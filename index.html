@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breeze — read it like a breeze!</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#faf7f1; --card:#ffffff; --ink:#2b2a27; --ink-soft:#6f6a60;
+    --line:#e8e2d6; --accent:#2f8fa5; --accent-soft:#e3f2f5;
+    --s1:#ffe28a; --s2:#ffc9a3; --s3:#ffb0b0;
+    --shadow:0 2px 12px rgba(60,50,30,.08);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Pretendard','Apple SD Gothic Neo',-apple-system,'Segoe UI',sans-serif;}
+
+  /* ---------- top bar ---------- */
+  #topbar{position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
+    padding:12px 22px; background:rgba(250,247,241,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);}
+  #logo{display:flex; align-items:baseline; gap:8px; cursor:pointer; user-select:none;}
+  #logo .mark{font-size:21px; font-weight:800; letter-spacing:-.5px; color:var(--accent);}
+  #logo .tag{font-size:12px; color:var(--ink-soft); font-style:italic;}
+  #topbar nav{margin-left:auto; display:flex; gap:6px;}
+  .navbtn{border:none; background:transparent; padding:7px 14px; border-radius:20px; font-size:14px; cursor:pointer; color:var(--ink-soft);}
+  .navbtn.on{background:var(--accent-soft); color:var(--accent); font-weight:700;}
+  .navbtn:hover{background:#f0ebe0;}
+
+  .view{display:none;} .view.on{display:block;}
+
+  /* ---------- library ---------- */
+  #v-lib{max-width:860px; margin:0 auto; padding:36px 24px 80px;}
+  #v-lib h1{font-size:26px; margin-bottom:4px;}
+  #v-lib .sub{color:var(--ink-soft); margin-bottom:28px; font-size:14px;}
+  #drop{border:2px dashed #d5cbb8; border-radius:16px; padding:34px; text-align:center; color:var(--ink-soft);
+    cursor:pointer; transition:.15s; margin-bottom:30px; background:#fffdf8;}
+  #drop:hover,#drop.over{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+  #drop .big{font-size:16px; font-weight:600; margin-bottom:6px;}
+  #drop .small{font-size:13px;}
+  #shelf{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px;}
+  .bookcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; cursor:pointer;
+    box-shadow:var(--shadow); transition:.15s; position:relative;}
+  .bookcard:hover{transform:translateY(-2px);}
+  .bookcard .bt{font-weight:700; font-size:15px; margin-bottom:5px; line-height:1.35; padding-right:20px;}
+  .bookcard .bm{font-size:12px; color:var(--ink-soft);}
+  .bookcard .del{position:absolute; top:10px; right:10px; border:none; background:none; color:#c9c0af;
+    cursor:pointer; font-size:15px; padding:4px;}
+  .bookcard .del:hover{color:#c0392b;}
+  .badge{display:inline-block; font-size:11px; background:var(--accent-soft); color:var(--accent);
+    border-radius:10px; padding:2px 8px; margin-top:9px;}
+
+  /* ---------- reader ---------- */
+  #v-read{display:none;}
+  #v-read.on{display:flex;}
+  #readmain{flex:1; min-width:0;}
+  #readwrap{max-width:680px; margin:0 auto; padding:34px 28px 50vh;}
+  #rtitle{font-size:22px; font-weight:800; margin-bottom:26px; font-family:Georgia,'Times New Roman',serif;}
+  #rtext{font-family:Georgia,'Iowan Old Style','Times New Roman',serif; font-size:var(--fs,18px); line-height:1.85; color:#33312c;}
+  #rtext p{margin-bottom:1.15em;}
+  #rtext h3{font-family:inherit; font-size:1.15em; margin:1.6em 0 .9em;}
+  .w{cursor:pointer; border-radius:3px; padding:0 1px; transition:background .12s;}
+  .w:hover{background:#efe7d6;}
+  .w.s1{background:var(--s1);}
+  .w.s2{background:var(--s2);}
+  .w.s3{background:var(--s3);}
+  .w.sel{box-shadow:0 0 0 2px var(--accent); background:var(--accent-soft);}
+  #rbar{position:sticky; top:0; z-index:40; display:flex; gap:10px; align-items:center;
+    padding:10px 18px; background:rgba(250,247,241,.94); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);}
+  #rbar .rt{font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;}
+  .iconbtn{border:1px solid var(--line); background:#fff; border-radius:8px; padding:5px 11px; cursor:pointer; font-size:13px;}
+  .iconbtn:hover{background:var(--accent-soft);}
+
+  /* ---------- side panel ---------- */
+  #panel{width:340px; flex-shrink:0; border-left:1px solid var(--line); background:#fffdf8;
+    height:calc(100vh - 49px); position:sticky; top:49px; overflow-y:auto; display:none;}
+  #panel.on{display:block;}
+  #panel .inner{padding:22px;}
+  #p-close{float:right; border:none; background:none; font-size:18px; cursor:pointer; color:var(--ink-soft);}
+  #p-word{font-size:24px; font-weight:800; font-family:Georgia,serif; margin-bottom:2px;}
+  #p-phon{color:var(--ink-soft); font-size:13px; margin-bottom:14px;}
+  #p-ko{font-size:17px; font-weight:700; background:var(--accent-soft); border-radius:10px; padding:10px 13px;
+    margin-bottom:14px; min-height:20px; outline:none;}
+  #p-ko:focus{box-shadow:0 0 0 2px var(--accent);}
+  #p-ko-hint{font-size:11px; color:var(--ink-soft); margin:-9px 0 14px 3px;}
+  .p-sec{font-size:11px; font-weight:700; color:var(--ink-soft); letter-spacing:.06em; margin:14px 0 6px;}
+  #p-defs{font-size:13.5px; line-height:1.55; color:#4a463e;}
+  #p-defs .pos{color:var(--accent); font-style:italic; margin-right:5px;}
+  #p-defs div{margin-bottom:7px;}
+  #p-ex{font-size:13.5px; font-family:Georgia,serif; font-style:italic; color:#5a554b; line-height:1.6;
+    border-left:3px solid var(--s1); padding-left:10px;}
+  #p-status{display:flex; gap:7px; margin-top:6px;}
+  .stbtn{flex:1; border:1.5px solid var(--line); background:#fff; border-radius:9px; padding:8px 0;
+    font-size:13px; cursor:pointer; font-weight:600; color:var(--ink-soft);}
+  .stbtn[data-s="1"].on{background:var(--s1); border-color:#e6c14f; color:#7a5d00;}
+  .stbtn[data-s="2"].on{background:var(--s2); border-color:#e89a5f; color:#8a4712;}
+  .stbtn[data-s="3"].on{background:var(--s3); border-color:#e57373; color:#9c1f1f;}
+  #p-del{margin-top:16px; width:100%; border:1px solid #eadfd2; background:none; color:#b0483a;
+    border-radius:9px; padding:8px; cursor:pointer; font-size:13px;}
+  #p-del:hover{background:#fdf1ee;}
+  #p-loading{color:var(--ink-soft); font-size:13px;}
+
+  /* ---------- vocab ---------- */
+  #v-vocab{max-width:960px; margin:0 auto; padding:32px 24px 80px;}
+  #v-vocab .head{display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
+  #v-vocab h1{font-size:22px;}
+  #v-vocab .cnt{color:var(--ink-soft); font-size:14px;}
+  #vsearch{margin-left:auto; border:1px solid var(--line); border-radius:9px; padding:8px 12px; font-size:14px; width:200px; background:#fff;}
+  #btn-xlsx{border:none; background:var(--accent); color:#fff; border-radius:9px; padding:9px 16px;
+    font-size:14px; font-weight:700; cursor:pointer;}
+  #btn-xlsx:hover{filter:brightness(1.08);}
+  table{width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow);}
+  th{font-size:12px; text-align:left; color:var(--ink-soft); padding:11px 14px; border-bottom:1px solid var(--line); background:#fcfaf5;}
+  td{padding:11px 14px; border-bottom:1px solid #f1ece1; font-size:14px; vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td.c-word{font-family:Georgia,serif; font-weight:700; white-space:nowrap;}
+  td.c-mean[contenteditable]{outline:none; min-width:120px;}
+  td.c-mean:focus{background:var(--accent-soft); border-radius:6px;}
+  td.c-ex{color:#6d675c; font-size:13px; font-style:italic; max-width:340px;}
+  .chip{display:inline-block; border-radius:8px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;}
+  .chip.s1{background:var(--s1); color:#7a5d00;}
+  .chip.s2{background:var(--s2); color:#8a4712;}
+  .chip.s3{background:var(--s3); color:#9c1f1f;}
+  #rtext figure{margin:1.5em 0; text-align:center;}
+  #rtext figure img{max-width:100%; border-radius:10px; box-shadow:var(--shadow);}
+  #p-kodict{font-size:13.5px; line-height:1.6; color:#4a463e;}
+  #p-kodict .pos{color:var(--accent); font-style:italic; margin-right:5px;}
+  #p-kodict div{margin-bottom:5px;}
+  #p-clicked{font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+  #p-naver{display:inline-block; margin-top:8px; font-size:12.5px; color:var(--accent); text-decoration:none;
+    border:1px solid var(--line); border-radius:8px; padding:5px 10px;}
+  #p-naver:hover{background:var(--accent-soft);}
+  .page{background:#fffdf9; border:1px solid var(--line); border-radius:16px;
+    padding:38px 42px; box-shadow:var(--shadow);}
+  .pageno{text-align:center; color:#b9b09e; font-size:12px; margin:16px 0 24px; font-family:Georgia,serif; user-select:none;}
+  @media (max-width:600px){ .page{padding:24px 20px;} }
+  .rowdel{border:none; background:none; color:#c9c0af; cursor:pointer; font-size:15px;}
+  .rowdel:hover{color:#c0392b;}
+  #vempty{text-align:center; color:var(--ink-soft); padding:60px 0; font-size:14px;}
+
+  #toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:#33312c; color:#fff;
+    padding:10px 20px; border-radius:22px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:99;}
+  #toast.on{opacity:.94;}
+  .legend{display:flex; gap:14px; font-size:12px; color:var(--ink-soft); margin-left:6px;}
+  .legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="logo" onclick="show('lib')">
+    <span class="mark">breeze</span><span class="tag">read it like a breeze!</span>
+  </div>
+  <nav>
+    <button class="navbtn on" id="nav-lib" onclick="show('lib')">라이브러리</button>
+    <button class="navbtn" id="nav-vocab" onclick="show('vocab')">단어장</button>
+  </nav>
+</div>
+
+<!-- ================= LIBRARY ================= -->
+<div class="view on" id="v-lib">
+  <h1>라이브러리</h1>
+  <div class="sub">책을 열거나, PDF · EPUB · TXT 파일을 끌어다 놓으세요.</div>
+  <div id="drop">
+    <div class="big">📄 파일을 여기로 드래그하거나 클릭해서 선택</div>
+    <div class="small">PDF, EPUB, TXT 지원 — 텍스트를 추출해 깔끔한 읽기 화면으로 만들어 드려요</div>
+    <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
+  </div>
+  <div id="shelf"></div>
+</div>
+
+<!-- ================= READER ================= -->
+<div class="view" id="v-read">
+  <div id="readmain">
+    <div id="rbar">
+      <button class="iconbtn" onclick="show('lib')">← 라이브러리</button>
+      <div class="rt" id="rbar-title"></div>
+      <div class="legend" title="모르는 정도 (클릭할 때마다 올라가요)">
+        <span><i style="background:var(--s1)"></i>★ 아리송</span>
+        <span><i style="background:var(--s2)"></i>★★ 모름</span>
+        <span><i style="background:var(--s3)"></i>★★★ 깜깜</span>
+      </div>
+      <button class="iconbtn" onclick="fontSize(-1)">A−</button>
+      <button class="iconbtn" onclick="fontSize(1)">A+</button>
+    </div>
+    <div id="readwrap">
+      <div id="rtitle"></div>
+      <div id="rtext"></div>
+    </div>
+  </div>
+  <div id="panel">
+    <div class="inner">
+      <button id="p-close" onclick="closePanel()">✕</button>
+      <div id="p-word"></div>
+      <div id="p-phon"></div>
+      <div id="p-clicked"></div>
+      <div id="p-ko" contenteditable="true" spellcheck="false"></div>
+      <div id="p-ko-hint">뜻은 클릭해서 직접 고칠 수 있어요</div>
+      <div class="p-sec">모르는 정도</div>
+      <div id="p-status">
+        <button class="stbtn" data-s="1">★</button>
+        <button class="stbtn" data-s="2">★★</button>
+        <button class="stbtn" data-s="3">★★★</button>
+      </div>
+      <div class="p-sec">한국어 사전</div>
+      <div id="p-kodict"></div>
+      <a id="p-naver" target="_blank" rel="noopener">네이버 사전에서 보기 ↗</a>
+      <div class="p-sec">영어 뜻</div>
+      <div id="p-defs"><span id="p-loading">불러오는 중…</span></div>
+      <div class="p-sec">저장된 예문</div>
+      <div id="p-ex"></div>
+      <button id="p-del">단어장에서 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VOCAB ================= -->
+<div class="view" id="v-vocab">
+  <div class="head">
+    <h1>단어장</h1><span class="cnt" id="vcnt"></span>
+    <input id="vsearch" placeholder="검색…">
+    <button id="btn-xlsx">⬇ 엑셀로 내보내기</button>
+  </div>
+  <div id="vtablewrap"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= data ================= */
+const DEMO_PARAS = ["Memo to: Oaktree Clients", "From: Howard Marks", "Re: AI Hurtles Ahead", "When I was preparing to write my December memo about artificial intelligence, Is It a Bubble?, I gained a great deal from speaking with some interesting techies in their thirties and forties. It’s stimulating to explore fresh territory and an absolute requirement for staying current as an investor. It’s one of the most enjoyable parts of my job.", "I recently returned to those people to follow up on the December memo. As part of that process, someone suggested I ask Claude, Anthropic’s AI model, to create a tutorial explaining artificial intelligence and the changes that have taken place in the last three months. I did so, and it gave me a great deal to work with. This resulting memo is intended as an addendum to December’s. Much of it will recap Claude’s 10,000- word essay, to which I’ll add a few observations of my own. In the process, I’ll highlight some terms that were new to me and might be new to you. I could have saved myself a lot of time by asking Claude to write this memo, but I decided not to, because I consider putting words on paper a big part of the fun. I will, however, quote liberally from Claude’s work product. That’ll be the source of all quotations that aren’t otherwise identified.", "Before I start in, I want to try to communicate the level of awe with which I viewed Claude’s output. It read like a personal note from a friend or colleague. It made reference to things I’ve talked about in past memos, like the sea change in interest rates and the pendulum of investor psychology, and it used them in metaphors related to AI. It argued logically, anticipated points I might make in response, injected humor, and bolstered its credibility by candidly acknowledging AI’s limitations, just as I might do. I’ve asked AI questions before and gotten answers back, but I’ve never received a personalized explanation like I did in this case.", "Understanding AI", "Before moving on to the meat of the matter – recent changes in AI and its capabilities – I want to share some insights into AI’s essence that the tutorial delivered for me. Importantly, the tutorial taught me not to think of an AI model as a search engine that retrieves data and regurgitates it. Rather, it’s a computer system that’s capable of synthesizing data and reasoning from it.", "There are two phases in the life of an AI model. In the first, it is “trained” by reading a vast amount of text. The training phase must not be thought of as loading the model with information, which I had done until now; it goes far beyond that. It consists of teaching the model how to think. By absorbing text, the model learns:", "• how to understand reasoning patterns and form them, • how arguments are structured, • how to generate new combinations of ideas, and • how to apply learned reasoning patterns to novel situations.", "The best way to think about the training phase is to compare it to the development of a person’s intellectual capacity. A baby is born with a brain, and through exposure to external stimuli, it develops the", "Follow us:", "ability to think, reason, synthesize, evaluate, analogize, combine ideas, create concepts, compose arguments, and so on. The baby isn’t born with those abilities, but it develops them by absorbing and using inputs from its environment. An AI model is the same. (A word here: I’m not implying that I understand how AI does what it does. There’s no chance of that. At best, I’ll describe what AI can do and the implications.)", "The second phase in an AI model’s life is “inference.” Once the model has been built and trained, inference is what it does for the rest of its life, using its capabilities to meet the demands of users.", "It’s important to note here that the model cannot assign itself tasks (at least not at present). It has to be ordered to perform tasks through “prompts” written by users. The better and more comprehensive the prompts, the more AI can do. For example, AI can write software to perform work a user wants done. It can also test the software, identify bugs, fix them, and test again, but it has to be instructed to do those things, at least at the current stage (read on). Because many people today lack awareness of the importance of prompts and fail to possess the ability to create them, AI’s potential is probably being underestimated. But note that the limitation is on the part of the users, not the model.", "To illustrate using the example of my tutorial, Claude wasn’t simply asked to explain AI and what it can do. When I queried Claude about the task it was assigned, here’s what it said:", "Someone designed a nine-module curriculum specifically for you, built around your December memo, your intellectual frameworks, and the goal of giving you enough technical understanding to write a credible addendum. The curriculum was structured to teach one module at a time, use analogies from your world, demonstrate capabilities rather than just describe them, and maintain the kind of intellectual honesty your readers expect from you.", "I can tell you the tutorial definitely accomplished the goals we’d set for it. This was entirely due to the quality and specificity of the prompts my advisers helped me prepare.", "Can AI Think?", "I’m going to take time here for a question I find fascinating. I know AI can reconfigure what people have already figured out and apply it to new data and other fields. But can it break new ground?", "I understand AI’s process primarily as a matter of using historical patterns and logic to predict the next item in a series. Write five words in a sentence, and it’ll predict what the sixth should be (look at the suggested words on your phone the next time you write an email – that’s AI in action). Ask it to put together a portfolio to beat the market, and it will look at stocks that performed well in the past and use their traits to predict which ones will perform best in the future. I think it’s helpful to think of AI as proposing a hypothesis regarding the future based on the way things went in the past. I’ll return to this later.", "What follows from the above is my question: Can AI have a new idea? Maybe it can perform every knowledge task we assign to it. But can it think of things we haven’t told it to think of? Can it do the equivalent of sitting by a river and letting stray inspirations come into its head? Can it see an apple fall from a tree and develop the notion of gravity? Can it muse, daydream, or ideate? Can it have intuition?", "This is where the debate around AI gets complicated. According to Claude, the skeptics argue as follows:", "Follow us:", "Everything Claude learned came from human-written text. It has no experiences, no embodied understanding of the world, no genuine comprehension. Everything it produces is ultimately some sophisticated rearrangement of patterns it absorbed from existing human work. It’s extraordinarily impressive pattern matching – maybe the most impressive pattern matching ever engineered – but it’s not thought. It’s not reasoning. It’s statistical recombination. And if that’s true, then there’s a ceiling. It can remix what humans have already figured out, but it can’t break genuinely new ground. It’s a very talented cover band, not a composer.", "Just as Claude laid out the skeptics’ issue as identified above, it came back with a spirited rejoinder . . . framed in terms of me (talk about knowing how to argue a point):", "Howard, everything you know about investing came from other people. Benjamin Graham taught you about margin of safety. Buffett taught you about quality. Charlie Munger taught you about mental models from multiple disciplines. John Kenneth Galbraith taught you about the psychology of financial manias. You read thousands of books, memos, case studies, and annual reports over fifty years. Every input was someone else’s thinking. . . .", "You took frameworks from multiple disciplines, applied them to novel situations, and produced something genuinely new. . . . The raw material came from others. The synthesis was yours.", "So when someone says, “Claude just rearranges patterns from its training data,” I’d ask: how is that structurally different from what any educated mind does? You learned reasoning patterns from decades of reading. I learned reasoning patterns from training. The question isn’t where the inputs came from. The question is whether the system – human or artificial – can combine them in ways that are genuinely novel and useful.", "Of course, this is completely true. I ingested data as a young investor (from actual experience as well as the written word), and I learned how those who went before me thought about the data and what conclusions they reached. I studied their thought processes and how to apply them to the data I took in. I was also inspired by the example of their processes to come up with my own. This is how the human brain expands its capabilities. Is AI’s way of growing, learning, and “thinking” really different from ours?", "Finally, Claude came back with a convincing real-world argument:", "Even if you grant the skeptic everything – even if you accept, philosophically, that what I do is “merely” pattern matching and not “true” thought – the economic implications are identical. Let me put it starkly. If I can produce the analytical output of a $200,000-a- year research associate, it does not matter to the person paying the bill whether I’m “really” thinking or merely pattern matching? What matters is whether the work product is reliable enough to be useful. And increasingly, it is. The philosophical debate about machine consciousness is fascinating. But the economic question isn’t “does AI truly understand?” The economic question is “does AI do the work?”", "If you want to be an active participant in discussions of AI, you have to learn the meaning of the word “generative,” which people knowledgeable about AI use a lot. Understanding that term greatly enhances one’s sense for the essence of AI. According to the AI model Perplexity:", "Follow us:", "In “generative AI,” the word generative means “able to create new things, not just analyze or label existing ones.” It refers to AI systems that learn patterns in data and then generate new content that resembles that data.", "Is this thinking? Or something else? Or am I belaboring “a distinction without a difference?” We’ll get some indication of this on page six."];
+const DEMO_BOOK = {id:'demo', title:'AI Hurtles Ahead — Howard Marks (샘플)', paras:DEMO_PARAS, builtin:true};
+
+const LS_WORDS='breeze.words', LS_BOOKS='breeze.books', LS_POS='breeze.pos', LS_FS='breeze.fs';
+let words = load(LS_WORDS, {});          // key -> {word,ko,defs,phon,example,book,status,addedAt}
+let books = load(LS_BOOKS, []);          // user books
+let positions = load(LS_POS, {});        // bookId -> scrollY
+let curBook = null, selKey = null;
+
+/* ---- image store (IndexedDB, for EPUB illustrations) ---- */
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('breeze-img',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('imgs'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function imgPut(id, blob){ const db=await idb(); return new Promise((res,rej)=>{
+  const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(blob,id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function imgGet(id){ try{ const db=await idb(); return await new Promise(res=>{
+  const rq=db.transaction('imgs').objectStore('imgs').get(id); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function imgPurge(prefix){ try{ const db=await idb();
+  const st=db.transaction('imgs','readwrite').objectStore('imgs');
+  const rq=st.getAllKeys(); rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(prefix)).forEach(k=>st.delete(k)); }catch(e){} }
+const IMG_MARK = '[[IMG]]:';
+
+function load(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } }
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('저장 공간이 부족해요 (책이 너무 큼)'); } }
+const saveWords = () => save(LS_WORDS, words);
+
+/* ================= views ================= */
+function show(v){
+  if(curBook){ positions[curBook.id]=window.scrollY; save(LS_POS,positions); }
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.getElementById('v-'+(v==='read'?'read':v)).classList.add('on');
+  document.getElementById('nav-lib').classList.toggle('on', v==='lib');
+  document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
+  if(v!=='read'){ curBook=null; closePanel(); }
+  if(v==='lib') renderShelf();
+  if(v==='vocab') renderVocab();
+  window.scrollTo(0,0);
+}
+
+/* ================= library ================= */
+function allBooks(){ return [DEMO_BOOK, ...books]; }
+function renderShelf(){
+  const s = document.getElementById('shelf');
+  s.innerHTML='';
+  allBooks().forEach(b=>{
+    const wc = b.paras.reduce((a,p)=>a+p.split(/\s+/).length,0);
+    const card = document.createElement('div');
+    card.className='bookcard';
+    card.innerHTML = `<div class="bt"></div>
+      <div class="bm">${wc.toLocaleString()} 단어 · ${b.paras.length} 문단</div>
+      ${b.builtin?'<span class="badge">샘플</span>':''}
+      ${b.builtin?'':'<button class="del" title="삭제">✕</button>'}`;
+    card.querySelector('.bt').textContent = b.title;
+    card.onclick = e => { if(e.target.classList.contains('del')) return; openBook(b); };
+    const del = card.querySelector('.del');
+    if(del) del.onclick = () => {
+      if(!confirm(`"${b.title}" 책을 삭제할까요? (단어장은 유지돼요)`)) return;
+      books = books.filter(x=>x.id!==b.id); save(LS_BOOKS,books); imgPurge(b.id+'|'); renderShelf();
+    };
+    s.appendChild(card);
+  });
+}
+
+/* ================= import ================= */
+const drop = document.getElementById('drop'), finput = document.getElementById('fileinput');
+drop.onclick = () => finput.click();
+finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0]); finput.value=''; };
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) importFile(f); });
+
+async function importFile(f){
+  toast('텍스트 추출 중…');
+  const name = f.name.replace(/\.(pdf|epub|txt)$/i,'');
+  try{
+    const id = 'b'+Date.now();
+    let paras;
+    if(/\.pdf$/i.test(f.name)) paras = await parsePDF(f);
+    else if(/\.epub$/i.test(f.name)) paras = await parseEPUB(f, id);
+    else paras = parseTXT(await f.text());
+    paras = paras.map(p=>p.startsWith(IMG_MARK)?p:p.trim()).filter(p=>p.length>0);
+    if(paras.length===0){ toast('텍스트를 찾지 못했어요 (스캔 이미지 PDF일 수 있어요)'); return; }
+    const book = {id, title:name, paras, addedAt:Date.now()};
+    books.unshift(book); save(LS_BOOKS,books);
+    renderShelf(); toast('추가 완료! 책을 눌러 읽기 시작하세요');
+  }catch(err){ console.error(err); toast('파일을 읽지 못했어요: '+err.message); }
+}
+
+function parseTXT(text){
+  return text.replace(/\r/g,'').split(/\n\s*\n+/)
+    .map(blk => blk.split('\n').map(l=>l.trim()).join(' '));
+}
+
+/* --- PDF: rebuild paragraphs from positioned text, drop headers/footers --- */
+async function parsePDF(f){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
+  const pageLines = [];   // [ [ {text,y,h} ... ] per page ]
+  for(let i=1;i<=pdf.numPages;i++){
+    const content = await (await pdf.getPage(i)).getTextContent();
+    const rows = {};
+    for(const it of content.items){
+      if(!it.str.trim()) continue;
+      const y = Math.round(it.transform[5]);
+      let key = Object.keys(rows).find(k=>Math.abs(k-y)<=2);
+      if(key===undefined){ rows[y]={y, h:it.height||10, parts:[]}; key=y; }
+      rows[key].parts.push({x:it.transform[4], s:it.str});
+    }
+    const lines = Object.values(rows).sort((a,b)=>b.y-a.y).map(r=>({
+      y:r.y, h:r.h,
+      text: r.parts.sort((a,b)=>a.x-b.x).map(p=>p.s).join(' ').replace(/\s+/g,' ').trim()
+    }));
+    pageLines.push(lines);
+  }
+  // header/footer: identical (or number-only) lines near top/bottom on many pages
+  const freq = {};
+  pageLines.forEach(ls=>ls.forEach(l=>{
+    const t=l.text.replace(/\d+/g,'#');
+    freq[t]=(freq[t]||0)+1;
+  }));
+  const junk = t => /^\d{1,4}$/.test(t) || /^©|^Copyright\b/i.test(t) || /all rights reserved/i.test(t)
+    || (freq[t.replace(/\d+/g,'#')] > Math.max(2, pageLines.length*0.5) && t.length<80);
+  // merge lines -> paragraphs
+  const paras=[]; let cur='';
+  const push=()=>{ if(cur.trim()) paras.push(cur.trim()); cur=''; };
+  for(const lines of pageLines){
+    const clean = lines.filter(l=>!junk(l.text));
+    for(let i=0;i<clean.length;i++){
+      const l=clean[i], prev=clean[i-1];
+      const gap = prev ? (prev.y - l.y) : 0;
+      const newPara = prev && gap > (prev.h||10)*1.9;
+      if(newPara) push();
+      // hyphenated line break
+      if(cur.endsWith('-')) cur = cur.slice(0,-1) + l.text;
+      else cur += (cur?' ':'') + l.text;
+    }
+    // page break: continue paragraph only if it clearly runs on
+    if(cur && /[.!?:”"']$/.test(cur.trim())) push();
+  }
+  push();
+  return paras;
+}
+
+/* --- EPUB: unzip -> spine order -> extract p/h tags + images --- */
+function joinPath(baseDir, rel){
+  if(rel.startsWith('/')) return rel.slice(1);
+  const out=[];
+  for(const p of (baseDir+rel).split('/')){
+    if(p==='.'||p==='') continue;
+    if(p==='..') out.pop(); else out.push(p);
+  }
+  return out.join('/');
+}
+const MIME = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml'};
+async function parseEPUB(f, bookId){
+  const zip = await JSZip.loadAsync(await f.arrayBuffer());
+  const container = await zip.file('META-INF/container.xml').async('text');
+  const opfPath = new DOMParser().parseFromString(container,'text/xml')
+    .querySelector('rootfile').getAttribute('full-path');
+  const opfDir = opfPath.includes('/') ? opfPath.slice(0,opfPath.lastIndexOf('/')+1) : '';
+  const opf = new DOMParser().parseFromString(await zip.file(opfPath).async('text'),'text/xml');
+  const manifest = {};
+  opf.querySelectorAll('manifest > item').forEach(it=>manifest[it.getAttribute('id')]=it.getAttribute('href'));
+  const paras=[]; let imgIdx=0; const seenImg={};
+  for(const ref of opf.querySelectorAll('spine > itemref')){
+    const href = manifest[ref.getAttribute('idref')];
+    if(!href) continue;
+    const chPath = decodeURIComponent(joinPath(opfDir, href));
+    const file = zip.file(chPath) || zip.file(decodeURIComponent(href));
+    if(!file) continue;
+    const chDir = chPath.includes('/') ? chPath.slice(0,chPath.lastIndexOf('/')+1) : '';
+    const doc = new DOMParser().parseFromString(await file.async('text'),'text/html');
+    for(const el of doc.querySelectorAll('p, h1, h2, h3, h4, li, img, image')){
+      const tag = el.tagName.toLowerCase();
+      if(tag==='img' || tag==='image'){
+        const src = el.getAttribute('src') || el.getAttribute('xlink:href') || el.getAttribute('href');
+        if(!src || src.startsWith('data:') || src.startsWith('http')) continue;
+        const path = decodeURIComponent(joinPath(chDir, src));
+        let imgFile = zip.file(path);
+        if(!imgFile){ // fallback: match by filename
+          const base = path.split('/').pop();
+          const cand = Object.keys(zip.files).find(k=>k.endsWith('/'+base)||k===base);
+          if(cand) imgFile = zip.file(cand);
+        }
+        if(!imgFile) continue;
+        if(seenImg[imgFile.name]!==undefined){ paras.push(IMG_MARK+seenImg[imgFile.name]); continue; }
+        const ext = (imgFile.name.split('.').pop()||'').toLowerCase();
+        const blob = new Blob([await imgFile.async('arraybuffer')], {type: MIME[ext]||'image/jpeg'});
+        const id = bookId+'|'+(imgIdx++);
+        try{ await imgPut(id, blob); seenImg[imgFile.name]=id; paras.push(IMG_MARK+id); }catch(e){}
+      }else{
+        // avoid double text when a <li> wraps <p>/<h*> (children are matched separately)
+        if(tag==='li' && el.querySelector('p,h1,h2,h3,h4')) continue;
+        const t = el.textContent.replace(/\s+/g,' ').trim();
+        if(t) paras.push(t);
+      }
+    }
+  }
+  return paras;
+}
+
+/* ================= lemmatizer ================= */
+const IRREG = {
+  was:'be',were:'be',is:'be',are:'be',am:'be',been:'be',being:'be',
+  has:'have',had:'have',having:'have',does:'do',did:'do',done:'do',doing:'do',
+  went:'go',gone:'go',goes:'go',going:'go',said:'say',made:'make',took:'take',taken:'take',
+  came:'come',got:'get',gotten:'get',gave:'give',given:'give',found:'find',thought:'think',
+  told:'tell',became:'become',left:'leave',felt:'feel',brought:'bring',began:'begin',begun:'begin',
+  kept:'keep',held:'hold',wrote:'write',written:'write',stood:'stand',heard:'hear',meant:'mean',
+  met:'meet',ran:'run',paid:'pay',sat:'sit',spoke:'speak',spoken:'speak',led:'lead',grew:'grow',
+  grown:'grow',lost:'lose',fell:'fall',fallen:'fall',sent:'send',built:'build',understood:'understand',
+  drew:'draw',drawn:'draw',broke:'break',broken:'break',spent:'spend',rose:'rise',risen:'rise',
+  drove:'drive',driven:'drive',bought:'buy',wore:'wear',worn:'wear',chose:'choose',chosen:'choose',
+  ate:'eat',eaten:'eat',knew:'know',known:'know',saw:'see',seen:'see',sold:'sell',taught:'teach',
+  caught:'catch',fought:'fight',sought:'seek',flew:'fly',flown:'fly',threw:'throw',thrown:'throw',
+  lain:'lie',lay:'lie',woke:'wake',woken:'wake',hidden:'hide',hid:'hide',
+  men:'man',women:'woman',children:'child',feet:'foot',teeth:'tooth',mice:'mouse',
+  leaves:'leaf',lives:'life',wives:'wife',knives:'knife',selves:'self',shelves:'shelf',
+  movies:'movie',cookies:'cookie',calories:'calorie',
+  better:'good',best:'good',worse:'bad',worst:'bad'
+};
+const NO_LEMMA = new Set(['news','always','perhaps','these','those','series','species','during',
+  'evening','morning','nothing','something','anything','everything','indeed','hundred','sacred',
+  'hatred','united','ing','analysis','basis','crisis','thesis']);
+function lemma(w){
+  if(IRREG[w]) return IRREG[w];
+  if(w.length<4 || NO_LEMMA.has(w)) return w;
+  const hasVowel = s => /[aeiouy]/.test(s);
+  if(/ies$/.test(w) && w.length>4) return w.slice(0,-3)+'y';
+  if(/(sses|shes|ches|xes|zes)$/.test(w)) return w.slice(0,-2);
+  if(/oes$/.test(w) && w.length>4) return w.slice(0,-2);
+  if(/s$/.test(w) && !/(ss|us|is)$/.test(w)) return w.slice(0,-1);
+  if(/ing$/.test(w) && w.length>5){
+    let b = w.slice(0,-3);
+    if(!hasVowel(b)) return w;
+    if(b.length>2 && b[b.length-1]===b[b.length-2] && !/(ll|ss|zz)$/.test(b)) return b.slice(0,-1);
+    if(/[^aeiou][aeiou][^aeiouwxy]$/.test(b)) return b+'e';
+    return b;
+  }
+  if(/ed$/.test(w) && w.length>4 && !/eed$/.test(w)){
+    let b = w.slice(0,-2);
+    if(!hasVowel(b)) return w;
+    if(b.length>2 && b[b.length-1]===b[b.length-2] && !/(ll|ss|zz)$/.test(b)) return b.slice(0,-1);
+    if(/[^aeiou][aeiou][^aeiouwxy]$/.test(b)) return b+'e';
+    return b;
+  }
+  return w;
+}
+const isAcro = w => /^[A-Z]{2,6}s?$/.test(w);
+
+/* candidate lemmas, primary first — used for grouping & dictionary lookup */
+function lemmaCands(raw){
+  const w0 = raw.toLowerCase().replace(/’/g,"'");
+  if(isAcro(raw)) return [w0.replace(/s$/,'')];
+  const set = new Set([lemma(w0)]);
+  const addWithE = b => { set.add(b); set.add(b+'e'); if(b.length>2 && b[b.length-1]===b[b.length-2]) set.add(b.slice(0,-1)); };
+  if(/ing$/.test(w0) && w0.length>5 && /[aeiouy]/.test(w0.slice(0,-3))) addWithE(w0.slice(0,-3));
+  if(/ed$/.test(w0) && w0.length>4 && /[aeiouy]/.test(w0.slice(0,-2))) addWithE(w0.slice(0,-2));
+  set.add(w0);
+  // for derived candidates ending in e, also try without it (keeps groups stable)
+  [...set].forEach(c=>{ if(c!==w0 && c.endsWith('e')) set.add(c.slice(0,-1)); });
+  return [...set];
+}
+
+/* ================= reader ================= */
+const WORD_RE = /([A-Za-z][A-Za-z'’-]*[A-Za-z]|[A-Za-z])/g;
+const keyOf = raw => {
+  const cands = lemmaCands(raw);
+  return cands.find(c=>words[c]) || cands[0];
+};
+
+function looksHeading(p){
+  return p.length<70 && !/[.!?:;,]$/.test(p) && p.split(' ').length<=10 && /^[A-Z0-9“"]/.test(p);
+}
+
+function openBook(b){
+  curBook = b;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.getElementById('v-read').classList.add('on');
+  document.getElementById('nav-lib').classList.remove('on');
+  document.getElementById('rtitle').textContent = b.title;
+  document.getElementById('rbar-title').textContent = b.title;
+  const rt = document.getElementById('rtext');
+  rt.innerHTML='';
+  const frag = document.createDocumentFragment();
+  const PAGE_CHARS = 1700;
+  let page=null, pageChars=0, pageNo=0;
+  const newPage = ()=>{
+    if(page){
+      const no = document.createElement('div');
+      no.className='pageno'; no.textContent = '— '+pageNo+' —';
+      frag.appendChild(no);
+    }
+    page = document.createElement('section');
+    page.className='page';
+    frag.appendChild(page);
+    pageChars=0; pageNo++;
+  };
+  newPage();
+  b.paras.forEach((p,pi)=>{
+    if(p.startsWith(IMG_MARK)){
+      const fig = document.createElement('figure');
+      const img = document.createElement('img');
+      img.alt = '삽화';
+      imgGet(p.slice(IMG_MARK.length)).then(blob=>{
+        if(blob) img.src = URL.createObjectURL(blob);
+        else fig.remove();
+      });
+      fig.appendChild(img);
+      page.appendChild(fig);
+      pageChars += 400;
+      return;
+    }
+    const isHead = looksHeading(p);
+    // break page when full, or a bit early if a heading arrives
+    if(pageChars >= PAGE_CHARS || (isHead && pageChars > PAGE_CHARS*0.55)) newPage();
+    const el = document.createElement(isHead?'h3':'p');
+    el.dataset.pi = pi;
+    let html='', m, last=0;
+    WORD_RE.lastIndex=0;
+    while((m=WORD_RE.exec(p))){
+      html += esc(p.slice(last, m.index));
+      const k = keyOf(m[0]);
+      const st = words[k] ? ' s'+words[k].status : '';
+      html += `<span class="w${st}" data-w="${k}">${esc(m[0])}</span>`;
+      last = m.index + m[0].length;
+    }
+    html += esc(p.slice(last));
+    el.innerHTML = html;
+    page.appendChild(el);
+    pageChars += p.length;
+  });
+  const no = document.createElement('div');
+  no.className='pageno'; no.textContent = '— '+pageNo+' —';
+  frag.appendChild(no);
+  rt.appendChild(frag);
+  requestAnimationFrame(()=>window.scrollTo(0, positions[b.id]||0));
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('rtext').addEventListener('click', e=>{
+  const span = e.target.closest('.w');
+  if(!span) return;
+  const k = span.dataset.w;
+  if(words[k]){
+    // re-click = "still don't know" -> degree goes up, capped at 3 stars
+    if(words[k].status < 3) setStatus(k, words[k].status + 1);
+    selectWord(k, span);
+  }else{
+    addWord(k, span);
+  }
+});
+
+function sentenceOf(span){
+  const paraText = curBook.paras[+span.closest('[data-pi]').dataset.pi] || '';
+  const sents = paraText.match(/[^.!?…]+[.!?…]*/g) || [paraText];
+  const re = new RegExp('\\b'+span.textContent.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+  return (sents.find(s=>re.test(s)) || sents[0]).trim();
+}
+
+function addWord(k, span){
+  const raw = span.textContent.replace(/’/g,"'");
+  const acro = isAcro(raw);
+  const display = acro ? raw.replace(/s$/,'') : k;
+  // lookup candidates: primary lemma, alternates, then the clicked form
+  const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
+  words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
+    example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now() };
+  saveWords();
+  paintWord(k);
+  selectWord(k, span);
+  fetchDict(k);
+}
+
+function selectWord(k, span){
+  selKey = k;
+  document.querySelectorAll('.w.sel').forEach(s=>s.classList.remove('sel'));
+  if(span) span.classList.add('sel');
+  renderPanel();
+  document.getElementById('panel').classList.add('on');
+}
+
+function closePanel(){
+  selKey=null;
+  document.getElementById('panel').classList.remove('on');
+  document.querySelectorAll('.w.sel').forEach(s=>s.classList.remove('sel'));
+}
+
+function paintWord(k){
+  const w = words[k];
+  document.querySelectorAll(`.w[data-w="${CSS.escape(k)}"]`).forEach(s=>{
+    s.classList.remove('s1','s2','s3');
+    if(w) s.classList.add('s'+w.status);
+  });
+}
+
+function setStatus(k, st){
+  if(!words[k]) return;
+  words[k].status = st; saveWords(); paintWord(k);
+  if(selKey===k) renderPanel();
+}
+
+function renderPanel(){
+  const w = words[selKey]; if(!w) return;
+  document.getElementById('p-word').textContent = w.word;
+  document.getElementById('p-phon').textContent = w.phon || '';
+  document.getElementById('p-clicked').textContent =
+    (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
+  document.getElementById('p-ko').textContent = w.ko || (w.loading?'…':'');
+  document.getElementById('p-ex').textContent = w.example || '—';
+  document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
+  document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
+  const kod = document.getElementById('p-kodict');
+  if(w.loading) kod.innerHTML = '<span style="color:var(--ink-soft)">불러오는 중…</span>';
+  else if(!w.kodict || !w.kodict.length) kod.innerHTML = '<span style="color:var(--ink-soft)">사전 항목 없음</span>';
+  else kod.innerHTML = w.kodict.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.terms.join(', '))}</div>`).join('');
+  const defs = document.getElementById('p-defs');
+  if(w.loading) defs.innerHTML = '<span id="p-loading">불러오는 중…</span>';
+  else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--ink-soft)">영어 뜻을 찾지 못했어요</span>';
+  else defs.innerHTML = w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
+}
+
+document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>setStatus(selKey, +b.dataset.s));
+document.getElementById('p-del').onclick = ()=>{
+  if(!selKey) return;
+  const k = selKey;
+  delete words[k]; saveWords(); paintWord(k); closePanel(); toast('단어장에서 삭제했어요');
+};
+document.getElementById('p-ko').addEventListener('blur', e=>{
+  if(!selKey || !words[selKey]) return;
+  words[selKey].ko = e.target.textContent.trim(); saveWords();
+});
+
+/* ---- dictionary: Korean dict entries via translate(dt=bd), English via dictionaryapi.dev ---- */
+async function fetchKo(w, form){
+  const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q='+encodeURIComponent(form));
+  const j = await r.json();
+  const ko = (j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('').trim();
+  const dict = (j[1]||[]).map(e=>({pos:e[0]||'', terms:(e[1]||[]).slice(0,5)}));
+  // a "translation" identical to the word itself means the API found nothing useful
+  if(ko && ko.toLowerCase()!==form.toLowerCase()){ w.ko = w.ko || ko; }
+  if(dict.length){ w.kodict = dict; if(!w.ko && dict[0].terms[0]) w.ko = dict[0].terms[0]; return true; }
+  return !!w.ko;
+}
+async function fetchEn(w, form){
+  const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
+  if(!r.ok) return false;
+  const j = await r.json();
+  if(!j || !j[0]) return false;
+  w.phon = j[0].phonetic || ((j[0].phonetics||[]).find(p=>p.text)||{}).text || '';
+  w.defs = [];
+  for(const m of j[0].meanings||[]){
+    for(const d of m.definitions.slice(0,2)){
+      w.defs.push({pos:m.partOfSpeech, def:d.definition});
+      if(w.defs.length>=5) break;
+    }
+    if(w.defs.length>=5) break;
+  }
+  return w.defs.length>0;
+}
+/* Wiktionary fallback for English definitions (no key, CORS ok) */
+async function fetchEnWik(w, form){
+  const r = await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(form)+'?redirect=true');
+  if(!r.ok) return false;
+  const j = await r.json();
+  const entries = j.en || j[Object.keys(j)[0]];
+  if(!entries) return false;
+  w.defs = [];
+  for(const e of entries){
+    for(const d of (e.definitions||[]).slice(0,2)){
+      const txt = (d.definition||'').replace(/<[^>]*>/g,'').trim();
+      if(txt) w.defs.push({pos:e.partOfSpeech||'', def:txt});
+      if(w.defs.length>=5) break;
+    }
+    if(w.defs.length>=5) break;
+  }
+  return w.defs.length>0;
+}
+async function fetchDict(k){
+  const w = words[k]; if(!w) return;
+  w.loading = true; if(selKey===k) renderPanel();
+  const forms = w.forms && w.forms.length ? w.forms : [k];
+  // 1) settle the headword first, via English dictionary validation
+  let validated = null;
+  for(const f of forms){ try{ if(await fetchEn(w,f)){ validated=f; break; } }catch(e){} }
+  if(!validated){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
+  if(validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
+  if(selKey===k) renderPanel();
+  // 2) Korean meaning for the settled headword (other forms only as fallback)
+  const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
+  for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
+  delete w.loading;
+  saveWords();
+  if(selKey===k) renderPanel();
+}
+
+/* ================= vocab ================= */
+function renderVocab(){
+  const list = Object.entries(words).sort((a,b)=>b[1].addedAt-a[1].addedAt);
+  const q = document.getElementById('vsearch').value.trim().toLowerCase();
+  const rows = list.filter(([k,w]) => !q || w.word.toLowerCase().includes(q) || (w.ko||'').includes(q));
+  document.getElementById('vcnt').textContent = `${list.length}개 저장됨`;
+  const wrap = document.getElementById('vtablewrap');
+  if(!rows.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 클릭해 보세요!</div>'; return; }
+  const stName = {1:'★',2:'★★',3:'★★★'};
+  wrap.innerHTML = `<table><thead><tr>
+    <th>단어</th><th>뜻</th><th>예문</th><th>모르는 정도</th><th>저장일</th><th></th>
+  </tr></thead><tbody>` + rows.map(([k,w])=>`
+    <tr data-k="${esc(k)}">
+      <td class="c-word">${esc(w.word)}</td>
+      <td class="c-mean" contenteditable="true" spellcheck="false">${esc(w.ko||'')}</td>
+      <td class="c-ex">${esc(w.example||'')}</td>
+      <td><span class="chip s${w.status}" title="클릭해서 변경">${stName[w.status]}</span></td>
+      <td style="color:var(--ink-soft);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
+      <td><button class="rowdel" title="삭제">✕</button></td>
+    </tr>`).join('') + '</tbody></table>';
+
+  wrap.querySelectorAll('tr[data-k]').forEach(tr=>{
+    const k = tr.dataset.k;
+    tr.querySelector('.chip').onclick = ()=>{ setStatus(k, words[k].status%3+1); renderVocab(); };
+    tr.querySelector('.rowdel').onclick = ()=>{ delete words[k]; saveWords(); renderVocab(); };
+    tr.querySelector('.c-mean').addEventListener('blur', e=>{
+      if(words[k]){ words[k].ko = e.target.textContent.trim(); saveWords(); }
+    });
+  });
+}
+document.getElementById('vsearch').addEventListener('input', renderVocab);
+
+document.getElementById('btn-xlsx').onclick = ()=>{
+  const list = Object.values(words).sort((a,b)=>b.addedAt-a.addedAt);
+  if(!list.length){ toast('내보낼 단어가 없어요'); return; }
+  const stName = {1:'★',2:'★★',3:'★★★'};
+  const aoa = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
+    ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
+      w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:16},{wch:24},{wch:50},{wch:60},{wch:7},{wch:28},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Breeze 단어장');
+  XLSX.writeFile(wb, 'breeze_vocab.xlsx');
+};
+
+/* ================= misc ================= */
+let fs = load(LS_FS, 18);
+document.documentElement.style.setProperty('--fs', fs+'px');
+function fontSize(d){ fs=Math.min(26,Math.max(14,fs+d)); save(LS_FS,fs); document.documentElement.style.setProperty('--fs',fs+'px'); }
+
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),2600);
+}
+
+window.addEventListener('beforeunload', ()=>{ if(curBook){ positions[curBook.id]=window.scrollY; save(LS_POS,positions);} });
+
+renderShelf();
+</script>
+</body>
+</html>
