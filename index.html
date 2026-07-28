@@ -9,208 +9,326 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#faf7f1; --card:#ffffff; --ink:#2b2a27; --ink-soft:#6f6a60;
-    --line:#e8e2d6; --accent:#2f8fa5; --accent-soft:#e3f2f5;
-    --s1:#ffe28a; --s2:#ffc9a3; --s3:#ffb0b0;
-    --shadow:0 2px 12px rgba(60,50,30,.08);
+    --paper:#FAF8F2; --paper2:#FDFBF6; --ink:#18364A; --ink-body:#2D3E43;
+    --soft:#667D87; --soft2:#78909A; --line:#E4E8DF; --line2:#D7E1DE;
+    --blue:#2589BE; --blue-deep:#216F9C; --sky:#DCEFF5; --sky2:#D9F0F2;
+    --mint:#BDDCCD; --chipbg:#E6F3F1; --chiptx:#247B81;
+    --s1:#FFE28A; --s2:#FFC9A3; --s3:#FFB0B0;
+    --ui:'Avenir Next','Helvetica Neue','Apple SD Gothic Neo','Pretendard',-apple-system,sans-serif;
+    --serif:Georgia,'Times New Roman',serif;
+    --shadow:0 14px 34px rgba(23,55,71,.12);
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{background:var(--bg); color:var(--ink); font-family:'Pretendard','Apple SD Gothic Neo',-apple-system,'Segoe UI',sans-serif;}
+  html{background:var(--paper);}
+  body{background:var(--paper); color:var(--ink); font-family:var(--ui);}
+  body::before{content:''; position:fixed; inset:0; pointer-events:none; opacity:.5; z-index:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='8'/><feColorMatrix type='matrix' values='1 0 0 0 .82 0 1 0 0 .80 0 0 1 0 .73 0 0 0 .04 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");}
+  #app{position:relative; z-index:1;}
 
-  /* ---------- top bar ---------- */
+  /* ================= splash ================= */
+  #splash{position:fixed; inset:0; z-index:200; background:var(--paper); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:0; transition:opacity .6s ease;}
+  #splash.hide{opacity:0; pointer-events:none;}
+  #splash svg.mark{width:220px; height:130px; margin-bottom:10px;}
+  #splash .word{font-size:56px; font-weight:500; letter-spacing:-2.5px; color:var(--ink);}
+  #splash .tag{font-size:15px; color:var(--soft); letter-spacing:.8px; margin-top:6px;}
+  #splash .dots{display:flex; gap:14px; margin-top:64px;}
+  #splash .dots i{width:9px; height:9px; border-radius:50%; background:#2B94C5; opacity:.35; animation:pulse 1.2s infinite;}
+  #splash .dots i:nth-child(2){animation-delay:.2s;}
+  #splash .dots i:nth-child(3){animation-delay:.4s;}
+  @keyframes pulse{0%,100%{opacity:.3; transform:scale(1);} 50%{opacity:.9; transform:scale(1.25);}}
+
+  /* ================= top bar ================= */
   #topbar{position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
-    padding:12px 22px; background:rgba(250,247,241,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);}
-  #logo{display:flex; align-items:baseline; gap:8px; cursor:pointer; user-select:none;}
-  #logo .mark{font-size:21px; font-weight:800; letter-spacing:-.5px; color:var(--accent);}
-  #logo .tag{font-size:12px; color:var(--ink-soft); font-style:italic;}
-  #topbar nav{margin-left:auto; display:flex; gap:6px;}
-  .navbtn{border:none; background:transparent; padding:7px 14px; border-radius:20px; font-size:14px; cursor:pointer; color:var(--ink-soft);}
-  .navbtn.on{background:var(--accent-soft); color:var(--accent); font-weight:700;}
-  .navbtn:hover{background:#f0ebe0;}
+    padding:16px 26px; background:rgba(250,248,242,.9); backdrop-filter:blur(10px);}
+  #logo{display:flex; align-items:center; gap:9px; cursor:pointer; user-select:none;}
+  #logo svg{width:34px; height:22px;}
+  #logo .mark{font-size:21px; font-weight:600; letter-spacing:-1px; color:var(--ink);}
+  #topbar nav{margin-left:auto; display:flex; gap:8px; align-items:center;}
+  .navbtn{border:none; background:transparent; padding:8px 15px; border-radius:22px; font-size:14px;
+    cursor:pointer; color:var(--soft); font-family:var(--ui); font-weight:500;}
+  .navbtn.on{background:var(--sky); color:var(--blue-deep);}
+  .navbtn:hover{background:#EFEDE4;}
+  #btn-add{width:38px; height:38px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
+    font-size:20px; cursor:pointer; line-height:1;}
+  #btn-add:hover{background:var(--sky2);}
 
   .view{display:none;} .view.on{display:block;}
 
-  /* ---------- library ---------- */
-  #v-lib{max-width:860px; margin:0 auto; padding:36px 24px 80px;}
-  #v-lib h1{font-size:26px; margin-bottom:4px;}
-  #v-lib .sub{color:var(--ink-soft); margin-bottom:28px; font-size:14px;}
-  #drop{border:2px dashed #d5cbb8; border-radius:16px; padding:34px; text-align:center; color:var(--ink-soft);
-    cursor:pointer; transition:.15s; margin-bottom:30px; background:#fffdf8;}
-  #drop:hover,#drop.over{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
-  #drop .big{font-size:16px; font-weight:600; margin-bottom:6px;}
-  #drop .small{font-size:13px;}
-  #shelf{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px;}
-  .bookcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; cursor:pointer;
-    box-shadow:var(--shadow); transition:.15s; position:relative;}
-  .bookcard:hover{transform:translateY(-2px);}
-  .bookcard .bt{font-weight:700; font-size:15px; margin-bottom:5px; line-height:1.35; padding-right:20px;}
-  .bookcard .bm{font-size:12px; color:var(--ink-soft);}
-  .bookcard .del{position:absolute; top:10px; right:10px; border:none; background:none; color:#c9c0af;
-    cursor:pointer; font-size:15px; padding:4px;}
-  .bookcard .del:hover{color:#c0392b;}
-  .badge{display:inline-block; font-size:11px; background:var(--accent-soft); color:var(--accent);
-    border-radius:10px; padding:2px 8px; margin-top:9px;}
+  /* ================= home ================= */
+  #v-home{max-width:960px; margin:0 auto; padding:28px 26px 90px;}
+  #greet{font-size:13.5px; color:var(--soft); letter-spacing:1.6px; margin:14px 2px 10px;}
+  #bigq{font-size:clamp(28px,4.6vw,40px); font-weight:500; letter-spacing:-1.4px; margin-bottom:30px;}
+  /* hero continue card */
+  #hero{border-radius:26px; background:linear-gradient(135deg,#DCEFF5,#F9F7EE); box-shadow:var(--shadow);
+    position:relative; overflow:hidden; padding:34px; display:flex; gap:34px; cursor:pointer; margin-bottom:56px;}
+  #hero:hover{transform:translateY(-2px); transition:.2s;}
+  #hero .wave{position:absolute; left:0; right:0; bottom:0; height:32%; pointer-events:none;}
+  #hero .cover{width:150px; min-width:150px; height:220px; border-radius:8px; position:relative; z-index:1;
+    background:linear-gradient(135deg,#28516B,#173347); box-shadow:0 12px 24px rgba(23,51,71,.35);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; text-align:center;}
+  #hero .cover .inner{position:absolute; inset:9px; border:1px solid rgba(135,189,208,.7); border-radius:4px;}
+  #hero .cover .arc{width:70%; margin-bottom:14px;}
+  #hero .cover .ct{font-family:var(--serif); color:#E8F4F2; font-size:15px; line-height:1.35; letter-spacing:.5px; word-break:break-word;
+    display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;}
+  #hero .meta{position:relative; z-index:1; flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center;}
+  #hero .eyebrow{font-size:13px; letter-spacing:1.4px; color:#69818B; margin-bottom:12px;}
+  #hero .bt{font-size:clamp(20px,3vw,27px); font-weight:500; letter-spacing:-.6px; margin-bottom:9px;
+    overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  #hero .bm{font-size:15px; color:#5B707A; margin-bottom:20px;}
+  #hero .track{height:6px; border-radius:3px; background:#C7DDE0; max-width:420px; margin-bottom:26px;}
+  #hero .fill{height:6px; border-radius:3px; background:var(--blue); width:0;}
+  #hero .cta{align-self:flex-start; background:var(--blue); color:#FFFDF8; border:none; border-radius:26px;
+    padding:13px 34px; font-size:15.5px; font-weight:500; font-family:var(--ui); cursor:pointer;}
+  #hero .cta:hover{background:var(--blue-deep);}
+  /* new books */
+  #newhead{font-size:23px; font-weight:500; letter-spacing:-.5px; margin-bottom:6px;}
+  #newsub{font-size:14.5px; color:var(--soft); margin-bottom:22px;}
+  #shelf{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:18px;}
+  .bookcard{border-radius:22px; padding:24px 24px 0; height:250px; cursor:pointer; position:relative; overflow:hidden;
+    transition:.18s; display:block;}
+  .bookcard:hover{transform:translateY(-3px); box-shadow:var(--shadow);}
+  .bookcard .author{font-family:var(--serif); font-size:12.5px; letter-spacing:1.2px; margin-bottom:14px; opacity:.75;}
+  .bookcard .bt{font-family:var(--serif); font-size:20px; line-height:1.3; word-break:keep-all;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;}
+  .bookcard .wave{position:absolute; left:0; right:0; bottom:0; height:34%; pointer-events:none;}
+  .bookcard .prog{position:absolute; bottom:14px; left:24px; font-size:12px; opacity:.65; z-index:1;}
+  .bookcard .del{position:absolute; top:12px; right:12px; border:none; background:rgba(255,255,255,.55); width:28px; height:28px;
+    border-radius:50%; cursor:pointer; font-size:13px; color:#5c5648; opacity:0; transition:.15s;}
+  .bookcard:hover .del{opacity:1;}
+  .bookcard .del:hover{background:#fff; color:#c0392b;}
+  .bookcard.add{border:2px dashed #CBD9D3; background:transparent; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px; color:var(--soft);}
+  .bookcard.add:hover{border-color:var(--blue); color:var(--blue); box-shadow:none;}
+  .bookcard.add .plus{font-size:34px; line-height:1;}
+  .bookcard.add .lbl{font-size:13.5px; text-align:center; line-height:1.5;}
+  .pal0{background:#EEE7D5; color:#473D33;} .pal0 .author{color:#715C45;}
+  .pal1{background:#DCEBF0; color:#244B60;} .pal1 .author{color:#38667C;}
+  .pal2{background:#E6E2EE; color:#463954;} .pal2 .author{color:#625273;}
 
-  /* ---------- reader ---------- */
+  /* ================= reader ================= */
   #v-read{display:none;}
   #v-read.on{display:flex;}
   #readmain{flex:1; min-width:0;}
-  #readwrap{max-width:680px; margin:0 auto; padding:34px 28px 50vh;}
-  #rtitle{font-size:22px; font-weight:800; margin-bottom:26px; font-family:Georgia,'Times New Roman',serif;}
-  #rtext{font-family:Georgia,'Iowan Old Style','Times New Roman',serif; font-size:var(--fs,18px); line-height:1.85; color:#33312c;}
-  #rtext p{margin-bottom:1.15em;}
-  #rtext h3{font-family:inherit; font-size:1.15em; margin:1.6em 0 .9em;}
-  .w{cursor:pointer; border-radius:3px; padding:0 1px; transition:background .12s;}
-  .w:hover{background:#efe7d6;}
+  #rbar{position:sticky; top:0; z-index:40; background:rgba(253,251,246,.92); backdrop-filter:blur(10px);}
+  #rbar .row{display:flex; align-items:center; gap:12px; padding:14px 22px 10px;}
+  #rback{border:none; background:none; cursor:pointer; padding:6px; color:#345462;}
+  #rbar .rt{flex:1; text-align:center; font-size:14.5px; font-weight:500; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
+  .iconbtn:hover{background:var(--sky);}
+  #ptrack{height:3px; background:var(--line2);}
+  #pfill{height:3px; background:var(--blue); width:0; transition:width .15s;}
+  #readwrap{max-width:700px; margin:0 auto; padding:36px 26px 50vh;}
+  #rtitle{font-family:var(--serif); font-size:clamp(24px,3.4vw,30px); color:var(--ink); padding-bottom:18px;
+    border-bottom:1px solid var(--line); margin-bottom:8px;}
+  #rhint{font-size:13px; color:var(--soft2); margin-bottom:26px; display:flex; align-items:center; gap:8px;}
+  #rhint svg{flex-shrink:0;}
+  #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body);}
+  #rtext p{margin-bottom:1.2em;}
+  #rtext h3{font-size:1.16em; margin:1.6em 0 .9em; color:var(--ink);}
+  .page{background:#FFFEFA; border:1px solid #EDEAE0; border-radius:20px; padding:40px 44px;
+    box-shadow:0 3px 16px rgba(60,50,30,.05);}
+  .pageno{text-align:center; color:#B9B09E; font-size:12px; margin:18px 0 26px; font-family:var(--serif); user-select:none;}
+  #rtext figure{margin:1.5em 0; text-align:center;}
+  #rtext figure img{max-width:100%; border-radius:10px; box-shadow:var(--shadow);}
+  .w{cursor:pointer; border-radius:5px; padding:0 1px; transition:background .12s;}
+  .w:hover{background:#EFE9DB;}
   .w.s1{background:var(--s1);}
   .w.s2{background:var(--s2);}
   .w.s3{background:var(--s3);}
-  .w.sel{box-shadow:0 0 0 2px var(--accent); background:var(--accent-soft);}
-  #rbar{position:sticky; top:0; z-index:40; display:flex; gap:10px; align-items:center;
-    padding:10px 18px; background:rgba(250,247,241,.94); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);}
-  #rbar .rt{font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;}
-  .iconbtn{border:1px solid var(--line); background:#fff; border-radius:8px; padding:5px 11px; cursor:pointer; font-size:13px;}
-  .iconbtn:hover{background:var(--accent-soft);}
+  .w.sel{background:var(--sky2); box-shadow:0 0 0 3px var(--sky2); border-radius:6px;}
+  .legend{display:flex; gap:12px; font-size:12px; color:var(--soft);}
+  .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
 
-  /* ---------- side panel ---------- */
-  #panel{width:340px; flex-shrink:0; border-left:1px solid var(--line); background:#fffdf8;
-    height:calc(100vh - 49px); position:sticky; top:49px; overflow-y:auto; display:none;}
+  /* ================= dictionary panel / sheet ================= */
+  #sheetbg{display:none;}
+  #panel{width:360px; flex-shrink:0; background:#fff; border-radius:26px 0 0 0; box-shadow:-8px 0 30px rgba(24,54,74,.08);
+    height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
   #panel.on{display:block;}
-  #panel .inner{padding:22px;}
-  #p-close{float:right; border:none; background:none; font-size:18px; cursor:pointer; color:var(--ink-soft);}
-  #p-word{font-size:24px; font-weight:800; font-family:Georgia,serif; margin-bottom:2px;}
-  #p-phon{color:var(--ink-soft); font-size:13px; margin-bottom:14px;}
-  #p-ko{font-size:17px; font-weight:700; background:var(--accent-soft); border-radius:10px; padding:10px 13px;
-    margin-bottom:14px; min-height:20px; outline:none;}
-  #p-ko:focus{box-shadow:0 0 0 2px var(--accent);}
-  #p-ko-hint{font-size:11px; color:var(--ink-soft); margin:-9px 0 14px 3px;}
-  .p-sec{font-size:11px; font-weight:700; color:var(--ink-soft); letter-spacing:.06em; margin:14px 0 6px;}
-  #p-defs{font-size:13.5px; line-height:1.55; color:#4a463e;}
-  #p-defs .pos{color:var(--accent); font-style:italic; margin-right:5px;}
+  #panel .inner{padding:26px 26px 40px;}
+  #p-handle{display:none;}
+  #p-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
+    font-size:14px; cursor:pointer; color:var(--soft);}
+  #p-word{font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink); margin-bottom:4px;}
+  #p-phon{color:#5F7881; font-size:14px; margin-bottom:4px;}
+  #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
+  #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
+  #p-ko{font-size:17px; font-weight:600; background:var(--sky); color:var(--ink); border-radius:12px;
+    padding:11px 14px; margin-bottom:6px; min-height:22px; outline:none;}
+  #p-ko:focus{box-shadow:0 0 0 2px var(--blue);}
+  #p-ko-hint{font-size:11px; color:var(--soft2); margin:0 0 12px 3px;}
+  .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
+  #p-kodict{display:flex; flex-wrap:wrap; gap:7px;}
+  .kochip{border:none; background:var(--chipbg); color:var(--chiptx); border-radius:16px; padding:7px 13px;
+    font-size:13px; cursor:pointer; font-family:var(--ui);}
+  .kochip:hover{background:#D5EBE7;}
+  .kochip.on{background:var(--blue); color:#fff;}
+  .kochip .pos{opacity:.65; font-style:italic; margin-right:4px; font-size:11px;}
+  #p-defs{font-size:13.5px; line-height:1.6; color:var(--ink-body);}
+  #p-defs .pos{color:var(--blue); font-style:italic; margin-right:5px;}
   #p-defs div{margin-bottom:7px;}
-  #p-ex{font-size:13.5px; font-family:Georgia,serif; font-style:italic; color:#5a554b; line-height:1.6;
-    border-left:3px solid var(--s1); padding-left:10px;}
-  #p-status{display:flex; gap:7px; margin-top:6px;}
-  .stbtn{flex:1; border:1.5px solid var(--line); background:#fff; border-radius:9px; padding:8px 0;
-    font-size:13px; cursor:pointer; font-weight:600; color:var(--ink-soft);}
-  .stbtn[data-s="1"].on{background:var(--s1); border-color:#e6c14f; color:#7a5d00;}
-  .stbtn[data-s="2"].on{background:var(--s2); border-color:#e89a5f; color:#8a4712;}
-  .stbtn[data-s="3"].on{background:var(--s3); border-color:#e57373; color:#9c1f1f;}
-  #p-del{margin-top:16px; width:100%; border:1px solid #eadfd2; background:none; color:#b0483a;
-    border-radius:9px; padding:8px; cursor:pointer; font-size:13px;}
-  #p-del:hover{background:#fdf1ee;}
-  #p-loading{color:var(--ink-soft); font-size:13px;}
+  #p-ex{font-size:13.5px; font-family:var(--serif); font-style:italic; color:#5B707A; line-height:1.65;
+    border-left:3px solid var(--sky2); padding-left:11px;}
+  #p-status{display:flex; gap:8px; margin-top:6px;}
+  .stbtn{flex:1; border:1.5px solid var(--line); background:#fff; border-radius:12px; padding:9px 0;
+    font-size:13px; cursor:pointer; font-weight:600; color:var(--soft); font-family:var(--ui);}
+  .stbtn[data-s="1"].on{background:var(--s1); border-color:#E6C14F; color:#7A5D00;}
+  .stbtn[data-s="2"].on{background:var(--s2); border-color:#E89A5F; color:#8A4712;}
+  .stbtn[data-s="3"].on{background:var(--s3); border-color:#E57373; color:#9C1F1F;}
+  #p-naver{display:inline-block; margin-top:10px; font-size:12.5px; color:var(--blue); text-decoration:none;
+    border:1px solid var(--line); border-radius:16px; padding:6px 12px;}
+  #p-naver:hover{background:var(--sky);}
+  #p-know{display:block; margin:22px auto 0; border:none; background:none; color:#6C858D; font-size:14px;
+    cursor:pointer; font-family:var(--ui); text-decoration:underline; text-underline-offset:3px;}
+  #p-know:hover{color:#c0392b;}
 
-  /* ---------- vocab ---------- */
-  #v-vocab{max-width:960px; margin:0 auto; padding:32px 24px 80px;}
-  #v-vocab .head{display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
-  #v-vocab h1{font-size:22px;}
-  #v-vocab .cnt{color:var(--ink-soft); font-size:14px;}
-  #vsearch{margin-left:auto; border:1px solid var(--line); border-radius:9px; padding:8px 12px; font-size:14px; width:200px; background:#fff;}
-  #btn-xlsx{border:none; background:var(--accent); color:#fff; border-radius:9px; padding:9px 16px;
-    font-size:14px; font-weight:700; cursor:pointer;}
-  #btn-xlsx:hover{filter:brightness(1.08);}
-  table{width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow);}
-  th{font-size:12px; text-align:left; color:var(--ink-soft); padding:11px 14px; border-bottom:1px solid var(--line); background:#fcfaf5;}
-  td{padding:11px 14px; border-bottom:1px solid #f1ece1; font-size:14px; vertical-align:top;}
+  /* mobile: bottom sheet */
+  @media (max-width:760px){
+    #v-read.on{display:block;}
+    #sheetbg{display:block; position:fixed; inset:0; background:rgba(24,54,74,.25); z-index:80;
+      opacity:0; pointer-events:none; transition:opacity .25s;}
+    #sheetbg.on{opacity:1; pointer-events:auto;}
+    #panel{position:fixed; left:0; right:0; bottom:0; top:auto; width:100%; height:auto; max-height:72vh;
+      border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;
+      box-shadow:0 -10px 40px rgba(24,54,74,.18);}
+    #panel.on{transform:translateY(0);}
+    #p-handle{display:block; width:52px; height:5px; border-radius:3px; background:#C8D7D6; margin:12px auto 0;}
+    #panel .inner{padding:16px 22px 34px;}
+    #hero{flex-direction:column; gap:22px;}
+    .page{padding:26px 22px;}
+  }
+
+  /* ================= vocab ================= */
+  #v-vocab{max-width:980px; margin:0 auto; padding:30px 26px 90px;}
+  #v-vocab .head{display:flex; align-items:center; gap:12px; margin-bottom:22px; flex-wrap:wrap;}
+  #v-vocab h1{font-size:24px; font-weight:500; letter-spacing:-.5px;}
+  #v-vocab .cnt{color:var(--soft); font-size:14px;}
+  #vsearch{margin-left:auto; border:1px solid var(--line); border-radius:20px; padding:9px 16px; font-size:14px;
+    width:200px; background:#fff; font-family:var(--ui); outline:none;}
+  #vsearch:focus{border-color:var(--blue);}
+  #btn-xlsx{border:none; background:var(--blue); color:#fff; border-radius:22px; padding:10px 20px;
+    font-size:14px; font-weight:500; cursor:pointer; font-family:var(--ui);}
+  #btn-xlsx:hover{background:var(--blue-deep);}
+  table{width:100%; border-collapse:collapse; background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 4px 18px rgba(23,55,71,.06);}
+  th{font-size:12px; text-align:left; color:var(--soft2); padding:12px 15px; border-bottom:1px solid var(--line); background:#FBFAF5; letter-spacing:.04em;}
+  td{padding:12px 15px; border-bottom:1px solid #F2EFE7; font-size:14px; vertical-align:top;}
   tr:last-child td{border-bottom:none;}
-  td.c-word{font-family:Georgia,serif; font-weight:700; white-space:nowrap;}
+  td.c-word{font-family:var(--serif); font-weight:700; white-space:nowrap; color:var(--ink);}
   td.c-mean[contenteditable]{outline:none; min-width:120px;}
-  td.c-mean:focus{background:var(--accent-soft); border-radius:6px;}
-  td.c-ex{color:#6d675c; font-size:13px; font-style:italic; max-width:340px;}
-  .chip{display:inline-block; border-radius:8px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;}
-  .chip.s1{background:var(--s1); color:#7a5d00;}
-  .chip.s2{background:var(--s2); color:#8a4712;}
-  .chip.s3{background:var(--s3); color:#9c1f1f;}
-  #rtext figure{margin:1.5em 0; text-align:center;}
-  #rtext figure img{max-width:100%; border-radius:10px; box-shadow:var(--shadow);}
-  #p-kodict{font-size:13.5px; line-height:1.6; color:#4a463e;}
-  #p-kodict .pos{color:var(--accent); font-style:italic; margin-right:5px;}
-  #p-kodict div{margin-bottom:5px;}
-  #p-clicked{font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
-  #p-naver{display:inline-block; margin-top:8px; font-size:12.5px; color:var(--accent); text-decoration:none;
-    border:1px solid var(--line); border-radius:8px; padding:5px 10px;}
-  #p-naver:hover{background:var(--accent-soft);}
-  .page{background:#fffdf9; border:1px solid var(--line); border-radius:16px;
-    padding:38px 42px; box-shadow:var(--shadow);}
-  .pageno{text-align:center; color:#b9b09e; font-size:12px; margin:16px 0 24px; font-family:Georgia,serif; user-select:none;}
-  @media (max-width:600px){ .page{padding:24px 20px;} }
-  .rowdel{border:none; background:none; color:#c9c0af; cursor:pointer; font-size:15px;}
+  td.c-mean:focus{background:var(--sky); border-radius:6px;}
+  td.c-ex{color:#5B707A; font-size:13px; font-style:italic; max-width:340px;}
+  .chip{display:inline-block; border-radius:10px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;}
+  .chip.s1{background:var(--s1); color:#7A5D00;}
+  .chip.s2{background:var(--s2); color:#8A4712;}
+  .chip.s3{background:var(--s3); color:#9C1F1F;}
+  .rowdel{border:none; background:none; color:#C3BBA9; cursor:pointer; font-size:15px;}
   .rowdel:hover{color:#c0392b;}
-  #vempty{text-align:center; color:var(--ink-soft); padding:60px 0; font-size:14px;}
+  #vempty{text-align:center; color:var(--soft); padding:70px 0 40px; font-size:14.5px; line-height:1.8;}
 
-  #toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:#33312c; color:#fff;
-    padding:10px 20px; border-radius:22px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:99;}
-  #toast.on{opacity:.94;}
-  .legend{display:flex; gap:14px; font-size:12px; color:var(--ink-soft); margin-left:6px;}
-  .legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
+  #toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
+    padding:11px 22px; border-radius:24px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:150;}
+  #toast.on{opacity:.95;}
+  #drop-overlay{position:fixed; inset:0; z-index:120; background:rgba(220,239,245,.85); display:none;
+    align-items:center; justify-content:center; font-size:22px; color:var(--blue-deep); font-weight:500;
+    border:4px dashed var(--blue); border-radius:20px;}
+  #drop-overlay.on{display:flex;}
 </style>
 </head>
 <body>
+<div id="app">
 
+<!-- ================= SPLASH ================= -->
+<div id="splash">
+  <svg class="mark" viewBox="180 800 680 440" fill="none">
+    <path d="M221 934 C309 868 421 870 469 929 C512 983 451 1033 388 1002 C323 970 337 879 431 842 C546 796 686 847 742 939 C783 1005 765 1090 709 1127 C672 1152 629 1133 627 1095 C625 1053 669 1035 706 1057 C751 1083 785 1128 819 1173" stroke="url(#windg)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M819 1173 C858 1128 902 1094 941 1081 C913 1125 900 1174 907 1223 C867 1207 839 1190 819 1173Z" fill="#2589BE" opacity=".9"/>
+    <defs><linearGradient id="windg" x1="200" y1="0" x2="900" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9DDF0" stop-opacity=".25"/><stop offset=".34" stop-color="#4DAED6"/>
+      <stop offset=".72" stop-color="#167EBA"/><stop offset="1" stop-color="#216F9C"/></linearGradient></defs>
+  </svg>
+  <div class="word">Breeze</div>
+  <div class="tag">read it like a breeze!</div>
+  <div class="dots"><i></i><i></i><i></i></div>
+</div>
+
+<!-- ================= TOP BAR ================= -->
 <div id="topbar">
-  <div id="logo" onclick="show('lib')">
-    <span class="mark">breeze</span><span class="tag">read it like a breeze!</span>
+  <div id="logo" onclick="show('home')">
+    <svg viewBox="0 0 100 40" fill="none"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round" transform="translate(0 -2) scale(.95)"/></svg>
+    <span class="mark">Breeze</span>
   </div>
   <nav>
-    <button class="navbtn on" id="nav-lib" onclick="show('lib')">라이브러리</button>
-    <button class="navbtn" id="nav-vocab" onclick="show('vocab')">단어장</button>
+    <button class="navbtn on" id="nav-home" onclick="show('home')">Read</button>
+    <button class="navbtn" id="nav-vocab" onclick="show('vocab')">Review</button>
+    <button id="btn-add" title="책 추가 (PDF·EPUB·TXT)">+</button>
   </nav>
 </div>
 
-<!-- ================= LIBRARY ================= -->
-<div class="view on" id="v-lib">
-  <h1>라이브러리</h1>
-  <div class="sub">책을 열거나, PDF · EPUB · TXT 파일을 끌어다 놓으세요.</div>
-  <div id="drop">
-    <div class="big">📄 파일을 여기로 드래그하거나 클릭해서 선택</div>
-    <div class="small">PDF, EPUB, TXT 지원 — 텍스트를 추출해 깔끔한 읽기 화면으로 만들어 드려요</div>
-    <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
-  </div>
+<!-- ================= HOME ================= -->
+<div class="view on" id="v-home">
+  <div id="greet">GOOD MORNING</div>
+  <div id="bigq">Where shall we read?</div>
+  <div id="hero"></div>
+  <div id="newhead">Start somewhere new</div>
+  <div id="newsub">내 파일(PDF·EPUB·TXT)을 끌어다 놓거나 + 카드를 눌러 추가하세요.</div>
   <div id="shelf"></div>
+  <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
 </div>
 
 <!-- ================= READER ================= -->
 <div class="view" id="v-read">
   <div id="readmain">
     <div id="rbar">
-      <button class="iconbtn" onclick="show('lib')">← 라이브러리</button>
-      <div class="rt" id="rbar-title"></div>
-      <div class="legend" title="모르는 정도 (클릭할 때마다 올라가요)">
-        <span><i style="background:var(--s1)"></i>★ 아리송</span>
-        <span><i style="background:var(--s2)"></i>★★ 모름</span>
-        <span><i style="background:var(--s3)"></i>★★★ 깜깜</span>
+      <div class="row">
+        <button id="rback" onclick="show('home')" title="홈으로">
+          <svg width="17" height="24" viewBox="0 0 29 58" fill="none"><path d="M26 3 L3 29 L26 55" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="rt" id="rbar-title"></div>
+        <div class="legend" title="모르는 정도">
+          <span><i style="background:var(--s1)"></i>★</span>
+          <span><i style="background:var(--s2)"></i>★★</span>
+          <span><i style="background:var(--s3)"></i>★★★</span>
+        </div>
+        <button class="iconbtn" onclick="fontSize(-1)">A−</button>
+        <button class="iconbtn" onclick="fontSize(1)">A+</button>
       </div>
-      <button class="iconbtn" onclick="fontSize(-1)">A−</button>
-      <button class="iconbtn" onclick="fontSize(1)">A+</button>
+      <div id="ptrack"><div id="pfill"></div></div>
     </div>
     <div id="readwrap">
       <div id="rtitle"></div>
+      <div id="rhint">
+        <svg width="18" height="18" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#E7F3F1"/><path d="M16 26 C22 18 30 18 36 26 C30 34 22 34 16 26Z" stroke="#2589BE" stroke-width="3"/><circle cx="26" cy="26" r="4" fill="#2589BE"/></svg>
+        Tap a word whenever you need it. — 모르는 단어를 누르면 뜻이 뜨고 단어장에 저장돼요.
+      </div>
       <div id="rtext"></div>
     </div>
   </div>
+  <div id="sheetbg" onclick="closePanel()"></div>
   <div id="panel">
+    <div id="p-handle"></div>
     <div class="inner">
       <button id="p-close" onclick="closePanel()">✕</button>
       <div id="p-word"></div>
       <div id="p-phon"></div>
       <div id="p-clicked"></div>
+      <hr id="p-divider">
       <div id="p-ko" contenteditable="true" spellcheck="false"></div>
-      <div id="p-ko-hint">뜻은 클릭해서 직접 고칠 수 있어요</div>
+      <div id="p-ko-hint">직접 고치거나, 아래 칩을 눌러 한 번에 바꿀 수 있어요</div>
+      <div class="p-sec">여러 뜻 중 고르기</div>
+      <div id="p-kodict"></div>
       <div class="p-sec">모르는 정도</div>
       <div id="p-status">
         <button class="stbtn" data-s="1">★</button>
         <button class="stbtn" data-s="2">★★</button>
         <button class="stbtn" data-s="3">★★★</button>
       </div>
-      <div class="p-sec">한국어 사전</div>
-      <div id="p-kodict"></div>
-      <a id="p-naver" target="_blank" rel="noopener">네이버 사전에서 보기 ↗</a>
       <div class="p-sec">영어 뜻</div>
-      <div id="p-defs"><span id="p-loading">불러오는 중…</span></div>
+      <div id="p-defs"></div>
       <div class="p-sec">저장된 예문</div>
       <div id="p-ex"></div>
-      <button id="p-del">단어장에서 삭제</button>
+      <a id="p-naver" target="_blank" rel="noopener">네이버 사전에서 보기 ↗</a>
+      <button id="p-know">I know this word — 단어장에서 빼기</button>
     </div>
   </div>
 </div>
@@ -218,7 +336,7 @@
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
   <div class="head">
-    <h1>단어장</h1><span class="cnt" id="vcnt"></span>
+    <h1>Review</h1><span class="cnt" id="vcnt"></span>
     <input id="vsearch" placeholder="검색…">
     <button id="btn-xlsx">⬇ 엑셀로 내보내기</button>
   </div>
@@ -226,19 +344,11 @@
 </div>
 
 <div id="toast"></div>
+<div id="drop-overlay">여기에 놓으면 책이 추가됩니다</div>
+</div>
 
 <script>
-/* ================= data ================= */
-const DEMO_PARAS = ["Memo to: Oaktree Clients", "From: Howard Marks", "Re: AI Hurtles Ahead", "When I was preparing to write my December memo about artificial intelligence, Is It a Bubble?, I gained a great deal from speaking with some interesting techies in their thirties and forties. It’s stimulating to explore fresh territory and an absolute requirement for staying current as an investor. It’s one of the most enjoyable parts of my job.", "I recently returned to those people to follow up on the December memo. As part of that process, someone suggested I ask Claude, Anthropic’s AI model, to create a tutorial explaining artificial intelligence and the changes that have taken place in the last three months. I did so, and it gave me a great deal to work with. This resulting memo is intended as an addendum to December’s. Much of it will recap Claude’s 10,000- word essay, to which I’ll add a few observations of my own. In the process, I’ll highlight some terms that were new to me and might be new to you. I could have saved myself a lot of time by asking Claude to write this memo, but I decided not to, because I consider putting words on paper a big part of the fun. I will, however, quote liberally from Claude’s work product. That’ll be the source of all quotations that aren’t otherwise identified.", "Before I start in, I want to try to communicate the level of awe with which I viewed Claude’s output. It read like a personal note from a friend or colleague. It made reference to things I’ve talked about in past memos, like the sea change in interest rates and the pendulum of investor psychology, and it used them in metaphors related to AI. It argued logically, anticipated points I might make in response, injected humor, and bolstered its credibility by candidly acknowledging AI’s limitations, just as I might do. I’ve asked AI questions before and gotten answers back, but I’ve never received a personalized explanation like I did in this case.", "Understanding AI", "Before moving on to the meat of the matter – recent changes in AI and its capabilities – I want to share some insights into AI’s essence that the tutorial delivered for me. Importantly, the tutorial taught me not to think of an AI model as a search engine that retrieves data and regurgitates it. Rather, it’s a computer system that’s capable of synthesizing data and reasoning from it.", "There are two phases in the life of an AI model. In the first, it is “trained” by reading a vast amount of text. The training phase must not be thought of as loading the model with information, which I had done until now; it goes far beyond that. It consists of teaching the model how to think. By absorbing text, the model learns:", "• how to understand reasoning patterns and form them, • how arguments are structured, • how to generate new combinations of ideas, and • how to apply learned reasoning patterns to novel situations.", "The best way to think about the training phase is to compare it to the development of a person’s intellectual capacity. A baby is born with a brain, and through exposure to external stimuli, it develops the", "Follow us:", "ability to think, reason, synthesize, evaluate, analogize, combine ideas, create concepts, compose arguments, and so on. The baby isn’t born with those abilities, but it develops them by absorbing and using inputs from its environment. An AI model is the same. (A word here: I’m not implying that I understand how AI does what it does. There’s no chance of that. At best, I’ll describe what AI can do and the implications.)", "The second phase in an AI model’s life is “inference.” Once the model has been built and trained, inference is what it does for the rest of its life, using its capabilities to meet the demands of users.", "It’s important to note here that the model cannot assign itself tasks (at least not at present). It has to be ordered to perform tasks through “prompts” written by users. The better and more comprehensive the prompts, the more AI can do. For example, AI can write software to perform work a user wants done. It can also test the software, identify bugs, fix them, and test again, but it has to be instructed to do those things, at least at the current stage (read on). Because many people today lack awareness of the importance of prompts and fail to possess the ability to create them, AI’s potential is probably being underestimated. But note that the limitation is on the part of the users, not the model.", "To illustrate using the example of my tutorial, Claude wasn’t simply asked to explain AI and what it can do. When I queried Claude about the task it was assigned, here’s what it said:", "Someone designed a nine-module curriculum specifically for you, built around your December memo, your intellectual frameworks, and the goal of giving you enough technical understanding to write a credible addendum. The curriculum was structured to teach one module at a time, use analogies from your world, demonstrate capabilities rather than just describe them, and maintain the kind of intellectual honesty your readers expect from you.", "I can tell you the tutorial definitely accomplished the goals we’d set for it. This was entirely due to the quality and specificity of the prompts my advisers helped me prepare.", "Can AI Think?", "I’m going to take time here for a question I find fascinating. I know AI can reconfigure what people have already figured out and apply it to new data and other fields. But can it break new ground?", "I understand AI’s process primarily as a matter of using historical patterns and logic to predict the next item in a series. Write five words in a sentence, and it’ll predict what the sixth should be (look at the suggested words on your phone the next time you write an email – that’s AI in action). Ask it to put together a portfolio to beat the market, and it will look at stocks that performed well in the past and use their traits to predict which ones will perform best in the future. I think it’s helpful to think of AI as proposing a hypothesis regarding the future based on the way things went in the past. I’ll return to this later.", "What follows from the above is my question: Can AI have a new idea? Maybe it can perform every knowledge task we assign to it. But can it think of things we haven’t told it to think of? Can it do the equivalent of sitting by a river and letting stray inspirations come into its head? Can it see an apple fall from a tree and develop the notion of gravity? Can it muse, daydream, or ideate? Can it have intuition?", "This is where the debate around AI gets complicated. According to Claude, the skeptics argue as follows:", "Follow us:", "Everything Claude learned came from human-written text. It has no experiences, no embodied understanding of the world, no genuine comprehension. Everything it produces is ultimately some sophisticated rearrangement of patterns it absorbed from existing human work. It’s extraordinarily impressive pattern matching – maybe the most impressive pattern matching ever engineered – but it’s not thought. It’s not reasoning. It’s statistical recombination. And if that’s true, then there’s a ceiling. It can remix what humans have already figured out, but it can’t break genuinely new ground. It’s a very talented cover band, not a composer.", "Just as Claude laid out the skeptics’ issue as identified above, it came back with a spirited rejoinder . . . framed in terms of me (talk about knowing how to argue a point):", "Howard, everything you know about investing came from other people. Benjamin Graham taught you about margin of safety. Buffett taught you about quality. Charlie Munger taught you about mental models from multiple disciplines. John Kenneth Galbraith taught you about the psychology of financial manias. You read thousands of books, memos, case studies, and annual reports over fifty years. Every input was someone else’s thinking. . . .", "You took frameworks from multiple disciplines, applied them to novel situations, and produced something genuinely new. . . . The raw material came from others. The synthesis was yours.", "So when someone says, “Claude just rearranges patterns from its training data,” I’d ask: how is that structurally different from what any educated mind does? You learned reasoning patterns from decades of reading. I learned reasoning patterns from training. The question isn’t where the inputs came from. The question is whether the system – human or artificial – can combine them in ways that are genuinely novel and useful.", "Of course, this is completely true. I ingested data as a young investor (from actual experience as well as the written word), and I learned how those who went before me thought about the data and what conclusions they reached. I studied their thought processes and how to apply them to the data I took in. I was also inspired by the example of their processes to come up with my own. This is how the human brain expands its capabilities. Is AI’s way of growing, learning, and “thinking” really different from ours?", "Finally, Claude came back with a convincing real-world argument:", "Even if you grant the skeptic everything – even if you accept, philosophically, that what I do is “merely” pattern matching and not “true” thought – the economic implications are identical. Let me put it starkly. If I can produce the analytical output of a $200,000-a- year research associate, it does not matter to the person paying the bill whether I’m “really” thinking or merely pattern matching? What matters is whether the work product is reliable enough to be useful. And increasingly, it is. The philosophical debate about machine consciousness is fascinating. But the economic question isn’t “does AI truly understand?” The economic question is “does AI do the work?”", "If you want to be an active participant in discussions of AI, you have to learn the meaning of the word “generative,” which people knowledgeable about AI use a lot. Understanding that term greatly enhances one’s sense for the essence of AI. According to the AI model Perplexity:", "Follow us:", "In “generative AI,” the word generative means “able to create new things, not just analyze or label existing ones.” It refers to AI systems that learn patterns in data and then generate new content that resembles that data.", "Is this thinking? Or something else? Or am I belaboring “a distinction without a difference?” We’ll get some indication of this on page six."];
-const DEMO_BOOK = {id:'demo', title:'AI Hurtles Ahead — Howard Marks (샘플)', paras:DEMO_PARAS, builtin:true};
-
-const LS_WORDS='breeze.words', LS_BOOKS='breeze.books', LS_POS='breeze.pos', LS_FS='breeze.fs';
-let words = load(LS_WORDS, {});          // key -> {word,ko,defs,phon,example,book,status,addedAt}
-let books = load(LS_BOOKS, []);          // user books
-let positions = load(LS_POS, {});        // bookId -> scrollY
-let curBook = null, selKey = null;
-
-/* ---- image store (IndexedDB, for EPUB illustrations) ---- */
+/* ================= image store (IndexedDB) ================= */
 function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('breeze-img',1);
   r.onupgradeneeded=()=>r.result.createObjectStore('imgs'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 async function imgPut(id, blob){ const db=await idb(); return new Promise((res,rej)=>{
@@ -250,56 +360,123 @@ async function imgPurge(prefix){ try{ const db=await idb();
   const rq=st.getAllKeys(); rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(prefix)).forEach(k=>st.delete(k)); }catch(e){} }
 const IMG_MARK = '[[IMG]]:';
 
+/* ================= data ================= */
+const DEMO_PARAS = ["Memo to: Oaktree Clients", "From: Howard Marks", "Re: AI Hurtles Ahead", "When I was preparing to write my December memo about artificial intelligence, Is It a Bubble?, I gained a great deal from speaking with some interesting techies in their thirties and forties. It’s stimulating to explore fresh territory and an absolute requirement for staying current as an investor. It’s one of the most enjoyable parts of my job.", "I recently returned to those people to follow up on the December memo. As part of that process, someone suggested I ask Claude, Anthropic’s AI model, to create a tutorial explaining artificial intelligence and the changes that have taken place in the last three months. I did so, and it gave me a great deal to work with. This resulting memo is intended as an addendum to December’s. Much of it will recap Claude’s 10,000- word essay, to which I’ll add a few observations of my own. In the process, I’ll highlight some terms that were new to me and might be new to you. I could have saved myself a lot of time by asking Claude to write this memo, but I decided not to, because I consider putting words on paper a big part of the fun. I will, however, quote liberally from Claude’s work product. That’ll be the source of all quotations that aren’t otherwise identified.", "Before I start in, I want to try to communicate the level of awe with which I viewed Claude’s output. It read like a personal note from a friend or colleague. It made reference to things I’ve talked about in past memos, like the sea change in interest rates and the pendulum of investor psychology, and it used them in metaphors related to AI. It argued logically, anticipated points I might make in response, injected humor, and bolstered its credibility by candidly acknowledging AI’s limitations, just as I might do. I’ve asked AI questions before and gotten answers back, but I’ve never received a personalized explanation like I did in this case.", "Understanding AI", "Before moving on to the meat of the matter – recent changes in AI and its capabilities – I want to share some insights into AI’s essence that the tutorial delivered for me. Importantly, the tutorial taught me not to think of an AI model as a search engine that retrieves data and regurgitates it. Rather, it’s a computer system that’s capable of synthesizing data and reasoning from it.", "There are two phases in the life of an AI model. In the first, it is “trained” by reading a vast amount of text. The training phase must not be thought of as loading the model with information, which I had done until now; it goes far beyond that. It consists of teaching the model how to think. By absorbing text, the model learns:", "• how to understand reasoning patterns and form them, • how arguments are structured, • how to generate new combinations of ideas, and • how to apply learned reasoning patterns to novel situations.", "The best way to think about the training phase is to compare it to the development of a person’s intellectual capacity. A baby is born with a brain, and through exposure to external stimuli, it develops the", "Follow us:", "ability to think, reason, synthesize, evaluate, analogize, combine ideas, create concepts, compose arguments, and so on. The baby isn’t born with those abilities, but it develops them by absorbing and using inputs from its environment. An AI model is the same. (A word here: I’m not implying that I understand how AI does what it does. There’s no chance of that. At best, I’ll describe what AI can do and the implications.)", "The second phase in an AI model’s life is “inference.” Once the model has been built and trained, inference is what it does for the rest of its life, using its capabilities to meet the demands of users.", "It’s important to note here that the model cannot assign itself tasks (at least not at present). It has to be ordered to perform tasks through “prompts” written by users. The better and more comprehensive the prompts, the more AI can do. For example, AI can write software to perform work a user wants done. It can also test the software, identify bugs, fix them, and test again, but it has to be instructed to do those things, at least at the current stage (read on). Because many people today lack awareness of the importance of prompts and fail to possess the ability to create them, AI’s potential is probably being underestimated. But note that the limitation is on the part of the users, not the model.", "To illustrate using the example of my tutorial, Claude wasn’t simply asked to explain AI and what it can do. When I queried Claude about the task it was assigned, here’s what it said:", "Someone designed a nine-module curriculum specifically for you, built around your December memo, your intellectual frameworks, and the goal of giving you enough technical understanding to write a credible addendum. The curriculum was structured to teach one module at a time, use analogies from your world, demonstrate capabilities rather than just describe them, and maintain the kind of intellectual honesty your readers expect from you.", "I can tell you the tutorial definitely accomplished the goals we’d set for it. This was entirely due to the quality and specificity of the prompts my advisers helped me prepare.", "Can AI Think?", "I’m going to take time here for a question I find fascinating. I know AI can reconfigure what people have already figured out and apply it to new data and other fields. But can it break new ground?", "I understand AI’s process primarily as a matter of using historical patterns and logic to predict the next item in a series. Write five words in a sentence, and it’ll predict what the sixth should be (look at the suggested words on your phone the next time you write an email – that’s AI in action). Ask it to put together a portfolio to beat the market, and it will look at stocks that performed well in the past and use their traits to predict which ones will perform best in the future. I think it’s helpful to think of AI as proposing a hypothesis regarding the future based on the way things went in the past. I’ll return to this later.", "What follows from the above is my question: Can AI have a new idea? Maybe it can perform every knowledge task we assign to it. But can it think of things we haven’t told it to think of? Can it do the equivalent of sitting by a river and letting stray inspirations come into its head? Can it see an apple fall from a tree and develop the notion of gravity? Can it muse, daydream, or ideate? Can it have intuition?", "This is where the debate around AI gets complicated. According to Claude, the skeptics argue as follows:", "Follow us:", "Everything Claude learned came from human-written text. It has no experiences, no embodied understanding of the world, no genuine comprehension. Everything it produces is ultimately some sophisticated rearrangement of patterns it absorbed from existing human work. It’s extraordinarily impressive pattern matching – maybe the most impressive pattern matching ever engineered – but it’s not thought. It’s not reasoning. It’s statistical recombination. And if that’s true, then there’s a ceiling. It can remix what humans have already figured out, but it can’t break genuinely new ground. It’s a very talented cover band, not a composer.", "Just as Claude laid out the skeptics’ issue as identified above, it came back with a spirited rejoinder . . . framed in terms of me (talk about knowing how to argue a point):", "Howard, everything you know about investing came from other people. Benjamin Graham taught you about margin of safety. Buffett taught you about quality. Charlie Munger taught you about mental models from multiple disciplines. John Kenneth Galbraith taught you about the psychology of financial manias. You read thousands of books, memos, case studies, and annual reports over fifty years. Every input was someone else’s thinking. . . .", "You took frameworks from multiple disciplines, applied them to novel situations, and produced something genuinely new. . . . The raw material came from others. The synthesis was yours.", "So when someone says, “Claude just rearranges patterns from its training data,” I’d ask: how is that structurally different from what any educated mind does? You learned reasoning patterns from decades of reading. I learned reasoning patterns from training. The question isn’t where the inputs came from. The question is whether the system – human or artificial – can combine them in ways that are genuinely novel and useful.", "Of course, this is completely true. I ingested data as a young investor (from actual experience as well as the written word), and I learned how those who went before me thought about the data and what conclusions they reached. I studied their thought processes and how to apply them to the data I took in. I was also inspired by the example of their processes to come up with my own. This is how the human brain expands its capabilities. Is AI’s way of growing, learning, and “thinking” really different from ours?", "Finally, Claude came back with a convincing real-world argument:", "Even if you grant the skeptic everything – even if you accept, philosophically, that what I do is “merely” pattern matching and not “true” thought – the economic implications are identical. Let me put it starkly. If I can produce the analytical output of a $200,000-a- year research associate, it does not matter to the person paying the bill whether I’m “really” thinking or merely pattern matching? What matters is whether the work product is reliable enough to be useful. And increasingly, it is. The philosophical debate about machine consciousness is fascinating. But the economic question isn’t “does AI truly understand?” The economic question is “does AI do the work?”", "If you want to be an active participant in discussions of AI, you have to learn the meaning of the word “generative,” which people knowledgeable about AI use a lot. Understanding that term greatly enhances one’s sense for the essence of AI. According to the AI model Perplexity:", "Follow us:", "In “generative AI,” the word generative means “able to create new things, not just analyze or label existing ones.” It refers to AI systems that learn patterns in data and then generate new content that resembles that data.", "Is this thinking? Or something else? Or am I belaboring “a distinction without a difference?” We’ll get some indication of this on page six."];
+const DEMO_BOOK = {id:'demo', title:'AI Hurtles Ahead', author:'HOWARD MARKS', paras:DEMO_PARAS, builtin:true};
+
+const LS_WORDS='breeze.words', LS_BOOKS='breeze.books', LS_POS='breeze.pos', LS_FS='breeze.fs';
 function load(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('저장 공간이 부족해요 (책이 너무 큼)'); } }
+let words = load(LS_WORDS, {});
+let books = load(LS_BOOKS, []);
+let positions = load(LS_POS, {});   // bookId -> {y, p(0~1), t(lastOpened)}
+let curBook = null, selKey = null;
 const saveWords = () => save(LS_WORDS, words);
+const posOf = id => {
+  let v = positions[id];
+  if(typeof v === 'number') v = {y:v, p:0, t:0};   // migrate from v1 format
+  return v || {y:0, p:0, t:0};
+};
 
 /* ================= views ================= */
+function saveReadingState(){
+  if(!curBook) return;
+  const doc = document.documentElement;
+  const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+  positions[curBook.id] = {y:window.scrollY, p:Math.min(1, window.scrollY/max), t:Date.now()};
+  save(LS_POS, positions);
+}
 function show(v){
-  if(curBook){ positions[curBook.id]=window.scrollY; save(LS_POS,positions); }
+  saveReadingState();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
-  document.getElementById('v-'+(v==='read'?'read':v)).classList.add('on');
-  document.getElementById('nav-lib').classList.toggle('on', v==='lib');
+  document.getElementById('v-'+v).classList.add('on');
+  document.getElementById('nav-home').classList.toggle('on', v==='home');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
   if(v!=='read'){ curBook=null; closePanel(); }
-  if(v==='lib') renderShelf();
+  if(v==='home') renderHome();
   if(v==='vocab') renderVocab();
   window.scrollTo(0,0);
 }
 
-/* ================= library ================= */
+/* ================= home ================= */
 function allBooks(){ return [DEMO_BOOK, ...books]; }
-function renderShelf(){
+const wcOf = b => b.paras.reduce((a,p)=>p.startsWith(IMG_MARK)?a:a+p.split(/\s+/).length,0);
+const WAVE = (c1,op)=>`<svg class="wave" viewBox="0 0 300 90" preserveAspectRatio="none"><path d="M0 40 C55 15 105 55 160 30 C210 8 260 35 300 18 L300 90 L0 90Z" fill="${c1}" opacity="${op}"/></svg>`;
+
+function greet(){
+  const h = new Date().getHours();
+  return h<5 ? 'GOOD NIGHT' : h<12 ? 'GOOD MORNING' : h<18 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+}
+function renderHome(){
+  document.getElementById('greet').textContent = greet();
+  const list = allBooks();
+  // hero = most recently opened (default: demo)
+  const hero = list.slice().sort((a,b)=>posOf(b.id).t - posOf(a.id).t)[0];
+  const hp = posOf(hero.id);
+  const pct = Math.round(hp.p*100);
+  const minLeft = Math.max(1, Math.round(wcOf(hero)*(1-hp.p)/180));
+  const H = document.getElementById('hero');
+  H.innerHTML = `
+    ${WAVE('#BDDCCD','.45')}
+    <div class="cover"><div class="inner"></div>
+      <svg class="arc" viewBox="0 0 145 35" fill="none"><path d="M5 30 C54 0 103 -3 140 28" stroke="#A8D6E2" stroke-width="4" opacity=".8"/></svg>
+      <div class="ct"></div>
+    </div>
+    <div class="meta">
+      <div class="eyebrow">${hp.t? 'CONTINUE READING' : 'START READING'}</div>
+      <div class="bt"></div>
+      <div class="bm">${hp.t? pct+'% read · 약 '+minLeft+'분 남음' : wcOf(hero).toLocaleString()+' words · 약 '+minLeft+'분'}</div>
+      <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+      <button class="cta">${hp.t?'Read now':'Start'}</button>
+    </div>`;
+  H.querySelector('.ct').textContent = hero.title.toUpperCase();
+  H.querySelector('.bt').textContent = hero.title;
+  H.onclick = () => openBook(hero);
+  // shelf: the rest + add card
   const s = document.getElementById('shelf');
-  s.innerHTML='';
-  allBooks().forEach(b=>{
-    const wc = b.paras.reduce((a,p)=>a+p.split(/\s+/).length,0);
+  s.innerHTML = '';
+  list.filter(b=>b.id!==hero.id).forEach((b,i)=>{
+    const pal = 'pal'+(i%3);
+    const waveC = ['#C0DCC9','#9FCAB5','#B5D7C3'][i%3];
+    const p = posOf(b.id);
     const card = document.createElement('div');
-    card.className='bookcard';
-    card.innerHTML = `<div class="bt"></div>
-      <div class="bm">${wc.toLocaleString()} 단어 · ${b.paras.length} 문단</div>
-      ${b.builtin?'<span class="badge">샘플</span>':''}
+    card.className = 'bookcard '+pal;
+    card.innerHTML = `<div class="author"></div><div class="bt"></div>
+      ${WAVE(waveC,'.6')}
+      ${p.t? `<div class="prog">${Math.round(p.p*100)}% 읽음</div>`:''}
       ${b.builtin?'':'<button class="del" title="삭제">✕</button>'}`;
+    card.querySelector('.author').textContent = b.author || (b.builtin?'SAMPLE':'MY BOOK');
     card.querySelector('.bt').textContent = b.title;
     card.onclick = e => { if(e.target.classList.contains('del')) return; openBook(b); };
     const del = card.querySelector('.del');
     if(del) del.onclick = () => {
       if(!confirm(`"${b.title}" 책을 삭제할까요? (단어장은 유지돼요)`)) return;
-      books = books.filter(x=>x.id!==b.id); save(LS_BOOKS,books); imgPurge(b.id+'|'); renderShelf();
+      books = books.filter(x=>x.id!==b.id); save(LS_BOOKS,books); imgPurge(b.id+'|'); renderHome();
     };
     s.appendChild(card);
   });
+  const add = document.createElement('div');
+  add.className = 'bookcard add';
+  add.innerHTML = '<div class="plus">+</div><div class="lbl">PDF · EPUB · TXT<br>파일 추가</div>';
+  add.onclick = () => finput.click();
+  s.appendChild(add);
 }
 
 /* ================= import ================= */
-const drop = document.getElementById('drop'), finput = document.getElementById('fileinput');
-drop.onclick = () => finput.click();
+const finput = document.getElementById('fileinput');
+document.getElementById('btn-add').onclick = () => finput.click();
 finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0]); finput.value=''; };
-['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
-['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
-drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) importFile(f); });
+let dragDepth = 0;
+window.addEventListener('dragenter', e=>{ e.preventDefault(); if(++dragDepth) document.getElementById('drop-overlay').classList.add('on'); });
+window.addEventListener('dragleave', e=>{ e.preventDefault(); if(--dragDepth<=0){ dragDepth=0; document.getElementById('drop-overlay').classList.remove('on'); } });
+window.addEventListener('dragover', e=>e.preventDefault());
+window.addEventListener('drop', e=>{
+  e.preventDefault(); dragDepth=0; document.getElementById('drop-overlay').classList.remove('on');
+  const f = e.dataTransfer.files[0]; if(f) importFile(f);
+});
 
 async function importFile(f){
+  if(!/\.(pdf|epub|txt)$/i.test(f.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
   toast('텍스트 추출 중…');
   const name = f.name.replace(/\.(pdf|epub|txt)$/i,'');
   try{
@@ -312,7 +489,7 @@ async function importFile(f){
     if(paras.length===0){ toast('텍스트를 찾지 못했어요 (스캔 이미지 PDF일 수 있어요)'); return; }
     const book = {id, title:name, paras, addedAt:Date.now()};
     books.unshift(book); save(LS_BOOKS,books);
-    renderShelf(); toast('추가 완료! 책을 눌러 읽기 시작하세요');
+    renderHome(); toast('추가 완료! 카드를 눌러 읽기 시작하세요');
   }catch(err){ console.error(err); toast('파일을 읽지 못했어요: '+err.message); }
 }
 
@@ -325,7 +502,7 @@ function parseTXT(text){
 async function parsePDF(f){
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const pdf = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
-  const pageLines = [];   // [ [ {text,y,h} ... ] per page ]
+  const pageLines = [];
   for(let i=1;i<=pdf.numPages;i++){
     const content = await (await pdf.getPage(i)).getTextContent();
     const rows = {};
@@ -342,7 +519,6 @@ async function parsePDF(f){
     }));
     pageLines.push(lines);
   }
-  // header/footer: identical (or number-only) lines near top/bottom on many pages
   const freq = {};
   pageLines.forEach(ls=>ls.forEach(l=>{
     const t=l.text.replace(/\d+/g,'#');
@@ -350,7 +526,6 @@ async function parsePDF(f){
   }));
   const junk = t => /^\d{1,4}$/.test(t) || /^©|^Copyright\b/i.test(t) || /all rights reserved/i.test(t)
     || (freq[t.replace(/\d+/g,'#')] > Math.max(2, pageLines.length*0.5) && t.length<80);
-  // merge lines -> paragraphs
   const paras=[]; let cur='';
   const push=()=>{ if(cur.trim()) paras.push(cur.trim()); cur=''; };
   for(const lines of pageLines){
@@ -358,20 +533,17 @@ async function parsePDF(f){
     for(let i=0;i<clean.length;i++){
       const l=clean[i], prev=clean[i-1];
       const gap = prev ? (prev.y - l.y) : 0;
-      const newPara = prev && gap > (prev.h||10)*1.9;
-      if(newPara) push();
-      // hyphenated line break
+      if(prev && gap > (prev.h||10)*1.9) push();
       if(cur.endsWith('-')) cur = cur.slice(0,-1) + l.text;
       else cur += (cur?' ':'') + l.text;
     }
-    // page break: continue paragraph only if it clearly runs on
     if(cur && /[.!?:”"']$/.test(cur.trim())) push();
   }
   push();
   return paras;
 }
 
-/* --- EPUB: unzip -> spine order -> extract p/h tags + images --- */
+/* --- EPUB: unzip -> spine order -> extract text + images --- */
 function joinPath(baseDir, rel){
   if(rel.startsWith('/')) return rel.slice(1);
   const out=[];
@@ -407,7 +579,7 @@ async function parseEPUB(f, bookId){
         if(!src || src.startsWith('data:') || src.startsWith('http')) continue;
         const path = decodeURIComponent(joinPath(chDir, src));
         let imgFile = zip.file(path);
-        if(!imgFile){ // fallback: match by filename
+        if(!imgFile){
           const base = path.split('/').pop();
           const cand = Object.keys(zip.files).find(k=>k.endsWith('/'+base)||k===base);
           if(cand) imgFile = zip.file(cand);
@@ -419,7 +591,6 @@ async function parseEPUB(f, bookId){
         const id = bookId+'|'+(imgIdx++);
         try{ await imgPut(id, blob); seenImg[imgFile.name]=id; paras.push(IMG_MARK+id); }catch(e){}
       }else{
-        // avoid double text when a <li> wraps <p>/<h*> (children are matched separately)
         if(tag==='li' && el.querySelector('p,h1,h2,h3,h4')) continue;
         const t = el.textContent.replace(/\s+/g,' ').trim();
         if(t) paras.push(t);
@@ -477,8 +648,6 @@ function lemma(w){
   return w;
 }
 const isAcro = w => /^[A-Z]{2,6}s?$/.test(w);
-
-/* candidate lemmas, primary first — used for grouping & dictionary lookup */
 function lemmaCands(raw){
   const w0 = raw.toLowerCase().replace(/’/g,"'");
   if(isAcro(raw)) return [w0.replace(/s$/,'')];
@@ -487,7 +656,6 @@ function lemmaCands(raw){
   if(/ing$/.test(w0) && w0.length>5 && /[aeiouy]/.test(w0.slice(0,-3))) addWithE(w0.slice(0,-3));
   if(/ed$/.test(w0) && w0.length>4 && /[aeiouy]/.test(w0.slice(0,-2))) addWithE(w0.slice(0,-2));
   set.add(w0);
-  // for derived candidates ending in e, also try without it (keeps groups stable)
   [...set].forEach(c=>{ if(c!==w0 && c.endsWith('e')) set.add(c.slice(0,-1)); });
   return [...set];
 }
@@ -498,16 +666,14 @@ const keyOf = raw => {
   const cands = lemmaCands(raw);
   return cands.find(c=>words[c]) || cands[0];
 };
-
 function looksHeading(p){
   return p.length<70 && !/[.!?:;,]$/.test(p) && p.split(' ').length<=10 && /^[A-Z0-9“"]/.test(p);
 }
-
 function openBook(b){
   curBook = b;
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.getElementById('v-read').classList.add('on');
-  document.getElementById('nav-lib').classList.remove('on');
+  document.getElementById('nav-home').classList.remove('on');
   document.getElementById('rtitle').textContent = b.title;
   document.getElementById('rbar-title').textContent = b.title;
   const rt = document.getElementById('rtext');
@@ -542,7 +708,6 @@ function openBook(b){
       return;
     }
     const isHead = looksHeading(p);
-    // break page when full, or a bit early if a heading arrives
     if(pageChars >= PAGE_CHARS || (isHead && pageChars > PAGE_CHARS*0.55)) newPage();
     const el = document.createElement(isHead?'h3':'p');
     el.dataset.pi = pi;
@@ -564,16 +729,31 @@ function openBook(b){
   no.className='pageno'; no.textContent = '— '+pageNo+' —';
   frag.appendChild(no);
   rt.appendChild(frag);
-  requestAnimationFrame(()=>window.scrollTo(0, positions[b.id]||0));
+  positions[b.id] = {...posOf(b.id), t:Date.now()};
+  save(LS_POS, positions);
+  requestAnimationFrame(()=>{ window.scrollTo(0, posOf(b.id).y||0); updatePfill(); });
 }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updatePfill(){
+  if(!curBook) return;
+  const doc = document.documentElement;
+  const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+  document.getElementById('pfill').style.width = Math.min(100, window.scrollY/max*100)+'%';
+}
+let scrollTick = null;
+window.addEventListener('scroll', ()=>{
+  if(!curBook) return;
+  updatePfill();
+  if(scrollTick) return;
+  scrollTick = setTimeout(()=>{ scrollTick=null; saveReadingState(); }, 800);
+});
 
 document.getElementById('rtext').addEventListener('click', e=>{
   const span = e.target.closest('.w');
   if(!span) return;
   const k = span.dataset.w;
   if(words[k]){
-    // re-click = "still don't know" -> degree goes up, capped at 3 stars
     if(words[k].status < 3) setStatus(k, words[k].status + 1);
     selectWord(k, span);
   }else{
@@ -587,12 +767,10 @@ function sentenceOf(span){
   const re = new RegExp('\\b'+span.textContent.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
   return (sents.find(s=>re.test(s)) || sents[0]).trim();
 }
-
 function addWord(k, span){
   const raw = span.textContent.replace(/’/g,"'");
   const acro = isAcro(raw);
   const display = acro ? raw.replace(/s$/,'') : k;
-  // lookup candidates: primary lemma, alternates, then the clicked form
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
   words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
     example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now() };
@@ -601,21 +779,20 @@ function addWord(k, span){
   selectWord(k, span);
   fetchDict(k);
 }
-
 function selectWord(k, span){
   selKey = k;
   document.querySelectorAll('.w.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
   renderPanel();
   document.getElementById('panel').classList.add('on');
+  document.getElementById('sheetbg').classList.add('on');
 }
-
 function closePanel(){
   selKey=null;
   document.getElementById('panel').classList.remove('on');
+  document.getElementById('sheetbg').classList.remove('on');
   document.querySelectorAll('.w.sel').forEach(s=>s.classList.remove('sel'));
 }
-
 function paintWord(k){
   const w = words[k];
   document.querySelectorAll(`.w[data-w="${CSS.escape(k)}"]`).forEach(s=>{
@@ -623,13 +800,11 @@ function paintWord(k){
     if(w) s.classList.add('s'+w.status);
   });
 }
-
 function setStatus(k, st){
   if(!words[k]) return;
   words[k].status = st; saveWords(); paintWord(k);
   if(selKey===k) renderPanel();
 }
-
 function renderPanel(){
   const w = words[selKey]; if(!w) return;
   document.getElementById('p-word').textContent = w.word;
@@ -641,33 +816,42 @@ function renderPanel(){
   document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
   const kod = document.getElementById('p-kodict');
-  if(w.loading) kod.innerHTML = '<span style="color:var(--ink-soft)">불러오는 중…</span>';
-  else if(!w.kodict || !w.kodict.length) kod.innerHTML = '<span style="color:var(--ink-soft)">사전 항목 없음</span>';
-  else kod.innerHTML = w.kodict.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.terms.join(', '))}</div>`).join('');
+  kod.innerHTML='';
+  if(w.loading) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>';
+  else if(!w.kodict || !w.kodict.length) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">사전 항목 없음</span>';
+  else {
+    for(const d of w.kodict){
+      for(const t of d.terms){
+        const c = document.createElement('button');
+        c.className = 'kochip' + (w.ko===t ? ' on':'');
+        c.innerHTML = `<span class="pos">${esc(d.pos)}</span>${esc(t)}`;
+        c.onclick = ()=>{ w.ko = t; saveWords(); renderPanel(); };
+        kod.appendChild(c);
+      }
+    }
+  }
   const defs = document.getElementById('p-defs');
-  if(w.loading) defs.innerHTML = '<span id="p-loading">불러오는 중…</span>';
-  else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--ink-soft)">영어 뜻을 찾지 못했어요</span>';
+  if(w.loading) defs.innerHTML = '<span style="color:var(--soft2)">불러오는 중…</span>';
+  else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--soft2)">영어 뜻을 찾지 못했어요</span>';
   else defs.innerHTML = w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
 }
-
 document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>setStatus(selKey, +b.dataset.s));
-document.getElementById('p-del').onclick = ()=>{
+document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;
-  delete words[k]; saveWords(); paintWord(k); closePanel(); toast('단어장에서 삭제했어요');
+  delete words[k]; saveWords(); paintWord(k); closePanel(); toast('단어장에서 뺐어요');
 };
 document.getElementById('p-ko').addEventListener('blur', e=>{
   if(!selKey || !words[selKey]) return;
   words[selKey].ko = e.target.textContent.trim(); saveWords();
 });
 
-/* ---- dictionary: Korean dict entries via translate(dt=bd), English via dictionaryapi.dev ---- */
+/* ---- dictionary lookups ---- */
 async function fetchKo(w, form){
   const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q='+encodeURIComponent(form));
   const j = await r.json();
   const ko = (j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('').trim();
   const dict = (j[1]||[]).map(e=>({pos:e[0]||'', terms:(e[1]||[]).slice(0,5)}));
-  // a "translation" identical to the word itself means the API found nothing useful
   if(ko && ko.toLowerCase()!==form.toLowerCase()){ w.ko = w.ko || ko; }
   if(dict.length){ w.kodict = dict; if(!w.ko && dict[0].terms[0]) w.ko = dict[0].terms[0]; return true; }
   return !!w.ko;
@@ -688,7 +872,6 @@ async function fetchEn(w, form){
   }
   return w.defs.length>0;
 }
-/* Wiktionary fallback for English definitions (no key, CORS ok) */
 async function fetchEnWik(w, form){
   const r = await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(form)+'?redirect=true');
   if(!r.ok) return false;
@@ -710,13 +893,11 @@ async function fetchDict(k){
   const w = words[k]; if(!w) return;
   w.loading = true; if(selKey===k) renderPanel();
   const forms = w.forms && w.forms.length ? w.forms : [k];
-  // 1) settle the headword first, via English dictionary validation
   let validated = null;
   for(const f of forms){ try{ if(await fetchEn(w,f)){ validated=f; break; } }catch(e){} }
   if(!validated){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
   if(validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
   if(selKey===k) renderPanel();
-  // 2) Korean meaning for the settled headword (other forms only as fallback)
   const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
   for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
   delete w.loading;
@@ -731,7 +912,7 @@ function renderVocab(){
   const rows = list.filter(([k,w]) => !q || w.word.toLowerCase().includes(q) || (w.ko||'').includes(q));
   document.getElementById('vcnt').textContent = `${list.length}개 저장됨`;
   const wrap = document.getElementById('vtablewrap');
-  if(!rows.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 클릭해 보세요!</div>'; return; }
+  if(!rows.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 눌러 보세요!</div>'; return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
   wrap.innerHTML = `<table><thead><tr>
     <th>단어</th><th>뜻</th><th>예문</th><th>모르는 정도</th><th>저장일</th><th></th>
@@ -741,10 +922,9 @@ function renderVocab(){
       <td class="c-mean" contenteditable="true" spellcheck="false">${esc(w.ko||'')}</td>
       <td class="c-ex">${esc(w.example||'')}</td>
       <td><span class="chip s${w.status}" title="클릭해서 변경">${stName[w.status]}</span></td>
-      <td style="color:var(--ink-soft);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
+      <td style="color:var(--soft2);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
       <td><button class="rowdel" title="삭제">✕</button></td>
     </tr>`).join('') + '</tbody></table>';
-
   wrap.querySelectorAll('tr[data-k]').forEach(tr=>{
     const k = tr.dataset.k;
     tr.querySelector('.chip').onclick = ()=>{ setStatus(k, words[k].status%3+1); renderVocab(); };
@@ -755,7 +935,6 @@ function renderVocab(){
   });
 }
 document.getElementById('vsearch').addEventListener('input', renderVocab);
-
 document.getElementById('btn-xlsx').onclick = ()=>{
   const list = Object.values(words).sort((a,b)=>b.addedAt-a.addedAt);
   if(!list.length){ toast('내보낼 단어가 없어요'); return; }
@@ -764,26 +943,37 @@ document.getElementById('btn-xlsx').onclick = ()=>{
     ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
       w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{wch:16},{wch:24},{wch:50},{wch:60},{wch:7},{wch:28},{wch:12}];
+  ws['!cols'] = [{wch:16},{wch:24},{wch:50},{wch:60},{wch:10},{wch:28},{wch:12}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Breeze 단어장');
   XLSX.writeFile(wb, 'breeze_vocab.xlsx');
 };
 
 /* ================= misc ================= */
-let fs = load(LS_FS, 18);
+let fs = load(LS_FS, 19);
 document.documentElement.style.setProperty('--fs', fs+'px');
 function fontSize(d){ fs=Math.min(26,Math.max(14,fs+d)); save(LS_FS,fs); document.documentElement.style.setProperty('--fs',fs+'px'); }
-
 let toastTimer;
 function toast(msg){
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),2600);
 }
+window.addEventListener('beforeunload', saveReadingState);
 
-window.addEventListener('beforeunload', ()=>{ if(curBook){ positions[curBook.id]=window.scrollY; save(LS_POS,positions);} });
+/* splash: hide when ready (min 1.1s so the mark is actually seen) */
+const splashStart = Date.now();
+window.addEventListener('load', ()=>{
+  const wait = Math.max(0, 1100 - (Date.now()-splashStart));
+  setTimeout(()=>{
+    const sp = document.getElementById('splash');
+    sp.classList.add('hide');
+    setTimeout(()=>sp.remove(), 700);
+  }, wait);
+});
+/* safety: never let splash block the app */
+setTimeout(()=>{ const sp=document.getElementById('splash'); if(sp){ sp.classList.add('hide'); setTimeout(()=>sp.remove(),700); } }, 5000);
 
-renderShelf();
+renderHome();
 </script>
 </body>
 </html>
