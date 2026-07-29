@@ -252,6 +252,11 @@
   .sm-btn.primary:hover{background:var(--blue-deep);}
   .sm-btn.ghost{background:#F2F0E9; color:var(--ink);}
   #sm-status{font-size:13px; color:var(--soft); text-align:center; min-height:18px; margin-top:4px;}
+  #sm-codewrap{display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);}
+  #sm-code{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:22px;
+    letter-spacing:8px; text-align:center; font-family:var(--ui); outline:none; margin-bottom:10px;}
+  #sm-code:focus{border-color:var(--blue);}
+  #sm-codewrap .hint{font-size:12.5px; color:var(--soft); margin-bottom:8px; text-align:center;}
   #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
   #toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
@@ -261,6 +266,23 @@
     align-items:center; justify-content:center; font-size:22px; color:var(--blue-deep); font-weight:500;
     border:4px dashed var(--blue); border-radius:20px;}
   #drop-overlay.on{display:flex;}
+  /* ===== mobile overrides (must stay LAST so they win the cascade) ===== */
+  @media (max-width:760px){
+    #topbar{gap:6px; padding:12px 14px;}
+    #logo{gap:7px;}
+    #logo svg{width:28px; height:18px;}
+    #logo .mark{font-size:19px;}
+    .navbtn{padding:7px 11px; font-size:13px; white-space:nowrap;}
+    #btn-add{width:34px; height:34px; font-size:18px; flex-shrink:0;}
+    #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
+    #v-vocab h1{text-align:left;}
+    #v-vocab .cnt{margin-top:-4px;}
+    #vsearch{width:100%; margin-left:0;}
+    #btn-xlsx{width:100%; padding:12px 20px;}
+    #vtablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -26px; padding:0 26px;}
+    #vtablewrap table{min-width:560px;}
+    #vtablewrap th:nth-child(5), #vtablewrap td:nth-child(5){display:none;}
+  }
 </style>
 </head>
 <body>
@@ -1005,8 +1027,8 @@ window.addEventListener('beforeunload', saveReadingState);
 /* ================= sync (Supabase, magic link) =================
    ▼▼ 여기 두 줄에 Supabase 프로젝트의 URL과 anon key를 붙여넣으면 동기화가 켜집니다.
       (Supabase 대시보드 → Settings → API) 비워두면 로컬 전용으로 동작. */
-const SB_URL = 'https://hrtfhojbhqvaoiulspto.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydGZob2piaHF2YW9pdWxzcHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTM1MTEsImV4cCI6MjEwMDg4OTUxMX0.9LT_ly0fRXhWWFKK4o3ueREeOot8e_qUA9lI1IRANpQ';
+const SB_URL = '';
+const SB_KEY = '';
 
 let sb = null;
 try{ if(SB_URL && SB_KEY && window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
@@ -1016,7 +1038,7 @@ let lastSync = load('breeze.lastsync', 0);
 function syncStatus(msg){ const el=document.getElementById('sm-status'); if(el) el.textContent = msg; }
 function syncBadge(){
   const b = document.getElementById('nav-sync');
-  b.textContent = sbUser ? '동기화 ✓' : '동기화';
+  b.textContent = sbUser ? 'Sync ✓' : 'Sync';
 }
 function openSyncModal(){
   document.getElementById('sync-modal').classList.add('on');
@@ -1046,7 +1068,12 @@ function renderSyncModal(){
       비밀번호는 없습니다. 링크를 누르면 이 브라우저에서 로그인되고,
       단어장이 기기 간에 동기화됩니다.</div>
       <input id="sm-email" type="email" placeholder="you@example.com" autocomplete="email">
-      <button class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>`;
+      <button class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
+      <div id="sm-codewrap">
+        <div class="hint">메일에 온 <b>6자리 코드</b>를 입력해도 로그인돼요<br>(다른 기기에서 메일을 열어도 OK)</div>
+        <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
+        <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button>
+      </div>`;
   }
   syncStatus('');
 }
@@ -1056,7 +1083,19 @@ async function sbSendLink(){
   syncStatus('링크 보내는 중…');
   const { error } = await sb.auth.signInWithOtp({ email,
     options:{ emailRedirectTo: location.origin + location.pathname } });
-  syncStatus(error ? '전송 실패: '+error.message : '메일함을 확인하세요! 링크를 누르면 로그인돼요.');
+  if(error){ syncStatus('전송 실패: '+error.message); return; }
+  syncStatus('메일을 보냈어요! 링크를 누르거나, 6자리 코드를 입력하세요.');
+  const cw = document.getElementById('sm-codewrap');
+  if(cw){ cw.style.display='block'; document.getElementById('sm-code').focus(); }
+}
+async function sbVerifyCode(){
+  const email = (document.getElementById('sm-email').value||'').trim();
+  const token = (document.getElementById('sm-code').value||'').trim();
+  if(!/^\d{6}$/.test(token)){ syncStatus('6자리 숫자 코드를 입력해 주세요'); return; }
+  syncStatus('코드 확인 중…');
+  const { error } = await sb.auth.verifyOtp({ email, token, type:'email' });
+  if(error) syncStatus('코드 확인 실패: '+error.message+' (코드는 1시간 뒤 만료돼요)');
+  // 성공 시 onAuthStateChange가 자동으로 로그인 화면 전환 + 동기화 시작
 }
 async function sbLogout(){
   await sb.auth.signOut();
@@ -1098,7 +1137,7 @@ async function doSync(manual){
     }
     if(pushes.length){
       const { error: e2 } = await sb.from('words')
-        .upsert(pushes.map(p=>({user_id:uid, key:p.key, data:p.data})));
+        .upsert(pushes.map(p=>({user_id:uid, key:p.key, data:p.data})), {onConflict:'user_id,key'});
       if(e2) throw e2;
     }
     /* ---- positions: LWW by t ---- */
@@ -1111,7 +1150,7 @@ async function doSync(manual){
       if(sv && svT > lcT) positions[id] = sv;
       else if(lc && lcT > svT) ppush.push({user_id:uid, book_id:id, data:lc});
     }
-    if(ppush.length) await sb.from('positions').upsert(ppush);
+    if(ppush.length) await sb.from('positions').upsert(ppush, {onConflict:'user_id,book_id'});
     saveWords(); save(LS_DEAD, dead); save(LS_POS, positions);
     lastSync = Date.now(); save('breeze.lastsync', lastSync);
     if(manual){ syncStatus('완료!'); renderSyncModal(); }
