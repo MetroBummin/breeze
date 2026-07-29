@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --paper:#FAF8F2; --paper2:#FDFBF6; --ink:#18364A; --ink-body:#2D3E43;
@@ -235,6 +236,24 @@
   .rowdel:hover{color:#c0392b;}
   #vempty{text-align:center; color:var(--soft); padding:70px 0 40px; font-size:14.5px; line-height:1.8;}
 
+  /* sync modal */
+  #sync-modal{position:fixed; inset:0; z-index:160; background:rgba(24,54,74,.35); display:none;
+    align-items:center; justify-content:center; padding:20px;}
+  #sync-modal.on{display:flex;}
+  #sm-card{background:#fff; border-radius:22px; padding:30px 28px; width:100%; max-width:400px; box-shadow:var(--shadow);}
+  #sm-card h2{font-size:20px; font-weight:600; margin-bottom:6px;}
+  #sm-card .desc{font-size:13.5px; color:var(--soft); line-height:1.6; margin-bottom:18px;}
+  #sm-email{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px;
+    font-family:var(--ui); outline:none; margin-bottom:12px;}
+  #sm-email:focus{border-color:var(--blue);}
+  .sm-btn{width:100%; border:none; border-radius:12px; padding:13px; font-size:15px; font-weight:600;
+    font-family:var(--ui); cursor:pointer; margin-bottom:10px;}
+  .sm-btn.primary{background:var(--blue); color:#fff;}
+  .sm-btn.primary:hover{background:var(--blue-deep);}
+  .sm-btn.ghost{background:#F2F0E9; color:var(--ink);}
+  #sm-status{font-size:13px; color:var(--soft); text-align:center; min-height:18px; margin-top:4px;}
+  #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
+    font-size:14px; cursor:pointer; color:var(--soft);}
   #toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
     padding:11px 22px; border-radius:24px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:150;}
   #toast.on{opacity:.95;}
@@ -270,6 +289,7 @@
   <nav>
     <button class="navbtn on" id="nav-home" onclick="show('home')">Read</button>
     <button class="navbtn" id="nav-vocab" onclick="show('vocab')">Review</button>
+    <button class="navbtn" id="nav-sync" onclick="openSyncModal()">동기화</button>
     <button id="btn-add" title="책 추가 (PDF·EPUB·TXT)">+</button>
   </nav>
 </div>
@@ -352,6 +372,14 @@
   <div id="vtablewrap"></div>
 </div>
 
+<div id="sync-modal">
+  <div id="sm-card">
+    <button id="sm-close" onclick="closeSyncModal()">✕</button>
+    <h2>기기 간 동기화</h2>
+    <div id="sm-body"></div>
+    <div id="sm-status"></div>
+  </div>
+</div>
 <div id="toast"></div>
 <div id="drop-overlay">여기에 놓으면 책이 추가됩니다</div>
 </div>
@@ -376,7 +404,9 @@ const DEMO_BOOK = {id:'demo', title:'AI Hurtles Ahead', author:'HOWARD MARKS', p
 const LS_WORDS='breeze.words', LS_BOOKS='breeze.books', LS_POS='breeze.pos', LS_FS='breeze.fs';
 function load(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('저장 공간이 부족해요 (책이 너무 큼)'); } }
+const LS_DEAD='breeze.dead';
 let words = load(LS_WORDS, {});
+let dead = load(LS_DEAD, {});
 let books = load(LS_BOOKS, []);
 let positions = load(LS_POS, {});   // bookId -> {y, p(0~1), t(lastOpened)}
 let curBook = null, selKey = null;
@@ -782,8 +812,9 @@ function addWord(k, span){
   const display = acro ? raw.replace(/s$/,'') : k;
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
   words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
-    example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now() };
-  saveWords();
+    example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now(), up:Date.now() };
+  delete dead[k]; save(LS_DEAD, dead);
+  saveWords(); queueSync();
   paintWord(k);
   selectWord(k, span);
   fetchDict(k);
@@ -811,7 +842,7 @@ function paintWord(k){
 }
 function setStatus(k, st){
   if(!words[k]) return;
-  words[k].status = st; saveWords(); paintWord(k);
+  words[k].status = st; words[k].up = Date.now(); saveWords(); paintWord(k); queueSync();
   if(selKey===k) renderPanel();
 }
 function renderPanel(){
@@ -834,7 +865,7 @@ function renderPanel(){
         const c = document.createElement('button');
         c.className = 'kochip' + (w.ko===t ? ' on':'');
         c.innerHTML = `<span class="pos">${esc(d.pos)}</span>${esc(t)}`;
-        c.onclick = ()=>{ w.ko = t; saveWords(); renderPanel(); };
+        c.onclick = ()=>{ w.ko = t; w.up = Date.now(); saveWords(); queueSync(); renderPanel(); };
         kod.appendChild(c);
       }
     }
@@ -848,11 +879,12 @@ document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>setStatus(selKey, +
 document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;
-  delete words[k]; saveWords(); paintWord(k); closePanel(); toast('단어장에서 뺐어요');
+  delete words[k]; dead[k] = Date.now(); save(LS_DEAD, dead);
+  saveWords(); paintWord(k); closePanel(); queueSync(); toast('단어장에서 뺐어요');
 };
 document.getElementById('p-ko').addEventListener('blur', e=>{
   if(!selKey || !words[selKey]) return;
-  words[selKey].ko = e.target.textContent.trim(); saveWords();
+  words[selKey].ko = e.target.textContent.trim(); words[selKey].up = Date.now(); saveWords(); queueSync();
 });
 
 /* ---- dictionary lookups ---- */
@@ -910,7 +942,8 @@ async function fetchDict(k){
   const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
   for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
   delete w.loading;
-  saveWords();
+  w.up = Date.now();
+  saveWords(); queueSync();
   if(selKey===k) renderPanel();
 }
 
@@ -937,9 +970,9 @@ function renderVocab(){
   wrap.querySelectorAll('tr[data-k]').forEach(tr=>{
     const k = tr.dataset.k;
     tr.querySelector('.chip').onclick = ()=>{ setStatus(k, words[k].status%3+1); renderVocab(); };
-    tr.querySelector('.rowdel').onclick = ()=>{ delete words[k]; saveWords(); renderVocab(); };
+    tr.querySelector('.rowdel').onclick = ()=>{ delete words[k]; dead[k]=Date.now(); save(LS_DEAD,dead); saveWords(); queueSync(); renderVocab(); };
     tr.querySelector('.c-mean').addEventListener('blur', e=>{
-      if(words[k]){ words[k].ko = e.target.textContent.trim(); saveWords(); }
+      if(words[k]){ words[k].ko = e.target.textContent.trim(); words[k].up = Date.now(); saveWords(); queueSync(); }
     });
   });
 }
@@ -968,6 +1001,140 @@ function toast(msg){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),2600);
 }
 window.addEventListener('beforeunload', saveReadingState);
+
+/* ================= sync (Supabase, magic link) =================
+   ▼▼ 여기 두 줄에 Supabase 프로젝트의 URL과 anon key를 붙여넣으면 동기화가 켜집니다.
+      (Supabase 대시보드 → Settings → API) 비워두면 로컬 전용으로 동작. */
+const SB_URL = '';
+const SB_KEY = '';
+
+let sb = null;
+try{ if(SB_URL && SB_KEY && window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
+let sbUser = null, syncTimer = null, syncing = false;
+let lastSync = load('breeze.lastsync', 0);
+
+function syncStatus(msg){ const el=document.getElementById('sm-status'); if(el) el.textContent = msg; }
+function syncBadge(){
+  const b = document.getElementById('nav-sync');
+  b.textContent = sbUser ? '동기화 ✓' : '동기화';
+}
+function openSyncModal(){
+  document.getElementById('sync-modal').classList.add('on');
+  renderSyncModal();
+}
+function closeSyncModal(){ document.getElementById('sync-modal').classList.remove('on'); }
+document.getElementById('sync-modal').addEventListener('click', e=>{ if(e.target.id==='sync-modal') closeSyncModal(); });
+
+function renderSyncModal(){
+  const body = document.getElementById('sm-body');
+  if(!sb){
+    body.innerHTML = `<div class="desc">아직 서버가 연결되지 않았어요.<br>
+      Supabase 프로젝트를 만들고, 이 파일 상단의 <b>SB_URL / SB_KEY</b> 두 칸에
+      프로젝트 키를 붙여넣으면 동기화가 켜집니다.<br>
+      (자세한 순서는 <b>SYNC_SETUP.md</b> 참고)</div>`;
+    syncStatus('');
+    return;
+  }
+  if(sbUser){
+    body.innerHTML = `<div class="desc">로그인됨: <b>${esc(sbUser.email||'')}</b><br>
+      단어장과 읽던 위치가 자동으로 동기화됩니다.<br>
+      마지막 동기화: ${lastSync? new Date(lastSync).toLocaleString('ko-KR') : '아직 없음'}</div>
+      <button class="sm-btn primary" onclick="doSync(true)">지금 동기화</button>
+      <button class="sm-btn ghost" onclick="sbLogout()">로그아웃</button>`;
+  }else{
+    body.innerHTML = `<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
+      비밀번호는 없습니다. 링크를 누르면 이 브라우저에서 로그인되고,
+      단어장이 기기 간에 동기화됩니다.</div>
+      <input id="sm-email" type="email" placeholder="you@example.com" autocomplete="email">
+      <button class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>`;
+  }
+  syncStatus('');
+}
+async function sbSendLink(){
+  const email = (document.getElementById('sm-email').value||'').trim();
+  if(!/.+@.+\..+/.test(email)){ syncStatus('이메일 형식을 확인해 주세요'); return; }
+  syncStatus('링크 보내는 중…');
+  const { error } = await sb.auth.signInWithOtp({ email,
+    options:{ emailRedirectTo: location.origin + location.pathname } });
+  syncStatus(error ? '전송 실패: '+error.message : '메일함을 확인하세요! 링크를 누르면 로그인돼요.');
+}
+async function sbLogout(){
+  await sb.auth.signOut();
+  sbUser = null; syncBadge(); renderSyncModal();
+}
+function queueSync(){
+  if(!sb || !sbUser) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(()=>doSync(false), 4000);
+}
+const upOf = w => w ? (w.up || w.addedAt || 0) : 0;
+async function doSync(manual){
+  if(!sb || !sbUser || syncing) return;
+  syncing = true;
+  if(manual) syncStatus('동기화 중…');
+  try{
+    const uid = sbUser.id;
+    /* ---- words: pull, merge (last-write-wins + tombstones), push ---- */
+    const { data: rows, error } = await sb.from('words').select('key,data').eq('user_id', uid);
+    if(error) throw error;
+    const server = {}; (rows||[]).forEach(r=>server[r.key]=r.data||{});
+    const pushes = [];
+    const keys = new Set([...Object.keys(server), ...Object.keys(words), ...Object.keys(dead)]);
+    for(const k of keys){
+      const sv = server[k], lc = words[k], dt = dead[k]||0;
+      const svUp = sv ? (sv.up||0) : -1;
+      if(dt && dt >= svUp && dt >= upOf(lc)){          // deletion is the newest fact
+        if(!sv || !sv.deleted) pushes.push({key:k, data:{deleted:true, up:dt}});
+        if(lc) delete words[k];
+        continue;
+      }
+      if(sv && sv.deleted){                            // server says deleted
+        if(lc && upOf(lc) > svUp) pushes.push({key:k, data:lc});   // local edit is newer -> revive
+        else if(lc){ delete words[k]; }
+        continue;
+      }
+      if(sv && (!lc || svUp > upOf(lc))){ words[k] = sv; delete dead[k]; }
+      else if(lc && (!sv || upOf(lc) > svUp)) pushes.push({key:k, data:lc});
+    }
+    if(pushes.length){
+      const { error: e2 } = await sb.from('words')
+        .upsert(pushes.map(p=>({user_id:uid, key:p.key, data:p.data})));
+      if(e2) throw e2;
+    }
+    /* ---- positions: LWW by t ---- */
+    const { data: prows } = await sb.from('positions').select('book_id,data').eq('user_id', uid);
+    const pserver = {}; (prows||[]).forEach(r=>pserver[r.book_id]=r.data||{});
+    const ppush = [];
+    for(const id of new Set([...Object.keys(pserver), ...Object.keys(positions)])){
+      const sv = pserver[id], lc = positions[id] ? posOf(id) : null;
+      const svT = sv ? (sv.t||0) : -1, lcT = lc ? (lc.t||0) : -1;
+      if(sv && svT > lcT) positions[id] = sv;
+      else if(lc && lcT > svT) ppush.push({user_id:uid, book_id:id, data:lc});
+    }
+    if(ppush.length) await sb.from('positions').upsert(ppush);
+    saveWords(); save(LS_DEAD, dead); save(LS_POS, positions);
+    lastSync = Date.now(); save('breeze.lastsync', lastSync);
+    if(manual){ syncStatus('완료!'); renderSyncModal(); }
+    if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
+    if(document.getElementById('v-home').classList.contains('on')) renderHome();
+  }catch(e){
+    console.error(e);
+    if(manual) syncStatus('동기화 실패: '+(e.message||e));
+  }finally{ syncing = false; }
+}
+if(sb){
+  sb.auth.onAuthStateChange((ev, session)=>{
+    sbUser = session ? session.user : null;
+    syncBadge();
+    if(sbUser){ doSync(false); if(document.getElementById('sync-modal').classList.contains('on')) renderSyncModal(); }
+  });
+  sb.auth.getSession().then(({data:{session}})=>{
+    sbUser = session ? session.user : null;
+    syncBadge();
+    if(sbUser) doSync(false);
+  });
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && sb && sbUser){ clearTimeout(syncTimer); doSync(false); } });
 
 /* bottom sheet: drag handle to dismiss */
 (function(){
