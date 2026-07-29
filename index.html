@@ -1027,8 +1027,9 @@ window.addEventListener('beforeunload', saveReadingState);
 /* ================= sync (Supabase, magic link) =================
    ▼▼ 여기 두 줄에 Supabase 프로젝트의 URL과 anon key를 붙여넣으면 동기화가 켜집니다.
       (Supabase 대시보드 → Settings → API) 비워두면 로컬 전용으로 동작. */
-const SB_URL = '';
-const SB_KEY = '';
+const SB_URL = 'https://hrtfhojbhqvaoiulspto.supabase.co
+';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydGZob2piaHF2YW9pdWxzcHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTM1MTEsImV4cCI6MjEwMDg4OTUxMX0.9LT_ly0fRXhWWFKK4o3ueREeOot8e_qUA9lI1IRANpQ';
 
 let sb = null;
 try{ if(SB_URL && SB_KEY && window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
