@@ -159,6 +159,27 @@
     padding:11px 14px; margin-bottom:6px; min-height:22px; outline:none;}
   #p-ko:focus{box-shadow:0 0 0 2px var(--blue);}
   #p-ko-hint{font-size:11px; color:var(--soft2); margin:0 0 12px 3px;}
+  #p-ai{display:none; background:linear-gradient(135deg,#EAF4F8,#F3F6EC); border:1px solid #CFE4EC;
+    border-radius:14px; padding:13px 15px; margin-bottom:12px;}
+  #p-ai.on{display:block;}
+  #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+    letter-spacing:.08em; color:var(--blue); margin-bottom:6px;}
+  #p-ai .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--blue);}
+  #p-ai .m{font-size:18px; font-weight:700; color:var(--ink); line-height:1.35;}
+  #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
+  #p-ai .note{font-size:12.5px; color:#5B707A; line-height:1.55; margin-top:7px;}
+  #p-ai.load .m{color:var(--soft2); font-weight:500; font-size:15px;}
+  #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
+    border:1px dashed #BFD9E4; background:#F4FAFC; color:var(--blue); border-radius:12px;
+    padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
+    margin-bottom:12px;}
+  #p-aibtn:hover{background:var(--sky); border-style:solid;}
+  #p-aibtn:disabled{opacity:.6; cursor:default;}
+  #p-aibtn .sp{font-size:15px;}
+  #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
+  #p-airetry{display:block; margin:8px auto 0; border:none; background:none; color:var(--soft);
+    font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+  #p-airetry:hover{color:var(--blue);}
   .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
   #p-kodict{display:flex; flex-wrap:wrap; gap:7px;}
   .kochip{border:none; background:var(--chipbg); color:var(--chiptx); border-radius:16px; padding:7px 13px;
@@ -255,8 +276,10 @@
   .sm-btn.ghost{background:#F2F0E9; color:var(--ink);}
   #sm-status{font-size:13px; color:var(--soft); text-align:center; min-height:18px; margin-top:4px;}
   #sm-codewrap{display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);}
-  #sm-code{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:22px;
-    letter-spacing:8px; text-align:center; font-family:var(--ui); outline:none; margin-bottom:10px;}
+  #sm-code{width:100%; border:1px solid var(--line); border-radius:12px; padding:13px 14px; font-size:23px;
+    letter-spacing:11px; text-indent:11px; text-align:center; font-family:var(--ui); outline:none;
+    margin-bottom:10px; color:var(--ink); font-weight:600;}
+  #sm-code::placeholder{color:#C8D7D6; font-weight:400;}
   #sm-code:focus{border-color:var(--blue);}
   #sm-codewrap .hint{font-size:12.5px; color:var(--soft); margin-bottom:8px; text-align:center;}
   #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
@@ -366,8 +389,16 @@
       <div id="p-phon"></div>
       <div id="p-clicked"></div>
       <hr id="p-divider">
+      <div id="p-ai">
+        <div class="cap"><span class="dot"></span>문맥 뜻 · AI</div>
+        <div class="m" id="p-ai-m"></div>
+        <div class="note" id="p-ai-note"></div>
+        <button id="p-airetry">다른 뜻으로 다시 물어보기</button>
+      </div>
       <div id="p-ko" contenteditable="true" spellcheck="false"></div>
       <div id="p-ko-hint">직접 고치거나, 아래 칩을 눌러 한 번에 바꿀 수 있어요</div>
+      <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI read it</span></button>
+      <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec">여러 뜻 중 고르기</div>
       <div id="p-kodict"></div>
       <div class="p-sec">모르는 정도</div>
@@ -444,6 +475,32 @@ async function imgPurge(prefix){ try{ const db=await idb();
   const st=db.transaction('imgs','readwrite').objectStore('imgs');
   const rq=st.getAllKeys(); rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(prefix)).forEach(k=>st.delete(k)); }catch(e){} }
 const IMG_MARK = '[[IMG]]:';
+
+/* ---- AI dictionary cache (별도 DB: 나중에 내장 데이터셋의 씨앗이 됨) ---- */
+function ddb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('breeze-dict',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('entries'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function dictGet(key){ try{ const db=await ddb(); return await new Promise(res=>{
+  const rq=db.transaction('entries').objectStore('entries').get(key);
+  rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function dictPut(key,val){ try{ const db=await ddb(); await new Promise((res,rej)=>{
+  const tx=db.transaction('entries','readwrite'); tx.objectStore('entries').put(val,key);
+  tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }catch(e){} }
+async function dictCount(){ try{ const db=await ddb(); return await new Promise(res=>{
+  const rq=db.transaction('entries').objectStore('entries').count();
+  rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(0); }); }catch(e){ return 0; } }
+/* 캐시를 JSON으로 내보내기 — 콘솔에서 breezeExportDict() 로 호출 */
+window.breezeExportDict = async function(){
+  const db=await ddb();
+  const [keys,vals]=await Promise.all([
+    new Promise(r=>{const q=db.transaction('entries').objectStore('entries').getAllKeys(); q.onsuccess=()=>r(q.result);}),
+    new Promise(r=>{const q=db.transaction('entries').objectStore('entries').getAll();     q.onsuccess=()=>r(q.result);})
+  ]);
+  const out={}; keys.forEach((k,i)=>out[k]=vals[i]);
+  const blob=new Blob([JSON.stringify(out,null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='breeze_dict_'+keys.length+'.json'; a.click();
+  return keys.length+'개 내보냄';
+};
 
 /* ================= data ================= */
 const DEMO_PARAS = ["Memo to: Oaktree Clients", "From: Howard Marks", "Re: AI Hurtles Ahead", "When I was preparing to write my December memo about artificial intelligence, Is It a Bubble?, I gained a great deal from speaking with some interesting techies in their thirties and forties. It’s stimulating to explore fresh territory and an absolute requirement for staying current as an investor. It’s one of the most enjoyable parts of my job.", "I recently returned to those people to follow up on the December memo. As part of that process, someone suggested I ask Claude, Anthropic’s AI model, to create a tutorial explaining artificial intelligence and the changes that have taken place in the last three months. I did so, and it gave me a great deal to work with. This resulting memo is intended as an addendum to December’s. Much of it will recap Claude’s 10,000- word essay, to which I’ll add a few observations of my own. In the process, I’ll highlight some terms that were new to me and might be new to you. I could have saved myself a lot of time by asking Claude to write this memo, but I decided not to, because I consider putting words on paper a big part of the fun. I will, however, quote liberally from Claude’s work product. That’ll be the source of all quotations that aren’t otherwise identified.", "Before I start in, I want to try to communicate the level of awe with which I viewed Claude’s output. It read like a personal note from a friend or colleague. It made reference to things I’ve talked about in past memos, like the sea change in interest rates and the pendulum of investor psychology, and it used them in metaphors related to AI. It argued logically, anticipated points I might make in response, injected humor, and bolstered its credibility by candidly acknowledging AI’s limitations, just as I might do. I’ve asked AI questions before and gotten answers back, but I’ve never received a personalized explanation like I did in this case.", "Understanding AI", "Before moving on to the meat of the matter – recent changes in AI and its capabilities – I want to share some insights into AI’s essence that the tutorial delivered for me. Importantly, the tutorial taught me not to think of an AI model as a search engine that retrieves data and regurgitates it. Rather, it’s a computer system that’s capable of synthesizing data and reasoning from it.", "There are two phases in the life of an AI model. In the first, it is “trained” by reading a vast amount of text. The training phase must not be thought of as loading the model with information, which I had done until now; it goes far beyond that. It consists of teaching the model how to think. By absorbing text, the model learns:", "• how to understand reasoning patterns and form them, • how arguments are structured, • how to generate new combinations of ideas, and • how to apply learned reasoning patterns to novel situations.", "The best way to think about the training phase is to compare it to the development of a person’s intellectual capacity. A baby is born with a brain, and through exposure to external stimuli, it develops the", "Follow us:", "ability to think, reason, synthesize, evaluate, analogize, combine ideas, create concepts, compose arguments, and so on. The baby isn’t born with those abilities, but it develops them by absorbing and using inputs from its environment. An AI model is the same. (A word here: I’m not implying that I understand how AI does what it does. There’s no chance of that. At best, I’ll describe what AI can do and the implications.)", "The second phase in an AI model’s life is “inference.” Once the model has been built and trained, inference is what it does for the rest of its life, using its capabilities to meet the demands of users.", "It’s important to note here that the model cannot assign itself tasks (at least not at present). It has to be ordered to perform tasks through “prompts” written by users. The better and more comprehensive the prompts, the more AI can do. For example, AI can write software to perform work a user wants done. It can also test the software, identify bugs, fix them, and test again, but it has to be instructed to do those things, at least at the current stage (read on). Because many people today lack awareness of the importance of prompts and fail to possess the ability to create them, AI’s potential is probably being underestimated. But note that the limitation is on the part of the users, not the model.", "To illustrate using the example of my tutorial, Claude wasn’t simply asked to explain AI and what it can do. When I queried Claude about the task it was assigned, here’s what it said:", "Someone designed a nine-module curriculum specifically for you, built around your December memo, your intellectual frameworks, and the goal of giving you enough technical understanding to write a credible addendum. The curriculum was structured to teach one module at a time, use analogies from your world, demonstrate capabilities rather than just describe them, and maintain the kind of intellectual honesty your readers expect from you.", "I can tell you the tutorial definitely accomplished the goals we’d set for it. This was entirely due to the quality and specificity of the prompts my advisers helped me prepare.", "Can AI Think?", "I’m going to take time here for a question I find fascinating. I know AI can reconfigure what people have already figured out and apply it to new data and other fields. But can it break new ground?", "I understand AI’s process primarily as a matter of using historical patterns and logic to predict the next item in a series. Write five words in a sentence, and it’ll predict what the sixth should be (look at the suggested words on your phone the next time you write an email – that’s AI in action). Ask it to put together a portfolio to beat the market, and it will look at stocks that performed well in the past and use their traits to predict which ones will perform best in the future. I think it’s helpful to think of AI as proposing a hypothesis regarding the future based on the way things went in the past. I’ll return to this later.", "What follows from the above is my question: Can AI have a new idea? Maybe it can perform every knowledge task we assign to it. But can it think of things we haven’t told it to think of? Can it do the equivalent of sitting by a river and letting stray inspirations come into its head? Can it see an apple fall from a tree and develop the notion of gravity? Can it muse, daydream, or ideate? Can it have intuition?", "This is where the debate around AI gets complicated. According to Claude, the skeptics argue as follows:", "Follow us:", "Everything Claude learned came from human-written text. It has no experiences, no embodied understanding of the world, no genuine comprehension. Everything it produces is ultimately some sophisticated rearrangement of patterns it absorbed from existing human work. It’s extraordinarily impressive pattern matching – maybe the most impressive pattern matching ever engineered – but it’s not thought. It’s not reasoning. It’s statistical recombination. And if that’s true, then there’s a ceiling. It can remix what humans have already figured out, but it can’t break genuinely new ground. It’s a very talented cover band, not a composer.", "Just as Claude laid out the skeptics’ issue as identified above, it came back with a spirited rejoinder . . . framed in terms of me (talk about knowing how to argue a point):", "Howard, everything you know about investing came from other people. Benjamin Graham taught you about margin of safety. Buffett taught you about quality. Charlie Munger taught you about mental models from multiple disciplines. John Kenneth Galbraith taught you about the psychology of financial manias. You read thousands of books, memos, case studies, and annual reports over fifty years. Every input was someone else’s thinking. . . .", "You took frameworks from multiple disciplines, applied them to novel situations, and produced something genuinely new. . . . The raw material came from others. The synthesis was yours.", "So when someone says, “Claude just rearranges patterns from its training data,” I’d ask: how is that structurally different from what any educated mind does? You learned reasoning patterns from decades of reading. I learned reasoning patterns from training. The question isn’t where the inputs came from. The question is whether the system – human or artificial – can combine them in ways that are genuinely novel and useful.", "Of course, this is completely true. I ingested data as a young investor (from actual experience as well as the written word), and I learned how those who went before me thought about the data and what conclusions they reached. I studied their thought processes and how to apply them to the data I took in. I was also inspired by the example of their processes to come up with my own. This is how the human brain expands its capabilities. Is AI’s way of growing, learning, and “thinking” really different from ours?", "Finally, Claude came back with a convincing real-world argument:", "Even if you grant the skeptic everything – even if you accept, philosophically, that what I do is “merely” pattern matching and not “true” thought – the economic implications are identical. Let me put it starkly. If I can produce the analytical output of a $200,000-a- year research associate, it does not matter to the person paying the bill whether I’m “really” thinking or merely pattern matching? What matters is whether the work product is reliable enough to be useful. And increasingly, it is. The philosophical debate about machine consciousness is fascinating. But the economic question isn’t “does AI truly understand?” The economic question is “does AI do the work?”", "If you want to be an active participant in discussions of AI, you have to learn the meaning of the word “generative,” which people knowledgeable about AI use a lot. Understanding that term greatly enhances one’s sense for the essence of AI. According to the AI model Perplexity:", "Follow us:", "In “generative AI,” the word generative means “able to create new things, not just analyze or label existing ones.” It refers to AI systems that learn patterns in data and then generate new content that resembles that data.", "Is this thinking? Or something else? Or am I belaboring “a distinction without a difference?” We’ll get some indication of this on page six."];
@@ -903,6 +960,23 @@ function renderPanel(){
   document.getElementById('p-ex').textContent = w.example || '—';
   document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
+  const aiBox = document.getElementById('p-ai');
+  const aiM = document.getElementById('p-ai-m'), aiN = document.getElementById('p-ai-note');
+  if(w.aiLoading){
+    aiBox.className='on load'; aiM.textContent='문맥에 맞는 뜻을 찾고 있어요…'; aiN.textContent='';
+  }else if(w.ai && w.ai.ko){
+    aiBox.className='on';
+    aiM.innerHTML = esc(w.ai.ko) + (w.ai.pos?`<span class="pos">${esc(w.ai.pos)}</span>`:'');
+    aiN.textContent = w.ai.note || '';
+  }else{
+    aiBox.className='';
+  }
+  // on-demand 버튼: AI 결과가 있으면 숨기고, 없을 때만 보여준다
+  const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
+  const hasAI = !!(w.ai && w.ai.ko);
+  aiBtn.style.display = (hasAI || w.aiLoading) ? 'none' : 'flex';
+  aiHint.style.display = (hasAI || w.aiLoading) ? 'none' : 'block';
+  document.getElementById('p-aibtn-t').textContent = 'Let AI read it';
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';
   if(w.loading) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>';
@@ -978,9 +1052,75 @@ async function fetchEnWik(w, form){
   }
   return w.defs.length>0;
 }
+/* ---- Claude 기반 사전: Edge Function 경유 (키는 서버에만) ---- */
+const aiCacheKey = w => (w.clicked || w.word || '').toLowerCase();
+
+/* 캐시에만 있으면 복원 — 네트워크·비용 0 */
+async function loadCachedAI(k){
+  const w = words[k]; if(!w || w.ai) return false;
+  const hit = await dictGet(aiCacheKey(w));
+  if(hit){ applyAI(w, hit, k); return true; }
+  return false;
+}
+
+/* 버튼을 눌렀을 때만 실제 호출 */
+async function askAI(force){
+  const k = selKey; if(!k || !words[k]) return;
+  if(!sb || !sbUser){ toast('AI 뜻은 로그인 후 사용할 수 있어요'); openSyncModal(); return; }
+  await fetchAI(k, force);
+}
+
+document.getElementById('p-aibtn').onclick   = ()=>askAI(false);
+document.getElementById('p-airetry').onclick = ()=>askAI(true);
+
+async function fetchAI(k, force){
+  const w = words[k]; if(!w) return false;
+  if(!sb || !sbUser) return false;                    // 로그인 필요
+  const cacheKey = aiCacheKey(w);
+
+  if(!force){
+    const hit = await dictGet(cacheKey);
+    if(hit){ applyAI(w, hit, k); return true; }
+  }
+
+  w.aiLoading = true; if(selKey===k) renderPanel();
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json',
+                'Authorization':'Bearer ' + (session ? session.access_token : SB_KEY),
+                'apikey': SB_KEY },
+      body: JSON.stringify({ word: w.clicked || w.word || k, sentence: w.example || '' })
+    });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || j.error){ console.warn('AI dict:', r.status, j && j.error); return false; }
+    await dictPut(cacheKey, j);
+    applyAI(w, j, k);
+    return true;
+  }catch(e){ console.warn('AI dict failed', e); return false; }
+  finally{ delete w.aiLoading; if(selKey===k) renderPanel(); }
+}
+function applyAI(w, ai, k){
+  delete w.aiLoading;
+  w.ai = { ko:ai.ko||'', pos:ai.pos||'', note:ai.note||'' };
+  if(ai.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(ai.lemma)) w.word = ai.lemma.toLowerCase();
+  if(ai.ko) w.ko = ai.ko;                                    // 문맥 뜻을 기본 뜻으로
+  const extra = (ai.ko_all||[]).filter(t=>t && t!==ai.ko);
+  if(extra.length){
+    const chips = { pos: ai.pos || '', terms: [ai.ko, ...extra].filter(Boolean).slice(0,5) };
+    w.kodict = [chips, ...(w.kodict||[]).filter(d=>d.pos!==chips.pos)].slice(0,3);
+  }
+  if(ai.en) w.defs = [{pos:ai.pos||'', def:ai.en}, ...(w.defs||[])].slice(0,5);
+  w.up = Date.now();
+  saveWords(); queueSync();
+  if(selKey===k) renderPanel();
+}
+
 async function fetchDict(k){
   const w = words[k]; if(!w) return;
   w.loading = true; if(selKey===k) renderPanel();
+  loadCachedAI(k);                  // 이미 물어본 단어면 캐시에서 무료로 복원 (API 호출 없음)
   const forms = w.forms && w.forms.length ? w.forms : [k];
   let validated = null;
   for(const f of forms){ try{ if(await fetchEn(w,f)){ validated=f; break; } }catch(e){} }
@@ -1054,8 +1194,8 @@ window.addEventListener('beforeunload', saveReadingState);
 /* ================= sync (Supabase, magic link) =================
    ▼▼ 여기 두 줄에 Supabase 프로젝트의 URL과 anon key를 붙여넣으면 동기화가 켜집니다.
       (Supabase 대시보드 → Settings → API) 비워두면 로컬 전용으로 동작. */
-const SB_URL = 'https://hrtfhojbhqvaoiulspto.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydGZob2piaHF2YW9pdWxzcHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTM1MTEsImV4cCI6MjEwMDg4OTUxMX0.9LT_ly0fRXhWWFKK4o3ueREeOot8e_qUA9lI1IRANpQ';
+const SB_URL = '';
+const SB_KEY = '';
 
 let sb = null;
 try{ if(SB_URL && SB_KEY && window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
