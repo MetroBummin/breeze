@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script><!-- 키는 이 별도 파일에서: 없으면 로컬 전용으로 동작 -->
 <style>
   :root{
     --paper:#FAF8F2; --paper2:#FDFBF6; --ink:#18364A; --ink-body:#2D3E43;
@@ -111,13 +112,65 @@
   #v-read{display:none;}
   #v-read.on{display:flex;}
   #readmain{flex:1; min-width:0;}
-  #rbar{position:sticky; top:0; z-index:40; background:rgba(253,251,246,.92); backdrop-filter:blur(10px);}
+  #rbar{position:sticky; top:var(--topbar-h,56px); z-index:40; background:rgba(253,251,246,.92); backdrop-filter:blur(10px);}
   #rbar .row{display:flex; align-items:center; gap:12px; padding:14px 22px 10px;}
   #rback{border:none; background:none; cursor:pointer; padding:6px; color:#345462;}
   #rbar .rt{flex:1; text-align:center; font-size:14.5px; font-weight:500; color:var(--ink);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
   .iconbtn:hover{background:var(--sky);}
+  #rbar{transition:transform .28s ease;}
+  /* Aa settings popover */
+  #aa-pop{position:fixed; right:14px; top:112px; z-index:96; background:#fff; border:1px solid var(--line);
+    border-radius:16px; padding:16px 18px; width:240px; box-shadow:var(--shadow); display:none;}
+  #aa-pop.on{display:block;}
+  .aa-row{display:flex; align-items:center; justify-content:space-between; padding:8px 0;}
+  .aa-label{font-size:13.5px; color:var(--soft); font-weight:500;}
+  .aa-size{display:flex; align-items:center; gap:10px;}
+  .aa-size button{border:1px solid var(--line); background:none; border-radius:9px; padding:5px 11px;
+    cursor:pointer; font-size:13px; color:var(--ink); font-family:var(--ui);}
+  .aa-size button:hover{background:var(--sky);}
+  #aa-fs{font-size:13.5px; min-width:24px; text-align:center; color:var(--ink);}
+  .aa-toggle{width:46px; height:26px; border-radius:13px; border:none; background:#D8D4C8; cursor:pointer;
+    position:relative; transition:background .2s;}
+  .aa-toggle i{position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%;
+    background:#fff; transition:left .2s; box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  .aa-toggle.on{background:var(--blue);}
+  .aa-toggle.on i{left:23px;}
+  /* ---------- dark mode ---------- */
+  body.dark{
+    --paper:#16181B; --paper2:#16181B; --ink:#E7E3D8; --ink-body:#D3CFC4;
+    --soft:#9AA1A8; --soft2:#8A9199; --line:#2A2E33; --line2:#33383E;
+    --sky:#22333C; --sky2:#2A4552; --chipbg:#20353A; --chiptx:#8CCabf;
+    --shadow:0 14px 34px rgba(0,0,0,.4);
+  }
+  body.dark::before{opacity:.12;}
+  body.dark #topbar{background:rgba(22,24,27,.9);}
+  body.dark #rbar{background:rgba(22,24,27,.93);}
+  body.dark .page{background:#1C1F23; border-color:#2A2E33; box-shadow:none;}
+  body.dark .w:hover{background:#2E3237;}
+  body.dark .w.s1{background:rgba(255,226,138,.30);}
+  body.dark .w.s2{background:rgba(255,171,120,.32);}
+  body.dark .w.s3{background:rgba(255,140,140,.34);}
+  body.dark #panel, body.dark #sm-card, body.dark #aa-pop{background:#1F2327; border-color:#2A2E33;}
+  body.dark #p-close, body.dark #sm-close{background:#2A2E33; color:#9AA1A8;}
+  body.dark #p-handle{background:#1F2327;}
+  body.dark table, body.dark #vtablewrap table{background:#1C1F23;}
+  body.dark th{background:#22262B;}
+  body.dark td{border-bottom-color:#25292E;}
+  body.dark #vsearch, body.dark #sm-email{background:#1C1F23; color:var(--ink);}
+  body.dark #hero{background:linear-gradient(135deg,#20303A,#1C1F23);}
+  body.dark #hero .track{background:#2E3A42;}
+  body.dark .pal0, body.dark .pal1, body.dark .pal2{background:#22262B; color:#D3CFC4;}
+  body.dark .pal0 .author, body.dark .pal1 .author, body.dark .pal2 .author{color:#9AA1A8;}
+  body.dark .bookcard.add{border-color:#3A3F45;}
+  body.dark .bookcard .del{background:rgba(0,0,0,.4); color:#9AA1A8;}
+  body.dark #focusbtn{background:rgba(31,35,39,.9); border-color:#2A2E33;}
+  body.dark .aa-size button{color:var(--ink);}
+  body.dark #splash{background:#16181B;}
+  body.dark .navbtn:hover{background:#22262B;}
+  body.dark .iconbtn:hover{background:#22262B;}
+  body.chromehide #rbar{transform:translateY(-130%);}
   /* focus mode: chrome disappears, only text remains */
   #focusbtn{position:fixed; right:18px; bottom:18px; z-index:70; width:44px; height:44px; border-radius:50%;
     border:1px solid var(--line); background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
@@ -125,11 +178,16 @@
     box-shadow:0 4px 14px rgba(23,55,71,.12); transition:opacity .3s;}
   #v-read.on ~ #focusbtn, body.reading #focusbtn{display:flex;}
   #focusbtn:hover{color:var(--blue);}
-  body.focusmode #topbar, body.focusmode #rbar, body.focusmode #rhint,
-  body.focusmode .pageno{display:none;}
-  body.focusmode .page{background:transparent; border:none; box-shadow:none; padding:0; overflow:visible;}
-  body.focusmode #readwrap{padding-top:20px;}
+  body.focusmode #topbar, body.focusmode #rbar, body.focusmode #rhint{display:none;}
+  /* keep the page-card structure in focus mode — just give the text more room */
+  body.focusmode #readwrap{max-width:880px; padding:16px 10px 50vh;}
+  body.focusmode .page{padding:34px 30px;}
+  body.focusmode .pageno{margin:12px 0 18px;}
   body.focusmode #rtitle{display:none;}
+  @media (max-width:760px){
+    body.focusmode #readwrap{padding:8px 4px 50vh;}
+    body.focusmode .page{padding:22px 15px; border-radius:14px;}
+  }
   body.focusmode #focusbtn{opacity:.4;}
   body.focusmode #focusbtn:hover{opacity:1;}
   #ptrack{height:3px; background:var(--line2);}
@@ -298,6 +356,12 @@
   #sm-codewrap .hint{font-size:12.5px; color:var(--soft); margin-bottom:8px; text-align:center;}
   #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
+  #minitoast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:140;
+    background:rgba(24,54,74,.8); color:#fff; font-size:11.5px; letter-spacing:.2px;
+    padding:5px 13px; border-radius:20px; opacity:0; pointer-events:none;
+    transition:opacity .35s; backdrop-filter:blur(4px); white-space:nowrap;}
+  #minitoast.on{opacity:1;}
+  body.dark #minitoast{background:rgba(228,233,238,.85); color:#16181B;}
   #toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
     padding:11px 22px; border-radius:24px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:150;}
   #toast.on{opacity:.95;}
@@ -380,8 +444,7 @@
           <span><i style="background:var(--s2)"></i>★★</span>
           <span><i style="background:var(--s3)"></i>★★★</span>
         </div>
-        <button class="iconbtn" onclick="fontSize(-1)">A−</button>
-        <button class="iconbtn" onclick="fontSize(1)">A+</button>
+        <button class="iconbtn" id="btn-aa" onclick="toggleAa(event)" style="font-weight:600">Aa</button>
       </div>
       <div id="ptrack"><div id="pfill"></div></div>
     </div>
@@ -449,10 +512,25 @@
     <div id="sm-status"></div>
   </div>
 </div>
+<div id="aa-pop">
+  <div class="aa-row">
+    <span class="aa-label">글자 크기</span>
+    <div class="aa-size">
+      <button onclick="fontSize(-1)">A−</button>
+      <span id="aa-fs"></span>
+      <button onclick="fontSize(1)">A+</button>
+    </div>
+  </div>
+  <div class="aa-row">
+    <span class="aa-label">다크 모드</span>
+    <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
+  </div>
+</div>
 <button id="focusbtn" title="집중 모드" onclick="toggleFocus()">
   <svg id="fb-in" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
   <svg id="fb-out" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
 </button>
+<div id="minitoast"></div>
 <div id="toast"></div>
 <div id="bootfail" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:300;
   background:#B0483A;color:#fff;font:13px/1.5 -apple-system,sans-serif;padding:12px 16px;">
@@ -554,7 +632,7 @@ function show(v){
   document.getElementById('v-'+v).classList.add('on');
   document.getElementById('nav-home').classList.toggle('on', v==='home');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
-  if(v!=='read'){ curBook=null; closePanel(); toggleFocus(false); }
+  if(v!=='read'){ curBook=null; closePanel(); toggleFocus(false); document.body.classList.remove('chromehide'); }
   if(v==='home') renderHome();
   if(v==='vocab') renderVocab();
   window.scrollTo(0,0);
@@ -903,17 +981,27 @@ function updatePfill(){
   const max = Math.max(1, doc.scrollHeight - window.innerHeight);
   document.getElementById('pfill').style.width = Math.min(100, window.scrollY/max*100)+'%';
 }
-let scrollTick = null;
+let scrollTick = null, lastScrollY = 0;
 window.addEventListener('scroll', ()=>{
   if(!curBook) return;
   updatePfill();
+  /* reader-app pattern: scrolling down hides the bars, tap or scroll-up brings them back */
+  const y = window.scrollY, dy = y - lastScrollY; lastScrollY = y;
+  if(!document.body.classList.contains('focusmode')){
+    if(y < 80 || dy < -8) document.body.classList.remove('chromehide');
+    else if(y > 160 && dy > 8) document.body.classList.add('chromehide');
+  }
   if(scrollTick) return;
   scrollTick = setTimeout(()=>{ scrollTick=null; saveReadingState(); }, 800);
 });
 
 document.getElementById('rtext').addEventListener('click', e=>{
   const span = e.target.closest('.w');
-  if(!span) return;
+  if(!span){
+    if(!document.body.classList.contains('focusmode'))
+      document.body.classList.toggle('chromehide');
+    return;
+  }
   const k = span.dataset.w;
   if(words[k]){
     if(words[k].status < 3) setStatus(k, words[k].status + 1);
@@ -1201,12 +1289,55 @@ document.getElementById('btn-xlsx').onclick = ()=>{
 /* ================= misc ================= */
 let fs = load(LS_FS, 19);
 document.documentElement.style.setProperty('--fs', fs+'px');
-function fontSize(d){ fs=Math.min(26,Math.max(14,fs+d)); save(LS_FS,fs); document.documentElement.style.setProperty('--fs',fs+'px'); }
+function fontSize(d){ fs=Math.min(26,Math.max(14,fs+d)); save(LS_FS,fs); document.documentElement.style.setProperty('--fs',fs+'px');
+  const el=document.getElementById('aa-fs'); if(el) el.textContent=fs; }
+/* ---- Aa settings ---- */
+function toggleAa(e){
+  if(e) e.stopPropagation();
+  const p = document.getElementById('aa-pop');
+  const btn = document.getElementById('btn-aa');
+  if(btn){
+    const r = btn.getBoundingClientRect();
+    p.style.top = Math.round(r.bottom + 8) + 'px';
+    p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
+  }
+  p.classList.toggle('on');
+  document.getElementById('aa-fs').textContent = fs;
+}
+document.addEventListener('click', e=>{
+  const p = document.getElementById('aa-pop');
+  if(p.classList.contains('on') && !e.target.closest('#aa-pop') && !e.target.closest('#btn-aa'))
+    p.classList.remove('on');
+});
+let darkMode = load('breeze.dark', false);
+function applyDark(){
+  document.body.classList.toggle('dark', !!darkMode);
+  document.getElementById('aa-dark').classList.toggle('on', !!darkMode);
+}
+function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
+applyDark();
+function syncTopbarH(){
+  const tb = document.getElementById('topbar');
+  const h = (tb && !document.body.classList.contains('focusmode')) ? tb.offsetHeight : 0;
+  document.documentElement.style.setProperty('--topbar-h', h+'px');
+}
+window.addEventListener('resize', syncTopbarH);
+window.addEventListener('load', syncTopbarH);
+syncTopbarH();
 function toggleFocus(force){
   const on = force!==undefined ? force : !document.body.classList.contains('focusmode');
   document.body.classList.toggle('focusmode', on);
   document.getElementById('fb-in').style.display = on ? 'none':'block';
   document.getElementById('fb-out').style.display = on ? 'block':'none';
+  if(on) document.body.classList.remove('chromehide');
+  syncTopbarH();
+}
+let miniTimer;
+function miniToast(msg){
+  const t = document.getElementById('minitoast');
+  if(!t) return;
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(miniTimer); miniTimer = setTimeout(()=>t.classList.remove('on'), 1800);
 }
 let toastTimer;
 function toast(msg){
@@ -1218,8 +1349,8 @@ window.addEventListener('beforeunload', saveReadingState);
 /* ================= sync (Supabase, magic link) =================
    ▼▼ 여기 두 줄에 Supabase 프로젝트의 URL과 anon key를 붙여넣으면 동기화가 켜집니다.
       (Supabase 대시보드 → Settings → API) 비워두면 로컬 전용으로 동작. */
-const SB_URL = 'https://hrtfhojbhqvaoiulspto.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydGZob2piaHF2YW9pdWxzcHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTM1MTEsImV4cCI6MjEwMDg4OTUxMX0.9LT_ly0fRXhWWFKK4o3ueREeOot8e_qUA9lI1IRANpQ';
+const SB_URL = (window.BREEZE_CONFIG && window.BREEZE_CONFIG.SB_URL) || '';
+const SB_KEY = (window.BREEZE_CONFIG && window.BREEZE_CONFIG.SB_KEY) || '';
 
 let sb = null;
 try{ if(SB_URL && SB_KEY && window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
@@ -1242,7 +1373,7 @@ function renderSyncModal(){
   const body = document.getElementById('sm-body');
   if(!sb){
     body.innerHTML = `<div class="desc">아직 서버가 연결되지 않았어요.<br>
-      Supabase 프로젝트를 만들고, 이 파일 상단의 <b>SB_URL / SB_KEY</b> 두 칸에
+      Supabase 프로젝트를 만들고, <b>config.js</b> 파일에
       프로젝트 키를 붙여넣으면 동기화가 켜집니다.<br>
       (자세한 순서는 <b>SYNC_SETUP.md</b> 참고)</div>`;
     syncStatus('');
@@ -1348,6 +1479,10 @@ async function doSync(manual){
     saveWords(); save(LS_DEAD, dead); save(LS_POS, positions);
     lastSync = Date.now(); save('breeze.lastsync', lastSync);
     if(manual){ syncStatus('완료!'); renderSyncModal(); }
+    else {
+      const n = pushes.length + ppush.length;
+      miniToast(n ? `동기화됨 · ${n}건` : '동기화됨');
+    }
     if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
     if(document.getElementById('v-home').classList.contains('on')) renderHome();
   }catch(e){
