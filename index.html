@@ -112,16 +112,15 @@
   #v-read{display:none;}
   #v-read.on{display:flex;}
   #readmain{flex:1; min-width:0;}
-  #rbar{position:sticky; top:var(--topbar-h,56px); z-index:40; background:rgba(253,251,246,.92); backdrop-filter:blur(10px);}
+  #rbar{position:sticky; top:var(--topbar-h,56px); z-index:40; background:transparent; height:3px;}
   #rbar .row{display:flex; align-items:center; gap:12px; padding:14px 22px 10px;}
   #rback{border:none; background:none; cursor:pointer; padding:6px; color:#345462;}
   #rbar .rt{flex:1; text-align:center; font-size:14.5px; font-weight:500; color:var(--ink);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
   .iconbtn:hover{background:var(--sky);}
-  #rbar{transition:transform .28s ease;}
   /* Aa settings popover */
-  #aa-pop{position:fixed; right:14px; top:112px; z-index:96; background:#fff; border:1px solid var(--line);
+  #aa-pop{position:fixed; right:14px; bottom:126px; z-index:96; background:#fff; border:1px solid var(--line);
     border-radius:16px; padding:16px 18px; width:240px; box-shadow:var(--shadow); display:none;}
   #aa-pop.on{display:block;}
   .aa-row{display:flex; align-items:center; justify-content:space-between; padding:8px 0;}
@@ -170,13 +169,20 @@
   body.dark #splash{background:#16181B;}
   body.dark .navbtn:hover{background:#22262B;}
   body.dark .iconbtn:hover{background:#22262B;}
-  body.chromehide #rbar{transform:translateY(-130%);}
   /* focus mode: chrome disappears, only text remains */
-  #focusbtn{position:fixed; right:18px; bottom:18px; z-index:70; width:44px; height:44px; border-radius:50%;
+  #focusbtn, #aafab{position:fixed; right:18px; z-index:70; width:44px; height:44px; border-radius:50%;
     border:1px solid var(--line); background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
     cursor:pointer; display:none; align-items:center; justify-content:center; color:var(--soft);
-    box-shadow:0 4px 14px rgba(23,55,71,.12); transition:opacity .3s;}
-  #v-read.on ~ #focusbtn, body.reading #focusbtn{display:flex;}
+    box-shadow:0 4px 14px rgba(23,55,71,.12); transition:opacity .3s; font-family:var(--ui);}
+  #focusbtn{bottom:18px;}
+  #aafab{bottom:72px; font-size:15px; font-weight:600;}
+  body.reading #focusbtn, body.reading #aafab{display:flex;}
+  #aafab:hover{color:var(--blue);}
+  body.scrolling #focusbtn, body.scrolling #aafab{opacity:.3;}
+  body.dark #aafab{background:rgba(31,35,39,.9); border-color:#2A2E33;}
+  .aa-legend{display:flex; flex-direction:column; gap:5px; font-size:11.5px; color:var(--soft);
+    padding-bottom:10px; margin-bottom:4px; border-bottom:1px solid var(--line);}
+  .aa-legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; vertical-align:0;}
   #focusbtn:hover{color:var(--blue);}
   body.focusmode #topbar, body.focusmode #rbar, body.focusmode #rhint{display:none;}
   /* keep the page-card structure in focus mode — just give the text more room */
@@ -188,8 +194,8 @@
     body.focusmode #readwrap{padding:8px 4px 50vh;}
     body.focusmode .page{padding:22px 15px; border-radius:14px;}
   }
-  body.focusmode #focusbtn{opacity:.4;}
-  body.focusmode #focusbtn:hover{opacity:1;}
+  body.focusmode #focusbtn, body.focusmode #aafab{opacity:.35;}
+  body.focusmode #focusbtn:hover, body.focusmode #aafab:hover{opacity:1;}
   #ptrack{height:3px; background:var(--line2);}
   #pfill{height:3px; background:var(--blue); width:0; transition:width .15s;}
   #readwrap{max-width:700px; margin:0 auto; padding:36px 26px 50vh;}
@@ -217,6 +223,7 @@
   /* ================= dictionary panel / sheet ================= */
   #sheetbg{display:none;}
   #panel{width:360px; flex-shrink:0; background:#fff; border-radius:26px 0 0 0; box-shadow:-8px 0 30px rgba(24,54,74,.08);
+    overscroll-behavior:contain;
     height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
   #panel.on{display:block;}
   #panel .inner{padding:26px 26px 40px;}
@@ -280,10 +287,11 @@
   /* mobile: bottom sheet */
   @media (max-width:760px){
     #v-read.on{display:block;}
-    #sheetbg{display:block; position:fixed; inset:0; background:rgba(24,54,74,.25); z-index:80;
+    #sheetbg{display:block; position:fixed; inset:0; background:rgba(24,54,74,.25); z-index:80; touch-action:none;
       opacity:0; pointer-events:none; transition:opacity .25s;}
     #sheetbg.on{opacity:1; pointer-events:auto;}
     #panel{position:fixed; left:0; right:0; bottom:0; top:auto; width:100%; height:auto; max-height:72vh;
+      overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
       border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;
       box-shadow:0 -10px 40px rgba(24,54,74,.18);}
     #panel.on{transform:translateY(0);}
@@ -433,21 +441,7 @@
 <!-- ================= READER ================= -->
 <div class="view" id="v-read">
   <div id="readmain">
-    <div id="rbar">
-      <div class="row">
-        <button id="rback" onclick="show('home')" title="홈으로">
-          <svg width="17" height="24" viewBox="0 0 29 58" fill="none"><path d="M26 3 L3 29 L26 55" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <div class="rt" id="rbar-title"></div>
-        <div class="legend" title="모르는 정도">
-          <span><i style="background:var(--s1)"></i>★</span>
-          <span><i style="background:var(--s2)"></i>★★</span>
-          <span><i style="background:var(--s3)"></i>★★★</span>
-        </div>
-        <button class="iconbtn" id="btn-aa" onclick="toggleAa(event)" style="font-weight:600">Aa</button>
-      </div>
-      <div id="ptrack"><div id="pfill"></div></div>
-    </div>
+    <div id="rbar"><div id="ptrack"><div id="pfill"></div></div></div>
     <div id="readwrap">
       <div id="rtitle"></div>
       <div id="rhint">
@@ -513,6 +507,11 @@
   </div>
 </div>
 <div id="aa-pop">
+  <div class="aa-legend">
+    <span><i style="background:var(--s1)"></i>★ 아리송</span>
+    <span><i style="background:var(--s2)"></i>★★ 모름</span>
+    <span><i style="background:var(--s3)"></i>★★★ 깜깜</span>
+  </div>
   <div class="aa-row">
     <span class="aa-label">글자 크기</span>
     <div class="aa-size">
@@ -526,6 +525,7 @@
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
 </div>
+<button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
 <button id="focusbtn" title="집중 모드" onclick="toggleFocus()">
   <svg id="fb-in" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
   <svg id="fb-out" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
@@ -632,7 +632,8 @@ function show(v){
   document.getElementById('v-'+v).classList.add('on');
   document.getElementById('nav-home').classList.toggle('on', v==='home');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
-  if(v!=='read'){ curBook=null; closePanel(); toggleFocus(false); document.body.classList.remove('chromehide'); }
+  if(v!=='read'){ curBook=null; closePanel(); toggleFocus(false); }
+  document.body.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();
   if(v==='vocab') renderVocab();
   window.scrollTo(0,0);
@@ -915,7 +916,7 @@ function openBook(b){
   document.getElementById('v-read').classList.add('on');
   document.getElementById('nav-home').classList.remove('on');
   document.getElementById('rtitle').textContent = b.title;
-  document.getElementById('rbar-title').textContent = b.title;
+  document.body.classList.add('reading');
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
   const frag = document.createDocumentFragment();
@@ -981,27 +982,20 @@ function updatePfill(){
   const max = Math.max(1, doc.scrollHeight - window.innerHeight);
   document.getElementById('pfill').style.width = Math.min(100, window.scrollY/max*100)+'%';
 }
-let scrollTick = null, lastScrollY = 0;
+let scrollTick = null, fadeTimer = null;
 window.addEventListener('scroll', ()=>{
   if(!curBook) return;
   updatePfill();
-  /* reader-app pattern: scrolling down hides the bars, tap or scroll-up brings them back */
-  const y = window.scrollY, dy = y - lastScrollY; lastScrollY = y;
-  if(!document.body.classList.contains('focusmode')){
-    if(y < 80 || dy < -8) document.body.classList.remove('chromehide');
-    else if(y > 160 && dy > 8) document.body.classList.add('chromehide');
-  }
+  document.body.classList.add('scrolling');
+  clearTimeout(fadeTimer);
+  fadeTimer = setTimeout(()=>document.body.classList.remove('scrolling'), 900);
   if(scrollTick) return;
   scrollTick = setTimeout(()=>{ scrollTick=null; saveReadingState(); }, 800);
 });
 
 document.getElementById('rtext').addEventListener('click', e=>{
   const span = e.target.closest('.w');
-  if(!span){
-    if(!document.body.classList.contains('focusmode'))
-      document.body.classList.toggle('chromehide');
-    return;
-  }
+  if(!span) return;
   const k = span.dataset.w;
   if(words[k]){
     if(words[k].status < 3) setStatus(k, words[k].status + 1);
@@ -1295,10 +1289,11 @@ function fontSize(d){ fs=Math.min(26,Math.max(14,fs+d)); save(LS_FS,fs); documen
 function toggleAa(e){
   if(e) e.stopPropagation();
   const p = document.getElementById('aa-pop');
-  const btn = document.getElementById('btn-aa');
+  const btn = document.getElementById('aafab');
   if(btn){
     const r = btn.getBoundingClientRect();
-    p.style.top = Math.round(r.bottom + 8) + 'px';
+    p.style.top = 'auto';
+    p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
     p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
   }
   p.classList.toggle('on');
@@ -1306,7 +1301,7 @@ function toggleAa(e){
 }
 document.addEventListener('click', e=>{
   const p = document.getElementById('aa-pop');
-  if(p.classList.contains('on') && !e.target.closest('#aa-pop') && !e.target.closest('#btn-aa'))
+  if(p.classList.contains('on') && !e.target.closest('#aa-pop') && !e.target.closest('#aafab'))
     p.classList.remove('on');
 });
 let darkMode = load('breeze.dark', false);
@@ -1329,7 +1324,6 @@ function toggleFocus(force){
   document.body.classList.toggle('focusmode', on);
   document.getElementById('fb-in').style.display = on ? 'none':'block';
   document.getElementById('fb-out').style.display = on ? 'block':'none';
-  if(on) document.body.classList.remove('chromehide');
   syncTopbarH();
 }
 let miniTimer;
@@ -1442,22 +1436,22 @@ async function doSync(manual){
     const { data: rows, error } = await sb.from('words').select('key,data').eq('user_id', uid);
     if(error) throw error;
     const server = {}; (rows||[]).forEach(r=>server[r.key]=r.data||{});
-    const pushes = [];
+    const pushes = []; let pulled = 0;
     const keys = new Set([...Object.keys(server), ...Object.keys(words), ...Object.keys(dead)]);
     for(const k of keys){
       const sv = server[k], lc = words[k], dt = dead[k]||0;
       const svUp = sv ? (sv.up||0) : -1;
       if(dt && dt >= svUp && dt >= upOf(lc)){          // deletion is the newest fact
         if(!sv || !sv.deleted) pushes.push({key:k, data:{deleted:true, up:dt}});
-        if(lc) delete words[k];
+        if(lc){ delete words[k]; pulled++; }
         continue;
       }
       if(sv && sv.deleted){                            // server says deleted
         if(lc && upOf(lc) > svUp) pushes.push({key:k, data:lc});   // local edit is newer -> revive
-        else if(lc){ delete words[k]; }
+        else if(lc){ delete words[k]; pulled++; }
         continue;
       }
-      if(sv && (!lc || svUp > upOf(lc))){ words[k] = sv; delete dead[k]; }
+      if(sv && (!lc || svUp > upOf(lc))){ words[k] = sv; delete dead[k]; pulled++; }
       else if(lc && (!sv || upOf(lc) > svUp)) pushes.push({key:k, data:lc});
     }
     if(pushes.length){
@@ -1472,17 +1466,14 @@ async function doSync(manual){
     for(const id of new Set([...Object.keys(pserver), ...Object.keys(positions)])){
       const sv = pserver[id], lc = positions[id] ? posOf(id) : null;
       const svT = sv ? (sv.t||0) : -1, lcT = lc ? (lc.t||0) : -1;
-      if(sv && svT > lcT) positions[id] = sv;
+      if(sv && svT > lcT){ positions[id] = sv; pulled++; }
       else if(lc && lcT > svT) ppush.push({user_id:uid, book_id:id, data:lc});
     }
     if(ppush.length) await sb.from('positions').upsert(ppush, {onConflict:'user_id,book_id'});
     saveWords(); save(LS_DEAD, dead); save(LS_POS, positions);
     lastSync = Date.now(); save('breeze.lastsync', lastSync);
     if(manual){ syncStatus('완료!'); renderSyncModal(); }
-    else {
-      const n = pushes.length + ppush.length;
-      miniToast(n ? `동기화됨 · ${n}건` : '동기화됨');
-    }
+    else if(pushes.length || ppush.length || pulled) miniToast('Auto-synced');
     if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
     if(document.getElementById('v-home').classList.contains('on')) renderHome();
   }catch(e){
@@ -1509,6 +1500,26 @@ document.addEventListener('visibilitychange', ()=>{
 });
 /* periodic auto-sync (3분마다, 로그인 상태 + 화면 보이는 동안만) */
 setInterval(()=>{ if(sb && sbUser && !document.hidden) doSync(false); }, 3*60*1000);
+
+/* bottom sheet: never let scrolling inside the sheet move the page behind it */
+(function(){
+  const panel = document.getElementById('panel');
+  const bg = document.getElementById('sheetbg');
+  const isSheet = () => window.matchMedia('(max-width:760px)').matches
+                     && panel.classList.contains('on');
+  let ty = 0;
+  panel.addEventListener('touchstart', e=>{ ty = e.touches[0].clientY; }, {passive:true});
+  panel.addEventListener('touchmove', e=>{
+    if(!isSheet()) return;
+    const dy = e.touches[0].clientY - ty;          // >0 = dragging down (content scrolls up)
+    const canScroll = panel.scrollHeight > panel.clientHeight + 1;
+    if(!canScroll){ e.preventDefault(); return; }  // nothing to scroll -> don't pass it on
+    const atTop = panel.scrollTop <= 0;
+    const atBottom = panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 1;
+    if((atTop && dy > 0) || (atBottom && dy < 0)) e.preventDefault();
+  }, {passive:false});
+  bg.addEventListener('touchmove', e=>{ if(isSheet()) e.preventDefault(); }, {passive:false});
+})();
 
 /* bottom sheet: drag handle to dismiss */
 (function(){
