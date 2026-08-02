@@ -176,6 +176,15 @@
   body.dark #focusbtn{background:rgba(31,35,39,.9); border-color:#2A2E33;}
   body.dark .aa-size button{color:var(--ink);}
   body.dark #splash{background:#16181B;}
+  /* 다크 모드에서 밝은 배경 위에 밝은 글자가 놓이던 두 곳 */
+  body.dark .sm-btn.ghost{background:#262A2F; color:var(--ink);}
+  body.dark .sm-btn.ghost:hover{background:#2E3339;}
+  body.dark #p-ai{background:linear-gradient(135deg,#1D2E36,#1B2A22); border-color:#2F4650;}
+  body.dark #p-ai .m{color:#EAF4F8;}
+  body.dark #p-ai .note{color:#AFC3CB;}
+  body.dark #p-ai .cap{color:#6FC3E6;}
+  body.dark #p-airetry{color:#9AA1A8;}
+  body.dark #p-airetry:hover{color:#6FC3E6;}
   body.dark .navbtn:hover{background:#22262B;}
   body.dark .iconbtn:hover{background:#22262B;}
   /* focus mode: chrome disappears, only text remains */
@@ -384,6 +393,9 @@
     font-size:11.5px; cursor:pointer; color:var(--blue); font-family:var(--ui); flex-shrink:0;}
   .sm-book .act:hover{background:var(--sky);}
   .sm-book .done{color:var(--soft); font-size:11.5px; flex-shrink:0;}
+  .sm-book .act.del{color:var(--soft); padding:4px 8px;}
+  .sm-book .act.del:hover{background:#FBEDEA; color:#B0483A; border-color:#EBD5CF;}
+  body.dark .sm-book .act.del:hover{background:#3A2724; color:#E8837A; border-color:#4A322E;}
   #sm-status{font-size:13px; color:var(--soft); text-align:center; min-height:18px; margin-top:4px;}
   #sm-codewrap{display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);}
   #sm-code{width:100%; border:1px solid var(--line); border-radius:12px; padding:13px 14px; font-size:23px;
@@ -463,7 +475,7 @@
   <div id="bigq">Where shall we read?</div>
   <div id="hero"></div>
   <div id="newhead">Start somewhere new</div>
-  <div id="newsub">내 파일(PDF·EPUB·TXT)을 끌어다 놓거나 + 카드를 눌러 추가하세요.</div>
+  <div id="newsub">내 파일(PDF·EPUB·TXT)을 끌어다 놓거나 + 카드를 눌러 추가하세요. 책을 꾹 누르면 이름을 바꿀 수 있어요.</div>
   <div id="shelf"></div>
   <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
 </div>
@@ -618,6 +630,17 @@ async function imgPut(id, blob){ const db=await idb(); return new Promise((res,r
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(blob,id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 async function imgGet(id){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('imgs').objectStore('imgs').get(id); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function imgRename(oldPrefix, newPrefix){
+  try{
+    const db=await idb();
+    const st=db.transaction('imgs','readwrite').objectStore('imgs');
+    const rq=st.getAllKeys();
+    rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(oldPrefix+'|')).forEach(k=>{
+      const g=st.get(k);
+      g.onsuccess=()=>{ if(g.result!==undefined){ st.put(g.result, String(k).replace(oldPrefix, newPrefix)); st.delete(k); } };
+    });
+  }catch(e){}
+}
 async function imgPurge(prefix){ try{ const db=await idb();
   const st=db.transaction('imgs','readwrite').objectStore('imgs');
   const rq=st.getAllKeys(); rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(prefix)).forEach(k=>st.delete(k)); }catch(e){} }
@@ -747,6 +770,52 @@ function greet(){
   const h = new Date().getHours();
   return h<5 ? 'GOOD NIGHT' : h<12 ? 'GOOD MORNING' : h<18 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
 }
+/* 꾹 누르면(약 0.55초) 이름 바꾸기. 손가락이 움직이면(스크롤) 취소됩니다. */
+function attachLongPress(el, fn){
+  let timer = null, sx = 0, sy = 0, fired = false;
+  const start = e => {
+    fired = false;
+    const p = e.touches ? e.touches[0] : e;
+    sx = p.clientX; sy = p.clientY;
+    timer = setTimeout(()=>{ fired = true; fn(); }, 550);
+  };
+  const move = e => {
+    if(!timer) return;
+    const p = e.touches ? e.touches[0] : e;
+    if(Math.abs(p.clientX-sx) > 10 || Math.abs(p.clientY-sy) > 10) cancel();
+  };
+  const cancel = ()=>{ clearTimeout(timer); timer = null; };
+  el.addEventListener('touchstart', start, {passive:true});
+  el.addEventListener('touchmove', move, {passive:true});
+  el.addEventListener('touchend', cancel);
+  el.addEventListener('touchcancel', cancel);
+  el.addEventListener('mousedown', start);
+  el.addEventListener('mousemove', move);
+  el.addEventListener('mouseup', cancel);
+  el.addEventListener('mouseleave', cancel);
+  el.addEventListener('contextmenu', e=>e.preventDefault());
+  return ()=>fired;      // 클릭 처리에서 "길게 눌렀던 건 무시"에 사용
+}
+async function renameBook(b){
+  if(b.builtin){ toast('샘플 책은 이름을 바꿀 수 없어요'); return; }
+  const typed = prompt('책 이름', b.title);
+  if(typed === null) return;
+  const t = typed.trim();
+  if(!t || t === b.title) return;
+  b.title = t;
+  await bookPut(b);
+  renderHome();
+  toast('이름을 바꿨어요');
+  // 서버에 이미 올라간 책이면 목록의 이름도 함께 갱신
+  if(sb && sbUser){
+    try{
+      const { data } = await sb.from('books').select('meta').eq('user_id', sbUser.id).eq('book_id', b.id).maybeSingle();
+      if(data) await sb.from('books').upsert([{user_id:sbUser.id, book_id:b.id, meta:{...(data.meta||{}), title:t}}],
+                                             {onConflict:'user_id,book_id'});
+    }catch(e){}
+  }
+}
+
 function renderHome(){
   document.getElementById('greet').textContent = greet();
   const list = allBooks();
@@ -771,7 +840,8 @@ function renderHome(){
     </div>`;
   H.querySelector('.ct').textContent = hero.title.toUpperCase();
   H.querySelector('.bt').textContent = hero.title;
-  H.onclick = () => openBook(hero);
+  const heroPressed = attachLongPress(H, ()=>renameBook(hero));
+  H.onclick = () => { if(heroPressed()) return; openBook(hero); };
   // shelf: the rest + add card
   const s = document.getElementById('shelf');
   s.innerHTML = '';
@@ -787,7 +857,8 @@ function renderHome(){
       ${b.builtin?'':'<button class="del" title="삭제">✕</button>'}`;
     card.querySelector('.author').textContent = b.author || (b.builtin?'SAMPLE':'MY BOOK');
     card.querySelector('.bt').textContent = b.title;
-    card.onclick = e => { if(e.target.classList.contains('del')) return; openBook(b); };
+    const pressed = attachLongPress(card, ()=>renameBook(b));
+    card.onclick = e => { if(e.target.classList.contains('del') || pressed()) return; openBook(b); };
     const del = card.querySelector('.del');
     if(del) del.onclick = () => {
       if(!confirm(`"${b.title}" 책을 삭제할까요? (단어장은 유지돼요)`)) return;
@@ -815,19 +886,46 @@ window.addEventListener('drop', e=>{
   const f = e.dataTransfer.files[0]; if(f) importFile(f);
 });
 
+/* 책 ID를 "반입한 시각"이 아니라 "내용"으로 만든다.
+   같은 파일이면 어느 기기에서 넣어도 같은 ID → 중복이 생기지 않음.
+   계산은 전부 기기 안에서 하고, 서버로 가는 건 짧은 문자열 하나뿐입니다. */
+function bookHash(paras){
+  const head = paras.slice(0, 40).join(' ');
+  const tail = paras.slice(-10).join(' ');
+  const norm = (head + '||' + tail).toLowerCase().replace(/\s+/g,' ').slice(0, 4000);
+  let h1 = 0x811c9dc5, h2 = 0x9e3779b9;
+  for(let i=0;i<norm.length;i++){
+    const c = norm.charCodeAt(i);
+    h1 = Math.imul((h1 ^ c) >>> 0, 0x01000193) >>> 0;
+    h2 = Math.imul((h2 + c * (i+1)) >>> 0, 0x85ebca6b) >>> 0;
+  }
+  const total = paras.reduce((a,p)=>a+p.length, 0);
+  return 'b' + h1.toString(36) + h2.toString(36) + (total % 1000000).toString(36);
+}
+const normTitle = t => String(t||'').toLowerCase().replace(/[\s._-]+/g,' ').trim();
+
 async function importFile(f){
   if(!/\.(pdf|epub|txt)$/i.test(f.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
   toast('텍스트 추출 중…');
   const name = f.name.replace(/\.(pdf|epub|txt)$/i,'').replace(/[-_]+/g,' ').trim();
   try{
-    const id = 'b'+Date.now();
+    const tmpId = 'tmp'+Date.now();
     let paras;
     if(/\.pdf$/i.test(f.name)) paras = await parsePDF(f);
-    else if(/\.epub$/i.test(f.name)) paras = await parseEPUB(f, id);
+    else if(/\.epub$/i.test(f.name)) paras = await parseEPUB(f, tmpId);
     else paras = parseTXT(await f.text());
     paras = paras.map(p=>p.startsWith(IMG_MARK)?p:p.trim()).filter(p=>p.length>0);
     if(paras.length===0){ toast('텍스트를 찾지 못했어요 (스캔 이미지 PDF일 수 있어요)'); return; }
-    const book = {id, title:name, paras, addedAt:Date.now()};
+    const id = bookHash(paras);                       // 내용으로 ID 결정
+    const already = books.find(b=>b.id===id);
+    if(already){ toast(`이미 있는 책이에요 — "${already.title}"`); return; }
+    const typed = prompt('책 이름을 확인해 주세요', name);   // 반입할 때 이름 수정
+    if(typed === null) { toast('취소했어요'); return; }
+    const title = typed.trim() || name;
+    // EPUB 삽화는 임시 ID로 저장돼 있으므로 실제 ID로 표시를 바꿔 줍니다
+    paras = paras.map(p => p.startsWith(IMG_MARK) ? p.replace(tmpId, id) : p);
+    await imgRename(tmpId, id);
+    const book = {id, title, paras, addedAt:Date.now()};
     await bookPut(book); books.unshift(book);
     renderHome(); toast('추가 완료! 카드를 눌러 읽기 시작하세요');
   }catch(err){ console.error(err); toast('파일을 읽지 못했어요: '+err.message); }
@@ -1730,23 +1828,41 @@ function renderBookList(){
   });
   if(!rows.length){ el.innerHTML = '<div class="sm-dim">책이 없어요</div>'; return; }
   el.innerHTML = rows.map(r=>`
-    <div class="sm-book" data-id="${esc(r.id)}">
+    <div class="sm-book" data-id="${esc(r.id)}" data-title="${esc(r.title)}">
       <span class="t">${esc(r.title)}</span>
       ${r.where==='local'  ? '<button class="act" data-a="up">올리기</button>' : ''}
       ${r.where==='server' ? '<button class="act" data-a="down">이 기기에 받기</button>' : ''}
       ${r.where==='both'   ? '<span class="done">✓ 동기화됨</span>' : ''}
+      ${r.where!=='local'  ? '<button class="act del" data-a="rm" title="서버에서 지우기">✕</button>' : ''}
     </div>`).join('');
   el.querySelectorAll('.act').forEach(btn=>{
     btn.onclick = ()=>{
-      const id = btn.closest('.sm-book').dataset.id;
+      const row = btn.closest('.sm-book');
+      const id = row.dataset.id, title = row.dataset.title;
+      const job = btn.dataset.a==='up'   ? bookUpload(id)
+                : btn.dataset.a==='down' ? bookDownload(id)
+                :                          bookDeleteServer(id, title);
       btn.disabled = true;
-      (btn.dataset.a==='up' ? bookUpload(id) : bookDownload(id)).finally(()=>{ btn.disabled=false; });
+      Promise.resolve(job).finally(()=>{ btn.disabled=false; });
     };
   });
 }
 const bookPath = id => `${sbUser.id}/${id}.json`;
+async function bookDeleteServer(id, title){
+  if(!confirm(`서버에서 "${title}"을(를) 지울까요?\n\n이 기기에 있는 책은 그대로 남습니다.`)) return;
+  try{
+    syncStatus('지우는 중…');
+    await sb.storage.from('books').remove([bookPath(id)]);
+    const { error } = await sb.from('books').delete().eq('user_id', sbUser.id).eq('book_id', id);
+    if(error) throw error;
+    syncStatus('지웠어요');
+    await refreshBooks();
+  }catch(e){ console.error(e); syncStatus('삭제 실패: '+(e.message||e)); }
+}
 async function bookUpload(id){
   const b = books.find(x=>x.id===id); if(!b) return;
+  const twin = (serverBooks||[]).find(r => r.book_id !== id && normTitle((r.meta||{}).title) === normTitle(b.title));
+  if(twin && !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`)) return;
   try{
     syncStatus('올리는 중…');
     const blob = new Blob([JSON.stringify({paras:b.paras})], {type:'application/json'});
