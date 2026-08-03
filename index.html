@@ -796,6 +796,28 @@ function attachLongPress(el, fn){
   el.addEventListener('contextmenu', e=>e.preventDefault());
   return ()=>fired;      // 클릭 처리에서 "길게 눌렀던 건 무시"에 사용
 }
+/* 책 삭제 — 기기와 서버를 함께 지웁니다.
+   "여기서만 지우고 서버엔 남기고 싶다"는 경우가 사실상 없어서 하나로 합쳤습니다. */
+async function deleteBook(b){
+  if(b.builtin) return;
+  if(!confirm(`"${b.title}" 책을 삭제할까요?\n\n동기화한 경우 다른 기기에서도 삭제됩니다.\n(단어장은 그대로 남습니다)`)) return;
+  books = books.filter(x=>x.id!==b.id);
+  await bookDel(b.id);
+  imgPurge(b.id+'|');
+  delete positions[b.id]; save(LS_POS, positions);
+  renderHome();
+  if(sb && sbUser){
+    try{
+      await sb.storage.from('books').remove([bookPath(b.id)]);
+      const { error } = await sb.from('books').delete().eq('user_id', sbUser.id).eq('book_id', b.id);
+      if(error) throw error;
+      if(serverBooks) serverBooks = serverBooks.filter(r => r.book_id !== b.id);
+      renderBookList();
+    }catch(e){ console.error(e); toast('기기에서는 지웠지만 서버에서 지우지 못했어요'); return; }
+  }
+  toast('삭제했어요');
+}
+
 async function renameBook(b){
   if(b.builtin){ toast('샘플 책은 이름을 바꿀 수 없어요'); return; }
   const typed = prompt('책 이름', b.title);
@@ -803,6 +825,7 @@ async function renameBook(b){
   const t = typed.trim();
   if(!t || t === b.title) return;
   b.title = t;
+  b.renamedAt = Date.now();            // 어느 쪽 이름이 최신인지 판단하는 기준
   await bookPut(b);
   renderHome();
   toast('이름을 바꿨어요');
@@ -810,8 +833,9 @@ async function renameBook(b){
   if(sb && sbUser){
     try{
       const { data } = await sb.from('books').select('meta').eq('user_id', sbUser.id).eq('book_id', b.id).maybeSingle();
-      if(data) await sb.from('books').upsert([{user_id:sbUser.id, book_id:b.id, meta:{...(data.meta||{}), title:t}}],
-                                             {onConflict:'user_id,book_id'});
+      if(data) await sb.from('books').upsert(
+        [{user_id:sbUser.id, book_id:b.id, meta:{...(data.meta||{}), title:t, renamedAt:b.renamedAt}}],
+        {onConflict:'user_id,book_id'});
     }catch(e){}
   }
 }
@@ -860,10 +884,7 @@ function renderHome(){
     const pressed = attachLongPress(card, ()=>renameBook(b));
     card.onclick = e => { if(e.target.classList.contains('del') || pressed()) return; openBook(b); };
     const del = card.querySelector('.del');
-    if(del) del.onclick = () => {
-      if(!confirm(`"${b.title}" 책을 삭제할까요? (단어장은 유지돼요)`)) return;
-      books = books.filter(x=>x.id!==b.id); bookDel(b.id); imgPurge(b.id+'|'); renderHome();
-    };
+    if(del) del.onclick = () => deleteBook(b);
     s.appendChild(card);
   });
   const add = document.createElement('div');
@@ -1869,7 +1890,7 @@ async function bookUpload(id){
     const up = await sb.storage.from('books').upload(bookPath(id), blob, {upsert:true, contentType:'application/json'});
     if(up.error) throw up.error;
     const meta = { title:b.title, author:b.author||'', addedAt:b.addedAt||Date.now(),
-                   paras:b.paras.length, bytes:blob.size };
+                   renamedAt:b.renamedAt||0, paras:b.paras.length, bytes:blob.size };
     const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:id, meta}], {onConflict:'user_id,book_id'});
     if(error) throw error;
     syncStatus('올렸어요');
@@ -1943,6 +1964,22 @@ async function doSync(manual){
       else if(lc && lcT > svT) ppush.push({user_id:uid, book_id:id, data:lc});
     }
     if(ppush.length) await sb.from('positions').upsert(ppush, {onConflict:'user_id,book_id'});
+
+    /* ---- 책 이름만 동기화 (본문은 수동 그대로) ----
+       제목은 몇 바이트라 자동으로 오가도 부담이 없고, 한쪽에서 바꾼 이름이 다른 기기에도 반영됩니다.
+       books 표가 아직 없는 계정(supabase_books.sql 미실행)에서도 단어 동기화가 멈추지 않도록 따로 감쌉니다. */
+    try{
+      const { data: brows } = await sb.from('books').select('book_id,meta').eq('user_id', uid);
+      for(const r of (brows||[])){
+        const lc = books.find(b => b.id === r.book_id);
+        const meta = r.meta || {};
+        if(!lc || !meta.title || meta.title === lc.title) continue;
+        if((meta.renamedAt||0) >= (lc.renamedAt||0)){      // 더 최근에 바꾼 이름이 이김
+          lc.title = meta.title; lc.renamedAt = meta.renamedAt || Date.now();
+          await bookPut(lc); pulled++;
+        }
+      }
+    }catch(e){ console.warn('book title sync skipped:', e && e.message); }
     saveWords(); save(LS_DEAD, dead); save(LS_POS, positions);
     lastSync = Date.now(); save('breeze.lastsync', lastSync);
     if(manual){ syncStatus('완료!'); renderSyncModal(); }
