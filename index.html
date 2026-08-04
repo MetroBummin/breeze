@@ -219,11 +219,23 @@
      이 속성을 모르는 구형 브라우저를 위해 아래 JS에서 한 번 더 막아 둡니다. */
   #toc-list{overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:6px 0 12px;}
   #toc-sheet{overscroll-behavior:contain;}
-  .toc-i{display:block; width:100%; text-align:left; border:none; background:none; cursor:pointer;
-    padding:11px 20px; font-size:14px; color:var(--ink); font-family:var(--serif); line-height:1.5;}
+  .toc-i{display:flex; align-items:baseline; gap:9px; width:100%; text-align:left; border:none;
+    background:none; cursor:pointer; padding:11px 18px; font-size:14.5px; color:var(--ink);
+    font-family:var(--serif); line-height:1.45;}
   .toc-i:hover{background:var(--sky);}
-  .toc-i.l2{padding-left:38px; font-size:13px; color:var(--soft);}
-  .toc-i.here{color:var(--blue); font-weight:600;}
+  .toc-i .tt{flex:1; min-width:0;}
+  .toc-i .tt small{display:block; font-size:11.5px; color:var(--soft2); font-family:var(--ui);
+    margin-top:3px; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .toc-i .tm{flex:none; font-size:11.5px; color:var(--soft2); font-family:var(--ui);}
+  .toc-i .tw{flex:none; width:14px; text-align:center; color:var(--soft2); font-family:var(--ui);
+    font-size:13px; transition:transform .15s; align-self:center;}
+  .toc-i .tw.open{transform:rotate(90deg);}
+  .toc-i .tw.off{color:transparent;}
+  .toc-i.l2{padding-left:41px; font-size:13.5px; color:var(--soft);}
+  .toc-i.l3{padding-left:60px; font-size:12.5px; color:var(--soft2);}
+  .toc-i.here{color:var(--blue);}
+  .toc-i.here .tt{font-weight:600;}
+  .toc-i.l1{font-weight:500;}
   #toc-empty{padding:34px 20px; text-align:center; color:var(--soft); font-size:13.5px; line-height:1.8;}
   #aa-tidy-row{display:none; padding:12px 20px; border-bottom:1px solid var(--line); gap:12px;
     align-items:center; background:var(--sky); flex:none;}
@@ -262,7 +274,29 @@
   #rhint svg{flex-shrink:0;}
   #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;}
   #rtext p{margin-bottom:1.2em;}
-  #rtext h3{font-size:1.16em; margin:1.6em 0 .9em; color:var(--ink);}
+  /* 부 · 장 · 절 — 위계가 눈에 보여야 종이책처럼 읽힙니다 */
+  #rtext h2{font-size:1.62em; font-weight:600; letter-spacing:-.5px; line-height:1.35;
+    margin:2.2em 0 1.5em; padding-bottom:.5em; border-bottom:1px solid var(--line);
+    color:var(--ink); text-align:center;}
+  #rtext h3{font-size:1.24em; font-weight:600; margin:2em 0 1em; color:var(--ink); line-height:1.4;}
+  #rtext h4{font-size:1.02em; font-weight:700; margin:1.7em 0 .7em; color:var(--ink);
+    letter-spacing:.01em;}
+  #rtext h2:first-child, #rtext h3:first-child, #rtext h4:first-child{margin-top:.2em;}
+  /* 인용문 · 편지 — 본문에서 한 발 물러나게 */
+  #rtext .blk{margin:1.6em 0; }
+  #rtext .blk.quote{padding:.2em 0 .2em 1.2em; border-left:3px solid var(--line2);}
+  #rtext .blk.quote p{font-size:.95em; color:var(--soft); font-style:italic; margin-bottom:.8em;}
+  #rtext .blk.quote p:last-child{margin-bottom:0;}
+  /* 활동 상자 · 역주 — 원서에서 테두리 상자로 조판되던 것 */
+  #rtext .blk.note{background:var(--sky2); border:1px solid var(--line2); border-radius:14px;
+    padding:18px 20px;}
+  #rtext .blk.note p{font-size:.93em; margin-bottom:.7em; color:var(--ink-body);}
+  #rtext .blk.note p:last-child{margin-bottom:0;}
+  #rtext .blk.note p:first-child{font-weight:700; font-family:var(--ui); font-size:.86em;
+    letter-spacing:.02em; color:var(--chiptx); margin-bottom:.9em;}
+  body.dark #rtext .blk.note{background:#1E272B; border-color:#2F3A40;}
+  body.dark #rtext .blk.quote{border-left-color:#3A424A;}
+  @media(max-width:760px){ #rtext .blk.note{padding:15px 16px;} }
   .page{background:#FFFEFA; border:1px solid #EDEAE0; border-radius:20px; padding:40px 44px; overflow:hidden;
     box-shadow:0 3px 16px rgba(60,50,30,.05);}
   .pageno{text-align:center; color:#B9B09E; font-size:12px; margin:18px 0 26px; font-family:var(--serif); user-select:none;}
@@ -355,9 +389,16 @@
   #p-naver{display:inline-block; margin-top:10px; font-size:12.5px; color:var(--blue); text-decoration:none;
     border:1px solid var(--line); border-radius:16px; padding:6px 12px;}
   #p-naver:hover{background:var(--sky);}
-  #p-know{display:block; margin:22px auto 0; border:none; background:none; color:#6C858D; font-size:14px;
-    cursor:pointer; font-family:var(--ui); text-decoration:underline; text-underline-offset:3px;}
-  #p-know:hover{color:#c0392b;}
+  /* 아는 단어를 빼는 건 학습 루프의 핵심 동작이라 버튼처럼 보여야 합니다.
+     다만 지우는 동작이라 강한 색 대신 테두리만 씁니다. */
+  #p-know{display:flex; align-items:center; justify-content:center; gap:7px;
+    width:100%; margin:24px 0 4px; padding:13px 16px; font-size:14px; font-family:var(--ui);
+    border:1.5px solid var(--line2); border-radius:14px; background:var(--paper2);
+    color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s;}
+  #p-know .ck{width:17px; height:17px; flex:none; color:var(--chiptx);}
+  #p-know:hover{border-color:var(--blue); background:var(--sky);}
+  body.dark #p-know{background:#22262B; border-color:#343A41; color:var(--ink);}
+  body.dark #p-know:hover{border-color:var(--blue); background:#22333C;}
 
   /* mobile: bottom sheet */
   @media (max-width:760px){
@@ -567,7 +608,7 @@
       </div>
       <div id="p-ko" contenteditable="true" spellcheck="false"></div>
       <div id="p-ko-hint">직접 고치거나, 아래 칩을 눌러 한 번에 바꿀 수 있어요</div>
-      <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI read it</span></button>
+      <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI handle this</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec">여러 뜻 중 고르기<span id="p-src"></span></div>
       <div id="p-kodict"></div>
@@ -584,7 +625,9 @@
       <div class="p-sec">저장된 예문</div>
       <div id="p-ex"></div>
       <a id="p-naver" target="_blank" rel="noopener">네이버 사전에서 보기 ↗</a>
-      <button id="p-know">I know this word — 단어장에서 빼기</button>
+      <button id="p-know"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        I know this word — 단어장에서 빼기</button>
     </div>
   </div>
 </div>
@@ -1485,12 +1528,14 @@ const LS_TIDYOFF = 'breeze.tidyoff';
 let tidyOff = load(LS_TIDYOFF, {});       // { 책ID: true } — 이 책은 AI 정리를 끔
 function tidyActive(b){ return !!(b && b.tidy && !tidyOff[b.id]); }
 
-/* 서버로 보낼 한 줄. 긴 문단은 본문이므로 앞부분을 아예 안 보냅니다.
-   글자 수만으로도 "이 짧은 줄 앞뒤가 본문인가"를 판단할 수 있고, 토큰도 절반으로 줄어듭니다. */
-const TIDY_TEXT_MAX = 120;      // 이보다 긴 문단은 본문으로 보고 글자를 안 보냄
+/* 서버로 보낼 한 줄. 짧은 문단은 통째로, 긴 문단은 앞부분만 보냅니다.
+   AI가 "이게 인용문인지 활동 상자인지 대사인지"를 가리려면 글자를 봐야 합니다.
+   긴 문단은 어차피 본문이라 앞부분만으로 충분하고, 글자 수로 원래 길이를 알 수 있습니다. */
+const TIDY_FULL_MAX = 240;      // 이보다 짧으면 통째로 보냄
+const TIDY_HEAD_LEN = 100;      // 긴 문단은 앞부분만
 function tidyItem(paras, i){
   const p = paras[i];
-  return { i:i, n:p.length, t: p.length <= TIDY_TEXT_MAX ? p.slice(0,60) : '' };
+  return { i:i, n:p.length, t: p.length <= TIDY_FULL_MAX ? p : p.slice(0, TIDY_HEAD_LEN) };
 }
 const NUMWORD = 'one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen'
               + '|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|\\d{1,2}';
@@ -1557,61 +1602,82 @@ async function runTidy(paras, title, onStep){
     }
   }
 
-  /* 2) 소제목 판정 — 걸러내지 않고 본문 전체를 순서대로 보냅니다.
+  /* 2) 구조 판정 — 걸러내지 않고 본문 전체를 순서대로 보냅니다.
         앞뒤가 본문인지 보이지 않으면 대사와 제목을 구별할 수 없기 때문입니다. */
   const body = idx.filter(function(i){ return i >= start; });
-  const lv = {}, span = {};
+  const raw = [];
   const step = TIDY_BATCH - TIDY_OVERLAP;
   const batches = Math.min(TIDY_MAX_BATCH, Math.max(1, Math.ceil(body.length / step)));
   for(let b=0; b<batches; b++){
     const part = body.slice(b*step, b*step + TIDY_BATCH).map(function(i){ return tidyItem(paras, i); });
     if(!part.length) break;
-    if(onStep) onStep('소제목을 고르는 중… ' + (b+1) + '/' + batches);
-    const h = await tidyCall('heads', part, title);
-    (h.heads||[]).forEach(function(x){
-      lv[x.i] = x.l;
-      if(x.n > 1) span[x.i] = x.n;
-    });
+    if(onStep) onStep('책 구조를 읽는 중… ' + (b+1) + '/' + batches);
+    const h = await tidyCall('blocks', part, title);
+    (h.blocks||[]).forEach(function(x){ raw.push(x); });
   }
 
-  /* 3) 쪼개진 제목을 합치고, 책의 목차와 맞춰 진짜 제목을 찾습니다 */
-  const built = tidyBuildToc(paras, lv, span, bookToc, start);
-  return { start:start, why:f.why||'', heads:built.heads, toc:built.toc,
+  const built = tidyBuildToc(paras, raw, bookToc, start);
+  return { start:start, why:f.why||'', heads:built.heads, blocks:built.blocks,
+           drop:built.drop, toc:built.toc, levels:built.levels,
            title:f.title||'', author:f.author||'', at:Date.now() };
 }
 
-/* lv/span(AI 판정) → 화면용 heads + 목차 목록.
+/* AI가 준 블록 목록 → 화면용 지도 + 목차.
    제목 글자는 언제나 본문에서 그대로 이어 붙여 만듭니다. AI가 지어낼 여지가 없습니다. */
-function tidyBuildToc(paras, lv, span, bookToc, start){
-  const keys = Object.keys(lv).map(Number).sort(function(a,b){ return a-b; });
-  const heads = {}, toc = [];
-  const eaten = {};
-  keys.forEach(function(i){
-    if(eaten[i]) return;
-    let n = Math.min(3, span[i] || 1);
-    while(n > 1 && i + n - 1 >= paras.length) n--;
+function tidyBuildToc(paras, raw, bookToc, start){
+  /* 겹치는 블록은 먼저 온 것이 이깁니다(번호 오름차순 → 넓은 것 순) */
+  const items = raw.slice().sort(function(a,b){ return a.i - b.i || (b.n||1) - (a.n||1); });
+  const taken = {};
+  const heads = {}, blocks = {}, drop = {}, toc = [];
+
+  items.forEach(function(x){
+    const i = x.i;
+    if(paras[i] === undefined || taken[i]) return;
+    const cap = x.k === 'head' ? 3 : 10;
+    let n = Math.max(1, Math.min(cap, x.n || 1));
+    while(n > 1 && (paras[i+n-1] === undefined || taken[i+n-1])) n--;
     let t = '';
-    for(let k=0; k<n; k++){
-      const p = paras[i+k];
+    for(let d=0; d<n; d++){
+      const p = paras[i+d];
       if(p === undefined || p.startsWith(IMG_MARK)) break;
-      if(k) eaten[i+k] = 1;
-      heads[i+k] = lv[i];                      // 화면에서는 모두 소제목으로 그립니다
-      t += (t ? ' ' : '') + p;
+      taken[i+d] = 1;
+      if(x.k === 'head'){ heads[i+d] = x.l || 2; t += (t ? ' ' : '') + p; }
+      else if(x.k === 'drop') drop[i+d] = 1;
+      else blocks[i+d] = { k:x.k, first:d===0, last:d===n-1 };
     }
-    if(!heads[i]) heads[i] = lv[i];
-    toc.push({ pi:i, t:t.trim(), l:lv[i] });
+    if(x.k === 'head' && t) toc.push({ pi:i, t:t.trim(), l:x.l || 2 });
   });
-  const list = toc.filter(function(x){ return !eaten[x.pi]; });
-  /* 책의 목차와 대조 — 순서를 지키며 한 항목당 한 번만 씁니다 */
+
+  /* 책이 적어 둔 목차와 대조 — 순서를 지키며 한 항목당 한 번만 씁니다.
+     여기서 맞아떨어진 것은 "확실한 장"이므로 나중에 위계를 정할 때 기준이 됩니다. */
   if(bookToc && bookToc.length){
     let cursor = 0;
-    list.forEach(function(x){
-      if(x.l !== 1) return;
+    toc.forEach(function(x){
+      if(x.l > 2) return;                       // 소제목까지 목차 페이지와 맞추지는 않습니다
       const at = bestTocMatch(x.t, bookToc, cursor);
-      if(at >= 0){ x.t = bookToc[at]; cursor = at + 1; }
+      if(at >= 0){ x.t = bookToc[at]; x.sure = true; cursor = at + 1; }
     });
   }
-  return { heads:heads, toc:list };
+
+  /* 위계 정규화 — 부(Part)가 없는 책은 장이 1단계가 되어야 합니다.
+     안 그러면 목차 전체가 한 칸씩 들여쓰기된 채로 나옵니다. */
+  const used = {};
+  toc.forEach(function(x){ used[x.l] = 1; });
+  const present = Object.keys(used).map(Number).sort(function(a,b){ return a-b; });
+  const rank = {};
+  present.forEach(function(l, n){ rank[l] = n + 1; });
+  toc.forEach(function(x){ x.l = rank[x.l]; });
+  Object.keys(heads).forEach(function(pi){ heads[pi] = rank[heads[pi]] || heads[pi]; });
+
+  /* 책 목차와 맞은 항목이 있으면 그것들이 진짜 장입니다.
+     맞은 것보다 아래 단계로 매겨진 게 있으면 한 칸 내려 위계를 바로잡습니다. */
+  let sureLv = 0;
+  toc.forEach(function(x){ if(x.sure && (!sureLv || x.l < sureLv)) sureLv = x.l; });
+  if(sureLv){
+    toc.forEach(function(x){ if(!x.sure && x.l <= sureLv) x.l = sureLv + 1; });
+  }
+  toc.forEach(function(x){ if(x.l > 3) x.l = 3; });
+  return { heads:heads, blocks:blocks, drop:drop, toc:toc, levels:present.length };
 }
 
 /* 지금 보고 있는 책을 정리합니다 (Aa 설정 → 정리하기) */
@@ -1674,15 +1740,39 @@ function buildToc(b){
   /* AI 정리를 했으면 그때 만들어 둔 목록을 씁니다.
      "짧고 대문자로 시작하면 소제목" 같은 규칙은 목차로 쓰기엔 너무 지저분합니다
      (판권지·인명·대사가 줄줄이 섞여 들어옵니다). 그래서 규칙 추측은 목차에 안 씁니다. */
-  if(T && T.toc) return T.toc.filter(function(x){ return x.pi >= T.start && b.paras[x.pi] !== undefined; });
-  /* AI 정리 전이라도, 드롭캡으로 장이 확실히 잡히는 책은 그것만 보여 줍니다 */
-  const out = [];
-  let n = 0;
-  (b.chapters || []).forEach(function(pi){
-    if(T && pi < T.start) return;
-    const p = b.paras[pi];
-    if(p === undefined || p.startsWith(IMG_MARK)) return;
-    out.push({ pi:pi, l:1, t: (++n) + '장 · ' + p.slice(0,44).replace(/\s+\S*$/,'') + '…' });
+  let out;
+  if(T && T.toc){
+    out = T.toc.filter(function(x){ return x.pi >= T.start && b.paras[x.pi] !== undefined; })
+               .map(function(x){ return { pi:x.pi, t:x.t, l:x.l, sure:x.sure }; });
+  }else{
+    /* AI 정리 전이라도 드롭캡으로 장이 확실히 잡히는 책은 그것만 보여 줍니다.
+       제목 글자가 없으므로 지어내지 않고 "Chapter N"으로 둡니다. */
+    out = [];
+    let n = 0;
+    (b.chapters || []).forEach(function(pi){
+      if(T && pi < T.start) return;
+      const p = b.paras[pi];
+      if(p === undefined || p.startsWith(IMG_MARK)) return;
+      out.push({ pi:pi, l:1, t:'Chapter ' + (++n),
+                 hint: p.slice(0,52).replace(/\s+\S*$/,'') + '…' });
+    });
+  }
+  /* 항목마다 "여기부터 다음 항목까지 몇 분" — 한 장만 읽고 자기 같은 판단에 쓰입니다 */
+  const stops = out.map(function(x){ return x.pi; });
+  stops.push(b.paras.length);
+  const top = out.length ? Math.min.apply(null, out.map(function(x){ return x.l; })) : 1;
+  out.forEach(function(x, i){
+    if(x.l !== top) return;                       // 최상위 단계에만 붙입니다
+    let next = b.paras.length;
+    for(let j=i+1; j<out.length; j++){ if(out[j].l === top){ next = out[j].pi; break; } }
+    let words = 0;
+    for(let pi=x.pi; pi<next && pi<b.paras.length; pi++){
+      const p = b.paras[pi];
+      if(!p || p.startsWith(IMG_MARK)) continue;
+      if(T && T.drop && T.drop[pi]) continue;
+      words += p.split(/\s+/).length;
+    }
+    if(words > 120) x.mins = Math.max(1, Math.round(words/180));
   });
   return out;
 }
@@ -1692,6 +1782,8 @@ function openToc(){
   renderTocList();
   document.getElementById('toc-sheet').classList.add('on');
 }
+/* 펼쳐 둔 상위 항목 (책마다 기억) */
+let tocOpen = {};
 function renderTocList(){
   const b = curBook; if(!b) return;
   const items = buildToc(b);
@@ -1700,24 +1792,57 @@ function renderTocList(){
     list.innerHTML = '<div id="toc-empty">이 책에서는 소제목을 찾지 못했어요.<br>'
       + '전자책으로 바뀐 PDF는 장 제목이 그림이라 글자가 없는 경우가 많아요.<br>'
       + '위의 AI 정리를 해보면 더 찾을 수 있어요.</div>';
-  }else{
-    const here = lastAnchor ? lastAnchor.pi : -1;
-    let cur = -1;
-    for(let i=0;i<items.length;i++) if(items[i].pi <= here) cur = i;
-    list.innerHTML = items.map(function(x,i){
-      return '<button class="toc-i l' + x.l + (i===cur ? ' here' : '') + '" data-pi="' + x.pi + '">'
-           + esc(x.t) + '</button>';
-    }).join('');
-    list.querySelectorAll('.toc-i').forEach(function(el){
-      el.onclick = function(){
-        closeToc();
-        const target = document.querySelector('#rtext [data-pi="' + el.dataset.pi + '"]');
-        if(target) window.scrollTo(0, Math.max(0, window.scrollY + target.getBoundingClientRect().top - topInset()));
-        updatePfill();
-      };
-    });
+    return;
   }
-  document.getElementById('toc-sheet').classList.add('on');
+  const top = Math.min.apply(null, items.map(function(x){ return x.l; }));
+  const here = lastAnchor ? lastAnchor.pi : -1;
+  let cur = -1;
+  for(let i=0;i<items.length;i++) if(items[i].pi <= here) cur = i;
+  /* 지금 읽고 있는 곳이 속한 상위 항목은 자동으로 펼칩니다 */
+  let curTop = -1;
+  for(let i=0;i<items.length;i++){ if(items[i].l === top && items[i].pi <= here) curTop = items[i].pi; }
+  const hasChild = {};
+  let last = -1;
+  items.forEach(function(x){
+    if(x.l === top){ last = x.pi; return; }
+    if(last >= 0) hasChild[last] = (hasChild[last] || 0) + 1;
+  });
+
+  let ownerPi = -1;
+  const html = [];
+  items.forEach(function(x, i){
+    const isTop = x.l === top;
+    if(isTop) ownerPi = x.pi;
+    const shown = isTop || tocOpen[ownerPi] || ownerPi === curTop;
+    if(!shown) return;
+    const kids = hasChild[x.pi] || 0;
+    const parts = ['<button class="toc-i l' + (x.l - top + 1) + (i===cur ? ' here' : '') +
+                   '" data-pi="' + x.pi + '">'];
+    if(isTop && kids){
+      const open = tocOpen[x.pi] || x.pi === curTop;
+      parts.push('<span class="tw' + (open ? ' open' : '') + '" data-tw="' + x.pi + '">›</span>');
+    }else if(isTop) parts.push('<span class="tw off"></span>');
+    parts.push('<span class="tt">' + esc(x.t) + (x.hint ? '<small>' + esc(x.hint) + '</small>' : '') + '</span>');
+    if(x.mins) parts.push('<span class="tm">' + x.mins + '분</span>');
+    parts.push('</button>');
+    html.push(parts.join(''));
+  });
+  list.innerHTML = html.join('');
+  list.querySelectorAll('.toc-i').forEach(function(el){
+    el.onclick = function(e){
+      const tw = e.target.closest ? e.target.closest('.tw') : null;
+      if(tw && !tw.classList.contains('off')){        // 화살표를 누르면 접기·펴기만
+        const pi = +tw.dataset.tw;
+        if(tocOpen[pi]) delete tocOpen[pi]; else tocOpen[pi] = 1;
+        renderTocList();
+        return;
+      }
+      closeToc();
+      const target = document.querySelector('#rtext [data-pi="' + el.dataset.pi + '"]');
+      if(target) window.scrollTo(0, Math.max(0, window.scrollY + target.getBoundingClientRect().top - topInset()));
+      updatePfill();
+    };
+  });
 }
 function closeToc(){ document.getElementById('toc-sheet').classList.remove('on'); }
 document.getElementById('toc-sheet').addEventListener('click', function(e){
@@ -1762,8 +1887,9 @@ function renderBookBody(b){
   rt.innerHTML='';
   const frag = document.createDocumentFragment();
   const PAGE_CHARS = 1700;
-  let page=null, pageChars=0, pageNo=0;
+  let page=null, pageChars=0, pageNo=0, box=null, boxKind='';
   const newPage = ()=>{
+    box = null; boxKind = '';
     if(page){
       const no = document.createElement('div');
       no.className='pageno'; no.textContent = '— '+pageNo+' —';
@@ -1790,9 +1916,25 @@ function renderBookBody(b){
       pageChars += 400;
       return;
     }
-    const isHead = T ? !!T.heads[pi] : looksHeading(p);
-    if(pageChars >= PAGE_CHARS || (isHead && pageChars > PAGE_CHARS*0.55)) newPage();
-    const el = document.createElement(isHead?'h3':'p');
+    if(T && T.drop && T.drop[pi]) return;       // 쪽번호·워터마크 찌꺼기
+    const lvl = T ? (T.heads[pi] || 0) : (looksHeading(p) ? 2 : 0);
+    const isHead = !!lvl;
+    const blk = (T && T.blocks) ? T.blocks[pi] : null;
+    // 상자 한가운데서 쪽이 넘어가면 상자가 두 동강 나므로, 상자 안에서는 쪽을 넘기지 않습니다
+    const inBlock = blk && !blk.first;
+    if(!inBlock && (pageChars >= PAGE_CHARS || (isHead && lvl <= 2 && pageChars > PAGE_CHARS*0.55))) newPage();
+    /* 인용문·활동 상자는 본문과 다른 덩어리로 묶어 그립니다.
+       원서에서 테두리 상자나 작은 글씨로 따로 조판되던 것들입니다. */
+    if(blk){
+      if(blk.first || !box || boxKind !== blk.k){
+        box = document.createElement('aside');
+        box.className = 'blk ' + blk.k;
+        boxKind = blk.k;
+        page.appendChild(box);
+      }
+    }else{ box = null; boxKind = ''; }
+    const host = blk && box ? box : page;
+    const el = document.createElement(isHead ? (lvl===1?'h2':lvl===3?'h4':'h3') : 'p');
     el.dataset.pi = pi;
     let html='', m, last=0;
     WORD_RE.lastIndex=0;
@@ -1805,7 +1947,7 @@ function renderBookBody(b){
     }
     html += esc(p.slice(last));
     el.innerHTML = html;
-    page.appendChild(el);
+    host.appendChild(el);
     pageChars += p.length;
   });
   const no = document.createElement('div');
@@ -1919,7 +2061,10 @@ function renderPanel(){
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
   const aiBox = document.getElementById('p-ai');
   const aiM = document.getElementById('p-ai-m'), aiN = document.getElementById('p-ai-note');
-  if(w.aiLoading){
+  if(w.aiSlow && !(w.ai && w.ai.ko)){
+    aiBox.className='on'; aiM.textContent='조금 오래 걸리네요';
+    aiN.textContent='서버가 붐비는 것 같아요. 아래에서 다시 시도할 수 있어요.';
+  }else if(w.aiLoading){
     aiBox.className='on load'; aiM.textContent='문맥에 맞는 뜻을 찾고 있어요…'; aiN.textContent='';
   }else if(w.ai && w.ai.ko){
     aiBox.className='on';
@@ -1931,9 +2076,11 @@ function renderPanel(){
   // on-demand 버튼: AI 결과가 있으면 숨기고, 없을 때만 보여준다
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
   const hasAI = !!(w.ai && w.ai.ko);
-  aiBtn.style.display = (hasAI || w.aiLoading) ? 'none' : 'flex';
-  aiHint.style.display = (hasAI || w.aiLoading) ? 'none' : 'block';
-  document.getElementById('p-aibtn-t').textContent = 'Let AI read it';
+  const busy = w.aiLoading && !w.aiSlow;
+  aiBtn.style.display = (hasAI || busy) ? 'none' : 'flex';
+  aiHint.style.display = (hasAI || busy) ? 'none' : 'block';
+  document.getElementById('p-aibtn-t').textContent = w.aiSlow ? '다시 시도' : 'Let AI handle this';
+  aiHint.textContent = w.aiSlow ? '' : '뜻이 문맥과 안 맞을 때 눌러보세요';
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';
   if(w.loading) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>';
@@ -2027,6 +2174,8 @@ async function fetchEnWik(w, form){
   return w.defs.length>0;
 }
 /* ---- Claude 기반 사전: Edge Function 경유 (키는 서버에만) ---- */
+const AI_TIMEOUT = 6000;      // 이보다 오래 걸리면 "다시 시도"를 내밉니다
+const AI_MIN_WAIT = 500;      // 너무 빨리 와도 이만큼은 보여 줍니다(화면이 깜빡이지 않게)
 const aiCacheKey = w => (w.clicked || w.word || '').toLowerCase();
 
 /* 캐시에만 있으면 복원 — 네트워크·비용 0 */
@@ -2037,14 +2186,32 @@ async function loadCachedAI(k){
   return false;
 }
 
-/* 버튼을 눌렀을 때만 실제 호출 */
+/* Edge Function 은 한동안 안 쓰면 잠들어서 다음 호출 때 1~2초를 깨우는 데 씁니다.
+   단어를 누르는 순간 빈 신호를 하나 보내 미리 깨워 둡니다. AI를 부르지 않으므로 비용 0. */
+let warmAt = 0;
+function warmAI(){
+  if(!sb || !sbUser) return;
+  const now = Date.now();
+  if(now - warmAt < 60000) return;            // 1분에 한 번이면 충분합니다
+  warmAt = now;
+  try{
+    fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/tidy', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY },
+      body: JSON.stringify({ mode:'ping' })
+    }).catch(function(){});
+  }catch(e){}
+}
+
+/* 버튼을 눌렀을 때 실제 호출 */
 async function askAI(force){
   const k = selKey; if(!k || !words[k]) return;
+  if(navigator.onLine === false){ toast('오프라인이라 AI 뜻을 가져올 수 없어요'); return; }
   if(!sb || !sbUser){ toast('AI 뜻은 로그인 후 사용할 수 있어요'); openSyncModal(); return; }
   await fetchAI(k, force);
 }
 
-document.getElementById('p-aibtn').onclick   = ()=>askAI(false);
+document.getElementById('p-aibtn').onclick   = ()=>askAI(!!(selKey && words[selKey] && words[selKey].aiSlow));
 document.getElementById('p-airetry').onclick = ()=>askAI(true);
 
 async function fetchAI(k, force){
@@ -2057,23 +2224,39 @@ async function fetchAI(k, force){
     if(hit){ applyAI(w, hit, k); return true; }
   }
 
-  w.aiLoading = true; if(selKey===k) renderPanel();
+  const began = Date.now();
+  w.aiLoading = true; delete w.aiSlow; if(selKey===k) renderPanel();
+  /* 6초가 넘으면 무작정 기다리게 두지 않고 "다시 시도"를 내밉니다.
+     기다림 자체보다 "언제 끝날지 모른다"가 더 답답하기 때문입니다. */
+  const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const slow = setTimeout(function(){
+    if(!words[k]) return;
+    words[k].aiSlow = true;
+    if(ctrl) try{ ctrl.abort(); }catch(e){}
+    if(selKey===k) renderPanel();
+  }, AI_TIMEOUT);
   try{
     const { data:{ session } } = await sb.auth.getSession();
-    const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', {
+    const opt = {
       method:'POST',
       headers:{ 'Content-Type':'application/json',
                 'Authorization':'Bearer ' + (session ? session.access_token : SB_KEY),
                 'apikey': SB_KEY },
       body: JSON.stringify({ word: w.clicked || w.word || k, sentence: w.example || '' })
-    });
+    };
+    if(ctrl) opt.signal = ctrl.signal;
+    const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
     const j = await r.json().catch(()=>null);
     if(!r.ok || !j || j.error){ console.warn('AI dict:', r.status, j && j.error); return false; }
     await dictPut(cacheKey, j);
+    /* 답이 너무 빨리 와도 최소 0.5초는 보여 줍니다.
+       화면이 깜빡하고 바뀌면 무슨 일이 일어났는지 못 알아채거든요. */
+    const left = AI_MIN_WAIT - (Date.now() - began);
+    if(left > 0) await new Promise(function(res){ setTimeout(res, left); });
     applyAI(w, j, k);
     return true;
   }catch(e){ console.warn('AI dict failed', e); return false; }
-  finally{ delete w.aiLoading; if(selKey===k) renderPanel(); }
+  finally{ clearTimeout(slow); delete w.aiLoading; if(selKey===k) renderPanel(); }
 }
 function applyAI(w, ai, k){
   delete w.aiLoading;
@@ -2099,6 +2282,10 @@ async function fetchDict(k){
      그 뒤 발음만 받아 오고, 한국어·영어 뜻 조회는 통째로 건너뜁니다(호출 3회 → 1회). */
   const built = applyBuiltin(w);
   if(built && selKey===k) renderPanel();
+  /* 내장 사전에 있으면 AI를 부르지 않고 함수만 깨워 둡니다(비용 0).
+     없으면 누르는 순간 바로 AI에 겁니다 — 버튼을 누를 때쯤엔 답이 와 있게. */
+  if(built) warmAI();
+  else if(sb && sbUser && navigator.onLine !== false) fetchAI(k, false);
   const forms = w.forms && w.forms.length ? w.forms : [k];
   let validated = null;
   for(const f of forms){ try{ if(await fetchEn(w,f,built)){ validated=f; break; } }catch(e){} }
