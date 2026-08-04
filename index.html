@@ -18,6 +18,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script><!-- 키는 이 별도 파일에서: 없으면 로컬 전용으로 동작 -->
+<script src="dict300.js"></script><!-- 내장 사전 300개: 없으면 인터넷 사전만 사용 -->
 <style>
   :root{
     --paper:#FAF8F2; --paper2:#FDFBF6; --ink:#18364A; --ink-body:#2D3E43;
@@ -31,7 +32,11 @@
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html{background:var(--paper);}
-  body{background:var(--paper); color:var(--ink); font-family:var(--ui); -webkit-text-size-adjust:100%; text-size-adjust:100%; overflow-x:hidden;}
+  /* 다크 변수는 body에 걸려 있어서 html까지는 안 내려갑니다.
+     내용이 짧으면 body 아래로 html의 밝은 배경이 드러나므로 두 가지를 함께 둡니다. */
+  html.dark{background:#16181B;}
+  body{background:var(--paper); color:var(--ink); font-family:var(--ui); -webkit-text-size-adjust:100%; text-size-adjust:100%; overflow-x:hidden;
+       min-height:100vh;}
   body::before{content:''; position:fixed; inset:0; pointer-events:none; opacity:.5; z-index:0;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='8'/><feColorMatrix type='matrix' values='1 0 0 0 .82 0 1 0 0 .80 0 0 1 0 .73 0 0 0 .04 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");}
   #app{position:relative; z-index:1;}
@@ -188,13 +193,42 @@
   body.dark .navbtn:hover{background:#22262B;}
   body.dark .iconbtn:hover{background:#22262B;}
   /* focus mode: chrome disappears, only text remains */
-  #focusbtn, #aafab{position:fixed; right:18px; z-index:70; width:44px; height:44px; border-radius:50%;
+  #focusbtn, #aafab, #tocfab{position:fixed; right:18px; z-index:70; width:44px; height:44px; border-radius:50%;
     border:1px solid var(--line); background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
     cursor:pointer; display:none; align-items:center; justify-content:center; color:var(--soft);
     box-shadow:0 4px 14px rgba(23,55,71,.12); transition:opacity .3s; font-family:var(--ui);}
   #focusbtn{bottom:18px;}
   #aafab{bottom:72px; font-size:15px; font-weight:600;}
+  #tocfab{bottom:126px;}
   body.reading #focusbtn, body.reading #aafab{display:flex;}
+  body.reading #tocfab.has{display:flex;}
+  body.scrolling #tocfab{opacity:.3;}
+  body.focusmode #tocfab{opacity:.35;}
+  body.dark #tocfab{background:rgba(31,35,39,.9); border-color:#2A2E33;}
+  #tocfab:hover{color:var(--blue);}
+  /* ---------- 목차 ---------- */
+  #toc-sheet{position:fixed; inset:0; z-index:175; background:rgba(24,54,74,.35); display:none;
+    align-items:center; justify-content:center; padding:20px;}
+  #toc-sheet.on{display:flex;}
+  #toc-card{background:var(--paper2); border-radius:20px; width:min(520px,100%); max-height:76vh;
+    display:flex; flex-direction:column; box-shadow:var(--shadow); overflow:hidden;}
+  body.dark #toc-card{background:#1F2327;}
+  #toc-head{display:flex; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--line);}
+  #toc-head span{font-size:15px; font-weight:600; color:var(--ink); flex:1;}
+  #toc-head button{border:none; background:none; font-size:16px; color:var(--soft); cursor:pointer;}
+  #toc-list{overflow-y:auto; padding:6px 0 12px;}
+  .toc-i{display:block; width:100%; text-align:left; border:none; background:none; cursor:pointer;
+    padding:11px 20px; font-size:14px; color:var(--ink); font-family:var(--serif); line-height:1.5;}
+  .toc-i:hover{background:var(--sky);}
+  .toc-i.l2{padding-left:38px; font-size:13px; color:var(--soft);}
+  .toc-i.here{color:var(--blue); font-weight:600;}
+  #toc-empty{padding:34px 20px; text-align:center; color:var(--soft); font-size:13.5px; line-height:1.8;}
+  #aa-tidy-row{display:none;}
+  #aa-tidy-row.on{display:flex;}
+  #aa-tidy-row .aa-label small{display:block; font-size:10.5px; color:var(--soft2); font-weight:400; letter-spacing:0;}
+  #aa-tidy-run{border:1px solid var(--line); background:none; border-radius:14px; padding:6px 12px;
+    font-size:12.5px; color:var(--blue); font-family:var(--ui); cursor:pointer; white-space:nowrap;}
+  #aa-tidy-run:hover{background:var(--sky);}
   #aafab:hover{color:var(--blue);}
   body.scrolling #focusbtn, body.scrolling #aafab{opacity:.3;}
   body.dark #aafab{background:rgba(31,35,39,.9); border-color:#2A2E33;}
@@ -285,6 +319,17 @@
     font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
   #p-airetry:hover{color:var(--blue);}
   .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
+  #p-src{display:none; margin-left:7px; padding:2px 7px; border-radius:9px; background:var(--sky);
+         color:var(--chiptx); font-size:9.5px; letter-spacing:0; vertical-align:1px;}
+  #p-src.on{display:inline-block;}
+  #p-colloc-sec{display:none;}
+  #p-colloc{display:none; flex-wrap:wrap; gap:6px;}
+  #p-colloc.on{display:flex;}
+  #p-colloc.on + .p-sec, #p-colloc-sec.on{display:block;}
+  .colloc{border:1px solid var(--line); border-radius:14px; padding:5px 11px; font-size:12.5px;
+          color:var(--soft); font-family:var(--serif); font-style:italic;}
+  .colloc.hit{border-color:var(--blue); color:var(--blue); background:var(--sky);}
+  body.dark .colloc.hit{background:#22333C;}
   #p-kodict{display:flex; flex-wrap:wrap; gap:7px;}
   .kochip{border:none; background:var(--chipbg); color:var(--chiptx); border-radius:16px; padding:7px 13px;
     font-size:13px; cursor:pointer; font-family:var(--ui);}
@@ -365,31 +410,6 @@
   #vempty{text-align:center; color:var(--soft); padding:70px 0 40px; font-size:14.5px; line-height:1.8;}
 
   /* sync modal */
-  /* 책 상세 팝업 */
-  #book-modal{position:fixed; inset:0; z-index:170; background:rgba(24,54,74,.35); display:none;
-    align-items:center; justify-content:center; padding:20px;}
-  #book-modal.on{display:flex;}
-  #bm-card{background:#fff; border-radius:22px; padding:26px 26px 22px; width:100%; max-width:400px;
-    box-shadow:var(--shadow); max-height:88vh; overflow-y:auto;}
-  #bm-card h2{font-size:18px; font-weight:600; margin-bottom:14px;}
-  #bm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
-    font-size:14px; cursor:pointer; color:var(--soft);}
-  .bm-label{font-size:11.5px; font-weight:600; color:var(--soft2); letter-spacing:.05em; margin:14px 0 6px;}
-  #bm-title{width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 13px; font-size:15px;
-    font-family:var(--ui); outline:none; background:#fff; color:var(--ink);}
-  #bm-title:focus{border-color:var(--blue);}
-  #bm-info{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px;}
-  #bm-info span{font-size:11.5px; background:#F4F6F3; border:1px solid var(--line); border-radius:10px;
-    padding:3px 9px; color:var(--soft);}
-  #bm-del{width:100%; border:1px solid #EBD5CF; background:none; color:#B0483A; border-radius:12px;
-    padding:11px; font-size:14px; cursor:pointer; font-family:var(--ui); margin-top:10px;}
-  #bm-del:hover{background:#FBEDEA;}
-  body.dark #bm-card{background:#1F2327; border-color:#2A2E33;}
-  body.dark #bm-close{background:#2A2E33; color:#9AA1A8;}
-  body.dark #bm-title{background:#1C1F23; border-color:#2A2E33;}
-  body.dark #bm-info span{background:#22262B; border-color:#2A2E33;}
-  body.dark #bm-del{border-color:#4A322E;}
-  body.dark #bm-del:hover{background:#3A2724; color:#E8837A;}
   #sync-modal{position:fixed; inset:0; z-index:160; background:rgba(24,54,74,.35); display:none;
     align-items:center; justify-content:center; padding:20px;}
   #sync-modal.on{display:flex;}
@@ -500,7 +520,7 @@
   <div id="bigq">Where shall we read?</div>
   <div id="hero"></div>
   <div id="newhead">Start somewhere new</div>
-  <div id="newsub">내 파일(PDF·EPUB·TXT)을 끌어다 놓거나 + 카드를 눌러 추가하세요. 책을 꾹 누르면 제목을 바꾸거나 삭제할 수 있어요.</div>
+  <div id="newsub">내 파일(PDF·EPUB·TXT)을 끌어다 놓거나 + 카드를 눌러 추가하세요. 책을 꾹 누르면 이름을 바꿀 수 있어요.</div>
   <div id="shelf"></div>
   <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
 </div>
@@ -544,8 +564,10 @@
       <div id="p-ko-hint">직접 고치거나, 아래 칩을 눌러 한 번에 바꿀 수 있어요</div>
       <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI read it</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
-      <div class="p-sec">여러 뜻 중 고르기</div>
+      <div class="p-sec">여러 뜻 중 고르기<span id="p-src"></span></div>
       <div id="p-kodict"></div>
+      <div class="p-sec" id="p-colloc-sec">자주 함께 쓰는 말</div>
+      <div id="p-colloc"></div>
       <div class="p-sec">모르는 정도</div>
       <div id="p-status">
         <button class="stbtn" data-s="1">★</button>
@@ -572,17 +594,6 @@
   <div id="vtablewrap"></div>
 </div>
 
-<div id="book-modal">
-  <div id="bm-card">
-    <button id="bm-close" onclick="closeBookModal()">✕</button>
-    <h2>책 정보</h2>
-    <div class="bm-label">제목</div>
-    <input id="bm-title" spellcheck="false" placeholder="책 이름">
-    <div id="bm-info"></div>
-    <button class="sm-btn primary" style="margin-top:16px" onclick="saveBookDetail()">저장</button>
-    <button id="bm-del" onclick="deleteFromModal()">이 책 삭제</button>
-  </div>
-</div>
 <div id="sync-modal">
   <div id="sm-card">
     <button id="sm-close" onclick="closeSyncModal()">✕</button>
@@ -609,7 +620,20 @@
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
+  <div class="aa-row" id="aa-tidy-row">
+    <span class="aa-label">AI 정리<small id="aa-tidy-sub"></small></span>
+    <button id="aa-tidy" class="aa-toggle" onclick="toggleTidy()"><i></i></button>
+    <button id="aa-tidy-run" onclick="tidyNow()">정리하기</button>
+  </div>
 </div>
+<div id="toc-sheet"><div id="toc-card">
+  <div id="toc-head"><span>목차</span><button onclick="closeToc()">✕</button></div>
+  <div id="toc-list"></div>
+</div></div>
+<button id="tocfab" title="목차" onclick="openToc()">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+</button>
 <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
 <button id="focusbtn" title="집중 모드" onclick="toggleFocus()">
   <svg id="fb-in" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
@@ -713,7 +737,8 @@ const DEMO_PARAS = ["Memo to: Oaktree Clients", "From: Howard Marks", "Re: AI Hu
 const DEMO_BOOK = {id:'demo', title:'AI Hurtles Ahead', author:'HOWARD MARKS', paras:DEMO_PARAS, builtin:true};
 
 const LS_WORDS='breeze.words', LS_BOOKS='breeze.books', LS_POS='breeze.pos', LS_FS='breeze.fs';
-function load(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } }
+/* ?? 는 2020년 문법이라 오래된 태블릿 브라우저가 파일 전체를 못 읽습니다. 풀어서 씁니다. */
+function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return (v===null||v===undefined) ? d : v; }catch(e){ return d; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('저장 공간이 부족해요 (책이 너무 큼)'); } }
 const LS_DEAD='breeze.dead';
 let words = load(LS_WORDS, {});
@@ -834,45 +859,6 @@ function attachLongPress(el, fn){
 }
 /* 책 삭제 — 기기와 서버를 함께 지웁니다.
    "여기서만 지우고 서버엔 남기고 싶다"는 경우가 사실상 없어서 하나로 합쳤습니다. */
-/* ================= 책 상세 팝업 ================= */
-let bmBook = null;
-function openBookModal(b){
-  bmBook = b;
-  const el = document.getElementById('bm-title');
-  el.value = b.title;
-  el.disabled = !!b.builtin;
-  document.getElementById('bm-del').style.display = b.builtin ? 'none' : 'block';
-  const wc = wcOf(b), p = posOf(b.id);
-  const onServer = (serverBooks||[]).some(r => r.book_id === b.id && !(r.meta||{}).deleted);
-  const info = [
-    wc.toLocaleString() + ' 단어',
-    b.paras.length.toLocaleString() + ' 문단',
-    p.t ? Math.round(p.p*100) + '% 읽음' : '아직 안 읽음',
-    b.addedAt ? new Date(b.addedAt).toLocaleDateString('ko-KR') + ' 추가' : '',
-    b.builtin ? '샘플 책' : (onServer ? '동기화됨' : '이 기기에만')
-  ].filter(Boolean);
-  document.getElementById('bm-info').innerHTML = info.map(t=>`<span>${esc(t)}</span>`).join('');
-  document.getElementById('book-modal').classList.add('on');
-}
-function closeBookModal(){
-  document.getElementById('book-modal').classList.remove('on');
-  bmBook = null;
-}
-document.getElementById('book-modal').addEventListener('click', e=>{ if(e.target.id==='book-modal') closeBookModal(); });
-async function saveBookDetail(){
-  if(!bmBook) return;
-  const t = document.getElementById('bm-title').value.trim();
-  if(!t){ toast('제목을 입력해 주세요'); return; }
-  if(t !== bmBook.title) await renameBook(bmBook, t);
-  closeBookModal();
-}
-async function deleteFromModal(){
-  if(!bmBook) return;
-  const b = bmBook;
-  closeBookModal();
-  await deleteBook(b);
-}
-
 async function deleteBook(b){
   if(b.builtin) return;
   if(!confirm(`"${b.title}" 책을 삭제할까요?\n\n동기화한 경우 다른 기기에서도 삭제됩니다.\n(단어장은 그대로 남습니다)`)) return;
@@ -901,9 +887,11 @@ async function deleteBook(b){
   toast('삭제했어요');
 }
 
-async function renameBook(b, newTitle){
+async function renameBook(b){
   if(b.builtin){ toast('샘플 책은 이름을 바꿀 수 없어요'); return; }
-  const t = String(newTitle ?? '').trim();
+  const typed = prompt('책 이름', b.title);
+  if(typed === null) return;
+  const t = typed.trim();
   if(!t || t === b.title) return;
   b.title = t;
   b.renamedAt = Date.now();            // 어느 쪽 이름이 최신인지 판단하는 기준
@@ -946,7 +934,7 @@ function renderHome(){
     </div>`;
   H.querySelector('.ct').textContent = hero.title.toUpperCase();
   H.querySelector('.bt').textContent = hero.title;
-  const heroPressed = attachLongPress(H, ()=>openBookModal(hero));
+  const heroPressed = attachLongPress(H, ()=>renameBook(hero));
   H.onclick = () => { if(heroPressed()) return; openBook(hero); };
   // shelf: the rest + add card
   const s = document.getElementById('shelf');
@@ -960,11 +948,13 @@ function renderHome(){
     card.innerHTML = `<div class="author"></div><div class="bt"></div>
       ${WAVE(waveC,'.6')}
       ${p.t? `<div class="prog">${Math.round(p.p*100)}% 읽음</div>`:''}
-`;
+      ${b.builtin?'':'<button class="del" title="삭제">✕</button>'}`;
     card.querySelector('.author').textContent = b.author || (b.builtin?'SAMPLE':'MY BOOK');
     card.querySelector('.bt').textContent = b.title;
-    const pressed = attachLongPress(card, ()=>openBookModal(b));
-    card.onclick = () => { if(pressed()) return; openBook(b); };
+    const pressed = attachLongPress(card, ()=>renameBook(b));
+    card.onclick = e => { if(e.target.classList.contains('del') || pressed()) return; openBook(b); };
+    const del = card.querySelector('.del');
+    if(del) del.onclick = () => deleteBook(b);
     s.appendChild(card);
   });
   const add = document.createElement('div');
@@ -1020,14 +1010,40 @@ async function importFile(f){
     const id = bookHash(paras);                       // 내용으로 ID 결정
     const already = books.find(b=>b.id===id);
     if(already){ toast(`이미 있는 책이에요 — "${already.title}"`); return; }
-    const title = name;              // 제목은 파일명에서. 바꾸려면 홈에서 책을 꾹 누르세요
+    // 제목은 파일 이름에서 가져옵니다. 바꾸려면 홈에서 책을 꾹 누르세요.
+    // (반입할 때마다 이름을 묻지 않습니다 — 바로 뒤에 AI 정리 확인이 또 뜨면 성가시므로)
+    const title = name;
     // EPUB 삽화는 임시 ID로 저장돼 있으므로 실제 ID로 표시를 바꿔 줍니다
     paras = paras.map(p => p.startsWith(IMG_MARK) ? p.replace(tmpId, id) : p);
     await imgRename(tmpId, id);
     const book = {id, title, paras, addedAt:Date.now()};
     await bookPut(book); books.unshift(book);
     renderHome(); toast('추가 완료! 카드를 눌러 읽기 시작하세요');
+    await offerTidy(book);
   }catch(err){ console.error(err); toast('파일을 읽지 못했어요: '+err.message); }
+}
+
+/* 반입 직후 한 번만 물어봅니다. 거절해도 나중에 Aa 설정에서 할 수 있어요. */
+async function offerTidy(book){
+  if(!sb || !sbUser) return;
+  const n = book.paras.filter(function(p){ return !p.startsWith(IMG_MARK); }).length;
+  if(n < 40) return;
+  if(!confirm('AI로 이 책을 정리할까요?\n\n'
+            + '· 판권지·추천사 같은 앞부분을 접어 둡니다\n'
+            + '· 소제목을 찾아 목차를 만듭니다\n\n'
+            + '문단마다 앞 40자만 보내고 본문 전체는 보내지 않습니다.\n'
+            + '언제든 Aa 설정에서 끌 수 있어요.')) return;
+  try{
+    const t = await runTidy(book.paras, book.title, function(m){ toast(m); });
+    book.tidy = t;
+    if(t.author && !book.author) book.author = t.author;
+    await bookPut(book);
+    renderHome();
+    toast('정리 완료 — 앞 ' + t.start + '문단 접고, 소제목 ' + Object.keys(t.heads).length + '개');
+  }catch(e){
+    console.warn('tidy', e);
+    toast('AI 정리는 건너뛰었어요 (나중에 Aa 설정에서 할 수 있어요)');
+  }
 }
 
 function parseTXT(text){
@@ -1098,7 +1114,7 @@ function itemsToLines(items){
 
 /* ---------- ②+③ 줄 -> 문단 ---------- */
 function assembleParagraphs(pages){
-  const allLines = pages.flatMap(p=>p.lines);
+  const allLines = pages.reduce(function(a,p){ return a.concat(p.lines); }, []);
   if(!allLines.length) return [];
 
   /* ② 잡동사니: 페이지 번호 / 저작권 / 여러 페이지 같은 자리에 반복되는 머리글·꼬리글 */
@@ -1119,7 +1135,7 @@ function assembleParagraphs(pages){
   };
   const cleanPages = pages.map(p => ({...p, lines: p.lines.filter(l => !isJunk(l, p.h))}))
                           .filter(p => p.lines.length);
-  const lines = cleanPages.flatMap(p=>p.lines);
+  const lines = cleanPages.reduce(function(a,p){ return a.concat(p.lines); }, []);
   if(!lines.length) return [];
 
   /* 본문 좌/우 경계와 보통 줄간격을 통계로 추정 */
@@ -1322,6 +1338,229 @@ function lemmaCands(raw){
   return [...set];
 }
 
+/* ================= 내장 사전 =================
+   dict300.js가 함께 있으면 표제어 300개는 인터넷 없이 즉시 뜹니다.
+   그 파일이 없어도 앱은 그대로 돌아갑니다(예전처럼 인터넷 사전만 씁니다). */
+const BD = (window.BREEZE_DICT && window.BREEZE_DICT.w) ? window.BREEZE_DICT.w : null;
+/* 연어를 비교할 때 무시할 말. 관사·대명사처럼 아무 문장에나 나오는 것만 뺍니다.
+   out·up·off 같은 건 뜻을 가르는 열쇠라서 일부러 남겨 둡니다(run out ↔ run up). */
+const BD_STOP = {};
+'a an the of to in on at for from with by his her their its my your our this that these those be is are was were been and or as it he she they you we i some any very so than not no more one'
+  .split(' ').forEach(function(t){ BD_STOP[t] = 1; });
+
+function bdTokens(s){ return String(s||'').toLowerCase().match(/[a-z']+/g) || []; }
+/* ships ↔ ship 처럼 어미만 다른 경우까지 같은 말로 봅니다.
+   짧은 쪽이 4글자는 되어야 합니다 — 안 그러면 "a"가 "away"에 걸려 엉뚱한 뜻이 뽑힙니다. */
+function bdSame(tok, list){
+  for(let i=0;i<list.length;i++){
+    const s = list[i];
+    if(s === tok) return true;
+    const shortW = s.length < tok.length ? s : tok;
+    const longW  = s.length < tok.length ? tok : s;
+    if(shortW.length >= 4 && longW.length - shortW.length <= 3 && longW.indexOf(shortW) === 0) return true;
+  }
+  return false;
+}
+/* 클릭한 단어의 여러 형태 중 사전에 있는 것을 찾습니다 */
+function bdLookup(w){
+  if(!BD) return null;
+  const cands = (w.forms && w.forms.length) ? w.forms : lemmaCands(w.clicked || w.word || '');
+  for(let i=0;i<cands.length;i++){ if(BD[cands[i]]) return { word:cands[i], entry:BD[cands[i]] }; }
+  return null;
+}
+/* 뜻이 여러 개일 때, 문장에 함께 나온 말을 보고 고릅니다.
+   예: "abandon the ship"의 ship이 문장에 있으면 '버리고 떠나다'를 위로 올립니다. */
+function bdPickSense(entry, head, sentence){
+  const senses = entry.s || [];
+  if(senses.length < 2) return { sense: senses[0] || null, hit:'' };
+  const sent = bdTokens(sentence);
+  if(!sent.length) return { sense: senses[0], hit:'' };
+  let best = senses[0], bestScore = 0, bestHit = '';
+  for(let i=0;i<senses.length;i++){
+    const cs = senses[i].c || [];
+    for(let j=0;j<cs.length;j++){
+      const keys = bdTokens(cs[j]).filter(function(t){
+        return t.length >= 3 && !BD_STOP[t] && t.indexOf(head) !== 0 && head.indexOf(t) !== 0;
+      });
+      if(!keys.length) continue;
+      let hit = 0;
+      for(let n=0;n<keys.length;n++) if(bdSame(keys[n], sent)) hit++;
+      const score = hit / keys.length;
+      if(score > bestScore){ bestScore = score; best = senses[i]; bestHit = cs[j]; }
+    }
+  }
+  return { sense: best, hit: bestScore > 0 ? bestHit : '' };
+}
+/* 찾았으면 단어에 붙여 줍니다. 네트워크를 기다리지 않으므로 즉시 뜹니다. */
+function applyBuiltin(w){
+  const found = bdLookup(w);
+  if(!found) return false;
+  const picked = bdPickSense(found.entry, found.word, w.example || '');
+  if(!picked.sense) return false;
+  const pos = found.entry.p || '';
+  if(!isAcro(w.word)) w.word = found.word;
+  w.dictSrc = 'builtin';
+  if(!w.ko) w.ko = picked.sense.k;
+  w.kodict = [{ pos: pos, terms: found.entry.s.map(function(x){ return x.k; }).slice(0,5) }];
+  w.defs   = found.entry.s.map(function(x){ return { pos: pos, def: x.d }; }).slice(0,5);
+  w.colloc = (picked.sense.c || []).slice(0,3);
+  w.collocHit = picked.hit;
+  return true;
+}
+
+/* ================= AI 반입 정리 =================
+   원칙: 본문을 AI에게 보내지 않습니다. 문단마다 "앞 40자와 길이"만 보내고,
+   돌려받는 것도 본문이 아니라 지시(몇 번부터 본문인지, 어느 문단이 소제목인지)뿐입니다.
+   그래서 원문이 바뀔 수 없고, 언제든 꺼서 원래대로 되돌릴 수 있습니다. */
+const LS_TIDYOFF = 'breeze.tidyoff';
+let tidyOff = load(LS_TIDYOFF, {});       // { 책ID: true } — 이 책은 AI 정리를 끔
+function tidyActive(b){ return !!(b && b.tidy && !tidyOff[b.id]); }
+
+/* 소제목이 될 만한 문단만 후보로 추립니다. 대사·인용문은 여기서 대부분 걸러집니다. */
+function tidyHeadCand(p){
+  if(p.length > 90) return false;
+  if(/^(chapter|part|book|prologue|epilogue|section|appendix|interlude)\b/i.test(p)) return true;
+  if(/^\d+[.)]?(\s|$)/.test(p)) return true;
+  if(/[.!?,;:"'”’]$/.test(p)) return false;
+  return /^[A-Z0-9“"]/.test(p);
+}
+function tidyItem(paras, i){ return { i:i, t:paras[i].slice(0,40), n:paras[i].length }; }
+
+async function tidyCall(mode, items, title){
+  const got = await sb.auth.getSession();
+  const session = got && got.data ? got.data.session : null;
+  const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/tidy', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json',
+              'Authorization':'Bearer ' + (session ? session.access_token : SB_KEY),
+              'apikey': SB_KEY },
+    body: JSON.stringify({ mode:mode, items:items, title:title||'' })
+  });
+  let j = null; try{ j = await r.json(); }catch(e){}
+  if(!r.ok || !j || j.error) throw new Error((j && j.error) || ('http_'+r.status));
+  return j;
+}
+const TIDY_BATCH = 150, TIDY_MAX_BATCH = 15;
+async function runTidy(paras, title, onStep){
+  const idx = [];
+  for(let i=0;i<paras.length;i++) if(!paras[i].startsWith(IMG_MARK)) idx.push(i);
+  if(idx.length < 20) throw new Error('too_short');
+
+  /* 1) 앞단 자르기 — 앞쪽 100문단만 봅니다 */
+  if(onStep) onStep('앞부분을 살펴보는 중…');
+  const head = idx.slice(0, 100).map(function(i){ return tidyItem(paras, i); });
+  const f = await tidyCall('front', head, title);
+  const start = f.start || 0;
+
+  /* 2) 소제목 판정 — 후보만, 150개씩 나눠서 */
+  const cands = idx.filter(function(i){ return i >= start && tidyHeadCand(paras[i]); });
+  const heads = {};
+  const batches = Math.min(TIDY_MAX_BATCH, Math.ceil(cands.length / TIDY_BATCH));
+  for(let b=0; b<batches; b++){
+    const part = cands.slice(b*TIDY_BATCH, (b+1)*TIDY_BATCH).map(function(i){ return tidyItem(paras, i); });
+    if(!part.length) break;
+    if(onStep) onStep('소제목을 고르는 중… ' + (b+1) + '/' + batches);
+    const h = await tidyCall('heads', part, title);
+    (h.heads||[]).forEach(function(x){ heads[x.i] = x.l; });
+  }
+  return { start:start, why:f.why||'', heads:heads,
+           title:f.title||'', author:f.author||'', at:Date.now() };
+}
+
+/* 지금 보고 있는 책을 정리합니다 (Aa 설정 → 정리하기) */
+async function tidyNow(){
+  const b = curBook;
+  if(!b || b.builtin){ toast('샘플 책은 정리할 수 없어요'); return; }
+  if(!sb || !sbUser){ toast('AI 정리는 로그인 후 사용할 수 있어요'); openSyncModal(); return; }
+  if(!confirm('AI로 앞부분(판권지·추천사 등)을 잘라내고 소제목을 정리할까요?\n\n'
+            + '문단마다 앞 40자만 서버로 보냅니다. 본문 전체는 보내지 않아요.\n'
+            + '결과가 마음에 안 들면 이 설정에서 바로 끌 수 있습니다.')) return;
+  const runBtn = document.getElementById('aa-tidy-run');
+  runBtn.disabled = true;
+  try{
+    const t = await runTidy(b.paras, b.title, function(msg){ toast(msg); });
+    b.tidy = t;
+    delete tidyOff[b.id]; save(LS_TIDYOFF, tidyOff);
+    await bookPut(b);
+    const n = Object.keys(t.heads).length;
+    toast('정리했어요 — 앞 ' + t.start + '문단 접고, 소제목 ' + n + '개');
+    keepPlace(function(){ renderBookBody(b); });
+    syncTidyUI();
+  }catch(e){
+    console.error(e);
+    toast(e.message === 'login_required' ? '로그인이 필요해요'
+        : e.message === 'too_short' ? '문단이 너무 적어 정리할 게 없어요'
+        : 'AI 정리에 실패했어요: ' + e.message);
+  }finally{ runBtn.disabled = false; }
+}
+function toggleTidy(){
+  const b = curBook; if(!b || !b.tidy) return;
+  if(tidyOff[b.id]) delete tidyOff[b.id]; else tidyOff[b.id] = true;
+  save(LS_TIDYOFF, tidyOff);
+  keepPlace(function(){ renderBookBody(b); });
+  syncTidyUI();
+  toast(tidyOff[b.id] ? 'AI 정리를 껐어요 (원본 그대로)' : 'AI 정리를 켰어요');
+}
+function syncTidyUI(){
+  const b = curBook;
+  const row = document.getElementById('aa-tidy-row');
+  if(!b || b.builtin){ row.className = 'aa-row'; return; }
+  row.className = 'aa-row on';
+  const has = !!b.tidy;
+  document.getElementById('aa-tidy').style.display = has ? 'block' : 'none';
+  document.getElementById('aa-tidy').classList.toggle('on', tidyActive(b));
+  document.getElementById('aa-tidy-run').style.display = has ? 'none' : 'block';
+  document.getElementById('aa-tidy-sub').textContent = has
+    ? (tidyActive(b) ? '앞 ' + b.tidy.start + '문단 접음 · 소제목 ' + Object.keys(b.tidy.heads).length + '개' : '꺼짐 — 원본 그대로')
+    : '앞부분 자르기 · 목차 만들기';
+  document.getElementById('tocfab').classList.toggle('has', buildToc(b).length > 0);
+}
+
+/* ================= 목차 ================= */
+function buildToc(b){
+  if(!b || !b.paras) return [];
+  const T = tidyActive(b) ? b.tidy : null;
+  const out = [];
+  for(let pi=0; pi<b.paras.length; pi++){
+    const p = b.paras[pi];
+    if(p.startsWith(IMG_MARK)) continue;
+    if(T && pi < T.start) continue;
+    const lvl = T ? (T.heads[pi] || 0) : (looksHeading(p) ? 1 : 0);
+    if(lvl) out.push({ pi:pi, t:p, l:lvl });
+  }
+  return out;
+}
+function openToc(){
+  const b = curBook; if(!b) return;
+  const items = buildToc(b);
+  const list = document.getElementById('toc-list');
+  if(!items.length){
+    list.innerHTML = '<div id="toc-empty">이 책에서는 소제목을 찾지 못했어요.<br>'
+      + 'Aa 설정에서 AI 정리를 해보면 더 잘 찾을 수 있어요.</div>';
+  }else{
+    const here = lastAnchor ? lastAnchor.pi : -1;
+    let cur = -1;
+    for(let i=0;i<items.length;i++) if(items[i].pi <= here) cur = i;
+    list.innerHTML = items.map(function(x,i){
+      return '<button class="toc-i l' + x.l + (i===cur ? ' here' : '') + '" data-pi="' + x.pi + '">'
+           + esc(x.t) + '</button>';
+    }).join('');
+    list.querySelectorAll('.toc-i').forEach(function(el){
+      el.onclick = function(){
+        closeToc();
+        const target = document.querySelector('#rtext [data-pi="' + el.dataset.pi + '"]');
+        if(target) window.scrollTo(0, Math.max(0, window.scrollY + target.getBoundingClientRect().top - topInset()));
+        updatePfill();
+      };
+    });
+  }
+  document.getElementById('toc-sheet').classList.add('on');
+}
+function closeToc(){ document.getElementById('toc-sheet').classList.remove('on'); }
+document.getElementById('toc-sheet').addEventListener('click', function(e){
+  if(e.target.id === 'toc-sheet') closeToc();
+});
+
 /* ================= reader ================= */
 const WORD_RE = /([A-Za-z][A-Za-z'’-]*[A-Za-z]|[A-Za-z])/g;
 const keyOf = raw => {
@@ -1331,13 +1570,9 @@ const keyOf = raw => {
 function looksHeading(p){
   return p.length<70 && !/[.!?:;,]$/.test(p) && p.split(' ').length<=10 && /^[A-Z0-9“"]/.test(p);
 }
-function openBook(b){
-  curBook = b;
-  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
-  document.getElementById('v-read').classList.add('on');
-  document.getElementById('nav-home').classList.remove('on');
-  document.getElementById('rtitle').textContent = b.title;
-  document.body.classList.add('reading');
+/* 본문 그리기만 따로 뺐습니다. AI 정리를 켜고 끄면 이 부분만 다시 그립니다. */
+function renderBookBody(b){
+  const T = tidyActive(b) ? b.tidy : null;      // 켜져 있으면 앞단을 접고 소제목을 AI 판정으로
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
   const frag = document.createDocumentFragment();
@@ -1356,6 +1591,7 @@ function openBook(b){
   };
   newPage();
   b.paras.forEach((p,pi)=>{
+    if(T && pi < T.start) return;               // 판권지·추천사 등 앞단은 접어 둡니다
     if(p.startsWith(IMG_MARK)){
       const fig = document.createElement('figure');
       const img = document.createElement('img');
@@ -1369,7 +1605,7 @@ function openBook(b){
       pageChars += 400;
       return;
     }
-    const isHead = looksHeading(p);
+    const isHead = T ? !!T.heads[pi] : looksHeading(p);
     if(pageChars >= PAGE_CHARS || (isHead && pageChars > PAGE_CHARS*0.55)) newPage();
     const el = document.createElement(isHead?'h3':'p');
     el.dataset.pi = pi;
@@ -1391,6 +1627,16 @@ function openBook(b){
   no.className='pageno'; no.textContent = '— '+pageNo+' —';
   frag.appendChild(no);
   rt.appendChild(frag);
+}
+function openBook(b){
+  curBook = b;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.getElementById('v-read').classList.add('on');
+  document.getElementById('nav-home').classList.remove('on');
+  document.getElementById('rtitle').textContent = b.title;
+  document.body.classList.add('reading');
+  renderBookBody(b);
+  syncTidyUI();
   positions[b.id] = {...posOf(b.id), t:Date.now()};
   save(LS_POS, positions);
   requestAnimationFrame(()=>{
@@ -1518,6 +1764,20 @@ function renderPanel(){
       }
     }
   }
+  /* 내장 사전에서 온 뜻이면 출처를 밝히고, 함께 쓰는 말도 보여 줍니다.
+     문장과 맞아떨어진 연어에는 표시를 해서 "왜 이 뜻인지"가 보이게 합니다. */
+  const src = document.getElementById('p-src');
+  src.className = w.dictSrc === 'builtin' ? 'on' : '';
+  src.textContent = '기본 사전';
+  const col = document.getElementById('p-colloc'), colSec = document.getElementById('p-colloc-sec');
+  if(w.colloc && w.colloc.length){
+    col.className = 'on'; colSec.className = 'p-sec on';
+    col.innerHTML = w.colloc.map(function(c){
+      return '<span class="colloc' + (c === w.collocHit ? ' hit' : '') + '">' + esc(c) + '</span>';
+    }).join('');
+  }else{
+    col.className = ''; colSec.className = 'p-sec'; col.innerHTML = '';
+  }
   const defs = document.getElementById('p-defs');
   if(w.loading) defs.innerHTML = '<span style="color:var(--soft2)">불러오는 중…</span>';
   else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--soft2)">영어 뜻을 찾지 못했어요</span>';
@@ -1545,13 +1805,15 @@ async function fetchKo(w, form){
   if(dict.length){ w.kodict = dict; if(!w.ko && dict[0].terms[0]) w.ko = dict[0].terms[0]; return true; }
   return !!w.ko;
 }
-async function fetchEn(w, form){
+/* metaOnly = 내장 사전에서 이미 뜻을 얻은 경우. 발음만 받아 오고 뜻은 건드리지 않습니다. */
+async function fetchEn(w, form, metaOnly){
   const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
   if(!r.ok) return false;
   const j = await r.json();
   if(!j || !j[0]) return false;
   w.phon = j[0].phonetic || ((j[0].phonetics||[]).find(p=>p.text)||{}).text || '';
   w.audio = ((j[0].phonetics||[]).find(p=>p.audio) || {}).audio || '';   // 원어민 녹음
+  if(metaOnly) return true;
   w.defs = [];
   for(const m of j[0].meanings||[]){
     for(const d of m.definitions.slice(0,2)){
@@ -1648,14 +1910,20 @@ async function fetchDict(k){
   const w = words[k]; if(!w) return;
   w.loading = true; if(selKey===k) renderPanel();
   loadCachedAI(k);                  // 이미 물어본 단어면 캐시에서 무료로 복원 (API 호출 없음)
+  /* 내장 사전에 있으면 인터넷을 기다리지 않고 바로 보여 줍니다.
+     그 뒤 발음만 받아 오고, 한국어·영어 뜻 조회는 통째로 건너뜁니다(호출 3회 → 1회). */
+  const built = applyBuiltin(w);
+  if(built && selKey===k) renderPanel();
   const forms = w.forms && w.forms.length ? w.forms : [k];
   let validated = null;
-  for(const f of forms){ try{ if(await fetchEn(w,f)){ validated=f; break; } }catch(e){} }
-  if(!validated){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
-  if(validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
+  for(const f of forms){ try{ if(await fetchEn(w,f,built)){ validated=f; break; } }catch(e){} }
+  if(!validated && !built){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
+  if(!built && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
   if(selKey===k) renderPanel();
-  const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
-  for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
+  if(!built){
+    const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
+    for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
+  }
   delete w.loading;
   w.up = Date.now();
   saveWords(); queueSync();
@@ -1740,6 +2008,7 @@ document.addEventListener('click', e=>{
 let darkMode = load('breeze.dark', false);
 function applyDark(){
   document.body.classList.toggle('dark', !!darkMode);
+  document.documentElement.classList.toggle('dark', !!darkMode);   // 화면 맨 아래까지 어둡게
   document.getElementById('aa-dark').classList.toggle('on', !!darkMode);
 }
 function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
@@ -1989,7 +2258,8 @@ async function bookUpload(id){
   if(twin && !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`)) return;
   try{
     syncStatus('올리는 중…');
-    const blob = new Blob([JSON.stringify({paras:b.paras})], {type:'application/json'});
+    // AI 정리 결과도 같이 올립니다(몇 KB). 다른 기기에서 다시 돌릴 필요가 없어집니다.
+    const blob = new Blob([JSON.stringify({paras:b.paras, tidy:b.tidy||null})], {type:'application/json'});
     const up = await sb.storage.from('books').upload(bookPath(id), blob, {upsert:true, contentType:'application/json'});
     if(up.error) throw up.error;
     const meta = { title:b.title, author:b.author||'', addedAt:b.addedAt||Date.now(),
@@ -2009,7 +2279,7 @@ async function bookDownload(id){
     const body = JSON.parse(await data.text());
     const meta = (serverBooks.find(r=>r.book_id===id)||{}).meta || {};
     const book = { id, title: meta.title||'(제목 없음)', author: meta.author||'',
-                   addedAt: meta.addedAt||Date.now(), paras: body.paras||[] };
+                   addedAt: meta.addedAt||Date.now(), paras: body.paras||[], tidy: body.tidy||null };
     if(!book.paras.length) throw new Error('본문이 비어 있어요');
     await bookPut(book);
     books = books.filter(b=>b.id!==id); books.unshift(book);
