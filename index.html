@@ -1086,8 +1086,10 @@ async function offerTidy(book){
   if(n < 40) return;
   if(!confirm('AI로 이 책을 정리할까요?\n\n'
             + '· 판권지·추천사 같은 앞부분을 접어 둡니다\n'
-            + '· 소제목을 찾아 목차를 만듭니다\n\n'
-            + '문단마다 앞 40자만 보내고 본문 전체는 보내지 않습니다.\n'
+            + '· 책의 목차를 그대로 살려 장·절을 잡습니다\n'
+            + '· 인용문과 활동 상자를 원서처럼 따로 조판합니다\n\n'
+            + 'AI가 책 전체를 읽습니다. 다만 글자를 돌려주지 않고 위치만 알려 주므로\n'
+            + '원문은 그대로입니다. 책 길이에 따라 1~3분 걸려요.\n'
             + '언제든 Aa 설정에서 끌 수 있어요.')) return;
   try{
     const t = await runTidy(book.paras, book.title, function(m){ toast(m); });
@@ -1521,60 +1523,209 @@ function applyBuiltin(w){
 }
 
 /* ================= AI 반입 정리 =================
-   원칙: 본문을 AI에게 보내지 않습니다. 문단마다 "앞 40자와 길이"만 보내고,
-   돌려받는 것도 본문이 아니라 지시(몇 번부터 본문인지, 어느 문단이 소제목인지)뿐입니다.
+   AI는 책을 처음부터 끝까지 읽습니다. 대신 글자는 단 한 자도 돌려받지 않습니다.
+   돌려받는 것은 위치 지시뿐입니다 — 몇 번 문단이 제목이고, 어디가 인용문이고, 어디가 찌꺼기인지.
+   제목 글자는 언제나 원문 문단에서 그대로 이어 붙여 만듭니다. AI가 지어낼 여지가 없습니다.
    그래서 원문이 바뀔 수 없고, 언제든 꺼서 원래대로 되돌릴 수 있습니다. */
 const LS_TIDYOFF = 'breeze.tidyoff';
 let tidyOff = load(LS_TIDYOFF, {});       // { 책ID: true } — 이 책은 AI 정리를 끔
 function tidyActive(b){ return !!(b && b.tidy && !tidyOff[b.id]); }
 
-/* 서버로 보낼 한 줄. 짧은 문단은 통째로, 긴 문단은 앞부분만 보냅니다.
-   AI가 "이게 인용문인지 활동 상자인지 대사인지"를 가리려면 글자를 봐야 합니다.
-   긴 문단은 어차피 본문이라 앞부분만으로 충분하고, 글자 수로 원래 길이를 알 수 있습니다. */
-const TIDY_FULL_MAX = 240;      // 이보다 짧으면 통째로 보냄
-const TIDY_HEAD_LEN = 100;      // 긴 문단은 앞부분만
+/* 서버로 보낼 한 줄. 문단을 자르지 않고 전문 그대로 보냅니다.
+   앞부분만 보내면 AI가 "이 줄로 문장이 끝나는지"를 알 수 없어서
+   대사·목록 조각을 제목으로 착각합니다. 목차 품질은 여기서 갈립니다. */
+const TIDY_PARA_CAP = 3000;     // 비정상적으로 긴 문단만 잘라 냄(사고 방지)
 function tidyItem(paras, i){
   const p = paras[i];
-  return { i:i, n:p.length, t: p.length <= TIDY_FULL_MAX ? p : p.slice(0, TIDY_HEAD_LEN) };
+  return { i:i, n:p.length, t: p.length <= TIDY_PARA_CAP ? p : p.slice(0, TIDY_PARA_CAP) };
 }
 const NUMWORD = 'one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen'
               + '|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|\\d{1,2}';
 const NUMWORD_LEAD = new RegExp('^(?:' + NUMWORD + ')\\s+(?=(?:chapter|part|book)\\b)', 'i');
 const NUMWORD_ONLY = new RegExp('^(?:' + NUMWORD + ')[.)]?$', 'i');
-/* 제목끼리 얼마나 같은지 — 책이 스스로 적어 둔 목차와 본문 제목을 맞출 때 씁니다 */
-function tocWords(s){ return String(s||'').toLowerCase().match(/[a-z0-9]+/g) || []; }
-function bestTocMatch(t, list, from){
-  const a = tocWords(t);
-  if(!a.length) return -1;
-  let bestAt = -1, best = 0;
-  for(let k=from; k<list.length; k++){
-    const b = tocWords(list[k]);
-    if(!b.length) continue;
-    const seen = {};
-    b.forEach(function(w){ seen[w] = (seen[w]||0) + 1; });
-    let hit = 0;
-    a.forEach(function(w){ if(seen[w]){ seen[w]--; hit++; } });
-    const score = hit / Math.min(a.length, b.length);
-    if(score > best){ best = score; bestAt = k; }
-  }
-  return best >= 0.6 ? bestAt : -1;
+/* 떨어져 나온 장 번호를 제자리에 끼워 넣습니다.
+   "Chapter Get The Love You Want" + "Seven" → "Chapter Seven Get The Love You Want" */
+function tocPutNum(t, num){
+  if(!t || !num) return t;
+  const m = t.match(/^(chapter|part|book)\s+/i);
+  if(!m) return t;
+  const rest = t.slice(m[0].length);
+  if(NUMWORD_ONLY.test((rest.split(/\s+/)[0] || ''))) return t;   // 번호가 이미 있음
+  return m[0] + num + ' ' + rest;
 }
 
-async function tidyCall(mode, items, title){
+/* 책의 목차 페이지에서 장 제목 목록을 뽑습니다.
+   목차 페이지는 대개 2단으로 짜여 있어서 번호와 제목이 서로 다른 줄에 떨어집니다.
+     26| Chapter Get The Love You Want: Success Strategies…
+     27| Seven                                    ← 26번의 번호
+     29| Eight Chapter Nine Get the Life You Want… ← 앞의 Eight는 28번의 번호
+   번호만 있는 조각을 버리지 않고 앞 항목에 되돌려 놓습니다. */
+function tidyBookToc(paras, from, to){
+  const out = [];
+  if(!(from >= 0) || !(to >= from)) return out;
+  for(let i=from; i<=to && i<paras.length; i++){
+    let t = (paras[i]||'').trim();
+    if(!t || paras[i].startsWith(IMG_MARK) || t.length > 140) continue;
+    let carry = '';
+    const lead = t.match(NUMWORD_LEAD);
+    if(lead){ carry = lead[0].trim(); t = t.slice(lead[0].length).trim(); }
+    else if(NUMWORD_ONLY.test(t)){ carry = t.replace(/[.)]$/, ''); t = ''; }
+    if(carry && out.length) out[out.length-1] = tocPutNum(out[out.length-1], carry);
+    if(t) out.push(t);
+  }
+  return out;
+}
+
+/* 제목끼리 얼마나 같은지 — 책이 스스로 적어 둔 목차와 본문 제목을 맞출 때 씁니다 */
+function tocWords(s){ return String(s||'').toLowerCase().match(/[a-z0-9]+/g) || []; }
+
+/* PDF는 제목 마지막 줄을 본문 첫 문단 앞에 붙여 놓곤 합니다.
+     707| Chapter        708| Reclaim Your
+     709| Personal Power One Saturday morning a few years back, my wife…
+   제목은 이미 온전히 그렸으므로 본문에 남은 "Personal Power"는 군더더기입니다.
+   제목에서 아직 안 쓴 단어가 본문 맨 앞에 그대로 이어질 때만, 그만큼의 글자 수를 셉니다.
+   글자를 고쳐 쓰는 게 아니라 "여기부터 본문"이라는 위치를 기록할 뿐입니다. */
+function tocTrimLead(title, headText, para){
+  const used = {};
+  tocWords(headText).forEach(function(w){ used[w] = (used[w]||0) + 1; });
+  const rest = {};
+  tocWords(title).forEach(function(w){
+    if(used[w]) used[w]--; else rest[w] = (rest[w]||0) + 1;
+  });
+  const re = /[A-Za-z0-9]+/g;
+  let m, cut = 0, n = 0;
+  while((m = re.exec(para))){
+    const w = m[0].toLowerCase();
+    if(!rest[w]) break;
+    rest[w]--; n++; cut = m.index + m[0].length;
+  }
+  return n >= 2 ? cut : 0;      // 두 단어 이상 이어질 때만 — 우연한 한 단어는 그냥 둡니다
+}
+const TOC_HIT = 0.6;            // 목차 항목의 이만큼이 들어 있으면 같은 제목으로 봅니다
+
+/* 목차 항목(t)이 본문 후보(u)의 **앞머리**에 얼마나 들어 있는지 (0~1).
+   두 가지를 견뎌야 합니다.
+   ① PDF가 번호를 흘림 — 본문에는 "Chapter / Reclaim Your / Masculinity" 뿐이고 "Six"가 없음.
+      목차 쪽 단어를 기준으로 세므로 몇 개 빠져도 점수가 남습니다.
+   ② 제목 끝이 본문에 눌어붙음 — "Personal Power One Saturday morning a few years back…".
+      후보의 앞부분만 보므로 뒤에 붙은 본문이 점수를 흐리지 않습니다.
+   분모가 언제나 목차 항목 쪽이라는 게 핵심입니다. 짧은 쪽으로 나누면
+   "Reclaim Your" 두 단어가 다섯 단어짜리 제목에 만점을 받아 엉뚱한 곳에 장이 박힙니다. */
+function tocLead(t, u){
+  const a = tocWords(t);
+  if(!a.length) return 0;
+  const b = tocWords(u).slice(0, a.length + 3);   // 목차 길이 + 약간의 여유만 봅니다
+  if(!b.length) return 0;
+  const seen = {};
+  b.forEach(function(w){ seen[w] = (seen[w]||0) + 1; });
+  let hit = 0;
+  a.forEach(function(w){ if(seen[w]){ seen[w]--; hit++; } });
+  return hit / a.length;
+}
+function bestTocMatch(t, list, from){
+  let bestAt = -1, best = 0;
+  for(let k=from; k<list.length; k++){
+    const score = tocLead(list[k], t);
+    if(score > best){ best = score; bestAt = k; }
+  }
+  return best >= TOC_HIT ? bestAt : -1;
+}
+
+/* 이 문단이 "제목 단어로만" 이루어져 있는지 (0~1).
+   길이로 재면 안 됩니다. PDF는 제목 끝줄에 본문 첫 문장을 붙여 놓는 일이 잦은데
+     571| A Priority "I want you to know that I'm really uncomfortable…"
+   이건 104자짜리 짧은 문단이지만 대부분이 본문입니다. 길이로 걸렀다간 본문을 먹습니다.
+   반대로 한 줄로 온전히 적힌 긴 제목은 길이로 걸러선 안 됩니다. */
+function tocOwn(tw, para){
+  const b = tocWords(para);
+  if(!b.length) return 0;
+  let hit = 0;
+  b.forEach(function(w){ if(tw[w]) hit++; });
+  return hit / b.length;
+}
+
+/* 책 목차에는 있는데 AI가 놓친 장을 본문에서 직접 찾아 채웁니다.
+   AI가 한 구간을 통째로 실패했더라도 여기서 장이 되살아납니다.
+   이미 확정된 앞 장의 뒤쪽만 뒤지므로 순서가 뒤집힐 수 없습니다. */
+const SWEEP_OWN = 0.8;          // 문단의 이만큼이 제목 단어여야 제목 줄로 칩니다
+const SWEEP_MAX = 200;          // 제목치고 이보다 길면 아예 보지 않습니다
+const SWEEP_RUN = 8;            // 큰 글씨 제목은 이만큼 잘게 쪼개지기도 합니다
+function tocSweep(paras, bookToc, anchor, heads, taken, start, add){
+  for(let k=0; k<bookToc.length; k++){
+    if(anchor[k] >= 0) continue;                       // 이미 찾은 장
+    let lo = start, hi = paras.length;
+    for(let j=k-1; j>=0; j--) if(anchor[j] >= 0){ lo = anchor[j] + 1; break; }
+    for(let j=k+1; j<bookToc.length; j++) if(anchor[j] >= 0){ hi = anchor[j]; break; }
+
+    const tw = {};
+    tocWords(bookToc[k]).forEach(function(w){ tw[w] = 1; });
+
+    let bestAt = -1, bestN = 0, best = 0;
+    for(let i=lo; i<hi; i++){
+      const p0 = paras[i];
+      if(p0 === undefined || p0.startsWith(IMG_MARK) || heads[i]) continue;
+      if(p0.length > SWEEP_MAX || tocOwn(tw, p0) < SWEEP_OWN) continue;  // 제목 줄에서만 시작
+      let t = '', headN = 0;
+      for(let n=1; n<=SWEEP_RUN && i+n-1 < hi; n++){
+        const p = paras[i+n-1];
+        if(p === undefined || p.startsWith(IMG_MARK) || heads[i+n-1]) break;
+        t += (t ? ' ' : '') + p;
+        const mine = p.length <= SWEEP_MAX && tocOwn(tw, p) >= SWEEP_OWN;
+        if(mine) headN = n;                            // 제목으로 삼는 건 제목 줄까지
+        const s = tocLead(bookToc[k], t);
+        if(headN && s > best + 1e-9){ best = s; bestAt = i; bestN = headN; }
+        /* 본문이 섞인 문단은 점수를 매기는 데만 쓰고 본문으로 남깁니다.
+           제목 끝이 본문 첫 줄에 눌어붙은 걸 알아보되, 본문을 먹지는 않습니다. */
+        if(!mine) break;
+      }
+    }
+    if(bestAt >= 0 && best >= TOC_HIT){
+      anchor[k] = bestAt;
+      add(bestAt, bestN, bookToc[k]);
+      for(let d=0; d<bestN; d++) taken[bestAt+d] = 1;
+    }
+  }
+}
+
+async function tidyCall(mode, items, title, extra){
   const got = await sb.auth.getSession();
   const session = got && got.data ? got.data.session : null;
+  const payload = { mode:mode, items:items, title:title||'' };
+  if(extra){ for(const k in extra) payload[k] = extra[k]; }
   const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/tidy', {
     method:'POST',
     headers:{ 'Content-Type':'application/json',
               'Authorization':'Bearer ' + (session ? session.access_token : SB_KEY),
               'apikey': SB_KEY },
-    body: JSON.stringify({ mode:mode, items:items, title:title||'' })
+    body: JSON.stringify(payload)
   });
   let j = null; try{ j = await r.json(); }catch(e){}
   if(!r.ok || !j || j.error) throw new Error((j && j.error) || ('http_'+r.status));
   return j;
 }
-const TIDY_BATCH = 240, TIDY_OVERLAP = 8, TIDY_MAX_BATCH = 30;
+/* 배치는 문단 수가 아니라 글자 수로 끊습니다. 문단 길이가 책마다 천차만별이라
+   문단 수로 끊으면 어떤 책은 한 번에 너무 많이, 어떤 책은 너무 적게 보내게 됩니다. */
+const TIDY_CHARS = 45000;   // 한 번에 보낼 글자 수 (≈ 1.2만 토큰)
+const TIDY_MAX_ITEMS = 500; // 서버 상한(600)보다 낮게
+const TIDY_OVERLAP = 6;     // 구간 경계에서 제목이 잘리지 않도록 겹쳐 읽기
+
+/* 본문을 글자 수 기준 구간으로 나눕니다. 책이 길면 구간이 늘 뿐, 잘려 나가지 않습니다. */
+function tidyBatches(paras, body){
+  const out = [];
+  let cur = [], chars = 0;
+  for(let k=0; k<body.length; k++){
+    const i = body[k];
+    const len = Math.min(paras[i].length, TIDY_PARA_CAP);
+    if(cur.length && (chars + len > TIDY_CHARS || cur.length >= TIDY_MAX_ITEMS)){
+      out.push(cur);
+      cur = cur.slice(Math.max(0, cur.length - TIDY_OVERLAP));  // 경계 겹치기
+      chars = cur.reduce(function(s, j){ return s + Math.min(paras[j].length, TIDY_PARA_CAP); }, 0);
+    }
+    cur.push(i); chars += len;
+  }
+  if(cur.length) out.push(cur);
+  return out;
+}
 async function runTidy(paras, title, onStep){
   const idx = [];
   for(let i=0;i<paras.length;i++) if(!paras[i].startsWith(IMG_MARK)) idx.push(i);
@@ -1589,36 +1740,38 @@ async function runTidy(paras, title, onStep){
   const start = f.start || 0;
 
   /* 책이 적어 둔 목차 = 장 제목의 정답지. 본문 제목이 쪼개져 있어도 이걸로 복원합니다. */
-  const bookToc = [];
-  if(f.tocFrom >= 0 && f.tocTo >= f.tocFrom){
-    for(let i=f.tocFrom; i<=f.tocTo && i<paras.length; i++){
-      let t = (paras[i]||'').trim();
-      if(!t || paras[i].startsWith(IMG_MARK) || t.length > 140) continue;
-      /* 목차 페이지가 2단으로 짜여 있으면 장 번호가 옆 칸에 있어서
-         "Eight Chapter Nine Get the Life…"처럼 앞줄 번호가 떨어져 붙습니다. */
-      t = t.replace(NUMWORD_LEAD, '');
-      if(NUMWORD_ONLY.test(t)) continue;         // 번호만 남은 조각은 버립니다
-      if(t) bookToc.push(t);
-    }
-  }
+  const bookToc = tidyBookToc(paras, f.tocFrom, f.tocTo);
 
-  /* 2) 구조 판정 — 걸러내지 않고 본문 전체를 순서대로 보냅니다.
-        앞뒤가 본문인지 보이지 않으면 대사와 제목을 구별할 수 없기 때문입니다. */
+  /* 2) 구조 판정 — 책을 처음부터 끝까지, 문단 전문 그대로 순서대로 읽힙니다.
+        매 구간마다 책 자체 목차를 "정답지"로 같이 보내서, AI가 무엇을 찾아야 하는지
+        알고 읽게 합니다. 직전 구간에서 확정된 제목도 알려 줘 흐름이 끊기지 않게 합니다. */
   const body = idx.filter(function(i){ return i >= start; });
+  const parts = tidyBatches(paras, body);
   const raw = [];
-  const step = TIDY_BATCH - TIDY_OVERLAP;
-  const batches = Math.min(TIDY_MAX_BATCH, Math.max(1, Math.ceil(body.length / step)));
-  for(let b=0; b<batches; b++){
-    const part = body.slice(b*step, b*step + TIDY_BATCH).map(function(i){ return tidyItem(paras, i); });
-    if(!part.length) break;
-    if(onStep) onStep('책 구조를 읽는 중… ' + (b+1) + '/' + batches);
-    const h = await tidyCall('blocks', part, title);
-    (h.blocks||[]).forEach(function(x){ raw.push(x); });
+  let prevHead = '';
+  for(let b=0; b<parts.length; b++){
+    const part = parts[b].map(function(i){ return tidyItem(paras, i); });
+    if(onStep) onStep('책을 읽는 중… ' + (b+1) + '/' + parts.length);
+    try{
+      const h = await tidyCall('blocks', part, title, { toc: bookToc, prev: prevHead });
+      const got = h.blocks || [];
+      got.forEach(function(x){ raw.push(x); });
+      /* 이 구간에서 마지막으로 찾은 제목 — 다음 구간에 이어 붙일 실마리 */
+      for(let k=got.length-1; k>=0; k--){
+        if(got[k].k === 'head' && paras[got[k].i]){ prevHead = paras[got[k].i].slice(0,120); break; }
+      }
+    }catch(e){
+      /* 한 구간이 실패해도 전체를 멈추지 않습니다 — 그 구간은 그냥 본문으로 남습니다.
+         뒤에서 목차 보완(tocSweep)이 놓친 장을 다시 주워 담습니다. */
+      console.warn('tidy batch failed', b, e);
+      if(onStep) onStep('한 구간을 건너뛰었어요… ' + (b+1) + '/' + parts.length);
+    }
   }
 
   const built = tidyBuildToc(paras, raw, bookToc, start);
   return { start:start, why:f.why||'', heads:built.heads, blocks:built.blocks,
-           drop:built.drop, toc:built.toc, levels:built.levels,
+           drop:built.drop, toc:built.toc, htext:built.htext, hskip:built.hskip,
+           htrim:built.htrim, levels:built.levels,
            title:f.title||'', author:f.author||'', at:Date.now() };
 }
 
@@ -1629,6 +1782,10 @@ function tidyBuildToc(paras, raw, bookToc, start){
   const items = raw.slice().sort(function(a,b){ return a.i - b.i || (b.n||1) - (a.n||1); });
   const taken = {};
   const heads = {}, blocks = {}, drop = {}, toc = [];
+  /* 큰 글씨 제목은 PDF에서 "Chapter" / "Reclaim Your" / "Masculinity" 처럼 줄 단위로 쪼개집니다.
+     그대로 그리면 제목이 세 줄로 따로 놉니다. 그래서 첫 줄에 온전한 제목을 몰아 주고(htext)
+     나머지 조각은 그리지 않습니다(hskip). 글자는 원문 조각을 이어 붙인 것뿐입니다. */
+  const htext = {}, hskip = {}, htrim = {};
 
   items.forEach(function(x){
     const i = x.i;
@@ -1641,21 +1798,58 @@ function tidyBuildToc(paras, raw, bookToc, start){
       const p = paras[i+d];
       if(p === undefined || p.startsWith(IMG_MARK)) break;
       taken[i+d] = 1;
-      if(x.k === 'head'){ heads[i+d] = x.l || 2; t += (t ? ' ' : '') + p; }
+      if(x.k === 'head'){
+        if(d === 0) heads[i] = x.l || 2; else hskip[i+d] = 1;
+        t += (t ? ' ' : '') + p;
+      }
       else if(x.k === 'drop') drop[i+d] = 1;
       else blocks[i+d] = { k:x.k, first:d===0, last:d===n-1 };
     }
-    if(x.k === 'head' && t) toc.push({ pi:i, t:t.trim(), l:x.l || 2 });
+    if(x.k === 'head' && t){
+      t = t.trim();
+      toc.push({ pi:i, t:t, l:x.l || 2 });
+      if(n > 1) htext[i] = t;
+    }
   });
 
   /* 책이 적어 둔 목차와 대조 — 순서를 지키며 한 항목당 한 번만 씁니다.
      여기서 맞아떨어진 것은 "확실한 장"이므로 나중에 위계를 정할 때 기준이 됩니다. */
   if(bookToc && bookToc.length){
+    const anchor = bookToc.map(function(){ return -1; });
     let cursor = 0;
     toc.forEach(function(x){
       if(x.l > 2) return;                       // 소제목까지 목차 페이지와 맞추지는 않습니다
       const at = bestTocMatch(x.t, bookToc, cursor);
-      if(at >= 0){ x.t = bookToc[at]; x.sure = true; cursor = at + 1; }
+      if(at >= 0){
+        x.t = bookToc[at]; x.sure = true; anchor[at] = x.pi; cursor = at + 1;
+        htext[x.pi] = x.t;          // 책이 적어 둔 온전한 제목으로 갈아 끼웁니다
+      }
+    });
+
+    /* AI가 놓친 장을 본문에서 직접 찾아 채웁니다.
+       책이 "이런 장이 있다"고 적어 둔 이상, 본문 어딘가에 반드시 있습니다. */
+    tocSweep(paras, bookToc, anchor, heads, taken, start, function(pi, n, title){
+      for(let d=0; d<n; d++){
+        delete drop[pi+d]; delete blocks[pi+d];
+        if(d === 0) heads[pi] = 2; else hskip[pi+d] = 1;
+      }
+      htext[pi] = title;
+      toc.push({ pi:pi, t:title, l:2, sure:true });
+    });
+    toc.sort(function(a,b){ return a.pi - b.pi; });
+
+    /* 제목 꼬리가 눌어붙은 본문 첫 문단에서 그 꼬리만큼을 떼어 냅니다.
+       AI가 찾은 장이든 여기서 채운 장이든 똑같이 적용합니다. */
+    toc.forEach(function(x){
+      if(!x.sure) return;
+      let end = x.pi + 1;
+      while(hskip[end]) end++;
+      const p = paras[end];
+      if(p === undefined || p.startsWith(IMG_MARK) || heads[end]) return;
+      let headText = paras[x.pi] || '';
+      for(let j=x.pi+1; j<end; j++) headText += ' ' + paras[j];
+      const cut = tocTrimLead(x.t, headText, p);
+      if(cut > 0 && cut < p.length - 20) htrim[end] = cut;
     });
   }
 
@@ -1677,7 +1871,8 @@ function tidyBuildToc(paras, raw, bookToc, start){
     toc.forEach(function(x){ if(!x.sure && x.l <= sureLv) x.l = sureLv + 1; });
   }
   toc.forEach(function(x){ if(x.l > 3) x.l = 3; });
-  return { heads:heads, blocks:blocks, drop:drop, toc:toc, levels:present.length };
+  return { heads:heads, blocks:blocks, drop:drop, toc:toc,
+           htext:htext, hskip:hskip, htrim:htrim, levels:present.length };
 }
 
 /* 지금 보고 있는 책을 정리합니다 (Aa 설정 → 정리하기) */
@@ -1685,9 +1880,10 @@ async function tidyNow(){
   const b = curBook;
   if(!b || b.builtin){ toast('샘플 책은 정리할 수 없어요'); return; }
   if(!sb || !sbUser){ toast('AI 정리는 로그인 후 사용할 수 있어요'); openSyncModal(); return; }
-  if(!confirm('AI로 앞부분(판권지·추천사 등)을 잘라내고 소제목을 정리할까요?\n\n'
-            + '문단마다 앞 40자만 서버로 보냅니다. 본문 전체는 보내지 않아요.\n'
-            + '결과가 마음에 안 들면 이 설정에서 바로 끌 수 있습니다.')) return;
+  if(!confirm('AI가 책 전체를 읽고 목차와 소제목을 정리합니다.\n\n'
+            + '본문이 서버를 거쳐 AI에게 전달되지만, AI는 글자를 돌려주지 않습니다.\n'
+            + '제목은 언제나 원문에서 그대로 가져오므로 내용이 바뀌지 않아요.\n'
+            + '책 길이에 따라 1~3분 걸립니다. 결과가 마음에 안 들면 바로 끌 수 있어요.')) return;
   const runBtn = document.getElementById('aa-tidy-run');
   runBtn.disabled = true;
   try{
@@ -1917,6 +2113,11 @@ function renderBookBody(b){
       return;
     }
     if(T && T.drop && T.drop[pi]) return;       // 쪽번호·워터마크 찌꺼기
+    if(T && T.hskip && T.hskip[pi]) return;     // 쪼개진 제목의 뒷조각 — 첫 줄에 이미 합쳐 놓았습니다
+    /* 제목은 원문 조각을 이어 붙인 온전한 한 줄로 그리고,
+       그 꼬리가 눌어붙어 있던 본문은 꼬리를 뗀 자리부터 그립니다. */
+    let txt = (T && T.htext && T.htext[pi]) ? T.htext[pi] : p;
+    if(T && T.htrim && T.htrim[pi]) txt = txt.slice(T.htrim[pi]).replace(/^[\s.,:;]+/, '');
     const lvl = T ? (T.heads[pi] || 0) : (looksHeading(p) ? 2 : 0);
     const isHead = !!lvl;
     const blk = (T && T.blocks) ? T.blocks[pi] : null;
@@ -1938,17 +2139,17 @@ function renderBookBody(b){
     el.dataset.pi = pi;
     let html='', m, last=0;
     WORD_RE.lastIndex=0;
-    while((m=WORD_RE.exec(p))){
-      html += esc(p.slice(last, m.index));
+    while((m=WORD_RE.exec(txt))){
+      html += esc(txt.slice(last, m.index));
       const k = keyOf(m[0]);
       const st = words[k] ? ' s'+words[k].status : '';
       html += `<span class="w${st}" data-w="${k}">${esc(m[0])}</span>`;
       last = m.index + m[0].length;
     }
-    html += esc(p.slice(last));
+    html += esc(txt.slice(last));
     el.innerHTML = html;
     host.appendChild(el);
-    pageChars += p.length;
+    pageChars += txt.length;
   });
   const no = document.createElement('div');
   no.className='pageno'; no.textContent = '— '+pageNo+' —';
