@@ -2009,9 +2009,24 @@ async function runTidyFast(paras, sig, title, onStep){
   const lv = {};
   (r.levels || []).forEach(function(x){ lv[x.i] = x.l; });
 
-  /* AI가 준 단계 + 조판으로 잡은 인용문 → 기존 조립기에 그대로 태웁니다 */
+  /* AI가 준 단계 + 조판으로 잡은 인용문 → 기존 조립기에 그대로 태웁니다.
+     쪼개진 제목("Chapter"/"The Nice Guy"/"Syndrome")은 후보마다 따로 판정되므로
+     여기서 다시 한 줄로 묶어 줍니다. 안 그러면 장 하나가 목차에 세 줄로 따로 뜹니다.
+     (sigStructure 의 무료 경로에 있던 것과 같은 병합 규칙입니다.) */
   const raw = [];
-  use.forEach(function(c){ if(lv[c.i] > 0) raw.push({ i:c.i, n:1, k:'head', l:lv[c.i] }); });
+  const merged = {};
+  use.forEach(function(c){
+    if(merged[c.i] || !(lv[c.i] > 0)) return;
+    let t = paras[c.i], n = 1, lev = lv[c.i];
+    while(paras[c.i+n] !== undefined && lv[c.i+n] > 0
+          && (t + ' ' + paras[c.i+n]).length < 130 && !endsSentence(t) && n < 6){
+      merged[c.i+n] = 1;
+      t += ' ' + paras[c.i+n];
+      lev = Math.min(lev, lv[c.i+n]);
+      n++;
+    }
+    raw.push({ i:c.i, n:n, k:'head', l:lev });
+  });
   runsOf(paras, sig, 'quote').forEach(function(q){ if(q.i >= start && !lv[q.i]) raw.push(q); });
 
   const built = tidyBuildToc(paras, raw, bookToc, start);
@@ -2349,22 +2364,31 @@ async function tidyNow(){
   const b = curBook;
   if(!b || b.builtin){ toast('샘플 책은 정리할 수 없어요'); return; }
   if(!sb || !sbUser){ toast('AI 정리는 로그인 후 사용할 수 있어요'); openSyncModal(); return; }
-  if(!confirm('AI가 책 전체를 읽고 목차와 소제목을 정리합니다.\n\n'
-            + '본문이 서버를 거쳐 AI에게 전달되지만, AI는 글자를 돌려주지 않습니다.\n'
-            + '제목은 언제나 원문에서 그대로 가져오므로 내용이 바뀌지 않아요.\n'
-            + '책 길이에 따라 1~3분 걸립니다. 결과가 마음에 안 들면 바로 끌 수 있어요.')) return;
+  /* 조판 단서(b.sig)가 있으면 제목 후보만 보내는 싼 경로를 씁니다(수 초, 토큰 1/50).
+     이 단서는 반입할 때만 만들어지므로, 그 전에 넣은 책이나 스캔 PDF는 없습니다.
+     이 경우엔 전권을 읽혀야 해서 확인창부터 다르게 보여 줍니다 — 조용히 느린 길로
+     새면 "왜 오래 걸리지" 싶은 순간이 생기기 때문입니다. */
+  const fast = !!b.sig;
+  const msg = fast
+    ? 'AI가 목차 후보만 보고 위계를 정리합니다.\n\n'
+    + '본문은 서버로 보내지 않습니다 — 제목처럼 보이는 짧은 줄과 그 다음 문장만 보냅니다.\n'
+    + '몇 초면 끝나요. 결과가 마음에 안 들면 바로 끌 수 있어요.'
+    : 'AI가 책 전체를 읽고 목차와 소제목을 정리합니다.\n\n'
+    + '이 책은 (예전에 넣었거나 스캔본이라) 빠른 정리에 쓸 단서가 없어서 전권을 읽어야 해요.\n'
+    + '본문이 서버를 거치지만 AI는 글자를 돌려주지 않고, 제목은 언제나 원문 그대로예요.\n'
+    + '책 길이에 따라 1~3분 걸립니다. 다시 넣으면 다음엔 몇 초짜리 빠른 정리를 쓸 수 있어요.';
+  if(!confirm(msg)) return;
   const runBtn = document.getElementById('aa-tidy-run');
   runBtn.disabled = true;
   try{
-    /* 조판 단서가 있으면 제목 후보만 보내는 싼 경로를 먼저 씁니다(토큰 1/50).
-       후보가 안 나오는 책(스캔 PDF 등)만 본문 전체를 읽힙니다. */
-    let t = null;
-    if(b.sig) t = await runTidyFast(b.paras, b.sig, b.title, function(msg){ toast(msg); });
+    let t = fast ? await runTidyFast(b.paras, b.sig, b.title, function(msg){ toast(msg); }) : null;
+    if(fast && !t) toast('후보로는 부족해서 전체를 다시 읽을게요…');   // 조용히 안 넘어갑니다
     if(!t) t = await runTidy(b.paras, b.title, function(msg){ toast(msg); });
     b.tidy = t;
     delete tidyOff[b.id]; save(LS_TIDYOFF, tidyOff);
     await bookPut(b);
-    toast('정리했어요 — 앞 ' + t.start + '문단 접고, 목차 ' + t.toc.length + '개');
+    toast((t.src === 'fast' ? '빠른 정리 완료' : '정리 완료')
+        + ' — 앞 ' + t.start + '문단 접고, 목차 ' + t.toc.length + '개');
     keepPlace(function(){ renderBookBody(b); });
     syncTidyUI();
   }catch(e){
