@@ -14,6 +14,13 @@ async function loadBooks(){
     try{ localStorage.removeItem(LS_BOOKS); }catch(e){}
     books.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   }
+  // Older releases keyed books only by their importer-specific ID. Persist a
+  // paragraph-boundary-independent fingerprint for reliable server matching.
+  for(const book of books){
+    const previousFingerprint = book.fingerprint || '';
+    ensureBookFingerprint(book);
+    if(book.fingerprint !== previousFingerprint) await bookPut(book);
+  }
 }
 let positions = load(LS_POS, {});   // bookId -> {y, p(0~1), t(lastOpened)}
 let curBook = null, selKey = null;
