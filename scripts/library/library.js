@@ -33,6 +33,7 @@ function attachLongPress(el, fn){
 async function deleteBook(b){
   if(b.builtin) return;
   if(!confirm(`"${b.title}" 책을 삭제할까요?\n\n동기화한 경우 다른 기기에서도 삭제됩니다.\n(단어장은 그대로 남습니다)`)) return;
+  const remoteId = typeof serverBookIdFor === 'function' ? serverBookIdFor(b) : b.id;
   books = books.filter(x=>x.id!==b.id);
   await bookDel(b.id);
   imgPurge(b.id+'|');
@@ -40,18 +41,20 @@ async function deleteBook(b){
   renderHome();
   if(sb && sbUser){
     try{
-      // 본문 파일은 실제로 지우고,
-      await sb.storage.from('books').remove([bookPath(b.id)]);
+      // 본문과 작은 AI 조판 지도 파일을 실제로 지우고,
+      const removedFiles = await sb.storage.from('books').remove([bookPath(remoteId), bookFormatPath(remoteId)]);
+      if(removedFiles.error) throw removedFiles.error;
       // 목록 행은 "지웠음" 표시로 남깁니다. 이 표시가 있어야 다른 기기도 지울 수 있습니다.
-      const meta = { title:b.title, deleted:true, deletedAt:Date.now() };
-      const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:b.id, meta}],
+      const meta = { title:b.title, fingerprint:ensureBookFingerprint(b),
+                     deleted:true, deletedAt:Date.now() };
+      const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:remoteId, meta}],
                                                       {onConflict:'user_id,book_id'});
       if(error) throw error;
-      const positionDelete = await sb.from('positions').delete().eq('user_id', sbUser.id).eq('book_id', b.id);
+      const positionDelete = await sb.from('positions').delete().eq('user_id', sbUser.id).eq('book_id', remoteId);
       if(positionDelete.error) console.warn('Position cleanup skipped:', positionDelete.error.message);
       if(serverBooks){
-        serverBooks = serverBooks.filter(r => r.book_id !== b.id);
-        serverBooks.push({book_id:b.id, meta});
+        serverBooks = serverBooks.filter(r => r.book_id !== remoteId);
+        serverBooks.push({book_id:remoteId, meta});
       }
       renderBookList();
     }catch(e){ console.error(e); toast('기기에서는 지웠지만 서버에서 지우지 못했어요'); return; }
@@ -73,10 +76,12 @@ async function renameBook(b){
   // 서버에 이미 올라간 책이면 목록의 이름도 함께 갱신
   if(sb && sbUser){
     try{
-      const { data } = await sb.from('books').select('meta').eq('user_id', sbUser.id).eq('book_id', b.id).maybeSingle();
+      const remoteId = typeof serverBookIdFor === 'function' ? serverBookIdFor(b) : b.id;
+      const { data } = await sb.from('books').select('meta').eq('user_id', sbUser.id).eq('book_id', remoteId).maybeSingle();
       // 다른 기기가 이미 지운 책이면 서버 정보를 되살리지 않습니다(삭제가 이깁니다)
       if(data && !(data.meta||{}).deleted) await sb.from('books').upsert(
-        [{user_id:sbUser.id, book_id:b.id, meta:{...(data.meta||{}), title:t, renamedAt:b.renamedAt}}],
+        [{user_id:sbUser.id, book_id:remoteId,
+          meta:{...(data.meta||{}), title:t, fingerprint:ensureBookFingerprint(b), renamedAt:b.renamedAt}}],
         {onConflict:'user_id,book_id'});
     }catch(e){}
   }
@@ -171,8 +176,6 @@ function bookHash(paras){
   const total = paras.reduce((a,p)=>a+p.length, 0);
   return 'b' + h1.toString(36) + h2.toString(36) + (total % 1000000).toString(36);
 }
-const normTitle = t => String(t||'').toLowerCase().replace(/[\s._-]+/g,' ').trim();
-
 async function importFile(f){
   if(!/\.(pdf|epub|txt)$/i.test(f.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
   toast('텍스트 추출 중…');
@@ -204,6 +207,7 @@ async function importFile(f){
     paras = paras.map(p => p.startsWith(IMG_MARK) ? p.replace(tmpId, id) : p);
     await imgRename(tmpId, id);
     const book = {id, title, paras, addedAt:Date.now()};
+    ensureBookFingerprint(book);
     // Preserve raw structural hints for future rolling-formatting work.
     const packedSignals = packLayoutSignals(sig);
     if(packedSignals) book.layoutSignals = packedSignals;
