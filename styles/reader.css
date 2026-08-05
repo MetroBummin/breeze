@@ -1,0 +1,137 @@
+/* Reader layout, typography, focus mode, and formatting blocks */
+
+  #v-read{display:none;}
+  #v-read.on{display:flex;}
+  #readmain{flex:1; min-width:0;}
+  #rbar{position:sticky; top:var(--topbar-h,56px); z-index:40; background:transparent; height:3px;}
+  #rbar .row{display:flex; align-items:center; gap:12px; padding:14px 22px 10px;}
+  #rback{border:none; background:none; cursor:pointer; padding:6px; color:#345462;}
+  #rbar .rt{flex:1; text-align:center; font-size:14.5px; font-weight:500; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
+  .iconbtn:hover{background:var(--sky);}
+  /* Aa settings popover */
+  #aa-pop{position:fixed; right:14px; bottom:126px; z-index:96; background:#fff; border:1px solid var(--line);
+    border-radius:16px; padding:16px 18px; width:240px; box-shadow:var(--shadow); display:none;}
+  #aa-pop.on{display:block;}
+  .aa-row{display:flex; align-items:center; justify-content:space-between; padding:8px 0;}
+  .aa-label{font-size:13.5px; color:var(--soft); font-weight:500;}
+  .aa-size{display:flex; align-items:center; gap:10px;}
+  .aa-size button{border:1px solid var(--line); background:none; border-radius:9px; padding:5px 11px;
+    cursor:pointer; font-size:13px; color:var(--ink); font-family:var(--ui);}
+  .aa-size button:hover{background:var(--sky);}
+  #aa-fs{font-size:13.5px; min-width:24px; text-align:center; color:var(--ink);}
+  .aa-toggle{width:46px; height:26px; border-radius:13px; border:none; background:#D8D4C8; cursor:pointer;
+    position:relative; transition:background .2s;}
+  .aa-toggle i{position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%;
+    background:#fff; transition:left .2s; box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  .aa-toggle.on{background:var(--blue);}
+  .aa-toggle.on i{left:23px;}
+  /* ---------- dark mode ---------- */
+  body.dark{
+    --paper:#16181B; --paper2:#16181B; --ink:#E7E3D8; --ink-body:#D3CFC4;
+    --soft:#9AA1A8; --soft2:#8A9199; --line:#2A2E33; --line2:#33383E;
+    --sky:#22333C; --sky2:#2A4552; --chipbg:#20353A; --chiptx:#8CCabf;
+    --shadow:0 14px 34px rgba(0,0,0,.4);
+  }
+  body.dark::before{opacity:.12;}
+  body.dark #topbar{background:rgba(22,24,27,.9);}
+  body.dark #rbar{background:rgba(22,24,27,.93);}
+  body.dark .page{background:#1C1F23; border-color:#2A2E33; box-shadow:none;}
+  body.dark .w:hover{background:#2E3237;}
+  body.dark .w.s1{background:rgba(255,226,138,.30);}
+  body.dark .w.s2{background:rgba(255,171,120,.32);}
+  body.dark .w.s3{background:rgba(255,140,140,.34);}
+  body.dark #panel, body.dark #sm-card, body.dark #aa-pop{background:#1F2327; border-color:#2A2E33;}
+  body.dark #p-close, body.dark #sm-close{background:#2A2E33; color:#9AA1A8;}
+  body.dark #p-handle{background:#1F2327;}
+  body.dark table, body.dark #vtablewrap table{background:#1C1F23;}
+  body.dark th{background:#22262B;}
+  body.dark td{border-bottom-color:#25292E;}
+  body.dark #vsearch, body.dark #sm-email{background:#1C1F23; color:var(--ink);}
+  body.dark #hero{background:linear-gradient(135deg,#20303A,#1C1F23);}
+  body.dark #hero .track{background:#2E3A42;}
+  body.dark .pal0, body.dark .pal1, body.dark .pal2{background:#22262B; color:#D3CFC4;}
+  body.dark .pal0 .author, body.dark .pal1 .author, body.dark .pal2 .author{color:#9AA1A8;}
+  body.dark .bookcard.add{border-color:#3A3F45;}
+  body.dark .bookcard .del{background:rgba(0,0,0,.4); color:#9AA1A8;}
+  body.dark #focusbtn{background:rgba(31,35,39,.9); border-color:#2A2E33;}
+  body.dark .aa-size button{color:var(--ink);}
+  body.dark #splash{background:#16181B;}
+  /* 다크 모드에서 밝은 배경 위에 밝은 글자가 놓이던 두 곳 */
+  body.dark .sm-btn.ghost{background:#262A2F; color:var(--ink);}
+  body.dark .sm-btn.ghost:hover{background:#2E3339;}
+  body.dark #p-ai{background:linear-gradient(135deg,#1D2E36,#1B2A22); border-color:#2F4650;}
+  body.dark #p-ai .m{color:#EAF4F8;}
+  body.dark #p-ai .note{color:#AFC3CB;}
+  body.dark #p-ai .cap{color:#6FC3E6;}
+  body.dark #p-airetry{color:#9AA1A8;}
+  body.dark #p-airetry:hover{color:#6FC3E6;}
+  body.dark .navbtn:hover{background:#22262B;}
+  body.dark .iconbtn:hover{background:#22262B;}
+  /* focus mode: chrome disappears, only text remains */
+  #focusbtn, #aafab{position:fixed; right:18px; z-index:70; width:44px; height:44px; border-radius:50%;
+    border:1px solid var(--line); background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
+    cursor:pointer; display:none; align-items:center; justify-content:center; color:var(--soft);
+    box-shadow:0 4px 14px rgba(23,55,71,.12); transition:opacity .3s; font-family:var(--ui);}
+  #focusbtn{bottom:18px;}
+  #aafab{bottom:72px; font-size:15px; font-weight:600;}
+
+  body.reading #focusbtn, body.reading #aafab{display:flex;}
+
+  /* keep the page-card structure in focus mode — just give the text more room */
+  body.focusmode #readwrap{max-width:880px; padding:16px 10px 50vh;}
+  body.focusmode .page{padding:34px 30px;}
+  body.focusmode .pageno{margin:12px 0 18px;}
+  body.focusmode #rtitle{display:none;}
+  @media (max-width:760px){
+    body.focusmode #readwrap{padding:8px 4px 50vh;}
+    body.focusmode .page{padding:22px 15px; border-radius:14px;}
+  }
+  body.focusmode #focusbtn, body.focusmode #aafab{opacity:.35;}
+  body.focusmode #focusbtn:hover, body.focusmode #aafab:hover{opacity:1;}
+  #ptrack{height:3px; background:var(--line2);}
+  #pfill{height:3px; background:var(--blue); width:0; transition:width .15s;}
+  #readwrap{max-width:700px; margin:0 auto; padding:36px 26px 50vh;}
+  #rtitle{font-family:var(--serif); font-size:clamp(24px,3.4vw,30px); color:var(--ink); padding-bottom:18px; overflow-wrap:anywhere;
+    border-bottom:1px solid var(--line); margin-bottom:8px;}
+  #rhint{font-size:13px; color:var(--soft2); margin-bottom:26px; display:flex; align-items:center; gap:8px;}
+  #rhint svg{flex-shrink:0;}
+  #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;}
+  #rtext p{margin-bottom:1.2em;}
+  /* 부 · 장 · 절 — 위계가 눈에 보여야 종이책처럼 읽힙니다 */
+  #rtext h2{font-size:1.62em; font-weight:600; letter-spacing:-.5px; line-height:1.35;
+    margin:2.2em 0 1.5em; padding-bottom:.5em; border-bottom:1px solid var(--line);
+    color:var(--ink); text-align:center;}
+  #rtext h3{font-size:1.24em; font-weight:600; margin:2em 0 1em; color:var(--ink); line-height:1.4;}
+  #rtext h4{font-size:1.02em; font-weight:700; margin:1.7em 0 .7em; color:var(--ink);
+    letter-spacing:.01em;}
+  #rtext h2:first-child, #rtext h3:first-child, #rtext h4:first-child{margin-top:.2em;}
+  /* 인용문 · 편지 — 본문에서 한 발 물러나게 */
+  #rtext .blk{margin:1.6em 0; }
+  #rtext .blk.quote{padding:.2em 0 .2em 1.2em; border-left:3px solid var(--line2);}
+  #rtext .blk.quote p{font-size:.95em; color:var(--soft); font-style:italic; margin-bottom:.8em;}
+  #rtext .blk.quote p:last-child{margin-bottom:0;}
+  /* 활동 상자 · 역주 — 원서에서 테두리 상자로 조판되던 것 */
+  #rtext .blk.note{background:var(--sky2); border:1px solid var(--line2); border-radius:14px;
+    padding:18px 20px;}
+  #rtext .blk.note p{font-size:.93em; margin-bottom:.7em; color:var(--ink-body);}
+  #rtext .blk.note p:last-child{margin-bottom:0;}
+  #rtext .blk.note p:first-child{font-weight:700; font-family:var(--ui); font-size:.86em;
+    letter-spacing:.02em; color:var(--chiptx); margin-bottom:.9em;}
+  body.dark #rtext .blk.note{background:#1E272B; border-color:#2F3A40;}
+  body.dark #rtext .blk.quote{border-left-color:#3A424A;}
+  @media(max-width:760px){ #rtext .blk.note{padding:15px 16px;} }
+  .page{background:#FFFEFA; border:1px solid #EDEAE0; border-radius:20px; padding:40px 44px; overflow:hidden;
+    box-shadow:0 3px 16px rgba(60,50,30,.05);}
+  .pageno{text-align:center; color:#B9B09E; font-size:12px; margin:18px 0 26px; font-family:var(--serif); user-select:none;}
+  #rtext figure{margin:1.5em 0; text-align:center;}
+  #rtext figure img{max-width:100%; border-radius:10px; box-shadow:var(--shadow);}
+  .w{cursor:pointer; border-radius:5px; padding:0 1px; transition:background .12s;}
+  .w:hover{background:#EFE9DB;}
+  .w.s1{background:var(--s1);}
+  .w.s2{background:var(--s2);}
+  .w.s3{background:var(--s3);}
+  .w.sel{background:var(--sky2); box-shadow:0 0 0 3px var(--sky2); border-radius:6px;}
+  .legend{display:flex; gap:12px; font-size:12px; color:var(--soft);}
+  .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}

@@ -1,0 +1,115 @@
+/* Dictionary panel and mobile sheet */
+
+  #sheetbg{display:none;}
+  #panel{width:360px; flex-shrink:0; background:#fff; border-radius:26px 0 0 0; box-shadow:-8px 0 30px rgba(24,54,74,.08);
+    overscroll-behavior:contain;
+    height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
+  #panel.on{display:block;}
+  #panel .inner{padding:26px 26px 40px;}
+  #p-handle{display:none; touch-action:none;}
+  #p-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
+    font-size:14px; cursor:pointer; color:var(--soft);}
+  #p-head{display:flex; align-items:center; gap:10px; margin-bottom:4px;}
+  #p-word{font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);}
+  #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
+    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:var(--blue); transition:.15s;}
+  #p-speak:hover{background:var(--sky);}
+  #p-speak.playing{background:var(--blue); color:#fff; border-color:var(--blue);}
+  body.dark #p-speak{background:#22262B; border-color:#2A2E33;}
+  #p-phon{color:#5F7881; font-size:14px; margin-bottom:4px;}
+  #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
+  #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
+  #p-ko{font-size:17px; font-weight:600; background:var(--sky); color:var(--ink); border-radius:12px;
+    padding:11px 14px; margin-bottom:6px; min-height:22px; outline:none;}
+  #p-ko:focus{box-shadow:0 0 0 2px var(--blue);}
+  #p-ko-hint{font-size:11px; color:var(--soft2); margin:0 0 12px 3px;}
+  #p-ai{display:none; background:linear-gradient(135deg,#EAF4F8,#F3F6EC); border:1px solid #CFE4EC;
+    border-radius:14px; padding:13px 15px; margin-bottom:12px;}
+  #p-ai.on{display:block;}
+  #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+    letter-spacing:.08em; color:var(--blue); margin-bottom:6px;}
+  #p-ai .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--blue);}
+  #p-ai .m{font-size:18px; font-weight:700; color:var(--ink); line-height:1.35;}
+  #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
+  #p-ai .note{font-size:12.5px; color:#5B707A; line-height:1.55; margin-top:7px;}
+  #p-ai.load .m{color:var(--soft2); font-weight:500; font-size:15px;}
+  #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
+    border:1px dashed #BFD9E4; background:#F4FAFC; color:var(--blue); border-radius:12px;
+    padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
+    margin-bottom:12px;}
+  #p-aibtn:hover{background:var(--sky); border-style:solid;}
+  #p-aibtn:disabled{opacity:.6; cursor:default;}
+  #p-aibtn .sp{font-size:15px;}
+  #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
+  #p-airetry{display:block; margin:8px auto 0; border:none; background:none; color:var(--soft);
+    font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+  #p-airetry:hover{color:var(--blue);}
+  .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
+  #p-src{display:none; margin-left:7px; padding:2px 7px; border-radius:9px; background:var(--sky);
+         color:var(--chiptx); font-size:9.5px; letter-spacing:0; vertical-align:1px;}
+  #p-src.on{display:inline-block;}
+  #p-colloc-sec{display:none;}
+  #p-colloc{display:none; flex-wrap:wrap; gap:6px;}
+  #p-colloc.on{display:flex;}
+  #p-colloc.on + .p-sec, #p-colloc-sec.on{display:block;}
+  .colloc{border:1px solid var(--line); border-radius:14px; padding:5px 11px; font-size:12.5px;
+          color:var(--soft); font-family:var(--serif); font-style:italic;}
+  .colloc.hit{border-color:var(--blue); color:var(--blue); background:var(--sky);}
+  body.dark .colloc.hit{background:#22333C;}
+  #p-kodict{display:flex; flex-wrap:wrap; gap:7px;}
+  .kochip{border:none; background:var(--chipbg); color:var(--chiptx); border-radius:16px; padding:7px 13px;
+    font-size:13px; cursor:pointer; font-family:var(--ui);}
+  .kochip:hover{background:#D5EBE7;}
+  .kochip.on{background:var(--blue); color:#fff;}
+  .kochip .pos{opacity:.65; font-style:italic; margin-right:4px; font-size:11px;}
+  #p-defs{font-size:13.5px; line-height:1.6; color:var(--ink-body);}
+  #p-defs .pos{color:var(--blue); font-style:italic; margin-right:5px;}
+  #p-defs div{margin-bottom:7px;}
+  #p-ex{font-size:13.5px; font-family:var(--serif); font-style:italic; color:#5B707A; line-height:1.65;
+    border-left:3px solid var(--sky2); padding-left:11px;}
+  #p-status{display:flex; gap:8px; margin-top:6px;}
+  .stbtn{flex:1; border:1.5px solid var(--line); background:#fff; border-radius:12px; padding:9px 0;
+    font-size:13px; cursor:pointer; font-weight:600; color:var(--soft); font-family:var(--ui);}
+  .stbtn[data-s="1"].on{background:var(--s1); border-color:#E6C14F; color:#7A5D00;}
+  .stbtn[data-s="2"].on{background:var(--s2); border-color:#E89A5F; color:#8A4712;}
+  .stbtn[data-s="3"].on{background:var(--s3); border-color:#E57373; color:#9C1F1F;}
+  #p-naver{display:inline-block; margin-top:10px; font-size:12.5px; color:var(--blue); text-decoration:none;
+    border:1px solid var(--line); border-radius:16px; padding:6px 12px;}
+  #p-naver:hover{background:var(--sky);}
+  /* 아는 단어를 빼는 건 학습 루프의 핵심 동작이라 버튼처럼 보여야 합니다.
+     다만 지우는 동작이라 강한 색 대신 테두리만 씁니다. */
+  #p-know{display:flex; align-items:center; justify-content:center; gap:7px;
+    width:100%; margin:24px 0 4px; padding:13px 16px; font-size:14px; font-family:var(--ui);
+    border:1.5px solid var(--line2); border-radius:14px; background:var(--paper2);
+    color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s;}
+  #p-know .ck{width:17px; height:17px; flex:none; color:var(--chiptx);}
+  #p-know:hover{border-color:var(--blue); background:var(--sky);}
+  body.dark #p-know{background:#22262B; border-color:#343A41; color:var(--ink);}
+  body.dark #p-know:hover{border-color:var(--blue); background:#22333C;}
+
+  /* mobile: bottom sheet */
+  @media (max-width:760px){
+    #v-read.on{display:block;}
+    #sheetbg{display:block; position:fixed; inset:0; background:rgba(24,54,74,.25); z-index:80; touch-action:none;
+      opacity:0; pointer-events:none; transition:opacity .25s;}
+    #sheetbg.on{opacity:1; pointer-events:auto;}
+    #panel{position:fixed; left:0; right:0; bottom:0; top:auto; width:100%; height:auto; max-height:72vh;
+      overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+      border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;
+      box-shadow:0 -10px 40px rgba(24,54,74,.18);}
+    #panel.on{transform:translateY(0);}
+    #p-handle{display:flex; position:sticky; top:0; z-index:5; background:#fff; padding:12px 0 10px;
+      justify-content:center; cursor:grab; width:100%; margin:0;}
+    #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:#C8D7D6;}
+    #p-close{display:none;}
+    #panel .inner{padding:16px 22px 34px;}
+    #hero{flex-direction:column; gap:22px;}
+    .page{padding:26px 22px;}
+    #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
+    #vsearch{width:100%; margin-left:0;}
+    #btn-xlsx{width:100%; padding:12px 20px;}
+    #vtablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -26px; padding:0 26px;}
+    #vtablewrap table{min-width:560px;}
+    #vtablewrap th:nth-child(5), #vtablewrap td:nth-child(5){display:none;}
+  }
