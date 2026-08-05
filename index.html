@@ -1088,6 +1088,8 @@ async function importFile(f){
     if(chapters && chapters.length >= 3) book.chapters = chapters;   // 목차에 씁니다
     /* 조판 단서만으로 구조가 잡히면 AI를 한 번도 부르지 않고 여기서 끝냅니다.
        EPUB은 태그와 진짜 목차가 들어 있고, PDF도 제목은 글자가 큽니다. */
+    const packed = packSig(sig);
+    if(packed) book.sig = packed;                 // 나중에 AI로 다듬을 때 이 단서를 씁니다
     const st = sigStructure(paras, sig, nav);
     if(st && blocksIntact(paras, st.blocks)) book.tidy = st;
     await bookPut(book); books.unshift(book);
@@ -1300,6 +1302,7 @@ function assembleParagraphs(pages){
   const chapters = [];        // 드롭캡으로 시작하는 문단 = 장이 바뀌는 자리
   let cur = '', prev = null, prevPage = -1, curDrop = false;
   let curH = 0, curBold = true, curCenter = true, curLines = 0;
+  let curLeft = Infinity, curRight = -Infinity;
   const noteLine = l => {
     /* 드롭캡(문단 첫 글자를 두세 줄 높이로 키운 장식)은 글자 크기 단서를 망칩니다.
        본문 첫 문단이 제목보다 커 보이게 되므로 그 줄은 크기 계산에서 뺍니다. */
@@ -1307,6 +1310,10 @@ function assembleParagraphs(pages){
     if(!l.bold) curBold = false;
     const padL = l.left - bodyLeft, padR = bodyRight - l.right;
     if(!(padL > width*0.06 && Math.abs(padL - padR) < width*0.14)) curCenter = false;
+    /* 인용문·발췌는 좌우가 안쪽으로 들어가 조판됩니다. 본문은 첫 줄만 들여쓰고
+       둘째 줄부터는 왼쪽 끝에 붙으므로, "모든 줄이 안쪽"이면 인용문입니다. */
+    curLeft = Math.min(curLeft, l.left);
+    curRight = Math.max(curRight, l.right);
     curLines++;
   };
   const flush = ()=>{
@@ -1314,10 +1321,12 @@ function assembleParagraphs(pages){
     if(t){
       if(curDrop) chapters.push(paras.length);
       paras.push(t);
-      sig.push({ z: +(curH/medH).toFixed(2), b: curBold && curLines>0, c: curCenter && curLines>0 });
+      sig.push({ z: +(curH/medH).toFixed(2), b: curBold && curLines>0, c: curCenter && curLines>0,
+                 in: (curLines >= 2) ? +(((curLeft - bodyLeft)/width).toFixed(3)) : 0 });
     }
     cur=''; curDrop=false;
     curH=0; curBold=true; curCenter=true; curLines=0;
+    curLeft=Infinity; curRight=-Infinity;
   };
 
   cleanPages.forEach((page, pi) => {
@@ -1922,6 +1931,97 @@ function tidyBatches(paras, body){
   if(cur.length) out.push(cur);
   return out;
 }
+/* 조판 단서를 책에 저장할 때 쓸모없는 것은 버립니다.
+   본문 문단은 z=1, 굵기·가운데·들여쓰기 없음이라 저장할 게 없습니다.
+   실제로는 1600문단 중 50개 안팎만 남습니다. */
+function packSig(sig){
+  if(!sig) return null;
+  const out = new Array(sig.length);
+  let kept = 0;
+  for(let i=0;i<sig.length;i++){
+    const s = sig[i];
+    if(!s){ out[i] = null; continue; }
+    const keep = s.r || (s.z||1) >= 1.05 || s.b || s.c || (s.in||0) >= 0.05;
+    out[i] = keep ? s : null;
+    if(keep) kept++;
+  }
+  return kept ? out : null;
+}
+
+/* ===== 싼 경로: 제목 후보만 AI에 보내기 =====
+   본문을 통째로 보내지 않습니다. 조판 신호로 뽑은 제목 후보와, 그 뒤에 오는 첫 문장 80자만
+   보냅니다. 실측(No More Mr. Nice Guy)으로 후보가 50개라 약 1,500토큰 — 전권 8만 토큰의 2%.
+   v22에서 실패한 "후보만 보내기"와 다른 점은 후보를 고르는 기준입니다. 그때는 글자로
+   추측했고(짧은 줄+대문자), 지금은 조판이 남긴 신호(크기·굵기·가운데)를 씁니다. */
+function headCandidates(paras, sig){
+  const out = [];
+  if(!sig) return out;
+  for(let i=0; i<paras.length; i++){
+    const s = sig[i];
+    if(!s || paras[i].startsWith(IMG_MARK)) continue;
+    const r = s.r || '';
+    const z = s.z || 1;
+    /* 확정 제목보다 그물을 넓게 칩니다 — 애매한 것도 AI에게 물어보는 게 낫습니다.
+       어차피 후보는 짧은 줄이라 몇 개 늘어도 토큰이 거의 안 늘어납니다. */
+    const near = r.charAt(0) === 'h' || z >= 1.05 || s.b || s.c;
+    if(!near || badHeadText(paras[i])) continue;
+    let x = '';
+    for(let k=i+1; k<paras.length && k<i+4; k++){
+      if(paras[k].startsWith(IMG_MARK)) continue;
+      x = paras[k].slice(0, 80); break;                 // 뒤따르는 문장 = 장이 열리는지 판단할 실마리
+    }
+    out.push({ i:i, t:paras[i].slice(0,110), x:x, z:+z.toFixed(2), b:!!s.b, c:!!s.c });
+  }
+  return out;
+}
+
+/* 연달아 붙은 같은 종류를 한 덩어리로 묶습니다 (인용문 상자용) */
+function runsOf(paras, sig, kind){
+  const out = [];
+  let i = 0;
+  while(i < paras.length){
+    if(sigRole(sig[i]) !== kind){ i++; continue; }
+    let n = 1;
+    while(i+n < paras.length && sigRole(sig[i+n]) === kind) n++;
+    out.push({ i:i, n:Math.min(n,10), k:kind });
+    i += n;
+  }
+  return out;
+}
+
+async function runTidyFast(paras, sig, title, onStep){
+  const cand = headCandidates(paras, sig);
+  if(cand.length < 3) return null;                      // 후보가 없으면 전권 읽기로 넘깁니다
+
+  if(onStep) onStep('앞부분을 살펴보는 중…');
+  const idx = [];
+  for(let i=0;i<paras.length;i++) if(!paras[i].startsWith(IMG_MARK)) idx.push(i);
+  const head = idx.slice(0, 140).map(function(i){
+    return { i:i, n:paras[i].length, t:paras[i].slice(0,70) };
+  });
+  const f = await tidyCall('front', head, title);
+  const start = f.start || 0;
+  const bookToc = tidyBookToc(paras, f.tocFrom, f.tocTo);
+
+  if(onStep) onStep('목차를 정리하는 중… (후보 ' + cand.length + '개)');
+  const use = cand.filter(function(c){ return c.i >= start; }).slice(0, 400);
+  const r = await tidyCall('levels', use, title, { toc: bookToc });
+  const lv = {};
+  (r.levels || []).forEach(function(x){ lv[x.i] = x.l; });
+
+  /* AI가 준 단계 + 조판으로 잡은 인용문 → 기존 조립기에 그대로 태웁니다 */
+  const raw = [];
+  use.forEach(function(c){ if(lv[c.i] > 0) raw.push({ i:c.i, n:1, k:'head', l:lv[c.i] }); });
+  runsOf(paras, sig, 'quote').forEach(function(q){ if(q.i >= start && !lv[q.i]) raw.push(q); });
+
+  const built = tidyBuildToc(paras, raw, bookToc, start);
+  if(!built.toc.length) return null;
+  if(!blocksIntact(paras, built.blocks)) throw new Error('text_mismatch');
+  return { start:start, why:f.why||'', blocks:built.blocks, toc:built.toc,
+           levels:built.levels, title:f.title||'', author:f.author||'',
+           src:'fast', at:Date.now() };
+}
+
 async function runTidy(paras, title, onStep){
   const idx = [];
   for(let i=0;i<paras.length;i++) if(!paras[i].startsWith(IMG_MARK)) idx.push(i);
@@ -2124,6 +2224,8 @@ function sigRole(s){
   if(z >= 1.5) return 'h1';
   if(z >= 1.25) return 'h2';
   if(z >= 1.12 && (s.b || s.c)) return 'h3';
+  /* 모든 줄이 본문보다 안쪽에서 시작하는 덩어리 = 인용문·편지·발췌 */
+  if((s.in || 0) >= 0.05) return 'quote';
   return '';
 }
 function sigStructure(paras, sig, nav){
@@ -2254,7 +2356,11 @@ async function tidyNow(){
   const runBtn = document.getElementById('aa-tidy-run');
   runBtn.disabled = true;
   try{
-    const t = await runTidy(b.paras, b.title, function(msg){ toast(msg); });
+    /* 조판 단서가 있으면 제목 후보만 보내는 싼 경로를 먼저 씁니다(토큰 1/50).
+       후보가 안 나오는 책(스캔 PDF 등)만 본문 전체를 읽힙니다. */
+    let t = null;
+    if(b.sig) t = await runTidyFast(b.paras, b.sig, b.title, function(msg){ toast(msg); });
+    if(!t) t = await runTidy(b.paras, b.title, function(msg){ toast(msg); });
     b.tidy = t;
     delete tidyOff[b.id]; save(LS_TIDYOFF, tidyOff);
     await bookPut(b);
