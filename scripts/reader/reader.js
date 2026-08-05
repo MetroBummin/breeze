@@ -31,9 +31,11 @@ function renderBookBody(b){
   newPage();
   /* 반입할 때 이미 조립해 둔 블록을 순서대로 그리기만 합니다.
      예전처럼 문단마다 여섯 개의 판정 맵을 겹쳐 보지 않습니다. */
-  const list = (formatting && Array.isArray(formatting.blocks))
-    ? formatting.blocks
-    : buildPlainBlocks(b.paras);
+  const list = typeof buildRollingDisplayBlocks === 'function'
+    ? buildRollingDisplayBlocks(b)
+    : ((formatting && Array.isArray(formatting.blocks))
+        ? formatting.blocks
+        : buildPlainBlocks(b.paras));
   list.forEach(bl=>{
     if(bl.r === 'img'){
       const fig = document.createElement('figure');
@@ -54,7 +56,8 @@ function renderBookBody(b){
     const inBox = bl.r === 'quote' || bl.r === 'note';
     // 상자 한가운데서 쪽이 넘어가면 상자가 두 동강 나므로, 상자 안에서는 쪽을 넘기지 않습니다
     const cont = inBox && box && boxKind === bl.g;
-    if(!cont && (pageChars >= PAGE_CHARS || (isHead && lvl <= 2 && pageChars > PAGE_CHARS*0.55))) newPage();
+    if(!cont && bl.before === 'page' && pageChars > 0) newPage();
+    else if(!cont && (pageChars >= PAGE_CHARS || (isHead && lvl <= 2 && pageChars > PAGE_CHARS*0.55))) newPage();
     /* 인용문·활동 상자는 본문과 다른 덩어리로 묶어 그립니다.
        원서에서 테두리 상자나 작은 글씨로 따로 조판되던 것들입니다. */
     if(inBox){
@@ -67,6 +70,7 @@ function renderBookBody(b){
     }else{ box = null; boxKind = ''; }
     const host = inBox && box ? box : page;
     const el = document.createElement(isHead ? (lvl===1?'h2':lvl===3?'h4':'h3') : 'p');
+    if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
     let html='', m, last=0;
     WORD_RE.lastIndex=0;
@@ -102,6 +106,7 @@ function openBook(b){
     if(!restoreAnchor(pos)) window.scrollTo(0, pos.y||0);   // 예전 기록은 px 방식으로 복원
     lastAnchor = captureAnchor();
     updatePfill();
+    scheduleRollingFormatting(b, pos.pi == null ? 0 : pos.pi);
   });
 }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -120,7 +125,12 @@ window.addEventListener('scroll', ()=>{
   clearTimeout(fadeTimer);
   fadeTimer = setTimeout(()=>document.body.classList.remove('scrolling'), 900);
   if(scrollTick) return;
-  scrollTick = setTimeout(()=>{ scrollTick=null; saveReadingState(); lastAnchor = captureAnchor(); }, 800);
+  scrollTick = setTimeout(()=>{
+    scrollTick=null;
+    saveReadingState();
+    lastAnchor = captureAnchor();
+    if(lastAnchor) scheduleRollingFormatting(curBook, lastAnchor.pi);
+  }, 800);
 });
 
 document.getElementById('rtext').addEventListener('click', e=>{
