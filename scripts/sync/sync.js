@@ -1,11 +1,39 @@
 /* ================= sync (Supabase, magic link) =================
    ▼▼ 여기 두 줄에 Supabase 프로젝트의 URL과 anon key를 붙여넣으면 동기화가 켜집니다.
       (Supabase 대시보드 → Settings → API) 비워두면 로컬 전용으로 동작. */
-const SB_URL = (window.BREEZE_CONFIG && window.BREEZE_CONFIG.SB_URL) || '';
-const SB_KEY = (window.BREEZE_CONFIG && window.BREEZE_CONFIG.SB_KEY) || '';
-
+let SB_URL = '';
+let SB_KEY = '';
 let sb = null;
-try{ if(SB_URL && SB_KEY && window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
+let sbInitProblem = '';
+let authListenerAttached = false;
+
+function initSupabase(){
+  if(sb) return sb;
+
+  const config = window.BREEZE_CONFIG || {};
+  SB_URL = typeof config.SB_URL === 'string' ? config.SB_URL.trim() : '';
+  SB_KEY = typeof config.SB_KEY === 'string' ? config.SB_KEY.trim() : '';
+
+  if(!SB_URL || !SB_KEY){
+    sbInitProblem = 'config';
+    return null;
+  }
+  if(!window.supabase || typeof window.supabase.createClient !== 'function'){
+    sbInitProblem = 'sdk';
+    return null;
+  }
+
+  try{
+    sb = window.supabase.createClient(SB_URL, SB_KEY);
+    sbInitProblem = '';
+    attachSupabaseAuth();
+  }catch(e){
+    sbInitProblem = 'client';
+    console.error('Supabase 연결 초기화 실패:', e);
+  }
+  return sb;
+}
+
 let sbUser = null, syncTimer = null, syncing = false;
 let lastSync = load('breeze.lastsync', 0);
 
@@ -15,6 +43,7 @@ function syncBadge(){
   b.textContent = sbUser ? 'Sync ✓' : 'Sync';
 }
 function openSyncModal(){
+  initSupabase();
   document.getElementById('sync-modal').classList.add('on');
   renderSyncModal();
 }
@@ -24,10 +53,12 @@ document.getElementById('sync-modal').addEventListener('click', e=>{ if(e.target
 function renderSyncModal(){
   const body = document.getElementById('sm-body');
   if(!sb){
-    body.innerHTML = `<div class="desc">아직 서버가 연결되지 않았어요.<br>
-      Supabase 프로젝트를 만들고, <b>config.js</b> 파일에
-      프로젝트 키를 붙여넣으면 동기화가 켜집니다.<br>
-      (자세한 순서는 <b>SYNC_SETUP.md</b> 참고)</div>`;
+    const guide = sbInitProblem === 'sdk'
+      ? '동기화 라이브러리를 불러오지 못했어요.<br>인터넷 연결을 확인한 뒤 새로고침해 주세요.'
+      : sbInitProblem === 'client'
+        ? 'Supabase 연결을 시작하지 못했어요.<br><b>config.js</b>의 프로젝트 URL과 공개 키를 확인해 주세요.'
+        : '아직 서버가 연결되지 않았어요.<br><b>config.js</b>에 Supabase 프로젝트 URL과 공개 키를 입력해 주세요.';
+    body.innerHTML = `<div class="desc">${guide}</div>`;
     syncStatus('');
     return;
   }
@@ -290,7 +321,9 @@ async function doSync(manual){
     if(manual) syncStatus('동기화 실패: '+(e.message||e));
   }finally{ syncing = false; }
 }
-if(sb){
+function attachSupabaseAuth(){
+  if(!sb || authListenerAttached) return;
+  authListenerAttached = true;
   sb.auth.onAuthStateChange((ev, session)=>{
     sbUser = session ? session.user : null;
     syncBadge();
@@ -302,6 +335,7 @@ if(sb){
     if(sbUser) doSync(false);
   });
 }
+initSupabase();
 document.addEventListener('visibilitychange', ()=>{
   if(!sb || !sbUser) return;
   clearTimeout(syncTimer);
