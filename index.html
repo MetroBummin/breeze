@@ -32,8 +32,10 @@
   <script defer src="scripts/core/boot-safety.js"></script>
   <script defer src="scripts/core/storage.js"></script>
   <script defer src="scripts/core/demo-book.js"></script>
+  <script defer src="scripts/core/book-identity.js"></script>
   <script defer src="scripts/core/state.js"></script>
   <script defer src="scripts/reader/formatting.js"></script>
+  <script defer src="scripts/reader/rolling-formatting.js"></script>
   <script defer src="scripts/library/library.js"></script>
   <script defer src="scripts/importers/importers.js"></script>
   <script defer src="scripts/dictionary/dictionary.js"></script>
@@ -181,6 +183,10 @@
   <div class="aa-row">
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
+  </div>
+  <div class="aa-row">
+    <span class="aa-label">AI 조판<small>다음 8쪽 자동</small></span>
+    <button id="aa-rolling" class="aa-toggle" onclick="toggleRollingFormatting()" aria-label="AI 조판"><i></i></button>
   </div>
 </div>
 <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
