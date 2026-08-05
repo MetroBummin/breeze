@@ -14,6 +14,9 @@
   #aa-pop{position:fixed; right:14px; bottom:126px; z-index:96; background:#fff; border:1px solid var(--line);
     border-radius:16px; padding:16px 18px; width:240px; box-shadow:var(--shadow); display:none;}
   #aa-pop.on{display:block;}
+  .aa-legend{display:flex; flex-direction:column; gap:5px; font-size:11.5px; color:var(--soft);
+    padding-bottom:10px; margin-bottom:4px; border-bottom:1px solid var(--line);}
+  .aa-legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; vertical-align:0;}
   .aa-row{display:flex; align-items:center; justify-content:space-between; padding:8px 0;}
   .aa-label{font-size:13.5px; color:var(--soft); font-weight:500;}
   .aa-size{display:flex; align-items:center; gap:10px;}
