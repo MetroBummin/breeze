@@ -243,6 +243,8 @@
   body.dark #aa-tidy-row{background:#1B2429;}
   #aa-tidy-row .aa-label{flex:1; font-size:13.5px; color:var(--ink);}
   #aa-tidy-row .aa-label small{display:block; font-size:10.5px; color:var(--soft2); font-weight:400; letter-spacing:0;}
+  #aa-tidy-row .aa-label small.warn{color:#B08A3E;}
+  body.dark #aa-tidy-row .aa-label small.warn{color:#C9A253;}
   #aa-tidy-run{border:1px solid var(--line); background:none; border-radius:14px; padding:6px 12px;
     font-size:12.5px; color:var(--blue); font-family:var(--ui); cursor:pointer; white-space:nowrap;}
   #aa-tidy-run:hover{background:var(--sky);}
@@ -1092,41 +1094,48 @@ async function importFile(f){
     renderHome();
     toast(book.tidy ? ('추가 완료! 목차 ' + st.toc.length + '개를 찾았어요')
                     : '추가 완료! 카드를 눌러 읽기 시작하세요');
-    await offerTidy(book);
   }catch(err){ console.error(err); toast('파일을 읽지 못했어요: '+err.message); }
 }
 
-/* 반입 직후 한 번만 물어봅니다. 거절해도 나중에 Aa 설정에서 할 수 있어요. */
-async function offerTidy(book){
-  if(!sb || !sbUser) return;
-  const n = book.paras.filter(function(p){ return !p.startsWith(IMG_MARK); }).length;
-  if(n < 40) return;
-  /* 책이 스스로 알려 준 목차로 이미 구조가 잡혔으면 AI를 부를 이유가 없습니다.
-     EPUB의 nav는 추측이 아니라 정답이라 AI가 더 나은 답을 줄 수 없습니다. */
-  if(book.tidy && book.tidy.src === 'nav') return;
-  if(!confirm('AI로 이 책을 정리할까요?\n\n'
-            + '· 판권지·추천사 같은 앞부분을 접어 둡니다\n'
-            + '· 책의 목차를 그대로 살려 장·절을 잡습니다\n'
-            + '· 인용문과 활동 상자를 원서처럼 따로 조판합니다\n\n'
-            + 'AI가 책 전체를 읽습니다. 다만 글자를 돌려주지 않고 위치만 알려 주므로\n'
-            + '원문은 그대로입니다. 책 길이에 따라 1~3분 걸려요.\n'
-            + '언제든 Aa 설정에서 끌 수 있어요.')) return;
-  try{
-    const t = await runTidy(book.paras, book.title, function(m){ toast(m); });
-    book.tidy = t;
-    if(t.author && !book.author) book.author = t.author;
-    await bookPut(book);
-    renderHome();
-    toast('정리 완료 — 앞 ' + t.start + '문단 접고, 목차 ' + t.toc.length + '개');
-  }catch(e){
-    console.warn('tidy', e);
-    toast('AI 정리는 건너뛰었어요 (나중에 Aa 설정에서 할 수 있어요)');
-  }
-}
 
 function parseTXT(text){
-  return text.replace(/\r/g,'').split(/\n\s*\n+/)
+  const blocks = text.replace(/\r/g,'').split(/\n\s*\n+/)
     .map(blk => blk.split('\n').map(l=>l.trim()).join(' '));
+  return mergeWrapped(blocks, null);
+}
+
+/* 줄바꿈이 문단처럼 저장된 파일을 되돌립니다.
+   TXT나 조악하게 변환된 EPUB은 화면 폭에 맞춰 끊어 둔 줄을 그대로 문단으로 저장합니다.
+     "…sometimes calculated and at other"   ← 문장이 안 끝났는데 문단이 끊김
+     "times delusional. He has a…"          ← 소문자로 이어짐
+   이러면 읽을 때 두세 줄마다 문단이 바뀌어 눈이 튑니다.
+   앞이 문장으로 끝나지 않았는데 다음이 소문자로 이어지면 원래 한 문단입니다.
+   (PDF는 줄 단위에서 이미 같은 판단을 하고 있어서 여기 오지 않습니다.) */
+function mergeWrapped(paras, sig, keep){
+  const out = [], outSig = [], map = {};
+  const roleOf = function(x){ return x && x.r ? x.r : ''; };
+  for(let i=0; i<paras.length; i++){
+    const p = (paras[i] || '').trim();
+    if(!p) continue;
+    const r = sig ? (sig[i] || null) : null;
+    const last = out.length ? out[out.length-1] : null;
+    const lastR = out.length ? outSig[outSig.length-1] : null;
+    if(last !== null
+       && !p.startsWith(IMG_MARK) && !last.startsWith(IMG_MARK)
+       && !roleOf(r) && !roleOf(lastR)          // 제목·인용문 경계는 절대 넘지 않습니다
+       && !(keep && keep[i])                    // 목차가 가리키는 자리도 건드리지 않습니다
+       && !endsSentence(last)
+       && /^[a-z,;)’']/.test(p)){
+      out[out.length-1] = last.endsWith('-') ? last.slice(0,-1) + p : last + ' ' + p;
+      map[i] = out.length - 1;                  // 앞 문단에 흡수됨
+      continue;
+    }
+    map[i] = out.length;
+    out.push(p); outSig.push(r);
+  }
+  if(sig) out.sig = outSig;
+  out.imap = map;               // 옛 문단번호 → 새 문단번호 (배열의 map 메서드를 가리지 않게 imap)
+  return out;
 }
 
 /* --- PDF: rebuild paragraphs from positioned text, drop headers/footers --- */
@@ -1463,9 +1472,16 @@ async function parseEPUB(f, bookId){
       }
     }
   }
-  paras.sig = sig;
-  paras.nav = await epubNav(zip, opf, opfDir, manifest, anchors);
-  return paras;
+  const nav = await epubNav(zip, opf, opfDir, manifest, anchors);
+  /* 줄 단위로 <p>를 찍어 둔 EPUB이 있습니다. 붙여야 할 것은 붙입니다.
+     목차가 가리키는 자리는 문단이 흡수되면 안 되므로 그대로 둡니다. */
+  const keep = {};
+  (nav || []).forEach(function(x){ keep[x.pi] = 1; });
+  const merged = mergeWrapped(paras, sig, keep);
+  merged.nav = (nav || []).map(function(x){
+    return { pi: merged.imap[x.pi], t:x.t, l:x.l };
+  }).filter(function(x){ return x.pi !== undefined; });
+  return merged;
 }
 
 /* EPUB에는 사람이 아니라 기계가 읽으라고 만든 진짜 목차가 들어 있습니다
@@ -2221,12 +2237,27 @@ function syncTidyUI(){
   if(!b || b.builtin){ row.className = 'aa-row'; return; }
   row.className = 'aa-row on';
   const has = !!b.tidy;
+  const src = has ? (b.tidy.src || 'ai') : '';
+  /* 이미 코드로 목차가 잡혀 있어도 AI로 더 다듬을 수 있게 버튼은 남겨 둡니다.
+     책이 스스로 적어 둔 목차(EPUB nav)는 정답이라 AI가 나아지게 할 게 없습니다. */
   document.getElementById('aa-tidy').style.display = has ? 'block' : 'none';
   document.getElementById('aa-tidy').classList.toggle('on', tidyActive(b));
-  document.getElementById('aa-tidy-run').style.display = has ? 'none' : 'block';
-  document.getElementById('aa-tidy-sub').textContent = has
-    ? (tidyActive(b) ? '앞 ' + b.tidy.start + '문단 접음 · 목차 ' + buildToc(b).length + '줄' : '꺼짐 — 원본 그대로')
-    : '앞부분 자르기 · 소제목 찾기';
+  document.getElementById('aa-tidy-run').style.display = (has && src !== 'layout') ? 'none' : 'block';
+  document.getElementById('aa-tidy-run').textContent = has ? 'AI로 다듬기' : '정리하기';
+  const sub = document.getElementById('aa-tidy-sub');
+  if(!has){ sub.textContent = '앞부분 자르기 · 소제목 찾기'; sub.className = ''; return; }
+  if(!tidyActive(b)){ sub.textContent = '꺼짐 — 원본 그대로'; sub.className = ''; return; }
+  const n = buildToc(b).length;
+  if(src === 'nav'){
+    sub.textContent = '책에 들어 있는 목차 ' + n + '줄';
+    sub.className = '';
+  }else if(src === 'layout'){
+    sub.textContent = '글자 크기로 자동 정리 · 목차 ' + n + '줄 — 제목이 부정확할 수 있어요';
+    sub.className = 'warn';
+  }else{
+    sub.textContent = '앞 ' + b.tidy.start + '문단 접음 · 목차 ' + n + '줄';
+    sub.className = '';
+  }
 }
 
 /* ================= 목차 ================= */
