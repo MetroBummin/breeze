@@ -46,6 +46,7 @@ function openSyncModal(){
   initSupabase();
   document.getElementById('sync-modal').classList.add('on');
   renderSyncModal();
+  if(sbUser) refreshBooks();
 }
 function closeSyncModal(){ document.getElementById('sync-modal').classList.remove('on'); }
 document.getElementById('sync-modal').addEventListener('click', e=>{ if(e.target.id==='sync-modal') closeSyncModal(); });
@@ -72,7 +73,7 @@ function renderSyncModal(){
           <span>책 <span class="sm-dim">(수동)</span></span>
           <button class="sm-mini" onclick="refreshBooks()">목록 새로고침</button>
         </div>
-        <div id="sm-booklist"><div class="sm-dim">목록 새로고침을 눌러 확인하세요</div></div>
+        <div id="sm-booklist"><div class="sm-dim">서버 목록 확인 중…</div></div>
       </div>
       <button class="sm-btn ghost" onclick="sbLogout()">로그아웃</button>`;
     if(serverBooks) renderBookList();
@@ -121,6 +122,46 @@ async function sbLogout(){
    책은 반입 후 바뀌지 않으므로 충돌 판정이 필요 없습니다. 올리기/받기만 있습니다.
    본문은 Storage(파일), 목록은 books 테이블에 둡니다.                      */
 let serverBooks = null;
+function activeServerBooks(){
+  return (serverBooks || []).filter(serverRowIsActive);
+}
+function serverBookIdFor(book){
+  const match = activeServerBooks().find(row => serverRowMatchesBook(row, book));
+  return match ? match.book_id : book.id;
+}
+function localBookForServerId(serverId){
+  const row = (serverBooks || []).find(item => item.book_id === serverId);
+  return row ? findLocalBookForServerRow(row, books) : (books.find(book => book.id === serverId) || null);
+}
+
+/* Old uploads may use an importer-specific ID and have no fingerprint.
+   Only same-title candidates are downloaded, hashed locally, and backfilled.
+   The source text is never sent anywhere new; it is already the user's own
+   encrypted-session-protected Storage object. */
+async function hydrateServerFingerprints(rows){
+  for(const row of rows || []){
+    const meta = row.meta || {};
+    if(meta.deleted || meta.fingerprint) continue;
+    const sameTitle = books.some(book =>
+      book.id !== row.book_id && normalizeBookTitle(book.title) === normalizeBookTitle(meta.title)
+    );
+    if(!sameTitle) continue;
+    try{
+      const downloaded = await sb.storage.from('books').download(bookPath(row.book_id));
+      if(downloaded.error) throw downloaded.error;
+      const body = JSON.parse(await downloaded.data.text());
+      if(!Array.isArray(body.paras) || !body.paras.length) continue;
+      row.meta = { ...meta, fingerprint:bookContentFingerprint(body.paras) };
+      const saved = await sb.from('books').upsert(
+        [{ user_id:sbUser.id, book_id:row.book_id, meta:row.meta }],
+        { onConflict:'user_id,book_id' }
+      );
+      if(saved.error) throw saved.error;
+    }catch(error){
+      console.warn('Legacy book fingerprint skipped:', error && error.message);
+    }
+  }
+}
 /* 서버에 "지웠음" 표시가 있는 책을 이 기기에서도 지웁니다.
    책은 한 번 지우면 되살릴 이유가 없으므로 삭제가 항상 이깁니다.
    (같은 파일을 다시 넣으면 지문 ID가 같아 올리기 한 번으로 표시가 지워집니다) */
@@ -128,12 +169,15 @@ async function applyBookTombstones(rows){
   let removed = 0;
   for(const r of (rows||[])){
     if(!(r.meta||{}).deleted) continue;
-    const lc = books.find(b => b.id === r.book_id);
+    const lc = findLocalBookForServerRow(r, books);
     if(!lc) continue;
-    books = books.filter(b => b.id !== r.book_id);
-    await bookDel(r.book_id);
-    imgPurge(r.book_id+'|');
-    delete positions[r.book_id];
+    // A server-only deletion initiated on this device explicitly keeps its
+    // local copy. Tombstones from every other device still propagate normally.
+    if(lc.detachedServerId === r.book_id) continue;
+    books = books.filter(b => b.id !== lc.id);
+    await bookDel(lc.id);
+    imgPurge(lc.id+'|');
+    delete positions[lc.id];
     removed++;
   }
   if(removed){
@@ -149,6 +193,7 @@ async function refreshBooks(){
   const { data, error } = await sb.from('books').select('book_id,meta').eq('user_id', sbUser.id);
   if(error){ syncStatus('목록 실패: '+error.message); return; }
   serverBooks = data || [];
+  await hydrateServerFingerprints(serverBooks);
   await applyBookTombstones(serverBooks);     // 다른 기기에서 지운 책을 여기서도 정리
   syncStatus('');
   renderBookList();
@@ -156,19 +201,26 @@ async function refreshBooks(){
 function renderBookList(){
   const el = document.getElementById('sm-booklist');
   if(!el) return;
-  const srv = new Map((serverBooks||[])
-    .filter(r => !(r.meta||{}).deleted)        // 지운 책은 목록에 띄우지 않음
-    .map(r=>[r.book_id, r.meta||{}]));
+  const srv = activeServerBooks();
+  const consumedServerIds = new Set();
   const rows = [];
   books.forEach(b=>{
-    rows.push({ id:b.id, title:b.title, where: srv.has(b.id) ? 'both' : 'local' });
+    const match = srv.find(row => !consumedServerIds.has(row.book_id) && serverRowMatchesBook(row, b));
+    if(match) consumedServerIds.add(match.book_id);
+    rows.push({ id:b.id, serverId:match ? match.book_id : '',
+                title:b.title, where:match ? 'both' : 'local' });
   });
-  srv.forEach((meta,id)=>{
-    if(!books.some(b=>b.id===id)) rows.push({ id, title: meta.title || '(제목 없음)', where:'server' });
+  srv.forEach(row=>{
+    if(!consumedServerIds.has(row.book_id)) rows.push({
+      id:row.book_id,
+      serverId:row.book_id,
+      title:(row.meta || {}).title || '(제목 없음)',
+      where:'server',
+    });
   });
   if(!rows.length){ el.innerHTML = '<div class="sm-dim">책이 없어요</div>'; return; }
   el.innerHTML = rows.map(r=>`
-    <div class="sm-book" data-id="${esc(r.id)}" data-title="${esc(r.title)}">
+    <div class="sm-book" data-id="${esc(r.id)}" data-server-id="${esc(r.serverId || '')}" data-title="${esc(r.title)}">
       <span class="t">${esc(r.title)}</span>
       ${r.where==='local'  ? '<button class="act" data-a="up">올리기</button>' : ''}
       ${r.where==='server' ? '<button class="act" data-a="down">이 기기에 받기</button>' : ''}
@@ -178,23 +230,31 @@ function renderBookList(){
   el.querySelectorAll('.act').forEach(btn=>{
     btn.onclick = ()=>{
       const row = btn.closest('.sm-book');
-      const id = row.dataset.id, title = row.dataset.title;
+      const id = row.dataset.id, serverId = row.dataset.serverId || id, title = row.dataset.title;
       const job = btn.dataset.a==='up'   ? bookUpload(id)
-                : btn.dataset.a==='down' ? bookDownload(id)
-                :                          bookDeleteServer(id, title);
+                : btn.dataset.a==='down' ? bookDownload(serverId)
+                :                          bookDeleteServer(serverId, title);
       btn.disabled = true;
       Promise.resolve(job).finally(()=>{ btn.disabled=false; });
     };
   });
 }
 const bookPath = id => `${sbUser.id}/${id}.json`;
+const bookFormatPath = id => `${sbUser.id}/${id}.format.json`;
 async function bookDeleteServer(id, title){
   if(!confirm(`서버에서 "${title}"을(를) 지울까요?\n\n이 기기에 있는 책은 그대로 남습니다.`)) return;
   try{
     syncStatus('지우는 중…');
-    await sb.storage.from('books').remove([bookPath(id)]);
+    const removedFiles = await sb.storage.from('books').remove([bookPath(id), bookFormatPath(id)]);
+    if(removedFiles.error) throw removedFiles.error;
     // Keep a tombstone so other devices learn about the deletion.
-    const meta = { title, deleted:true, deletedAt:Date.now() };
+    const local = localBookForServerId(id);
+    if(local){
+      local.detachedServerId = id;
+      await bookPut(local);
+    }
+    const meta = { title, fingerprint:local ? ensureBookFingerprint(local) : '',
+                   deleted:true, deletedAt:Date.now() };
     const { error } = await sb.from('books').upsert(
       [{ user_id:sbUser.id, book_id:id, meta }],
       { onConflict:'user_id,book_id' }
@@ -206,20 +266,36 @@ async function bookDeleteServer(id, title){
 }
 async function bookUpload(id){
   const b = books.find(x=>x.id===id); if(!b) return;
-  const twin = (serverBooks||[]).find(r => r.book_id !== id && normTitle((r.meta||{}).title) === normTitle(b.title));
+  const fingerprint = ensureBookFingerprint(b);
+  const twin = activeServerBooks().find(r =>
+    r.book_id !== id && normalizeBookTitle((r.meta||{}).title) === normalizeBookTitle(b.title)
+  );
+  if(twin && (twin.meta || {}).fingerprint === fingerprint){
+    syncStatus('이미 서버에 있는 같은 책이에요');
+    renderBookList();
+    return;
+  }
   if(twin && !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`)) return;
   try{
     syncStatus('올리는 중…');
     // 원문과 별도로 저장된 포맷 지도도 함께 올립니다.
     const formatting = b.formatting || b.tidy || null;
-    const blob = new Blob([JSON.stringify({paras:b.paras, formatting})], {type:'application/json'});
+    const blob = new Blob([JSON.stringify({
+      paras:b.paras,
+      fingerprint,
+      formatting,
+      layoutSignals:b.layoutSignals || null,
+      aiFormatting:b.aiFormatting || null,
+    })], {type:'application/json'});
     const up = await sb.storage.from('books').upload(bookPath(id), blob, {upsert:true, contentType:'application/json'});
     if(up.error) throw up.error;
     const meta = { title:b.title, author:b.author||'', addedAt:b.addedAt||Date.now(),
                    renamedAt:b.renamedAt||0, paras:b.paras.length, bytes:blob.size,
-                   deleted:false };   // 다시 올리면 "지웠음" 표시가 해제됩니다
+                   fingerprint, deleted:false };   // 다시 올리면 "지웠음" 표시가 해제됩니다
     const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:id, meta}], {onConflict:'user_id,book_id'});
     if(error) throw error;
+    if(b.detachedServerId){ delete b.detachedServerId; await bookPut(b); }
+    await uploadBookFormatting(b, id, true);
     syncStatus('올렸어요');
     await refreshBooks();
   }catch(e){ console.error(e); syncStatus('올리기 실패: '+(e.message||e)); }
@@ -230,16 +306,57 @@ async function bookDownload(id){
     const { data, error } = await sb.storage.from('books').download(bookPath(id));
     if(error) throw error;
     const body = JSON.parse(await data.text());
-    const meta = (serverBooks.find(r=>r.book_id===id)||{}).meta || {};
+    const meta = (((serverBooks||[]).find(r=>r.book_id===id))||{}).meta || {};
     const book = { id, title: meta.title||'(제목 없음)', author: meta.author||'',
                    addedAt: meta.addedAt||Date.now(), paras: body.paras||[],
-                   formatting: body.formatting || body.tidy || null };
+                   fingerprint:meta.fingerprint || body.fingerprint || '',
+                   formatting:body.formatting || body.tidy || null,
+                   layoutSignals:body.layoutSignals || null,
+                   aiFormatting:body.aiFormatting || null };
     if(!book.paras.length) throw new Error('본문이 비어 있어요');
+    ensureBookFingerprint(book);
+    try{
+      const formatDownload = await sb.storage.from('books').download(bookFormatPath(id));
+      if(!formatDownload.error){
+        const formatBody = JSON.parse(await formatDownload.data.text());
+        if(formatBody && formatBody.aiFormatting) book.aiFormatting = formatBody.aiFormatting;
+      }
+    }catch(e){}
     await bookPut(book);
     books = books.filter(b=>b.id!==id); books.unshift(book);
     syncStatus('받았어요');
     renderHome(); renderBookList();
   }catch(e){ console.error(e); syncStatus('받기 실패: '+(e.message||e)); }
+}
+
+const bookFormattingTimers = new Map();
+async function uploadBookFormatting(book, remoteId, force){
+  if(!sb || !sbUser || !book || !book.aiFormatting) return;
+  const id = remoteId || serverBookIdFor(book);
+  const isOnServer = activeServerBooks().some(row => row.book_id === id && serverRowMatchesBook(row, book));
+  if(!force && !isOnServer && id === book.id) return;
+  const payload = new Blob([JSON.stringify({
+    version:1,
+    fingerprint:ensureBookFingerprint(book),
+    aiFormatting:book.aiFormatting,
+  })], {type:'application/json'});
+  const result = await sb.storage.from('books').upload(bookFormatPath(id), payload, {
+    upsert:true,
+    contentType:'application/json',
+  });
+  if(result.error) throw result.error;
+}
+function queueBookFormattingSync(book){
+  if(!sb || !sbUser || !book) return;
+  const oldTimer = bookFormattingTimers.get(book.id);
+  if(oldTimer) clearTimeout(oldTimer);
+  const timer = setTimeout(()=>{
+    bookFormattingTimers.delete(book.id);
+    uploadBookFormatting(book).catch(error =>
+      console.warn('Book formatting sync skipped:', error && error.message)
+    );
+  }, 1800);
+  bookFormattingTimers.set(book.id, timer);
 }
 
 function queueSync(){
@@ -281,35 +398,66 @@ async function doSync(manual){
         .upsert(pushes.map(p=>({user_id:uid, key:p.key, data:p.data})), {onConflict:'user_id,key'});
       if(e2) throw e2;
     }
-    /* ---- positions: LWW by t ---- */
-    const { data: prows } = await sb.from('positions').select('book_id,data').eq('user_id', uid);
-    const pserver = {}; (prows||[]).forEach(r=>pserver[r.book_id]=r.data||{});
-    const ppush = [];
-    for(const id of new Set([...Object.keys(pserver), ...Object.keys(positions)])){
-      const sv = pserver[id], lc = positions[id] ? posOf(id) : null;
-      const svT = sv ? (sv.t||0) : -1, lcT = lc ? (lc.t||0) : -1;
-      if(sv && svT > lcT){ positions[id] = sv; pulled++; }
-      else if(lc && lcT > svT) ppush.push({user_id:uid, book_id:id, data:lc});
-    }
-    if(ppush.length) await sb.from('positions').upsert(ppush, {onConflict:'user_id,book_id'});
-
-    /* ---- 책 이름만 동기화 (본문은 수동 그대로) ----
-       제목은 몇 바이트라 자동으로 오가도 부담이 없고, 한쪽에서 바꾼 이름이 다른 기기에도 반영됩니다.
-       books 표가 아직 없는 계정(supabase_books.sql 미실행)에서도 단어 동기화가 멈추지 않도록 따로 감쌉니다. */
+    /* ---- book identity + names ----
+       Metadata is loaded before positions so legacy IDs can be mapped through
+       the stable content fingerprint. */
     try{
-      const { data: brows } = await sb.from('books').select('book_id,meta').eq('user_id', uid);
-      pulled += await applyBookTombstones(brows);      // 다른 기기에서 지운 책 정리
-      for(const r of (brows||[])){
+      const { data: brows, error:bookError } = await sb.from('books').select('book_id,meta').eq('user_id', uid);
+      if(bookError) throw bookError;
+      serverBooks = brows || [];
+      pulled += await applyBookTombstones(serverBooks);      // 다른 기기에서 지운 책 정리
+      for(const r of serverBooks){
         const meta = r.meta || {};
         if(meta.deleted) continue;
-        const lc = books.find(b => b.id === r.book_id);
+        const lc = findLocalBookForServerRow(r, books);
         if(!lc || !meta.title || meta.title === lc.title) continue;
         if((meta.renamedAt||0) >= (lc.renamedAt||0)){      // 더 최근에 바꾼 이름이 이김
           lc.title = meta.title; lc.renamedAt = meta.renamedAt || Date.now();
           await bookPut(lc); pulled++;
+        }else{
+          r.meta = { ...meta, title:lc.title, renamedAt:lc.renamedAt,
+                     fingerprint:ensureBookFingerprint(lc) };
+          const renamed = await sb.from('books').upsert(
+            [{ user_id:uid, book_id:r.book_id, meta:r.meta }],
+            { onConflict:'user_id,book_id' }
+          );
+          if(renamed.error) throw renamed.error;
         }
       }
     }catch(e){ console.warn('book title sync skipped:', e && e.message); }
+
+    /* ---- positions: LWW by t, with legacy book-ID reconciliation ---- */
+    const { data: prows, error:positionError } = await sb.from('positions')
+      .select('book_id,data').eq('user_id', uid);
+    if(positionError) throw positionError;
+    const pserver = {}; (prows||[]).forEach(r=>pserver[r.book_id]=r.data||{});
+
+    for(const serverId of Object.keys(pserver)){
+      const localBook = localBookForServerId(serverId);
+      const localId = localBook ? localBook.id : serverId;
+      const serverPosition = pserver[serverId];
+      const localPosition = positions[localId] ? posOf(localId) : null;
+      if((serverPosition.t||0) > (localPosition ? localPosition.t||0 : -1)){
+        positions[localId] = serverPosition;
+        pulled++;
+      }
+    }
+
+    const positionPushes = new Map();
+    for(const localId of Object.keys(positions)){
+      const localBook = books.find(book => book.id === localId);
+      const serverId = localBook ? serverBookIdFor(localBook) : localId;
+      const localPosition = posOf(localId);
+      const serverPosition = pserver[serverId] || null;
+      if((localPosition.t||0) > (serverPosition ? serverPosition.t||0 : -1)){
+        positionPushes.set(serverId, {user_id:uid, book_id:serverId, data:localPosition});
+      }
+    }
+    const ppush = [...positionPushes.values()];
+    if(ppush.length){
+      const positionUpsert = await sb.from('positions').upsert(ppush, {onConflict:'user_id,book_id'});
+      if(positionUpsert.error) throw positionUpsert.error;
+    }
     saveWords(); save(LS_DEAD, dead); save(LS_POS, positions);
     lastSync = Date.now(); save('breeze.lastsync', lastSync);
     if(manual){ syncStatus('완료!'); renderSyncModal(); }
@@ -327,12 +475,19 @@ function attachSupabaseAuth(){
   sb.auth.onAuthStateChange((ev, session)=>{
     sbUser = session ? session.user : null;
     syncBadge();
-    if(sbUser){ doSync(false); if(document.getElementById('sync-modal').classList.contains('on')) renderSyncModal(); }
+    if(sbUser){
+      doSync(false);
+      if(curBook){ const anchor = captureAnchor(); scheduleRollingFormatting(curBook, anchor ? anchor.pi : 0); }
+      if(document.getElementById('sync-modal').classList.contains('on')) renderSyncModal();
+    }
   });
   sb.auth.getSession().then(({data:{session}})=>{
     sbUser = session ? session.user : null;
     syncBadge();
-    if(sbUser) doSync(false);
+    if(sbUser){
+      doSync(false);
+      if(curBook){ const anchor = captureAnchor(); scheduleRollingFormatting(curBook, anchor ? anchor.pi : 0); }
+    }
   });
 }
 initSupabase();
