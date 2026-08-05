@@ -3,6 +3,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { Script } from 'node:vm';
+import assert from 'node:assert/strict';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const required = [
@@ -10,12 +11,15 @@ const required = [
   'styles/base.css',
   'styles/reader.css',
   'scripts/core/storage.js',
+  'scripts/core/book-identity.js',
   'scripts/library/library.js',
   'scripts/importers/importers.js',
   'scripts/dictionary/dictionary.js',
   'scripts/reader/formatting.js',
+  'scripts/reader/rolling-formatting.js',
   'scripts/reader/reader.js',
   'scripts/sync/sync.js',
+  'server/format/index.ts',
   'legacy/toc-and-ai-formatting.disabled.js',
   'legacy/edge_function_tidy.disabled.ts',
 ];
@@ -72,5 +76,67 @@ const combined = orderedScripts
   .map(relative => readFileSync(resolve(root, relative), 'utf8'))
   .join('\n');
 new Script(combined, { filename:'breeze-active-scripts.js' });
+
+// A book parsed into different paragraph boundaries must keep the same stable
+// fingerprint, and a legacy server ID must reconcile through that fingerprint.
+const identityContext = {};
+new Script(readFileSync(resolve(root, 'scripts/core/book-identity.js'), 'utf8'))
+  .runInNewContext(identityContext);
+const segmented = identityContext.bookContentFingerprint(['Hello', 'world.', 'Next page']);
+const joined = identityContext.bookContentFingerprint(['Hello world.', 'Next page']);
+assert.equal(segmented, joined, 'Fingerprint changed with paragraph segmentation');
+const localBook = { id:'new-id', title:'Same book', paras:['Hello world.', 'Next page'] };
+assert.equal(identityContext.serverRowMatchesBook(
+  { book_id:'legacy-id', meta:{ fingerprint:joined } },
+  localBook,
+), true, 'Legacy server ID did not reconcile through content fingerprint');
+assert.equal(identityContext.serverRowIsActive(
+  { book_id:'deleted-copy', meta:{ title:'Same book', fingerprint:joined, deleted:true } },
+), false, 'Deleted tombstone was treated as an active server book');
+
+const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
+assert.match(
+  syncSource,
+  /const twin = activeServerBooks\(\)\.find/,
+  'Duplicate-title warning still inspects hidden deleted tombstones',
+);
+
+// A completed AI window owns the entire range: omitted heuristic headings
+// become plain paragraphs, while explicit structural operations are applied.
+const rollingContext = {
+  IMG_MARK:'[[IMG]]:',
+  Map,
+  Set,
+  navigator:{ onLine:true },
+  setTimeout,
+  clearTimeout,
+};
+new Script(readFileSync(resolve(root, 'scripts/reader/rolling-formatting.js'), 'utf8'))
+  .runInNewContext(rollingContext);
+const rollingBook = {
+  paras:['Heuristic heading', 'A quoted line.', 'Ordinary body.'],
+  formatting:{ blocks:[
+    {r:'h1', t:'Heuristic heading', f:0},
+    {r:'p', t:'A quoted line.', f:1},
+    {r:'p', t:'Ordinary body.', f:2},
+  ]},
+  aiFormatting:{ version:1, windows:[{
+    from:0, to:3, createdAt:1,
+    ops:[{i:1,n:1,r:'quote',j:false,b:'section'}],
+  }]},
+};
+const displayBlocks = rollingContext.buildRollingDisplayBlocks(rollingBook);
+assert.equal(
+  JSON.stringify(displayBlocks.map(block => [block.r, block.f, block.before || 'none'])),
+  JSON.stringify([['p',0,'none'], ['quote',1,'section'], ['p',2,'none']]),
+  'AI window was not applied as the sole authority for its range',
+);
+assert.equal(
+  rollingContext.validateRollingOps(rollingBook, {from:0,to:3}, [
+    {i:0,n:2,r:'h2'}, {i:1,n:1,r:'quote'},
+  ]),
+  null,
+  'Overlapping rolling operations were accepted',
+);
 
 console.log(`Breeze checks passed: ${jsFiles.length} active JavaScript files`);
