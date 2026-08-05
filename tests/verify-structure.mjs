@@ -120,7 +120,7 @@ const rollingBook = {
     {r:'p', t:'A quoted line.', f:1},
     {r:'p', t:'Ordinary body.', f:2},
   ]},
-  aiFormatting:{ version:1, windows:[{
+  aiFormatting:{ version:2, windows:[{
     from:0, to:3, createdAt:1,
     ops:[{i:1,n:1,r:'quote',j:false,b:'section'}],
   }]},
@@ -138,5 +138,31 @@ assert.equal(
   null,
   'Overlapping rolling operations were accepted',
 );
+
+// Even a model-selected heading is demoted when it is clearly a full body
+// paragraph. This catches the giant multi-sentence heading regression.
+const longBody = Array(8).fill(
+  'This is a complete sentence describing an ordinary scene in the book.'
+).join(' ');
+const safetyBook = { paras:[longBody] };
+const safeOps = rollingContext.validateRollingOps(safetyBook, {from:0,to:1}, [
+  {i:0,n:1,r:'h2',j:false,b:'page'},
+]);
+assert.equal(safeOps[0].r, 'p', 'Long body paragraph remained a heading');
+assert.equal(safeOps[0].b, 'none', 'Rejected heading kept a forced page break');
+
+// A join across two already-complete sentences is ignored instead of merging
+// independent paragraphs, while the rest of the AI window remains usable.
+const joinSafetyBook = { paras:['The first paragraph ends.', 'Another paragraph begins.'] };
+const joinSafeOps = rollingContext.validateRollingOps(joinSafetyBook, {from:0,to:2}, [
+  {i:0,n:2,r:'p',j:true,b:'none'},
+]);
+assert.equal(joinSafeOps[0].n, 1, 'Independent complete paragraphs were joined');
+
+const formatServer = readFileSync(resolve(root, 'server/format/index.ts'), 'utf8');
+assert.match(formatServer, /buildBoundaryPrompt/, 'Boundary restoration stage is missing');
+assert.match(formatServer, /buildRolePrompt/, 'Markdown role stage is missing');
+assert.match(formatServer, /safeHeadingRole/, 'Server heading safety gate is missing');
+assert.match(formatServer, /const VERSION = 2/, 'Old AI formatting maps were not invalidated');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active JavaScript files`);
