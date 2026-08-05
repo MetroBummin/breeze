@@ -12,6 +12,17 @@
 - 문서의 EPUB/PDF 조판 신호는 목차가 아니라 읽기 화면 포맷에만 사용합니다.
 - 이전 버전의 `book.tidy.blocks` 데이터는 읽기 호환성을 위해 표시만 지원합니다.
 - IndexedDB 이미지 이름 변경 완료 대기, 책 삭제 tombstone, Supabase 삭제 오류 처리를 정리했습니다.
+- 동일한 책을 다른 파서 버전으로 넣어도 내용 지문으로 서버 사본을 찾습니다.
+- 로그인한 사용자는 동의 후 현재 위치부터 다음 약 8쪽을 AI가 자동 조판합니다. AI는 원문이 아니라 위치 지도만 반환합니다.
+
+## AI 조판 함수
+
+Supabase Edge Functions에 `format`이라는 이름으로 `server/format/index.ts`를 배포합니다.
+기존 `dict` 함수와 같은 `GEMINI_API_KEY` 또는 `ANTHROPIC_API_KEY`, 선택적으로 `AI_PROVIDER`를 사용합니다.
+GitHub Pages 배포만으로 Edge Function이 자동 배포되지는 않습니다.
+
+책 내용은 사용자가 AI 조판에 처음 동의한 뒤에만 현재 위치부터 약 8쪽씩 AI 공급자에게 전송됩니다.
+응답에는 책 문장이 아니라 문단 위치·역할·줄바꿈 정보만 포함되며, 원문 배열은 변경하지 않습니다.
 
 ## 실행
 
