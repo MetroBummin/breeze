@@ -1097,7 +1097,7 @@ async function offerTidy(book){
     if(t.author && !book.author) book.author = t.author;
     await bookPut(book);
     renderHome();
-    toast('정리 완료 — 앞 ' + t.start + '문단 접고, 소제목 ' + Object.keys(t.heads).length + '개');
+    toast('정리 완료 — 앞 ' + t.start + '문단 접고, 목차 ' + t.toc.length + '개');
   }catch(e){
     console.warn('tidy', e);
     toast('AI 정리는 건너뛰었어요 (나중에 Aa 설정에서 할 수 있어요)');
@@ -1769,10 +1769,11 @@ async function runTidy(paras, title, onStep){
   }
 
   const built = tidyBuildToc(paras, raw, bookToc, start);
-  return { start:start, why:f.why||'', heads:built.heads, blocks:built.blocks,
-           drop:built.drop, toc:built.toc, htext:built.htext, hskip:built.hskip,
-           htrim:built.htrim, levels:built.levels,
-           title:f.title||'', author:f.author||'', at:Date.now() };
+  /* 조립된 글자가 정말 원문에서만 왔는지 코드가 확인합니다.
+     어긋나면 정리를 쓰지 않습니다 — 원문이 조용히 달라지는 것보다 안 예쁜 편이 낫습니다. */
+  if(!blocksIntact(paras, built.blocks)) throw new Error('text_mismatch');
+  return { start:start, why:f.why||'', blocks:built.blocks, toc:built.toc,
+           levels:built.levels, title:f.title||'', author:f.author||'', at:Date.now() };
 }
 
 /* AI가 준 블록 목록 → 화면용 지도 + 목차.
@@ -1803,7 +1804,7 @@ function tidyBuildToc(paras, raw, bookToc, start){
         t += (t ? ' ' : '') + p;
       }
       else if(x.k === 'drop') drop[i+d] = 1;
-      else blocks[i+d] = { k:x.k, first:d===0, last:d===n-1 };
+      else blocks[i+d] = { k:x.k, g:i };            // g = 이 상자가 시작된 문단 번호
     }
     if(x.k === 'head' && t){
       t = t.trim();
@@ -1871,8 +1872,87 @@ function tidyBuildToc(paras, raw, bookToc, start){
     toc.forEach(function(x){ if(!x.sure && x.l <= sureLv) x.l = sureLv + 1; });
   }
   toc.forEach(function(x){ if(x.l > 3) x.l = 3; });
-  return { heads:heads, blocks:blocks, drop:drop, toc:toc,
-           htext:htext, hskip:hskip, htrim:htrim, levels:present.length };
+
+  /* 여기까지가 "판정"이고, 아래가 "조립"입니다.
+     지금까지는 이 판정 맵들을 그대로 화면에 넘겨서, 그릴 때마다 여섯 군데를 겹쳐 봐야 했습니다.
+     이제는 여기서 한 번에 블록 배열로 만들어 넘깁니다. 화면은 그냥 순서대로 그리면 됩니다. */
+  return { blocks: assembleBlocks(paras, start, {
+             heads:heads, blk:blocks, drop:drop, htext:htext, hskip:hskip, htrim:htrim
+           }), toc:toc, levels:present.length };
+}
+
+/* 판정 결과 + 원문 → 화면에 그릴 블록의 나열.
+     { r:'h1'|'h2'|'h3'|'p'|'quote'|'note'|'img', t:글자, f:원문 문단 번호, g:상자 묶음 }
+   글자는 언제나 원문 문단에서 그대로 옵니다. 합치거나 앞을 떼어 낼 뿐 고쳐 쓰지 않습니다.
+   f 를 들고 있어서 읽던 위치(data-pi)와 목차가 예전 그대로 동작합니다. */
+function assembleBlocks(paras, start, d){
+  const out = [];
+  for(let pi = start; pi < paras.length; pi++){
+    const p = paras[pi];
+    if(p === undefined) continue;
+    if(d.drop[pi]) continue;                       // 쪽번호·워터마크 찌꺼기
+    if(d.hskip[pi]) continue;                      // 쪼개진 제목의 뒷조각 — 앞 블록에 이미 합쳐졌음
+    if(p.startsWith(IMG_MARK)){ out.push({ r:'img', t:p, f:pi }); continue; }
+    const lvl = d.heads[pi] || 0;
+    if(lvl){ out.push({ r:'h' + Math.min(3, lvl), t:(d.htext[pi] || p), f:pi }); continue; }
+    let t = p;
+    if(d.htrim[pi]) t = t.slice(d.htrim[pi]).replace(/^[\s.,:;]+/, '');   // 눌어붙은 제목 꼬리 제거
+    if(!t) continue;
+    const b = d.blk[pi];
+    if(b) out.push({ r:b.k, t:t, f:pi, g:b.g });
+    else out.push({ r:'p', t:t, f:pi });
+  }
+  return out;
+}
+
+/* AI 정리를 안 했거나 꺼 둔 책 — 원문 그대로 한 문단이 한 블록입니다. */
+function plainBlocks(paras){
+  const out = [];
+  paras.forEach(function(p, pi){
+    if(p === undefined) return;
+    if(p.startsWith(IMG_MARK)){ out.push({ r:'img', t:p, f:pi }); return; }
+    out.push({ r: looksHeading(p) ? 'h2' : 'p', t:p, f:pi });
+  });
+  return out;
+}
+
+/* 조립된 블록의 글자가 정말 원문에서만 왔는지 기계적으로 확인합니다.
+   AI는 위치만 말하고 글자는 앱이 원문에서 가져오지만, 그 약속이 지켜졌는지
+   사람 눈이 아니라 코드가 봅니다. 어긋나면 정리를 통째로 버리고 원문을 씁니다. */
+function blocksIntact(paras, blocks){
+  let vocab = null;                                 // 무거우니 필요할 때만 만듭니다
+  for(let i=0; i<blocks.length; i++){
+    const b = blocks[i];
+    if(b.r === 'img') continue;
+    const p = paras[b.f];
+    if(p === undefined) return false;
+    if(b.t === p || p.endsWith(b.t)) continue;      // 원문 그대로거나, 앞만 떼어 낸 것
+    let joined = '', ok = false;                    // 쪼개진 문단을 이어 붙인 것
+    for(let k=b.f; k<paras.length && joined.length <= b.t.length; k++){
+      joined += (joined ? ' ' : '') + paras[k];
+      if(joined === b.t){ ok = true; break; }
+    }
+    if(ok) continue;
+    /* 본문은 여기서 끝입니다. 원문 문단 그대로거나, 앞을 뗀 것이거나, 이어 붙인 것.
+       셋 중 어느 것도 아니면 글자가 바뀐 것이므로 바로 실패입니다. */
+    if(b.r.charAt(0) !== 'h') return false;
+    /* 여기까지 오는 건 장 제목뿐입니다. 제목은 본문 자리가 아니라 책의 목차
+       페이지에서 가져오고, 2단 조판 때문에 떨어져 있던 번호를 제자리에 끼우기도 합니다
+       ("Chapter Get The Love…" + "Seven" → "Chapter Seven Get The Love…").
+       그래서 통째로 이어진 문자열로는 원문에 없습니다. 대신 쓰인 낱말이 전부
+       이 책 안에 있는지를 봅니다. 없는 낱말이 하나라도 섞이면 지어낸 것입니다. */
+    if(vocab === null){
+      vocab = Object.create(null);
+      for(let k=0; k<paras.length; k++){
+        const ws = tocWords(paras[k]);
+        for(let j=0; j<ws.length; j++) vocab[ws[j]] = 1;
+      }
+    }
+    const w = tocWords(b.t);
+    if(!w.length) return false;
+    for(let j=0; j<w.length; j++) if(!vocab[w[j]]) return false;
+  }
+  return true;
 }
 
 /* 지금 보고 있는 책을 정리합니다 (Aa 설정 → 정리하기) */
@@ -1891,14 +1971,14 @@ async function tidyNow(){
     b.tidy = t;
     delete tidyOff[b.id]; save(LS_TIDYOFF, tidyOff);
     await bookPut(b);
-    const n = Object.keys(t.heads).length;
-    toast('정리했어요 — 앞 ' + t.start + '문단 접고, 소제목 ' + n + '개');
+    toast('정리했어요 — 앞 ' + t.start + '문단 접고, 목차 ' + t.toc.length + '개');
     keepPlace(function(){ renderBookBody(b); });
     syncTidyUI();
   }catch(e){
     console.error(e);
     toast(e.message === 'login_required' ? '로그인이 필요해요'
         : e.message === 'too_short' ? '문단이 너무 적어 정리할 게 없어요'
+        : e.message === 'text_mismatch' ? '정리 결과가 원문과 달라서 취소했어요 (원문은 그대로예요)'
         : 'AI 정리에 실패했어요: ' + e.message);
   }finally{ runBtn.disabled = false; }
 }
@@ -1962,12 +2042,11 @@ function buildToc(b){
     let next = b.paras.length;
     for(let j=i+1; j<out.length; j++){ if(out[j].l === top){ next = out[j].pi; break; } }
     let words = 0;
-    for(let pi=x.pi; pi<next && pi<b.paras.length; pi++){
-      const p = b.paras[pi];
-      if(!p || p.startsWith(IMG_MARK)) continue;
-      if(T && T.drop && T.drop[pi]) continue;
-      words += p.split(/\s+/).length;
-    }
+    const src = (T && Array.isArray(T.blocks)) ? T.blocks : plainBlocks(b.paras);
+    src.forEach(function(bl){
+      if(bl.r === 'img' || bl.f < x.pi || bl.f >= next) return;
+      words += bl.t.split(/\s+/).length;
+    });
     if(words > 120) x.mins = Math.max(1, Math.round(words/180));
   });
   return out;
@@ -2097,59 +2176,56 @@ function renderBookBody(b){
     pageChars=0; pageNo++;
   };
   newPage();
-  b.paras.forEach((p,pi)=>{
-    if(T && pi < T.start) return;               // 판권지·추천사 등 앞단은 접어 둡니다
-    if(p.startsWith(IMG_MARK)){
+  /* 반입할 때 이미 조립해 둔 블록을 순서대로 그리기만 합니다.
+     예전처럼 문단마다 여섯 개의 판정 맵을 겹쳐 보지 않습니다. */
+  const list = (T && Array.isArray(T.blocks)) ? T.blocks : plainBlocks(b.paras);
+  list.forEach(bl=>{
+    if(bl.r === 'img'){
       const fig = document.createElement('figure');
       const img = document.createElement('img');
       img.alt = '삽화';
-      imgGet(p.slice(IMG_MARK.length)).then(blob=>{
+      imgGet(bl.t.slice(IMG_MARK.length)).then(blob=>{
         if(blob) img.src = URL.createObjectURL(blob);
         else fig.remove();
       });
       fig.appendChild(img);
       page.appendChild(fig);
       pageChars += 400;
+      box = null; boxKind = '';
       return;
     }
-    if(T && T.drop && T.drop[pi]) return;       // 쪽번호·워터마크 찌꺼기
-    if(T && T.hskip && T.hskip[pi]) return;     // 쪼개진 제목의 뒷조각 — 첫 줄에 이미 합쳐 놓았습니다
-    /* 제목은 원문 조각을 이어 붙인 온전한 한 줄로 그리고,
-       그 꼬리가 눌어붙어 있던 본문은 꼬리를 뗀 자리부터 그립니다. */
-    let txt = (T && T.htext && T.htext[pi]) ? T.htext[pi] : p;
-    if(T && T.htrim && T.htrim[pi]) txt = txt.slice(T.htrim[pi]).replace(/^[\s.,:;]+/, '');
-    const lvl = T ? (T.heads[pi] || 0) : (looksHeading(p) ? 2 : 0);
-    const isHead = !!lvl;
-    const blk = (T && T.blocks) ? T.blocks[pi] : null;
+    const isHead = bl.r.charAt(0) === 'h';
+    const lvl = isHead ? +bl.r.charAt(1) : 0;
+    const inBox = bl.r === 'quote' || bl.r === 'note';
     // 상자 한가운데서 쪽이 넘어가면 상자가 두 동강 나므로, 상자 안에서는 쪽을 넘기지 않습니다
-    const inBlock = blk && !blk.first;
-    if(!inBlock && (pageChars >= PAGE_CHARS || (isHead && lvl <= 2 && pageChars > PAGE_CHARS*0.55))) newPage();
+    const cont = inBox && box && boxKind === bl.g;
+    if(!cont && (pageChars >= PAGE_CHARS || (isHead && lvl <= 2 && pageChars > PAGE_CHARS*0.55))) newPage();
     /* 인용문·활동 상자는 본문과 다른 덩어리로 묶어 그립니다.
        원서에서 테두리 상자나 작은 글씨로 따로 조판되던 것들입니다. */
-    if(blk){
-      if(blk.first || !box || boxKind !== blk.k){
+    if(inBox){
+      if(!box || boxKind !== bl.g){
         box = document.createElement('aside');
-        box.className = 'blk ' + blk.k;
-        boxKind = blk.k;
+        box.className = 'blk ' + bl.r;
+        boxKind = bl.g;
         page.appendChild(box);
       }
     }else{ box = null; boxKind = ''; }
-    const host = blk && box ? box : page;
+    const host = inBox && box ? box : page;
     const el = document.createElement(isHead ? (lvl===1?'h2':lvl===3?'h4':'h3') : 'p');
-    el.dataset.pi = pi;
+    el.dataset.pi = bl.f;
     let html='', m, last=0;
     WORD_RE.lastIndex=0;
-    while((m=WORD_RE.exec(txt))){
-      html += esc(txt.slice(last, m.index));
+    while((m=WORD_RE.exec(bl.t))){
+      html += esc(bl.t.slice(last, m.index));
       const k = keyOf(m[0]);
       const st = words[k] ? ' s'+words[k].status : '';
       html += `<span class="w${st}" data-w="${k}">${esc(m[0])}</span>`;
       last = m.index + m[0].length;
     }
-    html += esc(txt.slice(last));
+    html += esc(bl.t.slice(last));
     el.innerHTML = html;
     host.appendChild(el);
-    pageChars += txt.length;
+    pageChars += bl.t.length;
   });
   const no = document.createElement('div');
   no.className='pageno'; no.textContent = '— '+pageNo+' —';
