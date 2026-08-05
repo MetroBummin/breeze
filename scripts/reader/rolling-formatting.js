@@ -3,7 +3,7 @@
    and roles only. Source text never comes back from the model and is never
    replaced. */
 
-const ROLLING_FORMAT_VERSION = 1;
+const ROLLING_FORMAT_VERSION = 2;
 const ROLLING_FORMAT_PAGE_CHARS = 1700;
 const ROLLING_FORMAT_WINDOW_PAGES = 8;
 const ROLLING_FORMAT_WINDOW_CHARS = ROLLING_FORMAT_PAGE_CHARS * ROLLING_FORMAT_WINDOW_PAGES;
@@ -86,7 +86,8 @@ function rollingRoleInfo(book){
       const start = op.i;
       const span = op.n;
       const before = op.b || 'none';
-      if(op.r === 'quote' || op.r === 'note'){
+      const shouldJoin = !!op.j || op.r.charAt(0) === 'h';
+      if((op.r === 'quote' || op.r === 'note') && !shouldJoin){
         for(let offset = 0; offset < span; offset++){
           const index = start + offset;
           info[index] = { r:op.r, start:index, n:1, group:start,
@@ -95,7 +96,6 @@ function rollingRoleInfo(book){
         return;
       }
 
-      const shouldJoin = op.r.charAt(0) === 'h' || !!op.j;
       if(shouldJoin && span > 1){
         for(let offset = 0; offset < span; offset++){
           info[start + offset] = { r:op.r, start, n:span, group:start,
@@ -127,7 +127,11 @@ function buildRollingDisplayBlocks(book){
     if(role.start !== index) continue;
 
     if(role.r === 'quote' || role.r === 'note'){
-      blocks.push({ r:role.r, t:paragraphs[index], f:index, g:role.group,
+      const span = Math.max(1, role.n || 1);
+      const text = role.join
+        ? paragraphs.slice(index, index + span).join(' ')
+        : paragraphs[index];
+      blocks.push({ r:role.r, t:text, f:index, g:role.group,
                     before:role.before });
       continue;
     }
@@ -182,6 +186,36 @@ function rollingWindowItems(book, bounds){
   });
 }
 
+function rollingJoinLooksSafe(paragraphs, start, span){
+  if(span <= 1) return true;
+  let hasBrokenBoundary = false;
+  for(let index = start; index < start + span - 1; index++){
+    const left = String(paragraphs[index] || '').trim();
+    const right = String(paragraphs[index + 1] || '').trim();
+    if(left.startsWith(IMG_MARK) || right.startsWith(IMG_MARK)) return false;
+    const leftComplete = /[.!?]["'”’)]?$/.test(left);
+    const rightStartsNew = /^[A-ZÀ-Þ0-9“"'‘]/.test(right);
+    if(!leftComplete || !rightStartsNew) hasBrokenBoundary = true;
+  }
+  return hasBrokenBoundary;
+}
+
+function safeRollingRole(paragraphs, start, span, requestedRole){
+  if(requestedRole.charAt(0) !== 'h') return requestedRole;
+  const limits = {
+    h1:{ chars:120, words:18, spans:3 },
+    h2:{ chars:180, words:28, spans:4 },
+    h3:{ chars:240, words:40, spans:4 },
+  };
+  const limit = limits[requestedRole];
+  const text = paragraphs.slice(start, start + span).join(' ').trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  const sentenceEnds = (text.match(/[.!?](?=(?:["'”’\])]|\s|$))/g) || []).length;
+  if(!limit || text.length > limit.chars || words > limit.words
+      || span > limit.spans || sentenceEnds > 1) return 'p';
+  return requestedRole;
+}
+
 function validateRollingOps(book, bounds, rawOps){
   if(!Array.isArray(rawOps) || rawOps.length > ROLLING_FORMAT_MAX_ITEMS) return null;
   const ops = [];
@@ -189,16 +223,21 @@ function validateRollingOps(book, bounds, rawOps){
 
   for(const raw of rawOps){
     const i = Math.floor(Number(raw.i));
-    const n = Math.max(1, Math.min(12, Math.floor(Number(raw.n) || 1)));
-    const r = String(raw.r || '');
-    const b = ['none', 'section', 'page'].includes(raw.b) ? raw.b : 'none';
-    if(!Number.isFinite(i) || i < bounds.from || i + n > bounds.to) return null;
-    if(i < lastEnd || !ROLLING_FORMAT_ROLES.has(r)) return null;
-    for(let index = i; index < i + n; index++){
+    const requestedSpan = Math.max(1, Math.min(12, Math.floor(Number(raw.n) || 1)));
+    const requestedRole = String(raw.r || '');
+    if(!Number.isFinite(i) || i < bounds.from || i + requestedSpan > bounds.to) return null;
+    if(i < lastEnd || !ROLLING_FORMAT_ROLES.has(requestedRole)) return null;
+    for(let index = i; index < i + requestedSpan; index++){
       if(book.paras[index].startsWith(IMG_MARK)) return null;
     }
-    ops.push({ i, n, r, j:!!raw.j, b });
-    lastEnd = i + n;
+    const joinIsSafe = !raw.j || rollingJoinLooksSafe(book.paras, i, requestedSpan);
+    const n = joinIsSafe ? requestedSpan : 1;
+    const r = safeRollingRole(book.paras, i, n, requestedRole);
+    let b = ['none', 'section', 'page'].includes(raw.b) ? raw.b : 'none';
+    if(requestedRole.charAt(0) === 'h' && r === 'p' && b === 'page') b = 'none';
+    if(b === 'page' && r !== 'h1' && r !== 'h2') b = 'section';
+    ops.push({ i, n, r, j:joinIsSafe && !!raw.j, b });
+    lastEnd = i + requestedSpan;
   }
   return ops;
 }
