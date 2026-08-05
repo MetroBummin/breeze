@@ -36,6 +36,35 @@ function applyDark(){
 }
 function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
 applyDark();
+const LS_ROLLING_FORMAT = 'breeze.rolling-format';
+let rollingFormattingEnabled = load(LS_ROLLING_FORMAT, null);
+function applyRollingFormattingPreference(){
+  const toggle = document.getElementById('aa-rolling');
+  if(toggle) toggle.classList.toggle('on', rollingFormattingEnabled === true);
+}
+function requestRollingFormattingConsent(){
+  if(rollingFormattingEnabled !== null) return rollingFormattingEnabled;
+  rollingFormattingEnabled = confirm(
+    'AI 조판을 켤까요?\n\n읽고 있는 위치부터 앞으로 약 8쪽의 원문을 Supabase의 AI 함수로 보내고, 제목·인용문·줄바꿈 위치만 받아옵니다. 글 내용은 AI가 고치지 않습니다.'
+  );
+  save(LS_ROLLING_FORMAT, rollingFormattingEnabled);
+  applyRollingFormattingPreference();
+  return rollingFormattingEnabled;
+}
+function toggleRollingFormatting(){
+  if(rollingFormattingEnabled === null){
+    if(!requestRollingFormattingConsent()) return;
+  }else{
+    rollingFormattingEnabled = rollingFormattingEnabled !== true;
+    save(LS_ROLLING_FORMAT, rollingFormattingEnabled);
+    applyRollingFormattingPreference();
+  }
+  if(rollingFormattingEnabled && curBook){
+    const anchor = captureAnchor();
+    scheduleRollingFormatting(curBook, anchor ? anchor.pi : 0);
+  }
+}
+applyRollingFormattingPreference();
 function syncTopbarH(){
   const tb = document.getElementById('topbar');
   const h = (tb && !document.body.classList.contains('focusmode')) ? tb.offsetHeight : 0;
