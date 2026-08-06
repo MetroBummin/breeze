@@ -36,36 +36,6 @@ function applyDark(){
 }
 function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
 applyDark();
-/* v3는 "현재 8쪽"이 아니라 전권에서 뽑은 후보를 보내므로 예전 동의를
-   재사용하지 않습니다. 전송 범위가 바뀌면 반드시 새로 설명하고 묻습니다. */
-const LS_ROLLING_FORMAT = 'breeze.book-format-v3';
-let rollingFormattingEnabled = load(LS_ROLLING_FORMAT, null);
-function applyRollingFormattingPreference(){
-  const toggle = document.getElementById('aa-rolling');
-  if(toggle) toggle.classList.toggle('on', rollingFormattingEnabled === true);
-}
-function requestRollingFormattingConsent(){
-  if(rollingFormattingEnabled !== null) return rollingFormattingEnabled;
-  rollingFormattingEnabled = confirm(
-    'AI 책 조판을 켤까요?\n\n기기에서 책 전체의 디자인을 먼저 분석한 뒤, 제목·목차·인용문처럼 구조가 의심되는 일부만 AI 함수로 보냅니다. 일반 본문과 원문 전체는 보내지 않으며, AI는 글 내용을 고치지 않습니다. 완성된 조판은 다음에 책을 열 때 한 번에 적용됩니다.'
-  );
-  save(LS_ROLLING_FORMAT, rollingFormattingEnabled);
-  applyRollingFormattingPreference();
-  return rollingFormattingEnabled;
-}
-function toggleRollingFormatting(){
-  if(rollingFormattingEnabled === null){
-    if(!requestRollingFormattingConsent()) return;
-  }else{
-    rollingFormattingEnabled = rollingFormattingEnabled !== true;
-    save(LS_ROLLING_FORMAT, rollingFormattingEnabled);
-    applyRollingFormattingPreference();
-  }
-  if(rollingFormattingEnabled && curBook){
-    scheduleRollingFormatting(curBook);
-  }
-}
-applyRollingFormattingPreference();
 function syncTopbarH(){
   const tb = document.getElementById('topbar');
   const h = (tb && !document.body.classList.contains('focusmode')) ? tb.offsetHeight : 0;
@@ -74,7 +44,7 @@ function syncTopbarH(){
 let lastAnchor = null;
 window.addEventListener('resize', ()=>{
   syncTopbarH();
-  if(curBook && lastAnchor) requestAnimationFrame(()=>restoreAnchor(lastAnchor));
+  if(curBook && currentReaderMode==='text' && lastAnchor) requestAnimationFrame(()=>restoreAnchor(lastAnchor));
 });
 window.addEventListener('load', syncTopbarH);
 syncTopbarH();
