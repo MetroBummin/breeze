@@ -31,11 +31,9 @@ function renderBookBody(b){
   newPage();
   /* 반입할 때 이미 조립해 둔 블록을 순서대로 그리기만 합니다.
      예전처럼 문단마다 여섯 개의 판정 맵을 겹쳐 보지 않습니다. */
-  const list = typeof buildRollingDisplayBlocks === 'function'
-    ? buildRollingDisplayBlocks(b)
-    : ((formatting && Array.isArray(formatting.blocks))
-        ? formatting.blocks
-        : buildPlainBlocks(b.paras));
+  const list = (formatting && Array.isArray(formatting.blocks))
+    ? formatting.blocks
+    : buildPlainBlocks(b.paras);
   list.forEach(bl=>{
     if(bl.r === 'img'){
       const fig = document.createElement('figure');
@@ -93,22 +91,33 @@ function renderBookBody(b){
   frag.appendChild(no);
   rt.appendChild(frag);
 }
-function openBook(b){
+async function openBook(b){
+  if(typeof leaveOriginalReader==='function') leaveOriginalReader();
   curBook = b;
+  currentReaderMode = 'text';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.getElementById('v-read').classList.add('on');
   document.getElementById('nav-home').classList.remove('on');
   document.getElementById('rtitle').textContent = b.title;
   document.body.classList.add('reading');
+  document.body.classList.remove('reader-original');
+  document.getElementById('readwrap').hidden=false;
+  document.getElementById('originalwrap').hidden=true;
   renderBookBody(b);
-  positions[b.id] = {...posOf(b.id), t:Date.now()};
+  const initialPosition = posOf(b.id);
+  const firstOpen = !initialPosition.t;
+  positions[b.id] = {...initialPosition, t:Date.now()};
   save(LS_POS, positions);
-  requestAnimationFrame(()=>{
-    const pos = posOf(b.id);
-    if(!restoreAnchor(pos)) window.scrollTo(0, pos.y||0);   // 예전 기록은 px 방식으로 복원
-    lastAnchor = captureAnchor();
-    updatePfill();
-    scheduleRollingFormatting(b);
+  updateReaderModeControls();
+  const original = b.builtin ? null : await originalGet(b.id);
+  const desired = initialPosition.mode==='original'
+    ? (original ? 'original' : 'text')
+    : (firstOpen && original ? 'original' : 'text');
+  if(desired==='original') await switchReaderMode('original',{initial:true});
+  else requestAnimationFrame(()=>{
+    const pos=posOf(b.id);
+    if(!restoreAnchor(pos)) window.scrollTo(0,pos.y||0);
+    lastAnchor=captureAnchor(); updatePfill();
   });
 }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -130,8 +139,7 @@ window.addEventListener('scroll', ()=>{
   scrollTick = setTimeout(()=>{
     scrollTick=null;
     saveReadingState();
-    lastAnchor = captureAnchor();
-    if(lastAnchor) scheduleRollingFormatting(curBook);
+    if(currentReaderMode==='text') lastAnchor = captureAnchor();
   }, 800);
 });
 
