@@ -118,6 +118,10 @@ function itemsToLines(items){
   return rows.sort((a,b)=>b.y-a.y).map(r=>{
     const ps = r.parts.sort((a,b)=>a.x-b.x);
     let text = '';
+    const gaps = [];
+    ps.forEach((p,i)=>{
+      if(i) gaps.push(Math.max(0, p.x - (ps[i-1].x + ps[i-1].w)));
+    });
     ps.forEach((p,i)=>{
       if(i===0){ text = p.s; return; }
       const prev = ps[i-1];
@@ -125,6 +129,29 @@ function itemsToLines(items){
       const needSpace = gapX > Math.max(0.16*(p.h||10), 0.4) && !/\s$/.test(text) && !/^\s/.test(p.s);
       text += (needSpace ? ' ' : '') + p.s;
     });
+    /* 넓은 자간으로 찍힌 제목은 PDF 추출기가 "P A R T  O N E"처럼
+       글자 사이를 실제 공백으로 오해합니다. 원문 추출값은 그대로 두고,
+       좌표 간격으로 복원한 화면용 문자열만 조판 단서에 보관합니다. */
+    let display = text;
+    const visibleParts = ps.filter(p=>String(p.s||'').trim());
+    const singleRatio = visibleParts.length
+      ? visibleParts.filter(p=>String(p.s||'').trim().length <= 2).length / visibleParts.length
+      : 0;
+    const positiveGaps = gaps.filter(g=>g>0.15);
+    const trackingGap = median(positiveGaps);
+    if(visibleParts.length >= 4 && singleRatio >= 0.7 && trackingGap > r.h*0.08){
+      display = '';
+      visibleParts.forEach((p,i)=>{
+        if(i){
+          const prev = visibleParts[i-1];
+          const gap = Math.max(0, p.x - (prev.x + prev.w));
+          if(gap > Math.max(trackingGap*1.75, r.h*0.5)) display += ' ';
+        }
+        display += String(p.s||'').replace(/\s+/g,'');
+      });
+      display = display.replace(/\s+/g,' ').trim();
+      if(display.replace(/\s/g,'') !== text.replace(/\s/g,'')) display = text;
+    }
     if(r.drop){
       const rest = text.replace(/^\s+/,'');
       text = r.drop + (dropJoins(r.drop, rest) ? '' : ' ') + rest;
@@ -132,9 +159,14 @@ function itemsToLines(items){
     text = text.replace(/\s+/g,' ').trim();
     /* 굵기: 이 줄 글자의 대부분이 Bold 계열 폰트로 찍혔는가.
        제목은 크거나 굵거나 둘 다입니다. 조판이 남긴 단서라 추측보다 훨씬 셉니다. */
-    let bw = 0, tw = 0;
-    ps.forEach(p=>{ const n=(p.s||'').length; tw+=n; if(/bold|black|heavy|semib/i.test(p.f||'')) bw+=n; });
-    return { y:r.y, h:r.h, text, drop:!!r.drop, bold: tw>0 && bw/tw > 0.6,
+    let bw = 0, iw = 0, tw = 0;
+    ps.forEach(p=>{
+      const n=(p.s||'').length; tw+=n;
+      if(/bold|black|heavy|semib/i.test(p.f||'')) bw+=n;
+      if(/italic|oblique/i.test(p.f||'')) iw+=n;
+    });
+    return { y:r.y, h:r.h, text, display, drop:!!r.drop, bold: tw>0 && bw/tw > 0.6,
+             italic:tw>0 && iw/tw > 0.6,
              left: r.drop ? Math.min(r.dropX, ps.length?ps[0].x:r.dropX) : ps[0].x,
              right: ps.length ? ps[ps.length-1].x + (ps[ps.length-1].w||0) : r.dropX };
   }).filter(l=>l.text);
@@ -197,14 +229,16 @@ function assembleParagraphs(pages){
   const paras = [];
   const sig = [];
   const chapters = [];        // 드롭캡으로 시작하는 문단 = 장이 바뀌는 자리
-  let cur = '', prev = null, prevPage = -1, curDrop = false;
-  let curH = 0, curBold = true, curCenter = true, curLines = 0;
+  let cur = '', curDisplay = '', prev = null, prevPage = -1, curDrop = false;
+  let curPage = 0;
+  let curH = 0, curBold = true, curItalic = true, curCenter = true, curLines = 0;
   let curLeft = Infinity, curRight = -Infinity;
   const noteLine = l => {
     /* 드롭캡(문단 첫 글자를 두세 줄 높이로 키운 장식)은 글자 크기 단서를 망칩니다.
        본문 첫 문단이 제목보다 커 보이게 되므로 그 줄은 크기 계산에서 뺍니다. */
     if(!l.drop) curH = Math.max(curH, l.h || 0);
     if(!l.bold) curBold = false;
+    if(!l.italic) curItalic = false;
     const padL = l.left - bodyLeft, padR = bodyRight - l.right;
     if(!(padL > width*0.06 && Math.abs(padL - padR) < width*0.14)) curCenter = false;
     /* 인용문·발췌는 좌우가 안쪽으로 들어가 조판됩니다. 본문은 첫 줄만 들여쓰고
@@ -218,18 +252,26 @@ function assembleParagraphs(pages){
     if(t){
       if(curDrop) chapters.push(paras.length);
       paras.push(t);
-      sig.push({ z: +(curH/medH).toFixed(2), b: curBold && curLines>0, c: curCenter && curLines>0,
-                 in: (curLines >= 2) ? +(((curLeft - bodyLeft)/width).toFixed(3)) : 0 });
+      const signal = { z: +(curH/medH).toFixed(2), b: curBold && curLines>0,
+                       it:curItalic && curLines>0,
+                       c: curCenter && curLines>0, p:curPage,
+                       in: (curLines >= 2) ? +(((curLeft - bodyLeft)/width).toFixed(3)) : 0 };
+      const visual = curDisplay.trim().replace(/\s+/g,' ');
+      if(visual && visual !== t && visual.replace(/\s/g,'') === t.replace(/\s/g,'')) signal.v = visual;
+      sig.push(signal);
     }
-    cur=''; curDrop=false;
-    curH=0; curBold=true; curCenter=true; curLines=0;
+    cur=''; curDisplay=''; curDrop=false;
+    curH=0; curBold=true; curItalic=true; curCenter=true; curLines=0;
     curLeft=Infinity; curRight=-Infinity;
   };
 
   cleanPages.forEach((page, pi) => {
     page.lines.forEach(l => {
       const t = l.text;
-      if(!prev){ cur = t; curDrop = !!l.drop; noteLine(l); prev = l; prevPage = pi; return; }
+      if(!prev){
+        cur = t; curDisplay = l.display || t; curPage = pi + 1;
+        curDrop = !!l.drop; noteLine(l); prev = l; prevPage = pi; return;
+      }
 
       const samePage = pi === prevPage;
       const gap = samePage ? (prev.y - l.y) : null;
@@ -257,9 +299,16 @@ function assembleParagraphs(pages){
       }
 
       if(brk) flush();
+      if(!cur) curPage = pi + 1;
       if(!cur && l.drop) curDrop = true;
-      if(cur.endsWith('-') && /^[a-z]/.test(t)) cur = cur.slice(0,-1) + t;   // 줄바꿈 하이픈 복원
-      else cur += (cur ? ' ' : '') + t;
+      const visualLine = l.display || t;
+      if(cur.endsWith('-') && /^[a-z]/.test(t)){
+        cur = cur.slice(0,-1) + t;                      // 줄바꿈 하이픈 복원
+        curDisplay = curDisplay.replace(/-\s*$/, '') + visualLine;
+      }else{
+        cur += (cur ? ' ' : '') + t;
+        curDisplay += (curDisplay ? ' ' : '') + visualLine;
+      }
       noteLine(l);
       prev = l; prevPage = pi;
     });
@@ -296,6 +345,7 @@ async function parsePDF(f){
   const pdf = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
   const pages = [];
   for(let i=1;i<=pdf.numPages;i++){
+    if(i===1 || i%20===0) toast(`책 기본판 준비 중… ${i}/${pdf.numPages}쪽`);
     const page = await pdf.getPage(i);
     const h = page.getViewport({scale:1}).height;
     const content = await page.getTextContent();
