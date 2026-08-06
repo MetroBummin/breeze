@@ -35,6 +35,7 @@ function initSupabase(){
 }
 
 let sbUser = null, syncTimer = null, syncing = false;
+let syncPromise = null, syncAgain = false, syncAgainManual = false;
 let lastSync = load('breeze.lastsync', 0);
 
 function syncStatus(msg){ const el=document.getElementById('sm-status'); if(el) el.textContent = msg; }
@@ -171,9 +172,25 @@ async function applyBookTombstones(rows){
     if(!(r.meta||{}).deleted) continue;
     const lc = findLocalBookForServerRow(r, books);
     if(!lc) continue;
-    // A server-only deletion initiated on this device explicitly keeps its
-    // local copy. Tombstones from every other device still propagate normally.
-    if(lc.detachedServerId === r.book_id) continue;
+    const originalRecord=await originalGetForBook(lc);
+    if(!serverTombstoneShouldDelete(r,lc,originalRecord)){
+      /* The local file was imported after the server deletion. Keep it visible
+         as a local-only copy; pressing Upload clears the old tombstone. */
+      if(lc.detachedServerId!==r.book_id){
+        lc.detachedServerId=r.book_id;
+        delete lc.remoteDeletePendingAt; delete lc.remoteDeletePendingId;
+        await bookPut(lc);
+      }
+      continue;
+    }
+    /* Never pull the floor out from under an open reader. The same tombstone
+       is applied on the next sync after the user leaves the book. */
+    if(curBook && curBook.id===lc.id){
+      lc.remoteDeletePendingAt=(r.meta||{}).deletedAt||Date.now();
+      lc.remoteDeletePendingId=r.book_id;
+      await bookPut(lc);
+      continue;
+    }
     books = books.filter(b => b.id !== lc.id);
     await bookDel(lc.id);
     await originalDel(lc.id);
@@ -188,16 +205,23 @@ async function applyBookTombstones(rows){
   return removed;
 }
 
+let refreshingBooks = null;
 async function refreshBooks(){
   if(!sb || !sbUser) return;
-  syncStatus('책 목록 불러오는 중…');
-  const { data, error } = await sb.from('books').select('book_id,meta').eq('user_id', sbUser.id);
-  if(error){ syncStatus('목록 실패: '+error.message); return; }
-  serverBooks = data || [];
-  await hydrateServerFingerprints(serverBooks);
-  await applyBookTombstones(serverBooks);     // 다른 기기에서 지운 책을 여기서도 정리
-  syncStatus('');
-  renderBookList();
+  if(refreshingBooks) return refreshingBooks;
+  refreshingBooks=(async()=>{
+    syncStatus('책 목록 불러오는 중…');
+    await flushPendingBookDeletes();
+    const { data, error } = await sb.from('books').select('book_id,meta').eq('user_id', sbUser.id);
+    if(error){ syncStatus('목록 실패: '+error.message); return; }
+    serverBooks = data || [];
+    await hydrateServerFingerprints(serverBooks);
+    await applyBookTombstones(serverBooks);     // 다른 기기에서 지운 책을 여기서도 정리
+    syncStatus('');
+    renderBookList();
+  })();
+  try{ await refreshingBooks; }
+  finally{ refreshingBooks=null; }
 }
 function renderBookList(){
   const el = document.getElementById('sm-booklist');
@@ -242,25 +266,69 @@ function renderBookList(){
 }
 const bookPath = id => `${sbUser.id}/${id}.json`;
 const legacyBookFormatPath = id => `${sbUser.id}/${id}.format.json`;
+const LS_BOOK_DELETE_QUEUE='breeze.pending-book-deletes';
+let pendingBookDeletes=load(LS_BOOK_DELETE_QUEUE,{});
+function pendingDeleteQueue(){
+  if(!sbUser) return null;
+  if(!pendingBookDeletes[sbUser.id]) pendingBookDeletes[sbUser.id]={};
+  return pendingBookDeletes[sbUser.id];
+}
+function queueServerBookDelete(id,title,fingerprint,deletedAt){
+  const queue=pendingDeleteQueue();
+  if(!queue) return;
+  queue[id]={title:title||'(제목 없음)',fingerprint:fingerprint||'',
+             deletedAt:deletedAt||Date.now()};
+  save(LS_BOOK_DELETE_QUEUE,pendingBookDeletes);
+}
+function cancelQueuedServerBookDelete(id){
+  const queue=pendingDeleteQueue();
+  if(!queue || !queue[id]) return;
+  delete queue[id];
+  save(LS_BOOK_DELETE_QUEUE,pendingBookDeletes);
+}
+async function flushPendingBookDeletes(){
+  const queue=pendingDeleteQueue();
+  if(!sb || !sbUser || !queue) return {flushed:0,failed:0,cleanupPending:0};
+  let flushed=0, failed=0, cleanupPending=0;
+  for(const [id,item] of Object.entries({...queue})){
+    try{
+      /* The tombstone is authoritative. Publish it before removing the payload
+         so a partial failure can never leave an active row with a missing file. */
+      const meta={title:item.title,fingerprint:item.fingerprint||'',deleted:true,
+                  deletedAt:item.deletedAt||Date.now()};
+      const saved=await sb.from('books').upsert(
+        [{user_id:sbUser.id,book_id:id,meta}],{onConflict:'user_id,book_id'});
+      if(saved.error) throw saved.error;
+      let cleanupFailed=false;
+      const removed=await sb.storage.from('books').remove([bookPath(id),legacyBookFormatPath(id)]);
+      if(removed.error){ cleanupFailed=true; console.warn('Deleted book payload cleanup will retry:',removed.error.message); }
+      const positionDelete=await sb.from('positions').delete()
+        .eq('user_id',sbUser.id).eq('book_id',id);
+      if(positionDelete.error){ cleanupFailed=true; console.warn('Deleted book position cleanup will retry:',positionDelete.error.message); }
+      if(cleanupFailed){ cleanupPending++; continue; }
+      delete queue[id];
+      save(LS_BOOK_DELETE_QUEUE,pendingBookDeletes);
+      flushed++;
+    }catch(error){
+      failed++;
+      console.warn('Pending book deletion will retry:',error&&error.message);
+    }
+  }
+  return {flushed,failed,cleanupPending};
+}
 async function bookDeleteServer(id, title){
   if(!confirm(`서버에서 "${title}"을(를) 지울까요?\n\n이 기기에 있는 책은 그대로 남습니다.`)) return;
   try{
     syncStatus('지우는 중…');
-    const removedFiles = await sb.storage.from('books').remove([bookPath(id), legacyBookFormatPath(id)]);
-    if(removedFiles.error) throw removedFiles.error;
-    // Keep a tombstone so other devices learn about the deletion.
     const local = localBookForServerId(id);
     if(local){
       local.detachedServerId = id;
+      delete local.remoteDeletePendingAt; delete local.remoteDeletePendingId;
       await bookPut(local);
     }
-    const meta = { title, fingerprint:local ? ensureBookFingerprint(local) : '',
-                   deleted:true, deletedAt:Date.now() };
-    const { error } = await sb.from('books').upsert(
-      [{ user_id:sbUser.id, book_id:id, meta }],
-      { onConflict:'user_id,book_id' }
-    );
-    if(error) throw error;
+    queueServerBookDelete(id,title,local ? ensureBookFingerprint(local) : '',Date.now());
+    const result=await flushPendingBookDeletes();
+    if(result.failed) throw new Error('서버 삭제를 완료하지 못했어요. 다음 동기화 때 다시 시도합니다.');
     syncStatus('지웠어요');
     await refreshBooks();
   }catch(e){ console.error(e); syncStatus('삭제 실패: '+(e.message||e)); }
@@ -268,8 +336,9 @@ async function bookDeleteServer(id, title){
 async function bookUpload(id){
   const b = books.find(x=>x.id===id); if(!b) return;
   const fingerprint = ensureBookFingerprint(b);
+  const remoteId=b.detachedServerId||b.remoteDeletePendingId||id;
   const twin = activeServerBooks().find(r =>
-    r.book_id !== id && normalizeBookTitle((r.meta||{}).title) === normalizeBookTitle(b.title)
+    r.book_id !== remoteId && normalizeBookTitle((r.meta||{}).title) === normalizeBookTitle(b.title)
   );
   if(twin && (twin.meta || {}).fingerprint === fingerprint){
     syncStatus('이미 서버에 있는 같은 책이에요');
@@ -279,6 +348,7 @@ async function bookUpload(id){
   if(twin && !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`)) return;
   try{
     syncStatus('올리는 중…');
+    cancelQueuedServerBookDelete(remoteId);
     // 원본 PDF/EPUB Blob은 IndexedDB 전용입니다. 서버에는 재배치한 글자와
     // 작은 위치 지도만 올라가며 `original`에는 파일 이름/형식만 담깁니다.
     const formatting = b.formatting || b.tidy || null;
@@ -292,14 +362,17 @@ async function bookUpload(id){
       textAvailable:b.textAvailable !== false,
       readerSchema:4,
     })], {type:'application/json'});
-    const up = await sb.storage.from('books').upload(bookPath(id), blob, {upsert:true, contentType:'application/json'});
+    const up = await sb.storage.from('books').upload(bookPath(remoteId), blob, {upsert:true, contentType:'application/json'});
     if(up.error) throw up.error;
     const meta = { title:b.title, author:b.author||'', addedAt:b.addedAt||Date.now(),
                    renamedAt:b.renamedAt||0, paras:b.paras.length, bytes:blob.size,
                    fingerprint, deleted:false };   // 다시 올리면 "지웠음" 표시가 해제됩니다
-    const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:id, meta}], {onConflict:'user_id,book_id'});
+    const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:remoteId, meta}], {onConflict:'user_id,book_id'});
     if(error) throw error;
-    if(b.detachedServerId){ delete b.detachedServerId; await bookPut(b); }
+    if(b.detachedServerId || b.remoteDeletePendingAt || b.remoteDeletePendingId){
+      delete b.detachedServerId; delete b.remoteDeletePendingAt; delete b.remoteDeletePendingId;
+      await bookPut(b);
+    }
     syncStatus('올렸어요');
     await refreshBooks();
   }catch(e){ console.error(e); syncStatus('올리기 실패: '+(e.message||e)); }
@@ -311,13 +384,16 @@ async function bookDownload(id){
     if(error) throw error;
     const body = JSON.parse(await data.text());
     const meta = (((serverBooks||[]).find(r=>r.book_id===id))||{}).meta || {};
+    const existing=books.find(item=>item.id===id)||null;
+    const localOriginal=existing ? await originalGetForBook(existing) : null;
     const book = { id, title: meta.title||'(제목 없음)', author: meta.author||'',
                    addedAt: meta.addedAt||Date.now(), paras: body.paras||[],
                    fingerprint:meta.fingerprint || body.fingerprint || '',
                    formatting:body.formatting || body.tidy || null,
                    layoutSignals:body.layoutSignals || null,
                    sourceMap:body.sourceMap || null,
-                   original:body.original || null,
+                   original:localOriginal ? existing.original : (body.original || null),
+                   localSourceAt:localOriginal ? localBookSourceTime(existing,localOriginal) : 0,
                    textAvailable:body.textAvailable !== false,
                    readerSchema:4 };
     if(!book.paras.length) throw new Error('본문이 비어 있어요');
@@ -335,12 +411,36 @@ function queueSync(){
   syncTimer = setTimeout(()=>doSync(false), 4000);
 }
 const upOf = w => w ? (w.up || w.addedAt || 0) : 0;
-async function doSync(manual){
-  if(!sb || !sbUser || syncing) return;
-  syncing = true;
+function doSync(manual){
+  if(!sb || !sbUser) return Promise.resolve(false);
+  if(syncPromise){
+    syncAgain=true;
+    syncAgainManual=syncAgainManual||!!manual;
+    if(manual) syncStatus('현재 변경사항까지 이어서 동기화 중…');
+    return syncPromise;
+  }
+  syncing=true;
+  syncPromise=(async()=>{
+    let nextManual=!!manual;
+    do{
+      syncAgain=false;
+      const passManual=nextManual||syncAgainManual;
+      syncAgainManual=false;
+      await runSyncPass(passManual);
+      nextManual=false;
+    }while(syncAgain && sb && sbUser);
+    return true;
+  })().finally(()=>{
+    syncing=false;
+    syncPromise=null;
+  });
+  return syncPromise;
+}
+async function runSyncPass(manual){
   if(manual) syncStatus('동기화 중…');
   try{
     const uid = sbUser.id;
+    await flushPendingBookDeletes();
     /* ---- words: pull, merge (last-write-wins + tombstones), push ---- */
     const { data: rows, error } = await sb.from('words').select('key,data').eq('user_id', uid);
     if(error) throw error;
@@ -407,7 +507,9 @@ async function doSync(manual){
       const localId = localBook ? localBook.id : serverId;
       const serverPosition = pserver[serverId];
       const localPosition = positions[localId] ? posOf(localId) : null;
-      if((serverPosition.t||0) > (localPosition ? localPosition.t||0 : -1)){
+      const activelyReading=curBook && curBook.id===localId
+        && document.getElementById('v-read').classList.contains('on');
+      if(!activelyReading && (serverPosition.t||0) > (localPosition ? localPosition.t||0 : -1)){
         positions[localId] = serverPosition;
         pulled++;
       }
@@ -430,14 +532,14 @@ async function doSync(manual){
     }
     saveWords(); save(LS_DEAD, dead); save(LS_POS, positions);
     lastSync = Date.now(); save('breeze.lastsync', lastSync);
-    if(manual){ syncStatus('완료!'); renderSyncModal(); }
+    if(manual){ renderSyncModal(); syncStatus('완료!'); }
     else if(pushes.length || ppush.length || pulled) miniToast('Auto-synced');
     if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
     if(document.getElementById('v-home').classList.contains('on')) renderHome();
   }catch(e){
     console.error(e);
     if(manual) syncStatus('동기화 실패: '+(e.message||e));
-  }finally{ syncing = false; }
+  }
 }
 function attachSupabaseAuth(){
   if(!sb || authListenerAttached) return;
@@ -462,6 +564,12 @@ initSupabase();
 document.addEventListener('visibilitychange', ()=>{
   if(!sb || !sbUser) return;
   clearTimeout(syncTimer);
+  /* If the tab is hidden during the 800ms scroll debounce, save exactly that
+     pending movement before sending positions. Do not stamp an unchanged
+     position merely because visibility changed. */
+  if(document.hidden && curBook && typeof scrollTick!=='undefined' && scrollTick){
+    clearTimeout(scrollTick); scrollTick=null; saveReadingState();
+  }
   doSync(false);            // leaving: flush, returning: pull fresh
 });
 /* periodic auto-sync (3분마다, 로그인 상태 + 화면 보이는 동안만) */
