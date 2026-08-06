@@ -416,6 +416,21 @@ function renderEpubSavedWordHighlights(doc){
   const view=doc&&doc.defaultView;
   if(!doc || !view || !view.CSS || !view.CSS.highlights || !view.Highlight) return;
   ['breeze-saved-1','breeze-saved-2','breeze-saved-3'].forEach(name=>view.CSS.highlights.delete(name));
+  const mode=(document.body&&document.body.dataset.originalMarks)||'underline';
+  let markStyle=doc.getElementById('breeze-saved-mark-style');
+  if(!markStyle){ markStyle=doc.createElement('style'); markStyle.id='breeze-saved-mark-style'; doc.head.appendChild(markStyle); }
+  if(mode==='block'){
+    markStyle.textContent=`::highlight(breeze-saved-1){background:rgba(255,226,138,.34)}
+      ::highlight(breeze-saved-2){background:rgba(255,171,120,.31)}
+      ::highlight(breeze-saved-3){background:rgba(255,140,140,.33)}`;
+  }else if(mode==='underline'){
+    markStyle.textContent=`::highlight(breeze-saved-1){background:transparent;text-decoration:underline 2px rgba(208,170,45,.78);text-underline-offset:.12em}
+      ::highlight(breeze-saved-2){background:transparent;text-decoration:underline 2px rgba(210,119,58,.76);text-underline-offset:.12em}
+      ::highlight(breeze-saved-3){background:transparent;text-decoration:underline 2px rgba(207,86,86,.78);text-underline-offset:.12em}`;
+  }else{
+    markStyle.textContent='';
+    return;
+  }
   const ranges=[[],[],[]];
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const parent=node.parentElement;
@@ -593,10 +608,7 @@ async function sanitiseEpubChapter(archive,chapter,resources){
   const safety=`html,body{max-width:100%;min-height:1px}img,svg,video{max-width:100%;height:auto}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
-    .breeze-original-word.s3{background:rgba(255,140,140,.42)}::selection{background:rgba(37,137,190,.3)}
-    ::highlight(breeze-saved-1){background:rgba(255,226,138,.28)}
-    ::highlight(breeze-saved-2){background:rgba(255,171,120,.25)}
-    ::highlight(breeze-saved-3){background:rgba(255,140,140,.27)}`;
+    .breeze-original-word.s3{background:rgba(255,140,140,.42)}::selection{background:rgba(37,137,190,.3)}`;
   const style=doc.createElement('style'); style.textContent=cssParts.join('\n')+'\n'+safety; doc.head.appendChild(style);
   return '<!doctype html>'+doc.documentElement.outerHTML;
 }

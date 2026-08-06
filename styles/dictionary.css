@@ -6,6 +6,8 @@
     height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
   #panel.on{display:block;}
   @media (min-width:761px){
+    #panel{margin-top:8px; top:calc(var(--topbar-h,56px) + 8px);
+      height:calc(100vh - var(--topbar-h,56px) - 8px);}
     body.reader-original #panel{width:min(310px,26vw);}
     body.reader-original #panel .inner{padding:21px 20px 34px;}
     body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
@@ -99,7 +101,7 @@
     #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 9px 26px;
       background:#fff; border-bottom:1px solid rgba(229,235,231,.72);}
     body.dark #p-top{background:#1F2327; border-bottom-color:#2A2E33;}
-    body.reader-original #p-top{margin:-21px -20px 0; padding:18px 16px 8px 20px;}
+    body.reader-original #p-top{margin:-21px -20px 0; padding:22px 16px 9px 20px;}
   }
 
   /* mobile: bottom sheet */

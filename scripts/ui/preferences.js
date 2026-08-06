@@ -36,6 +36,26 @@ function applyDark(){
 }
 function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
 applyDark();
+
+const ORIGINAL_MARK_KEY='breeze.originalMarks';
+const ORIGINAL_MARK_MODES=new Set(['underline','block','off']);
+let originalMarkMode=load(ORIGINAL_MARK_KEY,'underline');
+if(!ORIGINAL_MARK_MODES.has(originalMarkMode)) originalMarkMode='underline';
+function applyOriginalMarkMode(){
+  document.body.dataset.originalMarks=originalMarkMode;
+  document.querySelectorAll('#aa-original-marks button').forEach(button=>{
+    const on=button.dataset.mode===originalMarkMode;
+    button.classList.toggle('on',on);
+    button.setAttribute('aria-pressed',on ? 'true':'false');
+  });
+  if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
+}
+function setOriginalMarkMode(mode){
+  if(!ORIGINAL_MARK_MODES.has(mode)) return;
+  originalMarkMode=mode; save(ORIGINAL_MARK_KEY,mode); applyOriginalMarkMode();
+}
+applyOriginalMarkMode();
+
 function syncTopbarH(){
   const tb = document.getElementById('topbar');
   const h = (tb && !document.body.classList.contains('focusmode')) ? tb.offsetHeight : 0;

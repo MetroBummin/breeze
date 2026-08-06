@@ -198,6 +198,8 @@ assert.match(originalViewer,/renderPdfSavedWordMarkers/,
   'Saved vocabulary is not painted in original PDF mode');
 assert.match(originalViewer,/CSS\.highlights/,
   'Saved vocabulary is not painted in original EPUB mode');
+assert.match(originalViewer,/dataset\.originalMarks/,
+  'Original EPUB highlights ignore the saved display preference');
 const geometryContext = {};
 new Script(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'))
   .runInNewContext(geometryContext);
@@ -211,6 +213,14 @@ assert.match(readerSource,/suspendReaderScrollSave/,
 const dictionaryCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8');
 assert.match(dictionaryCss,/pointer:fine/,
   'Desktop browser zoom still falls into the oversized mobile dictionary');
+const preferencesSource = readFileSync(resolve(root, 'scripts/ui/preferences.js'), 'utf8');
+assert.match(preferencesSource,/breeze\.originalMarks/,
+  'Original highlight preference is not persisted');
+assert.match(preferencesSource,/underline','block','off/,
+  'Original highlight preference no longer offers all three modes');
+const readerCss = readFileSync(resolve(root, 'styles/reader.css'), 'utf8');
+assert.match(readerCss,/#reader-mode-switch\{right:10px; top:9px;/,
+  'Mobile reader switch regressed to a duplicated top-bar offset');
 
 assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),false,
   'AI typography client was not removed');

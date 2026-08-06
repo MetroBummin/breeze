@@ -191,7 +191,7 @@
     <span><i style="background:var(--s2)"></i>★★ 모름</span>
     <span><i style="background:var(--s3)"></i>★★★ 깜깜</span>
   </div>
-  <div class="aa-row">
+  <div class="aa-row aa-text-only">
     <span class="aa-label">글자 크기</span>
     <div class="aa-size">
       <button onclick="fontSize(-1)">A−</button>
@@ -202,6 +202,14 @@
   <div class="aa-row">
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
+  </div>
+  <div class="aa-row aa-original-row">
+    <span class="aa-label">저장 단어 표시<small>원본 화면에 표시하는 방법</small></span>
+    <div id="aa-original-marks" class="aa-mark-options" role="group" aria-label="원본 저장 단어 표시">
+      <button type="button" data-mode="underline" onclick="setOriginalMarkMode('underline')">밑줄</button>
+      <button type="button" data-mode="block" onclick="setOriginalMarkMode('block')">블록</button>
+      <button type="button" data-mode="off" onclick="setOriginalMarkMode('off')">안 함</button>
+    </div>
   </div>
 </div>
 <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
