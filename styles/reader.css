@@ -108,6 +108,7 @@
   #rhint svg{flex-shrink:0;}
   #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;}
   #rtext p{margin-bottom:1.2em;}
+  #rtext .toc-entry{font-size:.92em; line-height:1.55; margin:.45em 0; color:var(--soft);}
   #rtext .section-break{margin-top:2.5em;}
   /* 부 · 장 · 절 — 위계가 눈에 보여야 종이책처럼 읽힙니다 */
   #rtext h2{font-size:1.62em; font-weight:600; letter-spacing:-.5px; line-height:1.35;
