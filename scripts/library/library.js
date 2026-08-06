@@ -42,17 +42,11 @@ async function deleteBook(b){
   renderHome();
   if(sb && sbUser){
     try{
-      // 현재 본문과 예전 버전이 남겼을 수 있는 조판 지도까지 정리합니다.
-      const removedFiles = await sb.storage.from('books').remove([bookPath(remoteId), legacyBookFormatPath(remoteId)]);
-      if(removedFiles.error) throw removedFiles.error;
-      // 목록 행은 "지웠음" 표시로 남깁니다. 이 표시가 있어야 다른 기기도 지울 수 있습니다.
       const meta = { title:b.title, fingerprint:ensureBookFingerprint(b),
                      deleted:true, deletedAt:Date.now() };
-      const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:remoteId, meta}],
-                                                      {onConflict:'user_id,book_id'});
-      if(error) throw error;
-      const positionDelete = await sb.from('positions').delete().eq('user_id', sbUser.id).eq('book_id', remoteId);
-      if(positionDelete.error) console.warn('Position cleanup skipped:', positionDelete.error.message);
+      queueServerBookDelete(remoteId,meta.title,meta.fingerprint,meta.deletedAt);
+      const result=await flushPendingBookDeletes();
+      if(result.failed) throw new Error('다음 동기화 때 서버 삭제를 다시 시도합니다.');
       if(serverBooks){
         serverBooks = serverBooks.filter(r => r.book_id !== remoteId);
         serverBooks.push({book_id:remoteId, meta});
@@ -279,6 +273,7 @@ async function applyPreparedBook(target, prepared, file){
   target.layoutSignals = prepared.packedSignals || null;
   target.formatting = prepared.formatting || null;
   target.original = original;
+  target.localSourceAt = original ? original.storedAt : Date.now();
   target.readerSchema = 4;
   const position = posOf(target.id);
   if(position.pi != null && position.pi >= target.paras.length){
@@ -343,7 +338,7 @@ async function importFile(file){
       fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
       readerSchema:4,sourceMap:prepared.sourceMap,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
-      original};
+      original,localSourceAt:original ? original.storedAt : Date.now()};
     await bookPut(book);
     books.unshift(book);
     renderHome();
