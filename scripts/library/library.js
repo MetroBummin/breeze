@@ -36,13 +36,14 @@ async function deleteBook(b){
   const remoteId = typeof serverBookIdFor === 'function' ? serverBookIdFor(b) : b.id;
   books = books.filter(x=>x.id!==b.id);
   await bookDel(b.id);
-  imgPurge(b.id+'|');
+  await originalDel(b.id);
+  await imgPurge(b.id+'|');
   delete positions[b.id]; save(LS_POS, positions);
   renderHome();
   if(sb && sbUser){
     try{
-      // 본문과 작은 AI 조판 지도 파일을 실제로 지우고,
-      const removedFiles = await sb.storage.from('books').remove([bookPath(remoteId), bookFormatPath(remoteId)]);
+      // 현재 본문과 예전 버전이 남겼을 수 있는 조판 지도까지 정리합니다.
+      const removedFiles = await sb.storage.from('books').remove([bookPath(remoteId), legacyBookFormatPath(remoteId)]);
       if(removedFiles.error) throw removedFiles.error;
       // 목록 행은 "지웠음" 표시로 남깁니다. 이 표시가 있어야 다른 기기도 지울 수 있습니다.
       const meta = { title:b.title, fingerprint:ensureBookFingerprint(b),
@@ -149,8 +150,25 @@ function renderHome(){
 
 /* ================= import ================= */
 const finput = document.getElementById('fileinput');
+const originalInput = document.getElementById('original-fileinput');
 document.getElementById('btn-add').onclick = () => finput.click();
 finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0]); finput.value=''; };
+let reconnectTarget = null;
+originalInput.onchange = async()=>{
+  const file = originalInput.files[0];
+  originalInput.value = '';
+  const target = reconnectTarget;
+  reconnectTarget = null;
+  if(file && target) await reconnectOriginalFile(target, file);
+};
+function requestOriginalReconnect(book){
+  if(!book || book.builtin) return;
+  reconnectTarget = book;
+  originalInput.accept = book.original && book.original.kind
+    ? '.'+book.original.kind
+    : '.pdf,.epub';
+  originalInput.click();
+}
 let dragDepth = 0;
 window.addEventListener('dragenter', e=>{ e.preventDefault(); if(++dragDepth) document.getElementById('drop-overlay').classList.add('on'); });
 window.addEventListener('dragleave', e=>{ e.preventDefault(); if(--dragDepth<=0){ dragDepth=0; document.getElementById('drop-overlay').classList.remove('on'); } });
@@ -176,58 +194,165 @@ function bookHash(paras){
   const total = paras.reduce((a,p)=>a+p.length, 0);
   return 'b' + h1.toString(36) + h2.toString(36) + (total % 1000000).toString(36);
 }
-async function importFile(f){
-  if(!/\.(pdf|epub|txt)$/i.test(f.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
-  toast('텍스트 추출 중…');
-  const name = f.name.replace(/\.(pdf|epub|txt)$/i,'').replace(/[-_]+/g,' ').trim();
-  try{
-    const tmpId = 'tmp'+Date.now();
-    let paras;
-    if(/\.pdf$/i.test(f.name)) paras = await parsePDF(f);
-    else if(/\.epub$/i.test(f.name)) paras = await parseEPUB(f, tmpId);
-    else paras = parseTXT(await f.text());
-    const sig0 = paras.sig || null;
-    /* 빈 문단을 걸러내면 번호가 밀리므로 조판 단서도 같은 순서로 당겨 줍니다. */
-    const keep = [];
-    paras.forEach(function(p, i){
-      const t = p.startsWith(IMG_MARK) ? p : p.trim();
-      if(t.length) keep.push({ t:t, i:i });
-    });
-    const shift = {}; keep.forEach(function(k, n){ shift[k.i] = n; });
-    paras = keep.map(function(k){ return k.t; });
-    const sig = sig0 ? keep.map(function(k){ return sig0[k.i] || null; }) : null;
-    if(paras.length===0){ toast('텍스트를 찾지 못했어요 (스캔 이미지 PDF일 수 있어요)'); return; }
-    const id = bookHash(paras);                       // 내용으로 ID 결정
-    const already = books.find(b=>b.id===id);
-    if(already){ toast(`이미 있는 책이에요 — "${already.title}"`); return; }
-    // 제목은 파일 이름에서 가져옵니다. 바꾸려면 홈에서 책을 꾹 누르세요.
-    // (반입할 때마다 이름을 묻지 않습니다 — 바로 뒤에 AI 정리 확인이 또 뜨면 성가시므로)
-    const title = name;
-    // EPUB 삽화는 임시 ID로 저장돼 있으므로 실제 ID로 표시를 바꿔 줍니다
-    paras = paras.map(p => p.startsWith(IMG_MARK) ? p.replace(tmpId, id) : p);
-    await imgRename(tmpId, id);
-    const book = {id, title, paras, addedAt:Date.now()};
-    ensureBookFingerprint(book);
-    // Preserve raw structural hints for future rolling-formatting work.
-    const packedSignals = packLayoutSignals(sig);
-    if(packedSignals) book.layoutSignals = packedSignals;
 
-    // EPUB/PDF layout can format obvious headings and quotes without AI.
-    const formatting = buildFormattingFromLayout(paras, sig, null);
-    if(formatting && validateFormattingBlocks(paras, formatting.blocks)){
-      book.formatting = formatting;
+function importKind(file){
+  const match = String(file.name||'').toLowerCase().match(/\.(pdf|epub|txt)$/);
+  return match ? match[1] : '';
+}
+async function rawFileHash(file){
+  const buffer = await file.arrayBuffer();
+  if(window.crypto && crypto.subtle){
+    const digest = await crypto.subtle.digest('SHA-256', buffer);
+    return [...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('');
+  }
+  let hash = 0x811c9dc5;
+  const bytes = new Uint8Array(buffer);
+  for(let index=0; index<bytes.length; index++) hash = Math.imul((hash^bytes[index])>>>0,0x01000193)>>>0;
+  return 'fallback-'+hash.toString(16)+'-'+bytes.length;
+}
+async function requestDurableLocalStorage(){
+  if(!navigator.storage || !navigator.storage.persist || load('breeze.storage-persist-asked',false)) return;
+  save('breeze.storage-persist-asked',true);
+  try{ await navigator.storage.persist(); }catch(e){}
+}
+async function storeLocalOriginal(bookId, file, kind, hash){
+  if(kind !== 'pdf' && kind !== 'epub') return null;
+  await requestDurableLocalStorage();
+  const metadata = { kind, name:file.name, type:file.type||'', size:file.size,
+                     hash, storedAt:Date.now() };
+  await originalPut(bookId, {...metadata, blob:file.slice(0,file.size,file.type||'application/octet-stream')});
+  return metadata;
+}
+async function prepareImportedFile(file){
+  const kind = importKind(file);
+  if(!kind) throw new Error('PDF, EPUB, TXT 파일만 지원해요');
+  const title = file.name.replace(/\.(pdf|epub|txt)$/i,'').replace(/[-_]+/g,' ').trim();
+  const tmpId = 'tmp'+Date.now()+Math.random().toString(36).slice(2,7);
+  try{
+    const hash = await rawFileHash(file);
+    let parsed;
+    if(kind === 'pdf') parsed = await parsePDF(file);
+    else if(kind === 'epub') parsed = await parseEPUB(file, tmpId);
+    else parsed = parseTXT(await file.text());
+
+    const sig0 = parsed.sig || null;
+    const keep = [];
+    parsed.forEach((paragraph,index)=>{
+      const text = paragraph.startsWith(IMG_MARK) ? paragraph : paragraph.trim();
+      if(text.length) keep.push({text,index});
+    });
+    let paras = keep.map(item=>item.text);
+    let sig = sig0 ? keep.map(item=>sig0[item.index]||null) : null;
+    let textAvailable = paras.some(text=>!text.startsWith(IMG_MARK) && text.trim().length);
+    if(!textAvailable && kind === 'pdf'){
+      paras = ['이 PDF에는 선택할 수 있는 글자가 없어요. 원본 모드에서 읽어주세요.'];
+      sig = [{p:1,y:0}];
+    }
+    if(!paras.length) throw new Error('읽을 수 있는 내용을 찾지 못했어요');
+
+    const id = textAvailable ? bookHash(paras) : 'raw-'+hash.slice(0,24);
+    const fingerprint = textAvailable ? bookContentFingerprint(paras) : 'raw:'+hash;
+    const sourceMap = buildSourceMap(sig);
+    const packedSignals = packLayoutSignals(sig);
+    const formatting = buildFormattingFromLayout(paras,sig,null);
+    return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,
+            formatting:formatting && validateFormattingBlocks(paras,formatting.blocks) ? formatting : null,
+            textAvailable};
+  }catch(error){
+    await imgPurge(tmpId+'|');
+    throw error;
+  }
+}
+function remapImportedImages(paras, fromId, toId){
+  return paras.map(text=>text.startsWith(IMG_MARK) ? text.replace(fromId,toId) : text);
+}
+async function applyPreparedBook(target, prepared, file){
+  const original = await storeLocalOriginal(target.id,file,prepared.kind,prepared.hash);
+  if(prepared.kind === 'epub'){
+    await imgPurge(target.id+'|');
+    await imgRename(prepared.tmpId,target.id);
+  }
+  target.paras = remapImportedImages(prepared.paras,prepared.tmpId,target.id);
+  target.fingerprint = prepared.fingerprint;
+  target.textAvailable = prepared.textAvailable;
+  target.sourceMap = prepared.sourceMap;
+  target.layoutSignals = prepared.packedSignals || null;
+  target.formatting = prepared.formatting || null;
+  target.original = original;
+  target.readerSchema = 4;
+  const position = posOf(target.id);
+  if(position.pi != null && position.pi >= target.paras.length){
+    position.pi = Math.max(0,Math.round((position.p||0)*(target.paras.length-1)));
+    position.dy = 0;
+    positions[target.id] = position;
+    save(LS_POS,positions);
+  }
+  await bookPut(target);
+}
+async function reconnectOriginalFile(target,file){
+  if(!/\.(pdf|epub)$/i.test(file.name)){ toast('원본은 PDF 또는 EPUB 파일을 골라주세요'); return; }
+  toast('같은 책인지 확인하고 있어요…');
+  let prepared = null;
+  try{
+    prepared = await prepareImportedFile(file);
+    if(prepared.fingerprint !== ensureBookFingerprint(target)){
+      imgPurge(prepared.tmpId+'|');
+      toast('다른 책으로 보여요. 원래 반입했던 파일을 골라주세요');
+      return;
+    }
+    await applyPreparedBook(target,prepared,file);
+    toast('원본을 연결했어요');
+    if(curBook && curBook.id === target.id && typeof switchReaderMode === 'function'){
+      await switchReaderMode('original',{reload:true});
+    }
+  }catch(error){
+    if(prepared) imgPurge(prepared.tmpId+'|');
+    console.error(error);
+    toast('원본을 연결하지 못했어요: '+(error.message||error));
+  }
+}
+async function importFile(file){
+  if(!/\.(pdf|epub|txt)$/i.test(file.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
+  toast('책을 준비하고 있어요…');
+  let prepared = null;
+  try{
+    prepared = await prepareImportedFile(file);
+    const already = books.find(book=>book.id===prepared.id || ensureBookFingerprint(book)===prepared.fingerprint);
+    if(already){
+      if(prepared.kind === 'txt'){
+        imgPurge(prepared.tmpId+'|');
+        toast(`이미 있는 책이에요 — "${already.title}"`);
+        return;
+      }
+      await applyPreparedBook(already,prepared,file);
+      renderHome();
+      toast(`기존 책에 원본을 연결했어요 — "${already.title}"`);
+      return;
     }
 
+    const id = prepared.id;
+    if(prepared.kind === 'epub') await imgRename(prepared.tmpId,id);
+    const paras = remapImportedImages(prepared.paras,prepared.tmpId,id);
+    let original = null;
+    try{ original = await storeLocalOriginal(id,file,prepared.kind,prepared.hash); }
+    catch(storageError){
+      console.warn('Original file storage failed:',storageError);
+      toast('책은 추가했지만 원본 파일을 기기에 보관하지 못했어요');
+    }
+    const book = {id,title:prepared.title,paras,addedAt:Date.now(),
+      fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
+      readerSchema:4,sourceMap:prepared.sourceMap,
+      layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
+      original};
     await bookPut(book);
     books.unshift(book);
     renderHome();
-    toast(book.formatting
-      ? '추가 완료! 문서 구조를 정리했어요'
+    toast(original
+      ? '추가 완료! 원본과 편한 글자 모드를 모두 준비했어요'
       : '추가 완료! 카드를 눌러 읽기 시작하세요');
-    /* 사용자가 이미 AI 조판에 동의했고 로그인돼 있으면 기본판은 즉시 둔 채
-       완성판만 백그라운드에서 준비합니다. 동의 창은 반입 흐름을 막지 않습니다. */
-    if(typeof rollingFormattingEnabled !== 'undefined' && rollingFormattingEnabled === true){
-      scheduleRollingFormatting(book);
-    }
-  }catch(err){ console.error(err); toast('파일을 읽지 못했어요: '+err.message); }
+  }catch(error){
+    if(prepared) imgPurge(prepared.tmpId+'|');
+    console.error(error);
+    toast('파일을 읽지 못했어요: '+(error.message||error));
+  }
 }
