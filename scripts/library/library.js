@@ -224,5 +224,10 @@ async function importFile(f){
     toast(book.formatting
       ? '추가 완료! 문서 구조를 정리했어요'
       : '추가 완료! 카드를 눌러 읽기 시작하세요');
+    /* 사용자가 이미 AI 조판에 동의했고 로그인돼 있으면 기본판은 즉시 둔 채
+       완성판만 백그라운드에서 준비합니다. 동의 창은 반입 흐름을 막지 않습니다. */
+    if(typeof rollingFormattingEnabled !== 'undefined' && rollingFormattingEnabled === true){
+      scheduleRollingFormatting(book);
+    }
   }catch(err){ console.error(err); toast('파일을 읽지 못했어요: '+err.message); }
 }
