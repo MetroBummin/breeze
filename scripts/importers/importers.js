@@ -230,7 +230,7 @@ function assembleParagraphs(pages){
   const sig = [];
   const chapters = [];        // 드롭캡으로 시작하는 문단 = 장이 바뀌는 자리
   let cur = '', curDisplay = '', prev = null, prevPage = -1, curDrop = false;
-  let curPage = 0;
+  let curPage = 0, curY = 0;
   let curH = 0, curBold = true, curItalic = true, curCenter = true, curLines = 0;
   let curLeft = Infinity, curRight = -Infinity;
   const noteLine = l => {
@@ -254,13 +254,13 @@ function assembleParagraphs(pages){
       paras.push(t);
       const signal = { z: +(curH/medH).toFixed(2), b: curBold && curLines>0,
                        it:curItalic && curLines>0,
-                       c: curCenter && curLines>0, p:curPage,
+                       c: curCenter && curLines>0, p:curPage, y:curY,
                        in: (curLines >= 2) ? +(((curLeft - bodyLeft)/width).toFixed(3)) : 0 };
       const visual = curDisplay.trim().replace(/\s+/g,' ');
       if(visual && visual !== t && visual.replace(/\s/g,'') === t.replace(/\s/g,'')) signal.v = visual;
       sig.push(signal);
     }
-    cur=''; curDisplay=''; curDrop=false;
+    cur=''; curDisplay=''; curDrop=false; curY=0;
     curH=0; curBold=true; curItalic=true; curCenter=true; curLines=0;
     curLeft=Infinity; curRight=-Infinity;
   };
@@ -270,6 +270,7 @@ function assembleParagraphs(pages){
       const t = l.text;
       if(!prev){
         cur = t; curDisplay = l.display || t; curPage = pi + 1;
+        curY = +Math.max(0, Math.min(1, 1 - l.y/page.h)).toFixed(4);
         curDrop = !!l.drop; noteLine(l); prev = l; prevPage = pi; return;
       }
 
@@ -299,7 +300,10 @@ function assembleParagraphs(pages){
       }
 
       if(brk) flush();
-      if(!cur) curPage = pi + 1;
+      if(!cur){
+        curPage = pi + 1;
+        curY = +Math.max(0, Math.min(1, 1 - l.y/page.h)).toFixed(4);
+      }
       if(!cur && l.drop) curDrop = true;
       const visualLine = l.display || t;
       if(cur.endsWith('-') && /^[a-z]/.test(t)){
@@ -329,7 +333,9 @@ function assembleParagraphs(pages){
         /* 쪼개진 조각도 원래 문단의 조판 단서를 물려받습니다.
            단, 글머리표 항목은 제목일 수 없으니 크기 단서를 지웁니다. */
         const sg = sig[pi] || { z:1, b:false, c:false };
-        outSig.push((firstIsItem || i > 0) ? { z:1, b:sg.b, c:false } : sg);
+        outSig.push((firstIsItem || i > 0)
+          ? { z:1, b:sg.b, it:sg.it, c:false, p:sg.p, y:sg.y, in:sg.in }
+          : sg);
       });
     });
     out.sig = outSig;
@@ -351,7 +357,9 @@ async function parsePDF(f){
     const content = await page.getTextContent();
     pages.push({ h, lines: itemsToLines(content.items) });
   }
-  return assembleParagraphs(pages);
+  const paragraphs = assembleParagraphs(pages);
+  try{ await pdf.destroy(); }catch(e){}
+  return paragraphs;
 }
 
 /* --- EPUB: unzip -> spine order -> extract text + images --- */
@@ -365,26 +373,52 @@ function joinPath(baseDir, rel){
   return out.join('/');
 }
 const MIME = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml'};
-async function parseEPUB(f, bookId){
-  const zip = await JSZip.loadAsync(await f.arrayBuffer());
-  const container = await zip.file('META-INF/container.xml').async('text');
-  const opfPath = new DOMParser().parseFromString(container,'text/xml')
-    .querySelector('rootfile').getAttribute('full-path');
+async function openEpubArchive(file){
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const containerFile = zip.file('META-INF/container.xml');
+  if(!containerFile) throw new Error('EPUB container.xml을 찾지 못했어요');
+  const container = await containerFile.async('text');
+  const rootfile = new DOMParser().parseFromString(container,'text/xml').querySelector('rootfile');
+  const opfPath = rootfile && rootfile.getAttribute('full-path');
+  if(!opfPath || !zip.file(opfPath)) throw new Error('EPUB 책 정보를 찾지 못했어요');
   const opfDir = opfPath.includes('/') ? opfPath.slice(0,opfPath.lastIndexOf('/')+1) : '';
   const opf = new DOMParser().parseFromString(await zip.file(opfPath).async('text'),'text/xml');
   const manifest = {};
-  opf.querySelectorAll('manifest > item').forEach(it=>manifest[it.getAttribute('id')]=it.getAttribute('href'));
+  opf.querySelectorAll('manifest > item').forEach(item=>{
+    manifest[item.getAttribute('id')] = {
+      href:item.getAttribute('href') || '',
+      mediaType:item.getAttribute('media-type') || '',
+      properties:item.getAttribute('properties') || '',
+    };
+  });
+  const spine = [];
+  opf.querySelectorAll('spine > itemref').forEach(ref=>{
+    const item = manifest[ref.getAttribute('idref')];
+    if(!item || !item.href) return;
+    spine.push({
+      id:ref.getAttribute('idref'),
+      href:item.href,
+      path:decodeURIComponent(joinPath(opfDir, item.href)),
+      linear:ref.getAttribute('linear') !== 'no',
+    });
+  });
+  return { zip, opf, opfPath, opfDir, manifest, spine };
+}
+async function parseEPUB(f, bookId){
+  const archive = await openEpubArchive(f);
+  const zip = archive.zip;
   const paras=[]; let imgIdx=0; const seenImg={};
   const sig=[];
-  for(const ref of opf.querySelectorAll('spine > itemref')){
-    const href = manifest[ref.getAttribute('idref')];
-    if(!href) continue;
-    const chPath = decodeURIComponent(joinPath(opfDir, href));
-    const file = zip.file(chPath) || zip.file(decodeURIComponent(href));
+  for(let spineIndex=0; spineIndex<archive.spine.length; spineIndex++){
+    const chapter = archive.spine[spineIndex];
+    const chPath = chapter.path;
+    const file = zip.file(chPath) || zip.file(decodeURIComponent(chapter.href));
     if(!file) continue;
     const chDir = chPath.includes('/') ? chPath.slice(0,chPath.lastIndexOf('/')+1) : '';
     const doc = new DOMParser().parseFromString(await file.async('text'),'text/html');
+    let elementIndex = 0;
     for(const el of doc.querySelectorAll('p, h1, h2, h3, h4, li, img, image')){
+      const sourceElement = elementIndex++;
       const tag = el.tagName.toLowerCase();
       if(tag==='img' || tag==='image'){
         const src = el.getAttribute('src') || el.getAttribute('xlink:href') || el.getAttribute('href');
@@ -397,11 +431,18 @@ async function parseEPUB(f, bookId){
           if(cand) imgFile = zip.file(cand);
         }
         if(!imgFile) continue;
-        if(seenImg[imgFile.name]!==undefined){ paras.push(IMG_MARK+seenImg[imgFile.name]); sig.push(null); continue; }
+        if(seenImg[imgFile.name]!==undefined){
+          paras.push(IMG_MARK+seenImg[imgFile.name]);
+          sig.push({src:chPath,si:spineIndex,ei:sourceElement});
+          continue;
+        }
         const ext = (imgFile.name.split('.').pop()||'').toLowerCase();
         const blob = new Blob([await imgFile.async('arraybuffer')], {type: MIME[ext]||'image/jpeg'});
         const id = bookId+'|'+(imgIdx++);
-        try{ await imgPut(id, blob); seenImg[imgFile.name]=id; paras.push(IMG_MARK+id); sig.push(null); }catch(e){}
+        try{
+          await imgPut(id, blob); seenImg[imgFile.name]=id; paras.push(IMG_MARK+id);
+          sig.push({src:chPath,si:spineIndex,ei:sourceElement});
+        }catch(e){}
       }else{
         if(tag==='li' && el.querySelector('p,h1,h2,h3,h4')) continue;
         let t = el.textContent.replace(/\s+/g,' ').trim();
@@ -423,7 +464,7 @@ async function parseEPUB(f, bookId){
         if(el.closest && el.closest('blockquote')) r = r || 'quote';
         else if(el.closest && el.closest('aside')) r = r || 'note';
         paras.push(t);
-        sig.push(r ? { r:r } : null);
+        sig.push({ r:r, src:chPath, si:spineIndex, ei:sourceElement });
       }
     }
   }
