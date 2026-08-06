@@ -82,20 +82,20 @@ function saveReadingState(){
   if(typeof currentReaderMode !== 'undefined' && currentReaderMode === 'original'){
     const original = typeof captureOriginalAnchor === 'function' ? captureOriginalAnchor() : null;
     const previous = posOf(curBook.id);
-    const doc = document.documentElement;
-    const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+    const logical = typeof sourceProgressForBook === 'function'
+      ? sourceProgressForBook(curBook,original) : null;
     positions[curBook.id] = {...previous,
-      p:Math.min(1, window.scrollY/max), t:Date.now(), mode:'original',
+      p:logical==null ? previous.p||0 : logical, t:Date.now(), mode:'original',
       original:original || previous.original || null};
     save(LS_POS, positions);
     return;
   }
-  const doc = document.documentElement;
-  const max = Math.max(1, doc.scrollHeight - window.innerHeight);
   const a = captureAnchor();
   const previous = posOf(curBook.id);
+  const logical = typeof textProgressForBook === 'function'
+    ? textProgressForBook(curBook,a) : null;
   positions[curBook.id] = {...previous, y:window.scrollY,
-                            p:Math.min(1, window.scrollY/max), t:Date.now(), mode:'text',
+                            p:logical==null ? previous.p||0 : logical, t:Date.now(), mode:'text',
                             pi: a ? a.pi : null, dy: a ? a.dy : 0 };
   save(LS_POS, positions);
 }
