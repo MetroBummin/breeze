@@ -1,10 +1,16 @@
 /* Dictionary panel and mobile sheet */
 
   #sheetbg{display:none;}
-  #panel{width:360px; flex-shrink:0; background:#fff; border-radius:26px 0 0 0; box-shadow:-8px 0 30px rgba(24,54,74,.08);
+  #panel{width:min(340px,28vw); flex-shrink:0; background:#fff; border-radius:26px 0 0 0; box-shadow:-8px 0 30px rgba(24,54,74,.08);
     overscroll-behavior:contain;
     height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
   #panel.on{display:block;}
+  @media (min-width:761px){
+    body.reader-original #panel{width:min(310px,26vw);}
+    body.reader-original #panel .inner{padding:21px 20px 34px;}
+    body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
+    body.reader-original .p-sec{margin-top:13px;}
+  }
   #panel .inner{padding:26px 26px 40px;}
   #p-handle{display:none; touch-action:none;}
   #p-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
@@ -112,4 +118,18 @@
     #vtablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -26px; padding:0 26px;}
     #vtablewrap table{min-width:560px;}
     #vtablewrap th:nth-child(5), #vtablewrap td:nth-child(5){display:none;}
+  }
+  /* 브라우저 확대 때문에 CSS 폭만 좁아진 데스크톱에서는 거대한 모바일
+     바텀시트로 바꾸지 않습니다. 마우스 환경이면 작은 옆 패널을 유지합니다. */
+  @media (max-width:760px) and (pointer:fine){
+    #v-read.on{display:flex;}
+    #sheetbg{display:none!important;}
+    #panel{position:sticky; left:auto; right:auto; bottom:auto; top:56px; width:min(300px,42vw);
+      height:calc(100vh - 56px); max-height:none; border-radius:22px 0 0 0; z-index:70;
+      display:none; transform:none; transition:none;}
+    #panel.on{display:block; transform:none;}
+    #p-handle{display:none;}
+    #p-close{display:block;}
+    #panel .inner{padding:18px 17px 30px;}
+    #p-word{font-size:clamp(21px,4vw,27px);}
   }
