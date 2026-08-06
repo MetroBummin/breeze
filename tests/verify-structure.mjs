@@ -153,6 +153,20 @@ assert.match(originalViewer,/sandbox','allow-same-origin'/,
   'EPUB chapters are not sandboxed');
 assert.match(originalViewer,/script,iframe,frame,object,embed/,
   'EPUB active content sanitizer is missing');
+assert.match(originalViewer,/readerModeChangeToken/,
+  'Reader-mode race protection is missing');
+assert.match(originalViewer,/sourceProgressForBook/,
+  'Logical original progress calculation is missing');
+assert.match(originalViewer,/openOriginalSelection/,
+  'Deliberate original-text selection is missing');
+assert.doesNotMatch(originalViewer,/range\.deleteContents\(\)/,
+  'Original PDF text layer is still being mutated');
+const readerSource = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
+assert.match(readerSource,/suspendReaderScrollSave/,
+  'Programmatic mode-switch scrolling can still overwrite progress');
+const dictionaryCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8');
+assert.match(dictionaryCss,/pointer:fine/,
+  'Desktop browser zoom still falls into the oversized mobile dictionary');
 
 assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),false,
   'AI typography client was not removed');
