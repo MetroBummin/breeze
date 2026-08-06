@@ -129,10 +129,21 @@ function applyBuiltin(w){
 }
 
 function sentenceOf(span){
-  const paraText = curBook.paras[+span.closest('[data-pi]').dataset.pi] || '';
+  if(span && span.dataset && span.dataset.example) return span.dataset.example;
+  const paragraph = span && span.closest ? span.closest('[data-pi]') : null;
+  const paraText = paragraph ? (curBook.paras[+paragraph.dataset.pi]||'') : '';
   const sents = paraText.match(/[^.!?…]+[.!?…]*/g) || [paraText];
   const re = new RegExp('\\b'+span.textContent.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
   return (sents.find(s=>re.test(s)) || sents[0]).trim();
+}
+function readerWordNodes(selector){
+  const nodes=[...document.querySelectorAll(selector)];
+  if(typeof originalSession!=='undefined' && originalSession && originalSession.frames){
+    originalSession.frames.forEach(frame=>{
+      try{ if(frame&&frame.contentDocument) nodes.push(...frame.contentDocument.querySelectorAll(selector)); }catch(e){}
+    });
+  }
+  return nodes;
 }
 function addWord(k, span){
   const raw = span.textContent.replace(/’/g,"'");
@@ -149,7 +160,7 @@ function addWord(k, span){
 }
 function selectWord(k, span){
   selKey = k;
-  document.querySelectorAll('.w.sel').forEach(s=>s.classList.remove('sel'));
+  readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
   renderPanel();
   document.getElementById('panel').classList.add('on');
@@ -159,11 +170,11 @@ function closePanel(){
   selKey=null;
   document.getElementById('panel').classList.remove('on');
   document.getElementById('sheetbg').classList.remove('on');
-  document.querySelectorAll('.w.sel').forEach(s=>s.classList.remove('sel'));
+  readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
 }
 function paintWord(k){
   const w = words[k];
-  document.querySelectorAll(`.w[data-w="${CSS.escape(k)}"]`).forEach(s=>{
+  readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`).forEach(s=>{
     s.classList.remove('s1','s2','s3');
     if(w) s.classList.add('s'+w.status);
   });
