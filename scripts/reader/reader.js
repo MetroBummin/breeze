@@ -92,6 +92,7 @@ function renderBookBody(b){
   rt.appendChild(frag);
 }
 async function openBook(b){
+  if(typeof readerModeChangeToken!=='undefined') readerModeChangeToken++;
   if(typeof leaveOriginalReader==='function') leaveOriginalReader();
   curBook = b;
   currentReaderMode = 'text';
@@ -124,20 +125,30 @@ function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/
 
 function updatePfill(){
   if(!curBook) return;
-  const doc = document.documentElement;
-  const max = Math.max(1, doc.scrollHeight - window.innerHeight);
-  document.getElementById('pfill').style.width = Math.min(100, window.scrollY/max*100)+'%';
+  const progress=typeof visibleReaderProgress==='function'
+    ? visibleReaderProgress()
+    : posOf(curBook.id).p||0;
+  document.getElementById('pfill').style.width = Math.max(0,Math.min(100,progress*100))+'%';
 }
-let scrollTick = null, fadeTimer = null;
+let scrollTick = null, fadeTimer = null, readerScrollPauseUntil = 0;
+function suspendReaderScrollSave(duration){
+  readerScrollPauseUntil=Math.max(readerScrollPauseUntil,Date.now()+(duration||500));
+  if(scrollTick){ clearTimeout(scrollTick); scrollTick=null; }
+}
 window.addEventListener('scroll', ()=>{
   if(!curBook) return;
   updatePfill();
   document.body.classList.add('scrolling');
   clearTimeout(fadeTimer);
   fadeTimer = setTimeout(()=>document.body.classList.remove('scrolling'), 900);
+  if(Date.now()<readerScrollPauseUntil) return;
   if(scrollTick) return;
+  const scheduledBook=curBook;
+  const scheduledMode=currentReaderMode;
   scrollTick = setTimeout(()=>{
     scrollTick=null;
+    if(!curBook || curBook!==scheduledBook || currentReaderMode!==scheduledMode
+        || Date.now()<readerScrollPauseUntil) return;
     saveReadingState();
     if(currentReaderMode==='text') lastAnchor = captureAnchor();
   }, 800);
