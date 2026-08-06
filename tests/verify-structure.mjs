@@ -16,12 +16,9 @@ const required = [
   'scripts/importers/importers.js',
   'scripts/dictionary/dictionary.js',
   'scripts/reader/formatting.js',
-  'scripts/reader/rolling-formatting.js',
+  'scripts/reader/original-viewer.js',
   'scripts/reader/reader.js',
   'scripts/sync/sync.js',
-  'server/format/index.ts',
-  'legacy/toc-and-ai-formatting.disabled.js',
-  'legacy/edge_function_tidy.disabled.ts',
 ];
 
 for(const relative of required){
@@ -100,6 +97,16 @@ assert.match(
   /const twin = activeServerBooks\(\)\.find/,
   'Duplicate-title warning still inspects hidden deleted tombstones',
 );
+assert.doesNotMatch(syncSource, /aiFormatting|uploadBookFormatting|functions\/v1\/format/,
+  'Removed AI typography is still part of book sync');
+assert.doesNotMatch(syncSource, /originalGet\(|\.blob\b/,
+  'Raw original files leaked into server sync');
+
+const storageSource = readFileSync(resolve(root, 'scripts/core/storage.js'), 'utf8');
+assert.match(storageSource, /indexedDB\.open\('breeze-img',3\)/,
+  'IndexedDB was not upgraded for local originals');
+assert.match(storageSource, /createObjectStore\('originals'\)/,
+  'Dedicated local original store is missing');
 
 // Adjacent large blocks stay separate in the safe local layout. A running
 // header, PART label, and chapter title must never become one giant heading.
@@ -124,80 +131,32 @@ assert.equal(
   'Adjacent headings were merged into a giant heading',
 );
 
-// A completed whole-book map owns only its selected candidates. Omitted
-// candidates become body, while ordinary paragraphs never sent to AI keep the
-// stable local layout.
-const rollingContext = {
-  IMG_MARK:'[[IMG]]:',
-  Map,
-  Set,
-  navigator:{ onLine:true },
-  setTimeout,
-  clearTimeout,
-};
-new Script(readFileSync(resolve(root, 'scripts/reader/rolling-formatting.js'), 'utf8'))
-  .runInNewContext(rollingContext);
-const rollingBook = {
-  paras:['Heuristic heading', 'A quoted line.', 'Ordinary body.'],
-  layoutSignals:[{z:1.6,b:true,c:true,p:1}, {in:.1,p:1}, null],
-  formatting:{ blocks:[
-    {r:'h1', t:'Heuristic heading', f:0},
-    {r:'p', t:'A quoted line.', f:1},
-    {r:'p', t:'Ordinary body.', f:2},
-  ]},
-  aiFormatting:{ version:3, status:'ready', candidateRanges:[[0,2]],
-    ops:[{i:1,n:1,r:'quote',b:'section'}], createdAt:1 },
-};
-const displayBlocks = rollingContext.buildRollingDisplayBlocks(rollingBook);
-assert.equal(
-  JSON.stringify(displayBlocks.map(block => [block.r, block.f, block.before || 'none'])),
-  JSON.stringify([['p',0,'none'], ['quote',1,'section'], ['p',2,'none']]),
-  'Atomic book typography map was not applied to candidate positions',
-);
-const plan = rollingContext.buildBookTypographyPlan(rollingBook);
-assert.equal(plan.items.some(item => item.i === 2), false, 'Ordinary body was sent to AI');
-assert.equal(plan.items.some(item => item.i === 0), true, 'Heading candidate was not selected');
-assert.equal(
-  rollingContext.validateBookTypographyOps(rollingBook, new Set([0,1]), [
-    {i:0,n:2,r:'quote'}, {i:1,n:1,r:'quote'},
-  ]),
-  null,
-  'Overlapping book-format operations were accepted',
-);
-
-// Even a model-selected heading is demoted when it is clearly a full body
-// paragraph. This catches the giant multi-sentence heading regression.
-const longBody = Array(8).fill(
-  'This is a complete sentence describing an ordinary scene in the book.'
-).join(' ');
-const safetyBook = { paras:[longBody] };
-const safeOps = rollingContext.validateBookTypographyOps(safetyBook, new Set([0]), [
-  {i:0,n:1,r:'h2',b:'page'},
+const sourceMap = layoutContext.buildSourceMap([
+  {p:47,y:.36,z:1},
+  {src:'Text/chapter-2.xhtml',si:3,ei:18,r:'h2'},
 ]);
-assert.equal(safeOps.length, 0, 'Long body paragraph remained a heading');
+assert.equal(JSON.stringify(sourceMap),JSON.stringify([
+  {page:47,y:.36},
+  {href:'Text/chapter-2.xhtml',spine:3,element:18},
+]),'Original-source bridge was not preserved');
 
-const giantNarrative = Array(30).fill('The ministry building stood above the city.').join(' ');
-const quoteSafetyBook = { paras:[giantNarrative], layoutSignals:[{in:.1,it:false}] };
-assert.equal(
-  rollingContext.validateBookTypographyOps(quoteSafetyBook, new Set([0]), [
-    {i:0,n:1,r:'quote'},
-  ]).length,
-  0,
-  'Long unquoted narrative became a giant block quote',
+const conservative = layoutContext.buildFormattingFromLayout(
+  ['This is a long ordinary paragraph that ends with a complete sentence and must stay body text.'],
+  [{z:1.5,b:false,c:false,in:.1,it:false,p:1,y:.2}],
+  null,
 );
+assert.equal(conservative,null,'Weak PDF styling was promoted into visible typography');
 
-// Compact candidate ranges must round-trip without listing every body block.
-assert.equal(
-  JSON.stringify([...rollingContext.candidateIdsFromRanges([[2,3],[8,1]])]),
-  JSON.stringify([2,3,4,8]),
-  'Compact candidate ranges did not round-trip',
-);
+const originalViewer = readFileSync(resolve(root, 'scripts/reader/original-viewer.js'), 'utf8');
+assert.match(originalViewer,/IntersectionObserver/,'PDF pages are not rendered lazily');
+assert.match(originalViewer,/sandbox','allow-same-origin'/,
+  'EPUB chapters are not sandboxed');
+assert.match(originalViewer,/script,iframe,frame,object,embed/,
+  'EPUB active content sanitizer is missing');
 
-const formatServer = readFileSync(resolve(root, 'server/format/index.ts'), 'utf8');
-assert.doesNotMatch(formatServer, /Return exactly one compact JSON role for every supplied segment/,
-  'Server still emits a role for every paragraph');
-assert.match(formatServer, /Ordinary body prose is the default/, 'Selective candidate contract is missing');
-assert.match(formatServer, /safeHeading/, 'Server heading safety gate is missing');
-assert.match(formatServer, /const VERSION = 3/, 'Old AI formatting maps were not invalidated');
+assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),false,
+  'AI typography client was not removed');
+assert.equal(existsSync(resolve(root,'server/format/index.ts')),false,
+  'AI typography server function was not removed');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active JavaScript files`);
