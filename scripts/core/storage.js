@@ -24,6 +24,24 @@ async function originalPut(id, record){ const db=await idb(); return new Promise
 async function originalGet(id){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('originals').objectStore('originals').get(id);
   rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function originalAll(){ try{ const db=await idb(); return await new Promise(res=>{
+  const rq=db.transaction('originals').objectStore('originals').getAll();
+  rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]); }); }catch(e){ return []; } }
+/* A synced/legacy book can acquire a different local ID even though its raw
+   file is already present on this device. Recover it through the file hash and
+   repair the direct ID lookup instead of asking the reader to reconnect. */
+async function originalGetForBook(book){
+  if(!book || !book.id) return null;
+  const direct=await originalGet(book.id);
+  if(direct) return direct;
+  const hash=book.original && book.original.hash;
+  if(!hash) return null;
+  const recovered=(await originalAll()).find(record=>record && record.hash===hash) || null;
+  if(recovered){
+    try{ await originalPut(book.id,recovered); }catch(e){}
+  }
+  return recovered;
+}
 async function originalDel(id){ try{ const db=await idb(); return await new Promise(res=>{
   const tx=db.transaction('originals','readwrite'); tx.objectStore('originals').delete(id);
   tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
