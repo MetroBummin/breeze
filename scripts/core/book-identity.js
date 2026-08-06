@@ -1,4 +1,4 @@
-/* Stable book identity shared by import, sync, and rolling formatting.
+/* Stable book identity shared by import and sync.
    The fingerprint ignores paragraph boundaries so the same text parsed by a
    newer importer can still be recognised as the same book. */
 
@@ -52,7 +52,8 @@ function bookContentFingerprint(paragraphs){
 
 function ensureBookFingerprint(book){
   if(!book) return '';
-  if(!book.fingerprint || !String(book.fingerprint).startsWith(BOOK_FINGERPRINT_VERSION)){
+  const current = String(book.fingerprint||'');
+  if(!current.startsWith(BOOK_FINGERPRINT_VERSION) && !current.startsWith('raw:')){
     book.fingerprint = bookContentFingerprint(book.paras || []);
   }
   return book.fingerprint;
