@@ -5,6 +5,9 @@
 let currentReaderMode = 'text';
 let originalSession = null;
 let originalLoadToken = 0;
+let originalOpenJob = null;
+let readerModeChangeToken = 0;
+let originalSelectionNoticeAt = 0;
 
 function sourceAnchorForParagraph(book, paragraphIndex){
   const map = book && book.sourceMap;
@@ -41,6 +44,52 @@ function paragraphForSource(book, source){
   return best;
 }
 
+/* 진행도는 화면의 픽셀 높이가 아니라 책 안의 논리적 위치로 계산합니다.
+   원본과 글자판의 높이는 완전히 다르기 때문에 scrollHeight 비율을 섞으면
+   모드를 바꿀 때마다 진행도가 튑니다. */
+function sourceProgressForBook(book,source){
+  if(!book || !source) return null;
+  const map=book.sourceMap||[];
+  if(source.kind==='pdf'){
+    const mappedPages=map.reduce((max,item)=>Math.max(max,(item&&item.page)||0),0);
+    const sessionPages=originalSession && originalSession.bookId===book.id && originalSession.kind==='pdf'
+      ? originalSession.pages.length : 0;
+    const total=Math.max(1,sessionPages,mappedPages,Number(source.page)||1);
+    return Math.max(0,Math.min(1,((Math.max(1,Number(source.page)||1)-1)
+      + Math.max(0,Math.min(1,Number(source.y)||0)))/total));
+  }
+  if(source.kind==='epub'){
+    const mappedSpines=map.reduce((max,item)=>Math.max(max,item&&!item.page ? (item.spine||0)+1 : 0),0);
+    const sessionSpines=originalSession && originalSession.bookId===book.id && originalSession.kind==='epub'
+      ? originalSession.frames.length : 0;
+    const total=Math.max(1,sessionSpines,mappedSpines,(Number(source.spine)||0)+1);
+    const spine=Math.max(0,Math.min(total-1,Number(source.spine)||0));
+    const maxElement=map.reduce((max,item)=>item&&!item.page&&(item.spine||0)===spine
+      ? Math.max(max,item.element||0) : max,0);
+    const inside=maxElement ? Math.max(0,Math.min(1,(Number(source.element)||0)/(maxElement+1))) : 0;
+    return Math.max(0,Math.min(1,(spine+inside)/total));
+  }
+  return null;
+}
+
+function textProgressForBook(book,anchor){
+  if(!book || !anchor || anchor.pi==null) return null;
+  const source=sourceAnchorForParagraph(book,anchor.pi);
+  const sourceProgress=sourceProgressForBook(book,source);
+  if(sourceProgress!=null) return sourceProgress;
+  return Math.max(0,Math.min(1,(Number(anchor.pi)||0)/Math.max(1,(book.paras||[]).length-1)));
+}
+
+function visibleReaderProgress(){
+  if(!curBook) return 0;
+  if(currentReaderMode==='original'){
+    const value=sourceProgressForBook(curBook,captureOriginalAnchor());
+    return value==null ? (posOf(curBook.id).p||0) : value;
+  }
+  const value=textProgressForBook(curBook,captureAnchor());
+  return value==null ? (posOf(curBook.id).p||0) : value;
+}
+
 function updateReaderModeControls(){
   const switcher = document.getElementById('reader-mode-switch');
   if(!switcher) return;
@@ -64,6 +113,8 @@ async function switchReaderMode(mode,options){
   if(!curBook || (mode!=='text' && mode!=='original')) return;
   if(mode==='original' && curBook.builtin) return;
 
+  const changeToken=++readerModeChangeToken;
+  const bookAtStart=curBook;
   const previousMode = currentReaderMode;
   const textAnchor = previousMode==='text' ? captureAnchor() : null;
   let bridge = previousMode==='text'
@@ -78,6 +129,7 @@ async function switchReaderMode(mode,options){
   }
   if(options.initial) bridge=null;
   if(previousMode!==mode) saveReadingState();
+  if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(1400);
   currentReaderMode = mode;
   rememberReaderMode(mode);
   closePanel();
@@ -92,6 +144,7 @@ async function switchReaderMode(mode,options){
   if(mode==='text'){
     const targetPi = paragraphForSource(curBook,bridge);
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='text') return;
       if(targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
         if(element) window.scrollTo(0,Math.max(0,window.scrollY+element.getBoundingClientRect().top-topInset()-10));
@@ -100,6 +153,7 @@ async function switchReaderMode(mode,options){
         if(!restoreAnchor(position)) window.scrollTo(0,position.y||0);
       }
       lastAnchor = captureAnchor();
+      if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(450);
       updatePfill();
     }));
     return;
@@ -114,6 +168,7 @@ async function switchReaderMode(mode,options){
   if(options.reload) leaveOriginalReader();
   try{
     await renderOriginalBook(curBook,record);
+    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
     let target = bridge || posOf(curBook.id).original;
     if(!target && options.initial){
       target = record.kind==='pdf'
@@ -121,16 +176,25 @@ async function switchReaderMode(mode,options){
         : {kind:'epub',href:'',spine:0,element:0};
     }
     target = target || sourceAnchorForParagraph(curBook,posOf(curBook.id).pi);
-    await restoreOriginalAnchor(target);
+    await restoreOriginalAnchor(target,changeToken);
+    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
     /* EPUB images and webfonts can change a chapter's height just after load.
        Re-apply the same source anchor once, so browser scroll anchoring does
        not leave a first-open book halfway down the next chapter. */
     if(record.kind==='epub' && target){
       const sessionAtRestore=originalSession;
-      setTimeout(()=>{ if(originalSession===sessionAtRestore) restoreOriginalAnchor(target); },650);
+      setTimeout(()=>{
+        if(originalSession===sessionAtRestore && changeToken===readerModeChangeToken
+            && curBook===bookAtStart && currentReaderMode==='original'){
+          suspendReaderScrollSave(450);
+          restoreOriginalAnchor(target,changeToken);
+        }
+      },650);
     }
+    if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(500);
     updatePfill();
   }catch(error){
+    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
     console.error(error);
     showOriginalError(error);
   }
@@ -157,18 +221,30 @@ function showOriginalError(error){
 }
 
 async function renderOriginalBook(book,record){
-  if(originalSession && originalSession.bookId===book.id && originalSession.hash===record.hash) return;
+  if(originalOpenJob && originalOpenJob.bookId===book.id && originalOpenJob.hash===record.hash){
+    await originalOpenJob.promise;
+    return;
+  }
+  if(originalSession && originalSession.bookId===book.id && originalSession.hash===record.hash
+      && document.getElementById('original-content').childElementCount) return;
   leaveOriginalReader();
   const token = ++originalLoadToken;
   const content = document.getElementById('original-content');
   content.innerHTML = '<div class="original-loading"><i></i><span>원본을 여는 중…</span></div>';
-  if(record.kind==='pdf') await openOriginalPdf(book,record,token);
-  else if(record.kind==='epub') await openOriginalEpub(book,record,token);
-  else throw new Error('지원하지 않는 원본 형식이에요');
+  const job={bookId:book.id,hash:record.hash,promise:null};
+  job.promise=(async()=>{
+    if(record.kind==='pdf') await openOriginalPdf(book,record,token);
+    else if(record.kind==='epub') await openOriginalEpub(book,record,token);
+    else throw new Error('지원하지 않는 원본 형식이에요');
+  })();
+  originalOpenJob=job;
+  try{ await job.promise; }
+  finally{ if(originalOpenJob===job) originalOpenJob=null; }
 }
 
 function leaveOriginalReader(){
   originalLoadToken++;
+  originalOpenJob=null;
   if(!originalSession) return;
   if(originalSession.observer) originalSession.observer.disconnect();
   (originalSession.resizeObservers||[]).forEach(observer=>observer.disconnect());
@@ -176,7 +252,7 @@ function leaveOriginalReader(){
   if(originalSession.pdf){ try{ originalSession.pdf.destroy(); }catch(e){} }
   originalSession = null;
   const content = document.getElementById('original-content');
-  if(content) content.innerHTML='';
+  if(content){ content.innerHTML=''; content.className='original-content'; }
 }
 
 async function openOriginalPdf(book,record,token){
@@ -391,7 +467,9 @@ async function openOriginalEpub(book,record,token){
           const observer=new ResizeObserver(resize); observer.observe(frameDoc.documentElement);
           session.resizeObservers.push(observer);
         }
-        if(frameDoc) frameDoc.addEventListener('click',event=>handleOriginalWordClick(frameDoc,event));
+        if(frameDoc) frameDoc.addEventListener('pointerup',()=>{
+          setTimeout(()=>openOriginalSelection(frameDoc),0);
+        });
         resolve(frame);
       };
     });
@@ -399,18 +477,6 @@ async function openOriginalEpub(book,record,token){
     session.frames[index]=frame; session.frameReady[index]=ready;
   }
   await Promise.all(session.frameReady.filter(Boolean).slice(0,2));
-}
-
-function caretTextPosition(doc,x,y){
-  if(doc.caretRangeFromPoint){
-    const range=doc.caretRangeFromPoint(x,y);
-    return range ? {node:range.startContainer,offset:range.startOffset} : null;
-  }
-  if(doc.caretPositionFromPoint){
-    const position=doc.caretPositionFromPoint(x,y);
-    return position ? {node:position.offsetNode,offset:position.offset} : null;
-  }
-  return null;
 }
 
 function originalSentence(text,word){
@@ -422,41 +488,58 @@ function originalSentence(text,word){
   return match.trim().slice(0,700);
 }
 
-function handleOriginalWordClick(doc,event){
-  if(event.target.closest && event.target.closest('a')) return;
-  const existing=event.target.closest && event.target.closest('.breeze-original-word');
-  if(existing){
-    const existingKey=existing.dataset.w||keyOf(existing.textContent);
-    if(words[existingKey]) selectWord(existingKey,existing);
-    else addWord(existingKey,existing);
+function clearOriginalSelectionMarkers(){
+  readerWordNodes('.original-selection-marker').forEach(marker=>marker.remove());
+}
+
+/* PDF.js의 투명 글자 span을 잘라 다시 감싸면 원본의 transform이 깨져서
+   선택 범위가 옆 단어까지 번집니다. 브라우저가 실제로 선택한 한 단어만
+   받아서, 본문을 수정하지 않는 독립 하이라이트를 얹습니다. */
+function openOriginalSelection(doc){
+  const selection=doc&&doc.getSelection ? doc.getSelection() : null;
+  if(!selection || selection.isCollapsed || !selection.rangeCount) return;
+  const raw=selection.toString().replace(/^[^A-Za-z]+|[^A-Za-z'’\-]+$/g,'').trim();
+  if(!/^[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?$/.test(raw)){
+    if(/[A-Za-z]/.test(raw) && Date.now()-originalSelectionNoticeAt>1800){
+      originalSelectionNoticeAt=Date.now();
+      toast('단어 하나만 선택해 주세요');
+    }
     return;
   }
-  const position=caretTextPosition(doc,event.clientX,event.clientY);
-  if(!position || !position.node || position.node.nodeType!==Node.TEXT_NODE) return;
-  const text=position.node.nodeValue||'';
-  const wordsInText=[...text.matchAll(/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g)];
-  const match=wordsInText.find(item=>position.offset>=item.index && position.offset<=item.index+item[0].length);
-  if(!match) return;
-  const range=doc.createRange();
-  range.setStart(position.node,match.index); range.setEnd(position.node,match.index+match[0].length);
-  const span=doc.createElement('span');
-  span.className='breeze-original-word'; span.textContent=match[0];
-  const parent=position.node.parentElement;
-  const block=parent&&parent.closest('p,li,blockquote,h1,h2,h3,h4');
-  const pageText=!block&&doc===document ? parent.closest('.pdf-text-layer') : null;
-  span.dataset.example=originalSentence((block||pageText||parent).textContent,match[0]);
-  const key=keyOf(match[0]); span.dataset.w=key;
-  if(words[key]) span.classList.add('s'+words[key].status);
-  try{ range.deleteContents(); range.insertNode(span); }catch(e){ return; }
-  if(words[key]){
-    if(words[key].status<3) setStatus(key,words[key].status+1);
-    selectWord(key,span);
-  }else addWord(key,span);
+  const range=selection.getRangeAt(0);
+  let owner=range.commonAncestorContainer;
+  if(owner.nodeType!==1) owner=owner.parentElement;
+  if(!owner || (owner.closest&&owner.closest('a'))) return;
+  const rect=[...range.getClientRects()].find(item=>item.width>0&&item.height>0);
+  if(!rect) return;
+  clearOriginalSelectionMarkers();
+  const marker=doc.createElement('span');
+  marker.className='breeze-original-word original-selection-marker';
+  marker.textContent=raw;
+  const key=keyOf(raw); marker.dataset.w=key;
+  const block=owner.closest&&owner.closest('p,li,blockquote,h1,h2,h3,h4');
+  const pageText=!block&&doc===document ? owner.closest('.pdf-text-layer') : null;
+  marker.dataset.example=originalSentence((block||pageText||owner).textContent,raw);
+  marker.setAttribute('aria-hidden','true');
+  if(words[key]) marker.classList.add('s'+words[key].status);
+  if(doc===document){
+    const page=owner.closest&&owner.closest('.pdf-source-page');
+    if(!page) return;
+    const pageRect=page.getBoundingClientRect();
+    marker.style.cssText=`left:${rect.left-pageRect.left}px;top:${rect.top-pageRect.top}px;width:${rect.width}px;height:${rect.height}px`;
+    page.appendChild(marker);
+  }else{
+    marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;background:rgba(37,137,190,.25);border-radius:3px`;
+    doc.body.appendChild(marker);
+  }
+  selection.removeAllRanges();
+  if(words[key]) selectWord(key,marker);
+  else addWord(key,marker);
 }
 
 function captureOriginalAnchor(){
   if(!originalSession) return null;
-  const inset=topInset()+8;
+  const inset=topInset()+10;
   if(originalSession.kind==='pdf'){
     const page=originalSession.pages.find(element=>element.getBoundingClientRect().bottom>inset);
     if(!page) return null;
@@ -479,7 +562,7 @@ function captureOriginalAnchor(){
   return {kind:'epub',href:section.dataset.href||'',spine,element};
 }
 
-async function restoreOriginalAnchor(source){
+async function restoreOriginalAnchor(source,changeToken){
   if(!source || !originalSession){ window.scrollTo(0,0); return false; }
   const inset=topInset()+10;
   if(originalSession.kind==='pdf'){
@@ -487,6 +570,7 @@ async function restoreOriginalAnchor(source){
     const page=originalSession.pages[pageNumber-1];
     window.scrollTo(0,Math.max(0,window.scrollY+page.getBoundingClientRect().top-inset));
     await renderOriginalPdfPage(originalSession,pageNumber);
+    if(changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original')) return false;
     const rect=page.getBoundingClientRect();
     window.scrollTo(0,Math.max(0,window.scrollY+rect.top-inset+Math.max(0,Math.min(1,Number(source.y)||0))*rect.height));
     return true;
@@ -503,5 +587,11 @@ async function restoreOriginalAnchor(source){
 }
 
 document.getElementById('original-content').addEventListener('click',event=>{
-  if(originalSession && originalSession.kind==='pdf') handleOriginalWordClick(document,event);
+  const marker=event.target.closest&&event.target.closest('.original-selection-marker');
+  if(!marker) return;
+  const key=marker.dataset.w||keyOf(marker.textContent);
+  if(words[key]) selectWord(key,marker);
+});
+document.getElementById('original-content').addEventListener('pointerup',()=>{
+  if(originalSession && originalSession.kind==='pdf') setTimeout(()=>openOriginalSelection(document),0);
 });
