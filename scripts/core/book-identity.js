@@ -73,3 +73,23 @@ function serverRowIsActive(row){
 function findLocalBookForServerRow(row, localBooks){
   return (localBooks || []).find(book => serverRowMatchesBook(row, book)) || null;
 }
+
+function localBookSourceTime(book, originalRecord){
+  return Math.max(0,
+    Number(book && book.addedAt)||0,
+    Number(book && book.localSourceAt)||0,
+    Number(book && book.original && book.original.storedAt)||0,
+    Number(originalRecord && originalRecord.storedAt)||0);
+}
+
+/* A tombstone must not erase a copy that the user imported or reconnected
+   after that deletion. Legacy tombstones without a timestamp keep their old
+   delete-wins behaviour. */
+function serverTombstoneShouldDelete(row, book, originalRecord){
+  const meta=(row&&row.meta)||{};
+  if(!meta.deleted || !book) return false;
+  if(book.detachedServerId===row.book_id) return false;
+  const deletedAt=Number(meta.deletedAt)||0;
+  if(!deletedAt) return true;
+  return localBookSourceTime(book,originalRecord)<=deletedAt;
+}
