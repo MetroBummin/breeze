@@ -101,8 +101,32 @@ assert.match(
   'Duplicate-title warning still inspects hidden deleted tombstones',
 );
 
-// A completed AI window owns the entire range: omitted heuristic headings
-// become plain paragraphs, while explicit structural operations are applied.
+// Adjacent large blocks stay separate in the safe local layout. A running
+// header, PART label, and chapter title must never become one giant heading.
+const layoutContext = {
+  IMG_MARK:'[[IMG]]:',
+  Map,
+  Set,
+  endsSentence:text=>/[.!?]$/.test(String(text||'').trim()),
+  looksHeading:()=>false,
+};
+new Script(readFileSync(resolve(root, 'scripts/reader/formatting.js'), 'utf8'))
+  .runInNewContext(layoutContext);
+const layoutParas = [
+  'NICK CHATER COVENTRY, 2017', 'PART ONE', 'THE ILLUSION OF MENTAL DEPTH',
+  ...Array(12).fill('Ordinary body paragraph.'),
+];
+const layoutSignals = layoutParas.map((_,index)=>index<3 ? {z:1.5,b:true,c:true} : null);
+const safeLayout = layoutContext.buildFormattingFromLayout(layoutParas,layoutSignals,null);
+assert.equal(
+  JSON.stringify(safeLayout.blocks.slice(0,3).map(block=>block.t)),
+  JSON.stringify(layoutParas.slice(0,3)),
+  'Adjacent headings were merged into a giant heading',
+);
+
+// A completed whole-book map owns only its selected candidates. Omitted
+// candidates become body, while ordinary paragraphs never sent to AI keep the
+// stable local layout.
 const rollingContext = {
   IMG_MARK:'[[IMG]]:',
   Map,
@@ -115,28 +139,30 @@ new Script(readFileSync(resolve(root, 'scripts/reader/rolling-formatting.js'), '
   .runInNewContext(rollingContext);
 const rollingBook = {
   paras:['Heuristic heading', 'A quoted line.', 'Ordinary body.'],
+  layoutSignals:[{z:1.6,b:true,c:true,p:1}, {in:.1,p:1}, null],
   formatting:{ blocks:[
     {r:'h1', t:'Heuristic heading', f:0},
     {r:'p', t:'A quoted line.', f:1},
     {r:'p', t:'Ordinary body.', f:2},
   ]},
-  aiFormatting:{ version:2, windows:[{
-    from:0, to:3, createdAt:1,
-    ops:[{i:1,n:1,r:'quote',j:false,b:'section'}],
-  }]},
+  aiFormatting:{ version:3, status:'ready', candidateRanges:[[0,2]],
+    ops:[{i:1,n:1,r:'quote',b:'section'}], createdAt:1 },
 };
 const displayBlocks = rollingContext.buildRollingDisplayBlocks(rollingBook);
 assert.equal(
   JSON.stringify(displayBlocks.map(block => [block.r, block.f, block.before || 'none'])),
   JSON.stringify([['p',0,'none'], ['quote',1,'section'], ['p',2,'none']]),
-  'AI window was not applied as the sole authority for its range',
+  'Atomic book typography map was not applied to candidate positions',
 );
+const plan = rollingContext.buildBookTypographyPlan(rollingBook);
+assert.equal(plan.items.some(item => item.i === 2), false, 'Ordinary body was sent to AI');
+assert.equal(plan.items.some(item => item.i === 0), true, 'Heading candidate was not selected');
 assert.equal(
-  rollingContext.validateRollingOps(rollingBook, {from:0,to:3}, [
-    {i:0,n:2,r:'h2'}, {i:1,n:1,r:'quote'},
+  rollingContext.validateBookTypographyOps(rollingBook, new Set([0,1]), [
+    {i:0,n:2,r:'quote'}, {i:1,n:1,r:'quote'},
   ]),
   null,
-  'Overlapping rolling operations were accepted',
+  'Overlapping book-format operations were accepted',
 );
 
 // Even a model-selected heading is demoted when it is clearly a full body
@@ -145,24 +171,33 @@ const longBody = Array(8).fill(
   'This is a complete sentence describing an ordinary scene in the book.'
 ).join(' ');
 const safetyBook = { paras:[longBody] };
-const safeOps = rollingContext.validateRollingOps(safetyBook, {from:0,to:1}, [
-  {i:0,n:1,r:'h2',j:false,b:'page'},
+const safeOps = rollingContext.validateBookTypographyOps(safetyBook, new Set([0]), [
+  {i:0,n:1,r:'h2',b:'page'},
 ]);
-assert.equal(safeOps[0].r, 'p', 'Long body paragraph remained a heading');
-assert.equal(safeOps[0].b, 'none', 'Rejected heading kept a forced page break');
+assert.equal(safeOps.length, 0, 'Long body paragraph remained a heading');
 
-// A join across two already-complete sentences is ignored instead of merging
-// independent paragraphs, while the rest of the AI window remains usable.
-const joinSafetyBook = { paras:['The first paragraph ends.', 'Another paragraph begins.'] };
-const joinSafeOps = rollingContext.validateRollingOps(joinSafetyBook, {from:0,to:2}, [
-  {i:0,n:2,r:'p',j:true,b:'none'},
-]);
-assert.equal(joinSafeOps[0].n, 1, 'Independent complete paragraphs were joined');
+const giantNarrative = Array(30).fill('The ministry building stood above the city.').join(' ');
+const quoteSafetyBook = { paras:[giantNarrative], layoutSignals:[{in:.1,it:false}] };
+assert.equal(
+  rollingContext.validateBookTypographyOps(quoteSafetyBook, new Set([0]), [
+    {i:0,n:1,r:'quote'},
+  ]).length,
+  0,
+  'Long unquoted narrative became a giant block quote',
+);
+
+// Compact candidate ranges must round-trip without listing every body block.
+assert.equal(
+  JSON.stringify([...rollingContext.candidateIdsFromRanges([[2,3],[8,1]])]),
+  JSON.stringify([2,3,4,8]),
+  'Compact candidate ranges did not round-trip',
+);
 
 const formatServer = readFileSync(resolve(root, 'server/format/index.ts'), 'utf8');
-assert.match(formatServer, /buildBoundaryPrompt/, 'Boundary restoration stage is missing');
-assert.match(formatServer, /buildRolePrompt/, 'Markdown role stage is missing');
-assert.match(formatServer, /safeHeadingRole/, 'Server heading safety gate is missing');
-assert.match(formatServer, /const VERSION = 2/, 'Old AI formatting maps were not invalidated');
+assert.doesNotMatch(formatServer, /Return exactly one compact JSON role for every supplied segment/,
+  'Server still emits a role for every paragraph');
+assert.match(formatServer, /Ordinary body prose is the default/, 'Selective candidate contract is missing');
+assert.match(formatServer, /safeHeading/, 'Server heading safety gate is missing');
+assert.match(formatServer, /const VERSION = 3/, 'Old AI formatting maps were not invalidated');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active JavaScript files`);
