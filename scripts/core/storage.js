@@ -1,8 +1,11 @@
-/* ================= image store (IndexedDB) ================= */
-function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('breeze-img',2);
+/* ================= local book assets (IndexedDB) =================
+   Extracted text stays in `books`, EPUB images in `imgs`, and the user's raw
+   PDF/EPUB stays in `originals`. Originals never enter the sync payload. */
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('breeze-img',3);
   r.onupgradeneeded=()=>{ const db=r.result;
     if(!db.objectStoreNames.contains('imgs'))  db.createObjectStore('imgs');
     if(!db.objectStoreNames.contains('books')) db.createObjectStore('books');   // 책 본문(용량 큼)
+    if(!db.objectStoreNames.contains('originals')) db.createObjectStore('originals');
   };
   r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 
@@ -15,6 +18,16 @@ async function bookDel(id){ try{ const db=await idb(); return await new Promise(
 async function bookAll(){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('books').objectStore('books').getAll();
   rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]); }); }catch(e){ return []; } }
+async function originalPut(id, record){ const db=await idb(); return new Promise((res,rej)=>{
+  const tx=db.transaction('originals','readwrite'); tx.objectStore('originals').put(record,id);
+  tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function originalGet(id){ try{ const db=await idb(); return await new Promise(res=>{
+  const rq=db.transaction('originals').objectStore('originals').get(id);
+  rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function originalDel(id){ try{ const db=await idb(); return await new Promise(res=>{
+  const tx=db.transaction('originals','readwrite'); tx.objectStore('originals').delete(id);
+  tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
+async function originalHas(id){ return !!(await originalGet(id)); }
 async function imgPut(id, blob){ const db=await idb(); return new Promise((res,rej)=>{
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(blob,id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 async function imgGet(id){ try{ const db=await idb(); return await new Promise(res=>{
@@ -48,9 +61,13 @@ async function imgRename(oldPrefix, newPrefix){
     console.warn('Could not rename imported images:', error);
   }
 }
-async function imgPurge(prefix){ try{ const db=await idb();
-  const st=db.transaction('imgs','readwrite').objectStore('imgs');
-  const rq=st.getAllKeys(); rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(prefix)).forEach(k=>st.delete(k)); }catch(e){} }
+async function imgPurge(prefix){ try{ const db=await idb(); return await new Promise((resolve,reject)=>{
+  const tx=db.transaction('imgs','readwrite');
+  const st=tx.objectStore('imgs');
+  const rq=st.getAllKeys();
+  rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(prefix)).forEach(k=>st.delete(k));
+  rq.onerror=()=>reject(rq.error); tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
+}); }catch(e){} }
 const IMG_MARK = '[[IMG]]:';
 
 /* ---- AI dictionary cache (별도 DB: 나중에 내장 데이터셋의 씨앗이 됨) ---- */
