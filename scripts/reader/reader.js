@@ -70,18 +70,20 @@ function renderBookBody(b){
     }else{ box = null; boxKind = ''; }
     const host = inBox && box ? box : page;
     const el = document.createElement(isHead ? (lvl===1?'h2':lvl===3?'h4':'h3') : 'p');
+    if(bl.r === 'toc') el.classList.add('toc-entry');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
     let html='', m, last=0;
     WORD_RE.lastIndex=0;
-    while((m=WORD_RE.exec(bl.t))){
-      html += esc(bl.t.slice(last, m.index));
+    const displayText = bl.v || bl.t;
+    while((m=WORD_RE.exec(displayText))){
+      html += esc(displayText.slice(last, m.index));
       const k = keyOf(m[0]);
       const st = words[k] ? ' s'+words[k].status : '';
       html += `<span class="w${st}" data-w="${k}">${esc(m[0])}</span>`;
       last = m.index + m[0].length;
     }
-    html += esc(bl.t.slice(last));
+    html += esc(displayText.slice(last));
     el.innerHTML = html;
     host.appendChild(el);
     pageChars += bl.t.length;
@@ -106,7 +108,7 @@ function openBook(b){
     if(!restoreAnchor(pos)) window.scrollTo(0, pos.y||0);   // 예전 기록은 px 방식으로 복원
     lastAnchor = captureAnchor();
     updatePfill();
-    scheduleRollingFormatting(b, pos.pi == null ? 0 : pos.pi);
+    scheduleRollingFormatting(b);
   });
 }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -129,7 +131,7 @@ window.addEventListener('scroll', ()=>{
     scrollTick=null;
     saveReadingState();
     lastAnchor = captureAnchor();
-    if(lastAnchor) scheduleRollingFormatting(curBook, lastAnchor.pi);
+    if(lastAnchor) scheduleRollingFormatting(curBook);
   }, 800);
 });
 
