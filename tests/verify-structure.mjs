@@ -18,6 +18,7 @@ const required = [
   'scripts/reader/formatting.js',
   'scripts/reader/pdf-word-geometry.js',
   'scripts/reader/original-viewer.js',
+  'scripts/reader/mode-bridge.js',
   'scripts/reader/reader.js',
   'scripts/sync/sync.js',
 ];
@@ -200,6 +201,17 @@ assert.match(originalViewer,/CSS\.highlights/,
   'Saved vocabulary is not painted in original EPUB mode');
 assert.match(originalViewer,/dataset\.originalMarks/,
   'Original EPUB highlights ignore the saved display preference');
+const bridgeContext = {};
+new Script(readFileSync(resolve(root, 'scripts/reader/mode-bridge.js'), 'utf8'))
+  .runInNewContext(bridgeContext);
+assert.deepEqual(Array.from(bridgeContext.bridgeTokens('“Michael  took—his eyes”')),
+  ['michael','took','his','eyes'],'Mode bridge does not normalize book punctuation');
+assert.deepEqual(JSON.parse(JSON.stringify(bridgeContext.bridgeFindSequence(
+  ['before','michael','took','his','eyes','off','the','road'],
+  'Michael took his eyes off the road.'))),
+  {start:1,length:7,confidence:1},'Mode bridge cannot locate a visible sentence');
+assert.match(originalViewer,/bridgeFindSequence/,
+  'Reader modes no longer align by the visible sentence');
 const geometryContext = {};
 new Script(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'))
   .runInNewContext(geometryContext);

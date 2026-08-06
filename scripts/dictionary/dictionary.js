@@ -174,16 +174,23 @@ function closePanel(){
 }
 function paintWord(k){
   const w = words[k];
-  readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`).forEach(s=>{
+  const paint=()=>readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`).forEach(s=>{
     s.classList.remove('s1','s2','s3');
     if(w) s.classList.add('s'+w.status);
   });
+  paint();
   if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
+  /* refreshOriginalSavedWords rebuilds persistent PDF markers. Repaint once
+     more so both the rebuilt marker and the current selection share status. */
+  paint();
 }
 function setStatus(k, st){
-  if(!words[k]) return;
-  words[k].status = st; words[k].up = Date.now(); saveWords(); paintWord(k); queueSync();
-  if(selKey===k) renderPanel();
+  const resolved=words[k] ? k : keyOf(k);
+  if(!words[resolved]) return;
+  selKey=resolved;
+  words[resolved].status = st; words[resolved].up = Date.now();
+  saveWords(); paintWord(resolved); queueSync();
+  renderPanel();
 }
 function renderPanel(){
   const w = words[selKey]; if(!w) return;

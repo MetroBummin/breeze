@@ -22,6 +22,11 @@
   #reader-mode-switch svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8;
     stroke-linecap:round; stroke-linejoin:round;}
   body.scrolling #reader-mode-switch{opacity:.42;}
+  #readwrap,#originalwrap{transition:opacity .22s ease,filter .22s ease;}
+  body.reader-mode-transition #readwrap,body.reader-mode-transition #originalwrap{opacity:.72; filter:saturate(.9);}
+  ::highlight(breeze-mode-cue){background:rgba(111,196,148,.30); color:inherit;}
+  .reader-mode-cue-dom{position:absolute; z-index:38; display:block; pointer-events:none;
+    border-radius:4px; background:rgba(111,196,148,.30); animation:reader-mode-cue-out 10s ease forwards;}
   /* Aa settings popover */
   #aa-pop{position:fixed; right:14px; bottom:126px; z-index:96; background:#fff; border:1px solid var(--line);
     border-radius:16px; padding:16px 18px; width:240px; box-shadow:var(--shadow); display:none;}
@@ -165,6 +170,7 @@
   .w.s1{background:var(--s1);}
   .w.s2{background:var(--s2);}
   .w.s3{background:var(--s3);}
+  .w.reader-mode-cue-word{background:rgba(111,196,148,.30)!important; box-shadow:0 0 0 2px rgba(111,196,148,.08);}
   .w.sel{background:var(--sky2); box-shadow:0 0 0 3px var(--sky2); border-radius:6px;}
   .legend{display:flex; gap:12px; font-size:12px; color:var(--soft);}
   .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
@@ -220,6 +226,10 @@
   .pdf-source-page>.original-saved-marker.s1{border-bottom-color:rgba(208,170,45,.7);}
   .pdf-source-page>.original-saved-marker.s2{border-bottom-color:rgba(210,119,58,.68);}
   .pdf-source-page>.original-saved-marker.s3{border-bottom-color:rgba(207,86,86,.7);}
+  .pdf-source-page>.reader-mode-cue{position:absolute; z-index:2; display:block; pointer-events:none;
+    box-sizing:border-box; border-radius:4px; background:rgba(111,196,148,.30);
+    animation:reader-mode-cue-out 10s ease forwards;}
+  @keyframes reader-mode-cue-out{0%,78%{opacity:1}100%{opacity:0}}
   body[data-original-marks="off"] .pdf-source-page>.original-saved-marker{display:none;}
   body[data-original-marks="block"] .pdf-source-page>.original-saved-marker{border-bottom:0; border-radius:3px;}
   body[data-original-marks="block"] .pdf-source-page>.original-saved-marker.s1{background:rgba(255,226,138,.34);}
@@ -237,4 +247,8 @@
     #originalwrap{padding:50px 6px 45vh;}
     .pdf-original{gap:10px;}
     .original-empty{margin:6vh 10px 0; padding:34px 22px;}
+  }
+  @media(prefers-reduced-motion:reduce){
+    #readwrap,#originalwrap{transition:none;}
+    .pdf-source-page>.reader-mode-cue{animation:none;}
   }

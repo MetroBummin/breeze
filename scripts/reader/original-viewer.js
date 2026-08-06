@@ -9,6 +9,7 @@ let originalOpenJob = null;
 let readerModeChangeToken = 0;
 let originalSelectionNoticeAt = 0;
 let originalPdfPointer = null;
+let readerModeCueTimer = 0;
 
 function sourceAnchorForParagraph(book, paragraphIndex){
   const map = book && book.sourceMap;
@@ -109,6 +110,274 @@ function rememberReaderMode(mode){
   save(LS_POS,positions);
 }
 
+function readerModeDelay(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+
+function domPositionAt(root,offset){
+  const doc=root.ownerDocument||document;
+  const walker=doc.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let left=Math.max(0,offset), node;
+  while((node=walker.nextNode())){
+    if(left<=node.data.length) return {node,offset:left};
+    left-=node.data.length;
+  }
+  return {node:root,offset:root.childNodes.length};
+}
+
+function domRangeForOffsets(root,start,end){
+  const doc=root.ownerDocument||document;
+  const a=domPositionAt(root,start), b=domPositionAt(root,end);
+  const range=doc.createRange();
+  try{ range.setStart(a.node,a.offset); range.setEnd(b.node,b.offset); }
+  catch(error){ range.selectNodeContents(root); }
+  return range;
+}
+
+function domWordStream(root){
+  const doc=root.ownerDocument||document;
+  const walker=doc.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){
+    const parent=node.parentElement;
+    return !parent || parent.closest('script,style,noscript,.breeze-original-word')
+      ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+  }});
+  const pattern=/[A-Za-z0-9](?:[A-Za-z0-9'’\-]*[A-Za-z0-9])?/g;
+  const stream=[];
+  let node;
+  while((node=walker.nextNode())){
+    pattern.lastIndex=0;
+    let match;
+    while((match=pattern.exec(node.data))){
+      stream.push({word:match[0],node,start:match.index,end:match.index+match[0].length});
+    }
+  }
+  return stream;
+}
+
+function rangeForWordMatch(stream,match){
+  if(!match || !stream[match.start]) return null;
+  const first=stream[match.start];
+  const last=stream[Math.min(stream.length-1,match.start+match.length-1)];
+  const doc=first.node.ownerDocument||document;
+  const range=doc.createRange();
+  range.setStart(first.node,first.start); range.setEnd(last.node,last.end);
+  return range;
+}
+
+function textSentenceBridge(){
+  const inset=topInset()+8;
+  const elements=[...document.querySelectorAll('#rtext [data-pi]')];
+  const startIndex=Math.max(0,elements.findIndex(element=>element.getBoundingClientRect().bottom>inset));
+  const entries=[];
+  for(let index=startIndex; index<elements.length && entries.length<5; index++){
+    const element=elements[index];
+    const sentences=bridgeSentences(element.textContent);
+    for(const sentence of sentences){
+      const range=domRangeForOffsets(element,sentence.start,sentence.end);
+      const rects=[...range.getClientRects()];
+      if(index===startIndex && rects.length && rects.every(rect=>rect.bottom<=inset)) continue;
+      entries.push({text:sentence.text,range,pi:+element.dataset.pi});
+      if(entries.length>=5) break;
+    }
+  }
+  if(!entries.length) return null;
+  /* A heading such as "Chapter 36" is too ambiguous. In that case the next
+     full sentence is a much safer bridge, exactly as the reader expects. */
+  const preferred=Math.max(0,entries.findIndex(entry=>bridgeTokens(entry.text).length>=5));
+  const chosen=entries[preferred];
+  const ordered=[...entries.slice(preferred),...entries.slice(0,preferred)].map(entry=>entry.text);
+  return {candidates:ordered,range:chosen.range,pi:chosen.pi};
+}
+
+function originalSentenceBridge(){
+  const source=captureOriginalAnchor();
+  if(!source || !originalSession) return null;
+  if(originalSession.kind==='pdf'){
+    const boxes=originalSession.wordBoxes.get(source.page)||[];
+    const visual=boxes.filter(box=>box.y+box.h>=source.y-.01)
+      .sort((a,b)=>Math.abs(a.y-b.y)<.012 ? a.x-b.x : a.y-b.y);
+    const candidates=[];
+    visual.forEach(box=>{
+      const value=box.example&&box.example.trim();
+      if(value && !candidates.includes(value) && candidates.length<4) candidates.push(value);
+    });
+    const match=candidates.length ? bridgeFindSequence(boxes,candidates[0]) : null;
+    return candidates.length ? {candidates,source,boxes:match ? boxes.slice(match.start,match.start+match.length) : []} : null;
+  }
+  const spine=Math.max(0,Math.min(originalSession.frames.length-1,Number(source.spine)||0));
+  const frame=originalSession.frames[spine], doc=frame&&frame.contentDocument;
+  const element=doc&&doc.querySelector(`[data-breeze-ei="${Math.max(0,Number(source.element)||0)}"]`);
+  if(!element) return null;
+  const sentences=bridgeSentences(element.textContent).slice(0,4);
+  return sentences.length
+    ? {candidates:sentences.map(item=>item.text),source,
+       range:domRangeForOffsets(element,sentences[0].start,sentences[0].end)} : null;
+}
+
+function clearReaderModeCue(){
+  clearTimeout(readerModeCueTimer); readerModeCueTimer=0;
+  document.querySelectorAll('.reader-mode-cue').forEach(node=>node.remove());
+  document.querySelectorAll('.reader-mode-cue-word').forEach(node=>node.classList.remove('reader-mode-cue-word'));
+  try{ if(CSS.highlights) CSS.highlights.delete('breeze-mode-cue'); }catch(error){}
+  if(originalSession&&originalSession.kind==='epub'){
+    originalSession.frames.forEach(frame=>{
+      try{
+        const view=frame.contentWindow, doc=frame.contentDocument;
+        if(view&&view.CSS&&view.CSS.highlights) view.CSS.highlights.delete('breeze-mode-cue');
+        if(doc) doc.querySelectorAll('.reader-mode-cue-dom').forEach(node=>node.remove());
+      }catch(error){}
+    });
+  }
+}
+
+function showRangeModeCue(range,duration){
+  if(!range) return;
+  const doc=range.startContainer.ownerDocument||document;
+  const view=doc.defaultView||window;
+  let painted=false;
+  try{
+    if(view.CSS&&view.CSS.highlights&&view.Highlight){
+      let style=doc.getElementById('breeze-mode-cue-style');
+      if(!style){
+        style=doc.createElement('style'); style.id='breeze-mode-cue-style';
+        style.textContent='::highlight(breeze-mode-cue){background:rgba(111,196,148,.30);color:inherit}';
+        doc.head.appendChild(style);
+      }
+      view.CSS.highlights.set('breeze-mode-cue',new view.Highlight(range));
+      painted=true;
+    }
+  }catch(error){}
+  /* Safari versions without the Custom Highlight API still get the same cue.
+     These rectangles live in document coordinates, so they follow scrolling
+     instead of remaining stuck to the viewport. */
+  if(!painted){
+    [...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0).forEach(rect=>{
+      const cue=doc.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-dom';
+      cue.style.cssText=`left:${rect.left+(view.scrollX||0)}px;top:${rect.top+(view.scrollY||0)}px;width:${rect.width}px;height:${rect.height}px`;
+      doc.body.appendChild(cue);
+    });
+  }
+  if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
+}
+
+function showPdfModeCue(page,boxes,duration){
+  if(!page || !boxes || !boxes.length) return;
+  const lines=[];
+  boxes.slice().sort((a,b)=>Math.abs(a.y-b.y)<.012 ? a.x-b.x : a.y-b.y).forEach(box=>{
+    let line=lines.find(item=>Math.abs(item.y-box.y)<Math.max(item.h,box.h)*.65);
+    if(!line){ line={x:box.x,y:box.y,right:box.x+box.w,bottom:box.y+box.h,h:box.h}; lines.push(line); }
+    else{ line.x=Math.min(line.x,box.x); line.y=Math.min(line.y,box.y); line.right=Math.max(line.right,box.x+box.w); line.bottom=Math.max(line.bottom,box.y+box.h); line.h=Math.max(line.h,box.h); }
+  });
+  lines.forEach(line=>{
+    const cue=document.createElement('span'); cue.className='reader-mode-cue';
+    cue.style.cssText=`left:${line.x*100}%;top:${line.y*100}%;width:${(line.right-line.x)*100}%;height:${(line.bottom-line.y)*100}%`;
+    page.appendChild(cue);
+  });
+  if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
+}
+
+function showBridgeSourceCue(bridge){
+  clearReaderModeCue();
+  if(!bridge) return;
+  if(bridge.range) showRangeModeCue(bridge.range,0);
+  else if(bridge.source&&bridge.source.kind==='pdf'){
+    showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0);
+  }
+}
+
+function findTextSentence(candidates,targetPi){
+  /* PDF importers sometimes split one visual sentence into several stored
+     paragraphs. Search the rendered book as one word stream first, so that
+     mode switching still lands on that sentence across block boundaries. */
+  const root=document.getElementById('rtext');
+  const fullStream=root ? domWordStream(root) : [];
+  for(const candidate of candidates||[]){
+    const match=bridgeFindSequence(fullStream,candidate);
+    const range=rangeForWordMatch(fullStream,match);
+    if(range) return {range,stream:fullStream,match};
+  }
+  const elements=[...document.querySelectorAll('#rtext [data-pi]')];
+  const start=Math.max(0,elements.findIndex(element=>+element.dataset.pi>=(targetPi==null ? 0 : targetPi)));
+  const ordered=[...elements.slice(start,start+18),...elements.slice(0,start)];
+  for(const candidate of candidates||[]){
+    for(const element of ordered){
+      const stream=domWordStream(element);
+      const match=bridgeFindSequence(stream,candidate);
+      const range=rangeForWordMatch(stream,match);
+      if(range) return {range,stream,match};
+    }
+  }
+  return null;
+}
+
+async function restoreTextSentence(candidates,targetPi){
+  const found=findTextSentence(candidates,targetPi);
+  if(!found) return false;
+  const rect=found.range.getBoundingClientRect();
+  window.scrollTo(0,Math.max(0,window.scrollY+rect.top-topInset()-12));
+  const end=found.match.start+found.match.length;
+  found.stream.slice(found.match.start,end).forEach(item=>{
+    const word=item.node.parentElement&&item.node.parentElement.closest('.w');
+    if(word) word.classList.add('reader-mode-cue-word');
+  });
+  showRangeModeCue(found.range,10000);
+  return true;
+}
+
+async function restorePdfSentence(candidates,source,changeToken){
+  const total=originalSession.pages.length;
+  const base=Math.max(1,Math.min(total,Number(source&&source.page)||1));
+  const pages=[base,base+1,base-1,base+2,base-2,base+3,base-3,base+4,base-4]
+    .filter((value,index,list)=>value>=1&&value<=total&&list.indexOf(value)===index);
+  for(const pageNumber of pages){
+    let boxes=originalSession.wordBoxes.get(pageNumber)||[];
+    if(!boxes.length){
+      /* Looking at nearby page text is cheap; only paint a canvas after a
+         sentence match, so the wider fallback does not render nine pages. */
+      const pdfPage=await originalSession.pdf.getPage(pageNumber);
+      const textContent=await pdfPage.getTextContent();
+      const stream=[];
+      (textContent.items||[]).forEach(item=>stream.push(...bridgeTokens(item.str||'')));
+      if(!(candidates||[]).some(candidate=>bridgeFindSequence(stream,candidate))) continue;
+      await renderOriginalPdfPage(originalSession,pageNumber);
+      boxes=originalSession.wordBoxes.get(pageNumber)||[];
+    }
+    if(changeToken!==readerModeChangeToken || currentReaderMode!=='original') return false;
+    for(const candidate of candidates||[]){
+      const match=bridgeFindSequence(boxes,candidate);
+      if(!match) continue;
+      const matched=boxes.slice(match.start,match.start+match.length);
+      const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];
+      const page=originalSession.pages[pageNumber-1];
+      const rect=page.getBoundingClientRect();
+      window.scrollTo(0,Math.max(0,window.scrollY+rect.top-topInset()-10+first.y*rect.height));
+      showPdfModeCue(page,matched,10000);
+      return true;
+    }
+  }
+  return false;
+}
+
+async function restoreEpubSentence(candidates,source,changeToken){
+  const total=originalSession.frames.length;
+  const base=Math.max(0,Math.min(total-1,Number(source&&source.spine)||0));
+  const spines=[base,base+1].filter(value=>value>=0&&value<total);
+  for(const spine of spines){
+    if(originalSession.frameReady[spine]) await originalSession.frameReady[spine];
+    if(changeToken!==readerModeChangeToken || currentReaderMode!=='original') return false;
+    const frame=originalSession.frames[spine], doc=frame&&frame.contentDocument;
+    if(!doc) continue;
+    const stream=domWordStream(doc.body);
+    for(const candidate of candidates||[]){
+      const range=rangeForWordMatch(stream,bridgeFindSequence(stream,candidate));
+      if(!range) continue;
+      const rect=range.getBoundingClientRect();
+      window.scrollTo(0,Math.max(0,window.scrollY+frame.getBoundingClientRect().top+rect.top-topInset()-10));
+      showRangeModeCue(range,10000);
+      return true;
+    }
+  }
+  return false;
+}
+
 async function switchReaderMode(mode,options){
   options = options || {};
   if(!curBook || (mode!=='text' && mode!=='original')) return;
@@ -117,6 +386,9 @@ async function switchReaderMode(mode,options){
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;
   const previousMode = currentReaderMode;
+  const sentenceBridge = !options.initial && previousMode!==mode
+    ? (previousMode==='text' ? textSentenceBridge() : originalSentenceBridge())
+    : null;
   const textAnchor = previousMode==='text' ? captureAnchor() : null;
   let bridge = previousMode==='text'
     ? sourceAnchorForParagraph(curBook,(textAnchor||{}).pi)
@@ -130,6 +402,14 @@ async function switchReaderMode(mode,options){
   }
   if(options.initial) bridge=null;
   if(previousMode!==mode) saveReadingState();
+  if(sentenceBridge){
+    showBridgeSourceCue(sentenceBridge);
+    document.body.classList.add('reader-mode-transition');
+    const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    await readerModeDelay(reduced ? 60 : 600);
+    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
+  }
+  clearReaderModeCue();
   if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(1400);
   currentReaderMode = mode;
   rememberReaderMode(mode);
@@ -141,15 +421,18 @@ async function switchReaderMode(mode,options){
   textWrap.hidden = mode==='original';
   originalWrap.hidden = mode!=='original';
   updateReaderModeControls();
+  requestAnimationFrame(()=>document.body.classList.remove('reader-mode-transition'));
 
   if(mode==='text'){
     const targetPi = paragraphForSource(curBook,bridge);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>requestAnimationFrame(async()=>{
       if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='text') return;
-      if(targetPi!=null){
+      const sentenceFound=sentenceBridge
+        ? await restoreTextSentence(sentenceBridge.candidates,targetPi) : false;
+      if(!sentenceFound && targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
         if(element) window.scrollTo(0,Math.max(0,window.scrollY+element.getBoundingClientRect().top-topInset()-10));
-      }else{
+      }else if(!sentenceFound){
         const position = posOf(curBook.id);
         if(!restoreAnchor(position)) window.scrollTo(0,position.y||0);
       }
@@ -179,6 +462,15 @@ async function switchReaderMode(mode,options){
     target = target || sourceAnchorForParagraph(curBook,posOf(curBook.id).pi);
     await restoreOriginalAnchor(target,changeToken);
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
+    if(sentenceBridge){
+      const sentenceFound=record.kind==='pdf'
+        ? await restorePdfSentence(sentenceBridge.candidates,target,changeToken)
+        : await restoreEpubSentence(sentenceBridge.candidates,target,changeToken);
+      if(!sentenceFound){
+        /* Search failure is deliberately quiet: the source-map anchor above
+           is still a stable and useful fallback. */
+      }
+    }
     /* EPUB images and webfonts can change a chapter's height just after load.
        Re-apply the same source anchor once, so browser scroll anchoring does
        not leave a first-open book halfway down the next chapter. */
@@ -349,9 +641,17 @@ function buildPdfWordBoxes(textContent,viewport){
   const boxes=[];
   const canvas=document.createElement('canvas');
   const context=canvas.getContext('2d');
-  const pageText=(textContent.items||[]).map(item=>item.str||'').join(' ');
+  const items=textContent.items||[];
+  const itemStarts=[];
+  let textOffset=0;
+  const pageText=items.map((item,index)=>{
+    itemStarts[index]=textOffset;
+    const value=String(item.str||'');
+    textOffset+=value.length+1;
+    return value;
+  }).join(' ');
   const wordPattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
-  (textContent.items||[]).forEach(item=>{
+  items.forEach((item,itemIndex)=>{
     const value=String(item.str||'');
     if(!value || !/[A-Za-z]/.test(value)) return;
     const tx=pdfTextTransform(viewport,item);
@@ -384,18 +684,21 @@ function buildPdfWordBoxes(textContent,viewport){
         y:top/viewport.height,
         w:Math.max(1,right-left)/viewport.width,
         h:Math.max(1,bottom-top)/viewport.height,
-        example:originalSentence(pageText,match[0]),
+        /* The old code searched the first occurrence of a word on the page.
+           Repeated words could therefore inherit a completely different
+           sentence. Keep the actual character offset of this occurrence. */
+        example:bridgeSentenceAt(pageText,itemStarts[itemIndex]+match.index),
       });
     }
   });
   return boxes;
 }
 
-function makePdfWordMarker(page,box,className,status){
+function makePdfWordMarker(page,box,className,status,wordKey){
   const marker=document.createElement('span');
   marker.className=`breeze-original-word ${className}${status ? ` s${status}` : ''}`;
   marker.textContent=box.word;
-  marker.dataset.w=keyOf(box.word);
+  marker.dataset.w=wordKey||keyOf(box.word);
   marker.dataset.example=box.example||'';
   marker.setAttribute('aria-hidden','true');
   marker.style.cssText=`left:${box.x*100}%;top:${box.y*100}%;width:${box.w*100}%;height:${box.h*100}%`;
@@ -407,8 +710,9 @@ function renderPdfSavedWordMarkers(page,boxes){
   if(!page) return;
   page.querySelectorAll('.original-saved-marker').forEach(marker=>marker.remove());
   (boxes||[]).forEach(box=>{
-    const saved=words[keyOf(box.word)];
-    if(saved) makePdfWordMarker(page,box,'original-saved-marker',saved.status);
+    const key=keyOf(box.word);
+    const saved=words[key];
+    if(saved) makePdfWordMarker(page,box,'original-saved-marker',saved.status,key);
   });
 }
 
@@ -491,7 +795,9 @@ function openPdfWord(page,box){
   if(!page || !box) return;
   clearOriginalSelectionMarkers();
   const key=keyOf(box.word);
-  const marker=makePdfWordMarker(page,box,'original-selection-marker',words[key]&&words[key].status);
+  /* Freeze the resolved key on the marker. keyOf() can legitimately change
+     after a new lemma is saved; a selected marker must not change identity. */
+  const marker=makePdfWordMarker(page,box,'original-selection-marker',words[key]&&words[key].status,key);
   if(words[key]) selectWord(key,marker);
   else addWord(key,marker);
 }
