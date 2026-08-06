@@ -17,18 +17,26 @@ async function loadBooks(){
   // Older releases keyed books only by their importer-specific ID. Persist a
   // paragraph-boundary-independent fingerprint for reliable server matching.
   for(const book of books){
+    let changed = false;
     const previousFingerprint = book.fingerprint || '';
     ensureBookFingerprint(book);
-    if(book.fingerprint !== previousFingerprint) await bookPut(book);
+    if(book.fingerprint !== previousFingerprint) changed = true;
+    /* v4 no longer reads or syncs AI typography. Keep a conservative local
+       block map, but remove stale model output so it cannot affect the reader. */
+    if(book.aiFormatting){ delete book.aiFormatting; changed = true; }
+    if(book.tidy && !book.formatting){ book.formatting = book.tidy; changed = true; }
+    if(book.tidy){ delete book.tidy; changed = true; }
+    if(book.readerSchema !== 4){ book.readerSchema = 4; changed = true; }
+    if(changed) await bookPut(book);
   }
 }
-let positions = load(LS_POS, {});   // bookId -> {y, p(0~1), t(lastOpened)}
+let positions = load(LS_POS, {});   // bookId -> text anchor + original source anchor
 let curBook = null, selKey = null;
 const saveWords = () => save(LS_WORDS, words);
 const posOf = id => {
   let v = positions[id];
   if(typeof v === 'number') v = {y:v, p:0, t:0};   // migrate from v1 format
-  return v || {y:0, p:0, t:0};
+  return v || {y:0, p:0, t:0, mode:'text', original:null};
 };
 
 /* ================= views ================= */
@@ -71,10 +79,23 @@ function keepPlace(fn){
 
 function saveReadingState(){
   if(!curBook) return;
+  if(typeof currentReaderMode !== 'undefined' && currentReaderMode === 'original'){
+    const original = typeof captureOriginalAnchor === 'function' ? captureOriginalAnchor() : null;
+    const previous = posOf(curBook.id);
+    const doc = document.documentElement;
+    const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+    positions[curBook.id] = {...previous,
+      p:Math.min(1, window.scrollY/max), t:Date.now(), mode:'original',
+      original:original || previous.original || null};
+    save(LS_POS, positions);
+    return;
+  }
   const doc = document.documentElement;
   const max = Math.max(1, doc.scrollHeight - window.innerHeight);
   const a = captureAnchor();
-  positions[curBook.id] = { y:window.scrollY, p:Math.min(1, window.scrollY/max), t:Date.now(),
+  const previous = posOf(curBook.id);
+  positions[curBook.id] = {...previous, y:window.scrollY,
+                            p:Math.min(1, window.scrollY/max), t:Date.now(), mode:'text',
                             pi: a ? a.pi : null, dy: a ? a.dy : 0 };
   save(LS_POS, positions);
 }
@@ -84,7 +105,10 @@ function show(v){
   document.getElementById('v-'+v).classList.add('on');
   document.getElementById('nav-home').classList.toggle('on', v==='home');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
-  if(v!=='read'){ curBook=null; closePanel(); toggleFocus(false); }
+  if(v!=='read'){
+    if(typeof leaveOriginalReader === 'function') leaveOriginalReader();
+    curBook=null; closePanel(); toggleFocus(false);
+  }
   document.body.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();
   if(v==='vocab') renderVocab();
