@@ -33,17 +33,40 @@ function packLayoutSignals(signals){
   return retained ? packed : null;
 }
 
+/* Compact bridge between reflowed paragraphs and the original document.
+   It stores only source coordinates, never another copy of the text. */
+function buildSourceMap(signals){
+  if(!signals || !signals.length) return null;
+  let retained = 0;
+  const map = signals.map(signal=>{
+    if(!signal) return null;
+    if(Number(signal.p) > 0){
+      retained++;
+      return { page:Number(signal.p), y:Math.max(0,Math.min(1,Number(signal.y)||0)) };
+    }
+    if(signal.src || Number.isFinite(signal.si)){
+      retained++;
+      return { href:String(signal.src||''), spine:Math.max(0,Number(signal.si)||0),
+               element:Math.max(0,Number(signal.ei)||0) };
+    }
+    return null;
+  });
+  return retained ? map : null;
+}
+
 function classifyLayoutRole(signal, text){
   if(!signal) return '';
   if(signal.r) return signal.r;
 
   const scale = signal.z || 1;
-  if(scale >= 1.5) return 'h1';
-  if(scale >= 1.25) return 'h2';
-  if(scale >= 1.12 && (signal.b || signal.c)) return 'h3';
-  /* 들여쓰기 하나만으로 긴 본문 전체를 인용문으로 만들면 오류가 너무 크게
-     보입니다. 긴 블록은 AI가 확실히 골라 줄 때까지 평문으로 둡니다. */
-  if((signal.in || 0) >= 0.07 && String(text || '').length <= 520) return 'quote';
+  const value = String(text || '').trim();
+  const short = value.length <= 180 && value.split(/\s+/).length <= 28;
+  /* False positives hurt more than missed decoration. Large scale must be
+     accompanied by short text, and smaller headings need bold/centred proof. */
+  if(short && scale >= 1.65) return 'h1';
+  if(short && scale >= 1.38 && (signal.b || signal.c)) return 'h2';
+  if(short && scale >= 1.2 && signal.b) return 'h3';
+  if((signal.in || 0) >= 0.08 && signal.it && value.length <= 420) return 'quote';
   return '';
 }
 
@@ -143,7 +166,13 @@ function buildFormattingFromLayout(paragraphs, signals, navigation){
 function buildPlainBlocks(paragraphs){
   return paragraphs.map((text, index) => {
     if(text.startsWith(IMG_MARK)) return { r:'img', t:text, f:index };
-    return { r:looksHeading(text) ? 'h2' : 'p', t:text, f:index };
+    const value = String(text || '').trim();
+    const veryLikelyHeading = value.length <= 55
+      && value.split(/\s+/).length <= 8
+      && !/[.!?;:]$/.test(value)
+      && (/^[A-Z\d][A-Z\d\s'’&\-–—]+$/.test(value)
+          || /^(part|book|chapter|section|prologue|epilogue|introduction)\b/i.test(value));
+    return { r:veryLikelyHeading ? 'h2' : 'p', t:text, f:index };
   });
 }
 
