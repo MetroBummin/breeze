@@ -21,9 +21,10 @@ function packLayoutSignals(signals){
       packed[index] = null;
       continue;
     }
-    const meaningful = signal.r
+    const meaningful = signal.r || signal.v
       || (signal.z || 1) >= 1.05
       || signal.b
+      || signal.it
       || signal.c
       || (signal.in || 0) >= 0.05;
     packed[index] = meaningful ? signal : null;
@@ -32,7 +33,7 @@ function packLayoutSignals(signals){
   return retained ? packed : null;
 }
 
-function classifyLayoutRole(signal){
+function classifyLayoutRole(signal, text){
   if(!signal) return '';
   if(signal.r) return signal.r;
 
@@ -40,7 +41,9 @@ function classifyLayoutRole(signal){
   if(scale >= 1.5) return 'h1';
   if(scale >= 1.25) return 'h2';
   if(scale >= 1.12 && (signal.b || signal.c)) return 'h3';
-  if((signal.in || 0) >= 0.05) return 'quote';
+  /* 들여쓰기 하나만으로 긴 본문 전체를 인용문으로 만들면 오류가 너무 크게
+     보입니다. 긴 블록은 AI가 확실히 골라 줄 때까지 평문으로 둡니다. */
+  if((signal.in || 0) >= 0.07 && String(text || '').length <= 520) return 'quote';
   return '';
 }
 
@@ -53,7 +56,7 @@ function buildFormattingFromLayout(paragraphs, signals, navigation){
       roles[index] = 'img';
       continue;
     }
-    let role = classifyLayoutRole(signals[index]);
+    let role = classifyLayoutRole(signals[index], paragraphs[index]);
     if(role.startsWith('h') && isInvalidHeadingText(paragraphs[index])) role = '';
     roles[index] = role;
   }
@@ -87,27 +90,19 @@ function buildFormattingFromLayout(paragraphs, signals, navigation){
     }
 
     if(role && role.startsWith('h')){
-      let text = paragraphs[index];
-      let count = 1;
-      let level = Number(role.slice(1)) || 2;
+      const text = paragraphs[index];
+      const count = 1;
+      const level = Number(role.slice(1)) || 2;
 
-      while(index + count < paragraphs.length
-          && roles[index + count]
-          && roles[index + count].startsWith('h')
-          && !navigationAt[index + count]
-          && paragraphs[index + count].length < 60
-          && (text + ' ' + paragraphs[index + count]).length < 130
-          && !endsSentence(text)
-          && count < 6){
-        text += ' ' + paragraphs[index + count];
-        level = Math.min(level, Number(roles[index + count].slice(1)) || level);
-        count++;
-      }
+      /* 연속된 큰 글자를 합치면 페이지 머리글 + PART + 장 제목이 하나의
+         거대한 제목이 되는 피해가 큽니다. PDF 줄 내부는 반입기가 이미
+         복원하므로, 서로 다른 문단은 기본판에서 안전하게 분리합니다. */
 
       const navigationItem = navigationAt[index];
       const headingText = navigationItem ? navigationItem.t : text;
       const headingLevel = navigationItem ? Number(role.slice(1)) || level : level;
-      blocks.push({ r:'h' + headingLevel, t:headingText, f:index });
+      const display = (signals[index] || {}).v;
+      blocks.push({ r:'h' + headingLevel, t:headingText, v:display || '', f:index });
       usedHeadingLevels.add(headingLevel);
       index += count;
       continue;
