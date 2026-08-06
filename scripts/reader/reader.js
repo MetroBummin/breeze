@@ -110,7 +110,7 @@ async function openBook(b){
   positions[b.id] = {...initialPosition, t:Date.now()};
   save(LS_POS, positions);
   updateReaderModeControls();
-  const original = b.builtin ? null : await originalGet(b.id);
+  const original = b.builtin ? null : await originalGetForBook(b);
   const desired = initialPosition.mode==='original'
     ? (original ? 'original' : 'text')
     : (firstOpen && original ? 'original' : 'text');
