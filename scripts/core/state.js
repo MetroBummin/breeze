@@ -26,6 +26,9 @@ async function loadBooks(){
     if(book.aiFormatting){ delete book.aiFormatting; changed = true; }
     if(book.tidy && !book.formatting){ book.formatting = book.tidy; changed = true; }
     if(book.tidy){ delete book.tidy; changed = true; }
+    if(!book.localSourceAt && book.original && book.original.storedAt){
+      book.localSourceAt = book.original.storedAt; changed = true;
+    }
     if(book.readerSchema !== 4){ book.readerSchema = 4; changed = true; }
     if(changed) await bookPut(book);
   }
