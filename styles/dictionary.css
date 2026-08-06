@@ -13,10 +13,11 @@
   }
   #panel .inner{padding:26px 26px 40px;}
   #p-handle{display:none; touch-action:none;}
-  #p-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
+  #p-top{display:flex; align-items:flex-start; gap:10px;}
+  #p-close{flex:none; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
-  #p-head{display:flex; align-items:center; gap:10px; margin-bottom:4px;}
-  #p-word{font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);}
+  #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:10px; margin-bottom:4px;}
+  #p-word{min-width:0; overflow-wrap:anywhere; font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);}
   #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
     background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
     color:var(--blue); transition:.15s;}
@@ -94,6 +95,13 @@
   body.dark #p-know{background:#22262B; border-color:#343A41; color:var(--ink);}
   body.dark #p-know:hover{border-color:var(--blue); background:#22333C;}
 
+  @media (min-width:761px){
+    #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 9px 26px;
+      background:#fff; border-bottom:1px solid rgba(229,235,231,.72);}
+    body.dark #p-top{background:#1F2327; border-bottom-color:#2A2E33;}
+    body.reader-original #p-top{margin:-21px -20px 0; padding:18px 16px 8px 20px;}
+  }
+
   /* mobile: bottom sheet */
   @media (max-width:760px){
     #v-read.on{display:block;}
@@ -109,6 +117,7 @@
       justify-content:center; cursor:grab; width:100%; margin:0;}
     #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:#C8D7D6;}
     #p-close{display:none;}
+    #p-top{position:static; margin:0; padding:0; background:transparent; border:0;}
     #panel .inner{padding:16px 22px 34px;}
     #hero{flex-direction:column; gap:22px;}
     .page{padding:26px 22px;}

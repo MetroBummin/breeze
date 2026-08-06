@@ -322,6 +322,7 @@ async function renderOriginalPdfPage(session,pageNumber){
       pageElement.appendChild(layer);
       const task=pdfjsLib.renderTextLayer({textContentSource:textContent,container:layer,viewport,textDivs:[]});
       if(task&&task.promise) await task.promise;
+      renderPdfSavedWordMarkers(pageElement,wordBoxes);
     }else pageElement.classList.add('scan-page');
   })().catch(error=>console.warn('PDF page render skipped:',error));
   session.rendering.set(pageNumber,job);
@@ -344,25 +345,6 @@ function pdfTextTransform(viewport,item){
     a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
 }
 
-function pdfWordBounds(origin,direction,normal,offset,width,ascent,height){
-  const baseX=origin.x+direction.x*offset;
-  const baseY=origin.y+direction.y*offset;
-  const topX=baseX+normal.x*ascent;
-  const topY=baseY+normal.y*ascent;
-  const endX=topX+direction.x*width;
-  const endY=topY+direction.y*width;
-  const bottomX=topX-normal.x*height;
-  const bottomY=topY-normal.y*height;
-  const farX=endX-normal.x*height;
-  const farY=endY-normal.y*height;
-  return {
-    left:Math.min(topX,endX,bottomX,farX),
-    top:Math.min(topY,endY,bottomY,farY),
-    right:Math.max(topX,endX,bottomX,farX),
-    bottom:Math.max(topY,endY,bottomY,farY),
-  };
-}
-
 function buildPdfWordBoxes(textContent,viewport){
   const boxes=[];
   const canvas=document.createElement('canvas');
@@ -378,8 +360,7 @@ function buildPdfWordBoxes(textContent,viewport){
     const normal={x:Math.sin(angle),y:-Math.cos(angle)};
     const fontHeight=Math.max(1,Math.hypot(tx[2],tx[3]));
     const style=(textContent.styles||{})[item.fontName]||{};
-    const ascent=style.ascent ? style.ascent*fontHeight
-      : style.descent ? (1+style.descent)*fontHeight : fontHeight*.8;
+    const ascent=pdfFontAscentRatio(style)*fontHeight;
     const itemWidth=Math.max(1,Math.abs((Number(item.width)||0)*viewport.scale));
     if(context) context.font=`${fontHeight}px ${style.fontFamily||'sans-serif'}`;
     const measured=context ? context.measureText(value).width : value.length;
@@ -410,6 +391,69 @@ function buildPdfWordBoxes(textContent,viewport){
   return boxes;
 }
 
+function makePdfWordMarker(page,box,className,status){
+  const marker=document.createElement('span');
+  marker.className=`breeze-original-word ${className}${status ? ` s${status}` : ''}`;
+  marker.textContent=box.word;
+  marker.dataset.w=keyOf(box.word);
+  marker.dataset.example=box.example||'';
+  marker.setAttribute('aria-hidden','true');
+  marker.style.cssText=`left:${box.x*100}%;top:${box.y*100}%;width:${box.w*100}%;height:${box.h*100}%`;
+  page.appendChild(marker);
+  return marker;
+}
+
+function renderPdfSavedWordMarkers(page,boxes){
+  if(!page) return;
+  page.querySelectorAll('.original-saved-marker').forEach(marker=>marker.remove());
+  (boxes||[]).forEach(box=>{
+    const saved=words[keyOf(box.word)];
+    if(saved) makePdfWordMarker(page,box,'original-saved-marker',saved.status);
+  });
+}
+
+function renderEpubSavedWordHighlights(doc){
+  const view=doc&&doc.defaultView;
+  if(!doc || !view || !view.CSS || !view.CSS.highlights || !view.Highlight) return;
+  ['breeze-saved-1','breeze-saved-2','breeze-saved-3'].forEach(name=>view.CSS.highlights.delete(name));
+  const ranges=[[],[],[]];
+  const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
+    const parent=node.parentElement;
+    if(!parent || !node.data || !/[A-Za-z]/.test(node.data)
+        || parent.closest('script,style,noscript,textarea,.breeze-original-word')) return NodeFilter.FILTER_REJECT;
+    return NodeFilter.FILTER_ACCEPT;
+  }});
+  const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+  let node;
+  while((node=walker.nextNode())){
+    pattern.lastIndex=0;
+    let match;
+    while((match=pattern.exec(node.data))){
+      const saved=words[keyOf(match[0])];
+      if(!saved) continue;
+      const range=doc.createRange();
+      range.setStart(node,match.index); range.setEnd(node,match.index+match[0].length);
+      ranges[Math.max(0,Math.min(2,(saved.status||1)-1))].push(range);
+    }
+  }
+  ranges.forEach((items,index)=>{
+    if(items.length) view.CSS.highlights.set(`breeze-saved-${index+1}`,new view.Highlight(...items));
+  });
+}
+
+function refreshOriginalSavedWords(){
+  if(!originalSession) return;
+  if(originalSession.kind==='pdf'){
+    originalSession.pages.forEach((page,index)=>{
+      if(page.dataset.wordCount) renderPdfSavedWordMarkers(page,originalSession.wordBoxes.get(index+1));
+    });
+    return;
+  }
+  (originalSession.frames||[]).forEach(frame=>{
+    try{ if(frame&&frame.contentDocument) renderEpubSavedWordHighlights(frame.contentDocument); }catch(e){}
+  });
+}
+
 function pdfWordAtPoint(page,clientX,clientY){
   if(!originalSession || originalSession.kind!=='pdf' || !page) return null;
   const rect=page.getBoundingClientRect();
@@ -431,16 +475,8 @@ function pdfWordAtPoint(page,clientX,clientY){
 function openPdfWord(page,box){
   if(!page || !box) return;
   clearOriginalSelectionMarkers();
-  const marker=document.createElement('span');
-  marker.className='breeze-original-word original-selection-marker';
-  marker.textContent=box.word;
   const key=keyOf(box.word);
-  marker.dataset.w=key;
-  marker.dataset.example=box.example||'';
-  marker.setAttribute('aria-hidden','true');
-  if(words[key]) marker.classList.add('s'+words[key].status);
-  marker.style.cssText=`left:${box.x*100}%;top:${box.y*100}%;width:${box.w*100}%;height:${box.h*100}%`;
-  page.appendChild(marker);
+  const marker=makePdfWordMarker(page,box,'original-selection-marker',words[key]&&words[key].status);
   if(words[key]) selectWord(key,marker);
   else addWord(key,marker);
 }
@@ -557,7 +593,10 @@ async function sanitiseEpubChapter(archive,chapter,resources){
   const safety=`html,body{max-width:100%;min-height:1px}img,svg,video{max-width:100%;height:auto}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
-    .breeze-original-word.s3{background:rgba(255,140,140,.42)}::selection{background:rgba(37,137,190,.3)}`;
+    .breeze-original-word.s3{background:rgba(255,140,140,.42)}::selection{background:rgba(37,137,190,.3)}
+    ::highlight(breeze-saved-1){background:rgba(255,226,138,.28)}
+    ::highlight(breeze-saved-2){background:rgba(255,171,120,.25)}
+    ::highlight(breeze-saved-3){background:rgba(255,140,140,.27)}`;
   const style=doc.createElement('style'); style.textContent=cssParts.join('\n')+'\n'+safety; doc.head.appendChild(style);
   return '<!doctype html>'+doc.documentElement.outerHTML;
 }
@@ -597,6 +636,7 @@ async function openOriginalEpub(book,record,token){
         if(frameDoc) frameDoc.addEventListener('pointerup',()=>{
           setTimeout(()=>openOriginalSelection(frameDoc),0);
         });
+        if(frameDoc) renderEpubSavedWordHighlights(frameDoc);
         resolve(frame);
       };
     });

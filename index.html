@@ -38,6 +38,7 @@
   <script defer src="scripts/library/library.js"></script>
   <script defer src="scripts/importers/importers.js"></script>
   <script defer src="scripts/dictionary/dictionary.js"></script>
+  <script defer src="scripts/reader/pdf-word-geometry.js"></script>
   <script defer src="scripts/reader/original-viewer.js"></script>
   <script defer src="scripts/reader/reader.js"></script>
   <script defer src="scripts/ui/preferences.js"></script>
@@ -120,14 +121,16 @@
   <div id="panel">
     <div id="p-handle"></div>
     <div class="inner">
-      <button id="p-close" onclick="closePanel()">✕</button>
-      <div id="p-head">
-        <div id="p-word"></div>
-        <button id="p-speak" title="발음 듣기" onclick="speakWord()">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
-          </svg>
-        </button>
+      <div id="p-top">
+        <div id="p-head">
+          <div id="p-word"></div>
+          <button id="p-speak" title="발음 듣기" onclick="speakWord()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+            </svg>
+          </button>
+        </div>
+        <button id="p-close" title="단어창 닫기" aria-label="단어창 닫기" onclick="closePanel()">✕</button>
       </div>
       <div id="p-phon"></div>
       <div id="p-clicked"></div>

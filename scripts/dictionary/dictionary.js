@@ -178,6 +178,7 @@ function paintWord(k){
     s.classList.remove('s1','s2','s3');
     if(w) s.classList.add('s'+w.status);
   });
+  if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
 }
 function setStatus(k, st){
   if(!words[k]) return;

@@ -16,6 +16,7 @@ const required = [
   'scripts/importers/importers.js',
   'scripts/dictionary/dictionary.js',
   'scripts/reader/formatting.js',
+  'scripts/reader/pdf-word-geometry.js',
   'scripts/reader/original-viewer.js',
   'scripts/reader/reader.js',
   'scripts/sync/sync.js',
@@ -193,6 +194,17 @@ assert.match(originalViewer,/box\.x\*100/,
   'PDF word highlights are not stored in resize-safe page coordinates');
 assert.doesNotMatch(originalViewer,/range\.deleteContents\(\)/,
   'Original PDF text layer is still being mutated');
+assert.match(originalViewer,/renderPdfSavedWordMarkers/,
+  'Saved vocabulary is not painted in original PDF mode');
+assert.match(originalViewer,/CSS\.highlights/,
+  'Saved vocabulary is not painted in original EPUB mode');
+const geometryContext = {};
+new Script(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'))
+  .runInNewContext(geometryContext);
+assert.equal(geometryContext.pdfFontAscentRatio({ascent:.82,descent:-.18}),.82,
+  'Normal PDF font metrics were unexpectedly changed');
+assert.ok(Math.abs(geometryContext.pdfFontAscentRatio({ascent:1.19628906,descent:-.43945313})-.7315)<.002,
+  'Exceptional Charis SIL metrics were not normalized for Holes');
 const readerSource = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
 assert.match(readerSource,/suspendReaderScrollSave/,
   'Programmatic mode-switch scrolling can still overwrite progress');
