@@ -192,7 +192,8 @@
   .pdf-page-loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:#AAA; font:13px var(--ui); background:#FFF;}
   .pdf-text-layer{position:absolute; inset:0; overflow:hidden; line-height:1; text-size-adjust:none;
-    -webkit-text-size-adjust:none; forced-color-adjust:none; transform-origin:0 0; z-index:2;}
+    -webkit-text-size-adjust:none; forced-color-adjust:none; transform-origin:0 0; z-index:2;
+    pointer-events:none; user-select:none; -webkit-user-select:none;}
   .pdf-text-layer span,.pdf-text-layer br{position:absolute; color:transparent; white-space:pre;
     cursor:text; transform-origin:0 0;}
   .pdf-text-layer ::selection{background:rgba(37,137,190,.34);}
