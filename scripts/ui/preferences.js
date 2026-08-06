@@ -36,7 +36,9 @@ function applyDark(){
 }
 function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
 applyDark();
-const LS_ROLLING_FORMAT = 'breeze.rolling-format';
+/* v3는 "현재 8쪽"이 아니라 전권에서 뽑은 후보를 보내므로 예전 동의를
+   재사용하지 않습니다. 전송 범위가 바뀌면 반드시 새로 설명하고 묻습니다. */
+const LS_ROLLING_FORMAT = 'breeze.book-format-v3';
 let rollingFormattingEnabled = load(LS_ROLLING_FORMAT, null);
 function applyRollingFormattingPreference(){
   const toggle = document.getElementById('aa-rolling');
@@ -45,7 +47,7 @@ function applyRollingFormattingPreference(){
 function requestRollingFormattingConsent(){
   if(rollingFormattingEnabled !== null) return rollingFormattingEnabled;
   rollingFormattingEnabled = confirm(
-    'AI 조판을 켤까요?\n\n읽고 있는 위치부터 앞으로 약 8쪽의 원문을 Supabase의 AI 함수로 보내고, 제목·인용문·줄바꿈 위치만 받아옵니다. 글 내용은 AI가 고치지 않습니다.'
+    'AI 책 조판을 켤까요?\n\n기기에서 책 전체의 디자인을 먼저 분석한 뒤, 제목·목차·인용문처럼 구조가 의심되는 일부만 AI 함수로 보냅니다. 일반 본문과 원문 전체는 보내지 않으며, AI는 글 내용을 고치지 않습니다. 완성된 조판은 다음에 책을 열 때 한 번에 적용됩니다.'
   );
   save(LS_ROLLING_FORMAT, rollingFormattingEnabled);
   applyRollingFormattingPreference();
@@ -60,8 +62,7 @@ function toggleRollingFormatting(){
     applyRollingFormattingPreference();
   }
   if(rollingFormattingEnabled && curBook){
-    const anchor = captureAnchor();
-    scheduleRollingFormatting(curBook, anchor ? anchor.pi : 0);
+    scheduleRollingFormatting(curBook);
   }
 }
 applyRollingFormattingPreference();
