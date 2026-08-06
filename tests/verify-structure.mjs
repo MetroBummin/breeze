@@ -90,6 +90,20 @@ assert.equal(identityContext.serverRowMatchesBook(
 assert.equal(identityContext.serverRowIsActive(
   { book_id:'deleted-copy', meta:{ title:'Same book', fingerprint:joined, deleted:true } },
 ), false, 'Deleted tombstone was treated as an active server book');
+const reimportedBook = { id:'same-id', addedAt:100, localSourceAt:500, paras:['Hello world.'] };
+assert.equal(identityContext.serverTombstoneShouldDelete(
+  { book_id:'same-id', meta:{ deleted:true, deletedAt:400 } },
+  reimportedBook,
+), false, 'A stale tombstone deletes a later local re-import');
+assert.equal(identityContext.serverTombstoneShouldDelete(
+  { book_id:'same-id', meta:{ deleted:true, deletedAt:600 } },
+  reimportedBook,
+), true, 'A genuinely newer remote deletion no longer propagates');
+reimportedBook.detachedServerId='same-id';
+assert.equal(identityContext.serverTombstoneShouldDelete(
+  { book_id:'same-id', meta:{ deleted:true, deletedAt:700 } },
+  reimportedBook,
+), false, 'A deliberate server-only deletion erased its local copy');
 
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
 assert.match(
@@ -101,12 +115,24 @@ assert.doesNotMatch(syncSource, /aiFormatting|uploadBookFormatting|functions\/v1
   'Removed AI typography is still part of book sync');
 assert.doesNotMatch(syncSource, /originalGet\(|\.blob\b/,
   'Raw original files leaked into server sync');
+assert.match(syncSource,/flushPendingBookDeletes/,
+  'Failed server book deletions are not retried');
+assert.match(syncSource,/if\(curBook && curBook\.id===lc\.id\)/,
+  'A remote tombstone can still erase the book currently being read');
+assert.ok(
+  syncSource.indexOf("sb.from('books').upsert") < syncSource.indexOf("sb.storage.from('books').remove"),
+  'Book payload is removed before its tombstone becomes authoritative',
+);
+assert.match(syncSource,/syncAgain=true/,
+  'A sync request arriving during another sync is still dropped');
 
 const storageSource = readFileSync(resolve(root, 'scripts/core/storage.js'), 'utf8');
 assert.match(storageSource, /indexedDB\.open\('breeze-img',3\)/,
   'IndexedDB was not upgraded for local originals');
 assert.match(storageSource, /createObjectStore\('originals'\)/,
   'Dedicated local original store is missing');
+assert.match(storageSource,/originalGetForBook/,
+  'Original files cannot recover across a legacy book-ID change');
 
 // Adjacent large blocks stay separate in the safe local layout. A running
 // header, PART label, and chapter title must never become one giant heading.
@@ -159,6 +185,12 @@ assert.match(originalViewer,/sourceProgressForBook/,
   'Logical original progress calculation is missing');
 assert.match(originalViewer,/openOriginalSelection/,
   'Deliberate original-text selection is missing');
+assert.match(originalViewer,/buildPdfWordBoxes/,
+  'PDF clicks still depend on browser selection rectangles');
+assert.match(originalViewer,/pdfWordAtPoint/,
+  'PDF word-coordinate hit testing is missing');
+assert.match(originalViewer,/box\.x\*100/,
+  'PDF word highlights are not stored in resize-safe page coordinates');
 assert.doesNotMatch(originalViewer,/range\.deleteContents\(\)/,
   'Original PDF text layer is still being mutated');
 const readerSource = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
