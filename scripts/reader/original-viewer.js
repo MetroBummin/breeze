@@ -8,6 +8,7 @@ let originalLoadToken = 0;
 let originalOpenJob = null;
 let readerModeChangeToken = 0;
 let originalSelectionNoticeAt = 0;
+let originalPdfPointer = null;
 
 function sourceAnchorForParagraph(book, paragraphIndex){
   const map = book && book.sourceMap;
@@ -159,7 +160,7 @@ async function switchReaderMode(mode,options){
     return;
   }
 
-  const record = await originalGet(curBook.id);
+  const record = await originalGetForBook(curBook);
   if(!record){
     showOriginalReconnect(curBook);
     updatePfill();
@@ -274,8 +275,11 @@ async function openOriginalPdf(book,record,token){
     page.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
     content.appendChild(page); pages.push(page);
   }
-  const session={kind:'pdf',bookId:book.id,hash:record.hash,pdf,pages,rendering:new Map(),urls:[]};
+  const session={kind:'pdf',bookId:book.id,hash:record.hash,pdf,pages,
+                 rendering:new Map(),wordBoxes:new Map(),urls:[]};
   originalSession=session;
+  const hint=document.getElementById('original-selection-hint');
+  if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,+entry.target.dataset.page); });
   },{rootMargin:'1300px 0px'});
@@ -307,9 +311,14 @@ async function renderOriginalPdfPage(session,pageNumber){
     await page.render({canvasContext:context,viewport,transform}).promise;
     const textContent=await page.getTextContent();
     if(textContent.items && textContent.items.length){
+      const wordBoxes=buildPdfWordBoxes(textContent,viewport);
+      session.wordBoxes.set(pageNumber,wordBoxes);
+      pageElement.dataset.wordCount=String(wordBoxes.length);
       const layer=document.createElement('div');
       layer.className='pdf-text-layer';
       layer.style.width=viewport.width+'px'; layer.style.height=viewport.height+'px';
+      layer.style.setProperty('--scale-factor',String(viewport.scale));
+      layer.setAttribute('aria-hidden','true');
       pageElement.appendChild(layer);
       const task=pdfjsLib.renderTextLayer({textContentSource:textContent,container:layer,viewport,textDivs:[]});
       if(task&&task.promise) await task.promise;
@@ -318,6 +327,122 @@ async function renderOriginalPdfPage(session,pageNumber){
   session.rendering.set(pageNumber,job);
   await job;
   return job;
+}
+
+/* PDF.js의 글자 레이어는 눈에 보이는 캔버스와 별개의 좌표계입니다.
+   패널이 열려 페이지 폭이 바뀌면 브라우저 selection 사각형은 쉽게 밀립니다.
+   그래서 PDF 자체 좌표에서 단어 상자를 한 번 만들고 페이지 크기의 비율로
+   저장합니다. 하이라이트와 클릭 판정이 같은 상자를 사용하므로 서로 어긋나지
+   않으며, 화면 폭이 바뀌어도 다시 계산할 필요가 없습니다. */
+function pdfTextTransform(viewport,item){
+  if(pdfjsLib.Util && pdfjsLib.Util.transform){
+    return pdfjsLib.Util.transform(viewport.transform,item.transform);
+  }
+  const a=viewport.transform, b=item.transform;
+  return [a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],
+    a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],
+    a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
+}
+
+function pdfWordBounds(origin,direction,normal,offset,width,ascent,height){
+  const baseX=origin.x+direction.x*offset;
+  const baseY=origin.y+direction.y*offset;
+  const topX=baseX+normal.x*ascent;
+  const topY=baseY+normal.y*ascent;
+  const endX=topX+direction.x*width;
+  const endY=topY+direction.y*width;
+  const bottomX=topX-normal.x*height;
+  const bottomY=topY-normal.y*height;
+  const farX=endX-normal.x*height;
+  const farY=endY-normal.y*height;
+  return {
+    left:Math.min(topX,endX,bottomX,farX),
+    top:Math.min(topY,endY,bottomY,farY),
+    right:Math.max(topX,endX,bottomX,farX),
+    bottom:Math.max(topY,endY,bottomY,farY),
+  };
+}
+
+function buildPdfWordBoxes(textContent,viewport){
+  const boxes=[];
+  const canvas=document.createElement('canvas');
+  const context=canvas.getContext('2d');
+  const pageText=(textContent.items||[]).map(item=>item.str||'').join(' ');
+  const wordPattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+  (textContent.items||[]).forEach(item=>{
+    const value=String(item.str||'');
+    if(!value || !/[A-Za-z]/.test(value)) return;
+    const tx=pdfTextTransform(viewport,item);
+    const angle=Math.atan2(tx[1],tx[0]);
+    const direction={x:Math.cos(angle),y:Math.sin(angle)};
+    const normal={x:Math.sin(angle),y:-Math.cos(angle)};
+    const fontHeight=Math.max(1,Math.hypot(tx[2],tx[3]));
+    const style=(textContent.styles||{})[item.fontName]||{};
+    const ascent=style.ascent ? style.ascent*fontHeight
+      : style.descent ? (1+style.descent)*fontHeight : fontHeight*.8;
+    const itemWidth=Math.max(1,Math.abs((Number(item.width)||0)*viewport.scale));
+    if(context) context.font=`${fontHeight}px ${style.fontFamily||'sans-serif'}`;
+    const measured=context ? context.measureText(value).width : value.length;
+    const unit=measured>0 ? itemWidth/measured : itemWidth/Math.max(1,value.length);
+    wordPattern.lastIndex=0;
+    let match;
+    while((match=wordPattern.exec(value))){
+      const before=value.slice(0,match.index);
+      const through=value.slice(0,match.index+match[0].length);
+      const startMeasure=context ? context.measureText(before).width : before.length;
+      const endMeasure=context ? context.measureText(through).width : through.length;
+      const bounds=pdfWordBounds({x:tx[4],y:tx[5]},direction,normal,
+        startMeasure*unit,Math.max(1,(endMeasure-startMeasure)*unit),ascent,fontHeight);
+      const left=Math.max(0,Math.min(viewport.width,bounds.left));
+      const top=Math.max(0,Math.min(viewport.height,bounds.top));
+      const right=Math.max(left,Math.min(viewport.width,bounds.right));
+      const bottom=Math.max(top,Math.min(viewport.height,bounds.bottom));
+      boxes.push({
+        word:match[0],
+        x:left/viewport.width,
+        y:top/viewport.height,
+        w:Math.max(1,right-left)/viewport.width,
+        h:Math.max(1,bottom-top)/viewport.height,
+        example:originalSentence(pageText,match[0]),
+      });
+    }
+  });
+  return boxes;
+}
+
+function pdfWordAtPoint(page,clientX,clientY){
+  if(!originalSession || originalSession.kind!=='pdf' || !page) return null;
+  const rect=page.getBoundingClientRect();
+  if(!rect.width || !rect.height) return null;
+  const boxes=originalSession.wordBoxes.get(+page.dataset.page)||[];
+  const x=(clientX-rect.left)/rect.width, y=(clientY-rect.top)/rect.height;
+  const padX=4/rect.width, padY=3/rect.height;
+  let best=null, bestScore=Infinity;
+  boxes.forEach(box=>{
+    if(x<box.x-padX || x>box.x+box.w+padX || y<box.y-padY || y>box.y+box.h+padY) return;
+    const dx=(x-(box.x+box.w/2))*rect.width;
+    const dy=(y-(box.y+box.h/2))*rect.height;
+    const score=dx*dx+dy*dy;
+    if(score<bestScore){ best=box; bestScore=score; }
+  });
+  return best;
+}
+
+function openPdfWord(page,box){
+  if(!page || !box) return;
+  clearOriginalSelectionMarkers();
+  const marker=document.createElement('span');
+  marker.className='breeze-original-word original-selection-marker';
+  marker.textContent=box.word;
+  const key=keyOf(box.word);
+  marker.dataset.w=key;
+  marker.dataset.example=box.example||'';
+  marker.setAttribute('aria-hidden','true');
+  if(words[key]) marker.classList.add('s'+words[key].status);
+  marker.style.cssText=`left:${box.x*100}%;top:${box.y*100}%;width:${box.w*100}%;height:${box.h*100}%`;
+  page.appendChild(marker);
+  if(words[key]) selectWord(key,marker);
+  else addWord(key,marker);
 }
 
 function epubMime(path){
@@ -444,6 +569,8 @@ async function openOriginalEpub(book,record,token){
   content.innerHTML=''; content.className='original-content epub-original';
   const session={kind:'epub',bookId:book.id,hash:record.hash,archive,urls:[],frames:[],frameReady:[],resizeObservers:[]};
   originalSession=session;
+  const hint=document.getElementById('original-selection-hint');
+  if(hint) hint.textContent='단어는 더블클릭하거나 드래그해서 선택해요';
   const resources=await buildEpubResources(archive,session);
   for(let index=0; index<archive.spine.length; index++){
     if(token!==originalLoadToken) return;
@@ -592,6 +719,19 @@ document.getElementById('original-content').addEventListener('click',event=>{
   const key=marker.dataset.w||keyOf(marker.textContent);
   if(words[key]) selectWord(key,marker);
 });
-document.getElementById('original-content').addEventListener('pointerup',()=>{
-  if(originalSession && originalSession.kind==='pdf') setTimeout(()=>openOriginalSelection(document),0);
+document.getElementById('original-content').addEventListener('pointerdown',event=>{
+  if(!originalSession || originalSession.kind!=='pdf' || event.button!==0) return;
+  originalPdfPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
+});
+document.getElementById('original-content').addEventListener('pointercancel',()=>{
+  originalPdfPointer=null;
+});
+document.getElementById('original-content').addEventListener('pointerup',event=>{
+  if(!originalSession || originalSession.kind!=='pdf') return;
+  const start=originalPdfPointer;
+  originalPdfPointer=null;
+  if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
+  const page=event.target.closest&&event.target.closest('.pdf-source-page');
+  const box=pdfWordAtPoint(page,event.clientX,event.clientY);
+  if(box) openPdfWord(page,box);
 });
