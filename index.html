@@ -35,10 +35,10 @@
   <script defer src="scripts/core/book-identity.js"></script>
   <script defer src="scripts/core/state.js"></script>
   <script defer src="scripts/reader/formatting.js"></script>
-  <script defer src="scripts/reader/rolling-formatting.js"></script>
   <script defer src="scripts/library/library.js"></script>
   <script defer src="scripts/importers/importers.js"></script>
   <script defer src="scripts/dictionary/dictionary.js"></script>
+  <script defer src="scripts/reader/original-viewer.js"></script>
   <script defer src="scripts/reader/reader.js"></script>
   <script defer src="scripts/ui/preferences.js"></script>
   <script defer src="scripts/sync/sync.js"></script>
@@ -90,7 +90,19 @@
 <!-- ================= READER ================= -->
 <div class="view" id="v-read">
   <div id="readmain">
-    <div id="rbar"><div id="ptrack"><div id="pfill"></div></div></div>
+    <div id="rbar">
+      <div id="ptrack"><div id="pfill"></div></div>
+      <div id="reader-mode-switch" role="group" aria-label="읽기 화면 전환">
+        <button type="button" data-mode="original" onclick="switchReaderMode('original')" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3 3V20.5H6z"/><path d="M15 3.5v4h3M9 11h6M9 14h6M9 17h4"/></svg>
+          <span>원본</span>
+        </button>
+        <button type="button" data-mode="text" onclick="switchReaderMode('text')" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 10h14M5 14h10M5 18h12"/></svg>
+          <span>글자</span>
+        </button>
+      </div>
+    </div>
     <div id="readwrap">
       <div id="rtitle"></div>
       <div id="rhint">
@@ -98,6 +110,9 @@
         Tap a word whenever you need it. — 모르는 단어를 누르면 뜻이 뜨고 단어장에 저장돼요.
       </div>
       <div id="rtext"></div>
+    </div>
+    <div id="originalwrap" hidden>
+      <div id="original-content" class="original-content"></div>
     </div>
   </div>
   <div id="sheetbg" onclick="closePanel()"></div>
@@ -184,10 +199,6 @@
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
-  <div class="aa-row">
-    <span class="aa-label">AI 책 조판<small>후보만 분석 · 완성본 한 번 적용</small></span>
-    <button id="aa-rolling" class="aa-toggle" onclick="toggleRollingFormatting()" aria-label="AI 조판"><i></i></button>
-  </div>
 </div>
 <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
 <button id="focusbtn" title="집중 모드" onclick="toggleFocus()">
@@ -202,6 +213,7 @@
   <span id="bootfail-msg" style="opacity:.85"></span>
 </div>
 <div id="drop-overlay">여기에 놓으면 책이 추가됩니다</div>
+<input type="file" id="original-fileinput" accept=".pdf,.epub" hidden>
 </div>
 
 </body>
