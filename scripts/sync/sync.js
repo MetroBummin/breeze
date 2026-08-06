@@ -176,7 +176,8 @@ async function applyBookTombstones(rows){
     if(lc.detachedServerId === r.book_id) continue;
     books = books.filter(b => b.id !== lc.id);
     await bookDel(lc.id);
-    imgPurge(lc.id+'|');
+    await originalDel(lc.id);
+    await imgPurge(lc.id+'|');
     delete positions[lc.id];
     removed++;
   }
@@ -240,12 +241,12 @@ function renderBookList(){
   });
 }
 const bookPath = id => `${sbUser.id}/${id}.json`;
-const bookFormatPath = id => `${sbUser.id}/${id}.format.json`;
+const legacyBookFormatPath = id => `${sbUser.id}/${id}.format.json`;
 async function bookDeleteServer(id, title){
   if(!confirm(`서버에서 "${title}"을(를) 지울까요?\n\n이 기기에 있는 책은 그대로 남습니다.`)) return;
   try{
     syncStatus('지우는 중…');
-    const removedFiles = await sb.storage.from('books').remove([bookPath(id), bookFormatPath(id)]);
+    const removedFiles = await sb.storage.from('books').remove([bookPath(id), legacyBookFormatPath(id)]);
     if(removedFiles.error) throw removedFiles.error;
     // Keep a tombstone so other devices learn about the deletion.
     const local = localBookForServerId(id);
@@ -278,14 +279,18 @@ async function bookUpload(id){
   if(twin && !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`)) return;
   try{
     syncStatus('올리는 중…');
-    // 원문과 별도로 저장된 포맷 지도도 함께 올립니다.
+    // 원본 PDF/EPUB Blob은 IndexedDB 전용입니다. 서버에는 재배치한 글자와
+    // 작은 위치 지도만 올라가며 `original`에는 파일 이름/형식만 담깁니다.
     const formatting = b.formatting || b.tidy || null;
     const blob = new Blob([JSON.stringify({
       paras:b.paras,
       fingerprint,
       formatting,
       layoutSignals:b.layoutSignals || null,
-      aiFormatting:b.aiFormatting || null,
+      sourceMap:b.sourceMap || null,
+      original:b.original ? {...b.original,storedAt:undefined} : null,
+      textAvailable:b.textAvailable !== false,
+      readerSchema:4,
     })], {type:'application/json'});
     const up = await sb.storage.from('books').upload(bookPath(id), blob, {upsert:true, contentType:'application/json'});
     if(up.error) throw up.error;
@@ -295,7 +300,6 @@ async function bookUpload(id){
     const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:id, meta}], {onConflict:'user_id,book_id'});
     if(error) throw error;
     if(b.detachedServerId){ delete b.detachedServerId; await bookPut(b); }
-    await uploadBookFormatting(b, id, true);
     syncStatus('올렸어요');
     await refreshBooks();
   }catch(e){ console.error(e); syncStatus('올리기 실패: '+(e.message||e)); }
@@ -312,51 +316,17 @@ async function bookDownload(id){
                    fingerprint:meta.fingerprint || body.fingerprint || '',
                    formatting:body.formatting || body.tidy || null,
                    layoutSignals:body.layoutSignals || null,
-                   aiFormatting:body.aiFormatting || null };
+                   sourceMap:body.sourceMap || null,
+                   original:body.original || null,
+                   textAvailable:body.textAvailable !== false,
+                   readerSchema:4 };
     if(!book.paras.length) throw new Error('본문이 비어 있어요');
     ensureBookFingerprint(book);
-    try{
-      const formatDownload = await sb.storage.from('books').download(bookFormatPath(id));
-      if(!formatDownload.error){
-        const formatBody = JSON.parse(await formatDownload.data.text());
-        if(formatBody && formatBody.aiFormatting) book.aiFormatting = formatBody.aiFormatting;
-      }
-    }catch(e){}
     await bookPut(book);
     books = books.filter(b=>b.id!==id); books.unshift(book);
     syncStatus('받았어요');
     renderHome(); renderBookList();
   }catch(e){ console.error(e); syncStatus('받기 실패: '+(e.message||e)); }
-}
-
-const bookFormattingTimers = new Map();
-async function uploadBookFormatting(book, remoteId, force){
-  if(!sb || !sbUser || !book || !book.aiFormatting) return;
-  const id = remoteId || serverBookIdFor(book);
-  const isOnServer = activeServerBooks().some(row => row.book_id === id && serverRowMatchesBook(row, book));
-  if(!force && !isOnServer && id === book.id) return;
-  const payload = new Blob([JSON.stringify({
-    version:1,
-    fingerprint:ensureBookFingerprint(book),
-    aiFormatting:book.aiFormatting,
-  })], {type:'application/json'});
-  const result = await sb.storage.from('books').upload(bookFormatPath(id), payload, {
-    upsert:true,
-    contentType:'application/json',
-  });
-  if(result.error) throw result.error;
-}
-function queueBookFormattingSync(book){
-  if(!sb || !sbUser || !book) return;
-  const oldTimer = bookFormattingTimers.get(book.id);
-  if(oldTimer) clearTimeout(oldTimer);
-  const timer = setTimeout(()=>{
-    bookFormattingTimers.delete(book.id);
-    uploadBookFormatting(book).catch(error =>
-      console.warn('Book formatting sync skipped:', error && error.message)
-    );
-  }, 1800);
-  bookFormattingTimers.set(book.id, timer);
 }
 
 function queueSync(){
@@ -477,7 +447,6 @@ function attachSupabaseAuth(){
     syncBadge();
     if(sbUser){
       doSync(false);
-      if(curBook){ const anchor = captureAnchor(); scheduleRollingFormatting(curBook, anchor ? anchor.pi : 0); }
       if(document.getElementById('sync-modal').classList.contains('on')) renderSyncModal();
     }
   });
@@ -486,7 +455,6 @@ function attachSupabaseAuth(){
     syncBadge();
     if(sbUser){
       doSync(false);
-      if(curBook){ const anchor = captureAnchor(); scheduleRollingFormatting(curBook, anchor ? anchor.pi : 0); }
     }
   });
 }
