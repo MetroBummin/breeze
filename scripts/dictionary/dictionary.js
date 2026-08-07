@@ -20,7 +20,9 @@ const IRREG = {
 };
 const NO_LEMMA = new Set(['news','always','perhaps','these','those','series','species','during',
   'evening','morning','nothing','something','anything','everything','indeed','hundred','sacred',
-  'hatred','united','ing','analysis','basis','crisis','thesis']);
+  'hatred','united','ing','analysis','basis','crisis','thesis',
+  /* 재귀대명사는 -s를 떼면 "themselve" 같은 없는 낱말이 되어 사전이 빕니다. */
+  'themselves','ourselves','yourselves','myself','yourself','himself','herself','itself','oneself']);
 function lemma(w){
   if(IRREG[w]) return IRREG[w];
   if(w.length<4 || NO_LEMMA.has(w)) return w;

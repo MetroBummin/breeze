@@ -1,0 +1,87 @@
+/* Shorts — 기출 한 문항씩. 릴스처럼 한 화면에 하나, 크롬은 전부 치웁니다.
+   밝은/어두운 모드와 상관없이 늘 차콜입니다. 시험은 시험의 얼굴이 있습니다. */
+
+  #v-shorts{position:fixed; inset:0; z-index:60; background:#101214; display:none;}
+  #v-shorts.on{display:block;}
+
+  /* 상단: 릴스처럼 로고만 가운데. 진행도 바 자리는 타이머가 씁니다. */
+  body.shorts #topbar{background:transparent; border-bottom:0; justify-content:center; z-index:80;}
+  body.shorts #topbar nav{display:none;}
+  body.shorts #logo .mark{color:#F3EFE4;}
+  body.shorts #logo{margin:0 auto; pointer-events:auto;}
+  body.shorts #focusbtn, body.shorts #aafab{display:none;}
+  #shorts-timer{position:fixed; top:0; left:0; height:3px; width:100%; z-index:90;
+    background:var(--blue); transition:background .25s linear; pointer-events:none;}
+  body:not(.shorts) #shorts-timer{display:none;}
+
+  #shorts-feed{height:100dvh; overflow-y:auto; scroll-snap-type:y mandatory;
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch;}
+  .short{height:100dvh; scroll-snap-align:start; scroll-snap-stop:always;
+    display:flex; flex-direction:column; color:#E9E4D8;
+    padding:calc(var(--topbar-h,56px) + 10px) 20px 22px; box-sizing:border-box;}
+  /* 지문이 화면보다 길면 안에서 스크롤됩니다. 아래를 흐리게 해서 잘린 것이
+     아니라 이어진다는 게 보이게 합니다. */
+  .short-body{flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+    max-width:640px; width:100%; margin:0 auto; padding-bottom:8px;
+    -webkit-mask-image:linear-gradient(#000 calc(100% - 22px), transparent);
+    mask-image:linear-gradient(#000 calc(100% - 22px), transparent);}
+  .short-body::-webkit-scrollbar{width:0;}
+
+  .short-meta{display:flex; align-items:baseline; gap:10px; margin-bottom:12px;}
+  .short-n{font:700 26px/1 var(--serif); color:#6FC3E6;}
+  .short-count{font:500 11.5px/1 var(--ui); color:#7C8791; letter-spacing:.06em;}
+  .short-prompt{font:600 14.5px/1.55 var(--ui); color:#BFD6E2; margin-bottom:14px;}
+  .short-passage{font-family:var(--serif); font-size:17px; line-height:1.85; color:#E9E4D8;
+    overflow-wrap:anywhere;}
+  .short-note{margin-top:14px; font:12px/1.6 var(--ui); color:#7C8791;}
+
+  /* 시간이 흐르는 동안에는 단어를 만질 수 없습니다. 실전은 사전이 없으니까요. */
+  .short:not(.revealed) .short-passage{user-select:none; -webkit-user-select:none;}
+  .short:not(.revealed) .short-passage .w{pointer-events:none; background:none!important;}
+  .short.revealed .short-passage .w{cursor:pointer; border-radius:5px; padding:0 1px;}
+  .short.revealed .short-passage .w:hover{background:#2E3237;}
+  .short.revealed .short-passage .w.s1{background:rgba(255,226,138,.30);}
+  .short.revealed .short-passage .w.s2{background:rgba(255,171,120,.32);}
+  .short.revealed .short-passage .w.s3{background:rgba(255,140,140,.34);}
+  .short.revealed .short-passage .w.sel{background:#2A4552; box-shadow:0 0 0 3px #2A4552;}
+
+  .short-foot{flex-shrink:0; max-width:640px; width:100%; margin:0 auto; padding-top:14px;}
+  .short-hint{font:11.5px/1.5 var(--ui); color:#6E7982; text-align:center; margin-bottom:10px;}
+  .short.revealed .short-hint{color:#6FC3E6;}
+  .short.timeout .short-hint{color:#D98A7A;}
+  .short-choices{display:flex; flex-direction:column; gap:7px;}
+  .short-choices button{display:flex; gap:9px; align-items:baseline; width:100%; text-align:left;
+    border:1px solid #2C3238; background:#191C20; color:#D9D4C8; border-radius:13px;
+    padding:11px 14px; font:15px/1.45 var(--ui); cursor:pointer; transition:border-color .15s, background .15s;}
+  .short-choices button b{color:#6FC3E6; font-weight:600; flex-shrink:0;}
+  .short-choices button:hover{border-color:#3C444C;}
+  .short-choices button.chosen{border-color:#2589BE; background:#1B2C35; color:#F3EFE4;}
+  .short-choices.marks{flex-direction:row; justify-content:center; gap:10px;}
+  .short-choices.marks button{width:52px; justify-content:center; font-size:19px; padding:11px 0;}
+
+  /* 표지 카드 — 시험지를 고르고 위로 넘겨 시작합니다. */
+  .short-cover{justify-content:center; align-items:center; text-align:center;}
+  .short-cover-inner{max-width:460px;}
+  .short-kicker{font:600 11px/1 var(--ui); letter-spacing:.18em; color:#6FC3E6; margin-bottom:14px;}
+  .short-cover h1{font-family:var(--serif); font-size:clamp(24px,6vw,34px); line-height:1.3;
+    color:#F3EFE4; margin-bottom:14px; overflow-wrap:anywhere;}
+  .short-sub{font:13.5px/1.75 var(--ui); color:#9AA1A8;}
+  .short-sub b{color:#D9D4C8;}
+  .short-swipe{margin-top:26px; font-size:22px; color:#4E585F; animation:short-nudge 1.9s ease-in-out infinite;}
+  @keyframes short-nudge{0%,100%{transform:translateY(4px); opacity:.5} 50%{transform:translateY(-4px); opacity:1}}
+  .short-others{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:26px;}
+  .short-others button{border:1px solid #2C3238; background:none; color:#9AA1A8; border-radius:20px;
+    padding:7px 14px; font:12px var(--ui); cursor:pointer; max-width:100%; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap;}
+  .short-others button:hover{border-color:#3C444C; color:#D9D4C8;}
+  .short-add{margin-top:24px; border:0; border-radius:22px; padding:11px 22px; background:var(--blue);
+    color:#fff; font:600 14px var(--ui); cursor:pointer;}
+
+  @media (max-width:760px){
+    .short{padding-left:16px; padding-right:16px;}
+    .short-passage{font-size:16.5px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .short-swipe{animation:none;}
+    #shorts-timer{transition:none;}
+  }

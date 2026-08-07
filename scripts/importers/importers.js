@@ -169,12 +169,21 @@ function itemsToLines(items){
     ps.forEach((p,i)=>{
       if(i) gaps.push(Math.max(0, p.x - (ps[i-1].x + ps[i-1].w)));
     });
+    /* 빈칸 문제의 밑줄은 그림이라 글자로 안 뽑히고, 자리만 텅 비어 옵니다.
+       그대로 두면 "just describe the ." 처럼 무엇을 묻는지 사라집니다.
+       낱말 사이 공백은 0.6em 안팎이고 그 자리는 7.8em이었습니다 — 열두 배라
+       헷갈릴 여지가 없습니다. 본문 글자는 건드리지 않고 사본에만 남깁니다. */
+    let blanked = '';
+    let sawBlank = false;
     ps.forEach((p,i)=>{
-      if(i===0){ text = p.s; return; }
+      if(i===0){ text = p.s; blanked = p.s; return; }
       const prev = ps[i-1];
       const gapX = p.x - (prev.x + prev.w);
       const needSpace = gapX > Math.max(0.16*(p.h||10), 0.4) && !/\s$/.test(text) && !/^\s/.test(p.s);
       text += (needSpace ? ' ' : '') + p.s;
+      const isBlank = gapX > (p.h || 10) * 2.5;
+      if(isBlank) sawBlank = true;
+      blanked += (isBlank ? ' ______ ' : (needSpace ? ' ' : '')) + p.s;
     });
     /* 넓은 자간으로 찍힌 제목은 PDF 추출기가 "P A R T  O N E"처럼
        글자 사이를 실제 공백으로 오해합니다. 원문 추출값은 그대로 두고,
@@ -212,7 +221,9 @@ function itemsToLines(items){
       if(/bold|black|heavy|semib/i.test(p.f||'')) bw+=n;
       if(/italic|oblique/i.test(p.f||'')) iw+=n;
     });
-    return { y:r.y, h:r.h, text, display, drop:!!r.drop, bold: tw>0 && bw/tw > 0.6,
+    return { y:r.y, h:r.h, text, display,
+             blank: sawBlank ? blanked.replace(/\s+/g,' ').trim() : '',
+             drop:!!r.drop, bold: tw>0 && bw/tw > 0.6,
              italic:tw>0 && iw/tw > 0.6,
              left: r.drop ? Math.min(r.dropX, ps.length?ps[0].x:r.dropX) : ps[0].x,
              right: ps.length ? ps[ps.length-1].x + (ps[ps.length-1].w||0) : r.dropX };
@@ -469,10 +480,17 @@ async function parsePDF(f){
        단 경계는 쪽 경계와 같은 규칙으로 문단이 끊깁니다. */
     for(const column of pdfPageColumns(content.items, width)){
       const lines = itemsToLines(column);
-      if(lines.length) pages.push({ n:i, h, lines });
+      if(!lines.length) continue;
+      /* 시험지 문항 분리기가 같은 줄을 다시 씁니다. 문항 번호 줄은 본문보다
+         왼쪽으로 내어 조판되므로 내어쓰기 폭과 쪽 안 세로 위치를 남깁니다. */
+      const lefts = lines.map(line => line.left).sort((a, b) => a - b);
+      const bodyLeft = lefts[Math.floor(lefts.length / 2)];
+      lines.forEach(line => { line.outdent = bodyLeft - line.left; line.rel = line.y / h; });
+      pages.push({ n:i, h, lines });
     }
   }
   const paragraphs = assembleParagraphs(pages);
+  paragraphs.sheets = pages;          // 시험지 분리기가 소비합니다
   try{ await pdf.destroy(); }catch(e){}
   return paragraphs;
 }

@@ -7,6 +7,19 @@ const keyOf = raw => {
 function looksHeading(p){
   return p.length<70 && !/[.!?:;,]$/.test(p) && p.split(' ').length<=10 && /^[A-Z0-9“"]/.test(p);
 }
+/* 글자를 단어 단위로 감쌉니다. 글자 화면과 쇼츠가 같은 함수를 씁니다. */
+function wordSpans(text){
+  let html = '', match, last = 0;
+  WORD_RE.lastIndex = 0;
+  while((match = WORD_RE.exec(text))){
+    html += esc(text.slice(last, match.index));
+    const key = keyOf(match[0]);
+    const status = words[key] ? ' s'+words[key].status : '';
+    html += `<span class="w${status}" data-w="${key}">${esc(match[0])}</span>`;
+    last = match.index + match[0].length;
+  }
+  return html + esc(text.slice(last));
+}
 /* Render source text using formatting metadata without changing the source. */
 function renderBookBody(b){
   // `tidy` is read-only compatibility for books saved by the previous version.
@@ -71,18 +84,7 @@ function renderBookBody(b){
     if(bl.r === 'toc') el.classList.add('toc-entry');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
-    let html='', m, last=0;
-    WORD_RE.lastIndex=0;
-    const displayText = bl.v || bl.t;
-    while((m=WORD_RE.exec(displayText))){
-      html += esc(displayText.slice(last, m.index));
-      const k = keyOf(m[0]);
-      const st = words[k] ? ' s'+words[k].status : '';
-      html += `<span class="w${st}" data-w="${k}">${esc(m[0])}</span>`;
-      last = m.index + m[0].length;
-    }
-    html += esc(displayText.slice(last));
-    el.innerHTML = html;
+    el.innerHTML = wordSpans(bl.v || bl.t);
     host.appendChild(el);
     pageChars += bl.t.length;
   });

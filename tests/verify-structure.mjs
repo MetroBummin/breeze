@@ -221,6 +221,18 @@ assert.equal(columns.length, 2, 'A two-column page was not split at its gutter')
 assert.ok(columns[0].every(i => i.transform[4] < 300) && columns[1].every(i => i.transform[4] >= 300),
   'The column split put fragments on the wrong side of the gutter');
 
+/* 빈칸 문제의 밑줄은 그림이라 글자로 안 뽑히고 자리만 비어 옵니다. 낱말
+   사이는 0.6em, 그 자리는 7.8em이었습니다 — 열두 배라 헷갈리지 않습니다. */
+const blankLine = importerContext.itemsToLines([
+  item('describe', 100, 700, 45), item('the', 150, 700, 18), item('.', 250, 700, 4),
+])[0];
+assert.equal(blankLine.text, 'describe the .', 'The plain line text changed');
+assert.equal(blankLine.blank, 'describe the ______ .', 'A blank-fill gap was not made visible');
+
+const ordinaryLine = importerContext.itemsToLines([
+  item('one', 100, 700, 18), item('two', 124, 700, 18), item('three', 148, 700, 26),
+])[0];
+assert.equal(ordinaryLine.blank, '', 'Ordinary word spacing was mistaken for a blank');
 const oneColumn = [];
 for(let row = 0; row < 30; row++) oneColumn.push(item('one column of ordinary prose', 60, 700 - row*14, 460));
 assert.equal(importerContext.pdfPageColumns(oneColumn, 600).length, 1,
@@ -229,6 +241,68 @@ assert.equal(importerContext.pdfPageColumns(oneColumn, 600).length, 1,
 const importedParas = importerContext.assembleParagraphs(importedPages);
 assert.deepEqual(Array.from(importedParas.sig, signal => signal.p), [1, 3],
   'A dropped page renumbered every later page in the original-mode coordinate map');
+
+/* ---- 수능·모의고사 문항 분리 (AI 없음) ----
+   기출 10종 240문항으로 검증한 규칙입니다. 측정값은 ROADMAP.md. */
+const examContext = { Math, JSON, RegExp, Object, Number, String, Array, Set };
+new Script(readFileSync(resolve(root, 'scripts/importers/exam.js'), 'utf8'))
+  .runInNewContext(examContext);
+
+const longPassage = 'This passage is long enough to be treated as a real reading passage by the parser.';
+const examLine = (text, outdent = 0) => ({ text, outdent, rel: 0.5 });
+const sliced = examContext.sliceExamQuestions([
+  examLine('18. 다음 글의 목적으로 가장 적절한 것은?', 4),
+  examLine(longPassage),
+  examLine('① first ② second ③ third ④ fourth ⑤ fifth'),
+  // 수능은 전각 물결표(U+FF5E)를 씁니다. 이걸 빠뜨리면 묶음 문항이 통째로 빕니다.
+  examLine('[31～34] 다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오.', 4),
+  examLine('31. ' + longPassage, 4),
+  examLine('① alpha ② beta ③ gamma ④ delta ⑤ epsilon'),
+]);
+assert.deepEqual(Array.from(sliced, q => q.n), [18, 31], 'Exam questions were not separated');
+assert.equal(sliced[0].prompt, '다음 글의 목적으로 가장 적절한 것은?', 'A question lost its own prompt');
+assert.equal(sliced[1].prompt, '다음 빈칸에 들어갈 말로 가장 적절한 것을 고르시오.',
+  'A fullwidth-tilde question range did not hand its instruction to the group');
+assert.equal(sliced[1].passage, longPassage, 'The group instruction leaked into the passage');
+assert.deepEqual(Array.from(sliced[1].choices), ['alpha','beta','gamma','delta','epsilon'],
+  'Choices were not split on the circled numbers');
+
+// Numbers inside the passage are not question starts; only outdented lines are.
+assert.deepEqual(
+  Array.from(examContext.sliceExamQuestions([
+    examLine('29. 다음 글의 밑줄 친 부분 중, 어법상 틀린 것은?', 4),
+    examLine('42. was the year everything changed, and ' + longPassage),
+  ]), q => q.n),
+  [29], 'A number inside the passage was mistaken for a question start');
+
+/* 어법·흐름 문제는 ①~⑤가 지문 안에 박혀 있습니다. 줄 시작이 아니므로
+   지문이 잘리면 안 됩니다. */
+const inlineQuestion = examContext.sliceExamQuestions([
+  examLine('29. 다음 글의 밑줄 친 부분 중, 어법상 틀린 것은?', 4),
+  examLine('Places like Little Italy ① exist and people ② do share values,'),
+  examLine('rooted ③ in how our species ④ developed and ⑤ relate to others.'),
+])[0];
+assert.equal(inlineQuestion.choices.length, 0, 'Inline ①-⑤ were mistaken for a choice list');
+assert.equal(inlineQuestion.inline, true, 'An inline-choice question was not recognised');
+assert.match(inlineQuestion.passage, /Little Italy/, 'An inline-choice passage was truncated');
+
+assert.equal(examContext.parseExam([{ n:1, lines:[examLine('Just a novel page. ' + longPassage)] }]), null,
+  'Ordinary prose was accepted as an exam paper');
+assert.equal(examContext.examWithoutBlanks('noisy ______'), 'noisy',
+  'Choice-grid spacing kept a blank marker that is not a blank');
+assert.equal(examContext.examSeconds(31), 100, 'Blank-fill questions lost their longer time limit');
+assert.ok(!examContext.examQuestionInScope(3) && !examContext.examQuestionInScope(26)
+  && examContext.examQuestionInScope(18) && examContext.examQuestionInScope(45),
+  'Listening 1-17 and chart/notice 25-28 are no longer excluded');
+
+const shortsSource = readFileSync(resolve(root, 'scripts/shorts/shorts.js'), 'utf8');
+assert.match(shortsSource, /revealed/, 'Shorts never unlocks the passage');
+assert.match(shortsSource, /card\.classList\.contains\('revealed'\)/,
+  'A word can be looked up while the timer is still running');
+const shortsCss = readFileSync(resolve(root, 'styles/shorts.css'), 'utf8');
+assert.match(shortsCss, /scroll-snap-type:y mandatory/, 'The shorts feed no longer pages one question at a time');
+assert.match(shortsCss, /\.short:not\(\.revealed\) \.short-passage \.w\{pointer-events:none/,
+  'Word taps are not locked during the timer');
 
 const sourceMap = layoutContext.buildSourceMap([
   {p:47,y:.36,z:1},

@@ -87,7 +87,8 @@ async function renameBook(b){
 
 function renderHome(){
   document.getElementById('greet').textContent = greet();
-  const list = allBooks();
+  // 기출 문제지는 Shorts 화면이 다룹니다. 책장에는 책만 둡니다.
+  const list = allBooks().filter(book => book.kind !== 'exam');
   // hero = most recently opened (default: demo)
   const hero = list.slice().sort((a,b)=>posOf(b.id).t - posOf(a.id).t)[0];
   const hp = posOf(hero.id);
@@ -305,10 +306,13 @@ async function prepareImportedFile(file){
 
     const id = textAvailable ? bookHash(paras) : 'raw-'+hash.slice(0,24);
     const fingerprint = textAvailable ? bookContentFingerprint(paras) : 'raw:'+hash;
+    /* 기출 문제지인지 봅니다. 시험지면 문항 단위로 다루는 편이 훨씬 쓸모
+       있어서, 책이 아니라 Shorts 항목으로 담습니다. */
+    const exam = kind === 'pdf' && parsed.sheets ? parseExam(parsed.sheets) : null;
     const sourceMap = buildSourceMap(sig);
     const packedSignals = packLayoutSignals(sig);
     const formatting = buildFormattingFromLayout(paras,sig,null);
-    return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,
+    return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,exam,
             formatting:formatting && validateFormattingBlocks(paras,formatting.blocks) ? formatting : null,
             textAvailable};
   }catch(error){
@@ -364,12 +368,33 @@ async function reconnectOriginalFile(target,file){
     toast('원본을 연결하지 못했어요: '+(error.message||error));
   }
 }
+/* 기출 문제지는 책장이 아니라 Shorts로 갑니다. 본문(paras)은 문항 지문을
+   그대로 담아 두어 사전의 예문 찾기와 책 지문·동기화가 그대로 동작합니다. */
+async function importExam(prepared){
+  const paras = prepared.exam.map(question => question.passage);
+  const id = bookHash(paras);
+  const existing = books.find(book => book.id === id);
+  const exam = { id, title:prepared.title, kind:'exam', questions:prepared.exam, paras,
+    addedAt: existing ? existing.addedAt : Date.now(),
+    fingerprint: bookContentFingerprint(paras), textAvailable:true, readerSchema:4,
+    sourceMap:null, layoutSignals:null, formatting:null, original:null,
+    localSourceAt: Date.now() };
+  await bookPut(exam);
+  books = books.filter(book => book.id !== id);
+  books.unshift(exam);
+  await imgPurge(prepared.tmpId+'|');
+  shortsExam = exam;
+  toast(`기출 ${prepared.exam.length}문항을 담았어요 — Shorts에서 풀어 보세요`);
+  show('shorts');
+}
+
 async function importFile(file){
   if(!/\.(pdf|epub|txt)$/i.test(file.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
   toast('책을 준비하고 있어요…');
   let prepared = null;
   try{
     prepared = await prepareImportedFile(file);
+    if(prepared.exam){ await importExam(prepared); return; }
     const already = books.find(book=>book.id===prepared.id || ensureBookFingerprint(book)===prepared.fingerprint);
     if(already){
       if(prepared.kind === 'txt'){

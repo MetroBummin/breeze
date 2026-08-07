@@ -21,6 +21,8 @@
   - `pdf-original.js` / `epub-original.js`: 형식별 렌더링·단어 선택·앵커
   - `reader-modes.js`: `글자` ↔ `원본` 전환과 전환 표시
   - `reader.js`: 글자 화면 렌더링, 스크롤·폭 변화 대응
+- `scripts/importers/exam.js`: 수능·모의고사 문항 분리 (규칙 기반, AI 없음)
+- `scripts/shorts/`: 기출 쇼츠 화면 — 세로 스냅, 타이머, 잠금·해제
 - `scripts/ui/`: 보기 설정, 발음, 시트 제스처
 - `scripts/sync/`: 로그인, 단어·위치·책 동기화
 - `server/dict/`: 활성 AI 사전 Edge Function
