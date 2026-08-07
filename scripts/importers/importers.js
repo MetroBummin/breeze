@@ -219,6 +219,61 @@ function itemsToLines(items){
   }).filter(l=>l.text);
 }
 
+/* ---------- ①-2. 단(column) 가르기 ----------
+   2단으로 조판된 PDF에서 한 화면 줄의 왼쪽과 오른쪽은 서로 다른 글입니다.
+   y좌표만 보고 묶으면 두 단이 한 줄로 접합돼 문장이 통째로 섞입니다.
+
+     "This is a very common human tendency ③ what is describe the . There is"
+      └── 왼쪽 단 ──────────────────────┘ └── 오른쪽 단 ─────────────────┘
+
+   글자가 거의 지나가지 않는 세로 띠(거터)를 찾아 단을 먼저 가릅니다.
+   순수 좌표 계산이라 출판사나 문서 종류를 가리지 않습니다. */
+function detectColumnGutter(items, pageWidth){
+  const width = Math.ceil(pageWidth) + 1;
+  if(!(width > 1) || !items.length) return null;
+  const cover = new Uint32Array(width);
+  const spans = [];
+  for(const it of items){
+    if(!it.str || !it.str.trim()) continue;
+    const a = it.transform[4], b = a + Math.abs(it.width || 0);
+    spans.push({a, b});
+    const x0 = Math.max(0, Math.floor(a)), x1 = Math.min(width, Math.ceil(b));
+    for(let x = x0; x < x1; x++) cover[x]++;     // 끝점은 잉크가 아니므로 반열림 구간
+  }
+  if(spans.length < 40) return null;
+  /* 진짜 전폭 제목 몇 줄이 페이지 전체를 거부하게 두지 않습니다. */
+  const tolerance = Math.floor(spans.length * 0.004);
+  const lo = Math.floor(width * 0.30), hi = Math.ceil(width * 0.70);
+  let best = null, run = -1;
+  for(let x = lo; x <= hi; x++){
+    if(cover[x] <= tolerance){ if(run < 0) run = x; }
+    else { if(run >= 0 && (!best || x - run > best.w)) best = {a:run, w:x - run}; run = -1; }
+  }
+  if(run >= 0 && (!best || hi - run + 1 > best.w)) best = {a:run, w:hi - run + 1};
+  if(!best || best.w < 6) return null;
+  const cut = best.a + best.w / 2;
+  const left = spans.filter(s => s.b <= cut).length;
+  const right = spans.filter(s => s.a >= cut).length;
+  // 양쪽이 모두 충분히 차 있고, 띠를 실제로 넘는 글자가 거의 없어야 단입니다.
+  if(left < spans.length * 0.2 || right < spans.length * 0.2) return null;
+  if(spans.length - left - right > spans.length * 0.02) return null;
+  return {cut};
+}
+
+/* 한 장의 종이를 단별로 나눠 돌려줍니다. 단이 없으면 통째로 한 덩이입니다.
+   단 경계는 문단을 이어 붙이면 안 되므로, 쪽 경계와 똑같이 다룹니다. */
+function pdfPageColumns(items, pageWidth){
+  const gutter = detectColumnGutter(items, pageWidth);
+  if(!gutter) return [items];
+  const left = [], right = [];
+  for(const it of items){
+    const a = it.transform[4], b = a + Math.abs(it.width || 0);
+    // 두 단을 가로지르는 소수의 줄(전폭 제목)은 왼쪽 단의 흐름에 둡니다.
+    if(a >= gutter.cut) right.push(it); else left.push(it);
+  }
+  return [left, right];
+}
+
 /* ---------- ②+③ 줄 -> 문단 ---------- */
 function assembleParagraphs(pages){
   const allLines = pages.reduce(function(a,p){ return a.concat(p.lines); }, []);
@@ -231,7 +286,9 @@ function assembleParagraphs(pages){
     const k=norm(l.text); freq[k]=(freq[k]||0)+1;
     const e=l.text.trim(); freqExact[e]=(freqExact[e]||0)+1;
   });
-  const repeatMin = Math.max(2, Math.round(pages.length*0.2));
+  // 한 쪽이 여러 단으로 쪼개져 들어오므로, 반복 기준은 종이 장수로 셉니다.
+  const sheets = new Set(pages.map(p => p.n)).size || pages.length;
+  const repeatMin = Math.max(2, Math.round(sheets*0.2));
   const isJunk = (l, pageH) => {
     const t = l.text;
     if(/^\d{1,4}$/.test(t)) return true;
@@ -407,7 +464,13 @@ async function parsePDF(f){
     const page = await pdf.getPage(i);
     const h = page.getViewport({scale:1}).height;
     const content = await page.getTextContent();
-    pages.push({ n:i, h, lines: itemsToLines(content.items) });
+    const width = page.getViewport({scale:1}).width;
+    /* 단마다 따로 담습니다. `n`은 실제 쪽 번호라 원본 좌표 지도는 그대로이고,
+       단 경계는 쪽 경계와 같은 규칙으로 문단이 끊깁니다. */
+    for(const column of pdfPageColumns(content.items, width)){
+      const lines = itemsToLines(column);
+      if(lines.length) pages.push({ n:i, h, lines });
+    }
   }
   const paragraphs = assembleParagraphs(pages);
   try{ await pdf.destroy(); }catch(e){}

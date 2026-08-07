@@ -166,7 +166,7 @@ assert.equal(
    coordinate map has to keep the real PDF page number, or 원본 모드 opens
    several pages away from where the reader was — and the gap grows. */
 const importerContext = {
-  IMG_MARK:'[[IMG]]:', Math, JSON, RegExp, Object, Number, String, Array, Set,
+  IMG_MARK:'[[IMG]]:', Math, JSON, RegExp, Object, Number, String, Array, Set, Uint32Array,
 };
 new Script(readFileSync(resolve(root, 'scripts/importers/importers.js'), 'utf8'))
   .runInNewContext(importerContext);
@@ -206,6 +206,25 @@ assert.equal(new Set(thread.formatting.blocks.slice(1).map(b => b.g)).size, 3,
 const lone = importerContext.parsePastedText('  Just one sentence I want to read.  ');
 assert.equal(lone.formatting.blocks[0].r, 'p', 'A lone pasted line became an empty-section heading');
 assert.equal(importerContext.parsePastedText('   \n  \n '), null, 'Blank paste was accepted');
+
+/* Two-column pages: grouping fragments by y alone glues the left column and
+   the right column into one sentence. The gutter is found by geometry, never
+   from a per-publisher template. */
+const item = (str, x, y, w) => ({ str, width:w, height:10, transform:[10,0,0,10,x,y], fontName:'f' });
+const twoColumn = [];
+for(let row = 0; row < 30; row++){
+  twoColumn.push(item('left column text', 60, 700 - row*14, 200));
+  twoColumn.push(item('right column text', 320, 700 - row*14, 200));
+}
+const columns = importerContext.pdfPageColumns(twoColumn, 600);
+assert.equal(columns.length, 2, 'A two-column page was not split at its gutter');
+assert.ok(columns[0].every(i => i.transform[4] < 300) && columns[1].every(i => i.transform[4] >= 300),
+  'The column split put fragments on the wrong side of the gutter');
+
+const oneColumn = [];
+for(let row = 0; row < 30; row++) oneColumn.push(item('one column of ordinary prose', 60, 700 - row*14, 460));
+assert.equal(importerContext.pdfPageColumns(oneColumn, 600).length, 1,
+  'A single-column page was split into columns that do not exist');
 
 const importedParas = importerContext.assembleParagraphs(importedPages);
 assert.deepEqual(Array.from(importedParas.sig, signal => signal.p), [1, 3],
