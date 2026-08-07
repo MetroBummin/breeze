@@ -138,7 +138,7 @@ function sentenceOf(span){
 }
 function readerWordNodes(selector){
   const nodes=[...document.querySelectorAll(selector)];
-  if(typeof originalSession!=='undefined' && originalSession && originalSession.frames){
+  if(originalSession && originalSession.frames){
     originalSession.frames.forEach(frame=>{
       try{ if(frame&&frame.contentDocument) nodes.push(...frame.contentDocument.querySelectorAll(selector)); }catch(e){}
     });
@@ -179,7 +179,7 @@ function paintWord(k){
     if(w) s.classList.add('s'+w.status);
   });
   paint();
-  if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
+  refreshOriginalSavedWords();
   /* refreshOriginalSavedWords rebuilds persistent PDF markers. Repaint once
      more so both the rebuilt marker and the current selection share status. */
   paint();

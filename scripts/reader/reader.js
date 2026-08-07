@@ -92,8 +92,11 @@ function renderBookBody(b){
   rt.appendChild(frag);
 }
 async function openBook(b){
-  if(typeof readerModeChangeToken!=='undefined') readerModeChangeToken++;
-  if(typeof leaveOriginalReader==='function') leaveOriginalReader();
+  readerModeChangeToken++;
+  leaveOriginalReader();
+  /* The width observer below fires as the reader appears. It must not aim at
+     wherever the previous book was being read. */
+  lastAnchor = null;
   curBook = b;
   currentReaderMode = 'text';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
@@ -121,23 +124,37 @@ async function openBook(b){
     lastAnchor=captureAnchor(); updatePfill();
   });
 }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* Book titles and file names end up inside HTML attributes, so quotes have to
+   be escaped too — otherwise a title containing " breaks out of the markup. */
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 function updatePfill(){
   if(!curBook) return;
-  const progress=typeof visibleReaderProgress==='function'
-    ? visibleReaderProgress()
-    : posOf(curBook.id).p||0;
+  const progress=visibleReaderProgress();
   document.getElementById('pfill').style.width = Math.max(0,Math.min(100,progress*100))+'%';
 }
-let scrollTick = null, fadeTimer = null, readerScrollPauseUntil = 0;
+let scrollTick = null, fadeTimer = null, readerScrollPauseUntil = 0, progressFrame = 0;
 function suspendReaderScrollSave(duration){
   readerScrollPauseUntil=Math.max(readerScrollPauseUntil,Date.now()+(duration||500));
   if(scrollTick){ clearTimeout(scrollTick); scrollTick=null; }
 }
+/* Progress needs the visible page or chapter, which means measuring elements.
+   Once per frame is plenty; once per scroll event janks a long PDF. */
+function scheduleProgressUpdate(){
+  if(progressFrame) return;
+  progressFrame=requestAnimationFrame(()=>{
+    progressFrame=0;
+    if(!curBook) return;
+    updatePfill();
+    if(currentReaderMode==='text' && !readerAnchorHeld()) lastAnchor=captureAnchor();
+  });
+}
 window.addEventListener('scroll', ()=>{
   if(!curBook) return;
-  updatePfill();
+  scheduleProgressUpdate();
   document.body.classList.add('scrolling');
   clearTimeout(fadeTimer);
   fadeTimer = setTimeout(()=>document.body.classList.remove('scrolling'), 900);
@@ -153,6 +170,26 @@ window.addEventListener('scroll', ()=>{
     if(currentReaderMode==='text') lastAnchor = captureAnchor();
   }, 800);
 });
+
+/* 사전 패널이 열리고 닫히면 읽는 영역의 폭이 바뀝니다. 글자판은 글이 다시
+   흐르고, 원본 페이지는 비율대로 높이가 줄어듭니다. 그대로 두면 보고 있던
+   줄이 화면에서 밀려나므로, 폭이 바뀔 때마다 방금 그 자리로 되돌립니다. */
+if(window.ResizeObserver){
+  let readerWidth = 0;
+  new ResizeObserver(entries=>{
+    const width = Math.round(entries[0].contentRect.width);
+    if(!readerWidth || width===readerWidth){ readerWidth = width; return; }
+    readerWidth = width;
+    if(!curBook || !document.getElementById('v-read').classList.contains('on')) return;
+    suspendReaderScrollSave(600);
+    /* The panel animates its width, so this fires many times. Freeze the
+       remembered place for the whole animation and aim at it every frame. */
+    holdReaderAnchor(600);
+    if(currentReaderMode==='original'){
+      if(lastOriginalAnchor) restoreOriginalAnchor(lastOriginalAnchor);
+    }else if(lastAnchor) restoreAnchor(lastAnchor);
+  }).observe(document.getElementById('readmain'));
+}
 
 document.getElementById('rtext').addEventListener('click', e=>{
   const span = e.target.closest('.w');

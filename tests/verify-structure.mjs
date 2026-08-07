@@ -17,7 +17,10 @@ const required = [
   'scripts/dictionary/dictionary.js',
   'scripts/reader/formatting.js',
   'scripts/reader/pdf-word-geometry.js',
-  'scripts/reader/original-viewer.js',
+  'scripts/reader/original-session.js',
+  'scripts/reader/pdf-original.js',
+  'scripts/reader/epub-original.js',
+  'scripts/reader/reader-modes.js',
   'scripts/reader/mode-bridge.js',
   'scripts/reader/reader.js',
   'scripts/sync/sync.js',
@@ -159,6 +162,26 @@ assert.equal(
   'Adjacent headings were merged into a giant heading',
 );
 
+/* Junk filtering drops whole pages (blank leaves, watermark-only pages). The
+   coordinate map has to keep the real PDF page number, or 원본 모드 opens
+   several pages away from where the reader was — and the gap grows. */
+const importerContext = {
+  IMG_MARK:'[[IMG]]:', Math, JSON, RegExp, Object, Number, String, Array, Set,
+};
+new Script(readFileSync(resolve(root, 'scripts/importers/importers.js'), 'utf8'))
+  .runInNewContext(importerContext);
+const line = (text, y, right) => ({ y, h:10, text, display:text, drop:false, bold:false,
+                                    italic:false, left:50, right:right||400 });
+const importedPages = [
+  // A short closing line makes the page break a real paragraph break.
+  { n:1, h:800, lines:[line('The first paragraph ends here.', 700, 200)] },
+  { n:2, h:800, lines:[line('7', 40)] },                       // page number only -> dropped
+  { n:3, h:800, lines:[line('A later paragraph on page three.', 700)] },
+];
+const importedParas = importerContext.assembleParagraphs(importedPages);
+assert.deepEqual(Array.from(importedParas.sig, signal => signal.p), [1, 3],
+  'A dropped page renumbered every later page in the original-mode coordinate map');
+
 const sourceMap = layoutContext.buildSourceMap([
   {p:47,y:.36,z:1},
   {src:'Text/chapter-2.xhtml',si:3,ei:18,r:'h2'},
@@ -175,32 +198,43 @@ const conservative = layoutContext.buildFormattingFromLayout(
 );
 assert.equal(conservative,null,'Weak PDF styling was promoted into visible typography');
 
-const originalViewer = readFileSync(resolve(root, 'scripts/reader/original-viewer.js'), 'utf8');
-assert.match(originalViewer,/IntersectionObserver/,'PDF pages are not rendered lazily');
-assert.match(originalViewer,/sandbox','allow-same-origin'/,
+const sessionSource = readFileSync(resolve(root, 'scripts/reader/original-session.js'), 'utf8');
+const pdfSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 'utf8');
+const epubSource = readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
+const modesSource = readFileSync(resolve(root, 'scripts/reader/reader-modes.js'), 'utf8');
+assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily');
+assert.match(epubSource,/sandbox','allow-same-origin'/,
   'EPUB chapters are not sandboxed');
-assert.match(originalViewer,/script,iframe,frame,object,embed/,
+assert.match(epubSource,/script,iframe,frame,object,embed/,
   'EPUB active content sanitizer is missing');
-assert.match(originalViewer,/readerModeChangeToken/,
+assert.match(modesSource,/readerModeChangeToken/,
   'Reader-mode race protection is missing');
-assert.match(originalViewer,/sourceProgressForBook/,
+assert.match(sessionSource,/sourceProgressForBook/,
   'Logical original progress calculation is missing');
-assert.match(originalViewer,/openOriginalSelection/,
+assert.match(epubSource,/openOriginalSelection/,
   'Deliberate original-text selection is missing');
-assert.match(originalViewer,/buildPdfWordBoxes/,
+assert.match(pdfSource,/buildPdfWordBoxes/,
   'PDF clicks still depend on browser selection rectangles');
-assert.match(originalViewer,/pdfWordAtPoint/,
+assert.match(pdfSource,/pdfWordAtPoint/,
   'PDF word-coordinate hit testing is missing');
-assert.match(originalViewer,/box\.x\*100/,
+assert.match(pdfSource,/box\.x\*100/,
   'PDF word highlights are not stored in resize-safe page coordinates');
-assert.doesNotMatch(originalViewer,/range\.deleteContents\(\)/,
+assert.doesNotMatch(pdfSource,/range\.deleteContents\(\)/,
   'Original PDF text layer is still being mutated');
-assert.match(originalViewer,/renderPdfSavedWordMarkers/,
+assert.match(pdfSource,/renderPdfSavedWordMarkers/,
   'Saved vocabulary is not painted in original PDF mode');
-assert.match(originalViewer,/CSS\.highlights/,
+assert.match(epubSource,/CSS\.highlights/,
   'Saved vocabulary is not painted in original EPUB mode');
-assert.match(originalViewer,/dataset\.originalMarks/,
+assert.match(epubSource,/dataset\.originalMarks/,
   'Original EPUB highlights ignore the saved display preference');
+assert.match(sessionSource,/firstElementBelow/,
+  'Visible page lookup walks every page on each scroll frame again');
+assert.match(sessionSource,/originalAnchorFromProgress/,
+  'A book without a coordinate map jumps back to page one');
+assert.match(pdfSource,/window\.scrollBy\(0,after\.height-before\.height\)/,
+  'A late page-size correction can still push the visible line');
+assert.match(epubSource,/EPUB_FRAME_TIMEOUT/,
+  'A chapter frame that never loads can hang the original reader');
 const bridgeContext = {};
 new Script(readFileSync(resolve(root, 'scripts/reader/mode-bridge.js'), 'utf8'))
   .runInNewContext(bridgeContext);
@@ -210,7 +244,7 @@ assert.deepEqual(JSON.parse(JSON.stringify(bridgeContext.bridgeFindSequence(
   ['before','michael','took','his','eyes','off','the','road'],
   'Michael took his eyes off the road.'))),
   {start:1,length:7,confidence:1},'Mode bridge cannot locate a visible sentence');
-assert.match(originalViewer,/bridgeFindSequence/,
+assert.match(modesSource,/bridgeFindSequence/,
   'Reader modes no longer align by the visible sentence');
 const geometryContext = {};
 new Script(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'))
@@ -219,6 +253,46 @@ assert.equal(geometryContext.pdfFontAscentRatio({ascent:.82,descent:-.18}),.82,
   'Normal PDF font metrics were unexpectedly changed');
 assert.ok(Math.abs(geometryContext.pdfFontAscentRatio({ascent:1.19628906,descent:-.43945313})-.7315)<.002,
   'Exceptional Charis SIL metrics were not normalized for Holes');
+
+/* Verity ships one text item per glyph. Tokenising each item on its own turned
+   every letter into a word, so the reader underlined every saved "h" and a tap
+   looked up a single letter. Items on one baseline must become one line first,
+   with the word gaps coming from the geometry rather than the item widths. */
+const GLYPH_WIDTH = 6, GLYPH_HEIGHT = 12, SPACE_GAP = 4;
+const glyphEntries = (line, startX, startY) => {
+  const entries = [];
+  let x = startX;
+  for(const character of line){
+    if(character === ' '){ x += SPACE_GAP; continue; }
+    entries.push(geometryContext.pdfTextEntry(
+      [GLYPH_HEIGHT, 0, 0, GLYPH_HEIGHT, x, startY], character, GLYPH_WIDTH, .89, 'sans-serif'));
+    x += GLYPH_WIDTH;
+  }
+  return entries;
+};
+const measureByLength = value => value.length * GLYPH_WIDTH;
+const glyphPage = geometryContext.pdfPageWords(
+  [...glyphEntries('the man is here.', 20, 200), ...glyphEntries('He left.', 20, 220)],
+  measureByLength, 600, 800);
+assert.equal(glyphPage.text, 'the man is here. He left.',
+  'Glyph-per-item PDF text was not reassembled into words');
+assert.deepEqual(Array.from(glyphPage.boxes, box => box.word),
+  ['the','man','is','here','He','left'],
+  'Every glyph of a glyph-per-item PDF still became its own word');
+const hereBox = glyphPage.boxes[3];
+assert.ok(Math.abs(hereBox.w * 600 - 4 * GLYPH_WIDTH) < .01,
+  'A rebuilt word box does not span all of its glyphs');
+assert.equal(glyphPage.boxes[4].offset, glyphPage.text.indexOf('He'),
+  'A rebuilt word lost the character offset that gives it its own sentence');
+
+// A PDF that already hands out whole lines must come through unchanged.
+const wholeLine = geometryContext.pdfPageWords(
+  [geometryContext.pdfTextEntry([GLYPH_HEIGHT,0,0,GLYPH_HEIGHT,20,200],
+    'the man is here.', 16 * GLYPH_WIDTH, .89, 'sans-serif')],
+  measureByLength, 600, 800);
+assert.equal(wholeLine.text, 'the man is here.', 'Line-per-item PDF text was altered');
+assert.deepEqual(Array.from(wholeLine.boxes, box => box.word), ['the','man','is','here'],
+  'Line-per-item PDF words regressed');
 const readerSource = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
 assert.match(readerSource,/suspendReaderScrollSave/,
   'Programmatic mode-switch scrolling can still overwrite progress');

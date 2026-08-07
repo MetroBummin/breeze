@@ -199,6 +199,10 @@ function assembleParagraphs(pages){
     const nearTop = l.y > pageH*0.94, nearBottom = l.y < pageH*0.10;
     return (nearTop || nearBottom) && freq[norm(t)] >= repeatMin;
   };
+  /* `n` is the real PDF page number and has to survive this filter. Numbering
+     the surviving pages 1..N instead would silently shift every coordinate
+     after the first dropped page, so 원본 모드 would open several pages away
+     from the sentence the reader was on — and drift further into the book. */
   const cleanPages = pages.map(p => ({...p, lines: p.lines.filter(l => !isJunk(l, p.h))}))
                           .filter(p => p.lines.length);
   const lines = cleanPages.reduce(function(a,p){ return a.concat(p.lines); }, []);
@@ -266,10 +270,11 @@ function assembleParagraphs(pages){
   };
 
   cleanPages.forEach((page, pi) => {
+    const pageNumber = page.n || pi + 1;
     page.lines.forEach(l => {
       const t = l.text;
       if(!prev){
-        cur = t; curDisplay = l.display || t; curPage = pi + 1;
+        cur = t; curDisplay = l.display || t; curPage = pageNumber;
         curY = +Math.max(0, Math.min(1, 1 - l.y/page.h)).toFixed(4);
         curDrop = !!l.drop; noteLine(l); prev = l; prevPage = pi; return;
       }
@@ -301,7 +306,7 @@ function assembleParagraphs(pages){
 
       if(brk) flush();
       if(!cur){
-        curPage = pi + 1;
+        curPage = pageNumber;
         curY = +Math.max(0, Math.min(1, 1 - l.y/page.h)).toFixed(4);
       }
       if(!cur && l.drop) curDrop = true;
@@ -355,7 +360,7 @@ async function parsePDF(f){
     const page = await pdf.getPage(i);
     const h = page.getViewport({scale:1}).height;
     const content = await page.getTextContent();
-    pages.push({ h, lines: itemsToLines(content.items) });
+    pages.push({ n:i, h, lines: itemsToLines(content.items) });
   }
   const paragraphs = assembleParagraphs(pages);
   try{ await pdf.destroy(); }catch(e){}

@@ -48,7 +48,7 @@ function applyOriginalMarkMode(){
     button.classList.toggle('on',on);
     button.setAttribute('aria-pressed',on ? 'true':'false');
   });
-  if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
+  refreshOriginalSavedWords();
 }
 function setOriginalMarkMode(mode){
   if(!ORIGINAL_MARK_MODES.has(mode)) return;
@@ -64,7 +64,13 @@ function syncTopbarH(){
 let lastAnchor = null;
 window.addEventListener('resize', ()=>{
   syncTopbarH();
-  if(curBook && currentReaderMode==='text' && lastAnchor) requestAnimationFrame(()=>restoreAnchor(lastAnchor));
+  if(!curBook) return;
+  holdReaderAnchor(400);
+  requestAnimationFrame(()=>{
+    if(currentReaderMode==='original'){
+      if(lastOriginalAnchor) restoreOriginalAnchor(lastOriginalAnchor);
+    }else if(lastAnchor) restoreAnchor(lastAnchor);
+  });
 });
 window.addEventListener('load', syncTopbarH);
 syncTopbarH();

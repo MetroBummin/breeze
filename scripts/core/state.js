@@ -82,11 +82,10 @@ function keepPlace(fn){
 
 function saveReadingState(){
   if(!curBook) return;
-  if(typeof currentReaderMode !== 'undefined' && currentReaderMode === 'original'){
-    const original = typeof captureOriginalAnchor === 'function' ? captureOriginalAnchor() : null;
+  if(currentReaderMode === 'original'){
+    const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
-    const logical = typeof sourceProgressForBook === 'function'
-      ? sourceProgressForBook(curBook,original) : null;
+    const logical = sourceProgressForBook(curBook,original);
     positions[curBook.id] = {...previous,
       p:logical==null ? previous.p||0 : logical, t:Date.now(), mode:'original',
       original:original || previous.original || null};
@@ -95,8 +94,7 @@ function saveReadingState(){
   }
   const a = captureAnchor();
   const previous = posOf(curBook.id);
-  const logical = typeof textProgressForBook === 'function'
-    ? textProgressForBook(curBook,a) : null;
+  const logical = textProgressForBook(curBook,a);
   positions[curBook.id] = {...previous, y:window.scrollY,
                             p:logical==null ? previous.p||0 : logical, t:Date.now(), mode:'text',
                             pi: a ? a.pi : null, dy: a ? a.dy : 0 };
@@ -109,7 +107,7 @@ function show(v){
   document.getElementById('nav-home').classList.toggle('on', v==='home');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
   if(v!=='read'){
-    if(typeof leaveOriginalReader === 'function') leaveOriginalReader();
+    leaveOriginalReader();
     curBook=null; closePanel(); toggleFocus(false);
   }
   document.body.classList.toggle('reading', v==='read');

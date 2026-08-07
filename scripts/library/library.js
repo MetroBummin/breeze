@@ -33,7 +33,10 @@ function attachLongPress(el, fn){
 async function deleteBook(b){
   if(b.builtin) return;
   if(!confirm(`"${b.title}" 책을 삭제할까요?\n\n동기화한 경우 다른 기기에서도 삭제됩니다.\n(단어장은 그대로 남습니다)`)) return;
-  const remoteId = typeof serverBookIdFor === 'function' ? serverBookIdFor(b) : b.id;
+  const remoteId = serverBookIdFor(b);
+  /* Deleting the book that is open would leave the reader pointing at content
+     that no longer exists. Leave the reader first. */
+  if(curBook && curBook.id===b.id) show('home');
   books = books.filter(x=>x.id!==b.id);
   await bookDel(b.id);
   await originalDel(b.id);
@@ -71,7 +74,7 @@ async function renameBook(b){
   // 서버에 이미 올라간 책이면 목록의 이름도 함께 갱신
   if(sb && sbUser){
     try{
-      const remoteId = typeof serverBookIdFor === 'function' ? serverBookIdFor(b) : b.id;
+      const remoteId = serverBookIdFor(b);
       const { data } = await sb.from('books').select('meta').eq('user_id', sbUser.id).eq('book_id', remoteId).maybeSingle();
       // 다른 기기가 이미 지운 책이면 서버 정보를 되살리지 않습니다(삭제가 이깁니다)
       if(data && !(data.meta||{}).deleted) await sb.from('books').upsert(
@@ -163,9 +166,12 @@ function requestOriginalReconnect(book){
     : '.pdf,.epub';
   originalInput.click();
 }
+/* Dragging over a child element fires dragleave on the parent, so the overlay
+   is driven by a depth counter rather than by the last event seen. */
 let dragDepth = 0;
-window.addEventListener('dragenter', e=>{ e.preventDefault(); if(++dragDepth) document.getElementById('drop-overlay').classList.add('on'); });
-window.addEventListener('dragleave', e=>{ e.preventDefault(); if(--dragDepth<=0){ dragDepth=0; document.getElementById('drop-overlay').classList.remove('on'); } });
+const dropOverlay = () => document.getElementById('drop-overlay');
+window.addEventListener('dragenter', e=>{ e.preventDefault(); dragDepth++; dropOverlay().classList.add('on'); });
+window.addEventListener('dragleave', e=>{ e.preventDefault(); if(--dragDepth<=0){ dragDepth=0; dropOverlay().classList.remove('on'); } });
 window.addEventListener('dragover', e=>e.preventDefault());
 window.addEventListener('drop', e=>{
   e.preventDefault(); dragDepth=0; document.getElementById('drop-overlay').classList.remove('on');
@@ -297,9 +303,7 @@ async function reconnectOriginalFile(target,file){
     }
     await applyPreparedBook(target,prepared,file);
     toast('원본을 연결했어요');
-    if(curBook && curBook.id === target.id && typeof switchReaderMode === 'function'){
-      await switchReaderMode('original',{reload:true});
-    }
+    if(curBook && curBook.id === target.id) await switchReaderMode('original',{reload:true});
   }catch(error){
     if(prepared) imgPurge(prepared.tmpId+'|');
     console.error(error);
