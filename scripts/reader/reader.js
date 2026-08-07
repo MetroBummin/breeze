@@ -113,7 +113,7 @@ async function openBook(b){
   positions[b.id] = {...initialPosition, t:Date.now()};
   save(LS_POS, positions);
   updateReaderModeControls();
-  const original = b.builtin ? null : await originalGetForBook(b);
+  const original = bookSupportsOriginal(b) ? await originalGetForBook(b) : null;
   const desired = initialPosition.mode==='original'
     ? (original ? 'original' : 'text')
     : (firstOpen && original ? 'original' : 'text');
@@ -193,12 +193,5 @@ if(window.ResizeObserver){
 
 document.getElementById('rtext').addEventListener('click', e=>{
   const span = e.target.closest('.w');
-  if(!span) return;
-  const k = span.dataset.w;
-  if(words[k]){
-    if(words[k].status < 3) setStatus(k, words[k].status + 1);
-    selectWord(k, span);
-  }else{
-    addWord(k, span);
-  }
+  if(span) openWord(span.dataset.w, span);
 });

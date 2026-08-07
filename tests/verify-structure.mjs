@@ -178,6 +178,35 @@ const importedPages = [
   { n:2, h:800, lines:[line('7', 40)] },                       // page number only -> dropped
   { n:3, h:800, lines:[line('A later paragraph on page three.', 700)] },
 ];
+/* Pasted text is the entry point that needs no file and no DRM. Its three
+   rules have to stay predictable: first line titles, blank lines separate
+   paragraphs, and no blank line at all means one card per line. */
+const article = importerContext.parsePastedText(
+  'How to Read Anything\n\nReading is a habit, not\na talent.\n\nStart small. Finish something.');
+assert.equal(article.title, 'How to Read Anything', 'Pasted first line did not become the title');
+assert.equal(article.thread, false, 'A blank-line article was mistaken for a thread');
+assert.deepEqual(Array.from(article.paras), [
+  'How to Read Anything',
+  'Reading is a habit, not a talent.',       // a hard-wrapped line is rejoined
+  'Start small. Finish something.',
+], 'Pasted paragraphs were not rebuilt from the blank lines');
+assert.equal(article.formatting.blocks[0].r, 'h1', 'Pasted title was not promoted');
+assert.equal(article.formatting.blocks[1].r, 'p', 'Pasted body stopped being body text');
+
+const thread = importerContext.parsePastedText(
+  'What I learned shipping\n1. Ship the boring version.\n2. Then make it fast.\n3. Then make it pretty.');
+assert.equal(thread.thread, true, 'A line-per-post thread was not detected');
+assert.equal(thread.paras.length, 4, 'Thread lines were merged into paragraphs');
+assert.deepEqual(Array.from(thread.formatting.blocks, block => block.r),
+  ['h1', 'note', 'note', 'note'], 'Thread lines did not become cards');
+assert.equal(new Set(thread.formatting.blocks.slice(1).map(b => b.g)).size, 3,
+  'Thread cards were grouped into one box instead of one card per line');
+
+// A single pasted line is body text, not a heading with nothing under it.
+const lone = importerContext.parsePastedText('  Just one sentence I want to read.  ');
+assert.equal(lone.formatting.blocks[0].r, 'p', 'A lone pasted line became an empty-section heading');
+assert.equal(importerContext.parsePastedText('   \n  \n '), null, 'Blank paste was accepted');
+
 const importedParas = importerContext.assembleParagraphs(importedPages);
 assert.deepEqual(Array.from(importedParas.sig, signal => signal.p), [1, 3],
   'A dropped page renumbered every later page in the original-mode coordinate map');

@@ -1,3 +1,50 @@
+/* ---- 붙여넣은 글 ----
+   기사 한 토막, X 스레드, 메모 — DRM도 파일도 없는 아무 영어 텍스트.
+   구조를 알려주는 JSON이 없으니 눈에 보이는 것만 규칙으로 씁니다.
+     첫 줄         -> 제목
+     빈 줄         -> 문단 경계
+     빈 줄이 없음  -> 줄마다 한 장의 카드 (스레드)
+   규칙이 세 줄이면 결과를 미리 예상할 수 있고, 예상할 수 있으면 버그로
+   보이지 않습니다. 추측이 필요한 판단은 일부러 넣지 않았습니다. */
+const PASTE_TITLE_MAX = 90;
+
+function parsePastedText(raw){
+  // 웹에서 복사한 글에는 눈에 보이지 않는 고정폭·너비 0 공백이 섞여 옵니다.
+  const text = String(raw||'').replace(/\r/g,'')
+    .replace(/[\u00a0\u200b\u2028\u2029]/g,' ').trim();
+  if(!text) return null;
+  const lines = text.split('\n').map(line=>line.trim());
+  const start = lines.findIndex(line=>line);
+  if(start < 0) return null;
+
+  const title = lines[start];
+  const rest = lines.slice(start+1);
+  const thread = rest.filter(Boolean).length >= 2 && !rest.some(line=>!line);
+  const bodies = thread
+    ? rest.filter(Boolean)
+    : rest.join('\n').split(/\n\s*\n+/)
+        .map(block=>block.split('\n').filter(Boolean).join(' ').trim())
+        .filter(Boolean);
+
+  // 한 줄만 붙여넣었다면 그건 제목이 아니라 그냥 본문입니다.
+  const titleRole = bodies.length ? 'h1' : '';
+  const merged = mergeWrapped([title, ...bodies],
+    [{r:titleRole}, ...bodies.map(()=>({r: thread ? 'note' : ''}))]);
+  const roles = merged.sig || [];
+  const blocks = merged.map((value,index)=>{
+    const role = (roles[index] && roles[index].r) || '';
+    // 카드는 한 장씩 따로 묶어야 여러 줄이 한 상자로 합쳐지지 않습니다.
+    if(role === 'note') return { r:'note', t:value, f:index, g:index };
+    return { r: role === 'h1' ? 'h1' : 'p', t:value, f:index };
+  });
+  return {
+    title: title.length > PASTE_TITLE_MAX ? title.slice(0,PASTE_TITLE_MAX).trim()+'…' : title,
+    paras: merged.slice(),
+    thread,
+    formatting: { blocks, start:0, levels:1, source:'pasted-text', createdAt:Date.now() },
+  };
+}
+
 function parseTXT(text){
   const blocks = text.replace(/\r/g,'').split(/\n\s*\n+/)
     .map(blk => blk.split('\n').map(l=>l.trim()).join(' '));

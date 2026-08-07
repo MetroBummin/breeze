@@ -138,12 +138,65 @@ function renderHome(){
     if(del) del.onclick = () => deleteBook(b);
     s.appendChild(card);
   });
+  const paste = document.createElement('div');
+  paste.className = 'bookcard add';
+  paste.innerHTML = '<div class="plus">¶</div><div class="lbl">기사 · 스레드<br>영어 글 붙여넣기</div>';
+  paste.onclick = openPasteModal;
+  s.appendChild(paste);
   const add = document.createElement('div');
   add.className = 'bookcard add';
   add.innerHTML = '<div class="plus">+</div><div class="lbl">PDF · EPUB · TXT<br>파일 추가</div>';
   add.onclick = () => finput.click();
   s.appendChild(add);
 }
+
+/* ================= 붙여넣은 글 =================
+   파일도 DRM도 없이 바로 읽기 시작하는 가장 짧은 경로입니다. 저장은 다른
+   책과 똑같이 IndexedDB로 가므로 넣는 순간부터 오프라인에서 읽힙니다. */
+function pasteModal(){ return document.getElementById('paste-modal'); }
+function openPasteModal(){
+  pasteModal().classList.add('on');
+  const field = document.getElementById('pm-text');
+  field.focus();
+  updatePastePreview();
+}
+function closePasteModal(){ pasteModal().classList.remove('on'); }
+
+function updatePastePreview(){
+  const parsed = parsePastedText(document.getElementById('pm-text').value);
+  const preview = document.getElementById('pm-preview');
+  if(!parsed){ preview.textContent = ''; return; }
+  const bodies = parsed.paras.length - (parsed.paras.length > 1 ? 1 : 0);
+  preview.innerHTML = parsed.paras.length > 1
+    ? `제목 <b>${esc(parsed.title)}</b> · ${parsed.thread ? `카드 <b>${bodies}</b>장` : `문단 <b>${bodies}</b>개`}`
+    : '문단 <b>1</b>개';
+}
+
+async function importPastedText(){
+  const parsed = parsePastedText(document.getElementById('pm-text').value);
+  if(!parsed){ toast('읽을 영어 글이 없어요'); return; }
+  const id = bookHash(parsed.paras);
+  const existing = books.find(book => book.id === id);
+  if(existing){
+    closePasteModal();
+    toast(`이미 있는 글이에요 — "${existing.title}"`);
+    openBook(existing);
+    return;
+  }
+  const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
+    addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
+    textAvailable:true, readerSchema:4, sourceMap:null, layoutSignals:null,
+    formatting:parsed.formatting, original:null, localSourceAt:Date.now() };
+  await bookPut(book);
+  books.unshift(book);
+  document.getElementById('pm-text').value = '';
+  closePasteModal();
+  renderHome();
+  openBook(book);
+}
+
+document.getElementById('pm-text').addEventListener('input', updatePastePreview);
+pasteModal().addEventListener('click', e => { if(e.target.id === 'paste-modal') closePasteModal(); });
 
 /* ================= import ================= */
 const finput = document.getElementById('fileinput');
@@ -273,6 +326,7 @@ async function applyPreparedBook(target, prepared, file){
     await imgRename(prepared.tmpId,target.id);
   }
   target.paras = remapImportedImages(prepared.paras,prepared.tmpId,target.id);
+  target.kind = prepared.kind;
   target.fingerprint = prepared.fingerprint;
   target.textAvailable = prepared.textAvailable;
   target.sourceMap = prepared.sourceMap;
@@ -338,7 +392,7 @@ async function importFile(file){
       console.warn('Original file storage failed:',storageError);
       toast('책은 추가했지만 원본 파일을 기기에 보관하지 못했어요');
     }
-    const book = {id,title:prepared.title,paras,addedAt:Date.now(),
+    const book = {id,title:prepared.title,kind:prepared.kind,paras,addedAt:Date.now(),
       fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
       readerSchema:4,sourceMap:prepared.sourceMap,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,

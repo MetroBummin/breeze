@@ -355,6 +355,7 @@ async function bookUpload(id){
     const blob = new Blob([JSON.stringify({
       paras:b.paras,
       fingerprint,
+      kind:b.kind||'',
       formatting,
       layoutSignals:b.layoutSignals || null,
       sourceMap:b.sourceMap || null,
@@ -389,6 +390,7 @@ async function bookDownload(id){
     const book = { id, title: meta.title||'(제목 없음)', author: meta.author||'',
                    addedAt: meta.addedAt||Date.now(), paras: body.paras||[],
                    fingerprint:meta.fingerprint || body.fingerprint || '',
+                   kind:body.kind || '',
                    formatting:body.formatting || body.tidy || null,
                    layoutSignals:body.layoutSignals || null,
                    sourceMap:body.sourceMap || null,

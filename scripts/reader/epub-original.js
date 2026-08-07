@@ -263,8 +263,7 @@ function openOriginalSelection(doc){
   marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;background:rgba(37,137,190,.25);border-radius:3px`;
   doc.body.appendChild(marker);
   selection.removeAllRanges();
-  if(words[key]) selectWord(key,marker);
-  else addWord(key,marker);
+  openWord(key,marker);
 }
 
 /* ================= anchors and mode bridging ================= */

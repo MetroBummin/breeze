@@ -158,6 +158,15 @@ function addWord(k, span){
   selectWord(k, span);
   fetchDict(k);
 }
+/* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
+   저장된 단어를 또 누르면 "아직 모른다"는 뜻이라 별을 하나 올립니다.
+   예전에는 이 규칙이 글자 화면에만 있어서, 원본 화면에서는 같은 단어를
+   몇 번을 눌러도 별이 ★에 머물렀습니다. */
+function openWord(k, node){
+  if(!words[k]){ addWord(k, node); return; }
+  if(words[k].status < 3) setStatus(k, words[k].status + 1);
+  selectWord(k, node);
+}
 function selectWord(k, span){
   selKey = k;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));

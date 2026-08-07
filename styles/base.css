@@ -48,6 +48,12 @@
   #btn-add{width:38px; height:38px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
     font-size:20px; cursor:pointer; line-height:1;}
   #btn-add:hover{background:var(--sky2);}
+  #btn-paste{width:38px; height:38px; border-radius:50%; border:none; background:transparent;
+    color:var(--soft); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  #btn-paste svg{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7;
+    stroke-linecap:round; stroke-linejoin:round;}
+  #btn-paste:hover{background:#EFEDE4; color:var(--blue);}
+  body.dark #btn-paste:hover{background:#22262B;}
 
   .view{display:none;} .view.on{display:block;}
 

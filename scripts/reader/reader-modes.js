@@ -5,11 +5,21 @@
 
 let readerModeCueTimer = 0;
 
+/* 원본 화면이 있을 수 있는 책인지. 붙여넣은 글과 TXT에는 원본이 영영 없으므로
+   전환 버튼을 아예 내지 않습니다. 전에는 버튼이 보인 뒤 "원본 파일을 연결해
+   주세요"라는 막다른 안내로 이어졌습니다. */
+function bookSupportsOriginal(book){
+  if(!book || book.builtin) return false;
+  const kind = book.kind || (book.original && book.original.kind) || '';
+  if(kind) return kind === 'pdf' || kind === 'epub';
+  // 형식을 저장하지 않던 시절의 책: 원본 좌표 지도가 있으면 PDF·EPUB입니다.
+  return !!(book.sourceMap && book.sourceMap.length);
+}
+
 function updateReaderModeControls(){
   const switcher = document.getElementById('reader-mode-switch');
   if(!switcher) return;
-  const canReconnect = !!curBook && !curBook.builtin;
-  const hasOriginalMode = canReconnect && (!curBook.original || curBook.original.kind !== 'txt');
+  const hasOriginalMode = bookSupportsOriginal(curBook);
   switcher.classList.toggle('available',hasOriginalMode);
   switcher.querySelectorAll('button').forEach(button=>{
     button.classList.toggle('on',button.dataset.mode===currentReaderMode);
@@ -211,7 +221,7 @@ function showBridgeSourceCue(bridge){
 async function switchReaderMode(mode,options){
   options = options || {};
   if(!curBook || (mode!=='text' && mode!=='original')) return;
-  if(mode==='original' && curBook.builtin) return;
+  if(mode==='original' && !bookSupportsOriginal(curBook)) return;
 
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;

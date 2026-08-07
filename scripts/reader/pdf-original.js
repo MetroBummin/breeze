@@ -182,8 +182,7 @@ function openPdfWord(page,box){
   /* Freeze the resolved key on the marker. keyOf() can legitimately change
      after a new lemma is saved; a selected marker must not change identity. */
   const marker=makePdfWordMarker(page,box,'original-selection-marker',words[key]&&words[key].status,key);
-  if(words[key]) selectWord(key,marker);
-  else addWord(key,marker);
+  openWord(key,marker);
 }
 
 /* ================= anchors and mode bridging ================= */
@@ -273,11 +272,5 @@ async function restorePdfSentence(candidates,source,changeToken){
     const page=event.target.closest&&event.target.closest('.pdf-source-page');
     const box=pdfWordAtPoint(page,event.clientX,event.clientY);
     if(box) openPdfWord(page,box);
-  });
-  content.addEventListener('click',event=>{
-    const marker=event.target.closest&&event.target.closest('.original-selection-marker');
-    if(!marker) return;
-    const key=marker.dataset.w||keyOf(marker.textContent);
-    if(words[key]) selectWord(key,marker);
   });
 })();

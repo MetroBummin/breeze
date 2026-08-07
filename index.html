@@ -77,6 +77,9 @@
     <button class="navbtn on" id="nav-home" onclick="show('home')">Read</button>
     <button class="navbtn" id="nav-vocab" onclick="show('vocab')">Review</button>
     <button class="navbtn" id="nav-sync" onclick="openSyncModal()">Sync</button>
+    <button id="btn-paste" title="영어 글 붙여넣기" onclick="openPasteModal()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9z"/><path d="M15 5.5h3.5v14H5.5v-14H9"/><path d="M9 12h6M9 15.5h4"/></svg>
+    </button>
     <button id="btn-add" title="책 추가 (PDF·EPUB·TXT)">+</button>
   </nav>
 </div>
@@ -87,7 +90,7 @@
   <div id="bigq">Where shall we read?</div>
   <div id="hero"></div>
   <div id="newhead">Start somewhere new</div>
-  <div id="newsub">내 파일(PDF·EPUB·TXT)을 끌어다 놓거나 + 카드를 눌러 추가하세요. 책을 꾹 누르면 이름을 바꿀 수 있어요.</div>
+  <div id="newsub">읽고 싶은 영어 글을 그냥 붙여넣거나, 내 파일(PDF·EPUB·TXT)을 끌어다 놓으세요. 책을 꾹 누르면 이름을 바꿀 수 있어요.</div>
   <div id="shelf"></div>
   <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
 </div>
@@ -187,6 +190,18 @@
     <h2>기기 간 동기화</h2>
     <div id="sm-body"></div>
     <div id="sm-status"></div>
+  </div>
+</div>
+<div id="paste-modal">
+  <div id="pm-card">
+    <button id="pm-close" onclick="closePasteModal()">✕</button>
+    <h2>영어 글 붙여넣기</h2>
+    <div class="desc">기사 한 토막, X 스레드, 뉴스레터 — 아무 영어 글이나 괜찮아요.
+      <b>첫 줄이 제목</b>이 되고 <b>빈 줄</b>로 문단을 나눠요.
+      빈 줄 없이 줄만 바꾸면 줄마다 한 장의 카드가 됩니다.</div>
+    <textarea id="pm-text" placeholder="여기에 붙여 넣으세요…" spellcheck="false"></textarea>
+    <div id="pm-preview"></div>
+    <button class="sm-btn primary" id="pm-go" onclick="importPastedText()">읽기 시작</button>
   </div>
 </div>
 <div id="aa-pop">
