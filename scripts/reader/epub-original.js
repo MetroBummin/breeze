@@ -313,8 +313,10 @@ async function restoreEpubSentence(candidates,source,changeToken){
     const frame=originalSession.frames[spine], doc=frame&&frame.contentDocument;
     if(!doc) continue;
     const stream=domWordStream(doc.body);
-    for(const candidate of candidates||[]){
-      const range=rangeForWordMatch(stream,bridgeFindSequence(stream,candidate));
+    const list=candidates||[];
+    for(let position=0; position<list.length; position++){
+      const match=bridgeFindSequence(stream,list[position],{follow:list[position+1]||'',near:0});
+      const range=rangeForWordMatch(stream,match);
       if(!range) continue;
       const rect=range.getBoundingClientRect();
       window.scrollTo(0,Math.max(0,window.scrollY+frame.getBoundingClientRect().top+rect.top-topInset()-10));

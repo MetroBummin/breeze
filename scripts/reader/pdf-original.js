@@ -27,6 +27,7 @@ async function openOriginalPdf(book,record,token){
     content.appendChild(page); pages.push(page);
   }
   const session={kind:'pdf',bookId:book.id,hash:record.hash,pdf,pages,
+                 glyphs:book.glyphs||null,
                  rendering:new Map(),wordBoxes:new Map(),urls:[]};
   originalSession=session;
   const hint=document.getElementById('original-selection-hint');
@@ -68,7 +69,7 @@ async function renderOriginalPdfPage(session,pageNumber){
     if(before.bottom<=0 && after.height!==before.height) window.scrollBy(0,after.height-before.height);
     await page.render({canvasContext:context,viewport,transform}).promise;
     const textContent=await page.getTextContent();
-    const wordBoxes=buildPdfWordBoxes(textContent,viewport);
+    const wordBoxes=buildPdfWordBoxes(textContent,viewport,session.glyphs);
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
@@ -102,11 +103,13 @@ function pdfWordMeasurer(){
   };
 }
 
-function buildPdfWordBoxes(textContent,viewport){
+/* 글자 화면에서 되살린 붙임글자는 원본 화면에서도 같아야 합니다. 다르면
+   같은 문장이 두 화면에서 다른 낱말이 되어, 모드를 바꿀 때 자리를 못 찾습니다. */
+function buildPdfWordBoxes(textContent,viewport,glyphs){
   const styles=textContent.styles||{};
   const entries=(textContent.items||[]).map(item=>pdfTextEntry(
     pdfTextTransform(viewport,item),
-    item.str,
+    applyLigatures(item.str,glyphs),
     Math.abs((Number(item.width)||0)*viewport.scale),
     pdfFontAscentRatio(styles[item.fontName]||{}),
     (styles[item.fontName]||{}).fontFamily));
@@ -235,14 +238,18 @@ async function restorePdfSentence(candidates,source,changeToken){
       const pdfPage=await originalSession.pdf.getPage(pageNumber);
       const textContent=await pdfPage.getTextContent();
       const stream=[];
-      (textContent.items||[]).forEach(item=>stream.push(...bridgeTokens(item.str||'')));
+      (textContent.items||[]).forEach(item=>
+        stream.push(...bridgeTokens(applyLigatures(item.str||'',originalSession.glyphs))));
       if(!(candidates||[]).some(candidate=>bridgeFindSequence(stream,candidate))) continue;
       await renderOriginalPdfPage(originalSession,pageNumber);
       boxes=originalSession.wordBoxes.get(pageNumber)||[];
     }
     if(changeToken!==readerModeChangeToken || currentReaderMode!=='original') return false;
-    for(const candidate of candidates||[]){
-      const match=bridgeFindSequence(boxes,candidate);
+    const list=candidates||[];
+    for(let position=0; position<list.length; position++){
+      /* 한 쪽 안에서만 찾으므로 near 는 0 이면 충분합니다. 뒤 문장까지 맞는
+         자리가 있으면 그쪽을 고릅니다 — 같은 쪽에 같은 말이 두 번 나올 때. */
+      const match=bridgeFindSequence(boxes,list[position],{follow:list[position+1]||'',near:0});
       if(!match) continue;
       const matched=boxes.slice(match.start,match.start+match.length);
       const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];

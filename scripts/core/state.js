@@ -68,18 +68,20 @@ function saveReadingState(){
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
-    const logical = sourceProgressForBook(curBook,original);
+    const measured = sourceProgressForBook(curBook,original);
+    const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);
     positions[curBook.id] = {...previous,
-      p:logical==null ? previous.p||0 : logical, t:Date.now(), mode:'original',
+      p:logical, t:Date.now(), mode:'original',
       original:original || previous.original || null};
     save(LS_POS, positions);
     return;
   }
   const a = captureAnchor();
   const previous = posOf(curBook.id);
-  const logical = textProgressForBook(curBook,a);
+  const measured = textProgressForBook(curBook,a);
+  const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);
   positions[curBook.id] = {...previous, y:window.scrollY,
-                            p:logical==null ? previous.p||0 : logical, t:Date.now(), mode:'text',
+                            p:logical, t:Date.now(), mode:'text',
                             pi: a ? a.pi : null, dy: a ? a.dy : 0 };
   save(LS_POS, positions);
 }

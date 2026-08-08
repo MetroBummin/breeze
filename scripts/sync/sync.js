@@ -395,6 +395,9 @@ async function bookUpload(id, options){
       formatting,
       layoutSignals:b.layoutSignals || null,
       sourceMap:b.sourceMap || null,
+      /* 붙임글자 표. 이걸 같이 올려야 받는 기기의 원본 화면도 글자 화면과
+         같은 낱말을 읽습니다 — scripts/importers/ligatures.js */
+      glyphs:b.glyphs || null,
       original:b.original ? {...b.original,storedAt:undefined} : null,
       /* 기사는 어디서 왔는지가 본문의 일부입니다 — 출처 이름, 원문 링크,
          그리고 사진이 어느 주소에서 왔는지. 사진 자체는 올리지 않습니다.
@@ -442,6 +445,7 @@ async function bookDownload(id, options){
                    formatting:body.formatting || body.tidy || null,
                    layoutSignals:body.layoutSignals || null,
                    sourceMap:body.sourceMap || null,
+                   glyphs:body.glyphs || null,
                    original:localOriginal ? existing.original : (body.original || null),
                    localSourceAt:localOriginal ? localBookSourceTime(existing,localOriginal) : 0,
                    site:body.site || '',

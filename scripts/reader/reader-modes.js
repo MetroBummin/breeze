@@ -120,27 +120,23 @@ function originalSentenceBridge(){
   return format.sentenceBridge(source);
 }
 
+/* PDF importers sometimes split one visual sentence into several stored
+   paragraphs, so the book is searched as one word stream. But a stream that
+   long needs a hint about where the reader already is — otherwise a common
+   sentence matches chapter one. `targetPi` is that hint. */
 function findTextSentence(candidates,targetPi){
-  /* PDF importers sometimes split one visual sentence into several stored
-     paragraphs. Search the rendered book as one word stream first, so that
-     mode switching still lands on that sentence across block boundaries. */
-  const root=document.getElementById('rtext');
-  const fullStream=root ? domWordStream(root) : [];
-  for(const candidate of candidates||[]){
-    const match=bridgeFindSequence(fullStream,candidate);
-    const range=rangeForWordMatch(fullStream,match);
-    if(range) return {range,stream:fullStream,match};
-  }
   const elements=[...document.querySelectorAll('#rtext [data-pi]')];
-  const start=Math.max(0,elements.findIndex(element=>+element.dataset.pi>=(targetPi==null ? 0 : targetPi)));
-  const ordered=[...elements.slice(start,start+18),...elements.slice(0,start)];
-  for(const candidate of candidates||[]){
-    for(const element of ordered){
-      const stream=domWordStream(element);
-      const match=bridgeFindSequence(stream,candidate);
-      const range=rangeForWordMatch(stream,match);
-      if(range) return {range,stream,match};
-    }
+  if(!elements.length) return null;
+  const stream=[], starts=[];
+  elements.forEach(element=>{ starts.push(stream.length); stream.push(...domWordStream(element)); });
+  const index=targetPi==null ? -1
+    : elements.findIndex(element=>+element.dataset.pi>=targetPi);
+  const near=index<0 ? null : starts[index];
+  const list=candidates||[];
+  for(let position=0; position<list.length; position++){
+    const match=bridgeFindSequence(stream,list[position],{follow:list[position+1]||'',near});
+    const range=rangeForWordMatch(stream,match);
+    if(range) return {range,stream,match};
   }
   return null;
 }

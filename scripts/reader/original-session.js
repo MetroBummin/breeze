@@ -89,14 +89,30 @@ function textProgressForBook(book,anchor){
   return Math.max(0,Math.min(1,(Number(anchor.pi)||0)/Math.max(1,(book.paras||[]).length-1)));
 }
 
+/* 진행도는 **화면 맨 위**에 무엇이 있는지로 셉니다. 그런데 글 아래 여백은 화면
+   절반뿐이라, 끝까지 내려도 마지막 문단은 화면 위까지 올라오지 못합니다. 그래서
+   다 읽어도 94%에서 멈췄습니다 — 쪽·장·요소로 세는 PDF·EPUB도 마지막 조각이
+   맨 위에 닿지 못해 같은 이유로 100%가 되지 않았습니다.
+   마지막 한 화면만은 남은 스크롤로 메꿉니다. 바닥에 닿으면 정확히 1입니다. */
+function readerProgressAtEnd(value){
+  const reach=Math.max(1,window.innerHeight);
+  const left=Math.max(0,document.documentElement.scrollHeight-reach-(window.scrollY||0));
+  if(left>=reach) return value;
+  const closing=1-left/reach;
+  return Math.max(0,Math.min(1,value+(1-value)*closing));
+}
+
+function readerProgressNow(){
+  if(!curBook) return null;
+  return currentReaderMode==='original'
+    ? sourceProgressForBook(curBook,captureOriginalAnchor())
+    : textProgressForBook(curBook,captureAnchor());
+}
+
 function visibleReaderProgress(){
   if(!curBook) return 0;
-  if(currentReaderMode==='original'){
-    const value=sourceProgressForBook(curBook,captureOriginalAnchor());
-    return value==null ? (posOf(curBook.id).p||0) : value;
-  }
-  const value=textProgressForBook(curBook,captureAnchor());
-  return value==null ? (posOf(curBook.id).p||0) : value;
+  const value=readerProgressNow();
+  return readerProgressAtEnd(value==null ? (posOf(curBook.id).p||0) : value);
 }
 
 /* ================= anchors ================= */

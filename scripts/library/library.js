@@ -435,12 +435,17 @@ async function prepareImportedFile(file){
     }
     if(!paras.length) throw new Error('읽을 수 있는 내용을 찾지 못했어요');
 
+    /* 붙임글자를 되살린 뒤에 지문을 냅니다 — 네모가 섞인 글과 고쳐진 글은
+       서로 다른 책이 되어 버리니까요. */
+    const glyphs = learnLigatures(paras.join('\n'));
+    paras = paras.map(text => text.startsWith(IMG_MARK) ? text : applyLigatures(text, glyphs));
+
     const id = textAvailable ? bookHash(paras) : 'raw-'+hash.slice(0,24);
     const fingerprint = textAvailable ? bookContentFingerprint(paras) : 'raw:'+hash;
     const sourceMap = buildSourceMap(sig);
     const packedSignals = packLayoutSignals(sig);
     const formatting = buildFormattingFromLayout(paras,sig,null);
-    return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,
+    return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,glyphs,
             formatting:formatting && validateFormattingBlocks(paras,formatting.blocks) ? formatting : null,
             textAvailable};
   }catch(error){
@@ -462,6 +467,7 @@ async function applyPreparedBook(target, prepared, file){
   target.fingerprint = prepared.fingerprint;
   target.textAvailable = prepared.textAvailable;
   target.sourceMap = prepared.sourceMap;
+  target.glyphs = prepared.glyphs || null;
   target.layoutSignals = prepared.packedSignals || null;
   target.formatting = prepared.formatting || null;
   target.original = original;
@@ -528,7 +534,7 @@ async function importFile(file, extra){
     }
     const book = {id,title:prepared.title,kind:prepared.kind,paras,addedAt:Date.now(),
       fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
-      sourceMap:prepared.sourceMap,
+      sourceMap:prepared.sourceMap,glyphs:prepared.glyphs||null,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
       original,localSourceAt:original ? original.storedAt : Date.now(), ...extra};
     await bookPut(book);

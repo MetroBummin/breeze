@@ -381,15 +381,64 @@ assert.match(pdfSource,/window\.scrollBy\(0,after\.height-before\.height\)/,
   'A late page-size correction can still push the visible line');
 assert.match(epubSource,/EPUB_FRAME_TIMEOUT/,
   'A chapter frame that never loads can hang the original reader');
+/* ---- 붙임글자: 책이 스스로 답을 갖고 있습니다 ----
+   Type 3 글꼴로 조판한 PDF 는 "Th"·"ft" 를 글꼴 안의 사용자 지정 자리에 넣어
+   두고 그게 무슨 글자인지 적어 두지 않습니다. 같은 책의 멀쩡한 낱말과 맞춰
+   보면 후보는 하나로 좁혀집니다 — 사전도 AI도 쓰지 않습니다. */
 const bridgeContext = {};
+new Script(readFileSync(resolve(root, 'scripts/importers/ligatures.js'), 'utf8'))
+  .runInNewContext(bridgeContext);
+{
+  const TH = '\uE062', FT = '\uE09D';
+  const book = [
+    TH+'e scythe arrived late on a cold November a'+FT+'ernoon.',
+    'His so'+FT+' shoes made no sound. A'+FT+'er all, scythes had to eat.',
+    TH+'ey looked like robes. The soft light left the room, and after that they often waited.',
+  ].join('\n');
+  const learned = bridgeContext.learnLigatures(book);
+  assert.deepEqual(JSON.parse(JSON.stringify(learned)), {[TH]:'th', [FT]:'ft'},
+    'The book can no longer work out which letters its unnamed glyphs stand for');
+  const fixed = bridgeContext.applyLigatures(book, learned);
+  assert.match(fixed, /^The scythe arrived late on a cold November afternoon\./,
+    'A sentence-opening ligature lost its capital');
+  assert.match(fixed, /His soft shoes made no sound\. After all/,
+    'A mid-sentence ligature was capitalised, or a sentence opener was not');
+  assert.doesNotMatch(fixed, /[\uE000-\uF8FF]/, 'A box character survived the repair');
+  /* 짐작이 서지 않으면 손대지 않습니다. 잘못 고친 글자는 네모보다 나쁩니다. */
+  assert.equal(bridgeContext.learnLigatures('zz'+TH+'qq and nothing else here'), null,
+    'An undecidable glyph is being replaced by a guess');
+  assert.equal(bridgeContext.normalizeLigatures('the oﬃce ﬂag'), 'the office flag',
+    'Unicode ligatures are no longer unpacked');
+}
 new Script(readFileSync(resolve(root, 'scripts/reader/mode-bridge.js'), 'utf8'))
   .runInNewContext(bridgeContext);
 assert.deepEqual(Array.from(bridgeContext.bridgeTokens('“Michael  took—his eyes”')),
   ['michael','took','his','eyes'],'Mode bridge does not normalize book punctuation');
+/* 두 화면이 붙임글자를 다르게 읽으면 같은 문장을 못 알아봅니다. */
+assert.deepEqual(Array.from(bridgeContext.bridgeTokens('the oﬃce ﬂag')),
+  ['the','office','flag'],'A ligature still splits one word into two tokens');
 assert.deepEqual(JSON.parse(JSON.stringify(bridgeContext.bridgeFindSequence(
   ['before','michael','took','his','eyes','off','the','road'],
   'Michael took his eyes off the road.'))),
-  {start:1,length:7,confidence:1},'Mode bridge cannot locate a visible sentence');
+  {start:1,length:7,confidence:1,confirmed:false},'Mode bridge cannot locate a visible sentence');
+
+/* ---- 같은 문장이 여러 번 나오는 책 ----
+   예전에는 언제나 "책에서 처음 나오는 자리"로 뛰었습니다. 400쪽짜리 책
+   한가운데서 모드를 바꾸면 1장으로 튀던 이유입니다. */
+const twice = [];
+for(let copy=0; copy<3; copy++){
+  for(const word of ['he','nodded','and','then','she','left','the','room','so','they','waited'])
+    twice.push(word);
+}
+assert.equal(bridgeContext.bridgeFindSequence(twice,'He nodded.',{near:13}).start,11,
+  'The bridge still ignores where the reader actually was');
+assert.equal(bridgeContext.bridgeFindSequence(twice,'He nodded.',{follow:'And then she left the room.',near:24}).start,22,
+  'The following sentence no longer confirms which copy is the right one');
+assert.equal(bridgeContext.bridgeFindSequence(twice,'He nodded.'),null,
+  'A short sentence with several equal matches still picks one at random');
+assert.equal(bridgeContext.bridgeFindSequence(
+  [...Array(2000).fill('filler'),'he','nodded','deeply'],'He nodded deeply.',{near:0}),null,
+  'A match on the far side of the book is still accepted as the same place');
 assert.match(modesSource,/bridgeFindSequence/,
   'Reader modes no longer align by the visible sentence');
 const geometryContext = {};

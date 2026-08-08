@@ -56,6 +56,9 @@ function renderBookBody(b){
         else fig.remove();
       });
       fig.appendChild(img);
+      /* 사진에도 번호를 답니다. 없으면 사진으로 끝나는 기사가 마지막 문단에
+         닿지 못해 진행도와 읽던 자리가 사진 앞에서 멈춥니다. */
+      fig.dataset.pi = bl.f;
       page.appendChild(fig);
       pageChars += 400;
       box = null; boxKind = '';
@@ -95,6 +98,9 @@ function renderBookBody(b){
 async function openBook(b){
   readerModeChangeToken++;
   leaveOriginalReader();
+  /* 예전에 넣어 둔 책에 남아 있는 네모(□)를 여기서 한 번 고칩니다 —
+     scripts/importers/ligatures.js */
+  await repairBookLigatures(b);
   /* The width observer below fires as the reader appears. It must not aim at
      wherever the previous book was being read. */
   lastAnchor = null;
