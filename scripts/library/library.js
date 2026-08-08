@@ -43,6 +43,7 @@ async function deleteBook(b){
   await imgPurge(b.id+'|');
   delete positions[b.id]; save(LS_POS, positions);
   renderHome();
+  renderCasualLibrary();
   if(sb && sbUser){
     try{
       const meta = { title:b.title, fingerprint:ensureBookFingerprint(b),
@@ -70,6 +71,7 @@ async function renameBook(b){
   b.renamedAt = Date.now();            // 어느 쪽 이름이 최신인지 판단하는 기준
   await bookPut(b);
   renderHome();
+  renderCasualLibrary();
   toast('이름을 바꿨어요');
   // 서버에 이미 올라간 책이면 목록의 이름도 함께 갱신
   if(sb && sbUser){
@@ -85,87 +87,155 @@ async function renameBook(b){
   }
 }
 
+/* ================= 홈 =================
+   짧은 글(Casuals)은 옆으로, 긴 글(Long-form)은 아래로. 두 줄이면 "무엇을
+   읽지"에 답이 되고, 그 이상은 이 앱에 필요 없습니다.
+
+   "이어서 읽기" 칸은 따로 두지 않습니다. 두면 같은 책이 한 화면에 두 번
+   나오니까요. 대신 마지막에 읽던 것 하나만 테두리로 표시합니다. */
+
+const CASUAL_KINDS = new Set(['paste','article']);
+const isCasual = book => CASUAL_KINDS.has(book.kind);
+function casualBooks(){ return books.filter(isCasual); }
+function longformBooks(){ return allBooks().filter(book => !isCasual(book)); }
+const readMinutes = book => Math.max(1, Math.round(wcOf(book)/180));
+
+/* 마지막으로 열었던 책 하나. 아직 아무것도 안 읽었으면 없습니다. */
+function nowReadingId(){
+  const opened = allBooks().filter(book => posOf(book.id).t);
+  if(!opened.length) return null;
+  return opened.sort((a,b) => posOf(b.id).t - posOf(a.id).t)[0].id;
+}
+/* 테두리와 진행도 글귀 하나로 표시합니다. 카드 위에 배지를 얹으면 지은이나
+   출처 줄을 가려 버립니다. */
+function nowReadingLabel(book, current){
+  const position = posOf(book.id);
+  const percent = position.t ? Math.round(position.p*100)+'% 읽음' : '';
+  if(book.id !== current) return percent;
+  return percent ? '이어서 · '+percent : '이어서 읽기';
+}
+
+function casualCard(book, index, current){
+  const position = posOf(book.id);
+  const percent = Math.round(position.p*100);
+  const card = document.createElement('div');
+  card.className = 'casual cpal'+(index%4);
+  card.innerHTML = `<div class="thumb">
+      <div class="src"></div><div class="lede"></div>
+      ${WAVE('#FFFFFF','.35')}
+      ${position.t ? `<div class="bar"><i style="width:${percent}%"></i></div>` : ''}
+      <button class="del" title="삭제">✕</button>
+    </div>
+    <div class="ct"></div>
+    <div class="cm"></div>`;
+  card.querySelector('.src').textContent = book.site || '붙여넣은 글';
+  /* 표지 그림이 없으므로 글 자체가 표지입니다. 첫 문단을 보여 줍니다. */
+  card.querySelector('.lede').textContent = book.paras[1] || book.paras[0] || '';
+  card.querySelector('.ct').textContent = book.title;
+  const label = nowReadingLabel(book, current);
+  card.querySelector('.cm').textContent = label
+    ? `${label} · ${readMinutes(book)}분`
+    : `${readMinutes(book)}분 읽기`;
+  const pressed = attachLongPress(card, ()=>renameBook(book));
+  card.onclick = event => {
+    if(event.target.classList.contains('del') || pressed()) return;
+    openBook(book);
+  };
+  card.querySelector('.del').onclick = () => deleteBook(book);
+  card.querySelector('.thumb').classList.toggle('now-ring', book.id === current);
+  return card;
+}
+
+function casualAddCard(){
+  const card = document.createElement('div');
+  card.className = 'casual add';
+  card.innerHTML = `<div class="thumb"><div class="plus">+</div>
+    <div class="lbl">기사 URL<br>또는 붙여넣기</div></div>`;
+  card.onclick = () => openAddModal('casual');
+  return card;
+}
+
+function bookCard(book, index, current){
+  const label = nowReadingLabel(book, current);
+  const card = document.createElement('div');
+  card.className = 'bookcard pal'+(index%3);
+  card.classList.toggle('now-ring', book.id === current);
+  card.innerHTML = `<div class="author"></div><div class="bt"></div>
+    ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
+    ${label ? `<div class="prog">${label}</div>` : ''}
+    ${book.builtin ? '' : '<button class="del" title="삭제">✕</button>'}`;
+  card.querySelector('.author').textContent = book.author || (book.builtin ? 'SAMPLE' : 'MY BOOK');
+  card.querySelector('.bt').textContent = book.title;
+  const pressed = attachLongPress(card, ()=>renameBook(book));
+  card.onclick = event => {
+    if(event.target.classList.contains('del') || pressed()) return;
+    openBook(book);
+  };
+  const del = card.querySelector('.del');
+  if(del) del.onclick = () => deleteBook(book);
+  return card;
+}
+
 function renderHome(){
   document.getElementById('greet').textContent = greet();
-  // 기출 문제지는 Shorts 화면이 다룹니다. 책장에는 책만 둡니다.
-  const list = allBooks().filter(book => book.kind !== 'exam');
-  // hero = most recently opened (default: demo)
-  const hero = list.slice().sort((a,b)=>posOf(b.id).t - posOf(a.id).t)[0];
-  const hp = posOf(hero.id);
-  const pct = Math.round(hp.p*100);
-  const minLeft = Math.max(1, Math.round(wcOf(hero)*(1-hp.p)/180));
-  /* #hero는 화면을 다시 그려도 같은 요소입니다. 여기에 꾹 누르기 리스너를 계속 더하면
-     renderHome()이 돈 횟수만큼 쌓여서, 한 번 꾹 눌렀는데 이름 바꾸기 창이
-     연달아 여러 번 뜹니다(닫아도 다음 창이 또 뜨는 것처럼 보임).
-     그래서 매번 빈 사본으로 갈아 끼워 옛 리스너를 통째로 떼어 냅니다. */
-  const H = document.getElementById('hero').cloneNode(false);
-  const H0 = document.getElementById('hero');
-  H0.parentNode.replaceChild(H, H0);
-  H.innerHTML = `
-    ${WAVE('#BDDCCD','.45')}
-    <div class="cover"><div class="inner"></div>
-      <svg class="arc" viewBox="0 0 145 35" fill="none"><path d="M5 30 C54 0 103 -3 140 28" stroke="#A8D6E2" stroke-width="4" opacity=".8"/></svg>
-      <div class="ct"></div>
-    </div>
-    <div class="meta">
-      <div class="eyebrow">${hp.t? 'CONTINUE READING' : 'START READING'}</div>
-      <div class="bt"></div>
-      <div class="bm">${hp.t? pct+'% read · 약 '+minLeft+'분 남음' : wcOf(hero).toLocaleString()+' words · 약 '+minLeft+'분'}</div>
-      <div class="track"><div class="fill" style="width:${pct}%"></div></div>
-      <button class="cta">${hp.t?'Read now':'Start'}</button>
-    </div>`;
-  H.querySelector('.ct').textContent = hero.title.toUpperCase();
-  H.querySelector('.bt').textContent = hero.title;
-  const heroPressed = attachLongPress(H, ()=>renameBook(hero));
-  H.onclick = () => { if(heroPressed()) return; openBook(hero); };
-  // shelf: the rest + add card
-  const s = document.getElementById('shelf');
-  s.innerHTML = '';
-  list.filter(b=>b.id!==hero.id).forEach((b,i)=>{
-    const pal = 'pal'+(i%3);
-    const waveC = ['#C0DCC9','#9FCAB5','#B5D7C3'][i%3];
-    const p = posOf(b.id);
-    const card = document.createElement('div');
-    card.className = 'bookcard '+pal;
-    card.innerHTML = `<div class="author"></div><div class="bt"></div>
-      ${WAVE(waveC,'.6')}
-      ${p.t? `<div class="prog">${Math.round(p.p*100)}% 읽음</div>`:''}
-      ${b.builtin?'':'<button class="del" title="삭제">✕</button>'}`;
-    card.querySelector('.author').textContent = b.author || (b.builtin?'SAMPLE':'MY BOOK');
-    card.querySelector('.bt').textContent = b.title;
-    const pressed = attachLongPress(card, ()=>renameBook(b));
-    card.onclick = e => { if(e.target.classList.contains('del') || pressed()) return; openBook(b); };
-    const del = card.querySelector('.del');
-    if(del) del.onclick = () => deleteBook(b);
-    s.appendChild(card);
-  });
-  const paste = document.createElement('div');
-  paste.className = 'bookcard add';
-  paste.innerHTML = '<div class="plus">¶</div><div class="lbl">기사 · 스레드<br>영어 글 붙여넣기</div>';
-  paste.onclick = openPasteModal;
-  s.appendChild(paste);
+  const current = nowReadingId();
+
+  const rail = document.getElementById('casual-rail');
+  rail.innerHTML = '';
+  const casuals = casualBooks();
+  casuals.forEach((book, index) => rail.appendChild(casualCard(book, index, current)));
+  rail.appendChild(casualAddCard());
+  document.querySelector('#casuals .sec-sub').textContent = casuals.length
+    ? `기사 · 스레드 · 짧은 글 ${casuals.length}편`
+    : '기사 · 스레드 · 짧은 글';
+
+  const shelf = document.getElementById('shelf');
+  shelf.innerHTML = '';
+  longformBooks().forEach((book, index) => shelf.appendChild(bookCard(book, index, current)));
+  pendingClassics().forEach(classic => shelf.appendChild(classicCard(classic)));
   const add = document.createElement('div');
   add.className = 'bookcard add';
   add.innerHTML = '<div class="plus">+</div><div class="lbl">PDF · EPUB · TXT<br>파일 추가</div>';
   add.onclick = () => finput.click();
-  s.appendChild(add);
+  shelf.appendChild(add);
 }
 
-/* ================= 붙여넣은 글 =================
-   파일도 DRM도 없이 바로 읽기 시작하는 가장 짧은 경로입니다. 저장은 다른
-   책과 똑같이 IndexedDB로 가므로 넣는 순간부터 오프라인에서 읽힙니다. */
-function pasteModal(){ return document.getElementById('paste-modal'); }
-function openPasteModal(){
-  pasteModal().classList.add('on');
-  const field = document.getElementById('pm-text');
-  field.focus();
-  updatePastePreview();
+function renderCasualLibrary(){
+  const casuals = casualBooks();
+  const current = nowReadingId();
+  const grid = document.getElementById('casual-grid');
+  const empty = document.getElementById('casual-empty');
+  document.getElementById('casual-cnt').textContent = casuals.length ? `${casuals.length}편` : '';
+  grid.innerHTML = '';
+  casuals.forEach((book, index) => grid.appendChild(casualCard(book, index, current)));
+  empty.hidden = casuals.length > 0;
+  empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
 }
-function closePasteModal(){ pasteModal().classList.remove('on'); }
+
+/* ================= 하나뿐인 추가 시트 =================
+   붙여넣기 · 기사 URL · 내 파일. 셋 다 넣는 순간부터 오프라인에서 읽힙니다. */
+function addModal(){ return document.getElementById('add-modal'); }
+function addStep(step){
+  addModal().querySelectorAll('.am-step').forEach(section =>
+    section.classList.toggle('on', section.dataset.step === step));
+  if(step === 'paste'){ document.getElementById('am-text').focus(); updatePastePreview(); }
+  if(step === 'url'){
+    document.getElementById('am-url').focus();
+    document.getElementById('am-url-status').textContent = '';
+  }
+}
+/* mode='casual'이면 짧은 글 두 가지만 보여 줍니다. */
+function openAddModal(mode){
+  addModal().classList.add('on');
+  addModal().querySelector('.am-file').hidden = mode === 'casual';
+  addStep('pick');
+}
+function closeAddModal(){ addModal().classList.remove('on'); }
+function pickBookFile(){ closeAddModal(); finput.click(); }
 
 function updatePastePreview(){
-  const parsed = parsePastedText(document.getElementById('pm-text').value);
-  const preview = document.getElementById('pm-preview');
+  const parsed = parsePastedText(document.getElementById('am-text').value);
+  const preview = document.getElementById('am-preview');
   if(!parsed){ preview.textContent = ''; return; }
   const bodies = parsed.paras.length - (parsed.paras.length > 1 ? 1 : 0);
   preview.innerHTML = parsed.paras.length > 1
@@ -173,36 +243,38 @@ function updatePastePreview(){
     : '문단 <b>1</b>개';
 }
 
-async function importPastedText(){
-  const parsed = parsePastedText(document.getElementById('pm-text').value);
-  if(!parsed){ toast('읽을 영어 글이 없어요'); return; }
+/* 붙여넣은 글과 가져온 기사가 같은 저장 경로를 씁니다. */
+async function saveCasualBook(parsed, extra){
   const id = bookHash(parsed.paras);
   const existing = books.find(book => book.id === id);
-  if(existing){
-    closePasteModal();
-    toast(`이미 있는 글이에요 — "${existing.title}"`);
-    openBook(existing);
-    return;
-  }
+  if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); openBook(existing); return; }
   const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
     addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
     textAvailable:true, readerSchema:4, sourceMap:null, layoutSignals:null,
-    formatting:parsed.formatting, original:null, localSourceAt:Date.now() };
+    formatting:parsed.formatting, original:null, localSourceAt:Date.now(), ...extra };
   await bookPut(book);
   books.unshift(book);
-  document.getElementById('pm-text').value = '';
-  closePasteModal();
+  closeAddModal();
   renderHome();
   openBook(book);
 }
 
-document.getElementById('pm-text').addEventListener('input', updatePastePreview);
-pasteModal().addEventListener('click', e => { if(e.target.id === 'paste-modal') closePasteModal(); });
+async function importPastedText(){
+  const parsed = parsePastedText(document.getElementById('am-text').value);
+  if(!parsed){ toast('읽을 영어 글이 없어요'); return; }
+  document.getElementById('am-text').value = '';
+  await saveCasualBook(parsed, null);
+}
+
+document.getElementById('am-text').addEventListener('input', updatePastePreview);
+document.getElementById('am-url').addEventListener('keydown', event => {
+  if(event.key === 'Enter') importArticleUrl();
+});
+addModal().addEventListener('click', event => { if(event.target.id === 'add-modal') closeAddModal(); });
 
 /* ================= import ================= */
 const finput = document.getElementById('fileinput');
 const originalInput = document.getElementById('original-fileinput');
-document.getElementById('btn-add').onclick = () => finput.click();
 finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0]); finput.value=''; };
 let reconnectTarget = null;
 originalInput.onchange = async()=>{
@@ -306,13 +378,10 @@ async function prepareImportedFile(file){
 
     const id = textAvailable ? bookHash(paras) : 'raw-'+hash.slice(0,24);
     const fingerprint = textAvailable ? bookContentFingerprint(paras) : 'raw:'+hash;
-    /* 기출 문제지인지 봅니다. 시험지면 문항 단위로 다루는 편이 훨씬 쓸모
-       있어서, 책이 아니라 Shorts 항목으로 담습니다. */
-    const exam = kind === 'pdf' && parsed.sheets ? parseExam(parsed.sheets) : null;
     const sourceMap = buildSourceMap(sig);
     const packedSignals = packLayoutSignals(sig);
     const formatting = buildFormattingFromLayout(paras,sig,null);
-    return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,exam,
+    return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,
             formatting:formatting && validateFormattingBlocks(paras,formatting.blocks) ? formatting : null,
             textAvailable};
   }catch(error){
@@ -368,33 +437,14 @@ async function reconnectOriginalFile(target,file){
     toast('원본을 연결하지 못했어요: '+(error.message||error));
   }
 }
-/* 기출 문제지는 책장이 아니라 Shorts로 갑니다. 본문(paras)은 문항 지문을
-   그대로 담아 두어 사전의 예문 찾기와 책 지문·동기화가 그대로 동작합니다. */
-async function importExam(prepared){
-  const paras = prepared.exam.map(question => question.passage);
-  const id = bookHash(paras);
-  const existing = books.find(book => book.id === id);
-  const exam = { id, title:prepared.title, kind:'exam', questions:prepared.exam, paras,
-    addedAt: existing ? existing.addedAt : Date.now(),
-    fingerprint: bookContentFingerprint(paras), textAvailable:true, readerSchema:4,
-    sourceMap:null, layoutSignals:null, formatting:null, original:null,
-    localSourceAt: Date.now() };
-  await bookPut(exam);
-  books = books.filter(book => book.id !== id);
-  books.unshift(exam);
-  await imgPurge(prepared.tmpId+'|');
-  shortsExam = exam;
-  toast(`기출 ${prepared.exam.length}문항을 담았어요 — Shorts에서 풀어 보세요`);
-  show('shorts');
-}
-
-async function importFile(file){
+/* `extra`는 파일에서 알 수 없는 것만 얹습니다 — 지금은 내장 고전의
+   지은이와 고전 ID뿐입니다. */
+async function importFile(file, extra){
   if(!/\.(pdf|epub|txt)$/i.test(file.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
   toast('책을 준비하고 있어요…');
   let prepared = null;
   try{
     prepared = await prepareImportedFile(file);
-    if(prepared.exam){ await importExam(prepared); return; }
     const already = books.find(book=>book.id===prepared.id || ensureBookFingerprint(book)===prepared.fingerprint);
     if(already){
       if(prepared.kind === 'txt'){
@@ -402,6 +452,7 @@ async function importFile(file){
         toast(`이미 있는 책이에요 — "${already.title}"`);
         return;
       }
+      Object.assign(already, extra);      // 같은 고전을 다시 받았을 때 표시가 남도록
       await applyPreparedBook(already,prepared,file);
       renderHome();
       toast(`기존 책에 원본을 연결했어요 — "${already.title}"`);
@@ -421,7 +472,7 @@ async function importFile(file){
       fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
       readerSchema:4,sourceMap:prepared.sourceMap,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
-      original,localSourceAt:original ? original.storedAt : Date.now()};
+      original,localSourceAt:original ? original.storedAt : Date.now(), ...extra};
     await bookPut(book);
     books.unshift(book);
     renderHome();

@@ -481,8 +481,8 @@ async function parsePDF(f){
     for(const column of pdfPageColumns(content.items, width)){
       const lines = itemsToLines(column);
       if(!lines.length) continue;
-      /* 시험지 문항 분리기가 같은 줄을 다시 씁니다. 문항 번호 줄은 본문보다
-         왼쪽으로 내어 조판되므로 내어쓰기 폭과 쪽 안 세로 위치를 남깁니다. */
+      /* 문항 번호 줄은 본문보다 왼쪽으로 내어 조판됩니다. 내어쓰기 폭과 쪽 안
+         세로 위치를 남겨 두면 `modules/exam-shorts`가 같은 줄을 다시 읽습니다. */
       const lefts = lines.map(line => line.left).sort((a, b) => a - b);
       const bodyLeft = lefts[Math.floor(lefts.length / 2)];
       lines.forEach(line => { line.outdent = bodyLeft - line.left; line.rel = line.y / h; });
@@ -490,7 +490,7 @@ async function parsePDF(f){
     }
   }
   const paragraphs = assembleParagraphs(pages);
-  paragraphs.sheets = pages;          // 시험지 분리기가 소비합니다
+  paragraphs.sheets = pages;          // modules/exam-shorts/exam.js 가 소비합니다
   try{ await pdf.destroy(); }catch(e){}
   return paragraphs;
 }

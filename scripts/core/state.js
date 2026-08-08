@@ -35,9 +35,6 @@ async function loadBooks(){
 }
 let positions = load(LS_POS, {});   // bookId -> text anchor + original source anchor
 let curBook = null, selKey = null;
-/* 쇼츠는 자체 스크롤 컨테이너를 쓰고 읽던 위치라는 개념이 없습니다.
-   책 진행도 저장 로직이 끼어들지 않도록 표시해 둡니다. */
-let shortsActive = false;
 const saveWords = () => save(LS_WORDS, words);
 const posOf = id => {
   let v = positions[id];
@@ -84,7 +81,7 @@ function keepPlace(fn){
 }
 
 function saveReadingState(){
-  if(!curBook || shortsActive) return;
+  if(!curBook) return;
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
@@ -107,18 +104,16 @@ function show(v){
   saveReadingState();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
-  document.getElementById('nav-home').classList.toggle('on', v==='home');
+  document.getElementById('nav-home').classList.toggle('on', v==='home' || v==='casuals');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
-  document.getElementById('nav-shorts').classList.toggle('on', v==='shorts');
-  document.body.classList.toggle('shorts', v==='shorts');
   if(v!=='read'){
     leaveOriginalReader();
     curBook=null; closePanel(); toggleFocus(false);
   }
   document.body.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();
+  if(v==='casuals') renderCasualLibrary();
   if(v==='vocab') renderVocab();
-  if(v==='shorts') openShorts(); else closeShorts();
   window.scrollTo(0,0);
 }
 

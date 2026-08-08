@@ -11,8 +11,10 @@
 ## 파일 책임
 
 - `scripts/core/`: 부팅 안전장치, IndexedDB, 상태, 샘플 데이터
-- `scripts/library/`: 책 목록, 추가·삭제·이름 변경
+- `scripts/library/`: 홈 두 줄(Casuals·Long-form), 추가 시트, 추가·삭제·이름 변경
+  - `classics.js`: 내장 무료 고전 목록과 받기
 - `scripts/importers/`: TXT/PDF/EPUB 파싱
+  - `article.js`: 기사 URL — 본문 추출 규칙과 가져오기
 - `scripts/dictionary/`: 표제어 처리, 사전 조회, 단어장 UI
 - `scripts/reader/`: 보수적인 글자 화면, PDF/EPUB 원본 화면, 양방향 위치 연결
   - `pdf-word-geometry.js`: DOM에 의존하지 않는 순수 단어 상자 계산 (테스트가 직접 호출)
@@ -21,11 +23,45 @@
   - `pdf-original.js` / `epub-original.js`: 형식별 렌더링·단어 선택·앵커
   - `reader-modes.js`: `글자` ↔ `원본` 전환과 전환 표시
   - `reader.js`: 글자 화면 렌더링, 스크롤·폭 변화 대응
-- `scripts/importers/exam.js`: 수능·모의고사 문항 분리 (규칙 기반, AI 없음)
-- `scripts/shorts/`: 기출 쇼츠 화면 — 세로 스냅, 타이머, 잠금·해제
 - `scripts/ui/`: 보기 설정, 발음, 시트 제스처
 - `scripts/sync/`: 로그인, 단어·위치·책 동기화
 - `server/dict/`: 활성 AI 사전 Edge Function
+- `server/article/`: 기사 HTML 중계 Edge Function (추출은 하지 않습니다)
+- `assets/classics/`: 함께 배포하는 퍼블릭 도메인 EPUB 5종
+- `modules/exam-shorts/`: **연결 해제된** 기출 문항 분리 + 쇼츠 화면.
+  `index.html`이 읽지 않습니다. 되살리는 순서는 그 폴더의 `README.md`에 있고,
+  `exam.js`의 규칙은 떼어 둔 동안에도 `npm test`가 계속 검사합니다.
+
+## 홈
+
+두 줄입니다. **Casuals**(`kind: paste | article`)는 가로 레일, **Long-form**(그
+밖의 전부 + 아직 안 받은 내장 고전)은 격자. "이어서 읽기" 칸은 만들지
+않았습니다 — 만들면 같은 책이 한 화면에 두 번 나옵니다. 대신 마지막에 열었던
+것 하나에 테두리를 두르고 진행도 글귀 앞에 `이어서`를 붙입니다.
+
+내장 고전은 별도 읽기 경로가 없습니다. 카드를 누르면 `assets/classics`의 EPUB을
+`fetch`해서 `File`로 만들어 평범한 `importFile()`에 넘깁니다. 그래서 `원본`
+모드, 단어장, 동기화가 전부 저절로 따라옵니다.
+
+## 기사 URL
+
+본문 추출은 **기기 안에서** 브라우저의 `DOMParser`로 합니다. 규칙만 씁니다.
+
+1. `script·style·nav·header·footer·aside·form·table·figure` 따위를 먼저 지웁니다.
+2. 본문 뿌리 = 50자 넘는 `<p>`가 가장 많이 모인 조상. 위로 갈수록 점수를 깎아
+   페이지 전체가 이기지 않게 합니다. 사이트가 `<article>`을 붙여 두었고 그
+   안에 본문이 들어 있으면 그쪽을 씁니다.
+3. 클래스·id에 `comment·promo·related·reference` 같은 말이 있으면 버립니다.
+   각주처럼 자기 자신은 깨끗한 경우가 있어 조상 네 칸까지 봅니다.
+4. `References`·`External links` 같은 소제목을 만나면 거기서 멈춥니다.
+5. 끝에 붙는 `Most viewed` 같은 것은 언제나 짧으므로, **마지막 진짜 문단**(100자
+   이상) 뒤를 통째로 자릅니다.
+6. 본문이 500자에 못 미치면 실패로 봅니다. 로그인·결제가 걸린 기사가 여기
+   걸리며, 그때는 "못 가져왔다"고 말하고 붙여넣기를 권합니다.
+
+서버(`server/article`)는 CORS만 넘겨 줍니다. HTML을 그대로 돌려주고 파싱하지
+않습니다 — 규칙을 고칠 때마다 함수를 다시 배포하고 싶지 않기 때문입니다.
+열린 중계가 되지 않도록 사설 대역·비 HTTP 스킴을 막고 3MB에서 끊습니다.
 
 ## 호환성
 

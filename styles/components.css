@@ -70,26 +70,6 @@
   #sm-codewrap .hint{font-size:12.5px; color:var(--soft); margin-bottom:8px; text-align:center;}
   #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
-  /* paste sheet — 파일 없이 아무 영어 글이나 받는 입구 */
-  #paste-modal{position:fixed; inset:0; z-index:160; background:rgba(24,54,74,.35); display:none;
-    align-items:center; justify-content:center; padding:20px;}
-  #paste-modal.on{display:flex;}
-  #pm-card{background:#fff; border-radius:22px; padding:30px 28px; width:100%; max-width:520px;
-    box-shadow:var(--shadow);}
-  #pm-card h2{font-size:20px; font-weight:600; margin-bottom:6px;}
-  #pm-card .desc{font-size:13.5px; color:var(--soft); line-height:1.65; margin-bottom:16px;}
-  #pm-card .desc b{color:var(--ink); font-weight:600;}
-  #pm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
-    font-size:14px; cursor:pointer; color:var(--soft);}
-  #pm-text{width:100%; height:210px; resize:vertical; border:1px solid var(--line); border-radius:14px;
-    padding:14px 15px; font:15px/1.65 var(--ui); color:var(--ink); background:var(--paper2);
-    outline:none; margin-bottom:10px;}
-  #pm-text:focus{border-color:var(--blue);}
-  #pm-preview{font-size:12.5px; color:var(--soft2); min-height:19px; margin-bottom:12px; text-align:center;}
-  #pm-preview b{color:var(--blue); font-weight:600;}
-  body.dark #pm-card{background:#1F2327; border-color:#2A2E33;}
-  body.dark #pm-close{background:#2A2E33; color:#9AA1A8;}
-  body.dark #pm-text{background:#1C1F23; border-color:#2A2E33; color:var(--ink);}
   #minitoast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:140;
     background:rgba(24,54,74,.8); color:#fff; font-size:11.5px; letter-spacing:.2px;
     padding:5px 13px; border-radius:20px; opacity:0; pointer-events:none;

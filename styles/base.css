@@ -46,64 +46,7 @@
   .navbtn.on{background:var(--sky); color:var(--blue-deep);}
   .navbtn:hover{background:#EFEDE4;}
   #btn-add{width:38px; height:38px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
-    font-size:20px; cursor:pointer; line-height:1;}
+    font-size:22px; cursor:pointer; line-height:1;}
   #btn-add:hover{background:var(--sky2);}
-  #btn-paste{width:38px; height:38px; border-radius:50%; border:none; background:transparent;
-    color:var(--soft); cursor:pointer; display:flex; align-items:center; justify-content:center;}
-  #btn-paste svg{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7;
-    stroke-linecap:round; stroke-linejoin:round;}
-  #btn-paste:hover{background:#EFEDE4; color:var(--blue);}
-  body.dark #btn-paste:hover{background:#22262B;}
 
   .view{display:none;} .view.on{display:block;}
-
-  /* ================= home ================= */
-  #v-home{max-width:960px; margin:0 auto; padding:28px 26px 90px;}
-  #greet{font-size:13.5px; color:var(--soft); letter-spacing:1.6px; margin:14px 2px 10px;}
-  #bigq{font-size:clamp(28px,4.6vw,40px); font-weight:500; letter-spacing:-1.4px; margin-bottom:30px;}
-  /* hero continue card */
-  #hero{border-radius:26px; background:linear-gradient(135deg,#DCEFF5,#F9F7EE); box-shadow:var(--shadow);
-    position:relative; overflow:hidden; padding:34px; display:flex; gap:34px; cursor:pointer; margin-bottom:56px;}
-  #hero:hover{transform:translateY(-2px); transition:.2s;}
-  #hero .wave{position:absolute; left:0; right:0; bottom:0; height:32%; pointer-events:none;}
-  #hero .cover{width:150px; min-width:150px; height:220px; border-radius:8px; position:relative; z-index:1;
-    background:linear-gradient(135deg,#28516B,#173347); box-shadow:0 12px 24px rgba(23,51,71,.35);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; text-align:center;}
-  #hero .cover .inner{position:absolute; inset:9px; border:1px solid rgba(135,189,208,.7); border-radius:4px;}
-  #hero .cover .arc{width:70%; margin-bottom:14px;}
-  #hero .cover .ct{font-family:var(--serif); color:#E8F4F2; font-size:15px; line-height:1.35; letter-spacing:.5px; word-break:break-word;
-    display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;}
-  #hero .meta{position:relative; z-index:1; flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center;}
-  #hero .eyebrow{font-size:13px; letter-spacing:1.4px; color:#69818B; margin-bottom:12px;}
-  #hero .bt{font-size:clamp(20px,3vw,27px); font-weight:500; letter-spacing:-.6px; margin-bottom:9px;
-    overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
-  #hero .bm{font-size:15px; color:#5B707A; margin-bottom:20px;}
-  #hero .track{height:6px; border-radius:3px; background:#C7DDE0; max-width:420px; margin-bottom:26px;}
-  #hero .fill{height:6px; border-radius:3px; background:var(--blue); width:0;}
-  #hero .cta{align-self:flex-start; background:var(--blue); color:#FFFDF8; border:none; border-radius:26px;
-    padding:13px 34px; font-size:15.5px; font-weight:500; font-family:var(--ui); cursor:pointer;}
-  #hero .cta:hover{background:var(--blue-deep);}
-  /* new books */
-  #newhead{font-size:23px; font-weight:500; letter-spacing:-.5px; margin-bottom:6px;}
-  #newsub{font-size:14.5px; color:var(--soft); margin-bottom:22px;}
-  #shelf{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:18px;}
-  .bookcard{border-radius:22px; padding:24px 24px 0; height:250px; cursor:pointer; position:relative; overflow:hidden;
-    transition:.18s; display:block;}
-  .bookcard:hover{transform:translateY(-3px); box-shadow:var(--shadow);}
-  .bookcard .author{font-family:var(--serif); font-size:12.5px; letter-spacing:1.2px; margin-bottom:14px; opacity:.75;}
-  .bookcard .bt{font-family:var(--serif); font-size:20px; line-height:1.3; word-break:keep-all;
-    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;}
-  .bookcard .wave{position:absolute; left:0; right:0; bottom:0; height:34%; pointer-events:none;}
-  .bookcard .prog{position:absolute; bottom:14px; left:24px; font-size:12px; opacity:.65; z-index:1;}
-  .bookcard .del{position:absolute; top:12px; right:12px; border:none; background:rgba(255,255,255,.55); width:28px; height:28px;
-    border-radius:50%; cursor:pointer; font-size:13px; color:#5c5648; opacity:0; transition:.15s;}
-  .bookcard:hover .del{opacity:1;}
-  .bookcard .del:hover{background:#fff; color:#c0392b;}
-  .bookcard.add{border:2px dashed #CBD9D3; background:transparent; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:10px; color:var(--soft);}
-  .bookcard.add:hover{border-color:var(--blue); color:var(--blue); box-shadow:none;}
-  .bookcard.add .plus{font-size:34px; line-height:1;}
-  .bookcard.add .lbl{font-size:13.5px; text-align:center; line-height:1.5;}
-  .pal0{background:#EEE7D5; color:#473D33;} .pal0 .author{color:#715C45;}
-  .pal1{background:#DCEBF0; color:#244B60;} .pal1 .author{color:#38667C;}
-  .pal2{background:#E6E2EE; color:#463954;} .pal2 .author{color:#625273;}

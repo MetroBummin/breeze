@@ -15,10 +15,10 @@
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/home.css">
   <link rel="stylesheet" href="styles/reader.css">
   <link rel="stylesheet" href="styles/dictionary.css">
   <link rel="stylesheet" href="styles/components.css">
-  <link rel="stylesheet" href="styles/shorts.css">
   <link rel="stylesheet" href="styles/responsive.css">
 
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -37,8 +37,9 @@
   <script defer src="scripts/core/state.js"></script>
   <script defer src="scripts/reader/formatting.js"></script>
   <script defer src="scripts/library/library.js"></script>
+  <script defer src="scripts/library/classics.js"></script>
   <script defer src="scripts/importers/importers.js"></script>
-  <script defer src="scripts/importers/exam.js"></script>
+  <script defer src="scripts/importers/article.js"></script>
   <script defer src="scripts/dictionary/dictionary.js"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js"></script>
   <script defer src="scripts/reader/mode-bridge.js"></script>
@@ -49,7 +50,6 @@
   <script defer src="scripts/reader/reader.js"></script>
   <script defer src="scripts/ui/preferences.js"></script>
   <script defer src="scripts/sync/sync.js"></script>
-  <script defer src="scripts/shorts/shorts.js"></script>
   <script defer src="scripts/ui/interactions.js"></script>
   <script defer src="scripts/main.js"></script>
 </head>
@@ -79,12 +79,8 @@
   <nav>
     <button class="navbtn on" id="nav-home" onclick="show('home')">Read</button>
     <button class="navbtn" id="nav-vocab" onclick="show('vocab')">Review</button>
-    <button class="navbtn" id="nav-shorts" onclick="show('shorts')">Shorts</button>
     <button class="navbtn" id="nav-sync" onclick="openSyncModal()">Sync</button>
-    <button id="btn-paste" title="영어 글 붙여넣기" onclick="openPasteModal()">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9z"/><path d="M15 5.5h3.5v14H5.5v-14H9"/><path d="M9 12h6M9 15.5h4"/></svg>
-    </button>
-    <button id="btn-add" title="책 추가 (PDF·EPUB·TXT)">+</button>
+    <button id="btn-add" title="읽을거리 추가" onclick="openAddModal()">+</button>
   </nav>
 </div>
 
@@ -92,11 +88,39 @@
 <div class="view on" id="v-home">
   <div id="greet">GOOD MORNING</div>
   <div id="bigq">Where shall we read?</div>
-  <div id="hero"></div>
-  <div id="newhead">Start somewhere new</div>
-  <div id="newsub">읽고 싶은 영어 글을 그냥 붙여넣거나, 내 파일(PDF·EPUB·TXT)을 끌어다 놓으세요. 책을 꾹 누르면 이름을 바꿀 수 있어요.</div>
-  <div id="shelf"></div>
+
+  <section id="casuals">
+    <div class="sec-head">
+      <h2>Casuals</h2>
+      <span class="sec-sub">기사 · 스레드 · 짧은 글</span>
+      <div class="sec-acts">
+        <button id="casual-lib" title="캐주얼 리딩 모아보기" aria-label="캐주얼 리딩 모아보기" onclick="show('casuals')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h3.5v15H5zM10.5 4.5H14v15h-3.5z"/><path d="m16.4 5.6 3.3.9-3.5 13-3.3-.9z"/></svg>
+        </button>
+        <button id="casual-add" title="캐주얼 리딩 추가" aria-label="캐주얼 리딩 추가" onclick="openAddModal('casual')">+</button>
+      </div>
+    </div>
+    <div id="casual-rail"></div>
+  </section>
+
+  <section id="longform">
+    <div class="sec-head">
+      <h2>Long-form</h2>
+      <span class="sec-sub">원서 · PDF · EPUB — 꾹 누르면 이름 바꾸기</span>
+    </div>
+    <div id="shelf"></div>
+  </section>
   <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
+</div>
+
+<!-- ================= CASUALS LIBRARY ================= -->
+<div class="view" id="v-casuals">
+  <div class="head">
+    <h1>Casuals</h1><span class="cnt" id="casual-cnt"></span>
+    <button id="btn-casual-add2" class="sm-mini" onclick="openAddModal('casual')">+ 추가</button>
+  </div>
+  <div id="casual-grid"></div>
+  <div id="casual-empty" hidden></div>
 </div>
 
 <!-- ================= READER ================= -->
@@ -178,11 +202,6 @@
   </div>
 </div>
 
-<!-- ================= SHORTS ================= -->
-<div class="view" id="v-shorts">
-  <div id="shorts-feed"></div>
-</div>
-
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
   <div class="head">
@@ -201,16 +220,48 @@
     <div id="sm-status"></div>
   </div>
 </div>
-<div id="paste-modal">
-  <div id="pm-card">
-    <button id="pm-close" onclick="closePasteModal()">✕</button>
-    <h2>영어 글 붙여넣기</h2>
-    <div class="desc">기사 한 토막, X 스레드, 뉴스레터 — 아무 영어 글이나 괜찮아요.
-      <b>첫 줄이 제목</b>이 되고 <b>빈 줄</b>로 문단을 나눠요.
-      빈 줄 없이 줄만 바꾸면 줄마다 한 장의 카드가 됩니다.</div>
-    <textarea id="pm-text" placeholder="여기에 붙여 넣으세요…" spellcheck="false"></textarea>
-    <div id="pm-preview"></div>
-    <button class="sm-btn primary" id="pm-go" onclick="importPastedText()">읽기 시작</button>
+<div id="add-modal">
+  <div id="am-card">
+    <button id="am-close" onclick="closeAddModal()">✕</button>
+
+    <div class="am-step on" data-step="pick">
+      <h2>무엇을 읽을까요?</h2>
+      <div class="desc">셋 다 넣는 순간부터 <b>오프라인</b>에서 읽힙니다.</div>
+      <div class="am-choices">
+        <button type="button" class="am-big" onclick="addStep('paste')">
+          <span class="am-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6v3H9z"/><path d="M15 5.5h3.5v14H5.5v-14H9"/><path d="M9 12h6M9 15.5h4"/></svg></span>
+          <span><span class="am-t">복사한 글 붙여넣기</span><span class="am-d">기사 한 토막 · X 스레드 · 뉴스레터</span></span>
+        </button>
+        <button type="button" class="am-big" onclick="addStep('url')">
+          <span class="am-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13.5a4 4 0 0 0 5.7.3l2.8-2.8a4 4 0 0 0-5.7-5.7l-1.6 1.6"/><path d="M14 10.5a4 4 0 0 0-5.7-.3l-2.8 2.8a4 4 0 0 0 5.7 5.7l1.6-1.6"/></svg></span>
+          <span><span class="am-t">기사 URL</span><span class="am-d">무료로 열리는 기사 링크 — BBC, Guardian, 위키 …</span></span>
+        </button>
+        <button type="button" class="am-big am-file" onclick="pickBookFile()">
+          <span class="am-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3 3V20.5H6z"/><path d="M15 3.5v4h3M9 12h6M9 15.5h4"/></svg></span>
+          <span><span class="am-t">내 파일</span><span class="am-d">PDF · EPUB · TXT — 끌어다 놓아도 됩니다</span></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="am-step" data-step="paste">
+      <button type="button" class="am-back" onclick="addStep('pick')">← 뒤로</button>
+      <h2>복사한 글 붙여넣기</h2>
+      <div class="desc"><b>첫 줄이 제목</b>이 되고 <b>빈 줄</b>로 문단을 나눠요.
+        빈 줄 없이 줄만 바꾸면 줄마다 한 장의 카드가 됩니다.</div>
+      <textarea id="am-text" placeholder="여기에 붙여 넣으세요…" spellcheck="false"></textarea>
+      <div id="am-preview"></div>
+      <button class="sm-btn primary" id="am-paste-go" onclick="importPastedText()">읽기 시작</button>
+    </div>
+
+    <div class="am-step" data-step="url">
+      <button type="button" class="am-back" onclick="addStep('pick')">← 뒤로</button>
+      <h2>기사 URL</h2>
+      <div class="desc">주소만 넣으면 본문만 골라 옵니다. <b>로그인이나 결제가 필요한 기사는 아직 못 가져와요</b> —
+        그럴 땐 본문을 복사해서 붙여넣어 주세요.</div>
+      <input id="am-url" type="url" inputmode="url" placeholder="https://www.bbc.com/news/…" spellcheck="false">
+      <div id="am-url-status"></div>
+      <button class="sm-btn primary" id="am-url-go" onclick="importArticleUrl()">가져오기</button>
+    </div>
   </div>
 </div>
 <div id="aa-pop">
@@ -245,7 +296,6 @@
   <svg id="fb-in" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
   <svg id="fb-out" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
 </button>
-<div id="shorts-timer"></div>
 <div id="minitoast"></div>
 <div id="toast"></div>
 <div id="bootfail" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:300;

@@ -9,11 +9,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const required = [
   'index.html',
   'styles/base.css',
+  'styles/home.css',
   'styles/reader.css',
   'scripts/core/storage.js',
   'scripts/core/book-identity.js',
   'scripts/library/library.js',
+  'scripts/library/classics.js',
   'scripts/importers/importers.js',
+  'scripts/importers/article.js',
   'scripts/dictionary/dictionary.js',
   'scripts/reader/formatting.js',
   'scripts/reader/pdf-word-geometry.js',
@@ -24,6 +27,12 @@ const required = [
   'scripts/reader/mode-bridge.js',
   'scripts/reader/reader.js',
   'scripts/sync/sync.js',
+  // 떼어 둔 기출 Shorts. 지우지 않고 언제든 다시 붙일 수 있게 남겨 둡니다.
+  'modules/exam-shorts/README.md',
+  'modules/exam-shorts/exam.js',
+  'modules/exam-shorts/shorts.js',
+  'modules/exam-shorts/shorts.css',
+  'server/article/index.ts',
 ];
 
 for(const relative of required){
@@ -63,7 +72,11 @@ const collectJs = directory => {
   }
 };
 collectJs(resolve(root, 'scripts'));
-for(const file of jsFiles){
+const parkedJs = [];
+const parkedSwap = jsFiles.length;
+collectJs(resolve(root, 'modules'));
+parkedJs.push(...jsFiles.splice(parkedSwap));
+for(const file of [...jsFiles, ...parkedJs]){
   const result = spawnSync(process.execPath, ['--check', file], { encoding:'utf8' });
   if(result.status !== 0) throw new Error(result.stderr || `Syntax error in ${file}`);
 }
@@ -245,7 +258,7 @@ assert.deepEqual(Array.from(importedParas.sig, signal => signal.p), [1, 3],
 /* ---- 수능·모의고사 문항 분리 (AI 없음) ----
    기출 10종 240문항으로 검증한 규칙입니다. 측정값은 ROADMAP.md. */
 const examContext = { Math, JSON, RegExp, Object, Number, String, Array, Set };
-new Script(readFileSync(resolve(root, 'scripts/importers/exam.js'), 'utf8'))
+new Script(readFileSync(resolve(root, 'modules/exam-shorts/exam.js'), 'utf8'))
   .runInNewContext(examContext);
 
 const longPassage = 'This passage is long enough to be treated as a real reading passage by the parser.';
@@ -295,14 +308,23 @@ assert.ok(!examContext.examQuestionInScope(3) && !examContext.examQuestionInScop
   && examContext.examQuestionInScope(18) && examContext.examQuestionInScope(45),
   'Listening 1-17 and chart/notice 25-28 are no longer excluded');
 
-const shortsSource = readFileSync(resolve(root, 'scripts/shorts/shorts.js'), 'utf8');
-assert.match(shortsSource, /revealed/, 'Shorts never unlocks the passage');
+const shortsSource = readFileSync(resolve(root, 'modules/exam-shorts/shorts.js'), 'utf8');
 assert.match(shortsSource, /card\.classList\.contains\('revealed'\)/,
   'A word can be looked up while the timer is still running');
-const shortsCss = readFileSync(resolve(root, 'styles/shorts.css'), 'utf8');
-assert.match(shortsCss, /scroll-snap-type:y mandatory/, 'The shorts feed no longer pages one question at a time');
+const shortsCss = readFileSync(resolve(root, 'modules/exam-shorts/shorts.css'), 'utf8');
 assert.match(shortsCss, /\.short:not\(\.revealed\) \.short-passage \.w\{pointer-events:none/,
   'Word taps are not locked during the timer');
+/* 떼어 둔 모듈이 다시 실행 경로로 새어 들어오지 않았는지. 되살리는 순서는
+   modules/exam-shorts/README.md 에 있습니다. */
+assert.doesNotMatch(index, /modules\/exam-shorts/, 'The parked exam module is loaded by index.html again');
+assert.doesNotMatch(index, /id="v-shorts"|id="shorts-timer"|nav-shorts/,
+  'Shorts UI is still in the page while the module is parked');
+for(const file of jsFiles){
+  assert.doesNotMatch(readFileSync(file, 'utf8'), /\b(?:parseExam|importExam|openShorts|shortsActive)\s*\(/,
+    `Active code still calls into the parked exam module: ${file}`);
+}
+assert.match(readFileSync(resolve(root, 'modules/exam-shorts/README.md'), 'utf8'),
+  /prepared\.exam/, 'The parked module lost its reconnection instructions');
 
 const sourceMap = layoutContext.buildSourceMap([
   {p:47,y:.36,z:1},
@@ -435,4 +457,65 @@ assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),fa
 assert.equal(existsSync(resolve(root,'server/format/index.ts')),false,
   'AI typography server function was not removed');
 
-console.log(`Breeze checks passed: ${jsFiles.length} active JavaScript files`);
+/* ---- 홈: 짧은 글 레일 + 긴 글 서가 ---- */
+const librarySource = readFileSync(resolve(root, 'scripts/library/library.js'), 'utf8');
+assert.doesNotMatch(librarySource, /getElementById\('hero'\)/,
+  'The old hero card is still rendered alongside the same book in the shelf');
+assert.match(librarySource, /CASUAL_KINDS = new Set\(\['paste','article'\]\)/,
+  'Casuals no longer collect both pasted text and fetched articles');
+assert.match(librarySource, /function nowReadingId/,
+  'Nothing marks which book is being read now that the hero card is gone');
+assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
+assert.match(index, /id="casual-lib"[\s\S]{0,500}id="casual-add"/,
+  'The Casuals header lost its library and add buttons');
+const homeCss = readFileSync(resolve(root, 'styles/home.css'), 'utf8');
+assert.match(homeCss, /#casual-rail\{[^}]*overflow-x:auto/,
+  'The Casuals rail no longer scrolls sideways');
+assert.match(homeCss, /\.now-ring\{/, 'The currently-read card lost its ring');
+assert.equal((index.match(/class="am-big"|class="am-big am-file"/g) || []).length, 3,
+  'The + sheet no longer offers exactly three ways in');
+
+/* ---- 내장 고전 ---- */
+const classicsContext = { console, Set, books:[] };
+new Script(readFileSync(resolve(root, 'scripts/library/classics.js'), 'utf8'))
+  .runInNewContext(classicsContext);
+const offered = classicsContext.pendingClassics();
+assert.equal(offered.length, 5, 'The bundled classic count changed');
+for(const classic of offered){
+  assert.ok(existsSync(resolve(root, `assets/classics/${classic.id}.epub`)),
+    `Bundled classic file is missing: ${classic.id}`);
+}
+// 이미 받은 고전은 권유 카드에서 빠져야 합니다.
+classicsContext.books = [{ classicId: offered[0].id }];
+assert.deepEqual(Array.from(classicsContext.pendingClassics(), classic => classic.id),
+  Array.from(offered.slice(1), classic => classic.id),
+  'An imported classic is still offered as a download card');
+assert.match(readFileSync(resolve(root, 'scripts/library/classics.js'), 'utf8'), /importFile\(file,/,
+  'Classics no longer go through the ordinary EPUB import, so they lose 원본 모드');
+
+/* ---- 기사 URL ----
+   DOM 을 쓰는 추출은 브라우저에서 확인합니다. 여기서는 순수 문자열 규칙만. */
+const articleContext = { Map, Set, RegExp, String, Number, Math, Object, Array, JSON, URL, Date, console };
+new Script(readFileSync(resolve(root, 'scripts/importers/article.js'), 'utf8'))
+  .runInNewContext(articleContext);
+assert.equal(articleContext.normalizeArticleUrl('bbc.com/news/x'), 'https://bbc.com/news/x',
+  'A pasted URL without a scheme was rejected');
+assert.equal(articleContext.normalizeArticleUrl('javascript:alert(1)'), '',
+  'A non-http scheme was accepted as an article URL');
+assert.equal(articleContext.normalizeArticleUrl('  '), '', 'Blank input produced a URL');
+assert.equal(articleContext.normalizeArticleUrl('notaurl!!'), '',
+  'A typo reached the network instead of being called a typo');
+assert.equal(articleContext.normalizeArticleUrl('https://en.wikipedia.org/wiki/Reading'),
+  'https://en.wikipedia.org/wiki/Reading', 'A perfectly good URL was rejected');
+assert.equal(
+  articleContext.articleStripSite('Whales are singing again - BBC News', 'BBC News', 'www.bbc.com'),
+  'Whales are singing again', 'The publisher suffix was not trimmed from the title');
+assert.equal(
+  articleContext.articleStripSite('A tale of two - and only two - cities', 'BBC News', 'www.bbc.com'),
+  'A tale of two - and only two - cities', 'A dash inside the title truncated it');
+const articleServer = readFileSync(resolve(root, 'server/article/index.ts'), 'utf8');
+assert.match(articleServer, /PRIVATE_HOST/,
+  'The article relay would happily fetch private network addresses');
+assert.match(articleServer, /MAX_BYTES/, 'The article relay has no response size limit');
+
+console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

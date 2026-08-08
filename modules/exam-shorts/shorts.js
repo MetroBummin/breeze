@@ -3,7 +3,10 @@
    잠겨 실전처럼 읽고, 답을 고르거나 시간이 끝나면 풀려서 사전이 열립니다.
 
    문제지 PDF에는 정답표가 없습니다. 그래서 채점하지 않습니다 — 고른 답을
-   표시만 하고, 진짜 값어치인 "모르는 단어 눌러 보기"를 열어 줍니다. */
+   표시만 하고, 진짜 값어치인 "모르는 단어 눌러 보기"를 열어 줍니다.
+
+   ⚠ 이 파일은 지금 앱에 연결되어 있지 않습니다. 되살리는 법은 같은 폴더의
+   README.md 를 보세요. */
 
 let shortsExam = null;
 let shortsFrame = 0;
@@ -160,6 +163,28 @@ function closeShorts(){
   stopShortsTimer();
   if(shortsObserver){ shortsObserver.disconnect(); shortsObserver = null; }
   shortsCard = null;
+}
+
+/* ---------- 반입 ----------
+   기출 문제지는 책장이 아니라 Shorts로 갑니다. 본문(paras)은 문항 지문을
+   그대로 담아 두어 사전의 예문 찾기와 책 지문·동기화가 그대로 동작합니다. */
+
+async function importExam(prepared){
+  const paras = prepared.exam.map(question => question.passage);
+  const id = bookHash(paras);
+  const existing = books.find(book => book.id === id);
+  const exam = { id, title:prepared.title, kind:'exam', questions:prepared.exam, paras,
+    addedAt: existing ? existing.addedAt : Date.now(),
+    fingerprint: bookContentFingerprint(paras), textAvailable:true, readerSchema:4,
+    sourceMap:null, layoutSignals:null, formatting:null, original:null,
+    localSourceAt: Date.now() };
+  await bookPut(exam);
+  books = books.filter(book => book.id !== id);
+  books.unshift(exam);
+  await imgPurge(prepared.tmpId+'|');
+  shortsExam = exam;
+  toast(`기출 ${prepared.exam.length}문항을 담았어요 — Shorts에서 풀어 보세요`);
+  show('shorts');
 }
 
 /* ---------- 입력 ---------- */

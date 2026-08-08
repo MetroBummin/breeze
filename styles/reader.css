@@ -77,12 +77,6 @@
   body.dark th{background:#22262B;}
   body.dark td{border-bottom-color:#25292E;}
   body.dark #vsearch, body.dark #sm-email{background:#1C1F23; color:var(--ink);}
-  body.dark #hero{background:linear-gradient(135deg,#20303A,#1C1F23);}
-  body.dark #hero .track{background:#2E3A42;}
-  body.dark .pal0, body.dark .pal1, body.dark .pal2{background:#22262B; color:#D3CFC4;}
-  body.dark .pal0 .author, body.dark .pal1 .author, body.dark .pal2 .author{color:#9AA1A8;}
-  body.dark .bookcard.add{border-color:#3A3F45;}
-  body.dark .bookcard .del{background:rgba(0,0,0,.4); color:#9AA1A8;}
   body.dark #focusbtn, body.dark #aafab{
     background:rgba(31,35,39,.94); border-color:#2A2E33; color:#9AA1A8;
     box-shadow:0 4px 14px rgba(0,0,0,.24);

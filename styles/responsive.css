@@ -7,6 +7,18 @@
     #logo .mark{font-size:19px;}
     .navbtn{padding:7px 11px; font-size:13px; white-space:nowrap;}
     #btn-add{width:34px; height:34px; font-size:18px; flex-shrink:0;}
+    #v-home, #v-casuals{padding:20px 18px 90px;}
+    #bigq{margin-bottom:26px;}
+    /* 레일은 화면 끝까지 흘러야 다음 카드가 잘려 보입니다. 좌우 여백과 같은 값. */
+    #casual-rail{padding:14px 18px 6px; margin:0 -18px; scroll-padding-left:18px;}
+    .casual{flex:0 0 136px;}
+    #longform{margin-top:34px;}
+    #shelf{grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+    .bookcard{height:206px; padding:18px 18px 0; border-radius:18px;}
+    .bookcard .bt{font-size:17px;}
+    .bookcard .prog, .bookcard.classic .get{left:18px;}
+    #am-card{padding:24px 20px;}
+    .am-big{padding:15px 16px; gap:13px;}
     #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
     #v-vocab h1{text-align:left;}
     #v-vocab .cnt{margin-top:-4px;}
