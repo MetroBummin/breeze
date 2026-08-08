@@ -116,8 +116,24 @@ function fillCard(card, parts){
 
 const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
-function casualBooks(){ return books.filter(isCasual); }
-function longformBooks(){ return books.filter(book => !isCasual(book)); }
+
+/* 최근에 읽던 것이 앞에 옵니다. 한 번도 열지 않은 것은 그 뒤에, 넣은 순서로.
+   읽던 책을 늘 첫 칸에서 찾을 수 있으면 정렬 단추가 필요 없습니다. */
+function byRecentlyRead(list){
+  return list.slice().sort((a,b) =>
+    (posOf(b.id).t||0)-(posOf(a.id).t||0) || (b.addedAt||0)-(a.addedAt||0));
+}
+function casualBooks(){ return byRecentlyRead(books.filter(isCasual)); }
+function longformBooks(){ return byRecentlyRead(books.filter(book => !isCasual(book))); }
+
+/* 카드 색은 자리가 아니라 책에 붙습니다. 줄이 자주 바뀌는데 색까지 따라
+   움직이면 같은 책을 눈으로 좇을 수 없습니다. */
+function paletteOf(book, count){
+  const id = String(book && book.id || '');
+  let sum = 0;
+  for(let index=0; index<id.length; index++) sum = (sum*31 + id.charCodeAt(index)) >>> 0;
+  return sum % count;
+}
 const readMinutes = book => Math.max(1, Math.round(wcOf(book)/180));
 
 /* 두 줄이 각자 자기 줄에서 마지막으로 읽던 것을 기억합니다. 지하철에서 기사를
@@ -162,7 +178,8 @@ function wireBookCard(card, book){
   return card;
 }
 
-function casualCard(book, index, current){
+function casualCard(book, current){
+  const index = paletteOf(book, 4);
   const position = posOf(book.id);
   const label = nowReadingLabel(book, current);
   const card = el('div', 'casual cpal'+(index%4));
@@ -194,7 +211,8 @@ function casualAddCard(){
   return card;
 }
 
-function bookCard(book, index, current){
+function bookCard(book, current){
+  const index = paletteOf(book, 3);
   const label = nowReadingLabel(book, current);
   const card = el('div', 'bookcard pal'+(index%3));
   card.classList.toggle('now-ring', book.id === current);
@@ -223,7 +241,7 @@ function renderHome(){
   const rail = document.getElementById('casual-rail');
   const nowCasual = nowReadingIn(casuals);
   rail.innerHTML = '';
-  casuals.forEach((book, index) => rail.appendChild(casualCard(book, index, nowCasual)));
+  casuals.forEach(book => rail.appendChild(casualCard(book, nowCasual)));
   rail.appendChild(casualAddCard());
   document.querySelector('#casuals .sec-sub').textContent = casuals.length
     ? `기사 · 스레드 · 짧은 글 ${casuals.length}편`
@@ -233,7 +251,7 @@ function renderHome(){
   const shelf = document.getElementById('shelf');
   const nowLongform = nowReadingIn(longform);
   shelf.innerHTML = '';
-  longform.forEach((book, index) => shelf.appendChild(bookCard(book, index, nowLongform)));
+  longform.forEach(book => shelf.appendChild(bookCard(book, nowLongform)));
   pendingClassics().forEach(classic => shelf.appendChild(classicCard(classic)));
   shelf.appendChild(longformAddCard());
   document.querySelector('#longform .sec-sub').textContent = longform.length
@@ -250,7 +268,7 @@ function renderCasualLibrary(){
   const empty = document.getElementById('casual-empty');
   document.getElementById('casual-cnt').textContent = casuals.length ? `${casuals.length}편` : '';
   grid.innerHTML = '';
-  casuals.forEach((book, index) => grid.appendChild(casualCard(book, index, current)));
+  casuals.forEach(book => grid.appendChild(casualCard(book, current)));
   empty.hidden = casuals.length > 0;
   empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
 }
@@ -263,7 +281,7 @@ function renderLongformLibrary(){
   const empty = document.getElementById('longform-empty');
   document.getElementById('longform-cnt').textContent = longform.length ? `${longform.length}권` : '';
   grid.innerHTML = '';
-  longform.forEach((book, index) => grid.appendChild(bookCard(book, index, current)));
+  longform.forEach(book => grid.appendChild(bookCard(book, current)));
   const offered = pendingClassics();
   offered.forEach(classic => grid.appendChild(classicCard(classic)));
   empty.hidden = longform.length > 0 || offered.length > 0;
