@@ -451,8 +451,6 @@ assert.doesNotMatch(preferencesSource,/function setOriginalMarkMode/,
 assert.doesNotMatch(index,/aa-original-marks/,
   'The settings popover still offers the deleted display modes');
 const readerCss = readFileSync(resolve(root, 'styles/reader.css'), 'utf8');
-assert.match(readerCss,/#reader-mode-switch\{right:10px; top:9px;/,
-  'Mobile reader switch regressed to a duplicated top-bar offset');
 
 assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),false,
   'AI typography client was not removed');
@@ -563,16 +561,52 @@ for(const file of ['scripts/reader/original-session.js','scripts/reader/reader-m
     `${file} dispatches on the format by hand again instead of using the table`);
 }
 
-/* ---- 집중 모드 ----
-   위에는 가운데 로고 하나, 오른쪽 아래 단추는 남기고, 원본으로 건너뛸 길 하나. */
-assert.match(readerCss, /body\.focusmode #topbar nav\{display:none/,
-  'Focus mode shows the navigation again');
-assert.match(readerCss, /body\.reading\.focusmode #modefab/,
-  'Focus mode has no way to reach 원본 mode');
+/* ---- 켜고 끄는 집중 모드는 없습니다 ----
+   읽는 방향이 신호입니다. 상단바만 미끄러져 나가고, 단추 둘은 늘 같은 자리에
+   있습니다. 화면을 바꾸는 스위치가 두 군데 있으면 자리가 어긋납니다. */
+assert.doesNotMatch(modesSource, /reader-mode-switch/,
+  'The reader still drives a second, top-bar copy of the mode switch');
+for(const gone of [/focusmode/, /id="focusbtn"/, /id="reader-mode-switch"/]){
+  assert.doesNotMatch(index, gone, `The removed focus-mode chrome is back (${gone})`);
+}
+assert.doesNotMatch(readerCss, /focusmode|#reader-mode-switch/,
+  'Focus-mode styling survived the switch to scroll-driven chrome');
+assert.doesNotMatch(preferencesSource, /focusmode/,
+  'The focus-mode toggle is back');
 assert.match(index, /id="modefab"[^>]*onclick="toggleReaderMode\(\)"/,
-  'The focus-mode format switch is missing');
-assert.doesNotMatch(preferencesSource, /focusmode'\) \? tb\.offsetHeight : 0/,
-  'Focus mode forces the top-bar height to zero again, hiding the first line');
+  'The 원본↔글자 button is missing');
+assert.match(index, /id="readfabs"/,
+  'The two reading buttons are no longer stacked, so they move when one hides');
+/* 단추에는 글자가 없습니다. 두 그림이 서로 자리를 바꿔야 어느 쪽으로 가는지 보입니다. */
+for(const glyph of ['mf-original', 'mf-text']){
+  assert.match(index, new RegExp(`class="${glyph}"`), `The mode button lost its ${glyph} glyph`);
+}
+assert.match(readerCss, /body\.reader-original #modefab \.mf-text\{opacity:1/,
+  'The mode button no longer flips its icon, so it always points the same way');
+
+/* 상단바가 사라져도 --topbar-h 는 그대로여야 합니다 — 0 으로 우기면 앵커
+   계산이 글 첫 줄을 로고 뒤에 숨깁니다(예전 집중 모드의 버그). */
+assert.match(readerCss, /body\.chrome-hidden #topbar\{transform:translateY\(-100%\)/,
+  'Reading downward no longer clears the top bar');
+assert.doesNotMatch(readerCss, /body\.chrome-hidden[^\n]*--topbar-h/,
+  'The top bar forces its height to zero again while hidden');
+const readerScroll = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
+assert.match(readerScroll, /CHROME_STEP/,
+  'Chrome follows every pixel of scroll, so the top bar flickers');
+assert.match(readerScroll, /Date\.now\(\) < readerScrollPauseUntil\)\{ chromeAnchorY = y/,
+  'A programmatic mode-switch scroll can hide the top bar as if the reader scrolled');
+assert.doesNotMatch(readerScroll, /classList\.add\('scrolling'\)/,
+  'The old any-scroll fade is back alongside the direction signal');
+
+/* ---- 좌우 여백은 Aa 안에서 ---- */
+assert.match(preferencesSource, /const READ_MARGINS = \{/,
+  'The margin control has no steps to choose from');
+assert.match(preferencesSource, /keepPlace\(\(\)=>\{[\s\S]*?save\('breeze\.margin'/,
+  'Changing the margin no longer keeps the sentence being read in place');
+assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto; padding:36px var\(--readpad,26px\)/,
+  'The reading column stopped following the margin setting');
+assert.match(index, /class="aa-row stack aa-text-only"[\s\S]*?id="aa-margin"/,
+  'The 좌우 여백 row is missing from the Aa popover');
 
 /* ---- 일회성 변환은 걷어냈습니다 ---- */
 /* 주석은 "무엇을 왜 지웠는지" 설명하느라 지운 이름을 그대로 적습니다.

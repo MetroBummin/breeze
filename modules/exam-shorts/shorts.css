@@ -9,7 +9,7 @@
   body.shorts #topbar nav{display:none;}
   body.shorts #logo .mark{color:#F3EFE4;}
   body.shorts #logo{margin:0 auto; pointer-events:auto;}
-  body.shorts #focusbtn, body.shorts #aafab{display:none;}
+  body.shorts #readfabs{display:none;}
   #shorts-timer{position:fixed; top:0; left:0; height:3px; width:100%; z-index:90;
     background:var(--blue); transition:background .25s linear; pointer-events:none;}
   body:not(.shorts) #shorts-timer{display:none;}

@@ -9,6 +9,34 @@ function fontSize(d){
   });
   const el=document.getElementById('aa-fs'); if(el) el.textContent=fs;
 }
+/* ---- 좌우 여백 ----
+   집중 모드가 몰래 넓혀 주던 글 폭을 여기로 꺼냈습니다. 폭은 스크롤과 묶지
+   않습니다 — 읽는 도중 줄바꿈이 달라지면 보던 자리를 놓치기 때문입니다. */
+const READ_MARGINS = {
+  wide:   {width:'560px', pad:'34px', page:'54px'},
+  normal: {width:'700px', pad:'26px', page:'44px'},
+  narrow: {width:'920px', pad:'10px', page:'30px'},
+};
+let readMargin = load('breeze.margin', 'normal');
+function applyReadMargin(){
+  const m = READ_MARGINS[readMargin] || READ_MARGINS.normal;
+  const root = document.documentElement.style;
+  root.setProperty('--readw', m.width);
+  root.setProperty('--readpad', m.pad);
+  root.setProperty('--pagepad', m.page);
+  document.querySelectorAll('#aa-margin button').forEach(button=>
+    button.classList.toggle('on', button.dataset.margin===readMargin));
+}
+function setReadMargin(next){
+  if(!READ_MARGINS[next]) return;
+  keepPlace(()=>{                       // 글 폭이 바뀌어도 보던 문장 유지
+    readMargin = next;
+    save('breeze.margin', next);
+    applyReadMargin();
+  });
+}
+applyReadMargin();
+
 /* ---- Aa settings ---- */
 function toggleAa(e){
   if(e) e.stopPropagation();
@@ -42,8 +70,8 @@ applyDark();
    지웁니다 — 다음 판에서 되살아날 자리를 남기지 않습니다. */
 try{ localStorage.removeItem('breeze.originalMarks'); }catch(e){}
 
-/* 집중 모드에서도 상단 막대는 로고 하나를 이고 남아 있습니다. 예전에는 여기서
-   높이를 0으로 우겨서, 앵커 계산이 글 첫 줄을 로고 뒤에 숨겼습니다. */
+/* 상단 막대는 스크롤을 따라 미끄러져 나갈 뿐, 자리는 늘 지킵니다. 예전 집중
+   모드는 여기서 높이를 0으로 우겨서, 앵커 계산이 첫 줄을 로고 뒤에 숨겼습니다. */
 function syncTopbarH(){
   const tb = document.getElementById('topbar');
   document.documentElement.style.setProperty('--topbar-h', (tb ? tb.offsetHeight : 0)+'px');
@@ -61,15 +89,6 @@ window.addEventListener('resize', ()=>{
 });
 window.addEventListener('load', syncTopbarH);
 syncTopbarH();
-function toggleFocus(force){
-  const on = force!==undefined ? force : !document.body.classList.contains('focusmode');
-  keepPlace(()=>{                       // 글 폭·여백이 바뀌어도 보던 문장 유지
-    document.body.classList.toggle('focusmode', on);
-    document.getElementById('fb-in').style.display = on ? 'none':'block';
-    document.getElementById('fb-out').style.display = on ? 'block':'none';
-    syncTopbarH();
-  });
-}
 let miniTimer;
 function miniToast(msg){
   const t = document.getElementById('minitoast');

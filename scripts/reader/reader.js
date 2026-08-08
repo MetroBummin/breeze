@@ -115,6 +115,7 @@ async function openBook(b){
   }
   document.body.classList.add('reading');
   document.body.classList.remove('reader-original');
+  showReaderChrome();                 // 새 책은 늘 상단바가 보이는 채로 시작합니다
   document.getElementById('readwrap').hidden=false;
   document.getElementById('originalwrap').hidden=true;
   renderBookBody(b);
@@ -146,7 +147,7 @@ function updatePfill(){
   const progress=visibleReaderProgress();
   document.getElementById('pfill').style.width = Math.max(0,Math.min(100,progress*100))+'%';
 }
-let scrollTick = null, fadeTimer = null, readerScrollPauseUntil = 0, progressFrame = 0;
+let scrollTick = null, readerScrollPauseUntil = 0, progressFrame = 0;
 function suspendReaderScrollSave(duration){
   readerScrollPauseUntil=Math.max(readerScrollPauseUntil,Date.now()+(duration||500));
   if(scrollTick){ clearTimeout(scrollTick); scrollTick=null; }
@@ -162,12 +163,34 @@ function scheduleProgressUpdate(){
     if(currentReaderMode==='text' && !readerAnchorHeld()) lastAnchor=captureAnchor();
   });
 }
+/* ---- 상단바는 읽는 방향을 따릅니다 ----
+   집중 모드 스위치를 대신하는 장치입니다. 아래로 읽어 내려가면 상단바가
+   걷히고 단추가 흐려지며, 위로 올리거나 글머리에 닿으면 돌아옵니다.
+   CHROME_STEP 이하의 움직임은 손떨림이지 신호가 아닙니다 — 이 문턱이 없으면
+   상단바가 한 픽셀마다 깜빡입니다. 글 폭은 여기서 건드리지 않습니다. */
+const CHROME_STEP = 12, CHROME_TOP = 80;
+let chromeAnchorY = 0;
+function setReaderChrome(hidden){
+  document.body.classList.toggle('chrome-hidden', hidden);
+}
+function showReaderChrome(){
+  chromeAnchorY = window.scrollY || 0;
+  setReaderChrome(false);
+}
+function followScrollDirection(){
+  const y = Math.max(0, window.scrollY || 0);
+  /* 모드를 바꾸며 프로그램이 옮겨 놓은 화면은 내가 읽어 내려간 것이 아닙니다 */
+  if(Date.now() < readerScrollPauseUntil){ chromeAnchorY = y; return; }
+  if(y < CHROME_TOP){ chromeAnchorY = y; setReaderChrome(false); return; }
+  const moved = y - chromeAnchorY;
+  if(Math.abs(moved) < CHROME_STEP) return;
+  chromeAnchorY = y;
+  setReaderChrome(moved > 0);
+}
 window.addEventListener('scroll', ()=>{
   if(!curBook) return;
   scheduleProgressUpdate();
-  document.body.classList.add('scrolling');
-  clearTimeout(fadeTimer);
-  fadeTimer = setTimeout(()=>document.body.classList.remove('scrolling'), 900);
+  followScrollDirection();
   if(Date.now()<readerScrollPauseUntil) return;
   if(scrollTick) return;
   const scheduledBook=curBook;

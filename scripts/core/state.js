@@ -28,7 +28,7 @@ const posOf = id => positions[id] || {y:0, p:0, t:0, mode:'text', original:null}
 /* ================= views ================= */
 /* ===== 스크롤 앵커 =====
    브라우저는 스크롤을 "위에서 몇 px"로만 기억합니다. 그래서 글 폭·글자 크기가
-   바뀌면(집중 모드, A+/A−, 화면 회전) 같은 px이 다른 문장을 가리키게 됩니다.
+   바뀌면(좌우 여백, A+/A−, 화면 회전) 같은 px이 다른 문장을 가리키게 됩니다.
    그래서 위치를 "몇 번째 문단이 화면 위에서 몇 px 떨어져 있었는지"로 기억합니다. */
 function topInset(){
   const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h'));
@@ -92,7 +92,7 @@ function show(v){
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
   if(v!=='read'){
     leaveOriginalReader();
-    curBook=null; closePanel(); toggleFocus(false);
+    curBook=null; closePanel(); showReaderChrome();
   }
   document.body.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();

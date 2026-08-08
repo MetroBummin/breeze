@@ -8,26 +8,22 @@ let readerModeCueTimer = 0;
 /* `bookSupportsOriginal()`은 형식 표와 같은 자리에 있습니다 —
    scripts/reader/original-formats.js */
 
-/* 집중 모드에서는 상단 스위치를 걷어내므로, 원본으로 건너갈 길이 하나
-   필요합니다. 오른쪽 아래 단추가 그 길입니다 — 지금 모드의 반대쪽을 적습니다. */
+/* 전환하는 길은 오른쪽 아래 동그란 단추 하나뿐입니다. 상단에 있던 두 칸짜리
+   스위치는 걷어냈습니다 — 같은 일을 하는 것이 둘이면 자리가 어긋납니다.
+   단추는 지금 모드의 반대쪽을 그리므로, 누르면 그 그림으로 갑니다. */
 function toggleReaderMode(){
-  switchReaderMode(currentReaderMode==='original' ? 'text' : 'original');
+  const next = currentReaderMode==='original' ? 'text' : 'original';
+  miniToast(next==='original' ? '원본' : '글자');   // 글자 없는 단추라 한 번 알려 줍니다
+  switchReaderMode(next);
 }
 
 function updateReaderModeControls(){
-  const switcher = document.getElementById('reader-mode-switch');
-  if(!switcher) return;
-  const hasOriginalMode = bookSupportsOriginal(curBook);
-  switcher.classList.toggle('available',hasOriginalMode);
-  switcher.querySelectorAll('button').forEach(button=>{
-    button.classList.toggle('on',button.dataset.mode===currentReaderMode);
-    button.setAttribute('aria-pressed',button.dataset.mode===currentReaderMode ? 'true':'false');
-  });
   const fab = document.getElementById('modefab');
-  if(fab){
-    fab.hidden = !hasOriginalMode;
-    fab.textContent = currentReaderMode==='original' ? '글자' : '원본';
-  }
+  if(!fab) return;
+  fab.hidden = !bookSupportsOriginal(curBook);
+  const label = currentReaderMode==='original' ? '글자로 보기' : '원본으로 보기';
+  fab.title = label;
+  fab.setAttribute('aria-label', label);
 }
 
 function rememberReaderMode(mode){
