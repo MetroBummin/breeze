@@ -30,7 +30,7 @@
   - `reader.js`: 글자 화면 렌더링, 스크롤·폭 변화 대응
 - `scripts/ui/`: 보기 설정, 발음, 시트 제스처
 - `scripts/sync/`: 로그인, 단어·위치·책 동기화
-- `server/dict/`: 활성 AI 사전 Edge Function
+- `server/dict/`: 사전 Edge Function. 한 함수 안에 갈래가 셋입니다 — `entry`(낱말 항목 생성, 낱말당 전 세계에서 한 번), `pick`(이 문장은 몇 번 뜻인가, 연어·쌓인 단서로 먼저 풀고 안 되면 8토큰), `explain`(이 문장에서의 설명, 단추를 눌렀을 때만). 왜 그런지는 [DICT.md](DICT.md), 표는 [sql/supabase_dict.sql](sql/supabase_dict.sql)
 - `server/article/`: 기사 HTML·사진 중계 Edge Function (추출은 하지 않습니다)
 - `assets/classics/`: 함께 배포하는 퍼블릭 도메인 EPUB 5종
 - `modules/exam-shorts/`: **연결 해제된** 기출 문항 분리 + 쇼츠 화면.

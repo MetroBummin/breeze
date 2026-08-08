@@ -223,18 +223,21 @@ function renderPanel(){
   }else if(w.ai && w.ai.ko){
     aiBox.className='on';
     aiM.innerHTML = esc(w.ai.ko) + (w.ai.pos?`<span class="pos">${esc(w.ai.pos)}</span>`:'');
-    aiN.textContent = w.ai.note || '';
+    /* 뜻 설명(gloss)은 공용 사전에 이미 들어 있어 공짜로 즉시 뜹니다.
+       이 문장에 대한 설명(note)은 물어봤을 때만 오고, 오면 그 자리를 대신합니다. */
+    aiN.textContent = w.ai.note || w.ai.gloss || '';
   }else{
     aiBox.className='';
   }
-  // on-demand 버튼: AI 결과가 있으면 숨기고, 없을 때만 보여준다
+  /* 단추는 "이 문장에서의 설명"이 아직 없을 때만 보여 줍니다.
+     뜻이 떴다고 숨기면, 정작 물어보고 싶을 때 물어볼 데가 없어집니다. */
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
-  const hasAI = !!(w.ai && w.ai.ko);
+  const hasNote = !!(w.ai && w.ai.note);
   const busy = w.aiLoading && !w.aiSlow;
-  aiBtn.style.display = (hasAI || busy) ? 'none' : 'flex';
-  aiHint.style.display = (hasAI || busy) ? 'none' : 'block';
-  document.getElementById('p-aibtn-t').textContent = w.aiSlow ? '다시 시도' : 'Let AI handle this';
-  aiHint.textContent = w.aiSlow ? '' : '뜻이 문맥과 안 맞을 때 눌러보세요';
+  aiBtn.style.display = (hasNote || busy) ? 'none' : 'flex';
+  aiHint.style.display = (hasNote || busy) ? 'none' : 'block';
+  document.getElementById('p-aibtn-t').textContent = w.aiSlow ? '다시 시도' : '이 문장에서는?';
+  aiHint.textContent = w.aiSlow ? '' : '이 문장에서 어떻게 쓰였는지 물어봅니다';
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';
   if(w.loading) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>';
@@ -253,8 +256,8 @@ function renderPanel(){
   /* 내장 사전에서 온 뜻이면 출처를 밝히고, 함께 쓰는 말도 보여 줍니다.
      문장과 맞아떨어진 연어에는 표시를 해서 "왜 이 뜻인지"가 보이게 합니다. */
   const src = document.getElementById('p-src');
-  src.className = w.dictSrc === 'builtin' ? 'on' : '';
-  src.textContent = '기본 사전';
+  src.className = (w.dictSrc === 'builtin' || w.dictSrc === 'shared') ? 'on' : '';
+  src.textContent = w.dictSrc === 'shared' ? '공용 사전' : '기본 사전';
   const col = document.getElementById('p-colloc'), colSec = document.getElementById('p-colloc-sec');
   if(w.colloc && w.colloc.length){
     col.className = 'on'; colSec.className = 'p-sec on';
@@ -327,38 +330,93 @@ async function fetchEnWik(w, form){
   }
   return w.defs.length>0;
 }
-/* ---- Claude 기반 사전: Edge Function 경유 (키는 서버에만) ---- */
+/* ---- 공용 사전: Edge Function 경유 (키는 서버에만) ----
+
+   캐시가 세 층입니다. 예전에는 한 층뿐이었고, 그 열쇠에 문장이 없었습니다 —
+   "The heat continues." 에서 한 번 물어보면 "He continues to argue." 에서도
+   그때 받은 문맥 설명이 그대로 떴습니다. 문맥 사전이 문맥을 무시한 셈입니다.
+
+     w:<낱말>             뜻 목록과 뜻마다의 설명. 문장과 무관하므로 낱말로 캐시
+     n:<낱말>|<문장 해시>  이 문장에서의 설명. 문장까지 넣어야 맞는 캐시
+
+   그리고 낱말을 누르는 순간에는 AI 를 부르지 않습니다. 공용 사전을 먼저 봅니다. */
 const AI_TIMEOUT = 6000;      // 이보다 오래 걸리면 "다시 시도"를 내밉니다
 const AI_MIN_WAIT = 500;      // 너무 빨리 와도 이만큼은 보여 줍니다(화면이 깜빡이지 않게)
-const aiCacheKey = w => (w.clicked || w.word || '').toLowerCase();
 
-/* 캐시에만 있으면 복원 — 네트워크·비용 0 */
-async function loadCachedAI(k){
-  const w = words[k]; if(!w || w.ai) return false;
-  const hit = await dictGet(aiCacheKey(w));
-  if(hit){ applyAI(w, hit, k); return true; }
+function sentenceHash(text){
+  const s = String(text||'').trim().toLowerCase();
+  let h = 2166136261;
+  for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h>>>0).toString(36);
+}
+/* 원형 후보를 모두 열쇠로 봅니다. "continues"를 눌렀는데 누군가 이미
+   "continue"를 물어봤다면 그것으로 끝나야 합니다. */
+function entryKeys(w){
+  const raw = w.clicked || w.word || '';
+  return [...new Set([w.word, ...lemmaCands(raw)].filter(Boolean).map(s=>String(s).toLowerCase()))];
+}
+const noteKey = w => 'n:' + String(w.word||'').toLowerCase() + '|' + sentenceHash(w.example);
+
+async function loadCachedEntry(k){
+  const w = words[k]; if(!w) return false;
+  for(const key of entryKeys(w)){
+    const hit = await dictGet('w:'+key);
+    if(hit){ applyEntry(w, hit, k); await loadCachedNote(k); return true; }
+  }
   return false;
 }
-
-/* 버튼을 눌렀을 때 실제 호출 */
-async function askAI(force){
-  const k = selKey; if(!k || !words[k]) return;
-  if(navigator.onLine === false){ toast('오프라인이라 AI 뜻을 가져올 수 없어요'); return; }
-  if(!sb || !sbUser){ toast('AI 뜻은 로그인 후 사용할 수 있어요'); openSyncModal(); return; }
-  await fetchAI(k, force);
+async function loadCachedNote(k){
+  const w = words[k]; if(!w || !w.example) return false;
+  const hit = await dictGet(noteKey(w));
+  if(!hit || !hit.note) return false;
+  w.ai = Object.assign({}, w.ai, { note: hit.note });
+  if(selKey===k) renderPanel();
+  return true;
 }
 
-document.getElementById('p-aibtn').onclick   = ()=>askAI(!!(selKey && words[selKey] && words[selKey].aiSlow));
-document.getElementById('p-airetry').onclick = ()=>askAI(true);
+/* 세 갈래 요청이 같은 문을 씁니다. 로그인은 문 앞이 아니라 AI 앞에 있습니다 —
+   공용 사전을 읽는 것은 로그인 없이도 되어야 가장 싼 길이 열립니다. */
+async function dictCall(payload, signal){
+  if(!sb || navigator.onLine === false) return null;
+  let token = SB_KEY;
+  try{ const { data:{ session } } = await sb.auth.getSession(); if(session) token = session.access_token; }catch(e){}
+  const opt = {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey': SB_KEY },
+    body: JSON.stringify(payload)
+  };
+  if(signal) opt.signal = signal;
+  try{
+    const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || j.error){ console.warn('dict', r.status, j && j.error); return null; }
+    return j;
+  }catch(e){ console.warn('dict failed', e); return null; }
+}
 
-async function fetchAI(k, force){
+/* 공용 사전 조회. 여기서 걸리면 AI 는 한 번도 안 부릅니다.
+   아무도 물어본 적 없는 낱말일 때만 서버가 항목을 한 번 만들고, 그건 모두의 것이 됩니다. */
+async function fetchEntry(k){
   const w = words[k]; if(!w) return false;
-  if(!sb || !sbUser) return false;                    // 로그인 필요
-  const cacheKey = aiCacheKey(w);
+  const j = await dictCall({ op:'entry', word: w.clicked || w.word || k, cands: entryKeys(w) });
+  if(!j || j.miss || !(j.senses||[]).length) return false;
+  await dictPut('w:'+String(j.lemma || w.word || k).toLowerCase(), j);
+  applyEntry(w, j, k);
+  await loadCachedNote(k);
+  return true;
+}
 
+/* 이 문장에서 왜 그 뜻인지. 단추를 눌렀을 때만 부릅니다. */
+async function fetchExplain(k, force){
+  const w = words[k]; if(!w) return false;
+  if(navigator.onLine === false){ toast('오프라인이라 AI 뜻을 가져올 수 없어요'); return false; }
+  if(!sb || !sbUser){ toast('문맥 설명은 로그인 후 사용할 수 있어요'); openSyncModal(); return false; }
+  if(!w.example){ toast('설명할 문장이 없어요'); return false; }
+
+  const key = noteKey(w);
   if(!force){
-    const hit = await dictGet(cacheKey);
-    if(hit){ applyAI(w, hit, k); return true; }
+    const hit = await dictGet(key);
+    if(hit && hit.note){ applyNote(w, hit.note, k); return true; }
   }
 
   const began = Date.now();
@@ -373,39 +431,67 @@ async function fetchAI(k, force){
     if(selKey===k) renderPanel();
   }, AI_TIMEOUT);
   try{
-    const { data:{ session } } = await sb.auth.getSession();
-    const opt = {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json',
-                'Authorization':'Bearer ' + (session ? session.access_token : SB_KEY),
-                'apikey': SB_KEY },
-      body: JSON.stringify({ word: w.clicked || w.word || k, sentence: w.example || '' })
-    };
-    if(ctrl) opt.signal = ctrl.signal;
-    const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
-    const j = await r.json().catch(()=>null);
-    if(!r.ok || !j || j.error){ console.warn('AI dict:', r.status, j && j.error); return false; }
-    await dictPut(cacheKey, j);
+    const j = await dictCall({ op:'explain', word: w.word || k, sentence: w.example, ko: w.ko || '' },
+                             ctrl ? ctrl.signal : null);
+    if(!j) return false;
+    await dictPut(key, { note: j.note || '' });
     /* 답이 너무 빨리 와도 최소 0.5초는 보여 줍니다.
        화면이 깜빡하고 바뀌면 무슨 일이 일어났는지 못 알아채거든요. */
     const left = AI_MIN_WAIT - (Date.now() - began);
     if(left > 0) await new Promise(function(res){ setTimeout(res, left); });
-    applyAI(w, j, k);
+    applyNote(w, j.note || '', k);
     return true;
-  }catch(e){ console.warn('AI dict failed', e); return false; }
-  finally{ clearTimeout(slow); delete w.aiLoading; if(selKey===k) renderPanel(); }
+  }finally{ clearTimeout(slow); delete w.aiLoading; if(selKey===k) renderPanel(); }
 }
-function applyAI(w, ai, k){
-  delete w.aiLoading;
-  w.ai = { ko:ai.ko||'', pos:ai.pos||'', note:ai.note||'' };
-  if(ai.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(ai.lemma)) w.word = ai.lemma.toLowerCase();
-  if(ai.ko) w.ko = ai.ko;                                    // 문맥 뜻을 기본 뜻으로
-  const extra = (ai.ko_all||[]).filter(t=>t && t!==ai.ko);
-  if(extra.length){
-    const chips = { pos: ai.pos || '', terms: [ai.ko, ...extra].filter(Boolean).slice(0,5) };
-    w.kodict = [chips, ...(w.kodict||[]).filter(d=>d.pos!==chips.pos)].slice(0,3);
+
+/* "이 뜻이 아닌 것 같다" — 문장을 보고 뜻을 다시 고른 뒤 설명까지 새로 받습니다.
+   고르는 일은 서버에서 연어·쌓인 단서로 먼저 해 보고, 정 안 되면 그때만 AI 를 씁니다. */
+async function askOtherSense(k){
+  const w = words[k]; if(!w) return;
+  const j = await dictCall({ op:'pick', word: w.word || k, sentence: w.example || '' });
+  const picked = j && j.no != null && (w.senses||[]).find(s=>s.no===j.no);
+  if(picked){
+    w.senseNo = picked.no;
+    w.ko = picked.ko;
+    w.ai = Object.assign({}, w.ai, { ko: picked.ko, gloss: picked.gloss || '' });
+    saveWords(); queueSync(); if(selKey===k) renderPanel();
   }
-  if(ai.en) w.defs = [{pos:ai.pos||'', def:ai.en}, ...(w.defs||[])].slice(0,5);
+  await fetchExplain(k, true);
+}
+
+async function askAI(force){
+  const k = selKey; if(!k || !words[k]) return;
+  await fetchExplain(k, force);
+}
+document.getElementById('p-aibtn').onclick   = ()=>askAI(!!(selKey && words[selKey] && words[selKey].aiSlow));
+document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey]) askOtherSense(selKey); };
+
+function applyEntry(w, e, k){
+  delete w.aiLoading;
+  w.senses = (e.senses || []).map(s=>({ no:s.no, ko:s.ko, def:s.def, gloss:s.gloss||'', colloc:s.colloc||[] }));
+  const chosen = w.senses.find(s=>s.no===w.senseNo) || w.senses[0] || null;
+  if(chosen) w.senseNo = chosen.no;
+  w.ai = { ko: (chosen && chosen.ko) || e.ko || '',
+           pos: e.pos || '',
+           gloss: (chosen && chosen.gloss) || e.gloss || '',
+           note: (w.ai && w.ai.note) || '' };
+  if(e.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(e.lemma)) w.word = e.lemma.toLowerCase();
+  /* 예전에는 여기서 w.ko 를 덮어썼습니다. 그때는 이 값이 문맥을 보고 고른 뜻이었으니까요.
+     이제 이건 첫 번째 뜻일 뿐이라, 이미 있는 뜻을 밀어내면 안 됩니다. */
+  if(!w.ko && w.ai.ko) w.ko = w.ai.ko;
+  const terms = w.senses.map(s=>s.ko).filter(Boolean).slice(0,5);
+  if(terms.length) w.kodict = [{ pos: e.pos || '', terms }, ...(w.kodict||[]).filter(d=>d.pos!==(e.pos||''))].slice(0,3);
+  const defs = w.senses.map(s=>({ pos: e.pos || '', def: s.def })).filter(d=>d.def);
+  if(defs.length) w.defs = [...defs, ...(w.defs||[])].slice(0,5);
+  if((chosen && chosen.colloc || []).length) w.colloc = chosen.colloc.slice(0,3);
+  w.dictSrc = 'shared';
+  w.up = Date.now();
+  saveWords(); queueSync();
+  if(selKey===k) renderPanel();
+}
+function applyNote(w, note, k){
+  delete w.aiLoading;
+  w.ai = Object.assign({}, w.ai, { note: note || '' });
   w.up = Date.now();
   saveWords(); queueSync();
   if(selKey===k) renderPanel();
@@ -414,20 +500,24 @@ function applyAI(w, ai, k){
 async function fetchDict(k){
   const w = words[k]; if(!w) return;
   w.loading = true; if(selKey===k) renderPanel();
-  loadCachedAI(k);                  // 이미 물어본 단어면 캐시에서 무료로 복원 (API 호출 없음)
-  /* 내장 사전에 있으면 인터넷을 기다리지 않고 바로 보여 줍니다.
-     그 뒤 발음만 받아 오고, 한국어·영어 뜻 조회는 통째로 건너뜁니다(호출 3회 → 1회). */
-  const built = applyBuiltin(w);
-  if(built && selKey===k) renderPanel();
-  /* 내장 사전에 없으면 문맥 뜻을 미리 요청합니다. */
-  if(!built && sb && sbUser && navigator.onLine !== false) fetchAI(k, false);
+
+  /* ① 이 기기에 이미 있나 — 0원, 기다림 없음 */
+  const cached = await loadCachedEntry(k);
+  /* ② 내장 사전 300개 — 인터넷을 안 기다립니다 */
+  const built  = !cached && applyBuiltin(w);
+  if((cached || built) && selKey===k) renderPanel();
+  /* ③ 모두가 함께 쓰는 사전 */
+  const shared = !cached && await fetchEntry(k);
+
+  /* 여기까지 뜻을 얻었으면 무료 사전에서는 발음만 받아 옵니다(호출 3회 → 1회). */
+  const rich = cached || shared || built;
   const forms = w.forms && w.forms.length ? w.forms : [k];
   let validated = null;
-  for(const f of forms){ try{ if(await fetchEn(w,f,built)){ validated=f; break; } }catch(e){} }
-  if(!validated && !built){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
-  if(!built && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
+  for(const f of forms){ try{ if(await fetchEn(w,f,rich)){ validated=f; break; } }catch(e){} }
+  if(!validated && !rich){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
+  if(!rich && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
   if(selKey===k) renderPanel();
-  if(!built){
+  if(!rich){
     const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
     for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
   }
