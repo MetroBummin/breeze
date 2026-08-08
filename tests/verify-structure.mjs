@@ -581,6 +581,26 @@ assert.match(articleSource, /articleMarkImages\(doc, url\);[\s\S]{0,120}querySel
    그 <figure>까지 지우면 사진도 함께 날아갑니다(실제로 BBC 사진이 0장이었습니다). */
 assert.doesNotMatch(articleSource, /holder\.remove\(\)/,
   'Rejecting one image removes its whole <figure>, taking the real photo with it');
+
+/* ---- 사진 동기화 ----
+   사진 자체는 올리지 않습니다. 이미 공개된 남의 사진을 서버에 쌓아 둘 이유가
+   없고, 받는 기기는 주소만 있으면 스스로 받아 옵니다. */
+assert.match(articleSource, /parsed\.imgSrc\[articleImageKey\(url\)\] = url/,
+  'Nothing records where each photo came from, so another device cannot fetch it');
+assert.match(articleSource, /function bookImageBlob/,
+  'A synced article has no way to recover its photos');
+// 홈은 자주 다시 그려집니다. 못 받는 사진을 렌더링할 때마다 다시 부르면 안 됩니다.
+assert.match(articleSource, /bookImageMissing\.has\(key\)/,
+  'An unreachable photo is re-fetched on every home render');
+const articleSyncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
+for(const field of ['site', 'sourceUrl', 'cover', 'imgSrc']){
+  assert.match(articleSyncSource, new RegExp(`${field}:b\\.${field}`),
+    `A synced article loses its ${field}`);
+  assert.match(articleSyncSource, new RegExp(`${field}:body\\.${field}`),
+    `A downloaded article never reads back its ${field}`);
+}
+assert.doesNotMatch(articleSyncSource, /storage\.from\('imgs'\)|uploadImage/,
+  'Article photos are being re-hosted on the server instead of re-fetched');
 assert.match(articleSource, /parsed\.blocks\.filter\(block => block\.r !== 'img' \|\| stored\.has/,
   'An image that failed to download would leave a broken figure in the article');
 

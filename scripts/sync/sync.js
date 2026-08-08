@@ -360,6 +360,14 @@ async function bookUpload(id){
       layoutSignals:b.layoutSignals || null,
       sourceMap:b.sourceMap || null,
       original:b.original ? {...b.original,storedAt:undefined} : null,
+      /* 기사는 어디서 왔는지가 본문의 일부입니다 — 출처 이름, 원문 링크,
+         그리고 사진이 어느 주소에서 왔는지. 사진 자체는 올리지 않습니다.
+         이미 공개된 남의 사진을 서버에 쌓아 둘 이유가 없고, 받는 기기는
+         주소만 있으면 스스로 받아 옵니다(`bookImageBlob`). */
+      site:b.site || '',
+      sourceUrl:b.sourceUrl || '',
+      cover:b.cover || '',
+      imgSrc:b.imgSrc || null,
       textAvailable:b.textAvailable !== false,
       readerSchema:4,
     })], {type:'application/json'});
@@ -396,6 +404,10 @@ async function bookDownload(id){
                    sourceMap:body.sourceMap || null,
                    original:localOriginal ? existing.original : (body.original || null),
                    localSourceAt:localOriginal ? localBookSourceTime(existing,localOriginal) : 0,
+                   site:body.site || '',
+                   sourceUrl:body.sourceUrl || '',
+                   cover:body.cover || '',
+                   imgSrc:body.imgSrc || null,
                    textAvailable:body.textAvailable !== false,
                    readerSchema:4 };
     if(!book.paras.length) throw new Error('본문이 비어 있어요');

@@ -343,7 +343,29 @@ async function attachArticleImages(parsed){
 
   parsed.blocks = parsed.blocks.filter(block => block.r !== 'img' || stored.has(block.t));
   parsed.cover = stored.has(parsed.cover) ? articleImageKey(parsed.cover) : '';
+  /* 어느 사진이 어느 주소에서 왔는지 적어 둡니다. 다른 기기는 이것만 있으면
+     같은 사진을 스스로 받아 옵니다 — 서버에 남의 사진을 쌓아 둘 이유가
+     없습니다. 주소 몇 줄이라 동기화 짐도 늘지 않습니다. */
+  parsed.imgSrc = {};
+  stored.forEach(url => { parsed.imgSrc[articleImageKey(url)] = url; });
   Object.assign(parsed, articleAssemble(parsed.title, parsed.blocks));
+}
+
+/* 사진 한 장 꺼내기. 다른 기기에서 받은 기사에는 문단과 사진 주소만 있고
+   사진 자체는 없으므로, 그 자리에서 한 번 더 받아 기기에 담습니다.
+   EPUB 삽화는 사용자 파일에서 나온 것이라 받아 올 곳이 없습니다 — 그때는
+   원본 파일을 다시 연결하면 삽화도 함께 되살아납니다. */
+const bookImageMissing = new Set();      // 홈은 자주 다시 그려집니다. 한 번만 시도합니다.
+async function bookImageBlob(book, key){
+  const cached = await imgGet(key);
+  if(cached) return cached;
+  if(bookImageMissing.has(key)) return null;
+  const url = book && book.imgSrc && book.imgSrc[key];
+  if(!url) return null;
+  const blob = await fetchArticleImage(url);
+  if(!blob){ bookImageMissing.add(key); return null; }
+  try{ await imgPut(key, blob); }catch(e){}
+  return blob;
 }
 
 async function importArticleUrl(){
@@ -368,7 +390,7 @@ async function importArticleUrl(){
     await attachArticleImages(parsed);
     field.value = '';
     await saveCasualBook(parsed, { kind:'article', site:parsed.site, sourceUrl:parsed.url,
-                                   cover:parsed.cover || null });
+                                   cover:parsed.cover || null, imgSrc:parsed.imgSrc || null });
   }catch(error){
     console.error(error);
     status.classList.add('bad');

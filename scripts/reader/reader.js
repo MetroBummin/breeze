@@ -52,7 +52,7 @@ function renderBookBody(b){
       const fig = document.createElement('figure');
       const img = document.createElement('img');
       img.alt = '삽화';
-      imgGet(bl.t.slice(IMG_MARK.length)).then(blob=>{
+      bookImageBlob(b, bl.t.slice(IMG_MARK.length)).then(blob=>{
         if(blob) img.src = URL.createObjectURL(blob);
         else fig.remove();
       });

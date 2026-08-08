@@ -122,10 +122,11 @@ function nowReadingLabel(book, current){
   return percent ? '이어서 · '+percent : '이어서 읽기';
 }
 
-/* 표지 사진은 IndexedDB에 있습니다. 없으면(다른 기기에서 받은 책, 사진이
-   없는 기사) 지금까지의 글자 표지가 그대로 나옵니다. */
-function applyCasualCover(thumb, key){
-  imgGet(key).then(blob => {
+/* 표지 사진은 IndexedDB에 있습니다. 다른 기기에서 받은 기사면 `bookImageBlob`이
+   원래 주소에서 한 번 받아 옵니다. 그래도 없으면(사진이 없는 기사, 오프라인)
+   지금까지의 글자 표지가 그대로 나옵니다. */
+function applyCasualCover(thumb, book){
+  bookImageBlob(book, book.cover).then(blob => {
     if(!blob) return;
     const image = thumb.querySelector('.cover');
     image.src = URL.createObjectURL(blob);
@@ -163,7 +164,7 @@ function casualCard(book, index, current){
   };
   card.querySelector('.del').onclick = () => deleteBook(book);
   card.querySelector('.thumb').classList.toggle('now-ring', book.id === current);
-  if(book.cover) applyCasualCover(card.querySelector('.thumb'), book.cover);
+  if(book.cover) applyCasualCover(card.querySelector('.thumb'), book);
   return card;
 }
 
