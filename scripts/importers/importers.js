@@ -1,18 +1,311 @@
 /* ---- 붙여넣은 글 ----
    기사 한 토막, X 스레드, 메모 — DRM도 파일도 없는 아무 영어 텍스트.
-   구조를 알려주는 JSON이 없으니 눈에 보이는 것만 규칙으로 씁니다.
-     첫 줄         -> 제목
-     빈 줄         -> 문단 경계
-     빈 줄이 없음  -> 줄마다 한 장의 카드 (스레드)
-   규칙이 세 줄이면 결과를 미리 예상할 수 있고, 예상할 수 있으면 버그로
-   보이지 않습니다. 추측이 필요한 판단은 일부러 넣지 않았습니다. */
+
+   붙여넣는 글의 모양이 한 가지가 아닙니다. 깃허브에서 남의 README 를 긁어오면
+   마크다운이 오고, 페이지 소스를 긁어오면 HTML 이 옵니다. 그걸 평범한 글로 다루면
+   `## Getting started`, `|---|---|`, `[docs](https://…)` 가 본문에 그대로 남아
+   읽을 수 없습니다. 그래서 먼저 무슨 모양인지 알아보고 그에 맞게 읽습니다.
+
+     HTML      -> 기사 URL 과 같은 추출기를 씁니다 (parseArticleHtml)
+     마크다운  -> 제목·목록·표·코드·인용을 Breeze 덩어리로 옮깁니다
+     평범한 글 -> 예전 그대로
+                    첫 줄         -> 제목
+                    빈 줄         -> 문단 경계
+                    빈 줄이 없음  -> 줄마다 한 장의 카드 (스레드)
+
+   어느 쪽이든 추측이 필요한 판단은 넣지 않았습니다. 마크다운은 구조를 글로 적어 두는
+   형식이라, 눈에 보이는 기호만 읽으면 결과를 미리 예상할 수 있습니다. */
 const PASTE_TITLE_MAX = 90;
+const cutPasteTitle = t => {
+  const s = String(t||'').replace(/\s+/g,' ').trim();
+  return s.length > PASTE_TITLE_MAX ? s.slice(0,PASTE_TITLE_MAX).trim()+'…' : s;
+};
+
+/* 표 구분선. 줄 하나가 전부 칸막이·붙임표·쌍점일 때만 참입니다 (`|---|:--:|`). */
+const MD_TABLE_RULE = /^\|?[\s:|-]*-[\s:|-]*\|[\s:|-]*$/;
+const MD_FENCE = /^\s{0,3}(```|~~~)/;
+const MD_LIST  = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+
+/* 마크다운인지 알아봅니다. 기호 하나로 정하지 않습니다 — 평범한 글에도 링크 하나쯤은
+   있고, 그것 때문에 X 스레드가 카드로 안 펼쳐지면 손해가 더 큽니다. 그래서 구조를
+   만드는 기호(제목·코드·표·목록·인용)가 반드시 하나는 있어야 하고, 점수도 3점을
+   넘어야 마크다운으로 봅니다. */
+function looksMarkdown(text){
+  const heading = /^\s{0,3}#{1,6}\s+\S/m.test(text);
+  const fence   = MD_FENCE.test(text) || /\n\s{0,3}(```|~~~)/.test(text);
+  const bullet  = /^\s*[-*+]\s+\S/m.test(text);
+  const number  = /^\s*\d+[.)]\s+\S/m.test(text);
+  const quote   = /^\s{0,3}>\s?\S/m.test(text);
+  const setext  = /\n(=|-){3,}\s*(\n|$)/.test(text);
+  const table   = text.split('\n').some(line => MD_TABLE_RULE.test(line.trim()));
+  if(!(heading || fence || bullet || number || quote || setext || table)) return false;
+  let score = 0;
+  if(heading) score += 2;
+  if(fence) score += 2;
+  if(table) score += 2;
+  if(bullet) score += 1;
+  if(number) score += 1;
+  if(quote) score += 1;
+  if(setext) score += 1;
+  if(/\[[^\]\n]+\]\([^)\s]+\)/.test(text)) score += 1;
+  if(/!\[[^\]\n]*\]\([^)\s]+\)/.test(text)) score += 1;
+  if(/(\*\*|__)[^*_\n]+\1/.test(text)) score += 1;
+  if(/`[^`\n]+`/.test(text)) score += 1;
+  return score >= 3;
+}
+
+/* HTML 로 붙여넣었나. 태그가 글 앞쪽에 실제로 있고 닫는 태그도 여럿이어야 합니다 —
+   본문에 "a < b" 가 섞인 것만으로 HTML 이라고 하면 안 됩니다. */
+function looksHtml(text){
+  const head = text.slice(0, 4000);
+  return /<(?:!doctype\s+html|html|body|article|main|section|div|p|h[1-6]|table|ul|ol|pre|blockquote)\b[^>]*>/i.test(head)
+      && (text.match(/<\/[a-z][a-z0-9]*>/gi) || []).length >= 3;
+}
+
+/* 마크다운의 줄 안쪽 기호를 벗깁니다. 읽는 사람에게 남길 것은 글자뿐입니다.
+   사진·배지는 버립니다 — 붙여넣은 글에는 받아 올 주소가 없어서 빈 칸만 남습니다. */
+function mdInline(raw){
+  let s = String(raw||'')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/!\[[^\]]*\]\[[^\]]*\]/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1')
+    .replace(/<((?:https?|mailto):[^>\s]+)>/gi, '$1')   // <https://…> 는 주소만 남깁니다
+    .replace(/<\/?[a-z][a-z0-9]*(?:\s[^>]*)?>/gi, '')
+    .replace(/`+([^`]+)`+/g, '$1')
+    /* 굵게. 안쪽에 기호가 또 들어오지 못하게 막습니다 — 느슨하게 두면 `**+**가 하나씩
+       있고, **두 줄은` 에서 첫 여는 기호가 한참 뒤의 기호까지 삼켜 문장이 뭉개집니다. */
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1');
+  /* 홑기호 기울임. snake_case 낱말을 건드리지 않도록 양옆을 확인합니다.
+     뒤돌아보기(lookbehind)는 오래된 사파리가 모르므로 쓰지 않습니다. */
+  s = s.replace(/(^|[^\w*])\*([^*\n]+)\*(?=[^\w*]|$)/g, '$1$2')
+       .replace(/(^|[^\w_])_([^_\n]+)_(?=[^\w_]|$)/g, '$1$2')
+       .replace(/\\([\\`*_{}[\]()#+\-.!|>~])/g, '$1');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+/* 덩어리 목록 -> 저장할 문단과 조판.
+   f 는 문단 번호입니다. 읽던 자리와 단어장 예문이 이 번호로 붙으므로 어긋나면 안 됩니다. */
+function assemblePasted(items, source){
+  const paras = [], blocks = [];
+  for(const item of items){
+    const t = String(item.t||'').trim();
+    if(!t) continue;
+    const r = item.r || 'p';
+    const f = paras.length;
+    paras.push(t);
+    const block = { r, t, f };
+    /* 인용·표·코드는 여러 덩어리가 한 상자로 묶입니다. 묶음표를 파서가 붙여 준 대로
+       씁니다 — 역할만 보고 묶으면 나란히 붙은 두 코드가 한 상자로 합쳐집니다. */
+    if(item.g != null) block.g = r + ':' + item.g;
+    blocks.push(block);
+  }
+  if(!paras.length) return null;
+  const levels = new Set(blocks.filter(b=>b.r.charAt(0)==='h').map(b=>b.r)).size;
+  return { paras, formatting: { blocks, start:0, levels: levels || 1, source, createdAt:Date.now() } };
+}
+
+/* 마크다운 -> Breeze 덩어리. 줄 단위 상태 기계입니다.
+   여는 기호를 만나면 닫힐 때까지 그 안을 그 규칙대로 담습니다. */
+function parseMarkdownBlocks(text){
+  const lines = text.split('\n');
+  const items = [];
+  let i = 0, fenceNo = 0, quoteNo = 0, tableNo = 0;
+
+  /* 맨 앞 --- 사이의 YAML 머리말은 글이 아니라 설정입니다(정적 사이트 생성기가 씁니다). */
+  if(/^---\s*$/.test(lines[0] || '')){
+    let j = 1;
+    while(j < lines.length && !/^(---|\.\.\.)\s*$/.test(lines[j])) j++;
+    if(j < lines.length) i = j + 1;
+  }
+
+  const push = (r, t, g) => {
+    const value = String(t||'').trim();
+    if(value) items.push(g != null ? { r, t:value, g } : { r, t:value });
+  };
+  const blockStart = line =>
+    /^\s{0,3}#{1,6}\s+\S/.test(line) || MD_FENCE.test(line) || MD_LIST.test(line)
+    || /^\s{0,3}>\s?/.test(line) || /^\s{0,3}(\*{3,}|-{3,}|_{3,})\s*$/.test(line)
+    || MD_TABLE_RULE.test(line.trim());
+
+  while(i < lines.length){
+    const line = lines[i];
+    const trimmed = line.trim();
+    if(!trimmed){ i++; continue; }
+
+    /* 코드 울타리. 안쪽은 마크다운이 아니므로 한 글자도 손대지 않습니다. */
+    const fence = trimmed.match(/^(```|~~~)/);
+    if(fence && MD_FENCE.test(line)){
+      const close = fence[1];
+      const body = [];
+      i++;
+      while(i < lines.length && !lines[i].trim().startsWith(close)) body.push(lines[i++]);
+      i++;
+      /* 코드는 줄바꿈이 뜻을 가지므로 한 덩어리로 둡니다. 줄마다 쪼개면 상자가 스무 개로
+         늘고, 문단 번호가 코드 줄 수만큼 밀립니다. */
+      const code = body.join('\n').replace(/\s+$/,'');
+      if(code.trim()) push('code', code, ++fenceNo);
+      continue;
+    }
+
+    // 밑줄로 그은 제목 (다음 줄이 ==== 또는 ----). reStructuredText 로 쓴 글도 여기 걸립니다.
+    const under = (lines[i+1] || '').trim();
+    if(!blockStart(line) && /^=+$/.test(under)){ push('h1', mdInline(trimmed)); i += 2; continue; }
+    if(!blockStart(line) && /^-{2,}$/.test(under)){ push('h2', mdInline(trimmed)); i += 2; continue; }
+
+    const heading = trimmed.match(/^(#{1,6})\s+(.*?)\s*#*$/);
+    if(heading){
+      push('h' + Math.min(3, heading[1].length), mdInline(heading[2]));
+      i++;
+      continue;
+    }
+
+    // 가로줄은 읽기에 보탤 것이 없습니다. 문단 경계는 이미 지켜지고 있습니다.
+    if(/^(\*{3,}|-{3,}|_{3,}|={3,})$/.test(trimmed)){ i++; continue; }
+
+    /* 표. 읽는 화면에 격자를 그리지는 않고, 한 행을 한 줄로 ` · ` 로 이어 상자에 담습니다 —
+       문단으로 풀면 낱말이 어느 칸의 것인지 사라지고, 격자를 그리면 폰에서 옆으로 넘칩니다.
+       칸마다 머리글을 앞에 붙여야 두 번째 행부터도 무슨 값인지 압니다. */
+    if(trimmed.includes('|') && MD_TABLE_RULE.test((lines[i+1]||'').trim())){
+      const cells = row => row.trim().replace(/^\||\|$/g,'').split('|').map(c=>mdInline(c));
+      const head = cells(line);
+      const rows = [];
+      i += 2;
+      while(i < lines.length && lines[i].includes('|') && lines[i].trim()){ rows.push(cells(lines[i])); i++; }
+      const group = ++tableNo;
+      const headText = head.filter(Boolean).join(' · ');
+      if(headText) push('note', headText, group);
+      for(const row of rows){
+        const text = row.map((c,n) => (head[n] && c) ? head[n] + ': ' + c : c).filter(Boolean).join(' · ');
+        if(text) push('note', text, group);
+      }
+      continue;
+    }
+
+    /* 인용. 안쪽에 또 마크다운이 있을 수 있어서 기호만 벗기고 이어 붙입니다. */
+    if(/^\s{0,3}>\s?/.test(line)){
+      const body = [];
+      while(i < lines.length && (/^\s{0,3}>\s?/.test(lines[i]) || (body.length && lines[i].trim()))){
+        body.push(lines[i].replace(/^\s{0,3}>\s?/, ''));
+        i++;
+      }
+      const group = ++quoteNo;
+      // 인용 안의 빈 줄은 문단 경계입니다. 한 상자 안에서 문단만 갈라 둡니다.
+      body.join('\n').split(/\n\s*\n+/).forEach(part => push('quote', mdInline(part.replace(/\n/g,' ')), group));
+      continue;
+    }
+
+    /* 목록. 항목 하나가 한 문단입니다 — 통째로 이으면 열 줄이 한 덩어리가 되고,
+       줄마다 쪼개면 한 항목의 이어진 줄이 따로 떨어집니다. */
+    if(MD_LIST.test(line)){
+      while(i < lines.length){
+        const m = lines[i].match(MD_LIST);
+        if(!m) break;
+        const depth = Math.min(2, Math.floor(m[1].replace(/\t/g,'  ').length / 2));
+        const parts = [m[3]];
+        i++;
+        // 다음 항목이 시작되기 전까지 이어진 줄은 같은 항목입니다.
+        while(i < lines.length && lines[i].trim() && !MD_LIST.test(lines[i])
+              && !/^\s{0,3}#{1,6}\s/.test(lines[i]) && !MD_FENCE.test(lines[i])){
+          parts.push(lines[i].trim());
+          i++;
+        }
+        let body = mdInline(parts.join(' '));
+        // 체크상자는 기호로 바꿉니다. [ ] [x] 를 글자로 두면 무슨 뜻인지 안 보입니다.
+        body = body.replace(/^\[\s\]\s*/, '☐ ').replace(/^\[[xX]\]\s*/, '☑ ');
+        /* 깊이는 글머리표로만 나타냅니다. 앞에 공백을 넣어 봐야 HTML 이 지우고,
+           push 도 앞뒤를 다듬으므로 남지 않습니다. */
+        const mark = /^\d/.test(m[2]) ? m[2].replace(/[.)]$/,'.') + ' ' : (depth ? '– ' : '• ');
+        if(body) push('p', mark + body);
+        if(i < lines.length && !lines[i].trim()){
+          // 빈 줄 하나는 느슨한 목록의 항목 사이입니다. 두 줄이면 목록이 끝난 것으로 봅니다.
+          if(/^\s*$/.test(lines[i+1] || 'x')) break;
+          i++;
+        }
+      }
+      continue;
+    }
+
+    // 참조 링크 정의와 HTML 주석은 읽을 글이 아닙니다.
+    if(/^\[[^\]]+\]:\s*\S+/.test(trimmed)){ i++; continue; }
+    if(/^<!--/.test(trimmed)){
+      while(i < lines.length && !lines[i].includes('-->')) i++;
+      i++;
+      continue;
+    }
+
+    // 평범한 문단. 빈 줄이나 다른 덩어리가 시작될 때까지 이어 붙입니다.
+    const para = [];
+    while(i < lines.length && lines[i].trim() && !blockStart(lines[i])
+          && !(lines[i].includes('|') && MD_TABLE_RULE.test((lines[i+1]||'').trim()))
+          && !/^=+$/.test((lines[i+1]||'').trim())){
+      para.push(lines[i].trim());
+      i++;
+    }
+    // 배지만 있는 줄은 여기서 빈 문자열이 되어 저절로 빠집니다.
+    push('p', mdInline(para.join(' ')));
+  }
+  return items;
+}
+
+function parsePastedMarkdown(text){
+  const items = parseMarkdownBlocks(text);
+  if(!items.length) return null;
+  /* 읽을 글이 정말 있는지 봅니다. 배지와 코드만 있는 README 를 책으로 만들면
+     열었을 때 읽을 것이 없습니다. */
+  if(!items.some(item => item.r === 'p' || item.r === 'quote')) return null;
+
+  /* 제목은 첫 h1 입니다. 없으면 첫 덩어리를 제목으로 쓰고 h1 로 올립니다 —
+     README 는 거의 늘 첫 줄이 제목이라 이쪽이 예상과 맞습니다. */
+  let title = '';
+  const firstHead = items.findIndex(item => item.r === 'h1');
+  if(firstHead >= 0) title = items[firstHead].t;
+  else if(items.length > 1){ title = items[0].t; items[0] = { r:'h1', t:items[0].t }; }
+  else title = items[0].t;
+
+  const assembled = assemblePasted(items, 'pasted-markdown');
+  if(!assembled) return null;
+  return { title: cutPasteTitle(title), paras: assembled.paras, thread:false,
+           formatting: assembled.formatting };
+}
+
+/* HTML 붙여넣기는 기사 URL 과 같은 추출기를 씁니다. 규칙을 두 벌 갖고 있으면
+   한쪽만 고쳐지는 날이 옵니다. */
+function parsePastedHtml(text){
+  if(typeof parseArticleHtml !== 'function' || typeof articleAssemble !== 'function') return null;
+  let parsed = null;
+  try{ parsed = parseArticleHtml(text, ''); }catch(e){ return null; }
+  if(!parsed || !parsed.blocks) return null;
+  /* 붙여넣은 HTML 에는 사진을 받아 올 주소가 없습니다. 자리만 잡고 빈 칸으로 남으므로
+     아예 뺍니다 — 문단 번호가 밀리지 않게 다시 조립합니다. */
+  const blocks = parsed.blocks.filter(block => block.r !== 'img');
+  if(!blocks.length) return null;
+  const title = parsed.title || blocks[0].t;
+  const assembled = articleAssemble(title, blocks);
+  return { title: cutPasteTitle(title), paras: assembled.paras, thread:false,
+           formatting: Object.assign({}, assembled.formatting, { source:'pasted-html' }) };
+}
 
 function parsePastedText(raw){
   // 웹에서 복사한 글에는 눈에 보이지 않는 고정폭·너비 0 공백이 섞여 옵니다.
   const text = String(raw||'').replace(/\r/g,'')
     .replace(/[\u00a0\u200b\u2028\u2029]/g,' ').trim();
   if(!text) return null;
+
+  /* 모양을 알아보고 맞는 쪽으로 보냅니다. 어느 쪽이든 실패하면 평범한 글로 읽습니다 —
+     붙여넣기가 아무것도 안 되는 것보다 낫습니다. */
+  if(looksHtml(text)){
+    const asHtml = parsePastedHtml(text);
+    if(asHtml) return asHtml;
+  }
+  if(looksMarkdown(text)){
+    const asMarkdown = parsePastedMarkdown(text);
+    if(asMarkdown) return asMarkdown;
+  }
+
   const lines = text.split('\n').map(line=>line.trim());
   const start = lines.findIndex(line=>line);
   if(start < 0) return null;

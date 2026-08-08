@@ -64,6 +64,20 @@ function renderBookBody(b){
       box = null; boxKind = '';
       return;
     }
+    /* 코드는 줄바꿈과 들여쓰기가 뜻입니다. 문단처럼 이어 붙이면 읽을 수 없어서
+       그대로 둡니다. 사전은 걸지 않습니다 — README 의 `npm install` 을 눌러
+       단어장에 쌓이면, 영어를 읽으려고 만든 목록이 명령어로 오염됩니다. */
+    if(bl.r === 'code'){
+      if(pageChars >= PAGE_CHARS) newPage();
+      const pre = document.createElement('pre');
+      pre.className = 'blk code';
+      pre.dataset.pi = bl.f;
+      pre.textContent = bl.t;
+      page.appendChild(pre);
+      pageChars += Math.min(bl.t.length, 600);
+      box = null; boxKind = '';
+      return;
+    }
     const isHead = bl.r.charAt(0) === 'h';
     const lvl = isHead ? +bl.r.charAt(1) : 0;
     const inBox = bl.r === 'quote' || bl.r === 'note';

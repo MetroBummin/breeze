@@ -159,6 +159,14 @@
   body.dark #rtext .blk.note{background:#1E272B; border-color:#2F3A40;}
   body.dark #rtext .blk.quote{border-left-color:#3A424A;}
   @media(max-width:760px){ #rtext .blk.note{padding:15px 16px;} }
+  /* 붙여넣은 README 의 코드. 긴 줄은 상자 안에서만 옆으로 밀립니다 — 쪽이
+     통째로 넓어지면 본문 줄바꿈이 흔들려서 보던 자리를 놓칩니다. */
+  #rtext .blk.code{background:var(--paper2); border:1px solid var(--line2); border-radius:12px;
+    padding:14px 16px; margin:0 0 1.1em; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--ink-body);
+    white-space:pre; user-select:text;}
+  body.dark #rtext .blk.code{background:#191D21; border-color:#2F3A40;}
+  @media(max-width:760px){ #rtext .blk.code{padding:12px 13px; font-size:12px;} }
   .page{background:#FFFEFA; border:1px solid #EDEAE0; border-radius:20px;
     padding:40px var(--pagepad,44px); overflow:hidden;
     box-shadow:0 3px 16px rgba(60,50,30,.05);}
