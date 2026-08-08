@@ -215,29 +215,41 @@ function renderPanel(){
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
   const aiBox = document.getElementById('p-ai');
   const aiM = document.getElementById('p-ai-m'), aiN = document.getElementById('p-ai-note');
-  if(w.aiSlow && !(w.ai && w.ai.ko)){
+  const aiG = document.getElementById('p-ai-gloss');
+  const ai = w.ai || {};
+  const noting = !!w.aiLoading && !w.aiSlow;
+  if(ai.ko){
+    /* 뜻은 공용 사전에서 이미 왔습니다. 문장 설명을 기다리는 동안에도 그걸 지우지 않습니다 —
+       예전에는 "찾고 있어요…"가 뜻을 밀어내서, 이미 알던 것까지 잠깐 사라졌습니다. */
+    aiBox.className = 'on' + (noting ? ' noting' : '');
+    aiM.innerHTML = esc(ai.ko) + (ai.pos?`<span class="pos">${esc(ai.pos)}</span>`:'');
+    /* 윗줄은 이 문장 이야기, 아랫줄은 이 뜻 자체의 성질.
+       문장 설명이 아직이면 뜻 설명이 그 자리를 대신 지킵니다 — 칸이 비지 않게. */
+    aiN.textContent = ai.note
+      || (noting ? '이 문장에서 어떻게 쓰였는지 보는 중…'
+        : w.aiSlow ? '조금 오래 걸리네요. 아래에서 다시 시도할 수 있어요.'
+        : (ai.gloss || ''));
+    const under = (ai.note && ai.gloss && ai.gloss !== ai.note) ? ai.gloss : '';
+    aiG.textContent = under;
+    aiG.style.display = under ? 'block' : 'none';
+  }else if(w.aiSlow){
     aiBox.className='on'; aiM.textContent='조금 오래 걸리네요';
     aiN.textContent='서버가 붐비는 것 같아요. 아래에서 다시 시도할 수 있어요.';
-  }else if(w.aiLoading){
-    aiBox.className='on load'; aiM.textContent='문맥에 맞는 뜻을 찾고 있어요…'; aiN.textContent='';
-  }else if(w.ai && w.ai.ko){
-    aiBox.className='on';
-    aiM.innerHTML = esc(w.ai.ko) + (w.ai.pos?`<span class="pos">${esc(w.ai.pos)}</span>`:'');
-    /* 뜻 설명(gloss)은 공용 사전에 이미 들어 있어 공짜로 즉시 뜹니다.
-       이 문장에 대한 설명(note)은 물어봤을 때만 오고, 오면 그 자리를 대신합니다. */
-    aiN.textContent = w.ai.note || w.ai.gloss || '';
+    aiG.style.display='none';
+  }else if(noting){
+    aiBox.className='on load'; aiM.textContent='문맥에 맞는 뜻을 찾고 있어요…';
+    aiN.textContent=''; aiG.style.display='none';
   }else{
-    aiBox.className='';
+    aiBox.className=''; aiG.style.display='none';
   }
   /* 단추는 "이 문장에서의 설명"이 아직 없을 때만 보여 줍니다.
      뜻이 떴다고 숨기면, 정작 물어보고 싶을 때 물어볼 데가 없어집니다. */
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
-  const hasNote = !!(w.ai && w.ai.note);
-  const busy = w.aiLoading && !w.aiSlow;
-  aiBtn.style.display = (hasNote || busy) ? 'none' : 'flex';
-  aiHint.style.display = (hasNote || busy) ? 'none' : 'block';
-  document.getElementById('p-aibtn-t').textContent = w.aiSlow ? '다시 시도' : '이 문장에서는?';
-  aiHint.textContent = w.aiSlow ? '' : '이 문장에서 어떻게 쓰였는지 물어봅니다';
+  const hasNote = !!(ai.note || ai.noteDone);
+  aiBtn.style.display = (hasNote || noting) ? 'none' : 'flex';
+  aiHint.style.display = (hasNote || noting) ? 'none' : 'block';
+  document.getElementById('p-aibtn-t').textContent = w.aiSlow ? '다시 시도' : 'Let AI handle this';
+  aiHint.textContent = w.aiSlow ? '' : '뜻이 문맥과 안 맞을 때 눌러보세요';
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';
   if(w.loading) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>';
@@ -368,8 +380,10 @@ async function loadCachedEntry(k){
 async function loadCachedNote(k){
   const w = words[k]; if(!w || !w.example) return false;
   const hit = await dictGet(noteKey(w));
-  if(!hit || !hit.note) return false;
-  w.ai = Object.assign({}, w.ai, { note: hit.note });
+  /* note 가 빈 문자열인 것도 답입니다 — "이 문장에서 더 보탤 말이 없다".
+     그걸 답으로 안 치면 단추가 다시 나타나고, 누를 때마다 같은 값을 돈 주고 다시 받습니다. */
+  if(!hit || !(hit.note || hit.done)) return false;
+  w.ai = Object.assign({}, w.ai, { note: hit.note || '', noteDone: true });
   if(selKey===k) renderPanel();
   return true;
 }
@@ -416,7 +430,7 @@ async function fetchExplain(k, force){
   const key = noteKey(w);
   if(!force){
     const hit = await dictGet(key);
-    if(hit && hit.note){ applyNote(w, hit.note, k); return true; }
+    if(hit && (hit.note || hit.done)){ applyNote(w, hit.note || '', k); return true; }
   }
 
   const began = Date.now();
@@ -434,7 +448,7 @@ async function fetchExplain(k, force){
     const j = await dictCall({ op:'explain', word: w.word || k, sentence: w.example, ko: w.ko || '' },
                              ctrl ? ctrl.signal : null);
     if(!j) return false;
-    await dictPut(key, { note: j.note || '' });
+    await dictPut(key, { note: j.note || '', done: true });
     /* 답이 너무 빨리 와도 최소 0.5초는 보여 줍니다.
        화면이 깜빡하고 바뀌면 무슨 일이 일어났는지 못 알아채거든요. */
     const left = AI_MIN_WAIT - (Date.now() - began);
@@ -491,7 +505,7 @@ function applyEntry(w, e, k){
 }
 function applyNote(w, note, k){
   delete w.aiLoading;
-  w.ai = Object.assign({}, w.ai, { note: note || '' });
+  w.ai = Object.assign({}, w.ai, { note: note || '', noteDone: true });
   w.up = Date.now();
   saveWords(); queueSync();
   if(selKey===k) renderPanel();
@@ -508,6 +522,14 @@ async function fetchDict(k){
   if((cached || built) && selKey===k) renderPanel();
   /* ③ 모두가 함께 쓰는 사전 */
   const shared = !cached && await fetchEntry(k);
+
+  /* ④ 이 문장에서의 설명은 예전처럼 여기서 미리 부릅니다.
+     단추를 누르고 나서 부르면, 누른 사람이 처음부터 끝까지 기다립니다. 지금 부르면
+     읽는 사람이 뜻·발음을 보는 동안 옵니다 — 기다림이 읽기 뒤에 숨습니다.
+     예전과 다른 점은 이 호출이 낱말 항목까지 새로 만들지는 않는다는 것입니다.
+     항목은 ③에서 이미 왔고, 여기서는 이 문장 이야기만 받아 옵니다. */
+  if(w.example && sb && sbUser && navigator.onLine !== false && !(w.ai && w.ai.note))
+    fetchExplain(k, false);
 
   /* 여기까지 뜻을 얻었으면 무료 사전에서는 발음만 받아 옵니다(호출 3회 → 1회). */
   const rich = cached || shared || built;
