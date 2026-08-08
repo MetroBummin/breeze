@@ -29,10 +29,6 @@
   #p-phon{color:#5F7881; font-size:14px; margin-bottom:4px;}
   #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
   #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
-  #p-ko{font-size:17px; font-weight:600; background:var(--sky); color:var(--ink); border-radius:12px;
-    padding:11px 14px; margin-bottom:6px; min-height:22px; outline:none;}
-  #p-ko:focus{box-shadow:0 0 0 2px var(--blue);}
-  #p-ko-hint{font-size:11px; color:var(--soft2); margin:0 0 12px 3px;}
   #p-ai{display:none; background:linear-gradient(135deg,#EAF4F8,#F3F6EC); border:1px solid #CFE4EC;
     border-radius:14px; padding:13px 15px; margin-bottom:12px;}
   #p-ai.on{display:block;}
@@ -42,13 +38,34 @@
   #p-ai .m{font-size:18px; font-weight:700; color:var(--ink); line-height:1.35;}
   #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
   #p-ai .note{font-size:12.5px; color:#5B707A; line-height:1.55; margin-top:7px;}
-  /* 뜻 자체의 성질. 문장 설명이 오면 그 아래로 한 칸 내려가 배경이 됩니다. */
-  #p-ai .gloss{display:none; font-size:11.5px; color:#8AA0A9; line-height:1.5;
-    margin-top:8px; padding-left:9px; border-left:2px solid #CFE4EC;}
-  #p-ai.load .m{color:var(--soft2); font-weight:500; font-size:15px;}
-  /* 뜻은 이미 왔고 문장 설명만 오는 중. 뜻을 지우지 않고 아랫줄만 숨을 쉽니다. */
-  #p-ai.noting .note{color:var(--soft2); animation:p-ai-breathe 1.4s ease-in-out infinite;}
-  @keyframes p-ai-breathe{0%,100%{opacity:.45} 50%{opacity:.95}}
+  /* 뜻을 고치는 자리가 곧 뜻이 뜨는 자리입니다. 그래서 평소에는 편집칸처럼 보이지 않고,
+     누르면 그때 테두리가 생깁니다 — 밑줄을 미리 그어 두면 박스가 서식 화면처럼 보입니다. */
+  #p-ai .mk{display:inline-block; min-width:2em; border-radius:7px; padding:1px 5px; margin-left:-5px;
+    outline:none; cursor:text; transition:background .15s, box-shadow .15s;}
+  #p-ai .mk:hover{background:rgba(255,255,255,.6);}
+  #p-ai .mk:focus{background:#fff; box-shadow:0 0 0 2px var(--blue);}
+  #p-ai .acts{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:9px;}
+  #p-ai .tip{font-size:10.5px; color:var(--soft2); flex:none;}
+  #p-ai.edited .tip{color:var(--blue);}
+  /* ── 바람. Breeze 라서 점 세 개가 아니라 돌풍이 지나갑니다 ──
+     선 하나하나가 서로 다른 속도로 지나가서 규칙적인 깜빡임처럼 보이지 않습니다. */
+  #p-ai .wind{display:none; height:46px; margin:2px 0 0;}
+  #p-ai.load .wind{display:block;}
+  /* 기다리는 동안에는 뜻도 아랫줄도 감춥니다. 특히 "다시 물어보기" 로 들어온 경우
+     앞서 받은 설명이 그대로 남아 있으면, 새 답이 온 것처럼 보입니다. */
+  #p-ai.load .m, #p-ai.load .acts, #p-ai.load .note{display:none;}
+  #p-ai .wind svg{display:block; width:100%; height:100%; overflow:visible;}
+  #p-ai .wind path{fill:none; stroke:var(--blue); stroke-width:1.8; stroke-linecap:round;
+    stroke-dasharray:38 150; opacity:.5; animation:p-gust 1.9s linear infinite;}
+  #p-ai .wind path:nth-child(2){animation-duration:2.4s; animation-delay:.3s; opacity:.38;}
+  #p-ai .wind path:nth-child(3){animation-duration:2.15s; animation-delay:.7s; opacity:.28;}
+  @keyframes p-gust{from{stroke-dashoffset:188} to{stroke-dashoffset:-38}}
+  /* 움직임을 줄여 달라고 설정한 사람에게는 지나가지 않고 숨만 쉽니다. */
+  @media (prefers-reduced-motion:reduce){
+    #p-ai .wind path{animation:p-ai-breathe 1.6s ease-in-out infinite; stroke-dasharray:none;}
+    #p-ai .wind path:nth-child(2),#p-ai .wind path:nth-child(3){animation-name:p-ai-breathe;}
+  }
+  @keyframes p-ai-breathe{0%,100%{opacity:.25} 50%{opacity:.7}}
   #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
     border:1px dashed #BFD9E4; background:#F4FAFC; color:var(--blue); border-radius:12px;
     padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
@@ -57,13 +74,11 @@
   #p-aibtn:disabled{opacity:.6; cursor:default;}
   #p-aibtn .sp{font-size:15px;}
   #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
-  #p-airetry{display:block; margin:8px auto 0; border:none; background:none; color:var(--soft);
+  #p-airetry{border:none; background:none; color:var(--soft); padding:0; text-align:left;
     font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
   #p-airetry:hover{color:var(--blue);}
+  #p-airetry:disabled{opacity:.45; cursor:default; text-decoration:none;}
   .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
-  #p-src{display:none; margin-left:7px; padding:2px 7px; border-radius:9px; background:var(--sky);
-         color:var(--chiptx); font-size:9.5px; letter-spacing:0; vertical-align:1px;}
-  #p-src.on{display:inline-block;}
   #p-colloc-sec{display:none;}
   #p-colloc{display:none; flex-wrap:wrap; gap:6px;}
   #p-colloc.on{display:flex;}

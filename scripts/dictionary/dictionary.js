@@ -60,76 +60,6 @@ function lemmaCands(raw){
   return [...set];
 }
 
-/* ================= 내장 사전 =================
-   dict300.js가 함께 있으면 표제어 300개는 인터넷 없이 즉시 뜹니다.
-   그 파일이 없어도 앱은 그대로 돌아갑니다(예전처럼 인터넷 사전만 씁니다). */
-const BD = (window.BREEZE_DICT && window.BREEZE_DICT.w) ? window.BREEZE_DICT.w : null;
-/* 연어를 비교할 때 무시할 말. 관사·대명사처럼 아무 문장에나 나오는 것만 뺍니다.
-   out·up·off 같은 건 뜻을 가르는 열쇠라서 일부러 남겨 둡니다(run out ↔ run up). */
-const BD_STOP = {};
-'a an the of to in on at for from with by his her their its my your our this that these those be is are was were been and or as it he she they you we i some any very so than not no more one'
-  .split(' ').forEach(function(t){ BD_STOP[t] = 1; });
-
-function bdTokens(s){ return String(s||'').toLowerCase().match(/[a-z']+/g) || []; }
-/* ships ↔ ship 처럼 어미만 다른 경우까지 같은 말로 봅니다.
-   짧은 쪽이 4글자는 되어야 합니다 — 안 그러면 "a"가 "away"에 걸려 엉뚱한 뜻이 뽑힙니다. */
-function bdSame(tok, list){
-  for(let i=0;i<list.length;i++){
-    const s = list[i];
-    if(s === tok) return true;
-    const shortW = s.length < tok.length ? s : tok;
-    const longW  = s.length < tok.length ? tok : s;
-    if(shortW.length >= 4 && longW.length - shortW.length <= 3 && longW.indexOf(shortW) === 0) return true;
-  }
-  return false;
-}
-/* 클릭한 단어의 여러 형태 중 사전에 있는 것을 찾습니다 */
-function bdLookup(w){
-  if(!BD) return null;
-  const cands = (w.forms && w.forms.length) ? w.forms : lemmaCands(w.clicked || w.word || '');
-  for(let i=0;i<cands.length;i++){ if(BD[cands[i]]) return { word:cands[i], entry:BD[cands[i]] }; }
-  return null;
-}
-/* 뜻이 여러 개일 때, 문장에 함께 나온 말을 보고 고릅니다.
-   예: "abandon the ship"의 ship이 문장에 있으면 '버리고 떠나다'를 위로 올립니다. */
-function bdPickSense(entry, head, sentence){
-  const senses = entry.s || [];
-  if(senses.length < 2) return { sense: senses[0] || null, hit:'' };
-  const sent = bdTokens(sentence);
-  if(!sent.length) return { sense: senses[0], hit:'' };
-  let best = senses[0], bestScore = 0, bestHit = '';
-  for(let i=0;i<senses.length;i++){
-    const cs = senses[i].c || [];
-    for(let j=0;j<cs.length;j++){
-      const keys = bdTokens(cs[j]).filter(function(t){
-        return t.length >= 3 && !BD_STOP[t] && t.indexOf(head) !== 0 && head.indexOf(t) !== 0;
-      });
-      if(!keys.length) continue;
-      let hit = 0;
-      for(let n=0;n<keys.length;n++) if(bdSame(keys[n], sent)) hit++;
-      const score = hit / keys.length;
-      if(score > bestScore){ bestScore = score; best = senses[i]; bestHit = cs[j]; }
-    }
-  }
-  return { sense: best, hit: bestScore > 0 ? bestHit : '' };
-}
-/* 찾았으면 단어에 붙여 줍니다. 네트워크를 기다리지 않으므로 즉시 뜹니다. */
-function applyBuiltin(w){
-  const found = bdLookup(w);
-  if(!found) return false;
-  const picked = bdPickSense(found.entry, found.word, w.example || '');
-  if(!picked.sense) return false;
-  const pos = found.entry.p || '';
-  if(!isAcro(w.word)) w.word = found.word;
-  w.dictSrc = 'builtin';
-  if(!w.ko) w.ko = picked.sense.k;
-  w.kodict = [{ pos: pos, terms: found.entry.s.map(function(x){ return x.k; }).slice(0,5) }];
-  w.defs   = found.entry.s.map(function(x){ return { pos: pos, def: x.d }; }).slice(0,5);
-  w.colloc = (picked.sense.c || []).slice(0,3);
-  w.collocHit = picked.hit;
-  return true;
-}
-
 function sentenceOf(span){
   if(span && span.dataset && span.dataset.example) return span.dataset.example;
   const paragraph = span && span.closest ? span.closest('[data-pi]') : null;
@@ -179,6 +109,9 @@ function selectWord(k, span){
 }
 function closePanel(){
   selKey=null;
+  /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
+     훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
+  abortLook();
   document.getElementById('panel').classList.remove('on');
   document.getElementById('sheetbg').classList.remove('on');
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
@@ -203,79 +136,109 @@ function setStatus(k, st){
   saveWords(); paintWord(resolved); queueSync();
   renderPanel();
 }
+/* 화면에 뜰 뜻 후보들. AI 가 고른 뜻이 맨 앞, 그 다음이 AI 가 준 다른 뜻,
+   마지막이 무료 사전이 준 것들. 같은 낱말이 두 번 뜨지 않게 걸러 냅니다. */
+function meaningChips(w){
+  const ai = w.ai || {};
+  const out = [], seen = new Set();
+  const push = (term, pos, fromAi) => {
+    const t = String(term||'').trim();
+    if(!t || seen.has(t)) return;
+    seen.add(t); out.push({ term:t, pos:pos||'', ai:!!fromAi });
+  };
+  push(ai.ko, ai.pos, true);
+  for(const a of (w.alts||[])) push(a, ai.pos, true);
+  for(const d of (w.kodict||[])) for(const t of (d.terms||[])) push(t, d.pos, false);
+  /* 사람이 직접 써 넣은 뜻은 어느 사전에도 없으니 따로 넣어 줍니다 —
+     안 그러면 자기가 고른 뜻만 칩에서 빠져 보입니다. */
+  if(w.ko) push(w.ko, ai.pos, false);
+  return out.slice(0, 8);
+}
 function renderPanel(){
   const w = words[selKey]; if(!w) return;
+  const k = selKey;
   document.getElementById('p-word').textContent = w.word;
   document.getElementById('p-phon').textContent = w.phon || '';
   document.getElementById('p-clicked').textContent =
     (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
-  document.getElementById('p-ko').textContent = w.ko || (w.loading?'…':'');
   document.getElementById('p-ex').textContent = w.example || '—';
   document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
+
+  /* ── 뜻이 사는 칸. 하나뿐입니다 ──
+     예전에는 이 박스가 "AI 가 알려준 것"이고 아래 파란 칸이 "내 단어장에 적히는 것"이라
+     같은 뜻이 화면에 두 번 있었습니다. 고치는 건 아래 칸에서만 됐고요. 이제 여기 뜬 뜻을
+     그 자리에서 누르면 고쳐지고, 그게 그대로 단어장에 들어갑니다. */
   const aiBox = document.getElementById('p-ai');
-  const aiM = document.getElementById('p-ai-m'), aiN = document.getElementById('p-ai-note');
-  const aiG = document.getElementById('p-ai-gloss');
+  const aiKo = document.getElementById('p-ai-ko'), aiPos = document.getElementById('p-ai-pos');
+  const aiN = document.getElementById('p-ai-note'), aiTip = document.getElementById('p-ai-tip');
+  const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
   const ai = w.ai || {};
-  const noting = !!w.aiLoading && !w.aiSlow;
-  if(ai.ko){
-    /* 뜻은 공용 사전에서 이미 왔습니다. 문장 설명을 기다리는 동안에도 그걸 지우지 않습니다 —
-       예전에는 "찾고 있어요…"가 뜻을 밀어내서, 이미 알던 것까지 잠깐 사라졌습니다. */
-    aiBox.className = 'on' + (noting ? ' noting' : '');
-    aiM.innerHTML = esc(ai.ko) + (ai.pos?`<span class="pos">${esc(ai.pos)}</span>`:'');
-    /* 윗줄은 이 문장 이야기, 아랫줄은 이 뜻 자체의 성질.
-       문장 설명이 아직이면 뜻 설명이 그 자리를 대신 지킵니다 — 칸이 비지 않게. */
+  const asking = !!w.aiLoading && !w.aiSlow;
+  const shown = w.ko || ai.ko || '';
+  if(asking){
+    aiBox.className = 'on load';
+    aiCap.textContent = w.aiRetrying ? '다른 뜻을 찾는 중' : '문맥 뜻 · AI';
+  }else if(shown){
+    aiBox.className = 'on' + (w.koEdited ? ' edited' : '');
+    /* noteDone 은 예전 모양입니다. 이미 저장된 단어를 다시 눌렀을 때
+       AI 가 답했던 사실이 사라져 보이지 않게 함께 봅니다. */
+    aiCap.textContent = w.koEdited ? '내가 고친 뜻'
+      : ((ai.done || ai.noteDone) ? '문맥 뜻 · AI' : '뜻');
+    /* 편집 중에 renderPanel 이 돌아도 커서가 앞으로 튀지 않게, 달라졌을 때만 씁니다. */
+    if(aiKo.textContent !== shown) aiKo.textContent = shown;
+    aiPos.textContent = ai.pos || '';
     aiN.textContent = ai.note
-      || (noting ? '이 문장에서 어떻게 쓰였는지 보는 중…'
-        : w.aiSlow ? '조금 오래 걸리네요. 아래에서 다시 시도할 수 있어요.'
-        : (ai.gloss || ''));
-    const under = (ai.note && ai.gloss && ai.gloss !== ai.note) ? ai.gloss : '';
-    aiG.textContent = under;
-    aiG.style.display = under ? 'block' : 'none';
-  }else if(w.aiSlow){
-    aiBox.className='on'; aiM.textContent='조금 오래 걸리네요';
-    aiN.textContent='서버가 붐비는 것 같아요. 아래에서 다시 시도할 수 있어요.';
-    aiG.style.display='none';
-  }else if(noting){
-    aiBox.className='on load'; aiM.textContent='문맥에 맞는 뜻을 찾고 있어요…';
-    aiN.textContent=''; aiG.style.display='none';
+      || (w.aiSlow ? '조금 오래 걸렸어요. 아래에서 다시 시도할 수 있어요.' : '');
+    aiN.style.display = aiN.textContent ? 'block' : 'none';
+    aiTip.textContent = w.koEdited ? '직접 고친 뜻이에요' : '뜻을 눌러 직접 고칠 수 있어요';
+    aiRetry.style.display = (sb && sbUser && w.example) ? 'inline' : 'none';
   }else{
-    aiBox.className=''; aiG.style.display='none';
+    aiBox.className = '';
   }
-  /* 단추는 "이 문장에서의 설명"이 아직 없을 때만 보여 줍니다.
-     뜻이 떴다고 숨기면, 정작 물어보고 싶을 때 물어볼 데가 없어집니다. */
+
+  /* 단추는 AI 가 답하지 못한 이유가 있을 때만 나옵니다. 평소에는 클릭한 순간
+     이미 다녀왔으므로 누를 것이 없고, 뜻이 안 맞을 때는 박스 안의 링크가 받습니다. */
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
-  const hasNote = !!(ai.note || ai.noteDone);
-  aiBtn.style.display = (hasNote || noting) ? 'none' : 'flex';
-  aiHint.style.display = (hasNote || noting) ? 'none' : 'block';
-  document.getElementById('p-aibtn-t').textContent = w.aiSlow ? '다시 시도' : 'Let AI handle this';
-  aiHint.textContent = w.aiSlow ? '' : '뜻이 문맥과 안 맞을 때 눌러보세요';
+  const off = asking ? '' : (w.aiOff || '');
+  aiBtn.style.display = (off && off !== 'quota') ? 'flex' : 'none';
+  aiHint.style.display = off ? 'block' : 'none';
+  document.getElementById('p-aibtn-t').textContent =
+    (off === 'error' || w.aiSlow) ? '다시 시도' : 'Let AI handle this';
+  aiHint.textContent =
+      off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
+    : off === 'quota'   ? '오늘 AI 사전을 다 썼어요. 자정에 다시 채워집니다'
+    : off === 'offline' ? '오프라인이라 무료 사전만 보여주고 있어요'
+    : off === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
+    : '뜻이 문맥과 안 맞을 때 눌러보세요';
+
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';
-  if(w.loading) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>';
-  else if(!w.kodict || !w.kodict.length) kod.innerHTML = '<span style="color:var(--soft2);font-size:13px">사전 항목 없음</span>';
-  else {
-    for(const d of w.kodict){
-      for(const t of d.terms){
-        const c = document.createElement('button');
-        c.className = 'kochip' + (w.ko===t ? ' on':'');
-        c.innerHTML = `<span class="pos">${esc(d.pos)}</span>${esc(t)}`;
-        c.onclick = ()=>{ w.ko = t; w.up = Date.now(); saveWords(); queueSync(); renderPanel(); };
-        kod.appendChild(c);
-      }
+  const chips = meaningChips(w);
+  if(!chips.length){
+    kod.innerHTML = w.loading
+      ? '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>'
+      : '<span style="color:var(--soft2);font-size:13px">다른 뜻 후보가 없어요</span>';
+  }else{
+    for(const c of chips){
+      const b = document.createElement('button');
+      b.className = 'kochip' + (w.ko===c.term ? ' on':'');
+      b.innerHTML = (c.pos ? `<span class="pos">${esc(c.pos)}</span>` : '') + esc(c.term);
+      b.onclick = ()=>{
+        w.ko = c.term;
+        /* AI 가 고른 뜻으로 되돌아온 것은 "고쳤다"가 아닙니다. */
+        if(c.term === (w.ai && w.ai.ko)) delete w.koEdited; else w.koEdited = true;
+        w.up = Date.now(); saveWords(); queueSync(); renderPanel();
+        logDict('pick', k);
+      };
+      kod.appendChild(b);
     }
   }
-  /* 내장 사전에서 온 뜻이면 출처를 밝히고, 함께 쓰는 말도 보여 줍니다.
-     문장과 맞아떨어진 연어에는 표시를 해서 "왜 이 뜻인지"가 보이게 합니다. */
-  const src = document.getElementById('p-src');
-  src.className = (w.dictSrc === 'builtin' || w.dictSrc === 'shared') ? 'on' : '';
-  src.textContent = w.dictSrc === 'shared' ? '공용 사전' : '기본 사전';
+
   const col = document.getElementById('p-colloc'), colSec = document.getElementById('p-colloc-sec');
   if(w.colloc && w.colloc.length){
     col.className = 'on'; colSec.className = 'p-sec on';
-    col.innerHTML = w.colloc.map(function(c){
-      return '<span class="colloc' + (c === w.collocHit ? ' hit' : '') + '">' + esc(c) + '</span>';
-    }).join('');
+    col.innerHTML = w.colloc.map(c=>'<span class="colloc">'+esc(c)+'</span>').join('');
   }else{
     col.className = ''; colSec.className = 'p-sec'; col.innerHTML = '';
   }
@@ -284,16 +247,34 @@ function renderPanel(){
   else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--soft2)">영어 뜻을 찾지 못했어요</span>';
   else defs.innerHTML = w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
 }
-document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>setStatus(selKey, +b.dataset.s));
+document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
+  setStatus(selKey, +b.dataset.s);
+  logDict('star', selKey, { meta:{ status:+b.dataset.s } });
+});
 document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;
+  logDict('known', k);
   delete words[k]; dead[k] = Date.now(); save(LS_DEAD, dead);
   saveWords(); paintWord(k); closePanel(); queueSync(); toast('단어장에서 뺐어요');
 };
-document.getElementById('p-ko').addEventListener('blur', e=>{
+/* 뜻을 고치는 곳이 뜻이 뜨는 곳입니다. 사람이 손으로 쓴 뜻은 그 뒤로 AI 가 덮지 않습니다 —
+   "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다. 그때는 새 뜻을 달라는 뜻이니까요. */
+const aiKoBox = document.getElementById('p-ai-ko');
+aiKoBox.addEventListener('blur', ()=>{
   if(!selKey || !words[selKey]) return;
-  words[selKey].ko = e.target.textContent.trim(); words[selKey].up = Date.now(); saveWords(); queueSync();
+  const w = words[selKey];
+  const next = aiKoBox.textContent.replace(/\s+/g,' ').trim();
+  if(next === (w.ko||'')) return;
+  w.ko = next;
+  w.koEdited = next !== ((w.ai && w.ai.ko) || '');
+  w.up = Date.now(); saveWords(); queueSync(); renderPanel();
+  if(w.koEdited) logDict('edit', selKey);
+});
+/* contenteditable 에서 엔터는 줄바꿈입니다. 뜻은 한 줄이므로 저장하고 나갑니다. */
+aiKoBox.addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); aiKoBox.blur(); }
+  if(e.key === 'Escape'){ e.preventDefault(); renderPanel(); aiKoBox.blur(); }
 });
 
 /* ---- dictionary lookups ---- */
@@ -306,7 +287,7 @@ async function fetchKo(w, form){
   if(dict.length){ w.kodict = dict; if(!w.ko && dict[0].terms[0]) w.ko = dict[0].terms[0]; return true; }
   return !!w.ko;
 }
-/* metaOnly = 내장 사전에서 이미 뜻을 얻은 경우. 발음만 받아 오고 뜻은 건드리지 않습니다. */
+/* metaOnly = 발음만 받아 오고 영어 뜻은 건드리지 않습니다. */
 async function fetchEn(w, form, metaOnly){
   const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
   if(!r.ok) return false;
@@ -342,18 +323,23 @@ async function fetchEnWik(w, form){
   }
   return w.defs.length>0;
 }
-/* ---- 공용 사전: Edge Function 경유 (키는 서버에만) ----
+/* ---- AI 사전: Edge Function 경유 (키는 서버에만) ----
 
-   캐시가 세 층입니다. 예전에는 한 층뿐이었고, 그 열쇠에 문장이 없었습니다 —
-   "The heat continues." 에서 한 번 물어보면 "He continues to argue." 에서도
-   그때 받은 문맥 설명이 그대로 떴습니다. 문맥 사전이 문맥을 무시한 셈입니다.
+   층이 하나입니다. 뜻은 AI 가 문장을 보고 답하고, 그 답은 이 기기에만 남습니다.
+   서버에 낱말 항목을 쌓아 두고 재사용하던 공용 사전은 접었습니다 — 화면의 두 줄 중
+   "이 뜻이 대체로 어떤 뜻인가" 쪽만 캐시하면서, 정작 Breeze 가 잘하는 "이 문장에서
+   어떻게 쓰였나" 는 하나도 재사용하지 못했고, 대신 문맥에 안 맞는 뜻을 확신 있게
+   내놓을 새 경로를 하나 만들었기 때문입니다.
 
-     w:<낱말>             뜻 목록과 뜻마다의 설명. 문장과 무관하므로 낱말로 캐시
-     n:<낱말>|<문장 해시>  이 문장에서의 설명. 문장까지 넣어야 맞는 캐시
+   캐시 열쇠에 문장이 들어갑니다. 예전에는 낱말 이름만으로 캐시해서,
+   "The heat continues." 에서 받은 설명이 "He continues to argue." 에서도 떴습니다.
 
-   그리고 낱말을 누르는 순간에는 AI 를 부르지 않습니다. 공용 사전을 먼저 봅니다. */
-const AI_TIMEOUT = 6000;      // 이보다 오래 걸리면 "다시 시도"를 내밉니다
-const AI_MIN_WAIT = 500;      // 너무 빨리 와도 이만큼은 보여 줍니다(화면이 깜빡이지 않게)
+     l:<낱말>|<문장 해시>   이 문장에서의 뜻 · 설명 · 다른 뜻 후보
+
+   무료 사전은 이제 경쟁하는 답이 아닙니다. 발음과 영어 뜻을 채우고,
+   로그인 전·한도 초과·오프라인·서버 장애일 때 뜻자리를 대신 지킵니다. */
+const AI_TIMEOUT  = 9000;   // 이보다 오래 걸리면 기다림을 끊고 "다시 시도"를 내밉니다
+const AI_MIN_WAIT = 280;    // 갓 받은 답은 이만큼은 바람을 보여 준 뒤에 놓습니다
 
 function sentenceHash(text){
   const s = String(text||'').trim().toLowerCase();
@@ -361,35 +347,15 @@ function sentenceHash(text){
   for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
   return (h>>>0).toString(36);
 }
-/* 원형 후보를 모두 열쇠로 봅니다. "continues"를 눌렀는데 누군가 이미
-   "continue"를 물어봤다면 그것으로 끝나야 합니다. */
+/* 원형 후보를 모두 열쇠로 봅니다. "continues"를 눌렀는데 이미 "continue"를
+   같은 문장에서 물어봤다면 그것으로 끝나야 합니다. */
 function entryKeys(w){
   const raw = w.clicked || w.word || '';
   return [...new Set([w.word, ...lemmaCands(raw)].filter(Boolean).map(s=>String(s).toLowerCase()))];
 }
-const noteKey = w => 'n:' + String(w.word||'').toLowerCase() + '|' + sentenceHash(w.example);
+const lookKey = (word, sentence) =>
+  'l:' + String(word||'').toLowerCase() + '|' + sentenceHash(sentence);
 
-async function loadCachedEntry(k){
-  const w = words[k]; if(!w) return false;
-  for(const key of entryKeys(w)){
-    const hit = await dictGet('w:'+key);
-    if(hit){ applyEntry(w, hit, k); await loadCachedNote(k); return true; }
-  }
-  return false;
-}
-async function loadCachedNote(k){
-  const w = words[k]; if(!w || !w.example) return false;
-  const hit = await dictGet(noteKey(w));
-  /* note 가 빈 문자열인 것도 답입니다 — "이 문장에서 더 보탤 말이 없다".
-     그걸 답으로 안 치면 단추가 다시 나타나고, 누를 때마다 같은 값을 돈 주고 다시 받습니다. */
-  if(!hit || !(hit.note || hit.done)) return false;
-  w.ai = Object.assign({}, w.ai, { note: hit.note || '', noteDone: true });
-  if(selKey===k) renderPanel();
-  return true;
-}
-
-/* 세 갈래 요청이 같은 문을 씁니다. 로그인은 문 앞이 아니라 AI 앞에 있습니다 —
-   공용 사전을 읽는 것은 로그인 없이도 되어야 가장 싼 길이 열립니다. */
 async function dictCall(payload, signal){
   if(!sb || navigator.onLine === false) return null;
   let token = SB_KEY;
@@ -403,111 +369,152 @@ async function dictCall(payload, signal){
   try{
     const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
     const j = await r.json().catch(()=>null);
-    if(!r.ok || !j || j.error){ console.warn('dict', r.status, j && j.error); return null; }
-    return j;
+    if(!r.ok || !j) console.warn('dict', r.status, j && j.error);
+    /* 오류도 답입니다. 한도 초과와 서버 장애는 화면에서 다르게 말해야 하므로
+       null 로 뭉개지 않고 그대로 올려 보냅니다. */
+    return j || null;
   }catch(e){ console.warn('dict failed', e); return null; }
 }
 
-/* 공용 사전 조회. 여기서 걸리면 AI 는 한 번도 안 부릅니다.
-   아무도 물어본 적 없는 낱말일 때만 서버가 항목을 한 번 만들고, 그건 모두의 것이 됩니다. */
-async function fetchEntry(k){
-  const w = words[k]; if(!w) return false;
-  const j = await dictCall({ op:'entry', word: w.clicked || w.word || k, cands: entryKeys(w) });
-  if(!j || j.miss || !(j.senses||[]).length) return false;
-  await dictPut('w:'+String(j.lemma || w.word || k).toLowerCase(), j);
-  applyEntry(w, j, k);
-  await loadCachedNote(k);
-  return true;
+/* 읽기 시작할 때 함수만 깨워 둡니다. AI 도 한도도 쓰지 않습니다. */
+let warmedAt = 0;
+function warmDict(){
+  if(!sb || navigator.onLine === false) return;
+  if(Date.now() - warmedAt < 120000) return;   // Edge Function 이 식기 전에 다시 부를 이유가 없습니다
+  warmedAt = Date.now();
+  dictCall({ op:'warm' });
 }
 
-/* 이 문장에서 왜 그 뜻인지. 단추를 눌렀을 때만 부릅니다. */
-async function fetchExplain(k, force){
-  const w = words[k]; if(!w) return false;
-  if(navigator.onLine === false){ toast('오프라인이라 AI 뜻을 가져올 수 없어요'); return false; }
-  if(!sb || !sbUser){ toast('문맥 설명은 로그인 후 사용할 수 있어요'); openSyncModal(); return false; }
-  if(!w.example){ toast('설명할 문장이 없어요'); return false; }
+/* 사람이 사전으로 무엇을 했는지. 낱말과 뜻 자체는 어디에도 있지만 이 기록은 없습니다.
+   문장 본문은 보내되 서버는 지문만 남깁니다 — 자세한 규칙은 DICT.md. */
+function logDict(action, k, extra){
+  const w = words[k]; if(!w || !sb || !sbUser) return;
+  const withSentence = (action === 'edit' || action === 'pick');
+  dictCall(Object.assign({
+    op:'log', action,
+    word: w.word || k, clicked: w.clicked || '', lemma: w.aiLemma || '',
+    ai_ko: (w.ai && w.ai.ko) || '', user_ko: w.ko || '',
+    sentence: withSentence ? (w.example || '') : '',
+    book: w.book || ''
+  }, extra || {}));
+}
 
-  const key = noteKey(w);
-  if(!force){
-    const hit = await dictGet(key);
-    if(hit && (hit.note || hit.done)){ applyNote(w, hit.note || '', k); return true; }
+/* 진행 중인 조회 하나만 살려 둡니다. 낱말을 연달아 누르거나 창을 닫으면
+   앞의 것은 아무도 안 볼 답이므로 끊습니다 — 하루 한도가 거기서 새 나갑니다. */
+let lookCtrl = null;
+function abortLook(){
+  if(lookCtrl){ try{ lookCtrl.abort(); }catch(e){} lookCtrl = null; }
+}
+
+async function loadCachedLook(k){
+  const w = words[k]; if(!w) return false;
+  for(const key of entryKeys(w)){
+    const hit = await dictGet(lookKey(key, w.example));
+    if(hit && hit.ko){ applyLook(w, hit, k, { cached:true }); return true; }
   }
+  return false;
+}
+
+/* 낱말 하나 · 문장 하나 · 왕복 한 번. 뜻과 이 문장에서의 설명과 다른 뜻 후보가
+   같이 옵니다. 예전에는 entry(700토큰) → pick → explain 로 세 번 다녀왔습니다. */
+async function fetchLook(k, opt){
+  const w = words[k]; if(!w) return false;
+  opt = opt || {};
+  if(navigator.onLine === false){ w.aiOff = 'offline'; if(selKey===k) renderPanel(); return false; }
+  if(!sb || !sbUser){ w.aiOff = 'login'; if(selKey===k) renderPanel(); return false; }
 
   const began = Date.now();
-  w.aiLoading = true; delete w.aiSlow; if(selKey===k) renderPanel();
-  /* 6초가 넘으면 무작정 기다리게 두지 않고 "다시 시도"를 내밉니다.
-     기다림 자체보다 "언제 끝날지 모른다"가 더 답답하기 때문입니다. */
+  abortLook();
   const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  lookCtrl = ctrl;
+  w.aiLoading = true; w.aiRetrying = !!opt.retry;
+  delete w.aiSlow; delete w.aiOff;
+  if(selKey===k) renderPanel();
+  /* 9초가 넘으면 무작정 기다리게 두지 않습니다. 기다림 자체보다
+     "언제 끝날지 모른다"가 더 답답하기 때문입니다. */
   const slow = setTimeout(function(){
     if(!words[k]) return;
-    words[k].aiSlow = true;
+    words[k].aiSlow = true; words[k].aiOff = 'error';
     if(ctrl) try{ ctrl.abort(); }catch(e){}
     if(selKey===k) renderPanel();
   }, AI_TIMEOUT);
   try{
-    const j = await dictCall({ op:'explain', word: w.word || k, sentence: w.example, ko: w.ko || '' },
-                             ctrl ? ctrl.signal : null);
-    if(!j) return false;
-    await dictPut(key, { note: j.note || '', done: true });
-    /* 답이 너무 빨리 와도 최소 0.5초는 보여 줍니다.
-       화면이 깜빡하고 바뀌면 무슨 일이 일어났는지 못 알아채거든요. */
+    const j = await dictCall({
+      op:'look',
+      word: w.word || k, clicked: w.clicked || '', cands: entryKeys(w),
+      sentence: w.example || '', book: w.book || '',
+      retry: !!opt.retry, avoid: opt.retry ? (w.asked || []) : []
+    }, ctrl ? ctrl.signal : null);
+    if(!j || j.error || !j.ko){
+      const e = j && j.error;
+      w.aiOff = e === 'quota_exceeded' ? 'quota' : e === 'login_required' ? 'login' : 'error';
+      if(w.aiOff === 'quota') toast('오늘 AI 사전 한도를 다 썼어요. 무료 사전으로 보여줄게요');
+      return false;
+    }
+    await dictPut(lookKey(j.lemma || w.word || k, w.example), Object.assign({}, j, { done:true }));
+    /* 갓 받은 답은 최소 0.28초는 바람을 보여 준 뒤에 놓습니다. 답이 너무 빨리 오면
+       화면이 튄 것처럼 느껴져서, 무슨 일이 일어났는지 못 알아챕니다.
+       기기에 이미 있던 답은 그냥 띄웁니다 — 기다린 척할 이유가 없습니다. */
     const left = AI_MIN_WAIT - (Date.now() - began);
-    if(left > 0) await new Promise(function(res){ setTimeout(res, left); });
-    applyNote(w, j.note || '', k);
+    if(left > 0) await new Promise(res=>setTimeout(res, left));
+    applyLook(w, j, k, opt);
     return true;
-  }finally{ clearTimeout(slow); delete w.aiLoading; if(selKey===k) renderPanel(); }
-}
-
-/* "이 뜻이 아닌 것 같다" — 문장을 보고 뜻을 다시 고른 뒤 설명까지 새로 받습니다.
-   고르는 일은 서버에서 연어·쌓인 단서로 먼저 해 보고, 정 안 되면 그때만 AI 를 씁니다. */
-async function askOtherSense(k){
-  const w = words[k]; if(!w) return;
-  const j = await dictCall({ op:'pick', word: w.word || k, sentence: w.example || '' });
-  const picked = j && j.no != null && (w.senses||[]).find(s=>s.no===j.no);
-  if(picked){
-    w.senseNo = picked.no;
-    w.ko = picked.ko;
-    w.ai = Object.assign({}, w.ai, { ko: picked.ko, gloss: picked.gloss || '' });
-    saveWords(); queueSync(); if(selKey===k) renderPanel();
+  }finally{
+    clearTimeout(slow);
+    if(lookCtrl === ctrl) lookCtrl = null;
+    delete w.aiLoading; delete w.aiRetrying;
+    if(selKey===k) renderPanel();
   }
-  await fetchExplain(k, true);
 }
 
-async function askAI(force){
-  const k = selKey; if(!k || !words[k]) return;
-  await fetchExplain(k, force);
-}
-document.getElementById('p-aibtn').onclick   = ()=>askAI(!!(selKey && words[selKey] && words[selKey].aiSlow));
-document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey]) askOtherSense(selKey); };
-
-function applyEntry(w, e, k){
-  delete w.aiLoading;
-  w.senses = (e.senses || []).map(s=>({ no:s.no, ko:s.ko, def:s.def, gloss:s.gloss||'', colloc:s.colloc||[] }));
-  const chosen = w.senses.find(s=>s.no===w.senseNo) || w.senses[0] || null;
-  if(chosen) w.senseNo = chosen.no;
-  w.ai = { ko: (chosen && chosen.ko) || e.ko || '',
-           pos: e.pos || '',
-           gloss: (chosen && chosen.gloss) || e.gloss || '',
-           note: (w.ai && w.ai.note) || '' };
-  if(e.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(e.lemma)) w.word = e.lemma.toLowerCase();
-  /* 예전에는 여기서 w.ko 를 덮어썼습니다. 그때는 이 값이 문맥을 보고 고른 뜻이었으니까요.
-     이제 이건 첫 번째 뜻일 뿐이라, 이미 있는 뜻을 밀어내면 안 됩니다. */
-  if(!w.ko && w.ai.ko) w.ko = w.ai.ko;
-  const terms = w.senses.map(s=>s.ko).filter(Boolean).slice(0,5);
-  if(terms.length) w.kodict = [{ pos: e.pos || '', terms }, ...(w.kodict||[]).filter(d=>d.pos!==(e.pos||''))].slice(0,3);
-  const defs = w.senses.map(s=>({ pos: e.pos || '', def: s.def })).filter(d=>d.def);
-  if(defs.length) w.defs = [...defs, ...(w.defs||[])].slice(0,5);
-  if((chosen && chosen.colloc || []).length) w.colloc = chosen.colloc.slice(0,3);
-  w.dictSrc = 'shared';
+function applyLook(w, j, k, opt){
+  opt = opt || {};
+  delete w.aiLoading; delete w.aiOff;
+  w.ai = { ko: j.ko || '', pos: j.pos || '', note: j.note || '', done:true };
+  w.aiLemma = j.lemma || w.aiLemma || '';
+  w.alts = (j.alts || []).filter(Boolean).slice(0,3);
+  if((j.colloc || []).length) w.colloc = j.colloc.slice(0,3);
+  /* 사람이 손으로 고친 뜻은 덮지 않습니다. "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다 —
+     그때는 새 뜻을 달라는 뜻이니까요. */
+  if(opt.retry || !w.koEdited) w.ko = j.ko || w.ko;
+  if(opt.retry) delete w.koEdited;
+  if(j.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(j.lemma)) w.word = j.lemma.toLowerCase();
+  /* 이미 보여 준 뜻은 "다시 물어보기" 때 제외 목록으로 보냅니다.
+     그래야 같은 답을 두 번 받고 한도만 쓰는 일이 없습니다. */
+  if(j.ko) w.asked = [...new Set([...(w.asked||[]), j.ko])].slice(-4);
   w.up = Date.now();
   saveWords(); queueSync();
   if(selKey===k) renderPanel();
 }
-function applyNote(w, note, k){
-  delete w.aiLoading;
-  w.ai = Object.assign({}, w.ai, { note: note || '', noteDone: true });
-  w.up = Date.now();
-  saveWords(); queueSync();
+
+/* "이 뜻이 아닌 것 같다" — 이미 보여 준 뜻을 빼고 다시 묻습니다. AI 가 틀렸다는
+   가장 강한 신호라서 서버에도 retry 로 기록됩니다. */
+async function askOtherSense(k){
+  const w = words[k]; if(!w) return;
+  await fetchLook(k, { retry:true });
+}
+function askAI(){
+  const k = selKey; if(!k || !words[k]) return;
+  if(words[k].aiOff === 'login'){ toast('로그인하면 문맥에 맞는 뜻을 찾아줘요'); openSyncModal(); return; }
+  fetchLook(k, {});
+}
+document.getElementById('p-aibtn').onclick   = ()=>askAI();
+document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey]) askOtherSense(selKey); };
+
+/* 무료 사전. 발음과 영어 뜻은 여기서만 오고, AI 가 답하지 못했을 때는 뜻자리도 지킵니다.
+   fetchKo 는 w.ko 가 비어 있을 때만 채우므로 AI 답을 밀어내지 않습니다. */
+async function fillFromFreeDicts(k){
+  const w = words[k]; if(!w) return;
+  const forms = w.forms && w.forms.length ? w.forms : [k];
+  let validated = null;
+  for(const f of forms){ try{ if(await fetchEn(w,f,false)){ validated=f; break; } }catch(e){} }
+  if(!validated){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
+  /* AI 가 표제어를 정했으면 그것을 씁니다. 무료 사전은 "뜻이 실려 있는 형태"를 찾아 준
+     것일 뿐이라, 둘이 다를 때 무료 사전을 따르면 AI 가 답한 낱말과 화면의 낱말이 어긋납니다. */
+  if(!w.aiLemma && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
+  if(selKey===k) renderPanel();
+  const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
+  for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
   if(selKey===k) renderPanel();
 }
 
@@ -515,34 +522,16 @@ async function fetchDict(k){
   const w = words[k]; if(!w) return;
   w.loading = true; if(selKey===k) renderPanel();
 
-  /* ① 이 기기에 이미 있나 — 0원, 기다림 없음 */
-  const cached = await loadCachedEntry(k);
-  /* ② 내장 사전 300개 — 인터넷을 안 기다립니다 */
-  const built  = !cached && applyBuiltin(w);
-  if((cached || built) && selKey===k) renderPanel();
-  /* ③ 모두가 함께 쓰는 사전 */
-  const shared = !cached && await fetchEntry(k);
+  /* 무료 사전은 AI 와 서로 기다릴 이유가 없으므로 같이 출발합니다. 발음과 영어 뜻이
+     먼저 도착해서, AI 를 기다리는 동안에도 패널이 채워집니다. */
+  const free = fillFromFreeDicts(k);
 
-  /* ④ 이 문장에서의 설명은 예전처럼 여기서 미리 부릅니다.
-     단추를 누르고 나서 부르면, 누른 사람이 처음부터 끝까지 기다립니다. 지금 부르면
-     읽는 사람이 뜻·발음을 보는 동안 옵니다 — 기다림이 읽기 뒤에 숨습니다.
-     예전과 다른 점은 이 호출이 낱말 항목까지 새로 만들지는 않는다는 것입니다.
-     항목은 ③에서 이미 왔고, 여기서는 이 문장 이야기만 받아 옵니다. */
-  if(w.example && sb && sbUser && navigator.onLine !== false && !(w.ai && w.ai.note))
-    fetchExplain(k, false);
+  /* ① 이 기기에 이 문장으로 물어본 적 있나 — 0원, 기다림 없음, 딜레이 없음 */
+  const cached = await loadCachedLook(k);
+  /* ② 없으면 AI. 뜻의 유일한 출처입니다. */
+  if(!cached) await fetchLook(k, {});
 
-  /* 여기까지 뜻을 얻었으면 무료 사전에서는 발음만 받아 옵니다(호출 3회 → 1회). */
-  const rich = cached || shared || built;
-  const forms = w.forms && w.forms.length ? w.forms : [k];
-  let validated = null;
-  for(const f of forms){ try{ if(await fetchEn(w,f,rich)){ validated=f; break; } }catch(e){} }
-  if(!validated && !rich){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
-  if(!rich && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
-  if(selKey===k) renderPanel();
-  if(!rich){
-    const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
-    for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
-  }
+  await free;
   delete w.loading;
   w.up = Date.now();
   saveWords(); queueSync();

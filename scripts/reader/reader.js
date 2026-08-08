@@ -109,6 +109,9 @@ async function openBook(b){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.getElementById('v-read').classList.add('on');
   document.getElementById('nav-home').classList.remove('on');
+  /* 읽기 시작하는 순간 사전 함수를 깨워 둡니다. 콜드스타트를 첫 낱말 클릭 뒤에
+     숨기는 게 아니라, 그 앞에서 끝내는 편이 낫습니다 — AI 도 한도도 쓰지 않습니다. */
+  warmDict();
   document.getElementById('rtitle').textContent = b.title;
   /* 기사에는 연결할 "원본 파일"이 없습니다. 사진과 소제목까지 담아 오지만
      사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을

@@ -16,8 +16,8 @@
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=6501268c">
   <link rel="stylesheet" href="styles/home.css?v=0d7af16c">
-  <link rel="stylesheet" href="styles/reader.css?v=b099e1ee">
-  <link rel="stylesheet" href="styles/dictionary.css?v=a0f7ead2">
+  <link rel="stylesheet" href="styles/reader.css?v=2e5bcfa9">
+  <link rel="stylesheet" href="styles/dictionary.css?v=7331c3b1">
   <link rel="stylesheet" href="styles/components.css?v=8ebadda1">
   <link rel="stylesheet" href="styles/responsive.css?v=f13e08e5">
 
@@ -26,7 +26,6 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- 설정 변경 직후에도 이전 빈 config.js 캐시를 사용하지 않도록 버전을 붙입니다. -->
   <script defer src="config.js?v=f079b481"></script>
-  <script defer src="dict300.js?v=7db0041e"></script>
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=f2af53e6"></script>
@@ -41,7 +40,7 @@
   <script defer src="scripts/library/classics.js?v=3e642a0c"></script>
   <script defer src="scripts/importers/importers.js?v=03c216e5"></script>
   <script defer src="scripts/importers/article.js?v=fcda8627"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=d839f5dc"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=c2892aad"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
   <script defer src="scripts/reader/original-session.js?v=60140f61"></script>
@@ -49,7 +48,7 @@
   <script defer src="scripts/reader/epub-original.js?v=29f4243b"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=c8318be8"></script>
-  <script defer src="scripts/reader/reader.js?v=b033acbe"></script>
+  <script defer src="scripts/reader/reader.js?v=95824933"></script>
   <script defer src="scripts/ui/preferences.js?v=27b17d89"></script>
   <script defer src="scripts/sync/sync.js?v=971be5ab"></script>
   <script defer src="scripts/ui/interactions.js?v=ab98b799"></script>
@@ -179,18 +178,31 @@
       <div id="p-phon"></div>
       <div id="p-clicked"></div>
       <hr id="p-divider">
+      <!-- 뜻이 사는 곳은 여기 하나입니다. 예전에는 이 박스 아래에 파란 뜻 칸이 하나 더
+           있어서, 같은 낱말의 뜻이 화면에 두 번 적혀 있었습니다. 고치는 것도 아래 칸에서만
+           됐고요. 이제 위에 뜬 뜻을 그 자리에서 누르면 바로 고쳐집니다. -->
       <div id="p-ai">
-        <div class="cap"><span class="dot"></span>문맥 뜻 · AI</div>
-        <div class="m" id="p-ai-m"></div>
+        <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻 · AI</span></div>
+        <div class="wind" id="p-ai-wind" aria-hidden="true">
+          <svg viewBox="0 0 120 30" preserveAspectRatio="none">
+            <path d="M2 8 H70 q13 0 13 -5"/>
+            <path d="M2 16 H96 q14 0 14 7"/>
+            <path d="M2 24 H52 q11 0 11 -5"/>
+          </svg>
+        </div>
+        <div class="m">
+          <span class="mk" id="p-ai-ko" contenteditable="true" spellcheck="false"
+                role="textbox" aria-label="뜻 — 눌러서 고칠 수 있어요"></span><span class="pos" id="p-ai-pos"></span>
+        </div>
         <div class="note" id="p-ai-note"></div>
-        <div class="gloss" id="p-ai-gloss"></div>
-        <button id="p-airetry">다른 뜻으로 다시 물어보기</button>
+        <div class="acts" id="p-ai-acts">
+          <button id="p-airetry">다른 뜻으로 다시 물어보기</button>
+          <span class="tip" id="p-ai-tip">뜻을 눌러 직접 고칠 수 있어요</span>
+        </div>
       </div>
-      <div id="p-ko" contenteditable="true" spellcheck="false"></div>
-      <div id="p-ko-hint">직접 고치거나, 아래 칩을 눌러 한 번에 바꿀 수 있어요</div>
       <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI handle this</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
-      <div class="p-sec">여러 뜻 중 고르기<span id="p-src"></span></div>
+      <div class="p-sec">여러 뜻 중 고르기</div>
       <div id="p-kodict"></div>
       <div class="p-sec" id="p-colloc-sec">자주 함께 쓰는 말</div>
       <div id="p-colloc"></div>

@@ -19,7 +19,7 @@
 - `scripts/importers/`: TXT/PDF/EPUB 파싱
   - `article.js`: 기사 URL — 본문 추출 규칙과 가져오기
   - `ligatures.js`: 이름 없는 붙임글자(□) 되살리기. DOM에 의존하지 않는 순수 함수 (테스트가 직접 호출)
-- `scripts/dictionary/`: 표제어 처리, 사전 조회, 단어장 UI
+- `scripts/dictionary/`: 표제어 처리, 사전 조회, 단어장 UI. 조회는 **기기 캐시 → AI** 두 층이고, 캐시 열쇠에 문장 해시가 들어갑니다(한 문장에서 받은 설명이 다른 문장에서 뜨지 않게). 무료 사전은 경쟁하는 답이 아니라 발음·영어 뜻 담당이면서, 로그인 전·한도 초과·오프라인·서버 장애일 때의 대체 경로입니다. 뜻을 고치는 자리와 뜻이 뜨는 자리가 같고(`#p-ai-ko`), 사람이 고친 뜻은 AI 가 덮지 않습니다
 - `scripts/reader/`: 보수적인 글자 화면, PDF/EPUB 원본 화면, 양방향 위치 연결
   - `pdf-word-geometry.js`: DOM에 의존하지 않는 순수 단어 상자 계산 (테스트가 직접 호출)
   - `mode-bridge.js`: 문장 단위 비교. 줄바꿈·따옴표·공백·붙임글자 차이를 무시하고, **읽던 자리에 가장 가까운** 자리를 고릅니다
@@ -30,7 +30,7 @@
   - `reader.js`: 글자 화면 렌더링, 스크롤·폭 변화 대응
 - `scripts/ui/`: 보기 설정, 발음, 시트 제스처
 - `scripts/sync/`: 로그인, 단어·위치·책 동기화
-- `server/dict/`: 사전 Edge Function. 한 함수 안에 갈래가 셋입니다 — `entry`(낱말 항목 생성, 낱말당 전 세계에서 한 번), `pick`(이 문장은 몇 번 뜻인가, 연어·쌓인 단서로 먼저 풀고 안 되면 8토큰), `explain`(이 문장에서의 설명, 단추를 눌렀을 때만). 왜 그런지는 [DICT.md](DICT.md), 표는 [sql/supabase_dict.sql](sql/supabase_dict.sql)
+- `server/dict/`: 사전 Edge Function. 갈래가 셋인데 AI 를 부르는 것은 하나뿐입니다 — `look`(낱말+문장 → 뜻·문장 설명·다른 뜻 후보, 왕복 한 번), `warm`(함수만 깨움), `log`(사람이 무엇을 했는지 기록). 예전 `entry`/`pick`/`explain` 3분할은 서버에 낱말 항목을 쌓아 두던 구조에 딸린 것이라 함께 접었습니다. 왜 그런지는 [DICT.md](DICT.md), 표는 [sql/supabase_dict.sql](sql/supabase_dict.sql)
 - `server/article/`: 기사 HTML·사진 중계 Edge Function (추출은 하지 않습니다)
 - `assets/classics/`: 함께 배포하는 퍼블릭 도메인 EPUB 5종
 - `modules/exam-shorts/`: **연결 해제된** 기출 문항 분리 + 쇼츠 화면.

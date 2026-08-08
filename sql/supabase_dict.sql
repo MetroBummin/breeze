@@ -1,92 +1,20 @@
--- Breeze 공용 사전 (몇 번을 실행해도 안전 — 이미 있으면 건너뜁니다)
+-- Breeze 사전 서버 (몇 번을 실행해도 안전 — 이미 있으면 건너뜁니다)
 -- Supabase 대시보드 → SQL Editor → New query → 전체 붙여넣기 → Run
 --
--- 여기서 만드는 것은 세 가지입니다.
---   dict_shared  모두가 함께 쓰는 사전. 낱말 하나를 누가 한 번 물어보면 그 뒤로는 모두가 공짜로 씁니다.
---   sense_cues   "이 문장은 몇 번 뜻인가"를 AI 없이 가려내기 위한 근거. 쓸수록 쌓입니다.
+-- 여기서 만드는 것은 두 가지뿐입니다.
 --   ai_usage     하루 AI 호출 한도. 한 사람이 예산을 다 태우지 못하게 막습니다.
+--   dict_events  사람들이 사전으로 "무엇을 했는가". Breeze 의 진짜 자산.
 --
--- 사용자 본문·예문은 여기에 한 글자도 들어가지 않습니다. 자세한 규칙은 DICT.md.
+-- 낱말 뜻을 서버에 쌓는 표(dict_shared)는 없습니다. 뜻은 AI 가 문장을 보고 그때그때
+-- 답하고, 그 답은 그 사람 기기에만 남습니다. 이유는 DICT.md 에 적어 두었습니다.
+--
+-- 사용자가 읽던 문장은 여기에 한 글자도 들어가지 않습니다. 문장은 지문(fingerprint)으로만
+-- 남고, 지문은 서버 비밀값(DICT_FP_SALT)을 섞어 만들기 때문에 되돌릴 수 없습니다.
 
 -- ────────────────────────────────────────────────────────────
--- 1) 공용 사전
+-- 1) 하루 AI 한도
 -- ────────────────────────────────────────────────────────────
-create table if not exists public.dict_shared (
-  lang        text not null default 'en',
-  word        text not null,
-  ui_lang     text not null default 'ko',
-  kind        text not null default 'word',   -- 'word' | 'phrase' (숙어)
-  lemma       text,
-  pos         text,
-  senses      jsonb not null default '[]'::jsonb,
-  sense_seq   integer not null default 0,     -- 다음 뜻 번호. 절대 줄지 않습니다
-  hits        integer not null default 0,
-  freq_rank   integer,
-  source      text default 'ai',
-  model       text,
-  meta        jsonb not null default '{}'::jsonb,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
-  primary key (lang, word, ui_lang)
-);
-
--- v1 스펙으로 이미 표를 만들어 두었다면 빠진 열만 채웁니다.
-alter table public.dict_shared add column if not exists kind      text    not null default 'word';
-alter table public.dict_shared add column if not exists sense_seq integer not null default 0;
-alter table public.dict_shared add column if not exists meta      jsonb   not null default '{}'::jsonb;
-
-create index if not exists dict_shared_lemma_idx on public.dict_shared (lang, lemma);
-create index if not exists dict_shared_kind_idx  on public.dict_shared (lang, kind);
-
--- senses[] 한 칸의 모양
---   { "no":     1,                                     ← next_sense_no() 가 발급. 절대 안 바뀝니다
---     "ko":     "계속되다",
---     "def":    "to keep happening without stopping",
---     "gloss":  "멈추지 않고 이어지는 상태를 말합니다",   ← 뜻 층. 화면에 0원·0ms 로 뜨는 설명
---     "colloc": ["continue to grow", "the rain continues"],
---     "domain": "일상",
---     "deprecated": false }
-
--- ── 뜻 번호 발급기 ──────────────────────────────────────────
--- 번호를 사람이(코드가) 세지 않습니다. 두 사람이 같은 낱말에 동시에 뜻을 더해도
--- 한 명은 3번, 한 명은 4번을 받습니다. 겹칠 수가 없습니다.
-create or replace function public.next_sense_no(p_lang text, p_word text, p_ui_lang text)
-returns integer language sql security definer as $$
-  update public.dict_shared
-     set sense_seq = sense_seq + 1, updated_at = now()
-   where lang = p_lang and word = p_word and ui_lang = p_ui_lang
-  returning sense_seq;
-$$;
-
--- ────────────────────────────────────────────────────────────
--- 2) 판별 근거 — "쓸수록 정교해진다"의 실체
--- ────────────────────────────────────────────────────────────
--- AI 가 "이 문장은 1번 뜻"이라고 답할 때마다, 그 판단의 단서만 한 칸씩 세어 둡니다.
--- cue 에 넣을 수 있는 것은 딱 두 가지뿐입니다.
---   ① 영어 기능어 닫힌 목록 (to, for, with, despite, …)
---   ② 그 낱말의 colloc 에 이미 있던 토큰 (AI 가 일반 지식으로 만든 것)
--- 그래서 아무리 쌓여도 사용자가 읽던 문장을 되짚을 수 없습니다.
-create table if not exists public.sense_cues (
-  lang      text not null default 'en',
-  word      text not null,
-  sense_no  integer not null,
-  cue       text not null,
-  n         integer not null default 0,
-  primary key (lang, word, sense_no, cue)
-);
-create index if not exists sense_cues_word_idx on public.sense_cues (lang, word);
-
-create or replace function public.bump_sense_cue(p_lang text, p_word text, p_sense integer, p_cue text)
-returns void language sql security definer as $$
-  insert into public.sense_cues (lang, word, sense_no, cue, n)
-  values (p_lang, p_word, p_sense, p_cue, 1)
-  on conflict (lang, word, sense_no, cue) do update set n = sense_cues.n + 1;
-$$;
-
--- ────────────────────────────────────────────────────────────
--- 3) 하루 AI 한도
--- ────────────────────────────────────────────────────────────
--- 로그인만 하면 쓰는 공개 사이트입니다. 이 표가 없으면 스크립트 하나가 한 달 예산을 태웁니다.
+-- 이제 AI 가 뜻의 유일한 출처입니다. 그래서 이 표가 유일한 비용 통제 장치입니다.
 create table if not exists public.ai_usage (
   user_id  uuid not null references auth.users(id) on delete cascade,
   day      date not null default (now() at time zone 'utc')::date,
@@ -95,6 +23,7 @@ create table if not exists public.ai_usage (
 );
 
 -- 한 칸 쓰고 "아직 한도 안이냐"를 돌려줍니다. AI 를 부르기 직전에 호출합니다.
+-- 첫 호출에서 calls 를 1로 넣는 것이 중요합니다 — 기본값 0으로 넣으면 첫 호출이 공짜가 됩니다.
 create or replace function public.take_ai_quota(p_user uuid, p_limit integer)
 returns boolean language plpgsql security definer as $$
 declare c integer;
@@ -105,35 +34,100 @@ begin
   return c <= p_limit;
 end $$;
 
+-- 오늘 몇 번 썼는지 세기만 합니다(한 칸 쓰지 않음). 앱이 남은 횟수를 보여줄 때 씁니다.
+create or replace function public.peek_ai_quota(p_user uuid)
+returns integer language sql security definer as $$
+  select coalesce((select calls from public.ai_usage
+                    where user_id = p_user
+                      and day = (now() at time zone 'utc')::date), 0);
+$$;
+
 -- ────────────────────────────────────────────────────────────
--- 4) 접근 권한
+-- 2) 행동 기록 — 낱말이 아니라 "사람이 무엇을 했는가"
 -- ────────────────────────────────────────────────────────────
--- 세 표 모두 앱이 직접 읽고 쓰지 않습니다. dict Edge Function 만 손댑니다.
+-- 낱말과 뜻 자체는 상품입니다. 위키낱말사전에도 있고 누구나 3개월이면 따라옵니다.
+-- 못 따라오는 것은 "이 사람이 AI 의 답을 고쳤다", "이 문장에서 다른 뜻을 다시 물었다",
+-- "이건 저장했고 저건 아는 낱말로 뺐다" 의 기록입니다. 그게 이 표입니다.
+--
+-- action 값
+--   look   낱말을 눌러 AI 가 답했다        (ai_ko 가 채워짐)
+--   retry  "다른 뜻으로 다시" 를 눌렀다     ← AI 가 틀렸다는 가장 강한 신호
+--   edit   뜻을 직접 고쳐 썼다              (user_ko 가 ai_ko 와 다름)
+--   pick   아래 칩으로 다른 뜻을 골랐다
+--   star   모르는 정도를 바꿨다
+--   known  아는 낱말이라 단어장에서 뺐다
+--   quota  한도에 걸려 AI 를 못 불렀다      ← 한도를 올릴 근거
+create table if not exists public.dict_events (
+  id        bigserial primary key,
+  user_id   uuid references auth.users(id) on delete set null,
+  at        timestamptz not null default now(),
+  action    text not null,
+  word      text not null,          -- 화면에 뜬 표제형
+  clicked   text,                   -- 실제로 누른 형태 (continues)
+  lemma     text,
+  pos       text,
+  ai_ko     text,                   -- AI 가 준 뜻
+  user_ko   text,                   -- 사람이 최종적으로 쓴 뜻
+  -- ── 문장에 대해 남기는 것 ──
+  sent_fp   text,                   -- 문장 지문. 소금을 섞은 SHA-256 앞 8바이트
+  sent_len  integer,                -- 문장 낱말 수
+  cue_before text,                  -- 바로 앞 낱말. 기능어 닫힌 목록에 있을 때만
+  cue_after  text,                  -- 바로 뒤 낱말. 같은 규칙 (continue → "to")
+  book_fp   text,                   -- 책 제목 지문. 같은 책끼리 묶어 보기 위해서만
+  provider  text,
+  meta      jsonb not null default '{}'::jsonb
+);
+
+create index if not exists dict_events_word_idx   on public.dict_events (word, at desc);
+create index if not exists dict_events_action_idx on public.dict_events (action, at desc);
+create index if not exists dict_events_user_idx   on public.dict_events (user_id, at desc);
+-- 같은 문장을 여러 사람이 물어본 경우를 찾기 위한 색인
+create index if not exists dict_events_fp_idx     on public.dict_events (sent_fp) where sent_fp is not null;
+
+-- ────────────────────────────────────────────────────────────
+-- 3) 접근 권한
+-- ────────────────────────────────────────────────────────────
+-- 두 표 모두 앱이 직접 읽고 쓰지 않습니다. dict Edge Function 만 손댑니다.
 -- RLS 를 켜고 정책을 하나도 만들지 않으면, service_role(= Edge Function)만 통과합니다.
-alter table public.dict_shared enable row level security;
-alter table public.sense_cues  enable row level security;
+-- 대시보드에서는 그대로 보입니다.
 alter table public.ai_usage    enable row level security;
+alter table public.dict_events enable row level security;
 
-revoke all on public.dict_shared from anon, authenticated;
-revoke all on public.sense_cues  from anon, authenticated;
 revoke all on public.ai_usage    from anon, authenticated;
+revoke all on public.dict_events from anon, authenticated;
 
--- 함수는 Edge Function 만 부르므로 service_role 에게만 줍니다.
-revoke all on function public.next_sense_no(text, text, text)   from public, anon, authenticated;
-revoke all on function public.bump_sense_cue(text, text, integer, text) from public, anon, authenticated;
-revoke all on function public.take_ai_quota(uuid, integer)      from public, anon, authenticated;
-grant execute on function public.next_sense_no(text, text, text)   to service_role;
-grant execute on function public.bump_sense_cue(text, text, integer, text) to service_role;
-grant execute on function public.take_ai_quota(uuid, integer)      to service_role;
+revoke all on function public.take_ai_quota(uuid, integer) from public, anon, authenticated;
+revoke all on function public.peek_ai_quota(uuid)          from public, anon, authenticated;
+grant execute on function public.take_ai_quota(uuid, integer) to service_role;
+grant execute on function public.peek_ai_quota(uuid)          to service_role;
+
+-- ────────────────────────────────────────────────────────────
+-- 4) 예전 공용 사전 치우기
+-- ────────────────────────────────────────────────────────────
+-- 공용 사전은 두 줄 중 "덜 중요한 줄"만 캐시하면서, 틀린 뜻을 확신 있게 내놓을
+-- 새 경로를 하나 만들었습니다. 그래서 접었습니다. 아래 세 줄이 그 흔적을 지웁니다.
+-- (표에 든 것은 AI 가 만든 낱말 항목뿐입니다. 사용자 데이터가 아닙니다.)
+drop function if exists public.next_sense_no(text, text, text);
+drop function if exists public.bump_sense_cue(text, text, integer, text);
+drop table    if exists public.sense_cues;
+drop table    if exists public.dict_shared;
 
 -- ────────────────────────────────────────────────────────────
 -- 5) 확인
 -- ────────────────────────────────────────────────────────────
--- 아래를 실행해서 1, 2 가 차례로 나오면 번호 발급기가 살아 있는 것입니다.
---   insert into public.dict_shared (word) values ('__test__') on conflict do nothing;
---   select public.next_sense_no('en','__test__','ko');   -- 1
---   select public.next_sense_no('en','__test__','ko');   -- 2
---   delete from public.dict_shared where word = '__test__';
-
 select tablename from pg_tables
-where schemaname = 'public' and tablename in ('dict_shared','sense_cues','ai_usage');
+where schemaname = 'public' and tablename in ('ai_usage','dict_events','dict_shared','sense_cues');
+-- ai_usage, dict_events 두 줄만 나와야 맞습니다.
+
+-- 들여다보기 —
+--   AI 가 자주 틀리는 낱말 (retry 가 많은 순)
+--     select word, count(*) from public.dict_events where action = 'retry'
+--     group by word order by count(*) desc limit 30;
+--
+--   사람이 손으로 고친 뜻 (AI 답과 나란히)
+--     select word, ai_ko, user_ko, cue_before, cue_after, at
+--     from public.dict_events where action = 'edit' order by at desc limit 50;
+--
+--   오늘 누가 얼마나 썼나
+--     select user_id, calls from public.ai_usage
+--     where day = (now() at time zone 'utc')::date order by calls desc;

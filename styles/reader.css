@@ -77,6 +77,9 @@
   body.dark #p-ai .m{color:#EAF4F8;}
   body.dark #p-ai .note{color:#AFC3CB;}
   body.dark #p-ai .cap{color:#6FC3E6;}
+  body.dark #p-ai .wind path{stroke:#6FC3E6;}
+  body.dark #p-ai .mk:hover{background:rgba(255,255,255,.07);}
+  body.dark #p-ai .mk:focus{background:#141A1E;}
   body.dark #p-airetry{color:#9AA1A8;}
   body.dark #p-airetry:hover{color:#6FC3E6;}
   body.dark .navbtn:hover{background:#22262B;}
