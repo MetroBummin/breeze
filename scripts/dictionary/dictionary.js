@@ -172,6 +172,7 @@ function renderPanel(){
   const aiBox = document.getElementById('p-ai');
   const aiKo = document.getElementById('p-ai-ko'), aiPos = document.getElementById('p-ai-pos');
   const aiN = document.getElementById('p-ai-note'), aiTip = document.getElementById('p-ai-tip');
+  const aiG = document.getElementById('p-ai-gloss');
   const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
   const ai = w.ai || {};
   const asking = !!w.aiLoading && !w.aiSlow;
@@ -188,9 +189,15 @@ function renderPanel(){
     /* 편집 중에 renderPanel 이 돌아도 커서가 앞으로 튀지 않게, 달라졌을 때만 씁니다. */
     if(aiKo.textContent !== shown) aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
-    aiN.textContent = ai.note
-      || (w.aiSlow ? '조금 오래 걸렸어요. 아래에서 다시 시도할 수 있어요.' : '');
-    aiN.style.display = aiN.textContent ? 'block' : 'none';
+    /* 윗줄에는 이 문장 이야기를 씁니다. 그게 없으면 뜻의 성질(gloss)이 올라와
+       윗줄 자리를 지킵니다 — 예전에 프롬프트가 "뻔하면 빈 문자열"을 허락해서
+       설명 줄이 통째로 사라져 있었습니다. 뜻만 덩그러니 있으면 사전이 아닙니다. */
+    const top = ai.note || ai.gloss || (w.aiSlow ? '조금 오래 걸렸어요. 아래에서 다시 시도할 수 있어요.' : '');
+    const under = (ai.note && ai.gloss && ai.gloss !== ai.note) ? ai.gloss : '';
+    aiN.textContent = top;
+    aiN.style.display = top ? 'block' : 'none';
+    aiG.textContent = under;
+    aiG.style.display = under ? 'block' : 'none';
     aiTip.textContent = w.koEdited ? '직접 고친 뜻이에요' : '뜻을 눌러 직접 고칠 수 있어요';
     aiRetry.style.display = (sb && sbUser && w.example) ? 'inline' : 'none';
   }else{
@@ -470,7 +477,7 @@ async function fetchLook(k, opt){
 function applyLook(w, j, k, opt){
   opt = opt || {};
   delete w.aiLoading; delete w.aiOff;
-  w.ai = { ko: j.ko || '', pos: j.pos || '', note: j.note || '', done:true };
+  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note: j.note || '', done:true };
   w.aiLemma = j.lemma || w.aiLemma || '';
   w.alts = (j.alts || []).filter(Boolean).slice(0,3);
   if((j.colloc || []).length) w.colloc = j.colloc.slice(0,3);

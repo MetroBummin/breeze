@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "stamp": "node tools/stamp-version.mjs",
-    "test": "node tools/stamp-version.mjs && node tests/verify-structure.mjs"
+    "docs": "node tools/build-docs.mjs",
+    "test": "node tools/stamp-version.mjs && node tools/build-docs.mjs && node tests/verify-structure.mjs"
   }
 }

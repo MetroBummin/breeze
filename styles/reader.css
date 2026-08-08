@@ -76,6 +76,7 @@
   body.dark #p-ai{background:linear-gradient(135deg,#1D2E36,#1B2A22); border-color:#2F4650;}
   body.dark #p-ai .m{color:#EAF4F8;}
   body.dark #p-ai .note{color:#AFC3CB;}
+  body.dark #p-ai .gloss{color:#8798A0; border-left-color:#2F4650;}
   body.dark #p-ai .cap{color:#6FC3E6;}
   body.dark #p-ai .wind path{stroke:#6FC3E6;}
   body.dark #p-ai .mk:hover{background:rgba(255,255,255,.07);}

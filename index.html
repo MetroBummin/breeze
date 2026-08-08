@@ -16,8 +16,8 @@
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=6501268c">
   <link rel="stylesheet" href="styles/home.css?v=0d7af16c">
-  <link rel="stylesheet" href="styles/reader.css?v=2e5bcfa9">
-  <link rel="stylesheet" href="styles/dictionary.css?v=7331c3b1">
+  <link rel="stylesheet" href="styles/reader.css?v=a08babba">
+  <link rel="stylesheet" href="styles/dictionary.css?v=4c46d74c">
   <link rel="stylesheet" href="styles/components.css?v=8ebadda1">
   <link rel="stylesheet" href="styles/responsive.css?v=f13e08e5">
 
@@ -40,7 +40,7 @@
   <script defer src="scripts/library/classics.js?v=3e642a0c"></script>
   <script defer src="scripts/importers/importers.js?v=03c216e5"></script>
   <script defer src="scripts/importers/article.js?v=fcda8627"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=c2892aad"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=88604f66"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
   <script defer src="scripts/reader/original-session.js?v=60140f61"></script>
@@ -194,7 +194,10 @@
           <span class="mk" id="p-ai-ko" contenteditable="true" spellcheck="false"
                 role="textbox" aria-label="뜻 — 눌러서 고칠 수 있어요"></span><span class="pos" id="p-ai-pos"></span>
         </div>
+        <!-- 윗줄은 이 문장 이야기, 아랫줄은 이 뜻 자체의 성질. 문장 이야기가 없으면
+             아랫줄이 올라와 윗줄 자리를 지킵니다 — 칸이 비지 않게. -->
         <div class="note" id="p-ai-note"></div>
+        <div class="gloss" id="p-ai-gloss"></div>
         <div class="acts" id="p-ai-acts">
           <button id="p-airetry">다른 뜻으로 다시 물어보기</button>
           <span class="tip" id="p-ai-tip">뜻을 눌러 직접 고칠 수 있어요</span>

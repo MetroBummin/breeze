@@ -1,5 +1,10 @@
 # Breeze Refactored
 
+> **📖 읽기 좋은 문서:** <https://metrobummin.github.io/breeze/docs/>
+> 이 저장소의 `.md` 문서들을 폰에서도 읽히게 구운 것입니다. 목차가 옆에 붙고,
+> 브라우저에서 인쇄(⌘P)하면 PDF 로 저장됩니다. 내용은 여기 파일과 항상 같습니다 —
+> `npm test` 를 돌릴 때마다 다시 굽습니다(`tools/build-docs.mjs`).
+
 기존 `breeze/index.html` 단일 파일을 기능별 파일로 분리한 버전입니다.
 원본 프로젝트는 수정하지 않았습니다.
 

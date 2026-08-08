@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>사전은 어떻게 움직이나 · Breeze 문서</title>
+<meta name="description" content="낱말을 누르면 벌어지는 일, AI 부하, 서버에 남는 것">
+<meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181B" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon/favicon.svg" type="image/svg+xml">
+<style>
+:root{--paper:#FAF8F2;--card:#fff;--ink:#1D3A47;--body:#33505C;--soft:#5F7881;
+  --soft2:#8AA0A9;--blue:#2589BE;--sky:#EAF4F8;--line:#E3E9E4;--code:#F4F6F1;}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#16181B;--card:#1F2327;--ink:#EAF4F8;--body:#C6D3D9;--soft:#9FB1B9;
+    --soft2:#7C8C94;--blue:#6FC3E6;--sky:#1D2E36;--line:#2A2E33;--code:#22262B;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--body);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",
+  "Malgun Gothic",system-ui,sans-serif;-webkit-text-size-adjust:100%;}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:currentColor}
+.top{position:sticky;top:0;z-index:5;background:var(--paper);
+  border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;
+  gap:16px;flex-wrap:wrap;}
+.top .brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);
+  font-size:17px;letter-spacing:-.3px;}
+.top .brand svg{width:26px;height:15px;flex:none}
+.top nav{display:flex;gap:4px;flex-wrap:wrap}
+.top nav a{padding:5px 11px;border-radius:999px;font-size:13.5px;color:var(--soft);border:0}
+.top nav a:hover{background:var(--sky);color:var(--blue)}
+.top nav a[aria-current]{background:var(--blue);color:#fff}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px 90px;display:grid;
+  grid-template-columns:1fr 232px;gap:44px;align-items:start;}
+main{min-width:0;padding-top:14px}
+aside{position:sticky;top:74px;padding-top:30px;font-size:13px;line-height:1.6}
+aside .lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--soft2);
+  margin-bottom:9px;text-transform:uppercase}
+aside a{display:block;color:var(--soft);padding:4px 0 4px 10px;border:0;
+  border-left:2px solid var(--line);}
+aside a:hover{color:var(--blue);border-left-color:var(--blue)}
+aside a.sub{padding-left:22px;font-size:12.5px}
+h1{font-size:clamp(28px,4.4vw,40px);line-height:1.2;letter-spacing:-.9px;color:var(--ink);
+  margin:24px 0 10px;font-weight:700}
+h2{font-size:22px;line-height:1.35;letter-spacing:-.4px;color:var(--ink);font-weight:700;
+  margin:52px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+h3{font-size:17px;color:var(--ink);font-weight:700;margin:32px 0 8px}
+h4{font-size:15px;color:var(--ink);font-weight:700;margin:24px 0 6px}
+p{margin:0 0 15px}
+strong{color:var(--ink);font-weight:700}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin-bottom:8px}
+li>ul,li>ol{margin:8px 0 0}
+code{font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code);
+  color:var(--ink);padding:2px 5px;border-radius:5px;word-break:break-word}
+pre{background:var(--code);border:1px solid var(--line);border-radius:12px;
+  padding:15px 17px;overflow-x:auto;margin:0 0 18px;position:relative}
+pre code{background:none;padding:0;font-size:13px;line-height:1.65;white-space:pre}
+pre[data-lang]::after{content:attr(data-lang);position:absolute;top:8px;right:12px;
+  font-size:10px;letter-spacing:.08em;color:var(--soft2);text-transform:uppercase}
+blockquote{margin:0 0 18px;padding:2px 0 2px 15px;border-left:3px solid var(--blue);
+  color:var(--soft)}
+hr{border:0;border-top:1px solid var(--line);margin:32px 0}
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--card)}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--sky);color:var(--ink);font-weight:700;font-size:12.5px;
+  letter-spacing:.03em;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+.foot{max-width:1080px;margin:0 auto;padding:26px 22px 70px;color:var(--soft2);font-size:12.5px}
+.foot a{color:var(--soft2)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr;gap:0}
+  aside{position:static;padding:0 0 8px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  aside a{display:inline-block;border-left:0;padding:4px 10px 4px 0}
+  aside a.sub{display:none}
+  h2{margin-top:40px}
+}
+/* 인쇄 → PDF 로 저장하면 그대로 종이 문서가 됩니다. */
+@media print{
+  :root{--paper:#fff;--card:#fff;--ink:#000;--body:#1a1a1a;--soft:#444;--soft2:#666;
+    --blue:#0b5f86;--sky:#f2f5f7;--line:#ccc;--code:#f5f5f5;}
+  .top,aside{display:none!important}
+  .wrap{display:block;max-width:none;padding:0}
+  body{font-size:11pt}
+  h1,h2,h3{break-after:avoid}
+  pre,table,blockquote{break-inside:avoid}
+  a{color:inherit}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt;color:#666}
+}</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="../index.html"><svg viewBox="0 0 100 40" fill="none" aria-hidden="true"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round"/></svg><span>Breeze</span></a>
+  <nav><a href="index.html">Breeze</a><a href="dictionary.html" aria-current="page">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html">로드맵</a></nav>
+</header>
+<div class="wrap">
+<main>
+<h1 id="breeze-사전은-어떻게-움직이나">Breeze 사전은 어떻게 움직이나</h1>
+<p>말로만 풀어 쓴 문서입니다. 코드를 안 봐도 읽히게 썼습니다.</p>
+<h2 id="한-줄로-말하면">한 줄로 말하면</h2>
+<p><strong>낱말을 누르면 AI 가 그 문장을 보고 뜻을 답합니다.</strong> 그 답은 누른 사람 기기에만 남고, 같은 문장에서 같은 낱말을 다시 누르면 0원·0초로 다시 뜹니다.</p>
+<p>층이 하나입니다. 예전에는 서버에 "모두가 함께 쓰는 사전"을 하나 더 두려고 했는데, 접었습니다. 왜 접었는지는 아래 <a href="#왜-공용-사전을-접었나">왜 공용 사전을 접었나</a>에 적었습니다.</p>
+<h2 id="낱말을-누르면-벌어지는-일">낱말을 누르면 벌어지는 일</h2>
+<pre><code>낱말을 누른다
+  │
+  ├─ ① 내 기기에 이 문장으로 물어본 적 있나?   있으면 여기서 끝.  0원 · 즉시 · 딜레이도 없음
+  │
+  ├─ ② AI 에게 묻는다 (문장까지 같이)          바람이 지나가고, 0.3초 뒤에 뜻이 놓인다
+  │                                            받은 답은 내 기기에 저장 → 다음엔 ①에서 끝
+  │
+  └─ 그리고 무료 사전이 발음 · 영어 뜻을 채운다  ②와 동시에 출발. 서로 기다리지 않는다</code></pre>
+<p><strong>"내 기기"는 브라우저 안입니다.</strong> IndexedDB 라는 칸에 저장됩니다 — 같은 브라우저로 다시 오면 그대로 있고, 다른 기기·다른 브라우저에는 없습니다. 사파리 방문 기록 지우기로 "웹사이트 데이터"까지 지우면 함께 사라집니다. 단어장(단어·뜻·별)은 이것과 별개로 Supabase 에 동기화되므로 기기를 바꿔도 남습니다.</p>
+<p><strong>무료 사전은 이제 뜻을 두고 다투지 않습니다.</strong> 하는 일이 둘입니다.</p>
+<ol><li>발음 기호와 영어 뜻 채우기 (AI 가 답하든 말든 늘)</li><li>AI 가 답하지 못했을 때 뜻자리 지키기 — 로그인 전, 하루 한도 초과, 오프라인, 서버 장애</li></ol>
+<p>2번으로 뜬 뜻은 화면에서 <code>문맥 뜻 · AI</code> 라고 하지 않고 그냥 <code>뜻</code> 이라고 씁니다. 문맥을 안 보고 온 뜻이니까요. 거짓말을 하지 않는 편이 낫습니다.</p>
+<h2 id="화면에-뜨는-것">화면에 뜨는 것</h2>
+<p>박스 하나뿐입니다.</p>
+<pre><code>● 문맥 뜻 · AI
+계속되다  동사
+여기서는 더위가 멈추지 않고 이어진다는 뜻입니다.
+다른 뜻으로 다시 물어보기          뜻을 눌러 직접 고칠 수 있어요</code></pre>
+<ul><li><strong>큰 글씨(계속되다)</strong> — 이 문장에서의 뜻. <strong>누르면 그 자리에서 고쳐집니다.</strong> 엔터를 치면 저장되고, <code>esc</code> 를 누르면 되돌아갑니다.</li><li><strong>작은 글씨</strong> — 이 문장에서 어떻게 쓰였는지. 뻔하면 AI 가 빈칸을 주고, 그러면 이 줄이 없습니다.</li><li><strong>아래 칩들</strong> — AI 가 준 다른 뜻 후보 + 무료 사전이 준 것들. 눌러서 한 번에 바꿉니다.</li><li><strong>다른 뜻으로 다시 물어보기</strong> — 이미 보여 준 뜻을 빼고 다시 묻습니다. 같은 답을 두 번 받고 한도만 쓰는 일이 없게, 보여 준 뜻 목록을 함께 보냅니다.</li></ul>
+<p>직접 고치면 머리말이 <code>내가 고친 뜻</code> 으로 바뀌고, <strong>그 뒤로 AI 가 그 뜻을 덮지 않습니다.</strong> 덮는 건 "다른 뜻으로 다시"를 눌렀을 때뿐입니다 — 그때는 새 뜻을 달라는 뜻이니까요.</p>
+<h3 id="예전에-박스가-둘이었던-이유와-왜-하나로-합쳤나">예전에 박스가 둘이었던 이유와, 왜 하나로 합쳤나</h3>
+<p>예전에는 이 박스 아래에 파란 뜻 칸이 하나 더 있었습니다. 위는 "AI 가 알려준 것", 아래는 "내 단어장에 적히는 것" 이라는 구분이었는데, 화면에서 보면 <strong>같은 뜻이 두 번 적혀 있고</strong> 고치는 건 아래 칸에서만 되는 상태였습니다. 이제 위에 뜬 뜻이 곧 단어장에 들어가는 뜻입니다.</p>
+<h3 id="바람">바람</h3>
+<p>기다리는 동안 점 세 개가 깜빡이지 않고 <strong>돌풍 세 줄기가 지나갑니다.</strong> Breeze 니까요. 세 줄기가 속도와 출발 시각이 서로 달라서 규칙적인 깜빡임처럼 보이지 않습니다. 움직임을 줄여 달라고 설정한 사람에게는 지나가지 않고 옅게 숨만 쉽니다.</p>
+<h3 id="일부러-주는-03초">일부러 주는 0.3초</h3>
+<p><strong>갓 받은 AI 답은 0.28초는 바람을 보여 준 뒤에 놓습니다.</strong> 답이 100ms 에 오면 화면이 그냥 튄 것처럼 느껴져서, 뭐가 바뀐 건지 못 알아챕니다.</p>
+<p><strong>기기에 이미 있던 답은 딜레이 없이 그냥 띄웁니다.</strong> 기다린 척할 이유가 없고, 빠른 게 이 구조로 얻은 것이니까요.</p>
+<h2 id="왜-공용-사전을-접었나">왜 공용 사전을 접었나</h2>
+<p>서버에 <code>dict_shared</code> 라는 표를 두고, 낱말 하나를 누가 한 번 물어보면 그 뒤로는 모두가 공짜로 쓰게 하려던 계획이 있었습니다. 표까지 만들고 씨앗 300개도 넣었는데 접었습니다. 이유가 셋입니다.</p>
+<p><strong>1. 두 줄 중 덜 중요한 줄만 캐시하고 있었습니다.</strong> 화면의 큰 글씨(이 문장에서의 뜻)와 작은 글씨(이 문장에서 어떻게 쓰였나) — 사람이 낱말을 누르는 이유는 이 둘입니다. 그런데 공용 사전이 저장할 수 있는 건 "이 낱말의 일반적인 뜻 목록" 뿐이었습니다. 그건 네이버 사전에도 있습니다. 즉 <strong>무료 사전으로도 되는 것을 열심히 저장하면서, 정작 Breeze 가 잘하는 것은 하나도 재사용하지 못하는</strong> 구조였습니다.</p>
+<p><strong>2. 틀린 뜻을 확신 있게 내놓을 새 경로를 만들었습니다.</strong> 표에 뜻이 있으면 AI 를 안 부릅니다. 그런데 그 뜻이 이 문장에 안 맞으면? 반쯤 맞는 답을 자신 있게 내놓는 게 모른다고 하는 것보다 나쁩니다. 사전 앱을 망하게 하는 가장 확실한 방법은 사전의 질을 떨어뜨리는 것입니다.</p>
+<p><strong>3. 비용이 문제가 아니었습니다.</strong> 낱말 하나 물어보는 데 약 <strong>1.7원</strong>입니다(입력 200토큰 · 출력 200토큰 기준). 하루 100번이면 170원. 한 달 꽉 채워 쓰는 사람이 5천원쯤 나갑니다. 그런 사람이 나타난다면 그건 비용이 아니라 매출 신호입니다. 그리고 AI 값은 계속 내려갑니다.</p>
+<p>진짜 걸리는 건 돈이 아니라 <strong>하루 100번이라는 횟수</strong>입니다. 소설을 한 시간 읽으면 모르는 낱말을 40~60개 누릅니다. 그래서 아래 절약은 돈을 아끼려는 게 아니라 <strong>100번을 300번처럼 쓰려는</strong> 것입니다.</p>
+<h2 id="ai-부하를-줄이는-방법-지금-들어간-것">AI 부하를 줄이는 방법 — 지금 들어간 것</h2>
+<p><strong>호출 세 번을 한 번으로.</strong> 예전 Edge Function 은 <code>entry</code>(낱말 항목 만들기, 700토큰) → <code>pick</code>(몇 번 뜻인지 고르기) → <code>explain</code>(문장 설명) 세 갈래였습니다. 이 세 갈래는 <em>서버에 표를 두고 재사용하려면</em> 필요한 구조였고, 표를 접으면서 존재 이유를 잃었습니다. 지금은 <code>look</code> 하나입니다 — 첫 조회 기준 <strong>왕복 3번 · 출력 900토큰 → 왕복 1번 · 출력 250토큰.</strong></p>
+<p><strong>기기 캐시.</strong> 같은 문장에서 같은 낱말 = 0회. 뒤로 갔다 다시 오는 것만으로 한도가 녹지 않게.</p>
+<p><strong>끊기.</strong> 낱말을 연달아 누르거나 창을 닫으면 앞의 요청을 끊습니다. 아무도 안 볼 답인데 한도는 이미 나갔던 자리입니다. 훑어 읽을 때 이 손실이 제일 컸습니다.</p>
+<p><strong>깨우기.</strong> 책을 열면 함수를 한 번 깨웁니다(<code>op:"warm"</code>). AI 도 한도도 쓰지 않습니다. 콜드스타트를 첫 클릭 뒤에 숨기는 게 아니라 그 앞에서 끝냅니다. 2분 안에는 다시 안 부릅니다.</p>
+<p><strong>동시에 출발.</strong> 무료 사전과 AI 는 서로 기다릴 이유가 없어서 같이 나갑니다. 발음과 영어 뜻이 먼저 도착해서, AI 를 기다리는 동안에도 패널이 채워집니다.</p>
+<p><strong>사람이 고친 뜻 우선.</strong> 직접 고친 낱말을 다시 누르면 AI 를 부르지 않습니다. 그 사람이 확정한 답이 있는데 새 추측을 보여주는 건 오히려 나빠지는 일입니다.</p>
+<h3 id="아직-안-넣은-것">아직 안 넣은 것</h3>
+<ul><li><strong>문단 단위로 묶어 보내기</strong> — 첫 낱말을 누를 때 같은 문단의 어려운 낱말 3~4개를 같은 요청에 실으면, 요청 1회로 4단어를 씁니다. 100번을 300~400번처럼 쓰게 만드는 핵심인데, 안 누를 낱말까지 받아 오므로 고르는 기준을 잘 잡아야 합니다.</li><li><strong>프롬프트 캐싱</strong> — 같은 문단 안의 두 번째 낱말부터 입력값을 다시 안 내는 것. 캐시 최소 길이가 있어서 문단이 짧으면 안 걸립니다. 재 보고 결정할 문제.</li><li><strong>스트리밍</strong> — 호출 수는 그대로지만 첫 글자가 300ms 에 뜹니다.</li></ul>
+<h2 id="서버에-올라가는-것과-올라가지-않는-것">서버에 올라가는 것과 올라가지 않는 것</h2>
+<p>표가 둘뿐입니다.</p>
+<div class="tablewrap"><table><thead><tr><th>표</th><th>무엇이 들어가나</th></tr></thead><tbody><tr><td><code>ai_usage</code></td><td>누가 오늘 몇 번 AI 를 썼나</td></tr><tr><td><code>dict_events</code></td><td>사람이 사전으로 <strong>무엇을 했나</strong></td></tr></tbody></table></div>
+<p><strong>낱말 뜻을 쌓는 표는 없습니다.</strong> 뜻은 그때그때 답하고 사라집니다.</p>
+<h3 id="dictevents-진짜-자산은-여기입니다">dict_events — 진짜 자산은 여기입니다</h3>
+<p>낱말과 뜻 자체는 상품입니다. 위키낱말사전에도 있고, 다른 앱이 3개월이면 따라옵니다. 못 따라오는 건 이것입니다.</p>
+<ul><li><strong><code>retry</code></strong> — "다른 뜻으로 다시"를 눌렀다. AI 가 틀렸다는 가장 강한 신호</li><li><strong><code>edit</code></strong> — 뜻을 손으로 고쳐 썼다. AI 답과 사람 답이 나란히 남습니다</li><li><strong><code>pick</code></strong> — 칩으로 다른 뜻을 골랐다</li><li><strong><code>star</code></strong> / <strong><code>known</code></strong> — 모르는 정도를 바꿨다 / 아는 낱말이라 뺐다</li><li><strong><code>look</code></strong> — 눌러서 AI 가 답했다</li><li><strong><code>quota</code></strong> — 한도에 걸려 못 불렀다. 한도를 올릴 근거</li></ul>
+<p><code>retry</code> 가 많은 낱말 목록이 곧 "프롬프트를 어디부터 고쳐야 하나"의 답입니다. 이건 사용자 없이는 만들 수 없습니다.</p>
+<h3 id="문장은-어떻게-다루나">문장은 어떻게 다루나</h3>
+<p><strong>문장 본문은 서버에 저장되지 않습니다.</strong> 대신 이런 것들이 남습니다.</p>
+<ul><li><code>sent_fp</code> — 문장 <strong>지문</strong>. 소금(<code>DICT_FP_SALT</code>)을 섞은 SHA-256 앞 8바이트</li><li><code>sent_len</code> — 문장 낱말 수</li><li><code>cue_before</code> / <code>cue_after</code> — 누른 낱말의 바로 앞뒤 한 칸. <strong>기능어 닫힌 목록에 있을 때만</strong> (<code>continue</code> 뒤에 <code>to</code> 가 왔다 — 판별에는 결정적이지만 이것만으로 문장을 되짚을 수는 없습니다)</li><li><code>book_fp</code> — 책 제목 지문. 같은 책끼리 묶어 보기 위해서만</li></ul>
+<p><strong>소금이 왜 반드시 필요한가.</strong> 소금 없이 해시만 남기면, 책 원문을 가진 사람이 전수 대조로 "이 사용자가 이 문장을 읽었다"를 되짚을 수 있습니다. 그건 저작권 문제가 아니라 사생활 문제입니다. 그래서 <code>DICT_FP_SALT</code> 가 없으면 <strong>지문을 아예 안 남깁니다.</strong></p>
+<p>지문이 같으면 "같은 문장을 여러 사람이 물어봤다"를 셀 수 있습니다. 그게 지문의 용도 전부입니다.</p>
+<h2 id="로그인은-어디에-걸려-있나">로그인은 어디에 걸려 있나</h2>
+<ul><li><strong>로그인 없이도</strong> — 무료 사전(발음·영어 뜻·기본 뜻), 단어장, 기기 캐시</li><li><strong>로그인해야</strong> — AI. 뜻의 유일한 출처가 되었으니 여기가 유일한 문지기입니다</li></ul>
+<p>로그인이 안 되어 있으면 요청 자체를 보내지 않고, 박스 아래에 <code>로그인하면 이 문장에 맞는 뜻을 찾아줘요</code> 만 뜹니다.</p>
+<h2 id="직접-들여다보기">직접 들여다보기</h2>
+<p>Supabase 대시보드 → SQL Editor.</p>
+<pre data-lang="sql"><code>-- AI 가 자주 틀리는 낱말
+select word, count(*) from public.dict_events where action = 'retry'
+group by word order by count(*) desc limit 30;
+
+-- 사람이 손으로 고친 뜻 (AI 답과 나란히)
+select word, ai_ko, user_ko, cue_before, cue_after, at
+from public.dict_events where action = 'edit' order by at desc limit 50;
+
+-- 오늘 누가 얼마나 썼나
+select user_id, calls from public.ai_usage
+where day = (now() at time zone 'utc')::date order by calls desc;
+
+-- 한도에 걸린 사람이 있나 (있으면 한도를 올릴 때가 된 것)
+select count(*) from public.dict_events where action = 'quota' and at &gt; now() - interval '7 days';</code></pre>
+<p>내 기기 캐시를 보려면 브라우저 콘솔에서:</p>
+<pre data-lang="js"><code>await dictCount()        // 몇 개 들어 있나
+await breezeExportDict() // 전부 JSON 으로</code></pre>
+<h2 id="처음-세팅">처음 세팅</h2>
+<ol><li>Supabase → SQL Editor 에서 <code>sql/supabase_dict.sql</code> 실행 (예전 <code>dict_shared</code> · <code>sense_cues</code> 를 치우는 문장이 뒤에 붙어 있습니다)</li><li>Edge Functions → Secrets 에 넣을 것<ul><li><code>GEMINI_API_KEY</code> 또는 <code>ANTHROPIC_API_KEY</code> (둘 다 있으면 <code>AI_PROVIDER</code> 로 고름)</li><li><code>DICT_FP_SALT</code> — 아무 긴 문자열. <strong>없으면 문장 지문을 안 남깁니다</strong></li><li><code>AI_DAILY_LIMIT</code> — 한 사람 하루 한도. 없으면 200</li></ul></li><li><code>supabase functions deploy dict</code></li></ol>
+<h2 id="파일로-들고-다니던-300개는-어디-갔나">파일로 들고 다니던 300개는 어디 갔나</h2>
+<p><code>dict300.js</code>(73KB) + <code>dict_300.json</code>(200KB) 이라는 게 있었습니다. 자주 나오는 낱말 300개를 파일로 들고 다니면서 인터넷 없이 뜻을 띄우는 용도였는데, 지웠습니다.</p>
+<p>같은 것을 두 모양으로 갖고 있었을 뿐이고, 무엇보다 <strong>문맥을 안 보고 온 뜻</strong>이었습니다. 이 앱이 파는 게 문맥 뜻인데 문맥을 안 보는 층을 앞에 두면 앞뒤가 안 맞습니다.</p>
+<p>비행기에서 읽는 문제는 나중에 따로 풉니다 — 유명해지면 "자주 나오는 3천 개를 미리 받아 두기" 같은 걸 넣으면 됩니다. 그때는 그게 목적인 기능이므로 반쪽이 아닙니다.</p>
+</main>
+<aside><div class="lbl">이 문서 안</div><a class="" href="#한-줄로-말하면">한 줄로 말하면</a><a class="" href="#낱말을-누르면-벌어지는-일">낱말을 누르면 벌어지는 일</a><a class="" href="#화면에-뜨는-것">화면에 뜨는 것</a><a class="sub" href="#예전에-박스가-둘이었던-이유와-왜-하나로-합쳤나">예전에 박스가 둘이었던 이유와, 왜 하나로 합쳤나</a><a class="sub" href="#바람">바람</a><a class="sub" href="#일부러-주는-03초">일부러 주는 0.3초</a><a class="" href="#왜-공용-사전을-접었나">왜 공용 사전을 접었나</a><a class="" href="#ai-부하를-줄이는-방법-지금-들어간-것">AI 부하를 줄이는 방법 — 지금 들어간 것</a><a class="sub" href="#아직-안-넣은-것">아직 안 넣은 것</a><a class="" href="#서버에-올라가는-것과-올라가지-않는-것">서버에 올라가는 것과 올라가지 않는 것</a><a class="sub" href="#dictevents-진짜-자산은-여기입니다">dict_events — 진짜 자산은 여기입니다</a><a class="sub" href="#문장은-어떻게-다루나">문장은 어떻게 다루나</a><a class="" href="#로그인은-어디에-걸려-있나">로그인은 어디에 걸려 있나</a><a class="" href="#직접-들여다보기">직접 들여다보기</a><a class="" href="#처음-세팅">처음 세팅</a><a class="" href="#파일로-들고-다니던-300개는-어디-갔나">파일로 들고 다니던 300개는 어디 갔나</a></aside>
+</div>
+<div class="foot">
+  이 문서는 저장소의 <code>DICT.md</code> 에서 자동으로 만들어집니다 ·
+  <a href="https://github.com/MetroBummin/breeze/blob/main/breeze-refactored/DICT.md" target="_blank" rel="noopener">원본 보기</a> ·
+  인쇄(⌘P)하면 PDF 로 저장됩니다
+</div>
+</body>
+</html>
