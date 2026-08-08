@@ -5,7 +5,10 @@
 //   supabase functions deploy article
 //
 // Secret 이 필요 없습니다. 하는 일은 딱 하나 — 브라우저가 CORS 때문에 직접
-// 읽지 못하는 페이지의 HTML 을 그대로 건네줍니다.
+// 읽지 못하는 것을 그대로 건네줍니다.
+//
+//   ?url=…              기사 HTML  -> { url, html }
+//   ?url=…&as=image     기사 사진   -> 그림 바이트 그대로
 //
 // 본문 추출은 여기서 하지 않습니다. 브라우저에는 이미 진짜 HTML 파서가 있고,
 // 규칙을 고칠 때마다 서버를 다시 배포하고 싶지 않기 때문입니다.
@@ -23,6 +26,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 const MAX_BYTES = 3_000_000;   // 기사 한 편치고 3MB 를 넘으면 기사가 아닙니다
+const MAX_IMAGE_BYTES = 2_000_000;
 const TIMEOUT_MS = 12_000;
 
 // 열린 중계는 사내망을 찔러 보는 발판이 되기 쉽습니다. 공인 주소만 받습니다.
@@ -46,8 +50,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "GET") return json({ error: "method", message: "GET 만 받습니다" }, 405);
 
-  const url = safeUrl(new URL(req.url).searchParams.get("url"));
+  const params = new URL(req.url).searchParams;
+  const url = safeUrl(params.get("url"));
   if (!url) return json({ error: "bad_url", message: "열 수 없는 주소예요" }, 400);
+  const asImage = params.get("as") === "image";
 
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
@@ -60,8 +66,10 @@ Deno.serve(async (req) => {
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
           "(KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml",
+        "Accept": asImage ? "image/*" : "text/html,application/xhtml+xml",
         "Accept-Language": "en-US,en;q=0.9",
+        // 매체는 흔히 자기 페이지에서 온 요청만 사진을 내줍니다.
+        ...(asImage ? { "Referer": url.origin + "/" } : {}),
       },
     });
 
@@ -75,6 +83,21 @@ Deno.serve(async (req) => {
     }
 
     const type = upstream.headers.get("content-type") || "";
+
+    if (asImage) {
+      // SVG 는 그림이 아니라 스크립트를 품을 수 있는 문서라 받지 않습니다.
+      if (!/^image\//i.test(type) || /svg/i.test(type)) {
+        return json({ error: "not_image", message: "그림이 아니에요" }, 415);
+      }
+      const bytes = await upstream.arrayBuffer();
+      if (bytes.byteLength > MAX_IMAGE_BYTES) {
+        return json({ error: "too_big", message: "그림이 너무 커요" }, 413);
+      }
+      return new Response(bytes, {
+        headers: { ...CORS, "Content-Type": type, "Cache-Control": "no-store" },
+      });
+    }
+
     if (!/html|xml/i.test(type)) {
       return json({ error: "not_html", message: "웹페이지가 아니에요" }, 415);
     }

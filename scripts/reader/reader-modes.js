@@ -9,7 +9,7 @@ let readerModeCueTimer = 0;
    전환 버튼을 아예 내지 않습니다. 전에는 버튼이 보인 뒤 "원본 파일을 연결해
    주세요"라는 막다른 안내로 이어졌습니다. */
 function bookSupportsOriginal(book){
-  if(!book || book.builtin) return false;
+  if(!book) return false;
   const kind = book.kind || (book.original && book.original.kind) || '';
   if(kind) return kind === 'pdf' || kind === 'epub';
   // 형식을 저장하지 않던 시절의 책: 원본 좌표 지도가 있으면 PDF·EPUB입니다.

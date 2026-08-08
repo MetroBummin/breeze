@@ -104,7 +104,8 @@ function show(v){
   saveReadingState();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
-  document.getElementById('nav-home').classList.toggle('on', v==='home' || v==='casuals');
+  document.getElementById('nav-home').classList.toggle('on',
+    v==='home' || v==='casuals' || v==='longform');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
   if(v!=='read'){
     leaveOriginalReader();
@@ -113,11 +114,14 @@ function show(v){
   document.body.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();
   if(v==='casuals') renderCasualLibrary();
+  if(v==='longform') renderLongformLibrary();
   if(v==='vocab') renderVocab();
   window.scrollTo(0,0);
 }
 
 /* ================= home ================= */
-function allBooks(){ return [DEMO_BOOK, ...books]; }
+/* 예전에는 샘플 책 한 권(AI Hurtles Ahead)을 늘 목록 맨 앞에 끼워 넣었습니다.
+   무료 고전 5종이 생긴 지금은 첫 화면을 채우는 일을 그쪽이 더 잘합니다 —
+   샘플은 지울 수도 이름을 바꿀 수도 없는데, 고전은 진짜 내 책이 됩니다. */
 const wcOf = b => b.paras.reduce((a,p)=>p.startsWith(IMG_MARK)?a:a+p.split(/\s+/).length,0);
 const WAVE = (c1,op)=>`<svg class="wave" viewBox="0 0 300 90" preserveAspectRatio="none"><path d="M0 40 C55 15 105 55 160 30 C210 8 260 35 300 18 L300 90 L0 90Z" fill="${c1}" opacity="${op}"/></svg>`;

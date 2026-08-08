@@ -50,6 +50,8 @@ async function imgPut(id, blob){ const db=await idb(); return new Promise((res,r
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(blob,id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 async function imgGet(id){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('imgs').objectStore('imgs').get(id); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function imgDel(id){ try{ const db=await idb(); return await new Promise(res=>{
+  const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').delete(id); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
 async function imgRename(oldPrefix, newPrefix){
   try{
     const db = await idb();

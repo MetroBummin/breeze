@@ -125,6 +125,11 @@
   #readwrap{max-width:700px; margin:0 auto; padding:36px 26px 50vh;}
   #rtitle{font-family:var(--serif); font-size:clamp(24px,3.4vw,30px); color:var(--ink); padding-bottom:18px; overflow-wrap:anywhere;
     border-bottom:1px solid var(--line); margin-bottom:8px;}
+  /* 기사에는 연결할 원본 파일이 없습니다. 원문으로 가는 길만 남겨 둡니다. */
+  #rsource{display:block; font-size:12.5px; color:var(--soft2); text-decoration:none; margin:-2px 0 8px;}
+  #rsource:hover{color:var(--blue);}
+  #rsource[hidden]{display:none;}
+  body.focusmode #rsource{display:none;}
   #rhint{font-size:13px; color:var(--soft2); margin-bottom:26px; display:flex; align-items:center; gap:8px;}
   #rhint svg{flex-shrink:0;}
   #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;}

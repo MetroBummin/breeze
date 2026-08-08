@@ -105,6 +105,15 @@ async function openBook(b){
   document.getElementById('v-read').classList.add('on');
   document.getElementById('nav-home').classList.remove('on');
   document.getElementById('rtitle').textContent = b.title;
+  /* 기사에는 연결할 "원본 파일"이 없습니다. 사진과 소제목까지 담아 오지만
+     사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을
+     하나 남겨 둡니다. */
+  const source = document.getElementById('rsource');
+  source.hidden = !b.sourceUrl;
+  if(b.sourceUrl){
+    source.href = b.sourceUrl;
+    source.textContent = (b.site ? b.site + '에서 ' : '') + '원문 보기 ↗';
+  }
   document.body.classList.add('reading');
   document.body.classList.remove('reader-original');
   document.getElementById('readwrap').hidden=false;

@@ -463,17 +463,42 @@ assert.doesNotMatch(librarySource, /getElementById\('hero'\)/,
   'The old hero card is still rendered alongside the same book in the shelf');
 assert.match(librarySource, /CASUAL_KINDS = new Set\(\['paste','article'\]\)/,
   'Casuals no longer collect both pasted text and fetched articles');
-assert.match(librarySource, /function nowReadingId/,
+assert.match(librarySource, /function nowReadingIn\(list\)/,
   'Nothing marks which book is being read now that the hero card is gone');
+/* 두 줄은 각자 자기 줄에서 마지막에 읽던 것을 기억해야 합니다. 기사를 한 편
+   봤다고 읽던 원서 표시가 사라지면 안 됩니다. */
+assert.match(librarySource, /nowReadingIn\(casuals\)/,
+  'The Casuals rail no longer tracks its own last-read item');
+assert.match(librarySource, /nowReadingIn\(longform\)/,
+  'The long-form shelf shares its last-read marker with Casuals again');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
 assert.match(index, /id="casual-lib"[\s\S]{0,500}id="casual-add"/,
   'The Casuals header lost its library and add buttons');
+assert.match(index, /id="longform-lib"[\s\S]{0,500}id="longform-add"/,
+  'The long-form header lost its library and add buttons');
+assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
+assert.match(librarySource, /function renderLongformLibrary/,
+  'Nothing fills the long-form library view');
+/* Casuals 의 + 는 파일 버튼을 감춥니다 — 짧은 글에 EPUB 을 넣을 수는 없습니다. */
+assert.match(librarySource, /\.am-file'\)\.hidden = mode === 'casual'/,
+  'The Casuals + sheet offers a file picker again');
+/* Long-form 의 + 는 시트를 거치지 않고 곧장 파일 고르기입니다 — 고를 것이 하나뿐입니다. */
+assert.match(index, /id="longform-add"[^>]*onclick="pickBookFile\(\)"/,
+  'The long-form + no longer opens the file picker directly');
 const homeCss = readFileSync(resolve(root, 'styles/home.css'), 'utf8');
 assert.match(homeCss, /#casual-rail\{[^}]*overflow-x:auto/,
   'The Casuals rail no longer scrolls sideways');
 assert.match(homeCss, /\.now-ring\{/, 'The currently-read card lost its ring');
 assert.equal((index.match(/class="am-big"|class="am-big am-file"/g) || []).length, 3,
   'The + sheet no longer offers exactly three ways in');
+
+/* ---- 샘플 책은 없앴습니다 ---- */
+assert.equal(existsSync(resolve(root, 'scripts/core/demo-book.js')), false,
+  'The sample book file is back');
+for(const file of [...jsFiles, resolve(root, 'index.html')]){
+  assert.doesNotMatch(readFileSync(file, 'utf8'), /DEMO_BOOK|allBooks\(\)/,
+    `${file.slice(root.length + 1)} still reaches for the removed sample book`);
+}
 
 /* ---- 내장 고전 ---- */
 const classicsContext = { console, Set, books:[] };
@@ -513,9 +538,59 @@ assert.equal(
 assert.equal(
   articleContext.articleStripSite('A tale of two - and only two - cities', 'BBC News', 'www.bbc.com'),
   'A tale of two - and only two - cities', 'A dash inside the title truncated it');
+/* ---- 기사 사진 ---- */
+// srcset 은 "주소 폭w, …" 입니다. 가장 큰 판을 골라야 카드 표지가 뭉개지지 않습니다.
+const srcsetImage = {
+  attrs:{ srcset:'/s.jpg 320w, /m.jpg 640w, /l.jpg 1280w', src:'/fallback.jpg' },
+  getAttribute(name){ return this.attrs[name] === undefined ? null : this.attrs[name]; },
+};
+assert.equal(articleContext.articleBestSrc(srcsetImage), '/l.jpg',
+  'The widest image in a srcset is no longer preferred');
+const bareImage = { getAttribute(name){ return name === 'src' ? '/only.jpg' : null; } };
+assert.equal(articleContext.articleBestSrc(bareImage), '/only.jpg',
+  'An image with a plain src was dropped');
+assert.equal(articleContext.articleAbsolute('/photo.jpg', 'https://www.bbc.com/news/x'),
+  'https://www.bbc.com/photo.jpg', 'A site-relative image path was not resolved');
+assert.equal(articleContext.articleAbsolute('data:image/gif;base64,R0lGOD', 'https://a.com/'), '',
+  'A data: URI was treated as a fetchable image');
+/* 그림 키는 주소에서 나옵니다 — 책 ID 는 그 키가 들어간 문단이 다 모여야
+   정해지기 때문입니다. 어느 기기에서 넣어도 같은 값이어야 합니다. */
+const sameKey = articleContext.articleImageKey('https://a.com/p.jpg');
+assert.equal(sameKey, articleContext.articleImageKey('https://a.com/p.jpg'),
+  'The image key is not stable, so the same article would import twice');
+assert.notEqual(sameKey, articleContext.articleImageKey('https://a.com/q.jpg'),
+  'Two different images share one storage key');
+assert.match(articleContext.articleImageKey('https://a.com/p.jpg'), /^art\|/,
+  'Article image keys lost the prefix that keeps them out of the EPUB namespace');
+/* 크기는 긴 변으로 봅니다. 두 변을 다 재면 250x144 짜리 가로 사진이 아이콘과
+   함께 걸러집니다 — 위키백과 본문 사진이 실제로 그렇게 사라졌습니다. */
+const sized = (width, height) => ({ getAttribute(name){
+  return name === 'width' ? String(width) : name === 'height' ? String(height) : null; } });
+assert.equal(articleContext.articleTooSmall(sized(250, 144)), false,
+  'A landscape photo was thrown out for being short');
+assert.equal(articleContext.articleTooSmall(sized(50, 50)), true, 'An icon was kept as a photo');
+assert.equal(articleContext.articleTooSmall(sized(728, 12)), true, 'A banner strip was kept as a photo');
+assert.equal(articleContext.articleTooSmall({ getAttribute: () => null }), false,
+  'An image without stated dimensions was thrown out — most sites state none');
+
+const articleSource = readFileSync(resolve(root, 'scripts/importers/article.js'), 'utf8');
+// 사진은 <figure> 안에 있고 <figure> 는 통째로 버려집니다. 순서가 뒤집히면 다 사라집니다.
+assert.match(articleSource, /articleMarkImages\(doc, url\);[\s\S]{0,120}querySelectorAll\(ARTICLE_DROP\)/,
+  'Images are collected after the drop pass removes the figures holding them');
+/* BBC 는 사진 한 장과 매체 로고를 한 <figure>에 같이 넣습니다. 로고를 버리면서
+   그 <figure>까지 지우면 사진도 함께 날아갑니다(실제로 BBC 사진이 0장이었습니다). */
+assert.doesNotMatch(articleSource, /holder\.remove\(\)/,
+  'Rejecting one image removes its whole <figure>, taking the real photo with it');
+assert.match(articleSource, /parsed\.blocks\.filter\(block => block\.r !== 'img' \|\| stored\.has/,
+  'An image that failed to download would leave a broken figure in the article');
+
 const articleServer = readFileSync(resolve(root, 'server/article/index.ts'), 'utf8');
 assert.match(articleServer, /PRIVATE_HOST/,
   'The article relay would happily fetch private network addresses');
 assert.match(articleServer, /MAX_BYTES/, 'The article relay has no response size limit');
+assert.match(articleServer, /MAX_IMAGE_BYTES/, 'The image relay has no size limit');
+// SVG 는 그림이 아니라 스크립트를 품을 수 있는 문서입니다.
+assert.match(articleServer, /\/svg\/i\.test\(type\)/,
+  'The image relay would pass an SVG document through as a photo');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

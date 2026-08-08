@@ -31,7 +31,6 @@ function attachLongPress(el, fn){
 /* 책 삭제 — 기기와 서버를 함께 지웁니다.
    "여기서만 지우고 서버엔 남기고 싶다"는 경우가 사실상 없어서 하나로 합쳤습니다. */
 async function deleteBook(b){
-  if(b.builtin) return;
   if(!confirm(`"${b.title}" 책을 삭제할까요?\n\n동기화한 경우 다른 기기에서도 삭제됩니다.\n(단어장은 그대로 남습니다)`)) return;
   const remoteId = serverBookIdFor(b);
   /* Deleting the book that is open would leave the reader pointing at content
@@ -41,9 +40,16 @@ async function deleteBook(b){
   await bookDel(b.id);
   await originalDel(b.id);
   await imgPurge(b.id+'|');
+  /* 기사 사진은 주소에서 키를 만들어서 책 ID로 시작하지 않습니다. 이 책이
+     실제로 쓰던 것만 골라 지웁니다. */
+  if(b.cover) await imgDel(b.cover);
+  for(const paragraph of b.paras || []){
+    if(paragraph.startsWith(IMG_MARK)) await imgDel(paragraph.slice(IMG_MARK.length));
+  }
   delete positions[b.id]; save(LS_POS, positions);
   renderHome();
   renderCasualLibrary();
+  renderLongformLibrary();
   if(sb && sbUser){
     try{
       const meta = { title:b.title, fingerprint:ensureBookFingerprint(b),
@@ -62,7 +68,6 @@ async function deleteBook(b){
 }
 
 async function renameBook(b){
-  if(b.builtin){ toast('샘플 책은 이름을 바꿀 수 없어요'); return; }
   const typed = prompt('책 이름', b.title);
   if(typed === null) return;
   const t = typed.trim();
@@ -72,6 +77,7 @@ async function renameBook(b){
   await bookPut(b);
   renderHome();
   renderCasualLibrary();
+  renderLongformLibrary();
   toast('이름을 바꿨어요');
   // 서버에 이미 올라간 책이면 목록의 이름도 함께 갱신
   if(sb && sbUser){
@@ -97,12 +103,13 @@ async function renameBook(b){
 const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
 function casualBooks(){ return books.filter(isCasual); }
-function longformBooks(){ return allBooks().filter(book => !isCasual(book)); }
+function longformBooks(){ return books.filter(book => !isCasual(book)); }
 const readMinutes = book => Math.max(1, Math.round(wcOf(book)/180));
 
-/* 마지막으로 열었던 책 하나. 아직 아무것도 안 읽었으면 없습니다. */
-function nowReadingId(){
-  const opened = allBooks().filter(book => posOf(book.id).t);
+/* 두 줄이 각자 자기 줄에서 마지막으로 읽던 것을 기억합니다. 지하철에서 기사를
+   한 편 봤다고 해서 읽던 원서 표시가 사라지면 안 되니까요. */
+function nowReadingIn(list){
+  const opened = list.filter(book => posOf(book.id).t);
   if(!opened.length) return null;
   return opened.sort((a,b) => posOf(b.id).t - posOf(a.id).t)[0].id;
 }
@@ -115,12 +122,25 @@ function nowReadingLabel(book, current){
   return percent ? '이어서 · '+percent : '이어서 읽기';
 }
 
+/* 표지 사진은 IndexedDB에 있습니다. 없으면(다른 기기에서 받은 책, 사진이
+   없는 기사) 지금까지의 글자 표지가 그대로 나옵니다. */
+function applyCasualCover(thumb, key){
+  imgGet(key).then(blob => {
+    if(!blob) return;
+    const image = thumb.querySelector('.cover');
+    image.src = URL.createObjectURL(blob);
+    image.hidden = false;
+    thumb.classList.add('has-cover');
+  });
+}
+
 function casualCard(book, index, current){
   const position = posOf(book.id);
   const percent = Math.round(position.p*100);
   const card = document.createElement('div');
   card.className = 'casual cpal'+(index%4);
   card.innerHTML = `<div class="thumb">
+      <img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>
       ${WAVE('#FFFFFF','.35')}
       ${position.t ? `<div class="bar"><i style="width:${percent}%"></i></div>` : ''}
@@ -143,6 +163,7 @@ function casualCard(book, index, current){
   };
   card.querySelector('.del').onclick = () => deleteBook(book);
   card.querySelector('.thumb').classList.toggle('now-ring', book.id === current);
+  if(book.cover) applyCasualCover(card.querySelector('.thumb'), book.cover);
   return card;
 }
 
@@ -163,46 +184,56 @@ function bookCard(book, index, current){
   card.innerHTML = `<div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
     ${label ? `<div class="prog">${label}</div>` : ''}
-    ${book.builtin ? '' : '<button class="del" title="삭제">✕</button>'}`;
-  card.querySelector('.author').textContent = book.author || (book.builtin ? 'SAMPLE' : 'MY BOOK');
+    <button class="del" title="삭제">✕</button>`;
+  card.querySelector('.author').textContent = book.author || 'MY BOOK';
   card.querySelector('.bt').textContent = book.title;
   const pressed = attachLongPress(card, ()=>renameBook(book));
   card.onclick = event => {
     if(event.target.classList.contains('del') || pressed()) return;
     openBook(book);
   };
-  const del = card.querySelector('.del');
-  if(del) del.onclick = () => deleteBook(book);
+  card.querySelector('.del').onclick = () => deleteBook(book);
+  return card;
+}
+
+function longformAddCard(){
+  const card = document.createElement('div');
+  card.className = 'bookcard add';
+  card.innerHTML = '<div class="plus">+</div><div class="lbl">PDF · EPUB · TXT<br>파일 추가</div>';
+  card.onclick = () => pickBookFile();
   return card;
 }
 
 function renderHome(){
   document.getElementById('greet').textContent = greet();
-  const current = nowReadingId();
 
-  const rail = document.getElementById('casual-rail');
-  rail.innerHTML = '';
   const casuals = casualBooks();
-  casuals.forEach((book, index) => rail.appendChild(casualCard(book, index, current)));
+  const rail = document.getElementById('casual-rail');
+  const nowCasual = nowReadingIn(casuals);
+  rail.innerHTML = '';
+  casuals.forEach((book, index) => rail.appendChild(casualCard(book, index, nowCasual)));
   rail.appendChild(casualAddCard());
   document.querySelector('#casuals .sec-sub').textContent = casuals.length
     ? `기사 · 스레드 · 짧은 글 ${casuals.length}편`
     : '기사 · 스레드 · 짧은 글';
 
+  const longform = longformBooks();
   const shelf = document.getElementById('shelf');
+  const nowLongform = nowReadingIn(longform);
   shelf.innerHTML = '';
-  longformBooks().forEach((book, index) => shelf.appendChild(bookCard(book, index, current)));
+  longform.forEach((book, index) => shelf.appendChild(bookCard(book, index, nowLongform)));
   pendingClassics().forEach(classic => shelf.appendChild(classicCard(classic)));
-  const add = document.createElement('div');
-  add.className = 'bookcard add';
-  add.innerHTML = '<div class="plus">+</div><div class="lbl">PDF · EPUB · TXT<br>파일 추가</div>';
-  add.onclick = () => finput.click();
-  shelf.appendChild(add);
+  shelf.appendChild(longformAddCard());
+  document.querySelector('#longform .sec-sub').textContent = longform.length
+    ? `원서 · PDF · EPUB ${longform.length}권 — 꾹 누르면 이름 바꾸기`
+    : '원서 · PDF · EPUB';
 }
 
+/* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에
+   답하는 자리고, 여기는 "그때 그거 어디 갔지"에 답하는 자리입니다. */
 function renderCasualLibrary(){
   const casuals = casualBooks();
-  const current = nowReadingId();
+  const current = nowReadingIn(casuals);
   const grid = document.getElementById('casual-grid');
   const empty = document.getElementById('casual-empty');
   document.getElementById('casual-cnt').textContent = casuals.length ? `${casuals.length}편` : '';
@@ -210,6 +241,21 @@ function renderCasualLibrary(){
   casuals.forEach((book, index) => grid.appendChild(casualCard(book, index, current)));
   empty.hidden = casuals.length > 0;
   empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
+}
+
+function renderLongformLibrary(){
+  const longform = longformBooks();
+  const current = nowReadingIn(longform);
+  const grid = document.getElementById('longform-grid');
+  if(!grid) return;
+  const empty = document.getElementById('longform-empty');
+  document.getElementById('longform-cnt').textContent = longform.length ? `${longform.length}권` : '';
+  grid.innerHTML = '';
+  longform.forEach((book, index) => grid.appendChild(bookCard(book, index, current)));
+  const offered = pendingClassics();
+  offered.forEach(classic => grid.appendChild(classicCard(classic)));
+  empty.hidden = longform.length > 0 || offered.length > 0;
+  empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
 }
 
 /* ================= 하나뿐인 추가 시트 =================
@@ -285,7 +331,7 @@ originalInput.onchange = async()=>{
   if(file && target) await reconnectOriginalFile(target, file);
 };
 function requestOriginalReconnect(book){
-  if(!book || book.builtin) return;
+  if(!book) return;
   reconnectTarget = book;
   originalInput.accept = book.original && book.original.kind
     ? '.'+book.original.kind

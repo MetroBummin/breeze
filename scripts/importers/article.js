@@ -17,6 +17,72 @@ const ARTICLE_DROP = 'script,style,noscript,template,nav,header,footer,aside,for
 /* 클래스·id에 이런 말이 있으면 본문이 아니라 주변 장치입니다. */
 const ARTICLE_NOISE = /(comment|promo|related|recirc|newsletter|advert|sponsor|share|social|subscribe|cookie|consent|banner|sidebar|breadcrumb|byline|most-read|read-more|trending|tag-list|caption|disclaimer|copyright|reference|reflist|citation|footnote|navbox|infobox|catlinks|editsection|metadata|cite[-_](note|ref))/i;
 
+/* ---------- 사진 ----------
+   사진은 대부분 <figure> 안에 있는데 그 <figure>는 곧 통째로 버려집니다.
+   그래서 버리기 전에 "여기에 사진이 있었다"는 표시로 바꿔 둡니다. */
+/* 크기는 긴 변으로 봅니다. 가로 사진은 250x144 처럼 한쪽이 짧아서, 두 변을
+   모두 재면 진짜 사진이 아이콘과 함께 걸러집니다. 짧은 변은 띠(spacer)만
+   막을 만큼만 봅니다. */
+const ARTICLE_IMG_MIN = 200;   // 긴 변이 이보다 작으면 아이콘·배지입니다
+const ARTICLE_IMG_THIN = 60;   // 짧은 변이 이보다 얇으면 구분선·추적 픽셀입니다
+const ARTICLE_IMG_MAX = 8;     // 기사 한 편에 담을 사진 수
+const ARTICLE_IMG_BAD = /(logo|icon|avatar|sprite|spacer|pixel|1x1|placeholder|badge|emoji|blank)/i;
+
+/* srcset 은 "주소 폭w, 주소 폭w …" 입니다. 가장 큰 판을 고릅니다. */
+function articleBestSrc(image){
+  const set = image.getAttribute('srcset') || image.getAttribute('data-srcset') || '';
+  let best = '', bestWidth = -1;
+  set.split(',').forEach(part => {
+    const piece = part.trim().split(/\s+/);
+    const width = /^\d+w$/.test(piece[1] || '') ? parseInt(piece[1], 10) : 0;
+    if(piece[0] && width > bestWidth){ best = piece[0]; bestWidth = width; }
+  });
+  return best || image.getAttribute('src') || image.getAttribute('data-src') || '';
+}
+function articleAbsolute(src, base){
+  try{
+    const parsed = new URL(String(src || '').trim(), base);
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : '';
+  }catch(e){ return ''; }
+}
+function articleTooSmall(image){
+  const width = parseInt(image.getAttribute('width') || '0', 10);
+  const height = parseInt(image.getAttribute('height') || '0', 10);
+  if(!width && !height) return false;             // 크기를 안 적어 둔 곳이 더 많습니다
+  const long = Math.max(width, height), short = Math.min(width, height);
+  return long < ARTICLE_IMG_MIN || (short > 0 && short < ARTICLE_IMG_THIN);
+}
+function articleMarkImages(doc, url){
+  const seen = new Set();
+  for(const image of doc.querySelectorAll('img')){
+    if(!image.isConnected) continue;               // 앞의 <figure>와 함께 이미 떨어져 나감
+    const src = articleAbsolute(articleBestSrc(image), url);
+    if(!src || articleTooSmall(image) || ARTICLE_IMG_BAD.test(src) || seen.has(src)){
+      /* 버리는 것은 이 <img> 하나뿐입니다. 담고 있는 <figure>까지 지우면
+         안 됩니다 — BBC 는 사진 한 장과 매체 로고를 한 <figure>에 같이
+         넣어 두어서, 로고를 버리다가 사진까지 통째로 날아갔습니다. */
+      image.remove();
+      continue;
+    }
+    seen.add(src);
+    const mark = doc.createElement('breeze-img');
+    mark.setAttribute('data-src', src);
+    (image.closest('figure') || image).replaceWith(mark);
+  }
+}
+/* 그림의 저장 키는 주소에서 만듭니다. 책 ID는 문단이 다 모여야 정해지는데,
+   그 문단 안에 이미 그림 표시가 들어가 있어야 하기 때문입니다. 주소에서
+   만들면 어느 기기에서 넣어도 같은 문단 → 같은 책 ID가 나옵니다. */
+function articleImageKey(url){
+  let h1 = 0x811c9dc5, h2 = 0x9e3779b9;
+  for(let index = 0; index < url.length; index++){
+    const code = url.charCodeAt(index);
+    h1 = Math.imul((h1 ^ code) >>> 0, 0x01000193) >>> 0;
+    h2 = Math.imul((h2 + code * (index+1)) >>> 0, 0x85ebca6b) >>> 0;
+  }
+  return 'art|' + h1.toString(36) + h2.toString(36);
+}
+
 const articleNoisy = element => ARTICLE_NOISE.test(
   (element.getAttribute('class') || '') + ' ' + (element.id || '') + ' ' +
   (element.getAttribute('data-component') || ''));
@@ -102,6 +168,7 @@ function articleBlockRole(element){
 function parseArticleHtml(html, url){
   const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
   if(!doc || !doc.body) return null;
+  articleMarkImages(doc, url);      // <figure>를 버리기 전에 사진 자리를 남깁니다
   doc.querySelectorAll(ARTICLE_DROP).forEach(node => node.remove());
   doc.querySelectorAll('[aria-hidden="true"],[hidden]').forEach(node => node.remove());
   /* 각주 번호는 문단 안에 박혀 있어 덩어리째 버릴 수 없습니다.
@@ -116,8 +183,13 @@ function parseArticleHtml(html, url){
   const site = articleSite(doc, host);
   const title = articleTitle(doc, root, site, host);
 
-  const blocks = [];
-  for(const element of root.querySelectorAll('p,h1,h2,h3,h4,blockquote,li')){
+  let blocks = [];
+  for(const element of root.querySelectorAll('p,h1,h2,h3,h4,blockquote,li,breeze-img')){
+    if(element.tagName.toLowerCase() === 'breeze-img'){
+      if(articleNoisyChain(element, root)) continue;   // 광고·추천 상자에 딸린 사진
+      blocks.push({ r:'img', t:element.getAttribute('data-src') });
+      continue;
+    }
     // 다른 덩어리를 품고 있으면 껍데기입니다. 안쪽에서 다시 만납니다.
     if(element.querySelector('p,li,blockquote,h1,h2,h3,h4')) continue;
     if(articleNoisyChain(element, root)) continue;
@@ -140,30 +212,50 @@ function parseArticleHtml(html, url){
   while(end > 0 && !(blocks[end-1].r === 'p' && blocks[end-1].t.length >= ARTICLE_TAIL_CHARS)) end--;
   blocks.length = Math.max(end, 0);
 
+  /* 사진 수는 여기서 자릅니다. 표시할 때 세면 표 안의 배지처럼 곧 버려질
+     그림까지 자릿수를 차지해, 정작 본문 사진이 밀려납니다. */
+  let photos = 0;
+  blocks = blocks.filter(block => block.r !== 'img' || ++photos <= ARTICLE_IMG_MAX);
+
   const body = blocks.filter(block => block.r === 'p' || block.r === 'quote');
   const chars = body.reduce((sum, block) => sum + block.t.length, 0);
   if(!body.length || chars < ARTICLE_MIN_CHARS) return null;
 
   // 제목이 첫 덩어리로 또 들어와 있으면 뺍니다.
-  while(blocks.length && blocks[0].r !== 'p' && blocks[0].t === title) blocks.shift();
+  while(blocks.length && blocks[0].r !== 'p' && blocks[0].r !== 'img' && blocks[0].t === title) blocks.shift();
 
+  /* 대표 사진. 매체가 og:image 로 알려주는 것이 가장 정확하고, 없으면 본문
+     첫 사진을 씁니다. Casuals 카드의 표지가 됩니다. */
+  const meta = doc.querySelector('meta[property="og:image"], meta[name="twitter:image"]');
+  const lead = meta ? articleAbsolute(meta.getAttribute('content'), url) : '';
+  const firstInBody = blocks.find(block => block.r === 'img');
+  const cover = lead || (firstInBody ? firstInBody.t : '');
+
+  return { title, site, url, cover, blocks, ...articleAssemble(title, blocks) };
+}
+
+/* 덩어리 목록 -> 저장할 문단과 조판. 사진을 못 받아 덩어리가 빠지면 다시
+   부릅니다 — 문단 번호(f)가 밀리기 때문에 손으로 고칠 수 없습니다. */
+function articleAssemble(title, blocks){
   let quotes = 0;
-  const paras = [title, ...blocks.map(block => block.t)];
+  const paras = [title, ...blocks.map(block =>
+    block.r === 'img' ? IMG_MARK + articleImageKey(block.t) : block.t)];
   const formatted = blocks.map((block, index) => {
-    const out = { r:block.r, t:block.t, f:index+1 };
+    const out = { r:block.r, t:paras[index+1], f:index+1 };
     if(block.r === 'quote') out.g = ++quotes;   // 인용문은 한 칸씩 따로 묶습니다
     return out;
   });
-  return { title, site, url, paras,
+  return { paras,
     formatting: { blocks:[{r:'h1', t:title, f:0}, ...formatted],
                   start:0, levels:2, source:'article-url', createdAt:Date.now() } };
 }
 
 /* ---------- 가져오기 ---------- */
 
-function articleProxyUrl(url){
+function articleProxyUrl(url, as){
   if(!SB_URL) return '';
-  return SB_URL.replace(/\/+$/,'') + '/functions/v1/article?url=' + encodeURIComponent(url);
+  return SB_URL.replace(/\/+$/,'') + '/functions/v1/article?url=' + encodeURIComponent(url)
+    + (as ? '&as=' + as : '');
 }
 /* `new URL()`은 "notaurl!!" 같은 것도 통과시킵니다. 진짜 호스트처럼 생겼는지
    여기서 한 번 더 봅니다 — 아니면 사용자는 오탈자 대신 서버 오류를 봅니다. */
@@ -211,6 +303,49 @@ async function fetchArticleHtml(url){
   return payload.html;
 }
 
+/* 사진 한 장 가져오기. 스스로 CORS를 열어 둔 곳은 바로, 아니면 중계를 거칩니다.
+   못 받으면 null — 사진 하나 때문에 기사를 통째로 못 읽으면 손해입니다. */
+async function fetchArticleImage(url){
+  let response = null;
+  try{ response = await fetch(url); }catch(e){}
+  if(!response || !response.ok){
+    const endpoint = articleProxyUrl(url, 'image');
+    if(!endpoint) return null;
+    response = null;
+    try{
+      response = await fetch(endpoint, {
+        headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
+      });
+    }catch(e){}
+  }
+  if(!response || !response.ok) return null;
+  const blob = await response.blob().catch(()=>null);
+  if(!blob || !blob.size || !/^image\//.test(blob.type) || /svg/.test(blob.type)) return null;
+  return blob;
+}
+/* 사진은 넣는 순간 기기에 담습니다. 나중에 비행기 안에서도 같은 화면이
+   나와야 하고, 읽을 때마다 그 매체 서버에 발자국을 남기지 않기 위해서입니다. */
+async function attachArticleImages(parsed){
+  const wanted = [];
+  if(parsed.cover) wanted.push(parsed.cover);
+  parsed.blocks.forEach(block => {
+    if(block.r === 'img' && wanted.indexOf(block.t) < 0) wanted.push(block.t);
+  });
+  if(!wanted.length) return;
+
+  const fetched = await Promise.all(wanted.map(url =>
+    fetchArticleImage(url).then(blob => [url, blob], () => [url, null])));
+  const stored = new Set();
+  for(const [url, blob] of fetched){
+    if(!blob) continue;
+    try{ await imgPut(articleImageKey(url), blob); stored.add(url); }catch(e){}
+  }
+
+  parsed.blocks = parsed.blocks.filter(block => block.r !== 'img' || stored.has(block.t));
+  parsed.cover = stored.has(parsed.cover) ? articleImageKey(parsed.cover) : '';
+  Object.assign(parsed, articleAssemble(parsed.title, parsed.blocks));
+}
+
 async function importArticleUrl(){
   const field = document.getElementById('am-url');
   const status = document.getElementById('am-url-status');
@@ -229,8 +364,11 @@ async function importArticleUrl(){
       status.innerHTML = '본문을 찾지 못했어요.<br>로그인이나 결제가 필요한 기사일 수 있어요 — 본문을 복사해서 붙여넣어 주세요.';
       return;
     }
+    status.textContent = '사진을 담는 중…';
+    await attachArticleImages(parsed);
     field.value = '';
-    await saveCasualBook(parsed, { kind:'article', site:parsed.site, sourceUrl:parsed.url });
+    await saveCasualBook(parsed, { kind:'article', site:parsed.site, sourceUrl:parsed.url,
+                                   cover:parsed.cover || null });
   }catch(error){
     console.error(error);
     status.classList.add('bad');

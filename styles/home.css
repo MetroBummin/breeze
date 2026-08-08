@@ -1,6 +1,6 @@
 /* Home: Casuals rail, long-form shelf, and the one "+" sheet */
 
-  #v-home, #v-casuals{max-width:960px; margin:0 auto; padding:28px 26px 90px;}
+  #v-home, #v-casuals, #v-longform{max-width:960px; margin:0 auto; padding:28px 26px 90px;}
   #greet{font-size:13.5px; color:var(--soft); letter-spacing:1.6px; margin:14px 2px 10px;}
   #bigq{font-size:clamp(28px,4.6vw,40px); font-weight:500; letter-spacing:-1.4px; margin-bottom:34px;}
 
@@ -36,6 +36,14 @@
   .casual .lede{font-family:var(--serif); font-size:14px; line-height:1.45; word-break:break-word;
     display:-webkit-box; -webkit-line-clamp:9; -webkit-box-orient:vertical; overflow:hidden; opacity:.92;}
   .casual .thumb .wave{position:absolute; left:0; right:0; bottom:0; height:30%; pointer-events:none;}
+  /* 표지 사진이 있으면 사진이 표지입니다. 없으면(붙여넣은 글, 사진 없는 기사)
+     지금까지처럼 글 첫 문단이 표지 노릇을 합니다. */
+  .casual .thumb .cover{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .casual .thumb.has-cover{padding:0;}
+  .casual .thumb.has-cover .lede, .casual .thumb.has-cover .wave{display:none;}
+  .casual .thumb.has-cover .src{position:relative; z-index:1; margin:auto 0 0; color:#fff; opacity:.95;
+    padding:38px 12px 11px; text-shadow:0 1px 3px rgba(0,0,0,.45);
+    background:linear-gradient(to top, rgba(10,18,24,.78), rgba(10,18,24,0));}
   .casual .bar{position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(0,0,0,.12);}
   .casual .bar i{display:block; height:3px; background:var(--blue);}
   .casual .ct{font-size:13.5px; font-weight:600; line-height:1.35; margin:9px 1px 3px; word-break:keep-all;
@@ -94,13 +102,17 @@
   .now-ring{outline:2.5px solid var(--blue); outline-offset:2px;}
   .now-ring .prog, .now-ring + .ct + .cm{color:var(--blue-deep); opacity:1; font-weight:600;}
 
-  /* ---- Casuals 라이브러리 ---- */
-  #v-casuals .head{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
-  #v-casuals h1{font-size:24px; font-weight:500; letter-spacing:-.5px;}
-  #v-casuals .cnt{color:var(--soft); font-size:14px; flex:1;}
+  /* ---- 라이브러리 두 개 ----
+     홈은 "무엇을 읽지"에, 여기는 "그때 그거 어디 갔지"에 답합니다.
+     같은 카드를 격자에만 다시 깝니다. */
+  #v-casuals .head, #v-longform .head{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+  #v-casuals h1, #v-longform h1{font-size:24px; font-weight:500; letter-spacing:-.5px;}
+  #v-casuals .cnt, #v-longform .cnt{color:var(--soft); font-size:14px; flex:1;}
   #casual-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:16px; margin-top:22px;}
   #casual-grid .casual{flex:none;}
-  #casual-empty{text-align:center; color:var(--soft); padding:70px 0 40px; font-size:14.5px; line-height:1.9;}
+  #longform-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:18px; margin-top:22px;}
+  #casual-empty, #longform-empty{text-align:center; color:var(--soft); padding:70px 0 40px;
+    font-size:14.5px; line-height:1.9;}
 
   /* ---- 하나뿐인 추가 시트 ---- */
   #add-modal{position:fixed; inset:0; z-index:160; background:rgba(24,54,74,.35); display:none;
