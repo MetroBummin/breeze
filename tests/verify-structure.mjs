@@ -489,8 +489,40 @@ const homeCss = readFileSync(resolve(root, 'styles/home.css'), 'utf8');
 assert.match(homeCss, /#casual-rail\{[^}]*overflow-x:auto/,
   'The Casuals rail no longer scrolls sideways');
 assert.match(homeCss, /\.now-ring\{/, 'The currently-read card lost its ring');
-assert.equal((index.match(/class="am-big"|class="am-big am-file"/g) || []).length, 3,
+const addSheet = index.slice(index.indexOf('id="add-modal"'), index.indexOf('id="edit-modal"'));
+assert.equal((addSheet.match(/class="am-big/g) || []).length, 3,
   'The + sheet no longer offers exactly three ways in');
+
+/* ---- 정보 바꾸기 시트와 두 갈래 삭제 ----
+   되돌릴 수 없는 쪽을 기본으로 두면 안 됩니다. 폰에서 자리만 비우려던
+   사람이 노트북의 책까지 잃습니다. */
+const editSource = readFileSync(resolve(root, 'scripts/library/book-edit.js'), 'utf8');
+assert.match(index, /id="edit-modal"/, 'The long-press edit sheet is missing');
+assert.match(index, /runDelete\('local'\)[\s\S]{0,900}runDelete\('all'\)/,
+  'The delete step no longer offers both scopes, with this device first');
+assert.match(librarySource, /async function deleteBook\(b, scope\)/,
+  'Deleting a book is back to one all-or-nothing path');
+assert.match(librarySource, /if\(scope !== 'all'\)[\s\S]{0,400}return;/,
+  'A device-only delete still reaches the server');
+assert.doesNotMatch(librarySource, /confirm\(`"\$\{b\.title\}" 책을 삭제/,
+  'The old two-button confirm is back in front of the scope question');
+assert.match(editSource, /function openEditSheet/, 'Nothing opens the edit sheet');
+assert.match(librarySource, /attachLongPress\(card, \(\)=>openEditSheet\(book\)\)/,
+  'A long press no longer opens the edit sheet');
+// 로그인하지 않았으면 서버 사본이 없습니다. 고를 것 없는 갈림길을 내지 않습니다.
+assert.match(editSource, /\.ed-all'\)\.hidden = !signedIn/,
+  'Signed-out users are offered a delete-everywhere button that does nothing');
+/* 카드가 보이는 곳이 셋이라 하나만 다시 그리면 나머지가 옛 이름을 들고 남습니다. */
+assert.match(librarySource, /function renderAllBookViews/,
+  'The three book views are refreshed one by one again');
+
+/* ---- Casuals 자동 올리기 ----
+   Sync 창을 열어 책마다 올리기를 눌러야 한다면 그 일은 일어나지 않습니다. */
+assert.match(librarySource, /autoUploadCasual\(book\)/,
+  'A pasted or fetched article never reaches the server on its own');
+assert.match(syncSource, /function autoUploadCasual/, 'Casual auto-upload is gone');
+assert.match(syncSource, /if\(twin && \(auto \|\|/,
+  'Auto-upload can pop a confirm dialog right after an import');
 
 /* ---- 샘플 책은 없앴습니다 ---- */
 assert.equal(existsSync(resolve(root, 'scripts/core/demo-book.js')), false,
@@ -592,14 +624,13 @@ assert.match(articleSource, /function bookImageBlob/,
 // 홈은 자주 다시 그려집니다. 못 받는 사진을 렌더링할 때마다 다시 부르면 안 됩니다.
 assert.match(articleSource, /bookImageMissing\.has\(key\)/,
   'An unreachable photo is re-fetched on every home render');
-const articleSyncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
 for(const field of ['site', 'sourceUrl', 'cover', 'imgSrc']){
-  assert.match(articleSyncSource, new RegExp(`${field}:b\\.${field}`),
+  assert.match(syncSource, new RegExp(`${field}:b\\.${field}`),
     `A synced article loses its ${field}`);
-  assert.match(articleSyncSource, new RegExp(`${field}:body\\.${field}`),
+  assert.match(syncSource, new RegExp(`${field}:body\\.${field}`),
     `A downloaded article never reads back its ${field}`);
 }
-assert.doesNotMatch(articleSyncSource, /storage\.from\('imgs'\)|uploadImage/,
+assert.doesNotMatch(syncSource, /storage\.from\('imgs'\)|uploadImage/,
   'Article photos are being re-hosted on the server instead of re-fetched');
 assert.match(articleSource, /parsed\.blocks\.filter\(block => block\.r !== 'img' \|\| stored\.has/,
   'An image that failed to download would leave a broken figure in the article');

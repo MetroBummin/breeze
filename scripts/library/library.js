@@ -28,10 +28,30 @@ function attachLongPress(el, fn){
   el.addEventListener('contextmenu', e=>e.preventDefault());
   return ()=>fired;      // 클릭 처리에서 "길게 눌렀던 건 무시"에 사용
 }
-/* 책 삭제 — 기기와 서버를 함께 지웁니다.
-   "여기서만 지우고 서버엔 남기고 싶다"는 경우가 사실상 없어서 하나로 합쳤습니다. */
-async function deleteBook(b){
-  if(!confirm(`"${b.title}" 책을 삭제할까요?\n\n동기화한 경우 다른 기기에서도 삭제됩니다.\n(단어장은 그대로 남습니다)`)) return;
+/* 책 목록이 보이는 곳은 셋입니다. 하나만 다시 그리면 나머지 둘이 옛날 이름을
+   들고 남아 있습니다. */
+function renderAllBookViews(){
+  renderHome();
+  renderCasualLibrary();
+  renderLongformLibrary();
+}
+
+/* 이 책이 쓰던 그림을 전부 지웁니다. EPUB 삽화는 `책ID|번호`라 접두어로
+   쓸어내지만, 기사 사진은 주소에서 키를 만들어서 책 ID로 시작하지 않습니다. */
+async function purgeBookImages(b){
+  await imgPurge(b.id+'|');
+  const keys = new Set(Object.keys(b.imgSrc || {}));
+  if(b.cover) keys.add(b.cover);
+  (b.paras || []).forEach(paragraph => {
+    if(paragraph.startsWith(IMG_MARK)) keys.add(paragraph.slice(IMG_MARK.length));
+  });
+  for(const key of keys) await imgDel(key);
+}
+
+/* 책 삭제. `scope`는 'local'(이 기기에서만) 또는 'all'(모든 기기에서).
+   되돌릴 수 없는 쪽을 기본으로 두지 않으려고 갈라 두었습니다 — 물어보는
+   화면은 `openEditSheet(book,'delete')`에 있습니다. */
+async function deleteBook(b, scope){
   const remoteId = serverBookIdFor(b);
   /* Deleting the book that is open would leave the reader pointing at content
      that no longer exists. Leave the reader first. */
@@ -39,17 +59,16 @@ async function deleteBook(b){
   books = books.filter(x=>x.id!==b.id);
   await bookDel(b.id);
   await originalDel(b.id);
-  await imgPurge(b.id+'|');
-  /* 기사 사진은 주소에서 키를 만들어서 책 ID로 시작하지 않습니다. 이 책이
-     실제로 쓰던 것만 골라 지웁니다. */
-  if(b.cover) await imgDel(b.cover);
-  for(const paragraph of b.paras || []){
-    if(paragraph.startsWith(IMG_MARK)) await imgDel(paragraph.slice(IMG_MARK.length));
-  }
+  await purgeBookImages(b);
   delete positions[b.id]; save(LS_POS, positions);
-  renderHome();
-  renderCasualLibrary();
-  renderLongformLibrary();
+  renderAllBookViews();
+  if(scope !== 'all'){
+    /* 서버 사본은 그대로 둡니다. Sync 창에 `이 기기에 받기`로 다시 나타나며,
+       내려받기는 수동이라 저절로 돌아오지 않습니다. */
+    if(typeof renderBookList === 'function') renderBookList();
+    toast('이 기기에서 지웠어요');
+    return;
+  }
   if(sb && sbUser){
     try{
       const meta = { title:b.title, fingerprint:ensureBookFingerprint(b),
@@ -64,33 +83,7 @@ async function deleteBook(b){
       renderBookList();
     }catch(e){ console.error(e); toast('기기에서는 지웠지만 서버에서 지우지 못했어요'); return; }
   }
-  toast('삭제했어요');
-}
-
-async function renameBook(b){
-  const typed = prompt('책 이름', b.title);
-  if(typed === null) return;
-  const t = typed.trim();
-  if(!t || t === b.title) return;
-  b.title = t;
-  b.renamedAt = Date.now();            // 어느 쪽 이름이 최신인지 판단하는 기준
-  await bookPut(b);
-  renderHome();
-  renderCasualLibrary();
-  renderLongformLibrary();
-  toast('이름을 바꿨어요');
-  // 서버에 이미 올라간 책이면 목록의 이름도 함께 갱신
-  if(sb && sbUser){
-    try{
-      const remoteId = serverBookIdFor(b);
-      const { data } = await sb.from('books').select('meta').eq('user_id', sbUser.id).eq('book_id', remoteId).maybeSingle();
-      // 다른 기기가 이미 지운 책이면 서버 정보를 되살리지 않습니다(삭제가 이깁니다)
-      if(data && !(data.meta||{}).deleted) await sb.from('books').upsert(
-        [{user_id:sbUser.id, book_id:remoteId,
-          meta:{...(data.meta||{}), title:t, fingerprint:ensureBookFingerprint(b), renamedAt:b.renamedAt}}],
-        {onConflict:'user_id,book_id'});
-    }catch(e){}
-  }
+  toast('모든 기기에서 지웠어요');
 }
 
 /* ================= 홈 =================
@@ -124,14 +117,15 @@ function nowReadingLabel(book, current){
 
 /* 표지 사진은 IndexedDB에 있습니다. 다른 기기에서 받은 기사면 `bookImageBlob`이
    원래 주소에서 한 번 받아 옵니다. 그래도 없으면(사진이 없는 기사, 오프라인)
-   지금까지의 글자 표지가 그대로 나옵니다. */
-function applyCasualCover(thumb, book){
+   지금까지의 글자 표지가 그대로 나옵니다. 두 줄의 카드가 같은 함수를 씁니다. */
+function applyCover(host, book){
+  if(!book.cover) return;
   bookImageBlob(book, book.cover).then(blob => {
     if(!blob) return;
-    const image = thumb.querySelector('.cover');
+    const image = host.querySelector('.cover');
     image.src = URL.createObjectURL(blob);
     image.hidden = false;
-    thumb.classList.add('has-cover');
+    host.classList.add('has-cover');
   });
 }
 
@@ -157,14 +151,14 @@ function casualCard(book, index, current){
   card.querySelector('.cm').textContent = label
     ? `${label} · ${readMinutes(book)}분`
     : `${readMinutes(book)}분 읽기`;
-  const pressed = attachLongPress(card, ()=>renameBook(book));
+  const pressed = attachLongPress(card, ()=>openEditSheet(book));
   card.onclick = event => {
     if(event.target.classList.contains('del') || pressed()) return;
     openBook(book);
   };
-  card.querySelector('.del').onclick = () => deleteBook(book);
+  card.querySelector('.del').onclick = () => confirmDeleteBook(book);
   card.querySelector('.thumb').classList.toggle('now-ring', book.id === current);
-  if(book.cover) applyCasualCover(card.querySelector('.thumb'), book);
+  applyCover(card.querySelector('.thumb'), book);
   return card;
 }
 
@@ -182,18 +176,20 @@ function bookCard(book, index, current){
   const card = document.createElement('div');
   card.className = 'bookcard pal'+(index%3);
   card.classList.toggle('now-ring', book.id === current);
-  card.innerHTML = `<div class="author"></div><div class="bt"></div>
+  card.innerHTML = `<img class="cover" alt="" hidden>
+    <div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
     ${label ? `<div class="prog">${label}</div>` : ''}
     <button class="del" title="삭제">✕</button>`;
   card.querySelector('.author').textContent = book.author || 'MY BOOK';
   card.querySelector('.bt').textContent = book.title;
-  const pressed = attachLongPress(card, ()=>renameBook(book));
+  const pressed = attachLongPress(card, ()=>openEditSheet(book));
   card.onclick = event => {
     if(event.target.classList.contains('del') || pressed()) return;
     openBook(book);
   };
-  card.querySelector('.del').onclick = () => deleteBook(book);
+  card.querySelector('.del').onclick = () => confirmDeleteBook(book);
+  applyCover(card, book);
   return card;
 }
 
@@ -304,6 +300,7 @@ async function saveCasualBook(parsed, extra){
   closeAddModal();
   renderHome();
   openBook(book);
+  autoUploadCasual(book);        // 읽기를 막지 않도록 기다리지 않습니다
 }
 
 async function importPastedText(){

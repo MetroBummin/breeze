@@ -331,7 +331,7 @@ async function attachArticleImages(parsed){
   parsed.blocks.forEach(block => {
     if(block.r === 'img' && wanted.indexOf(block.t) < 0) wanted.push(block.t);
   });
-  if(!wanted.length) return;
+  if(!wanted.length) return { wanted:0, missed:0 };
 
   const fetched = await Promise.all(wanted.map(url =>
     fetchArticleImage(url).then(blob => [url, blob], () => [url, null])));
@@ -349,6 +349,7 @@ async function attachArticleImages(parsed){
   parsed.imgSrc = {};
   stored.forEach(url => { parsed.imgSrc[articleImageKey(url)] = url; });
   Object.assign(parsed, articleAssemble(parsed.title, parsed.blocks));
+  return { wanted:wanted.length, missed:wanted.length - stored.size };
 }
 
 /* 사진 한 장 꺼내기. 다른 기기에서 받은 기사에는 문단과 사진 주소만 있고
@@ -387,10 +388,17 @@ async function importArticleUrl(){
       return;
     }
     status.textContent = '사진을 담는 중…';
-    await attachArticleImages(parsed);
+    const photos = await attachArticleImages(parsed);
     field.value = '';
     await saveCasualBook(parsed, { kind:'article', site:parsed.site, sourceUrl:parsed.url,
                                    cover:parsed.cover || null, imgSrc:parsed.imgSrc || null });
+    /* 사진 실패를 조용히 넘기면 "사진이 원래 없는 기사"와 구별되지 않습니다.
+       한 장도 못 받았다면 중계가 배포되지 않은 것이 거의 확실합니다. */
+    if(photos.missed === photos.wanted && photos.wanted > 0){
+      toast('사진을 못 가져왔어요 — supabase functions deploy article 을 한 번 실행해 주세요');
+    }else if(photos.missed){
+      toast(`사진 ${photos.missed}장은 못 가져왔어요`);
+    }
   }catch(error){
     console.error(error);
     status.classList.add('bad');

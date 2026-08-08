@@ -36,6 +36,7 @@
   <script defer src="scripts/core/state.js"></script>
   <script defer src="scripts/reader/formatting.js"></script>
   <script defer src="scripts/library/library.js"></script>
+  <script defer src="scripts/library/book-edit.js"></script>
   <script defer src="scripts/library/classics.js"></script>
   <script defer src="scripts/importers/importers.js"></script>
   <script defer src="scripts/importers/article.js"></script>
@@ -277,6 +278,43 @@
       <input id="am-url" type="url" inputmode="url" placeholder="https://www.bbc.com/news/…" spellcheck="false">
       <div id="am-url-status"></div>
       <button class="sm-btn primary" id="am-url-go" onclick="importArticleUrl()">가져오기</button>
+    </div>
+  </div>
+</div>
+<div id="edit-modal">
+  <div id="ed-card">
+    <button id="ed-close" onclick="closeEditSheet()">✕</button>
+
+    <div class="ed-step on" data-step="edit">
+      <h2>정보 바꾸기</h2>
+      <label class="ed-lbl" for="ed-title">제목</label>
+      <input id="ed-title" spellcheck="false">
+      <label class="ed-lbl">표지</label>
+      <div id="ed-covers"></div>
+      <label id="ed-pick-file">
+        그림 파일에서 고르기
+        <input type="file" accept="image/*" onchange="pickCoverFile(this)" hidden>
+      </label>
+      <div class="ed-acts">
+        <button type="button" class="sm-btn danger" onclick="editStep('delete')">삭제…</button>
+        <button type="button" class="sm-btn primary" onclick="saveEditSheet()">저장</button>
+      </div>
+    </div>
+
+    <div class="ed-step" data-step="delete">
+      <button type="button" class="am-back" onclick="editStep('edit')">← 뒤로</button>
+      <h2>어디서 지울까요?</h2>
+      <div class="desc"><b id="ed-what"></b><br><span id="ed-del-note"></span></div>
+      <div class="am-choices">
+        <button type="button" class="am-big" onclick="runDelete('local')">
+          <span class="am-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 12.5h9L17.5 7"/></svg></span>
+          <span><span class="am-t">이 기기에서만</span><span class="am-d">서버 사본은 그대로 — Sync에서 다시 받을 수 있어요</span></span>
+        </button>
+        <button type="button" class="am-big ed-all" onclick="runDelete('all')">
+          <span class="am-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c4.5 5 4.5 12 0 17-4.5-5-4.5-12 0-17"/></svg></span>
+          <span><span class="am-t">모든 기기에서</span><span class="am-d">되돌릴 수 없어요</span></span>
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -76,7 +76,7 @@
   .bookcard .wave{position:absolute; left:0; right:0; bottom:0; height:34%; pointer-events:none;}
   .bookcard .prog{position:absolute; bottom:14px; left:24px; font-size:12px; opacity:.65; z-index:1;}
   .bookcard .del{position:absolute; top:12px; right:12px; border:none; background:rgba(255,255,255,.55); width:28px; height:28px;
-    border-radius:50%; cursor:pointer; font-size:13px; color:#5c5648; opacity:0; transition:.15s;}
+    border-radius:50%; cursor:pointer; font-size:13px; color:#5c5648; opacity:0; transition:.15s; z-index:2;}
   .bookcard:hover .del{opacity:1;}
   .bookcard .del:hover{background:#fff; color:#c0392b;}
   .bookcard.add{border:2px dashed #CBD9D3; background:transparent; display:flex; flex-direction:column;
@@ -113,6 +113,14 @@
   #longform-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:18px; margin-top:22px;}
   #casual-empty, #longform-empty{text-align:center; color:var(--soft); padding:70px 0 40px;
     font-size:14.5px; line-height:1.9;}
+
+  /* 긴 글 카드도 표지를 답니다 — 없으면 지금까지의 색 카드 그대로입니다. */
+  .bookcard .cover{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .bookcard.has-cover .wave{display:none;}
+  .bookcard.has-cover .author, .bookcard.has-cover .bt, .bookcard.has-cover .prog{
+    position:relative; z-index:1; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.5);}
+  .bookcard.has-cover::after{content:''; position:absolute; inset:0;
+    background:linear-gradient(to bottom, rgba(10,18,24,.55), rgba(10,18,24,.15) 45%, rgba(10,18,24,.72));}
 
   /* ---- 하나뿐인 추가 시트 ---- */
   #add-modal{position:fixed; inset:0; z-index:160; background:rgba(24,54,74,.35); display:none;
@@ -152,6 +160,45 @@
   #am-url-status{font-size:12.5px; color:var(--soft2); min-height:19px; margin-bottom:12px; text-align:center;
     line-height:1.6;}
   #am-url-status.bad{color:#B0483A;}
+  /* ---- 정보 바꾸기 시트 (꾹 누르기) ----
+     추가 시트와 상자·큰 버튼 모양을 같이 씁니다(.am-big, .am-choices). */
+  #edit-modal{position:fixed; inset:0; z-index:170; background:rgba(24,54,74,.35); display:none;
+    align-items:center; justify-content:center; padding:20px;}
+  #edit-modal.on{display:flex;}
+  #ed-card{background:#fff; border-radius:22px; padding:30px 28px; width:100%; max-width:460px;
+    box-shadow:var(--shadow); max-height:88vh; overflow-y:auto;}
+  #ed-card h2{font-size:20px; font-weight:600; margin-bottom:14px;}
+  #ed-card .desc{font-size:13.5px; color:var(--soft); line-height:1.7; margin-bottom:4px;}
+  #ed-card .desc b{color:var(--ink); font-weight:600;}
+  #ed-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
+    font-size:14px; cursor:pointer; color:var(--soft);}
+  #ed-card .ed-step{display:none;} #ed-card .ed-step.on{display:block;}
+  .ed-lbl{display:block; font-size:12px; color:var(--soft); margin:16px 0 7px; letter-spacing:.3px;}
+  #ed-title{width:100%; border:1px solid var(--line); border-radius:14px; padding:12px 14px; font-size:15px;
+    font-family:var(--ui); color:var(--ink); background:var(--paper2); outline:none;}
+  #ed-title:focus{border-color:var(--blue);}
+  #ed-covers{display:flex; gap:9px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;}
+  #ed-covers::-webkit-scrollbar{display:none;}
+  .ed-cover{flex:0 0 62px; height:88px; border-radius:11px; overflow:hidden; cursor:pointer; padding:0;
+    border:1px solid var(--line); background:var(--paper2); position:relative; color:var(--soft);
+    font-family:var(--ui); font-size:11.5px;}
+  .ed-cover img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ed-cover.on{border-color:var(--blue); outline:2px solid var(--blue); outline-offset:1px;}
+  #ed-pick-file{display:inline-block; margin-top:11px; font-size:13px; color:var(--blue); cursor:pointer;}
+  #ed-pick-file:hover{text-decoration:underline;}
+  .ed-acts{display:flex; gap:10px; margin-top:26px;}
+  .ed-acts .sm-btn{flex:1; margin-bottom:0;}
+  .sm-btn.danger{background:#F7EAE7; color:#B0483A;}
+  .sm-btn.danger:hover{background:#F0DAD5;}
+  .ed-all .am-ico{background:#F7E4DF; color:#B0483A;}
+  .ed-all:hover{border-color:#B0483A; background:#FBEFEC;}
+  body.dark #ed-card{background:#1F2327;}
+  body.dark #ed-close{background:#2A2E33; color:#9AA1A8;}
+  body.dark #ed-title, body.dark .ed-cover{background:#1C1F23; border-color:#2A2E33; color:var(--ink);}
+  body.dark .sm-btn.danger{background:#33211E; color:#D98A7A;}
+  body.dark .sm-btn.danger:hover, body.dark .ed-all:hover{background:#3E2823;}
+  body.dark .ed-all .am-ico{background:#3A2622; color:#D98A7A;}
+
   body.dark #am-card{background:#1F2327;}
   body.dark #am-close{background:#2A2E33; color:#9AA1A8;}
   body.dark #am-text, body.dark #am-url{background:#1C1F23; border-color:#2A2E33; color:var(--ink);}

@@ -333,7 +333,33 @@ async function bookDeleteServer(id, title){
     await refreshBooks();
   }catch(e){ console.error(e); syncStatus('삭제 실패: '+(e.message||e)); }
 }
-async function bookUpload(id){
+/* 이름을 바꾸면 서버 목록의 이름도 따라가야 다른 기기가 옛 이름을 되돌려
+   놓지 않습니다. 아직 안 올린 책이면 조용히 아무 일도 하지 않습니다. */
+async function pushBookTitle(b){
+  if(!sb || !sbUser || !b) return;
+  try{
+    const remoteId = serverBookIdFor(b);
+    const { data } = await sb.from('books').select('meta')
+      .eq('user_id', sbUser.id).eq('book_id', remoteId).maybeSingle();
+    // 다른 기기가 이미 지운 책이면 서버 정보를 되살리지 않습니다(삭제가 이깁니다)
+    if(data && !(data.meta||{}).deleted) await sb.from('books').upsert(
+      [{user_id:sbUser.id, book_id:remoteId,
+        meta:{...(data.meta||{}), title:b.title,
+              fingerprint:ensureBookFingerprint(b), renamedAt:b.renamedAt}}],
+      {onConflict:'user_id,book_id'});
+  }catch(e){}
+}
+
+/* 짧은 글은 몇 KB라 넣자마자 올립니다. "폰에서 담고 노트북에서 읽는다"가
+   Casuals 가 있는 이유인데, 그러려면 Sync 창을 열어 책마다 `올리기`를 눌러야
+   했습니다. 그 일은 일어나지 않습니다. 원서는 수백 KB라 그대로 수동입니다. */
+async function autoUploadCasual(book){
+  if(!sb || !sbUser || !book || !isCasual(book)) return;
+  try{ await bookUpload(book.id, {auto:true}); }
+  catch(e){ console.warn('Casual auto-upload skipped:', e && e.message); }
+}
+async function bookUpload(id, options){
+  const auto = !!(options && options.auto);
   const b = books.find(x=>x.id===id); if(!b) return;
   const fingerprint = ensureBookFingerprint(b);
   const remoteId=b.detachedServerId||b.remoteDeletePendingId||id;
@@ -345,7 +371,8 @@ async function bookUpload(id){
     renderBookList();
     return;
   }
-  if(twin && !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`)) return;
+  // 자동 올리기는 절대 물어보지 않습니다. 방금 붙여넣은 참인데 창이 뜨면 놀랍니다.
+  if(twin && (auto || !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`))) return;
   try{
     syncStatus('올리는 중…');
     cancelQueuedServerBookDelete(remoteId);
