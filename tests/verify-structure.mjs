@@ -83,7 +83,7 @@ for(const file of [...jsFiles, ...parkedJs]){
 
 // Browser classic scripts share one global lexical scope. Parse them in the
 // exact HTML order as one program to catch cross-file duplicate declarations.
-const orderedScripts = [...index.matchAll(/<script defer src="([^"]+\.js)"><\/script>/g)]
+const orderedScripts = [...index.matchAll(/<script defer src="([^"]+\.js)(?:\?[^"]*)?"><\/script>/g)]
   .map(match => match[1])
   .filter(relative => !relative.startsWith('http'));
 const combined = orderedScripts
@@ -369,8 +369,10 @@ assert.match(pdfSource,/renderPdfSavedWordMarkers/,
   'Saved vocabulary is not painted in original PDF mode');
 assert.match(epubSource,/CSS\.highlights/,
   'Saved vocabulary is not painted in original EPUB mode');
-assert.match(epubSource,/dataset\.originalMarks/,
-  'Original EPUB highlights ignore the saved display preference');
+/* 저장 단어 표시는 블록 하나로 통일했습니다. 밑줄·끄기를 고르던 설정은
+   설정을 위한 설정이었습니다. */
+assert.doesNotMatch(epubSource,/dataset\.originalMarks/,
+  'The deleted saved-word display preference is back in the EPUB reader');
 assert.match(sessionSource,/firstElementBelow/,
   'Visible page lookup walks every page on each scroll frame again');
 assert.match(sessionSource,/originalAnchorFromProgress/,
@@ -444,10 +446,10 @@ const dictionaryCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8
 assert.match(dictionaryCss,/pointer:fine/,
   'Desktop browser zoom still falls into the oversized mobile dictionary');
 const preferencesSource = readFileSync(resolve(root, 'scripts/ui/preferences.js'), 'utf8');
-assert.match(preferencesSource,/breeze\.originalMarks/,
-  'Original highlight preference is not persisted');
-assert.match(preferencesSource,/underline','block','off/,
-  'Original highlight preference no longer offers all three modes');
+assert.doesNotMatch(preferencesSource,/function setOriginalMarkMode/,
+  'The saved-word display preference is back');
+assert.doesNotMatch(index,/aa-original-marks/,
+  'The settings popover still offers the deleted display modes');
 const readerCss = readFileSync(resolve(root, 'styles/reader.css'), 'utf8');
 assert.match(readerCss,/#reader-mode-switch\{right:10px; top:9px;/,
   'Mobile reader switch regressed to a duplicated top-bar offset');
@@ -523,6 +525,77 @@ assert.match(librarySource, /autoUploadCasual\(book\)/,
 assert.match(syncSource, /function autoUploadCasual/, 'Casual auto-upload is gone');
 assert.match(syncSource, /if\(twin && \(auto \|\|/,
   'Auto-upload can pop a confirm dialog right after an import');
+
+/* ---- 짐 덜기 ----
+   xlsx 881KB 는 Review 탭 버튼 하나 때문에 모든 사용자가 매번 받던 짐이었고,
+   PDF·EPUB 라이브러리 418KB 는 기사만 읽는 사람에게 한 번도 안 쓰일 짐입니다. */
+assert.doesNotMatch(index, /xlsx/i, 'The 881KB spreadsheet library is loaded again');
+assert.doesNotMatch(index, /<script[^>]+(?:pdf\.min\.js|jszip)/,
+  'PDF/EPUB libraries are eagerly loaded again');
+const dictionarySource = readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8');
+assert.doesNotMatch(dictionarySource, /\bXLSX\b/, 'The export still needs the xlsx library');
+// 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다.
+assert.match(dictionarySource, /'﻿' \+/, 'The CSV export lost its BOM, so Excel breaks Korean');
+const importerSource = readFileSync(resolve(root, 'scripts/importers/importers.js'), 'utf8');
+assert.match(importerSource, /await ensurePdfLib\(\)/, 'parsePDF no longer waits for the lazy library');
+assert.match(importerSource, /await ensureZipLib\(\)/, 'EPUB reading no longer waits for JSZip');
+
+/* ---- 배포마다 반쪽짜리 앱이 뜨던 문제 ----
+   GitHub Pages 는 파일마다 캐시를 따로 잡습니다. 새 index.html 과 옛
+   sync.js 가 함께 도는 상태가 실제로 만들어졌습니다. */
+const localAssets = [...index.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)="(?!https?:|\/\/|data:|#)([^"]+\.(?:js|css))([^"]*)"/g)];
+assert.ok(localAssets.length > 20, 'Local asset scan found almost nothing — the regex is wrong');
+for(const [, path, query] of localAssets){
+  assert.match(query, /^\?v=[0-9a-f]{8}$/,
+    `${path} has no cache-busting stamp — run \`npm run stamp\``);
+}
+
+/* ---- 원본 형식 표 ----
+   같은 일을 부르는 자리마다 pdf/epub 삼항연산자를 쓰던 것을 표 하나로 모았습니다. */
+const formatsSource = readFileSync(resolve(root, 'scripts/reader/original-formats.js'), 'utf8');
+for(const job of ['open','captureAnchor','restoreAnchor','anchorFromProgress',
+                  'progress','sentenceBridge','restoreSentence','refreshSavedWords']){
+  assert.ok(new RegExp(`${job}:`).test(formatsSource), `The format table lost its ${job} entry`);
+}
+for(const file of ['scripts/reader/original-session.js','scripts/reader/reader-modes.js']){
+  assert.doesNotMatch(readFileSync(resolve(root, file), 'utf8'),
+    /kind\s*===?\s*'pdf'\s*\?|kind==='pdf'\s*\?/,
+    `${file} dispatches on the format by hand again instead of using the table`);
+}
+
+/* ---- 집중 모드 ----
+   위에는 가운데 로고 하나, 오른쪽 아래 단추는 남기고, 원본으로 건너뛸 길 하나. */
+assert.match(readerCss, /body\.focusmode #topbar nav\{display:none/,
+  'Focus mode shows the navigation again');
+assert.match(readerCss, /body\.reading\.focusmode #modefab/,
+  'Focus mode has no way to reach 원본 mode');
+assert.match(index, /id="modefab"[^>]*onclick="toggleReaderMode\(\)"/,
+  'The focus-mode format switch is missing');
+assert.doesNotMatch(preferencesSource, /focusmode'\) \? tb\.offsetHeight : 0/,
+  'Focus mode forces the top-bar height to zero again, hiding the first line');
+
+/* ---- 일회성 변환은 걷어냈습니다 ---- */
+/* 주석은 "무엇을 왜 지웠는지" 설명하느라 지운 이름을 그대로 적습니다.
+   실제로 도는 코드만 봅니다. */
+const withoutComments = source => source
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/(^|[^:])\/\/.*$/gm, '$1');
+const stateSource = withoutComments(readFileSync(resolve(root, 'scripts/core/state.js'), 'utf8'));
+assert.doesNotMatch(stateSource, /readerSchema|book\.tidy|LS_BOOKS/,
+  'A one-time migration is running on every boot again');
+assert.doesNotMatch(withoutComments(syncSource), /hydrateServerFingerprints/,
+  'Every book-list refresh re-downloads and re-hashes server books again');
+
+/* ---- Casuals 는 양쪽으로 저절로 ---- */
+assert.match(syncSource, /function autoDownloadCasuals/,
+  'An article saved on another device never arrives on its own');
+assert.match(syncSource, /kind:b\.kind\|\|''/,
+  'The server list cannot tell a short read from a book, so nothing can be auto-pulled');
+/* 이 기기에서만 지운 책이 다음 동기화에 도로 돌아오면 지운 것이 아닙니다. */
+assert.match(librarySource, /hideBookLocally\(remoteId\)/,
+  'A device-only delete is undone by the next auto-download');
+assert.match(syncSource, /if\(hidden\[row\.book_id\]\) continue/,
+  'Auto-download ignores the device-only delete marker');
 
 /* ---- 샘플 책은 없앴습니다 ---- */
 assert.equal(existsSync(resolve(root, 'scripts/core/demo-book.js')), false,

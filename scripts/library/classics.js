@@ -54,12 +54,10 @@ async function importClassic(classic, card){
 }
 
 function classicCard(classic){
-  const card = document.createElement('div');
-  card.className = 'bookcard classic';
+  const card = el('div', 'bookcard classic');
   card.innerHTML = `<div class="author"></div><div class="bt"></div>
     <div class="get">↓ 무료로 받기 · ${(classic.kb/1024).toFixed(1)}MB</div>`;
-  card.querySelector('.author').textContent = classic.author.toUpperCase();
-  card.querySelector('.bt').textContent = classic.title;
+  fillCard(card, {'.author': classic.author.toUpperCase(), '.bt': classic.title});
   card.title = `${classic.blurb} (${classic.year}, 퍼블릭 도메인)`;
   card.onclick = () => importClassic(classic, card);
   return card;

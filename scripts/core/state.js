@@ -1,4 +1,4 @@
-const LS_WORDS='breeze.words', LS_BOOKS='breeze.books', LS_POS='breeze.pos', LS_FS='breeze.fs';
+const LS_WORDS='breeze.words', LS_POS='breeze.pos', LS_FS='breeze.fs';
 /* ?? 는 2020년 문법이라 오래된 태블릿 브라우저가 파일 전체를 못 읽습니다. 풀어서 씁니다. */
 function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return (v===null||v===undefined) ? d : v; }catch(e){ return d; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('저장 공간이 부족해요 (책이 너무 큼)'); } }
@@ -6,41 +6,24 @@ const LS_DEAD='breeze.dead';
 let words = load(LS_WORDS, {});
 let dead = load(LS_DEAD, {});
 let books = [];                       // 본문은 IndexedDB에 저장(부팅 시 로드)
+/* 부팅할 때마다 돌던 옛 판 변환들(localStorage 에 있던 책 옮기기, AI 조판
+   결과 `tidy` 를 `formatting` 으로 옮기기, `readerSchema` 찍기)은 뗐습니다.
+   한 번 돌고 끝났어야 할 일이 영구 코드가 되어 있었습니다.
+
+   지문만 남깁니다. 이건 변환이 아니라 서버와 짝을 맞추는 열쇠라, 어떤
+   경로로 들어온 책이든 있어야 합니다. */
 async function loadBooks(){
   books = (await bookAll()).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
-  const legacy = load(LS_BOOKS, []);   // 예전 버전이 localStorage에 넣어둔 책 이전
-  if(legacy && legacy.length){
-    for(const b of legacy){ if(!books.some(x=>x.id===b.id)){ await bookPut(b); books.push(b); } }
-    try{ localStorage.removeItem(LS_BOOKS); }catch(e){}
-    books.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
-  }
-  // Older releases keyed books only by their importer-specific ID. Persist a
-  // paragraph-boundary-independent fingerprint for reliable server matching.
   for(const book of books){
-    let changed = false;
     const previousFingerprint = book.fingerprint || '';
     ensureBookFingerprint(book);
-    if(book.fingerprint !== previousFingerprint) changed = true;
-    /* v4 no longer reads or syncs AI typography. Keep a conservative local
-       block map, but remove stale model output so it cannot affect the reader. */
-    if(book.aiFormatting){ delete book.aiFormatting; changed = true; }
-    if(book.tidy && !book.formatting){ book.formatting = book.tidy; changed = true; }
-    if(book.tidy){ delete book.tidy; changed = true; }
-    if(!book.localSourceAt && book.original && book.original.storedAt){
-      book.localSourceAt = book.original.storedAt; changed = true;
-    }
-    if(book.readerSchema !== 4){ book.readerSchema = 4; changed = true; }
-    if(changed) await bookPut(book);
+    if(book.fingerprint !== previousFingerprint) await bookPut(book);
   }
 }
 let positions = load(LS_POS, {});   // bookId -> text anchor + original source anchor
 let curBook = null, selKey = null;
 const saveWords = () => save(LS_WORDS, words);
-const posOf = id => {
-  let v = positions[id];
-  if(typeof v === 'number') v = {y:v, p:0, t:0};   // migrate from v1 format
-  return v || {y:0, p:0, t:0, mode:'text', original:null};
-};
+const posOf = id => positions[id] || {y:0, p:0, t:0, mode:'text', original:null};
 
 /* ================= views ================= */
 /* ===== 스크롤 앵커 =====

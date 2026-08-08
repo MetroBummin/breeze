@@ -72,27 +72,13 @@ function paragraphForSource(book, source){
    모드를 바꿀 때마다 진행도가 튑니다. */
 function sourceProgressForBook(book,source){
   if(!book || !source) return null;
-  const map=book.sourceMap||[];
-  if(source.kind==='pdf'){
-    const mappedPages=map.reduce((max,item)=>Math.max(max,(item&&item.page)||0),0);
-    const sessionPages=originalSession && originalSession.bookId===book.id && originalSession.kind==='pdf'
-      ? originalSession.pages.length : 0;
-    const total=Math.max(1,sessionPages,mappedPages,Number(source.page)||1);
-    return Math.max(0,Math.min(1,((Math.max(1,Number(source.page)||1)-1)
-      + Math.max(0,Math.min(1,Number(source.y)||0)))/total));
-  }
-  if(source.kind==='epub'){
-    const mappedSpines=map.reduce((max,item)=>Math.max(max,item&&!item.page ? (item.spine||0)+1 : 0),0);
-    const sessionSpines=originalSession && originalSession.bookId===book.id && originalSession.kind==='epub'
-      ? originalSession.frames.length : 0;
-    const total=Math.max(1,sessionSpines,mappedSpines,(Number(source.spine)||0)+1);
-    const spine=Math.max(0,Math.min(total-1,Number(source.spine)||0));
-    const maxElement=map.reduce((max,item)=>item&&!item.page&&(item.spine||0)===spine
-      ? Math.max(max,item.element||0) : max,0);
-    const inside=maxElement ? Math.max(0,Math.min(1,(Number(source.element)||0)/(maxElement+1))) : 0;
-    return Math.max(0,Math.min(1,(spine+inside)/total));
-  }
-  return null;
+  const format=ORIGINAL_FORMATS[source.kind];
+  if(!format) return null;
+  /* 이 책의 세션이 열려 있으면 진짜 쪽수를 알고, 아니면 좌표 지도가 아는
+     만큼만 압니다. 어느 쪽이든 형식별 계산은 형식 파일에 있습니다. */
+  const live=originalSession && originalSession.bookId===book.id
+    && originalSession.kind===source.kind ? originalSession : null;
+  return format.progress(book.sourceMap||[],source,live);
 }
 
 function textProgressForBook(book,anchor){
@@ -115,11 +101,15 @@ function visibleReaderProgress(){
 
 /* ================= anchors ================= */
 
+/* 지금 열려 있는 원본의 형식별 일감. 없으면 세션이 없다는 뜻입니다. */
+function originalFormat(){
+  return originalSession ? ORIGINAL_FORMATS[originalSession.kind] || null : null;
+}
+
 function captureOriginalAnchor(){
-  if(!originalSession) return null;
-  const inset=topInset()+10;
-  const anchor=originalSession.kind==='pdf'
-    ? capturePdfAnchor(inset) : captureEpubAnchor(inset);
+  const format=originalFormat();
+  if(!format) return null;
+  const anchor=format.captureAnchor(topInset()+10);
   if(anchor && !readerAnchorHeld()) lastOriginalAnchor=anchor;
   return anchor;
 }
@@ -128,26 +118,18 @@ function captureOriginalAnchor(){
    The stored progress is a much better guess for a book whose importer left
    no coordinate map. */
 function originalAnchorFromProgress(book){
-  if(!originalSession) return null;
-  const progress=Math.max(0,Math.min(1,Number(posOf(book&&book.id).p)||0));
-  if(originalSession.kind==='pdf'){
-    const total=Math.max(1,originalSession.pages.length);
-    const exact=progress*total;
-    const page=Math.max(1,Math.min(total,Math.floor(exact)+1));
-    return {kind:'pdf',page,y:Math.max(0,Math.min(1,exact-(page-1)))};
-  }
-  const total=Math.max(1,originalSession.frames.length);
-  return {kind:'epub',href:'',spine:Math.max(0,Math.min(total-1,Math.floor(progress*total))),element:0};
+  const format=originalFormat();
+  if(!format) return null;
+  return format.anchorFromProgress(originalSession,
+    Math.max(0,Math.min(1,Number(posOf(book&&book.id).p)||0)));
 }
 
 async function restoreOriginalAnchor(source,changeToken){
-  if(!originalSession){ window.scrollTo(0,0); return false; }
+  const format=originalFormat();
+  if(!format){ window.scrollTo(0,0); return false; }
   const target=source || originalAnchorFromProgress(curBook);
   if(!target){ window.scrollTo(0,0); return false; }
-  const inset=topInset()+10;
-  const restored=originalSession.kind==='pdf'
-    ? await restorePdfAnchor(target,inset,changeToken)
-    : await restoreEpubAnchor(target,inset);
+  const restored=await format.restoreAnchor(target,topInset()+10,changeToken);
   if(restored) lastOriginalAnchor=target;
   return restored;
 }
@@ -167,9 +149,9 @@ async function renderOriginalBook(book,record){
   content.innerHTML = '<div class="original-loading"><i></i><span>원본을 여는 중…</span></div>';
   const job={bookId:book.id,hash:record.hash,promise:null};
   job.promise=(async()=>{
-    if(record.kind==='pdf') await openOriginalPdf(book,record,token);
-    else if(record.kind==='epub') await openOriginalEpub(book,record,token);
-    else throw new Error('지원하지 않는 원본 형식이에요');
+    const format=ORIGINAL_FORMATS[record.kind];
+    if(!format) throw new Error('지원하지 않는 원본 형식이에요');
+    await format.open(book,record,token);
   })();
   originalOpenJob=job;
   try{ await job.promise; }
@@ -213,16 +195,8 @@ function showOriginalError(error){
 /* ================= saved vocabulary ================= */
 
 function refreshOriginalSavedWords(){
-  if(!originalSession) return;
-  if(originalSession.kind==='pdf'){
-    originalSession.pages.forEach((page,index)=>{
-      if(page.dataset.wordCount) renderPdfSavedWordMarkers(page,originalSession.wordBoxes.get(index+1));
-    });
-    return;
-  }
-  (originalSession.frames||[]).forEach(frame=>{
-    try{ if(frame&&frame.contentDocument) renderEpubSavedWordHighlights(frame.contentDocument); }catch(e){}
-  });
+  const format=originalFormat();
+  if(format) format.refreshSavedWords(originalSession);
 }
 
 function clearOriginalSelectionMarkers(){

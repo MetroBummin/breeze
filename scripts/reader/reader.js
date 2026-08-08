@@ -22,8 +22,7 @@ function wordSpans(text){
 }
 /* Render source text using formatting metadata without changing the source. */
 function renderBookBody(b){
-  // `tidy` is read-only compatibility for books saved by the previous version.
-  const formatting = b.formatting || b.tidy || null;
+  const formatting = b.formatting || null;
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
   const frag = document.createDocumentFragment();

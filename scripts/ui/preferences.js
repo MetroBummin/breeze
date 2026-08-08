@@ -37,29 +37,16 @@ function applyDark(){
 function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
 applyDark();
 
-const ORIGINAL_MARK_KEY='breeze.originalMarks';
-const ORIGINAL_MARK_MODES=new Set(['underline','block','off']);
-let originalMarkMode=load(ORIGINAL_MARK_KEY,'underline');
-if(!ORIGINAL_MARK_MODES.has(originalMarkMode)) originalMarkMode='underline';
-function applyOriginalMarkMode(){
-  document.body.dataset.originalMarks=originalMarkMode;
-  document.querySelectorAll('#aa-original-marks button').forEach(button=>{
-    const on=button.dataset.mode===originalMarkMode;
-    button.classList.toggle('on',on);
-    button.setAttribute('aria-pressed',on ? 'true':'false');
-  });
-  refreshOriginalSavedWords();
-}
-function setOriginalMarkMode(mode){
-  if(!ORIGINAL_MARK_MODES.has(mode)) return;
-  originalMarkMode=mode; save(ORIGINAL_MARK_KEY,mode); applyOriginalMarkMode();
-}
-applyOriginalMarkMode();
+/* 저장 단어는 원본에서도 글자 화면과 같은 블록으로 칠합니다. 밑줄·블록·끄기를
+   고르는 설정이 있었지만 설정을 위한 설정이었습니다. 남아 있던 선택값은
+   지웁니다 — 다음 판에서 되살아날 자리를 남기지 않습니다. */
+try{ localStorage.removeItem('breeze.originalMarks'); }catch(e){}
 
+/* 집중 모드에서도 상단 막대는 로고 하나를 이고 남아 있습니다. 예전에는 여기서
+   높이를 0으로 우겨서, 앵커 계산이 글 첫 줄을 로고 뒤에 숨겼습니다. */
 function syncTopbarH(){
   const tb = document.getElementById('topbar');
-  const h = (tb && !document.body.classList.contains('focusmode')) ? tb.offsetHeight : 0;
-  document.documentElement.style.setProperty('--topbar-h', h+'px');
+  document.documentElement.style.setProperty('--topbar-h', (tb ? tb.offsetHeight : 0)+'px');
 }
 let lastAnchor = null;
 window.addEventListener('resize', ()=>{

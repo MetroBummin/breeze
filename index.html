@@ -14,44 +14,45 @@
   <link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles/base.css">
-  <link rel="stylesheet" href="styles/home.css">
-  <link rel="stylesheet" href="styles/reader.css">
-  <link rel="stylesheet" href="styles/dictionary.css">
-  <link rel="stylesheet" href="styles/components.css">
-  <link rel="stylesheet" href="styles/responsive.css">
+  <link rel="stylesheet" href="styles/base.css?v=6501268c">
+  <link rel="stylesheet" href="styles/home.css?v=0d7af16c">
+  <link rel="stylesheet" href="styles/reader.css?v=49caa3eb">
+  <link rel="stylesheet" href="styles/dictionary.css?v=f15fced9">
+  <link rel="stylesheet" href="styles/components.css?v=8ebadda1">
+  <link rel="stylesheet" href="styles/responsive.css?v=f13e08e5">
 
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
+       사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- 설정 변경 직후에도 이전 빈 config.js 캐시를 사용하지 않도록 버전을 붙입니다. -->
-  <script defer src="config.js?v=20260805-1"></script>
-  <script defer src="dict300.js"></script>
+  <script defer src="config.js?v=f079b481"></script>
+  <script defer src="dict300.js?v=7db0041e"></script>
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
-  <script defer src="scripts/core/boot-safety.js"></script>
-  <script defer src="scripts/core/storage.js"></script>
-  <script defer src="scripts/core/book-identity.js"></script>
-  <script defer src="scripts/core/state.js"></script>
-  <script defer src="scripts/reader/formatting.js"></script>
-  <script defer src="scripts/library/library.js"></script>
-  <script defer src="scripts/library/book-edit.js"></script>
-  <script defer src="scripts/library/classics.js"></script>
-  <script defer src="scripts/importers/importers.js"></script>
-  <script defer src="scripts/importers/article.js"></script>
-  <script defer src="scripts/dictionary/dictionary.js"></script>
-  <script defer src="scripts/reader/pdf-word-geometry.js"></script>
-  <script defer src="scripts/reader/mode-bridge.js"></script>
-  <script defer src="scripts/reader/original-session.js"></script>
-  <script defer src="scripts/reader/pdf-original.js"></script>
-  <script defer src="scripts/reader/epub-original.js"></script>
-  <script defer src="scripts/reader/reader-modes.js"></script>
-  <script defer src="scripts/reader/reader.js"></script>
-  <script defer src="scripts/ui/preferences.js"></script>
-  <script defer src="scripts/sync/sync.js"></script>
-  <script defer src="scripts/ui/interactions.js"></script>
-  <script defer src="scripts/main.js"></script>
+  <script defer src="scripts/core/boot-safety.js?v=f2af53e6"></script>
+  <script defer src="scripts/core/lazy-lib.js?v=eabd666c"></script>
+  <script defer src="scripts/core/storage.js?v=c982702d"></script>
+  <script defer src="scripts/core/book-identity.js?v=61d55987"></script>
+  <script defer src="scripts/core/state.js?v=3b2fec71"></script>
+  <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
+  <script defer src="scripts/library/library.js?v=4de9d990"></script>
+  <script defer src="scripts/library/book-edit.js?v=2af55a98"></script>
+  <script defer src="scripts/library/classics.js?v=3e642a0c"></script>
+  <script defer src="scripts/importers/importers.js?v=03c216e5"></script>
+  <script defer src="scripts/importers/article.js?v=fcda8627"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=030a3e40"></script>
+  <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
+  <script defer src="scripts/reader/mode-bridge.js?v=d599036b"></script>
+  <script defer src="scripts/reader/original-session.js?v=6b0546ea"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=658306cd"></script>
+  <script defer src="scripts/reader/epub-original.js?v=34701037"></script>
+  <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=f0c4eab2"></script>
+  <script defer src="scripts/reader/reader.js?v=ef616455"></script>
+  <script defer src="scripts/ui/preferences.js?v=c7f00613"></script>
+  <script defer src="scripts/sync/sync.js?v=06e7ce06"></script>
+  <script defer src="scripts/ui/interactions.js?v=ab98b799"></script>
+  <script defer src="scripts/main.js?v=40ab4d6e"></script>
 </head>
 <body>
 <div id="app">
@@ -224,7 +225,7 @@
   <div class="head">
     <h1>Review</h1><span class="cnt" id="vcnt"></span>
     <input id="vsearch" placeholder="단어 · 뜻 · 책 검색…">
-    <button id="btn-xlsx">⬇ 엑셀로 내보내기</button>
+    <button id="btn-export">⬇ CSV로 내보내기</button>
   </div>
   <div id="vtablewrap"></div>
 </div>
@@ -336,16 +337,9 @@
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
-  <div class="aa-row aa-original-row">
-    <span class="aa-label">저장 단어 표시<small>원본 화면에 표시하는 방법</small></span>
-    <div id="aa-original-marks" class="aa-mark-options" role="group" aria-label="원본 저장 단어 표시">
-      <button type="button" data-mode="underline" onclick="setOriginalMarkMode('underline')">밑줄</button>
-      <button type="button" data-mode="block" onclick="setOriginalMarkMode('block')">블록</button>
-      <button type="button" data-mode="off" onclick="setOriginalMarkMode('off')">안 함</button>
-    </div>
-  </div>
 </div>
 <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
+<button id="modefab" title="원본 ↔ 글자 전환" onclick="toggleReaderMode()" hidden></button>
 <button id="focusbtn" title="집중 모드" onclick="toggleFocus()">
   <svg id="fb-in" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
   <svg id="fb-out" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>

@@ -8,7 +8,7 @@
 let originalPdfPointer = null;
 
 async function openOriginalPdf(book,record,token){
-  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  await ensurePdfLib();
   const pdf = await pdfjsLib.getDocument({data:await record.blob.arrayBuffer()}).promise;
   if(token!==originalLoadToken){ pdf.destroy(); return; }
   const content = document.getElementById('original-content');
@@ -274,3 +274,25 @@ async function restorePdfSentence(candidates,source,changeToken){
     if(box) openPdfWord(page,box);
   });
 })();
+
+/* ---- 형식 표에 넘겨줄 조각들 (scripts/reader/original-formats.js) ---- */
+
+function pdfAnchorFromProgress(session,progress){
+  const total=Math.max(1,session.pages.length);
+  const exact=progress*total;
+  const page=Math.max(1,Math.min(total,Math.floor(exact)+1));
+  return {kind:'pdf',page,y:Math.max(0,Math.min(1,exact-(page-1)))};
+}
+/* 진행도는 쪽 번호로 셉니다. 세션이 열려 있으면 진짜 쪽수를, 아니면 좌표
+   지도가 아는 마지막 쪽을 전체로 봅니다. */
+function pdfSourceProgress(map,source,session){
+  const mapped=map.reduce((max,item)=>Math.max(max,(item&&item.page)||0),0);
+  const total=Math.max(1,session ? session.pages.length : 0,mapped,Number(source.page)||1);
+  return Math.max(0,Math.min(1,((Math.max(1,Number(source.page)||1)-1)
+    + Math.max(0,Math.min(1,Number(source.y)||0)))/total));
+}
+function refreshPdfSavedWords(session){
+  session.pages.forEach((page,index)=>{
+    if(page.dataset.wordCount) renderPdfSavedWordMarkers(page,session.wordBoxes.get(index+1));
+  });
+}

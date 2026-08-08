@@ -183,17 +183,17 @@ function closePanel(){
   document.getElementById('sheetbg').classList.remove('on');
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
 }
+/* 원본의 PDF 표시는 지우고 다시 만듭니다. 그래서 칠하기가 먼저면 방금 칠한
+   덩어리가 사라집니다 — 예전에는 뒤에 한 번 더 칠해서 덮었는데, 그러면 한
+   프레임 동안 옛 색이 보입니다. 다시 만든 다음에 칠하면 한 번이면 됩니다. */
 function paintWord(k){
   const w = words[k];
-  const paint=()=>readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`).forEach(s=>{
-    s.classList.remove('s1','s2','s3');
-    if(w) s.classList.add('s'+w.status);
-  });
-  paint();
   refreshOriginalSavedWords();
-  /* refreshOriginalSavedWords rebuilds persistent PDF markers. Repaint once
-     more so both the rebuilt marker and the current selection share status. */
-  paint();
+  readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`)
+    .forEach(s=>{
+      s.classList.remove('s1','s2','s3');
+      if(w) s.classList.add('s'+w.status);
+    });
 }
 function setStatus(k, st){
   const resolved=words[k] ? k : keyOf(k);
@@ -468,16 +468,24 @@ function renderVocab(){
   });
 }
 document.getElementById('vsearch').addEventListener('input', renderVocab);
-document.getElementById('btn-xlsx').onclick = ()=>{
+/* 내보내기는 CSV 입니다. 엑셀·넘버스·구글 시트가 전부 그냥 엽니다.
+   예전에는 이 버튼 하나 때문에 xlsx 라이브러리 881KB를 모든 사용자가 매번
+   받았습니다 — 앱 전체 코드의 세 배가 넘는 짐이었습니다. */
+function csvCell(value){
+  const text = String(value == null ? '' : value);
+  return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g,'""') + '"' : text;
+}
+document.getElementById('btn-export').onclick = ()=>{
   const list = Object.values(words).sort((a,b)=>b.addedAt-a.addedAt);
   if(!list.length){ toast('내보낼 단어가 없어요'); return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
-  const aoa = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
+  const rows = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
     ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
       w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{wch:16},{wch:24},{wch:50},{wch:60},{wch:10},{wch:28},{wch:12}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Breeze 단어장');
-  XLSX.writeFile(wb, 'breeze_vocab.xlsx');
+  /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
+  const csv = '﻿' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  const link = document.createElement('a');
+  link.href = url; link.download = 'breeze_vocab.csv'; link.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
 };

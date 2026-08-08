@@ -180,21 +180,13 @@ function renderEpubSavedWordHighlights(doc){
   const view=doc&&doc.defaultView;
   if(!doc || !view || !view.CSS || !view.CSS.highlights || !view.Highlight) return;
   ['breeze-saved-1','breeze-saved-2','breeze-saved-3'].forEach(name=>view.CSS.highlights.delete(name));
-  const mode=(document.body&&document.body.dataset.originalMarks)||'underline';
+  /* 저장한 단어는 글자 화면과 같은 블록으로 칠합니다. 밑줄·끄기를 더 고를 수
+     있었지만 아무도 고르지 않는 설정이었습니다. */
   let markStyle=doc.getElementById('breeze-saved-mark-style');
   if(!markStyle){ markStyle=doc.createElement('style'); markStyle.id='breeze-saved-mark-style'; doc.head.appendChild(markStyle); }
-  if(mode==='block'){
-    markStyle.textContent=`::highlight(breeze-saved-1){background:rgba(255,226,138,.34)}
-      ::highlight(breeze-saved-2){background:rgba(255,171,120,.31)}
-      ::highlight(breeze-saved-3){background:rgba(255,140,140,.33)}`;
-  }else if(mode==='underline'){
-    markStyle.textContent=`::highlight(breeze-saved-1){background:transparent;text-decoration:underline 2px rgba(208,170,45,.78);text-underline-offset:.12em}
-      ::highlight(breeze-saved-2){background:transparent;text-decoration:underline 2px rgba(210,119,58,.76);text-underline-offset:.12em}
-      ::highlight(breeze-saved-3){background:transparent;text-decoration:underline 2px rgba(207,86,86,.78);text-underline-offset:.12em}`;
-  }else{
-    markStyle.textContent='';
-    return;
-  }
+  markStyle.textContent=`::highlight(breeze-saved-1){background:rgba(255,226,138,.34)}
+    ::highlight(breeze-saved-2){background:rgba(255,171,120,.31)}
+    ::highlight(breeze-saved-3){background:rgba(255,140,140,.33)}`;
   const ranges=[[],[],[]];
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const parent=node.parentElement;
@@ -331,4 +323,27 @@ async function restoreEpubSentence(candidates,source,changeToken){
     }
   }
   return false;
+}
+
+/* ---- 형식 표에 넘겨줄 조각들 (scripts/reader/original-formats.js) ---- */
+
+function epubAnchorFromProgress(session,progress){
+  const total=Math.max(1,session.frames.length);
+  return {kind:'epub',href:'',
+          spine:Math.max(0,Math.min(total-1,Math.floor(progress*total))),element:0};
+}
+/* 진행도는 장(spine) 번호로 세고, 장 안쪽은 요소 번호로 나눕니다. */
+function epubSourceProgress(map,source,session){
+  const mapped=map.reduce((max,item)=>Math.max(max,item&&!item.page ? (item.spine||0)+1 : 0),0);
+  const total=Math.max(1,session ? session.frames.length : 0,mapped,(Number(source.spine)||0)+1);
+  const spine=Math.max(0,Math.min(total-1,Number(source.spine)||0));
+  const maxElement=map.reduce((max,item)=>item&&!item.page&&(item.spine||0)===spine
+    ? Math.max(max,item.element||0) : max,0);
+  const inside=maxElement ? Math.max(0,Math.min(1,(Number(source.element)||0)/(maxElement+1))) : 0;
+  return Math.max(0,Math.min(1,(spine+inside)/total));
+}
+function refreshEpubSavedWords(session){
+  (session.frames||[]).forEach(frame=>{
+    try{ if(frame&&frame.contentDocument) renderEpubSavedWordHighlights(frame.contentDocument); }catch(e){}
+  });
 }

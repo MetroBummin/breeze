@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "test": "node tests/verify-structure.mjs"
+    "stamp": "node tools/stamp-version.mjs",
+    "test": "node tools/stamp-version.mjs && node tests/verify-structure.mjs"
   }
 }

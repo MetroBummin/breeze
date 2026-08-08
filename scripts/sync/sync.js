@@ -135,34 +135,12 @@ function localBookForServerId(serverId){
   return row ? findLocalBookForServerRow(row, books) : (books.find(book => book.id === serverId) || null);
 }
 
-/* Old uploads may use an importer-specific ID and have no fingerprint.
-   Only same-title candidates are downloaded, hashed locally, and backfilled.
-   The source text is never sent anywhere new; it is already the user's own
-   encrypted-session-protected Storage object. */
-async function hydrateServerFingerprints(rows){
-  for(const row of rows || []){
-    const meta = row.meta || {};
-    if(meta.deleted || meta.fingerprint) continue;
-    const sameTitle = books.some(book =>
-      book.id !== row.book_id && normalizeBookTitle(book.title) === normalizeBookTitle(meta.title)
-    );
-    if(!sameTitle) continue;
-    try{
-      const downloaded = await sb.storage.from('books').download(bookPath(row.book_id));
-      if(downloaded.error) throw downloaded.error;
-      const body = JSON.parse(await downloaded.data.text());
-      if(!Array.isArray(body.paras) || !body.paras.length) continue;
-      row.meta = { ...meta, fingerprint:bookContentFingerprint(body.paras) };
-      const saved = await sb.from('books').upsert(
-        [{ user_id:sbUser.id, book_id:row.book_id, meta:row.meta }],
-        { onConflict:'user_id,book_id' }
-      );
-      if(saved.error) throw saved.error;
-    }catch(error){
-      console.warn('Legacy book fingerprint skipped:', error && error.message);
-    }
-  }
-}
+/* 지문 없는 옛 업로드에 지문을 채워 넣는 `hydrateServerFingerprints()`가
+   여기 있었습니다. 목록을 새로 고칠 때마다 서버 책을 통째로 내려받아 다시
+   해싱했습니다 — 한 번 돌고 끝났어야 할 일이 매번 도는 비용이 됐습니다.
+   지문 없는 책은 이제 제목으로 짝을 찾고, 한 번 `올리기`를 누르면 지문이
+   붙습니다. */
+
 /* 서버에 "지웠음" 표시가 있는 책을 이 기기에서도 지웁니다.
    책은 한 번 지우면 되살릴 이유가 없으므로 삭제가 항상 이깁니다.
    (같은 파일을 다시 넣으면 지문 ID가 같아 올리기 한 번으로 표시가 지워집니다) */
@@ -215,8 +193,8 @@ async function refreshBooks(){
     const { data, error } = await sb.from('books').select('book_id,meta').eq('user_id', sbUser.id);
     if(error){ syncStatus('목록 실패: '+error.message); return; }
     serverBooks = data || [];
-    await hydrateServerFingerprints(serverBooks);
     await applyBookTombstones(serverBooks);     // 다른 기기에서 지운 책을 여기서도 정리
+    await autoDownloadCasuals();                // 다른 기기에서 담은 짧은 글
     syncStatus('');
     renderBookList();
   })();
@@ -358,6 +336,37 @@ async function autoUploadCasual(book){
   try{ await bookUpload(book.id, {auto:true}); }
   catch(e){ console.warn('Casual auto-upload skipped:', e && e.message); }
 }
+
+/* 이 기기에서만 지운 책. 서버 사본은 남겨 두었으므로, 표시가 없으면 다음
+   동기화가 곧바로 도로 받아 옵니다. 지운 사람 눈에는 안 지워진 것과 같습니다. */
+const LS_HIDDEN = 'breeze.hidden';
+function hiddenBookIds(){ return load(LS_HIDDEN, {}); }
+function hideBookLocally(id){
+  const hidden = hiddenBookIds();
+  hidden[id] = Date.now();
+  save(LS_HIDDEN, hidden);
+}
+function unhideBookLocally(id){
+  const hidden = hiddenBookIds();
+  if(hidden[id] === undefined) return;
+  delete hidden[id];
+  save(LS_HIDDEN, hidden);
+}
+
+/* 짧은 글은 저절로 내려받습니다. 폰에서 담고 노트북에서 읽는 것이 Casuals 가
+   있는 이유인데, 노트북에서 Sync 창을 열어 `받기`를 눌러야 한다면 그 일은
+   일어나지 않습니다. 원서는 수백 KB라 손으로 고릅니다 — 서버가 금방 찹니다. */
+async function autoDownloadCasuals(){
+  const hidden = hiddenBookIds();
+  for(const row of activeServerBooks()){
+    const meta = row.meta || {};
+    if(!CASUAL_KINDS.has(meta.kind || '')) continue;
+    if(hidden[row.book_id]) continue;
+    if(findLocalBookForServerRow(row, books)) continue;
+    try{ await bookDownload(row.book_id, {auto:true}); }
+    catch(e){ console.warn('Casual auto-download skipped:', e && e.message); }
+  }
+}
 async function bookUpload(id, options){
   const auto = !!(options && options.auto);
   const b = books.find(x=>x.id===id); if(!b) return;
@@ -378,7 +387,7 @@ async function bookUpload(id, options){
     cancelQueuedServerBookDelete(remoteId);
     // 원본 PDF/EPUB Blob은 IndexedDB 전용입니다. 서버에는 재배치한 글자와
     // 작은 위치 지도만 올라가며 `original`에는 파일 이름/형식만 담깁니다.
-    const formatting = b.formatting || b.tidy || null;
+    const formatting = b.formatting || null;
     const blob = new Blob([JSON.stringify({
       paras:b.paras,
       fingerprint,
@@ -396,12 +405,15 @@ async function bookUpload(id, options){
       cover:b.cover || '',
       imgSrc:b.imgSrc || null,
       textAvailable:b.textAvailable !== false,
-      readerSchema:4,
     })], {type:'application/json'});
     const up = await sb.storage.from('books').upload(bookPath(remoteId), blob, {upsert:true, contentType:'application/json'});
     if(up.error) throw up.error;
     const meta = { title:b.title, author:b.author||'', addedAt:b.addedAt||Date.now(),
                    renamedAt:b.renamedAt||0, paras:b.paras.length, bytes:blob.size,
+                   /* 다른 기기가 목록만 보고 "이건 저절로 받아도 되는 짧은
+                      글"인지 판단할 수 있어야 합니다. 본문을 받아 봐야 알면
+                      저절로 받을지 말지를 정할 수가 없습니다. */
+                   kind:b.kind||'',
                    fingerprint, deleted:false };   // 다시 올리면 "지웠음" 표시가 해제됩니다
     const { error } = await sb.from('books').upsert([{user_id:sbUser.id, book_id:remoteId, meta}], {onConflict:'user_id,book_id'});
     if(error) throw error;
@@ -413,9 +425,10 @@ async function bookUpload(id, options){
     await refreshBooks();
   }catch(e){ console.error(e); syncStatus('올리기 실패: '+(e.message||e)); }
 }
-async function bookDownload(id){
+async function bookDownload(id, options){
+  const auto = !!(options && options.auto);
   try{
-    syncStatus('받는 중…');
+    if(!auto) syncStatus('받는 중…');
     const { data, error } = await sb.storage.from('books').download(bookPath(id));
     if(error) throw error;
     const body = JSON.parse(await data.text());
@@ -435,15 +448,19 @@ async function bookDownload(id){
                    sourceUrl:body.sourceUrl || '',
                    cover:body.cover || '',
                    imgSrc:body.imgSrc || null,
-                   textAvailable:body.textAvailable !== false,
-                   readerSchema:4 };
+                   textAvailable:body.textAvailable !== false };
     if(!book.paras.length) throw new Error('본문이 비어 있어요');
     ensureBookFingerprint(book);
+    unhideBookLocally(id);        // 손수 받았으면 "이 기기에서 숨김"은 끝입니다
     await bookPut(book);
     books = books.filter(b=>b.id!==id); books.unshift(book);
-    syncStatus('받았어요');
-    renderHome(); renderBookList();
-  }catch(e){ console.error(e); syncStatus('받기 실패: '+(e.message||e)); }
+    if(!auto) syncStatus('받았어요');
+    renderAllBookViews(); renderBookList();
+  }catch(e){
+    console.error(e);
+    if(!auto) syncStatus('받기 실패: '+(e.message||e));
+    else throw e;
+  }
 }
 
 function queueSync(){
@@ -517,6 +534,7 @@ async function runSyncPass(manual){
       if(bookError) throw bookError;
       serverBooks = brows || [];
       pulled += await applyBookTombstones(serverBooks);      // 다른 기기에서 지운 책 정리
+      await autoDownloadCasuals();                            // 다른 기기에서 담은 짧은 글
       for(const r of serverBooks){
         const meta = r.meta || {};
         if(meta.deleted) continue;

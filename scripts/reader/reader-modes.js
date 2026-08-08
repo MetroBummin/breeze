@@ -5,15 +5,13 @@
 
 let readerModeCueTimer = 0;
 
-/* 원본 화면이 있을 수 있는 책인지. 붙여넣은 글과 TXT에는 원본이 영영 없으므로
-   전환 버튼을 아예 내지 않습니다. 전에는 버튼이 보인 뒤 "원본 파일을 연결해
-   주세요"라는 막다른 안내로 이어졌습니다. */
-function bookSupportsOriginal(book){
-  if(!book) return false;
-  const kind = book.kind || (book.original && book.original.kind) || '';
-  if(kind) return kind === 'pdf' || kind === 'epub';
-  // 형식을 저장하지 않던 시절의 책: 원본 좌표 지도가 있으면 PDF·EPUB입니다.
-  return !!(book.sourceMap && book.sourceMap.length);
+/* `bookSupportsOriginal()`은 형식 표와 같은 자리에 있습니다 —
+   scripts/reader/original-formats.js */
+
+/* 집중 모드에서는 상단 스위치를 걷어내므로, 원본으로 건너갈 길이 하나
+   필요합니다. 오른쪽 아래 단추가 그 길입니다 — 지금 모드의 반대쪽을 적습니다. */
+function toggleReaderMode(){
+  switchReaderMode(currentReaderMode==='original' ? 'text' : 'original');
 }
 
 function updateReaderModeControls(){
@@ -25,6 +23,11 @@ function updateReaderModeControls(){
     button.classList.toggle('on',button.dataset.mode===currentReaderMode);
     button.setAttribute('aria-pressed',button.dataset.mode===currentReaderMode ? 'true':'false');
   });
+  const fab = document.getElementById('modefab');
+  if(fab){
+    fab.hidden = !hasOriginalMode;
+    fab.textContent = currentReaderMode==='original' ? '글자' : '원본';
+  }
 }
 
 function rememberReaderMode(mode){
@@ -116,8 +119,9 @@ function textSentenceBridge(){
 
 function originalSentenceBridge(){
   const source=captureOriginalAnchor();
-  if(!source || !originalSession) return null;
-  return originalSession.kind==='pdf' ? pdfSentenceBridge(source) : epubSentenceBridge(source);
+  const format=originalFormat();
+  if(!source || !format) return null;
+  return format.sentenceBridge(source);
 }
 
 function findTextSentence(candidates,targetPi){
@@ -292,10 +296,9 @@ async function switchReaderMode(mode,options){
     await renderOriginalBook(curBook,record);
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
     let target = bridge || posOf(curBook.id).original;
+    // 처음 여는 책은 맨 앞부터 — 형식별 "맨 앞"은 형식 표가 압니다.
     if(!target && options.initial){
-      target = record.kind==='pdf'
-        ? {kind:'pdf',page:1,y:0}
-        : {kind:'epub',href:'',spine:0,element:0};
+      target = ORIGINAL_FORMATS[record.kind].anchorFromProgress(originalSession,0);
     }
     target = target || sourceAnchorForParagraph(curBook,posOf(curBook.id).pi);
     await restoreOriginalAnchor(target,changeToken);
@@ -303,8 +306,7 @@ async function switchReaderMode(mode,options){
     if(sentenceBridge){
       /* Search failure is deliberately quiet: the source-map anchor above is
          still a stable and useful fallback. */
-      if(record.kind==='pdf') await restorePdfSentence(sentenceBridge.candidates,target,changeToken);
-      else await restoreEpubSentence(sentenceBridge.candidates,target,changeToken);
+      await ORIGINAL_FORMATS[record.kind].restoreSentence(sentenceBridge.candidates,target,changeToken);
     }
     /* EPUB images and webfonts can change a chapter's height just after load.
        Re-apply the same source anchor once, so browser scroll anchoring does

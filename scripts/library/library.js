@@ -63,8 +63,11 @@ async function deleteBook(b, scope){
   delete positions[b.id]; save(LS_POS, positions);
   renderAllBookViews();
   if(scope !== 'all'){
-    /* 서버 사본은 그대로 둡니다. Sync 창에 `이 기기에 받기`로 다시 나타나며,
-       내려받기는 수동이라 저절로 돌아오지 않습니다. */
+    /* 서버 사본은 그대로 둡니다. 그래서 "이 기기에서 숨김"을 적어 둬야
+       합니다 — 짧은 글은 저절로 내려받으므로, 표시가 없으면 다음 동기화가
+       곧바로 도로 가져옵니다. Sync 창에서 손수 받으면 표시가 풀립니다. */
+    hideBookLocally(remoteId);
+    hideBookLocally(b.id);
     if(typeof renderBookList === 'function') renderBookList();
     toast('이 기기에서 지웠어요');
     return;
@@ -92,6 +95,24 @@ async function deleteBook(b, scope){
 
    "이어서 읽기" 칸은 따로 두지 않습니다. 두면 같은 책이 한 화면에 두 번
    나오니까요. 대신 마지막에 읽던 것 하나만 테두리로 표시합니다. */
+
+/* 카드는 다섯 군데에서 만들고, 전부 "틀을 innerHTML 로 찍고 → querySelector 로
+   글자를 넣는" 같은 짓을 했습니다. 사용자가 지은 제목이 마크업으로 새지
+   않게 하려면 textContent 로 넣어야 하는데, 그러다 보니 두 줄씩 늘어났습니다. */
+function el(tag, className, text){
+  const node = document.createElement(tag);
+  if(className) node.className = className;
+  if(text != null) node.textContent = text;
+  return node;
+}
+/* 틀 안의 자리마다 글자를 채웁니다 — `{'.ct': 제목, '.cm': 부제}` */
+function fillCard(card, parts){
+  Object.keys(parts).forEach(selector => {
+    const slot = card.querySelector(selector);
+    if(slot) slot.textContent = parts[selector];
+  });
+  return card;
+}
 
 const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
@@ -129,42 +150,44 @@ function applyCover(host, book){
   });
 }
 
-function casualCard(book, index, current){
-  const position = posOf(book.id);
-  const percent = Math.round(position.p*100);
-  const card = document.createElement('div');
-  card.className = 'casual cpal'+(index%4);
-  card.innerHTML = `<div class="thumb">
-      <img class="cover" alt="" hidden>
-      <div class="src"></div><div class="lede"></div>
-      ${WAVE('#FFFFFF','.35')}
-      ${position.t ? `<div class="bar"><i style="width:${percent}%"></i></div>` : ''}
-      <button class="del" title="삭제">✕</button>
-    </div>
-    <div class="ct"></div>
-    <div class="cm"></div>`;
-  card.querySelector('.src').textContent = book.site || '붙여넣은 글';
-  /* 표지 그림이 없으므로 글 자체가 표지입니다. 첫 문단을 보여 줍니다. */
-  card.querySelector('.lede').textContent = book.paras[1] || book.paras[0] || '';
-  card.querySelector('.ct').textContent = book.title;
-  const label = nowReadingLabel(book, current);
-  card.querySelector('.cm').textContent = label
-    ? `${label} · ${readMinutes(book)}분`
-    : `${readMinutes(book)}분 읽기`;
+/* 읽을거리 카드는 전부 같은 방식으로 동작합니다 — 누르면 열리고, 꾹 누르면
+   고치고, ✕는 지웁니다. 그 배선을 한 군데에 둡니다. */
+function wireBookCard(card, book){
   const pressed = attachLongPress(card, ()=>openEditSheet(book));
   card.onclick = event => {
     if(event.target.classList.contains('del') || pressed()) return;
     openBook(book);
   };
   card.querySelector('.del').onclick = () => confirmDeleteBook(book);
-  card.querySelector('.thumb').classList.toggle('now-ring', book.id === current);
-  applyCover(card.querySelector('.thumb'), book);
   return card;
 }
 
+function casualCard(book, index, current){
+  const position = posOf(book.id);
+  const label = nowReadingLabel(book, current);
+  const card = el('div', 'casual cpal'+(index%4));
+  card.innerHTML = `<div class="thumb">
+      <img class="cover" alt="" hidden>
+      <div class="src"></div><div class="lede"></div>
+      ${WAVE('#FFFFFF','.35')}
+      ${position.t ? `<div class="bar"><i style="width:${Math.round(position.p*100)}%"></i></div>` : ''}
+      <button class="del" title="삭제">✕</button>
+    </div>
+    <div class="ct"></div><div class="cm"></div>`;
+  fillCard(card, {
+    '.src': book.site || '붙여넣은 글',
+    /* 표지 그림이 없으므로 글 자체가 표지입니다. 첫 문단을 보여 줍니다. */
+    '.lede': book.paras[1] || book.paras[0] || '',
+    '.ct': book.title,
+    '.cm': label ? `${label} · ${readMinutes(book)}분` : `${readMinutes(book)}분 읽기`,
+  });
+  card.querySelector('.thumb').classList.toggle('now-ring', book.id === current);
+  applyCover(card.querySelector('.thumb'), book);
+  return wireBookCard(card, book);
+}
+
 function casualAddCard(){
-  const card = document.createElement('div');
-  card.className = 'casual add';
+  const card = el('div', 'casual add');
   card.innerHTML = `<div class="thumb"><div class="plus">+</div>
     <div class="lbl">기사 URL<br>또는 붙여넣기</div></div>`;
   card.onclick = () => openAddModal('casual');
@@ -173,24 +196,16 @@ function casualAddCard(){
 
 function bookCard(book, index, current){
   const label = nowReadingLabel(book, current);
-  const card = document.createElement('div');
-  card.className = 'bookcard pal'+(index%3);
+  const card = el('div', 'bookcard pal'+(index%3));
   card.classList.toggle('now-ring', book.id === current);
   card.innerHTML = `<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
-    ${label ? `<div class="prog">${label}</div>` : ''}
+    ${label ? '<div class="prog"></div>' : ''}
     <button class="del" title="삭제">✕</button>`;
-  card.querySelector('.author').textContent = book.author || 'MY BOOK';
-  card.querySelector('.bt').textContent = book.title;
-  const pressed = attachLongPress(card, ()=>openEditSheet(book));
-  card.onclick = event => {
-    if(event.target.classList.contains('del') || pressed()) return;
-    openBook(book);
-  };
-  card.querySelector('.del').onclick = () => confirmDeleteBook(book);
+  fillCard(card, {'.author': book.author || 'MY BOOK', '.bt': book.title, '.prog': label});
   applyCover(card, book);
-  return card;
+  return wireBookCard(card, book);
 }
 
 function longformAddCard(){
@@ -222,7 +237,7 @@ function renderHome(){
   pendingClassics().forEach(classic => shelf.appendChild(classicCard(classic)));
   shelf.appendChild(longformAddCard());
   document.querySelector('#longform .sec-sub').textContent = longform.length
-    ? `원서 · PDF · EPUB ${longform.length}권 — 꾹 누르면 이름 바꾸기`
+    ? `원서 · PDF · EPUB ${longform.length}권 — 꾹 누르면 정보 바꾸기`
     : '원서 · PDF · EPUB';
 }
 
@@ -293,7 +308,7 @@ async function saveCasualBook(parsed, extra){
   if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); openBook(existing); return; }
   const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
     addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
-    textAvailable:true, readerSchema:4, sourceMap:null, layoutSignals:null,
+    textAvailable:true, sourceMap:null, layoutSignals:null,
     formatting:parsed.formatting, original:null, localSourceAt:Date.now(), ...extra };
   await bookPut(book);
   books.unshift(book);
@@ -451,7 +466,6 @@ async function applyPreparedBook(target, prepared, file){
   target.formatting = prepared.formatting || null;
   target.original = original;
   target.localSourceAt = original ? original.storedAt : Date.now();
-  target.readerSchema = 4;
   const position = posOf(target.id);
   if(position.pi != null && position.pi >= target.paras.length){
     position.pi = Math.max(0,Math.round((position.p||0)*(target.paras.length-1)));
@@ -514,7 +528,7 @@ async function importFile(file, extra){
     }
     const book = {id,title:prepared.title,kind:prepared.kind,paras,addedAt:Date.now(),
       fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
-      readerSchema:4,sourceMap:prepared.sourceMap,
+      sourceMap:prepared.sourceMap,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
       original,localSourceAt:original ? original.storedAt : Date.now(), ...extra};
     await bookPut(book);

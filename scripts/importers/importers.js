@@ -467,7 +467,7 @@ function assembleParagraphs(pages){
 }
 
 async function parsePDF(f){
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  await ensurePdfLib();
   const pdf = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
   const pages = [];
   for(let i=1;i<=pdf.numPages;i++){
@@ -507,6 +507,7 @@ function joinPath(baseDir, rel){
 }
 const MIME = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml'};
 async function openEpubArchive(file){
+  await ensureZipLib();
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const containerFile = zip.file('META-INF/container.xml');
   if(!containerFile) throw new Error('EPUB container.xml을 찾지 못했어요');
