@@ -92,13 +92,14 @@ tbody tr:last-child td{border-bottom:0}
 <body>
 <header class="top">
   <a class="brand" href="../index.html"><svg viewBox="0 0 100 40" fill="none" aria-hidden="true"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round"/></svg><span>Breeze</span></a>
-  <nav><a href="index.html" aria-current="page">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html">로드맵</a></nav>
+  <nav><a href="index.html" aria-current="page">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html">로드맵</a><a href="privacy.html">개인정보처리방침</a></nav>
 </header>
 <div class="wrap">
 <main>
 <h1 id="breeze-refactored">Breeze Refactored</h1>
 <blockquote><strong>📖 읽기 좋은 문서:</strong> <a href="https://metrobummin.github.io/breeze/docs/" target="_blank" rel="noopener">https://metrobummin.github.io/breeze/docs/</a> 이 저장소의 <code>.md</code> 문서들을 폰에서도 읽히게 구운 것입니다. 목차가 옆에 붙고, 브라우저에서 인쇄(⌘P)하면 PDF 로 저장됩니다. 내용은 여기 파일과 항상 같습니다 — <code>npm test</code> 를 돌릴 때마다 다시 굽습니다(<code>tools/build-docs.mjs</code>).</blockquote>
 <p>기존 <code>breeze/index.html</code> 단일 파일을 기능별 파일로 분리한 버전입니다. 원본 프로젝트는 수정하지 않았습니다.</p>
+<p>무엇을 받고 어디에 두고 언제 지우는지는 <a href="privacy.html">PRIVACY.md</a> 에 따로 적었습니다.</p>
 <p>읽을거리를 파일에만 의존하지 않도록 방향을 넓히는 중입니다 — <a href="roadmap.html">ROADMAP.md</a>.</p>
 <ul><li>홈은 두 줄입니다. <strong>Casuals</strong>(기사·스레드·짧은 글)는 옆으로 넘기고, <strong>Books</strong>(원서·PDF·EPUB)은 아래로 봅니다. 줄마다 라이브러리와 <strong>+</strong>가 하나씩 있고, <strong>두 줄은 각자 자기 줄에서 마지막에 읽던 것</strong>을 테두리로 기억합니다 — 기사를 한 편 봤다고 읽던 원서 표시가 사라지지 않습니다. 그래서 "이어서 읽기" 칸이 따로 없습니다.</li></ul>
 <ul><li><strong>붙여넣기는 글의 모양을 먼저 알아봅니다.</strong> 깃허브에서 남의 README를 긁어오면 마크다운이 오고, 페이지 소스를 긁어오면 HTML이 옵니다. 예전에는 전부 평범한 글로 다뤄서 <code>## Getting started</code>나 <code>|---|---|</code>가 본문에 그대로 남았습니다. 이제 <strong>마크다운</strong>은 제목·목록·표·인용·코드로 옮기고(배지·링크 주소·HTML 주석·YAML 머리말은 버립니다), <strong>HTML</strong>은 기사 URL과 같은 추출기를 태웁니다. 표는 격자를 그리지 않고 한 행을 한 줄로 상자에 담습니다 — 격자는 폰에서 옆으로 넘치고, 문단으로 풀면 낱말이 어느 칸 것인지 사라지니까요. 코드는 줄바꿈을 그대로 두되 <strong>사전을 걸지 않습니다</strong>(<code>npm install</code>이 단어장에 쌓이면 안 되니까요). 구조 기호가 없는 평범한 글과 X 스레드는 예전 그대로 다룹니다.</li></ul>
