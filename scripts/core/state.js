@@ -82,7 +82,8 @@ function restoreAnchor(a){
   if(!a || a.pi == null) return false;
   const el = document.querySelector(`#rtext [data-pi="${a.pi}"]`);
   if(!el) return false;
-  window.scrollTo(0, Math.max(0, window.scrollY + el.getBoundingClientRect().top - (a.dy||0)));
+  /* 스크롤하는 것은 문서가 아니라 읽는 칸입니다 — scripts/reader/reader-scroll.js */
+  readerScrollTo(readerScrollTop() + el.getBoundingClientRect().top - (a.dy||0));
   updatePfill();
   return true;
 }
@@ -111,7 +112,7 @@ function saveReadingState(){
   const previous = posOf(curBook.id);
   const measured = textProgressForBook(curBook,a);
   const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);
-  positions[curBook.id] = {...previous, y:window.scrollY,
+  positions[curBook.id] = {...previous, y:readerScrollTop(),
                             p:logical, t:Date.now(), mode:'text',
                             pi: a ? a.pi : null, dy: a ? a.dy : 0 };
   save(LS_POS, positions);
@@ -126,15 +127,21 @@ function show(v){
   if(v!=='read'){
     leaveOriginalReader();
     curBook=null; closePanel(); showReaderChrome();
-    /* 원본을 벌린 채로 나가면 서재까지 벌어진 채로 열립니다 */
-    if(typeof resetPageZoom === 'function') resetPageZoom();
+    /* 벌린 것은 종이였습니다. 두고 나갑니다 — scripts/reader/reader-scroll.js */
+    resetOriginalZoom();
   }
+  /* 읽는 동안에는 문서가 아니라 읽는 칸이 스크롤합니다. `html` 에도 같은 표를
+     붙여야 문서 쪽 스크롤이 잠깁니다 — `body` 만 잠그면 아이폰에서 문서가
+     여전히 고무줄처럼 늘어납니다 (styles/reader.css 의 "읽는 동안의 셸"). */
   document.body.classList.toggle('reading', v==='read');
+  document.documentElement.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();
   if(v==='casuals') renderCasualLibrary();
   if(v==='longform') renderLongformLibrary();
   if(v==='vocab') renderVocab();
   window.scrollTo(0,0);
+  const box = readerScroller();
+  if(box && v!=='read'){ box.scrollTop = 0; box.scrollLeft = 0; }
 }
 
 /* ================= home ================= */

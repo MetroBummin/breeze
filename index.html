@@ -18,9 +18,9 @@
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
   <link rel="stylesheet" href="styles/home.css?v=07a0f9ad">
-  <link rel="stylesheet" href="styles/reader.css?v=8299bde0">
-  <link rel="stylesheet" href="styles/dictionary.css?v=e4822011">
-  <link rel="stylesheet" href="styles/components.css?v=d70c7a66">
+  <link rel="stylesheet" href="styles/reader.css?v=8e743bce">
+  <link rel="stylesheet" href="styles/dictionary.css?v=89282026">
+  <link rel="stylesheet" href="styles/components.css?v=ddc98573">
   <link rel="stylesheet" href="styles/responsive.css?v=6532e676">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -35,7 +35,10 @@
   <script defer src="scripts/core/storage.js?v=dc18ee04"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=61d55987"></script>
-  <script defer src="scripts/core/state.js?v=bdb33427"></script>
+  <script defer src="scripts/core/state.js?v=df4a083e"></script>
+  <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
+       확대를 안 타는 이유가 여기 적혀 있습니다. -->
+  <script defer src="scripts/reader/reader-scroll.js?v=a0368273"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=7f00030b"></script>
   <script defer src="scripts/library/book-edit.js?v=8027a26e"></script>
@@ -47,15 +50,15 @@
   <script defer src="scripts/dictionary/sentence.js?v=6de5d40b"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
-  <script defer src="scripts/reader/original-session.js?v=60140f61"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=456cf057"></script>
-  <script defer src="scripts/reader/epub-original.js?v=86b2f7ba"></script>
+  <script defer src="scripts/reader/original-session.js?v=72c59ad9"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=8f1f846c"></script>
+  <script defer src="scripts/reader/epub-original.js?v=03912194"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=57450ad9"></script>
-  <script defer src="scripts/reader/reader.js?v=d0dc04f0"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=4657a4e9"></script>
+  <script defer src="scripts/reader/reader.js?v=69dc0dd3"></script>
   <script defer src="scripts/ui/preferences.js?v=a7a8e034"></script>
   <script defer src="scripts/sync/sync.js?v=424f9f45"></script>
-  <script defer src="scripts/ui/interactions.js?v=0d36d22b"></script>
+  <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
   <script defer src="scripts/main.js?v=4c8ed2b7"></script>
 </head>
 <body>
@@ -148,21 +151,34 @@
 <!-- ================= READER ================= -->
 <div class="view" id="v-read">
   <div id="readmain">
+    <!-- 상단바와 이 진행줄은 아래 스크롤 칸 **바깥**입니다. 흐름 밖에 떠 있으므로
+         글은 처음부터 노치 옆까지 뻗고, 종이를 벌려도 이 둘은 제 크기입니다. -->
     <div id="rbar">
       <div id="ptrack"><div id="pfill"></div></div>
     </div>
-    <div id="readwrap">
-      <div id="rtitle"></div>
-      <a id="rsource" target="_blank" rel="noopener noreferrer" hidden></a>
-      <div id="rhint">
-        <svg width="18" height="18" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#E7F3F1"/><path d="M16 26 C22 18 30 18 36 26 C30 34 22 34 16 26Z" stroke="#2589BE" stroke-width="3"/><circle cx="26" cy="26" r="4" fill="#2589BE"/></svg>
-        Tap a word whenever you need it. — 모르는 단어를 누르면 뜻이 뜨고 단어장에 저장돼요.
+    <!-- 읽는 동안 스크롤하는 것은 문서가 아니라 이 칸 하나입니다.
+         까닭은 scripts/reader/reader-scroll.js 맨 위에 적어 두었습니다. -->
+    <div id="reader-scroll">
+      <div id="readwrap">
+        <div id="rtitle"></div>
+        <a id="rsource" target="_blank" rel="noopener noreferrer" hidden></a>
+        <div id="rhint">
+          <svg width="18" height="18" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#E7F3F1"/><path d="M16 26 C22 18 30 18 36 26 C30 34 22 34 16 26Z" stroke="#2589BE" stroke-width="3"/><circle cx="26" cy="26" r="4" fill="#2589BE"/></svg>
+          Tap a word whenever you need it. — 모르는 단어를 누르면 뜻이 뜨고 단어장에 저장돼요.
+        </div>
+        <div id="rtext"></div>
       </div>
-      <div id="rtext"></div>
-    </div>
-    <div id="originalwrap" hidden>
-      <div id="original-selection-hint">단어를 한 번 눌러 뜻을 봐요</div>
-      <div id="original-content" class="original-content"></div>
+      <div id="originalwrap" hidden>
+        <div id="original-selection-hint">단어를 한 번 눌러 뜻을 봐요</div>
+        <!-- 확대는 여기서 끝납니다. `#original-stage` 는 확대된 종이가 차지할
+             자리만 잡고, `#original-zoom` 이 그 위에서 `transform` 으로 커집니다.
+             바깥으로는 한 픽셀도 안 새어 나갑니다. -->
+        <div id="original-stage">
+          <div id="original-zoom">
+            <div id="original-content" class="original-content"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div id="sheetbg" onclick="closePanel()"></div>

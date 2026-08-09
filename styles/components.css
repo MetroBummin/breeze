@@ -83,10 +83,8 @@
   #sent-modal{position:fixed; inset:0; z-index:170; background:rgba(24,54,74,.35); display:none;
     align-items:center; justify-content:center; padding:20px;}
   #sent-modal.on{display:flex;}
-  /* 벌린 동안에도 제 크기로. 이 칸은 화면을 통째로 덮으므로 기준점이 왼쪽 위입니다
-     (`scripts/ui/interactions.js` 의 "벌려도 시트는 그대로"). */
-  body.vv-zoom #sent-modal{transform-origin:0 0;
-    translate:var(--vv-x,0px) var(--vv-y,0px); scale:var(--vv-k,1);}
+  /* 벌린 동안 제 크기로 되돌리던 줄은 걷어 냈습니다. 확대가 종이 안쪽 일이 되면서
+     (`scripts/reader/reader-scroll.js`) 이 칸은 애초에 안 커집니다. */
   /* 색은 낱말 뜻 상자(`#p-ai`)와 같은 `--ai-*` 입니다. 같은 AI 가 한 번은 낱말을,
      한 번은 문장을 말하는 것이라 두 자리가 남처럼 보이면 안 됩니다. */
   #st-card{background:linear-gradient(150deg,var(--ai-bg1),var(--ai-bg2));

@@ -8,22 +8,32 @@
 let originalPdfPointer = null;
 
 /* ================= 확대 =================
-   확대·축소 단추는 없앴습니다. 손가락으로 벌리면 됩니다 — 어느 PDF 뷰어에서나
-   그렇게 하니까요.
+   손가락으로 벌리면 종이만 커집니다. 단추도, 쪽마다 나뉜 가로 스크롤 칸도
+   없습니다 — 문서 전체가 종이 한 장처럼 같은 축에서 움직입니다.
 
-   한때 쪽마다 제 가로 스크롤 칸을 주고 단추로만 넓혔습니다. 화면이 통째로
-   커지면 뜻이 뜨는 시트까지 커져서, 작은 글씨를 보려고 벌릴수록 시트가 화면을
-   덮었기 때문입니다. 그 값은 이제 시트 쪽에서 냅니다 — 떠 있는 것들만
-   `visualViewport` 배율의 역수만큼 되돌려 제 크기로 남깁니다
-   (`scripts/ui/interactions.js` 의 "벌려도 시트는 그대로").
+   두 번을 돌아 여기 왔습니다.
 
-   그러고 나니 칸을 나눌 이유가 사라졌습니다. 쪽마다 가로축이 따로 놀면 한 줄을
-   읽으려고 민 자리가 다음 쪽에서 풀립니다. 이제 문서 전체가 종이 한 장처럼
-   같은 축에서 함께 움직입니다.
+   처음에는 `+`/`−` 단추와 쪽마다의 가로 칸이었습니다. 쪽을 넓히면 문서가
+   넓어지고, 문서가 화면보다 넓어지면 폰 브라우저는 스크롤바를 주는 대신 화면을
+   통째로 축소해 버립니다 — 1.7배로 키운 만큼 1.66배로 축소되어 글자가 하나도
+   안 커졌습니다. 칸을 나눈 것은 문서 폭을 안 바꾸려는 우회로였습니다.
 
-   벌려서 본 캔버스는 늘어난 그림이라 조금 흐립니다. `devicePixelRatio` 보다
-   한 단계 넉넉하게 그려 두어 두 배까지는 눈에 띄지 않게 합니다. */
+   다음에는 브라우저의 벌리기에 맡기고, 떠 있는 것들만 `visualViewport` 배율의
+   역수로 되돌렸습니다. 그 보정은 늘 한 박자 늦었습니다 — 벌어지는 그림은
+   컴포지터가 혼자 그리고 자바스크립트는 그 뒤를 따라가니까요.
+
+   지금은 확대가 종이 안쪽 일입니다. `#original-zoom` 이 `transform` 으로 커지고
+   바깥은 아무것도 안 변합니다. 문서 폭도 그대로라 브라우저가 축소할 이유가
+   없고, 시트·단추·상단바는 되돌릴 것 자체가 없습니다
+   (`scripts/reader/reader-scroll.js`).
+
+   ---- 선명함 ----
+   벌리는 동안 보는 것은 늘어난 그림이라 조금 흐립니다. `devicePixelRatio` 보다
+   한 단계 넉넉하게 그려 두어 웬만큼은 버티고, 손을 뗀 뒤 그 배율로 눈에 보이는
+   쪽만 다시 그립니다. 벌리는 **도중에** 다시 그리면 손짓이 끊깁니다.
+   위 한도(4배)는 캔버스 크기가 곧 메모리라서 둡니다 — 긴 PDF 는 쪽이 많습니다. */
 const PDF_OVERSAMPLE = 1.6;
+const PDF_MAX_RENDER_ZOOM = 3;   // 이보다 더 벌리면 늘린 그림으로 봅니다
 
 async function openOriginalPdf(book,record,token){
   await ensurePdfLib();
@@ -38,7 +48,8 @@ async function openOriginalPdf(book,record,token){
   const pages=[];
   const session={kind:'pdf',bookId:book.id,hash:record.hash,pdf,pages,
                  glyphs:book.glyphs||null,
-                 rendering:new Map(),wordBoxes:new Map(),urls:[]};
+                 /* 쪽마다 "어느 배율로 그렸나". 그보다 많이 벌리면 다시 그립니다. */
+                 rendering:new Map(),drawnAt:new Map(),wordBoxes:new Map(),urls:[]};
   for(let pageNumber=1; pageNumber<=pdf.numPages; pageNumber++){
     const page=document.createElement('article');
     page.className='pdf-source-page';
@@ -52,29 +63,51 @@ async function openOriginalPdf(book,record,token){
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,+entry.target.dataset.page); });
-  },{rootMargin:'1300px 0px'});
+  },{root:readerScroller(),rootMargin:'1300px 0px'});
   session.observer=observer;
   pages.forEach(page=>observer.observe(page));
   await renderOriginalPdfPage(session,1);
 }
 
-async function renderOriginalPdfPage(session,pageNumber){
-  if(!session || session!==originalSession || session.rendering.has(pageNumber)) return session&&session.rendering.get(pageNumber);
+async function renderOriginalPdfPage(session,pageNumber,options){
+  if(!session || session!==originalSession) return;
+  const zoom=Math.min(PDF_MAX_RENDER_ZOOM,Math.max(1,originalZoom()));
+  const drawn=session.rendering.get(pageNumber);
+  if(drawn){
+    /* 이미 그려진 쪽입니다. 벌린 만큼 눈에 띄게 흐려졌을 때만 다시 그립니다 —
+       1.25배까지는 넉넉히 그려 둔 여유(PDF_OVERSAMPLE)로 버팁니다. */
+    if(!options || !options.resharpen) return drawn;
+    if(zoom <= (session.drawnAt.get(pageNumber)||1) * 1.25) return drawn;
+  }
+  const redraw=!!drawn;
+  session.drawnAt.set(pageNumber,zoom);
   const job=(async()=>{
     const pageElement=session.pages[pageNumber-1];
     const page=await session.pdf.getPage(pageNumber);
     if(session!==originalSession) return;
     const base=page.getViewport({scale:1});
+    /* 레이아웃 폭은 벌려도 안 변합니다 — 커지는 것은 바깥의 `transform` 뿐입니다.
+       그래서 이 값은 늘 같고, 벌릴 때마다 문서가 다시 흐르지 않습니다. */
     const cssWidth=Math.max(240,pageElement.clientWidth||document.getElementById('original-content').clientWidth||700);
     const cssScale=cssWidth/base.width;
     const viewport=page.getViewport({scale:cssScale});
-    const outputScale=Math.min(3,(window.devicePixelRatio||1)*PDF_OVERSAMPLE);
+    const outputScale=Math.min(4,(window.devicePixelRatio||1)*PDF_OVERSAMPLE*zoom);
     const canvas=document.createElement('canvas');
     canvas.width=Math.floor(viewport.width*outputScale);
     canvas.height=Math.floor(viewport.height*outputScale);
     canvas.style.width=viewport.width+'px'; canvas.style.height=viewport.height+'px';
     const context=canvas.getContext('2d',{alpha:false});
     const transform=outputScale===1 ? null : [outputScale,0,0,outputScale,0,0];
+    if(redraw){
+      /* 다시 그릴 때는 캔버스만 갈아 끼웁니다. 통째로 비우면 칠해 둔 낱말과
+         지금 눌러 둔 낱말 표시가 함께 지워집니다 — 뜻을 보는 중에 벌리면
+         보고 있던 그 낱말의 표시가 사라졌습니다. */
+      await page.render({canvasContext:context,viewport,transform}).promise;
+      if(session!==originalSession) return;
+      const old=pageElement.querySelector('canvas');
+      if(old) old.replaceWith(canvas); else pageElement.insertBefore(canvas,pageElement.firstChild);
+      return;
+    }
     /* Placeholders all use the first page's proportions. When a page that has
        already scrolled past learns its real ratio, the height change would
        push the text the reader is looking at. Move the scroll by the same
@@ -84,7 +117,7 @@ async function renderOriginalPdfPage(session,pageNumber){
     pageElement.style.aspectRatio=`${viewport.width}/${viewport.height}`;
     pageElement.appendChild(canvas);
     const after=pageElement.getBoundingClientRect();
-    if(before.bottom<=0 && after.height!==before.height) window.scrollBy(0,after.height-before.height);
+    if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
     await page.render({canvasContext:context,viewport,transform}).promise;
     const textContent=await page.getTextContent();
     const wordBoxes=buildPdfWordBoxes(textContent,viewport,session.glyphs);
@@ -92,9 +125,27 @@ async function renderOriginalPdfPage(session,pageNumber){
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
   })().catch(error=>console.warn('PDF page render skipped:',error));
-  session.rendering.set(pageNumber,job);
+  /* 다시 그리는 동안에도 "이 쪽은 그려졌다"는 사실은 그대로 둡니다 — 실패해도
+     옛 캔버스가 그 자리에 남아 있으니까요. */
+  if(!redraw) session.rendering.set(pageNumber,job);
   await job;
   return job;
+}
+
+/* ---- 손을 뗀 뒤 다시 또렷하게 ----
+   벌리는 도중에는 안 합니다. 긴 PDF 에서 쪽마다 캔버스를 다시 그리면 손짓이
+   끊깁니다. 보이는 쪽과 그 위아래 한 화면씩만 손봅니다.
+   부르는 곳은 `scripts/reader/reader-scroll.js` 의 손짓이 끝나는 자리입니다. */
+function resharpenOriginalPages(){
+  const session=originalSession;
+  if(!session || session.kind!=='pdf') return;
+  const reach=readerViewHeight();
+  session.pages.forEach((pageElement,index)=>{
+    if(!session.rendering.has(index+1)) return;
+    const rect=pageElement.getBoundingClientRect();
+    if(rect.bottom < -reach || rect.top > reach*2) return;
+    renderOriginalPdfPage(session,index+1,{resharpen:true});
+  });
 }
 
 /* ================= word map ================= */
@@ -220,12 +271,14 @@ async function restorePdfAnchor(source,inset,changeToken){
   const pageNumber=Math.max(1,Math.min(originalSession.pages.length,Number(source.page)||1));
   const page=originalSession.pages[pageNumber-1];
   if(!page) return false;
-  window.scrollTo(0,Math.max(0,window.scrollY+page.getBoundingClientRect().top-inset));
+  /* 화면 좌표(`getBoundingClientRect`)는 벌린 배율을 이미 담고 있고, 읽는 칸의
+     `scrollTop` 도 같은 단위입니다. 그래서 이 셈은 배율이 얼마든 그대로입니다. */
+  readerScrollTo(readerScrollTop()+page.getBoundingClientRect().top-inset);
   await renderOriginalPdfPage(originalSession,pageNumber);
   if(changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original')) return false;
   const rect=page.getBoundingClientRect();
-  window.scrollTo(0,Math.max(0,window.scrollY+rect.top-inset
-    +Math.max(0,Math.min(1,Number(source.y)||0))*rect.height));
+  readerScrollTo(readerScrollTop()+rect.top-inset
+    +Math.max(0,Math.min(1,Number(source.y)||0))*rect.height);
   return true;
 }
 
@@ -273,7 +326,7 @@ async function restorePdfSentence(candidates,source,changeToken){
       const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];
       const page=originalSession.pages[pageNumber-1];
       const rect=page.getBoundingClientRect();
-      window.scrollTo(0,Math.max(0,window.scrollY+rect.top-topInset()-10+first.y*rect.height));
+      readerScrollTo(readerScrollTop()+rect.top-topInset()-10+first.y*rect.height);
       showPdfModeCue(page,matched,10000);
       return true;
     }
@@ -281,11 +334,14 @@ async function restorePdfSentence(candidates,source,changeToken){
   return false;
 }
 
-/* A tap opens the word under the finger; a drag is a scroll, not a lookup. */
+/* A tap opens the word under the finger; a drag is a scroll, not a lookup.
+   벌리는 손짓의 끝도 눌린 것이 아닙니다. 손가락 둘을 거의 안 움직이고 뗐을 때
+   그 자리의 낱말이 열리면, 벌릴 때마다 엉뚱한 뜻이 떴습니다. */
 (function(){
   const content=document.getElementById('original-content');
   content.addEventListener('pointerdown',event=>{
     if(!originalSession || originalSession.kind!=='pdf' || event.button!==0) return;
+    if(!event.isPrimary){ originalPdfPointer=null; return; }
     originalPdfPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
   });
   content.addEventListener('pointercancel',()=>{ originalPdfPointer=null; });
@@ -293,6 +349,7 @@ async function restorePdfSentence(candidates,source,changeToken){
     if(!originalSession || originalSession.kind!=='pdf') return;
     const start=originalPdfPointer;
     originalPdfPointer=null;
+    if(originalZoomJustPinched()) return;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
     const page=event.target.closest&&event.target.closest('.pdf-source-page');
     const box=pdfWordAtPoint(page,event.clientX,event.clientY);

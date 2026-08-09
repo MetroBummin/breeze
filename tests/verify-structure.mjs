@@ -402,19 +402,37 @@ assert.doesNotMatch(readFileSync(resolve(root, 'index.html'), 'utf8'),/pdfzoom-(
 /* 벌려서 본 캔버스는 늘어난 그림이라, 넉넉하게 그려 두어야 흐리지 않습니다. */
 assert.match(pdfSource,/PDF_OVERSAMPLE/,
   'PDF canvases are drawn at screen resolution again, so pinching makes them blurry');
-/* 벌리면 페이지 전체가 커집니다 — 떠 있는 것들만 배율의 역수로 되돌립니다. */
+/* ---- 확대는 종이 안쪽 일입니다 ----
+   예전에는 브라우저가 화면 전체를 키우고, 떠 있는 것들만 `visualViewport` 배율의
+   역수로 되돌렸습니다(`--vv-k`). 그 보정은 원리적으로 늦어서 — 벌어지는 그림은
+   컴포지터가 혼자 그립니다 — 벌리는 내내 단추가 딸려 다녔습니다.
+   지금은 `#original-zoom` 만 `transform` 으로 커집니다. 되돌릴 것이 없어야 맞고,
+   되돌리는 코드가 다시 생기면 그 싸움이 돌아온 것입니다. */
+const scrollSource = readFileSync(resolve(root, 'scripts/reader/reader-scroll.js'), 'utf8');
 const interactionsSource = readFileSync(resolve(root, 'scripts/ui/interactions.js'), 'utf8');
-assert.match(interactionsSource,/visualViewport/,
-  'Nothing counters the pinch, so the bottom sheet grows with the page and covers it');
-assert.match(interactionsSource,/vv-zoom/,
-  'The viewport lock is always on; a scale of 1 still changes the containing block');
-for(const [file, selector] of [['styles/dictionary.css','#panel'],
-                               ['styles/components.css','#sent-modal'],
-                               ['styles/reader.css','#readfabs']]){
-  assert.match(readFileSync(resolve(root, file), 'utf8'),
-    new RegExp('body\\.vv-zoom [^{]*'+selector),
-    `${selector} grows with the pinch instead of staying its own size`);
+const withoutBlockComments = text => text.replace(/\/\*[\s\S]*?\*\//g, '');
+for(const [file, source] of [['scripts/ui/interactions.js', interactionsSource],
+                             ['styles/dictionary.css', readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8')],
+                             ['styles/components.css', readFileSync(resolve(root, 'styles/components.css'), 'utf8')],
+                             ['styles/reader.css', readFileSync(resolve(root, 'styles/reader.css'), 'utf8')]]){
+  assert.doesNotMatch(withoutBlockComments(source), /vv-zoom|--vv-k/,
+    `${file} counters the browser pinch again; zoom belongs inside #original-zoom`);
 }
+assert.match(scrollSource,/function setOriginalZoom/,
+  'The reader no longer owns its zoom, so the browser scales the chrome with the paper');
+assert.match(scrollSource,/transform-origin|scale\(/,
+  'Zoom is not a transform on the paper any more');
+/* 문서 폭이 화면보다 넓어지면 폰 브라우저는 스크롤바를 주는 대신 화면을 통째로
+   축소합니다 — 키운 만큼 되돌아와 글자가 하나도 안 커집니다. 넓어지는 것은 읽는
+   칸 안쪽뿐이어야 합니다. */
+assert.match(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'),
+  /html\.reading, body\.reading\{[^}]*overflow:hidden/,
+  'The document scrolls again, so a widened page shrinks the whole screen on mobile');
+assert.match(readFileSync(resolve(root, 'index.html'), 'utf8'),/id="reader-scroll"/,
+  'The reader has no scrolling box of its own');
+/* 글자 화면은 벌리지 않습니다 — 글자 크기는 Aa 안에 있습니다. */
+assert.match(modesSource,/mode==='text'\) resetOriginalZoom\(\)/,
+  'Coming back to the 글자 view keeps the paper zoom, which nothing there can undo');
 assert.match(epubSource,/sandbox','allow-same-origin'/,
   'EPUB chapters are not sandboxed');
 assert.match(epubSource,/script,iframe,frame,object,embed/,
@@ -445,8 +463,19 @@ assert.match(sessionSource,/firstElementBelow/,
   'Visible page lookup walks every page on each scroll frame again');
 assert.match(sessionSource,/originalAnchorFromProgress/,
   'A book without a coordinate map jumps back to page one');
-assert.match(pdfSource,/window\.scrollBy\(0,after\.height-before\.height\)/,
+assert.match(pdfSource,/readerScrollBy\(after\.height-before\.height\)/,
   'A late page-size correction can still push the visible line');
+/* 스크롤 주인이 문서에서 읽는 칸으로 옮겨졌습니다. `window.scrollY` 는 이제
+   0 에 붙어 있으므로, 한 군데라도 남으면 그 자리가 조용히 맨 위로 튑니다. */
+for(const [file, source] of [['scripts/core/state.js', readFileSync(resolve(root, 'scripts/core/state.js'), 'utf8')],
+                             ['scripts/reader/reader.js', readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8')],
+                             ['scripts/reader/reader-modes.js', modesSource],
+                             ['scripts/reader/original-session.js', sessionSource],
+                             ['scripts/reader/pdf-original.js', pdfSource],
+                             ['scripts/reader/epub-original.js', epubSource]]){
+  assert.doesNotMatch(withoutBlockComments(source), /window\.scroll(Y|By)\b/,
+    `${file} still moves the document instead of the reader's own scrolling box`);
+}
 assert.match(epubSource,/EPUB_FRAME_TIMEOUT/,
   'A chapter frame that never loads can hang the original reader');
 /* ---- 붙임글자: 책이 스스로 답을 갖고 있습니다 ----
@@ -705,10 +734,13 @@ assert.match(readerCss, /body\.reader-original #modefab \.mf-text\{opacity:1/,
    계산이 글 첫 줄을 로고 뒤에 숨깁니다(예전 집중 모드의 버그). */
 assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*visibility:hidden/,
   'Reading downward no longer clears the top bar');
-/* 미는 대신 지웁니다. `position:sticky` + `backdrop-filter` 인 칸을 `transform` 으로
-   밀면 아이폰에서 옛 그림 한 장이 노치 옆에 남습니다. */
-assert.doesNotMatch(readerCss, /body\.chrome-hidden #topbar\{[^}]*transform:translateY/,
-  'The top bar slides again, which leaves a ghost beside the notch on iPhone');
+/* 이제는 밉니다. 밀지 못했던 것은 `position:sticky` 인 칸이 아이폰에서 스크롤과
+   같은 층에 있어서, `transform` 을 얹으면 옛 그림 한 장이 노치 옆에 남았기
+   때문입니다. 상단바가 흐름 밖(`fixed`)으로 나오면서 그 층이 갈라졌습니다. */
+assert.match(readerCss, /body\.reading #topbar\{position:fixed/,
+  'The top bar is in the flow again, so it reserves a blank strip beside the notch');
+assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*transform:translateY\(-100%\)/,
+  'The top bar only fades instead of sliding out of the way');
 assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*backdrop-filter:none/,
   'The blur layer is left running while the bar is hidden');
 assert.doesNotMatch(readerCss, /body\.chrome-hidden[^\n]*--topbar-h/,
@@ -733,8 +765,8 @@ assert.match(preferencesSource, /const READ_MARGINS = \{/,
   'The margin control has no steps to choose from');
 assert.match(preferencesSource, /keepPlace\(\(\)=>\{[\s\S]*?save\('breeze\.margin'/,
   'Changing the margin no longer keeps the sentence being read in place');
-assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto; padding:36px var\(--readpad,26px\)/,
-  'The reading column stopped following the margin setting');
+assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(var\(--topbar-h,56px\) \+ 36px\) var\(--readpad,26px\)/,
+  'The reading column stopped following the margin setting, or lost the room the fixed top bar needs');
 assert.match(index, /class="aa-row stack aa-text-only"[\s\S]*?id="aa-margin"/,
   'The 좌우 여백 row is missing from the Aa popover');
 

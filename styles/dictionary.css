@@ -171,12 +171,10 @@
       border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;
       box-shadow:0 -10px 40px rgba(24,54,74,.18);}
     #panel.on{transform:translateY(0);}
-    /* 화면을 벌린 동안에는 배율의 역수를 걸어 제 크기로 남깁니다. `translate`·
-       `scale` 은 `transform` 과 다른 속성이라, 시트가 올라오고 내려가는
-       `transform` 애니메이션을 건드리지 않고 겹쳐 얹힙니다.
-       기준점은 왼쪽 아래 — 시트가 붙어 있는 그 모서리입니다. */
-    body.vv-zoom #panel{transform-origin:0 100%;
-      translate:var(--vv-x,0px) var(--vv-dy,0px); scale:var(--vv-k,1);}
+    /* 시트가 벌어진 화면을 따라 커지던 문제가 이 앱의 확대를 두 번 갈아엎게 한
+       원인이었습니다. 이제 커지는 것은 종이(`#original-zoom`)뿐이고 시트는 그
+       바깥이라, 되돌리는 계산이 아예 필요 없습니다
+       (`scripts/reader/reader-scroll.js`). */
     #p-handle{display:flex; position:sticky; top:0; z-index:5; background:#fff; padding:12px 0 10px;
       justify-content:center; cursor:grab; width:100%; margin:0;}
     #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:#C8D7D6;}

@@ -136,7 +136,11 @@ async function openBook(b){
     source.href = b.sourceUrl;
     source.textContent = (b.site ? b.site + '에서 ' : '') + '원문 보기 ↗';
   }
+  /* 책은 `show('read')` 를 거치지 않고 바로 열립니다. 셸을 켜는 표는 두 곳에
+     달아야 합니다 — `body` 만 잠그면 아이폰에서 문서가 여전히 고무줄처럼 늘어나서,
+     읽는 칸 바깥이 함께 흔들립니다 (styles/reader.css 의 "읽는 동안의 셸"). */
   document.body.classList.add('reading');
+  document.documentElement.classList.add('reading');
   document.body.classList.remove('reader-original');
   showReaderChrome();                 // 새 책은 늘 상단바가 보이는 채로 시작합니다
   document.getElementById('readwrap').hidden=false;
@@ -154,7 +158,7 @@ async function openBook(b){
   if(desired==='original') await switchReaderMode('original',{initial:true});
   else requestAnimationFrame(()=>{
     const pos=posOf(b.id);
-    if(!restoreAnchor(pos)) window.scrollTo(0,pos.y||0);
+    if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
     lastAnchor=captureAnchor(); updatePfill();
   });
 }
@@ -206,9 +210,15 @@ let chromeLastY = 0, chromeRun = 0;    // chromeRun: 같은 방향으로 이어�
    "위로 올렸다"로 읽혀서, 뜻 한 번 보고 나면 상단바가 돌아와 있었습니다.
    낱말 창은 읽기를 멈춘 것이 아니라 읽는 도중이므로, 그동안의 움직임은
    방향으로 세지 않고 창을 닫을 때 거리만 0에서 다시 시작합니다. */
-/* 붙잡는 이유가 둘이라 이름을 붙여 셉니다 — 낱말 창(`panel`)과 벌린 화면(`zoom`).
-   하나가 놓아도 다른 하나가 잡고 있으면 상단바는 그대로입니다. 예전처럼 참·거짓
-   하나로 두면, 벌린 채 낱말을 보다가 창을 닫는 순간 아직 벌어져 있는데도 풀립니다. */
+/* 붙잡는 이유가 여럿이라 이름을 붙여 셉니다 — 낱말 창(`panel`), 자리 되돌리기
+   (`restore`). 하나가 놓아도 다른 하나가 잡고 있으면 상단바는 그대로입니다.
+   참·거짓 하나로 두면, 되돌리는 도중에 창을 닫는 순간 아직 옮기고 있는데도
+   풀립니다.
+
+   `zoom` 핀은 없앴습니다. 벌리는 것이 브라우저 몫이던 시절에는 벌리는 동안
+   `scrollY` 가 크게 흔들려서 상단바가 걷혔다 돌아왔다 했고, 그것을 막으려고
+   핀이 필요했습니다. 지금 확대는 종이 안쪽 일이라 `scrollTop` 을 건드리지
+   않습니다 — 막을 것이 없습니다 (scripts/reader/reader-scroll.js). */
 const chromePins = new Set();
 let chromePinned = false, chromeHoldUntil = 0;
 function pinReaderChrome(pinned, reason){
@@ -216,31 +226,42 @@ function pinReaderChrome(pinned, reason){
   if(pinned) chromePins.add(key); else chromePins.delete(key);
   chromePinned = chromePins.size > 0;
   chromeHoldUntil = Date.now() + 500;   // 시트가 미끄러져 나가는 동안까지
-  chromeLastY = Math.max(0, window.scrollY || 0);
+  chromeLastY = Math.max(0, readerScrollTop());
   chromeRun = 0;
-  /* 벌리는 것은 읽어 내려가는 것이 아니라 들여다보는 것입니다. 그때 상단바를
-     불러 두면, 벌린 내내 시트와 같은 값으로 제자리에 고정되어 남습니다 —
-     걷힌 채로 얼어붙어 "확대하면 상단바가 아예 없다" 가 되지 않도록. */
-  if(pinned && key === 'zoom') setReaderChrome(false);
+}
+/* ---- 오래 걸리는 일이 끝날 때까지 붙잡습니다 ----
+   벽시계로 재는 유예(`chromeHoldUntil`)만으로는 모자랍니다. 자리를 되돌리는
+   일에는 PDF 한 쪽을 그리는 `await` 가 끼어 있고, 그건 얼마나 걸릴지 알 수
+   없습니다. 유예가 먼저 끝나면 그 뒤에 오는 프로그램 스크롤이 "손으로 위로
+   올렸다"로 읽혀서, 낱말 하나 눌렀다 닫았을 뿐인데 상단바가 돌아와 있었습니다.
+   시간이 아니라 **일이 끝나는 것**을 기다립니다. */
+function whileRestoringChrome(job){
+  pinReaderChrome(true, 'restore');
+  const done = ()=>pinReaderChrome(false, 'restore');
+  let result;
+  try{ result = job(); }
+  catch(error){ done(); throw error; }
+  if(result && typeof result.then === 'function') return result.then(
+    value=>{ done(); return value; },
+    error=>{ done(); throw error; });
+  done();
+  return result;
 }
 function setReaderChrome(hidden){
   document.body.classList.toggle('chrome-hidden', hidden);
 }
 function showReaderChrome(){
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
-  chromeLastY = window.scrollY || 0; chromeRun = 0;
+  chromeLastY = readerScrollTop(); chromeRun = 0;
   setReaderChrome(false);
 }
 function followScrollDirection(){
-  const y = Math.max(0, window.scrollY || 0);
+  const y = Math.max(0, readerScrollTop());
   const step = y - chromeLastY;
   chromeLastY = y;
-  /* 붙잡혀 있으면 방향을 세지 않습니다 — 낱말 창이 열려 있거나, 화면이 벌어져
-     있을 때입니다. 벌린 채 손가락으로 종이를 미는 동안 아이폰은 `scrollY` 를
-     크게 움직입니다(보이는 화면을 담으려고 문서 쪽 화면까지 함께 옮깁니다).
-     그것을 읽는 방향으로 세면 미는 내내 상단바가 걷혔다 돌아왔다 하며,
-     노치 옆이 막혔다 뚫렸다 합니다. 미는 것은 읽는 것이 아닙니다
-     (거는 곳은 `scripts/ui/interactions.js` 의 "벌려도 시트는 그대로"). */
+  /* 붙잡혀 있으면 방향을 세지 않습니다 — 낱말 창이 열려 있거나, 보던 자리를
+     되돌리는 중일 때입니다. 둘 다 읽어 내려간 것이 아니라 프로그램이 옮긴
+     것이라, 방향으로 세면 상단바가 제멋대로 걷혔다 돌아왔다 합니다. */
   if(chromePinned || Date.now() < chromeHoldUntil){ chromeRun = 0; return; }
   /* 모드를 바꾸며 프로그램이 옮겨 놓은 화면은 내가 읽어 내려간 것이 아닙니다 */
   if(Date.now() < readerScrollPauseUntil){ chromeRun = 0; return; }
@@ -253,7 +274,10 @@ function followScrollDirection(){
   if(chromeRun >= CHROME_STEP){ chromeRun = 0; setReaderChrome(true); }
   else if(chromeRun <= -CHROME_BACK){ chromeRun = 0; setReaderChrome(false); }
 }
-window.addEventListener('scroll', ()=>{
+/* 듣는 곳이 문서(`window`)에서 읽는 칸으로 옮겨졌습니다. 아이폰 사파리가 주소창을
+   여닫으며 흘리던 가짜 스크롤이 여기까지 오지 않는 것도 덤입니다 — 그 흔들림이
+   "위로 올렸다"로 읽혀서 상단바가 깜빡이던 자리였습니다. */
+(readerScroller() || window).addEventListener('scroll', ()=>{
   if(!curBook) return;
   scheduleProgressUpdate();
   followScrollDirection();
@@ -268,7 +292,7 @@ window.addEventListener('scroll', ()=>{
     saveReadingState();
     if(currentReaderMode==='text') lastAnchor = captureAnchor();
   }, 800);
-});
+}, {passive:true});
 
 /* 사전 패널이 열리고 닫히면 읽는 영역의 폭이 바뀝니다. 글자판은 글이 다시
    흐르고, 원본 페이지는 비율대로 높이가 줄어듭니다. 그대로 두면 보고 있던
@@ -284,9 +308,17 @@ if(window.ResizeObserver){
     /* The panel animates its width, so this fires many times. Freeze the
        remembered place for the whole animation and aim at it every frame. */
     holdReaderAnchor(600);
-    if(currentReaderMode==='original'){
-      if(lastOriginalAnchor) restoreOriginalAnchor(lastOriginalAnchor);
-    }else if(lastAnchor) restoreAnchor(lastAnchor);
+    /* 되돌리는 일이 끝날 때까지 상단바를 붙잡습니다. 원본 쪽은 안에 PDF 한 쪽을
+       그리는 `await` 가 있어서, 600ms 유예가 먼저 끝나 버리는 일이 있었습니다 —
+       그러면 되돌리며 옮긴 스크롤이 "손으로 올렸다"로 읽혀 상단바가 돌아오고,
+       노치 옆이 다시 막혔습니다. */
+    whileRestoringChrome(()=>{
+      if(currentReaderMode==='original'){
+        return lastOriginalAnchor ? restoreOriginalAnchor(lastOriginalAnchor) : null;
+      }
+      if(lastAnchor) restoreAnchor(lastAnchor);
+      return null;
+    });
   }).observe(document.getElementById('readmain'));
 }
 

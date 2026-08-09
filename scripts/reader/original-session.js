@@ -95,8 +95,8 @@ function textProgressForBook(book,anchor){
    맨 위에 닿지 못해 같은 이유로 100%가 되지 않았습니다.
    마지막 한 화면만은 남은 스크롤로 메꿉니다. 바닥에 닿으면 정확히 1입니다. */
 function readerProgressAtEnd(value){
-  const reach=Math.max(1,window.innerHeight);
-  const left=Math.max(0,document.documentElement.scrollHeight-reach-(window.scrollY||0));
+  const reach=Math.max(1,readerViewHeight());
+  const left=Math.max(0,readerContentHeight()-reach-readerScrollTop());
   if(left>=reach) return value;
   const closing=1-left/reach;
   return Math.max(0,Math.min(1,value+(1-value)*closing));
@@ -142,9 +142,9 @@ function originalAnchorFromProgress(book){
 
 async function restoreOriginalAnchor(source,changeToken){
   const format=originalFormat();
-  if(!format){ window.scrollTo(0,0); return false; }
+  if(!format){ readerScrollTo(0); return false; }
   const target=source || originalAnchorFromProgress(curBook);
-  if(!target){ window.scrollTo(0,0); return false; }
+  if(!target){ readerScrollTo(0); return false; }
   const restored=await format.restoreAnchor(target,topInset()+10,changeToken);
   if(restored) lastOriginalAnchor=target;
   return restored;
@@ -178,6 +178,8 @@ function leaveOriginalReader(){
   originalLoadToken++;
   originalOpenJob=null;
   lastOriginalAnchor=null;
+  /* 배율은 이 종이의 것이었습니다. 다음 책은 제 크기로 엽니다. */
+  resetOriginalZoom();
   if(!originalSession) return;
   if(originalSession.observer) originalSession.observer.disconnect();
   (originalSession.resizeObservers||[]).forEach(observer=>observer.disconnect());

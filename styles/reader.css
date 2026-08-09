@@ -3,8 +3,37 @@
   #v-read{display:none;}
   #v-read.on{display:flex;}
   #readmain{position:relative; flex:1; min-width:0;}
-  #rbar{position:sticky; top:var(--topbar-h,56px); z-index:40; background:transparent; height:3px;
-    transition:top .24s ease;}
+
+  /* ================= 읽는 동안의 셸 =================
+
+     읽는 동안 문서는 화면에 못 박히고, 스크롤은 `#reader-scroll` 하나가 합니다.
+     상단바·진행줄·단추·시트는 그 칸 바깥에 떠 있습니다.
+
+     얻는 것이 셋입니다.
+
+     하나. 글이 처음부터 노치 옆까지 뻗습니다. 예전 상단바는 `sticky` 라 문서
+     흐름 안에 제 자리를 차지했고, 걷어도 그 자리는 남았습니다. 글이 위까지 온
+     것처럼 보였던 것은 "스크롤을 그 높이만큼 지나가서 바가 글을 덮은" 상태를
+     투명하게 만든 것뿐이라, 스크롤이 위로 돌아오면 다시 막혔습니다. 이제는
+     흐름 밖이라 막힐 자리가 없습니다.
+
+     둘. 종이를 벌려도 떠 있는 것들은 제 크기입니다. 확대가 `#original-zoom`
+     안쪽 일이라 바깥은 애초에 안 커집니다 — 되돌리는 계산이 사라집니다.
+
+     셋. 상단바가 부드럽게 걷힙니다. `scrollTop` 은 우리 것이라 아이폰이
+     제멋대로 흔들지 않고, 프로그램이 옮긴 스크롤도 정확히 구분됩니다
+     (`scripts/reader/reader.js` 의 "상단바는 읽는 방향을 따릅니다"). */
+  html.reading, body.reading{height:100%; overflow:hidden; overscroll-behavior:none;}
+  body.reading #app{position:fixed; inset:0;}
+  body.reading #topbar{position:fixed; top:0; left:0; right:0;}
+  body.reading #v-read.on{position:absolute; inset:0;}
+  body.reading #readmain{position:absolute; inset:0;}
+  /* `pan-x pan-y` 는 미는 것은 그대로 두고 브라우저의 벌리기만 뺍니다. 벌리기는
+     이제 우리가 그립니다 (`scripts/reader/reader-scroll.js`). */
+  #reader-scroll{position:absolute; inset:0; overflow:auto; overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y;}
+  #rbar{position:fixed; top:var(--topbar-h,56px); left:0; right:0; z-index:40;
+    background:transparent; height:3px; transition:top .24s ease;}
   .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
   .iconbtn:hover{background:var(--sky);}
   #readwrap,#originalwrap{transition:opacity .22s ease,filter .22s ease;}
@@ -112,43 +141,18 @@
   /* 읽어 내려가는 동안에는 흐려집니다. 위로 올리면 곧바로 또렷해집니다. */
   body.chrome-hidden #readfabs{opacity:.3;}
   body.chrome-hidden #readfabs:hover{opacity:1;}
-  /* 화면을 벌려도 이 단추들은 제 크기로 남습니다. 오른쪽 아래에 붙어 있으므로
-     기준점도 그 모서리입니다 (`scripts/ui/interactions.js`).
-     ---- 모서리에서 띄운 만큼은 따로 되돌립니다 ----
-     `--vv-dx`·`--vv-dy` 는 "문서의 끝"을 "보이는 끝"으로 옮깁니다. 그런데 이
-     단추들은 그 끝에 딱 붙어 있지 않고 18px 안쪽에 있습니다. 상자만 배율의
-     역수로 줄이면 그 18px 은 줄지 않은 채로 남아, 두 배로 벌리면 화면 끝에서
-     36px, 2.4배면 43px 안쪽으로 — 벌릴수록 단추가 화면 가운데로 걸어
-     들어갑니다. 이것이 "위치가 이상해진다" 의 정체였습니다. 시트는 끝에 딱
-     붙어 있어서(`left:0;right:0;bottom:0`) 이 어긋남이 없었고, 그래서 시트만
-     멀쩡해 보였습니다. 띄운 거리에 `1 - 배율역수` 를 곱해 되밀어 주면 벌린
-     화면에서도 늘 같은 18px 입니다. 진행줄이 상단바 높이를 되미는 것
-     (`(k - 1) * --topbar-h`)과 부호만 다른 같은 셈입니다. */
-  body.vv-zoom #readfabs{transform-origin:100% 100%; scale:var(--vv-k,1);
-    translate:calc(var(--vv-dx,0px) + 18px * (1 - var(--vv-k,1)))
-              calc(var(--vv-dy,0px) + (18px + env(safe-area-inset-bottom)) * (1 - var(--vv-k,1)));}
-  body.vv-zoom #aa-pop{transform-origin:100% 100%; scale:var(--vv-k,1);
-    translate:calc(var(--vv-dx,0px) + 14px * (1 - var(--vv-k,1)))
-              calc(var(--vv-dy,0px) + (126px + env(safe-area-inset-bottom)) * (1 - var(--vv-k,1)));}
-  /* ---- 상단바도 시트와 같은 값으로 되돌립니다 ----
-     벌리는 것은 종이(원본 PDF)이지 앱이 아닙니다. 시트가 제 크기로 남는데
-     상단바만 함께 커지면, 작은 글씨를 보려고 벌릴수록 로고와 메뉴가 화면을
-     차지합니다. 값은 시트와 똑같은 하나입니다.
-     `#topbar` 는 `sticky` 라 보이는 화면이 아니라 문서를 따라갑니다. 그래서
-     배율의 역수(`--vv-k`)로 크기를 되돌리고, 보이는 화면이 문서의 어디에
-     있는지(`--vv-x`·`--vv-y`)만큼 옮겨 놓습니다. 기준점은 왼쪽 위 — 상단바가
-     붙어 있는 그 모서리입니다.
-     흐림 층은 `transform` 을 따라가지 않아서, 옮겨 놓으면 흐림만 제자리에
-     남습니다. 벌린 동안에는 흐리지 않고 종이색으로 덮습니다. */
-  body.reading.vv-zoom #topbar{transform-origin:0 0;
-    translate:var(--vv-x,0px) var(--vv-y,0px); scale:var(--vv-k,1);
-    background:var(--paper); backdrop-filter:none; -webkit-backdrop-filter:none;}
-  body.dark.reading.vv-zoom #topbar{background:#16181B;}
-  /* 진행줄은 상단바 아래(`--topbar-h`)에 붙어 있습니다. 같은 배율로 줄이면 그
-     간격도 함께 줄어드니, 줄어든 만큼 다시 내려 줍니다. */
-  body.reading.vv-zoom #rbar{transform-origin:0 0;
-    translate:var(--vv-x,0px) calc(var(--vv-y,0px) + (var(--vv-k,1) - 1) * var(--topbar-h,56px));
-    scale:var(--vv-k,1);}
+  /* 여기 있던 서른 줄은 "벌리면 커진 만큼 다시 줄여 놓는" 보정이었습니다 —
+     `--vv-k`(배율의 역수)와 `--vv-x`·`--vv-y`·`--vv-dx`·`--vv-dy`(보이는 화면이
+     문서의 어디에 있나)를 매 프레임 읽어 단추·시트·상단바에 되걸었습니다.
+
+     그 값은 늘 한 박자 늦었습니다. 벌어지는 그림은 컴포지터가 혼자 그리고
+     자바스크립트는 그 뒤를 따라가므로, 벌리는 내내 단추가 딸려 다니다 손을 뗀
+     뒤에야 제자리를 찾았습니다. 배율이 미끄러져 돌아오는 마지막 한 번은 아무
+     이벤트도 없이 끝나는 일이 있어서, 단추 둘만 벌리던 도중의 배율에 굳기도
+     했습니다.
+
+     이제 확대는 `#original-zoom` 안쪽에서 끝납니다. 이 단추들은 그 바깥이라
+     애초에 안 커집니다 — 되돌릴 것이 없으니 보정도 없습니다. */
 
   /* 원본 ↔ 글자 — 글자 하나 없이 지금 모드의 반대쪽을 그립니다.
      종이(모서리 접힌 문서)면 원본으로, 글줄이면 글자 화면으로 갑니다. */
@@ -158,31 +162,30 @@
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-text{opacity:1; transform:none;}
 
-  /* ---- 상단바는 스크롤 방향을 따릅니다 ----
-     내려 읽으면 걷히고, 올리거나 맨 위에 닿으면 돌아옵니다. 높이(--topbar-h)는
-     그대로 둡니다 — 0으로 우기면 앵커 계산이 첫 줄을 로고 뒤에 숨깁니다. */
-  /* 걷힐 때는 **밀지 않고 지웁니다.** 위로 미는 방식은 아이폰에서 상단바가
-     노치 옆에 희미하게 남는 일이 있었습니다. `position:sticky` 인 칸은 아이폰에서
-     스크롤과 같은 층(컴포지터)이 자리를 잡는데, 거기에 `transform` 을 얹으면
-     스크롤이 흐르는 동안 옛 그림이 한 장 남습니다. 게다가 `backdrop-filter` 의
-     흐림 층은 애초에 `transform` 을 따라가지 않아서, 밀어 낸 자리에 흐림만
-     남기도 합니다. 밀 것이 없으면 남을 것도 없습니다.
+  /* ---- 상단바는 읽는 방향을 따릅니다 ----
+     내려 읽으면 걷히고, 올리거나 글머리에 닿으면 돌아옵니다.
 
-     그래서 세 가지를 함께 합니다 — 흐려지고(opacity), 흐림 층을 그 자리에서
-     끄고(backdrop-filter:none), 다 흐려진 뒤 `visibility` 로 확실히 없앱니다.
-     자리는 그대로 두므로 글은 지금까지처럼 그 아래로 지나갑니다. 돌아올 때는
-     기다리지 않고 곧바로 켭니다. */
-  #topbar{transition:opacity .22s ease, visibility 0s;}
+     이제는 **위로 밉니다.** 예전에는 밀지 못하고 흐리게만 지웠습니다 —
+     `position:sticky` 인 칸은 아이폰에서 스크롤과 같은 층이 자리를 잡는데, 거기에
+     `transform` 을 얹으면 스크롤이 흐르는 동안 옛 그림이 한 장 남았기 때문입니다.
+     상단바가 흐름 밖(`position:fixed`)으로 나오면서 그 층이 스크롤과 갈라졌고,
+     미는 그림은 이제 컴포지터가 혼자 그립니다. 자바스크립트는 클래스 하나만
+     바꾸므로 읽는 손맛을 한 프레임도 안 먹습니다.
+
+     흐림 층만 미리 끕니다 — `backdrop-filter` 는 밀려난 자리에 흐림만 남기는
+     일이 있어서, 걷히는 동안에는 아예 안 씁니다.
+     자리를 차지하지 않으므로 글은 그 아래로 그대로 지나갑니다. */
+  #topbar{transition:transform .24s cubic-bezier(.4,0,.2,1), opacity .18s ease, visibility 0s;}
   body.chrome-hidden #topbar{
-    opacity:0; visibility:hidden; pointer-events:none;
+    transform:translateY(-100%); opacity:0; visibility:hidden; pointer-events:none;
     background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none;
-    transition:opacity .22s ease, visibility 0s linear .22s;}
+    transition:transform .24s cubic-bezier(.4,0,.2,1), opacity .18s ease, visibility 0s linear .24s;}
   /* 진행바도 함께 걷힙니다. 상단바만 걷고 이 줄을 남기면, 파란 실 한 가닥이
      노치 옆 그 자리에 남아서 화면이 끝까지 트이지 않습니다 — 사파리에서
      주소창이 걷힐 때 남는 것이 아무것도 없는 것과 같은 이유입니다.
      "얼마나 왔나" 는 눈을 글에서 뗐을 때 궁금한 것이라, 상단바가 돌아오는
      바로 그 손짓(위로 조금 올리기)에 같이 돌아오면 충분합니다.
-     자리는 그대로 두고 색만 지웁니다 — 높이를 접으면 글이 3px 튑니다. */
+     상단바를 따라 맨 위로 올라갔다가 색만 지웁니다. */
   #rbar{transition:top .24s ease, opacity .24s ease;}
   body.chrome-hidden #rbar{top:0; opacity:0;}
   @media(prefers-reduced-motion:reduce){
@@ -191,14 +194,13 @@
   }
   #ptrack{height:3px; background:var(--line2);}
   #pfill{height:3px; background:var(--blue); width:0; transition:width .15s;}
-  /* 글자 화면에서는 벌려도 커지지 않습니다 — 크기는 Aa 안에 있고, 그쪽은
-     줄바꿈까지 다시 흘려 줍니다. `pan-x pan-y` 는 미는 것은 그대로 두고 벌리기와
-     두 번 두드리기만 뺍니다. 사파리는 이 값을 듣지 않으므로 손짓 이벤트로 한 번
-     더 막습니다 (`scripts/ui/interactions.js`). 원본 화면은 그대로 벌려집니다. */
-  body.reading:not(.reader-original){touch-action:pan-x pan-y;}
   /* 글 폭과 좌우 여백은 Aa 안에서 고릅니다. 스크롤에 따라 바뀌지는 않습니다 —
-     읽는 도중 줄바꿈이 흔들리면 보던 자리를 놓칩니다. */
-  #readwrap{max-width:var(--readw,700px); margin:0 auto; padding:36px var(--readpad,26px) 50vh;}
+     읽는 도중 줄바꿈이 흔들리면 보던 자리를 놓칩니다.
+     위 여백에 상단바 높이를 더합니다. 상단바가 흐름 밖으로 나가면서 글이 맨
+     위에서부터 시작하는데, 그러면 첫 줄이 로고 뒤에 깔립니다. 읽어 내려가면
+     글은 그 아래로 지나가고 상단바는 걷힙니다 — 사파리와 같습니다. */
+  #readwrap{max-width:var(--readw,700px); margin:0 auto;
+    padding:calc(var(--topbar-h,56px) + 36px) var(--readpad,26px) 50vh;}
   #rtitle{font-family:var(--serif); font-size:clamp(24px,3.4vw,30px); color:var(--ink); padding-bottom:18px; overflow-wrap:anywhere;
     border-bottom:1px solid var(--line); margin-bottom:8px;}
   /* 기사에는 연결할 원본 파일이 없습니다. 원문으로 가는 길만 남겨 둡니다. */
@@ -263,12 +265,29 @@
   .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
 
   /* ================= original document mode ================= */
-  #originalwrap{max-width:980px; margin:0 auto; padding:58px 24px 45vh;}
+  /* 폭 제한과 좌우 여백은 확대되는 층 **안쪽**(.original-content)으로 옮겼습니다.
+     바깥이 폭을 정하면 벌릴 때마다 종이의 왼쪽 끝이 움직여서, 손가락 아래 있던
+     줄을 붙들어 둘 기준점이 사라집니다. 안쪽에 두면 여백도 종이와 함께 커집니다
+     — 진짜 PDF 뷰어가 그렇습니다. */
+  #originalwrap{padding:calc(var(--topbar-h,56px) + 20px) 0 45vh;}
   #originalwrap[hidden]{display:none;}
   #original-selection-hint{width:max-content; max-width:calc(100% - 12px); margin:0 auto 12px; padding:6px 11px;
     border:1px solid var(--line); border-radius:14px; background:var(--paper2); color:var(--soft2);
     font:11px/1.3 var(--ui); text-align:center;}
-  .original-content{width:100%;}
+  /* 확대된 종이가 차지할 자리. 크기는 자바스크립트가 적습니다 (기준 크기 × 배율).
+     이 칸이 넓어지면 스크롤 칸 안에 가로로 밀 거리가 생깁니다 — 문서 폭은
+     한 픽셀도 안 변하므로 폰 브라우저가 화면을 축소할 이유가 없습니다. */
+  #original-stage{position:relative;}
+  /* 종이 자체. 레이아웃 폭은 늘 기준 폭이고 커지는 것은 `transform` 뿐입니다.
+     그래서 벌려도 글이 다시 흐르지 않습니다 — PDF 캔버스가 보는 `clientWidth`
+     가 그대로이기 때문입니다. */
+  /* `width:100%` 는 자바스크립트가 재기 전까지의 값입니다. `position:absolute` 인
+     칸은 폭을 안 적으면 내용에 맞춰 쪼그라들어서, 첫 그림이 좁게 그려집니다. */
+  #original-zoom{position:absolute; top:0; left:0; width:100%; transform-origin:0 0;}
+  /* 벌리는 동안에만 켭니다. 긴 PDF 는 캔버스가 많아서, 늘 켜 두면 안 쓰는
+     그림층을 계속 들고 있게 됩니다. */
+  #original-zoom.pinching{will-change:transform;}
+  .original-content{width:100%; max-width:980px; margin:0 auto; padding:0 24px;}
   .original-loading{min-height:55vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:14px; color:var(--soft); font-size:14px;}
   .original-loading i{width:28px; height:28px; border:3px solid var(--line2); border-top-color:var(--blue);
@@ -318,7 +337,10 @@
   .epub-chapter-frame{display:block; width:100%; min-height:80px; border:0; background:#fff;}
 
   @media(max-width:760px){
-    #originalwrap{padding:50px 6px 45vh;}
+    /* 좌우 여백은 확대되는 층 안쪽으로 내려갑니다 — 바깥이 폭을 정하면 벌릴 때
+       종이의 왼쪽 끝이 움직여서 손가락 아래를 붙들 기준이 사라집니다. */
+    #originalwrap{padding:calc(var(--topbar-h,56px) + 12px) 0 45vh;}
+    .original-content{padding:0 6px;}
     .pdf-original{gap:10px;}
     .original-empty{margin:6vh 10px 0; padding:34px 22px;}
   }

@@ -145,7 +145,7 @@ async function restoreTextSentence(candidates,targetPi){
   const found=findTextSentence(candidates,targetPi);
   if(!found) return false;
   const rect=found.range.getBoundingClientRect();
-  window.scrollTo(0,Math.max(0,window.scrollY+rect.top-topInset()-12));
+  readerScrollTo(readerScrollTop()+rect.top-topInset()-12);
   const end=found.match.start+found.match.length;
   found.stream.slice(found.match.start,end).forEach(item=>{
     const word=item.node.parentElement&&item.node.parentElement.closest('.w');
@@ -192,13 +192,20 @@ function showRangeModeCue(range,duration){
     }
   }catch(error){}
   /* Safari versions without the Custom Highlight API still get the same cue.
-     These rectangles live in document coordinates, so they follow scrolling
-     instead of remaining stuck to the viewport. */
+     These rectangles live in the scrolling box's own coordinates, so they follow
+     the reader instead of remaining stuck to the viewport.
+     EPUB 은 샌드박스 iframe 이라 그 안의 문서가 제 스크롤을 갖습니다. 우리 쪽
+     문서는 스크롤하지 않으므로(읽는 칸이 대신합니다) 기준이 다릅니다. */
   if(!painted){
+    const inFrame = doc !== document;
+    const host = inFrame ? doc.body : readerScroller();
+    const base = host ? host.getBoundingClientRect() : null;
+    const offsetX = inFrame ? (view.scrollX||0) : (base ? host.scrollLeft - base.left : 0);
+    const offsetY = inFrame ? (view.scrollY||0) : (base ? host.scrollTop  - base.top  : 0);
     [...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0).forEach(rect=>{
       const cue=doc.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-dom';
-      cue.style.cssText=`left:${rect.left+(view.scrollX||0)}px;top:${rect.top+(view.scrollY||0)}px;width:${rect.width}px;height:${rect.height}px`;
-      doc.body.appendChild(cue);
+      cue.style.cssText=`left:${rect.left+offsetX}px;top:${rect.top+offsetY}px;width:${rect.width}px;height:${rect.height}px`;
+      (host || doc.body).appendChild(cue);
     });
   }
   if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
@@ -253,11 +260,24 @@ async function switchReaderMode(mode,options){
   closePanel();
 
   document.body.classList.toggle('reader-original',mode==='original');
-  /* 벌린 것은 종이였습니다. 글자 화면은 벌리지 않기로 했으니 배율도 두고 옵니다
-     (scripts/ui/interactions.js 의 "벌어진 화면을 제 크기로 되돌립니다"). */
-  if(mode==='text' && typeof resetPageZoom === 'function') resetPageZoom();
+  /* ---- 글자 화면으로 오면 배율은 1 입니다 ----
+     벌린 것은 종이였습니다. 글자 화면에는 벌릴 이유가 없습니다 — 글자 크기는
+     Aa 안에 있고, 그쪽은 줄바꿈까지 다시 흘려 화면 폭에 맞춰 줍니다. 벌리기는
+     같은 일을 더 나쁘게 합니다(한 줄을 읽으려고 옆으로 밀어야 하니까요).
+
+     예전에는 이 한 줄이 꼼수였습니다. 브라우저 배율을 내리는 API 가 없어서
+     `<meta name=viewport>` 에 `maximum-scale=1` 을 얹어 사파리가 스스로 배율을
+     끌어내리게 하고, 400ms 뒤에 그 문장을 도로 떼어 냈습니다. 이제 배율은 우리
+     것이라 그냥 1 을 적습니다 (scripts/reader/reader-scroll.js).
+
+     원본으로 돌아갈 때는 되돌리지 않습니다 — 벌려 놓고 잠깐 글자 화면에
+     다녀온 사람에게 배율까지 뺏을 이유는 없습니다. */
+  if(mode==='text') resetOriginalZoom();
   document.getElementById('readwrap').hidden = mode==='original';
   document.getElementById('originalwrap').hidden = mode!=='original';
+  /* 숨어 있는 동안에는 잴 것이 없습니다. 드러난 다음 프레임에 한 번 재 둡니다 —
+     확대된 종이가 차지할 자리는 여기서 정해집니다. */
+  if(mode==='original') requestAnimationFrame(layoutOriginalZoom);
   updateReaderModeControls();
   requestAnimationFrame(()=>document.body.classList.remove('reader-mode-transition'));
 
@@ -269,10 +289,10 @@ async function switchReaderMode(mode,options){
         ? await restoreTextSentence(sentenceBridge.candidates,targetPi) : false;
       if(!sentenceFound && targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
-        if(element) window.scrollTo(0,Math.max(0,window.scrollY+element.getBoundingClientRect().top-topInset()-10));
+        if(element) readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-topInset()-10);
       }else if(!sentenceFound){
         const position = posOf(curBook.id);
-        if(!restoreAnchor(position)) window.scrollTo(0,position.y||0);
+        if(!restoreAnchor(position)) readerScrollTo(position.y||0);
       }
       lastAnchor = captureAnchor();
       suspendReaderScrollSave(450);

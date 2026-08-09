@@ -25,6 +25,7 @@
 - `scripts/reader/`: 보수적인 글자 화면, PDF/EPUB 원본 화면, 양방향 위치 연결
   - `pdf-word-geometry.js`: DOM에 의존하지 않는 순수 단어 상자 계산 (테스트가 직접 호출)
   - `mode-bridge.js`: 문장 단위 비교. 줄바꿈·따옴표·공백·붙임글자 차이를 무시하고, **읽던 자리에 가장 가까운** 자리를 고릅니다
+  - `reader-scroll.js`: **읽는 화면의 스크롤과 확대를 소유합니다.** 읽는 동안 문서(`window`)는 화면에 못 박히고 스크롤은 `#reader-scroll` 한 칸이 합니다. 상단바·진행줄·단추·시트는 그 칸 바깥이라, 종이를 벌려도 제 크기입니다 — 브라우저 배율과 싸우며 매 프레임 되돌리던 보정(`--vv-k`)이 여기서 사라졌습니다. 확대는 `#original-zoom` 에 걸리는 `transform` 이라 문서 폭이 안 변하고, 그래서 폰 브라우저가 화면을 축소하지도 않습니다. **벌어지는 것은 PDF 뿐입니다** — 종이를 찍은 그림이라 작은 글씨를 보는 길이 그것밖에 없습니다. EPUB 원본과 글자 화면은 글자라서 크기를 키우면 줄바꿈까지 다시 흐르므로(크기는 Aa 담당) 벌리기를 아예 안 받습니다
   - `original-session.js`: 원본 세션 상태·수명·앵커·진행도
   - `pdf-original.js` / `epub-original.js`: 형식별 렌더링·단어 선택·앵커
   - `original-formats.js`: 형식별 일감 표(pdf·epub)와 `bookSupportsOriginal()`

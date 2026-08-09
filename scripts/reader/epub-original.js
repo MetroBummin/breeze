@@ -161,6 +161,12 @@ async function openOriginalEpub(book,record,token){
         }
         if(frameDoc){
           frameDoc.addEventListener('pointerup',()=>{ setTimeout(()=>openOriginalSelection(frameDoc),0); });
+          /* EPUB 은 벌리지 않습니다 — 글자라서 크기를 키우면 줄바꿈까지 다시
+             흘러 화면 폭에 맞습니다(벌리기는 한 줄을 읽으려고 옆으로 밀게 만들
+             뿐입니다). 벌어지는 것은 종이를 찍은 그림인 PDF 뿐입니다.
+             샌드박스 iframe 은 제 문서라 우리 쪽 귀가 안 닿으므로, 브라우저의
+             벌리기를 막는 귀만 여기 한 번 겁니다. */
+          blockBrowserPinch(frameDoc);
           renderEpubSavedWordHighlights(frameDoc);
         }
         finish();
@@ -289,7 +295,7 @@ async function restoreEpubAnchor(source,inset){
   if(originalSession.frameReady[spine]) await originalSession.frameReady[spine];
   const element=epubElementAt(spine,source.element);
   const offset=element ? element.getBoundingClientRect().top : 0;
-  window.scrollTo(0,Math.max(0,window.scrollY+frame.getBoundingClientRect().top+offset-inset));
+  readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);
   return true;
 }
 
@@ -319,7 +325,7 @@ async function restoreEpubSentence(candidates,source,changeToken){
       const range=rangeForWordMatch(stream,match);
       if(!range) continue;
       const rect=range.getBoundingClientRect();
-      window.scrollTo(0,Math.max(0,window.scrollY+frame.getBoundingClientRect().top+rect.top-topInset()-10));
+      readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+rect.top-topInset()-10);
       showRangeModeCue(range,10000);
       return true;
     }
