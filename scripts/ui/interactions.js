@@ -58,51 +58,114 @@
    벌리지 않은 동안에는 변수도 클래스도 없습니다. 평소의 화면은 이 코드가
    있기 전과 정확히 같습니다 — 값이 1 인 `scale` 도 걸어 두면 그 자체로
    포함 블록이 바뀌므로, 아예 걸지 않는 편이 안전합니다. */
+let checkViewportLock = ()=>{};
 (function(){
   const vv = window.visualViewport;
   if(!vv) return;
   const VARS = ['--vv-x','--vv-y','--vv-dx','--vv-dy','--vv-k'];
   const root = document.documentElement;
-  let frame = 0, watch = 0;
-  function paintViewportLock(){
-    frame = 0;
+  let frame = 0, idle = 0, still = 0, last = '', zoomed = false, pinnedForZoom = false;
+
+  /* ---- 벌어져 있나 ----
+     들어가는 문턱과 나오는 문턱이 다릅니다. 손가락을 뗀 뒤에도 배율은 한동안
+     1.00 언저리에서 미세하게 떨립니다. 문턱이 하나면 그 떨림에 맞춰 상단바가
+     투명했다 종이색이었다 하고, 노치 옆이 막혔다 뚫렸다 합니다. 벌린 것으로
+     보려면 6% 는 커져야 하고, 한 번 그렇게 본 뒤에는 2% 아래로 내려와야
+     놓습니다. */
+  function measure(){
     const scale = vv.scale || 1;
-    /* 2% 는 흔들림입니다. 손가락을 뗀 뒤에도 배율이 1.000 으로 딱 떨어지지
-       않는 기기가 있어서, 그 언저리는 벌리지 않은 것으로 봅니다. */
-    const zoomed = scale > 1.02;
-    document.body.classList.toggle('vv-zoom', zoomed);
-    if(zoomed){
-      const layoutWidth = root.clientWidth, layoutHeight = root.clientHeight;
-      root.style.setProperty('--vv-k', String(1/scale));
-      root.style.setProperty('--vv-x', vv.offsetLeft+'px');
-      root.style.setProperty('--vv-y', vv.offsetTop+'px');
-      /* 오른쪽·아래에 붙은 것들은 "문서 끝에서 보이는 끝까지" 의 차이만큼 당깁니다. */
-      root.style.setProperty('--vv-dx', (vv.offsetLeft + vv.width  - layoutWidth )+'px');
-      root.style.setProperty('--vv-dy', (vv.offsetTop  + vv.height - layoutHeight)+'px');
+    zoomed = zoomed ? scale > 1.02 : scale > 1.06;
+    if(!zoomed) return null;
+    const layoutWidth = root.clientWidth, layoutHeight = root.clientHeight;
+    return {k:1/scale, x:vv.offsetLeft, y:vv.offsetTop,
+            /* 오른쪽·아래에 붙은 것들은 "문서 끝에서 보이는 끝까지" 의 차이만큼 당깁니다. */
+            dx:vv.offsetLeft + vv.width  - layoutWidth,
+            dy:vv.offsetTop  + vv.height - layoutHeight};
+  }
+
+  function apply(view){
+    document.body.classList.toggle('vv-zoom', !!view);
+    if(view){
+      root.style.setProperty('--vv-k', String(view.k));
+      root.style.setProperty('--vv-x', view.x+'px');
+      root.style.setProperty('--vv-y', view.y+'px');
+      root.style.setProperty('--vv-dx', view.dx+'px');
+      root.style.setProperty('--vv-dy', view.dy+'px');
     }else{
       VARS.forEach(name => root.style.removeProperty(name));
     }
-    /* ---- 벌린 동안에는 스스로도 확인합니다 ----
-       이 값들은 `visualViewport` 가 알려 줄 때만 다시 계산됐습니다. 그런데
-       아이폰은 손가락을 떼는 그 순간을 잘 빠뜨립니다 — 벌리는 동안 화면은
-       컴포지터가 혼자 그리고, `requestAnimationFrame` 은 그동안 밀려 있다가
-       나중에 한꺼번에 돌며, 손을 떼고 배율이 1 로 미끄러져 돌아가는 마지막
-       한 번은 아무 이벤트도 없이 끝나는 일이 있습니다. 그 한 번을 놓치면
-       `--vv-k` 가 벌리던 도중의 값(예: 0.4)에 그대로 굳습니다. 화면은 제 크기로
-       돌아왔는데 오른쪽 아래 단추 둘만 그 배율로 남아 — 갑자기 아주 작아지고
-       자리도 밀린 채 — 있었던 것이 이것입니다.
-       그래서 벌어져 있는 동안에는 이벤트를 기다리지 않고 0.25초마다 직접
-       봅니다. 배율이 1 로 돌아오면 그 자리에서 값을 지우고 확인도 멈춥니다. */
-    clearTimeout(watch);
-    if(zoomed) watch = setTimeout(scheduleViewportLock, 250);
+    /* 벌린 동안에는 상단바를 스크롤 방향에 맡기지 않습니다 (scripts/reader/reader.js).
+       들고 놓는 순간에만 알립니다 — 미는 내내 알리면 놓아 준 뒤의 유예가 계속
+       뒤로 밀려서, 손을 뗀 다음에도 상단바가 한참 멎어 있습니다. */
+    if(pinnedForZoom !== !!view){
+      pinnedForZoom = !!view;
+      if(typeof pinReaderChrome === 'function') pinReaderChrome(pinnedForZoom, 'zoom');
+    }
   }
-  const scheduleViewportLock = ()=>{ if(!frame) frame = requestAnimationFrame(paintViewportLock); };
-  vv.addEventListener('resize', scheduleViewportLock);
-  vv.addEventListener('scroll', scheduleViewportLock);
-  /* 다른 앱에 갔다 돌아오면 확인 타이머는 멈춰 있습니다. 돌아온 김에 한 번. */
-  window.addEventListener('pageshow', scheduleViewportLock);
-  document.addEventListener('visibilitychange', scheduleViewportLock);
+
+  /* ---- 벌어져 있는 동안에는 계속 지켜봅니다 ----
+     이 값들은 한때 `visualViewport` 가 알려 줄 때만 다시 계산했고, 그다음에는
+     0.25초마다 확인했습니다. 둘 다 모자랐습니다. 벌리는 동안 화면은 컴포지터가
+     혼자 그리고 `requestAnimationFrame` 은 그동안 밀려 있다가 나중에 한꺼번에
+     도는데, 손을 떼고 배율이 미끄러져 돌아가는 마지막 한 번은 아무 이벤트도
+     없이 끝나는 일이 있습니다. 그 한 번을 놓치면 `--vv-k` 가 벌리던 도중의
+     값(예: 0.4)에 굳어, 화면은 제 크기인데 오른쪽 아래 단추 둘만 그 배율로
+     남습니다 — 갑자기 작아지고 자리도 밀린 채로. 0.25초 확인은 그것을 늦게나마
+     고쳤지만, 대신 미는 내내 단추가 네 번씩 뒤늦게 따라와 춤을 췄습니다.
+
+     그래서 벌어져 있는 동안에는 매 프레임 봅니다. 하는 일은 숫자 다섯 개를
+     읽어 지난번과 견주는 것뿐이고, 바뀌었을 때만 씁니다. 1.5초쯤 가만히 있으면
+     느린 확인(0.4초)으로 내려갔다가, 다시 움직이면 곧바로 매 프레임으로
+     돌아옵니다. 제 크기로 돌아오는 순간 값을 지우고 지켜보는 것도 멈춥니다. */
+  function tick(){
+    frame = 0;
+    const view = measure();
+    const stamp = view ? [view.k,view.x,view.y,view.dx,view.dy].join(' ') : '';
+    if(stamp !== last){ last = stamp; still = 0; apply(view); }
+    else still++;
+    if(!view) return;                       // 제 크기 — 지켜볼 것이 없습니다
+    if(still < 90) frame = requestAnimationFrame(tick);
+    else idle = setTimeout(watchViewport, 400);
+  }
+  function watchViewport(){
+    if(idle){ clearTimeout(idle); idle = 0; }
+    if(!frame) frame = requestAnimationFrame(tick);
+  }
+  checkViewportLock = watchViewport;
+  vv.addEventListener('resize', watchViewport);
+  vv.addEventListener('scroll', watchViewport);
+  /* 손짓이 끝나는 자리도 직접 짚어 둡니다 — 이벤트 하나가 빠져도 여기서 걸립니다. */
+  ['gestureend','touchend','touchcancel'].forEach(type =>
+    document.addEventListener(type, watchViewport, {passive:true}));
+  /* 다른 앱에 갔다 돌아오면 타이머는 멈춰 있습니다. 돌아온 김에 한 번. */
+  window.addEventListener('pageshow', watchViewport);
+  document.addEventListener('visibilitychange', watchViewport);
 })();
+
+/* ---- 벌어진 화면을 제 크기로 되돌립니다 ----
+   글자 화면은 벌리지 않기로 했는데, 원본에서 벌린 채로 건너오면 그 배율 그대로
+   글자 화면이 열렸습니다. 벌리기를 막아 둔 화면이 벌어진 채로 있는 셈이라
+   되돌릴 길도 없었습니다.
+
+   배율을 내리는 API 는 없습니다. 있는 것은 `<meta name=viewport>` 하나뿐이고,
+   거기에 `maximum-scale=1` 을 얹으면 사파리가 지금 배율을 그 한도까지 끌어
+   내립니다. 그대로 두면 원본으로 돌아갔을 때 벌릴 수 없으므로, 한 번 내린 뒤
+   원래 문장으로 되돌려 놓습니다. 처음 문장은 시작할 때 한 번만 적어 두어,
+   연달아 불러도 얹은 문장이 다시 얹히지 않습니다. */
+const VIEWPORT_META = document.querySelector('meta[name="viewport"]');
+const VIEWPORT_BASE = VIEWPORT_META ? VIEWPORT_META.getAttribute('content') : '';
+let viewportResetTimer = 0;
+function resetPageZoom(){
+  const vv = window.visualViewport;
+  if(!VIEWPORT_META || !vv || (vv.scale || 1) <= 1.02) return;
+  VIEWPORT_META.setAttribute('content', VIEWPORT_BASE + ', maximum-scale=1, user-scalable=0');
+  checkViewportLock();     // 되돌아온 배율을 기다리지 않고 바로 확인합니다
+  clearTimeout(viewportResetTimer);
+  viewportResetTimer = setTimeout(()=>{
+    VIEWPORT_META.setAttribute('content', VIEWPORT_BASE);
+    checkViewportLock();
+  }, 400);
+}
 
 /* ================= 글자 화면은 벌려도 커지지 않습니다 =================
 

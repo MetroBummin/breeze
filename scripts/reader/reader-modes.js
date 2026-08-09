@@ -253,6 +253,9 @@ async function switchReaderMode(mode,options){
   closePanel();
 
   document.body.classList.toggle('reader-original',mode==='original');
+  /* 벌린 것은 종이였습니다. 글자 화면은 벌리지 않기로 했으니 배율도 두고 옵니다
+     (scripts/ui/interactions.js 의 "벌어진 화면을 제 크기로 되돌립니다"). */
+  if(mode==='text' && typeof resetPageZoom === 'function') resetPageZoom();
   document.getElementById('readwrap').hidden = mode==='original';
   document.getElementById('originalwrap').hidden = mode!=='original';
   updateReaderModeControls();

@@ -206,17 +206,28 @@ let chromeLastY = 0, chromeRun = 0;    // chromeRun: 같은 방향으로 이어�
    "위로 올렸다"로 읽혀서, 뜻 한 번 보고 나면 상단바가 돌아와 있었습니다.
    낱말 창은 읽기를 멈춘 것이 아니라 읽는 도중이므로, 그동안의 움직임은
    방향으로 세지 않고 창을 닫을 때 거리만 0에서 다시 시작합니다. */
+/* 붙잡는 이유가 둘이라 이름을 붙여 셉니다 — 낱말 창(`panel`)과 벌린 화면(`zoom`).
+   하나가 놓아도 다른 하나가 잡고 있으면 상단바는 그대로입니다. 예전처럼 참·거짓
+   하나로 두면, 벌린 채 낱말을 보다가 창을 닫는 순간 아직 벌어져 있는데도 풀립니다. */
+const chromePins = new Set();
 let chromePinned = false, chromeHoldUntil = 0;
-function pinReaderChrome(pinned){
-  chromePinned = pinned;
+function pinReaderChrome(pinned, reason){
+  const key = reason || 'panel';
+  if(pinned) chromePins.add(key); else chromePins.delete(key);
+  chromePinned = chromePins.size > 0;
   chromeHoldUntil = Date.now() + 500;   // 시트가 미끄러져 나가는 동안까지
   chromeLastY = Math.max(0, window.scrollY || 0);
   chromeRun = 0;
+  /* 벌리는 것은 읽어 내려가는 것이 아니라 들여다보는 것입니다. 그때 상단바를
+     불러 두면, 벌린 내내 시트와 같은 값으로 제자리에 고정되어 남습니다 —
+     걷힌 채로 얼어붙어 "확대하면 상단바가 아예 없다" 가 되지 않도록. */
+  if(pinned && key === 'zoom') setReaderChrome(false);
 }
 function setReaderChrome(hidden){
   document.body.classList.toggle('chrome-hidden', hidden);
 }
 function showReaderChrome(){
+  chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
   chromeLastY = window.scrollY || 0; chromeRun = 0;
   setReaderChrome(false);
 }
@@ -224,6 +235,12 @@ function followScrollDirection(){
   const y = Math.max(0, window.scrollY || 0);
   const step = y - chromeLastY;
   chromeLastY = y;
+  /* 붙잡혀 있으면 방향을 세지 않습니다 — 낱말 창이 열려 있거나, 화면이 벌어져
+     있을 때입니다. 벌린 채 손가락으로 종이를 미는 동안 아이폰은 `scrollY` 를
+     크게 움직입니다(보이는 화면을 담으려고 문서 쪽 화면까지 함께 옮깁니다).
+     그것을 읽는 방향으로 세면 미는 내내 상단바가 걷혔다 돌아왔다 하며,
+     노치 옆이 막혔다 뚫렸다 합니다. 미는 것은 읽는 것이 아닙니다
+     (거는 곳은 `scripts/ui/interactions.js` 의 "벌려도 시트는 그대로"). */
   if(chromePinned || Date.now() < chromeHoldUntil){ chromeRun = 0; return; }
   /* 모드를 바꾸며 프로그램이 옮겨 놓은 화면은 내가 읽어 내려간 것이 아닙니다 */
   if(Date.now() < readerScrollPauseUntil){ chromeRun = 0; return; }

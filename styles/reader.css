@@ -113,9 +113,23 @@
   body.chrome-hidden #readfabs{opacity:.3;}
   body.chrome-hidden #readfabs:hover{opacity:1;}
   /* 화면을 벌려도 이 단추들은 제 크기로 남습니다. 오른쪽 아래에 붙어 있으므로
-     기준점도 그 모서리입니다 (`scripts/ui/interactions.js`). */
-  body.vv-zoom #readfabs, body.vv-zoom #aa-pop{transform-origin:100% 100%;
-    translate:var(--vv-dx,0px) var(--vv-dy,0px); scale:var(--vv-k,1);}
+     기준점도 그 모서리입니다 (`scripts/ui/interactions.js`).
+     ---- 모서리에서 띄운 만큼은 따로 되돌립니다 ----
+     `--vv-dx`·`--vv-dy` 는 "문서의 끝"을 "보이는 끝"으로 옮깁니다. 그런데 이
+     단추들은 그 끝에 딱 붙어 있지 않고 18px 안쪽에 있습니다. 상자만 배율의
+     역수로 줄이면 그 18px 은 줄지 않은 채로 남아, 두 배로 벌리면 화면 끝에서
+     36px, 2.4배면 43px 안쪽으로 — 벌릴수록 단추가 화면 가운데로 걸어
+     들어갑니다. 이것이 "위치가 이상해진다" 의 정체였습니다. 시트는 끝에 딱
+     붙어 있어서(`left:0;right:0;bottom:0`) 이 어긋남이 없었고, 그래서 시트만
+     멀쩡해 보였습니다. 띄운 거리에 `1 - 배율역수` 를 곱해 되밀어 주면 벌린
+     화면에서도 늘 같은 18px 입니다. 진행줄이 상단바 높이를 되미는 것
+     (`(k - 1) * --topbar-h`)과 부호만 다른 같은 셈입니다. */
+  body.vv-zoom #readfabs{transform-origin:100% 100%; scale:var(--vv-k,1);
+    translate:calc(var(--vv-dx,0px) + 18px * (1 - var(--vv-k,1)))
+              calc(var(--vv-dy,0px) + (18px + env(safe-area-inset-bottom)) * (1 - var(--vv-k,1)));}
+  body.vv-zoom #aa-pop{transform-origin:100% 100%; scale:var(--vv-k,1);
+    translate:calc(var(--vv-dx,0px) + 14px * (1 - var(--vv-k,1)))
+              calc(var(--vv-dy,0px) + (126px + env(safe-area-inset-bottom)) * (1 - var(--vv-k,1)));}
   /* ---- 상단바도 시트와 같은 값으로 되돌립니다 ----
      벌리는 것은 종이(원본 PDF)이지 앱이 아닙니다. 시트가 제 크기로 남는데
      상단바만 함께 커지면, 작은 글씨를 보려고 벌릴수록 로고와 메뉴가 화면을

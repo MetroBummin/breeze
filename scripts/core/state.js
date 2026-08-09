@@ -126,6 +126,8 @@ function show(v){
   if(v!=='read'){
     leaveOriginalReader();
     curBook=null; closePanel(); showReaderChrome();
+    /* 원본을 벌린 채로 나가면 서재까지 벌어진 채로 열립니다 */
+    if(typeof resetPageZoom === 'function') resetPageZoom();
   }
   document.body.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();
