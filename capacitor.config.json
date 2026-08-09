@@ -1,0 +1,13 @@
+{
+  "appId": "com.breeze.reader",
+  "appName": "Breeze",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#FAF8F2"
+  },
+  "server": {
+    "iosScheme": "breeze",
+    "androidScheme": "https"
+  }
+}

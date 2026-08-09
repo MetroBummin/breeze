@@ -35,8 +35,12 @@
   @keyframes pulse{0%,100%{opacity:.3; transform:scale(1);} 50%{opacity:.9; transform:scale(1.25);}}
 
   /* ================= top bar ================= */
+  /* 위쪽 여백에 안전 영역을 더합니다. 브라우저에서는 0 이라 그대로이고, 아이폰
+     노치·다이내믹 아일랜드 아래에서는 그만큼 내려갑니다 — 네이티브 셸에서 로고가
+     시계와 겹쳐 있었습니다. */
   #topbar{position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
-    padding:16px 26px; background:rgba(250,248,242,.9); backdrop-filter:blur(10px);}
+    padding:calc(16px + env(safe-area-inset-top)) 26px 16px;
+    background:rgba(250,248,242,.9); backdrop-filter:blur(10px);}
   #logo{display:flex; align-items:center; gap:9px; cursor:pointer; user-select:none;}
   #logo svg{width:34px; height:22px;}
   #logo .mark{font-size:21px; font-weight:600; letter-spacing:-1px; color:var(--ink);}

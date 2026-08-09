@@ -5,6 +5,16 @@
   "scripts": {
     "stamp": "node tools/stamp-version.mjs",
     "docs": "node tools/build-docs.mjs",
+    "www": "node tools/stamp-version.mjs && node tools/build-www.mjs",
+    "ios": "npm run www && cap sync ios && cap open ios",
+    "ios:sync": "npm run www && cap sync ios",
     "test": "node tools/stamp-version.mjs && node tools/build-docs.mjs && node tests/verify-structure.mjs"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0"
   }
 }

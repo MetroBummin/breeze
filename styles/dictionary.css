@@ -144,7 +144,7 @@
     #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:#C8D7D6;}
     #p-close{display:none;}
     #p-top{position:static; margin:0; padding:0; background:transparent; border:0;}
-    #panel .inner{padding:16px 22px 34px;}
+    #panel .inner{padding:16px 22px calc(34px + env(safe-area-inset-bottom));}
     .page{padding:26px 22px;}
     #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
     #vsearch{width:100%; margin-left:0;}

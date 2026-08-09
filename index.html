@@ -2,7 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- viewport-fit=cover 가 있어야 env(safe-area-inset-*) 이 값을 냅니다.
+       네이티브 셸(Capacitor)과 아이폰 사파리 둘 다 여기에 기댑니다. -->
   <title>Breeze</title>
   <meta name="description" content="Breeze - 원서를 산들바람처럼 읽는 리더 + 단어장">
   <meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme: light)">
@@ -14,12 +16,12 @@
   <link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles/base.css?v=6501268c">
+  <link rel="stylesheet" href="styles/base.css?v=56535bee">
   <link rel="stylesheet" href="styles/home.css?v=0d7af16c">
-  <link rel="stylesheet" href="styles/reader.css?v=4c0b4ea9">
-  <link rel="stylesheet" href="styles/dictionary.css?v=4c46d74c">
+  <link rel="stylesheet" href="styles/reader.css?v=47d85f25">
+  <link rel="stylesheet" href="styles/dictionary.css?v=f4f90888">
   <link rel="stylesheet" href="styles/components.css?v=8ebadda1">
-  <link rel="stylesheet" href="styles/responsive.css?v=f13e08e5">
+  <link rel="stylesheet" href="styles/responsive.css?v=6532e676">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -50,7 +52,7 @@
   <script defer src="scripts/reader/reader-modes.js?v=6121dfd0"></script>
   <script defer src="scripts/reader/reader.js?v=2ff262a2"></script>
   <script defer src="scripts/ui/preferences.js?v=27b17d89"></script>
-  <script defer src="scripts/sync/sync.js?v=971be5ab"></script>
+  <script defer src="scripts/sync/sync.js?v=0458b213"></script>
   <script defer src="scripts/ui/interactions.js?v=ab98b799"></script>
   <script defer src="scripts/main.js?v=40ab4d6e"></script>
 </head>

@@ -1,7 +1,7 @@
 /* Responsive rules: load this file last */
 
   @media (max-width:760px){
-    #topbar{gap:6px; padding:12px 14px;}
+    #topbar{gap:6px; padding:calc(12px + env(safe-area-inset-top)) 14px 12px;}
     #logo{gap:7px;}
     #logo svg{width:28px; height:18px;}
     #logo .mark{font-size:19px;}

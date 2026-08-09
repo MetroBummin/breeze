@@ -92,14 +92,24 @@ function renderSyncModal(){
   }
   syncStatus('');
 }
+/* 네이티브 셸(Capacitor) 안인가. 브리지가 앱 안에서만 window.Capacitor 를 심어 줍니다. */
+function isNativeShell(){
+  try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }
+  catch(e){ return false; }
+}
 async function sbSendLink(){
   const email = (document.getElementById('sm-email').value||'').trim();
   if(!/.+@.+\..+/.test(email)){ syncStatus('이메일 형식을 확인해 주세요'); return; }
-  syncStatus('링크 보내는 중…');
-  const { error } = await sb.auth.signInWithOtp({ email,
-    options:{ emailRedirectTo: location.origin + location.pathname } });
+  const native = isNativeShell();
+  syncStatus(native ? '코드 보내는 중…' : '링크 보내는 중…');
+  /* 앱 안에서는 돌아올 주소를 주지 않습니다. 앱의 주소는 capacitor://localhost 라
+     메일 앱이 열어 주지 못하고 Supabase 허용 목록에도 없습니다. 대신 메일에 함께 오는
+     6자리 코드로 들어옵니다 — 어차피 다른 기기에서 메일을 열어도 되는 길입니다. */
+  const options = native ? {} : { emailRedirectTo: location.origin + location.pathname };
+  const { error } = await sb.auth.signInWithOtp({ email, options });
   if(error){ syncStatus('전송 실패: '+error.message); return; }
-  syncStatus('메일을 보냈어요! 링크를 누르거나, 6자리 코드를 입력하세요.');
+  syncStatus(native ? '메일로 6자리 코드를 보냈어요. 아래에 입력해 주세요.'
+                    : '메일을 보냈어요! 링크를 누르거나, 6자리 코드를 입력하세요.');
   const cw = document.getElementById('sm-codewrap');
   if(cw){ cw.style.display='block'; document.getElementById('sm-code').focus(); }
 }
