@@ -245,7 +245,7 @@ const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const cleanList = (v: unknown, n: number, max: number) =>
   (Array.isArray(v) ? v : []).map((x) => clean(x, max)).filter(Boolean).slice(0, n);
 
-async function opLook(body: any, userId: string | null) {
+async function opLook(body: any, userId: string | null, seeding = false) {
   const word = clean(body.word, 60).toLowerCase();
   const clicked = clean(body.clicked, 60);
   const sentence = clean(body.sentence, 600);
@@ -255,7 +255,9 @@ async function opLook(body: any, userId: string | null) {
   /* AI 가 뜻의 유일한 출처가 되었으니, 한도가 유일한 문지기입니다. 걸리면 앱은
      조용히 무료 사전으로 내려갑니다 — 화면이 비지는 않습니다. */
   let anonLeft: number | null = null;
-  if (!userId) {
+  if (seeding) {
+    /* 씨앗 만들기는 한도를 지나갑니다 — 위에서 비밀값을 이미 확인했습니다. */
+  } else if (!userId) {
     const verdict = await takeAnonQuota(clean(body.device, 64));
     if (verdict.status === "spent") {
       logEvent({ userId: null, action: "quota", word, clicked, sentence, meta: { anon: 1 } });
@@ -303,6 +305,10 @@ async function opLook(body: any, userId: string | null) {
     ...(anonLeft === null ? {} : { left: anonLeft }),
   };
   if (!answer.ko) return json({ error: "empty_answer" }, 502);
+
+  /* 씨앗은 사람이 읽다가 누른 것이 아닙니다. 행동 기록에 섞이면
+     "이 낱말을 사람들이 많이 눌렀다" 가 거짓이 됩니다. */
+  if (seeding) return json(answer);
 
   logEvent({
     userId, action: retry ? "retry" : "look", word, clicked, sentence,
@@ -406,6 +412,15 @@ Deno.serve(async (req) => {
        콜드스타트가 첫 낱말 클릭 뒤에 숨지 않고 그 앞에서 끝나도록. */
     if (op === "warm") return json({ ok: true });
 
+    /* 앱에 실어 보낼 사전 씨앗을 만들 때만 쓰는 통로입니다. 맛보기 글에 나오는
+       낱말 전부를 한 번에 받아 와야 해서 한도를 지나갑니다 — 그래서 비밀값을
+       아는 사람만 쓸 수 있고, 값을 정해 두지 않으면 아예 열리지 않습니다.
+       기록도 남기지 않습니다. 사람이 읽다가 누른 것이 아니니까요. */
+    const seedToken = Deno.env.get("SEED_TOKEN") ?? "";
+    const isSeed = op === "seed" && !!seedToken &&
+      req.headers.get("x-seed-token") === seedToken;
+    if (op === "seed" && !isSeed) return json({ error: "seed_forbidden" }, 403);
+
     let userId: string | null = null;
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace(/^Bearer\s+/i, "");
@@ -418,7 +433,7 @@ Deno.serve(async (req) => {
 
     const word = String(body.word ?? "").slice(0, 60).trim();
     if (!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word)) return json({ error: "bad_word" }, 400);
-    if (op === "look") return await opLook(body, userId);
+    if (op === "look" || isSeed) return await opLook(body, userId, isSeed);
     return json({ error: "bad_op" }, 400);
   } catch (e) {
     console.error(e);

@@ -1,13 +1,33 @@
 /* ================= local book assets (IndexedDB) =================
    Extracted text stays in `books`, EPUB images in `imgs`, and the user's raw
    PDF/EPUB stays in `originals`. Originals never enter the sync payload. */
-function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('breeze-img',3);
-  r.onupgradeneeded=()=>{ const db=r.result;
-    if(!db.objectStoreNames.contains('imgs'))  db.createObjectStore('imgs');
-    if(!db.objectStoreNames.contains('books')) db.createObjectStore('books');   // 책 본문(용량 큼)
-    if(!db.objectStoreNames.contains('originals')) db.createObjectStore('originals');
+/* 연결은 한 번만 엽니다. 예전에는 dictGet/dictPut/imgGet 이 호출될 때마다
+   indexedDB.open 을 새로 불렀습니다 — 낱말 하나 볼 때는 티가 안 나지만, 사전
+   씨앗처럼 천 번을 잇달아 쓰면 연결 여는 값이 일하는 값보다 커집니다.
+   실패하면 기억해 둔 약속을 버려서 다음에 다시 열어 볼 수 있게 합니다. */
+function openDb(name, version, upgrade){
+  let job = null;
+  return function(){
+    if(job) return job;
+    job = new Promise((res, rej)=>{
+      const r = indexedDB.open(name, version);
+      r.onupgradeneeded = ()=>upgrade(r.result);
+      r.onsuccess = ()=>{
+        /* 다른 탭이 판을 올리려 하면 붙잡고 있지 않습니다. */
+        r.result.onversionchange = ()=>{ try{ r.result.close(); }catch(e){} job = null; };
+        res(r.result);
+      };
+      r.onerror = ()=>{ job = null; rej(r.error); };
+    }).catch(error => { job = null; throw error; });
+    return job;
   };
-  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+}
+
+const idb = openDb('breeze-img', 3, db => {
+  if(!db.objectStoreNames.contains('imgs'))  db.createObjectStore('imgs');
+  if(!db.objectStoreNames.contains('books')) db.createObjectStore('books');   // 책 본문(용량 큼)
+  if(!db.objectStoreNames.contains('originals')) db.createObjectStore('originals');
+});
 
 /* ---- 이 기기의 저장소를 "영구"로 표시해 달라고 한 번 부탁합니다 ----
    표시가 없으면 브라우저는 공간이 모자랄 때 이 사이트의 저장소를 지울 수 있고,
@@ -109,8 +129,38 @@ async function imgPurge(prefix){ try{ const db=await idb(); return await new Pro
 const IMG_MARK = '[[IMG]]:';
 
 /* ---- AI dictionary cache (별도 DB: 나중에 내장 데이터셋의 씨앗이 됨) ---- */
-function ddb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('breeze-dict',1);
-  r.onupgradeneeded=()=>r.result.createObjectStore('entries'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+const ddb = openDb('breeze-dict', 1, db => {
+  if(!db.objectStoreNames.contains('entries')) db.createObjectStore('entries');
+});
+/* 씨앗을 부을 때는 한 번의 거래로 다 씁니다. 낱말마다 거래를 열면 천 개를
+   붓는 데 몇 초가 걸리고, 그동안 첫 낱말을 누른 사람은 그냥 기다립니다. */
+async function dictPutAll(pairs){
+  if(!pairs.length) return 0;
+  const db = await ddb();
+  return new Promise((res, rej)=>{
+    const tx = db.transaction('entries','readwrite');
+    const store = tx.objectStore('entries');
+    for(const [key, value] of pairs) store.put(value, key);
+    tx.oncomplete = ()=>res(pairs.length);
+    tx.onerror = ()=>rej(tx.error);
+    tx.onabort = ()=>rej(tx.error);
+  });
+}
+/* 이미 있는 열쇠만 골라 냅니다 — 씨앗이 사람이 직접 받은 답을 덮지 않도록. */
+async function dictExistingKeys(keys){
+  const db = await ddb();
+  return new Promise(res=>{
+    const found = new Set();
+    const tx = db.transaction('entries');
+    const store = tx.objectStore('entries');
+    for(const key of keys){
+      const rq = store.openKeyCursor(IDBKeyRange.only(key));
+      rq.onsuccess = ()=>{ if(rq.result) found.add(key); };
+    }
+    tx.oncomplete = ()=>res(found);
+    tx.onerror = ()=>res(found);
+  });
+}
 async function dictGet(key){ try{ const db=await ddb(); return await new Promise(res=>{
   const rq=db.transaction('entries').objectStore('entries').get(key);
   rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }catch(e){ return null; } }

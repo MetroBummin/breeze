@@ -1,27 +1,25 @@
 /* ================= 무료 고전 =================
    프로젝트 구텐베르크의 퍼블릭 도메인 EPUB을 앱과 함께 배포합니다. 파일도
-   DRM도 없이 "무엇을 읽지"에 바로 답하는 다섯 권입니다.
+   DRM도 없이 "무엇을 읽지"에 바로 답하는 세 권입니다.
+
+   다섯 권이었던 것을 셋으로 줄였습니다. 고르는 일 자체가 일이 되면 아무것도
+   안 고르고 나가고, 어차피 첫 책은 한 권입니다. 셋은 쉬움(앨리스) · 아름다움
+   (개츠비) · 이야기(오디세이아)로 서로 다른 이유에서 골랐습니다.
 
    눌렀을 때 하는 일은 사용자가 같은 파일을 끌어다 놓은 것과 완전히
    같습니다 — 받아서 `importFile()`에 넘깁니다. 그래서 `원본`과 `글자`
    모드, 단어장, 동기화가 전부 저절로 따라옵니다. 별도 경로가 없습니다. */
 
 const CLASSICS = [
-  { id:'sherlock-holmes', title:'The Adventures of Sherlock Holmes',
-    author:'Arthur Conan Doyle', year:1892, kb:308,
-    blurb:'셜록 홈즈 단편 12편. 한 편이 30분쯤이라 끊어 읽기 좋습니다.' },
   { id:'alice-in-wonderland', title:"Alice's Adventures in Wonderland",
     author:'Lewis Carroll', year:1865, kb:136,
     blurb:'가장 짧고 가장 쉽습니다. 첫 원서로 자주 고르는 책.' },
   { id:'the-great-gatsby', title:'The Great Gatsby',
     author:'F. Scott Fitzgerald', year:1925, kb:180,
     blurb:'문장이 아름답기로 이름난 미국 소설. 5만 단어 남짓.' },
-  { id:'pride-and-prejudice', title:'Pride and Prejudice',
-    author:'Jane Austen', year:1813, kb:548,
-    blurb:'대화가 많아 읽는 속도가 붙습니다. 다만 19세기 영어입니다.' },
-  { id:'frankenstein', title:'Frankenstein',
-    author:'Mary Shelley', year:1818, kb:372,
-    blurb:'다섯 권 중 가장 어렵습니다. 문장이 길고 어휘가 넓어요.' },
+  { id:'odyssey', title:'The Odyssey',
+    author:'Homer', year:-700, kb:435,
+    blurb:'서양 이야기의 출발점. 새뮤얼 버틀러의 산문 번역이라 운문보다 훨씬 읽기 쉽습니다.' },
 ];
 
 const classicFile = id => `assets/classics/${id}.epub`;
@@ -58,7 +56,9 @@ function classicCard(classic){
   card.innerHTML = `<div class="author"></div><div class="bt"></div>
     <div class="get">↓ 무료로 받기 · ${(classic.kb/1024).toFixed(1)}MB</div>`;
   fillCard(card, {'.author': classic.author.toUpperCase(), '.bt': classic.title});
-  card.title = `${classic.blurb} (${classic.year}, 퍼블릭 도메인)`;
+  /* 호메로스는 기원전이라 그냥 찍으면 "-700년"이 됩니다. */
+  const year = classic.year < 0 ? `기원전 ${-classic.year}년경` : `${classic.year}`;
+  card.title = `${classic.blurb} (${year}, 퍼블릭 도메인)`;
   card.onclick = () => importClassic(classic, card);
   return card;
 }

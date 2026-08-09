@@ -341,7 +341,9 @@ function parsePastedText(raw){
 function parseTXT(text){
   const blocks = text.replace(/\r/g,'').split(/\n\s*\n+/)
     .map(blk => blk.split('\n').map(l=>l.trim()).join(' '));
-  return mergeWrapped(blocks, null);
+  /* 구텐베르크의 TXT 판은 표시 한 줄로만 본문의 시작과 끝을 알립니다. */
+  const cut = trimGutenbergText(blocks);
+  return mergeWrapped(cut ? blocks.slice(cut.from, cut.to) : blocks, null);
 }
 
 /* 줄바꿈이 문단처럼 저장된 파일을 되돌립니다.
@@ -872,6 +874,36 @@ async function openEpubArchive(file){
   });
   return { zip, opf, opfPath, opfDir, manifest, spine };
 }
+/* ---- 프로젝트 구텐베르크 껍데기 벗기기 ----
+   구텐베르크 파일은 본문 앞뒤에 라이선스 안내가 붙어 있습니다. 그대로 두면
+   개츠비를 열었을 때 1쪽이 소설이 아니라 저작권 안내입니다 — 원서를 읽어
+   보려고 큰마음 먹고 누른 사람이 처음 보는 화면이 그것이면 안 됩니다.
+
+   내장 고전만 미리 손봐 두지 않고 반입기에서 벗기는 이유는, 사용자가 직접
+   구텐베르크에서 받아 온 파일도 똑같이 깨끗해야 하기 때문입니다.
+
+   표시는 두 겹입니다. EPUB3 판은 `id="pg-header"` · `id="pg-footer"` 로 감싸
+   두고, 옛 판과 TXT 는 `*** START OF ... ***` 한 줄로만 알립니다. 둘 다 봅니다. */
+const PG_START = /\*\*\*\s*START OF (?:TH(?:E|IS)\s+)?PROJECT GUTENBERG EBOOK\b[^*]*\*\*\*/i;
+const PG_END   = /\*\*\*\s*END OF (?:TH(?:E|IS)\s+)?PROJECT GUTENBERG EBOOK\b[^*]*\*\*\*/i;
+const PG_WRAPPER_IDS = '#pg-header, #pg-footer, #pg-start-separator, #pg-end-separator, #pg-machine-header';
+
+function stripGutenbergWrapper(doc){
+  doc.querySelectorAll(PG_WRAPPER_IDS).forEach(node => node.remove());
+}
+/* 문단이 다 모인 뒤 한 번 더 봅니다 — 표시만 있고 감싸는 태그가 없는 판을 위해서.
+   표시를 못 찾으면 아무것도 자르지 않습니다. 구텐베르크가 아닌 책이 잘리는 것이
+   라이선스 안내가 남는 것보다 훨씬 나쁩니다. */
+function trimGutenbergText(paras){
+  const start = paras.findIndex(p => PG_START.test(p));
+  const end   = paras.findIndex(p => PG_END.test(p));
+  if(start < 0 && end < 0) return null;
+  const from = start >= 0 ? start + 1 : 0;
+  const to   = end   >  start ? end : paras.length;
+  if(to - from < 20) return null;        // 너무 많이 자르면 표시를 잘못 읽은 것입니다
+  return { from, to };
+}
+
 async function parseEPUB(f, bookId){
   const archive = await openEpubArchive(f);
   const zip = archive.zip;
@@ -884,6 +916,7 @@ async function parseEPUB(f, bookId){
     if(!file) continue;
     const chDir = chPath.includes('/') ? chPath.slice(0,chPath.lastIndexOf('/')+1) : '';
     const doc = new DOMParser().parseFromString(await file.async('text'),'text/html');
+    stripGutenbergWrapper(doc);
     let elementIndex = 0;
     for(const el of doc.querySelectorAll('p, h1, h2, h3, h4, li, img, image')){
       const sourceElement = elementIndex++;
@@ -937,5 +970,8 @@ async function parseEPUB(f, bookId){
     }
   }
   // Keep EPUB heading tags and paragraph signals, but do not build navigation metadata.
+  /* 감싸는 태그가 없는 옛 판을 위해 한 번 더. 자를 자리를 못 찾으면 그대로 둡니다. */
+  const cut = trimGutenbergText(paras);
+  if(cut) return mergeWrapped(paras.slice(cut.from, cut.to), sig.slice(cut.from, cut.to));
   return mergeWrapped(paras, sig);
 }

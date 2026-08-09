@@ -15,6 +15,7 @@ const required = [
   'scripts/core/book-identity.js',
   'scripts/library/library.js',
   'scripts/library/classics.js',
+  'scripts/library/samples.js',
   'scripts/importers/importers.js',
   'scripts/importers/article.js',
   'scripts/dictionary/dictionary.js',
@@ -145,10 +146,17 @@ assert.match(syncSource,/syncAgain=true/,
   'A sync request arriving during another sync is still dropped');
 
 const storageSource = readFileSync(resolve(root, 'scripts/core/storage.js'), 'utf8');
-assert.match(storageSource, /indexedDB\.open\('breeze-img',3\)/,
+assert.match(storageSource, /openDb\('breeze-img',\s*3,/,
   'IndexedDB was not upgraded for local originals');
 assert.match(storageSource, /createObjectStore\('originals'\)/,
   'Dedicated local original store is missing');
+// One connection per database, not one per read. Pouring the dictionary seed
+// opens a thousand of these in a row; opening a thousand connections took longer
+// than the work itself.
+assert.match(storageSource, /if\(job\) return job;/,
+  'IndexedDB connections are no longer reused');
+assert.match(storageSource, /async function dictPutAll/,
+  'Bulk dictionary writes are missing — the seed would need one transaction each');
 assert.match(storageSource,/originalGetForBook/,
   'Original files cannot recover across a legacy book-ID change');
 
@@ -693,7 +701,7 @@ const classicsContext = { console, Set, books:[] };
 new Script(readFileSync(resolve(root, 'scripts/library/classics.js'), 'utf8'))
   .runInNewContext(classicsContext);
 const offered = classicsContext.pendingClassics();
-assert.equal(offered.length, 5, 'The bundled classic count changed');
+assert.equal(offered.length, 3, 'The bundled classic count changed');
 for(const classic of offered){
   assert.ok(existsSync(resolve(root, `assets/classics/${classic.id}.epub`)),
     `Bundled classic file is missing: ${classic.id}`);

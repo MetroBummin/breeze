@@ -396,6 +396,42 @@ function deviceId(){
 /* 서버가 답할 때마다 알려 주는 남은 횟수. 모르면 null. */
 let anonLooksLeft = null;
 
+/* ---- 앱과 함께 오는 사전 씨앗 ----
+   맛보기 글에 나오는 낱말은 답을 미리 받아 앱에 실어 둡니다. 열쇠는 AI 에게
+   물어봤을 때 저장하는 것과 완전히 같은 `l:<낱말>|<문장해시>` 라서, 앞으로
+   오는 모든 조회가 이걸 그냥 캐시로 씁니다 — 사전 코드에는 씨앗을 아는
+   갈래가 하나도 없습니다.
+
+   덕분에 첫 사용자는 로그인 전에도, 인터넷이 없어도, 어느 낱말을 눌러도
+   기다리지 않습니다. 바람은 그대로 붑니다(AI_MIN_WAIT 는 갓 받은 답에만
+   걸리지만, 캐시된 답도 창이 열리며 한 번 지나갑니다).
+
+   한 번 부으면 끝입니다. 판(version)이 오르면 다시 붓습니다. */
+const DICT_SEED_FILE = 'assets/samples/dict-seed.json';
+const LS_DICT_SEED = 'breeze.dict-seed';
+
+async function loadDictSeed(){
+  try{
+    const response = await fetch(DICT_SEED_FILE);
+    if(!response.ok) return;
+    const seed = await response.json();
+    if(!seed || !seed.entries) return;
+    if(load(LS_DICT_SEED, 0) >= (seed.version || 1)) return;
+    const keys = Object.keys(seed.entries);
+    /* 이미 있는 답은 덮지 않습니다. 사용자가 그 문장에서 직접 받은 답이
+       씨앗보다 새것이고, 다시 물어본 답이라면 더더욱 그렇습니다. */
+    const mine = await dictExistingKeys(keys);
+    const pairs = keys.filter(key => !mine.has(key))
+      .map(key => [key, Object.assign({}, seed.entries[key], { done:true, seed:true })]);
+    await dictPutAll(pairs);
+    save(LS_DICT_SEED, seed.version || 1);
+    if(pairs.length) console.info(`사전 씨앗 ${pairs.length}개 준비됨`);
+  }catch(error){
+    /* 씨앗이 없어도 앱은 그냥 AI 에게 물어봅니다. 조용히 지나갑니다. */
+    console.warn('사전 씨앗을 읽지 못했습니다:', error && error.message);
+  }
+}
+
 async function dictCall(payload, signal){
   if(!sb || navigator.onLine === false) return null;
   let token = SB_KEY;
@@ -446,11 +482,20 @@ function abortLook(){
   if(lookCtrl){ try{ lookCtrl.abort(); }catch(e){} lookCtrl = null; }
 }
 
-async function loadCachedLook(k){
+async function loadCachedLook(k, began){
   const w = words[k]; if(!w) return false;
   for(const key of entryKeys(w)){
     const hit = await dictGet(lookKey(key, w.example));
-    if(hit && hit.ko){ applyLook(w, hit, k, { cached:true }); return true; }
+    if(hit && hit.ko){
+      /* 기기에 있던 답도 바람을 한 번 보여 준 뒤에 놓습니다. 0초에 튀어나오면
+         무슨 일이 일어났는지 못 알아채고, 무엇보다 답이 어디서 왔느냐에 따라
+         화면이 달라 보이면 안 됩니다 — 씨앗을 깔아 둔 맛보기 글에서만 사전이
+         이상하게 빨라 보이는 것은 자랑이 아니라 다른 앱처럼 보이는 일입니다. */
+      const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
+      if(left > 0) await new Promise(res => setTimeout(res, left));
+      applyLook(w, hit, k, { cached:true });
+      return true;
+    }
   }
   return false;
 }
@@ -571,16 +616,22 @@ async function fillFromFreeDicts(k){
 
 async function fetchDict(k){
   const w = words[k]; if(!w) return;
-  w.loading = true; if(selKey===k) renderPanel();
+  const began = Date.now();
+  /* 창이 열리는 순간부터 바람이 붑니다. 답이 어디서 오든 — 씨앗이든, 예전에
+     물어본 것이든, 지금 AI 에게 묻든 — 사용자가 보는 것은 같은 한 번의 바람입니다. */
+  w.loading = true; w.aiLoading = true;
+  if(selKey===k) renderPanel();
 
   /* 무료 사전은 AI 와 서로 기다릴 이유가 없으므로 같이 출발합니다. 발음과 영어 뜻이
      먼저 도착해서, AI 를 기다리는 동안에도 패널이 채워집니다. */
   const free = fillFromFreeDicts(k);
 
-  /* ① 이 기기에 이 문장으로 물어본 적 있나 — 0원, 기다림 없음, 딜레이 없음 */
-  const cached = await loadCachedLook(k);
-  /* ② 없으면 AI. 뜻의 유일한 출처입니다. */
-  if(!cached) await fetchLook(k, {});
+  /* ① 이 기기에 이 문장으로 물어본 적 있나 — 0원, 기다림 없음 */
+  const cached = await loadCachedLook(k, began);
+  /* ② 없으면 AI. 뜻의 유일한 출처입니다.
+     fetchLook 은 오프라인·설정없음일 때 aiLoading 을 건드리지 않고 빠져나가므로,
+     넘기기 전에 여기서 내려놓습니다 — 안 그러면 바람이 영영 붑니다. */
+  if(!cached){ delete w.aiLoading; await fetchLook(k, {}); }
 
   await free;
   delete w.loading;
