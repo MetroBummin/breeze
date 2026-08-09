@@ -452,6 +452,74 @@ async function bookImageBlob(book, key){
   return blob;
 }
 
+/* ================= 사진을 글과 함께 보내기 =================
+   지금까지 다른 기기로는 사진의 주소만 갔습니다. 받는 쪽이 그 주소로 다시
+   받아 오면 된다는 생각이었는데, 자주 실패합니다 — 매체는 흔히 자기 페이지에서
+   온 요청에만 사진을 내주고, CDN 주소는 며칠이면 바뀌며, 중계를 한 번 더 타야
+   합니다. 그래서 폰에서 받은 기사는 어떤 건 사진이 뜨고 어떤 건 안 떴습니다.
+   이미 이 기기에 있는 바이트를 함께 보내면 그 갈림이 사라집니다.
+
+   예산을 둡니다. 사진 여덟 장을 통째로 실으면 "짧은 글"이 몇 MB가 되는데,
+   짧은 글은 묻지도 않고 저절로 내려받습니다 — 셀룰러로 그러면 안 됩니다.
+   예산을 넘는 사진은 지금까지처럼 주소로 받아 옵니다. 없어지는 길이 아니라
+   뒷길로 남습니다. */
+const BOOK_PHOTO_BUDGET = 800_000;
+
+function blobToDataUrl(blob){
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(String(reader.result || ''));
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(blob);
+  });
+}
+function dataUrlToBlob(value){
+  const match = /^data:([^;,]+);base64,([\s\S]*)$/.exec(String(value || ''));
+  if(!match) return null;
+  try{
+    const binary = atob(match[2]);
+    const bytes = new Uint8Array(binary.length);
+    for(let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type: match[1] });
+  }catch(e){ return null; }
+}
+/* 표지가 먼저, 그다음 본문에 나오는 차례대로. 예산이 모자라면 뒤가 잘리므로
+   순서가 곧 중요도입니다 — 카드에 뜨는 표지가 가장 아쉬운 한 장입니다. */
+function bookPhotoKeys(book, coverOnly){
+  const keys = [];
+  if(book.cover) keys.push(book.cover);
+  if(coverOnly) return keys;
+  (book.paras || []).forEach(paragraph => {
+    if(!paragraph.startsWith(IMG_MARK)) return;
+    const key = paragraph.slice(IMG_MARK.length);
+    if(keys.indexOf(key) < 0) keys.push(key);
+  });
+  return keys;
+}
+async function collectBookPhotos(book, coverOnly){
+  const photos = {};
+  let spent = 0;
+  for(const key of bookPhotoKeys(book, coverOnly)){
+    const blob = await imgGet(key);
+    if(!blob || !blob.size || spent + blob.size > BOOK_PHOTO_BUDGET) continue;
+    const dataUrl = await blobToDataUrl(blob);
+    if(!dataUrl) continue;
+    photos[key] = dataUrl;
+    spent += blob.size;
+  }
+  return photos;
+}
+/* 받는 쪽. 이 기기에 이미 있는 사진은 건드리지 않습니다 — 같은 열쇠라도
+   내가 직접 받아 둔 것이 언제나 더 믿을 만합니다. */
+async function storeBookPhotos(photos){
+  for(const key of Object.keys(photos || {})){
+    if(await imgGet(key)) continue;
+    const blob = dataUrlToBlob(photos[key]);
+    if(!blob) continue;
+    try{ await imgPut(key, blob); }catch(e){}
+  }
+}
+
 async function importArticleUrl(){
   const field = document.getElementById('am-url');
   const status = document.getElementById('am-url-status');

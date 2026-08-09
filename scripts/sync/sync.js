@@ -73,7 +73,8 @@ function renderSyncModal(){
       책은 카드 오른쪽 위 <b>↑</b> 를 눌러 올려 두세요.<br>
       마지막 동기화: ${lastSync? new Date(lastSync).toLocaleString('ko-KR') : '아직 없음'}</div>
       <button class="sm-btn primary" onclick="doSync(true)">지금 동기화</button>
-      <button class="sm-btn ghost" onclick="sbLogout()">로그아웃</button>`;
+      <button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>
+      <button class="sm-linkish" onclick="sbDeleteAccount()">계정 지우기</button>`;
   }else{
     body.innerHTML = `<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
       비밀번호는 없습니다. 링크를 누르면 이 브라우저에서 로그인되고,
@@ -121,9 +122,43 @@ async function sbVerifyCode(){
   if(error) syncStatus('코드 확인 실패: '+error.message+' (코드는 1시간 뒤 만료돼요)');
   // 성공 시 onAuthStateChange가 자동으로 로그인 화면 전환 + 동기화 시작
 }
+/* 나가는 것은 이 기기에서만입니다. Supabase 의 기본값은 'global' 이라, 노트북에서
+   로그아웃하면 폰의 갱신 토큰까지 함께 무효가 됩니다 — 폰을 든 사람은 자기가 한
+   적 없는 로그아웃을 당하고, 왜 그런지 알 방법도 없습니다. */
 async function sbLogout(){
-  await sb.auth.signOut();
-  sbUser = null; syncBadge(); renderSyncModal();
+  await sb.auth.signOut({ scope:'local' });
+  sbUser = null; serverBooks = null;
+  syncBadge(); renderSyncModal(); renderAllBookViews();
+}
+
+/* ---- 계정 지우기 ----
+   로그인이 있는 앱은 앱 안에서 계정을 지울 수 있어야 합니다(App Store 심사
+   지침 5.1.1(v)). 그것과 별개로, 나갈 문이 없는 곳에 자기 단어장을 맡기라고
+   할 수는 없습니다.
+
+   지우는 것은 서버 사본뿐입니다. 이 기기의 책과 단어장은 그대로 둡니다 —
+   "계정을 지운다"와 "읽던 것을 잃는다"는 같은 말이 아니고, 착각하면 되돌릴
+   수 없는 쪽으로 착각합니다. */
+async function sbDeleteAccount(){
+  if(!sb || !sbUser) return;
+  const email = sbUser.email || '';
+  if(!confirm(`계정을 지울까요?\n\n${email}\n\n서버에 있는 단어장 · 읽던 위치 · 올려 둔 책이 모두 지워지고,\n되돌릴 수 없어요.\n\n이 기기에 있는 책과 단어장은 그대로 남습니다.`)) return;
+  if(!confirm('마지막 확인이에요. 정말 지울까요?')) return;
+  syncStatus('계정을 지우는 중…');
+  try{
+    const answer = await dictCall({ op:'delete_account' });
+    if(!answer || !answer.ok) throw new Error((answer && (answer.message || answer.error)) || '서버가 응답하지 않았어요');
+    /* 계정이 없어졌으니 서버에 물어보는 로그아웃은 이제 실패합니다.
+       이 기기의 토큰만 조용히 버립니다. */
+    try{ await sb.auth.signOut({ scope:'local' }); }catch(e){}
+    sbUser = null; serverBooks = null;
+    lastSync = 0; save('breeze.lastsync', 0);
+    syncBadge(); renderSyncModal(); renderAllBookViews();
+    syncStatus('계정을 지웠어요. 이 기기의 책과 단어장은 그대로 있어요.');
+  }catch(error){
+    console.error(error);
+    syncStatus('계정을 지우지 못했어요: '+(error.message||error));
+  }
 }
 /* ================= 책 동기화 (수동) =================
    책은 반입 후 바뀌지 않으므로 충돌 판정이 필요 없습니다. 올리기/받기만 있습니다.
@@ -201,6 +236,7 @@ async function refreshBooks(){
     serverBooks = data || [];
     await applyBookTombstones(serverBooks);     // 다른 기기에서 지운 책을 여기서도 정리
     await autoDownloadCasuals();                // 다른 기기에서 담은 짧은 글
+    await autoUploadCasuals();                  // 여기서 담았는데 아직 안 올라간 짧은 글
     syncStatus('');
     /* 서버 목록이 곧 서가의 일부입니다 — 흐린 카드와 ✓ 표시가 여기서 나옵니다. */
     renderAllBookViews();
@@ -326,11 +362,49 @@ async function autoDownloadCasuals(){
   const hidden = hiddenBookIds();
   for(const row of activeServerBooks()){
     const meta = row.meta || {};
-    if(!CASUAL_KINDS.has(meta.kind || '')) continue;
+    if(!rowLooksCasual(meta)) continue;
     if(hidden[row.book_id]) continue;
     if(findLocalBookForServerRow(row, books)) continue;
-    try{ await bookDownload(row.book_id, {auto:true}); }
+    try{
+      await bookDownload(row.book_id, {auto:true});
+      await backfillServerKind(row);
+    }
     catch(e){ console.warn('Casual auto-download skipped:', e && e.message); }
+  }
+}
+
+/* 크기로 짐작해서 받아 봤더니 본문에 `kind` 가 있었습니다. 목록에 적어 두면
+   다음부터는 짐작하지 않습니다 — 그리고 이 사람의 다른 기기도 짐작하지
+   않습니다. 실패해도 조용합니다: 다음에 다시 짐작하면 그만입니다. */
+async function backfillServerKind(row){
+  const meta = row.meta || {};
+  if(meta.kind || !sbUser) return;
+  const local = books.find(book => book.id === row.book_id);
+  if(!local || !local.kind) return;
+  row.meta = { ...meta, kind:local.kind };
+  try{
+    await sb.from('books').upsert([{user_id:sbUser.id, book_id:row.book_id, meta:row.meta}],
+                                  {onConflict:'user_id,book_id'});
+  }catch(e){ console.warn('kind backfill skipped:', e && e.message); }
+}
+
+/* 올리는 쪽도 저절로여야 짝이 맞습니다. 지금까지는 붙여넣는 그 순간에 딱 한 번
+   불렀습니다 — 로그인하기 전에 담아 둔 글, 그때 인터넷이 없어서 실패한 글은
+   영영 서버에 올라가지 않았고, 사용자는 올라간 줄 알았습니다.
+   목록을 새로 고칠 때마다 "여기 있는데 서버에 없는 짧은 글"을 마저 올립니다.
+
+   앱과 함께 온 맛보기 글은 빼 둡니다. 어느 기기에서든 처음 열면 저절로 생기는
+   것이라, 서버를 거칠 이유가 없습니다(읽던 자리는 따로 동기화됩니다). */
+async function autoUploadCasuals(){
+  if(!sb || !sbUser) return;
+  const hidden = hiddenBookIds();
+  for(const book of books.filter(isCasual)){
+    if(book.sampleId) continue;
+    if(hidden[book.id]) continue;
+    if(book.detachedServerId || book.remoteDeletePendingId) continue;   // 지운 것을 되살리지 않습니다
+    if(serverRowForBook(book)) continue;
+    try{ await bookUpload(book.id, {auto:true}); }
+    catch(e){ console.warn('Casual auto-upload skipped:', e && e.message); }
   }
 }
 async function bookUpload(id, options){
@@ -372,6 +446,10 @@ async function bookUpload(id, options){
       sourceUrl:b.sourceUrl || '',
       cover:b.cover || '',
       imgSrc:b.imgSrc || null,
+      /* 사진 바이트 자체. 짧은 글은 본문 사진까지, 원서는 표지만 —
+         EPUB 삽화는 사용자 파일에서 나온 것이라 원본을 다시 연결하면
+         함께 되살아납니다(`scripts/importers/article.js`). */
+      photos: await collectBookPhotos(b, !isCasual(b)),
       textAvailable:b.textAvailable !== false,
     })], {type:'application/json'});
     const up = await sb.storage.from('books').upload(bookPath(remoteId), blob, {upsert:true, contentType:'application/json'});
@@ -389,8 +467,16 @@ async function bookUpload(id, options){
       delete b.detachedServerId; delete b.remoteDeletePendingAt; delete b.remoteDeletePendingId;
       await bookPut(b);
     }
+    /* 방금 올린 줄을 손안의 목록에도 넣습니다. 이것이 없으면 카드의 ✓ 표시가
+       다음 목록 조회까지 안 뜨고, 저절로 올리는 쪽은 `refreshBooks()` 안에서
+       도는 중이라 다시 부를 수도 없습니다 — 서로를 기다리며 멈춥니다. */
+    if(serverBooks){
+      serverBooks = serverBooks.filter(row => row.book_id !== remoteId);
+      serverBooks.push({ book_id:remoteId, meta });
+    }
     syncStatus('올렸어요');
-    await refreshBooks();
+    if(auto) renderAllBookViews();
+    else await refreshBooks();
     return true;
   }catch(e){
     console.error(e); syncStatus('올리기 실패: '+(e.message||e));
@@ -427,6 +513,9 @@ async function bookDownload(id, options){
     if(!book.paras.length) throw new Error('본문이 비어 있어요');
     ensureBookFingerprint(book);
     unhideBookLocally(id);        // 손수 받았으면 "이 기기에서 숨김"은 끝입니다
+    /* 사진을 먼저 담습니다. 책을 먼저 그리면 카드가 한 번 글자 표지로 떴다가
+       뒤늦게 사진으로 바뀌어 깜빡입니다. */
+    await storeBookPhotos(body.photos);
     await bookPut(book);
     books = books.filter(b=>b.id!==id); books.unshift(book);
     if(!auto) syncStatus('받았어요');
@@ -510,6 +599,7 @@ async function runSyncPass(manual){
       serverBooks = brows || [];
       pulled += await applyBookTombstones(serverBooks);      // 다른 기기에서 지운 책 정리
       await autoDownloadCasuals();                            // 다른 기기에서 담은 짧은 글
+      await autoUploadCasuals();                              // 여기서 담았는데 아직 안 올라간 것
       for(const r of serverBooks){
         const meta = r.meta || {};
         if(meta.deleted) continue;

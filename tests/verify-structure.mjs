@@ -144,6 +144,28 @@ assert.ok(
 );
 assert.match(syncSource,/syncAgain=true/,
   'A sync request arriving during another sync is still dropped');
+/* 로그아웃은 이 기기에서만. Supabase 의 기본값은 'global' 이라, 빼먹으면 노트북에서
+   로그아웃한 사람이 폰까지 로그아웃시킵니다. */
+assert.match(syncSource, /signOut\(\{\s*scope:\s*'local'\s*\}\)/,
+  'Logging out again revokes the session on every device');
+/* 계정을 지울 길이 없으면 애플 심사 5.1.1(v) 에서 그대로 반려됩니다. */
+assert.match(syncSource, /op:'delete_account'/,
+  'The in-app account deletion path is gone');
+assert.match(readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8'),
+  /auth\.admin\.deleteUser/, 'The server no longer deletes the auth user');
+/* 저절로 오가야 하는 것은 양쪽입니다. 올리는 쪽이 빠지면, 로그인 전에 담아 둔
+   글과 실패한 글이 영영 서버에 올라가지 않은 채 올라간 것처럼 보입니다. */
+assert.match(syncSource, /async function autoUploadCasuals/,
+  'Casuals are only auto-downloaded, never auto-uploaded');
+/* 자동 올리기는 `refreshBooks()` 안에서 돕니다. 거기서 다시 `refreshBooks()` 를
+   부르면 서로를 기다리며 멈춥니다. */
+assert.match(syncSource, /if\(auto\) renderAllBookViews\(\);\s*\n\s*else await refreshBooks\(\);/,
+  'An automatic upload refreshes the book list again and deadlocks');
+/* 사진 주소만 보내면 받는 기기가 그 매체 서버에서 다시 받아야 하고, 자주 실패합니다. */
+assert.match(syncSource, /photos: await collectBookPhotos\(/,
+  'Casual photos no longer travel with the article');
+assert.match(syncSource, /await storeBookPhotos\(body\.photos\)/,
+  'A downloaded casual never unpacks the photos it was sent');
 
 const storageSource = readFileSync(resolve(root, 'scripts/core/storage.js'), 'utf8');
 assert.match(storageSource, /openDb\('breeze-img',\s*3,/,
@@ -355,6 +377,17 @@ const pdfSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 
 const epubSource = readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
 const modesSource = readFileSync(resolve(root, 'scripts/reader/reader-modes.js'), 'utf8');
 assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily');
+/* 확대는 쪽마다 제 가로 스크롤 칸 안에서 일어나야 합니다. 문서를 통째로 넓히면
+   폰 브라우저가 스크롤바 대신 화면 전체를 축소해서 맞춰 버려, 확대한 만큼
+   그대로 되돌아갑니다(375px 화면이 623px 로 늘어나는 것을 확인했습니다). */
+assert.match(pdfSource,/pdf-page-lane/,
+  'The PDF zoom no longer scrolls inside each page, so the phone will just shrink the whole screen');
+assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'),
+  /body\.pdf-zoomed\s*\{[^}]*overflow-x/,
+  'Zooming widens the document again, which a phone answers by shrinking the viewport');
+/* 늘리기만 하면 캔버스가 흐려집니다. 화면에 있는 쪽은 새 너비로 다시 그립니다. */
+assert.match(pdfSource,/session\.rendering\.clear\(\)/,
+  'A zoom keeps the old canvases, so the enlarged page is blurry');
 assert.match(epubSource,/sandbox','allow-same-origin'/,
   'EPUB chapters are not sandboxed');
 assert.match(epubSource,/script,iframe,frame,object,embed/,
@@ -705,6 +738,10 @@ assert.equal(offered.length, 3, 'The bundled classic count changed');
 for(const classic of offered){
   assert.ok(existsSync(resolve(root, `assets/classics/${classic.id}.epub`)),
     `Bundled classic file is missing: ${classic.id}`);
+  /* 권유 카드는 아직 받기 전에 뜨므로, 표지 한 장을 보자고 책을 미리 받을 수
+     없습니다. 같은 그림이 파일 밖에도 한 장 있어야 합니다. */
+  assert.ok(existsSync(resolve(root, `assets/classics/${classic.id}.jpg`)),
+    `Bundled classic cover is missing: ${classic.id}`);
 }
 // 이미 받은 고전은 권유 카드에서 빠져야 합니다.
 classicsContext.books = [{ classicId: offered[0].id }];

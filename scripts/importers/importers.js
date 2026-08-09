@@ -904,9 +904,45 @@ function trimGutenbergText(paras){
   return { from, to };
 }
 
+/* ---- EPUB 표지 ----
+   서가는 표지로 읽힙니다. 지금까지 책 카드에 있던 것은 색과 제목뿐이었는데,
+   표지 그림은 처음부터 파일 안에 들어 있었습니다 — 꺼내 쓰지 않았을 뿐입니다.
+   내장 고전 세 권도, 사용자가 끌어다 놓는 EPUB 도 같은 길로 표지를 얻습니다.
+
+   가리키는 방법이 판마다 다릅니다. EPUB3 은 manifest 항목에
+   properties="cover-image" 를 달고, EPUB2 는 <meta name="cover" content="항목id">
+   로 가리킵니다. 둘 다 없는 파일도 흔해서, 마지막에는 이름으로 찾아봅니다
+   (구텐베르크 파일이 이쪽입니다: `..._cover.jpg`).
+
+   SVG 는 받지 않습니다 — 그림처럼 생겼지만 스크립트를 품을 수 있는 문서입니다. */
+async function epubCoverImage(archive, key){
+  const items = Object.keys(archive.manifest).map(id => archive.manifest[id]);
+  const usable = item => item && /^image\/(jpeg|png|gif|webp)$/i.test(item.mediaType || '');
+  let cover = items.find(item => usable(item) && /(^|\s)cover-image(\s|$)/.test(item.properties || ''));
+  if(!cover){
+    const meta = archive.opf.querySelector('metadata > meta[name="cover"]');
+    const pointed = meta && archive.manifest[meta.getAttribute('content') || ''];
+    if(usable(pointed)) cover = pointed;
+  }
+  if(!cover) cover = items.find(item => usable(item) && /cover/i.test(item.href || ''));
+  if(!cover) return '';
+  const path = decodeURIComponent(joinPath(archive.opfDir, cover.href));
+  const file = archive.zip.file(path);
+  if(!file) return '';
+  try{
+    const blob = new Blob([await file.async('arraybuffer')], {type:cover.mediaType});
+    await imgPut(key, blob);
+    return key;
+  }catch(error){ return ''; }
+}
+
 async function parseEPUB(f, bookId){
   const archive = await openEpubArchive(f);
   const zip = archive.zip;
+  /* 표지는 본문 그림과 같은 접두어를 씁니다. 책을 지울 때 `imgPurge(id+'|')`
+     한 번에 함께 쓸려 나가야 하고, 반입이 끝나고 임시 ID 를 진짜 ID 로 바꿀 때
+     (`imgRename`) 같이 따라와야 하기 때문입니다. */
+  const cover = await epubCoverImage(archive, bookId+'|cover');
   const paras=[]; let imgIdx=0; const seenImg={};
   const sig=[];
   for(let spineIndex=0; spineIndex<archive.spine.length; spineIndex++){
@@ -972,6 +1008,9 @@ async function parseEPUB(f, bookId){
   // Keep EPUB heading tags and paragraph signals, but do not build navigation metadata.
   /* 감싸는 태그가 없는 옛 판을 위해 한 번 더. 자를 자리를 못 찾으면 그대로 둡니다. */
   const cut = trimGutenbergText(paras);
-  if(cut) return mergeWrapped(paras.slice(cut.from, cut.to), sig.slice(cut.from, cut.to));
-  return mergeWrapped(paras, sig);
+  const merged = cut
+    ? mergeWrapped(paras.slice(cut.from, cut.to), sig.slice(cut.from, cut.to))
+    : mergeWrapped(paras, sig);
+  merged.cover = cover;
+  return merged;
 }

@@ -3,7 +3,7 @@
   "appName": "Breeze",
   "webDir": "www",
   "ios": {
-    "contentInset": "always",
+    "contentInset": "never",
     "backgroundColor": "#FAF8F2"
   },
   "server": {

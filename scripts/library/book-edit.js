@@ -98,9 +98,9 @@ async function saveEditSheet(){
   pushBookTitle(book);
 }
 
-/* ---------- 지우기 ---------- */
-
-function confirmDeleteBook(book){ openEditSheet(book, 'delete'); }
+/* ---------- 지우기 ----------
+   카드의 ✕ 를 걷어내면서 지우기로 곧장 들어오던 문(`confirmDeleteBook`)도
+   함께 없앴습니다. 이제는 꾹 눌러 이 시트를 열고 `삭제…` 를 고릅니다. */
 
 editModal().addEventListener('click', event => {
   if(event.target.id === 'edit-modal') closeEditSheet();

@@ -116,6 +116,21 @@ function fillCard(card, parts){
 const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
 
+/* 목록만 보고 "이건 짧은 글"인지 아는 법.
+   `kind` 를 목록에 적기 시작하기 전에 올라간 줄에는 그 칸이 없습니다. 그 줄들은
+   지금 Books 선반에 흐린 카드로 앉아 있습니다 — 기사를 원서 자리에서 손으로
+   받으라고 하는 셈이고, 폰에서 본 화면이 정확히 그것이었습니다.
+   목록에 있는 것 중 쓸 수 있는 단서는 크기뿐입니다. 기사는 몇 KB, 원서는 수백
+   KB라 사이가 넓습니다. 한 번 받아 보면 본문에 `kind` 가 들어 있으므로 그때
+   목록을 고쳐 둡니다(`backfillServerKind`) — 이 어림짐작은 줄마다 한 번뿐입니다. */
+const LEGACY_CASUAL_MAX_BYTES = 90 * 1024;
+function rowLooksCasual(meta){
+  const kind = (meta || {}).kind || '';
+  if(kind) return CASUAL_KINDS.has(kind);
+  const bytes = (meta || {}).bytes || 0;
+  return bytes > 0 && bytes <= LEGACY_CASUAL_MAX_BYTES;
+}
+
 /* 최근에 읽던 것이 앞에 옵니다. 한 번도 열지 않은 것은 그 뒤에, 넣은 순서로.
    읽던 책을 늘 첫 칸에서 찾을 수 있으면 정렬 단추가 필요 없습니다. */
 function byRecentlyRead(list){
@@ -166,15 +181,27 @@ function applyCover(host, book){
 }
 
 /* 읽을거리 카드는 전부 같은 방식으로 동작합니다 — 누르면 열리고, 꾹 누르면
-   고치고, ✕는 지웁니다. 그 배선을 한 군데에 둡니다. */
+   고칩니다(이름 바꾸기 · 표지 · 삭제). 그 배선을 한 군데에 둡니다.
+
+   모서리의 ✕ 는 걷어냈습니다. 오른쪽 위는 이제 백업 화살표 자리인데, 둘이
+   한 모서리를 나눠 쓰다 보니 화살표가 안 뜨는 상황(로그인 전)에서는 ✕ 가
+   아무것도 없는 자리를 비켜서서 혼자 어정쩡하게 떠 있었습니다. 지우는 길은
+   꾹 누르기로 이미 있고, 그쪽이 "이 기기에서만/모든 기기에서"까지 물어봅니다. */
 function wireBookCard(card, book){
   const pressed = attachLongPress(card, ()=>openEditSheet(book));
-  card.onclick = event => {
-    if(event.target.classList.contains('del') || pressed()) return;
-    openBook(book);
-  };
-  card.querySelector('.del').onclick = () => confirmDeleteBook(book);
+  card.onclick = () => { if(!pressed()) openBook(book); };
   return card;
+}
+
+/* 표지 그림이 없는 짧은 글은 글 자체가 표지입니다 — 첫 문단을 카드에 깝니다.
+   그런데 그 자리에는 기자 이름("By Owen Delaney")이나 사진 표시가 먼저 오기도
+   합니다. 그러면 카드가 아무 말도 하지 않게 됩니다. 읽을 만한 길이의 첫 줄을
+   찾고, 없으면 지금까지처럼 맨 앞을 씁니다. */
+function cardLede(book){
+  const paras = book.paras || [];
+  const real = paras.slice(1).find(text =>
+    !text.startsWith(IMG_MARK) && text.trim().length >= 60);
+  return real || paras[1] || paras[0] || '';
 }
 
 function casualCard(book, current){
@@ -187,13 +214,11 @@ function casualCard(book, current){
       <div class="src"></div><div class="lede"></div>
       ${WAVE('#FFFFFF','.35')}
       ${position.t ? `<div class="bar"><i style="width:${Math.round(position.p*100)}%"></i></div>` : ''}
-      <button class="del" title="삭제">✕</button>
     </div>
     <div class="ct"></div><div class="cm"></div>`;
   fillCard(card, {
     '.src': book.site || '붙여넣은 글',
-    /* 표지 그림이 없으므로 글 자체가 표지입니다. 첫 문단을 보여 줍니다. */
-    '.lede': book.paras[1] || book.paras[0] || '',
+    '.lede': cardLede(book),
     '.ct': book.title,
     '.cm': label ? `${label} · ${readMinutes(book)}분` : `${readMinutes(book)}분 읽기`,
   });
@@ -228,7 +253,7 @@ function serverOnlyBooks(){
   if(!sbUser || typeof activeServerBooks !== 'function') return [];
   const hidden = hiddenBookIds();
   return activeServerBooks()
-    .filter(row => !CASUAL_KINDS.has((row.meta || {}).kind || ''))
+    .filter(row => !rowLooksCasual(row.meta || {}))
     .filter(row => !hidden[row.book_id])
     .filter(row => !findLocalBookForServerRow(row, books));
 }
@@ -244,8 +269,7 @@ function bookCard(book, current){
     <div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
     ${label ? '<div class="prog"></div>' : ''}
-    <button class="up" type="button"></button>
-    <button class="del" title="삭제">✕</button>`;
+    <button class="up" type="button"></button>`;
   fillCard(card, {'.author': book.author || 'MY BOOK', '.bt': book.title, '.prog': label});
   applyCover(card, book);
   paintBookSync(card, book);
@@ -583,6 +607,9 @@ async function prepareImportedFile(file){
     const packedSignals = packLayoutSignals(sig);
     const formatting = buildFormattingFromLayout(paras,sig,null);
     return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,glyphs,
+            /* EPUB 안에 들어 있던 표지. 아직 임시 ID 로 담겨 있어서, 진짜 ID 가
+               정해지면 그림과 함께 이름이 바뀝니다(`imgRename`). */
+            cover:parsed.cover || '',
             formatting:formatting && validateFormattingBlocks(paras,formatting.blocks) ? formatting : null,
             textAvailable};
   }catch(error){
@@ -600,6 +627,9 @@ async function applyPreparedBook(target, prepared, file){
     await imgRename(prepared.tmpId,target.id);
   }
   target.paras = remapImportedImages(prepared.paras,prepared.tmpId,target.id);
+  /* 사용자가 손수 고른 표지가 있으면 건드리지 않습니다 — 같은 책의 원본을
+     다시 연결했다고 해서 골라 둔 표지가 파일 안의 것으로 되돌아가면 안 됩니다. */
+  if(prepared.cover && !target.cover) target.cover = prepared.cover.replace(prepared.tmpId,target.id);
   target.kind = prepared.kind;
   target.fingerprint = prepared.fingerprint;
   target.textAvailable = prepared.textAvailable;
@@ -677,6 +707,7 @@ async function importFile(file, extra){
       toast('책은 추가했지만 원본 파일을 기기에 보관하지 못했어요');
     }
     const book = {id,title:prepared.title,kind:prepared.kind,paras,addedAt:Date.now(),
+      cover:prepared.cover ? prepared.cover.replace(prepared.tmpId,id) : '',
       fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
       sourceMap:prepared.sourceMap,glyphs:prepared.glyphs||null,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,

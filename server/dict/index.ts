@@ -17,6 +17,7 @@
 //   op:"look"   낱말 + 문장 → 이 문장에서의 뜻 · 설명 · 다른 뜻 후보.  AI 를 부르는 유일한 곳
 //   op:"warm"   함수만 깨운다. AI 를 부르지 않고 한도도 쓰지 않는다
 //   op:"log"    사람이 무엇을 했는지 남긴다. AI 도, 한도도 안 씀
+//   op:"delete_account"  이 사람이 서버에 가진 것을 전부 지우고 계정을 없앤다
 //
 // 예전에는 entry / pick / explain 세 갈래였습니다. 낱말 항목을 서버 표에 쌓아 두고
 // 재사용하려면 "표에 적기 / 표에서 고르기 / 문장 설명하기"가 각각 필요했으니까요.
@@ -400,6 +401,40 @@ async function takeAnonQuota(device: string): Promise<AnonVerdict> {
   return (data ?? { status: "closed" }) as AnonVerdict;
 }
 
+/* ================= 계정 지우기 =================
+   로그인이 있는 앱은 앱 안에서 계정을 지울 수 있어야 합니다(App Store 심사
+   지침 5.1.1(v)). 심사와 별개로, 나갈 문이 없는 저장소에 자기 것을 맡기라고
+   할 수는 없습니다.
+
+   순서가 전부입니다. auth 사용자를 먼저 지우면 남은 줄들은 주인을 잃고,
+   주인이 없으면 두 번 다시 찾아가 지울 수 없습니다. 그래서 가진 것을 모두
+   지운 뒤에 계정을 지웁니다 — 중간에 끊기면 다시 눌러 이어서 지웁니다.
+
+   `ai_usage` 는 auth 사용자를 따라 저절로 지워지고(on delete cascade),
+   `dict_events` 는 user_id 만 비도록 되어 있습니다. 하지만 계정을 지운다는
+   말은 "내 것을 남기지 말아 달라"는 뜻이므로 여기서 손수 지웁니다. */
+async function opDeleteAccount(userId: string | null) {
+  if (!userId) return json({ error: "login_required" }, 401);
+
+  const listed = await SR.storage.from("books").list(userId, { limit: 1000 });
+  const files = (listed.data ?? []).map((file) => `${userId}/${file.name}`);
+  if (files.length) {
+    const removed = await SR.storage.from("books").remove(files);
+    if (removed.error) {
+      return json({ error: "delete_failed", message: removed.error.message }, 500);
+    }
+  }
+
+  for (const table of ["words", "positions", "books", "dict_events", "ai_usage"]) {
+    const { error } = await SR.from(table).delete().eq("user_id", userId);
+    if (error) return json({ error: "delete_failed", message: error.message }, 500);
+  }
+
+  const { error } = await SR.auth.admin.deleteUser(userId);
+  if (error) return json({ error: "delete_failed", message: error.message }, 500);
+  return json({ ok: true });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
@@ -430,6 +465,7 @@ Deno.serve(async (req) => {
     }
 
     if (op === "log") return await opLog(body, userId);
+    if (op === "delete_account") return await opDeleteAccount(userId);
 
     const word = String(body.word ?? "").slice(0, 60).trim();
     if (!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word)) return json({ error: "bad_word" }, 400);

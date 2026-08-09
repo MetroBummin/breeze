@@ -212,8 +212,20 @@
   body.dark .original-empty{background:#1C1F23; border-color:#2A2E33;}
 
   .pdf-original{display:flex; flex-direction:column; align-items:center; gap:22px;}
-  .pdf-source-page{position:relative; width:100%; background:#fff; box-shadow:0 8px 28px rgba(25,31,35,.18);
-    overflow:hidden; isolation:isolate;}
+  /* ---- 확대는 쪽마다 제 칸 안에서 ----
+     처음에는 쪽을 그냥 넓히고 화면 전체를 옆으로 스크롤하게 두었습니다. 폰에서는
+     그게 통하지 않습니다 — 내용이 화면보다 넓어지면 브라우저는 스크롤바를 주는
+     대신 화면 전체를 축소해서 맞춰 버립니다. 확대한 만큼 그대로 되돌려지므로
+     이득이 정확히 0이었습니다(375px 화면이 623px 로 늘어나는 것을 확인).
+     그래서 쪽마다 제 가로 스크롤 칸을 줍니다. 문서의 폭은 변하지 않으니 화면이
+     축소될 일이 없고, 세로 스크롤도 지금까지처럼 창이 맡습니다. */
+  .pdf-page-lane{width:100%; overflow-x:auto; overflow-y:hidden;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; overscroll-behavior-x:contain;}
+  .pdf-page-lane::-webkit-scrollbar{display:none;}
+  .pdf-source-page{position:relative; width:calc(100% * var(--pdf-zoom,1)); background:#fff;
+    box-shadow:0 8px 28px rgba(25,31,35,.18); overflow:hidden; isolation:isolate;}
+  #readfabs .zoomfab{font-size:19px; font-weight:400;}
+  #readfabs .zoomfab:disabled{opacity:.35; cursor:default;}
   .pdf-source-page canvas{position:absolute; inset:0; display:block; width:100%!important; height:100%!important;}
   .pdf-page-loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:#AAA; font:13px var(--ui); background:#FFF;}

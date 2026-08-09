@@ -23,6 +23,11 @@ const CLASSICS = [
 ];
 
 const classicFile = id => `assets/classics/${id}.epub`;
+/* 표지는 EPUB 안에 이미 들어 있고, 받고 나면 반입기가 거기서 꺼내 씁니다
+   (`epubCoverImage`). 하지만 권유 카드는 아직 받기 *전*에 뜨는 자리라,
+   표지 한 장을 보자고 400KB 짜리 책을 미리 받을 수는 없습니다. 그래서 같은
+   그림을 파일 밖에도 한 장 꺼내 두었습니다 — 세 장 합쳐 230KB 입니다. */
+const classicCoverFile = id => `assets/classics/${id}.jpg`;
 
 /* 이미 서가에 있는 고전은 권유 카드에서 뺍니다. */
 function pendingClassics(){
@@ -53,9 +58,15 @@ async function importClassic(classic, card){
 
 function classicCard(classic){
   const card = el('div', 'bookcard classic');
-  card.innerHTML = `<div class="author"></div><div class="bt"></div>
+  card.innerHTML = `<img class="cover" alt="" hidden>
+    <div class="author"></div><div class="bt"></div>
     <div class="get">↓ 무료로 받기 · ${(classic.kb/1024).toFixed(1)}MB</div>`;
   fillCard(card, {'.author': classic.author.toUpperCase(), '.bt': classic.title});
+  /* 표지가 뜨고 나서야 카드가 표지 카드로 바뀝니다. 미리 바꿔 두면 파일이
+     없을 때 흰 글씨가 빈 카드 위에 남습니다. */
+  const image = card.querySelector('.cover');
+  image.onload = () => { image.hidden = false; card.classList.add('has-cover'); };
+  image.src = classicCoverFile(classic.id);
   /* 호메로스는 기원전이라 그냥 찍으면 "-700년"이 됩니다. */
   const year = classic.year < 0 ? `기원전 ${-classic.year}년경` : `${classic.year}`;
   card.title = `${classic.blurb} (${year}, 퍼블릭 도메인)`;
