@@ -7,6 +7,8 @@
 //   ANTHROPIC_API_KEY   ← Claude 키            (유료, 선택)
 //   AI_PROVIDER         ← "gemini" 또는 "claude". 없으면 있는 키를 자동 선택
 //   AI_DAILY_LIMIT      ← 한 사람 하루 AI 호출 한도. 없으면 200
+//   AI_ANON_FREE        ← 로그인 전 기기당 평생 무료 횟수. 없으면 10
+//   AI_ANON_DAILY_CAP   ← 로그인 전 요청 전체의 하루 상한(차단기). 없으면 2000
 //   DICT_FP_SALT        ← 문장 지문에 섞는 아무 긴 문자열. 없으면 지문을 아예 안 남깁니다
 //
 // 먼저 sql/supabase_dict.sql 을 실행해 두어야 합니다.
@@ -37,6 +39,12 @@ const json = (body: unknown, status = 200) =>
 const GEMINI_MODEL = "gemini-3.5-flash-lite";
 const CLAUDE_MODEL = "claude-haiku-4-5";
 const DAILY_LIMIT = Number(Deno.env.get("AI_DAILY_LIMIT") ?? 200);
+/* 로그인 전에 그냥 써 볼 수 있는 횟수. 하루가 아니라 기기당 평생입니다 —
+   맛보기지 무료 요금제가 아닙니다. */
+const ANON_FREE = Number(Deno.env.get("AI_ANON_FREE") ?? 10);
+/* 로그인 전 요청 전체의 하루 상한. 기기 표시는 지우면 새로 생기므로,
+   예산을 지키는 진짜 벽은 이쪽입니다. */
+const ANON_DAILY_CAP = Number(Deno.env.get("AI_ANON_DAILY_CAP") ?? 2000);
 
 const SYSTEM =
   "You are a precise bilingual dictionary for Korean learners reading English books. " +
@@ -244,10 +252,20 @@ async function opLook(body: any, userId: string | null) {
   const avoid = cleanList(body.avoid, 4, 40);
   const retry = !!body.retry;
 
-  /* AI 가 뜻의 유일한 출처가 되었으니, 로그인과 한도가 유일한 문지기입니다.
-     둘 중 하나에 걸리면 앱은 조용히 무료 사전으로 내려갑니다 — 화면이 비지는 않습니다. */
-  if (!userId) return json({ error: "login_required" }, 401);
-  if (!(await takeQuota(userId))) {
+  /* AI 가 뜻의 유일한 출처가 되었으니, 한도가 유일한 문지기입니다. 걸리면 앱은
+     조용히 무료 사전으로 내려갑니다 — 화면이 비지는 않습니다. */
+  let anonLeft: number | null = null;
+  if (!userId) {
+    const verdict = await takeAnonQuota(clean(body.device, 64));
+    if (verdict.status === "spent") {
+      logEvent({ userId: null, action: "quota", word, clicked, sentence, meta: { anon: 1 } });
+      return json({ error: "anon_exhausted", free: ANON_FREE }, 429);
+    }
+    /* 기기 표시가 없거나(옛 앱) 하루 상한에 걸렸으면 로그인을 권합니다.
+       둘은 원인이 다르지만 사용자가 할 수 있는 일은 같습니다. */
+    if (verdict.status !== "ok") return json({ error: "login_required" }, 401);
+    anonLeft = Math.max(0, ANON_FREE - (verdict.calls ?? ANON_FREE));
+  } else if (!(await takeQuota(userId))) {
     logEvent({ userId, action: "quota", word, clicked, sentence });
     return json({ error: "quota_exceeded", limit: DAILY_LIMIT }, 429);
   }
@@ -280,6 +298,9 @@ async function opLook(body: any, userId: string | null) {
     alts: cleanList(parsed.alts, 3, 40).filter((a) => a !== ko),
     colloc: cleanList(parsed.colloc, 3, 60),
     provider: out.provider,
+    /* 로그인 전이면 몇 번 남았는지 함께 돌려줍니다. 마지막 한두 번쯤에
+       미리 알려 줘야, 다음 낱말에서 갑자기 막히지 않습니다. */
+    ...(anonLeft === null ? {} : { left: anonLeft }),
   };
   if (!answer.ko) return json({ error: "empty_answer" }, 502);
 
@@ -288,8 +309,11 @@ async function opLook(body: any, userId: string | null) {
     lemma, pos: answer.pos, aiKo: answer.ko, provider: out.provider,
     book: clean(body.book, 200),
     /* gloss 가 비어 오는 비율은 프롬프트가 먹히는지 보는 지표입니다.
-       예전에 "뻔하면 빈 문자열" 이라고 써 뒀다가 설명 줄이 통째로 사라졌습니다. */
-    meta: { alts: answer.alts.length, gloss: gloss ? 1 : 0, note: answer.note ? 1 : 0, avoid: avoid.length },
+       예전에 "뻔하면 빈 문자열" 이라고 써 뒀다가 설명 줄이 통째로 사라졌습니다.
+       기기 표시는 여기 남기지 않습니다 — 로그인 전 사람을 표에서 이어 붙일
+       수 있게 되면 그건 다른 종류의 기록이 됩니다. */
+    meta: { alts: answer.alts.length, gloss: gloss ? 1 : 0, note: answer.note ? 1 : 0,
+            avoid: avoid.length, ...(anonLeft === null ? {} : { anon: 1 }) },
   });
   return json(answer);
 }
@@ -350,10 +374,24 @@ async function logEvent(e: EventIn) {
 }
 
 /* ── 하루 한도 ───────────────────────────────────────────── */
+/* 표가 고장 나면 통과시킵니다. 로그인한 사람은 누군지 알고 수가 정해져 있어서,
+   잘못 열리는 쪽이 잘못 막히는 쪽보다 쌉니다. */
 async function takeQuota(userId: string) {
   const { data, error } = await SR.rpc("take_ai_quota", { p_user: userId, p_limit: DAILY_LIMIT });
   if (error) { console.warn("quota check failed, allowing:", error.message); return true; }
   return data !== false;
+}
+
+/* 로그인 전 몫. 위와 반대로, 고장 나면 막습니다 — 로그인 전 요청은 수가 정해져
+   있지 않아서, 열린 채로 두면 표 하나 고장 난 날 예산이 통째로 나갑니다. */
+type AnonVerdict = { status: string; calls?: number };
+async function takeAnonQuota(device: string): Promise<AnonVerdict> {
+  if (!device) return { status: "bad_device" };
+  const { data, error } = await SR.rpc("take_anon_quota", {
+    p_device: device, p_limit: ANON_FREE, p_daily_cap: ANON_DAILY_CAP,
+  });
+  if (error) { console.warn("anon quota failed, refusing:", error.message); return { status: "closed" }; }
+  return (data ?? { status: "closed" }) as AnonVerdict;
 }
 
 Deno.serve(async (req) => {

@@ -84,6 +84,9 @@ function addWord(k, span){
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
   words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
     example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now(), up:Date.now() };
+  /* 이제 이 기기에 잃을 것이 생겼습니다 — 저장소를 영구로 표시해 달라고 부탁합니다.
+     한 번만 물어보고, 이미 물어봤으면 조용히 지나갑니다. */
+  requestDurableLocalStorage();
   delete dead[k]; save(LS_DEAD, dead);
   saveWords(); queueSync();
   paintWord(k);
@@ -209,15 +212,26 @@ function renderPanel(){
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
   const off = asking ? '' : (w.aiOff || '');
   aiBtn.style.display = (off && off !== 'quota') ? 'flex' : 'none';
-  aiHint.style.display = off ? 'block' : 'none';
   document.getElementById('p-aibtn-t').textContent =
-    (off === 'error' || w.aiSlow) ? '다시 시도' : 'Let AI handle this';
+      (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
+    : (off === 'error' || w.aiSlow)        ? '다시 시도'
+    :                                        'Let AI handle this';
+  /* 맛보기가 몇 번 안 남았으면 미리 말해 둡니다. 다음 낱말에서 갑자기 막히는 것보다
+     낫습니다. 아직 넉넉할 때는 아무 말도 하지 않습니다 — 읽는 중이니까요. */
+  const trialWarn = (!sbUser && !off && anonLooksLeft !== null && anonLooksLeft <= 3)
+    ? (anonLooksLeft > 0
+        ? `무료 체험 ${anonLooksLeft}번 남았어요 · 로그인하면 계속 쓸 수 있어요`
+        : '무료 체험을 다 썼어요')
+    : '';
+  aiHint.style.display = (off || trialWarn) ? 'block' : 'none';
   aiHint.textContent =
-      off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
+      off === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
+    : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
     : off === 'quota'   ? '오늘 AI 사전을 다 썼어요. 자정에 다시 채워집니다'
     : off === 'offline' ? '오프라인이라 무료 사전만 보여주고 있어요'
     : off === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
-    : '뜻이 문맥과 안 맞을 때 눌러보세요';
+    : trialWarn         ? trialWarn
+    :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
 
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';
@@ -363,6 +377,25 @@ function entryKeys(w){
 const lookKey = (word, sentence) =>
   'l:' + String(word||'').toLowerCase() + '|' + sentenceHash(sentence);
 
+/* ---- 로그인 전 맛보기 ----
+   Breeze 가 남과 다른 점은 "이 문장에서는 이런 뜻" 하나입니다. 그게 로그인 뒤에만
+   보이면 처음 온 사람이 보는 것은 구글 번역 결과이고, 그 상태로 "로그인하면
+   좋아져요"라고 말해 봐야 믿을 이유가 없습니다. 먼저 보여 주고 나서 물어봅니다.
+
+   이 표시는 "몇 번 남았나"를 세기 위한 것뿐입니다. 서버의 기록 표에는 들어가지
+   않습니다 — 로그인 전 사람을 이어 붙일 수 있게 되는 순간 다른 종류의 기록이 됩니다. */
+function deviceId(){
+  let id = load('breeze.device', '');
+  if(!id){
+    id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+       : 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2,12);
+    save('breeze.device', id);
+  }
+  return id;
+}
+/* 서버가 답할 때마다 알려 주는 남은 횟수. 모르면 null. */
+let anonLooksLeft = null;
+
 async function dictCall(payload, signal){
   if(!sb || navigator.onLine === false) return null;
   let token = SB_KEY;
@@ -428,7 +461,9 @@ async function fetchLook(k, opt){
   const w = words[k]; if(!w) return false;
   opt = opt || {};
   if(navigator.onLine === false){ w.aiOff = 'offline'; if(selKey===k) renderPanel(); return false; }
-  if(!sb || !sbUser){ w.aiOff = 'login'; if(selKey===k) renderPanel(); return false; }
+  /* 서버 주소조차 없으면(config 미설정) 할 수 있는 일이 없습니다. 로그인 여부는
+     더 이상 여기서 막지 않습니다 — 맛보기 횟수는 서버가 셉니다. */
+  if(!sb){ w.aiOff = 'login'; if(selKey===k) renderPanel(); return false; }
 
   const began = Date.now();
   abortLook();
@@ -450,14 +485,20 @@ async function fetchLook(k, opt){
       op:'look',
       word: w.word || k, clicked: w.clicked || '', cands: entryKeys(w),
       sentence: w.example || '', book: w.book || '',
-      retry: !!opt.retry, avoid: opt.retry ? (w.asked || []) : []
+      retry: !!opt.retry, avoid: opt.retry ? (w.asked || []) : [],
+      /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
+      device: sbUser ? '' : deviceId()
     }, ctrl ? ctrl.signal : null);
     if(!j || j.error || !j.ko){
       const e = j && j.error;
-      w.aiOff = e === 'quota_exceeded' ? 'quota' : e === 'login_required' ? 'login' : 'error';
+      w.aiOff = e === 'quota_exceeded' ? 'quota'
+              : e === 'anon_exhausted' ? 'trial'
+              : e === 'login_required' ? 'login' : 'error';
       if(w.aiOff === 'quota') toast('오늘 AI 사전 한도를 다 썼어요. 무료 사전으로 보여줄게요');
+      if(w.aiOff === 'trial'){ anonLooksLeft = 0; toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요'); }
       return false;
     }
+    if(typeof j.left === 'number') anonLooksLeft = j.left;
     await dictPut(lookKey(j.lemma || w.word || k, w.example), Object.assign({}, j, { done:true }));
     /* 갓 받은 답은 최소 0.28초는 바람을 보여 준 뒤에 놓습니다. 답이 너무 빨리 오면
        화면이 튄 것처럼 느껴져서, 무슨 일이 일어났는지 못 알아챕니다.
@@ -502,7 +543,10 @@ async function askOtherSense(k){
 }
 function askAI(){
   const k = selKey; if(!k || !words[k]) return;
-  if(words[k].aiOff === 'login'){ toast('로그인하면 문맥에 맞는 뜻을 찾아줘요'); openSyncModal(); return; }
+  const off = words[k].aiOff;
+  /* 맛보기를 다 썼거나 서버가 로그인을 요구하면, 다시 부르는 것은 같은 답을
+     한 번 더 받는 일입니다. 할 수 있는 일이 있는 곳으로 보냅니다. */
+  if(off === 'trial' || off === 'login'){ openSyncModal(); return; }
   fetchLook(k, {});
 }
 document.getElementById('p-aibtn').onclick   = ()=>askAI();

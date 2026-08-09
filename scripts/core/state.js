@@ -1,7 +1,38 @@
 const LS_WORDS='breeze.words', LS_POS='breeze.pos', LS_FS='breeze.fs';
 /* ?? 는 2020년 문법이라 오래된 태블릿 브라우저가 파일 전체를 못 읽습니다. 풀어서 씁니다. */
 function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return (v===null||v===undefined) ? d : v; }catch(e){ return d; } }
-function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('저장 공간이 부족해요 (책이 너무 큼)'); } }
+
+/* 저장에 실패해도 하던 일은 막지 않습니다. 단어를 담다가 모달이 뜨면 읽기가
+   끊기는데, 그게 더 나쁩니다. 대신 무엇을 못 지켰는지는 정확히 말합니다 —
+   예전에는 무엇이 실패했든 "책이 너무 큼"이라고 했습니다.
+
+   읽는 위치는 조용히 흘려보냅니다. 스크롤할 때마다 저장하므로, 공간이 찬
+   상태에서 알렸다가는 읽는 내내 몇 초마다 토스트가 뜹니다. 그리고 위치를
+   잃는 것은 단어장을 잃는 것과 무게가 다릅니다. */
+const SAVE_FAIL_NAMES = {
+  'breeze.words': '단어장을 이 기기에 저장하지 못했어요',
+  'breeze.dead':  '단어장을 이 기기에 저장하지 못했어요',
+};
+const SAVE_FAIL_QUIET = new Set(['breeze.pos']);
+let lastSaveWarnAt = 0;
+function save(k, v){
+  try{ localStorage.setItem(k, JSON.stringify(v)); return true; }
+  catch(e){
+    console.warn('저장 실패:', k, e && e.name);
+    if(SAVE_FAIL_QUIET.has(k)) return false;
+    /* 한 번 차면 이어지는 저장도 줄줄이 실패합니다. 같은 말을 반복하지 않습니다. */
+    if(Date.now() - lastSaveWarnAt < 5*60*1000) return false;
+    lastSaveWarnAt = Date.now();
+    const what = SAVE_FAIL_NAMES[k] || '방금 한 변경을 이 기기에 저장하지 못했어요';
+    /* 로그인은 고치는 방법이지 잔소리가 아닙니다 — 서버에 있으면 기기가 차도 남습니다.
+       sbUser 는 이 파일보다 늦게 실행되는 sync.js 의 let 이라, 아직 초기화 전이면
+       읽는 것만으로 던집니다(TDZ). 로그인 여부는 곁가지이므로 조용히 넘깁니다. */
+    let signedIn = false;
+    try{ signedIn = !!sbUser; }catch(e){}
+    toast(what + (signedIn ? ' (서버 사본은 남아 있어요)' : '. 로그인하면 서버에 백업돼요'));
+    return false;
+  }
+}
 const LS_DEAD='breeze.dead';
 let words = load(LS_WORDS, {});
 let dead = load(LS_DEAD, {});

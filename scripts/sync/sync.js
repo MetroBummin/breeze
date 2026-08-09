@@ -64,20 +64,16 @@ function renderSyncModal(){
     syncStatus('');
     return;
   }
+  /* 이 창은 이제 로그인만 맡습니다. 책을 올리고 받는 일은 책 위에서 합니다 —
+     여기 목록이 있던 시절에는, 창을 열어 책마다 단추를 눌러야 백업이 됐습니다.
+     그 일은 일어나지 않았고, 그래서 백업은 마음먹은 사람만 가졌습니다. */
   if(sbUser){
     body.innerHTML = `<div class="desc">로그인됨: <b>${esc(sbUser.email||'')}</b><br>
-      단어장과 읽던 위치가 자동으로 동기화됩니다.<br>
+      단어장과 읽던 위치는 자동으로 동기화됩니다.<br>
+      책은 카드 오른쪽 위 <b>↑</b> 를 눌러 올려 두세요.<br>
       마지막 동기화: ${lastSync? new Date(lastSync).toLocaleString('ko-KR') : '아직 없음'}</div>
       <button class="sm-btn primary" onclick="doSync(true)">지금 동기화</button>
-      <div class="sm-books">
-        <div class="sm-books-head">
-          <span>책 <span class="sm-dim">(수동)</span></span>
-          <button class="sm-mini" onclick="refreshBooks()">목록 새로고침</button>
-        </div>
-        <div id="sm-booklist"><div class="sm-dim">서버 목록 확인 중…</div></div>
-      </div>
       <button class="sm-btn ghost" onclick="sbLogout()">로그아웃</button>`;
-    if(serverBooks) renderBookList();
   }else{
     body.innerHTML = `<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
       비밀번호는 없습니다. 링크를 누르면 이 브라우저에서 로그인되고,
@@ -206,51 +202,11 @@ async function refreshBooks(){
     await applyBookTombstones(serverBooks);     // 다른 기기에서 지운 책을 여기서도 정리
     await autoDownloadCasuals();                // 다른 기기에서 담은 짧은 글
     syncStatus('');
-    renderBookList();
+    /* 서버 목록이 곧 서가의 일부입니다 — 흐린 카드와 ✓ 표시가 여기서 나옵니다. */
+    renderAllBookViews();
   })();
   try{ await refreshingBooks; }
   finally{ refreshingBooks=null; }
-}
-function renderBookList(){
-  const el = document.getElementById('sm-booklist');
-  if(!el) return;
-  const srv = activeServerBooks();
-  const consumedServerIds = new Set();
-  const rows = [];
-  books.forEach(b=>{
-    const match = srv.find(row => !consumedServerIds.has(row.book_id) && serverRowMatchesBook(row, b));
-    if(match) consumedServerIds.add(match.book_id);
-    rows.push({ id:b.id, serverId:match ? match.book_id : '',
-                title:b.title, where:match ? 'both' : 'local' });
-  });
-  srv.forEach(row=>{
-    if(!consumedServerIds.has(row.book_id)) rows.push({
-      id:row.book_id,
-      serverId:row.book_id,
-      title:(row.meta || {}).title || '(제목 없음)',
-      where:'server',
-    });
-  });
-  if(!rows.length){ el.innerHTML = '<div class="sm-dim">책이 없어요</div>'; return; }
-  el.innerHTML = rows.map(r=>`
-    <div class="sm-book" data-id="${esc(r.id)}" data-server-id="${esc(r.serverId || '')}" data-title="${esc(r.title)}">
-      <span class="t">${esc(r.title)}</span>
-      ${r.where==='local'  ? '<button class="act" data-a="up">올리기</button>' : ''}
-      ${r.where==='server' ? '<button class="act" data-a="down">이 기기에 받기</button>' : ''}
-      ${r.where==='both'   ? '<span class="done">✓ 동기화됨</span>' : ''}
-      ${r.where!=='local'  ? '<button class="act del" data-a="rm" title="서버에서 지우기">✕</button>' : ''}
-    </div>`).join('');
-  el.querySelectorAll('.act').forEach(btn=>{
-    btn.onclick = ()=>{
-      const row = btn.closest('.sm-book');
-      const id = row.dataset.id, serverId = row.dataset.serverId || id, title = row.dataset.title;
-      const job = btn.dataset.a==='up'   ? bookUpload(id)
-                : btn.dataset.a==='down' ? bookDownload(serverId)
-                :                          bookDeleteServer(serverId, title);
-      btn.disabled = true;
-      Promise.resolve(job).finally(()=>{ btn.disabled=false; });
-    };
-  });
 }
 const bookPath = id => `${sbUser.id}/${id}.json`;
 const legacyBookFormatPath = id => `${sbUser.id}/${id}.format.json`;
@@ -387,11 +343,10 @@ async function bookUpload(id, options){
   );
   if(twin && (twin.meta || {}).fingerprint === fingerprint){
     syncStatus('이미 서버에 있는 같은 책이에요');
-    renderBookList();
-    return;
+    return false;
   }
   // 자동 올리기는 절대 물어보지 않습니다. 방금 붙여넣은 참인데 창이 뜨면 놀랍니다.
-  if(twin && (auto || !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`))) return;
+  if(twin && (auto || !confirm(`서버에 같은 제목의 책이 이미 있어요.\n\n"${b.title}"\n\n다른 판본일 수 있습니다. 따로 하나 더 올릴까요?`))) return false;
   try{
     syncStatus('올리는 중…');
     cancelQueuedServerBookDelete(remoteId);
@@ -436,7 +391,13 @@ async function bookUpload(id, options){
     }
     syncStatus('올렸어요');
     await refreshBooks();
-  }catch(e){ console.error(e); syncStatus('올리기 실패: '+(e.message||e)); }
+    return true;
+  }catch(e){
+    console.error(e); syncStatus('올리기 실패: '+(e.message||e));
+    /* 부른 쪽이 카드 위에서 말해 줘야 합니다. 예전에는 Sync 창의 한 줄에만
+       적혀서, 창을 안 연 사람에게는 실패가 조용히 성공처럼 보였습니다. */
+    throw e;
+  }
 }
 async function bookDownload(id, options){
   const auto = !!(options && options.auto);
@@ -469,11 +430,11 @@ async function bookDownload(id, options){
     await bookPut(book);
     books = books.filter(b=>b.id!==id); books.unshift(book);
     if(!auto) syncStatus('받았어요');
-    renderAllBookViews(); renderBookList();
+    renderAllBookViews();
   }catch(e){
     console.error(e);
     if(!auto) syncStatus('받기 실패: '+(e.message||e));
-    else throw e;
+    throw e;                      // 부른 쪽이 카드 위에서 말합니다
   }
 }
 

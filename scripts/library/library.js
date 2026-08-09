@@ -68,7 +68,6 @@ async function deleteBook(b, scope){
        곧바로 도로 가져옵니다. Sync 창에서 손수 받으면 표시가 풀립니다. */
     hideBookLocally(remoteId);
     hideBookLocally(b.id);
-    if(typeof renderBookList === 'function') renderBookList();
     toast('이 기기에서 지웠어요');
     return;
   }
@@ -83,7 +82,7 @@ async function deleteBook(b, scope){
         serverBooks = serverBooks.filter(r => r.book_id !== remoteId);
         serverBooks.push({book_id:remoteId, meta});
       }
-      renderBookList();
+      renderAllBookViews();
     }catch(e){ console.error(e); toast('기기에서는 지웠지만 서버에서 지우지 못했어요'); return; }
   }
   toast('모든 기기에서 지웠어요');
@@ -211,6 +210,31 @@ function casualAddCard(){
   return card;
 }
 
+/* ================= 책이 서버에 있는가 =================
+   예전에는 이걸 Sync 창 안 목록에서만 알 수 있었습니다. 창을 열고, 책마다
+   `올리기`를 누르고, 다른 기기에서는 다시 열어서 `받기`를 눌러야 했습니다.
+   그 일은 일어나지 않습니다 — 그래서 백업은 "하려고 마음먹은 사람"만 가졌습니다.
+
+   이제 상태와 단추가 책 위에 있습니다. 카드를 보면 이 책이 안전한지 보이고,
+   올리는 것도 거기서 합니다. Sync 창은 로그인만 맡습니다. */
+function serverRowForBook(book){
+  if(!sbUser || typeof activeServerBooks !== 'function') return null;
+  return activeServerBooks().find(row => serverRowMatchesBook(row, book)) || null;
+}
+/* 서버에만 있는 원서. 짧은 글은 저절로 오가므로 여기 나오지 않습니다.
+   "이 기기에서만 지운" 책도 나오지 않습니다 — 서버 사본을 남기기로 하고 서가에서
+   치운 것인데, 흐린 카드로 도로 올라오면 지운 적이 없는 것과 같습니다. */
+function serverOnlyBooks(){
+  if(!sbUser || typeof activeServerBooks !== 'function') return [];
+  const hidden = hiddenBookIds();
+  return activeServerBooks()
+    .filter(row => !CASUAL_KINDS.has((row.meta || {}).kind || ''))
+    .filter(row => !hidden[row.book_id])
+    .filter(row => !findLocalBookForServerRow(row, books));
+}
+
+const cardBusy = new Set();      // 올리는/받는 중인 책 — 두 번 누르는 것을 막습니다
+
 function bookCard(book, current){
   const index = paletteOf(book, 3);
   const label = nowReadingLabel(book, current);
@@ -220,10 +244,86 @@ function bookCard(book, current){
     <div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
     ${label ? '<div class="prog"></div>' : ''}
+    <button class="up" type="button"></button>
     <button class="del" title="삭제">✕</button>`;
   fillCard(card, {'.author': book.author || 'MY BOOK', '.bt': book.title, '.prog': label});
   applyCover(card, book);
+  paintBookSync(card, book);
   return wireBookCard(card, book);
+}
+
+/* 화살표 하나가 상태이자 단추입니다. 올라가 있으면 조용한 ✓ 로 남아
+   "이 책은 기기가 죽어도 남는다"만 말합니다 — 누를 것이 없으니 흐리게. */
+function paintBookSync(card, book){
+  const button = card.querySelector('.up');
+  if(!button) return;
+  const busy = cardBusy.has(book.id);
+  const synced = !busy && !!serverRowForBook(book);
+  card.classList.toggle('synced', synced);
+  card.classList.toggle('busy-sync', busy);
+  /* 로그인 전에는 올릴 곳이 없습니다. 단추 대신 아무것도 두지 않습니다 —
+     읽으러 온 사람에게 계정 이야기를 카드마다 하지 않기 위해서. */
+  button.style.display = sbUser ? 'flex' : 'none';
+  button.textContent = busy ? '↑' : (synced ? '✓' : '↑');
+  button.title = busy ? '올리는 중…'
+    : synced ? '서버에 백업돼 있어요' : '서버에 올려 두기 (다른 기기에서도 읽기)';
+  button.onclick = event => {
+    event.stopPropagation();          // 카드를 누른 것이 아닙니다
+    if(busy || synced) return;
+    uploadBookFromCard(book);
+  };
+}
+
+async function uploadBookFromCard(book){
+  if(cardBusy.has(book.id)) return;
+  cardBusy.add(book.id);
+  renderAllBookViews();
+  try{
+    await bookUpload(book.id);
+    toast(`"${book.title}" 올렸어요`);
+  }catch(error){
+    console.error(error);
+    toast('올리지 못했어요: '+((error && error.message) || error));
+  }finally{
+    cardBusy.delete(book.id);
+    renderAllBookViews();
+  }
+}
+
+/* 서버에만 있는 책. 이름만 받아 와서 흐린 카드로 둡니다 — 있다는 것은 보이고,
+   가운데 단추가 "받으면 읽을 수 있다"를 말합니다. */
+function cloudBookCard(row){
+  const meta = row.meta || {};
+  const busy = cardBusy.has(row.book_id);
+  const card = el('div', 'bookcard cloud' + (busy ? ' busy-sync' : ''));
+  card.innerHTML = `<div class="author"></div><div class="bt"></div>
+    <button class="getbtn" type="button">${busy ? '받는 중…' : '↓ 이 기기에 받기'}</button>
+    <button class="del" type="button" title="서버에서 지우기">✕</button>`;
+  fillCard(card, { '.author': meta.author || '서버에 있음', '.bt': meta.title || '(제목 없음)' });
+  /* 서버에만 있는 책을 지우는 길은 예전 Sync 목록에만 있었습니다. 목록을 걷어낸
+     이상 여기 없으면 아예 지울 수 없게 됩니다. */
+  card.querySelector('.del').onclick = event => {
+    event.stopPropagation();
+    bookDeleteServer(row.book_id, meta.title || '(제목 없음)');
+  };
+  card.onclick = () => { if(!cardBusy.has(row.book_id)) downloadBookFromCard(row); };
+  return card;
+}
+
+async function downloadBookFromCard(row){
+  const id = row.book_id;
+  if(cardBusy.has(id)) return;
+  cardBusy.add(id);
+  renderAllBookViews();
+  try{
+    await bookDownload(id);
+  }catch(error){
+    console.error(error);
+    toast('받지 못했어요: '+((error && error.message) || error));
+  }finally{
+    cardBusy.delete(id);
+    renderAllBookViews();
+  }
 }
 
 function longformAddCard(){
@@ -252,6 +352,8 @@ function renderHome(){
   const nowLongform = nowReadingIn(longform);
   shelf.innerHTML = '';
   longform.forEach(book => shelf.appendChild(bookCard(book, nowLongform)));
+  /* 서버에만 있는 책은 내 책 다음, 권유하는 고전 앞에 옵니다 — 이미 내 것이니까요. */
+  serverOnlyBooks().forEach(row => shelf.appendChild(cloudBookCard(row)));
   pendingClassics().forEach(classic => shelf.appendChild(classicCard(classic)));
   shelf.appendChild(longformAddCard());
   document.querySelector('#longform .sec-sub').textContent = longform.length
@@ -282,10 +384,33 @@ function renderLongformLibrary(){
   document.getElementById('longform-cnt').textContent = longform.length ? `${longform.length}권` : '';
   grid.innerHTML = '';
   longform.forEach(book => grid.appendChild(bookCard(book, current)));
+  const cloud = serverOnlyBooks();
+  cloud.forEach(row => grid.appendChild(cloudBookCard(row)));
   const offered = pendingClassics();
   offered.forEach(classic => grid.appendChild(classicCard(classic)));
-  empty.hidden = longform.length > 0 || offered.length > 0;
+  empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
   empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
+  renderHiddenBooksNote();
+}
+
+/* "이 기기에서만 지우기"를 고른 책은 서버에 남아 있지만 서가에 나오지 않습니다.
+   예전에는 Sync 창 목록에서 다시 받을 수 있었는데, 그 목록을 걷어내면서 되살릴
+   길이 없어졌습니다. 이 줄이 그 길입니다 — 서가는 어지럽히지 않고,
+   찾는 사람만 찾을 수 있게 라이브러리 화면 아래에만 둡니다. */
+function renderHiddenBooksNote(){
+  const host = document.getElementById('longform-hidden');
+  if(!host) return;
+  const hidden = hiddenBookIds();
+  const count = (sbUser && typeof activeServerBooks === 'function')
+    ? activeServerBooks().filter(row => hidden[row.book_id]).length : 0;
+  host.hidden = count === 0;
+  if(!count) return;
+  host.innerHTML = `이 기기에서 숨긴 책 ${count}권 <button type="button" class="linkish">다시 보기</button>`;
+  host.querySelector('button').onclick = () => {
+    activeServerBooks().forEach(row => { if(hidden[row.book_id]) unhideBookLocally(row.book_id); });
+    renderAllBookViews();
+    toast('숨긴 책을 다시 꺼냈어요');
+  };
 }
 
 /* ================= 하나뿐인 추가 시트 =================
@@ -413,14 +538,8 @@ async function rawFileHash(file){
   for(let index=0; index<bytes.length; index++) hash = Math.imul((hash^bytes[index])>>>0,0x01000193)>>>0;
   return 'fallback-'+hash.toString(16)+'-'+bytes.length;
 }
-async function requestDurableLocalStorage(){
-  if(!navigator.storage || !navigator.storage.persist || load('breeze.storage-persist-asked',false)) return;
-  save('breeze.storage-persist-asked',true);
-  try{ await navigator.storage.persist(); }catch(e){}
-}
 async function storeLocalOriginal(bookId, file, kind, hash){
   if(kind !== 'pdf' && kind !== 'epub') return null;
-  await requestDurableLocalStorage();
   const metadata = { kind, name:file.name, type:file.type||'', size:file.size,
                      hash, storedAt:Date.now() };
   await originalPut(bookId, {...metadata, blob:file.slice(0,file.size,file.type||'application/octet-stream')});
@@ -522,6 +641,13 @@ async function reconnectOriginalFile(target,file){
 /* `extra`는 파일에서 알 수 없는 것만 얹습니다 — 지금은 내장 고전의
    지은이와 고전 ID뿐입니다. */
 async function importFile(file, extra){
+  /* 도서관에서 빌리면 책이 아니라 이 표가 내려옵니다. 확장자만 보고 "지원하지
+     않는 형식"이라고 하면, 실제로는 어도비 프로그램으로 받아야 하는 잠긴 책인데
+     파일을 잘못 고른 줄 알게 됩니다. */
+  if(/\.acsm$/i.test(file.name)){
+    toast('이건 책 파일이 아니라 어도비 대출 표(.acsm)예요. 저작권 보호가 걸려 있어 열 수 없어요');
+    return;
+  }
   if(!/\.(pdf|epub|txt)$/i.test(file.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
   toast('책을 준비하고 있어요…');
   let prepared = null;
@@ -564,6 +690,12 @@ async function importFile(file, extra){
   }catch(error){
     if(prepared) imgPurge(prepared.tmpId+'|');
     console.error(error);
+    /* 잠긴 책은 실패가 아니라 사실입니다. "읽지 못했어요"라고 하면 앱이 고장 난
+       줄 알지만, 잠겼다고 하면 다른 파일을 찾아볼 생각을 합니다. */
+    if(error && error.drm){
+      toast('저작권 보호(DRM)가 걸린 책이에요. DRM이 없는 EPUB·PDF는 열려요');
+      return;
+    }
     toast('파일을 읽지 못했어요: '+(error.message||error));
   }
 }

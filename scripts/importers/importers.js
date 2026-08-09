@@ -799,9 +799,50 @@ function joinPath(baseDir, rel){
   return out.join('/');
 }
 const MIME = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml'};
+
+/* ---- 저작권 보호(DRM)가 걸린 책 ----
+   서점에서 산 EPUB 상당수는 열쇠 없이는 못 읽습니다. 이걸 알아보지 못하면
+   "EPUB 책 정보를 찾지 못했어요" 같은 말이 나오고, 그러면 사용자는 앱이
+   고장 났다고 생각합니다. 우리가 못 여는 것이 아니라 열 수 없는 파일이라는
+   것을 말해 주어야, 다른 파일을 찾아볼 생각을 합니다.
+
+   조심할 것: encryption.xml 이 있다고 다 DRM 이 아닙니다. 글꼴을 살짝 가려
+   두는(obfuscation) 것은 표준에 있는 정상 기능이고 그런 책은 잘 읽힙니다.
+   그래서 "무엇이 잠겼는가"를 봅니다 — 글꼴만 잠긴 책은 통과시킵니다. */
+const EPUB_FONT_OBFUSCATION = new Set([
+  'http://www.idpf.org/2008/embedding',      // IDPF 표준 글꼴 가리기
+  'http://ns.adobe.com/pdf/enc#RC',          // 어도비 글꼴 가리기
+]);
+async function epubProtection(zip){
+  if(zip.file('META-INF/rights.xml')) return 'Adobe DRM';       // 어도비 ADEPT
+  if(zip.file('META-INF/sinf.xml'))   return 'Apple FairPlay';  // 애플 북스
+  const encryptionFile = zip.file('META-INF/encryption.xml');
+  if(!encryptionFile) return '';
+  let doc;
+  try{ doc = new DOMParser().parseFromString(await encryptionFile.async('text'), 'text/xml'); }
+  catch(e){ return ''; }
+  /* 이름공간 접두사(enc:, ds:)는 책마다 달라서 지역 이름으로 찾습니다. */
+  const blocks = [...doc.getElementsByTagNameNS('*','EncryptedData')];
+  for(const block of blocks){
+    const method = block.getElementsByTagNameNS('*','EncryptionMethod')[0];
+    if(EPUB_FONT_OBFUSCATION.has(method ? method.getAttribute('Algorithm')||'' : '')) continue;
+    /* 알고리즘이 낯설어도 잠긴 것이 글꼴 파일뿐이면 본문은 멀쩡합니다. */
+    const reference = block.getElementsByTagNameNS('*','CipherReference')[0];
+    if(/\.(ttf|otf|woff2?)$/i.test(reference ? reference.getAttribute('URI')||'' : '')) continue;
+    return 'DRM';
+  }
+  return '';
+}
+
 async function openEpubArchive(file){
   await ensureZipLib();
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const protection = await epubProtection(zip);
+  if(protection){
+    const locked = new Error('저작권 보호(DRM)가 걸린 책이에요');
+    locked.drm = protection;      // 화면에서 "읽지 못했다"가 아니라 "잠겨 있다"로 말하기 위해
+    throw locked;
+  }
   const containerFile = zip.file('META-INF/container.xml');
   if(!containerFile) throw new Error('EPUB container.xml을 찾지 못했어요');
   const container = await containerFile.async('text');

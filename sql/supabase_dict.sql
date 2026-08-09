@@ -43,6 +43,63 @@ returns integer language sql security definer as $$
 $$;
 
 -- ────────────────────────────────────────────────────────────
+-- 1-b) 로그인 전 무료 체험
+-- ────────────────────────────────────────────────────────────
+-- Breeze 가 남과 다른 점은 "이 문장에서 이 낱말이 이런 뜻"이라고 답하는 것 하나입니다.
+-- 그런데 그게 로그인 뒤에만 보이면, 처음 온 사람이 보는 것은 구글 번역 결과입니다.
+-- 그 상태로 "로그인하면 좋아져요"라고 말해 봐야 믿을 이유가 없습니다. 그래서 먼저
+-- 보여 주고 나서 물어봅니다 — 기기당 평생 몇 번(기본 10번).
+--
+-- 하루 10번이 아니라 평생 10번인 이유: 하루 10번이면 아무도 로그인하지 않습니다.
+-- 이건 무료 요금제가 아니라 맛보기입니다.
+--
+-- 기기 표시는 브라우저 저장소를 지우면 새로 생깁니다. 막을 방법이 없고, 막을
+-- 값어치도 없습니다(10번 = 20원 남짓). 대신 예산을 지키는 진짜 벽은 아래
+-- anon_daily 입니다 — 자동화된 요청이 예산을 통째로 태우는 것만 막으면 됩니다.
+create table if not exists public.anon_usage (
+  device    text primary key,
+  calls     integer not null default 0,
+  first_at  timestamptz not null default now(),
+  last_at   timestamptz not null default now()
+);
+
+-- 로그인 전 요청 전체의 하루 총량. 차단기입니다.
+create table if not exists public.anon_daily (
+  day    date primary key default (now() at time zone 'utc')::date,
+  calls  integer not null default 0
+);
+
+create or replace function public.take_anon_quota(
+  p_device text, p_limit integer, p_daily_cap integer)
+returns jsonb language plpgsql security definer as $$
+declare c integer; d integer;
+begin
+  if p_device is null or length(p_device) < 8 then
+    return jsonb_build_object('status','bad_device');
+  end if;
+
+  -- 기기 몫을 먼저 봅니다. 이미 다 쓴 기기는 아래 하루 총량을 건드리지 않습니다 —
+  -- 안 그러면 다 쓴 사람들의 재시도가 남들 몫의 차단기를 당깁니다.
+  insert into public.anon_usage (device, calls) values (p_device, 1)
+    on conflict (device) do update set calls = anon_usage.calls + 1, last_at = now()
+    returning calls into c;
+  if c > p_limit then
+    return jsonb_build_object('status','spent','calls',c);
+  end if;
+
+  insert into public.anon_daily (day, calls) values ((now() at time zone 'utc')::date, 1)
+    on conflict (day) do update set calls = anon_daily.calls + 1
+    returning calls into d;
+  if d > p_daily_cap then
+    -- 우리 사정으로 막은 것이므로 이 사람의 체험 횟수는 돌려줍니다.
+    update public.anon_usage set calls = calls - 1 where device = p_device;
+    return jsonb_build_object('status','closed');
+  end if;
+
+  return jsonb_build_object('status','ok','calls',c);
+end $$;
+
+-- ────────────────────────────────────────────────────────────
 -- 2) 행동 기록 — 낱말이 아니라 "사람이 무엇을 했는가"
 -- ────────────────────────────────────────────────────────────
 -- 낱말과 뜻 자체는 상품입니다. 위키낱말사전에도 있고 누구나 3개월이면 따라옵니다.
@@ -92,14 +149,20 @@ create index if not exists dict_events_fp_idx     on public.dict_events (sent_fp
 -- 대시보드에서는 그대로 보입니다.
 alter table public.ai_usage    enable row level security;
 alter table public.dict_events enable row level security;
+alter table public.anon_usage  enable row level security;
+alter table public.anon_daily  enable row level security;
 
 revoke all on public.ai_usage    from anon, authenticated;
 revoke all on public.dict_events from anon, authenticated;
+revoke all on public.anon_usage  from anon, authenticated;
+revoke all on public.anon_daily  from anon, authenticated;
 
 revoke all on function public.take_ai_quota(uuid, integer) from public, anon, authenticated;
 revoke all on function public.peek_ai_quota(uuid)          from public, anon, authenticated;
+revoke all on function public.take_anon_quota(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.take_ai_quota(uuid, integer) to service_role;
 grant execute on function public.peek_ai_quota(uuid)          to service_role;
+grant execute on function public.take_anon_quota(text, integer, integer) to service_role;
 
 -- ────────────────────────────────────────────────────────────
 -- 4) 예전 공용 사전 치우기
