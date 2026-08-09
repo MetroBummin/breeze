@@ -29,18 +29,21 @@
   #p-phon{color:#5F7881; font-size:14px; margin-bottom:4px;}
   #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
   #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
-  #p-ai{display:none; background:linear-gradient(135deg,#EAF4F8,#F3F6EC); border:1px solid #CFE4EC;
+  /* AI 가 말하는 자리는 셋 다 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
+     그리고 문장 창(`#st-card`). 값은 base.css 의 `--ai-*` 하나뿐입니다. */
+  #p-ai{display:none; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));
+    border:1px solid var(--ai-line);
     border-radius:14px; padding:13px 15px; margin-bottom:12px;}
   #p-ai.on{display:block;}
   #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
-    letter-spacing:.08em; color:var(--blue); margin-bottom:6px;}
-  #p-ai .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--blue);}
-  #p-ai .m{font-size:18px; font-weight:700; color:var(--ink); line-height:1.35;}
+    letter-spacing:.08em; color:var(--ai-key); margin-bottom:6px;}
+  #p-ai .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
+  #p-ai .m{font-size:18px; font-weight:700; color:var(--ai-ink); line-height:1.35;}
   #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
-  #p-ai .note{font-size:12.5px; color:#5B707A; line-height:1.55; margin-top:7px;}
+  #p-ai .note{font-size:12.5px; color:var(--ai-note); line-height:1.55; margin-top:7px;}
   /* 이 뜻 자체의 성질. 문장 이야기가 위에 오면 그 아래로 한 칸 내려가 배경이 됩니다. */
-  #p-ai .gloss{display:none; font-size:11.5px; color:#8AA0A9; line-height:1.5;
-    margin-top:8px; padding-left:9px; border-left:2px solid #CFE4EC;}
+  #p-ai .gloss{display:none; font-size:11.5px; color:var(--ai-quiet); line-height:1.5;
+    margin-top:8px; padding-left:9px; border-left:2px solid var(--ai-line);}
   /* 뜻을 고치는 자리가 곧 뜻이 뜨는 자리입니다. 그래서 평소에는 편집칸처럼 보이지 않고,
      누르면 그때 테두리가 생깁니다 — 밑줄을 미리 그어 두면 박스가 서식 화면처럼 보입니다. */
   #p-ai .mk{display:inline-block; min-width:2em; border-radius:7px; padding:1px 5px; margin-left:-5px;
@@ -92,7 +95,7 @@
      앞서 받은 설명이 그대로 남아 있으면, 새 답이 온 것처럼 보입니다. */
   #p-ai.load .m, #p-ai.load .acts, #p-ai.load .note, #p-ai.load .gloss{display:none!important;}
   #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
-    border:1px dashed #BFD9E4; background:#F4FAFC; color:var(--blue); border-radius:12px;
+    border:1px dashed var(--ai-line); background:var(--ai-bg2); color:var(--ai-key); border-radius:12px;
     padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
     margin-bottom:12px;}
   #p-aibtn:hover{background:var(--sky); border-style:solid;}
@@ -102,11 +105,10 @@
   /* 문장 통째로 가는 문. 낱말 뜻이 맞는데도 문장이 안 읽힐 때 누릅니다 —
      그래서 뜻 상자 바로 아래, 다른 뜻 후보들보다 앞에 둡니다. */
   #p-explain{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
-    border:1px solid var(--line); background:none; color:var(--soft); border-radius:12px;
+    border:1px solid var(--ai-line); background:none; color:var(--soft); border-radius:12px;
     padding:10px; font-size:12.5px; font-family:var(--ui); cursor:pointer; margin-bottom:12px;}
-  #p-explain:hover{border-color:var(--blue); color:var(--blue); background:var(--sky);}
-  #p-explain .sp{color:var(--blue);}
-  body.dark #p-explain{border-color:#2F4650;}
+  #p-explain:hover{border-color:var(--ai-key); color:var(--ai-key); background:var(--ai-bg2);}
+  #p-explain .sp{color:var(--ai-key);}
   #p-airetry{border:none; background:none; color:var(--soft); padding:0; text-align:left;
     font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
   #p-airetry:hover{color:var(--blue);}
@@ -169,6 +171,12 @@
       border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;
       box-shadow:0 -10px 40px rgba(24,54,74,.18);}
     #panel.on{transform:translateY(0);}
+    /* 화면을 벌린 동안에는 배율의 역수를 걸어 제 크기로 남깁니다. `translate`·
+       `scale` 은 `transform` 과 다른 속성이라, 시트가 올라오고 내려가는
+       `transform` 애니메이션을 건드리지 않고 겹쳐 얹힙니다.
+       기준점은 왼쪽 아래 — 시트가 붙어 있는 그 모서리입니다. */
+    body.vv-zoom #panel{transform-origin:0 100%;
+      translate:var(--vv-x,0px) var(--vv-dy,0px); scale:var(--vv-k,1);}
     #p-handle{display:flex; position:sticky; top:0; z-index:5; background:#fff; padding:12px 0 10px;
       justify-content:center; cursor:grab; width:100%; margin:0;}
     #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:#C8D7D6;}

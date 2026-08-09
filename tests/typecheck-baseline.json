@@ -1,0 +1,17 @@
+{
+  "total": 56,
+  "files": {
+    "scripts/core/state.js": 1,
+    "scripts/dictionary/dictionary.js": 10,
+    "scripts/importers/article.js": 5,
+    "scripts/importers/importers.js": 5,
+    "scripts/library/book-edit.js": 5,
+    "scripts/library/library.js": 12,
+    "scripts/reader/epub-original.js": 4,
+    "scripts/reader/original-session.js": 2,
+    "scripts/reader/pdf-original.js": 3,
+    "scripts/reader/reader-modes.js": 2,
+    "scripts/reader/reader.js": 2,
+    "scripts/sync/sync.js": 5
+  }
+}

@@ -33,6 +33,9 @@ const required = [
   'modules/exam-shorts/exam.js',
   'modules/exam-shorts/shorts.js',
   'modules/exam-shorts/shorts.css',
+  // 떼어 둔 사전 씨앗. 받는 쪽은 앱에 살아 있고 만드는 쪽만 여기 있습니다.
+  'modules/dict-seed/README.md',
+  'modules/dict-seed/build-dict-seed.js',
   'server/article/index.ts',
 ];
 
@@ -356,6 +359,18 @@ for(const file of jsFiles){
 assert.match(readFileSync(resolve(root, 'modules/exam-shorts/README.md'), 'utf8'),
   /prepared\.exam/, 'The parked module lost its reconnection instructions');
 
+/* ---- 떼어 둔 사전 씨앗 ----
+   만드는 쪽만 떼어 뒀습니다. 받는 쪽(`loadDictSeed`)은 앱에 살아 있어야 파일
+   한 장을 떨어뜨리는 것만으로 되살아납니다. */
+assert.doesNotMatch(index, /modules\/dict-seed/,
+  'The parked seed builder is loaded by index.html again');
+assert.match(readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8'),
+  /async function loadDictSeed/,
+  'The seed reader went away with the builder, so reviving it is no longer one file');
+assert.match(readFileSync(resolve(root, 'modules/dict-seed/README.md'), 'utf8'),
+  /x-seed-token/,
+  'The parked seed module lost the CORS trap that made it fail in the first place');
+
 const sourceMap = layoutContext.buildSourceMap([
   {p:47,y:.36,z:1},
   {src:'Text/chapter-2.xhtml',si:3,ei:18,r:'h2'},
@@ -377,17 +392,29 @@ const pdfSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 
 const epubSource = readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
 const modesSource = readFileSync(resolve(root, 'scripts/reader/reader-modes.js'), 'utf8');
 assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily');
-/* 확대는 쪽마다 제 가로 스크롤 칸 안에서 일어나야 합니다. 문서를 통째로 넓히면
-   폰 브라우저가 스크롤바 대신 화면 전체를 축소해서 맞춰 버려, 확대한 만큼
-   그대로 되돌아갑니다(375px 화면이 623px 로 늘어나는 것을 확인했습니다). */
-assert.match(pdfSource,/pdf-page-lane/,
-  'The PDF zoom no longer scrolls inside each page, so the phone will just shrink the whole screen');
-assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'),
-  /body\.pdf-zoomed\s*\{[^}]*overflow-x/,
-  'Zooming widens the document again, which a phone answers by shrinking the viewport');
-/* 늘리기만 하면 캔버스가 흐려집니다. 화면에 있는 쪽은 새 너비로 다시 그립니다. */
-assert.match(pdfSource,/session\.rendering\.clear\(\)/,
-  'A zoom keeps the old canvases, so the enlarged page is blurry');
+/* ---- 확대는 손가락이 합니다 ----
+   단추도 쪽마다 주던 가로 스크롤 칸도 없앴습니다. 쪽은 늘 글 폭에 꽉 차고,
+   문서 전체가 종이 한 장처럼 같은 축에서 움직입니다. */
+assert.doesNotMatch(pdfSource,/pdf-page-lane|pdfZoom|panRatio/,
+  'The per-page zoom lane is back, so pages no longer share one horizontal axis');
+assert.doesNotMatch(readFileSync(resolve(root, 'index.html'), 'utf8'),/pdfzoom-(in|out)/,
+  'The +/- zoom buttons are back; pinching is the gesture now');
+/* 벌려서 본 캔버스는 늘어난 그림이라, 넉넉하게 그려 두어야 흐리지 않습니다. */
+assert.match(pdfSource,/PDF_OVERSAMPLE/,
+  'PDF canvases are drawn at screen resolution again, so pinching makes them blurry');
+/* 벌리면 페이지 전체가 커집니다 — 떠 있는 것들만 배율의 역수로 되돌립니다. */
+const interactionsSource = readFileSync(resolve(root, 'scripts/ui/interactions.js'), 'utf8');
+assert.match(interactionsSource,/visualViewport/,
+  'Nothing counters the pinch, so the bottom sheet grows with the page and covers it');
+assert.match(interactionsSource,/vv-zoom/,
+  'The viewport lock is always on; a scale of 1 still changes the containing block');
+for(const [file, selector] of [['styles/dictionary.css','#panel'],
+                               ['styles/components.css','#sent-modal'],
+                               ['styles/reader.css','#readfabs']]){
+  assert.match(readFileSync(resolve(root, file), 'utf8'),
+    new RegExp('body\\.vv-zoom [^{]*'+selector),
+    `${selector} grows with the pinch instead of staying its own size`);
+}
 assert.match(epubSource,/sandbox','allow-same-origin'/,
   'EPUB chapters are not sandboxed');
 assert.match(epubSource,/script,iframe,frame,object,embed/,
@@ -676,14 +703,27 @@ assert.match(readerCss, /body\.reader-original #modefab \.mf-text\{opacity:1/,
 
 /* 상단바가 사라져도 --topbar-h 는 그대로여야 합니다 — 0 으로 우기면 앵커
    계산이 글 첫 줄을 로고 뒤에 숨깁니다(예전 집중 모드의 버그). */
-assert.match(readerCss, /body\.chrome-hidden #topbar\{transform:translateY\(-100%\)/,
+assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*visibility:hidden/,
   'Reading downward no longer clears the top bar');
+/* 미는 대신 지웁니다. `position:sticky` + `backdrop-filter` 인 칸을 `transform` 으로
+   밀면 아이폰에서 옛 그림 한 장이 노치 옆에 남습니다. */
+assert.doesNotMatch(readerCss, /body\.chrome-hidden #topbar\{[^}]*transform:translateY/,
+  'The top bar slides again, which leaves a ghost beside the notch on iPhone');
+assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*backdrop-filter:none/,
+  'The blur layer is left running while the bar is hidden');
 assert.doesNotMatch(readerCss, /body\.chrome-hidden[^\n]*--topbar-h/,
   'The top bar forces its height to zero again while hidden');
 const readerScroll = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
 assert.match(readerScroll, /CHROME_STEP/,
   'Chrome follows every pixel of scroll, so the top bar flickers');
-assert.match(readerScroll, /Date\.now\(\) < readerScrollPauseUntil\)\{ chromeAnchorY = y/,
+/* 돌아오는 문턱이 걷히는 문턱보다 높아야 아이폰 관성의 되튐이 상단바를
+   깜빡이지 않습니다. */
+assert.match(readerScroll, /CHROME_BACK = (\d+)/,
+  'The top bar comes back on the same threshold it hides on, so momentum flashes it');
+assert.ok(Number(/CHROME_BACK = (\d+)/.exec(readerScroll)[1])
+        > Number(/CHROME_STEP = (\d+)/.exec(readerScroll)[1]),
+  'The come-back threshold is not larger than the hide threshold');
+assert.match(readerScroll, /Date\.now\(\) < readerScrollPauseUntil\)\{ chromeRun = 0/,
   'A programmatic mode-switch scroll can hide the top bar as if the reader scrolled');
 assert.doesNotMatch(readerScroll, /classList\.add\('scrolling'\)/,
   'The old any-scroll fade is back alongside the direction signal');
@@ -882,25 +922,18 @@ assert.ok(
 
 /* ── 문장 통째로 ── */
 const sentenceSource = readFileSync(resolve(root, 'scripts/dictionary/sentence.js'), 'utf8');
-/* getClientRects() 는 줄이 아니라 조각을 줍니다 — 낱말마다 <span> 이라 한 줄짜리
-   문장도 쉰 조각이 넘습니다. 묶지 않으면 퍼지는 것이 아니라 자잘하게 깜빡입니다. */
-assert.match(sentenceSource, /function lineRects/,
-  'The sentence fill paints one bar per word fragment instead of per line');
-/* 스크롤하다 손가락이 잠깐 멈춘 것이 하루 다섯 번 중 하나를 태우면 안 됩니다. */
-assert.match(sentenceSource, /SENT_MOVE_SLOP/,
-  'A press that drifts into a scroll still burns a sentence explanation');
-/* 깨우는 요청에는 아무 내용이 없고 한도도 쓰지 않습니다. 문장은 다 찬 뒤에 갑니다. */
-assert.ok(
-  sentenceSource.indexOf('warmDict();') < sentenceSource.indexOf('sentTimer = setTimeout'),
-  'The function is only woken after the gauge fills, so the cold start is still paid at the end',
-);
+/* 문은 하나입니다 — 낱말 창의 단추. 꾹 누르는 손짓은 폰에만 있었고, iOS 의
+   복사·찾아보기를 가져오느라 읽는 화면의 글자 선택까지 함께 막았습니다. */
+assert.doesNotMatch(sentenceSource, /lineRects|SENT_MOVE_SLOP|beginSentPress|sent-fill/,
+  'The long-press sentence fill is back, so the phone and the laptop have different doors');
+assert.match(sentenceSource, /function explainSelectedSentence/,
+  'The word panel has no way into the sentence window');
+assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'), /[{;]\s*-webkit-touch-callout:none/,
+  'Text selection in the reader is suppressed again, but nothing needs the long press now');
 assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the server');
 /* 같은 문장을 다시 물으면 한도를 쓰지 않아야 합니다. */
 assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text\)/,
   'Sentence explanations are not cached, so re-reading the same line costs a lookup again');
-/* iOS 가 꾹 누르기를 가져가면 이 기능은 아이폰에서 영영 뜨지 않습니다. */
-assert.match(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'), /-webkit-touch-callout:none/,
-  "The iOS callout still steals the long press before the sentence fill can start");
 /* 서버 쪽: 한도를 낱말 조회와 한 통에 담으면 문장 다섯 번이 낱말 다섯 번을 먹습니다. */
 const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
 assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
@@ -913,9 +946,18 @@ assert.ok(
 /* ── 기다림 ──
    낱말 창과 문장 창이 같은 것을 씁니다. 자리마다 다른 것이 뜨면 "무엇을 기다리는지"
    보다 "여기가 어디인지"를 먼저 읽게 됩니다. */
-assert.match(readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8'), /\.aurora \.glow/, 'The shared AI waiting state is gone');
+const dictCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8');
+assert.match(dictCss, /\.aurora \.glow/, 'The shared AI waiting state is gone');
 const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
 assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 2,
   'The word panel and the sentence window no longer wait in the same way');
+/* 색도 하나입니다. AI 가 나오는 세 자리가 같은 변수만 씁니다 — 뜻 상자에 초록빛이,
+   문장 창에 흰 종이가 깔려 있으면 같은 목소리로 들리지 않습니다. */
+assert.match(readFileSync(resolve(root, 'styles/base.css'), 'utf8'), /--ai-bg1:/,
+  'The shared AI palette is gone, so each AI surface picks its own colour again');
+assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
+  'The word meaning box has its own colour again');
+assert.match(readFileSync(resolve(root, 'styles/components.css'), 'utf8'), /#st-card\{[^}]*var\(--ai-bg1\)/,
+  'The sentence window has its own colour again');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

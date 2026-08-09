@@ -141,7 +141,7 @@ async function openOriginalEpub(book,record,token){
     const html=await sanitiseEpubChapter(archive,chapter,resources);
     if(!html) continue;
     const section=document.createElement('section');
-    section.className='epub-source-chapter'; section.dataset.spine=index; section.dataset.href=chapter.path;
+    section.className='epub-source-chapter'; section.dataset.spine=String(index); section.dataset.href=chapter.path;
     const frame=document.createElement('iframe');
     frame.className='epub-chapter-frame'; frame.setAttribute('sandbox','allow-same-origin');
     frame.setAttribute('scrolling','no'); frame.title=`${book.title} ${index+1}`;

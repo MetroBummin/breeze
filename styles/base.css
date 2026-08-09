@@ -6,6 +6,14 @@
     --blue:#2589BE; --blue-deep:#216F9C; --sky:#DCEFF5; --sky2:#D9F0F2;
     --mint:#BDDCCD; --chipbg:#E6F3F1; --chiptx:#247B81;
     --s1:#FFE28A; --s2:#FFC9A3; --s3:#FFB0B0;
+    /* ── AI 가 말하는 자리의 색 ──
+       AI 가 나오는 곳은 셋입니다: 낱말 뜻을 기다리는 동안, 그 뜻이 뜬 뒤,
+       그리고 문장 통째로 물어봤을 때. 색이 자리마다 다르면 같은 목소리로
+       들리지 않습니다 — 뜻 상자에는 따뜻한 초록빛이, 문장 창에는 흰 종이가
+       깔려 있어서 셋이 서로 남처럼 보였습니다.
+       이제 셋 다 이 여섯 값만 씁니다. 흰색과 파랑, 이 앱의 색 그대로입니다. */
+    --ai-bg1:#EAF4FB; --ai-bg2:#F8FCFE; --ai-line:#CFE4EC;
+    --ai-key:#2589BE; --ai-ink:#18364A; --ai-note:#5B707A; --ai-quiet:#8AA0A9;
     --ui:'Avenir Next','Helvetica Neue','Apple SD Gothic Neo','Pretendard',-apple-system,sans-serif;
     --serif:Georgia,'Times New Roman',serif;
     --shadow:0 14px 34px rgba(23,55,71,.12);

@@ -16,11 +16,11 @@
   <link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles/base.css?v=56535bee">
+  <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
   <link rel="stylesheet" href="styles/home.css?v=07a0f9ad">
-  <link rel="stylesheet" href="styles/reader.css?v=126fc823">
-  <link rel="stylesheet" href="styles/dictionary.css?v=6e0a7076">
-  <link rel="stylesheet" href="styles/components.css?v=312537e9">
+  <link rel="stylesheet" href="styles/reader.css?v=746c5a85">
+  <link rel="stylesheet" href="styles/dictionary.css?v=e4822011">
+  <link rel="stylesheet" href="styles/components.css?v=d70c7a66">
   <link rel="stylesheet" href="styles/responsive.css?v=6532e676">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -39,23 +39,23 @@
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=7f00030b"></script>
   <script defer src="scripts/library/book-edit.js?v=8027a26e"></script>
-  <script defer src="scripts/library/classics.js?v=029bc022"></script>
-  <script defer src="scripts/library/samples.js?v=55d57f7d"></script>
-  <script defer src="scripts/importers/importers.js?v=460c37d2"></script>
+  <script defer src="scripts/library/classics.js?v=608376e4"></script>
+  <script defer src="scripts/library/samples.js?v=926e4816"></script>
+  <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
   <script defer src="scripts/importers/article.js?v=a810d631"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=65bd5489"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=9e1968b1"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=3c29ed02"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=6de5d40b"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
-  <script defer src="scripts/reader/original-session.js?v=91a5d115"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=acae4b2b"></script>
-  <script defer src="scripts/reader/epub-original.js?v=29f4243b"></script>
+  <script defer src="scripts/reader/original-session.js?v=60140f61"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=456cf057"></script>
+  <script defer src="scripts/reader/epub-original.js?v=86b2f7ba"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=83302cca"></script>
-  <script defer src="scripts/reader/reader.js?v=2ff262a2"></script>
-  <script defer src="scripts/ui/preferences.js?v=27b17d89"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=6121dfd0"></script>
+  <script defer src="scripts/reader/reader.js?v=20834084"></script>
+  <script defer src="scripts/ui/preferences.js?v=a7a8e034"></script>
   <script defer src="scripts/sync/sync.js?v=424f9f45"></script>
-  <script defer src="scripts/ui/interactions.js?v=ab98b799"></script>
+  <script defer src="scripts/ui/interactions.js?v=d09aaf52"></script>
   <script defer src="scripts/main.js?v=4c8ed2b7"></script>
 </head>
 <body>
@@ -294,7 +294,8 @@
     </div>
   </div>
 </div>
-<!-- 문장 통째로. 문장을 꾹 누르면 파란색이 퍼지고, 다 차면 여기가 열립니다.
+<!-- 문장 통째로. 낱말 창의 "이 문장이 통째로 안 읽힐 때"(`#p-explain`)로만
+     열립니다 — 폰이든 노트북이든 같은 문 하나입니다.
      `scripts/dictionary/sentence.js` -->
 <div id="sent-modal">
   <div id="st-card">
@@ -375,12 +376,6 @@
 </div>
 <!-- 읽는 동안 화면에 남는 것은 이 둘뿐입니다. 아래가 더 자주 누르는 쪽입니다. -->
 <div id="readfabs">
-  <!-- 원본 PDF 에서만 뜹니다. 화면을 손가락으로 벌리면 바텀시트까지 함께
-       커지는데, 이 둘은 쪽만 키웁니다. -->
-  <button id="pdfzoom-in" class="zoomfab" title="원본 확대" aria-label="원본 확대"
-          onclick="pdfZoom(1)" hidden>＋</button>
-  <button id="pdfzoom-out" class="zoomfab" title="원본 축소" aria-label="원본 축소"
-          onclick="pdfZoom(-1)" hidden>−</button>
   <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
   <button id="modefab" title="원본으로 보기" aria-label="원본으로 보기" onclick="toggleReaderMode()" hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"

@@ -354,7 +354,7 @@ function parseTXT(text){
    앞이 문장으로 끝나지 않았는데 다음이 소문자로 이어지면 원래 한 문단입니다.
    (PDF는 줄 단위에서 이미 같은 판단을 하고 있어서 여기 오지 않습니다.) */
 function mergeWrapped(paras, sig){
-  const out = [], outSig = [], map = {};
+  const out = [], outSig = [];
   const roleOf = function(x){ return x && x.r ? x.r : ''; };
   for(let i=0; i<paras.length; i++){
     const p = (paras[i] || '').trim();
@@ -368,14 +368,15 @@ function mergeWrapped(paras, sig){
        && !endsSentence(last)
        && /^[a-z,;)’']/.test(p)){
       out[out.length-1] = last.endsWith('-') ? last.slice(0,-1) + p : last + ' ' + p;
-      map[i] = out.length - 1;                  // 앞 문단에 흡수됨
       continue;
     }
-    map[i] = out.length;
     out.push(p); outSig.push(r);
   }
   if(sig) out.sig = outSig;
-  out.imap = map;               // 옛 문단번호 → 새 문단번호 (배열의 map 메서드를 가리지 않게 imap)
+  /* 옛 문단번호 → 새 문단번호 표(`out.imap`)를 함께 만들어 두었는데, 이 앱에서
+     그것을 읽는 곳이 한 군데도 없었습니다(타입 검사가 알려 줬습니다). 자리를
+     옮긴 뒤에 읽던 곳을 되찾는 일은 `mode-bridge.js` 가 **눈에 보이는 문장**으로
+     하고 있어서, 번호 표는 만들 때부터 쓸 데가 없었습니다. */
   return out;
 }
 

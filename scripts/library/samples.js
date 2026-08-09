@@ -4,9 +4,9 @@
    낱말을 누르면 이 문장에서의 뜻이 뜬다는 것을, 누르기 전에는 설명할 방법이
    없습니다. 그래서 누를 것을 먼저 놓아 둡니다.
 
-   이 글들의 사전 답은 앱과 함께 옵니다(assets/samples/dict-seed.json). 그래서
-   로그인하지 않아도, 인터넷이 없어도, 어느 낱말을 눌러도 바람 한 번 불고 뜻이
-   뜹니다. 첫 열 번이 어떤 앱인지를 정합니다.
+   이 글들의 사전 답을 앱과 함께 싣는 일(assets/samples/dict-seed.json)은 지금
+   접어 두었습니다 — `modules/dict-seed/README.md`. 파일이 없으면 다른 글과 똑같이
+   AI 에게 물어봅니다. 파일 한 장이 떨어지는 날 저절로 빨라집니다.
 
    한 번만 넣습니다. 지운 사람에게 다시 밀어 넣지 않습니다 — 지웠다는 것은
    보고 싶지 않다는 뜻이고, 서가는 그 사람 것입니다. */
@@ -97,5 +97,26 @@ async function seedSampleArticles(){
     }
   }
   save(LS_SAMPLES_DONE, true);
+  return added;
+}
+
+/* 사진이나 글을 갈아 끼우고 바로 확인하려고 서가에서 두 편을 지우고,
+   localStorage 를 지우고, 새로고침하는 세 걸음을 매번 밟아야 했습니다.
+   콘솔에서 `reseedSamples()` 한 줄이면 같은 일입니다. 앱 화면에는 이 문이
+   없습니다 — 만드는 사람만 쓰는 것이라 단추를 둘 자리가 아닙니다. */
+async function reseedSamples(){
+  const mine = books.filter(book => book.sampleId);
+  if(curBook && mine.some(book => book.id === curBook.id)) show('home');
+  for(const book of mine){
+    books = books.filter(other => other.id !== book.id);
+    await bookDel(book.id);
+    await purgeBookImages(book);          // 사진도 함께 — 새 사진을 보려는 것이니까
+    delete positions[book.id];
+  }
+  save(LS_POS, positions);
+  save(LS_SAMPLES_DONE, false);
+  const added = await seedSampleArticles();
+  renderAllBookViews();
+  console.info(`맛보기 글 ${mine.length}편을 지우고 ${added || 0}편을 다시 놓았습니다.`);
   return added;
 }

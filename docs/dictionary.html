@@ -181,8 +181,8 @@ select count(*) from public.dict_events where action = 'quota' and at &gt; now()
 await breezeExportDict() // 전부 JSON 으로</code></pre>
 <h2 id="로그인-전에-보는-것">로그인 전에 보는 것</h2>
 <p>AI 가 뜻의 유일한 출처가 되면서, 로그인이 사전 앞을 막고 서 있었습니다. 처음 온 사람이 낱말을 누르면 구글 번역 결과가 떴다는 뜻입니다 — 이 앱이 남과 다른 단 하나를 보지 못한 채로 "로그인하면 좋아져요"를 읽어야 했습니다. 두 겹으로 고쳤습니다.</p>
-<p><strong>① 맛보기 글에는 답을 미리 실어 둡니다.</strong> <code>assets/samples/</code> 의 글에 나오는 낱말은 <code>assets/samples/dict-seed.json</code> 에 답이 들어 있고, 부팅할 때 기기 캐시로 부어집니다. 열쇠가 <code>l:&lt;낱말&gt;|&lt;문장해시&gt;</code> 로 평소와 완전히 같아서 <strong>사전 코드에는 씨앗을 아는 갈래가 하나도 없습니다</strong> — 그냥 캐시가 이미 차 있는 것입니다. 로그인 없이, 인터넷 없이, 한도를 쓰지 않고 답이 뜹니다.</p>
-<p>씨앗은 <code>tools/build-dict-seed.js</code> 로 만듭니다. Node 가 아니라 <strong>브라우저 콘솔에 붙여넣는</strong> 스크립트인데, 낱말을 어디서 끊고 문장을 어디서 자르고 해시를 어떻게 내는지가 전부 앱 안의 함수라서, 밖에서 다시 구현하면 언젠가 어긋나고 어긋나면 씨앗이 통째로 죽기 때문입니다. 앱이 실제로 그리는 화면에서 사용자가 실제로 누르는 조각을 걸어 열쇠를 만듭니다. 앱 번들에는 안 들어갑니다.</p>
+<p><strong>① 맛보기 글에는 답을 미리 실어 두려 했습니다 — 지금은 접어 두었습니다.</strong> <code>assets/samples/</code> 의 글에 나오는 낱말의 답을 <code>assets/samples/dict-seed.json</code> 에 담아 두면, 부팅할 때 기기 캐시로 부어집니다. 열쇠가 <code>l:&lt;낱말&gt;|&lt;문장해시&gt;</code> 로 평소와 완전히 같아서 <strong>사전 코드에는 씨앗을 아는 갈래가 하나도 없습니다</strong> — 그냥 캐시가 이미 차 있는 것입니다. 로그인 없이, 인터넷 없이, 한도를 쓰지 않고 답이 뜹니다.</p>
+<p>받는 쪽(<code>loadDictSeed</code>)은 그대로 살아 있고, <strong>그 파일이 아직 없습니다.</strong> 만드는 쪽은 <code>modules/dict-seed/</code> 로 옮겨 연결을 끊었습니다 — 만드는 일이 배포·비밀값·SQL·콘솔 네 가지가 다 맞아야 끝나는데 어긋난 자리를 찾기가 어려웠고, 없어도 앱은 그냥 AI 에게 물어보기 때문입니다. 되살리는 순서와 알려진 함정(첫째가 <code>x-seed-token</code> 의 CORS)은 <code>modules/dict-seed/README.md</code> 에 있습니다. 되살리는 일은 파일 한 장 떨어뜨리기입니다.</p>
 <p><strong>② 자기 글에는 10번을 그냥 줍니다.</strong> 씨앗은 맛보기 글까지만 덮습니다. 자기 책을 넣거나 기사를 붙여넣는 순간 다시 AI 가 필요하고, 그 첫 경험도 좋아야 하므로 기기당 평생 10번을 로그인 없이 씁니다(<code>AI_ANON_FREE</code>). 하루 10번이 아닙니다 — 하루치면 아무도 로그인하지 않고, 이건 무료 요금제가 아니라 맛보기입니다.</p>
 <p>기기 표시(<code>breeze.device</code>)는 저장소를 지우면 새로 생깁니다. 막을 수 없고 막을 값어치도 없습니다(10번 ≈ 20원). 예산을 지키는 벽은 로그인 전 요청 <strong>전체</strong>의 하루 상한 (<code>AI_ANON_DAILY_CAP</code>)입니다. 그래서 로그인한 사람의 한도는 표가 고장 나면 통과시키고, 로그인 전 한도는 고장 나면 막습니다 — 전자는 수가 정해져 있고 후자는 아닙니다.</p>
 <h2 id="처음-세팅">처음 세팅</h2>

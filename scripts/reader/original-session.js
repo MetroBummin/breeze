@@ -184,7 +184,6 @@ function leaveOriginalReader(){
   (originalSession.urls||[]).forEach(url=>URL.revokeObjectURL(url));
   if(originalSession.pdf){ try{ originalSession.pdf.destroy(); }catch(e){} }
   originalSession = null;
-  if(typeof resetPdfZoom === 'function') resetPdfZoom();
   const content = document.getElementById('original-content');
   if(content){ content.innerHTML=''; content.className='original-content'; }
 }

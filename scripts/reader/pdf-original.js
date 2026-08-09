@@ -8,66 +8,22 @@
 let originalPdfPointer = null;
 
 /* ================= 확대 =================
-   손가락으로 화면을 벌리면 쪽만 커지는 것이 아니라 화면 전체가 커집니다 —
-   뜻이 뜨는 바텀시트까지 함께 커져서, 작은 글씨를 보려고 벌릴수록 시트가
-   화면을 덮습니다. 그래서 쪽만 키우는 단추를 둡니다. 시트와 떠 있는 단추는
-   fixed 라 제 크기 그대로 남습니다.
+   확대·축소 단추는 없앴습니다. 손가락으로 벌리면 됩니다 — 어느 PDF 뷰어에서나
+   그렇게 하니까요.
 
-   CSS 로 늘이기만 하면 캔버스가 흐려집니다. 그래서 지금 보고 있는 쪽은 새 너비로
-   다시 그립니다 — 나머지는 화면에 들어올 때 관찰자가 알아서 다시 부릅니다.
-   200쪽짜리를 통째로 다시 그리면 확대 한 번에 몇 초가 걸립니다. */
-const PDF_ZOOM_STEPS = [1, 1.3, 1.7, 2.2, 3];
-let pdfZoomStep = 0;
+   한때 쪽마다 제 가로 스크롤 칸을 주고 단추로만 넓혔습니다. 화면이 통째로
+   커지면 뜻이 뜨는 시트까지 커져서, 작은 글씨를 보려고 벌릴수록 시트가 화면을
+   덮었기 때문입니다. 그 값은 이제 시트 쪽에서 냅니다 — 떠 있는 것들만
+   `visualViewport` 배율의 역수만큼 되돌려 제 크기로 남깁니다
+   (`scripts/ui/interactions.js` 의 "벌려도 시트는 그대로").
 
-function paintPdfZoom(){
-  /* 원본 세션은 글자 화면으로 돌아가도 열린 채 남습니다. 그래서 "PDF 세션이
-     있는가"가 아니라 "지금 그 PDF 를 보고 있는가"로 판단합니다. */
-  const live = currentReaderMode === 'original'
-    && !!originalSession && originalSession.kind === 'pdf';
-  document.documentElement.style.setProperty(
-    '--pdf-zoom', String(live ? PDF_ZOOM_STEPS[pdfZoomStep] : 1));
-  const zoomIn = document.getElementById('pdfzoom-in');
-  const zoomOut = document.getElementById('pdfzoom-out');
-  if(zoomIn){ zoomIn.hidden = !live; zoomIn.disabled = pdfZoomStep === PDF_ZOOM_STEPS.length-1; }
-  if(zoomOut){ zoomOut.hidden = !live; zoomOut.disabled = pdfZoomStep === 0; }
-}
-function resetPdfZoom(){
-  pdfZoomStep = 0;
-  paintPdfZoom();
-}
+   그러고 나니 칸을 나눌 이유가 사라졌습니다. 쪽마다 가로축이 따로 놀면 한 줄을
+   읽으려고 민 자리가 다음 쪽에서 풀립니다. 이제 문서 전체가 종이 한 장처럼
+   같은 축에서 함께 움직입니다.
 
-/* 옆으로 민 만큼은 쪽마다 따로 두지 않습니다. 한 줄을 읽으려고 오른쪽으로 밀어
-   놓았는데 다음 쪽이 왼쪽 끝에서 시작하면, 쪽을 넘길 때마다 같은 손짓을 다시
-   해야 합니다. 마지막으로 민 비율을 하나만 들고 다니며 새로 뜨는 쪽에 얹습니다. */
-function applyPdfPan(session, pageElement){
-  const lane = pageElement && pageElement.parentElement;
-  if(!lane || !lane.classList.contains('pdf-page-lane')) return;
-  const room = lane.scrollWidth - lane.clientWidth;
-  lane.scrollLeft = room > 0 ? (session.panRatio || 0) * room : 0;
-}
-
-async function pdfZoom(direction){
-  const session = originalSession;
-  if(!session || session.kind !== 'pdf') return;
-  const next = Math.max(0, Math.min(PDF_ZOOM_STEPS.length-1, pdfZoomStep + direction));
-  if(next === pdfZoomStep) return;
-  /* 확대해도 보던 자리는 그대로여야 합니다. 쪽 높이가 통째로 바뀌므로 픽셀이
-     아니라 "몇 쪽의 어디쯤"으로 붙잡아 뒀다가 되돌립니다. */
-  const inset = topInset()+10;
-  const anchor = capturePdfAnchor(inset);
-  pdfZoomStep = next;
-  paintPdfZoom();
-  /* 이미 그려 둔 캔버스는 옛 너비로 그린 그림이라, 늘리기만 하면 흐려집니다.
-     지금 화면에 있는 쪽만 다시 그립니다 — 200쪽짜리를 통째로 다시 그리면
-     확대 한 번에 몇 초가 걸리고, 나머지는 화면에 들어올 때 관찰자가 부릅니다. */
-  session.rendering.clear();
-  const visible = session.pages.filter(page => {
-    const rect = page.getBoundingClientRect();
-    return rect.bottom > -400 && rect.top < window.innerHeight + 400;
-  });
-  for(const page of visible) await renderOriginalPdfPage(session, +page.dataset.page);
-  if(anchor) await restorePdfAnchor(anchor, inset, readerModeChangeToken);
-}
+   벌려서 본 캔버스는 늘어난 그림이라 조금 흐립니다. `devicePixelRatio` 보다
+   한 단계 넉넉하게 그려 두어 두 배까지는 눈에 띄지 않게 합니다. */
+const PDF_OVERSAMPLE = 1.6;
 
 async function openOriginalPdf(book,record,token){
   await ensurePdfLib();
@@ -81,27 +37,17 @@ async function openOriginalPdf(book,record,token){
   const ratio = firstViewport.width/firstViewport.height;
   const pages=[];
   const session={kind:'pdf',bookId:book.id,hash:record.hash,pdf,pages,
-                 glyphs:book.glyphs||null,panRatio:0,
+                 glyphs:book.glyphs||null,
                  rendering:new Map(),wordBoxes:new Map(),urls:[]};
   for(let pageNumber=1; pageNumber<=pdf.numPages; pageNumber++){
     const page=document.createElement('article');
     page.className='pdf-source-page';
-    page.dataset.page=pageNumber;
+    page.dataset.page=String(pageNumber);
     page.style.aspectRatio=String(ratio);
     page.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
-    /* 확대했을 때 옆으로 미는 칸. 배율이 1 이면 넘칠 것이 없어 아무 일도
-       하지 않습니다 — 늘 있어도 평소에는 보이지 않습니다. */
-    const lane=document.createElement('div');
-    lane.className='pdf-page-lane';
-    lane.appendChild(page);
-    lane.addEventListener('scroll',()=>{
-      const room=lane.scrollWidth-lane.clientWidth;
-      if(room>0) session.panRatio=lane.scrollLeft/room;
-    },{passive:true});
-    content.appendChild(lane); pages.push(page);
+    content.appendChild(page); pages.push(page);
   }
   originalSession=session;
-  resetPdfZoom();                  // 앞 책의 배율을 물려받지 않습니다
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const observer=new IntersectionObserver(entries=>{
@@ -122,7 +68,7 @@ async function renderOriginalPdfPage(session,pageNumber){
     const cssWidth=Math.max(240,pageElement.clientWidth||document.getElementById('original-content').clientWidth||700);
     const cssScale=cssWidth/base.width;
     const viewport=page.getViewport({scale:cssScale});
-    const outputScale=Math.min(2,window.devicePixelRatio||1);
+    const outputScale=Math.min(3,(window.devicePixelRatio||1)*PDF_OVERSAMPLE);
     const canvas=document.createElement('canvas');
     canvas.width=Math.floor(viewport.width*outputScale);
     canvas.height=Math.floor(viewport.height*outputScale);
@@ -145,7 +91,6 @@ async function renderOriginalPdfPage(session,pageNumber){
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
-    applyPdfPan(session,pageElement);
   })().catch(error=>console.warn('PDF page render skipped:',error));
   session.rendering.set(pageNumber,job);
   await job;

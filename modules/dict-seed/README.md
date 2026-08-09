@@ -1,0 +1,84 @@
+# 사전 씨앗 — 접어 둔 일 (2026-08-09)
+
+맛보기 글에 나오는 낱말의 답을 미리 받아 앱과 함께 배포하는 일입니다. 그러면
+처음 온 사람이 로그인 전에도, 인터넷이 없어도, 어느 낱말을 눌러든 기다리지
+않습니다.
+
+**지금은 접어 두었습니다.** 코드는 지우지 않고 여기로 옮겨 연결만 끊었습니다 —
+`modules/exam-shorts/` 와 같은 방식입니다.
+
+## 왜 접었나
+
+만드는 일이 한 번에 끝나지 않았습니다. Edge Function 재배포, `SEED_TOKEN`,
+SQL, 콘솔에서 함수 부르기 — 네 가지가 다 맞아야 파일 하나가 나오는데, 어긋나면
+어디가 어긋났는지가 콘솔 오류 한 줄로만 옵니다. 실제로 1,099개를 통째로 실패한
+적이 있고 원인은 아래 "알려진 함정"의 첫 줄이었습니다.
+
+**없어도 앱은 그대로 돕니다.** 씨앗이 없으면 맛보기 글의 낱말도 다른 글과 똑같이
+AI 에게 물어봅니다. 잃는 것은 "첫 열 번이 빠르다" 하나뿐이고, 그건 나중에 붙여도
+같은 값입니다.
+
+## 무엇이 남아 있나
+
+| 어디 | 무엇 | 상태 |
+|---|---|---|
+| `modules/dict-seed/build-dict-seed.js` | 씨앗을 만드는 콘솔 스크립트 | **떼어 둠** — 앱이 읽지 않습니다 |
+| `scripts/dictionary/dictionary.js` 의 `loadDictSeed()` | 씨앗 파일을 캐시에 붓는 쪽 | **살아 있음** |
+| `server/dict/index.ts` 의 `op:"seed"` | 씨앗을 만들 때만 쓰는 서버 갈래 | **살아 있음**, `SEED_TOKEN` 없으면 403 |
+
+받는 쪽(`loadDictSeed`)을 살려 둔 것은 일부러입니다. 되살리는 일이 **파일 한 장
+떨어뜨리기**가 되게 하려고요. `assets/samples/dict-seed.json` 이 없으면 조용히
+지나갑니다.
+
+## 되살리는 순서
+
+1. **Supabase → Edge Functions → Secrets** 에 `SEED_TOKEN` 을 아무 긴 문자열로 넣고
+   ```
+   supabase functions deploy dict
+   ```
+
+2. 브라우저에서 Breeze 를 엽니다. 배포본이든 `localhost` 든 상관없지만
+   **맛보기 글 두 편이 서가에 보여야 합니다.** 안 보이면 콘솔에서
+   `localStorage.removeItem('breeze.samples-seeded')` 하고 새로고침.
+
+3. 개발자 도구 콘솔(맥 사파리 ⌥⌘C, 크롬 ⌥⌘J)에서 이 한 줄로 스크립트를 읽어들입니다.
+   이 파일은 앱에 실려 있지 않으므로 **경로가 `modules/` 로 시작합니다** —
+   배포본에는 없을 수 있으니, 그럴 때는 파일을 통째로 복사해 붙여넣으세요.
+   ```
+   fetch('modules/dict-seed/build-dict-seed.js').then(r=>r.text()).then(eval)
+   ```
+
+4. ```
+   buildDictSeed('1)에서 정한 SEED_TOKEN')
+   ```
+   맛보기 글이 저절로 열렸다 닫히면서 낱말을 걷고, 몇 분 뒤 `dict-seed.json` 이
+   저절로 내려받아집니다. 진행 상황은 콘솔에 찍힙니다.
+
+5. 받은 파일을 `assets/samples/dict-seed.json` 에 넣고 커밋 · 배포. 끝입니다.
+
+글을 고쳤으면 4)부터 다시 하면 됩니다. 사진을 넣거나 빼는 것은 씨앗을 깨뜨리지
+않습니다 — 열쇠가 문장 기준이라 사진이 늘어도 문장은 그대로이기 때문입니다.
+
+## 알려진 함정
+
+- **`x-seed-token` 이 CORS 를 통과하지 못합니다.** `server/dict/index.ts` 의 `CORS`
+  상수가 `Access-Control-Allow-Headers` 에 `authorization, x-client-info, apikey,
+  content-type` 만 적고 있어서, 브라우저가 프리플라이트에서 막습니다. 콘솔에는
+  이렇게 뜹니다 —
+  > Request header field x-seed-token is not allowed by Access-Control-Allow-Headers in preflight response
+
+  **되살릴 때 이것부터 고치세요.** 두 가지 중 하나면 됩니다: `CORS` 에
+  `x-seed-token` 을 더하거나, 아니면 토큰을 헤더가 아니라 **본문**(`body.seed_token`)
+  으로 받게 서버와 `build-dict-seed.js` 를 함께 바꾸는 것. 뒤쪽이 낫습니다 —
+  프리플라이트 자체가 없어져서 다시는 같은 자리에서 막히지 않습니다.
+- **Edge Function 을 다시 배포해야 합니다.** `SEED_TOKEN` 은 배포 시점에 함수 안으로
+  들어갑니다. Secrets 에 넣기만 하고 배포하지 않으면 서버가 계속 403 을 냅니다.
+- **맛보기 글이 서가에 없으면** 걷을 낱말이 없어 바로 멈춥니다(2번).
+
+## 왜 Node 스크립트가 아니라 콘솔인가
+
+캐시 열쇠는 `l:<낱말>|<문장해시>` 인데, 이 셋 — 낱말을 어디서 끊는지, 문장을
+어디서 자르는지, 해시를 어떻게 내는지 — 이 전부 앱 안의 함수입니다. Node 에서
+다시 구현하면 언젠가 미세하게 어긋나고, 어긋나면 씨앗이 통째로 죽습니다.
+그래서 앱이 실제로 그리는 화면에서, 사용자가 실제로 누르는 그 조각을 걸어
+열쇠를 만듭니다. 어긋날 수가 없습니다.

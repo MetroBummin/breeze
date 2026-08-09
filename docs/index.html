@@ -114,6 +114,7 @@ tbody tr:last-child td{border-bottom:0}
 <ul><li><strong>뜻은 그 자리에서 고칩니다.</strong> 예전에는 AI 박스 아래에 파란 뜻 칸이 하나 더 있어서 같은 뜻이 화면에 두 번 적혀 있었고, 고치는 건 아래 칸에서만 됐습니다. 이제 위에 뜬 뜻을 누르면 바로 고쳐지고 그게 단어장에 들어갑니다. 한번 손으로 고친 뜻은 AI 가 덮지 않습니다. 기다리는 동안에는 점 세 개가 아니라 <strong>돌풍 세 줄기</strong>가 지나갑니다.</li></ul>
 <ul><li>첫 화면에서 받는 외부 라이브러리는 <strong>Supabase 하나(212KB)</strong>뿐입니다. PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받고, 단어장은 CSV로 내보내므로 xlsx 881KB가 필요 없습니다. 파일로 들고 다니던 사전 300개(73KB)도 지웠습니다 — 문맥을 안 보고 온 뜻이라, 문맥 뜻을 파는 앱의 맨 앞에 둘 층이 아니었습니다. 예전에는 1.5MB를 모두가 매번 받았습니다.</li></ul>
 <ul><li>수능·모의고사 문항 분리와 기출 Shorts 화면은 <strong>떼어 두었습니다</strong>(동작은 하지만 앱에 연결되어 있지 않습니다). 규칙과 되살리는 순서는 <a href="https://github.com/MetroBummin/breeze/blob/main/breeze-refactored/modules/exam-shorts/README.md" target="_blank" rel="noopener">modules/exam-shorts/README.md</a>.</li></ul>
+<ul><li>맛보기 글의 사전 답을 미리 받아 두는 일(씨앗)도 <strong>떼어 두었습니다</strong>. 받는 쪽은 살아 있어서 파일 한 장만 떨어뜨리면 되살아납니다 — <a href="https://github.com/MetroBummin/breeze/blob/main/breeze-refactored/modules/dict-seed/README.md" target="_blank" rel="noopener">modules/dict-seed/README.md</a>.</li></ul>
 <h2 id="주요-구조">주요 구조</h2>
 <ul><li>목차 버튼과 목차 시트를 화면에서 제거했습니다.</li><li>CSS를 화면 책임별로 6개 파일로 분리했습니다.</li><li>JavaScript를 저장소, 라이브러리, 반입기, 사전, 리더, 설정, 동기화로 분리했습니다.</li><li>PDF와 EPUB은 <code>원본</code>과 <code>글자</code> 모드를 자유롭게 전환할 수 있습니다.</li><li>원본 파일은 별도 IndexedDB 저장소에 보관하며 서버 책 동기화에 포함하지 않습니다.</li><li>글자 문단마다 원본 PDF 페이지·페이지 내부 위치 또는 EPUB 장·요소 위치를 연결합니다.</li><li>PDF 원본은 PDF.js 캔버스와 페이지 비율 단어 좌표 지도를 사용합니다. 단어를 한 번 누르면 같은 좌표로 사전과 하이라이트가 열려, 패널이 생겨 페이지 폭이 바뀌어도 범위가 밀리지 않습니다.</li><li>글자를 하나씩 따로 넘겨주는 PDF도 같은 기준선끼리 되붙여 진짜 단어로 읽습니다. 예전에는 낱글자가 단어가 되어 저장한 <code>h</code>가 온 페이지에 밑줄을 그었습니다.</li><li>원본 위치 지도는 걸러낸 페이지를 뺀 순번이 아니라 실제 PDF 페이지 번호를 씁니다. 이미 넣어 둔 책은 같은 파일을 한 번 더 끌어다 놓으면 지도만 새로 만들고 진행도와 단어장은 그대로 둡니다.</li><li>사전 패널이 열리고 닫혀 읽는 폭이 바뀌어도 보던 줄이 제자리에 남습니다.</li><li>EPUB 원본은 스크립트와 위험 요소를 제거한 뒤 샌드박스 안에서 출판사 스타일을 표시합니다.</li><li>글자 모드는 문서 자체의 확실한 구조 단서만 반영하고, 애매한 부분은 평범한 본문으로 둡니다.</li><li>전권 AI 조판 클라이언트·서버 함수·캐시는 제거했습니다. 문맥 사전 AI는 별도 기능이라 유지합니다.</li><li>IndexedDB 이미지 이름 변경 완료 대기, 책 삭제 tombstone, Supabase 삭제 재시도와 겹친 동기화 요청 처리를 정리했습니다.</li><li>동일한 책을 다른 파서 버전으로 넣어도 내용 지문으로 서버 사본을 찾습니다.</li></ul>
 <h2 id="원본-파일과-동기화">원본 파일과 동기화</h2>
@@ -123,8 +124,8 @@ tbody tr:last-child td{border-bottom:0}
 <pre data-lang="bash"><code>python3 -m http.server 8765</code></pre>
 <p>그 뒤 <code>http://127.0.0.1:8765/</code>를 엽니다.</p>
 <h2 id="확인">확인</h2>
-<p>Node.js가 있으면 외부 패키지 없이 구조 검사를 실행할 수 있습니다.</p>
 <pre data-lang="bash"><code>npm test</code></pre>
+<p>구조 검사와 <strong>타입 검사</strong>가 함께 돕니다. 타입 검사는 <code>tsc --noEmit</code> 이라 <strong>내보내는 파일이 없습니다</strong> — <code>.ts</code> 파일도 하나도 없고, 브라우저가 읽는 것은 지금까지와 똑같은 <code>scripts/*.js</code> 입니다. 배포는 여전히 빌드 단계가 없습니다. 타입 검사만 따로 보려면 <code>npm run typecheck</code>. 남은 지적은 늘지 못하게만 막아 두고 조금씩 줄입니다 — 까닭은 <code>ARCHITECTURE.md</code> 의 "타입 검사".</p>
 <p>자세한 파일 책임과 로딩 순서는 <code>ARCHITECTURE.md</code>를 참고하세요.</p>
 </main>
 <aside><div class="lbl">이 문서 안</div><a class="" href="#주요-구조">주요 구조</a><a class="" href="#원본-파일과-동기화">원본 파일과 동기화</a><a class="" href="#실행">실행</a><a class="" href="#확인">확인</a></aside>

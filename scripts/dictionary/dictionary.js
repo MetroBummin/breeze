@@ -410,7 +410,13 @@ let anonLooksLeft = null;
    기다리지 않습니다. 바람은 그대로 붑니다(AI_MIN_WAIT 는 갓 받은 답에만
    걸리지만, 캐시된 답도 창이 열리며 한 번 지나갑니다).
 
-   한 번 부으면 끝입니다. 판(version)이 오르면 다시 붓습니다. */
+   한 번 부으면 끝입니다. 판(version)이 오르면 다시 붓습니다.
+
+   ── 지금은 그 파일이 없습니다 ──
+   씨앗을 **만드는** 일은 접어 두었습니다(`modules/dict-seed/README.md`). 받는 쪽인
+   이 함수는 일부러 살려 둡니다 — 되살리는 일이 파일 한 장 떨어뜨리기가 되게 하려고요.
+   파일이 없으면 조용히 지나가고, 맛보기 글의 낱말도 다른 글과 똑같이 AI 에게
+   물어봅니다. */
 const DICT_SEED_FILE = 'assets/samples/dict-seed.json';
 const LS_DICT_SEED = 'breeze.dict-seed';
 

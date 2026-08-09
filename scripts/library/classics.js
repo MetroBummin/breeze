@@ -84,6 +84,21 @@ async function applyClassicCover(classic){
   }catch(error){ console.warn('고전 표지를 씌우지 못했습니다:', error && error.message); }
 }
 
+/* 표지는 책을 받는 순간에만 씌워집니다. 이미 받아 둔 책의 표지 그림을 갈아
+   끼우고 바로 보려면 콘솔에서 `refreshClassicCovers()` 한 줄이면 됩니다.
+   앱 화면에는 이 문이 없습니다 — 만드는 사람만 쓰는 것이라 단추를 둘 자리가
+   아닙니다. */
+async function refreshClassicCovers(){
+  let done = 0;
+  for(const classic of CLASSICS){
+    if(!books.some(book => book.classicId === classic.id)) continue;
+    await applyClassicCover(classic);
+    done++;
+  }
+  console.info(`받아 둔 고전 ${done}권의 표지를 파일에서 다시 씌웠습니다.`);
+  return done;
+}
+
 function classicCard(classic){
   const card = el('div', 'bookcard classic');
   card.innerHTML = `<img class="cover" alt="" hidden>

@@ -189,26 +189,36 @@ function scheduleProgressUpdate(){
 /* ---- 상단바는 읽는 방향을 따릅니다 ----
    집중 모드 스위치를 대신하는 장치입니다. 아래로 읽어 내려가면 상단바가
    걷히고 단추가 흐려지며, 위로 올리거나 글머리에 닿으면 돌아옵니다.
-   CHROME_STEP 이하의 움직임은 손떨림이지 신호가 아닙니다 — 이 문턱이 없으면
-   상단바가 한 픽셀마다 깜빡입니다. 글 폭은 여기서 건드리지 않습니다. */
-const CHROME_STEP = 12, CHROME_TOP = 80;
-let chromeAnchorY = 0;
+
+   두 문턱이 다릅니다. 걷히는 데는 12px 이면 되지만, 돌아오는 데는 44px 이
+   필요합니다. 아이폰은 손가락을 뗀 뒤에도 관성으로 한동안 흐르는데, 그 끝이
+   깔끔하게 멈추지 않고 몇 픽셀 되튑니다. 문턱이 같으면 그 되튐이 "위로
+   올렸다"로 읽혀서, 읽기를 멈출 때마다 상단바가 한 번 깜빡였습니다.
+   되돌리려는 손짓은 몇 픽셀로 끝나지 않으니, 위쪽만 높여도 잃는 것이 없습니다.
+   글 폭은 여기서 건드리지 않습니다. */
+const CHROME_STEP = 12, CHROME_BACK = 44, CHROME_TOP = 80;
+let chromeLastY = 0, chromeRun = 0;    // chromeRun: 같은 방향으로 이어서 간 거리
 function setReaderChrome(hidden){
   document.body.classList.toggle('chrome-hidden', hidden);
 }
 function showReaderChrome(){
-  chromeAnchorY = window.scrollY || 0;
+  chromeLastY = window.scrollY || 0; chromeRun = 0;
   setReaderChrome(false);
 }
 function followScrollDirection(){
   const y = Math.max(0, window.scrollY || 0);
+  const step = y - chromeLastY;
+  chromeLastY = y;
   /* 모드를 바꾸며 프로그램이 옮겨 놓은 화면은 내가 읽어 내려간 것이 아닙니다 */
-  if(Date.now() < readerScrollPauseUntil){ chromeAnchorY = y; return; }
-  if(y < CHROME_TOP){ chromeAnchorY = y; setReaderChrome(false); return; }
-  const moved = y - chromeAnchorY;
-  if(Math.abs(moved) < CHROME_STEP) return;
-  chromeAnchorY = y;
-  setReaderChrome(moved > 0);
+  if(Date.now() < readerScrollPauseUntil){ chromeRun = 0; return; }
+  if(y < CHROME_TOP){ chromeRun = 0; setReaderChrome(false); return; }
+  if(!step) return;
+  /* 방향이 바뀌면 거리를 처음부터 다시 셉니다. 그래야 관성이 남긴 몇 픽셀이
+     다음 판단까지 쌓이지 않습니다. */
+  if((step > 0) !== (chromeRun > 0)) chromeRun = 0;
+  chromeRun += step;
+  if(chromeRun >= CHROME_STEP){ chromeRun = 0; setReaderChrome(true); }
+  else if(chromeRun <= -CHROME_BACK){ chromeRun = 0; setReaderChrome(false); }
 }
 window.addEventListener('scroll', ()=>{
   if(!curBook) return;

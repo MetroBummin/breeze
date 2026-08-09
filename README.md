@@ -38,6 +38,8 @@
 
 - 수능·모의고사 문항 분리와 기출 Shorts 화면은 **떼어 두었습니다**(동작은 하지만 앱에 연결되어 있지 않습니다). 규칙과 되살리는 순서는 [modules/exam-shorts/README.md](modules/exam-shorts/README.md).
 
+- 맛보기 글의 사전 답을 미리 받아 두는 일(씨앗)도 **떼어 두었습니다**. 받는 쪽은 살아 있어서 파일 한 장만 떨어뜨리면 되살아납니다 — [modules/dict-seed/README.md](modules/dict-seed/README.md).
+
 ## 주요 구조
 
 - 목차 버튼과 목차 시트를 화면에서 제거했습니다.
@@ -78,10 +80,14 @@ python3 -m http.server 8765
 
 ## 확인
 
-Node.js가 있으면 외부 패키지 없이 구조 검사를 실행할 수 있습니다.
-
 ```bash
 npm test
 ```
+
+구조 검사와 **타입 검사**가 함께 돕니다. 타입 검사는 `tsc --noEmit` 이라
+**내보내는 파일이 없습니다** — `.ts` 파일도 하나도 없고, 브라우저가 읽는 것은
+지금까지와 똑같은 `scripts/*.js` 입니다. 배포는 여전히 빌드 단계가 없습니다.
+타입 검사만 따로 보려면 `npm run typecheck`. 남은 지적은 늘지 못하게만
+막아 두고 조금씩 줄입니다 — 까닭은 `ARCHITECTURE.md` 의 "타입 검사".
 
 자세한 파일 책임과 로딩 순서는 `ARCHITECTURE.md`를 참고하세요.

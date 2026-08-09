@@ -24,8 +24,9 @@ function applyReadMargin(){
   root.setProperty('--readw', m.width);
   root.setProperty('--readpad', m.pad);
   root.setProperty('--pagepad', m.page);
-  document.querySelectorAll('#aa-margin button').forEach(button=>
-    button.classList.toggle('on', button.dataset.margin===readMargin));
+  const buttons = /** @type {NodeListOf<HTMLElement>} */
+    (document.querySelectorAll('#aa-margin button'));
+  buttons.forEach(button => button.classList.toggle('on', button.dataset.margin===readMargin));
 }
 function setReadMargin(next){
   if(!READ_MARGINS[next]) return;
@@ -53,7 +54,8 @@ function toggleAa(e){
 }
 document.addEventListener('click', e=>{
   const p = document.getElementById('aa-pop');
-  if(p.classList.contains('on') && !e.target.closest('#aa-pop') && !e.target.closest('#aafab'))
+  const hit = /** @type {Element} */ (e.target);
+  if(p.classList.contains('on') && !hit.closest('#aa-pop') && !hit.closest('#aafab'))
     p.classList.remove('on');
 });
 let darkMode = load('breeze.dark', false);

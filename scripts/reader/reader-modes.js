@@ -18,10 +18,6 @@ function toggleReaderMode(){
 }
 
 function updateReaderModeControls(){
-  /* 확대 단추는 원본 PDF 를 보고 있을 때만 뜹니다. 세션은 글자 화면으로
-     돌아가도 열린 채로 남아 있어서, 세션만 보고 판단하면 글자 화면에도
-     따라 나옵니다. */
-  if(typeof paintPdfZoom === 'function') paintPdfZoom();
   const fab = document.getElementById('modefab');
   if(!fab) return;
   fab.hidden = !bookSupportsOriginal(curBook);
