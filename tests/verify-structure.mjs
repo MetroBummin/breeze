@@ -430,6 +430,11 @@ assert.match(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'),
   'The document scrolls again, so a widened page shrinks the whole screen on mobile');
 assert.match(readFileSync(resolve(root, 'index.html'), 'utf8'),/id="reader-scroll"/,
   'The reader has no scrolling box of its own');
+/* 읽는 칸을 흐름에서 빼면 옆에 서야 할 낱말 패널이 유일한 흐름 안 칸이 되어
+   왼쪽으로 넘어갑니다 (`#v-read` 는 데스크톱에서 가로 flex 입니다). */
+assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'),
+  /body\.reading #readmain\{[^}]*position:absolute/,
+  'readmain leaves the flex row again, which throws the word panel to the left');
 /* 글자 화면은 벌리지 않습니다 — 글자 크기는 Aa 안에 있습니다. */
 assert.match(modesSource,/mode==='text'\) resetOriginalZoom\(\)/,
   'Coming back to the 글자 view keeps the paper zoom, which nothing there can undo');

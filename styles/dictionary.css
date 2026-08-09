@@ -8,6 +8,10 @@
   @media (min-width:761px){
     #panel{margin-top:8px; top:calc(var(--topbar-h,56px) + 8px);
       height:calc(100vh - var(--topbar-h,56px) - 8px);}
+    /* 읽는 동안에는 화면이 못 박혀 있어 `sticky` 가 붙을 스크롤이 없습니다.
+       상단바 아래에서 시작해 남는 높이를 채우는 평범한 칸이면 됩니다. */
+    body.reading #panel{position:relative; top:auto; margin-top:calc(var(--topbar-h,56px) + 8px);
+      height:calc(100% - var(--topbar-h,56px) - 8px);}
     body.reader-original #panel{width:min(310px,26vw);}
     body.reader-original #panel .inner{padding:21px 20px 34px;}
     body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
@@ -197,6 +201,8 @@
     #panel{position:sticky; left:auto; right:auto; bottom:auto; top:56px; width:min(300px,42vw);
       height:calc(100vh - 56px); max-height:none; border-radius:22px 0 0 0; z-index:70;
       display:none; transform:none; transition:none;}
+    body.reading #panel{position:relative; top:auto; margin-top:var(--topbar-h,56px);
+      height:calc(100% - var(--topbar-h,56px));}
     #panel.on{display:block; transform:none;}
     #p-handle{display:none;}
     #p-close{display:block;}

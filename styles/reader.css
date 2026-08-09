@@ -27,7 +27,9 @@
   body.reading #app{position:fixed; inset:0;}
   body.reading #topbar{position:fixed; top:0; left:0; right:0;}
   body.reading #v-read.on{position:absolute; inset:0;}
-  body.reading #readmain{position:absolute; inset:0;}
+  /* 높이만 채웁니다. `position:absolute` 로 못 박으면 흐름에서 빠져서, 옆에
+     서야 할 낱말 패널이 유일한 흐름 안 칸이 되어 왼쪽으로 갑니다. */
+  body.reading #readmain{height:100%;}
   /* `pan-x pan-y` 는 미는 것은 그대로 두고 브라우저의 벌리기만 뺍니다. 벌리기는
      이제 우리가 그립니다 (`scripts/reader/reader-scroll.js`). */
   #reader-scroll{position:absolute; inset:0; overflow:auto; overscroll-behavior:contain;
