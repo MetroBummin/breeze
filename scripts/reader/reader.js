@@ -247,9 +247,24 @@ function whileRestoringChrome(job){
   done();
   return result;
 }
+/* ---- 걷히는 것은 손가락으로 읽는 화면에서만 ----
+   상단바를 걷는 것은 좁은 화면을 아끼려는 손짓입니다. 되부르는 방법도 손짓
+   하나 — 위로 조금 올리기 — 이고요. 마우스·트랙패드가 주 입력인 화면에는 둘
+   다 해당이 안 됩니다. 아낄 세로가 넉넉하고, 되부르려고 스크롤을 거꾸로 굴리는
+   것은 배워야 아는 동작입니다. 맥북에서 브라우저를 확대하면 글이 다시 흘러
+   스크롤이 움직이는데, 그것까지 "읽어 내려갔다"로 읽혀서 바가 걷혔습니다.
+
+   화면 폭이 아니라 **주 입력**으로 가릅니다. `pointer`·`hover` 는 곁다리가
+   아니라 주 입력을 가리키므로, 아이패드는 트랙패드를 붙여도 손가락 쪽에
+   남습니다 — 화면을 그대로 만질 수 있으니 그게 맞습니다. 폭으로 갈랐다면
+   창을 좁힌 맥북이 폰 취급을 받았을 겁니다. */
+const chromeStays = window.matchMedia('(hover:hover) and (pointer:fine)');
 function setReaderChrome(hidden){
-  document.body.classList.toggle('chrome-hidden', hidden);
+  document.body.classList.toggle('chrome-hidden', hidden && !chromeStays.matches);
 }
+/* 입력이 바뀌는 일은 드물지만(아이패드를 데스크톱 모드로 보는 등), 바가 걷힌
+   채로 넘어가면 되부를 손짓이 없는 화면에 갇힙니다. */
+chromeStays.addEventListener('change', ()=>{ if(chromeStays.matches) showReaderChrome(); });
 function showReaderChrome(){
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
   chromeLastY = readerScrollTop(); chromeRun = 0;
