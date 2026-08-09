@@ -198,6 +198,21 @@ function scheduleProgressUpdate(){
    글 폭은 여기서 건드리지 않습니다. */
 const CHROME_STEP = 12, CHROME_BACK = 44, CHROME_TOP = 80;
 let chromeLastY = 0, chromeRun = 0;    // chromeRun: 같은 방향으로 이어서 간 거리
+/* ---- 낱말 창이 열려 있는 동안에는 상단바를 건드리지 않습니다 ----
+   걷힌 상단바는 읽어 내려간 결과입니다. 그런데 낱말 하나를 누르면 시트가
+   올라오고, 그 사이에 화면이 조금씩 움직입니다 — 시트가 미끄러져 들어오고,
+   아이폰은 손을 뗀 뒤에도 관성으로 몇 픽셀을 더 흘리며, 폰이 아닌 화면에서는
+   옆 패널이 열리느라 글 폭이 바뀌어 보던 자리를 다시 맞춥니다. 그 몇 픽셀이
+   "위로 올렸다"로 읽혀서, 뜻 한 번 보고 나면 상단바가 돌아와 있었습니다.
+   낱말 창은 읽기를 멈춘 것이 아니라 읽는 도중이므로, 그동안의 움직임은
+   방향으로 세지 않고 창을 닫을 때 거리만 0에서 다시 시작합니다. */
+let chromePinned = false, chromeHoldUntil = 0;
+function pinReaderChrome(pinned){
+  chromePinned = pinned;
+  chromeHoldUntil = Date.now() + 500;   // 시트가 미끄러져 나가는 동안까지
+  chromeLastY = Math.max(0, window.scrollY || 0);
+  chromeRun = 0;
+}
 function setReaderChrome(hidden){
   document.body.classList.toggle('chrome-hidden', hidden);
 }
@@ -209,6 +224,7 @@ function followScrollDirection(){
   const y = Math.max(0, window.scrollY || 0);
   const step = y - chromeLastY;
   chromeLastY = y;
+  if(chromePinned || Date.now() < chromeHoldUntil){ chromeRun = 0; return; }
   /* 모드를 바꾸며 프로그램이 옮겨 놓은 화면은 내가 읽어 내려간 것이 아닙니다 */
   if(Date.now() < readerScrollPauseUntil){ chromeRun = 0; return; }
   if(y < CHROME_TOP){ chromeRun = 0; setReaderChrome(false); return; }

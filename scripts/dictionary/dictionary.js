@@ -109,6 +109,7 @@ function selectWord(k, span){
   renderPanel();
   document.getElementById('panel').classList.add('on');
   document.getElementById('sheetbg').classList.add('on');
+  pinReaderChrome(true);      // 뜻을 보는 동안 상단바는 그대로 (scripts/reader/reader.js)
 }
 function closePanel(){
   selKey=null;
@@ -117,6 +118,7 @@ function closePanel(){
   abortLook();
   document.getElementById('panel').classList.remove('on');
   document.getElementById('sheetbg').classList.remove('on');
+  pinReaderChrome(false);
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
 }
 /* 원본의 PDF 표시는 지우고 다시 만듭니다. 그래서 칠하기가 먼저면 방금 칠한

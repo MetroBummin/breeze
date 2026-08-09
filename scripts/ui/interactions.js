@@ -63,7 +63,7 @@
   if(!vv) return;
   const VARS = ['--vv-x','--vv-y','--vv-dx','--vv-dy','--vv-k'];
   const root = document.documentElement;
-  let frame = 0;
+  let frame = 0, watch = 0;
   function paintViewportLock(){
     frame = 0;
     const scale = vv.scale || 1;
@@ -71,16 +71,61 @@
        않는 기기가 있어서, 그 언저리는 벌리지 않은 것으로 봅니다. */
     const zoomed = scale > 1.02;
     document.body.classList.toggle('vv-zoom', zoomed);
-    if(!zoomed){ VARS.forEach(name => root.style.removeProperty(name)); return; }
-    const layoutWidth = root.clientWidth, layoutHeight = root.clientHeight;
-    root.style.setProperty('--vv-k', String(1/scale));
-    root.style.setProperty('--vv-x', vv.offsetLeft+'px');
-    root.style.setProperty('--vv-y', vv.offsetTop+'px');
-    /* 오른쪽·아래에 붙은 것들은 "문서 끝에서 보이는 끝까지" 의 차이만큼 당깁니다. */
-    root.style.setProperty('--vv-dx', (vv.offsetLeft + vv.width  - layoutWidth )+'px');
-    root.style.setProperty('--vv-dy', (vv.offsetTop  + vv.height - layoutHeight)+'px');
+    if(zoomed){
+      const layoutWidth = root.clientWidth, layoutHeight = root.clientHeight;
+      root.style.setProperty('--vv-k', String(1/scale));
+      root.style.setProperty('--vv-x', vv.offsetLeft+'px');
+      root.style.setProperty('--vv-y', vv.offsetTop+'px');
+      /* 오른쪽·아래에 붙은 것들은 "문서 끝에서 보이는 끝까지" 의 차이만큼 당깁니다. */
+      root.style.setProperty('--vv-dx', (vv.offsetLeft + vv.width  - layoutWidth )+'px');
+      root.style.setProperty('--vv-dy', (vv.offsetTop  + vv.height - layoutHeight)+'px');
+    }else{
+      VARS.forEach(name => root.style.removeProperty(name));
+    }
+    /* ---- 벌린 동안에는 스스로도 확인합니다 ----
+       이 값들은 `visualViewport` 가 알려 줄 때만 다시 계산됐습니다. 그런데
+       아이폰은 손가락을 떼는 그 순간을 잘 빠뜨립니다 — 벌리는 동안 화면은
+       컴포지터가 혼자 그리고, `requestAnimationFrame` 은 그동안 밀려 있다가
+       나중에 한꺼번에 돌며, 손을 떼고 배율이 1 로 미끄러져 돌아가는 마지막
+       한 번은 아무 이벤트도 없이 끝나는 일이 있습니다. 그 한 번을 놓치면
+       `--vv-k` 가 벌리던 도중의 값(예: 0.4)에 그대로 굳습니다. 화면은 제 크기로
+       돌아왔는데 오른쪽 아래 단추 둘만 그 배율로 남아 — 갑자기 아주 작아지고
+       자리도 밀린 채 — 있었던 것이 이것입니다.
+       그래서 벌어져 있는 동안에는 이벤트를 기다리지 않고 0.25초마다 직접
+       봅니다. 배율이 1 로 돌아오면 그 자리에서 값을 지우고 확인도 멈춥니다. */
+    clearTimeout(watch);
+    if(zoomed) watch = setTimeout(scheduleViewportLock, 250);
   }
   const scheduleViewportLock = ()=>{ if(!frame) frame = requestAnimationFrame(paintViewportLock); };
   vv.addEventListener('resize', scheduleViewportLock);
   vv.addEventListener('scroll', scheduleViewportLock);
+  /* 다른 앱에 갔다 돌아오면 확인 타이머는 멈춰 있습니다. 돌아온 김에 한 번. */
+  window.addEventListener('pageshow', scheduleViewportLock);
+  document.addEventListener('visibilitychange', scheduleViewportLock);
+})();
+
+/* ================= 글자 화면은 벌려도 커지지 않습니다 =================
+
+   원본은 종이를 찍은 그림이라, 작은 글씨를 보는 길이 벌리기밖에 없습니다.
+   글자 화면은 다릅니다 — 글자 크기는 Aa 안에 있고, 그쪽은 줄바꿈까지 다시
+   흘려서 화면 폭에 맞춰 줍니다. 벌리기는 같은 일을 더 나쁘게 합니다. 한 줄을
+   읽으려고 옆으로 밀어야 하고, 떠 있는 것들을 배율의 역수로 되돌리는 계산이
+   글을 읽는 내내 한 겹 얹힙니다. 그래서 여기서는 아예 받지 않습니다.
+
+   `user-scalable=no` 로는 안 됩니다 — 아이폰이 오래전부터 무시합니다. 사파리가
+   듣는 것은 제 손짓 이벤트(`gesturestart`)이고, 그 밖의 브라우저는 CSS 의
+   `touch-action` 을 듣습니다(styles/reader.css). 둘 다 걸어 둡니다.
+
+   이미 벌어져 있으면 막지 않습니다. 원본에서 벌린 채로 글자 화면에 건너온
+   사람에게서 되돌릴 손짓까지 뺏으면, 벌어진 화면에 갇힙니다. */
+(function(){
+  const vv = window.visualViewport;
+  const refuse = ()=> document.body.classList.contains('reading')
+                   && !document.body.classList.contains('reader-original')
+                   && !(vv && (vv.scale || 1) > 1.02);
+  /* 손가락 두 개짜리 손짓에서만 오는 이벤트입니다. 스크롤에는 닿지 않으므로
+     `touchmove` 를 통째로 붙잡을 때처럼 읽는 손맛을 깎지 않습니다. */
+  ['gesturestart','gesturechange'].forEach(type=>
+    document.addEventListener(type, event=>{ if(refuse()) event.preventDefault(); },
+      {passive:false}));
 })();
