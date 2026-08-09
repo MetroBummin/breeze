@@ -9,9 +9,14 @@
   .iconbtn:hover{background:var(--sky);}
   #readwrap,#originalwrap{transition:opacity .22s ease,filter .22s ease;}
   body.reader-mode-transition #readwrap,body.reader-mode-transition #originalwrap{opacity:.72; filter:saturate(.9);}
-  ::highlight(breeze-mode-cue){background:rgba(111,196,148,.30); color:inherit;}
+  /* 모드를 바꿨을 때 "여기 있었어요" 하고 짚어 주는 자리. Breeze 라서 로고 그라디언트의
+     바람색(#4DAED6)을 씁니다 — 초록은 이 앱 어디에도 없는 색이었습니다. */
+  ::highlight(breeze-mode-cue){background:rgba(77,174,214,.34); color:inherit;}
   .reader-mode-cue-dom{position:absolute; z-index:38; display:block; pointer-events:none;
-    border-radius:4px; background:rgba(111,196,148,.30); animation:reader-mode-cue-out 10s ease forwards;}
+    border-radius:4px; background:rgba(77,174,214,.34); animation:reader-mode-cue-out 10s ease forwards;}
+  /* 어두운 종이 위에서는 같은 알파가 거의 안 보입니다. */
+  body.dark ::highlight(breeze-mode-cue){background:rgba(111,199,236,.30);}
+  body.dark .reader-mode-cue-dom{background:rgba(111,199,236,.30);}
   /* Aa settings popover */
   #aa-pop{position:fixed; right:14px; bottom:126px; z-index:96; background:#fff; border:1px solid var(--line);
     border-radius:16px; padding:16px 18px; width:240px; box-shadow:var(--shadow); display:none;}
@@ -178,7 +183,8 @@
   .w.s1{background:var(--s1);}
   .w.s2{background:var(--s2);}
   .w.s3{background:var(--s3);}
-  .w.reader-mode-cue-word{background:rgba(111,196,148,.30)!important; box-shadow:0 0 0 2px rgba(111,196,148,.08);}
+  .w.reader-mode-cue-word{background:rgba(77,174,214,.34)!important; box-shadow:0 0 0 2px rgba(77,174,214,.10);}
+  body.dark .w.reader-mode-cue-word{background:rgba(111,199,236,.30)!important;}
   .w.sel{background:var(--sky2); box-shadow:0 0 0 3px var(--sky2); border-radius:6px;}
   .legend{display:flex; gap:12px; font-size:12px; color:var(--soft);}
   .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
@@ -226,7 +232,7 @@
   .pdf-source-page>.original-saved-marker.s2{background:rgba(255,171,120,.31);}
   .pdf-source-page>.original-saved-marker.s3{background:rgba(255,140,140,.33);}
   .pdf-source-page>.reader-mode-cue{position:absolute; z-index:2; display:block; pointer-events:none;
-    box-sizing:border-box; border-radius:4px; background:rgba(111,196,148,.30);
+    box-sizing:border-box; border-radius:4px; background:rgba(77,174,214,.34);
     animation:reader-mode-cue-out 10s ease forwards;}
   @keyframes reader-mode-cue-out{0%,78%{opacity:1}100%{opacity:0}}
 

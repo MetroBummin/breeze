@@ -26,7 +26,7 @@ const ARTICLE_NOISE = /(comment|promo|related|recirc|newsletter|advert|sponsor|s
 const ARTICLE_IMG_MIN = 200;   // 긴 변이 이보다 작으면 아이콘·배지입니다
 const ARTICLE_IMG_THIN = 60;   // 짧은 변이 이보다 얇으면 구분선·추적 픽셀입니다
 const ARTICLE_IMG_MAX = 8;     // 기사 한 편에 담을 사진 수
-const ARTICLE_IMG_BAD = /(logo|icon|avatar|sprite|spacer|pixel|1x1|placeholder|badge|emoji|blank)/i;
+const ARTICLE_IMG_BAD = /(logo|icon|avatar|profile[-_]image|sprite|spacer|pixel|1x1|placeholder|badge|emoji|blank)/i;
 
 /* srcset 은 "주소 폭w, 주소 폭w …" 입니다. 가장 큰 판을 고릅니다. */
 function articleBestSrc(image){
@@ -113,7 +113,83 @@ function articleBestHost(scope){
   score.forEach((value, node) => { if(value > top){ top = value; best = node; } });
   return best;
 }
-function articleRoot(doc){
+/* ---------- X(트위터) ----------
+   X 의 글 페이지 한 장에는 <article> 이 여럿입니다. 첫 번째가 그 글이고 나머지는
+   답글입니다. 그대로 두면 답글 본문과 답글에 딸린 사진까지 책에 들어옵니다.
+   실제로 그랬습니다 — 남의 책 요약 이미지 두 장이 남의 글 한가운데 끼어 있었습니다. */
+const ARTICLE_X_HOST = /(^|\.)(x|twitter)\.com$/i;
+
+function articleFocusPost(doc, host){
+  if(!ARTICLE_X_HOST.test(host || '')) return;
+  const posts = [...doc.querySelectorAll('article')];
+  if(posts.length < 2) return;
+  /* 본문이 가장 많은 것이 그 글입니다. 답글은 짧아서 긴 문단이 하나도 없습니다.
+     "첫 번째"로 정하지 않는 이유는, 언젠가 순서가 바뀌어도 이 기준은 버티기 때문입니다. */
+  const weigh = post => [...post.querySelectorAll('p')]
+    .filter(p => p.textContent.trim().length > ARTICLE_MIN_PARA).length;
+  let best = posts[0], bestScore = weigh(posts[0]);
+  for(const post of posts.slice(1)){
+    const score = weigh(post);
+    if(score > bestScore){ best = post; bestScore = score; }
+  }
+  posts.forEach(post => { if(post !== best) post.remove(); });
+  return best;
+}
+
+/* X 의 긴 글(Article)은 본문 사진을 <img> 로 그려 두지 않습니다. 페이지에 실려 오는
+   편집기 상태(DraftJS) 안에만 주소가 있고, 화면은 그걸 보고 나중에 그립니다.
+   그래서 DOM 만 보면 표지 한 장만 나오고 글 중간의 그림은 통째로 빠집니다.
+
+   블록 목록에는 문단이 순서대로 들어 있고, 사진 자리는 type:"atomic" 입니다.
+   그 바로 앞 문단의 글자를 열쇠로 삼아 화면의 같은 문단을 찾아 그 뒤에 끼웁니다.
+   남의 내부 형식이라 언젠가 바뀝니다. 그래서 하나라도 어긋나면 아무 일도 하지
+   않고 지금까지처럼 동작합니다 — 엉뚱한 자리에 사진을 넣는 것보다 낫습니다. */
+function articleRecoverXMedia(doc, html, host){
+  if(!ARTICLE_X_HOST.test(host || '')) return;
+  try{
+    const blockRe = /content_state:blocks:(\d+)"[^{]*\{[^}]*?text:"((?:[^"\\]|\\.)*)",type:"([^"]*)"/g;
+    const blocks = [];
+    let found;
+    while((found = blockRe.exec(html))) blocks.push({ i:+found[1], text:found[2], type:found[3] });
+    if(!blocks.length) return;
+    blocks.sort((a, b) => a.i - b.i);
+
+    const slots = [];
+    blocks.forEach((block, index) => {
+      if(block.type !== 'atomic') return;
+      for(let back = index - 1; back >= 0; back--){
+        const anchor = blocks[back].text.replace(/\\"/g, '"').trim();
+        if(anchor.length >= 20){ slots.push(anchor); return; }
+      }
+      slots.push('');
+    });
+    if(!slots.length || slots.some(anchor => !anchor)) return;
+
+    const rendered = new Set([...doc.querySelectorAll('img')]
+      .map(image => (image.getAttribute('src') || '').split('?')[0]));
+    const missing = [...new Set((html.match(/original_img_url:"([^"]+)"/g) || [])
+      .map(one => one.slice(18, -1)))]
+      .filter(src => !rendered.has(src.split('?')[0]));
+    /* 자리 수와 사진 수가 정확히 같을 때만 짝지어 넣습니다. */
+    if(missing.length !== slots.length) return;
+
+    const paragraphs = [...doc.querySelectorAll('article p')];
+    slots.forEach((anchor, index) => {
+      const head = anchor.slice(0, 60);
+      const hits = paragraphs.filter(p => p.textContent.trim().startsWith(head));
+      if(hits.length !== 1) return;                 // 여러 곳에 맞으면 자리를 못 정합니다
+      const mark = doc.createElement('breeze-img');
+      mark.setAttribute('data-src', missing[index]);
+      hits[0].after(mark);
+    });
+  }catch(error){ /* 남의 내부 형식입니다. 실패하면 없던 일로 둡니다. */ }
+}
+
+function articleRoot(doc, preferred){
+  /* 어느 덩어리가 본문인지 이미 아는 경우가 있습니다(X 는 답글을 떼어 내면서 골라 둡니다).
+     그때는 찾지 않습니다 — querySelector 는 문서에 먼저 나오는 것을 주므로, X 에서는
+     <main> 이 <article> 보다 앞이라 화면 제목("Post")까지 본문으로 딸려 왔습니다. */
+  if(preferred && preferred.isConnected) return preferred;
   const marked = doc.querySelector('article, [itemprop="articleBody"], main');
   const scored = articleBestHost(doc);
   if(!marked) return scored || doc.body;
@@ -152,7 +228,10 @@ function articleTitle(doc, root, site, host){
   const meta = doc.querySelector('meta[property="og:title"], meta[name="twitter:title"]');
   const fromMeta = meta && (meta.getAttribute('content') || '').trim();
   const heading = root.querySelector('h1') || doc.querySelector('h1');
-  const raw = fromMeta || (heading && articleText(heading)) || (doc.title || '').trim() || host;
+  /* X 는 og:title 이 늘 "이름 (@아이디) on X" 라 무슨 글인지 알 수 없습니다.
+     긴 글에는 진짜 제목이 본문 h1 에 들어 있으므로 그쪽을 먼저 봅니다. */
+  const raw = (ARTICLE_X_HOST.test(host || '') && heading && articleText(heading))
+    || fromMeta || (heading && articleText(heading)) || (doc.title || '').trim() || host;
   return articleStripSite(raw, site, host);
 }
 
@@ -168,6 +247,12 @@ function articleBlockRole(element){
 function parseArticleHtml(html, url){
   const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
   if(!doc || !doc.body) return null;
+  let host = '';
+  try{ host = new URL(url).hostname; }catch(e){}
+  /* 순서가 중요합니다. 답글을 먼저 떼어 내야 답글 사진이 자리 표시로 바뀌지 않고,
+     빠진 사진을 먼저 끼워 넣어야 그 자리도 함께 표시로 바뀝니다. */
+  const focus = articleFocusPost(doc, host);
+  articleRecoverXMedia(doc, html, host);
   articleMarkImages(doc, url);      // <figure>를 버리기 전에 사진 자리를 남깁니다
   doc.querySelectorAll(ARTICLE_DROP).forEach(node => node.remove());
   doc.querySelectorAll('[aria-hidden="true"],[hidden]').forEach(node => node.remove());
@@ -177,9 +262,7 @@ function parseArticleHtml(html, url){
     if(/^\[?\s*(\d{1,3}|[a-z])\s*\]?$/i.test(node.textContent.trim())) node.remove();
   });
 
-  let host = '';
-  try{ host = new URL(url).hostname; }catch(e){}
-  const root = articleRoot(doc);
+  const root = articleRoot(doc, focus);
   const site = articleSite(doc, host);
   const title = articleTitle(doc, root, site, host);
 

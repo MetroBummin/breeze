@@ -183,7 +183,8 @@ function showRangeModeCue(range,duration){
       let style=doc.getElementById('breeze-mode-cue-style');
       if(!style){
         style=doc.createElement('style'); style.id='breeze-mode-cue-style';
-        style.textContent='::highlight(breeze-mode-cue){background:rgba(111,196,148,.30);color:inherit}';
+        /* 원본 EPUB 은 샌드박스 iframe 이라 우리 CSS 가 닿지 않습니다. 같은 바람색을 안에도 넣어 둡니다. */
+        style.textContent='::highlight(breeze-mode-cue){background:rgba(77,174,214,.34);color:inherit}';
         doc.head.appendChild(style);
       }
       view.CSS.highlights.set('breeze-mode-cue',new view.Highlight(range));
