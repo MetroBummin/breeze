@@ -188,6 +188,7 @@ function renderPanel(){
     /* noteDone 은 예전 모양입니다. 이미 저장된 단어를 다시 눌렀을 때
        AI 가 답했던 사실이 사라져 보이지 않게 함께 봅니다. */
     aiCap.textContent = w.koEdited ? '내가 고친 뜻'
+      : ai.cached ? '전에 찾아본 뜻'
       : ((ai.done || ai.noteDone) ? '문맥 뜻 · AI' : '뜻');
     /* 편집 중에 renderPanel 이 돌아도 커서가 앞으로 튀지 않게, 달라졌을 때만 씁니다. */
     if(aiKo.textContent !== shown) aiKo.textContent = shown;
@@ -232,6 +233,9 @@ function renderPanel(){
     : off === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
     : trialWarn         ? trialWarn
     :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
+
+  /* 문장 통째로 가는 문. 예문이 없으면 물어볼 것이 없습니다. */
+  document.getElementById('p-explain').style.display = w.example ? 'flex' : 'none';
 
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';
@@ -482,18 +486,25 @@ function abortLook(){
   if(lookCtrl){ try{ lookCtrl.abort(); }catch(e){} lookCtrl = null; }
 }
 
+/* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
+
+   ① 씨앗 — 이 사람은 이 낱말을 물어본 적이 없습니다. 앱이 미리 받아 뒀을
+      뿐이고, 화면에서 벌어지는 일은 "지금 물어봤다" 입니다. 0초에 튀어나오면
+      무슨 일이 일어났는지 못 알아채고, 맛보기 글에서만 사전이 이상하게
+      빨라 보이는 것은 자랑이 아니라 다른 앱처럼 보이는 일입니다. 기다립니다.
+   ② 내가 전에 물어본 것 — 기다림은 거짓말이 됩니다. 이미 아는 답인데 기다린
+      척할 이유가 없고, 오히려 "아까 봤다" 는 사실이 곧바로 와야 합니다.
+      그래서 곧장 내놓고, 창의 머리글도 다르게 답니다. */
 async function loadCachedLook(k, began){
   const w = words[k]; if(!w) return false;
   for(const key of entryKeys(w)){
     const hit = await dictGet(lookKey(key, w.example));
     if(hit && hit.ko){
-      /* 기기에 있던 답도 바람을 한 번 보여 준 뒤에 놓습니다. 0초에 튀어나오면
-         무슨 일이 일어났는지 못 알아채고, 무엇보다 답이 어디서 왔느냐에 따라
-         화면이 달라 보이면 안 됩니다 — 씨앗을 깔아 둔 맛보기 글에서만 사전이
-         이상하게 빨라 보이는 것은 자랑이 아니라 다른 앱처럼 보이는 일입니다. */
-      const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
-      if(left > 0) await new Promise(res => setTimeout(res, left));
-      applyLook(w, hit, k, { cached:true });
+      if(hit.seed){
+        const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
+        if(left > 0) await new Promise(res => setTimeout(res, left));
+      }
+      applyLook(w, hit, k, { cached:!hit.seed });
       return true;
     }
   }
@@ -563,7 +574,10 @@ async function fetchLook(k, opt){
 function applyLook(w, j, k, opt){
   opt = opt || {};
   delete w.aiLoading; delete w.aiOff;
-  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note: j.note || '', done:true };
+  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note: j.note || '', done:true,
+           /* 이 기기가 전에 물어봤던 답인지. 머리글 한 줄이 달라집니다 —
+              한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
+           cached: !!opt.cached };
   w.aiLemma = j.lemma || w.aiLemma || '';
   w.alts = (j.alts || []).filter(Boolean).slice(0,3);
   if((j.colloc || []).length) w.colloc = j.colloc.slice(0,3);

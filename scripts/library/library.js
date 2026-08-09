@@ -117,18 +117,31 @@ const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
 
 /* 목록만 보고 "이건 짧은 글"인지 아는 법.
-   `kind` 를 목록에 적기 시작하기 전에 올라간 줄에는 그 칸이 없습니다. 그 줄들은
-   지금 Books 선반에 흐린 카드로 앉아 있습니다 — 기사를 원서 자리에서 손으로
-   받으라고 하는 셈이고, 폰에서 본 화면이 정확히 그것이었습니다.
-   목록에 있는 것 중 쓸 수 있는 단서는 크기뿐입니다. 기사는 몇 KB, 원서는 수백
-   KB라 사이가 넓습니다. 한 번 받아 보면 본문에 `kind` 가 들어 있으므로 그때
-   목록을 고쳐 둡니다(`backfillServerKind`) — 이 어림짐작은 줄마다 한 번뿐입니다. */
-const LEGACY_CASUAL_MAX_BYTES = 90 * 1024;
+
+   답은 `kind` 하나입니다. 그리고 `kind` 는 짐작이 아니라 **어떻게 들어왔는지**
+   그 자체입니다 — 붙여넣기는 `paste`, 주소는 `article`, 파일은 `pdf`·`epub`·`txt`.
+   넣는 순간 적히므로 틀릴 수가 없습니다.
+
+   문제는 `kind` 를 목록에 적기 시작하기 *전에* 올라간 줄입니다. 그 줄에는 그
+   칸이 아예 없어서, 지금 Books 선반에 흐린 카드로 앉아 있습니다. 그 줄들을
+   위해 두 가지를 합니다.
+
+   ① 아는 기기가 대신 적어 줍니다(`backfillServerKinds`). 그 책을 손에 들고
+      있는 기기라면 짐작할 것이 없습니다 — 그냥 알고 있는 값을 올려 줍니다.
+      이쪽이 거의 다 처리하고, 한 번 적히면 그걸로 끝입니다.
+   ② 그래도 남는 줄 — 어느 기기에도 없는, 순전히 서버에만 있는 옛 줄. 여기서만
+      어림짐작합니다. 크기 하나로는 긴 기사가 원서로 넘어갈 수 있어서 문단 수를
+      함께 봅니다: 기사는 아무리 길어도 수백 문단이고 원서는 수천 문단입니다.
+      둘 다 통과해야 짧은 글로 봅니다. */
+const LEGACY_CASUAL_MAX_BYTES = 300 * 1024;
+const LEGACY_CASUAL_MAX_PARAS = 400;
 function rowLooksCasual(meta){
   const kind = (meta || {}).kind || '';
   if(kind) return CASUAL_KINDS.has(kind);
   const bytes = (meta || {}).bytes || 0;
-  return bytes > 0 && bytes <= LEGACY_CASUAL_MAX_BYTES;
+  const paras = (meta || {}).paras || 0;
+  return bytes > 0 && bytes <= LEGACY_CASUAL_MAX_BYTES
+      && paras > 0 && paras <= LEGACY_CASUAL_MAX_PARAS;
 }
 
 /* 최근에 읽던 것이 앞에 옵니다. 한 번도 열지 않은 것은 그 뒤에, 넣은 순서로.

@@ -76,6 +76,41 @@
   #sm-codewrap .hint{font-size:12.5px; color:var(--soft); margin-bottom:8px; text-align:center;}
   #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
+
+  /* ── 문장 통째로 ──
+     낱말 창은 옆에 붙어 살지만 이건 한 번 보고 닫는 것이라 가운데로 띄웁니다.
+     폰에서는 아래에서 올라옵니다 — 손가락이 이미 화면 아래쪽에 있으니까요. */
+  #sent-modal{position:fixed; inset:0; z-index:170; background:rgba(24,54,74,.35); display:none;
+    align-items:center; justify-content:center; padding:20px;}
+  #sent-modal.on{display:flex;}
+  #st-card{background:#fff; border-radius:22px; padding:26px 26px 24px; width:100%; max-width:460px;
+    max-height:82vh; overflow-y:auto; box-shadow:var(--shadow);}
+  #st-close{float:right; margin-left:10px; border:none; background:#F2F0E9; width:30px; height:30px;
+    border-radius:50%; font-size:14px; cursor:pointer; color:var(--soft);}
+  #st-card .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+    letter-spacing:.08em; color:var(--blue); margin-bottom:10px;}
+  #st-card .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--blue);}
+  /* 원문은 물어본 그 문장 그대로. 세리프로 두어야 읽던 화면과 같은 글로 보입니다. */
+  #st-en{font-family:var(--serif); font-size:16.5px; line-height:1.65; color:var(--ink);
+    padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:14px;
+    overflow-wrap:anywhere;}
+  #st-ko{font-size:16px; font-weight:600; line-height:1.6; color:var(--ink);}
+  #st-points{list-style:none; margin-top:12px; display:flex; flex-direction:column; gap:9px;}
+  #st-points li{position:relative; padding-left:14px; font-size:13.5px; line-height:1.65; color:#5B707A;}
+  #st-points li::before{content:''; position:absolute; left:0; top:8px; width:5px; height:5px;
+    border-radius:50%; background:#BFD9E4;}
+  #st-foot{margin-top:14px; font-size:11.5px; color:var(--soft2); text-align:center;}
+  body.dark #st-card{background:#1F2327;}
+  body.dark #st-close{background:#22262B;}
+  body.dark #st-en{color:#EAF4F8; border-bottom-color:#2A2E33;}
+  body.dark #st-ko{color:#EAF4F8;}
+  body.dark #st-points li{color:#AFC3CB;}
+  body.dark #st-card .cap{color:#6FC3E6;}
+  @media (max-width:760px){
+    #sent-modal{align-items:flex-end; padding:0;}
+    #st-card{max-width:none; border-radius:22px 22px 0 0;
+      padding-bottom:calc(26px + env(safe-area-inset-bottom));}
+  }
   #minitoast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:140;
     background:rgba(24,54,74,.8); color:#fff; font-size:11.5px; letter-spacing:.2px;
     padding:5px 13px; border-radius:20px; opacity:0; pointer-events:none;

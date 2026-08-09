@@ -83,7 +83,15 @@
   body.dark #p-ai .note{color:#AFC3CB;}
   body.dark #p-ai .gloss{color:#8798A0; border-left-color:#2F4650;}
   body.dark #p-ai .cap{color:#6FC3E6;}
-  body.dark #p-ai .wind path{stroke:#6FC3E6;}
+  /* 어두운 종이 위에서는 같은 흰빛이 종이를 뚫습니다. 바탕을 깊은 파랑으로
+     내리고 흰빛도 한 단계 낮춥니다 — 색은 그대로 흰색과 파랑 둘입니다. */
+  body.dark .aurora{background:linear-gradient(100deg,#1A2C38,#22394A 52%,#1D3140);}
+  body.dark .aurora .glow{background:
+    radial-gradient(38% 64% at  8% 46%, rgba(226,244,253,.50), transparent 70%),
+    radial-gradient(36% 62% at 32% 56%, rgba(37,137,190,.78), transparent 70%),
+    radial-gradient(38% 64% at 56% 40%, rgba(226,244,253,.46), transparent 70%),
+    radial-gradient(40% 66% at 78% 60%, rgba(111,199,236,.62), transparent 70%),
+    radial-gradient(44% 70% at 98% 44%, rgba(226,244,253,.44), transparent 72%);}
   body.dark #p-ai .mk:hover{background:rgba(255,255,255,.07);}
   body.dark #p-ai .mk:focus{background:#141A1E;}
   body.dark #p-airetry{color:#9AA1A8;}
@@ -120,7 +128,14 @@
      그대로 둡니다 — 0으로 우기면 앵커 계산이 첫 줄을 로고 뒤에 숨깁니다. */
   #topbar{transition:transform .24s ease;}
   body.chrome-hidden #topbar{transform:translateY(-100%);}
-  body.chrome-hidden #rbar{top:0;}
+  /* 진행바도 함께 걷힙니다. 상단바만 걷고 이 줄을 남기면, 파란 실 한 가닥이
+     노치 옆 그 자리에 남아서 화면이 끝까지 트이지 않습니다 — 사파리에서
+     주소창이 걷힐 때 남는 것이 아무것도 없는 것과 같은 이유입니다.
+     "얼마나 왔나" 는 눈을 글에서 뗐을 때 궁금한 것이라, 상단바가 돌아오는
+     바로 그 손짓(위로 조금 올리기)에 같이 돌아오면 충분합니다.
+     자리는 그대로 두고 색만 지웁니다 — 높이를 접으면 글이 3px 튑니다. */
+  #rbar{transition:top .24s ease, opacity .24s ease;}
+  body.chrome-hidden #rbar{top:0; opacity:0;}
   @media(prefers-reduced-motion:reduce){
     #topbar, #rbar, #readfabs{transition:none;}
   }
@@ -137,7 +152,29 @@
   #rsource[hidden]{display:none;}
   #rhint{font-size:13px; color:var(--soft2); margin-bottom:26px; display:flex; align-items:center; gap:8px;}
   #rhint svg{flex-shrink:0;}
-  #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;}
+  /* ── 꾹 누르기를 iOS 에게 뺏기지 않기 ──
+     그냥 두면 아이폰이 꾹 누르기를 자기 것으로 가져가 "복사 / 찾아보기" 를
+     띄웁니다. 그러면 문장 설명은 영영 뜨지 못합니다. 이 두 줄이 그걸 막습니다.
+     대가는 읽는 화면에서 드래그 선택·복사가 안 되는 것 — 단어장이 있는 앱에서
+     본문 복사는 거의 쓰지 않으므로 이쪽을 골랐습니다.
+     (원문이 필요하면 기사 제목 밑의 `원문 보기` 로 갑니다.) */
+  #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;
+    -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+  /* ── 문장에 퍼지는 파란색 ──
+     줄마다 사각형 하나. 왼쪽에서 오른쪽으로 늘어나고, 앞 줄이 다 찬 뒤에 다음
+     줄이 시작합니다 — 읽는 방향 그대로 흐르게. 글자는 건드리지 않습니다.
+     `pointer-events:none` 이 없으면 이 층이 손가락을 가로채 낱말이 안 눌립니다. */
+  .sent-fill{position:fixed; inset:0; z-index:45; pointer-events:none;}
+  .sent-fill i{position:absolute; display:block; border-radius:3px;
+    background:linear-gradient(90deg, rgba(37,137,190,.36), rgba(77,174,214,.30));
+    transform:scaleX(0); transform-origin:left center;
+    animation:sent-spread linear forwards;}
+  @keyframes sent-spread{from{transform:scaleX(0)} to{transform:scaleX(1)}}
+  body.dark .sent-fill i{background:linear-gradient(90deg, rgba(111,199,236,.30), rgba(77,174,214,.24));}
+  @media (prefers-reduced-motion:reduce){
+    .sent-fill i{animation:sent-fade linear forwards; transform:none;}
+  }
+  @keyframes sent-fade{from{opacity:0} to{opacity:1}}
   #rtext p{margin-bottom:1.2em;}
   #rtext .toc-entry{font-size:.92em; line-height:1.55; margin:.45em 0; color:var(--soft);}
   #rtext .section-break{margin-top:2.5em;}

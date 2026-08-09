@@ -235,6 +235,7 @@ async function refreshBooks(){
     if(error){ syncStatus('목록 실패: '+error.message); return; }
     serverBooks = data || [];
     await applyBookTombstones(serverBooks);     // 다른 기기에서 지운 책을 여기서도 정리
+    await backfillServerKinds();                // 옛 줄에 "어떻게 들어왔는지"를 적어 둡니다
     await autoDownloadCasuals();                // 다른 기기에서 담은 짧은 글
     await autoUploadCasuals();                  // 여기서 담았는데 아직 안 올라간 짧은 글
     syncStatus('');
@@ -373,13 +374,24 @@ async function autoDownloadCasuals(){
   }
 }
 
-/* 크기로 짐작해서 받아 봤더니 본문에 `kind` 가 있었습니다. 목록에 적어 두면
-   다음부터는 짐작하지 않습니다 — 그리고 이 사람의 다른 기기도 짐작하지
-   않습니다. 실패해도 조용합니다: 다음에 다시 짐작하면 그만입니다. */
+/* 짐작을 없애는 가장 확실한 방법은, 아는 기기가 대신 적어 주는 것입니다.
+   `kind` 는 "어떻게 들어왔는가" 라서 그 책을 손에 들고 있는 기기는 그냥
+   알고 있습니다. 크기와 문단 수로 어림짐작하는 길(`rowLooksCasual`)은 이
+   쓸기가 끝난 뒤에도 남는 줄 — 어느 기기에도 없는 옛 줄 — 에만 쓰입니다.
+
+   내려받기보다 먼저 돌아야 합니다. 안 그러면 이번 판은 짐작으로 굴러갑니다. */
+async function backfillServerKinds(){
+  for(const row of activeServerBooks()){
+    if((row.meta || {}).kind) continue;
+    await backfillServerKind(row);
+  }
+}
+/* 한 줄. 이 기기에 그 책이 없으면 아무 일도 하지 않고 조용히 빠집니다 —
+   실패해도 조용합니다: 다음에 다시 적으면 그만입니다. */
 async function backfillServerKind(row){
   const meta = row.meta || {};
   if(meta.kind || !sbUser) return;
-  const local = books.find(book => book.id === row.book_id);
+  const local = findLocalBookForServerRow(row, books);
   if(!local || !local.kind) return;
   row.meta = { ...meta, kind:local.kind };
   try{
@@ -598,6 +610,7 @@ async function runSyncPass(manual){
       if(bookError) throw bookError;
       serverBooks = brows || [];
       pulled += await applyBookTombstones(serverBooks);      // 다른 기기에서 지운 책 정리
+      await backfillServerKinds();                            // 옛 줄에 들어온 방법을 적어 둡니다
       await autoDownloadCasuals();                            // 다른 기기에서 담은 짧은 글
       await autoUploadCasuals();                              // 여기서 담았는데 아직 안 올라간 것
       for(const r of serverBooks){

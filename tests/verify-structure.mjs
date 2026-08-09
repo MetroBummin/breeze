@@ -845,4 +845,77 @@ assert.match(articleServer, /MAX_IMAGE_BYTES/, 'The image relay has no size limi
 assert.match(articleServer, /\/svg\/i\.test\(type\)/,
   'The image relay would pass an SVG document through as a photo');
 
+/* ── 사진은 보내기 전에 한 번 줄입니다 ──
+   매체가 내주는 원본은 2000~3000px 짜리 인쇄용입니다. 그대로 실어 보내면 짧은
+   글 하나가 1MB 에 가까워지고, 짧은 글은 묻지도 않고 저절로 내려받습니다. */
+assert.match(articleSource, /async function shrinkPhotoForTransport/,
+  'Article photos are uploaded at their original print resolution');
+assert.match(articleSource, /await blobToDataUrl\(await shrinkPhotoForTransport\(stored\)\)/,
+  'The shrunk photo is built but the original is what actually gets sent');
+/* 예산은 실제로 오가는 크기(base64)로 세야 합니다. 원본 바이트로 세면 오가는
+   양은 언제나 그보다 3분의 1 많습니다. */
+assert.match(articleSource, /spent \+ dataUrl\.length > BOOK_PHOTO_BUDGET/,
+  'The photo budget counts raw bytes, so a third more than that actually travels');
+
+/* ── 옛 줄의 `kind` 는 짐작이 아니라 아는 기기가 적어 줍니다 ── */
+assert.match(syncSource, /async function backfillServerKinds/,
+  'Legacy server rows are left to the size guess forever');
+assert.ok(
+  syncSource.indexOf('await backfillServerKinds()') < syncSource.indexOf('await autoDownloadCasuals()'),
+  'The kind backfill runs after the download decision it was supposed to inform',
+);
+/* 크기 하나로는 긴 기사가 원서로 넘어갑니다. 문단 수를 함께 봐야 합니다. */
+assert.match(librarySource, /LEGACY_CASUAL_MAX_PARAS/,
+  'The legacy guess is back to size alone, so a long article lands on the wrong shelf');
+
+/* ── 고전 표지는 파일 밖의 한 장이 이깁니다 ──
+   그래야 `assets/classics/<id>.jpg` 를 갈아 끼우는 것만으로 권유 카드와 서가가
+   함께 바뀝니다. EPUB 안의 표지를 그대로 쓰면 파일을 다시 만들어야 합니다. */
+const classicsSource = readFileSync(resolve(root, 'scripts/library/classics.js'), 'utf8');
+assert.match(classicsSource, /async function applyClassicCover/,
+  'A downloaded classic keeps the cover buried in its EPUB');
+assert.ok(
+  classicsSource.indexOf('await applyClassicCover(classic)') >
+  classicsSource.indexOf('await importFile(file'),
+  'The classic cover is applied before the book it belongs to exists',
+);
+
+/* ── 문장 통째로 ── */
+const sentenceSource = readFileSync(resolve(root, 'scripts/dictionary/sentence.js'), 'utf8');
+/* getClientRects() 는 줄이 아니라 조각을 줍니다 — 낱말마다 <span> 이라 한 줄짜리
+   문장도 쉰 조각이 넘습니다. 묶지 않으면 퍼지는 것이 아니라 자잘하게 깜빡입니다. */
+assert.match(sentenceSource, /function lineRects/,
+  'The sentence fill paints one bar per word fragment instead of per line');
+/* 스크롤하다 손가락이 잠깐 멈춘 것이 하루 다섯 번 중 하나를 태우면 안 됩니다. */
+assert.match(sentenceSource, /SENT_MOVE_SLOP/,
+  'A press that drifts into a scroll still burns a sentence explanation');
+/* 깨우는 요청에는 아무 내용이 없고 한도도 쓰지 않습니다. 문장은 다 찬 뒤에 갑니다. */
+assert.ok(
+  sentenceSource.indexOf('warmDict();') < sentenceSource.indexOf('sentTimer = setTimeout'),
+  'The function is only woken after the gauge fills, so the cold start is still paid at the end',
+);
+assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the server');
+/* 같은 문장을 다시 물으면 한도를 쓰지 않아야 합니다. */
+assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text\)/,
+  'Sentence explanations are not cached, so re-reading the same line costs a lookup again');
+/* iOS 가 꾹 누르기를 가져가면 이 기능은 아이폰에서 영영 뜨지 않습니다. */
+assert.match(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'), /-webkit-touch-callout:none/,
+  "The iOS callout still steals the long press before the sentence fill can start");
+/* 서버 쪽: 한도를 낱말 조회와 한 통에 담으면 문장 다섯 번이 낱말 다섯 번을 먹습니다. */
+const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
+assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
+assert.match(dictServerSource, /EXPLAIN_DAILY/, 'Sentence explanations have no daily ceiling');
+assert.ok(
+  dictServerSource.indexOf('if (op === "explain")') < dictServerSource.indexOf('if (!/^[A-Za-z]'),
+  'The sentence op is rejected by the single-word guard it should have run before',
+);
+
+/* ── 기다림 ──
+   낱말 창과 문장 창이 같은 것을 씁니다. 자리마다 다른 것이 뜨면 "무엇을 기다리는지"
+   보다 "여기가 어디인지"를 먼저 읽게 됩니다. */
+assert.match(readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8'), /\.aurora \.glow/, 'The shared AI waiting state is gone');
+const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
+assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 2,
+  'The word panel and the sentence window no longer wait in the same way');
+
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

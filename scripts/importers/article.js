@@ -462,8 +462,53 @@ async function bookImageBlob(book, key){
    예산을 둡니다. 사진 여덟 장을 통째로 실으면 "짧은 글"이 몇 MB가 되는데,
    짧은 글은 묻지도 않고 저절로 내려받습니다 — 셀룰러로 그러면 안 됩니다.
    예산을 넘는 사진은 지금까지처럼 주소로 받아 옵니다. 없어지는 길이 아니라
-   뒷길로 남습니다. */
-const BOOK_PHOTO_BUDGET = 800_000;
+   뒷길로 남습니다.
+
+   ── 보내기 전에 한 번 줄입니다 ──
+   매체가 내주는 사진은 2000~3000px 짜리 원본입니다. 인쇄용 크기지, 폰에서
+   가로 400px 로 보는 카드에 쓸 크기가 아닙니다. 긴 변 1400px · JPEG 로 다시
+   구우면 대개 8배쯤 줄어듭니다 — 화면에서 달라 보이는 것은 없고, 서버에 쌓이는
+   양과 셀룰러로 흐르는 양만 줄어듭니다.
+
+   기기에 있는 원본은 건드리지 않습니다. 줄인 것은 **보내는 판**일 뿐이라,
+   이 기기에서 읽을 때는 늘 원본을 봅니다. */
+const BOOK_PHOTO_BUDGET = 700_000;   // 실제로 오가는 크기(base64) 기준
+const PHOTO_MAX_EDGE    = 1400;
+const PHOTO_QUALITY     = 0.72;
+const PHOTO_SKIP_UNDER  = 120_000;   // 이미 작은 사진은 다시 굽지 않습니다
+
+async function decodeImage(blob){
+  if(typeof createImageBitmap === 'function'){
+    try{ return await createImageBitmap(blob); }catch(e){}
+  }
+  return await new Promise(resolve => {
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+    image.onload  = () => { URL.revokeObjectURL(url); resolve(image); };
+    image.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    image.src = url;
+  });
+}
+/* 못 줄이면 원본을 그대로 돌려줍니다. 사진을 못 보내는 것보다 크게 보내는
+   편이 낫고, 예산이 뒤에서 한 번 더 막아 줍니다. */
+async function shrinkPhotoForTransport(blob){
+  if(!blob || blob.size <= PHOTO_SKIP_UNDER) return blob;
+  const source = await decodeImage(blob);
+  const width  = source && (source.width  || source.naturalWidth);
+  const height = source && (source.height || source.naturalHeight);
+  if(!width || !height) return blob;
+  const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(width, height));
+  const canvas = document.createElement('canvas');
+  canvas.width  = Math.max(1, Math.round(width  * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  try{
+    canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+    const baked = await new Promise(resolve =>
+      canvas.toBlob(resolve, 'image/jpeg', PHOTO_QUALITY));
+    if(source.close) source.close();
+    return (baked && baked.size && baked.size < blob.size) ? baked : blob;
+  }catch(e){ return blob; }
+}
 
 function blobToDataUrl(blob){
   return new Promise(resolve => {
@@ -500,12 +545,14 @@ async function collectBookPhotos(book, coverOnly){
   const photos = {};
   let spent = 0;
   for(const key of bookPhotoKeys(book, coverOnly)){
-    const blob = await imgGet(key);
-    if(!blob || !blob.size || spent + blob.size > BOOK_PHOTO_BUDGET) continue;
-    const dataUrl = await blobToDataUrl(blob);
-    if(!dataUrl) continue;
+    const stored = await imgGet(key);
+    if(!stored || !stored.size) continue;
+    const dataUrl = await blobToDataUrl(await shrinkPhotoForTransport(stored));
+    /* 예산은 base64 로 부풀린 뒤의 길이로 셉니다. 원본 바이트로 세면 실제로
+       오가는 양은 언제나 그보다 3분의 1 더 많습니다. */
+    if(!dataUrl || spent + dataUrl.length > BOOK_PHOTO_BUDGET) continue;
     photos[key] = dataUrl;
-    spent += blob.size;
+    spent += dataUrl.length;
   }
   return photos;
 }

@@ -7,9 +7,29 @@
  * ── 쓰는 법 ────────────────────────────────────────────────
  *   1) Supabase → Edge Functions → Secrets 에 SEED_TOKEN 을 아무 긴 문자열로 넣고
  *      `supabase functions deploy dict`
- *   2) 브라우저에서 Breeze 를 연다 (배포본이든 localhost 든 상관없음)
- *   3) 개발자 도구 콘솔에 이 파일 전체를 붙여넣는다
- *   4) buildDictSeed('아까 정한 SEED_TOKEN')
+ *
+ *   2) 브라우저에서 Breeze 를 연다. 배포본(breeze.kr)이든 localhost 든 상관없지만,
+ *      **맛보기 글 두 편이 서가에 보여야 합니다**. 안 보이면 콘솔에서
+ *      `localStorage.removeItem('breeze.samples-seeded')` 하고 새로고침.
+ *
+ *   3) 개발자 도구 콘솔(맥 사파리는 ⌥⌘C, 크롬은 ⌥⌘J)을 열고 이 한 줄:
+ *
+ *        fetch('tools/build-dict-seed.js').then(r=>r.text()).then(eval)
+ *
+ *      이 파일을 통째로 복사해 붙여넣어도 똑같습니다. 위 한 줄이 그걸 대신
+ *      해 줄 뿐입니다.
+ *
+ *   4) 그다음 줄:
+ *
+ *        buildDictSeed('1)에서 정한 SEED_TOKEN')
+ *
+ *      맛보기 글이 저절로 열렸다 닫히면서 낱말을 걷고, 몇 분 뒤 서버에 다 물어본 뒤
+ *      `dict-seed.json` 이 **저절로 내려받아집니다**. 진행 상황은 콘솔에 찍힙니다.
+ *
+ *   5) 받은 파일을 `assets/samples/dict-seed.json` 에 넣고 커밋 · 배포.
+ *
+ *   글을 고쳤으면 4)부터 다시 하면 됩니다. 사진을 넣거나 빼는 것은 씨앗을 깨뜨리지
+ *   않습니다 — 열쇠가 문장 기준이라 사진이 늘어도 문장은 그대로이기 때문입니다.
  *
  * ── 왜 Node 스크립트가 아니라 콘솔인가 ─────────────────────
  * 캐시 열쇠는 `l:<낱말>|<문장해시>` 인데, 이 셋 — 낱말을 어디서 끊는지, 문장을

@@ -9,12 +9,14 @@
 //   AI_DAILY_LIMIT      ← 한 사람 하루 AI 호출 한도. 없으면 200
 //   AI_ANON_FREE        ← 로그인 전 기기당 평생 무료 횟수. 없으면 10
 //   AI_ANON_DAILY_CAP   ← 로그인 전 요청 전체의 하루 상한(차단기). 없으면 2000
+//   AI_EXPLAIN_DAILY    ← 한 사람 하루 문장 설명 횟수. 없으면 5
 //   DICT_FP_SALT        ← 문장 지문에 섞는 아무 긴 문자열. 없으면 지문을 아예 안 남깁니다
 //
 // 먼저 sql/supabase_dict.sql 을 실행해 두어야 합니다.
 //
 // ── 하는 일 ──────────────────────────────────────────────────
-//   op:"look"   낱말 + 문장 → 이 문장에서의 뜻 · 설명 · 다른 뜻 후보.  AI 를 부르는 유일한 곳
+//   op:"look"    낱말 + 문장 → 이 문장에서의 뜻 · 설명 · 다른 뜻 후보
+//   op:"explain" 문장 하나 → 해석 + 왜 어려운지.  로그인 필수, 하루 5번
 //   op:"warm"   함수만 깨운다. AI 를 부르지 않고 한도도 쓰지 않는다
 //   op:"log"    사람이 무엇을 했는지 남긴다. AI 도, 한도도 안 씀
 //   op:"delete_account"  이 사람이 서버에 가진 것을 전부 지우고 계정을 없앤다
@@ -46,6 +48,10 @@ const ANON_FREE = Number(Deno.env.get("AI_ANON_FREE") ?? 10);
 /* 로그인 전 요청 전체의 하루 상한. 기기 표시는 지우면 새로 생기므로,
    예산을 지키는 진짜 벽은 이쪽입니다. */
 const ANON_DAILY_CAP = Number(Deno.env.get("AI_ANON_DAILY_CAP") ?? 2000);
+/* 문장 설명은 낱말 조회보다 답이 길어 서너 배 비쌉니다. 그리고 성격이 다릅니다 —
+   낱말은 읽다가 계속 누르는 것이고, 문장은 "이건 도저히 안 읽힌다" 싶을 때
+   한 번 쓰는 것입니다. 하루 다섯 번이면 그 쓰임에 모자라지 않습니다. */
+const EXPLAIN_DAILY = Number(Deno.env.get("AI_EXPLAIN_DAILY") ?? 5);
 
 const SYSTEM =
   "You are a precise bilingual dictionary for Korean learners reading English books. " +
@@ -325,6 +331,89 @@ async function opLook(body: any, userId: string | null, seeding = false) {
   return json(answer);
 }
 
+/* ── op:"explain" — 이 문장은 어떻게 읽는가 ──────────────────
+
+   낱말을 다 알아도 문장이 안 읽히는 때가 있습니다. 관계절이 겹쳤거나,
+   도치됐거나, 낱말은 쉬운데 합쳐 놓으니 다른 뜻이 되는 관용구일 때.
+   그때 필요한 것은 뜻 하나가 아니라 "이 문장은 이렇게 읽는다" 입니다.
+
+   ── 한도를 따로 세는 이유 ──
+   `ai_usage` 를 같이 쓰면 문장 설명 다섯 번이 낱말 조회 다섯 번을 잡아먹습니다.
+   둘은 성격이 달라서 한 통에 담으면 안 됩니다. 그래서 오늘 남긴 `explain`
+   기록을 세는 것으로 한도를 삼습니다 — 표를 하나 더 만들지 않아도 되고,
+   무엇보다 "실제로 답을 받은 횟수"를 세게 됩니다.
+   동시에 두 번 들어오면 둘 다 통과할 수 있지만, 하루 다섯 번짜리 한도에서
+   그건 문제가 아닙니다.
+
+   ── 문장은 남지 않습니다 ──
+   AI 에게는 보냅니다(보내지 않으면 답할 것이 없습니다). 표에 들어가는 것은
+   소금을 섞은 지문과 낱말 수뿐입니다 — 낱말 조회와 완전히 같은 규칙입니다. */
+const EXPLAIN_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["ko", "points"],
+  properties: {
+    ko: { type: "string" },
+    points: { type: "array", items: { type: "string" } },
+  },
+};
+
+function explainPrompt(sentence: string) {
+  return `문장: ${sentence}
+
+영어를 읽는 한국인에게 이 문장 하나를 설명하세요.
+
+- ko: 문장 전체의 한국어 해석. 직역하지 말고 한국어로 자연스럽게 읽히게 쓰세요.
+- points: 이 문장이 어려운 이유 2~3개. 각각 한국어 한 문장.
+  문장의 뼈대(무엇이 주어이고 무엇이 동사인지), 겹친 관계절, 도치,
+  생략된 것, 낱말 뜻만으로는 안 잡히는 관용구나 비유 같은 것을 짚으세요.
+  쉬운 문장이면 억지로 세 개를 채우지 말고 하나만 쓰세요.
+  낱말 하나의 뜻풀이는 쓰지 마세요 — 그건 낱말을 누르면 나옵니다.
+
+{"ko":"","points":[""]}`;
+}
+
+async function explainsToday(userId: string): Promise<number> {
+  const since = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z").toISOString();
+  const { count, error } = await SR.from("dict_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId).eq("action", "explain").gte("at", since);
+  /* 셀 수 없으면 막습니다. 낱말 조회와 반대인데, 문장 설명은 값이 비싸고
+     막혀도 낱말 사전은 그대로 열려 있기 때문입니다. */
+  if (error) { console.warn("explain quota failed, refusing:", error.message); return EXPLAIN_DAILY; }
+  return count ?? 0;
+}
+
+async function opExplain(body: any, userId: string | null) {
+  if (!userId) return json({ error: "login_required" }, 401);
+  const sentence = clean(body.sentence, 600);
+  if (sentence.length < 12) return json({ error: "bad_sentence" }, 400);
+
+  const used = await explainsToday(userId);
+  if (used >= EXPLAIN_DAILY) {
+    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain" } });
+    return json({ error: "quota_exceeded", limit: EXPLAIN_DAILY }, 429);
+  }
+
+  const out = await ask({
+    prompt: explainPrompt(sentence),
+    maxTokens: 600,
+    schema: EXPLAIN_SCHEMA,
+  });
+  const parsed = parseJson(out.text);
+  if (!parsed) return json({ error: "parse_failed", raw: out.text.slice(0, 300) }, 502);
+  const ko = clean(parsed.ko, 500);
+  if (!ko) return json({ error: "empty_answer" }, 502);
+  const points = cleanList(parsed.points, 3, 300);
+
+  await logEvent({
+    userId, action: "explain", word: "", sentence,
+    provider: out.provider, book: clean(body.book, 200),
+    meta: { points: points.length },
+  });
+  return json({ ko, points, provider: out.provider, left: Math.max(0, EXPLAIN_DAILY - used - 1) });
+}
+
 /* ── op:"log" — 사람이 무엇을 했는가 ─────────────────────── */
 /* 낱말·뜻은 상품이지만 이 기록은 아닙니다. AI 도 한도도 쓰지 않습니다. */
 const LOG_ACTIONS = new Set(["edit", "pick", "star", "known"]);
@@ -466,6 +555,8 @@ Deno.serve(async (req) => {
 
     if (op === "log") return await opLog(body, userId);
     if (op === "delete_account") return await opDeleteAccount(userId);
+    /* 아래의 낱말 검사보다 먼저 나갑니다 — 문장 설명에는 낱말이 없습니다. */
+    if (op === "explain") return await opExplain(body, userId);
 
     const word = String(body.word ?? "").slice(0, 60).trim();
     if (!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word)) return json({ error: "bad_word" }, 400);

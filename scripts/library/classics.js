@@ -23,10 +23,15 @@ const CLASSICS = [
 ];
 
 const classicFile = id => `assets/classics/${id}.epub`;
-/* 표지는 EPUB 안에 이미 들어 있고, 받고 나면 반입기가 거기서 꺼내 씁니다
-   (`epubCoverImage`). 하지만 권유 카드는 아직 받기 *전*에 뜨는 자리라,
-   표지 한 장을 보자고 400KB 짜리 책을 미리 받을 수는 없습니다. 그래서 같은
-   그림을 파일 밖에도 한 장 꺼내 두었습니다 — 세 장 합쳐 230KB 입니다. */
+/* 표지는 EPUB 안에도 들어 있지만(`epubCoverImage`), 이 세 권이 실제로 쓰는
+   표지는 파일 밖의 이 한 장입니다.
+
+   이유가 둘입니다. 하나는 권유 카드가 아직 받기 *전*에 뜨는 자리라, 표지
+   한 장을 보자고 400KB 짜리 책을 미리 받을 수 없다는 것. 다른 하나가 더
+   중요한데 — 구텐베르크가 붙여 둔 표지는 대개 밋밋합니다. 파일 밖에 두면
+   `assets/classics/<id>.jpg` 를 갈아 끼우는 것만으로 권유 카드와 서가의
+   책이 **함께** 바뀝니다. EPUB 을 다시 만들 일이 없습니다.
+   자세한 건 assets/classics/README.md. */
 const classicCoverFile = id => `assets/classics/${id}.jpg`;
 
 /* 이미 서가에 있는 고전은 권유 카드에서 뺍니다. */
@@ -47,6 +52,7 @@ async function importClassic(classic, card){
     /* 파일 이름이 곧 책 제목이 됩니다. 반입기가 쓰는 규칙 그대로입니다. */
     const file = new File([blob], `${classic.title}.epub`, {type:'application/epub+zip'});
     await importFile(file, { author:classic.author, classicId:classic.id });
+    await applyClassicCover(classic);
   }catch(error){
     console.error(error);
     toast('고전을 받지 못했어요 — 잠시 뒤 다시 눌러 보세요');
@@ -54,6 +60,28 @@ async function importClassic(classic, card){
     classicBusy = false;
     if(card) card.classList.remove('busy');
   }
+}
+
+/* 방금 받은 고전의 표지를 파일 밖의 한 장으로 덮어씁니다. EPUB 이 데려온
+   표지와 열쇠가 같아서(`<책id>|cover`) 그림만 갈립니다.
+
+   실패해도 조용합니다. 그림이 없으면 EPUB 이 데려온 표지가, 그것도 없으면
+   지금까지의 글자 표지가 그대로 남습니다 — 책을 받은 일이 표지 한 장 때문에
+   실패로 끝나면 안 됩니다. */
+async function applyClassicCover(classic){
+  try{
+    const book = books.find(item => item.classicId === classic.id);
+    if(!book) return;
+    const response = await fetch(classicCoverFile(classic.id));
+    if(!response.ok) return;
+    const blob = await response.blob();
+    if(!blob.size || !/^image\/(jpeg|png|gif|webp)$/i.test(blob.type)) return;
+    const key = book.id + '|cover';
+    await imgPut(key, blob);
+    book.cover = key;
+    await bookPut(book);
+    renderAllBookViews();
+  }catch(error){ console.warn('고전 표지를 씌우지 못했습니다:', error && error.message); }
 }
 
 function classicCard(classic){

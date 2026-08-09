@@ -50,25 +50,47 @@
   #p-ai .acts{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:9px;}
   #p-ai .tip{font-size:10.5px; color:var(--soft2); flex:none;}
   #p-ai.edited .tip{color:var(--blue);}
-  /* ── 바람. Breeze 라서 점 세 개가 아니라 돌풍이 지나갑니다 ──
-     선 하나하나가 서로 다른 속도로 지나가서 규칙적인 깜빡임처럼 보이지 않습니다. */
-  #p-ai .wind{display:none; height:46px; margin:2px 0 0;}
+  /* ══ 오로라 ══════════════════════════════════════════════
+     AI 를 기다리는 동안 뜨는 장치. 낱말 하나든 문장 하나든 같은 것을 씁니다 —
+     기다림의 모양이 자리마다 다르면 "무엇을 기다리는지"가 아니라 "여기가 어디인지"를
+     먼저 읽게 됩니다.
+
+     색은 흰색과 파랑 둘뿐입니다. 이 앱의 색이 그 둘이라, 기다리는 동안만 다른
+     색을 쓰면 그 몇 초 동안 잠깐 다른 앱이 됩니다.
+
+     옅은 파랑을 바탕에 깔고, 그 위로 흰빛 덩어리와 짙은 파란빛 덩어리가 서로
+     다른 자리에서 번집니다. 통째로 천천히 밀리고 부풀며 섞이는데, 흐림(blur)이
+     경계를 지워서 덩어리가 아니라 한 장의 움직이는 빛으로 보입니다.
+     선도 점도 없습니다 — 빛 하나면 "기다리는 중"은 다 전해집니다. */
+  .aurora{position:relative; height:46px; border-radius:12px; overflow:hidden;
+    background:linear-gradient(100deg,#BEDCF0,#DDEEF9 50%,#C7E3F4);}
+  /* 파란 덩어리와 흰 덩어리를 번갈아 놓습니다. 한쪽으로 몰아 두면 빛이 밀려
+     나가는 동안 한쪽 절반이 통째로 비어 보입니다. */
+  .aurora .glow{position:absolute; inset:-45%; will-change:transform;
+    background:
+      radial-gradient(38% 64% at  8% 46%, rgba(255,255,255,.95), transparent 70%),
+      radial-gradient(36% 62% at 32% 56%, rgba(23,126,186,.78), transparent 70%),
+      radial-gradient(38% 64% at 56% 40%, rgba(255,255,255,.92), transparent 70%),
+      radial-gradient(40% 66% at 78% 60%, rgba(37,137,190,.76), transparent 70%),
+      radial-gradient(44% 70% at 98% 44%, rgba(255,255,255,.88), transparent 72%);
+    filter:blur(13px);
+    animation:aurora-drift 5.6s ease-in-out infinite alternate;}
+  @keyframes aurora-drift{
+    0%  {transform:translate3d(-5%,-3%,0) scale(1.04) rotate(-1.5deg);}
+    50% {transform:translate3d(2%, 4%,0) scale(1.14) rotate(1deg);}
+    100%{transform:translate3d(6%,-2%,0) scale(1.07) rotate(-.5deg);}
+  }
+  /* 움직임을 줄여 달라고 설정한 사람에게는 흐르지 않고 숨만 쉽니다. */
+  @media (prefers-reduced-motion:reduce){
+    .aurora .glow{animation:aurora-breathe 2.4s ease-in-out infinite; filter:blur(16px);}
+  }
+  @keyframes aurora-breathe{0%,100%{opacity:.45} 50%{opacity:.9}}
+
+  #p-ai .wind{display:none; margin:2px 0 0;}
   #p-ai.load .wind{display:block;}
   /* 기다리는 동안에는 뜻도 아랫줄도 감춥니다. 특히 "다시 물어보기" 로 들어온 경우
      앞서 받은 설명이 그대로 남아 있으면, 새 답이 온 것처럼 보입니다. */
   #p-ai.load .m, #p-ai.load .acts, #p-ai.load .note, #p-ai.load .gloss{display:none!important;}
-  #p-ai .wind svg{display:block; width:100%; height:100%; overflow:visible;}
-  #p-ai .wind path{fill:none; stroke:var(--blue); stroke-width:1.8; stroke-linecap:round;
-    stroke-dasharray:38 150; opacity:.5; animation:p-gust 1.9s linear infinite;}
-  #p-ai .wind path:nth-child(2){animation-duration:2.4s; animation-delay:.3s; opacity:.38;}
-  #p-ai .wind path:nth-child(3){animation-duration:2.15s; animation-delay:.7s; opacity:.28;}
-  @keyframes p-gust{from{stroke-dashoffset:188} to{stroke-dashoffset:-38}}
-  /* 움직임을 줄여 달라고 설정한 사람에게는 지나가지 않고 숨만 쉽니다. */
-  @media (prefers-reduced-motion:reduce){
-    #p-ai .wind path{animation:p-ai-breathe 1.6s ease-in-out infinite; stroke-dasharray:none;}
-    #p-ai .wind path:nth-child(2),#p-ai .wind path:nth-child(3){animation-name:p-ai-breathe;}
-  }
-  @keyframes p-ai-breathe{0%,100%{opacity:.25} 50%{opacity:.7}}
   #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
     border:1px dashed #BFD9E4; background:#F4FAFC; color:var(--blue); border-radius:12px;
     padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
@@ -77,6 +99,14 @@
   #p-aibtn:disabled{opacity:.6; cursor:default;}
   #p-aibtn .sp{font-size:15px;}
   #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
+  /* 문장 통째로 가는 문. 낱말 뜻이 맞는데도 문장이 안 읽힐 때 누릅니다 —
+     그래서 뜻 상자 바로 아래, 다른 뜻 후보들보다 앞에 둡니다. */
+  #p-explain{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
+    border:1px solid var(--line); background:none; color:var(--soft); border-radius:12px;
+    padding:10px; font-size:12.5px; font-family:var(--ui); cursor:pointer; margin-bottom:12px;}
+  #p-explain:hover{border-color:var(--blue); color:var(--blue); background:var(--sky);}
+  #p-explain .sp{color:var(--blue);}
+  body.dark #p-explain{border-color:#2F4650;}
   #p-airetry{border:none; background:none; color:var(--soft); padding:0; text-align:left;
     font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
   #p-airetry:hover{color:var(--blue);}

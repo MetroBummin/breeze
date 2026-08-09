@@ -114,6 +114,9 @@ end $$;
 --   star   모르는 정도를 바꿨다
 --   known  아는 낱말이라 단어장에서 뺐다
 --   quota  한도에 걸려 AI 를 못 불렀다      ← 한도를 올릴 근거
+--   explain 문장을 통째로 물어봤다          ← 낱말을 다 알아도 안 읽힌 문장
+--           (word 가 빈 칸입니다. 하루 5번 한도를 세는 것도 이 줄입니다 —
+--            표를 하나 더 두지 않고 "실제로 답을 받은 횟수"를 셉니다)
 create table if not exists public.dict_events (
   id        bigserial primary key,
   user_id   uuid references auth.users(id) on delete set null,

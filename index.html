@@ -18,9 +18,9 @@
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=56535bee">
   <link rel="stylesheet" href="styles/home.css?v=07a0f9ad">
-  <link rel="stylesheet" href="styles/reader.css?v=e58b78c7">
-  <link rel="stylesheet" href="styles/dictionary.css?v=f4f90888">
-  <link rel="stylesheet" href="styles/components.css?v=a037e05e">
+  <link rel="stylesheet" href="styles/reader.css?v=126fc823">
+  <link rel="stylesheet" href="styles/dictionary.css?v=6e0a7076">
+  <link rel="stylesheet" href="styles/components.css?v=312537e9">
   <link rel="stylesheet" href="styles/responsive.css?v=6532e676">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -37,13 +37,14 @@
   <script defer src="scripts/core/book-identity.js?v=61d55987"></script>
   <script defer src="scripts/core/state.js?v=22cdf57e"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=51f246a0"></script>
+  <script defer src="scripts/library/library.js?v=7f00030b"></script>
   <script defer src="scripts/library/book-edit.js?v=8027a26e"></script>
-  <script defer src="scripts/library/classics.js?v=4c6a3bdc"></script>
+  <script defer src="scripts/library/classics.js?v=029bc022"></script>
   <script defer src="scripts/library/samples.js?v=55d57f7d"></script>
   <script defer src="scripts/importers/importers.js?v=460c37d2"></script>
-  <script defer src="scripts/importers/article.js?v=095e8459"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=aeee71cc"></script>
+  <script defer src="scripts/importers/article.js?v=a810d631"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=65bd5489"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=9e1968b1"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
   <script defer src="scripts/reader/original-session.js?v=91a5d115"></script>
@@ -53,7 +54,7 @@
   <script defer src="scripts/reader/reader-modes.js?v=83302cca"></script>
   <script defer src="scripts/reader/reader.js?v=2ff262a2"></script>
   <script defer src="scripts/ui/preferences.js?v=27b17d89"></script>
-  <script defer src="scripts/sync/sync.js?v=6a2d7c95"></script>
+  <script defer src="scripts/sync/sync.js?v=424f9f45"></script>
   <script defer src="scripts/ui/interactions.js?v=ab98b799"></script>
   <script defer src="scripts/main.js?v=4c8ed2b7"></script>
 </head>
@@ -187,12 +188,8 @@
            됐고요. 이제 위에 뜬 뜻을 그 자리에서 누르면 바로 고쳐집니다. -->
       <div id="p-ai">
         <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻 · AI</span></div>
-        <div class="wind" id="p-ai-wind" aria-hidden="true">
-          <svg viewBox="0 0 120 30" preserveAspectRatio="none">
-            <path d="M2 8 H70 q13 0 13 -5"/>
-            <path d="M2 16 H96 q14 0 14 7"/>
-            <path d="M2 24 H52 q11 0 11 -5"/>
-          </svg>
+        <div class="wind aurora" id="p-ai-wind" aria-hidden="true">
+          <span class="glow"></span>
         </div>
         <div class="m">
           <span class="mk" id="p-ai-ko" contenteditable="true" spellcheck="false"
@@ -207,6 +204,10 @@
           <span class="tip" id="p-ai-tip">뜻을 눌러 직접 고칠 수 있어요</span>
         </div>
       </div>
+      <!-- 문장을 꾹 누르는 손짓과 같은 일을 합니다. 마우스로 0.85초 누르기를
+           스스로 발견하는 사람은 없어서, 데스크탑에서는 이 줄이 유일한 문입니다. -->
+      <button id="p-explain" onclick="explainSelectedSentence()">
+        <span class="sp">✦</span>이 문장이 통째로 안 읽힐 때</button>
       <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI handle this</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec">여러 뜻 중 고르기</div>
@@ -291,6 +292,21 @@
       <div id="am-url-status"></div>
       <button class="sm-btn primary" id="am-url-go" onclick="importArticleUrl()">가져오기</button>
     </div>
+  </div>
+</div>
+<!-- 문장 통째로. 문장을 꾹 누르면 파란색이 퍼지고, 다 차면 여기가 열립니다.
+     `scripts/dictionary/sentence.js` -->
+<div id="sent-modal">
+  <div id="st-card">
+    <button id="st-close" onclick="closeSentence()">✕</button>
+    <div class="cap"><span class="dot"></span><span id="st-cap">문장 통째로 · AI</span></div>
+    <div id="st-en"></div>
+    <div class="aurora" id="st-wait" aria-hidden="true" hidden>
+      <span class="glow"></span>
+    </div>
+    <div id="st-ko" hidden></div>
+    <ul id="st-points" hidden></ul>
+    <div id="st-foot" hidden></div>
   </div>
 </div>
 <div id="edit-modal">
