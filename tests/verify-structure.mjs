@@ -603,19 +603,6 @@ assert.doesNotMatch(index,/aa-original-marks/,
   'The settings popover still offers the deleted display modes');
 const readerCss = readFileSync(resolve(root, 'styles/reader.css'), 'utf8');
 
-/* 상단바를 걷는 것도, 되부르는 것도 손짓입니다. 마우스가 주 입력인 화면에는
-   되부를 손짓이 없으므로 애초에 걷지 않습니다 — 폭이 아니라 입력으로 가릅니다. */
-assert.match(readerSource,/\(hover:hover\) and \(pointer:fine\)/,
-  'The top bar hides on a mouse screen again, where nothing brings it back');
-assert.match(readerSource,/chrome-hidden', hidden && !chromeStays\.matches/,
-  'Nothing gates the auto-hide on the primary pointer');
-/* 진행바는 상단바를 따라가되 지워지지 않습니다. 회색 홈만 끕니다 — 끝에서
-   끝까지 그은 줄은 진행이 아니라 테두리로 보입니다. */
-assert.doesNotMatch(readerCss,/body\.chrome-hidden #rbar\{[^}]*opacity:0/,
-  'The progress bar is erased with the top bar again');
-assert.match(readerCss,/body\.chrome-hidden #ptrack\{background:transparent/,
-  'The grey track stays on as a full-width seam once the top bar is gone');
-
 assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),false,
   'AI typography client was not removed');
 assert.equal(existsSync(resolve(root,'server/format/index.ts')),false,

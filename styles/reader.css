@@ -182,27 +182,19 @@
     transform:translateY(-100%); opacity:0; visibility:hidden; pointer-events:none;
     background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none;
     transition:transform .24s cubic-bezier(.4,0,.2,1), opacity .18s ease, visibility 0s linear .24s;}
-  /* 진행바는 남습니다. 상단바를 따라 맨 위로 올라가되, 지워지지 않고 파란 실
-     한 가닥으로 서 있습니다 — 읽는 내내 "얼마나 왔나" 가 보이는 편이 좋았다는
-     쪽을 골랐습니다.
-
-     남기면서 화면이 트인 느낌을 지키는 값이 둘입니다.
-
-     하나. 회색 홈(`#ptrack`)은 끕니다. 끝에서 끝까지 그은 회색 줄은 진행이
-     아니라 테두리로 보여서, 글이 노치까지 뻗은 것을 도로 막아 놓은 것처럼
-     읽힙니다. 지나온 만큼의 파란 부분만 남기면 그 줄이 사라집니다.
-
-     둘. 맨 위가 아니라 안전 영역 아래입니다. `top:0` 은 아이폰에서 시계와
-     같은 줄이라 실이 시계 뒤로 지나갑니다. 글은 그 아래로 지나가도 괜찮지만
-     (읽으면서 흐르니까) 한 자리에 서 있는 줄은 아닙니다. */
+  /* 진행바도 함께 걷힙니다. 상단바만 걷고 이 줄을 남기면, 파란 실 한 가닥이
+     노치 옆 그 자리에 남아서 화면이 끝까지 트이지 않습니다 — 사파리에서
+     주소창이 걷힐 때 남는 것이 아무것도 없는 것과 같은 이유입니다.
+     "얼마나 왔나" 는 눈을 글에서 뗐을 때 궁금한 것이라, 상단바가 돌아오는
+     바로 그 손짓(위로 조금 올리기)에 같이 돌아오면 충분합니다.
+     상단바를 따라 맨 위로 올라갔다가 색만 지웁니다. */
   #rbar{transition:top .24s ease, opacity .24s ease;}
-  body.chrome-hidden #rbar{top:env(safe-area-inset-top,0px);}
-  body.chrome-hidden #ptrack{background:transparent;}
+  body.chrome-hidden #rbar{top:0; opacity:0;}
   @media(prefers-reduced-motion:reduce){
-    #topbar, #rbar, #readfabs, #ptrack{transition:none;}
+    #topbar, #rbar, #readfabs{transition:none;}
     body.chrome-hidden #topbar{transition:none;}
   }
-  #ptrack{height:3px; background:var(--line2); transition:background .24s ease;}
+  #ptrack{height:3px; background:var(--line2);}
   #pfill{height:3px; background:var(--blue); width:0; transition:width .15s;}
   /* 글 폭과 좌우 여백은 Aa 안에서 고릅니다. 스크롤에 따라 바뀌지는 않습니다 —
      읽는 도중 줄바꿈이 흔들리면 보던 자리를 놓칩니다.
