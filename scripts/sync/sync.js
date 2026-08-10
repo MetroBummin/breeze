@@ -684,6 +684,7 @@ function attachSupabaseAuth(){
   sb.auth.onAuthStateChange((ev, session)=>{
     sbUser = session ? session.user : null;
     syncBadge();
+    if(typeof selKey !== 'undefined' && selKey && typeof renderPanel === 'function') renderPanel();
     if(sbUser){
       doSync(false);
       if(document.getElementById('sync-modal').classList.contains('on')) renderSyncModal();
@@ -692,6 +693,7 @@ function attachSupabaseAuth(){
   sb.auth.getSession().then(({data:{session}})=>{
     sbUser = session ? session.user : null;
     syncBadge();
+    if(typeof selKey !== 'undefined' && selKey && typeof renderPanel === 'function') renderPanel();
     if(sbUser){
       doSync(false);
     }

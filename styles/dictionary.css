@@ -110,9 +110,30 @@
      그래서 뜻 상자 바로 아래, 다른 뜻 후보들보다 앞에 둡니다. */
   #p-explain{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
     border:1px solid var(--ai-line); background:none; color:var(--soft); border-radius:12px;
-    padding:10px; font-size:12.5px; font-family:var(--ui); cursor:pointer; margin-bottom:12px;}
-  #p-explain:hover{border-color:var(--ai-key); color:var(--ai-key); background:var(--ai-bg2);}
+    padding:10px; font-size:12.5px; font-family:var(--ui); cursor:pointer;}
+  #p-explain.ready{border-color:var(--ai-line); color:var(--ai-key); background:var(--ai-bg2);}
+  #p-explain.ready:hover{border-color:var(--ai-key); background:var(--sky);}
+  #p-explain:disabled{border-color:var(--line); color:var(--soft2); background:transparent; cursor:default; opacity:.72;}
   #p-explain .sp{color:var(--ai-key);}
+  #p-explain:disabled .sp{color:var(--soft2);}
+  #p-explain-note{display:none; margin:5px 0 12px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
+  #p-explain-note.on{display:block;}
+  /* 해석은 따로 모달을 띄우지 않고, 지금 보고 있는 낱말·예문 아래에 이어집니다. */
+  #p-sentence{margin:10px 0 12px; padding:13px 15px; border:1px solid var(--ai-line);
+    border-radius:14px; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));}
+  #p-sentence[hidden]{display:none;}
+  #p-sentence .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+    letter-spacing:.08em; color:var(--ai-key); margin-bottom:7px;}
+  #p-sentence .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
+  #ps-en{font-family:var(--serif); font-size:14px; line-height:1.62; color:var(--ai-ink);
+    padding-bottom:10px; border-bottom:1px solid var(--ai-line); margin-bottom:10px; overflow-wrap:anywhere;}
+  #ps-wait{margin-top:2px;}
+  #ps-ko{font-size:15px; font-weight:600; line-height:1.62; color:var(--ai-ink);}
+  #ps-points{list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:7px;}
+  #ps-points li{position:relative; padding-left:13px; font-size:12.5px; line-height:1.6; color:var(--ai-note);}
+  #ps-points li::before{content:''; position:absolute; left:0; top:8px; width:5px; height:5px;
+    border-radius:50%; background:var(--ai-key); opacity:.45;}
+  #ps-foot{margin-top:10px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
   #p-airetry{border:none; background:none; color:var(--soft); padding:0; text-align:left;
     font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
   #p-airetry:hover{color:var(--blue);}

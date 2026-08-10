@@ -1002,7 +1002,7 @@ assert.match(readFileSync(resolve(root, 'styles/base.css'), 'utf8'), /--ai-bg1:/
   'The shared AI palette is gone, so each AI surface picks its own colour again');
 assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
   'The word meaning box has its own colour again');
-assert.match(readFileSync(resolve(root, 'styles/components.css'), 'utf8'), /#st-card\{[^}]*var\(--ai-bg1\)/,
-  'The sentence window has its own colour again');
+assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
+  'The inline sentence explanation has its own colour again');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

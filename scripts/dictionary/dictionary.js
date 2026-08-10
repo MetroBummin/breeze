@@ -84,6 +84,7 @@ function addWord(k, span){
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
   words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
     example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now(), up:Date.now() };
+  recentWordOpens.set(k, Date.now());
   /* 이제 이 기기에 잃을 것이 생겼습니다 — 저장소를 영구로 표시해 달라고 부탁합니다.
      한 번만 물어보고, 이미 물어봤으면 조용히 지나갑니다. */
   requestDurableLocalStorage();
@@ -93,16 +94,43 @@ function addWord(k, span){
   selectWord(k, span);
   fetchDict(k);
 }
+/* 같은 낱말을 눌러 사전 창을 막 닫았다 다시 여는 것은 "더 모른다"가 아니라
+   화면을 다시 확인하는 일입니다. 별은 읽는 동안 쌓이는 소음이 아니라, 시간을
+   두고 다시 막혔을 때만 하나 올립니다. 이 기록은 동기화할 학습 데이터가 아니라
+   잠깐의 손짓이므로 기기 메모리에만 둡니다. */
+const RECENT_WORD_OPEN_MS = 30000;
+const recentWordOpens = new Map();
+
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
-   저장된 단어를 또 누르면 "아직 모른다"는 뜻이라 별을 하나 올립니다.
-   예전에는 이 규칙이 글자 화면에만 있어서, 원본 화면에서는 같은 단어를
-   몇 번을 눌러도 별이 ★에 머물렀습니다. */
+   저장된 단어를 다시 만났을 때만 별을 하나 올립니다. */
 function openWord(k, node){
   if(!words[k]){ addWord(k, node); return; }
-  if(words[k].status < 3) setStatus(k, words[k].status + 1);
+  const now = Date.now();
+  const seenAt = recentWordOpens.get(k) || 0;
+  if(now - seenAt >= RECENT_WORD_OPEN_MS && words[k].status < 3) setStatus(k, words[k].status + 1);
+  recentWordOpens.set(k, now);
+
+  /* AI 답은 `단어 + 문장`으로 캐시되어 있습니다. 예전에는 저장된 첫 예문을
+     계속 보내서, 다른 쪽에서 만난 take도 첫 문장의 뜻으로 되돌아갔습니다.
+     지금 만난 문장을 현재 문맥으로 바꾸고 그 문장 캐시를 먼저 찾습니다. */
+  const nextExample = sentenceOf(node);
+  if(nextExample && nextExample !== words[k].example){
+    const w = words[k];
+    w.example = nextExample;
+    w.clicked = node.textContent.replace(/’/g,"'");
+    w.book = (curBook && curBook.title) || w.book;
+    /* 새 문맥의 답이 잠깐이라도 옛 문맥의 답으로 보이면 안 됩니다. 무료 사전은
+       뒤에서 다시 채우고, AI는 이 문장 전용 캐시 또는 새 조회로 들어옵니다. */
+    w.ko = ''; w.ai = {}; w.alts = []; delete w.koEdited;
+    selectWord(k, node);
+    fetchDict(k);
+    return;
+  }
   selectWord(k, node);
 }
 function selectWord(k, span){
+  /* 다른 낱말을 누르면 앞 낱말의 문장 해석을 남겨 둘 이유가 없습니다. */
+  if(typeof closeSentence === 'function') closeSentence();
   selKey = k;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
@@ -116,6 +144,7 @@ function closePanel(){
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();
+  if(typeof closeSentence === 'function') closeSentence();
   document.getElementById('panel').classList.remove('on');
   document.getElementById('sheetbg').classList.remove('on');
   pinReaderChrome(false);
@@ -236,8 +265,9 @@ function renderPanel(){
     : trialWarn         ? trialWarn
     :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
 
-  /* 문장 통째로 가는 문. 예문이 없으면 물어볼 것이 없습니다. */
-  document.getElementById('p-explain').style.display = w.example ? 'flex' : 'none';
+  /* 문장 통째로 가는 문. 보이는 단추와 실제로 쓸 수 있는 상태가 달라지면
+     "눌렀는데 왜 안 돼?"가 되므로 sentence.js가 같은 기준으로 칠합니다. */
+  if(typeof refreshSentenceExplainAvailability === 'function') refreshSentenceExplainAvailability(w);
 
   const kod = document.getElementById('p-kodict');
   kod.innerHTML='';

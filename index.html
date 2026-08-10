@@ -19,8 +19,8 @@
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
   <link rel="stylesheet" href="styles/home.css?v=21f9e6e2">
   <link rel="stylesheet" href="styles/reader.css?v=cc15a166">
-  <link rel="stylesheet" href="styles/dictionary.css?v=fe10f094">
-  <link rel="stylesheet" href="styles/components.css?v=ddc98573">
+  <link rel="stylesheet" href="styles/dictionary.css?v=38e1d31c">
+  <link rel="stylesheet" href="styles/components.css?v=441d4b85">
   <link rel="stylesheet" href="styles/responsive.css?v=3a1ec5f0">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -46,8 +46,8 @@
   <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
   <script defer src="scripts/importers/article.js?v=a38d1d1e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=ebcbde2c"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=6de5d40b"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=16d9a0db"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=de0679cd"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
@@ -57,7 +57,7 @@
   <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
   <script defer src="scripts/reader/reader.js?v=69dc0dd3"></script>
   <script defer src="scripts/ui/preferences.js?v=a7a8e034"></script>
-  <script defer src="scripts/sync/sync.js?v=424f9f45"></script>
+  <script defer src="scripts/sync/sync.js?v=8ac394be"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
   <script defer src="scripts/main.js?v=68f194d1"></script>
 </head>
@@ -229,6 +229,17 @@
            스스로 발견하는 사람은 없어서, 데스크탑에서는 이 줄이 유일한 문입니다. -->
       <button id="p-explain" onclick="explainSelectedSentence()">
         <span class="sp">✦</span>이 문장이 통째로 안 읽힐 때</button>
+      <div id="p-explain-note" aria-live="polite"></div>
+      <!-- 문장 해석은 낱말 창 안에서 이어집니다. 뜻을 확인하다 문장까지 막혔을 때
+           화면을 한 겹 더 띄우면, 원래 읽던 자리와 단어를 함께 잃기 때문입니다. -->
+      <section id="p-sentence" hidden aria-live="polite">
+        <div class="cap"><span class="dot"></span><span id="ps-cap">문장 통째로 · AI</span></div>
+        <div id="ps-en"></div>
+        <div class="aurora" id="ps-wait" aria-hidden="true" hidden><span class="glow"></span></div>
+        <div id="ps-ko" hidden></div>
+        <ul id="ps-points" hidden></ul>
+        <div id="ps-foot" hidden></div>
+      </section>
       <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI handle this</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec">여러 뜻 중 고르기</div>
@@ -313,22 +324,6 @@
       <div id="am-url-status"></div>
       <button class="sm-btn primary" id="am-url-go" onclick="importArticleUrl()">가져오기</button>
     </div>
-  </div>
-</div>
-<!-- 문장 통째로. 낱말 창의 "이 문장이 통째로 안 읽힐 때"(`#p-explain`)로만
-     열립니다 — 폰이든 노트북이든 같은 문 하나입니다.
-     `scripts/dictionary/sentence.js` -->
-<div id="sent-modal">
-  <div id="st-card">
-    <button id="st-close" onclick="closeSentence()">✕</button>
-    <div class="cap"><span class="dot"></span><span id="st-cap">문장 통째로 · AI</span></div>
-    <div id="st-en"></div>
-    <div class="aurora" id="st-wait" aria-hidden="true" hidden>
-      <span class="glow"></span>
-    </div>
-    <div id="st-ko" hidden></div>
-    <ul id="st-points" hidden></ul>
-    <div id="st-foot" hidden></div>
   </div>
 </div>
 <div id="edit-modal">
