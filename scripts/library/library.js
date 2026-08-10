@@ -383,6 +383,7 @@ function renderHome(){
   document.querySelector('#casuals .sec-sub').textContent = casuals.length
     ? `기사 · 스레드 · 짧은 글 ${casuals.length}편`
     : '기사 · 스레드 · 짧은 글';
+  if(typeof renderRssRail === 'function') renderRssRail();
 
   const longform = longformBooks();
   const shelf = document.getElementById('shelf');
