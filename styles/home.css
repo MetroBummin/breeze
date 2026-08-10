@@ -31,7 +31,8 @@
       linear-gradient(135deg,#46B5D7 0%,#70C9A7 46%,#F2B76E 100%) border-box;}
   /* 일반 Casual 표지 규칙이 뒤에서 `inset:0`을 다시 쓰므로, RSS 쪽은 한 단계 더
      구체적으로 적습니다. 그래야 사진 바깥에 2px짜리 새 글 링이 실제로 남습니다. */
-  .casual.rss-card .thumb.rss-thumb .cover{inset:2px; width:calc(100% - 4px); height:calc(100% - 4px);}
+  .casual.rss-card .thumb.rss-thumb .cover{inset:2px; width:calc(100% - 4px); height:calc(100% - 4px);
+    border-radius:11px;}
   .rss-card.busy{opacity:.55; pointer-events:none;}
   body.dark .casual.rss-card .thumb.rss-thumb{background:linear-gradient(#1D2126,#1D2126) padding-box,
     linear-gradient(135deg,#46B5D7 0%,#70C9A7 46%,#F2B76E 100%) border-box;}
