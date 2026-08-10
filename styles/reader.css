@@ -164,21 +164,24 @@
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-text{opacity:1; transform:none;}
 
-  /* PDF만 버튼 한 번마다 한 단계씩 키웁니다. 스크롤 칸 안의 sticky 층이라
-     상단바가 보일 때는 그 아래에, 걷히면 화면 위쪽에 함께 올라옵니다. */
-  #pdfzoomfabs{position:sticky; top:calc(var(--topbar-h,56px) + 14px); z-index:39;
-    width:52px; height:0; margin-left:auto; margin-right:14px; display:flex;
-    flex-direction:column; gap:8px; transition:top .24s ease,opacity .3s;}
+  /* PDF만 버튼 한 번마다 한 단계씩 키웁니다. 우하단의 읽기 단추처럼 화면에
+     고정하되, 상단바가 보일 때는 그 아래에 두고 걷히면 같이 위로 올라옵니다. */
+  #pdfzoomfabs{position:fixed; top:calc(var(--topbar-h,56px) + 14px); right:18px; z-index:70;
+    width:96px; height:44px; display:flex; overflow:hidden; border:1px solid var(--line);
+    border-radius:14px; background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
+    box-shadow:0 4px 14px rgba(23,55,71,.12); transition:top .24s ease,opacity .3s;}
   #pdfzoomfabs[hidden]{display:none;}
-  #pdfzoomfabs button{width:44px; height:44px; border:1px solid var(--line); border-radius:50%;
-    background:rgba(255,255,255,.88); backdrop-filter:blur(6px); cursor:pointer;
+  #pdfzoomfabs button{flex:1; height:44px; border:0; background:transparent; cursor:pointer;
     display:flex; align-items:center; justify-content:center; color:var(--soft);
-    box-shadow:0 4px 14px rgba(23,55,71,.12); font:600 24px/1 var(--ui); padding:0;
+    font:600 24px/1 var(--ui); padding:0;
     transition:color .2s,background .2s,opacity .2s;}
+  #pdfzoom-in{border-left:1px solid var(--line)!important;}
   #pdfzoomfabs button:hover{color:var(--blue); background:var(--sky);}
   #pdfzoomfabs button:disabled{opacity:.35; cursor:default;}
-  body.dark #pdfzoomfabs button{background:rgba(31,35,39,.94); border-color:#2A2E33; color:#9AA1A8;
+  body.dark #pdfzoomfabs{background:rgba(31,35,39,.94); border-color:#2A2E33;
     box-shadow:0 4px 14px rgba(0,0,0,.24);}
+  body.dark #pdfzoomfabs button{color:#9AA1A8;}
+  body.dark #pdfzoom-in{border-left-color:#2A2E33!important;}
   body.chrome-hidden #pdfzoomfabs{top:14px; opacity:.28;}
   body.chrome-hidden #pdfzoomfabs:hover{opacity:1;}
 
