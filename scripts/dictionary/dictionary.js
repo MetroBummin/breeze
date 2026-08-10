@@ -218,7 +218,6 @@ function renderPanel(){
     aiLoading:!!context.loading, aiSlow:false, aiOff:context.error||'',
   }) : base;
   document.getElementById('p-word').textContent = w.word;
-  document.getElementById('p-phon').textContent = w.phon || '';
   document.getElementById('p-clicked').textContent =
     (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
   document.getElementById('p-ex').textContent = w.example || '—';
@@ -228,6 +227,7 @@ function renderPanel(){
   const marked = base.mark !== false;
   mark.classList.toggle('on', marked);
   mark.setAttribute('aria-checked', String(marked));
+  mark.querySelector('span').textContent = marked ? '색칠 ON' : '색칠 OFF';
   mark.title = marked ? '이 단어의 본문 색칠 끄기' : '이 단어의 본문 색칠 켜기';
 
   const contextBtn=document.getElementById('p-context'), saveContext=document.getElementById('p-save-context');

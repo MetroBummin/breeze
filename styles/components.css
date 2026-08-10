@@ -74,19 +74,36 @@
   #sm-code::placeholder{color:#C8D7D6; font-weight:400;}
   #sm-code:focus{border-color:var(--blue);}
   #sm-codewrap .hint{font-size:12.5px; color:var(--soft); margin-bottom:8px; text-align:center;}
-  .sm-vault{border:1px solid var(--ai-line); border-radius:15px; padding:13px; margin:14px 0;
-    background:var(--ai-bg2);}
-  .sm-vault.locked{border-color:var(--line); background:#F2F2EF; color:var(--soft);}
-  .sm-vault-head{display:flex; align-items:center; justify-content:space-between; color:var(--ai-key); font-size:12.5px;}
+  .sm-vault{border:1px solid var(--ai-line); border-radius:18px; padding:18px; margin:20px 0 18px;
+    background:linear-gradient(145deg,var(--ai-bg1),var(--ai-bg2));}
+  .sm-vault.locked{border-color:#D9DDD8; background:linear-gradient(145deg,#F7F7F3,#EFF0EC); color:var(--soft);}
+  .sm-vault-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; color:var(--ai-key);}
+  .sm-vault-head b{display:block; margin-top:2px; font-size:15px; letter-spacing:-.2px;}
+  .sm-vault-kicker{display:block; font:700 9.5px var(--ui); letter-spacing:.12em; opacity:.72;}
   .sm-vault.locked .sm-vault-head{color:var(--soft);}
   .sm-info{border:1px solid currentColor; border-radius:50%; width:18px; height:18px; padding:0; background:none;
     color:inherit; font:700 11px var(--ui); cursor:pointer;}
-  .sm-vault p{margin:7px 0 10px; font-size:11px; line-height:1.5; color:var(--soft);}
-  .sm-secret{display:flex; align-items:center; gap:7px; border:1px solid var(--ai-line); border-radius:10px; padding:0 9px; background:#fff;}
-  .sm-vault.locked .sm-secret{border-color:#D8D8D3; background:#E5E5E1;}
-  .sm-secret input,.sm-secret span{flex:1; min-width:0; border:0; outline:0; background:transparent; padding:9px 0; font:13px var(--ui); color:var(--ink);}
-  .sm-secret button{border:0; background:none; color:var(--soft); cursor:pointer; padding:4px;}
-  .sm-reset{border:0; background:none; padding:2px 0; color:var(--soft2); font:11px var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+  .sm-vault p{margin:13px 0 12px; font-size:11.5px; line-height:1.55; color:var(--soft);}
+  .sm-vault-info{margin:13px 0 0; padding:10px 11px; border-radius:10px; background:rgba(255,255,255,.58);
+    color:var(--soft); font-size:11px; line-height:1.55;}
+  .sm-secret{display:flex; align-items:center; gap:8px; min-height:46px; border:1px solid var(--ai-line); border-radius:12px; padding:0 11px; background:rgba(255,255,255,.88);}
+  .sm-vault.locked .sm-secret{border-color:#D8D8D3; background:#E9EAE5;}
+  .sm-secret input,.sm-secret span{flex:1; min-width:0; border:0; outline:0; background:transparent; padding:11px 0; font:13px var(--ui); color:var(--ink);}
+  .sm-secret button{border:0; background:none; color:var(--soft); cursor:pointer; padding:5px 2px; font:600 11px var(--ui);}
+  .sm-secret button:disabled{opacity:.35; cursor:default;}
+  .sm-vault-actions{display:flex; justify-content:flex-end; margin-top:11px;}
+  .sm-vault .sm-mini.primary{border-color:var(--blue); background:var(--blue); color:#fff; padding:7px 12px;}
+  .sm-vault .sm-mini.primary:hover{background:var(--blue-deep);}
+  .sm-vault-error{margin-top:8px; color:#BA4C43; font-size:11.5px;}
+  .sm-reset{border:0; background:none; padding:4px 0; color:var(--soft2); font:11px var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+  .sm-reset-confirm{margin-top:14px; padding-top:13px; border-top:1px solid #D9DDD8;}
+  .sm-reset-confirm b{display:block; color:var(--ink); font-size:12px;}
+  .sm-reset-confirm span{display:block; margin:4px 0 9px; color:var(--soft); font-size:11px; line-height:1.45;}
+  .sm-reset-confirm input{box-sizing:border-box; width:100%; border:1px solid #D8D8D3; border-radius:9px; padding:9px 10px; background:#fff; font:12px var(--ui); outline:none;}
+  .sm-reset-confirm input:focus{border-color:var(--blue);}
+  .sm-reset-confirm>div{display:flex; align-items:center; justify-content:space-between; margin-top:8px;}
+  .sm-mini.danger{border-color:#E7C7C1; color:#B0483A;}
+  .sm-mini.danger:hover{background:#FBEDEA;}
   #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
 

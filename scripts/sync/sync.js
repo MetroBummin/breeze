@@ -39,24 +39,31 @@ let syncPromise = null, syncAgain = false, syncAgainManual = false;
 let lastSync = load('breeze.lastsync', 0);
 const LS_SYNC_CODE_UI = 'breeze.sync-code-ui';
 let syncCodeInMemory = '';
+let syncCodeInfoOpen = false, syncCodeResetOpen = false, syncCodeError = '';
 
 /* 실제 암복호화가 붙기 전의 설정 화면입니다. 원문 암호를 localStorage에 남기지
    않습니다. 따라서 새로고침 뒤에는 "설정됨"만 보이고, 실제 암호화 도입 때
    기기마다 다시 입력받아 키를 만들게 됩니다. */
 function syncCodeBox(){
   const set=load(LS_SYNC_CODE_UI,null);
+  const help = syncCodeInfoOpen ? `<div class="sm-vault-info">이 암호는 책·읽기 위치 같은 민감한 동기화 데이터를 기기에서 잠그는 데 쓰일 예정이에요. 잃어버리면 복구할 수 없으니 안전한 곳에 보관해 주세요.</div>` : '';
   if(set){
-    return `<section class="sm-vault locked"><div class="sm-vault-head"><b>동기화 암호</b><button class="sm-info" onclick="syncCodeInfo()" aria-label="동기화 암호 설명">i</button></div>
-      <div class="sm-secret"><span id="sm-secret-text">${syncCodeInMemory?'••••••••':'설정됨'}</span><button onclick="toggleSyncCode()" aria-label="암호 보기/숨기기">◉</button></div>
-      <p>한 번 정한 암호는 바꿀 수 없어요. 초기화하면 이후 암호화 동기화 데이터를 다시 설정해야 합니다.</p>
-      <button class="sm-reset" onclick="resetSyncCode()">초기화…</button></section>`;
+    const reset = syncCodeResetOpen
+      ? `<div class="sm-reset-confirm"><b>정말 초기화할까요?</b><span>되돌릴 수 없어요. 계속하려면 DELETE를 입력해 주세요.</span>
+          <input id="sm-reset-confirm" autocomplete="off" autocapitalize="characters" placeholder="DELETE">
+          ${syncCodeError?`<div class="sm-vault-error">${esc(syncCodeError)}</div>`:''}
+          <div><button class="sm-reset" onclick="cancelResetSyncCode()">취소</button><button class="sm-mini danger" onclick="resetSyncCode()">초기화</button></div></div>`
+      : `<button class="sm-reset" onclick="openResetSyncCode()">암호 설정 초기화…</button>`;
+    return `<section class="sm-vault locked"><div class="sm-vault-head"><div><span class="sm-vault-kicker">SYNC SECURITY</span><b>동기화 암호</b></div><button class="sm-info" onclick="syncCodeInfo()" aria-label="동기화 암호 설명">i</button></div>
+      ${help}<div class="sm-secret"><span id="sm-secret-text">${syncCodeInMemory?'••••••••':'설정됨'}</span><button onclick="toggleSyncCode()" ${syncCodeInMemory?'':'disabled'} aria-label="암호 보기/숨기기">보기</button></div>
+      <p>설정된 암호는 바꿀 수 없어요. 초기화하면 이후 암호화 동기화 데이터를 다시 설정해야 합니다.</p>${reset}</section>`;
   }
-  return `<section class="sm-vault"><div class="sm-vault-head"><b>동기화 암호</b><button class="sm-info" onclick="syncCodeInfo()" aria-label="동기화 암호 설명">i</button></div>
-    <p>한 번 정하면 바꿀 수 없어요. 실제 암호화 연결 전까지는 설정만 준비합니다.</p>
+  return `<section class="sm-vault"><div class="sm-vault-head"><div><span class="sm-vault-kicker">SYNC SECURITY</span><b>동기화 암호</b></div><button class="sm-info" onclick="syncCodeInfo()" aria-label="동기화 암호 설명">i</button></div>
+    ${help}<p>한 번 정하면 바꿀 수 없어요. 실제 암호화 연결 전까지는 설정만 준비합니다.</p>
     <div class="sm-secret"><input id="sm-secret-input" type="password" autocomplete="new-password" placeholder="암호를 정하세요"><button onclick="toggleSyncCode()" aria-label="암호 보기/숨기기">◉</button></div>
-    <button class="sm-mini primary" onclick="setSyncCode()">암호 정하기</button></section>`;
+    ${syncCodeError?`<div class="sm-vault-error">${esc(syncCodeError)}</div>`:''}<div class="sm-vault-actions"><button class="sm-mini primary" onclick="setSyncCode()">암호 정하기</button></div></section>`;
 }
-function syncCodeInfo(){ alert('동기화 암호는 앞으로 책·진행도처럼 민감한 동기화 데이터를 기기에서 암호화하는 데 쓸 예정입니다. 암호를 잃으면 복구할 수 없으므로 안전한 곳에 보관해야 합니다.'); }
+function syncCodeInfo(){ syncCodeInfoOpen=!syncCodeInfoOpen; renderSyncModal(); }
 function toggleSyncCode(){
   const input=document.getElementById('sm-secret-input'), text=document.getElementById('sm-secret-text');
   if(input){ input.type=input.type==='password'?'text':'password'; return; }
@@ -64,13 +71,15 @@ function toggleSyncCode(){
 }
 function setSyncCode(){
   const input=document.getElementById('sm-secret-input'); const code=(input&&input.value||'').trim();
-  if(code.length<8){ syncStatus('암호는 8자 이상으로 정해 주세요'); return; }
-  syncCodeInMemory=code; save(LS_SYNC_CODE_UI,{setAt:Date.now()}); renderSyncModal();
+  if(code.length<8){ syncCodeError='암호는 8자 이상으로 정해 주세요.'; renderSyncModal(); return; }
+  syncCodeError=''; syncCodeInMemory=code; save(LS_SYNC_CODE_UI,{setAt:Date.now()}); renderSyncModal();
 }
+function openResetSyncCode(){ syncCodeError=''; syncCodeResetOpen=true; renderSyncModal(); }
+function cancelResetSyncCode(){ syncCodeError=''; syncCodeResetOpen=false; renderSyncModal(); }
 function resetSyncCode(){
-  const typed=prompt('동기화 암호 설정을 초기화합니다. 되돌릴 수 없습니다.\n계속하려면 DELETE를 입력하세요.');
-  if(typed!=='DELETE') return;
-  syncCodeInMemory=''; try{ localStorage.removeItem(LS_SYNC_CODE_UI); }catch(e){} renderSyncModal();
+  const typed=(document.getElementById('sm-reset-confirm')||{}).value||'';
+  if(typed!=='DELETE'){ syncCodeError='DELETE를 정확히 입력해 주세요.'; renderSyncModal(); return; }
+  syncCodeInMemory=''; syncCodeResetOpen=false; syncCodeError=''; try{ localStorage.removeItem(LS_SYNC_CODE_UI); }catch(e){} renderSyncModal();
 }
 
 function syncStatus(msg){ const el=document.getElementById('sm-status'); if(el) el.textContent = msg; }

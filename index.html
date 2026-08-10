@@ -19,8 +19,8 @@
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
   <link rel="stylesheet" href="styles/home.css?v=21f9e6e2">
   <link rel="stylesheet" href="styles/reader.css?v=cc15a166">
-  <link rel="stylesheet" href="styles/dictionary.css?v=3d6e29fa">
-  <link rel="stylesheet" href="styles/components.css?v=61d7894e">
+  <link rel="stylesheet" href="styles/dictionary.css?v=104968ac">
+  <link rel="stylesheet" href="styles/components.css?v=95f8ca10">
   <link rel="stylesheet" href="styles/responsive.css?v=3a1ec5f0">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -46,7 +46,7 @@
   <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
   <script defer src="scripts/importers/article.js?v=a38d1d1e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=6afed3b8"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=b0695ef1"></script>
   <script defer src="scripts/dictionary/sentence.js?v=af9b9f34"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
@@ -57,7 +57,7 @@
   <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
   <script defer src="scripts/reader/reader.js?v=2a0cdda6"></script>
   <script defer src="scripts/ui/preferences.js?v=8084b314"></script>
-  <script defer src="scripts/sync/sync.js?v=8181d973"></script>
+  <script defer src="scripts/sync/sync.js?v=ecce8275"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
   <script defer src="scripts/main.js?v=68f194d1"></script>
 </head>
@@ -198,13 +198,12 @@
               <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
             </svg>
           </button>
+          <button id="p-mark" type="button" role="switch" aria-checked="true"
+            title="이 단어의 본문 색칠 켜기/끄기"><span>색칠 ON</span><i></i></button>
         </div>
         <button id="p-close" title="단어창 닫기" aria-label="단어창 닫기" onclick="closePanel()">✕</button>
       </div>
-      <div id="p-phon"></div>
       <div id="p-clicked"></div>
-      <div id="p-mark-row"><button id="p-mark" type="button" role="switch"
-        aria-checked="true" title="이 단어의 본문 색칠 켜기/끄기"><i></i></button><span>본문에서 표시</span></div>
       <hr id="p-divider">
       <!-- 뜻이 사는 곳은 여기 하나입니다. 예전에는 이 박스 아래에 파란 뜻 칸이 하나 더
            있어서, 같은 낱말의 뜻이 화면에 두 번 적혀 있었습니다. 고치는 것도 아래 칸에서만
