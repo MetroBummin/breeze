@@ -26,7 +26,9 @@
     padding:16px 26px 8px; margin:0 -26px; scroll-padding-left:26px;
     -webkit-overflow-scrolling:touch; scrollbar-width:none;}
   #casual-rail::-webkit-scrollbar{display:none;}
-  .casual.rss-card .thumb.rss-thumb{border:2px solid transparent;
+  /* RSS 링의 2px을 폭 바깥에 더하면 일반 Casual보다 4px 커집니다. 모바일에서는
+     그 차이가 특히 눈에 띄므로, 링까지 포함한 바깥 크기를 일반 카드와 같게 둡니다. */
+  .casual.rss-card .thumb.rss-thumb{box-sizing:border-box; border:2px solid transparent;
     background:linear-gradient(var(--paper2),var(--paper2)) padding-box,
       linear-gradient(135deg,#46B5D7 0%,#70C9A7 46%,#F2B76E 100%) border-box;}
   /* 일반 Casual 표지 규칙이 뒤에서 `inset:0`을 다시 쓰므로, RSS 쪽은 한 단계 더
