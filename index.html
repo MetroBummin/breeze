@@ -46,8 +46,8 @@
   <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
   <script defer src="scripts/importers/article.js?v=a38d1d1e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=1a12f985"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=de0679cd"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=a8dc98e1"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=6d53f747"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
@@ -226,6 +226,8 @@
           <span class="tip" id="p-ai-tip">뜻을 눌러 직접 고칠 수 있어요</span>
         </div>
       </div>
+      <button id="p-context" type="button">이 문맥에서는?</button>
+      <button id="p-save-context" type="button">+ 이 뜻도 저장</button>
       <!-- 문장을 꾹 누르는 손짓과 같은 일을 합니다. 마우스로 0.85초 누르기를
            스스로 발견하는 사람은 없어서, 데스크탑에서는 이 줄이 유일한 문입니다. -->
       <button id="p-explain" onclick="explainSelectedSentence()">

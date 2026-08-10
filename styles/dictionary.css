@@ -112,6 +112,13 @@
   #p-aibtn:hover{background:var(--sky); border-style:solid;}
   #p-aibtn:disabled{opacity:.6; cursor:default;}
   #p-aibtn .sp{font-size:15px;}
+  #p-context,#p-save-context{display:none; width:100%; margin:-2px 0 12px; padding:9px 11px;
+    border-radius:12px; font:600 12px var(--ui); cursor:pointer;}
+  #p-context.on{display:block; border:1px dashed var(--ai-line); background:transparent; color:var(--ai-key);}
+  #p-context.on:hover{background:var(--ai-bg2); border-style:solid;}
+  #p-context:disabled{opacity:.55; cursor:default;}
+  #p-save-context.on{display:block; border:1px solid var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
+  #p-save-context.on:hover{background:var(--sky); border-color:var(--ai-key);}
   #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
   /* 문장 통째로 가는 문. 낱말 뜻이 맞는데도 문장이 안 읽힐 때 누릅니다 —
      그래서 뜻 상자 바로 아래, 다른 뜻 후보들보다 앞에 둡니다. */

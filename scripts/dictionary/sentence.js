@@ -44,7 +44,8 @@ function refreshSentenceExplainAvailability(w){
   const button = document.getElementById('p-explain');
   const note = document.getElementById('p-explain-note');
   if(!button || !note) return;
-  const hasSentence = !!(w && w.example);
+  const context = typeof currentContext === 'function' && w ? currentContext(selKey) : null;
+  const hasSentence = !!(context ? context.sentence : (w && w.example));
   const left = sentLeft();
   let reason = '';
   if(!hasSentence) reason = '이 낱말에는 문장 해석에 쓸 예문이 없어요';
@@ -62,10 +63,12 @@ function refreshSentenceExplainAvailability(w){
    무엇을 물어볼지 고를 것이 없습니다 — 화면에 보이는 그 문장 그대로입니다. */
 function explainSelectedSentence(){
   const w = words[selKey];
-  if(!w || !w.example) return;
+  const context = typeof currentContext === 'function' && w ? currentContext(selKey) : null;
+  const sentence = context ? context.sentence : (w && w.example);
+  if(!sentence) return;
   refreshSentenceExplainAvailability(w);
   if(document.getElementById('p-explain').disabled) return;
-  openSentence(w.example);
+  openSentence(sentence);
 }
 
 function closeSentence(){

@@ -100,6 +100,16 @@ function addWord(k, span){
    잠깐의 손짓이므로 기기 메모리에만 둡니다. */
 const RECENT_WORD_OPEN_MS = 30000;
 const recentWordOpens = new Map();
+/* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 읽는 중의
+   문장을 서버 동기화 객체에 덮어 쓰지 않습니다. 사용자가 "이 뜻도 저장"을 눌러야
+   그때만 `senses`에 들어갑니다. */
+let contextView = null;
+function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
+function answerFromLook(j, cached){
+  const oldAi=j.ai||{};
+  return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',gloss:j.gloss||oldAi.gloss||'',note:j.note||oldAi.note||'',done:true,cached:!!cached},
+    alts:(j.alts||[]).filter(Boolean).slice(0,3), colloc:(j.colloc||[]).slice(0,3), aiLemma:j.lemma||'' };
+}
 
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
    저장된 단어를 다시 만났을 때만 별을 하나 올립니다. */
@@ -110,27 +120,24 @@ function openWord(k, node){
   if(now - seenAt >= RECENT_WORD_OPEN_MS && words[k].status < 3) setStatus(k, words[k].status + 1);
   recentWordOpens.set(k, now);
 
-  /* AI 답은 `단어 + 문장`으로 캐시되어 있습니다. 예전에는 저장된 첫 예문을
-     계속 보내서, 다른 쪽에서 만난 take도 첫 문장의 뜻으로 되돌아갔습니다.
-     지금 만난 문장을 현재 문맥으로 바꾸고 그 문장 캐시를 먼저 찾습니다. */
+  /* 새 문장은 우선 대표 뜻과 나란히 봅니다. 자동으로 AI를 부르거나 대표 예문을
+     바꾸지 않습니다 — 사용자가 "이 문맥에서는?"을 눌렀을 때만 새 뜻을 찾습니다. */
   const nextExample = sentenceOf(node);
   if(nextExample && nextExample !== words[k].example){
     const w = words[k];
-    w.example = nextExample;
-    w.clicked = node.textContent.replace(/’/g,"'");
-    w.book = (curBook && curBook.title) || w.book;
-    /* 새 문맥의 답이 잠깐이라도 옛 문맥의 답으로 보이면 안 됩니다. 무료 사전은
-       뒤에서 다시 채우고, AI는 이 문장 전용 캐시 또는 새 조회로 들어옵니다. */
-    w.ko = ''; w.ai = {}; w.alts = []; delete w.koEdited;
+    const known = (w.senses||[]).find(s=>s.example===nextExample);
+    contextView = { key:k, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
+      book:(curBook&&curBook.title)||w.book, answer:known ? answerFromLook(known,true) : null, saved:!!known };
     selectWord(k, node);
-    fetchDict(k);
     return;
   }
+  contextView = null;
   selectWord(k, node);
 }
 function selectWord(k, span){
   /* 다른 낱말을 누르면 앞 낱말의 문장 해석을 남겨 둘 이유가 없습니다. */
   if(typeof closeSentence === 'function') closeSentence();
+  if(!currentContext(k)) contextView = null;
   selKey = k;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
@@ -141,6 +148,7 @@ function selectWord(k, span){
 }
 function closePanel(){
   selKey=null;
+  contextView=null;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();
@@ -189,8 +197,15 @@ function meaningChips(w){
   return out.slice(0, 8);
 }
 function renderPanel(){
-  const w = words[selKey]; if(!w) return;
+  const base = words[selKey]; if(!base) return;
   const k = selKey;
+  const context = currentContext(k);
+  /* 새 문맥의 AI 답은 대표 단어를 덮지 않는 미리보기입니다. 화면은 같은 사전
+     모양을 쓰되, 저장 버튼을 누르기 전에는 `base`에 아무것도 쓰지 않습니다. */
+  const w = context ? Object.assign({}, base, context.answer || {}, {
+    example:context.sentence, clicked:context.clicked, book:context.book,
+    aiLoading:!!context.loading, aiSlow:false, aiOff:context.error||'',
+  }) : base;
   document.getElementById('p-word').textContent = w.word;
   document.getElementById('p-phon').textContent = w.phon || '';
   document.getElementById('p-clicked').textContent =
@@ -199,10 +214,19 @@ function renderPanel(){
   document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
   const mark = document.getElementById('p-mark');
-  const marked = w.mark !== false;
+  const marked = base.mark !== false;
   mark.classList.toggle('on', marked);
   mark.setAttribute('aria-pressed', String(marked));
   mark.title = marked ? '이 단어 표시 끄기' : '이 단어 표시 켜기';
+
+  const contextBtn=document.getElementById('p-context'), saveContext=document.getElementById('p-save-context');
+  contextBtn.classList.toggle('on', !!context && !context.answer);
+  contextBtn.disabled=!!(context && context.loading);
+  contextBtn.textContent=context && context.loading ? '이 문맥을 살펴보는 중…'
+    : context && context.error ? '이 문맥에서 다시 보기' : '이 문맥에서는?';
+  const isDifferent = context && context.answer && context.answer.ko
+    && context.answer.ko.trim() !== String(base.ko||'').trim();
+  saveContext.classList.toggle('on', !!isDifferent && !context.saved);
 
   /* ── 뜻이 사는 칸. 하나뿐입니다 ──
      예전에는 이 박스가 "AI 가 알려준 것"이고 아래 파란 칸이 "내 단어장에 적히는 것"이라
@@ -239,7 +263,7 @@ function renderPanel(){
     aiG.textContent = under;
     aiG.style.display = under ? 'block' : 'none';
     aiTip.textContent = w.koEdited ? '직접 고친 뜻이에요' : '뜻을 눌러 직접 고칠 수 있어요';
-    aiRetry.style.display = (sb && sbUser && w.example) ? 'inline' : 'none';
+    aiRetry.style.display = (!context && sb && sbUser && w.example) ? 'inline' : 'none';
   }else{
     aiBox.className = '';
   }
@@ -287,6 +311,12 @@ function renderPanel(){
       b.className = 'kochip' + (w.ko===c.term ? ' on':'');
       b.innerHTML = (c.pos ? `<span class="pos">${esc(c.pos)}</span>` : '') + esc(c.term);
       b.onclick = ()=>{
+        if(context && context.answer){
+          context.answer.ko=c.term;
+          if(context.answer.ai) context.answer.ai.ko=c.term;
+          renderPanel();
+          return;
+        }
         w.ko = c.term;
         /* AI 가 고른 뜻으로 되돌아온 것은 "고쳤다"가 아닙니다. */
         if(c.term === (w.ai && w.ai.ko)) delete w.koEdited; else w.koEdited = true;
@@ -318,6 +348,8 @@ document.getElementById('p-mark').onclick=()=>{
   w.mark = w.mark === false;
   w.up=Date.now(); saveWords(); paintWord(selKey); queueSync(); renderPanel();
 };
+document.getElementById('p-context').onclick=()=>{ if(selKey) askCurrentContext(selKey); };
+document.getElementById('p-save-context').onclick=()=>{ if(selKey) saveCurrentContext(selKey); };
 document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;
@@ -330,8 +362,17 @@ document.getElementById('p-know').onclick = ()=>{
 const aiKoBox = document.getElementById('p-ai-ko');
 aiKoBox.addEventListener('blur', ()=>{
   if(!selKey || !words[selKey]) return;
+  const context=currentContext(selKey);
   const w = words[selKey];
   const next = aiKoBox.textContent.replace(/\s+/g,' ').trim();
+  if(context && context.answer){
+    if(next !== (context.answer.ko||'')){
+      context.answer.ko=next;
+      if(context.answer.ai) context.answer.ai.ko=next;
+      renderPanel();
+    }
+    return;
+  }
   if(next === (w.ko||'')) return;
   w.ko = next;
   w.koEdited = next !== ((w.ai && w.ai.ko) || '');
@@ -557,6 +598,51 @@ async function loadCachedLook(k, began){
     }
   }
   return false;
+}
+
+/* 대표 뜻과 다른 문장에서만 쓰는 작은 길입니다. 조회 결과는 먼저 기기 캐시에
+   `단어 + 문장`으로 보관하고, 사람이 저장을 결정하기 전까지 단어장에는 넣지 않습니다. */
+async function askCurrentContext(k){
+  const w=words[k], context=currentContext(k);
+  if(!w || !context || context.loading) return;
+  if(navigator.onLine===false){ context.error='offline'; renderPanel(); return; }
+  if(!sb){ context.error='login'; renderPanel(); return; }
+  context.loading=true; delete context.error; renderPanel();
+  try{
+    for(const key of entryKeys(w)){
+      const hit=await dictGet(lookKey(key,context.sentence));
+      if(hit && hit.ko){
+        context.answer=answerFromLook(hit,!hit.seed); context.saved=!!(w.senses||[]).find(s=>s.example===context.sentence);
+        return;
+      }
+    }
+    const j=await dictCall({op:'look',word:w.word||k,clicked:context.clicked||'',cands:entryKeys(w),
+      sentence:context.sentence,book:context.book||'',device:sbUser?'':deviceId()});
+    if(!j || j.error || !j.ko){
+      context.error=(j&&j.error)==='anon_exhausted' ? 'trial' : (j&&j.error)||'error';
+      return;
+    }
+    if(typeof j.left==='number') anonLooksLeft=j.left;
+    await dictPut(lookKey(j.lemma||w.word||k,context.sentence),Object.assign({},j,{done:true}));
+    context.answer=answerFromLook(j,false);
+  }finally{
+    context.loading=false;
+    if(currentContext(k)===context && selKey===k) renderPanel();
+  }
+}
+
+function saveCurrentContext(k){
+  const w=words[k], context=currentContext(k);
+  if(!w || !context || !context.answer || !context.answer.ko) return;
+  const id=sentenceHash(context.sentence);
+  const sense={id,example:context.sentence,clicked:context.clicked||'',book:context.book||'',
+    ko:context.answer.ko,ai:context.answer.ai||{},alts:context.answer.alts||[],
+    colloc:context.answer.colloc||[],addedAt:Date.now()};
+  const all=(w.senses||[]).filter(item=>item.id!==id);
+  w.senses=[...all,sense].slice(-5); // 다의어 기록은 다섯 개면 충분하고 단어장을 부풀리지 않습니다.
+  w.up=Date.now(); saveWords(); queueSync();
+  context.saved=true;
+  renderPanel(); toast('이 문맥의 뜻도 저장했어요');
 }
 
 /* 낱말 하나 · 문장 하나 · 왕복 한 번. 뜻과 이 문장에서의 설명과 다른 뜻 후보가
