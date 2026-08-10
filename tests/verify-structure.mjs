@@ -615,14 +615,6 @@ assert.doesNotMatch(readerCss,/body\.chrome-hidden #rbar\{[^}]*opacity:0/,
   'The progress bar is erased with the top bar again');
 assert.match(readerCss,/body\.chrome-hidden #ptrack\{background:transparent/,
   'The grey track stays on as a full-width seam once the top bar is gone');
-/* 시계 옆까지 글을 뻗는 시도는 걷었습니다. 홈 화면 추가는 그 자리를 아예
-   예약해 CSS 로 손댈 수 없었고, 탭에서도 `--topbar-h` 측정이 늦으면 첫 줄이
-   시계에 파묻혔습니다. 스크롤 칸 자체를 안전 영역 아래에서 시작시켜, 무엇을
-   언제 재든 글이 물리적으로 그 위로 못 올라가게 막습니다. */
-assert.match(readerCss,/#reader-scroll\{position:absolute; top:env\(safe-area-inset-top,0px\)/,
-  'The reading box no longer has a hard floor under the notch, so the JS topbar-height race can bury the first line again');
-assert.match(readerCss,/#readwrap\{[^}]*padding:calc\(var\(--topbar-h,56px\) - env\(safe-area-inset-top,0px\) \+ 36px\)/,
-  'readwrap double-reserves the safe area on top of the scroller\'s own floor');
 
 assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),false,
   'AI typography client was not removed');
@@ -791,7 +783,7 @@ assert.match(preferencesSource, /const READ_MARGINS = \{/,
   'The margin control has no steps to choose from');
 assert.match(preferencesSource, /keepPlace\(\(\)=>\{[\s\S]*?save\('breeze\.margin'/,
   'Changing the margin no longer keeps the sentence being read in place');
-assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(var\(--topbar-h,56px\) - env\(safe-area-inset-top,0px\) \+ 36px\) var\(--readpad,26px\)/,
+assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(var\(--topbar-h,56px\) \+ 36px\) var\(--readpad,26px\)/,
   'The reading column stopped following the margin setting, or lost the room the fixed top bar needs');
 assert.match(index, /class="aa-row stack aa-text-only"[\s\S]*?id="aa-margin"/,
   'The 좌우 여백 row is missing from the Aa popover');
