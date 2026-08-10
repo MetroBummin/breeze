@@ -116,7 +116,18 @@ tbody tr:last-child td{border-bottom:0}
 <ul><li>단어별 <code>다음 복습일</code>, <code>간격</code>, <code>정답/실패 횟수</code>만 둡니다.</li><li>하루 새 단어와 복습 수에 작은 상한을 둡니다.</li><li><code>다시 / 어려움 / 알겠음</code> 정도의 간단한 선택으로 시작합니다.</li></ul>
 <p>단어가 500개, 1,000개가 되어도 한꺼번에 몰아 보여 주지 않는 것이 핵심입니다.</p>
 <h3 id="3-casuals의-입력-마찰-줄이기">3. Casuals의 입력 마찰 줄이기</h3>
-<p>RSS는 먼저 <strong>원문 링크 카드와 제목·요약·표지</strong>를 편하게 받아 보는 용도로 검토합니다. 본문을 자동 저장하거나 유료·로그인 페이지를 우회하는 기능은 기본값으로 만들지 않습니다. 출처별 약관과 저작권을 확인하고, 허용되거나 명시적으로 라이선스된 소스부터 좁게 지원합니다.</p>
+<p>RSS는 단순히 "글을 긁어 오는 기능"이 아니라, 새 글을 발견하고 바로 Breeze에서 읽기 시작하게 하는 입구입니다. 피드가 있다고 본문·사진을 저장해도 된다는 뜻은 아니므로, 출처별로 허용 범위를 코드에서 나눕니다.</p>
+<h4 id="첫-rss-ux">첫 RSS UX</h4>
+<pre data-lang="text"><code>RSS 카드(제목 · 출처 · 날짜 · 대표 사진)
+  → 탭
+  → 기존 URL 가져오기 경로를 사용
+  → Breeze 텍스트 모드에서 즉시 읽기
+  → 단어 선택 · 사전 · 단어장 사용</code></pre>
+<ul><li>이미 읽은 글이 최우선이고, 같은 읽기 상태 안에서는 <strong>대표 사진이 있는 카드가 먼저</strong> 오게 합니다. 사진 없는 글을 삭제하지 않고 뒤로 보내는 원칙입니다.</li><li>카드와 읽기 화면에는 출처·저자·원문 링크를 남깁니다.</li><li>URL 가져오기 엔진을 새로 만들지 않습니다. RSS는 목록을 공급하고, 탭 뒤에는 현재의 기사 텍스트 변환 경로를 그대로 씁니다.</li></ul>
+<h4 id="출처별-범위">출처별 범위</h4>
+<div class="tablewrap"><table><thead><tr><th>출처</th><th>RSS 목록</th><th>Breeze 텍스트 모드 자동 변환</th><th>사진 저장</th></tr></thead><tbody><tr><td><strong>The Conversation</strong></td><td>지원 후보</td><td>기사별 재배포 라이선스가 확인된 글부터 지원</td><td>이미지별 크레딧·라이선스가 확인된 것만</td></tr><tr><td><strong>ProPublica</strong></td><td>링크 카드 후보</td><td>기본 미지원</td><td>기본 미지원</td></tr><tr><td><strong>Guardian</strong></td><td>링크 카드 후보</td><td>기본 미지원</td><td>기본 미지원</td></tr><tr><td><strong>BBC</strong></td><td>링크 카드 후보</td><td>기본 미지원</td><td>기본 미지원</td></tr><tr><td><strong>AP</strong></td><td>제외</td><td>제외</td><td>제외</td></tr></tbody></table></div>
+<ul><li><strong>The Conversation</strong>은 기사 재배포를 Creative Commons로 운영하므로 첫 본문 지원 후보입니다. 다만 사진은 AP·Getty·Shutterstock·개별 사진가 등 별도 권리자가 섞일 수 있어, 기사 라이선스만으로 일괄 저장하지 않습니다. 글마다 저자·The Conversation 표기와 원문 링크를 유지하고, 사진에는 출처·크레딧·라이선스·원본 URL을 함께 보관합니다. <a href="https://cdn.theconversation.com/static_files/files/2010/Global_Editorial_Guidelines.pdf" target="_blank" rel="noopener">재배포 원칙</a></li><li><strong>ProPublica</strong>는 Creative Commons 재배포를 허용하지만 자동·대량 재게시를 금하고, 개별 선택·출처 표기·원문 링크 등의 조건을 둡니다. Breeze의 자동 가져오기 기본 출처로 넣지 않고, 별도 허가 또는 조건에 맞는 수동 흐름이 생길 때 다시 판단합니다. <a href="https://www.propublica.org/steal-our-stories" target="_blank" rel="noopener">재배포 규칙</a></li><li><strong>Guardian</strong>은 RSS를 제공하지만 개인·비상업 용도로 설명하고, Open Platform도 최종 이용자에게 개인·비상업 용도로만 제공하도록 정합니다. <a href="https://www.theguardian.com/help/feeds" target="_blank" rel="noopener">RSS 안내</a> · <a href="https://www.theguardian.com/open-platform/terms-and-conditions" target="_blank" rel="noopener">Open Platform 약관</a></li><li><strong>BBC</strong>는 RSS를 제공하지만 사업용 사용에는 허가와 비용이 필요할 수 있다고 명시합니다. <a href="https://downloads.bbc.co.uk/usingthebbc/bbc_terms_of_use_31March2022english.pdf" target="_blank" rel="noopener">BBC 이용약관</a></li><li><strong>AP</strong>는 RSS/API 자체가 라이선스 계약 범위에 묶여 있고 보관·재배포를 제한하므로 Breeze 대상에서 제외합니다. <a href="https://www.ap.org/terms-and-conditions" target="_blank" rel="noopener">AP 이용약관</a></li></ul>
+<p>이 표는 법률 자문이 아니라 제품의 보수적인 기본값입니다. 실제 지원 전에는 해당 피드와 기사별 라이선스·이미지 크레딧을 다시 확인하고, 출처가 요구하는 표기 문구를 화면에 반영합니다.</p>
 <h2 id="지금-보류하는-것">지금 보류하는 것</h2>
 <ul><li>유료 기사 우회, 로그인한 타사 페이지에 스크립트 주입</li><li>전체 책 본문을 AI로 재조판하는 기능</li><li>DRM EPUB 해제, 스캔 PDF OCR</li><li>기출 Shorts와 사전 답 사전생성 기능의 재연결</li><li>네이티브 PDFKit/Android 뷰어로의 전면 교체</li></ul>
 <p>이들은 불가능해서가 아니라 출시 품질, 권리, 유지보수 비용에 비해 지금의 핵심 흐름을 더 좋게 만들지 않기 때문에 보류합니다.</p>
