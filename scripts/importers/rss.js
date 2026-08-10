@@ -51,6 +51,17 @@ function rssDate(value){
   if(Number.isNaN(date.getTime())) return '';
   return date.toLocaleDateString('ko-KR', { month:'short', day:'numeric' });
 }
+function rssUrlKey(raw){
+  try{
+    const url = new URL(raw);
+    url.hash = '';
+    return url.href;
+  }catch(error){ return String(raw || ''); }
+}
+function rssAlreadySaved(entry){
+  const key = rssUrlKey(entry.url);
+  return books.some(book => book.sourceUrl && rssUrlKey(book.sourceUrl) === key);
+}
 function parseRss(xml, feed){
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
   if(doc.querySelector('parsererror')) throw new Error('RSS 형식을 읽지 못했어요');
@@ -119,7 +130,8 @@ function appendRssCards(rail, force){
   loadRss(force).then(entries => {
     if(renderId !== rssRenderId || !rail.isConnected) return;
     const before = rail.querySelector('.casual.add');
-    entries.forEach(entry => rail.insertBefore(rssCard(entry), before));
+    entries.filter(entry => !rssAlreadySaved(entry))
+      .forEach(entry => rail.insertBefore(rssCard(entry), before));
   }).catch(error => { console.error(error); });
 }
 document.getElementById('rss-refresh').onclick = () => {
