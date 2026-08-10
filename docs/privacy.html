@@ -97,28 +97,29 @@ tbody tr:last-child td{border-bottom:0}
 <div class="wrap">
 <main>
 <h1 id="개인정보처리방침">개인정보처리방침</h1>
-<p><strong>시행일: 2026년 8월 9일</strong></p>
+<p><strong>시행일: 2026년 8월 10일</strong></p>
 <p>Breeze(<a href="https://breeze.io.kr" target="_blank" rel="noopener">https://breeze.io.kr</a>, 그리고 같은 코드로 만든 iOS 앱)가 무엇을 받고, 어디에 두고, 언제 지우는지 적은 문서입니다. 코드와 같은 저장소에 있고, 코드가 바뀌면 이 문서도 같은 커밋에서 바뀝니다.</p>
 <hr>
 <h2 id="한-문단-요약">한 문단 요약</h2>
-<p>계정 없이도 거의 전부 씁니다. 책·단어장·읽던 자리는 <strong>내 기기 안에만</strong> 있고, 로그인은 AI 사전과 기기 간 동기화 두 가지에만 필요합니다. 낱말을 누르면 그 <strong>낱말과 그 문장 하나</strong>가 AI 에게 갑니다 — 문장 본문은 서버에 저장하지 않습니다. 광고도, 추적기도, 분석 SDK 도 없습니다. 어디에도 팔지 않습니다.</p>
+<p>계정 없이도 거의 전부 씁니다. 책·단어장·읽던 자리는 <strong>내 기기 안에만</strong> 있고, 로그인은 기기 간 동기화를 위해 선택합니다. 낱말을 누르면 그 <strong>낱말과 그 문장 하나</strong>가 AI 에게 갑니다 — Breeze 서버는 문장 본문을 저장하지 않습니다. 다만 기사 URL 가져오기는 CORS 때문에 Breeze 중계 서버에 그 URL을 요청합니다. 광고·추적기·분석 SDK는 없고, 개인정보를 팔지 않습니다.</p>
 <hr>
 <h2 id="1-로그인하지-않으면">1. 로그인하지 않으면</h2>
-<p>아무것도 서버로 가지 않습니다. 아래는 전부 브라우저(앱) 안에만 있습니다.</p>
-<div class="tablewrap"><table><thead><tr><th>무엇</th><th>어디에</th></tr></thead><tbody><tr><td>책 본문 · 표지 · 삽화, 연결해 둔 원본 PDF · EPUB 파일</td><td>IndexedDB</td></tr><tr><td>단어장 — 낱말, 뜻, 모르는 정도(★), 저장된 예문</td><td><code>localStorage: breeze.words</code></td></tr><tr><td>읽던 자리 · 진행도</td><td><code>localStorage: breeze.pos</code></td></tr><tr><td>보기 설정 — 글자 크기, 좌우 여백, 다크 모드</td><td><code>localStorage</code></td></tr><tr><td>기기 표시 <code>breeze.device</code></td><td><code>localStorage</code></td></tr></tbody></table></div>
+<p>기사 URL 가져오기와 AI/무료 사전 조회를 제외하면, 아래는 전부 브라우저(앱) 안에만 있습니다. URL 가져오기는 CORS를 넘기기 위해 해당 URL을 Breeze 중계 서버에 요청하며, 서버는 받은 HTML·이미지를 저장하지 않고 전달합니다. AI·무료 사전 조회의 범위는 각각 3절·5절입니다.</p>
+<div class="tablewrap"><table><thead><tr><th>무엇</th><th>어디에</th></tr></thead><tbody><tr><td>책 본문 · 표지 · 삽화, 연결해 둔 원본 PDF · EPUB 파일</td><td>IndexedDB</td></tr><tr><td>단어장 — 낱말, 뜻, 모르는 정도(★), 저장된 예문과 책 제목</td><td><code>localStorage: breeze.words</code></td></tr><tr><td>읽던 자리 · 진행도</td><td><code>localStorage: breeze.pos</code></td></tr><tr><td>보기 설정 — 글자 크기, 좌우 여백, 다크 모드</td><td><code>localStorage</code></td></tr><tr><td>기기 표시 <code>breeze.device</code></td><td><code>localStorage</code></td></tr></tbody></table></div>
 <p><code>breeze.device</code> 는 이름도 계정도 아닌 임의의 문자열입니다. <strong>로그인 전 AI 무료 횟수를 세는 데에만</strong> 씁니다. 브라우저 저장소를 지우면 새로 생기고, 다른 무엇과도 연결되지 않습니다.</p>
 <p>브라우저 저장소를 비우면 위의 것이 모두 사라집니다. 그래서 아래의 동기화가 있습니다.</p>
 <hr>
 <h2 id="2-로그인하면-선택">2. 로그인하면 (선택)</h2>
 <p>로그인은 <strong>이메일 주소 하나</strong>로 합니다. 비밀번호를 만들지 않고, 메일로 온 링크나 여섯 자리 코드로 들어옵니다. 저장소는 Supabase 입니다.</p>
 <p>서버에 두는 것:</p>
-<ul><li><strong>이메일 주소</strong> — 로그인 수단이자 계정 식별자</li><li><strong>단어장</strong> (<code>words</code>) — 낱말, 뜻, 모르는 정도, 예문</li><li><strong>읽던 자리</strong> (<code>positions</code>) — 책마다 어디까지 읽었나</li><li><strong>올린 책</strong> (<code>books</code> + Storage) — 본문 텍스트(JSON)와 제목·저자·표지 주소</li></ul>
+<ul><li><strong>이메일 주소</strong> — 로그인 수단이자 계정 식별자</li><li><strong>단어장</strong> (<code>words</code>) — 낱말, 뜻, 모르는 정도, 예문과 책 제목</li><li><strong>읽던 자리</strong> (<code>positions</code>) — 책마다 어디까지 읽었나</li><li><strong>올린 책</strong> (<code>books</code> + Storage) — 본문 텍스트(JSON)와 제목·저자·표지 주소</li></ul>
+<p>이 동기화는 <strong>종단간 암호화(E2EE)가 아닙니다.</strong> HTTPS는 전송 중 데이터를 보호하고, 행 수준 보안(RLS)은 다른 이용자가 내 데이터를 읽지 못하게 합니다. 그러나 서비스 운영에 사용되는 권한으로 서버에 저장된 동기화 데이터에 접근하는 것이 기술적으로 불가능한 구조는 아닙니다. 서버도 읽을 수 없는 선택형 암호화 동기화는 아직 제공하지 않습니다.</p>
 <p>책에 대해 두 가지를 분명히 해 둡니다.</p>
 <ul><li><strong>원본 PDF · EPUB 파일 자체는 올라가지 않습니다.</strong> 서버에는 파일 이름과 형식만 남습니다. 그래서 새 기기에서는 원본 파일을 다시 연결해야 <code>원본</code> 모드가 열립니다.</li><li><strong>짧은 글(Casuals)은 넣는 즉시</strong> 올라갑니다(폰에서 담고 노트북에서 읽으라고 있는 줄이니까요). <strong>원서는 손수 올리기를 눌러야만</strong> 올라갑니다.</li></ul>
 <p>기사 사진은 사진 자체가 아니라 <strong>사진의 주소</strong>를 올리고, 받는 기기가 스스로 한 번 받아서 담습니다.</p>
 <hr>
 <h2 id="3-ai-사전을-쓸-때">3. AI 사전을 쓸 때</h2>
-<p>낱말을 눌러 AI 뜻을 받을 때만 일어나는 일입니다. 로그인해야 씁니다(로그인 전 무료 횟수는 예외).</p>
+<p>낱말을 눌러 AI 뜻을 받을 때만 일어나는 일입니다. 로그인하면 제한 없이 쓸 수 있고, 로그인 전에는 기기당 정해진 무료 횟수 안에서만 쓸 수 있습니다. 문장 전체 설명은 로그인 후 하루 5회입니다.</p>
 <p><strong>보내는 것</strong> — Breeze 서버(<code>server/dict</code>)를 거쳐 AI 제공자에게 갑니다.</p>
 <ul><li>누른 낱말과 화면에 있던 그 형태</li><li><strong>그 낱말이 있던 문장 하나</strong> (최대 600자)</li><li>로그인 전이라면 기기 표시(<code>breeze.device</code>), 로그인했다면 계정 식별자</li></ul>
 <p><strong>AI 제공자</strong> — Anthropic(Claude) 또는 Google(Gemini). 뜻을 만드는 데에만 쓰이며, Breeze 는 이들에게 이메일 주소를 넘기지 않습니다.</p>
@@ -152,7 +153,7 @@ tbody tr:last-child td{border-bottom:0}
 <p>AI 제공자에게는 낱말과 문장만 가고, 이메일 주소는 가지 않습니다. 국외로 이전되는 항목은 이 표가 전부입니다.</p>
 <hr>
 <h2 id="10-아동">10. 아동</h2>
-<p>만 14세 미만은 법정대리인의 동의가 있어야 계정을 만들 수 있습니다. 동의 없이 만든 계정을 알게 되면 지웁니다. <strong>로그인 없이 읽고 단어장을 쓰는 것은 나이와 관계없이 할 수 있고, 그때는 아무것도 서버로 가지 않습니다.</strong></p>
+<p>만 14세 미만은 법정대리인의 동의가 있어야 계정을 만들 수 있습니다. 동의 없이 만든 계정을 알게 되면 지웁니다. 로그인 없이 읽고 단어장을 쓰는 것은 나이와 관계없이 할 수 있습니다. 다만 AI·무료 사전 조회와 기사 URL 가져오기는 위에 적은 외부 요청을 사용합니다.</p>
 <hr>
 <h2 id="11-안전하게-지키기">11. 안전하게 지키기</h2>
 <ul><li>서버와 주고받는 것은 모두 HTTPS 로 암호화됩니다.</li><li>서버의 표는 행 수준 보안(RLS)으로 잠겨 있어, 로그인한 사람은 <strong>자기 줄만</strong> 읽고 씁니다.</li><li>비밀번호를 아예 만들지 않으므로, 새어 나갈 비밀번호도 없습니다.</li></ul>
