@@ -12,6 +12,8 @@
        상단바 아래에서 시작해 남는 높이를 채우는 평범한 칸이면 됩니다. */
     body.reading #panel{position:relative; top:auto; margin-top:calc(var(--topbar-h,56px) + 8px);
       height:calc(100% - var(--topbar-h,56px) - 8px);}
+    /* 상단바가 걷힌 상태에서는 남아 있던 56px 빈자리까지 패널이 씁니다. */
+    body.reading.chrome-hidden #panel{margin-top:8px; height:calc(100% - 8px);}
     body.reader-original #panel{width:min(310px,26vw);}
     body.reader-original #panel .inner{padding:21px 20px 34px;}
     body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
@@ -19,7 +21,7 @@
   }
   #panel .inner{padding:26px 26px 40px;}
   #p-handle{display:none; touch-action:none;}
-  #p-top{display:flex; align-items:flex-start; gap:10px;}
+  #p-top{display:flex; align-items:flex-start; gap:10px; padding-bottom:13px; border-bottom:1px solid #E5EBE7;}
   #p-close{flex:none; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:10px; margin-bottom:4px;}
@@ -29,18 +31,20 @@
     color:var(--blue); transition:.15s;}
   #p-speak:hover{background:var(--sky);}
   #p-speak.playing{background:var(--blue); color:#fff; border-color:var(--blue);}
-  .p-row-divider{border:0; border-top:1px solid #E5EBE7; margin:15px 0 11px;}
-  #p-controls{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px;}
+  /* 첫 줄과 둘째 줄은 패널의 숨은 경계 대신, 아주 가는 선 하나만 나눕니다. */
+  .p-row-divider{display:none;}
+  #p-controls{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px; padding:11px 0;}
   /* 상태를 돌리는 단추지만 스위치 흉내는 내지 않습니다. 글자로 현재 상태를 말합니다. */
-  #p-mark{flex:0 0 auto; height:30px; padding:0 12px; border:1px solid #D7DEDC; border-radius:15px;
+  #p-mark{flex:0 0 auto; height:29px; padding:0 11px; border:1px solid #D7DEDC; border-radius:15px;
     background:#F0F2F1; color:var(--soft2); cursor:pointer; font:600 10.5px var(--ui); white-space:nowrap; transition:.16s;}
-  #p-mark.on{border-color:var(--blue); background:var(--blue); color:#fff;}
+  #p-mark.on{border-color:rgba(35,149,207,.55); background:var(--sky); color:var(--blue);}
   #p-mark:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
   body.dark #p-speak{background:#22262B; border-color:#2A2E33;}
   body.dark #p-mark{background:#252A2E; border-color:#343A40;}
-  body.dark #p-mark.on{background:var(--blue); border-color:var(--blue);}
+  body.dark #p-top, body.dark #p-divider{border-color:#30363B;}
+  body.dark #p-mark.on{background:#18394C; border-color:#277FA9; color:#70C9EF;}
   #p-clicked{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font-size:12px; color:var(--soft2);}
-  #p-divider{border:none; border-top:1px solid #E5EBE7; margin:11px 0 15px;}
+  #p-divider{border:none; border-top:1px solid #E5EBE7; margin:0 0 16px;}
   /* AI 가 말하는 자리는 셋 다 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
      그리고 문장 창(`#st-card`). 값은 base.css 의 `--ai-*` 하나뿐입니다. */
   #p-ai{display:none; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));
@@ -201,7 +205,7 @@
   body.dark #p-know:hover{border-color:var(--blue); background:#22333C;}
 
   @media (min-width:761px){
-    #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 9px 26px;
+    #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 13px 26px;
       background:#fff; border-bottom:1px solid rgba(229,235,231,.72);}
     body.dark #p-top{background:#1F2327; border-bottom-color:#2A2E33;}
     body.reader-original #p-top{margin:-21px -20px 0; padding:22px 16px 9px 20px;}
@@ -226,7 +230,7 @@
       justify-content:center; cursor:grab; width:100%; margin:0;}
     #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:#C8D7D6;}
     #p-close{display:none;}
-    #p-top{position:static; margin:0; padding:0; background:transparent; border:0;}
+    #p-top{position:static; margin:0; padding:0 0 13px; background:transparent; border-bottom:1px solid #E5EBE7;}
     #panel .inner{padding:16px 22px calc(34px + env(safe-area-inset-bottom));}
     .page{padding:26px 22px;}
     #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
@@ -246,6 +250,7 @@
       display:none; transform:none; transition:none;}
     body.reading #panel{position:relative; top:auto; margin-top:var(--topbar-h,56px);
       height:calc(100% - var(--topbar-h,56px));}
+    body.reading.chrome-hidden #panel{margin-top:0; height:100%;}
     #panel.on{display:block; transform:none;}
     #p-handle{display:none;}
     #p-close{display:block;}
