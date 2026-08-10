@@ -115,6 +115,7 @@ function fillCard(card, parts){
 
 const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
+const HOME_CASUAL_LIMIT = 4;
 
 /* 목록만 보고 "이건 짧은 글"인지 아는 법.
 
@@ -245,6 +246,13 @@ function casualAddCard(){
   card.innerHTML = `<div class="thumb"><div class="plus">+</div>
     <div class="lbl">기사 URL<br>또는 붙여넣기</div></div>`;
   card.onclick = () => openAddModal('casual');
+  return card;
+}
+function casualMoreCard(count){
+  const card = el('div', 'casual more');
+  card.innerHTML = `<div class="thumb"><div class="plus">→</div>
+    <div class="lbl">내 Casual<br>${count}편 더 보기</div></div>`;
+  card.onclick = () => show('casuals');
   return card;
 }
 
@@ -378,12 +386,13 @@ function renderHome(){
   const rail = document.getElementById('casual-rail');
   const nowCasual = nowReadingIn(casuals);
   rail.innerHTML = '';
-  casuals.forEach(book => rail.appendChild(casualCard(book, nowCasual)));
+  casuals.slice(0, HOME_CASUAL_LIMIT).forEach(book => rail.appendChild(casualCard(book, nowCasual)));
+  if(casuals.length > HOME_CASUAL_LIMIT) rail.appendChild(casualMoreCard(casuals.length - HOME_CASUAL_LIMIT));
   rail.appendChild(casualAddCard());
   document.querySelector('#casuals .sec-sub').textContent = casuals.length
     ? `기사 · 스레드 · 짧은 글 ${casuals.length}편`
     : '기사 · 스레드 · 짧은 글';
-  if(typeof renderRssRail === 'function') renderRssRail();
+  if(typeof appendRssCards === 'function') appendRssCards(rail);
 
   const longform = longformBooks();
   const shelf = document.getElementById('shelf');

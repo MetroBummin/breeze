@@ -12,6 +12,7 @@ const RSS_CACHE_MS = 10 * 60 * 1000;
 let rssEntries = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
+let rssRenderId = 0;
 
 function rssLocal(element){ return (element && (element.localName || element.nodeName) || '').toLowerCase(); }
 function rssChild(element, names){
@@ -112,17 +113,16 @@ async function importRssEntry(entry, card){
     toast((error && error.message) || '기사를 가져오지 못했어요');
   }finally{ card.classList.remove('busy'); }
 }
-function renderRssRail(force){
-  const rail = document.getElementById('rss-rail');
-  if(!rail) return;
-  rail.innerHTML = '<div class="rss-empty">새 글을 불러오는 중…</div>';
+function appendRssCards(rail, force){
+  const renderId = ++rssRenderId;
+  rail.querySelectorAll('.rss-card').forEach(card => card.remove());
   loadRss(force).then(entries => {
-    rail.innerHTML = '';
-    entries.forEach(entry => rail.appendChild(rssCard(entry)));
-    if(!entries.length) rail.innerHTML = '<div class="rss-empty">대표 사진이 있는 새 글이 아직 없어요.</div>';
-  }).catch(error => {
-    console.error(error);
-    rail.innerHTML = '<div class="rss-empty">새 글을 불러오지 못했어요. 잠시 뒤 ↻를 눌러 보세요.</div>';
-  });
+    if(renderId !== rssRenderId || !rail.isConnected) return;
+    const before = rail.querySelector('.casual.add');
+    entries.forEach(entry => rail.insertBefore(rssCard(entry), before));
+  }).catch(error => { console.error(error); });
 }
-document.getElementById('rss-refresh').onclick = () => renderRssRail(true);
+document.getElementById('rss-refresh').onclick = () => {
+  rssLoadedAt = 0;
+  renderHome();
+};

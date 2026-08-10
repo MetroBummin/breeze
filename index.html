@@ -17,7 +17,7 @@
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
-  <link rel="stylesheet" href="styles/home.css?v=89dc8908">
+  <link rel="stylesheet" href="styles/home.css?v=86f2a58d">
   <link rel="stylesheet" href="styles/reader.css?v=af098a1a">
   <link rel="stylesheet" href="styles/dictionary.css?v=fe10f094">
   <link rel="stylesheet" href="styles/components.css?v=ddc98573">
@@ -40,12 +40,12 @@
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=307db606"></script>
+  <script defer src="scripts/library/library.js?v=00037436"></script>
   <script defer src="scripts/library/book-edit.js?v=8027a26e"></script>
   <script defer src="scripts/library/classics.js?v=608376e4"></script>
   <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
   <script defer src="scripts/importers/article.js?v=a38d1d1e"></script>
-  <script defer src="scripts/importers/rss.js?v=ff1929c0"></script>
+  <script defer src="scripts/importers/rss.js?v=0cc32eac"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=ebcbde2c"></script>
   <script defer src="scripts/dictionary/sentence.js?v=6de5d40b"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
@@ -102,6 +102,7 @@
       <h2>Casuals</h2>
       <span class="sec-sub">기사 · 스레드 · 짧은 글</span>
       <div class="sec-acts">
+        <button id="rss-refresh" title="새 글 새로고침" aria-label="새 글 새로고침">↻</button>
         <button id="casual-lib" title="캐주얼 리딩 모아보기" aria-label="캐주얼 리딩 모아보기" onclick="show('casuals')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h3.5v15H5zM10.5 4.5H14v15h-3.5z"/><path d="m16.4 5.6 3.3.9-3.5 13-3.3-.9z"/></svg>
         </button>
@@ -109,15 +110,6 @@
       </div>
     </div>
     <div id="casual-rail"></div>
-  </section>
-
-  <section id="discover">
-    <div class="sec-head">
-      <h2>Discover</h2>
-      <span class="sec-sub">The Conversation · ProPublica · 새 글</span>
-      <div class="sec-acts"><button id="rss-refresh" title="새 글 새로고침" aria-label="새 글 새로고침">↻</button></div>
-    </div>
-    <div id="rss-rail" aria-live="polite"></div>
   </section>
 
   <section id="longform">
