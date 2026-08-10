@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
   <link rel="stylesheet" href="styles/home.css?v=21f9e6e2">
   <link rel="stylesheet" href="styles/reader.css?v=cc15a166">
-  <link rel="stylesheet" href="styles/dictionary.css?v=694bd2da">
+  <link rel="stylesheet" href="styles/dictionary.css?v=3d6e29fa">
   <link rel="stylesheet" href="styles/components.css?v=441d4b85">
   <link rel="stylesheet" href="styles/responsive.css?v=3a1ec5f0">
 
@@ -46,7 +46,7 @@
   <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
   <script defer src="scripts/importers/article.js?v=a38d1d1e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=4f39f1d7"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=8492a1e0"></script>
   <script defer src="scripts/dictionary/sentence.js?v=6d53f747"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
@@ -198,12 +198,13 @@
               <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
             </svg>
           </button>
-          <button id="p-mark" type="button" aria-pressed="true" title="이 단어 표시 끄기">표시</button>
         </div>
         <button id="p-close" title="단어창 닫기" aria-label="단어창 닫기" onclick="closePanel()">✕</button>
       </div>
       <div id="p-phon"></div>
       <div id="p-clicked"></div>
+      <div id="p-mark-row"><span>본문에서 표시</span><button id="p-mark" type="button" role="switch"
+        aria-checked="true" title="이 단어의 본문 색칠 켜기/끄기"><i></i></button></div>
       <hr id="p-divider">
       <!-- 뜻이 사는 곳은 여기 하나입니다. 예전에는 이 박스 아래에 파란 뜻 칸이 하나 더
            있어서, 같은 낱말의 뜻이 화면에 두 번 적혀 있었습니다. 고치는 것도 아래 칸에서만

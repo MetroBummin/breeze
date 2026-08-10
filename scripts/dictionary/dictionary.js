@@ -227,8 +227,8 @@ function renderPanel(){
   const mark = document.getElementById('p-mark');
   const marked = base.mark !== false;
   mark.classList.toggle('on', marked);
-  mark.setAttribute('aria-pressed', String(marked));
-  mark.title = marked ? '이 단어 표시 끄기' : '이 단어 표시 켜기';
+  mark.setAttribute('aria-checked', String(marked));
+  mark.title = marked ? '이 단어의 본문 색칠 끄기' : '이 단어의 본문 색칠 켜기';
 
   const contextBtn=document.getElementById('p-context'), saveContext=document.getElementById('p-save-context');
   contextBtn.classList.toggle('on', !!context && !context.answer);

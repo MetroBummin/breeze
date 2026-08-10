@@ -29,14 +29,20 @@
     color:var(--blue); transition:.15s;}
   #p-speak:hover{background:var(--sky);}
   #p-speak.playing{background:var(--blue); color:#fff; border-color:var(--blue);}
-  /* 낱말을 저장하는 것과 책 전체에서 색칠하는 것은 다른 선택입니다. 글자 하나만
-     남겨 두면 눈에 안 띄고, 큰 설정 줄을 만들면 사전의 흐름을 끊습니다. */
-  #p-mark{flex:none; height:27px; padding:0 8px; border:1px solid var(--line); border-radius:14px;
-    background:transparent; color:var(--soft2); font:600 10.5px var(--ui); cursor:pointer;}
-  #p-mark.on{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
-  #p-mark:hover{border-color:var(--ai-key); color:var(--ai-key);}
+  /* 낱말 저장과 본문 색칠은 다른 일입니다. 이름을 적고 스위치를 두면, 작은
+     자리만 쓰면서도 무엇을 켜고 끄는지 바로 알 수 있습니다. */
+  #p-mark-row{display:flex; align-items:center; justify-content:space-between; margin:7px 0 -3px;
+    color:var(--soft2); font:11.5px var(--ui);}
+  #p-mark{position:relative; width:37px; height:22px; padding:0; border:0; border-radius:12px;
+    background:#C9D2D3; cursor:pointer; transition:background .16s;}
+  #p-mark i{position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.18); transition:transform .16s;}
+  #p-mark.on{background:var(--blue);}
+  #p-mark.on i{transform:translateX(15px);}
+  #p-mark:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
   body.dark #p-speak{background:#22262B; border-color:#2A2E33;}
-  body.dark #p-mark{border-color:#2A2E33;}
+  body.dark #p-mark{background:#495056;}
+  body.dark #p-mark.on{background:var(--blue);}
   #p-phon{color:#5F7881; font-size:14px; margin-bottom:4px;}
   #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
   #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
