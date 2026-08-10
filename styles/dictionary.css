@@ -159,6 +159,12 @@
   #p-colloc.on + .p-sec, #p-colloc-sec.on{display:block;}
   .colloc{border:1px solid var(--line); border-radius:14px; padding:5px 11px; font-size:12.5px;
           color:var(--soft); font-family:var(--serif); font-style:italic;}
+  /* 표현은 있을 때만 나타납니다. 그래서 여러 후보 중 하나처럼 묻히지 않고,
+     통째로 봐야 한다는 신호 하나만 또렷하게 남깁니다. */
+  .phrase-suggestion{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--ai-line);
+    border-radius:16px; padding:7px 12px; background:linear-gradient(110deg,var(--ai-bg1),var(--ai-bg2));
+    color:var(--ai-ink); font:italic 600 14px var(--serif); box-shadow:0 3px 10px rgba(37,137,190,.08);}
+  .phrase-star{font:12px var(--ui); color:var(--ai-key); font-style:normal;}
   .colloc.hit{border-color:var(--blue); color:var(--blue); background:var(--sky);}
   body.dark .colloc.hit{background:#22333C;}
   #p-kodict{display:flex; flex-wrap:wrap; gap:7px;}

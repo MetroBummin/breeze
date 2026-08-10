@@ -214,15 +214,13 @@ function parseJson(raw: string): Record<string, unknown> | null {
 const LOOK_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["lemma", "pos", "ko", "gloss", "note", "alts", "colloc"],
+  required: ["lemma", "pos", "ko", "gloss", "phrase"],
   properties: {
     lemma: { type: "string" },
     pos: { type: "string" },
     ko: { type: "string" },
     gloss: { type: "string" },
-    note: { type: "string" },
-    alts: { type: "array", items: { type: "string" } },
-    colloc: { type: "array", items: { type: "string" } },
+    phrase: { type: "string" },
   },
 };
 
@@ -238,14 +236,13 @@ ${skip}
 - lemma: 사전 표제어(원형). 고유명사나 약어면 그대로
 - pos: 명사|동사|형용사|부사|전치사|기타 중 하나
 - ko: 이 문장에서의 뜻. 한국어로 8자 내외. 설명이 아니라 사전에 실릴 짧은 뜻
-- gloss: 이 뜻이 어떤 때 쓰이는 뜻인지 한국어 한 문장. 반드시 쓰세요, 절대 비우지 마세요.
-  예문을 쓰지 말고 성질을 설명하세요. ("어떤 행동이나 상태가 멈추지 않고 이어질 때 씁니다")
-- note: 이 문장에서만 알 수 있는 것 한국어 한 문장. gloss 를 되풀이하지 마세요.
-  누가 무엇을 계속하는지, 어느 쪽으로 기울어진 말인지 같은 것. 보탤 말이 없으면 빈 문자열
-- alts: 이 단어의 다른 흔한 뜻 2~3개. 한국어로 짧게. ko 와 겹치지 않게
-- colloc: 이 뜻과 자주 함께 쓰이는 표현 2~3개. 사용자 문장을 베끼지 말고 일반 지식으로
+- gloss: 이 뜻이 어떤 때 쓰이는지 한국어 한 문장으로 설명하세요. 예문을 쓰지 말고
+  뜻의 성질을 설명하세요. ("어떤 행동이나 상태가 멈추지 않고 이어질 때 씁니다")
+- phrase: 이 문장에서 클릭한 단어를 포함해 **통째로 알아야 뜻이 달라지는** 아주 확실한
+  고정 표현 하나만 적으세요. (예: "hot take", "per se", "prime minister")
+  단순히 자주 붙는 단어, 애매한 조합, 문장 전체는 절대 넣지 말고 빈 문자열로 두세요.
 
-{"lemma":"","pos":"","ko":"","gloss":"","note":"","alts":[""],"colloc":[""]}`;
+{"lemma":"","pos":"","ko":"","gloss":"","phrase":""}`;
 }
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -295,17 +292,12 @@ async function opLook(body: any, userId: string | null, seeding = false) {
 
   const ko = clean(parsed.ko, 60);
   const gloss = clean(parsed.gloss, 300);
-  const note = clean(parsed.note, 300);
   const answer = {
     lemma,
     pos: clean(parsed.pos, 12),
     ko,
     gloss,
-    /* 같은 말을 두 줄에 걸쳐 두 번 쓰지 않습니다. 모델이 gloss 를 그대로 note 에
-       옮겨 적는 일이 있어서, 그럴 때는 아랫줄만 남깁니다. */
-    note: note === gloss ? "" : note,
-    alts: cleanList(parsed.alts, 3, 40).filter((a) => a !== ko),
-    colloc: cleanList(parsed.colloc, 3, 60),
+    phrase: clean(parsed.phrase, 80),
     provider: out.provider,
     /* 로그인 전이면 몇 번 남았는지 함께 돌려줍니다. 마지막 한두 번쯤에
        미리 알려 줘야, 다음 낱말에서 갑자기 막히지 않습니다. */
@@ -321,11 +313,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
     userId, action: retry ? "retry" : "look", word, clicked, sentence,
     lemma, pos: answer.pos, aiKo: answer.ko, provider: out.provider,
     book: clean(body.book, 200),
-    /* gloss 가 비어 오는 비율은 프롬프트가 먹히는지 보는 지표입니다.
-       예전에 "뻔하면 빈 문자열" 이라고 써 뒀다가 설명 줄이 통째로 사라졌습니다.
-       기기 표시는 여기 남기지 않습니다 — 로그인 전 사람을 표에서 이어 붙일
-       수 있게 되면 그건 다른 종류의 기록이 됩니다. */
-    meta: { alts: answer.alts.length, gloss: gloss ? 1 : 0, note: answer.note ? 1 : 0,
+    meta: { gloss: answer.gloss ? 1 : 0, phrase: answer.phrase ? 1 : 0,
             avoid: avoid.length, ...(anonLeft === null ? {} : { anon: 1 }) },
   });
   return json(answer);

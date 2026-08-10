@@ -107,14 +107,27 @@ let contextView = null;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
 function answerFromLook(j, cached){
   const oldAi=j.ai||{};
-  return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',gloss:j.gloss||oldAi.gloss||'',note:j.note||oldAi.note||'',done:true,cached:!!cached},
-    alts:(j.alts||[]).filter(Boolean).slice(0,3), colloc:(j.colloc||[]).slice(0,3), aiLemma:j.lemma||'' };
+  return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',gloss:j.gloss||oldAi.gloss||'',note:'',done:true,cached:!!cached},
+    alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
+}
+function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
+function findContextCard(root, sentence){
+  const id=contextCardKey(root,sentence);
+  return words[id] ? id : null;
 }
 
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
    저장된 단어를 다시 만났을 때만 별을 하나 올립니다. */
 function openWord(k, node){
   if(!words[k]){ addWord(k, node); return; }
+  const nextExample = sentenceOf(node);
+  const root=words[k].root||k;
+  const savedContext=nextExample && findContextCard(root,nextExample);
+  if(savedContext){
+    const now=Date.now(), seenAt=recentWordOpens.get(savedContext)||0;
+    if(now-seenAt>=RECENT_WORD_OPEN_MS && words[savedContext].status<3) setStatus(savedContext,words[savedContext].status+1);
+    recentWordOpens.set(savedContext,now); contextView=null; selectWord(savedContext,node); return;
+  }
   const now = Date.now();
   const seenAt = recentWordOpens.get(k) || 0;
   if(now - seenAt >= RECENT_WORD_OPEN_MS && words[k].status < 3) setStatus(k, words[k].status + 1);
@@ -122,12 +135,10 @@ function openWord(k, node){
 
   /* 새 문장은 우선 대표 뜻과 나란히 봅니다. 자동으로 AI를 부르거나 대표 예문을
      바꾸지 않습니다 — 사용자가 "이 문맥에서는?"을 눌렀을 때만 새 뜻을 찾습니다. */
-  const nextExample = sentenceOf(node);
   if(nextExample && nextExample !== words[k].example){
     const w = words[k];
-    const known = (w.senses||[]).find(s=>s.example===nextExample);
     contextView = { key:k, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
-      book:(curBook&&curBook.title)||w.book, answer:known ? answerFromLook(known,true) : null, saved:!!known };
+      book:(curBook&&curBook.title)||w.book, answer:null, saved:false };
     selectWord(k, node);
     return;
   }
@@ -253,11 +264,10 @@ function renderPanel(){
     /* 편집 중에 renderPanel 이 돌아도 커서가 앞으로 튀지 않게, 달라졌을 때만 씁니다. */
     if(aiKo.textContent !== shown) aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
-    /* 윗줄에는 이 문장 이야기를 씁니다. 그게 없으면 뜻의 성질(gloss)이 올라와
-       윗줄 자리를 지킵니다 — 예전에 프롬프트가 "뻔하면 빈 문자열"을 허락해서
-       설명 줄이 통째로 사라져 있었습니다. 뜻만 덩그러니 있으면 사전이 아닙니다. */
-    const top = ai.note || ai.gloss || (w.aiSlow ? '조금 오래 걸렸어요. 아래에서 다시 시도할 수 있어요.' : '');
-    const under = (ai.note && ai.gloss && ai.gloss !== ai.note) ? ai.gloss : '';
+    /* 사전에는 뜻의 성질을 설명하는 한 줄만 둡니다. 문장 전용 note까지 붙이면
+       같은 뜻 상자가 두 번 설명하는 모양이 되어 읽는 흐름을 끊었습니다. */
+    const top = ai.gloss || (w.aiSlow ? '조금 오래 걸렸어요. 아래에서 다시 시도할 수 있어요.' : '');
+    const under = '';
     aiN.textContent = top;
     aiN.style.display = top ? 'block' : 'none';
     aiG.textContent = under;
@@ -298,39 +308,10 @@ function renderPanel(){
      "눌렀는데 왜 안 돼?"가 되므로 sentence.js가 같은 기준으로 칠합니다. */
   if(typeof refreshSentenceExplainAvailability === 'function') refreshSentenceExplainAvailability(w);
 
-  const kod = document.getElementById('p-kodict');
-  kod.innerHTML='';
-  const chips = meaningChips(w);
-  if(!chips.length){
-    kod.innerHTML = w.loading
-      ? '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>'
-      : '<span style="color:var(--soft2);font-size:13px">다른 뜻 후보가 없어요</span>';
-  }else{
-    for(const c of chips){
-      const b = document.createElement('button');
-      b.className = 'kochip' + (w.ko===c.term ? ' on':'');
-      b.innerHTML = (c.pos ? `<span class="pos">${esc(c.pos)}</span>` : '') + esc(c.term);
-      b.onclick = ()=>{
-        if(context && context.answer){
-          context.answer.ko=c.term;
-          if(context.answer.ai) context.answer.ai.ko=c.term;
-          renderPanel();
-          return;
-        }
-        w.ko = c.term;
-        /* AI 가 고른 뜻으로 되돌아온 것은 "고쳤다"가 아닙니다. */
-        if(c.term === (w.ai && w.ai.ko)) delete w.koEdited; else w.koEdited = true;
-        w.up = Date.now(); saveWords(); queueSync(); renderPanel();
-        logDict('pick', k);
-      };
-      kod.appendChild(b);
-    }
-  }
-
   const col = document.getElementById('p-colloc'), colSec = document.getElementById('p-colloc-sec');
-  if(w.colloc && w.colloc.length){
+  if(w.phrase){
     col.className = 'on'; colSec.className = 'p-sec on';
-    col.innerHTML = w.colloc.map(c=>'<span class="colloc">'+esc(c)+'</span>').join('');
+    col.innerHTML = '<span class="phrase-suggestion"><span class="phrase-star">✦</span>'+esc(w.phrase)+'</span>';
   }else{
     col.className = ''; colSec.className = 'p-sec'; col.innerHTML = '';
   }
@@ -354,6 +335,12 @@ document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;
   logDict('known', k);
+  const root=words[k]&&words[k].root;
+  /* 대표 단어를 빼면 그 아래의 문맥 카드도 함께 빼야 유령 카드가 남지 않습니다.
+     반대로 take의 두 번째 뜻 카드만 빼는 경우에는 그 카드 하나만 지웁니다. */
+  if(!root){
+    Object.keys(words).filter(id=>words[id]&&words[id].root===k).forEach(id=>delete words[id]);
+  }
   delete words[k]; dead[k] = Date.now(); save(LS_DEAD, dead);
   saveWords(); paintWord(k); closePanel(); queueSync(); toast('단어장에서 뺐어요');
 };
@@ -634,13 +621,13 @@ async function askCurrentContext(k){
 function saveCurrentContext(k){
   const w=words[k], context=currentContext(k);
   if(!w || !context || !context.answer || !context.answer.ko) return;
-  const id=sentenceHash(context.sentence);
-  const sense={id,example:context.sentence,clicked:context.clicked||'',book:context.book||'',
+  const root=w.root||k, id=contextCardKey(root,context.sentence);
+  /* 화면에는 둘 다 take로 보이지만, 저장·복습·난이도는 서로 다른 카드입니다. */
+  words[id]={word:w.word,root,clicked:context.clicked||'',forms:w.forms||[w.word],
+    example:context.sentence,book:context.book||'',status:1,mark:w.mark!==false,
     ko:context.answer.ko,ai:context.answer.ai||{},alts:context.answer.alts||[],
-    colloc:context.answer.colloc||[],addedAt:Date.now()};
-  const all=(w.senses||[]).filter(item=>item.id!==id);
-  w.senses=[...all,sense].slice(-5); // 다의어 기록은 다섯 개면 충분하고 단어장을 부풀리지 않습니다.
-  w.up=Date.now(); saveWords(); queueSync();
+    phrase:context.answer.phrase||'',addedAt:Date.now(),up:Date.now()};
+  saveWords(); queueSync();
   context.saved=true;
   renderPanel(); toast('이 문맥의 뜻도 저장했어요');
 }
@@ -708,13 +695,14 @@ async function fetchLook(k, opt){
 function applyLook(w, j, k, opt){
   opt = opt || {};
   delete w.aiLoading; delete w.aiOff;
-  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note: j.note || '', done:true,
+  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note:'', done:true,
            /* 이 기기가 전에 물어봤던 답인지. 머리글 한 줄이 달라집니다 —
               한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
            cached: !!opt.cached };
   w.aiLemma = j.lemma || w.aiLemma || '';
-  w.alts = (j.alts || []).filter(Boolean).slice(0,3);
-  if((j.colloc || []).length) w.colloc = j.colloc.slice(0,3);
+  w.alts = [];
+  w.colloc = [];
+  w.phrase = j.phrase || '';
   /* 사람이 손으로 고친 뜻은 덮지 않습니다. "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다 —
      그때는 새 뜻을 달라는 뜻이니까요. */
   if(opt.retry || !w.koEdited) w.ko = j.ko || w.ko;

@@ -101,35 +101,27 @@ function miniToast(msg){
 /* ---- 발음 ----------------------------------------------------------------
    1순위: 사전이 주는 원어민 녹음(mp3)   2순위: 기기 내장 음성(TTS)
    앱(Capacitor)으로 옮길 때도 이 함수 안쪽만 교체하면 됩니다.            */
-let curAudio = null;
-function speak(text, audioUrl){
+let curAudio = null, speakGeneration = 0;
+function speak(text){
   const btn = document.getElementById('p-speak');
   const mark = on => btn && btn.classList.toggle('playing', on);
-  try{ if(curAudio){ curAudio.pause(); curAudio = null; } }catch(e){}
+  const generation=++speakGeneration;
+  try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-
-  const tts = ()=>{
-    if(!window.speechSynthesis){ toast('이 브라우저는 발음 재생을 지원하지 않아요'); return; }
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.95;
-    const v = speechSynthesis.getVoices().find(v=>/^en(-|_)/i.test(v.lang));
-    if(v) u.voice = v;
-    u.onstart = ()=>mark(true); u.onend = ()=>mark(false); u.onerror = ()=>mark(false);
-    speechSynthesis.speak(u);
-  };
-
-  if(audioUrl){
-    const a = new Audio(audioUrl);
-    curAudio = a;
-    a.onplay = ()=>mark(true);
-    a.onended = ()=>{ mark(false); curAudio = null; };
-    a.onerror = ()=>{ mark(false); curAudio = null; tts(); };   // 녹음이 없거나 막히면 기기 음성으로
-    a.play().catch(()=>{ mark(false); curAudio = null; tts(); });
-  }else tts();
+  if(!window.speechSynthesis){ toast('이 브라우저는 발음 재생을 지원하지 않아요'); return; }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = 0.95;
+  const v = speechSynthesis.getVoices().find(v=>/^en(-|_)/i.test(v.lang));
+  if(v) u.voice = v;
+  u.onstart = ()=>{ if(generation===speakGeneration) mark(true); };
+  u.onend = u.onerror = ()=>{ if(generation===speakGeneration) mark(false); };
+  /* 원어민 mp3는 내려받고 실패하는 동안 뒤늦게 여러 TTS를 쌓았습니다. 발음은
+     사전 정보보다 즉시성이 중요하므로, 기기 음성만 바로 재생합니다. */
+  speechSynthesis.speak(u);
 }
 function speakWord(){
   const w = words[selKey]; if(!w) return;
-  speak(w.word, w.audio);
+  speak(w.word);
 }
 
 let toastTimer;
