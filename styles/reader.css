@@ -167,13 +167,13 @@
   /* PDF만 버튼 한 번마다 한 단계씩 키웁니다. 우하단의 읽기 단추처럼 화면에
      고정하되, 상단바가 보일 때는 그 아래에 두고 걷히면 같이 위로 올라옵니다. */
   #pdfzoomfabs{position:fixed; top:calc(var(--topbar-h,56px) + 14px); right:18px; z-index:70;
-    width:96px; height:44px; display:flex; overflow:hidden; border:1px solid var(--line);
-    border-radius:14px; background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
+    width:72px; height:33px; display:flex; overflow:hidden; border:1px solid var(--line);
+    border-radius:11px; background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
     box-shadow:0 4px 14px rgba(23,55,71,.12); transition:top .24s ease,opacity .3s;}
   #pdfzoomfabs[hidden]{display:none;}
-  #pdfzoomfabs button{flex:1; height:44px; border:0; background:transparent; cursor:pointer;
+  #pdfzoomfabs button{flex:1; height:33px; border:0; background:transparent; cursor:pointer;
     display:flex; align-items:center; justify-content:center; color:var(--soft);
-    font:600 24px/1 var(--ui); padding:0;
+    font:600 18px/1 var(--ui); padding:0;
     transition:color .2s,background .2s,opacity .2s;}
   #pdfzoom-in{border-left:1px solid var(--line)!important;}
   #pdfzoomfabs button:hover{color:var(--blue); background:var(--sky);}
