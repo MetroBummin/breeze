@@ -29,20 +29,18 @@
     color:var(--blue); transition:.15s;}
   #p-speak:hover{background:var(--sky);}
   #p-speak.playing{background:var(--blue); color:#fff; border-color:var(--blue);}
-  /* 색칠은 사운드와 함께 즉시 바꾸는 행동이라, 단어 제목 옆에 둡니다. */
-  #p-mark{flex:0 0 auto; height:30px; display:flex; align-items:center; gap:5px; padding:0 7px 0 9px;
-    border:1px solid var(--line); border-radius:16px; background:#F3F5F3; color:var(--soft2);
-    cursor:pointer; font:600 10.5px var(--ui); white-space:nowrap; transition:.16s;}
-  #p-mark i{width:13px; height:13px; border-radius:50%; background:#AAB6B8;
-    box-shadow:0 1px 2px rgba(0,0,0,.14); transition:.16s;}
-  #p-mark.on{border-color:rgba(35,149,207,.35); background:var(--sky); color:var(--blue);}
-  #p-mark.on i{background:var(--blue);}
+  .p-row-divider{border:0; border-top:1px solid #E5EBE7; margin:15px 0 11px;}
+  #p-controls{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px;}
+  /* 상태를 돌리는 단추지만 스위치 흉내는 내지 않습니다. 글자로 현재 상태를 말합니다. */
+  #p-mark{flex:0 0 auto; height:30px; padding:0 12px; border:1px solid #D7DEDC; border-radius:15px;
+    background:#F0F2F1; color:var(--soft2); cursor:pointer; font:600 10.5px var(--ui); white-space:nowrap; transition:.16s;}
+  #p-mark.on{border-color:var(--blue); background:var(--blue); color:#fff;}
   #p-mark:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
   body.dark #p-speak{background:#22262B; border-color:#2A2E33;}
   body.dark #p-mark{background:#252A2E; border-color:#343A40;}
-  body.dark #p-mark.on{background:#18364A; border-color:#286B91;}
-  #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
-  #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
+  body.dark #p-mark.on{background:var(--blue); border-color:var(--blue);}
+  #p-clicked{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font-size:12px; color:var(--soft2);}
+  #p-divider{border:none; border-top:1px solid #E5EBE7; margin:11px 0 15px;}
   /* AI 가 말하는 자리는 셋 다 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
      그리고 문장 창(`#st-card`). 값은 base.css 의 `--ai-*` 하나뿐입니다. */
   #p-ai{display:none; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));
@@ -166,7 +164,8 @@
      통째로 봐야 한다는 신호 하나만 또렷하게 남깁니다. */
   .phrase-suggestion{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--ai-line);
     border-radius:16px; padding:7px 12px; background:linear-gradient(110deg,var(--ai-bg1),var(--ai-bg2));
-    color:var(--ai-ink); font:italic 600 14px var(--serif); box-shadow:0 3px 10px rgba(37,137,190,.08);}
+    color:var(--ai-ink); font:italic 600 14px var(--serif); box-shadow:0 3px 10px rgba(37,137,190,.08); cursor:pointer;}
+  .phrase-suggestion:hover{border-color:var(--blue); transform:translateY(-1px);}
   .phrase-star{font:12px var(--ui); color:var(--ai-key); font-style:normal;}
   .colloc.hit{border-color:var(--blue); color:var(--blue); background:var(--sky);}
   body.dark .colloc.hit{background:#22333C;}

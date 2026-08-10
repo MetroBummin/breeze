@@ -103,8 +103,9 @@ const recentWordOpens = new Map();
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 읽는 중의
    문장을 서버 동기화 객체에 덮어 쓰지 않습니다. 사용자가 "이 뜻도 저장"을 눌러야
    그때만 `senses`에 들어갑니다. */
-let contextView = null;
+let contextView = null, phraseView = null;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
+function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
 function answerFromLook(j, cached){
   const oldAi=j.ai||{};
   return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',gloss:j.gloss||oldAi.gloss||'',note:'',done:true,cached:!!cached},
@@ -149,6 +150,7 @@ function selectWord(k, span){
   /* 다른 낱말을 누르면 앞 낱말의 문장 해석을 남겨 둘 이유가 없습니다. */
   if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
+  if(!phraseView || phraseView.key !== k) phraseView = null;
   selKey = k;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
@@ -159,7 +161,7 @@ function selectWord(k, span){
 }
 function closePanel(){
   selKey=null;
-  contextView=null;
+  contextView=null; phraseView=null;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();
@@ -211,22 +213,27 @@ function renderPanel(){
   const base = words[selKey]; if(!base) return;
   const k = selKey;
   const context = currentContext(k);
+  const phrase = !context && currentPhrase(k);
   /* 새 문맥의 AI 답은 대표 단어를 덮지 않는 미리보기입니다. 화면은 같은 사전
      모양을 쓰되, 저장 버튼을 누르기 전에는 `base`에 아무것도 쓰지 않습니다. */
   const w = context ? Object.assign({}, base, context.answer || {}, {
     example:context.sentence, clicked:context.clicked, book:context.book,
     aiLoading:!!context.loading, aiSlow:false, aiOff:context.error||'',
+  }) : phrase ? Object.assign({}, base, phrase.answer || { ko:'', ai:{}, phrase:'' }, {
+    word:phrase.phrase, clicked:'', example:phrase.sentence, book:phrase.book,
+    aiLoading:!!phrase.loading, aiSlow:false, aiOff:phrase.error||'',
   }) : base;
   document.getElementById('p-word').textContent = w.word;
   document.getElementById('p-clicked').textContent =
-    (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
+    phrase ? `표현 뜻 보기 · ${phrase.phrase}`
+    : (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
   document.getElementById('p-ex').textContent = w.example || '—';
   document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
   const mark = document.getElementById('p-mark');
   const marked = base.mark !== false;
   mark.classList.toggle('on', marked);
-  mark.setAttribute('aria-checked', String(marked));
+  mark.setAttribute('aria-pressed', String(marked));
   mark.querySelector('span').textContent = marked ? '색칠 ON' : '색칠 OFF';
   mark.title = marked ? '이 단어의 본문 색칠 끄기' : '이 단어의 본문 색칠 켜기';
 
@@ -311,7 +318,8 @@ function renderPanel(){
   const col = document.getElementById('p-colloc'), colSec = document.getElementById('p-colloc-sec');
   if(w.phrase){
     col.className = 'on'; colSec.className = 'p-sec on';
-    col.innerHTML = '<span class="phrase-suggestion"><span class="phrase-star">✦</span>'+esc(w.phrase)+'</span>';
+    col.innerHTML = '<button type="button" class="phrase-suggestion" title="표현 전체의 뜻 보기"><span class="phrase-star">✦</span>'+esc(w.phrase)+'</button>';
+    col.querySelector('button').onclick=()=>openPhrase(k);
   }else{
     col.className = ''; colSec.className = 'p-sec'; col.innerHTML = '';
   }
@@ -329,6 +337,28 @@ document.getElementById('p-mark').onclick=()=>{
   w.mark = w.mark === false;
   w.up=Date.now(); saveWords(); paintWord(selKey); queueSync(); renderPanel();
 };
+
+/* 고정 표현은 낱말 하나와 뜻이 달라질 수 있습니다. 칩을 누르면 대표 단어를
+   바꾸지 않고, 지금 열린 패널에서만 표현 전체를 하나의 표제어로 다시 풉니다. */
+async function openPhrase(k){
+  const base=words[k], text=base&&base.phrase;
+  if(!base || !text || (phraseView && phraseView.key===k && phraseView.loading)) return;
+  const view={key:k, phrase:text, sentence:base.example||'', book:base.book||'', loading:true};
+  phraseView=view; renderPanel();
+  try{
+    const cacheKey=lookKey('phrase:'+text,view.sentence);
+    const hit=await dictGet(cacheKey);
+    if(hit && hit.ko){ view.answer=answerFromLook(hit,!hit.seed); return; }
+    const j=await dictCall({op:'look',word:text,clicked:text,cands:[text.toLowerCase()],
+      sentence:view.sentence,book:view.book});
+    if(!j || j.error || !j.ko){ view.error=(j&&j.error)||'error'; return; }
+    await dictPut(cacheKey,Object.assign({},j,{done:true}));
+    view.answer=answerFromLook(j,false);
+  }finally{
+    view.loading=false;
+    if(currentPhrase(k)===view && selKey===k) renderPanel();
+  }
+}
 document.getElementById('p-context').onclick=()=>{ if(selKey) askCurrentContext(selKey); };
 document.getElementById('p-save-context').onclick=()=>{ if(selKey) saveCurrentContext(selKey); };
 document.getElementById('p-know').onclick = ()=>{

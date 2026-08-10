@@ -23,16 +23,21 @@
 const sentKey = text => 's:' + sentenceHash(text);
 const LS_SENT_LEFT = 'breeze.sent-left';
 
-/* 서버가 답할 때마다 남은 횟수를 알려 줍니다. 그 값을 날짜와 함께 들고 있다가
+/* 서버가 답할 때마다 남은 횟수를 알려 줍니다. 한국 날짜와 함께 들고 있다가
    창을 열 때 보여 줍니다 — 물어보기 전에 몇 번 남았는지 알아야 아낄 수 있습니다. */
+function sentDay(){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'})
+    .formatToParts(new Date()).reduce((o,x)=>(o[x.type]=x.value,o),{});
+  return `${p.year}-${p.month}-${p.day}`;
+}
 function sentLeft(){
   const kept = load(LS_SENT_LEFT, null);
-  const today = new Date().toISOString().slice(0,10);
+  const today = sentDay();
   return (kept && kept.day === today) ? kept.left : null;
 }
-function rememberSentLeft(left){
+function rememberSentLeft(left, day){
   if(typeof left !== 'number') return;
-  save(LS_SENT_LEFT, { day:new Date().toISOString().slice(0,10), left });
+  save(LS_SENT_LEFT, { day:day||sentDay(), left });
   if(typeof refreshSentenceExplainAvailability === 'function') refreshSentenceExplainAvailability(words[selKey]);
 }
 
@@ -48,10 +53,12 @@ function refreshSentenceExplainAvailability(w){
   if(!hasSentence) reason = '이 낱말에는 문장 해석에 쓸 예문이 없어요';
   else if(!sb || !sbUser) reason = '로그인하면 문장 해석을 쓸 수 있어요';
   else if(navigator.onLine === false) reason = '인터넷에 연결되면 문장 해석을 쓸 수 있어요';
+  else if(sentLeft() === 0) reason = '오늘 문장 해석 5회를 다 썼어요. 내일 다시 채워져요';
   button.style.display = hasSentence ? 'flex' : 'none';
   button.disabled = !!reason;
   button.classList.toggle('ready', !reason);
-  note.textContent = reason || '문장이 막힐 때 언제든 물어볼 수 있어요';
+  const left=sentLeft();
+  note.textContent = reason || (typeof left === 'number' ? `오늘 ${left}회 남았어요` : '하루 5회까지 쓸 수 있어요');
   note.classList.toggle('on', hasSentence);
 }
 
@@ -128,12 +135,14 @@ async function openSentence(text){
 
   if(!answer || answer.error || !answer.ko){
     const why = answer && answer.error;
+    if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
     paintSentence({ en:clean, foot:
         why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
+      : why === 'quota_exceeded' ? '오늘 문장 해석 5회를 다 썼어요. 내일 다시 채워져요'
       :                            '잠깐 문제가 있었어요. 다시 눌러 보세요' });
     return;
   }
-  rememberSentLeft(answer.left);
+  rememberSentLeft(answer.left,answer.day);
   await dictPut(key, { ko:answer.ko, points:answer.points || [], done:true });
   paintSentence({ en:clean, ko:answer.ko, points:answer.points || [] });
 }

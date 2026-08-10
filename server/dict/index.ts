@@ -52,6 +52,9 @@ const ANON_DAILY_CAP = Number(Deno.env.get("AI_ANON_DAILY_CAP") ?? 2000);
    낱말은 읽다가 계속 누르는 것이고, 문장은 "이건 도저히 안 읽힌다" 싶을 때
    한 번 쓰는 것입니다. 하루 다섯 번이면 그 쓰임에 모자라지 않습니다. */
 const EXPLAIN_DAILY = Number(Deno.env.get("AI_EXPLAIN_DAILY") ?? 5);
+/* 예전 꾹 누르기 UI가 남긴 기록과 새 버튼 UI의 사용량은 섞지 않습니다. 전자는
+   화면을 닫은 뒤에도 요청이 끝나 기록될 수 있어, 실제로 본 횟수의 근거가 될 수 없었습니다. */
+const EXPLAIN_QUOTA_VERSION = "button-v2";
 
 const SYSTEM =
   "You are a precise bilingual dictionary for Korean learners reading English books. " +
@@ -225,15 +228,16 @@ const LOOK_SCHEMA = {
 };
 
 function lookPrompt(word: string, clicked: string, sentence: string, avoid: string[]) {
-  const form = clicked && clicked.toLowerCase() !== word.toLowerCase()
+  const isPhrase = /\s/.test(word.trim());
+  const form = isPhrase ? `표현: ${word}` : clicked && clicked.toLowerCase() !== word.toLowerCase()
     ? `단어: ${word} (문장에서는 "${clicked}")` : `단어: ${word}`;
   const skip = avoid.length ? `\n이 뜻들은 이미 보여 줬으니 고르지 마세요: ${avoid.join(", ")}\n` : "";
   return `${form}
 문장: ${sentence || "(문장 없음 — 일반적인 뜻으로 답하세요)"}
 ${skip}
-이 문장에서 이 단어가 어떤 뜻으로 쓰였는지 판단하세요.
+이 문장에서 이 ${isPhrase ? "표현 전체가" : "단어가"} 어떤 뜻으로 쓰였는지 판단하세요.
 
-- lemma: 사전 표제어(원형). 고유명사나 약어면 그대로
+- lemma: 사전 표제어(원형). 표현이면 표현 전체를 그대로, 고유명사나 약어면 그대로
 - pos: 명사|동사|형용사|부사|전치사|기타 중 하나
 - ko: 이 문장에서의 뜻. 한국어로 8자 내외. 설명이 아니라 사전에 실릴 짧은 뜻
 - gloss: 이 뜻이 어떤 때 쓰이는지 한국어 한 문장으로 설명하세요. 예문을 쓰지 말고
@@ -361,21 +365,36 @@ function explainPrompt(sentence: string) {
 {"ko":"","points":[""]}`;
 }
 
-async function explainsToday(userId: string): Promise<number> {
-  const since = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z").toISOString();
+function seoulDayBounds() {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" })
+    .formatToParts(new Date()).reduce<Record<string, string>>((out, part) => { out[part.type] = part.value; return out; }, {});
+  const year = Number(parts.year), month = Number(parts.month), day = Number(parts.day);
+  const start = Date.UTC(year, month - 1, day) - 9 * 60 * 60 * 1000;
+  return { day: `${parts.year}-${parts.month}-${parts.day}`, since: new Date(start).toISOString(), until: new Date(start + 86400000).toISOString() };
+}
+
+async function explainsToday(userId: string): Promise<{ used: number; day: string }> {
+  const bounds = seoulDayBounds();
   const { count, error } = await SR.from("dict_events")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId).eq("action", "explain").gte("at", since);
+    .eq("user_id", userId).eq("action", "explain")
+    .contains("meta", { quota_version: EXPLAIN_QUOTA_VERSION })
+    .gte("at", bounds.since).lt("at", bounds.until);
   /* 셀 수 없으면 막습니다. 낱말 조회와 반대인데, 문장 설명은 값이 비싸고
      막혀도 낱말 사전은 그대로 열려 있기 때문입니다. */
-  if (error) { console.warn("explain quota failed, refusing:", error.message); return EXPLAIN_DAILY; }
-  return count ?? 0;
+  if (error) { console.warn("explain quota failed, refusing:", error.message); return { used: EXPLAIN_DAILY, day: bounds.day }; }
+  return { used: count ?? 0, day: bounds.day };
 }
 
 async function opExplain(body: any, userId: string | null) {
   if (!userId) return json({ error: "login_required" }, 401);
   const sentence = clean(body.sentence, 600);
   if (sentence.length < 12) return json({ error: "bad_sentence" }, 400);
+  const quota = await explainsToday(userId);
+  if (quota.used >= EXPLAIN_DAILY) {
+    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain", quota_version: EXPLAIN_QUOTA_VERSION, day: quota.day } });
+    return json({ error: "quota_exceeded", limit: EXPLAIN_DAILY, left: 0, day: quota.day }, 429);
+  }
 
   const out = await ask({
     prompt: explainPrompt(sentence),
@@ -391,11 +410,9 @@ async function opExplain(body: any, userId: string | null) {
   await logEvent({
     userId, action: "explain", word: "", sentence,
     provider: out.provider, book: clean(body.book, 200),
-    meta: { points: points.length },
+    meta: { points: points.length, quota_version: EXPLAIN_QUOTA_VERSION, day: quota.day },
   });
-  /* 출시 전에는 문장 해석의 실제 성공률을 먼저 확인합니다. 사용 한도는 그 뒤
-     비용과 이용 패턴을 보고 다시 정하며, 지금은 여기서 막지 않습니다. */
-  return json({ ko, points, provider: out.provider });
+  return json({ ko, points, provider: out.provider, left: Math.max(0, EXPLAIN_DAILY - quota.used - 1), day: quota.day });
 }
 
 /* ── op:"log" — 사람이 무엇을 했는가 ─────────────────────── */
