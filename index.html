@@ -18,7 +18,7 @@
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
   <link rel="stylesheet" href="styles/home.css?v=07a0f9ad">
-  <link rel="stylesheet" href="styles/reader.css?v=f4c2e5fc">
+  <link rel="stylesheet" href="styles/reader.css?v=19a2fdb7">
   <link rel="stylesheet" href="styles/dictionary.css?v=fe10f094">
   <link rel="stylesheet" href="styles/components.css?v=ddc98573">
   <link rel="stylesheet" href="styles/responsive.css?v=6532e676">
@@ -38,7 +38,7 @@
   <script defer src="scripts/core/state.js?v=df4a083e"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
-  <script defer src="scripts/reader/reader-scroll.js?v=a0368273"></script>
+  <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=7f00030b"></script>
   <script defer src="scripts/library/book-edit.js?v=8027a26e"></script>
@@ -50,11 +50,11 @@
   <script defer src="scripts/dictionary/sentence.js?v=6de5d40b"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
-  <script defer src="scripts/reader/original-session.js?v=72c59ad9"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=8f1f846c"></script>
+  <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=b56dc94e"></script>
   <script defer src="scripts/reader/epub-original.js?v=03912194"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=4657a4e9"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
   <script defer src="scripts/reader/reader.js?v=69dc0dd3"></script>
   <script defer src="scripts/ui/preferences.js?v=a7a8e034"></script>
   <script defer src="scripts/sync/sync.js?v=424f9f45"></script>
@@ -159,6 +159,10 @@
     <!-- 읽는 동안 스크롤하는 것은 문서가 아니라 이 칸 하나입니다.
          까닭은 scripts/reader/reader-scroll.js 맨 위에 적어 두었습니다. -->
     <div id="reader-scroll">
+      <div id="pdfzoomfabs" aria-label="PDF 확대·축소" hidden>
+        <button id="pdfzoom-out" type="button" title="PDF 축소" aria-label="PDF 축소" onclick="changeOriginalZoom(-1)">−</button>
+        <button id="pdfzoom-in" type="button" title="PDF 확대" aria-label="PDF 확대" onclick="changeOriginalZoom(1)">+</button>
+      </div>
       <div id="readwrap">
         <div id="rtitle"></div>
         <a id="rsource" target="_blank" rel="noopener noreferrer" hidden></a>

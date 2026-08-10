@@ -64,31 +64,20 @@ function readerContentHeight(){
    레이아웃 폭이 안 변하는 것이 요점입니다. PDF 캔버스는 `clientWidth` 를 보고
    자기 크기를 정하는데, 그 값이 확대할 때마다 바뀌면 벌릴 때마다 문서 전체가
    다시 흐릅니다. 지금은 벌려도 흐르지 않습니다 — 그린 그림을 늘릴 뿐이고,
-   손을 떼면 그때 한 번 또렷하게 다시 그립니다. */
-const ORIGINAL_ZOOM_MIN = 1, ORIGINAL_ZOOM_MAX = 6;
+   버튼을 누른 뒤 그때 한 번 또렷하게 다시 그립니다. */
+const ORIGINAL_ZOOM_MIN = 1, ORIGINAL_ZOOM_MAX = 4, ORIGINAL_ZOOM_STEP = .5;
 let originalZoomLevel = 1;
 let originalZoomBaseHeight = 0;
-let originalZoomPinchedAt = 0;
 
 function originalZoomStage(){ return document.getElementById('original-stage'); }
 function originalZoomLayer(){ return document.getElementById('original-zoom'); }
 function originalZoom(){ return originalZoomLevel; }
-/* ---- 벌리는 것은 PDF 뿐입니다 ----
-   PDF 는 종이를 찍은 **그림**이라, 작은 글씨를 보는 길이 벌리기밖에 없습니다.
-   EPUB 원본과 글자 화면은 글자라서 다릅니다 — 크기를 키우면 줄바꿈까지 다시
-   흘러 화면 폭에 맞습니다. 벌리기는 같은 일을 더 나쁘게 합니다(한 줄을 읽으려고
-   옆으로 밀어야 하니까요). 그래서 이 둘에서는 손짓을 아예 안 받고, 브라우저의
-   벌리기도 막습니다 (`blockBrowserPinch`). */
+/* PDF만 한 단계씩 키웁니다. EPUB과 글자 화면은 이 배율을 쓰지 않습니다. */
 function originalZoomActive(){
   if(!document.body.classList.contains('reader-original')) return false;
   if(!originalZoomLayer()) return false;
   return !!(typeof originalSession !== 'undefined' && originalSession && originalSession.kind === 'pdf');
 }
-/* 방금 벌렸나 — 낱말 탭이 손짓의 끝을 눌린 것으로 오해하지 않도록 (pdf-original.js) */
-function originalZoomJustPinched(){
-  return Date.now() - originalZoomPinchedAt < 350;
-}
-
 /* 확대된 종이가 차지할 자리를 다시 잽니다. 쪽이 그려지며 높이가 자라므로
    (PDF 는 처음엔 첫 쪽 비율로 자리만 잡아 둡니다) 한 번으로는 모자랍니다 —
    아래 `ResizeObserver` 가 자랄 때마다 이 함수를 부릅니다. */
@@ -141,90 +130,43 @@ function setOriginalZoom(next, focus){
   applyOriginalZoomTransform();
   box.scrollLeft = Math.max(0, origin.x + px * to - fx);
   box.scrollTop  = Math.max(0, origin.y + py * to - fy);
+  updateOriginalZoomControls();
+}
+
+/* 버튼을 누를 때만 중심점을 한 번 보정합니다. 손가락을 따라 scrollTop을
+   반복 수정하지 않으므로 iOS의 관성 스크롤과 충돌하지 않습니다. */
+function changeOriginalZoom(direction){
+  if(!originalZoomActive()) return;
+  setOriginalZoom(originalZoomLevel + (direction > 0 ? ORIGINAL_ZOOM_STEP : -ORIGINAL_ZOOM_STEP));
+  if(typeof resharpenOriginalPages === 'function') resharpenOriginalPages();
+  if(typeof saveReadingState === 'function') saveReadingState();
+}
+
+function updateOriginalZoomControls(){
+  const controls=document.getElementById('pdfzoomfabs');
+  const out=document.getElementById('pdfzoom-out'), inButton=document.getElementById('pdfzoom-in');
+  if(!controls || !out || !inButton) return;
+  const active=originalZoomActive();
+  controls.hidden=!active;
+  out.disabled=!active || originalZoomLevel<=ORIGINAL_ZOOM_MIN;
+  inButton.disabled=!active || originalZoomLevel>=ORIGINAL_ZOOM_MAX;
 }
 
 /* 배율을 1 로 되돌립니다. 예전에는 `<meta name=viewport>` 에 `maximum-scale=1`
    을 얹었다 400ms 뒤에 떼는 꼼수였습니다 — 브라우저 배율을 내리는 API 가 없어서
    였습니다. 이제 배율은 우리 것이라 그냥 1 을 씁니다. */
 function resetOriginalZoom(){
-  if(originalZoomLevel === 1) return;
+  if(originalZoomLevel === 1){ updateOriginalZoomControls(); return; }
   const box = readerScroller();
   originalZoomLevel = 1;
   applyOriginalZoomTransform();
   if(box) box.scrollLeft = 0;
+  updateOriginalZoomControls();
 }
 
-/* ---- 손가락 두 개 ----
-   벌리는 동안 브라우저의 기본 동작(화면 전체 확대, 관성 스크롤)은 막고 우리가
-   그립니다. 손가락 한 개짜리 스크롤에는 손대지 않습니다 — `touchmove` 를 통째로
-   붙잡으면 읽는 손맛이 깎입니다.
-
-   벌어지는 것은 PDF 뿐이고 PDF 는 우리 문서 안에 있으므로, 귀는 여기 하나면
-   됩니다. EPUB 은 샌드박스 iframe 이라 그 안의 손짓이 우리 문서까지 올라오지
-   않는데 — 벌릴 일이 없으니 상관없습니다. 그쪽 틀에는 브라우저의 벌리기를 막는
-   귀만 답니다 (`blockBrowserPinch`). */
-let originalPinch = null;
-
-function originalZoomPinchStart(points){
-  if(!originalZoomActive() || !points || points.length !== 2){ originalPinch = null; return; }
-  originalPinch = {distance: originalPinchSpread(points),
-                   level: originalZoomLevel,
-                   origin: originalZoomOrigin()};
-  originalZoomPinchedAt = Date.now();
-  const layer = originalZoomLayer();
-  if(layer) layer.classList.add('pinching');
-  /* ---- 벌리는 동안 상단바는 그대로 ----
-     손가락 아래를 붙들어 두려고 `scrollTop` 을 크게 옮깁니다. 그것을 읽는
-     방향으로 세면 벌리는 내내 상단바가 걷혔다 돌아왔다 합니다 — 벌리는 것은
-     읽어 내려가는 것이 아니라 들여다보는 것입니다.
-
-     예전에도 같은 핀이 있었지만 그때는 `visualViewport` 를 매 프레임 훔쳐보며
-     "지금 벌어져 있나"를 짐작했고, 마지막 한 번을 놓치면 핀이 안 풀려 상단바가
-     영영 안 걷혔습니다. 지금은 손짓의 시작과 끝이 우리 손에 있습니다. */
-  if(typeof pinReaderChrome === 'function') pinReaderChrome(true, 'zoom');
-}
-
-function originalZoomPinchMove(points){
-  if(!originalPinch || !points || points.length !== 2) return;
-  const centre = originalPinchMiddle(points);
-  const ratio = originalPinchSpread(points) / originalPinch.distance;
-  originalZoomPinchedAt = Date.now();
-  setOriginalZoom(originalPinch.level * ratio,
-                  {x:centre.x, y:centre.y, origin:originalPinch.origin});
-}
-
-function originalZoomPinchEnd(){
-  if(!originalPinch) return;
-  originalPinch = null;
-  originalZoomPinchedAt = Date.now();
-  const layer = originalZoomLayer();
-  if(layer) layer.classList.remove('pinching');
-  if(typeof pinReaderChrome === 'function') pinReaderChrome(false, 'zoom');
-  /* 늘린 그림은 조금 흐립니다. 손을 뗀 지금 새 배율로 다시 그립니다.
-     벌리는 도중이 아니라 여기인 것이 중요합니다 — 캔버스를 다시 그리는 일은
-     손짓 한가운데에 끼우기에는 무겁습니다 (`scripts/reader/pdf-original.js`). */
-  if(typeof resharpenOriginalPages === 'function') resharpenOriginalPages();
-  if(typeof saveReadingState === 'function') saveReadingState();
-}
-
-function originalPinchSpread(points){
-  return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y) || 1;
-}
-function originalPinchMiddle(points){
-  return {x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2};
-}
-function originalPinchPoints(touches){
-  const points = [];
-  for(let index = 0; index < Math.min(2, touches.length); index++){
-    points.push({x: touches[index].clientX, y: touches[index].clientY});
-  }
-  return points;
-}
-
-/* ---- 브라우저의 벌리기는 어디서나 막습니다 ----
-   사파리는 `touch-action` 만으로 제 확대를 다 놓지 않습니다. 제 손짓 이벤트도
-   함께 막아야 합니다. 읽는 동안에는 세 화면 모두 — PDF 는 우리가 대신 벌리고,
-   EPUB 과 글자 화면은 애초에 벌릴 일이 없습니다.
+/* ---- 브라우저의 벌리기는 읽는 동안 막습니다 ----
+   PDF 확대는 버튼만 담당합니다. Safari가 화면 전체를 확대하면 단추와 사전
+   시트까지 함께 커지므로, 손가락 두 개는 어떤 읽기 화면에서도 하지 않습니다.
    EPUB 틀(iframe)은 제 문서라 우리 쪽 귀가 안 닿습니다. 그래서 저쪽에도 이
    함수를 한 번 겁니다 (`scripts/reader/epub-original.js`). */
 function blockBrowserPinch(doc){
@@ -234,24 +176,7 @@ function blockBrowserPinch(doc){
     }, {passive:false}));
 }
 
-/* 벌어지는 것은 PDF 뿐이고 PDF 는 우리 문서 안에 있으므로 귀는 여기 하나입니다. */
-(function(){
-  document.addEventListener('touchstart', event=>{
-    if(event.touches.length !== 2){ originalPinch = null; return; }
-    originalZoomPinchStart(originalPinchPoints(event.touches));
-  }, {passive:true});
-  document.addEventListener('touchmove', event=>{
-    if(!originalPinch || event.touches.length !== 2) return;
-    /* 여기서만 막습니다. 이 손짓은 스크롤이 아니라 확대입니다. */
-    event.preventDefault();
-    originalZoomPinchMove(originalPinchPoints(event.touches));
-  }, {passive:false});
-  document.addEventListener('touchend', event=>{
-    if(event.touches.length < 2) originalZoomPinchEnd();
-  }, {passive:true});
-  document.addEventListener('touchcancel', originalZoomPinchEnd, {passive:true});
-  blockBrowserPinch(document);
-})();
+blockBrowserPinch(document);
 
 /* 쪽이 그려지면 종이가 자랍니다. 자란 만큼 자리도 늘려 둡니다.
 

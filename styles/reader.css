@@ -164,6 +164,24 @@
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-text{opacity:1; transform:none;}
 
+  /* PDF만 버튼 한 번마다 한 단계씩 키웁니다. 스크롤 칸 안의 sticky 층이라
+     상단바가 보일 때는 그 아래에, 걷히면 화면 위쪽에 함께 올라옵니다. */
+  #pdfzoomfabs{position:sticky; top:calc(var(--topbar-h,56px) + 14px); z-index:39;
+    width:52px; height:0; margin-left:auto; margin-right:14px; display:flex;
+    flex-direction:column; gap:8px; transition:top .24s ease,opacity .3s;}
+  #pdfzoomfabs[hidden]{display:none;}
+  #pdfzoomfabs button{width:44px; height:44px; border:1px solid var(--line); border-radius:50%;
+    background:rgba(255,255,255,.88); backdrop-filter:blur(6px); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:var(--soft);
+    box-shadow:0 4px 14px rgba(23,55,71,.12); font:600 24px/1 var(--ui); padding:0;
+    transition:color .2s,background .2s,opacity .2s;}
+  #pdfzoomfabs button:hover{color:var(--blue); background:var(--sky);}
+  #pdfzoomfabs button:disabled{opacity:.35; cursor:default;}
+  body.dark #pdfzoomfabs button{background:rgba(31,35,39,.94); border-color:#2A2E33; color:#9AA1A8;
+    box-shadow:0 4px 14px rgba(0,0,0,.24);}
+  body.chrome-hidden #pdfzoomfabs{top:14px; opacity:.28;}
+  body.chrome-hidden #pdfzoomfabs:hover{opacity:1;}
+
   /* ---- 상단바는 읽는 방향을 따릅니다 ----
      내려 읽으면 걷히고, 올리거나 글머리에 닿으면 돌아옵니다.
 
@@ -191,7 +209,7 @@
   #rbar{transition:top .24s ease, opacity .24s ease;}
   body.chrome-hidden #rbar{top:0; opacity:0;}
   @media(prefers-reduced-motion:reduce){
-    #topbar, #rbar, #readfabs{transition:none;}
+    #topbar, #rbar, #readfabs, #pdfzoomfabs{transition:none;}
     body.chrome-hidden #topbar{transition:none;}
   }
   #ptrack{height:3px; background:var(--line2);}
@@ -286,9 +304,6 @@
   /* `width:100%` 는 자바스크립트가 재기 전까지의 값입니다. `position:absolute` 인
      칸은 폭을 안 적으면 내용에 맞춰 쪼그라들어서, 첫 그림이 좁게 그려집니다. */
   #original-zoom{position:absolute; top:0; left:0; width:100%; transform-origin:0 0;}
-  /* 벌리는 동안에만 켭니다. 긴 PDF 는 캔버스가 많아서, 늘 켜 두면 안 쓰는
-     그림층을 계속 들고 있게 됩니다. */
-  #original-zoom.pinching{will-change:transform;}
   .original-content{width:100%; max-width:980px; margin:0 auto; padding:0 24px;}
   .original-loading{min-height:55vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:14px; color:var(--soft); font-size:14px;}

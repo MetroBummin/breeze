@@ -59,6 +59,7 @@ async function openOriginalPdf(book,record,token){
     content.appendChild(page); pages.push(page);
   }
   originalSession=session;
+  if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const observer=new IntersectionObserver(entries=>{
@@ -334,9 +335,7 @@ async function restorePdfSentence(candidates,source,changeToken){
   return false;
 }
 
-/* A tap opens the word under the finger; a drag is a scroll, not a lookup.
-   벌리는 손짓의 끝도 눌린 것이 아닙니다. 손가락 둘을 거의 안 움직이고 뗐을 때
-   그 자리의 낱말이 열리면, 벌릴 때마다 엉뚱한 뜻이 떴습니다. */
+/* A tap opens the word under the finger; a drag is a scroll, not a lookup. */
 (function(){
   const content=document.getElementById('original-content');
   content.addEventListener('pointerdown',event=>{
@@ -349,7 +348,6 @@ async function restorePdfSentence(candidates,source,changeToken){
     if(!originalSession || originalSession.kind!=='pdf') return;
     const start=originalPdfPointer;
     originalPdfPointer=null;
-    if(originalZoomJustPinched()) return;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
     const page=event.target.closest&&event.target.closest('.pdf-source-page');
     const box=pdfWordAtPoint(page,event.clientX,event.clientY);
