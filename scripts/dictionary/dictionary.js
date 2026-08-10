@@ -109,7 +109,7 @@ function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseVie
 function answerFromLook(j, cached){
   const oldAi=j.ai||{};
   return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',gloss:j.gloss||oldAi.gloss||'',note:'',done:true,cached:!!cached},
-    alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
+    alts:Array.isArray(j.alts)?j.alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
 function phraseCardKey(text){ return `phrase:${phraseParts(text).join(' ')}`; }
@@ -324,10 +324,24 @@ function renderPanel(){
   }else{
     col.className = ''; colSec.className = 'p-sec'; col.innerHTML = '';
   }
+  const altSec=document.getElementById('p-alt-sec'), altBox=document.getElementById('p-alts');
+  const alts=[...new Set((w.alts||[]).map(item=>String(item||'').trim()).filter(item=>item&&item!==shown))].slice(0,3);
+  if(alts.length){
+    altSec.className='p-sec on'; altBox.className='on';
+    altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip">${esc(item)}</button>`).join('');
+    [...altBox.querySelectorAll('button')].forEach((button,index)=>button.onclick=()=>chooseMeaning(k,alts[index]));
+  }else{ altSec.className='p-sec'; altBox.className=''; altBox.innerHTML=''; }
   const defs = document.getElementById('p-defs');
   if(w.loading) defs.innerHTML = '<span style="color:var(--soft2)">불러오는 중…</span>';
   else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--soft2)">영어 뜻을 찾지 못했어요</span>';
   else defs.innerHTML = w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
+}
+function chooseMeaning(k, meaning){
+  const w=words[k]; if(!w) return;
+  w.ko=meaning; w.ai={...(w.ai||{}),ko:meaning,gloss:''};
+  w.alts=(w.alts||[]).filter(item=>item!==meaning);
+  w.asked=[...new Set([...(w.asked||[]),meaning])].slice(-4);
+  w.up=Date.now(); saveWords(); queueSync(); logDict('pick',k); renderPanel();
 }
 document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
@@ -372,7 +386,7 @@ function adoptPhrase(k, view){
   words[id]={
     ...(previous||{}), word:view.phrase, clicked:view.phrase, forms:parts, phraseParts:parts,
     example:view.sentence||base.example, book:view.book||base.book, status:previous?previous.status:base.status,
-    mark:previous?previous.mark:base.mark, ko:answer.ko, ai:answer.ai||{}, alts:[], phrase:'',
+    mark:previous?previous.mark:base.mark, ko:answer.ko, ai:answer.ai||{}, alts:answer.alts||[], phrase:'',
     defs:[], kodict:[], addedAt:previous?previous.addedAt:Date.now(), up:Date.now()
   };
   if(id!==k){ delete words[k]; dead[k]=Date.now(); }
@@ -759,7 +773,7 @@ function applyLook(w, j, k, opt){
               한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
            cached: !!opt.cached };
   w.aiLemma = j.lemma || w.aiLemma || '';
-  w.alts = [];
+  w.alts = Array.isArray(j.alts) ? j.alts : [];
   w.colloc = [];
   w.phrase = j.phrase || '';
   /* 사람이 손으로 고친 뜻은 덮지 않습니다. "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다 —

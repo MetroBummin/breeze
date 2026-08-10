@@ -217,13 +217,14 @@ function parseJson(raw: string): Record<string, unknown> | null {
 const LOOK_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["lemma", "pos", "ko", "gloss", "phrase"],
+  required: ["lemma", "pos", "ko", "gloss", "phrase", "alts"],
   properties: {
     lemma: { type: "string" },
     pos: { type: "string" },
     ko: { type: "string" },
     gloss: { type: "string" },
     phrase: { type: "string" },
+    alts: { type: "array", items: { type: "string" } },
   },
 };
 
@@ -245,8 +246,10 @@ ${skip}
 - phrase: 이 문장에서 클릭한 단어를 포함해 **통째로 알아야 뜻이 달라지는** 아주 확실한
   고정 표현 하나만 적으세요. (예: "hot take", "per se", "prime minister")
   단순히 자주 붙는 단어, 애매한 조합, 문장 전체는 절대 넣지 말고 빈 문자열로 두세요.
+- alts: 지금 문맥의 뜻과 겹치지 않는, 이 단어의 흔한 다른 한국어 뜻을 최대 3개 적으세요.
+  짧은 사전식 뜻만 쓰고, 자신 없는 것은 빼세요.
 
-{"lemma":"","pos":"","ko":"","gloss":"","phrase":""}`;
+{"lemma":"","pos":"","ko":"","gloss":"","phrase":"","alts":[""]}`;
 }
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -302,6 +305,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
     ko,
     gloss,
     phrase: clean(parsed.phrase, 80),
+    alts: cleanList(parsed.alts, 3, 40).filter((item) => item !== ko),
     provider: out.provider,
     /* 로그인 전이면 몇 번 남았는지 함께 돌려줍니다. 마지막 한두 번쯤에
        미리 알려 줘야, 다음 낱말에서 갑자기 막히지 않습니다. */
@@ -317,7 +321,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
     userId, action: retry ? "retry" : "look", word, clicked, sentence,
     lemma, pos: answer.pos, aiKo: answer.ko, provider: out.provider,
     book: clean(body.book, 200),
-    meta: { gloss: answer.gloss ? 1 : 0, phrase: answer.phrase ? 1 : 0,
+    meta: { gloss: answer.gloss ? 1 : 0, phrase: answer.phrase ? 1 : 0, alts: answer.alts.length,
             avoid: avoid.length, ...(anonLeft === null ? {} : { anon: 1 }) },
   });
   return json(answer);
