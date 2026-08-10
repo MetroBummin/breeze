@@ -20,8 +20,6 @@
    AI 에게는 보냅니다(보내지 않으면 답할 것이 없습니다). 서버 기록에 남는 것은
    소금을 섞은 지문과 낱말 수뿐입니다 — 낱말 조회와 완전히 같은 규칙입니다. */
 
-const SENT_DAILY = 5;
-
 const sentKey = text => 's:' + sentenceHash(text);
 const LS_SENT_LEFT = 'breeze.sent-left';
 
@@ -46,16 +44,14 @@ function refreshSentenceExplainAvailability(w){
   if(!button || !note) return;
   const context = typeof currentContext === 'function' && w ? currentContext(selKey) : null;
   const hasSentence = !!(context ? context.sentence : (w && w.example));
-  const left = sentLeft();
   let reason = '';
   if(!hasSentence) reason = '이 낱말에는 문장 해석에 쓸 예문이 없어요';
-  else if(!sb || !sbUser) reason = '로그인하면 문장 해석을 하루 5번 쓸 수 있어요';
+  else if(!sb || !sbUser) reason = '로그인하면 문장 해석을 쓸 수 있어요';
   else if(navigator.onLine === false) reason = '인터넷에 연결되면 문장 해석을 쓸 수 있어요';
-  else if(left === 0) reason = '오늘 문장 해석 5번을 모두 썼어요 · 자정에 다시 채워져요';
   button.style.display = hasSentence ? 'flex' : 'none';
   button.disabled = !!reason;
   button.classList.toggle('ready', !reason);
-  note.textContent = reason || (left !== null ? `오늘 ${left}번 남았어요` : '로그인한 날 하루 5번 쓸 수 있어요');
+  note.textContent = reason || '문장이 막힐 때 언제든 물어볼 수 있어요';
   note.classList.toggle('on', hasSentence);
 }
 
@@ -118,7 +114,7 @@ async function openSentence(text){
     return;
   }
   if(!sbUser){
-    paintSentence({ en:clean, foot:`문장 설명은 로그인하면 하루 ${SENT_DAILY}번 쓸 수 있어요` });
+    paintSentence({ en:clean, foot:'문장 설명은 로그인하면 쓸 수 있어요' });
     return;
   }
 
@@ -133,14 +129,11 @@ async function openSentence(text){
   if(!answer || answer.error || !answer.ko){
     const why = answer && answer.error;
     paintSentence({ en:clean, foot:
-        why === 'quota_exceeded' ? `오늘 문장 설명 ${SENT_DAILY}번을 다 썼어요. 자정에 다시 채워집니다`
-      : why === 'login_required' ? `문장 설명은 로그인하면 하루 ${SENT_DAILY}번 쓸 수 있어요`
+        why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
       :                            '잠깐 문제가 있었어요. 다시 눌러 보세요' });
     return;
   }
   rememberSentLeft(answer.left);
   await dictPut(key, { ko:answer.ko, points:answer.points || [], done:true });
-  paintSentence({ en:clean, ko:answer.ko, points:answer.points || [],
-                  foot: typeof answer.left === 'number'
-                        ? `오늘 ${answer.left}번 남았어요` : '' });
+  paintSentence({ en:clean, ko:answer.ko, points:answer.points || [] });
 }

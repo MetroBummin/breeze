@@ -384,7 +384,10 @@ async function fetchKo(w, form){
 }
 /* metaOnly = 발음만 받아 오고 영어 뜻은 건드리지 않습니다. */
 async function fetchEn(w, form, metaOnly){
-  const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
+  let r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
+  /* 이 공개 사전은 가끔 첫 요청에 502를 돌려줍니다. IPA가 사라지면 사전창이
+     반쯤 비어 보이므로, 한 번만 짧게 다시 물어봅니다. */
+  if(!r.ok && r.status>=500){ await new Promise(resolve=>setTimeout(resolve,300)); r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form)); }
   if(!r.ok) return false;
   const j = await r.json();
   if(!j || !j[0]) return false;

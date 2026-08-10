@@ -377,12 +377,6 @@ async function opExplain(body: any, userId: string | null) {
   const sentence = clean(body.sentence, 600);
   if (sentence.length < 12) return json({ error: "bad_sentence" }, 400);
 
-  const used = await explainsToday(userId);
-  if (used >= EXPLAIN_DAILY) {
-    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain" } });
-    return json({ error: "quota_exceeded", limit: EXPLAIN_DAILY }, 429);
-  }
-
   const out = await ask({
     prompt: explainPrompt(sentence),
     maxTokens: 600,
@@ -399,7 +393,9 @@ async function opExplain(body: any, userId: string | null) {
     provider: out.provider, book: clean(body.book, 200),
     meta: { points: points.length },
   });
-  return json({ ko, points, provider: out.provider, left: Math.max(0, EXPLAIN_DAILY - used - 1) });
+  /* 출시 전에는 문장 해석의 실제 성공률을 먼저 확인합니다. 사용 한도는 그 뒤
+     비용과 이용 패턴을 보고 다시 정하며, 지금은 여기서 막지 않습니다. */
+  return json({ ko, points, provider: out.provider });
 }
 
 /* ── op:"log" — 사람이 무엇을 했는가 ─────────────────────── */

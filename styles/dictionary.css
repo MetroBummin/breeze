@@ -31,7 +31,7 @@
   #p-speak.playing{background:var(--blue); color:#fff; border-color:var(--blue);}
   /* 낱말 저장과 본문 색칠은 다른 일입니다. 이름을 적고 스위치를 두면, 작은
      자리만 쓰면서도 무엇을 켜고 끄는지 바로 알 수 있습니다. */
-  #p-mark-row{display:flex; align-items:center; justify-content:space-between; margin:7px 0 -3px;
+  #p-mark-row{display:flex; align-items:center; justify-content:flex-start; gap:8px; margin:7px 0 -3px;
     color:var(--soft2); font:11.5px var(--ui);}
   #p-mark{position:relative; width:37px; height:22px; padding:0; border:0; border-radius:12px;
     background:#C9D2D3; cursor:pointer; transition:background .16s;}
