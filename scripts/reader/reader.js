@@ -14,7 +14,7 @@ function wordSpans(text){
   while((match = WORD_RE.exec(text))){
     html += esc(text.slice(last, match.index));
     const key = keyOf(match[0]);
-    const status = words[key] ? ' s'+words[key].status : '';
+    const status = words[key] && words[key].mark !== false ? ' s'+words[key].status : '';
     html += `<span class="w${status}" data-w="${key}">${esc(match[0])}</span>`;
     last = match.index + match[0].length;
   }

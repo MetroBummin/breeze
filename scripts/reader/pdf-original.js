@@ -208,7 +208,7 @@ function renderPdfSavedWordMarkers(page,boxes){
   (boxes||[]).forEach(box=>{
     const key=keyOf(box.word);
     const saved=words[key];
-    if(saved) makePdfWordMarker(page,box,'original-saved-marker',saved.status,key);
+    if(saved && saved.mark !== false) makePdfWordMarker(page,box,'original-saved-marker',saved.status,key);
   });
 }
 
@@ -254,7 +254,7 @@ function openPdfWord(page,box){
   const key=keyOf(box.word);
   /* Freeze the resolved key on the marker. keyOf() can legitimately change
      after a new lemma is saved; a selected marker must not change identity. */
-  const marker=makePdfWordMarker(page,box,'original-selection-marker',words[key]&&words[key].status,key);
+  const marker=makePdfWordMarker(page,box,'original-selection-marker',words[key]&&words[key].mark!==false&&words[key].status,key);
   openWord(key,marker);
 }
 

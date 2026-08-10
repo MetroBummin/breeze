@@ -83,7 +83,7 @@ function addWord(k, span){
   const display = acro ? raw.replace(/s$/,'') : k;
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
   words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
-    example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now(), up:Date.now() };
+    example:sentenceOf(span), book:curBook.title, status:1, mark:true, addedAt:Date.now(), up:Date.now() };
   recentWordOpens.set(k, Date.now());
   /* 이제 이 기기에 잃을 것이 생겼습니다 — 저장소를 영구로 표시해 달라고 부탁합니다.
      한 번만 물어보고, 이미 물어봤으면 조용히 지나갑니다. */
@@ -159,7 +159,7 @@ function paintWord(k){
   readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`)
     .forEach(s=>{
       s.classList.remove('s1','s2','s3');
-      if(w) s.classList.add('s'+w.status);
+      if(w && w.mark !== false) s.classList.add('s'+w.status);
     });
 }
 function setStatus(k, st){
@@ -198,6 +198,11 @@ function renderPanel(){
   document.getElementById('p-ex').textContent = w.example || '—';
   document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
+  const mark = document.getElementById('p-mark');
+  const marked = w.mark !== false;
+  mark.classList.toggle('on', marked);
+  mark.setAttribute('aria-pressed', String(marked));
+  mark.title = marked ? '이 단어 표시 끄기' : '이 단어 표시 켜기';
 
   /* ── 뜻이 사는 칸. 하나뿐입니다 ──
      예전에는 이 박스가 "AI 가 알려준 것"이고 아래 파란 칸이 "내 단어장에 적히는 것"이라
@@ -308,6 +313,11 @@ document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
   logDict('star', selKey, { meta:{ status:+b.dataset.s } });
 });
+document.getElementById('p-mark').onclick=()=>{
+  const w=words[selKey]; if(!w) return;
+  w.mark = w.mark === false;
+  w.up=Date.now(); saveWords(); paintWord(selKey); queueSync(); renderPanel();
+};
 document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;

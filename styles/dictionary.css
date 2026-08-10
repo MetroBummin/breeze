@@ -29,7 +29,14 @@
     color:var(--blue); transition:.15s;}
   #p-speak:hover{background:var(--sky);}
   #p-speak.playing{background:var(--blue); color:#fff; border-color:var(--blue);}
+  /* 낱말을 저장하는 것과 책 전체에서 색칠하는 것은 다른 선택입니다. 글자 하나만
+     남겨 두면 눈에 안 띄고, 큰 설정 줄을 만들면 사전의 흐름을 끊습니다. */
+  #p-mark{flex:none; height:27px; padding:0 8px; border:1px solid var(--line); border-radius:14px;
+    background:transparent; color:var(--soft2); font:600 10.5px var(--ui); cursor:pointer;}
+  #p-mark.on{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
+  #p-mark:hover{border-color:var(--ai-key); color:var(--ai-key);}
   body.dark #p-speak{background:#22262B; border-color:#2A2E33;}
+  body.dark #p-mark{border-color:#2A2E33;}
   #p-phon{color:#5F7881; font-size:14px; margin-bottom:4px;}
   #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
   #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
