@@ -112,6 +112,7 @@ function answerFromLook(j, cached){
     alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
+function phraseCardKey(text){ return `phrase:${phraseParts(text).join(' ')}`; }
 function findContextCard(root, sentence){
   const id=contextCardKey(root,sentence);
   return words[id] ? id : null;
@@ -348,16 +349,41 @@ async function openPhrase(k){
   try{
     const cacheKey=lookKey('phrase:'+text,view.sentence);
     const hit=await dictGet(cacheKey);
-    if(hit && hit.ko){ view.answer=answerFromLook(hit,!hit.seed); return; }
+    if(hit && hit.ko){ view.answer=answerFromLook(hit,!hit.seed); adoptPhrase(k,view); return; }
     const j=await dictCall({op:'look',word:text,clicked:text,cands:[text.toLowerCase()],
       sentence:view.sentence,book:view.book});
     if(!j || j.error || !j.ko){ view.error=(j&&j.error)||'error'; return; }
     await dictPut(cacheKey,Object.assign({},j,{done:true}));
     view.answer=answerFromLook(j,false);
+    adoptPhrase(k,view);
   }finally{
     view.loading=false;
     if(currentPhrase(k)===view && selKey===k) renderPanel();
   }
+}
+
+/* 표현 칩을 고른 것은 "이 낱말 하나"가 아니라 "이 덩어리"를 외우겠다는 선택입니다.
+   따라서 flare 카드를 남겨 두지 않고 표현 카드로 바꾸며, 글자 화면도 같은 기준으로
+   다시 조립합니다. */
+function adoptPhrase(k, view){
+  const base=words[k], answer=view.answer, parts=phraseParts(view.phrase);
+  if(!base || !answer || parts.length<2) return;
+  const id=phraseCardKey(view.phrase), previous=words[id];
+  words[id]={
+    ...(previous||{}), word:view.phrase, clicked:view.phrase, forms:parts, phraseParts:parts,
+    example:view.sentence||base.example, book:view.book||base.book, status:previous?previous.status:base.status,
+    mark:previous?previous.mark:base.mark, ko:answer.ko, ai:answer.ai||{}, alts:[], phrase:'',
+    defs:[], kodict:[], addedAt:previous?previous.addedAt:Date.now(), up:Date.now()
+  };
+  if(id!==k){ delete words[k]; dead[k]=Date.now(); }
+  contextView=null; phraseView=null; selKey=id;
+  saveWords(); save(LS_DEAD,dead); queueSync();
+  if(curBook && currentReaderMode==='text'){
+    const anchor=captureAnchor();
+    renderBookBody(curBook);
+    requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
+  }
+  paintWord(id); renderPanel(); toast(`“${view.phrase}”을(를) 표현으로 저장했어요`);
 }
 document.getElementById('p-context').onclick=()=>{ if(selKey) askCurrentContext(selKey); };
 document.getElementById('p-save-context').onclick=()=>{ if(selKey) saveCurrentContext(selKey); };

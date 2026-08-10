@@ -7,16 +7,50 @@ const keyOf = raw => {
 function looksHeading(p){
   return p.length<70 && !/[.!?:;,]$/.test(p) && p.split(' ').length<=10 && /^[A-Z0-9“"]/.test(p);
 }
+function phraseParts(text){
+  return (String(text||'').toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g)||[])
+    .map(part=>lemmaCands(part)[0]||part);
+}
+/* 저장한 표현은 단어 둘을 따로 칠하는 것이 아니라, 원문 속의 한 덩어리로 감쌉니다.
+   그래야 flare만 남고 up이 빠지는 일이 없습니다. */
+function savedPhraseStarts(){
+  const starts=new Map();
+  Object.entries(words).forEach(([key,w])=>{
+    const parts=w&&w.phraseParts;
+    if(!Array.isArray(parts)||parts.length<2) return;
+    const first=parts[0];
+    if(!starts.has(first)) starts.set(first,[]);
+    starts.get(first).push({key,w,parts});
+  });
+  starts.forEach(list=>list.sort((a,b)=>b.parts.length-a.parts.length));
+  return starts;
+}
 /* 글자를 단어 단위로 감쌉니다. 글자 화면과 쇼츠가 같은 함수를 씁니다. */
 function wordSpans(text){
-  let html = '', match, last = 0;
+  const matches=[]; let match, last = 0, html = '';
   WORD_RE.lastIndex = 0;
-  while((match = WORD_RE.exec(text))){
+  while((match = WORD_RE.exec(text))) matches.push(match);
+  const starts=savedPhraseStarts();
+  for(let i=0;i<matches.length;){
+    match=matches[i];
+    const choices=[];
+    lemmaCands(match[0]).forEach(part=>(starts.get(part)||[]).forEach(item=>{
+      if(!choices.includes(item)) choices.push(item);
+    }));
+    const phrase=choices.find(item=>item.parts.every((part,n)=>
+      matches[i+n] && lemmaCands(matches[i+n][0]).includes(part)));
     html += esc(text.slice(last, match.index));
+    if(phrase){
+      const end=matches[i+phrase.parts.length-1].index+matches[i+phrase.parts.length-1][0].length;
+      const status=phrase.w.mark!==false ? ' s'+phrase.w.status : '';
+      html += `<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(text.slice(match.index,end))}</span>`;
+      last=end; i+=phrase.parts.length; continue;
+    }
     const key = keyOf(match[0]);
     const status = words[key] && words[key].mark !== false ? ' s'+words[key].status : '';
     html += `<span class="w${status}" data-w="${key}">${esc(match[0])}</span>`;
     last = match.index + match[0].length;
+    i++;
   }
   return html + esc(text.slice(last));
 }
