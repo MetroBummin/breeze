@@ -203,14 +203,10 @@
     transform:translateY(-100%); opacity:0; visibility:hidden; pointer-events:none;
     background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none;
     transition:transform .24s cubic-bezier(.4,0,.2,1), opacity .18s ease, visibility 0s linear .24s;}
-  /* 진행바도 함께 걷힙니다. 상단바만 걷고 이 줄을 남기면, 파란 실 한 가닥이
-     노치 옆 그 자리에 남아서 화면이 끝까지 트이지 않습니다 — 사파리에서
-     주소창이 걷힐 때 남는 것이 아무것도 없는 것과 같은 이유입니다.
-     "얼마나 왔나" 는 눈을 글에서 뗐을 때 궁금한 것이라, 상단바가 돌아오는
-     바로 그 손짓(위로 조금 올리기)에 같이 돌아오면 충분합니다.
-     상단바를 따라 맨 위로 올라갔다가 색만 지웁니다. */
+  /* 상단바가 걷혀도 읽은 위치는 가는 파란 선으로 남깁니다. 위치만 화면 맨
+     위로 옮기므로, 본문과 스크롤 좌표에는 손대지 않습니다. */
   #rbar{transition:top .24s ease, opacity .24s ease;}
-  body.chrome-hidden #rbar{top:0; opacity:0;}
+  body.chrome-hidden #rbar{top:0; opacity:1;}
   @media(prefers-reduced-motion:reduce){
     #topbar, #rbar, #readfabs, #pdfzoomfabs{transition:none;}
     body.chrome-hidden #topbar{transition:none;}
