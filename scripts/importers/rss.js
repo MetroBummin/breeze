@@ -13,6 +13,7 @@ let rssEntries = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
 let rssRenderId = 0;
+let rssPage = 0;
 
 function rssLocal(element){ return (element && (element.localName || element.nodeName) || '').toLowerCase(); }
 function rssChild(element, names){
@@ -25,7 +26,10 @@ function rssChild(element, names){
   }
   return null;
 }
-function rssText(element, names){ return (rssChild(element, names) || {}).textContent?.trim() || ''; }
+function rssText(element, names){
+  const child = rssChild(element, names);
+  return child && child.textContent ? child.textContent.trim() : '';
+}
 function rssHtmlText(html){
   const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
   return doc.body.textContent.replace(/\s+/g, ' ').trim();
@@ -82,7 +86,13 @@ async function loadRss(force){
   if(rssLoading) return rssLoading;
   rssLoading = Promise.all(RSS_FEEDS.map(async feed => {
     const html = await fetchArticleHtml(feed.url);
-    return parseRss(html, feed).filter(entry => entry.photo).slice(0, RSS_PER_FEED);
+    const pictured = parseRss(html, feed).filter(entry => entry.photo);
+    if(!pictured.length) return [];
+    /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
+       피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
+    const start = (rssPage * RSS_PER_FEED) % pictured.length;
+    const count = Math.min(RSS_PER_FEED, pictured.length);
+    return Array.from({length:count}, (_, index) => pictured[(start + index) % pictured.length]);
   })).then(groups => {
     rssEntries = groups.flat();
     rssLoadedAt = Date.now();
@@ -135,6 +145,7 @@ function appendRssCards(rail, force){
   }).catch(error => { console.error(error); });
 }
 document.getElementById('rss-refresh').onclick = () => {
+  rssPage++;
   rssLoadedAt = 0;
   renderHome();
 };
