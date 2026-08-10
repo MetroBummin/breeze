@@ -12,10 +12,14 @@ const ARTICLE_MIN_PARA = 40;        // 문단으로 칠 최소 길이
 const ARTICLE_TAIL_CHARS = 100;     // 이만큼 긴 문단이 글의 진짜 끝입니다
 /* 이 소제목부터는 글이 아니라 딸린 목록입니다(위키백과·긴 해설 기사). */
 const ARTICLE_END_MATTER = /^(references?|externallinks?|furtherreading|seealso|notes?|bibliography|citations?|sources?|footnotes?|relatedarticles?)$/i;
-const ARTICLE_DROP = 'script,style,noscript,template,nav,header,footer,aside,form,iframe,' +
+/* 기사 자체의 제목·대표 사진도 <header> 안에 듭니다(ProPublica). header는 여기서
+   지우지 말고, 본문을 고른 뒤 nav·주변 장치만 걸러 냅니다. */
+const ARTICLE_DROP = 'script,style,noscript,template,nav,footer,aside,form,iframe,' +
   'svg,button,select,textarea,label,figure,figcaption,table,video,audio,object,embed';
 /* 클래스·id에 이런 말이 있으면 본문이 아니라 주변 장치입니다. */
-const ARTICLE_NOISE = /(comment|promo|related|recirc|newsletter|advert|sponsor|share|social|subscribe|cookie|consent|banner|sidebar|breadcrumb|byline|most-read|read-more|trending|tag-list|caption|disclaimer|copyright|reference|reflist|citation|footnote|navbox|infobox|catlinks|editsection|metadata|cite[-_](note|ref))/i;
+/* `inline-promos`처럼 본문 컨테이너 이름에 우연히 든 말은 광고가 아닙니다
+   (The Conversation). 독립된 promo 또는 명시적인 promo-box/module/banner만 버립니다. */
+const ARTICLE_NOISE = /(comment|(?:^|[\s_-])promo(?:[\s_-](?:box|module|banner)|$)|related|recirc|newsletter|advert|sponsor|share|social|subscribe|cookie|consent|banner|sidebar|breadcrumb|byline|most-read|read-more|trending|tag-list|caption|disclaimer|copyright|reference|reflist|citation|footnote|navbox|infobox|catlinks|editsection|metadata|cite[-_](note|ref))/i;
 
 /* ---------- 사진 ----------
    사진은 대부분 <figure> 안에 있는데 그 <figure>는 곧 통째로 버려집니다.
