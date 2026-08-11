@@ -92,7 +92,7 @@ tbody tr:last-child td{border-bottom:0}
 <body>
 <header class="top">
   <a class="brand" href="../index.html"><svg viewBox="0 0 100 40" fill="none" aria-hidden="true"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round"/></svg><span>Breeze</span></a>
-  <nav><a href="index.html" aria-current="page">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html">로드맵</a><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a></nav>
+  <nav><a href="index.html" aria-current="page">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="sync.html">동기화</a><a href="roadmap.html">로드맵</a><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a></nav>
 </header>
 <div class="wrap">
 <main>
@@ -100,17 +100,17 @@ tbody tr:last-child td{border-bottom:0}
 <blockquote><strong>문서 페이지:</strong> <a href="https://breeze.io.kr/docs/" target="_blank" rel="noopener">https://breeze.io.kr/docs/</a>  이 문서는 앱의 현재 동작을 기준으로 씁니다. 다음에 만들 기능은 <a href="roadmap.html">ROADMAP.md</a>에, 데이터 처리 방식은 <a href="privacy.html">PRIVACY.md</a>에 따로 적습니다.</blockquote>
 <p>Breeze는 영어 글을 읽다가 모르는 낱말을 바로 확인하고, 내 단어장으로 가져가는 개인 리더입니다. PDF·EPUB 파일, 붙여 넣은 글, 조건이 맞는 기사 URL을 읽을 수 있습니다.</p>
 <h2 id="지금-할-수-있는-것">지금 할 수 있는 것</h2>
-<ul><li><strong>Books</strong>에는 PDF·EPUB을, <strong>Casuals</strong>에는 붙여 넣은 글과 기사 URL을 넣습니다. 각 줄은 마지막으로 읽던 항목을 따로 기억합니다.</li><li>PDF·EPUB은 <strong>글자</strong>와 <strong>원본</strong>을 오갈 수 있습니다. PDF 원본은 오른쪽 위의 <code>− / +</code>로만 확대합니다. 핀치 확대는 iOS 홈 화면 웹앱에서 브라우저가 스크롤 위치를 다시 계산하면서 페이지가 튀는 문제가 있어 의도적으로 쓰지 않습니다.</li><li><code>Aa</code>는 글자 모드의 글자 크기·여백·테마를 바꿉니다. EPUB과 글자 모드에는 PDF 배율이 적용되지 않습니다.</li><li>읽는 중 상단바는 사라져도 <strong>파란 진행 줄은 화면 위에 남습니다.</strong> 오른쪽 아래의 <code>Aa</code>, <code>원본/글자</code> 단추는 읽는 동안 옅어지지만 자리는 고정입니다.</li><li>낱말을 누르면 문맥에 맞는 뜻을 보고, 뜻을 고쳐 단어장에 넣을 수 있습니다. 같은 문맥으로 다시 누른 답은 기기에서 바로 엽니다. 문장 전체 설명은 로그인 후 하루 5번까지입니다.</li><li>로그인은 선택입니다. 로그인하면 단어장·읽던 자리·올린 책의 텍스트 사본을 기기 사이에 맞춥니다. 자세한 범위는 <a href="privacy.html">PRIVACY.md</a>를 봐 주세요.</li></ul>
+<ul><li><strong>Books</strong>에는 PDF·EPUB을, <strong>Casuals</strong>에는 붙여 넣은 글과 기사 URL을 넣습니다. 각 줄은 마지막으로 읽던 항목을 따로 기억합니다.</li><li>PDF·EPUB은 <strong>글자</strong>와 <strong>원본</strong>을 오갈 수 있습니다. PDF 원본은 오른쪽 위의 <code>− / +</code>로만 확대합니다. 핀치 확대는 iOS 홈 화면 웹앱에서 브라우저가 스크롤 위치를 다시 계산하면서 페이지가 튀는 문제가 있어 의도적으로 쓰지 않습니다.</li><li><code>Aa</code>는 글자 모드의 글자 크기·여백·테마를 바꿉니다. EPUB과 글자 모드에는 PDF 배율이 적용되지 않습니다.</li><li>읽는 중 상단바는 사라져도 <strong>파란 진행 줄은 화면 위에 남습니다.</strong> 오른쪽 아래의 <code>Aa</code>, <code>원본/글자</code> 단추는 읽는 동안 옅어지지만 자리는 고정입니다.</li><li>낱말을 누르면 문맥에 맞는 뜻을 보고, 뜻을 고쳐 단어장에 넣을 수 있습니다. 같은 문맥으로 다시 누른 답은 기기에서 바로 엽니다. 문장 전체 설명은 로그인 후 하루 5번까지입니다.</li><li>로그인은 선택입니다. 로그인하면 단어장·읽던 자리를 기기 사이에 암호화해 맞춥니다. 원문·표지·사진은 자동으로 보내지 않습니다. 자세한 범위는 <a href="sync.html">SYNC.md</a>를 봐 주세요.</li></ul>
 <h2 id="원본-파일과-동기화">원본 파일과 동기화</h2>
-<p>원본 PDF/EPUB 파일 자체는 <strong>현재 기기에만</strong> 저장합니다. 서버에는 읽기용 텍스트, 위치 정보, 제목 같은 책 정보만 동기화할 수 있습니다. 그래서 다른 기기에서 원본 모드를 열려면 같은 파일을 한 번 다시 연결해야 합니다.</p>
-<p>파일을 다시 연결할 때 현재는 책의 추출 텍스트 지문을 비교합니다. 파서 결과가 달라진 드문 경우에는 같은 원본인데도 연결을 거절할 수 있습니다. 원본 파일의 해시를 우선으로 비교하는 보완은 다음 안정화 작업입니다. 원본 파일 Blob을 서버에 올리는 계획은 없습니다.</p>
+<p>원본 PDF/EPUB 파일과 표지·삽화는 <strong>현재 기기에만</strong> 저장합니다. 서버에는 단어장, 위치, 제목과 파일 식별값 같은 작은 기록만 동기화합니다. 다른 기기에서 원본 모드까지 그대로 읽고 싶다면 Sync의 암호화 백업 파일을 한 번 불러옵니다.</p>
+<p>파일을 다시 연결하거나 백업을 불러올 때는 원본 파일 전체 SHA-256으로 같은 파일인지 확인합니다. 원본 파일 Blob을 서버에 올리는 계획은 없습니다.</p>
 <p>DRM EPUB과 스캔 PDF의 텍스트 선택·단어 클릭·OCR은 지원하지 않습니다. 스캔 PDF는 원본 화면으로 읽을 수 있습니다.</p>
 <h2 id="기사-url">기사 URL</h2>
 <p>URL 가져오기는 공개적으로 접근 가능한 페이지에서 본문과 사진을 골라 내는 편의 기능입니다. 로그인·결제·사이트 정책 때문에 읽을 수 없는 페이지는 가져오지 않습니다. 가져온 글은 사용자가 읽을 권리가 있는 내용에만 사용해야 하며, 유료 기사 우회나 사이트 안에 Breeze를 주입하는 기능은 제품 범위에 두지 않습니다.</p>
 <h2 id="개인정보과-보안의-현재-상태">개인정보과 보안의 현재 상태</h2>
 <ul><li>로그인 전 책·단어장·진행도는 기기에만 있습니다. 단, URL 가져오기는 CORS 때문에 Breeze의 중계 서버에 해당 URL을 요청합니다.</li><li>로그인하면 단어·예문·복습 기록과 읽던 위치만 기기에서 종단간 암호화(E2EE)되어 자동 동기화됩니다. PDF·EPUB·기사 본문·사진은 서버에 올라가지 않습니다.</li><li>복구키나 기존 기기의 승인이 없으면 Breeze도 암호문을 열 수 없습니다. 자세한 범위는 <a href="privacy.html">PRIVACY.md</a>에 적습니다.</li></ul>
 <h2 id="문서">문서</h2>
-<ul><li><a href="dictionary.html">사전 설계</a></li><li><a href="architecture.html">구조와 파일 책임</a></li><li><a href="roadmap.html">출시 로드맵</a></li><li><a href="privacy.html">개인정보처리방침</a></li></ul>
+<ul><li><a href="dictionary.html">사전 설계</a></li><li><a href="architecture.html">구조와 파일 책임</a></li><li><a href="sync.html">동기화</a></li><li><a href="roadmap.html">출시 로드맵</a></li><li><a href="privacy.html">개인정보처리방침</a></li></ul>
 <p><code>docs/</code>의 HTML은 직접 고치지 않습니다. 아래 검사가 Markdown 문서로부터 다시 만듭니다.</p>
 <pre data-lang="bash"><code>npm test</code></pre>
 <p>정적 서버에서 로컬로 열 때는 <code>file://</code> 대신 서버를 사용하세요.</p>

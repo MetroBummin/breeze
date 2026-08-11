@@ -27,6 +27,8 @@ const DOCS = [
     blurb: '낱말을 누르면 벌어지는 일, AI 부하, 서버에 남는 것' },
   { file: 'ARCHITECTURE.md', out: 'architecture.html', title: '파일 구조',
     blurb: '어떤 파일이 무슨 일을 하고 어떤 순서로 실리나' },
+  { file: 'SYNC.md',         out: 'sync.html',         title: '동기화',
+    blurb: '두 기기, 복구키, 읽기자료 백업이 움직이는 방식' },
   { file: 'ROADMAP.md',      out: 'roadmap.html',      title: '로드맵',
     blurb: '방향 전환과 다음에 만들 것' },
   { file: 'PRIVACY.md',      out: 'privacy.html',      title: '개인정보처리방침',
