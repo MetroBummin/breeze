@@ -21,12 +21,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/base.css?v=65664cb4">
-  <link rel="stylesheet" href="styles/home.css?v=9c10a745">
+  <script>
+    /* Safari의 주소창·하단 막대 색은 페이지가 완전히 통제할 수 없습니다.
+       일반 휴대폰 브라우저에서는 그 사이에 하늘색 띠가 남으므로, 스플래시는
+       홈 화면에 추가한 앱(standalone)에서만 보여 줍니다. */
+    (function(){
+      var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+      if(!standalone && window.matchMedia('(max-width: 700px)').matches){
+        document.documentElement.classList.add('mobile-browser');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles/base.css?v=2abb92ce">
+  <link rel="stylesheet" href="styles/home.css?v=bed4b3a7">
   <link rel="stylesheet" href="styles/reader.css?v=9d75b7c2">
   <link rel="stylesheet" href="styles/dictionary.css?v=fe541dd4">
   <link rel="stylesheet" href="styles/components.css?v=711de7e1">
-  <link rel="stylesheet" href="styles/responsive.css?v=9ba2f9bf">
+  <link rel="stylesheet" href="styles/responsive.css?v=794c5073">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->

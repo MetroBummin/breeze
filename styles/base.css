@@ -37,6 +37,9 @@
   #splash{position:fixed; inset:0; z-index:200; overflow:hidden; background:#65B6DC; display:flex;
     align-items:center; justify-content:center; transition:opacity .6s ease; isolation:isolate;}
   #splash.hide{opacity:0; pointer-events:none;}
+  /* 브라우저 크롬에 배경색이 잠깐 남는 문제를 피합니다. 홈 화면 웹앱은 이 규칙의
+     대상이 아니므로, 그곳에서는 원래의 첫 장면을 그대로 봅니다. */
+  html.mobile-browser #splash{display:none;}
   #splash .splash-scene,#splash .splash-scene picture{position:absolute; inset:0; z-index:-2; background:#65B6DC; overflow:hidden;}
   #splash .splash-scene{opacity:0; animation:splash-scene-in .42s ease-out forwards;}
   #splash .splash-scene::after{content:''; position:absolute; inset:0;
@@ -71,7 +74,7 @@
   #logo .mark{font-family:var(--display); font-size:25px; font-weight:600; letter-spacing:-1.35px; color:var(--ink);}
   #topbar nav{margin-left:auto; display:flex; gap:18px; align-items:center;}
   .navbtn{border:none; background:transparent; padding:8px 0; border-radius:0; font-size:17px;
-    cursor:pointer; color:var(--soft); font-family:var(--display); font-weight:600; letter-spacing:-.35px; text-transform:none;}
+    cursor:pointer; color:var(--soft); font-family:var(--display); font-weight:500; letter-spacing:-.35px; text-transform:none;}
   .navbtn.on{background:transparent; color:var(--blue-deep);}
   .navbtn:hover{background:transparent; color:var(--blue);}
   #btn-add{width:32px; height:32px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
