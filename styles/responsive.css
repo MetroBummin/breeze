@@ -4,7 +4,7 @@
     #topbar{gap:6px; padding:calc(12px + env(safe-area-inset-top)) 14px 12px;}
     #logo .mark{font-size:23px;}
     #topbar nav{gap:13px;}
-    .navbtn{padding:7px 0; font-size:10.5px; letter-spacing:.7px; white-space:nowrap;}
+    .navbtn{padding:7px 0; font-size:15px; letter-spacing:-.25px; white-space:nowrap;}
     #btn-add{width:30px; height:30px; font-size:18px; flex-shrink:0;}
     #v-home, #v-casuals, #v-longform{padding:20px 18px 90px;}
     #bigq{margin-bottom:26px;}
