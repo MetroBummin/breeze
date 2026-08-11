@@ -334,13 +334,6 @@ function serverBookIdFor(book){
   const match=activeServerBooks().find(row=>(row.meta||{}).localId===book.id);
   return match?match.book_id:book.id;
 }
-function localBookForServerId(id){
-  const row=activeServerBooks().find(item=>item.book_id===id);
-  return row?(books.find(book=>book.id===(row.meta||{}).localId)||null):(books.find(book=>book.id===id)||null);
-}
-function pushBookTitle(book){ if(book) queueSync(); }
-function autoUploadCasual(book){ if(book) queueSync(); }
-
 function queueSync(){
   if(!sb||!sbUser) return;
   save(VAULT_LOCAL_CHANGED,Date.now()); clearTimeout(syncTimer);
@@ -583,7 +576,7 @@ function attachSupabaseAuth(){
     if(sbUser) doSync(false);
     if(document.getElementById('sync-modal').classList.contains('on')) renderSyncModal();
   };
-  sb.auth.onAuthStateChange((event,session)=>accept(session));
+  sb.auth.onAuthStateChange((_event,session)=>accept(session));
   sb.auth.getSession().then(({data:{session}})=>accept(session));
 }
 initSupabase();

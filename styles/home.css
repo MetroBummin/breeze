@@ -126,10 +126,6 @@
   .bookcard.cloud:hover .del{opacity:1;}
   .bookcard.cloud .del:hover{background:#fff; color:#c0392b;}
 
-  /* 숨긴 책을 되찾는 줄. 찾는 사람만 보면 되므로 조용합니다. */
-  #longform-hidden{margin-top:20px; font-size:12.5px; color:var(--soft2);}
-  #longform-hidden .linkish{border:none; background:none; padding:0 0 0 4px; cursor:pointer;
-    font-size:12.5px; color:var(--blue-deep); text-decoration:underline; text-underline-offset:2px;}
   body.dark .bookcard.cloud{border-color:#2E3339;}
   .casual.cloud .thumb{border:1px dashed var(--line2); background:rgba(255,255,255,.34); filter:saturate(.25);}
   .casual.cloud .lede{opacity:.55; font-size:13px; line-height:1.45; padding:28px 18px;}

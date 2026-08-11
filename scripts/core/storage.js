@@ -93,16 +93,12 @@ async function originalGetForBook(book){
 async function originalDel(id){ try{ const db=await idb(); return await new Promise(res=>{
   const tx=db.transaction('originals','readwrite'); tx.objectStore('originals').delete(id);
   tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
-async function originalHas(id){ return !!(await originalGet(id)); }
 async function vaultPut(key, value){ const db=await idb(); return new Promise((res,rej)=>{
   const tx=db.transaction('vault','readwrite'); tx.objectStore('vault').put(value,key);
   tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 async function vaultGet(key){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('vault').objectStore('vault').get(key);
   rq.onsuccess=()=>res(rq.result===undefined?null:rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
-async function vaultDel(key){ try{ const db=await idb(); return await new Promise(res=>{
-  const tx=db.transaction('vault','readwrite'); tx.objectStore('vault').delete(key);
-  tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
 async function imgPut(id, blob){ const db=await idb(); return new Promise((res,rej)=>{
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(blob,id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 async function imgGet(id){ try{ const db=await idb(); return await new Promise(res=>{
@@ -151,44 +147,12 @@ const IMG_MARK = '[[IMG]]:';
 const ddb = openDb('breeze-dict', 1, db => {
   if(!db.objectStoreNames.contains('entries')) db.createObjectStore('entries');
 });
-/* 씨앗을 부을 때는 한 번의 거래로 다 씁니다. 낱말마다 거래를 열면 천 개를
-   붓는 데 몇 초가 걸리고, 그동안 첫 낱말을 누른 사람은 그냥 기다립니다. */
-async function dictPutAll(pairs){
-  if(!pairs.length) return 0;
-  const db = await ddb();
-  return new Promise((res, rej)=>{
-    const tx = db.transaction('entries','readwrite');
-    const store = tx.objectStore('entries');
-    for(const [key, value] of pairs) store.put(value, key);
-    tx.oncomplete = ()=>res(pairs.length);
-    tx.onerror = ()=>rej(tx.error);
-    tx.onabort = ()=>rej(tx.error);
-  });
-}
-/* 이미 있는 열쇠만 골라 냅니다 — 씨앗이 사람이 직접 받은 답을 덮지 않도록. */
-async function dictExistingKeys(keys){
-  const db = await ddb();
-  return new Promise(res=>{
-    const found = new Set();
-    const tx = db.transaction('entries');
-    const store = tx.objectStore('entries');
-    for(const key of keys){
-      const rq = store.openKeyCursor(IDBKeyRange.only(key));
-      rq.onsuccess = ()=>{ if(rq.result) found.add(key); };
-    }
-    tx.oncomplete = ()=>res(found);
-    tx.onerror = ()=>res(found);
-  });
-}
 async function dictGet(key){ try{ const db=await ddb(); return await new Promise(res=>{
   const rq=db.transaction('entries').objectStore('entries').get(key);
   rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
 async function dictPut(key,val){ try{ const db=await ddb(); await new Promise((res,rej)=>{
   const tx=db.transaction('entries','readwrite'); tx.objectStore('entries').put(val,key);
   tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }catch(e){} }
-async function dictCount(){ try{ const db=await ddb(); return await new Promise(res=>{
-  const rq=db.transaction('entries').objectStore('entries').count();
-  rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(0); }); }catch(e){ return 0; } }
 /* 캐시를 JSON으로 내보내기 — 콘솔에서 breezeExportDict() 로 호출 */
 window.breezeExportDict = async function(){
   const db=await ddb();

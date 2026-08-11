@@ -14,7 +14,5 @@ window.addEventListener('load', ()=>{
 /* safety: never let splash block the app */
 setTimeout(hideSplash, 5000);
 
-/* 서가를 먼저 읽고 홈을 그립니다. 사전 씨앗은 기다리지 않습니다 — 첫 낱말을
-   누르기 전에만 도착하면 됩니다. */
+/* 서가를 먼저 읽고 홈을 그립니다. */
 loadBooks().then(renderHome);
-loadDictSeed();

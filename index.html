@@ -17,10 +17,10 @@
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
-  <link rel="stylesheet" href="styles/home.css?v=348e4c0e">
+  <link rel="stylesheet" href="styles/home.css?v=de24650a">
   <link rel="stylesheet" href="styles/reader.css?v=153e724d">
-  <link rel="stylesheet" href="styles/dictionary.css?v=3e48bc28">
-  <link rel="stylesheet" href="styles/components.css?v=e7701cc8">
+  <link rel="stylesheet" href="styles/dictionary.css?v=9f9cc76b">
+  <link rel="stylesheet" href="styles/components.css?v=2652dba2">
   <link rel="stylesheet" href="styles/responsive.css?v=3a1ec5f0">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -32,35 +32,35 @@
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=84e8d1a2"></script>
   <script defer src="scripts/core/lazy-lib.js?v=3e8f6727"></script>
-  <script defer src="scripts/core/storage.js?v=d51f3f04"></script>
+  <script defer src="scripts/core/storage.js?v=40c5cf33"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
-  <script defer src="scripts/core/book-identity.js?v=45b41d84"></script>
+  <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/state.js?v=df4a083e"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=5616d002"></script>
-  <script defer src="scripts/library/book-edit.js?v=bc91d18e"></script>
+  <script defer src="scripts/library/library.js?v=7de8d725"></script>
+  <script defer src="scripts/library/book-edit.js?v=265671af"></script>
   <script defer src="scripts/library/classics.js?v=608376e4"></script>
-  <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
+  <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=ab01450f"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=ff6a5ef9"></script>
   <script defer src="scripts/dictionary/sentence.js?v=ab7b3016"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
   <script defer src="scripts/reader/pdf-original.js?v=adecf61c"></script>
-  <script defer src="scripts/reader/epub-original.js?v=7f2e9660"></script>
+  <script defer src="scripts/reader/epub-original.js?v=3c77d35e"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
-  <script defer src="scripts/reader/reader.js?v=8b52de23"></script>
+  <script defer src="scripts/reader/reader.js?v=57fbf848"></script>
   <script defer src="scripts/ui/preferences.js?v=d5c65a9c"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
-  <script defer src="scripts/sync/sync.js?v=2980e97f"></script>
+  <script defer src="scripts/sync/sync.js?v=b97f680f"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
-  <script defer src="scripts/main.js?v=68f194d1"></script>
+  <script defer src="scripts/main.js?v=0fc04365"></script>
 </head>
 <body>
 <div id="app">
@@ -104,7 +104,7 @@
       <span class="sec-sub">기사 · 스레드 · 짧은 글</span>
       <div class="sec-acts">
         <button id="rss-refresh" title="새 글 새로고침" aria-label="새 글 새로고침">↻</button>
-        <button id="casual-lib" title="캐주얼 리딩 모아보기" aria-label="캐주얼 리딩 모아보기" onclick="show('casuals')">
+        <button title="캐주얼 리딩 모아보기" aria-label="캐주얼 리딩 모아보기" onclick="show('casuals')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h3.5v15H5zM10.5 4.5H14v15h-3.5z"/><path d="m16.4 5.6 3.3.9-3.5 13-3.3-.9z"/></svg>
         </button>
         <button id="casual-add" title="캐주얼 리딩 추가" aria-label="캐주얼 리딩 추가" onclick="openAddModal('casual')">+</button>
@@ -118,7 +118,7 @@
       <h2>Books</h2>
       <span class="sec-sub">원서 · PDF · EPUB</span>
       <div class="sec-acts">
-        <button id="longform-lib" title="책 모아보기" aria-label="책 모아보기" onclick="show('longform')">
+        <button title="책 모아보기" aria-label="책 모아보기" onclick="show('longform')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h3.5v15H5zM10.5 4.5H14v15h-3.5z"/><path d="m16.4 5.6 3.3.9-3.5 13-3.3-.9z"/></svg>
         </button>
         <button id="longform-add" title="PDF · EPUB 파일 추가" aria-label="PDF · EPUB 파일 추가" onclick="pickBookFile()">+</button>
@@ -133,7 +133,7 @@
 <div class="view" id="v-casuals">
   <div class="head">
     <h1>Casuals</h1><span class="cnt" id="casual-cnt"></span>
-    <button id="btn-casual-add2" class="sm-mini" onclick="openAddModal('casual')">+ 추가</button>
+    <button class="sm-mini" onclick="openAddModal('casual')">+ 추가</button>
   </div>
   <div id="casual-grid"></div>
   <div id="casual-empty" hidden></div>
@@ -143,11 +143,10 @@
 <div class="view" id="v-longform">
   <div class="head">
     <h1>Books</h1><span class="cnt" id="longform-cnt"></span>
-    <button id="btn-longform-add2" class="sm-mini" onclick="pickBookFile()">+ 파일 추가</button>
+    <button class="sm-mini" onclick="pickBookFile()">+ 파일 추가</button>
   </div>
   <div id="longform-grid"></div>
   <div id="longform-empty" hidden></div>
-  <div id="longform-hidden" hidden></div>
 </div>
 
 <!-- ================= READER ================= -->
@@ -211,7 +210,7 @@
            됐고요. 이제 위에 뜬 뜻을 그 자리에서 누르면 바로 고쳐집니다. -->
       <div id="p-ai">
         <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻 · AI</span></div>
-        <div class="wind aurora" id="p-ai-wind" aria-hidden="true">
+        <div class="wind aurora" aria-hidden="true">
           <span class="glow"></span>
         </div>
         <div class="m">
@@ -222,7 +221,7 @@
              아랫줄이 올라와 윗줄 자리를 지킵니다 — 칸이 비지 않게. -->
         <div class="note" id="p-ai-note"></div>
         <div class="gloss" id="p-ai-gloss"></div>
-        <div class="acts" id="p-ai-acts">
+        <div class="acts">
           <button id="p-airetry">다른 뜻으로 다시 물어보기</button>
           <span class="tip" id="p-ai-tip">뜻을 눌러 직접 고칠 수 있어요</span>
         </div>
@@ -318,7 +317,7 @@
         빈 줄 없이 줄만 바꾸면 줄마다 한 장의 카드가 됩니다.</div>
       <textarea id="am-text" placeholder="여기에 붙여 넣으세요…" spellcheck="false"></textarea>
       <div id="am-preview"></div>
-      <button class="sm-btn primary" id="am-paste-go" onclick="importPastedText()">읽기 시작</button>
+      <button class="sm-btn primary" onclick="importPastedText()">읽기 시작</button>
     </div>
 
     <div class="am-step" data-step="url">

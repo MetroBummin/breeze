@@ -192,24 +192,6 @@ function setStatus(k, st){
   saveWords(); paintWord(resolved); queueSync();
   renderPanel();
 }
-/* 화면에 뜰 뜻 후보들. AI 가 고른 뜻이 맨 앞, 그 다음이 AI 가 준 다른 뜻,
-   마지막이 무료 사전이 준 것들. 같은 낱말이 두 번 뜨지 않게 걸러 냅니다. */
-function meaningChips(w){
-  const ai = w.ai || {};
-  const out = [], seen = new Set();
-  const push = (term, pos, fromAi) => {
-    const t = String(term||'').trim();
-    if(!t || seen.has(t)) return;
-    seen.add(t); out.push({ term:t, pos:pos||'', ai:!!fromAi });
-  };
-  push(ai.ko, ai.pos, true);
-  for(const a of (w.alts||[])) push(a, ai.pos, true);
-  for(const d of (w.kodict||[])) for(const t of (d.terms||[])) push(t, d.pos, false);
-  /* 사람이 직접 써 넣은 뜻은 어느 사전에도 없으니 따로 넣어 줍니다 —
-     안 그러면 자기가 고른 뜻만 칩에서 빠져 보입니다. */
-  if(w.ko) push(w.ko, ai.pos, false);
-  return out.slice(0, 8);
-}
 function renderPanel(){
   const base = words[selKey]; if(!base) return;
   const k = selKey;
@@ -543,48 +525,6 @@ function deviceId(){
 /* 서버가 답할 때마다 알려 주는 남은 횟수. 모르면 null. */
 let anonLooksLeft = null;
 
-/* ---- 앱과 함께 오는 사전 씨앗 ----
-   맛보기 글에 나오는 낱말은 답을 미리 받아 앱에 실어 둡니다. 열쇠는 AI 에게
-   물어봤을 때 저장하는 것과 완전히 같은 `l:<낱말>|<문장해시>` 라서, 앞으로
-   오는 모든 조회가 이걸 그냥 캐시로 씁니다 — 사전 코드에는 씨앗을 아는
-   갈래가 하나도 없습니다.
-
-   덕분에 첫 사용자는 로그인 전에도, 인터넷이 없어도, 어느 낱말을 눌러도
-   기다리지 않습니다. 바람은 그대로 붑니다(AI_MIN_WAIT 는 갓 받은 답에만
-   걸리지만, 캐시된 답도 창이 열리며 한 번 지나갑니다).
-
-   한 번 부으면 끝입니다. 판(version)이 오르면 다시 붓습니다.
-
-   ── 지금은 그 파일이 없습니다 ──
-   씨앗을 **만드는** 일은 접어 두었습니다(`modules/dict-seed/README.md`). 받는 쪽인
-   이 함수는 일부러 살려 둡니다 — 되살리는 일이 파일 한 장 떨어뜨리기가 되게 하려고요.
-   파일이 없으면 조용히 지나가고, 맛보기 글의 낱말도 다른 글과 똑같이 AI 에게
-   물어봅니다. */
-const DICT_SEED_FILE = 'assets/samples/dict-seed.json';
-const LS_DICT_SEED = 'breeze.dict-seed';
-
-async function loadDictSeed(){
-  try{
-    const response = await fetch(DICT_SEED_FILE);
-    if(!response.ok) return;
-    const seed = await response.json();
-    if(!seed || !seed.entries) return;
-    if(load(LS_DICT_SEED, 0) >= (seed.version || 1)) return;
-    const keys = Object.keys(seed.entries);
-    /* 이미 있는 답은 덮지 않습니다. 사용자가 그 문장에서 직접 받은 답이
-       씨앗보다 새것이고, 다시 물어본 답이라면 더더욱 그렇습니다. */
-    const mine = await dictExistingKeys(keys);
-    const pairs = keys.filter(key => !mine.has(key))
-      .map(key => [key, Object.assign({}, seed.entries[key], { done:true, seed:true })]);
-    await dictPutAll(pairs);
-    save(LS_DICT_SEED, seed.version || 1);
-    if(pairs.length) console.info(`사전 씨앗 ${pairs.length}개 준비됨`);
-  }catch(error){
-    /* 씨앗이 없어도 앱은 그냥 AI 에게 물어봅니다. 조용히 지나갑니다. */
-    console.warn('사전 씨앗을 읽지 못했습니다:', error && error.message);
-  }
-}
-
 async function dictCall(payload, signal){
   if(!sb || navigator.onLine === false) return null;
   let token = SB_KEY;
@@ -853,7 +793,7 @@ async function fetchDict(k){
 function renderVocab(){
   const list = Object.entries(words).sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
-  const rows = list.filter(([k,w]) => !q || w.word.toLowerCase().includes(q)
+  const rows = list.filter(([,w]) => !q || w.word.toLowerCase().includes(q)
     || (w.ko||'').includes(q) || (w.book||'').toLowerCase().includes(q));
   document.getElementById('vcnt').textContent = `${list.length}개 저장됨`;
   const wrap = document.getElementById('vtablewrap');

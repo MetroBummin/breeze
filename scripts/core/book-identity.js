@@ -3,13 +3,6 @@
 
 const BOOK_FINGERPRINT_VERSION = 'f2';
 
-function normalizeBookTitle(title){
-  return String(title || '')
-    .toLowerCase()
-    .replace(/[\s._-]+/g, ' ')
-    .trim();
-}
-
 function normalizeBookFingerprintText(text){
   return String(text || '')
     .toLowerCase()

@@ -4,9 +4,6 @@ const keyOf = raw => {
   const cands = lemmaCands(raw);
   return cands.find(c=>words[c]) || cands[0];
 };
-function looksHeading(p){
-  return p.length<70 && !/[.!?:;,]$/.test(p) && p.split(' ').length<=10 && /^[A-Z0-9“"]/.test(p);
-}
 function phraseParts(text){
   return (String(text||'').toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g)||[])
     .map(part=>lemmaCands(part)[0]||part);

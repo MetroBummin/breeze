@@ -574,7 +574,7 @@ function pdfPageColumns(items, pageWidth){
   if(!gutter) return [items];
   const left = [], right = [];
   for(const it of items){
-    const a = it.transform[4], b = a + Math.abs(it.width || 0);
+    const a = it.transform[4];
     // 두 단을 가로지르는 소수의 줄(전폭 제목)은 왼쪽 단의 흐름에 둡니다.
     if(a >= gutter.cut) right.push(it); else left.push(it);
   }

@@ -93,32 +93,8 @@ const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
 const HOME_CASUAL_LIMIT = 4;
 
-/* 목록만 보고 "이건 짧은 글"인지 아는 법.
-
-   답은 `kind` 하나입니다. 그리고 `kind` 는 짐작이 아니라 **어떻게 들어왔는지**
-   그 자체입니다 — 붙여넣기는 `paste`, 주소는 `article`, 파일은 `pdf`·`epub`·`txt`.
-   넣는 순간 적히므로 틀릴 수가 없습니다.
-
-   문제는 `kind` 를 목록에 적기 시작하기 *전에* 올라간 줄입니다. 그 줄에는 그
-   칸이 아예 없어서, 지금 Books 선반에 흐린 카드로 앉아 있습니다. 그 줄들을
-   위해 두 가지를 합니다.
-
-   ① 아는 기기가 대신 적어 줍니다(`backfillServerKinds`). 그 책을 손에 들고
-      있는 기기라면 짐작할 것이 없습니다 — 그냥 알고 있는 값을 올려 줍니다.
-      이쪽이 거의 다 처리하고, 한 번 적히면 그걸로 끝입니다.
-   ② 그래도 남는 줄 — 어느 기기에도 없는, 순전히 서버에만 있는 옛 줄. 여기서만
-      어림짐작합니다. 크기 하나로는 긴 기사가 원서로 넘어갈 수 있어서 문단 수를
-      함께 봅니다: 기사는 아무리 길어도 수백 문단이고 원서는 수천 문단입니다.
-      둘 다 통과해야 짧은 글로 봅니다. */
-const LEGACY_CASUAL_MAX_BYTES = 300 * 1024;
-const LEGACY_CASUAL_MAX_PARAS = 400;
 function rowLooksCasual(meta){
-  const kind = (meta || {}).kind || '';
-  if(kind) return CASUAL_KINDS.has(kind);
-  const bytes = (meta || {}).bytes || 0;
-  const paras = (meta || {}).paras || 0;
-  return bytes > 0 && bytes <= LEGACY_CASUAL_MAX_BYTES
-      && paras > 0 && paras <= LEGACY_CASUAL_MAX_PARAS;
+  return CASUAL_KINDS.has((meta||{}).kind||'');
 }
 
 /* 최근에 읽던 것이 앞에 옵니다. 한 번도 열지 않은 것은 그 뒤에, 넣은 순서로.
@@ -232,11 +208,6 @@ function casualMoreCard(count){
   return card;
 }
 
-/* 암호화 보관함에는 원문이 아니라 제목·식별값·진행도만 있습니다. */
-function serverRowForBook(book){
-  if(!sbUser || typeof activeServerBooks !== 'function') return null;
-  return activeServerBooks().find(row => (row.meta||{}).localId === book.id) || null;
-}
 /* 서버에만 있는 원서. 짧은 글은 저절로 오가므로 여기 나오지 않습니다.
    "이 기기에서만 지운" 책도 나오지 않습니다 — 서버 사본을 남기기로 하고 서가에서
    치운 것인데, 흐린 카드로 도로 올라오면 지운 적이 없는 것과 같습니다. */
@@ -399,18 +370,6 @@ function renderLongformLibrary(){
   offered.forEach(classic => grid.appendChild(classicCard(classic)));
   empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
   empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
-  renderHiddenBooksNote();
-}
-
-/* "이 기기에서만 지우기"를 고른 책은 서버에 남아 있지만 서가에 나오지 않습니다.
-   예전에는 Sync 창 목록에서 다시 받을 수 있었는데, 그 목록을 걷어내면서 되살릴
-   길이 없어졌습니다. 이 줄이 그 길입니다 — 서가는 어지럽히지 않고,
-   찾는 사람만 찾을 수 있게 라이브러리 화면 아래에만 둡니다. */
-function renderHiddenBooksNote(){
-  const host = document.getElementById('longform-hidden');
-  if(!host) return;
-  host.hidden = true;
-  host.innerHTML = '';
 }
 
 /* ================= 하나뿐인 추가 시트 =================
@@ -458,7 +417,7 @@ async function saveCasualBook(parsed, extra){
   closeAddModal();
   renderHome();
   openBook(book);
-  autoUploadCasual(book);        // 읽기를 막지 않도록 기다리지 않습니다
+  queueSync();                   // 읽기를 막지 않도록 기다리지 않습니다
 }
 
 async function importPastedText(){

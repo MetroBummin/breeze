@@ -162,13 +162,9 @@ assert.match(storageSource, /openDb\('breeze-img',\s*4,/,
   'IndexedDB was not upgraded for local originals');
 assert.match(storageSource, /createObjectStore\('originals'\)/,
   'Dedicated local original store is missing');
-// One connection per database, not one per read. Pouring the dictionary seed
-// opens a thousand of these in a row; opening a thousand connections took longer
-// than the work itself.
+// One connection per database, not one per read.
 assert.match(storageSource, /if\(job\) return job;/,
   'IndexedDB connections are no longer reused');
-assert.match(storageSource, /async function dictPutAll/,
-  'Bulk dictionary writes are missing — the seed would need one transaction each');
 assert.match(storageSource,/originalGetForBook/,
   'Original files cannot recover across a legacy book-ID change');
 
@@ -346,14 +342,12 @@ for(const file of jsFiles){
 assert.match(readFileSync(resolve(root, 'modules/exam-shorts/README.md'), 'utf8'),
   /prepared\.exam/, 'The parked module lost its reconnection instructions');
 
-/* ---- 떼어 둔 사전 씨앗 ----
-   만드는 쪽만 떼어 뒀습니다. 받는 쪽(`loadDictSeed`)은 앱에 살아 있어야 파일
-   한 장을 떨어뜨리는 것만으로 되살아납니다. */
+/* ---- 떼어 둔 사전 씨앗 ---- */
 assert.doesNotMatch(index, /modules\/dict-seed/,
   'The parked seed builder is loaded by index.html again');
-assert.match(readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8'),
-  /async function loadDictSeed/,
-  'The seed reader went away with the builder, so reviving it is no longer one file');
+assert.doesNotMatch(readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8'),
+  /dict-seed\.json|function loadDictSeed/,
+  'The parked dictionary seed still makes a failed request on every launch');
 assert.match(readFileSync(resolve(root, 'modules/dict-seed/README.md'), 'utf8'),
   /x-seed-token/,
   'The parked seed module lost the CORS trap that made it fail in the first place');
@@ -616,9 +610,9 @@ assert.match(librarySource, /nowReadingIn\(casuals\)/,
 assert.match(librarySource, /nowReadingIn\(longform\)/,
   'The long-form shelf shares its last-read marker with Casuals again');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
-assert.match(index, /id="casual-lib"[\s\S]{0,500}id="casual-add"/,
+assert.match(index, /aria-label="캐주얼 리딩 모아보기"[\s\S]{0,500}id="casual-add"/,
   'The Casuals header lost its library and add buttons');
-assert.match(index, /id="longform-lib"[\s\S]{0,500}id="longform-add"/,
+assert.match(index, /aria-label="책 모아보기"[\s\S]{0,500}id="longform-add"/,
   'The long-form header lost its library and add buttons');
 assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
 assert.match(librarySource, /function renderLongformLibrary/,
@@ -658,10 +652,8 @@ assert.match(librarySource, /function renderAllBookViews/,
   'The three book views are refreshed one by one again');
 
 /* Casual 원문은 기기에만 남고, URL과 진행도만 암호문에 들어갑니다. */
-assert.match(librarySource, /autoUploadCasual\(book\)/,
+assert.match(librarySource, /queueSync\(\);\s*\/\/ 읽기를 막지 않도록/,
   'A pasted or fetched article does not queue its encrypted metadata');
-assert.match(syncSource, /function autoUploadCasual\(book\).*queueSync/s,
-  'Casual metadata no longer joins automatic sync');
 
 /* ---- 짐 덜기 ----
    xlsx 881KB 는 Review 탭 버튼 하나 때문에 모든 사용자가 매번 받던 짐이었고,
@@ -908,9 +900,8 @@ assert.match(articleServer, /\/svg\/i\.test\(type\)/,
 
 assert.doesNotMatch(articleSource,/collectBookPhotos|shrinkPhotoForTransport|BOOK_PHOTO_BUDGET/,
   'The removed photo-upload transport code remains in the article importer');
-/* 크기 하나로는 긴 기사가 원서로 넘어갑니다. 문단 수를 함께 봐야 합니다. */
-assert.match(librarySource, /LEGACY_CASUAL_MAX_PARAS/,
-  'The legacy guess is back to size alone, so a long article lands on the wrong shelf');
+assert.match(librarySource, /CASUAL_KINDS\.has\(\(meta\|\|\{\}\)\.kind/,
+  'Encrypted metadata is no longer shelved from its explicit kind');
 
 /* ── 고전 표지는 파일 밖의 한 장이 이깁니다 ──
    그래야 `assets/classics/<id>.jpg` 를 갈아 끼우는 것만으로 권유 카드와 서가가

@@ -89,7 +89,7 @@ async function saveEditSheet(){
   closeEditSheet();
   renderAllBookViews();
   toast('바꿨어요');
-  pushBookTitle(book);
+  queueSync();
 }
 
 /* ---------- 지우기 ----------

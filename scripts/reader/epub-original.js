@@ -30,7 +30,7 @@ async function buildEpubResources(archive,session){
 
 function rewriteEpubCssUrls(css,cssPath,resources){
   const base=epubDirectory(cssPath);
-  return String(css||'').replace(/url\(\s*(['"]?)([^)'"\s]+)\1\s*\)/gi,(all,quote,raw)=>{
+  return String(css||'').replace(/url\(\s*(['"]?)([^)'"\s]+)\1\s*\)/gi,(all,_quote,raw)=>{
     if(/^(?:data:|blob:)/i.test(raw)) return all;
     if(/^(?:https?:|javascript:|file:)/i.test(raw)) return 'url("")';
     const fragment=raw.includes('#') ? '#'+raw.split('#').slice(1).join('#') : '';
