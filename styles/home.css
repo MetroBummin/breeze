@@ -4,20 +4,21 @@
   #greet{font-size:12.5px; color:var(--soft); letter-spacing:2.1px; margin:14px 2px 10px; font-weight:600;}
   /* 이 문장은 기능 안내가 아니라 독서를 시작하는 표지입니다. 제목에만 인쇄물 같은
      Display serif를 써서, 버튼과 본문은 여전히 빠르고 편하게 읽히게 둡니다. */
-  #bigq{font-family:var(--display); font-size:clamp(31px,5vw,45px); font-weight:600; letter-spacing:-1.7px; line-height:1.1; margin-bottom:38px;}
+  #bigq{font-family:var(--display); font-size:clamp(29px,4.4vw,40px); font-weight:600; letter-spacing:-1.5px; line-height:1.12; margin-bottom:34px;}
 
   /* ---- section headers ---- */
   .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:4px;}
-  .sec-head h2{font-family:var(--display); font-size:25px; font-weight:600; letter-spacing:-.8px;}
+  .sec-head h2{font-family:var(--display); font-size:23px; font-weight:600; letter-spacing:-.7px;}
   .sec-head .sec-sub{font-size:13px; color:var(--soft); flex:1; min-width:0;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .sec-acts{display:flex; gap:6px; align-self:center; margin-left:auto;}
-  .sec-acts button{width:34px; height:34px; border-radius:50%; border:none; background:transparent;
+  .sec-acts{display:flex; gap:5px; align-self:center; margin-left:auto;}
+  .sec-acts button{width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:rgba(253,251,246,.56);
     color:var(--soft); cursor:pointer; display:flex; align-items:center; justify-content:center;
-    font-size:20px; line-height:1; font-family:var(--ui);}
-  .sec-acts button svg{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7;
+    font-size:18px; line-height:1; font-family:var(--ui); transition:.15s;}
+  .sec-acts button svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7;
     stroke-linecap:round; stroke-linejoin:round;}
-  .sec-acts button:hover{background:#EFEDE4; color:var(--blue);}
+  #rss-refresh{width:25px; height:25px; border-color:transparent; background:transparent; font-size:16px;}
+  .sec-acts button:hover{background:#EFEDE4; border-color:#D9E3E1; color:var(--blue);}
   body.dark .sec-acts button:hover{background:#22262B;}
 
   /* ---- Casuals: a horizontal rail, one thumb per glass ---- */
@@ -44,7 +45,7 @@
   body.dark .casual.rss-card .thumb.rss-thumb{background:linear-gradient(#1D2126,#1D2126) padding-box,
     linear-gradient(135deg,#46B5D7 0%,#70C9A7 46%,#F2B76E 100%) border-box;}
   .casual{flex:0 0 158px; scroll-snap-align:start; cursor:pointer; position:relative;}
-  .casual .thumb{aspect-ratio:9/16; border-radius:13px; overflow:hidden; position:relative;
+  .casual .thumb{aspect-ratio:9/16; border-radius:15px; overflow:hidden; position:relative;
     display:flex; flex-direction:column; padding:14px; transition:.18s;
     box-shadow:0 6px 18px rgba(23,55,71,.10);}
   .casual:hover .thumb{transform:translateY(-3px); box-shadow:var(--shadow);}
@@ -83,7 +84,7 @@
   /* ---- Long-form shelf ---- */
   #longform{margin-top:44px;}
   #shelf{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:18px; margin-top:16px;}
-  .bookcard{border-radius:18px; padding:24px 24px 0; height:250px; cursor:pointer; position:relative; overflow:hidden;
+  .bookcard{border-radius:20px; padding:24px 24px 0; height:250px; cursor:pointer; position:relative; overflow:hidden;
     transition:.18s; display:block;}
   .bookcard:hover{transform:translateY(-3px); box-shadow:var(--shadow);}
   .bookcard .author{font-family:var(--serif); font-size:12.5px; letter-spacing:1.2px; margin-bottom:14px; opacity:.75;}

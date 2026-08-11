@@ -28,7 +28,7 @@
   html.dark{background:#171816;}
   body{background:var(--paper); color:var(--ink); font-family:var(--ui); -webkit-text-size-adjust:100%; text-size-adjust:100%; overflow-x:hidden;
        min-height:100vh;}
-  body::before{content:''; position:fixed; inset:0; pointer-events:none; opacity:.42; z-index:0;
+  body::before{content:''; position:fixed; inset:0; pointer-events:none; opacity:.5; z-index:0;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' seed='18'/><feColorMatrix type='matrix' values='1 0 0 0 .72 0 1 0 0 .68 0 0 1 0 .56 0 0 0 .045 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");}
   #app{position:relative; z-index:1;}
 
@@ -66,16 +66,16 @@
   #topbar{position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
     padding:calc(16px + env(safe-area-inset-top)) 26px 16px;
     background:rgba(250,248,242,.9); backdrop-filter:blur(10px); border-bottom:1px solid rgba(215,225,222,.42);}
-  #logo{display:flex; align-items:center; gap:9px; cursor:pointer; user-select:none;}
-  #logo svg{width:34px; height:22px;}
-  #logo .mark{font-size:21px; font-weight:600; letter-spacing:-1px; color:var(--ink);}
-  #topbar nav{margin-left:auto; display:flex; gap:8px; align-items:center;}
-  .navbtn{border:none; background:transparent; padding:8px 15px; border-radius:22px; font-size:14px;
-    cursor:pointer; color:var(--soft); font-family:var(--ui); font-weight:500;}
+  #logo{display:flex; align-items:center; cursor:pointer; user-select:none;}
+  #logo .mark{font-family:var(--display); font-size:25px; font-weight:600; letter-spacing:-1.35px; color:var(--ink);}
+  #topbar nav{margin-left:auto; display:flex; gap:2px; align-items:center; padding:3px; border:1px solid var(--line);
+    border-radius:999px; background:rgba(253,251,246,.6); box-shadow:0 3px 12px rgba(23,55,71,.035);}
+  .navbtn{border:none; background:transparent; padding:8px 12px; border-radius:18px; font-size:11.5px;
+    cursor:pointer; color:var(--soft); font-family:var(--ui); font-weight:600; letter-spacing:1.05px; text-transform:uppercase;}
   .navbtn.on{background:var(--sky); color:var(--blue-deep);}
   .navbtn:hover{background:#EFEDE4;}
-  #btn-add{width:38px; height:38px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
-    font-size:22px; cursor:pointer; line-height:1;}
+  #btn-add{width:32px; height:32px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
+    font-size:20px; cursor:pointer; line-height:1;}
   #btn-add:hover{background:var(--sky2);}
 
   .view{display:none;} .view.on{display:block;}

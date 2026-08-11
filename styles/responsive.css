@@ -2,11 +2,10 @@
 
   @media (max-width:760px){
     #topbar{gap:6px; padding:calc(12px + env(safe-area-inset-top)) 14px 12px;}
-    #logo{gap:7px;}
-    #logo svg{width:28px; height:18px;}
-    #logo .mark{font-size:19px;}
-    .navbtn{padding:7px 11px; font-size:13px; white-space:nowrap;}
-    #btn-add{width:34px; height:34px; font-size:18px; flex-shrink:0;}
+    #logo .mark{font-size:23px;}
+    #topbar nav{gap:1px; padding:3px;}
+    .navbtn{padding:7px 8px; font-size:10.5px; letter-spacing:.7px; white-space:nowrap;}
+    #btn-add{width:30px; height:30px; font-size:18px; flex-shrink:0;}
     #v-home, #v-casuals, #v-longform{padding:20px 18px 90px;}
     #bigq{margin-bottom:26px;}
     /* 레일은 화면 끝까지 흘러야 다음 카드가 잘려 보입니다. 좌우 여백과 같은 값. */
@@ -15,7 +14,7 @@
     #casual-rail > .casual{flex-basis:136px; width:136px; min-width:136px; max-width:136px;}
     #longform{margin-top:34px;}
     #shelf, #longform-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
-    .bookcard{height:206px; padding:18px 18px 0; border-radius:18px;}
+    .bookcard{height:206px; padding:18px 18px 0; border-radius:20px;}
     .bookcard .bt{font-size:17px;}
     .bookcard .prog, .bookcard.classic .get{left:18px;}
     /* "파일 연결해서 14%부터 이어 읽기"는 작은 카드에서 한 줄로 고집하면
