@@ -672,6 +672,27 @@ async function importFile(file, extra){
       return;
     }
 
+    /* 흐린 카드의 ×는 서버 기록을 지우는 것이 아니라 이 기기에서만 감춥니다.
+       그런데 그 뒤에 상단의 일반 파일 추가로 같은 바이트를 넣으면, 예전에는
+       새 0% 책으로 만들고 더 최신 항목으로 동기화해 버렸습니다. 파일 해시로
+       암호화 보관함의 기록을 먼저 찾아 다시 붙이면, 카드를 숨겼던 경우에도
+       읽던 위치를 잃지 않습니다. */
+    const identity=await vaultFileIdentity(prepared.hash);
+    const saved=identity&&(vaultRemoteItems||[]).find(item=>item.identity===identity);
+    if(saved){
+      const book={id:prepared.id,title:saved.title||prepared.title,author:saved.author||'',kind:prepared.kind,
+        paras:[],addedAt:saved.addedAt||Date.now(),fingerprint:prepared.fingerprint};
+      if(saved.position) positions[book.id]=saved.position;
+      await applyPreparedBook(book,prepared,file);
+      books=books.filter(one=>one.id!==book.id); books.unshift(book);
+      save(LS_POS,positions); unhideBookLocally(saved.id); unhideBookLocally(book.id);
+      await bookPut(book); queueSync(); renderAllBookViews();
+      toast(saved.position&&saved.position.t
+        ? `${Math.round((saved.position.p||0)*100)}%부터 이어 읽을 수 있어요`
+        : '이전에 보관한 책을 다시 연결했어요');
+      return;
+    }
+
     const id = prepared.id;
     if(prepared.kind === 'epub') await imgRename(prepared.tmpId,id);
     const paras = remapImportedImages(prepared.paras,prepared.tmpId,id);
