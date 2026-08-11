@@ -43,27 +43,15 @@
     transform:scale(1.025); animation:scene-breathe 16s ease-in-out infinite alternate;}
   #splash .splash-brand{display:flex; flex-direction:column; align-items:center; transform:translateY(-15vh);
     color:#FFF9EA; text-align:center; text-shadow:0 2px 20px rgba(15,45,55,.32);}
-  #splash svg.mark{width:148px; height:88px; margin-bottom:5px; filter:brightness(0) invert(1) sepia(.14) saturate(.55) drop-shadow(0 2px 9px rgba(10,35,45,.24));}
   #splash .word{font-family:var(--display); font-size:clamp(48px,8vw,68px); font-weight:600; letter-spacing:-3px; color:#FFF9EA;}
   #splash .tag{font-size:12px; color:rgba(255,249,234,.88); letter-spacing:1.3px; margin-top:8px; text-transform:uppercase; font-weight:600;}
-  #splash .splash-wind{position:absolute; z-index:-1; height:1px; border-top:1px solid rgba(255,251,235,.58); border-radius:50%;
-    filter:blur(.1px); opacity:0; transform:rotate(-8deg); animation:wind-pass 7s ease-in-out infinite;}
-  #splash .wind-one{width:88px; left:13%; top:37%; animation-delay:1.3s;}
-  #splash .wind-two{width:54px; right:18%; top:51%; animation-delay:4.2s;}
-  #splash .splash-leaf{position:absolute; z-index:-1; width:7px; height:3px; border-radius:100% 0 100% 0;
-    background:rgba(247,244,196,.9); opacity:0; animation:leaf-drift 9s linear infinite;}
-  #splash .leaf-one{left:20%; top:42%; animation-delay:2.2s;}
-  #splash .leaf-two{right:25%; top:60%; animation-delay:6.1s;}
   @keyframes scene-breathe{from{transform:scale(1.025) translate3d(0,0,0)}to{transform:scale(1.05) translate3d(-.35%,-.45%,0)}}
-  @keyframes wind-pass{0%,18%{opacity:0; transform:translateX(-25px) rotate(-8deg)}35%,58%{opacity:.66}82%,100%{opacity:0; transform:translateX(95px) rotate(-8deg)}}
-  @keyframes leaf-drift{0%{opacity:0; transform:translate3d(-16px,10px,0) rotate(0)}13%,78%{opacity:.82}100%{opacity:0; transform:translate3d(125px,-43px,0) rotate(260deg)}}
   @media (min-aspect-ratio:4/3){
     #splash .splash-scene img{object-fit:cover; object-position:center; transform:scale(1.025);}
     #splash .splash-brand{align-items:flex-start; width:min(38vw,440px); margin-right:42vw; transform:translateY(0); text-align:left;}
   }
   @media (prefers-reduced-motion:reduce){
-    #splash .splash-scene img,#splash .splash-wind,#splash .splash-leaf{animation:none;}
-    #splash .splash-wind,#splash .splash-leaf{display:none;}
+    #splash .splash-scene img{animation:none;}
   }
 
   /* ================= top bar ================= */
