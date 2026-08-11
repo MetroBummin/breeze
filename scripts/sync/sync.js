@@ -536,6 +536,29 @@ async function exportReadingBackup(){
   }catch(error){ console.error(error); syncStatus('백업을 만들지 못했어요: '+(error.message||error)); }
 }
 function pickReadingBackup(){ document.getElementById('reading-backup-input').click(); }
+
+/* 백업은 책 ID가 아니라 원본 파일 자체가 같은지를 우선 봅니다. 아주 초기 버전의
+   PDF/EPUB 카드는 본문 기반 ID를, 지금 카드는 파일 SHA-256 기반 ID를 가질 수
+   있습니다. ID만 비교하면 같은 Scythe가 두 권이 됩니다. */
+function backupOriginalHash(book, meta){
+  return String((book&&book.sourceHash)||(book&&book.original&&book.original.hash)||(meta&&meta.hash)||'');
+}
+function remapBackupAssetKey(key, aliases){
+  const value=String(key||'');
+  for(const [from,to] of aliases){
+    if(value===from || value.startsWith(from+'|')) return to+value.slice(from.length);
+  }
+  return value;
+}
+function remapBackupBookAssets(book, aliases){
+  const copy={...book};
+  copy.cover=remapBackupAssetKey(copy.cover,aliases)||null;
+  if(Array.isArray(copy.paras)) copy.paras=copy.paras.map(paragraph=>
+    paragraph.startsWith(IMG_MARK)
+      ? IMG_MARK+remapBackupAssetKey(paragraph.slice(IMG_MARK.length),aliases)
+      : paragraph);
+  return copy;
+}
 async function importReadingBackup(file){
   if(!file||!vaultMaster) return;
   syncStatus('백업 파일을 여는 중…');
@@ -543,17 +566,50 @@ async function importReadingBackup(file){
     await ensureZipLib(); const zip=await JSZip.loadAsync(await file.arrayBuffer());
     const packed=zip.file('breeze-backup.json'); if(!packed) throw new Error('Breeze 백업 파일이 아니에요');
     const manifest=JSON.parse(await packed.async('text')); if(manifest.v!==1) throw new Error('지원하지 않는 백업 형식이에요');
+    const originalMeta=new Map((manifest.originals||[]).map(item=>[String(item.key),item.meta||{}]));
+    const existingByHash=new Map(),aliases=new Map();
+    for(const current of books){
+      let hash=backupOriginalHash(current);
+      if(!hash){ const original=await originalGetForBook(current); hash=backupOriginalHash(current,original); }
+      if(!hash){ continue; }
+      const previous=existingByHash.get(hash);
+      if(!previous || previous.id===current.id){ existingByHash.set(hash,current); continue; }
+      /* 이미 이 기기에 남아 있던 구형 ID와 새 파일 ID도 여기서 하나로 접습니다.
+         파일 ID를 우선해 다음 가져오기·동기화 때 다시 갈라지지 않게 합니다. */
+      const keep=current.id.startsWith('file-') ? current : previous;
+      const drop=keep===current ? previous : current;
+      aliases.set(drop.id,keep.id);
+      if((positions[drop.id]&&positions[drop.id].t||0)>(positions[keep.id]&&positions[keep.id].t||0)) positions[keep.id]=positions[drop.id];
+      delete positions[drop.id];
+      books=books.filter(book=>book.id!==drop.id); await bookDel(drop.id);
+      existingByHash.set(hash,keep);
+    }
+    /* 예전 ID → 이 기기의 ID. 뒤에 원본·표지를 넣을 때도 같은 새 키를 씁니다. */
     for(const item of manifest.books||[]){
       const book=await VaultCrypto.openJson(vaultMaster,item.envelope,[sbUser.id,'backup','book',item.id],'breeze/backup/v1');
-      await bookPut(book); books=books.filter(one=>one.id!==book.id); books.push(book);
+      const hash=backupOriginalHash(book,originalMeta.get(String(item.id)));
+      const same=hash&&existingByHash.get(hash);
+      if(same&&same.id!==book.id){
+        aliases.set(book.id,same.id);
+        /* 백업을 일부러 불러온 것이므로 표지·제목 같은 서재 정보는 내보낸 기기의
+           것을 채택하되, 이 기기의 ID와 읽던 위치는 건드리지 않습니다. */
+        const merged=remapBackupBookAssets({...same,...book,id:same.id},aliases);
+        await bookPut(merged); books=books.filter(one=>one.id!==same.id); books.push(merged);
+        existingByHash.set(hash,merged);
+      }else{
+        await bookPut(book); books=books.filter(one=>one.id!==book.id); books.push(book);
+        if(hash) existingByHash.set(hash,book);
+      }
     }
     for(const item of manifest.originals||[]){
       const bytes=await VaultCrypto.openBytes(vaultMaster,item.envelope,[sbUser.id,'backup','original',item.key],'breeze/backup/v1');
-      await originalPut(item.key,{...(item.meta||{}),blob:new Blob([bytes],{type:(item.meta&&item.meta.type)||'application/octet-stream'})});
+      const key=remapBackupAssetKey(item.key,aliases);
+      await originalPut(key,{...(item.meta||{}),blob:new Blob([bytes],{type:(item.meta&&item.meta.type)||'application/octet-stream'})});
     }
     for(const item of manifest.images||[]){
       const bytes=await VaultCrypto.openBytes(vaultMaster,item.envelope,[sbUser.id,'backup','image',item.key],'breeze/backup/v1');
-      await imgPut(item.key,new Blob([bytes],{type:item.type||'application/octet-stream'}));
+      const key=remapBackupAssetKey(item.key,aliases);
+      await imgPut(key,new Blob([bytes],{type:item.type||'application/octet-stream'}));
     }
     books.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)); renderAllBookViews(); queueSync();
     syncStatus('읽기자료를 이 기기에 불러왔어요');
