@@ -201,6 +201,9 @@
   .am-big{display:flex; align-items:center; gap:16px; text-align:left; width:100%; cursor:pointer;
     border:1px solid var(--line); border-radius:18px; padding:18px 20px; background:var(--paper2);
     font-family:var(--ui); color:var(--ink); transition:.15s;}
+  /* Casuals에는 붙여넣기와 URL만 남깁니다. `.am-big`의 display:flex가 브라우저의
+     기본 [hidden] 규칙을 덮어써서 파일 항목이 다시 보이고 있었습니다. */
+  .am-big[hidden]{display:none!important;}
   .am-big:hover{border-color:var(--blue); background:var(--sky);}
   .am-big .am-ico{width:46px; height:46px; min-width:46px; border-radius:14px; background:#E3F1F2;
     color:var(--blue); display:flex; align-items:center; justify-content:center;}

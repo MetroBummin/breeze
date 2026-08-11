@@ -373,7 +373,7 @@ function renderLongformLibrary(){
 }
 
 /* ================= 하나뿐인 추가 시트 =================
-   붙여넣기 · 기사 URL · 내 파일. 셋 다 넣는 순간부터 오프라인에서 읽힙니다. */
+   Casuals에는 붙여넣기·기사 URL, Books에는 파일까지 함께 보여 줍니다. */
 function addModal(){ return document.getElementById('add-modal'); }
 function addStep(step){
   addModal().querySelectorAll('.am-step').forEach(section =>
