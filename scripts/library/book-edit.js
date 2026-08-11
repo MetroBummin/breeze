@@ -65,6 +65,7 @@ async function pickCoverFile(input){
   const key = editTarget.id + '|cover';
   await imgPut(key, file);
   editTarget.cover = key;
+  editTarget.coverUpdatedAt = Date.now();
   await bookPut(editTarget);
   renderCoverChoices(editTarget);
   renderAllBookViews();
@@ -82,7 +83,11 @@ async function saveEditSheet(){
     book.renamedAt = Date.now();        // 어느 쪽 이름이 최신인지 판단하는 기준
     changed = true;
   }
-  if(picked !== (book.cover || '')){ book.cover = picked || null; changed = true; }
+  if(picked !== (book.cover || '')){
+    book.cover = picked || null;
+    book.coverUpdatedAt = Date.now();
+    changed = true;
+  }
   if(!changed){ closeEditSheet(); return; }
 
   await bookPut(book);

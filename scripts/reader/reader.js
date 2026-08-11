@@ -179,8 +179,10 @@ async function openBook(b){
   renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
-  positions[b.id] = {...initialPosition, t:Date.now()};
-  save(LS_POS, positions);
+  /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
+     다른 기기의 위치를 이길 수 있습니다. 처음 연 책만 자리를 만들고, 이후의
+     시간표는 실제 스크롤이 남깁니다. */
+  if(firstOpen){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
   updateReaderModeControls();
   const original = bookSupportsOriginal(b) ? await originalGetForBook(b) : null;
   const desired = initialPosition.mode==='original'

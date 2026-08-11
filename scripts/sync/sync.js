@@ -5,6 +5,7 @@
 let SB_URL='', SB_KEY='', sb=null, sbInitProblem='', authListenerAttached=false;
 let sbUser=null, syncTimer=null, syncPromise=null, syncAgain=false, syncAgainManual=false;
 let lastSync=load('breeze.lastsync',0);
+let progressSyncTimer=null, lastProgressSyncAt=0;
 
 const VAULT_ROW='__breeze_vault_v2__';
 const VAULT_META_ROW='__breeze_vault_meta_v2__';
@@ -336,6 +337,18 @@ function queueSync(){
   save(VAULT_LOCAL_CHANGED,Date.now()); clearTimeout(syncTimer);
   syncTimer=setTimeout(()=>doSync(false),4000);
 }
+/* 책을 읽는 동안 위치는 자주 바뀌지만, 매 손가락 움직임마다 서버를 부를 이유는
+   없습니다. 25초마다 한 번이면 다른 기기로 옮겨 읽기에 충분히 빠르고 배터리도
+   덜 씁니다. 앱을 숨길 때는 아래 visibilitychange가 이 대기열을 건너뛰고 즉시
+   보냅니다. */
+function queueReadingProgressSync(){
+  if(!sb||!sbUser) return;
+  const wait=Math.max(0,25000-(Date.now()-lastProgressSyncAt));
+  clearTimeout(progressSyncTimer);
+  progressSyncTimer=setTimeout(()=>{
+    progressSyncTimer=null; lastProgressSyncAt=Date.now(); queueSync();
+  },wait);
+}
 const upOf=word=>word?(word.up||word.addedAt||0):0;
 function doSync(manual){
   if(!sb||!sbUser) return Promise.resolve(false);
@@ -383,7 +396,7 @@ async function localVaultItem(book){
   return {id:book.id,title:book.title||'(제목 없음)',author:book.author||'',kind:book.kind||'',site:book.site||'',
     sourceUrl:book.sourceUrl||'',classicId:book.classicId||'',identity:await vaultSourceIdentity(book,rawHash),originalKind:original.kind||'',
     fileSize:Number(original.size||book.sourceSize)||0,fileModified:Number(original.lastModified||book.sourceModified)||0,addedAt:book.addedAt||Date.now(),
-    updatedAt:Math.max(book.renamedAt||0,position&&position.t||0,book.addedAt||0),position};
+    updatedAt:Math.max(book.renamedAt||0,book.coverUpdatedAt||0,position&&position.t||0,book.addedAt||0),position};
 }
 function itemIdentity(item){
   return item.identity||'id:'+item.id;
@@ -512,10 +525,15 @@ async function exportReadingBackup(){
   if(!vaultMaster){ syncStatus('먼저 단어 보관함을 열어 주세요'); return; }
   syncStatus('읽기자료를 암호화하는 중…');
   try{
-    await ensureZipLib(); const zip=new JSZip(),manifest={v:1,createdAt:Date.now(),books:[],originals:[],images:[]};
+    await ensureZipLib(); const zip=new JSZip(),manifest={v:1,createdAt:Date.now(),books:[],positions:[],originals:[],images:[]};
     for(const book of books){
       const envelope=await VaultCrypto.sealJson(vaultMaster,book,[sbUser.id,'backup','book',book.id],'breeze/backup/v1');
       manifest.books.push({id:book.id,envelope});
+      const position=safePosition(positions[book.id]);
+      if(position&&position.t){
+        const positionEnvelope=await VaultCrypto.sealJson(vaultMaster,position,[sbUser.id,'backup','position',book.id],'breeze/backup/v1');
+        manifest.positions.push({id:book.id,envelope:positionEnvelope});
+      }
     }
     for(const entry of await originalEntries()){
       const key=String(entry[0]),record=entry[1]||{},blob=record.blob;
@@ -559,6 +577,29 @@ function remapBackupBookAssets(book, aliases){
       : paragraph);
   return copy;
 }
+function backupFieldTime(book, field){
+  if(field==='title') return Number(book&&book.renamedAt||book&&book.addedAt||0);
+  if(field==='cover') return Number(book&&book.coverUpdatedAt||book&&book.addedAt||0);
+  return 0;
+}
+function mergeBackupBook(existing, incoming, aliases){
+  const imported=remapBackupBookAssets(incoming,aliases);
+  const merged={...existing,...imported,id:existing.id};
+  /* 읽었다는 시간은 표지·제목을 고친 시간과 관계없습니다. 각각 마지막으로
+     손댄 쪽만 남겨야, 다른 기기에서 읽었다고 내 표지가 되돌아가지 않습니다. */
+  if(backupFieldTime(existing,'title')>backupFieldTime(imported,'title')){
+    merged.title=existing.title; merged.renamedAt=existing.renamedAt;
+  }
+  if(backupFieldTime(existing,'cover')>backupFieldTime(imported,'cover')){
+    merged.cover=existing.cover; merged.coverUpdatedAt=existing.coverUpdatedAt;
+  }
+  return merged;
+}
+async function preserveRemappedCover(source, merged, aliases){
+  const from=String(source&&source.cover||''),to=remapBackupAssetKey(from,aliases);
+  if(!from||from===to||merged.cover!==to) return;
+  const blob=await imgGet(from); if(blob) await imgPut(to,blob);
+}
 async function importReadingBackup(file){
   if(!file||!vaultMaster) return;
   syncStatus('백업 파일을 여는 중…');
@@ -581,8 +622,10 @@ async function importReadingBackup(file){
       aliases.set(drop.id,keep.id);
       if((positions[drop.id]&&positions[drop.id].t||0)>(positions[keep.id]&&positions[keep.id].t||0)) positions[keep.id]=positions[drop.id];
       delete positions[drop.id];
-      books=books.filter(book=>book.id!==drop.id); await bookDel(drop.id);
-      existingByHash.set(hash,keep);
+      const merged=mergeBackupBook(keep,drop,aliases);
+      await preserveRemappedCover(drop,merged,aliases);
+      await bookPut(merged); books=books.filter(book=>book.id!==keep.id&&book.id!==drop.id); books.push(merged); await bookDel(drop.id);
+      existingByHash.set(hash,merged);
     }
     /* 예전 ID → 이 기기의 ID. 뒤에 원본·표지를 넣을 때도 같은 새 키를 씁니다. */
     for(const item of manifest.books||[]){
@@ -591,9 +634,7 @@ async function importReadingBackup(file){
       const same=hash&&existingByHash.get(hash);
       if(same&&same.id!==book.id){
         aliases.set(book.id,same.id);
-        /* 백업을 일부러 불러온 것이므로 표지·제목 같은 서재 정보는 내보낸 기기의
-           것을 채택하되, 이 기기의 ID와 읽던 위치는 건드리지 않습니다. */
-        const merged=remapBackupBookAssets({...same,...book,id:same.id},aliases);
+        const merged=mergeBackupBook(same,book,aliases);
         await bookPut(merged); books=books.filter(one=>one.id!==same.id); books.push(merged);
         existingByHash.set(hash,merged);
       }else{
@@ -611,6 +652,12 @@ async function importReadingBackup(file){
       const key=remapBackupAssetKey(item.key,aliases);
       await imgPut(key,new Blob([bytes],{type:item.type||'application/octet-stream'}));
     }
+    for(const item of manifest.positions||[]){
+      const imported=safePosition(await VaultCrypto.openJson(vaultMaster,item.envelope,[sbUser.id,'backup','position',item.id],'breeze/backup/v1'));
+      const id=aliases.get(item.id)||item.id,current=positions[id];
+      if(imported&&(!current||(imported.t||0)>(current.t||0))) positions[id]=imported;
+    }
+    save(LS_POS,positions);
     books.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)); renderAllBookViews(); queueSync();
     syncStatus('읽기자료를 이 기기에 불러왔어요');
   }catch(error){ console.error(error); syncStatus('백업을 열지 못했어요. 같은 계정의 복구키인지 확인해 주세요.'); }

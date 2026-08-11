@@ -106,6 +106,7 @@ function saveReadingState(){
       p:logical, t:Date.now(), mode:'original',
       original:original || previous.original || null};
     save(LS_POS, positions);
+    if(typeof queueReadingProgressSync==='function') queueReadingProgressSync();
     return;
   }
   const a = captureAnchor();
@@ -116,6 +117,7 @@ function saveReadingState(){
                             p:logical, t:Date.now(), mode:'text',
                             pi: a ? a.pi : null, dy: a ? a.dy : 0 };
   save(LS_POS, positions);
+  if(typeof queueReadingProgressSync==='function') queueReadingProgressSync();
 }
 function show(v){
   saveReadingState();
