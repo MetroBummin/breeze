@@ -5,8 +5,8 @@
        만드는 대신, 배경 위에만 아주 조용히 얹습니다. */
     --paper:#FAF8F2; --paper2:#FDFBF6; --ink:#18364A; --ink-body:#2D3E43;
     --soft:#667D87; --soft2:#78909A; --line:#E4E8DF; --line2:#D7E1DE;
-    /* 스플래시 하늘에서 가져온 맑은 파랑. 선택 배경이 아니라 잉크처럼 씁니다. */
-    --blue:#2495D3; --blue-deep:#1D7DB7; --sky:#E7F5FB; --sky2:#DCEFF8;
+    /* 하늘색을 한 번 햇볕에 바랜 듯 낮춰, 화면에서는 잉크처럼 보이게 둡니다. */
+    --blue:#5C98B2; --blue-deep:#3F7895; --sky:#E7F1F4; --sky2:#DCEAF0;
     --mint:#BDDCCD; --chipbg:#E6F3F1; --chiptx:#247B81;
     --s1:#FFE28A; --s2:#FFC9A3; --s3:#FFB0B0;
     /* ── AI 가 말하는 자리의 색 ──
@@ -16,7 +16,7 @@
        깔려 있어서 셋이 서로 남처럼 보였습니다.
        이제 셋 다 이 여섯 값만 씁니다. 흰색과 파랑, 이 앱의 색 그대로입니다. */
     --ai-bg1:#EAF4FB; --ai-bg2:#F8FCFE; --ai-line:#CFE4EC;
-    --ai-key:#2495D3; --ai-ink:#18364A; --ai-note:#5B707A; --ai-quiet:#8AA0A9;
+    --ai-key:#4E88A4; --ai-ink:#18364A; --ai-note:#5B707A; --ai-quiet:#8AA0A9;
     --ui:'Avenir Next','Helvetica Neue','Apple SD Gothic Neo','Pretendard',-apple-system,sans-serif;
     --serif:Georgia,'Times New Roman',serif;
     --display:'Fraunces',Georgia,'Times New Roman',serif;

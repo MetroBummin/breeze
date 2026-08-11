@@ -18,7 +18,8 @@
   .sec-acts button svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7;
     stroke-linecap:round; stroke-linejoin:round;}
   .sec-acts button:hover{background:#EFEDE4; border-color:#D9E3E1; color:var(--blue);}
-  body.dark .sec-acts button:hover{background:#22262B;}
+  body.dark .sec-acts button{background:#20211F; border-color:#41443D; color:#B7BBB0;}
+  body.dark .sec-acts button:hover{background:#2A2C28; border-color:#63899A; color:#9BC1CD;}
 
   /* ---- Casuals: a horizontal rail, one thumb per glass ---- */
   /* 레일이 페이지 여백 밖까지 흘러야 "옆으로 더 있다"가 잘려 보입니다. */
@@ -31,15 +32,12 @@
   /* 피드 카드든 내 Casual이든 레일에서 차지하는 바깥 폭은 하나여야 합니다.
      사진·테두리·article/div 태그 차이에 flex 계산이 흔들리지 않게 명시합니다. */
   #casual-rail > .casual{flex:0 0 158px; width:158px; min-width:158px; max-width:158px;}
-  /* 새 RSS 글은 무지개 글로우 대신, 종이 위에 한 번 더 찍은 파란 인쇄선으로 표시합니다. */
-  .casual.rss-card .thumb.rss-thumb{box-sizing:border-box; border:2px solid #6FA9C5;
-    outline:1px solid rgba(228,190,113,.7); outline-offset:2px; background:var(--paper2);}
-  /* 일반 Casual 표지 규칙이 뒤에서 `inset:0`을 다시 쓰므로, RSS 쪽은 한 단계 더
-     구체적으로 적습니다. 그래야 사진 바깥에 2px짜리 새 글 링이 실제로 남습니다. */
-  .casual.rss-card .thumb.rss-thumb .cover{inset:2px; width:calc(100% - 4px); height:calc(100% - 4px);
-    border-radius:13px;}
+  /* 새 RSS 글은 테두리 대신 뒤에 포개 놓은 얇은 종이 한 장으로만 구분합니다. */
+  .casual.rss-card .thumb.rss-thumb{box-sizing:border-box; border:none; background:var(--paper2);
+    box-shadow:3px 4px 0 rgba(220,204,169,.9), 0 6px 18px rgba(23,55,71,.10);}
+  .casual.rss-card .thumb.rss-thumb .cover{inset:0; width:100%; height:100%; border-radius:15px;}
   .rss-card.busy{opacity:.55; pointer-events:none;}
-  body.dark .casual.rss-card .thumb.rss-thumb{border-color:#6D9BB2; outline-color:rgba(202,174,115,.46); background:#1D2126;}
+  body.dark .casual.rss-card .thumb.rss-thumb{background:#1D2126; box-shadow:3px 4px 0 rgba(104,95,71,.65), 0 6px 18px rgba(0,0,0,.32);}
   .casual{flex:0 0 158px; scroll-snap-align:start; cursor:pointer; position:relative;}
   .casual .thumb{aspect-ratio:9/16; border-radius:15px; overflow:hidden; position:relative;
     display:flex; flex-direction:column; padding:14px; transition:.18s;
