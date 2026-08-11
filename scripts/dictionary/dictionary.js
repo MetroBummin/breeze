@@ -103,7 +103,7 @@ const recentWordOpens = new Map();
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 읽는 중의
    문장을 서버 동기화 객체에 덮어 쓰지 않습니다. 사용자가 "이 뜻도 저장"을 눌러야
    그때만 `senses`에 들어갑니다. */
-let contextView = null, phraseView = null;
+let contextView = null, phraseView = null, altChoice = null;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
 function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
 function answerFromLook(j, cached){
@@ -112,10 +112,17 @@ function answerFromLook(j, cached){
     alts:Array.isArray(j.alts)?j.alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
+function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }
 function phraseCardKey(text){ return `phrase:${phraseParts(text).join(' ')}`; }
 function findContextCard(root, sentence){
   const id=contextCardKey(root,sentence);
   return words[id] ? id : null;
+}
+function findSavedSense(root, sentence){
+  return Object.keys(words).find(id=>{
+    const item=words[id];
+    return item && item.sense && item.root===root && item.example===sentence;
+  }) || null;
 }
 
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
@@ -124,7 +131,7 @@ function openWord(k, node){
   if(!words[k]){ addWord(k, node); return; }
   const nextExample = sentenceOf(node);
   const root=words[k].root||k;
-  const savedContext=nextExample && findContextCard(root,nextExample);
+  const savedContext=nextExample && (findContextCard(root,nextExample)||findSavedSense(root,nextExample));
   if(savedContext){
     const now=Date.now(), seenAt=recentWordOpens.get(savedContext)||0;
     if(now-seenAt>=RECENT_WORD_OPEN_MS && words[savedContext].status<3) setStatus(savedContext,words[savedContext].status+1);
@@ -152,6 +159,7 @@ function selectWord(k, span){
   if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
   if(!phraseView || phraseView.key !== k) phraseView = null;
+  if(!altChoice || altChoice.key!==k) altChoice = null;
   selKey = k;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
@@ -319,20 +327,47 @@ function renderPanel(){
   const alts=[...new Set((w.alts||[]).map(item=>String(item||'').trim()).filter(item=>item&&item!==shown))].slice(0,3);
   if(alts.length){
     altSec.className='p-sec on'; altBox.className='on';
-    altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip">${esc(item)}</button>`).join('');
-    [...altBox.querySelectorAll('button')].forEach((button,index)=>button.onclick=()=>chooseMeaning(k,alts[index]));
+    const picked=altChoice&&altChoice.key===k ? altChoice.meaning : '';
+    altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip${picked===item?' on':''}" data-meaning="${esc(item)}">${esc(item)}</button>`).join('')
+      +(picked?`<div class="alt-actions"><button type="button" class="alt-action" id="p-alt-replace">이 뜻으로 바꾸기</button><button type="button" class="alt-action save" id="p-alt-save">+ 따로 저장</button></div>`:'');
+    [...altBox.querySelectorAll('.kochip')].forEach(button=>{
+      const chip=/** @type {HTMLElement} */(button);
+      chip.onclick=()=>pickAlternative(k,chip.dataset.meaning||'');
+    });
+    const replace=document.getElementById('p-alt-replace'), saveAlt=document.getElementById('p-alt-save');
+    if(replace) replace.onclick=()=>chooseMeaning(k,picked);
+    if(saveAlt) saveAlt.onclick=()=>saveAlternateMeaning(k,picked,w);
   }else{ altSec.className='p-sec'; altBox.className=''; altBox.innerHTML=''; }
   const defs = document.getElementById('p-defs');
   if(w.loading) defs.innerHTML = '<span style="color:var(--soft2)">불러오는 중…</span>';
   else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--soft2)">영어 뜻을 찾지 못했어요</span>';
   else defs.innerHTML = w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
 }
+function pickAlternative(k, meaning){
+  if(!meaning) return;
+  altChoice={key:k,meaning}; renderPanel();
+}
 function chooseMeaning(k, meaning){
   const w=words[k]; if(!w) return;
   w.ko=meaning; w.ai={...(w.ai||{}),ko:meaning,gloss:''};
   w.alts=(w.alts||[]).filter(item=>item!==meaning);
   w.asked=[...new Set([...(w.asked||[]),meaning])].slice(-4);
-  w.up=Date.now(); saveWords(); queueSync(); logDict('pick',k); renderPanel();
+  altChoice=null; w.up=Date.now(); saveWords(); queueSync(); logDict('pick',k); renderPanel();
+}
+/* 같은 철자라도 문맥별 뜻과 복습 기록은 따로여야 합니다. 화면에는 take 하나로
+   묶어 보이지만, 내부에는 root 아래의 독립 카드로 두어 난이도·예문이 섞이지
+   않게 합니다. */
+function saveAlternateMeaning(k, meaning, source){
+  const base=words[k]; if(!base || !meaning) return;
+  const shown=source||base;
+  const root=base.root||k, id=senseCardKey(root,meaning), previous=words[id];
+  words[id]={...(previous||{}),word:shown.word||base.word,root, sense:true, clicked:shown.clicked||base.clicked||base.word,
+    forms:base.forms||[base.word], example:shown.example||base.example||'', book:shown.book||base.book||'', status:previous?previous.status:1,
+    mark:previous?previous.mark:base.mark!==false, ko:meaning, ai:{...(shown.ai||base.ai||{}),ko:meaning,gloss:''},
+    alts:(base.alts||[]).filter(item=>item!==meaning), phrase:'', defs:[], kodict:[],
+    addedAt:previous?previous.addedAt:Date.now(),up:Date.now()};
+  altChoice=null; saveWords(); queueSync(); selectWord(id,null);
+  toast(`“${base.word} · ${meaning}” 뜻을 따로 저장했어요`);
 }
 document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
@@ -802,23 +837,36 @@ async function fetchDict(k){
 function renderVocab(){
   const list = Object.entries(words).sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
-  const rows = list.filter(([,w]) => !q || w.word.toLowerCase().includes(q)
-    || (w.ko||'').includes(q) || (w.book||'').toLowerCase().includes(q));
+  const grouped=new Map();
+  list.forEach(([k,w])=>{
+    const groupKey=w.root||k;
+    if(!grouped.has(groupKey)) grouped.set(groupKey,[]);
+    grouped.get(groupKey).push([k,w]);
+  });
+  const groups=[...grouped.values()].filter(entries=>entries.some(([,w])=>!q || w.word.toLowerCase().includes(q)
+    || (w.ko||'').includes(q) || (w.book||'').toLowerCase().includes(q)));
   document.getElementById('vcnt').textContent = `${list.length}개 저장됨`;
   const wrap = document.getElementById('vtablewrap');
-  if(!rows.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 눌러 보세요!</div>'; return; }
+  if(!groups.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 눌러 보세요!</div>'; return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
   wrap.innerHTML = `<table><thead><tr>
     <th>단어</th><th>뜻</th><th>예문 · 출처</th><th>모르는 정도</th><th>저장일</th><th></th>
-  </tr></thead><tbody>` + rows.map(([k,w])=>`
-    <tr data-k="${esc(k)}">
-      <td class="c-word">${esc(w.word)}</td>
-      <td class="c-mean" contenteditable="true" spellcheck="false">${esc(w.ko||'')}</td>
-      <td class="c-ex">${esc(w.example||'')}${w.book?`<span class="src">📖 ${esc(w.book)}</span>`:''}</td>
-      <td><span class="chip s${w.status}" title="클릭해서 변경">${stName[w.status]}</span></td>
-      <td style="color:var(--soft2);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
-      <td><button class="rowdel" title="삭제">✕</button></td>
-    </tr>`).join('') + '</tbody></table>';
+  </tr></thead><tbody>` + groups.map(entries=>{
+    /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 하나의 word cell 아래로
+       묶습니다. 학습 데이터는 분리된 채라 별·삭제·예문은 각각 독립입니다. */
+    entries.sort((a,b)=>(a[0]===((a[1].root)||a[0])?-1:0)-(b[0]===((b[1].root)||b[0])?-1:0)
+      || (b[1].addedAt||0)-(a[1].addedAt||0));
+    const [firstKey,first]=entries[0], span=entries.length;
+    return entries.map(([k,w],index)=>`
+      <tr class="vocab-sense${index===0?' group-start':''}" data-k="${esc(k)}">
+        ${index===0?`<td class="c-word" rowspan="${span}">${esc(first.word)}${span>1?`<span class="c-sense-count">뜻 ${span}</span>`:''}</td>`:''}
+        <td class="c-mean" contenteditable="true" spellcheck="false">${esc(w.ko||'')}</td>
+        <td class="c-ex">${esc(w.example||'')}${w.book?`<span class="src">📖 ${esc(w.book)}</span>`:''}</td>
+        <td><span class="chip s${w.status}" title="클릭해서 변경">${stName[w.status]}</span></td>
+        <td style="color:var(--soft2);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
+        <td><button class="rowdel" title="이 뜻만 삭제">✕</button></td>
+      </tr>`).join('');
+  }).join('') + '</tbody></table>';
   wrap.querySelectorAll('tr[data-k]').forEach(tr=>{
     const k = tr.dataset.k;
     tr.querySelector('.chip').onclick = ()=>{ setStatus(k, words[k].status%3+1); renderVocab(); };

@@ -15,6 +15,8 @@
   td{padding:12px 15px; border-bottom:1px solid #F2EFE7; font-size:14px; vertical-align:top;}
   tr:last-child td{border-bottom:none;}
   td.c-word{font-family:var(--serif); font-weight:700; white-space:nowrap; color:var(--ink);}
+  td.c-word .c-sense-count{display:block; margin-top:5px; color:var(--soft2); font:500 10.5px var(--ui);}
+  tr.vocab-sense.group-start:not(:first-child) td{border-top:7px solid var(--paper2);}
   td.c-mean[contenteditable]{outline:none; min-width:120px;}
   td.c-mean:focus{background:var(--sky); border-radius:6px;}
   td.c-ex{color:#5B707A; font-size:13px; font-style:italic; max-width:340px;}
