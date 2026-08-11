@@ -381,7 +381,7 @@ async function localVaultItem(book){
   }
   const rawHash=original.hash||book.sourceHash||'',position=safePosition(positions[book.id]);
   return {id:book.id,title:book.title||'(제목 없음)',author:book.author||'',kind:book.kind||'',site:book.site||'',
-    sourceUrl:book.sourceUrl||'',identity:await vaultSourceIdentity(book,rawHash),originalKind:original.kind||'',
+    sourceUrl:book.sourceUrl||'',classicId:book.classicId||'',identity:await vaultSourceIdentity(book,rawHash),originalKind:original.kind||'',
     fileSize:Number(original.size||book.sourceSize)||0,fileModified:Number(original.lastModified||book.sourceModified)||0,addedAt:book.addedAt||Date.now(),
     updatedAt:Math.max(book.renamedAt||0,position&&position.t||0,book.addedAt||0),position};
 }

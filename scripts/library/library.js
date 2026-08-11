@@ -228,6 +228,20 @@ function serverOnlyCasuals(){
     .filter(row=>!(row.meta||{}).localId);
 }
 
+/* 기본 고전은 같은 EPUB을 다시 받을 수 있습니다. 다른 기기에서 읽던 앨리스가
+   "파일 연결 필요"와 "무료로 받기" 두 장으로 따로 보이면, 사용자는 같은 책인지
+   알 길이 없습니다. 새 기록에는 classicId를 싣고, 이미 올라간 예전 기록은
+   제목·지은이로 보수적으로 한 번만 알아봅니다. */
+function classicForMeta(meta){
+  if(typeof CLASSICS==='undefined') return null;
+  const byId=CLASSICS.find(classic=>classic.id===(meta&&meta.classicId));
+  if(byId) return byId;
+  const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const title=norm(meta&&meta.title),author=norm(meta&&meta.author);
+  return CLASSICS.find(classic=>norm(classic.title)===title
+    && (!author || norm(classic.author)===author)) || null;
+}
+
 function cloudCasualCard(row){
   const meta=row.meta||{},card=el('div','casual cloud');
   const article=meta.kind==='article'&&meta.sourceUrl;
@@ -289,16 +303,23 @@ function bookCard(book, current){
    가운데 단추가 "받으면 읽을 수 있다"를 말합니다. */
 function cloudBookCard(row){
   const meta = row.meta || {};
+  const classic=classicForMeta(meta);
   const card = el('div', 'bookcard cloud');
   const progress=meta.position&&meta.position.t?Math.round((meta.position.p||0)*100)+'%부터 이어 읽기':'';
-  card.innerHTML = `<div class="author"></div><div class="bt"></div>
-    <button class="getbtn" type="button">파일 연결해서 ${progress||'마저 읽기'}</button>
+  card.innerHTML = `${classic?'<img class="cover" alt="" hidden>':''}<div class="author"></div><div class="bt"></div>
+    <button class="getbtn" type="button">${classic?'무료로 다시 받아서':'파일 연결해서'} ${progress||'마저 읽기'}</button>
     <button class="del" type="button" title="이 기기에서 지우기">✕</button>`;
   fillCard(card, { '.author': meta.author || '파일 연결 필요', '.bt': meta.title || '(제목 없음)' });
+  if(classic){
+    card.classList.add('classic-cloud');
+    const image=card.querySelector('.cover');
+    image.onload=()=>{ image.hidden=false; card.classList.add('has-cover'); };
+    image.src=classicCoverFile(classic.id);
+  }
   card.querySelector('.del').onclick = event => {
     event.stopPropagation(); hideBookLocally(row.book_id); renderAllBookViews(); toast('이 기기에서 지웠어요');
   };
-  card.onclick = () => requestVaultReconnect(row);
+  card.onclick = () => classic ? importClassic(classic,card) : requestVaultReconnect(row);
   return card;
 }
 

@@ -113,7 +113,8 @@
   .bookcard.cloud .getbtn{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     border:1px solid var(--line2); background:var(--paper); color:var(--blue-deep);
     padding:9px 15px; border-radius:999px; font-size:12.5px; font-weight:600; cursor:pointer;
-    white-space:nowrap; transition:.15s;}
+    width:calc(100% - 28px); max-width:220px; text-align:center; line-height:1.35;
+    white-space:normal; transition:.15s;}
   .bookcard.cloud:hover .getbtn{border-color:var(--blue); background:var(--blue); color:#fff;}
   .bookcard.cloud.busy-sync{pointer-events:none;}
   .bookcard.cloud.busy-sync .getbtn{opacity:.6;}

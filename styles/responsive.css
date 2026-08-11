@@ -18,6 +18,9 @@
     .bookcard{height:206px; padding:18px 18px 0; border-radius:18px;}
     .bookcard .bt{font-size:17px;}
     .bookcard .prog, .bookcard.classic .get{left:18px;}
+    /* "파일 연결해서 14%부터 이어 읽기"는 작은 카드에서 한 줄로 고집하면
+       카드 바깥까지 밀려납니다. 두 줄까지는 카드 안에서 읽는 편이 낫습니다. */
+    .bookcard.cloud .getbtn{width:calc(100% - 20px); padding:8px 10px; font-size:12px;}
     #am-card{padding:24px 20px;}
     .am-big{padding:15px 16px; gap:13px;}
     #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
