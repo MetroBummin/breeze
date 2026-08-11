@@ -1,4 +1,4 @@
-/* splash: hide when ready (min 1.45s so the brand scene and its single breeze are actually seen).
+/* splash: hide when ready (min 2s so the brand scene and its single breeze are actually seen).
    boot-safety.js can already have removed it on a slow load, so every path
    here has to tolerate the element being gone. */
 const splashStart = Date.now();
@@ -9,7 +9,7 @@ function hideSplash(){
   setTimeout(()=>sp.remove(), 700);
 }
 window.addEventListener('load', ()=>{
-  setTimeout(hideSplash, Math.max(0, 1450 - (Date.now()-splashStart)));
+  setTimeout(hideSplash, Math.max(0, 2000 - (Date.now()-splashStart)));
 });
 /* safety: never let splash block the app */
 setTimeout(hideSplash, 5000);

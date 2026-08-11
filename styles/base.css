@@ -36,7 +36,7 @@
   #splash{position:fixed; inset:0; z-index:200; overflow:hidden; background:#65B6DC; display:flex;
     align-items:center; justify-content:center; transition:opacity .6s ease; isolation:isolate;}
   #splash.hide{opacity:0; pointer-events:none;}
-  #splash .splash-scene{position:absolute; inset:0; z-index:-2; background:#65B6DC; overflow:hidden;}
+  #splash .splash-scene,#splash .splash-scene picture{position:absolute; inset:0; z-index:-2; background:#65B6DC; overflow:hidden;}
   #splash .splash-scene::after{content:''; position:absolute; inset:0;
     background:linear-gradient(180deg,rgba(10,45,66,.14),transparent 38%,rgba(11,36,31,.24));}
   #splash .splash-scene img{width:100%; height:100%; object-fit:cover; object-position:center bottom;
@@ -58,7 +58,7 @@
   @keyframes wind-pass{0%,18%{opacity:0; transform:translateX(-25px) rotate(-8deg)}35%,58%{opacity:.66}82%,100%{opacity:0; transform:translateX(95px) rotate(-8deg)}}
   @keyframes leaf-drift{0%{opacity:0; transform:translate3d(-16px,10px,0) rotate(0)}13%,78%{opacity:.82}100%{opacity:0; transform:translate3d(125px,-43px,0) rotate(260deg)}}
   @media (min-aspect-ratio:4/3){
-    #splash .splash-scene img{object-fit:contain; object-position:76% bottom; transform:scale(1.02);}
+    #splash .splash-scene img{object-fit:cover; object-position:center; transform:scale(1.025);}
     #splash .splash-brand{align-items:flex-start; width:min(38vw,440px); margin-right:42vw; transform:translateY(0); text-align:left;}
   }
   @media (prefers-reduced-motion:reduce){

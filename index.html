@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/base.css?v=51097a20">
+  <link rel="stylesheet" href="styles/base.css?v=0a44ee27">
   <link rel="stylesheet" href="styles/home.css?v=6de54f37">
   <link rel="stylesheet" href="styles/reader.css?v=9d75b7c2">
   <link rel="stylesheet" href="styles/dictionary.css?v=fe541dd4">
@@ -65,7 +65,7 @@
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=daefaddf"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
-  <script defer src="scripts/main.js?v=50c92f42"></script>
+  <script defer src="scripts/main.js?v=ec124aee"></script>
 </head>
 <body>
 <div id="app">
@@ -73,7 +73,12 @@
 <!-- ================= SPLASH ================= -->
 <div id="splash" class="splash-day">
   <!-- 낮의 들판은 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지 않습니다. -->
-  <div class="splash-scene" aria-hidden="true"><img src="assets/brand/breeze-day.jpg" alt=""></div>
+  <div class="splash-scene" aria-hidden="true">
+    <picture>
+      <source media="(min-aspect-ratio: 4/3)" srcset="assets/brand/breeze-day-wide.jpg">
+      <img src="assets/brand/breeze-day.jpg" alt="">
+    </picture>
+  </div>
   <span class="splash-wind wind-one" aria-hidden="true"></span>
   <span class="splash-wind wind-two" aria-hidden="true"></span>
   <span class="splash-leaf leaf-one" aria-hidden="true"></span>
