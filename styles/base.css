@@ -5,7 +5,8 @@
        만드는 대신, 배경 위에만 아주 조용히 얹습니다. */
     --paper:#FAF8F2; --paper2:#FDFBF6; --ink:#18364A; --ink-body:#2D3E43;
     --soft:#667D87; --soft2:#78909A; --line:#E4E8DF; --line2:#D7E1DE;
-    --blue:#2589BE; --blue-deep:#216F9C; --sky:#DCEFF5; --sky2:#D9F0F2;
+    /* 스플래시 하늘에서 가져온 맑은 파랑. 선택 배경이 아니라 잉크처럼 씁니다. */
+    --blue:#2495D3; --blue-deep:#1D7DB7; --sky:#E7F5FB; --sky2:#DCEFF8;
     --mint:#BDDCCD; --chipbg:#E6F3F1; --chiptx:#247B81;
     --s1:#FFE28A; --s2:#FFC9A3; --s3:#FFB0B0;
     /* ── AI 가 말하는 자리의 색 ──
@@ -15,10 +16,10 @@
        깔려 있어서 셋이 서로 남처럼 보였습니다.
        이제 셋 다 이 여섯 값만 씁니다. 흰색과 파랑, 이 앱의 색 그대로입니다. */
     --ai-bg1:#EAF4FB; --ai-bg2:#F8FCFE; --ai-line:#CFE4EC;
-    --ai-key:#2589BE; --ai-ink:#18364A; --ai-note:#5B707A; --ai-quiet:#8AA0A9;
+    --ai-key:#2495D3; --ai-ink:#18364A; --ai-note:#5B707A; --ai-quiet:#8AA0A9;
     --ui:'Avenir Next','Helvetica Neue','Apple SD Gothic Neo','Pretendard',-apple-system,sans-serif;
     --serif:Georgia,'Times New Roman',serif;
-    --display:'Playfair Display',Georgia,'Times New Roman',serif;
+    --display:'Fraunces',Georgia,'Times New Roman',serif;
     --shadow:0 14px 34px rgba(23,55,71,.12);
   }
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -68,12 +69,11 @@
     background:rgba(250,248,242,.9); backdrop-filter:blur(10px); border-bottom:1px solid rgba(215,225,222,.42);}
   #logo{display:flex; align-items:center; cursor:pointer; user-select:none;}
   #logo .mark{font-family:var(--display); font-size:25px; font-weight:600; letter-spacing:-1.35px; color:var(--ink);}
-  #topbar nav{margin-left:auto; display:flex; gap:2px; align-items:center; padding:3px; border:1px solid var(--line);
-    border-radius:999px; background:rgba(253,251,246,.6); box-shadow:0 3px 12px rgba(23,55,71,.035);}
-  .navbtn{border:none; background:transparent; padding:8px 12px; border-radius:18px; font-size:11.5px;
+  #topbar nav{margin-left:auto; display:flex; gap:18px; align-items:center;}
+  .navbtn{border:none; background:transparent; padding:8px 0; border-radius:0; font-size:11.5px;
     cursor:pointer; color:var(--soft); font-family:var(--ui); font-weight:600; letter-spacing:1.05px; text-transform:uppercase;}
-  .navbtn.on{background:var(--sky); color:var(--blue-deep);}
-  .navbtn:hover{background:#EFEDE4;}
+  .navbtn.on{background:transparent; color:var(--blue-deep);}
+  .navbtn:hover{background:transparent; color:var(--blue);}
   #btn-add{width:32px; height:32px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
     font-size:20px; cursor:pointer; line-height:1;}
   #btn-add:hover{background:var(--sky2);}
