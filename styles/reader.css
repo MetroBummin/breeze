@@ -80,17 +80,18 @@
   body.reader-original .aa-text-only{display:none;}
   /* ---------- dark mode ---------- */
   body.dark{
-    --paper:#16181B; --paper2:#16181B; --ink:#E7E3D8; --ink-body:#D3CFC4;
-    --soft:#9AA1A8; --soft2:#8A9199; --line:#2A2E33; --line2:#33383E;
-    --sky:#22333C; --sky2:#2A4552; --chipbg:#20353A; --chiptx:#8CCabf;
+    /* 검은 화면도 앱용 차콜 대신 먹을 먹인 종이처럼 따뜻하게 둡니다. */
+    --paper:#171816; --paper2:#1B1C19; --ink:#E7E1D4; --ink-body:#D5D0C4;
+    --soft:#A09E94; --soft2:#8D8E87; --line:#30312C; --line2:#3C3D37;
+    --sky:#203C47; --sky2:#294B57; --chipbg:#20363A; --chiptx:#92C4C6;
     --shadow:0 14px 34px rgba(0,0,0,.4);
     /* AI 자리의 색도 여기서 한 번에 뒤집힙니다 (base.css 의 같은 이름 참조) */
     --ai-bg1:#1C2E39; --ai-bg2:#182731; --ai-line:#2F4650;
     --ai-key:#6FC3E6; --ai-ink:#EAF4F8; --ai-note:#AFC3CB; --ai-quiet:#8798A0;
   }
-  body.dark::before{opacity:.12;}
-  body.dark #topbar{background:rgba(22,24,27,.9);}
-  body.dark #rbar{background:rgba(22,24,27,.93);}
+  body.dark::before{opacity:.17;}
+  body.dark #topbar{background:rgba(23,24,22,.88); border-bottom-color:rgba(77,76,68,.42);}
+  body.dark #rbar{background:rgba(23,24,22,.93);}
   body.dark .page{background:#1C1F23; border-color:#2A2E33; box-shadow:none;}
   body.dark .w.s1{background:rgba(255,226,138,.30);}
   body.dark .w.s2{background:rgba(255,171,120,.32);}
