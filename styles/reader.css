@@ -108,7 +108,7 @@
     box-shadow:0 4px 14px rgba(0,0,0,.24);
   }
   body.dark .aa-size button{color:var(--ink);}
-  body.dark #splash{background:#16181B;}
+  body.dark #splash{background:#171816;}
   /* 다크 모드에서 밝은 배경 위에 밝은 글자가 놓이던 두 곳 */
   body.dark .sm-btn.ghost{background:#262A2F; color:var(--ink);}
   body.dark .sm-btn.ghost:hover{background:#2E3339;}

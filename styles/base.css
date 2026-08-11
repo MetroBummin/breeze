@@ -33,17 +33,38 @@
   #app{position:relative; z-index:1;}
 
   /* ================= splash ================= */
-  #splash{position:fixed; inset:0; z-index:200; background:var(--paper); display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:0; transition:opacity .6s ease;}
+  #splash{position:fixed; inset:0; z-index:200; overflow:hidden; background:#65B6DC; display:flex;
+    align-items:center; justify-content:center; transition:opacity .6s ease; isolation:isolate;}
   #splash.hide{opacity:0; pointer-events:none;}
-  #splash svg.mark{width:220px; height:130px; margin-bottom:10px;}
-  #splash .word{font-size:56px; font-weight:500; letter-spacing:-2.5px; color:var(--ink);}
-  #splash .tag{font-size:15px; color:var(--soft); letter-spacing:.8px; margin-top:6px;}
-  #splash .dots{display:flex; gap:14px; margin-top:64px;}
-  #splash .dots i{width:9px; height:9px; border-radius:50%; background:#2B94C5; opacity:.35; animation:pulse 1.2s infinite;}
-  #splash .dots i:nth-child(2){animation-delay:.2s;}
-  #splash .dots i:nth-child(3){animation-delay:.4s;}
-  @keyframes pulse{0%,100%{opacity:.3; transform:scale(1);} 50%{opacity:.9; transform:scale(1.25);}}
+  #splash .splash-scene{position:absolute; inset:0; z-index:-2; background:#65B6DC; overflow:hidden;}
+  #splash .splash-scene::after{content:''; position:absolute; inset:0;
+    background:linear-gradient(180deg,rgba(10,45,66,.14),transparent 38%,rgba(11,36,31,.24));}
+  #splash .splash-scene img{width:100%; height:100%; object-fit:cover; object-position:center bottom;
+    transform:scale(1.025); animation:scene-breathe 16s ease-in-out infinite alternate;}
+  #splash .splash-brand{display:flex; flex-direction:column; align-items:center; transform:translateY(-15vh);
+    color:#FFF9EA; text-align:center; text-shadow:0 2px 20px rgba(15,45,55,.32);}
+  #splash svg.mark{width:148px; height:88px; margin-bottom:5px; filter:brightness(0) invert(1) sepia(.14) saturate(.55) drop-shadow(0 2px 9px rgba(10,35,45,.24));}
+  #splash .word{font-family:var(--display); font-size:clamp(48px,8vw,68px); font-weight:600; letter-spacing:-3px; color:#FFF9EA;}
+  #splash .tag{font-size:12px; color:rgba(255,249,234,.88); letter-spacing:1.3px; margin-top:8px; text-transform:uppercase; font-weight:600;}
+  #splash .splash-wind{position:absolute; z-index:-1; height:1px; border-top:1px solid rgba(255,251,235,.58); border-radius:50%;
+    filter:blur(.1px); opacity:0; transform:rotate(-8deg); animation:wind-pass 7s ease-in-out infinite;}
+  #splash .wind-one{width:88px; left:13%; top:37%; animation-delay:1.3s;}
+  #splash .wind-two{width:54px; right:18%; top:51%; animation-delay:4.2s;}
+  #splash .splash-leaf{position:absolute; z-index:-1; width:7px; height:3px; border-radius:100% 0 100% 0;
+    background:rgba(247,244,196,.9); opacity:0; animation:leaf-drift 9s linear infinite;}
+  #splash .leaf-one{left:20%; top:42%; animation-delay:2.2s;}
+  #splash .leaf-two{right:25%; top:60%; animation-delay:6.1s;}
+  @keyframes scene-breathe{from{transform:scale(1.025) translate3d(0,0,0)}to{transform:scale(1.05) translate3d(-.35%,-.45%,0)}}
+  @keyframes wind-pass{0%,18%{opacity:0; transform:translateX(-25px) rotate(-8deg)}35%,58%{opacity:.66}82%,100%{opacity:0; transform:translateX(95px) rotate(-8deg)}}
+  @keyframes leaf-drift{0%{opacity:0; transform:translate3d(-16px,10px,0) rotate(0)}13%,78%{opacity:.82}100%{opacity:0; transform:translate3d(125px,-43px,0) rotate(260deg)}}
+  @media (min-aspect-ratio:4/3){
+    #splash .splash-scene img{object-fit:contain; object-position:76% bottom; transform:scale(1.02);}
+    #splash .splash-brand{align-items:flex-start; width:min(38vw,440px); margin-right:42vw; transform:translateY(0); text-align:left;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #splash .splash-scene img,#splash .splash-wind,#splash .splash-leaf{animation:none;}
+    #splash .splash-wind,#splash .splash-leaf{display:none;}
+  }
 
   /* ================= top bar ================= */
   /* 위쪽 여백에 안전 영역을 더합니다. 브라우저에서는 0 이라 그대로이고, 아이폰
