@@ -120,8 +120,8 @@ function recoveryPanel(){
   return `<section class="sm-vault"><div class="sm-vault-head"><div><span class="sm-vault-kicker">END-TO-END ENCRYPTED</span><b>단어 보관함 · 자동 동기화 중</b></div><button class="sm-info" onclick="toggleVaultInfo()" aria-label="암호화 설명">i</button></div>
     ${vaultInfoOpen?'<div class="sm-vault-info">단어·숙어·뜻·예문과 읽던 위치만 기기에서 암호화해 동기화해요. PDF·EPUB·기사 본문과 사진은 이 기기 밖으로 보내지 않아요. Breeze는 복호화 키를 보유하지 않습니다.</div>':''}
     <p>${pendingRecoveryKey?'기기를 잃어도 단어장을 되찾을 수 있도록 복구키를 안전한 곳에 저장해 주세요.':'이 기기의 열쇠로 자동 동기화하고 있어요. 이전에 저장한 복구키는 앱에서 다시 표시되지 않습니다.'}</p>${recovery}
-    <div class="sm-device-move"><b>다른 기기 연결</b><span>새 기기에 표시된 6자리 코드를 입력해 열쇠를 보내세요.</span><input id="sm-pair-code" inputmode="numeric" maxlength="6" placeholder="6자리 코드"><button onclick="approvePairingCode()">코드로 동기화</button><small>새 기기가 QR을 띄우면 이 기기의 카메라로 스캔해도 됩니다.</small></div>
-    <div class="sm-device-move"><b>읽기자료 옮기기</b><span>서버에 올리지 않고 암호화 파일로 직접 옮겨요.</span><button onclick="exportReadingBackup()">내 책·글 내보내기</button><button onclick="pickReadingBackup()">백업 파일 불러오기</button></div></section>`;
+    <details class="sm-fold"><summary><b>다른 기기 연결</b><span>6자리 코드 또는 QR</span></summary><div class="sm-device-move"><span>새 기기에 표시된 6자리 코드를 입력해 열쇠를 보내세요.</span><input id="sm-pair-code" inputmode="numeric" maxlength="6" placeholder="6자리 코드"><button onclick="approvePairingCode()">코드로 동기화</button><small>새 기기가 QR을 띄우면 이 기기의 카메라로 스캔해도 됩니다.</small></div></details>
+    <details class="sm-fold"><summary><b>읽기자료 옮기기</b><span>이 기기에만 보관</span></summary><div class="sm-device-move"><span>서버에 올리지 않고 암호화 파일로 직접 옮겨요.</span><button onclick="exportReadingBackup()">내 책·글 내보내기</button><button onclick="pickReadingBackup()">백업 파일 불러오기</button></div></details></section>`;
 }
 
 function renderSyncModal(){
@@ -136,10 +136,7 @@ function renderSyncModal(){
     const deleteArea=accountDeleteOpen
       ? `<div class="sm-delete-confirm"><b>계정과 서버의 암호화 보관함을 지울까요?</b><span>이 기기의 책과 단어장은 그대로 남습니다. 계속하려면 DELETE를 입력하세요.</span><input id="sm-delete-input" autocomplete="off" spellcheck="false" placeholder="DELETE"><div><button class="sm-reset" onclick="cancelAccountDelete()">취소</button><button class="sm-mini danger" onclick="confirmAccountDelete()">계정 지우기</button></div>${accountDeleteError?`<small class="sm-vault-error">${esc(accountDeleteError)}</small>`:''}</div>`
       : `<button class="sm-linkish" onclick="openAccountDelete()">계정 지우기</button>`;
-    body.innerHTML=`<div class="desc">로그인됨: <b>${esc(sbUser.email||'')}</b><br>
-      단어장과 읽던 위치는 자동으로 암호화되어 동기화됩니다.<br>
-      책·기사의 원문과 사진은 이 기기에만 남습니다.<br>
-      마지막 동기화: ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</div>
+    body.innerHTML=`<div class="sm-account"><b>${esc(sbUser.email||'')}</b><span>마지막 동기화 · ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</span></div>
       ${recoveryPanel()}
       <button class="sm-btn primary" onclick="doSync(true)">지금 동기화</button>
       <button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>

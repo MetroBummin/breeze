@@ -35,6 +35,9 @@
   #sm-card{background:#fff; border-radius:22px; padding:30px 28px; width:100%; max-width:400px; box-shadow:var(--shadow);}
   #sm-card h2{font-size:20px; font-weight:600; margin-bottom:6px;}
   #sm-card .desc{font-size:13.5px; color:var(--soft); line-height:1.6; margin-bottom:18px;}
+  .sm-account{margin:0 0 13px; color:var(--soft); font-size:11px; line-height:1.4;}
+  .sm-account b{display:block; overflow-wrap:anywhere; color:var(--ink); font-size:12px;}
+  .sm-account span{display:block; margin-top:2px;}
   #sm-email{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px;
     font-family:var(--ui); outline:none; margin-bottom:12px;}
   #sm-email:focus{border-color:var(--blue);}
@@ -118,10 +121,42 @@
   .sm-pair-box img{width:150px; height:150px; image-rendering:pixelated; border-radius:7px;}
   .sm-pair-box b{font:700 20px var(--ui); letter-spacing:.22em; color:var(--ink);}
   .sm-pair-box span{text-align:center;}
+  /* 평소에는 거의 쓰지 않는 기기 연결·자료 옮기기를 접어 둡니다. 동기화의
+     핵심 상태와 복구키가 첫 화면에서 밀려나는 일을 막습니다. */
+  .sm-fold{margin-top:12px; padding-top:11px; border-top:1px solid rgba(115,145,155,.18);}
+  .sm-fold summary{display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;
+    list-style:none; color:var(--ink);}
+  .sm-fold summary::-webkit-details-marker{display:none;}
+  .sm-fold summary::after{content:'›'; order:3; color:var(--soft2); font:20px/1 var(--ui); transition:transform .16s;}
+  .sm-fold[open] summary::after{transform:rotate(90deg);}
+  .sm-fold summary b{font-size:12px;}
+  .sm-fold summary span{margin-left:auto; color:var(--soft); font-size:10.5px;}
+  .sm-fold .sm-device-move{margin-top:10px; padding-top:0; border-top:0;}
   body.dark .sm-recovery-key,body.dark .sm-recovery-actions button,body.dark .sm-device-move button,body.dark .sm-saved{
     background:rgba(255,255,255,.04);}
   #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
+
+  @media (max-width:760px){
+    #sync-modal{align-items:flex-start; overflow-y:auto; padding:12px;}
+    #sm-card{box-sizing:border-box; margin:auto 0; padding:21px 18px; border-radius:19px; max-width:430px;}
+    #sm-card h2{font-size:18px; margin-bottom:4px;}
+    #sm-card .desc{font-size:12.5px; line-height:1.5; margin-bottom:13px;}
+    .sm-account{margin-bottom:10px; font-size:10px;}
+    .sm-account b{font-size:11px;}
+    .sm-vault{margin:12px 0 13px; padding:14px; border-radius:15px;}
+    .sm-vault-head b{font-size:13.5px;}
+    .sm-vault-kicker{font-size:8.5px;}
+    .sm-vault p{margin:9px 0 9px; font-size:10.5px; line-height:1.45;}
+    .sm-recovery-key{margin:9px 0 7px; padding:9px 10px; font-size:10px; line-height:1.45;}
+    .sm-recovery-actions button,.sm-device-move button,.sm-saved{padding:7px 4px; font-size:10px;}
+    .sm-fold{margin-top:10px; padding-top:9px;}
+    .sm-fold summary b{font-size:11.5px;}
+    .sm-fold .sm-device-move{margin-top:8px;}
+    .sm-device-move{gap:6px;}
+    .sm-device-move span,.sm-device-move small{font-size:10px; line-height:1.35;}
+    .sm-btn{padding:11px; font-size:14px; margin-bottom:8px;}
+  }
 
   #minitoast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:140;
     background:rgba(24,54,74,.8); color:#fff; font-size:11.5px; letter-spacing:.2px;

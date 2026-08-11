@@ -156,8 +156,15 @@ function selectWord(k, span){
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
   renderPanel();
-  document.getElementById('panel').classList.add('on');
+  const panel=document.getElementById('panel');
+  /* 패널은 한 번 열린 뒤에도 자기 안의 스크롤 위치를 기억합니다. 다른 낱말을
+     눌렀는데 중간부터 보였던 이유가 이것입니다. 내용을 바꾼 직후와 레이아웃이
+     한 번 그려진 뒤에 모두 0으로 돌려, 항상 낱말 제목부터 열리게 합니다. */
+  const resetPanelScroll=()=>{ panel.scrollTop=0; };
+  resetPanelScroll();
+  panel.classList.add('on');
   document.getElementById('sheetbg').classList.add('on');
+  requestAnimationFrame(resetPanelScroll);
   pinReaderChrome(true);      // 뜻을 보는 동안 상단바는 그대로 (scripts/reader/reader.js)
 }
 function closePanel(){
@@ -167,7 +174,9 @@ function closePanel(){
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();
   if(typeof closeSentence === 'function') closeSentence();
-  document.getElementById('panel').classList.remove('on');
+  const panel=document.getElementById('panel');
+  panel.classList.remove('on');
+  panel.scrollTop=0;
   document.getElementById('sheetbg').classList.remove('on');
   pinReaderChrome(false);
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
