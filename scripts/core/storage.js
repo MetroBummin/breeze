@@ -23,10 +23,13 @@ function openDb(name, version, upgrade){
   };
 }
 
-const idb = openDb('breeze-img', 3, db => {
+const idb = openDb('breeze-img', 4, db => {
   if(!db.objectStoreNames.contains('imgs'))  db.createObjectStore('imgs');
   if(!db.objectStoreNames.contains('books')) db.createObjectStore('books');   // 책 본문(용량 큼)
   if(!db.objectStoreNames.contains('originals')) db.createObjectStore('originals');
+  /* E2EE 기기 열쇠와 잠긴 마스터 키. CryptoKey 는 구조화 복제로 IndexedDB에
+     들어가며, extractable:false 로 만들어 원문 열쇠를 꺼낼 수 없게 합니다. */
+  if(!db.objectStoreNames.contains('vault')) db.createObjectStore('vault');
 });
 
 /* ---- 이 기기의 저장소를 "영구"로 표시해 달라고 한 번 부탁합니다 ----
@@ -65,6 +68,13 @@ async function originalGet(id){ try{ const db=await idb(); return await new Prom
 async function originalAll(){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('originals').objectStore('originals').getAll();
   rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]); }); }catch(e){ return []; } }
+async function storeEntries(name){ try{ const db=await idb(); return await new Promise(res=>{
+  const store=db.transaction(name).objectStore(name), kr=store.getAllKeys(), vr=store.getAll();
+  let keys=null,values=null; const done=()=>{ if(keys&&values) res(keys.map((key,index)=>[key,values[index]])); };
+  kr.onsuccess=()=>{ keys=kr.result||[]; done(); }; vr.onsuccess=()=>{ values=vr.result||[]; done(); };
+  kr.onerror=vr.onerror=()=>res([]); }); }catch(e){ return []; } }
+const originalEntries=()=>storeEntries('originals');
+const imgEntries=()=>storeEntries('imgs');
 /* A synced/legacy book can acquire a different local ID even though its raw
    file is already present on this device. Recover it through the file hash and
    repair the direct ID lookup instead of asking the reader to reconnect. */
@@ -84,6 +94,15 @@ async function originalDel(id){ try{ const db=await idb(); return await new Prom
   const tx=db.transaction('originals','readwrite'); tx.objectStore('originals').delete(id);
   tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
 async function originalHas(id){ return !!(await originalGet(id)); }
+async function vaultPut(key, value){ const db=await idb(); return new Promise((res,rej)=>{
+  const tx=db.transaction('vault','readwrite'); tx.objectStore('vault').put(value,key);
+  tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function vaultGet(key){ try{ const db=await idb(); return await new Promise(res=>{
+  const rq=db.transaction('vault').objectStore('vault').get(key);
+  rq.onsuccess=()=>res(rq.result===undefined?null:rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function vaultDel(key){ try{ const db=await idb(); return await new Promise(res=>{
+  const tx=db.transaction('vault','readwrite'); tx.objectStore('vault').delete(key);
+  tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
 async function imgPut(id, blob){ const db=await idb(); return new Promise((res,rej)=>{
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(blob,id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 async function imgGet(id){ try{ const db=await idb(); return await new Promise(res=>{

@@ -131,6 +131,13 @@
   #longform-hidden .linkish{border:none; background:none; padding:0 0 0 4px; cursor:pointer;
     font-size:12.5px; color:var(--blue-deep); text-decoration:underline; text-underline-offset:2px;}
   body.dark .bookcard.cloud{border-color:#2E3339;}
+  .casual.cloud .thumb{border:1px dashed var(--line2); background:rgba(255,255,255,.34); filter:saturate(.25);}
+  .casual.cloud .lede{opacity:.55; font-size:13px; line-height:1.45; padding:28px 18px;}
+  .casual.cloud .cm{color:var(--blue);}
+  .casual.cloud .del{position:absolute; top:8px; right:8px; z-index:4; width:25px; height:25px; border:0;
+    border-radius:50%; background:rgba(255,255,255,.78); color:var(--soft); cursor:pointer;}
+  body.dark .casual.cloud .thumb{background:rgba(255,255,255,.025);}
+  body.dark .casual.cloud .del{background:rgba(0,0,0,.45);}
   body.dark .bookcard .up{background:rgba(0,0,0,.42); color:#9AA1A8;}
   body.dark .bookcard .up:hover{background:rgba(0,0,0,.6); color:var(--blue);}
 

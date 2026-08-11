@@ -21,13 +21,7 @@ function openEditSheet(book, step){
   document.getElementById('ed-title').value = book.title;
   document.getElementById('ed-what').textContent = book.title;
   renderCoverChoices(book);
-  /* 로그인하지 않았으면 서버에 사본이 없습니다. 고를 것이 없는 갈림길을
-     보여줄 이유가 없습니다. */
-  const signedIn = !!(typeof sbUser !== 'undefined' && sbUser);
-  editModal().querySelector('.ed-all').hidden = !signedIn;
-  document.getElementById('ed-del-note').textContent = signedIn
-    ? '단어장은 어느 쪽이든 그대로 남습니다.'
-    : '로그인하지 않아 서버에는 사본이 없습니다. 단어장은 그대로 남습니다.';
+  document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   editModal().classList.add('on');
   editStep(step || 'edit');
 }
@@ -106,9 +100,9 @@ editModal().addEventListener('click', event => {
   if(event.target.id === 'edit-modal') closeEditSheet();
 });
 
-async function runDelete(scope){
+async function runDelete(){
   const book = editTarget;
   if(!book) return;
   closeEditSheet();
-  await deleteBook(book, scope);
+  await deleteBook(book);
 }

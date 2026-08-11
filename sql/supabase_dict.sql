@@ -8,8 +8,7 @@
 -- 낱말 뜻을 서버에 쌓는 표(dict_shared)는 없습니다. 뜻은 AI 가 문장을 보고 그때그때
 -- 답하고, 그 답은 그 사람 기기에만 남습니다. 이유는 DICT.md 에 적어 두었습니다.
 --
--- 사용자가 읽던 문장은 여기에 한 글자도 들어가지 않습니다. 문장은 지문(fingerprint)으로만
--- 남고, 지문은 서버 비밀값(DICT_FP_SALT)을 섞어 만들기 때문에 되돌릴 수 없습니다.
+-- 사용자가 읽던 낱말·뜻·문장·책 제목과 그 지문은 저장하지 않습니다.
 
 -- ────────────────────────────────────────────────────────────
 -- 1) 하루 AI 한도
@@ -122,27 +121,26 @@ create table if not exists public.dict_events (
   user_id   uuid references auth.users(id) on delete set null,
   at        timestamptz not null default now(),
   action    text not null,
-  word      text not null,          -- 화면에 뜬 표제형
-  clicked   text,                   -- 실제로 누른 형태 (continues)
-  lemma     text,
-  pos       text,
-  ai_ko     text,                   -- AI 가 준 뜻
-  user_ko   text,                   -- 사람이 최종적으로 쓴 뜻
-  -- ── 문장에 대해 남기는 것 ──
-  sent_fp   text,                   -- 문장 지문. 소금을 섞은 SHA-256 앞 8바이트
-  sent_len  integer,                -- 문장 낱말 수
-  cue_before text,                  -- 바로 앞 낱말. 기능어 닫힌 목록에 있을 때만
-  cue_after  text,                  -- 바로 뒤 낱말. 같은 규칙 (continue → "to")
-  book_fp   text,                   -- 책 제목 지문. 같은 책끼리 묶어 보기 위해서만
+  word      text not null default '', -- 호환용 빈 칸. 실제 낱말은 저장하지 않음
   provider  text,
   meta      jsonb not null default '{}'::jsonb
 );
 
-create index if not exists dict_events_word_idx   on public.dict_events (word, at desc);
 create index if not exists dict_events_action_idx on public.dict_events (action, at desc);
 create index if not exists dict_events_user_idx   on public.dict_events (user_id, at desc);
--- 같은 문장을 여러 사람이 물어본 경우를 찾기 위한 색인
-create index if not exists dict_events_fp_idx     on public.dict_events (sent_fp) where sent_fp is not null;
+drop index if exists public.dict_events_word_idx;
+drop index if exists public.dict_events_fp_idx;
+alter table public.dict_events
+  drop column if exists clicked,
+  drop column if exists lemma,
+  drop column if exists pos,
+  drop column if exists ai_ko,
+  drop column if exists user_ko,
+  drop column if exists sent_fp,
+  drop column if exists sent_len,
+  drop column if exists cue_before,
+  drop column if exists cue_after,
+  drop column if exists book_fp;
 
 -- ────────────────────────────────────────────────────────────
 -- 3) 접근 권한

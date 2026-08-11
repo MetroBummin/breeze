@@ -67,54 +67,6 @@ const SR = createClient(
   { auth: { persistSession: false } },
 );
 
-/* ── 낱말 쪼개기 ─────────────────────────────────────────── */
-const tokens = (s: string) => String(s || "").toLowerCase().match(/[a-z']+/g) ?? [];
-
-/* 기록에 남길 수 있는 기능어. 닫힌 목록입니다 — 여기 없는 낱말은 사용자 문장에서
-   길어 온 것이므로 남기지 않습니다. "continue 뒤에 to 가 왔다"는 판별에 결정적이지만
-   그것만으로 문장을 되짚을 수는 없습니다. */
-const FUNCTION_WORDS = new Set(
-  ("about above across after against along among around as at back before behind below beneath " +
-   "beside besides between beyond but by despite down during except for from in inside into like " +
-   "near of off on onto out outside over past round since than through throughout till to toward " +
-   "towards under underneath until up upon with within without " +
-   "away forth together apart aside ahead " +
-   "not no never ever again still yet already just only even too so very much many few " +
-   "and or if while when where because though although unless whether that which who whom whose " +
-   "a an the this these those " +
-   "be am is are was were been being have has had having do does did done will would shall should " +
-   "can could may might must ought used need dare")
-    .split(/\s+/),
-);
-
-/* ── 문장 지문 ───────────────────────────────────────────── */
-/* 문장 자체는 어디에도 저장하지 않습니다. 대신 지문만 남겨서 "같은 문장을 여러 사람이
-   물어봤다"를 셀 수 있게 합니다.
-   소금(DICT_FP_SALT)이 반드시 필요합니다. 소금 없이 해시만 남기면, 책 원문을 가진
-   사람이 전수 대조로 "이 사용자가 이 문장을 읽었다"를 되짚을 수 있습니다.
-   그건 저작권 문제가 아니라 사생활 문제입니다. 소금이 없으면 지문을 안 남깁니다. */
-async function sentFp(sentence: string): Promise<string | null> {
-  const salt = Deno.env.get("DICT_FP_SALT") ?? "";
-  if (!salt || !sentence) return null;
-  const norm = sentence.trim().toLowerCase().replace(/\s+/g, " ");
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + "\n" + norm));
-  return [...new Uint8Array(buf)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/* 누른 낱말의 앞뒤 한 칸. 기능어 목록에 있을 때만 남깁니다. */
-function neighbors(sentence: string, word: string, clicked: string) {
-  const t = tokens(sentence);
-  const targets = new Set([word.toLowerCase(), clicked.toLowerCase()]);
-  let i = t.findIndex((x) => targets.has(x));
-  if (i < 0) {
-    const stem = word.toLowerCase().slice(0, Math.max(4, word.length - 2));
-    i = stem.length >= 4 ? t.findIndex((x) => x.startsWith(stem)) : -1;
-  }
-  if (i < 0) return { before: null, after: null };
-  const keep = (x?: string) => (x && FUNCTION_WORDS.has(x) ? x : null);
-  return { before: keep(t[i - 1]), after: keep(t[i + 1]) };
-}
-
 /* ── AI 호출 ─────────────────────────────────────────────── */
 type Ask = { prompt: string; maxTokens: number; schema?: unknown; system?: string };
 
@@ -441,6 +393,13 @@ async function opLog(body: any, userId: string | null) {
   return json({ ok: true });
 }
 
+async function opPurgePrivateLogs(userId: string | null) {
+  if (!userId) return json({ error: "login_required" }, 401);
+  const { error } = await SR.from("dict_events").delete().eq("user_id", userId);
+  if (error) return json({ error: "delete_failed" }, 500);
+  return json({ ok: true });
+}
+
 type EventIn = {
   userId: string | null; action: string; word: string; clicked?: string; sentence?: string;
   lemma?: string; pos?: string; aiKo?: string; userKo?: string; provider?: string;
@@ -449,24 +408,17 @@ type EventIn = {
 
 async function logEvent(e: EventIn) {
   try {
-    const sentence = e.sentence ?? "";
-    const nb = sentence ? neighbors(sentence, e.word, e.clicked ?? "") : { before: null, after: null };
+    /* 운영 통계에는 내용이 필요하지 않습니다. 낱말·뜻·문장·책 제목·지문을
+       저장하지 않고, 어떤 동작이 성공했는지와 공급자만 남깁니다. */
     await SR.from("dict_events").insert({
       user_id: e.userId,
       action: e.action,
-      word: e.word,
-      clicked: e.clicked || null,
-      lemma: e.lemma || null,
-      pos: e.pos || null,
-      ai_ko: e.aiKo || null,
-      user_ko: e.userKo || null,
-      sent_fp: await sentFp(sentence),
-      sent_len: sentence ? tokens(sentence).length : null,
-      cue_before: nb.before,
-      cue_after: nb.after,
-      book_fp: await sentFp(e.book ?? ""),
+      word: "",
       provider: e.provider || null,
-      meta: e.meta ?? {},
+      meta: {
+        outcome: (e.meta && e.meta.outcome) || "ok",
+        ...(e.meta && e.meta.quota_version ? { quota_version: e.meta.quota_version } : {}),
+      },
     });
   } catch (err) {
     /* 기록이 실패해도 사전은 답해야 합니다. */
@@ -559,6 +511,7 @@ Deno.serve(async (req) => {
     }
 
     if (op === "log") return await opLog(body, userId);
+    if (op === "purge_private_logs") return await opPurgePrivateLogs(userId);
     if (op === "delete_account") return await opDeleteAccount(userId);
     /* 아래의 낱말 검사보다 먼저 나갑니다 — 문장 설명에는 낱말이 없습니다. */
     if (op === "explain") return await opExplain(body, userId);

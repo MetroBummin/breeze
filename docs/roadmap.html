@@ -92,7 +92,7 @@ tbody tr:last-child td{border-bottom:0}
 <body>
 <header class="top">
   <a class="brand" href="../index.html"><svg viewBox="0 0 100 40" fill="none" aria-hidden="true"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round"/></svg><span>Breeze</span></a>
-  <nav><a href="index.html">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html" aria-current="page">로드맵</a><a href="privacy.html">개인정보처리방침</a></nav>
+  <nav><a href="index.html">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html" aria-current="page">로드맵</a><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a></nav>
 </header>
 <div class="wrap">
 <main>
@@ -100,7 +100,7 @@ tbody tr:last-child td{border-bottom:0}
 <h2 id="제품의-중심">제품의 중심</h2>
 <p>Breeze는 파일 형식 자체보다 <strong>읽기 → 문맥 뜻 → 내 단어장</strong>의 흐름에 집중합니다. 기능을 많이 쌓기보다, 읽던 자리가 흔들리지 않고 개인 데이터의 경계가 분명한 리더를 먼저 출시합니다.</p>
 <h2 id="현재-출시-범위">현재 출시 범위</h2>
-<div class="tablewrap"><table><thead><tr><th>영역</th><th>현재 상태</th></tr></thead><tbody><tr><td>PDF·EPUB 글자/원본 읽기</td><td>사용 가능</td></tr><tr><td>PDF 원본 확대</td><td><code>− / +</code> 단추, 핀치 확대는 사용하지 않음</td></tr><tr><td>붙여 넣은 글</td><td>사용 가능</td></tr><tr><td>공개 페이지 기사 URL 가져오기</td><td>사용 가능, 사이트 조건·권리 범위 안에서만</td></tr><tr><td>문맥 사전·단어장</td><td>사용 가능</td></tr><tr><td>문장 전체 설명</td><td>로그인 후 하루 5회</td></tr><tr><td>단어장·위치·책 텍스트 동기화</td><td>사용 가능, 현재 E2EE 아님</td></tr><tr><td>iOS Capacitor 셸</td><td>있음</td></tr><tr><td>Android 네이티브 셸</td><td>아직 없음</td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>영역</th><th>현재 상태</th></tr></thead><tbody><tr><td>PDF·EPUB 글자/원본 읽기</td><td>사용 가능</td></tr><tr><td>PDF 원본 확대</td><td><code>− / +</code> 단추, 핀치 확대는 사용하지 않음</td></tr><tr><td>붙여 넣은 글</td><td>사용 가능</td></tr><tr><td>공개 페이지 기사 URL 가져오기</td><td>사용 가능, 사이트 조건·권리 범위 안에서만</td></tr><tr><td>문맥 사전·단어장</td><td>사용 가능</td></tr><tr><td>문장 전체 설명</td><td>로그인 후 하루 5회</td></tr><tr><td>단어장·위치·읽기자료 메타데이터 동기화</td><td>E2EE 자동 동기화, 원문은 기기 전용</td></tr><tr><td>iOS Capacitor 셸</td><td>있음</td></tr><tr><td>Android 네이티브 셸</td><td>아직 없음</td></tr></tbody></table></div>
 <h2 id="출시-전-안정화">출시 전: 안정화</h2>
 <ol><li><strong>원본 파일 다시 연결</strong><ul><li>같은 PDF/EPUB인지 원본 파일 해시를 먼저 확인하도록 보완합니다.</li><li>현재의 텍스트 지문 비교는 이전 데이터 호환용 보조 경로로 둡니다.</li></ul></li></ol>
 <ol><li><strong>읽기 화면 안정성</strong><ul><li><code>ResizeObserver</code> 경고가 실제 앱 오류처럼 빨간 화면에 표시되지 않게 고칩니다.</li><li>PDF 확대 버튼, 진행 줄, 상단바가 iOS 홈 화면 웹앱에서 안정적으로 동작하는지 실제 기기로 확인합니다.</li><li>Android 8–9에서는 기본 읽기·단어장·로그인 흐름을 우선 검증하고, 대용량 PDF의 고성능을 약속하지 않습니다.</li></ul></li></ol>
@@ -108,9 +108,7 @@ tbody tr:last-child td{border-bottom:0}
 <ol><li><strong>첫 경험과 출시 준비</strong><ul><li>빈 라이브러리, 권한·로그인 안내, 오류 문구, 대표 목업을 정리합니다.</li><li>iOS TestFlight와 Android 내부/비공개 테스트를 통해 실제 기기에서 먼저 확인합니다.</li></ul></li></ol>
 <h2 id="출시-뒤-우선순위">출시 뒤 우선순위</h2>
 <h3 id="1-동기화의-선택권과-개인정보">1. 동기화의 선택권과 개인정보</h3>
-<p>현재 동기화는 편하지만 종단간 암호화가 아닙니다. 다음 큰 결정은 기능 추가가 아니라 사용자가 무엇을 서버에 맡길지 고르는 방식입니다.</p>
-<ul><li>단어와 학습 상태는 기본 동기화로 유지할지 결정합니다.</li><li>책 텍스트·제목·진행도·문맥 예문은 선택형 <strong>암호화 동기화 금고</strong>로 분리하는 방안을 검토합니다.</li><li>이 기능은 사용자가 정한 동기화 암호로 기기에서만 암복호화해야 합니다. 이메일·사용자 ID·앱 안의 고정 salt만으로 만든 키는 서버도 재현할 수 있어 E2EE가 아닙니다.</li></ul>
-<p>이 설계는 아직 구현하지 않았습니다. 출시 직전에 서둘러 넣지 않고, 복구·기기 추가·암호 분실 안내까지 함께 설계한 뒤 진행합니다.</p>
+<p>단어·예문·복습 기록과 진행도는 E2EE 보관함으로 자동 동기화합니다. 원문은 기기에만 남기고, 필요할 때 암호화 백업 파일로 직접 옮깁니다. 새 기기는 복구키 또는 기존 기기의 QR·6자리 일회용 코드 승인으로 연결합니다.</p>
 <h3 id="2-단어-복습-mvp">2. 단어 복습 MVP</h3>
 <p>Anki의 원리(간격 반복)는 참고하되, Anki 코드나 앱을 끌어오지 않습니다.</p>
 <ul><li>단어별 <code>다음 복습일</code>, <code>간격</code>, <code>정답/실패 횟수</code>만 둡니다.</li><li>하루 새 단어와 복습 수에 작은 상한을 둡니다.</li><li><code>다시 / 어려움 / 알겠음</code> 정도의 간단한 선택으로 시작합니다.</li></ul>

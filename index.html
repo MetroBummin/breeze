@@ -17,10 +17,10 @@
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
-  <link rel="stylesheet" href="styles/home.css?v=21f9e6e2">
-  <link rel="stylesheet" href="styles/reader.css?v=ab8f2c61">
-  <link rel="stylesheet" href="styles/dictionary.css?v=3a8f1d94">
-  <link rel="stylesheet" href="styles/components.css?v=95f8ca10">
+  <link rel="stylesheet" href="styles/home.css?v=348e4c0e">
+  <link rel="stylesheet" href="styles/reader.css?v=153e724d">
+  <link rel="stylesheet" href="styles/dictionary.css?v=3e48bc28">
+  <link rel="stylesheet" href="styles/components.css?v=e7701cc8">
   <link rel="stylesheet" href="styles/responsive.css?v=3a1ec5f0">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -31,33 +31,34 @@
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=84e8d1a2"></script>
-  <script defer src="scripts/core/lazy-lib.js?v=eabd666c"></script>
-  <script defer src="scripts/core/storage.js?v=dc18ee04"></script>
+  <script defer src="scripts/core/lazy-lib.js?v=3e8f6727"></script>
+  <script defer src="scripts/core/storage.js?v=d51f3f04"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
-  <script defer src="scripts/core/book-identity.js?v=61d55987"></script>
+  <script defer src="scripts/core/book-identity.js?v=45b41d84"></script>
   <script defer src="scripts/core/state.js?v=df4a083e"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=00037436"></script>
-  <script defer src="scripts/library/book-edit.js?v=8027a26e"></script>
+  <script defer src="scripts/library/library.js?v=5616d002"></script>
+  <script defer src="scripts/library/book-edit.js?v=bc91d18e"></script>
   <script defer src="scripts/library/classics.js?v=608376e4"></script>
   <script defer src="scripts/importers/importers.js?v=edfb3f6c"></script>
-  <script defer src="scripts/importers/article.js?v=a38d1d1e"></script>
+  <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=0e3b9f7c"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=7c92059b"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=ab01450f"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=ab7b3016"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=026461f5"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=9ac9bcf4"></script>
-  <script defer src="scripts/reader/epub-original.js?v=71c8b804"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=adecf61c"></script>
+  <script defer src="scripts/reader/epub-original.js?v=7f2e9660"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
-  <script defer src="scripts/reader/reader.js?v=1b936ed2"></script>
-  <script defer src="scripts/ui/preferences.js?v=8084b314"></script>
-  <script defer src="scripts/sync/sync.js?v=ecce8275"></script>
+  <script defer src="scripts/reader/reader.js?v=8b52de23"></script>
+  <script defer src="scripts/ui/preferences.js?v=d5c65a9c"></script>
+  <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
+  <script defer src="scripts/sync/sync.js?v=2980e97f"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
   <script defer src="scripts/main.js?v=68f194d1"></script>
 </head>
@@ -285,6 +286,8 @@
     <div id="sm-status"></div>
   </div>
 </div>
+<input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
+<input type="file" id="reading-backup-input" accept=".zip,.breeze.zip,application/zip" hidden>
 <div id="add-modal">
   <div id="am-card">
     <button id="am-close" onclick="closeAddModal()">✕</button>
@@ -351,16 +354,12 @@
 
     <div class="ed-step" data-step="delete">
       <button type="button" class="am-back" onclick="editStep('edit')">← 뒤로</button>
-      <h2>어디서 지울까요?</h2>
+      <h2>이 기기에서 지울까요?</h2>
       <div class="desc"><b id="ed-what"></b><br><span id="ed-del-note"></span></div>
       <div class="am-choices">
-        <button type="button" class="am-big" onclick="runDelete('local')">
+        <button type="button" class="am-big" onclick="runDelete()">
           <span class="am-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 12.5h9L17.5 7"/></svg></span>
-          <span><span class="am-t">이 기기에서만</span><span class="am-d">서버 사본은 그대로 — Sync에서 다시 받을 수 있어요</span></span>
-        </button>
-        <button type="button" class="am-big ed-all" onclick="runDelete('all')">
-          <span class="am-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c4.5 5 4.5 12 0 17-4.5-5-4.5-12 0-17"/></svg></span>
-          <span><span class="am-t">모든 기기에서</span><span class="am-d">되돌릴 수 없어요</span></span>
+          <span><span class="am-t">이 기기에서 지우기</span><span class="am-d">다른 기기의 읽기자료는 건드리지 않아요</span></span>
         </button>
       </div>
     </div>

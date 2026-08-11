@@ -92,7 +92,7 @@ tbody tr:last-child td{border-bottom:0}
 <body>
 <header class="top">
   <a class="brand" href="../index.html"><svg viewBox="0 0 100 40" fill="none" aria-hidden="true"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round"/></svg><span>Breeze</span></a>
-  <nav><a href="index.html" aria-current="page">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html">로드맵</a><a href="privacy.html">개인정보처리방침</a></nav>
+  <nav><a href="index.html" aria-current="page">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="roadmap.html">로드맵</a><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a></nav>
 </header>
 <div class="wrap">
 <main>
@@ -108,7 +108,7 @@ tbody tr:last-child td{border-bottom:0}
 <h2 id="기사-url">기사 URL</h2>
 <p>URL 가져오기는 공개적으로 접근 가능한 페이지에서 본문과 사진을 골라 내는 편의 기능입니다. 로그인·결제·사이트 정책 때문에 읽을 수 없는 페이지는 가져오지 않습니다. 가져온 글은 사용자가 읽을 권리가 있는 내용에만 사용해야 하며, 유료 기사 우회나 사이트 안에 Breeze를 주입하는 기능은 제품 범위에 두지 않습니다.</p>
 <h2 id="개인정보과-보안의-현재-상태">개인정보과 보안의 현재 상태</h2>
-<ul><li>로그인 전 책·단어장·진행도는 기기에만 있습니다. 단, URL 가져오기는 CORS 때문에 Breeze의 중계 서버에 해당 URL을 요청합니다.</li><li>로그인하면 현재 동기화 데이터는 종단간 암호화(E2EE)가 아닙니다. HTTPS와 Supabase의 행 수준 보안(RLS)로 전송·계정 간 접근을 보호하지만, 서비스 운영자는 서버 데이터를 기술적으로 읽을 수 있습니다.</li><li>단어 동기화에는 현재 단어, 뜻, 별표뿐 아니라 저장된 예문과 책 제목도 포함될 수 있습니다. 이 사실과 향후 선택형 암호화 금고의 방향은 <a href="privacy.html">PRIVACY.md</a>에 명확히 적습니다.</li></ul>
+<ul><li>로그인 전 책·단어장·진행도는 기기에만 있습니다. 단, URL 가져오기는 CORS 때문에 Breeze의 중계 서버에 해당 URL을 요청합니다.</li><li>로그인하면 단어·예문·복습 기록과 읽던 위치만 기기에서 종단간 암호화(E2EE)되어 자동 동기화됩니다. PDF·EPUB·기사 본문·사진은 서버에 올라가지 않습니다.</li><li>복구키나 기존 기기의 승인이 없으면 Breeze도 암호문을 열 수 없습니다. 자세한 범위는 <a href="privacy.html">PRIVACY.md</a>에 적습니다.</li></ul>
 <h2 id="문서">문서</h2>
 <ul><li><a href="dictionary.html">사전 설계</a></li><li><a href="architecture.html">구조와 파일 책임</a></li><li><a href="roadmap.html">출시 로드맵</a></li><li><a href="privacy.html">개인정보처리방침</a></li></ul>
 <p><code>docs/</code>의 HTML은 직접 고치지 않습니다. 아래 검사가 Markdown 문서로부터 다시 만듭니다.</p>

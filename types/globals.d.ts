@@ -7,6 +7,7 @@
    `undefined` 일 수 있다고 적지 않습니다 — 확인은 `ensurePdfLib()` 가 합니다. */
 declare var pdfjsLib: any;
 declare var JSZip: any;
+declare var qrcode: any;
 
 /* 창에 직접 붙여 두는 것들.
    - `supabase` : CDN 스크립트가 붙입니다
@@ -18,6 +19,7 @@ interface Window {
   BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string };
   Capacitor?: any;
   breezeExportDict?: () => Promise<any>;
+  showSaveFilePicker?: (options?: any) => Promise<any>;
 }
 
 /* ── 문단 배열에 얹혀 다니는 것들 ──

@@ -96,55 +96,30 @@ const combined = orderedScripts
   .join('\n');
 new Script(combined, { filename:'breeze-active-scripts.js' });
 
-// A book parsed into different paragraph boundaries must keep the same stable
-// fingerprint, and a legacy server ID must reconcile through that fingerprint.
+// Text layout can keep a local fingerprint, but sync/file identity must never
+// derive from it.
 const identityContext = {};
 new Script(readFileSync(resolve(root, 'scripts/core/book-identity.js'), 'utf8'))
   .runInNewContext(identityContext);
 const segmented = identityContext.bookContentFingerprint(['Hello', 'world.', 'Next page']);
 const joined = identityContext.bookContentFingerprint(['Hello world.', 'Next page']);
 assert.equal(segmented, joined, 'Fingerprint changed with paragraph segmentation');
-const localBook = { id:'new-id', title:'Same book', paras:['Hello world.', 'Next page'] };
-assert.equal(identityContext.serverRowMatchesBook(
-  { book_id:'legacy-id', meta:{ fingerprint:joined } },
-  localBook,
-), true, 'Legacy server ID did not reconcile through content fingerprint');
-assert.equal(identityContext.serverRowIsActive(
-  { book_id:'deleted-copy', meta:{ title:'Same book', fingerprint:joined, deleted:true } },
-), false, 'Deleted tombstone was treated as an active server book');
-const reimportedBook = { id:'same-id', addedAt:100, localSourceAt:500, paras:['Hello world.'] };
-assert.equal(identityContext.serverTombstoneShouldDelete(
-  { book_id:'same-id', meta:{ deleted:true, deletedAt:400 } },
-  reimportedBook,
-), false, 'A stale tombstone deletes a later local re-import');
-assert.equal(identityContext.serverTombstoneShouldDelete(
-  { book_id:'same-id', meta:{ deleted:true, deletedAt:600 } },
-  reimportedBook,
-), true, 'A genuinely newer remote deletion no longer propagates');
-reimportedBook.detachedServerId='same-id';
-assert.equal(identityContext.serverTombstoneShouldDelete(
-  { book_id:'same-id', meta:{ deleted:true, deletedAt:700 } },
-  reimportedBook,
-), false, 'A deliberate server-only deletion erased its local copy');
 
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
-assert.match(
-  syncSource,
-  /const twin = activeServerBooks\(\)\.find/,
-  'Duplicate-title warning still inspects hidden deleted tombstones',
-);
-assert.doesNotMatch(syncSource, /aiFormatting|uploadBookFormatting|functions\/v1\/format/,
-  'Removed AI typography is still part of book sync');
-assert.doesNotMatch(syncSource, /originalGet\(|\.blob\b/,
-  'Raw original files leaked into server sync');
-assert.match(syncSource,/flushPendingBookDeletes/,
-  'Failed server book deletions are not retried');
-assert.match(syncSource,/if\(curBook && curBook\.id===lc\.id\)/,
-  'A remote tombstone can still erase the book currently being read');
-assert.ok(
-  syncSource.indexOf("sb.from('books').upsert") < syncSource.indexOf("sb.storage.from('books').remove"),
-  'Book payload is removed before its tombstone becomes authoritative',
-);
+assert.match(syncSource,/VaultCrypto\.sealJson\(master,payload/,
+  'The sync snapshot is sent without end-to-end encryption');
+assert.match(syncSource,/await cleanLegacyServer\(rows\)/,
+  'Legacy plaintext is not removed after the encrypted snapshot succeeds');
+assert.doesNotMatch(syncSource,/bookUpload|bookDownload|collectBookPhotos|storeBookPhotos/,
+  'The removed plaintext book transfer path is still callable');
+assert.doesNotMatch(syncSource,/paras:|imgSrc:|cover:/,
+  'Reading content or images leaked into the server snapshot');
+assert.match(syncSource,/vaultFileIdentity\(rawHash\)/,
+  'Raw files are not matched through a keyed full-file digest');
+assert.doesNotMatch(syncSource,/file-sha256[^\n]*ensureBookFingerprint|recordId\(vaultMaster,'file[^\n]*fingerprint/,
+  'A text fingerprint is still used as a file identity');
+assert.doesNotMatch(syncSource,/recordId\(vaultMaster,'anchor'/,
+  'A sentence-derived reading anchor is still uploaded');
 assert.match(syncSource,/syncAgain=true/,
   'A sync request arriving during another sync is still dropped');
 /* 로그아웃은 이 기기에서만. Supabase 의 기본값은 'global' 이라, 빼먹으면 노트북에서
@@ -156,22 +131,34 @@ assert.match(syncSource, /op:'delete_account'/,
   'The in-app account deletion path is gone');
 assert.match(readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8'),
   /auth\.admin\.deleteUser/, 'The server no longer deletes the auth user');
-/* 저절로 오가야 하는 것은 양쪽입니다. 올리는 쪽이 빠지면, 로그인 전에 담아 둔
-   글과 실패한 글이 영영 서버에 올라가지 않은 채 올라간 것처럼 보입니다. */
-assert.match(syncSource, /async function autoUploadCasuals/,
-  'Casuals are only auto-downloaded, never auto-uploaded');
-/* 자동 올리기는 `refreshBooks()` 안에서 돕니다. 거기서 다시 `refreshBooks()` 를
-   부르면 서로를 기다리며 멈춥니다. */
-assert.match(syncSource, /if\(auto\) renderAllBookViews\(\);\s*\n\s*else await refreshBooks\(\);/,
-  'An automatic upload refreshes the book list again and deadlocks');
-/* 사진 주소만 보내면 받는 기기가 그 매체 서버에서 다시 받아야 하고, 자주 실패합니다. */
-assert.match(syncSource, /photos: await collectBookPhotos\(/,
-  'Casual photos no longer travel with the article');
-assert.match(syncSource, /await storeBookPhotos\(body\.photos\)/,
-  'A downloaded casual never unpacks the photos it was sent');
+
+// Cryptographic primitives must round-trip, reject a different master key,
+// preserve recovery secrets, and agree across an ephemeral device pairing.
+const cryptoContext={crypto:globalThis.crypto,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,
+  btoa:globalThis.btoa,atob:globalThis.atob,structuredClone};
+new Script(readFileSync(resolve(root,'scripts/sync/vault-crypto.js'),'utf8')+'\n;globalThis.__vault=VaultCrypto;')
+  .runInNewContext(cryptoContext);
+const vault=cryptoContext.__vault,master=vault.random(32),aad=['user','vault','snapshot'];
+const sealed=await vault.sealJson(master,{word:'hidden',progress:.43},aad,'test/v1');
+assert.equal(JSON.stringify(await vault.openJson(master,sealed,aad,'test/v1')),JSON.stringify({word:'hidden',progress:.43}),
+  'Encrypted vault snapshot did not round-trip');
+await assert.rejects(()=>vault.openJson(vault.random(32),sealed,aad,'test/v1'),
+  'A different master key opened the encrypted snapshot');
+const recovery=vault.random(32);
+assert.deepEqual([...vault.recoveryDecode(vault.recoveryEncode(recovery))],[...recovery],
+  'Recovery key text did not restore the same secret');
+const deviceA=await vault.pairingCreate(),deviceB=await vault.pairingCreate(),pairSalt=vault.random(16);
+const pairA=await vault.pairingKey(deviceA.privateKey,deviceB.publicJwk,pairSalt,'test/pair');
+const pairB=await vault.pairingKey(deviceB.privateKey,deviceA.publicJwk,pairSalt,'test/pair');
+const paired=await vault.pairingSeal(pairA,master,['user','request','pair']);
+assert.deepEqual([...await vault.pairingOpen(pairB,paired,['user','request','pair'])],[...master],
+  'QR/code device pairing did not transfer the same master key');
+const rawDigest='a'.repeat(64),opaqueIdentity=await vault.recordId(master,'file-sha256',rawDigest);
+assert.ok(!opaqueIdentity.includes(rawDigest)&&opaqueIdentity.length>20,
+  'The raw full-file SHA-256 is exposed as the server identity');
 
 const storageSource = readFileSync(resolve(root, 'scripts/core/storage.js'), 'utf8');
-assert.match(storageSource, /openDb\('breeze-img',\s*3,/,
+assert.match(storageSource, /openDb\('breeze-img',\s*4,/,
   'IndexedDB was not upgraded for local originals');
 assert.match(storageSource, /createObjectStore\('originals'\)/,
   'Dedicated local original store is missing');
@@ -650,36 +637,31 @@ const addSheet = index.slice(index.indexOf('id="add-modal"'), index.indexOf('id=
 assert.equal((addSheet.match(/class="am-big/g) || []).length, 3,
   'The + sheet no longer offers exactly three ways in');
 
-/* ---- 정보 바꾸기 시트와 두 갈래 삭제 ----
-   되돌릴 수 없는 쪽을 기본으로 두면 안 됩니다. 폰에서 자리만 비우려던
-   사람이 노트북의 책까지 잃습니다. */
+/* 원문은 서버에 없으므로 삭제는 이 기기 하나만 건드립니다. */
 const editSource = readFileSync(resolve(root, 'scripts/library/book-edit.js'), 'utf8');
 assert.match(index, /id="edit-modal"/, 'The long-press edit sheet is missing');
-assert.match(index, /runDelete\('local'\)[\s\S]{0,900}runDelete\('all'\)/,
-  'The delete step no longer offers both scopes, with this device first');
-assert.match(librarySource, /async function deleteBook\(b, scope\)/,
-  'Deleting a book is back to one all-or-nothing path');
-assert.match(librarySource, /if\(scope !== 'all'\)[\s\S]{0,400}return;/,
-  'A device-only delete still reaches the server');
+assert.match(index, /onclick="runDelete\(\)"/,
+  'The device-only delete action is missing');
+assert.match(librarySource, /async function deleteBook\(b\)/,
+  'Deleting a book still exposes an obsolete server scope');
+assert.doesNotMatch(librarySource, /queueServerBookDelete|flushPendingBookDeletes/,
+  'Local deletion can still reach the removed server-book path');
 assert.doesNotMatch(librarySource, /confirm\(`"\$\{b\.title\}" 책을 삭제/,
   'The old two-button confirm is back in front of the scope question');
 assert.match(editSource, /function openEditSheet/, 'Nothing opens the edit sheet');
 assert.match(librarySource, /attachLongPress\(card, \(\)=>openEditSheet\(book\)\)/,
   'A long press no longer opens the edit sheet');
-// 로그인하지 않았으면 서버 사본이 없습니다. 고를 것 없는 갈림길을 내지 않습니다.
-assert.match(editSource, /\.ed-all'\)\.hidden = !signedIn/,
-  'Signed-out users are offered a delete-everywhere button that does nothing');
+assert.doesNotMatch(index, /class="am-big ed-all"/,
+  'The obsolete delete-everywhere choice is still visible');
 /* 카드가 보이는 곳이 셋이라 하나만 다시 그리면 나머지가 옛 이름을 들고 남습니다. */
 assert.match(librarySource, /function renderAllBookViews/,
   'The three book views are refreshed one by one again');
 
-/* ---- Casuals 자동 올리기 ----
-   Sync 창을 열어 책마다 올리기를 눌러야 한다면 그 일은 일어나지 않습니다. */
+/* Casual 원문은 기기에만 남고, URL과 진행도만 암호문에 들어갑니다. */
 assert.match(librarySource, /autoUploadCasual\(book\)/,
-  'A pasted or fetched article never reaches the server on its own');
-assert.match(syncSource, /function autoUploadCasual/, 'Casual auto-upload is gone');
-assert.match(syncSource, /if\(twin && \(auto \|\|/,
-  'Auto-upload can pop a confirm dialog right after an import');
+  'A pasted or fetched article does not queue its encrypted metadata');
+assert.match(syncSource, /function autoUploadCasual\(book\).*queueSync/s,
+  'Casual metadata no longer joins automatic sync');
 
 /* ---- 짐 덜기 ----
    xlsx 881KB 는 Review 탭 버튼 하나 때문에 모든 사용자가 매번 받던 짐이었고,
@@ -795,16 +777,14 @@ assert.doesNotMatch(stateSource, /readerSchema|book\.tidy|LS_BOOKS/,
 assert.doesNotMatch(withoutComments(syncSource), /hydrateServerFingerprints/,
   'Every book-list refresh re-downloads and re-hashes server books again');
 
-/* ---- Casuals 는 양쪽으로 저절로 ---- */
-assert.match(syncSource, /function autoDownloadCasuals/,
-  'An article saved on another device never arrives on its own');
-assert.match(syncSource, /kind:b\.kind\|\|''/,
-  'The server list cannot tell a short read from a book, so nothing can be auto-pulled');
+/* URL 기사는 새 기기에서 다시 수집하고 원문을 서버에서 받지 않습니다. */
+assert.match(librarySource, /function restoreMissingVaultArticles/,
+  'An article URL is not restored on a new device');
 /* 이 기기에서만 지운 책이 다음 동기화에 도로 돌아오면 지운 것이 아닙니다. */
 assert.match(librarySource, /hideBookLocally\(remoteId\)/,
   'A device-only delete is undone by the next auto-download');
-assert.match(syncSource, /if\(hidden\[row\.book_id\]\) continue/,
-  'Auto-download ignores the device-only delete marker');
+assert.match(librarySource, /filter\(row=>!hidden\[row\.book_id\]\)/,
+  'Ghost cards ignore the device-only delete marker');
 
 /* ---- 샘플 책은 없앴습니다 ---- */
 assert.equal(existsSync(resolve(root, 'scripts/core/demo-book.js')), false,
@@ -910,12 +890,8 @@ assert.match(articleSource, /function bookImageBlob/,
 // 홈은 자주 다시 그려집니다. 못 받는 사진을 렌더링할 때마다 다시 부르면 안 됩니다.
 assert.match(articleSource, /bookImageMissing\.has\(key\)/,
   'An unreachable photo is re-fetched on every home render');
-for(const field of ['site', 'sourceUrl', 'cover', 'imgSrc']){
-  assert.match(syncSource, new RegExp(`${field}:b\\.${field}`),
-    `A synced article loses its ${field}`);
-  assert.match(syncSource, new RegExp(`${field}:body\\.${field}`),
-    `A downloaded article never reads back its ${field}`);
-}
+assert.match(syncSource, /sourceUrl:book\.sourceUrl/,
+  'The encrypted article metadata loses its source URL');
 assert.doesNotMatch(syncSource, /storage\.from\('imgs'\)|uploadImage/,
   'Article photos are being re-hosted on the server instead of re-fetched');
 assert.match(articleSource, /parsed\.blocks\.filter\(block => block\.r !== 'img' \|\| stored\.has/,
@@ -930,25 +906,8 @@ assert.match(articleServer, /MAX_IMAGE_BYTES/, 'The image relay has no size limi
 assert.match(articleServer, /\/svg\/i\.test\(type\)/,
   'The image relay would pass an SVG document through as a photo');
 
-/* ── 사진은 보내기 전에 한 번 줄입니다 ──
-   매체가 내주는 원본은 2000~3000px 짜리 인쇄용입니다. 그대로 실어 보내면 짧은
-   글 하나가 1MB 에 가까워지고, 짧은 글은 묻지도 않고 저절로 내려받습니다. */
-assert.match(articleSource, /async function shrinkPhotoForTransport/,
-  'Article photos are uploaded at their original print resolution');
-assert.match(articleSource, /await blobToDataUrl\(await shrinkPhotoForTransport\(stored\)\)/,
-  'The shrunk photo is built but the original is what actually gets sent');
-/* 예산은 실제로 오가는 크기(base64)로 세야 합니다. 원본 바이트로 세면 오가는
-   양은 언제나 그보다 3분의 1 많습니다. */
-assert.match(articleSource, /spent \+ dataUrl\.length > BOOK_PHOTO_BUDGET/,
-  'The photo budget counts raw bytes, so a third more than that actually travels');
-
-/* ── 옛 줄의 `kind` 는 짐작이 아니라 아는 기기가 적어 줍니다 ── */
-assert.match(syncSource, /async function backfillServerKinds/,
-  'Legacy server rows are left to the size guess forever');
-assert.ok(
-  syncSource.indexOf('await backfillServerKinds()') < syncSource.indexOf('await autoDownloadCasuals()'),
-  'The kind backfill runs after the download decision it was supposed to inform',
-);
+assert.doesNotMatch(articleSource,/collectBookPhotos|shrinkPhotoForTransport|BOOK_PHOTO_BUDGET/,
+  'The removed photo-upload transport code remains in the article importer');
 /* 크기 하나로는 긴 기사가 원서로 넘어갑니다. 문단 수를 함께 봐야 합니다. */
 assert.match(librarySource, /LEGACY_CASUAL_MAX_PARAS/,
   'The legacy guess is back to size alone, so a long article lands on the wrong shelf');

@@ -31,6 +31,8 @@ const DOCS = [
     blurb: '방향 전환과 다음에 만들 것' },
   { file: 'PRIVACY.md',      out: 'privacy.html',      title: '개인정보처리방침',
     blurb: '무엇을 받고, 어디에 두고, 언제 지우나' },
+  { file: 'TERMS.md',        out: 'terms.html',        title: '이용약관',
+    blurb: '개인 보관, 금지되는 사용, 권리침해 신고' },
 ];
 const asHtml = new Map(DOCS.map(d => [d.file, d.out]));
 

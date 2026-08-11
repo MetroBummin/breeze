@@ -9,10 +9,12 @@
 const LAZY_LIBS = {
   pdf:  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   zip:  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  qr:   'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js',
 };
 const LAZY_LIB_READY = {
   pdf: () => typeof pdfjsLib !== 'undefined',
   zip: () => typeof JSZip !== 'undefined',
+  qr:  () => typeof qrcode !== 'undefined',
 };
 const lazyLibJobs = {};
 
@@ -38,4 +40,8 @@ async function ensurePdfLib(){
 async function ensureZipLib(){
   await loadLazyLib('zip');
   return JSZip;
+}
+async function ensureQrLib(){
+  await loadLazyLib('qr');
+  return qrcode;
 }
