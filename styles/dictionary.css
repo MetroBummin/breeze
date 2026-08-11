@@ -158,13 +158,19 @@
   #p-airetry:hover{color:var(--blue);}
   #p-airetry:disabled{opacity:.45; cursor:default; text-decoration:none;}
   .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
-  #p-colloc-sec,#p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
+  #p-colloc-sec,#p-saved-senses-sec,#p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
   #p-colloc-sec{margin-top:16px; color:var(--soft2);}
   #p-colloc{display:none; flex-wrap:wrap; gap:6px;}
   #p-colloc.on{display:flex;}
-  #p-colloc-sec.on,#p-alt-sec.on{display:block;}
+  #p-colloc-sec.on,#p-saved-senses-sec.on,#p-alt-sec.on{display:block;}
   #p-alts{display:none; flex-wrap:wrap; gap:7px;}
   #p-alts.on{display:flex;}
+  #p-saved-senses{display:none; flex-wrap:wrap; gap:6px;}
+  #p-saved-senses.on{display:flex;}
+  .saved-sense{border:1px solid var(--line); border-radius:14px; padding:5px 10px; background:var(--paper2);
+    color:var(--soft); font:600 12px var(--ui); cursor:pointer;}
+  .saved-sense.on{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
+  .saved-sense:hover{border-color:var(--blue); color:var(--blue);}
   .alt-actions{display:flex; flex-basis:100%; gap:6px; margin-top:1px;}
   .alt-action{border:1px solid var(--line); border-radius:13px; padding:6px 10px; background:transparent;
     color:var(--soft); font:600 11px var(--ui); cursor:pointer;}

@@ -114,6 +114,7 @@ function answerFromLook(j, cached){
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
 function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }
 function phraseCardKey(text){ return `phrase:${phraseParts(text).join(' ')}`; }
+function meaningKey(meaning){ return String(meaning||'').trim().replace(/\s+/g,' ').toLowerCase(); }
 function findContextCard(root, sentence){
   const id=contextCardKey(root,sentence);
   return words[id] ? id : null;
@@ -123,6 +124,24 @@ function findSavedSense(root, sentence){
     const item=words[id];
     return item && item.sense && item.root===root && item.example===sentence;
   }) || null;
+}
+function findSenseByMeaning(root, meaning){
+  const wanted=meaningKey(meaning); if(!wanted) return null;
+  const pairs=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
+    && meaningKey(item.ko)===wanted);
+  pairs.sort(([a],[b])=>(a===root?-1:0)-(b===root?-1:0));
+  return pairs.length ? pairs[0][0] : null;
+}
+function savedSenseCards(root){
+  const cards=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
+    && item.ko && !item.phraseParts);
+  cards.sort(([a,aw],[b,bw])=>(a===root?-1:0)-(b===root?-1:0)
+    || (bw.addedAt||0)-(aw.addedAt||0));
+  const unique=new Set();
+  return cards.filter(([,item])=>{
+    const key=meaningKey(item.ko); if(!key||unique.has(key)) return false;
+    unique.add(key); return true;
+  });
 }
 
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
@@ -323,6 +342,19 @@ function renderPanel(){
   }else{
     col.className = ''; colSec.className = 'p-sec'; col.innerHTML = '';
   }
+  /* 큰 뜻 카드는 지금 문장에 맞는 하나만 유지합니다. 대신 사용자가 직접 저장한
+     다른 뜻들은 작은 칩으로 함께 보여 주어, 새 문장에서 "아, 이 take는 그 take"
+     라는 판단을 할 수 있게 합니다. */
+  const root=base.root||k, savedSec=document.getElementById('p-saved-senses-sec');
+  const savedBox=document.getElementById('p-saved-senses'), savedSenses=savedSenseCards(root);
+  if(savedSenses.length>1){
+    savedSec.className='p-sec on'; savedBox.className='on';
+    savedBox.innerHTML=savedSenses.map(([id,item])=>`<button type="button" class="saved-sense${meaningKey(item.ko)===meaningKey(shown)?' on':''}" data-k="${esc(id)}">${esc(item.ko)}</button>`).join('');
+    [...savedBox.querySelectorAll('.saved-sense')].forEach(button=>{
+      const chip=/** @type {HTMLElement} */(button);
+      chip.onclick=()=>{ contextView=null; phraseView=null; altChoice=null; selectWord(chip.dataset.k||'',null); };
+    });
+  }else{ savedSec.className='p-sec'; savedBox.className=''; savedBox.innerHTML=''; }
   const altSec=document.getElementById('p-alt-sec'), altBox=document.getElementById('p-alts');
   const alts=[...new Set((w.alts||[]).map(item=>String(item||'').trim()).filter(item=>item&&item!==shown))].slice(0,3);
   if(alts.length){
@@ -360,9 +392,9 @@ function chooseMeaning(k, meaning){
 function saveAlternateMeaning(k, meaning, source){
   const base=words[k]; if(!base || !meaning) return;
   const shown=source||base;
-  const root=base.root||k, id=senseCardKey(root,meaning), previous=words[id];
+  const root=base.root||k, id=findSenseByMeaning(root,meaning)||senseCardKey(root,meaning), previous=words[id];
   words[id]={...(previous||{}),word:shown.word||base.word,root, sense:true, clicked:shown.clicked||base.clicked||base.word,
-    forms:base.forms||[base.word], example:shown.example||base.example||'', book:shown.book||base.book||'', status:previous?previous.status:1,
+    forms:base.forms||[base.word], example:previous?previous.example:(shown.example||base.example||''), book:previous?previous.book:(shown.book||base.book||''), status:previous?previous.status:1,
     mark:previous?previous.mark:base.mark!==false, ko:meaning, ai:{...(shown.ai||base.ai||{}),ko:meaning,gloss:''},
     alts:(base.alts||[]).filter(item=>item!==meaning), phrase:'', defs:[], kodict:[],
     addedAt:previous?previous.addedAt:Date.now(),up:Date.now()};
@@ -678,7 +710,12 @@ async function askCurrentContext(k){
 function saveCurrentContext(k){
   const w=words[k], context=currentContext(k);
   if(!w || !context || !context.answer || !context.answer.ko) return;
-  const root=w.root||k, id=contextCardKey(root,context.sentence);
+  const root=w.root||k, existing=findSenseByMeaning(root,context.answer.ko);
+  if(existing){
+    context.saved=true; saveWords(); queueSync(); renderPanel();
+    toast('이미 저장한 뜻이에요'); return;
+  }
+  const id=contextCardKey(root,context.sentence);
   /* 화면에는 둘 다 take로 보이지만, 저장·복습·난이도는 서로 다른 카드입니다. */
   words[id]={word:w.word,root,clicked:context.clicked||'',forms:w.forms||[w.word],
     example:context.sentence,book:context.book||'',status:1,mark:w.mark!==false,
