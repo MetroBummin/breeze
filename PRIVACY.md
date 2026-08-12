@@ -167,7 +167,6 @@ Breeze 는 이들에게 이메일 주소를 넘기지 않습니다.
 | Anthropic (Claude) | 낱말 뜻 생성 | 미국 |
 | Google (Gemini) | 낱말 뜻 생성 (대체 경로) | 미국 |
 | GitHub Pages | 웹 사이트 제공 | 전 세계 CDN |
-| Google Fonts | 제목 글꼴(Fraunces · 고운바탕) 내려받기 | 전 세계 CDN |
 
 AI 제공자에게는 낱말과 문장만 가고, 이메일 주소는 가지 않습니다. 국외로 이전되는
 항목은 이 표가 전부입니다.

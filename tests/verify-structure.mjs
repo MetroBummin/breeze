@@ -963,4 +963,29 @@ assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
 assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
   'The inline sentence explanation has its own colour again');
 
+/* ---- 글꼴 ----------------------------------------------------------------
+   제목 글꼴은 우리 서버에 있습니다. 남의 서버 주소가 다시 들어오면, 비행기
+   모드에서 제목이 무너지고 이 앱을 여는 사람의 IP 가 글꼴 회사로 갑니다. */
+for(const file of ['index.html', 'styles/fonts.css', 'styles/tokens.css', 'scripts/ui/i18n.js']){
+  assert.doesNotMatch(readFileSync(resolve(root, file), 'utf8'), /fonts\.(?:googleapis|gstatic)\.com/,
+    `${file} 가 글꼴을 남의 서버에서 받고 있습니다 — npm run fonts 로 가져와 주세요`);
+}
+const fontsCss = readFileSync(resolve(root, 'styles/fonts.css'), 'utf8');
+for(const font of [...fontsCss.matchAll(/url\(\.\.\/([^)?]+)/g)].map(match => match[1])){
+  assert.ok(existsSync(resolve(root, font)), `styles/fonts.css 가 없는 글꼴을 가리킵니다: ${font}`);
+}
+/* OFL 글꼴은 라이선스 원문을 함께 나눠 주어야 합니다. */
+for(const licence of ['assets/fonts/OFL-Fraunces.txt', 'assets/fonts/OFL-GowunBatang.txt']){
+  assert.ok(existsSync(resolve(root, licence)), `${licence} 이 없습니다 — 글꼴만 두고 라이선스를 빠뜨렸습니다`);
+}
+/* 한글 글꼴은 화면에 실제로 쓰는 글자만 잘라서 담았습니다(몇 MB 를 20KB 로).
+   그래서 새 문구를 넣으면 그 글자가 글꼴에 없습니다 — 조용히 다른 글꼴로
+   찍히는 대신 여기서 막습니다. */
+const { koreanGlyphs } = await import('../tools/fetch-fonts.mjs');
+const needed = koreanGlyphs(readFileSync(resolve(root, 'scripts/ui/i18n.js'), 'utf8'));
+const shipped = new Set(readFileSync(resolve(root, 'assets/fonts/gowun-batang-ui.txt'), 'utf8').trim());
+const uncovered = [...needed].filter(character => !shipped.has(character));
+assert.deepEqual(uncovered, [],
+  `한글 제목 글꼴에 없는 글자가 화면에 생겼습니다 — npm run fonts 를 돌려 주세요: ${uncovered.join('')}`);
+
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);
