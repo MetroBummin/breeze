@@ -948,8 +948,16 @@ assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 
   'The word panel and the sentence window no longer wait in the same way');
 /* 색도 하나입니다. AI 가 나오는 세 자리가 같은 변수만 씁니다 — 뜻 상자에 초록빛이,
    문장 창에 흰 종이가 깔려 있으면 같은 목소리로 들리지 않습니다. */
-assert.match(readFileSync(resolve(root, 'styles/base.css'), 'utf8'), /--ai-bg1:/,
+assert.match(readFileSync(resolve(root, 'styles/tokens.css'), 'utf8'), /--ai-bg1:/,
   'The shared AI palette is gone, so each AI surface picks its own colour again');
+/* 디자인 값은 tokens.css 한 곳에 삽니다. 다른 스타일 파일이 색을 직접 적기
+   시작하면, "여기만 고치면 된다"가 다시 거짓말이 됩니다. */
+for(const sheet of ['base.css','home.css','components.css','dictionary.css','reader.css']){
+  const css = readFileSync(resolve(root, 'styles', sheet), 'utf8');
+  const literals = (css.match(/:\s*(?:#[0-9A-Fa-f]{3,8}\b|rgba?\([\d.,\s]+\))/g) || []);
+  assert.deepEqual(literals, [],
+    `styles/${sheet} 가 색을 직접 적고 있습니다 — tokens.css 로 옮겨 주세요: ${literals.join(', ')}`);
+}
 assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
   'The word meaning box has its own colour again');
 assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,

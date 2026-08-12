@@ -31,7 +31,14 @@ function initSupabase(){
 }
 
 function syncStatus(message){ const el=document.getElementById('sm-status'); if(el) el.textContent=message; }
-function syncBadge(){ const el=document.getElementById('nav-sync'); if(el) el.textContent=sbUser?'Sync ✓':'Sync'; }
+/* 상단바에는 이제 "설정"이 섭니다. 로그인해 두었다는 사실은 그 이름 옆의 ✓
+   하나로만 알립니다 — 이름표를 쓰는 곳은 여기 한 곳뿐입니다(i18n 이 덮지 않게). */
+function syncBadge(){
+  const el=document.getElementById('nav-settings');
+  if(el) el.textContent=tr('nav.settings')+(sbUser?' ✓':'');
+  /* 두 번째 탭 이름도 로그인 여부를 따릅니다 — scripts/ui/i18n.js */
+  settingsSyncTabLabel();
+}
 function isNativeShell(){
   try{ return !!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()); }
   catch(error){ return false; }
@@ -87,15 +94,10 @@ async function ensureVaultReady(){
   return master;
 }
 
-function openSyncModal(){
-  initSupabase();
-  document.getElementById('sync-modal').classList.add('on');
-  renderSyncModal();
-}
-function closeSyncModal(){ document.getElementById('sync-modal').classList.remove('on'); }
-document.getElementById('sync-modal').addEventListener('click',event=>{
-  if(event.target===document.getElementById('sync-modal')) closeSyncModal();
-});
+/* 동기화 화면은 설정 안의 한 탭입니다. 여기서 "열어 달라"고 하면 설정을 열되
+   그 탭을 펴 둡니다 — 사전이 로그인을 요구할 때 이 문으로 들어옵니다. */
+function openSyncModal(){ openSettings('sync'); }
+function closeSyncModal(){ closeSettings(); }
 
 function recoveryPanel(){
   if(vaultMeta&&!vaultMaster){
@@ -674,7 +676,7 @@ function attachSupabaseAuth(){
     sbUser=next; syncBadge();
     if(typeof selKey!=='undefined'&&selKey&&typeof renderPanel==='function') renderPanel();
     if(sbUser) doSync(false);
-    if(document.getElementById('sync-modal').classList.contains('on')) renderSyncModal();
+    if(document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
   };
   sb.auth.onAuthStateChange((_event,session)=>accept(session));
   sb.auth.getSession().then(({data:{session}})=>accept(session));

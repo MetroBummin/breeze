@@ -8,7 +8,7 @@
   <title>Breeze</title>
   <meta name="description" content="Breeze - 원서를 산들바람처럼 읽는 리더 + 단어장">
   <meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#16181B" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#171816" media="(prefers-color-scheme: dark)">
   <meta property="og:title" content="Breeze - read it like a breeze!">
   <meta property="og:description" content="원서를 편하게 읽고, 모르는 단어는 눌러서 바로 단어장에.">
   <meta property="og:image" content="assets/favicon/icon-512.png">
@@ -16,12 +16,31 @@
   <link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles/base.css?v=f37cd7b5">
-  <link rel="stylesheet" href="styles/home.css?v=5929639c">
-  <link rel="stylesheet" href="styles/reader.css?v=410d5b6d">
-  <link rel="stylesheet" href="styles/dictionary.css?v=fe541dd4">
-  <link rel="stylesheet" href="styles/components.css?v=711de7e1">
-  <link rel="stylesheet" href="styles/responsive.css?v=ed1e3b98">
+  <!-- 제목에만 쓰는 Fraunces는 SIL Open Font License 글꼴입니다.
+       본문과 버튼은 기기 기본 글꼴을 유지해 읽는 속도를 건드리지 않습니다. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <script>
+    /* Safari의 주소창·하단 막대 색은 페이지가 완전히 통제할 수 없습니다.
+       일반 휴대폰 브라우저에서는 그 사이에 하늘색 띠가 남으므로, 스플래시는
+       홈 화면에 추가한 앱(standalone)에서만 보여 줍니다. */
+    (function(){
+      var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+      if(!standalone && window.matchMedia('(max-width: 700px)').matches){
+        document.documentElement.classList.add('mobile-browser');
+      }
+    })();
+  </script>
+  <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
+       씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
+  <link rel="stylesheet" href="styles/tokens.css?v=88bc98ca">
+  <link rel="stylesheet" href="styles/base.css?v=83cf67d4">
+  <link rel="stylesheet" href="styles/home.css?v=9e4580a7">
+  <link rel="stylesheet" href="styles/reader.css?v=021ca768">
+  <link rel="stylesheet" href="styles/dictionary.css?v=38772f7f">
+  <link rel="stylesheet" href="styles/components.css?v=6db1e069">
+  <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -36,11 +55,14 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/state.js?v=55e8bd83"></script>
+  <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
+       그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
+  <script defer src="scripts/ui/i18n.js?v=d6b8e9b7"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=f7865250"></script>
+  <script defer src="scripts/library/library.js?v=f63be3ea"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
   <script defer src="scripts/library/classics.js?v=608376e4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
@@ -55,52 +77,53 @@
   <script defer src="scripts/reader/epub-original.js?v=3c77d35e"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
-  <script defer src="scripts/reader/reader.js?v=45ca433b"></script>
-  <script defer src="scripts/ui/preferences.js?v=d5c65a9c"></script>
+  <script defer src="scripts/reader/reader.js?v=ebe63916"></script>
+  <script defer src="scripts/ui/preferences.js?v=03a9b082"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
-  <script defer src="scripts/sync/sync.js?v=daefaddf"></script>
+  <script defer src="scripts/sync/sync.js?v=9009ab47"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
-  <script defer src="scripts/main.js?v=0fc04365"></script>
+  <script defer src="scripts/main.js?v=9b64c486"></script>
 </head>
 <body>
 <div id="app">
 
 <!-- ================= SPLASH ================= -->
-<div id="splash">
-  <svg class="mark" viewBox="180 800 680 440" fill="none">
-    <path d="M221 934 C309 868 421 870 469 929 C512 983 451 1033 388 1002 C323 970 337 879 431 842 C546 796 686 847 742 939 C783 1005 765 1090 709 1127 C672 1152 629 1133 627 1095 C625 1053 669 1035 706 1057 C751 1083 785 1128 819 1173" stroke="url(#windg)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M819 1173 C858 1128 902 1094 941 1081 C913 1125 900 1174 907 1223 C867 1207 839 1190 819 1173Z" fill="#2589BE" opacity=".9"/>
-    <defs><linearGradient id="windg" x1="200" y1="0" x2="900" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#A9DDF0" stop-opacity=".25"/><stop offset=".34" stop-color="#4DAED6"/>
-      <stop offset=".72" stop-color="#167EBA"/><stop offset="1" stop-color="#216F9C"/></linearGradient></defs>
-  </svg>
+<div id="splash" class="splash-day">
+  <!-- 낮의 들판은 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지 않습니다.
+       사진은 여기가 아니라 styles/base.css 가 배경으로 깝니다 — 위 스크립트가
+       휴대폰 브라우저에서 스플래시를 통째로 감추는데(html.mobile-browser),
+       `<img>` 였다면 감춰 놓고도 250KB를 먼저 받아 버립니다. 배경 그림은 감춰진
+       자리에서는 아예 요청하지 않습니다. -->
+  <div class="splash-scene" aria-hidden="true"></div>
+  <div class="splash-brand">
   <div class="word">Breeze</div>
   <div class="tag">read it like a breeze!</div>
-  <div class="dots"><i></i><i></i><i></i></div>
+  </div>
 </div>
 
 <!-- ================= TOP BAR ================= -->
 <div id="topbar">
   <div id="logo" onclick="show('home')">
-    <svg viewBox="0 0 100 40" fill="none"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round" transform="translate(0 -2) scale(.95)"/></svg>
     <span class="mark">Breeze</span>
   </div>
+  <!-- 상단바에는 갈 곳만 둡니다. "+" 는 각 섹션 머리(가벼운 글·긴 글)에 이미
+       있고, 거기서는 무엇이 추가될지가 자리로 드러납니다. 같은 일을 하는 단추가
+       화면에 둘 있으면 둘 다 덜 믿게 됩니다. -->
   <nav>
-    <button class="navbtn on" id="nav-home" onclick="show('home')">Read</button>
-    <button class="navbtn" id="nav-vocab" onclick="show('vocab')">Review</button>
-    <button class="navbtn" id="nav-sync" onclick="openSyncModal()">Sync</button>
-    <button id="btn-add" title="읽을거리 추가" onclick="openAddModal()">+</button>
+    <button class="navbtn on" id="nav-home" onclick="show('home')" data-i18n="nav.home">Home</button>
+    <button class="navbtn" id="nav-vocab" onclick="show('vocab')" data-i18n="nav.words">Words</button>
+    <button class="navbtn" id="nav-settings" onclick="openSettings()" data-i18n="nav.settings">Settings</button>
   </nav>
 </div>
 
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
   <div id="greet">GOOD MORNING</div>
-  <div id="bigq">Where shall we read?</div>
+  <div id="bigq" data-i18n="home.q">Where shall we read?</div>
 
   <section id="casuals">
     <div class="sec-head">
-      <h2>Casuals</h2>
+      <h2 data-i18n="sec.casuals">Casuals</h2>
       <span class="sec-sub">기사 · 스레드 · 짧은 글</span>
       <div class="sec-acts">
         <button id="rss-refresh" title="새 글 새로고침" aria-label="새 글 새로고침">↻</button>
@@ -115,7 +138,7 @@
 
   <section id="longform">
     <div class="sec-head">
-      <h2>Books</h2>
+      <h2 data-i18n="sec.books">Books</h2>
       <span class="sec-sub">원서 · PDF · EPUB</span>
       <div class="sec-acts">
         <button title="책 모아보기" aria-label="책 모아보기" onclick="show('longform')">
@@ -132,7 +155,7 @@
 <!-- ================= CASUALS LIBRARY ================= -->
 <div class="view" id="v-casuals">
   <div class="head">
-    <h1>Casuals</h1><span class="cnt" id="casual-cnt"></span>
+    <h1 data-i18n="sec.casuals">Casuals</h1><span class="cnt" id="casual-cnt"></span>
     <button class="sm-mini" onclick="openAddModal('casual')">+ 추가</button>
   </div>
   <div id="casual-grid"></div>
@@ -142,7 +165,7 @@
 <!-- ================= LONG-FORM LIBRARY ================= -->
 <div class="view" id="v-longform">
   <div class="head">
-    <h1>Books</h1><span class="cnt" id="longform-cnt"></span>
+    <h1 data-i18n="sec.books">Books</h1><span class="cnt" id="longform-cnt"></span>
     <button class="sm-mini" onclick="pickBookFile()">+ 파일 추가</button>
   </div>
   <div id="longform-grid"></div>
@@ -272,19 +295,62 @@
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
   <div class="head">
-    <h1>Review</h1><span class="cnt" id="vcnt"></span>
+    <h1 data-i18n="nav.words">Words</h1><span class="cnt" id="vcnt"></span>
     <input id="vsearch" placeholder="단어 · 뜻 · 책 검색…">
     <button id="btn-export">⬇ CSV로 내보내기</button>
   </div>
   <div id="vtablewrap"></div>
 </div>
 
-<div id="sync-modal">
-  <div id="sm-card">
-    <button id="sm-close" onclick="closeSyncModal()">✕</button>
-    <h2>기기 간 동기화</h2>
-    <div id="sm-body"></div>
-    <div id="sm-status"></div>
+<!-- ================= SETTINGS =================
+     동기화는 이제 설정 안의 한 탭입니다. 상단바에서 곧장 열리던 시절에는
+     "동기화"가 앱의 세 기둥 중 하나처럼 보였지만, 한 번 맞춰 두면 다시 열 일이
+     거의 없는 자리입니다. `#sm-*` 이름은 동기화 탭 안에서 그대로 삽니다 —
+     scripts/sync/sync.js 가 그 이름으로 그립니다. -->
+<div id="settings-modal">
+  <div id="set-card">
+    <button id="set-close" onclick="closeSettings()">✕</button>
+    <h2 data-i18n="settings.title">Settings</h2>
+    <div class="set-tabs" role="tablist">
+      <button type="button" class="set-tab on" data-tab="general" role="tab"
+              onclick="settingsTab('general')" data-i18n="settings.tab.general">General</button>
+      <!-- 이 탭 이름은 로그인 여부를 따릅니다 — scripts/ui/i18n.js 의
+           settingsSyncTabLabel(). 로그인 전에 "다른 기기와 연결하기"라고 적어
+           두면, 눌러 놓고 기기를 찾다가 로그인 화면을 만납니다. -->
+      <button type="button" class="set-tab" id="set-tab-sync" data-tab="sync" role="tab"
+              onclick="settingsTab('sync')">Sign in</button>
+    </div>
+
+    <div class="set-panel on" data-panel="general">
+      <div class="set-row">
+        <div class="set-label">
+          <b data-i18n="settings.language">Language</b>
+          <span data-i18n="settings.language.note">Changes the app's own wording only.</span>
+        </div>
+        <div class="set-seg" id="set-lang" role="group" aria-label="Language">
+          <button type="button" data-lang="en" onclick="setLang('en')">English</button>
+          <button type="button" data-lang="ko" onclick="setLang('ko')">한국어</button>
+        </div>
+      </div>
+
+      <!-- 보기 설정은 읽는 화면의 Aa 에도 그대로 있습니다. 거기서는 글을 보면서
+           고르고, 여기서는 읽기 전에 정해 둡니다 — 둘은 같은 값 하나를 봅니다. -->
+      <div class="set-row">
+        <div class="set-label">
+          <b data-i18n="settings.dark">Dark mode</b>
+        </div>
+        <button id="set-dark" class="aa-toggle" type="button" aria-label="Dark mode" onclick="toggleDark()"><i></i></button>
+      </div>
+
+      <!-- 글자 크기는 여기 두지 않습니다. 읽는 글이 안 보이는 자리에서 A+ 를
+           눌러 봐야 무엇이 커졌는지 알 수 없습니다 — 그 설정은 글 위에 떠 있는
+           Aa 안에서만 뜻이 있습니다. -->
+    </div>
+
+    <div class="set-panel" data-panel="sync">
+      <div id="sm-body"></div>
+      <div id="sm-status"></div>
+    </div>
   </div>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>

@@ -74,9 +74,22 @@ function renderBookBody(b){
   newPage();
   /* 반입할 때 이미 조립해 둔 블록을 순서대로 그리기만 합니다.
      예전처럼 문단마다 여섯 개의 판정 맵을 겹쳐 보지 않습니다. */
-  const list = (formatting && Array.isArray(formatting.blocks))
+  let list = (formatting && Array.isArray(formatting.blocks))
     ? formatting.blocks
     : buildPlainBlocks(b.paras);
+  /* 기사는 제목을 본문에도 담고 있습니다 — 앱이 맨 앞에 붙인 h1 하나, 그리고
+     기사 페이지 자신의 headline 하나. 그 둘 사이에 대표 사진이 끼어 있는 일이
+     많아서 "첫 덩어리 하나"만 봐서는 못 걸러 냅니다. 읽는 화면에는 그 위에 이미
+     `#rtitle` 이 서 있으므로, 맨 앞 몇 덩어리 안에서 제목과 똑같은 제목 줄은
+     그리지 않습니다. 저장해 둔 자료는 건드리지 않으므로 이미 담아 둔 기사도
+     함께 고쳐집니다. */
+  const titleText = String(b.title||'').trim();
+  let headScan = 0;
+  if(titleText) list = list.filter(bl => {
+    if(headScan >= 4) return true;
+    headScan++;
+    return !(bl.r && bl.r.charAt(0) === 'h' && String(bl.t||'').trim() === titleText);
+  });
   list.forEach(bl=>{
     if(bl.r === 'img'){
       const fig = document.createElement('figure');

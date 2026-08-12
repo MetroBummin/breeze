@@ -1,6 +1,6 @@
 function greet(){
   const h = new Date().getHours();
-  return h<5 ? 'GOOD NIGHT' : h<12 ? 'GOOD MORNING' : h<18 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+  return tr(h<5 ? 'greet.night' : h<12 ? 'greet.morning' : h<18 ? 'greet.afternoon' : 'greet.evening');
 }
 /* 꾹 누르면(약 0.55초) 이름 바꾸기. 손가락이 움직이면(스크롤) 취소됩니다. */
 function attachLongPress(el, fn){
