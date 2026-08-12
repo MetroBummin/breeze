@@ -29,13 +29,11 @@ const I18N_STRINGS = {
     'sec.books':'Books',
     'settings.title':'Settings',
     'settings.tab.general':'General',
-    'settings.tab.sync':'Sync',
+    'settings.tab.signin':'Sign in',
+    'settings.tab.sync':'Devices',
     'settings.language':'Language',
-    'settings.language.note':"Only the app's own wording changes.",
+    'settings.language.note':'Headings only.',
     'settings.dark':'Dark mode',
-    'settings.dark.note':'Kept for this device.',
-    'settings.textsize':'Text size',
-    'settings.textsize.note':'The size of the text you read.',
   },
   ko: {
     'nav.home':'책장',
@@ -50,20 +48,19 @@ const I18N_STRINGS = {
     'sec.books':'긴 글',
     'settings.title':'설정',
     'settings.tab.general':'일반',
+    'settings.tab.signin':'로그인',
     'settings.tab.sync':'다른 기기와 연결하기',
     'settings.language':'언어',
-    'settings.language.note':'앱이 쓰는 말만 바뀌어요.',
+    'settings.language.note':'표지 문구만 바뀝니다.',
     'settings.dark':'다크 모드',
-    'settings.dark.note':'이 기기에 저장돼요.',
-    'settings.textsize':'글자 크기',
-    'settings.textsize.note':'읽는 글의 글자 크기예요.',
   },
 };
 
-/* 기본값은 영어입니다. 지금까지 이 앱을 써 온 사람의 화면이 업데이트만으로
-   달라지지 않게 두고, 바꾸고 싶은 사람은 설정에서 한 번 고르면 됩니다. */
-let uiLang = load(LS_LANG, 'en');
-if(!I18N_STRINGS[uiLang]) uiLang = 'en';
+/* 기본값은 한국어입니다. 이 앱을 쓰는 사람은 영어 원서를 읽는 한국인이고,
+   뜻풀이도 AI 설명도 한국어로 나옵니다 — 표지만 영어인 것이 오히려 예외였습니다.
+   영어 표지를 좋아하는 사람은 설정에서 한 번 고르면 됩니다. */
+let uiLang = load(LS_LANG, 'ko');
+if(!I18N_STRINGS[uiLang]) uiLang = 'ko';
 
 /** @param {string} key */
 function tr(key){
@@ -100,6 +97,19 @@ function applyI18n(){
   /* 동기화 표시(✓)는 로그인 상태를 담고 있어서 위 루프가 덮으면 안 됩니다.
      이름표를 쓰는 일은 저쪽 함수 하나에만 맡깁니다 — scripts/sync/sync.js */
   if(typeof syncBadge === 'function') syncBadge();
+  settingsSyncTabLabel();
+}
+
+/* 설정의 두 번째 탭은 로그인 전에는 "로그인"입니다. 거기서 할 수 있는 일이
+   그것 하나뿐이기 때문입니다 — "다른 기기와 연결하기"라고 적어 두면 눌러 놓고
+   기기를 찾다가 로그인 화면을 만납니다. sbUser 는 이 파일보다 늦게 실행되는
+   sync.js 의 let 이라, 아직 초기화 전이면 읽는 것만으로 던집니다(TDZ). */
+function settingsSyncTabLabel(){
+  const tab = document.getElementById('set-tab-sync');
+  if(!tab) return;
+  let signedIn = false;
+  try{ signedIn = !!sbUser; }catch(error){}
+  tab.textContent = tr(signedIn ? 'settings.tab.sync' : 'settings.tab.signin');
 }
 
 /** @param {string} next */

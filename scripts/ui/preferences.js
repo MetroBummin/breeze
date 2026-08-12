@@ -106,7 +106,6 @@ function openSettings(tab){
   /* 시트를 닫아 둔 사이에 읽는 화면에서 바꿔 놓았을 수 있습니다. 열 때마다
      지금 값으로 맞춥니다. */
   applyDark();
-  showFontSize();
   settingsTab(tab || 'general');
 }
 function closeSettings(){ settingsModal().classList.remove('on'); }

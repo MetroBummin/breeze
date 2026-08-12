@@ -33,7 +33,12 @@ function initSupabase(){
 function syncStatus(message){ const el=document.getElementById('sm-status'); if(el) el.textContent=message; }
 /* 상단바에는 이제 "설정"이 섭니다. 로그인해 두었다는 사실은 그 이름 옆의 ✓
    하나로만 알립니다 — 이름표를 쓰는 곳은 여기 한 곳뿐입니다(i18n 이 덮지 않게). */
-function syncBadge(){ const el=document.getElementById('nav-settings'); if(el) el.textContent=tr('nav.settings')+(sbUser?' ✓':''); }
+function syncBadge(){
+  const el=document.getElementById('nav-settings');
+  if(el) el.textContent=tr('nav.settings')+(sbUser?' ✓':'');
+  /* 두 번째 탭 이름도 로그인 여부를 따릅니다 — scripts/ui/i18n.js */
+  settingsSyncTabLabel();
+}
 function isNativeShell(){
   try{ return !!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()); }
   catch(error){ return false; }
