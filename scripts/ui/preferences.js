@@ -9,11 +9,12 @@ function fontSize(d){
   });
   showFontSize();
 }
-/* 같은 값을 두 곳이 보여 줍니다 — 읽는 화면의 Aa 와 설정. 바꾸는 곳은 위 하나뿐입니다. */
+/* 글자 크기를 보여 주는 곳은 읽는 화면의 Aa 하나뿐입니다 — 설정에는 두지
+   않았습니다(글이 안 보이는 자리에서 A+ 를 눌러 봐야 소용이 없으니까요).
+   처음 켤 때와 바뀔 때, 두 길에서 같은 함수를 부릅니다. */
 function showFontSize(){
-  const spots = /** @type {NodeListOf<HTMLElement>} */
-    (document.querySelectorAll('#aa-fs, #set-fs'));
-  spots.forEach(spot => { spot.textContent = String(fs); });
+  const spot = document.getElementById('aa-fs');
+  if(spot) spot.textContent = String(fs);
 }
 showFontSize();
 /* ---- 좌우 여백 ----

@@ -35,7 +35,7 @@
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=88bc98ca">
-  <link rel="stylesheet" href="styles/base.css?v=d3b4abaf">
+  <link rel="stylesheet" href="styles/base.css?v=83cf67d4">
   <link rel="stylesheet" href="styles/home.css?v=9e4580a7">
   <link rel="stylesheet" href="styles/reader.css?v=021ca768">
   <link rel="stylesheet" href="styles/dictionary.css?v=38772f7f">
@@ -78,7 +78,7 @@
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
   <script defer src="scripts/reader/reader.js?v=ebe63916"></script>
-  <script defer src="scripts/ui/preferences.js?v=2a62f77d"></script>
+  <script defer src="scripts/ui/preferences.js?v=03a9b082"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=9009ab47"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
@@ -89,13 +89,12 @@
 
 <!-- ================= SPLASH ================= -->
 <div id="splash" class="splash-day">
-  <!-- 낮의 들판은 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지 않습니다. -->
-  <div class="splash-scene" aria-hidden="true">
-    <picture>
-      <source media="(min-aspect-ratio: 4/3)" srcset="assets/brand/breeze-day-wide.jpg">
-      <img src="assets/brand/breeze-day.jpg" alt="">
-    </picture>
-  </div>
+  <!-- 낮의 들판은 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지 않습니다.
+       사진은 여기가 아니라 styles/base.css 가 배경으로 깝니다 — 위 스크립트가
+       휴대폰 브라우저에서 스플래시를 통째로 감추는데(html.mobile-browser),
+       `<img>` 였다면 감춰 놓고도 250KB를 먼저 받아 버립니다. 배경 그림은 감춰진
+       자리에서는 아예 요청하지 않습니다. -->
+  <div class="splash-scene" aria-hidden="true"></div>
   <div class="splash-brand">
   <div class="word">Breeze</div>
   <div class="tag">read it like a breeze!</div>

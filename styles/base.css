@@ -19,11 +19,15 @@
   /* 브라우저 크롬에 배경색이 잠깐 남는 문제를 피합니다. 홈 화면 웹앱은 이 규칙의
      대상이 아니므로, 그곳에서는 원래의 첫 장면을 그대로 봅니다. */
   html.mobile-browser #splash{display:none;}
-  #splash .splash-scene,#splash .splash-scene picture{position:absolute; inset:0; z-index:-2; background:var(--brand-sky); overflow:hidden;}
-  #splash .splash-scene{opacity:0; animation:splash-scene-in .42s ease-out forwards;}
-  #splash .splash-scene::after{content:''; position:absolute; inset:0; background:var(--splash-veil);}
-  #splash .splash-scene img{width:100%; height:100%; object-fit:cover; object-position:center bottom;
+  #splash .splash-scene{position:absolute; inset:0; z-index:-2; background:var(--brand-sky); overflow:hidden;
+    opacity:0; animation:splash-scene-in .42s ease-out forwards;}
+  /* 사진은 `<img>` 가 아니라 배경입니다 — 위의 `display:none` 안에서는 브라우저가
+     배경 그림을 아예 요청하지 않기 때문입니다. `::before` 가 사진, `::after` 가
+     그 위에 덮는 얇은 막입니다(뒤에 오는 쪽이 위에 그려집니다). */
+  #splash .splash-scene::before{content:''; position:absolute; inset:0;
+    background:url(../assets/brand/breeze-day.jpg) center bottom/cover no-repeat;
     transform:scale(1.025); animation:scene-breathe 16s ease-in-out infinite alternate;}
+  #splash .splash-scene::after{content:''; position:absolute; inset:0; background:var(--splash-veil);}
   /* 두 줄은 한 덩어리입니다. 그래서 크기도 한 곳에서만 정합니다 — 상표는 이
      font-size 그대로, 그 아래 한 줄은 그 몇 분의 몇으로. 예전에는 상표만 화면
      너비를 따라 줄고 아래 한 줄은 12px 에 붙박여 있어서, 화면이 좁아질수록
@@ -41,12 +45,13 @@
   /* 넓은 화면에서는 들판의 아이를 비켜 왼쪽에 섭니다. 두 줄이 서로 가운데를
      맞추는 것은 그대로입니다 — 덩어리째 왼쪽으로 갈 뿐입니다. */
   @media (min-aspect-ratio:4/3){
-    #splash .splash-scene img{object-fit:cover; object-position:center; transform:scale(1.025);}
+    #splash .splash-scene::before{background-image:url(../assets/brand/breeze-day-wide.jpg);
+      background-position:center;}
     #splash .splash-brand{width:min(38vw,440px); margin-right:42vw; transform:translateY(-4vh);}
   }
   @media (prefers-reduced-motion:reduce){
     #splash .splash-scene,#splash .splash-brand{animation:none; opacity:1;}
-    #splash .splash-scene img{animation:none;}
+    #splash .splash-scene::before{animation:none;}
   }
 
   /* ================= top bar ================= */
