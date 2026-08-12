@@ -5,7 +5,6 @@
     #logo .mark{font-size:23px;}
     #topbar nav{gap:13px;}
     .navbtn{padding:7px 0; font-size:15px; letter-spacing:-.25px; white-space:nowrap;}
-    #btn-add{width:30px; height:30px; font-size:18px; flex-shrink:0;}
     #v-home, #v-casuals, #v-longform{padding:20px 18px 90px;}
     #bigq{margin-bottom:26px;}
     /* 레일은 화면 끝까지 흘러야 다음 카드가 잘려 보입니다. 좌우 여백과 같은 값. */

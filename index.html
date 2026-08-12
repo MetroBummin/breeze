@@ -32,12 +32,12 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles/base.css?v=2abb92ce">
-  <link rel="stylesheet" href="styles/home.css?v=bed4b3a7">
-  <link rel="stylesheet" href="styles/reader.css?v=9d75b7c2">
+  <link rel="stylesheet" href="styles/base.css?v=d7ac801f">
+  <link rel="stylesheet" href="styles/home.css?v=09721543">
+  <link rel="stylesheet" href="styles/reader.css?v=f84af90c">
   <link rel="stylesheet" href="styles/dictionary.css?v=fe541dd4">
-  <link rel="stylesheet" href="styles/components.css?v=711de7e1">
-  <link rel="stylesheet" href="styles/responsive.css?v=794c5073">
+  <link rel="stylesheet" href="styles/components.css?v=8f301a80">
+  <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -52,11 +52,14 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/state.js?v=55e8bd83"></script>
+  <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
+       그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
+  <script defer src="scripts/ui/i18n.js?v=af438b50"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=f7865250"></script>
+  <script defer src="scripts/library/library.js?v=f63be3ea"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
   <script defer src="scripts/library/classics.js?v=608376e4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
@@ -72,9 +75,9 @@
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
   <script defer src="scripts/reader/reader.js?v=45ca433b"></script>
-  <script defer src="scripts/ui/preferences.js?v=d5c65a9c"></script>
+  <script defer src="scripts/ui/preferences.js?v=0f43d327"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
-  <script defer src="scripts/sync/sync.js?v=daefaddf"></script>
+  <script defer src="scripts/sync/sync.js?v=41a126d1"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
   <script defer src="scripts/main.js?v=9b64c486"></script>
 </head>
@@ -101,22 +104,24 @@
   <div id="logo" onclick="show('home')">
     <span class="mark">Breeze</span>
   </div>
+  <!-- 상단바에는 갈 곳만 둡니다. "+" 는 각 섹션 머리(가벼운 글·긴 글)에 이미
+       있고, 거기서는 무엇이 추가될지가 자리로 드러납니다. 같은 일을 하는 단추가
+       화면에 둘 있으면 둘 다 덜 믿게 됩니다. -->
   <nav>
-    <button class="navbtn on" id="nav-home" onclick="show('home')">Read</button>
-    <button class="navbtn" id="nav-vocab" onclick="show('vocab')">Review</button>
-    <button class="navbtn" id="nav-sync" onclick="openSyncModal()">Sync</button>
-    <button id="btn-add" title="읽을거리 추가" onclick="openAddModal()">+</button>
+    <button class="navbtn on" id="nav-home" onclick="show('home')" data-i18n="nav.home">Home</button>
+    <button class="navbtn" id="nav-vocab" onclick="show('vocab')" data-i18n="nav.words">Words</button>
+    <button class="navbtn" id="nav-settings" onclick="openSettings()" data-i18n="nav.settings">Settings</button>
   </nav>
 </div>
 
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
   <div id="greet">GOOD MORNING</div>
-  <div id="bigq">Where shall we read?</div>
+  <div id="bigq" data-i18n="home.q">Where shall we read?</div>
 
   <section id="casuals">
     <div class="sec-head">
-      <h2>Casuals</h2>
+      <h2 data-i18n="sec.casuals">Casuals</h2>
       <span class="sec-sub">기사 · 스레드 · 짧은 글</span>
       <div class="sec-acts">
         <button id="rss-refresh" title="새 글 새로고침" aria-label="새 글 새로고침">↻</button>
@@ -131,7 +136,7 @@
 
   <section id="longform">
     <div class="sec-head">
-      <h2>Books</h2>
+      <h2 data-i18n="sec.books">Books</h2>
       <span class="sec-sub">원서 · PDF · EPUB</span>
       <div class="sec-acts">
         <button title="책 모아보기" aria-label="책 모아보기" onclick="show('longform')">
@@ -148,7 +153,7 @@
 <!-- ================= CASUALS LIBRARY ================= -->
 <div class="view" id="v-casuals">
   <div class="head">
-    <h1>Casuals</h1><span class="cnt" id="casual-cnt"></span>
+    <h1 data-i18n="sec.casuals">Casuals</h1><span class="cnt" id="casual-cnt"></span>
     <button class="sm-mini" onclick="openAddModal('casual')">+ 추가</button>
   </div>
   <div id="casual-grid"></div>
@@ -158,7 +163,7 @@
 <!-- ================= LONG-FORM LIBRARY ================= -->
 <div class="view" id="v-longform">
   <div class="head">
-    <h1>Books</h1><span class="cnt" id="longform-cnt"></span>
+    <h1 data-i18n="sec.books">Books</h1><span class="cnt" id="longform-cnt"></span>
     <button class="sm-mini" onclick="pickBookFile()">+ 파일 추가</button>
   </div>
   <div id="longform-grid"></div>
@@ -288,19 +293,68 @@
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
   <div class="head">
-    <h1>Review</h1><span class="cnt" id="vcnt"></span>
+    <h1 data-i18n="nav.words">Words</h1><span class="cnt" id="vcnt"></span>
     <input id="vsearch" placeholder="단어 · 뜻 · 책 검색…">
     <button id="btn-export">⬇ CSV로 내보내기</button>
   </div>
   <div id="vtablewrap"></div>
 </div>
 
-<div id="sync-modal">
-  <div id="sm-card">
-    <button id="sm-close" onclick="closeSyncModal()">✕</button>
-    <h2>기기 간 동기화</h2>
-    <div id="sm-body"></div>
-    <div id="sm-status"></div>
+<!-- ================= SETTINGS =================
+     동기화는 이제 설정 안의 한 탭입니다. 상단바에서 곧장 열리던 시절에는
+     "동기화"가 앱의 세 기둥 중 하나처럼 보였지만, 한 번 맞춰 두면 다시 열 일이
+     거의 없는 자리입니다. `#sm-*` 이름은 동기화 탭 안에서 그대로 삽니다 —
+     scripts/sync/sync.js 가 그 이름으로 그립니다. -->
+<div id="settings-modal">
+  <div id="set-card">
+    <button id="set-close" onclick="closeSettings()">✕</button>
+    <h2 data-i18n="settings.title">Settings</h2>
+    <div class="set-tabs" role="tablist">
+      <button type="button" class="set-tab on" data-tab="general" role="tab"
+              onclick="settingsTab('general')" data-i18n="settings.tab.general">General</button>
+      <button type="button" class="set-tab" data-tab="sync" role="tab"
+              onclick="settingsTab('sync')" data-i18n="settings.tab.sync">Sync</button>
+    </div>
+
+    <div class="set-panel on" data-panel="general">
+      <div class="set-row">
+        <div class="set-label">
+          <b data-i18n="settings.language">Language</b>
+          <span data-i18n="settings.language.note">Changes the app's own wording only.</span>
+        </div>
+        <div class="set-seg" id="set-lang" role="group" aria-label="Language">
+          <button type="button" data-lang="en" onclick="setLang('en')">English</button>
+          <button type="button" data-lang="ko" onclick="setLang('ko')">한국어</button>
+        </div>
+      </div>
+
+      <!-- 보기 설정은 읽는 화면의 Aa 에도 그대로 있습니다. 거기서는 글을 보면서
+           고르고, 여기서는 읽기 전에 정해 둡니다 — 둘은 같은 값 하나를 봅니다. -->
+      <div class="set-row">
+        <div class="set-label">
+          <b data-i18n="settings.dark">Dark mode</b>
+          <span data-i18n="settings.dark.note">Kept for this device.</span>
+        </div>
+        <button id="set-dark" class="aa-toggle" type="button" aria-label="Dark mode" onclick="toggleDark()"><i></i></button>
+      </div>
+
+      <div class="set-row">
+        <div class="set-label">
+          <b data-i18n="settings.textsize">Text size</b>
+          <span data-i18n="settings.textsize.note">The size of the text you read.</span>
+        </div>
+        <div class="aa-size">
+          <button type="button" onclick="fontSize(-1)">A−</button>
+          <span id="set-fs"></span>
+          <button type="button" onclick="fontSize(1)">A+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-panel" data-panel="sync">
+      <div id="sm-body"></div>
+      <div id="sm-status"></div>
+    </div>
   </div>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>

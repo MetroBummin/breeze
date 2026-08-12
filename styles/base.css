@@ -22,6 +22,12 @@
     --display:'Fraunces',Georgia,'Times New Roman',serif;
     --shadow:0 14px 34px rgba(23,55,71,.12);
   }
+  /* ---- 한국어 화면의 제목 글꼴 ----
+     Fraunces 를 스택 맨 앞에 그대로 둡니다. 로마자(로고의 "Breeze")는 지금까지와
+     똑같이 Fraunces 로 찍히고, Fraunces 에 없는 한글만 고운바탕으로 넘어갑니다 —
+     같은 결의 바탕체라 로고 옆에서 남처럼 보이지 않습니다. 글꼴 파일은 한국어를
+     고른 사람에게만 받아옵니다(scripts/ui/i18n.js). */
+  body.lang-ko{--display:'Fraunces','Gowun Batang',Georgia,'Times New Roman',serif;}
   *{box-sizing:border-box; margin:0; padding:0;}
   html{background:var(--paper);}
   /* 다크 변수는 body에 걸려 있어서 html까지는 안 내려갑니다.
@@ -46,11 +52,17 @@
     background:linear-gradient(180deg,rgba(10,45,66,.14),transparent 38%,rgba(11,36,31,.24));}
   #splash .splash-scene img{width:100%; height:100%; object-fit:cover; object-position:center bottom;
     transform:scale(1.025); animation:scene-breathe 16s ease-in-out infinite alternate;}
+  /* 두 줄은 한 덩어리입니다. 그래서 크기도 한 곳에서만 정합니다 — 상표는 이
+     font-size 그대로, 그 아래 한 줄은 그 몇 분의 몇으로. 예전에는 상표만 화면
+     너비를 따라 줄고 아래 한 줄은 12px 에 붙박여 있어서, 화면이 좁아질수록
+     꼬리가 상표보다 넓어져 양옆으로 삐져나왔습니다. */
   #splash .splash-brand{display:flex; flex-direction:column; align-items:center; transform:translateY(-15vh);
-    color:#FFF9EA; text-align:center; text-shadow:0 2px 20px rgba(15,45,55,.32); opacity:0;
+    font-size:clamp(52px,8vw,68px); color:#FFF9EA; text-align:center;
+    text-shadow:0 2px 20px rgba(15,45,55,.32); opacity:0;
     animation:splash-brand-in .52s .12s ease-out forwards;}
-  #splash .word{font-family:var(--display); font-size:clamp(48px,8vw,68px); font-weight:600; letter-spacing:-3px; color:#FFF9EA;}
-  #splash .tag{font-size:12px; color:rgba(255,249,234,.88); letter-spacing:1.3px; margin-top:8px; text-transform:uppercase; font-weight:600;}
+  #splash .word{font-family:var(--display); font-size:1em; font-weight:600; letter-spacing:-.045em; color:#FFF9EA;}
+  #splash .tag{font-size:.17em; color:rgba(255,249,234,.88); letter-spacing:.1em; margin-top:.7em;
+    text-transform:uppercase; font-weight:600; white-space:nowrap;}
   @keyframes splash-scene-in{from{opacity:0}to{opacity:1}}
   @keyframes splash-brand-in{from{opacity:0; filter:blur(2px)}to{opacity:1; filter:blur(0)}}
   @keyframes scene-breathe{from{transform:scale(1.025) translate3d(0,0,0)}to{transform:scale(1.05) translate3d(-.35%,-.45%,0)}}
@@ -77,8 +89,5 @@
     cursor:pointer; color:var(--soft); font-family:var(--display); font-weight:500; letter-spacing:-.35px; text-transform:none;}
   .navbtn.on{background:transparent; color:var(--blue-deep);}
   .navbtn:hover{background:transparent; color:var(--blue);}
-  #btn-add{width:32px; height:32px; border-radius:50%; border:none; background:#E3F1F2; color:var(--blue);
-    font-size:20px; cursor:pointer; line-height:1;}
-  #btn-add:hover{background:var(--sky2);}
 
   .view{display:none;} .view.on{display:block;}

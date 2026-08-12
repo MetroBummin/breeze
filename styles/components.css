@@ -30,13 +30,37 @@
   .rowdel:hover{color:#c0392b;}
   #vempty{text-align:center; color:var(--soft); padding:70px 0 40px; font-size:14.5px; line-height:1.8;}
 
-  /* sync modal */
-  #sync-modal{position:fixed; inset:0; z-index:160; background:rgba(24,54,74,.35); display:none;
+  /* ---- 설정 시트 ----
+     탭 두 개(일반 · 다른 기기와 연결하기)를 두르고, 동기화 화면은 그 안의 한
+     칸으로 들어옵니다. 아래 `.sm-*` 는 전부 그 칸 안에서 쓰이는 이름입니다. */
+  #settings-modal{position:fixed; inset:0; z-index:160; background:rgba(24,54,74,.35); display:none;
     align-items:center; justify-content:center; padding:20px;}
-  #sync-modal.on{display:flex;}
-  #sm-card{background:#fff; border-radius:22px; padding:30px 28px; width:100%; max-width:400px; box-shadow:var(--shadow);}
-  #sm-card h2{font-size:20px; font-weight:600; margin-bottom:6px;}
-  #sm-card .desc{font-size:13.5px; color:var(--soft); line-height:1.6; margin-bottom:18px;}
+  #settings-modal.on{display:flex;}
+  #set-card{background:#fff; border-radius:22px; padding:30px 28px; width:100%; max-width:400px;
+    box-shadow:var(--shadow); max-height:88vh; overflow-y:auto;}
+  #set-card h2{font-family:var(--display); font-size:22px; font-weight:600; letter-spacing:-.5px; margin-bottom:14px;}
+  #set-card .desc{font-size:13.5px; color:var(--soft); line-height:1.6; margin-bottom:18px;}
+  .set-tabs{display:flex; gap:4px; padding:4px; margin-bottom:20px; border-radius:14px; background:#F2F0E9;}
+  .set-tab{flex:1; min-width:0; border:none; background:none; border-radius:11px; padding:9px 6px;
+    font:600 12.5px var(--ui); color:var(--soft); cursor:pointer; transition:.15s;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .set-tab:hover{color:var(--blue);}
+  .set-tab.on{background:#fff; color:var(--ink); box-shadow:0 1px 4px rgba(23,55,71,.10);}
+  #set-card .set-panel{display:none;} #set-card .set-panel.on{display:block;}
+  .set-row{display:flex; align-items:center; gap:14px; padding:4px 0 14px;}
+  .set-label{flex:1; min-width:0;}
+  .set-label b{display:block; font-size:14px; font-weight:600; color:var(--ink);}
+  .set-label span{display:block; margin-top:4px; font-size:11.5px; line-height:1.5; color:var(--soft);}
+  .set-seg{display:flex; flex-shrink:0; gap:3px; padding:3px; border-radius:12px; border:1px solid var(--line);
+    background:var(--paper2);}
+  .set-seg button{border:none; background:none; border-radius:9px; padding:7px 11px; cursor:pointer;
+    font:600 12px var(--ui); color:var(--soft); transition:.15s; white-space:nowrap;}
+  .set-seg button:hover{color:var(--blue);}
+  .set-seg button.on{background:var(--blue); color:#fff;}
+  body.dark #set-card{background:#1F2327;}
+  body.dark .set-tabs{background:#191C1F;}
+  body.dark .set-tab.on{background:#2A2E33; color:var(--ink);}
+  body.dark .set-seg{background:#1C1F23; border-color:#2A2E33;}
   .sm-account{margin:0 0 13px; color:var(--soft); font-size:11px; line-height:1.4;}
   .sm-account b{display:block; overflow-wrap:anywhere; color:var(--ink); font-size:12px;}
   .sm-account span{display:block; margin-top:2px;}
@@ -136,14 +160,21 @@
   .sm-fold .sm-device-move{margin-top:10px; padding-top:0; border-top:0;}
   body.dark .sm-recovery-key,body.dark .sm-recovery-actions button,body.dark .sm-device-move button,body.dark .sm-saved{
     background:rgba(255,255,255,.04);}
-  #sm-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
+  #set-close{float:right; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--soft);}
+  body.dark #set-close{background:#2A2E33; color:#9AA1A8;}
 
   @media (max-width:760px){
-    #sync-modal{align-items:flex-start; overflow-y:auto; padding:12px;}
-    #sm-card{box-sizing:border-box; margin:auto 0; padding:21px 18px; border-radius:19px; max-width:430px;}
-    #sm-card h2{font-size:18px; margin-bottom:4px;}
-    #sm-card .desc{font-size:12.5px; line-height:1.5; margin-bottom:13px;}
+    #settings-modal{align-items:flex-start; overflow-y:auto; padding:12px;}
+    #set-card{box-sizing:border-box; margin:auto 0; padding:21px 18px; border-radius:19px; max-width:430px;}
+    #set-card h2{font-size:19px; margin-bottom:11px;}
+    #set-card .desc{font-size:12.5px; line-height:1.5; margin-bottom:13px;}
+    .set-tabs{margin-bottom:16px;}
+    .set-tab{font-size:11.5px; padding:8px 5px;}
+    /* 좁은 화면에서는 설명과 선택 단추가 한 줄에 못 삽니다. 단추를 아래로
+       내리고 폭을 채웁니다 — 반쯤 잘린 "한국어"보다 낫습니다. */
+    .set-row{flex-direction:column; align-items:stretch; gap:10px;}
+    .set-seg button{flex:1; padding:9px 8px;}
     .sm-account{margin-bottom:10px; font-size:10px;}
     .sm-account b{font-size:11px;}
     .sm-vault{margin:12px 0 13px; padding:14px; border-radius:15px;}
