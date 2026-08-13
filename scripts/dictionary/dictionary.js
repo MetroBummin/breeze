@@ -103,7 +103,7 @@ const recentWordOpens = new Map();
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 읽는 중의
    문장을 서버 동기화 객체에 덮어 쓰지 않습니다. 사용자가 "이 뜻도 저장"을 눌러야
    그때만 `senses`에 들어갑니다. */
-let contextView = null, phraseView = null, altChoice = null;
+let contextView = null, phraseView = null, altChoice = null, wordRename = null;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
 function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
 function answerFromLook(j, cached){
@@ -180,6 +180,7 @@ function selectWord(k, span){
   if(!phraseView || phraseView.key !== k) phraseView = null;
   if(!altChoice || altChoice.key!==k) altChoice = null;
   selKey = k;
+  if(!wordRename || wordRename.to!==k) wordRename=null;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
   renderPanel();
@@ -199,7 +200,7 @@ function selectWord(k, span){
 }
 function closePanel(){
   selKey=null;
-  contextView=null; phraseView=null;
+  contextView=null; phraseView=null; wordRename=null;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();
@@ -246,6 +247,18 @@ function renderPanel(){
     aiLoading:!!phrase.loading, aiSlow:false, aiOff:phrase.error||'',
   }) : base;
   document.getElementById('p-word').textContent = w.word;
+  const wordEdit=document.getElementById('p-edit-word');
+  const wordInput=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
+  const canRename=!context && !phrase && !base.root && !base.phraseParts;
+  wordEdit.hidden=!canRename;
+  if(!canRename) document.getElementById('panel').classList.remove('word-editing');
+  const renameBox=document.getElementById('p-rename-confirm');
+  const renaming=wordRename&&wordRename.to===k;
+  renameBox.hidden=!renaming;
+  if(renaming){
+    document.getElementById('p-rename-copy').textContent=`“${wordRename.fromWord}”은(는) 원문 표시와 함께 남아 있어요.`;
+  }
+  if(!document.getElementById('panel').classList.contains('word-editing')) wordInput.value=w.word;
   document.getElementById('p-clicked').textContent =
     phrase ? `표현 뜻 보기 · ${phrase.phrase}`
     : (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
@@ -475,6 +488,76 @@ document.getElementById('p-know').onclick = ()=>{
   delete words[k]; dead[k] = Date.now(); save(LS_DEAD, dead);
   saveWords(); paintWord(k); closePanel(); queueSync(); toast('단어장에서 뺐어요');
 };
+/* 단어 이름은 단순한 화면 글자가 아니라 원문 색칠·동기화가 기대는 열쇠입니다.
+   그래서 제자리에서 열쇠를 바꾸지 않고, 먼저 새 단어 카드를 복사해 만든 뒤
+   기존 카드를 남길지 바로 묻습니다. 사용자가 원문 표기를 고친 경우에도 과거
+   문장에 있던 표시와 학습 기록을 잃지 않습니다. */
+function headwordKey(value){
+  const raw=String(value||'').trim().replace(/’/g,"'");
+  if(!/^[A-Za-z](?:[A-Za-z'’-]*[A-Za-z])?$/.test(raw)) return null;
+  return {display:raw,key:(lemmaCands(raw)[0]||raw).toLowerCase()};
+}
+function refreshReaderWords(){
+  if(curBook && currentReaderMode==='text'){
+    const anchor=captureAnchor();
+    renderBookBody(curBook);
+    requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
+  }else if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
+}
+function beginWordRename(){
+  const base=words[selKey];
+  if(!base || base.root || base.phraseParts) return;
+  const panel=document.getElementById('panel'), input=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
+  panel.classList.add('word-editing'); input.value=base.word;
+  requestAnimationFrame(()=>{ input.focus(); input.select(); });
+}
+function cancelWordRename(){
+  document.getElementById('panel').classList.remove('word-editing');
+  renderPanel();
+}
+function commitWordRename(){
+  const input=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
+  const from=selKey, base=words[from], parsed=headwordKey(input.value);
+  if(!base || !parsed) { toast('영어 단어 하나로 적어 주세요'); return; }
+  document.getElementById('panel').classList.remove('word-editing');
+  if(parsed.key===from){
+    base.word=parsed.display; base.clicked=parsed.display; base.up=Date.now();
+    saveWords(); queueSync(); renderPanel(); return;
+  }
+  if(words[parsed.key]){ toast('이미 저장한 단어예요'); return; }
+  const next={...base,word:parsed.display,clicked:parsed.display,
+    forms:[...new Set([parsed.key,...lemmaCands(parsed.display),parsed.display.toLowerCase()])],up:Date.now()};
+  delete next.root;
+  words[parsed.key]=next; delete dead[parsed.key]; save(LS_DEAD,dead);
+  wordRename={from,to:parsed.key,fromWord:base.word,toWord:parsed.display};
+  selKey=parsed.key;
+  saveWords(); queueSync(); paintWord(parsed.key); renderPanel();
+}
+function keepOriginalAfterRename(){ wordRename=null; renderPanel(); }
+function deleteOriginalAfterRename(){
+  if(!wordRename || !words[wordRename.to]) return;
+  const old=wordRename.from;
+  Object.keys(words).filter(key=>key===old || words[key].root===old).forEach(key=>{
+    delete words[key]; dead[key]=Date.now();
+  });
+  wordRename=null; saveWords(); save(LS_DEAD,dead); queueSync(); refreshReaderWords(); renderPanel();
+}
+const wordEditButton=document.getElementById('p-edit-word');
+const wordEditInput=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
+wordEditButton.addEventListener('mousedown',event=>event.preventDefault());
+wordEditButton.addEventListener('click',()=>{
+  if(document.getElementById('panel').classList.contains('word-editing')) commitWordRename();
+  else beginWordRename();
+});
+wordEditInput.addEventListener('keydown',event=>{
+  if(event.key==='Enter'){ event.preventDefault(); commitWordRename(); }
+  if(event.key==='Escape'){ event.preventDefault(); cancelWordRename(); }
+});
+wordEditInput.addEventListener('blur',()=>{
+  if(document.getElementById('panel').classList.contains('word-editing')) commitWordRename();
+});
+document.getElementById('p-rename-keep').addEventListener('click',keepOriginalAfterRename);
+document.getElementById('p-rename-delete').addEventListener('click',deleteOriginalAfterRename);
 /* 뜻을 고치는 곳이 뜻이 뜨는 곳입니다. 사람이 손으로 쓴 뜻은 그 뒤로 AI 가 덮지 않습니다 —
    "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다. 그때는 새 뜻을 달라는 뜻이니까요. */
 const aiKoBox = document.getElementById('p-ai-ko');

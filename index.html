@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="styles/base.css?v=5ed82354">
   <link rel="stylesheet" href="styles/home.css?v=9e4580a7">
   <link rel="stylesheet" href="styles/reader.css?v=1f27c2ff">
-  <link rel="stylesheet" href="styles/dictionary.css?v=38772f7f">
+  <link rel="stylesheet" href="styles/dictionary.css?v=543878b3">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
@@ -66,7 +66,7 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=3d021bfa"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=267a81de"></script>
   <script defer src="scripts/dictionary/sentence.js?v=ab7b3016"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -214,6 +214,8 @@
       <div id="p-top">
         <div id="p-head">
           <div id="p-word"></div>
+          <button id="p-edit-word" type="button" title="단어 표기 수정" aria-label="단어 표기 수정">✎</button>
+          <input id="p-word-edit" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="새 단어">
           <button id="p-speak" title="발음 듣기" onclick="speakWord()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
@@ -221,6 +223,11 @@
           </button>
         </div>
         <button id="p-close" title="단어창 닫기" aria-label="단어창 닫기" onclick="closePanel()">✕</button>
+      </div>
+      <div id="p-rename-confirm" hidden>
+        <b>기존 단어도 지울까요?</b>
+        <span id="p-rename-copy"></span>
+        <div><button id="p-rename-keep" type="button">기존 단어도 유지</button><button id="p-rename-delete" type="button">기존 단어 삭제</button></div>
       </div>
       <hr class="p-row-divider">
       <div id="p-controls"><button id="p-mark" type="button" aria-pressed="true"

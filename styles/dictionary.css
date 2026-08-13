@@ -26,6 +26,18 @@
     font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:10px; margin-bottom:4px;}
   #p-word{min-width:0; overflow-wrap:anywhere; font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);}
+  #p-edit-word{flex:none; width:28px; height:28px; border:0; border-radius:50%; background:transparent; color:var(--soft2); cursor:pointer; font:17px/1 var(--ui);}
+  #p-edit-word:hover{background:var(--sky); color:var(--blue);}
+  #p-word-edit{display:none; min-width:0; flex:1; border:1px solid var(--blue-ring); border-radius:9px; padding:6px 8px; background:var(--field); color:var(--ink); font:500 20px var(--serif); outline:none;}
+  #panel.word-editing #p-word{display:none;}
+  #panel.word-editing #p-word-edit{display:block;}
+  #panel.word-editing #p-edit-word{background:var(--blue); color:var(--on-color);}
+  #p-rename-confirm{margin:0 0 13px; padding:11px 12px; border:1px solid var(--ai-line); border-radius:12px; background:var(--ai-bg1); color:var(--ai-ink);}
+  #p-rename-confirm b{display:block; font-size:12.5px;}
+  #p-rename-confirm span{display:block; margin-top:3px; font-size:11.5px; line-height:1.45; color:var(--ai-note);}
+  #p-rename-confirm div{display:flex; gap:7px; margin-top:9px;}
+  #p-rename-confirm button{flex:1; border:1px solid var(--ai-line); border-radius:8px; padding:7px 6px; background:var(--sheet); color:var(--ai-ink); cursor:pointer; font:600 11px var(--ui);}
+  #p-rename-confirm #p-rename-delete{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
   #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--speak-line);
     background:var(--speak-bg); cursor:pointer; display:flex; align-items:center; justify-content:center;
     color:var(--blue); transition:.15s;}
