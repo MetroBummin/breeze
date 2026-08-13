@@ -76,7 +76,8 @@
   .navbtn.on{background:transparent; color:var(--blue-deep);}
   .navbtn:hover{background:var(--nav-hover); color:var(--blue);}
   #login-nudge{position:absolute; top:calc(100% - 6px); left:var(--login-nudge-x,50%); border:0; border-radius:11px;
-    padding:4px 8px; background:var(--brand); color:var(--on-color); box-shadow:var(--shadow-tab);
+    min-width:38px; padding:5px 9px; white-space:nowrap; word-break:keep-all; overflow-wrap:normal;
+    background:var(--brand); color:var(--on-color); box-shadow:var(--shadow-tab);
     font:700 10px/1 var(--ui); cursor:pointer; transform:translate(-50%,-3px); opacity:0; pointer-events:none;
     transition:transform .16s ease,opacity .16s ease;}
   #login-nudge::before{content:''; position:absolute; top:-4px; left:50%; width:8px; height:8px;
