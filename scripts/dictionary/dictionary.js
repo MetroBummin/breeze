@@ -545,11 +545,17 @@ function refreshReaderWords(){
 function beginPanelEdit(target){
   if(!selKey || !words[selKey]) return;
   panelEditTarget=target; panelEditDirty=false;
-  document.getElementById('p-edit-actions').hidden=false;
+  document.getElementById(target==='word'?'p-word-actions':'p-meaning-actions').hidden=false;
 }
 function cancelPanelEdit(){
   panelEditTarget=null; panelEditDirty=false;
-  document.getElementById('p-edit-actions').hidden=true; renderPanel();
+  document.getElementById('p-word-actions').hidden=true;
+  document.getElementById('p-meaning-actions').hidden=true; renderPanel();
+}
+function finishPanelEdit(){
+  panelEditTarget=null; panelEditDirty=false;
+  document.getElementById('p-word-actions').hidden=true;
+  document.getElementById('p-meaning-actions').hidden=true;
 }
 function commitWordRename(){
   const input=document.getElementById('p-word');
@@ -557,7 +563,7 @@ function commitWordRename(){
   if(!base || !parsed) { toast('영어 단어 또는 표현으로 적어 주세요'); return; }
   if(parsed.key===from){
     base.word=parsed.display; base.clicked=parsed.display; base.up=Date.now();
-    saveWords(); queueSync(); panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel(); return;
+    saveWords(); queueSync(); finishPanelEdit(); renderPanel(); return;
   }
   if(words[parsed.key]){ toast('이미 저장한 단어예요'); return; }
   const next={...base,word:parsed.display,clicked:parsed.display,
@@ -568,7 +574,7 @@ function commitWordRename(){
   words[parsed.key]=next; delete dead[parsed.key]; save(LS_DEAD,dead);
   wordRename={from,to:parsed.key,fromWord:base.word,toWord:parsed.display};
   selKey=parsed.key;
-  saveWords(); queueSync(); paintWord(parsed.key); panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel();
+  saveWords(); queueSync(); paintWord(parsed.key); finishPanelEdit(); renderPanel();
 }
 function keepOriginalAfterRename(){ wordRename=null; renderPanel(); }
 function deleteOriginalAfterRename(){
@@ -590,10 +596,10 @@ wordEditBox.addEventListener('keydown',event=>{
   if(event.key==='Enter'){ event.preventDefault(); commitWordRename(); }
   if(event.key==='Escape'){ event.preventDefault(); cancelPanelEdit(); }
 });
-document.getElementById('p-edit-save').addEventListener('click',()=>{
+document.querySelectorAll('[data-edit-save]').forEach(button=>button.addEventListener('click',()=>{
   if(panelEditTarget==='word') commitWordRename(); else commitMeaningEdit();
-});
-document.getElementById('p-edit-cancel').addEventListener('click',cancelPanelEdit);
+}));
+document.querySelectorAll('[data-edit-cancel]').forEach(button=>button.addEventListener('click',cancelPanelEdit));
 document.getElementById('p-rename-keep').addEventListener('click',keepOriginalAfterRename);
 document.getElementById('p-rename-delete').addEventListener('click',deleteOriginalAfterRename);
 /* 뜻을 고치는 곳이 뜻이 뜨는 곳입니다. 사람이 손으로 쓴 뜻은 그 뒤로 AI 가 덮지 않습니다 —
@@ -610,14 +616,14 @@ function commitMeaningEdit(){
     if(next !== (context.answer.ko||'')){
       context.answer.ko=next;
       if(context.answer.ai) context.answer.ai.ko=next;
-      panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel();
+      finishPanelEdit(); renderPanel();
     }
     return;
   }
-  if(next === (w.ko||'')){ panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; return; }
+  if(next === (w.ko||'')){ finishPanelEdit(); return; }
   w.ko = next;
   w.koEdited = next !== ((w.ai && w.ai.ko) || '');
-  w.up = Date.now(); saveWords(); queueSync(); panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel();
+  w.up = Date.now(); saveWords(); queueSync(); finishPanelEdit(); renderPanel();
   if(w.koEdited) logDict('edit', selKey);
 }
 /* contenteditable 에서 엔터는 줄바꿈입니다. 뜻은 한 줄이므로 저장하고 나갑니다. */
