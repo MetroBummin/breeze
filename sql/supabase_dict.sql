@@ -22,10 +22,9 @@ create table if not exists public.ai_usage (
 );
 
 -- 한 번의 낱말 조회는 1, 문장 해석은 2를 씁니다. 남은 양을 서버가 돌려주므로
--- 앱이 추측하지 않습니다. 기존 boolean 반환 함수는 새 JSON 반환 함수와 공존할 수 없어
--- 인자 모양을 넓히기 전에 지웁니다(표의 데이터에는 영향이 없습니다).
-drop function if exists public.take_ai_quota(uuid, integer);
-create function public.take_ai_quota(p_user uuid, p_limit integer, p_cost integer default 1)
+-- 앱이 추측하지 않습니다. 반환형을 바꾸지 않고, 기존 두 인자 함수는 그대로 둔 채
+-- 세 인자 함수만 추가합니다. 그래서 이미 운영 중인 DB에서도 순서·서명 충돌이 없습니다.
+create or replace function public.take_ai_quota(p_user uuid, p_limit integer, p_cost integer)
 returns jsonb language plpgsql security definer as $$
 declare c integer;
 begin
@@ -167,10 +166,10 @@ revoke all on public.dict_events from anon, authenticated;
 revoke all on public.anon_usage  from anon, authenticated;
 revoke all on public.anon_daily  from anon, authenticated;
 
-revoke all on function public.take_ai_quota(uuid, integer) from public, anon, authenticated;
+revoke all on function public.take_ai_quota(uuid, integer, integer) from public, anon, authenticated;
 revoke all on function public.peek_ai_quota(uuid)          from public, anon, authenticated;
 revoke all on function public.take_anon_quota(text, integer, integer) from public, anon, authenticated;
-grant execute on function public.take_ai_quota(uuid, integer) to service_role;
+grant execute on function public.take_ai_quota(uuid, integer, integer) to service_role;
 grant execute on function public.peek_ai_quota(uuid)          to service_role;
 grant execute on function public.take_anon_quota(text, integer, integer) to service_role;
 
