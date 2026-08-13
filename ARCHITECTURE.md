@@ -26,7 +26,11 @@ server/
 ```
 
 `index.html`의 script 순서가 브라우저에서의 의존 순서입니다. 별도 번들러 없이 정적
-파일로 배포하고, PDF.js와 JSZip은 PDF/EPUB을 처음 열 때만 불러옵니다.
+파일로 배포하고, PDF.js와 JSZip은 PDF/EPUB을 처음 열 때만 불러옵니다. 두 라이브러리는
+`assets/lib/`에 함께 들어 있습니다(`npm run libs`) — 남의 CDN을 부르지 않으므로 IP가
+새어 나가지 않고, 한 번 연 기기에서는 오프라인으로도 열립니다. 판 번호는 파일 이름에
+있습니다: 이 주소는 `index.html`이 아니라 `scripts/core/lazy-lib.js` 안에 적혀 있어서
+`?v=` 스탬프가 닿지 않습니다.
 
 ## 화면과 주요 파일
 
@@ -92,7 +96,8 @@ IndexedDB에만 둡니다. 자세한 흐름은 [SYNC.md](SYNC.md)를 봐 주세�
 - `ios/`는 Capacitor iOS 셸입니다. `viewport-fit=cover`와 safe area를 사용해 상태바와
   홈 인디케이터를 처리합니다.
 - 앱에서도 웹과 같은 리더·저장소·동기화 코드를 씁니다.
-- PDF.js와 JSZip은 현재 CDN에서 지연 로드하므로, 첫 PDF/EPUB 열기에는 인터넷이 필요합니다.
+- PDF.js와 JSZip은 앱 번들 안에 들어갑니다(`assets/`를 통째로 싣습니다). 네이티브
+  앱에서는 첫 PDF/EPUB 열기에도 인터넷이 필요 없습니다.
 - Android 네이티브 셸은 아직 없습니다. Android 8–9 지원은 기본 읽기·단어장·로그인 흐름을
   실제 기기에서 확인한 뒤 범위를 정합니다.
 
