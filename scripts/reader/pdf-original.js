@@ -470,9 +470,19 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
 
 /* A tap opens the word under the finger; a drag is a scroll, not a lookup. */
 (function(){
-  let lastPdfTap=0;
-  function openPdfWordAt(clientX,clientY){
+  let lastPdfTap=0, lastPdfAttempt=0;
+  async function openPdfWordAt(clientX,clientY){
+    lastPdfAttempt=Date.now();
     const page=pdfPageAtPoint(clientX,clientY);
+    if(!page) return false;
+    const session=originalSession, pageNumber=+page.dataset.page;
+    /* 캔버스는 먼저 보이고 단어 좌표표는 PDF.js의 textContent가 끝난 뒤 생깁니다.
+       그 짧은 사이의 첫 탭을 버리면 두 번 눌러야 합니다. 같은 렌더 작업을 기다린
+       뒤 사용자가 눌렀던 좌표로 다시 찾습니다. */
+    if(!(session.wordBoxes.get(pageNumber)||[]).length){
+      await renderOriginalPdfPage(session,pageNumber);
+      if(session!==originalSession) return false;
+    }
     const box=pdfWordAtPoint(page,clientX,clientY);
     if(!box) return false;
     lastPdfTap=Date.now(); openPdfWord(page,box); return true;
@@ -494,13 +504,14 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
     const start=originalPdfPointer;
     originalPdfPointer=null;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
-    openPdfWordAt(event.clientX,event.clientY);
+    void openPdfWordAt(event.clientX,event.clientY);
   },true);
   /* 일부 모바일 PDF canvas는 pointerup을 웹뷰에 넘기지 않고 click만 남깁니다.
      위 pointerup이 이미 처리한 탭은 시간으로 걸러, 별이 두 칸 오르지 않게 합니다. */
   document.addEventListener('click',event=>{
-    if(!originalSession || originalSession.kind!=='pdf' || Date.now()-lastPdfTap<450) return;
-    openPdfWordAt(event.clientX,event.clientY);
+    if(!originalSession || originalSession.kind!=='pdf'
+        || Date.now()-Math.max(lastPdfTap,lastPdfAttempt)<450) return;
+    void openPdfWordAt(event.clientX,event.clientY);
   },true);
 })();
 

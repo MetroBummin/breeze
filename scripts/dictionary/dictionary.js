@@ -197,6 +197,8 @@ function selectWord(k, span){
   if(!altChoice || altChoice.key!==k) altChoice = null;
   /* 다른 낱말을 열 때 앞 카드의 편집 상태와 저장/취소를 가져오지 않습니다. */
   panelEditTarget=null; panelEditDirty=false;
+  document.getElementById('p-word-actions').hidden=true;
+  document.getElementById('p-meaning-actions').hidden=true;
   selKey = k;
   if(!wordRename || wordRename.to!==k) wordRename=null;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
@@ -219,7 +221,9 @@ function selectWord(k, span){
 }
 function closePanel(){
   selKey=null;
-  contextView=null; phraseView=null; wordRename=null;
+  contextView=null; phraseView=null; wordRename=null; panelEditTarget=null; panelEditDirty=false;
+  document.getElementById('p-word-actions').hidden=true;
+  document.getElementById('p-meaning-actions').hidden=true;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();

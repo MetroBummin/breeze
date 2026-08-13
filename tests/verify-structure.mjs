@@ -718,11 +718,20 @@ assert.match(pdfOriginalSource, /document\.addEventListener\('click',[\s\S]{0,24
   'Mobile PDF canvas click fallback is missing');
 assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
   'PDF word lookup depends on the top-most overlay instead of the tapped page coordinates');
+assert.match(pdfOriginalSource,
+  /if\(!\(session\.wordBoxes\.get\(pageNumber\)\|\|\[\]\)\.length\)\{[\s\S]{0,140}await renderOriginalPdfPage\(session,pageNumber\)/,
+  'The first PDF tap is discarded while its word map is still loading');
 /* 읽는 상태의 단어장 표제어·뜻은 입력창처럼 보이면 안 됩니다. */
 assert.match(index, /id="p-word" contenteditable="false"/,
   'The word field is editable before the user asks to edit it');
 assert.match(index, /id="p-ai-ko" contenteditable="false"/,
   'The meaning field is editable before the user asks to edit it');
+assert.match(readFileSync(resolve(root,'styles/dictionary.css'),'utf8'),
+  /\.p-inline-edit\[hidden\]\{display:none!important;\}/,
+  'Hidden edit actions are forced visible by the flex rule');
+assert.match(dictionarySource,
+  /panelEditTarget=null; panelEditDirty=false;[\s\S]{0,180}p-word-actions'\)\.hidden=true;[\s\S]{0,120}p-meaning-actions'\)\.hidden=true;/,
+  'Opening another word keeps the previous word edit buttons visible');
 assert.match(index, /id="readfabs"/,
   'The reading controls are no longer stacked, so they move when one hides');
 assert.match(index,/id="pdfzoomfabs"[\s\S]*id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,

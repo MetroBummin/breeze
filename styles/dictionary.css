@@ -31,6 +31,7 @@
   #p-word:hover{border-color:var(--blue-ring); background:var(--field);}
   #p-word[contenteditable="true"]{cursor:text; border-color:var(--blue); background:var(--field); box-shadow:0 0 0 2px var(--blue-ring);}
   .p-inline-edit{display:flex; flex:none; align-items:center; gap:5px;}
+  .p-inline-edit[hidden]{display:none!important;}
   .p-inline-edit button{border:1px solid var(--line); border-radius:8px; padding:6px 8px; background:var(--sheet); color:var(--soft); font:600 10.5px var(--ui); cursor:pointer; white-space:nowrap;}
   .p-inline-edit button.save{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
   #p-word-actions{justify-content:flex-end; margin-top:6px;}
