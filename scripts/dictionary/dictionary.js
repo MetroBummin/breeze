@@ -42,6 +42,9 @@ function lemma(w){
     let b = w.slice(0,-2);
     if(!hasVowel(b)) return w;
     if(b.length>2 && b[b.length-1]===b[b.length-2] && !/(ll|ss|zz)$/.test(b)) return b.slice(0,-1);
+    /* charge→charged, use→used처럼 e가 사라진 형태. 일반 CVC 규칙보다 먼저
+       대표적인 어말 묶음을 복원해야 charg 같은 가짜 표제어가 생기지 않습니다. */
+    if(/(?:[cgsv]|bl|gl|iz)$/.test(b)) return b+'e';
     if(/[^aeiou][aeiou][^aeiouwxy]$/.test(b)) return b+'e';
     return b;
   }

@@ -198,6 +198,7 @@ assert.equal((wordSpans('a point charge here').match(/<span/g)||[]).length, 3,
 /* ⑨ 열쇠는 굴절형을 원형으로 되돌립니다 — 화면의 "fields" 와 단어장의
       "field" 가 같은 것을 가리켜야 색이 앉습니다. */
 assert.equal(keyOf('Fields'), 'field', '굴절형이 단어장 열쇠로 되돌아가지 않습니다');
+assert.equal(keyOf('charged'), 'charge', 'silent-e 과거형이 가짜 표제어로 갈라졌습니다');
 assert.equal(keyOf('NASA'), 'nasa', '약어가 단어장 열쇠로 되돌아가지 않습니다');
 
 const total = SAMPLES.reduce((sum, [, text]) => sum + (wordSpans(text).match(/<span/g)||[]).length, 0);
