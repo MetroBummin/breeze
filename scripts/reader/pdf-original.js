@@ -378,7 +378,12 @@ function pdfSentenceBridge(source){
   });
   if(!candidates.length) return null;
   const match=bridgeFindSequence(boxes,candidates[0]);
-  return {candidates,source,boxes:match ? boxes.slice(match.start,match.start+match.length) : []};
+  /* PDF 추출 문자열에는 간혹 보이지 않는 합자·기호가 섞여 문장 토큰 전체가
+     일치하지 않습니다. 그래도 현재 앵커 바로 아래 첫 줄은 알고 있으므로, 그 줄을
+     문단 단서로 넘깁니다. pdfParagraphCue가 sourceMap 경계까지 넓혀 칠합니다. */
+  const first=visual[0];
+  const fallback=first ? boxes.filter(box=>Math.abs(box.y-first.y)<.018) : [];
+  return {candidates,source,boxes:match ? boxes.slice(match.start,match.start+match.length) : fallback};
 }
 
 async function restorePdfSentence(candidates,source,changeToken){

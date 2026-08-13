@@ -724,6 +724,9 @@ assert.match(modesSource, /if\(sourceCueBridge\)\{\s*showBridgeSourceCue\(source
   'Mode switching no longer paints the paragraph before leaving it');
 assert.match(modesSource, /else if\(sourceCueBridge\)\{[\s\S]{0,300}showOriginalLandingCue\(record,target\)/,
   'Quick text-to-original returns no longer paint their landing paragraph');
+assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
+  /const fallback=first \? boxes\.filter\(box=>Math\.abs\(box\.y-first\.y\)<\.018\)/,
+  'A PDF sentence token mismatch leaves the departure paragraph without a cue');
 assert.match(readerCss, /\[data-pi\]\.reader-mode-cue-block\{background:var\(--cue-block\)/,
   'Text landing cues are no longer a uniform pale paragraph block');
 assert.match(readerCss, /\.pdf-source-page>\.reader-mode-cue\{[\s\S]{0,220}background:var\(--cue-block\)/,
