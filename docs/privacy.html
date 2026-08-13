@@ -105,7 +105,8 @@ tbody tr:last-child td{border-bottom:0}
 <hr>
 <h2 id="1-로그인하지-않으면">1. 로그인하지 않으면</h2>
 <p>기사 URL 가져오기와 AI/무료 사전 조회를 제외하면, 아래는 전부 브라우저(앱) 안에만 있습니다. URL 가져오기는 CORS를 넘기기 위해 해당 URL을 Breeze 중계 서버에 요청하며, 서버는 받은 HTML·이미지를 저장하지 않고 전달합니다. AI·무료 사전 조회의 범위는 각각 3절·5절입니다.</p>
-<div class="tablewrap"><table><thead><tr><th>무엇</th><th>어디에</th></tr></thead><tbody><tr><td>책 본문 · 표지 · 삽화, 연결해 둔 원본 PDF · EPUB 파일</td><td>IndexedDB</td></tr><tr><td>단어장 — 낱말, 뜻, 모르는 정도(★), 저장된 예문과 책 제목</td><td><code>localStorage: breeze.words</code></td></tr><tr><td>읽던 자리 · 진행도</td><td><code>localStorage: breeze.pos</code></td></tr><tr><td>보기 설정 — 글자 크기, 좌우 여백, 다크 모드</td><td><code>localStorage</code></td></tr><tr><td>기기 표시 <code>breeze.device</code></td><td><code>localStorage</code></td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>무엇</th><th>어디에</th></tr></thead><tbody><tr><td>책 본문 · 표지 · 삽화, 연결해 둔 원본 PDF · EPUB 파일</td><td>IndexedDB</td></tr><tr><td>단어장 — 낱말, 뜻, 모르는 정도(★), 저장된 예문과 책 제목</td><td><code>localStorage: breeze.words</code></td></tr><tr><td>읽던 자리 · 진행도</td><td><code>localStorage: breeze.pos</code></td></tr><tr><td>보기 설정 — 글자 크기, 좌우 여백, 다크 모드</td><td><code>localStorage</code></td></tr><tr><td>기기 표시 <code>breeze.device</code></td><td><code>localStorage</code></td></tr><tr><td>앱 자신의 파일(HTML · CSS · JS · 글꼴) — 빨리 켜지려고</td><td>캐시 저장소 <code>breeze-…</code></td></tr></tbody></table></div>
+<p>앱 파일 캐시에는 <strong>읽은 내용이 하나도 들어가지 않습니다.</strong> 담는 것은 우리 서버에서 온 우리 파일뿐이고, 사전 조회·기사 가져오기·동기화는 이 캐시를 그냥 지나갑니다.</p>
 <p><code>breeze.device</code> 는 이름도 계정도 아닌 임의의 문자열입니다. <strong>로그인 전 AI 무료 횟수를 세는 데에만</strong> 씁니다. 브라우저 저장소를 지우면 새로 생기고, 다른 무엇과도 연결되지 않습니다.</p>
 <p>브라우저 저장소를 비우면 위의 것이 모두 사라집니다. 그래서 아래의 동기화가 있습니다.</p>
 <hr>

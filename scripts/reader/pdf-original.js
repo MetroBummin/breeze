@@ -6,6 +6,7 @@
    않으며, 화면 폭이 바뀌어도 다시 계산할 필요가 없습니다. */
 
 let originalPdfPointer = null;
+let pdfDrawToken = 0;
 
 /* ================= 확대 =================
    손가락으로 벌리면 종이만 커집니다. 단추도, 쪽마다 나뉜 가로 스크롤 칸도
@@ -35,6 +36,51 @@ let originalPdfPointer = null;
 const PDF_OVERSAMPLE = 1.6;
 const PDF_MAX_RENDER_ZOOM = 3;   // 이보다 더 벌리면 늘린 그림으로 봅니다
 
+/* ---- 멀어진 쪽은 놓아 줍니다 ----
+   캔버스의 크기가 곧 메모리입니다. 폭 932px 짜리 쪽을 `devicePixelRatio` 2 인
+   화면에서 그리면 2982×3872 — 한 쪽에 46MB 입니다. 예전에는 한 번 그린 쪽을
+   책을 닫을 때까지 안 놓았습니다. 605쪽짜리 교재를 마흔 쪽만 넘겨도 1.8GB 고,
+   거기서부터는 그리는 일보다 메모리를 밀어내는 일이 더 오래 걸립니다. 램이
+   넉넉한 기기는 이것을 힘으로 이기고, 그렇지 않은 기기는 통째로 느려집니다.
+
+   놓는 문턱(4000px)은 그리는 문턱(1300px)보다 멉니다. 그 사이가 여유입니다 —
+   한 쪽쯤 되돌아가는 것으로는 방금 놓은 쪽을 다시 그리지 않습니다.
+
+   놓아도 자리는 한 톨도 안 움직입니다. 쪽 상자는 첫 렌더에서 제 비율을 이미
+   배웠고 그 값은 그대로 두기 때문입니다 — 읽던 줄이 흔들리지 않습니다. */
+const PDF_KEEP_REACH = 4000;
+
+/* 새로 그릴 때마다 훑습니다. "자리를 새로 얻을 때 남는 자리를 만든다"는 뜻이라,
+   가만히 있으면 아무 일도 안 하고 늘어날 때만 정리합니다. 놓친 쪽이 있어도
+   다음 렌더가 다시 훑으므로 영영 남지 않습니다. */
+function releaseDistantPdfPages(session,exceptPage){
+  if(!session || session!==originalSession || session.kind!=='pdf') return;
+  session.settled.forEach(pageNumber=>{
+    if(pageNumber===exceptPage) return;
+    const pageElement=session.pages[pageNumber-1];
+    if(!pageElement) return;
+    const rect=pageElement.getBoundingClientRect();
+    if(rect.bottom>-PDF_KEEP_REACH && rect.top<PDF_KEEP_REACH+readerViewHeight()) return;
+    releaseOriginalPdfPage(session,pageNumber);
+  });
+}
+
+function releaseOriginalPdfPage(session,pageNumber){
+  session.settled.delete(pageNumber);
+  session.rendering.delete(pageNumber);
+  session.drawnAt.delete(pageNumber);
+  session.drawToken.delete(pageNumber);   // 아직 도는 일감이 있으면 이걸로 물러납니다
+  session.wordBoxes.delete(pageNumber);
+  const pageElement=session.pages[pageNumber-1];
+  if(!pageElement) return;
+  /* DOM 에서 떼는 것만으로는 모자랍니다. 크기를 0 으로 만들어야 브라우저가 뒤에
+     잡아 둔 그림판(iOS 에서는 GPU 쪽)을 그 자리에서 놓습니다. */
+  const canvas=pageElement.querySelector('canvas');
+  if(canvas){ canvas.width=0; canvas.height=0; }
+  delete pageElement.dataset.wordCount;
+  pageElement.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
+}
+
 async function openOriginalPdf(book,record,token){
   await ensurePdfLib();
   const pdf = await pdfjsLib.getDocument({data:await record.blob.arrayBuffer()}).promise;
@@ -49,7 +95,11 @@ async function openOriginalPdf(book,record,token){
   const session={kind:'pdf',bookId:book.id,hash:record.hash,pdf,pages,
                  glyphs:book.glyphs||null,
                  /* 쪽마다 "어느 배율로 그렸나". 그보다 많이 벌리면 다시 그립니다. */
-                 rendering:new Map(),drawnAt:new Map(),wordBoxes:new Map(),urls:[]};
+                 rendering:new Map(),drawnAt:new Map(),wordBoxes:new Map(),urls:[],
+                 /* settled: 다 그려진 쪽 — 놓아 줄 수 있는 것은 이 쪽들뿐입니다.
+                    drawToken: 쪽마다 "지금 유효한 일감". 놓아 주면 지워지므로,
+                    돌고 있던 일감이 뒤늦게 캔버스를 끼워 넣지 못합니다. */
+                 settled:new Set(),drawToken:new Map()};
   for(let pageNumber=1; pageNumber<=pdf.numPages; pageNumber++){
     const page=document.createElement('article');
     page.className='pdf-source-page';
@@ -82,10 +132,19 @@ async function renderOriginalPdfPage(session,pageNumber,options){
   }
   const redraw=!!drawn;
   session.drawnAt.set(pageNumber,zoom);
+  /* 이 쪽에 대해 지금 유효한 일감. 도중에 이 쪽을 놓아 주면 이 표가 지워지고,
+     그러면 아래의 `alive()` 가 거짓이 되어 일감이 조용히 물러납니다. */
+  const drawToken=++pdfDrawToken;
+  session.drawToken.set(pageNumber,drawToken);
+  const alive=()=>session===originalSession && session.drawToken.get(pageNumber)===drawToken;
+  /* 그리기 전에 한 번, 그리고 나서 또 한 번 훑습니다. 멀리 건너뛰면 떠나온 자리의
+     쪽들과 새 자리의 쪽들이 잠깐 함께 남는데, 앞의 한 번이 그 겹침을 없앱니다 —
+     가장 크게 잡히는 순간이 곧 이 기능의 한도라서, 그 봉우리를 깎는 일입니다. */
+  releaseDistantPdfPages(session,pageNumber);
   const job=(async()=>{
     const pageElement=session.pages[pageNumber-1];
     const page=await session.pdf.getPage(pageNumber);
-    if(session!==originalSession) return;
+    if(!alive()) return;
     const base=page.getViewport({scale:1});
     /* 레이아웃 폭은 벌려도 안 변합니다 — 커지는 것은 바깥의 `transform` 뿐입니다.
        그래서 이 값은 늘 같고, 벌릴 때마다 문서가 다시 흐르지 않습니다. */
@@ -104,7 +163,7 @@ async function renderOriginalPdfPage(session,pageNumber,options){
          지금 눌러 둔 낱말 표시가 함께 지워집니다 — 뜻을 보는 중에 벌리면
          보고 있던 그 낱말의 표시가 사라졌습니다. */
       await page.render({canvasContext:context,viewport,transform}).promise;
-      if(session!==originalSession) return;
+      if(!alive()) return;
       const old=pageElement.querySelector('canvas');
       if(old) old.replaceWith(canvas); else pageElement.insertBefore(canvas,pageElement.firstChild);
       return;
@@ -121,7 +180,9 @@ async function renderOriginalPdfPage(session,pageNumber,options){
     if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
     await page.render({canvasContext:context,viewport,transform}).promise;
     const textContent=await page.getTextContent();
+    if(!alive()) return;
     const wordBoxes=buildPdfWordBoxes(textContent,viewport,session.glyphs);
+    if(!alive()) return;
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
@@ -130,6 +191,11 @@ async function renderOriginalPdfPage(session,pageNumber,options){
      옛 캔버스가 그 자리에 남아 있으니까요. */
   if(!redraw) session.rendering.set(pageNumber,job);
   await job;
+  /* 다 그려진 쪽만 놓아 줄 수 있습니다. 이 쪽 자신은 빼고 훑습니다 — 자리를
+     되돌리기 전에 미리 그려 두는 곳이 있어서(restorePdfSentence), 방금 그린
+     것을 그 자리에서 도로 놓으면 헛일이 됩니다. */
+  if(alive()) session.settled.add(pageNumber);
+  releaseDistantPdfPages(session,pageNumber);
   return job;
 }
 
@@ -184,7 +250,8 @@ function buildPdfWordBoxes(textContent,viewport,glyphs){
     pdfFontAscentRatio(styles[item.fontName]||{}),
     (styles[item.fontName]||{}).fontFamily));
   const {boxes,text}=pdfPageWords(entries,pdfWordMeasurer(),viewport.width,viewport.height);
-  boxes.forEach(box=>{ box.example=bridgeSentenceAt(text,box.offset); });
+  const sentenceAt=bridgeSentenceFinder(text);
+  boxes.forEach(box=>{ box.example=sentenceAt(box.offset); });
   return boxes;
 }
 

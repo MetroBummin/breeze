@@ -988,4 +988,40 @@ const uncovered = [...needed].filter(character => !shipped.has(character));
 assert.deepEqual(uncovered, [],
   `한글 제목 글꼴에 없는 글자가 화면에 생겼습니다 — npm run fonts 를 돌려 주세요: ${uncovered.join('')}`);
 
+/* ---- 빠르게 켜지기 ---------------------------------------------------------
+   서비스워커가 남의 서버까지 담기 시작하면, 사전에서 찾아본 낱말과 동기화한
+   내용이 캐시에 남습니다. 담는 것은 우리 서버에서 온 것뿐이어야 합니다. */
+const workerSource = readFileSync(resolve(root, 'sw.js'), 'utf8');
+assert.match(workerSource, /origin !== self\.location\.origin\) return;/,
+  'sw.js 가 남의 서버 응답까지 가로채고 있습니다');
+/* 브라우저는 sw.js 의 바이트가 달라졌을 때만 새로 설치합니다. 이 줄이 없으면
+   CSS 를 고쳐 배포해도 캐시가 옛것 그대로 남습니다. */
+assert.match(workerSource, /^const VERSION = '[0-9a-f]{8}';$/m,
+  "sw.js 에 tools/stamp-version.mjs 가 찍는 `const VERSION` 줄이 없습니다");
+assert.match(readFileSync(resolve(root, 'scripts/main.js'), 'utf8'),
+  /navigator\.serviceWorker\.register\('sw\.js'/,
+  '서비스워커를 등록하는 곳이 없습니다 — 파일만 있고 아무도 켜지 않습니다');
+/* 네이티브 셸은 파일을 이미 앱 안에 안고 있습니다. 거기서 등록을 시도하면
+   `capacitor://` 에서 조용히 실패할 뿐입니다. */
+assert.match(readFileSync(resolve(root, 'scripts/main.js'), 'utf8'),
+  /location\.protocol\.startsWith\('http'\)/,
+  '서비스워커를 네이티브 셸에서도 등록하려 합니다');
+
+/* ---- 긴 PDF ---------------------------------------------------------------
+   ① 낱말마다 페이지 글 전체를 다시 문장으로 나누면 일이 제곱으로 늡니다.
+      쪽마다 한 번만 나누는 finder 를 거쳐야 합니다. */
+const pdfOriginalSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 'utf8');
+assert.match(pdfOriginalSource, /const sentenceAt\s*=\s*bridgeSentenceFinder\(text\)/,
+  'PDF 낱말 상자가 문장 나누기를 낱말마다 다시 하고 있습니다 (제곱으로 느려집니다)');
+assert.doesNotMatch(pdfOriginalSource, /boxes\.forEach\([^)]*bridgeSentenceAt/,
+  'PDF 낱말 상자가 문장 나누기를 낱말마다 다시 하고 있습니다 (제곱으로 느려집니다)');
+/* ② 캔버스 하나가 수십 MB 입니다. 멀어진 쪽을 안 놓으면 600쪽짜리 책에서
+      메모리가 끝없이 자랍니다 — 램이 적은 기기가 먼저 무너집니다. */
+assert.match(pdfOriginalSource, /function releaseDistantPdfPages/,
+  '멀어진 PDF 쪽을 놓아 주는 곳이 없습니다 — 캔버스가 끝없이 쌓입니다');
+assert.match(pdfOriginalSource, /canvas\.width=0;\s*canvas\.height=0;/,
+  '캔버스를 DOM 에서만 떼고 있습니다 — 크기를 0 으로 해야 그림판이 바로 풀립니다');
+assert.match(pdfOriginalSource, /releaseDistantPdfPages\(session,pageNumber\)/,
+  '새로 그린 뒤에 훑지 않으면, 놓칠 쪽이 영영 남습니다');
+
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);
