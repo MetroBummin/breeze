@@ -470,10 +470,17 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
 
 /* A tap opens the word under the finger; a drag is a scroll, not a lookup. */
 (function(){
-  const content=document.getElementById('original-content');
-  /* 파란 표시·저장 단어 마커가 PDF 위에 올라와 있습니다. 그 레이어가 자기
-     이벤트를 멈춰도, 읽는 칸의 capture 단계에서 탭 시작점을 먼저 기억합니다. */
-  content.addEventListener('pointerdown',event=>{
+  let lastPdfTap=0;
+  function openPdfWordAt(clientX,clientY){
+    const page=pdfPageAtPoint(clientX,clientY);
+    const box=pdfWordAtPoint(page,clientX,clientY);
+    if(!box) return false;
+    lastPdfTap=Date.now(); openPdfWord(page,box); return true;
+  }
+  /* PDF 위에는 캔버스·저장 표시·전환 표시가 번갈아 올라옵니다. 원본 칸에만
+     묶지 않고 문서 capture 단계에서 좌표를 받으면 어느 레이어를 눌러도 한 번의
+     탭이 같은 단어 찾기가 됩니다. */
+  document.addEventListener('pointerdown',event=>{
     if(!originalSession || originalSession.kind!=='pdf') return;
     /* Touch PointerEvent의 button 값은 브라우저마다 0/-1로 다릅니다. 마우스의
        오른쪽·가운데 버튼만 걸러야 한 번 탭한 단어도 놓치지 않습니다. */
@@ -481,17 +488,19 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
     if(!event.isPrimary){ originalPdfPointer=null; return; }
     originalPdfPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
   },true);
-  content.addEventListener('pointercancel',()=>{ originalPdfPointer=null; });
-  content.addEventListener('pointerup',event=>{
+  document.addEventListener('pointercancel',()=>{ originalPdfPointer=null; },true);
+  document.addEventListener('pointerup',event=>{
     if(!originalSession || originalSession.kind!=='pdf') return;
     const start=originalPdfPointer;
     originalPdfPointer=null;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
-    /* PDF canvas, 선택 마커, 모드 표시 중 무엇을 눌렀는지는 중요하지 않습니다.
-       좌표 아래의 종이를 직접 찾으면 겹친 레이어가 바뀌어도 한 번 탭은 항상 같습니다. */
-    const page=pdfPageAtPoint(event.clientX,event.clientY);
-    const box=pdfWordAtPoint(page,event.clientX,event.clientY);
-    if(box) openPdfWord(page,box);
+    openPdfWordAt(event.clientX,event.clientY);
+  },true);
+  /* 일부 모바일 PDF canvas는 pointerup을 웹뷰에 넘기지 않고 click만 남깁니다.
+     위 pointerup이 이미 처리한 탭은 시간으로 걸러, 별이 두 칸 오르지 않게 합니다. */
+  document.addEventListener('click',event=>{
+    if(!originalSession || originalSession.kind!=='pdf' || Date.now()-lastPdfTap<450) return;
+    openPdfWordAt(event.clientX,event.clientY);
   },true);
 })();
 

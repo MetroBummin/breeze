@@ -710,10 +710,12 @@ assert.match(index, /id="modefab"[^>]*onclick="toggleReaderMode\(\)"/,
 const pdfOriginalSource=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
 assert.match(pdfOriginalSource, /event\.pointerType==='mouse' && event\.button!==0/,
   'PDF word lookup rejects touch pointers before they can open a word');
-assert.match(pdfOriginalSource, /content\.addEventListener\('pointerup',[\s\S]{0,1000}\},true\)/,
+assert.match(pdfOriginalSource, /document\.addEventListener\('pointerup',[\s\S]{0,1000}\},true\)/,
   'A PDF overlay can swallow the one-tap word lookup again');
-assert.match(pdfOriginalSource, /content\.addEventListener\('pointerdown',[\s\S]{0,700}\},true\)/,
+assert.match(pdfOriginalSource, /document\.addEventListener\('pointerdown',[\s\S]{0,700}\},true\)/,
   'A PDF overlay can swallow the tap start, making a single click require a retry');
+assert.match(pdfOriginalSource, /document\.addEventListener\('click',[\s\S]{0,240}openPdfWordAt/,
+  'Mobile PDF canvas click fallback is missing');
 assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
   'PDF word lookup depends on the top-most overlay instead of the tapped page coordinates');
 /* 읽는 상태의 단어장 표제어·뜻은 입력창처럼 보이면 안 됩니다. */
