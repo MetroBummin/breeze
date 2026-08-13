@@ -164,14 +164,10 @@ async function restoreTextSentence(candidates,targetPi){
   const cueBlocks=[...new Set(found.stream.slice(found.match.start,refreshedEnd)
     .map(item=>item.node.parentElement&&item.node.parentElement.closest('[data-pi]'))
     .filter(Boolean))];
-  /* 문장 색칠만 지원하지 않는 브라우저에서도 위치를 바로 알 수 있게, 해당 문단을
-     함께 살짝 물들입니다. 범위가 다시 그려져도 이 표시는 남습니다. */
+  /* 문장과 문단을 겹쳐 칠하면 읽을 곳보다 장치가 먼저 보입니다. 목적지는 문단
+     하나로만 알려 줍니다. 지연 span 재조립 뒤에도 이 표시는 안정적으로 남습니다. */
   cueBlocks.forEach(block=>block.classList.add('reader-mode-cue-block'));
-  found.stream.slice(found.match.start,refreshedEnd).forEach(item=>{
-    const word=item.node.parentElement&&item.node.parentElement.closest('.w');
-    if(word) word.classList.add('reader-mode-cue-word');
-  });
-  showRangeModeCue(found.range,10000);
+  readerModeCueTimer=setTimeout(clearReaderModeCue,10000);
   return true;
 }
 
@@ -236,7 +232,6 @@ function showBridgeSourceCue(bridge){
   clearReaderModeCue();
   if(!bridge) return;
   if(bridge.block) bridge.block.classList.add('reader-mode-cue-block');
-  if(bridge.range) showRangeModeCue(bridge.range,0);
   else if(bridge.source&&bridge.source.kind==='pdf'&&originalSession&&originalSession.pages){
     showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0);
   }

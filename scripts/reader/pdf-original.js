@@ -280,19 +280,35 @@ function renderPdfSavedWordMarkers(page,boxes){
   });
 }
 
+function pdfParagraphCue(page,matched){
+  if(!page || !matched || !matched.length) return null;
+  const pageNumber=+page.dataset.page;
+  const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];
+  const paragraph=paragraphForSource(curBook,{kind:'pdf',page:pageNumber,y:first.y});
+  const start=paragraph==null ? null : sourceAnchorForParagraph(curBook,paragraph);
+  const next=paragraph==null ? null : sourceAnchorForParagraph(curBook,paragraph+1);
+  const minMatched=Math.min(...matched.map(box=>box.y));
+  const maxMatched=Math.max(...matched.map(box=>box.y+box.h));
+  /* PDF의 원본 문단 경계는 반입 때 만든 sourceMap이 가장 잘 압니다. 다음 문단이
+     같은 쪽에 있으면 그 직전까지, 쪽 끝이면 현재 문장이 닿는 데까지 칠합니다. */
+  const top=start&&start.page===pageNumber ? Math.min(start.y,minMatched) : minMatched;
+  let bottom=next&&next.page===pageNumber ? Math.max(maxMatched,next.y-.012) : maxMatched;
+  bottom=Math.min(.985,Math.max(top+.018,bottom));
+  const pageBoxes=originalSession&&originalSession.wordBoxes.get(pageNumber)||matched;
+  const inside=pageBoxes.filter(box=>box.y+box.h>=top-.01&&box.y<=bottom+.01);
+  const source=inside.length ? inside : matched;
+  const left=Math.max(.008,Math.min(...source.map(box=>box.x))-.012);
+  const right=Math.min(.992,Math.max(...source.map(box=>box.x+box.w))+.012);
+  return {x:left,y:Math.max(.006,top-.008),right,bottom:Math.min(.994,bottom+.008)};
+}
+
 function showPdfModeCue(page,boxes,duration){
   if(!page || !boxes || !boxes.length) return;
-  const lines=[];
-  boxes.slice().sort((a,b)=>Math.abs(a.y-b.y)<.012 ? a.x-b.x : a.y-b.y).forEach(box=>{
-    let line=lines.find(item=>Math.abs(item.y-box.y)<Math.max(item.h,box.h)*.65);
-    if(!line){ line={x:box.x,y:box.y,right:box.x+box.w,bottom:box.y+box.h,h:box.h}; lines.push(line); }
-    else{ line.x=Math.min(line.x,box.x); line.y=Math.min(line.y,box.y); line.right=Math.max(line.right,box.x+box.w); line.bottom=Math.max(line.bottom,box.y+box.h); line.h=Math.max(line.h,box.h); }
-  });
-  lines.forEach(line=>{
-    const cue=document.createElement('span'); cue.className='reader-mode-cue';
-    cue.style.cssText=`left:${line.x*100}%;top:${line.y*100}%;width:${(line.right-line.x)*100}%;height:${(line.bottom-line.y)*100}%`;
-    page.appendChild(cue);
-  });
+  const block=pdfParagraphCue(page,boxes);
+  if(!block) return;
+  const cue=document.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-block';
+  cue.style.cssText=`left:${block.x*100}%;top:${block.y*100}%;width:${(block.right-block.x)*100}%;height:${(block.bottom-block.y)*100}%`;
+  page.appendChild(cue);
   if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
 }
 

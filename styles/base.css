@@ -14,12 +14,12 @@
 
   /* ================= splash ================= */
   #splash{position:fixed; inset:0; z-index:200; overflow:hidden; background:var(--splash-bg); display:flex;
-    align-items:center; justify-content:center; transition:opacity .6s ease; isolation:isolate;}
+    align-items:center; justify-content:center; transition:opacity .24s ease; isolation:isolate;}
   #splash.hide{opacity:0; pointer-events:none;}
   /* 홈 화면 앱과 일반 모바일 브라우저 모두 같은 첫 장면을 봅니다.
      주소창 주변의 색보다 브랜드 전환을 우선합니다. */
   #splash .splash-scene{position:absolute; inset:0; z-index:-2; background:var(--splash-bg); overflow:hidden;
-    opacity:0; animation:splash-scene-in .5s .18s ease-out forwards;}
+    opacity:1;}
   /* 사진은 `<img>` 가 아니라 배경입니다 — 위의 `display:none` 안에서는 브라우저가
      배경 그림을 아예 요청하지 않기 때문입니다. `::before` 가 사진, `::after` 가
      그 위에 덮는 얇은 막입니다(뒤에 오는 쪽이 위에 그려집니다).
@@ -45,7 +45,6 @@
   #splash .word{font-family:var(--display); font-size:1em; font-weight:600; letter-spacing:-.045em; color:var(--brand-cream);}
   #splash .tag{font-size:.17em; color:var(--brand-cream-soft); letter-spacing:.1em; margin-top:.7em;
     text-transform:uppercase; font-weight:600; white-space:nowrap;}
-  @keyframes splash-scene-in{from{opacity:0}to{opacity:1}}
   @keyframes scene-breathe{from{transform:translate3d(0,0,0)}to{transform:scale(1.012) translate3d(-.12%,-.15%,0)}}
   /* 넓은 화면에서는 들판의 아이를 비켜 왼쪽에 섭니다. 두 줄이 서로 가운데를
      맞추는 것은 그대로입니다 — 덩어리째 왼쪽으로 갈 뿐입니다. */

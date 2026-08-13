@@ -25,11 +25,15 @@
   <link rel="preload" href="assets/fonts/fraunces-latin.woff2?v=48282a41" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/gowun-batang-ui-400.woff2?v=cb182529" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/gowun-batang-ui-700.woff2?v=8fbd485f" as="font" type="font/woff2" crossorigin>
+  <!-- 첫 장면은 검은 네이티브 런치 화면 바로 뒤에 이어집니다. 그림을 먼저 받아
+       검정→그림→홈으로 여러 번 바뀌어 보이지 않게 합니다. -->
+  <link rel="preload" href="assets/brand/breeze-day.avif" as="image" type="image/avif" media="(max-aspect-ratio: 4/3)">
+  <link rel="preload" href="assets/brand/breeze-day-wide.avif" as="image" type="image/avif" media="(min-aspect-ratio: 4/3)">
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=c5250b64">
-  <link rel="stylesheet" href="styles/base.css?v=ed35f5dd">
+  <link rel="stylesheet" href="styles/base.css?v=5ed82354">
   <link rel="stylesheet" href="styles/home.css?v=9e4580a7">
   <link rel="stylesheet" href="styles/reader.css?v=1f27c2ff">
   <link rel="stylesheet" href="styles/dictionary.css?v=38772f7f">
@@ -62,21 +66,21 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=f68e8e86"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=3d021bfa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=ab7b3016"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=2809d840"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=f61acffe"></script>
   <script defer src="scripts/reader/epub-original.js?v=3c77d35e"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=d6e2d2db"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=97b08b17"></script>
   <script defer src="scripts/reader/reader.js?v=51d02ab5"></script>
   <script defer src="scripts/ui/preferences.js?v=03a9b082"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=9009ab47"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
-  <script defer src="scripts/main.js?v=14827fbb"></script>
+  <script defer src="scripts/main.js?v=16ea797d"></script>
 </head>
 <body>
 <div id="app">
