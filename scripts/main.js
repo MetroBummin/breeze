@@ -8,14 +8,17 @@ function hideSplash(){
   sp.classList.add('hide');
   setTimeout(()=>sp.remove(), 700);
 }
+/* 서가를 먼저 읽고 홈을 그립니다. 스플래시가 먼저 걷히고 빈 홈이 그려졌다가
+   책 카드가 뒤늦게 붙는 것이 첫 실행 때의 "새로고침" 같은 깜빡임이었습니다. */
+const homeReady=loadBooks().then(renderHome).catch(error=>{
+  console.error('서가를 읽지 못했습니다:',error);
+  renderHome();
+});
 window.addEventListener('load', ()=>{
-  setTimeout(hideSplash, Math.max(0, 900 - (Date.now()-splashStart)));
+  homeReady.finally(()=>setTimeout(hideSplash,Math.max(0,900-(Date.now()-splashStart))));
 });
 /* safety: never let splash block the app */
 setTimeout(hideSplash, 5000);
-
-/* 서가를 먼저 읽고 홈을 그립니다. */
-loadBooks().then(renderHome);
 
 /* ---- 다음부터는 네트워크를 기다리지 않고 켜집니다 ----
    무엇을 어떻게 담는지는 sw.js 맨 위에 적혀 있습니다. 여기서는 등록만 합니다.

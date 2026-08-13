@@ -252,6 +252,20 @@
    같은 결의 바탕체라 로고 옆에서 남처럼 보이지 않습니다. 글꼴 파일은 한국어를
    고른 사람에게만 받아옵니다(scripts/ui/i18n.js). */
 body.lang-ko{--display:'Fraunces','Gowun Batang',Georgia,'Times New Roman',serif;}
+/* 고운바탕은 Fraunces보다 세로 여백이 넉넉합니다. 한글을 고른 때에는 제목만
+   한 단계 가볍게 줄여, 같은 정보량과 리듬으로 읽히게 합니다. 본문 글자와 로고는
+   건드리지 않습니다. */
+body.lang-ko #greet{font-size:14px;}
+body.lang-ko #bigq{font-size:clamp(27px,4vw,37px); line-height:1.1;}
+body.lang-ko .sec-head h2{font-size:21px; line-height:1.2;}
+body.lang-ko #v-vocab h1,
+body.lang-ko #v-casuals h1,
+body.lang-ko #v-longform h1{font-size:22px; line-height:1.2;}
+body.lang-ko #set-card h2{font-size:20px; line-height:1.2;}
+body.lang-ko .navbtn{font-size:16px; line-height:1.1;}
+@media(max-width:760px){
+  body.lang-ko #set-card h2{font-size:18px;}
+}
 
 /* ================= 어두운 화면 =================
    검은 화면도 앱용 차콜 대신 먹을 먹인 종이처럼 따뜻하게 둡니다.

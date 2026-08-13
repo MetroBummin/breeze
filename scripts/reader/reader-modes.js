@@ -144,12 +144,30 @@ function findTextSentence(candidates,targetPi){
 }
 
 async function restoreTextSentence(candidates,targetPi){
-  const found=findTextSentence(candidates,targetPi);
+  let found=findTextSentence(candidates,targetPi);
   if(!found) return false;
+  /* 지연 단어 상자는 화면에 들어온 뒤 원래 TextNode를 span으로 교체합니다.
+     그 교체 직전에 만든 Range는 Safari에서 빈 범위가 되어 파란 표시가 사라졌습니다.
+     찾은 문장이 든 문단을 먼저 고정하고, 새 TextNode 기준으로 한 번 더 찾습니다. */
+  const end=found.match.start+found.match.length;
+  const blocks=[...new Set(found.stream.slice(found.match.start,end)
+    .map(item=>item.node.parentElement&&item.node.parentElement.closest('[data-pi]'))
+    .filter(Boolean))];
+  if(typeof hydrateWordSpanBatch==='function' && blocks.length){
+    hydrateWordSpanBatch(blocks);
+    found=findTextSentence(candidates,targetPi);
+    if(!found) return false;
+  }
   const rect=found.range.getBoundingClientRect();
   readerScrollTo(readerScrollTop()+rect.top-(topInset()+readerViewHeight()*.32));
-  const end=found.match.start+found.match.length;
-  found.stream.slice(found.match.start,end).forEach(item=>{
+  const refreshedEnd=found.match.start+found.match.length;
+  const cueBlocks=[...new Set(found.stream.slice(found.match.start,refreshedEnd)
+    .map(item=>item.node.parentElement&&item.node.parentElement.closest('[data-pi]'))
+    .filter(Boolean))];
+  /* 문장 색칠만 지원하지 않는 브라우저에서도 위치를 바로 알 수 있게, 해당 문단을
+     함께 살짝 물들입니다. 범위가 다시 그려져도 이 표시는 남습니다. */
+  cueBlocks.forEach(block=>block.classList.add('reader-mode-cue-block'));
+  found.stream.slice(found.match.start,refreshedEnd).forEach(item=>{
     const word=item.node.parentElement&&item.node.parentElement.closest('.w');
     if(word) word.classList.add('reader-mode-cue-word');
   });
