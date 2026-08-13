@@ -90,6 +90,7 @@ function applyI18n(){
      이름표를 쓰는 일은 저쪽 함수 하나에만 맡깁니다 — scripts/sync/sync.js */
   if(typeof syncBadge === 'function') syncBadge();
   settingsSyncTabLabel();
+  if(typeof syncLoginNudge === 'function') syncLoginNudge();
 }
 
 /* 설정의 두 번째 탭은 로그인 전에는 "로그인"입니다. 거기서 할 수 있는 일이

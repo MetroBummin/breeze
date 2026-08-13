@@ -119,7 +119,19 @@ function saveReadingState(){
   save(LS_POS, positions);
   if(typeof queueReadingProgressSync==='function') queueReadingProgressSync();
 }
-function show(v){
+let appHistoryReady=false, appHistoryRestoring=false;
+function activeAppView(){
+  const view=document.querySelector('.view.on');
+  return view ? view.id.replace(/^v-/,'') : 'home';
+}
+function rememberAppView(view,replace){
+  if(appHistoryRestoring) return;
+  const state={breeze:true,view:view||activeAppView()};
+  if(replace) history.replaceState(state,'');
+  else history.pushState(state,'');
+}
+function show(v,options){
+  const settings=options||{};
   saveReadingState();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
@@ -144,7 +156,25 @@ function show(v){
   window.scrollTo(0,0);
   const box = readerScroller();
   if(box && v!=='read'){ box.scrollTop = 0; box.scrollLeft = 0; }
+  if(typeof syncLoginNudge==='function') syncLoginNudge();
+  if(appHistoryReady && !settings.fromHistory) rememberAppView(v,!!settings.replace);
 }
+
+/* 뒤로가기는 먼저 앱 안의 가장 가까운 층(단어창·설정)을 닫고, 그 다음에 화면을
+   되돌립니다. 그래서 Google에서 들어온 사람도 책을 읽다 한 번 뒤로 갔다고 곧장
+   바깥 사이트로 나가지 않습니다. */
+window.addEventListener('popstate',event=>{
+  const panel=document.getElementById('panel');
+  if(panel&&panel.classList.contains('on')){ closePanel(); return; }
+  const settingsModal=document.getElementById('settings-modal');
+  if(settingsModal&&settingsModal.classList.contains('on')){ closeSettings(); return; }
+  const target=event.state&&event.state.breeze ? event.state.view : 'home';
+  show(target,{fromHistory:true});
+});
+/* 첫 기록을 Breeze의 홈으로 바꿔 둡니다. 이후 앱 안에서 이동할 때만 새 기록을
+   쌓으므로, 홈에서 뒤로가기는 원래 방문한 사이트로 자연스럽게 나갑니다. */
+history.replaceState({breeze:true,view:activeAppView()},'');
+appHistoryReady=true;
 
 /* ================= home ================= */
 /* 예전에는 샘플 책 한 권(AI Hurtles Ahead)을 늘 목록 맨 앞에 끼워 넣었습니다.

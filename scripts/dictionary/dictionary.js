@@ -192,6 +192,7 @@ function selectWord(k, span){
   resetPanelScroll();
   panel.classList.add('on');
   document.getElementById('sheetbg').classList.add('on');
+  if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
   /* 넓은 화면의 사전 패널은 상단바와 나란히 읽는 보조 공간입니다. 상단바가
      걷힌 채 열리면 다시 보이게 해, 패널을 닫지 않고도 책장으로 돌아갈 길을 둡니다. */

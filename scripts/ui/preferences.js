@@ -104,6 +104,7 @@ function settingsTab(name){
 /** @param {string} [tab] */
 function openSettings(tab){
   settingsModal().classList.add('on');
+  if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   /* 시트를 닫아 둔 사이에 읽는 화면에서 바꿔 놓았을 수 있습니다. 열 때마다
      지금 값으로 맞춥니다. */
   applyDark();
@@ -113,6 +114,17 @@ function closeSettings(){ settingsModal().classList.remove('on'); }
 settingsModal().addEventListener('click', event => {
   if(event.target===settingsModal()) closeSettings();
 });
+
+/* 홈 상단의 작은 Login! 말풍선은 로그인 전만 보입니다. 동기화 모듈이 뒤늦게
+   준비되는 경우에도 이 함수를 다시 불러 현재 상태로 맞춥니다. */
+function syncLoginNudge(){
+  const nudge=document.getElementById('login-nudge');
+  if(!nudge) return;
+  let signedIn=false;
+  try{ signedIn=!!sbUser; }catch(error){}
+  nudge.classList.toggle('on',!signedIn && activeAppView()==='home');
+}
+window.addEventListener('load',syncLoginNudge);
 
 /* 저장 단어는 원본에서도 글자 화면과 같은 블록으로 칠합니다. 밑줄·블록·끄기를
    고르는 설정이 있었지만 설정을 위한 설정이었습니다. 남아 있던 선택값은

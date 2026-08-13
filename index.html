@@ -32,8 +32,8 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=c5250b64">
-  <link rel="stylesheet" href="styles/base.css?v=5ed82354">
+  <link rel="stylesheet" href="styles/tokens.css?v=eba39574">
+  <link rel="stylesheet" href="styles/base.css?v=d9f299c1">
   <link rel="stylesheet" href="styles/home.css?v=9e4580a7">
   <link rel="stylesheet" href="styles/reader.css?v=1f27c2ff">
   <link rel="stylesheet" href="styles/dictionary.css?v=543878b3">
@@ -52,10 +52,10 @@
   <script defer src="scripts/core/storage.js?v=40c5cf33"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
-  <script defer src="scripts/core/state.js?v=55e8bd83"></script>
+  <script defer src="scripts/core/state.js?v=ebfdd7c2"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
-  <script defer src="scripts/ui/i18n.js?v=f0b18972"></script>
+  <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
@@ -66,7 +66,7 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=267a81de"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=19060cc1"></script>
   <script defer src="scripts/dictionary/sentence.js?v=ab7b3016"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -75,10 +75,10 @@
   <script defer src="scripts/reader/epub-original.js?v=3c77d35e"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=97b08b17"></script>
-  <script defer src="scripts/reader/reader.js?v=51d02ab5"></script>
-  <script defer src="scripts/ui/preferences.js?v=03a9b082"></script>
+  <script defer src="scripts/reader/reader.js?v=ae6d68ac"></script>
+  <script defer src="scripts/ui/preferences.js?v=331d1343"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
-  <script defer src="scripts/sync/sync.js?v=9009ab47"></script>
+  <script defer src="scripts/sync/sync.js?v=122c6eec"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
   <script defer src="scripts/main.js?v=16ea797d"></script>
 </head>
@@ -112,6 +112,7 @@
     <button class="navbtn" id="nav-vocab" onclick="show('vocab')" data-i18n="nav.words">Words</button>
     <button class="navbtn" id="nav-settings" onclick="openSettings()" data-i18n="nav.settings">Settings</button>
   </nav>
+  <button id="login-nudge" type="button" onclick="openSettings('sync')" aria-label="로그인"><span>Login!</span></button>
 </div>
 
 <!-- ================= HOME ================= -->

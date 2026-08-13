@@ -36,6 +36,7 @@ function syncStatus(message){ const el=document.getElementById('sm-status'); if(
 function syncBadge(){
   const el=document.getElementById('nav-settings');
   if(el) el.textContent=tr('nav.settings')+(sbUser?' ✓':'');
+  if(typeof syncLoginNudge==='function') syncLoginNudge();
   /* 두 번째 탭 이름도 로그인 여부를 따릅니다 — scripts/ui/i18n.js */
   settingsSyncTabLabel();
 }
