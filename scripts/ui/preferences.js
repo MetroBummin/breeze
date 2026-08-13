@@ -122,6 +122,9 @@ function syncLoginNudge(){
   if(!nudge) return;
   let signedIn=false;
   try{ signedIn=!!sbUser; }catch(error){}
+  const label=uiLang==='ko' ? '로그인' : 'Login';
+  nudge.querySelector('span').textContent=label;
+  nudge.setAttribute('aria-label',label);
   nudge.classList.toggle('on',!signedIn && activeAppView()==='home');
 }
 window.addEventListener('load',syncLoginNudge);

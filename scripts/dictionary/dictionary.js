@@ -494,9 +494,12 @@ document.getElementById('p-know').onclick = ()=>{
    기존 카드를 남길지 바로 묻습니다. 사용자가 원문 표기를 고친 경우에도 과거
    문장에 있던 표시와 학습 기록을 잃지 않습니다. */
 function headwordKey(value){
-  const raw=String(value||'').trim().replace(/’/g,"'");
-  if(!/^[A-Za-z](?:[A-Za-z'’-]*[A-Za-z])?$/.test(raw)) return null;
-  return {display:raw,key:(lemmaCands(raw)[0]||raw).toLowerCase()};
+  const raw=String(value||'').trim().replace(/’/g,"'").replace(/\s+/g,' ');
+  /* 단어 하나뿐 아니라 `betel quid`, `take care of` 같은 표현도 독립 카드로
+     고칠 수 있습니다. 영어 글자·공백·낱말 안의 아포스트로피/하이픈만 받습니다. */
+  if(!/^[A-Za-z]+(?:['-][A-Za-z]+)*(?: [A-Za-z]+(?:['-][A-Za-z]+)*)*$/.test(raw)) return null;
+  const parts=raw.toLowerCase().split(' ');
+  return {display:raw,key:parts.length>1 ? `phrase:${phraseParts(raw).join(' ')}` : (lemmaCands(raw)[0]||raw).toLowerCase(),parts};
 }
 function refreshReaderWords(){
   if(curBook && currentReaderMode==='text'){
@@ -519,7 +522,7 @@ function cancelWordRename(){
 function commitWordRename(){
   const input=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
   const from=selKey, base=words[from], parsed=headwordKey(input.value);
-  if(!base || !parsed) { toast('영어 단어 하나로 적어 주세요'); return; }
+  if(!base || !parsed) { toast('영어 단어 또는 표현으로 적어 주세요'); return; }
   document.getElementById('panel').classList.remove('word-editing');
   if(parsed.key===from){
     base.word=parsed.display; base.clicked=parsed.display; base.up=Date.now();
@@ -528,6 +531,8 @@ function commitWordRename(){
   if(words[parsed.key]){ toast('이미 저장한 단어예요'); return; }
   const next={...base,word:parsed.display,clicked:parsed.display,
     forms:[...new Set([parsed.key,...lemmaCands(parsed.display),parsed.display.toLowerCase()])],up:Date.now()};
+  if(parsed.parts.length>1) next.phraseParts=parsed.parts;
+  else delete next.phraseParts;
   delete next.root;
   words[parsed.key]=next; delete dead[parsed.key]; save(LS_DEAD,dead);
   wordRename={from,to:parsed.key,fromWord:base.word,toWord:parsed.display};
@@ -553,6 +558,10 @@ wordEditButton.addEventListener('click',()=>{
 wordEditInput.addEventListener('keydown',event=>{
   if(event.key==='Enter'){ event.preventDefault(); commitWordRename(); }
   if(event.key==='Escape'){ event.preventDefault(); cancelWordRename(); }
+});
+wordEditInput.addEventListener('input',()=>{
+  const cleaned=wordEditInput.value.replace(/[^A-Za-z'’\-\s]/g,'').replace(/\s+/g,' ');
+  if(wordEditInput.value!==cleaned) wordEditInput.value=cleaned;
 });
 wordEditInput.addEventListener('blur',()=>{
   if(document.getElementById('panel').classList.contains('word-editing')) commitWordRename();
