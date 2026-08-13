@@ -5,6 +5,19 @@
 
 let readerModeCueTimer = 0;
 let recentModeLanding = null;
+let textModeMovedByUser = false;
+
+/* 프로그램이 앵커를 가운데로 맞춘 스크롤과 사람이 읽으며 움직인 스크롤은 다릅니다.
+   scroll 이벤트만 보면 둘을 구분할 수 없어서 실제 입력만 기록합니다. */
+document.addEventListener('DOMContentLoaded',()=>{
+  const box=readerScroller(); if(!box) return;
+  const moved=()=>{ if(currentReaderMode==='text') textModeMovedByUser=true; };
+  box.addEventListener('wheel',moved,{passive:true});
+  box.addEventListener('touchmove',moved,{passive:true});
+  box.addEventListener('keydown',event=>{
+    if(['PageDown','PageUp','ArrowDown','ArrowUp','Home','End',' '].includes(event.key)) moved();
+  });
+});
 
 /* `bookSupportsOriginal()`은 형식 표와 같은 자리에 있습니다 —
    scripts/reader/original-formats.js */
@@ -274,7 +287,7 @@ async function switchReaderMode(mode,options){
   if(previousMode==='text' && recentModeLanding
       && recentModeLanding.bookId===curBook.id && recentModeLanding.mode==='text'
       && Date.now()-recentModeLanding.at<12000
-      && Math.abs(readerScrollTop()-recentModeLanding.textTop)<80){
+      && !textModeMovedByUser){
     bridge=recentModeLanding.originalAnchor;
   }
   /* A quick round trip inside the same paragraph should return to the exact
@@ -342,6 +355,7 @@ async function switchReaderMode(mode,options){
       lastAnchor = captureAnchor();
       recentModeLanding={bookId:curBook.id,mode:'text',at:Date.now(),textTop:readerScrollTop(),
         originalAnchor:previousMode==='original' ? bridge : null};
+      textModeMovedByUser=false;
       suspendReaderScrollSave(450);
       updatePfill();
     }));
