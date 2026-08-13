@@ -271,7 +271,9 @@ function renderPanel(){
   }) : base;
   const wordBox=document.getElementById('p-word');
   const wordWrap=document.getElementById('p-word-wrap');
-  const canRename=!context && !phrase && !base.root && !base.phraseParts;
+  /* 뜻 카드(`root`)도 지금 보고 있는 카드 안에서 표제어를 고칠 수 있습니다.
+     내부 key는 뜻 묶음 주소일 뿐, 입력 가능 여부를 막는 이유가 아닙니다. */
+  const canRename=!context && !phrase && !base.phraseParts;
   const editingWord=canRename && panelEditTarget==='word';
   wordWrap.classList.toggle('editing',editingWord);
   wordBox.contentEditable=editingWord?'true':'false';
