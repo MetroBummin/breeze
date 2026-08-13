@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>동기화 · Breeze 문서</title>
+<meta name="description" content="두 기기, 복구키, 읽기자료 백업이 움직이는 방식">
+<meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181B" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon/favicon.svg" type="image/svg+xml">
+<style>
+:root{--paper:#FAF8F2;--card:#fff;--ink:#1D3A47;--body:#33505C;--soft:#5F7881;
+  --soft2:#8AA0A9;--blue:#2589BE;--sky:#EAF4F8;--line:#E3E9E4;--code:#F4F6F1;}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#16181B;--card:#1F2327;--ink:#EAF4F8;--body:#C6D3D9;--soft:#9FB1B9;
+    --soft2:#7C8C94;--blue:#6FC3E6;--sky:#1D2E36;--line:#2A2E33;--code:#22262B;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--body);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",
+  "Malgun Gothic",system-ui,sans-serif;-webkit-text-size-adjust:100%;}
+a{color:var(--blue);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:currentColor}
+.top{position:sticky;top:0;z-index:5;background:var(--paper);
+  border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;
+  gap:16px;flex-wrap:wrap;}
+.top .brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);
+  font-size:17px;letter-spacing:-.3px;}
+.top .brand svg{width:26px;height:15px;flex:none}
+.top nav{display:flex;gap:4px;flex-wrap:wrap}
+.top nav a{padding:5px 11px;border-radius:999px;font-size:13.5px;color:var(--soft);border:0}
+.top nav a:hover{background:var(--sky);color:var(--blue)}
+.top nav a[aria-current]{background:var(--blue);color:#fff}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px 90px;display:grid;
+  grid-template-columns:1fr 232px;gap:44px;align-items:start;}
+main{min-width:0;padding-top:14px}
+aside{position:sticky;top:74px;padding-top:30px;font-size:13px;line-height:1.6}
+aside .lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--soft2);
+  margin-bottom:9px;text-transform:uppercase}
+aside a{display:block;color:var(--soft);padding:4px 0 4px 10px;border:0;
+  border-left:2px solid var(--line);}
+aside a:hover{color:var(--blue);border-left-color:var(--blue)}
+aside a.sub{padding-left:22px;font-size:12.5px}
+h1{font-size:clamp(28px,4.4vw,40px);line-height:1.2;letter-spacing:-.9px;color:var(--ink);
+  margin:24px 0 10px;font-weight:700}
+h2{font-size:22px;line-height:1.35;letter-spacing:-.4px;color:var(--ink);font-weight:700;
+  margin:52px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+h3{font-size:17px;color:var(--ink);font-weight:700;margin:32px 0 8px}
+h4{font-size:15px;color:var(--ink);font-weight:700;margin:24px 0 6px}
+p{margin:0 0 15px}
+strong{color:var(--ink);font-weight:700}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin-bottom:8px}
+li>ul,li>ol{margin:8px 0 0}
+code{font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code);
+  color:var(--ink);padding:2px 5px;border-radius:5px;word-break:break-word}
+pre{background:var(--code);border:1px solid var(--line);border-radius:12px;
+  padding:15px 17px;overflow-x:auto;margin:0 0 18px;position:relative}
+pre code{background:none;padding:0;font-size:13px;line-height:1.65;white-space:pre}
+pre[data-lang]::after{content:attr(data-lang);position:absolute;top:8px;right:12px;
+  font-size:10px;letter-spacing:.08em;color:var(--soft2);text-transform:uppercase}
+blockquote{margin:0 0 18px;padding:2px 0 2px 15px;border-left:3px solid var(--blue);
+  color:var(--soft)}
+hr{border:0;border-top:1px solid var(--line);margin:32px 0}
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--card)}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--sky);color:var(--ink);font-weight:700;font-size:12.5px;
+  letter-spacing:.03em;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+.foot{max-width:1080px;margin:0 auto;padding:26px 22px 70px;color:var(--soft2);font-size:12.5px}
+.foot a{color:var(--soft2)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr;gap:0}
+  aside{position:static;padding:0 0 8px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  aside a{display:inline-block;border-left:0;padding:4px 10px 4px 0}
+  aside a.sub{display:none}
+  h2{margin-top:40px}
+}
+/* 인쇄 → PDF 로 저장하면 그대로 종이 문서가 됩니다. */
+@media print{
+  :root{--paper:#fff;--card:#fff;--ink:#000;--body:#1a1a1a;--soft:#444;--soft2:#666;
+    --blue:#0b5f86;--sky:#f2f5f7;--line:#ccc;--code:#f5f5f5;}
+  .top,aside{display:none!important}
+  .wrap{display:block;max-width:none;padding:0}
+  body{font-size:11pt}
+  h1,h2,h3{break-after:avoid}
+  pre,table,blockquote{break-inside:avoid}
+  a{color:inherit}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt;color:#666}
+}</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="../index.html"><svg viewBox="0 0 100 40" fill="none" aria-hidden="true"><path d="M4 22 C20 7 43 9 51 24 C59 38 42 46 28 37 C15 29 22 8 41 4 C64 -1 88 14 97 33" stroke="#2589BE" stroke-width="7" stroke-linecap="round"/></svg><span>Breeze</span></a>
+  <nav><a href="index.html">Breeze</a><a href="dictionary.html">사전은 어떻게 움직이나</a><a href="architecture.html">파일 구조</a><a href="sync.html" aria-current="page">동기화</a><a href="roadmap.html">로드맵</a><a href="privacy.html">개인정보처리방침</a><a href="terms.html">이용약관</a></nav>
+</header>
+<div class="wrap">
+<main>
+<h1 id="동기화">동기화</h1>
+<h2 id="한-줄-요약">한 줄 요약</h2>
+<p>Breeze의 자동 동기화는 <strong>단어장과 마지막 읽던 자리</strong>를 기기 사이에 맞춥니다. 책 파일·본문·사진은 서버에 올리지 않습니다. 원문까지 옮기고 싶을 때만 사용자가 암호화 백업 파일을 직접 내보내고 불러옵니다.</p>
+<h2 id="처음-켤-때">처음 켤 때</h2>
+<ol><li><code>Sync</code>에서 이메일 링크 또는 여섯 자리 코드로 로그인합니다.</li><li>첫 기기가 무작위 마스터 키와 복구키를 만듭니다.</li><li>복구키를 복사하거나 파일로 저장합니다. Breeze는 이 키를 다시 보여 주거나 서버에 보관하지 않습니다.</li><li>이후 단어장과 진행도는 자동 동기화됩니다.</li></ol>
+<p>새 기기는 복구키를 입력하거나, 기존 기기의 QR·여섯 자리 일회용 코드 승인을 받아 같은 보관함을 엽니다. 복구키와 기존 기기를 모두 잃으면 서버의 암호문을 열 수 없습니다.</p>
+<h2 id="무엇이-어디에-있나">무엇이 어디에 있나</h2>
+<div class="tablewrap"><table><thead><tr><th>데이터</th><th>자동 동기화</th><th>읽기자료 백업</th><th>Breeze 서버</th></tr></thead><tbody><tr><td>단어·숙어, 문맥 뜻, 저장 예문, 모르는 정도·향후 복습 기록</td><td>예</td><td>포함하지 않음</td><td>E2EE 암호문만</td></tr><tr><td>책·글 제목, 파일 식별값, 기사 URL</td><td>예</td><td>예</td><td>E2EE 암호문만</td></tr><tr><td>읽던 위치·진행도</td><td>예</td><td>예</td><td>E2EE 암호문만</td></tr><tr><td>PDF·EPUB·TXT 원본, <code>paras</code> 본문</td><td>아니오</td><td>예</td><td>올리지 않음</td></tr><tr><td>책 표지·삽화, 기사 본문·사진</td><td>아니오</td><td>예</td><td>올리지 않음</td></tr></tbody></table></div>
+<p>표지를 Mac에서 바꿨다고 휴대폰 표지가 자동으로 바뀌지는 않습니다. 표지도 이미지 파일이므로 기기에만 두기 때문입니다. 원문·표지까지 다른 기기에 옮길 때는 아래의 백업을 사용합니다.</p>
+<h2 id="두-기기를-번갈아-읽을-때">두 기기를 번갈아 읽을 때</h2>
+<ul><li>실제로 스크롤해 위치가 바뀔 때만 읽기 시간표가 갱신됩니다. 책을 잠깐 여는 것만으로 더 최근 위치가 되지는 않습니다.</li><li>읽는 중에는 약 25초마다 위치를 보냅니다. 앱을 백그라운드로 보내거나 닫으면 마지막 위치를 바로 보냅니다.</li><li>다른 기기에서 책을 열면 가장 최근에 <strong>실제로 읽은</strong> 위치부터 이어집니다. 더 멀리 읽은 퍼센트가 아니라 더 최근 기록이 기준입니다.</li><li>두 기기에서 동시에 읽고 있다면 열린 화면을 강제로 다른 위치로 옮기지 않습니다. 다음에 나가거나 다시 열 때 마지막으로 저장한 위치가 다음 시작점이 됩니다.</li></ul>
+<h2 id="같은-책을-두-기기에서-만났을-때">같은 책을 두 기기에서 만났을 때</h2>
+<p>PDF·EPUB은 원본 파일 전체 SHA-256으로 같은 파일인지 확인합니다. ID가 다른 오래된 카드라도 원본 해시가 같으면 한 권으로 합칩니다.</p>
+<p>각 정보는 따로 가장 최근 값을 고릅니다.</p>
+<div class="tablewrap"><table><thead><tr><th>정보</th><th>고르는 기준</th></tr></thead><tbody><tr><td>읽던 위치</td><td>가장 최근에 실제로 읽은 위치</td></tr><tr><td>제목</td><td>가장 최근에 제목을 수정한 값</td></tr><tr><td>표지</td><td>가장 최근에 표지를 바꾼 값</td></tr><tr><td>원본 파일</td><td>해시가 같으면 같은 파일로 병합</td></tr></tbody></table></div>
+<h2 id="원문까지-다른-기기로-옮기기">원문까지 다른 기기로 옮기기</h2>
+<p>첫 동기화를 시작한 Mac에서 읽다가 iPhone으로 완전히 옮기고 싶다면 다음 순서입니다.</p>
+<ol><li>Mac에서 <code>지금 동기화</code>가 끝날 때까지 기다립니다.</li><li>Sync → <code>내 책·글 내보내기</code>를 누릅니다.</li><li>iPhone에서 같은 계정으로 로그인하고 복구키 또는 기존 기기 승인으로 보관함을 엽니다.</li><li>Sync → <code>백업 파일 불러오기</code>로 받은 <code>.breeze.zip</code> 파일을 선택합니다.</li></ol>
+<p>백업에는 책·글 본문, 원본 파일, 표지·삽화와 저장된 진행도가 기기에서 암호화된 채로 들어 있습니다. 같은 파일이 iPhone에 이미 있으면 중복 카드를 만들지 않고 한 권으로 합칩니다.</p>
+<h2 id="서버가-하지-않는-일">서버가 하지 않는 일</h2>
+<ul><li>책·기사의 본문 또는 표지·사진을 저장하거나 미리보기로 열지 않음</li><li>사용자끼리 책을 전송하거나 공개 링크를 만들지 않음</li><li>원문을 검색, AI 학습, 광고, 오디오북 변환에 쓰지 않음</li><li>암호문을 사용자끼리 중복 제거하지 않음</li></ul>
+<p>암호화·복호화는 기기에서 이뤄집니다. 서버에는 계정 식별자, 암호문 크기·갱신 시각과 동기화에 필요한 기술 메타데이터만 남습니다. 자세한 법적·개인정보 처리 내용은 <a href="privacy.html">PRIVACY.md</a>와 <a href="terms.html">TERMS.md</a>를 봐 주세요.</p>
+</main>
+<aside><div class="lbl">이 문서 안</div><a class="" href="#한-줄-요약">한 줄 요약</a><a class="" href="#처음-켤-때">처음 켤 때</a><a class="" href="#무엇이-어디에-있나">무엇이 어디에 있나</a><a class="" href="#두-기기를-번갈아-읽을-때">두 기기를 번갈아 읽을 때</a><a class="" href="#같은-책을-두-기기에서-만났을-때">같은 책을 두 기기에서 만났을 때</a><a class="" href="#원문까지-다른-기기로-옮기기">원문까지 다른 기기로 옮기기</a><a class="" href="#서버가-하지-않는-일">서버가 하지 않는 일</a></aside>
+</div>
+<div class="foot">
+  이 문서는 저장소의 <code>SYNC.md</code> 에서 자동으로 만들어집니다 ·
+  <a href="https://github.com/MetroBummin/breeze/blob/main/breeze-refactored/SYNC.md" target="_blank" rel="noopener">원본 보기</a> ·
+  인쇄(⌘P)하면 PDF 로 저장됩니다
+</div>
+</body>
+</html>

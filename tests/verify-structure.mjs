@@ -96,55 +96,30 @@ const combined = orderedScripts
   .join('\n');
 new Script(combined, { filename:'breeze-active-scripts.js' });
 
-// A book parsed into different paragraph boundaries must keep the same stable
-// fingerprint, and a legacy server ID must reconcile through that fingerprint.
+// Text layout can keep a local fingerprint, but sync/file identity must never
+// derive from it.
 const identityContext = {};
 new Script(readFileSync(resolve(root, 'scripts/core/book-identity.js'), 'utf8'))
   .runInNewContext(identityContext);
 const segmented = identityContext.bookContentFingerprint(['Hello', 'world.', 'Next page']);
 const joined = identityContext.bookContentFingerprint(['Hello world.', 'Next page']);
 assert.equal(segmented, joined, 'Fingerprint changed with paragraph segmentation');
-const localBook = { id:'new-id', title:'Same book', paras:['Hello world.', 'Next page'] };
-assert.equal(identityContext.serverRowMatchesBook(
-  { book_id:'legacy-id', meta:{ fingerprint:joined } },
-  localBook,
-), true, 'Legacy server ID did not reconcile through content fingerprint');
-assert.equal(identityContext.serverRowIsActive(
-  { book_id:'deleted-copy', meta:{ title:'Same book', fingerprint:joined, deleted:true } },
-), false, 'Deleted tombstone was treated as an active server book');
-const reimportedBook = { id:'same-id', addedAt:100, localSourceAt:500, paras:['Hello world.'] };
-assert.equal(identityContext.serverTombstoneShouldDelete(
-  { book_id:'same-id', meta:{ deleted:true, deletedAt:400 } },
-  reimportedBook,
-), false, 'A stale tombstone deletes a later local re-import');
-assert.equal(identityContext.serverTombstoneShouldDelete(
-  { book_id:'same-id', meta:{ deleted:true, deletedAt:600 } },
-  reimportedBook,
-), true, 'A genuinely newer remote deletion no longer propagates');
-reimportedBook.detachedServerId='same-id';
-assert.equal(identityContext.serverTombstoneShouldDelete(
-  { book_id:'same-id', meta:{ deleted:true, deletedAt:700 } },
-  reimportedBook,
-), false, 'A deliberate server-only deletion erased its local copy');
 
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
-assert.match(
-  syncSource,
-  /const twin = activeServerBooks\(\)\.find/,
-  'Duplicate-title warning still inspects hidden deleted tombstones',
-);
-assert.doesNotMatch(syncSource, /aiFormatting|uploadBookFormatting|functions\/v1\/format/,
-  'Removed AI typography is still part of book sync');
-assert.doesNotMatch(syncSource, /originalGet\(|\.blob\b/,
-  'Raw original files leaked into server sync');
-assert.match(syncSource,/flushPendingBookDeletes/,
-  'Failed server book deletions are not retried');
-assert.match(syncSource,/if\(curBook && curBook\.id===lc\.id\)/,
-  'A remote tombstone can still erase the book currently being read');
-assert.ok(
-  syncSource.indexOf("sb.from('books').upsert") < syncSource.indexOf("sb.storage.from('books').remove"),
-  'Book payload is removed before its tombstone becomes authoritative',
-);
+assert.match(syncSource,/VaultCrypto\.sealJson\(master,payload/,
+  'The sync snapshot is sent without end-to-end encryption');
+assert.match(syncSource,/await cleanLegacyServer\(rows\)/,
+  'Legacy plaintext is not removed after the encrypted snapshot succeeds');
+assert.doesNotMatch(syncSource,/bookUpload|bookDownload|collectBookPhotos|storeBookPhotos/,
+  'The removed plaintext book transfer path is still callable');
+assert.doesNotMatch(syncSource,/paras:|imgSrc:|cover:/,
+  'Reading content or images leaked into the server snapshot');
+assert.match(syncSource,/vaultFileIdentity\(rawHash\)/,
+  'Raw files are not matched through a keyed full-file digest');
+assert.doesNotMatch(syncSource,/file-sha256[^\n]*ensureBookFingerprint|recordId\(vaultMaster,'file[^\n]*fingerprint/,
+  'A text fingerprint is still used as a file identity');
+assert.doesNotMatch(syncSource,/recordId\(vaultMaster,'anchor'/,
+  'A sentence-derived reading anchor is still uploaded');
 assert.match(syncSource,/syncAgain=true/,
   'A sync request arriving during another sync is still dropped');
 /* 로그아웃은 이 기기에서만. Supabase 의 기본값은 'global' 이라, 빼먹으면 노트북에서
@@ -156,32 +131,40 @@ assert.match(syncSource, /op:'delete_account'/,
   'The in-app account deletion path is gone');
 assert.match(readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8'),
   /auth\.admin\.deleteUser/, 'The server no longer deletes the auth user');
-/* 저절로 오가야 하는 것은 양쪽입니다. 올리는 쪽이 빠지면, 로그인 전에 담아 둔
-   글과 실패한 글이 영영 서버에 올라가지 않은 채 올라간 것처럼 보입니다. */
-assert.match(syncSource, /async function autoUploadCasuals/,
-  'Casuals are only auto-downloaded, never auto-uploaded');
-/* 자동 올리기는 `refreshBooks()` 안에서 돕니다. 거기서 다시 `refreshBooks()` 를
-   부르면 서로를 기다리며 멈춥니다. */
-assert.match(syncSource, /if\(auto\) renderAllBookViews\(\);\s*\n\s*else await refreshBooks\(\);/,
-  'An automatic upload refreshes the book list again and deadlocks');
-/* 사진 주소만 보내면 받는 기기가 그 매체 서버에서 다시 받아야 하고, 자주 실패합니다. */
-assert.match(syncSource, /photos: await collectBookPhotos\(/,
-  'Casual photos no longer travel with the article');
-assert.match(syncSource, /await storeBookPhotos\(body\.photos\)/,
-  'A downloaded casual never unpacks the photos it was sent');
+
+// Cryptographic primitives must round-trip, reject a different master key,
+// preserve recovery secrets, and agree across an ephemeral device pairing.
+const cryptoContext={crypto:globalThis.crypto,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,
+  btoa:globalThis.btoa,atob:globalThis.atob,structuredClone};
+new Script(readFileSync(resolve(root,'scripts/sync/vault-crypto.js'),'utf8')+'\n;globalThis.__vault=VaultCrypto;')
+  .runInNewContext(cryptoContext);
+const vault=cryptoContext.__vault,master=vault.random(32),aad=['user','vault','snapshot'];
+const sealed=await vault.sealJson(master,{word:'hidden',progress:.43},aad,'test/v1');
+assert.equal(JSON.stringify(await vault.openJson(master,sealed,aad,'test/v1')),JSON.stringify({word:'hidden',progress:.43}),
+  'Encrypted vault snapshot did not round-trip');
+await assert.rejects(()=>vault.openJson(vault.random(32),sealed,aad,'test/v1'),
+  'A different master key opened the encrypted snapshot');
+const recovery=vault.random(32);
+assert.deepEqual([...vault.recoveryDecode(vault.recoveryEncode(recovery))],[...recovery],
+  'Recovery key text did not restore the same secret');
+const deviceA=await vault.pairingCreate(),deviceB=await vault.pairingCreate(),pairSalt=vault.random(16);
+const pairA=await vault.pairingKey(deviceA.privateKey,deviceB.publicJwk,pairSalt,'test/pair');
+const pairB=await vault.pairingKey(deviceB.privateKey,deviceA.publicJwk,pairSalt,'test/pair');
+const paired=await vault.pairingSeal(pairA,master,['user','request','pair']);
+assert.deepEqual([...await vault.pairingOpen(pairB,paired,['user','request','pair'])],[...master],
+  'QR/code device pairing did not transfer the same master key');
+const rawDigest='a'.repeat(64),opaqueIdentity=await vault.recordId(master,'file-sha256',rawDigest);
+assert.ok(!opaqueIdentity.includes(rawDigest)&&opaqueIdentity.length>20,
+  'The raw full-file SHA-256 is exposed as the server identity');
 
 const storageSource = readFileSync(resolve(root, 'scripts/core/storage.js'), 'utf8');
-assert.match(storageSource, /openDb\('breeze-img',\s*3,/,
+assert.match(storageSource, /openDb\('breeze-img',\s*4,/,
   'IndexedDB was not upgraded for local originals');
 assert.match(storageSource, /createObjectStore\('originals'\)/,
   'Dedicated local original store is missing');
-// One connection per database, not one per read. Pouring the dictionary seed
-// opens a thousand of these in a row; opening a thousand connections took longer
-// than the work itself.
+// One connection per database, not one per read.
 assert.match(storageSource, /if\(job\) return job;/,
   'IndexedDB connections are no longer reused');
-assert.match(storageSource, /async function dictPutAll/,
-  'Bulk dictionary writes are missing — the seed would need one transaction each');
 assert.match(storageSource,/originalGetForBook/,
   'Original files cannot recover across a legacy book-ID change');
 
@@ -359,14 +342,12 @@ for(const file of jsFiles){
 assert.match(readFileSync(resolve(root, 'modules/exam-shorts/README.md'), 'utf8'),
   /prepared\.exam/, 'The parked module lost its reconnection instructions');
 
-/* ---- 떼어 둔 사전 씨앗 ----
-   만드는 쪽만 떼어 뒀습니다. 받는 쪽(`loadDictSeed`)은 앱에 살아 있어야 파일
-   한 장을 떨어뜨리는 것만으로 되살아납니다. */
+/* ---- 떼어 둔 사전 씨앗 ---- */
 assert.doesNotMatch(index, /modules\/dict-seed/,
   'The parked seed builder is loaded by index.html again');
-assert.match(readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8'),
-  /async function loadDictSeed/,
-  'The seed reader went away with the builder, so reviving it is no longer one file');
+assert.doesNotMatch(readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8'),
+  /dict-seed\.json|function loadDictSeed/,
+  'The parked dictionary seed still makes a failed request on every launch');
 assert.match(readFileSync(resolve(root, 'modules/dict-seed/README.md'), 'utf8'),
   /x-seed-token/,
   'The parked seed module lost the CORS trap that made it fail in the first place');
@@ -392,14 +373,16 @@ const pdfSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 
 const epubSource = readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
 const modesSource = readFileSync(resolve(root, 'scripts/reader/reader-modes.js'), 'utf8');
 assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily');
-/* ---- 확대는 손가락이 합니다 ----
-   단추도 쪽마다 주던 가로 스크롤 칸도 없앴습니다. 쪽은 늘 글 폭에 꽉 차고,
+/* ---- 확대는 PDF 버튼이 합니다 ----
+   쪽마다 주던 가로 스크롤 칸은 없습니다. 쪽은 늘 글 폭에 꽉 차고,
    문서 전체가 종이 한 장처럼 같은 축에서 움직입니다. */
 assert.doesNotMatch(pdfSource,/pdf-page-lane|pdfZoom|panRatio/,
   'The per-page zoom lane is back, so pages no longer share one horizontal axis');
-assert.doesNotMatch(readFileSync(resolve(root, 'index.html'), 'utf8'),/pdfzoom-(in|out)/,
-  'The +/- zoom buttons are back; pinching is the gesture now');
-/* 벌려서 본 캔버스는 늘어난 그림이라, 넉넉하게 그려 두어야 흐리지 않습니다. */
+assert.match(index,/id="pdfzoom-out"[^>]*changeOriginalZoom\(-1\)/,
+  'The PDF zoom-out button is missing');
+assert.match(index,/id="pdfzoom-in"[^>]*changeOriginalZoom\(1\)/,
+  'The PDF zoom-in button is missing');
+/* 버튼으로 키운 캔버스는 다시 그려 또렷하게 남겨야 합니다. */
 assert.match(pdfSource,/PDF_OVERSAMPLE/,
   'PDF canvases are drawn at screen resolution again, so pinching makes them blurry');
 /* ---- 확대는 종이 안쪽 일입니다 ----
@@ -420,6 +403,10 @@ for(const [file, source] of [['scripts/ui/interactions.js', interactionsSource],
 }
 assert.match(scrollSource,/function setOriginalZoom/,
   'The reader no longer owns its zoom, so the browser scales the chrome with the paper');
+assert.match(scrollSource,/function changeOriginalZoom/,
+  'The PDF zoom buttons have no single-step zoom action');
+assert.doesNotMatch(scrollSource,/originalZoomPinch(Start|Move|End)|originalPinch/,
+  'Pinch zoom handling survived the switch to buttons');
 assert.match(scrollSource,/transform-origin|scale\(/,
   'Zoom is not a transform on the paper any more');
 /* 문서 폭이 화면보다 넓어지면 폰 브라우저는 스크롤바를 주는 대신 화면을 통째로
@@ -603,27 +590,6 @@ assert.doesNotMatch(index,/aa-original-marks/,
   'The settings popover still offers the deleted display modes');
 const readerCss = readFileSync(resolve(root, 'styles/reader.css'), 'utf8');
 
-/* 상단바를 걷는 것도, 되부르는 것도 손짓입니다. 마우스가 주 입력인 화면에는
-   되부를 손짓이 없으므로 애초에 걷지 않습니다 — 폭이 아니라 입력으로 가릅니다. */
-assert.match(readerSource,/\(hover:hover\) and \(pointer:fine\)/,
-  'The top bar hides on a mouse screen again, where nothing brings it back');
-assert.match(readerSource,/chrome-hidden', hidden && !chromeStays\.matches/,
-  'Nothing gates the auto-hide on the primary pointer');
-/* 진행바는 상단바를 따라가되 지워지지 않습니다. 회색 홈만 끕니다 — 끝에서
-   끝까지 그은 줄은 진행이 아니라 테두리로 보입니다. */
-assert.doesNotMatch(readerCss,/body\.chrome-hidden #rbar\{[^}]*opacity:0/,
-  'The progress bar is erased with the top bar again');
-assert.match(readerCss,/body\.chrome-hidden #ptrack\{background:transparent/,
-  'The grey track stays on as a full-width seam once the top bar is gone');
-/* 시계 옆까지 글을 뻗는 시도는 걷었습니다. 홈 화면 추가는 그 자리를 아예
-   예약해 CSS 로 손댈 수 없었고, 탭에서도 `--topbar-h` 측정이 늦으면 첫 줄이
-   시계에 파묻혔습니다. 스크롤 칸 자체를 안전 영역 아래에서 시작시켜, 무엇을
-   언제 재든 글이 물리적으로 그 위로 못 올라가게 막습니다. */
-assert.match(readerCss,/#reader-scroll\{position:absolute; top:env\(safe-area-inset-top,0px\)/,
-  'The reading box no longer has a hard floor under the notch, so the JS topbar-height race can bury the first line again');
-assert.match(readerCss,/#readwrap\{[^}]*padding:calc\(var\(--topbar-h,56px\) - env\(safe-area-inset-top,0px\) \+ 36px\)/,
-  'readwrap double-reserves the safe area on top of the scroller\'s own floor');
-
 assert.equal(existsSync(resolve(root,'scripts/reader/rolling-formatting.js')),false,
   'AI typography client was not removed');
 assert.equal(existsSync(resolve(root,'server/format/index.ts')),false,
@@ -644,9 +610,9 @@ assert.match(librarySource, /nowReadingIn\(casuals\)/,
 assert.match(librarySource, /nowReadingIn\(longform\)/,
   'The long-form shelf shares its last-read marker with Casuals again');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
-assert.match(index, /id="casual-lib"[\s\S]{0,500}id="casual-add"/,
+assert.match(index, /aria-label="캐주얼 리딩 모아보기"[\s\S]{0,500}id="casual-add"/,
   'The Casuals header lost its library and add buttons');
-assert.match(index, /id="longform-lib"[\s\S]{0,500}id="longform-add"/,
+assert.match(index, /aria-label="책 모아보기"[\s\S]{0,500}id="longform-add"/,
   'The long-form header lost its library and add buttons');
 assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
 assert.match(librarySource, /function renderLongformLibrary/,
@@ -665,36 +631,29 @@ const addSheet = index.slice(index.indexOf('id="add-modal"'), index.indexOf('id=
 assert.equal((addSheet.match(/class="am-big/g) || []).length, 3,
   'The + sheet no longer offers exactly three ways in');
 
-/* ---- 정보 바꾸기 시트와 두 갈래 삭제 ----
-   되돌릴 수 없는 쪽을 기본으로 두면 안 됩니다. 폰에서 자리만 비우려던
-   사람이 노트북의 책까지 잃습니다. */
+/* 원문은 서버에 없으므로 삭제는 이 기기 하나만 건드립니다. */
 const editSource = readFileSync(resolve(root, 'scripts/library/book-edit.js'), 'utf8');
 assert.match(index, /id="edit-modal"/, 'The long-press edit sheet is missing');
-assert.match(index, /runDelete\('local'\)[\s\S]{0,900}runDelete\('all'\)/,
-  'The delete step no longer offers both scopes, with this device first');
-assert.match(librarySource, /async function deleteBook\(b, scope\)/,
-  'Deleting a book is back to one all-or-nothing path');
-assert.match(librarySource, /if\(scope !== 'all'\)[\s\S]{0,400}return;/,
-  'A device-only delete still reaches the server');
+assert.match(index, /onclick="runDelete\(\)"/,
+  'The device-only delete action is missing');
+assert.match(librarySource, /async function deleteBook\(b\)/,
+  'Deleting a book still exposes an obsolete server scope');
+assert.doesNotMatch(librarySource, /queueServerBookDelete|flushPendingBookDeletes/,
+  'Local deletion can still reach the removed server-book path');
 assert.doesNotMatch(librarySource, /confirm\(`"\$\{b\.title\}" 책을 삭제/,
   'The old two-button confirm is back in front of the scope question');
 assert.match(editSource, /function openEditSheet/, 'Nothing opens the edit sheet');
 assert.match(librarySource, /attachLongPress\(card, \(\)=>openEditSheet\(book\)\)/,
   'A long press no longer opens the edit sheet');
-// 로그인하지 않았으면 서버 사본이 없습니다. 고를 것 없는 갈림길을 내지 않습니다.
-assert.match(editSource, /\.ed-all'\)\.hidden = !signedIn/,
-  'Signed-out users are offered a delete-everywhere button that does nothing');
+assert.doesNotMatch(index, /class="am-big ed-all"/,
+  'The obsolete delete-everywhere choice is still visible');
 /* 카드가 보이는 곳이 셋이라 하나만 다시 그리면 나머지가 옛 이름을 들고 남습니다. */
 assert.match(librarySource, /function renderAllBookViews/,
   'The three book views are refreshed one by one again');
 
-/* ---- Casuals 자동 올리기 ----
-   Sync 창을 열어 책마다 올리기를 눌러야 한다면 그 일은 일어나지 않습니다. */
-assert.match(librarySource, /autoUploadCasual\(book\)/,
-  'A pasted or fetched article never reaches the server on its own');
-assert.match(syncSource, /function autoUploadCasual/, 'Casual auto-upload is gone');
-assert.match(syncSource, /if\(twin && \(auto \|\|/,
-  'Auto-upload can pop a confirm dialog right after an import');
+/* Casual 원문은 기기에만 남고, URL과 진행도만 암호문에 들어갑니다. */
+assert.match(librarySource, /queueSync\(\);\s*\/\/ 읽기를 막지 않도록/,
+  'A pasted or fetched article does not queue its encrypted metadata');
 
 /* ---- 짐 덜기 ----
    xlsx 881KB 는 Review 탭 버튼 하나 때문에 모든 사용자가 매번 받던 짐이었고,
@@ -748,7 +707,9 @@ assert.doesNotMatch(preferencesSource, /focusmode/,
 assert.match(index, /id="modefab"[^>]*onclick="toggleReaderMode\(\)"/,
   'The 원본↔글자 button is missing');
 assert.match(index, /id="readfabs"/,
-  'The two reading buttons are no longer stacked, so they move when one hides');
+  'The reading controls are no longer stacked, so they move when one hides');
+assert.match(index,/id="pdfzoomfabs"[\s\S]*id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
+  'The original PDF has not got its +/- controls');
 /* 단추에는 글자가 없습니다. 두 그림이 서로 자리를 바꿔야 어느 쪽으로 가는지 보입니다. */
 for(const glyph of ['mf-original', 'mf-text']){
   assert.match(index, new RegExp(`class="${glyph}"`), `The mode button lost its ${glyph} glyph`);
@@ -791,7 +752,7 @@ assert.match(preferencesSource, /const READ_MARGINS = \{/,
   'The margin control has no steps to choose from');
 assert.match(preferencesSource, /keepPlace\(\(\)=>\{[\s\S]*?save\('breeze\.margin'/,
   'Changing the margin no longer keeps the sentence being read in place');
-assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(var\(--topbar-h,56px\) - env\(safe-area-inset-top,0px\) \+ 36px\) var\(--readpad,26px\)/,
+assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(var\(--topbar-h,56px\) \+ 36px\) var\(--readpad,26px\)/,
   'The reading column stopped following the margin setting, or lost the room the fixed top bar needs');
 assert.match(index, /class="aa-row stack aa-text-only"[\s\S]*?id="aa-margin"/,
   'The 좌우 여백 row is missing from the Aa popover');
@@ -808,16 +769,14 @@ assert.doesNotMatch(stateSource, /readerSchema|book\.tidy|LS_BOOKS/,
 assert.doesNotMatch(withoutComments(syncSource), /hydrateServerFingerprints/,
   'Every book-list refresh re-downloads and re-hashes server books again');
 
-/* ---- Casuals 는 양쪽으로 저절로 ---- */
-assert.match(syncSource, /function autoDownloadCasuals/,
-  'An article saved on another device never arrives on its own');
-assert.match(syncSource, /kind:b\.kind\|\|''/,
-  'The server list cannot tell a short read from a book, so nothing can be auto-pulled');
+/* URL 기사는 새 기기에서 다시 수집하고 원문을 서버에서 받지 않습니다. */
+assert.match(librarySource, /function restoreMissingVaultArticles/,
+  'An article URL is not restored on a new device');
 /* 이 기기에서만 지운 책이 다음 동기화에 도로 돌아오면 지운 것이 아닙니다. */
 assert.match(librarySource, /hideBookLocally\(remoteId\)/,
   'A device-only delete is undone by the next auto-download');
-assert.match(syncSource, /if\(hidden\[row\.book_id\]\) continue/,
-  'Auto-download ignores the device-only delete marker');
+assert.match(librarySource, /filter\(row=>!hidden\[row\.book_id\]\)/,
+  'Ghost cards ignore the device-only delete marker');
 
 /* ---- 샘플 책은 없앴습니다 ---- */
 assert.equal(existsSync(resolve(root, 'scripts/core/demo-book.js')), false,
@@ -923,12 +882,8 @@ assert.match(articleSource, /function bookImageBlob/,
 // 홈은 자주 다시 그려집니다. 못 받는 사진을 렌더링할 때마다 다시 부르면 안 됩니다.
 assert.match(articleSource, /bookImageMissing\.has\(key\)/,
   'An unreachable photo is re-fetched on every home render');
-for(const field of ['site', 'sourceUrl', 'cover', 'imgSrc']){
-  assert.match(syncSource, new RegExp(`${field}:b\\.${field}`),
-    `A synced article loses its ${field}`);
-  assert.match(syncSource, new RegExp(`${field}:body\\.${field}`),
-    `A downloaded article never reads back its ${field}`);
-}
+assert.match(syncSource, /sourceUrl:book\.sourceUrl/,
+  'The encrypted article metadata loses its source URL');
 assert.doesNotMatch(syncSource, /storage\.from\('imgs'\)|uploadImage/,
   'Article photos are being re-hosted on the server instead of re-fetched');
 assert.match(articleSource, /parsed\.blocks\.filter\(block => block\.r !== 'img' \|\| stored\.has/,
@@ -943,28 +898,10 @@ assert.match(articleServer, /MAX_IMAGE_BYTES/, 'The image relay has no size limi
 assert.match(articleServer, /\/svg\/i\.test\(type\)/,
   'The image relay would pass an SVG document through as a photo');
 
-/* ── 사진은 보내기 전에 한 번 줄입니다 ──
-   매체가 내주는 원본은 2000~3000px 짜리 인쇄용입니다. 그대로 실어 보내면 짧은
-   글 하나가 1MB 에 가까워지고, 짧은 글은 묻지도 않고 저절로 내려받습니다. */
-assert.match(articleSource, /async function shrinkPhotoForTransport/,
-  'Article photos are uploaded at their original print resolution');
-assert.match(articleSource, /await blobToDataUrl\(await shrinkPhotoForTransport\(stored\)\)/,
-  'The shrunk photo is built but the original is what actually gets sent');
-/* 예산은 실제로 오가는 크기(base64)로 세야 합니다. 원본 바이트로 세면 오가는
-   양은 언제나 그보다 3분의 1 많습니다. */
-assert.match(articleSource, /spent \+ dataUrl\.length > BOOK_PHOTO_BUDGET/,
-  'The photo budget counts raw bytes, so a third more than that actually travels');
-
-/* ── 옛 줄의 `kind` 는 짐작이 아니라 아는 기기가 적어 줍니다 ── */
-assert.match(syncSource, /async function backfillServerKinds/,
-  'Legacy server rows are left to the size guess forever');
-assert.ok(
-  syncSource.indexOf('await backfillServerKinds()') < syncSource.indexOf('await autoDownloadCasuals()'),
-  'The kind backfill runs after the download decision it was supposed to inform',
-);
-/* 크기 하나로는 긴 기사가 원서로 넘어갑니다. 문단 수를 함께 봐야 합니다. */
-assert.match(librarySource, /LEGACY_CASUAL_MAX_PARAS/,
-  'The legacy guess is back to size alone, so a long article lands on the wrong shelf');
+assert.doesNotMatch(articleSource,/collectBookPhotos|shrinkPhotoForTransport|BOOK_PHOTO_BUDGET/,
+  'The removed photo-upload transport code remains in the article importer');
+assert.match(librarySource, /CASUAL_KINDS\.has\(\(meta\|\|\{\}\)\.kind/,
+  'Encrypted metadata is no longer shelved from its explicit kind');
 
 /* ── 고전 표지는 파일 밖의 한 장이 이깁니다 ──
    그래야 `assets/classics/<id>.jpg` 를 갈아 끼우는 것만으로 권유 카드와 서가가
@@ -1011,11 +948,32 @@ assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 
   'The word panel and the sentence window no longer wait in the same way');
 /* 색도 하나입니다. AI 가 나오는 세 자리가 같은 변수만 씁니다 — 뜻 상자에 초록빛이,
    문장 창에 흰 종이가 깔려 있으면 같은 목소리로 들리지 않습니다. */
-assert.match(readFileSync(resolve(root, 'styles/base.css'), 'utf8'), /--ai-bg1:/,
+assert.match(readFileSync(resolve(root, 'styles/tokens.css'), 'utf8'), /--ai-bg1:/,
   'The shared AI palette is gone, so each AI surface picks its own colour again');
+/* 디자인 값은 tokens.css 한 곳에 삽니다. 다른 스타일 파일이 색을 직접 적기
+   시작하면, "여기만 고치면 된다"가 다시 거짓말이 됩니다. */
+for(const sheet of ['base.css','home.css','components.css','dictionary.css','reader.css']){
+  const css = readFileSync(resolve(root, 'styles', sheet), 'utf8');
+  const literals = (css.match(/:\s*(?:#[0-9A-Fa-f]{3,8}\b|rgba?\([\d.,\s]+\))/g) || []);
+  assert.deepEqual(literals, [],
+    `styles/${sheet} 가 색을 직접 적고 있습니다 — tokens.css 로 옮겨 주세요: ${literals.join(', ')}`);
+}
 assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
   'The word meaning box has its own colour again');
-assert.match(readFileSync(resolve(root, 'styles/components.css'), 'utf8'), /#st-card\{[^}]*var\(--ai-bg1\)/,
-  'The sentence window has its own colour again');
+assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
+  'The inline sentence explanation has its own colour again');
+
+/* 긴 글은 문단 뼈대만 먼저 만들고, 눈앞의 문단에만 낱말 상자를 붙입니다.
+   이 세 고리가 함께 있어야 전체 책의 수십만 span 이 다시 생기지 않습니다. */
+assert.match(readerSource, /function beginLazyWordSpans/,
+  'Long text is no longer prepared for lazy word spans');
+assert.match(readerSource, /el\.textContent = bl\.v \|\| bl\.t/,
+  'The reader wraps every word while constructing the whole book again');
+assert.match(readerSource, /wordSpanObserver\.observe\(element\)/,
+  'Visible paragraphs are not observed for word-span hydration');
+assert.match(readerCss, /\.w\{[^}]*padding:0 1px; margin:0 -1px/,
+  'Word-span padding can change paragraph height during lazy hydration');
+assert.match(modesSource, /function stabilizePdfModeTarget/,
+  'PDF mode switches no longer re-anchor after placeholder sizes settle');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

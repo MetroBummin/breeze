@@ -21,9 +21,9 @@ const out = resolve(root, 'www');
 const FILES = ['index.html', 'config.js'];
 const DIRS  = ['scripts', 'styles', 'assets'];
 
-/* assets 안에서도 빼는 것 — 내장 고전 5종(1.3MB)은 앱에 함께 넣습니다.
-   비행기에서 읽을거리가 하나도 없는 앱이 되면 안 되니까요. */
-const SKIP = /(^|\/)\.DS_Store$/;
+/* 내장 고전 3종은 앱에 함께 넣습니다. 현재 실행 경로에서 떼어 둔 옛 맛보기 글은
+   저장소에 보관하되 네이티브 앱 용량에는 포함하지 않습니다. */
+const SKIP = /(^|\/)\.DS_Store$|^scripts\/library\/samples\.js$|^assets\/samples\//;
 
 let copied = 0, bytes = 0;
 function copyInto(sourcePath){

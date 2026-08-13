@@ -21,13 +21,7 @@ function openEditSheet(book, step){
   document.getElementById('ed-title').value = book.title;
   document.getElementById('ed-what').textContent = book.title;
   renderCoverChoices(book);
-  /* 로그인하지 않았으면 서버에 사본이 없습니다. 고를 것이 없는 갈림길을
-     보여줄 이유가 없습니다. */
-  const signedIn = !!(typeof sbUser !== 'undefined' && sbUser);
-  editModal().querySelector('.ed-all').hidden = !signedIn;
-  document.getElementById('ed-del-note').textContent = signedIn
-    ? '단어장은 어느 쪽이든 그대로 남습니다.'
-    : '로그인하지 않아 서버에는 사본이 없습니다. 단어장은 그대로 남습니다.';
+  document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   editModal().classList.add('on');
   editStep(step || 'edit');
 }
@@ -71,6 +65,7 @@ async function pickCoverFile(input){
   const key = editTarget.id + '|cover';
   await imgPut(key, file);
   editTarget.cover = key;
+  editTarget.coverUpdatedAt = Date.now();
   await bookPut(editTarget);
   renderCoverChoices(editTarget);
   renderAllBookViews();
@@ -88,14 +83,18 @@ async function saveEditSheet(){
     book.renamedAt = Date.now();        // 어느 쪽 이름이 최신인지 판단하는 기준
     changed = true;
   }
-  if(picked !== (book.cover || '')){ book.cover = picked || null; changed = true; }
+  if(picked !== (book.cover || '')){
+    book.cover = picked || null;
+    book.coverUpdatedAt = Date.now();
+    changed = true;
+  }
   if(!changed){ closeEditSheet(); return; }
 
   await bookPut(book);
   closeEditSheet();
   renderAllBookViews();
   toast('바꿨어요');
-  pushBookTitle(book);
+  queueSync();
 }
 
 /* ---------- 지우기 ----------
@@ -106,9 +105,9 @@ editModal().addEventListener('click', event => {
   if(event.target.id === 'edit-modal') closeEditSheet();
 });
 
-async function runDelete(scope){
+async function runDelete(){
   const book = editTarget;
   if(!book) return;
   closeEditSheet();
-  await deleteBook(book, scope);
+  await deleteBook(book);
 }

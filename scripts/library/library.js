@@ -1,6 +1,6 @@
 function greet(){
   const h = new Date().getHours();
-  return h<5 ? 'GOOD NIGHT' : h<12 ? 'GOOD MORNING' : h<18 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+  return tr(h<5 ? 'greet.night' : h<12 ? 'greet.morning' : h<18 ? 'greet.afternoon' : 'greet.evening');
 }
 /* 꾹 누르면(약 0.55초) 이름 바꾸기. 손가락이 움직이면(스크롤) 취소됩니다. */
 function attachLongPress(el, fn){
@@ -48,10 +48,9 @@ async function purgeBookImages(b){
   for(const key of keys) await imgDel(key);
 }
 
-/* 책 삭제. `scope`는 'local'(이 기기에서만) 또는 'all'(모든 기기에서).
-   되돌릴 수 없는 쪽을 기본으로 두지 않으려고 갈라 두었습니다 — 물어보는
-   화면은 `openEditSheet(book,'delete')`에 있습니다. */
-async function deleteBook(b, scope){
+/* 원문은 서버에 없으므로 삭제도 이 기기 하나만 다룹니다. 암호화 보관함의
+   흐린 카드는 로컬 숨김 표시에 의해 이 기기에서 다시 나타나지 않습니다. */
+async function deleteBook(b){
   const remoteId = serverBookIdFor(b);
   /* Deleting the book that is open would leave the reader pointing at content
      that no longer exists. Leave the reader first. */
@@ -61,31 +60,8 @@ async function deleteBook(b, scope){
   await originalDel(b.id);
   await purgeBookImages(b);
   delete positions[b.id]; save(LS_POS, positions);
-  renderAllBookViews();
-  if(scope !== 'all'){
-    /* 서버 사본은 그대로 둡니다. 그래서 "이 기기에서 숨김"을 적어 둬야
-       합니다 — 짧은 글은 저절로 내려받으므로, 표시가 없으면 다음 동기화가
-       곧바로 도로 가져옵니다. Sync 창에서 손수 받으면 표시가 풀립니다. */
-    hideBookLocally(remoteId);
-    hideBookLocally(b.id);
-    toast('이 기기에서 지웠어요');
-    return;
-  }
-  if(sb && sbUser){
-    try{
-      const meta = { title:b.title, fingerprint:ensureBookFingerprint(b),
-                     deleted:true, deletedAt:Date.now() };
-      queueServerBookDelete(remoteId,meta.title,meta.fingerprint,meta.deletedAt);
-      const result=await flushPendingBookDeletes();
-      if(result.failed) throw new Error('다음 동기화 때 서버 삭제를 다시 시도합니다.');
-      if(serverBooks){
-        serverBooks = serverBooks.filter(r => r.book_id !== remoteId);
-        serverBooks.push({book_id:remoteId, meta});
-      }
-      renderAllBookViews();
-    }catch(e){ console.error(e); toast('기기에서는 지웠지만 서버에서 지우지 못했어요'); return; }
-  }
-  toast('모든 기기에서 지웠어요');
+  hideBookLocally(remoteId); hideBookLocally(b.id); queueSync();
+  renderAllBookViews(); toast('이 기기에서 지웠어요');
 }
 
 /* ================= 홈 =================
@@ -115,33 +91,10 @@ function fillCard(card, parts){
 
 const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
+const HOME_CASUAL_LIMIT = 4;
 
-/* 목록만 보고 "이건 짧은 글"인지 아는 법.
-
-   답은 `kind` 하나입니다. 그리고 `kind` 는 짐작이 아니라 **어떻게 들어왔는지**
-   그 자체입니다 — 붙여넣기는 `paste`, 주소는 `article`, 파일은 `pdf`·`epub`·`txt`.
-   넣는 순간 적히므로 틀릴 수가 없습니다.
-
-   문제는 `kind` 를 목록에 적기 시작하기 *전에* 올라간 줄입니다. 그 줄에는 그
-   칸이 아예 없어서, 지금 Books 선반에 흐린 카드로 앉아 있습니다. 그 줄들을
-   위해 두 가지를 합니다.
-
-   ① 아는 기기가 대신 적어 줍니다(`backfillServerKinds`). 그 책을 손에 들고
-      있는 기기라면 짐작할 것이 없습니다 — 그냥 알고 있는 값을 올려 줍니다.
-      이쪽이 거의 다 처리하고, 한 번 적히면 그걸로 끝입니다.
-   ② 그래도 남는 줄 — 어느 기기에도 없는, 순전히 서버에만 있는 옛 줄. 여기서만
-      어림짐작합니다. 크기 하나로는 긴 기사가 원서로 넘어갈 수 있어서 문단 수를
-      함께 봅니다: 기사는 아무리 길어도 수백 문단이고 원서는 수천 문단입니다.
-      둘 다 통과해야 짧은 글로 봅니다. */
-const LEGACY_CASUAL_MAX_BYTES = 300 * 1024;
-const LEGACY_CASUAL_MAX_PARAS = 400;
 function rowLooksCasual(meta){
-  const kind = (meta || {}).kind || '';
-  if(kind) return CASUAL_KINDS.has(kind);
-  const bytes = (meta || {}).bytes || 0;
-  const paras = (meta || {}).paras || 0;
-  return bytes > 0 && bytes <= LEGACY_CASUAL_MAX_BYTES
-      && paras > 0 && paras <= LEGACY_CASUAL_MAX_PARAS;
+  return CASUAL_KINDS.has((meta||{}).kind||'');
 }
 
 /* 최근에 읽던 것이 앞에 옵니다. 한 번도 열지 않은 것은 그 뒤에, 넣은 순서로.
@@ -247,18 +200,14 @@ function casualAddCard(){
   card.onclick = () => openAddModal('casual');
   return card;
 }
-
-/* ================= 책이 서버에 있는가 =================
-   예전에는 이걸 Sync 창 안 목록에서만 알 수 있었습니다. 창을 열고, 책마다
-   `올리기`를 누르고, 다른 기기에서는 다시 열어서 `받기`를 눌러야 했습니다.
-   그 일은 일어나지 않습니다 — 그래서 백업은 "하려고 마음먹은 사람"만 가졌습니다.
-
-   이제 상태와 단추가 책 위에 있습니다. 카드를 보면 이 책이 안전한지 보이고,
-   올리는 것도 거기서 합니다. Sync 창은 로그인만 맡습니다. */
-function serverRowForBook(book){
-  if(!sbUser || typeof activeServerBooks !== 'function') return null;
-  return activeServerBooks().find(row => serverRowMatchesBook(row, book)) || null;
+function casualMoreCard(count){
+  const card = el('div', 'casual more');
+  card.innerHTML = `<div class="thumb"><div class="plus">→</div>
+    <div class="lbl">내 Casual<br>${count}편 더 보기</div></div>`;
+  card.onclick = () => show('casuals');
+  return card;
 }
+
 /* 서버에만 있는 원서. 짧은 글은 저절로 오가므로 여기 나오지 않습니다.
    "이 기기에서만 지운" 책도 나오지 않습니다 — 서버 사본을 남기기로 하고 서가에서
    치운 것인데, 흐린 카드로 도로 올라오면 지운 적이 없는 것과 같습니다. */
@@ -268,10 +217,73 @@ function serverOnlyBooks(){
   return activeServerBooks()
     .filter(row => !rowLooksCasual(row.meta || {}))
     .filter(row => !hidden[row.book_id])
-    .filter(row => !findLocalBookForServerRow(row, books));
+    .filter(row => !(row.meta||{}).localId);
+}
+function serverOnlyCasuals(){
+  if(!sbUser || typeof activeServerBooks !== 'function') return [];
+  const hidden=hiddenBookIds();
+  return activeServerBooks()
+    .filter(row=>rowLooksCasual(row.meta||{}))
+    .filter(row=>!hidden[row.book_id])
+    .filter(row=>!(row.meta||{}).localId);
 }
 
-const cardBusy = new Set();      // 올리는/받는 중인 책 — 두 번 누르는 것을 막습니다
+/* 기본 고전은 같은 EPUB을 다시 받을 수 있습니다. 다른 기기에서 읽던 앨리스가
+   "파일 연결 필요"와 "무료로 받기" 두 장으로 따로 보이면, 사용자는 같은 책인지
+   알 길이 없습니다. 새 기록에는 classicId를 싣고, 이미 올라간 예전 기록은
+   제목·지은이로 보수적으로 한 번만 알아봅니다. */
+function classicForMeta(meta){
+  if(typeof CLASSICS==='undefined') return null;
+  const byId=CLASSICS.find(classic=>classic.id===(meta&&meta.classicId));
+  if(byId) return byId;
+  const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const title=norm(meta&&meta.title),author=norm(meta&&meta.author);
+  return CLASSICS.find(classic=>norm(classic.title)===title
+    && (!author || norm(classic.author)===author)) || null;
+}
+
+function cloudCasualCard(row){
+  const meta=row.meta||{},card=el('div','casual cloud');
+  const article=meta.kind==='article'&&meta.sourceUrl;
+  card.innerHTML=`<div class="thumb"><div class="src"></div><div class="lede"></div>
+      <button class="del" type="button" title="이 기기에서 지우기">✕</button></div>
+    <div class="ct"></div><div class="cm"></div>`;
+  fillCard(card,{'.src':meta.site||(article?'기사':'붙여넣은 글'),'.lede':article?'원문에서 다시 가져올 수 있어요':'내용을 다시 붙여넣어 이어 읽으세요',
+    '.ct':meta.title||'(제목 없음)', '.cm':article?'원문 열기 · 다시 시도':'내용 다시 붙여넣기'});
+  card.querySelector('.del').onclick=event=>{ event.stopPropagation(); hideBookLocally(row.book_id); renderAllBookViews(); toast('이 기기에서 지웠어요'); };
+  card.onclick=()=>article?restoreVaultArticle(row,true):(openAddModal('casual'),addStep('paste'));
+  return card;
+}
+
+async function restoreVaultArticle(row,manual){
+  const meta=row.meta||{}; if(!meta.sourceUrl||cardBusy.has(row.book_id)) return false;
+  cardBusy.add(row.book_id); if(manual) toast('기사를 다시 가져오는 중…');
+  try{
+    const html=await fetchArticleHtml(meta.sourceUrl),parsed=/** @type {any} */(parseArticleHtml(html,meta.sourceUrl));
+    if(!parsed) throw new Error('본문을 찾지 못했어요');
+    await attachArticleImages(parsed);
+    const id=bookHash(parsed.paras),book={id,title:meta.title||parsed.title,kind:'article',paras:parsed.paras,
+      addedAt:meta.addedAt||Date.now(),fingerprint:bookContentFingerprint(parsed.paras),textAvailable:true,
+      sourceMap:null,layoutSignals:null,formatting:parsed.formatting,original:null,localSourceAt:Date.now(),
+      site:parsed.site,sourceUrl:parsed.url,cover:parsed.cover||null,imgSrc:parsed.imgSrc||null};
+    await bookPut(book); books=books.filter(one=>one.id!==id); books.unshift(book);
+    if(meta.position) positions[id]=meta.position;
+    save(LS_POS,positions); unhideBookLocally(row.book_id); renderAllBookViews(); queueSync();
+    if(manual) toast('기사를 다시 가져왔어요'); return true;
+  }catch(error){ if(manual) toast('다시 가져오지 못했어요. 원문 열기나 붙여넣기를 이용해 주세요'); return false; }
+  finally{ cardBusy.delete(row.book_id); }
+}
+async function restoreMissingVaultArticles(){
+  const attempted=load('breeze.article-restore-attempts',{}),now=Date.now();
+  for(const row of serverOnlyCasuals()){
+    if((row.meta||{}).kind!=='article'||!(row.meta||{}).sourceUrl) continue;
+    if(now-(attempted[row.book_id]||0)<24*60*60*1000) continue;
+    attempted[row.book_id]=now; save('breeze.article-restore-attempts',attempted);
+    await restoreVaultArticle(row,false);
+  }
+}
+
+const cardBusy = new Set();
 
 function bookCard(book, current){
   const index = paletteOf(book, 3);
@@ -281,86 +293,34 @@ function bookCard(book, current){
   card.innerHTML = `<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
-    ${label ? '<div class="prog"></div>' : ''}
-    <button class="up" type="button"></button>`;
+    ${label ? '<div class="prog"></div>' : ''}`;
   fillCard(card, {'.author': book.author || 'MY BOOK', '.bt': book.title, '.prog': label});
   applyCover(card, book);
-  paintBookSync(card, book);
   return wireBookCard(card, book);
-}
-
-/* 화살표 하나가 상태이자 단추입니다. 올라가 있으면 조용한 ✓ 로 남아
-   "이 책은 기기가 죽어도 남는다"만 말합니다 — 누를 것이 없으니 흐리게. */
-function paintBookSync(card, book){
-  const button = card.querySelector('.up');
-  if(!button) return;
-  const busy = cardBusy.has(book.id);
-  const synced = !busy && !!serverRowForBook(book);
-  card.classList.toggle('synced', synced);
-  card.classList.toggle('busy-sync', busy);
-  /* 로그인 전에는 올릴 곳이 없습니다. 단추 대신 아무것도 두지 않습니다 —
-     읽으러 온 사람에게 계정 이야기를 카드마다 하지 않기 위해서. */
-  button.style.display = sbUser ? 'flex' : 'none';
-  button.textContent = busy ? '↑' : (synced ? '✓' : '↑');
-  button.title = busy ? '올리는 중…'
-    : synced ? '서버에 백업돼 있어요' : '서버에 올려 두기 (다른 기기에서도 읽기)';
-  button.onclick = event => {
-    event.stopPropagation();          // 카드를 누른 것이 아닙니다
-    if(busy || synced) return;
-    uploadBookFromCard(book);
-  };
-}
-
-async function uploadBookFromCard(book){
-  if(cardBusy.has(book.id)) return;
-  cardBusy.add(book.id);
-  renderAllBookViews();
-  try{
-    await bookUpload(book.id);
-    toast(`"${book.title}" 올렸어요`);
-  }catch(error){
-    console.error(error);
-    toast('올리지 못했어요: '+((error && error.message) || error));
-  }finally{
-    cardBusy.delete(book.id);
-    renderAllBookViews();
-  }
 }
 
 /* 서버에만 있는 책. 이름만 받아 와서 흐린 카드로 둡니다 — 있다는 것은 보이고,
    가운데 단추가 "받으면 읽을 수 있다"를 말합니다. */
 function cloudBookCard(row){
   const meta = row.meta || {};
-  const busy = cardBusy.has(row.book_id);
-  const card = el('div', 'bookcard cloud' + (busy ? ' busy-sync' : ''));
-  card.innerHTML = `<div class="author"></div><div class="bt"></div>
-    <button class="getbtn" type="button">${busy ? '받는 중…' : '↓ 이 기기에 받기'}</button>
-    <button class="del" type="button" title="서버에서 지우기">✕</button>`;
-  fillCard(card, { '.author': meta.author || '서버에 있음', '.bt': meta.title || '(제목 없음)' });
-  /* 서버에만 있는 책을 지우는 길은 예전 Sync 목록에만 있었습니다. 목록을 걷어낸
-     이상 여기 없으면 아예 지울 수 없게 됩니다. */
-  card.querySelector('.del').onclick = event => {
-    event.stopPropagation();
-    bookDeleteServer(row.book_id, meta.title || '(제목 없음)');
-  };
-  card.onclick = () => { if(!cardBusy.has(row.book_id)) downloadBookFromCard(row); };
-  return card;
-}
-
-async function downloadBookFromCard(row){
-  const id = row.book_id;
-  if(cardBusy.has(id)) return;
-  cardBusy.add(id);
-  renderAllBookViews();
-  try{
-    await bookDownload(id);
-  }catch(error){
-    console.error(error);
-    toast('받지 못했어요: '+((error && error.message) || error));
-  }finally{
-    cardBusy.delete(id);
-    renderAllBookViews();
+  const classic=classicForMeta(meta);
+  const card = el('div', 'bookcard cloud');
+  const progress=meta.position&&meta.position.t?Math.round((meta.position.p||0)*100)+'%부터 이어 읽기':'';
+  card.innerHTML = `${classic?'<img class="cover" alt="" hidden>':''}<div class="author"></div><div class="bt"></div>
+    <button class="getbtn" type="button">${classic?'무료로 다시 받아서':'파일 연결해서'} ${progress||'마저 읽기'}</button>
+    <button class="del" type="button" title="이 기기에서 지우기">✕</button>`;
+  fillCard(card, { '.author': meta.author || '파일 연결 필요', '.bt': meta.title || '(제목 없음)' });
+  if(classic){
+    card.classList.add('classic-cloud');
+    const image=card.querySelector('.cover');
+    image.onload=()=>{ image.hidden=false; card.classList.add('has-cover'); };
+    image.src=classicCoverFile(classic.id);
   }
+  card.querySelector('.del').onclick = event => {
+    event.stopPropagation(); hideBookLocally(row.book_id); renderAllBookViews(); toast('이 기기에서 지웠어요');
+  };
+  card.onclick = () => classic ? importClassic(classic,card) : requestVaultReconnect(row);
+  return card;
 }
 
 function longformAddCard(){
@@ -378,11 +338,14 @@ function renderHome(){
   const rail = document.getElementById('casual-rail');
   const nowCasual = nowReadingIn(casuals);
   rail.innerHTML = '';
-  casuals.forEach(book => rail.appendChild(casualCard(book, nowCasual)));
+  casuals.slice(0, HOME_CASUAL_LIMIT).forEach(book => rail.appendChild(casualCard(book, nowCasual)));
+  serverOnlyCasuals().slice(0,Math.max(0,HOME_CASUAL_LIMIT-casuals.length)).forEach(row=>rail.appendChild(cloudCasualCard(row)));
+  if(casuals.length > HOME_CASUAL_LIMIT) rail.appendChild(casualMoreCard(casuals.length - HOME_CASUAL_LIMIT));
   rail.appendChild(casualAddCard());
   document.querySelector('#casuals .sec-sub').textContent = casuals.length
     ? `기사 · 스레드 · 짧은 글 ${casuals.length}편`
     : '기사 · 스레드 · 짧은 글';
+  if(typeof appendRssCards === 'function') appendRssCards(rail);
 
   const longform = longformBooks();
   const shelf = document.getElementById('shelf');
@@ -408,7 +371,8 @@ function renderCasualLibrary(){
   document.getElementById('casual-cnt').textContent = casuals.length ? `${casuals.length}편` : '';
   grid.innerHTML = '';
   casuals.forEach(book => grid.appendChild(casualCard(book, current)));
-  empty.hidden = casuals.length > 0;
+  const cloud=serverOnlyCasuals(); cloud.forEach(row=>grid.appendChild(cloudCasualCard(row)));
+  empty.hidden = casuals.length > 0 || cloud.length > 0;
   empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
 }
 
@@ -427,31 +391,10 @@ function renderLongformLibrary(){
   offered.forEach(classic => grid.appendChild(classicCard(classic)));
   empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
   empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
-  renderHiddenBooksNote();
-}
-
-/* "이 기기에서만 지우기"를 고른 책은 서버에 남아 있지만 서가에 나오지 않습니다.
-   예전에는 Sync 창 목록에서 다시 받을 수 있었는데, 그 목록을 걷어내면서 되살릴
-   길이 없어졌습니다. 이 줄이 그 길입니다 — 서가는 어지럽히지 않고,
-   찾는 사람만 찾을 수 있게 라이브러리 화면 아래에만 둡니다. */
-function renderHiddenBooksNote(){
-  const host = document.getElementById('longform-hidden');
-  if(!host) return;
-  const hidden = hiddenBookIds();
-  const count = (sbUser && typeof activeServerBooks === 'function')
-    ? activeServerBooks().filter(row => hidden[row.book_id]).length : 0;
-  host.hidden = count === 0;
-  if(!count) return;
-  host.innerHTML = `이 기기에서 숨긴 책 ${count}권 <button type="button" class="linkish">다시 보기</button>`;
-  host.querySelector('button').onclick = () => {
-    activeServerBooks().forEach(row => { if(hidden[row.book_id]) unhideBookLocally(row.book_id); });
-    renderAllBookViews();
-    toast('숨긴 책을 다시 꺼냈어요');
-  };
 }
 
 /* ================= 하나뿐인 추가 시트 =================
-   붙여넣기 · 기사 URL · 내 파일. 셋 다 넣는 순간부터 오프라인에서 읽힙니다. */
+   Casuals에는 붙여넣기·기사 URL, Books에는 파일까지 함께 보여 줍니다. */
 function addModal(){ return document.getElementById('add-modal'); }
 function addStep(step){
   addModal().querySelectorAll('.am-step').forEach(section =>
@@ -495,7 +438,7 @@ async function saveCasualBook(parsed, extra){
   closeAddModal();
   renderHome();
   openBook(book);
-  autoUploadCasual(book);        // 읽기를 막지 않도록 기다리지 않습니다
+  queueSync();                   // 읽기를 막지 않도록 기다리지 않습니다
 }
 
 async function importPastedText(){
@@ -512,16 +455,20 @@ document.getElementById('am-url').addEventListener('keydown', event => {
 addModal().addEventListener('click', event => { if(event.target.id === 'add-modal') closeAddModal(); });
 
 /* ================= import ================= */
-const finput = document.getElementById('fileinput');
-const originalInput = document.getElementById('original-fileinput');
+const finput = /** @type {HTMLInputElement} */(document.getElementById('fileinput'));
+const originalInput = /** @type {HTMLInputElement} */(document.getElementById('original-fileinput'));
 finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0]); finput.value=''; };
 let reconnectTarget = null;
+let vaultReconnectTarget = null;
 originalInput.onchange = async()=>{
   const file = originalInput.files[0];
   originalInput.value = '';
   const target = reconnectTarget;
   reconnectTarget = null;
-  if(file && target) await reconnectOriginalFile(target, file);
+  const remote = vaultReconnectTarget;
+  vaultReconnectTarget = null;
+  if(file && remote) await reconnectVaultItem(remote,file);
+  else if(file && target) await reconnectOriginalFile(target, file);
 };
 function requestOriginalReconnect(book){
   if(!book) return;
@@ -530,6 +477,33 @@ function requestOriginalReconnect(book){
     ? '.'+book.original.kind
     : '.pdf,.epub';
   originalInput.click();
+}
+function requestVaultReconnect(row){
+  if(!row) return;
+  vaultReconnectTarget=row;
+  const meta=row.meta||{};
+  originalInput.accept=meta.originalKind?'.'+meta.originalKind:'.pdf,.epub,.txt';
+  originalInput.click();
+}
+async function reconnectVaultItem(row,file){
+  const meta=row.meta||{};
+  toast('같은 읽기자료인지 확인하고 있어요…');
+  let prepared=null;
+  try{
+    prepared=await prepareImportedFile(file);
+    const same=meta.identity && await vaultFileIdentity(prepared.hash)===meta.identity;
+    if(!same){ await imgPurge(prepared.tmpId+'|'); toast('다른 파일로 보여요. 원래 읽던 파일을 골라주세요'); return; }
+    const book={id:prepared.id,title:meta.title||prepared.title,author:meta.author||'',kind:prepared.kind,
+      paras:[],addedAt:meta.addedAt||Date.now(),fingerprint:prepared.fingerprint};
+    await applyPreparedBook(book,prepared,file);
+    books=books.filter(one=>one.id!==book.id); books.unshift(book);
+    if(meta.position) positions[book.id]=meta.position;
+    save(LS_POS,positions); unhideBookLocally(row.book_id); await bookPut(book); queueSync(); renderAllBookViews();
+    toast(meta.position&&meta.position.t?`${Math.round((meta.position.p||0)*100)}%부터 이어 읽을 수 있어요`:'파일을 연결했어요');
+  }catch(error){
+    if(prepared) await imgPurge(prepared.tmpId+'|');
+    console.error(error); toast('파일을 연결하지 못했어요: '+(error.message||error));
+  }
 }
 /* Dragging over a child element fires dragleave on the parent, so the overlay
    is driven by a depth counter rather than by the last event seen. */
@@ -566,18 +540,13 @@ function importKind(file){
 }
 async function rawFileHash(file){
   const buffer = await file.arrayBuffer();
-  if(window.crypto && crypto.subtle){
-    const digest = await crypto.subtle.digest('SHA-256', buffer);
-    return [...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('');
-  }
-  let hash = 0x811c9dc5;
-  const bytes = new Uint8Array(buffer);
-  for(let index=0; index<bytes.length; index++) hash = Math.imul((hash^bytes[index])>>>0,0x01000193)>>>0;
-  return 'fallback-'+hash.toString(16)+'-'+bytes.length;
+  if(!window.crypto||!crypto.subtle) throw new Error('이 기기에서는 안전한 파일 확인 기능을 사용할 수 없어요');
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  return [...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('');
 }
 async function storeLocalOriginal(bookId, file, kind, hash){
   if(kind !== 'pdf' && kind !== 'epub') return null;
-  const metadata = { kind, name:file.name, type:file.type||'', size:file.size,
+  const metadata = { kind, name:file.name, type:file.type||'', size:file.size, lastModified:file.lastModified||0,
                      hash, storedAt:Date.now() };
   await originalPut(bookId, {...metadata, blob:file.slice(0,file.size,file.type||'application/octet-stream')});
   return metadata;
@@ -614,12 +583,15 @@ async function prepareImportedFile(file){
     const glyphs = learnLigatures(paras.join('\n'));
     paras = paras.map(text => text.startsWith(IMG_MARK) ? text : applyLigatures(text, glyphs));
 
-    const id = textAvailable ? bookHash(paras) : 'raw-'+hash.slice(0,24);
+    /* 파일 책의 로컬 ID도 본문에서 만들지 않습니다. 동일한 원본 바이트만
+       같은 파일로 판정하도록 전체 파일 SHA-256을 기준으로 삼습니다. */
+    const id = 'file-'+hash.slice(0,32);
     const fingerprint = textAvailable ? bookContentFingerprint(paras) : 'raw:'+hash;
     const sourceMap = buildSourceMap(sig);
     const packedSignals = packLayoutSignals(sig);
     const formatting = buildFormattingFromLayout(paras,sig,null);
     return {kind,title,tmpId,hash,id,fingerprint,paras,sig,sourceMap,packedSignals,glyphs,
+            size:file.size||0,lastModified:file.lastModified||0,
             /* EPUB 안에 들어 있던 표지. 아직 임시 ID 로 담겨 있어서, 진짜 ID 가
                정해지면 그림과 함께 이름이 바뀝니다(`imgRename`). */
             cover:parsed.cover || '',
@@ -644,6 +616,9 @@ async function applyPreparedBook(target, prepared, file){
      다시 연결했다고 해서 골라 둔 표지가 파일 안의 것으로 되돌아가면 안 됩니다. */
   if(prepared.cover && !target.cover) target.cover = prepared.cover.replace(prepared.tmpId,target.id);
   target.kind = prepared.kind;
+  target.sourceHash = prepared.hash;
+  target.sourceSize = prepared.size||0;
+  target.sourceModified = prepared.lastModified||0;
   target.fingerprint = prepared.fingerprint;
   target.textAvailable = prepared.textAvailable;
   target.sourceMap = prepared.sourceMap;
@@ -667,9 +642,11 @@ async function reconnectOriginalFile(target,file){
   let prepared = null;
   try{
     prepared = await prepareImportedFile(file);
-    if(prepared.fingerprint !== ensureBookFingerprint(target)){
+    const record=await originalGetForBook(target);
+    const knownHash=(record&&record.hash)||(target.original&&target.original.hash)||target.sourceHash||'';
+    if(!knownHash||prepared.hash!==knownHash){
       imgPurge(prepared.tmpId+'|');
-      toast('다른 책으로 보여요. 원래 반입했던 파일을 골라주세요');
+      toast(knownHash?'다른 파일로 보여요. 원래 반입했던 파일을 골라주세요':'이전 기록에는 안전한 파일 ID가 없어 자동 연결할 수 없어요. 새 책으로 추가해 주세요');
       return;
     }
     await applyPreparedBook(target,prepared,file);
@@ -696,7 +673,13 @@ async function importFile(file, extra){
   let prepared = null;
   try{
     prepared = await prepareImportedFile(file);
-    const already = books.find(book=>book.id===prepared.id || ensureBookFingerprint(book)===prepared.fingerprint);
+    let already = books.find(book=>book.id===prepared.id || book.sourceHash===prepared.hash || (book.original&&book.original.hash===prepared.hash));
+    if(!already){
+      for(const book of books){
+        const record=await originalGetForBook(book);
+        if(record&&record.hash===prepared.hash){ already=book; break; }
+      }
+    }
     if(already){
       if(prepared.kind === 'txt'){
         imgPurge(prepared.tmpId+'|');
@@ -707,6 +690,27 @@ async function importFile(file, extra){
       await applyPreparedBook(already,prepared,file);
       renderHome();
       toast(`기존 책에 원본을 연결했어요 — "${already.title}"`);
+      return;
+    }
+
+    /* 흐린 카드의 ×는 서버 기록을 지우는 것이 아니라 이 기기에서만 감춥니다.
+       그런데 그 뒤에 상단의 일반 파일 추가로 같은 바이트를 넣으면, 예전에는
+       새 0% 책으로 만들고 더 최신 항목으로 동기화해 버렸습니다. 파일 해시로
+       암호화 보관함의 기록을 먼저 찾아 다시 붙이면, 카드를 숨겼던 경우에도
+       읽던 위치를 잃지 않습니다. */
+    const identity=await vaultFileIdentity(prepared.hash);
+    const saved=identity&&(vaultRemoteItems||[]).find(item=>item.identity===identity);
+    if(saved){
+      const book={id:prepared.id,title:saved.title||prepared.title,author:saved.author||'',kind:prepared.kind,
+        paras:[],addedAt:saved.addedAt||Date.now(),fingerprint:prepared.fingerprint};
+      if(saved.position) positions[book.id]=saved.position;
+      await applyPreparedBook(book,prepared,file);
+      books=books.filter(one=>one.id!==book.id); books.unshift(book);
+      save(LS_POS,positions); unhideBookLocally(saved.id); unhideBookLocally(book.id);
+      await bookPut(book); queueSync(); renderAllBookViews();
+      toast(saved.position&&saved.position.t
+        ? `${Math.round((saved.position.p||0)*100)}%부터 이어 읽을 수 있어요`
+        : '이전에 보관한 책을 다시 연결했어요');
       return;
     }
 
@@ -724,7 +728,9 @@ async function importFile(file, extra){
       fingerprint:prepared.fingerprint,textAvailable:prepared.textAvailable,
       sourceMap:prepared.sourceMap,glyphs:prepared.glyphs||null,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
-      original,localSourceAt:original ? original.storedAt : Date.now(), ...extra};
+      original,sourceHash:prepared.hash,localSourceAt:original ? original.storedAt : Date.now(), ...extra};
+    book.sourceSize=prepared.size||0;
+    book.sourceModified=prepared.lastModified||0;
     await bookPut(book);
     books.unshift(book);
     renderHome();

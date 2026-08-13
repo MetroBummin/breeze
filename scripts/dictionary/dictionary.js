@@ -83,7 +83,8 @@ function addWord(k, span){
   const display = acro ? raw.replace(/s$/,'') : k;
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
   words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
-    example:sentenceOf(span), book:curBook.title, status:1, addedAt:Date.now(), up:Date.now() };
+    example:sentenceOf(span), book:curBook.title, status:1, mark:true, addedAt:Date.now(), up:Date.now() };
+  recentWordOpens.set(k, Date.now());
   /* 이제 이 기기에 잃을 것이 생겼습니다 — 저장소를 영구로 표시해 달라고 부탁합니다.
      한 번만 물어보고, 이미 물어봤으면 조용히 지나갑니다. */
   requestDurableLocalStorage();
@@ -93,30 +94,116 @@ function addWord(k, span){
   selectWord(k, span);
   fetchDict(k);
 }
+/* 같은 낱말을 눌러 사전 창을 막 닫았다 다시 여는 것은 "더 모른다"가 아니라
+   화면을 다시 확인하는 일입니다. 별은 읽는 동안 쌓이는 소음이 아니라, 시간을
+   두고 다시 막혔을 때만 하나 올립니다. 이 기록은 동기화할 학습 데이터가 아니라
+   잠깐의 손짓이므로 기기 메모리에만 둡니다. */
+const RECENT_WORD_OPEN_MS = 30000;
+const recentWordOpens = new Map();
+/* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 읽는 중의
+   문장을 서버 동기화 객체에 덮어 쓰지 않습니다. 사용자가 "이 뜻도 저장"을 눌러야
+   그때만 `senses`에 들어갑니다. */
+let contextView = null, phraseView = null, altChoice = null;
+function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
+function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
+function answerFromLook(j, cached){
+  const oldAi=j.ai||{};
+  return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',gloss:j.gloss||oldAi.gloss||'',note:'',done:true,cached:!!cached},
+    alts:Array.isArray(j.alts)?j.alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
+}
+function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
+function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }
+function phraseCardKey(text){ return `phrase:${phraseParts(text).join(' ')}`; }
+function meaningKey(meaning){ return String(meaning||'').trim().replace(/\s+/g,' ').toLowerCase(); }
+function findContextCard(root, sentence){
+  const id=contextCardKey(root,sentence);
+  return words[id] ? id : null;
+}
+function findSavedSense(root, sentence){
+  return Object.keys(words).find(id=>{
+    const item=words[id];
+    return item && item.sense && item.root===root && item.example===sentence;
+  }) || null;
+}
+function findSenseByMeaning(root, meaning){
+  const wanted=meaningKey(meaning); if(!wanted) return null;
+  const pairs=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
+    && meaningKey(item.ko)===wanted);
+  pairs.sort(([a],[b])=>(a===root?-1:0)-(b===root?-1:0));
+  return pairs.length ? pairs[0][0] : null;
+}
+function savedSenseCards(root){
+  const cards=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
+    && item.ko && !item.phraseParts);
+  cards.sort(([a,aw],[b,bw])=>(a===root?-1:0)-(b===root?-1:0)
+    || (bw.addedAt||0)-(aw.addedAt||0));
+  const unique=new Set();
+  return cards.filter(([,item])=>{
+    const key=meaningKey(item.ko); if(!key||unique.has(key)) return false;
+    unique.add(key); return true;
+  });
+}
+
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
-   저장된 단어를 또 누르면 "아직 모른다"는 뜻이라 별을 하나 올립니다.
-   예전에는 이 규칙이 글자 화면에만 있어서, 원본 화면에서는 같은 단어를
-   몇 번을 눌러도 별이 ★에 머물렀습니다. */
+   저장된 단어를 다시 만났을 때만 별을 하나 올립니다. */
 function openWord(k, node){
   if(!words[k]){ addWord(k, node); return; }
-  if(words[k].status < 3) setStatus(k, words[k].status + 1);
+  const nextExample = sentenceOf(node);
+  const root=words[k].root||k;
+  const savedContext=nextExample && (findContextCard(root,nextExample)||findSavedSense(root,nextExample));
+  if(savedContext){
+    const now=Date.now(), seenAt=recentWordOpens.get(savedContext)||0;
+    if(now-seenAt>=RECENT_WORD_OPEN_MS && words[savedContext].status<3) setStatus(savedContext,words[savedContext].status+1);
+    recentWordOpens.set(savedContext,now); contextView=null; selectWord(savedContext,node); return;
+  }
+  const now = Date.now();
+  const seenAt = recentWordOpens.get(k) || 0;
+  if(now - seenAt >= RECENT_WORD_OPEN_MS && words[k].status < 3) setStatus(k, words[k].status + 1);
+  recentWordOpens.set(k, now);
+
+  /* 새 문장은 우선 대표 뜻과 나란히 봅니다. 자동으로 AI를 부르거나 대표 예문을
+     바꾸지 않습니다 — 사용자가 "이 문맥에서는?"을 눌렀을 때만 새 뜻을 찾습니다. */
+  if(nextExample && nextExample !== words[k].example){
+    const w = words[k];
+    contextView = { key:k, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
+      book:(curBook&&curBook.title)||w.book, answer:null, saved:false };
+    selectWord(k, node);
+    return;
+  }
+  contextView = null;
   selectWord(k, node);
 }
 function selectWord(k, span){
+  /* 다른 낱말을 누르면 앞 낱말의 문장 해석을 남겨 둘 이유가 없습니다. */
+  if(typeof closeSentence === 'function') closeSentence();
+  if(!currentContext(k)) contextView = null;
+  if(!phraseView || phraseView.key !== k) phraseView = null;
+  if(!altChoice || altChoice.key!==k) altChoice = null;
   selKey = k;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
   renderPanel();
-  document.getElementById('panel').classList.add('on');
+  const panel=document.getElementById('panel');
+  /* 패널은 한 번 열린 뒤에도 자기 안의 스크롤 위치를 기억합니다. 다른 낱말을
+     눌렀는데 중간부터 보였던 이유가 이것입니다. 내용을 바꾼 직후와 레이아웃이
+     한 번 그려진 뒤에 모두 0으로 돌려, 항상 낱말 제목부터 열리게 합니다. */
+  const resetPanelScroll=()=>{ panel.scrollTop=0; };
+  resetPanelScroll();
+  panel.classList.add('on');
   document.getElementById('sheetbg').classList.add('on');
+  requestAnimationFrame(resetPanelScroll);
   pinReaderChrome(true);      // 뜻을 보는 동안 상단바는 그대로 (scripts/reader/reader.js)
 }
 function closePanel(){
   selKey=null;
+  contextView=null; phraseView=null;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();
-  document.getElementById('panel').classList.remove('on');
+  if(typeof closeSentence === 'function') closeSentence();
+  const panel=document.getElementById('panel');
+  panel.classList.remove('on');
+  panel.scrollTop=0;
   document.getElementById('sheetbg').classList.remove('on');
   pinReaderChrome(false);
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
@@ -130,7 +217,7 @@ function paintWord(k){
   readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`)
     .forEach(s=>{
       s.classList.remove('s1','s2','s3');
-      if(w) s.classList.add('s'+w.status);
+      if(w && w.mark !== false) s.classList.add('s'+w.status);
     });
 }
 function setStatus(k, st){
@@ -141,34 +228,42 @@ function setStatus(k, st){
   saveWords(); paintWord(resolved); queueSync();
   renderPanel();
 }
-/* 화면에 뜰 뜻 후보들. AI 가 고른 뜻이 맨 앞, 그 다음이 AI 가 준 다른 뜻,
-   마지막이 무료 사전이 준 것들. 같은 낱말이 두 번 뜨지 않게 걸러 냅니다. */
-function meaningChips(w){
-  const ai = w.ai || {};
-  const out = [], seen = new Set();
-  const push = (term, pos, fromAi) => {
-    const t = String(term||'').trim();
-    if(!t || seen.has(t)) return;
-    seen.add(t); out.push({ term:t, pos:pos||'', ai:!!fromAi });
-  };
-  push(ai.ko, ai.pos, true);
-  for(const a of (w.alts||[])) push(a, ai.pos, true);
-  for(const d of (w.kodict||[])) for(const t of (d.terms||[])) push(t, d.pos, false);
-  /* 사람이 직접 써 넣은 뜻은 어느 사전에도 없으니 따로 넣어 줍니다 —
-     안 그러면 자기가 고른 뜻만 칩에서 빠져 보입니다. */
-  if(w.ko) push(w.ko, ai.pos, false);
-  return out.slice(0, 8);
-}
 function renderPanel(){
-  const w = words[selKey]; if(!w) return;
+  const base = words[selKey]; if(!base) return;
   const k = selKey;
+  const context = currentContext(k);
+  const phrase = !context && currentPhrase(k);
+  /* 새 문맥의 AI 답은 대표 단어를 덮지 않는 미리보기입니다. 화면은 같은 사전
+     모양을 쓰되, 저장 버튼을 누르기 전에는 `base`에 아무것도 쓰지 않습니다. */
+  const w = context ? Object.assign({}, base, context.answer || {}, {
+    example:context.sentence, clicked:context.clicked, book:context.book,
+    aiLoading:!!context.loading, aiSlow:false, aiOff:context.error||'',
+  }) : phrase ? Object.assign({}, base, phrase.answer || { ko:'', ai:{}, phrase:'' }, {
+    word:phrase.phrase, clicked:'', example:phrase.sentence, book:phrase.book,
+    aiLoading:!!phrase.loading, aiSlow:false, aiOff:phrase.error||'',
+  }) : base;
   document.getElementById('p-word').textContent = w.word;
-  document.getElementById('p-phon').textContent = w.phon || '';
   document.getElementById('p-clicked').textContent =
-    (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
+    phrase ? `표현 뜻 보기 · ${phrase.phrase}`
+    : (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
   document.getElementById('p-ex').textContent = w.example || '—';
   document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
+  const mark = document.getElementById('p-mark');
+  const marked = base.mark !== false;
+  mark.classList.toggle('on', marked);
+  mark.setAttribute('aria-pressed', String(marked));
+  mark.querySelector('span').textContent = marked ? '색칠 ON' : '색칠 OFF';
+  mark.title = marked ? '이 단어의 본문 색칠 끄기' : '이 단어의 본문 색칠 켜기';
+
+  const contextBtn=document.getElementById('p-context'), saveContext=document.getElementById('p-save-context');
+  contextBtn.classList.toggle('on', !!context && !context.answer);
+  contextBtn.disabled=!!(context && context.loading);
+  contextBtn.textContent=context && context.loading ? '이 문맥을 살펴보는 중…'
+    : context && context.error ? '이 문맥에서 다시 보기' : '이 문맥에서는?';
+  const isDifferent = context && context.answer && context.answer.ko
+    && context.answer.ko.trim() !== String(base.ko||'').trim();
+  saveContext.classList.toggle('on', !!isDifferent && !context.saved);
 
   /* ── 뜻이 사는 칸. 하나뿐입니다 ──
      예전에는 이 박스가 "AI 가 알려준 것"이고 아래 파란 칸이 "내 단어장에 적히는 것"이라
@@ -195,17 +290,16 @@ function renderPanel(){
     /* 편집 중에 renderPanel 이 돌아도 커서가 앞으로 튀지 않게, 달라졌을 때만 씁니다. */
     if(aiKo.textContent !== shown) aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
-    /* 윗줄에는 이 문장 이야기를 씁니다. 그게 없으면 뜻의 성질(gloss)이 올라와
-       윗줄 자리를 지킵니다 — 예전에 프롬프트가 "뻔하면 빈 문자열"을 허락해서
-       설명 줄이 통째로 사라져 있었습니다. 뜻만 덩그러니 있으면 사전이 아닙니다. */
-    const top = ai.note || ai.gloss || (w.aiSlow ? '조금 오래 걸렸어요. 아래에서 다시 시도할 수 있어요.' : '');
-    const under = (ai.note && ai.gloss && ai.gloss !== ai.note) ? ai.gloss : '';
+    /* 사전에는 뜻의 성질을 설명하는 한 줄만 둡니다. 문장 전용 note까지 붙이면
+       같은 뜻 상자가 두 번 설명하는 모양이 되어 읽는 흐름을 끊었습니다. */
+    const top = ai.gloss || (w.aiSlow ? '조금 오래 걸렸어요. 아래에서 다시 시도할 수 있어요.' : '');
+    const under = '';
     aiN.textContent = top;
     aiN.style.display = top ? 'block' : 'none';
     aiG.textContent = under;
     aiG.style.display = under ? 'block' : 'none';
     aiTip.textContent = w.koEdited ? '직접 고친 뜻이에요' : '뜻을 눌러 직접 고칠 수 있어요';
-    aiRetry.style.display = (sb && sbUser && w.example) ? 'inline' : 'none';
+    aiRetry.style.display = (!context && sb && sbUser && w.example) ? 'inline' : 'none';
   }else{
     aiBox.className = '';
   }
@@ -236,52 +330,145 @@ function renderPanel(){
     : trialWarn         ? trialWarn
     :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
 
-  /* 문장 통째로 가는 문. 예문이 없으면 물어볼 것이 없습니다. */
-  document.getElementById('p-explain').style.display = w.example ? 'flex' : 'none';
-
-  const kod = document.getElementById('p-kodict');
-  kod.innerHTML='';
-  const chips = meaningChips(w);
-  if(!chips.length){
-    kod.innerHTML = w.loading
-      ? '<span style="color:var(--soft2);font-size:13px">불러오는 중…</span>'
-      : '<span style="color:var(--soft2);font-size:13px">다른 뜻 후보가 없어요</span>';
-  }else{
-    for(const c of chips){
-      const b = document.createElement('button');
-      b.className = 'kochip' + (w.ko===c.term ? ' on':'');
-      b.innerHTML = (c.pos ? `<span class="pos">${esc(c.pos)}</span>` : '') + esc(c.term);
-      b.onclick = ()=>{
-        w.ko = c.term;
-        /* AI 가 고른 뜻으로 되돌아온 것은 "고쳤다"가 아닙니다. */
-        if(c.term === (w.ai && w.ai.ko)) delete w.koEdited; else w.koEdited = true;
-        w.up = Date.now(); saveWords(); queueSync(); renderPanel();
-        logDict('pick', k);
-      };
-      kod.appendChild(b);
-    }
-  }
+  /* 문장 통째로 가는 문. 보이는 단추와 실제로 쓸 수 있는 상태가 달라지면
+     "눌렀는데 왜 안 돼?"가 되므로 sentence.js가 같은 기준으로 칠합니다. */
+  if(typeof refreshSentenceExplainAvailability === 'function') refreshSentenceExplainAvailability(w);
 
   const col = document.getElementById('p-colloc'), colSec = document.getElementById('p-colloc-sec');
-  if(w.colloc && w.colloc.length){
+  if(w.phrase){
     col.className = 'on'; colSec.className = 'p-sec on';
-    col.innerHTML = w.colloc.map(c=>'<span class="colloc">'+esc(c)+'</span>').join('');
+    col.innerHTML = '<button type="button" class="phrase-suggestion" title="표현 전체의 뜻 보기"><span class="phrase-star">✦</span>'+esc(w.phrase)+'</button>';
+    col.querySelector('button').onclick=()=>openPhrase(k);
   }else{
     col.className = ''; colSec.className = 'p-sec'; col.innerHTML = '';
   }
+  /* 큰 뜻 카드는 지금 문장에 맞는 하나만 유지합니다. 대신 사용자가 직접 저장한
+     다른 뜻들은 작은 칩으로 함께 보여 주어, 새 문장에서 "아, 이 take는 그 take"
+     라는 판단을 할 수 있게 합니다. */
+  const root=base.root||k, savedSec=document.getElementById('p-saved-senses-sec');
+  const savedBox=document.getElementById('p-saved-senses'), savedSenses=savedSenseCards(root);
+  if(savedSenses.length>1){
+    savedSec.className='p-sec on'; savedBox.className='on';
+    savedBox.innerHTML=savedSenses.map(([id,item])=>`<button type="button" class="saved-sense${meaningKey(item.ko)===meaningKey(shown)?' on':''}" data-k="${esc(id)}">${esc(item.ko)}</button>`).join('');
+    [...savedBox.querySelectorAll('.saved-sense')].forEach(button=>{
+      const chip=/** @type {HTMLElement} */(button);
+      chip.onclick=()=>{ contextView=null; phraseView=null; altChoice=null; selectWord(chip.dataset.k||'',null); };
+    });
+  }else{ savedSec.className='p-sec'; savedBox.className=''; savedBox.innerHTML=''; }
+  const altSec=document.getElementById('p-alt-sec'), altBox=document.getElementById('p-alts');
+  const alts=[...new Set((w.alts||[]).map(item=>String(item||'').trim()).filter(item=>item&&item!==shown))].slice(0,3);
+  if(alts.length){
+    altSec.className='p-sec on'; altBox.className='on';
+    const picked=altChoice&&altChoice.key===k ? altChoice.meaning : '';
+    altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip${picked===item?' on':''}" data-meaning="${esc(item)}">${esc(item)}</button>`).join('')
+      +(picked?`<div class="alt-actions"><button type="button" class="alt-action" id="p-alt-replace">이 뜻으로 바꾸기</button><button type="button" class="alt-action save" id="p-alt-save">+ 따로 저장</button></div>`:'');
+    [...altBox.querySelectorAll('.kochip')].forEach(button=>{
+      const chip=/** @type {HTMLElement} */(button);
+      chip.onclick=()=>pickAlternative(k,chip.dataset.meaning||'');
+    });
+    const replace=document.getElementById('p-alt-replace'), saveAlt=document.getElementById('p-alt-save');
+    if(replace) replace.onclick=()=>chooseMeaning(k,picked);
+    if(saveAlt) saveAlt.onclick=()=>saveAlternateMeaning(k,picked,w);
+  }else{ altSec.className='p-sec'; altBox.className=''; altBox.innerHTML=''; }
   const defs = document.getElementById('p-defs');
   if(w.loading) defs.innerHTML = '<span style="color:var(--soft2)">불러오는 중…</span>';
   else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--soft2)">영어 뜻을 찾지 못했어요</span>';
   else defs.innerHTML = w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
 }
+function pickAlternative(k, meaning){
+  if(!meaning) return;
+  altChoice={key:k,meaning}; renderPanel();
+}
+function chooseMeaning(k, meaning){
+  const w=words[k]; if(!w) return;
+  w.ko=meaning; w.ai={...(w.ai||{}),ko:meaning,gloss:''};
+  w.alts=(w.alts||[]).filter(item=>item!==meaning);
+  w.asked=[...new Set([...(w.asked||[]),meaning])].slice(-4);
+  altChoice=null; w.up=Date.now(); saveWords(); queueSync(); logDict('pick',k); renderPanel();
+}
+/* 같은 철자라도 문맥별 뜻과 복습 기록은 따로여야 합니다. 화면에는 take 하나로
+   묶어 보이지만, 내부에는 root 아래의 독립 카드로 두어 난이도·예문이 섞이지
+   않게 합니다. */
+function saveAlternateMeaning(k, meaning, source){
+  const base=words[k]; if(!base || !meaning) return;
+  const shown=source||base;
+  const root=base.root||k, id=findSenseByMeaning(root,meaning)||senseCardKey(root,meaning), previous=words[id];
+  words[id]={...(previous||{}),word:shown.word||base.word,root, sense:true, clicked:shown.clicked||base.clicked||base.word,
+    forms:base.forms||[base.word], example:previous?previous.example:(shown.example||base.example||''), book:previous?previous.book:(shown.book||base.book||''), status:previous?previous.status:1,
+    mark:previous?previous.mark:base.mark!==false, ko:meaning, ai:{...(shown.ai||base.ai||{}),ko:meaning,gloss:''},
+    alts:(base.alts||[]).filter(item=>item!==meaning), phrase:'', defs:[], kodict:[],
+    addedAt:previous?previous.addedAt:Date.now(),up:Date.now()};
+  altChoice=null; saveWords(); queueSync(); selectWord(id,null);
+  toast(`“${base.word} · ${meaning}” 뜻을 따로 저장했어요`);
+}
 document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
   logDict('star', selKey, { meta:{ status:+b.dataset.s } });
 });
+document.getElementById('p-mark').onclick=()=>{
+  const w=words[selKey]; if(!w) return;
+  w.mark = w.mark === false;
+  w.up=Date.now(); saveWords(); paintWord(selKey); queueSync(); renderPanel();
+};
+
+/* 고정 표현은 낱말 하나와 뜻이 달라질 수 있습니다. 칩을 누르면 대표 단어를
+   바꾸지 않고, 지금 열린 패널에서만 표현 전체를 하나의 표제어로 다시 풉니다. */
+async function openPhrase(k){
+  const base=words[k], text=base&&base.phrase;
+  if(!base || !text || (phraseView && phraseView.key===k && phraseView.loading)) return;
+  const view={key:k, phrase:text, sentence:base.example||'', book:base.book||'', loading:true};
+  phraseView=view; renderPanel();
+  try{
+    const cacheKey=lookKey('phrase:'+text,view.sentence);
+    const hit=await dictGet(cacheKey);
+    if(hit && hit.ko){ view.answer=answerFromLook(hit,!hit.seed); adoptPhrase(k,view); return; }
+    const j=await dictCall({op:'look',word:text,clicked:text,cands:[text.toLowerCase()],
+      sentence:view.sentence,book:view.book});
+    if(!j || j.error || !j.ko){ view.error=(j&&j.error)||'error'; return; }
+    await dictPut(cacheKey,Object.assign({},j,{done:true}));
+    view.answer=answerFromLook(j,false);
+    adoptPhrase(k,view);
+  }finally{
+    view.loading=false;
+    if(currentPhrase(k)===view && selKey===k) renderPanel();
+  }
+}
+
+/* 표현 칩을 고른 것은 "이 낱말 하나"가 아니라 "이 덩어리"를 외우겠다는 선택입니다.
+   따라서 flare 카드를 남겨 두지 않고 표현 카드로 바꾸며, 글자 화면도 같은 기준으로
+   다시 조립합니다. */
+function adoptPhrase(k, view){
+  const base=words[k], answer=view.answer, parts=phraseParts(view.phrase);
+  if(!base || !answer || parts.length<2) return;
+  const id=phraseCardKey(view.phrase), previous=words[id];
+  words[id]={
+    ...(previous||{}), word:view.phrase, clicked:view.phrase, forms:parts, phraseParts:parts,
+    example:view.sentence||base.example, book:view.book||base.book, status:previous?previous.status:base.status,
+    mark:previous?previous.mark:base.mark, ko:answer.ko, ai:answer.ai||{}, alts:answer.alts||[], phrase:'',
+    defs:[], kodict:[], addedAt:previous?previous.addedAt:Date.now(), up:Date.now()
+  };
+  if(id!==k){ delete words[k]; dead[k]=Date.now(); }
+  contextView=null; phraseView=null; selKey=id;
+  saveWords(); save(LS_DEAD,dead); queueSync();
+  if(curBook && currentReaderMode==='text'){
+    const anchor=captureAnchor();
+    renderBookBody(curBook);
+    requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
+  }
+  paintWord(id); renderPanel(); toast(`“${view.phrase}”을(를) 표현으로 저장했어요`);
+}
+document.getElementById('p-context').onclick=()=>{ if(selKey) askCurrentContext(selKey); };
+document.getElementById('p-save-context').onclick=()=>{ if(selKey) saveCurrentContext(selKey); };
 document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;
   logDict('known', k);
+  const root=words[k]&&words[k].root;
+  /* 대표 단어를 빼면 그 아래의 문맥 카드도 함께 빼야 유령 카드가 남지 않습니다.
+     반대로 take의 두 번째 뜻 카드만 빼는 경우에는 그 카드 하나만 지웁니다. */
+  if(!root){
+    Object.keys(words).filter(id=>words[id]&&words[id].root===k).forEach(id=>delete words[id]);
+  }
   delete words[k]; dead[k] = Date.now(); save(LS_DEAD, dead);
   saveWords(); paintWord(k); closePanel(); queueSync(); toast('단어장에서 뺐어요');
 };
@@ -290,8 +477,17 @@ document.getElementById('p-know').onclick = ()=>{
 const aiKoBox = document.getElementById('p-ai-ko');
 aiKoBox.addEventListener('blur', ()=>{
   if(!selKey || !words[selKey]) return;
+  const context=currentContext(selKey);
   const w = words[selKey];
   const next = aiKoBox.textContent.replace(/\s+/g,' ').trim();
+  if(context && context.answer){
+    if(next !== (context.answer.ko||'')){
+      context.answer.ko=next;
+      if(context.answer.ai) context.answer.ai.ko=next;
+      renderPanel();
+    }
+    return;
+  }
   if(next === (w.ko||'')) return;
   w.ko = next;
   w.koEdited = next !== ((w.ai && w.ai.ko) || '');
@@ -316,7 +512,10 @@ async function fetchKo(w, form){
 }
 /* metaOnly = 발음만 받아 오고 영어 뜻은 건드리지 않습니다. */
 async function fetchEn(w, form, metaOnly){
-  const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
+  let r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
+  /* 이 공개 사전은 가끔 첫 요청에 502를 돌려줍니다. IPA가 사라지면 사전창이
+     반쯤 비어 보이므로, 한 번만 짧게 다시 물어봅니다. */
+  if(!r.ok && r.status>=500){ await new Promise(resolve=>setTimeout(resolve,300)); r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form)); }
   if(!r.ok) return false;
   const j = await r.json();
   if(!j || !j[0]) return false;
@@ -402,48 +601,6 @@ function deviceId(){
 /* 서버가 답할 때마다 알려 주는 남은 횟수. 모르면 null. */
 let anonLooksLeft = null;
 
-/* ---- 앱과 함께 오는 사전 씨앗 ----
-   맛보기 글에 나오는 낱말은 답을 미리 받아 앱에 실어 둡니다. 열쇠는 AI 에게
-   물어봤을 때 저장하는 것과 완전히 같은 `l:<낱말>|<문장해시>` 라서, 앞으로
-   오는 모든 조회가 이걸 그냥 캐시로 씁니다 — 사전 코드에는 씨앗을 아는
-   갈래가 하나도 없습니다.
-
-   덕분에 첫 사용자는 로그인 전에도, 인터넷이 없어도, 어느 낱말을 눌러도
-   기다리지 않습니다. 바람은 그대로 붑니다(AI_MIN_WAIT 는 갓 받은 답에만
-   걸리지만, 캐시된 답도 창이 열리며 한 번 지나갑니다).
-
-   한 번 부으면 끝입니다. 판(version)이 오르면 다시 붓습니다.
-
-   ── 지금은 그 파일이 없습니다 ──
-   씨앗을 **만드는** 일은 접어 두었습니다(`modules/dict-seed/README.md`). 받는 쪽인
-   이 함수는 일부러 살려 둡니다 — 되살리는 일이 파일 한 장 떨어뜨리기가 되게 하려고요.
-   파일이 없으면 조용히 지나가고, 맛보기 글의 낱말도 다른 글과 똑같이 AI 에게
-   물어봅니다. */
-const DICT_SEED_FILE = 'assets/samples/dict-seed.json';
-const LS_DICT_SEED = 'breeze.dict-seed';
-
-async function loadDictSeed(){
-  try{
-    const response = await fetch(DICT_SEED_FILE);
-    if(!response.ok) return;
-    const seed = await response.json();
-    if(!seed || !seed.entries) return;
-    if(load(LS_DICT_SEED, 0) >= (seed.version || 1)) return;
-    const keys = Object.keys(seed.entries);
-    /* 이미 있는 답은 덮지 않습니다. 사용자가 그 문장에서 직접 받은 답이
-       씨앗보다 새것이고, 다시 물어본 답이라면 더더욱 그렇습니다. */
-    const mine = await dictExistingKeys(keys);
-    const pairs = keys.filter(key => !mine.has(key))
-      .map(key => [key, Object.assign({}, seed.entries[key], { done:true, seed:true })]);
-    await dictPutAll(pairs);
-    save(LS_DICT_SEED, seed.version || 1);
-    if(pairs.length) console.info(`사전 씨앗 ${pairs.length}개 준비됨`);
-  }catch(error){
-    /* 씨앗이 없어도 앱은 그냥 AI 에게 물어봅니다. 조용히 지나갑니다. */
-    console.warn('사전 씨앗을 읽지 못했습니다:', error && error.message);
-  }
-}
-
 async function dictCall(payload, signal){
   if(!sb || navigator.onLine === false) return null;
   let token = SB_KEY;
@@ -519,6 +676,56 @@ async function loadCachedLook(k, began){
   return false;
 }
 
+/* 대표 뜻과 다른 문장에서만 쓰는 작은 길입니다. 조회 결과는 먼저 기기 캐시에
+   `단어 + 문장`으로 보관하고, 사람이 저장을 결정하기 전까지 단어장에는 넣지 않습니다. */
+async function askCurrentContext(k){
+  const w=words[k], context=currentContext(k);
+  if(!w || !context || context.loading) return;
+  if(navigator.onLine===false){ context.error='offline'; renderPanel(); return; }
+  if(!sb){ context.error='login'; renderPanel(); return; }
+  context.loading=true; delete context.error; renderPanel();
+  try{
+    for(const key of entryKeys(w)){
+      const hit=await dictGet(lookKey(key,context.sentence));
+      if(hit && hit.ko){
+        context.answer=answerFromLook(hit,!hit.seed); context.saved=!!(w.senses||[]).find(s=>s.example===context.sentence);
+        return;
+      }
+    }
+    const j=await dictCall({op:'look',word:w.word||k,clicked:context.clicked||'',cands:entryKeys(w),
+      sentence:context.sentence,book:context.book||'',device:sbUser?'':deviceId()});
+    if(!j || j.error || !j.ko){
+      context.error=(j&&j.error)==='anon_exhausted' ? 'trial' : (j&&j.error)||'error';
+      return;
+    }
+    if(typeof j.left==='number') anonLooksLeft=j.left;
+    await dictPut(lookKey(j.lemma||w.word||k,context.sentence),Object.assign({},j,{done:true}));
+    context.answer=answerFromLook(j,false);
+  }finally{
+    context.loading=false;
+    if(currentContext(k)===context && selKey===k) renderPanel();
+  }
+}
+
+function saveCurrentContext(k){
+  const w=words[k], context=currentContext(k);
+  if(!w || !context || !context.answer || !context.answer.ko) return;
+  const root=w.root||k, existing=findSenseByMeaning(root,context.answer.ko);
+  if(existing){
+    context.saved=true; saveWords(); queueSync(); renderPanel();
+    toast('이미 저장한 뜻이에요'); return;
+  }
+  const id=contextCardKey(root,context.sentence);
+  /* 화면에는 둘 다 take로 보이지만, 저장·복습·난이도는 서로 다른 카드입니다. */
+  words[id]={word:w.word,root,clicked:context.clicked||'',forms:w.forms||[w.word],
+    example:context.sentence,book:context.book||'',status:1,mark:w.mark!==false,
+    ko:context.answer.ko,ai:context.answer.ai||{},alts:context.answer.alts||[],
+    phrase:context.answer.phrase||'',addedAt:Date.now(),up:Date.now()};
+  saveWords(); queueSync();
+  context.saved=true;
+  renderPanel(); toast('이 문맥의 뜻도 저장했어요');
+}
+
 /* 낱말 하나 · 문장 하나 · 왕복 한 번. 뜻과 이 문장에서의 설명과 다른 뜻 후보가
    같이 옵니다. 예전에는 entry(700토큰) → pick → explain 로 세 번 다녀왔습니다. */
 async function fetchLook(k, opt){
@@ -582,13 +789,14 @@ async function fetchLook(k, opt){
 function applyLook(w, j, k, opt){
   opt = opt || {};
   delete w.aiLoading; delete w.aiOff;
-  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note: j.note || '', done:true,
+  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note:'', done:true,
            /* 이 기기가 전에 물어봤던 답인지. 머리글 한 줄이 달라집니다 —
               한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
            cached: !!opt.cached };
   w.aiLemma = j.lemma || w.aiLemma || '';
-  w.alts = (j.alts || []).filter(Boolean).slice(0,3);
-  if((j.colloc || []).length) w.colloc = j.colloc.slice(0,3);
+  w.alts = Array.isArray(j.alts) ? j.alts : [];
+  w.colloc = [];
+  w.phrase = j.phrase || '';
   /* 사람이 손으로 고친 뜻은 덮지 않습니다. "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다 —
      그때는 새 뜻을 달라는 뜻이니까요. */
   if(opt.retry || !w.koEdited) w.ko = j.ko || w.ko;
@@ -666,23 +874,36 @@ async function fetchDict(k){
 function renderVocab(){
   const list = Object.entries(words).sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
-  const rows = list.filter(([k,w]) => !q || w.word.toLowerCase().includes(q)
-    || (w.ko||'').includes(q) || (w.book||'').toLowerCase().includes(q));
+  const grouped=new Map();
+  list.forEach(([k,w])=>{
+    const groupKey=w.root||k;
+    if(!grouped.has(groupKey)) grouped.set(groupKey,[]);
+    grouped.get(groupKey).push([k,w]);
+  });
+  const groups=[...grouped.values()].filter(entries=>entries.some(([,w])=>!q || w.word.toLowerCase().includes(q)
+    || (w.ko||'').includes(q) || (w.book||'').toLowerCase().includes(q)));
   document.getElementById('vcnt').textContent = `${list.length}개 저장됨`;
   const wrap = document.getElementById('vtablewrap');
-  if(!rows.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 눌러 보세요!</div>'; return; }
+  if(!groups.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 눌러 보세요!</div>'; return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
   wrap.innerHTML = `<table><thead><tr>
     <th>단어</th><th>뜻</th><th>예문 · 출처</th><th>모르는 정도</th><th>저장일</th><th></th>
-  </tr></thead><tbody>` + rows.map(([k,w])=>`
-    <tr data-k="${esc(k)}">
-      <td class="c-word">${esc(w.word)}</td>
-      <td class="c-mean" contenteditable="true" spellcheck="false">${esc(w.ko||'')}</td>
-      <td class="c-ex">${esc(w.example||'')}${w.book?`<span class="src">📖 ${esc(w.book)}</span>`:''}</td>
-      <td><span class="chip s${w.status}" title="클릭해서 변경">${stName[w.status]}</span></td>
-      <td style="color:var(--soft2);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
-      <td><button class="rowdel" title="삭제">✕</button></td>
-    </tr>`).join('') + '</tbody></table>';
+  </tr></thead><tbody>` + groups.map(entries=>{
+    /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 하나의 word cell 아래로
+       묶습니다. 학습 데이터는 분리된 채라 별·삭제·예문은 각각 독립입니다. */
+    entries.sort((a,b)=>(a[0]===((a[1].root)||a[0])?-1:0)-(b[0]===((b[1].root)||b[0])?-1:0)
+      || (b[1].addedAt||0)-(a[1].addedAt||0));
+    const [firstKey,first]=entries[0], span=entries.length;
+    return entries.map(([k,w],index)=>`
+      <tr class="vocab-sense${index===0?' group-start':''}" data-k="${esc(k)}">
+        ${index===0?`<td class="c-word" rowspan="${span}">${esc(first.word)}${span>1?`<span class="c-sense-count">뜻 ${span}</span>`:''}</td>`:''}
+        <td class="c-mean" contenteditable="true" spellcheck="false">${esc(w.ko||'')}</td>
+        <td class="c-ex">${esc(w.example||'')}${w.book?`<span class="src">📖 ${esc(w.book)}</span>`:''}</td>
+        <td><span class="chip s${w.status}" title="클릭해서 변경">${stName[w.status]}</span></td>
+        <td style="color:var(--soft2);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
+        <td><button class="rowdel" title="이 뜻만 삭제">✕</button></td>
+      </tr>`).join('');
+  }).join('') + '</tbody></table>';
   wrap.querySelectorAll('tr[data-k]').forEach(tr=>{
     const k = tr.dataset.k;
     tr.querySelector('.chip').onclick = ()=>{ setStatus(k, words[k].status%3+1); renderVocab(); };

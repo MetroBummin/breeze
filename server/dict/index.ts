@@ -52,6 +52,9 @@ const ANON_DAILY_CAP = Number(Deno.env.get("AI_ANON_DAILY_CAP") ?? 2000);
    낱말은 읽다가 계속 누르는 것이고, 문장은 "이건 도저히 안 읽힌다" 싶을 때
    한 번 쓰는 것입니다. 하루 다섯 번이면 그 쓰임에 모자라지 않습니다. */
 const EXPLAIN_DAILY = Number(Deno.env.get("AI_EXPLAIN_DAILY") ?? 5);
+/* 예전 꾹 누르기 UI가 남긴 기록과 새 버튼 UI의 사용량은 섞지 않습니다. 전자는
+   화면을 닫은 뒤에도 요청이 끝나 기록될 수 있어, 실제로 본 횟수의 근거가 될 수 없었습니다. */
+const EXPLAIN_QUOTA_VERSION = "button-v2";
 
 const SYSTEM =
   "You are a precise bilingual dictionary for Korean learners reading English books. " +
@@ -63,54 +66,6 @@ const SR = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   { auth: { persistSession: false } },
 );
-
-/* ── 낱말 쪼개기 ─────────────────────────────────────────── */
-const tokens = (s: string) => String(s || "").toLowerCase().match(/[a-z']+/g) ?? [];
-
-/* 기록에 남길 수 있는 기능어. 닫힌 목록입니다 — 여기 없는 낱말은 사용자 문장에서
-   길어 온 것이므로 남기지 않습니다. "continue 뒤에 to 가 왔다"는 판별에 결정적이지만
-   그것만으로 문장을 되짚을 수는 없습니다. */
-const FUNCTION_WORDS = new Set(
-  ("about above across after against along among around as at back before behind below beneath " +
-   "beside besides between beyond but by despite down during except for from in inside into like " +
-   "near of off on onto out outside over past round since than through throughout till to toward " +
-   "towards under underneath until up upon with within without " +
-   "away forth together apart aside ahead " +
-   "not no never ever again still yet already just only even too so very much many few " +
-   "and or if while when where because though although unless whether that which who whom whose " +
-   "a an the this these those " +
-   "be am is are was were been being have has had having do does did done will would shall should " +
-   "can could may might must ought used need dare")
-    .split(/\s+/),
-);
-
-/* ── 문장 지문 ───────────────────────────────────────────── */
-/* 문장 자체는 어디에도 저장하지 않습니다. 대신 지문만 남겨서 "같은 문장을 여러 사람이
-   물어봤다"를 셀 수 있게 합니다.
-   소금(DICT_FP_SALT)이 반드시 필요합니다. 소금 없이 해시만 남기면, 책 원문을 가진
-   사람이 전수 대조로 "이 사용자가 이 문장을 읽었다"를 되짚을 수 있습니다.
-   그건 저작권 문제가 아니라 사생활 문제입니다. 소금이 없으면 지문을 안 남깁니다. */
-async function sentFp(sentence: string): Promise<string | null> {
-  const salt = Deno.env.get("DICT_FP_SALT") ?? "";
-  if (!salt || !sentence) return null;
-  const norm = sentence.trim().toLowerCase().replace(/\s+/g, " ");
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + "\n" + norm));
-  return [...new Uint8Array(buf)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/* 누른 낱말의 앞뒤 한 칸. 기능어 목록에 있을 때만 남깁니다. */
-function neighbors(sentence: string, word: string, clicked: string) {
-  const t = tokens(sentence);
-  const targets = new Set([word.toLowerCase(), clicked.toLowerCase()]);
-  let i = t.findIndex((x) => targets.has(x));
-  if (i < 0) {
-    const stem = word.toLowerCase().slice(0, Math.max(4, word.length - 2));
-    i = stem.length >= 4 ? t.findIndex((x) => x.startsWith(stem)) : -1;
-  }
-  if (i < 0) return { before: null, after: null };
-  const keep = (x?: string) => (x && FUNCTION_WORDS.has(x) ? x : null);
-  return { before: keep(t[i - 1]), after: keep(t[i + 1]) };
-}
 
 /* ── AI 호출 ─────────────────────────────────────────────── */
 type Ask = { prompt: string; maxTokens: number; schema?: unknown; system?: string };
@@ -214,38 +169,39 @@ function parseJson(raw: string): Record<string, unknown> | null {
 const LOOK_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["lemma", "pos", "ko", "gloss", "note", "alts", "colloc"],
+  required: ["lemma", "pos", "ko", "gloss", "phrase", "alts"],
   properties: {
     lemma: { type: "string" },
     pos: { type: "string" },
     ko: { type: "string" },
     gloss: { type: "string" },
-    note: { type: "string" },
+    phrase: { type: "string" },
     alts: { type: "array", items: { type: "string" } },
-    colloc: { type: "array", items: { type: "string" } },
   },
 };
 
 function lookPrompt(word: string, clicked: string, sentence: string, avoid: string[]) {
-  const form = clicked && clicked.toLowerCase() !== word.toLowerCase()
+  const isPhrase = /\s/.test(word.trim());
+  const form = isPhrase ? `표현: ${word}` : clicked && clicked.toLowerCase() !== word.toLowerCase()
     ? `단어: ${word} (문장에서는 "${clicked}")` : `단어: ${word}`;
   const skip = avoid.length ? `\n이 뜻들은 이미 보여 줬으니 고르지 마세요: ${avoid.join(", ")}\n` : "";
   return `${form}
 문장: ${sentence || "(문장 없음 — 일반적인 뜻으로 답하세요)"}
 ${skip}
-이 문장에서 이 단어가 어떤 뜻으로 쓰였는지 판단하세요.
+이 문장에서 이 ${isPhrase ? "표현 전체가" : "단어가"} 어떤 뜻으로 쓰였는지 판단하세요.
 
-- lemma: 사전 표제어(원형). 고유명사나 약어면 그대로
+- lemma: 사전 표제어(원형). 표현이면 표현 전체를 그대로, 고유명사나 약어면 그대로
 - pos: 명사|동사|형용사|부사|전치사|기타 중 하나
 - ko: 이 문장에서의 뜻. 한국어로 8자 내외. 설명이 아니라 사전에 실릴 짧은 뜻
-- gloss: 이 뜻이 어떤 때 쓰이는 뜻인지 한국어 한 문장. 반드시 쓰세요, 절대 비우지 마세요.
-  예문을 쓰지 말고 성질을 설명하세요. ("어떤 행동이나 상태가 멈추지 않고 이어질 때 씁니다")
-- note: 이 문장에서만 알 수 있는 것 한국어 한 문장. gloss 를 되풀이하지 마세요.
-  누가 무엇을 계속하는지, 어느 쪽으로 기울어진 말인지 같은 것. 보탤 말이 없으면 빈 문자열
-- alts: 이 단어의 다른 흔한 뜻 2~3개. 한국어로 짧게. ko 와 겹치지 않게
-- colloc: 이 뜻과 자주 함께 쓰이는 표현 2~3개. 사용자 문장을 베끼지 말고 일반 지식으로
+- gloss: 이 뜻이 어떤 때 쓰이는지 한국어 한 문장으로 설명하세요. 예문을 쓰지 말고
+  뜻의 성질을 설명하세요. ("어떤 행동이나 상태가 멈추지 않고 이어질 때 씁니다")
+- phrase: 이 문장에서 클릭한 단어를 포함해 **통째로 알아야 뜻이 달라지는** 아주 확실한
+  고정 표현 하나만 적으세요. (예: "hot take", "per se", "prime minister")
+  단순히 자주 붙는 단어, 애매한 조합, 문장 전체는 절대 넣지 말고 빈 문자열로 두세요.
+- alts: 지금 문맥의 뜻과 겹치지 않는, 이 단어의 흔한 다른 한국어 뜻을 최대 3개 적으세요.
+  짧은 사전식 뜻만 쓰고, 자신 없는 것은 빼세요.
 
-{"lemma":"","pos":"","ko":"","gloss":"","note":"","alts":[""],"colloc":[""]}`;
+{"lemma":"","pos":"","ko":"","gloss":"","phrase":"","alts":[""]}`;
 }
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -295,17 +251,13 @@ async function opLook(body: any, userId: string | null, seeding = false) {
 
   const ko = clean(parsed.ko, 60);
   const gloss = clean(parsed.gloss, 300);
-  const note = clean(parsed.note, 300);
   const answer = {
     lemma,
     pos: clean(parsed.pos, 12),
     ko,
     gloss,
-    /* 같은 말을 두 줄에 걸쳐 두 번 쓰지 않습니다. 모델이 gloss 를 그대로 note 에
-       옮겨 적는 일이 있어서, 그럴 때는 아랫줄만 남깁니다. */
-    note: note === gloss ? "" : note,
-    alts: cleanList(parsed.alts, 3, 40).filter((a) => a !== ko),
-    colloc: cleanList(parsed.colloc, 3, 60),
+    phrase: clean(parsed.phrase, 80),
+    alts: cleanList(parsed.alts, 3, 40).filter((item) => item !== ko),
     provider: out.provider,
     /* 로그인 전이면 몇 번 남았는지 함께 돌려줍니다. 마지막 한두 번쯤에
        미리 알려 줘야, 다음 낱말에서 갑자기 막히지 않습니다. */
@@ -321,11 +273,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
     userId, action: retry ? "retry" : "look", word, clicked, sentence,
     lemma, pos: answer.pos, aiKo: answer.ko, provider: out.provider,
     book: clean(body.book, 200),
-    /* gloss 가 비어 오는 비율은 프롬프트가 먹히는지 보는 지표입니다.
-       예전에 "뻔하면 빈 문자열" 이라고 써 뒀다가 설명 줄이 통째로 사라졌습니다.
-       기기 표시는 여기 남기지 않습니다 — 로그인 전 사람을 표에서 이어 붙일
-       수 있게 되면 그건 다른 종류의 기록이 됩니다. */
-    meta: { alts: answer.alts.length, gloss: gloss ? 1 : 0, note: answer.note ? 1 : 0,
+    meta: { gloss: answer.gloss ? 1 : 0, phrase: answer.phrase ? 1 : 0, alts: answer.alts.length,
             avoid: avoid.length, ...(anonLeft === null ? {} : { anon: 1 }) },
   });
   return json(answer);
@@ -373,26 +321,35 @@ function explainPrompt(sentence: string) {
 {"ko":"","points":[""]}`;
 }
 
-async function explainsToday(userId: string): Promise<number> {
-  const since = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z").toISOString();
+function seoulDayBounds() {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" })
+    .formatToParts(new Date()).reduce<Record<string, string>>((out, part) => { out[part.type] = part.value; return out; }, {});
+  const year = Number(parts.year), month = Number(parts.month), day = Number(parts.day);
+  const start = Date.UTC(year, month - 1, day) - 9 * 60 * 60 * 1000;
+  return { day: `${parts.year}-${parts.month}-${parts.day}`, since: new Date(start).toISOString(), until: new Date(start + 86400000).toISOString() };
+}
+
+async function explainsToday(userId: string): Promise<{ used: number; day: string }> {
+  const bounds = seoulDayBounds();
   const { count, error } = await SR.from("dict_events")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId).eq("action", "explain").gte("at", since);
+    .eq("user_id", userId).eq("action", "explain")
+    .contains("meta", { quota_version: EXPLAIN_QUOTA_VERSION })
+    .gte("at", bounds.since).lt("at", bounds.until);
   /* 셀 수 없으면 막습니다. 낱말 조회와 반대인데, 문장 설명은 값이 비싸고
      막혀도 낱말 사전은 그대로 열려 있기 때문입니다. */
-  if (error) { console.warn("explain quota failed, refusing:", error.message); return EXPLAIN_DAILY; }
-  return count ?? 0;
+  if (error) { console.warn("explain quota failed, refusing:", error.message); return { used: EXPLAIN_DAILY, day: bounds.day }; }
+  return { used: count ?? 0, day: bounds.day };
 }
 
 async function opExplain(body: any, userId: string | null) {
   if (!userId) return json({ error: "login_required" }, 401);
   const sentence = clean(body.sentence, 600);
   if (sentence.length < 12) return json({ error: "bad_sentence" }, 400);
-
-  const used = await explainsToday(userId);
-  if (used >= EXPLAIN_DAILY) {
-    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain" } });
-    return json({ error: "quota_exceeded", limit: EXPLAIN_DAILY }, 429);
+  const quota = await explainsToday(userId);
+  if (quota.used >= EXPLAIN_DAILY) {
+    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain", quota_version: EXPLAIN_QUOTA_VERSION, day: quota.day } });
+    return json({ error: "quota_exceeded", limit: EXPLAIN_DAILY, left: 0, day: quota.day }, 429);
   }
 
   const out = await ask({
@@ -409,9 +366,9 @@ async function opExplain(body: any, userId: string | null) {
   await logEvent({
     userId, action: "explain", word: "", sentence,
     provider: out.provider, book: clean(body.book, 200),
-    meta: { points: points.length },
+    meta: { points: points.length, quota_version: EXPLAIN_QUOTA_VERSION, day: quota.day },
   });
-  return json({ ko, points, provider: out.provider, left: Math.max(0, EXPLAIN_DAILY - used - 1) });
+  return json({ ko, points, provider: out.provider, left: Math.max(0, EXPLAIN_DAILY - quota.used - 1), day: quota.day });
 }
 
 /* ── op:"log" — 사람이 무엇을 했는가 ─────────────────────── */
@@ -436,6 +393,13 @@ async function opLog(body: any, userId: string | null) {
   return json({ ok: true });
 }
 
+async function opPurgePrivateLogs(userId: string | null) {
+  if (!userId) return json({ error: "login_required" }, 401);
+  const { error } = await SR.from("dict_events").delete().eq("user_id", userId);
+  if (error) return json({ error: "delete_failed" }, 500);
+  return json({ ok: true });
+}
+
 type EventIn = {
   userId: string | null; action: string; word: string; clicked?: string; sentence?: string;
   lemma?: string; pos?: string; aiKo?: string; userKo?: string; provider?: string;
@@ -444,24 +408,17 @@ type EventIn = {
 
 async function logEvent(e: EventIn) {
   try {
-    const sentence = e.sentence ?? "";
-    const nb = sentence ? neighbors(sentence, e.word, e.clicked ?? "") : { before: null, after: null };
+    /* 운영 통계에는 내용이 필요하지 않습니다. 낱말·뜻·문장·책 제목·지문을
+       저장하지 않고, 어떤 동작이 성공했는지와 공급자만 남깁니다. */
     await SR.from("dict_events").insert({
       user_id: e.userId,
       action: e.action,
-      word: e.word,
-      clicked: e.clicked || null,
-      lemma: e.lemma || null,
-      pos: e.pos || null,
-      ai_ko: e.aiKo || null,
-      user_ko: e.userKo || null,
-      sent_fp: await sentFp(sentence),
-      sent_len: sentence ? tokens(sentence).length : null,
-      cue_before: nb.before,
-      cue_after: nb.after,
-      book_fp: await sentFp(e.book ?? ""),
+      word: "",
       provider: e.provider || null,
-      meta: e.meta ?? {},
+      meta: {
+        outcome: (e.meta && e.meta.outcome) || "ok",
+        ...(e.meta && e.meta.quota_version ? { quota_version: e.meta.quota_version } : {}),
+      },
     });
   } catch (err) {
     /* 기록이 실패해도 사전은 답해야 합니다. */
@@ -554,6 +511,7 @@ Deno.serve(async (req) => {
     }
 
     if (op === "log") return await opLog(body, userId);
+    if (op === "purge_private_logs") return await opPurgePrivateLogs(userId);
     if (op === "delete_account") return await opDeleteAccount(userId);
     /* 아래의 낱말 검사보다 먼저 나갑니다 — 문장 설명에는 낱말이 없습니다. */
     if (op === "explain") return await opExplain(body, userId);

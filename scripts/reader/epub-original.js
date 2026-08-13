@@ -30,7 +30,7 @@ async function buildEpubResources(archive,session){
 
 function rewriteEpubCssUrls(css,cssPath,resources){
   const base=epubDirectory(cssPath);
-  return String(css||'').replace(/url\(\s*(['"]?)([^)'"\s]+)\1\s*\)/gi,(all,quote,raw)=>{
+  return String(css||'').replace(/url\(\s*(['"]?)([^)'"\s]+)\1\s*\)/gi,(all,_quote,raw)=>{
     if(/^(?:data:|blob:)/i.test(raw)) return all;
     if(/^(?:https?:|javascript:|file:)/i.test(raw)) return 'url("")';
     const fragment=raw.includes('#') ? '#'+raw.split('#').slice(1).join('#') : '';
@@ -207,7 +207,7 @@ function renderEpubSavedWordHighlights(doc){
     let match;
     while((match=pattern.exec(node.data))){
       const saved=words[keyOf(match[0])];
-      if(!saved) continue;
+      if(!saved || saved.mark === false) continue;
       const range=doc.createRange();
       range.setStart(node,match.index); range.setEnd(node,match.index+match[0].length);
       ranges[Math.max(0,Math.min(2,(saved.status||1)-1))].push(range);
@@ -257,7 +257,7 @@ function openOriginalSelection(doc){
   const block=owner.closest&&owner.closest('p,li,blockquote,h1,h2,h3,h4');
   marker.dataset.example=originalSentence((block||owner).textContent,raw);
   marker.setAttribute('aria-hidden','true');
-  if(words[key]) marker.classList.add('s'+words[key].status);
+  if(words[key] && words[key].mark !== false) marker.classList.add('s'+words[key].status);
   marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;background:rgba(37,137,190,.25);border-radius:3px`;
   doc.body.appendChild(marker);
   selection.removeAllRanges();

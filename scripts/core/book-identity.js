@@ -1,15 +1,7 @@
-/* Stable book identity shared by import and sync.
-   The fingerprint ignores paragraph boundaries so the same text parsed by a
-   newer importer can still be recognised as the same book. */
+/* Local text-layout fingerprint. File identity and sync never use this value:
+   imported files are identified from their complete raw-file SHA-256. */
 
 const BOOK_FINGERPRINT_VERSION = 'f2';
-
-function normalizeBookTitle(title){
-  return String(title || '')
-    .toLowerCase()
-    .replace(/[\s._-]+/g, ' ')
-    .trim();
-}
 
 function normalizeBookFingerprintText(text){
   return String(text || '')
@@ -57,39 +49,4 @@ function ensureBookFingerprint(book){
     book.fingerprint = bookContentFingerprint(book.paras || []);
   }
   return book.fingerprint;
-}
-
-function serverRowMatchesBook(row, book){
-  if(!row || !book) return false;
-  if(row.book_id === book.id) return true;
-  const serverFingerprint = (row.meta || {}).fingerprint || '';
-  return !!serverFingerprint && serverFingerprint === ensureBookFingerprint(book);
-}
-
-function serverRowIsActive(row){
-  return !!row && !(row.meta || {}).deleted;
-}
-
-function findLocalBookForServerRow(row, localBooks){
-  return (localBooks || []).find(book => serverRowMatchesBook(row, book)) || null;
-}
-
-function localBookSourceTime(book, originalRecord){
-  return Math.max(0,
-    Number(book && book.addedAt)||0,
-    Number(book && book.localSourceAt)||0,
-    Number(book && book.original && book.original.storedAt)||0,
-    Number(originalRecord && originalRecord.storedAt)||0);
-}
-
-/* A tombstone must not erase a copy that the user imported or reconnected
-   after that deletion. Legacy tombstones without a timestamp keep their old
-   delete-wins behaviour. */
-function serverTombstoneShouldDelete(row, book, originalRecord){
-  const meta=(row&&row.meta)||{};
-  if(!meta.deleted || !book) return false;
-  if(book.detachedServerId===row.book_id) return false;
-  const deletedAt=Number(meta.deletedAt)||0;
-  if(!deletedAt) return true;
-  return localBookSourceTime(book,originalRecord)<=deletedAt;
 }

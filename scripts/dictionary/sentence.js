@@ -20,46 +20,74 @@
    AI 에게는 보냅니다(보내지 않으면 답할 것이 없습니다). 서버 기록에 남는 것은
    소금을 섞은 지문과 낱말 수뿐입니다 — 낱말 조회와 완전히 같은 규칙입니다. */
 
-const SENT_DAILY = 5;
-
 const sentKey = text => 's:' + sentenceHash(text);
 const LS_SENT_LEFT = 'breeze.sent-left';
 
-/* 서버가 답할 때마다 남은 횟수를 알려 줍니다. 그 값을 날짜와 함께 들고 있다가
+/* 서버가 답할 때마다 남은 횟수를 알려 줍니다. 한국 날짜와 함께 들고 있다가
    창을 열 때 보여 줍니다 — 물어보기 전에 몇 번 남았는지 알아야 아낄 수 있습니다. */
+function sentDay(){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'})
+    .formatToParts(new Date()).reduce((o,x)=>(o[x.type]=x.value,o),{});
+  return `${p.year}-${p.month}-${p.day}`;
+}
 function sentLeft(){
   const kept = load(LS_SENT_LEFT, null);
-  const today = new Date().toISOString().slice(0,10);
+  const today = sentDay();
   return (kept && kept.day === today) ? kept.left : null;
 }
-function rememberSentLeft(left){
+function rememberSentLeft(left, day){
   if(typeof left !== 'number') return;
-  save(LS_SENT_LEFT, { day:new Date().toISOString().slice(0,10), left });
+  save(LS_SENT_LEFT, { day:day||sentDay(), left });
+  if(typeof refreshSentenceExplainAvailability === 'function') refreshSentenceExplainAvailability(words[selKey]);
+}
+
+/* 이 기능은 로그인한 상태에서만 새 해석을 만들 수 있습니다. 전에는 이 사실을
+   눌러 본 뒤의 작은 오류 문구로만 알려 줬습니다. 버튼을 보기 전에 알려야 합니다. */
+function refreshSentenceExplainAvailability(w){
+  const button = document.getElementById('p-explain');
+  const note = document.getElementById('p-explain-note');
+  if(!button || !note) return;
+  const context = typeof currentContext === 'function' && w ? currentContext(selKey) : null;
+  const hasSentence = !!(context ? context.sentence : (w && w.example));
+  let reason = '';
+  if(!hasSentence) reason = '이 낱말에는 문장 해석에 쓸 예문이 없어요';
+  else if(!sb || !sbUser) reason = '로그인하면 문장 해석을 쓸 수 있어요';
+  else if(navigator.onLine === false) reason = '인터넷에 연결되면 문장 해석을 쓸 수 있어요';
+  else if(sentLeft() === 0) reason = '오늘 문장 해석 5회를 다 썼어요. 내일 다시 채워져요';
+  button.style.display = hasSentence ? 'flex' : 'none';
+  button.disabled = !!reason;
+  button.classList.toggle('ready', !reason);
+  const left=sentLeft();
+  note.textContent = reason || (typeof left === 'number' ? `오늘 ${left}회 남았어요` : '하루 5회까지 쓸 수 있어요');
+  note.classList.toggle('on', hasSentence);
 }
 
 /* 낱말 창에서 들어오는 유일한 문. 창에 이미 그 낱말의 예문이 적혀 있으므로
    무엇을 물어볼지 고를 것이 없습니다 — 화면에 보이는 그 문장 그대로입니다. */
 function explainSelectedSentence(){
   const w = words[selKey];
-  if(w && w.example) openSentence(w.example);
+  const context = typeof currentContext === 'function' && w ? currentContext(selKey) : null;
+  const sentence = context ? context.sentence : (w && w.example);
+  if(!sentence) return;
+  refreshSentenceExplainAvailability(w);
+  if(document.getElementById('p-explain').disabled) return;
+  openSentence(sentence);
 }
 
-/* ---------- 창 ---------- */
-const sentModal = () => document.getElementById('sent-modal');
-
 function closeSentence(){
-  sentModal().classList.remove('on');
+  const card = document.getElementById('p-sentence');
+  if(card) card.hidden = true;
   if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl = null; }
 }
 function paintSentence(state){
-  const card = sentModal();
-  card.classList.add('on');
-  document.getElementById('st-en').textContent = state.en || '';
-  document.getElementById('st-wait').hidden = !state.waiting;
-  const ko = document.getElementById('st-ko');
+  const card = document.getElementById('p-sentence');
+  card.hidden = false;
+  document.getElementById('ps-en').textContent = state.en || '';
+  document.getElementById('ps-wait').hidden = !state.waiting;
+  const ko = document.getElementById('ps-ko');
   ko.textContent = state.ko || '';
   ko.hidden = !state.ko;
-  const points = document.getElementById('st-points');
+  const points = document.getElementById('ps-points');
   points.innerHTML = '';
   (state.points || []).forEach(line => {
     const item = document.createElement('li');
@@ -67,10 +95,10 @@ function paintSentence(state){
     points.appendChild(item);
   });
   points.hidden = !(state.points || []).length;
-  const foot = document.getElementById('st-foot');
+  const foot = document.getElementById('ps-foot');
   foot.textContent = state.foot || '';
   foot.hidden = !state.foot;
-  document.getElementById('st-cap').textContent = state.cached ? '전에 물어본 문장' : '문장 통째로 · AI';
+  document.getElementById('ps-cap').textContent = state.cached ? '전에 물어본 문장' : '문장 통째로 · AI';
 }
 
 let sentCtrl = null;
@@ -93,7 +121,7 @@ async function openSentence(text){
     return;
   }
   if(!sbUser){
-    paintSentence({ en:clean, foot:`문장 설명은 로그인하면 하루 ${SENT_DAILY}번 쓸 수 있어요` });
+    paintSentence({ en:clean, foot:'문장 설명은 로그인하면 쓸 수 있어요' });
     return;
   }
 
@@ -103,26 +131,18 @@ async function openSentence(text){
   const answer = await dictCall({ op:'explain', sentence:clean, book:(curBook && curBook.title) || '' },
                                 ctrl ? ctrl.signal : null);
   if(sentCtrl === ctrl) sentCtrl = null;
-  if(!sentModal().classList.contains('on')) return;
+  if(document.getElementById('p-sentence').hidden) return;
 
   if(!answer || answer.error || !answer.ko){
     const why = answer && answer.error;
+    if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
     paintSentence({ en:clean, foot:
-        why === 'quota_exceeded' ? `오늘 문장 설명 ${SENT_DAILY}번을 다 썼어요. 자정에 다시 채워집니다`
-      : why === 'login_required' ? `문장 설명은 로그인하면 하루 ${SENT_DAILY}번 쓸 수 있어요`
+        why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
+      : why === 'quota_exceeded' ? '오늘 문장 해석 5회를 다 썼어요. 내일 다시 채워져요'
       :                            '잠깐 문제가 있었어요. 다시 눌러 보세요' });
     return;
   }
-  rememberSentLeft(answer.left);
+  rememberSentLeft(answer.left,answer.day);
   await dictPut(key, { ko:answer.ko, points:answer.points || [], done:true });
-  paintSentence({ en:clean, ko:answer.ko, points:answer.points || [],
-                  foot: typeof answer.left === 'number'
-                        ? `오늘 ${answer.left}번 남았어요` : '' });
+  paintSentence({ en:clean, ko:answer.ko, points:answer.points || [] });
 }
-
-sentModal().addEventListener('click', event => {
-  /* `event.target` 은 "무엇이든 사건을 받을 수 있는 것" 이라 id 가 없을 수도
-     있습니다(창·문서). 여기 오는 것은 언제나 화면 요소라 그렇게 읽습니다. */
-  const hit = /** @type {Element} */ (event.target);
-  if(hit.id === 'sent-modal') closeSentence();
-});

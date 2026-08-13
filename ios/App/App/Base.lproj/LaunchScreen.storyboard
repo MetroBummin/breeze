@@ -12,21 +12,39 @@
         <scene sceneID="EHf-IW-A2E">
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
-                    <imageView key="view" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Splash" id="snD-IY-ifK">
+                    <view key="view" contentMode="scaleToFill" id="snD-IY-ifK">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                    </imageView>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Breeze" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="breeze-word">
+                                <rect key="frame" x="0.0" y="203" width="375" height="62"/>
+                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="52"/>
+                                <color key="textColor" red="1" green="0.9764705882" blue="0.9176470588" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="READ IT LIKE A BREEZE!" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="breeze-tag">
+                                <rect key="frame" x="0.0" y="300" width="375" height="16"/>
+                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="9"/>
+                                <color key="textColor" red="1" green="0.9764705882" blue="0.9176470588" alpha="0.88" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="breeze-word" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="breeze-word-x"/>
+                            <constraint firstItem="breeze-word" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" constant="-100" id="breeze-word-y"/>
+                            <constraint firstItem="breeze-word" firstAttribute="leading" secondItem="snD-IY-ifK" secondAttribute="leading" id="breeze-word-leading"/>
+                            <constraint firstItem="breeze-word" firstAttribute="trailing" secondItem="snD-IY-ifK" secondAttribute="trailing" id="breeze-word-trailing"/>
+                            <constraint firstItem="breeze-tag" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="breeze-tag-x"/>
+                            <constraint firstItem="breeze-tag" firstAttribute="top" secondItem="breeze-word" secondAttribute="bottom" constant="34" id="breeze-tag-y"/>
+                            <constraint firstItem="breeze-tag" firstAttribute="leading" secondItem="snD-IY-ifK" secondAttribute="leading" id="breeze-tag-leading"/>
+                            <constraint firstItem="breeze-tag" firstAttribute="trailing" secondItem="snD-IY-ifK" secondAttribute="trailing" id="breeze-tag-trailing"/>
+                        </constraints>
+                    </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
-    <resources>
-        <image name="Splash" width="1366" height="1366"/>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-    </resources>
 </document>

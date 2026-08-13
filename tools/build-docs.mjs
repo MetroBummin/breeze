@@ -27,10 +27,14 @@ const DOCS = [
     blurb: '낱말을 누르면 벌어지는 일, AI 부하, 서버에 남는 것' },
   { file: 'ARCHITECTURE.md', out: 'architecture.html', title: '파일 구조',
     blurb: '어떤 파일이 무슨 일을 하고 어떤 순서로 실리나' },
+  { file: 'SYNC.md',         out: 'sync.html',         title: '동기화',
+    blurb: '두 기기, 복구키, 읽기자료 백업이 움직이는 방식' },
   { file: 'ROADMAP.md',      out: 'roadmap.html',      title: '로드맵',
     blurb: '방향 전환과 다음에 만들 것' },
   { file: 'PRIVACY.md',      out: 'privacy.html',      title: '개인정보처리방침',
     blurb: '무엇을 받고, 어디에 두고, 언제 지우나' },
+  { file: 'TERMS.md',        out: 'terms.html',        title: '이용약관',
+    blurb: '개인 보관, 금지되는 사용, 권리침해 신고' },
 ];
 const asHtml = new Map(DOCS.map(d => [d.file, d.out]));
 

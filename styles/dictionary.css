@@ -1,7 +1,7 @@
 /* Dictionary panel and mobile sheet */
 
   #sheetbg{display:none;}
-  #panel{width:min(340px,28vw); flex-shrink:0; background:#fff; border-radius:26px 0 0 0; box-shadow:-8px 0 30px rgba(24,54,74,.08);
+  #panel{width:min(340px,28vw); flex-shrink:0; background:var(--sheet); border-radius:26px 0 0 0; box-shadow:var(--shadow-panel);
     overscroll-behavior:contain;
     height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
   #panel.on{display:block;}
@@ -12,6 +12,8 @@
        상단바 아래에서 시작해 남는 높이를 채우는 평범한 칸이면 됩니다. */
     body.reading #panel{position:relative; top:auto; margin-top:calc(var(--topbar-h,56px) + 8px);
       height:calc(100% - var(--topbar-h,56px) - 8px);}
+    /* 상단바가 걷힌 상태에서는 남아 있던 56px 빈자리까지 패널이 씁니다. */
+    body.reading.chrome-hidden #panel{margin-top:8px; height:calc(100% - 8px);}
     body.reader-original #panel{width:min(310px,26vw);}
     body.reader-original #panel .inner{padding:21px 20px 34px;}
     body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
@@ -19,22 +21,28 @@
   }
   #panel .inner{padding:26px 26px 40px;}
   #p-handle{display:none; touch-action:none;}
-  #p-top{display:flex; align-items:flex-start; gap:10px;}
-  #p-close{flex:none; border:none; background:#F2F0E9; width:30px; height:30px; border-radius:50%;
-    font-size:14px; cursor:pointer; color:var(--soft);}
+  #p-top{display:flex; align-items:flex-start; gap:10px; padding-bottom:13px; border-bottom:1px solid var(--divider);}
+  #p-close{flex:none; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
+    font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:10px; margin-bottom:4px;}
   #p-word{min-width:0; overflow-wrap:anywhere; font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);}
-  #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
-    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--speak-line);
+    background:var(--speak-bg); cursor:pointer; display:flex; align-items:center; justify-content:center;
     color:var(--blue); transition:.15s;}
   #p-speak:hover{background:var(--sky);}
-  #p-speak.playing{background:var(--blue); color:#fff; border-color:var(--blue);}
-  body.dark #p-speak{background:#22262B; border-color:#2A2E33;}
-  #p-phon{color:#5F7881; font-size:14px; margin-bottom:4px;}
-  #p-clicked{font-size:12px; color:var(--soft2); margin-bottom:8px;}
-  #p-divider{border:none; border-top:1px solid #E5EBE7; margin:14px 0;}
-  /* AI 가 말하는 자리는 셋 다 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
-     그리고 문장 창(`#st-card`). 값은 base.css 의 `--ai-*` 하나뿐입니다. */
+  #p-speak.playing{background:var(--blue); color:var(--on-color); border-color:var(--blue);}
+  /* 첫 줄과 둘째 줄은 패널의 숨은 경계 대신, 아주 가는 선 하나만 나눕니다. */
+  .p-row-divider{display:none;}
+  #p-controls{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px; padding:11px 0;}
+  /* 상태를 돌리는 단추지만 스위치 흉내는 내지 않습니다. 글자로 현재 상태를 말합니다. */
+  #p-mark{flex:0 0 auto; height:29px; padding:0 11px; border:1px solid var(--mark-line); border-radius:15px;
+    background:var(--mark-bg); color:var(--soft2); cursor:pointer; font:600 10.5px var(--ui); white-space:nowrap; transition:.16s;}
+  #p-mark.on{border-color:var(--blue-ring); background:var(--mark-on); color:var(--mark-on-ink);}
+  #p-mark:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
+  #p-clicked{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font-size:12px; color:var(--soft2);}
+  #p-divider{border:none; border-top:1px solid var(--divider); margin:0 0 16px;}
+  /* AI 가 말하는 자리는 모두 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
+     그리고 문장 해석 카드. 값은 base.css 의 `--ai-*` 하나뿐입니다. */
   #p-ai{display:none; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));
     border:1px solid var(--ai-line);
     border-radius:14px; padding:13px 15px; margin-bottom:12px;}
@@ -52,8 +60,8 @@
      누르면 그때 테두리가 생깁니다 — 밑줄을 미리 그어 두면 박스가 서식 화면처럼 보입니다. */
   #p-ai .mk{display:inline-block; min-width:2em; border-radius:7px; padding:1px 5px; margin-left:-5px;
     outline:none; cursor:text; transition:background .15s, box-shadow .15s;}
-  #p-ai .mk:hover{background:rgba(255,255,255,.6);}
-  #p-ai .mk:focus{background:#fff; box-shadow:0 0 0 2px var(--blue);}
+  #p-ai .mk:hover{background:var(--ai-mk-hover);}
+  #p-ai .mk:focus{background:var(--ai-mk-focus); box-shadow:0 0 0 2px var(--blue);}
   #p-ai .acts{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:9px;}
   #p-ai .tip{font-size:10.5px; color:var(--soft2); flex:none;}
   #p-ai.edited .tip{color:var(--blue);}
@@ -70,16 +78,11 @@
      경계를 지워서 덩어리가 아니라 한 장의 움직이는 빛으로 보입니다.
      선도 점도 없습니다 — 빛 하나면 "기다리는 중"은 다 전해집니다. */
   .aurora{position:relative; height:46px; border-radius:12px; overflow:hidden;
-    background:linear-gradient(100deg,#BEDCF0,#DDEEF9 50%,#C7E3F4);}
+    background:var(--aurora-bed);}
   /* 파란 덩어리와 흰 덩어리를 번갈아 놓습니다. 한쪽으로 몰아 두면 빛이 밀려
      나가는 동안 한쪽 절반이 통째로 비어 보입니다. */
   .aurora .glow{position:absolute; inset:-45%; will-change:transform;
-    background:
-      radial-gradient(38% 64% at  8% 46%, rgba(255,255,255,.95), transparent 70%),
-      radial-gradient(36% 62% at 32% 56%, rgba(23,126,186,.78), transparent 70%),
-      radial-gradient(38% 64% at 56% 40%, rgba(255,255,255,.92), transparent 70%),
-      radial-gradient(40% 66% at 78% 60%, rgba(37,137,190,.76), transparent 70%),
-      radial-gradient(44% 70% at 98% 44%, rgba(255,255,255,.88), transparent 72%);
+    background:var(--aurora-glow);
     filter:blur(13px);
     animation:aurora-drift 5.6s ease-in-out infinite alternate;}
   @keyframes aurora-drift{
@@ -105,44 +108,91 @@
   #p-aibtn:hover{background:var(--sky); border-style:solid;}
   #p-aibtn:disabled{opacity:.6; cursor:default;}
   #p-aibtn .sp{font-size:15px;}
+  #p-context,#p-save-context{display:none; width:100%; margin:-2px 0 12px; padding:9px 11px;
+    border-radius:12px; font:600 12px var(--ui); cursor:pointer;}
+  #p-context.on{display:block; border:1px dashed var(--ai-line); background:transparent; color:var(--ai-key);}
+  #p-context.on:hover{background:var(--ai-bg2); border-style:solid;}
+  #p-context:disabled{opacity:.55; cursor:default;}
+  #p-save-context.on{display:block; border:1px solid var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
+  #p-save-context.on:hover{background:var(--sky); border-color:var(--ai-key);}
   #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
   /* 문장 통째로 가는 문. 낱말 뜻이 맞는데도 문장이 안 읽힐 때 누릅니다 —
      그래서 뜻 상자 바로 아래, 다른 뜻 후보들보다 앞에 둡니다. */
   #p-explain{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
     border:1px solid var(--ai-line); background:none; color:var(--soft); border-radius:12px;
-    padding:10px; font-size:12.5px; font-family:var(--ui); cursor:pointer; margin-bottom:12px;}
-  #p-explain:hover{border-color:var(--ai-key); color:var(--ai-key); background:var(--ai-bg2);}
+    padding:10px; font-size:12.5px; font-family:var(--ui); cursor:pointer;}
+  #p-explain.ready{border-color:var(--ai-line); color:var(--ai-key); background:var(--ai-bg2);}
+  #p-explain.ready:hover{border-color:var(--ai-key); background:var(--sky);}
+  #p-explain:disabled{border-color:var(--line); color:var(--soft2); background:transparent; cursor:default; opacity:.72;}
   #p-explain .sp{color:var(--ai-key);}
-  #p-airetry{border:none; background:none; color:var(--soft); padding:0; text-align:left;
+  #p-explain:disabled .sp{color:var(--soft2);}
+  #p-explain-note{display:none; margin:5px 0 12px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
+  #p-explain-note.on{display:block;}
+  /* 해석은 따로 모달을 띄우지 않고, 지금 보고 있는 낱말·예문 아래에 이어집니다. */
+  #p-sentence{margin:10px 0 12px; padding:13px 15px; border:1px solid var(--ai-line);
+    border-radius:14px; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));}
+  #p-sentence[hidden]{display:none;}
+  #p-sentence .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+    letter-spacing:.08em; color:var(--ai-key); margin-bottom:7px;}
+  #p-sentence .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
+  #ps-en{font-family:var(--serif); font-size:14px; line-height:1.62; color:var(--ai-ink);
+    padding-bottom:10px; border-bottom:1px solid var(--ai-line); margin-bottom:10px; overflow-wrap:anywhere;}
+  #ps-wait{margin-top:2px;}
+  #ps-ko{font-size:15px; font-weight:600; line-height:1.62; color:var(--ai-ink);}
+  #ps-points{list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:7px;}
+  #ps-points li{position:relative; padding-left:13px; font-size:12.5px; line-height:1.6; color:var(--ai-note);}
+  #ps-points li::before{content:''; position:absolute; left:0; top:8px; width:5px; height:5px;
+    border-radius:50%; background:var(--ai-key); opacity:.45;}
+  #ps-foot{margin-top:10px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
+  #p-airetry{border:none; background:none; color:var(--retry-ink); padding:0; text-align:left;
     font-size:12px; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
-  #p-airetry:hover{color:var(--blue);}
+  #p-airetry:hover{color:var(--retry-hover);}
   #p-airetry:disabled{opacity:.45; cursor:default; text-decoration:none;}
   .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
-  #p-colloc-sec{display:none;}
+  #p-colloc-sec,#p-saved-senses-sec,#p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
+  #p-colloc-sec{margin-top:16px; color:var(--soft2);}
   #p-colloc{display:none; flex-wrap:wrap; gap:6px;}
   #p-colloc.on{display:flex;}
-  #p-colloc.on + .p-sec, #p-colloc-sec.on{display:block;}
+  #p-colloc-sec.on,#p-saved-senses-sec.on,#p-alt-sec.on{display:block;}
+  #p-alts{display:none; flex-wrap:wrap; gap:7px;}
+  #p-alts.on{display:flex;}
+  #p-saved-senses{display:none; flex-wrap:wrap; gap:6px;}
+  #p-saved-senses.on{display:flex;}
+  .saved-sense{border:1px solid var(--line); border-radius:14px; padding:5px 10px; background:var(--paper2);
+    color:var(--soft); font:600 12px var(--ui); cursor:pointer;}
+  .saved-sense.on{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
+  .saved-sense:hover{border-color:var(--blue); color:var(--blue);}
+  .alt-actions{display:flex; flex-basis:100%; gap:6px; margin-top:1px;}
+  .alt-action{border:1px solid var(--line); border-radius:13px; padding:6px 10px; background:transparent;
+    color:var(--soft); font:600 11px var(--ui); cursor:pointer;}
+  .alt-action.save{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
+  .alt-action:hover{border-color:var(--blue); color:var(--blue);}
   .colloc{border:1px solid var(--line); border-radius:14px; padding:5px 11px; font-size:12.5px;
           color:var(--soft); font-family:var(--serif); font-style:italic;}
-  .colloc.hit{border-color:var(--blue); color:var(--blue); background:var(--sky);}
-  body.dark .colloc.hit{background:#22333C;}
-  #p-kodict{display:flex; flex-wrap:wrap; gap:7px;}
+  /* 표현은 있을 때만 나타납니다. 그래서 여러 후보 중 하나처럼 묻히지 않고,
+     통째로 봐야 한다는 신호 하나만 또렷하게 남깁니다. */
+  .phrase-suggestion{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--ai-line);
+    border-radius:16px; padding:7px 12px; background:linear-gradient(110deg,var(--ai-bg1),var(--ai-bg2));
+    color:var(--ai-ink); font:italic 600 14px var(--serif); box-shadow:var(--shadow-phrase); cursor:pointer;}
+  .phrase-suggestion:hover{border-color:var(--blue); transform:translateY(-1px);}
+  .phrase-star{font:12px var(--ui); color:var(--ai-key); font-style:normal;}
+  .colloc.hit{border-color:var(--blue); color:var(--blue); background:var(--chip-hit);}
   .kochip{border:none; background:var(--chipbg); color:var(--chiptx); border-radius:16px; padding:7px 13px;
     font-size:13px; cursor:pointer; font-family:var(--ui);}
-  .kochip:hover{background:#D5EBE7;}
-  .kochip.on{background:var(--blue); color:#fff;}
+  .kochip:hover{background:var(--chip-hover);}
+  .kochip.on{background:var(--blue); color:var(--on-color);}
   .kochip .pos{opacity:.65; font-style:italic; margin-right:4px; font-size:11px;}
   #p-defs{font-size:13.5px; line-height:1.6; color:var(--ink-body);}
   #p-defs .pos{color:var(--blue); font-style:italic; margin-right:5px;}
   #p-defs div{margin-bottom:7px;}
-  #p-ex{font-size:13.5px; font-family:var(--serif); font-style:italic; color:#5B707A; line-height:1.65;
+  #p-ex{font-size:13.5px; font-family:var(--serif); font-style:italic; color:var(--ex-ink); line-height:1.65;
     border-left:3px solid var(--sky2); padding-left:11px;}
   #p-status{display:flex; gap:8px; margin-top:6px;}
-  .stbtn{flex:1; border:1.5px solid var(--line); background:#fff; border-radius:12px; padding:9px 0;
+  .stbtn{flex:1; border:1.5px solid var(--line); background:var(--stbtn-bg); border-radius:12px; padding:9px 0;
     font-size:13px; cursor:pointer; font-weight:600; color:var(--soft); font-family:var(--ui);}
-  .stbtn[data-s="1"].on{background:var(--s1); border-color:#E6C14F; color:#7A5D00;}
-  .stbtn[data-s="2"].on{background:var(--s2); border-color:#E89A5F; color:#8A4712;}
-  .stbtn[data-s="3"].on{background:var(--s3); border-color:#E57373; color:#9C1F1F;}
+  .stbtn[data-s="1"].on{background:var(--s1); border-color:var(--s1-line); color:var(--s1-ink);}
+  .stbtn[data-s="2"].on{background:var(--s2); border-color:var(--s2-line); color:var(--s2-ink);}
+  .stbtn[data-s="3"].on{background:var(--s3); border-color:var(--s3-line); color:var(--s3-ink);}
   #p-naver{display:inline-block; margin-top:10px; font-size:12.5px; color:var(--blue); text-decoration:none;
     border:1px solid var(--line); border-radius:16px; padding:6px 12px;}
   #p-naver:hover{background:var(--sky);}
@@ -150,40 +200,37 @@
      다만 지우는 동작이라 강한 색 대신 테두리만 씁니다. */
   #p-know{display:flex; align-items:center; justify-content:center; gap:7px;
     width:100%; margin:24px 0 4px; padding:13px 16px; font-size:14px; font-family:var(--ui);
-    border:1.5px solid var(--line2); border-radius:14px; background:var(--paper2);
+    border:1.5px solid var(--know-line); border-radius:14px; background:var(--know-bg);
     color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s;}
   #p-know .ck{width:17px; height:17px; flex:none; color:var(--chiptx);}
-  #p-know:hover{border-color:var(--blue); background:var(--sky);}
-  body.dark #p-know{background:#22262B; border-color:#343A41; color:var(--ink);}
-  body.dark #p-know:hover{border-color:var(--blue); background:#22333C;}
+  #p-know:hover{border-color:var(--blue); background:var(--chip-hit);}
 
   @media (min-width:761px){
-    #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 9px 26px;
-      background:#fff; border-bottom:1px solid rgba(229,235,231,.72);}
-    body.dark #p-top{background:#1F2327; border-bottom-color:#2A2E33;}
+    #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 13px 26px;
+      background:var(--sheet); border-bottom:1px solid var(--sticky-line);}
     body.reader-original #p-top{margin:-21px -20px 0; padding:22px 16px 9px 20px;}
   }
 
   /* mobile: bottom sheet */
   @media (max-width:760px){
     #v-read.on{display:block;}
-    #sheetbg{display:block; position:fixed; inset:0; background:rgba(24,54,74,.25); z-index:80; touch-action:none;
+    #sheetbg{display:block; position:fixed; inset:0; background:var(--scrim-sheet); z-index:80; touch-action:none;
       opacity:0; pointer-events:none; transition:opacity .25s;}
     #sheetbg.on{opacity:1; pointer-events:auto;}
     #panel{position:fixed; left:0; right:0; bottom:0; top:auto; width:100%; height:auto; max-height:72vh;
       overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
       border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;
-      box-shadow:0 -10px 40px rgba(24,54,74,.18);}
+      box-shadow:var(--shadow-sheet);}
     #panel.on{transform:translateY(0);}
     /* 시트가 벌어진 화면을 따라 커지던 문제가 이 앱의 확대를 두 번 갈아엎게 한
        원인이었습니다. 이제 커지는 것은 종이(`#original-zoom`)뿐이고 시트는 그
        바깥이라, 되돌리는 계산이 아예 필요 없습니다
        (`scripts/reader/reader-scroll.js`). */
-    #p-handle{display:flex; position:sticky; top:0; z-index:5; background:#fff; padding:12px 0 10px;
+    #p-handle{display:flex; position:sticky; top:0; z-index:5; background:var(--sheet); padding:12px 0 10px;
       justify-content:center; cursor:grab; width:100%; margin:0;}
-    #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:#C8D7D6;}
+    #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:var(--handle);}
     #p-close{display:none;}
-    #p-top{position:static; margin:0; padding:0; background:transparent; border:0;}
+    #p-top{position:static; margin:0; padding:0 0 13px; background:transparent; border-bottom:1px solid var(--divider);}
     #panel .inner{padding:16px 22px calc(34px + env(safe-area-inset-bottom));}
     .page{padding:26px 22px;}
     #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
@@ -203,6 +250,7 @@
       display:none; transform:none; transition:none;}
     body.reading #panel{position:relative; top:auto; margin-top:var(--topbar-h,56px);
       height:calc(100% - var(--topbar-h,56px));}
+    body.reading.chrome-hidden #panel{margin-top:0; height:100%;}
     #panel.on{display:block; transform:none;}
     #p-handle{display:none;}
     #p-close{display:block;}

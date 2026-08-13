@@ -4,21 +4,78 @@ const keyOf = raw => {
   const cands = lemmaCands(raw);
   return cands.find(c=>words[c]) || cands[0];
 };
-function looksHeading(p){
-  return p.length<70 && !/[.!?:;,]$/.test(p) && p.split(' ').length<=10 && /^[A-Z0-9“"]/.test(p);
+function phraseParts(text){
+  return (String(text||'').toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g)||[])
+    .map(part=>lemmaCands(part)[0]||part);
+}
+/* 저장한 표현은 단어 둘을 따로 칠하는 것이 아니라, 원문 속의 한 덩어리로 감쌉니다.
+   그래야 flare만 남고 up이 빠지는 일이 없습니다. */
+function savedPhraseStarts(){
+  const starts=new Map();
+  Object.entries(words).forEach(([key,w])=>{
+    const parts=w&&w.phraseParts;
+    if(!Array.isArray(parts)||parts.length<2) return;
+    const first=parts[0];
+    if(!starts.has(first)) starts.set(first,[]);
+    starts.get(first).push({key,w,parts});
+  });
+  starts.forEach(list=>list.sort((a,b)=>b.parts.length-a.parts.length));
+  return starts;
 }
 /* 글자를 단어 단위로 감쌉니다. 글자 화면과 쇼츠가 같은 함수를 씁니다. */
-function wordSpans(text){
-  let html = '', match, last = 0;
+function wordSpans(text,starts){
+  const matches=[]; let match, last = 0, html = '';
   WORD_RE.lastIndex = 0;
-  while((match = WORD_RE.exec(text))){
+  while((match = WORD_RE.exec(text))) matches.push(match);
+  starts=starts||savedPhraseStarts();
+  for(let i=0;i<matches.length;){
+    match=matches[i];
+    const choices=[];
+    lemmaCands(match[0]).forEach(part=>(starts.get(part)||[]).forEach(item=>{
+      if(!choices.includes(item)) choices.push(item);
+    }));
+    const phrase=choices.find(item=>item.parts.every((part,n)=>
+      matches[i+n] && lemmaCands(matches[i+n][0]).includes(part)));
     html += esc(text.slice(last, match.index));
+    if(phrase){
+      const end=matches[i+phrase.parts.length-1].index+matches[i+phrase.parts.length-1][0].length;
+      const status=phrase.w.mark!==false ? ' s'+phrase.w.status : '';
+      html += `<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(text.slice(match.index,end))}</span>`;
+      last=end; i+=phrase.parts.length; continue;
+    }
     const key = keyOf(match[0]);
-    const status = words[key] ? ' s'+words[key].status : '';
+    const status = words[key] && words[key].mark !== false ? ' s'+words[key].status : '';
     html += `<span class="w${status}" data-w="${key}">${esc(match[0])}</span>`;
     last = match.index + match[0].length;
+    i++;
   }
   return html + esc(text.slice(last));
+}
+/* 긴 책도 문단 뼈대는 한 번에 만들되, 단어 상자는 눈앞의 문단에만 붙입니다.
+   원문 텍스트는 그대로 남으므로 검색·문단 앵커는 전 범위에서 즉시 작동합니다. */
+let wordSpanObserver=null;
+function hydrateWordSpanBatch(elements){
+  const starts=savedPhraseStarts();
+  elements.forEach(el=>{
+    if(!el || el.dataset.wordSpans==='1') return;
+    el.innerHTML=wordSpans(el.textContent,starts);
+    el.dataset.wordSpans='1';
+  });
+}
+function dehydrateWordSpan(el){
+  if(!el || el.dataset.wordSpans!=='1' || el.querySelector('.sel')) return;
+  el.textContent=el.textContent;
+  delete el.dataset.wordSpans;
+}
+function beginLazyWordSpans(elements){
+  if(wordSpanObserver) wordSpanObserver.disconnect();
+  if(!window.IntersectionObserver){ hydrateWordSpanBatch(elements); return; }
+  wordSpanObserver=new IntersectionObserver(entries=>{
+    const entering=entries.filter(entry=>entry.isIntersecting).map(entry=>entry.target);
+    if(entering.length) hydrateWordSpanBatch(entering);
+    entries.filter(entry=>!entry.isIntersecting).forEach(entry=>dehydrateWordSpan(entry.target));
+  },{root:readerScroller(),rootMargin:'900px 0px'});
+  elements.forEach(element=>wordSpanObserver.observe(element));
 }
 /* Render source text using formatting metadata without changing the source. */
 function renderBookBody(b){
@@ -27,6 +84,7 @@ function renderBookBody(b){
   rt.innerHTML='';
   const frag = document.createDocumentFragment();
   const PAGE_CHARS = 1700;
+  const wordSpanTargets=[];
   let page=null, pageChars=0, pageNo=0, box=null, boxKind='';
   const newPage = ()=>{
     box = null; boxKind = '';
@@ -43,9 +101,22 @@ function renderBookBody(b){
   newPage();
   /* 반입할 때 이미 조립해 둔 블록을 순서대로 그리기만 합니다.
      예전처럼 문단마다 여섯 개의 판정 맵을 겹쳐 보지 않습니다. */
-  const list = (formatting && Array.isArray(formatting.blocks))
+  let list = (formatting && Array.isArray(formatting.blocks))
     ? formatting.blocks
     : buildPlainBlocks(b.paras);
+  /* 기사는 제목을 본문에도 담고 있습니다 — 앱이 맨 앞에 붙인 h1 하나, 그리고
+     기사 페이지 자신의 headline 하나. 그 둘 사이에 대표 사진이 끼어 있는 일이
+     많아서 "첫 덩어리 하나"만 봐서는 못 걸러 냅니다. 읽는 화면에는 그 위에 이미
+     `#rtitle` 이 서 있으므로, 맨 앞 몇 덩어리 안에서 제목과 똑같은 제목 줄은
+     그리지 않습니다. 저장해 둔 자료는 건드리지 않으므로 이미 담아 둔 기사도
+     함께 고쳐집니다. */
+  const titleText = String(b.title||'').trim();
+  let headScan = 0;
+  if(titleText) list = list.filter(bl => {
+    if(headScan >= 4) return true;
+    headScan++;
+    return !(bl.r && bl.r.charAt(0) === 'h' && String(bl.t||'').trim() === titleText);
+  });
   list.forEach(bl=>{
     if(bl.r === 'img'){
       const fig = document.createElement('figure');
@@ -100,14 +171,16 @@ function renderBookBody(b){
     if(bl.r === 'toc') el.classList.add('toc-entry');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
-    el.innerHTML = wordSpans(bl.v || bl.t);
+    el.textContent = bl.v || bl.t;
     host.appendChild(el);
+    wordSpanTargets.push(el);
     pageChars += bl.t.length;
   });
   const no = document.createElement('div');
   no.className='pageno'; no.textContent = '— '+pageNo+' —';
   frag.appendChild(no);
   rt.appendChild(frag);
+  beginLazyWordSpans(wordSpanTargets);
 }
 async function openBook(b){
   readerModeChangeToken++;
@@ -148,8 +221,10 @@ async function openBook(b){
   renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
-  positions[b.id] = {...initialPosition, t:Date.now()};
-  save(LS_POS, positions);
+  /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
+     다른 기기의 위치를 이길 수 있습니다. 처음 연 책만 자리를 만들고, 이후의
+     시간표는 실제 스크롤이 남깁니다. */
+  if(firstOpen){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
   updateReaderModeControls();
   const original = bookSupportsOriginal(b) ? await originalGetForBook(b) : null;
   const desired = initialPosition.mode==='original'
@@ -247,24 +322,9 @@ function whileRestoringChrome(job){
   done();
   return result;
 }
-/* ---- 걷히는 것은 손가락으로 읽는 화면에서만 ----
-   상단바를 걷는 것은 좁은 화면을 아끼려는 손짓입니다. 되부르는 방법도 손짓
-   하나 — 위로 조금 올리기 — 이고요. 마우스·트랙패드가 주 입력인 화면에는 둘
-   다 해당이 안 됩니다. 아낄 세로가 넉넉하고, 되부르려고 스크롤을 거꾸로 굴리는
-   것은 배워야 아는 동작입니다. 맥북에서 브라우저를 확대하면 글이 다시 흘러
-   스크롤이 움직이는데, 그것까지 "읽어 내려갔다"로 읽혀서 바가 걷혔습니다.
-
-   화면 폭이 아니라 **주 입력**으로 가릅니다. `pointer`·`hover` 는 곁다리가
-   아니라 주 입력을 가리키므로, 아이패드는 트랙패드를 붙여도 손가락 쪽에
-   남습니다 — 화면을 그대로 만질 수 있으니 그게 맞습니다. 폭으로 갈랐다면
-   창을 좁힌 맥북이 폰 취급을 받았을 겁니다. */
-const chromeStays = window.matchMedia('(hover:hover) and (pointer:fine)');
 function setReaderChrome(hidden){
-  document.body.classList.toggle('chrome-hidden', hidden && !chromeStays.matches);
+  document.body.classList.toggle('chrome-hidden', hidden);
 }
-/* 입력이 바뀌는 일은 드물지만(아이패드를 데스크톱 모드로 보는 등), 바가 걷힌
-   채로 넘어가면 되부를 손짓이 없는 화면에 갇힙니다. */
-chromeStays.addEventListener('change', ()=>{ if(chromeStays.matches) showReaderChrome(); });
 function showReaderChrome(){
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
   chromeLastY = readerScrollTop(); chromeRun = 0;

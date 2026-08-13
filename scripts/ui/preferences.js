@@ -7,8 +7,15 @@ function fontSize(d){
     save(LS_FS, fs);
     document.documentElement.style.setProperty('--fs', fs+'px');
   });
-  const el=document.getElementById('aa-fs'); if(el) el.textContent=fs;
+  showFontSize();
 }
+/* 같은 값을 두 곳이 보여 줍니다 — 읽는 화면의 Aa 와 설정. 바꾸는 곳은 위 하나뿐입니다. */
+function showFontSize(){
+  const spots = /** @type {NodeListOf<HTMLElement>} */
+    (document.querySelectorAll('#aa-fs, #set-fs'));
+  spots.forEach(spot => { spot.textContent = String(fs); });
+}
+showFontSize();
 /* ---- 좌우 여백 ----
    집중 모드가 몰래 넓혀 주던 글 폭을 여기로 꺼냈습니다. 폭은 스크롤과 묶지
    않습니다 — 읽는 도중 줄바꿈이 달라지면 보던 자리를 놓치기 때문입니다. */
@@ -62,10 +69,49 @@ let darkMode = load('breeze.dark', false);
 function applyDark(){
   document.body.classList.toggle('dark', !!darkMode);
   document.documentElement.classList.toggle('dark', !!darkMode);   // 화면 맨 아래까지 어둡게
-  document.getElementById('aa-dark').classList.toggle('on', !!darkMode);
+  /* 다크 모드를 켜는 자리는 둘입니다 — 읽는 화면의 Aa 와 설정. 어느 쪽에서
+     켜든 나머지 하나도 같은 자리로 옮겨 놓습니다. */
+  const toggles = /** @type {NodeListOf<HTMLElement>} */
+    (document.querySelectorAll('#aa-dark, #set-dark'));
+  toggles.forEach(toggle => {
+    toggle.classList.toggle('on', !!darkMode);
+    toggle.setAttribute('aria-pressed', darkMode ? 'true' : 'false');
+  });
 }
 function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
 applyDark();
+
+/* ---- 설정 ----------------------------------------------------------------
+   설정은 탭 두 개짜리 시트 하나입니다. "일반"에는 이 앱이 쓰는 말(언어)이,
+   "다른 기기와 연결하기"에는 예전의 동기화 화면이 통째로 들어와 있습니다.
+   동기화 쪽 내용을 그리는 것은 여전히 scripts/sync/sync.js 하나뿐입니다. */
+function settingsModal(){ return document.getElementById('settings-modal'); }
+/** @param {string} name */
+function settingsTab(name){
+  const card = settingsModal();
+  /** @type {NodeListOf<HTMLElement>} */
+  (card.querySelectorAll('.set-tab')).forEach(tab => tab.classList.toggle('on', tab.dataset.tab===name));
+  /** @type {NodeListOf<HTMLElement>} */
+  (card.querySelectorAll('.set-panel')).forEach(panel => panel.classList.toggle('on', panel.dataset.panel===name));
+  /* 동기화 탭은 열릴 때마다 지금 상태로 다시 그립니다 — 로그인·복구키·마지막
+     동기화 시각은 시트를 닫아 둔 사이에도 바뀝니다. */
+  if(name==='sync'){
+    if(typeof initSupabase==='function') initSupabase();
+    if(typeof renderSyncModal==='function') renderSyncModal();
+  }
+}
+/** @param {string} [tab] */
+function openSettings(tab){
+  settingsModal().classList.add('on');
+  /* 시트를 닫아 둔 사이에 읽는 화면에서 바꿔 놓았을 수 있습니다. 열 때마다
+     지금 값으로 맞춥니다. */
+  applyDark();
+  settingsTab(tab || 'general');
+}
+function closeSettings(){ settingsModal().classList.remove('on'); }
+settingsModal().addEventListener('click', event => {
+  if(event.target===settingsModal()) closeSettings();
+});
 
 /* 저장 단어는 원본에서도 글자 화면과 같은 블록으로 칠합니다. 밑줄·블록·끄기를
    고르는 설정이 있었지만 설정을 위한 설정이었습니다. 남아 있던 선택값은
@@ -101,35 +147,27 @@ function miniToast(msg){
 /* ---- 발음 ----------------------------------------------------------------
    1순위: 사전이 주는 원어민 녹음(mp3)   2순위: 기기 내장 음성(TTS)
    앱(Capacitor)으로 옮길 때도 이 함수 안쪽만 교체하면 됩니다.            */
-let curAudio = null;
-function speak(text, audioUrl){
+let curAudio = null, speakGeneration = 0;
+function speak(text){
   const btn = document.getElementById('p-speak');
   const mark = on => btn && btn.classList.toggle('playing', on);
-  try{ if(curAudio){ curAudio.pause(); curAudio = null; } }catch(e){}
+  const generation=++speakGeneration;
+  try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-
-  const tts = ()=>{
-    if(!window.speechSynthesis){ toast('이 브라우저는 발음 재생을 지원하지 않아요'); return; }
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.95;
-    const v = speechSynthesis.getVoices().find(v=>/^en(-|_)/i.test(v.lang));
-    if(v) u.voice = v;
-    u.onstart = ()=>mark(true); u.onend = ()=>mark(false); u.onerror = ()=>mark(false);
-    speechSynthesis.speak(u);
-  };
-
-  if(audioUrl){
-    const a = new Audio(audioUrl);
-    curAudio = a;
-    a.onplay = ()=>mark(true);
-    a.onended = ()=>{ mark(false); curAudio = null; };
-    a.onerror = ()=>{ mark(false); curAudio = null; tts(); };   // 녹음이 없거나 막히면 기기 음성으로
-    a.play().catch(()=>{ mark(false); curAudio = null; tts(); });
-  }else tts();
+  if(!window.speechSynthesis){ toast('이 브라우저는 발음 재생을 지원하지 않아요'); return; }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = 0.95;
+  const v = speechSynthesis.getVoices().find(v=>/^en(-|_)/i.test(v.lang));
+  if(v) u.voice = v;
+  u.onstart = ()=>{ if(generation===speakGeneration) mark(true); };
+  u.onend = u.onerror = ()=>{ if(generation===speakGeneration) mark(false); };
+  /* 원어민 mp3는 내려받고 실패하는 동안 뒤늦게 여러 TTS를 쌓았습니다. 발음은
+     사전 정보보다 즉시성이 중요하므로, 기기 음성만 바로 재생합니다. */
+  speechSynthesis.speak(u);
 }
 function speakWord(){
   const w = words[selKey]; if(!w) return;
-  speak(w.word, w.audio);
+  speak(w.word);
 }
 
 let toastTimer;
