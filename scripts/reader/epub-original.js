@@ -133,7 +133,7 @@ async function openOriginalEpub(book,record,token){
   const session={kind:'epub',bookId:book.id,hash:record.hash,archive,urls:[],frames:[],frameReady:[],resizeObservers:[]};
   originalSession=session;
   const hint=document.getElementById('original-selection-hint');
-  if(hint) hint.textContent='단어는 더블클릭하거나 드래그해서 선택해요';
+  if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const resources=await buildEpubResources(archive,session);
   for(let index=0; index<archive.spine.length; index++){
     if(token!==originalLoadToken) return;
@@ -160,7 +160,7 @@ async function openOriginalEpub(book,record,token){
           session.resizeObservers.push(observer);
         }
         if(frameDoc){
-          frameDoc.addEventListener('pointerup',()=>{ setTimeout(()=>openOriginalSelection(frameDoc),0); });
+          installEpubWordTap(frameDoc);
           /* EPUB 은 벌리지 않습니다 — 글자라서 크기를 키우면 줄바꿈까지 다시
              흘러 화면 폭에 맞습니다(벌리기는 한 줄을 읽으려고 옆으로 밀게 만들
              뿐입니다). 벌어지는 것은 종이를 찍은 그림인 PDF 뿐입니다.
@@ -229,6 +229,70 @@ function originalSentence(text,word){
   return match.trim().slice(0,700);
 }
 
+/* EPUB 원본은 iframe 안의 진짜 글자입니다. 예전에는 브라우저 selection만 읽어서
+   마우스로 더블클릭하거나 손가락으로 드래그해야 selection이 생겼습니다. PDF는
+   이미 좌표표로 한 번 탭을 처리했지만 EPUB에는 그 길이 없었고, 겉보기에는 같은
+   '원본 모드'라 PDF 수정이 안 먹는 것처럼 보였습니다.
+
+   한 번 탭은 브라우저가 알려 주는 caret에서 낱말 경계를 찾습니다. 빈 여백을
+   눌렀을 때 가까운 낱말이 열리지 않도록 실제 낱말 사각형 안인지도 다시 봅니다.
+   드래그/더블클릭 selection은 기존 길을 그대로 남겨 두므로 표현을 골라 복사하는
+   출판사 조판의 기본 동작도 잃지 않습니다. */
+function epubWordRangeAtPoint(doc,clientX,clientY){
+  let node=null, offset=0;
+  if(doc.caretPositionFromPoint){
+    const caret=doc.caretPositionFromPoint(clientX,clientY);
+    if(caret){ node=caret.offsetNode; offset=caret.offset; }
+  }else if(doc.caretRangeFromPoint){
+    const caret=doc.caretRangeFromPoint(clientX,clientY);
+    if(caret){ node=caret.startContainer; offset=caret.startOffset; }
+  }
+  if(!node) return null;
+  if(node.nodeType!==Node.TEXT_NODE){
+    const walker=doc.createTreeWalker(node,NodeFilter.SHOW_TEXT);
+    node=walker.nextNode(); offset=0;
+  }
+  if(!node || !node.data || !/[A-Za-z]/.test(node.data)) return null;
+  const owner=node.parentElement;
+  if(!owner || owner.closest('a,script,style,noscript,textarea')) return null;
+  const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+  let found=null, match;
+  while((match=pattern.exec(node.data))){
+    if(offset>=match.index && offset<=match.index+match[0].length){ found=match; break; }
+  }
+  if(!found) return null;
+  const range=doc.createRange();
+  range.setStart(node,found.index); range.setEnd(node,found.index+found[0].length);
+  const rect=[...range.getClientRects()].find(item=>item.width>0&&item.height>0
+    && clientX>=item.left-4 && clientX<=item.right+4
+    && clientY>=item.top-3 && clientY<=item.bottom+3);
+  return rect ? {range,raw:found[0],owner,rect} : null;
+}
+
+function installEpubWordTap(doc){
+  let pointer=null;
+  doc.addEventListener('pointerdown',event=>{
+    if(event.pointerType==='mouse' && event.button!==0) return;
+    if(!event.isPrimary){ pointer=null; return; }
+    pointer={id:event.pointerId,x:event.clientX,y:event.clientY};
+  },true);
+  doc.addEventListener('pointercancel',()=>{ pointer=null; },true);
+  doc.addEventListener('pointerup',event=>{
+    const start=pointer; pointer=null;
+    if(!start || start.id!==event.pointerId) return;
+    const moved=Math.hypot(event.clientX-start.x,event.clientY-start.y)>9;
+    /* selection은 pointerup 기본 동작 뒤에 확정됩니다. 먼저 사용자가 드래그/더블클릭
+       한 selection을 존중하고, 평범한 탭일 때만 caret 기반 낱말을 엽니다. */
+    setTimeout(()=>{
+      const selection=doc.getSelection();
+      if(selection && !selection.isCollapsed){ openOriginalSelection(doc); return; }
+      if(moved) return;
+      const hit=epubWordRangeAtPoint(doc,event.clientX,event.clientY);
+      if(hit) openOriginalRange(doc,hit.range,hit.raw,hit.owner,hit.rect);
+    },0);
+  },true);
+}
+
 /* 출판사 조판을 그대로 보여주려면 본문 DOM을 건드리면 안 됩니다.
    브라우저가 실제로 선택한 한 단어만 받아서, 본문을 수정하지 않는
    독립 하이라이트를 그 위에 얹습니다. */
@@ -249,6 +313,12 @@ function openOriginalSelection(doc){
   if(!owner || (owner.closest&&owner.closest('a'))) return;
   const rect=[...range.getClientRects()].find(item=>item.width>0&&item.height>0);
   if(!rect) return;
+  openOriginalRange(doc,range,raw,owner,rect);
+  selection.removeAllRanges();
+}
+
+function openOriginalRange(doc,range,raw,owner,rect){
+  if(!doc || !range || !raw || !owner || !rect) return;
   clearOriginalSelectionMarkers();
   const marker=doc.createElement('span');
   marker.className='breeze-original-word original-selection-marker';
@@ -260,7 +330,6 @@ function openOriginalSelection(doc){
   if(words[key] && words[key].mark !== false) marker.classList.add('s'+words[key].status);
   marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;background:rgba(37,137,190,.25);border-radius:3px`;
   doc.body.appendChild(marker);
-  selection.removeAllRanges();
   openWord(key,marker);
 }
 

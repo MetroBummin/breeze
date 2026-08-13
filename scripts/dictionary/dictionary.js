@@ -270,8 +270,10 @@ function renderPanel(){
     aiLoading:!!phrase.loading, aiSlow:false, aiOff:phrase.error||'',
   }) : base;
   const wordBox=document.getElementById('p-word');
+  const wordWrap=document.getElementById('p-word-wrap');
   const canRename=!context && !phrase && !base.root && !base.phraseParts;
   const editingWord=canRename && panelEditTarget==='word';
+  wordWrap.classList.toggle('editing',editingWord);
   wordBox.contentEditable=editingWord?'true':'false';
   const renameBox=document.getElementById('p-rename-confirm');
   const renaming=wordRename&&wordRename.to===k;
@@ -342,6 +344,7 @@ function renderPanel(){
   }else{
     aiBox.className = '';
   }
+  aiBox.classList.toggle('editing',editingMeaning && !!shown && !asking);
 
   /* 단추는 AI 가 답하지 못한 이유가 있을 때만 나옵니다. 평소에는 클릭한 순간
      이미 다녀왔으므로 누를 것이 없고, 뜻이 안 맞을 때는 박스 안의 링크가 받습니다. */
