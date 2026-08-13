@@ -722,6 +722,14 @@ assert.match(modesSource, /const sourceCueBridge=sentenceBridge/,
   'The source cue is coupled to landing search again, so quick round trips hide it');
 assert.match(modesSource, /entries\.push\(\{text:sentence\.text,range,pi:\+element\.dataset\.pi,block:element\}\)/,
   'The text bridge no longer keeps its paragraph element for the departure cue');
+assert.match(modesSource, /paragraph:chosen\.pi/,
+  'The text bridge lost the canonical paragraph shared by both mode cues');
+assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
+  /pdfParagraphCue\(page,matched,paragraphHint\)/,
+  'PDF cues no longer use the same canonical paragraph as text cues');
+assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'),
+  /showElementModeCue\(block,10000\)/,
+  'EPUB landing cues paint only the matched sentence instead of its paragraph');
 assert.match(modesSource, /if\(sourceCueBridge\)\{\s*showBridgeSourceCue\(sourceCueBridge\)/,
   'Mode switching no longer paints the paragraph before leaving it');
 assert.match(modesSource, /else if\(sourceCueBridge\)\{[\s\S]{0,300}showOriginalLandingCue\(record,target\)/,

@@ -280,21 +280,28 @@ function renderPdfSavedWordMarkers(page,boxes){
   });
 }
 
-function pdfParagraphCue(page,matched){
+function pdfParagraphCue(page,matched,paragraphHint){
   if(!page || !matched || !matched.length) return null;
   const pageNumber=+page.dataset.page;
   const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];
-  const paragraph=paragraphForSource(curBook,{kind:'pdf',page:pageNumber,y:first.y});
+  const paragraph=paragraphHint==null
+    ? paragraphForSource(curBook,{kind:'pdf',page:pageNumber,y:first.y}) : paragraphHint;
   const start=paragraph==null ? null : sourceAnchorForParagraph(curBook,paragraph);
   const next=paragraph==null ? null : sourceAnchorForParagraph(curBook,paragraph+1);
-  const minMatched=Math.min(...matched.map(box=>box.y));
-  const maxMatched=Math.max(...matched.map(box=>box.y+box.h));
+  const pageBoxes=originalSession&&originalSession.wordBoxes.get(pageNumber)||matched;
+  const lower=start&&start.page===pageNumber ? start.y-.01
+    : start&&start.page<pageNumber ? 0 : Math.min(...matched.map(box=>box.y))-.01;
+  const upper=next&&next.page===pageNumber ? next.y-.012
+    : next&&next.page>pageNumber ? 1 : Math.max(...matched.map(box=>box.y+box.h))+.01;
+  const paragraphBoxes=pageBoxes.filter(box=>box.y+box.h>=lower&&box.y<=upper);
+  const bounds=paragraphBoxes.length ? paragraphBoxes : matched;
+  const minMatched=Math.min(...bounds.map(box=>box.y));
+  const maxMatched=Math.max(...bounds.map(box=>box.y+box.h));
   /* PDF의 원본 문단 경계는 반입 때 만든 sourceMap이 가장 잘 압니다. 다음 문단이
      같은 쪽에 있으면 그 직전까지, 쪽 끝이면 현재 문장이 닿는 데까지 칠합니다. */
   const top=start&&start.page===pageNumber ? Math.min(start.y,minMatched) : minMatched;
   let bottom=next&&next.page===pageNumber ? Math.max(maxMatched,next.y-.012) : maxMatched;
   bottom=Math.min(.985,Math.max(top+.018,bottom));
-  const pageBoxes=originalSession&&originalSession.wordBoxes.get(pageNumber)||matched;
   const inside=pageBoxes.filter(box=>box.y+box.h>=top-.01&&box.y<=bottom+.01);
   const source=inside.length ? inside : matched;
   const left=Math.max(.008,Math.min(...source.map(box=>box.x))-.012);
@@ -302,9 +309,9 @@ function pdfParagraphCue(page,matched){
   return {x:left,y:Math.max(.006,top-.008),right,bottom:Math.min(.994,bottom+.008)};
 }
 
-function showPdfModeCue(page,boxes,duration){
+function showPdfModeCue(page,boxes,duration,paragraphHint){
   if(!page || !boxes || !boxes.length) return;
-  const block=pdfParagraphCue(page,boxes);
+  const block=pdfParagraphCue(page,boxes,paragraphHint);
   if(!block) return;
   const cue=document.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-block';
   cue.style.cssText=`left:${block.x*100}%;top:${block.y*100}%;width:${(block.right-block.x)*100}%;height:${(block.bottom-block.y)*100}%`;
@@ -383,10 +390,11 @@ function pdfSentenceBridge(source){
      문단 단서로 넘깁니다. pdfParagraphCue가 sourceMap 경계까지 넓혀 칠합니다. */
   const first=visual[0];
   const fallback=first ? boxes.filter(box=>Math.abs(box.y-first.y)<.018) : [];
-  return {candidates,source,boxes:match ? boxes.slice(match.start,match.start+match.length) : fallback};
+  return {candidates,source,paragraph:paragraphForSource(curBook,source),
+    boxes:match ? boxes.slice(match.start,match.start+match.length) : fallback};
 }
 
-async function restorePdfSentence(candidates,source,changeToken){
+async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
   const total=originalSession.pages.length;
   const base=Math.max(1,Math.min(total,Number(source&&source.page)||1));
   const pages=[base,base+1,base-1,base+2,base-2,base+3,base-3,base+4,base-4]
@@ -417,7 +425,7 @@ async function restorePdfSentence(candidates,source,changeToken){
       const page=originalSession.pages[pageNumber-1];
       const rect=page.getBoundingClientRect();
       readerScrollTo(readerScrollTop()+rect.top-(topInset()+readerViewHeight()*.32)+first.y*rect.height);
-      showPdfModeCue(page,matched,10000);
+      showPdfModeCue(page,matched,10000,paragraphHint);
       return true;
     }
   }

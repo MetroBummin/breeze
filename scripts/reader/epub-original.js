@@ -305,11 +305,12 @@ function epubSentenceBridge(source){
   if(!element) return null;
   const sentences=bridgeSentences(element.textContent).slice(0,4);
   return sentences.length
-    ? {candidates:sentences.map(item=>item.text),source,
+    ? {candidates:sentences.map(item=>item.text),source,block:element,
+       paragraph:paragraphForSource(curBook,source),
        range:domRangeForOffsets(element,sentences[0].start,sentences[0].end)} : null;
 }
 
-async function restoreEpubSentence(candidates,source,changeToken){
+async function restoreEpubSentence(candidates,source,changeToken,paragraphHint){
   const total=originalSession.frames.length;
   const base=Math.max(0,Math.min(total-1,Number(source&&source.spine)||0));
   const spines=[base,base+1].filter(value=>value>=0&&value<total);
@@ -326,7 +327,10 @@ async function restoreEpubSentence(candidates,source,changeToken){
       if(!range) continue;
       const rect=range.getBoundingClientRect();
       readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+rect.top-topInset()-10);
-      showRangeModeCue(range,10000);
+      const canonical=paragraphHint==null ? null : sourceAnchorForParagraph(curBook,paragraphHint);
+      const block=canonical&&canonical.kind==='epub'
+        ? epubElementAt(canonical.spine,canonical.element) : range.commonAncestorContainer.parentElement;
+      showElementModeCue(block,10000);
       return true;
     }
   }

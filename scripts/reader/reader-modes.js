@@ -125,7 +125,7 @@ function textSentenceBridge(){
   const preferred=Math.max(0,entries.findIndex(entry=>bridgeTokens(entry.text).length>=5));
   const chosen=entries[preferred];
   const ordered=[...entries.slice(preferred),...entries.slice(0,preferred)].map(entry=>entry.text);
-  return {candidates:ordered,range:chosen.range,pi:chosen.pi,
+  return {candidates:ordered,range:chosen.range,pi:chosen.pi,paragraph:chosen.pi,
     block:chosen.block};
 }
 
@@ -180,7 +180,10 @@ async function restoreTextSentence(candidates,targetPi){
     .filter(Boolean))];
   /* 문장과 문단을 겹쳐 칠하면 읽을 곳보다 장치가 먼저 보입니다. 목적지는 문단
      하나로만 알려 줍니다. 지연 span 재조립 뒤에도 이 표시는 안정적으로 남습니다. */
-  cueBlocks.forEach(block=>block.classList.add('reader-mode-cue-block'));
+  /* 문장은 두 화면 사이에서 같은 곳을 찾기 위한 검색어일 뿐입니다. 실제 표시는
+     sourceMap이 정한 같은 문단 하나여야 출발·도착의 크기가 달라지지 않습니다. */
+  const canonical=document.querySelector(`#rtext [data-pi="${targetPi}"]`)||cueBlocks[0];
+  if(canonical) canonical.classList.add('reader-mode-cue-block');
   readerModeCueTimer=setTimeout(clearReaderModeCue,10000);
   return true;
 }
@@ -198,10 +201,25 @@ function clearReaderModeCue(){
       try{
         const view=frame.contentWindow, doc=frame.contentDocument;
         if(view&&view.CSS&&view.CSS.highlights) view.CSS.highlights.delete('breeze-mode-cue');
-        if(doc) doc.querySelectorAll('.reader-mode-cue-dom').forEach(node=>node.remove());
+        if(doc){
+          doc.querySelectorAll('.reader-mode-cue-dom').forEach(node=>node.remove());
+          doc.querySelectorAll('.reader-mode-cue-block').forEach(node=>node.classList.remove('reader-mode-cue-block'));
+        }
       }catch(error){}
     });
   }
+}
+
+function showElementModeCue(element,duration){
+  if(!element) return;
+  const doc=element.ownerDocument||document;
+  if(doc!==document && !doc.getElementById('breeze-mode-cue-block-style')){
+    const style=doc.createElement('style'); style.id='breeze-mode-cue-block-style';
+    style.textContent='.reader-mode-cue-block{background:rgba(77,174,214,.16)!important;border-radius:5px}';
+    doc.head.appendChild(style);
+  }
+  element.classList.add('reader-mode-cue-block');
+  if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
 }
 
 function showRangeModeCue(range,duration){
@@ -245,9 +263,9 @@ function showRangeModeCue(range,duration){
 function showBridgeSourceCue(bridge){
   clearReaderModeCue();
   if(!bridge) return;
-  if(bridge.block) bridge.block.classList.add('reader-mode-cue-block');
+  if(bridge.block) showElementModeCue(bridge.block,0);
   else if(bridge.source&&bridge.source.kind==='pdf'&&originalSession&&originalSession.pages){
-    showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0);
+    showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0,bridge.paragraph);
   }else if(bridge.range) showRangeModeCue(bridge.range,0);
 }
 
@@ -259,8 +277,9 @@ function showOriginalLandingCue(record,target){
   if(record.kind==='pdf'){
     const page=originalSession.pages&&originalSession.pages[landing.source.page-1];
     if(!page || !landing.boxes || !landing.boxes.length) return false;
-    showPdfModeCue(page,landing.boxes,10000);
-  }else if(landing.range) showRangeModeCue(landing.range,10000);
+    showPdfModeCue(page,landing.boxes,10000,landing.paragraph);
+  }else if(landing.block) showElementModeCue(landing.block,10000);
+  else if(landing.range) showRangeModeCue(landing.range,10000);
   else return false;
   return true;
 }
@@ -273,7 +292,8 @@ function stabilizePdfModeTarget(record,target,bridge,changeToken,bookAtStart){
   [360,900].forEach(delay=>setTimeout(async()=>{
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
     suspendReaderScrollSave(500);
-    const found=bridge ? await ORIGINAL_FORMATS.pdf.restoreSentence(bridge.candidates,target,changeToken) : false;
+    const found=bridge ? await ORIGINAL_FORMATS.pdf.restoreSentence(
+      bridge.candidates,target,changeToken,bridge.paragraph) : false;
     if(!found) await restoreOriginalAnchor(target,changeToken);
   },delay));
 }
@@ -359,8 +379,10 @@ async function switchReaderMode(mode,options){
     const targetPi = paragraphForSource(curBook,bridge);
     requestAnimationFrame(()=>requestAnimationFrame(async()=>{
       if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='text') return;
+      const canonicalPi=sentenceBridge&&sentenceBridge.paragraph!=null
+        ? sentenceBridge.paragraph : targetPi;
       const sentenceFound=sentenceBridge
-        ? await restoreTextSentence(sentenceBridge.candidates,targetPi) : false;
+        ? await restoreTextSentence(sentenceBridge.candidates,canonicalPi) : false;
       if(!sentenceFound && targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
         if(element){
@@ -404,7 +426,8 @@ async function switchReaderMode(mode,options){
     if(sentenceBridge){
       /* Search failure is deliberately quiet: the source-map anchor above is
          still a stable and useful fallback. */
-      await ORIGINAL_FORMATS[record.kind].restoreSentence(sentenceBridge.candidates,target,changeToken);
+      await ORIGINAL_FORMATS[record.kind].restoreSentence(
+        sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
     }else if(sourceCueBridge){
       /* 빠른 왕복에서는 정확한 원본 좌표를 지키려고 문장 재검색을 생략합니다.
          좌표는 건드리지 않고, 그 좌표의 문단만 목적지 표시로 다시 칠합니다. */
