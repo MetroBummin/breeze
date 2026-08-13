@@ -23,7 +23,9 @@ const DIRS  = ['scripts', 'styles', 'assets'];
 
 /* 내장 고전 3종은 앱에 함께 넣습니다. 현재 실행 경로에서 떼어 둔 옛 맛보기 글은
    저장소에 보관하되 네이티브 앱 용량에는 포함하지 않습니다. */
-const SKIP = /(^|\/)\.DS_Store$|^scripts\/library\/samples\.js$|^assets\/samples\//;
+/* 라이선스 원문(OFL-*.txt)은 앱에 함께 들어갑니다 — 글꼴을 실어 나르는 조건입니다.
+   빠지는 것은 사람이 읽으려고 둔 메모뿐입니다. */
+const SKIP = /(^|\/)\.DS_Store$|^scripts\/library\/samples\.js$|^assets\/samples\/|^assets\/brand\/README\.md$|^assets\/fonts\/gowun-batang-ui\.txt$/;
 
 let copied = 0, bytes = 0;
 function copyInto(sourcePath){

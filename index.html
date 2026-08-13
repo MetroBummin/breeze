@@ -16,28 +16,17 @@
   <link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-  <!-- 제목에만 쓰는 Fraunces는 SIL Open Font License 글꼴입니다.
-       본문과 버튼은 기기 기본 글꼴을 유지해 읽는 속도를 건드리지 않습니다. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <script>
-    /* Safari의 주소창·하단 막대 색은 페이지가 완전히 통제할 수 없습니다.
-       일반 휴대폰 브라우저에서는 그 사이에 하늘색 띠가 남으므로, 스플래시는
-       홈 화면에 추가한 앱(standalone)에서만 보여 줍니다. */
-    (function(){
-      var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-      if(!standalone && window.matchMedia('(max-width: 700px)').matches){
-        document.documentElement.classList.add('mobile-browser');
-      }
-    })();
-  </script>
+  <!-- 제목에 쓰는 두 글꼴(Fraunces · 고운바탕)은 우리 서버에 함께 들어 있습니다.
+       남의 서버를 부르지 않으므로 비행기 모드에서도 제목이 제 글꼴로 찍히고,
+       이 앱을 여는 사람의 IP 가 글꼴 회사로 가지 않습니다. 이 파일은
+       `npm run fonts` 가 만듭니다 — tools/fetch-fonts.mjs -->
+  <link rel="stylesheet" href="styles/fonts.css?v=5ff34459">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=38be5228">
-  <link rel="stylesheet" href="styles/base.css?v=60be5d65">
+  <link rel="stylesheet" href="styles/tokens.css?v=88bc98ca">
+  <link rel="stylesheet" href="styles/base.css?v=a3265dad">
   <link rel="stylesheet" href="styles/home.css?v=9e4580a7">
-  <link rel="stylesheet" href="styles/reader.css?v=1f27c2ff">
+  <link rel="stylesheet" href="styles/reader.css?v=021ca768">
   <link rel="stylesheet" href="styles/dictionary.css?v=38772f7f">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
@@ -57,7 +46,7 @@
   <script defer src="scripts/core/state.js?v=55e8bd83"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
-  <script defer src="scripts/ui/i18n.js?v=d6b8e9b7"></script>
+  <script defer src="scripts/ui/i18n.js?v=f4b4f72f"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=c3b98b4a"></script>
@@ -73,31 +62,28 @@
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=2809d840"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=cf65bccf"></script>
   <script defer src="scripts/reader/epub-original.js?v=3c77d35e"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=1758d329"></script>
-  <script defer src="scripts/reader/reader.js?v=51d02ab5"></script>
-  <script defer src="scripts/ui/preferences.js?v=2a62f77d"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=eb95818c"></script>
+  <script defer src="scripts/reader/reader.js?v=ebe63916"></script>
+  <script defer src="scripts/ui/preferences.js?v=03a9b082"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=9009ab47"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
-  <script defer src="scripts/main.js?v=d381806b"></script>
+  <script defer src="scripts/main.js?v=580d466b"></script>
 </head>
 <body>
 <div id="app">
 
 <!-- ================= SPLASH ================= -->
 <div id="splash" class="splash-day">
-  <!-- 낮의 들판은 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지 않습니다. -->
-  <div class="splash-scene" aria-hidden="true">
-    <picture>
-      <source media="(min-aspect-ratio: 4/3)" type="image/avif" srcset="assets/brand/breeze-day-wide.avif">
-      <source media="(min-aspect-ratio: 4/3)" srcset="assets/brand/breeze-day-wide.jpg">
-      <source type="image/avif" srcset="assets/brand/breeze-day.avif">
-      <img src="assets/brand/breeze-day.jpg" alt="">
-    </picture>
-  </div>
+  <!-- 낮의 들판은 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지 않습니다.
+       사진은 여기가 아니라 styles/base.css 가 배경으로 깝니다 — 위 스크립트가
+       휴대폰 브라우저에서 스플래시를 통째로 감추는데(html.mobile-browser),
+       `<img>` 였다면 감춰 놓고도 250KB를 먼저 받아 버립니다. 배경 그림은 감춰진
+       자리에서는 아예 요청하지 않습니다. -->
+  <div class="splash-scene" aria-hidden="true"></div>
   <div class="splash-brand">
   <div class="word">Breeze</div>
   <div class="tag">read it like a breeze!</div>

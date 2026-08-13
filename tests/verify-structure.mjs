@@ -963,8 +963,6 @@ assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
 assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
   'The inline sentence explanation has its own colour again');
 
-/* 긴 글은 문단 뼈대만 먼저 만들고, 눈앞의 문단에만 낱말 상자를 붙입니다.
-   이 세 고리가 함께 있어야 전체 책의 수십만 span 이 다시 생기지 않습니다. */
 assert.match(readerSource, /function beginLazyWordSpans/,
   'Long text is no longer prepared for lazy word spans');
 assert.match(readerSource, /el\.textContent = bl\.v \|\| bl\.t/,
@@ -975,5 +973,95 @@ assert.match(readerCss, /\.w\{[^}]*padding:0 1px; margin:0 -1px/,
   'Word-span padding can change paragraph height during lazy hydration');
 assert.match(modesSource, /function stabilizePdfModeTarget/,
   'PDF mode switches no longer re-anchor after placeholder sizes settle');
+
+/* ---- 글꼴 ----------------------------------------------------------------
+   제목 글꼴은 우리 서버에 있습니다. 남의 서버 주소가 다시 들어오면, 비행기
+   모드에서 제목이 무너지고 이 앱을 여는 사람의 IP 가 글꼴 회사로 갑니다. */
+for(const file of ['index.html', 'styles/fonts.css', 'styles/tokens.css', 'scripts/ui/i18n.js']){
+  assert.doesNotMatch(readFileSync(resolve(root, file), 'utf8'), /fonts\.(?:googleapis|gstatic)\.com/,
+    `${file} 가 글꼴을 남의 서버에서 받고 있습니다 — npm run fonts 로 가져와 주세요`);
+}
+const fontsCss = readFileSync(resolve(root, 'styles/fonts.css'), 'utf8');
+for(const font of [...fontsCss.matchAll(/url\(\.\.\/([^)?]+)/g)].map(match => match[1])){
+  assert.ok(existsSync(resolve(root, font)), `styles/fonts.css 가 없는 글꼴을 가리킵니다: ${font}`);
+}
+/* OFL 글꼴은 라이선스 원문을 함께 나눠 주어야 합니다. */
+for(const licence of ['assets/fonts/OFL-Fraunces.txt', 'assets/fonts/OFL-GowunBatang.txt']){
+  assert.ok(existsSync(resolve(root, licence)), `${licence} 이 없습니다 — 글꼴만 두고 라이선스를 빠뜨렸습니다`);
+}
+/* 한글 글꼴은 화면에 실제로 쓰는 글자만 잘라서 담았습니다(몇 MB 를 20KB 로).
+   그래서 새 문구를 넣으면 그 글자가 글꼴에 없습니다 — 조용히 다른 글꼴로
+   찍히는 대신 여기서 막습니다. */
+const { koreanGlyphs } = await import('../tools/fetch-fonts.mjs');
+const needed = koreanGlyphs(readFileSync(resolve(root, 'scripts/ui/i18n.js'), 'utf8'));
+const shipped = new Set(readFileSync(resolve(root, 'assets/fonts/gowun-batang-ui.txt'), 'utf8').trim());
+const uncovered = [...needed].filter(character => !shipped.has(character));
+assert.deepEqual(uncovered, [],
+  `한글 제목 글꼴에 없는 글자가 화면에 생겼습니다 — npm run fonts 를 돌려 주세요: ${uncovered.join('')}`);
+
+/* ---- 빠르게 켜지기 ---------------------------------------------------------
+   서비스워커가 남의 서버까지 담기 시작하면, 사전에서 찾아본 낱말과 동기화한
+   내용이 캐시에 남습니다. 담는 것은 우리 서버에서 온 것뿐이어야 합니다. */
+const workerSource = readFileSync(resolve(root, 'sw.js'), 'utf8');
+assert.match(workerSource, /origin !== self\.location\.origin\) return;/,
+  'sw.js 가 남의 서버 응답까지 가로채고 있습니다');
+/* 브라우저는 sw.js 의 바이트가 달라졌을 때만 새로 설치합니다. 이 줄이 없으면
+   CSS 를 고쳐 배포해도 캐시가 옛것 그대로 남습니다. */
+assert.match(workerSource, /^const VERSION = '[0-9a-f]{8}';$/m,
+  "sw.js 에 tools/stamp-version.mjs 가 찍는 `const VERSION` 줄이 없습니다");
+assert.match(readFileSync(resolve(root, 'scripts/main.js'), 'utf8'),
+  /navigator\.serviceWorker\.register\('sw\.js'/,
+  '서비스워커를 등록하는 곳이 없습니다 — 파일만 있고 아무도 켜지 않습니다');
+/* 네이티브 셸은 파일을 이미 앱 안에 안고 있습니다. 거기서 등록을 시도하면
+   `capacitor://` 에서 조용히 실패할 뿐입니다. */
+assert.match(readFileSync(resolve(root, 'scripts/main.js'), 'utf8'),
+  /location\.protocol\.startsWith\('http'\)/,
+  '서비스워커를 네이티브 셸에서도 등록하려 합니다');
+
+/* ---- 긴 PDF ---------------------------------------------------------------
+   ① 낱말마다 페이지 글 전체를 다시 문장으로 나누면 일이 제곱으로 늡니다.
+      쪽마다 한 번만 나누는 finder 를 거쳐야 합니다. */
+const pdfOriginalSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 'utf8');
+assert.match(pdfOriginalSource, /const sentenceAt\s*=\s*bridgeSentenceFinder\(text\)/,
+  'PDF 낱말 상자가 문장 나누기를 낱말마다 다시 하고 있습니다 (제곱으로 느려집니다)');
+assert.doesNotMatch(pdfOriginalSource, /boxes\.forEach\([^)]*bridgeSentenceAt/,
+  'PDF 낱말 상자가 문장 나누기를 낱말마다 다시 하고 있습니다 (제곱으로 느려집니다)');
+/* ② 캔버스 하나가 수십 MB 입니다. 멀어진 쪽을 안 놓으면 600쪽짜리 책에서
+      메모리가 끝없이 자랍니다 — 램이 적은 기기가 먼저 무너집니다. */
+assert.match(pdfOriginalSource, /function releaseDistantPdfPages/,
+  '멀어진 PDF 쪽을 놓아 주는 곳이 없습니다 — 캔버스가 끝없이 쌓입니다');
+assert.match(pdfOriginalSource, /canvas\.width=0;\s*canvas\.height=0;/,
+  '캔버스를 DOM 에서만 떼고 있습니다 — 크기를 0 으로 해야 그림판이 바로 풀립니다');
+assert.match(pdfOriginalSource, /releaseDistantPdfPages\(session,pageNumber\)/,
+  '새로 그린 뒤에 훑지 않으면, 놓칠 쪽이 영영 남습니다');
+
+/* ---- 늦게 받는 라이브러리는 우리 서버에서 ---------------------------------
+   남의 CDN 에 두면 PDF 를 여는 모든 사람의 IP 가 그리로 가고, 서비스워커가
+   남의 서버를 담지 않으므로 비행기 모드에서는 아예 안 열립니다. */
+const lazyLibSource = readFileSync(resolve(root, 'scripts/core/lazy-lib.js'), 'utf8');
+assert.doesNotMatch(lazyLibSource, /https?:\/\//,
+  'scripts/core/lazy-lib.js 가 라이브러리를 남의 서버에서 받고 있습니다 — npm run libs 로 가져와 주세요');
+const lazyLibFiles = [...lazyLibSource.matchAll(/'(assets\/lib\/[^']+)'/g)].map(match => match[1]);
+assert.ok(lazyLibFiles.length >= 4,
+  'scripts/core/lazy-lib.js 가 가리키는 라이브러리가 모자랍니다 (pdf · pdf worker · zip · qr)');
+for(const file of lazyLibFiles){
+  assert.ok(existsSync(resolve(root, file)),
+    `scripts/core/lazy-lib.js 가 없는 파일을 가리킵니다: ${file} — npm run libs`);
+}
+/* 본체와 일꾼의 판이 어긋나면 PDF.js 가 통째로 멈춥니다("API version does not
+   match the Worker version"). 이름에 판이 적혀 있으니 이름으로 맞춰 봅니다. */
+const pdfLib = lazyLibFiles.find(file => /pdf-[\d.]+\.min\.js$/.test(file));
+const pdfWorker = lazyLibFiles.find(file => /worker\.min\.js$/.test(file));
+assert.ok(pdfLib && pdfWorker && pdfWorker.startsWith(pdfLib.replace(/\.min\.js$/, '')),
+  `PDF.js 본체와 일꾼의 판이 다릅니다: ${pdfLib} / ${pdfWorker}`);
+/* 남의 코드를 실어 나르는 조건입니다 — 글꼴의 OFL 과 같습니다. */
+for(const licence of ['LICENSE-pdfjs.txt', 'LICENSE-jszip.txt', 'LICENSE-qrcode-generator.txt']){
+  assert.ok(existsSync(resolve(root, 'assets/lib', licence)),
+    `assets/lib/${licence} 이 없습니다 — 코드만 두고 라이선스를 빠뜨렸습니다`);
+}
+/* 1.45MB 입니다. 미리 담으면 기사만 읽는 사람이 한 번도 안 쓸 짐을 첫 실행에
+   받습니다 — 실제로 PDF 를 연 기기에서만 cacheFirst 가 담아야 합니다. */
+assert.doesNotMatch(workerSource.replace(/\/\*[\s\S]*?\*\//g, ''), /assets\/lib/,
+  'sw.js 가 라이브러리를 미리 담고 있습니다 — 쓸 때만 담기게 두세요');
 
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

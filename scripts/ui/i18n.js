@@ -8,12 +8,13 @@
  * 여기서 바뀌는 것은 **앱이 스스로 하는 말**뿐입니다. 읽는 글도, 단어 뜻도,
  * 사전이 주는 설명도 건드리지 않습니다 — 그건 언어 설정이 아니라 내용입니다.
  *
- * 글꼴: 한국어를 고르면 로고와 같은 결의 한글 글꼴(고운바탕)을 그때 받아옵니다.
- * 영어로 두는 사람은 이 요청을 하지 않습니다. Fraunces 가 스택 맨 앞에 남아
- * 있으므로 로마자는 지금까지와 똑같이 Fraunces 로 찍힙니다 — 한글만 넘어갑니다.
+ * 글꼴은 이 파일이 챙기지 않습니다. 한글 제목 글꼴(고운바탕)은 styles/fonts.css
+ * 에 이미 선언되어 있고, 브라우저는 **그 글꼴로 그릴 글자가 실제로 생겼을 때만**
+ * 파일을 받으러 갑니다. 그래서 영어로 두는 사람은 예전처럼 이 요청을 하지
+ * 않습니다 — 한 줄도 안 쓰고 그대로입니다. Fraunces 가 스택 맨 앞에 남아 있으므로
+ * 로마자는 지금까지와 똑같이 Fraunces 로 찍힙니다 — 한글만 넘어갑니다.
  */
 const LS_LANG = 'breeze.lang';
-const KO_DISPLAY_FONT = 'https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap';
 
 const I18N_STRINGS = {
   en: {
@@ -69,15 +70,6 @@ function tr(key){
   return word === undefined ? (I18N_STRINGS.en[key] || key) : word;
 }
 
-function ensureKoreanDisplayFont(){
-  if(document.getElementById('ko-display-font')) return;
-  const link = document.createElement('link');
-  link.id = 'ko-display-font';
-  link.rel = 'stylesheet';
-  link.href = KO_DISPLAY_FONT;
-  document.head.appendChild(link);
-}
-
 /* 화면에 이미 붙어 있는 글자를 다시 씁니다. `data-i18n` 이 달린 곳만 바꾸므로,
    같은 자리에 다른 말을 넣고 싶으면 HTML 한 곳만 고치면 됩니다. */
 function applyI18n(){
@@ -87,10 +79,12 @@ function applyI18n(){
     const key = el.dataset.i18n;
     if(key) el.textContent = tr(key);
   });
-  /* `<html lang>` 은 건드리지 않습니다. 그건 "이 페이지에 담긴 글의 언어"고,
+  /* 아래 한 줄이 한글 제목 글꼴도 함께 켭니다 — `body.lang-ko` 가 --display 스택에
+     고운바탕을 끼워 넣고(styles/tokens.css), 그제서야 브라우저가 그 파일을
+     받으러 갑니다. 영어로 두면 받으러 가지 않습니다.
+     `<html lang>` 은 건드리지 않습니다. 그건 "이 페이지에 담긴 글의 언어"고,
      여기서 고르는 것은 "앱이 나에게 말을 거는 언어"입니다 — 다른 이야기입니다. */
   document.body.classList.toggle('lang-ko', uiLang === 'ko');
-  if(uiLang === 'ko') ensureKoreanDisplayFont();
   const buttons = /** @type {NodeListOf<HTMLElement>} */
     (document.querySelectorAll('#set-lang button'));
   buttons.forEach(button => button.classList.toggle('on', button.dataset.lang === uiLang));
