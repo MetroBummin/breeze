@@ -463,6 +463,8 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
 /* A tap opens the word under the finger; a drag is a scroll, not a lookup. */
 (function(){
   const content=document.getElementById('original-content');
+  /* 파란 표시·저장 단어 마커가 PDF 위에 올라와 있습니다. 그 레이어가 자기
+     이벤트를 멈춰도, 읽는 칸의 capture 단계에서 탭 시작점을 먼저 기억합니다. */
   content.addEventListener('pointerdown',event=>{
     if(!originalSession || originalSession.kind!=='pdf') return;
     /* Touch PointerEvent의 button 값은 브라우저마다 0/-1로 다릅니다. 마우스의
@@ -470,7 +472,7 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
     if(event.pointerType==='mouse' && event.button!==0) return;
     if(!event.isPrimary){ originalPdfPointer=null; return; }
     originalPdfPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
-  });
+  },true);
   content.addEventListener('pointercancel',()=>{ originalPdfPointer=null; });
   content.addEventListener('pointerup',event=>{
     if(!originalSession || originalSession.kind!=='pdf') return;
