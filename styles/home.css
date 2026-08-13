@@ -35,7 +35,7 @@
   #casual-rail > .casual{flex:0 0 158px; width:158px; min-width:158px; max-width:158px;}
   /* RSS는 평소 카드와 같은 리듬을 지킵니다. 방금 도착한 글은 들판에서 가져온
      바랜 초록 인쇄선 하나로만 알립니다 — 뱃지나 광택 효과는 쓰지 않습니다. */
-  .casual.rss-card .thumb.rss-thumb{box-sizing:border-box; border:2.5px solid var(--brand-fresh);
+  .casual.rss-card .thumb.rss-thumb{box-sizing:border-box; border:2.5px solid var(--rss-fresh-green);
     background:var(--rss-thumb); box-shadow:var(--shadow-card);}
   .casual.rss-card .thumb.rss-thumb .cover{inset:2.5px; width:calc(100% - 5px); height:calc(100% - 5px);
     border-radius:12.5px;}
