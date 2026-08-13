@@ -115,7 +115,7 @@ function textSentenceBridge(){
       const range=domRangeForOffsets(element,sentence.start,sentence.end);
       const rects=[...range.getClientRects()];
       if(index===startIndex && rects.length && rects.every(rect=>rect.bottom<=inset)) continue;
-      entries.push({text:sentence.text,range,pi:+element.dataset.pi});
+      entries.push({text:sentence.text,range,pi:+element.dataset.pi,block:element});
       if(entries.length>=5) break;
     }
   }
@@ -125,10 +125,8 @@ function textSentenceBridge(){
   const preferred=Math.max(0,entries.findIndex(entry=>bridgeTokens(entry.text).length>=5));
   const chosen=entries[preferred];
   const ordered=[...entries.slice(preferred),...entries.slice(0,preferred)].map(entry=>entry.text);
-  const common=chosen.range.commonAncestorContainer;
-  const cueRoot=common.nodeType===Node.ELEMENT_NODE ? common : common.parentElement;
   return {candidates:ordered,range:chosen.range,pi:chosen.pi,
-    block:cueRoot&&cueRoot.closest('[data-pi]')};
+    block:chosen.block};
 }
 
 function originalSentenceBridge(){
