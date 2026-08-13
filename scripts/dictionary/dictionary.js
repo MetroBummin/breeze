@@ -560,15 +560,11 @@ function refreshReaderWords(){
 function beginPanelEdit(target){
   if(!selKey || !words[selKey]) return;
   if(target==='word'){
-    /* 문맥에서 갈라져 저장된 뜻 카드에도 `root`가 붙습니다. 그 카드의 표제어는
-       따로 고치면 안 되지만, 사용자가 제목을 누른 순간에는 대표 카드를 열어
-       고치게 해야 합니다. 예전에는 여기서 조용히 return 해서, `come`처럼 다른
-       뜻을 보고 있을 때는 제목을 눌러도 아무 일도 안 일어났습니다. */
+    /* 여러 뜻 중 하나를 보고 있을 때도 그 카드 안에서 바로 고칩니다. 대표
+       표제어로 옮겨 버리면 사용자가 방금 고르던 뜻이 사라져 보이기 때문입니다.
+       아직 저장하지 않은 문맥 미리보기·표현 미리보기만 이름이 정해진 카드가
+       아니므로 편집 대상으로 삼지 않습니다. */
     if(currentContext(selKey) || currentPhrase(selKey)) return;
-    const root=words[selKey].root||selKey;
-    if(root!==selKey && words[root]){
-      selKey=root; contextView=null; phraseView=null; altChoice=null; wordRename=null;
-    }
   }
   panelEditTarget=target; panelEditDirty=false;
   document.getElementById(target==='word'?'p-word-actions':'p-meaning-actions').hidden=false;
@@ -592,8 +588,13 @@ function commitWordRename(){
   const input=document.getElementById('p-word');
   const from=selKey, base=words[from], parsed=headwordKey(input.textContent);
   if(!base || !parsed) { toast('영어 단어 또는 표현으로 적어 주세요'); return; }
-  if(parsed.key===from){
-    base.word=parsed.display; base.clicked=parsed.display; base.up=Date.now();
+  /* 뜻별 카드의 key는 `take::sense:…`처럼 뜻을 묶기 위한 내부 주소입니다.
+     표제어를 다듬을 때 그 주소를 새 단어 key로 바꾸면 묶음에서 떨어지고, 바로
+     보고 있던 뜻도 사라집니다. 뜻 카드에서는 현재 카드의 표시 이름만 고칩니다. */
+  if(parsed.key===from || base.root){
+    base.word=parsed.display; base.clicked=parsed.display;
+    base.forms=[...new Set([...(base.forms||[]),parsed.key,...lemmaCands(parsed.display),parsed.display.toLowerCase()])];
+    base.up=Date.now();
     saveWords(); queueSync(); finishPanelEdit(); renderPanel(); return;
   }
   if(words[parsed.key]){ toast('이미 저장한 단어예요'); return; }
