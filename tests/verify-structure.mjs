@@ -1024,4 +1024,33 @@ assert.match(pdfOriginalSource, /canvas\.width=0;\s*canvas\.height=0;/,
 assert.match(pdfOriginalSource, /releaseDistantPdfPages\(session,pageNumber\)/,
   '새로 그린 뒤에 훑지 않으면, 놓칠 쪽이 영영 남습니다');
 
+/* ---- 늦게 받는 라이브러리는 우리 서버에서 ---------------------------------
+   남의 CDN 에 두면 PDF 를 여는 모든 사람의 IP 가 그리로 가고, 서비스워커가
+   남의 서버를 담지 않으므로 비행기 모드에서는 아예 안 열립니다. */
+const lazyLibSource = readFileSync(resolve(root, 'scripts/core/lazy-lib.js'), 'utf8');
+assert.doesNotMatch(lazyLibSource, /https?:\/\//,
+  'scripts/core/lazy-lib.js 가 라이브러리를 남의 서버에서 받고 있습니다 — npm run libs 로 가져와 주세요');
+const lazyLibFiles = [...lazyLibSource.matchAll(/'(assets\/lib\/[^']+)'/g)].map(match => match[1]);
+assert.ok(lazyLibFiles.length >= 4,
+  'scripts/core/lazy-lib.js 가 가리키는 라이브러리가 모자랍니다 (pdf · pdf worker · zip · qr)');
+for(const file of lazyLibFiles){
+  assert.ok(existsSync(resolve(root, file)),
+    `scripts/core/lazy-lib.js 가 없는 파일을 가리킵니다: ${file} — npm run libs`);
+}
+/* 본체와 일꾼의 판이 어긋나면 PDF.js 가 통째로 멈춥니다("API version does not
+   match the Worker version"). 이름에 판이 적혀 있으니 이름으로 맞춰 봅니다. */
+const pdfLib = lazyLibFiles.find(file => /pdf-[\d.]+\.min\.js$/.test(file));
+const pdfWorker = lazyLibFiles.find(file => /worker\.min\.js$/.test(file));
+assert.ok(pdfLib && pdfWorker && pdfWorker.startsWith(pdfLib.replace(/\.min\.js$/, '')),
+  `PDF.js 본체와 일꾼의 판이 다릅니다: ${pdfLib} / ${pdfWorker}`);
+/* 남의 코드를 실어 나르는 조건입니다 — 글꼴의 OFL 과 같습니다. */
+for(const licence of ['LICENSE-pdfjs.txt', 'LICENSE-jszip.txt', 'LICENSE-qrcode-generator.txt']){
+  assert.ok(existsSync(resolve(root, 'assets/lib', licence)),
+    `assets/lib/${licence} 이 없습니다 — 코드만 두고 라이선스를 빠뜨렸습니다`);
+}
+/* 1.45MB 입니다. 미리 담으면 기사만 읽는 사람이 한 번도 안 쓸 짐을 첫 실행에
+   받습니다 — 실제로 PDF 를 연 기기에서만 cacheFirst 가 담아야 합니다. */
+assert.doesNotMatch(workerSource.replace(/\/\*[\s\S]*?\*\//g, ''), /assets\/lib/,
+  'sw.js 가 라이브러리를 미리 담고 있습니다 — 쓸 때만 담기게 두세요');
+
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);
