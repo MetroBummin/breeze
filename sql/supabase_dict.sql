@@ -22,9 +22,10 @@ create table if not exists public.ai_usage (
 );
 
 -- 한 번의 낱말 조회는 1, 문장 해석은 2를 씁니다. 남은 양을 서버가 돌려주므로
--- 앱이 추측하지 않습니다. 반환형을 바꾸지 않고, 기존 두 인자 함수는 그대로 둔 채
--- 세 인자 함수만 추가합니다. 그래서 이미 운영 중인 DB에서도 순서·서명 충돌이 없습니다.
-create or replace function public.take_ai_quota(p_user uuid, p_limit integer, p_cost integer)
+-- 앱이 추측하지 않습니다. 함수에는 사용량 데이터가 들어 있지 않으므로 재실행할 때
+-- 3인자 함수만 안전하게 다시 만듭니다. ai_usage 표의 기존 기록은 그대로 유지됩니다.
+drop function if exists public.take_ai_quota(uuid, integer, integer);
+create function public.take_ai_quota(p_user uuid, p_limit integer, p_cost integer)
 returns jsonb language plpgsql security definer as $$
 declare c integer;
 begin
