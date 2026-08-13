@@ -195,6 +195,8 @@ function selectWord(k, span){
   if(!currentContext(k)) contextView = null;
   if(!phraseView || phraseView.key !== k) phraseView = null;
   if(!altChoice || altChoice.key!==k) altChoice = null;
+  /* 다른 낱말을 열 때 앞 카드의 편집 상태와 저장/취소를 가져오지 않습니다. */
+  panelEditTarget=null; panelEditDirty=false;
   selKey = k;
   if(!wordRename || wordRename.to!==k) wordRename=null;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));

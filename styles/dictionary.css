@@ -26,9 +26,10 @@
     font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:8px; margin-bottom:4px;}
   #p-word-wrap{min-width:0; flex:1;}
-  #p-word{min-width:0; flex:1; overflow-wrap:anywhere; font-size:32px; font-weight:600; letter-spacing:-.9px; color:var(--ink);
-    border:1px solid transparent; border-radius:10px; padding:3px 7px; margin:-3px -7px; outline:none; cursor:pointer;}
-  #p-word[contenteditable="true"]{cursor:text; border-color:var(--blue-ring); background:var(--field);}
+  #p-word{min-width:0; flex:1; overflow-wrap:anywhere; font-size:31px; font-weight:600; letter-spacing:-.9px; color:var(--ink);
+    border:1px solid var(--line); border-radius:10px; padding:6px 9px; outline:none; cursor:pointer; background:var(--paper2);}
+  #p-word:hover{border-color:var(--blue-ring); background:var(--field);}
+  #p-word[contenteditable="true"]{cursor:text; border-color:var(--blue); background:var(--field); box-shadow:0 0 0 2px var(--blue-ring);}
   .p-inline-edit{display:flex; flex:none; align-items:center; gap:5px;}
   .p-inline-edit button{border:1px solid var(--line); border-radius:8px; padding:6px 8px; background:var(--sheet); color:var(--soft); font:600 10.5px var(--ui); cursor:pointer; white-space:nowrap;}
   .p-inline-edit button.save{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
@@ -71,9 +72,10 @@
     margin-top:8px; padding-left:9px; border-left:2px solid var(--ai-line);}
   /* 단어와 뜻은 모두 같은 방식의 입력 칸입니다. 눌렀을 때만 저장·취소가 떠서,
      단순한 장식이 아니라 실제로 바꿀 수 있다는 점을 분명히 합니다. */
-  #p-ai .mk{display:inline-block; min-width:2em; border-radius:7px; padding:1px 5px; margin-left:-5px;
-    outline:none; cursor:pointer; transition:background .15s, box-shadow .15s;}
-  #p-ai .mk{border:1px solid transparent;}
+  #p-ai .mk{display:inline-block; min-width:2em; border-radius:8px; padding:4px 7px; margin-left:-2px;
+    outline:none; cursor:pointer; transition:background .15s, box-shadow .15s;
+    border:1px solid var(--ai-line); background:var(--paper2);}
+  #p-ai .mk:hover{background:var(--field); border-color:var(--blue-ring);}
   #p-ai .mk[contenteditable="true"]{cursor:text; background:var(--ai-mk-focus); border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-ring);}
   #p-ai .acts{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px;}
   #p-ai .tip{font-size:10px; line-height:1.35; color:var(--soft2); text-align:right;}

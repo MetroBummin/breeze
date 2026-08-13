@@ -714,6 +714,8 @@ assert.match(pdfOriginalSource, /content\.addEventListener\('pointerup',[\s\S]{0
   'A PDF overlay can swallow the one-tap word lookup again');
 assert.match(pdfOriginalSource, /content\.addEventListener\('pointerdown',[\s\S]{0,700}\},true\)/,
   'A PDF overlay can swallow the tap start, making a single click require a retry');
+assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
+  'PDF word lookup depends on the top-most overlay instead of the tapped page coordinates');
 /* 읽는 상태의 단어장 표제어·뜻은 입력창처럼 보이면 안 됩니다. */
 assert.match(index, /id="p-word" contenteditable="false"/,
   'The word field is editable before the user asks to edit it');

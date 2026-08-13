@@ -366,6 +366,14 @@ function pdfWordAtPoint(page,clientX,clientY){
   return best;
 }
 
+function pdfPageAtPoint(clientX,clientY){
+  if(!originalSession || !originalSession.pages) return null;
+  return originalSession.pages.find(page=>{
+    const rect=page.getBoundingClientRect();
+    return clientX>=rect.left && clientX<=rect.right && clientY>=rect.top && clientY<=rect.bottom;
+  })||null;
+}
+
 function openPdfWord(page,box){
   if(!page || !box) return;
   clearOriginalSelectionMarkers();
@@ -479,10 +487,9 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
     const start=originalPdfPointer;
     originalPdfPointer=null;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
-    const target=/** @type {HTMLElement|null} */(event.target instanceof HTMLElement ? event.target : null);
-    const path=event.composedPath ? event.composedPath() : [];
-    const page=(target&&target.closest('.pdf-source-page'))
-      || /** @type {HTMLElement|undefined} */(path.find(node=>node instanceof HTMLElement&&node.classList.contains('pdf-source-page')));
+    /* PDF canvas, 선택 마커, 모드 표시 중 무엇을 눌렀는지는 중요하지 않습니다.
+       좌표 아래의 종이를 직접 찾으면 겹친 레이어가 바뀌어도 한 번 탭은 항상 같습니다. */
+    const page=pdfPageAtPoint(event.clientX,event.clientY);
     const box=pdfWordAtPoint(page,event.clientX,event.clientY);
     if(box) openPdfWord(page,box);
   },true);
