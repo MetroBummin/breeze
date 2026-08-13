@@ -248,7 +248,21 @@ function showBridgeSourceCue(bridge){
   if(bridge.block) bridge.block.classList.add('reader-mode-cue-block');
   else if(bridge.source&&bridge.source.kind==='pdf'&&originalSession&&originalSession.pages){
     showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0);
-  }
+  }else if(bridge.range) showRangeModeCue(bridge.range,0);
+}
+
+function showOriginalLandingCue(record,target){
+  if(!record || !target || !originalSession) return false;
+  const format=ORIGINAL_FORMATS[record.kind];
+  const landing=format&&format.sentenceBridge(target);
+  if(!landing) return false;
+  if(record.kind==='pdf'){
+    const page=originalSession.pages&&originalSession.pages[landing.source.page-1];
+    if(!page || !landing.boxes || !landing.boxes.length) return false;
+    showPdfModeCue(page,landing.boxes,10000);
+  }else if(landing.range) showRangeModeCue(landing.range,10000);
+  else return false;
+  return true;
 }
 
 /* PDF는 placeholder가 실제 쪽 비율을 배울 때 높이가 한 번 더 바뀔 수 있습니다.
@@ -277,6 +291,10 @@ async function switchReaderMode(mode,options){
   let sentenceBridge = !options.initial && previousMode!==mode
     ? (previousMode==='text' ? textSentenceBridge() : originalSentenceBridge())
     : null;
+  /* 어디를 찾을지는 왕복 안정성을 위해 아래에서 바뀔 수 있지만, 출발 화면에서
+     무엇을 읽고 있었는지는 지금 이미 확정돼 있습니다. 둘을 같은 변수로 쓰면
+     빠른 왕복의 문장 검색을 끌 때 출발지의 파란 표시까지 사라집니다. */
+  const sourceCueBridge=sentenceBridge;
   const textAnchor = previousMode==='text' ? captureAnchor() : null;
   let bridge = previousMode==='text'
     ? sourceAnchorForParagraph(curBook,(textAnchor||{}).pi)
@@ -302,11 +320,11 @@ async function switchReaderMode(mode,options){
   }
   if(options.initial) bridge=null;
   if(previousMode!==mode) saveReadingState();
-  if(sentenceBridge){
-    showBridgeSourceCue(sentenceBridge);
+  if(sourceCueBridge){
+    showBridgeSourceCue(sourceCueBridge);
     document.body.classList.add('reader-mode-transition');
     const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    await readerModeDelay(reduced ? 60 : 600);
+    await readerModeDelay(reduced ? 180 : 600);
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
   }
   clearReaderModeCue();
@@ -387,6 +405,10 @@ async function switchReaderMode(mode,options){
       /* Search failure is deliberately quiet: the source-map anchor above is
          still a stable and useful fallback. */
       await ORIGINAL_FORMATS[record.kind].restoreSentence(sentenceBridge.candidates,target,changeToken);
+    }else if(sourceCueBridge){
+      /* 빠른 왕복에서는 정확한 원본 좌표를 지키려고 문장 재검색을 생략합니다.
+         좌표는 건드리지 않고, 그 좌표의 문단만 목적지 표시로 다시 칠합니다. */
+      showOriginalLandingCue(record,target);
     }
     stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
     /* EPUB images and webfonts can change a chapter's height just after load.

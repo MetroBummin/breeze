@@ -716,6 +716,20 @@ for(const glyph of ['mf-original', 'mf-text']){
 }
 assert.match(readerCss, /body\.reader-original #modefab \.mf-text\{opacity:1/,
   'The mode button no longer flips its icon, so it always points the same way');
+/* 빠른 글자↔원본 왕복은 위치 검색을 생략할 수 있어도, 출발지와 목적지의
+   '여기 있었어요' 표시는 생략하면 안 됩니다. */
+assert.match(modesSource, /const sourceCueBridge=sentenceBridge/,
+  'The source cue is coupled to landing search again, so quick round trips hide it');
+assert.match(modesSource, /if\(sourceCueBridge\)\{\s*showBridgeSourceCue\(sourceCueBridge\)/,
+  'Mode switching no longer paints the paragraph before leaving it');
+assert.match(modesSource, /else if\(sourceCueBridge\)\{[\s\S]{0,300}showOriginalLandingCue\(record,target\)/,
+  'Quick text-to-original returns no longer paint their landing paragraph');
+assert.match(readerCss, /\[data-pi\]\.reader-mode-cue-block\{background:var\(--cue-block\)/,
+  'Text landing cues are no longer a uniform pale paragraph block');
+assert.match(readerCss, /\.pdf-source-page>\.reader-mode-cue\{[\s\S]{0,220}background:var\(--cue-block\)/,
+  'PDF landing cues are no longer a uniform pale paragraph block');
+assert.doesNotMatch(readerCss, /reader-mode-cue[^}]*linear-gradient/,
+  'A spatial gradient returned to the paragraph cue');
 
 /* 상단바가 사라져도 --topbar-h 는 그대로여야 합니다 — 0 으로 우기면 앵커
    계산이 글 첫 줄을 로고 뒤에 숨깁니다(예전 집중 모드의 버그). */
