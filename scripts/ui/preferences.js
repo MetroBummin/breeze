@@ -119,15 +119,24 @@ settingsModal().addEventListener('click', event => {
    준비되는 경우에도 이 함수를 다시 불러 현재 상태로 맞춥니다. */
 function syncLoginNudge(){
   const nudge=document.getElementById('login-nudge');
+  const settingsButton=document.getElementById('nav-settings');
   if(!nudge) return;
   let signedIn=false;
   try{ signedIn=!!sbUser; }catch(error){}
   const label=uiLang==='ko' ? '로그인' : 'Login';
   nudge.querySelector('span').textContent=label;
   nudge.setAttribute('aria-label',label);
+  /* 말풍선·꼬리의 중심을 Settings 글자 중앙에 붙입니다. 한국어/영어 길이와
+     모바일 폭이 달라도 고정 좌표를 쓰지 않아 같은 자리를 정확히 가리킵니다. */
+  if(settingsButton){
+    const bar=document.getElementById('topbar').getBoundingClientRect();
+    const button=settingsButton.getBoundingClientRect();
+    nudge.style.setProperty('--login-nudge-x',(button.left-bar.left+button.width/2)+'px');
+  }
   nudge.classList.toggle('on',!signedIn && activeAppView()==='home');
 }
 window.addEventListener('load',syncLoginNudge);
+window.addEventListener('resize',syncLoginNudge);
 
 /* 저장 단어는 원본에서도 글자 화면과 같은 블록으로 칠합니다. 밑줄·블록·끄기를
    고르는 설정이 있었지만 설정을 위한 설정이었습니다. 남아 있던 선택값은
