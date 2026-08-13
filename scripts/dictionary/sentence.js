@@ -21,7 +21,8 @@
    소금을 섞은 지문과 낱말 수뿐입니다 — 낱말 조회와 완전히 같은 규칙입니다. */
 
 const sentKey = text => 's:' + sentenceHash(text);
-const LS_SENT_LEFT = 'breeze.sent-left';
+const LS_SENT_LEFT = 'breeze.ai-left';
+const AI_DAILY_TOKENS = 100;
 
 /* 서버가 답할 때마다 남은 횟수를 알려 줍니다. 한국 날짜와 함께 들고 있다가
    창을 열 때 보여 줍니다 — 물어보기 전에 몇 번 남았는지 알아야 아낄 수 있습니다. */
@@ -53,12 +54,12 @@ function refreshSentenceExplainAvailability(w){
   if(!hasSentence) reason = '이 낱말에는 문장 해석에 쓸 예문이 없어요';
   else if(!sb || !sbUser) reason = '로그인하면 문장 해석을 쓸 수 있어요';
   else if(navigator.onLine === false) reason = '인터넷에 연결되면 문장 해석을 쓸 수 있어요';
-  else if(sentLeft() === 0) reason = '오늘 문장 해석 5회를 다 썼어요. 내일 다시 채워져요';
+  else if(typeof sentLeft()==='number' && sentLeft() < 2) reason = '문장 해석에는 2회가 필요해요. 내일 다시 채워져요';
   button.style.display = hasSentence ? 'flex' : 'none';
   button.disabled = !!reason;
   button.classList.toggle('ready', !reason);
   const left=sentLeft();
-  note.textContent = reason || (typeof left === 'number' ? `오늘 ${left}회 남았어요` : '하루 5회까지 쓸 수 있어요');
+  note.textContent = reason || (typeof left === 'number' ? `오늘 AI 조회 ${left}회 남았어요 · 문장 해석 2회` : `하루 AI 조회 ${AI_DAILY_TOKENS}회 · 문장 해석 2회`);
   note.classList.toggle('on', hasSentence);
 }
 
@@ -138,7 +139,7 @@ async function openSentence(text){
     if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
     paintSentence({ en:clean, foot:
         why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
-      : why === 'quota_exceeded' ? '오늘 문장 해석 5회를 다 썼어요. 내일 다시 채워져요'
+      : why === 'quota_exceeded' ? '오늘 AI 조회가 부족해요. 문장 해석에는 2회가 필요해요'
       :                            '잠깐 문제가 있었어요. 다시 눌러 보세요' });
     return;
   }

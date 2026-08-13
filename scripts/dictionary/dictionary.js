@@ -11,7 +11,7 @@ const IRREG = {
   drew:'draw',drawn:'draw',broke:'break',broken:'break',spent:'spend',rose:'rise',risen:'rise',
   drove:'drive',driven:'drive',bought:'buy',wore:'wear',worn:'wear',chose:'choose',chosen:'choose',
   ate:'eat',eaten:'eat',knew:'know',known:'know',saw:'see',seen:'see',sold:'sell',taught:'teach',
-  caught:'catch',fought:'fight',sought:'seek',flew:'fly',flown:'fly',threw:'throw',thrown:'throw',
+  caught:'catch',fought:'fight',sought:'seek',swept:'sweep',flew:'fly',flown:'fly',threw:'throw',thrown:'throw',
   lain:'lie',lay:'lie',woke:'wake',woken:'wake',hidden:'hide',hid:'hide',
   men:'man',women:'woman',children:'child',feet:'foot',teeth:'tooth',mice:'mouse',
   leaves:'leaf',lives:'life',wives:'wife',knives:'knife',selves:'self',shelves:'shelf',
@@ -68,6 +68,19 @@ function sentenceOf(span){
   const re = new RegExp('\\b'+span.textContent.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
   return (sents.find(s=>re.test(s)) || sents[0]).trim();
 }
+function expandedContextFor(w, sentence){
+  const target=String(sentence||'').replace(/\s+/g,' ').trim();
+  if(!target || !curBook || !Array.isArray(curBook.paras)) return target;
+  const normalized=value=>String(value||'').replace(/\s+/g,' ').trim();
+  const index=curBook.paras.findIndex(para=>normalized(para).includes(target));
+  if(index<0) return target;
+  const here=normalized(curBook.paras[index]);
+  const parts=here.match(/[^.!?…]+[.!?…]*/g)||[here];
+  const at=Math.max(0,parts.findIndex(part=>normalized(part)===target || normalized(part).includes(target)));
+  const before=at>0 ? parts[at-1] : curBook.paras[index-1];
+  const after=at<parts.length-1 ? parts[at+1] : curBook.paras[index+1];
+  return [before,target,after].filter(Boolean).map(normalized).join(' ').slice(0, 600);
+}
 function readerWordNodes(selector){
   const nodes=[...document.querySelectorAll(selector)];
   if(originalSession && originalSession.frames){
@@ -103,7 +116,7 @@ const recentWordOpens = new Map();
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 읽는 중의
    문장을 서버 동기화 객체에 덮어 쓰지 않습니다. 사용자가 "이 뜻도 저장"을 눌러야
    그때만 `senses`에 들어갑니다. */
-let contextView = null, phraseView = null, altChoice = null, wordRename = null;
+let contextView = null, phraseView = null, altChoice = null, wordRename = null, panelEditDirty = false, panelEditTarget = null;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
 function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
 function answerFromLook(j, cached){
@@ -247,19 +260,16 @@ function renderPanel(){
     word:phrase.phrase, clicked:'', example:phrase.sentence, book:phrase.book,
     aiLoading:!!phrase.loading, aiSlow:false, aiOff:phrase.error||'',
   }) : base;
-  document.getElementById('p-word').textContent = w.word;
-  const wordEdit=document.getElementById('p-edit-word');
-  const wordInput=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
+  const wordBox=document.getElementById('p-word');
   const canRename=!context && !phrase && !base.root && !base.phraseParts;
-  wordEdit.hidden=!canRename;
-  if(!canRename) document.getElementById('panel').classList.remove('word-editing');
+  wordBox.contentEditable=canRename?'true':'false';
   const renameBox=document.getElementById('p-rename-confirm');
   const renaming=wordRename&&wordRename.to===k;
   renameBox.hidden=!renaming;
   if(renaming){
     document.getElementById('p-rename-copy').textContent=`“${wordRename.fromWord}”은(는) 원문 표시와 함께 남아 있어요.`;
   }
-  if(!document.getElementById('panel').classList.contains('word-editing')) wordInput.value=w.word;
+  if(document.activeElement!==wordBox) wordBox.textContent=w.word;
   document.getElementById('p-clicked').textContent =
     phrase ? `표현 뜻 보기 · ${phrase.phrase}`
     : (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
@@ -366,10 +376,13 @@ function renderPanel(){
   const savedBox=document.getElementById('p-saved-senses'), savedSenses=savedSenseCards(root);
   if(savedSenses.length>1){
     savedSec.className='p-sec on'; savedBox.className='on';
-    savedBox.innerHTML=savedSenses.map(([id,item])=>`<button type="button" class="saved-sense${meaningKey(item.ko)===meaningKey(shown)?' on':''}" data-k="${esc(id)}">${esc(item.ko)}</button>`).join('');
+    savedBox.innerHTML=savedSenses.map(([id,item])=>`<button type="button" class="saved-sense${meaningKey(item.ko)===meaningKey(shown)?' on':''}" data-k="${esc(id)}">${esc(item.ko)}<span class="sense-remove" role="img" aria-label="이 뜻 삭제">×</span></button>`).join('');
     [...savedBox.querySelectorAll('.saved-sense')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
-      chip.onclick=()=>{ contextView=null; phraseView=null; altChoice=null; selectWord(chip.dataset.k||'',null); };
+      chip.onclick=event=>{
+        if((/** @type {HTMLElement} */(event.target)).closest('.sense-remove')){ removeSavedSense(chip.dataset.k||''); return; }
+        contextView=null; phraseView=null; altChoice=null; selectWord(chip.dataset.k||'',null);
+      };
     });
   }else{ savedSec.className='p-sec'; savedBox.className=''; savedBox.innerHTML=''; }
   const altSec=document.getElementById('p-alt-sec'), altBox=document.getElementById('p-alts');
@@ -417,6 +430,27 @@ function saveAlternateMeaning(k, meaning, source){
     addedAt:previous?previous.addedAt:Date.now(),up:Date.now()};
   altChoice=null; saveWords(); queueSync(); selectWord(id,null);
   toast(`“${base.word} · ${meaning}” 뜻을 따로 저장했어요`);
+}
+/* 저장한 뜻 하나만 지웁니다. 대표 카드의 뜻을 지울 때 다른 뜻이 남아 있으면 그 카드를
+   대표 자리로 올려 원문 색칠 열쇠가 사라지지 않게 합니다. */
+function removeSavedSense(id){
+  const item=words[id]; if(!item) return;
+  const root=item.root||id;
+  const siblings=Object.entries(words).filter(([key,value])=>key!==id&&value&&value.root===root);
+  if(id===root && siblings.length){
+    const [nextId,next]=siblings.sort((a,b)=>(b[1].addedAt||0)-(a[1].addedAt||0))[0];
+    words[root]={...next, root:undefined, sense:undefined, word:item.word, clicked:item.clicked,
+      forms:item.forms, addedAt:item.addedAt, up:Date.now()};
+    delete words[nextId];
+  }else{
+    delete words[id]; dead[id]=Date.now(); save(LS_DEAD,dead);
+  }
+  saveWords(); queueSync(); refreshReaderWords();
+  if(id===selKey){
+    if(words[root]) selectWord(root,null); else closePanel();
+  }else renderPanel();
+  if(typeof renderVocab==='function' && document.getElementById('v-vocab').classList.contains('on')) renderVocab();
+  toast('저장한 뜻을 지웠어요');
 }
 document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
@@ -508,25 +542,22 @@ function refreshReaderWords(){
     requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
   }else if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
 }
-function beginWordRename(){
-  const base=words[selKey];
-  if(!base || base.root || base.phraseParts) return;
-  const panel=document.getElementById('panel'), input=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
-  panel.classList.add('word-editing'); input.value=base.word;
-  requestAnimationFrame(()=>{ input.focus(); input.select(); });
+function beginPanelEdit(target){
+  if(!selKey || !words[selKey]) return;
+  panelEditTarget=target; panelEditDirty=false;
+  document.getElementById('p-edit-actions').hidden=false;
 }
-function cancelWordRename(){
-  document.getElementById('panel').classList.remove('word-editing');
-  renderPanel();
+function cancelPanelEdit(){
+  panelEditTarget=null; panelEditDirty=false;
+  document.getElementById('p-edit-actions').hidden=true; renderPanel();
 }
 function commitWordRename(){
-  const input=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
-  const from=selKey, base=words[from], parsed=headwordKey(input.value);
+  const input=document.getElementById('p-word');
+  const from=selKey, base=words[from], parsed=headwordKey(input.textContent);
   if(!base || !parsed) { toast('영어 단어 또는 표현으로 적어 주세요'); return; }
-  document.getElementById('panel').classList.remove('word-editing');
   if(parsed.key===from){
     base.word=parsed.display; base.clicked=parsed.display; base.up=Date.now();
-    saveWords(); queueSync(); renderPanel(); return;
+    saveWords(); queueSync(); panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel(); return;
   }
   if(words[parsed.key]){ toast('이미 저장한 단어예요'); return; }
   const next={...base,word:parsed.display,clicked:parsed.display,
@@ -537,7 +568,7 @@ function commitWordRename(){
   words[parsed.key]=next; delete dead[parsed.key]; save(LS_DEAD,dead);
   wordRename={from,to:parsed.key,fromWord:base.word,toWord:parsed.display};
   selKey=parsed.key;
-  saveWords(); queueSync(); paintWord(parsed.key); renderPanel();
+  saveWords(); queueSync(); paintWord(parsed.key); panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel();
 }
 function keepOriginalAfterRename(){ wordRename=null; renderPanel(); }
 function deleteOriginalAfterRename(){
@@ -548,30 +579,29 @@ function deleteOriginalAfterRename(){
   });
   wordRename=null; saveWords(); save(LS_DEAD,dead); queueSync(); refreshReaderWords(); renderPanel();
 }
-const wordEditButton=document.getElementById('p-edit-word');
-const wordEditInput=/** @type {HTMLInputElement} */(document.getElementById('p-word-edit'));
-wordEditButton.addEventListener('mousedown',event=>event.preventDefault());
-wordEditButton.addEventListener('click',()=>{
-  if(document.getElementById('panel').classList.contains('word-editing')) commitWordRename();
-  else beginWordRename();
+const wordEditBox=document.getElementById('p-word');
+wordEditBox.addEventListener('focus',()=>beginPanelEdit('word'));
+wordEditBox.addEventListener('input',()=>{
+  const cleaned=wordEditBox.textContent.replace(/[^A-Za-z'’\-\s]/g,'').replace(/\s+/g,' ');
+  if(wordEditBox.textContent!==cleaned) wordEditBox.textContent=cleaned;
+  panelEditDirty=true;
 });
-wordEditInput.addEventListener('keydown',event=>{
+wordEditBox.addEventListener('keydown',event=>{
   if(event.key==='Enter'){ event.preventDefault(); commitWordRename(); }
-  if(event.key==='Escape'){ event.preventDefault(); cancelWordRename(); }
+  if(event.key==='Escape'){ event.preventDefault(); cancelPanelEdit(); }
 });
-wordEditInput.addEventListener('input',()=>{
-  const cleaned=wordEditInput.value.replace(/[^A-Za-z'’\-\s]/g,'').replace(/\s+/g,' ');
-  if(wordEditInput.value!==cleaned) wordEditInput.value=cleaned;
+document.getElementById('p-edit-save').addEventListener('click',()=>{
+  if(panelEditTarget==='word') commitWordRename(); else commitMeaningEdit();
 });
-wordEditInput.addEventListener('blur',()=>{
-  if(document.getElementById('panel').classList.contains('word-editing')) commitWordRename();
-});
+document.getElementById('p-edit-cancel').addEventListener('click',cancelPanelEdit);
 document.getElementById('p-rename-keep').addEventListener('click',keepOriginalAfterRename);
 document.getElementById('p-rename-delete').addEventListener('click',deleteOriginalAfterRename);
 /* 뜻을 고치는 곳이 뜻이 뜨는 곳입니다. 사람이 손으로 쓴 뜻은 그 뒤로 AI 가 덮지 않습니다 —
    "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다. 그때는 새 뜻을 달라는 뜻이니까요. */
 const aiKoBox = document.getElementById('p-ai-ko');
-aiKoBox.addEventListener('blur', ()=>{
+aiKoBox.addEventListener('focus',()=>beginPanelEdit('meaning'));
+aiKoBox.addEventListener('input',()=>{ panelEditDirty=true; });
+function commitMeaningEdit(){
   if(!selKey || !words[selKey]) return;
   const context=currentContext(selKey);
   const w = words[selKey];
@@ -580,20 +610,20 @@ aiKoBox.addEventListener('blur', ()=>{
     if(next !== (context.answer.ko||'')){
       context.answer.ko=next;
       if(context.answer.ai) context.answer.ai.ko=next;
-      renderPanel();
+      panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel();
     }
     return;
   }
-  if(next === (w.ko||'')) return;
+  if(next === (w.ko||'')){ panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; return; }
   w.ko = next;
   w.koEdited = next !== ((w.ai && w.ai.ko) || '');
-  w.up = Date.now(); saveWords(); queueSync(); renderPanel();
+  w.up = Date.now(); saveWords(); queueSync(); panelEditTarget=null; panelEditDirty=false; document.getElementById('p-edit-actions').hidden=true; renderPanel();
   if(w.koEdited) logDict('edit', selKey);
-});
+}
 /* contenteditable 에서 엔터는 줄바꿈입니다. 뜻은 한 줄이므로 저장하고 나갑니다. */
 aiKoBox.addEventListener('keydown', e=>{
-  if(e.key === 'Enter'){ e.preventDefault(); aiKoBox.blur(); }
-  if(e.key === 'Escape'){ e.preventDefault(); renderPanel(); aiKoBox.blur(); }
+  if(e.key === 'Enter' && (e.metaKey||e.ctrlKey)){ e.preventDefault(); commitMeaningEdit(); }
+  if(e.key === 'Escape'){ e.preventDefault(); cancelPanelEdit(); }
 });
 
 /* ---- dictionary lookups ---- */
@@ -696,6 +726,11 @@ function deviceId(){
 }
 /* 서버가 답할 때마다 알려 주는 남은 횟수. 모르면 null. */
 let anonLooksLeft = null;
+const LS_AI_LEFT='breeze.ai-left';
+function rememberAiLeft(left){
+  if(typeof left!=='number') return;
+  if(sbUser) save(LS_AI_LEFT,{day:sentDay(),left}); else anonLooksLeft=left;
+}
 
 async function dictCall(payload, signal){
   if(!sb || navigator.onLine === false) return null;
@@ -794,7 +829,7 @@ async function askCurrentContext(k){
       context.error=(j&&j.error)==='anon_exhausted' ? 'trial' : (j&&j.error)||'error';
       return;
     }
-    if(typeof j.left==='number') anonLooksLeft=j.left;
+    if(typeof j.left==='number') rememberAiLeft(j.left);
     await dictPut(lookKey(j.lemma||w.word||k,context.sentence),Object.assign({},j,{done:true}));
     context.answer=answerFromLook(j,false);
   }finally{
@@ -827,6 +862,7 @@ function saveCurrentContext(k){
 async function fetchLook(k, opt){
   const w = words[k]; if(!w) return false;
   opt = opt || {};
+  const querySentence=opt.sentence || w.example || '';
   if(navigator.onLine === false){ w.aiOff = 'offline'; if(selKey===k) renderPanel(); return false; }
   /* 서버 주소조차 없으면(config 미설정) 할 수 있는 일이 없습니다. 로그인 여부는
      더 이상 여기서 막지 않습니다 — 맛보기 횟수는 서버가 셉니다. */
@@ -851,7 +887,7 @@ async function fetchLook(k, opt){
     const j = await dictCall({
       op:'look',
       word: w.word || k, clicked: w.clicked || '', cands: entryKeys(w),
-      sentence: w.example || '', book: w.book || '',
+      sentence: querySentence, book: w.book || '',
       retry: !!opt.retry, avoid: opt.retry ? (w.asked || []) : [],
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
@@ -865,8 +901,8 @@ async function fetchLook(k, opt){
       if(w.aiOff === 'trial'){ anonLooksLeft = 0; toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요'); }
       return false;
     }
-    if(typeof j.left === 'number') anonLooksLeft = j.left;
-    await dictPut(lookKey(j.lemma || w.word || k, w.example), Object.assign({}, j, { done:true }));
+    if(typeof j.left === 'number') rememberAiLeft(j.left);
+    await dictPut(lookKey(j.lemma || w.word || k, querySentence), Object.assign({}, j, { done:true }));
     /* 갓 받은 답은 최소 0.28초는 바람을 보여 준 뒤에 놓습니다. 답이 너무 빨리 오면
        화면이 튄 것처럼 느껴져서, 무슨 일이 일어났는지 못 알아챕니다.
        기기에 이미 있던 답은 그냥 띄웁니다 — 기다린 척할 이유가 없습니다. */
@@ -910,7 +946,8 @@ function applyLook(w, j, k, opt){
    가장 강한 신호라서 서버에도 retry 로 기록됩니다. */
 async function askOtherSense(k){
   const w = words[k]; if(!w) return;
-  await fetchLook(k, { retry:true });
+  const expanded=expandedContextFor(w,w.example||'');
+  await fetchLook(k, { retry:true, sentence:expanded });
 }
 function askAI(){
   const k = selKey; if(!k || !words[k]) return;

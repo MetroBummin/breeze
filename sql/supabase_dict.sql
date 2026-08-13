@@ -21,16 +21,25 @@ create table if not exists public.ai_usage (
   primary key (user_id, day)
 );
 
--- 한 칸 쓰고 "아직 한도 안이냐"를 돌려줍니다. AI 를 부르기 직전에 호출합니다.
--- 첫 호출에서 calls 를 1로 넣는 것이 중요합니다 — 기본값 0으로 넣으면 첫 호출이 공짜가 됩니다.
-create or replace function public.take_ai_quota(p_user uuid, p_limit integer)
-returns boolean language plpgsql security definer as $$
+-- 한 번의 낱말 조회는 1, 문장 해석은 2를 씁니다. 남은 양을 서버가 돌려주므로
+-- 앱이 추측하지 않습니다. 기존 boolean 반환 함수는 새 JSON 반환 함수와 공존할 수 없어
+-- 인자 모양을 넓히기 전에 지웁니다(표의 데이터에는 영향이 없습니다).
+drop function if exists public.take_ai_quota(uuid, integer);
+create function public.take_ai_quota(p_user uuid, p_limit integer, p_cost integer default 1)
+returns jsonb language plpgsql security definer as $$
 declare c integer;
 begin
-  insert into public.ai_usage (user_id, calls) values (p_user, 1)
-    on conflict (user_id, day) do update set calls = ai_usage.calls + 1
+  insert into public.ai_usage (user_id, calls)
+    select p_user, greatest(1,p_cost) where greatest(1,p_cost) <= p_limit
+    on conflict (user_id, day) do update set calls = ai_usage.calls + greatest(1,p_cost)
+      where ai_usage.calls + greatest(1,p_cost) <= p_limit
     returning calls into c;
-  return c <= p_limit;
+  if c is null then
+    select calls into c from public.ai_usage
+      where user_id = p_user and day = (now() at time zone 'utc')::date;
+    return jsonb_build_object('ok', false, 'calls', coalesce(c,0));
+  end if;
+  return jsonb_build_object('ok', true, 'calls', c);
 end $$;
 
 -- 오늘 몇 번 썼는지 세기만 합니다(한 칸 쓰지 않음). 앱이 남은 횟수를 보여줄 때 씁니다.

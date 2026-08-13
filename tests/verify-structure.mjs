@@ -929,10 +929,11 @@ assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the
 /* 같은 문장을 다시 물으면 한도를 쓰지 않아야 합니다. */
 assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text\)/,
   'Sentence explanations are not cached, so re-reading the same line costs a lookup again');
-/* 서버 쪽: 한도를 낱말 조회와 한 통에 담으면 문장 다섯 번이 낱말 다섯 번을 먹습니다. */
+/* 서버 쪽: 테스트 기간에는 하루 100회 풀을 쓰고 문장 해석만 2회를 씁니다. */
 const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
 assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
-assert.match(dictServerSource, /EXPLAIN_DAILY/, 'Sentence explanations have no daily ceiling');
+assert.match(dictServerSource, /DAILY_LIMIT.*100/, 'The test daily AI allowance is not 100');
+assert.match(dictServerSource, /EXPLAIN_COST = 2/, 'Sentence explanations do not spend two AI calls');
 assert.ok(
   dictServerSource.indexOf('if (op === "explain")') < dictServerSource.indexOf('if (!/^[A-Za-z]'),
   'The sentence op is rejected by the single-word guard it should have run before',

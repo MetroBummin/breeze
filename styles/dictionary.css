@@ -25,13 +25,12 @@
   #p-close{flex:none; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:10px; margin-bottom:4px;}
-  #p-word{min-width:0; overflow-wrap:anywhere; font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);}
-  #p-edit-word{flex:none; width:28px; height:28px; border:0; border-radius:50%; background:transparent; color:var(--soft2); cursor:pointer; font:17px/1 var(--ui);}
-  #p-edit-word:hover{background:var(--sky); color:var(--blue);}
-  #p-word-edit{display:none; min-width:0; flex:1; border:1px solid var(--blue-ring); border-radius:9px; padding:6px 8px; background:var(--field); color:var(--ink); font:500 20px var(--serif); outline:none;}
-  #panel.word-editing #p-word{display:none;}
-  #panel.word-editing #p-word-edit{display:block;}
-  #panel.word-editing #p-edit-word{background:var(--blue); color:var(--on-color);}
+  #p-word{min-width:0; flex:1; overflow-wrap:anywhere; font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);
+    border:1px solid transparent; border-radius:10px; padding:3px 7px; margin:-3px -7px; outline:none; cursor:text;}
+  #p-word:hover,#p-word:focus{border-color:var(--blue-ring); background:var(--field);}
+  #p-edit-actions{display:flex; justify-content:flex-end; gap:7px; margin:-3px 0 13px;}
+  #p-edit-actions button{border:1px solid var(--line); border-radius:9px; padding:7px 10px; background:var(--sheet); color:var(--soft); font:600 11px var(--ui); cursor:pointer;}
+  #p-edit-actions #p-edit-save{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
   #p-rename-confirm{margin:0 0 13px; padding:11px 12px; border:1px solid var(--ai-line); border-radius:12px; background:var(--ai-bg1); color:var(--ai-ink);}
   #p-rename-confirm b{display:block; font-size:12.5px;}
   #p-rename-confirm span{display:block; margin-top:3px; font-size:11.5px; line-height:1.45; color:var(--ai-note);}
@@ -68,12 +67,13 @@
   /* 이 뜻 자체의 성질. 문장 이야기가 위에 오면 그 아래로 한 칸 내려가 배경이 됩니다. */
   #p-ai .gloss{display:none; font-size:11.5px; color:var(--ai-quiet); line-height:1.5;
     margin-top:8px; padding-left:9px; border-left:2px solid var(--ai-line);}
-  /* 뜻을 고치는 자리가 곧 뜻이 뜨는 자리입니다. 그래서 평소에는 편집칸처럼 보이지 않고,
-     누르면 그때 테두리가 생깁니다 — 밑줄을 미리 그어 두면 박스가 서식 화면처럼 보입니다. */
+  /* 단어와 뜻은 모두 같은 방식의 입력 칸입니다. 눌렀을 때만 저장·취소가 떠서,
+     단순한 장식이 아니라 실제로 바꿀 수 있다는 점을 분명히 합니다. */
   #p-ai .mk{display:inline-block; min-width:2em; border-radius:7px; padding:1px 5px; margin-left:-5px;
     outline:none; cursor:text; transition:background .15s, box-shadow .15s;}
-  #p-ai .mk:hover{background:var(--ai-mk-hover);}
-  #p-ai .mk:focus{background:var(--ai-mk-focus); box-shadow:0 0 0 2px var(--blue);}
+  #p-ai .mk{border:1px solid transparent;}
+  #p-ai .mk:hover{background:var(--ai-mk-hover); border-color:var(--ai-line);}
+  #p-ai .mk:focus{background:var(--ai-mk-focus); border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-ring);}
   #p-ai .acts{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:9px;}
   #p-ai .tip{font-size:10.5px; color:var(--soft2); flex:none;}
   #p-ai.edited .tip{color:var(--blue);}
@@ -170,10 +170,12 @@
   #p-alts.on{display:flex;}
   #p-saved-senses{display:none; flex-wrap:wrap; gap:6px;}
   #p-saved-senses.on{display:flex;}
-  .saved-sense{border:1px solid var(--line); border-radius:14px; padding:5px 10px; background:var(--paper2);
+  .saved-sense{border:1px solid var(--line); border-radius:14px; padding:5px 8px 5px 10px; background:var(--paper2);
     color:var(--soft); font:600 12px var(--ui); cursor:pointer;}
   .saved-sense.on{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
   .saved-sense:hover{border-color:var(--blue); color:var(--blue);}
+  .saved-sense .sense-remove{display:inline-block; margin-left:5px; color:var(--soft2); font:700 14px/1 var(--ui); vertical-align:-1px;}
+  .saved-sense:hover .sense-remove{color:var(--danger);}
   .alt-actions{display:flex; flex-basis:100%; gap:6px; margin-top:1px;}
   .alt-action{border:1px solid var(--line); border-radius:13px; padding:6px 10px; background:transparent;
     color:var(--soft); font:600 11px var(--ui); cursor:pointer;}

@@ -6,17 +6,16 @@
 //   GEMINI_API_KEY      ← Google AI Studio 키  (무료 티어)
 //   ANTHROPIC_API_KEY   ← Claude 키            (유료, 선택)
 //   AI_PROVIDER         ← "gemini" 또는 "claude". 없으면 있는 키를 자동 선택
-//   AI_DAILY_LIMIT      ← 한 사람 하루 AI 호출 한도. 없으면 200
+//   AI_DAILY_LIMIT      ← 한 사람 하루 AI 조회 토큰. 없으면 100 (문장 해석은 2)
 //   AI_ANON_FREE        ← 로그인 전 기기당 평생 무료 횟수. 없으면 10
 //   AI_ANON_DAILY_CAP   ← 로그인 전 요청 전체의 하루 상한(차단기). 없으면 2000
-//   AI_EXPLAIN_DAILY    ← 한 사람 하루 문장 설명 횟수. 없으면 5
 //   DICT_FP_SALT        ← 문장 지문에 섞는 아무 긴 문자열. 없으면 지문을 아예 안 남깁니다
 //
 // 먼저 sql/supabase_dict.sql 을 실행해 두어야 합니다.
 //
 // ── 하는 일 ──────────────────────────────────────────────────
 //   op:"look"    낱말 + 문장 → 이 문장에서의 뜻 · 설명 · 다른 뜻 후보
-//   op:"explain" 문장 하나 → 해석 + 왜 어려운지.  로그인 필수, 하루 5번
+//   op:"explain" 문장 하나 → 해석 + 왜 어려운지. 로그인 필수, 일일 토큰 2개
 //   op:"warm"   함수만 깨운다. AI 를 부르지 않고 한도도 쓰지 않는다
 //   op:"log"    사람이 무엇을 했는지 남긴다. AI 도, 한도도 안 씀
 //   op:"delete_account"  이 사람이 서버에 가진 것을 전부 지우고 계정을 없앤다
@@ -41,20 +40,14 @@ const json = (body: unknown, status = 200) =>
 
 const GEMINI_MODEL = "gemini-3.5-flash-lite";
 const CLAUDE_MODEL = "claude-haiku-4-5";
-const DAILY_LIMIT = Number(Deno.env.get("AI_DAILY_LIMIT") ?? 200);
+const DAILY_LIMIT = Number(Deno.env.get("AI_DAILY_LIMIT") ?? 100);
+const EXPLAIN_COST = 2;
 /* 로그인 전에 그냥 써 볼 수 있는 횟수. 하루가 아니라 기기당 평생입니다 —
    맛보기지 무료 요금제가 아닙니다. */
 const ANON_FREE = Number(Deno.env.get("AI_ANON_FREE") ?? 10);
 /* 로그인 전 요청 전체의 하루 상한. 기기 표시는 지우면 새로 생기므로,
    예산을 지키는 진짜 벽은 이쪽입니다. */
 const ANON_DAILY_CAP = Number(Deno.env.get("AI_ANON_DAILY_CAP") ?? 2000);
-/* 문장 설명은 낱말 조회보다 답이 길어 서너 배 비쌉니다. 그리고 성격이 다릅니다 —
-   낱말은 읽다가 계속 누르는 것이고, 문장은 "이건 도저히 안 읽힌다" 싶을 때
-   한 번 쓰는 것입니다. 하루 다섯 번이면 그 쓰임에 모자라지 않습니다. */
-const EXPLAIN_DAILY = Number(Deno.env.get("AI_EXPLAIN_DAILY") ?? 5);
-/* 예전 꾹 누르기 UI가 남긴 기록과 새 버튼 UI의 사용량은 섞지 않습니다. 전자는
-   화면을 닫은 뒤에도 요청이 끝나 기록될 수 있어, 실제로 본 횟수의 근거가 될 수 없었습니다. */
-const EXPLAIN_QUOTA_VERSION = "button-v2";
 
 const SYSTEM =
   "You are a precise bilingual dictionary for Korean learners reading English books. " +
@@ -217,7 +210,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
 
   /* AI 가 뜻의 유일한 출처가 되었으니, 한도가 유일한 문지기입니다. 걸리면 앱은
      조용히 무료 사전으로 내려갑니다 — 화면이 비지는 않습니다. */
-  let anonLeft: number | null = null;
+  let anonLeft: number | null = null, userLeft: number | null = null;
   if (seeding) {
     /* 씨앗 만들기는 한도를 지나갑니다 — 위에서 비밀값을 이미 확인했습니다. */
   } else if (!userId) {
@@ -230,9 +223,13 @@ async function opLook(body: any, userId: string | null, seeding = false) {
        둘은 원인이 다르지만 사용자가 할 수 있는 일은 같습니다. */
     if (verdict.status !== "ok") return json({ error: "login_required" }, 401);
     anonLeft = Math.max(0, ANON_FREE - (verdict.calls ?? ANON_FREE));
-  } else if (!(await takeQuota(userId))) {
-    logEvent({ userId, action: "quota", word, clicked, sentence });
-    return json({ error: "quota_exceeded", limit: DAILY_LIMIT }, 429);
+  } else {
+    const quota = await takeQuota(userId);
+    if (!quota.ok) {
+      logEvent({ userId, action: "quota", word, clicked, sentence });
+      return json({ error: "quota_exceeded", limit: DAILY_LIMIT }, 429);
+    }
+    userLeft = quota.left;
   }
 
   const out = await ask({
@@ -261,7 +258,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
     provider: out.provider,
     /* 로그인 전이면 몇 번 남았는지 함께 돌려줍니다. 마지막 한두 번쯤에
        미리 알려 줘야, 다음 낱말에서 갑자기 막히지 않습니다. */
-    ...(anonLeft === null ? {} : { left: anonLeft }),
+    ...(anonLeft !== null ? { left: anonLeft } : userLeft !== null ? { left: userLeft } : {}),
   };
   if (!answer.ko) return json({ error: "empty_answer" }, 502);
 
@@ -329,27 +326,14 @@ function seoulDayBounds() {
   return { day: `${parts.year}-${parts.month}-${parts.day}`, since: new Date(start).toISOString(), until: new Date(start + 86400000).toISOString() };
 }
 
-async function explainsToday(userId: string): Promise<{ used: number; day: string }> {
-  const bounds = seoulDayBounds();
-  const { count, error } = await SR.from("dict_events")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId).eq("action", "explain")
-    .contains("meta", { quota_version: EXPLAIN_QUOTA_VERSION })
-    .gte("at", bounds.since).lt("at", bounds.until);
-  /* 셀 수 없으면 막습니다. 낱말 조회와 반대인데, 문장 설명은 값이 비싸고
-     막혀도 낱말 사전은 그대로 열려 있기 때문입니다. */
-  if (error) { console.warn("explain quota failed, refusing:", error.message); return { used: EXPLAIN_DAILY, day: bounds.day }; }
-  return { used: count ?? 0, day: bounds.day };
-}
-
 async function opExplain(body: any, userId: string | null) {
   if (!userId) return json({ error: "login_required" }, 401);
   const sentence = clean(body.sentence, 600);
   if (sentence.length < 12) return json({ error: "bad_sentence" }, 400);
-  const quota = await explainsToday(userId);
-  if (quota.used >= EXPLAIN_DAILY) {
-    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain", quota_version: EXPLAIN_QUOTA_VERSION, day: quota.day } });
-    return json({ error: "quota_exceeded", limit: EXPLAIN_DAILY, left: 0, day: quota.day }, 429);
+  const quota = await takeQuota(userId, EXPLAIN_COST);
+  if (!quota.ok) {
+    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain" } });
+    return json({ error: "quota_exceeded", limit: DAILY_LIMIT, left: 0 }, 429);
   }
 
   const out = await ask({
@@ -366,9 +350,9 @@ async function opExplain(body: any, userId: string | null) {
   await logEvent({
     userId, action: "explain", word: "", sentence,
     provider: out.provider, book: clean(body.book, 200),
-    meta: { points: points.length, quota_version: EXPLAIN_QUOTA_VERSION, day: quota.day },
+    meta: { points: points.length, cost: EXPLAIN_COST },
   });
-  return json({ ko, points, provider: out.provider, left: Math.max(0, EXPLAIN_DAILY - quota.used - 1), day: quota.day });
+  return json({ ko, points, provider: out.provider, left: quota.left });
 }
 
 /* ── op:"log" — 사람이 무엇을 했는가 ─────────────────────── */
@@ -429,10 +413,10 @@ async function logEvent(e: EventIn) {
 /* ── 하루 한도 ───────────────────────────────────────────── */
 /* 표가 고장 나면 통과시킵니다. 로그인한 사람은 누군지 알고 수가 정해져 있어서,
    잘못 열리는 쪽이 잘못 막히는 쪽보다 쌉니다. */
-async function takeQuota(userId: string) {
-  const { data, error } = await SR.rpc("take_ai_quota", { p_user: userId, p_limit: DAILY_LIMIT });
-  if (error) { console.warn("quota check failed, allowing:", error.message); return true; }
-  return data !== false;
+async function takeQuota(userId: string, cost = 1): Promise<{ ok: boolean; left: number }> {
+  const { data, error } = await SR.rpc("take_ai_quota", { p_user: userId, p_limit: DAILY_LIMIT, p_cost: cost });
+  if (error) { console.warn("quota check failed, allowing:", error.message); return { ok:true, left:DAILY_LIMIT }; }
+  return { ok:data?.ok !== false, left:Math.max(0, DAILY_LIMIT - Number(data?.calls ?? DAILY_LIMIT)) };
 }
 
 /* 로그인 전 몫. 위와 반대로, 고장 나면 막습니다 — 로그인 전 요청은 수가 정해져

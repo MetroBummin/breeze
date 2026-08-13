@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=34f41373">
   <link rel="stylesheet" href="styles/reader.css?v=1f27c2ff">
-  <link rel="stylesheet" href="styles/dictionary.css?v=543878b3">
+  <link rel="stylesheet" href="styles/dictionary.css?v=2586d04c">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
@@ -66,8 +66,8 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=d89b6c48"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=ab7b3016"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=788ef874"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=68233d74"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
@@ -76,7 +76,7 @@
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=97b08b17"></script>
   <script defer src="scripts/reader/reader.js?v=ae6d68ac"></script>
-  <script defer src="scripts/ui/preferences.js?v=56f4265a"></script>
+  <script defer src="scripts/ui/preferences.js?v=79bac433"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=122c6eec"></script>
   <script defer src="scripts/ui/interactions.js?v=7de2089e"></script>
@@ -112,7 +112,7 @@
     <button class="navbtn" id="nav-vocab" onclick="show('vocab')" data-i18n="nav.words">Words</button>
     <button class="navbtn" id="nav-settings" onclick="openSettings()" data-i18n="nav.settings">Settings</button>
   </nav>
-  <button id="login-nudge" type="button" onclick="openSettings('sync')" aria-label="로그인"><span>Login!</span></button>
+  <button id="login-nudge" type="button" onclick="openSettings('sync')" aria-label="로그인"><span>Sign in</span></button>
 </div>
 
 <!-- ================= HOME ================= -->
@@ -214,9 +214,7 @@
     <div class="inner">
       <div id="p-top">
         <div id="p-head">
-          <div id="p-word"></div>
-          <button id="p-edit-word" type="button" title="단어 표기 수정" aria-label="단어 표기 수정">✎</button>
-          <input id="p-word-edit" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="새 단어">
+          <div id="p-word" contenteditable="true" spellcheck="false" role="textbox" aria-label="영어 단어 또는 표현"></div>
           <button id="p-speak" title="발음 듣기" onclick="speakWord()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
@@ -230,6 +228,7 @@
         <span id="p-rename-copy"></span>
         <div><button id="p-rename-keep" type="button">기존 단어도 유지</button><button id="p-rename-delete" type="button">기존 단어 삭제</button></div>
       </div>
+      <div id="p-edit-actions" hidden><button id="p-edit-cancel" type="button">취소</button><button id="p-edit-save" type="button">저장</button></div>
       <hr class="p-row-divider">
       <div id="p-controls"><button id="p-mark" type="button" aria-pressed="true"
         title="이 단어의 본문 색칠 켜기/끄기"><span>색칠 ON</span></button><div id="p-clicked"></div></div>
@@ -251,7 +250,7 @@
         <div class="note" id="p-ai-note"></div>
         <div class="gloss" id="p-ai-gloss"></div>
         <div class="acts">
-          <button id="p-airetry">다른 뜻으로 다시 물어보기</button>
+          <button id="p-airetry">넓은 문맥으로 다시 물어보기</button>
           <span class="tip" id="p-ai-tip">뜻을 눌러 직접 고칠 수 있어요</span>
         </div>
       </div>

@@ -123,7 +123,7 @@ function syncLoginNudge(){
   if(!nudge) return;
   let signedIn=false;
   try{ signedIn=!!sbUser; }catch(error){}
-  const label=uiLang==='ko' ? '로그인' : 'Login';
+  const label=uiLang==='ko' ? '로그인' : 'Sign in';
   nudge.querySelector('span').textContent=label;
   nudge.setAttribute('aria-label',label);
   /* 말풍선·꼬리의 중심을 Settings 글자 중앙에 붙입니다. 한국어/영어 길이와
