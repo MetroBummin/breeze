@@ -730,6 +730,9 @@ assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8')
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
   /cue\.dataset\.pi=paragraphHint/,
   'PDF cues no longer expose their canonical paragraph for symmetry tests');
+assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
+  /function showPdfParagraphModeCue\(paragraph,duration,preferredPage\)/,
+  'PDF paragraph cues depend on a sentence match again instead of source-map boundaries');
 assert.match(modesSource,
   /if\(!sentenceFound\)\{[\s\S]{0,220}showOriginalLandingCue\(record,canonical,sentenceBridge\.paragraph\)/,
   'A first PDF sentence-search miss leaves the matching landing paragraph unpainted');

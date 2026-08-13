@@ -320,6 +320,25 @@ function showPdfModeCue(page,boxes,duration,paragraphHint){
   if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
 }
 
+function showPdfParagraphModeCue(paragraph,duration,preferredPage){
+  if(paragraph==null || !originalSession || !originalSession.pages) return false;
+  const start=sourceAnchorForParagraph(curBook,paragraph);
+  const next=sourceAnchorForParagraph(curBook,paragraph+1);
+  if(!start || start.kind!=='pdf') return false;
+  const pageNumber=Math.max(start.page,Math.min(Number(preferredPage)||start.page,
+    next&&next.kind==='pdf' ? next.page : start.page));
+  const page=originalSession.pages[pageNumber-1];
+  const boxes=originalSession.wordBoxes.get(pageNumber)||[];
+  if(!page || !boxes.length) return false;
+  const lower=pageNumber===start.page ? (start.y||0)-.01 : 0;
+  const upper=next&&next.kind==='pdf'&&next.page===pageNumber ? (next.y||0)-.012 : 1;
+  const inside=boxes.filter(box=>box.y+box.h>=lower&&box.y<=upper);
+  const clue=inside.length ? inside : boxes.slice(0,1);
+  if(!clue.length) return false;
+  showPdfModeCue(page,clue,duration,paragraph);
+  return true;
+}
+
 /* ================= tapping a word ================= */
 
 function pdfWordAtPoint(page,clientX,clientY){
@@ -426,7 +445,8 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
       const page=originalSession.pages[pageNumber-1];
       const rect=page.getBoundingClientRect();
       readerScrollTo(readerScrollTop()+rect.top-(topInset()+readerViewHeight()*.32)+first.y*rect.height);
-      showPdfModeCue(page,matched,10000,paragraphHint);
+      if(!showPdfParagraphModeCue(paragraphHint,10000,pageNumber))
+        showPdfModeCue(page,matched,10000,paragraphHint);
       return true;
     }
   }

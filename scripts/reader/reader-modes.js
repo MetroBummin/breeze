@@ -265,7 +265,8 @@ function showBridgeSourceCue(bridge){
   if(!bridge) return;
   if(bridge.block) showElementModeCue(bridge.block,0);
   else if(bridge.source&&bridge.source.kind==='pdf'&&originalSession&&originalSession.pages){
-    showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0,bridge.paragraph);
+    if(!showPdfParagraphModeCue(bridge.paragraph,0,bridge.source.page))
+      showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0,bridge.paragraph);
   }else if(bridge.range) showRangeModeCue(bridge.range,0);
 }
 
@@ -276,6 +277,7 @@ function showOriginalLandingCue(record,target,paragraphHint){
   if(!landing) return false;
   const paragraph=paragraphHint==null ? landing.paragraph : paragraphHint;
   if(record.kind==='pdf'){
+    if(showPdfParagraphModeCue(paragraph,10000,landing.source.page)) return true;
     const page=originalSession.pages&&originalSession.pages[landing.source.page-1];
     if(!page || !landing.boxes || !landing.boxes.length) return false;
     showPdfModeCue(page,landing.boxes,10000,paragraph);
@@ -431,7 +433,7 @@ async function switchReaderMode(mode,options){
         sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
       if(!sentenceFound){
         const canonical=sourceAnchorForParagraph(curBook,sentenceBridge.paragraph)||target;
-        showOriginalLandingCue(record,canonical,sentenceBridge.paragraph);
+      showOriginalLandingCue(record,canonical,sentenceBridge.paragraph);
       }
     }else if(sourceCueBridge){
       /* 빠른 왕복에서는 정확한 원본 좌표를 지키려고 문장 재검색을 생략합니다.
