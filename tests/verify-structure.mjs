@@ -733,6 +733,9 @@ assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8')
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
   /function showPdfParagraphModeCue\(paragraph,duration,preferredPage\)/,
   'PDF paragraph cues depend on a sentence match again instead of source-map boundaries');
+assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
+  /: \.04;[\s\S]{0,160}: \.96;/,
+  'Image-only PDF paragraphs no longer receive a full block cue');
 assert.match(modesSource,
   /if\(!sentenceFound\)\{[\s\S]{0,220}showOriginalLandingCue\(record,canonical,sentenceBridge\.paragraph\)/,
   'A first PDF sentence-search miss leaves the matching landing paragraph unpainted');

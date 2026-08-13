@@ -329,13 +329,20 @@ function showPdfParagraphModeCue(paragraph,duration,preferredPage){
     next&&next.kind==='pdf' ? next.page : start.page));
   const page=originalSession.pages[pageNumber-1];
   const boxes=originalSession.wordBoxes.get(pageNumber)||[];
-  if(!page || !boxes.length) return false;
+  if(!page) return false;
   const lower=pageNumber===start.page ? (start.y||0)-.01 : 0;
   const upper=next&&next.kind==='pdf'&&next.page===pageNumber ? (next.y||0)-.012 : 1;
   const inside=boxes.filter(box=>box.y+box.h>=lower&&box.y<=upper);
-  const clue=inside.length ? inside : boxes.slice(0,1);
-  if(!clue.length) return false;
-  showPdfModeCue(page,clue,duration,paragraph);
+  const left=inside.length ? Math.max(.008,Math.min(...inside.map(box=>box.x))-.012) : .04;
+  const right=inside.length ? Math.min(.992,Math.max(...inside.map(box=>box.x+box.w))+.012) : .96;
+  const top=Math.max(.006,inside.length ? Math.min(...inside.map(box=>box.y))-.008 : lower);
+  const bottom=Math.min(.994,Math.max(top+.018,
+    inside.length ? Math.max(...inside.map(box=>box.y+box.h))+.008 : upper));
+  const cue=document.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-block';
+  cue.dataset.pi=paragraph;
+  cue.style.cssText=`left:${left*100}%;top:${top*100}%;width:${(right-left)*100}%;height:${(bottom-top)*100}%`;
+  page.appendChild(cue);
+  if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
   return true;
 }
 
@@ -403,14 +410,14 @@ function pdfSentenceBridge(source){
     const value=box.example&&box.example.trim();
     if(value && !candidates.includes(value) && candidates.length<4) candidates.push(value);
   });
-  if(!candidates.length) return null;
-  const match=bridgeFindSequence(boxes,candidates[0]);
+  const paragraph=paragraphForSource(curBook,source);
+  const match=candidates.length ? bridgeFindSequence(boxes,candidates[0]) : null;
   /* PDF 추출 문자열에는 간혹 보이지 않는 합자·기호가 섞여 문장 토큰 전체가
      일치하지 않습니다. 그래도 현재 앵커 바로 아래 첫 줄은 알고 있으므로, 그 줄을
      문단 단서로 넘깁니다. pdfParagraphCue가 sourceMap 경계까지 넓혀 칠합니다. */
   const first=visual[0];
   const fallback=first ? boxes.filter(box=>Math.abs(box.y-first.y)<.018) : [];
-  return {candidates,source,paragraph:paragraphForSource(curBook,source),
+  return {candidates,source,paragraph,
     boxes:match ? boxes.slice(match.start,match.start+match.length) : fallback};
 }
 
