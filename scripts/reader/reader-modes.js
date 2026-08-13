@@ -269,15 +269,16 @@ function showBridgeSourceCue(bridge){
   }else if(bridge.range) showRangeModeCue(bridge.range,0);
 }
 
-function showOriginalLandingCue(record,target){
+function showOriginalLandingCue(record,target,paragraphHint){
   if(!record || !target || !originalSession) return false;
   const format=ORIGINAL_FORMATS[record.kind];
   const landing=format&&format.sentenceBridge(target);
   if(!landing) return false;
+  const paragraph=paragraphHint==null ? landing.paragraph : paragraphHint;
   if(record.kind==='pdf'){
     const page=originalSession.pages&&originalSession.pages[landing.source.page-1];
     if(!page || !landing.boxes || !landing.boxes.length) return false;
-    showPdfModeCue(page,landing.boxes,10000,landing.paragraph);
+    showPdfModeCue(page,landing.boxes,10000,paragraph);
   }else if(landing.block) showElementModeCue(landing.block,10000);
   else if(landing.range) showRangeModeCue(landing.range,10000);
   else return false;
@@ -426,8 +427,12 @@ async function switchReaderMode(mode,options){
     if(sentenceBridge){
       /* Search failure is deliberately quiet: the source-map anchor above is
          still a stable and useful fallback. */
-      await ORIGINAL_FORMATS[record.kind].restoreSentence(
+      const sentenceFound=await ORIGINAL_FORMATS[record.kind].restoreSentence(
         sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
+      if(!sentenceFound){
+        const canonical=sourceAnchorForParagraph(curBook,sentenceBridge.paragraph)||target;
+        showOriginalLandingCue(record,canonical,sentenceBridge.paragraph);
+      }
     }else if(sourceCueBridge){
       /* 빠른 왕복에서는 정확한 원본 좌표를 지키려고 문장 재검색을 생략합니다.
          좌표는 건드리지 않고, 그 좌표의 문단만 목적지 표시로 다시 칠합니다. */

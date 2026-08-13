@@ -727,6 +727,12 @@ assert.match(modesSource, /paragraph:chosen\.pi/,
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
   /pdfParagraphCue\(page,matched,paragraphHint\)/,
   'PDF cues no longer use the same canonical paragraph as text cues');
+assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),
+  /cue\.dataset\.pi=paragraphHint/,
+  'PDF cues no longer expose their canonical paragraph for symmetry tests');
+assert.match(modesSource,
+  /if\(!sentenceFound\)\{[\s\S]{0,220}showOriginalLandingCue\(record,canonical,sentenceBridge\.paragraph\)/,
+  'A first PDF sentence-search miss leaves the matching landing paragraph unpainted');
 assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'),
   /showElementModeCue\(block,10000\)/,
   'EPUB landing cues paint only the matched sentence instead of its paragraph');

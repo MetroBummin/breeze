@@ -314,6 +314,7 @@ function showPdfModeCue(page,boxes,duration,paragraphHint){
   const block=pdfParagraphCue(page,boxes,paragraphHint);
   if(!block) return;
   const cue=document.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-block';
+  if(paragraphHint!=null) cue.dataset.pi=paragraphHint;
   cue.style.cssText=`left:${block.x*100}%;top:${block.y*100}%;width:${(block.right-block.x)*100}%;height:${(block.bottom-block.y)*100}%`;
   page.appendChild(cue);
   if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
