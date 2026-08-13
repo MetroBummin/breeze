@@ -721,6 +721,16 @@ assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
 assert.match(pdfOriginalSource,
   /if\(!\(session\.wordBoxes\.get\(pageNumber\)\|\|\[\]\)\.length\)\{[\s\S]{0,140}await renderOriginalPdfPage\(session,pageNumber\)/,
   'The first PDF tap is discarded while its word map is still loading');
+/* EPUB 원본도 겉보기에는 같은 원본 화면입니다. selection에만 기대면 데스크톱은
+   더블클릭, 모바일은 드래그가 필요해져 PDF 수정이 안 된 것처럼 보입니다. */
+assert.match(epubSource,/function installEpubWordTap\(doc\)/,
+  'EPUB original words require a browser selection instead of one tap');
+assert.match(epubSource,/function epubWordRangeAtPoint\(doc,clientX,clientY\)/,
+  'EPUB one-tap lookup has no text-caret word hit test');
+assert.match(epubSource,/frameDoc\)\{\s*installEpubWordTap\(frameDoc\)/,
+  'EPUB chapter frames do not install the one-tap word lookup');
+assert.doesNotMatch(epubSource,/더블클릭하거나 드래그/,
+  'EPUB still tells readers to double-click after one-tap lookup was added');
 /* 읽는 상태의 단어장 표제어·뜻은 입력창처럼 보이면 안 됩니다. */
 assert.match(index, /id="p-word" contenteditable="false"/,
   'The word field is editable before the user asks to edit it');
