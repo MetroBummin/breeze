@@ -4,6 +4,7 @@
    map as the fallback. */
 
 let readerModeCueTimer = 0;
+let recentModeLanding = null;
 
 /* `bookSupportsOriginal()`은 형식 표와 같은 자리에 있습니다 —
    scripts/reader/original-formats.js */
@@ -267,6 +268,15 @@ async function switchReaderMode(mode,options){
   let bridge = previousMode==='text'
     ? sourceAnchorForParagraph(curBook,(textAnchor||{}).pi)
     : captureOriginalAnchor();
+  /* 원본→글자 직후 다시 원본으로 돌아갈 때는, 사용자가 글자를 실제로 스크롤하지
+     않았다면 방금 떠난 원본 좌표가 가장 정확합니다. 매번 화면 첫 문단을 다시 고르면
+     위에 걸친 문단 때문에 왕복할수록 한 쪽씩 위로 기어갑니다. */
+  if(previousMode==='text' && recentModeLanding
+      && recentModeLanding.bookId===curBook.id && recentModeLanding.mode==='text'
+      && Date.now()-recentModeLanding.at<12000
+      && Math.abs(readerScrollTop()-recentModeLanding.textTop)<80){
+    bridge=recentModeLanding.originalAnchor;
+  }
   /* A quick round trip inside the same paragraph should return to the exact
      original page percentage, not merely that paragraph's first line. */
   const rememberedOriginal = posOf(curBook.id).original;
@@ -319,12 +329,19 @@ async function switchReaderMode(mode,options){
         ? await restoreTextSentence(sentenceBridge.candidates,targetPi) : false;
       if(!sentenceFound && targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
-        if(element) readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-topInset()-10);
+        if(element){
+          readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-(topInset()+readerViewHeight()*.24));
+          /* PDF 문장 검색이 실패해도 sourceMap이 가리킨 문단은 확실한 목적지입니다. */
+          element.classList.add('reader-mode-cue-block');
+          readerModeCueTimer=setTimeout(clearReaderModeCue,6000);
+        }
       }else if(!sentenceFound){
         const position = posOf(curBook.id);
         if(!restoreAnchor(position)) readerScrollTo(position.y||0);
       }
       lastAnchor = captureAnchor();
+      recentModeLanding={bookId:curBook.id,mode:'text',at:Date.now(),textTop:readerScrollTop(),
+        originalAnchor:previousMode==='original' ? bridge : null};
       suspendReaderScrollSave(450);
       updatePfill();
     }));

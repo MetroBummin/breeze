@@ -231,7 +231,8 @@
   .w.s2{background:var(--mark2);}
   .w.s3{background:var(--mark3);}
   .w.reader-mode-cue-word{background:var(--cue)!important; box-shadow:0 0 0 2px var(--cue-ring);}
-  [data-pi].reader-mode-cue-block{background:var(--cue); box-shadow:0 0 0 3px var(--cue-ring); border-radius:8px;}
+  [data-pi].reader-mode-cue-block{background:linear-gradient(90deg,var(--cue),transparent 82%);
+    box-shadow:inset 3px 0 0 var(--brand); border-radius:5px;}
   .w.sel{background:var(--sky2); box-shadow:0 0 0 3px var(--sky2); border-radius:6px;}
   .legend{display:flex; gap:12px; font-size:12px; color:var(--soft);}
   .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
@@ -296,9 +297,10 @@
   .pdf-source-page>.original-saved-marker.s2{background:var(--saved2);}
   .pdf-source-page>.original-saved-marker.s3{background:var(--saved3);}
   .pdf-source-page>.reader-mode-cue{position:absolute; z-index:2; display:block; pointer-events:none;
-    box-sizing:border-box; border-radius:4px; background:var(--cue);
-    animation:reader-mode-cue-out 10s ease forwards;}
-  @keyframes reader-mode-cue-out{0%,78%{opacity:1}100%{opacity:0}}
+    box-sizing:border-box; border-radius:4px;
+    background:linear-gradient(90deg,var(--cue),rgba(77,174,214,.08));
+    box-shadow:inset 3px 0 0 var(--brand); animation:reader-mode-cue-out 6s ease forwards;}
+  @keyframes reader-mode-cue-out{0%,58%{opacity:1}100%{opacity:0}}
 
   .epub-original{display:flex; flex-direction:column; gap:20px;}
   .epub-source-chapter{width:100%; background:var(--source-page); box-shadow:var(--source-shadow-soft); overflow:hidden;}
