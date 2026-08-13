@@ -125,7 +125,7 @@
   --splash-bg:#000;
   --brand-cream:#FFF9EA;    /* 그 위의 글자 */
   --brand-cream-soft:rgba(255,249,234,.88);   /* 상표 아래 한 줄 */
-  --brand-fresh:#7DA95D;    /* 방금 도착한 글의 인쇄선 */
+  --brand-fresh:#28B7C7;    /* 방금 도착한 글의 인쇄선 — 시원한 청록 */
   --brand-ink-shadow:0 2px 20px rgba(15,45,55,.32);
   --splash-veil:linear-gradient(180deg,rgba(10,45,66,.14),transparent 38%,rgba(11,36,31,.24));
 
@@ -376,7 +376,7 @@ body.dark{
   --sec-act-line:#41443D;
   --sec-act-ink:#B7BBB0;
   --sec-act-hover-ink:#9BC1CD;
-  --brand-fresh:#88AA6B;
+  --brand-fresh:#4DC8D4;
   --rss-thumb:#1D2126;
   --cloud-line:#2E3339;
   --dash:#3A3F45;
