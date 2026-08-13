@@ -737,8 +737,11 @@ assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8')
   /: \.04;[\s\S]{0,160}: \.96;/,
   'Image-only PDF paragraphs no longer receive a full block cue');
 assert.match(modesSource,
-  /if\(!sentenceFound\)\{[\s\S]{0,220}showOriginalLandingCue\(record,canonical,sentenceBridge\.paragraph\)/,
-  'A first PDF sentence-search miss leaves the matching landing paragraph unpainted');
+  /else if\(!sentenceFound\)\{[\s\S]{0,220}showOriginalLandingCue\(record,canonical,sentenceBridge\.paragraph\)/,
+  'An original sentence-search miss leaves the matching landing paragraph unpainted');
+assert.match(modesSource,
+  /if\(record\.kind==='pdf'\) showPdfParagraphModeCue\([\s\S]{0,120}sentenceBridge\.paragraph,10000/,
+  'First PDF entry waits for sentence search before painting its paragraph');
 assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'),
   /showElementModeCue\(block,10000\)/,
   'EPUB landing cues paint only the matched sentence instead of its paragraph');

@@ -427,13 +427,20 @@ async function switchReaderMode(mode,options){
     await restoreOriginalAnchor(target,changeToken);
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
     if(sentenceBridge){
+      /* 첫 PDF 진입은 문장 색인을 읽는 데 시간이 걸릴 수 있습니다. 레이아웃과
+         sourceMap은 이미 준비됐으므로 같은 문단 블록을 먼저 보여 줍니다. */
+      if(record.kind==='pdf') showPdfParagraphModeCue(
+        sentenceBridge.paragraph,10000,target&&target.page);
       /* Search failure is deliberately quiet: the source-map anchor above is
          still a stable and useful fallback. */
       const sentenceFound=await ORIGINAL_FORMATS[record.kind].restoreSentence(
         sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
-      if(!sentenceFound){
+      if(record.kind==='pdf'){
+        clearReaderModeCue();
+        showPdfParagraphModeCue(sentenceBridge.paragraph,10000,target&&target.page);
+      }else if(!sentenceFound){
         const canonical=sourceAnchorForParagraph(curBook,sentenceBridge.paragraph)||target;
-      showOriginalLandingCue(record,canonical,sentenceBridge.paragraph);
+        showOriginalLandingCue(record,canonical,sentenceBridge.paragraph);
       }
     }else if(sourceCueBridge){
       /* 빠른 왕복에서는 정확한 원본 좌표를 지키려고 문장 재검색을 생략합니다.
