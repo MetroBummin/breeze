@@ -10,7 +10,7 @@
  * 파일 내용의 해시를 씁니다. 바뀐 파일만 주소가 바뀌므로, 안 고친 파일은
  * 캐시가 그대로 살아 있습니다. 날짜를 쓰면 배포할 때마다 전부 다시 받습니다.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,3 +43,23 @@ if(missing.length){
 }
 if(next !== html) writeFileSync(page, next);
 console.log(`Stamped ${stamped} local assets${next === html ? ' (변경 없음)' : ''}`);
+
+/* ---- 서비스워커의 판 번호 ----
+ * 브라우저는 sw.js 의 **바이트가 달라졌을 때만** 그것을 새로 설치합니다. 그래서
+ * 판 번호를 안 찍으면, CSS 를 고쳐 배포해도 서비스워커는 옛 캐시를 그대로 안고
+ * 있습니다. 값으로는 방금 찍은 index.html 의 해시를 씁니다 — 그 안에 모든 파일의
+ * 해시가 들어 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다.
+ */
+const worker = resolve(root, 'sw.js');
+if(existsSync(worker)){
+  const source = readFileSync(worker, 'utf8');
+  const line = /^const VERSION = '[^']*';$/m;
+  if(!line.test(source)){
+    console.error("sw.js 에서 `const VERSION = '…';` 줄을 못 찾았습니다.");
+    process.exit(1);
+  }
+  const version = createHash('sha256').update(next).digest('hex').slice(0, 8);
+  const stampedWorker = source.replace(line, `const VERSION = '${version}';`);
+  if(stampedWorker !== source) writeFileSync(worker, stampedWorker);
+  console.log(`Service worker ${version}${stampedWorker === source ? ' (변경 없음)' : ''}`);
+}

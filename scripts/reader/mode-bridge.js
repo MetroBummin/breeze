@@ -34,14 +34,35 @@ function bridgeSentences(value){
   return parts;
 }
 
-function bridgeSentenceAt(value,offset){
+/* 한 쪽에는 글이 하나뿐인데 낱말은 수백 개입니다. 그래서 문장 나누기는 쪽마다
+   한 번만 하고, 낱말들은 그 결과를 나눠 씁니다.
+
+   낱말마다 다시 나누면 일이 낱말 수의 **제곱**으로 늘어납니다. 실제로 그랬고,
+   재어 보니 전공 교재 한 쪽(낱말 650개)이 128ms, 수식이 빽빽한 쪽(1000개)은
+   321ms 씩 화면을 붙들었습니다. 이 일은 스크롤과 같은 줄에서 돕니다 — 빠른
+   노트북에서는 프레임 몇 장이지만, 느린 기기에서는 스크롤이 멈춰 보입니다.
+
+   다듬은 글도 문장마다 한 번만 만듭니다. 같은 문장을 가리키는 낱말들은 같은
+   문자열 하나를 함께 봅니다 — 600쪽짜리 책에서는 이것만으로도 꽤 큰 짐입니다. */
+function bridgeSentenceFinder(value){
   const sentences=bridgeSentences(value);
-  if(!sentences.length) return '';
-  const point=Math.max(0,Number(offset)||0);
-  const found=sentences.find(sentence=>point>=sentence.start&&point<=sentence.end)
-    || sentences.find(sentence=>sentence.start>=point)
-    || sentences[sentences.length-1];
-  return found.text.replace(/\s+/g,' ').trim().slice(0,900);
+  const trimmed=new Array(sentences.length);
+  return offset=>{
+    if(!sentences.length) return '';
+    const point=Math.max(0,Number(offset)||0);
+    let index=sentences.findIndex(sentence=>point>=sentence.start&&point<=sentence.end);
+    if(index<0) index=sentences.findIndex(sentence=>sentence.start>=point);
+    if(index<0) index=sentences.length-1;
+    if(trimmed[index]===undefined)
+      trimmed[index]=sentences[index].text.replace(/\s+/g,' ').trim().slice(0,900);
+    return trimmed[index];
+  };
+}
+
+/* 한 자리만 물을 때. 여러 자리를 물을 것이라면 위의 finder 를 한 번 만들어 두고
+   그것을 부르세요 — 그러라고 나눠 놓았습니다. */
+function bridgeSentenceAt(value,offset){
+  return bridgeSentenceFinder(value)(offset);
 }
 
 /* 문장 하나는 자리를 가리키기에 모자랍니다. "He nodded." 같은 문장은 책 어디에나
