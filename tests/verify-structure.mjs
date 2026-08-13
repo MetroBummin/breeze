@@ -720,6 +720,8 @@ assert.match(readerCss, /body\.reader-original #modefab \.mf-text\{opacity:1/,
    '여기 있었어요' 표시는 생략하면 안 됩니다. */
 assert.match(modesSource, /const sourceCueBridge=sentenceBridge/,
   'The source cue is coupled to landing search again, so quick round trips hide it');
+assert.match(modesSource, /const cueRoot=common\.nodeType===Node\.ELEMENT_NODE \? common : common\.parentElement/,
+  'A text Range rooted at the paragraph itself skips its departure cue block');
 assert.match(modesSource, /if\(sourceCueBridge\)\{\s*showBridgeSourceCue\(sourceCueBridge\)/,
   'Mode switching no longer paints the paragraph before leaving it');
 assert.match(modesSource, /else if\(sourceCueBridge\)\{[\s\S]{0,300}showOriginalLandingCue\(record,target\)/,

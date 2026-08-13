@@ -125,8 +125,10 @@ function textSentenceBridge(){
   const preferred=Math.max(0,entries.findIndex(entry=>bridgeTokens(entry.text).length>=5));
   const chosen=entries[preferred];
   const ordered=[...entries.slice(preferred),...entries.slice(0,preferred)].map(entry=>entry.text);
+  const common=chosen.range.commonAncestorContainer;
+  const cueRoot=common.nodeType===Node.ELEMENT_NODE ? common : common.parentElement;
   return {candidates:ordered,range:chosen.range,pi:chosen.pi,
-    block:chosen.range.commonAncestorContainer.parentElement&&chosen.range.commonAncestorContainer.parentElement.closest('[data-pi]')};
+    block:cueRoot&&cueRoot.closest('[data-pi]')};
 }
 
 function originalSentenceBridge(){
