@@ -119,7 +119,7 @@ const recentWordOpens = new Map();
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 읽는 중의
    문장을 서버 동기화 객체에 덮어 쓰지 않습니다. 사용자가 "이 뜻도 저장"을 눌러야
    그때만 `senses`에 들어갑니다. */
-let contextView = null, phraseView = null, altChoice = null, wordRename = null, panelEditDirty = false, panelEditTarget = null;
+let contextView = null, phraseView = null, altChoice = null, panelEditDirty = false, panelEditTarget = null;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
 function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
 function answerFromLook(j, cached){
@@ -200,7 +200,6 @@ function selectWord(k, span){
   document.getElementById('p-word-actions').hidden=true;
   document.getElementById('p-meaning-actions').hidden=true;
   selKey = k;
-  if(!wordRename || wordRename.to!==k) wordRename=null;
   readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
   if(span) span.classList.add('sel');
   renderPanel();
@@ -221,7 +220,7 @@ function selectWord(k, span){
 }
 function closePanel(){
   selKey=null;
-  contextView=null; phraseView=null; wordRename=null; panelEditTarget=null; panelEditDirty=false;
+  contextView=null; phraseView=null; panelEditTarget=null; panelEditDirty=false;
   document.getElementById('p-word-actions').hidden=true;
   document.getElementById('p-meaning-actions').hidden=true;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
@@ -271,18 +270,11 @@ function renderPanel(){
   }) : base;
   const wordBox=document.getElementById('p-word');
   const wordWrap=document.getElementById('p-word-wrap');
-  /* 뜻 카드(`root`)도 지금 보고 있는 카드 안에서 표제어를 고칠 수 있습니다.
-     내부 key는 뜻 묶음 주소일 뿐, 입력 가능 여부를 막는 이유가 아닙니다. */
-  const canRename=!context && !phrase && !base.phraseParts;
-  const editingWord=canRename && panelEditTarget==='word';
+  /* 화면의 단어 칸은 내부 key가 아니라 지금 열어 둔 카드의 표시값입니다.
+     어떤 뜻·문맥을 보고 있든 이 칸에서 바로 고칩니다. */
+  const editingWord=panelEditTarget==='word';
   wordWrap.classList.toggle('editing',editingWord);
   wordBox.contentEditable=editingWord?'true':'false';
-  const renameBox=document.getElementById('p-rename-confirm');
-  const renaming=wordRename&&wordRename.to===k;
-  renameBox.hidden=!renaming;
-  if(renaming){
-    document.getElementById('p-rename-copy').textContent=`“${wordRename.fromWord}”은(는) 원문 표시와 함께 남아 있어요.`;
-  }
   if(!editingWord) wordBox.textContent=w.word;
   document.getElementById('p-clicked').textContent =
     phrase ? `표현 뜻 보기 · ${phrase.phrase}`
@@ -561,13 +553,6 @@ function refreshReaderWords(){
 }
 function beginPanelEdit(target){
   if(!selKey || !words[selKey]) return;
-  if(target==='word'){
-    /* 여러 뜻 중 하나를 보고 있을 때도 그 카드 안에서 바로 고칩니다. 대표
-       표제어로 옮겨 버리면 사용자가 방금 고르던 뜻이 사라져 보이기 때문입니다.
-       아직 저장하지 않은 문맥 미리보기·표현 미리보기만 이름이 정해진 카드가
-       아니므로 편집 대상으로 삼지 않습니다. */
-    if(currentContext(selKey) || currentPhrase(selKey)) return;
-  }
   panelEditTarget=target; panelEditDirty=false;
   document.getElementById(target==='word'?'p-word-actions':'p-meaning-actions').hidden=false;
   renderPanel();
@@ -588,36 +573,17 @@ function finishPanelEdit(){
 }
 function commitWordRename(){
   const input=document.getElementById('p-word');
-  const from=selKey, base=words[from], parsed=headwordKey(input.textContent);
+  const base=words[selKey], parsed=headwordKey(input.textContent);
   if(!base || !parsed) { toast('영어 단어 또는 표현으로 적어 주세요'); return; }
-  /* 뜻별 카드의 key는 `take::sense:…`처럼 뜻을 묶기 위한 내부 주소입니다.
-     표제어를 다듬을 때 그 주소를 새 단어 key로 바꾸면 묶음에서 떨어지고, 바로
-     보고 있던 뜻도 사라집니다. 뜻 카드에서는 현재 카드의 표시 이름만 고칩니다. */
-  if(parsed.key===from || base.root){
-    base.word=parsed.display; base.clicked=parsed.display;
-    base.forms=[...new Set([...(base.forms||[]),parsed.key,...lemmaCands(parsed.display),parsed.display.toLowerCase()])];
-    base.up=Date.now();
-    saveWords(); queueSync(); finishPanelEdit(); renderPanel(); return;
-  }
-  if(words[parsed.key]){ toast('이미 저장한 단어예요'); return; }
-  const next={...base,word:parsed.display,clicked:parsed.display,
-    forms:[...new Set([parsed.key,...lemmaCands(parsed.display),parsed.display.toLowerCase()])],up:Date.now()};
-  if(parsed.parts.length>1) next.phraseParts=parsed.parts;
-  else delete next.phraseParts;
-  delete next.root;
-  words[parsed.key]=next; delete dead[parsed.key]; save(LS_DEAD,dead);
-  wordRename={from,to:parsed.key,fromWord:base.word,toWord:parsed.display};
-  selKey=parsed.key;
-  saveWords(); queueSync(); paintWord(parsed.key); finishPanelEdit(); renderPanel();
-}
-function keepOriginalAfterRename(){ wordRename=null; renderPanel(); }
-function deleteOriginalAfterRename(){
-  if(!wordRename || !words[wordRename.to]) return;
-  const old=wordRename.from;
-  Object.keys(words).filter(key=>key===old || words[key].root===old).forEach(key=>{
-    delete words[key]; dead[key]=Date.now();
-  });
-  wordRename=null; saveWords(); save(LS_DEAD,dead); queueSync(); refreshReaderWords(); renderPanel();
+  /* 단어를 고친다고 카드 주소·다른 뜻·원문 표시는 건드리지 않습니다. 지금 보는
+     카드의 제목만 바꿉니다. `clicked`는 실제로 눌렀던 원문 형태라 남겨 두어
+     문맥 정보를 잃지 않고, forms에는 새 표기를 더해 이후 검색도 받습니다. */
+  base.word=parsed.display;
+  base.forms=[...new Set([...(base.forms||[]),parsed.key,...lemmaCands(parsed.display),parsed.display.toLowerCase()])];
+  if(parsed.parts.length>1) base.phraseParts=parsed.parts;
+  else delete base.phraseParts;
+  base.up=Date.now();
+  saveWords(); queueSync(); finishPanelEdit(); renderPanel();
 }
 const wordEditBox=document.getElementById('p-word');
 wordEditBox.addEventListener('click',()=>{ if(panelEditTarget!=='word') beginPanelEdit('word'); });
@@ -634,8 +600,6 @@ document.querySelectorAll('[data-edit-save]').forEach(button=>button.addEventLis
   if(panelEditTarget==='word') commitWordRename(); else commitMeaningEdit();
 }));
 document.querySelectorAll('[data-edit-cancel]').forEach(button=>button.addEventListener('click',cancelPanelEdit));
-document.getElementById('p-rename-keep').addEventListener('click',keepOriginalAfterRename);
-document.getElementById('p-rename-delete').addEventListener('click',deleteOriginalAfterRename);
 /* 뜻을 고치는 곳이 뜻이 뜨는 곳입니다. 사람이 손으로 쓴 뜻은 그 뒤로 AI 가 덮지 않습니다 —
    "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다. 그때는 새 뜻을 달라는 뜻이니까요. */
 const aiKoBox = document.getElementById('p-ai-ko');

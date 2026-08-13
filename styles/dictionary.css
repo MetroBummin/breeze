@@ -44,12 +44,6 @@
   /* 표제어를 고칠 때는 뜻 편집과 같은 한 칸만 남깁니다. 발음은 저장 뒤 바로
      들을 수 있으므로, 입력 중에는 자리를 차지하지 않게 해 긴 표현도 편하게 봅니다. */
   #p-word-wrap.editing + #p-speak{display:none;}
-  #p-rename-confirm{margin:0 0 13px; padding:11px 12px; border:1px solid var(--ai-line); border-radius:12px; background:var(--ai-bg1); color:var(--ai-ink);}
-  #p-rename-confirm b{display:block; font-size:12.5px;}
-  #p-rename-confirm span{display:block; margin-top:3px; font-size:11.5px; line-height:1.45; color:var(--ai-note);}
-  #p-rename-confirm div{display:flex; gap:7px; margin-top:9px;}
-  #p-rename-confirm button{flex:1; border:1px solid var(--ai-line); border-radius:8px; padding:7px 6px; background:var(--sheet); color:var(--ai-ink); cursor:pointer; font:600 11px var(--ui);}
-  #p-rename-confirm #p-rename-delete{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
   #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--speak-line);
     background:var(--speak-bg); cursor:pointer; display:flex; align-items:center; justify-content:center;
     color:var(--blue); transition:.15s;}

@@ -722,10 +722,12 @@ assert.match(pdfOriginalSource,
   /if\(!\(session\.wordBoxes\.get\(pageNumber\)\|\|\[\]\)\.length\)\{[\s\S]{0,140}await renderOriginalPdfPage\(session,pageNumber\)/,
   'The first PDF tap is discarded while its word map is still loading');
 const dictionarySource=readFileSync(resolve(root,'scripts/dictionary/dictionary.js'),'utf8');
-assert.match(dictionarySource,/const canRename=!context && !phrase && !base\.phraseParts;/,
-  'A saved alternate sense cannot edit its own visible headword');
-assert.match(dictionarySource,/if\(parsed\.key===from \|\| base\.root\)/,
-  'Renaming an alternate sense changes its grouping key instead of its displayed headword');
+assert.match(dictionarySource,/const editingWord=panelEditTarget==='word';/,
+  'The visible word cannot be edited from every open dictionary card');
+assert.match(dictionarySource,/base\.word=parsed\.display;[\s\S]{0,220}saveWords\(\); queueSync\(\); finishPanelEdit\(\); renderPanel\(\);/,
+  'Editing a visible word no longer saves directly on the current card');
+assert.doesNotMatch(dictionarySource,/wordRename=\{from,to:/,
+  'Editing a visible word still changes cards and asks about deleting the old one');
 /* EPUB 원본도 겉보기에는 같은 원본 화면입니다. selection에만 기대면 데스크톱은
    더블클릭, 모바일은 드래그가 필요해져 PDF 수정이 안 된 것처럼 보입니다. */
 assert.match(epubSource,/function installEpubWordTap\(doc\)/,
