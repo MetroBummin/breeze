@@ -274,7 +274,7 @@ async function switchReaderMode(mode,options){
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;
   const previousMode = currentReaderMode;
-  const sentenceBridge = !options.initial && previousMode!==mode
+  let sentenceBridge = !options.initial && previousMode!==mode
     ? (previousMode==='text' ? textSentenceBridge() : originalSentenceBridge())
     : null;
   const textAnchor = previousMode==='text' ? captureAnchor() : null;
@@ -289,6 +289,9 @@ async function switchReaderMode(mode,options){
       && Date.now()-recentModeLanding.at<12000
       && !textModeMovedByUser){
     bridge=recentModeLanding.originalAnchor;
+    /* 이 경우 정확한 원본 좌표가 이미 있습니다. 문장 검색까지 다시 하면 그 문장의
+       첫 줄을 가운데 놓느라 좌표가 덮여, 반복할수록 이전 쪽으로 밀립니다. */
+    sentenceBridge=null;
   }
   /* A quick round trip inside the same paragraph should return to the exact
      original page percentage, not merely that paragraph's first line. */
