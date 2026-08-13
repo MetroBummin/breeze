@@ -33,7 +33,7 @@
     background-image:image-set(url(../assets/brand/breeze-day.avif) type('image/avif'),
                                url(../assets/brand/breeze-day.jpg) type('image/jpeg'));
     background-position:center bottom; background-size:cover; background-repeat:no-repeat;
-    transform:scale(1.025); animation:scene-breathe 16s ease-in-out infinite alternate;}
+    animation:scene-breathe 16s ease-in-out infinite alternate;}
   #splash .splash-scene::after{content:''; position:absolute; inset:0; background:var(--splash-veil);}
   /* 두 줄은 한 덩어리입니다. 그래서 크기도 한 곳에서만 정합니다 — 상표는 이
      font-size 그대로, 그 아래 한 줄은 그 몇 분의 몇으로. 예전에는 상표만 화면
@@ -46,7 +46,7 @@
   #splash .tag{font-size:.17em; color:var(--brand-cream-soft); letter-spacing:.1em; margin-top:.7em;
     text-transform:uppercase; font-weight:600; white-space:nowrap;}
   @keyframes splash-scene-in{from{opacity:0}to{opacity:1}}
-  @keyframes scene-breathe{from{transform:scale(1.025) translate3d(0,0,0)}to{transform:scale(1.05) translate3d(-.35%,-.45%,0)}}
+  @keyframes scene-breathe{from{transform:translate3d(0,0,0)}to{transform:scale(1.012) translate3d(-.12%,-.15%,0)}}
   /* 넓은 화면에서는 들판의 아이를 비켜 왼쪽에 섭니다. 두 줄이 서로 가운데를
      맞추는 것은 그대로입니다 — 덩어리째 왼쪽으로 갈 뿐입니다. */
   @media (min-aspect-ratio:4/3){
