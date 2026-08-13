@@ -265,14 +265,15 @@ function renderPanel(){
   }) : base;
   const wordBox=document.getElementById('p-word');
   const canRename=!context && !phrase && !base.root && !base.phraseParts;
-  wordBox.contentEditable=canRename?'true':'false';
+  const editingWord=canRename && panelEditTarget==='word';
+  wordBox.contentEditable=editingWord?'true':'false';
   const renameBox=document.getElementById('p-rename-confirm');
   const renaming=wordRename&&wordRename.to===k;
   renameBox.hidden=!renaming;
   if(renaming){
     document.getElementById('p-rename-copy').textContent=`“${wordRename.fromWord}”은(는) 원문 표시와 함께 남아 있어요.`;
   }
-  if(document.activeElement!==wordBox) wordBox.textContent=w.word;
+  if(!editingWord) wordBox.textContent=w.word;
   document.getElementById('p-clicked').textContent =
     phrase ? `표현 뜻 보기 · ${phrase.phrase}`
     : (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `클릭한 형태: ${w.clicked}` : '';
@@ -307,6 +308,8 @@ function renderPanel(){
   const ai = w.ai || {};
   const asking = !!w.aiLoading && !w.aiSlow;
   const shown = w.ko || ai.ko || '';
+  const editingMeaning=panelEditTarget==='meaning';
+  aiKo.contentEditable=editingMeaning?'true':'false';
   if(asking){
     aiBox.className = 'on load';
     aiCap.textContent = w.aiRetrying ? '다른 뜻을 찾는 중' : '문맥 뜻 · AI';
@@ -318,7 +321,7 @@ function renderPanel(){
       : ai.cached ? '전에 찾아본 뜻'
       : ((ai.done || ai.noteDone) ? '문맥 뜻 · AI' : '뜻');
     /* 편집 중에 renderPanel 이 돌아도 커서가 앞으로 튀지 않게, 달라졌을 때만 씁니다. */
-    if(aiKo.textContent !== shown) aiKo.textContent = shown;
+    if(!editingMeaning && aiKo.textContent !== shown) aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
     /* 사전에는 뜻의 성질을 설명하는 한 줄만 둡니다. 문장 전용 note까지 붙이면
        같은 뜻 상자가 두 번 설명하는 모양이 되어 읽는 흐름을 끊었습니다. */
@@ -547,8 +550,14 @@ function refreshReaderWords(){
 }
 function beginPanelEdit(target){
   if(!selKey || !words[selKey]) return;
+  if(target==='word' && (currentContext(selKey) || currentPhrase(selKey) || words[selKey].root || words[selKey].phraseParts)) return;
   panelEditTarget=target; panelEditDirty=false;
   document.getElementById(target==='word'?'p-word-actions':'p-meaning-actions').hidden=false;
+  renderPanel();
+  requestAnimationFrame(()=>{
+    const box=document.getElementById(target==='word'?'p-word':'p-ai-ko');
+    box.focus();
+  });
 }
 function cancelPanelEdit(){
   panelEditTarget=null; panelEditDirty=false;
@@ -589,7 +598,7 @@ function deleteOriginalAfterRename(){
   wordRename=null; saveWords(); save(LS_DEAD,dead); queueSync(); refreshReaderWords(); renderPanel();
 }
 const wordEditBox=document.getElementById('p-word');
-wordEditBox.addEventListener('focus',()=>beginPanelEdit('word'));
+wordEditBox.addEventListener('click',()=>{ if(panelEditTarget!=='word') beginPanelEdit('word'); });
 wordEditBox.addEventListener('input',()=>{
   const cleaned=wordEditBox.textContent.replace(/[^A-Za-z'’\-\s]/g,'').replace(/\s+/g,' ');
   if(wordEditBox.textContent!==cleaned) wordEditBox.textContent=cleaned;
@@ -608,7 +617,7 @@ document.getElementById('p-rename-delete').addEventListener('click',deleteOrigin
 /* 뜻을 고치는 곳이 뜻이 뜨는 곳입니다. 사람이 손으로 쓴 뜻은 그 뒤로 AI 가 덮지 않습니다 —
    "다른 뜻으로 다시" 를 눌렀을 때만 덮습니다. 그때는 새 뜻을 달라는 뜻이니까요. */
 const aiKoBox = document.getElementById('p-ai-ko');
-aiKoBox.addEventListener('focus',()=>beginPanelEdit('meaning'));
+aiKoBox.addEventListener('click',()=>{ if(panelEditTarget!=='meaning') beginPanelEdit('meaning'); });
 aiKoBox.addEventListener('input',()=>{ panelEditDirty=true; });
 function commitMeaningEdit(){
   if(!selKey || !words[selKey]) return;

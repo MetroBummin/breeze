@@ -19,16 +19,16 @@
     body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
     body.reader-original .p-sec{margin-top:13px;}
   }
-  #panel .inner{padding:26px 26px 40px;}
+  #panel .inner{padding:22px 22px 36px;}
   #p-handle{display:none; touch-action:none;}
-  #p-top{display:flex; align-items:flex-start; gap:10px; padding-bottom:13px; border-bottom:1px solid var(--divider);}
+  #p-top{display:flex; align-items:flex-start; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--divider);}
   #p-close{flex:none; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:8px; margin-bottom:4px;}
   #p-word-wrap{min-width:0; flex:1;}
-  #p-word{min-width:0; flex:1; overflow-wrap:anywhere; font-size:34px; font-weight:500; letter-spacing:-.8px; color:var(--ink);
-    border:1px solid transparent; border-radius:10px; padding:3px 7px; margin:-3px -7px; outline:none; cursor:text;}
-  #p-word:hover,#p-word:focus{border-color:var(--blue-ring); background:var(--field);}
+  #p-word{min-width:0; flex:1; overflow-wrap:anywhere; font-size:32px; font-weight:600; letter-spacing:-.9px; color:var(--ink);
+    border:1px solid transparent; border-radius:10px; padding:3px 7px; margin:-3px -7px; outline:none; cursor:pointer;}
+  #p-word[contenteditable="true"]{cursor:text; border-color:var(--blue-ring); background:var(--field);}
   .p-inline-edit{display:flex; flex:none; align-items:center; gap:5px;}
   .p-inline-edit button{border:1px solid var(--line); border-radius:8px; padding:6px 8px; background:var(--sheet); color:var(--soft); font:600 10.5px var(--ui); cursor:pointer; white-space:nowrap;}
   .p-inline-edit button.save{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
@@ -47,38 +47,36 @@
   #p-speak.playing{background:var(--blue); color:var(--on-color); border-color:var(--blue);}
   /* 첫 줄과 둘째 줄은 패널의 숨은 경계 대신, 아주 가는 선 하나만 나눕니다. */
   .p-row-divider{display:none;}
-  #p-controls{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px; padding:11px 0;}
+  #p-controls{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px; padding:9px 0;}
   /* 상태를 돌리는 단추지만 스위치 흉내는 내지 않습니다. 글자로 현재 상태를 말합니다. */
   #p-mark{flex:0 0 auto; height:29px; padding:0 11px; border:1px solid var(--mark-line); border-radius:15px;
     background:var(--mark-bg); color:var(--soft2); cursor:pointer; font:600 10.5px var(--ui); white-space:nowrap; transition:.16s;}
   #p-mark.on{border-color:var(--blue-ring); background:var(--mark-on); color:var(--mark-on-ink);}
   #p-mark:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
   #p-clicked{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font-size:12px; color:var(--soft2);}
-  #p-divider{border:none; border-top:1px solid var(--divider); margin:0 0 16px;}
+  #p-divider{border:none; border-top:1px solid var(--divider); margin:0 0 12px;}
   /* AI 가 말하는 자리는 모두 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
      그리고 문장 해석 카드. 값은 base.css 의 `--ai-*` 하나뿐입니다. */
-  #p-ai{display:none; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));
-    border:1px solid var(--ai-line);
-    border-radius:14px; padding:13px 15px; margin-bottom:12px;}
+  #p-ai{display:none; background:var(--ai-bg1); border:1px solid var(--ai-line);
+    border-radius:12px; padding:12px 13px; margin-bottom:10px;}
   #p-ai.on{display:block;}
-  #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
-    letter-spacing:.08em; color:var(--ai-key); margin-bottom:6px;}
+  #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700;
+    letter-spacing:.06em; color:var(--ai-key); margin-bottom:5px;}
   #p-ai .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
-  #p-ai .m{font-size:18px; font-weight:700; color:var(--ai-ink); line-height:1.35;}
+  #p-ai .m{font-size:18px; font-weight:700; color:var(--ai-ink); line-height:1.4;}
   #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
-  #p-ai .note{font-size:12.5px; color:var(--ai-note); line-height:1.55; margin-top:7px;}
+  #p-ai .note{font-size:12px; color:var(--ai-note); line-height:1.55; margin-top:6px;}
   /* 이 뜻 자체의 성질. 문장 이야기가 위에 오면 그 아래로 한 칸 내려가 배경이 됩니다. */
   #p-ai .gloss{display:none; font-size:11.5px; color:var(--ai-quiet); line-height:1.5;
     margin-top:8px; padding-left:9px; border-left:2px solid var(--ai-line);}
   /* 단어와 뜻은 모두 같은 방식의 입력 칸입니다. 눌렀을 때만 저장·취소가 떠서,
      단순한 장식이 아니라 실제로 바꿀 수 있다는 점을 분명히 합니다. */
   #p-ai .mk{display:inline-block; min-width:2em; border-radius:7px; padding:1px 5px; margin-left:-5px;
-    outline:none; cursor:text; transition:background .15s, box-shadow .15s;}
+    outline:none; cursor:pointer; transition:background .15s, box-shadow .15s;}
   #p-ai .mk{border:1px solid transparent;}
-  #p-ai .mk:hover{background:var(--ai-mk-hover); border-color:var(--ai-line);}
-  #p-ai .mk:focus{background:var(--ai-mk-focus); border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-ring);}
-  #p-ai .acts{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:7px; margin-top:10px;}
-  #p-ai .tip{font-size:10.5px; line-height:1.4; color:var(--soft2); text-align:right;}
+  #p-ai .mk[contenteditable="true"]{cursor:text; background:var(--ai-mk-focus); border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-ring);}
+  #p-ai .acts{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px;}
+  #p-ai .tip{font-size:10px; line-height:1.35; color:var(--soft2); text-align:right;}
   #p-ai.edited .tip{color:var(--blue);}
   /* ══ 오로라 ══════════════════════════════════════════════
      AI 를 기다리는 동안 뜨는 장치. 낱말 하나든 문장 하나든 같은 것을 씁니다 —
@@ -134,8 +132,8 @@
   /* 문장 통째로 가는 문. 낱말 뜻이 맞는데도 문장이 안 읽힐 때 누릅니다 —
      그래서 뜻 상자 바로 아래, 다른 뜻 후보들보다 앞에 둡니다. */
   #p-explain{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
-    border:1px solid var(--ai-line); background:none; color:var(--soft); border-radius:12px;
-    padding:10px; font-size:12.5px; font-family:var(--ui); cursor:pointer;}
+    border:1px solid var(--ai-line); background:none; color:var(--soft); border-radius:10px;
+    padding:9px; font-size:12px; font-family:var(--ui); cursor:pointer;}
   #p-explain.ready{border-color:var(--ai-line); color:var(--ai-key); background:var(--ai-bg2);}
   #p-explain.ready:hover{border-color:var(--ai-key); background:var(--sky);}
   #p-explain:disabled{border-color:var(--line); color:var(--soft2); background:transparent; cursor:default; opacity:.72;}
@@ -163,7 +161,7 @@
     font-size:11.5px; line-height:1.45; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
   #p-airetry:hover{color:var(--retry-hover);}
   #p-airetry:disabled{opacity:.45; cursor:default; text-decoration:none;}
-  .p-sec{font-size:11px; font-weight:600; color:var(--soft2); letter-spacing:.09em; margin:16px 0 8px;}
+  .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}
   #p-colloc-sec,#p-saved-senses-sec,#p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
   #p-colloc-sec{margin-top:16px; color:var(--soft2);}
   #p-colloc{display:none; flex-wrap:wrap; gap:6px;}

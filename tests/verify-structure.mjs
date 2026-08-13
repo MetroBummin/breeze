@@ -706,6 +706,17 @@ assert.doesNotMatch(preferencesSource, /focusmode/,
   'The focus-mode toggle is back');
 assert.match(index, /id="modefab"[^>]*onclick="toggleReaderMode\(\)"/,
   'The 원본↔글자 button is missing');
+/* PDF 단어 찾기는 터치와 마우스 모두 한 번의 탭/클릭으로 열려야 합니다. */
+const pdfOriginalSource=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
+assert.match(pdfOriginalSource, /event\.pointerType==='mouse' && event\.button!==0/,
+  'PDF word lookup rejects touch pointers before they can open a word');
+assert.match(pdfOriginalSource, /content\.addEventListener\('pointerup',[\s\S]{0,1000}\},true\)/,
+  'A PDF overlay can swallow the one-tap word lookup again');
+/* 읽는 상태의 단어장 표제어·뜻은 입력창처럼 보이면 안 됩니다. */
+assert.match(index, /id="p-word" contenteditable="false"/,
+  'The word field is editable before the user asks to edit it');
+assert.match(index, /id="p-ai-ko" contenteditable="false"/,
+  'The meaning field is editable before the user asks to edit it');
 assert.match(index, /id="readfabs"/,
   'The reading controls are no longer stacked, so they move when one hides');
 assert.match(index,/id="pdfzoomfabs"[\s\S]*id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
@@ -1064,7 +1075,6 @@ assert.match(readFileSync(resolve(root, 'scripts/main.js'), 'utf8'),
 /* ---- 긴 PDF ---------------------------------------------------------------
    ① 낱말마다 페이지 글 전체를 다시 문장으로 나누면 일이 제곱으로 늡니다.
       쪽마다 한 번만 나누는 finder 를 거쳐야 합니다. */
-const pdfOriginalSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 'utf8');
 assert.match(pdfOriginalSource, /const sentenceAt\s*=\s*bridgeSentenceFinder\(text\)/,
   'PDF 낱말 상자가 문장 나누기를 낱말마다 다시 하고 있습니다 (제곱으로 느려집니다)');
 assert.doesNotMatch(pdfOriginalSource, /boxes\.forEach\([^)]*bridgeSentenceAt/,

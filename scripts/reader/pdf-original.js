@@ -464,7 +464,10 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
 (function(){
   const content=document.getElementById('original-content');
   content.addEventListener('pointerdown',event=>{
-    if(!originalSession || originalSession.kind!=='pdf' || event.button!==0) return;
+    if(!originalSession || originalSession.kind!=='pdf') return;
+    /* Touch PointerEvent의 button 값은 브라우저마다 0/-1로 다릅니다. 마우스의
+       오른쪽·가운데 버튼만 걸러야 한 번 탭한 단어도 놓치지 않습니다. */
+    if(event.pointerType==='mouse' && event.button!==0) return;
     if(!event.isPrimary){ originalPdfPointer=null; return; }
     originalPdfPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
   });
@@ -474,10 +477,13 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
     const start=originalPdfPointer;
     originalPdfPointer=null;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
-    const page=event.target.closest&&event.target.closest('.pdf-source-page');
+    const target=/** @type {HTMLElement|null} */(event.target instanceof HTMLElement ? event.target : null);
+    const path=event.composedPath ? event.composedPath() : [];
+    const page=(target&&target.closest('.pdf-source-page'))
+      || /** @type {HTMLElement|undefined} */(path.find(node=>node instanceof HTMLElement&&node.classList.contains('pdf-source-page')));
     const box=pdfWordAtPoint(page,event.clientX,event.clientY);
     if(box) openPdfWord(page,box);
-  });
+  },true);
 })();
 
 /* ---- 형식 표에 넘겨줄 조각들 (scripts/reader/original-formats.js) ---- */

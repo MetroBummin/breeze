@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=34f41373">
   <link rel="stylesheet" href="styles/reader.css?v=89bdb096">
-  <link rel="stylesheet" href="styles/dictionary.css?v=f88a0389">
+  <link rel="stylesheet" href="styles/dictionary.css?v=f578f5c9">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
@@ -66,12 +66,12 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=419bd152"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=dbec137a"></script>
   <script defer src="scripts/dictionary/sentence.js?v=68233d74"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=c6531b04"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=00dc55ba"></script>
   <script defer src="scripts/reader/epub-original.js?v=6c5f6574"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=b212c6d4"></script>
@@ -214,7 +214,7 @@
     <div class="inner">
       <div id="p-top">
         <div id="p-head">
-          <div id="p-word-wrap"><div id="p-word" contenteditable="true" spellcheck="false" role="textbox" aria-label="영어 단어 또는 표현"></div>
+          <div id="p-word-wrap"><div id="p-word" contenteditable="false" spellcheck="false" role="textbox" aria-label="영어 단어 또는 표현"></div>
             <div id="p-word-actions" class="p-inline-edit" hidden><button type="button" data-edit-cancel>취소</button><button type="button" class="save" data-edit-save>저장</button></div>
           </div>
           <button id="p-speak" title="발음 듣기" onclick="speakWord()">
@@ -243,7 +243,7 @@
           <span class="glow"></span>
         </div>
         <div class="m">
-          <span class="mk" id="p-ai-ko" contenteditable="true" spellcheck="false"
+          <span class="mk" id="p-ai-ko" contenteditable="false" spellcheck="false"
                 role="textbox" aria-label="뜻 — 눌러서 고칠 수 있어요"></span><span class="pos" id="p-ai-pos"></span>
         </div>
         <div id="p-meaning-actions" class="p-inline-edit" hidden><button type="button" data-edit-cancel>취소</button><button type="button" class="save" data-edit-save>저장</button></div>
