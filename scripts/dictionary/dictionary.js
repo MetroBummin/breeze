@@ -559,7 +559,17 @@ function refreshReaderWords(){
 }
 function beginPanelEdit(target){
   if(!selKey || !words[selKey]) return;
-  if(target==='word' && (currentContext(selKey) || currentPhrase(selKey) || words[selKey].root || words[selKey].phraseParts)) return;
+  if(target==='word'){
+    /* 문맥에서 갈라져 저장된 뜻 카드에도 `root`가 붙습니다. 그 카드의 표제어는
+       따로 고치면 안 되지만, 사용자가 제목을 누른 순간에는 대표 카드를 열어
+       고치게 해야 합니다. 예전에는 여기서 조용히 return 해서, `come`처럼 다른
+       뜻을 보고 있을 때는 제목을 눌러도 아무 일도 안 일어났습니다. */
+    if(currentContext(selKey) || currentPhrase(selKey)) return;
+    const root=words[selKey].root||selKey;
+    if(root!==selKey && words[root]){
+      selKey=root; contextView=null; phraseView=null; altChoice=null; wordRename=null;
+    }
+  }
   panelEditTarget=target; panelEditDirty=false;
   document.getElementById(target==='word'?'p-word-actions':'p-meaning-actions').hidden=false;
   renderPanel();
