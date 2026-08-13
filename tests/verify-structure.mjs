@@ -721,6 +721,9 @@ assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
 assert.match(pdfOriginalSource,
   /if\(!\(session\.wordBoxes\.get\(pageNumber\)\|\|\[\]\)\.length\)\{[\s\S]{0,140}await renderOriginalPdfPage\(session,pageNumber\)/,
   'The first PDF tap is discarded while its word map is still loading');
+const readerScrollSource=readFileSync(resolve(root,'scripts/reader/reader-scroll.js'),'utf8');
+assert.match(readerScrollSource,/const panelOpen=document\.getElementById\('panel'\)\?\.classList\.contains\('on'\)/,
+  'PDF zoom controls can overlap the open dictionary panel');
 const dictionarySource=readFileSync(resolve(root,'scripts/dictionary/dictionary.js'),'utf8');
 assert.match(dictionarySource,/const editingWord=panelEditTarget==='word';/,
   'The visible word cannot be edited from every open dictionary card');

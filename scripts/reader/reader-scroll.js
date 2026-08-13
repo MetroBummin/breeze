@@ -147,7 +147,10 @@ function updateOriginalZoomControls(){
   const out=document.getElementById('pdfzoom-out'), inButton=document.getElementById('pdfzoom-in');
   if(!controls || !out || !inButton) return;
   const active=originalZoomActive();
-  controls.hidden=!active;
+  /* 확대 단추는 종이를 위한 도구입니다. 단어창이 열려 있으면 그 자리에는 사전
+     조작이 우선이므로, 패널 위에 겹쳐 보이는 대신 잠시 접어 둡니다. */
+  const panelOpen=document.getElementById('panel')?.classList.contains('on');
+  controls.hidden=!active || panelOpen;
   out.disabled=!active || originalZoomLevel<=ORIGINAL_ZOOM_MIN;
   inButton.disabled=!active || originalZoomLevel>=ORIGINAL_ZOOM_MAX;
 }

@@ -210,6 +210,7 @@ function selectWord(k, span){
   const resetPanelScroll=()=>{ panel.scrollTop=0; };
   resetPanelScroll();
   panel.classList.add('on');
+  if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   document.getElementById('sheetbg').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
@@ -229,6 +230,7 @@ function closePanel(){
   if(typeof closeSentence === 'function') closeSentence();
   const panel=document.getElementById('panel');
   panel.classList.remove('on');
+  if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   panel.scrollTop=0;
   document.getElementById('sheetbg').classList.remove('on');
   pinReaderChrome(false);
