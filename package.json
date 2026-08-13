@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "scripts": {
     "stamp": "node tools/stamp-version.mjs",
-    "fonts": "node tools/fetch-fonts.mjs",
     "libs": "node tools/fetch-libs.mjs",
     "docs": "node tools/build-docs.mjs",
     "www": "node tools/stamp-version.mjs && node tools/build-www.mjs",

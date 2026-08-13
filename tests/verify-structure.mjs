@@ -963,4 +963,17 @@ assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
 assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
   'The inline sentence explanation has its own colour again');
 
+/* 긴 글은 문단 뼈대만 먼저 만들고, 눈앞의 문단에만 낱말 상자를 붙입니다.
+   이 세 고리가 함께 있어야 전체 책의 수십만 span 이 다시 생기지 않습니다. */
+assert.match(readerSource, /function beginLazyWordSpans/,
+  'Long text is no longer prepared for lazy word spans');
+assert.match(readerSource, /el\.textContent = bl\.v \|\| bl\.t/,
+  'The reader wraps every word while constructing the whole book again');
+assert.match(readerSource, /wordSpanObserver\.observe\(element\)/,
+  'Visible paragraphs are not observed for word-span hydration');
+assert.match(readerCss, /\.w\{[^}]*padding:0 1px; margin:0 -1px/,
+  'Word-span padding can change paragraph height during lazy hydration');
+assert.match(modesSource, /function stabilizePdfModeTarget/,
+  'PDF mode switches no longer re-anchor after placeholder sizes settle');
+
 console.log(`Breeze checks passed: ${jsFiles.length} active + ${parkedJs.length} parked JavaScript files`);

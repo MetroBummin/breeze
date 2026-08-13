@@ -19,8 +19,9 @@
   /* 브라우저 크롬에 배경색이 잠깐 남는 문제를 피합니다. 홈 화면 웹앱은 이 규칙의
      대상이 아니므로, 그곳에서는 원래의 첫 장면을 그대로 봅니다. */
   html.mobile-browser #splash{display:none;}
-  #splash .splash-scene,#splash .splash-scene picture{position:absolute; inset:0; z-index:-2; background:var(--brand-sky); overflow:hidden;}
-  #splash .splash-scene{opacity:0; animation:splash-scene-in .42s ease-out forwards;}
+  #splash .splash-scene,#splash .splash-scene picture{position:absolute; inset:0; z-index:-2; background:var(--splash-bg); overflow:hidden;}
+  /* 로고는 처음부터 네이티브 화면과 같은 자리에 고정하고, 풍경만 뒤에서 나타납니다. */
+  #splash .splash-scene{opacity:0; animation:splash-scene-in .5s .18s ease-out forwards;}
   #splash .splash-scene::after{content:''; position:absolute; inset:0; background:var(--splash-veil);}
   #splash .splash-scene img{width:100%; height:100%; object-fit:cover; object-position:center bottom;
     transform:scale(1.025); animation:scene-breathe 16s ease-in-out infinite alternate;}
@@ -30,13 +31,11 @@
      꼬리가 상표보다 넓어져 양옆으로 삐져나왔습니다. */
   #splash .splash-brand{display:flex; flex-direction:column; align-items:center; transform:translateY(-15vh);
     font-size:clamp(52px,8vw,68px); color:var(--brand-cream); text-align:center;
-    text-shadow:var(--brand-ink-shadow); opacity:0;
-    animation:splash-brand-in .52s .12s ease-out forwards;}
+    text-shadow:var(--brand-ink-shadow); opacity:1;}
   #splash .word{font-family:var(--display); font-size:1em; font-weight:600; letter-spacing:-.045em; color:var(--brand-cream);}
   #splash .tag{font-size:.17em; color:var(--brand-cream-soft); letter-spacing:.1em; margin-top:.7em;
     text-transform:uppercase; font-weight:600; white-space:nowrap;}
   @keyframes splash-scene-in{from{opacity:0}to{opacity:1}}
-  @keyframes splash-brand-in{from{opacity:0; filter:blur(2px)}to{opacity:1; filter:blur(0)}}
   @keyframes scene-breathe{from{transform:scale(1.025) translate3d(0,0,0)}to{transform:scale(1.05) translate3d(-.35%,-.45%,0)}}
   /* 넓은 화면에서는 들판의 아이를 비켜 왼쪽에 섭니다. 두 줄이 서로 가운데를
      맞추는 것은 그대로입니다 — 덩어리째 왼쪽으로 갈 뿐입니다. */

@@ -4,7 +4,7 @@
   "webDir": "www",
   "ios": {
     "contentInset": "never",
-    "backgroundColor": "#FAF8F2"
+    "backgroundColor": "#000000"
   },
   "server": {
     "iosScheme": "breeze",

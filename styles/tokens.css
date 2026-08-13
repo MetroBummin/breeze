@@ -116,7 +116,9 @@
 
   /* ---- 브랜드 ---- */
   --brand-sky:#65B6DC;      /* 첫 화면의 하늘 */
-  --splash-bg:#65B6DC;      /* 사진이 오기 전 한 순간의 바탕 */
+  /* 네이티브 Launch Screen과 WebView의 첫 프레임은 같은 검정입니다.
+     일러스트가 준비될 때까지 하늘색이 먼저 번쩍이지 않게 합니다. */
+  --splash-bg:#000;
   --brand-cream:#FFF9EA;    /* 그 위의 글자 */
   --brand-cream-soft:rgba(255,249,234,.88);   /* 상표 아래 한 줄 */
   --brand-fresh:#7DA95D;    /* 방금 도착한 글의 인쇄선 */

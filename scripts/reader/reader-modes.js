@@ -111,7 +111,8 @@ function textSentenceBridge(){
   const preferred=Math.max(0,entries.findIndex(entry=>bridgeTokens(entry.text).length>=5));
   const chosen=entries[preferred];
   const ordered=[...entries.slice(preferred),...entries.slice(0,preferred)].map(entry=>entry.text);
-  return {candidates:ordered,range:chosen.range,pi:chosen.pi};
+  return {candidates:ordered,range:chosen.range,pi:chosen.pi,
+    block:chosen.range.commonAncestorContainer.parentElement&&chosen.range.commonAncestorContainer.parentElement.closest('[data-pi]')};
 }
 
 function originalSentenceBridge(){
@@ -146,7 +147,7 @@ async function restoreTextSentence(candidates,targetPi){
   const found=findTextSentence(candidates,targetPi);
   if(!found) return false;
   const rect=found.range.getBoundingClientRect();
-  readerScrollTo(readerScrollTop()+rect.top-topInset()-12);
+  readerScrollTo(readerScrollTop()+rect.top-(topInset()+readerViewHeight()*.32));
   const end=found.match.start+found.match.length;
   found.stream.slice(found.match.start,end).forEach(item=>{
     const word=item.node.parentElement&&item.node.parentElement.closest('.w');
@@ -161,6 +162,7 @@ async function restoreTextSentence(candidates,targetPi){
 function clearReaderModeCue(){
   clearTimeout(readerModeCueTimer); readerModeCueTimer=0;
   document.querySelectorAll('.reader-mode-cue').forEach(node=>node.remove());
+  document.querySelectorAll('.reader-mode-cue-block').forEach(node=>node.classList.remove('reader-mode-cue-block'));
   document.querySelectorAll('.reader-mode-cue-word').forEach(node=>node.classList.remove('reader-mode-cue-word'));
   try{ if(CSS.highlights) CSS.highlights.delete('breeze-mode-cue'); }catch(error){}
   if(originalSession&&originalSession.kind==='epub'){
@@ -215,10 +217,24 @@ function showRangeModeCue(range,duration){
 function showBridgeSourceCue(bridge){
   clearReaderModeCue();
   if(!bridge) return;
+  if(bridge.block) bridge.block.classList.add('reader-mode-cue-block');
   if(bridge.range) showRangeModeCue(bridge.range,0);
   else if(bridge.source&&bridge.source.kind==='pdf'&&originalSession&&originalSession.pages){
     showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0);
   }
+}
+
+/* PDF는 placeholder가 실제 쪽 비율을 배울 때 높이가 한 번 더 바뀔 수 있습니다.
+   한 줄의 px 보정보다, 독자가 보던 문장(없으면 원본 앵커)을 두 번 다시 가운데에
+   놓는 편이 쪽 크기가 섞인 스캔본에도 견고합니다. */
+function stabilizePdfModeTarget(record,target,bridge,changeToken,bookAtStart){
+  if(!record || record.kind!=='pdf' || !target) return;
+  [360,900].forEach(delay=>setTimeout(async()=>{
+    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
+    suspendReaderScrollSave(500);
+    const found=bridge ? await ORIGINAL_FORMATS.pdf.restoreSentence(bridge.candidates,target,changeToken) : false;
+    if(!found) await restoreOriginalAnchor(target,changeToken);
+  },delay));
 }
 
 /* ================= the switch itself ================= */
@@ -325,6 +341,7 @@ async function switchReaderMode(mode,options){
          still a stable and useful fallback. */
       await ORIGINAL_FORMATS[record.kind].restoreSentence(sentenceBridge.candidates,target,changeToken);
     }
+    stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
     /* EPUB images and webfonts can change a chapter's height just after load.
        Re-apply the same source anchor once, so browser scroll anchoring does
        not leave a first-open book halfway down the next chapter. */

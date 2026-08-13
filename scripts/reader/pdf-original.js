@@ -165,7 +165,8 @@ async function renderOriginalPdfPage(session,pageNumber,options){
       await page.render({canvasContext:context,viewport,transform}).promise;
       if(!alive()) return;
       const old=pageElement.querySelector('canvas');
-      if(old) old.replaceWith(canvas); else pageElement.insertBefore(canvas,pageElement.firstChild);
+      if(old){ old.replaceWith(canvas); old.width=0; old.height=0; }
+      else pageElement.insertBefore(canvas,pageElement.firstChild);
       return;
     }
     /* Placeholders all use the first page's proportions. When a page that has
@@ -394,7 +395,7 @@ async function restorePdfSentence(candidates,source,changeToken){
       const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];
       const page=originalSession.pages[pageNumber-1];
       const rect=page.getBoundingClientRect();
-      readerScrollTo(readerScrollTop()+rect.top-topInset()-10+first.y*rect.height);
+      readerScrollTo(readerScrollTop()+rect.top-(topInset()+readerViewHeight()*.32)+first.y*rect.height);
       showPdfModeCue(page,matched,10000);
       return true;
     }

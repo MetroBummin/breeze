@@ -23,11 +23,11 @@ function savedPhraseStarts(){
   return starts;
 }
 /* 글자를 단어 단위로 감쌉니다. 글자 화면과 쇼츠가 같은 함수를 씁니다. */
-function wordSpans(text){
+function wordSpans(text,starts){
   const matches=[]; let match, last = 0, html = '';
   WORD_RE.lastIndex = 0;
   while((match = WORD_RE.exec(text))) matches.push(match);
-  const starts=savedPhraseStarts();
+  starts=starts||savedPhraseStarts();
   for(let i=0;i<matches.length;){
     match=matches[i];
     const choices=[];
@@ -51,6 +51,32 @@ function wordSpans(text){
   }
   return html + esc(text.slice(last));
 }
+/* 긴 책도 문단 뼈대는 한 번에 만들되, 단어 상자는 눈앞의 문단에만 붙입니다.
+   원문 텍스트는 그대로 남으므로 검색·문단 앵커는 전 범위에서 즉시 작동합니다. */
+let wordSpanObserver=null;
+function hydrateWordSpanBatch(elements){
+  const starts=savedPhraseStarts();
+  elements.forEach(el=>{
+    if(!el || el.dataset.wordSpans==='1') return;
+    el.innerHTML=wordSpans(el.textContent,starts);
+    el.dataset.wordSpans='1';
+  });
+}
+function dehydrateWordSpan(el){
+  if(!el || el.dataset.wordSpans!=='1' || el.querySelector('.sel')) return;
+  el.textContent=el.textContent;
+  delete el.dataset.wordSpans;
+}
+function beginLazyWordSpans(elements){
+  if(wordSpanObserver) wordSpanObserver.disconnect();
+  if(!window.IntersectionObserver){ hydrateWordSpanBatch(elements); return; }
+  wordSpanObserver=new IntersectionObserver(entries=>{
+    const entering=entries.filter(entry=>entry.isIntersecting).map(entry=>entry.target);
+    if(entering.length) hydrateWordSpanBatch(entering);
+    entries.filter(entry=>!entry.isIntersecting).forEach(entry=>dehydrateWordSpan(entry.target));
+  },{root:readerScroller(),rootMargin:'900px 0px'});
+  elements.forEach(element=>wordSpanObserver.observe(element));
+}
 /* Render source text using formatting metadata without changing the source. */
 function renderBookBody(b){
   const formatting = b.formatting || null;
@@ -58,6 +84,7 @@ function renderBookBody(b){
   rt.innerHTML='';
   const frag = document.createDocumentFragment();
   const PAGE_CHARS = 1700;
+  const wordSpanTargets=[];
   let page=null, pageChars=0, pageNo=0, box=null, boxKind='';
   const newPage = ()=>{
     box = null; boxKind = '';
@@ -144,14 +171,16 @@ function renderBookBody(b){
     if(bl.r === 'toc') el.classList.add('toc-entry');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
-    el.innerHTML = wordSpans(bl.v || bl.t);
+    el.textContent = bl.v || bl.t;
     host.appendChild(el);
+    wordSpanTargets.push(el);
     pageChars += bl.t.length;
   });
   const no = document.createElement('div');
   no.className='pageno'; no.textContent = '— '+pageNo+' —';
   frag.appendChild(no);
   rt.appendChild(frag);
+  beginLazyWordSpans(wordSpanTargets);
 }
 async function openBook(b){
   readerModeChangeToken++;
