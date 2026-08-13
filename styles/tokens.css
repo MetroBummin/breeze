@@ -72,6 +72,9 @@
      그리고 문장 통째로 물어봤을 때. 색이 자리마다 다르면 같은 목소리로
      들리지 않습니다. 이제 셋 다 이 값들만 씁니다 — 흰색과 파랑, 이 앱의 색입니다. */
   --ai-bg1:#EAF4FB; --ai-bg2:#F8FCFE; --ai-line:#CFE4EC;
+  /* 단어창의 뜻 카드는 AI라는 표시는 남기되 종이 위에 따로 떠 보이지 않게,
+     배경보다 한 숨만 차가운 흰색을 씁니다. */
+  --ai-panel:#F7FBFC;
   --ai-key:#4E88A4; --ai-ink:#18364A; --ai-note:#5B707A; --ai-quiet:#8AA0A9;
   --ai-mk-hover:rgba(255,255,255,.6);
   --ai-mk-focus:#fff;
@@ -315,6 +318,7 @@ body.dark{
   --blue-ring:rgba(77,174,214,.6);
 
   --ai-bg1:#1C2E39; --ai-bg2:#182731; --ai-line:#2F4650;
+  --ai-panel:#202C33;
   --ai-key:#6FC3E6; --ai-ink:#EAF4F8; --ai-note:#AFC3CB; --ai-quiet:#8798A0;
   --ai-mk-hover:rgba(255,255,255,.07);
   --ai-mk-focus:#141A1E;

@@ -41,6 +41,9 @@
   .p-inline-edit button.save{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
   #p-word-actions,#p-meaning-actions{justify-content:flex-end;}
   #p-word-wrap.editing #p-word{width:100%; box-sizing:border-box;}
+  /* 표제어를 고칠 때는 뜻 편집과 같은 한 칸만 남깁니다. 발음은 저장 뒤 바로
+     들을 수 있으므로, 입력 중에는 자리를 차지하지 않게 해 긴 표현도 편하게 봅니다. */
+  #p-word-wrap.editing + #p-speak{display:none;}
   #p-rename-confirm{margin:0 0 13px; padding:11px 12px; border:1px solid var(--ai-line); border-radius:12px; background:var(--ai-bg1); color:var(--ai-ink);}
   #p-rename-confirm b{display:block; font-size:12.5px;}
   #p-rename-confirm span{display:block; margin-top:3px; font-size:11.5px; line-height:1.45; color:var(--ai-note);}
@@ -64,7 +67,7 @@
   #p-divider{border:none; border-top:1px solid var(--divider); margin:0 0 12px;}
   /* AI 가 말하는 자리는 모두 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
      그리고 문장 해석 카드. 값은 base.css 의 `--ai-*` 하나뿐입니다. */
-  #p-ai{display:none; background:var(--ai-bg1); border:1px solid var(--ai-line);
+  #p-ai{display:none; background:var(--ai-panel); border:1px solid var(--ai-line);
     border-radius:12px; padding:12px 13px; margin-bottom:10px;}
   #p-ai.on{display:block;}
   #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700;
