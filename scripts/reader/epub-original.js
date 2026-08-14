@@ -116,13 +116,15 @@ async function sanitiseEpubChapter(archive,chapter,resources){
   /* 마우스가 있는 화면에서는 커서가 곧 안내문입니다. 출판사 조판을 그대로
      보여 주느라 본문은 평범한 글자라, 그냥 두면 커서가 글자 고르는 I 자로 떠서
      "여기서 할 일은 드래그"라고 말합니다 — 실제로 할 일은 한 번 누르는 것인데도.
-     글자를 담은 칸만 손가락 커서로 바꿉니다(여백은 그대로 화살표). 고르기는
-     그대로 됩니다 — 커서 모양은 막지 않습니다. */
+     글자를 담은 칸만 손가락 커서로 바꿉니다(여백은 그대로 화살표).
+     iOS의 native callout은 문장 꾹 누르기를 가로채므로 EPUB 본문 안에서만
+     선택과 callout을 끕니다. */
   const safety=`html,body{max-width:100%;min-height:1px}img,svg,video{max-width:100%;height:auto}
+    body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
     p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th{cursor:pointer}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
-    .breeze-original-word.s3{background:rgba(255,140,140,.42)}::selection{background:rgba(37,137,190,.3)}`;
+    .breeze-original-word.s3{background:rgba(255,140,140,.42)}`;
   const style=doc.createElement('style'); style.textContent=cssParts.join('\n')+'\n'+safety; doc.head.appendChild(style);
   return '<!doctype html>'+doc.documentElement.outerHTML;
 }
@@ -289,6 +291,9 @@ function epubWordRangeAtPoint(doc,clientX,clientY){
 
 function installEpubWordTap(doc){
   let pointer=null;
+  /* The iframe is its own document, so the reader stylesheet cannot suppress
+     the iOS callout here. Keep this scoped to the sanitized EPUB body. */
+  doc.addEventListener('contextmenu',event=>event.preventDefault());
   doc.addEventListener('pointerdown',event=>{
     if(event.pointerType==='mouse' && event.button!==0) return;
     if(!event.isPrimary){ pointer=null; return; }

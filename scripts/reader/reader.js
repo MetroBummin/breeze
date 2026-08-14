@@ -407,6 +407,11 @@ document.getElementById('rtext').addEventListener('click', e=>{
 });
 (function(){
   const text=document.getElementById('rtext');
+  /* iOS Safari/WebView sometimes reaches its Look Up callout before the
+     selection-blocking CSS has won the long press. This is deliberately
+     confined to reading text: inputs, dictionary fields and the rest of the
+     app retain their normal context menus. */
+  text.addEventListener('contextmenu', event=>event.preventDefault());
   text.addEventListener('pointerdown', event=>{
     if(typeof beginSentencePress !== 'function') return;
     const target=/** @type {HTMLElement} */(event.target);

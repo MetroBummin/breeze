@@ -1132,8 +1132,18 @@ assert.doesNotMatch(sentenceSource, /showPdfModeCue\(found\./,
    짧은 문단은 통째로, 같은 낱말이 두 번 나오면 늘 앞의 것이 잡힙니다. */
 assert.match(sentenceSource, /function sentencePressInEpub[\s\S]{0,700}parts\.find\(item=>at>=item\.start && at<item\.end\)/,
   'A pressed sentence in EPUB original is found by text instead of by where the finger was');
-assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'), /[{;]\s*-webkit-touch-callout:none/,
-  'Text selection in the reader is suppressed again to protect the long press');
+assert.match(readerCss, /#rtext\{[^}]*-webkit-user-select:none;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
+  'Reader text can still invoke iOS selection or the Look Up callout before a sentence press');
+assert.match(readerCss, /\.w\{[^}]*-webkit-touch-callout:none/,
+  'A word span can still invoke the native callout while awaiting its sentence press');
+const textReaderSource=readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
+assert.match(textReaderSource, /text\.addEventListener\('contextmenu', event=>event\.preventDefault\(\)\)/,
+  'Reader text does not dismiss a native context menu that escapes the iOS CSS guard');
+const epubOriginalSource=readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
+assert.match(epubOriginalSource, /body\{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/,
+  'Original EPUB text does not suppress the iOS selection callout inside its iframe');
+assert.match(epubOriginalSource, /doc\.addEventListener\('contextmenu',event=>event\.preventDefault\(\)\)/,
+  'Original EPUB text does not dismiss a native context menu that escapes the iOS CSS guard');
 assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the server');
 /* 같은 문장을 다시 물으면 한도를 쓰지 않아야 합니다. */
 assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text\)/,
