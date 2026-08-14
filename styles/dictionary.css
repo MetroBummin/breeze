@@ -82,6 +82,14 @@
   #p-meaning-del:hover{background:var(--danger-bg); color:var(--danger);}
   #p-meaning-del[hidden]{display:none;}
   #p-ai .cap{padding-right:26px;}
+  /* 되묻는 길은 한 줄짜리 작은 글씨입니다. 뜻보다 커지면 "이 답은 틀렸다"가
+     먼저 읽힙니다 — 대개는 맞고, 가끔만 필요한 문입니다. */
+  #p-airetry{display:block; margin:8px 0 0 auto; border:none; background:none; padding:0;
+    color:var(--ai-quiet); font:500 10.5px var(--ui); cursor:pointer;
+    text-decoration:underline; text-underline-offset:3px;}
+  #p-airetry:hover{color:var(--ai-key);}
+  #p-airetry[hidden]{display:none;}
+  #p-ai.load #p-airetry{display:none;}
   /* ══ 오로라 ══════════════════════════════════════════════
      AI 를 기다리는 동안 뜨는 장치. 낱말 하나든 문장 하나든 같은 것을 씁니다 —
      기다림의 모양이 자리마다 다르면 "무엇을 기다리는지"가 아니라 "여기가 어디인지"를
@@ -134,6 +142,30 @@
   #p-context:disabled{opacity:.55; cursor:default;}
   #p-context .sp{font-size:11px;}
   #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
+  /* ── 문장 해석 ──
+     낱말 창은 본문 옆의 보조 칸이지만, 문장 해석은 지금 읽던 한 문장에 대한
+     답이라 화면 한가운데에 뜹니다. 파랗게 차오른 문장이 그 뒤에 보입니다. */
+  #sentence-modal{position:fixed; inset:0; z-index:120; display:flex; align-items:center; justify-content:center;
+    padding:20px;}
+  #sentence-modal[hidden]{display:none;}
+  #sentence-scrim{position:absolute; inset:0; background:var(--scrim-sheet);}
+  #p-sentence{position:relative; width:min(520px,100%); max-height:76vh; overflow-y:auto;
+    padding:18px 20px 20px; border:1px solid var(--ai-line); border-radius:18px;
+    background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2)); box-shadow:var(--shadow-sheet);}
+  #ps-close{position:absolute; top:11px; right:11px; width:28px; height:28px; border:none; border-radius:50%;
+    background:var(--quiet); color:var(--quiet-ink); font-size:13px; cursor:pointer;}
+  #p-sentence .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+    letter-spacing:.08em; color:var(--ai-key); margin-bottom:7px;}
+  #p-sentence .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
+  #ps-en{font-family:var(--serif); font-size:14.5px; line-height:1.62; color:var(--ai-ink);
+    padding:0 24px 10px 0; border-bottom:1px solid var(--ai-line); margin-bottom:10px; overflow-wrap:anywhere;}
+  #ps-wait{margin-top:2px;}
+  #ps-ko{font-size:15.5px; font-weight:600; line-height:1.62; color:var(--ai-ink);}
+  #ps-points{list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:7px;}
+  #ps-points li{position:relative; padding-left:13px; font-size:12.5px; line-height:1.6; color:var(--ai-note);}
+  #ps-points li::before{content:''; position:absolute; left:0; top:8px; width:5px; height:5px;
+    border-radius:50%; background:var(--ai-key); opacity:.45;}
+  #ps-foot{margin-top:10px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
   .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}
   /* 머리글 오른쪽 끝에 그 칸의 유일한 단추가 붙습니다 — 저장된 뜻의 ＋, 모르는 정도의 색칠. */
   .p-sec-row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px;}

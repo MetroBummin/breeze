@@ -497,18 +497,26 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
     if(event.pointerType==='mouse' && event.button!==0) return;
     if(!event.isPrimary){ originalPdfPointer=null; return; }
     originalPdfPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
+    /* 스캔본에서도 손짓은 같습니다: 탭은 낱말, 꾹 누르기는 이 문장.
+       scripts/dictionary/sentence.js */
+    if(typeof beginSentencePress==='function')
+      beginSentencePress(event,()=>sentencePressInPdf(event.clientX,event.clientY));
   },true);
-  document.addEventListener('pointercancel',()=>{ originalPdfPointer=null; },true);
+  document.addEventListener('pointermove',event=>{ if(typeof moveSentencePress==='function') moveSentencePress(event); },true);
+  document.addEventListener('pointercancel',()=>{ originalPdfPointer=null; if(typeof cancelSentencePress==='function') cancelSentencePress(); },true);
   document.addEventListener('pointerup',event=>{
+    if(typeof cancelSentencePress==='function') cancelSentencePress();
     if(!originalSession || originalSession.kind!=='pdf') return;
     const start=originalPdfPointer;
     originalPdfPointer=null;
+    if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
     void openPdfWordAt(event.clientX,event.clientY);
   },true);
   /* 일부 모바일 PDF canvas는 pointerup을 웹뷰에 넘기지 않고 click만 남깁니다.
      위 pointerup이 이미 처리한 탭은 시간으로 걸러, 별이 두 칸 오르지 않게 합니다. */
   document.addEventListener('click',event=>{
+    if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
     if(!originalSession || originalSession.kind!=='pdf'
         || Date.now()-Math.max(lastPdfTap,lastPdfAttempt)<450) return;
     void openPdfWordAt(event.clientX,event.clientY);

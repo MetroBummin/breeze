@@ -1043,37 +1043,47 @@ assert.ok(
   'The classic cover is applied before the book it belongs to exists',
 );
 
-/* ── 문장 통째로 — 떼어 둔 모듈 ──
-   단어 팝업은 뜻 하나만 다룹니다. 문장 해석은 팝업 안의 단추가 아니라 자기 손짓
-   (낱말 꾹 누르기)으로 열리는 별개의 기능이 됩니다. 되살리는 순서는
-   modules/sentence-explain/README.md 에 있습니다. */
-const sentenceSource = readFileSync(resolve(root, 'modules/sentence-explain/sentence.js'), 'utf8');
-assert.ok(!existsSync(resolve(root, 'scripts/dictionary/sentence.js')),
-  'The sentence window is back in the loaded scripts while the module is parked');
-assert.doesNotMatch(index, /modules\/sentence-explain/,
-  'The parked sentence module is loaded by index.html again');
-assert.doesNotMatch(index, /id="p-explain"|id="p-explain-note"|id="p-sentence"/,
-  'The word popup still carries the sentence button, its note, or its answer card');
-for(const file of jsFiles){
-  assert.doesNotMatch(readFileSync(file, 'utf8'), /\b(?:openSentence|paintSentence|explainSelectedSentence)\s*\(/,
-    `Active code still calls into the parked sentence module: ${file}`);
+/* ── 문장 통째로 ──
+   낱말 Tap 은 단어 팝업, 낱말 Long Press 는 이 문장. 팝업 안에는 문장 해석의
+   단추도 남은 횟수도 없고, 해석은 자기 창(화면 한가운데)에 뜹니다. */
+const sentenceSource = readFileSync(resolve(root, 'scripts/dictionary/sentence.js'), 'utf8');
+assert.doesNotMatch(index, /id="p-explain"|id="p-explain-note"/,
+  'The word popup carries the sentence button or its usage note again');
+assert.match(index, /id="sentence-modal"[\s\S]{0,400}id="p-sentence"/,
+  'The sentence explanation is not a window of its own any more');
+/* 꾹 누르기는 넉넉히 깁니다. 짧게 잡으면 스크롤하려고 얹은 손가락이 질문이 됩니다. */
+assert.match(sentenceSource, /const SENT_PRESS_MS = (\d+)/,
+  'The long press lost its own threshold');
+assert.ok(Number(sentenceSource.match(/const SENT_PRESS_MS = (\d+)/)[1]) >= 500,
+  'The sentence long press is short enough to fire on an ordinary tap again');
+assert.match(sentenceSource, /Math\.hypot\(event\.clientX - sentPressFrom\.x, event\.clientY - sentPressFrom\.y\) > SENT_PRESS_SLOP/,
+  'A moving finger no longer cancels the sentence press, so scrolling can spend the daily allowance');
+/* 확정된 뒤에만 문장을 짚고 칠합니다. 미리 준비하면 짧은 탭이 문장 선택으로 오인됩니다. */
+assert.match(sentenceSource,
+  /sentPressTimer = setTimeout\(\(\)=>\{[\s\S]{0,240}found = resolve\(\);[\s\S]{0,240}paintPressedSentence\(found\);\s*openSentence\(found\.sentence\);/,
+  'The pressed sentence is resolved or painted before the press is confirmed');
+/* 문은 세 화면 모두에 같은 모양으로 있어야 합니다 — 폰에만 있던 문이 예전에 걷힌 이유입니다. */
+for(const [file, resolver] of [['scripts/reader/reader.js','sentencePressInText'],
+                               ['scripts/reader/epub-original.js','sentencePressInEpub'],
+                               ['scripts/reader/pdf-original.js','sentencePressInPdf']]){
+  const source=readFileSync(resolve(root, file), 'utf8');
+  assert.match(source, new RegExp(`beginSentencePress\\(event,\\s*\\(\\)=>${resolver}\\(`),
+    `${file} has no long press into the sentence window, so the modes behave differently`);
+  assert.match(source, /sentencePressBusy\(\)\) return/,
+    `${file} opens a word popup on the tap that follows a long press`);
 }
-/* 꾹 누르기는 확정된 뒤에만 문장 UI 를 엽니다. 손가락이 닿는 순간부터 문장 전체를
-   칠할 준비를 하면 짧은 탭까지 문장 선택으로 오인되어 낱말 탭과 부딪힙니다. */
-assert.doesNotMatch(sentenceSource, /lineRects|SENT_MOVE_SLOP|beginSentPress|sent-fill/,
-  'The long-press sentence fill is back, so the phone and the laptop have different doors');
-assert.match(readFileSync(resolve(root, 'modules/sentence-explain/README.md'), 'utf8'),
-  /확정된\s*뒤에만/,
-  'The parked module lost the rule that kept a short tap from becoming a sentence press');
+/* 문장이 차오르는 그림은 모드 전환 표시와 같은 것을 씁니다. */
+assert.match(sentenceSource, /showRangeModeCue\(found\.range, 0\)[\s\S]{0,200}showPdfModeCue\(found\.page, found\.boxes, 0/,
+  'The pressed sentence paints something other than the shared reader cue');
 assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'), /[{;]\s*-webkit-touch-callout:none/,
-  'Text selection in the reader is suppressed again, but nothing needs the long press now');
+  'Text selection in the reader is suppressed again to protect the long press');
 assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the server');
 /* 같은 문장을 다시 물으면 한도를 쓰지 않아야 합니다. */
 assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text\)/,
   'Sentence explanations are not cached, so re-reading the same line costs a lookup again');
-/* 남은 횟수를 세는 날짜는 낱말 쪽에 삽니다 — 모듈을 떼어 내도 한도 표시가 살아 있게. */
+/* 남은 횟수를 세는 날짜는 낱말 쪽에 삽니다 — 두 기능이 같은 하루를 봅니다. */
 assert.match(dictionarySource, /function aiDay\(\)/,
-  'The Korean-day helper left with the parked module, so the AI allowance loses its calendar');
+  'The Korean-day helper is gone, so the AI allowance loses its calendar');
 /* 서버 쪽: 테스트 기간에는 하루 100회 풀을 쓰고 문장 해석만 2회를 씁니다. */
 const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
 assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
@@ -1090,12 +1100,8 @@ assert.ok(
 const dictCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8');
 assert.match(dictCss, /\.aurora \.glow/, 'The shared AI waiting state is gone');
 const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
-assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 1,
-  'The word panel waits with something other than the shared aurora');
-/* 떼어 둔 문장 해석도 같은 빛을 씁니다. 되살릴 때 자기만의 기다림을 새로 그리면
-   "무엇을 기다리는지"보다 "여기가 어디인지"를 먼저 읽게 됩니다. */
-assert.match(sentenceSource, /class="aurora"/,
-  'The parked sentence module no longer waits with the shared aurora');
+assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 2,
+  'The word panel and the sentence window no longer wait in the same way');
 /* 색도 하나입니다. AI 가 나오는 세 자리가 같은 변수만 씁니다 — 뜻 상자에 초록빛이,
    문장 창에 흰 종이가 깔려 있으면 같은 목소리로 들리지 않습니다. */
 assert.match(readFileSync(resolve(root, 'styles/tokens.css'), 'utf8'), /--ai-bg1:/,
@@ -1110,9 +1116,8 @@ for(const sheet of ['base.css','home.css','components.css','dictionary.css','rea
 }
 assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-panel\)/,
   'The word meaning box has its own colour again');
-assert.match(readFileSync(resolve(root, 'modules/sentence-explain/sentence.css'), 'utf8'),
-  /#p-sentence\{[^}]*var\(--ai-bg1\)/,
-  'The parked sentence card has its own colour again');
+assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
+  'The sentence window has its own colour again');
 
 assert.match(readerSource, /function beginLazyWordSpans/,
   'Long text is no longer prepared for lazy word spans');

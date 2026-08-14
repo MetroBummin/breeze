@@ -71,6 +71,21 @@ function sentenceOf(span){
   const re = new RegExp('\\b'+span.textContent.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
   return (sents.find(s=>re.test(s)) || sents[0]).trim();
 }
+/* 한 문장만으로는 뜻이 안 잡히는 자리가 있습니다. 앞뒤 문장을 한 번 더 붙여
+   물어보면 대명사·생략·비유가 풀립니다. */
+function expandedContextFor(w, sentence){
+  const target=String(sentence||'').replace(/\s+/g,' ').trim();
+  if(!target || !curBook || !Array.isArray(curBook.paras)) return target;
+  const normalized=value=>String(value||'').replace(/\s+/g,' ').trim();
+  const index=curBook.paras.findIndex(para=>normalized(para).includes(target));
+  if(index<0) return target;
+  const here=normalized(curBook.paras[index]);
+  const parts=here.match(/[^.!?…]+[.!?…]*/g)||[here];
+  const at=Math.max(0,parts.findIndex(part=>normalized(part)===target || normalized(part).includes(target)));
+  const before=at>0 ? parts[at-1] : curBook.paras[index-1];
+  const after=at<parts.length-1 ? parts[at+1] : curBook.paras[index+1];
+  return [before,target,after].filter(Boolean).map(normalized).join(' ').slice(0, 600);
+}
 function readerWordNodes(selector){
   const nodes=[...document.querySelectorAll(selector)];
   if(originalSession && originalSession.frames){
@@ -147,8 +162,11 @@ function findSenseByMeaning(root, meaning){
    그래야 칩을 눌러 뜻을 바꿨을 때 방금 고른 것이 첫 자리로 올라옵니다. */
 function meaningPickedAt(item){ return (item&&(item.pickedAt||item.up||item.addedAt))||0; }
 function meaningCards(root, activeId){
+  /* `areca nut` 같은 표현도 자기 뜻을 여러 개 가질 수 있는 표제어입니다. 표현이라는
+     이유로 대표 카드를 목록에서 빼면, 첫 번째로 적은 뜻이 화면에서 사라진 채
+     저장소에만 남습니다. 걸러 낼 것은 "다른 표현 카드"뿐입니다. */
   const cards=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
-    && item.ko && !item.phraseParts);
+    && item.ko && (id===root || !item.phraseParts));
   cards.sort(([a,aw],[b,bw])=>(a===activeId?-1:0)-(b===activeId?-1:0)
     || meaningPickedAt(bw)-meaningPickedAt(aw));
   const unique=new Set();
@@ -283,6 +301,8 @@ function panelIsSheet(){
   return window.matchMedia('(max-width:760px)').matches && !window.matchMedia('(pointer:fine)').matches;
 }
 function selectWord(k, span){
+  /* 다른 낱말을 열면 앞 문장의 해석 창은 남겨 둘 이유가 없습니다. */
+  if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
   if(!phraseView || phraseView.key !== k) phraseView = null;
   /* 다른 낱말을 열 때 앞 카드의 편집 상태와 저장/취소를 가져오지 않습니다. */
@@ -394,7 +414,7 @@ function renderPanel(){
   const aiKo = document.getElementById('p-ai-ko'), aiPos = document.getElementById('p-ai-pos');
   const aiN = document.getElementById('p-ai-note');
   const aiG = document.getElementById('p-ai-gloss');
-  const aiCap = document.getElementById('p-ai-cap-t');
+  const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
   const ai = w.ai || {};
   const asking = !!w.aiLoading && !w.aiSlow;
   const shown = w.ko || ai.ko || '';
@@ -417,11 +437,13 @@ function renderPanel(){
     aiN.style.display = top ? 'block' : 'none';
     aiG.textContent = '';
     aiG.style.display = 'none';
+    /* 이 문장만으로 안 풀릴 때 앞뒤 문장까지 붙여 한 번 더 묻는 길입니다.
+       새 답은 지금 뜻을 덮지 않고 뜻 하나로 더해집니다 — 마음에 안 들면 × 입니다. */
+    aiRetry.hidden = !(sb && sbUser && w.example);
   }else{
     aiBox.className = '';
+    aiRetry.hidden = true;
   }
-  /* 표현 카드에는 뜻이 하나뿐이라 지울 것이 없습니다(빼려면 아래 "단어장에서 빼기"). */
-  document.getElementById('p-meaning-del').hidden = !(shown && !asking && !phrase);
 
   /* 이미 저장해 둔 뜻을 다른 문장에서 보고 있을 때만 여는 문입니다. 방금 이 문장으로
      받아 온 뜻이면 다시 물어볼 것이 없으므로 아예 뜨지 않습니다. */
@@ -490,6 +512,10 @@ function renderPanel(){
       };
     });
   }else{ savedBox.className=''; savedBox.innerHTML=''; }
+  /* 뜻이 하나뿐이면 지우는 문을 닫아 둡니다. 뜻 없는 낱말을 만들 수 있는 유일한
+     길이었고, 그렇게 만들어 두면 다음에 열었을 때 빈 칸부터 마주칩니다.
+     낱말째로 빼는 것은 아래 "단어장에서 빼기"가 맡습니다. */
+  document.getElementById('p-meaning-del').hidden = !(shown && !asking && !phrase && meanings.length>1);
   const addBox=document.getElementById('p-sense-add');
   const addInput=/** @type {HTMLInputElement} */(document.getElementById('p-sense-input'));
   addBox.hidden=!(canAdd && addingMeaning);
@@ -927,6 +953,8 @@ async function fetchLook(k, opt){
   const w = words[k]; if(!w) return false;
   opt = opt || {};
   const querySentence=opt.sentence || w.example || '';
+  /* `hold` 는 답을 카드에 바르지 않고 그대로 돌려 달라는 뜻입니다. 넓은 문맥으로
+     다시 물어본 답은 지금 뜻을 덮는 것이 아니라 새 뜻이 되기 때문입니다. */
   if(navigator.onLine === false){ w.aiOff = 'offline'; if(selKey===k) renderPanel(); return false; }
   /* 서버 주소조차 없으면(config 미설정) 할 수 있는 일이 없습니다. 로그인 여부는
      더 이상 여기서 막지 않습니다 — 맛보기 횟수는 서버가 셉니다. */
@@ -952,6 +980,7 @@ async function fetchLook(k, opt){
       op:'look',
       word: w.word || k, clicked: w.clicked || '', cands: entryKeys(w),
       sentence: querySentence, book: w.book || '',
+      retry: !!opt.wider, avoid: opt.wider ? (opt.avoid || []) : [],
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
     }, ctrl ? ctrl.signal : null);
@@ -971,6 +1000,7 @@ async function fetchLook(k, opt){
        기기에 이미 있던 답은 그냥 띄웁니다 — 기다린 척할 이유가 없습니다. */
     const left = AI_MIN_WAIT - (Date.now() - began);
     if(left > 0) await new Promise(res=>setTimeout(res, left));
+    if(opt.hold) return j;
     applyLook(w, j, k, opt);
     return true;
   }finally{
@@ -1001,6 +1031,23 @@ function applyLook(w, j, k, opt){
   if(selKey===k) renderPanel();
 }
 
+/* "이 뜻이 아닌 것 같다" — 이미 보여 준 뜻을 빼고, 앞뒤 문장까지 붙여 다시 묻습니다.
+   AI 가 틀렸다는 가장 강한 신호라서 서버에도 retry 로 기록됩니다. 돌아온 답은
+   지금 뜻을 덮지 않고 새 Meaning 이 됩니다. */
+async function askWiderContext(k){
+  const w=words[k]; if(!w || w.aiLoading) return;
+  const root=w.root||k;
+  const sentence=expandedContextFor(w, w.example||'');
+  /* 이미 저장해 둔 뜻은 빼고 물어봅니다. 같은 답을 한 번 더 받고 한도만 쓰는 일이
+     없도록, 그리고 "다른 뜻"을 달라는 뜻이 서버에도 그대로 전해지도록. */
+  const avoid=meaningCards(root,null).map(([,item])=>item.ko).filter(Boolean).slice(0,4);
+  const answer=await fetchLook(k, {sentence, wider:true, hold:true, avoid});
+  if(!answer || !answer.ko) return;
+  const id=createMeaning(root, answer.ko, {clicked:w.clicked, example:w.example, book:w.book,
+    ai:answerFromLook(answer,false).ai, alts:answer.alts, phrase:answer.phrase});
+  if(!id) return;
+  paintWord(root); selectWord(id,null);
+}
 function askAI(){
   const k = selKey; if(!k || !words[k]) return;
   const off = words[k].aiOff;
@@ -1010,6 +1057,7 @@ function askAI(){
   fetchLook(k, {});
 }
 document.getElementById('p-aibtn').onclick   = ()=>askAI();
+document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey]) askWiderContext(selKey); };
 
 /* 무료 사전. 발음과 영어 뜻은 여기서만 오고, AI 가 답하지 못했을 때는 뜻자리도 지킵니다.
    fetchKo 는 w.ko 가 비어 있을 때만 채우므로 AI 답을 밀어내지 않습니다. */

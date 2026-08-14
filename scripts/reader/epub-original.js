@@ -275,10 +275,18 @@ function installEpubWordTap(doc){
     if(event.pointerType==='mouse' && event.button!==0) return;
     if(!event.isPrimary){ pointer=null; return; }
     pointer={id:event.pointerId,x:event.clientX,y:event.clientY};
+    /* 원본에서도 손짓은 같습니다: 탭은 낱말, 꾹 누르기는 이 문장.
+       scripts/dictionary/sentence.js */
+    if(typeof beginSentencePress==='function')
+      beginSentencePress(event,()=>sentencePressInEpub(doc,event.clientX,event.clientY));
   },true);
-  doc.addEventListener('pointercancel',()=>{ pointer=null; },true);
+  doc.addEventListener('pointermove',event=>{ if(typeof moveSentencePress==='function') moveSentencePress(event); },true);
+  doc.addEventListener('pointercancel',()=>{ pointer=null; if(typeof cancelSentencePress==='function') cancelSentencePress(); },true);
+  doc.addEventListener('scroll',()=>{ if(typeof cancelSentencePress==='function') cancelSentencePress(); },true);
   doc.addEventListener('pointerup',event=>{
+    if(typeof cancelSentencePress==='function') cancelSentencePress();
     const start=pointer; pointer=null;
+    if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
     if(!start || start.id!==event.pointerId) return;
     const moved=Math.hypot(event.clientX-start.x,event.clientY-start.y)>9;
     /* selection은 pointerup 기본 동작 뒤에 확정됩니다. 먼저 사용자가 드래그/더블클릭

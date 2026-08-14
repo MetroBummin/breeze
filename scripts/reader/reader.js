@@ -398,7 +398,28 @@ if(window.ResizeObserver){
   }).observe(document.getElementById('readmain'));
 }
 
+/* 낱말 하나는 탭, 문장 하나는 꾹 누르기입니다. 꾹 누르기가 확정되면 뒤따라오는
+   탭은 낱말을 여는 손짓이 아니므로 삼킵니다 — scripts/dictionary/sentence.js */
 document.getElementById('rtext').addEventListener('click', e=>{
+  if(typeof sentencePressBusy === 'function' && sentencePressBusy()) return;
   const span = e.target.closest('.w');
   if(span) openWord(span.dataset.w, span);
 });
+(function(){
+  const text=document.getElementById('rtext');
+  text.addEventListener('pointerdown', event=>{
+    if(typeof beginSentencePress !== 'function') return;
+    const target=/** @type {HTMLElement} */(event.target);
+    const span=target && target.closest ? target.closest('.w') : null;
+    if(!span) return;
+    /* 누르고 있는 동안에는 아무것도 찾지 않고 아무것도 칠하지 않습니다.
+       문장을 짚는 일은 타이머가 끝난 그 순간에 처음 일어납니다. */
+    beginSentencePress(event, ()=>sentencePressInText(span));
+  }, true);
+  text.addEventListener('pointermove', event=>{ if(typeof moveSentencePress==='function') moveSentencePress(event); }, true);
+  ['pointerup','pointercancel','pointerleave'].forEach(name=>
+    text.addEventListener(name, ()=>{ if(typeof cancelSentencePress==='function') cancelSentencePress(); }, true));
+  /* 화면이 움직이면 그것은 스크롤입니다. 손가락이 제자리에 있어도 마찬가지입니다. */
+  const scroller=document.getElementById('readmain');
+  if(scroller) scroller.addEventListener('scroll', ()=>{ if(typeof cancelSentencePress==='function') cancelSentencePress(); }, {passive:true});
+})();

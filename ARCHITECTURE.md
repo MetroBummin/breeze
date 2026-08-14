@@ -44,7 +44,7 @@ server/
 | 홈 | `scripts/library/` | Casuals·Books, 추가, 카드 수정·삭제 |
 | 파일/URL 가져오기 | `scripts/importers/` | PDF·EPUB·TXT 파싱, 붙여넣기, 기사 본문 추출 |
 | 읽기 | `scripts/reader/` | 글자/원본 모드, 위치 전환, 진행도, PDF 확대 |
-| 사전 | `scripts/dictionary/` | 낱말 선택, 문맥 캐시, 뜻 만들기·고르기·지우기, 단어장 |
+| 사전 | `scripts/dictionary/` | 낱말 선택, 문맥 캐시, 뜻 만들기·고르기·지우기, 단어장, 문장 해석(꾹 누르기) |
 | 동기화 | `scripts/sync/` | 매직 링크/OTP 로그인, 단어·위치·책 데이터 맞추기 |
 | 저장소 | `scripts/core/storage.js` | IndexedDB 원본·이미지, 로컬 책 데이터 |
 | 서버 | `server/dict`, `server/article` | AI 요청·계정 삭제, URL 중계 |

@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=34f41373">
   <link rel="stylesheet" href="styles/reader.css?v=89bdb096">
-  <link rel="stylesheet" href="styles/dictionary.css?v=91bce540">
+  <link rel="stylesheet" href="styles/dictionary.css?v=96879e05">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
@@ -66,15 +66,16 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=d91c067e"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=2dbb212a"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=de7294b2"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=f53b7612"></script>
-  <script defer src="scripts/reader/epub-original.js?v=0e9a13dd"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=fcbe7233"></script>
+  <script defer src="scripts/reader/epub-original.js?v=a8b6d148"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=b212c6d4"></script>
-  <script defer src="scripts/reader/reader.js?v=ae6d68ac"></script>
+  <script defer src="scripts/reader/reader.js?v=55c28b86"></script>
   <script defer src="scripts/ui/preferences.js?v=79bac433"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=122c6eec"></script>
@@ -207,6 +208,20 @@
       </div>
     </div>
   </div>
+  <!-- 문장 해석은 낱말 창과 별개입니다. 낱말을 꾹 누르면 문장이 파랗게 차오르고
+       화면 한가운데에 이 창이 뜹니다 — scripts/dictionary/sentence.js -->
+  <div id="sentence-modal" hidden>
+    <div id="sentence-scrim" onclick="closeSentence()"></div>
+    <section id="p-sentence" role="dialog" aria-modal="true" aria-live="polite">
+      <button id="ps-close" type="button" aria-label="문장 해석 닫기" onclick="closeSentence()">✕</button>
+      <div class="cap"><span class="dot"></span><span id="ps-cap">문장 통째로 · AI</span></div>
+      <div id="ps-en"></div>
+      <div class="aurora" id="ps-wait" aria-hidden="true" hidden><span class="glow"></span></div>
+      <div id="ps-ko" hidden></div>
+      <ul id="ps-points" hidden></ul>
+      <div id="ps-foot" hidden></div>
+    </section>
+  </div>
   <div id="sheetbg" onclick="closePanel()"></div>
   <div id="panel">
     <div id="p-handle"></div>
@@ -244,6 +259,9 @@
              아랫줄이 올라와 윗줄 자리를 지킵니다 — 칸이 비지 않게. -->
         <div class="note" id="p-ai-note"></div>
         <div class="gloss" id="p-ai-gloss"></div>
+        <!-- 이 문장만으로 안 풀릴 때. 앞뒤 문장까지 붙여 다시 묻고, 돌아온 답은
+             지금 뜻을 덮지 않고 뜻 하나로 더해집니다. -->
+        <button id="p-airetry" type="button" hidden>↻ 넓은 문맥으로</button>
       </div>
       <!-- 이미 저장해 둔 뜻을 보고 있을 때만 뜹니다. 방금 이 문장을 보고 받아 온
            뜻이라면 다시 물어볼 것이 없습니다. -->
