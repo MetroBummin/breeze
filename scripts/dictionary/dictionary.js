@@ -199,7 +199,13 @@ function createMeaning(root, text, source){
     base.pickedAt=Date.now(); base.up=Date.now();
     dropSuggestion(root,meaning); saveWords(); queueSync(); return root;
   }
+  /* 뜻 카드의 주소는 뜻 글자에서 나옵니다. 그래서 지웠던 뜻을 똑같이 다시 적으면
+     주소도 똑같고, 그 주소에는 "지웠다"는 표(`dead`)가 아직 붙어 있습니다. 표를
+     떼지 않으면 이 기기는 살아 있는 카드와 그 카드의 부고를 함께 올려 보냅니다 —
+     두 시각이 같은 순간에 찍히면 합칠 때 부고가 이깁니다. 만드는 순간 뗍니다
+     (낱말을 다시 넣을 때 `addWord` 가 하는 일과 같습니다). */
   const id=senseCardKey(root,meaning), previous=words[id];
+  if(dead[id]){ delete dead[id]; save(LS_DEAD,dead); }
   words[id]={...(previous||{}), word:base.word, root, sense:true,
     clicked:from.clicked||base.clicked||base.word, forms:base.forms||[base.word],
     example:from.example||base.example||'', book:from.book||base.book||'',

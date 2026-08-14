@@ -42,7 +42,7 @@ function rememberSentLeft(left, day){
 
 /* ================= 꾹 누르기 ================= */
 
-const SENT_PRESS_MS = 620;     // 스크롤하려고 얹은 손가락과 구별되는 길이
+const SENT_PRESS_MS = 1000;    // 스크롤하려고 얹은 손가락과 구별되는 길이
 const SENT_PRESS_SLOP = 10;    // 이만큼 움직였으면 질문이 아니라 스크롤입니다
 const SENT_PRESS_GUARD = 900;  // 손을 뗀 뒤 따라오는 탭 한 번을 삼킵니다
 
@@ -83,7 +83,8 @@ function cancelSentencePress(){
 function paintPressedSentence(found){
   if(typeof clearReaderModeCue === 'function') clearReaderModeCue();
   if(found.range && typeof showRangeModeCue === 'function') showRangeModeCue(found.range, 0);
-  else if(found.page && found.boxes && typeof showPdfModeCue === 'function') showPdfModeCue(found.page, found.boxes, 0, null);
+  /* 스캔본은 문단이 아니라 그 문장의 줄들만 칠합니다 — scripts/reader/pdf-original.js */
+  else if(found.page && found.boxes && typeof showPdfSentenceCue === 'function') showPdfSentenceCue(found.page, found.boxes, 0);
   else if(found.block && typeof showElementModeCue === 'function') showElementModeCue(found.block, 0);
   /* 꾹 누르면 브라우저가 낱말을 선택해 두기도 합니다. 파란 문장 위에 회색 선택이
      겹치면 무엇이 골라졌는지 알 수 없습니다. */
@@ -109,16 +110,29 @@ function sentencePressInText(span){
   if(!sentence) return null;
   return { sentence, range:sentenceRangeIn(block, sentence), block };
 }
+/* 원본 EPUB 에서는 누른 자리가 문단 어디쯤인지를 세어 그 자리를 품은 문장을
+   고릅니다. 낱말이 어느 문장에 **들어 있는지**로 찾으면 같은 낱말이 문단에 두 번
+   나올 때 늘 앞의 것이 잡히고, 짧은 문단에서는 문단 전체가 통째로 넘어갔습니다 —
+   "이 문장"이라고 해 놓고 다섯 문장을 물어보는 셈이었습니다. */
 function sentencePressInEpub(doc, clientX, clientY){
   if(typeof epubWordRangeAtPoint !== 'function') return null;
   const hit=epubWordRangeAtPoint(doc, clientX, clientY);
   if(!hit) return null;
   const owner=hit.owner;
   const block=(owner && owner.closest && owner.closest('p,li,blockquote,h1,h2,h3,h4')) || owner;
-  if(!block) return null;
-  const sentence=originalSentence(block.textContent, hit.raw);
+  if(!block || typeof bridgeSentences !== 'function') return null;
+  let at=0;
+  try{
+    const before=doc.createRange();
+    before.selectNodeContents(block);
+    before.setEnd(hit.range.startContainer, hit.range.startOffset);
+    at=before.toString().length;
+  }catch(error){ at=0; }
+  const parts=bridgeSentences(block.textContent);
+  const part=parts.find(item=>at>=item.start && at<item.end) || parts[0];
+  const sentence=part ? part.text.replace(/\s+/g,' ').trim() : '';
   if(!sentence) return null;
-  return { sentence, range:sentenceRangeIn(block, sentence), block };
+  return { sentence, range:domRangeForOffsets(block, part.start, part.end), block };
 }
 function sentencePressInPdf(clientX, clientY){
   if(typeof pdfPageAtPoint !== 'function' || !originalSession) return null;

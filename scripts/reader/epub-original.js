@@ -113,7 +113,13 @@ async function sanitiseEpubChapter(archive,chapter,resources){
       anchor.removeAttribute('href');
     }
   });
+  /* 마우스가 있는 화면에서는 커서가 곧 안내문입니다. 출판사 조판을 그대로
+     보여 주느라 본문은 평범한 글자라, 그냥 두면 커서가 글자 고르는 I 자로 떠서
+     "여기서 할 일은 드래그"라고 말합니다 — 실제로 할 일은 한 번 누르는 것인데도.
+     글자를 담은 칸만 손가락 커서로 바꿉니다(여백은 그대로 화살표). 고르기는
+     그대로 됩니다 — 커서 모양은 막지 않습니다. */
   const safety=`html,body{max-width:100%;min-height:1px}img,svg,video{max-width:100%;height:auto}
+    p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th{cursor:pointer}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
     .breeze-original-word.s3{background:rgba(255,140,140,.42)}::selection{background:rgba(37,137,190,.3)}`;
@@ -238,6 +244,18 @@ function originalSentence(text,word){
    눌렀을 때 가까운 낱말이 열리지 않도록 실제 낱말 사각형 안인지도 다시 봅니다.
    드래그/더블클릭 selection은 기존 길을 그대로 남겨 두므로 표현을 골라 복사하는
    출판사 조판의 기본 동작도 잃지 않습니다. */
+/* ---- 낱말을 열면 안 되는 자리 ----
+   진짜 링크 위에서는 낱말을 열지 않습니다. 누르면 갈 곳이 있는 글자라서, 뜻과
+   이동이 같은 한 번의 탭을 두고 다투기 때문입니다.
+
+   다만 `<a>` 라고 다 링크는 아닙니다. EPUB 은 목차가 가리킬 자리를 `<a id="…">`
+   로 표시하는데, 구텐베르크 판은 그 닻이 **장 전체를 감쌉니다**. 태그 이름만
+   보고 걸렀더니 앨리스의 본문 한 장이 통째로 "링크 안"이 되어, 원본 모드에서
+   낱말도 문장도 열리지 않았습니다 — 눌러도 아무 일이 없는 화면이었습니다.
+   갈 곳(`href`)이 적힌 것만 링크로 셉니다. 안쪽 링크는 반입할 때 `href` 를
+   `data-epub-href` 로 옮겨 두므로 둘 다 봅니다. */
+const EPUB_NO_TAP = 'a[href],a[data-epub-href],script,style,noscript,textarea';
+
 function epubWordRangeAtPoint(doc,clientX,clientY){
   let node=null, offset=0;
   if(doc.caretPositionFromPoint){
@@ -254,7 +272,7 @@ function epubWordRangeAtPoint(doc,clientX,clientY){
   }
   if(!node || !node.data || !/[A-Za-z]/.test(node.data)) return null;
   const owner=node.parentElement;
-  if(!owner || owner.closest('a,script,style,noscript,textarea')) return null;
+  if(!owner || owner.closest(EPUB_NO_TAP)) return null;
   const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
   let found=null, match;
   while((match=pattern.exec(node.data))){
@@ -289,14 +307,24 @@ function installEpubWordTap(doc){
     if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
     if(!start || start.id!==event.pointerId) return;
     const moved=Math.hypot(event.clientX-start.x,event.clientY-start.y)>9;
-    /* selection은 pointerup 기본 동작 뒤에 확정됩니다. 먼저 사용자가 드래그/더블클릭
-       한 selection을 존중하고, 평범한 탭일 때만 caret 기반 낱말을 엽니다. */
+    /* selection 은 pointerup 기본 동작 뒤에 확정되므로 한 박자 뒤에 봅니다.
+       손이 움직였으면 그것은 고른 것이고, 제자리에서 뗐으면 그냥 누른 것입니다.
+
+       순서가 중요합니다. 예전에는 selection 을 먼저 봤는데, 마우스는 누르는
+       동안 한두 픽셀이 늘 흔들려서 글자 한 개짜리 selection 이 남습니다 —
+       `considering` 을 눌렀는데 `c` 한 글자가 열렸습니다. 더블클릭도 두 번째
+       pointerup 은 제자리라, caret 으로 찾으면 같은 낱말이 나옵니다. */
     setTimeout(()=>{
       const selection=doc.getSelection();
-      if(selection && !selection.isCollapsed){ openOriginalSelection(doc); return; }
-      if(moved) return;
-      const hit=epubWordRangeAtPoint(doc,event.clientX,event.clientY);
-      if(hit) openOriginalRange(doc,hit.range,hit.raw,hit.owner,hit.rect);
+      if(!moved){
+        const hit=epubWordRangeAtPoint(doc,event.clientX,event.clientY);
+        if(hit){
+          if(selection) selection.removeAllRanges();
+          openOriginalRange(doc,hit.range,hit.raw,hit.owner,hit.rect);
+          return;
+        }
+      }
+      if(selection && !selection.isCollapsed) openOriginalSelection(doc);
     },0);
   },true);
 }
@@ -318,7 +346,7 @@ function openOriginalSelection(doc){
   const range=selection.getRangeAt(0);
   let owner=range.commonAncestorContainer;
   if(owner.nodeType!==1) owner=owner.parentElement;
-  if(!owner || (owner.closest&&owner.closest('a'))) return;
+  if(!owner || (owner.closest&&owner.closest(EPUB_NO_TAP))) return;
   const rect=[...range.getClientRects()].find(item=>item.width>0&&item.height>0);
   if(!rect) return;
   openOriginalRange(doc,range,raw,owner,rect);

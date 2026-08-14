@@ -740,6 +740,24 @@ assert.match(epubSource,/frameDoc\)\{\s*installEpubWordTap\(frameDoc\)/,
   'EPUB chapter frames do not install the one-tap word lookup');
 assert.doesNotMatch(epubSource,/더블클릭하거나 드래그/,
   'EPUB still tells readers to double-click after one-tap lookup was added');
+/* `<a>` 라고 다 링크는 아닙니다. 구텐베르크 EPUB 은 목차가 가리킬 닻(`<a id>`)으로
+   장 전체를 감싸는데, 태그 이름만 보고 걸렀더니 앨리스 원본 한 장이 통째로
+   "링크 안"이 되어 낱말도 문장도 열리지 않았습니다. 갈 곳이 적힌 것만 링크입니다. */
+assert.match(epubSource,/a\[href\],a\[data-epub-href\]/,
+  'EPUB original treats a bare <a id> anchor as a link, so a whole chapter stops answering taps');
+assert.doesNotMatch(epubSource,/closest\('a[,')]/,
+  'EPUB original blocks word lookup by tag name again, which swallows anchor-wrapped chapters');
+/* 마우스가 있는 화면에서는 커서가 유일한 안내문입니다 — 원본은 평범한 글자·그림이라
+   그냥 두면 "여기서 할 일은 드래그"라고 말합니다. */
+assert.match(epubSource,/p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th\{cursor:pointer\}/,
+  'EPUB original text shows a text caret instead of a tappable cursor');
+assert.match(readFileSync(resolve(root,'styles/reader.css'),'utf8'),
+  /\.pdf-source-page\{[^}]*cursor:pointer/,
+  'A scanned page does not look tappable on a desktop browser');
+/* 제자리에서 뗀 손은 "고른 것"이 아닙니다. selection 을 먼저 보면 마우스가 흔들려
+   생긴 한 글자짜리 selection 이 낱말을 이깁니다 — `considering` 대신 `c` 가 열립니다. */
+assert.match(epubSource,/if\(!moved\)\{\s*const hit=epubWordRangeAtPoint/,
+  'A still click in EPUB original trusts an accidental selection over the word under the finger');
 /* 읽는 상태의 단어장 표제어는 입력창처럼 보이면 안 됩니다. */
 assert.match(index, /id="p-word" contenteditable="false"/,
   'The word field is editable before the user asks to edit it');
@@ -1054,7 +1072,7 @@ assert.match(index, /id="sentence-modal"[\s\S]{0,400}id="p-sentence"/,
 /* 꾹 누르기는 넉넉히 깁니다. 짧게 잡으면 스크롤하려고 얹은 손가락이 질문이 됩니다. */
 assert.match(sentenceSource, /const SENT_PRESS_MS = (\d+)/,
   'The long press lost its own threshold');
-assert.ok(Number(sentenceSource.match(/const SENT_PRESS_MS = (\d+)/)[1]) >= 500,
+assert.ok(Number(sentenceSource.match(/const SENT_PRESS_MS = (\d+)/)[1]) >= 1000,
   'The sentence long press is short enough to fire on an ordinary tap again');
 assert.match(sentenceSource, /Math\.hypot\(event\.clientX - sentPressFrom\.x, event\.clientY - sentPressFrom\.y\) > SENT_PRESS_SLOP/,
   'A moving finger no longer cancels the sentence press, so scrolling can spend the daily allowance');
@@ -1072,9 +1090,17 @@ for(const [file, resolver] of [['scripts/reader/reader.js','sentencePressInText'
   assert.match(source, /sentencePressBusy\(\)\) return/,
     `${file} opens a word popup on the tap that follows a long press`);
 }
-/* 문장이 차오르는 그림은 모드 전환 표시와 같은 것을 씁니다. */
-assert.match(sentenceSource, /showRangeModeCue\(found\.range, 0\)[\s\S]{0,200}showPdfModeCue\(found\.page, found\.boxes, 0/,
+/* 문장이 차오르는 그림은 모드 전환 표시와 같은 것을 씁니다. 다만 스캔본은
+   문단이 아니라 그 문장의 줄만 칠합니다 — 무엇을 물어봤는지가 곧 그 문장이라
+   문단을 칠하면 답과 질문이 어긋납니다. */
+assert.match(sentenceSource, /showRangeModeCue\(found\.range, 0\)[\s\S]{0,260}showPdfSentenceCue\(found\.page, found\.boxes, 0\)/,
   'The pressed sentence paints something other than the shared reader cue');
+assert.doesNotMatch(sentenceSource, /showPdfModeCue\(found\./,
+  'A pressed sentence paints the whole paragraph on a scan');
+/* 원본 EPUB 도 "이 문장" 하나여야 합니다. 낱말이 들어 있는 문장을 글자로 찾으면
+   짧은 문단은 통째로, 같은 낱말이 두 번 나오면 늘 앞의 것이 잡힙니다. */
+assert.match(sentenceSource, /function sentencePressInEpub[\s\S]{0,700}parts\.find\(item=>at>=item\.start && at<item\.end\)/,
+  'A pressed sentence in EPUB original is found by text instead of by where the finger was');
 assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'), /[{;]\s*-webkit-touch-callout:none/,
   'Text selection in the reader is suppressed again to protect the long press');
 assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the server');

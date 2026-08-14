@@ -320,6 +320,36 @@ function showPdfModeCue(page,boxes,duration,paragraphHint){
   if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
 }
 
+/* ---- 문장 하나만 칠하기 ----
+   위의 `showPdfModeCue` 는 문단을 칠합니다. 모드를 옮길 때 "읽던 데가 여기"를
+   가리키는 일이라 넓을수록 찾기 쉽습니다. 꾹 눌러 문장을 물어볼 때는 반대입니다 —
+   무엇을 물어봤는지가 곧 그 문장이라, 문단을 칠하면 답과 질문이 어긋납니다.
+
+   스캔본에는 줄이라는 것이 따로 없고 낱말 상자만 있습니다. 세로 자리가 비슷한
+   것끼리 한 줄로 묶어, 줄마다 왼쪽 끝에서 오른쪽 끝까지 하나씩 칠합니다 —
+   글자 화면에서 문장 하나에 색이 차오르는 것과 같은 그림입니다. */
+const PDF_LINE_GAP = .012;
+function showPdfSentenceCue(page,boxes,duration){
+  if(!page || !boxes || !boxes.length) return;
+  const sorted=boxes.slice().sort((a,b)=>a.y-b.y||a.x-b.x);
+  const lines=[];
+  sorted.forEach(box=>{
+    const line=lines[lines.length-1];
+    if(line && Math.abs(box.y-line.y)<PDF_LINE_GAP) line.items.push(box);
+    else lines.push({y:box.y,items:[box]});
+  });
+  lines.forEach(line=>{
+    const left=Math.max(0,Math.min(...line.items.map(box=>box.x))-.004);
+    const right=Math.min(1,Math.max(...line.items.map(box=>box.x+box.w))+.004);
+    const top=Math.max(0,Math.min(...line.items.map(box=>box.y))-.003);
+    const bottom=Math.min(1,Math.max(...line.items.map(box=>box.y+box.h))+.003);
+    const cue=document.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-block';
+    cue.style.cssText=`left:${left*100}%;top:${top*100}%;width:${(right-left)*100}%;height:${(bottom-top)*100}%`;
+    page.appendChild(cue);
+  });
+  if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
+}
+
 function showPdfParagraphModeCue(paragraph,duration,preferredPage){
   if(paragraph==null || !originalSession || !originalSession.pages) return false;
   const start=sourceAnchorForParagraph(curBook,paragraph);
