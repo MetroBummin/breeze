@@ -1,9 +1,8 @@
 {
-  "total": 52,
+  "total": 46,
   "files": {
     "scripts/core/state.js": 1,
-    "scripts/dictionary/dictionary.js": 11,
-    "scripts/dictionary/sentence.js": 5,
+    "scripts/dictionary/dictionary.js": 10,
     "scripts/importers/article.js": 5,
     "scripts/importers/importers.js": 5,
     "scripts/importers/rss.js": 2,

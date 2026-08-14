@@ -724,10 +724,9 @@ assert.match(pdfOriginalSource,
 const readerScrollSource=readFileSync(resolve(root,'scripts/reader/reader-scroll.js'),'utf8');
 assert.match(readerScrollSource,/const panelOpen=document\.getElementById\('panel'\)\?\.classList\.contains\('on'\)/,
   'PDF zoom controls can overlap the open dictionary panel');
-const dictionarySource=readFileSync(resolve(root,'scripts/dictionary/dictionary.js'),'utf8');
 assert.match(dictionarySource,/const editingWord=panelEditTarget==='word';/,
   'The visible word cannot be edited from every open dictionary card');
-assert.match(dictionarySource,/base\.word=parsed\.display;[\s\S]{0,220}saveWords\(\); queueSync\(\); finishPanelEdit\(\); renderPanel\(\);/,
+assert.match(dictionarySource,/base\.word=parsed\.display;[\s\S]{0,320}saveWords\(\); queueSync\(\); finishPanelEdit\(\); renderPanel\(\);/,
   'Editing a visible word no longer saves directly on the current card');
 assert.doesNotMatch(dictionarySource,/wordRename=\{from,to:/,
   'Editing a visible word still changes cards and asks about deleting the old one');
@@ -741,17 +740,58 @@ assert.match(epubSource,/frameDoc\)\{\s*installEpubWordTap\(frameDoc\)/,
   'EPUB chapter frames do not install the one-tap word lookup');
 assert.doesNotMatch(epubSource,/더블클릭하거나 드래그/,
   'EPUB still tells readers to double-click after one-tap lookup was added');
-/* 읽는 상태의 단어장 표제어·뜻은 입력창처럼 보이면 안 됩니다. */
+/* 읽는 상태의 단어장 표제어는 입력창처럼 보이면 안 됩니다. */
 assert.match(index, /id="p-word" contenteditable="false"/,
   'The word field is editable before the user asks to edit it');
-assert.match(index, /id="p-ai-ko" contenteditable="false"/,
-  'The meaning field is editable before the user asks to edit it');
 assert.match(readFileSync(resolve(root,'styles/dictionary.css'),'utf8'),
   /\.p-inline-edit\[hidden\]\{display:none!important;\}/,
   'Hidden edit actions are forced visible by the flex rule');
 assert.match(dictionarySource,
-  /panelEditTarget=null; panelEditDirty=false;[\s\S]{0,180}p-word-actions'\)\.hidden=true;[\s\S]{0,120}p-meaning-actions'\)\.hidden=true;/,
+  /panelEditTarget=null; panelEditDirty=false;[\s\S]{0,180}p-word-actions'\)\.hidden=true;/,
   'Opening another word keeps the previous word edit buttons visible');
+/* ── 단어 팝업의 뜻 문법 ──
+   외울 손짓은 셋뿐입니다: 칩 = 이 뜻을 본다, ＋ = 뜻을 만든다, 메인 × = 지금 뜻을
+   없앤다. 이 셋을 깨는 예외가 다시 생기지 않았는지 봅니다. */
+/* 지금 보는 뜻(첫 칩)에는 × 가 없습니다 — 그 문은 메인 뜻 칸에 있습니다. 두 번째
+   칩부터만 × 를 달아, 보고 있는 뜻을 고르는 손짓과 지우는 손짓이 겹치지 않게 합니다. */
+assert.match(dictionarySource, /index===0\?'':'<span class="sense-remove"/,
+  'The active chip carries its own delete target, or the other chips lost theirs');
+assert.match(dictionarySource, /closest\('\.sense-remove'\)\)\{ deleteMeaning\(id\); return; \}/,
+  'A chip delete no longer deletes that meaning');
+assert.match(dictionarySource, /p-meaning-del'\)\.onclick=\(\)=>\{ if\(selKey && words\[selKey\]\) deleteMeaning\(selKey\); \}/,
+  'The meaning on show is no longer deleted from the main meaning box');
+/* 다른 뜻을 정리했다고 보고 있던 뜻이 바뀌면 안 됩니다. */
+assert.match(dictionarySource, /const wasActive=id===selKey;[\s\S]{0,400}let next=wasActive \? '' : selKey;/,
+  'Deleting a chip that is not the one on show moves the reader to another meaning');
+assert.match(dictionarySource, /function createMeaning\(root, text, source\)/,
+  'Meanings are created in more than one place again');
+for(const caller of ['adoptSuggestion', 'addMeaningFromInput', 'adoptContextAnswer']){
+  assert.match(dictionarySource, new RegExp(`function ${caller}[\\s\\S]{0,700}createMeaning\\(`),
+    `${caller} builds a meaning of its own instead of going through createMeaning`);
+}
+/* 확인창은 읽는 흐름을 끊습니다. 사용자가 누른 것 자체가 대답입니다. */
+assert.doesNotMatch(dictionarySource, /\bconfirm\(/,
+  'The dictionary panel asks the reader to confirm something again');
+assert.doesNotMatch(index, /이 뜻도 저장|기존 뜻도 유지|이 뜻으로 바꾸기/,
+  'A meaning now needs a second confirming step again');
+/* 지금 보고 있는 뜻은 늘 첫 자리입니다. 최근에 고른 것이 그 다음. */
+assert.match(dictionarySource, /cards\.sort\(\(\[a,aw\],\[b,bw\]\)=>\(a===activeId\?-1:0\)-\(b===activeId\?-1:0\)\s*\|\| meaningPickedAt\(bw\)-meaningPickedAt\(aw\)\)/,
+  'The active meaning no longer leads the saved list, or recency stopped ordering the rest');
+/* 뜻은 고치지 않습니다 — 지우고 새로 만듭니다. 안내 문구도 함께 사라져야 합니다. */
+assert.doesNotMatch(index, /뜻을 눌러 직접 고칠 수 있어요/,
+  'The popup still tells the reader to tap a meaning to edit it');
+assert.doesNotMatch(dictionarySource, /function commitMeaningEdit/,
+  'Editing a meaning is back as its own state');
+/* 색칠은 혼자 서는 행이 아니라 "모르는 정도" 줄의 오른쪽 끝입니다. */
+assert.match(index, /<div class="p-sec p-sec-row">\s*<span>모르는 정도<\/span><button id="p-mark"/,
+  'The colouring switch left the difficulty row and stands on its own again');
+assert.doesNotMatch(index, /id="p-controls"/,
+  'The old stand-alone colouring row is back');
+/* 숙어는 뜻이 아닙니다. 낱말 바로 아래, 추천 뜻 칩과 다른 줄에 삽니다. */
+assert.ok(index.indexOf('id="p-colloc"') < index.indexOf('id="p-ai"'),
+  'The phrase suggestion no longer sits directly under the word');
+assert.ok(index.indexOf('id="p-alts"') > index.indexOf('id="p-saved-senses"'),
+  'Suggested meanings are no longer a separate row below the saved ones');
 assert.match(index, /id="readfabs"/,
   'The reading controls are no longer stacked, so they move when one hides');
 assert.match(index,/id="pdfzoomfabs"[\s\S]*id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
@@ -1003,20 +1043,37 @@ assert.ok(
   'The classic cover is applied before the book it belongs to exists',
 );
 
-/* ── 문장 통째로 ── */
-const sentenceSource = readFileSync(resolve(root, 'scripts/dictionary/sentence.js'), 'utf8');
-/* 문은 하나입니다 — 낱말 창의 단추. 꾹 누르는 손짓은 폰에만 있었고, iOS 의
-   복사·찾아보기를 가져오느라 읽는 화면의 글자 선택까지 함께 막았습니다. */
+/* ── 문장 통째로 — 떼어 둔 모듈 ──
+   단어 팝업은 뜻 하나만 다룹니다. 문장 해석은 팝업 안의 단추가 아니라 자기 손짓
+   (낱말 꾹 누르기)으로 열리는 별개의 기능이 됩니다. 되살리는 순서는
+   modules/sentence-explain/README.md 에 있습니다. */
+const sentenceSource = readFileSync(resolve(root, 'modules/sentence-explain/sentence.js'), 'utf8');
+assert.ok(!existsSync(resolve(root, 'scripts/dictionary/sentence.js')),
+  'The sentence window is back in the loaded scripts while the module is parked');
+assert.doesNotMatch(index, /modules\/sentence-explain/,
+  'The parked sentence module is loaded by index.html again');
+assert.doesNotMatch(index, /id="p-explain"|id="p-explain-note"|id="p-sentence"/,
+  'The word popup still carries the sentence button, its note, or its answer card');
+for(const file of jsFiles){
+  assert.doesNotMatch(readFileSync(file, 'utf8'), /\b(?:openSentence|paintSentence|explainSelectedSentence)\s*\(/,
+    `Active code still calls into the parked sentence module: ${file}`);
+}
+/* 꾹 누르기는 확정된 뒤에만 문장 UI 를 엽니다. 손가락이 닿는 순간부터 문장 전체를
+   칠할 준비를 하면 짧은 탭까지 문장 선택으로 오인되어 낱말 탭과 부딪힙니다. */
 assert.doesNotMatch(sentenceSource, /lineRects|SENT_MOVE_SLOP|beginSentPress|sent-fill/,
   'The long-press sentence fill is back, so the phone and the laptop have different doors');
-assert.match(sentenceSource, /function explainSelectedSentence/,
-  'The word panel has no way into the sentence window');
+assert.match(readFileSync(resolve(root, 'modules/sentence-explain/README.md'), 'utf8'),
+  /확정된\s*뒤에만/,
+  'The parked module lost the rule that kept a short tap from becoming a sentence press');
 assert.doesNotMatch(readFileSync(resolve(root, 'styles/reader.css'), 'utf8'), /[{;]\s*-webkit-touch-callout:none/,
   'Text selection in the reader is suppressed again, but nothing needs the long press now');
 assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the server');
 /* 같은 문장을 다시 물으면 한도를 쓰지 않아야 합니다. */
 assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text\)/,
   'Sentence explanations are not cached, so re-reading the same line costs a lookup again');
+/* 남은 횟수를 세는 날짜는 낱말 쪽에 삽니다 — 모듈을 떼어 내도 한도 표시가 살아 있게. */
+assert.match(dictionarySource, /function aiDay\(\)/,
+  'The Korean-day helper left with the parked module, so the AI allowance loses its calendar');
 /* 서버 쪽: 테스트 기간에는 하루 100회 풀을 쓰고 문장 해석만 2회를 씁니다. */
 const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
 assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
@@ -1033,8 +1090,12 @@ assert.ok(
 const dictCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8');
 assert.match(dictCss, /\.aurora \.glow/, 'The shared AI waiting state is gone');
 const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
-assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 2,
-  'The word panel and the sentence window no longer wait in the same way');
+assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 1,
+  'The word panel waits with something other than the shared aurora');
+/* 떼어 둔 문장 해석도 같은 빛을 씁니다. 되살릴 때 자기만의 기다림을 새로 그리면
+   "무엇을 기다리는지"보다 "여기가 어디인지"를 먼저 읽게 됩니다. */
+assert.match(sentenceSource, /class="aurora"/,
+  'The parked sentence module no longer waits with the shared aurora');
 /* 색도 하나입니다. AI 가 나오는 세 자리가 같은 변수만 씁니다 — 뜻 상자에 초록빛이,
    문장 창에 흰 종이가 깔려 있으면 같은 목소리로 들리지 않습니다. */
 assert.match(readFileSync(resolve(root, 'styles/tokens.css'), 'utf8'), /--ai-bg1:/,
@@ -1047,10 +1108,11 @@ for(const sheet of ['base.css','home.css','components.css','dictionary.css','rea
   assert.deepEqual(literals, [],
     `styles/${sheet} 가 색을 직접 적고 있습니다 — tokens.css 로 옮겨 주세요: ${literals.join(', ')}`);
 }
-assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-bg1\)/,
+assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-panel\)/,
   'The word meaning box has its own colour again');
-assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
-  'The inline sentence explanation has its own colour again');
+assert.match(readFileSync(resolve(root, 'modules/sentence-explain/sentence.css'), 'utf8'),
+  /#p-sentence\{[^}]*var\(--ai-bg1\)/,
+  'The parked sentence card has its own colour again');
 
 assert.match(readerSource, /function beginLazyWordSpans/,
   'Long text is no longer prepared for lazy word spans');

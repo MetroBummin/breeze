@@ -12,8 +12,8 @@
        상단바 아래에서 시작해 남는 높이를 채우는 평범한 칸이면 됩니다. */
     body.reading #panel{position:relative; top:auto; margin-top:calc(var(--topbar-h,56px) + 8px);
       height:calc(100% - var(--topbar-h,56px) - 8px);}
-    /* 상단바가 걷힌 상태에서는 남아 있던 56px 빈자리까지 패널이 씁니다. */
-    body.reading.chrome-hidden #panel{margin-top:8px; height:calc(100% - 8px);}
+    /* 상단바가 걷혀도 패널의 자리와 높이는 그대로입니다. 상단바는 스크롤을 따라
+       움직이지만, 뜻을 읽는 칸이 그때마다 늘었다 줄면 글자가 함께 뜁니다. */
     body.reader-original #panel{width:min(310px,26vw);}
     body.reader-original #panel .inner{padding:21px 20px 34px;}
     body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
@@ -49,20 +49,19 @@
     color:var(--blue); transition:.15s;}
   #p-speak:hover{background:var(--sky);}
   #p-speak.playing{background:var(--blue); color:var(--on-color); border-color:var(--blue);}
-  /* 첫 줄과 둘째 줄은 패널의 숨은 경계 대신, 아주 가는 선 하나만 나눕니다. */
-  .p-row-divider{display:none;}
-  #p-controls{display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px; padding:9px 0;}
-  /* 상태를 돌리는 단추지만 스위치 흉내는 내지 않습니다. 글자로 현재 상태를 말합니다. */
-  #p-mark{flex:0 0 auto; height:29px; padding:0 11px; border:1px solid var(--mark-line); border-radius:15px;
+  /* 색칠은 이제 혼자 서 있는 행이 아니라 "모르는 정도"의 오른쪽 끝에 붙습니다.
+     둘 다 이 낱말을 화면에서 어떻게 다룰지 정하는 일이라 한 줄이면 됩니다. */
+  #p-mark{flex:0 0 auto; height:26px; padding:0 10px; border:1px solid var(--mark-line); border-radius:14px;
     background:var(--mark-bg); color:var(--soft2); cursor:pointer; font:600 10.5px var(--ui); white-space:nowrap; transition:.16s;}
   #p-mark.on{border-color:var(--blue-ring); background:var(--mark-on); color:var(--mark-on-ink);}
   #p-mark:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
-  #p-clicked{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; font-size:12px; color:var(--soft2);}
-  #p-divider{border:none; border-top:1px solid var(--divider); margin:0 0 12px;}
+  /* 원형이 따로 있을 때만 뜨는 한 줄 — "spared에서 찾음". */
+  #p-clicked{display:none; margin:7px 0 0; font-size:11.5px; color:var(--soft2);}
+  #p-clicked.on{display:block;}
   /* AI 가 말하는 자리는 모두 같은 색을 씁니다 — 여기, 기다리는 동안의 오로라,
      그리고 문장 해석 카드. 값은 base.css 의 `--ai-*` 하나뿐입니다. */
-  #p-ai{display:none; background:var(--ai-panel); border:1px solid var(--ai-line);
-    border-radius:12px; padding:12px 13px; margin-bottom:10px;}
+  #p-ai{display:none; position:relative; background:var(--ai-panel); border:1px solid var(--ai-line);
+    border-radius:12px; padding:12px 13px; margin:13px 0 10px;}
   #p-ai.on{display:block;}
   #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700;
     letter-spacing:.06em; color:var(--ai-key); margin-bottom:5px;}
@@ -73,20 +72,16 @@
   /* 이 뜻 자체의 성질. 문장 이야기가 위에 오면 그 아래로 한 칸 내려가 배경이 됩니다. */
   #p-ai .gloss{display:none; font-size:11.5px; color:var(--ai-quiet); line-height:1.5;
     margin-top:8px; padding-left:9px; border-left:2px solid var(--ai-line);}
-  /* 단어와 뜻은 모두 같은 방식의 입력 칸입니다. 눌렀을 때만 저장·취소가 떠서,
-     단순한 장식이 아니라 실제로 바꿀 수 있다는 점을 분명히 합니다. */
-  #p-ai .mk{display:inline-block; min-width:2em; border-radius:8px; padding:4px 7px; margin-left:-2px;
-    outline:none; cursor:pointer; transition:background .15s, box-shadow .15s;
-    border:1px solid var(--ai-line); background:var(--paper2);}
-  #p-ai .mk:hover{background:var(--field); border-color:var(--blue-ring);}
-  #p-ai .mk[contenteditable="true"]{cursor:text; background:var(--ai-mk-focus); border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-ring);}
-  #p-ai.editing .m{display:block;}
-  #p-ai.editing .mk{display:block; width:100%; box-sizing:border-box; margin:0; padding:7px 9px;}
-  #p-ai.editing .pos{display:none;}
-  #p-ai.editing .note,#p-ai.editing .gloss,#p-ai.editing .acts{display:none!important;}
-  #p-ai .acts{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px;}
-  #p-ai .tip{font-size:10px; line-height:1.35; color:var(--soft2); text-align:right;}
-  #p-ai.edited .tip{color:var(--blue);}
+  /* 뜻은 읽는 글자입니다. 고치는 칸이 아닙니다 — 바꾸고 싶으면 × 로 지우고
+     ＋ 로 새로 적습니다. 그래야 뜻에 필요한 손짓이 셋으로 남습니다. */
+  #p-ai .mk{display:inline;}
+  /* 지우는 단추는 뜻 칸 안에만 있습니다. 칩 안에는 두지 않습니다 — 손가락 하나
+     넓이에서 "고르기"와 "지우기"가 겹치면 둘 다 못 믿게 됩니다. */
+  #p-meaning-del{position:absolute; top:7px; right:7px; width:26px; height:26px; border:none; border-radius:50%;
+    background:transparent; color:var(--ai-quiet); font:400 17px/1 var(--ui); cursor:pointer;}
+  #p-meaning-del:hover{background:var(--danger-bg); color:var(--danger);}
+  #p-meaning-del[hidden]{display:none;}
+  #p-ai .cap{padding-right:26px;}
   /* ══ 오로라 ══════════════════════════════════════════════
      AI 를 기다리는 동안 뜨는 장치. 낱말 하나든 문장 하나든 같은 것을 씁니다 —
      기다림의 모양이 자리마다 다르면 "무엇을 기다리는지"가 아니라 "여기가 어디인지"를
@@ -122,7 +117,7 @@
   #p-ai.load .wind{display:block;}
   /* 기다리는 동안에는 뜻도 아랫줄도 감춥니다. 특히 "다시 물어보기" 로 들어온 경우
      앞서 받은 설명이 그대로 남아 있으면, 새 답이 온 것처럼 보입니다. */
-  #p-ai.load .m, #p-ai.load .acts, #p-ai.load .note, #p-ai.load .gloss{display:none!important;}
+  #p-ai.load .m, #p-ai.load .note, #p-ai.load .gloss{display:none!important;}
   #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
     border:1px dashed var(--ai-line); background:var(--ai-bg2); color:var(--ai-key); border-radius:12px;
     padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
@@ -130,69 +125,48 @@
   #p-aibtn:hover{background:var(--sky); border-style:solid;}
   #p-aibtn:disabled{opacity:.6; cursor:default;}
   #p-aibtn .sp{font-size:15px;}
-  #p-context,#p-save-context{display:none; width:100%; margin:-2px 0 12px; padding:9px 11px;
-    border-radius:12px; font:600 12px var(--ui); cursor:pointer;}
-  #p-context.on{display:block; border:1px dashed var(--ai-line); background:transparent; color:var(--ai-key);}
+  /* 캐시된 뜻을 보고 있을 때만 열리는 문. 이미 이 문장으로 받아 온 뜻이면
+     아예 뜨지 않습니다 — 누를 이유가 없는 단추는 자리도 차지하지 않습니다. */
+  #p-context{display:none; align-items:center; justify-content:center; gap:6px; width:100%;
+    margin:-2px 0 12px; padding:9px 11px; border-radius:12px; font:600 12px var(--ui); cursor:pointer;}
+  #p-context.on{display:flex; border:1px dashed var(--ai-line); background:transparent; color:var(--ai-key);}
   #p-context.on:hover{background:var(--ai-bg2); border-style:solid;}
   #p-context:disabled{opacity:.55; cursor:default;}
-  #p-save-context.on{display:block; border:1px solid var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
-  #p-save-context.on:hover{background:var(--sky); border-color:var(--ai-key);}
+  #p-context .sp{font-size:11px;}
   #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
-  /* 문장 통째로 가는 문. 낱말 뜻이 맞는데도 문장이 안 읽힐 때 누릅니다 —
-     그래서 뜻 상자 바로 아래, 다른 뜻 후보들보다 앞에 둡니다. */
-  #p-explain{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
-    border:1px solid var(--ai-line); background:none; color:var(--soft); border-radius:10px;
-    padding:9px; font-size:12px; font-family:var(--ui); cursor:pointer;}
-  #p-explain.ready{border-color:var(--ai-line); color:var(--ai-key); background:var(--ai-bg2);}
-  #p-explain.ready:hover{border-color:var(--ai-key); background:var(--sky);}
-  #p-explain:disabled{border-color:var(--line); color:var(--soft2); background:transparent; cursor:default; opacity:.72;}
-  #p-explain .sp{color:var(--ai-key);}
-  #p-explain:disabled .sp{color:var(--soft2);}
-  #p-explain-note{display:none; margin:5px 0 12px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
-  #p-explain-note.on{display:block;}
-  /* 해석은 따로 모달을 띄우지 않고, 지금 보고 있는 낱말·예문 아래에 이어집니다. */
-  #p-sentence{margin:10px 0 12px; padding:13px 15px; border:1px solid var(--ai-line);
-    border-radius:14px; background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2));}
-  #p-sentence[hidden]{display:none;}
-  #p-sentence .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
-    letter-spacing:.08em; color:var(--ai-key); margin-bottom:7px;}
-  #p-sentence .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
-  #ps-en{font-family:var(--serif); font-size:14px; line-height:1.62; color:var(--ai-ink);
-    padding-bottom:10px; border-bottom:1px solid var(--ai-line); margin-bottom:10px; overflow-wrap:anywhere;}
-  #ps-wait{margin-top:2px;}
-  #ps-ko{font-size:15px; font-weight:600; line-height:1.62; color:var(--ai-ink);}
-  #ps-points{list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:7px;}
-  #ps-points li{position:relative; padding-left:13px; font-size:12.5px; line-height:1.6; color:var(--ai-note);}
-  #ps-points li::before{content:''; position:absolute; left:0; top:8px; width:5px; height:5px;
-    border-radius:50%; background:var(--ai-key); opacity:.45;}
-  #ps-foot{margin-top:10px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
-  #p-airetry{border:none; background:none; color:var(--retry-ink); padding:0; text-align:left;
-    font-size:11.5px; line-height:1.45; font-family:var(--ui); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
-  #p-airetry:hover{color:var(--retry-hover);}
-  #p-airetry:disabled{opacity:.45; cursor:default; text-decoration:none;}
   .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}
-  #p-colloc-sec,#p-saved-senses-sec,#p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
-  #p-colloc-sec{margin-top:16px; color:var(--soft2);}
-  #p-colloc{display:none; flex-wrap:wrap; gap:6px;}
+  /* 머리글 오른쪽 끝에 그 칸의 유일한 단추가 붙습니다 — 저장된 뜻의 ＋, 모르는 정도의 색칠. */
+  .p-sec-row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px;}
+  #p-saved-senses-sec,#p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
+  #p-saved-senses-sec.on{display:flex;}
+  #p-alt-sec.on{display:block;}
+  #p-add-sense{flex:0 0 auto; width:26px; height:26px; border:1px solid var(--line); border-radius:50%;
+    background:var(--paper2); color:var(--soft); font:400 14px/1 var(--ui); cursor:pointer;}
+  #p-add-sense:hover{border-color:var(--blue); color:var(--blue); background:var(--sky);}
+  #p-sense-add{margin-top:8px;}
+  #p-sense-add[hidden]{display:none;}
+  #p-sense-input{width:100%; box-sizing:border-box; border:1px solid var(--blue); border-radius:12px;
+    padding:9px 11px; background:var(--field); color:var(--ink); font:400 13.5px var(--ui); outline:none;
+    box-shadow:0 0 0 2px var(--blue-ring);}
+  /* 숙어는 낱말 바로 아래 한 줄입니다. 뜻 칩과 섞이지 않게 자기 자리를 따로 씁니다. */
+  #p-colloc{display:none; flex-wrap:wrap; gap:6px; margin-top:11px;}
   #p-colloc.on{display:flex;}
-  #p-colloc-sec.on,#p-saved-senses-sec.on,#p-alt-sec.on{display:block;}
   #p-alts{display:none; flex-wrap:wrap; gap:7px;}
   #p-alts.on{display:flex;}
   #p-saved-senses{display:none; flex-wrap:wrap; gap:6px;}
   #p-saved-senses.on{display:flex;}
-  .saved-sense{border:1px solid var(--line); border-radius:14px; padding:5px 8px 5px 10px; background:var(--paper2);
-    color:var(--soft); font:600 12px var(--ui); cursor:pointer;}
-  .saved-sense.on{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
-  .saved-sense:hover{border-color:var(--blue); color:var(--blue);}
-  .saved-sense .sense-remove{display:inline-block; margin-left:5px; color:var(--soft2); font:700 14px/1 var(--ui); vertical-align:-1px;}
-  .saved-sense:hover .sense-remove{color:var(--danger);}
-  .alt-actions{display:flex; flex-basis:100%; gap:6px; margin-top:1px;}
-  .alt-action{border:1px solid var(--line); border-radius:13px; padding:6px 10px; background:transparent;
-    color:var(--soft); font:600 11px var(--ui); cursor:pointer;}
-  .alt-action.save{border-color:var(--ai-line); background:var(--ai-bg2); color:var(--ai-key);}
-  .alt-action:hover{border-color:var(--blue); color:var(--blue);}
-  .colloc{border:1px solid var(--line); border-radius:14px; padding:5px 11px; font-size:12.5px;
-          color:var(--soft); font-family:var(--serif); font-style:italic;}
+  /* 칩은 고르는 것 하나만 합니다. 저장된 뜻은 모두 같은 파란 무리로 보이고, 지금
+     보고 있는 하나만 그 안에서 꽉 찬 색과 ✓ 로 앞자리에 섭니다. */
+  .saved-sense{border:1px solid var(--blue-ring); border-radius:14px; padding:5px 10px; background:var(--sky);
+    color:var(--blue); font:600 12px var(--ui); cursor:pointer;}
+  .saved-sense.on{border-color:var(--blue); background:var(--blue); color:var(--on-color); cursor:default;}
+  .saved-sense:not(.on):hover{border-color:var(--blue); background:var(--chip-hit);}
+  .saved-sense .sense-tick{margin-right:4px; font-size:10px;}
+  /* 첫 칩에는 × 가 없습니다 — 지금 보는 뜻을 지우는 문은 메인 뜻 칸에 이미 있습니다.
+     두 번째 칩부터만 정리할 길을 답니다. */
+  .saved-sense .sense-remove{display:inline-block; margin:-2px -3px -2px 5px; padding:2px 4px;
+    color:var(--blue); opacity:.5; font:700 13px/1 var(--ui); vertical-align:-1px;}
+  .saved-sense:hover .sense-remove{opacity:1; color:var(--danger);}
   /* 표현은 있을 때만 나타납니다. 그래서 여러 후보 중 하나처럼 묻히지 않고,
      통째로 봐야 한다는 신호 하나만 또렷하게 남깁니다. */
   .phrase-suggestion{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--ai-line);
@@ -200,7 +174,7 @@
     color:var(--ai-ink); font:italic 600 14px var(--serif); box-shadow:var(--shadow-phrase); cursor:pointer;}
   .phrase-suggestion:hover{border-color:var(--blue); transform:translateY(-1px);}
   .phrase-star{font:12px var(--ui); color:var(--ai-key); font-style:normal;}
-  .colloc.hit{border-color:var(--blue); color:var(--blue); background:var(--chip-hit);}
+  .phrase-go{font:13px var(--ui); color:var(--ai-key); font-style:normal;}
   .kochip{border:none; background:var(--chipbg); color:var(--chiptx); border-radius:16px; padding:7px 13px;
     font-size:13px; cursor:pointer; font-family:var(--ui);}
   .kochip:hover{background:var(--chip-hover);}
@@ -274,7 +248,6 @@
       display:none; transform:none; transition:none;}
     body.reading #panel{position:relative; top:auto; margin-top:var(--topbar-h,56px);
       height:calc(100% - var(--topbar-h,56px));}
-    body.reading.chrome-hidden #panel{margin-top:0; height:100%;}
     #panel.on{display:block; transform:none;}
     #p-handle{display:none;}
     #p-close{display:block;}

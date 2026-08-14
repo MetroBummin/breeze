@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=34f41373">
   <link rel="stylesheet" href="styles/reader.css?v=89bdb096">
-  <link rel="stylesheet" href="styles/dictionary.css?v=1d1358ae">
+  <link rel="stylesheet" href="styles/dictionary.css?v=91bce540">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
@@ -66,8 +66,7 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=ca92f5e9"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=68233d74"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=d91c067e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
@@ -225,58 +224,41 @@
         </div>
         <button id="p-close" title="단어창 닫기" aria-label="단어창 닫기" onclick="closePanel()">✕</button>
       </div>
-      <hr class="p-row-divider">
-      <div id="p-controls"><button id="p-mark" type="button" aria-pressed="true"
-        title="이 단어의 본문 색칠 켜기/끄기"><span>색칠 ON</span></button><div id="p-clicked"></div></div>
-      <hr id="p-divider">
-      <!-- 뜻이 사는 곳은 여기 하나입니다. 예전에는 이 박스 아래에 파란 뜻 칸이 하나 더
-           있어서, 같은 낱말의 뜻이 화면에 두 번 적혀 있었습니다. 고치는 것도 아래 칸에서만
-           됐고요. 이제 위에 뜬 뜻을 그 자리에서 누르면 바로 고쳐집니다. -->
+      <!-- 원형이 따로 있을 때만 뜨는 한 줄. 표제어 바로 아래의 보조 정보입니다. -->
+      <div id="p-clicked"></div>
+      <!-- 숙어는 뜻이 아닙니다. 그래서 뜻 칩들과 섞지 않고 낱말 바로 아래,
+           이 문장에서 확신이 설 때만 한 줄로 뜹니다. -->
+      <div id="p-colloc"></div>
+      <!-- 지금 보고 있는 뜻 하나. 만들기(＋)·고르기(칩)·지우기(×) 중 지우기가
+           여기 삽니다 — 작은 칩 안에서 고르기와 지우기가 부딪히지 않게. -->
       <div id="p-ai">
+        <button id="p-meaning-del" type="button" title="이 뜻 지우기" aria-label="이 뜻 지우기">×</button>
         <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻 · AI</span></div>
         <div class="wind aurora" aria-hidden="true">
           <span class="glow"></span>
         </div>
         <div class="m">
-          <span class="mk" id="p-ai-ko" contenteditable="false" spellcheck="false"
-                role="textbox" aria-label="뜻 — 눌러서 고칠 수 있어요"></span><span class="pos" id="p-ai-pos"></span>
+          <span class="mk" id="p-ai-ko"></span><span class="pos" id="p-ai-pos"></span>
         </div>
-        <div id="p-meaning-actions" class="p-inline-edit" hidden><button type="button" data-edit-cancel>취소</button><button type="button" class="save" data-edit-save>저장</button></div>
         <!-- 윗줄은 이 문장 이야기, 아랫줄은 이 뜻 자체의 성질. 문장 이야기가 없으면
              아랫줄이 올라와 윗줄 자리를 지킵니다 — 칸이 비지 않게. -->
         <div class="note" id="p-ai-note"></div>
         <div class="gloss" id="p-ai-gloss"></div>
-        <div class="acts">
-          <button id="p-airetry">넓은 문맥으로 다시 물어보기</button>
-          <span class="tip" id="p-ai-tip">뜻을 눌러 직접 고칠 수 있어요</span>
-        </div>
       </div>
-      <button id="p-context" type="button">이 문맥에서는?</button>
-      <button id="p-save-context" type="button">+ 이 뜻도 저장</button>
-      <!-- 문장을 꾹 누르는 손짓과 같은 일을 합니다. 마우스로 0.85초 누르기를
-           스스로 발견하는 사람은 없어서, 데스크탑에서는 이 줄이 유일한 문입니다. -->
-      <button id="p-explain" onclick="explainSelectedSentence()">
-        <span class="sp">✦</span>이 문장이 통째로 안 읽힐 때</button>
-      <div id="p-explain-note" aria-live="polite"></div>
-      <!-- 문장 해석은 낱말 창 안에서 이어집니다. 뜻을 확인하다 문장까지 막혔을 때
-           화면을 한 겹 더 띄우면, 원래 읽던 자리와 단어를 함께 잃기 때문입니다. -->
-      <section id="p-sentence" hidden aria-live="polite">
-        <div class="cap"><span class="dot"></span><span id="ps-cap">문장 통째로 · AI</span></div>
-        <div id="ps-en"></div>
-        <div class="aurora" id="ps-wait" aria-hidden="true" hidden><span class="glow"></span></div>
-        <div id="ps-ko" hidden></div>
-        <ul id="ps-points" hidden></ul>
-        <div id="ps-foot" hidden></div>
-      </section>
+      <!-- 이미 저장해 둔 뜻을 보고 있을 때만 뜹니다. 방금 이 문장을 보고 받아 온
+           뜻이라면 다시 물어볼 것이 없습니다. -->
+      <button id="p-context" type="button"><span class="sp">✦</span>이 문장에서는?</button>
       <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI handle this</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
-      <div class="p-sec" id="p-colloc-sec">이건 어때요?</div>
-      <div id="p-colloc"></div>
-      <div class="p-sec" id="p-saved-senses-sec">저장한 뜻</div>
+      <div class="p-sec p-sec-row" id="p-saved-senses-sec"><span>저장된 뜻</span>
+        <button id="p-add-sense" type="button" title="뜻 추가" aria-label="뜻 추가">＋</button></div>
       <div id="p-saved-senses"></div>
-      <div class="p-sec" id="p-alt-sec">다른 뜻</div>
+      <div id="p-sense-add" hidden><input id="p-sense-input" type="text" autocomplete="off"
+        spellcheck="false" placeholder="새 뜻을 적고 Enter" aria-label="새 뜻"></div>
+      <div class="p-sec" id="p-alt-sec">추천 뜻</div>
       <div id="p-alts"></div>
-      <div class="p-sec">모르는 정도</div>
+      <div class="p-sec p-sec-row"><span>모르는 정도</span><button id="p-mark" type="button"
+        aria-pressed="true" title="이 단어의 본문 색칠 켜기/끄기"><span>색칠 ON</span></button></div>
       <div id="p-status">
         <button class="stbtn" data-s="1">★</button>
         <button class="stbtn" data-s="2">★★</button>
