@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=34f41373">
   <link rel="stylesheet" href="styles/reader.css?v=36719341">
-  <link rel="stylesheet" href="styles/dictionary.css?v=21a85b4f">
+  <link rel="stylesheet" href="styles/dictionary.css?v=59d6cc60">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
@@ -67,7 +67,7 @@
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=930db122"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=967596c2"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=d6f5fc72"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=062d528d"></script>
@@ -228,9 +228,9 @@
     <div class="inner">
       <div id="p-top">
         <div id="p-head">
-          <div id="p-word-wrap"><div id="p-word" contenteditable="false" spellcheck="false" role="textbox" aria-label="영어 단어 또는 표현"></div>
-            <div id="p-word-actions" class="p-inline-edit" hidden><button type="button" data-edit-cancel>취소</button><button type="button" class="save" data-edit-save>저장</button></div>
-          </div>
+          <!-- 표제어는 읽는 글자입니다. 고치는 칸이 아닙니다 — 이 글자는 원문 색칠과
+               캐시가 기대는 열쇠에서 나오므로, 여기서만 바꾸면 둘이 갈라집니다. -->
+          <div id="p-word"></div>
           <button id="p-speak" title="발음 듣기" onclick="speakWord()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
@@ -255,10 +255,9 @@
         <div class="m">
           <span class="mk" id="p-ai-ko"></span><span class="pos" id="p-ai-pos"></span>
         </div>
-        <!-- 윗줄은 이 문장 이야기, 아랫줄은 이 뜻 자체의 성질. 문장 이야기가 없으면
-             아랫줄이 올라와 윗줄 자리를 지킵니다 — 칸이 비지 않게. -->
+        <!-- 뜻 아래 한 줄은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질은
+             사전이 이미 하는 말이라, 이 자리에는 문장 이야기만 둡니다. -->
         <div class="note" id="p-ai-note"></div>
-        <div class="gloss" id="p-ai-gloss"></div>
         <!-- 이 문장만으로 안 풀릴 때. 앞뒤 문장까지 붙여 다시 묻고, 돌아온 답은
              지금 뜻을 덮지 않고 뜻 하나로 더해집니다. -->
         <button id="p-airetry" type="button" hidden>↻ 넓은 문맥으로</button>

@@ -25,25 +25,10 @@
   #p-close{flex:none; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:8px; margin-bottom:4px;}
-  #p-word-wrap{min-width:0; flex:1;}
-  #p-word{min-width:0; flex:1; overflow-wrap:anywhere; font-size:31px; font-weight:600; letter-spacing:-.9px; color:var(--ink);
-    border:1px solid var(--line); border-radius:10px; padding:6px 9px; outline:none; cursor:pointer; background:var(--paper2);}
-  #p-word:hover{border-color:var(--blue-ring); background:var(--field);}
-  #p-word[contenteditable="true"]{cursor:text; border-color:var(--blue); background:var(--field); box-shadow:0 0 0 2px var(--blue-ring);}
-  /* 편집 명령은 내용 옆에 끼워 넣지 않습니다. 뜻과 품사를 밀어 줄바꿈시키던
-     작은 두 버튼 대신, 편집하는 칸 바로 아래의 한 줄이 됩니다. */
-  .p-inline-edit{display:flex; width:100%; box-sizing:border-box; align-items:center; justify-content:flex-end; gap:8px;
-    margin-top:8px; padding-top:8px; border-top:1px solid var(--divider);}
-  .p-inline-edit[hidden]{display:none!important;}
-  .p-inline-edit button{min-width:50px; height:30px; border:0; border-radius:8px; padding:0 10px;
-    background:transparent; color:var(--soft); font:600 11px var(--ui); cursor:pointer; white-space:nowrap;}
-  .p-inline-edit button:hover{background:var(--quiet); color:var(--ink);}
-  .p-inline-edit button.save{border-color:var(--blue); background:var(--blue); color:var(--on-color);}
-  #p-word-actions,#p-meaning-actions{justify-content:flex-end;}
-  #p-word-wrap.editing #p-word{width:100%; box-sizing:border-box;}
-  /* 표제어를 고칠 때는 뜻 편집과 같은 한 칸만 남깁니다. 발음은 저장 뒤 바로
-     들을 수 있으므로, 입력 중에는 자리를 차지하지 않게 해 긴 표현도 편하게 봅니다. */
-  #p-word-wrap.editing + #p-speak{display:none;}
+  /* 표제어는 제목이지 입력칸이 아닙니다 — 테두리와 배경을 두면 "여기를 고치세요"로
+     읽힙니다. 고치는 길은 없습니다(scripts/dictionary/dictionary.js). */
+  #p-word{min-width:0; flex:1; overflow-wrap:anywhere; font-size:31px; font-weight:600;
+    letter-spacing:-.9px; color:var(--ink);}
   #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--speak-line);
     background:var(--speak-bg); cursor:pointer; display:flex; align-items:center; justify-content:center;
     color:var(--blue); transition:.15s;}
@@ -68,10 +53,8 @@
   #p-ai .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
   #p-ai .m{font-size:18px; font-weight:700; color:var(--ai-ink); line-height:1.4;}
   #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
+  /* 이 문장에서 어떻게 쓰였나 — 뜻 아래 한 줄. */
   #p-ai .note{font-size:12px; color:var(--ai-note); line-height:1.55; margin-top:6px;}
-  /* 이 뜻 자체의 성질. 문장 이야기가 위에 오면 그 아래로 한 칸 내려가 배경이 됩니다. */
-  #p-ai .gloss{display:none; font-size:11.5px; color:var(--ai-quiet); line-height:1.5;
-    margin-top:8px; padding-left:9px; border-left:2px solid var(--ai-line);}
   /* 뜻은 읽는 글자입니다. 고치는 칸이 아닙니다 — 바꾸고 싶으면 × 로 지우고
      ＋ 로 새로 적습니다. 그래야 뜻에 필요한 손짓이 셋으로 남습니다. */
   #p-ai .mk{display:inline;}
@@ -125,7 +108,7 @@
   #p-ai.load .wind{display:block;}
   /* 기다리는 동안에는 뜻도 아랫줄도 감춥니다. 특히 "다시 물어보기" 로 들어온 경우
      앞서 받은 설명이 그대로 남아 있으면, 새 답이 온 것처럼 보입니다. */
-  #p-ai.load .m, #p-ai.load .note, #p-ai.load .gloss{display:none!important;}
+  #p-ai.load .m, #p-ai.load .note{display:none!important;}
   #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
     border:1px dashed var(--ai-line); background:var(--ai-bg2); color:var(--ai-key); border-radius:12px;
     padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;

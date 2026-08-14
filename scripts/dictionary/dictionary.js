@@ -122,14 +122,16 @@ const recentWordOpens = new Map();
    그대로 보여 주면서 "이 문장에서는?" 하나를 더 내밀 뿐이고, 읽는 중의 문장을
    저장 카드에 덮어 쓰지 않습니다. 눌러서 새 뜻을 받으면 그 순간 Meaning 이 하나
    생깁니다 — 미리보기 상태도, 저장 여부를 묻는 단계도 없습니다. */
-let contextView = null, phraseView = null, panelEditDirty = false, panelEditTarget = null;
+let contextView = null, phraseView = null;
 /* ＋ 로 뜻을 직접 적는 동안만 켜지는 칸입니다. */
 let addingMeaning = false;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
 function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
 function answerFromLook(j, cached){
   const oldAi=j.ai||{};
-  return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',gloss:j.gloss||oldAi.gloss||'',note:'',done:true,cached:!!cached},
+  /* `gloss` 는 옛 이름입니다 — 기기에 남아 있는 예전 답을 그대로 읽기 위해 함께 봅니다. */
+  return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',
+      note:j.note||j.gloss||oldAi.note||oldAi.gloss||'',done:true,cached:!!cached},
     alts:Array.isArray(j.alts)?j.alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
@@ -189,7 +191,7 @@ function createMeaning(root, text, source){
   const from=source||{};
   const already=findSenseByMeaning(root,meaning);
   if(already){ touchMeaning(already); dropSuggestion(root,meaning); saveWords(); queueSync(); return already; }
-  const ai={...(from.ai||{}),ko:meaning,gloss:(from.ai&&from.ai.gloss)||''};
+  const ai={...(from.ai||{}),ko:meaning,note:(from.ai&&(from.ai.note||from.ai.gloss))||''};
   /* 아직 뜻이 하나도 없는 낱말이면 대표 카드의 빈 뜻자리를 채웁니다. 빈 카드를
      남겨 두고 옆에 새 카드를 만들면, 화면에 없는 뜻이 저장소에만 생깁니다. */
   if(!String(base.ko||'').trim()){
@@ -242,7 +244,7 @@ function deleteMeaning(id){
     if(id!==root && words[root]) bury(id);
     else{
       const base=words[root];
-      base.ko=''; base.ai={...(base.ai||{}),ko:'',gloss:''}; delete base.koEdited;
+      base.ko=''; base.ai={...(base.ai||{}),ko:'',note:'',gloss:''}; delete base.koEdited;
       base.up=Date.now();
     }
     next=root;
@@ -311,10 +313,7 @@ function selectWord(k, span){
   if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
   if(!phraseView || phraseView.key !== k) phraseView = null;
-  /* 다른 낱말을 열 때 앞 카드의 편집 상태와 저장/취소를 가져오지 않습니다. */
-  panelEditTarget=null; panelEditDirty=false;
   if(selKey!==k) addingMeaning=false;
-  document.getElementById('p-word-actions').hidden=true;
   /* 칩을 눌러 고른 뜻은 다음에 열 때 맨 앞에서 만납니다. */
   if(words[k] && words[k].ko){ touchMeaning(k); saveWords(); }
   selKey = k;
@@ -340,8 +339,7 @@ function selectWord(k, span){
 }
 function closePanel(){
   selKey=null;
-  contextView=null; phraseView=null; panelEditTarget=null; panelEditDirty=false; addingMeaning=false;
-  document.getElementById('p-word-actions').hidden=true;
+  contextView=null; phraseView=null; addingMeaning=false;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
   abortLook();
@@ -388,14 +386,10 @@ function renderPanel(){
     word:phrase.phrase, clicked:'', example:phrase.sentence, book:phrase.book,
     aiLoading:!!phrase.loading, aiSlow:false, aiOff:phrase.error||'',
   }) : base;
-  const wordBox=document.getElementById('p-word');
-  const wordWrap=document.getElementById('p-word-wrap');
-  /* 화면의 단어 칸은 내부 key가 아니라 지금 열어 둔 카드의 표시값입니다.
-     어떤 뜻·문맥을 보고 있든 이 칸에서 바로 고칩니다. */
-  const editingWord=panelEditTarget==='word';
-  wordWrap.classList.toggle('editing',editingWord);
-  wordBox.contentEditable=editingWord?'true':'false';
-  if(!editingWord) wordBox.textContent=w.word;
+  /* 화면의 단어 칸은 내부 key 가 아니라 지금 열어 둔 카드의 표시값입니다. 읽는
+     글자일 뿐, 고치는 칸이 아닙니다 — 표제어를 손으로 바꾸면 원문 색칠이 기대는
+     열쇠와 화면의 글자가 갈라집니다. 잘못 잡힌 낱말은 단어장에서 빼고 다시 누릅니다. */
+  document.getElementById('p-word').textContent=w.word;
   /* 표제어 아래 한 줄. 원형이 따로 있을 때만 뜹니다 — "spared에서 찾음". */
   const clickedLine=document.getElementById('p-clicked');
   const original = phrase ? `표현 뜻 보기 · ${phrase.phrase}`
@@ -419,7 +413,6 @@ function renderPanel(){
   const aiBox = document.getElementById('p-ai');
   const aiKo = document.getElementById('p-ai-ko'), aiPos = document.getElementById('p-ai-pos');
   const aiN = document.getElementById('p-ai-note');
-  const aiG = document.getElementById('p-ai-gloss');
   const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
   const ai = w.ai || {};
   const asking = !!w.aiLoading && !w.aiSlow;
@@ -436,13 +429,14 @@ function renderPanel(){
       : ((ai.done || ai.noteDone) ? '문맥 뜻 · AI' : '뜻');
     aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
-    /* 사전에는 뜻의 성질을 설명하는 한 줄만 둡니다. 문장 전용 note까지 붙이면
-       같은 뜻 상자가 두 번 설명하는 모양이 되어 읽는 흐름을 끊었습니다. */
-    const top = ai.gloss || (w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : '');
+    /* 뜻 아래 한 줄은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질은
+       사전이 이미 말해 주는 것이고, 이 자리에서 Breeze 만 할 수 있는 말은 이쪽입니다.
+       그래서 화면에 뜬 문장이 이 뜻이 배운 그 문장일 때만 답니다 — 다른 문장에서
+       만난 낱말에는 바로 아래 "이 문장에서는?" 이 그 문장의 줄을 새로 받아 옵니다. */
+    const said = context ? '' : (ai.note || ai.gloss || '');
+    const top = said || (w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : '');
     aiN.textContent = top;
     aiN.style.display = top ? 'block' : 'none';
-    aiG.textContent = '';
-    aiG.style.display = 'none';
     /* 이 문장만으로 안 풀릴 때 앞뒤 문장까지 붙여 한 번 더 묻는 길입니다.
        새 답은 지금 뜻을 덮지 않고 뜻 하나로 더해집니다 — 마음에 안 들면 × 입니다. */
     aiRetry.hidden = !(sb && sbUser && w.example);
@@ -564,7 +558,7 @@ function addMeaningFromInput(){
   if(!text){ addingMeaning=false; renderPanel(); return; }
   const root=base.root||selKey;
   const id=createMeaning(root, text, {clicked:base.clicked, example:base.example, book:base.book,
-    ai:{ko:text, pos:'', gloss:'', done:false}});
+    ai:{ko:text, pos:'', note:'', done:false}});
   if(!id) return;
   const card=words[id];
   if(card){ card.koEdited=true; card.up=Date.now(); saveWords(); queueSync(); }
@@ -660,18 +654,6 @@ document.getElementById('p-know').onclick = ()=>{
   delete words[k]; dead[k] = Date.now(); save(LS_DEAD, dead);
   saveWords(); paintWord(k); closePanel(); queueSync(); toast('단어장에서 뺐어요');
 };
-/* 단어 이름은 단순한 화면 글자가 아니라 원문 색칠·동기화가 기대는 열쇠입니다.
-   그래서 제자리에서 열쇠를 바꾸지 않고, 먼저 새 단어 카드를 복사해 만든 뒤
-   기존 카드를 남길지 바로 묻습니다. 사용자가 원문 표기를 고친 경우에도 과거
-   문장에 있던 표시와 학습 기록을 잃지 않습니다. */
-function headwordKey(value){
-  const raw=String(value||'').trim().replace(/’/g,"'").replace(/\s+/g,' ');
-  /* 단어 하나뿐 아니라 `betel quid`, `take care of` 같은 표현도 독립 카드로
-     고칠 수 있습니다. 영어 글자·공백·낱말 안의 아포스트로피/하이픈만 받습니다. */
-  if(!/^[A-Za-z]+(?:['-][A-Za-z]+)*(?: [A-Za-z]+(?:['-][A-Za-z]+)*)*$/.test(raw)) return null;
-  const parts=raw.toLowerCase().split(' ');
-  return {display:raw,key:parts.length>1 ? `phrase:${phraseParts(raw).join(' ')}` : (lemmaCands(raw)[0]||raw).toLowerCase(),parts};
-}
 function refreshReaderWords(){
   if(curBook && currentReaderMode==='text'){
     const anchor=captureAnchor();
@@ -679,50 +661,10 @@ function refreshReaderWords(){
     requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
   }else if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
 }
-/* 고칠 수 있는 칸은 표제어 하나뿐입니다. 뜻은 고치지 않습니다 — 지우고 새로
-   만듭니다(× → ＋). 뜻의 상태 가짓수를 늘리지 않으려는 선택입니다. */
-function beginPanelEdit(target){
-  if(!selKey || !words[selKey]) return;
-  panelEditTarget=target; panelEditDirty=false;
-  document.getElementById('p-word-actions').hidden=false;
-  renderPanel();
-  requestAnimationFrame(()=>document.getElementById('p-word').focus());
-}
-function cancelPanelEdit(){
-  panelEditTarget=null; panelEditDirty=false;
-  document.getElementById('p-word-actions').hidden=true; renderPanel();
-}
-function finishPanelEdit(){
-  panelEditTarget=null; panelEditDirty=false;
-  document.getElementById('p-word-actions').hidden=true;
-}
-function commitWordRename(){
-  const input=document.getElementById('p-word');
-  const base=words[selKey], parsed=headwordKey(input.textContent);
-  if(!base || !parsed) { toast('영어 단어 또는 표현으로 적어 주세요'); return; }
-  /* 단어를 고친다고 카드 주소·다른 뜻·원문 표시는 건드리지 않습니다. 지금 보는
-     카드의 제목만 바꿉니다. `clicked`는 실제로 눌렀던 원문 형태라 남겨 두어
-     문맥 정보를 잃지 않고, forms에는 새 표기를 더해 이후 검색도 받습니다. */
-  base.word=parsed.display;
-  base.forms=[...new Set([...(base.forms||[]),parsed.key,...lemmaCands(parsed.display),parsed.display.toLowerCase()])];
-  if(parsed.parts.length>1) base.phraseParts=parsed.parts;
-  else delete base.phraseParts;
-  base.up=Date.now();
-  saveWords(); queueSync(); finishPanelEdit(); renderPanel();
-}
-const wordEditBox=document.getElementById('p-word');
-wordEditBox.addEventListener('click',()=>{ if(panelEditTarget!=='word') beginPanelEdit('word'); });
-wordEditBox.addEventListener('input',()=>{
-  const cleaned=wordEditBox.textContent.replace(/[^A-Za-z'’\-\s]/g,'').replace(/\s+/g,' ');
-  if(wordEditBox.textContent!==cleaned) wordEditBox.textContent=cleaned;
-  panelEditDirty=true;
-});
-wordEditBox.addEventListener('keydown',event=>{
-  if(event.key==='Enter'){ event.preventDefault(); commitWordRename(); }
-  if(event.key==='Escape'){ event.preventDefault(); cancelPanelEdit(); }
-});
-document.querySelectorAll('[data-edit-save]').forEach(button=>button.addEventListener('click',commitWordRename));
-document.querySelectorAll('[data-edit-cancel]').forEach(button=>button.addEventListener('click',cancelPanelEdit));
+/* 표제어를 손으로 고치는 칸은 없습니다. 화면의 낱말은 원문 색칠·캐시·동기화가
+   모두 기대는 열쇠에서 나온 글자라, 그 자리에서 글자만 바꾸면 화면과 열쇠가
+   갈라집니다(고친 이름으로는 본문이 안 칠해지고, 캐시도 옛 이름으로 남습니다).
+   잘못 잡힌 표제어는 "단어장에서 빼기" 뒤에 원하는 낱말을 다시 누르면 됩니다. */
 
 /* ---- dictionary lookups ---- */
 async function fetchKo(w, form){
@@ -1020,7 +962,7 @@ async function fetchLook(k, opt){
 function applyLook(w, j, k, opt){
   opt = opt || {};
   delete w.aiLoading; delete w.aiOff;
-  w.ai = { ko: j.ko || '', pos: j.pos || '', gloss: j.gloss || '', note:'', done:true,
+  w.ai = { ko: j.ko || '', pos: j.pos || '', note: j.note || j.gloss || '', done:true,
            /* 이 기기가 전에 물어봤던 답인지. 머리글 한 줄이 달라집니다 —
               한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
            cached: !!opt.cached };

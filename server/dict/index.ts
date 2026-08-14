@@ -162,12 +162,12 @@ function parseJson(raw: string): Record<string, unknown> | null {
 const LOOK_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["lemma", "pos", "ko", "gloss", "phrase", "alts"],
+  required: ["lemma", "pos", "ko", "note", "phrase", "alts"],
   properties: {
     lemma: { type: "string" },
     pos: { type: "string" },
     ko: { type: "string" },
-    gloss: { type: "string" },
+    note: { type: "string" },
     phrase: { type: "string" },
     alts: { type: "array", items: { type: "string" } },
   },
@@ -186,15 +186,18 @@ ${skip}
 - lemma: 사전 표제어(원형). 표현이면 표현 전체를 그대로, 고유명사나 약어면 그대로
 - pos: 명사|동사|형용사|부사|전치사|기타 중 하나
 - ko: 이 문장에서의 뜻. 한국어로 8자 내외. 설명이 아니라 사전에 실릴 짧은 뜻
-- gloss: 이 뜻이 어떤 때 쓰이는지 한국어 한 문장으로 설명하세요. 예문을 쓰지 말고
-  뜻의 성질을 설명하세요. ("어떤 행동이나 상태가 멈추지 않고 이어질 때 씁니다")
+- note: 이 ${isPhrase ? "표현이" : "단어가"} **이 문장에서** 어떻게 쓰였는지 한국어 한 문장으로
+  설명하세요. 사전식 뜻풀이를 되풀이하지 말고, 이 문장이라서 알 수 있는 것을 적으세요 —
+  누가 무엇을 하는지, 어느 쪽으로 기울어진 말인지 같은 것.
+  ("무전기가 아니라 사람 사이의 연락이 끊겼다는 뜻으로 썼습니다")
+  문장이 없으면 그 뜻이 어떤 때 쓰이는지 한 문장으로 적으세요.
 - phrase: 이 문장에서 클릭한 단어를 포함해 **통째로 알아야 뜻이 달라지는** 아주 확실한
   고정 표현 하나만 적으세요. (예: "hot take", "per se", "prime minister")
   단순히 자주 붙는 단어, 애매한 조합, 문장 전체는 절대 넣지 말고 빈 문자열로 두세요.
 - alts: 지금 문맥의 뜻과 겹치지 않는, 이 단어의 흔한 다른 한국어 뜻을 최대 3개 적으세요.
   짧은 사전식 뜻만 쓰고, 자신 없는 것은 빼세요.
 
-{"lemma":"","pos":"","ko":"","gloss":"","phrase":"","alts":[""]}`;
+{"lemma":"","pos":"","ko":"","note":"","phrase":"","alts":[""]}`;
 }
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -247,12 +250,15 @@ async function opLook(body: any, userId: string | null, seeding = false) {
   const lemma = cands.includes(aiLemma) || aiLemma === word ? aiLemma : (word || cands[0] || "");
 
   const ko = clean(parsed.ko, 60);
-  const gloss = clean(parsed.gloss, 300);
+  /* 한 줄뿐인 설명 자리입니다. 예전에는 뜻의 성질(gloss)을 적었는데, 그건 사전이
+     이미 하는 말이었습니다. Breeze 가 혼자 할 수 있는 말은 "이 문장에서" 쪽이라
+     그 한 줄만 남깁니다 — 옛 캐시의 gloss 는 앱이 그대로 읽습니다. */
+  const note = clean(parsed.note, 300);
   const answer = {
     lemma,
     pos: clean(parsed.pos, 12),
     ko,
-    gloss,
+    note,
     phrase: clean(parsed.phrase, 80),
     alts: cleanList(parsed.alts, 3, 40).filter((item) => item !== ko),
     provider: out.provider,
@@ -270,7 +276,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
     userId, action: retry ? "retry" : "look", word, clicked, sentence,
     lemma, pos: answer.pos, aiKo: answer.ko, provider: out.provider,
     book: clean(body.book, 200),
-    meta: { gloss: answer.gloss ? 1 : 0, phrase: answer.phrase ? 1 : 0, alts: answer.alts.length,
+    meta: { note: answer.note ? 1 : 0, phrase: answer.phrase ? 1 : 0, alts: answer.alts.length,
             avoid: avoid.length, ...(anonLeft === null ? {} : { anon: 1 }) },
   });
   return json(answer);

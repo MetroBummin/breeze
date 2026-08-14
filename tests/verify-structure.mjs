@@ -724,12 +724,16 @@ assert.match(pdfOriginalSource,
 const readerScrollSource=readFileSync(resolve(root,'scripts/reader/reader-scroll.js'),'utf8');
 assert.match(readerScrollSource,/const panelOpen=document\.getElementById\('panel'\)\?\.classList\.contains\('on'\)/,
   'PDF zoom controls can overlap the open dictionary panel');
-assert.match(dictionarySource,/const editingWord=panelEditTarget==='word';/,
-  'The visible word cannot be edited from every open dictionary card');
-assert.match(dictionarySource,/base\.word=parsed\.display;[\s\S]{0,320}saveWords\(\); queueSync\(\); finishPanelEdit\(\); renderPanel\(\);/,
-  'Editing a visible word no longer saves directly on the current card');
-assert.doesNotMatch(dictionarySource,/wordRename=\{from,to:/,
-  'Editing a visible word still changes cards and asks about deleting the old one');
+/* ── 표제어는 고치지 않습니다 ──
+   화면의 낱말은 원문 색칠·캐시·동기화가 모두 기대는 열쇠에서 나온 글자입니다.
+   그 자리에서 글자만 갈아 끼우면 고친 이름으로는 본문이 칠해지지 않고, 캐시는
+   옛 이름으로 남습니다. 잘못 잡힌 낱말은 빼고 다시 누르는 길 하나면 됩니다. */
+assert.match(dictionarySource,/document\.getElementById\('p-word'\)\.textContent=w\.word;/,
+  'The word title is no longer painted straight from the open card');
+for(const gone of [/panelEditTarget/, /commitWordRename/, /headwordKey/, /p-word-actions/]){
+  assert.doesNotMatch(dictionarySource, gone,
+    `The headword editor is back in the dictionary panel (${gone})`);
+}
 /* EPUB 원본도 겉보기에는 같은 원본 화면입니다. selection에만 기대면 데스크톱은
    더블클릭, 모바일은 드래그가 필요해져 PDF 수정이 안 된 것처럼 보입니다. */
 assert.match(epubSource,/function installEpubWordTap\(doc\)/,
@@ -758,15 +762,25 @@ assert.match(readFileSync(resolve(root,'styles/reader.css'),'utf8'),
    생긴 한 글자짜리 selection 이 낱말을 이깁니다 — `considering` 대신 `c` 가 열립니다. */
 assert.match(epubSource,/if\(!moved\)\{\s*const hit=epubWordRangeAtPoint/,
   'A still click in EPUB original trusts an accidental selection over the word under the finger');
-/* 읽는 상태의 단어장 표제어는 입력창처럼 보이면 안 됩니다. */
-assert.match(index, /id="p-word" contenteditable="false"/,
-  'The word field is editable before the user asks to edit it');
-assert.match(readFileSync(resolve(root,'styles/dictionary.css'),'utf8'),
-  /\.p-inline-edit\[hidden\]\{display:none!important;\}/,
-  'Hidden edit actions are forced visible by the flex rule');
-assert.match(dictionarySource,
-  /panelEditTarget=null; panelEditDirty=false;[\s\S]{0,180}p-word-actions'\)\.hidden=true;/,
-  'Opening another word keeps the previous word edit buttons visible');
+/* 표제어 칸은 제목입니다 — 입력칸처럼 보이지도, 굴지도 않습니다. */
+assert.match(index, /<div id="p-word"><\/div>/,
+  'The word title carries editing attributes again');
+for(const gone of [/\.p-inline-edit/, /#p-word\[contenteditable/, /#p-word-wrap/]){
+  assert.doesNotMatch(dictionaryCss, gone, `The headword editor's styling survived (${gone})`);
+}
+/* ── 뜻 아래 한 줄 ──
+   여기 적히는 것은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질(gloss)은
+   사전이 이미 하는 말이라 이 자리를 차지할 이유가 없습니다. 그리고 다른 문장에서
+   만난 낱말에는 달지 않습니다 — 그 줄이 설명하는 문장이 화면에 없기 때문입니다. */
+assert.match(dictionarySource, /const said = context \? '' : \(ai\.note \|\| ai\.gloss \|\| ''\);/,
+  'The meaning box explains the sense in general again, or talks about a sentence that is not on screen');
+assert.doesNotMatch(index, /id="p-ai-gloss"/,
+  'The second, general explanation line is back under the meaning');
+const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
+assert.match(dictServer, /required: \["lemma", "pos", "ko", "note", "phrase", "alts"\]/,
+  'The AI is asked for a general gloss instead of what this sentence shows');
+assert.match(dictServer, /\*\*이 문장에서\*\* 어떻게 쓰였는지/,
+  'The look prompt no longer asks about this sentence');
 /* ── 단어 팝업의 뜻 문법 ──
    외울 손짓은 셋뿐입니다: 칩 = 이 뜻을 본다, ＋ = 뜻을 만든다, 메인 × = 지금 뜻을
    없앤다. 이 셋을 깨는 예외가 다시 생기지 않았는지 봅니다. */
