@@ -124,7 +124,8 @@ tbody tr:last-child td{border-bottom:0}
 <p><strong>보내는 것</strong> — Breeze 서버(<code>server/dict</code>)를 거쳐 AI 제공자에게 갑니다.</p>
 <ul><li>누른 낱말과 화면에 있던 그 형태</li><li><strong>그 낱말이 있던 문장 하나</strong> (최대 600자)</li><li>로그인 전이라면 기기 표시(<code>breeze.device</code>), 로그인했다면 계정 식별자</li></ul>
 <p><strong>AI 제공자</strong> — Anthropic(Claude) 또는 Google(Gemini). 뜻을 만드는 데에만 쓰이며, Breeze 는 이들에게 이메일 주소를 넘기지 않습니다.</p>
-<p><strong>서버에 남는 것</strong> (<code>dict_events</code>) — 어떤 동작이 성공했는지, 사용한 AI 제공자 같은 내용 없는 운영 기록만 남깁니다. 낱말, 클릭한 형태, AI 뜻, 사용자가 고친 뜻, 문장·문장 지문·앞뒤 단어, 책 제목·책 지문은 저장하지 않습니다.</p>
+<p><strong>서버에 남는 것</strong> (<code>dict_events</code>) — 어떤 동작이었는지, 사용한 AI 제공자, 그리고 <strong>그 동작의 대상이 된 표제어 하나</strong>(낱말 또는 표현)와 품사입니다. 표제어를 남기는 이유는 "이 뜻이 아닌 것 같다"가 어떤 낱말에서 자주 눌리는지 알아야 그 낱말의 답을 고칠 수 있기 때문입니다.</p>
+<p>읽던 문장과 그 지문·앞뒤 단어, 책 제목과 책 지문, AI 가 준 한국어 뜻, 사용자가 직접 적은 뜻은 저장하지 않습니다 — 앱이 서버로 보내지도 않습니다.</p>
 <p>하루에 몇 번 불렀는지(<code>ai_usage</code>)는 한도를 지키기 위해 따로 셉니다.</p>
 <p>자세한 설계는 <a href="dictionary.html">DICT.md</a> 에 있습니다.</p>
 <hr>

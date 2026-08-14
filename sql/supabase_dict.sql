@@ -8,7 +8,9 @@
 -- 낱말 뜻을 서버에 쌓는 표(dict_shared)는 없습니다. 뜻은 AI 가 문장을 보고 그때그때
 -- 답하고, 그 답은 그 사람 기기에만 남습니다. 이유는 DICT.md 에 적어 두었습니다.
 --
--- 사용자가 읽던 낱말·뜻·문장·책 제목과 그 지문은 저장하지 않습니다.
+-- 여기 남는 것은 표제어 하나(낱말 또는 표현)와 무슨 손짓이었나 뿐입니다.
+-- 사용자가 읽던 문장·책 제목·AI 가 준 뜻·사람이 적은 뜻은 저장하지 않습니다.
+-- 앱도 그것들을 서버로 보내지 않습니다(scripts/dictionary/dictionary.js 의 logDict).
 
 -- ────────────────────────────────────────────────────────────
 -- 1) 하루 AI 한도
@@ -110,34 +112,43 @@ end $$;
 -- ────────────────────────────────────────────────────────────
 -- 2) 행동 기록 — 낱말이 아니라 "사람이 무엇을 했는가"
 -- ────────────────────────────────────────────────────────────
--- 낱말과 뜻 자체는 상품입니다. 위키낱말사전에도 있고 누구나 3개월이면 따라옵니다.
--- 못 따라오는 것은 "이 사람이 AI 의 답을 고쳤다", "이 문장에서 다른 뜻을 다시 물었다",
--- "이건 저장했고 저건 아는 낱말로 뺐다" 의 기록입니다. 그게 이 표입니다.
+-- 이 표가 답해야 하는 질문은 하나입니다: **어떤 낱말에서 Breeze 의 뜻이 자주
+-- 빗나가나.** `retry` 는 "이 뜻이 아닌 것 같다" 라서 가장 강한 신호인데, 무슨
+-- 낱말이었는지가 없으면 셀 수 있는 것이 "오늘 몇 번" 뿐이고 그것으로는 아무것도
+-- 못 고칩니다. 그래서 표제어는 남깁니다.
+--
+-- 반대로 사용자가 읽던 문장·책 제목·AI 가 준 뜻·사람이 적은 뜻은 이 질문에
+-- 답하지 않으면서 읽기 기록만 쌓습니다. 그래서 남기지 않습니다.
+-- word 에 들어가는 것은 낱말 하나 또는 표현 하나이고, 문장이 아닙니다.
 --
 -- action 값
---   look   낱말을 눌러 AI 가 답했다        (ai_ko 가 채워짐)
+--   look   낱말을 눌러 AI 가 답했다
 --   retry  "다른 뜻으로 다시" 를 눌렀다     ← AI 가 틀렸다는 가장 강한 신호
---   edit   뜻을 직접 고쳐 썼다              (user_ko 가 ai_ko 와 다름)
+--   edit   뜻을 직접 적어 넣었다
 --   pick   아래 칩으로 다른 뜻을 골랐다
 --   star   모르는 정도를 바꿨다
 --   known  아는 낱말이라 단어장에서 뺐다
 --   quota  한도에 걸려 AI 를 못 불렀다      ← 한도를 올릴 근거
 --   explain 문장을 통째로 물어봤다          ← 낱말을 다 알아도 안 읽힌 문장
---           (word 가 빈 칸입니다. 하루 5번 한도를 세는 것도 이 줄입니다 —
---            표를 하나 더 두지 않고 "실제로 답을 받은 횟수"를 셉니다)
+--           (표제어가 없으므로 word 가 빈 칸입니다. 하루 5번 한도를 세는 것도
+--            이 줄입니다 — 표를 하나 더 두지 않고 "실제로 답을 받은 횟수"를 셉니다)
+--
+-- meta 에는 숫자와 짧은 꼬리표만 들어갑니다 — pos, note/phrase/alts 가 있었는지(0/1),
+-- 별 단계(status), 한도 사유. 사람이 쓴 글자는 들어가지 않습니다.
 create table if not exists public.dict_events (
   id        bigserial primary key,
   user_id   uuid references auth.users(id) on delete set null,
   at        timestamptz not null default now(),
   action    text not null,
-  word      text not null default '', -- 호환용 빈 칸. 실제 낱말은 저장하지 않음
+  word      text not null default '', -- 표제어 하나(소문자, 60자). 문장이 아님
   provider  text,
   meta      jsonb not null default '{}'::jsonb
 );
 
 create index if not exists dict_events_action_idx on public.dict_events (action, at desc);
 create index if not exists dict_events_user_idx   on public.dict_events (user_id, at desc);
-drop index if exists public.dict_events_word_idx;
+-- 아래 질의는 전부 "낱말별로 묶어 세기" 입니다.
+create index if not exists dict_events_word_idx   on public.dict_events (word, action);
 drop index if exists public.dict_events_fp_idx;
 alter table public.dict_events
   drop column if exists clicked,
@@ -193,13 +204,22 @@ where schemaname = 'public' and tablename in ('ai_usage','dict_events','dict_sha
 -- ai_usage, dict_events 두 줄만 나와야 맞습니다.
 
 -- 들여다보기 —
---   AI 가 자주 틀리는 낱말 (retry 가 많은 순)
---     select word, count(*) from public.dict_events where action = 'retry'
---     group by word order by count(*) desc limit 30;
+--   AI 가 자주 틀리는 낱말 — 조회 대비 retry 비율. 한 번 물어보고 만 낱말이
+--   100% 로 올라오지 않도록 조회 20번 이상만 봅니다.
+--     select word,
+--            count(*) filter (where action = 'retry') as retries,
+--            count(*) filter (where action = 'look')  as looks,
+--            round(100.0 * count(*) filter (where action = 'retry')
+--                        / nullif(count(*) filter (where action = 'look'), 0), 1) as pct
+--     from public.dict_events
+--     where word <> '' and action in ('look','retry')
+--     group by word having count(*) filter (where action = 'look') >= 20
+--     order by pct desc nulls last limit 30;
 --
---   사람이 손으로 고친 뜻 (AI 답과 나란히)
---     select word, ai_ko, user_ko, cue_before, cue_after, at
---     from public.dict_events where action = 'edit' order by at desc limit 50;
+--   사람이 뜻을 직접 적어 넣은 낱말 (= 우리 답을 안 쓴 낱말)
+--     select word, count(*) from public.dict_events where action = 'edit'
+--     group by word order by count(*) desc limit 30;
+--   무엇이라고 적었는지는 저장하지 않습니다 — 어떤 낱말이었는지만 남습니다.
 --
 --   오늘 누가 얼마나 썼나
 --     select user_id, calls from public.ai_usage

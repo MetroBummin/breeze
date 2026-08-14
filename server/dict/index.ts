@@ -219,7 +219,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
   } else if (!userId) {
     const verdict = await takeAnonQuota(clean(body.device, 64));
     if (verdict.status === "spent") {
-      logEvent({ userId: null, action: "quota", word, clicked, sentence, meta: { anon: 1 } });
+      logEvent({ userId: null, action: "quota", meta: { anon: 1 } });
       return json({ error: "anon_exhausted", free: ANON_FREE }, 429);
     }
     /* 기기 표시가 없거나(옛 앱) 하루 상한에 걸렸으면 로그인을 권합니다.
@@ -229,7 +229,7 @@ async function opLook(body: any, userId: string | null, seeding = false) {
   } else {
     const quota = await takeQuota(userId);
     if (!quota.ok) {
-      logEvent({ userId, action: "quota", word, clicked, sentence });
+      logEvent({ userId, action: "quota" });
       return json({ error: "quota_exceeded", limit: DAILY_LIMIT }, 429);
     }
     userLeft = quota.left;
@@ -273,9 +273,8 @@ async function opLook(body: any, userId: string | null, seeding = false) {
   if (seeding) return json(answer);
 
   logEvent({
-    userId, action: retry ? "retry" : "look", word, clicked, sentence,
-    lemma, pos: answer.pos, aiKo: answer.ko, provider: out.provider,
-    book: clean(body.book, 200),
+    userId, action: retry ? "retry" : "look",
+    lemma: lemma || word, pos: answer.pos, provider: out.provider,
     meta: { note: answer.note ? 1 : 0, phrase: answer.phrase ? 1 : 0, alts: answer.alts.length,
             avoid: avoid.length, ...(anonLeft === null ? {} : { anon: 1 }) },
   });
@@ -338,7 +337,7 @@ async function opExplain(body: any, userId: string | null) {
   if (sentence.length < 12) return json({ error: "bad_sentence" }, 400);
   const quota = await takeQuota(userId, EXPLAIN_COST);
   if (!quota.ok) {
-    logEvent({ userId, action: "quota", word: "", sentence, meta: { of: "explain" } });
+    logEvent({ userId, action: "quota", meta: { of: "explain" } });
     return json({ error: "quota_exceeded", limit: DAILY_LIMIT, left: 0 }, 429);
   }
 
@@ -353,9 +352,10 @@ async function opExplain(body: any, userId: string | null) {
   if (!ko) return json({ error: "empty_answer" }, 502);
   const points = cleanList(parsed.points, 3, 300);
 
+  /* 문장 해석에는 표제어가 없습니다. 문장 자체는 기록하지 않으므로
+     남는 것은 "몇 번 · 어느 공급자 · 몇 줄" 뿐입니다. */
   await logEvent({
-    userId, action: "explain", word: "", sentence,
-    provider: out.provider, book: clean(body.book, 200),
+    userId, action: "explain", provider: out.provider,
     meta: { points: points.length, cost: EXPLAIN_COST },
   });
   return json({ ko, points, provider: out.provider, left: quota.left });
@@ -369,16 +369,14 @@ async function opLog(body: any, userId: string | null) {
   if (!userId) return json({ ok: false, reason: "anonymous" });
   const action = clean(body.action, 20);
   if (!LOG_ACTIONS.has(action)) return json({ error: "bad_action" }, 400);
+  /* 몸통에서 읽는 것은 표제어와 품사뿐입니다. 옛 앱이 문장이나 책 제목을
+     함께 보내더라도 여기서 집지 않으므로 표까지 가지 않습니다. */
+  const status = Number(body.meta && body.meta.status);
   await logEvent({
     userId, action,
-    word: clean(body.word, 60).toLowerCase(),
-    clicked: clean(body.clicked, 60),
-    sentence: clean(body.sentence, 600),
     lemma: clean(body.lemma, 60),
-    aiKo: clean(body.ai_ko, 60),
-    userKo: clean(body.user_ko, 60),
-    book: clean(body.book, 200),
-    meta: (body.meta && typeof body.meta === "object") ? body.meta : {},
+    pos: clean(body.pos, 20),
+    meta: Number.isInteger(status) ? { status } : {},
   });
   return json({ ok: true });
 }
@@ -390,24 +388,32 @@ async function opPurgePrivateLogs(userId: string | null) {
   return json({ ok: true });
 }
 
+/* 이 표가 답해야 하는 질문은 하나입니다: **어떤 낱말에서 Breeze 의 뜻이
+   자주 빗나가나.** `retry` 는 "이 뜻이 아닌 것 같다" 이므로 가장 강한 신호인데,
+   무슨 낱말이었는지가 없으면 셀 수 있는 것이 "오늘 몇 번" 뿐이라 아무것도
+   고칠 수 없습니다. 그래서 표제어는 남깁니다.
+
+   대신 사람이 읽던 문장·책 제목·AI 가 준 한국어 뜻·사람이 적은 뜻은 남기지
+   않습니다. 그것들은 위 질문에 답하지 않으면서 읽기 기록만 서버에 쌓습니다.
+   `word` 칸에 들어가는 것은 낱말 하나(또는 표현 하나)이고, 문장은 아닙니다. */
 type EventIn = {
-  userId: string | null; action: string; word: string; clicked?: string; sentence?: string;
-  lemma?: string; pos?: string; aiKo?: string; userKo?: string; provider?: string;
-  book?: string; meta?: Record<string, unknown>;
+  userId: string | null; action: string;
+  lemma?: string; pos?: string; provider?: string;
+  meta?: Record<string, unknown>;
 };
 
 async function logEvent(e: EventIn) {
   try {
-    /* 운영 통계에는 내용이 필요하지 않습니다. 낱말·뜻·문장·책 제목·지문을
-       저장하지 않고, 어떤 동작이 성공했는지와 공급자만 남깁니다. */
+    const pos = String(e.pos || "").slice(0, 20);
     await SR.from("dict_events").insert({
       user_id: e.userId,
       action: e.action,
-      word: "",
+      word: String(e.lemma || "").toLowerCase().slice(0, 60),
       provider: e.provider || null,
       meta: {
+        ...(e.meta || {}),
+        ...(pos ? { pos } : {}),
         outcome: (e.meta && e.meta.outcome) || "ok",
-        ...(e.meta && e.meta.quota_version ? { quota_version: e.meta.quota_version } : {}),
       },
     });
   } catch (err) {

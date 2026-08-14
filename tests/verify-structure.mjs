@@ -781,6 +781,23 @@ assert.match(dictServer, /required: \["lemma", "pos", "ko", "note", "phrase", "a
   'The AI is asked for a general gloss instead of what this sentence shows');
 assert.match(dictServer, /\*\*이 문장에서\*\* 어떻게 쓰였는지/,
   'The look prompt no longer asks about this sentence');
+
+/* ── 운영 기록으로 나가는 것 ──
+   서버가 버려 주기를 믿지 않습니다. 사람이 읽던 문장·책 제목·뜻은 앱에서 아예
+   만들지 않고, 서버도 몸통에서 집지 않습니다. 두 겹 다 확인합니다 — 여기가
+   느슨해지면 화면은 그대로인데 읽기 기록만 조용히 서버로 흘러갑니다. */
+const logDictBody = (dictionarySource.match(/function logDict\([\s\S]*?\n\}/)||[''])[0];
+assert.match(logDictBody, /lemma:/, 'logDict no longer sends the headword to log against');
+assert.doesNotMatch(logDictBody, /sentence|book|user_ko|ai_ko|clicked/,
+  'logDict ships the reader sentence, book title or meanings to the server again');
+const opLogBody = (dictServer.match(/async function opLog\([\s\S]*?\n\}/)||[''])[0];
+assert.doesNotMatch(opLogBody, /body\.(sentence|book|ai_ko|user_ko|clicked|word)\b/,
+  'The log op reads the sentence, book title or meanings out of the request again');
+const logEventBody = (dictServer.match(/async function logEvent\([\s\S]*?\n\}\n/)||[''])[0];
+assert.doesNotMatch(logEventBody, /sentence|book|aiKo|userKo|clicked/,
+  'logEvent stores the sentence, book title or meanings again');
+assert.match(logEventBody, /word: String\(e\.lemma \|\| ""\)/,
+  'dict_events no longer records which headword the action was about');
 /* ── 단어 팝업의 뜻 문법 ──
    외울 손짓은 셋뿐입니다: 칩 = 이 뜻을 본다, ＋ = 뜻을 만든다, 메인 × = 지금 뜻을
    없앤다. 이 셋을 깨는 예외가 다시 생기지 않았는지 봅니다. */

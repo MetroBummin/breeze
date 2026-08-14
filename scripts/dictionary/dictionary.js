@@ -23,6 +23,19 @@ const NO_LEMMA = new Set(['news','always','perhaps','these','those','series','sp
   'hatred','united','ing','analysis','basis','crisis','thesis',
   /* 재귀대명사는 -s를 떼면 "themselve" 같은 없는 낱말이 되어 사전이 빕니다. */
   'themselves','ourselves','yourselves','myself','yourself','himself','herself','itself','oneself']);
+/* `hoping → hope` 처럼 사라진 e 를 되살리는 자리입니다. 그런데 이 규칙은
+   마지막 음절에 힘이 실린 낱말에서만 맞습니다 — `consider` 도 `offer` 도
+   `open` 도 끝이 "자음+모음+자음" 이라 규칙에는 걸리는데, 실제로는 e 가 없습니다.
+   그래서 `considering → considere`, `answered → answere` 같은 없는 낱말이
+   표제어로 저장되고 있었습니다.
+
+   가르는 신호는 하나로 충분합니다: **음절이 둘 이상이면서 끝이 힘 없는
+   -er/-en/-el/-on/-or 인 어간에는 e 를 붙이지 않습니다.** `bore·store·phone·
+   clone·come` 처럼 e 가 진짜 필요한 쪽은 전부 한 음절이라 그대로 지나갑니다. */
+const DULL_TAIL = /(?:er|en|el|on|or)$/;
+const vowelRuns = s => (s.match(/[aeiouy]+/g)||[]).length;
+const needsSilentE = b =>
+  /[^aeiou][aeiou][^aeiouwxy]$/.test(b) && !(DULL_TAIL.test(b) && vowelRuns(b) > 1);
 function lemma(w){
   if(IRREG[w]) return IRREG[w];
   if(w.length<4 || NO_LEMMA.has(w)) return w;
@@ -35,7 +48,7 @@ function lemma(w){
     let b = w.slice(0,-3);
     if(!hasVowel(b)) return w;
     if(b.length>2 && b[b.length-1]===b[b.length-2] && !/(ll|ss|zz)$/.test(b)) return b.slice(0,-1);
-    if(/[^aeiou][aeiou][^aeiouwxy]$/.test(b)) return b+'e';
+    if(needsSilentE(b)) return b+'e';
     return b;
   }
   if(/ed$/.test(w) && w.length>4 && !/eed$/.test(w)){
@@ -45,7 +58,7 @@ function lemma(w){
     /* charge→charged, use→used처럼 e가 사라진 형태. 일반 CVC 규칙보다 먼저
        대표적인 어말 묶음을 복원해야 charg 같은 가짜 표제어가 생기지 않습니다. */
     if(/(?:[cgsv]|bl|gl|iz)$/.test(b)) return b+'e';
-    if(/[^aeiou][aeiou][^aeiouwxy]$/.test(b)) return b+'e';
+    if(needsSilentE(b)) return b+'e';
     return b;
   }
   return w;
@@ -638,7 +651,20 @@ function adoptPhrase(k, view){
     renderBookBody(curBook);
     requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
   }
-  paintWord(id); renderPanel(); toast(`“${view.phrase}”을(를) 표현으로 저장했어요`);
+  paintWord(id); renderPanel(); announcePhraseSaved(view.phrase);
+}
+/* 표현의 색칠은 원문의 낱말이 저장한 순서 그대로 붙어 있을 때만 앉습니다.
+   `takes care of` · `taken care of` 같은 변형은 잡지만, `take good care of`
+   처럼 사이에 낱말이 끼거나 원본(PDF·EPUB) 모드에서는 안 칠해집니다.
+   여기를 더 똑똑하게 만드는 값보다, 처음 한 번 그렇다고 말해 두는 값이
+   큽니다 — 표현의 핵심은 발견하고 뜻을 알고 저장하는 것이지 색칠이 아닙니다. */
+const LS_PHRASE_HINT='breeze.phraseHint';
+function announcePhraseSaved(text){
+  let seen=false;
+  try{ seen=localStorage.getItem(LS_PHRASE_HINT)==='1'; }catch(e){}
+  if(seen){ toast(`“${text}”을(를) 표현으로 저장했어요`); return; }
+  try{ localStorage.setItem(LS_PHRASE_HINT,'1'); }catch(e){}
+  toast('표현을 저장했어요 · 문장 모양에 따라 본문에서 색칠되지 않을 수 있어요');
 }
 document.getElementById('p-context').onclick=()=>{ if(selKey) askCurrentContext(selKey); };
 document.getElementById('p-know').onclick = ()=>{
@@ -811,15 +837,17 @@ function warmDict(){
 
 /* 사람이 사전으로 무엇을 했는지. 낱말과 뜻 자체는 어디에도 있지만 이 기록은 없습니다.
    문장 본문은 보내되 서버는 지문만 남깁니다 — 자세한 규칙은 DICT.md. */
+/* 운영 기록으로 나가는 것은 **표제어 하나와 무슨 손짓이었나** 뿐입니다.
+   읽던 문장·책 제목·AI 가 준 뜻·내가 적은 뜻은 보내지 않습니다 — 서버가
+   답하고 싶은 질문("어떤 낱말에서 뜻 추천이 자주 빗나가나")은 표제어만으로
+   전부 답해지고, 나머지는 얻는 것 없이 사람의 읽기 기록만 밖으로 내보냅니다.
+   그래서 여기서 아예 만들지 않습니다. 서버가 버려 주기를 믿지 않습니다. */
 function logDict(action, k, extra){
   const w = words[k]; if(!w || !sb || !sbUser) return;
-  const withSentence = (action === 'edit' || action === 'pick');
   dictCall(Object.assign({
     op:'log', action,
-    word: w.word || k, clicked: w.clicked || '', lemma: w.aiLemma || '',
-    ai_ko: (w.ai && w.ai.ko) || '', user_ko: w.ko || '',
-    sentence: withSentence ? (w.example || '') : '',
-    book: w.book || ''
+    lemma: w.aiLemma || w.word || '',
+    pos: (w.ai && w.ai.pos) || ''
   }, extra || {}));
 }
 
