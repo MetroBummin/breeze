@@ -412,6 +412,19 @@ document.getElementById('rtext').addEventListener('click', e=>{
      confined to reading text: inputs, dictionary fields and the rest of the
      app retain their normal context menus. */
   text.addEventListener('contextmenu', event=>event.preventDefault());
+  /* `contextmenu` 위 한 줄로는 부족합니다 — iOS 의 Copy/Look Up 메뉴는 DOM
+     이벤트가 아니라 그 아래 UIKit 이 만드는 선택을 보고 뜨는 것이라, CSS의
+     `user-select:none` 이 그 경합에서 매번 이기지 못합니다. 손가락을 얹고 있는
+     동안 iOS 가 몰래 만든 선택을 그 자리에서 지우면(`selectionchange`), 메뉴가
+     뜨기 전에 없어집니다. `preventDefault` 를 쓰지 않으므로 스크롤(팬)에는
+     손대지 않습니다. */
+  document.addEventListener('selectionchange', ()=>{
+    const selection=document.getSelection();
+    if(!selection || selection.isCollapsed) return;
+    const node=selection.anchorNode;
+    const el=/** @type {Element|null} */(node && (node.nodeType===1 ? node : node.parentElement));
+    if(el && el.closest('#rtext') && !el.closest('.blk.code')) selection.removeAllRanges();
+  });
   text.addEventListener('pointerdown', event=>{
     if(typeof beginSentencePress !== 'function') return;
     const target=/** @type {HTMLElement} */(event.target);
