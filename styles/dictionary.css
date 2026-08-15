@@ -227,9 +227,28 @@
   /* mobile: bottom sheet */
   @media (max-width:760px){
     #v-read.on{display:block;}
-    #sheetbg{display:block; position:fixed; inset:0; background:var(--scrim-sheet); z-index:80; touch-action:none;
-      opacity:0; pointer-events:none; transition:opacity .25s;}
-    #sheetbg.on{opacity:1; pointer-events:auto;}
+    /* ---- 닫힌 시트의 바깥은 화면에서 아예 빠집니다 ----
+       예전에는 닫혀도 `display:block` 인 채 `opacity:0` 으로 남았습니다. 그러면
+       읽는 내내 화면 전체 크기의 `position:fixed` 판 하나가 본문 위에 얹혀
+       있습니다 — 게다가 `opacity` 전환이 한 번 돌고 난 뒤라 WebKit 이 따로
+       떼어 그리기 좋은 상태입니다. 남아 있어야 할 이유는 없었습니다: 닫힌
+       동안 이 판이 하는 일이 없고, `touchmove` 를 막는 귀는 요소가 살아 있기만
+       하면 되며(요소는 지워지지 않고 `display` 만 바뀝니다), 넓은 화면에서는
+       이미 `display:none` 입니다. 해석 창도 `[hidden]` 으로 통째로 빠집니다.
+
+       동작은 이 두 줄이 전부입니다 — `display` 하나로 뜨고 집니다. 아래의
+       스르르 뜨고 지는 그림은 **얹는 것**이라 없어도 됩니다. 그래서 전환을
+       기본 규칙에 섞지 않고 `@supports` 안에만 둡니다: 그것을 모르는 브라우저는
+       규칙 자체를 못 보고, 그림 없이 바로 뜨고 질 뿐 하는 일은 똑같습니다.
+       때를 재는 자바스크립트도, 따로 기억하는 상태도 없습니다. */
+    #sheetbg{display:none; position:fixed; inset:0; background:var(--scrim-sheet); z-index:80;
+      touch-action:none; opacity:0; pointer-events:none;}
+    #sheetbg.on{display:block; opacity:1; pointer-events:auto;}
+    /* ---- 여기부터는 있으면 좋은 것 ---- */
+    @supports (transition-behavior:allow-discrete){
+      #sheetbg{transition:opacity .25s, display .25s allow-discrete;}
+      @starting-style{ #sheetbg.on{opacity:0;} }
+    }
     #panel{position:fixed; left:0; right:0; bottom:0; top:auto; width:100%; height:auto; max-height:72vh;
       overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
       border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;

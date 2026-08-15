@@ -1360,6 +1360,28 @@ assert.match(gestureSource,
   'DISMISS_WORD no longer ends in exactly one closePanel() call');
 assert.match(gestureSource, /\|\| lastGesture\.decision === GESTURE_DISMISS_WORD\)\{/,
   'The click trailing a sheet dismiss is let through to the reader again');
+/* ---- 닫힌 것은 화면에서 빠집니다 ----
+   닫힌 시트의 바깥이 `display:block` 인 채 `opacity:0` 으로 남으면, 읽는 내내
+   화면 전체 크기의 고정 판이 본문 위에 얹혀 있게 됩니다. 해석 창은 `[hidden]`
+   으로 통째로 빠지고, 넓은 화면의 낱말 창도 `display:none` 입니다 — 폰의
+   시트만 예외였습니다. */
+assert.match(dictionaryCss, /#sheetbg\{display:none;[\s\S]{0,400}?\}\s*\n\s*#sheetbg\.on\{display:block;/,
+  'The closed sheet scrim stays in the render tree as a full-viewport fixed layer again');
+assert.match(dictionaryCss, /#sentence-modal\[hidden\]\{display:none;\}/,
+  'The closed sentence window stays in the render tree again');
+/* ---- 스르르 뜨고 지는 그림은 얹는 것입니다 ----
+   뜨고 지는 일 자체는 `display` 두 줄로 끝나야 합니다. 전환이 기본 규칙에
+   섞이면, 그것을 모르는 브라우저에서 `transition` 선언 하나가 통째로 버려질 때
+   무엇까지 함께 버려지는지가 브라우저 사정에 달리게 됩니다. `@supports` 안에만
+   두면 못 알아보는 쪽은 규칙 자체를 안 보고, 하는 일은 똑같습니다. */
+{
+  const scrimBlock = dictionaryCss.slice(dictionaryCss.indexOf('#sheetbg{display:none; position:fixed'));
+  const functional = scrimBlock.slice(0, scrimBlock.indexOf('@supports'));
+  assert.ok(functional.length && !/transition|allow-discrete|@starting-style/.test(functional),
+    'The sheet scrim needs a transition to open and close, so an engine without allow-discrete is left broken');
+  assert.match(scrimBlock, /@supports \(transition-behavior:allow-discrete\)\{[\s\S]{0,300}?@starting-style/,
+    'The scrim fade is no longer fenced behind @supports as a pure enhancement');
+}
 /* caret 이 대답하지 않는 엔진에서도 낱말은 열려야 합니다. */
 assert.match(epubOriginalSource, /function epubWordByGeometry/,
   'EPUB word lookup has no fallback for engines whose caret hit test returns null');
