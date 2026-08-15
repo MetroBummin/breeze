@@ -751,7 +751,7 @@ assert.match(epubSource,/function installEpubWordTap\(doc\)/,
   'EPUB original words require a browser selection instead of one tap');
 assert.match(epubSource,/function epubWordRangeAtPoint\(doc,clientX,clientY\)/,
   'EPUB one-tap lookup has no text-caret word hit test');
-assert.match(epubSource,/frameDoc\)\{\s*installEpubWordTap\(frameDoc\)/,
+assert.match(epubSource,/if\(frameDoc\) installEpubWordTap\(frameDoc\)/,
   'EPUB chapter frames do not install the one-tap word lookup');
 assert.doesNotMatch(epubSource,/더블클릭하거나 드래그/,
   'EPUB still tells readers to double-click after one-tap lookup was added');
@@ -774,7 +774,7 @@ assert.match(readFileSync(resolve(root,'styles/reader.css'),'utf8'),
    낱말을 이기는 일이 있었습니다 — `considering` 대신 `c` 가 열렸습니다.
    지금은 움직였는지를 판정자가 봅니다: 움직였으면 그 손짓은 이미 SCROLL 로
    끝나 EPUB 까지 오지 않고, 여기까지 온 것은 제자리에서 뗀 손뿐입니다. */
-assert.match(epubSource,/openWordAt\(clientX,clientY\)\{[\s\S]{0,300}epubWordRangeAtPoint\(doc,clientX,clientY\)/,
+assert.match(epubSource,/openWordAt\(clientX,clientY\)\{[\s\S]{0,300}epubWordRangeAtPoint\(at\.doc,at\.x,at\.y\)/,
   'A still click in EPUB original trusts an accidental selection over the word under the finger');
 assert.match(gestureSource,/gesture\.moved > GESTURE_SLOP/,
   'Movement is judged by each paper again instead of once by the controller');
@@ -1243,6 +1243,31 @@ assert.match(epubOriginalSource, /body\{-webkit-touch-callout:none\}/,
   'Original EPUB no longer suppresses the iOS Look Up callout inside its iframe');
 assert.match(epubOriginalSource, /suppressReaderSelection\(doc, \(\)=>true\)/,
   'Original EPUB does not clear the selection iOS makes under a long press');
+
+/* ---- 대본을 못 돌게 막은 틀에는 입력이 배달되지 않습니다 ----
+   iOS WebKit 에서 `sandbox="allow-same-origin"` 인 iframe 은 pointerdown 조차
+   내주지 않습니다(시뮬레이터 iOS 18.7 에서 잰 값은 epub-original.js 에 있습니다).
+   그래서 손가락은 그 위에 덮은 우리 문서의 살갗이 받고, 글자는 좌표를 옮겨
+   자식 문서에 물어봅니다. 이 다섯 줄이 그 계약입니다 — 하나라도 풀리면
+   실기기에서 "EPUB 만 안 눌린다"가 그대로 돌아옵니다. */
+assert.match(epubOriginalSource, /skin\.className='epub-touch-skin'/,
+  'EPUB chapters have no skin to catch the finger, so a sandboxed frame swallows every tap on iOS');
+assert.match(epubOriginalSource, /section\.appendChild\(frame\); section\.appendChild\(skin\)/,
+  'The EPUB skin is not stacked above its chapter frame, so the frame takes the touch again');
+assert.match(epubOriginalSource, /claims\(event\)\{[\s\S]{0,220}closest\('\.epub-touch-skin'\)/,
+  'The EPUB surface still claims by frame document, which never sees a gesture on iOS');
+assert.match(epubOriginalSource, /function epubFrameAtPoint\([\s\S]{0,600}x:clientX-box\.left, y:clientY-box\.top/,
+  'EPUB lookups are not translated from screen coordinates into the chapter frame');
+assert.doesNotMatch(runningCode(epubOriginalSource), /attachReaderGestures/,
+  'EPUB frames listen for gestures again, which judges one touch in two places');
+assert.doesNotMatch(runningCode(epubOriginalSource), /allow-scripts/,
+  'The EPUB sandbox lets the book run scripts in our own origin');
+assert.match(readerCss, /\.epub-source-chapter\{[^}]*position:relative/,
+  'The EPUB chapter is not a positioning parent, so its skin covers the wrong box');
+assert.match(readerCss, /\.epub-touch-skin\{[^}]*position:absolute; inset:0;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
+  'The EPUB skin is the biggest empty box on screen and can still be selected whole by iOS');
+assert.doesNotMatch(readerCss, /\.epub-chapter-frame\{[^}]*user-select/,
+  'Selection was turned off on the EPUB chapter itself, which takes its caret hit test down with it');
 assert.match(gestureSource, /addEventListener\('contextmenu'/,
   'Nothing dismisses a native context menu that escapes the iOS CSS guard');
 /* ---- 종이 셋이 모두 이 계약을 맺어야 합니다 ----

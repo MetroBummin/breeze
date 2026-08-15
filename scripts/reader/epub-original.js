@@ -117,17 +117,17 @@ async function sanitiseEpubChapter(archive,chapter,resources){
      글자를 담은 칸만 손가락 커서로 바꿉니다(여백은 그대로 화살표).
      iOS의 native callout은 문장 꾹 누르기를 가로채므로 EPUB 본문 안에서만
      선택과 callout을 끕니다. */
-  /* ---- callout 은 끄되 선택 자체는 끄지 않습니다 ----
+  /* ---- 책 안에서는 선택을 끄지 않습니다 ----
      한때 여기에 `user-select:none` 이 있었습니다. iOS 의 Look Up 메뉴를 막으려고
      넣은 것인데, 그 선언은 브라우저에 따라 caret hit-test 까지 함께 끕니다 —
-     그리고 EPUB 의 낱말 찾기는 caret 에 기대고 있었습니다. 한 증상을 막으려던
-     규칙이 다른 증상을 만든 자리입니다.
+     그리고 EPUB 의 낱말 찾기는 caret 에 기대고 있습니다. 한 증상을 막으려던
+     규칙이 다른 증상을 만든 자리입니다. 그래서 다시 넣지 않습니다.
 
-     지금은 둘을 나눕니다. 메뉴를 부르는 스위치(`-webkit-touch-callout`)만 끄고,
-     iOS 가 몰래 만든 선택은 생기는 족족 지웁니다(`suppressReaderSelection`) —
-     글자 화면이 쓰는 것과 같은 방법입니다. 선택 기능 자체는 살아 있으므로
-     어느 엔진에서든 caret 이 대답합니다. 그래도 대답하지 않으면 낱말 찾기가
-     기하로 한 번 더 시도합니다(`epubWordRangeAtPoint`). */
+     iOS 의 선택은 여기서 끄는 것이 아니라 **닿지 않게** 해서 막습니다 — 손가락은
+     이 문서가 아니라 그 위의 살갗(`.epub-touch-skin`)이 받습니다. 아래
+     `registerReaderSurface` 위에 잰 값과 함께 적어 두었습니다.
+     `-webkit-touch-callout` 은 그대로 둡니다 — 값이 싸고, 살갗이 없는 자리(장이
+     아직 안 뜬 사이)에서 링크 callout 만은 여전히 막아 줍니다. */
   const safety=`html,body{max-width:100%;min-height:1px}img,svg,video{max-width:100%;height:auto}
     body{-webkit-touch-callout:none}
     p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th{cursor:pointer}
@@ -159,6 +159,11 @@ async function openOriginalEpub(book,record,token){
     if(!html) continue;
     const section=document.createElement('section');
     section.className='epub-source-chapter'; section.dataset.spine=String(index); section.dataset.href=chapter.path;
+    /* ---- 손가락을 받는 것은 틀이 아니라 그 위의 살갗입니다 ----
+       까닭은 아래 `registerReaderSurface` 위에 적어 두었습니다. 장마다 하나씩,
+       틀과 정확히 같은 자리에 덮습니다(`styles/reader.css`). */
+    const skin=document.createElement('div');
+    skin.className='epub-touch-skin';
     const frame=document.createElement('iframe');
     frame.className='epub-chapter-frame'; frame.setAttribute('sandbox','allow-same-origin');
     frame.setAttribute('scrolling','no'); frame.title=`${book.title} ${index+1}`;
@@ -176,22 +181,13 @@ async function openOriginalEpub(book,record,token){
           const observer=new ResizeObserver(resize); observer.observe(frameDoc.documentElement);
           session.resizeObservers.push(observer);
         }
-        if(frameDoc){
-          installEpubWordTap(frameDoc);
-          /* EPUB 은 벌리지 않습니다 — 글자라서 크기를 키우면 줄바꿈까지 다시
-             흘러 화면 폭에 맞습니다(벌리기는 한 줄을 읽으려고 옆으로 밀게 만들
-             뿐입니다). 벌어지는 것은 종이를 찍은 그림인 PDF 뿐입니다.
-             샌드박스 iframe 은 제 문서라 우리 쪽 귀가 안 닿으므로, 브라우저의
-             벌리기를 막는 귀만 여기 한 번 겁니다. */
-          blockBrowserPinch(frameDoc);
-          renderEpubSavedWordHighlights(frameDoc);
-        }
+        if(frameDoc) installEpubWordTap(frameDoc);
         finish();
       };
       frame.onerror=finish;
       setTimeout(finish,EPUB_FRAME_TIMEOUT);
     });
-    frame.srcdoc=html; section.appendChild(frame); content.appendChild(section);
+    frame.srcdoc=html; section.appendChild(frame); section.appendChild(skin); content.appendChild(section);
     session.frames[index]=frame; session.frameReady[index]=ready;
   }
   await Promise.all(session.frameReady.filter(Boolean).slice(0,2));
@@ -380,47 +376,83 @@ function epubWordRangeAtPoint(doc,clientX,clientY){
 }
 
 /* ================= EPUB 이라는 종이 =================
-   장마다 제 문서(iframe)라 귀는 그 문서에도 한 벌 답니다. 그러나 판정하는 코드는
-   글자판·스캔본과 똑같은 그 한 곳입니다 — scripts/reader/gesture.js.
 
-   예전에는 여기에 리스너가 여섯 개 있었고, 그중 `pointerup` 이 **한 손짓을 두 번**
-   판정했습니다: 먼저 caret 으로 낱말을 찾고, 그것이 실패하면 `setTimeout(…,0)`
-   뒤에 브라우저 selection 으로 또 한 번 찾았습니다. 그 두 번째 길은 지금
-   도달할 수 없습니다 — iOS 가 만든 선택은 생기는 족족 지워지므로(위의 safety
-   CSS 설명) 볼 selection 이 없습니다. 그래서 걷어냈습니다. 낱말을 고르는 길은
-   세 화면 모두 하나입니다: 한 번 누른다. */
+   ---- 샌드박스 안에서는 손짓이 일어나지 않습니다 ----
+   장은 저마다 `sandbox="allow-same-origin"` 인 iframe 입니다. 대본을 못 돌게
+   막은 그 한 마디가, iOS WebKit 에서는 **그 문서에 아무 입력도 배달되지 않게**
+   합니다. 시뮬레이터(iOS 18.7 / WebKit 26.4)에서 같은 조건을 세워 재었습니다 —
+   같은 자리를 한 번 누를 때:
+
+     sandbox="allow-same-origin"            pointerdown 0 · pointerup 0 · click 0
+     sandbox 없음                            pointerdown 1 · pointerup 1 · click 1
+     sandbox="allow-same-origin allow-scripts"  pointerdown 1 · pointerup 1 · click 1
+
+   가르는 것은 `allow-scripts` 입니다. 그런데 `allow-same-origin` 과 함께 주면
+   책이 제 울타리를 스스로 풀 수 있으므로 그 길은 없습니다. 그리고 울타리를
+   아예 걷는 것도 답이 아닙니다 — 남의 책을 우리 출처에서 대본 채로 여는 셈입니다.
+
+   그래서 **누가 손가락을 받는지**를 바꿉니다. 틀 위에 우리 문서의 살갗
+   (`.epub-touch-skin`)을 한 겹 덮습니다. 살갗은 대본이 도는 문서의 것이라
+   손짓이 살아서 오고, 글자를 짚는 일은 좌표만 옮겨 자식 문서에 물어봅니다 —
+   `caretPositionFromPoint` 도 `elementFromPoint` 도 같은 출처라서 그대로
+   대답합니다(재어 봤습니다: 살갗 좌표 150,79 → caret `his`, 기하 `his`).
+
+   덤으로 3 번 증상이 함께 끝납니다. 손가락이 애초에 책의 글자에 닿지 않으므로
+   iOS 가 선택을 **시작할 자리가 없습니다**. `user-select:none` 을 책에 넣어
+   caret 을 죽이는 길도, 이미 시작된 선택을 뒤늦게 지우는 길도 아닙니다 —
+   같은 조건에서 1.8 초를 눌러 확인했습니다: 파란 선택 0, Copy/Look Up 메뉴 0.
+   (덮기 전에는 같은 손짓이 선택과 메뉴를 띄웠고, 그때 로그는 비어 있었습니다 —
+   지울 기회조차 없었다는 뜻입니다.)
+
+   판정하는 코드는 글자판·스캔본과 똑같은 그 한 곳입니다 — scripts/reader/gesture.js. */
 function installEpubWordTap(doc){
-  attachReaderGestures(doc);
+  /* 살갗이 손짓을 다 받으므로 이 문서로는 손짓이 오지 않습니다. 다만 자판으로
+     고르는 길(찾기·전체 선택)은 남아 있어, 그때 생긴 선택만 지웁니다. */
   suppressReaderSelection(doc, ()=>true);
+  renderEpubSavedWordHighlights(doc);
+}
+
+/* 짚은 자리가 어느 장인지. 좌표는 화면의 것이므로 틀의 왼쪽 위를 빼서
+   그 장의 좌표로 옮깁니다. EPUB 은 배율을 쓰지 않으므로(`originalZoomActive`)
+   나눌 것은 없습니다. */
+function epubFrameAtPoint(clientX,clientY){
+  if(!originalSession || !originalSession.frames) return null;
+  for(const frame of originalSession.frames){
+    if(!frame) continue;
+    const box=frame.getBoundingClientRect();
+    if(clientX<box.left || clientX>box.right || clientY<box.top || clientY>box.bottom) continue;
+    let doc=null;
+    try{ doc=frame.contentDocument; }catch(error){ return null; }
+    return doc ? {doc, x:clientX-box.left, y:clientY-box.top} : null;
+  }
+  return null;
 }
 
 registerReaderSurface({
   name:'epub',
   claims(event){
-    if(!originalSession || !originalSession.frames) return false;
-    const doc=event.target && event.target.ownerDocument;
-    if(!doc || doc===document) return false;
-    return originalSession.frames.some(frame=>{
-      try{ return frame && frame.contentDocument===doc; }catch(error){ return false; }
-    });
+    if(!originalSession || originalSession.kind!=='epub') return false;
+    const target=event.target;
+    return !!(target && target.closest && target.closest('.epub-touch-skin'));
   },
-  document(){ return epubActiveDocument() || document; },
+  document(){ return document; },
   openWordAt(clientX,clientY){
-    const doc=epubActiveDocument();
-    if(!doc) return false;
-    const hit=epubWordRangeAtPoint(doc,clientX,clientY);
+    const at=epubFrameAtPoint(clientX,clientY);
+    if(!at) return false;
+    const hit=epubWordRangeAtPoint(at.doc,at.x,at.y);
     if(!hit) return false;
-    openOriginalRange(doc,hit.range,hit.raw,hit.owner,hit.rect);
+    openOriginalRange(at.doc,hit.range,hit.raw,hit.owner,hit.rect);
     return true;
   },
   sentenceAt(clientX,clientY){
-    const doc=epubActiveDocument();
-    if(!doc) return null;
+    const spot=epubFrameAtPoint(clientX,clientY);
+    if(!spot) return null;
+    const doc=spot.doc;
     /* 누른 자리가 문단 어디쯤인지를 세어 그 자리를 품은 문장을 고릅니다. 낱말이
        어느 문장에 **들어 있는지**로 찾으면 같은 낱말이 문단에 두 번 나올 때 늘
        앞의 것이 잡히고, 짧은 문단에서는 문단 전체가 통째로 넘어갔습니다 —
        "이 문장"이라고 해 놓고 다섯 문장을 물어보는 셈이었습니다. */
-    const hit=epubWordRangeAtPoint(doc,clientX,clientY);
+    const hit=epubWordRangeAtPoint(doc,spot.x,spot.y);
     if(!hit || typeof bridgeSentences!=='function') return null;
     const owner=hit.owner;
     const block=(owner && owner.closest && owner.closest('p,li,blockquote,h1,h2,h3,h4')) || owner;
@@ -441,16 +473,6 @@ registerReaderSurface({
   },
   trace(){ return `caret path: ${epubLastHitPath||'—'}`; },
 });
-
-/* 손짓이 시작된 장의 문서. 좌표는 그 문서의 것이라 다른 장에 물으면 어긋납니다. */
-function epubActiveDocument(){
-  if(!originalSession || !originalSession.frames) return null;
-  const doc=readerGestureDocument();
-  if(!doc || doc===document) return null;
-  return originalSession.frames.some(frame=>{
-    try{ return frame && frame.contentDocument===doc; }catch(error){ return false; }
-  }) ? doc : null;
-}
 
 function openOriginalRange(doc,range,raw,owner,rect){
   if(!doc || !range || !raw || !owner || !rect) return;

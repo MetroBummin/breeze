@@ -319,8 +319,22 @@
   @keyframes reader-mode-cue-out{0%,58%{opacity:1}100%{opacity:0}}
 
   .epub-original{display:flex; flex-direction:column; gap:20px;}
-  .epub-source-chapter{width:100%; background:var(--source-page); box-shadow:var(--source-shadow-soft); overflow:hidden;}
+  .epub-source-chapter{width:100%; background:var(--source-page); box-shadow:var(--source-shadow-soft); overflow:hidden;
+    position:relative;}
   .epub-chapter-frame{display:block; width:100%; min-height:80px; border:0; background:var(--source-page);}
+  /* ---- 장 위에 덮는 살갗 ----
+     책은 대본을 못 돌게 막은 iframe 이고, 그 한 마디 때문에 iOS 는 그 문서로
+     입력을 아예 배달하지 않습니다(까닭과 잰 값은 scripts/reader/epub-original.js).
+     그래서 손가락은 우리 문서의 이 빈 겹이 받습니다. 틀과 같은 자리를 덮으므로
+     장이 자라면 함께 자랍니다.
+
+     `user-select:none` 은 여기 **살갗에** 답니다 — 책의 글자에 달면 caret 이
+     함께 죽습니다. 고를 글자가 없는 빈 상자를 꾹 누르면 iOS 가 상자 전체를
+     골라 버리는 것은 스캔본 종이와 낱말 시트 바깥에서 이미 겪은 그 버릇입니다.
+     배경은 투명하고 자리도 차지하지 않으므로 그림에는 아무 일도 없습니다. */
+  .epub-touch-skin{position:absolute; inset:0; background:transparent;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;}
 
   @media(max-width:760px){
     /* 좌우 여백은 확대되는 층 안쪽으로 내려갑니다 — 바깥이 폭을 정하면 벌릴 때
