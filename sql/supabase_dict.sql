@@ -18,10 +18,12 @@
 -- 이제 AI 가 뜻의 유일한 출처입니다. 그래서 이 표가 유일한 비용 통제 장치입니다.
 create table if not exists public.ai_usage (
   user_id  uuid not null references auth.users(id) on delete cascade,
-  day      date not null default (now() at time zone 'utc')::date,
+  day      date not null default (now() at time zone 'Asia/Seoul')::date,
   calls    integer not null default 0,
   primary key (user_id, day)
 );
+-- 표가 이미 있으면 위 create 는 그냥 건너뛰므로, default 는 따로 갱신해야 적용됩니다.
+alter table public.ai_usage alter column day set default (now() at time zone 'Asia/Seoul')::date;
 
 -- 한 번의 낱말 조회는 1, 문장 해석은 2를 씁니다. 남은 양을 서버가 돌려주므로
 -- 앱이 추측하지 않습니다. 함수에는 사용량 데이터가 들어 있지 않으므로 재실행할 때
@@ -38,7 +40,7 @@ begin
     returning calls into c;
   if c is null then
     select calls into c from public.ai_usage
-      where user_id = p_user and day = (now() at time zone 'utc')::date;
+      where user_id = p_user and day = (now() at time zone 'Asia/Seoul')::date;
     return jsonb_build_object('ok', false, 'calls', coalesce(c,0));
   end if;
   return jsonb_build_object('ok', true, 'calls', c);
@@ -49,7 +51,7 @@ create or replace function public.peek_ai_quota(p_user uuid)
 returns integer language sql security definer as $$
   select coalesce((select calls from public.ai_usage
                     where user_id = p_user
-                      and day = (now() at time zone 'utc')::date), 0);
+                      and day = (now() at time zone 'Asia/Seoul')::date), 0);
 $$;
 
 -- ────────────────────────────────────────────────────────────
@@ -75,9 +77,10 @@ create table if not exists public.anon_usage (
 
 -- 로그인 전 요청 전체의 하루 총량. 차단기입니다.
 create table if not exists public.anon_daily (
-  day    date primary key default (now() at time zone 'utc')::date,
+  day    date primary key default (now() at time zone 'Asia/Seoul')::date,
   calls  integer not null default 0
 );
+alter table public.anon_daily alter column day set default (now() at time zone 'Asia/Seoul')::date;
 
 create or replace function public.take_anon_quota(
   p_device text, p_limit integer, p_daily_cap integer)
@@ -97,7 +100,7 @@ begin
     return jsonb_build_object('status','spent','calls',c);
   end if;
 
-  insert into public.anon_daily (day, calls) values ((now() at time zone 'utc')::date, 1)
+  insert into public.anon_daily (day, calls) values ((now() at time zone 'Asia/Seoul')::date, 1)
     on conflict (day) do update set calls = anon_daily.calls + 1
     returning calls into d;
   if d > p_daily_cap then
@@ -223,4 +226,8 @@ where schemaname = 'public' and tablename in ('ai_usage','dict_events','dict_sha
 --
 --   오늘 누가 얼마나 썼나
 --     select user_id, calls from public.ai_usage
---     where day = (now() at time zone 'utc')::date order by calls desc;
+--     where day = (now() at time zone 'Asia/Seoul')::date order by calls desc;
+--
+--   UTC 기준으로 쌓인 예전 테스트 행 지우기 (reset 기준을 KST 로 바꾼 뒤,
+--   한 번만 필요하면 직접 실행 — 이 파일을 다시 돌릴 때마다 자동으로 지우지 않습니다)
+--     truncate public.ai_usage, public.anon_daily;

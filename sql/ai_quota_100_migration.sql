@@ -25,7 +25,7 @@ begin
     select calls into c
       from public.ai_usage
       where user_id = p_user
-        and day = (now() at time zone 'utc')::date;
+        and day = (now() at time zone 'Asia/Seoul')::date;
     return jsonb_build_object('ok', false, 'calls', coalesce(c, 0));
   end if;
 

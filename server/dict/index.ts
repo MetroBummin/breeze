@@ -323,14 +323,6 @@ function explainPrompt(sentence: string) {
 {"ko":"","points":[""]}`;
 }
 
-function seoulDayBounds() {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" })
-    .formatToParts(new Date()).reduce<Record<string, string>>((out, part) => { out[part.type] = part.value; return out; }, {});
-  const year = Number(parts.year), month = Number(parts.month), day = Number(parts.day);
-  const start = Date.UTC(year, month - 1, day) - 9 * 60 * 60 * 1000;
-  return { day: `${parts.year}-${parts.month}-${parts.day}`, since: new Date(start).toISOString(), until: new Date(start + 86400000).toISOString() };
-}
-
 async function opExplain(body: any, userId: string | null) {
   if (!userId) return json({ error: "login_required" }, 401);
   const sentence = clean(body.sentence, 600);

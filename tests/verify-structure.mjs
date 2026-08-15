@@ -1494,6 +1494,30 @@ assert.ok(
   dictServerSource.indexOf('if (op === "explain")') < dictServerSource.indexOf('if (!/^[A-Za-z]'),
   'The sentence op is rejected by the single-word guard it should have run before',
 );
+/* 클라이언트는 한국 날짜로 하루를 셉니다("자정에 다시 채워집니다"). 서버가 UTC 로
+   세면 자정~오전 9시 사이에 화면과 실제 한도가 서로 다른 날을 봅니다. 그래서
+   day 계산은 어디에도 UTC 가 남아 있으면 안 되고, 전부 Asia/Seoul 이어야 합니다. */
+const dictSqlSource = readFileSync(resolve(root, 'sql/supabase_dict.sql'), 'utf8');
+const quotaMigrationSource = readFileSync(resolve(root, 'sql/ai_quota_100_migration.sql'), 'utf8');
+assert.doesNotMatch(dictSqlSource, /time zone 'utc'/,
+  'A quota day is still computed in UTC, so it resets 9 hours after the KST midnight the UI promises');
+assert.doesNotMatch(quotaMigrationSource, /time zone 'utc'/,
+  'take_ai_quota\'s fallback lookup is still computed in UTC');
+for(const table of ['ai_usage', 'anon_daily']){
+  const create = dictSqlSource.slice(dictSqlSource.indexOf(`create table if not exists public.${table}`));
+  assert.match(create.slice(0, create.indexOf(');')), /time zone 'Asia\/Seoul'/,
+    `public.${table}.day does not default to the Korean calendar date`);
+}
+assert.match(dictSqlSource, /alter table public\.ai_usage alter column day set default \(now\(\) at time zone 'Asia\/Seoul'\)::date/,
+  'An already-existing ai_usage table would keep its old UTC default, since "create table if not exists" skips existing tables');
+assert.match(dictSqlSource, /alter table public\.anon_daily alter column day set default \(now\(\) at time zone 'Asia\/Seoul'\)::date/,
+  'An already-existing anon_daily table would keep its old UTC default, since "create table if not exists" skips existing tables');
+assert.match(quotaMigrationSource, /day = \(now\(\) at time zone 'Asia\/Seoul'\)::date/,
+  'take_ai_quota looks up today\'s row in a different calendar than the one it writes to');
+/* 죽은 코드였습니다 — 아무도 부르지 않는 KST 계산이 서버에 남아 있으면, 진짜
+   고쳐야 할 SQL 쪽 day 계산을 고친 줄 알고 넘어가기 쉽습니다. */
+assert.doesNotMatch(dictServerSource, /seoulDayBounds/,
+  'The unused seoulDayBounds() helper is back — the real fix lives in the SQL day defaults, not here');
 
 /* ── 기다림 ──
    낱말 창과 문장 창이 같은 것을 씁니다. 자리마다 다른 것이 뜨면 "무엇을 기다리는지"
