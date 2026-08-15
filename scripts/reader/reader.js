@@ -398,60 +398,59 @@ if(window.ResizeObserver){
   }).observe(document.getElementById('readmain'));
 }
 
-/* 낱말 하나는 탭, 문장 하나는 꾹 누르기입니다. 꾹 누르기가 확정되면 뒤따라오는
-   탭은 낱말을 여는 손짓이 아니므로 삼킵니다 — scripts/dictionary/sentence.js */
-document.getElementById('rtext').addEventListener('click', e=>{
-  if(typeof sentencePressBusy === 'function' && sentencePressBusy()) return;
-  const span = e.target.closest('.w');
-  if(span) openWord(span.dataset.w, span);
+/* ================= 글자판이라는 종이 =================
+   낱말 하나는 탭, 문장 하나는 꾹 누르기 — 그 판정은 여기서 하지 않습니다
+   (scripts/reader/gesture.js). 여기 있는 것은 "그 자리에 어떤 낱말·문장이
+   있는가"뿐이고, 그건 이 종이만 아는 일입니다.
+
+   예전에는 이 자리에 리스너가 여섯 개 있었습니다 — click 이 낱말을 열고,
+   pointerdown/move/up 이 꾹 누르기를 재고, scroll 이 그것을 취소하면서 벽시계
+   유예 셋을 함께 봤습니다. 전부 판정 주체가 없어서 생긴 것이라 사라졌습니다. */
+
+/* 한 문단 안에서 이 문장이 차지하는 자리를 찾습니다. 문단 글자와 문장 글자는
+   같은 곳(`bridgeSentences`)에서 잘라 낸 것이라 자를 다시 대지 않아도 맞습니다. */
+function textSentenceRangeIn(block, sentence){
+  if(!block || typeof bridgeSentences !== 'function') return null;
+  const want=String(sentence||'').replace(/\s+/g,' ').trim();
+  if(!want) return null;
+  const parts=bridgeSentences(block.textContent);
+  const part=parts.find(item=>item.text.replace(/\s+/g,' ').trim() === want)
+    || parts.find(item=>item.text.replace(/\s+/g,' ').includes(want));
+  return part ? domRangeForOffsets(block, part.start, part.end) : null;
+}
+
+function textWordSpanAt(clientX, clientY){
+  const element=document.elementFromPoint(clientX, clientY);
+  return element && element.closest ? element.closest('#rtext .w') : null;
+}
+
+registerReaderSurface({
+  name: 'text',
+  claims(event){
+    const target=event.target;
+    return currentReaderMode==='text' && !!(target && target.closest && target.closest('#rtext'));
+  },
+  document(){ return document; },
+  openWordAt(clientX, clientY){
+    const span=textWordSpanAt(clientX, clientY);
+    if(!span) return false;
+    openWord(span.dataset.w, span);
+    return true;
+  },
+  sentenceAt(clientX, clientY){
+    const span=textWordSpanAt(clientX, clientY);
+    if(!span) return null;
+    const block=span.closest('[data-pi]');
+    const sentence=sentenceOf(span);
+    if(!sentence) return null;
+    const range=textSentenceRangeIn(block, sentence);
+    return { sentence, paint(){
+      if(range && typeof showRangeModeCue==='function') showRangeModeCue(range, 0);
+      else if(block && typeof showElementModeCue==='function') showElementModeCue(block, 0);
+    } };
+  },
 });
-(function(){
-  const text=document.getElementById('rtext');
-  /* iOS Safari/WebView sometimes reaches its Look Up callout before the
-     selection-blocking CSS has won the long press. This is deliberately
-     confined to reading text: inputs, dictionary fields and the rest of the
-     app retain their normal context menus. */
-  text.addEventListener('contextmenu', event=>event.preventDefault());
-  /* `contextmenu` 위 한 줄로는 부족합니다 — iOS 의 Copy/Look Up 메뉴는 DOM
-     이벤트가 아니라 그 아래 UIKit 이 만드는 선택을 보고 뜨는 것이라, CSS의
-     `user-select:none` 이 그 경합에서 매번 이기지 못합니다. 손가락을 얹고 있는
-     동안 iOS 가 몰래 만든 선택을 그 자리에서 지우면(`selectionchange`), 메뉴가
-     뜨기 전에 없어집니다. `preventDefault` 를 쓰지 않으므로 스크롤(팬)에는
-     손대지 않습니다. */
-  document.addEventListener('selectionchange', ()=>{
-    const selection=document.getSelection();
-    if(!selection || selection.isCollapsed) return;
-    const node=selection.anchorNode;
-    const el=/** @type {Element|null} */(node && (node.nodeType===1 ? node : node.parentElement));
-    if(el && el.closest('#rtext') && !el.closest('.blk.code')) selection.removeAllRanges();
-  });
-  text.addEventListener('pointerdown', event=>{
-    if(typeof beginSentencePress !== 'function') return;
-    const target=/** @type {HTMLElement} */(event.target);
-    const span=target && target.closest ? target.closest('.w') : null;
-    if(!span) return;
-    /* 누르고 있는 동안에는 아무것도 찾지 않고 아무것도 칠하지 않습니다.
-       문장을 짚는 일은 타이머가 끝난 그 순간에 처음 일어납니다. */
-    beginSentencePress(event, ()=>sentencePressInText(span));
-  }, true);
-  text.addEventListener('pointermove', event=>{ if(typeof moveSentencePress==='function') moveSentencePress(event); }, true);
-  ['pointerup','pointercancel','pointerleave'].forEach(name=>
-    text.addEventListener(name, ()=>{ if(typeof cancelSentencePress==='function') cancelSentencePress(); }, true));
-  /* 화면이 움직이면 그것은 스크롤입니다. 손가락이 제자리에 있어도 마찬가지입니다.
-     듣는 곳은 실제로 구르는 칸(`#reader-scroll`)이어야 합니다 — `#readmain` 은
-     읽는 동안 아예 구르지 않으므로(scripts/reader/reader-scroll.js) 여기 걸어 둔
-     귀는 한 번도 울린 적이 없었습니다. 그래서 낱말에 손가락을 얹은 채 밀면
-     1초 뒤에 묻지도 않은 문장 해석이 열렸습니다. */
-  const scroller=readerScroller();
-  if(scroller) scroller.addEventListener('scroll', ()=>{
-    /* 프로그램이 옮겨 놓은 화면은 스크롤이 아닙니다 — 낱말 창이 닫히며 보던
-       자리를 되돌리는 중이거나, 모드를 옮기며 자리를 맞추는 중입니다. 그동안
-       손가락은 제자리에 있으므로 누르던 것을 뺏지 않습니다. 상단바가 제멋대로
-       걷히지 않게 쓰는 표를 그대로 씁니다 — 그중 `chromePinned` 만이 되돌리는
-       일이 **끝날 때까지** 잡고 있습니다(원본은 안에 쪽 하나를 그리는 `await`
-       가 있어서 벽시계 유예가 먼저 끝납니다). 그 사이에 손을 얹으면 꾹 누르기가
-       조용히 죽고 낱말 창이 대신 떴습니다. */
-    if(chromePinned || readerAnchorHeld() || Date.now() < readerScrollPauseUntil) return;
-    if(typeof cancelSentencePress==='function') cancelSentencePress();
-  }, {passive:true});
-})();
+
+/* 코드 블록은 읽는 글이 아니라 옮겨 적을 것이라, 거기서는 선택을 지우지 않습니다. */
+suppressReaderSelection(document, element=>
+  !!element.closest('#rtext') && !element.closest('.blk.code'));

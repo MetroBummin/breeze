@@ -120,6 +120,26 @@ server/
 <h2 id="읽기-화면">읽기 화면</h2>
 <h3 id="글자와-원본">글자와 원본</h3>
 <ul><li><strong>글자 모드</strong>는 추출한 문단을 읽기 좋은 흐름으로 보여 줍니다. 글자 크기·여백·테마는 <code>Aa</code>가 맡습니다.</li><li><strong>원본 모드</strong>는 PDF 캔버스 또는 정리된 EPUB을 보여 줍니다.</li><li>문단마다 PDF 페이지 좌표 또는 EPUB 장/요소 위치를 기록해 두 모드를 오갈 때 가능한 한 같은 문장 근처로 돌아갑니다.</li><li>진행도는 화면 픽셀이 아니라 PDF 페이지·EPUB 위치·문단 위치처럼 논리적인 위치를 기준으로 저장합니다.</li></ul>
+<h3 id="손짓은-한-곳에서-판정합니다">손짓은 한 곳에서 판정합니다</h3>
+<p>한 번의 손짓은 정확히 하나로 끝납니다 — <code>UI</code> · <code>SCROLL</code> · <code>SENTENCE</code> · <code>WORD</code> · <code>CANCEL</code>. 판정하는 곳은 <code>scripts/reader/gesture.js</code> 하나입니다.</p>
+<pre data-lang="text"><code>        pointerdown / move / up / click
+                     │
+            Gesture Controller       한 손짓 = 한 판정
+                     │
+      ┌──────────────┼──────────────┐
+     UI           SCROLL      WORD / SENTENCE
+                                    │
+                          ┌─────────┼─────────┐
+                        Text       PDF      EPUB      ← surface
+                     DOM에서    좌표표에서   caret·기하로</code></pre>
+<p><code>pointerdown → pointermove → pointerup → click</code> 은 서로 다른 행동이 아니라 한 손짓을 읽기 위한 브라우저 신호입니다. 확정된 뒤에 오는 꼬리(<code>click</code>)는 다시 판정하지 않습니다 — 시계로 거르는 것이 아니라 <strong>누구의 꼬리인지</strong>로 거릅니다.</p>
+<p>종이는 허용 목록입니다(<code>#rtext</code>, <code>#originalwrap</code>). 그 바깥에서 시작한 손짓은 무엇이 깔려 있든 reader 로 내려가지 않습니다. 떠 있는 UI 를 하나씩 세어 거르던 목록은 없어졌습니다.</p>
+<p>중앙은 형식을 모릅니다. "이번 손짓은 WORD 다"까지만 정하고, 그 자리의 낱말을 실제로 찾는 일은 surface 가 합니다(<code>registerReaderSurface</code>). <code>ORIGINAL_FORMATS</code> 가 앵커·진행도에 대해 하는 일을 입력에 대해 하는 것과 같습니다. 그래서 버그가 나면 계층이 바로 갈립니다:</p>
+<div class="tablewrap"><table><thead><tr><th>증상</th><th>볼 곳</th></tr></thead><tbody><tr><td>모든 모드에서 한 탭이 두 번</td><td>Gesture Controller</td></tr><tr><td>UI 를 눌렀는데 뒤가 열림</td><td>종이 허용 목록 / <code>claims()</code></td></tr><tr><td>PDF 에서만 엉뚱한 낱말</td><td>PDF surface</td></tr><tr><td>EPUB 에서만 안 열림</td><td>EPUB surface</td></tr></tbody></table></div>
+<p><code>tests/verify-structure.mjs</code> 가 이 경계를 지킵니다 — 판정 계층이 형식을 분기하거나, 종이가 raw pointer 신호를 다시 듣기 시작하면 테스트가 깨집니다.</p>
+<p>개발 중에는 <code>?gesture=1</code> 로 손짓 하나하나를 볼 수 있습니다. 한 손짓에서 뜻 있는 action 이 둘 이상 나가면 개발 모드가 아니어도 콘솔이 소리칩니다.</p>
+<h3 id="프레임은-같은-자를-두-번-대지-않습니다">프레임은 같은 자를 두 번 대지 않습니다</h3>
+<p><code>?frames=1</code> 을 켜면 프레임마다 무슨 일이 몇 번 일어났는지 찍힙니다 (<code>scripts/reader/frame-trace.js</code>). <code>breezeFrameSummary()</code> 로 요약을 봅니다. 이 계측으로 스크롤 한 프레임에서 <code>captureAnchor()</code> 가 두 번 돌던 것을 찾아 하나로 줄였습니다 — 진행줄과 읽던 자리 기억이 같은 답을 나눠 씁니다.</p>
 <h3 id="pdf-확대">PDF 확대</h3>
 <p>PDF 원본의 확대는 <code>#pdfzoom-out</code>, <code>#pdfzoom-in</code>이 <code>#original-zoom</code>의 배율을 바꾸는 방식입니다. 확대된 종이는 뷰어 안에서 가로·세로로 스크롤합니다.</p>
 <p>핀치 확대는 iOS 홈 화면 웹앱에서 브라우저가 viewport와 스크롤 앵커를 동시에 바꾸며 페이지가 튀는 문제가 있어 사용하지 않습니다. EPUB 원본과 글자 모드는 PDF 배율을 쓰지 않고 <code>Aa</code> 설정을 사용합니다.</p>
@@ -143,7 +163,7 @@ server/
 <p><code>README.md</code>, <code>DICT.md</code>, <code>ARCHITECTURE.md</code>, <code>ROADMAP.md</code>, <code>PRIVACY.md</code>를 고치면 <code>npm test</code>가 <code>docs/</code>의 HTML을 다시 생성합니다. <code>docs/</code>는 직접 편집하지 않습니다.</p>
 <pre data-lang="bash"><code>npm test</code></pre>
 </main>
-<aside><div class="lbl">이 문서 안</div><a class="" href="#구조-원칙">구조 원칙</a><a class="" href="#큰-그림">큰 그림</a><a class="" href="#화면과-주요-파일">화면과 주요 파일</a><a class="" href="#읽기-화면">읽기 화면</a><a class="sub" href="#글자와-원본">글자와 원본</a><a class="sub" href="#pdf-확대">PDF 확대</a><a class="sub" href="#긴-pdf에서-무엇이-비싼가">긴 PDF에서 무엇이 비싼가</a><a class="" href="#데이터와-동기화">데이터와 동기화</a><a class="" href="#url-가져오기">URL 가져오기</a><a class="" href="#ios와-android">iOS와 Android</a><a class="" href="#알려진-안정화-작업">알려진 안정화 작업</a><a class="" href="#문서와-검사">문서와 검사</a></aside>
+<aside><div class="lbl">이 문서 안</div><a class="" href="#구조-원칙">구조 원칙</a><a class="" href="#큰-그림">큰 그림</a><a class="" href="#화면과-주요-파일">화면과 주요 파일</a><a class="" href="#읽기-화면">읽기 화면</a><a class="sub" href="#글자와-원본">글자와 원본</a><a class="sub" href="#손짓은-한-곳에서-판정합니다">손짓은 한 곳에서 판정합니다</a><a class="sub" href="#프레임은-같은-자를-두-번-대지-않습니다">프레임은 같은 자를 두 번 대지 않습니다</a><a class="sub" href="#pdf-확대">PDF 확대</a><a class="sub" href="#긴-pdf에서-무엇이-비싼가">긴 PDF에서 무엇이 비싼가</a><a class="" href="#데이터와-동기화">데이터와 동기화</a><a class="" href="#url-가져오기">URL 가져오기</a><a class="" href="#ios와-android">iOS와 Android</a><a class="" href="#알려진-안정화-작업">알려진 안정화 작업</a><a class="" href="#문서와-검사">문서와 검사</a></aside>
 </div>
 <div class="foot">
   이 문서는 저장소의 <code>ARCHITECTURE.md</code> 에서 자동으로 만들어집니다 ·

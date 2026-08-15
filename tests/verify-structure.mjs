@@ -370,6 +370,9 @@ assert.equal(conservative,null,'Weak PDF styling was promoted into visible typog
 
 const sessionSource = readFileSync(resolve(root, 'scripts/reader/original-session.js'), 'utf8');
 const pdfSource = readFileSync(resolve(root, 'scripts/reader/pdf-original.js'), 'utf8');
+const gestureSource = readFileSync(resolve(root, 'scripts/reader/gesture.js'), 'utf8');
+const textReaderSource = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
+const epubOriginalSource = readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
 const epubSource = readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
 const modesSource = readFileSync(resolve(root, 'scripts/reader/reader-modes.js'), 'utf8');
 assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily');
@@ -433,8 +436,12 @@ assert.match(modesSource,/readerModeChangeToken/,
   'Reader-mode race protection is missing');
 assert.match(sessionSource,/sourceProgressForBook/,
   'Logical original progress calculation is missing');
-assert.match(epubSource,/openOriginalSelection/,
-  'Deliberate original-text selection is missing');
+/* 예전에는 여기서 "드래그로 고른 낱말도 받을 것"을 지켰습니다. 그 길은 지금
+   도달할 수 없습니다 — 원본 EPUB 안에서 iOS 가 만든 선택은 생기는 족족 지워지고
+   (`suppressReaderSelection`), 그래서 볼 selection 이 없습니다. 낱말을 고르는
+   길은 세 화면 모두 하나입니다: 한 번 누른다. */
+assert.doesNotMatch(epubSource,/openOriginalSelection/,
+  'EPUB original has two ways to pick a word again, so one gesture can be judged twice');
 assert.match(pdfSource,/buildPdfWordBoxes/,
   'PDF clicks still depend on browser selection rectangles');
 assert.match(pdfSource,/pdfWordAtPoint/,
@@ -706,16 +713,20 @@ assert.doesNotMatch(preferencesSource, /focusmode/,
   'The focus-mode toggle is back');
 assert.match(index, /id="modefab"[^>]*onclick="toggleReaderMode\(\)"/,
   'The 원본↔글자 button is missing');
-/* PDF 단어 찾기는 터치와 마우스 모두 한 번의 탭/클릭으로 열려야 합니다. */
+/* 단어 찾기는 터치와 마우스 모두 한 번의 탭/클릭으로 열려야 합니다. 이 세 가지는
+   예전에 pdf-original.js 가 문서 전역 리스너로 각각 들고 있던 것입니다 — 지금은
+   판정하는 곳이 하나이므로 세 화면이 함께 이 성질을 물려받습니다. */
 const pdfOriginalSource=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
-assert.match(pdfOriginalSource, /event\.pointerType==='mouse' && event\.button!==0/,
-  'PDF word lookup rejects touch pointers before they can open a word');
-assert.match(pdfOriginalSource, /document\.addEventListener\('pointerup',[\s\S]{0,1000}\},true\)/,
-  'A PDF overlay can swallow the one-tap word lookup again');
-assert.match(pdfOriginalSource, /document\.addEventListener\('pointerdown',[\s\S]{0,700}\},true\)/,
-  'A PDF overlay can swallow the tap start, making a single click require a retry');
-assert.match(pdfOriginalSource, /document\.addEventListener\('click',[\s\S]{0,240}openPdfWordAt/,
-  'Mobile PDF canvas click fallback is missing');
+assert.match(gestureSource, /event\.pointerType === 'mouse' && event\.button !== 0/,
+  'Word lookup rejects touch pointers before they can open a word');
+assert.match(gestureSource, /doc\.addEventListener\('pointerup', endGesture, true\)/,
+  'An overlay above the paper can swallow the one-tap word lookup again');
+assert.match(gestureSource, /doc\.addEventListener\('pointerdown', beginGesture, true\)/,
+  'An overlay above the paper can swallow the tap start, making a single click require a retry');
+/* 일부 모바일 PDF 캔버스는 pointerup 을 웹뷰에 넘기지 않고 click 만 남깁니다.
+   그 click 이 앞선 손짓의 꼬리가 아니라면 그것 자체가 하나의 탭입니다. */
+assert.match(gestureSource, /if\(activeGesture\) return;[\s\S]{0,800}\[click-only\]/,
+  'Mobile canvas click fallback is missing');
 assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
   'PDF word lookup depends on the top-most overlay instead of the tapped page coordinates');
 assert.match(pdfOriginalSource,
@@ -758,10 +769,15 @@ assert.match(epubSource,/p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th\{cursor:p
 assert.match(readFileSync(resolve(root,'styles/reader.css'),'utf8'),
   /\.pdf-source-page\{[^}]*cursor:pointer/,
   'A scanned page does not look tappable on a desktop browser');
-/* 제자리에서 뗀 손은 "고른 것"이 아닙니다. selection 을 먼저 보면 마우스가 흔들려
-   생긴 한 글자짜리 selection 이 낱말을 이깁니다 — `considering` 대신 `c` 가 열립니다. */
-assert.match(epubSource,/if\(!moved\)\{\s*const hit=epubWordRangeAtPoint/,
+/* 제자리에서 뗀 손은 "고른 것"이 아닙니다. 예전에는 그 판정을 EPUB 이 혼자
+   했고(`if(!moved)`), 그래서 마우스가 흔들려 생긴 한 글자짜리 selection 이
+   낱말을 이기는 일이 있었습니다 — `considering` 대신 `c` 가 열렸습니다.
+   지금은 움직였는지를 판정자가 봅니다: 움직였으면 그 손짓은 이미 SCROLL 로
+   끝나 EPUB 까지 오지 않고, 여기까지 온 것은 제자리에서 뗀 손뿐입니다. */
+assert.match(epubSource,/openWordAt\(clientX,clientY\)\{[\s\S]{0,300}epubWordRangeAtPoint\(doc,clientX,clientY\)/,
   'A still click in EPUB original trusts an accidental selection over the word under the finger');
+assert.match(gestureSource,/gesture\.moved > GESTURE_SLOP/,
+  'Movement is judged by each paper again instead of once by the controller');
 /* 표제어 칸은 제목입니다 — 입력칸처럼 보이지도, 굴지도 않습니다. */
 assert.match(index, /<div id="p-word"><\/div>/,
   'The word title carries editing attributes again');
@@ -1100,50 +1116,140 @@ assert.doesNotMatch(index, /id="p-explain"|id="p-explain-note"/,
   'The word popup carries the sentence button or its usage note again');
 assert.match(index, /id="sentence-modal"[\s\S]{0,400}id="p-sentence"/,
   'The sentence explanation is not a window of its own any more');
+/* ================= 한 손짓, 한 판정 =================
+
+   여기 아래의 검사들은 기능이 아니라 **경계**를 지킵니다. 예전에는 이 자리에
+   "sentence.js 가 타이머를 들고 있을 것", "세 파일이 각자 `sentencePressBusy()`
+   를 물어볼 것" 같은 검사가 있었습니다. 그 검사들은 손짓을 여러 곳이 판정하던
+   구조를 **못박고 있었습니다** — 구조가 무너진 것이 아니라, 검사가 무너진
+   구조를 지키고 있었습니다.
+
+   지금 지키는 것은 하나입니다: 판정은 한 곳에서 하고, 종이는 판정하지 않는다. */
+
 /* 꾹 누르기는 넉넉히 깁니다. 짧게 잡으면 스크롤하려고 얹은 손가락이 질문이 됩니다. */
-assert.match(sentenceSource, /const SENT_PRESS_MS = (\d+)/,
+assert.match(gestureSource, /const GESTURE_HOLD_MS = (\d+)/,
   'The long press lost its own threshold');
-assert.ok(Number(sentenceSource.match(/const SENT_PRESS_MS = (\d+)/)[1]) >= 1000,
+assert.ok(Number(gestureSource.match(/const GESTURE_HOLD_MS = (\d+)/)[1]) >= 1000,
   'The sentence long press is short enough to fire on an ordinary tap again');
-assert.match(sentenceSource, /Math\.hypot\(event\.clientX - sentPressFrom\.x, event\.clientY - sentPressFrom\.y\) > SENT_PRESS_SLOP/,
+assert.match(gestureSource, /gesture\.moved > GESTURE_SLOP\) finishGesture\(gesture, GESTURE_SCROLL\)/,
   'A moving finger no longer cancels the sentence press, so scrolling can spend the daily allowance');
 /* 확정된 뒤에만 문장을 짚고 칠합니다. 미리 준비하면 짧은 탭이 문장 선택으로 오인됩니다. */
-assert.match(sentenceSource,
-  /sentPressTimer = setTimeout\(\(\)=>\{[\s\S]{0,240}found = resolve\(\);[\s\S]{0,240}paintPressedSentence\(found\);\s*openSentence\(found\.sentence\);/,
+assert.match(gestureSource,
+  /holdTimer = setTimeout\(\(\)=>holdGesture\(gesture\), GESTURE_HOLD_MS\)/,
+  'The sentence press no longer waits for its own timer');
+assert.match(gestureSource,
+  /function holdGesture[\s\S]{0,900}surface\.sentenceAt\([\s\S]{0,1200}openSentence\(found\.sentence\)/,
   'The pressed sentence is resolved or painted before the press is confirmed');
-/* 문은 세 화면 모두에 같은 모양으로 있어야 합니다 — 폰에만 있던 문이 예전에 걷힌 이유입니다. */
-for(const [file, resolver] of [['scripts/reader/reader.js','sentencePressInText'],
-                               ['scripts/reader/epub-original.js','sentencePressInEpub'],
-                               ['scripts/reader/pdf-original.js','sentencePressInPdf']]){
-  const source=readFileSync(resolve(root, file), 'utf8');
-  assert.match(source, new RegExp(`beginSentencePress\\(event,\\s*\\(\\)=>${resolver}\\(`),
-    `${file} has no long press into the sentence window, so the modes behave differently`);
-  assert.match(source, /sentencePressBusy\(\)\) return/,
-    `${file} opens a word popup on the tap that follows a long press`);
+
+/* ---- 판정자는 하나 ---- */
+assert.ok((gestureSource.match(/addEventListener\('pointerdown'/g) || []).length === 1,
+  'The gesture controller listens for pointerdown in more than one place');
+for(const [file, source] of [['scripts/reader/reader.js', textReaderSource],
+                             ['scripts/reader/pdf-original.js', pdfSource],
+                             ['scripts/reader/epub-original.js', epubOriginalSource],
+                             ['scripts/dictionary/sentence.js', sentenceSource]]){
+  for(const signal of ['pointerdown','pointerup','pointermove','pointercancel']){
+    assert.doesNotMatch(source, new RegExp(`addEventListener\\('${signal}'`),
+      `${file} judges raw pointer signals again instead of registering a reader surface`);
+  }
+  assert.doesNotMatch(source, /addEventListener\('click'/,
+    `${file} opens a word from a click again, so one tap can dispatch two actions`);
 }
+/* ---- 한 손짓에서 뜻 있는 action 은 많아야 하나 ---- */
+assert.match(gestureSource, /function countDispatch[\s\S]{0,400}gesture invariant broken/,
+  'Nothing shouts when one gesture dispatches two semantic actions');
+assert.match(gestureSource, /countDispatch\(gesture, 'WORD'\)/,
+  'A WORD dispatch is not counted against the one-gesture-one-action invariant');
+assert.match(gestureSource, /countDispatch\(gesture, 'SENTENCE'\)/,
+  'A SENTENCE dispatch is not counted against the one-gesture-one-action invariant');
+/* 꼬리 click 은 시계가 아니라 "누구의 꼬리인지"로 거릅니다. */
+assert.match(gestureSource, /lastGesture && !lastGesture\.tailClickUsed/,
+  'The click that trails a finished gesture is filtered by a wall clock again');
+/* 밀어서 끝난 손짓도 꼬리를 남겨야 합니다. 남기지 않으면 그 click 이 "앞선
+   손짓이 없다"로 보여 "click 만 오는 기기" 길로 빠지고, 민 손가락이 낱말 창을
+   엽니다. 실기기에서 이것은 "스크롤했는데 단어창이 떴다" 입니다. */
+assert.match(gestureSource, /lastGesture = decision === GESTURE_UI \? null : gesture/,
+  'A scrolled or cancelled gesture leaves no trace, so its trailing click opens a word');
+for(const stale of ['sentencePressBusy','beginSentencePress','SENT_PRESS_GUARD','sentPressHolding',
+                    'pdfPaperEvent','lastPdfTap','lastPdfAttempt']){
+  for(const [file, source] of [['scripts/reader/gesture.js', gestureSource],
+                               ['scripts/reader/reader.js', textReaderSource],
+                               ['scripts/reader/pdf-original.js', pdfSource],
+                               ['scripts/reader/epub-original.js', epubOriginalSource],
+                               ['scripts/dictionary/sentence.js', sentenceSource]]){
+    assert.ok(!new RegExp(`(?<!\`)\\b${stale}\\b(?!\`)`).test(source.replace(/`[^`]*`/g,'``')),
+      `${file} brought back "${stale}" — a guard that only existed to referee competing judges`);
+  }
+}
+/* ---- 판정 계층은 형식을 모릅니다 ----
+   설명하는 주석에는 형식 이름이 나올 수 있고 나와야 합니다 — 왜 이 경계를
+   두었는지가 거기 적혀 있으니까요. 검사는 실제로 도는 코드만 봅니다. */
+const runningCode = source => source.replace(/\/\*[\s\S]*?\*\//g,' ').replace(/(^|[^:])\/\/.*$/gm,'$1');
+const gestureCode = runningCode(gestureSource);
+assert.doesNotMatch(gestureCode, /originalSession/,
+  'The gesture controller branches on the open original format again');
+for(const formatOnly of ['pdfWordAtPoint','pdfPageAtPoint','epubWordRangeAtPoint','wordBoxes',
+                         'caretRangeFromPoint','caretPositionFromPoint','currentReaderMode']){
+  assert.ok(!new RegExp(`\\b${formatOnly}\\b`).test(gestureCode),
+    `The gesture controller calls "${formatOnly}" directly instead of going through a surface`);
+}
+for(const [file, source, name] of [['scripts/reader/reader.js', textReaderSource, 'text'],
+                                   ['scripts/reader/pdf-original.js', pdfSource, 'pdf'],
+                                   ['scripts/reader/epub-original.js', epubOriginalSource, 'epub']]){
+  assert.match(source, new RegExp(`registerReaderSurface\\(\\{\\s*\\n?\\s*name:\\s*'${name}'`),
+    `${file} no longer registers its paper with the gesture controller`);
+  for(const duty of ['claims','openWordAt','sentenceAt']){
+    assert.match(source, new RegExp(`\\b${duty}\\s*[(:]`),
+      `${file} registers a surface without ${duty}, so the controller has to know the format`);
+  }
+}
+/* 종이는 허용 목록입니다. 떠 있는 것을 하나씩 세어 거르면 새 UI 마다 목록이
+   길어지고, 빠뜨린 하나가 곧 "상단바 뒤의 낱말이 함께 열린다"가 됩니다. */
+assert.match(gestureSource, /const READER_PAPER = '#rtext, #originalwrap'/,
+  'Reader paper is no longer an allowlist, so new floating UI can leak taps into the book');
+/* ---- 우리가 옮긴 화면은 스크롤이 아닙니다 (시계가 아니라 값으로) ---- */
+assert.match(readerScrollSource, /function readerScrollWasProgrammatic/,
+  'Programmatic scrolls are told apart from finger scrolls by a wall clock again');
+assert.match(gestureSource, /readerScrollWasProgrammatic\(\)\) return/,
+  'A programmatic scroll can steal the finger that is pressing for a sentence');
+
 /* 문장이 차오르는 그림은 모드 전환 표시와 같은 것을 씁니다. 다만 스캔본은
    문단이 아니라 그 문장의 줄만 칠합니다 — 무엇을 물어봤는지가 곧 그 문장이라
-   문단을 칠하면 답과 질문이 어긋납니다. */
-assert.match(sentenceSource, /showRangeModeCue\(found\.range, 0\)[\s\S]{0,260}showPdfSentenceCue\(found\.page, found\.boxes, 0\)/,
-  'The pressed sentence paints something other than the shared reader cue');
-assert.doesNotMatch(sentenceSource, /showPdfModeCue\(found\./,
+   문단을 칠하면 답과 질문이 어긋납니다. 어느 그림인지는 종이가 정합니다. */
+assert.match(textReaderSource, /showRangeModeCue\(range, 0\)/,
+  'The pressed sentence in 글자 mode paints something other than the shared reader cue');
+assert.match(pdfSource, /paint\(\)\{ showPdfSentenceCue\(page,boxes,0\); \}/,
   'A pressed sentence paints the whole paragraph on a scan');
+assert.match(epubOriginalSource, /paint\(\)\{ showRangeModeCue\(range, 0\); \}/,
+  'The pressed sentence in EPUB original paints something other than the shared reader cue');
 /* 원본 EPUB 도 "이 문장" 하나여야 합니다. 낱말이 들어 있는 문장을 글자로 찾으면
    짧은 문단은 통째로, 같은 낱말이 두 번 나오면 늘 앞의 것이 잡힙니다. */
-assert.match(sentenceSource, /function sentencePressInEpub[\s\S]{0,700}parts\.find\(item=>at>=item\.start && at<item\.end\)/,
+assert.match(epubOriginalSource, /sentenceAt\(clientX,clientY\)\{[\s\S]{0,900}parts\.find\(item=>at>=item\.start && at<item\.end\)/,
   'A pressed sentence in EPUB original is found by text instead of by where the finger was');
+
+/* ---- callout 은 끄되 hit-test 는 살립니다 ----
+   `user-select:none` 은 브라우저에 따라 caret hit-test 까지 함께 끕니다. 원본
+   EPUB 의 낱말 찾기가 caret 에 기대고 있었으므로, 그 한 줄이 "EPUB 만 안 눌린다"
+   가 될 수 있었습니다. 그래서 EPUB 안쪽에서는 선택을 **끄지 않고 지웁니다**.
+   글자 화면은 제 DOM 이라 CSS 로 끄는 편이 확실하고, 낱말 찾기도 caret 을
+   쓰지 않으므로(`elementFromPoint`) 그대로 둡니다. */
 assert.match(readerCss, /#rtext\{[^}]*-webkit-user-select:none;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
   'Reader text can still invoke iOS selection or the Look Up callout before a sentence press');
 assert.match(readerCss, /\.w\{[^}]*-webkit-touch-callout:none/,
   'A word span can still invoke the native callout while awaiting its sentence press');
-const textReaderSource=readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
-assert.match(textReaderSource, /text\.addEventListener\('contextmenu', event=>event\.preventDefault\(\)\)/,
-  'Reader text does not dismiss a native context menu that escapes the iOS CSS guard');
-const epubOriginalSource=readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
-assert.match(epubOriginalSource, /body\{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/,
-  'Original EPUB text does not suppress the iOS selection callout inside its iframe');
-assert.match(epubOriginalSource, /doc\.addEventListener\('contextmenu',event=>event\.preventDefault\(\)\)/,
-  'Original EPUB text does not dismiss a native context menu that escapes the iOS CSS guard');
+assert.doesNotMatch(runningCode(epubOriginalSource), /user-select:none/,
+  'Original EPUB turned selection off again, which can take its caret hit test down with it');
+assert.match(epubOriginalSource, /body\{-webkit-touch-callout:none\}/,
+  'Original EPUB no longer suppresses the iOS Look Up callout inside its iframe');
+assert.match(epubOriginalSource, /suppressReaderSelection\(doc, \(\)=>true\)/,
+  'Original EPUB does not clear the selection iOS makes under a long press');
+assert.match(gestureSource, /addEventListener\('contextmenu'/,
+  'Nothing dismisses a native context menu that escapes the iOS CSS guard');
+/* caret 이 대답하지 않는 엔진에서도 낱말은 열려야 합니다. */
+assert.match(epubOriginalSource, /function epubWordByGeometry/,
+  'EPUB word lookup has no fallback for engines whose caret hit test returns null');
+assert.match(epubOriginalSource, /epubLastHitPath=byGeometry \? 'geometry \(caret returned null\)'/,
+  'The EPUB word lookup does not record which path found the word, so a device report stays a guess');
 assert.match(sentenceSource, /op:'explain'/, 'The sentence window never asks the server');
 /* 같은 문장을 다시 물으면 한도를 쓰지 않아야 합니다. */
 assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text\)/,

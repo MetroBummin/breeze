@@ -2,8 +2,6 @@
    then shown in same-origin sandboxed frames so the publisher's own typography
    survives without letting the book run anything. */
 
-let originalSelectionNoticeAt = 0;
-
 function epubMime(path){
   const ext=(path.split('.').pop()||'').toLowerCase();
   return ({jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml',
@@ -119,8 +117,19 @@ async function sanitiseEpubChapter(archive,chapter,resources){
      글자를 담은 칸만 손가락 커서로 바꿉니다(여백은 그대로 화살표).
      iOS의 native callout은 문장 꾹 누르기를 가로채므로 EPUB 본문 안에서만
      선택과 callout을 끕니다. */
+  /* ---- callout 은 끄되 선택 자체는 끄지 않습니다 ----
+     한때 여기에 `user-select:none` 이 있었습니다. iOS 의 Look Up 메뉴를 막으려고
+     넣은 것인데, 그 선언은 브라우저에 따라 caret hit-test 까지 함께 끕니다 —
+     그리고 EPUB 의 낱말 찾기는 caret 에 기대고 있었습니다. 한 증상을 막으려던
+     규칙이 다른 증상을 만든 자리입니다.
+
+     지금은 둘을 나눕니다. 메뉴를 부르는 스위치(`-webkit-touch-callout`)만 끄고,
+     iOS 가 몰래 만든 선택은 생기는 족족 지웁니다(`suppressReaderSelection`) —
+     글자 화면이 쓰는 것과 같은 방법입니다. 선택 기능 자체는 살아 있으므로
+     어느 엔진에서든 caret 이 대답합니다. 그래도 대답하지 않으면 낱말 찾기가
+     기하로 한 번 더 시도합니다(`epubWordRangeAtPoint`). */
   const safety=`html,body{max-width:100%;min-height:1px}img,svg,video{max-width:100%;height:auto}
-    body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+    body{-webkit-touch-callout:none}
     p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th{cursor:pointer}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
@@ -258,7 +267,48 @@ function originalSentence(text,word){
    `data-epub-href` 로 옮겨 두므로 둘 다 봅니다. */
 const EPUB_NO_TAP = 'a[href],a[data-epub-href],script,style,noscript,textarea';
 
-function epubWordRangeAtPoint(doc,clientX,clientY){
+const EPUB_WORD_RE=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+
+/* 낱말 하나를 Range 로 싸고, 그 Range 의 사각형이 손가락을 품는지 봅니다.
+   품지 않으면 여백을 누른 것입니다 — 가까운 낱말을 억지로 열지 않습니다.
+
+   여유(`padX`/`padY`)를 두는 것은 손가락이 글자 사이 틈에 떨어져도 열리게
+   하려는 것입니다. 그런데 그 여유 때문에 **줄과 줄 사이**에서는 위아래 두 줄이
+   동시에 맞습니다. 그래서 맞았는지만 보고 첫 번째를 집으면, 줄 경계를 누를 때
+   윗줄의 낱말이 열립니다. 얼마나 잘 맞았는지도 함께 돌려주어 부르는 쪽이
+   가장 가까운 것을 고르게 합니다 — 스캔본이 쓰는 셈법과 같습니다
+   (`pdfWordAtPoint`). */
+const EPUB_HIT_PAD_X = 4, EPUB_HIT_PAD_Y = 3;
+function epubWordHit(doc,node,match,clientX,clientY){
+  const owner=node.parentElement;
+  if(!owner || owner.closest(EPUB_NO_TAP)) return null;
+  const range=doc.createRange();
+  range.setStart(node,match.index); range.setEnd(node,match.index+match[0].length);
+  let best=null;
+  for(const item of range.getClientRects()){
+    if(!(item.width>0&&item.height>0)) continue;
+    if(clientX<item.left-EPUB_HIT_PAD_X || clientX>item.right+EPUB_HIT_PAD_X
+      || clientY<item.top-EPUB_HIT_PAD_Y || clientY>item.bottom+EPUB_HIT_PAD_Y) continue;
+    /* ---- 줄을 먼저 정하고, 그 줄 안에서 고릅니다 ----
+       세로 여유는 줄과 줄 사이에서 위아래 두 줄을 동시에 맞힙니다. 그 상태로
+       거리만 비교하면 세로 거리가 같아서 **가로 거리가 줄을 고르는** 꼴이 되고,
+       그건 아무 뜻이 없습니다 — 줄 경계를 누르면 윗줄의 엉뚱한 낱말이 열렸습니다.
+       세로는 반열린 구간(`top <= y < bottom`)으로 봅니다. 맞닿은 두 줄이 경계
+       한 점을 두고 다투지 않고, 브라우저가 그 점을 어느 줄로 세는지와도 같습니다. */
+    const onLine=clientY>=item.top && clientY<item.bottom;
+    const dx=Math.max(item.left-clientX, 0, clientX-item.right);
+    const dy=Math.max(item.top-clientY, 0, clientY-item.bottom);
+    if(!best || (onLine && !best.onLine)
+      || (onLine===best.onLine && dx*dx+dy*dy < best.dx*best.dx+best.dy*best.dy)){
+      best={rect:item,onLine,dx,dy};
+    }
+  }
+  return best ? {range,raw:match[0],owner,rect:best.rect,
+                 onLine:best.onLine,gap:best.dx*best.dx+best.dy*best.dy} : null;
+}
+
+/* ---- 빠른 길: 브라우저가 알려 주는 caret ---- */
+function epubWordByCaret(doc,clientX,clientY){
   let node=null, offset=0;
   if(doc.caretPositionFromPoint){
     const caret=doc.caretPositionFromPoint(clientX,clientY);
@@ -273,89 +323,133 @@ function epubWordRangeAtPoint(doc,clientX,clientY){
     node=walker.nextNode(); offset=0;
   }
   if(!node || !node.data || !/[A-Za-z]/.test(node.data)) return null;
-  const owner=node.parentElement;
-  if(!owner || owner.closest(EPUB_NO_TAP)) return null;
-  const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
-  let found=null, match;
-  while((match=pattern.exec(node.data))){
-    if(offset>=match.index && offset<=match.index+match[0].length){ found=match; break; }
+  EPUB_WORD_RE.lastIndex=0;
+  let match;
+  while((match=EPUB_WORD_RE.exec(node.data))){
+    if(offset>=match.index && offset<=match.index+match[0].length)
+      return epubWordHit(doc,node,match,clientX,clientY);
   }
-  if(!found) return null;
-  const range=doc.createRange();
-  range.setStart(node,found.index); range.setEnd(node,found.index+found[0].length);
-  const rect=[...range.getClientRects()].find(item=>item.width>0&&item.height>0
-    && clientX>=item.left-4 && clientX<=item.right+4
-    && clientY>=item.top-3 && clientY<=item.bottom+3);
-  return rect ? {range,raw:found[0],owner,rect} : null;
+  return null;
 }
 
-function installEpubWordTap(doc){
-  let pointer=null;
-  /* The iframe is its own document, so the reader stylesheet cannot suppress
-     the iOS callout here. Keep this scoped to the sanitized EPUB body. */
-  doc.addEventListener('contextmenu',event=>event.preventDefault());
-  doc.addEventListener('pointerdown',event=>{
-    if(event.pointerType==='mouse' && event.button!==0) return;
-    if(!event.isPrimary){ pointer=null; return; }
-    pointer={id:event.pointerId,x:event.clientX,y:event.clientY};
-    /* 원본에서도 손짓은 같습니다: 탭은 낱말, 꾹 누르기는 이 문장.
-       scripts/dictionary/sentence.js */
-    if(typeof beginSentencePress==='function')
-      beginSentencePress(event,()=>sentencePressInEpub(doc,event.clientX,event.clientY));
-  },true);
-  doc.addEventListener('pointermove',event=>{ if(typeof moveSentencePress==='function') moveSentencePress(event); },true);
-  doc.addEventListener('pointercancel',()=>{ pointer=null; if(typeof cancelSentencePress==='function') cancelSentencePress(); },true);
-  doc.addEventListener('scroll',()=>{ if(typeof cancelSentencePress==='function') cancelSentencePress(); },true);
-  doc.addEventListener('pointerup',event=>{
-    if(typeof cancelSentencePress==='function') cancelSentencePress();
-    const start=pointer; pointer=null;
-    if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
-    if(!start || start.id!==event.pointerId) return;
-    const moved=Math.hypot(event.clientX-start.x,event.clientY-start.y)>9;
-    /* selection 은 pointerup 기본 동작 뒤에 확정되므로 한 박자 뒤에 봅니다.
-       손이 움직였으면 그것은 고른 것이고, 제자리에서 뗐으면 그냥 누른 것입니다.
+/* ---- 예비 길: 눌린 칸의 낱말들을 재어 봅니다 ----
+   caret hit-test 는 엔진마다 조건이 다릅니다. 어떤 WebKit 판은 선택을 끈 곳에서
+   caret 을 돌려주지 않고, 어떤 판은 그림·표 안쪽에서 빗나갑니다. 그때 손짓을
+   그냥 버리면 "눌러도 아무 일이 없는 화면"이 됩니다.
 
-       순서가 중요합니다. 예전에는 selection 을 먼저 봤는데, 마우스는 누르는
-       동안 한두 픽셀이 늘 흔들려서 글자 한 개짜리 selection 이 남습니다 —
-       `considering` 을 눌렀는데 `c` 한 글자가 열렸습니다. 더블클릭도 두 번째
-       pointerup 은 제자리라, caret 으로 찾으면 같은 낱말이 나옵니다. */
-    setTimeout(()=>{
-      const selection=doc.getSelection();
-      if(!moved){
-        const hit=epubWordRangeAtPoint(doc,event.clientX,event.clientY);
-        if(hit){
-          if(selection) selection.removeAllRanges();
-          openOriginalRange(doc,hit.range,hit.raw,hit.owner,hit.rect);
-          return;
-        }
-      }
-      if(selection && !selection.isCollapsed) openOriginalSelection(doc);
-    },0);
-  },true);
-}
-
-/* 출판사 조판을 그대로 보여주려면 본문 DOM을 건드리면 안 됩니다.
-   브라우저가 실제로 선택한 한 단어만 받아서, 본문을 수정하지 않는
-   독립 하이라이트를 그 위에 얹습니다. */
-function openOriginalSelection(doc){
-  const selection=doc&&doc.getSelection ? doc.getSelection() : null;
-  if(!selection || selection.isCollapsed || !selection.rangeCount) return;
-  const raw=selection.toString().replace(/^[^A-Za-z]+|[^A-Za-z'’\-]+$/g,'').trim();
-  if(!/^[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?$/.test(raw)){
-    if(/[A-Za-z]/.test(raw) && Date.now()-originalSelectionNoticeAt>1800){
-      originalSelectionNoticeAt=Date.now();
-      toast('단어 하나만 선택해 주세요');
+   caret 이 대답하지 않으면 눌린 칸(`elementFromPoint`)의 글자들을 낱말 단위로
+   재어 손가락을 품는 것을 고릅니다. 한 문단 안의 일이라 탭 한 번에 몇 밀리초면
+   끝나고, 무엇보다 브라우저의 선택 기능에 전혀 기대지 않습니다. */
+function epubWordByGeometry(doc,clientX,clientY){
+  let element=null;
+  try{ element=doc.elementFromPoint(clientX,clientY); }catch(error){ return null; }
+  const block=element && element.closest
+    ? (element.closest('p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th')||element) : null;
+  if(!block || (block.closest && block.closest(EPUB_NO_TAP))) return null;
+  const walker=doc.createTreeWalker(block,NodeFilter.SHOW_TEXT,{acceptNode(node){
+    return node.data && /[A-Za-z]/.test(node.data)
+      ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+  }});
+  /* 맞는 것을 모두 모아 하나를 고릅니다. 손가락이 놓인 줄에 있는 것이 먼저이고,
+     같은 줄 안에서는 가까운 것입니다. 글자 안에 정확히 떨어졌으면(`gap` 0) 더
+     볼 것이 없으므로 거기서 멈춥니다 — 긴 문단을 끝까지 훑지 않습니다. */
+  let best=null, node;
+  while((node=walker.nextNode())){
+    EPUB_WORD_RE.lastIndex=0;
+    let match;
+    while((match=EPUB_WORD_RE.exec(node.data))){
+      const hit=epubWordHit(doc,node,match,clientX,clientY);
+      if(!hit) continue;
+      if(hit.onLine && hit.gap===0) return hit;
+      if(!best || (hit.onLine && !best.onLine)
+        || (hit.onLine===best.onLine && hit.gap<best.gap)) best=hit;
     }
-    return;
   }
-  const range=selection.getRangeAt(0);
-  let owner=range.commonAncestorContainer;
-  if(owner.nodeType!==1) owner=owner.parentElement;
-  if(!owner || (owner.closest&&owner.closest(EPUB_NO_TAP))) return;
-  const rect=[...range.getClientRects()].find(item=>item.width>0&&item.height>0);
-  if(!rect) return;
-  openOriginalRange(doc,range,raw,owner,rect);
-  selection.removeAllRanges();
+  return best;
+}
+
+/* 어느 길로 찾았는지는 손짓 기록에 남습니다 — 실기기에서 "EPUB 만 안 된다"가
+   다시 나왔을 때, 추측하지 않고 이 한 줄을 보면 됩니다. */
+let epubLastHitPath='';
+function epubWordRangeAtPoint(doc,clientX,clientY){
+  const byCaret=epubWordByCaret(doc,clientX,clientY);
+  if(byCaret){ epubLastHitPath='caret'; return byCaret; }
+  const byGeometry=epubWordByGeometry(doc,clientX,clientY);
+  epubLastHitPath=byGeometry ? 'geometry (caret returned null)' : 'miss';
+  return byGeometry;
+}
+
+/* ================= EPUB 이라는 종이 =================
+   장마다 제 문서(iframe)라 귀는 그 문서에도 한 벌 답니다. 그러나 판정하는 코드는
+   글자판·스캔본과 똑같은 그 한 곳입니다 — scripts/reader/gesture.js.
+
+   예전에는 여기에 리스너가 여섯 개 있었고, 그중 `pointerup` 이 **한 손짓을 두 번**
+   판정했습니다: 먼저 caret 으로 낱말을 찾고, 그것이 실패하면 `setTimeout(…,0)`
+   뒤에 브라우저 selection 으로 또 한 번 찾았습니다. 그 두 번째 길은 지금
+   도달할 수 없습니다 — iOS 가 만든 선택은 생기는 족족 지워지므로(위의 safety
+   CSS 설명) 볼 selection 이 없습니다. 그래서 걷어냈습니다. 낱말을 고르는 길은
+   세 화면 모두 하나입니다: 한 번 누른다. */
+function installEpubWordTap(doc){
+  attachReaderGestures(doc);
+  suppressReaderSelection(doc, ()=>true);
+}
+
+registerReaderSurface({
+  name:'epub',
+  claims(event){
+    if(!originalSession || !originalSession.frames) return false;
+    const doc=event.target && event.target.ownerDocument;
+    if(!doc || doc===document) return false;
+    return originalSession.frames.some(frame=>{
+      try{ return frame && frame.contentDocument===doc; }catch(error){ return false; }
+    });
+  },
+  document(){ return epubActiveDocument() || document; },
+  openWordAt(clientX,clientY){
+    const doc=epubActiveDocument();
+    if(!doc) return false;
+    const hit=epubWordRangeAtPoint(doc,clientX,clientY);
+    if(!hit) return false;
+    openOriginalRange(doc,hit.range,hit.raw,hit.owner,hit.rect);
+    return true;
+  },
+  sentenceAt(clientX,clientY){
+    const doc=epubActiveDocument();
+    if(!doc) return null;
+    /* 누른 자리가 문단 어디쯤인지를 세어 그 자리를 품은 문장을 고릅니다. 낱말이
+       어느 문장에 **들어 있는지**로 찾으면 같은 낱말이 문단에 두 번 나올 때 늘
+       앞의 것이 잡히고, 짧은 문단에서는 문단 전체가 통째로 넘어갔습니다 —
+       "이 문장"이라고 해 놓고 다섯 문장을 물어보는 셈이었습니다. */
+    const hit=epubWordRangeAtPoint(doc,clientX,clientY);
+    if(!hit || typeof bridgeSentences!=='function') return null;
+    const owner=hit.owner;
+    const block=(owner && owner.closest && owner.closest('p,li,blockquote,h1,h2,h3,h4')) || owner;
+    if(!block) return null;
+    let at=0;
+    try{
+      const before=doc.createRange();
+      before.selectNodeContents(block);
+      before.setEnd(hit.range.startContainer, hit.range.startOffset);
+      at=before.toString().length;
+    }catch(error){ at=0; }
+    const parts=bridgeSentences(block.textContent);
+    const part=parts.find(item=>at>=item.start && at<item.end) || parts[0];
+    const sentence=part ? part.text.replace(/\s+/g,' ').trim() : '';
+    if(!sentence) return null;
+    const range=domRangeForOffsets(block, part.start, part.end);
+    return { sentence, paint(){ showRangeModeCue(range, 0); } };
+  },
+  trace(){ return `caret path: ${epubLastHitPath||'—'}`; },
+});
+
+/* 손짓이 시작된 장의 문서. 좌표는 그 문서의 것이라 다른 장에 물으면 어긋납니다. */
+function epubActiveDocument(){
+  if(!originalSession || !originalSession.frames) return null;
+  const doc=readerGestureDocument();
+  if(!doc || doc===document) return null;
+  return originalSession.frames.some(frame=>{
+    try{ return frame && frame.contentDocument===doc; }catch(error){ return false; }
+  }) ? doc : null;
 }
 
 function openOriginalRange(doc,range,raw,owner,rect){

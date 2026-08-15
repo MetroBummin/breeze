@@ -59,6 +59,57 @@ server/
   같은 문장 근처로 돌아갑니다.
 - 진행도는 화면 픽셀이 아니라 PDF 페이지·EPUB 위치·문단 위치처럼 논리적인 위치를 기준으로 저장합니다.
 
+### 손짓은 한 곳에서 판정합니다
+
+한 번의 손짓은 정확히 하나로 끝납니다 — `UI` · `SCROLL` · `SENTENCE` · `WORD` ·
+`CANCEL`. 판정하는 곳은 `scripts/reader/gesture.js` 하나입니다.
+
+```text
+        pointerdown / move / up / click
+                     │
+            Gesture Controller       한 손짓 = 한 판정
+                     │
+      ┌──────────────┼──────────────┐
+     UI           SCROLL      WORD / SENTENCE
+                                    │
+                          ┌─────────┼─────────┐
+                        Text       PDF      EPUB      ← surface
+                     DOM에서    좌표표에서   caret·기하로
+```
+
+`pointerdown → pointermove → pointerup → click` 은 서로 다른 행동이 아니라 한
+손짓을 읽기 위한 브라우저 신호입니다. 확정된 뒤에 오는 꼬리(`click`)는 다시
+판정하지 않습니다 — 시계로 거르는 것이 아니라 **누구의 꼬리인지**로 거릅니다.
+
+종이는 허용 목록입니다(`#rtext`, `#originalwrap`). 그 바깥에서 시작한 손짓은
+무엇이 깔려 있든 reader 로 내려가지 않습니다. 떠 있는 UI 를 하나씩 세어 거르던
+목록은 없어졌습니다.
+
+중앙은 형식을 모릅니다. "이번 손짓은 WORD 다"까지만 정하고, 그 자리의 낱말을
+실제로 찾는 일은 surface 가 합니다(`registerReaderSurface`). `ORIGINAL_FORMATS`
+가 앵커·진행도에 대해 하는 일을 입력에 대해 하는 것과 같습니다. 그래서 버그가
+나면 계층이 바로 갈립니다:
+
+| 증상 | 볼 곳 |
+| --- | --- |
+| 모든 모드에서 한 탭이 두 번 | Gesture Controller |
+| UI 를 눌렀는데 뒤가 열림 | 종이 허용 목록 / `claims()` |
+| PDF 에서만 엉뚱한 낱말 | PDF surface |
+| EPUB 에서만 안 열림 | EPUB surface |
+
+`tests/verify-structure.mjs` 가 이 경계를 지킵니다 — 판정 계층이 형식을 분기하거나,
+종이가 raw pointer 신호를 다시 듣기 시작하면 테스트가 깨집니다.
+
+개발 중에는 `?gesture=1` 로 손짓 하나하나를 볼 수 있습니다. 한 손짓에서 뜻 있는
+action 이 둘 이상 나가면 개발 모드가 아니어도 콘솔이 소리칩니다.
+
+### 프레임은 같은 자를 두 번 대지 않습니다
+
+`?frames=1` 을 켜면 프레임마다 무슨 일이 몇 번 일어났는지 찍힙니다
+(`scripts/reader/frame-trace.js`). `breezeFrameSummary()` 로 요약을 봅니다.
+이 계측으로 스크롤 한 프레임에서 `captureAnchor()` 가 두 번 돌던 것을 찾아
+하나로 줄였습니다 — 진행줄과 읽던 자리 기억이 같은 답을 나눠 씁니다.
+
 ### PDF 확대
 
 PDF 원본의 확대는 `#pdfzoom-out`, `#pdfzoom-in`이 `#original-zoom`의 배율을 바꾸는

@@ -5,7 +5,6 @@
    저장합니다. 하이라이트와 클릭 판정이 같은 상자를 사용하므로 서로 어긋나지
    않으며, 화면 폭이 바뀌어도 다시 계산할 필요가 없습니다. */
 
-let originalPdfPointer = null;
 let pdfDrawToken = 0;
 
 /* ================= 확대 =================
@@ -498,79 +497,61 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
   return false;
 }
 
-/* A tap opens the word under the finger; a drag is a scroll, not a lookup. */
-(function(){
-  let lastPdfTap=0, lastPdfAttempt=0;
-  async function openPdfWordAt(clientX,clientY){
-    lastPdfAttempt=Date.now();
-    const page=pdfPageAtPoint(clientX,clientY);
-    if(!page) return false;
-    const session=originalSession, pageNumber=+page.dataset.page;
-    /* 캔버스는 먼저 보이고 단어 좌표표는 PDF.js의 textContent가 끝난 뒤 생깁니다.
-       그 짧은 사이의 첫 탭을 버리면 두 번 눌러야 합니다. 같은 렌더 작업을 기다린
-       뒤 사용자가 눌렀던 좌표로 다시 찾습니다. */
-    if(!(session.wordBoxes.get(pageNumber)||[]).length){
-      await renderOriginalPdfPage(session,pageNumber);
-      if(session!==originalSession) return false;
-    }
-    const box=pdfWordAtPoint(page,clientX,clientY);
-    if(!box) return false;
-    lastPdfTap=Date.now(); openPdfWord(page,box); return true;
+/* ================= 스캔본이라는 종이 =================
+   탭은 낱말, 꾹 누르기는 이 문장 — 그 판정은 여기서 하지 않습니다
+   (scripts/reader/gesture.js). 여기 있는 것은 "이 좌표에 무엇이 있는가"뿐입니다.
+
+   예전에는 이 자리에 문서 전역 capture 리스너가 넷 있었고, 그중 `pointerup` 과
+   `click` 이 **같은 탭을 두 번** 낱말 찾기로 보냈습니다. 그 둘을 450ms 벽시계로
+   서로 걸렀고, 앞뒤로 `sentencePressBusy()` 를 세 번 물었습니다. 손짓을
+   판정하는 주인이 생기면서 그 넷과 벽시계가 함께 사라졌습니다.
+
+   `pdfPaperEvent` 도 없어졌습니다 — "떠 있는 것들"을 하나씩 세어 거르는 대신,
+   종이라고 등록된 곳에서 시작한 손짓만 이 종이의 것입니다. 상단바·확대 단추·
+   낱말 창·해석 창은 종이가 아니므로 애초에 여기까지 오지 않습니다. */
+
+async function openPdfWordAt(clientX,clientY){
+  const page=pdfPageAtPoint(clientX,clientY);
+  if(!page) return false;
+  const session=originalSession, pageNumber=+page.dataset.page;
+  /* 캔버스는 먼저 보이고 단어 좌표표는 PDF.js의 textContent가 끝난 뒤 생깁니다.
+     그 짧은 사이의 첫 탭을 버리면 두 번 눌러야 합니다. 같은 렌더 작업을 기다린
+     뒤 사용자가 눌렀던 좌표로 다시 찾습니다. */
+  if(!(session.wordBoxes.get(pageNumber)||[]).length){
+    await renderOriginalPdfPage(session,pageNumber);
+    if(session!==originalSession) return false;
   }
-  /* ---- 종이를 눌렀을 때만 낱말을 찾습니다 ----
-     PDF 위에는 캔버스·저장 표시·전환 표시가 번갈아 올라옵니다. 그래서 손짓은
-     원본 칸 하나에 묶지 않고 문서 capture 단계에서 받습니다 — 어느 레이어를
-     눌러도 한 번의 탭이 같은 단어 찾기가 되도록.
+  const box=pdfWordAtPoint(page,clientX,clientY);
+  if(!box) return false;
+  openPdfWord(page,box);
+  return true;
+}
 
-     그런데 좌표만 보고 판단하면 **종이 위에 떠 있는 것들**까지 종이가 됩니다.
-     상단바·확대 단추·낱말 창·문장 해석 창은 전부 종이와 겹쳐 있고, 낱말 상자를
-     찾는 셈(`pdfPageAtPoint`)은 그 위에 무엇이 떠 있는지 모르기 때문입니다.
-     실제로 이렇게 어긋났습니다:
-
-       · 상단바의 "단어장"을 누르면 상단바 뒤에 깔린 낱말이 함께 열렸습니다.
-       · 문장 해석 창을 누르면 창 뒤의 낱말이 열리고, 그 창을 닫으려고 또 누르면
-         또 뒤의 낱말이 열렸습니다 — 나가도 나가도 새 낱말 창이 뜨는 까닭입니다.
-
-     그래서 누른 자리가 정말 종이인지를 **눌린 것**으로 확인합니다. 종이 위의
-     레이어(캔버스·표시·안내)는 모두 `#originalwrap` 안이라 예전처럼 어느
-     레이어를 눌러도 통하고, 그 바깥에 떠 있는 것들은 자기 일만 합니다. */
-  function pdfPaperEvent(event){
+registerReaderSurface({
+  name:'pdf',
+  claims(event){
     if(!originalSession || originalSession.kind!=='pdf') return false;
     const target=event.target;
-    if(!target || typeof target.closest!=='function') return false;
-    return !!target.closest('#originalwrap');
-  }
-  document.addEventListener('pointerdown',event=>{
-    if(!pdfPaperEvent(event)) return;
-    /* Touch PointerEvent의 button 값은 브라우저마다 0/-1로 다릅니다. 마우스의
-       오른쪽·가운데 버튼만 걸러야 한 번 탭한 단어도 놓치지 않습니다. */
-    if(event.pointerType==='mouse' && event.button!==0) return;
-    if(!event.isPrimary){ originalPdfPointer=null; return; }
-    originalPdfPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
-    /* 스캔본에서도 손짓은 같습니다: 탭은 낱말, 꾹 누르기는 이 문장.
-       scripts/dictionary/sentence.js */
-    if(typeof beginSentencePress==='function')
-      beginSentencePress(event,()=>sentencePressInPdf(event.clientX,event.clientY));
-  },true);
-  document.addEventListener('pointermove',event=>{ if(typeof moveSentencePress==='function') moveSentencePress(event); },true);
-  document.addEventListener('pointercancel',()=>{ originalPdfPointer=null; if(typeof cancelSentencePress==='function') cancelSentencePress(); },true);
-  document.addEventListener('pointerup',event=>{
-    if(typeof cancelSentencePress==='function') cancelSentencePress();
-    const start=originalPdfPointer;
-    originalPdfPointer=null;
-    if(!pdfPaperEvent(event)) return;
-    if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
-    if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
-    void openPdfWordAt(event.clientX,event.clientY);
-  },true);
-  /* 일부 모바일 PDF canvas는 pointerup을 웹뷰에 넘기지 않고 click만 남깁니다.
-     위 pointerup이 이미 처리한 탭은 시간으로 걸러, 별이 두 칸 오르지 않게 합니다. */
-  document.addEventListener('click',event=>{
-    if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
-    if(!pdfPaperEvent(event) || Date.now()-Math.max(lastPdfTap,lastPdfAttempt)<450) return;
-    void openPdfWordAt(event.clientX,event.clientY);
-  },true);
-})();
+    return !!(target && target.closest && target.closest('#originalwrap'));
+  },
+  document(){ return document; },
+  openWordAt:openPdfWordAt,
+  sentenceAt(clientX,clientY){
+    if(!originalSession) return null;
+    const page=pdfPageAtPoint(clientX,clientY);
+    if(!page) return null;
+    const box=pdfWordAtPoint(page,clientX,clientY);
+    const sentence=box && box.example ? String(box.example).trim() : '';
+    if(!sentence) return null;
+    /* 같은 문장에서 잘라 낸 낱말 상자들이 곧 그 문장의 자리입니다 — 위의
+       `buildPdfWordBoxes` 가 상자마다 `example` 을 적어 둡니다. 스캔본은 문단이
+       아니라 그 문장의 줄들만 칠합니다: 무엇을 물어봤는지가 곧 그 문장이라
+       문단을 칠하면 질문과 답이 어긋납니다. */
+    const boxes=(originalSession.wordBoxes.get(+page.dataset.page)||[])
+      .filter(item=>item.example===box.example);
+    return { sentence, paint(){ showPdfSentenceCue(page,boxes,0); } };
+  },
+});
 
 /* ---- 형식 표에 넘겨줄 조각들 (scripts/reader/original-formats.js) ---- */
 

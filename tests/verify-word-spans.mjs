@@ -61,6 +61,10 @@ const context = {
   /* 아래 두 개는 다른 파일에 있는 것을 부르는 자리입니다. 불러오는 동안에만
      쓰이고, 우리가 재는 함수는 건드리지 않습니다. */
   readerScroller: () => null,
+  /* 글자판은 자기를 "종이"로 등록하고, iOS 가 만든 선택을 지워 달라고 부탁합니다.
+     둘 다 scripts/reader/gesture.js 에 있고, 여기서는 부르기만 하면 됩니다. */
+  registerReaderSurface: noop,
+  suppressReaderSelection: noop,
   requestAnimationFrame: noop,
   setTimeout, clearTimeout, CSS: { escape: s => s },
   /* 단어장입니다. 원래는 scripts/core/state.js 가 `let words` 로 잡는데, 그

@@ -36,10 +36,26 @@ function readerScrollTop(){
   const box = readerScroller();
   return box ? box.scrollTop : (window.scrollY || 0);
 }
+/* ---- 우리가 옮긴 화면과 사람이 민 화면 ----
+   `scroll` 이벤트만 보면 둘을 구분할 수 없습니다. 예전에는 벽시계 유예 셋으로
+   구분했고(`readerScrollPauseUntil` · `readerAnchorHoldUntil` · `chromePinned`),
+   그 유예가 먼저 끝나 버리면 — 자리를 되돌리는 일 안에는 PDF 한 쪽을 그리는
+   `await` 가 있어서 자주 그랬습니다 — 우리가 낸 스크롤이 "손으로 밀었다"로
+   읽혔습니다. 상단바가 제멋대로 돌아오고, 누르던 손짓이 조용히 죽었습니다.
+
+   시계가 아니라 값을 남깁니다. 우리가 마지막으로 적어 넣은 값과 지금 값이
+   같으면 그 스크롤은 우리 것입니다. 얼마나 오래 걸리든 정확합니다. */
+let lastProgrammaticScrollTop = null;
 function readerScrollTo(y){
   const top = Math.max(0, y || 0);
   const box = readerScroller();
-  if(box) box.scrollTop = top; else window.scrollTo(0, top);
+  if(box){ box.scrollTop = top; lastProgrammaticScrollTop = box.scrollTop; }
+  else window.scrollTo(0, top);
+}
+function readerScrollWasProgrammatic(){
+  const box = readerScroller();
+  if(!box || lastProgrammaticScrollTop === null) return false;
+  return Math.abs(box.scrollTop - lastProgrammaticScrollTop) < 1;
 }
 function readerScrollBy(dy){
   if(!dy) return;
