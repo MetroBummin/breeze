@@ -32,14 +32,15 @@
    때문에 삼킵니다. 그래서 이 파일에는 450ms 도 600ms 도 없습니다.
 
    ---- 한 손짓 · 한 임자 · 한 뜻 ----
-   판정을 한 곳으로 모았어도, 화면 위에 떠 있는 것들 중 하나가 여전히 제
-   길을 따로 갖고 있었습니다 — 해석 창의 바깥(scrim)은 `onclick` 한 줄로
-   혼자 닫혔습니다. 그래서 "바깥을 눌러 닫는 손짓"만은 이 파일이 본 적 없는
+   판정을 한 곳으로 모았어도, 화면 위에 떠 있는 것들이 여전히 제 길을 따로
+   갖고 있었습니다 — 떠 있는 창의 바깥(scrim)은 `onclick` 한 줄로 혼자
+   닫혔습니다. 그래서 "바깥을 눌러 닫는 손짓"만은 이 파일이 본 적 없는
    손짓이었고, 그 뒤에 렉·빈 화면·다음 꾹 누르기 오판이 함께 따라왔습니다.
 
    손짓에는 시작하는 순간 **임자**가 정해집니다:
 
      SENTENCE_MODAL  해석 창이 떠 있는 동안의 모든 손짓
+     WORD_SHEET      낱말 시트가 화면을 덮고 있는 동안의 모든 손짓
      READER          종이(surface) 위에서 시작한 손짓
      UI              그 밖에서 시작한 손짓
 
@@ -48,6 +49,12 @@
    임자가 reader 로 넘어가지 않습니다. 시계로 막는 것이 아니라(`300ms`,
    `ignoreNextClickUntil` 같은 것은 여기 없습니다) 애초에 남의 손짓이라서
    해석하지 않는 것입니다.
+
+   "덮고 있는 동안"이 조건인 이유가 있습니다. 낱말 창은 두 가지 물건입니다 —
+   폰에서는 화면을 덮는 바텀시트, 넓은 화면에서는 본문 옆에 나란히 서는 칸.
+   옆 칸일 때는 덮은 것이 없으므로 종이의 손짓은 그대로 종이 것입니다.
+   임자를 정하는 것은 "무엇이 열려 있는가"가 아니라 **무엇이 손가락을 받는가**
+   입니다.
 
    ---- 형식을 모릅니다 ----
    여기서는 "이번 손짓은 WORD 다"까지만 정합니다. 그 자리의 낱말을 실제로
@@ -62,9 +69,14 @@ const GESTURE_SLOP = 10;
    것까지 질문으로 읽혀 하루 몫이 새 나갔습니다. */
 const GESTURE_HOLD_MS = 1000;
 
+/* 시트를 손잡이로 끌어내려 닫는 거리. `scripts/ui/interactions.js` 가 들고 있던
+   값 그대로 옮겨 왔습니다 — 시계가 아니라 거리라서 이 파일의 규칙에 맞습니다. */
+const SHEET_PULL_DISMISS = 90;
+
 const GESTURE_UI = 'UI', GESTURE_SCROLL = 'SCROLL', GESTURE_WORD = 'WORD',
       GESTURE_SENTENCE = 'SENTENCE', GESTURE_CANCEL = 'CANCEL',
-      GESTURE_DISMISS_SENTENCE = 'DISMISS_SENTENCE', GESTURE_MODAL_UI = 'MODAL_UI';
+      GESTURE_DISMISS_SENTENCE = 'DISMISS_SENTENCE', GESTURE_DISMISS_WORD = 'DISMISS_WORD',
+      GESTURE_MODAL_UI = 'MODAL_UI';
 
 /* ---- 종이는 허용 목록입니다 ----
    예전에는 "떠 있는 것"을 하나씩 세어 걸렀고, 새 UI 가 생길 때마다 목록이
@@ -87,8 +99,13 @@ function readerSurfaceFor(event){
 
    지금 화면에 해석 창이 떠 있으면, 어디를 눌렀든 그 손짓의 임자는 창입니다.
    창 안의 X 를 눌렀든 창 밖을 눌렀든 똑같습니다 — 둘은 UI 요소로서는 다르지만
-   임자가 같아야 reader 가 같은 손짓에 끼어들 수 없습니다. */
-const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL', OWNER_UI = 'UI';
+   임자가 같아야 reader 가 같은 손짓에 끼어들 수 없습니다.
+
+   낱말 시트도 같습니다. 다만 시트는 폰에서만 화면을 덮습니다 — 넓은 화면에서는
+   본문 옆의 칸이라 종이를 가리지 않으므로, 그때는 종이의 손짓을 가져가지
+   않습니다. 옆 칸일 때도 임자가 되는 것은 그 칸의 닫기 단추 하나뿐입니다. */
+const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',
+      OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_UI = 'UI';
 
 function sentenceModalOpen(){
   const modal = document.getElementById('sentence-modal');
@@ -98,6 +115,25 @@ function sentenceModalOpen(){
 function sentenceDismissTarget(target){
   if(!target || typeof target.closest !== 'function') return false;
   return !!(target.closest('#ps-close') || target.closest('#sentence-scrim'));
+}
+
+function wordPanelOpen(){
+  const panel = document.getElementById('panel');
+  return !!panel && panel.classList.contains('on');
+}
+/* 화면을 덮고 있는가. 덮고 있을 때만 그 동안의 손짓이 통째로 시트의 것입니다. */
+function wordSheetCovers(){
+  return wordPanelOpen() && typeof panelIsSheet === 'function' && panelIsSheet();
+}
+/* 시트를 닫는 자리는 셋입니다 — 시트 바깥(`#sheetbg`), 넓은 화면의 X(`#p-close`),
+   그리고 끌어내리는 손잡이(`#p-handle`). 손잡이만 제자리가 아니라 거리로 닫습니다. */
+function wordDismissTarget(target){
+  if(!target || typeof target.closest !== 'function') return false;
+  return !!(target.closest('#sheetbg') || target.closest('#p-close'));
+}
+function wordPullTarget(target){
+  if(!target || typeof target.closest !== 'function') return false;
+  return !!target.closest('#p-handle');
 }
 
 /* ================= 지금 판정 중인 손짓 ================= */
@@ -206,15 +242,29 @@ function beginGesture(event){
     startTag: (target.tagName || '?').toLowerCase(),
     owner: null, surface: null, decision: null, completed: null, dispatched: 0,
     adapterCall: '', holdTimer: 0, tailClickUsed: false, dismisses: false,
+    pulls: false, dy: 0,
   };
 
   /* ---- 창이 떠 있으면 임자는 창입니다 ----
      여기서 정한 임자는 손짓이 끝날 때까지 그대로입니다. 아래에서 창을 닫아
      scrim 이 사라져도 이 손짓은 계속 창의 것이고, 그래서 뒤따라오는
-     `pointerup` 도 `click` 도 종이로 내려가지 않습니다. */
+     `pointerup` 도 `click` 도 종이로 내려가지 않습니다.
+
+     둘 다 떠 있을 수 있습니다 — 낱말 시트 위에 해석 창이 겹칩니다. 위에 있는
+     것이 손가락을 받으므로 해석 창을 먼저 봅니다. */
   if(sentenceModalOpen()){
     gesture.owner = OWNER_SENTENCE_MODAL;
     gesture.dismisses = sentenceDismissTarget(target);
+    activeGesture = gesture;
+    return;
+  }
+
+  /* 시트가 덮고 있으면 그 동안의 모든 손짓이 시트의 것이고, 옆 칸일 때는
+     그 칸의 닫기 단추에서 시작한 손짓만 시트의 것입니다. */
+  if(wordSheetCovers() || (wordPanelOpen() && wordDismissTarget(target))){
+    gesture.owner = OWNER_WORD_SHEET;
+    gesture.dismisses = wordDismissTarget(target);
+    gesture.pulls = wordPullTarget(target);
     activeGesture = gesture;
     return;
   }
@@ -253,6 +303,25 @@ function endSentenceModalGesture(gesture){
   if(typeof closeSentence === 'function') closeSentence();
 }
 
+/* ---- 낱말 시트의 손짓이 끝나는 자리 ----
+   닫는 길이 둘입니다. 바깥이나 X 를 짚고 제자리에서 뗐거나, 손잡이를 잡고
+   `SHEET_PULL_DISMISS` 만큼 끌어내렸거나. 끌어내리는 그림(시트가 손가락을
+   따라 내려오는 것)은 여전히 `scripts/ui/interactions.js` 가 그리지만, 닫을지
+   말지를 정하는 일은 이제 여기 하나뿐입니다 — 예전에는 그 파일이 제 손으로
+   `closePanel()` 을 불러서, 한 손짓이 두 곳에서 판정됐습니다. */
+function endWordSheetGesture(gesture){
+  const tapped = gesture.dismisses && gesture.moved <= GESTURE_SLOP;
+  const pulled = gesture.pulls && gesture.dy > SHEET_PULL_DISMISS;
+  if(!tapped && !pulled){
+    finishGesture(gesture, GESTURE_MODAL_UI);
+    return;
+  }
+  finishGesture(gesture, GESTURE_DISMISS_WORD, true);
+  countDispatch(gesture, 'DISMISS_WORD');
+  gesture.adapterCall = 'closePanel()';
+  if(typeof closePanel === 'function') closePanel();
+}
+
 /* ---- 꾹 누르기가 확정되는 그 순간 ----
    누르고 있는 동안에는 아무것도 찾지 않고 아무것도 칠하지 않습니다. 문장을
    짚는 일조차 여기서 처음 합니다 — 미리 준비해 두면 짧은 탭까지 문장 선택으로
@@ -286,6 +355,9 @@ function moveGesture(event){
   if(!gesture || gesture.decision) return;
   if(event.pointerId != null && event.pointerId !== gesture.pointerId) return;
   gesture.moved = Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y);
+  /* 아래로 얼마나 왔는지는 부호가 있어야 압니다 — 시트를 끌어내리는 손짓만
+     닫고, 올리는 손짓은 시트 안의 스크롤이기 때문입니다. */
+  gesture.dy = event.clientY - gesture.y;
   /* 움직였다는 사실은 누구의 손짓이든 적어 둡니다. 다만 그것을 "밀었다"로
      읽는 것은 종이의 손짓일 때뿐입니다. */
   if(gesture.moved > GESTURE_SLOP && gesture.owner === OWNER_READER){
@@ -299,6 +371,7 @@ function endGesture(event){
   if(event.pointerId != null && event.pointerId !== gesture.pointerId) return;
   if(gesture.decision) return;
   if(gesture.owner === OWNER_SENTENCE_MODAL){ endSentenceModalGesture(gesture); return; }
+  if(gesture.owner === OWNER_WORD_SHEET){ endWordSheetGesture(gesture); return; }
   finishGesture(gesture, GESTURE_WORD);
   gesture.adapterCall = `${gesture.surface.name}.openWordAt(${Math.round(event.clientX)},${Math.round(event.clientY)})`;
   dispatchWord(gesture, event.clientX, event.clientY);
@@ -318,6 +391,17 @@ function dispatchWord(gesture, clientX, clientY){
     return;
   }
   gesture.completed = !!result;
+}
+
+/* pointer 조각 없이 `click` 하나만 오는 길(일부 모바일 캔버스, 그리고 자판의
+   Enter)을 위한 손짓 한 벌. 조각이 없었으니 꼬리도 없습니다. */
+function syntheticGesture(event, owner, dismisses){
+  return {
+    id: ++gestureSeq, pointerId: null, x: event.clientX, y: event.clientY, moved: 0, dy: 0,
+    startedAt: performance.now(), startTag: (event.target.tagName||'?').toLowerCase(),
+    owner, surface: null, decision: null, completed: null, dispatched: 0,
+    adapterCall: '', holdTimer: 0, tailClickUsed: true, dismisses, pulls: false,
+  };
 }
 
 function cancelGesture(reason){
@@ -342,7 +426,8 @@ function clickGesture(event){
        "바깥을 눌렀다"가 되어 창을 도로 닫아 버리지 않습니다. 민 손짓·취소된
        손짓의 꼬리는 삼키기만 하고 길은 막지 않습니다 — 막을 이유가 없습니다. */
     if(lastGesture.decision === GESTURE_WORD || lastGesture.decision === GESTURE_SENTENCE
-       || lastGesture.decision === GESTURE_DISMISS_SENTENCE){
+       || lastGesture.decision === GESTURE_DISMISS_SENTENCE
+       || lastGesture.decision === GESTURE_DISMISS_WORD){
       event.stopPropagation();
       event.preventDefault();
     }
@@ -353,17 +438,22 @@ function clickGesture(event){
   if(activeGesture) return;
   /* 창이 떠 있는데 pointer 조각 없이 click 만 왔다면, 그 한 번이 통째로 창의
      손짓입니다. scrim 의 `onclick` 을 지웠으므로 이 길이 없으면 그런 기기에서는
-     바깥을 눌러 닫을 수 없게 됩니다. */
+     바깥을 눌러 닫을 수 없게 됩니다. 자판의 Enter 로 X 를 누르는 길도 여기입니다. */
   if(sentenceModalOpen()){
-    const modalGesture = {
-      id: ++gestureSeq, pointerId: null, x: event.clientX, y: event.clientY, moved: 0,
-      startedAt: performance.now(), startTag: (event.target.tagName||'?').toLowerCase(),
-      owner: OWNER_SENTENCE_MODAL, surface: null, decision: null, completed: null,
-      dispatched: 0, adapterCall: '', holdTimer: 0, tailClickUsed: true,
-      dismisses: sentenceDismissTarget(event.target),
-    };
+    const modalGesture = syntheticGesture(event, OWNER_SENTENCE_MODAL,
+                                          sentenceDismissTarget(event.target));
     endSentenceModalGesture(modalGesture);
     if(modalGesture.decision === GESTURE_DISMISS_SENTENCE){
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    return;
+  }
+  if(wordSheetCovers() || (wordPanelOpen() && wordDismissTarget(event.target))){
+    const sheetGesture = syntheticGesture(event, OWNER_WORD_SHEET,
+                                          wordDismissTarget(event.target));
+    endWordSheetGesture(sheetGesture);
+    if(sheetGesture.decision === GESTURE_DISMISS_WORD){
       event.stopPropagation();
       event.preventDefault();
     }

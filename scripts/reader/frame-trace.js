@@ -237,8 +237,11 @@
   document.addEventListener('pointerdown', event=>{
     const target = event.target;
     if(!target || typeof target.closest !== 'function'){ pressedOn = ''; return; }
-    pressedOn = target.closest('#ps-close') ? 'X 단추'
-              : target.closest('#sentence-scrim') ? '바깥' : '';
+    pressedOn = target.closest('#ps-close') ? '문장 X'
+              : target.closest('#sentence-scrim') ? '문장 바깥'
+              : target.closest('#p-close') ? '낱말 X'
+              : target.closest('#p-handle') ? '낱말 손잡이'
+              : target.closest('#sheetbg') ? '낱말 바깥' : '';
   }, true);
   document.addEventListener('pointerup', ()=>{
     const how = pressedOn;
@@ -248,10 +251,16 @@
     bump('닫기: ' + how);
     /* 닫힌 뒤에 세야 합니다 — 이 pointerup 이 아직 판정 계층에 닿기 전입니다. */
     setTimeout(()=>{
+      /* 닫힌 뒤에도 화면 전체를 덮은 채 렌더 트리에 남는 것이 있는지 — 해석 창은
+         `[hidden]` 으로 통째로 빠지고, 낱말 시트의 바깥은 `display:block` 인 채
+         `opacity:0` 으로 남습니다. 그 차이를 실기기에서 눈으로 보려고 적습니다. */
+      const scrim = document.getElementById('sheetbg');
+      const scrimStyle = scrim ? getComputedStyle(scrim) : null;
       dismissMarks.push({how,
         highlights: (window.CSS && CSS.highlights) ? CSS.highlights.size : -1,
         cue: document.querySelectorAll('.reader-mode-cue,.reader-mode-cue-dom').length,
         selection: document.getSelection().rangeCount,
+        scrim: scrimStyle ? `${scrimStyle.display}/${scrimStyle.opacity}` : '—',
         nodes: document.getElementsByTagName('*').length});
       if(dismissMarks.length > 40) dismissMarks.shift();
     }, 0);
@@ -304,7 +313,7 @@
       '마지막 닫기': lastDismiss,
       '닫은 뒤 남은 것': dismissMarks.length
         ? dismissMarks.slice(-3).map(mark=>
-            `${mark.how}(highlight ${mark.highlights}·cue ${mark.cue}·선택 ${mark.selection}·노드 ${mark.nodes})`).join(' / ')
+            `${mark.how}(highlight ${mark.highlights}·cue ${mark.cue}·선택 ${mark.selection}·노드 ${mark.nodes}·시트바깥 ${mark.scrim})`).join(' / ')
         : '아직 없음',
       'captureAnchor/frame': per('captureAnchor'),
       'paragraphForSource/frame': per('paragraphForSource'),

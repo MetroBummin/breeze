@@ -18,25 +18,29 @@
   bg.addEventListener('touchmove', e=>{ if(isSheet()) e.preventDefault(); }, {passive:false});
 })();
 
-/* bottom sheet: drag handle to dismiss */
+/* ---- 손잡이는 그림만 그립니다 ----
+   시트가 손가락을 따라 내려오는 그림은 여기서 그립니다. 그런데 **닫을지 말지**
+   를 정하는 일은 여기 있으면 안 됩니다 — 예전에는 이 파일이 제 손으로
+   `closePanel()` 을 불러서, 손잡이를 끄는 한 번의 손짓이 두 곳에서 판정됐습니다
+   (여기, 그리고 판정 계층). 지금은 거리(`SHEET_PULL_DISMISS`)를 보고 닫는 일이
+   `scripts/reader/gesture.js` 의 `DISMISS_WORD` 하나뿐입니다. 여기 남는 것은
+   따라오는 `transform` 과, 손을 뗐을 때 그것을 되돌리는 일입니다. */
 (function(){
   const panel = document.getElementById('panel');
   const handle = document.getElementById('p-handle');
-  let startY=null, dy=0;
+  let startY=null;
   handle.addEventListener('touchstart', e=>{
-    startY = e.touches[0].clientY; dy=0;
+    startY = e.touches[0].clientY;
     panel.style.transition='none';
   }, {passive:true});
   handle.addEventListener('touchmove', e=>{
     if(startY===null) return;
-    dy = Math.max(0, e.touches[0].clientY - startY);
-    panel.style.transform = 'translateY('+dy+'px)';
+    panel.style.transform = 'translateY('+Math.max(0, e.touches[0].clientY - startY)+'px)';
   }, {passive:true});
   const end = ()=>{
     if(startY===null) return;
     panel.style.transition=''; panel.style.transform='';
-    if(dy>90) closePanel();
-    startY=null; dy=0;
+    startY=null;
   };
   handle.addEventListener('touchend', end);
   handle.addEventListener('touchcancel', end);

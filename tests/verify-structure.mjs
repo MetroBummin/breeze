@@ -1277,7 +1277,7 @@ assert.doesNotMatch(index, /id="ps-close"[^>]*onclick/,
   'The X button closes the sentence window outside the gesture controller again');
 assert.ok(!/closeSentence/.test(index),
   'index.html reaches into the sentence close path directly instead of letting the gesture owner do it');
-assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL'/,
+assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',\s*\n\s*OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_UI = 'UI'/,
   'A gesture no longer has an owner, so a modal and the reader can share one physical gesture');
 /* 임자는 pointerdown 에서 정해집니다 — 판정보다 먼저, 그리고 딱 한 번. */
 assert.match(gestureSource,
@@ -1285,11 +1285,11 @@ assert.match(gestureSource,
   'The owner is not decided at pointerdown, so a gesture can change hands halfway through');
 /* ---- 임자는 손짓이 끝날 때까지 바뀌지 않습니다 ----
    창이 닫혀 눌렀던 자리가 사라지고 그 밑에서 종이가 드러나도 마찬가지입니다.
-   임자를 적는 곳은 `beginGesture` 의 세 갈래뿐이어야 합니다(창 · 종이 · 그 밖).
-   네 번째 대입이 생기면 여기서 걸립니다. */
+   임자를 적는 곳은 `beginGesture` 의 네 갈래뿐이어야 합니다
+   (해석 창 · 낱말 시트 · 종이 · 그 밖). 다섯 번째 대입이 생기면 여기서 걸립니다. */
 {
   const owns = runningCode(gestureSource).match(/\.owner\s*=(?!=)/g) || [];
-  assert.strictEqual(owns.length, 3,
+  assert.strictEqual(owns.length, 4,
     `A gesture's owner is written in ${owns.length} places instead of once at pointerdown, `
     + 'so a gesture can change hands halfway through');
   assert.ok(!/activeGesture\.owner\s*=/.test(gestureSource),
@@ -1318,6 +1318,48 @@ for(const clockGuard of ['ignoreNextClickUntil','dismissGuardUntil','modalCloseA
   assert.ok(!new RegExp(`\\b${clockGuard}\\b`).test(runningCode(gestureSource) + runningCode(sentenceSource)),
     `The outside dismiss is refereed by a wall clock ("${clockGuard}") instead of by ownership`);
 }
+
+/* ================= 낱말 시트도 같은 규칙입니다 =================
+
+   해석 창을 고친 뒤에도 낱말 시트의 바깥(`#sheetbg`)만은 제 `onclick` 으로
+   혼자 닫히는 예외로 남아 있었습니다. 실기기에서 그 길로 닫으면 렉이 나고,
+   그 상태에서 해석 창을 열었다 임자 방식으로 닫으면 다시 부드러워졌습니다 —
+   같은 화면에서 예외 있는 길과 예외 없는 길을 나란히 비교한 A/B 였습니다.
+   (그 렉이 모든 책에서 나지는 않습니다. 기사에서는 안 나고 개츠비처럼 긴 책
+   에서 납니다 — 바깥 누르기는 방아쇠이고, 그리는 양이 조건입니다. 그래서
+   이 줄들이 지키는 것은 "렉이 없다"가 아니라 "예외가 없다" 입니다.) */
+assert.doesNotMatch(index, /id="sheetbg"[^>]*onclick/,
+  'The sheet scrim closes the word panel through its own onclick again, outside the gesture controller');
+assert.doesNotMatch(index, /id="p-close"[^>]*onclick/,
+  'The word panel X button closes the panel outside the gesture controller again');
+assert.ok(!/closePanel/.test(index),
+  'index.html reaches into the word panel close path directly instead of letting the gesture owner do it');
+/* 손잡이를 끌어내려 닫는 길도 손짓입니다. 그림은 `interactions.js` 가 그리되,
+   닫을지 말지는 판정 계층만 정합니다 — 예전에는 두 곳이 같은 한 손짓을
+   각자 판정했습니다. */
+assert.ok(!/closePanel/.test(runningCode(interactionsSource)),
+  'The sheet drag handle decides on its own to close the panel again, so one gesture is judged twice');
+assert.match(gestureSource, /const SHEET_PULL_DISMISS = 90/,
+  'The pull-to-dismiss distance no longer lives with the judging layer');
+/* 임자가 되는 조건은 "열려 있는가"가 아니라 "덮고 있는가"입니다. 넓은 화면의
+   옆 칸까지 종이의 손짓을 가져가면, 뜻을 열어 둔 채 다음 낱말을 누를 수 없습니다. */
+assert.match(gestureSource,
+  /function wordSheetCovers\(\)\{\s*\n\s*return wordPanelOpen\(\) && typeof panelIsSheet === 'function' && panelIsSheet\(\);/,
+  'The word panel takes over reader gestures even when it is a side panel that covers nothing');
+assert.match(gestureSource,
+  /function beginGesture[\s\S]{0,2200}if\(wordSheetCovers\(\) \|\| \(wordPanelOpen\(\) && wordDismissTarget\(target\)\)\)\{\s*\n\s*gesture\.owner = OWNER_WORD_SHEET;[\s\S]{0,240}activeGesture = gesture;\s*\n\s*return;/,
+  'The word sheet owner is not decided at pointerdown, so that gesture can change hands halfway through');
+assert.match(gestureSource, /if\(gesture\.owner === OWNER_WORD_SHEET\)\{ endWordSheetGesture\(gesture\); return; \}/,
+  'A sheet-owned gesture falls through to the reader WORD path again');
+assert.match(gestureSource, /countDispatch\(gesture, 'DISMISS_WORD'\)/,
+  'A DISMISS_WORD dispatch is not counted against the one-gesture-one-action invariant');
+assert.ok((runningCode(gestureSource).match(/closePanel\(\);/g) || []).length === 1,
+  'The gesture controller closes the word panel from more than one place');
+assert.match(gestureSource,
+  /function endWordSheetGesture[\s\S]{0,700}finishGesture\(gesture, GESTURE_DISMISS_WORD, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_WORD'\);[\s\S]{0,200}closePanel\(\)/,
+  'DISMISS_WORD no longer ends in exactly one closePanel() call');
+assert.match(gestureSource, /\|\| lastGesture\.decision === GESTURE_DISMISS_WORD\)\{/,
+  'The click trailing a sheet dismiss is let through to the reader again');
 /* caret 이 대답하지 않는 엔진에서도 낱말은 열려야 합니다. */
 assert.match(epubOriginalSource, /function epubWordByGeometry/,
   'EPUB word lookup has no fallback for engines whose caret hit test returns null');

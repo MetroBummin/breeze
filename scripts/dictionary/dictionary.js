@@ -350,6 +350,15 @@ function selectWord(k, span){
      자리와 높이는 상단바가 있을 때로 고정입니다(styles/dictionary.css). */
   pinReaderChrome(panelIsSheet());
 }
+/* ---- 낱말 창을 치우는 일도 여기 하나뿐입니다 ----
+   닫는 길은 넷입니다 — 시트 바깥 · 손잡이 끌어내리기 · 넓은 화면의 X · 뒤로가기.
+   앞의 셋은 손짓이므로 판정 계층이 `DISMISS_WORD` 하나로 끝내고 여기로 옵니다
+   (scripts/reader/gesture.js). 그래서 이 파일에도, `index.html` 에도, 시트를
+   끄는 `onclick` 은 없습니다.
+
+   해석 창에서 먼저 겪은 일입니다: 바깥으로 닫는 길만 판정 계층 밖에 있었고,
+   두 길이 남기는 JS/DOM 상태는 한 글자도 다르지 않은데 실기기에서는 바깥으로
+   닫을 때만 렉이 났습니다. 낱말 시트의 바깥도 같은 예외였습니다. */
 function closePanel(){
   selKey=null;
   contextView=null; phraseView=null; addingMeaning=false;
