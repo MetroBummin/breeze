@@ -65,6 +65,31 @@ function topInset(){
   const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h'));
   return (isNaN(v) ? 0 : v) + 8;
 }
+/* ---- 문단 목록은 한 번만 셉니다 ----
+   그린 뒤로 `[data-pi]` 의 개수와 차례는 그대로입니다. 눈앞의 문단에 낱말 상자가
+   붙었다 떨어져도(`hydrateWordSpanBatch`) 문단 자체는 그 자리에 남습니다.
+   새 책을 그리면 `#rtext` 안이 통째로 갈리므로, 담아 둔 첫 문단이 문서에서
+   떨어져 나간 것으로 그것을 압니다. */
+let readerParagraphCache = null;
+function readerParagraphs(){
+  if(readerParagraphCache && readerParagraphCache.length && readerParagraphCache[0].isConnected)
+    return readerParagraphCache;
+  readerParagraphCache = [...document.querySelectorAll('#rtext [data-pi]')];
+  return readerParagraphCache;
+}
+/* ---- 예비 길은 반으로 접어 찾습니다 ----
+   `elementFromPoint` 는 자주 빗나갑니다. 재는 점이 문단 사이 여백이나 쪽 상자의
+   안쪽 여백, 쪽 번호 줄에 떨어지면 문단이 안 잡히고, 낱말 창·문장 해석 창이 떠
+   있으면 그 창이 잡힙니다. 400쪽짜리 책의 한가운데에서 세어 보면 스크롤 위치
+   열 중 셋이 빗나갔습니다.
+   예전의 예비 길은 그때마다 책 첫 문단부터 훑으며 자리를 쟀습니다. 2000번째
+   문단을 읽고 있으면 한 번에 2000번, 그것을 한 프레임에 두 번(진행줄 · 앵커)
+   했습니다. 눈앞의 문단이 다시 조립되며 배치가 더러워진 직후라 그 2000번은
+   전부 강제 재배치였습니다 — 읽을수록 무거워지고, 책 뒤쪽에서는 손가락을 밀어도
+   화면이 따라오지 못했습니다.
+   문단은 위에서 아래로 한 줄로 흐르므로 자리는 늘 오름차순입니다. 반으로 접어
+   찾으면 3450개짜리 책도 열두 번이면 끝납니다 — 원본 쪽·요소를 찾을 때 쓰는
+   `firstElementBelow` 와 같은 셈법입니다. */
 function captureAnchor(){
   if(!curBook) return null;
   const y = topInset() + 4;
@@ -72,8 +97,8 @@ function captureAnchor(){
   try{ el = document.elementFromPoint(Math.round(window.innerWidth/2), y); }catch(e){}
   el = el && el.closest ? el.closest('[data-pi]') : null;
   if(!el){                                    // 예비: 화면 위쪽에 걸친 첫 문단을 찾는다
-    const nodes = document.querySelectorAll('#rtext [data-pi]');
-    for(const n of nodes){ if(n.getBoundingClientRect().bottom > y){ el = n; break; } }
+    const list = readerParagraphs();
+    el = list.length ? firstElementBelow(list, y) : null;
   }
   if(!el) return null;
   return { pi: +el.dataset.pi, dy: Math.round(el.getBoundingClientRect().top) };

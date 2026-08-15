@@ -44,12 +44,17 @@ function rememberSentLeft(left, day){
 
 const SENT_PRESS_MS = 1000;    // 스크롤하려고 얹은 손가락과 구별되는 길이
 const SENT_PRESS_SLOP = 10;    // 이만큼 움직였으면 질문이 아니라 스크롤입니다
-const SENT_PRESS_GUARD = 900;  // 손을 뗀 뒤 따라오는 탭 한 번을 삼킵니다
+const SENT_PRESS_GUARD = 600;  // 손을 뗀 **뒤로** 따라오는 탭 한 번을 삼킵니다
 
 let sentPressTimer = 0, sentPressFrom = null, sentPressGuardUntil = 0;
+/* 문장이 열린 그 손가락. 아직 화면에 붙어 있는 동안은 뗄 때까지 기다립니다. */
+let sentPressHolding = false;
 
-/* 꾹 누르기가 방금 열렸으면 뒤따라오는 탭은 낱말을 여는 손짓이 아닙니다. */
-function sentencePressBusy(){ return Date.now() < sentPressGuardUntil; }
+/* 꾹 누르기가 방금 열렸으면 뒤따라오는 탭은 낱말을 여는 손짓이 아닙니다.
+   손가락이 아직 붙어 있는 동안에도 마찬가지입니다 — 유예를 벽시계로만 재던
+   때에는, 해석이 뜬 것을 보고 잠깐 더 들고 있다가 떼면 그 뗌이 낱말 탭이 되어
+   해석 창 위로 낱말 창이 겹쳐 떴습니다. */
+function sentencePressBusy(){ return sentPressHolding || Date.now() < sentPressGuardUntil; }
 
 /* `resolve` 는 타이머가 끝난 뒤에만 불립니다. 누르고 있는 동안에는 문장을 찾지도,
    칠하지도 않습니다. */
@@ -63,6 +68,7 @@ function beginSentencePress(event, resolve){
     let found = null;
     try{ found = resolve(); }catch(error){ found = null; }
     if(!found || !found.sentence) return;
+    sentPressHolding = true;
     sentPressGuardUntil = Date.now() + SENT_PRESS_GUARD;
     paintPressedSentence(found);
     openSentence(found.sentence);
@@ -73,10 +79,23 @@ function moveSentencePress(event){
   if(Math.hypot(event.clientX - sentPressFrom.x, event.clientY - sentPressFrom.y) > SENT_PRESS_SLOP)
     cancelSentencePress();
 }
+/* 손을 뗄 때(그리고 스크롤·취소 때) 불립니다. 문장이 이미 열린 손가락이었다면
+   그 순간부터 유예를 다시 겁니다 — 얼마나 오래 들고 있었든 뗀 뒤의 한 박자는
+   같습니다. */
 function cancelSentencePress(){
   if(sentPressTimer) clearTimeout(sentPressTimer);
   sentPressTimer = 0; sentPressFrom = null;
+  if(sentPressHolding){ sentPressHolding = false; sentPressGuardUntil = Date.now() + SENT_PRESS_GUARD; }
 }
+
+/* 손을 떼는 것은 어디서 떼든 같은 뜻입니다. 그런데 해석 창은 누르고 있던 손가락
+   **아래로** 올라옵니다 — 그러면 뗌은 창이 받고, 눌렀던 곳(글자판·종이)은 영영
+   못 받습니다. 그 한 번을 놓치면 "아직 붙잡고 있다"가 풀리지 않아 다음 낱말이
+   열리지 않습니다. 그래서 뗌만은 문서 전체에서 한 번 더 듣습니다.
+   문서 capture 는 각 화면의 손짓보다 먼저 도므로, 그 뒤의 탭 판정은 이미
+   다시 걸린 유예를 보게 됩니다. */
+['pointerup','pointercancel'].forEach(name=>
+  document.addEventListener(name, ()=>cancelSentencePress(), true));
 
 /* 문장이 차오르는 그림은 모드를 옮길 때 쓰는 "여기 있었어요"와 같은 것입니다.
    같은 일(한 문장을 가리키는 것)에 두 가지 그림을 두지 않습니다. */
@@ -154,6 +173,13 @@ function closeSentence(){
   if(modal) modal.hidden = true;
   if(typeof clearReaderModeCue === 'function') clearReaderModeCue();
   if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl = null; }
+}
+/* 바깥을 눌러 닫는 길. 창은 누르고 있던 손가락 **아래로** 올라오므로, 손을 떼는
+   그 한 번이 곧바로 "바깥을 눌렀다"가 될 수 있습니다 — 열리자마자 닫혀서
+   아무 일도 안 일어난 것처럼 보이던 자리입니다. 그 한 박자만 흘려보냅니다. */
+function dismissSentence(){
+  if(typeof sentencePressBusy === 'function' && sentencePressBusy()) return;
+  closeSentence();
 }
 function paintSentence(state){
   const modal = document.getElementById('sentence-modal');

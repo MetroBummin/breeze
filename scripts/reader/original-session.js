@@ -32,6 +32,20 @@ function firstElementBelow(elements,inset){
   return found;
 }
 
+/* ---- 좌표 지도에서 한 번만 세면 되는 것들 ----
+   진행도는 스크롤 프레임마다 다시 셉니다. 그런데 "이 지도가 아는 마지막 쪽" 같은
+   값은 지도가 그대로인 한 늘 같은 답입니다. 3450줄짜리 지도를 프레임마다
+   (EPUB 은 두 번씩) 훑던 자리라, 지도별로 한 번 세어 두고 그 값을 씁니다.
+   지도가 없는 책은 빈 배열이 매번 새로 만들어지므로 담지 않습니다. */
+const sourceMapFacts = new WeakMap();
+function sourceMapFact(map, name, measure){
+  if(!map || !map.length) return measure(map);
+  let facts = sourceMapFacts.get(map);
+  if(!facts){ facts = Object.create(null); sourceMapFacts.set(map, facts); }
+  if(facts[name] === undefined) facts[name] = measure(map);
+  return facts[name];
+}
+
 function sourceAnchorForParagraph(book, paragraphIndex){
   const map = book && book.sourceMap;
   if(!map || !map.length) return null;

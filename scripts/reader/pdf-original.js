@@ -517,11 +517,31 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
     if(!box) return false;
     lastPdfTap=Date.now(); openPdfWord(page,box); return true;
   }
-  /* PDF 위에는 캔버스·저장 표시·전환 표시가 번갈아 올라옵니다. 원본 칸에만
-     묶지 않고 문서 capture 단계에서 좌표를 받으면 어느 레이어를 눌러도 한 번의
-     탭이 같은 단어 찾기가 됩니다. */
+  /* ---- 종이를 눌렀을 때만 낱말을 찾습니다 ----
+     PDF 위에는 캔버스·저장 표시·전환 표시가 번갈아 올라옵니다. 그래서 손짓은
+     원본 칸 하나에 묶지 않고 문서 capture 단계에서 받습니다 — 어느 레이어를
+     눌러도 한 번의 탭이 같은 단어 찾기가 되도록.
+
+     그런데 좌표만 보고 판단하면 **종이 위에 떠 있는 것들**까지 종이가 됩니다.
+     상단바·확대 단추·낱말 창·문장 해석 창은 전부 종이와 겹쳐 있고, 낱말 상자를
+     찾는 셈(`pdfPageAtPoint`)은 그 위에 무엇이 떠 있는지 모르기 때문입니다.
+     실제로 이렇게 어긋났습니다:
+
+       · 상단바의 "단어장"을 누르면 상단바 뒤에 깔린 낱말이 함께 열렸습니다.
+       · 문장 해석 창을 누르면 창 뒤의 낱말이 열리고, 그 창을 닫으려고 또 누르면
+         또 뒤의 낱말이 열렸습니다 — 나가도 나가도 새 낱말 창이 뜨는 까닭입니다.
+
+     그래서 누른 자리가 정말 종이인지를 **눌린 것**으로 확인합니다. 종이 위의
+     레이어(캔버스·표시·안내)는 모두 `#originalwrap` 안이라 예전처럼 어느
+     레이어를 눌러도 통하고, 그 바깥에 떠 있는 것들은 자기 일만 합니다. */
+  function pdfPaperEvent(event){
+    if(!originalSession || originalSession.kind!=='pdf') return false;
+    const target=event.target;
+    if(!target || typeof target.closest!=='function') return false;
+    return !!target.closest('#originalwrap');
+  }
   document.addEventListener('pointerdown',event=>{
-    if(!originalSession || originalSession.kind!=='pdf') return;
+    if(!pdfPaperEvent(event)) return;
     /* Touch PointerEvent의 button 값은 브라우저마다 0/-1로 다릅니다. 마우스의
        오른쪽·가운데 버튼만 걸러야 한 번 탭한 단어도 놓치지 않습니다. */
     if(event.pointerType==='mouse' && event.button!==0) return;
@@ -536,9 +556,9 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
   document.addEventListener('pointercancel',()=>{ originalPdfPointer=null; if(typeof cancelSentencePress==='function') cancelSentencePress(); },true);
   document.addEventListener('pointerup',event=>{
     if(typeof cancelSentencePress==='function') cancelSentencePress();
-    if(!originalSession || originalSession.kind!=='pdf') return;
     const start=originalPdfPointer;
     originalPdfPointer=null;
+    if(!pdfPaperEvent(event)) return;
     if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
     if(!start || start.id!==event.pointerId || Math.hypot(event.clientX-start.x,event.clientY-start.y)>9) return;
     void openPdfWordAt(event.clientX,event.clientY);
@@ -547,8 +567,7 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
      위 pointerup이 이미 처리한 탭은 시간으로 걸러, 별이 두 칸 오르지 않게 합니다. */
   document.addEventListener('click',event=>{
     if(typeof sentencePressBusy==='function' && sentencePressBusy()) return;
-    if(!originalSession || originalSession.kind!=='pdf'
-        || Date.now()-Math.max(lastPdfTap,lastPdfAttempt)<450) return;
+    if(!pdfPaperEvent(event) || Date.now()-Math.max(lastPdfTap,lastPdfAttempt)<450) return;
     void openPdfWordAt(event.clientX,event.clientY);
   },true);
 })();
@@ -564,7 +583,8 @@ function pdfAnchorFromProgress(session,progress){
 /* 진행도는 쪽 번호로 셉니다. 세션이 열려 있으면 진짜 쪽수를, 아니면 좌표
    지도가 아는 마지막 쪽을 전체로 봅니다. */
 function pdfSourceProgress(map,source,session){
-  const mapped=map.reduce((max,item)=>Math.max(max,(item&&item.page)||0),0);
+  const mapped=sourceMapFact(map,'lastPage',
+    list=>list.reduce((max,item)=>Math.max(max,(item&&item.page)||0),0));
   const total=Math.max(1,session ? session.pages.length : 0,mapped,Number(source.page)||1);
   return Math.max(0,Math.min(1,((Math.max(1,Number(source.page)||1)-1)
     + Math.max(0,Math.min(1,Number(source.y)||0)))/total));

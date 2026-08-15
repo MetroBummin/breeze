@@ -437,7 +437,21 @@ document.getElementById('rtext').addEventListener('click', e=>{
   text.addEventListener('pointermove', event=>{ if(typeof moveSentencePress==='function') moveSentencePress(event); }, true);
   ['pointerup','pointercancel','pointerleave'].forEach(name=>
     text.addEventListener(name, ()=>{ if(typeof cancelSentencePress==='function') cancelSentencePress(); }, true));
-  /* 화면이 움직이면 그것은 스크롤입니다. 손가락이 제자리에 있어도 마찬가지입니다. */
-  const scroller=document.getElementById('readmain');
-  if(scroller) scroller.addEventListener('scroll', ()=>{ if(typeof cancelSentencePress==='function') cancelSentencePress(); }, {passive:true});
+  /* 화면이 움직이면 그것은 스크롤입니다. 손가락이 제자리에 있어도 마찬가지입니다.
+     듣는 곳은 실제로 구르는 칸(`#reader-scroll`)이어야 합니다 — `#readmain` 은
+     읽는 동안 아예 구르지 않으므로(scripts/reader/reader-scroll.js) 여기 걸어 둔
+     귀는 한 번도 울린 적이 없었습니다. 그래서 낱말에 손가락을 얹은 채 밀면
+     1초 뒤에 묻지도 않은 문장 해석이 열렸습니다. */
+  const scroller=readerScroller();
+  if(scroller) scroller.addEventListener('scroll', ()=>{
+    /* 프로그램이 옮겨 놓은 화면은 스크롤이 아닙니다 — 낱말 창이 닫히며 보던
+       자리를 되돌리는 중이거나, 모드를 옮기며 자리를 맞추는 중입니다. 그동안
+       손가락은 제자리에 있으므로 누르던 것을 뺏지 않습니다. 상단바가 제멋대로
+       걷히지 않게 쓰는 표를 그대로 씁니다 — 그중 `chromePinned` 만이 되돌리는
+       일이 **끝날 때까지** 잡고 있습니다(원본은 안에 쪽 하나를 그리는 `await`
+       가 있어서 벽시계 유예가 먼저 끝납니다). 그 사이에 손을 얹으면 꾹 누르기가
+       조용히 죽고 낱말 창이 대신 떴습니다. */
+    if(chromePinned || readerAnchorHeld() || Date.now() < readerScrollPauseUntil) return;
+    if(typeof cancelSentencePress==='function') cancelSentencePress();
+  }, {passive:true});
 })();

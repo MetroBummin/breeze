@@ -456,11 +456,13 @@ function epubAnchorFromProgress(session,progress){
 }
 /* 진행도는 장(spine) 번호로 세고, 장 안쪽은 요소 번호로 나눕니다. */
 function epubSourceProgress(map,source,session){
-  const mapped=map.reduce((max,item)=>Math.max(max,item&&!item.page ? (item.spine||0)+1 : 0),0);
+  const mapped=sourceMapFact(map,'lastSpine',
+    list=>list.reduce((max,item)=>Math.max(max,item&&!item.page ? (item.spine||0)+1 : 0),0));
   const total=Math.max(1,session ? session.frames.length : 0,mapped,(Number(source.spine)||0)+1);
   const spine=Math.max(0,Math.min(total-1,Number(source.spine)||0));
-  const maxElement=map.reduce((max,item)=>item&&!item.page&&(item.spine||0)===spine
-    ? Math.max(max,item.element||0) : max,0);
+  const maxElement=sourceMapFact(map,'lastElement:'+spine,
+    list=>list.reduce((max,item)=>item&&!item.page&&(item.spine||0)===spine
+      ? Math.max(max,item.element||0) : max,0));
   const inside=maxElement ? Math.max(0,Math.min(1,(Number(source.element)||0)/(maxElement+1))) : 0;
   return Math.max(0,Math.min(1,(spine+inside)/total));
 }
