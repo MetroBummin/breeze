@@ -174,10 +174,13 @@
   window.breezeFrameSummary = function(sinceMs){
     const list = (window.__breezeFrames||[]).filter(entry=>
       !sinceMs || entry.at >= Date.now()-sinceMs);
-    if(!list.length) return '아직 잰 프레임이 없습니다';
+    /* 프레임 기록이 비어 있어도 rAF 값은 그대로 돌려줍니다 — 그 둘은 다른 자입니다.
+       "아직 없습니다" 한 줄로 덮으면 기기에서 다시 재야 하는데, 그게 제일 비쌉니다. */
     const total = key => list.reduce((sum,entry)=>sum+(entry[key]||0),0);
+    const per = key => list.length ? +(total(key)/list.length).toFixed(2) : 0;
     const durations = list.map(entry=>entry.duration).sort((a,b)=>a-b);
-    const at = q => durations[Math.min(durations.length-1,Math.floor(durations.length*q))];
+    const at = q => durations.length
+      ? durations[Math.min(durations.length-1,Math.floor(durations.length*q))] : 0;
     const gaps = [...rafGaps].sort((a,b)=>a-b);
     const gapAt = q => gaps.length ? gaps[Math.min(gaps.length-1,Math.floor(gaps.length*q))] : 0;
     const rafP95 = +gapAt(.95).toFixed(1);
@@ -188,19 +191,128 @@
       'rAF max': gaps.length ? +gaps[gaps.length-1].toFixed(1) : 0,
       'long tasks': longTasks.length,
       'long task ms': +longTasks.reduce((sum,ms)=>sum+ms,0).toFixed(0),
-      '판정': rafP95 > 100 ? 'A — 메인 스레드가 막혔습니다 (JS/layout 계층)'
+      /* 표본이 없으면 p95 는 0 이고, 0 은 "빠르다"가 아니라 "재지 못했다"입니다.
+         그 둘을 섞으면 판정 자체가 거짓말이 됩니다. */
+      '판정': gaps.length < 30 ? '표본이 모자랍니다 — 몇 초 더 밀고 다시 보세요'
+            : rafP95 > 100 ? 'A — 메인 스레드가 막혔습니다 (JS/layout 계층)'
             : rafP95 > 33  ? '애매 — 다시 재세요'
             :                'B — 메인 스레드는 정상입니다 (WebKit paint 계층)',
       '낱말 span': spansOff ? '꺼짐' : '켜짐',
-      'captureAnchor/frame': +(total('captureAnchor')/list.length).toFixed(2),
-      'paragraphForSource/frame': +(total('paragraphForSource')/list.length).toFixed(2),
-      'getBoundingClientRect/frame': +(total('layout read: getBoundingClientRect')/list.length).toFixed(1),
-      'elementFromPoint/frame': +(total('layout read: elementFromPoint')/list.length).toFixed(2),
+      'captureAnchor/frame': per('captureAnchor'),
+      'paragraphForSource/frame': per('paragraphForSource'),
+      'getBoundingClientRect/frame': per('layout read: getBoundingClientRect'),
+      'elementFromPoint/frame': per('layout read: elementFromPoint'),
       'duration p50': +at(.5).toFixed(2),
       'duration p95': +at(.95).toFixed(2),
-      'duration max': +durations[durations.length-1].toFixed(2),
+      'duration max': durations.length ? +durations[durations.length-1].toFixed(2) : 0,
     };
   };
-  window.breezeFrameReset = function(){ window.__breezeFrames = []; return 'ok'; };
+  /* 한 번 재고 다음 조건으로 넘어갈 때, 앞 조건의 값이 섞이면 A/B 비교가 무의미해집니다.
+     그래서 프레임 기록뿐 아니라 rAF 간격과 long task 도 함께 비웁니다. */
+  window.breezeFrameReset = function(){
+    window.__breezeFrames = [];
+    rafGaps.length = 0; rafLast = performance.now();
+    longTasks.length = 0;
+    return 'ok';
+  };
+
+  /* ---- 손에 들고 재기 ----
+     이 계측은 기기에서 빠르게 밀어 봐야 뜻이 있는데, 아이폰에는 콘솔이 없습니다.
+     그래서 `?frames=1` 일 때만 왼쪽 아래에 작은 단추를 답니다. 눌러서 값을 보고,
+     복사해서 그대로 붙여 넣으면 됩니다. 이 파일 자체가 `?frames=1` 이 아니면
+     실행되지 않으므로, 평소 화면에는 이 단추가 존재하지 않습니다. */
+  function lines(summary){
+    if(typeof summary === 'string') return [summary];
+    return Object.entries(summary).map(([key,value])=>`${key}: ${value}`);
+  }
+
+  function buildPanel(){
+    if(!document.body || document.getElementById('breeze-frame-hud')) return;
+
+    const hud = document.createElement('div');
+    hud.id = 'breeze-frame-hud';
+    hud.style.cssText = 'position:fixed; left:14px; bottom:calc(18px + env(safe-area-inset-bottom));' +
+      /* 떠 있는 UI 위이되(진행줄·Aa·전환 단추), 문장해석 창(120) 아래입니다 —
+         재는 동안 창을 가려 손짓을 가로채면 그 자체가 실험을 망칩니다. */
+      'z-index:110; font:600 13px/1.45 -apple-system,system-ui,sans-serif;' +
+      '-webkit-user-select:none; user-select:none;';
+
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.textContent = '진단';
+    open.style.cssText = 'appearance:none; border:0; border-radius:999px; padding:9px 15px;' +
+      'background:#1b1b1f; color:#fff; box-shadow:0 3px 10px rgba(0,0,0,.3); font:inherit;';
+
+    const sheet = document.createElement('div');
+    sheet.hidden = true;
+    sheet.style.cssText = 'position:fixed; left:12px; right:12px;' +
+      'bottom:calc(66px + env(safe-area-inset-bottom)); max-height:62vh;' +
+      'background:#fff; color:#111; border-radius:14px; padding:12px;' +
+      'box-shadow:0 8px 30px rgba(0,0,0,.28); display:flex; flex-direction:column; gap:8px;';
+
+    /* 값은 textarea 에 둡니다 — 복사가 막힌 상황에서도 길게 눌러 직접 고를 수 있습니다.
+       (http 로 열면 clipboard API 가 없는 기기가 있습니다.) */
+    const box = document.createElement('textarea');
+    box.readOnly = true;
+    box.style.cssText = 'width:100%; flex:1; min-height:200px; border:1px solid #ddd;' +
+      'border-radius:9px; padding:9px; font:500 12px/1.5 ui-monospace,Menlo,monospace;' +
+      'color:#111; background:#fafafa; -webkit-user-select:text; user-select:text; resize:none;';
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:8px;';
+    const button = (label, background) => {
+      const el = document.createElement('button');
+      el.type = 'button'; el.textContent = label;
+      el.style.cssText = 'flex:1; appearance:none; border:0; border-radius:9px; padding:10px;' +
+        `background:${background}; color:#fff; font:inherit;`;
+      row.appendChild(el);
+      return el;
+    };
+    const copy  = button('복사', '#2f6fed');
+    const reset = button('초기화', '#8a8a90');
+    const close = button('닫기', '#c9c9cf');
+    close.style.color = '#111';
+
+    function refresh(){
+      const head = [
+        `Breeze 진단 ${new Date().toLocaleTimeString('ko-KR')}`,
+        `주소: ${location.search || '(없음)'}`,
+        '',
+      ];
+      box.value = head.concat(lines(window.breezeFrameSummary())).join('\n');
+    }
+
+    open.addEventListener('click', ()=>{
+      if(sheet.hidden){ refresh(); sheet.hidden = false; open.textContent = '새로'; }
+      else refresh();
+    });
+    close.addEventListener('click', ()=>{ sheet.hidden = true; open.textContent = '진단'; });
+    reset.addEventListener('click', ()=>{
+      window.breezeFrameReset();
+      box.value = '비웠습니다 — 이제 빠르게 밀어 본 뒤 "새로" 를 누르세요';
+    });
+    copy.addEventListener('click', async ()=>{
+      const said = text => { copy.textContent = text; setTimeout(()=>{ copy.textContent = '복사'; }, 1200); };
+      try{
+        await navigator.clipboard.writeText(box.value);
+        said('복사됨');
+      }catch(error){
+        /* 안전한 문맥이 아니면 clipboard API 가 없습니다 — 예전 방법으로 한 번 더. */
+        box.removeAttribute('readonly');
+        box.select(); box.setSelectionRange(0, box.value.length);
+        const ok = document.execCommand && document.execCommand('copy');
+        box.readOnly = true;
+        said(ok ? '복사됨' : '길게 눌러 복사하세요');
+      }
+    });
+
+    sheet.append(box, row);
+    hud.append(sheet, open);
+    document.body.appendChild(hud);
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildPanel);
+  else buildPanel();
+
   console.log('[breeze] frame trace on — breezeFrameSummary() / breezeFrameReset()');
 })();
