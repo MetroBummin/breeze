@@ -103,6 +103,22 @@ function captureAnchor(){
   if(!el) return null;
   return { pi: +el.dataset.pi, dy: Math.round(el.getBoundingClientRect().top) };
 }
+/* ---- 같은 자를 한 프레임에 두 번 대지 않습니다 ----
+   `captureAnchor()` 는 `elementFromPoint` 로 배치를 강제로 다시 계산하게 만듭니다.
+   그런데 스크롤 한 프레임 안에서 그 답을 원하는 곳이 둘이었습니다 — 진행줄
+   (`updatePfill` → `visibleReaderProgress`)과 읽던 자리 기억(`lastAnchor`).
+   둘은 같은 순간의 같은 화면을 물어보면서 각자 쟀습니다. 계측으로 확인한 값이
+   프레임당 2.04회였고, 그중 정확히 절반이 헛일이었습니다.
+
+   재는 것은 한 번, 답은 나눠 씁니다. 화면이 실제로 움직였을 때만 다시 잽니다 —
+   시계로 만료시키지 않습니다. 무엇이 화면을 움직이는지는 우리가 압니다:
+   스크롤과 크기 변화, 그리고 우리가 옮긴 자리. */
+let frameAnchorValue = null, frameAnchorValid = false;
+function invalidateReaderMeasurements(){ frameAnchorValid = false; }
+function readerFrameAnchor(){
+  if(!frameAnchorValid){ frameAnchorValue = captureAnchor(); frameAnchorValid = true; }
+  return frameAnchorValue;
+}
 function restoreAnchor(a){
   if(!a || a.pi == null) return false;
   const el = document.querySelector(`#rtext [data-pi="${a.pi}"]`);
@@ -134,7 +150,7 @@ function saveReadingState(){
     if(typeof queueReadingProgressSync==='function') queueReadingProgressSync();
     return;
   }
-  const a = captureAnchor();
+  const a = readerFrameAnchor();
   const previous = posOf(curBook.id);
   const measured = textProgressForBook(curBook,a);
   const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);

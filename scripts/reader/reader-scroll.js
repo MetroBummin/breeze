@@ -51,6 +51,8 @@ function readerScrollTo(y){
   const box = readerScroller();
   if(box){ box.scrollTop = top; lastProgrammaticScrollTop = box.scrollTop; }
   else window.scrollTo(0, top);
+  /* 자리를 옮겼으면 방금 잰 값은 옛 화면의 것입니다 — scripts/core/state.js */
+  if(typeof invalidateReaderMeasurements === 'function') invalidateReaderMeasurements();
 }
 function readerScrollWasProgrammatic(){
   const box = readerScroller();

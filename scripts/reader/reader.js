@@ -262,8 +262,10 @@ function scheduleProgressUpdate(){
   progressFrame=requestAnimationFrame(()=>{
     progressFrame=0;
     if(!curBook) return;
+    /* 이 프레임의 자를 여기서 한 번 놓습니다. 아래 둘은 같은 답을 나눠 씁니다. */
+    invalidateReaderMeasurements();
     updatePfill();
-    if(currentReaderMode==='text' && !readerAnchorHeld()) lastAnchor=captureAnchor();
+    if(currentReaderMode==='text' && !readerAnchorHeld()) lastAnchor=readerFrameAnchor();
   });
 }
 /* ---- 상단바는 읽는 방향을 따릅니다 ----
@@ -355,6 +357,7 @@ function followScrollDirection(){
    "위로 올렸다"로 읽혀서 상단바가 깜빡이던 자리였습니다. */
 (readerScroller() || window).addEventListener('scroll', ()=>{
   if(!curBook) return;
+  invalidateReaderMeasurements();
   scheduleProgressUpdate();
   followScrollDirection();
   if(Date.now()<readerScrollPauseUntil) return;
@@ -380,6 +383,7 @@ if(window.ResizeObserver){
     if(!readerWidth || width===readerWidth){ readerWidth = width; return; }
     readerWidth = width;
     if(!curBook || !document.getElementById('v-read').classList.contains('on')) return;
+    invalidateReaderMeasurements();   // 폭이 바뀌면 글이 다시 흐릅니다
     suspendReaderScrollSave(600);
     /* The panel animates its width, so this fires many times. Freeze the
        remembered place for the whole animation and aim at it every frame. */

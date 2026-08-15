@@ -120,7 +120,7 @@ function readerProgressNow(){
   if(!curBook) return null;
   return currentReaderMode==='original'
     ? sourceProgressForBook(curBook,captureOriginalAnchor())
-    : textProgressForBook(curBook,captureAnchor());
+    : textProgressForBook(curBook,readerFrameAnchor());
 }
 
 function visibleReaderProgress(){
