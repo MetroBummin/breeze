@@ -241,8 +241,26 @@
        기본 규칙에 섞지 않고 `@supports` 안에만 둡니다: 그것을 모르는 브라우저는
        규칙 자체를 못 보고, 그림 없이 바로 뜨고 질 뿐 하는 일은 똑같습니다.
        때를 재는 자바스크립트도, 따로 기억하는 상태도 없습니다. */
+    /* ---- 이 판은 고를 글자가 없는 화면만 한 상자입니다 ----
+       PDF 종이에서 먼저 겪은 그대로입니다(styles/reader.css): 고를 글자가 없는
+       자리에서 꾹 누르면 iOS 는 가장 가까운 **상자 전체**를 골라 버립니다.
+       `#sheetbg` 는 이 앱에서 가장 큰 빈 상자이고, 시트가 덮고 있는 동안 본문
+       쪽 좌표의 손짓은 **전부 이 판이 받습니다** — 재 보면 본문 위 어느 점을
+       짚어도 `elementFromPoint` 가 `#sheetbg` 를 돌려줍니다. 그래서 화면 전체가
+       파래지고, 시트를 닫아도 선택이 남았습니다.
+
+       막을 자리는 여기 하나면 됩니다. 밑의 종이에 손대지 않는 것이 중요합니다:
+       글자 종이와 PDF 는 이미 스스로 막고 있고, EPUB 은 제 문서(iframe)라
+       caret 으로 낱말을 짚습니다 — 거기서 선택을 끄면 낱말 찾기가 함께 꺼집니다.
+
+       "덮고 있는 동안만"이라는 조건도 따로 만들지 않습니다. 이 판은 덮고 있을
+       때만 렌더 트리에 있으므로(위의 `display`), 판의 수명이 곧 그 조건입니다.
+       손짓의 임자를 정하는 것도 같은 판이고(scripts/reader/gesture.js 의
+       `wordSheetCovers`), 시트가 닫히면 판이 사라지면서 계약도 함께 풀립니다.
+       상태를 따로 세는 곳은 없습니다. */
     #sheetbg{display:none; position:fixed; inset:0; background:var(--scrim-sheet); z-index:80;
-      touch-action:none; opacity:0; pointer-events:none;}
+      touch-action:none; opacity:0; pointer-events:none;
+      -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
     #sheetbg.on{display:block; opacity:1; pointer-events:auto;}
     /* ---- 여기부터는 있으면 좋은 것 ---- */
     @supports (transition-behavior:allow-discrete){
@@ -258,8 +276,12 @@
        원인이었습니다. 이제 커지는 것은 종이(`#original-zoom`)뿐이고 시트는 그
        바깥이라, 되돌리는 계산이 아예 필요 없습니다
        (`scripts/reader/reader-scroll.js`). */
+    /* 손잡이도 글자가 없는 상자입니다 — 끌어내리려고 꾹 잡으면 시트 안의 글이
+       통째로 파래졌습니다. 뜻은 골라서 복사할 수 있어야 하므로 시트 전체를
+       막지는 않고, 잡는 자리만 막습니다. */
     #p-handle{display:flex; position:sticky; top:0; z-index:5; background:var(--sheet); padding:12px 0 10px;
-      justify-content:center; cursor:grab; width:100%; margin:0;}
+      justify-content:center; cursor:grab; width:100%; margin:0;
+      -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
     #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:var(--handle);}
     #p-close{display:none;}
     #p-top{position:static; margin:0; padding:0 0 13px; background:transparent; border-bottom:1px solid var(--divider);}

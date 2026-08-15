@@ -1382,6 +1382,32 @@ assert.match(dictionaryCss, /#sentence-modal\[hidden\]\{display:none;\}/,
   assert.match(scrimBlock, /@supports \(transition-behavior:allow-discrete\)\{[\s\S]{0,300}?@starting-style/,
     'The scrim fade is no longer fenced behind @supports as a pure enhancement');
 }
+/* ---- 덮고 있는 판은 고를 수 없어야 합니다 ----
+   시트가 떠 있는 동안 본문 쪽 좌표의 손짓은 전부 `#sheetbg` 가 받습니다 —
+   재 보면 본문 위 어느 점을 짚어도 `elementFromPoint` 가 이 판을 돌려줍니다.
+   그런데 이 판은 이 앱에서 가장 큰 **빈 상자**였습니다. PDF 종이에서 먼저 겪은
+   그대로, iOS 는 고를 글자가 없는 자리에서 꾹 누르면 가장 가까운 상자 전체를
+   골라 버립니다 — 화면이 통째로 파래지고 빠져나오기 어려웠습니다.
+
+   막는 자리는 이 판과 손잡이뿐입니다. 밑의 종이는 건드리지 않습니다: 글자
+   종이와 PDF 는 이미 스스로 막고 있고, EPUB 은 제 문서라 caret 으로 낱말을
+   짚습니다. "덮고 있는 동안만"이라는 조건도 따로 세지 않습니다 — 이 판은
+   덮고 있을 때만 렌더 트리에 있으므로 판의 수명이 곧 그 조건입니다. */
+{
+  const scrimRule = dictionaryCss.slice(dictionaryCss.indexOf('#sheetbg{display:none; position:fixed'));
+  const functional = scrimRule.slice(0, scrimRule.indexOf('}') + 1);
+  assert.match(functional, /-webkit-user-select:none; user-select:none; -webkit-touch-callout:none/,
+    'The sheet scrim is selectable again, so a long press over the reader selects the nearest box whole');
+  const handleRule = dictionaryCss.slice(dictionaryCss.indexOf('#p-handle{display:flex'));
+  assert.match(handleRule.slice(0, handleRule.indexOf('}') + 1),
+    /-webkit-user-select:none; user-select:none; -webkit-touch-callout:none/,
+    'The sheet handle is selectable again, so grabbing it selects the sheet contents');
+  /* 여기서 막는 것으로 끝나야 합니다 — 종이까지 끄면 EPUB 의 낱말 찾기가
+     함께 꺼집니다(styles/reader.css 의 그 사고). */
+  assert.doesNotMatch(dictionaryCss, /#rtext|epub-chapter-frame|\.pdf-original/,
+    'The word sheet stylesheet now reaches into the reader papers to suppress selection');
+}
+
 /* caret 이 대답하지 않는 엔진에서도 낱말은 열려야 합니다. */
 assert.match(epubOriginalSource, /function epubWordByGeometry/,
   'EPUB word lookup has no fallback for engines whose caret hit test returns null');
