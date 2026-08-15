@@ -125,6 +125,49 @@
     };
   });
 
+  /* ---- "렉"을 두 가지로 가르는 자 ----
+     아이폰 녹화에서 본 것은 "문단 상자는 있는데 글자가 없다"였습니다. 그 그림은
+     원인이 둘 중 하나입니다:
+
+       A. 메인 스레드가 막혀서 아무것도 못 그린다   → rAF 가 함께 멈춥니다
+       B. 메인 스레드는 멀쩡한데 WebKit 이 칠하지 못한다 → rAF 는 정상인데 화면만 빕니다
+
+     둘은 정반대 자리를 고쳐야 하므로, 먼저 갈라야 합니다. rAF 는 우리 코드가
+     아니라 브라우저가 부르는 것이라, 그 간격이 곧 메인 스레드의 건강입니다.
+     화면이 비는 동안 아래 `rAF p95` 가 20ms 근처면 B, 100ms 를 넘으면 A 입니다. */
+  let rafLast = performance.now();
+  const rafGaps = [];
+  (function beat(){
+    const now = performance.now();
+    rafGaps.push(now - rafLast); rafLast = now;
+    if(rafGaps.length > 4000) rafGaps.splice(0, 2000);
+    requestAnimationFrame(beat);
+  })();
+  const longTasks = [];
+  try{
+    new PerformanceObserver(list=>{ for(const entry of list.getEntries()) longTasks.push(entry.duration); })
+      .observe({entryTypes:['longtask']});
+  }catch(error){}
+
+  /* ---- 낱말 상자를 끄고 견주는 자 ----
+     문단은 화면에 들어올 때 낱말마다 `<span>` 으로 쪼개집니다 — 한 화면에 600~1000
+     개입니다. 글리프를 칠하는 값이 여기서 몇 배가 되는지는 기기마다 다르고, 맥에서
+     재면 답이 나오지 않습니다. 그래서 그 자리에서 껐다 켜 보게 합니다.
+
+     `?spans=off` 로 켜면 낱말 쪼개기를 하지 않습니다 — 낱말 탭은 그동안 안 됩니다.
+     고치는 것이 아니라 재는 것입니다. 이 상태에서 빠르게 밀어 화면이 안 비면,
+     값을 치르는 자리는 낱말 span 입니다. */
+  let spansOff = false;
+  try{
+    if(/[?&]spans=off/.test(location.search)) localStorage.setItem('breeze.debug.spans','off');
+    if(/[?&]spans=on/.test(location.search)) localStorage.removeItem('breeze.debug.spans');
+    spansOff = localStorage.getItem('breeze.debug.spans') === 'off';
+  }catch(error){}
+  if(spansOff){
+    window.hydrateWordSpanBatch = function(){ bump('hydrate: 꺼짐'); };
+    console.log('[breeze] 낱말 span 꺼짐 — 낱말 탭은 안 됩니다 (?spans=on 으로 되돌립니다)');
+  }
+
   /* 시간축으로 봐야 보이는 것이 있습니다 — 문장해석을 한 번 쓰고 닫은 뒤부터
      프레임이 조금씩 무거워지는지 같은 것. 창을 열고 닫는 순간만 보면 그 버그는
      재현된 적이 없는 것입니다. 이 요약은 그 비교를 위한 것입니다. */
@@ -135,8 +178,20 @@
     const total = key => list.reduce((sum,entry)=>sum+(entry[key]||0),0);
     const durations = list.map(entry=>entry.duration).sort((a,b)=>a-b);
     const at = q => durations[Math.min(durations.length-1,Math.floor(durations.length*q))];
+    const gaps = [...rafGaps].sort((a,b)=>a-b);
+    const gapAt = q => gaps.length ? gaps[Math.min(gaps.length-1,Math.floor(gaps.length*q))] : 0;
+    const rafP95 = +gapAt(.95).toFixed(1);
     return {
       frames: list.length,
+      'rAF p50': +gapAt(.5).toFixed(1),
+      'rAF p95': rafP95,
+      'rAF max': gaps.length ? +gaps[gaps.length-1].toFixed(1) : 0,
+      'long tasks': longTasks.length,
+      'long task ms': +longTasks.reduce((sum,ms)=>sum+ms,0).toFixed(0),
+      '판정': rafP95 > 100 ? 'A — 메인 스레드가 막혔습니다 (JS/layout 계층)'
+            : rafP95 > 33  ? '애매 — 다시 재세요'
+            :                'B — 메인 스레드는 정상입니다 (WebKit paint 계층)',
+      '낱말 span': spansOff ? '꺼짐' : '켜짐',
       'captureAnchor/frame': +(total('captureAnchor')/list.length).toFixed(2),
       'paragraphForSource/frame': +(total('paragraphForSource')/list.length).toFixed(2),
       'getBoundingClientRect/frame': +(total('layout read: getBoundingClientRect')/list.length).toFixed(1),
