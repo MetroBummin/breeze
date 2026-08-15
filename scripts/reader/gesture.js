@@ -31,6 +31,24 @@
    시계로 거르는 것이 아니라, 그 조각이 **이미 끝난 손짓의 꼬리**임을 알기
    때문에 삼킵니다. 그래서 이 파일에는 450ms 도 600ms 도 없습니다.
 
+   ---- 한 손짓 · 한 임자 · 한 뜻 ----
+   판정을 한 곳으로 모았어도, 화면 위에 떠 있는 것들 중 하나가 여전히 제
+   길을 따로 갖고 있었습니다 — 해석 창의 바깥(scrim)은 `onclick` 한 줄로
+   혼자 닫혔습니다. 그래서 "바깥을 눌러 닫는 손짓"만은 이 파일이 본 적 없는
+   손짓이었고, 그 뒤에 렉·빈 화면·다음 꾹 누르기 오판이 함께 따라왔습니다.
+
+   손짓에는 시작하는 순간 **임자**가 정해집니다:
+
+     SENTENCE_MODAL  해석 창이 떠 있는 동안의 모든 손짓
+     READER          종이(surface) 위에서 시작한 손짓
+     UI              그 밖에서 시작한 손짓
+
+   임자는 손짓이 끝날 때까지 바뀌지 않습니다. 손짓 도중에 창이 닫혀 눌렀던
+   자리가 사라져도 마찬가지입니다 — 사라진 자리 밑에서 종이가 드러난다고 해서
+   임자가 reader 로 넘어가지 않습니다. 시계로 막는 것이 아니라(`300ms`,
+   `ignoreNextClickUntil` 같은 것은 여기 없습니다) 애초에 남의 손짓이라서
+   해석하지 않는 것입니다.
+
    ---- 형식을 모릅니다 ----
    여기서는 "이번 손짓은 WORD 다"까지만 정합니다. 그 자리의 낱말을 실제로
    찾아내는 방법은 종이마다 다르고, 그것은 surface 가 압니다 —
@@ -45,7 +63,8 @@ const GESTURE_SLOP = 10;
 const GESTURE_HOLD_MS = 1000;
 
 const GESTURE_UI = 'UI', GESTURE_SCROLL = 'SCROLL', GESTURE_WORD = 'WORD',
-      GESTURE_SENTENCE = 'SENTENCE', GESTURE_CANCEL = 'CANCEL';
+      GESTURE_SENTENCE = 'SENTENCE', GESTURE_CANCEL = 'CANCEL',
+      GESTURE_DISMISS_SENTENCE = 'DISMISS_SENTENCE', GESTURE_MODAL_UI = 'MODAL_UI';
 
 /* ---- 종이는 허용 목록입니다 ----
    예전에는 "떠 있는 것"을 하나씩 세어 걸렀고, 새 UI 가 생길 때마다 목록이
@@ -64,6 +83,23 @@ function readerSurfaceFor(event){
   return null;
 }
 
+/* ================= 임자 =================
+
+   지금 화면에 해석 창이 떠 있으면, 어디를 눌렀든 그 손짓의 임자는 창입니다.
+   창 안의 X 를 눌렀든 창 밖을 눌렀든 똑같습니다 — 둘은 UI 요소로서는 다르지만
+   임자가 같아야 reader 가 같은 손짓에 끼어들 수 없습니다. */
+const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL', OWNER_UI = 'UI';
+
+function sentenceModalOpen(){
+  const modal = document.getElementById('sentence-modal');
+  return !!modal && !modal.hidden;
+}
+/* 창을 닫는 자리는 둘입니다 — 오른쪽 위의 X, 그리고 창 바깥. */
+function sentenceDismissTarget(target){
+  if(!target || typeof target.closest !== 'function') return false;
+  return !!(target.closest('#ps-close') || target.closest('#sentence-scrim'));
+}
+
 /* ================= 지금 판정 중인 손짓 ================= */
 
 let gestureSeq = 0;
@@ -80,6 +116,7 @@ function gestureLog(gesture, note){
   if(!readerGestureDebug()) return;
   const lines = [
     `Gesture #${gesture.id}`,
+    `owner: ${gesture.owner || '—'}`,
     `source: ${gesture.surface ? gesture.surface.name : '—'}`,
     `start target: ${gesture.startTag}`,
     `move: ${Math.round(gesture.moved)}px`,
@@ -167,12 +204,24 @@ function beginGesture(event){
     moved: 0,
     startedAt: performance.now(),
     startTag: (target.tagName || '?').toLowerCase(),
-    surface: null, decision: null, completed: null, dispatched: 0,
-    adapterCall: '', holdTimer: 0, tailClickUsed: false,
+    owner: null, surface: null, decision: null, completed: null, dispatched: 0,
+    adapterCall: '', holdTimer: 0, tailClickUsed: false, dismisses: false,
   };
+
+  /* ---- 창이 떠 있으면 임자는 창입니다 ----
+     여기서 정한 임자는 손짓이 끝날 때까지 그대로입니다. 아래에서 창을 닫아
+     scrim 이 사라져도 이 손짓은 계속 창의 것이고, 그래서 뒤따라오는
+     `pointerup` 도 `click` 도 종이로 내려가지 않습니다. */
+  if(sentenceModalOpen()){
+    gesture.owner = OWNER_SENTENCE_MODAL;
+    gesture.dismisses = sentenceDismissTarget(target);
+    activeGesture = gesture;
+    return;
+  }
 
   const surface = readerSurfaceFor(event);
   if(!surface){
+    gesture.owner = OWNER_UI;
     /* 종이가 아닙니다. 상단바·확대 단추·낱말 창·해석 창에서 시작한 손짓은
        그 뒤에 무엇이 깔려 있든 reader 로 내려가지 않습니다. 예전에는 좌표만
        보고 판단해서, 상단바의 "단어장"을 누르면 그 뒤의 낱말이 함께 열렸습니다. */
@@ -182,9 +231,26 @@ function beginGesture(event){
     return;
   }
 
+  gesture.owner = OWNER_READER;
   gesture.surface = surface;
   activeGesture = gesture;
   gesture.holdTimer = setTimeout(()=>holdGesture(gesture), GESTURE_HOLD_MS);
+}
+
+/* ---- 창의 손짓이 끝나는 자리 ----
+   시작할 때 X 나 바깥을 짚고 있었고 손가락이 제자리였다면 닫습니다. 짚은 자리는
+   시작할 때 정해 두었으므로, 창 안에서 눌러 바깥에서 뗀 손짓은 닫지 않습니다.
+   움직였다면 창 안에서 무언가를 밀거나 고른 것이니 그냥 놓아 둡니다 — 여기서
+   SCROLL 로 넘기면 읽는 화면이 남의 손짓을 해석하는 셈이 됩니다. */
+function endSentenceModalGesture(gesture){
+  if(gesture.moved > GESTURE_SLOP || !gesture.dismisses){
+    finishGesture(gesture, GESTURE_MODAL_UI);
+    return;
+  }
+  finishGesture(gesture, GESTURE_DISMISS_SENTENCE, true);
+  countDispatch(gesture, 'DISMISS_SENTENCE');
+  gesture.adapterCall = 'closeSentence()';
+  if(typeof closeSentence === 'function') closeSentence();
 }
 
 /* ---- 꾹 누르기가 확정되는 그 순간 ----
@@ -220,7 +286,11 @@ function moveGesture(event){
   if(!gesture || gesture.decision) return;
   if(event.pointerId != null && event.pointerId !== gesture.pointerId) return;
   gesture.moved = Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y);
-  if(gesture.moved > GESTURE_SLOP) finishGesture(gesture, GESTURE_SCROLL);
+  /* 움직였다는 사실은 누구의 손짓이든 적어 둡니다. 다만 그것을 "밀었다"로
+     읽는 것은 종이의 손짓일 때뿐입니다. */
+  if(gesture.moved > GESTURE_SLOP && gesture.owner === OWNER_READER){
+    finishGesture(gesture, GESTURE_SCROLL);
+  }
 }
 
 function endGesture(event){
@@ -228,6 +298,7 @@ function endGesture(event){
   if(!gesture) return;
   if(event.pointerId != null && event.pointerId !== gesture.pointerId) return;
   if(gesture.decision) return;
+  if(gesture.owner === OWNER_SENTENCE_MODAL){ endSentenceModalGesture(gesture); return; }
   finishGesture(gesture, GESTURE_WORD);
   gesture.adapterCall = `${gesture.surface.name}.openWordAt(${Math.round(event.clientX)},${Math.round(event.clientY)})`;
   dispatchWord(gesture, event.clientX, event.clientY);
@@ -270,7 +341,8 @@ function clickGesture(event){
        창이 손가락 아래로 올라온 뒤 그 손가락을 떼면서 나오는 click 이
        "바깥을 눌렀다"가 되어 창을 도로 닫아 버리지 않습니다. 민 손짓·취소된
        손짓의 꼬리는 삼키기만 하고 길은 막지 않습니다 — 막을 이유가 없습니다. */
-    if(lastGesture.decision === GESTURE_WORD || lastGesture.decision === GESTURE_SENTENCE){
+    if(lastGesture.decision === GESTURE_WORD || lastGesture.decision === GESTURE_SENTENCE
+       || lastGesture.decision === GESTURE_DISMISS_SENTENCE){
       event.stopPropagation();
       event.preventDefault();
     }
@@ -279,6 +351,24 @@ function clickGesture(event){
   /* pointerup 을 웹뷰에 넘기지 않고 click 만 남기는 종이가 있습니다(일부 모바일
      PDF 캔버스). 앞선 손짓의 꼬리가 아니라면 그것 자체가 하나의 탭입니다. */
   if(activeGesture) return;
+  /* 창이 떠 있는데 pointer 조각 없이 click 만 왔다면, 그 한 번이 통째로 창의
+     손짓입니다. scrim 의 `onclick` 을 지웠으므로 이 길이 없으면 그런 기기에서는
+     바깥을 눌러 닫을 수 없게 됩니다. */
+  if(sentenceModalOpen()){
+    const modalGesture = {
+      id: ++gestureSeq, pointerId: null, x: event.clientX, y: event.clientY, moved: 0,
+      startedAt: performance.now(), startTag: (event.target.tagName||'?').toLowerCase(),
+      owner: OWNER_SENTENCE_MODAL, surface: null, decision: null, completed: null,
+      dispatched: 0, adapterCall: '', holdTimer: 0, tailClickUsed: true,
+      dismisses: sentenceDismissTarget(event.target),
+    };
+    endSentenceModalGesture(modalGesture);
+    if(modalGesture.decision === GESTURE_DISMISS_SENTENCE){
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    return;
+  }
   const surface = readerSurfaceFor(event);
   if(!surface) return;
   gestureDocument = event.target.ownerDocument || document;
@@ -306,6 +396,8 @@ function clickGesture(event){
    (`readerScrollTo` 가 적어 둡니다 — scripts/reader/reader-scroll.js). */
 function scrollGesture(){
   if(!activeGesture) return;
+  /* 창이 임자인 손짓은 화면이 움직여도 창의 것입니다. */
+  if(activeGesture.owner !== OWNER_READER) return;
   if(typeof readerScrollWasProgrammatic === 'function' && readerScrollWasProgrammatic()) return;
   finishGesture(activeGesture, GESTURE_SCROLL);
 }

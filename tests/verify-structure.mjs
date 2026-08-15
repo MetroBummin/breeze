@@ -725,7 +725,7 @@ assert.match(gestureSource, /doc\.addEventListener\('pointerdown', beginGesture,
   'An overlay above the paper can swallow the tap start, making a single click require a retry');
 /* 일부 모바일 PDF 캔버스는 pointerup 을 웹뷰에 넘기지 않고 click 만 남깁니다.
    그 click 이 앞선 손짓의 꼬리가 아니라면 그것 자체가 하나의 탭입니다. */
-assert.match(gestureSource, /if\(activeGesture\) return;[\s\S]{0,800}\[click-only\]/,
+assert.match(gestureSource, /if\(activeGesture\) return;[\s\S]{0,1600}\[click-only\]/,
   'Mobile canvas click fallback is missing');
 assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
   'PDF word lookup depends on the top-most overlay instead of the tapped page coordinates');
@@ -1131,7 +1131,7 @@ assert.match(gestureSource, /const GESTURE_HOLD_MS = (\d+)/,
   'The long press lost its own threshold');
 assert.ok(Number(gestureSource.match(/const GESTURE_HOLD_MS = (\d+)/)[1]) >= 1000,
   'The sentence long press is short enough to fire on an ordinary tap again');
-assert.match(gestureSource, /gesture\.moved > GESTURE_SLOP\) finishGesture\(gesture, GESTURE_SCROLL\)/,
+assert.match(gestureSource, /gesture\.moved > GESTURE_SLOP && gesture\.owner === OWNER_READER\)\{\s*\n\s*finishGesture\(gesture, GESTURE_SCROLL\)/,
   'A moving finger no longer cancels the sentence press, so scrolling can spend the daily allowance');
 /* 확정된 뒤에만 문장을 짚고 칠합니다. 미리 준비하면 짧은 탭이 문장 선택으로 오인됩니다. */
 assert.match(gestureSource,
@@ -1265,8 +1265,59 @@ for(const caret of ['caretRangeFromPoint','caretPositionFromPoint']){
    X 단추와 바깥(scrim)이 서로 다른 함수를 부르면, 언젠가 한쪽에만 손이 갑니다. */
 assert.doesNotMatch(sentenceSource, /function dismissSentence/,
   'The sentence window has two names for closing again, so the two paths can drift apart');
-assert.ok((index.match(/closeSentence\(\)/g) || []).length >= 2,
-  'The scrim and the X button no longer end in the same close path');
+
+/* ---- 한 손짓 · 한 임자 · 한 뜻 ----
+   같은 함수를 부르는 것만으로는 모자랐습니다. 바깥 누르기만 판정 계층 **바깥**
+   에서 제 `onclick` 으로 살아 있었고, 그 한 손짓만 임자가 없었습니다. 실기기에서
+   그 뒤로 렉·빈 화면·다음 꾹 누르기 오판이 함께 왔습니다. 아래 줄들이 지키는 것은
+   "창이 떠 있는 동안의 입력은 창이 가진다" 하나입니다. */
+assert.doesNotMatch(index, /id="sentence-scrim"[^>]*onclick/,
+  'The scrim closes the sentence window through its own onclick again, outside the gesture controller');
+assert.doesNotMatch(index, /id="ps-close"[^>]*onclick/,
+  'The X button closes the sentence window outside the gesture controller again');
+assert.ok(!/closeSentence/.test(index),
+  'index.html reaches into the sentence close path directly instead of letting the gesture owner do it');
+assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL'/,
+  'A gesture no longer has an owner, so a modal and the reader can share one physical gesture');
+/* 임자는 pointerdown 에서 정해집니다 — 판정보다 먼저, 그리고 딱 한 번. */
+assert.match(gestureSource,
+  /function beginGesture[\s\S]{0,1600}if\(sentenceModalOpen\(\)\)\{\s*\n\s*gesture\.owner = OWNER_SENTENCE_MODAL;[\s\S]{0,200}activeGesture = gesture;\s*\n\s*return;/,
+  'The owner is not decided at pointerdown, so a gesture can change hands halfway through');
+/* ---- 임자는 손짓이 끝날 때까지 바뀌지 않습니다 ----
+   창이 닫혀 눌렀던 자리가 사라지고 그 밑에서 종이가 드러나도 마찬가지입니다.
+   임자를 적는 곳은 `beginGesture` 의 세 갈래뿐이어야 합니다(창 · 종이 · 그 밖).
+   네 번째 대입이 생기면 여기서 걸립니다. */
+{
+  const owns = runningCode(gestureSource).match(/\.owner\s*=(?!=)/g) || [];
+  assert.strictEqual(owns.length, 3,
+    `A gesture's owner is written in ${owns.length} places instead of once at pointerdown, `
+    + 'so a gesture can change hands halfway through');
+  assert.ok(!/activeGesture\.owner\s*=/.test(gestureSource),
+    'The gesture in flight has its owner rewritten, which is exactly the handover this model forbids');
+}
+assert.match(gestureSource, /if\(gesture\.owner === OWNER_SENTENCE_MODAL\)\{ endSentenceModalGesture\(gesture\); return; \}/,
+  'A modal-owned gesture falls through to the reader WORD path again');
+assert.match(gestureSource, /if\(activeGesture\.owner !== OWNER_READER\) return;/,
+  'A modal-owned gesture is read as a reader SCROLL when the page moves under it');
+/* `DISMISS_SENTENCE` 도 다른 판정과 똑같이 한 번만 셉니다. */
+assert.match(gestureSource, /countDispatch\(gesture, 'DISMISS_SENTENCE'\)/,
+  'A DISMISS_SENTENCE dispatch is not counted against the one-gesture-one-action invariant');
+assert.ok((runningCode(gestureSource).match(/closeSentence\(\);/g) || []).length === 1,
+  'The gesture controller closes the sentence window from more than one place');
+assert.match(gestureSource,
+  /function endSentenceModalGesture[\s\S]{0,600}finishGesture\(gesture, GESTURE_DISMISS_SENTENCE, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_SENTENCE'\);[\s\S]{0,200}closeSentence\(\)/,
+  'DISMISS_SENTENCE no longer ends in exactly one closeSentence() call');
+/* 바깥 누르기의 꼬리 click 은 reader 로 내려가지 않아야 합니다 — 예전에 "팝업
+   뒤의 낱말이 함께 눌린다"가 여기서 나왔습니다. */
+assert.match(gestureSource,
+  /lastGesture\.decision === GESTURE_WORD \|\| lastGesture\.decision === GESTURE_SENTENCE\s*\n?\s*\|\| lastGesture\.decision === GESTURE_DISMISS_SENTENCE/,
+  'The click trailing an outside dismiss is let through to the reader again');
+/* 시계로 막지 않습니다. 임자로 막습니다. (왜 그런지 적은 주석에는 이 이름들이
+   나올 수 있고 나와야 합니다 — 검사는 실제로 도는 코드만 봅니다.) */
+for(const clockGuard of ['ignoreNextClickUntil','dismissGuardUntil','modalCloseAt','sentenceCloseGuard']){
+  assert.ok(!new RegExp(`\\b${clockGuard}\\b`).test(runningCode(gestureSource) + runningCode(sentenceSource)),
+    `The outside dismiss is refereed by a wall clock ("${clockGuard}") instead of by ownership`);
+}
 /* caret 이 대답하지 않는 엔진에서도 낱말은 열려야 합니다. */
 assert.match(epubOriginalSource, /function epubWordByGeometry/,
   'EPUB word lookup has no fallback for engines whose caret hit test returns null');

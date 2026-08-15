@@ -228,17 +228,25 @@
      그래서 여기서는 (1) 어느 길로 닫았는지와 닫은 직후에 남은 것을 세고,
      (2) `?taphl=off` 로 scrim 의 tap highlight 만 꺼 봅니다. 고치는 것이 아니라
      한 가지만 다르게 해 보는 것입니다 — 이것으로 화면이 안 비면 원인은 거기입니다. */
+  /* 어느 길로 닫았는지는 **누른 순간**에 적습니다. 닫는 일이 손을 떼는 자리로
+     옮겨 갔고(gesture.js 의 `DISMISS_SENTENCE`), 그때는 scrim 이 이미 사라진
+     뒤라 뒤따라오는 click 의 target 을 믿을 수 없기 때문입니다. */
   let lastDismiss = '—';
+  let pressedOn = '';
   const dismissMarks = [];
-  document.addEventListener('click', event=>{
+  document.addEventListener('pointerdown', event=>{
     const target = event.target;
-    if(!target || typeof target.closest !== 'function') return;
-    const how = target.closest('#ps-close') ? 'X 단추'
+    if(!target || typeof target.closest !== 'function'){ pressedOn = ''; return; }
+    pressedOn = target.closest('#ps-close') ? 'X 단추'
               : target.closest('#sentence-scrim') ? '바깥' : '';
+  }, true);
+  document.addEventListener('pointerup', ()=>{
+    const how = pressedOn;
+    pressedOn = '';
     if(!how) return;
     lastDismiss = how;
     bump('닫기: ' + how);
-    /* 닫힌 뒤에 세야 합니다 — 이 click 이 아직 `closeSentence()` 에 닿기 전입니다. */
+    /* 닫힌 뒤에 세야 합니다 — 이 pointerup 이 아직 판정 계층에 닿기 전입니다. */
     setTimeout(()=>{
       dismissMarks.push({how,
         highlights: (window.CSS && CSS.highlights) ? CSS.highlights.size : -1,
