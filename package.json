@@ -11,7 +11,7 @@
     "ios": "npm run www && cap sync ios && cap open ios",
     "ios:sync": "npm run www && cap sync ios",
     "typecheck": "node tools/typecheck.mjs",
-    "test": "node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs"
+    "test": "node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-sheet-lifecycle.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

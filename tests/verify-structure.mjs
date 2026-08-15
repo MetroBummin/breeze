@@ -1408,6 +1408,46 @@ assert.match(dictionaryCss, /#sentence-modal\[hidden\]\{display:none;\}/,
     'The word sheet stylesheet now reaches into the reader papers to suppress selection');
 }
 
+/* ================= 한 번의 열림이 제 조회의 임자 =================
+   손짓의 임자가 `pointerdown`~`click` 이라면 이쪽 임자는 **창이 열려 있는
+   동안**입니다. 늦게 온 답이 죽은 창을 조종하던 자리들을 여기서 지킵니다 —
+   자세한 것은 tests/verify-sheet-lifecycle.mjs 가 실제로 돌려서 봅니다. */
+assert.match(dictionarySource, /function beginSheetLife\(\)\{\s*\n\s*endSheetLife\(\);/,
+  'A new sheet opening no longer ends the previous one');
+assert.match(dictionarySource, /function selectWord\(k, span\)\{[\s\S]{0,200}?beginSheetLife\(\);/,
+  'Opening the word sheet no longer starts a new lookup lifetime');
+assert.match(dictionarySource, /function closePanel\(\)\{[\s\S]{0,700}?endSheetLife\(\);/,
+  'Closing the word sheet no longer ends its lookup lifetime');
+assert.doesNotMatch(runningCode(dictionarySource), /abortLook|lookCtrl/,
+  'The old single-call abort is back alongside the opening lifetime — two owners for one thing');
+/* 세 무료 사전은 모두 취소표를 들고 가야 합니다. 하나라도 맨몸이면 창을 닫은
+   뒤에 **다음 요청이 새로 출발**합니다 — 실제로 2초 뒤에 나갔습니다. */
+for(const free of ['translate.googleapis.com', 'api.dictionaryapi.dev', 'en.wiktionary.org']){
+  const calls = runningCode(dictionarySource).split('\n').filter(line => line.includes(free));
+  assert.ok(calls.length > 0, `The free dictionary ${free} is gone`);
+  calls.forEach(line => assert.match(line, /\{signal\}/,
+    `A request to ${free} goes out with no way to stop it when the sheet closes`));
+}
+/* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
+   본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
+assert.match(dictionarySource, /if\(!sheetAlive\(life\)\) return;\s*\n\s*adoptContextAnswer\(k,context,answerFromLook\(j,false\)\)/,
+  'A late "in this sentence" answer can reopen a dismissed sheet again');
+assert.match(dictionarySource, /if\(!sheetAlive\(life\)\) return;\s*\n\s*view\.answer=answerFromLook\(j,false\);\s*\n\s*adoptPhrase/,
+  'A late phrase answer can rebuild the whole book body under a dismissed sheet again');
+assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!sheetAlive\(life\)\) return;/,
+  'A late "another meaning" answer can reselect a word on a dismissed sheet again');
+/* 그리는 문지기는 열림 번호입니다. `selKey === k` 로는 **같은 낱말을 닫았다
+   다시 연** 경우를 가릴 수 없습니다 — 열쇠가 같다고 같은 열림은 아닙니다. */
+assert.doesNotMatch(runningCode(dictionarySource), /if\(selKey===k\) renderPanel\(\)/,
+  'Rendering is gated on the word key again, so a reopened sheet accepts the previous opening\'s answer');
+/* 도착한 답까지 버리면 한도만 쓰고 낱말은 빈 채로 남습니다. 끊겨서 **빈손으로**
+   돌아온 것만 없던 일입니다. */
+assert.match(dictionarySource, /if\(!j && ctrl && ctrl\.signal\.aborted\) return false;/,
+  'An answer that beat the cancellation is thrown away again');
+/* 세는 곳은 서버 하나입니다 — 여기서 빼지도, 되돌리지도 않습니다. */
+assert.doesNotMatch(runningCode(dictionarySource), /anonLooksLeft\s*(--|\+\+|-=|\+=)/,
+  'The client counts the AI quota by itself again — the server is the only place that knows');
+
 /* caret 이 대답하지 않는 엔진에서도 낱말은 열려야 합니다. */
 assert.match(epubOriginalSource, /function epubWordByGeometry/,
   'EPUB word lookup has no fallback for engines whose caret hit test returns null');

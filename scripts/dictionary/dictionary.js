@@ -322,6 +322,8 @@ function panelIsSheet(){
   return window.matchMedia('(max-width:760px)').matches && !window.matchMedia('(pointer:fine)').matches;
 }
 function selectWord(k, span){
+  /* 여기서부터가 새 열림입니다. 앞 열림에 딸린 조회는 이 줄에서 임자를 잃습니다. */
+  beginSheetLife();
   /* 다른 낱말을 열면 앞 문장의 해석 창은 남겨 둘 이유가 없습니다. */
   if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
@@ -363,8 +365,9 @@ function closePanel(){
   selKey=null;
   contextView=null; phraseView=null; addingMeaning=false;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
-     훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. */
-  abortLook();
+     훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. 끊는 것은 AI
+     한 번이 아니라 이 열림에 딸린 전부입니다 — 무료 사전 셋도 함께입니다. */
+  endSheetLife();
   const panel=document.getElementById('panel');
   panel.classList.remove('on');
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
@@ -618,24 +621,35 @@ document.getElementById('p-mark').onclick=()=>{
 
 /* 고정 표현은 낱말 하나와 뜻이 달라질 수 있습니다. 칩을 누르면 대표 단어를
    바꾸지 않고, 지금 열린 패널에서만 표현 전체를 하나의 표제어로 다시 풉니다. */
+/* `adoptPhrase` 는 글자 화면을 통째로 다시 조립합니다(`renderBookBody`). 개츠비
+   에서는 문단 1600여 개입니다 — 시트를 닫은 뒤에 이것이 늦게 돌면 스크롤 한복판
+   에서 본문 전체가 다시 만들어집니다. 이 파일에서 가장 무거운 늦은 일입니다. */
 async function openPhrase(k){
   const base=words[k], text=base&&base.phrase;
   if(!base || !text || (phraseView && phraseView.key===k && phraseView.loading)) return;
+  const life=sheetLife;
   const view={key:k, phrase:text, sentence:base.example||'', book:base.book||'', loading:true};
   phraseView=view; renderPanel();
   try{
     const cacheKey=lookKey('phrase:'+text,view.sentence);
     const hit=await dictGet(cacheKey);
-    if(hit && hit.ko){ view.answer=answerFromLook(hit,!hit.seed); adoptPhrase(k,view); return; }
+    if(hit && hit.ko){
+      if(!sheetAlive(life)) return;
+      view.answer=answerFromLook(hit,!hit.seed); adoptPhrase(k,view); return;
+    }
+    const sig=sheetSignal();
     const j=await dictCall({op:'look',word:text,clicked:text,cands:[text.toLowerCase()],
-      sentence:view.sentence,book:view.book});
+      sentence:view.sentence,book:view.book}, sig);
+    if(!j && sig && sig.aborted) return;
     if(!j || j.error || !j.ko){ view.error=(j&&j.error)||'error'; return; }
+    /* 답은 남깁니다. 본문을 다시 조립하는 것만 산 열림의 일입니다. */
     await dictPut(cacheKey,Object.assign({},j,{done:true}));
+    if(!sheetAlive(life)) return;
     view.answer=answerFromLook(j,false);
     adoptPhrase(k,view);
   }finally{
     view.loading=false;
-    if(currentPhrase(k)===view && selKey===k) renderPanel();
+    if(currentPhrase(k)===view && sheetAlive(life)) renderPanel();
   }
 }
 
@@ -702,8 +716,10 @@ function refreshReaderWords(){
    잘못 잡힌 표제어는 "단어장에서 빼기" 뒤에 원하는 낱말을 다시 누르면 됩니다. */
 
 /* ---- dictionary lookups ---- */
-async function fetchKo(w, form){
-  const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q='+encodeURIComponent(form));
+/* 세 무료 사전은 모두 취소표를 받습니다. 예전에는 창을 닫아도 이 셋만은 계속
+   달렸고, 앞의 답이 늦게 오면 **닫힌 창을 위해 다음 요청이 새로 출발**했습니다. */
+async function fetchKo(w, form, signal){
+  const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q='+encodeURIComponent(form), {signal});
   const j = await r.json();
   const ko = (j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('').trim();
   const dict = (j[1]||[]).map(e=>({pos:e[0]||'', terms:(e[1]||[]).slice(0,5)}));
@@ -712,11 +728,11 @@ async function fetchKo(w, form){
   return !!w.ko;
 }
 /* metaOnly = 발음만 받아 오고 영어 뜻은 건드리지 않습니다. */
-async function fetchEn(w, form, metaOnly){
-  let r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form));
+async function fetchEn(w, form, metaOnly, signal){
+  let r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form), {signal});
   /* 이 공개 사전은 가끔 첫 요청에 502를 돌려줍니다. IPA가 사라지면 사전창이
      반쯤 비어 보이므로, 한 번만 짧게 다시 물어봅니다. */
-  if(!r.ok && r.status>=500){ await new Promise(resolve=>setTimeout(resolve,300)); r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form)); }
+  if(!r.ok && r.status>=500){ await new Promise(resolve=>setTimeout(resolve,300)); r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form), {signal}); }
   if(!r.ok) return false;
   const j = await r.json();
   if(!j || !j[0]) return false;
@@ -733,8 +749,8 @@ async function fetchEn(w, form, metaOnly){
   }
   return w.defs.length>0;
 }
-async function fetchEnWik(w, form){
-  const r = await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(form)+'?redirect=true');
+async function fetchEnWik(w, form, signal){
+  const r = await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(form)+'?redirect=true', {signal});
   if(!r.ok) return false;
   const j = await r.json();
   const entries = j.en || j[Object.keys(j)[0]];
@@ -799,7 +815,21 @@ function deviceId(){
   }
   return id;
 }
-/* 서버가 답할 때마다 알려 주는 남은 횟수. 모르면 null. */
+/* 서버가 답할 때마다 알려 주는 남은 횟수. 모르면 null.
+
+   ---- 세는 곳은 서버 하나입니다 ----
+   여기서는 한 번도 빼지 않습니다. `j.left` 를 받아 적을 뿐입니다. 그래서 화면의
+   수명(열림)과 셈의 수명(요청)이 애초에 섞이지 않습니다:
+
+     캐시에서 꺼냄        요청이 없으므로 0회
+     열림이 먼저 끝남     요청을 보내지 않으므로 0회 (fetchDict 의 `sheetAlive`)
+     보냈고 답이 옴       서버가 1회 뺀 수를 알려 주고, 우리는 받아 적습니다
+     보냈는데 우리가 끊음 서버는 이미 받았습니다. 되돌리지 않습니다 —
+                          끊은 것은 우리 쪽 기다림이지 서버의 계산이 아닙니다
+
+   끊은 경우에 화면의 남은 횟수는 옛 수인 채로 있습니다. 그것을 여기서 하나
+   빼서 맞추지 않습니다 — 서버가 진짜 수를 아는 유일한 곳이고, 다음 답 한 번에
+   저절로 맞습니다. 틀린 수를 지어내는 것보다 한 박자 늦는 편이 낫습니다. */
 let anonLooksLeft = null;
 const LS_AI_LEFT='breeze.ai-left';
 /* 하루는 한국 날짜로 셉니다. 서버의 한도가 그렇게 돌아가므로 화면도 같은
@@ -860,12 +890,53 @@ function logDict(action, k, extra){
   }, extra || {}));
 }
 
-/* 진행 중인 조회 하나만 살려 둡니다. 낱말을 연달아 누르거나 창을 닫으면
-   앞의 것은 아무도 안 볼 답이므로 끊습니다 — 하루 한도가 거기서 새 나갑니다. */
-let lookCtrl = null;
-function abortLook(){
-  if(lookCtrl){ try{ lookCtrl.abort(); }catch(e){} lookCtrl = null; }
+/* ---- 한 번의 열림이 제 조회의 임자입니다 ----
+
+   손짓의 임자가 `pointerdown` 부터 `click` 까지라면(scripts/reader/gesture.js),
+   여기의 임자는 **창이 열려 있는 동안**입니다. 낱말 하나를 열면 번호가 하나
+   오르고, 그 열림에 딸린 모든 요청은 그 번호를 들고 다닙니다. 창을 닫거나 다른
+   낱말을 열면 번호가 또 올라, 앞 번호를 든 답은 그 순간부터 아무도 아닌 답이
+   됩니다 — 돌아와도 화면을 건드리지 않습니다.
+
+   `selKey === k` 로만 막던 자리였습니다. 그것으로는 **같은 낱말을 닫았다 다시
+   연** 경우를 가릴 수 없습니다. 앞 열림의 늦은 답이 새 열림의 것인 척 들어옵니다.
+
+   번호와 함께 취소표(AbortController)도 하나씩 답니다. 번호는 "돌아온 답에게
+   화면을 안 준다"이고 취소표는 "애초에 더 달리지 않는다"입니다. 둘 다 필요합니다 —
+   무료 사전은 셋을 차례로 다녀오므로, 번호만으로는 창을 닫은 뒤에도 다음
+   요청이 새로 출발합니다. 실제로 시트를 닫고 2초 뒤에 번역 요청이 나갔습니다.
+
+   ---- 무엇을 끊고 무엇을 남기는가 ----
+   끊는 것은 **아직 안 끝난 일**입니다. 버리는 것은 **화면을 만질 권리**뿐이고,
+   이미 도착한 답은 버리지 않습니다. 한도는 이미 나갔고 답은 옳기 때문입니다.
+
+     기기에 있던 답      곧바로 보여 줍니다 — 예전 그대로
+     도착한 답           캐시에 넣고 카드에도 바릅니다 — 창이 닫혔어도
+     아직 달리는 요청    끊습니다. 다음 요청은 출발조차 안 합니다
+     끊긴 요청           답이 아닙니다 — 오류로도 적지 않습니다
+     닫힌 뒤 온 답       그리지 않고, 창을 다시 열지 않고, `selectWord` 도 안 합니다
+     이미 저장된 것      되돌리지 않습니다
+
+   한 줄로: **죽은 열림은 이후의 답으로 화면을 조종할 권리가 없습니다.** 답을
+   잃는 것이 목적이 아닙니다. */
+let sheetLife = 0;
+let sheetCtrl = null;
+/* 새 열림을 시작합니다 — 앞 열림은 여기서 끝납니다. */
+function beginSheetLife(){
+  endSheetLife();
+  sheetCtrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  return sheetLife;
 }
+/* 창이 닫혔습니다. 번호를 올려 앞 번호를 죽이고, 달리던 것은 끊습니다 —
+   아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
+function endSheetLife(){
+  sheetLife++;
+  if(sheetCtrl){ try{ sheetCtrl.abort(); }catch(e){} sheetCtrl = null; }
+}
+function sheetAlive(life){ return life === sheetLife; }
+function sheetSignal(){ return sheetCtrl ? sheetCtrl.signal : null; }
+/* 이 열림이 아직 그 열림이면 다시 그립니다. 아니면 그릴 창이 없습니다. */
+function renderIfAlive(life){ if(sheetAlive(life)) renderPanel(); }
 
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
 
@@ -876,16 +947,20 @@ function abortLook(){
    ② 내가 전에 물어본 것 — 기다림은 거짓말이 됩니다. 이미 아는 답인데 기다린
       척할 이유가 없고, 오히려 "아까 봤다" 는 사실이 곧바로 와야 합니다.
       그래서 곧장 내놓고, 창의 머리글도 다르게 답니다. */
-async function loadCachedLook(k, began){
+async function loadCachedLook(k, began, life){
   const w = words[k]; if(!w) return false;
   for(const key of entryKeys(w)){
     const hit = await dictGet(lookKey(key, w.example));
+    /* 기기에 이미 있던 답입니다. 창이 닫혔어도 카드에는 바릅니다 — 여기서
+       거르면 그 낱말은 답을 가진 채로 영영 빈 카드가 됩니다. 그리는 것은
+       `applyLook` 이 `life` 로 가립니다. */
     if(hit && hit.ko){
-      if(hit.seed){
+      /* 바람을 보여 주는 기다림입니다. 볼 사람이 없으면 기다릴 이유도 없습니다. */
+      if(hit.seed && sheetAlive(life)){
         const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
         if(left > 0) await new Promise(res => setTimeout(res, left));
       }
-      applyLook(w, hit, k, { cached:!hit.seed });
+      applyLook(w, hit, k, { cached:!hit.seed, life });
       return true;
     }
   }
@@ -895,29 +970,43 @@ async function loadCachedLook(k, began){
 /* 이미 저장한 낱말을 다른 문장에서 만났을 때의 문입니다. 답이 오면 그것으로 끝나지
    않고 곧바로 Meaning 이 하나 생깁니다 — 저장할지 묻지 않고, 기존 뜻도 지우지
    않습니다. 예전 뜻으로 돌아가고 싶으면 칩을 한 번 누르면 됩니다. */
+/* 이 문은 답을 받아 **창을 다시 엽니다**(`adoptContextAnswer` → `selectWord`).
+   그래서 늦은 답이 제일 위험한 자리입니다 — 시트를 닫고 손을 뗀 뒤에 시트가
+   저 혼자 돌아왔습니다. 실기기에서 "닫았는데 렉"으로 보이던 그림입니다.
+   이제 이 열림이 끝났으면 답은 저장만 되고 화면은 건드리지 않습니다. */
 async function askCurrentContext(k){
   const w=words[k], context=currentContext(k);
   if(!w || !context || context.loading) return;
+  const life=sheetLife;
   if(navigator.onLine===false){ context.error='offline'; renderPanel(); return; }
   if(!sb){ context.error='login'; renderPanel(); return; }
   context.loading=true; delete context.error; renderPanel();
   try{
     for(const key of entryKeys(w)){
       const hit=await dictGet(lookKey(key,context.sentence));
-      if(hit && hit.ko){ adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed)); return; }
+      if(hit && hit.ko){
+        if(!sheetAlive(life)) return;
+        adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed)); return;
+      }
     }
+    const sig=sheetSignal();
     const j=await dictCall({op:'look',word:w.word||k,clicked:context.clicked||'',cands:entryKeys(w),
-      sentence:context.sentence,book:context.book||'',device:sbUser?'':deviceId()});
+      sentence:context.sentence,book:context.book||'',device:sbUser?'':deviceId()}, sig);
+    /* 빈손으로 끊긴 것만 없던 일입니다. 끊기보다 답이 빨랐다면 그것은 답입니다. */
+    if(!j && sig && sig.aborted) return;
     if(!j || j.error || !j.ko){
       context.error=(j&&j.error)==='anon_exhausted' ? 'trial' : (j&&j.error)||'error';
       return;
     }
     if(typeof j.left==='number') rememberAiLeft(j.left);
+    /* 답은 닫혔어도 캐시에 남깁니다 — 다시 물으면 0원, 기다림 없음.
+       다만 뜻 카드를 만들고 창을 다시 여는 것은 산 열림의 일입니다. */
     await dictPut(lookKey(j.lemma||w.word||k,context.sentence),Object.assign({},j,{done:true}));
+    if(!sheetAlive(life)) return;
     adoptContextAnswer(k,context,answerFromLook(j,false));
   }finally{
     context.loading=false;
-    if(currentContext(k)===context && selKey===k) renderPanel();
+    if(currentContext(k)===context && sheetAlive(life)) renderPanel();
   }
 }
 
@@ -937,28 +1026,37 @@ function adoptContextAnswer(k, context, answer){
 async function fetchLook(k, opt){
   const w = words[k]; if(!w) return false;
   opt = opt || {};
+  /* 이 요청이 어느 열림의 것인지. 단추에서 바로 부를 때는 지금 열려 있는 것입니다. */
+  if(opt.life === undefined) opt.life = sheetLife;
+  const life = opt.life;
   const querySentence=opt.sentence || w.example || '';
   /* `hold` 는 답을 카드에 바르지 않고 그대로 돌려 달라는 뜻입니다. 넓은 문맥으로
      다시 물어본 답은 지금 뜻을 덮는 것이 아니라 새 뜻이 되기 때문입니다. */
-  if(navigator.onLine === false){ w.aiOff = 'offline'; if(selKey===k) renderPanel(); return false; }
+  if(navigator.onLine === false){ w.aiOff = 'offline'; renderIfAlive(life); return false; }
   /* 서버 주소조차 없으면(config 미설정) 할 수 있는 일이 없습니다. 로그인 여부는
      더 이상 여기서 막지 않습니다 — 맛보기 횟수는 서버가 셉니다. */
-  if(!sb){ w.aiOff = 'login'; if(selKey===k) renderPanel(); return false; }
+  if(!sb){ w.aiOff = 'login'; renderIfAlive(life); return false; }
 
   const began = Date.now();
-  abortLook();
+  /* 이 물음 하나만 따로 끊을 수 있어야 합니다 — 9초가 넘었을 때. 그래서 표를
+     하나 더 만들되, 열림의 표에 매답니다. 임자는 여전히 열림 하나입니다:
+     열림이 끝나면 이 표도 함께 끊기고, 반대 방향은 없습니다. */
   const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-  lookCtrl = ctrl;
+  const sheetSig = sheetSignal();
+  if(ctrl && sheetSig){
+    if(sheetSig.aborted) try{ ctrl.abort(); }catch(e){}
+    else sheetSig.addEventListener('abort', ()=>{ try{ ctrl.abort(); }catch(e){} }, {once:true});
+  }
   w.aiLoading = true;
   delete w.aiSlow; delete w.aiOff;
-  if(selKey===k) renderPanel();
+  renderIfAlive(life);
   /* 9초가 넘으면 무작정 기다리게 두지 않습니다. 기다림 자체보다
      "언제 끝날지 모른다"가 더 답답하기 때문입니다. */
   const slow = setTimeout(function(){
     if(!words[k]) return;
     words[k].aiSlow = true; words[k].aiOff = 'error';
     if(ctrl) try{ ctrl.abort(); }catch(e){}
-    if(selKey===k) renderPanel();
+    renderIfAlive(life);
   }, AI_TIMEOUT);
   try{
     const j = await dictCall({
@@ -969,6 +1067,14 @@ async function fetchLook(k, opt){
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
     }, ctrl ? ctrl.signal : null);
+    /* 끊긴 요청도 `dictCall` 은 `null` 로 돌려줍니다. 그것을 오류로 적으면 닫은
+       창에 오류가 남고, 다시 열었을 때 "안 됐다"가 먼저 보입니다. 끊긴 것은
+       답이 아니라 없던 일입니다 — 여기서만 갈라섭니다.
+
+       반대로 **도착한 답은 창이 닫혔어도 답입니다.** 한도는 이미 나갔고 답은
+       옳으므로, 아래의 캐시와 카드 바르기는 그대로 지납니다. 닫힌 열림이 잃는
+       것은 화면을 만질 권리 하나뿐입니다. */
+    if(!j && ctrl && ctrl.signal.aborted) return false;
     if(!j || j.error || !j.ko){
       const e = j && j.error;
       w.aiOff = e === 'quota_exceeded' ? 'quota'
@@ -984,15 +1090,15 @@ async function fetchLook(k, opt){
        화면이 튄 것처럼 느껴져서, 무슨 일이 일어났는지 못 알아챕니다.
        기기에 이미 있던 답은 그냥 띄웁니다 — 기다린 척할 이유가 없습니다. */
     const left = AI_MIN_WAIT - (Date.now() - began);
-    if(left > 0) await new Promise(res=>setTimeout(res, left));
+    /* 볼 사람이 있을 때만 뜸을 들입니다. */
+    if(left > 0 && sheetAlive(life)) await new Promise(res=>setTimeout(res, left));
     if(opt.hold) return j;
     applyLook(w, j, k, opt);
     return true;
   }finally{
     clearTimeout(slow);
-    if(lookCtrl === ctrl) lookCtrl = null;
     delete w.aiLoading;
-    if(selKey===k) renderPanel();
+    renderIfAlive(life);
   }
 }
 
@@ -1013,7 +1119,7 @@ function applyLook(w, j, k, opt){
   if(j.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(j.lemma)) w.word = j.lemma.toLowerCase();
   w.up = Date.now();
   saveWords(); queueSync();
-  if(selKey===k) renderPanel();
+  renderIfAlive(opt.life);
 }
 
 /* "이 뜻이 아닌 것 같다" — 이미 보여 준 뜻을 빼고, 앞뒤 문장까지 붙여 다시 묻습니다.
@@ -1021,12 +1127,14 @@ function applyLook(w, j, k, opt){
    지금 뜻을 덮지 않고 새 Meaning 이 됩니다. */
 async function askWiderContext(k){
   const w=words[k]; if(!w || w.aiLoading) return;
+  const life=sheetLife;
   const root=w.root||k;
   const sentence=expandedContextFor(w, w.example||'');
   /* 이미 저장해 둔 뜻은 빼고 물어봅니다. 같은 답을 한 번 더 받고 한도만 쓰는 일이
      없도록, 그리고 "다른 뜻"을 달라는 뜻이 서버에도 그대로 전해지도록. */
   const avoid=meaningCards(root,null).map(([,item])=>item.ko).filter(Boolean).slice(0,4);
-  const answer=await fetchLook(k, {sentence, wider:true, hold:true, avoid});
+  const answer=await fetchLook(k, {sentence, wider:true, hold:true, avoid, life});
+  if(!sheetAlive(life)) return;
   if(!answer || !answer.ko) return;
   const id=createMeaning(root, answer.ko, {clicked:w.clicked, example:w.example, book:w.book,
     ai:answerFromLook(answer,false).ai, alts:answer.alts, phrase:answer.phrase});
@@ -1035,6 +1143,11 @@ async function askWiderContext(k){
 }
 function askAI(){
   const k = selKey; if(!k || !words[k]) return;
+  /* 이미 묻고 있는 중이면 한 번 더 묻는 것은 한도만 쓰는 일입니다. 예전에는
+     `fetchLook` 이 앞의 요청을 끊는 것으로 이 일을 했는데, 이제 끊는 표는 열림
+     전체의 것이라 여기서 막습니다 — 옆에서 달리는 무료 사전까지 끊을 이유가
+     없기 때문입니다. `askWiderContext` 는 처음부터 이렇게 막고 있었습니다. */
+  if(words[k].aiLoading) return;
   const off = words[k].aiOff;
   /* 맛보기를 다 썼거나 서버가 로그인을 요구하면, 다시 부르는 것은 같은 답을
      한 번 더 받는 일입니다. 할 수 있는 일이 있는 곳으로 보냅니다. */
@@ -1046,45 +1159,56 @@ document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey])
 
 /* 무료 사전. 발음과 영어 뜻은 여기서만 오고, AI 가 답하지 못했을 때는 뜻자리도 지킵니다.
    fetchKo 는 w.ko 가 비어 있을 때만 채우므로 AI 답을 밀어내지 않습니다. */
-async function fillFromFreeDicts(k){
+async function fillFromFreeDicts(k, life){
   const w = words[k]; if(!w) return;
+  const signal = sheetSignal();
   const forms = w.forms && w.forms.length ? w.forms : [k];
   let validated = null;
-  for(const f of forms){ try{ if(await fetchEn(w,f,false)){ validated=f; break; } }catch(e){} }
-  if(!validated){ for(const f of forms){ try{ if(await fetchEnWik(w,f)){ validated=f; break; } }catch(e){} } }
+  /* 이 열림이 끝났으면 다음 형태를 물어볼 이유가 없습니다. `try/catch` 가 취소를
+     삼키므로, 다음 바퀴로 넘어가기 전에 여기서 한 번 봅니다. */
+  for(const f of forms){ if(!sheetAlive(life)) return;
+    try{ if(await fetchEn(w,f,false,signal)){ validated=f; break; } }catch(e){} }
+  if(!validated){ for(const f of forms){ if(!sheetAlive(life)) return;
+    try{ if(await fetchEnWik(w,f,signal)){ validated=f; break; } }catch(e){} } }
   /* AI 가 표제어를 정했으면 그것을 씁니다. 무료 사전은 "뜻이 실려 있는 형태"를 찾아 준
      것일 뿐이라, 둘이 다를 때 무료 사전을 따르면 AI 가 답한 낱말과 화면의 낱말이 어긋납니다. */
   if(!w.aiLemma && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
-  if(selKey===k) renderPanel();
+  renderIfAlive(life);
   const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
-  for(const f of koForms){ try{ if(await fetchKo(w,f)) break; }catch(e){} }
-  if(selKey===k) renderPanel();
+  for(const f of koForms){ if(!sheetAlive(life)) return;
+    try{ if(await fetchKo(w,f,signal)) break; }catch(e){} }
+  renderIfAlive(life);
 }
 
 async function fetchDict(k){
   const w = words[k]; if(!w) return;
+  /* 이 조회는 방금 열린 창의 것입니다 — `addWord` 가 `selectWord` 다음에 부릅니다. */
+  const life = sheetLife;
   const began = Date.now();
   /* 창이 열리는 순간부터 바람이 붑니다. 답이 어디서 오든 — 씨앗이든, 예전에
      물어본 것이든, 지금 AI 에게 묻든 — 사용자가 보는 것은 같은 한 번의 바람입니다. */
   w.loading = true; w.aiLoading = true;
-  if(selKey===k) renderPanel();
+  renderIfAlive(life);
 
   /* 무료 사전은 AI 와 서로 기다릴 이유가 없으므로 같이 출발합니다. 발음과 영어 뜻이
      먼저 도착해서, AI 를 기다리는 동안에도 패널이 채워집니다. */
-  const free = fillFromFreeDicts(k);
+  const free = fillFromFreeDicts(k, life);
 
   /* ① 이 기기에 이 문장으로 물어본 적 있나 — 0원, 기다림 없음 */
-  const cached = await loadCachedLook(k, began);
+  const cached = await loadCachedLook(k, began, life);
   /* ② 없으면 AI. 뜻의 유일한 출처입니다.
      fetchLook 은 오프라인·설정없음일 때 aiLoading 을 건드리지 않고 빠져나가므로,
      넘기기 전에 여기서 내려놓습니다 — 안 그러면 바람이 영영 붑니다. */
-  if(!cached){ delete w.aiLoading; await fetchLook(k, {}); }
+  if(!cached && sheetAlive(life)){ delete w.aiLoading; await fetchLook(k, {life}); }
 
   await free;
-  delete w.loading;
+  /* 창이 닫혔어도 여기까지 온 것은 **적어 둡니다**. 창을 닫는 순간 요청이 끊기므로
+     이 줄은 늦게 오지 않고 닫는 그 자리에서 돕니다 — 예전에는 닫고 2초 뒤에
+     혼자 돌아, 스크롤 한복판에서 낱말장 전체를 다시 써 내려갔습니다. */
+  delete w.loading; delete w.aiLoading;
   w.up = Date.now();
   saveWords(); queueSync();
-  if(selKey===k) renderPanel();
+  renderIfAlive(life);
 }
 
 /* ================= vocab ================= */
