@@ -553,6 +553,18 @@ registerReaderSurface({
   },
 });
 
+/* ---- 종이 셋이 같은 계약을 맺습니다 ----
+   `#rtext` 는 reader.js 에서, EPUB 의 장 문서는 epub-original.js 에서 이 계약을
+   맺고 있었습니다. 원본 종이만 아무 데도 없었습니다 — 그래서 iOS 가 만든 선택이
+   지워지지 않고 남았습니다. 재어 보면 분명합니다: 같은 선택을 글자 종이에
+   만들면 한 박자 만에 `rangeCount` 가 0 이 되고, 원본 종이에 만들면 1 로
+   남습니다.
+
+   CSS 가 이미 막고 있는데도 여기서 한 번 더 지우는 까닭은, 그 경합의 승자가
+   기기마다 다르기 때문입니다(EPUB 에서 배운 것입니다). 막는 것과 지우는 것은
+   서로의 대체가 아니라 서로의 뒷받침입니다. */
+suppressReaderSelection(document, element => !!element.closest('.pdf-original'));
+
 /* ---- 형식 표에 넘겨줄 조각들 (scripts/reader/original-formats.js) ---- */
 
 function pdfAnchorFromProgress(session,progress){

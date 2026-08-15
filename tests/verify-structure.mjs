@@ -1245,6 +1245,28 @@ assert.match(epubOriginalSource, /suppressReaderSelection\(doc, \(\)=>true\)/,
   'Original EPUB does not clear the selection iOS makes under a long press');
 assert.match(gestureSource, /addEventListener\('contextmenu'/,
   'Nothing dismisses a native context menu that escapes the iOS CSS guard');
+/* ---- 종이 셋이 모두 이 계약을 맺어야 합니다 ----
+   글자와 EPUB 은 맺고 있었고 원본 PDF 만 빠져 있었습니다. 그린 쪽에는 글자 마디가
+   0 개인데(캔버스 한 장) 칸은 `user-select:auto` 라, iOS 는 꾹 누른 자리에서 고를
+   글자를 못 찾고 **쪽 상자 전체**를 골라 버렸습니다 — 낱말이 아니라 쪽이 파래지던
+   자리입니다.
+   PDF 는 좌표표로 낱말을 짚으므로 caret 을 쓰지 않습니다. 그래서 여기서는 선택을
+   꺼도 안전합니다 — 아래 검사가 그 전제를 지킵니다. 이 전제가 깨지면(누군가 PDF
+   낱말 찾기를 caret 으로 바꾸면) EPUB 에서 겪었던 사고가 그대로 재현됩니다. */
+assert.match(readerCss, /\.pdf-original\{[^}]*-webkit-user-select:none;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
+  'The PDF page can still invoke iOS selection, so a long press paints the whole page blue');
+assert.match(pdfSource, /suppressReaderSelection\(document, element => !!element\.closest\('\.pdf-original'\)\)/,
+  'The PDF paper does not clear the selection iOS makes under a long press');
+for(const caret of ['caretRangeFromPoint','caretPositionFromPoint']){
+  assert.ok(!new RegExp(`\\b${caret}\\b`).test(runningCode(pdfSource)),
+    `PDF word lookup now leans on ${caret}, which its own user-select:none can switch off`);
+}
+/* ---- 해석 창을 닫는 길은 하나입니다 ----
+   X 단추와 바깥(scrim)이 서로 다른 함수를 부르면, 언젠가 한쪽에만 손이 갑니다. */
+assert.doesNotMatch(sentenceSource, /function dismissSentence/,
+  'The sentence window has two names for closing again, so the two paths can drift apart');
+assert.ok((index.match(/closeSentence\(\)/g) || []).length >= 2,
+  'The scrim and the X button no longer end in the same close path');
 /* caret 이 대답하지 않는 엔진에서도 낱말은 열려야 합니다. */
 assert.match(epubOriginalSource, /function epubWordByGeometry/,
   'EPUB word lookup has no fallback for engines whose caret hit test returns null');

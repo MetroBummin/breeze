@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="styles/tokens.css?v=00e0aeef">
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=2dee2be8">
+  <link rel="stylesheet" href="styles/reader.css?v=d2a6afd9">
   <link rel="stylesheet" href="styles/dictionary.css?v=59d6cc60">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
@@ -69,12 +69,12 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=0623fde9"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=c7baba1c"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=a524e0aa"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=e7f2eaca"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=4590f9f7"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=eebc985e"></script>
   <script defer src="scripts/reader/epub-original.js?v=b5bf7116"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=b212c6d4"></script>
@@ -86,7 +86,7 @@
   <script defer src="scripts/main.js?v=16ea797d"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
-  <script defer src="scripts/reader/frame-trace.js?v=a828af28"></script>
+  <script defer src="scripts/reader/frame-trace.js?v=6778b21f"></script>
 </head>
 <body>
 <div id="app">
@@ -217,7 +217,7 @@
   <!-- 문장 해석은 낱말 창과 별개입니다. 낱말을 꾹 누르면 문장이 파랗게 차오르고
        화면 한가운데에 이 창이 뜹니다 — scripts/dictionary/sentence.js -->
   <div id="sentence-modal" hidden>
-    <div id="sentence-scrim" onclick="dismissSentence()"></div>
+    <div id="sentence-scrim" onclick="closeSentence()"></div>
     <section id="p-sentence" role="dialog" aria-modal="true" aria-live="polite">
       <button id="ps-close" type="button" aria-label="문장 해석 닫기" onclick="closeSentence()">✕</button>
       <div class="cap"><span class="dot"></span><span id="ps-cap">문장 통째로 · AI</span></div>

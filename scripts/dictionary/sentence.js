@@ -50,19 +50,25 @@ function rememberSentLeft(left, day){
 
 /* ================= 해석 창 ================= */
 
+/* 닫는 길은 셋입니다 — X 단추 · 바깥(scrim) · Esc. 셋 다 이 함수 하나로 끝납니다.
+
+   한때 바깥을 눌러 닫는 길만 따로 `dismissSentence()` 라는 이름을 갖고 있었습니다.
+   속은 `closeSentence()` 한 줄이라 하는 일은 같았지만, 이름이 둘이면 "두 길이
+   다른 일을 한다"는 의심이 계속 되살아납니다. 실제로 그 의심을 확인하려고 두 길이
+   남기는 상태를 떠서 비교했고, 한 글자도 다르지 않았습니다. 그래서 이름도 하나로
+   합칩니다 — 같음을 주석으로 약속하는 것보다 갈라질 자리를 없애는 편이 낫습니다.
+
+   창은 누르고 있던 손가락 **아래로** 올라오므로, 손을 떼는 그 한 번이 곧바로
+   "바깥을 눌렀다"가 될 수 있습니다 — 열리자마자 닫혀서 아무 일도 안 일어난 것처럼
+   보이던 자리입니다. 예전에는 여기서 600ms 유예를 봤습니다. 이제 그 `click` 은
+   창을 연 손짓의 꼬리로 판정되어 문서 capture 단계에서 멈추므로, 여기까지 오지
+   않습니다 (scripts/reader/gesture.js). */
 function closeSentence(){
   const modal = document.getElementById('sentence-modal');
   if(modal) modal.hidden = true;
   if(typeof clearReaderModeCue === 'function') clearReaderModeCue();
   if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl = null; }
 }
-/* 바깥을 눌러 닫는 길. 창은 누르고 있던 손가락 **아래로** 올라오므로, 손을 떼는
-   그 한 번이 곧바로 "바깥을 눌렀다"가 될 수 있습니다 — 열리자마자 닫혀서
-   아무 일도 안 일어난 것처럼 보이던 자리입니다.
-   예전에는 여기서 600ms 유예를 봤습니다. 이제 그 `click` 은 창을 연 손짓의
-   꼬리로 판정되어 문서 capture 단계에서 멈추므로, 여기까지 오지 않습니다
-   (scripts/reader/gesture.js). */
-function dismissSentence(){ closeSentence(); }
 function paintSentence(state){
   const modal = document.getElementById('sentence-modal');
   modal.hidden = false;

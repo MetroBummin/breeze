@@ -110,10 +110,59 @@
     return fromPoint.apply(this, arguments);
   };
 
+  /* ---- 상단바는 언제 무엇을 하고 있었나 ----
+     "빠르게 위아래로 밀면 상단바가 투명한 채로 굳는다" 를 눈으로 재현하는 것은
+     어렵습니다. 굳은 뒤에 보면 이미 늦었고, 굳는 순간에는 손이 바쁩니다.
+     그래서 미는 내내 시간순으로 적어 둡니다.
+
+     한 줄에 드는 값은 전부 이미 메모리에 있는 것들입니다 — 배치를 다시 계산하게
+     만드는 읽기는 없습니다. 계산이 드는 `getComputedStyle` 은 **클래스가 바뀐
+     그 줄에서만** 한 번 합니다. 재는 일이 재는 대상을 무겁게 만들면 그 기록은
+     거짓말이 됩니다. */
+  const chromeTrace = [];
+  let chromeTraceLastClass = null;
+  /* 이름으로 붙잡습니다. reader.js 의 `let` 들은 window 에 앉지 않으므로 —
+     전역 렉시컬 자리에 있습니다 — 닫힘으로 읽고, 없으면 조용히 '?' 입니다. */
+  function peek(read, fallback){ try{ return read(); }catch(error){ return fallback; } }
+  function since(value){ return Math.max(0, Math.round((Number(value) || 0) - Date.now())); }
+  function sampleChrome(y, step){
+    const hidden = document.body.classList.contains('chrome-hidden');
+    const changed = hidden !== chromeTraceLastClass;
+    chromeTraceLastClass = hidden;
+    const row = {
+      t: Math.round(performance.now()),
+      y: Math.round(y),
+      d: Math.round(step),                                    // 이번 걸음 (+아래 −위)
+      run: Math.round(peek(()=>chromeRun, 0)),                // 같은 방향으로 이어 간 거리
+      hidden,
+      pin: peek(()=>chromePinned, '?'),
+      hold: since(peek(()=>chromeHoldUntil, 0)),
+      pause: since(peek(()=>readerScrollPauseUntil, 0)),
+      anchor: peek(()=>readerAnchorHeld(), '?'),
+      prog: peek(()=>readerScrollWasProgrammatic(), '?'),
+    };
+    if(changed){
+      const bar = document.getElementById('topbar');
+      if(bar){
+        const style = getComputedStyle(bar);
+        row.paint = `opacity ${style.opacity} · ${style.visibility} · ${style.transform}`;
+      }
+    }
+    chromeTrace.push(row);
+    if(chromeTrace.length > 600) chromeTrace.splice(0, 300);
+  }
+
   /* 프레임에 이름을 붙여 주는 것들 — 무엇 때문에 이 프레임이 돌았는가. */
   document.addEventListener('DOMContentLoaded', ()=>{
     const scroller = typeof readerScroller === 'function' ? readerScroller() : null;
-    if(scroller) scroller.addEventListener('scroll', ()=>scheduleReport('scroll'), {passive:true});
+    if(!scroller) return;
+    let lastY = scroller.scrollTop;
+    scroller.addEventListener('scroll', ()=>{
+      scheduleReport('scroll');
+      const y = scroller.scrollTop;
+      sampleChrome(y, y - lastY);
+      lastY = y;
+    }, {passive:true});
   });
   window.addEventListener('resize', ()=>scheduleReport('resize'));
   ['closeSentence','closePanel','switchReaderMode','selectWord'].forEach(name=>{
@@ -168,6 +217,51 @@
     console.log('[breeze] 낱말 span 꺼짐 — 낱말 탭은 안 됩니다 (?spans=on 으로 되돌립니다)');
   }
 
+  /* ---- 같은 창을 두 가지로 닫습니다 ----
+     `X 단추`(28px)와 `바깥`(화면 전체를 덮은 scrim). 둘 다 `closeSentence()` 하나로
+     끝나므로, 자바스크립트가 남기는 상태는 맥에서 재면 완전히 같습니다 — 떠서
+     비교해 봤습니다. 그런데 기기에서는 한쪽만 렉이 온다고 합니다. 그렇다면 남는
+     차이는 **누른 상자의 크기**입니다: iOS 는 누른 요소 위에 tap highlight 층을
+     한 장 깔고, scrim 은 그 상자가 화면 전체입니다. 그 층이 깔린 채로 요소가
+     `display:none` 이 되면 무엇이 남는지는 WebKit 만 압니다.
+
+     그래서 여기서는 (1) 어느 길로 닫았는지와 닫은 직후에 남은 것을 세고,
+     (2) `?taphl=off` 로 scrim 의 tap highlight 만 꺼 봅니다. 고치는 것이 아니라
+     한 가지만 다르게 해 보는 것입니다 — 이것으로 화면이 안 비면 원인은 거기입니다. */
+  let lastDismiss = '—';
+  const dismissMarks = [];
+  document.addEventListener('click', event=>{
+    const target = event.target;
+    if(!target || typeof target.closest !== 'function') return;
+    const how = target.closest('#ps-close') ? 'X 단추'
+              : target.closest('#sentence-scrim') ? '바깥' : '';
+    if(!how) return;
+    lastDismiss = how;
+    bump('닫기: ' + how);
+    /* 닫힌 뒤에 세야 합니다 — 이 click 이 아직 `closeSentence()` 에 닿기 전입니다. */
+    setTimeout(()=>{
+      dismissMarks.push({how,
+        highlights: (window.CSS && CSS.highlights) ? CSS.highlights.size : -1,
+        cue: document.querySelectorAll('.reader-mode-cue,.reader-mode-cue-dom').length,
+        selection: document.getSelection().rangeCount,
+        nodes: document.getElementsByTagName('*').length});
+      if(dismissMarks.length > 40) dismissMarks.shift();
+    }, 0);
+  }, true);
+
+  let tapHighlightOff = false;
+  try{
+    if(/[?&]taphl=off/.test(location.search)) localStorage.setItem('breeze.debug.taphl','off');
+    if(/[?&]taphl=on/.test(location.search)) localStorage.removeItem('breeze.debug.taphl');
+    tapHighlightOff = localStorage.getItem('breeze.debug.taphl') === 'off';
+  }catch(error){}
+  if(tapHighlightOff){
+    const style = document.createElement('style');
+    style.textContent = '#sentence-scrim,#sheetbg{-webkit-tap-highlight-color:transparent}';
+    (document.head || document.documentElement).appendChild(style);
+    console.log('[breeze] scrim tap highlight 꺼짐 (?taphl=on 으로 되돌립니다)');
+  }
+
   /* 시간축으로 봐야 보이는 것이 있습니다 — 문장해석을 한 번 쓰고 닫은 뒤부터
      프레임이 조금씩 무거워지는지 같은 것. 창을 열고 닫는 순간만 보면 그 버그는
      재현된 적이 없는 것입니다. 이 요약은 그 비교를 위한 것입니다. */
@@ -198,6 +292,12 @@
             : rafP95 > 33  ? '애매 — 다시 재세요'
             :                'B — 메인 스레드는 정상입니다 (WebKit paint 계층)',
       '낱말 span': spansOff ? '꺼짐' : '켜짐',
+      'scrim tap highlight': tapHighlightOff ? '꺼짐' : '켜짐',
+      '마지막 닫기': lastDismiss,
+      '닫은 뒤 남은 것': dismissMarks.length
+        ? dismissMarks.slice(-3).map(mark=>
+            `${mark.how}(highlight ${mark.highlights}·cue ${mark.cue}·선택 ${mark.selection}·노드 ${mark.nodes})`).join(' / ')
+        : '아직 없음',
       'captureAnchor/frame': per('captureAnchor'),
       'paragraphForSource/frame': per('paragraphForSource'),
       'getBoundingClientRect/frame': per('layout read: getBoundingClientRect'),
@@ -213,7 +313,24 @@
     window.__breezeFrames = [];
     rafGaps.length = 0; rafLast = performance.now();
     longTasks.length = 0;
+    chromeTrace.length = 0;
+    dismissMarks.length = 0;
     return 'ok';
+  };
+
+  /* 상단바가 굳는 자리를 찾으려면 요약이 아니라 **차례**가 필요합니다. 어떤 전이가
+     빠졌는지는 평균으로는 안 보입니다 — 굳기 직전 몇 줄에 들어 있습니다. */
+  window.breezeChromeTrace = function(){
+    if(!chromeTrace.length) return '아직 민 적이 없습니다';
+    const head = 't(ms)  y     걸음  run   상단바  pin   hold  pause anchor prog';
+    const rows = chromeTrace.slice(-120).map(row=>{
+      const pad = (value, width) => String(value).padEnd(width);
+      const line = pad(row.t, 7) + pad(row.y, 6) + pad(row.d, 6) + pad(row.run, 6)
+        + pad(row.hidden ? '걷힘' : '보임', 8) + pad(row.pin, 6) + pad(row.hold, 6)
+        + pad(row.pause, 6) + pad(row.anchor, 7) + row.prog;
+      return row.paint ? line + '\n        ↳ ' + row.paint : line;
+    });
+    return [head, ...rows].join('\n');
   };
 
   /* ---- 손에 들고 재기 ----
@@ -269,22 +386,32 @@
       return el;
     };
     const copy  = button('복사', '#2f6fed');
+    const bar   = button('상단바', '#4a5568');
     const reset = button('초기화', '#8a8a90');
     const close = button('닫기', '#c9c9cf');
     close.style.color = '#111';
 
+    /* 보고 있는 것이 요약인지 상단바 기록인지 — "새로" 는 그때 보던 것을 다시 뜹니다. */
+    let view = 'summary';
     function refresh(){
       const head = [
         `Breeze 진단 ${new Date().toLocaleTimeString('ko-KR')}`,
         `주소: ${location.search || '(없음)'}`,
         '',
       ];
-      box.value = head.concat(lines(window.breezeFrameSummary())).join('\n');
+      box.value = view === 'chrome'
+        ? head.concat('── 상단바 시간순 ──', window.breezeChromeTrace()).join('\n')
+        : head.concat(lines(window.breezeFrameSummary())).join('\n');
     }
 
     open.addEventListener('click', ()=>{
       if(sheet.hidden){ refresh(); sheet.hidden = false; open.textContent = '새로'; }
       else refresh();
+    });
+    bar.addEventListener('click', ()=>{
+      view = view === 'chrome' ? 'summary' : 'chrome';
+      bar.textContent = view === 'chrome' ? '요약' : '상단바';
+      refresh();
     });
     close.addEventListener('click', ()=>{ sheet.hidden = true; open.textContent = '진단'; });
     reset.addEventListener('click', ()=>{
