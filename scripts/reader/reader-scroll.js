@@ -167,16 +167,20 @@ function resetOriginalZoom(){
   updateOriginalZoomControls();
 }
 
-/* ---- 브라우저의 벌리기는 읽는 동안 막습니다 ----
+/* ---- 브라우저의 벌리기는 어디서도 안 씁니다 ----
    PDF 확대는 버튼만 담당합니다. Safari가 화면 전체를 확대하면 단추와 사전
-   시트까지 함께 커지므로, 손가락 두 개는 어떤 읽기 화면에서도 하지 않습니다.
+   시트까지 함께 커지므로, 손가락 두 개는 읽기 화면에서 하지 않습니다.
    EPUB 틀(iframe)은 제 문서라 우리 쪽 귀가 안 닿습니다. 그래서 저쪽에도 이
-   함수를 한 번 겁니다 (`scripts/reader/epub-original.js`). */
+   함수를 한 번 겁니다 (`scripts/reader/epub-original.js`).
+
+   예전에는 읽는 동안(`body.reading`)만 막았습니다. 그런데 서재·단어장에는
+   되돌릴 길이 없습니다 — 원생 확대는 앱이 아니라 브라우저(WKWebView)가
+   쥐고 있는 배율이라, 화면을 옮겨도 풀리지 않고 상단바 같은 고정 요소만
+   시야 밖으로 밀어냅니다. 그 화면들에도 확대로 얻을 것이 없으므로(글자
+   크기는 Aa 가 따로 있습니다) 어디서든 막습니다. */
 function blockBrowserPinch(doc){
   ['gesturestart','gesturechange','gestureend'].forEach(type=>
-    doc.addEventListener(type, event=>{
-      if(document.body.classList.contains('reading')) event.preventDefault();
-    }, {passive:false}));
+    doc.addEventListener(type, event=>event.preventDefault(), {passive:false}));
 }
 
 blockBrowserPinch(document);

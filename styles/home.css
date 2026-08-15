@@ -40,6 +40,13 @@
   .casual.rss-card .thumb.rss-thumb .cover{inset:2.5px; width:calc(100% - 5px); height:calc(100% - 5px);
     border-radius:12.5px;}
   .rss-card.busy{opacity:.55; pointer-events:none;}
+  /* 이름 바꾸기·삭제로 가는 꾹 누르기 손짓입니다(attachLongPress). iOS 가 그
+     자리를 먼저 사진 저장 콜아웃이나 드래그로 가져가면 우리 시트 대신 그것이
+     뜹니다. 카드 전체와 표지 사진 모두 막습니다 — 사진은 손짓을 직접 받을
+     이유가 없으므로 클릭도 카드로 넘깁니다(pointer-events:none). */
+  .casual, .bookcard{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;}
+  .casual .cover, .bookcard .cover{-webkit-touch-callout:none; -webkit-user-drag:none; pointer-events:none;}
   .casual{flex:0 0 158px; scroll-snap-align:start; cursor:pointer; position:relative;}
   .casual .thumb{aspect-ratio:9/16; border-radius:15px; overflow:hidden; position:relative;
     display:flex; flex-direction:column; padding:14px; transition:.18s;
