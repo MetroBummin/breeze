@@ -113,7 +113,9 @@ action 이 둘 이상 나가면 개발 모드가 아니어도 콘솔이 소리�
 ### PDF 확대
 
 PDF 원본의 확대는 `#pdfzoom-out`, `#pdfzoom-in`이 `#original-zoom`의 배율을 바꾸는
-방식입니다. 확대된 종이는 뷰어 안에서 가로·세로로 스크롤합니다.
+방식입니다. 확대된 종이는 뷰어 안에서 가로·세로로 스크롤합니다. 두 버튼은 따로 뜨지
+않고 Aa popover(`#aa-pdfzoom`) 안, 다른 설정들 아래 한 줄에 삽니다 — PDF 원본일
+때만 `updateOriginalZoomControls()`가 그 줄을 켭니다.
 
 핀치 확대는 iOS 홈 화면 웹앱에서 브라우저가 viewport와 스크롤 앵커를 동시에 바꾸며
 페이지가 튀는 문제가 있어 사용하지 않습니다. EPUB 원본과 글자 모드는 PDF 배율을 쓰지

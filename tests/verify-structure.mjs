@@ -537,6 +537,45 @@ assert.equal(bridgeContext.bridgeFindSequence(
   'A match on the far side of the book is still accepted as the same place');
 assert.match(modesSource,/bridgeFindSequence/,
   'Reader modes no longer align by the visible sentence');
+
+/* ---- 어느 문장인지는 누른 자리가 정합니다 ----
+   글자판은 오랫동안 누른 낱말의 **글자**를 문단에서 찾아 그 글자를 품은 첫
+   문장을 골랐습니다. 그래서 한 문단에 같은 낱말이 두 번 나오면 늘 앞의 것이
+   잡혔습니다 — 실기기에서 아래 문장의 두 번째 `was` 를 꾹 누르면 "He was
+   tired." 가 열렸습니다. `was` · `the` · `looked` 처럼 흔한 낱말에서는 거의
+   매번입니다. 스캔본과 EPUB 은 처음부터 자리를 세고 있었고, 이제 셋이 같습니다. */
+{
+  const paragraph = 'He was tired. It was getting dark.';
+  const sentences = bridgeContext.bridgeSentences(paragraph);
+  const pick = at => (sentences.find(part => at >= part.start && at < part.end) || sentences[0]).text;
+  const second = paragraph.indexOf('was', paragraph.indexOf('was') + 1);
+  assert.equal(pick(paragraph.indexOf('was')), 'He was tired.',
+    'The first occurrence no longer resolves to its own sentence');
+  assert.equal(pick(second), 'It was getting dark.',
+    'A repeated word still resolves to the first sentence that contains it, not the one under the finger');
+}
+/* 세 종이가 같은 방법을 씁니다. 글자로 찾는 길이 어느 한 곳에라도 돌아오면
+   그 종이만 조용히 다시 옆 문장을 엽니다. */
+{
+  const textPaper = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
+  const dictPaper = readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8');
+  assert.match(textPaper,
+    /function textSentencePartAt\(span\)\{[\s\S]{0,700}before\.setEndBefore\(span\);[\s\S]{0,400}parts\.find\(item=>at>=item\.start && at<item\.end\)/,
+    'The text paper picks a sentence by searching for the tapped word again, so a repeated word opens the wrong one');
+  assert.match(textPaper, /sentenceAt\(clientX, clientY\)\{[\s\S]{0,400}textSentencePartAt\(span\)/,
+    'The text long-press no longer asks where the finger was, so it can pick a neighbouring sentence');
+  assert.doesNotMatch(textPaper, /function textSentenceRangeIn/,
+    'The string-matching sentence lookup is back beside the offset one, so the two can disagree');
+  assert.match(epubOriginalSource, /parts\.find\(item=>at>=item\.start && at<item\.end\)/,
+    'EPUB picks its sentence by matching text again instead of by the tapped offset');
+  assert.match(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'),
+    /offset:base\+match\.index/,
+    'A PDF word box no longer carries its own offset, so repeated words share one sentence');
+  /* 낱말 카드에 적히는 예문도 같은 자리에서 어긋났습니다 — 같은 문을 지나야 합니다. */
+  assert.match(dictPaper, /function sentenceOf\(span\)\{[\s\S]{0,700}textSentencePartAt\(span\)/,
+    'The saved example sentence is still found by searching for the word, so it can quote the wrong sentence');
+}
+
 const geometryContext = {};
 new Script(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'))
   .runInNewContext(geometryContext);
@@ -725,7 +764,9 @@ assert.match(gestureSource, /doc\.addEventListener\('pointerdown', beginGesture,
   'An overlay above the paper can swallow the tap start, making a single click require a retry');
 /* 일부 모바일 PDF 캔버스는 pointerup 을 웹뷰에 넘기지 않고 click 만 남깁니다.
    그 click 이 앞선 손짓의 꼬리가 아니라면 그것 자체가 하나의 탭입니다. */
-assert.match(gestureSource, /if\(activeGesture\) return;[\s\S]{0,1600}\[click-only\]/,
+/* 창이 하나 늘 때마다 이 사이가 조금씩 길어집니다(해석 창 · 낱말 시트 · Aa).
+   재는 것은 길이가 아니라 "그 뒤에 아직 있는가" 이므로 자리만 넓힙니다. */
+assert.match(gestureSource, /if\(activeGesture\) return;[\s\S]{0,2200}\[click-only\]/,
   'Mobile canvas click fallback is missing');
 assert.match(pdfOriginalSource, /function pdfPageAtPoint\(clientX,clientY\)/,
   'PDF word lookup depends on the top-most overlay instead of the tapped page coordinates');
@@ -857,10 +898,26 @@ assert.ok(index.indexOf('id="p-colloc"') < index.indexOf('id="p-ai"'),
   'The phrase suggestion no longer sits directly under the word');
 assert.ok(index.indexOf('id="p-alts"') > index.indexOf('id="p-saved-senses"'),
   'Suggested meanings are no longer a separate row below the saved ones');
-assert.match(index, /id="readfabs"/,
-  'The reading controls are no longer stacked, so they move when one hides');
-assert.match(index,/id="pdfzoomfabs"[\s\S]*id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
-  'The original PDF has not got its +/- controls');
+/* 읽는 화면의 조작은 두 덩어리뿐입니다 — 왼쪽 위에 나가는 길, 오른쪽 위에
+   보기 설정과 글자↔원본. 아래쪽에는 떠 있는 단추가 남지 않습니다. */
+assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button id="readback"[\s\S]{0,900}<div id="readfabs">/,
+  'The reading controls are no longer one back control on the left and one capsule on the right');
+assert.ok(index.indexOf('id="readchrome"') > index.indexOf('id="readmain"')
+       && index.indexOf('id="readchrome"') < index.indexOf('id="reader-scroll"'),
+  'The floating reader controls left #readmain, so the word panel no longer pushes them aside');
+assert.match(index, /<div id="readfabs">\s*<button id="aafab"[\s\S]{0,120}<button id="modefab"/,
+  'Aa and the mode toggle are no longer two independent one-tap controls in one capsule');
+assert.doesNotMatch(readerCss.replace(/\/\*[\s\S]*?\*\//g,' '), /#readfabs\{[^}]*bottom:/,
+  'A floating control is back at the bottom of the reading screen');
+/* PDF 확대 −/+ 는 예전처럼 따로 떠 있지 않습니다 — 뜨는 조각을 늘리지 않으려고
+   Aa popover 안, 다른 설정들 아래 한 줄로 들어갔습니다. 단추가 부르는 함수는
+   그대로입니다(위의 384/386번 검사). */
+assert.match(index,/id="aa-pdfzoom"[\s\S]{0,200}id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
+  'The original PDF has not got its +/- controls inside the Aa popover');
+assert.ok(index.indexOf('id="aa-pdfzoom"') > index.indexOf('id="aa-dark"'),
+  'The PDF zoom row is no longer the last row below the existing Aa settings');
+assert.doesNotMatch(index, /id="pdfzoomfabs"/,
+  'The old floating PDF zoom control was not removed');
 /* 단추에는 글자가 없습니다. 두 그림이 서로 자리를 바꿔야 어느 쪽으로 가는지 보입니다. */
 for(const glyph of ['mf-original', 'mf-text']){
   assert.match(index, new RegExp(`class="${glyph}"`), `The mode button lost its ${glyph} glyph`);
@@ -910,33 +967,66 @@ assert.match(readerCss, /\.pdf-source-page>\.reader-mode-cue\{[\s\S]{0,220}backg
 assert.doesNotMatch(readerCss, /reader-mode-cue[^}]*linear-gradient/,
   'A spatial gradient returned to the paragraph cue');
 
-/* 상단바가 사라져도 --topbar-h 는 그대로여야 합니다 — 0 으로 우기면 앵커
-   계산이 글 첫 줄을 로고 뒤에 숨깁니다(예전 집중 모드의 버그). */
-assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*visibility:hidden/,
-  'Reading downward no longer clears the top bar');
-/* 이제는 밉니다. 밀지 못했던 것은 `position:sticky` 인 칸이 아이폰에서 스크롤과
-   같은 층에 있어서, `transform` 을 얹으면 옛 그림 한 장이 노치 옆에 남았기
-   때문입니다. 상단바가 흐름 밖(`fixed`)으로 나오면서 그 층이 갈라졌습니다. */
-assert.match(readerCss, /body\.reading #topbar\{position:fixed/,
-  'The top bar is in the flow again, so it reserves a blank strip beside the notch');
-assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*transform:translateY\(-100%\)/,
-  'The top bar only fades instead of sliding out of the way');
-assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*backdrop-filter:none/,
-  'The blur layer is left running while the bar is hidden');
-assert.doesNotMatch(readerCss, /body\.chrome-hidden[^\n]*--topbar-h/,
-  'The top bar forces its height to zero again while hidden');
+/* ---- 읽는 화면에서 상단바는 감춰져 있습니다. 지워진 것이 아닙니다 ----
+   넓은 화면에서는 예전 상단바를 고정형으로 다시 세울 수 있습니다. 그래서
+   DOM · navigation · 걷힘 규칙 · 문턱은 전부 제자리에 두고, **읽는 화면에
+   연결되던 한 줄만** 끊었습니다: 읽는 칸의 `scroll` 이 더 이상
+   `followScrollDirection()` 을 부르지 않습니다.
+
+   그 한 줄이 끊겼는지를 여기서 지킵니다. 다시 이어지면 새 조작 조각과 진행줄이
+   스크롤을 따라 움직이기 시작합니다 — "자리도 진하기도 늘 같다"가 깨집니다. */
+assert.match(readerCss, /body\.reading #topbar\{display:none/,
+  'The reading screen shows the old top bar again');
 const readerScroll = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
-assert.match(readerScroll, /CHROME_STEP/,
-  'Chrome follows every pixel of scroll, so the top bar flickers');
-/* 돌아오는 문턱이 걷히는 문턱보다 높아야 아이폰 관성의 되튐이 상단바를
-   깜빡이지 않습니다. */
-assert.match(readerScroll, /CHROME_BACK = (\d+)/,
-  'The top bar comes back on the same threshold it hides on, so momentum flashes it');
-assert.ok(Number(/CHROME_BACK = (\d+)/.exec(readerScroll)[1])
-        > Number(/CHROME_STEP = (\d+)/.exec(readerScroll)[1]),
-  'The come-back threshold is not larger than the hide threshold');
-assert.match(readerScroll, /Date\.now\(\) < readerScrollPauseUntil\)\{ chromeRun = 0/,
-  'A programmatic mode-switch scroll can hide the top bar as if the reader scrolled');
+/* 주석은 "무엇을 왜 끊었는지" 설명하느라 끊은 이름을 그대로 적습니다. 실제로
+   도는 코드만 봅니다 (아래의 `runningCode` 와 같은 일, 여기서 먼저 필요합니다). */
+const readerRunning = readerScroll.replace(/\/\*[\s\S]*?\*\//g,' ').replace(/(^|[^:])\/\/.*$/gm,'$1');
+/* 되살릴 때 그대로 쓸 부품들 — 지우지 않았는지 확인합니다. */
+for(const name of ['followScrollDirection', 'setReaderChrome', 'showReaderChrome',
+                   'pinReaderChrome', 'whileRestoringChrome', 'CHROME_STEP', 'CHROME_BACK']){
+  assert.match(readerRunning, new RegExp(name),
+    `The reusable top-bar machinery was deleted instead of disconnected (${name})`);
+}
+assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*transform:translateY\(-100%\)/,
+  'The top bar lost its slide-out rule, so reviving it on desktop needs it written again');
+/* 끊은 연결은 여기 하나입니다 — 읽는 칸의 `scroll` 이 부르는 목록. */
+const readerScrollListener = /\(readerScroller\(\) \|\| window\)\.addEventListener\('scroll',[\s\S]*?\}, \{passive:true\}\);/
+  .exec(readerRunning);
+assert.ok(readerScrollListener, 'The reading pane no longer listens for scroll at all');
+assert.doesNotMatch(readerScrollListener[0], /followScrollDirection/,
+  'Scrolling drives the chrome again, so the floating controls move and fade with the page');
+/* 새 조각과 진행줄에는 그 상태가 걸리지 않습니다. 걸리는 순간 스크롤이 다시
+   조작 조각의 임자가 됩니다. */
+const readerCssRules = readerCss.replace(/\/\*[\s\S]*?\*\//g, ' ');
+for(const selector of ['#readchrome', '#readback', '#readfabs', '#rbar']){
+  assert.doesNotMatch(readerCssRules, new RegExp(`body\\.chrome-hidden[^{]*${selector}`),
+    `The scroll-driven chrome state reaches ${selector} again`);
+}
+/* 조각은 자리도 진하기도 늘 같습니다. 스크롤에 따라 흐려지거나 움직이는 규칙이
+   하나라도 돌아오면 "상태 없는 UI" 가 아니게 됩니다. */
+assert.doesNotMatch(readerCssRules, /#readchrome[^}]*transition/,
+  'The floating reader controls animate again, so they have a state to be in');
+/* 조각은 안전 영역 **밑에서** 시작합니다 — 노치·시계 자리를 침범하지 않습니다. */
+assert.match(readerCss, /#readchrome\{[\s\S]{0,220}padding:calc\(env\(safe-area-inset-top\) \+ \d+px\)/,
+  'The floating reader controls no longer clear the iOS safe area');
+/* 조각 사이의 빈 자리는 본문의 것입니다. 여기가 손짓을 먹으면 그 폭만큼 글을
+   못 누릅니다. */
+assert.match(readerCss, /#readchrome\{[\s\S]{0,320}pointer-events:none;\}/,
+  'The gap between the floating controls swallows touches meant for the page');
+assert.match(readerCss, /#readchrome > \*\{pointer-events:auto;\}/,
+  'The floating controls themselves stopped taking touches');
+/* 왼쪽 원과 오른쪽 조각은 한 줄에 나란히 섭니다 — 윗변은 `#readchrome` 의 여백
+   하나가 정하고, 높이는 둘이 같은 숫자로 적혀 있어야 합니다. 한쪽만 1px 달라도
+   줄이 어긋나 보입니다. */
+const backHeight = /#readback\{[^}]*height:(\d+)px/.exec(readerCssRules);
+const capsuleHeight = /#readfabs\{[^}]*height:(\d+)px/.exec(readerCssRules);
+assert.ok(backHeight && capsuleHeight, 'One of the two floating controls no longer states its height');
+assert.equal(backHeight[1], capsuleHeight[1],
+  'The back circle and the Aa/mode capsule are different heights, so the row is uneven');
+for(const selector of ['#readback', '#readfabs']){
+  assert.doesNotMatch(readerCssRules, new RegExp(`${selector}\\{[^}]*(top|margin-top):`),
+    `${selector} sets its own vertical offset, so the two controls can drift apart`);
+}
 assert.doesNotMatch(readerScroll, /classList\.add\('scrolling'\)/,
   'The old any-scroll fade is back alongside the direction signal');
 
@@ -945,8 +1035,8 @@ assert.match(preferencesSource, /const READ_MARGINS = \{/,
   'The margin control has no steps to choose from');
 assert.match(preferencesSource, /keepPlace\(\(\)=>\{[\s\S]*?save\('breeze\.margin'/,
   'Changing the margin no longer keeps the sentence being read in place');
-assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(var\(--topbar-h,56px\) \+ 36px\) var\(--readpad,26px\)/,
-  'The reading column stopped following the margin setting, or lost the room the fixed top bar needs');
+assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(env\(safe-area-inset-top\) \+ \d+px\) var\(--readpad,26px\)/,
+  'The reading column stopped following the margin setting, or lost the room the floating controls need');
 assert.match(index, /class="aa-row stack aa-text-only"[\s\S]*?id="aa-margin"/,
   'The 좌우 여백 row is missing from the Aa popover');
 
@@ -1266,6 +1356,34 @@ assert.match(readerCss, /\.epub-source-chapter\{[^}]*position:relative/,
   'The EPUB chapter is not a positioning parent, so its skin covers the wrong box');
 assert.match(readerCss, /\.epub-touch-skin\{[^}]*position:absolute; inset:0;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
   'The EPUB skin is the biggest empty box on screen and can still be selected whole by iOS');
+/* ---- 주석을 잘못 닫으면 그 아래 규칙이 통째로 사라집니다 ----
+   실제로 이 커밋에서 한 번 그랬습니다. 설명을 덧붙이면서 원래 있던 닫는 표를
+   문단 가운데에 남겨 두었더니, 브라우저가 그 뒤의 `.epub-touch-skin` 을 규칙으로
+   세지 않았습니다 — 파일에는 글자가 멀쩡히 있는데 화면에는 없는 상태입니다.
+   글자만 보는 아래의 검사들은 이것을 못 봅니다(주석 안에도 같은 글자가 그대로
+   있으니까요). 그래서 "브라우저가 이 파일을 끝까지 읽는가"를 따로 봅니다. */
+for(const file of readdirSync(resolve(root, 'styles')).filter(name=>name.endsWith('.css'))){
+  const css = readFileSync(resolve(root, 'styles', file), 'utf8');
+  let at = 0, open = false;
+  while(at < css.length){
+    const starts = css.indexOf('/*', at), ends = css.indexOf('*/', at);
+    if(starts < 0 && ends < 0) break;
+    if(starts >= 0 && (ends < 0 || starts < ends)){ open = true; at = starts + 2; continue; }
+    assert.ok(open, `styles/${file} closes a comment that was never opened, so every rule after it is dropped`);
+    open = false; at = ends + 2;
+  }
+  assert.ok(!open, `styles/${file} leaves a comment open, so the rest of the file never reaches the browser`);
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.equal((bare.match(/\{/g)||[]).length, (bare.match(/\}/g)||[]).length,
+    `styles/${file} has unbalanced braces, so the browser drops rules from there on`);
+}
+/* 살갗이 손가락의 임자이면 커서의 임자이기도 합니다. 책 안의 글에 붙은
+   `cursor:pointer` 는 마우스가 살갗에 막혀 닿지 않으므로, 데스크톱에서
+   EPUB 본문 위에만 화살표가 남았습니다 — 누를 수 있다는 말을 못 하는 자리입니다. */
+assert.match(readerCss, /\.epub-touch-skin\{[^}]*cursor:pointer/,
+  'The EPUB skin eats the pointer cursor its own chapter sets, so the text looks unclickable on desktop');
+assert.match(epubOriginalSource, /p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th\{cursor:pointer\}/,
+  'EPUB chapters no longer mark their text as clickable');
 assert.doesNotMatch(readerCss, /\.epub-chapter-frame\{[^}]*user-select/,
   'Selection was turned off on the EPUB chapter itself, which takes its caret hit test down with it');
 assert.match(gestureSource, /addEventListener\('contextmenu'/,
@@ -1302,7 +1420,7 @@ assert.doesNotMatch(index, /id="ps-close"[^>]*onclick/,
   'The X button closes the sentence window outside the gesture controller again');
 assert.ok(!/closeSentence/.test(index),
   'index.html reaches into the sentence close path directly instead of letting the gesture owner do it');
-assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',\s*\n\s*OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_UI = 'UI'/,
+assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',\s*\n\s*OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_AA = 'AA', OWNER_UI = 'UI'/,
   'A gesture no longer has an owner, so a modal and the reader can share one physical gesture');
 /* 임자는 pointerdown 에서 정해집니다 — 판정보다 먼저, 그리고 딱 한 번. */
 assert.match(gestureSource,
@@ -1310,11 +1428,11 @@ assert.match(gestureSource,
   'The owner is not decided at pointerdown, so a gesture can change hands halfway through');
 /* ---- 임자는 손짓이 끝날 때까지 바뀌지 않습니다 ----
    창이 닫혀 눌렀던 자리가 사라지고 그 밑에서 종이가 드러나도 마찬가지입니다.
-   임자를 적는 곳은 `beginGesture` 의 네 갈래뿐이어야 합니다
-   (해석 창 · 낱말 시트 · 종이 · 그 밖). 다섯 번째 대입이 생기면 여기서 걸립니다. */
+   임자를 적는 곳은 `beginGesture` 의 다섯 갈래뿐이어야 합니다
+   (해석 창 · 낱말 시트 · Aa · 종이 · 그 밖). 여섯 번째 대입이 생기면 여기서 걸립니다. */
 {
   const owns = runningCode(gestureSource).match(/\.owner\s*=(?!=)/g) || [];
-  assert.strictEqual(owns.length, 4,
+  assert.strictEqual(owns.length, 5,
     `A gesture's owner is written in ${owns.length} places instead of once at pointerdown, `
     + 'so a gesture can change hands halfway through');
   assert.ok(!/activeGesture\.owner\s*=/.test(gestureSource),
@@ -1383,8 +1501,38 @@ assert.ok((runningCode(gestureSource).match(/closePanel\(\);/g) || []).length ==
 assert.match(gestureSource,
   /function endWordSheetGesture[\s\S]{0,700}finishGesture\(gesture, GESTURE_DISMISS_WORD, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_WORD'\);[\s\S]{0,200}closePanel\(\)/,
   'DISMISS_WORD no longer ends in exactly one closePanel() call');
-assert.match(gestureSource, /\|\| lastGesture\.decision === GESTURE_DISMISS_WORD\)\{/,
+assert.match(gestureSource, /\|\| lastGesture\.decision === GESTURE_DISMISS_WORD\s*\n/,
   'The click trailing a sheet dismiss is let through to the reader again');
+/* ================= Aa 도 같은 규칙입니다 =================
+
+   보기 설정은 화면을 덮지 않는 작은 창이라 바깥에 scrim 이 없습니다 — 바깥이
+   곧 읽는 종이입니다. 그래서 닫는 일만 `scripts/ui/preferences.js` 의 document
+   click 하나가 판정 계층 **바깥에서** 맡고 있었고, 뒤에 글자가 있는 자리를 눌러
+   Aa 를 닫으면 그 한 터치가 종이에서 한 번 더 판정되어 낱말 창·문장 해석이 함께
+   떴습니다. 해석 창·낱말 시트에서 걷어 낸 것과 같은 예외입니다. */
+assert.ok(!/document\.addEventListener\('click'/.test(runningCode(preferencesSource)),
+  'The Aa popover judges its own outside tap again, outside the gesture controller');
+assert.ok(!/aa-pop/.test(runningCode(interactionsSource)),
+  'A second place decides when the Aa popover closes');
+assert.match(preferencesSource, /function closeAa\(\)\{[\s\S]{0,200}classList\.remove\('on'\)/,
+  'The Aa popover has no single place that closes it, so the gesture owner cannot end there');
+assert.match(gestureSource,
+  /function beginGesture[\s\S]{0,2600}if\(aaPopOpen\(\) && aaOutside\(target\)\)\{\s*\n\s*gesture\.owner = OWNER_AA;[\s\S]{0,200}activeGesture = gesture;\s*\n\s*return;/,
+  'The Aa owner is not decided at pointerdown, so that gesture can change hands halfway through');
+/* 창 안과 그 창을 연 단추는 제 `onclick` 을 받아야 합니다 — 넓은 화면의 낱말
+   칸과 같은 규칙입니다. 여기까지 가져가면 A+ 도 다크 모드도 안 눌립니다. */
+assert.match(gestureSource,
+  /function aaOutside\(target\)\{[\s\S]{0,240}closest\('#aa-pop'\) \|\| target\.closest\('#aafab'\)/,
+  'The Aa popover swallows the taps on its own buttons, or stops answering its own FAB');
+assert.match(gestureSource, /if\(gesture\.owner === OWNER_AA\)\{ endAaGesture\(gesture\); return; \}/,
+  'An Aa-owned gesture falls through to the reader WORD path again — the exact bug this owner exists for');
+assert.match(gestureSource, /countDispatch\(gesture, 'DISMISS_AA'\)/,
+  'A DISMISS_AA dispatch is not counted against the one-gesture-one-action invariant');
+assert.ok((runningCode(gestureSource).match(/closeAa\(\);/g) || []).length === 1,
+  'The gesture controller closes the Aa popover from more than one place');
+assert.match(gestureSource, /\|\| lastGesture\.decision === GESTURE_DISMISS_AA\)\{/,
+  'The click that closed Aa is let through to the reader again, so it opens a word on the way out');
+
 /* ---- 닫힌 것은 화면에서 빠집니다 ----
    닫힌 시트의 바깥이 `display:block` 인 채 `opacity:0` 으로 남으면, 읽는 내내
    화면 전체 크기의 고정 판이 본문 위에 얹혀 있게 됩니다. 해석 창은 `[hidden]`

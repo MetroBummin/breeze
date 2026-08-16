@@ -62,6 +62,13 @@ const posOf = id => positions[id] || {y:0, p:0, t:0, mode:'text', original:null}
    바뀌면(좌우 여백, A+/A−, 화면 회전) 같은 px이 다른 문장을 가리키게 됩니다.
    그래서 위치를 "몇 번째 문단이 화면 위에서 몇 px 떨어져 있었는지"로 기억합니다. */
 function topInset(){
+  /* 읽는 화면에는 상단바가 없습니다. 글 위를 덮고 있는 것은 떠 있는 조작 조각
+     뿐이라, 되돌린 문단이 그 밑에 깔리지 않으려면 그 조각의 아랫변을 봐야
+     합니다(styles/reader.css 의 `#readchrome`). 그 밖의 화면에서는 예전대로
+     상단바 높이입니다. */
+  const chrome = document.body.classList.contains('reading')
+    ? document.getElementById('readchrome') : null;
+  if(chrome) return chrome.getBoundingClientRect().bottom + 8;
   const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h'));
   return (isNaN(v) ? 0 : v) + 8;
 }

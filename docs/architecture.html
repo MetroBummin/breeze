@@ -141,7 +141,7 @@ server/
 <h3 id="프레임은-같은-자를-두-번-대지-않습니다">프레임은 같은 자를 두 번 대지 않습니다</h3>
 <p><code>?frames=1</code> 을 켜면 프레임마다 무슨 일이 몇 번 일어났는지 찍힙니다 (<code>scripts/reader/frame-trace.js</code>). <code>breezeFrameSummary()</code> 로 요약을 봅니다. 이 계측으로 스크롤 한 프레임에서 <code>captureAnchor()</code> 가 두 번 돌던 것을 찾아 하나로 줄였습니다 — 진행줄과 읽던 자리 기억이 같은 답을 나눠 씁니다.</p>
 <h3 id="pdf-확대">PDF 확대</h3>
-<p>PDF 원본의 확대는 <code>#pdfzoom-out</code>, <code>#pdfzoom-in</code>이 <code>#original-zoom</code>의 배율을 바꾸는 방식입니다. 확대된 종이는 뷰어 안에서 가로·세로로 스크롤합니다.</p>
+<p>PDF 원본의 확대는 <code>#pdfzoom-out</code>, <code>#pdfzoom-in</code>이 <code>#original-zoom</code>의 배율을 바꾸는 방식입니다. 확대된 종이는 뷰어 안에서 가로·세로로 스크롤합니다. 두 버튼은 따로 뜨지 않고 Aa popover(<code>#aa-pdfzoom</code>) 안, 다른 설정들 아래 한 줄에 삽니다 — PDF 원본일 때만 <code>updateOriginalZoomControls()</code>가 그 줄을 켭니다.</p>
 <p>핀치 확대는 iOS 홈 화면 웹앱에서 브라우저가 viewport와 스크롤 앵커를 동시에 바꾸며 페이지가 튀는 문제가 있어 사용하지 않습니다. EPUB 원본과 글자 모드는 PDF 배율을 쓰지 않고 <code>Aa</code> 설정을 사용합니다.</p>
 <p>상단바는 아래로 읽으면 사라지지만, 파란 진행 줄은 화면 위에 남습니다. <code>Aa</code>와 원본/글자 전환 버튼은 오른쪽 아래에 고정되어 있으며 읽는 동안만 옅어집니다.</p>
 <h3 id="긴-pdf에서-무엇이-비싼가">긴 PDF에서 무엇이 비싼가</h3>

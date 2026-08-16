@@ -161,7 +161,7 @@ function changeOriginalZoom(direction){
 }
 
 function updateOriginalZoomControls(){
-  const controls=document.getElementById('pdfzoomfabs');
+  const controls=document.getElementById('aa-pdfzoom');
   const out=document.getElementById('pdfzoom-out'), inButton=document.getElementById('pdfzoom-in');
   if(!controls || !out || !inButton) return;
   const active=originalZoomActive();
@@ -171,6 +171,8 @@ function updateOriginalZoomControls(){
   controls.hidden=!active || panelOpen;
   out.disabled=!active || originalZoomLevel<=ORIGINAL_ZOOM_MIN;
   inButton.disabled=!active || originalZoomLevel>=ORIGINAL_ZOOM_MAX;
+  const pct=document.getElementById('aa-pdfzoom-pct');
+  if(pct) pct.textContent=active ? Math.round(originalZoomLevel*100)+'%' : '';
 }
 
 /* 배율을 1 로 되돌립니다. 예전에는 `<meta name=viewport>` 에 `maximum-scale=1`

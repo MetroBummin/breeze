@@ -78,6 +78,12 @@ function lemmaCands(raw){
 
 function sentenceOf(span){
   if(span && span.dataset && span.dataset.example) return span.dataset.example;
+  /* 글자판에서는 누른 **자리**가 문장을 정합니다. 아래의 글자로 찾는 길은 한
+     문단에 같은 낱말이 두 번 나오면 늘 앞의 것을 집었습니다 — 꾹 눌러 문장을
+     물어볼 때 옆 문장이 뜨던 까닭이 그것이었고, 낱말 카드에 적히는 예문도
+     같은 자리에서 어긋났습니다(scripts/reader/reader.js 의 `textSentencePartAt`). */
+  const spot = typeof textSentencePartAt === 'function' ? textSentencePartAt(span) : null;
+  if(spot && spot.sentence) return spot.sentence;
   const paragraph = span && span.closest ? span.closest('[data-pi]') : null;
   const paraText = paragraph ? (curBook.paras[+paragraph.dataset.pi]||'') : '';
   const sents = paraText.match(/[^.!?…]+[.!?…]*/g) || [paraText];
@@ -119,11 +125,81 @@ function addWord(k, span){
   /* 이제 이 기기에 잃을 것이 생겼습니다 — 저장소를 영구로 표시해 달라고 부탁합니다.
      한 번만 물어보고, 이미 물어봤으면 조용히 지나갑니다. */
   requestDurableLocalStorage();
+  const buried = dead[k] || 0;
   delete dead[k]; save(LS_DEAD, dead);
-  saveWords(); queueSync();
+  /* 여기서는 이 기기에만 적어 둡니다. 아직 뜻이 하나도 없는 낱말이라 다른 기기로
+     보낼 것이 없고, 그대로 닫히면 없던 일이 되기 때문입니다 — 올려 보낸 뒤에
+     지우면 지웠다는 부고까지 한 번 더 오가야 합니다. 뜻이 붙는 그 자리에서
+     `applyLook`(그리고 `createMeaning`)이 올려 보냅니다. */
+  saveWords();
   paintWord(k);
   selectWord(k, span);
+  markPendingWord(k, buried);
   fetchDict(k);
+}
+/* ---- 뜻이 확정된 낱말 ----
+   낱말을 확정시키는 길은 둘뿐입니다.
+
+     ① AI 가 지금 문장의 대표 뜻을 답했다      `applyLook`
+     ② 사람이 뜻을 채택했다                    `createMeaning`
+                                               (추천 뜻 클릭 · ＋ 직접 입력 ·
+                                                "이 문장에서는?" 의 답)
+
+   둘 다 `ai.ko` 를 남깁니다. 그래서 확정 여부를 묻는 자리는 여기 하나면 됩니다.
+
+   **무료 사전이 채운 `ko` 는 여기서 세지 않습니다.** `fetchKo` 는 번역기의 첫
+   줄을 빈 뜻자리에 넣는데, 그것은 "이 문장에서 어떤 뜻인가"가 아니라 후보
+   목록의 맨 앞 하나입니다 — `yield` 를 누르면 양보하다·산출하다·굴복하다·
+   생산량이 함께 옵니다. 후보가 여럿이라는 사실만으로는 사람이 무엇을 원했는지
+   알 수 없으므로, 그것으로 낱말을 확정하지 않습니다. 무료 사전은 뜻이 아니라
+   조회 정보입니다. */
+function hasResolvedMeaning(word){
+  return !!(word && word.ai && String(word.ai.ko||'').trim());
+}
+/* ---- 이번 조회에서 처음 만들어진 낱말 ----
+   낱말을 누르는 그 순간 단어장에 자리가 하나 생기고, 뜻은 그 뒤에 옵니다. 그래서
+   AI 를 기다리는 동안 창을 닫으면 뜻이 하나도 없는 낱말이 남았습니다. 한도가
+   떨어졌을 때도, 요청이 실패했을 때도 같은 껍데기가 남습니다 — 실사용에서 제일
+   자주 만나는 쓰레기입니다.
+
+   규칙은 하나입니다: **새 조회는 창이 살아 있는 동안에만 낱말이 될 수 있습니다.**
+   확정되지 않은 채로 창이 끝나면 그 조회는 그 자리에서 없던 일입니다.
+
+   그래서 이 표는 **창이 열려 있는 동안만** 삽니다. 닫힌 뒤에도 남아 답을 기다리는
+   자리는 없습니다 — 늦게 온 답이 낱말을 되살리는 길을 아예 만들지 않기 위해서,
+   그리고 동기화가 신경 쓸 것이 애초에 안 생기게 하기 위해서입니다. 지우는 것은
+   이 조회가 만든 것뿐이라, 전에 저장해 둔 낱말은 여기 적히지도 않습니다
+   (`addWord` 만 적습니다). */
+let pendingWord = null;
+function markPendingWord(k, buried){ pendingWord = { key:k, deadAt:buried || 0 }; }
+/* 대표 카드가 확정됐거나, 이 낱말에 딸린 뜻 카드가 하나라도 확정됐으면 확정입니다
+   — ＋ 로 적은 두 번째 뜻부터는 딸린 카드가 되기 때문입니다. */
+function pendingWordResolved(key){
+  const w = words[key];
+  if(!w) return true;
+  if(hasResolvedMeaning(w)) return true;
+  return Object.values(words).some(item=>item && item.root===key && hasResolvedMeaning(item));
+}
+/* 확정되는 순간 이 낱말은 더 이상 "이번 조회가 만든 껍데기"가 아닙니다. 표를
+   그때 떼지 않으면, 뜻을 받은 뒤에 사람이 그 뜻을 × 로 지웠을 때 낱말까지 함께
+   사라집니다 — 그것은 이 규칙이 볼 일이 아니라 단어장을 손보는 일이고,
+   `deleteMeaning` 은 빈 뜻자리를 남기기로 되어 있습니다.
+   화면을 다시 그리는 자리에서 봅니다. 사람이 뜻을 만질 수 있으려면 그 뜻이 먼저
+   화면에 그려져야 하므로, 여기를 지나지 않고 지워지는 뜻은 없습니다. */
+function settlePendingWord(){
+  if(pendingWord && pendingWordResolved(pendingWord.key)) pendingWord = null;
+}
+function discardPendingWord(){
+  const held = pendingWord;
+  pendingWord = null;
+  if(!held || pendingWordResolved(held.key)) return;
+  delete words[held.key];
+  /* 지웠던 낱말을 다시 눌렀다가 그냥 닫은 것이라면, `addWord` 가 떼어 낸 부고를
+     그 시각 그대로 도로 붙입니다. 새 부고를 쓰는 것이 아니라 `addWord` 가 한 일을
+     되돌리는 것이라, 이 조회 전후의 저장소가 한 글자도 다르지 않게 됩니다. */
+  if(held.deadAt){ dead[held.key]=held.deadAt; save(LS_DEAD, dead); }
+  saveWords();
+  paintWord(held.key);
 }
 /* 같은 낱말을 눌러 사전 창을 막 닫았다 다시 여는 것은 "더 모른다"가 아니라
    화면을 다시 확인하는 일입니다. 별은 읽는 동안 쌓이는 소음이 아니라, 시간을
@@ -346,10 +422,9 @@ function selectWord(k, span){
   document.getElementById('sheetbg').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
-  /* 폰의 바텀시트는 화면을 덮으므로, 그 동안 상단바가 걷혔다 돌아오면 시트가
-     함께 흔들립니다 — 그래서 붙잡습니다. 넓은 화면의 패널은 본문 옆에 나란히
-     서 있을 뿐이라 상단바는 평소처럼 스크롤을 따라가게 둡니다. 대신 패널의
-     자리와 높이는 상단바가 있을 때로 고정입니다(styles/dictionary.css). */
+  /* 폰의 바텀시트가 미끄러져 들어오는 동안의 몇 픽셀이 "위로 올렸다"로 읽히지
+     않게 붙잡습니다. 읽는 화면에는 지금 걷힐 상단바가 없어 아무것도 안 움직이지만,
+     상단바가 다시 서는 날을 위해 배선은 그대로 둡니다 (scripts/reader/reader.js). */
   pinReaderChrome(panelIsSheet());
 }
 /* ---- 낱말 창을 치우는 일도 여기 하나뿐입니다 ----
@@ -397,6 +472,7 @@ function setStatus(k, st){
   renderPanel();
 }
 function renderPanel(){
+  settlePendingWord();
   const base = words[selKey]; if(!base) return;
   const k = selKey;
   const context = currentContext(k);
@@ -932,6 +1008,12 @@ function beginSheetLife(){
 function endSheetLife(){
   sheetLife++;
   if(sheetCtrl){ try{ sheetCtrl.abort(); }catch(e){} sheetCtrl = null; }
+  /* 이 열림이 끝나는 자리는 여기 하나입니다 — 창을 닫았든, 다른 낱말을 열었든.
+     그래서 "확정 못 한 새 낱말을 버린다"도 여기 하나면 됩니다. 닫기에만 달면
+     빈 낱말을 띄워 둔 채 옆 낱말을 눌렀을 때 껍데기가 그대로 남습니다.
+     끊는 것과 같은 줄에 두는 것이 요점입니다 — 표는 이 줄에서 사라지므로, 뒤에
+     오는 답이 다시 붙잡을 표가 남지 않습니다. */
+  discardPendingWord();
 }
 function sheetAlive(life){ return life === sheetLife; }
 function sheetSignal(){ return sheetCtrl ? sheetCtrl.signal : null; }

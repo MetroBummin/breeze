@@ -32,11 +32,11 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=00e0aeef">
+  <link rel="stylesheet" href="styles/tokens.css?v=373312cc">
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=d9d59119">
-  <link rel="stylesheet" href="styles/dictionary.css?v=2a747ac1">
+  <link rel="stylesheet" href="styles/reader.css?v=3a7c668c">
+  <link rel="stylesheet" href="styles/dictionary.css?v=7678652f">
   <link rel="stylesheet" href="styles/components.css?v=6db1e069">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
@@ -52,16 +52,16 @@
   <script defer src="scripts/core/storage.js?v=40c5cf33"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
-  <script defer src="scripts/core/state.js?v=cc7898d8"></script>
+  <script defer src="scripts/core/state.js?v=c9cb62f1"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
-  <script defer src="scripts/reader/reader-scroll.js?v=7b4e9047"></script>
+  <script defer src="scripts/reader/reader-scroll.js?v=c3039932"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
-  <script defer src="scripts/reader/gesture.js?v=5bbbd1ed"></script>
+  <script defer src="scripts/reader/gesture.js?v=c958ef71"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=f63be3ea"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
@@ -70,7 +70,7 @@
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=b49e938f"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=e3d50b89"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=11b6e588"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=e7f2eaca"></script>
@@ -78,8 +78,8 @@
   <script defer src="scripts/reader/epub-original.js?v=ec47681f"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=b212c6d4"></script>
-  <script defer src="scripts/reader/reader.js?v=3742fa4d"></script>
-  <script defer src="scripts/ui/preferences.js?v=79bac433"></script>
+  <script defer src="scripts/reader/reader.js?v=0f4b3e78"></script>
+  <script defer src="scripts/ui/preferences.js?v=e1e7fbb1"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=122c6eec"></script>
   <script defer src="scripts/ui/interactions.js?v=aa82019f"></script>
@@ -185,13 +185,38 @@
     <div id="rbar">
       <div id="ptrack"><div id="pfill"></div></div>
     </div>
+    <!-- ================= 읽는 동안의 조작 =================
+         읽는 화면에는 상단바가 없습니다. Breeze·Home·Words·Settings 는 모두
+         서재에서 만나는 것들이라, 책을 펴 놓고 늘 보고 있을 이유가 없었습니다.
+         남는 것은 여기서만 할 수 있는 일 셋뿐입니다 — 나가기 · 보기 설정 ·
+         글자↔원본. 본문은 이 조각들 밑으로 그대로 흐릅니다(자리를 안 뺏습니다).
+
+         이 칸은 `#readmain` 안에 있습니다. 넓은 화면에서 낱말 칸이 열리면
+         `#readmain` 이 그만큼 좁아지므로, 조각들도 글이 있는 쪽에 그대로
+         머뭅니다 — 화면에 못 박았다면 낱말 칸 위에 겹쳐 앉았을 자리입니다. -->
+    <div id="readchrome">
+      <button id="readback" type="button" title="서재로" aria-label="서재로" onclick="show('home')">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
+      </button>
+      <!-- 한 조각 안에 둘이지만 하는 일은 서로 남입니다. 한 번 누르면 한 가지가
+           일어나고, 둘을 하나로 합치지 않습니다. -->
+      <div id="readfabs">
+        <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
+        <button id="modefab" title="원본으로 보기" aria-label="원본으로 보기" onclick="toggleReaderMode()" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round">
+            <!-- 지금 모드의 반대쪽을 그립니다: 글자 화면이면 종이, 원본이면 글줄 -->
+            <g class="mf-original"><path d="M6.6 3.7h6.9L17.4 7.7v12.6H6.6z"/><path d="M13.5 3.7v4h3.9"/>
+              <path d="M9.3 12.1h5.4M9.3 15.1h5.4M9.3 18h3.4"/></g>
+            <g class="mf-text"><path d="M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6"/></g>
+          </svg>
+        </button>
+      </div>
+    </div>
     <!-- 읽는 동안 스크롤하는 것은 문서가 아니라 이 칸 하나입니다.
          까닭은 scripts/reader/reader-scroll.js 맨 위에 적어 두었습니다. -->
     <div id="reader-scroll">
-      <div id="pdfzoomfabs" aria-label="PDF 확대·축소" hidden>
-        <button id="pdfzoom-out" type="button" title="PDF 축소" aria-label="PDF 축소" onclick="changeOriginalZoom(-1)">−</button>
-        <button id="pdfzoom-in" type="button" title="PDF 확대" aria-label="PDF 확대" onclick="changeOriginalZoom(1)">+</button>
-      </div>
       <div id="readwrap">
         <div id="rtitle"></div>
         <a id="rsource" target="_blank" rel="noopener noreferrer" hidden></a>
@@ -471,19 +496,17 @@
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
-</div>
-<!-- 읽는 동안 화면에 남는 것은 이 둘뿐입니다. 아래가 더 자주 누르는 쪽입니다. -->
-<div id="readfabs">
-  <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
-  <button id="modefab" title="원본으로 보기" aria-label="원본으로 보기" onclick="toggleReaderMode()" hidden>
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
-         stroke-linecap="round" stroke-linejoin="round">
-      <!-- 지금 모드의 반대쪽을 그립니다: 글자 화면이면 종이, 원본이면 글줄 -->
-      <g class="mf-original"><path d="M6.6 3.7h6.9L17.4 7.7v12.6H6.6z"/><path d="M13.5 3.7v4h3.9"/>
-        <path d="M9.3 12.1h5.4M9.3 15.1h5.4M9.3 18h3.4"/></g>
-      <g class="mf-text"><path d="M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6"/></g>
-    </svg>
-  </button>
+  <!-- PDF 원본에서만 켭니다 — updateOriginalZoomControls() 가 예전에 떠 있던
+       #pdfzoomfabs 대신 이 자리를 켜고 끕니다. 버튼이 부르는 changeOriginalZoom
+       은 그대로입니다 — 옮긴 것은 자리뿐입니다. -->
+  <div class="aa-row" id="aa-pdfzoom" hidden>
+    <span class="aa-label">PDF 확대</span>
+    <div class="aa-size">
+      <button id="pdfzoom-out" type="button" title="PDF 축소" aria-label="PDF 축소" onclick="changeOriginalZoom(-1)">−</button>
+      <span id="aa-pdfzoom-pct"></span>
+      <button id="pdfzoom-in" type="button" title="PDF 확대" aria-label="PDF 확대" onclick="changeOriginalZoom(1)">+</button>
+    </div>
+  </div>
 </div>
 <div id="minitoast"></div>
 <div id="toast"></div>

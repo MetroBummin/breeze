@@ -216,7 +216,7 @@ async function openBook(b){
   document.body.classList.add('reading');
   document.documentElement.classList.add('reading');
   document.body.classList.remove('reader-original');
-  showReaderChrome();                 // 새 책은 늘 상단바가 보이는 채로 시작합니다
+  showReaderChrome();                 // 상단바가 다시 서는 날을 위한 배선입니다
   document.getElementById('readwrap').hidden=false;
   document.getElementById('originalwrap').hidden=true;
   renderBookBody(b);
@@ -268,7 +268,18 @@ function scheduleProgressUpdate(){
     if(currentReaderMode==='text' && !readerAnchorHeld()) lastAnchor=readerFrameAnchor();
   });
 }
-/* ---- 상단바는 읽는 방향을 따릅니다 ----
+/* ---- 상단바는 읽는 방향을 따릅니다 (지금은 읽는 화면에 연결돼 있지 않습니다) ----
+
+   읽는 화면에서 상단바를 걷어내면서(styles/reader.css 의 `#readchrome`) 이
+   장치를 **부르는 곳**이 하나 없어졌습니다 — 읽는 칸의 `scroll` 이 더 이상
+   `followScrollDirection()` 을 부르지 않습니다. 장치 자체는 그대로 둡니다:
+   넓은 화면에서는 예전 상단바를 다시 세울 수 있고, 그때 필요한 것이 정확히
+   이 문턱 둘과 붙잡기 표이기 때문입니다. 지우면 그날 다시 써야 합니다.
+
+   `pinReaderChrome` · `whileRestoringChrome` 을 부르는 자리들도 그대로입니다.
+   지금은 아무것도 안 움직이지만(움직일 상단바가 없으므로), 상단바가 돌아오는
+   날 배선을 다시 깔지 않기 위해서입니다.
+
    집중 모드 스위치를 대신하는 장치입니다. 아래로 읽어 내려가면 상단바가
    걷히고 단추가 흐려지며, 위로 올리거나 글머리에 닿으면 돌아옵니다.
 
@@ -353,13 +364,15 @@ function followScrollDirection(){
   else if(chromeRun <= -CHROME_BACK){ chromeRun = 0; setReaderChrome(false); }
 }
 /* 듣는 곳이 문서(`window`)에서 읽는 칸으로 옮겨졌습니다. 아이폰 사파리가 주소창을
-   여닫으며 흘리던 가짜 스크롤이 여기까지 오지 않는 것도 덤입니다 — 그 흔들림이
-   "위로 올렸다"로 읽혀서 상단바가 깜빡이던 자리였습니다. */
+   여닫으며 흘리던 가짜 스크롤이 여기까지 오지 않는 것도 덤입니다.
+
+   여기서 하는 일은 둘뿐입니다 — 진행줄을 다시 그리고, 잠시 뒤에 읽은 자리를
+   적어 두기. **위의 `followScrollDirection()` 은 여기서 부르지 않습니다.**
+   끊은 연결은 이 한 줄이고, 그것이 "스크롤은 글을 옮기는 일일 뿐"의 전부입니다. */
 (readerScroller() || window).addEventListener('scroll', ()=>{
   if(!curBook) return;
   invalidateReaderMeasurements();
   scheduleProgressUpdate();
-  followScrollDirection();
   if(Date.now()<readerScrollPauseUntil) return;
   if(scrollTick) return;
   const scheduledBook=curBook;
@@ -389,9 +402,8 @@ if(window.ResizeObserver){
        remembered place for the whole animation and aim at it every frame. */
     holdReaderAnchor(600);
     /* 되돌리는 일이 끝날 때까지 상단바를 붙잡습니다. 원본 쪽은 안에 PDF 한 쪽을
-       그리는 `await` 가 있어서, 600ms 유예가 먼저 끝나 버리는 일이 있었습니다 —
-       그러면 되돌리며 옮긴 스크롤이 "손으로 올렸다"로 읽혀 상단바가 돌아오고,
-       노치 옆이 다시 막혔습니다. */
+       그리는 `await` 가 있어서, 600ms 유예가 먼저 끝나 버리는 일이 있었습니다.
+       지금 읽는 화면에는 붙잡을 상단바가 없지만, 배선은 그대로 둡니다. */
     whileRestoringChrome(()=>{
       if(currentReaderMode==='original'){
         return lastOriginalAnchor ? restoreOriginalAnchor(lastOriginalAnchor) : null;
@@ -411,16 +423,34 @@ if(window.ResizeObserver){
    pointerdown/move/up 이 꾹 누르기를 재고, scroll 이 그것을 취소하면서 벽시계
    유예 셋을 함께 봤습니다. 전부 판정 주체가 없어서 생긴 것이라 사라졌습니다. */
 
-/* 한 문단 안에서 이 문장이 차지하는 자리를 찾습니다. 문단 글자와 문장 글자는
-   같은 곳(`bridgeSentences`)에서 잘라 낸 것이라 자를 다시 대지 않아도 맞습니다. */
-function textSentenceRangeIn(block, sentence){
+/* ---- 어느 문장인지는 누른 **자리**가 정합니다 ----
+   예전에는 누른 낱말의 글자를 문단 안에서 찾아, 그 글자를 품은 **첫** 문장을
+   골랐습니다. 그래서 한 문단에 같은 낱말이 두 번 나오면 늘 앞의 것이 잡혔습니다:
+
+     He was tired. It was getting dark.
+
+   두 번째 `was` 를 꾹 눌러도 "He was tired." 가 열렸습니다. `was` · `the` ·
+   `looked` 처럼 흔한 낱말에서는 거의 매번입니다.
+
+   스캔본은 낱말 상자마다 문단 안의 자리(`box.offset`)를 들고 있고, EPUB 은
+   caret 자리를 세어 씁니다(scripts/reader/pdf-original.js ·
+   scripts/reader/epub-original.js). 글자판만 글자를 찾고 있었습니다. 이제
+   셋이 같습니다 — 누른 자리가 문단의 몇 번째 글자인지를 세고, 그 자리를 품은
+   문장 하나를 고릅니다. 자리는 하나뿐이라 고를 것도 하나뿐입니다. */
+function textSentencePartAt(span){
+  const block=span && span.closest ? span.closest('[data-pi]') : null;
   if(!block || typeof bridgeSentences !== 'function') return null;
-  const want=String(sentence||'').replace(/\s+/g,' ').trim();
-  if(!want) return null;
+  let at=0;
+  try{
+    const before=(block.ownerDocument||document).createRange();
+    before.selectNodeContents(block);
+    before.setEndBefore(span);
+    at=before.toString().length;
+  }catch(error){ at=0; }
   const parts=bridgeSentences(block.textContent);
-  const part=parts.find(item=>item.text.replace(/\s+/g,' ').trim() === want)
-    || parts.find(item=>item.text.replace(/\s+/g,' ').includes(want));
-  return part ? domRangeForOffsets(block, part.start, part.end) : null;
+  const part=parts.find(item=>at>=item.start && at<item.end) || parts[0];
+  if(!part) return null;
+  return { block, part, sentence:part.text.replace(/\s+/g,' ').trim() };
 }
 
 function textWordSpanAt(clientX, clientY){
@@ -444,11 +474,13 @@ registerReaderSurface({
   sentenceAt(clientX, clientY){
     const span=textWordSpanAt(clientX, clientY);
     if(!span) return null;
-    const block=span.closest('[data-pi]');
-    const sentence=sentenceOf(span);
-    if(!sentence) return null;
-    const range=textSentenceRangeIn(block, sentence);
-    return { sentence, paint(){
+    const found=textSentencePartAt(span);
+    if(!found || !found.sentence) return null;
+    const block=found.block;
+    /* 물어본 문장과 칠하는 자리가 같은 곳에서 나옵니다 — 문장을 글자로 다시
+       찾지 않으므로 둘이 어긋날 자리가 없습니다. */
+    const range=domRangeForOffsets(block, found.part.start, found.part.end);
+    return { sentence:found.sentence, paint(){
       if(range && typeof showRangeModeCue==='function') showRangeModeCue(range, 0);
       else if(block && typeof showElementModeCue==='function') showElementModeCue(block, 0);
     } };

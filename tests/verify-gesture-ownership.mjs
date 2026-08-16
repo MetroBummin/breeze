@@ -67,6 +67,15 @@ function makeWorld(){
   element('sentence-modal');
   element('sentence-scrim', 'sentence-modal');
   element('ps-close', 'sentence-modal');
+  element('aa-pop');
+  element('aa-dark', 'aa-pop');
+  /* 읽는 동안 떠 있는 조각 — 상단바 자리를 대신하는 것들입니다. 종이가 아니므로
+     여기서 시작한 손짓은 판정 계층이 통째로 UI 로 보냅니다. */
+  element('readchrome');
+  element('readback', 'readchrome');
+  element('readfabs', 'readchrome');
+  element('aafab', 'readfabs');
+  element('modefab', 'readfabs');
   element('sheetbg');
   element('panel');
   element('p-close', 'panel');
@@ -82,13 +91,14 @@ function makeWorld(){
   };
   const world = {
     nodes, doc, listeners,
-    calls: { closeSentence: 0, closePanel: 0, openSentence: 0, openWordAt: 0, sentenceAt: 0 },
+    calls: { closeSentence: 0, closePanel: 0, closeAa: 0, openSentence: 0, openWordAt: 0, sentenceAt: 0 },
     errors: [], timers: [],
     sheetLayout: true,          // 폰(바텀시트)인가, 넓은 화면(옆 칸)인가
     /* 실제 화면에서 하는 일을 그대로 흉내 냅니다 — 닫으면 정말로 닫힙니다.
        그래야 "손짓 도중에 창이 닫힌다"를 진짜로 재현할 수 있습니다. */
     openSentenceModal(){ nodes['sentence-modal'].hidden = false; },
     openWordPanel(){ nodes.panel.classList.add('on'); nodes.sheetbg.classList.add('on'); },
+    openAa(){ nodes['aa-pop'].classList.add('on'); },
   };
   return world;
 }
@@ -113,6 +123,7 @@ function makeContext(world){
       nodes.panel.classList.remove('on');
       nodes.sheetbg.classList.remove('on');
     },
+    closeAa(){ world.calls.closeAa++; nodes['aa-pop'].classList.remove('on'); },
     panelIsSheet: () => world.sheetLayout,
     openSentence(){ world.calls.openSentence++; },
     clearReaderModeCue(){},
@@ -278,6 +289,104 @@ function scenario(setup){
   const { world } = scenario(w => { w.sheetLayout = false; w.openWordPanel(); });
   tap(world, world.nodes['p-close'], 700, 90);
   assert.equal(world.calls.closePanel, 1, '옆 칸의 X 가 창을 닫지 않습니다');
+}
+
+/* ================= Aa 보기 설정 =================
+
+   Aa 에는 scrim 이 없습니다 — 바깥이 곧 읽는 종이입니다. 그래서 "바깥을 눌러
+   닫는 손짓"이 동시에 "글자를 누른 손짓"이었고, 실사용에서 설정을 닫는 터치가
+   낱말 팝업이나 문장 해석을 함께 열었습니다. 해석 창·낱말 시트와 같은 규칙으로
+   옮긴 뒤에는, 그 한 터치가 Aa 를 닫고 **거기서 끝나야** 합니다. */
+{
+  const { world } = scenario(w => w.openAa());
+  /* 뒤에 글자가 있는 자리를 눌러 닫습니다 — 사용자가 실제로 하는 그 손짓. */
+  const click = tap(world, world.nodes.word, 120, 320);
+  assert.equal(world.calls.closeAa, 1, '바깥을 눌렀는데 Aa 가 닫히지 않습니다');
+  assert.equal(world.calls.openWordAt, 0,
+    'Aa 를 닫은 그 터치가 종이로 이어져 낱말 창이 함께 열립니다');
+  assert.ok(click.stopped && click.prevented, 'Aa 를 닫은 손짓의 꼬리 click 이 그대로 흘러갑니다');
+  assert.deepEqual(world.errors, [], '한 손짓이 두 가지 일을 했습니다');
+}
+{
+  /* 꾹 누르기 타이머 **자체가** 안 걸려야 합니다 — 걸리면 1초 뒤에 문장 해석이
+     뜹니다. "안 뜬다"가 아니라 "못 뜬다"로 지킵니다. */
+  const { world } = scenario(w => w.openAa());
+  fire(world, 'pointerdown', world.nodes.word, 120, 320);
+  assert.deepEqual(world.timers, [],
+    'Aa 가 떠 있는데 그 뒤의 종이가 꾹 누르기 시간을 재기 시작했습니다');
+  fire(world, 'pointerup', world.nodes.word, 120, 320);
+  assert.equal(world.calls.sentenceAt, 0, 'Aa 를 닫는 손짓이 문장 해석까지 열었습니다');
+}
+{
+  /* 창 안의 단추는 제 `onclick` 을 받아야 합니다 — 여기까지 가져가면 A+ 도
+     다크 모드도 안 눌립니다. */
+  const { world } = scenario(w => w.openAa());
+  const click = tap(world, world.nodes['aa-dark'], 300, 600);
+  assert.equal(world.calls.closeAa, 0, 'Aa 안을 눌렀는데 Aa 가 닫혔습니다');
+  assert.ok(!click.stopped && !click.prevented, 'Aa 안의 단추가 받을 click 을 판정 계층이 삼켰습니다');
+}
+{
+  /* Aa 단추 자신도 그렇습니다 — 그 click 은 토글이 받습니다. */
+  const { world } = scenario(w => w.openAa());
+  const click = tap(world, world.nodes.aafab, 340, 700);
+  assert.equal(world.calls.closeAa, 0, 'Aa 단추를 눌렀는데 판정 계층이 먼저 닫았습니다');
+  assert.ok(!click.stopped && !click.prevented, 'Aa 단추의 click 을 판정 계층이 삼켰습니다');
+}
+{
+  /* 바깥을 밀었으면 읽던 글을 굴린 것입니다. 창은 그대로 두고, 종이의 낱말도
+     열지 않습니다 — 임자가 다른 손짓이기 때문입니다. */
+  const { world } = scenario(w => w.openAa());
+  tap(world, world.nodes.word, 120, 320, [[120, 180]]);
+  assert.equal(world.calls.closeAa, 0, '밀었을 뿐인데 Aa 가 닫혔습니다');
+  assert.equal(world.calls.openWordAt, 0, '민 손짓이 낱말을 열었습니다');
+}
+{
+  /* 손을 완전히 뗀 뒤의 새 손짓은 평소대로 reader 의 것입니다. */
+  const { world } = scenario(w => w.openAa());
+  tap(world, world.nodes.word, 120, 320);
+  world.clickTarget = null;
+  tap(world, world.nodes.word, 120, 320);
+  assert.equal(world.calls.closeAa, 1, 'Aa 가 두 번 닫혔습니다');
+  assert.equal(world.calls.openWordAt, 1, 'Aa 를 닫은 뒤 새로 누른 낱말이 열리지 않습니다');
+}
+{
+  /* pointer 조각 없이 click 만 오는 기기에서도 닫히고, 거기서 끝나야 합니다. */
+  const { world } = scenario(w => w.openAa());
+  const click = fire(world, 'click', world.nodes.word, 120, 320);
+  assert.equal(world.calls.closeAa, 1, 'click 만 오는 기기에서 Aa 를 바깥으로 닫을 수 없습니다');
+  assert.equal(world.calls.openWordAt, 0, 'click 만 오는 기기에서 Aa 를 닫은 터치가 낱말까지 열었습니다');
+  assert.ok(click.stopped && click.prevented, '그 click 이 그대로 흘러갑니다');
+}
+/* ---- 새 조작 조각에서 시작한 손짓은 종이로 안 내려갑니다 ----
+   상단바가 걷힌 자리에 뜬 것들이라 **뒤에 글자가 깔려 있습니다.** 예전 상단바에서
+   "단어장" 을 눌렀을 때 그 뒤의 낱말이 함께 열리던 자리와 똑같은 모양입니다.
+   허용 목록(`READER_PAPER`)이 종이만 reader 로 보내므로 규칙은 이미 서 있지만,
+   자리가 겹치는 조각이 새로 셋 생겼으니 그 셋을 이름으로 세워 둡니다. */
+for(const id of ['readback', 'aafab', 'modefab']){
+  const { world } = scenario();
+  const click = tap(world, world.nodes[id], 30, 60);
+  assert.equal(world.calls.openWordAt, 0, `#${id} 를 누른 손짓이 그 뒤의 낱말까지 열었습니다`);
+  assert.equal(world.calls.sentenceAt, 0, `#${id} 를 누른 손짓이 문장 해석을 열었습니다`);
+  assert.deepEqual(world.timers, [], `#${id} 위에서 꾹 누르기 시간을 재기 시작했습니다`);
+  assert.ok(!click.stopped && !click.prevented,
+    `#${id} 가 받을 click 을 판정 계층이 삼켰습니다 — 단추가 아예 안 눌립니다`);
+  assert.deepEqual(world.errors, [], `#${id} 에서 시작한 한 손짓이 두 가지 일을 했습니다`);
+}
+{
+  /* 조각을 눌렀다 손가락이 글 위로 흘러가도 마찬가지입니다 — 임자는 시작할 때
+     정해지고 도중에 바뀌지 않습니다. */
+  const { world } = scenario();
+  fire(world, 'pointerdown', world.nodes.readback, 30, 60);
+  fire(world, 'pointerup', world.nodes.word, 120, 320);
+  assert.equal(world.calls.openWordAt, 0, '조각에서 시작해 글 위에서 뗀 손짓이 낱말을 열었습니다');
+}
+{
+  /* 겹쳐 있으면 위에 있는 것이 임자입니다 — 낱말 시트가 덮고 있으면 Aa 가
+     아니라 시트의 손짓입니다. */
+  const { world } = scenario(w => { w.openAa(); w.openWordPanel(); });
+  tap(world, world.nodes.sheetbg, 100, 100);
+  assert.equal(world.calls.closePanel, 1, '시트가 덮고 있는데 바깥 누르기가 시트를 닫지 않습니다');
+  assert.equal(world.calls.closeAa, 0, '시트를 닫는 손짓이 Aa 까지 닫았습니다');
 }
 
 /* ---- 겹쳐 있으면 위에 있는 것이 임자입니다 ---- */

@@ -146,7 +146,7 @@
   /* ---- 그림자 ---- */
   --shadow:0 14px 34px rgba(23,55,71,.12);           /* 떠 있는 큰 것 */
   --shadow-card:0 6px 18px rgba(23,55,71,.10);       /* 카드 */
-  --shadow-fab:0 4px 14px rgba(23,55,71,.12);        /* 떠 있는 단추 */
+  --shadow-chrome:0 1px 5px rgba(23,55,71,.07);      /* 읽는 동안 떠 있는 조각 — 그림자가 아니라 들린 자국 */
   --shadow-table:0 4px 18px rgba(23,55,71,.06);
   --shadow-tab:0 1px 4px rgba(23,55,71,.10);
   --shadow-panel:-8px 0 30px rgba(24,54,74,.08);     /* 옆에 서는 낱말 창 */
@@ -167,7 +167,11 @@
   --bar-bg:rgba(250,248,242,.9);
   --bar-line:rgba(215,225,222,.42);
   --rbar-bg:transparent;
-  --fab-bg:rgba(255,255,255,.88);
+  /* 읽는 동안 떠 있는 조각 — 유리가 아니라 책 위에 얹은 얇은 종이입니다.
+     그래서 흰색이 아니라 바탕 종이색(`--paper`)을 옅게 깔고, 테두리는 반짝이는
+     흰 줄이 아니라 잉크가 아주 약하게 앉은 정도입니다. */
+  --chrome-paper:rgba(250,248,242,.72);
+  --chrome-press:rgba(23,55,71,.06);
   --sec-act-bg:rgba(253,251,246,.56);
   --sec-act-hover:#EFEDE4;
   --sec-act-hover-line:#D9E3E1;
@@ -209,8 +213,8 @@
   --seg-on-ink:var(--brand-strong);
   --toggle-knob:#fff;
   --stbtn-bg:#fff;                       /* 모르는 정도 단추 — 두 화면 모두 흰 칸 */
-  --fab-line:#E4E8DF;                    /* 읽는 동안 떠 있는 단추 */
-  --fab-ink:#667D87;
+  --chrome-line:rgba(23,55,71,.09);      /* 읽는 동안 떠 있는 조각 */
+  --chrome-ink:#667D87;
   --note-bg:#DCEAF0;                     /* 활동 상자 · 역주 */
   --note-line:#D7E1DE;
   --quote-line:#D7E1DE;                  /* 인용문 왼쪽 선 */
@@ -361,12 +365,13 @@ body.dark{
 
   --shadow:0 14px 34px rgba(0,0,0,.4);
   --shadow-card:0 6px 18px rgba(0,0,0,.32);
-  --shadow-fab:0 4px 14px rgba(0,0,0,.24);
+  --shadow-chrome:0 1px 5px rgba(0,0,0,.2);
 
   --bar-bg:rgba(23,24,22,.88);
   --bar-line:rgba(77,76,68,.42);
   --rbar-bg:rgba(23,24,22,.93);
-  --fab-bg:rgba(31,35,39,.94);
+  --chrome-paper:rgba(23,24,22,.62);
+  --chrome-press:rgba(255,255,255,.07);
   --sec-act-bg:#20211F;
   --sec-act-hover:#2A2C28;
   --sec-act-hover-line:#63899A;
@@ -405,8 +410,8 @@ body.dark{
   --retry-hover:var(--brand-strong);
   --seg-on:#263C47;
   --seg-on-ink:var(--brand-strong);
-  --fab-line:#2A2E33;
-  --fab-ink:#9AA1A8;
+  --chrome-line:rgba(255,255,255,.07);
+  --chrome-ink:#9AA1A8;
   --note-bg:#1E272B;
   --note-line:#2F3A40;
   --quote-line:#3A424A;

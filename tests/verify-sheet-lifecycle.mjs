@@ -195,6 +195,7 @@ function boot(){
   return { world, net, store, ctx:context };
 }
 
+const AI_MIN_WAIT = 400;    // dictionary.js 의 280ms 보다 넉넉하게
 const tick = () => new Promise(res => setTimeout(res, 0));
 /* 미세 작업이 여러 겹 쌓입니다 — 몇 번 돌려 다 가라앉힌 뒤에 봅니다. */
 const settle = async (n=12) => { for(let i=0;i<n;i++) await tick(); };
@@ -390,4 +391,191 @@ function tapNewWord(ctx, key){
   assert.deepEqual(stuck, [], '바람이 멈추지 않은 낱말이 남았습니다: '+stuck.join(', '));
 }
 
+/* ================= ⑨ 확정 못 한 새 조회는 없던 일입니다 =================
+
+   낱말을 누르는 그 순간 단어장에 자리가 하나 생기고, 뜻은 그 뒤에 옵니다.
+   그래서 AI 를 기다리는 동안 창을 닫으면 뜻이 하나도 없는 낱말이 남았습니다 —
+   실사용에서 제일 자주 만나는 쓰레기입니다. 한도가 떨어졌을 때도, 요청이
+   실패했을 때도 같은 껍데기가 남습니다.
+
+   규칙은 한 줄입니다: **새 조회는 창이 살아 있는 동안에만 낱말이 됩니다.**
+   확정 못 한 채로 창이 끝나면 그 자리에서 없던 일입니다. 닫은 뒤에도 남아
+   답을 기다리는 상태는 만들지 않습니다.
+
+   그래서 여기서 지키는 것은 셋입니다:
+     ① 확정 못 하고 끝난 새 조회는 버린다
+     ② 확정의 기준은 **AI 의 답이거나 사람의 채택**이다 — 무료 사전 후보가
+        뜻자리를 채웠다는 것만으로는 확정이 아닙니다. `yield` 를 누르면
+        양보하다·산출하다·굴복하다·생산량이 함께 오는데, 그 중 무엇을 원했는지
+        시스템은 모릅니다
+     ③ 그 밖에는 **아무것도** 안 버린다 — 전에 저장해 둔 낱말은 뜻이 비어
+        있어도 남고, 늦게 온 답이 버린 낱말을 되살리지도 않습니다
+   ①만 지키면 단어장이 조용히 줄어듭니다. */
+function newWordSpan(key){
+  return { textContent:key, dataset:{}, classList:{ add(){}, remove(){} }, closest:()=>null };
+}
+/* 진짜 손짓이 지나는 문 그대로 — `addWord` 를 건너뛰면 이 규칙 자체가 안 걸립니다. */
+const tapBrandNewWord = (ctx, key) => ctx.openWord(key, newWordSpan(key));
+/* 창이 열려 있는 채로 답이 오면 `AI_MIN_WAIT`(280ms) 만큼 바람을 더 보여 준 뒤에
+   놓습니다 — 미세 작업만 돌려서는 그 자리를 못 지납니다. */
+const rest = ms => new Promise(res => setTimeout(res, ms));
+const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?{ko,done:true}:undefined,
+  phon:'', defs:[], kodict:[], example:'첫 문장', book:'시험책', status:1, mark:true, addedAt:1, up:1 });
+
+{
+  /* AI 뜻 로딩 중에 닫음 */
+  const { world, net, ctx } = boot();
+  tapBrandNewWord(ctx, 'gossamer');
+  await settle();
+  assert.ok(ctx.words.gossamer, '새 낱말이 창을 여는 동안에도 자리를 못 잡았습니다');
+  assert.equal(world.syncs, 0,
+    '뜻이 하나도 없는 낱말을 곧바로 다른 기기로 올려 보냈습니다 — 그대로 닫히면 부고까지 한 번 더 오갑니다');
+  ctx.closePanel();
+  await settle();
+  net.deliver(null);
+  await settle();
+  assert.equal(ctx.words.gossamer, undefined,
+    'AI 를 기다리다 닫았는데 뜻 없는 낱말이 단어장에 남았습니다');
+}
+{
+  /* 답이 왔으면 채택입니다 — 닫아도 남습니다 */
+  const { net, ctx } = boot();
+  tapBrandNewWord(ctx, 'brindle');
+  await settle();
+  net.deliver();
+  await rest(AI_MIN_WAIT); await settle();
+  ctx.closePanel();
+  await settle();
+  assert.ok(ctx.words.brindle, '뜻을 받은 새 낱말이 닫으면서 함께 사라졌습니다');
+  assert.equal(ctx.words.brindle.ko, '뜻', '남기기는 했는데 뜻이 안 붙어 있습니다');
+}
+{
+  /* 한도가 떨어졌거나 요청이 실패한 뒤에 닫음 */
+  const { net, ctx } = boot();
+  tapBrandNewWord(ctx, 'quillon');
+  await settle();
+  net.deliver({ error:'quota_exceeded' });
+  await settle();
+  assert.equal(ctx.words.quillon.ko, '', '이 시험은 뜻이 안 붙은 상태를 봐야 합니다');
+  ctx.closePanel();
+  await settle();
+  assert.equal(ctx.words.quillon, undefined,
+    'AI 가 답하지 못한 낱말이 뜻 없이 단어장에 남았습니다');
+}
+{
+  /* 이미 있던 낱말은 절대 안 지웁니다 — 뜻이 있든 없든 */
+  const { ctx } = boot();
+  ctx.words.harbour = savedWord('harbour', '항구');
+  ctx.words.hollow  = savedWord('hollow', '');     // 사람이 뜻만 지워 둔 자리
+  ctx.openWord('harbour', newWordSpan('harbour'));
+  await settle();
+  ctx.closePanel();
+  await settle();
+  ctx.openWord('hollow', newWordSpan('hollow'));
+  await settle();
+  ctx.closePanel();
+  await settle();
+  assert.ok(ctx.words.harbour, '이미 저장해 둔 낱말이 다시 열었다 닫는 것만으로 사라졌습니다');
+  assert.ok(ctx.words.hollow,
+    '뜻자리를 비워 둔 낱말이 사라졌습니다 — 버리는 기준은 "비었다"가 아니라 "이번에 만들었다"입니다');
+}
+{
+  /* 닫지 않고 옆 낱말로 건너뛰어도 껍데기는 안 남습니다 */
+  const { ctx } = boot();
+  tapBrandNewWord(ctx, 'lintel');
+  await settle();
+  tapBrandNewWord(ctx, 'mullion');
+  await settle();
+  assert.equal(ctx.words.lintel, undefined,
+    '뜻 없는 낱말을 띄운 채 옆 낱말을 열었더니 앞 껍데기가 그대로 남았습니다');
+  assert.ok(ctx.words.mullion, '방금 연 낱말까지 함께 사라졌습니다');
+}
+{
+  /* 뜻을 받은 뒤에 사람이 그 뜻을 × 로 지우는 것은 단어장을 손보는 일입니다 —
+     이 규칙이 볼 일이 아닙니다. `deleteMeaning` 은 빈 뜻자리를 남깁니다. */
+  const { net, ctx } = boot();
+  tapBrandNewWord(ctx, 'tessera');
+  await settle();
+  net.deliver();
+  await rest(AI_MIN_WAIT); await settle();
+  ctx.deleteMeaning('tessera');
+  await settle();
+  ctx.closePanel();
+  await settle();
+  assert.ok(ctx.words.tessera,
+    '뜻을 받은 뒤 그 뜻 하나를 지웠을 뿐인데 낱말까지 사라졌습니다');
+  assert.equal(ctx.words.tessera.ko, '', '뜻자리가 비지 않았습니다');
+}
+
+{
+  /* 무료 사전 후보만 있는 채로 닫음 — 후보가 여럿이라는 사실은 대표 뜻이 아닙니다.
+     번역기가 실제로 돌려주는 모양 그대로 답하게 해서, `fetchKo` 가 빈 뜻자리를
+     채우는 그 길을 진짜로 지나갑니다. */
+  const { net, ctx } = boot();
+  const bare = ctx.fetch;
+  ctx.fetch = (url, opt) => String(url).includes('translate.googleapis.com')
+    ? Promise.resolve({ ok:true, json:()=>Promise.resolve(
+        [[['양보하다','yield']], [['동사',['양보하다','굴복하다']],['명사',['산출하다','생산량']]]]) })
+    : bare(url, opt);
+  tapBrandNewWord(ctx, 'yield');
+  net.deliver({ error:'quota_exceeded' });
+  await settle(40);
+  assert.equal(ctx.words.yield.ko, '양보하다',
+    '이 시험은 무료 사전이 뜻자리를 채운 상태를 봐야 합니다');
+  assert.ok(ctx.words.yield.kodict.length >= 2, '무료 사전 후보가 여러 개인 상태여야 합니다');
+  ctx.closePanel();
+  await settle();
+  assert.equal(ctx.words.yield, undefined,
+    '무료 사전 후보만 보고 닫았는데 낱말이 남았습니다 — 어느 뜻을 원했는지 아무도 모릅니다');
+}
+{
+  /* 늦게 도착한 답이 버린 낱말을 되살리지 않습니다.
+     이 자리가 이번 규칙에서 제일 위험한 곳입니다: 요청은 이미 선을 타고 있고,
+     답은 옳고, 캐시에는 남아야 합니다. 남으면 안 되는 것은 **낱말** 하나뿐입니다. */
+  const { world, net, ctx } = boot();
+  net.outran = true;                       // 끊기보다 답이 빨랐던 경우
+  tapBrandNewWord(ctx, 'ferrule');
+  await settle();
+  assert.equal(world.sent.length, 1, '이 시험은 요청이 이미 나간 상태를 봐야 합니다');
+  ctx.closePanel();
+  await settle();
+  assert.equal(ctx.words.ferrule, undefined, '닫는 그 자리에서 버리지 않았습니다');
+
+  net.deliver();                           // 그 뒤에 답이 도착합니다
+  await rest(AI_MIN_WAIT); await settle(30);
+  assert.equal(ctx.words.ferrule, undefined,
+    '늦게 온 답이 버린 낱말을 단어장에 되살렸습니다');
+  assert.ok(world.puts.some(key=>key.includes('ferrule')),
+    '늦게 온 답을 캐시에도 안 남겼습니다 — 다시 물으면 한도를 또 씁니다');
+  assert.equal(world.el('panel').classList.contains('on'), false,
+    '늦게 온 답이 낱말 창을 다시 열었습니다');
+  assert.equal(ctx.selKey, null, '늦게 온 답이 고른 낱말을 되살렸습니다');
+}
+{
+  /* 사람이 추천 뜻을 직접 채택했으면 확정입니다 — AI 가 답한 적이 없어도. */
+  const { ctx } = boot();
+  tapBrandNewWord(ctx, 'gimbal');
+  await settle();
+  ctx.adoptSuggestion('gimbal', '짐벌');
+  ctx.closePanel();
+  await settle();
+  assert.ok(ctx.words.gimbal, '사람이 고른 뜻이 있는데도 닫으면서 낱말이 사라졌습니다');
+  assert.equal(ctx.words.gimbal.ko, '짐벌', '남기기는 했는데 고른 뜻이 안 붙어 있습니다');
+}
+{
+  /* 이미 있던 낱말은 AI 가 실패해도 그대로입니다 — 이번 규칙의 대상이 아닙니다. */
+  const { net, ctx } = boot();
+  ctx.words.harrow = savedWord('harrow', '써레');
+  ctx.selectWord('harrow', null);
+  const running = ctx.fetchDict('harrow');
+  await settle();
+  net.deliver({ error:'quota_exceeded' });
+  await running; await settle();
+  ctx.closePanel();
+  await settle();
+  assert.ok(ctx.words.harrow, 'AI 가 실패했다고 이미 있던 낱말을 지웠습니다');
+  assert.equal(ctx.words.harrow.ko, '써레', '있던 뜻이 함께 사라졌습니다');
+}
+
 console.log('낱말 창 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)');
+console.log('확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다');

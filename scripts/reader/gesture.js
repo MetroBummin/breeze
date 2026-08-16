@@ -76,7 +76,7 @@ const SHEET_PULL_DISMISS = 90;
 const GESTURE_UI = 'UI', GESTURE_SCROLL = 'SCROLL', GESTURE_WORD = 'WORD',
       GESTURE_SENTENCE = 'SENTENCE', GESTURE_CANCEL = 'CANCEL',
       GESTURE_DISMISS_SENTENCE = 'DISMISS_SENTENCE', GESTURE_DISMISS_WORD = 'DISMISS_WORD',
-      GESTURE_MODAL_UI = 'MODAL_UI';
+      GESTURE_DISMISS_AA = 'DISMISS_AA', GESTURE_MODAL_UI = 'MODAL_UI';
 
 /* ---- 종이는 허용 목록입니다 ----
    예전에는 "떠 있는 것"을 하나씩 세어 걸렀고, 새 UI 가 생길 때마다 목록이
@@ -105,7 +105,7 @@ function readerSurfaceFor(event){
    본문 옆의 칸이라 종이를 가리지 않으므로, 그때는 종이의 손짓을 가져가지
    않습니다. 옆 칸일 때도 임자가 되는 것은 그 칸의 닫기 단추 하나뿐입니다. */
 const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',
-      OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_UI = 'UI';
+      OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_AA = 'AA', OWNER_UI = 'UI';
 
 function sentenceModalOpen(){
   const modal = document.getElementById('sentence-modal');
@@ -134,6 +134,27 @@ function wordDismissTarget(target){
 function wordPullTarget(target){
   if(!target || typeof target.closest !== 'function') return false;
   return !!target.closest('#p-handle');
+}
+
+/* ---- Aa 도 임자입니다 ----
+   보기 설정은 화면을 덮지 않는 작은 창이라, 그 바깥에는 scrim 이 없습니다 —
+   바깥이 곧 읽는 종이입니다. 그래서 닫는 일만 판정 계층 **바깥의** document
+   click 하나가 맡고 있었고(`scripts/ui/preferences.js`), 그 한 손짓이 종이의
+   손짓이기도 했습니다: 뒤에 글자가 있는 자리를 눌러 Aa 를 닫으면 같은 터치가
+   낱말 창까지 함께 열었습니다. 해석 창·낱말 시트에서 이미 한 번씩 겪은 그
+   자리이고, 고치는 방법도 같습니다.
+
+   임자를 정하는 규칙은 넓은 화면의 낱말 칸과 같습니다 — 덮지 않으므로 창
+   자신(과 그 창을 연 단추)에서 시작한 손짓만 창의 몫으로 두면 안쪽 단추들이
+   제 `onclick` 을 받고, 그 밖에서 시작한 손짓은 통째로 "닫기" 하나가 됩니다. */
+function aaPopOpen(){
+  const pop = document.getElementById('aa-pop');
+  return !!pop && pop.classList.contains('on');
+}
+/* 창 안과 그 창을 연 Aa 단추는 자기 일을 합니다. 그 밖은 전부 닫는 자리입니다. */
+function aaOutside(target){
+  if(!target || typeof target.closest !== 'function') return true;
+  return !(target.closest('#aa-pop') || target.closest('#aafab'));
 }
 
 /* ================= 지금 판정 중인 손짓 ================= */
@@ -269,6 +290,16 @@ function beginGesture(event){
     return;
   }
 
+  /* Aa 가 열려 있고 그 바깥에서 시작했으면, 이 손짓은 통째로 Aa 의 것입니다.
+     종이를 보기 전에 봅니다 — 뒤에 글자가 있는 자리가 바로 그 "바깥"이라, 종이가
+     먼저 가져가면 애초에 고치려는 것이 안 고쳐집니다. */
+  if(aaPopOpen() && aaOutside(target)){
+    gesture.owner = OWNER_AA;
+    gesture.dismisses = true;
+    activeGesture = gesture;
+    return;
+  }
+
   const surface = readerSurfaceFor(event);
   if(!surface){
     gesture.owner = OWNER_UI;
@@ -322,6 +353,22 @@ function endWordSheetGesture(gesture){
   if(typeof closePanel === 'function') closePanel();
 }
 
+/* ---- Aa 의 손짓이 끝나는 자리 ----
+   창 바깥을 제자리에서 눌렀으면 닫고, 그 손짓은 거기서 끝납니다 — 닫는 데 쓴
+   터치가 종이로 이어지지 않습니다. 밀었다면 읽던 글을 굴린 것이니 창은 그대로
+   둡니다(예전의 document click 도 민 손짓에는 울리지 않았습니다). 종이의
+   SCROLL 로 넘기지도 않습니다 — 임자가 다른 손짓이기 때문입니다. */
+function endAaGesture(gesture){
+  if(gesture.moved > GESTURE_SLOP){
+    finishGesture(gesture, GESTURE_MODAL_UI);
+    return;
+  }
+  finishGesture(gesture, GESTURE_DISMISS_AA, true);
+  countDispatch(gesture, 'DISMISS_AA');
+  gesture.adapterCall = 'closeAa()';
+  if(typeof closeAa === 'function') closeAa();
+}
+
 /* ---- 꾹 누르기가 확정되는 그 순간 ----
    누르고 있는 동안에는 아무것도 찾지 않고 아무것도 칠하지 않습니다. 문장을
    짚는 일조차 여기서 처음 합니다 — 미리 준비해 두면 짧은 탭까지 문장 선택으로
@@ -372,6 +419,7 @@ function endGesture(event){
   if(gesture.decision) return;
   if(gesture.owner === OWNER_SENTENCE_MODAL){ endSentenceModalGesture(gesture); return; }
   if(gesture.owner === OWNER_WORD_SHEET){ endWordSheetGesture(gesture); return; }
+  if(gesture.owner === OWNER_AA){ endAaGesture(gesture); return; }
   finishGesture(gesture, GESTURE_WORD);
   gesture.adapterCall = `${gesture.surface.name}.openWordAt(${Math.round(event.clientX)},${Math.round(event.clientY)})`;
   dispatchWord(gesture, event.clientX, event.clientY);
@@ -427,7 +475,8 @@ function clickGesture(event){
        손짓의 꼬리는 삼키기만 하고 길은 막지 않습니다 — 막을 이유가 없습니다. */
     if(lastGesture.decision === GESTURE_WORD || lastGesture.decision === GESTURE_SENTENCE
        || lastGesture.decision === GESTURE_DISMISS_SENTENCE
-       || lastGesture.decision === GESTURE_DISMISS_WORD){
+       || lastGesture.decision === GESTURE_DISMISS_WORD
+       || lastGesture.decision === GESTURE_DISMISS_AA){
       event.stopPropagation();
       event.preventDefault();
     }
@@ -454,6 +503,15 @@ function clickGesture(event){
                                           wordDismissTarget(event.target));
     endWordSheetGesture(sheetGesture);
     if(sheetGesture.decision === GESTURE_DISMISS_WORD){
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    return;
+  }
+  if(aaPopOpen() && aaOutside(event.target)){
+    const aaGesture = syntheticGesture(event, OWNER_AA, true);
+    endAaGesture(aaGesture);
+    if(aaGesture.decision === GESTURE_DISMISS_AA){
       event.stopPropagation();
       event.preventDefault();
     }

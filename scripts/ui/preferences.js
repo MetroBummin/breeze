@@ -46,26 +46,37 @@ function setReadMargin(next){
 }
 applyReadMargin();
 
-/* ---- Aa settings ---- */
+/* ---- Aa settings ----
+   여는 것과 자리를 잡는 것은 여기 일이고, **닫는 것은 손짓의 일**입니다.
+   예전에는 이 파일이 document 의 click 하나를 따로 들으며 "바깥을 눌렀으면
+   닫는다"를 혼자 판정했습니다. 그 한 줄이 판정 계층 바깥에 있는 유일한 입력이라,
+   뒤에 글자가 있는 자리를 눌러 Aa 를 닫으면 같은 터치가 종이에서 한 번 더
+   판정되어 낱말 창·문장 해석이 함께 떴습니다. 해석 창(`#sentence-scrim`)과
+   낱말 시트(`#sheetbg`)의 `onclick` 을 걷어 낸 것과 같은 이유, 같은 자리입니다.
+   이제 Aa 가 열려 있는 동안의 손짓은 임자가 Aa 이고, 임자가 `DISMISS_AA` 로
+   판정한 그 자리에서 아래 `closeAa()` 를 한 번 부릅니다
+   (scripts/reader/gesture.js). */
 function toggleAa(e){
   if(e) e.stopPropagation();
   const p = document.getElementById('aa-pop');
   const btn = document.getElementById('aafab');
+  /* 창은 단추의 실제 자리에서 매답니다 — Aa 가 화면 위로 올라갔으므로 아래로
+     펼칩니다. 넓은 화면에서 낱말 칸이 열리면 단추가 글 쪽으로 물러나는데, 여기서
+     재는 것이 단추 자신이라 창도 함께 따라갑니다. */
   if(btn){
     const r = btn.getBoundingClientRect();
-    p.style.top = 'auto';
-    p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
+    p.style.bottom = 'auto';
+    p.style.top = Math.round(r.bottom + 10) + 'px';
     p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
   }
   p.classList.toggle('on');
   document.getElementById('aa-fs').textContent = fs;
 }
-document.addEventListener('click', e=>{
+/* 치우는 일은 여기 하나뿐입니다 — 무엇이 닫기로 판정했는지는 여기서 묻지 않습니다. */
+function closeAa(){
   const p = document.getElementById('aa-pop');
-  const hit = /** @type {Element} */ (e.target);
-  if(p.classList.contains('on') && !hit.closest('#aa-pop') && !hit.closest('#aafab'))
-    p.classList.remove('on');
-});
+  if(p) p.classList.remove('on');
+}
 let darkMode = load('breeze.dark', false);
 function applyDark(){
   document.body.classList.toggle('dark', !!darkMode);
@@ -143,11 +154,14 @@ window.addEventListener('resize',syncLoginNudge);
    지웁니다 — 다음 판에서 되살아날 자리를 남기지 않습니다. */
 try{ localStorage.removeItem('breeze.originalMarks'); }catch(e){}
 
-/* 상단 막대는 스크롤을 따라 미끄러져 나갈 뿐, 자리는 늘 지킵니다. 예전 집중
-   모드는 여기서 높이를 0으로 우겨서, 앵커 계산이 첫 줄을 로고 뒤에 숨겼습니다. */
+/* 상단 막대의 높이. 예전 집중 모드는 여기서 0으로 우겨서, 앵커 계산이 첫 줄을
+   로고 뒤에 숨겼습니다 — 그래서 **보이는 동안에만** 적습니다. 읽는 화면에는
+   상단바가 아예 없으므로(styles/reader.css), 책을 펴 놓고 화면을 돌리면 여기서
+   0 을 재게 되고 그 0 이 서재로 따라 나갑니다. */
 function syncTopbarH(){
   const tb = document.getElementById('topbar');
-  document.documentElement.style.setProperty('--topbar-h', (tb ? tb.offsetHeight : 0)+'px');
+  if(!tb || !tb.offsetHeight) return;
+  document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight+'px');
 }
 let lastAnchor = null;
 window.addEventListener('resize', ()=>{

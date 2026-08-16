@@ -20,12 +20,19 @@
      둘. 종이를 벌려도 떠 있는 것들은 제 크기입니다. 확대가 `#original-zoom`
      안쪽 일이라 바깥은 애초에 안 커집니다 — 되돌리는 계산이 사라집니다.
 
-     셋. 상단바가 부드럽게 걷힙니다. `scrollTop` 은 우리 것이라 아이폰이
-     제멋대로 흔들지 않고, 프로그램이 옮긴 스크롤도 정확히 구분됩니다
-     (`scripts/reader/reader.js` 의 "상단바는 읽는 방향을 따릅니다"). */
+     셋. 읽는 화면에는 상단바가 뜨지 않습니다. 떠 있는 것은 조작 조각 셋
+     (`#readchrome`)과 진행줄 하나뿐이고, 그것들은 스크롤을 따라 걷히지도
+     흐려지지도 않습니다 — 스크롤은 글을 옮기는 일일 뿐입니다. */
   html.reading, body.reading{height:100%; overflow:hidden; overscroll-behavior:none;}
   body.reading #app{position:fixed; inset:0;}
-  body.reading #topbar{position:fixed; top:0; left:0; right:0;}
+  /* 읽는 동안에는 상단바를 감춥니다. Breeze·Home·Words·Settings 는 서재에서
+     만나는 것들이고, 여기서 필요한 것은 `#readchrome` 의 세 조각뿐입니다.
+     **지우지 않고 감춥니다** — 넓은 화면에서는 예전 상단바를 고정형으로 다시
+     세울 수 있고, 그날 되돌릴 것이 이 한 줄이면 되게 하려는 것입니다. 상단바의
+     DOM·navigation·걷힘 규칙은 전부 제자리에 있습니다.
+     (`--topbar-h` 는 여기서 0 이 되지 않습니다 — 재는 자리가 보이는 동안에만
+     적기 때문입니다. scripts/ui/preferences.js 의 `syncTopbarH`) */
+  body.reading #topbar{display:none;}
   body.reading #v-read.on{position:absolute; inset:0;}
   /* 높이만 채웁니다. `position:absolute` 로 못 박으면 흐름에서 빠져서, 옆에
      서야 할 낱말 패널이 유일한 흐름 안 칸이 되어 왼쪽으로 갑니다. */
@@ -34,8 +41,10 @@
      이제 우리가 그립니다 (`scripts/reader/reader-scroll.js`). */
   #reader-scroll{position:absolute; inset:0; overflow:auto; overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y;}
-  #rbar{position:fixed; top:var(--topbar-h,56px); left:0; right:0; z-index:40;
-    background:var(--rbar-bg); height:3px; transition:top .24s ease;}
+  /* 읽은 자리는 화면 맨 위의 가는 선 하나로 남습니다. 시계·노치 밑으로 들어가면
+     안 보이므로 안전 영역만큼 내려 둡니다. 자리는 스크롤과 무관하게 고정입니다. */
+  #rbar{position:fixed; top:env(safe-area-inset-top); left:0; right:0; z-index:40;
+    background:var(--rbar-bg); height:3px;}
   .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
   .iconbtn:hover{background:var(--hover-quiet);}
   #readwrap,#originalwrap{transition:opacity .22s ease,filter .22s ease;}
@@ -46,7 +55,8 @@
   .reader-mode-cue-dom{position:absolute; z-index:38; display:block; pointer-events:none;
     border-radius:4px; background:var(--cue); animation:reader-mode-cue-out 10s ease forwards;}
   /* Aa settings popover */
-  #aa-pop{position:fixed; right:14px; bottom:calc(126px + env(safe-area-inset-bottom)); z-index:96; background:var(--sheet); border:1px solid var(--sheet-line);
+  /* Aa 단추가 오른쪽 위로 올라갔으므로 창도 그 밑에서 열립니다. */
+  #aa-pop{position:fixed; right:14px; top:calc(env(safe-area-inset-top) + 54px); z-index:96; background:var(--sheet); border:1px solid var(--sheet-line);
     border-radius:16px; padding:16px 18px; width:240px; box-shadow:var(--shadow); display:none;}
   #aa-pop.on{display:block;}
   .aa-legend{display:flex; flex-direction:column; gap:5px; font-size:11.5px; color:var(--soft);
@@ -67,6 +77,13 @@
     cursor:pointer; font-size:13px; color:var(--ink); font-family:var(--ui);}
   .aa-size button:hover{background:var(--sky);}
   #aa-fs{font-size:13.5px; min-width:24px; text-align:center; color:var(--ink);}
+  /* PDF 원본을 열었을 때만 켭니다 — updateOriginalZoomControls() 가 켜고 끕니다.
+     `.aa-row{display:flex}` 가 저작 스타일이라 UA 의 `[hidden]{display:none}` 을
+     덮어써서, 여기서 다시 명시해야 실제로 접힙니다. */
+  #aa-pdfzoom[hidden]{display:none;}
+  #aa-pdfzoom-pct{font-size:13.5px; min-width:34px; text-align:center; color:var(--ink);}
+  .aa-size button:disabled{opacity:.35; cursor:default;}
+  .aa-size button:disabled:hover{background:none;}
   .aa-toggle{width:46px; height:26px; border-radius:13px; border:none; background:var(--toggle-off); cursor:pointer;
     position:relative; transition:background .2s;}
   .aa-toggle i{position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%;
@@ -79,22 +96,62 @@
      "어두운 화면에서는 이 규칙이 통째로 없다/다르다"는 이야기입니다. */
   body.dark .page{box-shadow:none;}
   body.dark .sm-btn.ghost:hover{background:var(--ghost-btn-hover);}
-  /* ---- 읽는 동안 떠 있는 단추 ----
-     집중 모드 스위치는 없앴습니다. 읽어 내려가면 상단바가 저절로 걷히므로
-     켜고 끌 것이 없고, 남은 단추는 자리를 옮기지 않습니다. */
-  #readfabs{position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:70;
-    display:none; flex-direction:column; gap:10px; transition:opacity .3s;}
-  body.reading #readfabs{display:flex;}
-  #readfabs button{width:44px; height:44px; border-radius:50%;
-    border:1px solid var(--fab-line); background:var(--fab-bg); backdrop-filter:blur(6px);
-    cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--fab-ink);
-    box-shadow:var(--shadow-fab); transition:color .2s,background .2s;
-    font:600 15px var(--ui); padding:0;}
+  /* ---- 읽는 동안 떠 있는 조각 ----
+     상단바를 감추고 남긴 것은 셋입니다 — 왼쪽 위에 나가는 길, 오른쪽 위에 보기
+     설정과 글자↔원본. 스크롤과는 아무 관계가 없습니다: 자리도 진하기도 늘
+     같습니다. 예전에는 읽어 내려가면 상단바가 걷히고 단추가 흐려졌는데, 그것은
+     "읽는 중"이라는 상태를 하나 더 두는 일이었고 그 상태 때문에 노치 옆이
+     막혔다 열렸다 했습니다. 이 조각들에는 그 상태가 걸리지 않습니다.
+
+     생김새는 유리가 아니라 **종이**입니다 — 책 위에 얹은 얇은 반투명 종이 조각.
+     그래서 반짝이는 테두리도, 그라디언트도, 진한 그림자도 없습니다. 색은
+     탐색용이라 브랜드 파랑을 쓰지 않습니다(누르는 동안에만 살짝 짙어집니다). */
+  #readchrome{position:absolute; top:0; left:0; right:0; z-index:70;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    padding:calc(env(safe-area-inset-top) + 10px) 14px 0;
+    /* 조각 사이의 빈 자리는 본문의 것입니다 — 손짓이 여기서 막히면 안 됩니다. */
+    pointer-events:none;}
+  #readchrome > *{pointer-events:auto;}
+  #readback, #readfabs{border:1px solid var(--chrome-line); background:var(--chrome-paper);
+    backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+    box-shadow:var(--shadow-chrome); color:var(--chrome-ink);}
+  /* 왼쪽 원과 오른쪽 조각은 **같은 높이·같은 윗변**입니다(36px · 안전 영역 + 10px).
+     둘이 한 줄에 나란히 서는 물건이라, 한쪽만 1px 달라도 줄이 어긋나 보입니다.
+     아래 `#readfabs` 의 높이도 같은 36px 이어야 합니다. */
+  #readback{position:relative; width:36px; height:36px; border-radius:50%; padding:0;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  /* 그림은 상자 한가운데 놓여 있지만, 화살표의 **잉크**는 그렇지 않습니다.
+     `<` 는 24칸 중 8~14.2 만 차지해서 잉크의 한가운데가 11.1 — 상자 한가운데(12)
+     보다 0.9칸(19px 로 그리면 0.71px) 왼쪽입니다. 뾰족한 끝이 열린 쪽보다 가볍게
+     보이는 것까지 더해 1px 만 오른쪽으로 밉니다. 상자는 그대로입니다 — 옮기는
+     것은 그림 하나입니다. */
+  #readback svg{width:19px; height:19px; transform:translateX(1px);}
+  /* 보이는 것은 작게, 누르는 자리는 넉넉하게. 그림을 키우면 종이 위에서 무거워
+     지고, 자리를 줄이면 걸어가며 못 누릅니다 — 둘을 따로 정합니다. */
+  #readback::after{content:''; position:absolute; inset:-6px;}
+  #readfabs{display:flex; align-items:stretch; height:36px; border-radius:18px; overflow:hidden;}
+  #readfabs button{position:relative; width:44px; border:0; background:transparent; padding:0;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    color:inherit; font:600 14.5px var(--ui);}
+  #readfabs button::after{content:''; position:absolute; left:0; right:0; top:-6px; bottom:-6px;}
   #readfabs button[hidden]{display:none;}
-  #readfabs button:hover{color:var(--blue); background:var(--hover-quiet);}
-  /* 읽어 내려가는 동안에는 흐려집니다. 위로 올리면 곧바로 또렷해집니다. */
-  body.chrome-hidden #readfabs{opacity:.3;}
-  body.chrome-hidden #readfabs:hover{opacity:1;}
+  /* 둘은 서로 남입니다. 사이의 실선 한 줄이 그 사실을 말합니다 — 눈에 겨우
+     보일 만큼만, 그리고 하나만 있을 때는 없습니다. */
+  #readfabs button + button:not([hidden]){box-shadow:inset 1px 0 0 var(--chrome-line);}
+  #readback:active, #readfabs button:active{background:var(--chrome-press);}
+  @media (hover:hover){
+    #readback:hover, #readfabs button:hover{background:var(--chrome-press);}
+  }
+  /* 넓은 화면에서도 정보 구조는 같습니다 — 왼쪽에 나가는 길, 오른쪽에 둘.
+     데스크톱 전용 길은 만들지 않습니다. 넓어진 만큼 조각이 가장자리에서 조금
+     더 떨어지고, 마우스로 보는 화면에서는 들린 자국을 아예 지웁니다. */
+  /* 들린 자국은 넓은 화면에서도 남깁니다. 어두운 화면에서 조각의 종이색은 바탕과
+     같은 색(`--paper`)을 옅게 깐 것이라, 자국까지 지우면 조각이 통째로 사라집니다 —
+     글자가 없는 왼쪽 여백 위의 back 이 특히 그렇습니다. */
+  @media (min-width:761px){
+    #readchrome{padding:calc(env(safe-area-inset-top) + 16px) 22px 0;}
+    #aa-pop{right:22px; top:calc(env(safe-area-inset-top) + 62px);}
+  }
   /* 여기 있던 서른 줄은 "벌리면 커진 만큼 다시 줄여 놓는" 보정이었습니다 —
      `--vv-k`(배율의 역수)와 `--vv-x`·`--vv-y`·`--vv-dx`·`--vv-dy`(보이는 화면이
      문서의 어디에 있나)를 매 프레임 읽어 단추·시트·상단바에 되걸었습니다.
@@ -116,58 +173,45 @@
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-text{opacity:1; transform:none;}
 
-  /* PDF만 버튼 한 번마다 한 단계씩 키웁니다. 우하단의 읽기 단추처럼 화면에
-     고정하되, 상단바가 보일 때는 그 아래에 두고 걷히면 같이 위로 올라옵니다. */
-  #pdfzoomfabs{position:fixed; top:calc(var(--topbar-h,56px) + 14px); right:18px; z-index:70;
-    width:72px; height:33px; display:flex; overflow:hidden; border:1px solid var(--fab-line);
-    border-radius:11px; background:var(--fab-bg); backdrop-filter:blur(6px);
-    box-shadow:var(--shadow-fab); transition:top .24s ease,opacity .3s;}
-  #pdfzoomfabs[hidden]{display:none;}
-  #pdfzoomfabs button{flex:1; height:33px; border:0; background:transparent; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; color:var(--fab-ink);
-    font:600 18px/1 var(--ui); padding:0;
-    transition:color .2s,background .2s,opacity .2s;}
-  #pdfzoom-in{border-left:1px solid var(--fab-line)!important;}
-  #pdfzoomfabs button:hover{color:var(--blue); background:var(--hover-quiet);}
-  #pdfzoomfabs button:disabled{opacity:.35; cursor:default;}
-  body.chrome-hidden #pdfzoomfabs{top:14px; opacity:.28;}
-  body.chrome-hidden #pdfzoomfabs:hover{opacity:1;}
+  /* PDF 확대 −/+ 는 이제 Aa popover 안, `.aa-size` 한 줄입니다 — 뜨는 조각을
+     늘리지 않으려고 따로 띄우던 자리를 없앴습니다. 버튼이 부르는
+     `changeOriginalZoom` 과 그 안의 배율·범위·저장은 그대로입니다
+     (scripts/reader/reader-scroll.js). */
 
-  /* ---- 상단바는 읽는 방향을 따릅니다 ----
-     내려 읽으면 걷히고, 올리거나 글머리에 닿으면 돌아옵니다.
+  /* ---- 상단바는 읽는 방향을 따릅니다 (지금 읽는 화면에서는 잠자코 있습니다) ----
+     내려 읽으면 걷히고, 올리거나 글머리에 닿으면 돌아옵니다. 읽는 화면에서는
+     상단바가 `display:none` 이라 이 규칙들이 걸릴 자리가 없습니다 — 넓은 화면에서
+     예전 상단바를 다시 세우는 날 그대로 쓸 수 있게 남겨 둡니다.
 
-     이제는 **위로 밉니다.** 예전에는 밀지 못하고 흐리게만 지웠습니다 —
-     `position:sticky` 인 칸은 아이폰에서 스크롤과 같은 층이 자리를 잡는데, 거기에
-     `transform` 을 얹으면 스크롤이 흐르는 동안 옛 그림이 한 장 남았기 때문입니다.
-     상단바가 흐름 밖(`position:fixed`)으로 나오면서 그 층이 스크롤과 갈라졌고,
-     미는 그림은 이제 컴포지터가 혼자 그립니다. 자바스크립트는 클래스 하나만
-     바꾸므로 읽는 손맛을 한 프레임도 안 먹습니다.
+     **새 조작 조각(`#readchrome`)에는 이 규칙이 하나도 걸리지 않습니다.** 자리도
+     진하기도 늘 같아야 하기 때문입니다 — 예전의 `body.chrome-hidden #readfabs`
+     (읽어 내려가면 흐려짐)는 그래서 여기서 지웠습니다. PDF 확대는 이제 Aa
+     popover 안에 살아서 애초에 스크롤 걷힘과 무관합니다. 진행줄도 이제 한
+     자리에 고정입니다.
 
-     흐림 층만 미리 끕니다 — `backdrop-filter` 는 밀려난 자리에 흐림만 남기는
-     일이 있어서, 걷히는 동안에는 아예 안 씁니다.
-     자리를 차지하지 않으므로 글은 그 아래로 그대로 지나갑니다. */
+     밀지 못했던 것은 `position:sticky` 인 칸이 아이폰에서 스크롤과 같은 층에
+     있어서, `transform` 을 얹으면 옛 그림 한 장이 노치 옆에 남았기 때문입니다.
+     상단바가 흐름 밖(`fixed`)으로 나오면서 그 층이 갈라졌습니다. 흐림 층만 미리
+     끕니다 — `backdrop-filter` 는 밀려난 자리에 흐림만 남기는 일이 있습니다. */
   #topbar{transition:transform .24s cubic-bezier(.4,0,.2,1), opacity .18s ease, visibility 0s;}
   body.chrome-hidden #topbar{
     transform:translateY(-100%); opacity:0; visibility:hidden; pointer-events:none;
     backdrop-filter:none; -webkit-backdrop-filter:none;
     transition:transform .24s cubic-bezier(.4,0,.2,1), opacity .18s ease, visibility 0s linear .24s;}
-  /* 상단바가 걷혀도 읽은 위치는 가는 파란 선으로 남깁니다. 위치만 화면 맨
-     위로 옮기므로, 본문과 스크롤 좌표에는 손대지 않습니다. */
-  #rbar{transition:top .24s ease, opacity .24s ease;}
-  body.chrome-hidden #rbar{top:0; opacity:1;}
   @media(prefers-reduced-motion:reduce){
-    #topbar, #rbar, #readfabs, #pdfzoomfabs{transition:none;}
+    #topbar{transition:none;}
     body.chrome-hidden #topbar{transition:none;}
   }
   #ptrack{height:3px; background:var(--line2);}
   #pfill{height:3px; background:var(--blue); width:0; transition:width .15s;}
   /* 글 폭과 좌우 여백은 Aa 안에서 고릅니다. 스크롤에 따라 바뀌지는 않습니다 —
      읽는 도중 줄바꿈이 흔들리면 보던 자리를 놓칩니다.
-     위 여백에 상단바 높이를 더합니다. 상단바가 흐름 밖으로 나가면서 글이 맨
-     위에서부터 시작하는데, 그러면 첫 줄이 로고 뒤에 깔립니다. 읽어 내려가면
-     글은 그 아래로 지나가고 상단바는 걷힙니다 — 사파리와 같습니다. */
+
+     위 여백은 조작 조각이 **자리를 차지해서**가 아니라, 첫 줄이 처음부터 그
+     밑에 깔려 있으면 안 되기 때문입니다. 읽어 내려가면 글은 조각 밑으로 그대로
+     지나갑니다 — 조각은 자리를 뺏지 않고 떠 있을 뿐입니다(`#readchrome`). */
   #readwrap{max-width:var(--readw,700px); margin:0 auto;
-    padding:calc(var(--topbar-h,56px) + 36px) var(--readpad,26px) 50vh;}
+    padding:calc(env(safe-area-inset-top) + 62px) var(--readpad,26px) 50vh;}
   #rtitle{font-family:var(--serif); font-size:clamp(24px,3.4vw,30px); color:var(--ink); padding-bottom:18px; overflow-wrap:anywhere;
     border-bottom:1px solid var(--line); margin-bottom:8px;}
   /* 기사에는 연결할 원본 파일이 없습니다. 원문으로 가는 길만 남겨 둡니다. */
@@ -243,7 +287,7 @@
      바깥이 폭을 정하면 벌릴 때마다 종이의 왼쪽 끝이 움직여서, 손가락 아래 있던
      줄을 붙들어 둘 기준점이 사라집니다. 안쪽에 두면 여백도 종이와 함께 커집니다
      — 진짜 PDF 뷰어가 그렇습니다. */
-  #originalwrap{padding:calc(var(--topbar-h,56px) + 20px) 0 45vh;}
+  #originalwrap{padding:calc(env(safe-area-inset-top) + 56px) 0 45vh;}
   #originalwrap[hidden]{display:none;}
   #original-selection-hint{width:max-content; max-width:calc(100% - 12px); margin:0 auto 12px; padding:6px 11px;
     border:1px solid var(--line); border-radius:14px; background:var(--paper2); color:var(--soft2);
@@ -331,15 +375,22 @@
      `user-select:none` 은 여기 **살갗에** 답니다 — 책의 글자에 달면 caret 이
      함께 죽습니다. 고를 글자가 없는 빈 상자를 꾹 누르면 iOS 가 상자 전체를
      골라 버리는 것은 스캔본 종이와 낱말 시트 바깥에서 이미 겪은 그 버릇입니다.
-     배경은 투명하고 자리도 차지하지 않으므로 그림에는 아무 일도 없습니다. */
-  .epub-touch-skin{position:absolute; inset:0; background:transparent;
+     배경은 투명하고 자리도 차지하지 않으므로 그림에는 아무 일도 없습니다.
+
+     책 안의 글에는 `cursor:pointer` 가 붙어 있지만(위 `safety`), 마우스가 닿는
+     것은 그 글이 아니라 이 살갗입니다 — 그래서 데스크톱에서 본문 위의 커서가
+     화살표로 남았습니다. "여기를 누르면 뜻이 뜬다"를 커서가 말해 주지 못하면
+     원본 화면만 다른 앱처럼 보입니다. 살갗이 손가락의 임자이므로 커서의 임자도
+     살갗입니다. 스캔본 종이(`.pdf-source-page`)가 쪽 전체에 같은 커서를 다는
+     것과 같은 규칙이고, 손짓 판정에는 아무것도 더하지 않습니다. */
+  .epub-touch-skin{position:absolute; inset:0; background:transparent; cursor:pointer;
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
     -webkit-tap-highlight-color:transparent;}
 
   @media(max-width:760px){
     /* 좌우 여백은 확대되는 층 안쪽으로 내려갑니다 — 바깥이 폭을 정하면 벌릴 때
        종이의 왼쪽 끝이 움직여서 손가락 아래를 붙들 기준이 사라집니다. */
-    #originalwrap{padding:calc(var(--topbar-h,56px) + 12px) 0 45vh;}
+    #originalwrap{padding:calc(env(safe-area-inset-top) + 52px) 0 45vh;}
     .original-content{padding:0 6px;}
     .pdf-original{gap:10px;}
     .original-empty{margin:6vh 10px 0; padding:34px 22px;}
