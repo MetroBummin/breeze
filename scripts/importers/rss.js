@@ -9,7 +9,8 @@ const RSS_FEEDS = [
 ];
 const RSS_PER_FEED = 3;
 const RSS_CACHE_MS = 10 * 60 * 1000;
-let rssEntries = [];
+const RSS_PHOTO_MS = 8000;
+let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
 let rssRenderId = 0;
@@ -62,25 +63,6 @@ function rssUrlKey(raw){
     return url.href;
   }catch(error){ return String(raw || ''); }
 }
-/* photo 주소가 있다는 것과 그 사진이 실제로 뜬다는 것은 다릅니다 — 핫링크
-   차단이나 404가 섞여 있으면 문자열은 멀쩡한데 빈 칸만 남습니다. 실제로
-   그려지는지는 브라우저에게 직접 시켜서 확인합니다(classics.js·library.js가
-   표지에 쓰는 것과 같은 onload/onerror 판단입니다).
-
-   본문 첫 `<img>`를 그대로 믿을 수도 없습니다 — 일부 매체는 조회수를 세는
-   1×1 투명 gif를 기사 맨 앞에 심어 두는데, 그 주소는 정상적으로 "로드"됩니다.
-   그런 것까지 사진으로 치면 카드가 빈 칸으로 보이기는 마찬가지입니다. 그래서
-   실제로 뜬 크기까지 봅니다 — 추적 픽셀보다는 훨씬 크고, 진짜 작은 썸네일보다는
-   작은 문턱 하나로 충분합니다. */
-function rssPhotoLoads(url){
-  return new Promise(resolve => {
-    const probe = new Image();
-    const timer = setTimeout(() => { probe.onload = probe.onerror = null; resolve(false); }, 8000);
-    probe.onload = () => { clearTimeout(timer); resolve(probe.naturalWidth >= 60 && probe.naturalHeight >= 60); };
-    probe.onerror = () => { clearTimeout(timer); resolve(false); };
-    probe.src = url;
-  });
-}
 function rssAlreadySaved(entry){
   const key = rssUrlKey(entry.url);
   return books.some(book => book.sourceUrl && rssUrlKey(book.sourceUrl) === key);
@@ -100,31 +82,50 @@ function parseRss(xml, feed){
     };
   }).filter(entry => entry.title && entry.url);
 }
+/* 후보를 여기서 자르지 않습니다. 사진이 실제로 뜨는지는 카드가 그려질 때
+   `rssCardPhoto()` 가 딱 한 번 봅니다 — 여기서 미리 한 번 더 재 두면 "주소는
+   떴는데 카드에서는 안 뜬다"는 두 가지 상태가 생기고, 사용자가 보는 것은 늘
+   두 번째입니다. 그래서 이 단계는 순서만 정해서 넘깁니다. */
 async function loadRss(force){
-  if(!force && rssEntries.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssEntries;
+  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
   if(rssLoading) return rssLoading;
   rssLoading = Promise.all(RSS_FEEDS.map(async feed => {
     const html = await fetchArticleHtml(feed.url);
     const pictured = parseRss(html, feed).filter(entry => entry.photo);
-    if(!pictured.length) return [];
     /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
        피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
-    const start = (rssPage * RSS_PER_FEED) % pictured.length;
-    /* photo 주소가 있어도 실제로 뜨지 않는 기사는 뽑지 않습니다. 그 자리는
-       건너뛰고 같은 묶음의 다음 기사로 채웁니다 — 카드 수가 줄어들 뿐, 빈
-       칸으로 나가는 카드는 없습니다. */
-    const picked = [];
-    for(let step = 0; step < pictured.length && picked.length < RSS_PER_FEED; step++){
-      const entry = pictured[(start + step) % pictured.length];
-      if(await rssPhotoLoads(entry.photo)) picked.push(entry);
-    }
-    return picked;
+    const start = pictured.length ? (rssPage * RSS_PER_FEED) % pictured.length : 0;
+    return pictured.map((_, step) => pictured[(start + step) % pictured.length]);
   })).then(groups => {
-    rssEntries = groups.flat();
+    rssCands = groups;
     rssLoadedAt = Date.now();
-    return rssEntries;
+    return rssCands;
   }).finally(() => { rssLoading = null; });
   return rssLoading;
+}
+/* 카드에 실제로 붙는 그 `<img>` 하나가 뜰 때까지 기다립니다. 이 약속이 참으로
+   끝난 카드만 rail 에 들어가므로, `#casual-rail` 안의 RSS 카드는 언제나 이미
+   다 뜬 사진을 가집니다 — 빈 칸도, 글자만 남은 카드도 생길 수 없습니다.
+
+   크기까지 보는 이유: 일부 매체는 조회수를 세는 1×1 투명 gif 를 기사 맨 앞에
+   심어 두는데, 그 주소는 정상적으로 "로드"됩니다. 추적 픽셀보다는 훨씬 크고
+   진짜 작은 썸네일보다는 작은 문턱 하나면 충분합니다. */
+function rssCardPhoto(card, entry){
+  const image = /** @type {HTMLImageElement} */(card.querySelector('.cover'));
+  const thumb = card.querySelector('.thumb');
+  return new Promise(resolve => {
+    const done = ok => { clearTimeout(timer); image.onload = image.onerror = null; resolve(ok); };
+    const timer = setTimeout(() => done(false), RSS_PHOTO_MS);
+    image.onload = () => {
+      if(image.naturalWidth < 60 || image.naturalHeight < 60) return done(false);
+      image.hidden = false; thumb.classList.add('has-cover'); done(true);
+    };
+    image.onerror = () => done(false);
+    /* `loading="lazy"` 는 일부러 두지 않습니다 — 아직 문서에 붙지 않은(그리고
+       `hidden` 인) 엘리먼트는 화면에 자리가 없어 브라우저가 "가까워졌다"를 잴
+       수 없고, 그러면 지연 로드가 영영 안 걸립니다. */
+    image.src = entry.photo;
+  });
 }
 function rssCard(entry){
   const card = document.createElement('article');
@@ -133,22 +134,6 @@ function rssCard(entry){
   card.innerHTML = `<div class="thumb rss-thumb"><img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
-  if(entry.photo){
-    /* 목록에 뽑힐 때 이미 한 번 떴던 사진이지만, 카드로 그릴 때 또 실패할 수
-       있습니다(캐시 밀림 등) — classics.js·library.js의 표지와 같은 방법으로,
-       실제로 뜬 순간에만 사진 칸으로 바뀌게 둡니다. 실패하면 예비 글자칸이
-       그대로 남아 빈 칸이 되지 않습니다.
-
-       `loading="lazy"` 는 일부러 뺐습니다 — `hidden`(display:none) 인
-       엘리먼트는 화면에 자리가 없어 브라우저가 "가까워졌다"를 잴 수 없고,
-       그러면 지연 로드가 영영 안 걸리는 사진이 생겼습니다(요청은
-       `loadRss()` 단계에서 이미 한 번 검증까지 마친 뒤라, 미리 불러오지
-       않을 이유도 없습니다). */
-    const image = /** @type {HTMLImageElement} */(card.querySelector('.cover'));
-    const thumb = card.querySelector('.thumb');
-    image.onload = () => { image.hidden = false; thumb.classList.add('has-cover'); };
-    image.src = entry.photo;
-  }
   card.querySelector('.src').textContent = entry.source;
   card.querySelector('.lede').textContent = entry.summary;
   card.querySelector('.ct').textContent = entry.title;
@@ -171,15 +156,29 @@ async function importRssEntry(entry, card){
     toast((error && error.message) || '기사를 가져오지 못했어요');
   }finally{ card.classList.remove('busy'); }
 }
+/* 한 피드에서 사진이 실제로 뜬 카드 RSS_PER_FEED 장을 만듭니다. 실패한 후보는
+   그 자리에서 버리고 같은 순서의 다음 기사로 채웁니다 — 카드가 줄어들 뿐, 사진
+   없는 카드가 나가는 일은 없습니다. */
+async function rssFeedCards(entries, renderId){
+  const cards = [];
+  for(const entry of entries){
+    if(cards.length >= RSS_PER_FEED || renderId !== rssRenderId) break;
+    if(rssAlreadySaved(entry)) continue;
+    const card = rssCard(entry);
+    if(await rssCardPhoto(card, entry)) cards.push(card);
+  }
+  return cards;
+}
 function appendRssCards(rail, force){
   const renderId = ++rssRenderId;
   rail.querySelectorAll('.rss-card').forEach(card => card.remove());
-  loadRss(force).then(entries => {
-    if(renderId !== rssRenderId || !rail.isConnected) return;
-    const before = rail.querySelector('.casual.add');
-    entries.filter(entry => !rssAlreadySaved(entry))
-      .forEach(entry => rail.insertBefore(rssCard(entry), before));
-  }).catch(error => { console.error(error); });
+  loadRss(force)
+    .then(groups => Promise.all(groups.map(entries => rssFeedCards(entries, renderId))))
+    .then(groups => {
+      if(renderId !== rssRenderId || !rail.isConnected) return;
+      const before = rail.querySelector('.casual.add');
+      groups.flat().forEach(card => rail.insertBefore(card, before));
+    }).catch(error => { console.error(error); });
 }
 document.getElementById('rss-refresh').onclick = () => {
   rssPage++;

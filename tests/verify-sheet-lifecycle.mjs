@@ -176,6 +176,9 @@ function makeContext(world, net, store){
     },
   };
   context.window = context;
+  /* 창 자체에 붙는 것은 지금 `online`·`offline` 둘뿐입니다 — 이 시험의 주제가
+     아니라 받아만 둡니다. */
+  context.addEventListener = () => {};
   context.matchMedia = () => ({ matches:false });
   context.window.matchMedia = context.matchMedia;
   return context;

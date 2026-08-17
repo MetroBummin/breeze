@@ -574,7 +574,16 @@ function renderPanel(){
      한도(quota)와 마찬가지로 오프라인도 지금 눌러서 될 일이 아닙니다 — 단추를
      숨기고 아래 안내 한 줄만 남겨서 "다시 눌러 보세요"처럼 보이지 않게 합니다. */
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
-  const off = asking ? '' : (w.aiOff || '');
+  /* 오프라인은 이 낱말에 무슨 일이 있었는지와 상관없는 사실입니다 — 지금 연결이
+     없다는 것뿐입니다. 그래서 `w.aiOff` 를 거치지 않고 화면에서 바로 정합니다.
+     `aiOff` 는 `fetchLook` 이 다녀와야 붙는 자국인데, 전에 저장해 둔 낱말을 다시
+     누르면 그 길(`addWord`→`fetchDict`→`fetchLook`)을 아예 지나지 않아 자국이
+     비어 있었습니다 — 그래서 오프라인인데도 안내 한 줄이 통째로 사라졌습니다.
+     처음 누른 낱말이든 전에 담아 둔 낱말이든, 캐시가 있든 없든, 단어창이 열려
+     있고 오프라인이면 안내는 언제나 뜹니다. 거꾸로 연결이 돌아왔으면 지난번에
+     찍힌 `aiOff:'offline'` 은 지금 화면의 사실이 아니므로 함께 걷습니다. */
+  const offline = navigator.onLine === false;
+  const off = offline ? 'offline' : asking ? '' : (w.aiOff === 'offline' ? '' : (w.aiOff || ''));
   aiBtn.style.display = (off && off !== 'quota' && off !== 'offline') ? 'flex' : 'none';
   document.getElementById('p-aibtn-t').textContent =
       (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
@@ -1260,6 +1269,10 @@ function askAI(){
 }
 document.getElementById('p-aibtn').onclick   = ()=>askAI();
 document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey]) askWiderContext(selKey); };
+/* 단어창을 열어 둔 채로 연결이 끊기거나 돌아올 수 있습니다. 안내 한 줄은 지금
+   연결 상태를 그대로 읽으므로(위 `off`), 그 순간 한 번 다시 그리면 됩니다. */
+addEventListener('online',  () => { if(selKey) renderPanel(); });
+addEventListener('offline', () => { if(selKey) renderPanel(); });
 
 /* 무료 사전. 발음과 영어 뜻은 여기서만 오고, AI 가 답하지 못했을 때는 뜻자리도 지킵니다.
    fetchKo 는 w.ko 가 비어 있을 때만 채우므로 AI 답을 밀어내지 않습니다. */

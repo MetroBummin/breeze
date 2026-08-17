@@ -37,6 +37,7 @@ const context = {
               addEventListener: noop, documentElement: fakeElement(),
               body: fakeElement() },
   window: { addEventListener: noop },
+  addEventListener: noop,                   // 창에 바로 붙는 online·offline
   localStorage: { getItem: () => null, setItem: noop, removeItem: noop },
   navigator: { language: 'ko' },
   console, setTimeout, clearTimeout,
