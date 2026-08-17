@@ -411,14 +411,20 @@ async function fetchArticleImage(url){
   return blob;
 }
 /* 사진은 넣는 순간 기기에 담습니다. 나중에 비행기 안에서도 같은 화면이
-   나와야 하고, 읽을 때마다 그 매체 서버에 발자국을 남기지 않기 위해서입니다. */
-async function attachArticleImages(parsed){
+   나와야 하고, 읽을 때마다 그 매체 서버에 발자국을 남기지 않기 위해서입니다.
+
+   `fallbackPhoto` 는 RSS 카드에서 온 기사일 때만 옵니다 — 그 카드에 이미 떠
+   있던 사진 주소입니다. 원문에서 캐낸 표지와는 늘 다른 주소입니다(피드는 제
+   나름의 크기를, 원문은 og:image 를 줍니다). 그래서 카드에서는 사진이 보이는데
+   담고 나면 "사진은 못 가져왔어요" 가 뜨는 일이 있었습니다. 원문 쪽이 안 되면
+   눈앞에 떠 있던 그 주소로 표지를 채웁니다. */
+async function attachArticleImages(parsed, fallbackPhoto){
   const wanted = [];
   if(parsed.cover) wanted.push(parsed.cover);
   parsed.blocks.forEach(block => {
     if(block.r === 'img' && wanted.indexOf(block.t) < 0) wanted.push(block.t);
   });
-  if(!wanted.length) return { wanted:0, missed:0 };
+  if(!wanted.length && !fallbackPhoto) return { wanted:0, missed:0 };
 
   const fetched = await Promise.all(wanted.map(url =>
     fetchArticleImage(url).then(blob => [url, blob], () => [url, null])));
@@ -430,13 +436,30 @@ async function attachArticleImages(parsed){
 
   parsed.blocks = parsed.blocks.filter(block => block.r !== 'img' || stored.has(block.t));
   parsed.cover = stored.has(parsed.cover) ? articleImageKey(parsed.cover) : '';
+  const missing = wanted.filter(url => !stored.has(url)).length;
+  /* 표지 자리가 비었을 때만 갑니다 — 원문 사진이 잘 왔으면 여기는 지나갑니다. */
+  let rescued = false;
+  if(!parsed.cover && fallbackPhoto && !stored.has(fallbackPhoto)){
+    const blob = await fetchArticleImage(fallbackPhoto);
+    if(blob){
+      try{
+        await imgPut(articleImageKey(fallbackPhoto), blob);
+        stored.add(fallbackPhoto);
+        parsed.cover = articleImageKey(fallbackPhoto);
+        rescued = true;
+      }catch(e){}
+    }
+  }
+
   /* 어느 사진이 어느 주소에서 왔는지 적어 둡니다. 다른 기기는 이것만 있으면
      같은 사진을 스스로 받아 옵니다 — 서버에 남의 사진을 쌓아 둘 이유가
      없습니다. 주소 몇 줄이라 동기화 짐도 늘지 않습니다. */
   parsed.imgSrc = {};
   stored.forEach(url => { parsed.imgSrc[articleImageKey(url)] = url; });
   Object.assign(parsed, articleAssemble(parsed.title, parsed.blocks));
-  return { wanted:wanted.length, missed:wanted.length - stored.size };
+  /* 대신 받아 온 한 장은 표지 몫을 채웠으므로 못 받은 장수에서 뺍니다. 그러지
+     않으면 표지가 멀쩡히 떠 있는 화면 위로 "한 장도 못 받았어요" 가 뜹니다. */
+  return { wanted:wanted.length, missed:rescued ? Math.max(missing - 1, 0) : missing };
 }
 
 /* 사진 한 장 꺼내기. 다른 기기에서 받은 기사에는 문단과 사진 주소만 있고

@@ -147,7 +147,10 @@ async function importRssEntry(entry, card){
     const html = await fetchArticleHtml(entry.url);
     const parsed = parseArticleHtml(html, entry.url);
     if(!parsed) throw new Error('본문을 찾지 못했어요');
-    const photos = await attachArticleImages(parsed);
+    /* 카드에 떠 있던 그 사진을 함께 넘깁니다 — 원문에서 표지를 못 캐면 이것이
+       대신 들어갑니다. 사진이 보이는 카드를 눌렀는데 사진 없는 글이 담기는
+       일은 없어야 합니다. */
+    const photos = await attachArticleImages(parsed, entry.photo);
     await saveCasualBook(parsed, { kind:'article', site:parsed.site || entry.source,
       sourceUrl:parsed.url, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null });
     if(photos.missed === photos.wanted && photos.wanted > 0) toast('글은 담았지만 사진은 못 가져왔어요');
