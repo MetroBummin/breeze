@@ -588,6 +588,11 @@ function renderPanel(){
         : '무료 체험을 다 썼어요')
     : '';
   aiHint.style.display = (off || trialWarn) ? 'block' : 'none';
+  /* `#p-aihint` 는 단추 바로 아래 붙도록 음수 margin 으로 당겨져 있습니다
+     (styles/dictionary.css). 단추가 사라지면(quota·offline) 끌어당길 것이
+     없어서 그 위의 낱말 칸(`#p-clicked`)까지 겹쳐 올라갑니다 — 그래서 단추가
+     실제로 그려질 때만 당기고, 아니면 평범한 간격으로 놔둡니다. */
+  aiHint.classList.toggle('tight', aiBtn.style.display !== 'none');
   aiHint.textContent =
       off === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
     : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'

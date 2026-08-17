@@ -130,14 +130,20 @@ function rssCard(entry){
   const card = document.createElement('article');
   const color = entry.source === 'ProPublica' ? 1 : 0;
   card.className = 'casual rss-card cpal' + color;
-  card.innerHTML = `<div class="thumb rss-thumb"><img class="cover" alt="" loading="lazy" hidden>
+  card.innerHTML = `<div class="thumb rss-thumb"><img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
   if(entry.photo){
     /* 목록에 뽑힐 때 이미 한 번 떴던 사진이지만, 카드로 그릴 때 또 실패할 수
        있습니다(캐시 밀림 등) — classics.js·library.js의 표지와 같은 방법으로,
        실제로 뜬 순간에만 사진 칸으로 바뀌게 둡니다. 실패하면 예비 글자칸이
-       그대로 남아 빈 칸이 되지 않습니다. */
+       그대로 남아 빈 칸이 되지 않습니다.
+
+       `loading="lazy"` 는 일부러 뺐습니다 — `hidden`(display:none) 인
+       엘리먼트는 화면에 자리가 없어 브라우저가 "가까워졌다"를 잴 수 없고,
+       그러면 지연 로드가 영영 안 걸리는 사진이 생겼습니다(요청은
+       `loadRss()` 단계에서 이미 한 번 검증까지 마친 뒤라, 미리 불러오지
+       않을 이유도 없습니다). */
     const image = /** @type {HTMLImageElement} */(card.querySelector('.cover'));
     const thumb = card.querySelector('.thumb');
     image.onload = () => { image.hidden = false; thumb.classList.add('has-cover'); };

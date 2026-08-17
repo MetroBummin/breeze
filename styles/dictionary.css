@@ -155,7 +155,12 @@
   #p-context.on:hover{background:var(--ai-bg2); border-style:solid;}
   #p-context:disabled{opacity:.55; cursor:default;}
   #p-context .sp{font-size:11px;}
-  #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:-8px 0 12px;}
+  /* 기본은 보통 흐름의 위 여백입니다 — 바로 위 형제가 아무것도 안 그려질 때
+     (quota·offline: 단추가 숨습니다) 이 여백이 그 위의 낱말 칸과 부딪히지
+     않게. 단추가 실제로 있을 때만(.tight, scripts/dictionary/dictionary.js)
+     그 아래로 바짝 당깁니다. */
+  #p-aihint{font-size:11px; color:var(--soft2); text-align:center; margin:8px 0 12px;}
+  #p-aihint.tight{margin-top:-8px;}
   /* ── 문장 해석 ──
      낱말 창은 본문 옆의 보조 칸이지만, 문장 해석은 지금 읽던 한 문장에 대한
      답이라 화면 한가운데에 뜹니다. 파랗게 차오른 문장이 그 뒤에 보입니다. */
