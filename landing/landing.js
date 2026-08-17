@@ -1,8 +1,10 @@
 /* ================= 랜딩 =================
  *
  * 이 파일은 앱과 아무것도 나눠 갖지 않습니다. 앱의 사전도, 저장소도, 손짓
- * 판정기도 부르지 않습니다 — 여기 있는 것은 아래 상자에 적어 둔 낱말 넷과
- * 문장 둘이 전부이고, 서버로 나가는 요청은 하나도 없습니다.
+ * 판정기도 부르지 않습니다 — 여기 있는 것은 아래 상자에 적어 둔 낱말들과 문장
+ * 둘이 전부이고, 서버로 나가는 요청은 하나도 없습니다. 두 문장에 나오는
+ * 일반 낱말은(상표 `Breeze` 포함) 예외 없이 전부 눌립니다 — 특정 낱말만
+ * 되는 것처럼 보이면 안 되기 때문입니다.
  *
  * 그런데 화면에 뜨는 창은 진짜 그 창입니다. 단어창도 시트도 문장 창도 앱의
  * CSS 를 그대로 링크해서 씁니다(index.html). 랜딩에서 눌러 본 방식이 앱에서
@@ -38,6 +40,26 @@ const LP_WORDS = {
     alts:['나머지','휴식','쉬다'],
     defs:[['n.','the remaining part of something'],
           ['v.','to stop working for a while']] },
+  on:{ line:1, word:'on', ko:'~에', pos:'prep.',
+    note:'집중하는 대상 바로 앞에 붙는 전치사예요.',
+    alts:['~에','~위에','~에 대해'],
+    defs:[['prep.','used to show what someone gives their attention to'],
+          ['prep.','positioned so as to be supported by or attached to']] },
+  the:{ line:1, word:'the', ko:'그', pos:'art.',
+    note:'이미 알고 있는 특정한 대상을 가리킬 때 붙는 관사예요.',
+    alts:['그','이','저'],
+    defs:[['art.','used to refer to a specific thing already known or mentioned'],
+          ['art.','used before a noun that is unique or already clear']] },
+  will:{ line:2, word:'will', ko:'~할 것이다', pos:'aux.',
+    note:'앞으로 일어날 일을 나타낼 때 쓰는 조동사예요.',
+    alts:['~할 것이다','~할게요','~하겠다'],
+    defs:[['aux.','used to talk about what happens in the future'],
+          ['n.','the mental power to choose and decide']] },
+  breeze:{ line:2, word:'Breeze', ko:'산들바람', pos:'n.',
+    note:'상표이기 전에, 가볍고 상쾌하게 부는 바람을 가리키는 실제 영어 낱말이에요.',
+    alts:['산들바람','미풍','순풍'],
+    defs:[['n.','a light, gentle wind'],
+          ['v.','to move somewhere in a quick, easy way']] },
 };
 /* 문장의 한국어는 이 페이지가 이미 쓴 그 두 줄입니다 — 여기서 새로 지어낸 말은
    없습니다. */
@@ -49,15 +71,21 @@ const LP_SENTS = {
       points:['handle 은 여기서 "알아서 맡아 처리하다"에 가까워요.',
               'the rest 는 앞에서 말한 것을 뺀 나머지 전부예요.'] },
 };
-/* 눌러서 뜻을 볼 수 있는 낱말만 상자로 감쌉니다. 읽는 화면에서는 모든 낱말이
-   상자지만, 이 페이지가 가진 사전은 위의 넷뿐이라 누를 곳과 누를 수 없는 곳을
-   말과 어긋나게 두지 않습니다. */
+/* 읽는 화면에서는 모든 낱말이 상자입니다 — 특정 낱말만 눌리면 "이 낱말만
+   특별하다" 는 오해를 남깁니다. 그래서 영어 문장의 일반 낱말은 전부 상자로
+   감쌉니다. `Breeze` 는 이 문자열 안에 없습니다 — index.html 의 `.lp-brand`
+   자리가 이미 그 자리를 지키고 있고, 그 span 도 `.w data-w="breeze"` 라서
+   똑같이 눌립니다(상표이기 전에 "가볍게 부는 바람"이라는 뜻이 있으니까요). */
 const LP_COPY = {
   ko:{ a1:'이야기에 집중하세요.', a2:'나머지는 ', b2:'가 할게요.' },
-  en:{ a1:'<span class="w" data-w="focus">Focus</span> on the ' +
+  en:{ a1:'<span class="w" data-w="focus">Focus</span> ' +
+          '<span class="w" data-w="on">on</span> ' +
+          '<span class="w" data-w="the">the</span> ' +
           '<span class="w" data-w="story">story</span>.',
        a2:'',
-       b2:' will <span class="w" data-w="handle">handle</span> the ' +
+       b2:' <span class="w" data-w="will">will</span> ' +
+          '<span class="w" data-w="handle">handle</span> ' +
+          '<span class="w" data-w="the">the</span> ' +
           '<span class="w" data-w="rest">rest</span>.' },
 };
 
@@ -112,7 +140,7 @@ function lpCloseWord(){
   document.querySelectorAll('.w.sel').forEach(node => node.classList.remove('sel'));
 }
 
-function lpOpenWord(key){
+function lpOpenWord(key, fromLine){
   const entry = LP_WORDS[key];
   if(!entry) return;
   lpCloseSentence();
@@ -132,7 +160,11 @@ function lpOpenWord(key){
     chip.addEventListener('click', () => lpPickMeaning(key, chip.textContent)));
   $('p-defs').innerHTML = entry.defs.map(([pos, text]) =>
     '<div><span class="pos">' + pos + '</span>' + text + '</div>').join('');
-  $('p-ex').textContent = LP_SENTS[entry.line].en;
+  /* "the" 처럼 두 줄에 다 나오는 낱말은, 실제로 누른 그 줄이 예문이어야 맞습니다
+     — 사전 항목 하나가 두 문장을 다 가리키면 어느 쪽에서 눌러도 같은 예문만
+     보이게 됩니다. 눌린 자리를 모를 때(2번 장면이 스스로 여는 경우)만
+     `entry.line` 을 기본값으로 씁니다. */
+  $('p-ex').textContent = LP_SENTS[fromLine || entry.line].en;
 
   document.querySelectorAll('.w').forEach(node =>
     node.classList.toggle('sel', node.dataset.w === key));
@@ -213,7 +245,7 @@ document.querySelectorAll('.lp-sentence').forEach(sentence => {
     if(!timer) return;                             /* 움직였거나 남의 손짓입니다 */
     stop();
     const word = (/** @type {HTMLElement} */(event.target)).closest('.w');
-    if(word) lpOpenWord(word.dataset.w);
+    if(word) lpOpenWord(word.dataset.w, +sentence.dataset.s);
   });
   /* 안드로이드는 꾹 누르면 제 메뉴를 엽니다. 이 자리에서 꾹 누르는 것은
      문장을 물어보는 일이라 그 메뉴는 오지 않습니다. */

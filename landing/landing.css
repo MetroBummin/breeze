@@ -21,6 +21,28 @@
  * 언어가 바뀌는 동안에도 `Breeze` 만 흐려지지 않고 남습니다.
  */
 
+/* ---- 두 줄만을 위한 한글 글꼴 ----
+   앱은 큰 제목 자리에 고운바탕을 씁니다. 그런데 이 페이지는 그 글꼴을 다른
+   어떤 화면보다 크게(최대 50px) 씁니다 — 실측해 보니 "요" 글리프가 다른 글자보다
+   베이스라인에서 9px 위에서 잉크가 끝나고(캔버스로 잰 값입니다), 두 문장이
+   공교롭게 둘 다 "요."로 끝나서 그 자리가 계속 눈에 띕니다. 레이아웃 줄상자는
+   문자마다 정확히 같아서(Range 로 재면 소수점까지 일치) CSS 버그는 아니고,
+   고운바탕이라는 특정 글꼴의 특성입니다.
+
+   그래서 이 두 줄에서만 노토 세리프 KR 로 바꿉니다 — 획 편차가 훨씬 적어
+   "정돈되어" 보입니다. 앱의 styles/fonts.css 는 건드리지 않습니다: 새 글꼴은
+   이 폴더 안(assets/fonts/)에만 있고, 아래 두 줄이 --display 를 다시 정의하는
+   자리도 `#copy` 하나뿐이라 단어창 등 다른 한글에는 영향이 없습니다. 원본
+   text= 로만 골라 받아서(이 두 줄에 실제로 쓰는 18자) 56KB 입니다. */
+  @font-face{
+    font-family:'Noto Serif KR';
+    font-style:normal;
+    font-weight:600;
+    font-display:swap;
+    src:url(assets/fonts/noto-serif-kr-600.woff2) format('woff2');
+  }
+  #copy{--display:'Fraunces','Noto Serif KR',Georgia,'Times New Roman',serif;}
+
 /* ---- 첫 장면 그림 ----
    앱의 스플래시(`#splash`)를 그대로 가져다 뒷배경으로 세웁니다. 세로·가로 고르기,
    그 위의 얇은 막, 느린 숨쉬기, 움직임을 줄여 달라는 설정까지 styles/base.css 가
@@ -116,10 +138,17 @@
 
    경계는 단어창이 옆으로 나오는 그 폭(1000px)과 같습니다. 그보다 좁을 때 두 줄을
    왼쪽 절반에 밀어 넣으면 "Breeze will handle the rest." 가 세 줄이 됩니다 —
-   두 줄이라는 것이 이 화면의 전부인데. 그 아래에서는 위쪽에 폭을 다 쓰고 섭니다. */
+   두 줄이라는 것이 이 화면의 전부인데. 그 아래에서는 위쪽에 폭을 다 쓰고 섭니다.
+
+   660px 은 가장 긴 줄(영어 둘째 줄, 50px 글자에서 약 610px)에는 좁았습니다 —
+   "Breeze will handle the" 까지 차고 "rest." 만 다음 줄로 밀려, 문장이 두 줄이
+   아니라 세 줄이 되고 파랗게 차오르는 칠도 그 자리에서 끊겨 보였습니다. 820px 은
+   가장 긴 줄보다 넉넉히 넓어서, 이 폭 위에서는(1000px 이상 전부) 두 줄이 항상
+   두 줄입니다. 옆에 뜨는 단어창·문장창(오른쪽 clamp(20px,5vw,64px) 안쪽)과는
+   1000px 에서도 70px 넘게 떨어져 겹치지 않습니다. */
   @media (min-width:1000px){
     #copy{top:50%; transform:translateY(-54%);
-      width:min(56vw,660px); right:auto; padding:0 0 0 clamp(32px,7vw,112px);
+      width:min(56vw,820px); right:auto; padding:0 0 0 clamp(32px,7vw,112px);
       font-size:clamp(34px,3.4vw,50px);}
     #hint{font-size:12.5px;}
   }
