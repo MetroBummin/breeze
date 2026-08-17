@@ -1,0 +1,130 @@
+/* ================= 랜딩 무대 =================
+ *
+ * 이 파일이 정하는 것은 **자리**뿐입니다. 색·그림자·글꼴은 한 줄도 여기서 만들지
+ * 않고 styles/tokens.css 의 이름만 씁니다. 단어창·시트·문장 창의 생김새도 여기
+ * 없습니다 — 그건 앱의 것을 그대로 링크해 씁니다(../styles/dictionary.css ·
+ * ../styles/reader.css). 랜딩에서 보는 Breeze 는 진짜 그 Breeze 여야 합니다.
+ *
+ * ---- 장면은 넷, 스크롤에 붙어 움직이는 값은 없습니다 ----
+ * 무대 하나가 `sticky` 로 제자리에 서 있고, 그 바깥의 빈 레일만 길게 흐릅니다.
+ * 스크롤이 하는 일은 `body[data-state]` 를 0→3 으로 넘기는 것 하나뿐입니다.
+ *
+ *   0  들판 + 한국어
+ *   1  그림이 물러나고 영어 — 여기서부터 진짜 Breeze 처럼 눌립니다
+ *   2  같은 문장 + 단어창이 이미 열려 있는 순간
+ *   3  같은 문장 + 문장 해석이 이미 열려 있는 순간
+ *
+ * 2·3 은 시연이 아니라 **끝난 순간**입니다. 커서가 움직이지도, 창이 열리는 것을
+ * 보여 주지도 않습니다 — 눌렀다면 보게 될 화면이 그냥 거기 있습니다.
+ *
+ * 두 줄의 자리는 넷 내내 같습니다. 그래서 장면이 넘어가도 글이 움직이지 않고,
+ * 언어가 바뀌는 동안에도 `Breeze` 만 흐려지지 않고 남습니다.
+ */
+
+/* ---- 첫 장면 그림 ----
+   앱의 스플래시(`#splash`)를 그대로 가져다 뒷배경으로 세웁니다. 세로·가로 고르기,
+   그 위의 얇은 막, 느린 숨쉬기, 움직임을 줄여 달라는 설정까지 styles/base.css 가
+   이미 하고 있어서 여기서는 층과 물러나는 법만 적습니다. */
+  #splash{z-index:0; transition:opacity .9s ease;}
+  /* 아주 옅게 남깁니다 — 그림이 그대로 보일 만큼 남기면 그 위에 뜬 단어창이
+     사진 위의 상자가 되고, 눌린 낱말의 옅은 하늘색 표시가 그림에 묻힙니다.
+     장면이 물러났다는 것만 남기고 종이에 자리를 내줍니다. */
+  body:not([data-state="0"]) #splash{opacity:.045;}
+  /* 앱은 이 그림을 걷을 때 `hide` 를 씁니다. 여기서는 걷지 않고 물러날 뿐입니다. */
+  #splash.hide{opacity:.045; pointer-events:none;}
+
+/* ---- 레일과 무대 ----
+   레일은 그저 스크롤할 거리입니다. 장면 하나에 화면 하나씩. */
+  #rail{position:relative; z-index:1; height:400vh; height:400svh;}
+  #stage{position:sticky; top:0; height:100vh; height:100svh; overflow:hidden;}
+
+/* ---- 두 줄 ----
+   좁은 화면에서는 위쪽에 섭니다. 아래에서 올라오는 시트가 화면의 3분의 2를
+   덮어도 문장이 가려지지 않아야 하고, 장면이 바뀔 때 글이 자리를 옮기지 않아야
+   하기 때문입니다 — 자리를 한 번 정하면 넷 내내 그대로입니다. */
+  #copy{position:absolute; left:0; right:0; top:13svh; padding:0 24px;
+    font-family:var(--display); font-weight:600;
+    font-size:clamp(24px,6.2vw,38px); line-height:1.5; letter-spacing:-.01em;
+    color:var(--brand-cream); text-shadow:var(--brand-ink-shadow);
+    transition:color .8s ease, text-shadow .8s ease;}
+  /* 그림이 물러나면 글은 종이 위의 잉크가 됩니다. */
+  body:not([data-state="0"]) #copy{color:var(--ink); text-shadow:none;}
+  .lp-line + .lp-line{margin-top:.15em;}
+  /* ---- 상표만 남습니다 ----
+     한국어가 영어로 바뀔 때, 앞뒤의 말은 흐려졌다 돌아오고 `Breeze` 는 흐려지지
+     않습니다. 줄 안에서 자리가 바뀌는 것만 옛 자리에서부터 조용히 미끄러져
+     옵니다 — 그 한 줄은 landing.js 에 있습니다. */
+  .lp-a,.lp-b{transition:opacity .32s ease;}
+  body.lp-swap .lp-a,body.lp-swap .lp-b{opacity:0;}
+  .lp-brand{display:inline-block; transition:transform .5s cubic-bezier(.4,0,.2,1);}
+
+/* ---- 눌리는 문장 ----
+   문장 위에서 꾹 누르면 iOS 는 가장 가까운 상자를 통째로 골라 버립니다. 읽는
+   화면의 낱말(`.w`)이 이미 같은 이유로 선택을 끄고 있어서, 그 사이의 글자에도
+   같은 규칙을 겁니다 — 그러지 않으면 문장을 길게 누를 때마다 파랗게 잡힙니다. */
+  .lp-sentence{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent; border-radius:6px;
+    transition:background .2s ease, box-shadow .2s ease;}
+  /* 문장이 파랗게 차오르는 것은 앱과 같은 색입니다(`--cue`). */
+  .lp-sentence.cued{background:var(--cue); box-shadow:0 0 0 4px var(--cue);}
+
+/* ---- 조작 힌트 ----
+   시선을 끌면 안 되는 한 줄입니다. 영어 문장보다 훨씬 작고 흐리게, 조금 늦게
+   옵니다. 깜빡이거나 부풀지 않습니다 — 누르라고 조르는 자리가 아닙니다.
+   두 줄 바로 아래에 그냥 놓입니다. 자리를 따로 잡지 않으므로 나타날 때
+   아무것도 밀지 않습니다. */
+  #hint{margin-top:1.5em; font:500 12px/1.6 var(--ui); color:var(--soft2);
+    text-shadow:none; opacity:0; transition:opacity .9s ease; pointer-events:none;}
+  #hint.on{opacity:1;}
+
+/* ================= 단어창 자리 =================
+   좁은 손가락 화면에서 아래에서 올라오는 시트는 styles/dictionary.css 가 이미 다
+   합니다. 여기서 고치는 것은 한 줄뿐입니다: 시트 뒤의 판이 스크롤까지 막지
+   않게. 앱에서는 그 판을 눌러 시트를 닫는데, 그 길은 그대로 둡니다 — 랜딩용
+   손짓을 새로 만들지 않고 앱과 같은 자리에서 같은 방법으로 닫습니다. */
+  @media (max-width:999px) and (pointer:coarse){
+    #sheetbg{touch-action:auto;}
+    #panel{max-height:66svh;}
+  }
+
+/* 넓은 화면 — 앱에서는 본문 옆에 나란히 서는 칸이지만, 이 페이지에는 나란히 설
+   본문이 없습니다(두 줄뿐입니다). 그래서 같은 칸을 문장 옆에 떠 있는 카드로
+   둡니다. 아래 물음은 styles/dictionary.css 의 "옆 칸이냐 시트냐" 를 그대로
+   뒤집은 것입니다 — 경계를 둘로 만들지 않으려고. */
+  @media not all and (max-width:999px) and (pointer:coarse){
+    #panel{position:fixed; left:auto; right:clamp(20px,5vw,64px); bottom:auto;
+      top:50%; transform:translateY(-50%); margin-top:0;
+      width:min(340px,32vw); height:auto; max-height:min(680px,78svh);
+      border:1px solid var(--sheet-line); border-radius:22px;
+      box-shadow:var(--shadow-sheet);}
+  }
+
+/* ================= 문장 해석 자리 =================
+   창도 뒤의 막도 앱 그대로입니다. 막이 손가락을 먹지 않게만 풀어 둡니다 —
+   장면을 넘기는 일은 스크롤이 하므로. 눌러서 닫는 길은 앱과 같습니다. */
+  #sentence-modal{touch-action:auto;}
+  /* 넓은 화면에서는 두 줄을 가리지 않도록 단어창과 같은 쪽에 섭니다. 카드 자체는
+     앱의 그 카드 그대로이고, 자리만 가운데에서 옆으로 옮깁니다. */
+  @media not all and (max-width:999px) and (pointer:coarse){
+    #sentence-modal{justify-content:flex-end; padding-right:clamp(20px,5vw,64px);}
+    #p-sentence{width:min(420px,34vw); max-height:78svh;}
+  }
+
+/* ================= 넓은 화면의 두 줄 =================
+   가로 그림에서는 들판의 아이가 오른쪽에 섭니다. 앱의 스플래시가 상표를 왼쪽에
+   세우는 것과 같은 이유로 두 줄도 왼쪽에 섭니다 — 오른쪽은 Breeze 자리입니다.
+
+   경계는 단어창이 옆으로 나오는 그 폭(1000px)과 같습니다. 그보다 좁을 때 두 줄을
+   왼쪽 절반에 밀어 넣으면 "Breeze will handle the rest." 가 세 줄이 됩니다 —
+   두 줄이라는 것이 이 화면의 전부인데. 그 아래에서는 위쪽에 폭을 다 쓰고 섭니다. */
+  @media (min-width:1000px){
+    #copy{top:50%; transform:translateY(-54%);
+      width:min(56vw,660px); right:auto; padding:0 0 0 clamp(32px,7vw,112px);
+      font-size:clamp(34px,3.4vw,50px);}
+    #hint{font-size:12.5px;}
+  }
+
+/* 움직임을 줄여 달라고 설정한 사람에게는 장면이 그냥 바뀝니다. */
+  @media (prefers-reduced-motion:reduce){
+    #splash,#copy,.lp-a,.lp-b,.lp-brand,.lp-sentence,#hint{transition:none!important;}
+  }
