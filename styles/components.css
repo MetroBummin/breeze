@@ -7,27 +7,54 @@
   #vsearch{margin-left:auto; border:1px solid var(--line); border-radius:20px; padding:9px 16px; font-size:14px;
     width:200px; background:var(--field); font-family:var(--ui); outline:none;}
   #vsearch:focus{border-color:var(--blue);}
-  #btn-xlsx{border:none; background:var(--blue); color:var(--on-color); border-radius:22px; padding:10px 20px;
-    font-size:14px; font-weight:500; cursor:pointer; font-family:var(--ui);}
-  #btn-xlsx:hover{background:var(--blue-deep);}
-  table{width:100%; border-collapse:collapse; background:var(--field); border-radius:18px; overflow:hidden; box-shadow:var(--shadow-table);}
-  th{font-size:12px; text-align:left; color:var(--soft2); padding:12px 15px; border-bottom:1px solid var(--line); background:var(--th); letter-spacing:.04em;}
-  td{padding:12px 15px; border-bottom:1px solid var(--td-line); font-size:14px; vertical-align:top;}
-  tr:last-child td{border-bottom:none;}
-  td.c-word{font-family:var(--serif); font-weight:700; white-space:nowrap; color:var(--ink);}
-  td.c-word .c-sense-count{display:block; margin-top:5px; color:var(--soft2); font:500 10.5px var(--ui);}
-  tr.vocab-sense.group-start:not(:first-child) td{border-top:7px solid var(--paper2);}
-  td.c-mean[contenteditable]{outline:none; min-width:120px;}
-  td.c-mean:focus{background:var(--sky); border-radius:6px;}
-  td.c-ex{color:var(--ex-ink); font-size:13px; font-style:italic; max-width:340px;}
-  td.c-ex .src{display:block; margin-top:5px; font-style:normal; font-size:11.5px; color:var(--soft2);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .chip{display:inline-block; border-radius:10px; padding:3px 10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;}
+  /* 내보내기는 가끔 한 번 누르는 단추입니다. 예전에는 화면 폭을 다 차지하는 파란
+     단추였는데(좁은 화면에서는 검색칸 아래 한 줄을 통째로), 그 자리는 단어를
+     보여 주는 데 씁니다. 단어창의 `.p-tool` 과 같은 문법을 그대로 씁니다. */
+  #btn-export:hover{border-color:var(--blue-ring); background:var(--chip-hit); color:var(--ink);}
+
+  /* ---- 단어장 ----
+     접혀 있을 때 한 줄에 있는 것은 [단어] [뜻] [★] 셋뿐입니다. 같은 표제어의
+     뜻이 여럿이면 단어를 반복하지 않고 뜻 칸 안에서만 아래로 이어 붙어, 표가
+     주던 "단어 ↔ 뜻" 가로 대응은 남고 가로 스크롤만 사라집니다.
+     칸 폭은 clamp 하나로 잡습니다 — 고정 px 는 좁은 화면에서 다시 표를 밀어냅니다. */
+  #vtablewrap{border-top:1px solid var(--td-line);}
+  .vgroup{border-bottom:1px solid var(--td-line);}
+  .vrow{display:grid; grid-template-columns:minmax(0,clamp(92px,22%,168px)) minmax(0,1fr) auto;
+    align-items:start; column-gap:14px; padding:9px 4px; cursor:pointer;}
+  @media (hover:hover){ .vrow:hover{background:var(--paper2); border-radius:10px;} }
+  /* 표제어는 영어라 하이픈으로 끊습니다. `anywhere` 만 두면 좁은 화면에서
+     "conspicuou / s" 처럼 글자 하나가 다음 줄에 홀로 떨어집니다. */
+  .vword{font:700 15.5px/1.6 var(--serif); color:var(--ink); overflow-wrap:anywhere;
+    -webkit-hyphens:auto; hyphens:auto; -webkit-user-select:none; user-select:none;}
+  .vword:focus-visible{outline:2px solid var(--blue); outline-offset:3px; border-radius:5px;}
+  .vsenses{min-width:0;}
+  .vsense + .vsense{margin-top:3px;}
+  .vko{font:400 14px/1.6 var(--ui); color:var(--soft); overflow-wrap:anywhere;}
+  .vgroup:not(.open) .vko:empty::before{content:'뜻 없음'; color:var(--soft2);}
+  /* 펼치면 그 자리에서 고칩니다. 종이 위에 칸 하나가 떠오르는 것으로 "여기는
+     고치는 곳"이라고 말합니다 — 접혀 있을 때는 읽는 글자일 뿐입니다. */
+  /* 넓은 화면이라고 칸을 끝까지 벌리지 않습니다 — "모호한" 세 글자를 받는 칸이
+     700px 일 이유가 없고, 예문 한 줄이 90자면 눈이 되돌아올 곳을 잃습니다. */
+  .vgroup.open .vko{color:var(--ink); background:var(--field); border-radius:7px; max-width:26em;
+    box-shadow:inset 0 0 0 1px var(--field-line); padding:3px 8px; margin:-3px -8px 0; outline:none;}
+  .vgroup.open .vko:focus{background:var(--sky);}
+  .vmore{margin:7px 0 10px; padding-left:11px; max-width:42em;
+    border-left:2px solid var(--divider); cursor:auto;}
+  .vex{font:italic 13px/1.65 var(--ui); color:var(--ex-ink); overflow-wrap:anywhere;}
+  .vmeta{margin-top:4px; font:500 11.5px/1.55 var(--ui); color:var(--soft2); overflow-wrap:anywhere;}
+  .rowdel{margin-top:7px; border:none; background:none; padding:3px 0; color:var(--rowdel);
+    cursor:pointer; font:600 11.5px var(--ui);}
+  .rowdel:hover{color:var(--danger-strong);}
+  /* 26px 짜리 칩은 손가락이 잘 못 맞힙니다. 보이지 않는 여유를 둘러 44px 로 넓힙니다 —
+     칩 자체를 키우면 훑는 줄이 그만큼 두꺼워집니다. */
+  .chip{position:relative; display:inline-flex; align-items:center; justify-content:center;
+    min-width:46px; min-height:26px; border:none; border-radius:9px; padding:3px 9px;
+    font:700 12px var(--ui); cursor:pointer; white-space:nowrap;}
+  .chip::after{content:''; position:absolute; inset:-9px -3px;}
+  .chip:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
   .chip.s1{background:var(--s1); color:var(--s1-ink);}
   .chip.s2{background:var(--s2); color:var(--s2-ink);}
   .chip.s3{background:var(--s3); color:var(--s3-ink);}
-  .rowdel{border:none; background:none; color:var(--rowdel); cursor:pointer; font-size:15px;}
-  .rowdel:hover{color:var(--danger-strong);}
   #vempty{text-align:center; color:var(--soft); padding:70px 0 40px; font-size:14.5px; line-height:1.8;}
 
   /* ---- 설정 시트 ----

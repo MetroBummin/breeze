@@ -1714,6 +1714,40 @@ assert.match(readerCss, /\.w\{[^}]*padding:0 1px; margin:0 -1px/,
 assert.match(modesSource, /function stabilizePdfModeTarget/,
   'PDF mode switches no longer re-anchor after placeholder sizes settle');
 
+/* ---- 단어장 ----------------------------------------------------------------
+   단어장은 먼저 단어를 훑는 곳입니다. 표로 돌아가는 순간 375px 화면에서 표가
+   637px 이 되고, 별과 삭제가 화면 밖으로 나가 가로로 밀어야 닿습니다. */
+const vocabCss = readFileSync(resolve(root, 'styles/components.css'), 'utf8');
+assert.doesNotMatch(dictionarySource, /<table>/,
+  '단어장이 다시 표로 그려집니다 — 좁은 화면에서 가로로 밀어야 별에 닿게 됩니다');
+assert.match(dictionarySource, /class="vgroup/,
+  '단어장의 표제어 묶음이 사라졌습니다');
+/* 접힌 줄에 있는 것은 [단어] [뜻] [★] 셋뿐입니다. 예문·출처·저장일·삭제가 다시
+   기본 상태로 올라오면 한 줄이 108px 로 돌아갑니다. */
+assert.match(dictionarySource, /open\?`<div class="vmore">/,
+  '예문·출처·저장일·삭제가 접힌 줄에도 나옵니다 — 훑는 화면이 다시 길어집니다');
+/* 폭은 clamp 하나로 잡습니다. 고정 px 를 다시 쓰면 좁은 화면이 옆으로 밀립니다. */
+assert.match(vocabCss, /\.vrow\{[^}]*grid-template-columns:minmax\(0,clamp\(/,
+  '단어 칸이 고정 폭으로 돌아갔습니다 — 좁은 화면에서 가로 스크롤이 생깁니다');
+assert.doesNotMatch(vocabCss + readFileSync(resolve(root, 'styles/responsive.css'), 'utf8'),
+  /#vtablewrap\{[^}]*overflow-x:auto/,
+  '단어장에 가로 스크롤이 다시 생겼습니다');
+/* 펼침은 화면에만 있는 상태입니다. `words` 에 들어가는 순간 기기끼리 "무엇을
+   열어 두었는지"까지 주고받게 됩니다. */
+assert.match(dictionarySource, /const vocabOpen = new Set\(\);/,
+  '단어장 펼침 상태가 사라졌거나 다른 곳으로 옮겨 갔습니다');
+assert.doesNotMatch(dictionarySource, /vocabOpen[\s\S]{0,80}?(?:saveWords|queueSync|localStorage)/,
+  '단어장 펼침은 화면에만 있어야 합니다 — 저장하거나 동기화하면 안 됩니다');
+/* 별·삭제·뜻 편집은 각자 할 일이 있어서 펼침 토글이 가로채면 안 됩니다. */
+assert.match(dictionarySource, /closest\('\.chip, \.rowdel, \.vmore, \[contenteditable\]'\)/,
+  '별·삭제·뜻 편집이 펼침 토글과 다시 충돌합니다');
+/* 내보내기 단추의 id 는 btn-export 입니다. 예전 이름이 스타일시트에 남아 있던
+   동안 이 단추는 모든 화면에서 브라우저 기본 단추로 떴습니다. */
+for(const sheet of ['components.css','dictionary.css','responsive.css']){
+  assert.doesNotMatch(readFileSync(resolve(root, 'styles', sheet), 'utf8'), /#btn-xlsx/,
+    `styles/${sheet} 가 없는 단추(#btn-xlsx)를 꾸미고 있습니다 — 지금 이름은 #btn-export 입니다`);
+}
+
 /* ---- 글꼴 ----------------------------------------------------------------
    제목 글꼴은 우리 서버에 있습니다. 남의 서버 주소가 다시 들어오면, 비행기
    모드에서 제목이 무너지고 이 앱을 여는 사람의 IP 가 글꼴 회사로 갑니다. */

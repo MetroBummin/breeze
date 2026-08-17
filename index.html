@@ -32,13 +32,13 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=c54392f5">
+  <link rel="stylesheet" href="styles/tokens.css?v=e8d23303">
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
   <link rel="stylesheet" href="styles/reader.css?v=3a7c668c">
-  <link rel="stylesheet" href="styles/dictionary.css?v=1afc072d">
-  <link rel="stylesheet" href="styles/components.css?v=1e6c00ff">
-  <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
+  <link rel="stylesheet" href="styles/dictionary.css?v=949eaab0">
+  <link rel="stylesheet" href="styles/components.css?v=4e7a0cca">
+  <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -70,7 +70,7 @@
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=57567da7"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=183a6b21"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=de9edd61"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=e7f2eaca"></script>
@@ -354,7 +354,7 @@
   <div class="head">
     <h1 data-i18n="nav.words">Words</h1><span class="cnt" id="vcnt"></span>
     <input id="vsearch" placeholder="단어 · 뜻 · 책 검색…">
-    <button id="btn-export">⬇ CSV로 내보내기</button>
+    <button id="btn-export" class="p-tool" title="저장한 단어를 CSV로 내보내기">⬇ CSV 내보내기</button>
   </div>
   <div id="vtablewrap"></div>
 </div>

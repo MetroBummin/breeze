@@ -320,16 +320,12 @@
     #p-top{position:static; margin:0; padding:0 0 13px; background:transparent; border-bottom:1px solid var(--divider);}
     #panel .inner{padding:16px 22px calc(34px + env(safe-area-inset-bottom));}
   }
-  /* 시트와 상관없는 좁은 화면 규칙들. 단어창의 경계가 넓어져도 이쪽은 폰 기준
-     그대로입니다 — 단어장 표와 읽는 쪽 여백은 아이패드 세로에서 좁힐 이유가 없습니다. */
+  /* 시트와 상관없는 좁은 화면 규칙. 단어창의 경계가 넓어져도 이쪽은 폰 기준
+     그대로입니다 — 읽는 쪽 여백은 아이패드 세로에서 좁힐 이유가 없습니다.
+     단어장 규칙은 styles/responsive.css 한 곳에만 둡니다(예전에는 같은 줄이
+     두 파일에 있었고, 한쪽만 고치면 조용히 어긋났습니다). */
   @media (max-width:760px){
     .page{padding:26px 22px;}
-    #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
-    #vsearch{width:100%; margin-left:0;}
-    #btn-xlsx{width:100%; padding:12px 20px;}
-    #vtablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -26px; padding:0 26px;}
-    #vtablewrap table{min-width:560px;}
-    #vtablewrap th:nth-child(5), #vtablewrap td:nth-child(5){display:none;}
   }
   /* 브라우저 확대 때문에 CSS 폭만 좁아진 데스크톱에서는 거대한 모바일
      바텀시트로 바꾸지 않습니다. 마우스 환경이면 작은 옆 패널을 유지합니다. */

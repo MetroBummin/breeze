@@ -1309,6 +1309,17 @@ async function fetchDict(k){
 }
 
 /* ================= vocab ================= */
+/* 단어장은 **먼저 단어를 훑는 곳**입니다. 그래서 접혀 있을 때 한 줄에 있는 것은
+   [단어] [뜻] [★] 셋뿐입니다. 예전에는 여섯 칸짜리 표였는데, 375px 화면에서
+   표가 637px 이라 별과 삭제가 화면 밖에 있었고(가로로 밀어야 닿았습니다) 예문
+   세 줄 때문에 한 줄이 108px 였습니다 — 27개가 네 화면이었습니다.
+   표를 쓴 이유는 `rowspan` 하나였습니다. 같은 표제어의 뜻들을 단어 한 칸 아래로
+   묶는 일인데, 그건 뜻 칸 안에서 줄을 잇는 것으로 충분합니다. 단어와 뜻의 가로
+   대응은 그대로 남고 가로 스크롤만 사라집니다. */
+/* 펼침은 화면에만 있는 상태입니다 — 저장하지도, 동기화하지도, `words` 에 넣지도
+   않습니다. 별을 누르거나 동기화가 도착하면 목록 전체를 다시 그리므로, 열어 둔
+   자리를 기억할 곳이 어딘가에는 있어야 합니다. */
+const vocabOpen = new Set();
 function renderVocab(){
   const list = Object.entries(words).sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
@@ -1318,36 +1329,77 @@ function renderVocab(){
     if(!grouped.has(groupKey)) grouped.set(groupKey,[]);
     grouped.get(groupKey).push([k,w]);
   });
-  const groups=[...grouped.values()].filter(entries=>entries.some(([,w])=>!q || w.word.toLowerCase().includes(q)
+  const groups=[...grouped.entries()].filter(([,entries])=>entries.some(([,w])=>!q || w.word.toLowerCase().includes(q)
     || (w.ko||'').includes(q) || (w.book||'').toLowerCase().includes(q)));
   document.getElementById('vcnt').textContent = `${list.length}개 저장됨`;
   const wrap = document.getElementById('vtablewrap');
   if(!groups.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 눌러 보세요!</div>'; return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
-  wrap.innerHTML = `<table><thead><tr>
-    <th>단어</th><th>뜻</th><th>예문 · 출처</th><th>모르는 정도</th><th>저장일</th><th></th>
-  </tr></thead><tbody>` + groups.map(entries=>{
-    /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 하나의 word cell 아래로
-       묶습니다. 학습 데이터는 분리된 채라 별·삭제·예문은 각각 독립입니다. */
+  wrap.innerHTML = groups.map(([groupKey,entries])=>{
+    /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 단어 한 칸 아래로 묶습니다.
+       학습 데이터는 분리된 채라 별·삭제·예문은 각각 독립입니다. */
     entries.sort((a,b)=>(a[0]===((a[1].root)||a[0])?-1:0)-(b[0]===((b[1].root)||b[0])?-1:0)
       || (b[1].addedAt||0)-(a[1].addedAt||0));
-    const [firstKey,first]=entries[0], span=entries.length;
-    return entries.map(([k,w],index)=>`
-      <tr class="vocab-sense${index===0?' group-start':''}" data-k="${esc(k)}">
-        ${index===0?`<td class="c-word" rowspan="${span}">${esc(first.word)}${span>1?`<span class="c-sense-count">뜻 ${span}</span>`:''}</td>`:''}
-        <td class="c-mean" contenteditable="true" spellcheck="false">${esc(w.ko||'')}</td>
-        <td class="c-ex">${esc(w.example||'')}${w.book?`<span class="src">📖 ${esc(w.book)}</span>`:''}</td>
-        <td><span class="chip s${w.status}" title="클릭해서 변경">${stName[w.status]}</span></td>
-        <td style="color:var(--soft2);font-size:12px;white-space:nowrap">${new Date(w.addedAt).toLocaleDateString('ko-KR')}</td>
-        <td><button class="rowdel" title="이 뜻만 삭제">✕</button></td>
-      </tr>`).join('');
-  }).join('') + '</tbody></table>';
-  wrap.querySelectorAll('tr[data-k]').forEach(tr=>{
-    const k = tr.dataset.k;
-    tr.querySelector('.chip').onclick = ()=>{ setStatus(k, words[k].status%3+1); renderVocab(); };
-    tr.querySelector('.rowdel').onclick = ()=>{ delete words[k]; dead[k]=Date.now(); save(LS_DEAD,dead); saveWords(); queueSync(); renderVocab(); };
-    tr.querySelector('.c-mean').addEventListener('blur', e=>{
-      if(words[k]){ words[k].ko = e.target.textContent.trim(); words[k].up = Date.now(); saveWords(); queueSync(); }
+    const first=entries[0][1], open=vocabOpen.has(groupKey);
+    /* 별은 낱말 하나에 하나입니다. 그 하나가 어느 레코드에 사는지는 이미 정해져
+       있습니다 — 본문 색칠이 그 값을 씁니다. reader.js 는 낱말 조각에
+       `data-w="keyOf(단어)"` 를 붙이고(뜻 카드의 주소는 본문에 나오지 않습니다),
+       `paintWord` 는 그 주소로 색을 칠합니다. 그러니 표제어의 "모르는 정도"는
+       언제나 대표 레코드(`w.root||k`)의 것입니다. 여기서 새로 정하는 규칙은
+       없고, 그 값을 그대로 보여 주고 그대로 바꿉니다.
+       대표 레코드가 없을 수 있는 경우는 하나뿐입니다 — 아래 ✕ 로 대표 뜻만
+       지우고 딸린 뜻이 남았을 때. 그때는 남은 첫 뜻이 화면의 표제어이므로
+       별도 그 레코드의 것을 씁니다(정렬이 이미 그 뜻을 맨 앞에 둡니다). */
+    const headKey = words[groupKey] ? groupKey : entries[0][0];
+    const head = words[headKey];
+    return `<div class="vgroup${open?' open':''}" data-g="${esc(groupKey)}" data-head="${esc(headKey)}">
+      <div class="vrow">
+        <div class="vword" role="button" tabindex="0" aria-expanded="${open}">${esc(first.word)}</div>
+        <div class="vsenses">${entries.map(([k,w])=>`
+          <div class="vsense" data-k="${esc(k)}">
+            <div class="vko"${open?' contenteditable="true" spellcheck="false"':''}>${esc(w.ko||'')}</div>
+            ${open?`<div class="vmore">
+              ${w.example?`<div class="vex">${esc(w.example)}</div>`:''}
+              <div class="vmeta">${w.book?`📖 ${esc(w.book)} · `:''}${new Date(w.addedAt).toLocaleDateString('ko-KR')}</div>
+              <button class="rowdel" title="이 뜻만 삭제">✕ 이 뜻 삭제</button>
+            </div>`:''}
+          </div>`).join('')}</div>
+        <button class="chip s${head.status}" title="클릭해서 모르는 정도 바꾸기">${stName[head.status]}</button>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.vgroup').forEach(node=>{
+    const group = /** @type {HTMLElement} */(node);
+    const groupKey = group.dataset.g;
+    const toggle = ()=>{
+      if(vocabOpen.has(groupKey)) vocabOpen.delete(groupKey); else vocabOpen.add(groupKey);
+      renderVocab();
+    };
+    /* 접었다 펴는 일은 줄 전체가 받습니다. 별·삭제·펼친 속은 각자 할 일이 있어서
+       여기서 한 번에 비켜 줍니다 — 세 곳에 stopPropagation 을 흩뿌리는 것보다
+       "무엇이 토글이 아닌지"가 한 줄에 모여 있는 편이 나중에 읽힙니다.
+       펼쳤을 때의 뜻은 `contenteditable` 이라 여기서 함께 걸러집니다: 고치려고
+       누른 손이 창을 닫아 버리면 고칠 수가 없습니다. */
+    group.addEventListener('click', event=>{
+      if((/** @type {HTMLElement} */(event.target)).closest('.chip, .rowdel, .vmore, [contenteditable]')) return;
+      toggle();
+    });
+    /** @type {HTMLElement} */(group.querySelector('.vword')).addEventListener('keydown', event=>{
+      const key=(/** @type {KeyboardEvent} */(event)).key;
+      if(key==='Enter' || key===' '){ event.preventDefault(); toggle(); }
+    });
+    const headKey = group.dataset.head;
+    /** @type {HTMLElement} */(group.querySelector('.chip')).onclick = ()=>{
+      setStatus(headKey, words[headKey].status%3+1); renderVocab();
+    };
+    group.querySelectorAll('.vsense').forEach(row=>{
+      const sense = /** @type {HTMLElement} */(row);
+      const k = sense.dataset.k;
+      const del = /** @type {HTMLElement} */(sense.querySelector('.rowdel'));
+      if(del) del.onclick = ()=>{ delete words[k]; dead[k]=Date.now(); save(LS_DEAD,dead); saveWords(); queueSync(); renderVocab(); };
+      sense.querySelector('.vko').addEventListener('blur', event=>{
+        if(words[k]){ words[k].ko = (/** @type {HTMLElement} */(event.target)).textContent.trim(); words[k].up = Date.now(); saveWords(); queueSync(); }
+      });
     });
   });
 }

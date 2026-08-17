@@ -21,12 +21,11 @@
     .bookcard.cloud .getbtn{width:calc(100% - 20px); padding:8px 10px; font-size:12px;}
     #am-card{padding:24px 20px;}
     .am-big{padding:15px 16px; gap:13px;}
-    #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
-    #v-vocab h1{text-align:left;}
-    #v-vocab .cnt{margin-top:-4px;}
-    #vsearch{width:100%; margin-left:0;}
-    #btn-xlsx{width:100%; padding:12px 20px;}
-    #vtablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -26px; padding:0 26px;}
-    #vtablewrap table{min-width:560px;}
-    #vtablewrap th:nth-child(5), #vtablewrap td:nth-child(5){display:none;}
+    /* 제목·개수·내보내기가 한 줄, 검색칸이 그 아래 한 줄입니다. 예전에는 셋이
+       각각 한 줄씩 쌓여서 첫 단어가 나오기까지 296px 을 썼습니다. */
+    #v-vocab{padding:22px 20px 90px;}
+    #v-vocab .head{gap:10px 12px; margin-bottom:14px;}
+    #vsearch{order:3; flex:1 0 100%; width:auto; margin-left:0;}
+    #btn-export{margin-left:auto;}
+    .vrow{column-gap:11px; padding:9px 2px;}
   }
