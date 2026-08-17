@@ -570,10 +570,12 @@ function renderPanel(){
     : `<span class="sp">✦</span>${context && context.error ? '이 문장에서 다시 보기' : '이 문장에서는?'}`;
 
   /* 단추는 AI 가 답하지 못한 이유가 있을 때만 나옵니다. 평소에는 클릭한 순간
-     이미 다녀왔으므로 누를 것이 없고, 뜻이 안 맞을 때는 박스 안의 링크가 받습니다. */
+     이미 다녀왔으므로 누를 것이 없고, 뜻이 안 맞을 때는 박스 안의 링크가 받습니다.
+     한도(quota)와 마찬가지로 오프라인도 지금 눌러서 될 일이 아닙니다 — 단추를
+     숨기고 아래 안내 한 줄만 남겨서 "다시 눌러 보세요"처럼 보이지 않게 합니다. */
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
   const off = asking ? '' : (w.aiOff || '');
-  aiBtn.style.display = (off && off !== 'quota') ? 'flex' : 'none';
+  aiBtn.style.display = (off && off !== 'quota' && off !== 'offline') ? 'flex' : 'none';
   document.getElementById('p-aibtn-t').textContent =
       (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
     : (off === 'error' || w.aiSlow)        ? '다시 시도'
