@@ -2,8 +2,11 @@
 (function(){
   const panel = document.getElementById('panel');
   const bg = document.getElementById('sheetbg');
-  const isSheet = () => window.matchMedia('(max-width:760px)').matches
-                     && panel.classList.contains('on');
+  /* 시트인지 아닌지는 한 곳에서만 정합니다(`panelIsSheet`) — 경계가 옮겨질 때
+     이 파일이 따라가지 못하면, 시트인데 뒤가 함께 밀리는 화면이 생깁니다. */
+  const isSheet = () => panel.classList.contains('on')
+                     && (typeof panelIsSheet === 'function' ? panelIsSheet()
+                         : window.matchMedia('(max-width:760px)').matches);
   let ty = 0;
   panel.addEventListener('touchstart', e=>{ ty = e.touches[0].clientY; }, {passive:true});
   panel.addEventListener('touchmove', e=>{

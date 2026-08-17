@@ -34,9 +34,23 @@ const classicFile = id => `assets/classics/${id}.epub`;
    자세한 건 assets/classics/README.md. */
 const classicCoverFile = id => `assets/classics/${id}.jpg`;
 
-/* 이미 서가에 있는 고전은 권유 카드에서 뺍니다. */
+/* 이미 서가에 있는 고전은 권유 카드에서 뺍니다.
+
+   알아보는 일은 흐린 카드가 쓰는 자와 같은 자입니다(`classicForMeta`) — 새로
+   받은 책에는 `classicId` 가 실려 있고, 그것이 없는 기록만 제목·지은이로
+   보수적으로 한 번 더 봅니다. 자를 하나만 쓰는 것이 중요합니다: 같은 앨리스가
+   흐린 카드에서는 고전으로, 여기서는 남의 책으로 읽히면 서가에 두 권이 섭니다.
+   `classicId` 없이 서가에 오는 길이 실제로 있습니다 — 암호화 보관함에 기록이
+   있는 파일을 다시 넣으면 그 기록으로 책을 세우느라 이 표를 싣지 않습니다
+   (scripts/library/library.js 의 `importFile`).
+
+   지우는 것은 아무것도 없습니다. 받아 둔 책을 지우면 이 자가 다시 못 알아보므로
+   권유 카드가 저절로 돌아옵니다. */
 function pendingClassics(){
-  const owned = new Set(books.map(book => book.classicId).filter(Boolean));
+  const knows = typeof classicForMeta === 'function';
+  const owned = new Set(books
+    .map(book => knows ? (classicForMeta(book) || {}).id : book.classicId)
+    .filter(Boolean));
   return CLASSICS.filter(classic => !owned.has(classic.id));
 }
 

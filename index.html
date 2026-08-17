@@ -32,12 +32,12 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=373312cc">
+  <link rel="stylesheet" href="styles/tokens.css?v=c54392f5">
   <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
   <link rel="stylesheet" href="styles/reader.css?v=3a7c668c">
-  <link rel="stylesheet" href="styles/dictionary.css?v=7678652f">
-  <link rel="stylesheet" href="styles/components.css?v=6db1e069">
+  <link rel="stylesheet" href="styles/dictionary.css?v=1afc072d">
+  <link rel="stylesheet" href="styles/components.css?v=1e6c00ff">
   <link rel="stylesheet" href="styles/responsive.css?v=41fd3870">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -65,12 +65,12 @@
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=f63be3ea"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
-  <script defer src="scripts/library/classics.js?v=608376e4"></script>
+  <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=d0982c6e"></script>
   <script defer src="scripts/importers/rss.js?v=a58919fa"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=b49e938f"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=11b6e588"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=57567da7"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=183a6b21"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=e7f2eaca"></script>
@@ -82,7 +82,7 @@
   <script defer src="scripts/ui/preferences.js?v=e1e7fbb1"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=122c6eec"></script>
-  <script defer src="scripts/ui/interactions.js?v=aa82019f"></script>
+  <script defer src="scripts/ui/interactions.js?v=31e4ec05"></script>
   <script defer src="scripts/main.js?v=16ea797d"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
@@ -254,6 +254,11 @@
       <div id="ps-ko" hidden></div>
       <ul id="ps-points" hidden></ul>
       <div id="ps-foot" hidden></div>
+      <!-- 요청만 실패했는데 손짓부터 다시 할 이유는 없습니다. 같은 문장을 그대로
+           다시 물어봅니다 — 창은 닫지 않습니다(scripts/dictionary/sentence.js).
+           이 단추는 닫는 자리가 아니므로(gesture.js 의 `sentenceDismissTarget`)
+           창이 임자인 동안에도 제 `onclick` 을 그대로 받습니다. -->
+      <button id="ps-retry" type="button" hidden onclick="retrySentence()">↻ 다시 시도</button>
     </section>
   </div>
   <!-- 시트 바깥에도 손잡이에도 닫기 단추에도 `onclick` 이 없습니다. 낱말 시트가
@@ -285,7 +290,13 @@
            여기 삽니다 — 작은 칩 안에서 고르기와 지우기가 부딪히지 않게. -->
       <div id="p-ai">
         <button id="p-meaning-del" type="button" title="이 뜻 지우기" aria-label="이 뜻 지우기">×</button>
-        <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻 · AI</span></div>
+        <!-- 저장 단추가 없는 앱이라, 방금 누른 낱말이 정말 담겼는지 확인할 자리가
+             없었습니다. 토스트로 알리는 대신 뜻 카드가 조용히 자기 상태를 말합니다.
+             뜻이 확정된 낱말일 때만 뜹니다 — 판단은 이미 있는
+             `hasResolvedMeaning`/`pendingWordResolved` 를 읽기만 합니다
+             (scripts/dictionary/dictionary.js). 한살이는 건드리지 않습니다. -->
+        <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻 · AI</span>
+          <span id="p-ai-saved" hidden>✓ 저장됨</span></div>
         <div class="wind aurora" aria-hidden="true">
           <span class="glow"></span>
         </div>
@@ -311,8 +322,19 @@
         spellcheck="false" placeholder="새 뜻을 적고 Enter" aria-label="새 뜻"></div>
       <div class="p-sec" id="p-alt-sec">추천 뜻</div>
       <div id="p-alts"></div>
-      <div class="p-sec p-sec-row"><span>모르는 정도</span><button id="p-mark" type="button"
-        aria-pressed="true" title="이 단어의 본문 색칠 켜기/끄기"><span>색칠 ON</span></button></div>
+      <div class="p-sec">모르는 정도</div>
+      <!-- 이 낱말을 화면에서 어떻게 다룰지 정하는 두 단추입니다 — 단어장에서 빼기,
+           본문 색칠. 같은 일의 두 갈래라 한 줄에 같은 모양으로 섭니다. 빼기는
+           예전에 창 맨 아래 큰 단추였는데, 긴 낱말 창에서는 끝까지 내려야 보였습니다.
+           단추가 부르는 일은 그대로입니다(scripts/dictionary/dictionary.js). -->
+      <div id="p-word-tools">
+        <button id="p-know" class="p-tool" type="button" title="이 단어를 단어장에서 빼기">
+          <svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>아는 단어 · 빼기</span></button>
+        <button id="p-mark" class="p-tool" type="button"
+          aria-pressed="true" title="이 단어의 본문 색칠 켜기/끄기"><span>색칠 ON</span></button>
+      </div>
       <div id="p-status">
         <button class="stbtn" data-s="1">★</button>
         <button class="stbtn" data-s="2">★★</button>
@@ -323,9 +345,6 @@
       <div class="p-sec">저장된 예문</div>
       <div id="p-ex"></div>
       <a id="p-naver" target="_blank" rel="noopener">네이버 사전에서 보기 ↗</a>
-      <button id="p-know"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-        I know this word — 단어장에서 빼기</button>
     </div>
   </div>
 </div>

@@ -1,11 +1,24 @@
 /* Dictionary panel and mobile sheet */
 
+/* ---- 옆 칸이냐 아래에서 올라오는 시트냐 ----
+   기준은 기기가 아니라 **옆 칸을 열고도 본문에 읽을 폭이 남는가** 하나입니다.
+   옆 칸은 `min(340px,28vw)` 를 가져가므로, 화면이 1000px 는 되어야 본문 쪽에
+   읽을 만한 폭이 남습니다. 그보다 좁으면 아이패드 세로처럼 넉넉해 보이는
+   화면이어도 둘 다 좁아지기만 합니다 — 뜻은 두 글자마다 줄이 바뀌고 본문은
+   한 줄이 짧아집니다. 그 구간은 폰과 같은 시트가 낫습니다.
+
+   마우스 화면은 이 셈에서 빠집니다(`pointer:fine`). 창을 줄였거나 브라우저를
+   확대해서 좁아진 것뿐이라, 화면을 덮는 큰 시트로 바뀌면 오히려 낯섭니다.
+   기기 이름을 묻는 곳은 여기에도 자바스크립트에도 없습니다. 자바스크립트가
+   같은 경계를 봐야 하는 자리는 `panelIsSheet()` 하나입니다
+   (scripts/dictionary/dictionary.js). */
+
   #sheetbg{display:none;}
   #panel{width:min(340px,28vw); flex-shrink:0; background:var(--sheet); border-radius:26px 0 0 0; box-shadow:var(--shadow-panel);
     overscroll-behavior:contain;
     height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
   #panel.on{display:block;}
-  @media (min-width:761px){
+  @media (min-width:1000px), (min-width:761px) and (pointer:fine){
     #panel{margin-top:8px; top:calc(var(--topbar-h,56px) + 8px);
       height:calc(100vh - var(--topbar-h,56px) - 8px);}
     /* 읽는 동안에는 화면이 못 박혀 있어 `sticky` 가 붙을 스크롤이 없습니다.
@@ -34,12 +47,21 @@
     color:var(--blue); transition:.15s;}
   #p-speak:hover{background:var(--sky);}
   #p-speak.playing{background:var(--blue); color:var(--on-color); border-color:var(--blue);}
-  /* 색칠은 이제 혼자 서 있는 행이 아니라 "모르는 정도"의 오른쪽 끝에 붙습니다.
-     둘 다 이 낱말을 화면에서 어떻게 다룰지 정하는 일이라 한 줄이면 됩니다. */
-  #p-mark{flex:0 0 auto; height:26px; padding:0 10px; border:1px solid var(--mark-line); border-radius:14px;
-    background:var(--mark-bg); color:var(--soft2); cursor:pointer; font:600 10.5px var(--ui); white-space:nowrap; transition:.16s;}
+  /* ── 낱말 하나를 화면에서 어떻게 다룰지 ──
+     "모르는 정도" 아래 한 줄에 단추 둘이 섭니다 — 왼쪽은 단어장에서 빼기,
+     오른쪽은 본문 색칠. 같은 일의 두 갈래라 높이·모서리·테두리·글자를 하나로
+     둡니다(`.p-tool`). 다른 것은 상태뿐입니다: 색칠은 켜고 끄는 것이라 켜졌을
+     때만 파랑이 옅게 들고, 빼기는 한 번 누르면 끝나는 일이라 상태가 없습니다.
+     빼는 일에 붉은색은 쓰지 않습니다 — 지우는 것이 아니라 "이건 안다"입니다. */
+  #p-word-tools{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
+  .p-tool{flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 12px;
+    border:1px solid var(--mark-line); border-radius:9px; background:var(--mark-bg); color:var(--soft2);
+    cursor:pointer; font:600 11px var(--ui); white-space:nowrap; transition:.16s;}
+  .p-tool:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
+  /* 체크만 파랗습니다. 글자까지 파래지면 켜져 있는 것처럼 읽힙니다. */
+  #p-know .ck{width:13px; height:13px; flex:none; color:var(--blue);}
+  #p-know:hover{border-color:var(--blue-ring); background:var(--chip-hit); color:var(--ink);}
   #p-mark.on{border-color:var(--blue-ring); background:var(--mark-on); color:var(--mark-on-ink);}
-  #p-mark:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
   /* 원형이 따로 있을 때만 뜨는 한 줄 — "spared에서 찾음". */
   #p-clicked{display:none; margin:7px 0 0; font-size:11.5px; color:var(--soft2);}
   #p-clicked.on{display:block;}
@@ -51,6 +73,15 @@
   #p-ai .cap{display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700;
     letter-spacing:.06em; color:var(--ai-key); margin-bottom:5px;}
   #p-ai .cap .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
+  /* 담겼다는 표시. 확인 배지처럼 눈을 끌면 뜻보다 먼저 읽힙니다 — 옅은 하늘색
+     바탕에 파란 글자 하나, 그림자 없이. 카드의 오른쪽 위 모서리에 답니다. */
+  #p-ai-saved{position:absolute; top:9px; right:10px; padding:2px 7px; border-radius:9px;
+    background:var(--sky); color:var(--brand-strong); font-size:9.5px; font-weight:600;
+    letter-spacing:0; white-space:nowrap;}
+  /* 그 자리에 지우기 단추가 이미 서 있으면 그 왼쪽으로 비켜섭니다. 단추는 이
+     배지보다 앞에 있으므로(`~`) 있는지 없는지를 CSS 가 그대로 읽습니다. */
+  #p-meaning-del:not([hidden]) ~ .cap #p-ai-saved{right:38px;}
+  #p-ai-saved[hidden]{display:none;}
   #p-ai .m{font-size:18px; font-weight:700; color:var(--ai-ink); line-height:1.4;}
   #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
   /* 이 문장에서 어떻게 쓰였나 — 뜻 아래 한 줄. */
@@ -149,6 +180,13 @@
   #ps-points li::before{content:''; position:absolute; left:0; top:8px; width:5px; height:5px;
     border-radius:50%; background:var(--ai-key); opacity:.45;}
   #ps-foot{margin-top:10px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
+  /* 실패했을 때만 뜨는 한 줄. 뜻 칸의 "이 문장에서는?" 과 같은 문법을 씁니다 —
+     둘 다 이 카드 안에서 다시 물어보는 자리라 모양이 같아야 합니다. */
+  #ps-retry{display:block; margin:10px auto 0; padding:8px 16px; border-radius:12px;
+    border:1px dashed var(--ai-line); background:transparent; color:var(--ai-key);
+    font:600 12px var(--ui); cursor:pointer;}
+  #ps-retry:hover{background:var(--ai-bg2); border-style:solid;}
+  #ps-retry[hidden]{display:none;}
   .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}
   /* 머리글 오른쪽 끝에 그 칸의 유일한 단추가 붙습니다 — 저장된 뜻의 ＋, 모르는 정도의 색칠. */
   .p-sec-row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px;}
@@ -209,23 +247,18 @@
   #p-naver{display:inline-block; margin-top:10px; font-size:12.5px; color:var(--blue); text-decoration:none;
     border:1px solid var(--line); border-radius:16px; padding:6px 12px;}
   #p-naver:hover{background:var(--sky);}
-  /* 아는 단어를 빼는 건 학습 루프의 핵심 동작이라 버튼처럼 보여야 합니다.
-     다만 지우는 동작이라 강한 색 대신 테두리만 씁니다. */
-  #p-know{display:flex; align-items:center; justify-content:center; gap:7px;
-    width:100%; margin:24px 0 4px; padding:13px 16px; font-size:14px; font-family:var(--ui);
-    border:1.5px solid var(--know-line); border-radius:14px; background:var(--know-bg);
-    color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s;}
-  #p-know .ck{width:17px; height:17px; flex:none; color:var(--chiptx);}
-  #p-know:hover{border-color:var(--blue); background:var(--chip-hit);}
+  /* 빼기 단추는 창 맨 아래의 큰 단추가 아니라 "모르는 정도" 줄로 올라갔습니다 —
+     위의 `.p-tool` 을 봐 주세요. 긴 낱말 창에서 끝까지 내려야 보이던 자리였습니다. */
 
-  @media (min-width:761px){
+  @media (min-width:1000px), (min-width:761px) and (pointer:fine){
     #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 13px 26px;
       background:var(--sheet); border-bottom:1px solid var(--sticky-line);}
     body.reader-original #p-top{margin:-21px -20px 0; padding:22px 16px 9px 20px;}
   }
 
-  /* mobile: bottom sheet */
-  @media (max-width:760px){
+  /* 아래에서 올라오는 시트. 폰과, 옆 칸을 두기에는 좁은 손가락 화면(아이패드
+     세로)이 여기 삽니다 — 위의 "옆 칸이냐 시트냐"를 봐 주세요. */
+  @media (max-width:760px), (max-width:999px) and (pointer:coarse){
     #v-read.on{display:block;}
     /* ---- 닫힌 시트의 바깥은 화면에서 아예 빠집니다 ----
        예전에는 닫혀도 `display:block` 인 채 `opacity:0` 으로 남았습니다. 그러면
@@ -286,6 +319,10 @@
     #p-close{display:none;}
     #p-top{position:static; margin:0; padding:0 0 13px; background:transparent; border-bottom:1px solid var(--divider);}
     #panel .inner{padding:16px 22px calc(34px + env(safe-area-inset-bottom));}
+  }
+  /* 시트와 상관없는 좁은 화면 규칙들. 단어창의 경계가 넓어져도 이쪽은 폰 기준
+     그대로입니다 — 단어장 표와 읽는 쪽 여백은 아이패드 세로에서 좁힐 이유가 없습니다. */
+  @media (max-width:760px){
     .page{padding:26px 22px;}
     #v-vocab .head{flex-direction:column; align-items:stretch; gap:10px;}
     #vsearch{width:100%; margin-left:0;}

@@ -192,7 +192,9 @@
     padding:5px 13px; border-radius:20px; opacity:0; pointer-events:none;
     transition:opacity .35s; backdrop-filter:blur(4px); white-space:nowrap;}
   #minitoast.on{opacity:1;}
-  #toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--toast-bg); color:var(--on-color);
+  /* 글자색은 `--on-color`(늘 흰색)가 아니라 `--toast-ink` 입니다 — 어두운 화면에서는
+     이 판이 밝은 종이색으로 뒤집히므로, 흰 글자를 박아 두면 그때만 읽히지 않습니다. */
+  #toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--toast-bg); color:var(--toast-ink);
     padding:11px 22px; border-radius:24px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:150;}
   #toast.on{opacity:.95;}
   #drop-overlay{position:fixed; inset:0; z-index:120; background:var(--drop-veil); display:none;

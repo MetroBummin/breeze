@@ -204,8 +204,6 @@
   --mark-on:#E7F1F4;
   --mark-on-ink:var(--brand-strong);
   --chip-hit:#E7F1F4;                    /* 지금 문장에 있는 표현 */
-  --know-bg:#FDFBF6;                     /* 아는 단어 빼기 */
-  --know-line:#D7E1DE;
   --sticky-line:rgba(229,235,231,.72);   /* 낱말 창 머리의 아래선 */
   --retry-ink:#667D87;                   /* 다른 뜻으로 다시 물어보기 */
   --retry-hover:var(--brand-strong);
@@ -403,8 +401,6 @@ body.dark{
   --mark-on-ink:#70C9EF;
   --blue-ring:#277FA9;
   --chip-hit:#22333C;
-  --know-bg:#22262B;
-  --know-line:#343A41;
   --sticky-line:#2A2E33;
   --retry-ink:#9AA1A8;
   --retry-hover:var(--brand-strong);
@@ -421,6 +417,7 @@ body.dark{
   --tab-on:#2A2E33;
   --ghost-btn:#262A2F;
   --minitoast-ink:#16181B;
+  --toast-ink:#16181B;
   --toast-bg:#E7E1D4;
   --vault-key:rgba(255,255,255,.04);
   --vault-btn:rgba(255,255,255,.04);

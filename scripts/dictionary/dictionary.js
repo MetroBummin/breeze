@@ -395,7 +395,10 @@ function openWord(k, node){
    본문 옆에 나란히 서는 칸. 상단바를 어떻게 다룰지가 여기서 갈립니다. */
 function panelIsSheet(){
   if(!window.matchMedia) return false;
-  return window.matchMedia('(max-width:760px)').matches && !window.matchMedia('(pointer:fine)').matches;
+  /* 경계는 styles/dictionary.css 의 "옆 칸이냐 시트냐"와 같은 값입니다 — 옆 칸을
+     열고도 본문에 읽을 폭이 남는가. 1000px 아래의 손가락 화면은 아이패드 세로여도
+     시트입니다. 마우스 화면은 창이 좁아졌을 뿐이라 옆 칸을 그대로 둡니다. */
+  return window.matchMedia('(max-width:999px)').matches && !window.matchMedia('(pointer:fine)').matches;
 }
 function selectWord(k, span){
   /* 여기서부터가 새 열림입니다. 앞 열림에 딸린 조회는 이 줄에서 임자를 잃습니다. */
@@ -545,6 +548,18 @@ function renderPanel(){
     aiBox.className = '';
     aiRetry.hidden = true;
   }
+
+  /* ── 담겼습니다 ──
+     이 앱에는 저장 단추가 없습니다. 그래서 방금 누른 낱말이 정말 단어장에 남았는지
+     확인할 자리가 없었습니다. 여기서 새로 판단하는 것은 하나도 없습니다 — 뜻이
+     확정됐는지 묻는 자는 이미 `pendingWordResolved` 하나뿐이고(그 안에서
+     `hasResolvedMeaning`), 그 답을 그대로 뜻 카드 머리에 적을 뿐입니다.
+
+     기다리는 동안에는 적지 않습니다. 무료 사전 후보만 있는 낱말도 아직 아닙니다 —
+     그 규칙 역시 저 함수가 이미 알고 있습니다. 표현(phrase)은 아직 저장된 표제어가
+     아니라 미리 보는 카드라 여기서 빠집니다. */
+  const savedBadge = document.getElementById('p-ai-saved');
+  if(savedBadge) savedBadge.hidden = !(!phrase && !asking && words[k] && pendingWordResolved(k));
 
   /* 이미 저장해 둔 뜻을 다른 문장에서 보고 있을 때만 여는 문입니다. 방금 이 문장으로
      받아 온 뜻이면 다시 물어볼 것이 없으므로 아예 뜨지 않습니다. */

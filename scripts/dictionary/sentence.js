@@ -94,13 +94,24 @@ function paintSentence(state){
   const foot = document.getElementById('ps-foot');
   foot.textContent = state.foot || '';
   foot.hidden = !state.foot;
+  /* 다시 물어볼 만한 실패에서만 뜹니다. 로그인이 없어서, 오늘 몫을 다 써서 막힌
+     것은 다시 눌러도 같은 답이 오므로 여기서 권하지 않습니다. */
+  const retry = document.getElementById('ps-retry');
+  if(retry) retry.hidden = !state.retry;
   document.getElementById('ps-cap').textContent = state.cached ? '전에 물어본 문장' : '문장 통째로 · AI';
 }
+
+/* 실패한 것은 요청 하나뿐입니다. 어느 문장이었는지는 창이 떠 있는 동안 여기
+   한 줄로 남습니다 — 다시 짚을 필요가 없도록. 손짓·문장 찾기·칠하기는 이미
+   끝난 일이라 아무것도 다시 하지 않습니다(scripts/reader/gesture.js). */
+let sentAsked = '';
+function retrySentence(){ if(sentAsked) openSentence(sentAsked); }
 
 let sentCtrl = null;
 async function openSentence(text){
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if(!clean) return;
+  sentAsked = clean;
   paintSentence({ en:clean, waiting:true });
 
   /* ① 전에 물어본 적 있는 문장이면 그대로 내놓습니다. 한도를 쓰지 않습니다. */
@@ -113,7 +124,7 @@ async function openSentence(text){
   }
 
   if(!sb || navigator.onLine === false){
-    paintSentence({ en:clean, foot:'오프라인이라 문장 설명은 나중에 볼 수 있어요' });
+    paintSentence({ en:clean, retry:true, foot:'오프라인이라 문장 설명은 나중에 볼 수 있어요' });
     return;
   }
   if(!sbUser){
@@ -132,10 +143,11 @@ async function openSentence(text){
   if(!answer || answer.error || !answer.ko){
     const why = answer && answer.error;
     if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
-    paintSentence({ en:clean, foot:
+    const stuck = why === 'login_required' || why === 'quota_exceeded';
+    paintSentence({ en:clean, retry:!stuck, foot:
         why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
       : why === 'quota_exceeded' ? '오늘 AI 조회가 부족해요. 문장 해석에는 2회가 필요해요'
-      :                            '잠깐 문제가 있었어요. 다시 눌러 보세요' });
+      :                            '잠깐 문제가 있었어요' });
     return;
   }
   rememberSentLeft(answer.left,answer.day);

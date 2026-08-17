@@ -888,11 +888,22 @@ assert.doesNotMatch(index, /뜻을 눌러 직접 고칠 수 있어요/,
   'The popup still tells the reader to tap a meaning to edit it');
 assert.doesNotMatch(dictionarySource, /function commitMeaningEdit/,
   'Editing a meaning is back as its own state');
-/* 색칠은 혼자 서는 행이 아니라 "모르는 정도" 줄의 오른쪽 끝입니다. */
-assert.match(index, /<div class="p-sec p-sec-row">\s*<span>모르는 정도<\/span><button id="p-mark"/,
-  'The colouring switch left the difficulty row and stands on its own again');
+/* 빼기와 색칠은 "모르는 정도" 아래 한 줄에, 같은 모양으로 섭니다. 빼기가 창 맨
+   아래 큰 단추였을 때는 긴 낱말 창에서 끝까지 내려야 보였습니다. */
+assert.match(index, /<div class="p-sec">모르는 정도<\/div>[\s\S]{0,600}<div id="p-word-tools">[\s\S]{0,600}id="p-know" class="p-tool"[\s\S]{0,400}id="p-mark" class="p-tool"[\s\S]{0,300}<\/div>\s*<div id="p-status">/,
+  'The remove-word and colouring buttons no longer share one row above the stars');
+assert.ok(index.indexOf('id="p-know"') < index.indexOf('id="p-status"'),
+  'The remove-word button sank back below the difficulty stars');
 assert.doesNotMatch(index, /id="p-controls"/,
   'The old stand-alone colouring row is back');
+/* 저장됐다는 표시는 뜻 카드 머리에서, 이미 있는 확정 판단을 읽기만 합니다.
+   새 상태를 만들면 낱말 한살이가 다시 둘로 갈립니다. */
+assert.match(index, /id="p-ai-cap-t"[\s\S]{0,120}id="p-ai-saved"/,
+  'The saved badge left the meaning card caption');
+assert.match(dictionarySource, /savedBadge\.hidden = !\(!phrase && !asking && words\[k\] && pendingWordResolved\(k\)\)/,
+  'The saved badge stopped reading the existing resolved-meaning truth');
+assert.doesNotMatch(dictionarySource, /function .*[Ss]avedState|let .*savedFlag/,
+  'The saved badge grew a state of its own');
 /* 숙어는 뜻이 아닙니다. 낱말 바로 아래, 추천 뜻 칩과 다른 줄에 삽니다. */
 assert.ok(index.indexOf('id="p-colloc"') < index.indexOf('id="p-ai"'),
   'The phrase suggestion no longer sits directly under the word');
