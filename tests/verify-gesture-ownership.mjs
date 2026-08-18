@@ -66,7 +66,7 @@ function makeWorld(){
   nodes.word.parent = nodes.rtext;
   element('sentence-modal');
   element('sentence-scrim', 'sentence-modal');
-  element('ps-close', 'sentence-modal');
+  element('ps-body', 'sentence-modal');      // 창 안 — 눌러도 닫히지 않아야 합니다
   element('aa-pop');
   element('aa-dark', 'aa-pop');
   /* 읽는 동안 떠 있는 조각 — 상단바 자리를 대신하는 것들입니다. 종이가 아니므로
@@ -188,9 +188,15 @@ function scenario(setup){
   assert.deepEqual(world.errors, [], '한 손짓이 두 가지 일을 했습니다');
 }
 {
+  /* 창 안을 누른 손짓은 아무것도 닫지 않고, 꼬리 click 도 막지 않습니다 — 그
+     click 은 창 안의 ↻ 가 받아야 할 자기 것입니다. X 를 뗀 뒤 닫는 길은 바깥
+     하나뿐이므로, 이 줄이 그 하나가 안쪽까지 삼키지 않는다는 것을 지킵니다. */
   const { world } = scenario(w => w.openSentenceModal());
-  tap(world, world.nodes['ps-close'], 300, 20);
-  assert.equal(world.calls.closeSentence, 1, 'X 단추가 해석 창을 한 번 닫지 않습니다');
+  const click = tap(world, world.nodes['ps-body'], 300, 200);
+  assert.equal(world.calls.closeSentence, 0, '창 안을 눌렀는데 해석 창이 닫혔습니다');
+  assert.equal(world.nodes['sentence-modal'].hidden, false, '창 안을 눌렀는데 창이 사라졌습니다');
+  assert.ok(!click.stopped && !click.prevented, '창 안의 단추가 받을 click 을 판정 계층이 삼켰습니다');
+  assert.deepEqual(world.errors, [], '창 안을 누른 손짓이 무언가를 했습니다');
 }
 {
   /* 창 안에서 시작해 크게 민 손짓은 닫지도, 종이의 SCROLL 이 되지도 않습니다. */
@@ -261,7 +267,7 @@ function scenario(setup){
      손짓에는 걸립니다 — 둘을 나란히 재야 "안 뜬다"와 "못 뜬다"가 구별됩니다. */
   const paper = scenario();
   fire(paper.world, 'pointerdown', paper.world.nodes.word, 100, 300);
-  assert.deepEqual(paper.world.timers, [1000], '종이 위의 꾹 누르기 타이머가 사라졌습니다');
+  assert.deepEqual(paper.world.timers, [750], '종이 위의 꾹 누르기 타이머가 사라졌습니다');
 
   const covered = scenario(w => w.openWordPanel());
   fire(covered.world, 'pointerdown', covered.world.nodes.word, 100, 300);

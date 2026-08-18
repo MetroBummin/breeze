@@ -669,16 +669,48 @@ document.getElementById('reading-backup-input').addEventListener('change',event=
   const target=/** @type {HTMLInputElement} */(event.currentTarget),file=target.files[0]; target.value=''; if(file) importReadingBackup(file);
 });
 
+/* ---- 로그인했다는 사실은 이 기기의 것입니다 ----
+   supabase-js 는 로그인한 세션을 localStorage 의 `sb-<프로젝트>-auth-token` 아래
+   둡니다. 로그아웃하면 지우고, 서버가 "이 토큰은 무효다" 라고 답했을 때도
+   지웁니다. 그런데 **네트워크가 없어서** 새 토큰을 못 받은 것은 그 둘 중 어느
+   것도 아니라서, supabase 자신도 이 값을 그대로 둡니다.
+
+   그동안 Breeze 는 로그인한 적 없는 사람처럼 굴었습니다. 접근 토큰은 한 시간
+   만에 만료되고, `getSession()` 은 만료됐으면 새로 받아 보려 하는데, 오프라인
+   에서는 그 재시도가 물러서며 되풀이됩니다 — 재어 보니 25초 동안 답도
+   `onAuthStateChange` 이벤트도 오지 않았습니다(그동안 저장된 세션은 그대로
+   있었습니다). 그 25초 내내, 그리고 그 뒤로도 `sbUser` 는 null 이고 화면은
+   "로그인" 을 권합니다. 어제 로그인해 둔 사람이 비행기 모드로 앱을 켜면 늘
+   이것입니다.
+
+   그래서 저장된 세션을 먼저 읽고, 그 뒤에 오는 진짜 답이 이것을 덮게 합니다.
+   가짜 로그인을 만드는 것이 아닙니다 — 이미 이 기기에 있는 것을 네트워크가
+   대답할 때까지 버리지 않는 것뿐입니다. 로그아웃하면 이 값이 사라지므로
+   로그아웃은 그대로 로그아웃입니다. */
+function storedAuthUser(){
+  try{
+    const ref=new URL(SB_URL).hostname.split('.')[0];
+    const raw=localStorage.getItem(`sb-${ref}-auth-token`);
+    if(!raw) return null;
+    const saved=JSON.parse(raw);
+    return saved&&saved.user&&saved.user.id?saved.user:null;
+  }catch(error){ return null; }
+}
+
 function attachSupabaseAuth(){
   if(!sb||authListenerAttached) return; authListenerAttached=true;
   const accept=session=>{
-    const next=session?session.user:null;
+    /* 서버가 세션을 주지 않았어도 이 기기에 남아 있으면 그것이 지금의 사실입니다. */
+    const next=session?session.user:storedAuthUser();
     if(!next||(sbUser&&sbUser.id!==next.id)){ vaultMaster=null; vaultMeta=null; vaultRemoteItems=[]; serverBooks=[]; }
     sbUser=next; syncBadge();
     if(typeof selKey!=='undefined'&&selKey&&typeof renderPanel==='function') renderPanel();
     if(sbUser) doSync(false);
     if(document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
   };
+  /* 부팅하는 그 자리에서 한 번. `getSession()` 이 오프라인에서 돌아오지 않아도
+     로그인 상태는 이미 서 있습니다. */
+  accept(null);
   sb.auth.onAuthStateChange((_event,session)=>accept(session));
   sb.auth.getSession().then(({data:{session}})=>accept(session));
 }

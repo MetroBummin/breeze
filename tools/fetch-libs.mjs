@@ -28,8 +28,24 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const libDir = resolve(root, 'assets/lib');
 
 /* 올릴 때는 여기만 고치고 `npm run libs` 를 돌리면 됩니다. `local` 이름이
-   scripts/core/lazy-lib.js 에 적힌 이름과 같아야 하고, 테스트가 그것을 봅니다. */
+   그것을 부르는 파일(`wiredIn`)에 적힌 이름과 같아야 하고, 아래에서 맞춰 봅니다. */
 const LIBS = [
+  /* ---- 동기화 SDK 는 늦게 받지 않습니다 ----
+     이것만은 index.html 이 곧바로 부릅니다 — `scripts/sync/sync.js` 가 파일을
+     읽는 그 자리에서 `initSupabase()` 를 부르기 때문입니다.
+
+     여기로 가져온 까닭은 위의 셋과 정확히 같습니다. 남의 서버(jsDelivr)에 있는
+     동안에는 서비스워커가 담을 수 없어서, 비행기 모드로 앱을 켜면 이 파일만
+     오지 않았습니다. 그러면 `window.supabase` 가 없고, `sb` 가 null 이 되고,
+     `sbUser` 가 null 이 되고, 화면은 **로그인한 적 없는 사람에게 하는 말**을
+     합니다 — 실제로 재어 봤습니다: `sbInitProblem:'sdk'`, 설정 둘째 탭 "로그인",
+     홈에 Login 말풍선. 오프라인은 로그아웃이 아닙니다.
+
+     index.html 안에 있으므로 `sw.js` 의 install 이 앱 껍데기와 함께 미리
+     담습니다 — 두 번째 실행부터는 네트워크 없이도 이 파일이 있습니다. */
+  { local: 'supabase-2.112.3.min.js',
+    url: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js',
+    wiredIn: 'index.html' },
   { local: 'pdf-3.11.174.min.js',
     url: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js' },
   /* 일꾼(worker)은 PDF 를 실제로 푸는 쪽입니다. 본체보다 큽니다 — 대신 이게
@@ -44,6 +60,8 @@ const LIBS = [
 
 /* 남의 코드를 실어 나르는 조건입니다 — 글꼴의 OFL 과 같습니다. */
 const LICENSES = [
+  { file: 'LICENSE-supabase-js.txt',
+    url: 'https://raw.githubusercontent.com/supabase/supabase-js/v2.112.3/LICENSE' },
   { file: 'LICENSE-pdfjs.txt',
     url: 'https://raw.githubusercontent.com/mozilla/pdf.js/v3.11.174/LICENSE' },
   { file: 'LICENSE-jszip.txt',
@@ -72,13 +90,14 @@ for(const license of LICENSES){
   writeFileSync(resolve(libDir, license.file), await get(license.url));
 }
 
-/* lazy-lib.js 가 정말 이 파일들을 가리키는지 여기서 한 번 맞춰 봅니다. 파일만
+/* 부르는 쪽이 정말 이 파일들을 가리키는지 여기서 한 번 맞춰 봅니다. 파일만
    받아 놓고 주소를 안 고치면 아무 일도 안 일어나면서 조용히 예전대로 돕니다. */
-const source = readFileSync(resolve(root, 'scripts/core/lazy-lib.js'), 'utf8');
-const unwired = LIBS.filter(lib => !source.includes(`assets/lib/${lib.local}`));
-if(unwired.length){
-  console.error('scripts/core/lazy-lib.js 가 아직 안 가리킵니다:\n  ' +
-    unwired.map(lib => lib.local).join('\n  '));
+const wiring = new Map();
+for(const lib of LIBS){
+  const where = lib.wiredIn || 'scripts/core/lazy-lib.js';
+  if(!wiring.has(where)) wiring.set(where, readFileSync(resolve(root, where), 'utf8'));
+  if(wiring.get(where).includes(`assets/lib/${lib.local}`)) continue;
+  console.error(`${where} 가 아직 assets/lib/${lib.local} 를 안 가리킵니다.`);
   process.exit(1);
 }
 

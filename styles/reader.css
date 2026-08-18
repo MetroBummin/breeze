@@ -261,7 +261,13 @@
     box-shadow:var(--page-shadow);}
   .pageno{text-align:center; color:var(--pageno); font-size:12px; margin:18px 0 26px; font-family:var(--serif); user-select:none;}
   #rtext figure{margin:1.5em 0; text-align:center;}
-  #rtext figure img{max-width:100%; border-radius:10px; box-shadow:var(--shadow);}
+  /* 그림을 꾹 누르면 Safari 는 그것을 집어 옮기려 합니다. 그 끌기가 시작되면
+     읽는 손짓이 더 이상 오지 않아 화면이 굳은 것처럼 됩니다 — 홈의 표지 카드가
+     이미 같은 선언을 갖고 있습니다(styles/home.css). 판정 계층도 `dragstart` 를
+     한 번 더 막습니다(scripts/reader/gesture.js): 막는 것과 지우는 것은 서로의
+     대체가 아니라 서로의 뒷받침입니다. */
+  #rtext figure img{max-width:100%; border-radius:10px; box-shadow:var(--shadow);
+    -webkit-user-drag:none; -webkit-touch-callout:none;}
   .w{cursor:pointer; border-radius:5px; padding:0 1px; margin:0 -1px; transition:background .12s;
     /* 저장한 색이 아닌데 잠깐 회색 네모가 생기는 것은 Safari/Chrome의 기본 탭 표시입니다.
        단어 자체가 클릭 단추라 이 브라우저 효과는 남길 이유가 없습니다. */

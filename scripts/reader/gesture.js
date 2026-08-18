@@ -66,8 +66,14 @@
 /* 이만큼 움직였으면 고르는 것이 아니라 미는 것입니다. */
 const GESTURE_SLOP = 10;
 /* 스크롤하려고 얹은 손가락과 구별되는 길이. 예전에 짧게 잡았다가 얹기만 한
-   것까지 질문으로 읽혀 하루 몫이 새 나갔습니다. */
-const GESTURE_HOLD_MS = 1000;
+   것까지 질문으로 읽혀 하루 몫이 새 나갔습니다.
+
+   1000ms 에서 750ms 로 내렸습니다. 이 값이 재는 것은 "빨리 뜨는가"가 아니라
+   "읽다가 실수로 뜨지 않는가"입니다 — 읽으며 얹었다 미는 손가락은 여기 닿기
+   한참 전에 움직여서(`GESTURE_SLOP`) 이미 SCROLL 로 끝나 있고, 문장을 물어보는
+   손짓은 처음부터 제자리에서 오래 누르는 것입니다. 750ms 는 그 둘을 가르기에
+   여전히 넉넉하면서, 1초처럼 "눌러도 아무 일이 없나" 싶은 자리는 아닙니다. */
+const GESTURE_HOLD_MS = 750;
 
 /* 시트를 손잡이로 끌어내려 닫는 거리. `scripts/ui/interactions.js` 가 들고 있던
    값 그대로 옮겨 왔습니다 — 시계가 아니라 거리라서 이 파일의 규칙에 맞습니다. */
@@ -98,7 +104,7 @@ function readerSurfaceFor(event){
 /* ================= 임자 =================
 
    지금 화면에 해석 창이 떠 있으면, 어디를 눌렀든 그 손짓의 임자는 창입니다.
-   창 안의 X 를 눌렀든 창 밖을 눌렀든 똑같습니다 — 둘은 UI 요소로서는 다르지만
+   창 안을 눌렀든 창 밖을 눌렀든 똑같습니다 — 둘이 하는 일은 다르지만
    임자가 같아야 reader 가 같은 손짓에 끼어들 수 없습니다.
 
    낱말 시트도 같습니다. 다만 시트는 폰에서만 화면을 덮습니다 — 넓은 화면에서는
@@ -111,10 +117,17 @@ function sentenceModalOpen(){
   const modal = document.getElementById('sentence-modal');
   return !!modal && !modal.hidden;
 }
-/* 창을 닫는 자리는 둘입니다 — 오른쪽 위의 X, 그리고 창 바깥. */
+/* ---- 창을 닫는 자리는 하나입니다 — 창 바깥 ----
+   오른쪽 위에 X 가 하나 더 있었습니다. 임자 모델에서는 둘 다 같은 손짓이라
+   남겨 두어도 판정이 흐트러지지는 않지만, 닫는 길이 둘이면 "닫은 뒤에 무엇이
+   남았는가"를 두 벌 확인해야 합니다. 지금은 한 벌입니다.
+
+   바깥만 남기는 것이 안전한 까닭은 이 창이 scrim 을 깔고 뜨기 때문입니다 —
+   화면에서 창이 아닌 곳은 전부 그 scrim 입니다. 창 안을 눌렀을 때는 여기가
+   거짓이 되어(`endSentenceModalGesture`) 아무 일도 일어나지 않습니다. */
 function sentenceDismissTarget(target){
   if(!target || typeof target.closest !== 'function') return false;
-  return !!(target.closest('#ps-close') || target.closest('#sentence-scrim'));
+  return !!target.closest('#sentence-scrim');
 }
 
 function wordPanelOpen(){
@@ -244,6 +257,9 @@ function beginGesture(event){
      기준이므로 새 pointerdown 은 곧 앞것의 끝입니다. */
   if(activeGesture) finishGesture(activeGesture, GESTURE_CANCEL);
   lastGesture = null;
+  /* 앞선 손짓에서 Safari 가 만들어 놓고 간 선택이 남아 있으면 여기서 지웁니다.
+     이 한 줄이 "막지 못했더라도 다음 손짓에서는 되찾는다"의 전부입니다. */
+  reclaimReaderSelection();
 
   /* 마우스의 오른쪽·가운데 단추는 우리 손짓이 아닙니다. Touch PointerEvent 의
      `button` 은 브라우저마다 0/-1 로 달라서, 마우스일 때만 봅니다. */
@@ -573,6 +589,18 @@ function attachReaderGestures(doc){
   doc.addEventListener('pointerup', endGesture, true);
   doc.addEventListener('pointercancel', ()=>cancelGesture('pointercancel'), true);
   doc.addEventListener('click', clickGesture, true);
+  /* ---- 끌어서 옮기기는 우리 손짓이 아닙니다 ----
+     꾹 누르면 Safari 는 그 자리의 그림이나 골라 둔 글자를 통째로 집어 옮기려
+     합니다. 그 끌기가 한 번 시작되면 손짓 조각은 더 오지 않고(우리는 CANCEL 만
+     받습니다), 놓을 곳도 없어서 사용자는 화면이 굳은 것처럼 느낍니다.
+     읽는 종이 안에서만 막습니다 — 파일을 끌어다 넣는 반입 길은 종이 밖이라
+     그대로입니다. EPUB 의 장 문서는 통째로 책이므로 문서 전체가 종이입니다. */
+  doc.addEventListener('dragstart', event=>{
+    const target = event.target;
+    const inPaper = doc !== document
+      || !!(target && typeof target.closest === 'function' && target.closest(READER_PAPER));
+    if(inPaper) event.preventDefault();
+  }, true);
   /* iOS 의 Copy/Look Up 메뉴는 DOM 이벤트가 아니라 그 아래 UIKit 이 만드는
      선택을 보고 뜹니다. 읽는 종이 안에서만 끕니다 — 입력칸과 사전 칸은
      평소의 메뉴를 그대로 씁니다. */
@@ -598,13 +626,52 @@ document.addEventListener('DOMContentLoaded', ()=>{
    매번 이기지도 않고, 무엇보다 그 선언은 WebKit 의 caret hit-test 를 함께
    꺼 버립니다 — EPUB 에서 낱말이 안 열리던 진짜 까닭이 그것이었습니다
    (scripts/reader/epub-original.js). 선택은 **끄지 않고 지웁니다**.
-   `preventDefault` 를 쓰지 않으므로 스크롤(팬)에는 손대지 않습니다. */
+   `preventDefault` 를 쓰지 않으므로 스크롤(팬)에는 손대지 않습니다.
+
+   ---- 지우는 때가 둘입니다 ----
+   막는 것(CSS)과 지우는 것(`selectionchange`)은 둘 다 **선택이 생기는 순간**에
+   거는 방어입니다. 그 순간을 한 번 놓치면 — 경합에서 지거나, iOS 가 우리 문서에
+   조각을 아예 배달하지 않거나 — 파란 선택과 그 손잡이가 화면에 그대로 남고,
+   그 뒤로 손가락은 우리가 아니라 그 손잡이에게 갑니다. 사용자가 보기에는
+   프로그램이 멈춘 것입니다. 지금까지 여기에는 그 상태에서 **빠져나오는 길이
+   없었습니다** — 방어가 실패했다는 것을 아무도 다시 묻지 않았기 때문입니다.
+
+   그래서 잣대를 한 곳에 모아 두고, 손짓이 시작될 때마다 한 번 더 묻습니다
+   (`reclaimReaderSelection`, 아래 `beginGesture`). 이것이 이 파일이 지키는
+   약속의 나머지 절반입니다: **막지 못했더라도 다음 손짓에서는 반드시 되찾는다.**
+   평소에는 선택이 없으므로 아무 일도 하지 않는 줄입니다 — 값을 치르는 것은
+   실제로 망가진 그 한 번뿐입니다. */
+const READER_SELECTION_GUARDS = [];
 function suppressReaderSelection(doc, inPaper){
-  doc.addEventListener('selectionchange', ()=>{
-    const selection = doc.getSelection();
-    if(!selection || selection.isCollapsed) return;
-    const node = selection.anchorNode;
-    const element = node && (node.nodeType === 1 ? node : node.parentElement);
-    if(element && inPaper(element)) selection.removeAllRanges();
+  READER_SELECTION_GUARDS.push({ doc, inPaper });
+  /* 문서 하나에 귀는 하나. 종이 둘이 같은 문서를 쓰기도 합니다(글자판·스캔본). */
+  if(doc.__breezeSelectionGuard) return;
+  doc.__breezeSelectionGuard = true;
+  doc.addEventListener('selectionchange', ()=>clearReaderPaperSelection(doc));
+}
+/* 지금 이 문서에 남아 있는 선택이 읽는 종이의 것이면 지웁니다. 종이 밖의 선택
+   (입력칸·사전 칸·베껴 갈 코드 상자)은 사용자의 것이므로 건드리지 않습니다. */
+function clearReaderPaperSelection(doc){
+  let selection = null;
+  try{ selection = doc.getSelection(); }catch(error){ return false; }
+  if(!selection || selection.isCollapsed) return false;
+  const node = selection.anchorNode;
+  const element = node && (node.nodeType === 1 ? node : node.parentElement);
+  if(!element) return false;
+  const ours = READER_SELECTION_GUARDS.some(guard => {
+    if(guard.doc !== doc) return false;
+    try{ return !!guard.inPaper(element); }catch(error){ return false; }
   });
+  if(!ours) return false;
+  try{ selection.removeAllRanges(); }catch(error){ return false; }
+  return true;
+}
+/* 등록된 종이 전부에서 한 번씩. EPUB 은 장마다 제 문서라 여럿입니다. */
+function reclaimReaderSelection(){
+  const seen = new Set();
+  for(const guard of READER_SELECTION_GUARDS){
+    if(seen.has(guard.doc)) continue;
+    seen.add(guard.doc);
+    clearReaderPaperSelection(guard.doc);
+  }
 }

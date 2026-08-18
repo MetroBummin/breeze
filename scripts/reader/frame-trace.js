@@ -237,8 +237,7 @@
   document.addEventListener('pointerdown', event=>{
     const target = event.target;
     if(!target || typeof target.closest !== 'function'){ pressedOn = ''; return; }
-    pressedOn = target.closest('#ps-close') ? '문장 X'
-              : target.closest('#sentence-scrim') ? '문장 바깥'
+    pressedOn = target.closest('#sentence-scrim') ? '문장 바깥'
               : target.closest('#p-close') ? '낱말 X'
               : target.closest('#p-handle') ? '낱말 손잡이'
               : target.closest('#sheetbg') ? '낱말 바깥' : '';

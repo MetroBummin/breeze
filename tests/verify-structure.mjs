@@ -1227,10 +1227,13 @@ assert.match(index, /id="sentence-modal"[\s\S]{0,400}id="p-sentence"/,
 
    지금 지키는 것은 하나입니다: 판정은 한 곳에서 하고, 종이는 판정하지 않는다. */
 
-/* 꾹 누르기는 넉넉히 깁니다. 짧게 잡으면 스크롤하려고 얹은 손가락이 질문이 됩니다. */
+/* 꾹 누르기는 넉넉히 깁니다. 짧게 잡으면 스크롤하려고 얹은 손가락이 질문이 됩니다.
+   750ms 로 내렸습니다 — 여기서 지키는 것은 정확한 값이 아니라 "우발적으로 뜰 만큼
+   짧지 않다"는 바닥입니다. 얹었다 미는 손가락은 이 시간에 닿기 전에 이미 움직여서
+   (`GESTURE_SLOP`) SCROLL 로 끝나 있습니다. */
 assert.match(gestureSource, /const GESTURE_HOLD_MS = (\d+)/,
   'The long press lost its own threshold');
-assert.ok(Number(gestureSource.match(/const GESTURE_HOLD_MS = (\d+)/)[1]) >= 1000,
+assert.ok(Number(gestureSource.match(/const GESTURE_HOLD_MS = (\d+)/)[1]) >= 700,
   'The sentence long press is short enough to fire on an ordinary tap again');
 assert.match(gestureSource, /gesture\.moved > GESTURE_SLOP && gesture\.owner === OWNER_READER\)\{\s*\n\s*finishGesture\(gesture, GESTURE_SCROLL\)/,
   'A moving finger no longer cancels the sentence press, so scrolling can spend the daily allowance');
@@ -1427,8 +1430,12 @@ assert.doesNotMatch(sentenceSource, /function dismissSentence/,
    "창이 떠 있는 동안의 입력은 창이 가진다" 하나입니다. */
 assert.doesNotMatch(index, /id="sentence-scrim"[^>]*onclick/,
   'The scrim closes the sentence window through its own onclick again, outside the gesture controller');
-assert.doesNotMatch(index, /id="ps-close"[^>]*onclick/,
-  'The X button closes the sentence window outside the gesture controller again');
+/* 닫는 자리는 창 바깥 하나입니다. X 를 도로 넣으면 닫는 길이 둘이 되고, 그러면
+   "닫은 뒤에 무엇이 남았는가"를 두 벌 확인해야 합니다. */
+assert.ok(!/id="ps-close"/.test(index),
+  'The sentence window grew a second way to close again — the scrim is the only one');
+assert.ok(!/ps-close/.test(gestureSource),
+  'The gesture controller treats an X button as a dismiss target again');
 assert.ok(!/closeSentence/.test(index),
   'index.html reaches into the sentence close path directly instead of letting the gesture owner do it');
 assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',\s*\n\s*OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_AA = 'AA', OWNER_UI = 'UI'/,

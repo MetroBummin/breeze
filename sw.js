@@ -23,7 +23,8 @@
  * PDF.js · JSZip 도 이제 우리 서버에 있습니다(`assets/lib/`). 미리 담지는
  * 않습니다 — 기사만 읽는 사람에게는 한 번도 쓰지 않을 1.45MB 라서, 실제로
  * PDF 를 연 기기에서만 아래 `cacheFirst` 가 지나가는 길에 담아 둡니다.
- * 그 다음부터는 비행기 모드에서도 PDF 가 열립니다.
+ * 그 다음부터는 비행기 모드에서도 PDF 가 열립니다 — 그리고 판이 바뀌어도
+ * 그대로 남습니다(아래 `carryOverRuntimeLibs`).
  *
  * 네이티브 셸(Capacitor)은 이 파일을 쓰지 않습니다 — 그쪽은 파일이 이미 앱 안에
  * 들어 있고, 주소가 http 가 아니라 등록 자체를 건너뜁니다 (scripts/main.js).
@@ -32,7 +33,7 @@
 /* tools/stamp-version.mjs 가 찍습니다 — 손으로 고치지 마세요.
    값은 "판 번호를 찍은 index.html 의 해시" 입니다. index.html 은 모든 파일의
    해시를 담고 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다. */
-const VERSION = 'c7ea84fc';
+const VERSION = '4c3c87ea';
 const CACHE = `breeze-${VERSION}`;
 
 /* 담을 목록은 index.html 을 읽어서 그때그때 만듭니다. 손으로 적어 두면 파일을
@@ -68,11 +69,46 @@ self.addEventListener('install', event => {
   })());
 });
 
+/* ---- 한 벌만은 옮겨 싣습니다 ----
+   `assets/lib/` 의 PDF.js · JSZip 은 위 install 이 미리 담지 않습니다 —
+   index.html 에 없고(늦게 받습니다), 기사만 읽는 사람에게는 한 번도 쓰지 않을
+   1.45MB 라서. 실제로 PDF 나 EPUB 을 연 기기에만 `cacheFirst` 가 지나가는 길에
+   남습니다.
+
+   그런데 아래에서 옛 캐시를 통째로 버리면 그 한 벌도 함께 버려졌습니다. 배포할
+   때마다입니다. 다음에 온라인일 때 다시 받으면 되는 것처럼 보이지만, 그 사이에
+   비행기 모드가 되면 **이미 이 기기 안에 들어 있는 PDF** 가 "인터넷 연결을
+   확인해 주세요"로 안 열립니다. 재현해 보면 판 번호 한 번 바꾸는 것으로 충분했고,
+   그때 사용자가 잃는 것은 캐시가 아니라 자기 책입니다.
+
+   이 주소들만 옮깁니다. 이름 안에 판이 들어 있어(`pdf-3.11.174.min.js`) 판이
+   바뀌어도 같은 이름은 같은 내용이고, 올려 받으면 이름이 달라져 저절로 빗나갑니다.
+   `?v=` 가 붙는 앱 파일(js·css)과 index.html 은 **옮기지 않습니다** — 그쪽은
+   옛 주소가 곧 옛 내용이라, 옮기면 반은 새 코드 반은 옛 코드가 됩니다. */
+const KEEP_ACROSS_VERSIONS = /\/assets\/lib\/[^/]+$/;
+
+async function carryOverRuntimeLibs(cache){
+  for(const name of await caches.keys()){
+    if(name === CACHE) continue;
+    const old = await caches.open(name);
+    for(const request of await old.keys()){
+      const url = new URL(request.url);
+      if(url.origin !== self.location.origin) continue;
+      if(url.search || !KEEP_ACROSS_VERSIONS.test(url.pathname)) continue;
+      if(await cache.match(request)) continue;
+      const response = await old.match(request);
+      if(response) await cache.put(request, response);
+    }
+  }
+}
+
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     /* 판이 바뀌면 옛 캐시는 통째로 버립니다. 새 캐시는 위 install 에서 이미 다
        채워진 뒤라 빈 구간이 생기지 않습니다. 주소마다 해시가 붙어 있어서
-       배포할 때마다 옛 주소가 쌓이는데, 이렇게 해야 그것이 끝없이 늘지 않습니다. */
+       배포할 때마다 옛 주소가 쌓이는데, 이렇게 해야 그것이 끝없이 늘지 않습니다.
+       버리기 전에 위의 한 벌만 새 캐시로 옮겨 싣습니다. */
+    await carryOverRuntimeLibs(await caches.open(CACHE));
     for(const name of await caches.keys()) if(name !== CACHE) await caches.delete(name);
     await self.clients.claim();
   })());
