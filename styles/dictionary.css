@@ -56,9 +56,10 @@
   /* ── 낱말 하나를 화면에서 어떻게 다룰지 ──
      "모르는 정도" 아래 한 줄에 단추 둘이 섭니다 — 왼쪽은 단어장에서 빼기,
      오른쪽은 본문 색칠. 같은 일의 두 갈래라 높이·모서리·테두리·글자를 하나로
-     둡니다(`.p-tool`). 다른 것은 상태뿐입니다: 색칠은 켜고 끄는 것이라 켜졌을
-     때만 파랑이 옅게 들고, 빼기는 한 번 누르면 끝나는 일이라 상태가 없습니다.
-     빼는 일에 붉은색은 쓰지 않습니다 — 지우는 것이 아니라 "이건 안다"입니다. */
+     둡니다(`.p-tool`). 다른 것은 색뿐입니다: 색칠은 켜고 끄는 것이라 켜졌을
+     때만 파랑이 옅게 들고, 빼기는 한 번 누르면 이 낱말이 단어장에서 사라지는,
+     되돌리려면 다시 찾아 눌러야 하는 일입니다. 그래서 옅은 벽돌빛을 입힙니다 —
+     쨍한 빨강이 아니라 창의 다른 곳에서 이미 쓰는 `--danger` 한 벌입니다. */
   /* 좁은 옆 칸(약 875px 아래의 마우스 화면)에서는 이 두 단추가 한 줄에 다 서지
      못합니다. 글자를 줄이는 대신 줄을 바꿉니다 — 넉넉할 때는 지금까지처럼 한
      줄이고, 모자랄 때만 아래로 내려섭니다. 넘쳐서 창에 가로 스크롤을 만드는 것보다
@@ -68,9 +69,12 @@
     border:1px solid var(--mark-line); border-radius:9px; background:var(--mark-bg); color:var(--soft2);
     cursor:pointer; font:600 11px var(--ui); white-space:nowrap; transition:.16s;}
   .p-tool:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
-  /* 체크만 파랗습니다. 글자까지 파래지면 켜져 있는 것처럼 읽힙니다. */
-  #p-know .ck{width:13px; height:13px; flex:none; color:var(--blue);}
-  #p-know:hover{border-color:var(--blue-ring); background:var(--chip-hit); color:var(--ink);}
+  /* 크기·높이·모서리·글자는 `.p-tool` 그대로고, 색만 다릅니다. */
+  #p-know{border-color:var(--danger); background:var(--danger-tint); color:var(--danger);}
+  #p-know .ck{width:13px; height:13px; flex:none; color:var(--danger);}
+  /* 짚었을 때 — 어두운 화면에서는 바탕이 더 짙어질 자리가 없어서, 테두리를 안쪽으로
+     한 겹 더 그어 두 테마 모두에서 손끝이 닿은 것이 보이게 합니다(자리는 그대로). */
+  #p-know:hover{background:var(--danger-bg-hover); box-shadow:inset 0 0 0 1px var(--danger);}
   #p-mark.on{border-color:var(--blue-ring); background:var(--mark-on); color:var(--mark-on-ink);}
   /* 원형이 따로 있을 때만 뜨는 한 줄 — "spared에서 찾음". */
   #p-clicked{display:none; margin:7px 0 0; font-size:11.5px; color:var(--soft2);}
@@ -213,8 +217,13 @@
   #p-add-sense:hover{border-color:var(--blue); color:var(--blue); background:var(--sky);}
   #p-sense-add{margin-top:8px;}
   #p-sense-add[hidden]{display:none;}
+  /* 이 칸의 글자는 16px 밑으로 내려가면 안 됩니다. iOS Safari 는 글자가 그보다
+     작은 칸에 손이 닿으면 읽으라고 화면 전체를 당겨 키웁니다 — 낱말 창만이 아니라
+     읽던 쪽까지 함께 커지고, 손가락으로 되돌리기가 쉽지 않습니다. 막는 길은 두
+     가지인데, viewport 에 확대 금지를 적는 쪽은 원본 종이를 손으로 키워 보는 길까지
+     같이 막습니다. 그래서 이 칸의 글자만 16px 로 둡니다. */
   #p-sense-input{width:100%; box-sizing:border-box; border:1px solid var(--blue); border-radius:12px;
-    padding:9px 11px; background:var(--field); color:var(--ink); font:400 13.5px var(--ui); outline:none;
+    padding:9px 11px; background:var(--field); color:var(--ink); font:400 16px var(--ui); outline:none;
     box-shadow:0 0 0 2px var(--blue-ring);}
   /* 숙어는 낱말 바로 아래 한 줄입니다. 뜻 칩과 섞이지 않게 자기 자리를 따로 씁니다. */
   #p-colloc{display:none; flex-wrap:wrap; gap:6px; margin-top:11px;}
