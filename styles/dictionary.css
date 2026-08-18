@@ -53,7 +53,11 @@
      둡니다(`.p-tool`). 다른 것은 상태뿐입니다: 색칠은 켜고 끄는 것이라 켜졌을
      때만 파랑이 옅게 들고, 빼기는 한 번 누르면 끝나는 일이라 상태가 없습니다.
      빼는 일에 붉은색은 쓰지 않습니다 — 지우는 것이 아니라 "이건 안다"입니다. */
-  #p-word-tools{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
+  /* 좁은 옆 칸(약 875px 아래의 마우스 화면)에서는 이 두 단추가 한 줄에 다 서지
+     못합니다. 글자를 줄이는 대신 줄을 바꿉니다 — 넉넉할 때는 지금까지처럼 한
+     줄이고, 모자랄 때만 아래로 내려섭니다. 넘쳐서 창에 가로 스크롤을 만드는 것보다
+     낫습니다. */
+  #p-word-tools{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
   .p-tool{flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 12px;
     border:1px solid var(--mark-line); border-radius:9px; background:var(--mark-bg); color:var(--soft2);
     cursor:pointer; font:600 11px var(--ui); white-space:nowrap; transition:.16s;}
@@ -256,7 +260,12 @@
      위의 `.p-tool` 을 봐 주세요. 긴 낱말 창에서 끝까지 내려야 보이던 자리였습니다. */
 
   @media (min-width:1000px), (min-width:761px) and (pointer:fine){
-    #p-top{position:sticky; top:0; z-index:6; margin:-26px -26px 0; padding:22px 20px 13px 26px;
+    /* 붙어 있는 머리글은 창의 좌우 끝까지 배경을 깔아야 하므로, `.inner` 의
+       여백만큼 음수 여백으로 되물러 나갔다가 같은 값을 안쪽 여백으로 되돌려
+       놓습니다. 그래서 이 값은 바로 위 `#panel .inner` 의 여백과 **같은 수**여야
+       합니다 — 여백을 26 에서 22 로 줄이면서 여기를 26 인 채 두었더니, 머리글이
+       창보다 4px 넓어져 옆 칸에 가로 스크롤이 생겼습니다. */
+    #p-top{position:sticky; top:0; z-index:6; margin:-22px -22px 0; padding:22px 20px 13px 22px;
       background:var(--sheet); border-bottom:1px solid var(--sticky-line);}
     body.reader-original #p-top{margin:-21px -20px 0; padding:22px 16px 9px 20px;}
   }
