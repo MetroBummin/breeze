@@ -19,6 +19,14 @@
  */
 
 :root{
+  /* ---- 브라우저가 그리는 것들 ----
+     스크롤 막대·기본 입력칸처럼 우리가 아니라 브라우저가 색을 정하는 부분이
+     있습니다. 이 앱의 어둠은 `body.dark` 라는 우리끼리의 표시라서, 말해 주지
+     않으면 브라우저는 여전히 밝은 화면인 줄 알고 흰 스크롤 막대를 그립니다 —
+     읽는 화면에서 글과 낱말 창 사이에 흰 띠가 서 있던 것이 이것이었습니다.
+     그래서 어느 화면인지를 여기서 한 번 알려 줍니다(어두울 때는 `html.dark`). */
+  color-scheme:light;
+
   /* ---- 글꼴 ----
      제목에만 쓰는 Fraunces 는 SIL Open Font License 글꼴입니다. 본문과 버튼은
      기기 기본 글꼴을 유지해 읽는 속도를 건드리지 않습니다. */
@@ -288,7 +296,7 @@ body.lang-ko .navbtn{font-size:16px; line-height:1.1;}
 
 /* 종이색은 html 에도 걸립니다. 내용이 짧으면 body 아래로 html 의 배경이
    드러나기 때문입니다(scripts/ui/preferences.js 가 두 곳에 함께 표를 답니다). */
-html.dark{--paper:#171816;}
+html.dark{--paper:#171816; color-scheme:dark;}
 
 body.dark{
   --brand:#4DAED6;
