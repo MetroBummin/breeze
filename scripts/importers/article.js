@@ -392,21 +392,67 @@ async function fetchArticleHtml(url){
 
 /* 사진 한 장 가져오기. 스스로 CORS를 열어 둔 곳은 바로, 아니면 중계를 거칩니다.
    못 받으면 null — 사진 하나 때문에 기사를 통째로 못 읽으면 손해입니다. */
-async function fetchArticleImage(url){
+/* ===== 임시 진단 시작 — iPhone 확인 뒤 통째로 지웁니다 (article.js) ===== */
+/** @param {any} error @returns {string} */
+function diagWhy(error){
+  /* 주소·본문은 절대 싣지 않습니다. 이름과 메시지만, 그것도 URL 은 지우고 남깁니다. */
+  const message = error && error.message
+    ? String(error.message).replace(/https?:\/\/\S+/g, '…').slice(0, 40) : '';
+  return '!' + ((error && error.name) || '?') + (message ? '(' + message + ')' : '');
+}
+/* 네 칸 가운데 어디서 끊겼는지 한 마디로 정합니다. */
+/** @param {any} one @returns {string} */
+function diagStop(one){
+  if(one.w && one.w.charAt(0) !== '!') return 'ok ' + one.w;
+  if(one.w) return 'imgPut ' + one.w;
+  if(one.b && !/^\d+k$/.test(one.b)) return 'blob ' + one.b;
+  if(one.p && one.p !== 'ok') return 'proxy ' + one.p;
+  if(one.d && one.d !== 'ok') return 'direct ' + one.d;
+  return '?';
+}
+/** @param {string[]} lines */
+function diagShow(lines){
+  const old = document.getElementById('img-diag');
+  if(old) old.remove();
+  const box = document.createElement('div');
+  box.id = 'img-diag';
+  box.style.cssText = 'position:fixed; left:8px; right:8px; bottom:8px; z-index:99999;'
+    + 'background:#111; color:#eee; padding:10px 12px; border-radius:10px;'
+    + 'font:12px/1.45 ui-monospace,Menlo,monospace; white-space:pre-wrap; word-break:break-all;'
+    + '-webkit-user-select:text; user-select:text; max-height:60vh; overflow:auto;';
+  box.textContent = lines.join('\n') + '\n— 탭하면 닫힙니다';
+  box.onclick = () => box.remove();
+  document.body.appendChild(box);
+}
+/* ===== 임시 진단 끝 ===== */
+
+/** @param {string} url @param {any} [diag] */
+async function fetchArticleImage(url, diag){
+  const note = (key, value) => { if(diag) diag[key] = value; };       // 임시 진단
   let response = null;
-  try{ response = await fetch(url); }catch(e){}
+  try{
+    response = await fetch(url);
+    note('d', response.ok ? 'ok' : 'h' + response.status);            // 임시 진단
+  }catch(e){ note('d', diagWhy(e)); }                                 // 임시 진단
   if(!response || !response.ok){
     const endpoint = articleProxyUrl(url, 'image');
-    if(!endpoint) return null;
+    if(!endpoint){ note('p', 'nokey'); return null; }                 // 임시 진단
     response = null;
     try{
       response = await fetch(endpoint, {
         headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
       });
-    }catch(e){}
+      note('p', response.ok ? 'ok' : 'h' + response.status);          // 임시 진단
+    }catch(e){ note('p', diagWhy(e)); }                               // 임시 진단
   }
   if(!response || !response.ok) return null;
   const blob = await response.blob().catch(()=>null);
+  /* 임시 진단 — 판정 자체는 아래 한 줄과 똑같습니다. 어디서 걸렸는지만 적습니다. */
+  if(!blob) note('b', 'noblob');
+  else if(!blob.size) note('b', 'size0');
+  else if(!/^image\//.test(blob.type)) note('b', 'type=' + (blob.type || 'none'));
+  else if(/svg/.test(blob.type)) note('b', 'svg');
+  else note('b', Math.round(blob.size/1024) + 'k');
   if(!blob || !blob.size || !/^image\//.test(blob.type) || /svg/.test(blob.type)) return null;
   return blob;
 }
@@ -426,12 +472,20 @@ async function attachArticleImages(parsed, fallbackPhoto){
   });
   if(!wanted.length && !fallbackPhoto) return { wanted:0, missed:0 };
 
-  const fetched = await Promise.all(wanted.map(url =>
-    fetchArticleImage(url).then(blob => [url, blob], () => [url, null])));
+  const diags = /** @type {any[]} */ (wanted.map(() => ({})));        // 임시 진단
+  const fetched = await Promise.all(wanted.map((url, index) =>
+    fetchArticleImage(url, diags[index]).then(blob => [url, blob], () => [url, null])));
   const stored = new Set();
+  let step = 0;                                                       // 임시 진단
   for(const [url, blob] of fetched){
+    const diag = diags[step++];                                       // 임시 진단
     if(!blob) continue;
-    try{ await imgPut(articleImageKey(url), blob); stored.add(url); }catch(e){}
+    const began = Date.now();                                         // 임시 진단
+    try{
+      await imgPut(articleImageKey(url), blob);
+      stored.add(url);
+      diag.w = 'ok' + (Date.now() - began) + 'ms';                    // 임시 진단
+    }catch(e){ diag.w = diagWhy(e); }                                 // 임시 진단
   }
 
   parsed.blocks = parsed.blocks.filter(block => block.r !== 'img' || stored.has(block.t));
@@ -439,16 +493,20 @@ async function attachArticleImages(parsed, fallbackPhoto){
   const missing = wanted.filter(url => !stored.has(url)).length;
   /* 표지 자리가 비었을 때만 갑니다 — 원문 사진이 잘 왔으면 여기는 지나갑니다. */
   let rescued = false;
+  const rescueDiag = /** @type {any} */ ({ rescue:true });            // 임시 진단
   if(!parsed.cover && fallbackPhoto && !stored.has(fallbackPhoto)){
-    const blob = await fetchArticleImage(fallbackPhoto);
+    const blob = await fetchArticleImage(fallbackPhoto, rescueDiag);
     if(blob){
+      const began = Date.now();                                       // 임시 진단
       try{
         await imgPut(articleImageKey(fallbackPhoto), blob);
         stored.add(fallbackPhoto);
         parsed.cover = articleImageKey(fallbackPhoto);
         rescued = true;
-      }catch(e){}
+        rescueDiag.w = 'ok' + (Date.now() - began) + 'ms';            // 임시 진단
+      }catch(e){ rescueDiag.w = diagWhy(e); }                          // 임시 진단
     }
+    diags.push(rescueDiag);                                           // 임시 진단
   }
 
   /* 어느 사진이 어느 주소에서 왔는지 적어 둡니다. 다른 기기는 이것만 있으면
@@ -456,6 +514,20 @@ async function attachArticleImages(parsed, fallbackPhoto){
      없습니다. 주소 몇 줄이라 동기화 짐도 늘지 않습니다. */
   parsed.imgSrc = {};
   stored.forEach(url => { parsed.imgSrc[articleImageKey(url)] = url; });
+  /* ===== 임시 진단 — 어느 칸에서 멈췄는지 화면에 그대로 적습니다 ===== */
+  try{
+    const estimate = navigator.storage && navigator.storage.estimate
+      ? await navigator.storage.estimate().catch(()=>null) : null;
+    diagShow([
+      '사진 ' + stored.size + '/' + diags.length + ' 저장',
+      ...diags.map((one, index) => (index+1) + (one.rescue ? '(카드사진)' : '')
+        + ' ' + diagStop(one)
+        + '\n   direct:' + (one.d || '-') + ' proxy:' + (one.p || '-')
+        + ' blob:' + (one.b || '-') + ' put:' + (one.w || '-')),
+      estimate ? ('quota:' + estimate.quota + ' usage:' + estimate.usage) : 'quota:없음',
+    ]);
+  }catch(e){ diagShow(['진단 실패 ' + diagWhy(e)]); }
+  /* ===== 임시 진단 끝 ===== */
   Object.assign(parsed, articleAssemble(parsed.title, parsed.blocks));
   /* 대신 받아 온 한 장은 표지 몫을 채웠으므로 못 받은 장수에서 뺍니다. 그러지
      않으면 표지가 멀쩡히 떠 있는 화면 위로 "한 장도 못 받았어요" 가 뜹니다. */
