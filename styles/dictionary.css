@@ -27,6 +27,12 @@
     body.reading #panel{position:relative; top:auto;
       margin-top:calc(env(safe-area-inset-top) + 10px);
       height:calc(100% - env(safe-area-inset-top) - 10px);}
+    /* 옆 칸의 막대는 감춥니다. 뜻 몇 줄이 들어가는 좁은 칸이라 막대가 서면 그
+       폭만큼 글이 밀리고, 창의 오른쪽 가장자리에 밝은 띠가 하나 더 생깁니다.
+       미는 길(휠·트랙패드·손)은 그대로입니다 — 그림만 없앱니다. 바닥에서
+       올라오는 시트는 이 미디어 밖이라 손대지 않았습니다. */
+    #panel{scrollbar-width:none;}
+    #panel::-webkit-scrollbar{display:none;}
     body.reader-original #panel{width:min(310px,26vw);}
     body.reader-original #panel .inner{padding:21px 20px 34px;}
     body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}

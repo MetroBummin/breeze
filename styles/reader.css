@@ -41,6 +41,31 @@
      이제 우리가 그립니다 (`scripts/reader/reader-scroll.js`). */
   #reader-scroll{position:absolute; inset:0; overflow:auto; overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y;}
+  /* ---- 스크롤 막대는 가늘게 ----
+     맥에서 "스크롤 막대 항상 표시"를 켜 두면 이 칸의 막대가 15px 를 차지합니다.
+     그 자리가 하필 글과 낱말 창 사이라, 두 칸을 가르는 굵은 선처럼 보였습니다.
+     자리를 6px 로 줄이고 바탕은 비웁니다 — 남는 것은 손잡이 하나입니다.
+     **없애지는 않습니다.** 긴 책에서 손잡이를 잡아 단숨에 옮기는 길이 여기 말고는
+     없습니다.
+
+     마우스 화면에서만 합니다(`pointer:fine`). 손으로 미는 화면의 막대는 원래
+     떴다 사라지는 것이라 자리를 안 차지하는데, 모양을 적는 순간 늘 서 있는
+     막대로 바뀝니다 — 폰과 태블릿은 손대지 않는 편이 맞습니다.
+
+     `::-webkit-scrollbar` 와 `scrollbar-width` 는 함께 못 씁니다. 크롬은 둘 다
+     있으면 표준 쪽을 따르는데 거기서 가장 가는 값이 11px 이라, 6px 이 조용히
+     무시됩니다. 그래서 `::-webkit-scrollbar` 를 모르는 브라우저에만 표준 쪽을
+     남깁니다(파이어폭스 — 거기서는 `thin` 이 가장 가는 값입니다). */
+  @media (pointer:fine){
+    #reader-scroll::-webkit-scrollbar{width:6px; height:6px;}
+    #reader-scroll::-webkit-scrollbar-track{background:transparent;}
+    #reader-scroll::-webkit-scrollbar-thumb{background:var(--sb-thumb); border-radius:3px;}
+    #reader-scroll::-webkit-scrollbar-thumb:hover{background:var(--sb-thumb-strong);}
+    #reader-scroll::-webkit-scrollbar-corner{background:transparent;}
+    @supports not selector(::-webkit-scrollbar){
+      #reader-scroll{scrollbar-width:thin; scrollbar-color:var(--sb-thumb) transparent;}
+    }
+  }
   /* 읽은 자리는 화면 맨 위의 가는 선 하나로 남습니다. 시계·노치 밑으로 들어가면
      안 보이므로 안전 영역만큼 내려 둡니다. 자리는 스크롤과 무관하게 고정입니다. */
   #rbar{position:fixed; top:env(safe-area-inset-top); left:0; right:0; z-index:40;

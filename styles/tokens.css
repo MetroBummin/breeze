@@ -58,6 +58,10 @@
   --line2:#D7E1DE;
   --sheet-line:#E4E8DF;     /* 떠 있는 면 위의 경계 */
   --divider:#E5EBE7;        /* 낱말 창 안의 가로선 */
+  /* 스크롤 손잡이. 투명도로 적어 두면 어느 바탕 위에 서든 그 바탕에
+     녹습니다 — 이 막대는 글 옆에도 서고 원본 종이 옆에도 섭니다. */
+  --sb-thumb:rgba(24,54,74,.22);
+  --sb-thumb-strong:rgba(24,54,74,.40);   /* 짚거나 끄는 동안 */
 
   /* ---- Breeze Sky ----
      앱 전체가 같은 하늘을 봅니다. `--brand` 는 넓은 면·강조, `--brand-strong` 은
@@ -323,6 +327,8 @@ body.dark{
   --line2:#3C3D37;
   --sheet-line:#2A2E33;
   --divider:#30363B;
+  --sb-thumb:rgba(231,225,212,.20);
+  --sb-thumb-strong:rgba(231,225,212,.38);
 
   --sky:#203C47;
   --sky2:#294B57;
