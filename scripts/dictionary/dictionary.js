@@ -145,16 +145,47 @@ function addWord(k, span){
                                                (추천 뜻 클릭 · ＋ 직접 입력 ·
                                                 "이 문장에서는?" 의 답)
 
-   둘 다 `ai.ko` 를 남깁니다. 그래서 확정 여부를 묻는 자리는 여기 하나면 됩니다.
+   둘 다 `ko` 를 남깁니다. 그래서 확정 여부를 묻는 자리는 여기 하나면 됩니다.
+   묻는 것은 "AI 가 답했나" 가 아니라 **"쓸 뜻 하나가 정해졌나"** 입니다 — 그래서
+   AI 가 한도에 걸리든 실패하든, 사람이 고른 뜻은 그대로 확정입니다.
 
-   **무료 사전이 채운 `ko` 는 여기서 세지 않습니다.** `fetchKo` 는 번역기의 첫
-   줄을 빈 뜻자리에 넣는데, 그것은 "이 문장에서 어떤 뜻인가"가 아니라 후보
-   목록의 맨 앞 하나입니다 — `yield` 를 누르면 양보하다·산출하다·굴복하다·
-   생산량이 함께 옵니다. 후보가 여럿이라는 사실만으로는 사람이 무엇을 원했는지
-   알 수 없으므로, 그것으로 낱말을 확정하지 않습니다. 무료 사전은 뜻이 아니라
-   조회 정보입니다. */
+   **무료 사전은 뜻자리에 들어오지 않습니다.** 번역기가 주는 것은 "이 문장에서
+   어떤 뜻인가"가 아니라 후보 목록입니다 — `yield` 를 누르면 양보하다·산출하다·
+   굴복하다·생산량이 함께 옵니다. 예전에는 그 목록의 맨 앞 하나를 빈 뜻자리에
+   슬쩍 넣었고, 그래서 화면은 "정해진 뜻"처럼 보이는데 속으로는 확정이 아닌
+   상태가 생겼습니다 — 그대로 닫으면 낱말이 사라졌습니다. 이제 후보는 후보 줄에만
+   서고(`freeDictCandidates`), 사람이 하나를 고르는 순간 `createMeaning` 을 지나
+   확정됩니다. 무료 사전은 뜻이 아니라 조회 정보입니다. */
 function hasResolvedMeaning(word){
-  return !!(word && word.ai && String(word.ai.ko||'').trim());
+  if(!word) return false;
+  return !!(String(word.ko||'').trim() || String((word.ai&&word.ai.ko)||'').trim());
+}
+/* 무료 사전이 모아 둔 후보들. `kodict` 는 예전부터 받아 두고 화면에서는 한 번도
+   쓰지 않던 자리입니다 — 새 그릇을 만들지 않고 그대로 폅니다. */
+/** @param {any} word @returns {string[]} */
+function freeDictCandidates(word){
+  if(!word || !Array.isArray(word.kodict)) return [];
+  const out=[];
+  word.kodict.forEach(group=>{
+    (group && Array.isArray(group.terms) ? group.terms : []).forEach(term=>{
+      const text=String(term||'').replace(/\s+/g,' ').trim();
+      if(text) out.push(text);
+    });
+  });
+  return [...new Set(out)];
+}
+/* 뜻이 아직 없을 때 그 자리에 적는 한 줄. 왜 못 정했는지와, 아래에서 고를 수
+   있는지를 말합니다. */
+/** @param {string} off @param {boolean} hasCandidates @returns {string} */
+function meaningWaitLine(off, hasCandidates){
+  const why =
+      off === 'quota'   ? '오늘 AI 사전을 다 썼어요'
+    : off === 'trial'   ? '무료 체험을 다 썼어요'
+    : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
+    : off === 'offline' ? '오프라인이라 문맥 뜻을 못 받았어요'
+    : off === 'error'   ? '문맥 뜻을 받지 못했어요'
+    :                     '아직 뜻이 정해지지 않았어요';
+  return hasCandidates ? why + ' · 아래에서 뜻을 골라 주세요' : why;
 }
 /* ---- 이번 조회에서 처음 만들어진 낱말 ----
    낱말을 누르는 그 순간 단어장에 자리가 하나 생기고, 뜻은 그 뒤에 옵니다. 그래서
@@ -285,6 +316,9 @@ function createMeaning(root, text, source){
      남겨 두고 옆에 새 카드를 만들면, 화면에 없는 뜻이 저장소에만 생깁니다. */
   if(!String(base.ko||'').trim()){
     base.ko=meaning; base.ai=ai; delete base.koEdited;
+    /* 한도·오프라인·오류로 못 정했던 자국입니다. 뜻이 정해진 낱말에 남겨 두면
+       다음에 열었을 때 정해진 뜻 옆에 "못 가져왔어요"가 함께 뜹니다. */
+    delete base.aiOff; delete base.aiSlow;
     if(from.example) base.example=from.example;
     if(from.book) base.book=from.book;
     base.pickedAt=Date.now(); base.up=Date.now();
@@ -520,11 +554,31 @@ function renderPanel(){
   const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
   const ai = w.ai || {};
   const asking = !!w.aiLoading && !w.aiSlow;
+  /* 이 자리에 글자가 오르는 것은 뜻이 정해진 뒤입니다. 무료 사전 후보는 여기
+     오지 않고 아래 후보 줄에 섭니다 — 고르는 순간 정해지고, 그때 올라옵니다. */
   const shown = w.ko || ai.ko || '';
+  /* 지금 연결이 없다는 것은 이 낱말에 무슨 일이 있었는지와 상관없는 사실입니다.
+     거꾸로 뜻이 정해진 낱말에는 지난 실패를 붙들고 있지 않습니다 — 화면과 속이
+     어긋나는 자리가 거기였습니다. */
+  const offline = navigator.onLine === false;
+  const off = offline ? 'offline'
+    : asking ? ''
+    : (w.aiOff === 'offline' || shown) ? '' : (w.aiOff || '');
+  /* AI 가 못 정했을 때만 폅니다. 잘 답했으면 사람이 더 누를 일은 없습니다. */
+  const freeCands = (!shown && !asking && !phrase) ? freeDictCandidates(base) : [];
   if(asking){
     aiBox.className = 'on load';
     aiCap.textContent = '문맥 뜻 · AI';
-  }else if(shown){
+  }else if(!shown){
+    /* 뜻이 아직 없습니다. 칸을 접지 않고 무슨 일인지 그 자리에 적습니다 —
+       칸이 사라졌다 나타나면 화면이 출렁이고, 무엇을 기다렸는지도 남지 않습니다. */
+    aiBox.className = 'on wait';
+    aiCap.textContent = '뜻';
+    aiKo.textContent = ''; aiPos.textContent = '';
+    aiN.textContent = meaningWaitLine(off, freeCands.length > 0);
+    aiN.style.display = 'block';
+    aiRetry.hidden = true;
+  }else{
     aiBox.className = 'on' + (w.koEdited ? ' edited' : '');
     /* noteDone 은 예전 모양입니다. 이미 저장된 단어를 다시 눌렀을 때
        AI 가 답했던 사실이 사라져 보이지 않게 함께 봅니다. */
@@ -544,9 +598,6 @@ function renderPanel(){
     /* 이 문장만으로 안 풀릴 때 앞뒤 문장까지 붙여 한 번 더 묻는 길입니다.
        새 답은 지금 뜻을 덮지 않고 뜻 하나로 더해집니다 — 마음에 안 들면 × 입니다. */
     aiRetry.hidden = !(sb && sbUser && w.example);
-  }else{
-    aiBox.className = '';
-    aiRetry.hidden = true;
   }
 
   /* ── 담겼습니다 ──
@@ -574,16 +625,11 @@ function renderPanel(){
      한도(quota)와 마찬가지로 오프라인도 지금 눌러서 될 일이 아닙니다 — 단추를
      숨기고 아래 안내 한 줄만 남겨서 "다시 눌러 보세요"처럼 보이지 않게 합니다. */
   const aiBtn = document.getElementById('p-aibtn'), aiHint = document.getElementById('p-aihint');
-  /* 오프라인은 이 낱말에 무슨 일이 있었는지와 상관없는 사실입니다 — 지금 연결이
-     없다는 것뿐입니다. 그래서 `w.aiOff` 를 거치지 않고 화면에서 바로 정합니다.
-     `aiOff` 는 `fetchLook` 이 다녀와야 붙는 자국인데, 전에 저장해 둔 낱말을 다시
-     누르면 그 길(`addWord`→`fetchDict`→`fetchLook`)을 아예 지나지 않아 자국이
-     비어 있었습니다 — 그래서 오프라인인데도 안내 한 줄이 통째로 사라졌습니다.
-     처음 누른 낱말이든 전에 담아 둔 낱말이든, 캐시가 있든 없든, 단어창이 열려
-     있고 오프라인이면 안내는 언제나 뜹니다. 거꾸로 연결이 돌아왔으면 지난번에
-     찍힌 `aiOff:'offline'` 은 지금 화면의 사실이 아니므로 함께 걷습니다. */
-  const offline = navigator.onLine === false;
-  const off = offline ? 'offline' : asking ? '' : (w.aiOff === 'offline' ? '' : (w.aiOff || ''));
+  /* `off` 는 위에서 한 번 정했습니다 — 메인 뜻 칸과 이 아래가 같은 사실을 봐야
+     하기 때문입니다. 여기서 다시 정하면 두 자리가 다른 말을 할 수 있습니다. */
+  /* 뜻 칸이 이미 이유를 말한 상태에서는 아래에서 되풀이하지 않습니다. 누를 것이
+     있는 상태(체험 소진·로그인·오류)만 단추와 함께 한 줄을 남깁니다. */
+  const hintOff = (!shown && (off === 'quota' || off === 'offline')) ? '' : off;
   aiBtn.style.display = (off && off !== 'quota' && off !== 'offline') ? 'flex' : 'none';
   document.getElementById('p-aibtn-t').textContent =
       (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
@@ -596,20 +642,20 @@ function renderPanel(){
         ? `무료 체험 ${anonLooksLeft}번 남았어요 · 로그인하면 계속 쓸 수 있어요`
         : '무료 체험을 다 썼어요')
     : '';
-  aiHint.style.display = (off || trialWarn) ? 'block' : 'none';
+  aiHint.style.display = (hintOff || trialWarn) ? 'block' : 'none';
   /* `#p-aihint` 는 단추 바로 아래 붙도록 음수 margin 으로 당겨져 있습니다
      (styles/dictionary.css). 단추가 사라지면(quota·offline) 끌어당길 것이
      없어서 그 위의 낱말 칸(`#p-clicked`)까지 겹쳐 올라갑니다 — 그래서 단추가
      실제로 그려질 때만 당기고, 아니면 평범한 간격으로 놔둡니다. */
   aiHint.classList.toggle('tight', aiBtn.style.display !== 'none');
   aiHint.textContent =
-      off === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
-    : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
-    : off === 'quota'   ? '오늘 AI 사전을 다 썼어요. 자정에 다시 채워집니다'
+      hintOff === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
+    : hintOff === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
+    : hintOff === 'quota'   ? '오늘 AI 사전을 다 썼어요. 자정에 다시 채워집니다'
     /* 무료 사전도 남의 서버입니다 — 오프라인이면 그쪽도 못 부릅니다. 보이는
        뜻은 전에 받아 둔 것뿐이라, "무료 사전은 된다"고 적으면 거짓말입니다. */
-    : off === 'offline' ? '오프라인이라 새로운 뜻은 불러올 수 없어요'
-    : off === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
+    : hintOff === 'offline' ? '오프라인이라 새로운 뜻은 불러올 수 없어요'
+    : hintOff === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
     : trialWarn         ? trialWarn
     :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
 
@@ -658,10 +704,18 @@ function renderPanel(){
      떠납니다. 싫은 추천에는 × 를 두지 않습니다 — 그냥 지나치면 됩니다. */
   const altSec=document.getElementById('p-alt-sec'), altBox=document.getElementById('p-alts');
   const savedKeys=new Set(meanings.map(([,item])=>meaningKey(item.ko)));
-  const alts=[...new Set((w.alts||[]).map(item=>String(item||'').trim())
-    .filter(item=>item && !savedKeys.has(meaningKey(item)) && meaningKey(item)!==meaningKey(shown)))].slice(0,3);
+  /* AI 가 뜻을 정했으면 예전 그대로 "다른 뜻" 몇 개입니다. 못 정했을 때만 무료
+     사전이 모아 둔 후보가 같은 칩으로 이어 섭니다 — 누르면 `adoptSuggestion` 이
+     받으므로 확정되는 길은 지금까지와 하나입니다. */
+  const pool=[...(w.alts||[]), ...freeCands];
+  const alts=[...new Set(pool.map(item=>String(item||'').trim())
+    .filter(item=>item && !savedKeys.has(meaningKey(item)) && meaningKey(item)!==meaningKey(shown)))]
+    .slice(0, shown ? 3 : 6);
   if(alts.length && !phrase){
     altSec.className='p-sec on'; altBox.className='on';
+    /* 어디서 온 후보인지 이름을 다르게 답니다 — AI 가 고른 다른 뜻과 사전이
+       늘어놓은 후보는 같은 무게가 아닙니다. */
+    altSec.textContent = shown ? '추천 뜻' : '무료 사전 뜻';
     altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip" data-meaning="${esc(item)}">${esc(item)}</button>`).join('');
     [...altBox.querySelectorAll('.kochip')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
@@ -827,14 +881,20 @@ function refreshReaderWords(){
 /* ---- dictionary lookups ---- */
 /* 세 무료 사전은 모두 취소표를 받습니다. 예전에는 창을 닫아도 이 셋만은 계속
    달렸고, 앞의 답이 늦게 오면 **닫힌 창을 위해 다음 요청이 새로 출발**했습니다. */
+/* 받아 온 것은 후보 목록입니다. 뜻자리(`ko`)에는 손대지 않습니다 — 그 자리는
+   확정된 뜻 하나만 앉는 자리이고, 여기서 채우면 화면은 "정해졌다"고 말하는데
+   속으로는 아닌 상태가 생깁니다. 번역기의 첫 줄도 후보 하나로 같이 세웁니다. */
 async function fetchKo(w, form, signal){
   const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q='+encodeURIComponent(form), {signal});
   const j = await r.json();
   const ko = (j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('').trim();
   const dict = (j[1]||[]).map(e=>({pos:e[0]||'', terms:(e[1]||[]).slice(0,5)}));
-  if(ko && ko.toLowerCase()!==form.toLowerCase()){ w.ko = w.ko || ko; }
-  if(dict.length){ w.kodict = dict; if(!w.ko && dict[0].terms[0]) w.ko = dict[0].terms[0]; return true; }
-  return !!w.ko;
+  const groups = [];
+  if(ko && ko.toLowerCase()!==form.toLowerCase()) groups.push({pos:'', terms:[ko]});
+  dict.forEach(group=>groups.push(group));
+  if(!groups.length) return false;
+  w.kodict = groups;
+  return true;
 }
 /* metaOnly = 발음만 받아 오고 영어 뜻은 건드리지 않습니다. */
 async function fetchEn(w, form, metaOnly, signal){
@@ -1195,7 +1255,9 @@ async function fetchLook(k, opt){
       w.aiOff = e === 'quota_exceeded' ? 'quota'
               : e === 'anon_exhausted' ? 'trial'
               : e === 'login_required' ? 'login' : 'error';
-      if(w.aiOff === 'quota') toast('오늘 AI 사전 한도를 다 썼어요. 무료 사전으로 보여줄게요');
+      /* 예전에는 "무료 사전으로 보여줄게요" 였습니다 — 그때는 번역기의 첫 줄을
+         뜻자리에 슬쩍 넣었기 때문입니다. 이제 고르는 사람은 사람입니다. */
+      if(w.aiOff === 'quota') toast('오늘 AI 사전 한도를 다 썼어요. 무료 사전 뜻에서 골라 주세요');
       if(w.aiOff === 'trial'){ anonLooksLeft = 0; toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요'); }
       return false;
     }
@@ -1220,17 +1282,24 @@ async function fetchLook(k, opt){
 function applyLook(w, j, k, opt){
   opt = opt || {};
   delete w.aiLoading; delete w.aiOff;
-  w.ai = { ko: j.ko || '', pos: j.pos || '', note: j.note || j.gloss || '', done:true,
-           /* 이 기기가 전에 물어봤던 답인지. 머리글 한 줄이 달라집니다 —
-              한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
-           cached: !!opt.cached };
+  /* 사람이 이미 뜻을 정해 놨으면 AI 가 갈아 끼우지 않습니다. 직접 적은 뜻도,
+     한도가 걸린 사이에 후보에서 고른 뜻도 마찬가지입니다 — 고르자마자 늦은 답이
+     도착해 방금 고른 뜻이 바뀌던 자리입니다. 답은 버리지 않고 후보 줄 맨 앞에
+     세웁니다. 원하면 한 번 눌러 그쪽으로 갈 수 있습니다. */
+  const settled = String(w.ko||'').trim();
+  const keep = !!settled && (!!w.koEdited || meaningKey(j.ko||'') !== meaningKey(settled));
+  if(!keep){
+    w.ai = { ko: j.ko || '', pos: j.pos || '', note: j.note || j.gloss || '', done:true,
+             /* 이 기기가 전에 물어봤던 답인지. 머리글 한 줄이 달라집니다 —
+                한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
+             cached: !!opt.cached };
+    if(!w.koEdited) w.ko = j.ko || w.ko;
+  }
   w.aiLemma = j.lemma || w.aiLemma || '';
   w.alts = Array.isArray(j.alts) ? j.alts : [];
+  if(keep && j.ko) w.alts = [j.ko, ...w.alts];
   w.colloc = [];
   w.phrase = j.phrase || '';
-  /* 사람이 직접 적은 뜻은 AI 가 덮지 않습니다. 바꾸고 싶으면 사람이 × 로 지우고
-     ＋ 로 다시 적습니다 — 저장한 것을 AI 가 말없이 갈아 끼우는 일은 없습니다. */
-  if(!w.koEdited) w.ko = j.ko || w.ko;
   if(j.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(j.lemma)) w.word = j.lemma.toLowerCase();
   w.up = Date.now();
   saveWords(); queueSync();

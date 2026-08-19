@@ -4,7 +4,7 @@
   #v-vocab .head{display:flex; align-items:center; gap:12px; margin-bottom:22px; flex-wrap:wrap;}
   #v-vocab h1{font-size:24px; font-weight:500; letter-spacing:-.5px;}
   #v-vocab .cnt{color:var(--soft); font-size:14px;}
-  #vsearch{margin-left:auto; border:1px solid var(--line); border-radius:20px; padding:9px 16px; font-size:14px;
+  #vsearch{margin-left:auto; border:1px solid var(--line); border-radius:20px; padding:9px 16px; font-size:16px;
     width:200px; background:var(--field); font-family:var(--ui); outline:none;}
   #vsearch:focus{border-color:var(--blue);}
   /* 내보내기는 가끔 한 번 누르는 단추입니다. 예전에는 화면 폭을 다 차지하는 파란

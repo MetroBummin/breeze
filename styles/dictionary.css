@@ -149,6 +149,11 @@
   }
   @keyframes aurora-breathe{0%,100%{opacity:.45} 50%{opacity:.9}}
 
+  /* 뜻이 아직 정해지지 않았을 때. 칸은 그 자리에 그대로 서 있고 안내 한 줄만
+     듭니다 — 상태마다 칸이 나타났다 사라지면 아래 것들이 함께 출렁이고, 무엇을
+     기다렸는지도 화면에 남지 않습니다. */
+  #p-ai.wait .m{display:none;}
+  #p-ai.wait .note{margin-top:0; color:var(--soft);}
   #p-ai .wind{display:none; margin:2px 0 0;}
   #p-ai.load .wind{display:block;}
   /* 기다리는 동안에는 뜻도 아랫줄도 감춥니다. 특히 "다시 물어보기" 로 들어온 경우

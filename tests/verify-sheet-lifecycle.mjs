@@ -512,8 +512,11 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
 
 {
   /* 무료 사전 후보만 있는 채로 닫음 — 후보가 여럿이라는 사실은 대표 뜻이 아닙니다.
-     번역기가 실제로 돌려주는 모양 그대로 답하게 해서, `fetchKo` 가 빈 뜻자리를
-     채우는 그 길을 진짜로 지나갑니다. */
+     번역기가 실제로 돌려주는 모양 그대로 답하게 해서, `fetchKo` 가 지나는 길을
+     진짜로 밟습니다. 여기서 함께 지키는 것이 하나 더 있습니다: **무료 사전은
+     뜻자리에 들어오지 않는다.** 예전에는 후보의 맨 앞 하나가 슬쩍 뜻자리에
+     앉았고, 그래서 화면은 "정해졌다"고 말하는데 닫으면 사라지는 낱말이
+     생겼습니다 — 사람이 본 것과 안에 든 것이 갈라지던 자리입니다. */
   const { net, ctx } = boot();
   const bare = ctx.fetch;
   ctx.fetch = (url, opt) => String(url).includes('translate.googleapis.com')
@@ -523,9 +526,11 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   tapBrandNewWord(ctx, 'yield');
   net.deliver({ error:'quota_exceeded' });
   await settle(40);
-  assert.equal(ctx.words.yield.ko, '양보하다',
-    '이 시험은 무료 사전이 뜻자리를 채운 상태를 봐야 합니다');
+  assert.equal(ctx.words.yield.ko, '',
+    '무료 사전이 뜻자리를 채웠습니다 — 화면은 정해졌다고 말하는데 안은 아직 아닙니다');
   assert.ok(ctx.words.yield.kodict.length >= 2, '무료 사전 후보가 여러 개인 상태여야 합니다');
+  assert.ok(ctx.words.yield.kodict.some(group=>(group.terms||[]).includes('굴복하다')),
+    '무료 사전 후보가 고를 수 있는 모양으로 남지 않았습니다');
   ctx.closePanel();
   await settle();
   assert.equal(ctx.words.yield, undefined,
