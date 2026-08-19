@@ -178,11 +178,16 @@ function freeDictCandidates(word){
    있는지를 말합니다. */
 /** @param {string} off @param {boolean} hasCandidates @returns {string} */
 function meaningWaitLine(off, hasCandidates){
+  /* 연결이 없다는 것만 말합니다. "문맥 뜻"이 무엇인지, 어디서 못 받았는지는
+     안에서 벌어진 일이지 읽는 사람이 알 바가 아닙니다. */
+  if(off === 'offline'){
+    return hasCandidates ? '오프라인이에요 · 아래 뜻에서 골라 주세요'
+                         : '오프라인이라 뜻을 찾을 수 없어요';
+  }
   const why =
       off === 'quota'   ? '오늘 AI 사전을 다 썼어요'
     : off === 'trial'   ? '무료 체험을 다 썼어요'
     : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
-    : off === 'offline' ? '오프라인이라 문맥 뜻을 못 받았어요'
     : off === 'error'   ? '문맥 뜻을 받지 못했어요'
     :                     '아직 뜻이 정해지지 않았어요';
   return hasCandidates ? why + ' · 아래에서 뜻을 골라 주세요' : why;
@@ -553,10 +558,14 @@ function renderPanel(){
   const aiN = document.getElementById('p-ai-note');
   const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
   const ai = w.ai || {};
-  const asking = !!w.aiLoading && !w.aiSlow;
   /* 이 자리에 글자가 오르는 것은 뜻이 정해진 뒤입니다. 무료 사전 후보는 여기
      오지 않고 아래 후보 줄에 섭니다 — 고르는 순간 정해지고, 그때 올라옵니다. */
   const shown = w.ko || ai.ko || '';
+  /* 오로라는 **이 칸에 아직 들어올 것이 남았을 때**만 붑니다. 뜻이 정해졌으면
+     달리던 물음은 이 칸을 바꾸지 못합니다 — 늦게 와도 후보 줄로 갑니다
+     (`applyLook`). 기다리는 동안 후보 하나를 고르면 그 뜻이 곧바로 여기 서고,
+     끊긴 물음의 바람이 빈 칸 위에서 계속 불지 않습니다. */
+  const asking = !!w.aiLoading && !w.aiSlow && !shown;
   /* 지금 연결이 없다는 것은 이 낱말에 무슨 일이 있었는지와 상관없는 사실입니다.
      거꾸로 뜻이 정해진 낱말에는 지난 실패를 붙들고 있지 않습니다 — 화면과 속이
      어긋나는 자리가 거기였습니다. */
@@ -564,8 +573,12 @@ function renderPanel(){
   const off = offline ? 'offline'
     : asking ? ''
     : (w.aiOff === 'offline' || shown) ? '' : (w.aiOff || '');
-  /* AI 가 못 정했을 때만 폅니다. 잘 답했으면 사람이 더 누를 일은 없습니다. */
-  const freeCands = (!shown && !asking && !phrase) ? freeDictCandidates(base) : [];
+  /* AI 가 이 문장의 뜻을 답했으면 그 답이 추천까지 데리고 옵니다. 그 전에는 —
+     기다리는 동안에도, 한도에 걸렸을 때도, 사람이 후보 하나를 고른 뒤에도 —
+     무료 사전이 이미 가져다 둔 나머지 후보를 붙들고 있을 이유가 없습니다.
+     기다림은 AI 쪽 사정이고, 손에 들어온 것을 못 보게 할 까닭은 아닙니다. */
+  const aiAnswered = !!(ai.done && String(ai.ko||'').trim());
+  const freeCands = (!phrase && !aiAnswered) ? freeDictCandidates(base) : [];
   if(asking){
     aiBox.className = 'on load';
     aiCap.textContent = '문맥 뜻 · AI';
@@ -710,12 +723,12 @@ function renderPanel(){
   const pool=[...(w.alts||[]), ...freeCands];
   const alts=[...new Set(pool.map(item=>String(item||'').trim())
     .filter(item=>item && !savedKeys.has(meaningKey(item)) && meaningKey(item)!==meaningKey(shown)))]
-    .slice(0, shown ? 3 : 6);
+    .slice(0, aiAnswered ? 3 : 6);
   if(alts.length && !phrase){
     altSec.className='p-sec on'; altBox.className='on';
     /* 어디서 온 후보인지 이름을 다르게 답니다 — AI 가 고른 다른 뜻과 사전이
        늘어놓은 후보는 같은 무게가 아닙니다. */
-    altSec.textContent = shown ? '추천 뜻' : '무료 사전 뜻';
+    altSec.textContent = (w.alts||[]).length ? '추천 뜻' : '무료 사전 뜻';
     altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip" data-meaning="${esc(item)}">${esc(item)}</button>`).join('');
     [...altBox.querySelectorAll('.kochip')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
