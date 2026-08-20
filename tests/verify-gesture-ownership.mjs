@@ -39,17 +39,19 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 function makeElement(id, parent){
   const element = {
     id, parent: parent || null, hidden: true, classes: new Set(),
-    tagName: 'DIV',
+    tagName: 'DIV', nodeType: 1,
     classList: {
       contains: name => element.classes.has(name),
       add: name => element.classes.add(name),
       remove: name => element.classes.delete(name),
     },
     closest(selector){
-      const wanted = selector.replace('#','');
+      const wants = selector.split(',').map(part => part.trim());
       let node = element;
       while(node){
-        if(node.id === wanted) return node;
+        if(wants.some(wanted => wanted.startsWith('#') ? node.id === wanted.slice(1)
+          : wanted === '[contenteditable]' ? !!node.contenteditable
+          : wanted === node.tagName.toLowerCase())) return node;
         node = node.parent;
       }
       return null;
@@ -61,36 +63,45 @@ function makeElement(id, parent){
 function makeWorld(){
   const nodes = {};
   const element = (id, parent) => (nodes[id] = makeElement(id, parent ? nodes[parent] : null));
-  element('rtext');
+  element('v-read');
+  element('rtext', 'v-read');
   element('word');            // 종이 위의 낱말 하나
   nodes.word.parent = nodes.rtext;
-  element('sentence-modal');
+  element('sentence-modal', 'v-read');
   element('sentence-scrim', 'sentence-modal');
   element('ps-body', 'sentence-modal');      // 창 안 — 눌러도 닫히지 않아야 합니다
   element('aa-pop');
   element('aa-dark', 'aa-pop');
   /* 읽는 동안 떠 있는 조각 — 상단바 자리를 대신하는 것들입니다. 종이가 아니므로
      여기서 시작한 손짓은 판정 계층이 통째로 UI 로 보냅니다. */
-  element('readchrome');
+  element('readchrome', 'v-read');
   element('readback', 'readchrome');
   element('readfabs', 'readchrome');
   element('aafab', 'readfabs');
   element('modefab', 'readfabs');
-  element('sheetbg');
-  element('panel');
+  element('sheetbg', 'v-read');
+  element('panel', 'v-read');
   element('p-close', 'panel');
   element('p-handle', 'panel');
   element('p-body', 'panel');
+  element('p-input', 'panel'); nodes['p-input'].tagName = 'INPUT';
+  element('p-textarea', 'panel'); nodes['p-textarea'].tagName = 'TEXTAREA';
+  element('p-edit', 'panel'); nodes['p-edit'].contenteditable = true;
+  element('topbar');
 
   const listeners = {};
+  const selection = {
+    isCollapsed: true, anchorNode: null,
+    removeAllRanges(){ selection.isCollapsed = true; selection.anchorNode = null; },
+  };
   const doc = {
     __nodes: nodes,
     getElementById: id => nodes[id] || null,
     addEventListener: (type, handler) => { (listeners[type] = listeners[type] || []).push(handler); },
-    getSelection: () => ({ removeAllRanges(){}, rangeCount: 0 }),
+    getSelection: () => selection,
   };
   const world = {
-    nodes, doc, listeners,
+    nodes, doc, listeners, selection,
     calls: { closeSentence: 0, closePanel: 0, closeAa: 0, openSentence: 0, openWordAt: 0, sentenceAt: 0 },
     errors: [], timers: [],
     sheetLayout: true,          // 폰(바텀시트)인가, 넓은 화면(옆 칸)인가
@@ -172,6 +183,34 @@ function scenario(setup){
   const context = makeContext(world);
   if(setup) setup(world, context);
   return { world, context };
+}
+
+/* Reading experience의 표시 텍스트만 native selection을 못 시작합니다. 이
+   선택 방지는 pointerdown을 취소하지 않고, 남은 selection도 다음 interaction의
+   capture 단계에서 지워 기존 word/scroll ownership으로 돌아갑니다. */
+{
+  const { world } = scenario();
+  assert.equal(fire(world, 'selectstart', world.nodes.word, 120, 320).prevented, true,
+    'Text Reader lets native selection begin');
+  assert.equal(fire(world, 'selectstart', world.nodes['p-body'], 120, 320).prevented, true,
+    'Dictionary display text lets native selection begin');
+  assert.equal(fire(world, 'selectstart', world.nodes['sentence-modal'], 120, 320).prevented, true,
+    'Sentence modal lets native selection begin');
+  assert.equal(fire(world, 'selectstart', world.nodes['p-input'], 120, 320).prevented, false,
+    'Dictionary input lost native editing selection');
+  assert.equal(fire(world, 'selectstart', world.nodes['p-textarea'], 120, 320).prevented, false,
+    'Dictionary textarea lost native editing selection');
+  assert.equal(fire(world, 'selectstart', world.nodes['p-edit'], 120, 320).prevented, false,
+    'Dictionary contenteditable lost native editing selection');
+  assert.equal(fire(world, 'selectstart', world.nodes.topbar, 120, 320).prevented, false,
+    'Reading selection policy leaks into normal app UI');
+  world.selection.isCollapsed = false;
+  world.selection.anchorNode = world.nodes['p-body'];
+  const recovery = fire(world, 'pointerdown', world.nodes.word, 120, 320);
+  assert.equal(world.selection.isCollapsed, true,
+    'A stale dictionary selection survives the next Reader interaction');
+  assert.equal(recovery.prevented, false,
+    'Selection recovery cancels the pointerdown needed for Reader gestures');
 }
 
 /* ================= 해석 창 ================= */

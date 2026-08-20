@@ -84,12 +84,6 @@ const GESTURE_UI = 'UI', GESTURE_SCROLL = 'SCROLL', GESTURE_WORD = 'WORD',
       GESTURE_DISMISS_SENTENCE = 'DISMISS_SENTENCE', GESTURE_DISMISS_WORD = 'DISMISS_WORD',
       GESTURE_DISMISS_AA = 'DISMISS_AA', GESTURE_MODAL_UI = 'MODAL_UI';
 
-/* ---- 종이는 허용 목록입니다 ----
-   예전에는 "떠 있는 것"을 하나씩 세어 걸렀고, 새 UI 가 생길 때마다 목록이
-   한 줄씩 길어졌습니다. 반대로 둡니다 — 종이라고 적힌 곳에서 시작한 손짓만
-   reader 의 것입니다. 그 바깥은 무엇이든 UI 이고, 자기 일만 합니다. */
-const READER_PAPER = '#rtext, #originalwrap';
-
 const READER_SURFACES = [];
 /* 종이마다 자기를 등록합니다. 등록 순서는 상관없습니다 — 한 손짓은
    `claims()` 가 참인 종이 하나에만 속합니다. */
@@ -589,26 +583,6 @@ function attachReaderGestures(doc){
   doc.addEventListener('pointerup', endGesture, true);
   doc.addEventListener('pointercancel', ()=>cancelGesture('pointercancel'), true);
   doc.addEventListener('click', clickGesture, true);
-  /* ---- 끌어서 옮기기는 우리 손짓이 아닙니다 ----
-     꾹 누르면 Safari 는 그 자리의 그림이나 골라 둔 글자를 통째로 집어 옮기려
-     합니다. 그 끌기가 한 번 시작되면 손짓 조각은 더 오지 않고(우리는 CANCEL 만
-     받습니다), 놓을 곳도 없어서 사용자는 화면이 굳은 것처럼 느낍니다.
-     읽는 종이 안에서만 막습니다 — 파일을 끌어다 넣는 반입 길은 종이 밖이라
-     그대로입니다. EPUB 의 장 문서는 통째로 책이므로 문서 전체가 종이입니다. */
-  doc.addEventListener('dragstart', event=>{
-    const target = event.target;
-    const inPaper = doc !== document
-      || !!(target && typeof target.closest === 'function' && target.closest(READER_PAPER));
-    if(inPaper) event.preventDefault();
-  }, true);
-  /* iOS 의 Copy/Look Up 메뉴는 DOM 이벤트가 아니라 그 아래 UIKit 이 만드는
-     선택을 보고 뜹니다. 읽는 종이 안에서만 끕니다 — 입력칸과 사전 칸은
-     평소의 메뉴를 그대로 씁니다. */
-  doc.addEventListener('contextmenu', event=>{
-    const target = event.target;
-    if(target && target.closest && !readerSurfaceFor(event)) return;
-    event.preventDefault();
-  });
 }
 
 attachReaderGestures(document);
@@ -642,12 +616,34 @@ document.addEventListener('DOMContentLoaded', ()=>{
    평소에는 선택이 없으므로 아무 일도 하지 않는 줄입니다 — 값을 치르는 것은
    실제로 망가진 그 한 번뿐입니다. */
 const READER_SELECTION_GUARDS = [];
+function readerSelectionGuardElement(target){
+  return target && (target.nodeType === 1 ? target
+    : target.parentElement || (typeof target.closest === 'function' ? target : null));
+}
+function readerSelectionGuardClaims(doc, target){
+  const element = readerSelectionGuardElement(target);
+  if(!element) return false;
+  return READER_SELECTION_GUARDS.some(guard => {
+    if(guard.doc !== doc) return false;
+    try{ return !!guard.inPaper(element); }catch(error){ return false; }
+  });
+}
 function suppressReaderSelection(doc, inPaper){
   READER_SELECTION_GUARDS.push({ doc, inPaper });
   /* 문서 하나에 귀는 하나. 종이 둘이 같은 문서를 쓰기도 합니다(글자판·스캔본). */
   if(doc.__breezeSelectionGuard) return;
   doc.__breezeSelectionGuard = true;
   doc.addEventListener('selectionchange', ()=>clearReaderPaperSelection(doc));
+  /* selection default만 끕니다. pointerdown/touchstart는 취소하지 않으므로
+     scroll·탭·문장 꾹 누르기의 기존 ownership은 그대로입니다. */
+  doc.addEventListener('selectstart', event=>{
+    if(readerSelectionGuardClaims(doc, event.target)) event.preventDefault();
+  }, true);
+  /* native drag/callout도 selection policy의 일부입니다. 이 자리에 넣어야
+     main document뿐 아니라 EPUB iframe document에도 같은 경계가 적용됩니다. */
+  ['dragstart','contextmenu'].forEach(type=>doc.addEventListener(type, event=>{
+    if(readerSelectionGuardClaims(doc, event.target)) event.preventDefault();
+  }, true));
 }
 /* 지금 이 문서에 남아 있는 선택이 읽는 종이의 것이면 지웁니다. 종이 밖의 선택
    (입력칸·사전 칸·베껴 갈 코드 상자)은 사용자의 것이므로 건드리지 않습니다. */
@@ -655,14 +651,7 @@ function clearReaderPaperSelection(doc){
   let selection = null;
   try{ selection = doc.getSelection(); }catch(error){ return false; }
   if(!selection || selection.isCollapsed) return false;
-  const node = selection.anchorNode;
-  const element = node && (node.nodeType === 1 ? node : node.parentElement);
-  if(!element) return false;
-  const ours = READER_SELECTION_GUARDS.some(guard => {
-    if(guard.doc !== doc) return false;
-    try{ return !!guard.inPaper(element); }catch(error){ return false; }
-  });
-  if(!ours) return false;
+  if(!readerSelectionGuardClaims(doc, selection.anchorNode)) return false;
   try{ selection.removeAllRanges(); }catch(error){ return false; }
   return true;
 }
@@ -675,3 +664,10 @@ function reclaimReaderSelection(){
     clearReaderPaperSelection(guard.doc);
   }
 }
+/* Main document의 reading experience 전체가 하나의 non-editable 정책 경계입니다.
+   EPUB은 별도 document라 아래 iframe별 등록으로 같은 계약을 맺습니다. */
+function nonEditableReadingElement(element){
+  return !!(element && element.closest && element.closest('#v-read')
+    && !element.closest('input,textarea,[contenteditable]'));
+}
+suppressReaderSelection(document, nonEditableReadingElement);

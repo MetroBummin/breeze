@@ -1307,10 +1307,6 @@ for(const [file, source, name] of [['scripts/reader/reader.js', textReaderSource
       `${file} registers a surface without ${duty}, so the controller has to know the format`);
   }
 }
-/* 종이는 허용 목록입니다. 떠 있는 것을 하나씩 세어 거르면 새 UI 마다 목록이
-   길어지고, 빠뜨린 하나가 곧 "상단바 뒤의 낱말이 함께 열린다"가 됩니다. */
-assert.match(gestureSource, /const READER_PAPER = '#rtext, #originalwrap'/,
-  'Reader paper is no longer an allowlist, so new floating UI can leak taps into the book');
 /* ---- 우리가 옮긴 화면은 스크롤이 아닙니다 (시계가 아니라 값으로) ---- */
 assert.match(readerScrollSource, /function readerScrollWasProgrammatic/,
   'Programmatic scrolls are told apart from finger scrolls by a wall clock again');
@@ -1331,16 +1327,35 @@ assert.match(epubOriginalSource, /paint\(\)\{ showRangeModeCue\(range, 0\); \}/,
 assert.match(epubOriginalSource, /sentenceAt\(clientX,clientY\)\{[\s\S]{0,900}parts\.find\(item=>at>=item\.start && at<item\.end\)/,
   'A pressed sentence in EPUB original is found by text instead of by where the finger was');
 
-/* ---- callout 은 끄되 hit-test 는 살립니다 ----
+/* ---- reading experience 전체의 selection 정책 ----
+   main document는 `#v-read` 하나가 경계입니다. Text/PDF/panel/modal의 표시
+   글자는 모두 여기서 막고, 실제 편집 control만 명시적으로 되돌립니다. EPUB은
+   iframe이라 이 CSS를 넣지 않고 overlay와 iframe document guard를 씁니다. */
+assert.match(readerCss, /body\.reading #v-read\{[^}]*-webkit-user-select:none;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
+  'The reading experience has no single native-selection policy boundary');
+assert.match(readerCss, /body\.reading #v-read input, body\.reading #v-read textarea,[\s\S]{0,180}\[contenteditable\]\{[^}]*-webkit-user-select:text;[^}]*user-select:text;[^}]*-webkit-touch-callout:default/,
+  'Editable controls inside the reading experience lost native editing selection');
+assert.doesNotMatch(readerCss, /#rtext\{[^}]*user-select|\.pdf-original\{[^}]*user-select|#rtext \.blk\.code\{[^}]*user-select:text/,
+  'A format-specific selection CSS rule survived the shared reading policy');
+assert.doesNotMatch(dictionaryCss, /#panel\{[^}]*user-select|#panel input, #panel textarea/,
+  'Dictionary selection policy is still separate from the reading boundary');
+assert.match(gestureSource, /function nonEditableReadingElement\(element\)/,
+  'Selection recovery is not scoped to the reading-experience boundary');
+assert.match(gestureSource, /addEventListener\('selectstart', event=>\{[\s\S]*?readerSelectionGuardClaims\(doc, event\.target\)/,
+  'Reader display text can still start native selection');
+assert.match(gestureSource, /\['dragstart','contextmenu'\]\.forEach[\s\S]*?readerSelectionGuardClaims/,
+  'Native drag is not guarded by the shared selection policy');
+assert.doesNotMatch(readerSource, /suppressReaderSelection/,
+  'Text Reader retains a redundant per-format selection guard');
+assert.doesNotMatch(pdfSource, /suppressReaderSelection/,
+  'PDF Reader retains a redundant per-format selection guard');
+
+/* ---- callout 은 끄되 EPUB caret hit-test 는 살립니다 ----
    `user-select:none` 은 브라우저에 따라 caret hit-test 까지 함께 끕니다. 원본
    EPUB 의 낱말 찾기가 caret 에 기대고 있었으므로, 그 한 줄이 "EPUB 만 안 눌린다"
    가 될 수 있었습니다. 그래서 EPUB 안쪽에서는 선택을 **끄지 않고 지웁니다**.
    글자 화면은 제 DOM 이라 CSS 로 끄는 편이 확실하고, 낱말 찾기도 caret 을
    쓰지 않으므로(`elementFromPoint`) 그대로 둡니다. */
-assert.match(readerCss, /#rtext\{[^}]*-webkit-user-select:none;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
-  'Reader text can still invoke iOS selection or the Look Up callout before a sentence press');
-assert.match(readerCss, /\.w\{[^}]*-webkit-touch-callout:none/,
-  'A word span can still invoke the native callout while awaiting its sentence press');
 assert.doesNotMatch(runningCode(epubOriginalSource), /user-select:none/,
   'Original EPUB turned selection off again, which can take its caret hit test down with it');
 assert.match(epubOriginalSource, /body\{-webkit-touch-callout:none\}/,
@@ -1400,20 +1415,10 @@ assert.match(epubOriginalSource, /p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th\
   'EPUB chapters no longer mark their text as clickable');
 assert.doesNotMatch(readerCss, /\.epub-chapter-frame\{[^}]*user-select/,
   'Selection was turned off on the EPUB chapter itself, which takes its caret hit test down with it');
-assert.match(gestureSource, /addEventListener\('contextmenu'/,
+assert.match(gestureSource, /\['dragstart','contextmenu'\]/,
   'Nothing dismisses a native context menu that escapes the iOS CSS guard');
-/* ---- 종이 셋이 모두 이 계약을 맺어야 합니다 ----
-   글자와 EPUB 은 맺고 있었고 원본 PDF 만 빠져 있었습니다. 그린 쪽에는 글자 마디가
-   0 개인데(캔버스 한 장) 칸은 `user-select:auto` 라, iOS 는 꾹 누른 자리에서 고를
-   글자를 못 찾고 **쪽 상자 전체**를 골라 버렸습니다 — 낱말이 아니라 쪽이 파래지던
-   자리입니다.
-   PDF 는 좌표표로 낱말을 짚으므로 caret 을 쓰지 않습니다. 그래서 여기서는 선택을
-   꺼도 안전합니다 — 아래 검사가 그 전제를 지킵니다. 이 전제가 깨지면(누군가 PDF
-   낱말 찾기를 caret 으로 바꾸면) EPUB 에서 겪었던 사고가 그대로 재현됩니다. */
-assert.match(readerCss, /\.pdf-original\{[^}]*-webkit-user-select:none;[^}]*user-select:none;[^}]*-webkit-touch-callout:none/,
-  'The PDF page can still invoke iOS selection, so a long press paints the whole page blue');
-assert.match(pdfSource, /suppressReaderSelection\(document, element => !!element\.closest\('\.pdf-original'\)\)/,
-  'The PDF paper does not clear the selection iOS makes under a long press');
+/* PDF는 좌표표로 낱말을 짚으므로 shared policy가 선택을 막아도 caret hit-test를
+   잃지 않습니다. 이 전제가 깨지면 EPUB에서 겪었던 사고가 그대로 재현됩니다. */
 for(const caret of ['caretRangeFromPoint','caretPositionFromPoint']){
   assert.ok(!new RegExp(`\\b${caret}\\b`).test(runningCode(pdfSource)),
     `PDF word lookup now leans on ${caret}, which its own user-select:none can switch off`);

@@ -33,6 +33,13 @@
      (`--topbar-h` 는 여기서 0 이 되지 않습니다 — 재는 자리가 보이는 동안에만
      적기 때문입니다. scripts/ui/preferences.js 의 `syncTopbarH`) */
   body.reading #topbar{display:none;}
+  /* 읽는 화면의 표시 글자는 Breeze가 다룹니다. 단어는 탭, 문장은 꾹 누르기이며
+     iOS의 native selection은 이 화면의 interaction이 아닙니다. 실제로 고치는
+     control만 명시적으로 되돌려 cursor·복사·붙여넣기를 보존합니다. */
+  body.reading #v-read{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  body.reading #v-read input, body.reading #v-read textarea,
+  body.reading #v-read [contenteditable]{-webkit-user-select:text; user-select:text;
+    -webkit-touch-callout:default;}
   body.reading #v-read.on{position:absolute; inset:0;}
   /* 높이만 채웁니다. `position:absolute` 로 못 박으면 흐름에서 빠져서, 옆에
      서야 할 낱말 패널이 유일한 흐름 안 칸이 되어 왼쪽으로 갑니다. */
@@ -245,11 +252,9 @@
   #rsource[hidden]{display:none;}
   #rhint{font-size:13px; color:var(--soft2); margin-bottom:26px; display:flex; align-items:center; gap:8px;}
   #rhint svg{flex-shrink:0;}
-  /* 본문 낱말은 탭·꾹 누르기라는 리더의 손짓입니다. iOS가 이 자리를 먼저
-     글자 선택으로 가져가면 문장 해석보다 Copy/Look Up 메뉴가 떠 버립니다.
-     입력칸이나 다른 UI가 아니라 읽는 본문에만 막습니다. */
-  #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;
-    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  /* 본문 낱말은 탭·꾹 누르기라는 리더의 손짓입니다. native selection 정책은
+     위 `body.reading #v-read` 경계가 Text·PDF·사전·문장 창에 함께 적용합니다. */
+  #rtext{font-family:var(--serif); font-size:var(--fs,19px); line-height:1.9; color:var(--ink-body); overflow-wrap:anywhere;}
   #rtext p{margin-bottom:1.2em;}
   #rtext .toc-entry{font-size:.92em; line-height:1.55; margin:.45em 0; color:var(--soft);}
   #rtext .section-break{margin-top:2.5em;}
@@ -279,7 +284,7 @@
   #rtext .blk.code{background:var(--code-bg); border:1px solid var(--note-line); border-radius:12px;
     padding:14px 16px; margin:0 0 1.1em; overflow-x:auto; -webkit-overflow-scrolling:touch;
     font:13px/1.65 var(--mono); color:var(--ink-body);
-    white-space:pre; user-select:text;}
+    white-space:pre;}
   @media(max-width:760px){ #rtext .blk.code{padding:12px 13px; font-size:12px;} }
   .page{background:var(--page); border:1px solid var(--page-line); border-radius:20px;
     padding:40px var(--pagepad,44px); overflow:hidden;
@@ -296,8 +301,7 @@
   .w{cursor:pointer; border-radius:5px; padding:0 1px; margin:0 -1px; transition:background .12s;
     /* 저장한 색이 아닌데 잠깐 회색 네모가 생기는 것은 Safari/Chrome의 기본 탭 표시입니다.
        단어 자체가 클릭 단추라 이 브라우저 효과는 남길 이유가 없습니다. */
-    -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none;
-    -webkit-touch-callout:none;}
+    -webkit-tap-highlight-color:transparent;}
   /* iOS는 터치한 낱말에도 hover를 남겨 두고, 다음 스크롤에서야 지웁니다.
      저장하지 않은 낱말이 회색 상자로 남아 보이던 원인이라 마우스 환경에서만
      hover 색을 씁니다. */
@@ -349,19 +353,6 @@
   .original-empty small{display:block; color:var(--soft2); font-size:11.5px;}
 
   .pdf-original{display:flex; flex-direction:column; align-items:center; gap:22px;}
-  /* ---- 이 종이에는 고를 글자가 없습니다 ----
-     다 그려진 쪽을 뜯어 보면 글자 마디가 **0 개**입니다 — 캔버스 한 장뿐이고,
-     PDF.js 의 text layer 는 쓰지 않습니다(낱말은 좌표표가 짚습니다). 그런데 이
-     칸은 `user-select:auto` 였습니다. 고를 글자가 없는 자리에서 꾹 누르면 iOS 는
-     가장 가까운 **상자 전체**를 골라 버립니다 — 그래서 낱말이 아니라 쪽 하나가
-     통째로 파래졌습니다. 실제로 그렇게 잡힌 선택은 사각형 7 개짜리였습니다.
-
-     글자 종이(`#rtext`)는 이미 이 선언을 갖고 있었고 원본 종이만 빠져 있었습니다.
-     여기서 선택을 꺼도 잃는 것이 없습니다 — PDF 의 낱말 찾기는 caret 이 아니라
-     좌표표(`pdfWordAtPoint`)라서, EPUB 에서 `user-select:none` 이 caret hit-test 를
-     함께 꺼 버렸던 그 사고가 여기서는 일어날 수 없습니다. EPUB 은 제 문서(iframe)
-     라 이 선언이 애초에 닿지도 않습니다. */
-  .pdf-original{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
   /* 쪽은 언제나 글 폭에 꽉 찹니다. 확대는 손가락이 합니다 — 쪽마다 제 가로
      스크롤 칸을 주던 구조를 걷어 냈습니다. 칸이 있으면 한 줄을 읽으려고 옆으로
      민 자리가 다음 쪽에서 풀려서, 쪽을 넘길 때마다 같은 손짓을 다시 해야

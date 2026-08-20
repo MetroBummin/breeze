@@ -486,7 +486,3 @@ registerReaderSurface({
     } };
   },
 });
-
-/* 코드 블록은 읽는 글이 아니라 옮겨 적을 것이라, 거기서는 선택을 지우지 않습니다. */
-suppressReaderSelection(document, element=>
-  !!element.closest('#rtext') && !element.closest('.blk.code'));
