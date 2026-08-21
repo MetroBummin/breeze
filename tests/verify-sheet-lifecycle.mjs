@@ -64,6 +64,7 @@ function makeElement(id, world){
       return kids.get(sel);
     },
     querySelectorAll(){ return []; },
+    remove(){ element.removed=true; world.removed++; },
     insertAdjacentHTML(){ world.touched++; },
   };
   return element;
@@ -71,7 +72,7 @@ function makeElement(id, world){
 
 function makeWorld(){
   const world = { touched:0, elements:new Map(), renders:0, saves:0, syncs:0,
-                  bookRebuilds:0, sent:[], puts:[], aborted:0, timers:[] };
+                  bookRebuilds:0, sent:[], puts:[], aborted:0, timers:[], queries:0, removed:0 };
   world.el = id => {
     if(!world.elements.has(id)) world.elements.set(id, makeElement(id, world));
     return world.elements.get(id);
@@ -126,7 +127,7 @@ function makeContext(world, net, store){
     document:{
       getElementById:id=>world.el(id),
       querySelector:()=>null,
-      querySelectorAll:()=>[],
+      querySelectorAll:()=>{ world.queries++; return []; },
       createElement:id=>makeElement(id, world),
       body:makeElement('body', world),
       addEventListener(){},
@@ -583,6 +584,37 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   await settle();
   assert.ok(ctx.words.harrow, 'AI 가 실패했다고 이미 있던 낱말을 지웠습니다');
   assert.equal(ctx.words.harrow.ko, '써레', '있던 뜻이 함께 사라졌습니다');
+}
+{
+  /* 선택 표시는 opening 이 만든 node 하나입니다. 새 선택과 close 가 그 reference 만
+     치우고 document/EPUB 전체에서 다시 찾지 않는 계약을 지킵니다. */
+  const { world, ctx } = boot();
+  ctx.words.anchor = savedWord('anchor','닻');
+  const first=makeElement('first-selection',world);
+  ctx.selectWord('anchor',first);
+  assert.equal(first.classList.contains('sel'),true,'선택 node 가 opening 에 붙지 않았습니다');
+  const queriesAfterOpen=world.queries;
+  ctx.closePanel();
+  assert.equal(first.classList.contains('sel'),false,'close 가 소유한 선택 node 를 놓지 않았습니다');
+  assert.equal(world.queries,queriesAfterOpen,'normal close 가 전체 document 에서 선택을 다시 찾았습니다');
+
+  const marker=makeElement('original-marker',world);
+  marker.classList.add('original-selection-marker');
+  ctx.selectWord('anchor',marker);
+  ctx.closePanel();
+  assert.equal(marker.removed,true,'original selection marker 를 reference 로 제거하지 않았습니다');
+}
+{
+  /* 원본 session 을 보존해도 Text interaction 에는 참여하지 않습니다. */
+  const { ctx }=boot();
+  let frameQueries=0;
+  ctx.originalSession={frames:[{contentDocument:{querySelectorAll(){ frameQueries++; return []; }}}]};
+  ctx.currentReaderMode='text';
+  ctx.readerWordNodes('.w');
+  assert.equal(frameQueries,0,'Text mode 가 hidden EPUB frame 을 query 했습니다');
+  ctx.currentReaderMode='original';
+  ctx.readerWordNodes('.w');
+  assert.equal(frameQueries,1,'Original mode 의 active EPUB frame 까지 제외했습니다');
 }
 
 console.log('낱말 창 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)');

@@ -11,6 +11,55 @@ function epubMime(path){
 function epubDirectory(path){ return path.includes('/') ? path.slice(0,path.lastIndexOf('/')+1) : ''; }
 function cleanEpubReference(value){ return decodeURIComponent(String(value||'').split('#')[0].split('?')[0]); }
 
+/* EPUB 의 viewport 는 장 iframe 의 높이였습니다. 그 높이를 다시 scrollHeight 로
+   맞추는 reader 에서 publisher CSS 의 `vh` 는 다음 순환을 만듭니다:
+
+     frame height -> vh block -> scrollHeight -> frame height
+
+   viewport 단위의 뜻을 없애지는 않습니다. 단지 그것이 가리키는 viewport 를
+   reader 의 안정된 종이 크기로 고정합니다. `calc(100vh - 2em)` 안의 단위도 같은
+   변수로 바뀌므로 특정 책이나 특정 98vh 문자열에 기대지 않습니다. @media 의
+   조건식은 CSS 값 문법이 아니므로 여기서는 보존하고, frame load 뒤에 같은 안정된
+   viewport 를 기준으로 한 번 판정해 고정합니다. */
+const EPUB_VIEWPORT_UNIT=/(-?(?:\d+(?:\.\d+)?|\.\d+))(dvh|svh|lvh|vh|dvw|svw|lvw|vw|vmin|vmax|vi|vb)\b/gi;
+function epubViewportVariable(unit){
+  unit=String(unit||'').toLowerCase();
+  if(/vh$/.test(unit)||unit==='vb') return '--breeze-epub-vh';
+  if(/vw$/.test(unit)||unit==='vi') return '--breeze-epub-vw';
+  return unit==='vmin' ? '--breeze-epub-vmin' : '--breeze-epub-vmax';
+}
+function stabiliseEpubViewportCss(css,state){
+  const media=[];
+  let text=String(css||'').replace(/@media\s+([^\{]+)\{/gi,(all,query)=>{
+    const token=`__BREEZE_EPUB_MEDIA_${media.length}__`;
+    media.push({token,query});
+    return `@media ${token}{`;
+  });
+  EPUB_VIEWPORT_UNIT.lastIndex=0;
+  if(EPUB_VIEWPORT_UNIT.test(text)) state.viewportDependent=true;
+  EPUB_VIEWPORT_UNIT.lastIndex=0;
+  text=text.replace(EPUB_VIEWPORT_UNIT,(_all,value,unit)=>
+    `calc(${value} * var(${epubViewportVariable(unit)}))`);
+  media.forEach(item=>{
+    if(/(?:^|[^-])(?:min-|max-)?height\s*:|aspect-ratio|orientation|\b(?:d|s|l)?v[hw]\b|\bv(?:min|max|i|b)\b/i.test(item.query))
+      state.viewportDependent=true;
+    text=text.replace(item.token,item.query);
+  });
+  return text;
+}
+
+function epubStableViewport(){
+  const content=document.getElementById('original-content');
+  const width=Math.max(1,(content&&content.clientWidth)||window.innerWidth||1);
+  const height=Math.max(1,(typeof readerViewHeight==='function'&&readerViewHeight())||window.innerHeight||1);
+  return {width,height};
+}
+function epubViewportProperties(viewport){
+  const vw=viewport.width/100, vh=viewport.height/100;
+  return `--breeze-epub-vw:${vw}px;--breeze-epub-vh:${vh}px;`
+    +`--breeze-epub-vmin:${Math.min(vw,vh)}px;--breeze-epub-vmax:${Math.max(vw,vh)}px;`;
+}
+
 async function buildEpubResources(archive,session){
   const resources=new Map();
   const skip=/\.(?:x?html?|css|opf|ncx|xml)$/i;
@@ -54,7 +103,7 @@ async function resolveEpubCss(archive,path,resources,seen){
   return rewriteEpubCssUrls(css,path,resources);
 }
 
-async function sanitiseEpubChapter(archive,chapter,resources){
+async function sanitiseEpubChapter(archive,chapter,resources,viewport){
   const file=archive.zip.file(chapter.path) || archive.zip.file(decodeURIComponent(chapter.href));
   if(!file) return '';
   const doc=new DOMParser().parseFromString(await file.async('text'),'text/html');
@@ -73,17 +122,20 @@ async function sanitiseEpubChapter(archive,chapter,resources){
     element.dataset.breezeEi=String(elementIndex++);
   });
   const base=epubDirectory(chapter.path);
-  const cssParts=[];
+  const cssParts=[], viewportState={viewportDependent:false};
   for(const link of [...doc.querySelectorAll('link[rel~="stylesheet"][href]')]){
     const cssPath=joinPath(base,cleanEpubReference(link.getAttribute('href')));
-    cssParts.push(await resolveEpubCss(archive,cssPath,resources));
+    cssParts.push(stabiliseEpubViewportCss(
+      await resolveEpubCss(archive,cssPath,resources),viewportState));
     link.remove();
   }
   doc.querySelectorAll('style').forEach(style=>{
-    style.textContent=rewriteEpubCssUrls(style.textContent,chapter.path,resources);
+    style.textContent=stabiliseEpubViewportCss(
+      rewriteEpubCssUrls(style.textContent,chapter.path,resources),viewportState);
   });
   doc.querySelectorAll('[style]').forEach(element=>{
-    element.setAttribute('style',rewriteEpubCssUrls(element.getAttribute('style'),chapter.path,resources));
+    element.setAttribute('style',stabiliseEpubViewportCss(
+      rewriteEpubCssUrls(element.getAttribute('style'),chapter.path,resources),viewportState));
   });
   doc.querySelectorAll('[src]').forEach(element=>{
     const raw=element.getAttribute('src');
@@ -128,35 +180,155 @@ async function sanitiseEpubChapter(archive,chapter,resources){
      `registerReaderSurface` 위에 잰 값과 함께 적어 두었습니다.
      `-webkit-touch-callout` 은 그대로 둡니다 — 값이 싸고, 살갗이 없는 자리(장이
      아직 안 뜬 사이)에서 링크 callout 만은 여전히 막아 줍니다. */
-  const safety=`html,body{max-width:100%;min-height:1px}img,svg,video{max-width:100%;height:auto}
+  const geometrySafety=viewportState.viewportDependent
+    ? 'html,body{height:auto!important;overflow:visible!important}*,*::before,*::after{animation:none!important;transition:none!important}'
+    : '';
+  const safety=`:root{${epubViewportProperties(viewport)}}html,body{max-width:100%;min-height:1px}${geometrySafety}img,svg,video{max-width:100%;height:auto}
     body{-webkit-touch-callout:none}
     p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th{cursor:pointer}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
     .breeze-original-word.s3{background:rgba(255,140,140,.42)}`;
   const style=doc.createElement('style'); style.textContent=cssParts.join('\n')+'\n'+safety; doc.head.appendChild(style);
-  return '<!doctype html>'+doc.documentElement.outerHTML;
+  return {html:'<!doctype html>'+doc.documentElement.outerHTML,
+          viewportDependent:viewportState.viewportDependent};
 }
 
 /* A chapter frame that never reports load — a broken srcdoc, a resource the
    browser refuses — must not leave the reader waiting on "원본을 여는 중…". */
 const EPUB_FRAME_TIMEOUT = 8000;
 
+function epubFrameHeight(frame){
+  const doc=frame&&frame.contentDocument;
+  if(!doc) return 60;
+  return Math.max(60,Math.ceil(Math.max(
+    doc.documentElement&&doc.documentElement.scrollHeight||0,
+    doc.body&&doc.body.scrollHeight||0)));
+}
+function setEpubFrameHeight(frame,height){
+  frame.style.height=Math.max(60,Math.ceil(height))+'px';
+}
+function applyEpubStableViewport(frame,viewport){
+  const root=frame&&frame.contentDocument&&frame.contentDocument.documentElement;
+  if(!root) return;
+  const vw=viewport.width/100, vh=viewport.height/100;
+  root.style.setProperty('--breeze-epub-vw',vw+'px');
+  root.style.setProperty('--breeze-epub-vh',vh+'px');
+  root.style.setProperty('--breeze-epub-vmin',Math.min(vw,vh)+'px');
+  root.style.setProperty('--breeze-epub-vmax',Math.max(vw,vh)+'px');
+}
+function freezeEpubHeightMediaQueries(frame,session){
+  const doc=frame&&frame.contentDocument, view=frame&&frame.contentWindow;
+  if(!doc||!view) return;
+  const visit=rules=>{
+    for(const rule of [...(rules||[])]){
+      if(rule.media&&rule.cssRules){
+        const query=rule.media.mediaText;
+        if(/(?:^|[^-])(?:min-|max-)?height\s*:|aspect-ratio|orientation/i.test(query)){
+          let matches=false; try{ matches=view.matchMedia(query).matches; }catch(error){}
+          try{ rule.media.mediaText=matches?'all':'not all'; }catch(error){}
+          session.viewportMedia.push({media:rule.media,query});
+        }
+      }
+      if(rule.cssRules) visit(rule.cssRules);
+    }
+  };
+  for(const sheet of [...doc.styleSheets]){
+    try{ visit(sheet.cssRules); }catch(error){}
+  }
+}
+function nextEpubLayoutFrame(view){
+  return new Promise(resolve=>(view&&view.requestAnimationFrame
+    ? view.requestAnimationFrame(()=>resolve()) : requestAnimationFrame(()=>resolve())));
+}
+async function waitForEpubAssets(frame){
+  const doc=frame&&frame.contentDocument;
+  if(!doc) return;
+  const waits=[];
+  if(doc.fonts&&doc.fonts.ready) waits.push(Promise.resolve(doc.fonts.ready).catch(()=>{}));
+  [...doc.images].forEach(image=>{
+    const loaded=image.complete ? Promise.resolve() : new Promise(resolve=>{
+      image.addEventListener('load',resolve,{once:true});
+      image.addEventListener('error',resolve,{once:true});
+    });
+    waits.push(loaded.then(()=>image.decode ? image.decode().catch(()=>{}) : null));
+  });
+  await Promise.all(waits);
+}
+async function settleEpubFrameGeometry(session,index){
+  const frame=session.frames[index], meta=session.frameMeta[index];
+  if(!frame||!meta||!frame.contentDocument) return;
+  const view=frame.contentWindow;
+  await waitForEpubAssets(frame);
+  if(originalSession!==session) return;
+  if(meta.viewportDependent){
+    /* canonical measurement: publisher viewport CSS is evaluated against the
+       reader viewport, never against the height produced by that CSS. */
+    setEpubFrameHeight(frame,session.viewport.height);
+    applyEpubStableViewport(frame,session.viewport);
+    await nextEpubLayoutFrame(view);
+    const canonical=epubFrameHeight(frame);
+    setEpubFrameHeight(frame,canonical);
+    await nextEpubLayoutFrame(view);
+    const verified=epubFrameHeight(frame);
+    setEpubFrameHeight(frame,Math.max(canonical,verified));
+    meta.height=Math.max(canonical,verified); meta.stable=true;
+    return;
+  }
+  setEpubFrameHeight(frame,epubFrameHeight(frame));
+  await nextEpubLayoutFrame(view);
+  setEpubFrameHeight(frame,epubFrameHeight(frame));
+  meta.height=epubFrameHeight(frame); meta.stable=true;
+}
+
+async function ensureEpubViewportCurrent(session){
+  const viewport=epubStableViewport(), previous=session.viewport;
+  if(previous&&previous.width===viewport.width&&previous.height===viewport.height)
+    return session.viewportJob||Promise.resolve();
+  session.viewport=viewport;
+  session.viewportMedia.forEach(item=>{
+    let matches=false; try{ matches=window.matchMedia(item.query).matches; }catch(error){}
+    try{ item.media.mediaText=matches?'all':'not all'; }catch(error){}
+  });
+  const jobs=[];
+  session.frameMeta.forEach((meta,index)=>{
+    if(!meta||!meta.viewportDependent) return;
+    meta.stable=false;
+    jobs.push(settleEpubFrameGeometry(session,index));
+  });
+  const job=Promise.all(jobs);
+  session.viewportJob=job;
+  job.finally(()=>{ if(session.viewportJob===job) session.viewportJob=null; });
+  return job;
+}
+
+async function waitForEpubAnchorGeometry(source){
+  if(!originalSession||originalSession.kind!=='epub') return;
+  await ensureEpubViewportCurrent(originalSession);
+  const last=Math.max(0,Math.min(originalSession.frames.length-1,Number(source&&source.spine)||0));
+  await Promise.all(originalSession.frameGeometryReady.slice(0,last+1).filter(Boolean));
+}
+
 async function openOriginalEpub(book,record,token){
   const archive=await openEpubArchive(record.blob);
   if(token!==originalLoadToken) return;
   const content=document.getElementById('original-content');
   content.innerHTML=''; content.className='original-content epub-original';
-  const session={kind:'epub',bookId:book.id,hash:record.hash,archive,urls:[],frames:[],frameReady:[],resizeObservers:[]};
+  const session={kind:'epub',bookId:book.id,hash:record.hash,archive,urls:[],frames:[],frameReady:[],
+    frameGeometryReady:[],frameMeta:[],resizeObservers:[],viewportMedia:[],viewport:epubStableViewport()};
   originalSession=session;
+  session.viewportListener=()=>{
+    if(originalSession===session&&currentReaderMode==='original') ensureEpubViewportCurrent(session);
+  };
+  window.addEventListener('resize',session.viewportListener);
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const resources=await buildEpubResources(archive,session);
   for(let index=0; index<archive.spine.length; index++){
     if(token!==originalLoadToken) return;
     const chapter=archive.spine[index];
-    const html=await sanitiseEpubChapter(archive,chapter,resources);
-    if(!html) continue;
+    const chapterDoc=await sanitiseEpubChapter(archive,chapter,resources,session.viewport);
+    if(!chapterDoc||!chapterDoc.html) continue;
     const section=document.createElement('section');
     section.className='epub-source-chapter'; section.dataset.spine=String(index); section.dataset.href=chapter.path;
     /* ---- 손가락을 받는 것은 틀이 아니라 그 위의 살갗입니다 ----
@@ -167,28 +339,36 @@ async function openOriginalEpub(book,record,token){
     const frame=document.createElement('iframe');
     frame.className='epub-chapter-frame'; frame.setAttribute('sandbox','allow-same-origin');
     frame.setAttribute('scrolling','no'); frame.title=`${book.title} ${index+1}`;
+    const meta={viewportDependent:chapterDoc.viewportDependent,stable:false,height:session.viewport.height};
+    setEpubFrameHeight(frame,meta.viewportDependent ? session.viewport.height : 80);
+    session.frameMeta[index]=meta;
+    let finishGeometry;
+    const geometryReady=new Promise(resolve=>{ finishGeometry=resolve; });
     const ready=new Promise(resolve=>{
       let settled=false;
       const finish=()=>{ if(settled) return; settled=true; resolve(frame); };
       frame.onload=()=>{
         const frameDoc=frame.contentDocument;
         const resize=()=>{
-          if(!frameDoc) return;
-          frame.style.height=Math.max(60,Math.ceil(frameDoc.documentElement.scrollHeight))+'px';
+          if(!frameDoc||meta.viewportDependent) return;
+          setEpubFrameHeight(frame,epubFrameHeight(frame));
         };
-        resize(); setTimeout(resize,80); setTimeout(resize,500);
-        if(window.ResizeObserver && frameDoc){
+        applyEpubStableViewport(frame,session.viewport);
+        if(meta.viewportDependent) freezeEpubHeightMediaQueries(frame,session);
+        resize();
+        if(window.ResizeObserver && frameDoc && !meta.viewportDependent){
           const observer=new ResizeObserver(resize); observer.observe(frameDoc.documentElement);
           session.resizeObservers.push(observer);
         }
         if(frameDoc) installEpubWordTap(frameDoc);
         finish();
+        settleEpubFrameGeometry(session,index).then(finishGeometry,finishGeometry);
       };
-      frame.onerror=finish;
-      setTimeout(finish,EPUB_FRAME_TIMEOUT);
+      frame.onerror=()=>{ finish(); finishGeometry(); };
+      setTimeout(()=>{ finish(); finishGeometry(); },EPUB_FRAME_TIMEOUT);
     });
-    frame.srcdoc=html; section.appendChild(frame); section.appendChild(skin); content.appendChild(section);
-    session.frames[index]=frame; session.frameReady[index]=ready;
+    frame.srcdoc=chapterDoc.html; section.appendChild(frame); section.appendChild(skin); content.appendChild(section);
+    session.frames[index]=frame; session.frameReady[index]=ready; session.frameGeometryReady[index]=geometryReady;
   }
   await Promise.all(session.frameReady.filter(Boolean).slice(0,2));
 }
@@ -518,7 +698,7 @@ async function restoreEpubAnchor(source,inset){
   const spine=Math.max(0,Math.min(originalSession.frames.length-1,Number(source.spine)||0));
   const frame=originalSession.frames[spine];
   if(!frame) return false;
-  if(originalSession.frameReady[spine]) await originalSession.frameReady[spine];
+  await waitForEpubAnchorGeometry(source);
   const element=epubElementAt(spine,source.element);
   const offset=element ? element.getBoundingClientRect().top : 0;
   readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);

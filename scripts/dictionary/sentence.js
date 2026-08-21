@@ -74,6 +74,7 @@ function rememberSentLeft(left, day){
    창을 연 손짓의 꼬리로 판정되어 문서 capture 단계에서 멈추므로, 여기까지 오지
    않습니다. */
 function closeSentence(){
+  sentenceLife++;
   const modal = document.getElementById('sentence-modal');
   if(modal) modal.hidden = true;
   if(typeof clearReaderModeCue === 'function') clearReaderModeCue();
@@ -112,43 +113,51 @@ let sentAsked = '';
 function retrySentence(){ if(sentAsked) openSentence(sentAsked); }
 
 let sentCtrl = null;
+let sentenceLife = 0;
+function sentenceAlive(life){ return life===sentenceLife; }
+function paintSentenceFor(life,state){
+  if(!sentenceAlive(life)) return false;
+  paintSentence(state); return true;
+}
 async function openSentence(text){
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if(!clean) return;
+  const life=++sentenceLife;
+  if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl=null; }
   sentAsked = clean;
-  paintSentence({ en:clean, waiting:true });
+  paintSentenceFor(life,{ en:clean, waiting:true });
 
   /* ① 전에 물어본 적 있는 문장이면 그대로 내놓습니다. 한도를 쓰지 않습니다. */
   const key = sentKey(clean);
   const hit = await dictGet(key);
+  if(!sentenceAlive(life)) return;
   if(hit && hit.ko){
-    paintSentence({ en:clean, ko:hit.ko, points:hit.points || [], cached:true,
+    paintSentenceFor(life,{ en:clean, ko:hit.ko, points:hit.points || [], cached:true,
                     foot:'전에 물어본 문장이라 오늘 몫을 쓰지 않았어요' });
     return;
   }
 
   if(!sb || navigator.onLine === false){
-    paintSentence({ en:clean, retry:true, foot:'오프라인이라 문장 설명은 나중에 볼 수 있어요' });
+    paintSentenceFor(life,{ en:clean, retry:true, foot:'오프라인이라 문장 설명은 나중에 볼 수 있어요' });
     return;
   }
   if(!sbUser){
-    paintSentence({ en:clean, foot:'문장 설명은 로그인하면 쓸 수 있어요' });
+    paintSentenceFor(life,{ en:clean, foot:'문장 설명은 로그인하면 쓸 수 있어요' });
     return;
   }
 
-  if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} }
   const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   sentCtrl = ctrl;
   const answer = await dictCall({ op:'explain', sentence:clean, book:(curBook && curBook.title) || '' },
                                 ctrl ? ctrl.signal : null);
   if(sentCtrl === ctrl) sentCtrl = null;
-  if(document.getElementById('sentence-modal').hidden) return;
 
   if(!answer || answer.error || !answer.ko){
     const why = answer && answer.error;
     if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
+    if(!sentenceAlive(life)) return;
     const stuck = why === 'login_required' || why === 'quota_exceeded';
-    paintSentence({ en:clean, retry:!stuck, foot:
+    paintSentenceFor(life,{ en:clean, retry:!stuck, foot:
         why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
       : why === 'quota_exceeded' ? '오늘 AI 조회가 부족해요. 문장 해석에는 2회가 필요해요'
       :                            '잠깐 문제가 있었어요' });
@@ -156,7 +165,7 @@ async function openSentence(text){
   }
   rememberSentLeft(answer.left,answer.day);
   await dictPut(key, { ko:answer.ko, points:answer.points || [], done:true });
-  paintSentence({ en:clean, ko:answer.ko, points:answer.points || [] });
+  paintSentenceFor(life,{ en:clean, ko:answer.ko, points:answer.points || [] });
 }
 
 document.addEventListener('keydown', event=>{

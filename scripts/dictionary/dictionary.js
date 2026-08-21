@@ -107,7 +107,10 @@ function expandedContextFor(w, sentence){
 }
 function readerWordNodes(selector){
   const nodes=[...document.querySelectorAll(selector)];
-  if(originalSession && originalSession.frames){
+  /* 숨겨 둔 original session 은 다음 mode switch 를 위한 보관물이지 Text interaction
+     의 surface 가 아닙니다. Text 에서 단어 하나를 만질 때 EPUB spine 비용을 내지
+     않습니다. */
+  if(currentReaderMode==='original' && originalSession && originalSession.frames){
     originalSession.frames.forEach(frame=>{
       try{ if(frame&&frame.contentDocument) nodes.push(...frame.contentDocument.querySelectorAll(selector)); }catch(e){}
     });
@@ -439,6 +442,19 @@ function panelIsSheet(){
      시트입니다. 마우스 화면은 창이 좁아졌을 뿐이라 옆 칸을 그대로 둡니다. */
   return window.matchMedia('(max-width:999px)').matches && !window.matchMedia('(pointer:fine)').matches;
 }
+/* 한 번의 word opening 이 선택 표시 하나를 소유합니다. 선택을 만든 node 를 이미
+   받았는데 닫을 때 다시 책 전체와 모든 EPUB frame 에서 `.sel` 을 찾는 것은
+   ownership 을 버렸다가 interaction 순간에 재발견하는 일이었습니다. */
+let activeSelectedWordNode=null;
+function clearActiveWordSelection(){
+  const node=activeSelectedWordNode;
+  activeSelectedWordNode=null;
+  if(!node) return;
+  try{
+    if(node.classList) node.classList.remove('sel');
+    if(node.classList&&node.classList.contains('original-selection-marker')&&node.remove) node.remove();
+  }catch(error){}
+}
 function selectWord(k, span){
   /* 여기서부터가 새 열림입니다. 앞 열림에 딸린 조회는 이 줄에서 임자를 잃습니다. */
   beginSheetLife();
@@ -450,8 +466,8 @@ function selectWord(k, span){
   /* 칩을 눌러 고른 뜻은 다음에 열 때 맨 앞에서 만납니다. */
   if(words[k] && words[k].ko){ touchMeaning(k); saveWords(); }
   selKey = k;
-  readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
-  if(span) span.classList.add('sel');
+  clearActiveWordSelection();
+  if(span){ span.classList.add('sel'); activeSelectedWordNode=span; }
   renderPanel();
   const panel=document.getElementById('panel');
   /* 패널은 한 번 열린 뒤에도 자기 안의 스크롤 위치를 기억합니다. 다른 낱말을
@@ -491,7 +507,7 @@ function closePanel(){
   panel.scrollTop=0;
   document.getElementById('sheetbg').classList.remove('on');
   pinReaderChrome(false);
-  readerWordNodes('.w.sel,.breeze-original-word.sel').forEach(s=>s.classList.remove('sel'));
+  clearActiveWordSelection();
 }
 /* 원본의 PDF 표시는 지우고 다시 만듭니다. 그래서 칠하기가 먼저면 방금 칠한
    덩어리가 사라집니다 — 예전에는 뒤에 한 번 더 칠해서 덮었는데, 그러면 한

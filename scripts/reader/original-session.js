@@ -197,6 +197,7 @@ function leaveOriginalReader(){
   if(!originalSession) return;
   if(originalSession.observer) originalSession.observer.disconnect();
   (originalSession.resizeObservers||[]).forEach(observer=>observer.disconnect());
+  if(originalSession.viewportListener) window.removeEventListener('resize',originalSession.viewportListener);
   (originalSession.urls||[]).forEach(url=>URL.revokeObjectURL(url));
   if(originalSession.pdf){ try{ originalSession.pdf.destroy(); }catch(e){} }
   originalSession = null;
@@ -228,10 +229,11 @@ function showOriginalError(error){
 /* ================= saved vocabulary ================= */
 
 function refreshOriginalSavedWords(){
+  if(currentReaderMode!=='original') return;
   const format=originalFormat();
   if(format) format.refreshSavedWords(originalSession);
 }
 
 function clearOriginalSelectionMarkers(){
-  readerWordNodes('.original-selection-marker').forEach(marker=>marker.remove());
+  if(typeof clearActiveWordSelection==='function') clearActiveWordSelection();
 }

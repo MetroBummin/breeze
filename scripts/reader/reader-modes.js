@@ -196,7 +196,7 @@ function clearReaderModeCue(){
   document.querySelectorAll('.reader-mode-cue-block').forEach(node=>node.classList.remove('reader-mode-cue-block'));
   document.querySelectorAll('.reader-mode-cue-word').forEach(node=>node.classList.remove('reader-mode-cue-word'));
   try{ if(CSS.highlights) CSS.highlights.delete('breeze-mode-cue'); }catch(error){}
-  if(originalSession&&originalSession.kind==='epub'){
+  if(currentReaderMode==='original'&&originalSession&&originalSession.kind==='epub'){
     originalSession.frames.forEach(frame=>{
       try{
         const view=frame.contentWindow, doc=frame.contentDocument;
@@ -448,19 +448,6 @@ async function switchReaderMode(mode,options){
       showOriginalLandingCue(record,target);
     }
     stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
-    /* EPUB images and webfonts can change a chapter's height just after load.
-       Re-apply the same source anchor once, so browser scroll anchoring does
-       not leave a first-open book halfway down the next chapter. */
-    if(record.kind==='epub' && target){
-      const sessionAtRestore=originalSession;
-      setTimeout(()=>{
-        if(originalSession===sessionAtRestore && changeToken===readerModeChangeToken
-            && curBook===bookAtStart && currentReaderMode==='original'){
-          suspendReaderScrollSave(450);
-          restoreOriginalAnchor(target,changeToken);
-        }
-      },650);
-    }
     suspendReaderScrollSave(500);
     updatePfill();
   }catch(error){
