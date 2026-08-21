@@ -13,9 +13,12 @@
  *     꾹 누르기 1000ms · 흔들림 10px   (scripts/reader/gesture.js 의
  *                                       GESTURE_HOLD_MS · GESTURE_SLOP)
  *
- * 장면 넷은 스크롤이 넘겨 줍니다. 스크롤이 하는 일은 `body[data-state]` 한
+ * 장면 여섯은 스크롤이 넘겨 줍니다. 스크롤이 하는 일은 `body[data-state]` 한
  * 글자를 바꾸는 것뿐이고, 2·3 은 시연이 아니라 **이미 끝난 순간**입니다 —
  * 커서가 움직이지도, 창이 열리는 과정을 보여 주지도 않습니다.
+ *
+ * 뒤의 두 장면(4·5)은 이 파일이 하는 일이 없습니다. 글도 그림도 index.html 에
+ * 이미 있고, 나타나고 사라지는 것은 CSS 가 `body[data-state]` 를 보고 합니다.
  */
 
 /* ---- 이 페이지가 아는 전부 ---- */
@@ -252,20 +255,23 @@ document.querySelectorAll('.lp-sentence').forEach(sentence => {
   sentence.addEventListener('contextmenu', event => event.preventDefault());
 });
 
-/* 닫는 길은 앱과 같은 자리입니다 — 시트 뒤의 판, 옆 칸의 ✕, 문장 창의 ✕와
-   그 바깥. 랜딩이 새로 만든 문은 없습니다. */
+/* 닫는 길은 앱과 같은 자리입니다 — 시트 뒤의 판, 옆 칸의 ✕, 문장 창 바깥.
+   랜딩이 새로 만든 문은 없습니다. 문장 창에는 ✕ 가 없습니다: 앱이 "닫는 길이
+   둘이면 닫은 뒤에 무엇이 남았는지 두 벌 확인해야 한다"는 이유로 뺐고
+   (index.html 의 `#sentence-modal` 주석), 그래서 그 단추의 생김새도
+   styles/dictionary.css 에 남아 있지 않습니다. */
 $('sheetbg').addEventListener('click', lpCloseWord);
 $('p-close').addEventListener('click', lpCloseWord);
-$('ps-close').addEventListener('click', lpCloseSentence);
 $('sentence-scrim').addEventListener('click', lpCloseSentence);
 document.addEventListener('keydown', event => {
   if(event.key !== 'Escape') return;
   lpCloseSentence(); lpCloseWord();
 });
 
-/* ================= 네 장면 =================
+/* ================= 여섯 장면 =================
    스크롤은 장면을 고르기만 합니다. 고른 뒤에 벌어지는 일은 위의 함수들이고,
-   그 함수들은 사용자가 직접 눌렀을 때 부르는 것과 똑같은 것들입니다. */
+   그 함수들은 사용자가 직접 눌렀을 때 부르는 것과 똑같은 것들입니다.
+   4·5 에서는 부를 것이 없습니다 — 두 창을 닫고 나면 나머지는 CSS 몫입니다. */
 let lpState = -1, lpHintTimer;
 function lpApply(state){
   if(state === lpState) return;
@@ -282,6 +288,8 @@ function lpApply(state){
   /* 창은 두 줄이 그 언어로 적힌 **뒤에** 엽니다. 아직 한국어가 적혀 있는 사이에
      열면 눌린 낱말을 표시할 상자가 없어서, 창만 뜨고 문장에는 아무 표시도 남지
      않습니다 — 0 에서 2 로 단숨에 내려갈 때 그렇게 됩니다. */
+  /* 4·5 에서는 두 줄이 이미 물러났습니다. 그 사이에 말을 되돌려 놓으면 보이지
+     않는 곳에서 글자만 바뀌므로, 영어인 채로 둡니다. */
   lpSetLang(state === 0 ? 'ko' : 'en', () => {
     if(lpState !== state) return;                 /* 그사이 장면이 또 넘어갔습니다 */
     if(state === 2) lpOpenWord('handle');
@@ -296,7 +304,7 @@ function lpApply(state){
    나올 때까지 오지 않아서, 그동안 두 줄이 빈 채로 있게 됩니다. */
 let lpStageH = 1;
 function lpMeasure(){ lpStageH = $('stage').clientHeight || window.innerHeight || 1; }
-function lpOnScroll(){ lpApply(Math.max(0, Math.min(3, Math.round(window.scrollY / lpStageH)))); }
+function lpOnScroll(){ lpApply(Math.max(0, Math.min(5, Math.round(window.scrollY / lpStageH)))); }
 window.addEventListener('scroll', lpOnScroll, {passive:true});
 window.addEventListener('resize', () => { lpMeasure(); lpOnScroll(); });
 lpMeasure();

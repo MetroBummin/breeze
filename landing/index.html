@@ -27,7 +27,7 @@
   <link rel="preload" href="../assets/fonts/gowun-batang-ui-700.woff2?v=8fbd485f" as="font" type="font/woff2" crossorigin>
   <!-- 첫 장면 두 줄만을 위한 글꼴입니다(landing.css 참고) — 앱의 고운바탕이 아니라
        이 폴더 안의 노토 세리프 KR 을 씁니다. -->
-  <link rel="preload" href="assets/fonts/noto-serif-kr-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/noto-serif-kr-600.woff2?v=2c77ca91" as="font" type="font/woff2" crossorigin>
   <!-- 첫 장면 그림은 앱의 스플래시와 같은 파일, 같은 규칙입니다(styles/base.css 의
        `#splash .splash-scene`). 화면 비율에 따라 세로·가로 중 한 벌만 받습니다. -->
   <link rel="preload" href="../assets/brand/breeze-day.avif" as="image" type="image/avif" media="(max-aspect-ratio: 4/3)">
@@ -41,8 +41,10 @@
   <link rel="stylesheet" href="../styles/reader.css">
   <!-- 단어창과 바텀시트, 문장 해석 창 -->
   <link rel="stylesheet" href="../styles/dictionary.css">
-  <!-- 저장했다고 알리는 한 줄(`#toast`) -->
+  <!-- 저장했다고 알리는 한 줄(`#toast`)과 단어장 한 줄(`.vrow`) -->
   <link rel="stylesheet" href="../styles/components.css">
+  <!-- 서재의 책·글 카드(`.bookcard` · `.casual`) -->
+  <link rel="stylesheet" href="../styles/home.css">
   <link rel="stylesheet" href="landing.css">
 </head>
 <!-- `lang-ko` 는 앱과 같은 제목 글꼴 짝(Fraunces + 고운바탕)을 씁니다 — 로마자
@@ -64,7 +66,7 @@
      순간에만 `body[data-state]` 한 글자가 바뀌고, 나머지는 CSS 가 합니다. -->
 <div id="rail">
   <div id="stage">
-    <div id="copy">
+    <div id="copy" class="lp-slot">
       <!-- 두 줄의 자리는 네 장면 내내 같습니다. 바뀌는 것은 언어와, 그 뒤로
            물러나는 그림뿐입니다.
 
@@ -88,6 +90,118 @@
            동안에도 자리를 지키므로 나타날 때 아무것도 밀지 않습니다. -->
       <div id="hint">단어를 눌러보세요 · 문장은 길게 눌러보세요</div>
     </div>
+
+<!-- ================= 셋째 장면 · 읽고 싶은 걸 =================
+     첫 두 장면이 "어떻게 읽히는가"를 보여 줬으니, 여기서는 그 앞의 물음 하나만
+     남습니다 — 무엇을 읽는가. 설명하지 않고 그냥 놓아 둡니다.
+
+     카드는 앱의 그 카드입니다. `.casual` 도 `.bookcard` 도 파도 그림도
+     ../styles/home.css 의 것이고, 표지는 앱이 실제로 딸려 보내는 그 파일입니다
+     (assets/classics/). 랜딩이 정하는 것은 셋이 어떻게 겹쳐 놓이는가뿐입니다 —
+     나란한 세 칸으로 세우면 기능 목록이 되고, 겹쳐 놓으면 책상 위가 됩니다.
+     누를 수 없습니다(landing.css 의 `pointer-events:none`): 여기 있는 것은
+     "가져올 수 있는 것들"이지 단추가 아닙니다. -->
+<div class="lp-scene" id="scene3">
+  <p class="lp-slot lp-head">읽고 싶은 걸, 그대로.</p>
+  <div class="lp-shelf" aria-hidden="true">
+    <div class="casual cpal2 lp-card lp-card-a">
+      <div class="thumb">
+        <div class="src">붙여넣은 글</div>
+        <div class="lede">Nobody tells this to people who are beginners. I wish someone had told me.</div>
+        <svg class="wave" viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40 C55 15 105 55 160 30 C210 8 260 35 300 18 L300 90 L0 90Z" fill="#FFFFFF" opacity=".35"/></svg>
+      </div>
+      <div class="ct">The Gap</div>
+      <div class="cm">6분 읽기</div>
+    </div>
+    <div class="bookcard pal1 lp-card lp-card-b">
+      <div class="author">F. SCOTT FITZGERALD</div>
+      <div class="bt">The Great Gatsby</div>
+      <svg class="wave" viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40 C55 15 105 55 160 30 C210 8 260 35 300 18 L300 90 L0 90Z" fill="#9FCAB5" opacity=".6"/></svg>
+    </div>
+    <div class="bookcard pal0 lp-card lp-card-c">
+      <div class="author">MY BOOK</div>
+      <div class="bt">On the Origin of Species.pdf</div>
+      <svg class="wave" viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40 C55 15 105 55 160 30 C210 8 260 35 300 18 L300 90 L0 90Z" fill="#C0DCC9" opacity=".6"/></svg>
+    </div>
+  </div>
+  <!-- 앱이 파일을 받는 자리에 적어 둔 그 한 줄입니다(`.bookcard.add` 의 라벨).
+       카드가 이미 말한 것을 한 번만 확인해 주는 자리라, 조작 힌트와 같은
+       세기로 둡니다 — 여기서 새로 지어낸 말은 없습니다. -->
+  <div class="lp-note">PDF · EPUB · TXT</div>
+</div>
+
+<!-- ================= 넷째 장면 · 어디서든 =================
+     두 화면에 같은 단어장이 있습니다. 그것이 전부입니다 — 화살표도, 구름도,
+     "동기화 중" 도 없습니다. 한쪽에서 다른 쪽으로 보내는 그림이 아니라 같은
+     것이 두 군데 있는 그림이라, 사이를 잇는 것도 방향이 없는 점 다섯입니다.
+
+     단어장 한 줄은 앱의 그 한 줄입니다 — `.vgroup` · `.vrow` · `.vword` ·
+     `.vko` · `.chip`, 전부 ../styles/components.css 의 것이고 글자 크기도 앱과
+     같습니다. 기기를 통째로 보여 주려고 글씨를 줄이지 않습니다: 화면은 아래가
+     잘린 채로 둡니다(진짜 화면도 아래로 이어집니다). -->
+<div class="lp-scene" id="scene4">
+  <p class="lp-slot lp-head">어디서든, 그대로.</p>
+  <div class="lp-devices" aria-hidden="true">
+    <div class="lp-device lp-mac">
+      <div class="lp-glass">
+        <div class="lp-vhead">Words</div>
+        <div class="lp-vtable">
+          <div class="vgroup lp-new">
+            <div class="vrow">
+              <div class="vword">reluctant</div>
+              <div class="vsenses"><div class="vsense"><div class="vko">꺼리는</div></div></div>
+              <span class="chip s2">★★</span>
+            </div>
+          </div>
+          <div class="vgroup">
+            <div class="vrow">
+              <div class="vword">meadow</div>
+              <div class="vsenses"><div class="vsense"><div class="vko">초원</div></div></div>
+              <span class="chip s1">★</span>
+            </div>
+          </div>
+          <div class="vgroup">
+            <div class="vrow">
+              <div class="vword">subtle</div>
+              <div class="vsenses"><div class="vsense"><div class="vko">미묘한</div></div></div>
+              <span class="chip s3">★★★</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="lp-foot"></div>
+    </div>
+    <div class="lp-link" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="lp-device lp-phone">
+      <div class="lp-glass">
+        <div class="lp-vhead">Words</div>
+        <div class="lp-vtable">
+          <div class="vgroup lp-new">
+            <div class="vrow">
+              <div class="vword">reluctant</div>
+              <div class="vsenses"><div class="vsense"><div class="vko">꺼리는</div></div></div>
+              <span class="chip s2">★★</span>
+            </div>
+          </div>
+          <div class="vgroup">
+            <div class="vrow">
+              <div class="vword">meadow</div>
+              <div class="vsenses"><div class="vsense"><div class="vko">초원</div></div></div>
+              <span class="chip s1">★</span>
+            </div>
+          </div>
+          <div class="vgroup">
+            <div class="vrow">
+              <div class="vword">subtle</div>
+              <div class="vsenses"><div class="vsense"><div class="vko">미묘한</div></div></div>
+              <span class="chip s3">★★★</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -100,6 +214,16 @@
      닿는 줄(모르는 정도 · 아는 단어 빼기 · 사전 링크 · 발음)은 여기 두지
      않습니다. 이 페이지가 보여 주는 것은 "모르는 낱말을 만난 그 순간" 하나이고,
      그 뒤의 일은 앱에서 시작합니다. -->
+<!-- ================= 아래로 이어진다는 표시 =================
+     좁은 화면에서 시트가 올라온 그 한 장면(2)에서만 나옵니다. 시트는 앱의
+     것이라 손대지 않습니다 — 다만 시트가 화면을 덮는 순간 "여기서 뭘 해야
+     하나"로 읽힐 수 있어서, 종이가 아직 아래로 남아 있다는 것만 알립니다.
+     단추가 아닙니다: 누를 수 없고, 테두리도 바탕도 글자도 없습니다. 다음
+     장면으로 넘어가면 스스로 사라집니다(landing.css). -->
+<div id="scrollcue" aria-hidden="true">
+  <svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg>
+</div>
+
 <div id="sheetbg"></div>
 <div id="panel">
   <div id="p-handle"></div>
@@ -133,7 +257,6 @@
 <div id="sentence-modal" hidden>
   <div id="sentence-scrim"></div>
   <section id="p-sentence" role="dialog" aria-modal="true" aria-live="polite">
-    <button id="ps-close" type="button" aria-label="문장 해석 닫기">✕</button>
     <div class="cap"><span class="dot"></span><span id="ps-cap">문장 통째로 · AI</span></div>
     <div id="ps-en"></div>
     <div id="ps-ko"></div>
