@@ -13,8 +13,9 @@
   #app{position:relative; z-index:1;}
 
   /* ================= splash ================= */
-  #splash{position:fixed; inset:0; z-index:200; overflow:hidden; background:var(--splash-bg); display:flex;
+  #splash{position:fixed; inset:0; z-index:200; overflow:hidden; background:var(--splash-bg); display:none;
     align-items:center; justify-content:center; transition:opacity .24s ease; isolation:isolate;}
+  html.native-shell #splash{display:flex;}
   #splash.hide{opacity:0; pointer-events:none;}
   /* 홈 화면 앱과 일반 모바일 브라우저 모두 같은 첫 장면을 봅니다.
      주소창 주변의 색보다 브랜드 전환을 우선합니다. */

@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <!-- viewport-fit=cover 가 있어야 env(safe-area-inset-*) 이 값을 냅니다.
        네이티브 셸(Capacitor)과 아이폰 사파리 둘 다 여기에 기댑니다. -->
+  <script>
+    /* Capacitor 는 document 시작 전에 이 bridge 를 넣습니다. CSS 가 그려지기 전에
+       native shell 만 표시하도록 해 웹/PWA 에서는 splash 가 한 프레임도 보이지 않게 합니다. */
+    try{
+      if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()){
+        document.documentElement.classList.add('native-shell');
+      }
+    }catch(error){}
+  </script>
   <title>Breeze</title>
   <meta name="description" content="Breeze - 원서를 산들바람처럼 읽는 리더 + 단어장">
   <meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme: light)">
@@ -25,15 +34,23 @@
   <link rel="preload" href="assets/fonts/fraunces-latin.woff2?v=48282a41" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/gowun-batang-ui-400.woff2?v=cb182529" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/gowun-batang-ui-700.woff2?v=8fbd485f" as="font" type="font/woff2" crossorigin>
-  <!-- 첫 장면은 검은 네이티브 런치 화면 바로 뒤에 이어집니다. 그림을 먼저 받아
-       검정→그림→홈으로 여러 번 바뀌어 보이지 않게 합니다. -->
-  <link rel="preload" href="assets/brand/breeze-day.avif" as="image" type="image/avif" media="(max-aspect-ratio: 4/3)">
-  <link rel="preload" href="assets/brand/breeze-day-wide.avif" as="image" type="image/avif" media="(min-aspect-ratio: 4/3)">
+  <!-- 첫 장면 그림은 네이티브 셸에서만 미리 받습니다. 웹/PWA 는 splash 를 쓰지
+       않으므로 이 큰 이미지를 부팅 경로에 요청하지 않습니다. -->
+  <link data-native-splash-preload data-href="assets/brand/breeze-day.avif" data-as="image" data-type="image/avif" data-media="(max-aspect-ratio: 4/3)">
+  <link data-native-splash-preload data-href="assets/brand/breeze-day-wide.avif" data-as="image" data-type="image/avif" data-media="(min-aspect-ratio: 4/3)">
+  <script>
+    if(document.documentElement.classList.contains('native-shell')){
+      document.querySelectorAll('[data-native-splash-preload]').forEach(link=>{
+        link.rel='preload'; link.href=link.dataset.href; link.as=link.dataset.as;
+        link.type=link.dataset.type; link.media=link.dataset.media;
+      });
+    }
+  </script>
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=ed7b30a4">
-  <link rel="stylesheet" href="styles/base.css?v=52cbcef3">
+  <link rel="stylesheet" href="styles/base.css?v=b3e4ae3e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
   <link rel="stylesheet" href="styles/reader.css?v=bbd230d1">
   <link rel="stylesheet" href="styles/dictionary.css?v=9e60beab">
@@ -88,7 +105,7 @@
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=c3fd0319"></script>
   <script defer src="scripts/ui/interactions.js?v=31e4ec05"></script>
-  <script defer src="scripts/main.js?v=16ea797d"></script>
+  <script defer src="scripts/main.js?v=b316fa5a"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=9665da99"></script>
@@ -98,11 +115,8 @@
 
 <!-- ================= SPLASH ================= -->
 <div id="splash" class="splash-day">
-  <!-- 낮의 들판은 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지 않습니다.
-       사진은 여기가 아니라 styles/base.css 가 배경으로 깝니다 — 위 스크립트가
-       휴대폰 브라우저에서 스플래시를 통째로 감추는데(html.mobile-browser),
-       `<img>` 였다면 감춰 놓고도 250KB를 먼저 받아 버립니다. 배경 그림은 감춰진
-       자리에서는 아예 요청하지 않습니다. -->
+  <!-- 낮의 들판은 native 첫 화면에서만 쓰는 브랜드 장면입니다. 본문에는 절대 깔지
+       않습니다. 웹/PWA 에서는 native-shell class 가 없어 통째로 보이지 않습니다. -->
   <div class="splash-scene" aria-hidden="true"></div>
   <div class="splash-brand">
   <div class="word">Breeze</div>
