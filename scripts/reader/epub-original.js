@@ -237,28 +237,58 @@ function freezeEpubHeightMediaQueries(frame,session){
     try{ visit(sheet.cssRules); }catch(error){}
   }
 }
-function nextEpubLayoutFrame(view){
-  return new Promise(resolve=>(view&&view.requestAnimationFrame
-    ? view.requestAnimationFrame(()=>resolve()) : requestAnimationFrame(()=>resolve())));
+/* 장 iframe 은 `sandbox="allow-same-origin"` 하나만 답니다 — `allow-scripts` 가
+   없으므로 그 안에서는 스크립트가 돌지 않습니다. 그래서 **자식 창에 건 콜백은
+   영영 실행되지 않습니다.** 예전에는 여기서 자식의 `requestAnimationFrame` 을
+   기다렸고, 그 약속이 지켜지지 않아 장 크기 재기가 끝나지 않았습니다. 크기가
+   확정되지 않으면 읽던 자리를 되찾는 일이 8초짜리 포기 타이머에 걸려 그 동안
+   표지에 머물렀습니다.
+
+   여기서 하려는 일은 "레이아웃을 한 번 흘려보내기" 하나입니다. 그러니 스크립트가
+   도는 쪽 — 부모 — 의 프레임을 씁니다. 먼저 오는 쪽을 받으면 되고, 이 기다림은
+   자리를 정하지 않습니다. 다음 줄에서 다시 재고, 그 값이 자리를 정합니다. */
+function nextEpubLayoutFrame(){
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=()=>{ if(settled) return; settled=true; resolve(); };
+    try{ requestAnimationFrame(finish); }catch(error){}
+    /* 화면이 안 그려지는 동안에는 프레임이 오지 않습니다. 그때도 한 박자는 쉬어야
+       하는데, 배경으로 내려간 화면의 타이머는 1초까지 늘어납니다 — 장마다 그
+       값을 물면 책 한 권을 여는 데 1분이 걸립니다(실제로 그랬습니다). 그래서
+       늘어나지 않는 통로를 나란히 두고 먼저 오는 쪽을 받습니다. */
+    try{
+      const channel=new MessageChannel();
+      channel.port1.onmessage=finish;
+      channel.port2.postMessage(0);
+    }catch(error){ setTimeout(finish,32); }
+  });
 }
 async function waitForEpubAssets(frame){
   const doc=frame&&frame.contentDocument;
   if(!doc) return;
   const waits=[];
   if(doc.fonts&&doc.fonts.ready) waits.push(Promise.resolve(doc.fonts.ready).catch(()=>{}));
+  /* 여기서 기다리는 까닭은 **높이를 재기 위해서**입니다. 그림의 제 크기는 그림이
+     도착한 순간(`complete`) 이미 알 수 있고, 자리를 차지하는 데 필요한 것도 그것뿐입니다.
+
+     예전에는 그 뒤에 `decode()` 까지 기다렸습니다. 그것은 그릴 준비가 됐는지를
+     묻는 일이라, **브라우저가 그릴 생각이 없는 장에서는 영영 답이 오지 않습니다** —
+     화면 밖의 장, 안 보이는 탭, 손이 닿기 전의 뒷장이 모두 그렇습니다. 표지 한
+     장이 여기서 멈춰 서면 그 위를 기다리던 되찾기 전체가 8초짜리 포기 타이머에
+     걸렸고, 그 동안 화면은 책 맨 앞에 머물렀습니다. 실제로 표지 그림은 이미
+     `complete:true` 에 800×1104 로 다 와 있었는데도 그랬습니다. */
   [...doc.images].forEach(image=>{
-    const loaded=image.complete ? Promise.resolve() : new Promise(resolve=>{
+    if(image.complete) return;
+    waits.push(new Promise(resolve=>{
       image.addEventListener('load',resolve,{once:true});
       image.addEventListener('error',resolve,{once:true});
-    });
-    waits.push(loaded.then(()=>image.decode ? image.decode().catch(()=>{}) : null));
+    }));
   });
   await Promise.all(waits);
 }
 async function settleEpubFrameGeometry(session,index){
   const frame=session.frames[index], meta=session.frameMeta[index];
   if(!frame||!meta||!frame.contentDocument) return;
-  const view=frame.contentWindow;
   await waitForEpubAssets(frame);
   if(originalSession!==session) return;
   if(meta.viewportDependent){
@@ -266,19 +296,21 @@ async function settleEpubFrameGeometry(session,index){
        reader viewport, never against the height produced by that CSS. */
     setEpubFrameHeight(frame,session.viewport.height);
     applyEpubStableViewport(frame,session.viewport);
-    await nextEpubLayoutFrame(view);
+    await nextEpubLayoutFrame();
     const canonical=epubFrameHeight(frame);
     setEpubFrameHeight(frame,canonical);
-    await nextEpubLayoutFrame(view);
+    await nextEpubLayoutFrame();
     const verified=epubFrameHeight(frame);
     setEpubFrameHeight(frame,Math.max(canonical,verified));
     meta.height=Math.max(canonical,verified); meta.stable=true;
+      reapplyEpubAnchorIfPending(session,index);
     return;
   }
   setEpubFrameHeight(frame,epubFrameHeight(frame));
-  await nextEpubLayoutFrame(view);
+  await nextEpubLayoutFrame();
   setEpubFrameHeight(frame,epubFrameHeight(frame));
   meta.height=epubFrameHeight(frame); meta.stable=true;
+  reapplyEpubAnchorIfPending(session,index);
 }
 
 async function ensureEpubViewportCurrent(session){
@@ -302,11 +334,60 @@ async function ensureEpubViewportCurrent(session){
   return job;
 }
 
+/* 크기가 늦게 확정되면 그 위의 장들이 자라면서 읽던 자리가 아래로 밀립니다.
+   한 번 재고 끝내면 그 어긋남을 되돌릴 사람이 없어, 화면은 책 앞쪽에 남습니다.
+   그래서 앵커를 세션에 그대로 들고 있다가, 앵커보다 위에 있는 장이 자리를 잡을
+   때마다 같은 앵커를 다시 앉힙니다. 시간을 재서 다시 하는 것이 아니라, **크기가
+   실제로 확정됐다는 사건**에만 움직입니다.
+
+   사람이 그 사이에 스스로 스크롤했으면 그만둡니다 — 되찾아 주려던 자리보다
+   지금 손이 있는 자리가 언제나 우선입니다. 앵커 위쪽이 모두 확정되면 들고 있던
+   것을 놓습니다. 그래야 한참 뒤의 화면 회전이 읽던 자리를 낚아채지 않습니다. */
+function epubAnchorSettled(session,spine){
+  return (session.frameMeta||[]).slice(0,spine+1)
+    .every(meta=>!meta||meta.stable);
+}
+function reapplyEpubAnchorIfPending(session,index){
+  const pending=session&&session.pendingAnchor;
+  if(!pending||originalSession!==session) return;
+  if(typeof currentReaderMode!=='undefined'&&currentReaderMode!=='original') return;
+  /* 앵커 아래에서 자란 것은 읽던 자리를 밀지 않습니다. */
+  if(index>pending.spine){
+    if(epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
+    return;
+  }
+  /* 우리가 놓아둔 자리에서 손이 이미 움직였으면 여기서 손을 뗍니다. */
+  if(Math.abs(readerScrollTop()-pending.appliedTop)>2){ session.pendingAnchor=null; return; }
+  const frame=session.frames[pending.spine];
+  const element=frame ? epubElementAt(pending.spine,pending.source.element) : null;
+  if(frame&&element){
+    readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top
+      +element.getBoundingClientRect().top-pending.inset);
+    pending.appliedTop=readerScrollTop();
+  }
+  if(epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
+}
+
 async function waitForEpubAnchorGeometry(source){
   if(!originalSession||originalSession.kind!=='epub') return;
   await ensureEpubViewportCurrent(originalSession);
-  const last=Math.max(0,Math.min(originalSession.frames.length-1,Number(source&&source.spine)||0));
-  await Promise.all(originalSession.frameGeometryReady.slice(0,last+1).filter(Boolean));
+  const session=originalSession;
+  const last=Math.max(0,Math.min(session.frames.length-1,Number(source&&source.spine)||0));
+  /* 앵커가 든 장은 그 안에서 요소를 찾아야 하므로, 열릴 때까지는 기다립니다. */
+  if(session.frameReady&&session.frameReady[last]) await session.frameReady[last];
+  if(originalSession!==session) return;
+  /* 그 위의 장들은 **이미 열린 것의 크기만** 기다립니다. 아직 안 열린 장까지
+     기다리면 그 한 장 때문에 모든 되찾기가 포기 타이머(8초)에 걸려 멈춰 섰고,
+     그 동안 화면은 책 맨 앞 — 표지 — 에 머물렀습니다. 실제로 표지 장 하나가
+     끝내 안 열려서, 어느 자리에서 눌러도 8초를 기다린 뒤에야 옮겨 갔습니다.
+     늦게 열리는 장은 `pendingAnchor` 가 맡습니다: 크기가 확정되는 그 사건마다
+     같은 앵커를 다시 앉히므로, 기다리지 않아도 자리를 잃지 않습니다. */
+  const waits=[], geometry=session.frameGeometryReady||[];
+  for(let index=0; index<last; index++){
+    const doc=session.frames[index]&&session.frames[index].contentDocument;
+    if(geometry[index]&&doc&&doc.readyState==='complete') waits.push(geometry[index]);
+  }
+  await Promise.all(waits);
 }
 
 async function openOriginalEpub(book,record,token){
@@ -698,10 +779,23 @@ async function restoreEpubAnchor(source,inset){
   const spine=Math.max(0,Math.min(originalSession.frames.length-1,Number(source.spine)||0));
   const frame=originalSession.frames[spine];
   if(!frame) return false;
-  await waitForEpubAnchorGeometry(source);
+  /* 크기를 기다리는 동안 화면은 아직 책 앞쪽에 있습니다. 그 자리가 "읽던 자리"로
+     적히면 다음 번에도 표지에서 시작합니다 — 기다림이 길어질수록 확실해집니다.
+     기다리는 동안에만 적기를 미루고, 끝나면 곧 풀립니다. */
+  const holdSave=setInterval(()=>{
+    if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(600);
+  },300);
+  if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(600);
+  try{ await waitForEpubAnchorGeometry(source); }
+  finally{ clearInterval(holdSave); }
   const element=epubElementAt(spine,source.element);
   const offset=element ? element.getBoundingClientRect().top : 0;
   readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);
+  /* 아직 크기가 확정되지 않은 장이 위에 있으면, 그 장이 자리를 잡을 때 이 앵커를
+     다시 앉힙니다(`reapplyEpubAnchorIfPending`). 전부 확정돼 있으면 들고 있을
+     이유가 없습니다. */
+  originalSession.pendingAnchor=epubAnchorSettled(originalSession,spine) ? null
+    : {source,inset,spine,appliedTop:readerScrollTop()};
   return true;
 }
 
