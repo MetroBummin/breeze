@@ -75,7 +75,7 @@
   }
   /* 읽은 자리는 화면 맨 아래 edge의 가는 선 하나로 남습니다. Home indicator 위로
      올리지 않고 실제 viewport 끝에 붙이며, 자리는 스크롤과 무관하게 고정입니다. */
-  #rbar{position:fixed; bottom:0; left:0; right:0; z-index:40;
+  #rbar{position:fixed; bottom:0; left:0; right:0; z-index:40; pointer-events:none;
     background:var(--rbar-bg); height:3px;}
   .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
   .iconbtn:hover{background:var(--hover-quiet);}
