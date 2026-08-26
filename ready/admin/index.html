@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="../../styles/base.css" />
     <link rel="stylesheet" href="../ready.css" />
     <script defer src="../config.js"></script>
-    <script type="module" src="app.js?v=single-passage-preview-1"></script>
+    <script type="module" src="app.js?v=golden-path-1"></script>
   </head>
   <body data-ready-mode="admin">
     <div id="app">
@@ -45,10 +45,7 @@
             Students</button
           ><button class="navbtn" type="button" data-route="passages">
             Passages</button
-          ><button class="navbtn" type="button" data-route="exams">Exams</button
-          ><button class="navbtn" type="button" data-route="analytics">
-            Review
-          </button>
+          ><button class="navbtn" type="button" data-route="exams">Exams</button>
         </nav>
         <button
           id="theme-toggle"
@@ -220,6 +217,7 @@
               </select></label
             >
           </div>
+          <div id="passage-selection"></div>
           <div id="passage-library"></div>
         </section>
         <section class="view" id="v-students">
@@ -396,29 +394,29 @@
         <div id="passage-import-content"></div>
       </section>
     </div>
-    <div id="student-delete-modal" class="modal" aria-hidden="true">
-      <div class="modal-scrim" data-close-student-delete></div>
+    <div id="delete-modal" class="modal" aria-hidden="true">
+      <div class="modal-scrim" data-close-delete></div>
       <section
         class="sheet small-sheet"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="student-delete-title"
+        aria-labelledby="delete-title"
       >
         <div class="sheet-head">
           <div>
-            <p class="eyebrow">DELETE STUDENT</p>
-            <h2 id="student-delete-title">학생 삭제</h2>
+            <p class="eyebrow">SAFE DELETE</p>
+            <h2 id="delete-title">삭제 확인</h2>
           </div>
           <button
             class="icon-button"
             type="button"
-            data-close-student-delete
+            data-close-delete
             aria-label="닫기"
           >
             ×
           </button>
         </div>
-        <div id="student-delete-content"></div>
+        <div id="delete-content"></div>
       </section>
     </div>
     <div id="busy" class="busy" hidden>

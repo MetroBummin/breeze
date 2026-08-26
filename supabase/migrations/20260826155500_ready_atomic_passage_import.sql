@@ -50,15 +50,14 @@ begin
   end if;
 
   insert into public.ready_passages(
-    study_set_id, exam_id, title, source_text, position, display_order,
-    source_type, grade, source_year, source_month, source_label,
+    title, source_text, display_order, source_type, grade, source_year, source_month, source_label,
     study_status, translation_source, processing_error
   )
   select
-    null, null, trim(p_title),
+    trim(p_title),
     (select string_agg(trim(row_value ->> 'text'), ' ' order by ordinal)
        from jsonb_array_elements(p_rows) with ordinality as item(row_value, ordinal)),
-    0, coalesce((select max(display_order) + 1 from public.ready_passages), 0),
+    coalesce((select max(display_order) + 1 from public.ready_passages), 0),
     p_source_type, trim(p_grade), p_source_year, p_source_month,
     trim(coalesce(p_source_label, '')), 'ready', 'teacher', ''
   returning id into v_passage_id;

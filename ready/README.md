@@ -1,4 +1,4 @@
-# READY — ORDER Milestone 1
+# READY — Golden Path
 
 READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내부용 웹앱입니다.
 
@@ -6,53 +6,55 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 - 관리자: `/ready/admin/`
 - 서버: READY 전용 Supabase 프로젝트의 `ready` Edge Function
 
-## 인증 구조
-
-- 학생 PIN은 PostgreSQL `pgcrypto`의 bcrypt 해시만 DB에 저장합니다.
-- 관리자 비밀번호는 `READY_ADMIN_PASSWORD` Supabase Secret에서만 읽습니다.
-- 로그인 성공 시 256-bit opaque session token을 한 번 반환하고 DB에는 SHA-256만 저장합니다.
-- 학생 세션은 자기 `student_id`에 고정됩니다. 문제 조회·attempt 저장 API는 client의 studentId를 받지 않습니다.
-- 관리자 비밀번호는 로그인할 때만 보내며 이후 요청은 8시간짜리 admin session을 사용합니다.
-- 로그인 실패는 사용자별 15분 동안 5회로 제한합니다.
-
-## 배포 순서
-
-Supabase CLI 연결 후 아래 순서로 배포합니다. 실제 secret 값은 terminal history나 Git 파일에
-넣지 말고 Supabase Dashboard의 **Project Settings → Edge Functions → Secrets**에서 입력합니다.
-
-1. `sql/ready_milestone_1.sql`
-2. `sql/ready_auth_migration.sql`
-3. `ready` Edge Function (`verify_jwt = false`)
-4. Supabase Secrets
-
-Claude Sonnet 5를 사용할 때 필요한 Secrets:
+현재 운영 경로는 하나입니다.
 
 ```text
-READY_ADMIN_PASSWORD   관리자 로그인에 사용할 충분히 긴 비밀번호
-READY_AI_PROVIDER      anthropic
-READY_AI_MODEL         claude-sonnet-5
-ANTHROPIC_API_KEY       Anthropic Console에서 만든 API key
+영어/한국어 TSV 붙여넣기 → Preview/Edit → Passage 저장
+→ Passage 여러 개 선택 → Exam 생성
+→ 학생 PIN 로그인 → Exam → Passage Reader
 ```
 
-`claude-sonnet-5`에서는 `temperature`를 보내지 않습니다. 최신 Messages API의
-`output_config.format` JSON Schema structured output을 사용해 ORDER JSON을 받습니다.
-OpenAI로 바꾸려면 `READY_AI_PROVIDER=openai`와 `OPENAI_API_KEY`를 설정하면 됩니다.
+## 데이터 계약
 
-`SUPABASE_URL`과 `SUPABASE_SERVICE_ROLE_KEY`는 배포된 Edge Function에 Supabase가 자동으로
-제공합니다. frontend에는 넣지 않습니다.
+- TSV 한 행은 `PassageSentence` 한 개입니다.
+- 1열은 영어, 2열은 한국어 해석이며 서버가 다시 분리하거나 번역하지 않습니다.
+- Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
+- Exam과 선택 Passage 연결은 `ready_create_exam_with_passages` 한 transaction으로 저장합니다.
+- Passage 소속의 Source of Truth는 `ready_exam_passages`입니다.
+- StudySet/Publication은 과거 attempt 감사용 데이터일 뿐 신규 runtime에서 사용하지 않습니다.
 
-배포 후 공개 Function URL만 `ready/config.js`의 `API_URL`에 넣습니다.
+## 로컬 확인
 
-```text
-https://<READY_PROJECT_REF>.supabase.co/functions/v1/ready
+```bash
+npm run ready:dev
 ```
 
-이 URL과 project ref는 공개 식별자입니다. 인증은 URL 은닉이 아니라 서버 세션 검증으로 처리합니다.
+그다음 `http://127.0.0.1:4173/ready/admin/`을 엽니다. 로컬 frontend도
+`ready/config.js`에 설정된 READY Supabase backend를 사용하므로 Pages 배포 전에 바로 검증할 수 있습니다.
 
-## 범위
+핵심 정적/계약 테스트:
 
-- 관리자: 학생/PIN 관리 → 세트 생성 → 지문 저장 → ORDER AI 생성 → Preview/수정/재생성/승인/삭제 → Publish
-- 학생: 이름+PIN → 게시 세트 → 배열/제출/즉시 채점 → 다음 문제
-- Review: completed/total, accuracy, 모든 attempt, 반복 오답, Passage별 오답 학생
-- `questions.type = 'order'`와 JSON payload만 사용합니다.
-- Breeze reader, PDF/EPUB, word lifecycle, sync, gesture 코드는 사용하지 않습니다.
+```bash
+npm run ready:test
+```
+
+## 인증과 Secrets
+
+- 학생 PIN은 PostgreSQL bcrypt hash만 저장합니다.
+- 관리자 비밀번호는 로그인 시 한 번만 보내고 이후 opaque admin session을 사용합니다.
+- API key, 관리자 비밀번호, service-role key는 frontend나 Git에 넣지 않습니다.
+- AI key는 ORDER 기능을 다시 노출할 때도 Supabase Secret에서만 읽습니다.
+
+## 배포
+
+`supabase/migrations/`의 migration을 순서대로 적용한 뒤 `ready` Edge Function을 배포합니다.
+새 READY DB는 migration 디렉터리만으로 현재 schema를 만들 수 있어야 하며 `sql/ready_*.sql`
+수동 실행에 의존하지 않습니다.
+
+```bash
+npx supabase db push --linked
+npx supabase functions deploy ready --no-verify-jwt
+```
+
+삭제는 서버의 `delete_impact` 결과를 먼저 보여줍니다. Attempt나 학습 이벤트가 없을 때만
+`DELETE` 확인 후 hard delete하며, 기록이 있으면 연결 수와 함께 차단합니다.
