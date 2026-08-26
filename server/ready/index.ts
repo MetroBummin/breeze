@@ -16,7 +16,7 @@ function supabaseAdminKey() {
   return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", supabaseAdminKey(), { auth: { persistSession: false } });
-const adminOps = new Set(["teacher_bootstrap", "create_exam", "create_passage", "generate_order", "update_question", "set_question_status", "delete_question", "create_student", "set_student_pin", "set_student_active", "delete_student"]);
+const adminOps = new Set(["teacher_bootstrap", "create_exam", "update_exam_passages", "create_passage", "update_passage", "delete_passage", "reorder_passages", "generate_order", "update_question", "set_question_status", "delete_question", "create_student", "set_student_pin", "set_student_active", "delete_student"]);
 const studentOps = new Set(["student_bootstrap", "student_exam", "student_questions", "submit_attempt"]);
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
 
@@ -152,21 +152,33 @@ async function deleteStudent(body: any) {
 }
 
 async function teacherBootstrap() {
-  const [students, exams, passages, sentences, questions, attempts] = await Promise.all([
-    db.from("ready_students").select("id,name,school,grade,sort_order,active,created_at").order("school").order("grade").order("sort_order").order("name"), db.from("ready_exams").select("*").order("created_at", { ascending: false }), db.from("ready_passages").select("*").order("position").order("created_at"), db.from("ready_passage_sentences").select("*").order("sentence_index"), db.from("ready_questions").select("*").order("created_at"), db.from("ready_attempts").select("*").order("created_at", { ascending: false }),
+  const [students, exams, passages, sentences, questions, attempts, examPassages] = await Promise.all([
+    db.from("ready_students").select("id,name,school,grade,sort_order,active,created_at").order("school").order("grade").order("sort_order").order("name"), db.from("ready_exams").select("*").order("created_at", { ascending: false }), db.from("ready_passages").select("*").order("display_order").order("created_at"), db.from("ready_passage_sentences").select("*").order("sentence_index"), db.from("ready_questions").select("*").order("created_at"), db.from("ready_attempts").select("*").order("created_at", { ascending: false }), db.from("ready_exam_passages").select("*").order("position"),
   ]);
-  return { students: rows(students), exams: rows(exams), passages: rows(passages), sentences: rows(sentences), questions: rows(questions), attempts: rows(attempts) };
+  return { students: rows(students), exams: rows(exams), passages: rows(passages), sentences: rows(sentences), questions: rows(questions), attempts: rows(attempts), examPassages: rows(examPassages) };
 }
-async function createExam(body: any) { return { exam: rows(await db.from("ready_exams").insert({ school: required(body.school, "학교", 80), grade: required(body.grade, "학년", 40), title: required(body.title, "시험명", 120), description: clean(body.description, 500) }).select().single()) }; }
+function ids(value: unknown) { return Array.isArray(value) ? [...new Set(value.map(item => clean(item, 80)).filter(Boolean))] : []; }
+async function setExamPassages(examId: string, passageIds: string[]) {
+  const found = passageIds.length ? rows<any[]>(await db.from("ready_passages").select("id").in("id", passageIds)) : [];
+  if (found.length !== passageIds.length) throw new ApiError(400, "존재하지 않는 지문이 포함되어 있습니다.");
+  const removed = await db.from("ready_exam_passages").delete().eq("exam_id", examId); if (removed.error) throw new ApiError(500, removed.error.message);
+  if (passageIds.length) { const inserted = await db.from("ready_exam_passages").insert(passageIds.map((passage_id, position) => ({ exam_id: examId, passage_id, position }))); if (inserted.error) throw new ApiError(500, inserted.error.message); }
+}
+async function createExam(body: any) { const exam = rows<any>(await db.from("ready_exams").insert({ school: required(body.school, "학교", 80), grade: required(body.grade, "학년", 40), title: required(body.title, "시험명", 120), description: clean(body.description, 500) }).select().single()); await setExamPassages(exam.id, ids(body.passageIds)); return { exam }; }
+async function updateExamPassages(body: any) { const examId = required(body.examId, "Exam", 80); const exists = await db.from("ready_exams").select("id").eq("id", examId).maybeSingle(); if (exists.error || !exists.data) throw new ApiError(404, "Exam을 찾지 못했습니다."); await setExamPassages(examId, ids(body.passageIds)); return { updated: examId }; }
 async function createPassage(body: any) {
-  const examId = required(body.examId, "Exam", 80), sourceText = required(body.sourceText, "영어 지문", 30_000), pieces = splitSentences(sourceText);
+  const sourceText = required(body.sourceText, "영어 지문", 30_000), pieces = splitSentences(sourceText), sourceType = body.sourceType === "MOCK_EXAM" ? "MOCK_EXAM" : "TEXTBOOK";
   if (pieces.length < 2) throw new ApiError(400, "ORDER 문제에는 문장이 2개 이상 필요합니다."); if (pieces.length > 80) throw new ApiError(400, "한 지문은 80문장 이하로 나눠 주세요.");
-  const exam = await db.from("ready_exams").select("id").eq("id", examId).maybeSingle(); if (exam.error || !exam.data) throw new ApiError(404, "Exam을 찾지 못했습니다.");
-  const current = rows<any[]>(await db.from("ready_passages").select("position").eq("exam_id", examId).order("position", { ascending: false }).limit(1));
-  const passage = rows<any>(await db.from("ready_passages").insert({ exam_id: examId, study_set_id: null, title: required(body.title, "지문 제목", 120), source_text: sourceText, position: Number(current[0]?.position ?? -1) + 1 }).select().single());
+  const current = rows<any[]>(await db.from("ready_passages").select("display_order").order("display_order", { ascending: false }).limit(1));
+  const grade = required(body.grade, "학년", 40), sourceYear = body.sourceYear ? Math.round(Number(body.sourceYear)) : null, sourceMonth = body.sourceMonth ? Math.round(Number(body.sourceMonth)) : null;
+  if (sourceType === "MOCK_EXAM" && (!sourceYear || !sourceMonth)) throw new ApiError(400, "모의고사는 연도와 월이 필요합니다.");
+  const passage = rows<any>(await db.from("ready_passages").insert({ study_set_id: null, exam_id: null, title: required(body.title, "지문 제목", 120), source_text: sourceText, position: 0, display_order: Number(current[0]?.display_order ?? -1) + 1, source_type: sourceType, grade, source_year: sourceYear, source_month: sourceMonth, source_label: clean(body.sourceLabel, 120) }).select().single());
   const sentenceResult = await db.from("ready_passage_sentences").insert(pieces.map((text, sentence_index) => ({ passage_id: passage.id, sentence_index, text }))).select().order("sentence_index");
   return { passage, sentences: rows(sentenceResult) };
 }
+async function updatePassage(body: any) { const passageId=required(body.passageId,"지문",80), current=rows<any>(await db.from("ready_passages").select("id,source_text").eq("id",passageId).single()), hasQuestions=rows<any[]>(await db.from("ready_questions").select("id").eq("passage_id",passageId)).length>0, sourceText=clean(body.sourceText,30_000); if(sourceText&&sourceText!==current.source_text&&hasQuestions)throw new ApiError(409,"문제가 있는 지문의 원문은 수정할 수 없습니다."); const patch:any={title:required(body.title,"지문 제목",120),source_type:body.sourceType==="MOCK_EXAM"?"MOCK_EXAM":"TEXTBOOK",grade:required(body.grade,"학년",40),source_year:body.sourceYear?Math.round(Number(body.sourceYear)):null,source_month:body.sourceMonth?Math.round(Number(body.sourceMonth)):null,source_label:clean(body.sourceLabel,120)}; if(sourceText)patch.source_text=sourceText; return {passage:rows(await db.from("ready_passages").update(patch).eq("id",passageId).select().single())}; }
+async function deletePassage(body:any){const passageId=required(body.passageId,"지문",80), questions=rows<any[]>(await db.from("ready_questions").select("id").eq("passage_id",passageId)), qids=questions.map(q=>q.id), attempts=qids.length?rows<any[]>(await db.from("ready_attempts").select("id").in("question_id",qids)):[];if(attempts.length)throw new ApiError(409,`학습기록 ${attempts.length}건 때문에 삭제할 수 없습니다.`,{questions:questions.length,attempts:attempts.length});const result=await db.from("ready_passages").delete().eq("id",passageId);if(result.error)throw new ApiError(500,result.error.message);return{deleted:passageId};}
+async function reorderPassages(body:any){const passageIds=ids(body.passageIds);if(!passageIds.length)throw new ApiError(400,"지문 순서가 필요합니다.");const found=rows<any[]>(await db.from("ready_passages").select("id").in("id",passageIds));if(found.length!==passageIds.length)throw new ApiError(400,"존재하지 않는 지문이 포함되어 있습니다.");for(const [display_order,id] of passageIds.entries()){const result=await db.from("ready_passages").update({display_order}).eq("id",id);if(result.error)throw new ApiError(500,result.error.message);}return{reordered:passageIds};}
 async function questionHasAttempts(questionId: string) { const result = await db.from("ready_attempts").select("id", { count: "exact", head: true }).eq("question_id", questionId); if (result.error) throw new ApiError(500, result.error.message); return (result.count || 0) > 0; }
 async function generateOrderQuestion(body: any) {
   const passageId = required(body.passageId, "지문", 80), difficulty = Number(body.difficulty); if (![1, 2, 3, 4].includes(difficulty)) throw new ApiError(400, "난이도는 1–4입니다.");
@@ -239,7 +251,7 @@ async function dispatch(op: string, body: any, session: ReadySession | null) {
   switch (op) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);
     case "teacher_bootstrap": return teacherBootstrap(); case "create_student": return createStudent(body); case "set_student_pin": return setStudentPin(body); case "set_student_active": return setStudentActive(body); case "delete_student": return deleteStudent(body);
-    case "create_exam": return createExam(body); case "create_passage": return createPassage(body); case "generate_order": return generateOrderQuestion(body); case "update_question": return updateQuestion(body); case "set_question_status": return setQuestionStatus(body); case "delete_question": return deleteQuestion(body);
+    case "create_exam": return createExam(body); case "update_exam_passages": return updateExamPassages(body); case "create_passage": return createPassage(body); case "update_passage": return updatePassage(body); case "delete_passage": return deletePassage(body); case "reorder_passages": return reorderPassages(body); case "generate_order": return generateOrderQuestion(body); case "update_question": return updateQuestion(body); case "set_question_status": return setQuestionStatus(body); case "delete_question": return deleteQuestion(body);
     case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_exam": return studentExam(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession);
     default: throw new ApiError(404, "알 수 없는 READY 작업입니다.");
   }
