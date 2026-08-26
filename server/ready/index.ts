@@ -188,14 +188,18 @@ async function studentExamAccess(examId: string, student: Student) {
 }
 function summary(attempts: any[]) { return { completed: new Set(attempts.map(item => item.question_id)).size, attempts: attempts.length, accuracy: attempts.length ? Math.round(attempts.filter(item => item.correct).length / attempts.length * 100) : 0 }; }
 async function availableExamQuestions(examId: string) {
-  const passages = rows<any[]>(await db.from("ready_passages").select("id,title,position").eq("exam_id", examId).order("position").order("created_at"));
+  const links = rows<any[]>(await db.from("ready_exam_passages").select("passage_id,position").eq("exam_id", examId).order("position"));
+  const linkedIds = links.map(item => item.passage_id);
+  const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,display_order").in("id", linkedIds)) : [];
+  const byId = new Map(sourcePassages.map(item => [item.id, item]));
+  const passages = links.map(link => ({ ...byId.get(link.passage_id), position: link.position })).filter(item => item.id);
   const ids = passages.map(item => item.id), questions = ids.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,difficulty,payload,status").in("passage_id", ids).eq("status", "available").order("created_at")) : [];
   return { passages, questions };
 }
 async function studentBootstrap(session: ReadySession) {
   const student = await studentForSession(session), exams = rows<any[]>(await db.from("ready_exams").select("id,school,grade,title,description,created_at").eq("school", student.school).eq("grade", student.grade).order("created_at", { ascending: false }));
-  const examIds = exams.map(item => item.id), passages = examIds.length ? rows<any[]>(await db.from("ready_passages").select("id,exam_id").in("exam_id", examIds)) : [], passageIds = passages.map(item => item.id), questions = passageIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id").in("passage_id", passageIds).eq("status", "available")) : [];
-  return { student: { id: student.id, name: student.name, school: student.school, grade: student.grade }, exams: exams.map(exam => ({ ...exam, passageCount: passages.filter(passage => passage.exam_id === exam.id).length, questionCount: questions.filter(question => passages.find(passage => passage.id === question.passage_id)?.exam_id === exam.id).length })) };
+  const examIds = exams.map(item => item.id), links = examIds.length ? rows<any[]>(await db.from("ready_exam_passages").select("exam_id,passage_id").in("exam_id", examIds)) : [], passageIds = [...new Set(links.map(item => item.passage_id))], questions = passageIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id").in("passage_id", passageIds).eq("status", "available")) : [];
+  return { student: { id: student.id, name: student.name, school: student.school, grade: student.grade }, exams: exams.map(exam => { const ids = new Set(links.filter(link => link.exam_id === exam.id).map(link => link.passage_id)); return { ...exam, passageCount: ids.size, questionCount: questions.filter(question => ids.has(question.passage_id)).length }; }) };
 }
 async function studentExam(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), exam = await studentExamAccess(examId, student), { passages, questions } = await availableExamQuestions(examId), questionIds = questions.map(item => item.id), attempts = questionIds.length ? rows<any[]>(await db.from("ready_attempts").select("question_id,correct,created_at").eq("student_id", student.id).in("question_id", questionIds)) : [];
@@ -215,12 +219,16 @@ async function studentQuestions(body: any, session: ReadySession) {
 async function submitAttempt(body: any, session: ReadySession) {
   const student = await studentForSession(session), questionId = required(body.questionId, "문제", 80), question = rows<any>(await db.from("ready_questions").select("id,type,payload,status,passage_id").eq("id", questionId).maybeSingle());
   if (!question || question.status !== "available") throw new ApiError(404, "현재 풀 수 없는 문제입니다.");
-  const passage = rows<any>(await db.from("ready_passages").select("exam_id").eq("id", question.passage_id).maybeSingle()); if (!passage) throw new ApiError(404, "지문을 찾지 못했습니다."); await studentExamAccess(passage.exam_id, student);
+  const passage = rows<any>(await db.from("ready_passages").select("exam_id").eq("id", question.passage_id).maybeSingle()); if (!passage) throw new ApiError(404, "지문을 찾지 못했습니다.");
+  const examId = clean(body.examId, 80) || clean(passage.exam_id, 80);
+  const link = await db.from("ready_exam_passages").select("exam_id").eq("exam_id", examId).eq("passage_id", question.passage_id).maybeSingle();
+  if (link.error || !link.data) throw new ApiError(404, "이 Exam에 없는 문제입니다.");
+  await studentExamAccess(examId, student);
   if (question.type !== "order") throw new ApiError(400, "현재는 ORDER 문제만 채점합니다.");
   const order = Array.isArray(body.order) ? body.order.map((id: unknown) => clean(id, 100)) : [], correctOrder = question.payload.correctOrder.map(String);
   if (JSON.stringify([...order].sort()) !== JSON.stringify([...correctOrder].sort())) throw new ApiError(400, "응답 항목이 문제와 일치하지 않습니다.");
   const elapsed_ms = Math.max(0, Math.min(86_400_000, Math.round(Number(body.elapsedMs) || 0)));
-  const result = await db.from("ready_attempts").insert({ student_id: student.id, question_id: questionId, response: { type: "order", order }, correct: isCorrectOrder(order, correctOrder), elapsed_ms }).select("id,correct,created_at").single();
+  const result = await db.from("ready_attempts").insert({ student_id: student.id, exam_id: examId, question_id: questionId, response: { type: "order", order }, correct: isCorrectOrder(order, correctOrder), elapsed_ms }).select("id,correct,created_at").single();
   return { attempt: rows(result) };
 }
 
