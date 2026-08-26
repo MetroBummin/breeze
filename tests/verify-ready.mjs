@@ -85,6 +85,7 @@ assert.match(edge, /authenticate\(req, "student"\)/, 'Student APIs do not requir
 assert.match(edge, /student_id: student\.id/, 'Attempt student identity does not come from the authenticated session');
 assert.match(edge, /studentExamAccess/, 'Server does not check Exam access from the authenticated student');
 assert.match(edge, /"school", student\.school[\s\S]*"grade", student\.grade/, 'Exam is not constrained by student school and grade');
+assert.match(edge, /async function deleteStudent[\s\S]*학습기록 .*건 때문에 삭제할 수 없습니다/, 'Student deletion does not preserve attempt history');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
 
@@ -98,6 +99,9 @@ assert.doesNotMatch(app + adminApp, /studySetId|publicationId|publish_set/, 'Fro
 assert.doesNotMatch(app, /main_idea|sentence_translation|vocabulary/, 'A future question type was implemented early');
 assert.doesNotMatch(app, /submit_attempt[^\n]*studentId|studentId[^\n]*submit_attempt/, 'Student can choose the attempt owner');
 assert.match(adminApp, /admin_login/, 'Admin session login is missing');
+assert.match(adminApp, /student-school-filter[\s\S]*student-grade-filter/, 'Student school/grade filters are missing');
+assert.match(adminApp, /confirmation.*DELETE|DELETE.*confirmation/, 'Student DELETE confirmation is missing');
+assert.doesNotMatch(adminApp, /reorder_students|saveGroupOrder/, 'Student manual ordering remains in the admin UI');
 assert.doesNotMatch(app + adminApp + readyConfig, /SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY|READY_ADMIN_PASSWORD|READY_TEACHER_KEY/, 'A server secret name/value leaked into frontend runtime code');
 
 console.log('READY core checks passed');

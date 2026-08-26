@@ -16,7 +16,7 @@ function supabaseAdminKey() {
   return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", supabaseAdminKey(), { auth: { persistSession: false } });
-const adminOps = new Set(["teacher_bootstrap", "create_exam", "create_passage", "generate_order", "update_question", "set_question_status", "delete_question", "create_student", "set_student_pin", "set_student_active", "reorder_students"]);
+const adminOps = new Set(["teacher_bootstrap", "create_exam", "create_passage", "generate_order", "update_question", "set_question_status", "delete_question", "create_student", "set_student_pin", "set_student_active", "delete_student"]);
 const studentOps = new Set(["student_bootstrap", "student_exam", "student_questions", "submit_attempt"]);
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
 
@@ -139,13 +139,16 @@ async function setStudentActive(body: any) {
   if (!active) await db.from("ready_sessions").update({ revoked_at: new Date().toISOString() }).eq("actor_type", "student").eq("student_id", studentId).is("revoked_at", null);
   return { student };
 }
-async function reorderStudents(body: any) {
-  const school = required(body.school, "학교", 80), grade = required(body.grade, "학년", 40), ids = Array.isArray(body.studentIds) ? body.studentIds.map((id: unknown) => clean(id, 80)).filter(Boolean) : [];
-  if (!ids.length || new Set(ids).size !== ids.length) throw new ApiError(400, "학생 순서가 올바르지 않습니다.");
-  const found = rows<any[]>(await db.from("ready_students").select("id").eq("school", school).eq("grade", grade).in("id", ids));
-  if (found.length !== ids.length) throw new ApiError(400, "같은 학교·학년 학생만 함께 정렬할 수 있습니다.");
-  for (const [sort_order, id] of ids.entries()) { const result = await db.from("ready_students").update({ sort_order }).eq("id", id); if (result.error) throw new ApiError(500, result.error.message); }
-  return { reordered: ids };
+async function deleteStudent(body: any) {
+  const studentId = required(body.studentId, "학생", 80);
+  if (clean(body.confirmation, 10) !== "DELETE") throw new ApiError(400, "DELETE를 정확히 입력해 주세요.");
+  const attempts = await db.from("ready_attempts").select("id", { count: "exact", head: true }).eq("student_id", studentId);
+  if (attempts.error) throw new ApiError(500, attempts.error.message);
+  if ((attempts.count || 0) > 0) throw new ApiError(409, `학습기록 ${attempts.count}건 때문에 삭제할 수 없습니다.`, { attempts: attempts.count });
+  const result = await db.from("ready_students").delete().eq("id", studentId).select("id").maybeSingle();
+  if (result.error) throw new ApiError(500, result.error.message);
+  if (!result.data) throw new ApiError(404, "학생을 찾지 못했습니다.");
+  return { deleted: studentId };
 }
 
 async function teacherBootstrap() {
@@ -235,7 +238,7 @@ async function submitAttempt(body: any, session: ReadySession) {
 async function dispatch(op: string, body: any, session: ReadySession | null) {
   switch (op) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);
-    case "teacher_bootstrap": return teacherBootstrap(); case "create_student": return createStudent(body); case "set_student_pin": return setStudentPin(body); case "set_student_active": return setStudentActive(body); case "reorder_students": return reorderStudents(body);
+    case "teacher_bootstrap": return teacherBootstrap(); case "create_student": return createStudent(body); case "set_student_pin": return setStudentPin(body); case "set_student_active": return setStudentActive(body); case "delete_student": return deleteStudent(body);
     case "create_exam": return createExam(body); case "create_passage": return createPassage(body); case "generate_order": return generateOrderQuestion(body); case "update_question": return updateQuestion(body); case "set_question_status": return setQuestionStatus(body); case "delete_question": return deleteQuestion(body);
     case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_exam": return studentExam(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession);
     default: throw new ApiError(404, "알 수 없는 READY 작업입니다.");
