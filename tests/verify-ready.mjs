@@ -98,6 +98,9 @@ assert.match(edge, /async function reorderPassages/, 'Passage Library order cann
 assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
 assert.match(edge, /translateSentences/, 'Sentence translations are not precomputed server-side');
 assert.match(edge, /sentenceRows/, 'Table imports do not preserve explicit sentence rows');
+assert.match(edge, /insert\(pieces\.map\(\(text, sentence_index\) => \(\{ passage_id: passage\.id, sentence_index, text, translation:/, 'Teacher sentence translations are not inserted with their sentence rows');
+assert.match(edge, /const suppliedTranslations[\s\S]*const passage =/, 'Teacher row validation happens after Passage creation and can leave a partial write');
+assert.match(edge, /if \(!suppliedTranslations\) await preparePassageStudy/, 'Teacher translations still trigger the follow-up AI/update pipeline');
 assert.match(edge, /async function deleteStudent[\s\S]*학습기록 .*건 때문에 삭제할 수 없습니다/, 'Student deletion does not preserve attempt history');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
