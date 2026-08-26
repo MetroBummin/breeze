@@ -10,8 +10,8 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 
 ```text
 영어/한국어 TSV 붙여넣기 → Preview/Edit → Passage 저장
-→ Passage 여러 개 선택 → Exam 생성
-→ 학생 PIN 로그인 → Exam → Passage Reader
+→ Passage 여러 개 선택 → 학교/학년 시험범위에 배정
+→ 학생 PIN 로그인 → 현재 시험범위 Passage → Reader
 ```
 
 ## 데이터 계약
@@ -19,8 +19,9 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 - TSV 한 행은 `PassageSentence` 한 개입니다.
 - 1열은 영어, 2열은 한국어 해석이며 서버가 다시 분리하거나 번역하지 않습니다.
 - Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
-- Exam과 선택 Passage 연결은 `ready_create_exam_with_passages` 한 transaction으로 저장합니다.
+- 학교/학년별 현재 시험범위와 Passage 연결은 `ready_set_current_scope_passages` 한 transaction으로 저장합니다.
 - Passage 소속의 Source of Truth는 `ready_exam_passages`입니다.
+- `ready_exams`는 기록 분리를 위한 내부 구현이며 학생과 관리자에게 생성·선택 개념을 노출하지 않습니다.
 - StudySet/Publication은 과거 attempt 감사용 데이터일 뿐 신규 runtime에서 사용하지 않습니다.
 
 ## 로컬 확인
@@ -56,5 +57,5 @@ npx supabase db push --linked
 npx supabase functions deploy ready --no-verify-jwt
 ```
 
-삭제는 서버의 `delete_impact` 결과를 먼저 보여줍니다. Attempt나 학습 이벤트가 없을 때만
-`DELETE` 확인 후 hard delete하며, 기록이 있으면 연결 수와 함께 차단합니다.
+삭제 전 서버의 `delete_impact`가 연결 수를 계산합니다. 관리자가 확인하면 Student, Passage,
+시험범위별 cascade RPC가 Attempt와 학습 이벤트까지 하나의 transaction에서 함께 삭제합니다.

@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="../../styles/base.css" />
     <link rel="stylesheet" href="../ready.css" />
     <script defer src="../config.js"></script>
-    <script type="module" src="app.js?v=golden-path-1"></script>
+    <script type="module" src="app.js?v=scope-reader-1"></script>
   </head>
   <body data-ready-mode="admin">
     <div id="app">
@@ -45,7 +45,7 @@
             Students</button
           ><button class="navbtn" type="button" data-route="passages">
             Passages</button
-          ><button class="navbtn" type="button" data-route="exams">Exams</button>
+          ><button class="navbtn" type="button" data-route="scopes">시험범위</button>
         </nav>
         <button
           id="theme-toggle"
@@ -293,10 +293,10 @@
           </div>
           <div id="admin-students"></div>
         </section>
-        <section class="view" id="v-exams">
+        <section class="view" id="v-scopes">
           <div class="page-head">
             <div>
-              <p class="eyebrow">EXAMS</p>
+              <p class="eyebrow">CURRENT SCOPE</p>
               <h1>시험범위</h1>
             </div>
             <button id="refresh-exams" class="button quiet" type="button">
@@ -404,7 +404,7 @@
       >
         <div class="sheet-head">
           <div>
-            <p class="eyebrow">SAFE DELETE</p>
+            <p class="eyebrow">DELETE</p>
             <h2 id="delete-title">삭제 확인</h2>
           </div>
           <button

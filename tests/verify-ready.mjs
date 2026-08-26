@@ -104,7 +104,7 @@ assert.match(edge, /studentExamAccess/, 'Server does not check Exam access from 
 assert.match(edge, /"school", student\.school[\s\S]*"grade", student\.grade/, 'Exam is not constrained by student school and grade');
 assert.match(edge, /ready_exam_passages/, 'Runtime does not use the Exam-to-Passage relationship');
 assert.match(edge, /exam_id: examId/, 'Attempt does not retain the verified Exam context');
-assert.match(edge, /async function updateExamPassages/, 'Exam Passage range cannot be edited');
+assert.match(edge, /async function setScopePassages[\s\S]*ready_set_current_scope_passages/, 'Current Scope Passage range cannot be edited atomically');
 assert.doesNotMatch(edge, /async function reorderPassages|reorder_passages/, 'Passage drag reorder remains in the runtime');
 assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
 assert.doesNotMatch(edge, /translateSentences|createPassageBatch|retryPassageStudy/, 'Legacy Passage AI/batch mutation paths remain active');
@@ -112,7 +112,8 @@ assert.match(edge, /sentenceRows/, 'Table imports do not preserve explicit sente
 const createPassageBody = edge.match(/async function createPassage\(body: any\) \{[\s\S]*?\n\}/)?.[0] || '';
 assert.match(createPassageBody, /ready_create_passage_with_sentences/, 'Teacher rows are not saved through the atomic Passage RPC');
 assert.doesNotMatch(createPassageBody, /splitSentences|translateSentences|preparePassageStudy/, 'Passage import still re-splits or AI-processes teacher rows');
-assert.match(edge, /async function deleteImpact[\s\S]*ready_attempts[\s\S]*async function deleteStudent/, 'Student deletion does not inspect learning history');
+assert.match(edge, /async function deleteImpact[\s\S]*ready_attempts[\s\S]*ready_delete_student_cascade/, 'Student deletion does not report impact then cascade atomically');
+assert.match(edge, /ready_delete_passage_cascade/, 'Passage deletion is not atomic');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
 
@@ -125,19 +126,22 @@ assert.match(atomicPassageSql, /ready_create_passage_with_sentences/, 'Atomic Pa
 assert.match(atomicPassageSql, /insert into public\.ready_passages[\s\S]*insert into public\.ready_passage_sentences/, 'Passage and sentence rows are not in one database transaction');
 assert.match(atomicPassageSql, /with ordinality/, 'Pasted row order is not preserved as sentence_index');
 assert.doesNotMatch(app, /submit_attempt|data-order-move|student_questions/, 'ORDER UI remains in the Golden Path');
-assert.match(app, /student_passage[\s\S]*data-study-toggle[\s\S]*preview-translation/, 'Student Passage Reader does not show stored row translations');
+assert.match(app, /student_bootstrap[\s\S]*renderScope[\s\S]*student_passage[\s\S]*reading-passage[\s\S]*preview-translation/, 'Student does not enter the current Scope and read stored translations');
+assert.doesNotMatch(app, /student_exam|renderExams|data-exam-id|data-back-exams/, 'Student Exam selection remains in the UI');
 assert.doesNotMatch(app + adminApp, /studySetId|publicationId|publish_set/, 'Frontend still depends on StudySet or Publication');
 assert.doesNotMatch(app, /main_idea|sentence_translation|vocabulary/, 'A future question type was implemented early');
 assert.match(adminApp, /admin_login/, 'Admin session login is missing');
 assert.match(adminApp, /student-school-filter[\s\S]*student-grade-filter/, 'Student school/grade filters are missing');
-assert.match(adminApp, /confirmation.*DELETE|DELETE.*confirmation/, 'Student DELETE confirmation is missing');
-assert.match(adminApp, /data-update-exam/, 'Exam Passage checkbox editing is missing');
-assert.match(adminApp, /data-select-passage[\s\S]*create-exam-from-passages/, 'Passage checkbox to Exam flow is missing');
+assert.doesNotMatch(adminApp, /confirmation.*DELETE|DELETE.*confirmation/, 'Typed DELETE confirmation remains in the UI');
+assert.match(adminApp, /delete-actions[\s\S]*data-close-delete[\s\S]*type="submit">삭제/, 'READY delete confirmation modal is missing');
+assert.match(adminApp, /data-set-scope/, 'Scope Passage checkbox editing is missing');
+assert.match(adminApp, /data-select-passage[\s\S]*assign-passages-to-scope/, 'Passage checkbox to Scope assignment flow is missing');
+assert.doesNotMatch(adminApp, /data-delete-scope|delete_scope/, 'Permanent Scope slots can be deleted');
 assert.doesNotMatch(adminApp, /reorder_passages|draggedPassageId|draggable="true"/, 'Passage drag order remains in the UI');
 assert.match(adminApp, /update-passage-form/, 'Passage editing is missing');
 assert.match(adminApp, /parsePassageRows[\s\S]*renderImportPreview/, 'Paste does not stop at editable Preview before saving');
 assert.match(adminHtml, /passage-import-modal[\s\S]*지문 미리보기/, 'Passage Preview sheet is missing');
-assert.match(adminHtml, /data-route="students"[\s\S]*data-route="passages"[\s\S]*data-route="exams"/, 'Admin navigation order is incorrect');
+assert.match(adminHtml, /data-route="students"[\s\S]*data-route="passages"[\s\S]*data-route="scopes"/, 'Admin navigation order is incorrect');
 assert.doesNotMatch(adminHtml, /create-exam-form|새 Exam|Exam 만들기/, 'Exam list view still exposes Exam creation');
 assert.doesNotMatch(adminApp, /reorder_students|saveGroupOrder/, 'Student manual ordering remains in the admin UI');
 assert.doesNotMatch(app + adminApp + readyConfig, /SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY|READY_ADMIN_PASSWORD|READY_TEACHER_KEY/, 'A server secret name/value leaked into frontend runtime code');

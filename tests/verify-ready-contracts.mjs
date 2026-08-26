@@ -13,28 +13,38 @@ const clientOps = new Set([...admin.matchAll(/call\(['"]([a-z_]+)['"]/g), ...stu
 const serverOps = new Set([...edge.matchAll(/case "([a-z_]+)"/g)].map(match => match[1]));
 
 for (const op of clientOps) assert(serverOps.has(op), `Frontend operation has no server contract: ${op}`);
-for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active']) {
+for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active', 'create_exam', 'update_exam_passages', 'delete_exam', 'delete_scope', 'student_exam']) {
   assert(!serverOps.has(removed), `Legacy operation is still dispatched: ${removed}`);
 }
 
 assert.match(admin, /data-select-passage/, 'Passage Library checkbox is missing');
-assert.match(admin, /create-exam-from-passages[\s\S]*create_exam/, 'Selected Passages do not create an Exam');
+assert.match(admin, /assign-passages-to-scope[\s\S]*assign_scope_passages/, 'Selected Passages are not assigned to a current Scope');
 assert.doesNotMatch(admin, /draggable="true"|reorder_passages|draggedPassageId/, 'Passage drag reorder remains in the critical path');
 assert.match(admin, /delete_impact/, 'Delete UI does not fetch server-side impact counts');
-assert.match(edge, /ready_create_exam_with_passages/, 'Exam and Passage links are not created atomically');
+assert.match(edge, /ready_set_current_scope_passages/, 'Scope and Passage links are not updated atomically');
 assert.match(edge, /async function countWhere[\s\S]*?\.select\("\*", \{ count: "exact", head: true \}\)/, 'Delete impact counting assumes every relation has an id column');
+assert.match(edge, /ready_delete_student_cascade[\s\S]*ready_delete_passage_cascade/, 'Administrator deletion is not delegated to atomic cascade RPCs');
 assert.match(api, /READ_ONLY_OPS[\s\S]*const attempts = READ_ONLY_OPS\.has\(op\) \? 2 : 1/, 'Mutation requests can still retry');
+assert.doesNotMatch(student, /student_exam|data-exam-id|data-back-exams|renderExams/, 'Student still has an Exam selection step');
+assert.match(student, /student_bootstrap[\s\S]*state\.scope=data\.scope[\s\S]*renderScope/, 'Student does not enter the current Scope directly');
+assert.match(student, /reading-passage[\s\S]*reading-sentence/, 'Reader is not rendered as a continuous passage');
 
 const migrations = readdirSync(resolve(root, 'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
 assert.deepEqual(migrations, [
   '20260826150000_ready_current_baseline.sql',
   '20260826155500_ready_atomic_passage_import.sql',
   '20260826161000_ready_golden_path_stabilization.sql',
+  '20260826170000_ready_scope_simplification.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
 assert.match(baseline, /create table if not exists public\.ready_exam_passages/);
 assert.match(baseline, /create table if not exists public\.ready_attempts/);
 assert.doesNotMatch(baseline, /ready_study_sets|ready_publications|ready_publication_questions/, 'Clean schema recreates legacy runtime tables');
+const scopeMigration = read(`supabase/migrations/${migrations[3]}`);
+assert.match(scopeMigration, /ready_exams_one_current_scope_idx/, 'School and grade can have multiple current Scopes');
+assert.match(scopeMigration, /\('중앙고', '1학년'\)[\s\S]*\('한빛고', '2학년'\)/, 'Eight permanent Scope slots are not seeded');
+assert.doesNotMatch(scopeMigration + edge + admin, /delete_scope|ready_delete_scope_cascade|data-delete-scope/, 'Permanent Scope slots can still be deleted');
+assert.match(scopeMigration, /set_config\('ready\.allow_cascade_delete', 'on', true\)/, 'Cascade deletion cannot safely remove append-only Attempts');
 
 console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);
