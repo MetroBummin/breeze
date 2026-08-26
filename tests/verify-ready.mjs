@@ -70,7 +70,8 @@ assert.match(authSql, /grant all on table public\.ready_sessions, public\.ready_
 const edge = readFileSync(resolve(root, 'server/ready/index.ts'), 'utf8');
 assert.match(edge, /READY_AI_PROVIDER/, 'AI provider is hard-coded');
 assert.match(edge, /READY_AI_MODEL/, 'AI model is hard-coded');
-assert.match(edge, /output_config:\s*\{ format: \{ type: "json_schema", schema: ORDER_SCHEMA \}/, 'Claude Sonnet 5 structured JSON output is not configured');
+assert.match(edge, /function anthropicOutputSchema/, 'Claude schema compatibility transform is missing');
+assert.match(edge, /output_config:\s*\{ format: \{ type: "json_schema", schema: anthropicOutputSchema\(ORDER_SCHEMA\) \}/, 'Claude Sonnet 5 structured JSON output is not configured');
 assert.doesNotMatch(edge, /model, max_tokens: 5000, temperature: 0/, 'Claude Sonnet 5 rejects temperature: 0');
 assert.doesNotMatch(edge, /tool_choice: \{ type: "tool", name: "submit_order" \}/, 'Forced tool use conflicts with Claude 5 adaptive thinking');
 assert.match(edge, /SUPABASE_SECRET_KEYS/, 'READY does not use Supabase server-side secret keys');

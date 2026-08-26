@@ -151,6 +151,15 @@ const ORDER_SCHEMA = {
   },
 };
 
+function anthropicOutputSchema(schema: any): any {
+  // Anthropic's raw Messages API does not transform schemas like its SDKs do.
+  // These bounds are still enforced by validateGeneratedOrder after parsing.
+  if (Array.isArray(schema)) return schema.map(anthropicOutputSchema);
+  if (!schema || typeof schema !== "object") return schema;
+  const { minimum, maximum, minLength, maxLength, minItems, maxItems, pattern, ...supported } = schema;
+  return Object.fromEntries(Object.entries(supported).map(([key, value]) => [key, anthropicOutputSchema(value)]));
+}
+
 function orderPrompt(sentences: Array<{ id: string; sentence_index: number; text: string }>, difficulty: number) {
   return `You create one ORDER question for a Korean English academy.
 Understand discourse flow (introduction, claim, explanation, example, contrast, cause/effect, result, conclusion) and make semantic chunks. Never split mechanically by equal length.
@@ -177,7 +186,7 @@ async function generateWithAnthropic(prompt: string) {
       // Claude Sonnet 5 supports native schema-constrained JSON output. This
       // avoids a forced client-tool call, which is incompatible with adaptive
       // thinking's tool-choice restrictions on Claude 5.
-      output_config: { format: { type: "json_schema", schema: ORDER_SCHEMA } },
+      output_config: { format: { type: "json_schema", schema: anthropicOutputSchema(ORDER_SCHEMA) } },
     }),
   });
   const data = await response.json();
