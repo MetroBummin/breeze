@@ -66,6 +66,12 @@ assert.match(examSql, /add column if not exists school[\s\S]*add column if not e
 assert.match(examSql, /publication_id drop not null/, 'New attempts still require a Publication');
 assert.match(examSql, /status in \('draft', 'available'\)/, 'Question availability state is missing');
 
+const passageLibrarySql = readFileSync(resolve(root, 'sql/ready_passage_library_refactor.sql'), 'utf8');
+assert.match(passageLibrarySql, /create table if not exists public\.ready_exam_passages/, 'Exam-to-Passage join table is missing');
+assert.match(passageLibrarySql, /position integer not null/, 'Exam Passage order is missing');
+assert.match(passageLibrarySql, /add column if not exists exam_id uuid/, 'Attempt Exam context is missing');
+assert.match(passageLibrarySql, /disable trigger ready_attempts_no_update[\s\S]*enable trigger ready_attempts_no_update/, 'Attempt backfill does not restore append-only protection');
+
 const authSql = readFileSync(resolve(root, 'sql/ready_auth_migration.sql'), 'utf8');
 assert.match(authSql, /pin_hash = extensions\.crypt\(p_pin, pin_hash\)/, 'Student PIN is not verified against a password hash');
 assert.match(authSql, /extensions\.crypt\(p_pin, extensions\.gen_salt\('bf'/, 'Student PIN is not stored as bcrypt');
@@ -85,6 +91,10 @@ assert.match(edge, /authenticate\(req, "student"\)/, 'Student APIs do not requir
 assert.match(edge, /student_id: student\.id/, 'Attempt student identity does not come from the authenticated session');
 assert.match(edge, /studentExamAccess/, 'Server does not check Exam access from the authenticated student');
 assert.match(edge, /"school", student\.school[\s\S]*"grade", student\.grade/, 'Exam is not constrained by student school and grade');
+assert.match(edge, /ready_exam_passages/, 'Runtime does not use the Exam-to-Passage relationship');
+assert.match(edge, /exam_id: examId/, 'Attempt does not retain the verified Exam context');
+assert.match(edge, /async function updateExamPassages/, 'Exam Passage range cannot be edited');
+assert.match(edge, /async function reorderPassages/, 'Passage Library order cannot be persisted');
 assert.match(edge, /async function deleteStudent[\s\S]*학습기록 .*건 때문에 삭제할 수 없습니다/, 'Student deletion does not preserve attempt history');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
@@ -101,6 +111,10 @@ assert.doesNotMatch(app, /submit_attempt[^\n]*studentId|studentId[^\n]*submit_at
 assert.match(adminApp, /admin_login/, 'Admin session login is missing');
 assert.match(adminApp, /student-school-filter[\s\S]*student-grade-filter/, 'Student school/grade filters are missing');
 assert.match(adminApp, /confirmation.*DELETE|DELETE.*confirmation/, 'Student DELETE confirmation is missing');
+assert.match(adminApp, /create-passage-form[\s\S]*create_exam/, 'Passage Library to Exam flow is missing');
+assert.match(adminApp, /data-update-exam/, 'Exam Passage checkbox editing is missing');
+assert.match(adminApp, /reorder_passages/, 'Passage Library drag order is not saved');
+assert.match(adminApp, /update-passage-form/, 'Passage editing is missing');
 assert.doesNotMatch(adminApp, /reorder_students|saveGroupOrder/, 'Student manual ordering remains in the admin UI');
 assert.doesNotMatch(app + adminApp + readyConfig, /SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY|READY_ADMIN_PASSWORD|READY_TEACHER_KEY/, 'A server secret name/value leaked into frontend runtime code');
 
