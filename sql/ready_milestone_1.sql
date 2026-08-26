@@ -142,8 +142,11 @@ revoke all on public.ready_publications from anon, authenticated;
 revoke all on public.ready_publication_questions from anon, authenticated;
 revoke all on public.ready_attempts from anon, authenticated;
 revoke all on function public.ready_publish_study_set(uuid) from public, anon, authenticated;
+
+-- Edge Function의 server key만 RLS를 우회해 READY 데이터를 관리합니다.
+grant all on table public.ready_students, public.ready_study_sets, public.ready_passages,
+  public.ready_passage_sentences, public.ready_questions, public.ready_publications,
+  public.ready_publication_questions, public.ready_attempts to service_role;
 grant execute on function public.ready_publish_study_set(uuid) to service_role;
 
--- 최초 학생은 필요에 맞게 바꿔 실행합니다.
--- insert into public.ready_students(name, sort_order) values
---   ('김유빈', 10), ('김해성', 20), ('박지유', 30);
+-- 학생과 PIN은 migration 적용 후 READY 관리자 화면에서 추가합니다.

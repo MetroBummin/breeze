@@ -1,17 +1,15 @@
-const getConfig = () => window.BREEZE_CONFIG || {};
+const getConfig = () => window.READY_CONFIG || {};
 
-export async function readyApi(op, data = {}, teacherKey = '') {
-  const { SB_URL, SB_KEY } = getConfig();
-  if (!SB_URL || !SB_KEY) throw new Error('config.js의 Supabase 설정을 확인해 주세요.');
+export async function readyApi(op, data = {}, token = '') {
+  const { API_URL } = getConfig();
+  if (!API_URL) throw new Error('READY config.js의 API_URL을 확인해 주세요.');
   let response;
   try {
-    response = await fetch(`${SB_URL.replace(/\/$/, '')}/functions/v1/ready`, {
+    response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        apikey: SB_KEY,
-        authorization: `Bearer ${SB_KEY}`,
-        ...(teacherKey ? { 'x-ready-teacher-key': teacherKey } : {}),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ op, ...data }),
     });
@@ -20,6 +18,10 @@ export async function readyApi(op, data = {}, teacherKey = '') {
   }
   let body;
   try { body = await response.json(); } catch { body = {}; }
-  if (!response.ok) throw new Error(body.error || `READY 서버 오류 (${response.status})`);
+  if (!response.ok) {
+    const error = new Error(body.error || `READY 서버 오류 (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
   return body;
 }

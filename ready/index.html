@@ -11,82 +11,33 @@
   <link rel="stylesheet" href="../styles/tokens.css">
   <link rel="stylesheet" href="../styles/base.css">
   <link rel="stylesheet" href="ready.css">
-  <script defer src="../config.js"></script>
+  <script defer src="config.js"></script>
   <script type="module" src="app.js"></script>
 </head>
-<body>
+<body data-ready-mode="student">
 <div id="app">
   <header id="topbar">
-    <button id="logo" class="brand-button" type="button" data-route="student" aria-label="READY 학생 홈">
-      <span class="mark">Ready</span><span class="family">by Breeze</span>
-    </button>
-    <nav aria-label="주요 화면">
-      <button class="navbtn on" type="button" data-route="student">Student</button>
-      <button class="navbtn" type="button" data-route="teacher">Teacher</button>
-      <button class="navbtn" type="button" data-route="analytics">Review</button>
-    </nav>
-    <button id="theme-toggle" class="icon-button" type="button" aria-label="색상 모드 바꾸기">◐</button>
+    <button id="logo" class="brand-button" type="button" data-home aria-label="READY 학생 홈"><span class="mark">Ready</span><span class="family">by Breeze</span></button>
+    <div class="session-actions"><span id="session-name"></span><button id="theme-toggle" class="icon-button" type="button" aria-label="색상 모드 바꾸기">◐</button><button id="logout" class="button quiet small" type="button" hidden>로그아웃</button></div>
   </header>
-
   <main>
-    <section class="view on" id="v-student" aria-labelledby="student-title">
-      <div id="student-home">
-        <p class="eyebrow">READY TO LEARN</p>
-        <h1 id="student-title">오늘은 누가 공부하나요?</h1>
-        <p class="lead">이름을 선택하면 지금 열린 학습세트가 보여요.</p>
-        <div id="student-list" class="student-grid" aria-live="polite"></div>
-      </div>
-      <div id="student-sets" hidden></div>
-      <div id="student-player" hidden></div>
+    <section id="student-home" aria-labelledby="student-title">
+      <p class="eyebrow">READY TO LEARN</p><h1 id="student-title">오늘은 누가 공부하나요?</h1><p class="lead">이름을 선택하고 나만의 PIN을 입력하세요.</p>
+      <div id="student-list" class="student-grid" aria-live="polite"></div>
     </section>
-
-    <section class="view" id="v-teacher" aria-labelledby="teacher-title">
-      <div class="page-head">
-        <div><p class="eyebrow">TEACHER STUDIO</p><h1 id="teacher-title">ORDER 문제 만들기</h1></div>
-        <button id="refresh-teacher" class="button quiet" type="button">새로고침</button>
-      </div>
-      <div id="teacher-gate" class="gate card">
-        <h2>교사용 화면</h2>
-        <p>계정 대신 학원 공용 교사용 키를 사용합니다.</p>
-        <form id="teacher-key-form" class="inline-form">
-          <label><span>교사용 키</span><input id="teacher-key" type="password" autocomplete="current-password" required></label>
-          <button class="button primary" type="submit">열기</button>
-        </form>
-      </div>
-      <div id="teacher-workspace" hidden>
-        <form id="create-set-form" class="card form-card">
-          <div class="card-head"><div><span class="step">1</span><h2>새 학습세트</h2></div></div>
-          <div class="form-grid two">
-            <label><span>세트 이름</span><input name="title" maxlength="120" placeholder="예: 신흥고 1학기 중간고사" required></label>
-            <label><span>설명 <small>선택</small></span><input name="description" maxlength="500" placeholder="학생에게 보일 짧은 안내"></label>
-          </div>
-          <button class="button primary" type="submit">학습세트 만들기</button>
-        </form>
-        <div id="teacher-sets"></div>
-      </div>
+    <section id="pin-login" class="auth-wrap" hidden aria-labelledby="pin-title">
+      <button class="button quiet small" type="button" data-back-students>← 이름 선택</button>
+      <form id="pin-form" class="card auth-card">
+        <p class="eyebrow">STUDENT PIN</p><h1 id="pin-title"><span id="pin-student-name"></span> 학생</h1>
+        <label><span>개인 PIN</span><input id="student-pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" autocomplete="current-password" required></label>
+        <label class="remember"><input name="remember" type="checkbox"><span>이 기기에서 로그인 유지</span></label>
+        <button class="button primary" type="submit">학습 시작</button>
+      </form>
     </section>
-
-    <section class="view" id="v-analytics" aria-labelledby="analytics-title">
-      <div class="page-head">
-        <div><p class="eyebrow">ACTIONABLE REVIEW</p><h1 id="analytics-title">학생 학습 기록</h1></div>
-        <button id="refresh-analytics" class="button quiet" type="button">새로고침</button>
-      </div>
-      <div id="analytics-content" class="analytics-content"></div>
-    </section>
+    <section id="student-sets" hidden></section>
+    <section id="student-player" hidden></section>
   </main>
 </div>
-
-<div id="question-modal" class="modal" aria-hidden="true">
-  <div class="modal-scrim" data-close-modal></div>
-  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="question-modal-title">
-    <div class="sheet-head">
-      <div><p class="eyebrow">ORDER PREVIEW</p><h2 id="question-modal-title">문제 검수</h2></div>
-      <button class="icon-button" type="button" data-close-modal aria-label="닫기">×</button>
-    </div>
-    <div id="question-editor"></div>
-  </section>
-</div>
-
 <div id="busy" class="busy" hidden aria-live="assertive"><span class="spinner"></span><span>잠시만요…</span></div>
 <div id="toast" role="status"></div>
 </body>

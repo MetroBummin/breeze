@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>READY Admin · 고려에듀</title>
+  <meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme:light)"><meta name="theme-color" content="#171816" media="(prefers-color-scheme:dark)">
+  <link rel="icon" href="../../assets/favicon/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../styles/fonts.css"><link rel="stylesheet" href="../../styles/tokens.css"><link rel="stylesheet" href="../../styles/base.css"><link rel="stylesheet" href="../ready.css">
+  <script defer src="../config.js"></script><script type="module" src="app.js"></script>
+</head>
+<body data-ready-mode="admin">
+<div id="app">
+  <header id="topbar"><button id="logo" class="brand-button" type="button" data-route="studio"><span class="mark">Ready</span><span class="family">Admin</span></button><nav id="admin-nav" hidden><button class="navbtn on" type="button" data-route="studio">Studio</button><button class="navbtn" type="button" data-route="analytics">Review</button></nav><button id="theme-toggle" class="icon-button" type="button" aria-label="색상 모드 바꾸기">◐</button><button id="admin-logout" class="button quiet small" type="button" hidden>로그아웃</button></header>
+  <main>
+    <section id="admin-login" class="auth-wrap" aria-labelledby="admin-login-title"><form id="admin-login-form" class="card auth-card"><p class="eyebrow">READY ADMIN</p><h1 id="admin-login-title">관리자 로그인</h1><p class="lead">관리자 비밀번호는 로그인할 때 한 번만 서버에서 확인합니다.</p><label><span>관리자 비밀번호</span><input name="password" type="password" autocomplete="current-password" maxlength="200" required></label><button class="button primary" type="submit">관리자 화면 열기</button></form></section>
+    <section class="view" id="v-studio" aria-labelledby="teacher-title">
+      <div class="page-head"><div><p class="eyebrow">TEACHER STUDIO</p><h1 id="teacher-title">ORDER 문제 만들기</h1></div><button id="refresh-admin" class="button quiet" type="button">새로고침</button></div>
+      <section class="card form-card"><div class="card-head"><div><span class="step">0</span><h2>학생 관리</h2></div></div><form id="create-student-form" class="form-grid student-create"><label><span>학생 이름</span><input name="name" maxlength="40" required></label><label><span>개인 PIN</span><input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" autocomplete="new-password" required></label><label><span>정렬</span><input name="sortOrder" type="number" value="0"></label><button class="button primary" type="submit">학생 추가</button></form><div id="admin-students"></div></section>
+      <form id="create-set-form" class="card form-card"><div class="card-head"><div><span class="step">1</span><h2>새 학습세트</h2></div></div><div class="form-grid two"><label><span>세트 이름</span><input name="title" maxlength="120" required></label><label><span>설명 <small>선택</small></span><input name="description" maxlength="500"></label></div><button class="button primary" type="submit">학습세트 만들기</button></form>
+      <div id="teacher-sets"></div>
+    </section>
+    <section class="view" id="v-analytics" aria-labelledby="analytics-title"><div class="page-head"><div><p class="eyebrow">ACTIONABLE REVIEW</p><h1 id="analytics-title">학생 학습 기록</h1></div><button id="refresh-analytics" class="button quiet" type="button">새로고침</button></div><div id="analytics-content"></div></section>
+  </main>
+</div>
+<div id="question-modal" class="modal" aria-hidden="true"><div class="modal-scrim" data-close-modal></div><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="question-modal-title"><div class="sheet-head"><div><p class="eyebrow">ORDER PREVIEW</p><h2 id="question-modal-title">문제 검수</h2></div><button class="icon-button" type="button" data-close-modal aria-label="닫기">×</button></div><div id="question-editor"></div></section></div>
+<div id="busy" class="busy" hidden><span class="spinner"></span><span>잠시만요…</span></div><div id="toast" role="status"></div>
+</body>
+</html>
