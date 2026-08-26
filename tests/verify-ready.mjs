@@ -101,6 +101,7 @@ assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher 
 
 const app = readFileSync(resolve(root, 'ready/app.js'), 'utf8');
 const adminApp = readFileSync(resolve(root, 'ready/admin/app.js'), 'utf8');
+const adminHtml = readFileSync(resolve(root, 'ready/admin/index.html'), 'utf8');
 const readyConfig = readFileSync(resolve(root, 'ready/config.js'), 'utf8');
 assert.match(app, /submit_attempt/, 'Student attempts are not sent to the server');
 assert.match(app, /data-order-move="up"/, 'ORDER has no mobile-friendly non-drag control');
@@ -111,10 +112,11 @@ assert.doesNotMatch(app, /submit_attempt[^\n]*studentId|studentId[^\n]*submit_at
 assert.match(adminApp, /admin_login/, 'Admin session login is missing');
 assert.match(adminApp, /student-school-filter[\s\S]*student-grade-filter/, 'Student school/grade filters are missing');
 assert.match(adminApp, /confirmation.*DELETE|DELETE.*confirmation/, 'Student DELETE confirmation is missing');
-assert.match(adminApp, /create-passage-form[\s\S]*create_exam/, 'Passage Library to Exam flow is missing');
 assert.match(adminApp, /data-update-exam/, 'Exam Passage checkbox editing is missing');
 assert.match(adminApp, /reorder_passages/, 'Passage Library drag order is not saved');
 assert.match(adminApp, /update-passage-form/, 'Passage editing is missing');
+assert.match(adminHtml, /data-route="students"[\s\S]*data-route="passages"[\s\S]*data-route="exams"[\s\S]*data-route="analytics"/, 'Admin navigation order is incorrect');
+assert.doesNotMatch(adminHtml, /create-exam-form|새 Exam|Exam 만들기/, 'Exam list view still exposes Exam creation');
 assert.doesNotMatch(adminApp, /reorder_students|saveGroupOrder/, 'Student manual ordering remains in the admin UI');
 assert.doesNotMatch(app + adminApp + readyConfig, /SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY|READY_ADMIN_PASSWORD|READY_TEACHER_KEY/, 'A server secret name/value leaked into frontend runtime code');
 
