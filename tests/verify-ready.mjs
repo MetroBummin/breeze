@@ -6,6 +6,7 @@ import {
   isCorrectOrder, shuffled, splitSentences, validateGeneratedOrder, validateTeacherOrder,
 } from '../server/ready/order-core.mjs';
 import { bearerToken, randomSessionToken, secureEqual, sha256Hex, validPin } from '../server/ready/auth-core.mjs';
+import { parsePassageRows, validatePassageRows } from '../ready/admin/import-core.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sentences = [
@@ -54,6 +55,16 @@ assert.equal((await sha256Hex(sessionToken)).length, 64);
 assert.equal(secureEqual('same-secret', 'same-secret'), true);
 assert.equal(secureEqual('same-secret', 'other-secret'), false);
 
+const pasted = parsePassageRows("This is sentence one. This is sentence two.\t두 문장이 한 행에 있다.\n\nThe writer's long, quoted sentence remains intact.\t글쓴이의 긴 문장도 그대로 유지된다.");
+assert.deepEqual(pasted.errors, []);
+assert.equal(pasted.rows.length, 2, 'One pasted row was split again at punctuation');
+assert.equal(pasted.rows[0].text, 'This is sentence one. This is sentence two.');
+assert.equal(pasted.rows[1].text, "The writer's long, quoted sentence remains intact.");
+assert.match(parsePassageRows('English only\t').errors[0], /1번 행의 한국어 해석/);
+assert.match(parsePassageRows('\t한국어만').errors[0], /1번 행의 영어 문장/);
+assert.match(parsePassageRows('a\tb\textra').errors[0], /두 열/);
+assert.match(validatePassageRows([{ text:'', translation:'해석' }])[0], /1번 행의 영어 문장/);
+
 const sql = readFileSync(resolve(root, 'sql/ready_milestone_1.sql'), 'utf8');
 assert.match(sql, /ready_questions[\s\S]*type text[\s\S]*payload jsonb/, 'Question is no longer generic JSON-backed data');
 assert.match(sql, /ready_attempts_are_immutable[\s\S]*before update or delete/, 'Attempts are no longer append-only');
@@ -98,9 +109,9 @@ assert.match(edge, /async function reorderPassages/, 'Passage Library order cann
 assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
 assert.match(edge, /translateSentences/, 'Sentence translations are not precomputed server-side');
 assert.match(edge, /sentenceRows/, 'Table imports do not preserve explicit sentence rows');
-assert.match(edge, /insert\(pieces\.map\(\(text, sentence_index\) => \(\{ passage_id: passage\.id, sentence_index, text, translation:/, 'Teacher sentence translations are not inserted with their sentence rows');
-assert.match(edge, /const suppliedTranslations[\s\S]*const passage =/, 'Teacher row validation happens after Passage creation and can leave a partial write');
-assert.match(edge, /if \(!suppliedTranslations\) await preparePassageStudy/, 'Teacher translations still trigger the follow-up AI/update pipeline');
+const createPassageBody = edge.match(/async function createPassage\(body: any\) \{[\s\S]*?\n\}/)?.[0] || '';
+assert.match(createPassageBody, /ready_create_passage_with_sentences/, 'Teacher rows are not saved through the atomic Passage RPC');
+assert.doesNotMatch(createPassageBody, /splitSentences|translateSentences|preparePassageStudy/, 'Passage import still re-splits or AI-processes teacher rows');
 assert.match(edge, /async function deleteStudent[\s\S]*학습기록 .*건 때문에 삭제할 수 없습니다/, 'Student deletion does not preserve attempt history');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
@@ -109,6 +120,10 @@ const app = readFileSync(resolve(root, 'ready/app.js'), 'utf8');
 const adminApp = readFileSync(resolve(root, 'ready/admin/app.js'), 'utf8');
 const adminHtml = readFileSync(resolve(root, 'ready/admin/index.html'), 'utf8');
 const readyConfig = readFileSync(resolve(root, 'ready/config.js'), 'utf8');
+const atomicPassageSql = readFileSync(resolve(root, 'supabase/migrations/20260826155500_ready_atomic_passage_import.sql'), 'utf8');
+assert.match(atomicPassageSql, /ready_create_passage_with_sentences/, 'Atomic Passage import RPC is missing');
+assert.match(atomicPassageSql, /insert into public\.ready_passages[\s\S]*insert into public\.ready_passage_sentences/, 'Passage and sentence rows are not in one database transaction');
+assert.match(atomicPassageSql, /with ordinality/, 'Pasted row order is not preserved as sentence_index');
 assert.match(app, /submit_attempt/, 'Student attempts are not sent to the server');
 assert.match(app, /data-order-move="up"/, 'ORDER has no mobile-friendly non-drag control');
 assert.match(app, /지문별[\s\S]*유형별[\s\S]*오답/, 'Student Exam browsing modes are missing');
@@ -121,6 +136,8 @@ assert.match(adminApp, /confirmation.*DELETE|DELETE.*confirmation/, 'Student DEL
 assert.match(adminApp, /data-update-exam/, 'Exam Passage checkbox editing is missing');
 assert.match(adminApp, /reorder_passages/, 'Passage Library drag order is not saved');
 assert.match(adminApp, /update-passage-form/, 'Passage editing is missing');
+assert.match(adminApp, /parsePassageRows[\s\S]*renderImportPreview/, 'Paste does not stop at editable Preview before saving');
+assert.match(adminHtml, /passage-import-modal[\s\S]*지문 미리보기/, 'Passage Preview sheet is missing');
 assert.match(adminHtml, /data-route="students"[\s\S]*data-route="passages"[\s\S]*data-route="exams"[\s\S]*data-route="analytics"/, 'Admin navigation order is incorrect');
 assert.doesNotMatch(adminHtml, /create-exam-form|새 Exam|Exam 만들기/, 'Exam list view still exposes Exam creation');
 assert.doesNotMatch(adminApp, /reorder_students|saveGroupOrder/, 'Student manual ordering remains in the admin UI');
