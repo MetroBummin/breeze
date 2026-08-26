@@ -83,7 +83,7 @@ const edge = readFileSync(resolve(root, 'server/ready/index.ts'), 'utf8');
 assert.match(edge, /READY_AI_PROVIDER/, 'AI provider is hard-coded');
 assert.match(edge, /READY_AI_MODEL/, 'AI model is hard-coded');
 assert.match(edge, /function anthropicOutputSchema/, 'Claude schema compatibility transform is missing');
-assert.match(edge, /output_config:\s*\{ format: \{ type: "json_schema", schema: anthropicOutputSchema\(ORDER_SCHEMA\) \}/, 'Claude Sonnet 5 structured JSON output is not configured');
+assert.match(edge, /output_config:\s*\{ format: \{ type: "json_schema", schema: anthropicOutputSchema\(schema\) \}/, 'Claude Sonnet 5 structured JSON output is not configured');
 assert.doesNotMatch(edge, /model, max_tokens: 5000, temperature: 0/, 'Claude Sonnet 5 rejects temperature: 0');
 assert.doesNotMatch(edge, /tool_choice: \{ type: "tool", name: "submit_order" \}/, 'Forced tool use conflicts with Claude 5 adaptive thinking');
 assert.match(edge, /SUPABASE_SECRET_KEYS/, 'READY does not use Supabase server-side secret keys');
@@ -95,6 +95,8 @@ assert.match(edge, /ready_exam_passages/, 'Runtime does not use the Exam-to-Pass
 assert.match(edge, /exam_id: examId/, 'Attempt does not retain the verified Exam context');
 assert.match(edge, /async function updateExamPassages/, 'Exam Passage range cannot be edited');
 assert.match(edge, /async function reorderPassages/, 'Passage Library order cannot be persisted');
+assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
+assert.match(edge, /translateSentences/, 'Sentence translations are not precomputed server-side');
 assert.match(edge, /async function deleteStudent[\s\S]*학습기록 .*건 때문에 삭제할 수 없습니다/, 'Student deletion does not preserve attempt history');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
