@@ -1,60 +1,65 @@
 import { readyApi } from './api.js';
 
-const $ = selector => document.querySelector(selector);
-const $$ = selector => [...document.querySelectorAll(selector)];
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const SESSION_KEY = 'ready-student-session';
-const state = { token:'', student:null, selectedStudent:null, sets:[], publication:null, questions:[], questionIndex:0, startedAt:0 };
+const state = { token:'', student:null, selectedStudent:null, exams:[], exam:null, examData:null, questions:[], questionIndex:0, startedAt:0 };
 let busyCount = 0, toastTimer;
+const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const typeName = type => type === 'order' ? 'ORDER' : String(type || '문제').toUpperCase();
+function busy(on,label='잠시만요…'){busyCount=Math.max(0,busyCount+(on?1:-1));$('#busy').hidden=!busyCount;$('#busy span:last-child').textContent=label;}
+function toast(message){$('#toast').textContent=message;$('#toast').classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('on'),3200);}
+function theme(next){const dark=next==='dark';document.documentElement.classList.toggle('dark',dark);document.body.classList.toggle('dark',dark);localStorage.setItem('ready-theme',next);}
+async function call(op,data={},token=state.token,label='잠시만요…'){busy(true,label);try{return await readyApi(op,data,token);}finally{busy(false);}}
+function clearSession(){localStorage.removeItem(SESSION_KEY);state.token='';state.student=null;state.exams=[];state.exam=null;state.examData=null;}
+async function safely(job,{auth=true}={}){try{return await job();}catch(error){if(auth&&error.status===401){clearSession();await chooseStudent();}toast(error.message||'요청을 처리하지 못했습니다.');return null;}}
+function show(...ids){['student-home','pin-login','student-sets','student-player'].forEach(id=>$('#'+id).hidden=!ids.includes(id));}
 
-const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[char]);
-function setBusy(on, label='잠시만요…') { busyCount=Math.max(0,busyCount+(on?1:-1)); $('#busy').hidden=!busyCount; $('#busy span:last-child').textContent=label; }
-function toast(message) { $('#toast').textContent=message; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('#toast').classList.remove('on'),3200); }
-function applyTheme(theme) { const dark=theme==='dark'; document.documentElement.classList.toggle('dark',dark); document.body.classList.toggle('dark',dark); localStorage.setItem('ready-theme',theme); }
-function initTheme() { applyTheme(localStorage.getItem('ready-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')); }
-function savedSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY)||'null'); } catch { return null; } }
-function clearSession() { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); state.token=''; state.student=null; }
-function saveSession(session) { clearSession(); (session.remember?localStorage:sessionStorage).setItem(SESSION_KEY,JSON.stringify(session)); state.token=session.token; }
-async function call(op,data={},token=state.token,label='잠시만요…') { setBusy(true,label); try { return await readyApi(op,data,token); } finally { setBusy(false); } }
-async function safely(job,{auth=true}={}) { try { return await job(); } catch(error) { if(auth&&error.status===401){ clearSession(); await showStudentChooser(); } toast(error.message||'요청을 처리하지 못했습니다.'); return null; } }
-function showOnly(id) { ['student-home','pin-login','student-sets','student-player'].forEach(name=>$('#'+name).hidden=name!==id); }
-
-async function showStudentChooser() {
-  showOnly('student-home'); $('#logout').hidden=true; $('#session-name').textContent='';
-  const data=await safely(()=>call('list_students',{},'','학생 목록을 불러오는 중…'),{auth:false});
-  $('#student-list').innerHTML=data?.students?.length?data.students.map(student=>`<button class="student-button" type="button" data-student-id="${student.id}" data-student-name="${escapeHtml(student.name)}">${escapeHtml(student.name)}</button>`).join(''):'<div class="empty">로그인 가능한 학생이 없습니다. 선생님께 알려 주세요.</div>';
+async function chooseStudent(){
+  const data=await safely(()=>call('list_students',{},'','학생 목록을 불러오는 중…'),{auth:false});if(!data)return;
+  state.selectedStudent=null;show('student-home');
+  $('#student-list').innerHTML=data.students.length?data.students.map(s=>'<button class="student-button" type="button" data-student-id="'+s.id+'" data-student-name="'+esc(s.name)+'">'+esc(s.name)+'</button>').join(''):'<div class="empty">등록된 학생이 없습니다. 관리자에게 문의해 주세요.</div>';
 }
-function openPin(student) { state.selectedStudent=student; $('#pin-student-name').textContent=student.name; $('#pin-form').reset(); showOnly('pin-login'); setTimeout(()=>$('#student-pin').focus(),0); }
-async function login(form) {
-  const values=new FormData(form), remember=values.get('remember')==='on';
-  const data=await safely(()=>call('student_login',{studentId:state.selectedStudent.id,pin:values.get('pin'),remember},'','PIN을 확인하는 중…'),{auth:false});
-  if(!data)return; saveSession(data.session); state.student=data.student; await loadDashboard();
+function openPin(student){state.selectedStudent=student;show('pin-login');$('#pin-student-name').textContent=student.name;$('#student-pin').focus();}
+async function login(form){
+  const values=Object.fromEntries(new FormData(form)),data=await safely(()=>call('student_login',{studentId:state.selectedStudent.id,pin:values.pin,remember:values.remember==='on'},'','PIN을 확인하는 중…'),{auth:false});form.reset();if(!data)return;
+  state.token=data.session.token;state.student=data.student;
+  if(data.session.remember)localStorage.setItem(SESSION_KEY,JSON.stringify(data.session));else localStorage.removeItem(SESSION_KEY);
+  await loadDashboard();
 }
-async function loadDashboard() {
-  const data=await safely(()=>call('student_bootstrap',{},state.token,'학습세트를 불러오는 중…')); if(!data)return;
-  state.student=data.student; state.sets=data.sets; $('#logout').hidden=false; $('#session-name').textContent=state.student.name; renderSets();
+async function loadDashboard(){const data=await safely(()=>call('student_bootstrap',{},state.token,'학습 목록을 준비하는 중…'));if(!data)return;state.student=data.student;state.exams=data.exams;renderExams();}
+function renderExams(){
+  show('student-sets');$('#session-name').textContent=state.student?.name||'';$('#logout').hidden=!state.token;
+  const cards=state.exams.length?state.exams.map(e=>'<button class="card set-button" type="button" data-exam-id="'+e.id+'"><span class="pill">지문 '+e.passageCount+' · 문제 '+e.questionCount+'</span><h2>'+esc(e.title)+'</h2><p class="lead">'+esc(e.description||'지문별·유형별로 문제를 풀어보세요.')+'</p></button>').join(''):'<div class="empty">현재 열려 있는 Exam이 없습니다.</div>';
+  $('#student-sets').innerHTML='<p class="eyebrow">MY EXAMS</p><h1>'+esc(state.student.school)+' · '+esc(state.student.grade)+'</h1><p class="lead">'+esc(state.student.name)+' 학생이 풀 수 있는 시험범위입니다.</p><div class="set-grid" style="margin-top:30px">'+cards+'</div>';
 }
-function renderSets() {
-  showOnly('student-sets');
-  $('#student-sets').innerHTML=`<p class="eyebrow">PUBLISHED STUDY SETS</p><h1>${escapeHtml(state.student.name)} 학생, 무엇을 풀어볼까요?</h1><div class="set-grid" style="margin-top:30px">${state.sets.length?state.sets.map(set=>`<button class="card set-button" type="button" data-publication-id="${set.publicationId}"><span class="pill">ORDER · ${set.total}문제</span><h2>${escapeHtml(set.title)}</h2><p class="lead">${escapeHtml(set.description||'문장을 읽고 가장 자연스러운 순서로 배열하세요.')}</p></button>`).join(''):'<div class="empty">지금 공개된 학습세트가 없습니다.</div>'}</div>`;
+async function loadExam(examId){const data=await safely(()=>call('student_exam',{examId},state.token,'Exam을 준비하는 중…'));if(!data)return;state.exam=data.exam;state.examData=data;renderExam('passages');}
+function renderExam(tab='passages'){
+  show('student-sets');const data=state.examData, button=(key,label)=>'<button class="button '+(tab===key?'primary':'quiet')+' small" type="button" data-exam-tab="'+key+'">'+label+'</button>';
+  let content='';
+  if(tab==='passages')content=data.passages.length?'<div class="passage-choice-list">'+data.passages.map((p,i)=>'<button class="card set-button passage-choice" type="button" data-start-passage="'+p.id+'"><span class="pill">Passage '+String(i+1).padStart(2,'0')+' · '+p.total+'문제</span><h2>'+esc(p.title)+'</h2><p class="meta">완료 '+p.completed+'/'+p.total+' · 정확도 '+p.accuracy+'% · '+p.attempts+' attempts</p></button>').join('')+'</div>':'<div class="empty">Available 문제가 있는 지문이 없습니다.</div>';
+  else if(tab==='types')content=data.types.length?'<div class="set-grid">'+data.types.map(t=>'<button class="card set-button" type="button" data-start-type="'+esc(t.type)+'"><span class="pill">'+t.total+'문제</span><h2>'+typeName(t.type)+'</h2><p class="meta">완료 '+t.completed+'/'+t.total+' · 정확도 '+t.accuracy+'%</p></button>').join('')+'</div>':'<div class="empty">사용 가능한 문제 유형이 없습니다.</div>';
+  else content=data.wrong.length?'<div class="passage-choice-list">'+data.wrong.map(item=>'<button class="card set-button passage-choice" type="button" data-start-wrong><span class="pill warn">오답 '+item.wrongCount+'회</span><h2>'+esc(item.passageTitle)+'</h2><p class="meta">'+typeName(item.type)+' · Level '+item.difficulty+'</p></button>').join('')+'</div>':'<div class="empty">아직 오답 문제가 없습니다.</div>';
+  $('#student-sets').innerHTML='<div class="backline"><button class="button quiet small" type="button" data-back-exams>← Exam 목록</button><strong>'+esc(data.exam.title)+'</strong></div><p class="eyebrow">'+esc(data.exam.school)+' · '+esc(data.exam.grade)+'</p><div class="analytics-tabs">'+button('passages','지문별')+button('types','유형별')+button('wrong','오답')+'</div>'+content;
 }
-async function startPublication(publicationId) {
-  const data=await safely(()=>call('student_questions',{publicationId},state.token,'문제를 준비하는 중…')); if(!data)return;
-  state.publication=state.sets.find(set=>set.publicationId===publicationId); state.questions=data.questions; state.questionIndex=0; renderQuestion();
+async function startQuestions(selection){
+  const data=await safely(()=>call('student_questions',Object.assign({examId:state.exam.id},selection),state.token,'문제를 준비하는 중…'));if(!data)return;
+  if(!data.questions.length){toast(selection.mode==='wrong'?'다시 풀 오답 문제가 없습니다.':'현재 Available 문제가 없습니다.');return;}
+  state.questions=data.questions;state.questionIndex=0;renderQuestion();
 }
-function orderItem(item,index,total) { return `<article class="order-item" draggable="true" data-chunk-id="${escapeHtml(item.id)}"><div class="drag-handle" aria-hidden="true">⠿</div><div class="order-text">${escapeHtml(item.text)}</div><div class="move-stack"><button type="button" data-order-move="up" aria-label="위로 이동" ${index===0?'disabled':''}>↑</button><button type="button" data-order-move="down" aria-label="아래로 이동" ${index===total-1?'disabled':''}>↓</button></div></article>`; }
-function renderQuestion() {
-  showOnly('student-player'); const area=$('#student-player');
-  if(state.questionIndex>=state.questions.length){ area.innerHTML=`<div class="player-shell card" style="text-align:center"><p class="eyebrow">ALL DONE</p><h1 style="margin:auto">오늘 문제를 모두 풀었어요.</h1><p class="lead">선생님 화면에 모든 시도가 저장됐습니다.</p><button class="button primary" style="margin-top:24px" type="button" data-finish-player>학습세트로 돌아가기</button></div>`; return; }
-  const question=state.questions[state.questionIndex]; state.startedAt=performance.now();
-  area.innerHTML=`<div class="player-shell"><div class="backline"><button class="button quiet small" type="button" data-exit-player>← 나가기</button><strong>${escapeHtml(state.student.name)}</strong></div><div class="progress-line"><span style="width:${state.questionIndex/state.questions.length*100}%"></span></div><p class="question-kicker">${escapeHtml(question.passageTitle)} · Level ${question.difficulty} · ${state.questionIndex+1}/${state.questions.length}</p><h2 class="question-title">가장 자연스러운 순서로 배열하세요.</h2><div class="order-list" id="order-list">${question.items.map((item,index)=>orderItem(item,index,question.items.length)).join('')}</div><div id="answer-result"></div><div class="player-actions"><span class="lead" style="margin:0">끌거나 ↑ ↓ 버튼으로 움직일 수 있어요.</span><button class="button primary" type="button" data-submit-order>정답 제출</button></div></div>`;
-  setupDragAndDrop();
+function renderQuestion(){
+  const q=state.questions[state.questionIndex];if(!q){loadExam(state.exam.id);return;}show('student-player');state.startedAt=performance.now();
+  const items=q.items.map((item,i)=>'<article class="order-item" draggable="true" data-chunk-id="'+esc(item.id)+'"><span class="drag-handle">⠿</span><div class="order-text">'+esc(item.text)+'</div><div class="move-stack"><button type="button" data-order-move="up" '+(i===0?'disabled':'')+'>↑</button><button type="button" data-order-move="down" '+(i===q.items.length-1?'disabled':'')+'>↓</button></div></article>').join('');
+  $('#student-player').innerHTML='<div class="player-shell"><div class="backline"><button class="button quiet small" type="button" data-exit-player>← Exam으로</button><strong>'+(state.questionIndex+1)+' / '+state.questions.length+'</strong></div><div class="progress-line"><span style="width:'+(state.questionIndex+1)/state.questions.length*100+'%"></span></div><p class="question-kicker">'+esc(q.passageTitle)+' · '+typeName(q.type)+' · Level '+q.difficulty+'</p><h1 class="question-title">가장 자연스러운 흐름으로 배열하세요.</h1><div class="order-list" id="order-list">'+items+'</div><div class="player-actions"><button class="button quiet" type="button" data-exit-player>나가기</button><button class="button primary" type="button" data-submit-order>답안 제출</button></div><div id="answer-result"></div></div>';
+  enableQuestionDrag();
 }
-function updateMoveButtons(){const items=$$('#order-list .order-item');items.forEach((item,index)=>{item.querySelector('[data-order-move="up"]').disabled=index===0;item.querySelector('[data-order-move="down"]').disabled=index===items.length-1;});}
-function setupDragAndDrop(){let dragged=null;$$('#order-list .order-item').forEach(item=>{item.addEventListener('dragstart',event=>{dragged=item;item.classList.add('dragging');event.dataTransfer.effectAllowed='move';});item.addEventListener('dragend',()=>{item.classList.remove('dragging');dragged=null;updateMoveButtons();});item.addEventListener('dragover',event=>{event.preventDefault();if(!dragged||dragged===item)return;const before=event.clientY<item.getBoundingClientRect().top+item.offsetHeight/2;item.parentNode.insertBefore(dragged,before?item:item.nextSibling);});});}
-async function submitOrder(){const question=state.questions[state.questionIndex],order=$$('#order-list .order-item').map(item=>item.dataset.chunkId);const data=await safely(()=>call('submit_attempt',{publicationId:state.publication.publicationId,questionId:question.id,order,elapsedMs:Math.round(performance.now()-state.startedAt)},state.token,'답을 저장하는 중…'));if(!data)return;$('[data-submit-order]').disabled=true;$$('#order-list button').forEach(button=>button.disabled=true);const correct=data.attempt.correct;$('#answer-result').innerHTML=`<div class="result ${correct?'good':'bad'}">${correct?'정답이에요. 흐름을 정확히 읽었어요.':'아쉬워요. 이 시도도 그대로 기록했어요.'}</div><button class="button primary" type="button" data-next-question>${state.questionIndex+1===state.questions.length?'마치기':'다음 문제'}</button>`;}
-async function logout(){if(state.token)await safely(()=>call('logout',{},state.token,'로그아웃하는 중…'));clearSession();await showStudentChooser();}
-
-document.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.id==='theme-toggle')return applyTheme(document.body.classList.contains('dark')?'light':'dark');if(button.id==='logout')return logout();if(button.hasAttribute('data-home'))return state.token?loadDashboard():showStudentChooser();if(button.dataset.studentId)return openPin({id:button.dataset.studentId,name:button.dataset.studentName});if(button.hasAttribute('data-back-students'))return showStudentChooser();if(button.dataset.publicationId)return startPublication(button.dataset.publicationId);if(button.hasAttribute('data-exit-player')||button.hasAttribute('data-finish-player'))return renderSets();if(button.dataset.orderMove){const item=button.closest('.order-item'),sibling=button.dataset.orderMove==='up'?item.previousElementSibling:item.nextElementSibling;if(sibling)item.parentNode.insertBefore(item,button.dataset.orderMove==='up'?sibling:sibling.nextSibling);updateMoveButtons();return;}if(button.hasAttribute('data-submit-order'))return submitOrder();if(button.hasAttribute('data-next-question')){state.questionIndex+=1;return renderQuestion();}});
+function updateMoveButtons(){$$('#order-list .order-item').forEach((item,i,items)=>{item.querySelector('[data-order-move="up"]').disabled=i===0;item.querySelector('[data-order-move="down"]').disabled=i===items.length-1;});}
+function enableQuestionDrag(){let dragging;const list=$('#order-list');list.addEventListener('dragstart',e=>{dragging=e.target.closest('.order-item');dragging?.classList.add('dragging');});list.addEventListener('dragend',()=>dragging?.classList.remove('dragging'));list.addEventListener('dragover',e=>{e.preventDefault();const target=e.target.closest('.order-item');if(!dragging||!target||dragging===target)return;const before=e.clientY<target.getBoundingClientRect().top+target.offsetHeight/2;list.insertBefore(dragging,before?target:target.nextSibling);updateMoveButtons();});}
+async function submitOrder(){
+  const q=state.questions[state.questionIndex],order=$$('#order-list .order-item').map(item=>item.dataset.chunkId),data=await safely(()=>call('submit_attempt',{questionId:q.id,order,elapsedMs:Math.round(performance.now()-state.startedAt)},state.token,'답을 저장하는 중…'));if(!data)return;
+  $('[data-submit-order]').disabled=true;$$('#order-list button').forEach(button=>button.disabled=true);
+  $('#answer-result').innerHTML='<div class="result '+(data.attempt.correct?'good':'bad')+'">'+(data.attempt.correct?'정답이에요. 흐름을 정확히 읽었어요.':'아쉬워요. 이 시도도 그대로 기록했어요.')+'</div><button class="button primary" type="button" data-next-question>'+(state.questionIndex+1===state.questions.length?'Exam으로 돌아가기':'다음 문제')+'</button>';
+}
+async function logout(){if(state.token)await safely(()=>call('logout',{},state.token,'로그아웃하는 중…'));clearSession();await chooseStudent();}
+document.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.id==='theme-toggle')return theme(document.body.classList.contains('dark')?'light':'dark');if(button.id==='logout')return logout();if(button.hasAttribute('data-home'))return state.token?loadDashboard():chooseStudent();if(button.dataset.studentId)return openPin({id:button.dataset.studentId,name:button.dataset.studentName});if(button.hasAttribute('data-back-students'))return chooseStudent();if(button.dataset.examId)return loadExam(button.dataset.examId);if(button.dataset.examTab)return renderExam(button.dataset.examTab);if(button.hasAttribute('data-back-exams'))return renderExams();if(button.dataset.startPassage)return startQuestions({mode:'passage',passageId:button.dataset.startPassage});if(button.dataset.startType)return startQuestions({mode:'type',type:button.dataset.startType});if(button.hasAttribute('data-start-wrong'))return startQuestions({mode:'wrong'});if(button.hasAttribute('data-exit-player'))return renderExam('passages');if(button.dataset.orderMove){const item=button.closest('.order-item'),sibling=button.dataset.orderMove==='up'?item.previousElementSibling:item.nextElementSibling;if(sibling)item.parentNode.insertBefore(item,button.dataset.orderMove==='up'?sibling:sibling.nextSibling);updateMoveButtons();return;}if(button.hasAttribute('data-submit-order'))return submitOrder();if(button.hasAttribute('data-next-question')){state.questionIndex+=1;return renderQuestion();}});
 document.addEventListener('submit',event=>{event.preventDefault();if(event.target.id==='pin-form')login(event.target);});
-
-initTheme(); const previous=savedSession(); if(previous?.token){state.token=previous.token;loadDashboard();}else showStudentChooser();
+theme(localStorage.getItem('ready-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));const previous=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');if(previous?.token){state.token=previous.token;loadDashboard();}else chooseStudent();

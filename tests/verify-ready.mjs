@@ -57,8 +57,14 @@ assert.equal(secureEqual('same-secret', 'other-secret'), false);
 const sql = readFileSync(resolve(root, 'sql/ready_milestone_1.sql'), 'utf8');
 assert.match(sql, /ready_questions[\s\S]*type text[\s\S]*payload jsonb/, 'Question is no longer generic JSON-backed data');
 assert.match(sql, /ready_attempts_are_immutable[\s\S]*before update or delete/, 'Attempts are no longer append-only');
-assert.match(sql, /ready_publish_study_set/, 'Publish is not atomic');
 assert.match(sql, /grant all on table[\s\S]*ready_students[\s\S]*to service_role/, 'READY server role lacks table privileges');
+
+const examSql = readFileSync(resolve(root, 'sql/ready_exam_refactor.sql'), 'utf8');
+assert.match(examSql, /create table if not exists public\.ready_exams/, 'Exam table is missing');
+assert.match(examSql, /add column if not exists exam_id/, 'Passage is not attached to an Exam');
+assert.match(examSql, /add column if not exists school[\s\S]*add column if not exists grade/, 'Student school and grade are missing');
+assert.match(examSql, /publication_id drop not null/, 'New attempts still require a Publication');
+assert.match(examSql, /status in \('draft', 'available'\)/, 'Question availability state is missing');
 
 const authSql = readFileSync(resolve(root, 'sql/ready_auth_migration.sql'), 'utf8');
 assert.match(authSql, /pin_hash = extensions\.crypt\(p_pin, pin_hash\)/, 'Student PIN is not verified against a password hash');
@@ -76,7 +82,10 @@ assert.doesNotMatch(edge, /model, max_tokens: 5000, temperature: 0/, 'Claude Son
 assert.doesNotMatch(edge, /tool_choice: \{ type: "tool", name: "submit_order" \}/, 'Forced tool use conflicts with Claude 5 adaptive thinking');
 assert.match(edge, /SUPABASE_SECRET_KEYS/, 'READY does not use Supabase server-side secret keys');
 assert.match(edge, /authenticate\(req, "student"\)/, 'Student APIs do not require a student session');
-assert.match(edge, /student_id: session\.student_id/, 'Attempt student identity does not come from the authenticated session');
+assert.match(edge, /student_id: student\.id/, 'Attempt student identity does not come from the authenticated session');
+assert.match(edge, /studentExamAccess/, 'Server does not check Exam access from the authenticated student');
+assert.match(edge, /"school", student\.school[\s\S]*"grade", student\.grade/, 'Exam is not constrained by student school and grade');
+assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
 
 const app = readFileSync(resolve(root, 'ready/app.js'), 'utf8');
@@ -84,6 +93,8 @@ const adminApp = readFileSync(resolve(root, 'ready/admin/app.js'), 'utf8');
 const readyConfig = readFileSync(resolve(root, 'ready/config.js'), 'utf8');
 assert.match(app, /submit_attempt/, 'Student attempts are not sent to the server');
 assert.match(app, /data-order-move="up"/, 'ORDER has no mobile-friendly non-drag control');
+assert.match(app, /지문별[\s\S]*유형별[\s\S]*오답/, 'Student Exam browsing modes are missing');
+assert.doesNotMatch(app + adminApp, /studySetId|publicationId|publish_set/, 'Frontend still depends on StudySet or Publication');
 assert.doesNotMatch(app, /main_idea|sentence_translation|vocabulary/, 'A future question type was implemented early');
 assert.doesNotMatch(app, /submit_attempt[^\n]*studentId|studentId[^\n]*submit_attempt/, 'Student can choose the attempt owner');
 assert.match(adminApp, /admin_login/, 'Admin session login is missing');
