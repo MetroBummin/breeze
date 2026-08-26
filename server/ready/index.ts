@@ -183,14 +183,17 @@ async function preparePassageStudy(passageId: string, sentences: any[], translat
   catch (error) { await db.from("ready_passages").update({ study_status: "failed", processing_error: error instanceof Error ? error.message.slice(0, 500) : "처리 실패" }).eq("id", passageId); throw error; }
 }
 async function createPassage(body: any) {
-  const sourceText = required(body.sourceText, "영어 지문", 30_000), pieces = splitSentences(sourceText), sourceType = body.sourceType === "MOCK_EXAM" ? "MOCK_EXAM" : "TEXTBOOK";
-  if (pieces.length < 2) throw new ApiError(400, "ORDER 문제에는 문장이 2개 이상 필요합니다."); if (pieces.length > 80) throw new ApiError(400, "한 지문은 80문장 이하로 나눠 주세요.");
+  const importedRows = Array.isArray(body.sentenceRows) ? body.sentenceRows.map((row: any) => ({ text: clean(row?.text, 5000), translation: clean(row?.translation, 5000) })).filter((row: any) => row.text || row.translation) : [];
+  if (importedRows.some((row: any) => !row.text || !row.translation)) throw new ApiError(400, "모든 행에 영어 문장과 한국어 해석이 필요합니다.");
+  const sourceText = importedRows.length ? importedRows.map((row: any) => row.text).join(" ") : required(body.sourceText, "영어 지문", 30_000), pieces = importedRows.length ? importedRows.map((row: any) => row.text) : splitSentences(sourceText), sourceType = body.sourceType === "MOCK_EXAM" ? "MOCK_EXAM" : "TEXTBOOK";
+  if (pieces.length < 1) throw new ApiError(400, "지문에는 문장이 하나 이상 필요합니다."); if (pieces.length > 80) throw new ApiError(400, "한 지문은 80문장 이하로 나눠 주세요.");
   const current = rows<any[]>(await db.from("ready_passages").select("display_order").order("display_order", { ascending: false }).limit(1));
   const grade = required(body.grade, "학년", 40), sourceYear = body.sourceYear ? Math.round(Number(body.sourceYear)) : null, sourceMonth = body.sourceMonth ? Math.round(Number(body.sourceMonth)) : null;
   if (sourceType === "MOCK_EXAM" && (!sourceYear || !sourceMonth)) throw new ApiError(400, "모의고사는 연도와 월이 필요합니다.");
   const passage = rows<any>(await db.from("ready_passages").insert({ study_set_id: null, exam_id: null, title: required(body.title, "지문 제목", 120), source_text: sourceText, position: 0, display_order: Number(current[0]?.display_order ?? -1) + 1, source_type: sourceType, grade, source_year: sourceYear, source_month: sourceMonth, source_label: clean(body.sourceLabel, 120), study_status: "pending", translation_source: "none" }).select().single());
   const sentenceResult = await db.from("ready_passage_sentences").insert(pieces.map((text, sentence_index) => ({ passage_id: passage.id, sentence_index, text }))).select().order("sentence_index"); const sentences = rows<any[]>(sentenceResult);
-  await preparePassageStudy(passage.id, sentences, teacherTranslations(body.translations, sentences.length));
+  const suppliedTranslations = importedRows.length ? importedRows.map((row: any) => row.translation) : teacherTranslations(body.translations, sentences.length);
+  await preparePassageStudy(passage.id, sentences, suppliedTranslations);
   return { passage: rows<any>(await db.from("ready_passages").select("*").eq("id", passage.id).single()), sentences: rows<any[]>(await db.from("ready_passage_sentences").select("*").eq("passage_id", passage.id).order("sentence_index")) };
 }
 async function updatePassageStudy(body: any) { const passageId = required(body.passageId, "지문", 80), sentences = rows<any[]>(await db.from("ready_passage_sentences").select("id,text").eq("passage_id", passageId).order("sentence_index")), translations = teacherTranslations(body.translations, sentences.length); if (!translations) throw new ApiError(400, "문장 해석이 필요합니다."); await preparePassageStudy(passageId, sentences, translations); return { updated: passageId }; }

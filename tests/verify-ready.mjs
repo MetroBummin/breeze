@@ -97,6 +97,7 @@ assert.match(edge, /async function updateExamPassages/, 'Exam Passage range cann
 assert.match(edge, /async function reorderPassages/, 'Passage Library order cannot be persisted');
 assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
 assert.match(edge, /translateSentences/, 'Sentence translations are not precomputed server-side');
+assert.match(edge, /sentenceRows/, 'Table imports do not preserve explicit sentence rows');
 assert.match(edge, /async function deleteStudent[\s\S]*학습기록 .*건 때문에 삭제할 수 없습니다/, 'Student deletion does not preserve attempt history');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
