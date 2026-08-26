@@ -35,6 +35,7 @@ assert.deepEqual(migrations, [
   '20260826155500_ready_atomic_passage_import.sql',
   '20260826161000_ready_golden_path_stabilization.sql',
   '20260826170000_ready_scope_simplification.sql',
+  '20260826174000_ready_legacy_delete_cleanup.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
@@ -42,9 +43,11 @@ assert.match(baseline, /create table if not exists public\.ready_exam_passages/)
 assert.match(baseline, /create table if not exists public\.ready_attempts/);
 assert.doesNotMatch(baseline, /ready_study_sets|ready_publications|ready_publication_questions/, 'Clean schema recreates legacy runtime tables');
 const scopeMigration = read(`supabase/migrations/${migrations[3]}`);
+const legacyDeleteMigration = read(`supabase/migrations/${migrations[4]}`);
 assert.match(scopeMigration, /ready_exams_one_current_scope_idx/, 'School and grade can have multiple current Scopes');
 assert.match(scopeMigration, /\('중앙고', '1학년'\)[\s\S]*\('한빛고', '2학년'\)/, 'Eight permanent Scope slots are not seeded');
 assert.doesNotMatch(scopeMigration + edge + admin, /delete_scope|ready_delete_scope_cascade|data-delete-scope/, 'Permanent Scope slots can still be deleted');
 assert.match(scopeMigration, /set_config\('ready\.allow_cascade_delete', 'on', true\)/, 'Cascade deletion cannot safely remove append-only Attempts');
+assert.match(legacyDeleteMigration, /to_regclass\('public\.ready_publication_questions'\)[\s\S]*execute 'delete from public\.ready_publication_questions/, 'Production legacy Publication links still block Passage deletion');
 
 console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);

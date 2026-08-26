@@ -122,6 +122,7 @@ const adminApp = readFileSync(resolve(root, 'ready/admin/app.js'), 'utf8');
 const adminHtml = readFileSync(resolve(root, 'ready/admin/index.html'), 'utf8');
 const readyConfig = readFileSync(resolve(root, 'ready/config.js'), 'utf8');
 const atomicPassageSql = readFileSync(resolve(root, 'supabase/migrations/20260826155500_ready_atomic_passage_import.sql'), 'utf8');
+const legacyDeleteSql = readFileSync(resolve(root, 'supabase/migrations/20260826174000_ready_legacy_delete_cleanup.sql'), 'utf8');
 assert.match(atomicPassageSql, /ready_create_passage_with_sentences/, 'Atomic Passage import RPC is missing');
 assert.match(atomicPassageSql, /insert into public\.ready_passages[\s\S]*insert into public\.ready_passage_sentences/, 'Passage and sentence rows are not in one database transaction');
 assert.match(atomicPassageSql, /with ordinality/, 'Pasted row order is not preserved as sentence_index');
@@ -135,6 +136,8 @@ assert.match(adminApp, /student-school-filter[\s\S]*student-grade-filter/, 'Stud
 assert.doesNotMatch(adminApp, /confirmation.*DELETE|DELETE.*confirmation/, 'Typed DELETE confirmation remains in the UI');
 assert.match(adminApp, /delete-actions[\s\S]*data-close-delete[\s\S]*type="submit">삭제/, 'READY delete confirmation modal is missing');
 assert.match(adminApp, /data-set-scope/, 'Scope Passage checkbox editing is missing');
+assert.match(adminApp, /data-open-scope-school[\s\S]*scope-detail-content[\s\S]*scope-passage-grid/, 'Scope cards do not open a full-page Passage editor');
+assert.doesNotMatch(adminApp, /<details class="exam-range"/, 'Scope Passage editing still uses the cramped inline disclosure');
 assert.match(adminApp, /data-select-passage[\s\S]*assign-passages-to-scope/, 'Passage checkbox to Scope assignment flow is missing');
 assert.doesNotMatch(adminApp, /data-delete-scope|delete_scope/, 'Permanent Scope slots can be deleted');
 assert.doesNotMatch(adminApp, /reorder_passages|draggedPassageId|draggable="true"/, 'Passage drag order remains in the UI');
@@ -144,6 +147,7 @@ assert.match(adminHtml, /passage-import-modal[\s\S]*지문 미리보기/, 'Passa
 assert.match(adminHtml, /data-route="students"[\s\S]*data-route="passages"[\s\S]*data-route="scopes"/, 'Admin navigation order is incorrect');
 assert.doesNotMatch(adminHtml, /create-exam-form|새 Exam|Exam 만들기/, 'Exam list view still exposes Exam creation');
 assert.doesNotMatch(adminApp, /reorder_students|saveGroupOrder/, 'Student manual ordering remains in the admin UI');
+assert.match(legacyDeleteSql, /to_regclass\('public\.ready_publication_questions'\)[\s\S]*delete from public\.ready_publication_questions/, 'Passage deletion does not clean retired Publication links');
 assert.doesNotMatch(app + adminApp + readyConfig, /SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY|READY_ADMIN_PASSWORD|READY_TEACHER_KEY/, 'A server secret name/value leaked into frontend runtime code');
 
 console.log('READY core checks passed');
