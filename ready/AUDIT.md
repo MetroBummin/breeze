@@ -65,7 +65,7 @@ Students, the Passage Library, Scope membership, bake status, and deletion.
 
 ## Migration verification
 
-- Local and remote migration ledgers must match for all eleven migrations after deployment.
+- Local and remote migration ledgers match for all eleven migrations.
 - Linked dry-run reports no pending migration.
 - Remote PostgreSQL lint reports no schema error.
 - Static clean-schema contracts verify that the first migration creates the
