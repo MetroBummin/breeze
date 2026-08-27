@@ -10,7 +10,7 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 
 ```text
 원본 자료 → ChatGPT Work에서 정리·분석 → 구조화된 Passage 데이터
-→ 검증된 원자적 저장 계약으로 READY에 반영 → 필요할 때 Reader Bake
+→ 검증된 원자적 저장 계약으로 READY에 반영 → 필요할 때 어휘 Bake
 → Passage 여러 개 선택 → 학교/학년 시험범위에 배정
 → 학생 PIN 로그인 → 현재 시험범위 Passage → Reader
 ```
@@ -23,7 +23,8 @@ READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 지문·문제 �
 - 구조화된 `sentenceRows` 항목 하나는 `PassageSentence` 한 개입니다.
 - 각 항목은 영어 `text`와 한국어 `translation`을 가지며 서버가 다시 분리하거나 번역하지 않습니다.
 - Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
-- 저장은 AI와 독립적입니다. Reader Bake가 실패해도 원문과 해석 Reader는 계속 동작합니다.
+- 저장과 문장 학습은 AI와 독립적입니다. 문장 sheet는 원문·교사 해석·저장만 즉시 보여줍니다.
+- AI Bake는 단어·숙어 후보만 만들며 실패해도 원문과 해석 Reader는 계속 동작합니다.
 - Bake된 어휘는 `kind + canonical lemma/phrase + stable sense key`로 식별합니다.
 - rebake는 동일 문장·동일 occurrence의 기존 concept UUID를 재사용하고 새 sense key는 alias로 기록해, SavedWord/SavedPhrase와 highlight를 보존합니다.
 - 학교/학년별 현재 시험범위와 Passage 연결은 `ready_set_current_scope_passages` 한 transaction으로 저장합니다.

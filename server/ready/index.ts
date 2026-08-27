@@ -68,8 +68,8 @@ const ALT_SENSE_SCHEMA = { type:"object", additionalProperties:false, required:[
 const BAKE_SCHEMA = {
   type:"object",additionalProperties:false,required:["sentences"],properties:{sentences:{
     type:"array",items:{type:"object",additionalProperties:false,
-      required:["sentenceId","structureSummary","grammarPoints","keyExpressions","difficulty","concepts"],
-      properties:{sentenceId:{type:"string"},structureSummary:{type:"string"},grammarPoints:{type:"array",items:{type:"string"}},keyExpressions:{type:"array",items:{type:"string"}},difficulty:{type:"string"},concepts:{
+      required:["sentenceId","concepts"],
+      properties:{sentenceId:{type:"string"},concepts:{
         type:"array",items:{type:"object",additionalProperties:false,
           required:["kind","canonicalForm","lemma","senseKey","partOfSpeech","contextMeaning","alternativeSenses","tokenIndexes"],
           properties:{kind:{type:"string",enum:["word","phrase"]},canonicalForm:{type:"string"},lemma:{type:"string"},senseKey:{type:"string"},partOfSpeech:{type:"string"},contextMeaning:{type:"string"},alternativeSenses:{type:"array",items:ALT_SENSE_SCHEMA},tokenIndexes:{type:"array",items:{type:"integer"}}}
@@ -108,36 +108,35 @@ async function generateWithOpenAI(prompt: string, schema: any, maxTokens = 5000)
   try { return JSON.parse(text); } catch { throw new ApiError(502, "AI JSON을 읽지 못했습니다."); }
 }
 function bakePrompt(sentences: Array<{id:string;text:string;tokens:any[]}>,existingConcepts:any[]) {
-  return `You precompute concise English-reading help for Korean high-school students. Return structured JSON only.
-Never change or translate the teacher text. Analyze every source sentence exactly once.
+  return `You identify concise English vocabulary and phrase help for Korean high-school students. Return structured JSON only.
+Never change, translate, summarize, grade, or explain the teacher sentences. Inspect every source sentence exactly once only to identify lexical concepts.
 For each sentence, emit at most 4 high-value concepts total: prioritize exam-relevant content words, idioms, phrasal verbs, and expressions. Skip low-value function words and obvious beginner vocabulary.
 Use the supplied zero-based tokenIndexes. Phrases may be inflected or discontinuous; list only semantic component token indexes in source order.
 kind=word uses one token. kind=phrase uses at least two tokens. canonicalForm and lemma are lowercase dictionary forms.
 senseKey is a stable short ENGLISH semantic identity, independent of Korean wording, such as create.object, cause.state, compensate.for. Use the same senseKey for the same meaning across passages and a different one for a different meaning.
 An existing concept registry is provided. When an existing entry has the same canonical form and semantic meaning, you MUST reuse its exact senseKey. Create a new senseKey only for a genuinely different sense.
 alternativeSenses contains at most one genuinely useful contrastive sense per concept; otherwise return an empty array.
-structureSummary is a compact formula. Return at most 2 grammarPoints and 2 keyExpressions per sentence, each as a concise Korean explanation. difficulty is one of easy, medium, hard.
 Source JSON:
 ${JSON.stringify(sentences)}
 Existing concept registry:
 ${JSON.stringify(existingConcepts)}`;
 }
 function normalizedBake(raw:any, source:Array<{id:string;text:string;tokens:any[]}>) {
-  if(!raw || !Array.isArray(raw.sentences) || raw.sentences.length!==source.length) throw new ApiError(502,"AI 문장 분석 개수가 원문과 다릅니다.");
+  if(!raw || !Array.isArray(raw.sentences) || raw.sentences.length!==source.length) throw new ApiError(502,"AI 어휘 분석의 문장 ID 개수가 원문과 다릅니다.");
   const byId=new Map(source.map(sentence=>[sentence.id,sentence])); const seen=new Set<string>();
   const sentences=raw.sentences.map((item:any)=>{
     const sourceSentence=byId.get(clean(item.sentenceId,80)); if(!sourceSentence || seen.has(sourceSentence.id)) throw new ApiError(502,"AI 문장 ID가 원문과 다릅니다."); seen.add(sourceSentence.id);
     const concepts=(Array.isArray(item.concepts)?item.concepts:[]).map((candidate:any,index:number)=>{
       const kind=candidate.kind==="phrase"?"phrase":"word", canonicalForm=required(candidate.canonicalForm,"canonical form",120).toLowerCase(), senseKey=required(candidate.senseKey,"sense key",120).toLowerCase();
       const tokenIndexes:number[]=[...new Set<number>((Array.isArray(candidate.tokenIndexes)?candidate.tokenIndexes:[]).map((value:any)=>Number(value)))].sort((a,b)=>a-b);
-      // A malformed optional vocabulary occurrence must never block the sentence
-      // translation/grammar bake.  Do not guess or shift indexes: omitting it is
-      // safer than attaching a meaning to the wrong word in the Reader.
+      // A malformed optional vocabulary occurrence must never block the lexical
+      // bake. Do not guess or shift indexes: omitting it is safer than attaching
+      // a meaning to the wrong word in the Reader.
       if(!tokenIndexes.length || tokenIndexes.some(value=>!Number.isInteger(value)||value<0||value>=sourceSentence.tokens.length) || (kind==="word"&&tokenIndexes.length!==1) || (kind==="phrase"&&tokenIndexes.length<2)) return null;
       const alternatives=(Array.isArray(candidate.alternativeSenses)?candidate.alternativeSenses:[]).map((alt:any)=>{const altSense=required(alt.senseKey,"alternative sense",120).toLowerCase();return {senseKey:altSense,meaning:required(alt.meaning,"alternative meaning",500),conceptKey:conceptKey(kind,canonicalForm,altSense)};});
       return {kind,canonicalForm,lemma:clean(candidate.lemma,120).toLowerCase(),senseKey,partOfSpeech:clean(candidate.partOfSpeech,40),contextMeaning:required(candidate.contextMeaning,"context meaning",500),alternativeSenses:alternatives,tokenIndexes,conceptKey:conceptKey(kind,canonicalForm,senseKey),occurrenceKey:`${kind}:${canonicalForm.replace(/[^a-z0-9]+/g,"_")}:${tokenIndexes.join("-")}`,surfaceText:tokenIndexes.map(i=>sourceSentence.tokens[i].surface).join(" … ")};
     }).filter(Boolean);
-    return {sentenceId:sourceSentence.id,structureSummary:clean(item.structureSummary,1000),grammarPoints:(Array.isArray(item.grammarPoints)?item.grammarPoints:[]).map((v:any)=>clean(v,500)).filter(Boolean),keyExpressions:(Array.isArray(item.keyExpressions)?item.keyExpressions:[]).map((v:any)=>clean(v,500)).filter(Boolean),difficulty:["easy","medium","hard"].includes(item.difficulty)?item.difficulty:"medium",tokens:sourceSentence.tokens,concepts};
+    return {sentenceId:sourceSentence.id,tokens:sourceSentence.tokens,concepts};
   });
   return {sentences};
 }
@@ -151,7 +150,7 @@ async function bakePassage(body:any){
     const provider=(Deno.env.get("READY_AI_PROVIDER")||"openai").toLowerCase(), prompt=bakePrompt(source,registry);
     const raw=provider==="anthropic"?await generateWithAnthropic(prompt,BAKE_SCHEMA,16000):provider==="openai"?await generateWithOpenAI(prompt,BAKE_SCHEMA,16000):(()=>{throw new ApiError(503,`지원하지 않는 READY_AI_PROVIDER: ${provider}`)})();
     const bake=normalizedBake(raw,source), applied=await db.rpc("ready_apply_passage_bake",{p_passage_id:passageId,p_generation:generation,p_bake:bake});
-    if(applied.error)throw new ApiError(500,applied.error.message); return {passageId,status:"ready",generation,sentenceCount:bake.sentences.length,conceptCount:bake.sentences.reduce((sum:any,s:any)=>sum+s.concepts.length,0)};
+    if(applied.error)throw new ApiError(500,applied.error.message); return {passageId,status:"ready",generation,conceptCount:bake.sentences.reduce((sum:any,s:any)=>sum+s.concepts.length,0)};
   }catch(error){const message=error instanceof Error?error.message:String(error);await db.from("ready_passages").update({bake_status:"failed",bake_error:message.slice(0,1000)}).eq("id",passageId);throw error;}
 }
 async function listStudents() { return { students: rows(await db.from("ready_students").select("id,name").eq("active", true).not("pin_hash", "is", null).order("school").order("grade").order("sort_order").order("name")) }; }
@@ -203,12 +202,12 @@ async function deleteImpact(body: any) {
     if (passage.error) throw new ApiError(500, passage.error.message); if (!passage.data) throw new ApiError(404, "지문을 찾지 못했습니다.");
     const questions = rows<any[]>(await db.from("ready_questions").select("id").eq("passage_id", targetId)), questionIds = questions.map(item => item.id);
     const attempts = questionIds.length ? rows<any[]>(await db.from("ready_attempts").select("id").in("question_id", questionIds)).length : 0;
-    const [sentences, sentenceBakes, tokens, lexicalOccurrences, lexicalSources, examLinks, savedWords, savedSentences, wordLookups, translationViews] = await Promise.all([
-      countWhere("ready_passage_sentences", "passage_id", targetId),countWhere("ready_sentence_bakes", "passage_id", targetId),countWhere("ready_sentence_tokens", "passage_id", targetId),countWhere("ready_lexical_occurrences", "passage_id", targetId),countWhere("ready_saved_lexical_sources", "passage_id", targetId),countWhere("ready_exam_passages", "passage_id", targetId),
+    const [sentences, tokens, lexicalOccurrences, lexicalSources, examLinks, savedWords, savedSentences, wordLookups, translationViews] = await Promise.all([
+      countWhere("ready_passage_sentences", "passage_id", targetId),countWhere("ready_sentence_tokens", "passage_id", targetId),countWhere("ready_lexical_occurrences", "passage_id", targetId),countWhere("ready_saved_lexical_sources", "passage_id", targetId),countWhere("ready_exam_passages", "passage_id", targetId),
       countWhere("ready_saved_words", "passage_id", targetId), countWhere("ready_saved_sentences", "passage_id", targetId),
       countWhere("ready_word_lookup_events", "passage_id", targetId), countWhere("ready_sentence_translation_view_events", "passage_id", targetId),
     ]);
-    const counts = { sentences, sentenceBakes, tokens, lexicalOccurrences, lexicalSources, questions: questions.length, examLinks, attempts, savedWords, savedSentences, wordLookups, translationViews };
+    const counts = { sentences, tokens, lexicalOccurrences, lexicalSources, questions: questions.length, examLinks, attempts, savedWords, savedSentences, wordLookups, translationViews };
     return { targetType, targetId, label: passage.data.title, counts };
   }
   throw new ApiError(400, "삭제 대상 종류가 올바르지 않습니다.");
@@ -276,17 +275,16 @@ async function studentBootstrap(session: ReadySession) {
 async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,study_status,processing_error,bake_status,bake_error,updated_at").eq("id", passageId).single()); }
 async function studentPassage(body: any, session: ReadySession) {
   const student=await studentForSession(session),examId=required(body.examId,"Exam",80),passageId=required(body.passageId,"지문",80),passage=await studentPassageAccess(examId,passageId,student);
-  const [sentences,tokens,bakes,occurrences,savedLexical,savedSentences]=await Promise.all([
+  const [sentences,tokens,occurrences,savedLexical,savedSentences]=await Promise.all([
     db.from("ready_passage_sentences").select("id,sentence_index,text,translation").eq("passage_id",passageId).order("sentence_index"),
     db.from("ready_sentence_tokens").select("id,sentence_id,token_index,surface,normalized,lemma,start_offset,end_offset").eq("passage_id",passageId).order("token_index"),
-    db.from("ready_sentence_bakes").select("sentence_id,structure_summary,grammar_points,key_expressions,difficulty").eq("passage_id",passageId),
     db.from("ready_lexical_occurrences").select("id,sentence_id,occurrence_key,surface_text,token_ids,specificity,concept:ready_lexical_concepts(id,concept_key,kind,canonical_form,lemma,sense_key,part_of_speech,context_meaning,alternative_senses)").eq("passage_id",passageId),
     db.from("ready_saved_lexical_items").select("concept_id").eq("student_id",student.id),
     db.from("ready_saved_sentences").select("sentence_id").eq("student_id",student.id).eq("passage_id",passageId),
   ]);
   const sentenceRows=rows<any[]>(sentences),persistedTokens=rows<any[]>(tokens),sentencesWithTokens=new Set(persistedTokens.map(token=>token.sentence_id));
   const readerTokens=[...persistedTokens,...sentenceRows.filter(sentence=>!sentencesWithTokens.has(sentence.id)).flatMap(sentence=>tokenizeSentence(sentence.text).map(token=>({id:`fallback-${sentence.id}-${token.tokenIndex}`,sentence_id:sentence.id,token_index:token.tokenIndex,surface:token.surface,normalized:token.normalized,lemma:token.lemma,start_offset:token.startOffset,end_offset:token.endOffset})))];
-  return {passage,sentences:sentenceRows,tokens:readerTokens,sentenceBakes:rows(bakes),occurrences:rows(occurrences),savedConceptIds:rows<any[]>(savedLexical).map(item=>item.concept_id),savedSentenceIds:rows<any[]>(savedSentences).map(item=>item.sentence_id)};
+  return {passage,sentences:sentenceRows,tokens:readerTokens,occurrences:rows(occurrences),savedConceptIds:rows<any[]>(savedLexical).map(item=>item.concept_id),savedSentenceIds:rows<any[]>(savedSentences).map(item=>item.sentence_id)};
 }
 function normalizedWord(value: unknown) { return clean(value, 100).toLowerCase().replace(/[^a-z']/g, "").replace(/^'+|'+$/g, ""); }
 async function studyContext(body: any, session: ReadySession, sentenceRequired = false) { const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), passageId = required(body.passageId, "지문", 80), passage = await studentPassageAccess(examId, passageId, student), sentenceId = clean(body.sentenceId, 80); let sentence:any = null; if (sentenceRequired || sentenceId) { sentence = rows<any>(await db.from("ready_passage_sentences").select("id,text,translation").eq("id", required(sentenceId, "문장", 80)).eq("passage_id", passage.id).single()); } return { student, examId, passage, sentence }; }
@@ -301,10 +299,10 @@ async function saveLexical(body:any,session:ReadySession){const context=await st
   const item=rows<any>(await db.from("ready_saved_lexical_items").upsert({student_id:context.student.id,concept_id:concept.id,meaning_snapshot:concept.context_meaning},{onConflict:"student_id,concept_id"}).select().single());
   const source=await db.from("ready_saved_lexical_sources").upsert({saved_item_id:item.id,occurrence_id:occurrence.id,passage_id:context.passage.id,sentence_id:occurrence.sentence_id,surface_text:occurrence.surface_text},{onConflict:"saved_item_id,occurrence_id",ignoreDuplicates:true});if(source.error)throw new ApiError(500,source.error.message);return {saved:true,conceptId:concept.id,conceptKey:concept.concept_key};}
 async function translationView(body: any, session: ReadySession) { const context = await studyContext(body, session, true); const event = await db.from("ready_sentence_translation_view_events").insert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence.id }); if (event.error) throw new ApiError(500, event.error.message); return { recorded:true }; }
-async function saveSentence(body: any, session: ReadySession) { const context = await studyContext(body, session, true),bake=rows<any>(await db.from("ready_sentence_bakes").select("structure_summary,grammar_points,key_expressions,difficulty").eq("sentence_id",context.sentence.id).maybeSingle()); const saved = await db.from("ready_saved_sentences").upsert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence.id, source_text_snapshot: context.sentence.text, translation_snapshot: context.sentence.translation,analysis_snapshot:bake||{} }, { onConflict: "student_id,sentence_id", ignoreDuplicates: true }).select().maybeSingle(); if (saved.error) throw new ApiError(500, saved.error.message); return { saved: true }; }
+async function saveSentence(body: any, session: ReadySession) { const context = await studyContext(body, session, true); const saved = await db.from("ready_saved_sentences").upsert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence.id, source_text_snapshot: context.sentence.text, translation_snapshot: context.sentence.translation }, { onConflict: "student_id,sentence_id", ignoreDuplicates: true }).select().maybeSingle(); if (saved.error) throw new ApiError(500, saved.error.message); return { saved: true }; }
 async function personalLibrary(_body:any,session:ReadySession){const student=await studentForSession(session),[lexical,sentences]=await Promise.all([
   db.from("ready_saved_lexical_items").select("id,meaning_snapshot,created_at,concept:ready_lexical_concepts(id,concept_key,kind,canonical_form,lemma,sense_key),sources:ready_saved_lexical_sources(surface_text,passage:ready_passages(title))").eq("student_id",student.id).order("created_at",{ascending:false}),
-  db.from("ready_saved_sentences").select("id,source_text_snapshot,translation_snapshot,analysis_snapshot,created_at,passage:ready_passages(title)").eq("student_id",student.id).order("created_at",{ascending:false})]);return {lexical:rows(lexical),sentences:rows(sentences)};}
+  db.from("ready_saved_sentences").select("id,source_text_snapshot,translation_snapshot,created_at,passage:ready_passages(title)").eq("student_id",student.id).order("created_at",{ascending:false})]);return {lexical:rows(lexical),sentences:rows(sentences)};}
 async function dispatch(op: string, body: any, session: ReadySession | null) {
   switch (op) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);

@@ -88,6 +88,8 @@ assert.match(app, /student_passage/, 'Student cannot open a Passage');
 assert.match(app, /reading-passage/, 'Student Reader is missing');
 assert.match(app, /translation_view/, 'Stored teacher translations are not opened through an authenticated event');
 assert.match(app, /sentenceSheet[\s\S]*sentence\.translation/, 'Sentence Sheet does not use the already-loaded translation');
+assert.doesNotMatch(app, /sentenceBakes|analysis_snapshot|문장 구조|핵심 문법|핵심 표현/, 'Sentence sheet still depends on AI metadata');
+assert.doesNotMatch(edge, /ready_sentence_bakes|structureSummary|grammarPoints|keyExpressions|analysis_snapshot/, 'Edge runtime still reads or writes sentence AI metadata');
 assert.match(app, /record\('translation_view'/, 'Sentence view event is not recorded in the background');
 assert.match(app, /CACHE_INDEX[\s\S]*cachedPassage[\s\S]*cachePassage/, 'Passage Reader has no local read-through cache');
 assert.match(app, /student-route="review"|studentRoute==='review'/, 'Student Review route is missing');

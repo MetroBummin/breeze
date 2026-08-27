@@ -52,6 +52,7 @@ assert.deepEqual(migrations, [
   '20260827040000_ready_bake_snapshot_lint_fix.sql',
   '20260827041500_ready_bake_lint_ambiguity_fix.sql',
   '20260827050000_ready_passage_revision.sql',
+  '20260827053000_ready_lexical_only_bake.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
@@ -64,6 +65,8 @@ const intelligenceMigration = read(`supabase/migrations/${migrations[5]}`);
 const stableIdentityMigration = read(`supabase/migrations/${migrations[6]}`);
 const bakeSnapshotFix = read(`supabase/migrations/${migrations[7]}`);
 const bakeLintFix = read(`supabase/migrations/${migrations[8]}`);
+const lexicalOnlyBake = read(`supabase/migrations/${migrations[10]}`);
+const lexicalOnlyFunction = lexicalOnlyBake.slice(lexicalOnlyBake.indexOf('create or replace function'));
 assert.match(scopeMigration, /ready_exams_one_current_scope_idx/, 'School and grade can have multiple current Scopes');
 assert.match(scopeMigration, /\('중앙고', '1학년'\)[\s\S]*\('한빛고', '2학년'\)/, 'Eight permanent Scope slots are not seeded');
 assert.doesNotMatch(scopeMigration + edge + admin, /delete_scope|ready_delete_scope_cascade|data-delete-scope/, 'Permanent Scope slots can still be deleted');
@@ -74,5 +77,8 @@ assert.match(intelligenceMigration,/ready_saved_lexical_items[\s\S]*unique\(stud
 assert.match(stableIdentityMigration,/v_old_occurrences[\s\S]*v_old_concept_id[\s\S]*ready_lexical_concept_aliases/,'Rebake does not preserve or explicitly remap lexical identity');
 assert.doesNotMatch(stableIdentityMigration + bakeSnapshotFix,/create temporary table|ready_bake_old_occurrences/,'Bake identity snapshots still depend on temporary relations');
 assert.doesNotMatch(bakeLintFix,/declare[^;]*old_occurrence jsonb/,'Bake remap function reintroduced the ambiguous alias variable');
+assert.match(lexicalOnlyBake,/ready_apply_passage_bake[\s\S]*ready_sentence_tokens[\s\S]*ready_lexical_occurrences/,'Lexical-only bake is not atomic');
+assert.doesNotMatch(lexicalOnlyFunction,/ready_sentence_bakes|structure_summary|grammar_points|key_expressions|analysis_snapshot/,'Latest bake still reads or writes sentence AI metadata');
+assert.doesNotMatch(edge + student,/ready_sentence_bakes|sentenceBakes|structureSummary|grammarPoints|keyExpressions|analysis_snapshot|문장 구조|핵심 문법|핵심 표현/,'Current runtime still consumes sentence AI bake data');
 
 console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);
