@@ -43,6 +43,7 @@ assert.deepEqual(migrations, [
   '20260827034500_ready_stable_lexical_identity.sql',
   '20260827040000_ready_bake_snapshot_lint_fix.sql',
   '20260827041500_ready_bake_lint_ambiguity_fix.sql',
+  '20260827050000_ready_passage_revision.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
