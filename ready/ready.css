@@ -118,19 +118,24 @@ body[data-ready-mode="student"] .reading-passage{
 }
 body[data-ready-mode="student"] .reading-sentence{
   display:block;
+  width:100%;
   padding:14px 16px;
   border:1px solid transparent;
   border-radius:12px;
   background:transparent;
   box-shadow:none;
+  color:inherit;
+  font:inherit;
+  text-align:left;
+  appearance:none;
   cursor:pointer;
   transition:background .16s ease,border-color .16s ease,box-shadow .16s ease;
 }
 body[data-ready-mode="student"] .reading-sentence:hover{background:var(--quiet);border-color:var(--line)}
 body[data-ready-mode="student"] .reading-sentence.translation-open{background:var(--sky);border-color:var(--ai-line);box-shadow:inset 3px 0 var(--brand)}
 body[data-ready-mode="student"] .reading-sentence.saved-sentence{box-shadow:inset 3px 0 color-mix(in srgb,var(--saved3) 75%,var(--brand))}
-body[data-ready-mode="student"] .sentence-text{min-width:0}
-body[data-ready-mode="student"] .inline-translation{margin-top:14px;padding:13px 14px 2px;border-top:1px solid var(--ai-line);font:650 clamp(15px,2vw,18px)/1.7 var(--ready-ui);color:var(--brand-strong);letter-spacing:-.02em}
+body[data-ready-mode="student"] .sentence-text{display:block;min-width:0}
+body[data-ready-mode="student"] .inline-translation{display:block;margin-top:14px;padding:13px 14px 2px;border-top:1px solid var(--ai-line);font:650 clamp(15px,2vw,18px)/1.7 var(--ready-ui);color:var(--brand-strong);letter-spacing:-.02em}
 body[data-ready-mode="student"] .reader-token{border-radius:4px}
 
 @media(max-width:700px){
