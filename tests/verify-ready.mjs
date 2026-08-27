@@ -106,6 +106,7 @@ assert.match(edge, /ready_exam_passages/, 'Runtime does not use the Exam-to-Pass
 assert.match(edge, /exam_id: examId/, 'Attempt does not retain the verified Exam context');
 assert.match(edge, /async function setScopePassages[\s\S]*ready_set_current_scope_passages/, 'Current Scope Passage range cannot be edited atomically');
 assert.match(edge, /generateWithAnthropic\(prompt,BAKE_SCHEMA,16000\)/, 'Long Passage Bakes do not have enough output budget');
+assert.match(edge, /at most 4 high-value concepts total/, 'Bake output is not bounded to a useful student-sized vocabulary set');
 assert.doesNotMatch(edge, /async function reorderPassages|reorder_passages/, 'Passage drag reorder remains in the runtime');
 assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
 assert.doesNotMatch(edge, /translateSentences|createPassageBatch|retryPassageStudy/, 'Legacy Passage AI/batch mutation paths remain active');

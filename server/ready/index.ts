@@ -125,13 +125,13 @@ async function generateWithOpenAI(prompt: string, schema: any = ORDER_SCHEMA, ma
 function bakePrompt(sentences: Array<{id:string;text:string;tokens:any[]}>,existingConcepts:any[]) {
   return `You precompute concise English-reading help for Korean high-school students. Return structured JSON only.
 Never change or translate the teacher text. Analyze every source sentence exactly once.
-For each useful content word and every valid idiom/phrasal/expression occurrence, emit one concept. Skip low-value function words.
+For each sentence, emit at most 4 high-value concepts total: prioritize exam-relevant content words, idioms, phrasal verbs, and expressions. Skip low-value function words and obvious beginner vocabulary.
 Use the supplied zero-based tokenIndexes. Phrases may be inflected or discontinuous; list only semantic component token indexes in source order.
 kind=word uses one token. kind=phrase uses at least two tokens. canonicalForm and lemma are lowercase dictionary forms.
 senseKey is a stable short ENGLISH semantic identity, independent of Korean wording, such as create.object, cause.state, compensate.for. Use the same senseKey for the same meaning across passages and a different one for a different meaning.
 An existing concept registry is provided. When an existing entry has the same canonical form and semantic meaning, you MUST reuse its exact senseKey. Create a new senseKey only for a genuinely different sense.
-alternativeSenses are a few genuinely useful other senses, each with its own stable English senseKey and Korean meaning.
-structureSummary is a compact formula, grammarPoints and keyExpressions are concise Korean explanations, and difficulty is one of easy, medium, hard.
+alternativeSenses contains at most one genuinely useful contrastive sense per concept; otherwise return an empty array.
+structureSummary is a compact formula. Return at most 2 grammarPoints and 2 keyExpressions per sentence, each as a concise Korean explanation. difficulty is one of easy, medium, hard.
 Source JSON:
 ${JSON.stringify(sentences)}
 Existing concept registry:
