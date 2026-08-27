@@ -9,6 +9,7 @@ const admin = read('ready/admin/app.js');
 const student = read('ready/app.js');
 const api = read('ready/api.js');
 const edge = read('server/ready/index.ts');
+const questionTypes = read('ready/QUESTION_TYPES.md');
 const operationPattern = /(?:call|readyApi|record)\(['"]([a-z_]+)['"]/g;
 const clientOps = new Set([...admin.matchAll(operationPattern), ...student.matchAll(operationPattern)].map(match => match[1]));
 const serverOps = new Set([...edge.matchAll(/case "([a-z_]+)"/g)].map(match => match[1]));
@@ -44,6 +45,15 @@ assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|generateOrder
 assert.match(edge, /publicQuestion[\s\S]*variantText[\s\S]*choiceTokens/, 'Multiple-choice public contract does not sanitize answers or tokenize choices');
 assert.match(student, /question-answer-area[\s\S]*question-choice/, 'Choices are not rendered inline beneath the Passage');
 assert.match(student, /question\.multiSelect[\s\S]*current\.includes/, 'Single and multi select do not share one renderer');
+assert.match(student, /questionReviewEnabled[\s\S]*questionLearningAllowed/, 'Question lookup is not gated by the submitted state');
+assert.match(student, /openLexical\(token\)\{if\(!questionLearningAllowed\(token\)\)return/, 'Word lookup can run before Question submission');
+assert.match(student, /openSentence\(sentenceEl\)\{if\(!questionLearningAllowed\(sentenceEl\)\)return/, 'Sentence translation can run before Question submission');
+assert.match(student, /data-question-phase="\$\{phase\}"/, 'Question renderer does not expose solving/submitted state');
+assert.match(questionTypes, /ready_passages.*canonical source/, 'Question Type Contract does not define the canonical Passage');
+assert.match(questionTypes, /ready_attempts.*append-only/, 'Question Type Contract does not define append-only Attempts');
+assert.match(questionTypes, /제출해 `submitted`가 된 뒤에만 lookup/, 'Question Type Contract does not gate lookup until submission');
+assert.match(questionTypes, /Standard Multiple Choice[\s\S]*Annotated Multiple Choice[\s\S]*Structural Questions[\s\S]*Summary Completion[\s\S]*Written Response/, 'Question Type Contract does not classify current and future renderers');
+assert.match(questionTypes, /raw HTML.*저장하지 않는다/i, 'Question Type Contract permits raw HTML annotations');
 assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
 
 const migrations = readdirSync(resolve(root, 'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();

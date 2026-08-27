@@ -81,6 +81,9 @@ assert.match(atomicPassageSql, /with ordinality/, 'Pasted row order is not prese
 assert.doesNotMatch(app, /data-order-move|generate_order/, 'ORDER UI remains in the Golden Path');
 assert.match(app, /student_questions[\s\S]*submit_attempt/, 'Question session does not load and persist Attempts');
 assert.match(app, /question\.variantText[\s\S]*questionPassageHtml/, 'Question variant_text is not optional over the canonical Passage');
+assert.match(app, /questionLearningAllowed[\s\S]*questionReviewEnabled/, 'Question learning interactions are not limited to submitted review');
+assert.match(readyCss, /question-passage\{display:block[\s\S]*question-passage \.reading-sentence\{display:inline/, 'Question Passage is not compact continuous prose');
+assert.match(readyCss, /question-choice\{display:grid[\s\S]*padding:9px 12px/, 'Question choices are not compact');
 assert.match(app, /data-start-questions[\s\S]*문제없음/, 'Passage rows do not expose enabled and disabled question actions');
 assert.doesNotMatch(adminApp + adminHtml, /question-editor|question-modal|v-analytics|renderAnalytics/, 'Dormant ORDER or Analytics UI remains in Admin');
 assert.match(app, /student_bootstrap[\s\S]*renderScope/, 'Student does not enter the current Scope');
