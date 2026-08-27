@@ -47,8 +47,8 @@ console.log(`Stamped ${stamped} local assets${next === html ? ' (변경 없음)'
 /* ---- 서비스워커의 판 번호 ----
  * 브라우저는 sw.js 의 **바이트가 달라졌을 때만** 그것을 새로 설치합니다. 그래서
  * 판 번호를 안 찍으면, CSS 를 고쳐 배포해도 서비스워커는 옛 캐시를 그대로 안고
- * 있습니다. 값으로는 방금 찍은 index.html 의 해시를 씁니다 — 그 안에 모든 파일의
- * 해시가 들어 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다.
+ * 있습니다. READY 는 별도 HTML 진입점이라 루트 index.html 에 나타나지 않으므로
+ * 두 READY 화면과 앱 자산도 같은 판 번호 입력에 포함합니다.
  */
 const worker = resolve(root, 'sw.js');
 if(existsSync(worker)){
@@ -58,7 +58,9 @@ if(existsSync(worker)){
     console.error("sw.js 에서 `const VERSION = '…';` 줄을 못 찾았습니다.");
     process.exit(1);
   }
-  const version = createHash('sha256').update(next).digest('hex').slice(0, 8);
+  const readyAssets = ['ready/index.html','ready/admin/index.html','ready/app.js','ready/admin/app.js','ready/ready.css'];
+  const versionInput = [next,...readyAssets.map(path=>readFileSync(resolve(root,path),'utf8'))].join('\n');
+  const version = createHash('sha256').update(versionInput).digest('hex').slice(0, 8);
   const stampedWorker = source.replace(line, `const VERSION = '${version}';`);
   if(stampedWorker !== source) writeFileSync(worker, stampedWorker);
   console.log(`Service worker ${version}${stampedWorker === source ? ' (변경 없음)' : ''}`);
