@@ -63,8 +63,10 @@ assert.match(edge, /async function deleteImpact[\s\S]*ready_attempts[\s\S]*ready
 assert.match(edge, /ready_delete_passage_cascade/, 'Passage deletion is not atomic');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
 assert.doesNotMatch(edge, /READY_TEACHER_KEY|x-ready-teacher-key/, 'Raw teacher secret authentication is still active');
-assert.doesNotMatch(edge, /generate_order|student_questions|submit_attempt|update_question|set_question_status|delete_question/, 'Dormant Question/Attempt operations remain dispatched');
-assert.doesNotMatch(edge, /function studentQuestions|function submitAttempt|function generateOrderQuestion/, 'Dormant ORDER runtime remains in the Edge Function');
+assert.doesNotMatch(edge, /generate_order|update_question|set_question_status|delete_question/, 'Dormant Question authoring operations remain dispatched');
+assert.match(edge, /async function studentQuestions[\s\S]*type\", \"multiple_choice\"[\s\S]*status\", \"available\"/, 'Available multiple-choice questions cannot be loaded');
+assert.match(edge, /async function submitAttempt[\s\S]*studentPassageAccess[\s\S]*ready_attempts[\s\S]*student_id: student\.id/, 'Attempt grading is not bound to the authenticated student and current Scope');
+assert.match(edge, /selected\.length === answer\.length[\s\S]*selected\.every/, 'Multiple-choice grading is not deterministic set equality');
 
 const app = readFileSync(resolve(root, 'ready/app.js'), 'utf8');
 const adminApp = readFileSync(resolve(root, 'ready/admin/app.js'), 'utf8');
@@ -76,7 +78,10 @@ const legacyDeleteSql = readFileSync(resolve(root, 'supabase/migrations/20260826
 assert.match(atomicPassageSql, /ready_create_passage_with_sentences/, 'Atomic Passage import RPC is missing');
 assert.match(atomicPassageSql, /insert into public\.ready_passages[\s\S]*insert into public\.ready_passage_sentences/, 'Passage and sentence rows are not in one database transaction');
 assert.match(atomicPassageSql, /with ordinality/, 'Pasted row order is not preserved as sentence_index');
-assert.doesNotMatch(app, /submit_attempt|data-order-move|student_questions/, 'ORDER UI remains in the Golden Path');
+assert.doesNotMatch(app, /data-order-move|generate_order/, 'ORDER UI remains in the Golden Path');
+assert.match(app, /student_questions[\s\S]*submit_attempt/, 'Question session does not load and persist Attempts');
+assert.match(app, /question\.variantText[\s\S]*questionPassageHtml/, 'Question variant_text is not optional over the canonical Passage');
+assert.match(app, /data-start-questions[\s\S]*문제없음/, 'Passage rows do not expose enabled and disabled question actions');
 assert.doesNotMatch(adminApp + adminHtml, /question-editor|question-modal|v-analytics|renderAnalytics/, 'Dormant ORDER or Analytics UI remains in Admin');
 assert.match(app, /student_bootstrap[\s\S]*renderScope/, 'Student does not enter the current Scope');
 assert.match(app, /student_passage/, 'Student cannot open a Passage');
@@ -85,7 +90,7 @@ assert.match(readyCss, /reading-passage\{display:grid;gap:14px/, 'Reader is not 
 assert.match(readyCss, /reading-sentence\{display:block;padding:/, 'Reader sentences are not individual cards');
 assert.match(app, /sentence-translation[\s\S]*data-save-sentence/, 'Sentence translation is not rendered inline beneath its card');
 const openSentenceBody = app.match(/function openSentence\(sentenceEl\)\{[^\n]*\}/)?.[0] || '';
-assert.match(openSentenceBody, /state\.activeSentenceId[\s\S]*renderReader/, 'Sentence interaction does not expand the inline card');
+assert.match(openSentenceBody, /state\.activeSentenceId[\s\S]*renderStudySurface/, 'Sentence interaction does not expand the inline card');
 assert.doesNotMatch(openSentenceBody, /openSheet/, 'Sentence interaction still opens a separate sheet');
 assert.match(readyCss, /--ready-sentence-saved[\s\S]*--ready-word-saved/, 'Sentence and word saved states do not have separate colors');
 assert.match(app, /translation_view/, 'Stored teacher translations are not opened through an authenticated event');

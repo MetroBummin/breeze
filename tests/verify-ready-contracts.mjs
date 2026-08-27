@@ -19,7 +19,7 @@ const serverOnlyOps = new Set([
 
 for (const op of clientOps) assert(serverOps.has(op), `Frontend operation has no server contract: ${op}`);
 for (const op of serverOps) assert(clientOps.has(op) || serverOnlyOps.has(op), `Server operation has no active caller: ${op}`);
-for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active', 'create_exam', 'update_exam_passages', 'delete_exam', 'delete_scope', 'student_exam', 'generate_order', 'student_questions', 'submit_attempt', 'update_question', 'set_question_status', 'delete_question']) {
+for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active', 'create_exam', 'update_exam_passages', 'delete_exam', 'delete_scope', 'student_exam', 'generate_order', 'update_question', 'set_question_status', 'delete_question']) {
   assert(!serverOps.has(removed), `Legacy operation is still dispatched: ${removed}`);
 }
 
@@ -40,7 +40,10 @@ assert.doesNotMatch(edge, /ready_passage_sentences"\)\.select\("id,passage_id,se
 assert.doesNotMatch(edge, /anthropic\.com|api\.openai\.com|generateWithAnthropic|generateWithOpenAI/, 'READY Edge still calls an AI provider');
 assert.match(edge, /deleteSavedWord[\s\S]*student_id/, 'Saved words cannot be deleted by their authenticated owner');
 assert.match(edge, /deleteSavedSentence[\s\S]*student_id/, 'Saved sentences cannot be deleted by their authenticated owner');
-assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|studentQuestions|submitAttempt|generateOrderQuestion/, 'Dormant Question/Attempt runtime is still active');
+assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|generateOrderQuestion/, 'Dormant Question authoring or Analytics runtime is still active');
+assert.match(edge, /publicQuestion[\s\S]*variantText[\s\S]*choiceTokens/, 'Multiple-choice public contract does not sanitize answers or tokenize choices');
+assert.match(student, /question-answer-area[\s\S]*question-choice/, 'Choices are not rendered inline beneath the Passage');
+assert.match(student, /question\.multiSelect[\s\S]*current\.includes/, 'Single and multi select do not share one renderer');
 assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
 
 const migrations = readdirSync(resolve(root, 'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
@@ -58,6 +61,7 @@ assert.deepEqual(migrations, [
   '20260827053000_ready_lexical_only_bake.sql',
   '20260827060000_ready_remove_all_baking.sql',
   '20260827070000_ready_runtime_cleanup.sql',
+  '20260828100000_ready_multiple_choice_mvp.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);

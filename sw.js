@@ -33,7 +33,7 @@
 /* tools/stamp-version.mjs 가 찍습니다 — 손으로 고치지 마세요.
    값은 "판 번호를 찍은 index.html 의 해시" 입니다. index.html 은 모든 파일의
    해시를 담고 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다. */
-const VERSION = '5e8eff68';
+const VERSION = '1494a1e6';
 const CACHE = `breeze-${VERSION}`;
 
 /* 담을 목록은 index.html 을 읽어서 그때그때 만듭니다. 손으로 적어 두면 파일을
