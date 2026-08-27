@@ -117,6 +117,27 @@ body[data-ready-mode="student"] .reader-shell{max-width:820px}body[data-ready-mo
 body[data-ready-mode="student"] .reading-passage{display:grid;gap:14px;margin:24px 0 40px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-align:left;color:var(--ink-body);user-select:text}
 body[data-ready-mode="student"] .reading-sentence{display:block;padding:clamp(19px,3.3vw,27px);border:1px solid var(--line);border-radius:16px;background:var(--sheet);box-shadow:0 5px 16px rgba(23,55,71,.055);color:var(--ink-body);font:400 clamp(18px,2.5vw,23px)/1.75 var(--serif);text-align:left;appearance:none;cursor:pointer;touch-action:pan-y;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 body[data-ready-mode="student"] .reading-sentence:hover{border-color:var(--brand);background:var(--sky)}body[data-ready-mode="student"] .reading-sentence.saved-sentence{border-color:var(--ready-sentence-line);background:var(--ready-sentence-saved);box-shadow:inset 4px 0 var(--ready-sentence-line),0 5px 16px rgba(23,55,71,.055)}body[data-ready-mode="student"] .sentence-translation{font-size:15px}
+/* Breeze reader layout: the desktop dictionary is a flex sibling of the text,
+   not an overlay.  The same panel becomes a capped bottom sheet on touch. */
+.ready-reader-layout{display:block;max-width:820px;margin:0 auto}
+#ready-word-dock{display:none}
+@media (min-width:1000px), (pointer:fine){
+  body.ready-word-side-open main{width:min(1280px,100%)}
+  body.ready-word-side-open .ready-reader-layout{display:flex;align-items:flex-start;gap:clamp(18px,2.5vw,34px);max-width:1180px}
+  body.ready-word-side-open .ready-reader-layout>.reader-shell{flex:1;min-width:0;max-width:none}
+  body.ready-word-side-open #ready-word-dock{position:sticky;top:calc(var(--topbar-h,68px) + 10px);display:block;flex:0 0 min(340px,28vw);max-height:calc(100vh - var(--topbar-h,68px) - 20px);overflow:auto;border-radius:22px 0 0 0;background:var(--sheet);box-shadow:var(--shadow-panel);scrollbar-width:none}
+  body.ready-word-side-open #ready-word-dock::-webkit-scrollbar{display:none}
+  .ready-word-dock-inner{padding:22px 22px 36px}
+  .ready-word-dock-close{float:right;width:30px;height:30px;border:0;border-radius:50%;background:var(--quiet);color:var(--quiet-ink);font:400 16px/1 var(--ui);cursor:pointer}
+  .ready-word-dock-close:hover{background:var(--hover-quiet)}
+  .ready-word-dock-inner .ready-word-top{padding-right:40px}
+}
+@media (max-width:999px) and (pointer:coarse){
+  .modal[data-kind="lexical"] .learning-sheet{height:auto;max-height:72vh;border-radius:26px 26px 0 0;padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+  .modal[data-kind="lexical"] .sheet-head{position:sticky;top:-1px;z-index:2;margin:-2px 0 12px;padding:10px 0;background:var(--sheet)}
+  .modal[data-kind="lexical"] .sheet-head::before{content:'';position:absolute;left:50%;top:5px;width:52px;height:5px;border-radius:3px;background:var(--handle);transform:translateX(-50%)}
+  .modal[data-kind="lexical"] .sheet-head .icon-button{margin-left:auto;margin-top:4px}
+}
 /* Reduced Breeze word sheet: same information order and visual primitives as
    styles/dictionary.css, scoped to READY's existing modal. */
 .learning-sheet[data-kind="lexical"]{width:min(380px,100%)}

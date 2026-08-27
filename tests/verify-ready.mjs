@@ -99,6 +99,9 @@ assert.match(app, /savedWordLemmas[\s\S]*token\.lemma/, 'Saved-word highlights a
 assert.match(app, /deleteLibraryItem[\s\S]*delete_saved_word[\s\S]*delete_saved_sentence/, 'Review saved items cannot be deleted');
 assert.match(app, /breezeWordSheet[\s\S]*ready-lemma[\s\S]*ready-active-meaning[\s\S]*ready-sense-chips/, 'READY does not retain Breeze word-sheet hierarchy for lemma, meaning, and senses');
 assert.match(app, /wordSheetLoading[\s\S]*wordSheetError/, 'READY word sheet has no Breeze-style loading and error states');
+assert.match(app, /lexicalUsesSidePanel[\s\S]*presentLexical[\s\S]*ready-word-dock/, 'READY does not reuse Breeze’s side-panel versus bottom-sheet split');
+assert.match(readyCss, /ready-word-side-open[\s\S]*ready-word-dock[\s\S]*flex:0 0 min\(340px,28vw\)/, 'Desktop dictionary still overlays rather than sharing the Reader layout');
+assert.match(readyCss, /modal\[data-kind="lexical"\][\s\S]*max-height:72vh/, 'Touch dictionary is not capped as a Breeze-style bottom sheet');
 assert.doesNotMatch(app + adminApp, /bake_passage|data-bake|Bake|rebake|bake_status|savedConceptIds|ready_lexical/, 'Frontend still exposes bake state or controls');
 assert.match(app, /CACHE_INDEX[\s\S]*cachedPassage[\s\S]*cachePassage/, 'Passage Reader has no local read-through cache');
 assert.match(app, /student-route="review"|studentRoute==='review'/, 'Student Review route is missing');
