@@ -49,6 +49,7 @@ assert.match(student, /questionReviewEnabled[\s\S]*questionLearningAllowed/, 'Qu
 assert.match(student, /openLexical\(token\)\{if\(!questionLearningAllowed\(token\)\)return/, 'Word lookup can run before Question submission');
 assert.match(student, /openSentence\(sentenceEl\)\{if\(!questionLearningAllowed\(sentenceEl\)\)return/, 'Sentence translation can run before Question submission');
 assert.match(student, /data-question-phase="\$\{phase\}"/, 'Question renderer does not expose solving/submitted state');
+assert.match(student, /questionVisible=.*state\.questionSession[\s\S]*event\.stopImmediatePropagation\(\)/, 'Choice token clicks can leak into lookup after the Question rerenders');
 assert.match(questionTypes, /ready_passages.*canonical source/, 'Question Type Contract does not define the canonical Passage');
 assert.match(questionTypes, /ready_attempts.*append-only/, 'Question Type Contract does not define append-only Attempts');
 assert.match(questionTypes, /제출해 `submitted`가 된 뒤에만 lookup/, 'Question Type Contract does not gate lookup until submission');
