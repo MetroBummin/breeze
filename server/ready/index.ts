@@ -145,10 +145,13 @@ function normalizedBake(raw:any, source:Array<{id:string;text:string;tokens:any[
     const concepts=(Array.isArray(item.concepts)?item.concepts:[]).map((candidate:any,index:number)=>{
       const kind=candidate.kind==="phrase"?"phrase":"word", canonicalForm=required(candidate.canonicalForm,"canonical form",120).toLowerCase(), senseKey=required(candidate.senseKey,"sense key",120).toLowerCase();
       const tokenIndexes:number[]=[...new Set<number>((Array.isArray(candidate.tokenIndexes)?candidate.tokenIndexes:[]).map((value:any)=>Number(value)))].sort((a,b)=>a-b);
-      if(!tokenIndexes.length || tokenIndexes.some(value=>!Number.isInteger(value)||value<0||value>=sourceSentence.tokens.length) || (kind==="word"&&tokenIndexes.length!==1) || (kind==="phrase"&&tokenIndexes.length<2)) throw new ApiError(502,"AI token mapping이 올바르지 않습니다.");
+      // A malformed optional vocabulary occurrence must never block the sentence
+      // translation/grammar bake.  Do not guess or shift indexes: omitting it is
+      // safer than attaching a meaning to the wrong word in the Reader.
+      if(!tokenIndexes.length || tokenIndexes.some(value=>!Number.isInteger(value)||value<0||value>=sourceSentence.tokens.length) || (kind==="word"&&tokenIndexes.length!==1) || (kind==="phrase"&&tokenIndexes.length<2)) return null;
       const alternatives=(Array.isArray(candidate.alternativeSenses)?candidate.alternativeSenses:[]).map((alt:any)=>{const altSense=required(alt.senseKey,"alternative sense",120).toLowerCase();return {senseKey:altSense,meaning:required(alt.meaning,"alternative meaning",500),conceptKey:conceptKey(kind,canonicalForm,altSense)};});
       return {kind,canonicalForm,lemma:clean(candidate.lemma,120).toLowerCase(),senseKey,partOfSpeech:clean(candidate.partOfSpeech,40),contextMeaning:required(candidate.contextMeaning,"context meaning",500),alternativeSenses:alternatives,tokenIndexes,conceptKey:conceptKey(kind,canonicalForm,senseKey),occurrenceKey:`${kind}:${canonicalForm.replace(/[^a-z0-9]+/g,"_")}:${tokenIndexes.join("-")}`,surfaceText:tokenIndexes.map(i=>sourceSentence.tokens[i].surface).join(" … ")};
-    });
+    }).filter(Boolean);
     return {sentenceId:sourceSentence.id,structureSummary:clean(item.structureSummary,1000),grammarPoints:(Array.isArray(item.grammarPoints)?item.grammarPoints:[]).map((v:any)=>clean(v,500)).filter(Boolean),keyExpressions:(Array.isArray(item.keyExpressions)?item.keyExpressions:[]).map((v:any)=>clean(v,500)).filter(Boolean),difficulty:["easy","medium","hard"].includes(item.difficulty)?item.difficulty:"medium",tokens:sourceSentence.tokens,concepts};
   });
   return {sentences};
