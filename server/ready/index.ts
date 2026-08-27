@@ -206,7 +206,7 @@ async function saveSentence(body: any, session: ReadySession) { const context = 
 async function deleteSavedSentence(body:any,session:ReadySession){const student=await studentForSession(session),savedSentenceId=required(body.savedSentenceId,"저장 문장",80),result=await db.from("ready_saved_sentences").delete().eq("id",savedSentenceId).eq("student_id",student.id).select("id,sentence_id").maybeSingle();if(result.error)throw new ApiError(500,result.error.message);if(!result.data)throw new ApiError(404,"저장 문장을 찾지 못했습니다.");return {deleted:result.data.id,sentenceId:result.data.sentence_id};}
 async function personalLibrary(_body:any,session:ReadySession){const student=await studentForSession(session),[words,sentences]=await Promise.all([
   db.from("ready_saved_words").select("id,word,normalized_word,meaning_snapshot,created_at,passage:ready_passages(title)").eq("student_id",student.id).order("created_at",{ascending:false}),
-  db.from("ready_saved_sentences").select("id,source_text_snapshot,translation_snapshot,created_at,passage:ready_passages(title)").eq("student_id",student.id).order("created_at",{ascending:false})]);return {words:rows(words),sentences:rows(sentences)};}
+  db.from("ready_saved_sentences").select("id,sentence_id,source_text_snapshot,translation_snapshot,created_at,passage:ready_passages(title)").eq("student_id",student.id).order("created_at",{ascending:false})]);return {words:rows(words),sentences:rows(sentences)};}
 async function dispatch(op: string, body: any, session: ReadySession | null) {
   switch (op) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);
