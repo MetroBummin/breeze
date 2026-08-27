@@ -2,7 +2,8 @@
 
 READY is now constrained to one product path: authenticated Students read the
 Passages assigned to their fixed school/grade Scope; the administrator manages
-Students, the Passage Library, Scope membership, bake status, and deletion.
+Students, the Passage Library, Scope membership, deterministic study memory,
+and deletion.
 
 ## Runtime classification
 
@@ -11,10 +12,10 @@ Students, the Passage Library, Scope membership, bake status, and deletion.
 - `ready_students`, bcrypt PINs, opaque `ready_sessions`, login throttling
 - eight permanent school/grade rows in `ready_exams` and `ready_exam_passages`
 - `ready_passages`, `ready_passage_sentences`, and atomic structured-row writes
-- lexical bake tables: sentence tokens, lexical concepts/aliases/occurrences
-- student lookup/view events and deduplicated saved lexical/sentence records
+- on-demand dictionary lookup and simple `ready_saved_words`
+- student lookup/view events and deduplicated saved word/sentence records
 - atomic Student and Passage delete-impact/cascade RPCs
-- 19 frontend operations plus authenticated server-only `create_passage`
+- 18 frontend operations plus authenticated server-only `create_passage`
 
 ### PRESERVED DORMANT
 
@@ -23,9 +24,6 @@ Students, the Passage Library, Scope membership, bake status, and deletion.
   UI, Edge dispatch operation, or bootstrap query.
 - Question/Attempt cleanup remains inside Passage/Student deletion transactions
   so dormant rows cannot become orphans.
-- `ready_sentence_bakes` and `ready_saved_sentences.analysis_snapshot`: retained
-  physically for production compatibility only. Current UI, Edge code, and the
-  latest lexical bake transaction never read or write sentence AI metadata.
 
 ### LEGACY IN PRODUCTION ONLY
 
@@ -45,8 +43,10 @@ Students, the Passage Library, Scope membership, bake status, and deletion.
   datasets that no visible screen consumed (11 query groups reduced to 5)
 - READY TSV parser, paste Import form, Import Preview state/modal, and related CSS
 - obsolete passage/student drag, question/player/analytics/memory CSS
-- redundant baked-word concept response and translation-view bake response
-- duplicate unbaked word-lookup request and full-payload cache comparison
+- every sentence/lexical bake table, status column, RPC, retry, UI, prompt, and
+  Anthropic/OpenAI provider path; saved lexical data was copied to SavedWord
+  before the old tables were dropped
+- phrase/concept/sense-key remap machinery and persisted Reader tokens
 
 ## API and performance contract
 
@@ -55,8 +55,8 @@ Students, the Passage Library, Scope membership, bake status, and deletion.
 - `teacher_bootstrap` loads Students, current Scopes, Passages, Sentences, and
   Scope links only.
 - Reader opens from a local revision cache immediately, then revalidates.
-- Baked word taps and translation views render from loaded Reader data and send
-  one background event. Unbaked dictionary fallback sends one request.
+- Word taps make one on-demand dictionary request and write one lookup event.
+  Sentence translation views render from teacher data and send one background event.
 - Save operations are optimistic, idempotent in the database, and invalidate the
   in-memory Review list.
 - `create_passage` is an admin-session-only structured-data ingress retained for
@@ -65,7 +65,7 @@ Students, the Passage Library, Scope membership, bake status, and deletion.
 
 ## Migration verification
 
-- Local and remote migration ledgers match for all eleven migrations.
+- Local and remote migration ledgers match for all twelve migrations.
 - Linked dry-run reports no pending migration.
 - Remote PostgreSQL lint reports no schema error.
 - Static clean-schema contracts verify that the first migration creates the

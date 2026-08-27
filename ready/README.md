@@ -10,7 +10,7 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 
 ```text
 원본 자료 → ChatGPT Work에서 정리·분석 → 구조화된 Passage 데이터
-→ 검증된 원자적 저장 계약으로 READY에 반영 → 필요할 때 어휘 Bake
+→ 검증된 원자적 저장 계약으로 READY에 반영
 → Passage 여러 개 선택 → 학교/학년 시험범위에 배정
 → 학생 PIN 로그인 → 현재 시험범위 Passage → Reader
 ```
@@ -24,9 +24,9 @@ READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 지문·문제 �
 - 각 항목은 영어 `text`와 한국어 `translation`을 가지며 서버가 다시 분리하거나 번역하지 않습니다.
 - Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
 - 저장과 문장 학습은 AI와 독립적입니다. 문장 sheet는 원문·교사 해석·저장만 즉시 보여줍니다.
-- AI Bake는 단어·숙어 후보만 만들며 실패해도 원문과 해석 Reader는 계속 동작합니다.
-- Bake된 어휘는 `kind + canonical lemma/phrase + stable sense key`로 식별합니다.
-- rebake는 동일 문장·동일 occurrence의 기존 concept UUID를 재사용하고 새 sense key는 alias로 기록해, SavedWord/SavedPhrase와 highlight를 보존합니다.
+- Reader 토큰은 지문을 열 때 결정적으로 계산하며 DB 전처리나 AI 호출이 없습니다.
+- 단어는 누른 순간 Breeze와 같은 무료 사전 후보를 조회하고, 학생이 고른 뜻만 `ready_saved_words`에 저장합니다.
+- 저장 highlight는 lemma 기준이라 `made`로 저장한 `make`가 다른 지문에서도 유지됩니다.
 - 학교/학년별 현재 시험범위와 Passage 연결은 `ready_set_current_scope_passages` 한 transaction으로 저장합니다.
 - Passage 소속의 Source of Truth는 `ready_exam_passages`입니다.
 - `ready_exams`는 기록 분리를 위한 내부 구현이며 학생과 관리자에게 생성·선택 개념을 노출하지 않습니다.
@@ -53,7 +53,7 @@ npm run ready:test
 - 학생 PIN은 PostgreSQL bcrypt hash만 저장합니다.
 - 관리자 비밀번호는 로그인 시 한 번만 보내고 이후 opaque admin session을 사용합니다.
 - API key, 관리자 비밀번호, service-role key는 frontend나 Git에 넣지 않습니다.
-- AI key와 provider/model 설정은 Supabase Secret에서만 읽습니다.
+- READY Edge Function에는 AI provider/model/API key 의존성이 없습니다.
 
 ## 배포
 

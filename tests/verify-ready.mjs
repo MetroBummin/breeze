@@ -42,12 +42,7 @@ assert.doesNotMatch(authSql, /\bpin\s+text\s*(?:not null)?[,)]/i, 'A plaintext P
 assert.match(authSql, /grant all on table public\.ready_sessions, public\.ready_login_attempts to service_role/, 'READY server role lacks auth-table privileges');
 
 const edge = readFileSync(resolve(root, 'server/ready/index.ts'), 'utf8');
-assert.match(edge, /READY_AI_PROVIDER/, 'AI provider is hard-coded');
-assert.match(edge, /READY_AI_MODEL/, 'AI model is hard-coded');
-assert.match(edge, /function anthropicOutputSchema/, 'Claude schema compatibility transform is missing');
-assert.match(edge, /output_config:\s*\{ format: \{ type: "json_schema", schema: anthropicOutputSchema\(schema\) \}/, 'Claude Sonnet 5 structured JSON output is not configured');
-assert.doesNotMatch(edge, /temperature:\s*0/, 'Claude Sonnet 5 rejects temperature: 0');
-assert.doesNotMatch(edge, /tool_choice: \{ type: "tool", name: "submit_order" \}/, 'Forced tool use conflicts with Claude 5 adaptive thinking');
+assert.doesNotMatch(edge, /READY_AI_PROVIDER|READY_AI_MODEL|ANTHROPIC_API_KEY|OPENAI_API_KEY|generateWithAnthropic|generateWithOpenAI|bakePassage|ready_apply_passage_bake/, 'READY Edge still has an AI bake/provider path');
 assert.match(edge, /SUPABASE_SECRET_KEYS/, 'READY does not use Supabase server-side secret keys');
 assert.match(edge, /authenticate\(req, "student"\)/, 'Student APIs do not require a student session');
 assert.match(edge, /student_id: context\.student\.id/, 'Learning event identity does not come from the authenticated session');
@@ -56,8 +51,6 @@ assert.match(edge, /"school", student\.school[\s\S]*"grade", student\.grade/, 'E
 assert.match(edge, /ready_exam_passages/, 'Runtime does not use the Exam-to-Passage relationship');
 assert.match(edge, /exam_id: context\.examId/, 'Learning events do not retain verified Scope context');
 assert.match(edge, /async function setScopePassages[\s\S]*ready_set_current_scope_passages/, 'Current Scope Passage range cannot be edited atomically');
-assert.match(edge, /generateWithAnthropic\(prompt,BAKE_SCHEMA,16000\)/, 'Long Passage Bakes do not have enough output budget');
-assert.match(edge, /at most 4 high-value concepts total/, 'Bake output is not bounded to a useful student-sized vocabulary set');
 assert.doesNotMatch(edge, /async function reorderPassages|reorder_passages/, 'Passage drag reorder remains in the runtime');
 assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
 assert.doesNotMatch(edge, /translateSentences|createPassageBatch|retryPassageStudy/, 'Legacy Passage AI/batch mutation paths remain active');
@@ -91,6 +84,10 @@ assert.match(app, /sentenceSheet[\s\S]*sentence\.translation/, 'Sentence Sheet d
 assert.doesNotMatch(app, /sentenceBakes|analysis_snapshot|문장 구조|핵심 문법|핵심 표현/, 'Sentence sheet still depends on AI metadata');
 assert.doesNotMatch(edge, /ready_sentence_bakes|structureSummary|grammarPoints|keyExpressions|analysis_snapshot/, 'Edge runtime still reads or writes sentence AI metadata');
 assert.match(app, /record\('translation_view'/, 'Sentence view event is not recorded in the background');
+assert.match(edge, /translate\.googleapis\.com[\s\S]*dt=bd/, 'On-demand Breeze-compatible dictionary candidates are missing');
+assert.match(edge, /ready_saved_words[\s\S]*meaning_snapshot/, 'Selected word meaning is not stored in the simple SavedWord table');
+assert.match(app, /savedWordLemmas[\s\S]*token\.lemma/, 'Saved-word highlights are not lemma based');
+assert.doesNotMatch(app + adminApp, /bake_passage|data-bake|Bake|rebake|bake_status|savedConceptIds|ready_lexical/, 'Frontend still exposes bake state or controls');
 assert.match(app, /CACHE_INDEX[\s\S]*cachedPassage[\s\S]*cachePassage/, 'Passage Reader has no local read-through cache');
 assert.match(app, /student-route="review"|studentRoute==='review'/, 'Student Review route is missing');
 assert.match(app, /disabled aria-label="문제 유형 학습은 준비 중입니다"/, 'Unavailable question modes are not visibly disabled');

@@ -36,7 +36,7 @@ assert.match(student, /student_bootstrap[\s\S]*state\.scope=data\.scope[\s\S]*re
 assert.match(student, /reading-passage[\s\S]*reading-sentence/, 'Reader is not rendered as a continuous passage');
 assert.match(student, /courseKey[\s\S]*source_type!=='TEXTBOOK'[\s\S]*scopePassagesHtml/, 'Textbook Passages are not grouped by course in the student list');
 assert.match(edge, /select\("id,title,display_order,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
-assert.match(edge, /output_json[\s\S]*AI 구조화 응답이 비어 있습니다/, 'Anthropic structured output has no robust response parser');
+assert.doesNotMatch(edge, /anthropic\.com|api\.openai\.com|generateWithAnthropic|generateWithOpenAI/, 'READY Edge still calls an AI provider');
 assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|studentQuestions|submitAttempt|generateOrderQuestion/, 'Dormant Question/Attempt runtime is still active');
 assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
 
@@ -53,6 +53,7 @@ assert.deepEqual(migrations, [
   '20260827041500_ready_bake_lint_ambiguity_fix.sql',
   '20260827050000_ready_passage_revision.sql',
   '20260827053000_ready_lexical_only_bake.sql',
+  '20260827060000_ready_remove_all_baking.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
@@ -61,24 +62,16 @@ assert.match(baseline, /create table if not exists public\.ready_attempts/);
 assert.doesNotMatch(baseline, /ready_study_sets|ready_publications|ready_publication_questions/, 'Clean schema recreates legacy runtime tables');
 const scopeMigration = read(`supabase/migrations/${migrations[3]}`);
 const legacyDeleteMigration = read(`supabase/migrations/${migrations[4]}`);
-const intelligenceMigration = read(`supabase/migrations/${migrations[5]}`);
-const stableIdentityMigration = read(`supabase/migrations/${migrations[6]}`);
-const bakeSnapshotFix = read(`supabase/migrations/${migrations[7]}`);
-const bakeLintFix = read(`supabase/migrations/${migrations[8]}`);
-const lexicalOnlyBake = read(`supabase/migrations/${migrations[10]}`);
-const lexicalOnlyFunction = lexicalOnlyBake.slice(lexicalOnlyBake.indexOf('create or replace function'));
+const removeBaking = read(`supabase/migrations/${migrations[11]}`);
 assert.match(scopeMigration, /ready_exams_one_current_scope_idx/, 'School and grade can have multiple current Scopes');
 assert.match(scopeMigration, /\('중앙고', '1학년'\)[\s\S]*\('한빛고', '2학년'\)/, 'Eight permanent Scope slots are not seeded');
 assert.doesNotMatch(scopeMigration + edge + admin, /delete_scope|ready_delete_scope_cascade|data-delete-scope/, 'Permanent Scope slots can still be deleted');
 assert.match(scopeMigration, /set_config\('ready\.allow_cascade_delete', 'on', true\)/, 'Cascade deletion cannot safely remove append-only Attempts');
 assert.match(legacyDeleteMigration, /to_regclass\('public\.ready_publication_questions'\)[\s\S]*execute 'delete from public\.ready_publication_questions/, 'Production legacy Publication links still block Passage deletion');
-assert.match(intelligenceMigration,/ready_apply_passage_bake[\s\S]*ready_sentence_tokens[\s\S]*ready_lexical_occurrences/,'Bake output is not applied atomically');
-assert.match(intelligenceMigration,/ready_saved_lexical_items[\s\S]*unique\(student_id, concept_id\)/,'Saved lexical concepts are not deduplicated per student');
-assert.match(stableIdentityMigration,/v_old_occurrences[\s\S]*v_old_concept_id[\s\S]*ready_lexical_concept_aliases/,'Rebake does not preserve or explicitly remap lexical identity');
-assert.doesNotMatch(stableIdentityMigration + bakeSnapshotFix,/create temporary table|ready_bake_old_occurrences/,'Bake identity snapshots still depend on temporary relations');
-assert.doesNotMatch(bakeLintFix,/declare[^;]*old_occurrence jsonb/,'Bake remap function reintroduced the ambiguous alias variable');
-assert.match(lexicalOnlyBake,/ready_apply_passage_bake[\s\S]*ready_sentence_tokens[\s\S]*ready_lexical_occurrences/,'Lexical-only bake is not atomic');
-assert.doesNotMatch(lexicalOnlyFunction,/ready_sentence_bakes|structure_summary|grammar_points|key_expressions|analysis_snapshot/,'Latest bake still reads or writes sentence AI metadata');
-assert.doesNotMatch(edge + student,/ready_sentence_bakes|sentenceBakes|structureSummary|grammarPoints|keyExpressions|analysis_snapshot|문장 구조|핵심 문법|핵심 표현/,'Current runtime still consumes sentence AI bake data');
+assert.match(removeBaking,/insert into public\.ready_saved_words[\s\S]*ready_saved_lexical_items[\s\S]*raise exception 'Saved lexical migration is incomplete/, 'Saved lexical data is not guarded during bake removal');
+for(const table of ['ready_sentence_bakes','ready_sentence_tokens','ready_lexical_concepts','ready_lexical_concept_aliases','ready_lexical_occurrences','ready_saved_lexical_items','ready_saved_lexical_sources'])assert.match(removeBaking,new RegExp(`drop table if exists public\\.${table}`),`${table} survives the final clean schema`);
+assert.match(removeBaking,/drop function if exists public\.ready_apply_passage_bake/, 'Bake RPC survives the final schema');
+assert.match(removeBaking,/drop column if exists bake_status[\s\S]*drop column if exists bake_error/, 'Passage bake state survives the final schema');
+assert.doesNotMatch(edge + student + admin,/ready_sentence_bakes|ready_sentence_tokens|ready_lexical_|ready_saved_lexical|bake_passage|bake_status|READY_AI_|ANTHROPIC_API_KEY|OPENAI_API_KEY/,'Current runtime still consumes bake/provider data');
 
 console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);

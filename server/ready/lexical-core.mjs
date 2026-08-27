@@ -35,26 +35,3 @@ export function tokenizeSentence(text){
   while((match=pattern.exec(String(text||''))))out.push({tokenIndex:out.length,surface:match[0],normalized:match[0].toLowerCase().replace(/’/g,"'"),lemma:lemma(match[0]),startOffset:match.index,endOffset:match.index+match[0].length});
   return out;
 }
-
-export function conceptKey(kind,canonicalForm,senseKey){
-  const clean=value=>String(value||'').trim().toLowerCase().replace(/[^a-z0-9.'_-]+/g,'_').replace(/^_+|_+$/g,'');
-  const k=kind==='phrase'?'phrase':'word', canonical=clean(canonicalForm), sense=clean(senseKey);
-  if(!canonical||!sense)throw new Error('concept canonical form and stable English sense key are required');
-  return `${k}:${canonical}:${sense}`;
-}
-
-export function lexicalState(tokens,occurrences,savedConceptKeys){
-  const saved=new Set(savedConceptKeys||[]), classes=new Map(tokens.map(t=>[t.id||t.tokenId||String(t.tokenIndex),new Set()]));
-  const phrases=(occurrences||[]).filter(o=>o.kind==='phrase').sort((a,b)=>(b.tokenIds?.length||0)-(a.tokenIds?.length||0));
-  const claimed=new Set();
-  for(const phrase of phrases){for(const id of phrase.tokenIds||[])claimed.add(id);if(saved.has(phrase.conceptKey))for(const id of phrase.tokenIds||[])classes.get(id)?.add('saved-phrase');}
-  for(const word of (occurrences||[]).filter(o=>o.kind==='word'))if(saved.has(word.conceptKey))for(const id of word.tokenIds||[])if(!claimed.has(id))classes.get(id)?.add('saved-word');
-  return classes;
-}
-
-// A rebake may reorder AI output or rename a sense. The occurrence's semantic
-// location is deterministic, so the previous concept remains authoritative.
-export function remapRebakeConcepts(previousOccurrences,nextOccurrences){
-  const previous=new Map((previousOccurrences||[]).map(item=>[`${item.sentenceId}:${item.occurrenceKey}`,item.conceptKey]));
-  return (nextOccurrences||[]).map(item=>({...item,conceptKey:previous.get(`${item.sentenceId}:${item.occurrenceKey}`)||item.conceptKey}));
-}
