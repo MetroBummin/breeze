@@ -27,9 +27,16 @@ assert(state.get('took').has('saved-phrase')&&state.get('into').has('saved-phras
 assert(!state.get('this').has('saved-phrase')&&!state.get('issue').has('saved-phrase'),'discontinuous phrase colored intervening tokens');
 
 const rebaked=remapRebakeConcepts(
-  [{sentenceId:'s1',occurrenceKey:'word:make:1',conceptKey:makeCreate}],
-  [{sentenceId:'s1',occurrenceKey:'word:make:1',conceptKey:conceptKey('word','make','produce.object')}],
+  [
+    {sentenceId:'s1',occurrenceKey:'word:make:1',conceptKey:makeCreate},
+    {sentenceId:'s1',occurrenceKey:'phrase:make_up_for:1_3_4',conceptKey:makeUpFor},
+  ],
+  [
+    {sentenceId:'s1',occurrenceKey:'word:make:1',conceptKey:conceptKey('word','make','produce.object')},
+    {sentenceId:'s1',occurrenceKey:'phrase:make_up_for:1_3_4',conceptKey:conceptKey('phrase','make up for','offset.loss')},
+  ],
 );
 assert.equal(rebaked[0].conceptKey,makeCreate,'rebake replaced a saved concept solely because the model renamed its sense key');
+assert.equal(rebaked[1].conceptKey,makeUpFor,'rebake replaced a SavedPhrase solely because the model renamed its sense key');
 
 console.log('READY Reader Intelligence semantics verified.');
