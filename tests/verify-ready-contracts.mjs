@@ -38,6 +38,8 @@ assert.match(student, /courseKey[\s\S]*source_type!=='TEXTBOOK'[\s\S]*scopePassa
 assert.match(edge, /select\("id,title,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
 assert.doesNotMatch(edge, /ready_passage_sentences"\)\.select\("id,passage_id,sentence_index,text,translation"\)/, 'Admin bootstrap still downloads every sentence');
 assert.doesNotMatch(edge, /anthropic\.com|api\.openai\.com|generateWithAnthropic|generateWithOpenAI/, 'READY Edge still calls an AI provider');
+assert.match(edge, /deleteSavedWord[\s\S]*student_id/, 'Saved words cannot be deleted by their authenticated owner');
+assert.match(edge, /deleteSavedSentence[\s\S]*student_id/, 'Saved sentences cannot be deleted by their authenticated owner');
 assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|studentQuestions|submitAttempt|generateOrderQuestion/, 'Dormant Question/Attempt runtime is still active');
 assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
 

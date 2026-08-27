@@ -96,6 +96,8 @@ assert.match(app, /record\('translation_view'/, 'Sentence view event is not reco
 assert.match(edge, /translate\.googleapis\.com[\s\S]*dt=bd/, 'On-demand Breeze-compatible dictionary candidates are missing');
 assert.match(edge, /ready_saved_words[\s\S]*meaning_snapshot/, 'Selected word meaning is not stored in the simple SavedWord table');
 assert.match(app, /savedWordLemmas[\s\S]*token\.lemma/, 'Saved-word highlights are not lemma based');
+assert.match(app, /deleteLibraryItem[\s\S]*delete_saved_word[\s\S]*delete_saved_sentence/, 'Review saved items cannot be deleted');
+assert.match(app, /ready-word-panel[\s\S]*word-meaning-card/, 'READY word panel does not use the Breeze-style word card hierarchy');
 assert.doesNotMatch(app + adminApp, /bake_passage|data-bake|Bake|rebake|bake_status|savedConceptIds|ready_lexical/, 'Frontend still exposes bake state or controls');
 assert.match(app, /CACHE_INDEX[\s\S]*cachedPassage[\s\S]*cachePassage/, 'Passage Reader has no local read-through cache');
 assert.match(app, /student-route="review"|studentRoute==='review'/, 'Student Review route is missing');
