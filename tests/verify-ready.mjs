@@ -69,6 +69,7 @@ assert.doesNotMatch(edge, /function studentQuestions|function submitAttempt|func
 const app = readFileSync(resolve(root, 'ready/app.js'), 'utf8');
 const adminApp = readFileSync(resolve(root, 'ready/admin/app.js'), 'utf8');
 const adminHtml = readFileSync(resolve(root, 'ready/admin/index.html'), 'utf8');
+const readyCss = readFileSync(resolve(root, 'ready/ready.css'), 'utf8');
 const readyConfig = readFileSync(resolve(root, 'ready/config.js'), 'utf8');
 const atomicPassageSql = readFileSync(resolve(root, 'supabase/migrations/20260826155500_ready_atomic_passage_import.sql'), 'utf8');
 const legacyDeleteSql = readFileSync(resolve(root, 'supabase/migrations/20260826174000_ready_legacy_delete_cleanup.sql'), 'utf8');
@@ -80,6 +81,8 @@ assert.doesNotMatch(adminApp + adminHtml, /question-editor|question-modal|v-anal
 assert.match(app, /student_bootstrap[\s\S]*renderScope/, 'Student does not enter the current Scope');
 assert.match(app, /student_passage/, 'Student cannot open a Passage');
 assert.match(app, /reading-passage/, 'Student Reader is missing');
+assert.match(readyCss, /reading-passage\{display:grid;gap:14px/, 'Reader is not a sentence-card layout');
+assert.match(readyCss, /reading-sentence\{display:block;padding:/, 'Reader sentences are not individual cards');
 assert.match(app, /translation_view/, 'Stored teacher translations are not opened through an authenticated event');
 assert.match(app, /sentenceSheet[\s\S]*sentence\.translation/, 'Sentence Sheet does not use the already-loaded translation');
 assert.doesNotMatch(app, /sentenceBakes|analysis_snapshot|문장 구조|핵심 문법|핵심 표현/, 'Sentence sheet still depends on AI metadata');
