@@ -96,6 +96,14 @@ body[data-ready-mode] .student-button{min-height:96px;border-radius:18px;font-si
 body[data-ready-mode] .passage-choice-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 body[data-ready-mode] .passage-choice{min-height:130px}
 body[data-ready-mode] .passage-choice h2{font-size:19px;line-height:1.4}
+body[data-ready-mode="student"] .textbook-course{margin-top:28px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--paper2)}
+body[data-ready-mode="student"] .textbook-course summary{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;list-style:none;color:var(--ink)}
+body[data-ready-mode="student"] .textbook-course summary::-webkit-details-marker{display:none}
+body[data-ready-mode="student"] .textbook-course summary span{display:grid;gap:4px}
+body[data-ready-mode="student"] .textbook-course summary small{color:var(--brand-strong);font-size:10px;font-weight:850;letter-spacing:.13em}
+body[data-ready-mode="student"] .textbook-course summary strong{font-size:18px;letter-spacing:-.03em}
+body[data-ready-mode="student"] .textbook-course summary em{flex:none;color:var(--soft);font-size:12px;font-style:normal;font-weight:700}
+body[data-ready-mode="student"] .textbook-course details[open] summary{margin-bottom:16px}
 body[data-ready-mode] .table-wrap,
 body[data-ready-mode] .passage,
 body[data-ready-mode] .scope-passage-row{border-radius:14px}
@@ -142,6 +150,7 @@ body[data-ready-mode="student"] .reader-token{border-radius:4px}
   body[data-ready-mode] #topbar{min-height:60px;padding:calc(11px + env(safe-area-inset-top)) 14px 11px}
   body[data-ready-mode] main{padding:30px 16px calc(52px + env(safe-area-inset-bottom))}
   body[data-ready-mode] .passage-choice-list{grid-template-columns:1fr}
+  body[data-ready-mode="student"] .textbook-course{margin-top:20px;padding:16px}
   body[data-ready-mode] .student-nav{gap:12px}
   body[data-ready-mode] .student-nav button{font-size:12px}
   body[data-ready-mode="student"] .reading-passage{margin-inline:-4px;padding:12px 8px;border-radius:16px;gap:8px}

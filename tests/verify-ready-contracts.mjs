@@ -28,6 +28,9 @@ assert.match(api, /READ_ONLY_OPS[\s\S]*const attempts = READ_ONLY_OPS\.has\(op\)
 assert.doesNotMatch(student, /student_exam|data-exam-id|data-back-exams|renderExams/, 'Student still has an Exam selection step');
 assert.match(student, /student_bootstrap[\s\S]*state\.scope=data\.scope[\s\S]*renderScope/, 'Student does not enter the current Scope directly');
 assert.match(student, /reading-passage[\s\S]*reading-sentence/, 'Reader is not rendered as a continuous passage');
+assert.match(student, /courseKey[\s\S]*source_type!=='TEXTBOOK'[\s\S]*scopePassagesHtml/, 'Textbook Passages are not grouped by course in the student list');
+assert.match(edge, /select\("id,title,display_order,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
+assert.match(edge, /output_json[\s\S]*AI 구조화 응답이 비어 있습니다/, 'Anthropic structured output has no robust response parser');
 
 const migrations = readdirSync(resolve(root, 'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
 assert.deepEqual(migrations, [

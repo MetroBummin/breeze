@@ -95,7 +95,7 @@ assert.match(edge, /READY_AI_PROVIDER/, 'AI provider is hard-coded');
 assert.match(edge, /READY_AI_MODEL/, 'AI model is hard-coded');
 assert.match(edge, /function anthropicOutputSchema/, 'Claude schema compatibility transform is missing');
 assert.match(edge, /output_config:\s*\{ format: \{ type: "json_schema", schema: anthropicOutputSchema\(schema\) \}/, 'Claude Sonnet 5 structured JSON output is not configured');
-assert.doesNotMatch(edge, /model, max_tokens: 5000, temperature: 0/, 'Claude Sonnet 5 rejects temperature: 0');
+assert.doesNotMatch(edge, /temperature:\s*0/, 'Claude Sonnet 5 rejects temperature: 0');
 assert.doesNotMatch(edge, /tool_choice: \{ type: "tool", name: "submit_order" \}/, 'Forced tool use conflicts with Claude 5 adaptive thinking');
 assert.match(edge, /SUPABASE_SECRET_KEYS/, 'READY does not use Supabase server-side secret keys');
 assert.match(edge, /authenticate\(req, "student"\)/, 'Student APIs do not require a student session');
@@ -105,6 +105,7 @@ assert.match(edge, /"school", student\.school[\s\S]*"grade", student\.grade/, 'E
 assert.match(edge, /ready_exam_passages/, 'Runtime does not use the Exam-to-Passage relationship');
 assert.match(edge, /exam_id: examId/, 'Attempt does not retain the verified Exam context');
 assert.match(edge, /async function setScopePassages[\s\S]*ready_set_current_scope_passages/, 'Current Scope Passage range cannot be edited atomically');
+assert.match(edge, /generateWithAnthropic\(prompt,BAKE_SCHEMA,16000\)/, 'Long Passage Bakes do not have enough output budget');
 assert.doesNotMatch(edge, /async function reorderPassages|reorder_passages/, 'Passage drag reorder remains in the runtime');
 assert.match(edge, /studentPassageAccess[\s\S]*ready_word_lookup_events/, 'Passage Study events are not authenticated against Exam access');
 assert.doesNotMatch(edge, /translateSentences|createPassageBatch|retryPassageStudy/, 'Legacy Passage AI/batch mutation paths remain active');

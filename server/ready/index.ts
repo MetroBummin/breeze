@@ -100,18 +100,23 @@ Requested difficulty: ${difficulty}
 Source JSON:
 ${JSON.stringify(sentences)}`;
 }
-async function generateWithAnthropic(prompt: string, schema: any = ORDER_SCHEMA) {
+async function generateWithAnthropic(prompt: string, schema: any = ORDER_SCHEMA, maxTokens = 5000) {
   const key = Deno.env.get("ANTHROPIC_API_KEY"), model = Deno.env.get("READY_AI_MODEL");
   if (!key || !model) throw new ApiError(503, "ANTHROPIC_API_KEY와 READY_AI_MODEL을 설정해 주세요.");
-  const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model, max_tokens: 5000, messages: [{ role: "user", content: prompt }], output_config: { format: { type: "json_schema", schema: anthropicOutputSchema(schema) } } }) });
+  const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "user", content: prompt }], output_config: { format: { type: "json_schema", schema: anthropicOutputSchema(schema) } } }) });
   const data = await response.json();
   if (!response.ok) throw new ApiError(502, data?.error?.message || "AI 요청에 실패했습니다.");
-  try { return JSON.parse(data?.content?.find((item: any) => item.type === "text")?.text); } catch { throw new ApiError(502, "AI JSON을 읽지 못했습니다."); }
+  const content = Array.isArray(data?.content) ? data.content : [];
+  const structured = content.find((item: any) => item?.type === "output_json" || item?.type === "json")?.json;
+  if (structured && typeof structured === "object") return structured;
+  const text = content.filter((item: any) => item?.type === "text").map((item: any) => item.text || "").join("\n").trim().replace(/^```json\s*|\s*```$/g, "");
+  if (!text) throw new ApiError(502, `AI 구조화 응답이 비어 있습니다 (${data?.stop_reason || "unknown"}).`);
+  try { return JSON.parse(text); } catch { throw new ApiError(502, `AI JSON을 읽지 못했습니다 (${data?.stop_reason || "unknown"}).`); }
 }
-async function generateWithOpenAI(prompt: string, schema: any = ORDER_SCHEMA) {
+async function generateWithOpenAI(prompt: string, schema: any = ORDER_SCHEMA, maxTokens = 5000) {
   const key = Deno.env.get("OPENAI_API_KEY"), model = Deno.env.get("READY_AI_MODEL");
   if (!key || !model) throw new ApiError(503, "OPENAI_API_KEY와 READY_AI_MODEL을 설정해 주세요.");
-  const response = await fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify({ model, input: prompt, store: false, max_output_tokens: 5000, text: { format: { type: "json_schema", name: "ready_structured", strict: true, schema } } }) });
+  const response = await fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify({ model, input: prompt, store: false, max_output_tokens: maxTokens, text: { format: { type: "json_schema", name: "ready_structured", strict: true, schema } } }) });
   const data = await response.json();
   if (!response.ok) throw new ApiError(502, data?.error?.message || "AI 요청에 실패했습니다.");
   const text = data?.output_text || data?.output?.flatMap((item: any) => item.content || []).find((item: any) => item.type === "output_text")?.text;
@@ -156,7 +161,7 @@ async function bakePassage(body:any){
   try{
     const registry=rows<any[]>(await db.from("ready_lexical_concepts").select("concept_key,kind,canonical_form,lemma,sense_key,context_meaning").limit(800));
     const provider=(Deno.env.get("READY_AI_PROVIDER")||"openai").toLowerCase(), prompt=bakePrompt(source,registry);
-    const raw=provider==="anthropic"?await generateWithAnthropic(prompt,BAKE_SCHEMA):provider==="openai"?await generateWithOpenAI(prompt,BAKE_SCHEMA):(()=>{throw new ApiError(503,`지원하지 않는 READY_AI_PROVIDER: ${provider}`)})();
+    const raw=provider==="anthropic"?await generateWithAnthropic(prompt,BAKE_SCHEMA,16000):provider==="openai"?await generateWithOpenAI(prompt,BAKE_SCHEMA,16000):(()=>{throw new ApiError(503,`지원하지 않는 READY_AI_PROVIDER: ${provider}`)})();
     const bake=normalizedBake(raw,source), applied=await db.rpc("ready_apply_passage_bake",{p_passage_id:passageId,p_generation:generation,p_bake:bake});
     if(applied.error)throw new ApiError(500,applied.error.message); return {passageId,status:"ready",generation,sentenceCount:bake.sentences.length,conceptCount:bake.sentences.reduce((sum:any,s:any)=>sum+s.concepts.length,0)};
   }catch(error){const message=error instanceof Error?error.message:String(error);await db.from("ready_passages").update({bake_status:"failed",bake_error:message.slice(0,1000)}).eq("id",passageId);throw error;}
@@ -293,7 +298,7 @@ async function studentExamAccess(examId: string, student: Student) {
 async function availableExamQuestions(examId: string) {
   const links = rows<any[]>(await db.from("ready_exam_passages").select("passage_id,position").eq("exam_id", examId).order("position"));
   const linkedIds = links.map(item => item.passage_id);
-  const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,display_order").in("id", linkedIds)) : [];
+  const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,display_order,source_type,source_label").in("id", linkedIds)) : [];
   const byId = new Map(sourcePassages.map(item => [item.id, item]));
   const passages = links.map(link => ({ ...byId.get(link.passage_id), position: link.position })).filter(item => item.id);
   const ids = passages.map(item => item.id), questions = ids.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,difficulty,payload,status").in("passage_id", ids).eq("status", "available").order("created_at")) : [];
