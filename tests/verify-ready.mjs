@@ -133,9 +133,11 @@ assert.match(app, /student_bootstrap[\s\S]*renderScope/, 'Student does not enter
 assert.match(app, /student_passage/, 'Student cannot open a Passage');
 assert.match(app, /reading-passage/, 'Student Reader is missing');
 assert.match(app, /translation_view/, 'Stored teacher translations are not opened through an authenticated event');
-assert.match(app, /inline-translation/, 'Reader has no inline translation region');
-assert.match(app, /toggleTranslation[\s\S]*translation_view/, 'Sentence tap does not fetch its stored translation');
-assert.match(app, /translationCache:new Map/, 'Repeated sentence translation views are not cached in the Reader session');
+assert.match(app, /sentenceSheet[\s\S]*sentence\.translation/, 'Sentence Sheet does not use the already-loaded translation');
+assert.match(app, /record\('translation_view'/, 'Sentence view event is not recorded in the background');
+assert.match(app, /CACHE_INDEX[\s\S]*cachedPassage[\s\S]*cachePassage/, 'Passage Reader has no local read-through cache');
+assert.match(app, /student-route="review"|studentRoute==='review'/, 'Student Review route is missing');
+assert.match(app, /disabled aria-label="문제 유형 학습은 준비 중입니다"/, 'Unavailable question modes are not visibly disabled');
 assert.doesNotMatch(app, /student_exam|renderExams|data-exam-id|data-back-exams/, 'Student Exam selection remains in the UI');
 assert.doesNotMatch(app + adminApp, /studySetId|publicationId|publish_set/, 'Frontend still depends on StudySet or Publication');
 assert.doesNotMatch(app, /main_idea|sentence_translation|vocabulary/, 'A future question type was implemented early');

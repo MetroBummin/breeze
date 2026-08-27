@@ -309,7 +309,7 @@ async function studentBootstrap(session: ReadySession) {
   const passages = scope ? (await availableExamQuestions(scope.id)).passages : [];
   return { student: { id: student.id, name: student.name, school: student.school, grade: student.grade }, scope, passages };
 }
-async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,study_status,processing_error,bake_status,bake_error").eq("id", passageId).single()); }
+async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,study_status,processing_error,bake_status,bake_error,updated_at").eq("id", passageId).single()); }
 async function studentPassage(body: any, session: ReadySession) {
   const student=await studentForSession(session),examId=required(body.examId,"Exam",80),passageId=required(body.passageId,"지문",80),passage=await studentPassageAccess(examId,passageId,student);
   const [sentences,tokens,bakes,occurrences,savedLexical,savedSentences]=await Promise.all([
