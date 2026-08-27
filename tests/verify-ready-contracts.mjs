@@ -35,7 +35,8 @@ assert.doesNotMatch(student, /student_exam|data-exam-id|data-back-exams|renderEx
 assert.match(student, /student_bootstrap[\s\S]*state\.scope=data\.scope[\s\S]*renderScope/, 'Student does not enter the current Scope directly');
 assert.match(student, /reading-passage[\s\S]*reading-sentence/, 'Reader is not rendered as a continuous passage');
 assert.match(student, /courseKey[\s\S]*source_type!=='TEXTBOOK'[\s\S]*scopePassagesHtml/, 'Textbook Passages are not grouped by course in the student list');
-assert.match(edge, /select\("id,title,display_order,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
+assert.match(edge, /select\("id,title,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
+assert.doesNotMatch(edge, /ready_passage_sentences"\)\.select\("id,passage_id,sentence_index,text,translation"\)/, 'Admin bootstrap still downloads every sentence');
 assert.doesNotMatch(edge, /anthropic\.com|api\.openai\.com|generateWithAnthropic|generateWithOpenAI/, 'READY Edge still calls an AI provider');
 assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|studentQuestions|submitAttempt|generateOrderQuestion/, 'Dormant Question/Attempt runtime is still active');
 assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
@@ -54,6 +55,7 @@ assert.deepEqual(migrations, [
   '20260827050000_ready_passage_revision.sql',
   '20260827053000_ready_lexical_only_bake.sql',
   '20260827060000_ready_remove_all_baking.sql',
+  '20260827070000_ready_runtime_cleanup.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
@@ -73,5 +75,7 @@ for(const table of ['ready_sentence_bakes','ready_sentence_tokens','ready_lexica
 assert.match(removeBaking,/drop function if exists public\.ready_apply_passage_bake/, 'Bake RPC survives the final schema');
 assert.match(removeBaking,/drop column if exists bake_status[\s\S]*drop column if exists bake_error/, 'Passage bake state survives the final schema');
 assert.doesNotMatch(edge + student + admin,/ready_sentence_bakes|ready_sentence_tokens|ready_lexical_|ready_saved_lexical|bake_passage|bake_status|READY_AI_|ANTHROPIC_API_KEY|OPENAI_API_KEY/,'Current runtime still consumes bake/provider data');
+const runtimeCleanup = read(`supabase/migrations/${migrations[12]}`);
+assert.match(runtimeCleanup, /drop index if exists public\.ready_passages_exam_position_idx/, 'Retired Passage-to-Exam index survives production cleanup');
 
 console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);

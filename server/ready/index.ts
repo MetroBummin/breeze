@@ -21,14 +21,14 @@ const studentOps = new Set(["student_bootstrap", "student_passage", "word_lookup
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
 
 type ReadySession = { id: string; actor_type: "student" | "admin"; student_id: string | null; remembered: boolean; expires_at: string };
-type Student = { id: string; name: string; school: string; grade: string; active: boolean };
+type Student = { id: string; name: string; school: string; grade: string };
 class ApiError extends Error { constructor(public status: number, message: string, public detail?: unknown) { super(message); } }
 function clean(value: unknown, max = 10_000) { return String(value ?? "").trim().slice(0, max); }
 function required(value: unknown, name: string, max = 10_000) { const out = clean(value, max); if (!out) throw new ApiError(400, `${name} 값이 필요합니다.`); return out; }
 function rows<T>(result: { data: T | null; error: { message: string } | null }): T { if (result.error) throw new ApiError(500, result.error.message); return result.data as T; }
 
 async function studentForSession(session: ReadySession): Promise<Student> {
-  const result = await db.from("ready_students").select("id,name,school,grade,active").eq("id", session.student_id).eq("active", true).maybeSingle();
+  const result = await db.from("ready_students").select("id,name,school,grade").eq("id", session.student_id).eq("active", true).maybeSingle();
   if (result.error) throw new ApiError(500, result.error.message);
   if (!result.data) {
     await db.from("ready_sessions").update({ revoked_at: new Date().toISOString() }).eq("id", session.id);
@@ -64,7 +64,7 @@ async function assertLoginAllowed(identifier: string) {
 async function recordLogin(identifier: string, successful: boolean) { const result = await db.from("ready_login_attempts").insert({ identifier, successful }); if (result.error) console.error("ready_login_attempts:", result.error.message); }
 async function revokeSession(session: ReadySession) { const result = await db.from("ready_sessions").update({ revoked_at: new Date().toISOString() }).eq("id", session.id); if (result.error) throw new ApiError(500, result.error.message); return { loggedOut: true }; }
 
-async function listStudents() { return { students: rows(await db.from("ready_students").select("id,name").eq("active", true).not("pin_hash", "is", null).order("school").order("grade").order("sort_order").order("name")) }; }
+async function listStudents() { return { students: rows(await db.from("ready_students").select("id,name").eq("active", true).not("pin_hash", "is", null).order("school").order("grade").order("name")) }; }
 async function studentLogin(body: any) {
   const studentId = required(body.studentId, "학생", 80), pin = clean(body.pin, 10);
   if (!validPin(pin)) throw new ApiError(400, "PIN은 숫자 4~6자리입니다.");
@@ -84,8 +84,7 @@ async function adminLogin(body: any) {
 async function createStudent(body: any) {
   const name = required(body.name, "학생 이름", 40), school = required(body.school, "학교", 80), grade = required(body.grade, "학년", 40), pin = clean(body.pin, 10);
   if (!validPin(pin)) throw new ApiError(400, "PIN은 숫자 4~6자리여야 합니다.");
-  const existing = rows<any[]>(await db.from("ready_students").select("sort_order").eq("school", school).eq("grade", grade).order("sort_order", { ascending: false }).limit(1));
-  const result = await db.rpc("ready_create_student", { p_name: name, p_school: school, p_grade: grade, p_pin: pin, p_sort_order: Number(existing[0]?.sort_order ?? -1) + 1 });
+  const result = await db.rpc("ready_create_student", { p_name: name, p_school: school, p_grade: grade, p_pin: pin, p_sort_order: 0 });
   return { student: rows<any[]>(result)[0] };
 }
 async function setStudentPin(body: any) { const studentId = required(body.studentId, "학생", 80), pin = clean(body.pin, 10); if (!validPin(pin)) throw new ApiError(400, "PIN은 숫자 4~6자리여야 합니다."); const result = await db.rpc("ready_set_student_pin", { p_student_id: studentId, p_pin: pin }); if (result.error) throw new ApiError(500, result.error.message); return { updated: studentId }; }
@@ -128,10 +127,10 @@ async function deleteStudent(body: any) {
 }
 
 async function teacherBootstrap() {
-  const [students, exams, passages, sentences, examPassages] = await Promise.all([
-    db.from("ready_students").select("id,name,school,grade,sort_order,active,created_at").order("school").order("grade").order("sort_order").order("name"), db.from("ready_exams").select("id,school,grade,title,is_current").eq("is_current", true).order("school").order("grade"), db.from("ready_passages").select("id,title,source_type,grade,source_year,source_month,source_label,display_order,study_status,created_at,updated_at").order("display_order").order("created_at"), db.from("ready_passage_sentences").select("id,passage_id,sentence_index,text,translation").order("sentence_index"), db.from("ready_exam_passages").select("exam_id,passage_id,position").order("position"),
+  const [students, exams, passages, examPassages] = await Promise.all([
+    db.from("ready_students").select("id,name,school,grade,created_at").order("school").order("grade").order("name"), db.from("ready_exams").select("id,school,grade,title,is_current").eq("is_current", true).order("school").order("grade"), db.from("ready_passages").select("id,title,source_type,grade,source_year,source_month,source_label,created_at,updated_at").order("display_order").order("created_at"), db.from("ready_exam_passages").select("exam_id,passage_id,position").order("position"),
   ]);
-  return { students: rows(students), exams: rows(exams), passages: rows(passages), sentences: rows(sentences), examPassages: rows(examPassages) };
+  return { students: rows(students), exams: rows(exams), passages: rows(passages), examPassages: rows(examPassages) };
 }
 function ids(value: unknown) { return Array.isArray(value) ? [...new Set(value.map(item => clean(item, 80)).filter(Boolean))] : []; }
 async function setScopePassages(body: any, replace: boolean) {
@@ -153,7 +152,7 @@ async function createPassage(body: any) {
   const sourceType = body.sourceType === "MOCK_EXAM" ? "MOCK_EXAM" : "TEXTBOOK", title = required(body.title, "지문 제목", 120), grade = required(body.grade, "학년", 40), sourceYear = body.sourceYear ? Math.round(Number(body.sourceYear)) : null, sourceMonth = body.sourceMonth ? Math.round(Number(body.sourceMonth)) : null;
   if (sourceType === "MOCK_EXAM" && (!sourceYear || !sourceMonth)) throw new ApiError(400, "모의고사는 연도와 월이 필요합니다.");
   const passageId = rows<string>(await db.rpc("ready_create_passage_with_sentences", { p_title: title, p_source_type: sourceType, p_grade: grade, p_source_year: sourceYear, p_source_month: sourceMonth, p_source_label: clean(body.sourceLabel, 120), p_rows: structuredRows }));
-  return { passage: rows<any>(await db.from("ready_passages").select("*").eq("id", passageId).single()), sentences: rows<any[]>(await db.from("ready_passage_sentences").select("*").eq("passage_id", passageId).order("sentence_index")) };
+  return { passageId };
 }
 async function updatePassage(body: any) {
   const passageId = required(body.passageId, "지문", 80), sourceType = body.sourceType === "MOCK_EXAM" ? "MOCK_EXAM" : "TEXTBOOK", sourceYear = body.sourceYear ? Math.round(Number(body.sourceYear)) : null, sourceMonth = body.sourceMonth ? Math.round(Number(body.sourceMonth)) : null;
@@ -166,13 +165,13 @@ async function deletePassage(body: any) {
   if (result.error) throw new ApiError(500, result.error.message); return { deleted: passageId };
 }
 async function studentExamAccess(examId: string, student: Student) {
-  const result = await db.from("ready_exams").select("id,school,grade,title,description").eq("id", examId).eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle();
+  const result = await db.from("ready_exams").select("id").eq("id", examId).eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle();
   if (result.error) throw new ApiError(500, result.error.message); if (!result.data) throw new ApiError(404, "현재 배정된 시험범위가 아닙니다."); return result.data as any;
 }
 async function scopePassages(examId: string) {
   const links = rows<any[]>(await db.from("ready_exam_passages").select("passage_id,position").eq("exam_id", examId).order("position"));
   const linkedIds = links.map(item => item.passage_id);
-  const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,display_order,source_type,source_label").in("id", linkedIds)) : [];
+  const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", linkedIds)) : [];
   const byId = new Map(sourcePassages.map(item => [item.id, item]));
   const passages = links.map(link => ({ ...byId.get(link.passage_id), position: link.position })).filter(item => item.id);
   return passages;
@@ -180,9 +179,9 @@ async function scopePassages(examId: string) {
 async function studentBootstrap(session: ReadySession) {
   const student = await studentForSession(session), scope = rows<any>(await db.from("ready_exams").select("id,school,grade").eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle());
   const passages = scope ? await scopePassages(scope.id) : [];
-  return { student: { id: student.id, name: student.name, school: student.school, grade: student.grade }, scope, passages };
+  return { student: { id: student.id, school: student.school, grade: student.grade }, scope, passages };
 }
-async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,study_status,processing_error,updated_at").eq("id", passageId).single()); }
+async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,updated_at").eq("id", passageId).single()); }
 async function studentPassage(body: any, session: ReadySession) {
   const student=await studentForSession(session),examId=required(body.examId,"Exam",80),passageId=required(body.passageId,"지문",80),passage=await studentPassageAccess(examId,passageId,student);
   const [sentences,savedWords,savedSentences]=await Promise.all([

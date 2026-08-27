@@ -58,6 +58,7 @@ assert.match(edge, /sentenceRows/, 'Structured Passage writes do not preserve ex
 const createPassageBody = edge.match(/async function createPassage\(body: any\) \{[\s\S]*?\n\}/)?.[0] || '';
 assert.match(createPassageBody, /ready_create_passage_with_sentences/, 'Structured rows are not saved through the atomic Passage RPC');
 assert.doesNotMatch(createPassageBody, /splitSentences|translateSentences|preparePassageStudy/, 'Structured Passage writes still re-split or AI-process supplied rows');
+assert.match(createPassageBody, /return \{ passageId \}/, 'Passage creation performs follow-up reads instead of returning the transaction id');
 assert.match(edge, /async function deleteImpact[\s\S]*ready_attempts[\s\S]*ready_delete_student_cascade/, 'Student deletion does not report impact then cascade atomically');
 assert.match(edge, /ready_delete_passage_cascade/, 'Passage deletion is not atomic');
 assert.doesNotMatch(edge, /ready_publish_study_set|ready_publication_questions/, 'New READY runtime still depends on Publication');
