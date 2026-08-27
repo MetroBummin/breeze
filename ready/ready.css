@@ -128,9 +128,9 @@ body[data-ready-mode="student"] .reading-sentence:hover{border-color:var(--brand
   body.ready-word-side-open #ready-word-dock{position:fixed;z-index:170;top:var(--topbar-h,68px);right:0;bottom:0;display:block;width:min(340px,28vw);max-height:none;overflow:auto;border-radius:22px 0 0 0;background:var(--sheet);box-shadow:var(--shadow-panel);scrollbar-width:none}
   body.ready-word-side-open #ready-word-dock::-webkit-scrollbar{display:none}
   .ready-word-dock-inner{padding:22px 22px 36px}
-  .ready-word-dock-close{float:right;width:30px;height:30px;border:0;border-radius:50%;background:var(--quiet);color:var(--quiet-ink);font:400 16px/1 var(--ui);cursor:pointer}
+  .ready-word-dock-close{width:34px;height:34px;border:0;border-radius:50%;background:var(--quiet);color:var(--quiet-ink);font:400 18px/1 var(--ui);cursor:pointer}
   .ready-word-dock-close:hover{background:var(--hover-quiet)}
-  .ready-word-dock-inner .ready-word-top{padding-right:40px}
+  .ready-word-dock-inner .ready-word-top{padding-right:0}
 }
 @media (max-width:999px) and (pointer:coarse){
   .modal[data-kind="lexical"] .learning-sheet{height:auto;max-height:72vh;border-radius:26px 26px 0 0;padding-bottom:calc(30px + env(safe-area-inset-bottom))}
