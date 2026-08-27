@@ -131,6 +131,9 @@ assert.match(app, /student_bootstrap[\s\S]*renderScope/, 'Student does not enter
 assert.match(app, /student_passage/, 'Student cannot open a Passage');
 assert.match(app, /reading-passage/, 'Student Reader is missing');
 assert.match(app, /translation_view/, 'Stored teacher translations are not opened through an authenticated event');
+assert.match(app, /inline-translation/, 'Reader has no inline translation region');
+assert.match(app, /toggleTranslation[\s\S]*translation_view/, 'Sentence tap does not fetch its stored translation');
+assert.match(app, /translationCache:new Map/, 'Repeated sentence translation views are not cached in the Reader session');
 assert.doesNotMatch(app, /student_exam|renderExams|data-exam-id|data-back-exams/, 'Student Exam selection remains in the UI');
 assert.doesNotMatch(app + adminApp, /studySetId|publicationId|publish_set/, 'Frontend still depends on StudySet or Publication');
 assert.doesNotMatch(app, /main_idea|sentence_translation|vocabulary/, 'A future question type was implemented early');
