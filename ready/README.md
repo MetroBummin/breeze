@@ -10,6 +10,7 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 
 ```text
 영어/한국어 TSV 붙여넣기 → Preview/Edit → Passage 저장
+→ 필요할 때 별도 Reader Bake
 → Passage 여러 개 선택 → 학교/학년 시험범위에 배정
 → 학생 PIN 로그인 → 현재 시험범위 Passage → Reader
 ```
@@ -19,6 +20,9 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 - TSV 한 행은 `PassageSentence` 한 개입니다.
 - 1열은 영어, 2열은 한국어 해석이며 서버가 다시 분리하거나 번역하지 않습니다.
 - Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
+- 저장은 AI와 독립적입니다. Reader Bake가 실패해도 원문과 해석 Reader는 계속 동작합니다.
+- Bake된 어휘는 `kind + canonical lemma/phrase + stable sense key`로 식별합니다.
+- rebake는 동일 문장·동일 occurrence의 기존 concept UUID를 재사용하고 새 sense key는 alias로 기록해, SavedWord/SavedPhrase와 highlight를 보존합니다.
 - 학교/학년별 현재 시험범위와 Passage 연결은 `ready_set_current_scope_passages` 한 transaction으로 저장합니다.
 - Passage 소속의 Source of Truth는 `ready_exam_passages`입니다.
 - `ready_exams`는 기록 분리를 위한 내부 구현이며 학생과 관리자에게 생성·선택 개념을 노출하지 않습니다.
@@ -44,7 +48,7 @@ npm run ready:test
 - 학생 PIN은 PostgreSQL bcrypt hash만 저장합니다.
 - 관리자 비밀번호는 로그인 시 한 번만 보내고 이후 opaque admin session을 사용합니다.
 - API key, 관리자 비밀번호, service-role key는 frontend나 Git에 넣지 않습니다.
-- AI key는 ORDER 기능을 다시 노출할 때도 Supabase Secret에서만 읽습니다.
+- AI key와 provider/model 설정은 Supabase Secret에서만 읽습니다.
 
 ## 배포
 
@@ -57,5 +61,6 @@ npx supabase db push --linked
 npx supabase functions deploy ready --no-verify-jwt
 ```
 
-삭제 전 서버의 `delete_impact`가 연결 수를 계산합니다. 관리자가 확인하면 Student, Passage,
-시험범위별 cascade RPC가 Attempt와 학습 이벤트까지 하나의 transaction에서 함께 삭제합니다.
+삭제 전 서버의 `delete_impact`가 연결 수를 계산합니다. 관리자가 확인하면 Student와 Passage
+cascade RPC가 Attempt와 학습 이벤트까지 하나의 transaction에서 함께 삭제합니다. 학교/학년
+시험범위는 영구 슬롯이므로 삭제하지 않고 포함 Passage만 교체합니다.

@@ -127,7 +127,10 @@ assert.match(atomicPassageSql, /ready_create_passage_with_sentences/, 'Atomic Pa
 assert.match(atomicPassageSql, /insert into public\.ready_passages[\s\S]*insert into public\.ready_passage_sentences/, 'Passage and sentence rows are not in one database transaction');
 assert.match(atomicPassageSql, /with ordinality/, 'Pasted row order is not preserved as sentence_index');
 assert.doesNotMatch(app, /submit_attempt|data-order-move|student_questions/, 'ORDER UI remains in the Golden Path');
-assert.match(app, /student_bootstrap[\s\S]*renderScope[\s\S]*student_passage[\s\S]*reading-passage[\s\S]*preview-translation/, 'Student does not enter the current Scope and read stored translations');
+assert.match(app, /student_bootstrap[\s\S]*renderScope/, 'Student does not enter the current Scope');
+assert.match(app, /student_passage/, 'Student cannot open a Passage');
+assert.match(app, /reading-passage/, 'Student Reader is missing');
+assert.match(app, /translation_view/, 'Stored teacher translations are not opened through an authenticated event');
 assert.doesNotMatch(app, /student_exam|renderExams|data-exam-id|data-back-exams/, 'Student Exam selection remains in the UI');
 assert.doesNotMatch(app + adminApp, /studySetId|publicationId|publish_set/, 'Frontend still depends on StudySet or Publication');
 assert.doesNotMatch(app, /main_idea|sentence_translation|vocabulary/, 'A future question type was implemented early');

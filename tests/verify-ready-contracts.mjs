@@ -36,6 +36,10 @@ assert.deepEqual(migrations, [
   '20260826161000_ready_golden_path_stabilization.sql',
   '20260826170000_ready_scope_simplification.sql',
   '20260826174000_ready_legacy_delete_cleanup.sql',
+  '20260827030000_ready_reader_intelligence.sql',
+  '20260827034500_ready_stable_lexical_identity.sql',
+  '20260827040000_ready_bake_snapshot_lint_fix.sql',
+  '20260827041500_ready_bake_lint_ambiguity_fix.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
@@ -44,10 +48,19 @@ assert.match(baseline, /create table if not exists public\.ready_attempts/);
 assert.doesNotMatch(baseline, /ready_study_sets|ready_publications|ready_publication_questions/, 'Clean schema recreates legacy runtime tables');
 const scopeMigration = read(`supabase/migrations/${migrations[3]}`);
 const legacyDeleteMigration = read(`supabase/migrations/${migrations[4]}`);
+const intelligenceMigration = read(`supabase/migrations/${migrations[5]}`);
+const stableIdentityMigration = read(`supabase/migrations/${migrations[6]}`);
+const bakeSnapshotFix = read(`supabase/migrations/${migrations[7]}`);
+const bakeLintFix = read(`supabase/migrations/${migrations[8]}`);
 assert.match(scopeMigration, /ready_exams_one_current_scope_idx/, 'School and grade can have multiple current Scopes');
 assert.match(scopeMigration, /\('중앙고', '1학년'\)[\s\S]*\('한빛고', '2학년'\)/, 'Eight permanent Scope slots are not seeded');
 assert.doesNotMatch(scopeMigration + edge + admin, /delete_scope|ready_delete_scope_cascade|data-delete-scope/, 'Permanent Scope slots can still be deleted');
 assert.match(scopeMigration, /set_config\('ready\.allow_cascade_delete', 'on', true\)/, 'Cascade deletion cannot safely remove append-only Attempts');
 assert.match(legacyDeleteMigration, /to_regclass\('public\.ready_publication_questions'\)[\s\S]*execute 'delete from public\.ready_publication_questions/, 'Production legacy Publication links still block Passage deletion');
+assert.match(intelligenceMigration,/ready_apply_passage_bake[\s\S]*ready_sentence_tokens[\s\S]*ready_lexical_occurrences/,'Bake output is not applied atomically');
+assert.match(intelligenceMigration,/ready_saved_lexical_items[\s\S]*unique\(student_id, concept_id\)/,'Saved lexical concepts are not deduplicated per student');
+assert.match(stableIdentityMigration,/v_old_occurrences[\s\S]*v_old_concept_id[\s\S]*ready_lexical_concept_aliases/,'Rebake does not preserve or explicitly remap lexical identity');
+assert.doesNotMatch(stableIdentityMigration + bakeSnapshotFix,/create temporary table|ready_bake_old_occurrences/,'Bake identity snapshots still depend on temporary relations');
+assert.doesNotMatch(bakeLintFix,/declare[^;]*old_occurrence jsonb/,'Bake remap function reintroduced the ambiguous alias variable');
 
 console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);
