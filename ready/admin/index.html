@@ -25,9 +25,9 @@
     <link rel="stylesheet" href="../../styles/fonts.css" />
     <link rel="stylesheet" href="../../styles/tokens.css" />
     <link rel="stylesheet" href="../../styles/base.css" />
-    <link rel="stylesheet" href="../ready.css?v=course-groups-1" />
+    <link rel="stylesheet" href="../ready.css?v=stabilization-1" />
     <script defer src="../config.js"></script>
-    <script type="module" src="app.js?v=clean-sentence-ui-3"></script>
+    <script type="module" src="app.js?v=stabilization-1"></script>
   </head>
   <body data-ready-mode="admin">
     <div id="app">
@@ -98,96 +98,6 @@
               새로고침
             </button>
           </div>
-          <form id="create-passage-form" class="card form-card">
-            <div class="card-head">
-              <div>
-                <span class="step">+</span>
-                <h2>한 지문 등록</h2>
-              </div>
-            </div>
-            <p class="lead compact">
-              문항 번호 하나를 고른 뒤 Excel·한글에서
-              <strong>영어 문장 / 한국어 해석</strong> 두 열을 복사해
-              붙여넣으세요.
-            </p>
-            <div class="form-grid passage-create">
-              <label
-                ><span>종류</span
-                ><select name="sourceType" id="passage-source-type">
-                  <option value="TEXTBOOK">교과서</option>
-                  <option value="MOCK_EXAM">모의고사</option>
-                </select></label
-              ><label
-                ><span>학년</span
-                ><select name="grade">
-                  <option>1학년</option>
-                  <option>2학년</option>
-                  <option>3학년</option>
-                </select></label
-              ><label data-textbook-meta
-                ><span>교과서 페이지 이름</span
-                ><input
-                  name="title"
-                  maxlength="120"
-                  placeholder="Lesson 1 · Part A"
-                  required /></label
-              ><label data-mock-meta hidden
-                ><span>연도</span
-                ><input
-                  name="sourceYear"
-                  inputmode="numeric"
-                  placeholder="2026" /></label
-              ><label data-mock-meta hidden
-                ><span>월</span
-                ><select name="sourceMonth">
-                  <option value="">선택</option>
-                  <option>3</option>
-                  <option>6</option>
-                  <option>9</option>
-                  <option>11</option>
-                </select></label
-              ><label data-mock-meta hidden
-                ><span>문항 번호</span
-                ><select name="questionNumber">
-                  <option value="18">18번</option>
-                  <option value="19">19번</option>
-                  <option value="20">20번</option>
-                  <option value="21">21번</option>
-                  <option value="22">22번</option>
-                  <option value="23">23번</option>
-                  <option value="24">24번</option>
-                  <option value="25">25번</option>
-                  <option value="26">26번</option>
-                  <option value="27">27번</option>
-                  <option value="28">28번</option>
-                  <option value="29">29번</option>
-                  <option value="30">30번</option>
-                  <option value="31">31번</option>
-                  <option value="32">32번</option>
-                  <option value="33">33번</option>
-                  <option value="34">34번</option>
-                  <option value="35">35번</option>
-                  <option value="36">36번</option>
-                  <option value="37">37번</option>
-                  <option value="38">38번</option>
-                  <option value="39">39번</option>
-                  <option value="40">40번</option>
-                  <option value="41-42">41·42번</option>
-                  <option value="43-45">43·44·45번</option>
-                </select></label
-              ><label class="passage-source"
-                ><span>영어 문장 ↹ 한국어 해석 표 붙여넣기</span
-                ><textarea
-                  name="tsv"
-                  maxlength="30000"
-                  required
-                  placeholder="Students learn best when they understand each sentence.&#9;학생들은 각 문장을 이해할 때 가장 잘 학습한다.&#10;Clear explanations help them read with confidence.&#9;명확한 설명은 학생들이 자신감 있게 읽도록 돕는다."
-                ></textarea>
-              </label>
-            </div>
-            <div id="passage-import-error" class="inline-error" role="alert"></div>
-            <button class="button primary" type="submit">이 지문 Import</button>
-          </form>
           <div class="filter-toolbar">
             <label
               >학년<select id="passage-grade-filter">
@@ -308,44 +218,7 @@
         <section class="view" id="v-scope-detail">
           <div id="scope-detail-content"></div>
         </section>
-        <section class="view" id="v-analytics">
-          <div class="page-head">
-            <div>
-              <p class="eyebrow">ACTIONABLE REVIEW</p>
-              <h1>학생 학습 기록</h1>
-            </div>
-            <button id="refresh-analytics" class="button quiet" type="button">
-              새로고침
-            </button>
-          </div>
-          <div id="analytics-content"></div>
-        </section>
       </main>
-    </div>
-    <div id="question-modal" class="modal" aria-hidden="true">
-      <div class="modal-scrim" data-close-modal></div>
-      <section
-        class="sheet"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="question-modal-title"
-      >
-        <div class="sheet-head">
-          <div>
-            <p class="eyebrow">ORDER PREVIEW</p>
-            <h2 id="question-modal-title">문제 검수</h2>
-          </div>
-          <button
-            class="icon-button"
-            type="button"
-            data-close-modal
-            aria-label="닫기"
-          >
-            ×
-          </button>
-        </div>
-        <div id="question-editor"></div>
-      </section>
     </div>
     <div id="passage-modal" class="modal" aria-hidden="true">
       <div class="modal-scrim" data-close-passage></div>
@@ -370,31 +243,6 @@
           </button>
         </div>
         <div id="passage-editor"></div>
-      </section>
-    </div>
-    <div id="passage-import-modal" class="modal" aria-hidden="true">
-      <div class="modal-scrim" data-close-import-preview></div>
-      <section
-        class="sheet import-preview-sheet"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="passage-import-title"
-      >
-        <div class="sheet-head">
-          <div>
-            <p class="eyebrow">PASSAGE PREVIEW</p>
-            <h2 id="passage-import-title">지문 미리보기</h2>
-          </div>
-          <button
-            class="icon-button"
-            type="button"
-            data-close-import-preview
-            aria-label="닫기"
-          >
-            ×
-          </button>
-        </div>
-        <div id="passage-import-content"></div>
       </section>
     </div>
     <div id="delete-modal" class="modal" aria-hidden="true">

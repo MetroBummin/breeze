@@ -9,11 +9,17 @@ const admin = read('ready/admin/app.js');
 const student = read('ready/app.js');
 const api = read('ready/api.js');
 const edge = read('server/ready/index.ts');
-const clientOps = new Set([...admin.matchAll(/call\(['"]([a-z_]+)['"]/g), ...student.matchAll(/call\(['"]([a-z_]+)['"]/g)].map(match => match[1]));
+const operationPattern = /(?:call|readyApi|record)\(['"]([a-z_]+)['"]/g;
+const clientOps = new Set([...admin.matchAll(operationPattern), ...student.matchAll(operationPattern)].map(match => match[1]));
 const serverOps = new Set([...edge.matchAll(/case "([a-z_]+)"/g)].map(match => match[1]));
+const serverOnlyOps = new Set([
+  'create_passage', // authenticated structured-data ingress used by ChatGPT Work tooling
+  'delete_student', 'delete_passage', // selected through the typed delete modal's operation map
+]);
 
 for (const op of clientOps) assert(serverOps.has(op), `Frontend operation has no server contract: ${op}`);
-for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active', 'create_exam', 'update_exam_passages', 'delete_exam', 'delete_scope', 'student_exam']) {
+for (const op of serverOps) assert(clientOps.has(op) || serverOnlyOps.has(op), `Server operation has no active caller: ${op}`);
+for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active', 'create_exam', 'update_exam_passages', 'delete_exam', 'delete_scope', 'student_exam', 'generate_order', 'student_questions', 'submit_attempt', 'update_question', 'set_question_status', 'delete_question']) {
   assert(!serverOps.has(removed), `Legacy operation is still dispatched: ${removed}`);
 }
 
@@ -31,6 +37,8 @@ assert.match(student, /reading-passage[\s\S]*reading-sentence/, 'Reader is not r
 assert.match(student, /courseKey[\s\S]*source_type!=='TEXTBOOK'[\s\S]*scopePassagesHtml/, 'Textbook Passages are not grouped by course in the student list');
 assert.match(edge, /select\("id,title,display_order,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
 assert.match(edge, /output_json[\s\S]*AI 구조화 응답이 비어 있습니다/, 'Anthropic structured output has no robust response parser');
+assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|studentQuestions|submitAttempt|generateOrderQuestion/, 'Dormant Question/Attempt runtime is still active');
+assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
 
 const migrations = readdirSync(resolve(root, 'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
 assert.deepEqual(migrations, [
