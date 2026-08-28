@@ -41,7 +41,7 @@ READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 지문·문제 �
 - Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
 - 저장과 문장 학습은 AI와 독립적입니다. 문장 sheet는 원문·교사 해석·저장만 즉시 보여줍니다.
 - Reader 토큰은 지문을 열 때 결정적으로 계산하며 DB 전처리나 AI 호출이 없습니다.
-- 단어는 누른 순간에만 Breeze와 같은 Gemini 문맥 사전을 조회합니다. 원형·실제 문장으로 문맥 뜻, 품사, 짧은 설명, 표현 후보를 받고 학생이 고른 뜻만 `ready_saved_words`에 저장합니다. 지문을 열거나 문장을 저장할 때 AI를 호출하지 않습니다.
+- 단어는 누른 순간에만 Breeze와 같은 Gemini 문맥 사전을 조회합니다. 원형·실제 문장으로 문맥 뜻, 품사, 짧은 설명, 표현 후보를 받고 대표 문맥 뜻은 즉시 `ready_saved_words`에 자동 저장합니다. 다른 뜻을 누르면 같은 lemma에 복수 뜻을 추가로 저장할 수 있습니다. `아는 단어 빼기`는 해당 지문의 학습 저장·강조를 제거하되 되돌릴 수 있는 `ready_word_states` 상태로 남깁니다. 지문을 열거나 문장을 저장할 때 AI를 호출하지 않습니다.
 - 저장 highlight는 lemma 기준이라 `made`로 저장한 `make`가 다른 지문에서도 유지됩니다.
 - 학교/학년별 현재 시험범위와 Passage 연결은 `ready_set_current_scope_passages` 한 transaction으로 저장합니다.
 - Passage 소속의 Source of Truth는 `ready_exam_passages`입니다.
