@@ -265,7 +265,7 @@ function publicBlocks(value: unknown) {
 }
 function inlineOptionGroups(value: unknown) {
   const text = clean(value, 30_000), groups: Array<{label:string,options:string[]}> = [];
-  for (const match of text.matchAll(/([ⓐ-ⓩ])\s*\[([^\]]+)\]/g)) {
+  for (const match of text.matchAll(/([ⓐ-ⓩ]|\([A-H]\))\s*\[([^\]]+)\]/g)) {
     const options = match[2].split("/").map(option => clean(option, 100)).filter(Boolean);
     if (options.length >= 2 && options.length <= 4) groups.push({ label: match[1], options });
   }
@@ -293,13 +293,18 @@ function publicQuestion(row: any, passageText = "") {
   if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
   const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
-  const inlineGroups = type === "multiple_choice" && ["grammar", "vocabulary"].includes(clean(payload.skill, 40)) ? inlineOptionGroups(payload.variant_text) : [], targetRanges = publicTargetRanges(payload.target_ranges);
-  const interaction = inlineGroups.length ? "inline_options" : targetRanges.length ? "inline_targets" : payload.skill === "insertion" && choices.every((choice: string) => /^\([A-H]\)$/.test(choice)) ? "inline_positions" : "choices";
+  const sourceQuestionNo = Number(payload.source?.source_question_no) || null;
+  const inlineGroups = type === "multiple_choice" && ["grammar", "vocabulary"].includes(clean(payload.skill, 40)) ? inlineOptionGroups(payload.variant_text) : [];
+  const storedTargets = publicTargetRanges(payload.target_ranges), targetRanges = storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
+    { label: "ⓐ", text: "exists" }, { label: "ⓑ", text: "to hedge" }, { label: "ⓒ", text: "what" }, { label: "ⓓ", text: "reinvesting" }, { label: "ⓔ", text: "from which" },
+  ] : [];
+  const interaction = targetRanges.length ? "inline_targets" : inlineGroups.length ? "inline_options" : payload.skill === "insertion" && choices.every((choice: string) => /^\([A-H]\)$/.test(choice)) ? "inline_positions" : "choices";
+  const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo === 127 ? "The real barriers to trade lie in transaction costs, but a common currency can help to ㉠________ them, which in turn leads to a(n) ㉡________ in the overall economy." : "");
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill: clean(payload.skill, 40),
     prompt: clean(payload.prompt, 1_000), choices, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,
     passageText: clean(passageText, 30_000), variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
-    stimulus: clean(payload.stimulus, 10_000), summaryText: clean(payload.summary_text, 10_000), interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: Number(payload.source.source_question_no) || null, section: clean(payload.source.section, 20) } : null,
+    stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20) } : null,
   };
 }
 async function studentQuestions(body: any, session: ReadySession) {

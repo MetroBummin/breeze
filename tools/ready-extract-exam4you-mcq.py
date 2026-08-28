@@ -53,6 +53,16 @@ CITY_TOUR_TARGETS = [
     {"label": "ⓔ", "text": "check out"},
 ]
 
+TRADE_TARGETS = [
+    {"label": "ⓐ", "text": "exists"},
+    {"label": "ⓑ", "text": "to hedge"},
+    {"label": "ⓒ", "text": "what"},
+    {"label": "ⓓ", "text": "reinvesting"},
+    {"label": "ⓔ", "text": "from which"},
+]
+
+TRADE_SUMMARY = "The real barriers to trade lie in transaction costs, but a common currency can help to ㉠________ them, which in turn leads to a(n) ㉡________ in the overall economy."
+
 
 def city_tour_blocks(annotated: bool):
     def target(label, text):
@@ -211,6 +221,10 @@ def main():
                     if question_no == 38:
                         payload["content_blocks"] = city_tour_blocks(False)
                         payload.pop("variant_text", None)
+                    if question_no == 123:
+                        payload["target_ranges"] = TRADE_TARGETS
+                    if question_no == 127:
+                        payload["summary_text"] = TRADE_SUMMARY
                     status = "draft" if question_no == 32 else "available"
                     questions.append({"passage_id": passage_map[passage_no], "type": "multiple_choice", "status": status, "payload": payload})
 
