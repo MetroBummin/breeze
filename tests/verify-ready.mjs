@@ -41,18 +41,22 @@ assert.match(edge,/\["grammar", "vocabulary"\]\.includes[\s\S]*inlineOptionGroup
 assert.match(edge,/\[ⓐ-ⓩ\]\|\\\(\[A-H\]\\\)/,'Parenthesized inline option groups are missing');
 assert.match(edge,/sourceQuestionNo === 123[\s\S]*sourceQuestionNo === 127/,'Verified 23번 source repairs are missing');
 assert.match(edge,/sourceQuestionNo === 125 \? "vocabulary"[\s\S]*sourceQuestionNo === 127 \? "summary"/,'23번 vocabulary and summary skills are not repaired');
-assert.match(edge,/target_ranges[\s\S]*inline_positions/,'Inline target/position contracts are missing');
+assert.match(edge,/targetRanges[\s\S]*const interaction = "choices"/,'Passage metadata must point while MCQ answers stay in the plain choice list');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
 
 assert.match(app,/function renderReader[\s\S]*plainPassage/,'Reader does not render continuous prose');
 assert.doesNotMatch(app,/openLexical|openSentence|translation_view|save_sentence|savedWord|savedSentence/,'Lexical/sentence study remains connected to the student frontend');
 assert.match(app,/family\|\|'standard'[\s\S]*questionPassageHtml/,'Question family renderer is missing');
-assert.match(app,/contentBlocks[\s\S]*variantSegments[\s\S]*summaryText/,'Question variants and summary blocks are not rendered');
+assert.match(app,/contentBlocks/,'Structured Passage blocks are not rendered');
+assert.match(app,/fixedSetAnchor[\s\S]*summaryText/,'Stable Passage variants and summary blocks are not rendered');
 assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written response UI is missing');
 assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
-assert.match(app,/data-inline-group[\s\S]*inlineTargetPassageHtml[\s\S]*data-target-choice[\s\S]*data-position-choice/,'Direct passage interactions are missing');
-assert.match(app,/implicationPassageHtml[\s\S]*question-footnote/,'Underline and footnote passage rendering is missing');
+assert.match(app,/function fixedSetAnchor[\s\S]*function questionPassageHtml/,'A question set does not keep one stable Passage anchor');
+assert.match(app,/resolvedSetPassageText[\s\S]*pointedPassageHtml/,'The stable Passage does not use plain text with pointing');
+assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointing and footnote rendering is missing');
+assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');
+assert.match(app,/combinationChoiceParts[\s\S]*choice-separator/,'Grammar and vocabulary combination choices are not visually separated');
 assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned when moving within a question set');
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
@@ -60,7 +64,9 @@ assert.match(app,/continuationQuestion[\s\S]*question_count/,'Quick start can se
 assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a question session can show a stale Review count');
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
 assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*written-response/,'Question family styling is incomplete');
-assert.match(css,/inline-answer[\s\S]*question-set-nav/,'Question-set and inline interaction styling is missing');
+assert.match(css,/passage-pointer[\s\S]*question-set-nav/,'Question-set pointing styling is missing');
+assert.match(css,/question-choice\.eliminated[\s\S]*question-choice\.candidate/,'Choice deliberation states are missing');
+assert.match(css,/font-size:16px!important/,'iOS Safari input zoom prevention is missing');
 assert.match(css,/reader-shell>\.question-prompt\{[^}]*clamp\(18px,1\.65vw,22px\)/,'Question prompt has regressed to an oversized display heading');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/stimulus[\s\S]*target_ranges[\s\S]*city_tour_blocks/,'Question-set source repairs are missing from the importer');
 

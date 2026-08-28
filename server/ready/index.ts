@@ -299,7 +299,9 @@ function publicQuestion(row: any, passageText = "") {
   const storedTargets = publicTargetRanges(payload.target_ranges), targetRanges = storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
     { label: "ⓐ", text: "exists" }, { label: "ⓑ", text: "to hedge" }, { label: "ⓒ", text: "what" }, { label: "ⓓ", text: "reinvesting" }, { label: "ⓔ", text: "from which" },
   ] : [];
-  const interaction = targetRanges.length ? "inline_targets" : inlineGroups.length ? "inline_options" : payload.skill === "insertion" && choices.every((choice: string) => /^\([A-H]\)$/.test(choice)) ? "inline_positions" : "choices";
+  // Keep answering deliberately plain: the passage may point at evidence, but
+  // every multiple-choice answer is selected from the normal choice list.
+  const interaction = "choices";
   const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo === 127 ? "The real barriers to trade lie in transaction costs, but a common currency can help to ㉠________ them, which in turn leads to a(n) ㉡________ in the overall economy." : "");
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
