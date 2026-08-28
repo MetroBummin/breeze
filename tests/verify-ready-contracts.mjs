@@ -10,6 +10,8 @@ const student = read('ready/app.js');
 const api = read('ready/api.js');
 const edge = read('server/ready/index.ts');
 const questionTypes = read('ready/QUESTION_TYPES.md');
+const questionImport = read('ready/QUESTION_IMPORT.md');
+const readyReadme = read('ready/README.md');
 const operationPattern = /(?:call|readyApi|record)\(['"]([a-z_]+)['"]/g;
 const clientOps = new Set([...admin.matchAll(operationPattern), ...student.matchAll(operationPattern)].map(match => match[1]));
 const serverOps = new Set([...edge.matchAll(/case "([a-z_]+)"/g)].map(match => match[1]));
@@ -55,6 +57,12 @@ assert.match(questionTypes, /ready_attempts.*append-only/, 'Question Type Contra
 assert.match(questionTypes, /제출해 `submitted`가 된 뒤에만 lookup/, 'Question Type Contract does not gate lookup until submission');
 assert.match(questionTypes, /Standard Multiple Choice[\s\S]*Annotated Multiple Choice[\s\S]*Structural Questions[\s\S]*Summary Completion[\s\S]*Written Response/, 'Question Type Contract does not classify current and future renderers');
 assert.match(questionTypes, /raw HTML.*저장하지 않는다/i, 'Question Type Contract permits raw HTML annotations');
+assert.match(questionTypes, /Mandatory workflow/, 'Question Type Contract lacks the required task workflow');
+assert.match(questionImport, /PDF[\s\S]*source exam 식별[\s\S]*passage number 식별[\s\S]*READY canonical Passage와 연결[\s\S]*import/, 'Question import workflow is incomplete');
+assert.match(questionImport, /source_exam[\s\S]*source_passage_no[\s\S]*source_question_no/, 'Question import contract lacks traceable source metadata');
+assert.match(questionImport, /canonical Passage를 수정하거나 덮어쓰지 않는다/, 'Question import can modify canonical Passages');
+assert.match(questionImport, /PDF import API, parser, admin import UI는 현재 없다/, 'Question import doc does not distinguish the current implementation');
+assert.match(readyReadme, /Any READY question-related task must read `ready\/QUESTION_TYPES\.md` and `ready\/QUESTION_IMPORT\.md` first\./, 'READY development guidance does not require the Question documents');
 assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
 
 const migrations = readdirSync(resolve(root, 'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();

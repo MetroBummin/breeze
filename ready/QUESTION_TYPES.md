@@ -1,6 +1,19 @@
 # READY Question Type Contract
 
-이 문서는 READY에 Question renderer나 문제 데이터를 추가하기 전에 먼저 확인해야 하는 기준 문서다. 현재 제품은 `multiple_choice`만 학생 runtime에서 활성화한다. 아래의 미래 유형은 구현 약속이 아니라, 실제 사례를 조사할 때 서로 다른 문제를 같은 renderer에 억지로 넣지 않기 위한 분류다.
+이 문서는 READY의 Question 계약 기준이다. **Question과 관련된 모든 작업은 이 문서를 먼저 읽고**, import 작업이면 이어서 [QUESTION_IMPORT.md](QUESTION_IMPORT.md)도 읽는다. 현재 학생 runtime에서 활성화된 type은 `multiple_choice`뿐이다. 아래의 미래 유형은 구현 약속이 아니라, 실제 사례를 조사할 때 서로 다른 문제를 같은 renderer에 억지로 넣지 않기 위한 분류다.
+
+## Mandatory workflow
+
+Question 관련 작업은 다음 순서를 따른다.
+
+1. 먼저 `QUESTION_TYPES.md`를 읽는다.
+2. import 작업이면 `QUESTION_IMPORT.md`도 읽는다.
+3. 문제를 기존 family 중 하나로 분류한다.
+4. 가능한 경우 기존 renderer를 재사용한다.
+5. Question에 맞추기 위해 canonical Passage를 수정하지 않는다.
+6. 변형된 원문은 question-specific variant로 저장한다.
+7. 현재 contract가 다루지 않는 새 패턴이면 구현 전에 패턴과 contract를 문서화한다.
+8. contract가 바뀌면 같은 commit에서 두 문서를 함께 갱신한다.
 
 ## 공통 원칙
 
@@ -68,6 +81,7 @@
 - `variant_text`가 없으면 canonical PassageSentence를 사용한다.
 - plain `variant_text`는 현재 word lookup만 지원한다. 문장 번역까지 필요하면 canonical sentence reference를 보존하는 structured variant가 먼저 설계되어야 한다.
 - `source`는 현재 JSON metadata로 추적한다. import가 실제로 시작되기 전에는 별도 source table을 만들지 않는다.
+- 현재 20·21번 seed는 `source.exam`, `source.passage_no`, `source.source_question_no`를 사용한다. 이는 import workflow의 논리적 `source_exam`, `source_passage_no`, `source_question_no`에 각각 대응한다. 아직 별도 DB column도 server-side metadata validation도 없다.
 
 ### Student public contract
 
@@ -105,7 +119,7 @@ response = { selected }, correct, elapsed_ms, created_at
 - 주제, 제목, 요지, 목적, 심경
 - 내용 일치, 내용 불일치
 
-UI:
+공통 UI:
 
 ```text
 prompt
@@ -126,7 +140,7 @@ renderer는 `multiple_choice` 하나다. `skill`은 분석/분류 metadata이며
 - 어법
 - 어휘
 
-기본 뼈대는 Standard Multiple Choice와 같지만 Passage의 특정 영역에 annotation이 필요하다. raw HTML은 DB에 저장하지 않는다. 실제 문제 사례를 더 조사한 후 start/end offset, stable token/segment reference, label, options 중 최소 구조를 선택한다.
+기본 뼈대는 Standard Multiple Choice와 같지만 Passage의 특정 영역에 annotation이 필요하다. 예: blank, underline, labeled span, A/B choice. raw HTML은 DB에 저장하지 않는다. 실제 문제 사례를 더 조사한 후 start/end offset, stable token/segment reference, label, options 중 최소 structured annotation payload를 선택한다.
 
 ## C. Structural Questions — 미구현
 
@@ -164,4 +178,3 @@ deterministic grading이 가능한 형태부터 검토한다. free-response AI g
 7. desktop/mobile에서 같은 의미의 interaction을 제공하는가?
 8. Breeze lexical layer를 재사용하고 별도 dictionary를 만들지 않는가?
 9. contract test와 실제 공개 E2E가 추가됐는가?
-

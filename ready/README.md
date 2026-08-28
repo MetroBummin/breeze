@@ -18,6 +18,22 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 지문·문제 추출 workflow를
 두지 않습니다. Work가 콘텐츠를 준비하고 READY는 저장·읽기·Review·기록만 책임집니다.
 
+## Question 작업 필수 절차
+
+**Any READY question-related task must read `ready/QUESTION_TYPES.md` and `ready/QUESTION_IMPORT.md` first.**
+
+다음 작업은 두 문서를 source of truth로 삼습니다.
+
+- PDF 문제 import
+- 새로운 question type 추가
+- question renderer 수정·추가
+- variant passage 처리
+- grading contract 변경
+- question source metadata 처리
+
+기존 renderer 재사용을 먼저 검토하고, Question에 맞추기 위해 canonical Passage를 수정하지
+않습니다. 새 패턴이나 contract 변경은 구현과 같은 commit에서 두 문서에 기록합니다.
+
 ## 데이터 계약
 
 - 구조화된 `sentenceRows` 항목 하나는 `PassageSentence` 한 개입니다.
