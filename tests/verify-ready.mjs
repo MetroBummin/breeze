@@ -36,6 +36,8 @@ assert.match(edge,/type === "multiple_choice"[\s\S]*selected\.length === answer\
 assert.match(edge,/type === "written_response"|question\.type === "written_response"/,'Written response grading is missing');
 assert.match(edge,/normalize\("NFKC"\)[\s\S]*toLowerCase\(\)[\s\S]*replace\(\/\\s\+\/g/,'Written normalization is incomplete');
 assert.match(edge,/accepted_response_sets[\s\S]*acceptedSets\.some/,'Linked written-response combinations are not graded atomically');
+assert.match(edge,/inlineOptionGroups[\s\S]*inlineSelected[\s\S]*inlineAnswer/,'Inline passage-option grading is missing');
+assert.match(edge,/target_ranges[\s\S]*inline_positions/,'Inline target/position contracts are missing');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
 
@@ -44,10 +46,15 @@ assert.doesNotMatch(app,/openLexical|openSentence|translation_view|save_sentence
 assert.match(app,/family\|\|'standard'[\s\S]*questionPassageHtml/,'Question family renderer is missing');
 assert.match(app,/contentBlocks[\s\S]*variantSegments[\s\S]*summaryText/,'Question variants and summary blocks are not rendered');
 assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written response UI is missing');
+assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
+assert.match(app,/data-inline-group[\s\S]*data-target-choice[\s\S]*data-position-choice/,'Direct passage interactions are missing');
+assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
 assert.match(app,/continuationQuestion[\s\S]*question_count/,'Quick start can select a Passage without questions');
 assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a question session can show a stale Review count');
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
 assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*written-response/,'Question family styling is incomplete');
+assert.match(css,/inline-answer[\s\S]*question-set-nav/,'Question-set and inline interaction styling is missing');
+assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/stimulus[\s\S]*target_ranges[\s\S]*city_tour_blocks/,'Question-set source repairs are missing from the importer');
 
 console.log('READY Question-first core checks passed');

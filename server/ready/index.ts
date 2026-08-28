@@ -263,16 +263,43 @@ function publicSegments(value: unknown) {
 function publicBlocks(value: unknown) {
   return (Array.isArray(value) ? value : []).slice(0, 80).map((block: any) => ({ kind: clean(block?.kind, 20), label: clean(block?.label, 80), text: clean(block?.text, 10_000), url: clean(block?.url, 2_000), alt: clean(block?.alt, 200), caption: clean(block?.caption, 500), segments: publicSegments(block?.segments) }));
 }
+function inlineOptionGroups(value: unknown) {
+  const text = clean(value, 30_000), groups: Array<{label:string,options:string[]}> = [];
+  for (const match of text.matchAll(/([ⓐ-ⓩ])\s*\[([^\]]+)\]/g)) {
+    const options = match[2].split("/").map(option => clean(option, 100)).filter(Boolean);
+    if (options.length >= 2 && options.length <= 4) groups.push({ label: match[1], options });
+  }
+  return groups.length && groups.length <= 8 ? groups : [];
+}
+function publicTargetRanges(value: unknown) {
+  return (Array.isArray(value) ? value : []).slice(0, 8).map((target: any) => ({ label: clean(target?.label, 20), text: clean(target?.text, 200) })).filter(target => target.label && target.text);
+}
+function normalizedCombination(value: unknown) { return clean(value, 1_000).normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
+function inlineAnswer(payload: any, choiceCount: number) {
+  const groups = inlineOptionGroups(payload?.variant_text), answer = answerIndexes(payload?.answer, choiceCount);
+  if (!groups.length || answer.length !== 1) return [];
+  const expected = normalizedCombination(payload?.choices?.[answer[0]]), selected: number[] = [];
+  function visit(index: number, parts: string[]): boolean {
+    if (index === groups.length) return normalizedCombination(parts.join(" ")) === expected;
+    for (let option = 0; option < groups[index].options.length; option += 1) {
+      if (visit(index + 1, [...parts, groups[index].options[option]])) { selected[index] = option; return true; }
+    }
+    return false;
+  }
+  return visit(0, []) ? selected : [];
+}
 function publicQuestion(row: any, passageText = "") {
   const payload = row.payload || {}, type = clean(row.type, 40), choices = Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
   if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
   const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
+  const inlineGroups = type === "multiple_choice" ? inlineOptionGroups(payload.variant_text) : [], targetRanges = publicTargetRanges(payload.target_ranges);
+  const interaction = inlineGroups.length ? "inline_options" : targetRanges.length ? "inline_targets" : payload.skill === "insertion" && choices.every((choice: string) => /^\([A-H]\)$/.test(choice)) ? "inline_positions" : "choices";
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill: clean(payload.skill, 40),
     prompt: clean(payload.prompt, 1_000), choices, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,
     passageText: clean(passageText, 30_000), variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
-    stimulus: clean(payload.stimulus, 10_000), summaryText: clean(payload.summary_text, 10_000), source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: Number(payload.source.source_question_no) || null, section: clean(payload.source.section, 20) } : null,
+    stimulus: clean(payload.stimulus, 10_000), summaryText: clean(payload.summary_text, 10_000), interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: Number(payload.source.source_question_no) || null, section: clean(payload.source.section, 20) } : null,
   };
 }
 async function studentQuestions(body: any, session: ReadySession) {
@@ -309,9 +336,16 @@ async function submitAttempt(body: any, session: ReadySession) {
   await studentPassageAccess(examId, question.passage_id, student);
   const spec = publicQuestion(question); let response: any, answer: any, correct = false;
   if (question.type === "multiple_choice") {
-    const selected = answerIndexes(body.selected, spec.choices.length); answer = answerIndexes(question.payload?.answer, spec.choices.length);
-    if (!spec.multiSelect && selected.length !== 1) throw new ApiError(400, "답을 하나만 선택해 주세요.");
-    correct = selected.length === answer.length && selected.every((value, index) => value === answer[index]); response = { selected };
+    if (spec.interaction === "inline_options") {
+      const selected = Array.isArray(body.inlineSelected) ? body.inlineSelected.map(Number) : [], expected = inlineAnswer(question.payload, spec.choices.length);
+      if (selected.length !== spec.inlineGroups.length || selected.some((value: number, index: number) => !Number.isInteger(value) || value < 0 || value >= spec.inlineGroups[index].options.length)) throw new ApiError(400, "본문의 모든 단어를 선택해 주세요.");
+      if (expected.length !== selected.length) throw new ApiError(500, "본문 선택형 정답을 해석하지 못했습니다.");
+      correct = selected.every((value: number, index: number) => value === expected[index]); response = { inlineSelected: selected }; answer = expected;
+    } else {
+      const selected = answerIndexes(body.selected, spec.choices.length); answer = answerIndexes(question.payload?.answer, spec.choices.length);
+      if (!spec.multiSelect && selected.length !== 1) throw new ApiError(400, "답을 하나만 선택해 주세요.");
+      correct = selected.length === answer.length && selected.every((value, index) => value === answer[index]); response = { selected };
+    }
   } else {
     const responses = cleanList(body.responses, 12, 2_000), accepted = Array.isArray(question.payload?.accepted_answers) ? question.payload.accepted_answers : [];
     if (!responses.length || responses.length !== accepted.length) throw new ApiError(400, "모든 답을 입력해 주세요.");

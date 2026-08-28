@@ -45,6 +45,38 @@ TABLE_CHOICES = {
     137: ["disregard ignoring", "fame distorting", "criticism depicting", "wealth financing", "recognition portraying"],
 }
 
+CITY_TOUR_TARGETS = [
+    {"label": "ⓐ", "text": "control it"},
+    {"label": "ⓑ", "text": "that"},
+    {"label": "ⓒ", "text": "to listen"},
+    {"label": "ⓓ", "text": "available"},
+    {"label": "ⓔ", "text": "check out"},
+]
+
+
+def city_tour_blocks(annotated: bool):
+    def target(label, text):
+        return {"kind": "target", "label": label, "text": text} if annotated else {"kind": "text", "text": text}
+
+    return [
+        {"kind": "heading", "text": "Hop-on Hop-off City Tour"},
+        {"kind": "paragraph", "segments": [
+            {"kind": "text", "text": "Enjoy a tour you can "}, target("ⓐ", "control it" if annotated else "control"),
+            {"kind": "text", "text": ". Get on or off the bus at 15 different stops. Explore "}, target("ⓑ", "that" if annotated else "what"),
+            {"kind": "text", "text": " you want, when you want, for as long as you want!"},
+        ]},
+        {"kind": "heading", "text": "On the Bus"},
+        {"kind": "bullet", "text": "Free Wi-Fi and USB ports"},
+        {"kind": "bullet", "text": "Open-air top level provides wonderful city views."},
+        {"kind": "bullet", "text": "Unlimited rides for one day"},
+        {"kind": "heading", "text": "Audio Guides"},
+        {"kind": "bullet", "segments": [{"kind": "text", "text": "Scan QR codes "}, target("ⓒ", "to listen"), {"kind": "text", "text": " to information about landmarks."}]},
+        {"kind": "bullet", "segments": [{"kind": "text", "text": "Languages "}, target("ⓓ", "available"), {"kind": "text", "text": ": English, Spanish, and Chinese"}]},
+        {"kind": "heading", "text": "Special Offer"},
+        {"kind": "paragraph", "text": "Show your tour ticket to get a discount at museums."},
+        {"kind": "note", "segments": [{"kind": "text", "text": "For prices and more information, "}, target("ⓔ", "check out"), {"kind": "text", "text": " h*h#citytour.com."}]},
+    ]
+
 
 def compact(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
@@ -169,6 +201,16 @@ def main():
                     }
                     if section != 3 or family != "standard":
                         payload["variant_text"] = question_passage
+                    if skill_for(prompt) == "insertion":
+                        payload["stimulus"] = clean_page_noise(before_choices)
+                    if question_no == 16:
+                        payload["variant_text"] = "Humans excel at visual imagery. Our brains evolved this ability to create an internal mental picture or model of the world in which we can rehearse forthcoming actions, without the risks or the penalties of doing them in the real world. (A) There are even hints from brain-imaging studies by Harvard University psychologist Steve Kosslyn showing that your brain uses the same regions to imagine a scene as when you actually view one. (B) This is a wise bit of self-restraint on your genes’ part. (C) If your internal model of the world were a perfect substitute, then anytime you felt hungry you could simply imagine yourself at a banquet, consuming a feast. (D) You would have no incentive to find real food and would soon starve to death. (E) As the Bard said, “You cannot cloy the hungry edge of appetite by bare imagination of a feast.”"
+                    if question_no == 37:
+                        payload["content_blocks"] = city_tour_blocks(True)
+                        payload["target_ranges"] = CITY_TOUR_TARGETS
+                    if question_no == 38:
+                        payload["content_blocks"] = city_tour_blocks(False)
+                        payload.pop("variant_text", None)
                     status = "draft" if question_no == 32 else "available"
                     questions.append({"passage_id": passage_map[passage_no], "type": "multiple_choice", "status": status, "payload": payload})
 
