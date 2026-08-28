@@ -54,6 +54,7 @@ assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written res
 assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
 assert.match(app,/function fixedSetAnchor[\s\S]*function questionPassageHtml/,'A question set does not keep one stable Passage anchor');
 assert.match(app,/resolvedSetPassageText[\s\S]*pointedPassageHtml/,'The stable Passage does not use plain text with pointing');
+assert.match(app,/canonicalOption[\s\S]*sort\(\(a,b\)=>b\.length-a\.length\)/,'Overlapping alternatives do not prefer the specific longer option');
 assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointing and footnote rendering is missing');
 assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');
 assert.match(app,/combinationChoiceParts[\s\S]*choice-separator/,'Grammar and vocabulary combination choices are not visually separated');
