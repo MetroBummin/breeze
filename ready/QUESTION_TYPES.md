@@ -44,12 +44,14 @@
     "family": "written",
     "prompt": "...",
     "response_slots": [{"label": "(1)"}, {"label": "(2)"}],
-    "accepted_answers": [["answer one"], ["answer two", "allowed alternative"]]
+    "accepted_answers": [["answer one"], ["answer two", "allowed alternative"]],
+    "accepted_response_sets": [["answer one", "answer two"]]
   }
 }
 ```
 
 - slot마다 허용 정답 문자열을 한 개 이상 둔다.
+- 서로 연동된 빈칸(예: 두 단어의 순서 교환)은 `accepted_response_sets`로 허용되는 전체 조합만 지정한다.
 - 서버가 NFKC, case folding, 문장부호 제거, 연속 공백 축약 후 정확히 비교한다.
 - PDF 18~28의 고쳐쓰기, 배열, 조건형 영작, 빈칸 요약은 이 방식으로 deterministic grading이 가능했다.
 - 자유 응답 AI grading은 현재 계약이 아니다.

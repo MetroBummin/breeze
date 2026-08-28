@@ -316,7 +316,10 @@ async function submitAttempt(body: any, session: ReadySession) {
     const responses = cleanList(body.responses, 12, 2_000), accepted = Array.isArray(question.payload?.accepted_answers) ? question.payload.accepted_answers : [];
     if (!responses.length || responses.length !== accepted.length) throw new ApiError(400, "모든 답을 입력해 주세요.");
     const normalize = (value: unknown) => clean(value, 2_000).normalize("NFKC").toLowerCase().replace(/[“”‘’'".,!?;:()[\]{}]/g, "").replace(/\s+/g, " ").trim();
-    correct = responses.every((value, index) => (Array.isArray(accepted[index]) ? accepted[index] : [accepted[index]]).some((candidate: unknown) => normalize(candidate) === normalize(value)));
+    const acceptedSets = Array.isArray(question.payload?.accepted_response_sets) ? question.payload.accepted_response_sets : [];
+    correct = acceptedSets.length
+      ? acceptedSets.some((set: unknown) => Array.isArray(set) && set.length === responses.length && set.every((candidate, index) => normalize(candidate) === normalize(responses[index])))
+      : responses.every((value, index) => (Array.isArray(accepted[index]) ? accepted[index] : [accepted[index]]).some((candidate: unknown) => normalize(candidate) === normalize(value)));
     response = { responses }; answer = accepted.map((slot: unknown) => (Array.isArray(slot) ? slot : [slot]).map(candidate => clean(candidate, 2_000)));
   }
   const elapsedMs = Math.max(0, Math.min(3_600_000, Math.round(Number(body.elapsedMs) || 0)));

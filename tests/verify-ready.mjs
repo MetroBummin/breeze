@@ -35,6 +35,7 @@ assert.doesNotMatch(edge.match(/function publicQuestion[\s\S]*?\n\}/)?.[0]||'',/
 assert.match(edge,/type === "multiple_choice"[\s\S]*selected\.length === answer\.length[\s\S]*selected\.every/,'MCQ grading is not deterministic set equality');
 assert.match(edge,/type === "written_response"|question\.type === "written_response"/,'Written response grading is missing');
 assert.match(edge,/normalize\("NFKC"\)[\s\S]*toLowerCase\(\)[\s\S]*replace\(\/\\s\+\/g/,'Written normalization is incomplete');
+assert.match(edge,/accepted_response_sets[\s\S]*acceptedSets\.some/,'Linked written-response combinations are not graded atomically');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
 
