@@ -76,6 +76,7 @@ const context = {
 /* `const` 로 잡은 것(`keyOf`)은 이 바깥에서 안 보입니다 — 파일 끝에 한 줄
    붙여 꺼냅니다. scripts/sync/vault-crypto.js 를 검사할 때와 같은 방법입니다. */
 const EXPORTS = { 'scripts/reader/reader.js': ['wordSpans', 'keyOf', 'phraseParts'] };
+new Script(readFileSync(resolve(root, 'modules/lexical/core.js'), 'utf8'), { filename:'modules/lexical/core.js' }).runInNewContext(context);
 for(const file of ['scripts/dictionary/dictionary.js', 'scripts/reader/reader.js']){
   const exported = EXPORTS[file] || [];
   const source = readFileSync(resolve(root, file), 'utf8') +

@@ -36,6 +36,7 @@ import assert from 'node:assert/strict';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8');
+const lexicalCore = readFileSync(resolve(root, 'modules/lexical/core.js'), 'utf8');
 
 /* ---- 가짜 화면 ----
    사전 창은 그리는 자리가 많습니다. 여기서 보고 싶은 것은 그 내용이 아니라
@@ -190,6 +191,7 @@ function boot(){
   const net = makeNet(world);
   const store = new Map();
   const context = makeContext(world, net, store);
+  new Script(lexicalCore, { filename:'modules/lexical/core.js' }).runInNewContext(context);
   new Script(source, { filename:'dictionary.js' }).runInNewContext(context);
   /* `dictCall` 은 이 파일이 스스로 선언하므로, 올려놓은 **뒤에** 갈아 끼웁니다. */
   context.dictCall = net.dictCall;

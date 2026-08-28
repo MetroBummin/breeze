@@ -17,7 +17,7 @@ function supabaseAdminKey() {
 }
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", supabaseAdminKey(), { auth: { persistSession: false } });
 const adminOps = new Set(["teacher_bootstrap", "delete_impact", "assign_scope_passages", "set_scope_passages", "create_passage", "update_passage", "delete_passage", "create_student", "set_student_pin", "delete_student"]);
-const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "submit_attempt", "word_lookup", "save_word", "delete_saved_word", "translation_view", "save_sentence", "delete_saved_sentence", "personal_library"]);
+const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "submit_attempt", "word_lookup", "save_word", "mark_word_known", "resume_word_learning", "delete_saved_word", "translation_view", "save_sentence", "delete_saved_sentence", "personal_library"]);
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
 // Match Breeze's free Gemini dictionary defaults. The API key remains a
 // Supabase Edge Function Secret and is never part of any public response.
@@ -284,6 +284,14 @@ async function studyContext(body: any, session: ReadySession, sentenceRequired =
 async function wordLookup(body: any, session: ReadySession) {
   const context = await studyContext(body, session), surfaceWord = required(body.word, "단어", 100), normalized = normalizedWord(surfaceWord), root = lemma(normalized);
   if (!normalized) throw new ApiError(400, "영어 단어만 조회할 수 있습니다.");
+  const [knownState, savedSenses] = await Promise.all([
+    db.from("ready_word_states").select("known").eq("student_id", context.student.id).eq("passage_id", context.passage.id).eq("normalized_word", root).maybeSingle(),
+    db.from("ready_saved_words").select("meaning_snapshot").eq("student_id", context.student.id).eq("passage_id", context.passage.id).eq("normalized_word", root).order("created_at"),
+  ]);
+  if (knownState.error) throw new ApiError(500, knownState.error.message);
+  if (savedSenses.error) throw new ApiError(500, savedSenses.error.message);
+  const known = knownState.data?.known === true;
+  const existingMeanings = rows<any[]>(savedSenses).map(item => clean(item.meaning_snapshot, 500)).filter(Boolean);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const used = await db.from("ready_word_lookup_events").select("id", { count: "exact", head: true }).eq("student_id", context.student.id).gte("created_at", today.toISOString());
   if (used.error) throw new ApiError(500, used.error.message);
@@ -294,13 +302,23 @@ async function wordLookup(body: any, session: ReadySession) {
   // different things in two sentences. Breeze caches by lemma + context.
   const result = await callGeminiLook(root, surfaceWord, context.sentence?.text || "");
   const meaning = clean(result.ko, 60), alts = cleanList(result.alts, 3, 40).filter(item => item !== meaning);
+  if (!known && meaning) {
+    const automaticSave = await db.from("ready_saved_words").upsert({
+      student_id: context.student.id, passage_id: context.passage.id, sentence_id: context.sentence?.id || null,
+      word: surfaceWord, normalized_word: root, meaning_snapshot: meaning, meaning_key: meaningKey(meaning),
+    }, { onConflict: "student_id,passage_id,normalized_word,meaning_key", ignoreDuplicates: true });
+    if (automaticSave.error) throw new ApiError(500, automaticSave.error.message);
+  }
   return {
     word: surfaceWord, normalizedWord: root, meaning, meanings: [meaning, ...alts],
     pos: clean(result.pos, 12), note: clean(result.note, 300), phrase: clean(result.phrase, 80),
-    provider: "gemini", cached: false, remaining: Math.max(0, AI_DAILY_LIMIT - (used.count || 0) - 1),
+    provider: "gemini", cached: false, known, savedMeanings: known ? existingMeanings : [...new Set([...existingMeanings, meaning])].filter(Boolean),
+    remaining: Math.max(0, AI_DAILY_LIMIT - (used.count || 0) - 1),
   };
 }
-async function saveWord(body:any,session:ReadySession){const context=await studyContext(body,session),word=required(body.word,"단어",100),normalized=normalizedWord(body.normalizedWord||word),root=lemma(normalized),meaning=required(body.meaning,"선택한 뜻",500);if(!root)throw new ApiError(400,"영어 단어만 저장할 수 있습니다.");const saved=await db.from("ready_saved_words").upsert({student_id:context.student.id,passage_id:context.passage.id,sentence_id:context.sentence?.id||null,word,normalized_word:root,meaning_snapshot:meaning},{onConflict:"student_id,passage_id,normalized_word"}).select().single();if(saved.error)throw new ApiError(500,saved.error.message);return {saved:true,normalizedWord:root};}
+function meaningKey(value: string) { return clean(value, 500).toLowerCase().replace(/\s+/g, " "); }
+async function saveWord(body:any,session:ReadySession){const context=await studyContext(body,session),word=required(body.word,"단어",100),normalized=normalizedWord(body.normalizedWord||word),root=lemma(normalized),meaning=required(body.meaning,"선택한 뜻",500);if(!root)throw new ApiError(400,"영어 단어만 저장할 수 있습니다.");const known=await db.from("ready_word_states").select("known").eq("student_id",context.student.id).eq("passage_id",context.passage.id).eq("normalized_word",root).maybeSingle();if(known.error)throw new ApiError(500,known.error.message);if(known.data?.known)throw new ApiError(409,"아는 단어로 표시했습니다. 다시 학습하기를 누른 뒤 저장할 수 있습니다.");const saved=await db.from("ready_saved_words").upsert({student_id:context.student.id,passage_id:context.passage.id,sentence_id:context.sentence?.id||null,word,normalized_word:root,meaning_snapshot:meaning,meaning_key:meaningKey(meaning)},{onConflict:"student_id,passage_id,normalized_word,meaning_key",ignoreDuplicates:true}).select("id,meaning_snapshot").maybeSingle();if(saved.error)throw new ApiError(500,saved.error.message);return {saved:true,normalizedWord:root,meaning};}
+async function setWordKnown(body:any,session:ReadySession,known:boolean){const context=await studyContext(body,session),root=lemma(normalizedWord(required(body.normalizedWord||body.word,"단어",100)));if(!root)throw new ApiError(400,"영어 단어만 처리할 수 있습니다.");const result=await db.rpc("ready_set_word_known",{p_student_id:context.student.id,p_passage_id:context.passage.id,p_normalized_word:root,p_known:known});if(result.error)throw new ApiError(500,result.error.message);return {known,normalizedWord:root};}
 async function deleteSavedWord(body:any,session:ReadySession){const student=await studentForSession(session),savedWordId=required(body.savedWordId,"저장 단어",80),result=await db.from("ready_saved_words").delete().eq("id",savedWordId).eq("student_id",student.id).select("id,normalized_word").maybeSingle();if(result.error)throw new ApiError(500,result.error.message);if(!result.data)throw new ApiError(404,"저장 단어를 찾지 못했습니다.");return {deleted:result.data.id,normalizedWord:result.data.normalized_word};}
 async function translationView(body: any, session: ReadySession) { const context = await studyContext(body, session, true); const event = await db.from("ready_sentence_translation_view_events").insert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence.id }); if (event.error) throw new ApiError(500, event.error.message); return { recorded:true }; }
 async function saveSentence(body: any, session: ReadySession) { const context = await studyContext(body, session, true); const saved = await db.from("ready_saved_sentences").upsert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence.id, source_text_snapshot: context.sentence.text, translation_snapshot: context.sentence.translation }, { onConflict: "student_id,sentence_id", ignoreDuplicates: true }).select().maybeSingle(); if (saved.error) throw new ApiError(500, saved.error.message); return { saved: true }; }
@@ -313,7 +331,7 @@ async function dispatch(op: string, body: any, session: ReadySession | null) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);
     case "teacher_bootstrap": return teacherBootstrap(); case "delete_impact": return deleteImpact(body); case "create_student": return createStudent(body); case "set_student_pin": return setStudentPin(body); case "delete_student": return deleteStudent(body);
     case "assign_scope_passages": return setScopePassages(body, false); case "set_scope_passages": return setScopePassages(body, true); case "create_passage": return createPassage(body); case "update_passage": return updatePassage(body); case "delete_passage": return deletePassage(body);
-    case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_passage": return studentPassage(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession); case "word_lookup": return wordLookup(body, session as ReadySession); case "save_word": return saveWord(body, session as ReadySession); case "delete_saved_word": return deleteSavedWord(body, session as ReadySession); case "translation_view": return translationView(body, session as ReadySession); case "save_sentence": return saveSentence(body, session as ReadySession); case "delete_saved_sentence": return deleteSavedSentence(body, session as ReadySession); case "personal_library": return personalLibrary(body,session as ReadySession);
+    case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_passage": return studentPassage(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession); case "word_lookup": return wordLookup(body, session as ReadySession); case "save_word": return saveWord(body, session as ReadySession); case "mark_word_known": return setWordKnown(body,session as ReadySession,true); case "resume_word_learning": return setWordKnown(body,session as ReadySession,false); case "delete_saved_word": return deleteSavedWord(body, session as ReadySession); case "translation_view": return translationView(body, session as ReadySession); case "save_sentence": return saveSentence(body, session as ReadySession); case "delete_saved_sentence": return deleteSavedSentence(body, session as ReadySession); case "personal_library": return personalLibrary(body,session as ReadySession);
     default: throw new ApiError(404, "알 수 없는 READY 작업입니다.");
   }
 }

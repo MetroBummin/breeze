@@ -19,9 +19,13 @@ const serverOnlyOps = new Set([
   'create_passage', // authenticated structured-data ingress used by ChatGPT Work tooling
   'delete_student', 'delete_passage', // selected through the typed delete modal's operation map
 ]);
+const dynamicStudentOps = new Set(['mark_word_known', 'resume_word_learning']);
 
 for (const op of clientOps) assert(serverOps.has(op), `Frontend operation has no server contract: ${op}`);
-for (const op of serverOps) assert(clientOps.has(op) || serverOnlyOps.has(op), `Server operation has no active caller: ${op}`);
+for (const op of serverOps) assert(clientOps.has(op) || serverOnlyOps.has(op) || dynamicStudentOps.has(op), `Server operation has no active caller: ${op}`);
+assert.match(student, /data-mark-word-known/, 'Known-word control is not rendered');
+assert.match(student, /data-resume-word/, 'Resume-learning control is not rendered');
+assert.match(student, /mark_word_known[\s\S]*resume_word_learning/, 'Known-word controls are not bound to authenticated operations');
 for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active', 'create_exam', 'update_exam_passages', 'delete_exam', 'delete_scope', 'student_exam', 'generate_order', 'update_question', 'set_question_status', 'delete_question']) {
   assert(!serverOps.has(removed), `Legacy operation is still dispatched: ${removed}`);
 }
@@ -82,6 +86,7 @@ assert.deepEqual(migrations, [
   '20260827060000_ready_remove_all_baking.sql',
   '20260827070000_ready_runtime_cleanup.sql',
   '20260828100000_ready_multiple_choice_mvp.sql',
+  '20260828123000_ready_word_senses_and_known_state.sql',
 ]);
 const baseline = read(`supabase/migrations/${migrations[0]}`);
 assert.match(baseline, /create table if not exists public\.ready_students/);
@@ -103,5 +108,15 @@ assert.match(removeBaking,/drop column if exists bake_status[\s\S]*drop column i
 assert.doesNotMatch(edge + student + admin,/ready_sentence_bakes|ready_sentence_tokens|ready_lexical_|ready_saved_lexical|bake_passage|bake_status|READY_AI_|ANTHROPIC_API_KEY|OPENAI_API_KEY/,'Current runtime still consumes bake/provider data');
 const runtimeCleanup = read(`supabase/migrations/${migrations[12]}`);
 assert.match(runtimeCleanup, /drop index if exists public\.ready_passages_exam_position_idx/, 'Retired Passage-to-Exam index survives production cleanup');
+const wordSenseMigration = read(`supabase/migrations/${migrations[14]}`);
+assert.match(wordSenseMigration, /meaning_key[\s\S]*unique \(student_id, passage_id, normalized_word, meaning_key\)/, 'Saved words still collapse multiple meanings into one row');
+assert.match(wordSenseMigration, /ready_word_states[\s\S]*ready_set_word_known/, 'Known-word state is not stored separately from saved meanings');
+assert.match(wordSenseMigration, /delete from ready_word_states where student_id=p_student_id[\s\S]*delete from ready_word_states where passage_id=p_passage_id/, 'Word-state rows would survive Student or Passage deletion');
+assert.match(student, /lookupController\?\.abort\(\)[\s\S]*AbortController[\s\S]*lookupGeneration/, 'Closed or superseded word lookups can still update a newer sheet');
+assert.match(edge, /automaticSave[\s\S]*ready_saved_words[\s\S]*savedMeanings/, 'Contextual Gemini results are not automatically saved as Breeze-style words');
+assert.match(edge, /meaning_key[\s\S]*student_id,passage_id,normalized_word,meaning_key/, 'Word save API still overwrites a lemma\'s other meanings');
+assert.match(read('index.html'), /modules\/lexical\/core\.js/, 'Breeze does not load the shared lexical core before its dictionary');
+assert.match(read('scripts/dictionary/dictionary.js'), /globalThis\.BreezeLexical/, 'Breeze dictionary still owns a forked lemma implementation');
+assert.match(read('server/ready/lexical-core.mjs'), /import "\.\.\/\.\.\/modules\/lexical\/core\.js"/, 'READY does not import Breeze lexical primitives');
 
 console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);

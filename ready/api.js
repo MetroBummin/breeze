@@ -4,7 +4,7 @@ const READ_ONLY_OPS = new Set([
   'student_passage', 'student_questions',
 ]);
 
-export async function readyApi(op, data = {}, token = '') {
+export async function readyApi(op, data = {}, token = '', { signal } = {}) {
   const { API_URL } = getConfig();
   if (!API_URL) throw new Error('READY config.js의 API_URL을 확인해 주세요.');
   let response;
@@ -17,9 +17,11 @@ export async function readyApi(op, data = {}, token = '') {
           'content-type': 'application/json',
           ...(token ? { authorization: `Bearer ${token}` } : {}),
         },
+        signal,
         body: JSON.stringify({ op, ...data }),
       });
     } catch {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (attempt === attempts - 1) throw new Error('READY 서버에 연결할 수 없습니다. 배포 상태와 네트워크를 확인해 주세요.');
       await new Promise(resolve => setTimeout(resolve, 350));
     }

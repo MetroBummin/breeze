@@ -46,7 +46,7 @@ const context = {
   words: {},
 };
 const file = 'scripts/dictionary/dictionary.js';
-const source = readFileSync(resolve(root, file), 'utf8') +
+const source = readFileSync(resolve(root, 'modules/lexical/core.js'), 'utf8') + '\n' + readFileSync(resolve(root, file), 'utf8') +
   '\n;globalThis.lemma = lemma;\n;globalThis.lemmaCands = lemmaCands;';
 try{
   new Script(source, { filename:file }).runInNewContext(context);
