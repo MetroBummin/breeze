@@ -293,7 +293,7 @@ function publicQuestion(row: any, passageText = "") {
   if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
   const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
-  const inlineGroups = type === "multiple_choice" ? inlineOptionGroups(payload.variant_text) : [], targetRanges = publicTargetRanges(payload.target_ranges);
+  const inlineGroups = type === "multiple_choice" && ["grammar", "vocabulary"].includes(clean(payload.skill, 40)) ? inlineOptionGroups(payload.variant_text) : [], targetRanges = publicTargetRanges(payload.target_ranges);
   const interaction = inlineGroups.length ? "inline_options" : targetRanges.length ? "inline_targets" : payload.skill === "insertion" && choices.every((choice: string) => /^\([A-H]\)$/.test(choice)) ? "inline_positions" : "choices";
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill: clean(payload.skill, 40),
