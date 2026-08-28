@@ -233,3 +233,58 @@ body[data-ready-mode="student"] .question-variant{cursor:default!important}
   body[data-ready-mode] .filter-toolbar{display:grid;grid-template-columns:1fr 1fr}
   body[data-ready-mode] .filter-toolbar label{min-width:0}
 }
+
+/* Question-first reset: Reader and every question passage are continuous prose.
+   Lexical and sentence-study data remains in storage, but has no student runtime
+   affordance here. */
+body[data-ready-mode="student"] .reading-passage{
+  display:block;
+  margin:24px 0 38px;
+  color:var(--ink-body);
+  font:400 clamp(18px,2.45vw,22px)/1.82 var(--serif);
+  text-align:left;
+  user-select:text;
+}
+body[data-ready-mode="student"] .reading-passage>p{margin:0}
+body[data-ready-mode="student"] .reader-shell{max-width:780px}
+body[data-ready-mode="student"] .question-layout{max-width:1000px;margin:0 auto}
+body[data-ready-mode="student"] .question-layout .reader-shell{max-width:960px}
+body[data-ready-mode="student"] .question-passage{
+  display:block;
+  margin:20px 0 18px;
+  padding:20px 22px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--sheet);
+  font:400 clamp(16px,1.7vw,18px)/1.72 var(--serif);
+}
+.question-stimulus,.question-summary,.question-block.given{
+  margin:16px 0;
+  padding:14px 16px;
+  border-left:3px solid var(--brand);
+  border-radius:0 10px 10px 0;
+  background:var(--paper2);
+  color:var(--ink-body);
+  font:600 15px/1.65 var(--ready-ui);
+  white-space:pre-wrap;
+}
+.question-block{display:block;margin:0 0 13px;white-space:pre-wrap}
+.question-block strong{display:block;margin-bottom:5px;color:var(--brand-strong);font:800 13px/1.3 var(--ready-ui)}
+.question-block.heading{font:800 19px/1.4 var(--ready-ui)}
+.question-block.group{padding:13px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper2)}
+.question-block.note{color:var(--soft);font:600 13px/1.55 var(--ready-ui)}
+.question-segment.underline,.question-segment.emphasis{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.question-segment.label::before{content:attr(data-label);margin-right:4px;color:var(--brand-strong);font-weight:800}
+.question-segment.blank{display:inline-block;min-width:88px;border-bottom:2px solid currentColor;text-align:center}
+.question-segment.choice{padding:1px 4px;border-radius:4px;background:var(--sky);font-family:var(--ready-ui)}
+.question-image{margin:15px auto;text-align:center}.question-image img{max-width:100%;height:auto;border-radius:8px}.question-image figcaption{margin-top:7px;color:var(--soft);font:600 12px/1.4 var(--ready-ui)}
+.written-response{display:grid;gap:10px;margin:18px 0}
+.written-response label{display:grid;grid-template-columns:minmax(72px,auto) minmax(0,1fr);align-items:center;gap:12px}
+.written-response label>span{font:750 13px/1.4 var(--ready-ui);color:var(--soft)}
+.written-response input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:9px;background:var(--sheet);color:var(--ink);font:500 15px/1.4 var(--ready-ui)}
+.home-tabs button span{display:inline-grid;place-items:center;min-width:20px;height:20px;margin-left:4px;padding:0 6px;border-radius:999px;background:var(--danger);color:white;font:800 11px/1 var(--ready-ui)}
+@media(max-width:700px){
+  body[data-ready-mode="student"] .reading-passage{margin-inline:0;font-size:18px;line-height:1.76}
+  body[data-ready-mode="student"] .question-passage{margin:16px -2px 15px;padding:16px 15px;font-size:16px;line-height:1.66}
+  .written-response label{grid-template-columns:1fr;gap:5px}
+}

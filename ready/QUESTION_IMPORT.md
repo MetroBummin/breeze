@@ -1,128 +1,98 @@
 # READY Question Import Workflow
 
-이 문서는 READY에 문제를 반영할 때의 source-of-truth workflow다. **PDF 문제 import, source metadata 처리, variant passage 처리, grading contract 변경, renderer 추가·수정 작업은 먼저 [QUESTION_TYPES.md](QUESTION_TYPES.md)와 이 문서를 읽는다.**
-
-현재 READY에는 PDF parser, upload UI, AI 자동 추출 runtime이 없다. 따라서 이 문서는 향후 승인된 import 작업에서 사람이 준비한 structured data를 검증해 반영하는 기준이며, 지금의 20·21번 Multiple Choice MVP는 manual seed로 들어가 있다.
+이 문서는 PDF를 private structured Question bundle로 바꾸고 READY에 원자적으로 반영하는 절차다. 콘텐츠 추출은 teacher-side에서 수행하며 READY 학생/Admin UI에 PDF parser나 AI pipeline을 넣지 않는다.
 
 ## Required flow
 
 ```text
 PDF
-↓
-source exam 식별
-↓
-passage number 식별
-↓
-READY canonical Passage와 연결
-↓
-question type 분류
-↓
-prompt / choices / answer 추출
-↓
-source passage가 변형되었는지 확인
-↓
-필요하면 question-specific variant 생성
-↓
-answer/해설 대조
-↓
-preview/validation
-↓
-import
+→ source exam / Section / source question number 확인
+→ source passage number 확인
+→ READY canonical Passage ID 연결
+→ Question family 분류
+→ canonical / variant 결정
+→ prompt / choices 또는 response slots 추출
+→ 뒤쪽 정답·해설과 대조
+→ private JSON bundle dry-run
+→ atomic import
+→ student solve / Attempt / Review E2E
 ```
 
-PDF 전체를 바로 반영하지 않는다. 먼저 작은 sample을 structured data로 만들어 Question → student render → submit → Attempt 저장까지 end-to-end로 검증한다. 이 검증이 통과한 뒤에만 같은 패턴의 나머지를 반영한다.
+명시적 시험·지문 번호를 identity로 사용한다. 텍스트 similarity는 연결 후 검증용일 뿐이며 fuzzy/AI matching을 우선하지 않는다.
 
-## Mandatory workflow
+## Private bundle
 
-모든 READY Question 관련 작업은 다음을 지킨다.
+문제 본문, 보기, 정답이 포함된 bundle은 공개 저장소에 커밋하지 않는다. 저장소에는 contract와 source-number inventory만 둔다.
 
-1. `QUESTION_TYPES.md`를 먼저 읽는다.
-2. import 작업이면 이 `QUESTION_IMPORT.md`도 읽는다.
-3. 문제를 기존 family로 분류한다.
-4. 가능한 경우 기존 renderer를 재사용한다.
-5. Question에 맞추기 위해 canonical Passage를 절대 수정하지 않는다.
-6. 변형된 source text는 question-specific variant로 저장한다.
-7. 현재 contract에 없는 패턴이면 구현 전에 패턴을 문서화한다.
-8. contract 변경은 같은 commit에서 문서도 함께 갱신한다.
-
-## Passage matching and source metadata
-
-PDF에서 확인 가능한 명시적 source metadata를 1순위로 사용한다. 예를 들어 `2026년 6월 · 고2 · 20번`은 먼저 시험명·학년·월·지문 번호로 READY Passage를 찾는다. AI나 fuzzy matching으로 먼저 추측하지 않는다. 텍스트 similarity는 이미 찾은 candidate가 맞는지 검증하는 2순위 수단일 뿐이다.
-
-각 Question은 최소한 다음 논리 metadata를 잃지 않아야 한다.
-
-```text
-source_exam
-source_passage_no
-source_question_no
-```
-
-현재 구현에서는 이 값이 별도 column이 아니라 `ready_questions.payload.source` JSON 안에 보관된다.
+각 row:
 
 ```json
 {
-  "source": {
-    "provider": "exam4you",
-    "exam": "2026-06 부산 고2",
-    "passage_no": 20,
-    "source_question_no": 213
+  "passage_id": "canonical READY Passage UUID",
+  "type": "multiple_choice",
+  "status": "available",
+  "payload": {
+    "family": "annotated",
+    "skill": "grammar",
+    "prompt": "...",
+    "choices": ["..."],
+    "answer": [2],
+    "multi_select": false,
+    "variant_segments": [],
+    "position": 11,
+    "source": {
+      "provider": "exam4you",
+      "exam": "2026-06 부산 고2 예상문제",
+      "passage_no": 20,
+      "source_question_no": 11,
+      "section": "1"
+    }
   }
 }
 ```
 
-즉 현재 저장 key의 대응은 `source_exam → source.exam`, `source_passage_no → source.passage_no`, `source_question_no → source.source_question_no`다. 새 import도 별도 schema를 만들지 않는 한 이 실제 payload shape를 유지한다. source metadata는 현재 server가 해석하거나 검증하지 않는 provenance record이므로, import preview에서 사람이 확인해야 한다.
+`passage_id + exam + passage_no + source_question_no + section`이 import identity다. 같은 identity를 다시 import하면 새 Question을 중복 생성하지 않고 기존 row를 갱신한다.
 
-## Question family and renderer decision
+## Validation
 
-먼저 [QUESTION_TYPES.md](QUESTION_TYPES.md)의 family로 분류한다.
+1. canonical Passage ID가 명시적 `source.passage_no`와 맞는지 확인한다.
+2. prompt와 모든 choice를 문제 쪽과 대조한다.
+3. `answer` 또는 `accepted_answers`를 정답/해설 쪽과 대조한다.
+4. single/multi를 문제 지시문과 대조한다.
+5. canonical 문제는 variant를 넣지 않는다.
+6. 문제용 변형은 `variant_text`, `variant_segments`, `content_blocks` 중 최소 표현을 사용한다.
+7. raw HTML을 payload에 넣지 않는다.
+8. Passage 25 chart처럼 외부 asset이 없으면 `draft`로 유지한다.
+9. public response에 `answer`/`accepted_answers`가 없는지 contract test로 확인한다.
 
-- 주제·제목·요지·목적·심경·내용 일치/불일치면 Standard Multiple Choice의 기존 `multiple_choice` renderer를 쓴다.
-- 빈칸·함축의미·어법·어휘는 annotation이 실제로 필요한지 확인한다. raw HTML을 저장하지 않고 structured annotation payload가 정의되기 전에는 renderer를 새로 만들지 않는다.
-- 문장 삽입·무관한 문장·글의 순서는 Structural family다. Standard renderer에 억지로 넣지 말고, 실제 variation을 충분히 모은 뒤 별도 presentation contract를 문서화한다.
-- 요약문 완성·서술형도 문서의 기존 family와 renderer 기준을 먼저 따른다.
+Dry-run:
 
-새 renderer와 새 schema는 마지막 수단이다. 같은 유형의 variation을 몇 개 확인해 공통 패턴을 먼저 찾는다.
-
-## Canonical Passage and variants
-
-`ready_passages`와 `ready_passage_sentences`가 canonical source다. Question import는 canonical Passage를 수정하거나 덮어쓰지 않는다.
-
-문제마다 원문이 다음처럼 달라질 수 있다.
-
-- 빈칸
-- 어법 오류
-- 어휘 치환
-- 문장 삽입 marker
-- A/B/C 순서 표기
-
-이 경우 Question에만 귀속된 variant를 사용한다.
-
-```text
-variant 없음 → canonical Passage 렌더링
-variant 있음 → question-specific variant 렌더링
+```bash
+npm run ready:import -- /absolute/path/to/private-bundle.json
 ```
 
-현재 active `multiple_choice` contract의 variant는 plain `payload.variant_text`다. 이는 canonical을 바꾸지 않고 문제 화면에서 word lookup 가능한 variant를 표시한다. 단, sentence ID와 교사 translation 연결이 없으므로 plain variant에서는 sentence translation을 제공하지 않는다. 문장 interaction까지 필요한 variant는 실제 사례를 문서화한 뒤 stable segment/sentence reference를 보존하는 structured contract가 필요하다.
+Apply에는 runtime 환경변수가 필요하다. 값은 명령행, JSON, Git, 로그에 넣지 않는다.
 
-## Extraction, validation, and import checklist
+```bash
+READY_API_URL=... READY_ADMIN_PASSWORD=... \
+  npm run ready:import -- /absolute/path/to/private-bundle.json --apply
+```
 
-반영 전에 다음을 확인한다.
+서버는 admin session을 만든 뒤 `ready_import_question_bundle` RPC 하나로 bundle 전체를 transaction 처리한다. 한 row라도 검증에 실패하면 전체 import가 rollback된다.
 
-1. prompt, choices, answer를 source PDF와 대조한다.
-2. `source_question_no`와 정답/해설을 함께 대조한다.
-3. canonical Passage 연결이 명시적 metadata와 맞는지 확인한다.
-4. variant가 필요하면 canonical text와 variant text가 각각 정확한지 확인한다.
-5. `multiple_choice`라면 `answer`를 zero-based index 배열로 저장하고, `multi_select`를 실제 선택 규칙에 맞춘다.
-6. 공개 Question payload에 정답이 없는지 확인한다.
-7. submit이 server deterministic grading을 거쳐 append-only `ready_attempts`에 저장되는지 확인한다.
-8. 제출 전 lookup/translation/save가 막히고, 제출 후에만 허용되는지 확인한다.
-9. import preview에서 source metadata, Passage title/ID, type, prompt, choices, answer, variant 여부를 사람이 확인한다.
+## E2E acceptance
 
-Question source metadata를 잃거나 canonical Passage를 문제용으로 바꾸는 import는 허용하지 않는다.
+1. Passage 목록의 Question count가 import 수와 일치한다.
+2. standard, annotated, structural, summary, written 대표 문제를 mobile/desktop에서 푼다.
+3. 제출 전 network payload에 정답이 없다.
+4. 제출 후 `ready_attempts`에 새 row가 하나 추가된다.
+5. 일부러 오답 제출 → `복습 문제` count 증가 → 복습에서 재풀이 → 정답 제출 → queue에서 제거를 확인한다.
+6. generated fixture 1~2개도 같은 import RPC와 renderer를 사용한다. `ready/fixtures/generated-question-smoke.json`은 contract 예시이며 실제 Passage ID로 바꾸기 전에는 import하지 않는다.
 
-## Current code differences to preserve
+## 18~28 status
 
-- PDF import API, parser, admin import UI는 현재 없다. 이 문서는 그런 기능을 암시하거나 요구하지 않는다.
-- 현재 Question schema에는 source metadata 전용 column이나 variant table이 없다. source는 `payload.source`, active variant는 `payload.variant_text`다.
-- `payload.source`는 seed/import provenance용이며 현재 Edge Function이 scope authorization이나 grading에 사용하지 않는다.
-- 현재 활성 renderer는 `multiple_choice` 하나다. 다른 family를 문서에 넣었다고 구현된 것은 아니다.
+- 조사: 137문항 완료.
+- contract 표현 가능: 137문항.
+- private asset 없이 import 가능: 136문항.
+- Passage 25 source question 32는 라이선스가 보존된 graph asset 또는 structured chart representation이 필요하다.
+- 상세 inventory: `ready/inventory/2026-06-busan-18-28.md`.

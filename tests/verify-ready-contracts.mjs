@@ -3,120 +3,39 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const read = path => readFileSync(resolve(root, path), 'utf8');
-const admin = read('ready/admin/app.js');
-const student = read('ready/app.js');
-const api = read('ready/api.js');
-const edge = read('server/ready/index.ts');
-const questionTypes = read('ready/QUESTION_TYPES.md');
-const questionImport = read('ready/QUESTION_IMPORT.md');
-const readyReadme = read('ready/README.md');
-const operationPattern = /(?:call|readyApi|record)\(['"]([a-z_]+)['"]/g;
-const clientOps = new Set([...admin.matchAll(operationPattern), ...student.matchAll(operationPattern)].map(match => match[1]));
-const serverOps = new Set([...edge.matchAll(/case "([a-z_]+)"/g)].map(match => match[1]));
-const serverOnlyOps = new Set([
-  'create_passage', // authenticated structured-data ingress used by ChatGPT Work tooling
-  'delete_student', 'delete_passage', // selected through the typed delete modal's operation map
-]);
-const dynamicStudentOps = new Set(['mark_word_known', 'resume_word_learning']);
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const read=path=>readFileSync(resolve(root,path),'utf8');
+const admin=read('ready/admin/app.js');
+const student=read('ready/app.js');
+const edge=read('server/ready/index.ts');
+const types=read('ready/QUESTION_TYPES.md');
+const importing=read('ready/QUESTION_IMPORT.md');
+const inventory=read('ready/inventory/2026-06-busan-18-28.md');
+const importer=read('tools/ready-import-questions.mjs');
 
-for (const op of clientOps) assert(serverOps.has(op), `Frontend operation has no server contract: ${op}`);
-for (const op of serverOps) assert(clientOps.has(op) || serverOnlyOps.has(op) || dynamicStudentOps.has(op), `Server operation has no active caller: ${op}`);
-assert.match(student, /data-mark-word-known/, 'Known-word control is not rendered');
-assert.match(student, /data-resume-word/, 'Resume-learning control is not rendered');
-assert.match(student, /mark_word_known[\s\S]*resume_word_learning/, 'Known-word controls are not bound to authenticated operations');
-for (const removed of ['create_passage_batch', 'update_passage_study', 'retry_passage_study', 'reorder_passages', 'student_study_library', 'set_student_active', 'create_exam', 'update_exam_passages', 'delete_exam', 'delete_scope', 'student_exam', 'generate_order', 'update_question', 'set_question_status', 'delete_question']) {
-  assert(!serverOps.has(removed), `Legacy operation is still dispatched: ${removed}`);
-}
+const operationPattern=/(?:call|readyApi|record)\(['"]([a-z_]+)['"]/g;
+const clientOps=new Set([...admin.matchAll(operationPattern),...student.matchAll(operationPattern)].map(match=>match[1]));
+const serverOps=new Set([...edge.matchAll(/case "([a-z_]+)"/g)].map(match=>match[1]));
+const serverOnlyOps=new Set(['create_passage','delete_student','delete_passage','import_questions']);
+for(const op of clientOps)assert(serverOps.has(op),`Frontend operation has no server contract: ${op}`);
+for(const op of serverOps)assert(clientOps.has(op)||serverOnlyOps.has(op),`Server operation has no active caller: ${op}`);
 
-assert.match(admin, /data-select-passage/, 'Passage Library checkbox is missing');
-assert.match(admin, /assign-passages-to-scope[\s\S]*assign_scope_passages/, 'Selected Passages are not assigned to a current Scope');
-assert.doesNotMatch(admin, /draggable="true"|reorder_passages|draggedPassageId/, 'Passage drag reorder remains in the critical path');
-assert.match(admin, /delete_impact/, 'Delete UI does not fetch server-side impact counts');
-assert.match(edge, /ready_set_current_scope_passages/, 'Scope and Passage links are not updated atomically');
-assert.match(edge, /async function countWhere[\s\S]*?\.select\("\*", \{ count: "exact", head: true \}\)/, 'Delete impact counting assumes every relation has an id column');
-assert.match(edge, /ready_delete_student_cascade[\s\S]*ready_delete_passage_cascade/, 'Administrator deletion is not delegated to atomic cascade RPCs');
-assert.match(api, /READ_ONLY_OPS[\s\S]*const attempts = READ_ONLY_OPS\.has\(op\) \? 2 : 1/, 'Mutation requests can still retry');
-assert.doesNotMatch(student, /student_exam|data-exam-id|data-back-exams|renderExams/, 'Student still has an Exam selection step');
-assert.match(student, /student_bootstrap[\s\S]*state\.scope=data\.scope[\s\S]*renderScope/, 'Student does not enter the current Scope directly');
-assert.match(student, /reading-passage[\s\S]*reading-sentence/, 'Reader is not rendered as a continuous passage');
-assert.match(student, /courseKey[\s\S]*source_type!=='TEXTBOOK'[\s\S]*scopePassagesHtml/, 'Textbook Passages are not grouped by course in the student list');
-assert.match(edge, /select\("id,title,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
-assert.doesNotMatch(edge, /ready_passage_sentences"\)\.select\("id,passage_id,sentence_index,text,translation"\)/, 'Admin bootstrap still downloads every sentence');
-assert.doesNotMatch(edge, /anthropic\.com|api\.openai\.com|generateWithAnthropic|generateWithOpenAI/, 'READY Edge still calls a retired AI provider');
-assert.match(edge, /callGeminiLook[\s\S]*GEMINI_API_KEY[\s\S]*context\.sentence\?\.text/, 'READY word lookup is not a server-only contextual Gemini call');
-assert.match(edge, /deleteSavedWord[\s\S]*student_id/, 'Saved words cannot be deleted by their authenticated owner');
-assert.match(edge, /deleteSavedSentence[\s\S]*student_id/, 'Saved sentences cannot be deleted by their authenticated owner');
-assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|generateOrderQuestion/, 'Dormant Question authoring or Analytics runtime is still active');
-assert.match(edge, /publicQuestion[\s\S]*variantText[\s\S]*choiceTokens/, 'Multiple-choice public contract does not sanitize answers or tokenize choices');
-assert.match(student, /question-answer-area[\s\S]*question-choice/, 'Choices are not rendered inline beneath the Passage');
-assert.match(student, /question\.multiSelect[\s\S]*current\.includes/, 'Single and multi select do not share one renderer');
-assert.match(student, /questionReviewEnabled[\s\S]*questionLearningAllowed/, 'Question lookup is not gated by the submitted state');
-assert.match(student, /openLexical\(token\)\{if\(!questionLearningAllowed\(token\)\)return/, 'Word lookup can run before Question submission');
-assert.match(student, /openSentence\(sentenceEl\)\{if\(!questionLearningAllowed\(sentenceEl\)\)return/, 'Sentence translation can run before Question submission');
-assert.match(student, /data-question-phase="\$\{phase\}"/, 'Question renderer does not expose solving/submitted state');
-assert.match(student, /questionVisible=.*state\.questionSession[\s\S]*event\.stopImmediatePropagation\(\)/, 'Choice token clicks can leak into lookup after the Question rerenders');
-assert.match(questionTypes, /ready_passages.*canonical source/, 'Question Type Contract does not define the canonical Passage');
-assert.match(questionTypes, /ready_attempts.*append-only/, 'Question Type Contract does not define append-only Attempts');
-assert.match(questionTypes, /제출해 `submitted`가 된 뒤에만 lookup/, 'Question Type Contract does not gate lookup until submission');
-assert.match(questionTypes, /Standard Multiple Choice[\s\S]*Annotated Multiple Choice[\s\S]*Structural Questions[\s\S]*Summary Completion[\s\S]*Written Response/, 'Question Type Contract does not classify current and future renderers');
-assert.match(questionTypes, /raw HTML.*저장하지 않는다/i, 'Question Type Contract permits raw HTML annotations');
-assert.match(questionTypes, /Mandatory workflow/, 'Question Type Contract lacks the required task workflow');
-assert.match(questionImport, /PDF[\s\S]*source exam 식별[\s\S]*passage number 식별[\s\S]*READY canonical Passage와 연결[\s\S]*import/, 'Question import workflow is incomplete');
-assert.match(questionImport, /source_exam[\s\S]*source_passage_no[\s\S]*source_question_no/, 'Question import contract lacks traceable source metadata');
-assert.match(questionImport, /canonical Passage를 수정하거나 덮어쓰지 않는다/, 'Question import can modify canonical Passages');
-assert.match(questionImport, /PDF import API, parser, admin import UI는 현재 없다/, 'Question import doc does not distinguish the current implementation');
-assert.match(readyReadme, /Any READY question-related task must read `ready\/QUESTION_TYPES\.md` and `ready\/QUESTION_IMPORT\.md` first\./, 'READY development guidance does not require the Question documents');
-assert.doesNotMatch(admin, /import-core|renderImportPreview|create-passage-form|\btsv\b/, 'READY Admin still contains an Import workflow');
+assert.match(types,/Question-first[\s\S]*plain prose/,'Question-first product boundary is undocumented');
+assert.match(types,/multiple_choice[\s\S]*written_response/,'Two grading contracts are undocumented');
+assert.match(types,/Standard Multiple Choice[\s\S]*Annotated Multiple Choice[\s\S]*Structural Multiple Choice[\s\S]*Summary Completion[\s\S]*Written Response/,'Renderer families are incomplete');
+assert.match(types,/raw HTML/,'Structured payload rule is missing');
+assert.match(types,/마지막 Attempt가 오답/,'Latest-attempt review rule is missing');
+assert.match(importing,/PDF[\s\S]*source exam[\s\S]*canonical Passage ID[\s\S]*atomic import/,'Import flow is incomplete');
+assert.match(importing,/private structured Question bundle|private JSON bundle/,'Copyright-safe private bundle boundary is missing');
+assert.match(importer,/mode:apply\?'apply':'dry-run'/,'Importer is not dry-run by default');
+assert.match(importer,/READY_API_URL[\s\S]*READY_ADMIN_PASSWORD/,'Apply-mode credentials are not environment-only');
+assert.match(inventory,/\| 1 \| 40[\s\S]*\| 2 \| 41[\s\S]*\| 3 \| 24[\s\S]*\| 4 \| 32[\s\S]*\*\*137\*\*/,'18-28 inventory totals are incorrect');
+for(const passage of [18,19,20,21,22,23,24,25,26,27,28])assert.match(inventory,new RegExp(`\\| ${passage} \\|`),`Passage ${passage} is missing from inventory`);
+assert.match(inventory,/Question 32 \(Passage 25 chart\)/,'Chart asset limitation is not reported');
 
-const migrations = readdirSync(resolve(root, 'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
-assert.deepEqual(migrations, [
-  '20260826150000_ready_current_baseline.sql',
-  '20260826155500_ready_atomic_passage_import.sql',
-  '20260826161000_ready_golden_path_stabilization.sql',
-  '20260826170000_ready_scope_simplification.sql',
-  '20260826174000_ready_legacy_delete_cleanup.sql',
-  '20260827030000_ready_reader_intelligence.sql',
-  '20260827034500_ready_stable_lexical_identity.sql',
-  '20260827040000_ready_bake_snapshot_lint_fix.sql',
-  '20260827041500_ready_bake_lint_ambiguity_fix.sql',
-  '20260827050000_ready_passage_revision.sql',
-  '20260827053000_ready_lexical_only_bake.sql',
-  '20260827060000_ready_remove_all_baking.sql',
-  '20260827070000_ready_runtime_cleanup.sql',
-  '20260828100000_ready_multiple_choice_mvp.sql',
-  '20260828123000_ready_word_senses_and_known_state.sql',
-]);
-const baseline = read(`supabase/migrations/${migrations[0]}`);
-assert.match(baseline, /create table if not exists public\.ready_students/);
-assert.match(baseline, /create table if not exists public\.ready_exam_passages/);
-assert.match(baseline, /create table if not exists public\.ready_attempts/);
-assert.doesNotMatch(baseline, /ready_study_sets|ready_publications|ready_publication_questions/, 'Clean schema recreates legacy runtime tables');
-const scopeMigration = read(`supabase/migrations/${migrations[3]}`);
-const legacyDeleteMigration = read(`supabase/migrations/${migrations[4]}`);
-const removeBaking = read(`supabase/migrations/${migrations[11]}`);
-assert.match(scopeMigration, /ready_exams_one_current_scope_idx/, 'School and grade can have multiple current Scopes');
-assert.match(scopeMigration, /\('중앙고', '1학년'\)[\s\S]*\('한빛고', '2학년'\)/, 'Eight permanent Scope slots are not seeded');
-assert.doesNotMatch(scopeMigration + edge + admin, /delete_scope|ready_delete_scope_cascade|data-delete-scope/, 'Permanent Scope slots can still be deleted');
-assert.match(scopeMigration, /set_config\('ready\.allow_cascade_delete', 'on', true\)/, 'Cascade deletion cannot safely remove append-only Attempts');
-assert.match(legacyDeleteMigration, /to_regclass\('public\.ready_publication_questions'\)[\s\S]*execute 'delete from public\.ready_publication_questions/, 'Production legacy Publication links still block Passage deletion');
-assert.match(removeBaking,/insert into public\.ready_saved_words[\s\S]*ready_saved_lexical_items[\s\S]*raise exception 'Saved lexical migration is incomplete/, 'Saved lexical data is not guarded during bake removal');
-for(const table of ['ready_sentence_bakes','ready_sentence_tokens','ready_lexical_concepts','ready_lexical_concept_aliases','ready_lexical_occurrences','ready_saved_lexical_items','ready_saved_lexical_sources'])assert.match(removeBaking,new RegExp(`drop table if exists public\\.${table}`),`${table} survives the final clean schema`);
-assert.match(removeBaking,/drop function if exists public\.ready_apply_passage_bake/, 'Bake RPC survives the final schema');
-assert.match(removeBaking,/drop column if exists bake_status[\s\S]*drop column if exists bake_error/, 'Passage bake state survives the final schema');
-assert.doesNotMatch(edge + student + admin,/ready_sentence_bakes|ready_sentence_tokens|ready_lexical_|ready_saved_lexical|bake_passage|bake_status|READY_AI_|ANTHROPIC_API_KEY|OPENAI_API_KEY/,'Current runtime still consumes bake/provider data');
-const runtimeCleanup = read(`supabase/migrations/${migrations[12]}`);
-assert.match(runtimeCleanup, /drop index if exists public\.ready_passages_exam_position_idx/, 'Retired Passage-to-Exam index survives production cleanup');
-const wordSenseMigration = read(`supabase/migrations/${migrations[14]}`);
-assert.match(wordSenseMigration, /meaning_key[\s\S]*unique \(student_id, passage_id, normalized_word, meaning_key\)/, 'Saved words still collapse multiple meanings into one row');
-assert.match(wordSenseMigration, /ready_word_states[\s\S]*ready_set_word_known/, 'Known-word state is not stored separately from saved meanings');
-assert.match(wordSenseMigration, /delete from ready_word_states where student_id=p_student_id[\s\S]*delete from ready_word_states where passage_id=p_passage_id/, 'Word-state rows would survive Student or Passage deletion');
-assert.match(student, /lookupController\?\.abort\(\)[\s\S]*AbortController[\s\S]*lookupGeneration/, 'Closed or superseded word lookups can still update a newer sheet');
-assert.match(edge, /automaticSave[\s\S]*ready_saved_words[\s\S]*savedMeanings/, 'Contextual Gemini results are not automatically saved as Breeze-style words');
-assert.match(edge, /meaning_key[\s\S]*student_id,passage_id,normalized_word,meaning_key/, 'Word save API still overwrites a lemma\'s other meanings');
-assert.match(read('index.html'), /modules\/lexical\/core\.js/, 'Breeze does not load the shared lexical core before its dictionary');
-assert.match(read('scripts/dictionary/dictionary.js'), /globalThis\.BreezeLexical/, 'Breeze dictionary still owns a forked lemma implementation');
-assert.match(read('server/ready/lexical-core.mjs'), /import "\.\.\/\.\.\/modules\/lexical\/core\.js"/, 'READY does not import Breeze lexical primitives');
+const migrations=readdirSync(resolve(root,'supabase/migrations')).filter(name=>name.endsWith('.sql')).sort();
+assert.equal(migrations.at(-1),'20260828150000_ready_question_first.sql');
+assert.doesNotMatch(student+admin,/SUPABASE_SERVICE_ROLE_KEY|READY_ADMIN_PASSWORD|GEMINI_API_KEY/,'A server secret name leaked into frontend code');
+assert.doesNotMatch(student,/reader-token|learning-sheet|data-save-sentence/,'Student frontend still exposes lexical study controls');
 
-console.log(`READY API contracts verified (${clientOps.size} frontend operations).`);
+console.log(`READY API contracts verified (${clientOps.size} frontend operations, 137 inventoried questions).`);

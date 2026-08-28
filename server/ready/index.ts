@@ -16,8 +16,8 @@ function supabaseAdminKey() {
   return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", supabaseAdminKey(), { auth: { persistSession: false } });
-const adminOps = new Set(["teacher_bootstrap", "delete_impact", "assign_scope_passages", "set_scope_passages", "create_passage", "update_passage", "delete_passage", "create_student", "set_student_pin", "delete_student"]);
-const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "submit_attempt", "word_lookup", "save_word", "mark_word_known", "resume_word_learning", "delete_saved_word", "translation_view", "save_sentence", "delete_saved_sentence", "personal_library"]);
+const adminOps = new Set(["teacher_bootstrap", "delete_impact", "assign_scope_passages", "set_scope_passages", "create_passage", "update_passage", "delete_passage", "create_student", "set_student_pin", "delete_student", "import_questions"]);
+const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt"]);
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
 // Match Breeze's free Gemini dictionary defaults. The API key remains a
 // Supabase Edge Function Secret and is never part of any public response.
@@ -218,6 +218,12 @@ async function deletePassage(body: any) {
   const passageId = required(body.passageId, "지문", 80), result = await db.rpc("ready_delete_passage_cascade", { p_passage_id: passageId });
   if (result.error) throw new ApiError(500, result.error.message); return { deleted: passageId };
 }
+async function importQuestions(body: any) {
+  if (!Array.isArray(body.questions)) throw new ApiError(400, "검증된 Question 배열이 필요합니다.");
+  const result = await db.rpc("ready_import_question_bundle", { p_questions: body.questions });
+  if (result.error) throw new ApiError(400, result.error.message);
+  return { imported: Number(result.data) || 0 };
+}
 async function studentExamAccess(examId: string, student: Student) {
   const result = await db.from("ready_exams").select("id").eq("id", examId).eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle();
   if (result.error) throw new ApiError(500, result.error.message); if (!result.data) throw new ApiError(404, "현재 배정된 시험범위가 아닙니다."); return result.data as any;
@@ -226,7 +232,7 @@ async function scopePassages(examId: string) {
   const links = rows<any[]>(await db.from("ready_exam_passages").select("passage_id,position").eq("exam_id", examId).order("position"));
   const linkedIds = links.map(item => item.passage_id);
   const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", linkedIds)) : [];
-  const availableQuestions = linkedIds.length ? rows<any[]>(await db.from("ready_questions").select("passage_id").in("passage_id", linkedIds).eq("type", "multiple_choice").eq("status", "available")) : [];
+  const availableQuestions = linkedIds.length ? rows<any[]>(await db.from("ready_questions").select("passage_id").in("passage_id", linkedIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available")) : [];
   const questionCounts = new Map<string, number>();
   availableQuestions.forEach(question => questionCounts.set(question.passage_id, (questionCounts.get(question.passage_id) || 0) + 1));
   const byId = new Map(sourcePassages.map(item => [item.id, item]));
@@ -236,18 +242,14 @@ async function scopePassages(examId: string) {
 async function studentBootstrap(session: ReadySession) {
   const student = await studentForSession(session), scope = rows<any>(await db.from("ready_exams").select("id,school,grade").eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle());
   const passages = scope ? await scopePassages(scope.id) : [];
-  return { student: { id: student.id, school: student.school, grade: student.grade }, scope, passages };
+  const reviewCount = scope ? (await unresolvedQuestionIds(student.id, scope.id)).length : 0;
+  return { student: { id: student.id, school: student.school, grade: student.grade }, scope, passages, reviewCount };
 }
 async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,updated_at").eq("id", passageId).single()); }
 async function studentPassage(body: any, session: ReadySession) {
   const student=await studentForSession(session),examId=required(body.examId,"Exam",80),passageId=required(body.passageId,"지문",80),passage=await studentPassageAccess(examId,passageId,student);
-  const [sentences,savedWords,savedSentences]=await Promise.all([
-    db.from("ready_passage_sentences").select("id,sentence_index,text,translation").eq("passage_id",passageId).order("sentence_index"),
-    db.from("ready_saved_words").select("normalized_word").eq("student_id",student.id),
-    db.from("ready_saved_sentences").select("sentence_id").eq("student_id",student.id).eq("passage_id",passageId),
-  ]);
-  const sentenceRows=rows<any[]>(sentences),readerTokens=sentenceRows.flatMap(sentence=>tokenizeSentence(sentence.text).map(token=>({id:`${sentence.id}-${token.tokenIndex}`,sentence_id:sentence.id,token_index:token.tokenIndex,surface:token.surface,normalized:token.normalized,lemma:token.lemma,start_offset:token.startOffset,end_offset:token.endOffset})));
-  return {passage,sentences:sentenceRows,tokens:readerTokens,savedWordLemmas:rows<any[]>(savedWords).map(item=>item.normalized_word),savedSentenceIds:rows<any[]>(savedSentences).map(item=>item.sentence_id)};
+  const sentences=await db.from("ready_passage_sentences").select("id,sentence_index,text").eq("passage_id",passageId).order("sentence_index");
+  return {passage,sentences:rows<any[]>(sentences)};
 }
 function answerIndexes(value: unknown, choiceCount: number) {
   if (!Array.isArray(value)) throw new ApiError(500, "문제 정답 형식이 올바르지 않습니다.");
@@ -255,28 +257,70 @@ function answerIndexes(value: unknown, choiceCount: number) {
   if (!indexes.length || indexes.length !== value.length) throw new ApiError(500, "문제 정답 형식이 올바르지 않습니다.");
   return indexes;
 }
-function publicQuestion(row: any) {
-  const payload = row.payload || {}, choices = Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 500)).filter(Boolean) : [];
-  if (choices.length < 2 || choices.length > 8) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
-  const variantText = clean(payload.variant_text, 20_000) || null;
-  return { id: row.id, type: row.type, skill: clean(payload.skill, 40), prompt: clean(payload.prompt, 500), choices, choiceTokens: choices.map(choice => tokenizeSentence(choice)), multiSelect: payload.multi_select === true, variantText, variantTokens: variantText ? tokenizeSentence(variantText) : [] };
+function publicSegments(value: unknown) {
+  return (Array.isArray(value) ? value : []).slice(0, 500).map((segment: any) => ({ text: clean(segment?.text, 5_000), kind: clean(segment?.kind, 20), label: clean(segment?.label, 20) }));
+}
+function publicBlocks(value: unknown) {
+  return (Array.isArray(value) ? value : []).slice(0, 80).map((block: any) => ({ kind: clean(block?.kind, 20), label: clean(block?.label, 80), text: clean(block?.text, 10_000), url: clean(block?.url, 2_000), alt: clean(block?.alt, 200), caption: clean(block?.caption, 500), segments: publicSegments(block?.segments) }));
+}
+function publicQuestion(row: any, passageText = "") {
+  const payload = row.payload || {}, type = clean(row.type, 40), choices = Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
+  if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
+  if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
+  const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
+  return {
+    id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill: clean(payload.skill, 40),
+    prompt: clean(payload.prompt, 1_000), choices, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,
+    passageText: clean(passageText, 30_000), variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
+    stimulus: clean(payload.stimulus, 10_000), summaryText: clean(payload.summary_text, 10_000), source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: Number(payload.source.source_question_no) || null, section: clean(payload.source.section, 20) } : null,
+  };
 }
 async function studentQuestions(body: any, session: ReadySession) {
   const study = await studentPassage(body, session), passageId = study.passage.id;
-  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,type,payload,created_at").eq("passage_id", passageId).eq("type", "multiple_choice").eq("status", "available").order("created_at"));
+  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,type,payload,created_at").eq("passage_id", passageId).in("type", ["multiple_choice", "written_response"]).eq("status", "available").order("created_at"));
   questionRows.sort((a, b) => (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
-  return { ...study, questions: questionRows.map(publicQuestion) };
+  const passageText = study.sentences.map((sentence: any) => sentence.text).join(" ");
+  return { ...study, questions: questionRows.map(row => publicQuestion(row, passageText)) };
+}
+async function unresolvedQuestionIds(studentId: string, examId: string) {
+  const attempts = rows<any[]>(await db.from("ready_attempts").select("question_id,correct,created_at").eq("student_id", studentId).eq("exam_id", examId).order("created_at", { ascending: false }));
+  const latest = new Map<string, boolean>();
+  for (const attempt of attempts) if (!latest.has(attempt.question_id)) latest.set(attempt.question_id, attempt.correct === true);
+  return [...latest.entries()].filter(([, correct]) => !correct).map(([questionId]) => questionId);
+}
+async function studentReviewQuestions(body: any, session: ReadySession) {
+  const student = await studentForSession(session), examId = required(body.examId, "Exam", 80);
+  await studentExamAccess(examId, student);
+  const questionIds = await unresolvedQuestionIds(student.id, examId);
+  if (!questionIds.length) return { items: [] };
+  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,created_at").in("id", questionIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
+  if (!questionRows.length) return { items: [] };
+  const passageIds = [...new Set(questionRows.map(question => question.passage_id))];
+  const sentenceRows = rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index"));
+  const passageText = new Map<string, string>();
+  for (const passageId of passageIds) passageText.set(passageId, sentenceRows.filter(sentence => sentence.passage_id === passageId).map(sentence => sentence.text).join(" "));
+  questionRows.sort((a, b) => (Number(a.payload?.source?.passage_no) || 0) - (Number(b.payload?.source?.passage_no) || 0) || (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
+  return { items: questionRows.map(row => ({ question: publicQuestion(row, passageText.get(row.passage_id) || "") })) };
 }
 async function submitAttempt(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), questionId = required(body.questionId, "문제", 80);
-  const question = rows<any>(await db.from("ready_questions").select("id,passage_id,type,payload,status").eq("id", questionId).eq("type", "multiple_choice").eq("status", "available").maybeSingle());
+  const question = rows<any>(await db.from("ready_questions").select("id,passage_id,type,payload,status").eq("id", questionId).in("type", ["multiple_choice", "written_response"]).eq("status", "available").maybeSingle());
   if (!question) throw new ApiError(404, "현재 풀 수 없는 문제입니다.");
   await studentPassageAccess(examId, question.passage_id, student);
-  const spec = publicQuestion(question), selected = answerIndexes(body.selected, spec.choices.length), answer = answerIndexes(question.payload?.answer, spec.choices.length);
-  if (!spec.multiSelect && selected.length !== 1) throw new ApiError(400, "답을 하나만 선택해 주세요.");
-  const correct = selected.length === answer.length && selected.every((value, index) => value === answer[index]);
+  const spec = publicQuestion(question); let response: any, answer: any, correct = false;
+  if (question.type === "multiple_choice") {
+    const selected = answerIndexes(body.selected, spec.choices.length); answer = answerIndexes(question.payload?.answer, spec.choices.length);
+    if (!spec.multiSelect && selected.length !== 1) throw new ApiError(400, "답을 하나만 선택해 주세요.");
+    correct = selected.length === answer.length && selected.every((value, index) => value === answer[index]); response = { selected };
+  } else {
+    const responses = cleanList(body.responses, 12, 2_000), accepted = Array.isArray(question.payload?.accepted_answers) ? question.payload.accepted_answers : [];
+    if (!responses.length || responses.length !== accepted.length) throw new ApiError(400, "모든 답을 입력해 주세요.");
+    const normalize = (value: unknown) => clean(value, 2_000).normalize("NFKC").toLowerCase().replace(/[“”‘’'".,!?;:()[\]{}]/g, "").replace(/\s+/g, " ").trim();
+    correct = responses.every((value, index) => (Array.isArray(accepted[index]) ? accepted[index] : [accepted[index]]).some((candidate: unknown) => normalize(candidate) === normalize(value)));
+    response = { responses }; answer = accepted.map((slot: unknown) => (Array.isArray(slot) ? slot : [slot]).map(candidate => clean(candidate, 2_000)));
+  }
   const elapsedMs = Math.max(0, Math.min(3_600_000, Math.round(Number(body.elapsedMs) || 0)));
-  const attempt = rows<any>(await db.from("ready_attempts").insert({ student_id: student.id, question_id: question.id, exam_id: examId, response: { selected }, correct, elapsed_ms: elapsedMs }).select("id,correct,created_at").single());
+  const attempt = rows<any>(await db.from("ready_attempts").insert({ student_id: student.id, question_id: question.id, exam_id: examId, response, correct, elapsed_ms: elapsedMs }).select("id,correct,created_at").single());
   return { attempt, correct, answer };
 }
 function normalizedWord(value: unknown) { return clean(value, 100).toLowerCase().replace(/[^a-z']/g, "").replace(/^'+|'+$/g, ""); }
@@ -330,8 +374,8 @@ async function dispatch(op: string, body: any, session: ReadySession | null) {
   switch (op) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);
     case "teacher_bootstrap": return teacherBootstrap(); case "delete_impact": return deleteImpact(body); case "create_student": return createStudent(body); case "set_student_pin": return setStudentPin(body); case "delete_student": return deleteStudent(body);
-    case "assign_scope_passages": return setScopePassages(body, false); case "set_scope_passages": return setScopePassages(body, true); case "create_passage": return createPassage(body); case "update_passage": return updatePassage(body); case "delete_passage": return deletePassage(body);
-    case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_passage": return studentPassage(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession); case "word_lookup": return wordLookup(body, session as ReadySession); case "save_word": return saveWord(body, session as ReadySession); case "mark_word_known": return setWordKnown(body,session as ReadySession,true); case "resume_word_learning": return setWordKnown(body,session as ReadySession,false); case "delete_saved_word": return deleteSavedWord(body, session as ReadySession); case "translation_view": return translationView(body, session as ReadySession); case "save_sentence": return saveSentence(body, session as ReadySession); case "delete_saved_sentence": return deleteSavedSentence(body, session as ReadySession); case "personal_library": return personalLibrary(body,session as ReadySession);
+    case "assign_scope_passages": return setScopePassages(body, false); case "set_scope_passages": return setScopePassages(body, true); case "create_passage": return createPassage(body); case "update_passage": return updatePassage(body); case "delete_passage": return deletePassage(body); case "import_questions": return importQuestions(body);
+    case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_passage": return studentPassage(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "student_review_questions": return studentReviewQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession);
     default: throw new ApiError(404, "알 수 없는 READY 작업입니다.");
   }
 }

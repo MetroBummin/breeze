@@ -9,14 +9,15 @@ READY는 Breeze 저장소 안에서 UI 토큰만 공유하는 고려에듀 내�
 이번 시험 기간 READY의 운영 경계는 분명합니다.
 
 ```text
-원본 자료 → ChatGPT Work에서 정리·분석 → 구조화된 Passage 데이터
+원본 자료 → ChatGPT Work에서 정리·분석 → 구조화된 Passage / Question 데이터
 → 검증된 원자적 저장 계약으로 READY에 반영
 → Passage 여러 개 선택 → 학교/학년 시험범위에 배정
-→ 학생 PIN 로그인 → 현재 시험범위 Passage → Reader
+→ 학생 PIN 로그인 → 문제 풀이 → Attempt → 오답 복습
 ```
 
-READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 지문·문제 추출 workflow를
-두지 않습니다. Work가 콘텐츠를 준비하고 READY는 저장·읽기·Review·기록만 책임집니다.
+READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 추출 workflow를 두지 않습니다.
+Work가 private structured Question bundle을 준비하고 READY는 검증·원자적 저장·풀이·채점·오답
+Review를 책임집니다.
 
 ## Question 작업 필수 절차
 
@@ -39,14 +40,16 @@ READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 지문·문제 �
 - 구조화된 `sentenceRows` 항목 하나는 `PassageSentence` 한 개입니다.
 - 각 항목은 영어 `text`와 한국어 `translation`을 가지며 서버가 다시 분리하거나 번역하지 않습니다.
 - Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
-- 저장과 문장 학습은 AI와 독립적입니다. 문장 sheet는 원문·교사 해석·저장만 즉시 보여줍니다.
-- Reader 토큰은 지문을 열 때 결정적으로 계산하며 DB 전처리나 AI 호출이 없습니다.
-- 단어는 누른 순간에만 Breeze와 같은 Gemini 문맥 사전을 조회합니다. 원형·실제 문장으로 문맥 뜻, 품사, 짧은 설명, 표현 후보를 받고 대표 문맥 뜻은 즉시 `ready_saved_words`에 자동 저장합니다. 다른 뜻을 누르면 같은 lemma에 복수 뜻을 추가로 저장할 수 있습니다. `아는 단어 빼기`는 해당 지문의 학습 저장·강조를 제거하되 되돌릴 수 있는 `ready_word_states` 상태로 남깁니다. 지문을 열거나 문장을 저장할 때 AI를 호출하지 않습니다.
-- 저장 highlight는 lemma 기준이라 `made`로 저장한 `make`가 다른 지문에서도 유지됩니다.
+- Reader와 Question passage는 연속된 plain prose입니다. 학생 runtime의 word lookup, 문장 해석,
+  SavedWord/SavedSentence, lexical highlight 연결은 비활성화되어 있습니다. 기존 운영 데이터와
+  관련 테이블은 삭제하지 않습니다.
 - 학교/학년별 현재 시험범위와 Passage 연결은 `ready_set_current_scope_passages` 한 transaction으로 저장합니다.
 - Passage 소속의 Source of Truth는 `ready_exam_passages`입니다.
 - `ready_exams`는 기록 분리를 위한 내부 구현이며 학생과 관리자에게 생성·선택 개념을 노출하지 않습니다.
-- Question/Attempt는 과거 기록 보존을 위해 DB에만 남기며 현재 runtime에서 읽거나 쓰지 않습니다.
+- Question은 `multiple_choice`와 `written_response` 두 deterministic response contract를 사용합니다.
+  Standard/Annotated/Structural/Summary/Written family는 같은 Question/Attempt lifecycle을 공유합니다.
+- `ready_attempts`는 append-only이며 학생별 마지막 Attempt가 오답인 Question이 자동으로 Review에
+  나타납니다. 복습 정답 Attempt가 추가되면 해결됩니다.
 - StudySet/Publication은 신규 runtime과 clean migration에서 사용하지 않습니다.
 
 ## 로컬 확인
@@ -69,8 +72,8 @@ npm run ready:test
 - 학생 PIN은 PostgreSQL bcrypt hash만 저장합니다.
 - 관리자 비밀번호는 로그인 시 한 번만 보내고 이후 opaque admin session을 사용합니다.
 - API key, 관리자 비밀번호, service-role key는 frontend나 Git에 넣지 않습니다.
-- READY Edge Function은 단어 lookup에만 `GEMINI_API_KEY`, `AI_PROVIDER=gemini`, Breeze와 같은 `gemini-3.5-flash-lite`를 사용합니다. API key는 Edge Function Secret에서만 읽고 client·git·로그에 넣지 않습니다.
-- `AI_DAILY_LIMIT`은 학생 한 명의 하루 Gemini 단어 lookup 상한입니다. 없으면 100회이며, 무료 API 예산에 맞게 Secret으로 조정합니다.
+- 기존 lexical 데이터와 비활성 서버 함수는 보존하지만 학생 operation dispatcher에는 연결하지 않습니다.
+- Question import용 관리자 비밀번호와 서버 key는 client·git·로그에 넣지 않습니다.
 
 ## 배포
 
