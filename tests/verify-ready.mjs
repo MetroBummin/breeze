@@ -44,6 +44,8 @@ assert.match(app,/family\|\|'standard'[\s\S]*questionPassageHtml/,'Question fami
 assert.match(app,/contentBlocks[\s\S]*variantSegments[\s\S]*summaryText/,'Question variants and summary blocks are not rendered');
 assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written response UI is missing');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
+assert.match(app,/continuationQuestion[\s\S]*question_count/,'Quick start can select a Passage without questions');
+assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a question session can show a stale Review count');
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
 assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*written-response/,'Question family styling is incomplete');
 
