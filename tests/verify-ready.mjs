@@ -40,6 +40,7 @@ assert.match(edge,/inlineOptionGroups[\s\S]*inlineSelected[\s\S]*inlineAnswer/,'
 assert.match(edge,/\["grammar", "vocabulary"\]\.includes[\s\S]*inlineOptionGroups/,'Inline options can leak from a shared Passage into an unrelated question type');
 assert.match(edge,/\[ⓐ-ⓩ\]\|\\\(\[A-H\]\\\)/,'Parenthesized inline option groups are missing');
 assert.match(edge,/sourceQuestionNo === 123[\s\S]*sourceQuestionNo === 127/,'Verified 23번 source repairs are missing');
+assert.match(edge,/sourceQuestionNo === 125 \? "vocabulary"[\s\S]*sourceQuestionNo === 127 \? "summary"/,'23번 vocabulary and summary skills are not repaired');
 assert.match(edge,/target_ranges[\s\S]*inline_positions/,'Inline target/position contracts are missing');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');

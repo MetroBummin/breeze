@@ -223,7 +223,10 @@ def main():
                         payload.pop("variant_text", None)
                     if question_no == 123:
                         payload["target_ranges"] = TRADE_TARGETS
+                    if question_no == 125:
+                        payload["skill"] = "vocabulary"
                     if question_no == 127:
+                        payload["skill"] = "summary"
                         payload["summary_text"] = TRADE_SUMMARY
                     status = "draft" if question_no == 32 else "available"
                     questions.append({"passage_id": passage_map[passage_no], "type": "multiple_choice", "status": status, "payload": payload})

@@ -294,14 +294,15 @@ function publicQuestion(row: any, passageText = "") {
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
   const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
   const sourceQuestionNo = Number(payload.source?.source_question_no) || null;
-  const inlineGroups = type === "multiple_choice" && ["grammar", "vocabulary"].includes(clean(payload.skill, 40)) ? inlineOptionGroups(payload.variant_text) : [];
+  const storedSkill = clean(payload.skill, 40), skill = sourceQuestionNo === 125 ? "vocabulary" : sourceQuestionNo === 127 ? "summary" : storedSkill;
+  const inlineGroups = type === "multiple_choice" && ["grammar", "vocabulary"].includes(skill) ? inlineOptionGroups(payload.variant_text) : [];
   const storedTargets = publicTargetRanges(payload.target_ranges), targetRanges = storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
     { label: "ⓐ", text: "exists" }, { label: "ⓑ", text: "to hedge" }, { label: "ⓒ", text: "what" }, { label: "ⓓ", text: "reinvesting" }, { label: "ⓔ", text: "from which" },
   ] : [];
   const interaction = targetRanges.length ? "inline_targets" : inlineGroups.length ? "inline_options" : payload.skill === "insertion" && choices.every((choice: string) => /^\([A-H]\)$/.test(choice)) ? "inline_positions" : "choices";
   const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo === 127 ? "The real barriers to trade lie in transaction costs, but a common currency can help to ㉠________ them, which in turn leads to a(n) ㉡________ in the overall economy." : "");
   return {
-    id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill: clean(payload.skill, 40),
+    id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
     prompt: clean(payload.prompt, 1_000), choices, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,
     passageText: clean(passageText, 30_000), variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
     stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20) } : null,
