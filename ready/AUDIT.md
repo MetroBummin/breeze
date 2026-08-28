@@ -12,7 +12,7 @@ and deletion.
 - `ready_students`, bcrypt PINs, opaque `ready_sessions`, login throttling
 - eight permanent school/grade rows in `ready_exams` and `ready_exam_passages`
 - `ready_passages`, `ready_passage_sentences`, and one atomic structured-row write
-- on-demand dictionary lookup and simple `ready_saved_words`
+- on-demand Gemini contextual dictionary lookup and simple `ready_saved_words`
 - student lookup/view events and deduplicated saved word/sentence records
 - atomic Student and Passage delete-impact/cascade RPCs
 - 18 statically visible frontend operations, two typed-modal delete operations,
@@ -60,7 +60,7 @@ and deletion.
 - Passage creation calls one atomic RPC and returns its `passageId`; it does not
   re-fetch the newly written Passage and all sentences.
 - Reader opens from a local revision cache immediately, then revalidates.
-- Word taps make one on-demand dictionary request and write one lookup event.
+- Word taps make one authenticated, on-demand Gemini contextual dictionary request and write one lookup event. The old lemma-only cache is deliberately bypassed because it cannot preserve sentence context.
   Sentence translation views render from teacher data and send one background event.
 - Save operations are optimistic, idempotent in the database, and invalidate the
   in-memory Review list.
@@ -83,7 +83,8 @@ and deletion.
 
 - Active tables: Students/sessions/login attempts, eight internal current Scope
   rows and their Passage links, Passages/Sentences, SavedWord/SavedSentence,
-  lookup/view events, and the small dictionary cache.
+  lookup/view events, and the legacy dictionary cache (retained but no longer
+  used by contextual lookup).
 - Dormant tables: Question/Attempt are kept for historical ORDER compatibility.
   Production-only StudySet/Publication tables contain legacy records and remain
   isolated from runtime. The empty production-only textbook-group table is also

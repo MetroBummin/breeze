@@ -19,6 +19,11 @@ const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", supabaseAdminKey(), 
 const adminOps = new Set(["teacher_bootstrap", "delete_impact", "assign_scope_passages", "set_scope_passages", "create_passage", "update_passage", "delete_passage", "create_student", "set_student_pin", "delete_student"]);
 const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "submit_attempt", "word_lookup", "save_word", "delete_saved_word", "translation_view", "save_sentence", "delete_saved_sentence", "personal_library"]);
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
+// Match Breeze's free Gemini dictionary defaults. The API key remains a
+// Supabase Edge Function Secret and is never part of any public response.
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const AI_DAILY_LIMIT = Math.max(1, Math.min(1_000, Number(Deno.env.get("AI_DAILY_LIMIT") ?? 100)));
+const GEMINI_SYSTEM = "You are a precise bilingual dictionary for Korean learners reading English books. Reply with ONLY minified JSON. No markdown, no code fence, no commentary.";
 
 type ReadySession = { id: string; actor_type: "student" | "admin"; student_id: string | null; remembered: boolean; expires_at: string };
 type Student = { id: string; name: string; school: string; grade: string };
@@ -26,6 +31,55 @@ class ApiError extends Error { constructor(public status: number, message: strin
 function clean(value: unknown, max = 10_000) { return String(value ?? "").trim().slice(0, max); }
 function required(value: unknown, name: string, max = 10_000) { const out = clean(value, max); if (!out) throw new ApiError(400, `${name} 값이 필요합니다.`); return out; }
 function rows<T>(result: { data: T | null; error: { message: string } | null }): T { if (result.error) throw new ApiError(500, result.error.message); return result.data as T; }
+function cleanList(value: unknown, count: number, max: number) { return (Array.isArray(value) ? value : []).map(item => clean(item, max)).filter(Boolean).slice(0, count); }
+function parseJson(raw: string) { try { return JSON.parse(raw); } catch { /* Gemini occasionally adds a wrapper despite JSON mode. */ } const found = raw.match(/\{[\s\S]*\}/); if (!found) return null; try { return JSON.parse(found[0]); } catch { return null; } }
+
+function geminiLookPrompt(word: string, clicked: string, sentence: string) {
+  const form = clicked && clicked.toLowerCase() !== word.toLowerCase() ? `단어: ${word} (문장에서는 "${clicked}")` : `단어: ${word}`;
+  return `${form}
+문장: ${sentence || "(문장 없음 — 일반적인 뜻으로 답하세요)"}
+
+이 문장에서 이 단어가 어떤 뜻으로 쓰였는지 판단하세요.
+
+- lemma: 사전 표제어(원형). 고유명사나 약어면 그대로
+- pos: 명사|동사|형용사|부사|전치사|기타 중 하나
+- ko: 이 문장에서의 뜻. 한국어 8자 내외의 짧은 사전식 뜻
+- note: 이 문장에서 어떻게 쓰였는지 한국어 한 문장으로 설명
+- phrase: 클릭한 단어를 포함한 아주 확실한 고정 표현 하나만. 없으면 빈 문자열
+- alts: 지금 문맥의 뜻과 겹치지 않는 흔한 다른 한국어 뜻을 최대 3개
+
+{"lemma":"","pos":"","ko":"","note":"","phrase":"","alts":[""]}`;
+}
+
+async function callGeminiLook(word: string, clicked: string, sentence: string) {
+  const provider = (Deno.env.get("AI_PROVIDER") ?? "").trim().toLowerCase();
+  const key = Deno.env.get("GEMINI_API_KEY");
+  if (provider !== "gemini" || !key) throw new ApiError(503, "Gemini 사전이 아직 연결되지 않았습니다.");
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+  // Breeze intentionally requests JSON mode without responseSchema: Gemini's
+  // OpenAPI-schema subset differs between models, while this prompt is stable.
+  const base = { maxOutputTokens: 450, temperature: 0.2, responseMimeType: "application/json" };
+  let lastError = "";
+  // This is the same compatibility fallback Breeze uses for Gemini models
+  // that do not yet accept thinkingConfig.
+  for (const generationConfig of [{ ...base, thinkingConfig: { thinkingBudget: 0 } }, base]) {
+    const response = await fetch(url, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ system_instruction: { parts: [{ text: GEMINI_SYSTEM }] }, contents: [{ role: "user", parts: [{ text: geminiLookPrompt(word, clicked, sentence) }] }], generationConfig }),
+    });
+    if (response.ok) {
+      const payload = await response.json();
+      const text = (payload?.candidates?.[0]?.content?.parts || []).map((part: { text?: string }) => part?.text || "").join("").trim();
+      const parsed = parseJson(text);
+      if (parsed && clean(parsed.ko, 60)) return parsed;
+      throw new ApiError(502, "Gemini가 단어 뜻을 읽지 못했습니다.");
+    }
+    lastError = (await response.text()).slice(0, 300);
+    if (response.status !== 400) break;
+  }
+  console.error("READY Gemini lookup failed:", lastError);
+  throw new ApiError(502, "Gemini 단어 사전을 잠시 사용할 수 없습니다.");
+}
 
 async function studentForSession(session: ReadySession): Promise<Student> {
   const result = await db.from("ready_students").select("id,name,school,grade").eq("id", session.student_id).eq("active", true).maybeSingle();
@@ -227,11 +281,25 @@ async function submitAttempt(body: any, session: ReadySession) {
 }
 function normalizedWord(value: unknown) { return clean(value, 100).toLowerCase().replace(/[^a-z']/g, "").replace(/^'+|'+$/g, ""); }
 async function studyContext(body: any, session: ReadySession, sentenceRequired = false) { const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), passageId = required(body.passageId, "지문", 80), passage = await studentPassageAccess(examId, passageId, student), sentenceId = clean(body.sentenceId, 80); let sentence:any = null; if (sentenceRequired || sentenceId) { sentence = rows<any>(await db.from("ready_passage_sentences").select("id,text,translation").eq("id", required(sentenceId, "문장", 80)).eq("passage_id", passage.id).single()); } return { student, examId, passage, sentence }; }
-async function wordLookup(body: any, session: ReadySession) { const context = await studyContext(body, session), surfaceWord = required(body.word, "단어", 100), normalized = normalizedWord(surfaceWord), root=lemma(normalized); if (!normalized) throw new ApiError(400, "영어 단어만 조회할 수 있습니다.");
-  const event = await db.from("ready_word_lookup_events").insert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence?.id||null, surface_word: surfaceWord, normalized_word: root }); if (event.error) throw new ApiError(500, event.error.message);
-  const cached = await db.from("ready_word_cache").select("meanings").eq("normalized_word", root).maybeSingle(); if (cached.error) throw new ApiError(500, cached.error.message); if (Array.isArray(cached.data?.meanings)&&cached.data.meanings.length) return { word:surfaceWord, normalizedWord:root, meanings:cached.data.meanings, cached:true };
-  const meanings:string[]=[]; try { const response=await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q=${encodeURIComponent(root)}`),data=await response.json(); const translated=(data?.[0]||[]).map((item:any)=>item?.[0]).filter(Boolean).join("").trim(); if(translated&&translated.toLowerCase()!==root)meanings.push(translated); for(const group of data?.[1]||[])for(const term of (group?.[1]||[]).slice(0,5))if(term&&!meanings.includes(term))meanings.push(term); } catch { /* Breeze-compatible free dictionary fallback; no AI call. */ }
-  if(!meanings.length)meanings.push("뜻을 찾지 못했어요."); else await db.from("ready_word_cache").upsert({normalized_word:root,meanings,updated_at:new Date().toISOString()}); return {word:surfaceWord,normalizedWord:root,meanings:meanings.slice(0,8),cached:false}; }
+async function wordLookup(body: any, session: ReadySession) {
+  const context = await studyContext(body, session), surfaceWord = required(body.word, "단어", 100), normalized = normalizedWord(surfaceWord), root = lemma(normalized);
+  if (!normalized) throw new ApiError(400, "영어 단어만 조회할 수 있습니다.");
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const used = await db.from("ready_word_lookup_events").select("id", { count: "exact", head: true }).eq("student_id", context.student.id).gte("created_at", today.toISOString());
+  if (used.error) throw new ApiError(500, used.error.message);
+  if ((used.count || 0) >= AI_DAILY_LIMIT) throw new ApiError(429, `오늘 Gemini 단어 사전 ${AI_DAILY_LIMIT}회를 모두 사용했습니다.`);
+  const event = await db.from("ready_word_lookup_events").insert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence?.id || null, surface_word: surfaceWord, normalized_word: root });
+  if (event.error) throw new ApiError(500, event.error.message);
+  // Do not use the legacy lemma-only cache here: the same lemma can mean
+  // different things in two sentences. Breeze caches by lemma + context.
+  const result = await callGeminiLook(root, surfaceWord, context.sentence?.text || "");
+  const meaning = clean(result.ko, 60), alts = cleanList(result.alts, 3, 40).filter(item => item !== meaning);
+  return {
+    word: surfaceWord, normalizedWord: root, meaning, meanings: [meaning, ...alts],
+    pos: clean(result.pos, 12), note: clean(result.note, 300), phrase: clean(result.phrase, 80),
+    provider: "gemini", cached: false, remaining: Math.max(0, AI_DAILY_LIMIT - (used.count || 0) - 1),
+  };
+}
 async function saveWord(body:any,session:ReadySession){const context=await studyContext(body,session),word=required(body.word,"단어",100),normalized=normalizedWord(body.normalizedWord||word),root=lemma(normalized),meaning=required(body.meaning,"선택한 뜻",500);if(!root)throw new ApiError(400,"영어 단어만 저장할 수 있습니다.");const saved=await db.from("ready_saved_words").upsert({student_id:context.student.id,passage_id:context.passage.id,sentence_id:context.sentence?.id||null,word,normalized_word:root,meaning_snapshot:meaning},{onConflict:"student_id,passage_id,normalized_word"}).select().single();if(saved.error)throw new ApiError(500,saved.error.message);return {saved:true,normalizedWord:root};}
 async function deleteSavedWord(body:any,session:ReadySession){const student=await studentForSession(session),savedWordId=required(body.savedWordId,"저장 단어",80),result=await db.from("ready_saved_words").delete().eq("id",savedWordId).eq("student_id",student.id).select("id,normalized_word").maybeSingle();if(result.error)throw new ApiError(500,result.error.message);if(!result.data)throw new ApiError(404,"저장 단어를 찾지 못했습니다.");return {deleted:result.data.id,normalizedWord:result.data.normalized_word};}
 async function translationView(body: any, session: ReadySession) { const context = await studyContext(body, session, true); const event = await db.from("ready_sentence_translation_view_events").insert({ student_id: context.student.id, exam_id: context.examId, passage_id: context.passage.id, sentence_id: context.sentence.id }); if (event.error) throw new ApiError(500, event.error.message); return { recorded:true }; }

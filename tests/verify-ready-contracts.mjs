@@ -40,7 +40,8 @@ assert.match(student, /reading-passage[\s\S]*reading-sentence/, 'Reader is not r
 assert.match(student, /courseKey[\s\S]*source_type!=='TEXTBOOK'[\s\S]*scopePassagesHtml/, 'Textbook Passages are not grouped by course in the student list');
 assert.match(edge, /select\("id,title,source_type,source_label"\)/, 'Student passage list lacks textbook course metadata');
 assert.doesNotMatch(edge, /ready_passage_sentences"\)\.select\("id,passage_id,sentence_index,text,translation"\)/, 'Admin bootstrap still downloads every sentence');
-assert.doesNotMatch(edge, /anthropic\.com|api\.openai\.com|generateWithAnthropic|generateWithOpenAI/, 'READY Edge still calls an AI provider');
+assert.doesNotMatch(edge, /anthropic\.com|api\.openai\.com|generateWithAnthropic|generateWithOpenAI/, 'READY Edge still calls a retired AI provider');
+assert.match(edge, /callGeminiLook[\s\S]*GEMINI_API_KEY[\s\S]*context\.sentence\?\.text/, 'READY word lookup is not a server-only contextual Gemini call');
 assert.match(edge, /deleteSavedWord[\s\S]*student_id/, 'Saved words cannot be deleted by their authenticated owner');
 assert.match(edge, /deleteSavedSentence[\s\S]*student_id/, 'Saved sentences cannot be deleted by their authenticated owner');
 assert.doesNotMatch(admin + edge, /renderAnalytics|question-editor|generateOrderQuestion/, 'Dormant Question authoring or Analytics runtime is still active');

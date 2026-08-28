@@ -41,7 +41,7 @@ READY 안에는 PDF/DOCX/Excel/TSV Import UI, 파일 parser, AI 지문·문제 �
 - Passage와 모든 문장/해석은 `ready_create_passage_with_sentences` 한 transaction으로 저장합니다.
 - 저장과 문장 학습은 AI와 독립적입니다. 문장 sheet는 원문·교사 해석·저장만 즉시 보여줍니다.
 - Reader 토큰은 지문을 열 때 결정적으로 계산하며 DB 전처리나 AI 호출이 없습니다.
-- 단어는 누른 순간 Breeze와 같은 무료 사전 후보를 조회하고, 학생이 고른 뜻만 `ready_saved_words`에 저장합니다.
+- 단어는 누른 순간에만 Breeze와 같은 Gemini 문맥 사전을 조회합니다. 원형·실제 문장으로 문맥 뜻, 품사, 짧은 설명, 표현 후보를 받고 학생이 고른 뜻만 `ready_saved_words`에 저장합니다. 지문을 열거나 문장을 저장할 때 AI를 호출하지 않습니다.
 - 저장 highlight는 lemma 기준이라 `made`로 저장한 `make`가 다른 지문에서도 유지됩니다.
 - 학교/학년별 현재 시험범위와 Passage 연결은 `ready_set_current_scope_passages` 한 transaction으로 저장합니다.
 - Passage 소속의 Source of Truth는 `ready_exam_passages`입니다.
@@ -69,7 +69,8 @@ npm run ready:test
 - 학생 PIN은 PostgreSQL bcrypt hash만 저장합니다.
 - 관리자 비밀번호는 로그인 시 한 번만 보내고 이후 opaque admin session을 사용합니다.
 - API key, 관리자 비밀번호, service-role key는 frontend나 Git에 넣지 않습니다.
-- READY Edge Function에는 AI provider/model/API key 의존성이 없습니다.
+- READY Edge Function은 단어 lookup에만 `GEMINI_API_KEY`, `AI_PROVIDER=gemini`, Breeze와 같은 `gemini-3.5-flash-lite`를 사용합니다. API key는 Edge Function Secret에서만 읽고 client·git·로그에 넣지 않습니다.
+- `AI_DAILY_LIMIT`은 학생 한 명의 하루 Gemini 단어 lookup 상한입니다. 없으면 100회이며, 무료 API 예산에 맞게 Secret으로 조정합니다.
 
 ## 배포
 

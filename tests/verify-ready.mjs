@@ -42,7 +42,12 @@ assert.doesNotMatch(authSql, /\bpin\s+text\s*(?:not null)?[,)]/i, 'A plaintext P
 assert.match(authSql, /grant all on table public\.ready_sessions, public\.ready_login_attempts to service_role/, 'READY server role lacks auth-table privileges');
 
 const edge = readFileSync(resolve(root, 'server/ready/index.ts'), 'utf8');
-assert.doesNotMatch(edge, /READY_AI_PROVIDER|READY_AI_MODEL|ANTHROPIC_API_KEY|OPENAI_API_KEY|generateWithAnthropic|generateWithOpenAI|bakePassage|ready_apply_passage_bake/, 'READY Edge still has an AI bake/provider path');
+assert.doesNotMatch(edge, /READY_AI_PROVIDER|READY_AI_MODEL|ANTHROPIC_API_KEY|OPENAI_API_KEY|generateWithAnthropic|generateWithOpenAI|bakePassage|ready_apply_passage_bake/, 'READY Edge still has a retired bake/provider path');
+assert.match(edge, /GEMINI_API_KEY/, 'READY word lookup does not read the Gemini Secret server-side');
+assert.match(edge, /AI_PROVIDER/, 'READY word lookup does not respect the configured AI provider');
+assert.match(edge, /gemini-3\.5-flash-lite/, 'READY word lookup does not use Breeze\'s Gemini model default');
+assert.match(edge, /callGeminiLook\(root, surfaceWord, context\.sentence\?\.text \|\| ""\)/, 'READY word lookup does not send the verified sentence context to Gemini');
+assert.match(edge, /AI_DAILY_LIMIT[\s\S]*ready_word_lookup_events/, 'READY Gemini lookup has no per-student daily limit');
 assert.match(edge, /SUPABASE_SECRET_KEYS/, 'READY does not use Supabase server-side secret keys');
 assert.match(edge, /authenticate\(req, "student"\)/, 'Student APIs do not require a student session');
 assert.match(edge, /student_id: context\.student\.id/, 'Learning event identity does not come from the authenticated session');
@@ -101,7 +106,7 @@ assert.match(app, /sentenceSheet[\s\S]*sentence\.translation/, 'Sentence Sheet d
 assert.doesNotMatch(app, /sentenceBakes|analysis_snapshot|문장 구조|핵심 문법|핵심 표현/, 'Sentence sheet still depends on AI metadata');
 assert.doesNotMatch(edge, /ready_sentence_bakes|structureSummary|grammarPoints|keyExpressions|analysis_snapshot/, 'Edge runtime still reads or writes sentence AI metadata');
 assert.match(app, /record\('translation_view'/, 'Sentence view event is not recorded in the background');
-assert.match(edge, /translate\.googleapis\.com[\s\S]*dt=bd/, 'On-demand Breeze-compatible dictionary candidates are missing');
+assert.match(edge, /geminiLookPrompt[\s\S]*이 문장에서[\s\S]*phrase/, 'On-demand Breeze-compatible contextual dictionary prompt is missing');
 assert.match(edge, /ready_saved_words[\s\S]*meaning_snapshot/, 'Selected word meaning is not stored in the simple SavedWord table');
 assert.match(app, /savedWordLemmas[\s\S]*token\.lemma/, 'Saved-word highlights are not lemma based');
 assert.match(app, /deleteLibraryItem[\s\S]*delete_saved_word[\s\S]*delete_saved_sentence/, 'Review saved items cannot be deleted');
