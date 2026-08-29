@@ -224,6 +224,7 @@ async function importQuestions(body: any) {
   if (result.error) throw new ApiError(400, result.error.message);
   return { imported: Number(result.data) || 0 };
 }
+
 async function studentExamAccess(examId: string, student: Student) {
   const result = await db.from("ready_exams").select("id").eq("id", examId).eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle();
   if (result.error) throw new ApiError(500, result.error.message); if (!result.data) throw new ApiError(404, "현재 배정된 시험범위가 아닙니다."); return result.data as any;
@@ -390,6 +391,18 @@ const WRITING_GUIDE_REPAIRS: Record<number, any> = {
   350: { kind:"summary", title:"제목의 빈칸에 들어갈 말을 지문에서 찾아 한 단어씩 쓰세요.", slotLabels:["빈칸 1","빈칸 2"] },
 };
 function publicWritingGuide(questionNo: number | null) { return questionNo ? WRITING_GUIDE_REPAIRS[questionNo] || null : null; }
+function publicStoredWritingGuide(value: any) {
+  if (!value || typeof value !== "object") return null;
+  const guide = {
+    kind: clean(value.kind, 40) || "sentence",
+    title: clean(value.title, 1_000),
+    slotLabels: cleanList(value.slot_labels, 12, 80),
+    conditions: cleanList(value.conditions, 12, 500),
+    wordBank: cleanList(value.word_bank, 40, 200),
+    targets: publicTargetRanges(value.targets),
+  };
+  return guide.title || guide.slotLabels.length || guide.conditions.length || guide.wordBank.length || guide.targets.length ? guide : null;
+}
 function normalizedCombination(value: unknown) { return clean(value, 1_000).normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
 function choicesMatchGroups(groups: Array<{ label: string; options: string[] }>, choices: string[]) {
   if (!groups.length || !choices.length) return false;
@@ -416,8 +429,11 @@ function inlineAnswer(payload: any, choiceCount: number) {
 }
 function publicQuestion(row: any, passageText = "") {
   const payload = row.payload || {}, type = clean(row.type, 40), sourceQuestionNo = Number(payload.source?.source_question_no) || null;
-  const writingGuide = publicWritingGuide(sourceQuestionNo);
-  const storedChoiceParts = publicChoiceParts(payload.choice_parts), choiceParts = storedChoiceParts.length ? storedChoiceParts : sourceQuestionNo ? CHOICE_PART_REPAIRS[sourceQuestionNo] || [] : [];
+  // Legacy repairs belong to one named workbook. A bare source question number
+  // is not a global identity: every new PDF also has a question 1, 2, 3, ...
+  const legacyWorkbook = /2026\s*[-년]?\s*0?6|부산/.test(clean(payload.source?.exam, 160));
+  const writingGuide = publicStoredWritingGuide(payload.writing_guide) || (legacyWorkbook ? publicWritingGuide(sourceQuestionNo) : null);
+  const storedChoiceParts = publicChoiceParts(payload.choice_parts), choiceParts = storedChoiceParts.length ? storedChoiceParts : legacyWorkbook && sourceQuestionNo ? CHOICE_PART_REPAIRS[sourceQuestionNo] || [] : [];
   const choices = choiceParts.length ? choiceParts.map(parts => parts.join(" ")) : Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
   if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
@@ -430,16 +446,16 @@ function publicQuestion(row: any, passageText = "") {
   const inlineGroups = choicesMatchGroups(detectedGroups, choices) ? detectedGroups : [];
   if (inlineGroups.length && !["grammar", "vocabulary"].includes(skill)) skill = /흐름상|문맥상/.test(clean(payload.prompt, 1_000)) ? "vocabulary" : "grammar";
   const storedTargets = publicTargetRanges(payload.target_ranges);
-  const targetRanges = sourceQuestionNo && TARGET_RANGE_REPAIRS[sourceQuestionNo] ? TARGET_RANGE_REPAIRS[sourceQuestionNo] : storedTargets;
+  const targetRanges = legacyWorkbook && sourceQuestionNo && TARGET_RANGE_REPAIRS[sourceQuestionNo] ? TARGET_RANGE_REPAIRS[sourceQuestionNo] : storedTargets;
   // Keep answering deliberately plain: the passage may point at evidence, but
   // every multiple-choice answer is selected from the normal choice list.
   const interaction = "choices";
-  const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo ? SUMMARY_REPAIRS[sourceQuestionNo] || "" : "");
+  const summaryText = clean(payload.summary_text, 10_000) || (legacyWorkbook && sourceQuestionNo ? SUMMARY_REPAIRS[sourceQuestionNo] || "" : "");
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
     prompt: clean(payload.prompt, 1_000), choices, choiceParts, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots, writingGuide,
-    passageText: clean(passageText, 30_000), variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
-    stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20) } : null,
+    passageText: clean(passageText, 30_000), setText: clean(payload.set_text, 30_000) || null, variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
+    stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20), setId: clean(payload.source.set_id, 120) || null } : null,
   };
 }
 async function studentQuestions(body: any, session: ReadySession) {

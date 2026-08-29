@@ -57,6 +57,8 @@ assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*295:[\s\S]*that glows in the Orion
 assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*236:[\s\S]*bare imagination of a feast[\s\S]*240:[\s\S]*continued to explore/,'Meaning questions with label-only prompts lack their full source expressions');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
+assert.match(edge,/legacyWorkbook[\s\S]*publicStoredWritingGuide[\s\S]*CHOICE_PART_REPAIRS/,'Workbook-specific repairs are not scoped by source identity');
+assert.match(edge,/setText: clean\(payload\.set_text[\s\S]*setId: clean\(payload\.source\.set_id/,'Question-set passage identity is not exposed to the student UI');
 
 assert.match(app,/function renderReader[\s\S]*plainPassage/,'Reader does not render continuous prose');
 assert.doesNotMatch(app,/openLexical|openSentence|translation_view|save_sentence|savedWord|savedSentence/,'Lexical/sentence study remains connected to the student frontend');
@@ -70,6 +72,8 @@ assert.match(app,/sentence-answer[\s\S]*textarea[\s\S]*완성한 영어 문장/,
 assert.match(app,/writtenSlotsHtml[\s\S]*multi-correction[\s\S]*summary-slots/,'Multi-slot summary and correction tasks are still flattened into one field');
 assert.match(app,/writingGuide\?\.title\|\|question\.prompt/,'Flattened PDF prompts still override structured writing titles');
 assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
+assert.match(app,/question\.source[\s\S]*source\?\.setId[\s\S]*source-set:/,'Question sets do not use the source-scoped set identity');
+assert.match(app,/setBasePassage[\s\S]*question\.setText/,'Question sets do not prefer their immutable worksheet context');
 assert.match(app,/function setBasePassage[\s\S]*function currentQuestionPassage[\s\S]*function questionPassageHtml/,'A question set does not keep an immutable base Passage with current-question overlays');
 assert.match(app,/applyAlternativeOverlay[\s\S]*applyTargetOverlay[\s\S]*applyStructuralOverlay[\s\S]*pointedPassageHtml/,'Question overlays are not isolated by interaction type');
 assert.match(app,/target\.canonicalText\|\|target\.text/,'Target overlays cannot distinguish source anchors from displayed expressions');
@@ -114,7 +118,7 @@ const orderSession={items:[{question:{...orderQuestion,id:'order'}}],index:0};
 assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:orderSession}),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)/,'Order question loses its explicit A/B/C blocks');
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
-assert.match(app,/continuationQuestion[\s\S]*question_count/,'Quick start can select a Passage without questions');
+assert.doesNotMatch(app,/function continuationQuestion|class="start-study"|class="home-tabs"/,'Home still exposes quick-start or study-mode tabs');
 assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a question session can show a stale Review count');
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
 assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*written-response/,'Question family styling is incomplete');
