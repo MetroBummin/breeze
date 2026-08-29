@@ -284,6 +284,27 @@ const SUMMARY_REPAIRS: Record<number, string> = {
   132: "Since starlight travels a great distance before reaching us, observing the stars gives us a(n) (1)_____________ to explore the (2)_____________ of the universe. (1) (2)",
   137: "Jacob Lawrence was an American painter who gained national (1)______________ by (2)______________ the lives of African-Americans in his paintings. (1) (2)",
 };
+const CHOICE_PART_REPAIRS: Record<number, string[][]> = {
+  1: [["be held", "invited", "to showcase"], ["hold", "inviting", "showcase"], ["be held", "invited", "showcase"], ["hold", "invited", "to showcase"], ["be held", "inviting", "to showcase"]],
+  31: [["where", "that", "was"], ["which", "that", "was"], ["where", "those", "was"], ["which", "those", "were"], ["where", "that", "were"]],
+  39: [["melt", "learn", "bowls"], ["melting", "learn", "bowl"], ["melt", "to learn", "bowl"], ["melt", "learn", "bowl"], ["melting", "to learn", "bowls"]],
+  99: [["evaluate", "conservation", "showcase"], ["present", "destruction", "showcase"], ["present", "conservation", "showcase"], ["evaluate", "destruction", "review"], ["present", "conservation", "review"]],
+  101: [["absence", "exhibit"], ["enrollment", "appreciate"], ["participation", "display"], ["criticism", "revise"], ["competition", "submit"]],
+  106: [["frustration", "regret"], ["excitement", "relief"], ["confusion", "satisfaction"], ["relief", "delight"], ["embarrassment", "anger"]],
+  111: [["incompetent", "neglects"], ["skilled", "prioritizes"], ["competent", "overlooks"], ["unqualified", "considers"], ["capable", "highlights"]],
+  117: [["rehearse", "perfect"], ["avoid", "incomplete"], ["simulate", "imperfect"], ["predict", "limited"], ["practice", "authentic"]],
+  119: [["subjective", "smaller", "pessimistic"], ["subjective", "smaller", "optimistic"], ["objective", "larger", "optimistic"], ["subjective", "larger", "pessimistic"], ["objective", "smaller", "pessimistic"]],
+  122: [["more consideration", "less likely"], ["little thought", "more significant"], ["low priority", "more certain"], ["more value", "less important"], ["more weight", "more likely"]],
+  125: [["substantial", "disappear", "productive"], ["negligible", "remain", "wasteful"], ["substantial", "disappear", "wasteful"], ["negligible", "remain", "productive"], ["substantial", "remain", "productive"]],
+  127: [["remove", "decline"], ["preserve", "benefit"], ["eliminate", "improvement"], ["multiply", "edge"], ["erase", "setback"]],
+  129: [["back", "further", "distant"], ["back", "further", "nearby"], ["back", "nearer", "distant"], ["forward", "further", "nearby"], ["forward", "nearer", "distant"]],
+  132: [["obstacle", "past"], ["illusion", "composition"], ["opportunity", "history"], ["challenge", "evolution"], ["chance", "future"]],
+  134: [["vague", "criticism", "preserved"], ["vague", "recognition", "lost"], ["vivid", "criticism", "preserved"], ["vivid", "recognition", "preserved"], ["vivid", "recognition", "lost"]],
+  137: [["disregard", "ignoring"], ["fame", "distorting"], ["criticism", "depicting"], ["wealth", "financing"], ["recognition", "portraying"]],
+};
+function publicChoiceParts(value: unknown) {
+  return (Array.isArray(value) ? value : []).slice(0, 8).map(row => cleanList(row, 4, 200)).filter(row => row.length > 1);
+}
 function normalizedCombination(value: unknown) { return clean(value, 1_000).normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
 function choicesMatchGroups(groups: Array<{ label: string; options: string[] }>, choices: string[]) {
   if (!groups.length || !choices.length) return false;
@@ -309,11 +330,12 @@ function inlineAnswer(payload: any, choiceCount: number) {
   return visit(0, []) ? selected : [];
 }
 function publicQuestion(row: any, passageText = "") {
-  const payload = row.payload || {}, type = clean(row.type, 40), choices = Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
+  const payload = row.payload || {}, type = clean(row.type, 40), sourceQuestionNo = Number(payload.source?.source_question_no) || null;
+  const storedChoiceParts = publicChoiceParts(payload.choice_parts), choiceParts = storedChoiceParts.length ? storedChoiceParts : sourceQuestionNo ? CHOICE_PART_REPAIRS[sourceQuestionNo] || [] : [];
+  const choices = choiceParts.length ? choiceParts.map(parts => parts.join(" ")) : Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
   if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
   const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
-  const sourceQuestionNo = Number(payload.source?.source_question_no) || null;
   const storedSkill = clean(payload.skill, 40);
   let skill = /요약/.test(clean(payload.prompt, 1_000)) ? "summary" : sourceQuestionNo === 125 ? "vocabulary" : storedSkill;
   const detectedGroups = type === "multiple_choice" ? inlineOptionGroups(payload.variant_text) : [];
@@ -321,6 +343,8 @@ function publicQuestion(row: any, passageText = "") {
   if (inlineGroups.length && !["grammar", "vocabulary"].includes(skill)) skill = /흐름상|문맥상/.test(clean(payload.prompt, 1_000)) ? "vocabulary" : "grammar";
   const storedTargets = publicTargetRanges(payload.target_ranges), targetRanges = sourceQuestionNo === 97 ? [
     { label: "ⓐ", text: "Although", canonicalText: "Although" }, { label: "ⓑ", text: "to take part", canonicalText: "to take part" }, { label: "ⓒ", text: "is related", canonicalText: "related" }, { label: "ⓓ", text: "interesting", canonicalText: "interested" }, { label: "ⓔ", text: "submit", canonicalText: "submit" },
+  ] : sourceQuestionNo === 118 ? [
+    { label: "ⓐ", text: "that", canonicalText: "that" }, { label: "ⓑ", text: "can define", canonicalText: "can be defined" }, { label: "ⓒ", text: "the most", canonicalText: "the more" }, { label: "ⓓ", text: "playing", canonicalText: "play" }, { label: "ⓔ", text: "is", canonicalText: "are" },
   ] : storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
     { label: "ⓐ", text: "exists" }, { label: "ⓑ", text: "to hedge" }, { label: "ⓒ", text: "what" }, { label: "ⓓ", text: "reinvesting" }, { label: "ⓔ", text: "from which" },
   ] : [];
@@ -330,7 +354,7 @@ function publicQuestion(row: any, passageText = "") {
   const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo ? SUMMARY_REPAIRS[sourceQuestionNo] || "" : "");
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
-    prompt: clean(payload.prompt, 1_000), choices, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,
+    prompt: clean(payload.prompt, 1_000), choices, choiceParts, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,
     passageText: clean(passageText, 30_000), variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
     stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20) } : null,
   };

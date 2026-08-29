@@ -47,6 +47,8 @@ assert.match(edge,/choicesMatchGroups[\s\S]*inlineGroups[\s\S]*흐름상\|문맥
 assert.match(edge,/sourceQuestionNo === 97[\s\S]*to take part[\s\S]*is related/,'18번 밑줄 범위 repair is missing');
 assert.match(edge,/canonicalText: "related"[\s\S]*canonicalText: "interested"/,'Deliberately transformed targets do not retain their canonical anchors');
 assert.match(edge,/SUMMARY_REPAIRS[\s\S]*101:[\s\S]*137:/,'Imported summary material is not repaired for existing rows');
+assert.match(edge,/CHOICE_PART_REPAIRS[\s\S]*119:[\s\S]*122:/,'Multi-column source choices are not structurally repaired');
+assert.match(edge,/sourceQuestionNo === 118[\s\S]*can define[\s\S]*the most[\s\S]*playing/,'22번 underline targets are not repaired');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
 
@@ -61,32 +63,34 @@ assert.match(app,/function setBasePassage[\s\S]*function currentQuestionPassage[
 assert.match(app,/applyAlternativeOverlay[\s\S]*applyTargetOverlay[\s\S]*applyStructuralOverlay[\s\S]*pointedPassageHtml/,'Question overlays are not isolated by interaction type');
 assert.match(app,/target\.canonicalText\|\|target\.text/,'Target overlays cannot distinguish source anchors from displayed expressions');
 assert.match(app,/\['implication','order'\]\.includes\(question\.skill\)[\s\S]*question\.variantText/,'Standalone implication and order questions do not use their explicit question material');
+assert.match(app,/worksheetPassageText[\s\S]*questionSetIndices\(session\)\.length>1[\s\S]*setBasePassage/,'Question sets do not preserve one original worksheet Passage');
 assert.match(app,/canonicalOption[\s\S]*sort\(\(a,b\)=>b\.length-a\.length\)/,'Overlapping alternatives do not prefer the specific longer option');
 assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointing and footnote rendering is missing');
 assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');
 assert.match(app,/combinationChoiceParts[\s\S]*choice-separator/,'Grammar and vocabulary combination choices are not visually separated');
 assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned when moving within a question set');
 
-const passageFunctionNames=['canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','setBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage','questionSetKey','questionSetIndices'];
+const passageFunctionNames=['canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','setBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage','questionSetKey','questionSetIndices'];
 const passageFunctions=passageFunctionNames.map(name=>app.match(new RegExp(`function ${name}\\([^\\n]+`))?.[0]||'').join('\n');
 const canonical18='Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme Sustainable Future. Although we announced the fair last month, student registration is still lower than expected. Therefore, we would like to encourage more of you to take part. You are invited to present a project. You will have the opportunity to showcase your work. If you are interested, please submit a description. We look forward to your participation.';
+const worksheet18='Dear students, The annual Riverdale Science Fair will ⓐ[hold / be held] on July 18 with the theme “㉠________.” (A) Although we announced the fair last month, student registration is still lower than expected. (B) You are ⓑ[inviting / invited] to present a project. (C) You will have the opportunity ⓒ[showcase / to showcase] your work. (D) If you are interested, please submit a description. (E) We look forward to your participation.';
 const sharedSource={passageNo:18,section:'1',questionNo:1};
 const setQuestions=[
-  {skill:'grammar',passageText:canonical18,variantText:'Dear students, The annual Riverdale Science Fair will ⓐ[hold / be held] on July 18 with the theme “㉠________.” Although we announced the fair last month, student registration is still lower than expected. You are ⓑ[inviting / invited] to present a project. You will have the opportunity ⓒ[showcase / to showcase] your work. We look forward to your participation.',inlineGroups:[{label:'ⓐ',options:['hold','be held']},{label:'ⓑ',options:['inviting','invited']},{label:'ⓒ',options:['showcase','to showcase']}],source:sharedSource},
-  {skill:'blank',choices:['Space Tourism','Sustainable Future'],passageText:canonical18,variantText:'Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme “㉠________.” Although we announced the fair last month, student registration is still lower than expected.',source:sharedSource},
-  {skill:'insertion',stimulus:'Therefore, we would like to encourage more of you to take part.',passageText:canonical18,variantText:'Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme “㉠________.” (A) Although we announced the fair last month, student registration is still lower than expected. (B) You are invited to present a project. (C) You will have the opportunity to showcase your work. (D) If you are interested, please submit a description. (E) We look forward to your participation.',source:sharedSource},
-  {skill:'content',passageText:canonical18,variantText:canonical18,source:sharedSource},
+  {skill:'grammar',passageText:canonical18,variantText:worksheet18,inlineGroups:[{label:'ⓐ',options:['hold','be held']},{label:'ⓑ',options:['inviting','invited']},{label:'ⓒ',options:['showcase','to showcase']}],source:sharedSource},
+  {skill:'blank',choices:['Space Tourism','Sustainable Future'],passageText:canonical18,variantText:worksheet18,source:sharedSource},
+  {skill:'insertion',stimulus:'Therefore, we would like to encourage more of you to take part.',passageText:canonical18,variantText:worksheet18,source:sharedSource},
+  {skill:'content',passageText:canonical18,variantText:worksheet18,source:sharedSource},
 ];
 const setSession={items:setQuestions.map((question,index)=>({question:{...question,id:`set-${index}`}})),index:0};
 const basePassages=setQuestions.map((_question,index)=>runInNewContext(`${passageFunctions}; setBasePassage(session)`,{session:{...setSession,index}}));
 assert.equal(new Set(basePassages).size,1,'The same question set does not share one immutable base Passage');
 assert.doesNotMatch(basePassages[0],/Therefore, we would like/,'Insertion stimulus remains in the set base Passage');
 assert.match(basePassages[0],/㉠_{4,}/,'The shared blank was not preserved in the set base Passage');
+assert.match(basePassages[0],/ⓐhold \/ be held[\s\S]*\(A\)[\s\S]*\(E\)/,'The original worksheet apparatus is not preserved as the set master');
 const overlayFor=index=>runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[session.index].question)`,{session:{...setSession,index}});
 assert.match(overlayFor(0),/ⓐhold \/ be held[\s\S]*ⓑinviting \/ invited[\s\S]*ⓒshowcase \/ to showcase/,'Grammar alternatives are not presented without revealing the answer');
-assert.doesNotMatch(overlayFor(0),/\(A\)|\(B\)|\(C\)/,'Insertion markers leaked into the grammar question');
 assert.match(overlayFor(2),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)[\s\S]*\(D\)[\s\S]*\(E\)/,'Insertion positions are missing from the insertion question');
-assert.doesNotMatch(overlayFor(3),/[ⓐ-ⓩ]|\([A-H]\)/,'Another question overlay leaked into a content question');
+assert.equal(new Set(setQuestions.map((_question,index)=>overlayFor(index))).size,1,'A set question changes the original worksheet Passage between tabs');
 const targetCanonical='You are invited to present a model related to conservation. If you are interested, please submit it.';
 const transformedTarget={skill:'grammar',passageText:targetCanonical,variantText:targetCanonical,targetRanges:[{label:'ⓒ',text:'is related',canonicalText:'related'},{label:'ⓓ',text:'interesting',canonicalText:'interested'}],source:sharedSource};
 const transformedSession={items:[{question:{...transformedTarget,id:'target-transform'}}],index:0};
@@ -104,11 +108,13 @@ assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a questio
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
 assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*written-response/,'Question family styling is incomplete');
 assert.match(css,/passage-pointer[\s\S]*question-set-nav/,'Question-set pointing styling is missing');
+assert.match(css,/passage-blank[\s\S]*white-space:nowrap/,'Inline blanks can still expand into an awkward wrapped bar');
 assert.match(css,/question-choice\.eliminated[\s\S]*question-choice\.candidate/,'Choice deliberation states are missing');
 assert.match(css,/font-size:16px!important/,'iOS Safari input zoom prevention is missing');
 assert.match(css,/reader-shell>\.question-prompt\{[^}]*clamp\(18px,1\.65vw,22px\)/,'Question prompt has regressed to an oversized display heading');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/stimulus[\s\S]*target_ranges[\s\S]*city_tour_blocks/,'Question-set source repairs are missing from the importer');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/\("요약", "summary"\)[\s\S]*\("빈칸", "blank"\)/,'Summary questions are still misclassified as generic blanks');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/family == "summary"[\s\S]*summary_text/,'Summary material is not imported explicitly');
+assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/TABLE_CHOICE_PARTS[\s\S]*119:[\s\S]*122:/,'Importer still flattens multi-column choices into ambiguous strings');
 
 console.log('READY Question-first core checks passed');

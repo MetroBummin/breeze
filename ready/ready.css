@@ -285,6 +285,9 @@ body[data-ready-mode="student"] .question-passage{
 .question-footnote{display:block;margin-top:10px;color:var(--soft);font:600 12px/1.5 var(--ready-ui)}
 .passage-pointer{display:inline;padding:1px 4px;border:1px solid color-mix(in srgb,var(--brand) 48%,var(--line));border-radius:5px;background:color-mix(in srgb,var(--brand) 10%,transparent);color:var(--brand-strong);font-weight:650;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .passage-pointer b{margin-right:3px;font:800 .72em/1 var(--ready-ui)}
+.passage-blank{display:inline-flex;align-items:baseline;gap:5px;width:min(13em,48vw);max-width:100%;vertical-align:baseline;white-space:nowrap;color:var(--brand-strong)}
+.passage-blank b{flex:none;font:800 .72em/1 var(--ready-ui)}
+.passage-blank i{flex:1;min-width:5em;border-bottom:2px solid color-mix(in srgb,var(--brand) 62%,var(--ink));transform:translateY(-2px)}
 .question-segment.label::before{content:attr(data-label);margin-right:4px;color:var(--brand-strong);font-weight:800}
 .question-segment.blank{display:inline-block;min-width:88px;border-bottom:2px solid currentColor;text-align:center}
 .question-segment.choice{padding:1px 4px;border-radius:4px;background:var(--sky);font-family:var(--ready-ui)}

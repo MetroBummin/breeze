@@ -37,12 +37,33 @@ TABLE_CHOICES = {
     101: ["absence exhibit", "enrollment appreciate", "participation display", "criticism revise", "competition submit"],
     111: ["incompetent neglects", "skilled prioritizes", "competent overlooks", "unqualified considers", "capable highlights"],
     117: ["rehearse perfect", "avoid incomplete", "simulate imperfect", "predict limited", "practice authentic"],
+    119: ["subjective smaller pessimistic", "subjective smaller optimistic", "objective larger optimistic", "subjective larger pessimistic", "objective smaller pessimistic"],
+    122: ["more consideration less likely", "little thought more significant", "low priority more certain", "more value less important", "more weight more likely"],
     125: ["substantial disappear productive", "negligible remain wasteful", "substantial disappear wasteful", "negligible remain productive", "substantial remain productive"],
     127: ["remove decline", "preserve benefit", "eliminate improvement", "multiply edge", "erase setback"],
     129: ["back further distant", "back further nearby", "back nearer distant", "forward further nearby", "forward nearer distant"],
     132: ["obstacle past", "illusion composition", "opportunity history", "challenge evolution", "chance future"],
     134: ["vague criticism preserved", "vague recognition lost", "vivid criticism preserved", "vivid recognition preserved", "vivid recognition lost"],
     137: ["disregard ignoring", "fame distorting", "criticism depicting", "wealth financing", "recognition portraying"],
+}
+
+TABLE_CHOICE_PARTS = {
+    1: [["be held", "invited", "to showcase"], ["hold", "inviting", "showcase"], ["be held", "invited", "showcase"], ["hold", "invited", "to showcase"], ["be held", "inviting", "to showcase"]],
+    31: [["where", "that", "was"], ["which", "that", "was"], ["where", "those", "was"], ["which", "those", "were"], ["where", "that", "were"]],
+    39: [["melt", "learn", "bowls"], ["melting", "learn", "bowl"], ["melt", "to learn", "bowl"], ["melt", "learn", "bowl"], ["melting", "to learn", "bowls"]],
+    99: [["evaluate", "conservation", "showcase"], ["present", "destruction", "showcase"], ["present", "conservation", "showcase"], ["evaluate", "destruction", "review"], ["present", "conservation", "review"]],
+    101: [["absence", "exhibit"], ["enrollment", "appreciate"], ["participation", "display"], ["criticism", "revise"], ["competition", "submit"]],
+    106: [["frustration", "regret"], ["excitement", "relief"], ["confusion", "satisfaction"], ["relief", "delight"], ["embarrassment", "anger"]],
+    111: [["incompetent", "neglects"], ["skilled", "prioritizes"], ["competent", "overlooks"], ["unqualified", "considers"], ["capable", "highlights"]],
+    117: [["rehearse", "perfect"], ["avoid", "incomplete"], ["simulate", "imperfect"], ["predict", "limited"], ["practice", "authentic"]],
+    119: [["subjective", "smaller", "pessimistic"], ["subjective", "smaller", "optimistic"], ["objective", "larger", "optimistic"], ["subjective", "larger", "pessimistic"], ["objective", "smaller", "pessimistic"]],
+    122: [["more consideration", "less likely"], ["little thought", "more significant"], ["low priority", "more certain"], ["more value", "less important"], ["more weight", "more likely"]],
+    125: [["substantial", "disappear", "productive"], ["negligible", "remain", "wasteful"], ["substantial", "disappear", "wasteful"], ["negligible", "remain", "productive"], ["substantial", "remain", "productive"]],
+    127: [["remove", "decline"], ["preserve", "benefit"], ["eliminate", "improvement"], ["multiply", "edge"], ["erase", "setback"]],
+    129: [["back", "further", "distant"], ["back", "further", "nearby"], ["back", "nearer", "distant"], ["forward", "further", "nearby"], ["forward", "nearer", "distant"]],
+    132: [["obstacle", "past"], ["illusion", "composition"], ["opportunity", "history"], ["challenge", "evolution"], ["chance", "future"]],
+    134: [["vague", "criticism", "preserved"], ["vague", "recognition", "lost"], ["vivid", "criticism", "preserved"], ["vivid", "recognition", "preserved"], ["vivid", "recognition", "lost"]],
+    137: [["disregard", "ignoring"], ["fame", "distorting"], ["criticism", "depicting"], ["wealth", "financing"], ["recognition", "portraying"]],
 }
 
 CITY_TOUR_TARGETS = [
@@ -209,6 +230,8 @@ def main():
                         "position": section * 1000 + question_no,
                         "source": {"provider": "exam4you", "exam": "2026-06 부산 고2 예상문제", "passage_no": passage_no, "source_question_no": question_no, "section": str(section)},
                     }
+                    if question_no in TABLE_CHOICE_PARTS:
+                        payload["choice_parts"] = TABLE_CHOICE_PARTS[question_no]
                     if section != 3 or family != "standard":
                         payload["variant_text"] = question_passage
                     if skill_for(prompt) == "insertion":
@@ -232,6 +255,14 @@ def main():
                             {"label": "ⓒ", "text": "is related", "canonical_text": "related"},
                             {"label": "ⓓ", "text": "interesting", "canonical_text": "interested"},
                             {"label": "ⓔ", "text": "submit", "canonical_text": "submit"},
+                        ]
+                    if question_no == 118:
+                        payload["target_ranges"] = [
+                            {"label": "ⓐ", "text": "that", "canonical_text": "that"},
+                            {"label": "ⓑ", "text": "can define", "canonical_text": "can be defined"},
+                            {"label": "ⓒ", "text": "the most", "canonical_text": "the more"},
+                            {"label": "ⓓ", "text": "playing", "canonical_text": "play"},
+                            {"label": "ⓔ", "text": "is", "canonical_text": "are"},
                         ]
                     if question_no == 125:
                         payload["skill"] = "vocabulary"
