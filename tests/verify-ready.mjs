@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 import { bearerToken, randomSessionToken, secureEqual, sha256Hex, validPin } from '../server/ready/auth-core.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
@@ -59,6 +60,22 @@ assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointi
 assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');
 assert.match(app,/combinationChoiceParts[\s\S]*choice-separator/,'Grammar and vocabulary combination choices are not visually separated');
 assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned when moving within a question set');
+
+const passageFunctionNames=['canonicalHasOption','canonicalOption','resolvedSetPassageText','passageFeatureScore','labelNeedleIndex','mergeQuestionPointers','fixedSetPassage','questionSetKey','questionSetIndices'];
+const passageFunctions=passageFunctionNames.map(name=>app.match(new RegExp(`function ${name}\\([^\\n]+`))?.[0]||'').join('\n');
+const canonical18='Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme Sustainable Future. Although we announced the fair last month, student registration is still lower than expected. You are invited to present a project. You will have the opportunity to showcase your work. We look forward to your participation.';
+const sharedSource={passageNo:18,section:'1',questionNo:1};
+const setQuestions=[
+  {passageText:canonical18,variantText:'Dear students, The annual Riverdale Science Fair will ⓐ[be held / hold] on July 18 with the theme “㉠________.” Although we announced the fair last month, student registration is still lower than expected. You are ⓑ[invited / inviting] to present a project. You will have the opportunity ⓒ[to showcase / showcase] your work. We look forward to your participation.',inlineGroups:[{label:'ⓐ',options:['be held','hold']},{label:'ⓑ',options:['invited','inviting']},{label:'ⓒ',options:['to showcase','showcase']}],source:sharedSource},
+  {passageText:canonical18,variantText:'Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme “㉠________.” Although we announced the fair last month, student registration is still lower than expected. You are invited to present a project. You will have the opportunity to showcase your work. We look forward to your participation.',source:sharedSource},
+  {passageText:canonical18,variantText:'Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme “㉠________.” (A) Although we announced the fair last month, student registration is still lower than expected. (B) You are invited to present a project. (C) You will have the opportunity to showcase your work. (D) We look forward to your participation. (E)',source:sharedSource},
+  {passageText:canonical18,variantText:canonical18,source:sharedSource},
+];
+const setSession={items:setQuestions.map((question,index)=>({question:{...question,id:`set-${index}`}})),index:0};
+const mergedPassages=setQuestions.map((_question,index)=>runInNewContext(`${passageFunctions}; fixedSetPassage(session)`,{session:{...setSession,index}}));
+assert.equal(new Set(mergedPassages).size,1,'The same question set renders different Passage text by current question');
+assert.match(mergedPassages[0],/ⓐbe held[\s\S]*ⓑinvited[\s\S]*ⓒto showcase/,'Grammar pointers were lost while merging the set Passage');
+assert.match(mergedPassages[0],/㉠_{4,}[\s\S]*\(A\)[\s\S]*\(B\)[\s\S]*\(C\)[\s\S]*\(D\)[\s\S]*\(E\)/,'Blank or insertion markers were lost while merging the set Passage');
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
 assert.match(app,/continuationQuestion[\s\S]*question_count/,'Quick start can select a Passage without questions');
