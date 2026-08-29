@@ -143,7 +143,7 @@ def family_for(prompt: str) -> str:
 
 
 def skill_for(prompt: str) -> str:
-    for word, skill in (("어법", "grammar"), ("어휘", "vocabulary"), ("빈칸", "blank"), ("주어진 문장", "insertion"), ("관계없는", "irrelevant"), ("이어질 순서", "order"), ("요약", "summary"), ("주제", "topic"), ("제목", "title"), ("목적", "purpose"), ("심경", "emotion"), ("내용과 일치", "content"), ("의미하는", "implication")):
+    for word, skill in (("어법", "grammar"), ("어휘", "vocabulary"), ("요약", "summary"), ("빈칸", "blank"), ("주어진 문장", "insertion"), ("관계없는", "irrelevant"), ("이어질 순서", "order"), ("주제", "topic"), ("제목", "title"), ("목적", "purpose"), ("심경", "emotion"), ("내용과 일치", "content"), ("의미하는", "implication")):
         if word in prompt:
             return skill
     return "comprehension"
@@ -213,6 +213,8 @@ def main():
                         payload["variant_text"] = question_passage
                     if skill_for(prompt) == "insertion":
                         payload["stimulus"] = clean_page_noise(before_choices)
+                    if family == "summary":
+                        payload["summary_text"] = clean_page_noise(before_choices)
                     if question_no == 16:
                         payload["variant_text"] = "Humans excel at visual imagery. Our brains evolved this ability to create an internal mental picture or model of the world in which we can rehearse forthcoming actions, without the risks or the penalties of doing them in the real world. (A) There are even hints from brain-imaging studies by Harvard University psychologist Steve Kosslyn showing that your brain uses the same regions to imagine a scene as when you actually view one. (B) This is a wise bit of self-restraint on your genes’ part. (C) If your internal model of the world were a perfect substitute, then anytime you felt hungry you could simply imagine yourself at a banquet, consuming a feast. (D) You would have no incentive to find real food and would soon starve to death. (E) As the Bard said, “You cannot cloy the hungry edge of appetite by bare imagination of a feast.”"
                     if question_no == 37:
@@ -225,11 +227,11 @@ def main():
                         payload["target_ranges"] = TRADE_TARGETS
                     if question_no == 97:
                         payload["target_ranges"] = [
-                            {"label": "ⓐ", "text": "Although"},
-                            {"label": "ⓑ", "text": "to take part"},
-                            {"label": "ⓒ", "text": "is related"},
-                            {"label": "ⓓ", "text": "interesting"},
-                            {"label": "ⓔ", "text": "submit"},
+                            {"label": "ⓐ", "text": "Although", "canonical_text": "Although"},
+                            {"label": "ⓑ", "text": "to take part", "canonical_text": "to take part"},
+                            {"label": "ⓒ", "text": "is related", "canonical_text": "related"},
+                            {"label": "ⓓ", "text": "interesting", "canonical_text": "interested"},
+                            {"label": "ⓔ", "text": "submit", "canonical_text": "submit"},
                         ]
                     if question_no == 125:
                         payload["skill"] = "vocabulary"

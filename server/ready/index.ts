@@ -272,8 +272,18 @@ function inlineOptionGroups(value: unknown) {
   return groups.length && groups.length <= 8 ? groups : [];
 }
 function publicTargetRanges(value: unknown) {
-  return (Array.isArray(value) ? value : []).slice(0, 8).map((target: any) => ({ label: clean(target?.label, 20), text: clean(target?.text, 200) })).filter(target => target.label && target.text);
+  return (Array.isArray(value) ? value : []).slice(0, 8).map((target: any) => ({ label: clean(target?.label, 20), text: clean(target?.text, 200), canonicalText: clean(target?.canonical_text ?? target?.canonicalText, 200) || clean(target?.text, 200) })).filter(target => target.label && target.text);
 }
+const SUMMARY_REPAIRS: Record<number, string> = {
+  101: "Since student (1)__________ in the Riverdale Science Fair is still not enough, the science teacher encourages students to (2)__________ work related to a sustainable future. (1) (2)",
+  106: "Luna's initial (1)___________ upon receiving the wrong birthday cake quickly turned into a(n) (2)___________ once the bakery's mistake was corrected. (1) (2)",
+  111: "The belief that a group of (1)______________ members will automatically succeed is a misconception because it (2)______________ how those members can function as a whole. (1) (2)",
+  117: "The human brain evolved the ability to form mental images of the world to (1)__________ actions in advance, but evolution ensured these images remain (2)__________ to prevent us from confusing them with reality. (1) (2)",
+  122: "When making decisions, people tend to give low-probability events (1)______________ than their objective chances deserve, making them seem (2)______________ than they really are. (1) (2)",
+  127: "The real barriers to trade lie in transaction costs, but a common currency can help to ㉠_____________ them, which in turn leads to a(n) ㉡_____________ in the overall economy.㉠ ㉡",
+  132: "Since starlight travels a great distance before reaching us, observing the stars gives us a(n) (1)_____________ to explore the (2)_____________ of the universe. (1) (2)",
+  137: "Jacob Lawrence was an American painter who gained national (1)______________ by (2)______________ the lives of African-Americans in his paintings. (1) (2)",
+};
 function normalizedCombination(value: unknown) { return clean(value, 1_000).normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
 function choicesMatchGroups(groups: Array<{ label: string; options: string[] }>, choices: string[]) {
   if (!groups.length || !choices.length) return false;
@@ -305,19 +315,19 @@ function publicQuestion(row: any, passageText = "") {
   const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
   const sourceQuestionNo = Number(payload.source?.source_question_no) || null;
   const storedSkill = clean(payload.skill, 40);
-  let skill = sourceQuestionNo === 125 ? "vocabulary" : sourceQuestionNo === 127 ? "summary" : storedSkill;
+  let skill = /요약/.test(clean(payload.prompt, 1_000)) ? "summary" : sourceQuestionNo === 125 ? "vocabulary" : storedSkill;
   const detectedGroups = type === "multiple_choice" ? inlineOptionGroups(payload.variant_text) : [];
   const inlineGroups = choicesMatchGroups(detectedGroups, choices) ? detectedGroups : [];
   if (inlineGroups.length && !["grammar", "vocabulary"].includes(skill)) skill = /흐름상|문맥상/.test(clean(payload.prompt, 1_000)) ? "vocabulary" : "grammar";
-  const storedTargets = publicTargetRanges(payload.target_ranges), targetRanges = storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
+  const storedTargets = publicTargetRanges(payload.target_ranges), targetRanges = sourceQuestionNo === 97 ? [
+    { label: "ⓐ", text: "Although", canonicalText: "Although" }, { label: "ⓑ", text: "to take part", canonicalText: "to take part" }, { label: "ⓒ", text: "is related", canonicalText: "related" }, { label: "ⓓ", text: "interesting", canonicalText: "interested" }, { label: "ⓔ", text: "submit", canonicalText: "submit" },
+  ] : storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
     { label: "ⓐ", text: "exists" }, { label: "ⓑ", text: "to hedge" }, { label: "ⓒ", text: "what" }, { label: "ⓓ", text: "reinvesting" }, { label: "ⓔ", text: "from which" },
-  ] : sourceQuestionNo === 97 ? [
-    { label: "ⓐ", text: "Although" }, { label: "ⓑ", text: "to take part" }, { label: "ⓒ", text: "is related" }, { label: "ⓓ", text: "interesting" }, { label: "ⓔ", text: "submit" },
   ] : [];
   // Keep answering deliberately plain: the passage may point at evidence, but
   // every multiple-choice answer is selected from the normal choice list.
   const interaction = "choices";
-  const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo === 127 ? "The real barriers to trade lie in transaction costs, but a common currency can help to ㉠________ them, which in turn leads to a(n) ㉡________ in the overall economy." : "");
+  const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo ? SUMMARY_REPAIRS[sourceQuestionNo] || "" : "");
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
     prompt: clean(payload.prompt, 1_000), choices, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,

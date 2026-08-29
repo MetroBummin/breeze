@@ -40,11 +40,13 @@ assert.match(edge,/accepted_response_sets[\s\S]*acceptedSets\.some/,'Linked writ
 assert.match(edge,/inlineOptionGroups[\s\S]*inlineSelected[\s\S]*inlineAnswer/,'Inline passage-option grading is missing');
 assert.match(edge,/detectedGroups[\s\S]*choicesMatchGroups\(detectedGroups, choices\)/,'Inline options can leak from a shared Passage into choices that do not encode those groups');
 assert.match(edge,/\[ⓐ-ⓩ\]\|\\\(\[A-H\]\\\)/,'Parenthesized inline option groups are missing');
-assert.match(edge,/sourceQuestionNo === 123[\s\S]*sourceQuestionNo === 127/,'Verified 23번 source repairs are missing');
-assert.match(edge,/sourceQuestionNo === 125 \? "vocabulary"[\s\S]*sourceQuestionNo === 127 \? "summary"/,'23번 vocabulary and summary skills are not repaired');
+assert.match(edge,/sourceQuestionNo === 123/,'Verified 23번 target repair is missing');
+assert.match(edge,/\/요약\/\.test[\s\S]*sourceQuestionNo === 125 \? "vocabulary"/,'Summary prompts and 23번 vocabulary skill are not repaired');
 assert.match(edge,/targetRanges[\s\S]*const interaction = "choices"/,'Passage metadata must point while MCQ answers stay in the plain choice list');
 assert.match(edge,/choicesMatchGroups[\s\S]*inlineGroups[\s\S]*흐름상\|문맥상/,'Combination questions are not recognized from their own choices');
 assert.match(edge,/sourceQuestionNo === 97[\s\S]*to take part[\s\S]*is related/,'18번 밑줄 범위 repair is missing');
+assert.match(edge,/canonicalText: "related"[\s\S]*canonicalText: "interested"/,'Deliberately transformed targets do not retain their canonical anchors');
+assert.match(edge,/SUMMARY_REPAIRS[\s\S]*101:[\s\S]*137:/,'Imported summary material is not repaired for existing rows');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
 
@@ -57,6 +59,8 @@ assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written res
 assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
 assert.match(app,/function setBasePassage[\s\S]*function currentQuestionPassage[\s\S]*function questionPassageHtml/,'A question set does not keep an immutable base Passage with current-question overlays');
 assert.match(app,/applyAlternativeOverlay[\s\S]*applyTargetOverlay[\s\S]*applyStructuralOverlay[\s\S]*pointedPassageHtml/,'Question overlays are not isolated by interaction type');
+assert.match(app,/target\.canonicalText\|\|target\.text/,'Target overlays cannot distinguish source anchors from displayed expressions');
+assert.match(app,/\['implication','order'\]\.includes\(question\.skill\)[\s\S]*question\.variantText/,'Standalone implication and order questions do not use their explicit question material');
 assert.match(app,/canonicalOption[\s\S]*sort\(\(a,b\)=>b\.length-a\.length\)/,'Overlapping alternatives do not prefer the specific longer option');
 assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointing and footnote rendering is missing');
 assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');
@@ -83,6 +87,16 @@ assert.match(overlayFor(0),/ⓐhold \/ be held[\s\S]*ⓑinviting \/ invited[\s\S
 assert.doesNotMatch(overlayFor(0),/\(A\)|\(B\)|\(C\)/,'Insertion markers leaked into the grammar question');
 assert.match(overlayFor(2),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)[\s\S]*\(D\)[\s\S]*\(E\)/,'Insertion positions are missing from the insertion question');
 assert.doesNotMatch(overlayFor(3),/[ⓐ-ⓩ]|\([A-H]\)/,'Another question overlay leaked into a content question');
+const targetCanonical='You are invited to present a model related to conservation. If you are interested, please submit it.';
+const transformedTarget={skill:'grammar',passageText:targetCanonical,variantText:targetCanonical,targetRanges:[{label:'ⓒ',text:'is related',canonicalText:'related'},{label:'ⓓ',text:'interesting',canonicalText:'interested'}],source:sharedSource};
+const transformedSession={items:[{question:{...transformedTarget,id:'target-transform'}}],index:0};
+assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:transformedSession}),/ⓒis related[\s\S]*ⓓinteresting/,'Variant-only target expressions cannot be anchored to canonical prose');
+const implication={skill:'implication',passageText:'Canonical prose without a label.',variantText:'Context. (A)encourage more of you to take part. Ending.',source:{passageNo:18,section:'3',questionNo:233}};
+const implicationSession={items:[{question:{...implication,id:'implication'}}],index:0};
+assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:implicationSession}),/\(A\)encourage more of you to take part/,'Implication question loses its explicit underlined expression');
+const orderQuestion={skill:'order',passageText:'Canonical prose.',variantText:'Opening. (A) First block. (B) Second block. (C) Third block.',source:{passageNo:18,section:'3',questionNo:255}};
+const orderSession={items:[{question:{...orderQuestion,id:'order'}}],index:0};
+assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:orderSession}),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)/,'Order question loses its explicit A/B/C blocks');
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
 assert.match(app,/continuationQuestion[\s\S]*question_count/,'Quick start can select a Passage without questions');
@@ -94,5 +108,7 @@ assert.match(css,/question-choice\.eliminated[\s\S]*question-choice\.candidate/,
 assert.match(css,/font-size:16px!important/,'iOS Safari input zoom prevention is missing');
 assert.match(css,/reader-shell>\.question-prompt\{[^}]*clamp\(18px,1\.65vw,22px\)/,'Question prompt has regressed to an oversized display heading');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/stimulus[\s\S]*target_ranges[\s\S]*city_tour_blocks/,'Question-set source repairs are missing from the importer');
+assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/\("요약", "summary"\)[\s\S]*\("빈칸", "blank"\)/,'Summary questions are still misclassified as generic blanks');
+assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/family == "summary"[\s\S]*summary_text/,'Summary material is not imported explicitly');
 
 console.log('READY Question-first core checks passed');
