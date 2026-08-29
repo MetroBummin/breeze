@@ -49,11 +49,11 @@ assert.match(app,/function renderReader[\s\S]*plainPassage/,'Reader does not ren
 assert.doesNotMatch(app,/openLexical|openSentence|translation_view|save_sentence|savedWord|savedSentence/,'Lexical/sentence study remains connected to the student frontend');
 assert.match(app,/family\|\|'standard'[\s\S]*questionPassageHtml/,'Question family renderer is missing');
 assert.match(app,/contentBlocks/,'Structured Passage blocks are not rendered');
-assert.match(app,/fixedSetAnchor[\s\S]*summaryText/,'Stable Passage variants and summary blocks are not rendered');
+assert.match(app,/fixedSetPassage[\s\S]*summaryText/,'Stable Passage variants and summary blocks are not rendered');
 assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written response UI is missing');
 assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
-assert.match(app,/function fixedSetAnchor[\s\S]*function questionPassageHtml/,'A question set does not keep one stable Passage anchor');
-assert.match(app,/resolvedSetPassageText[\s\S]*pointedPassageHtml/,'The stable Passage does not use plain text with pointing');
+assert.match(app,/function passageFeatureScore[\s\S]*function fixedSetPassage[\s\S]*function questionPassageHtml/,'A question set does not merge one stable Passage from all variants');
+assert.match(app,/resolvedSetPassageText[\s\S]*mergeQuestionPointers[\s\S]*pointedPassageHtml/,'The stable Passage does not preserve every question marker with pointing');
 assert.match(app,/canonicalOption[\s\S]*sort\(\(a,b\)=>b\.length-a\.length\)/,'Overlapping alternatives do not prefer the specific longer option');
 assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointing and footnote rendering is missing');
 assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');

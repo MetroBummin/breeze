@@ -33,7 +33,7 @@
 /* tools/stamp-version.mjs 가 찍습니다 — 손으로 고치지 마세요.
    값은 "판 번호를 찍은 index.html 의 해시" 입니다. index.html 은 모든 파일의
    해시를 담고 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다. */
-const VERSION = '8c0f4a51';
+const VERSION = '393ddc7c';
 const CACHE = `breeze-${VERSION}`;
 
 /* 담을 목록은 index.html 을 읽어서 그때그때 만듭니다. 손으로 적어 두면 파일을
@@ -118,11 +118,26 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if(request.method !== 'GET') return;
   /* 우리 서버에서 온 것만. 나머지는 이 파일이 없는 것처럼 그대로 흘러갑니다. */
-  if(new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if(url.origin !== self.location.origin) return;
   event.respondWith(request.mode === 'navigate'
-    ? staleWhileRevalidate(request)
+    ? (url.pathname.startsWith('/ready/') ? networkFirst(request) : staleWhileRevalidate(request))
     : cacheFirst(request));
 });
+
+/* READY 는 시험 화면이라 새 문제 표시 규칙이 한 판 늦게 보이면 정답을 고를 수
+   없는 상태가 생깁니다. 온라인에서는 최신 HTML 을 먼저 받고, 연결이 끊겼을 때만
+   저장된 화면으로 돌아갑니다. */
+async function networkFirst(request){
+  const cache = await caches.open(CACHE);
+  try{
+    const fresh = await fetch(request);
+    if(fresh && fresh.ok) await cache.put(request, fresh.clone());
+    return fresh;
+  }catch{
+    return await cache.match(request, {ignoreSearch:true}) || Response.error();
+  }
+}
 
 /* 화면을 먼저 띄우고, 새것은 뒤에서 받아 둡니다. index.html 만 이 규칙입니다 —
    이 파일에는 `?v=` 를 붙일 수 없어서(자기 자신을 가리킬 방법이 없습니다)
