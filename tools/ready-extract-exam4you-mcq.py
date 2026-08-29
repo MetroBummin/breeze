@@ -49,7 +49,11 @@ TABLE_CHOICES = {
 
 TABLE_CHOICE_PARTS = {
     1: [["be held", "invited", "to showcase"], ["hold", "inviting", "showcase"], ["be held", "invited", "showcase"], ["hold", "invited", "to showcase"], ["be held", "inviting", "to showcase"]],
+    19: [["aren’t", "are", "wins"], ["isn’t", "are", "winning"], ["aren’t", "are", "winning"], ["aren’t", "is", "winning"], ["isn’t", "is", "wins"]],
+    23: [["because", "Having", "grow"], ["because of", "Having", "grow"], ["because", "Have", "growing"], ["because of", "Having", "growing"], ["because of", "Have", "grow"]],
+    28: [["further", "which", "have"], ["further", "that", "has"], ["far", "which", "has"], ["further", "which", "has"], ["far", "that", "have"]],
     31: [["where", "that", "was"], ["which", "that", "was"], ["where", "those", "was"], ["which", "those", "were"], ["where", "that", "were"]],
+    35: [["studied", "regarded", "lost"], ["studies", "regarding", "lost"], ["studied", "regarding", "were lost"], ["studies", "regarded", "were lost"], ["studied", "regarded", "were lost"]],
     39: [["melt", "learn", "bowls"], ["melting", "learn", "bowl"], ["melt", "to learn", "bowl"], ["melt", "learn", "bowl"], ["melting", "to learn", "bowls"]],
     99: [["evaluate", "conservation", "showcase"], ["present", "destruction", "showcase"], ["present", "conservation", "showcase"], ["evaluate", "destruction", "review"], ["present", "conservation", "review"]],
     101: [["absence", "exhibit"], ["enrollment", "appreciate"], ["participation", "display"], ["criticism", "revise"], ["competition", "submit"]],
@@ -81,6 +85,30 @@ TRADE_TARGETS = [
     {"label": "ⓓ", "text": "reinvesting"},
     {"label": "ⓔ", "text": "from which"},
 ]
+
+# Exact underlined spans verified against the rendered source pages.  READY
+# must never infer an underline from a bare label such as ⓐ or (A).
+TARGET_RANGE_REPAIRS = {
+    6: [{"label":"ⓐ","text":"what"},{"label":"ⓑ","text":"They"},{"label":"ⓒ","text":"ordering"},{"label":"ⓓ","text":"have received"},{"label":"ⓔ","text":"Knowing"}],
+    11: [{"label":"ⓐ","text":"that"},{"label":"ⓑ","text":"is"},{"label":"ⓒ","text":"That"},{"label":"ⓓ","text":"the different “parts” interact with each other"},{"label":"ⓔ","text":"assembling"}],
+    15: [{"label":"ⓐ","text":"which"},{"label":"ⓑ","text":"them"},{"label":"ⓒ","text":"shows"},{"label":"ⓓ","text":"were"},{"label":"ⓔ","text":"consuming"}],
+    102: [{"label":"ⓐ","text":"to pick up"},{"label":"ⓑ","text":"that"},{"label":"ⓒ","text":"waited"},{"label":"ⓓ","text":"explained"},{"label":"ⓔ","text":"had chosen"},{"label":"ⓕ","text":"even better than I imagined"}],
+    103: [{"label":"(A)","text":"understand"},{"label":"(B)","text":"wrong"},{"label":"(C)","text":"unrelated"},{"label":"(D)","text":"poor-quality"},{"label":"(E)","text":"better"}],
+    107: [{"label":"(A)","text":"assume"},{"label":"(B)","text":"reasonable"},{"label":"(C)","text":"fails to allow for"},{"label":"(D)","text":"solution"},{"label":"(E)","text":"possess a stable center"}],
+    109: [{"label":"ⓐ","text":"that"},{"label":"ⓑ","text":"what"},{"label":"ⓒ","text":"how"},{"label":"ⓓ","text":"the other"},{"label":"ⓔ","text":"composing"},{"label":"ⓕ","text":"assembled"},{"label":"ⓖ","text":"involved"}],
+    112: [{"label":"(A)","text":"excel at visual imagery"},{"label":"(B)","text":"overlook forthcoming actions"},{"label":"(C)","text":"the same regions"},{"label":"(D)","text":"real thing"},{"label":"(E)","text":"reflection"},{"label":"(F)","text":"consumption of a feast"}],
+    113: [{"label":"ⓐ","text":"where"},{"label":"ⓑ","text":"are"},{"label":"ⓒ","text":"what"},{"label":"ⓓ","text":"internal generated"},{"label":"ⓔ","text":"authentically"},{"label":"ⓕ","text":"yourself"}],
+    114: [{"label":"㉠","text":"a wise bit of self-restraint on your genes’ part"}],
+    133: [{"label":"ⓐ","text":"was known"},{"label":"ⓑ","text":"simplified"},{"label":"ⓒ","text":"bring"},{"label":"ⓓ","text":"produced"},{"label":"ⓔ","text":"including"}],
+    233: [{"label":"(A)","text":"encourage more of you to take part"}],
+    234: [{"label":"(A)","text":"this looks perfect, even better than I imagined"}],
+    235: [{"label":"(A)","text":"lack a stable center"}],
+    236: [{"label":"(A)","text":"You cannot cloy the hungry edge of appetite by bare imagination of a feast"}],
+    237: [{"label":"(A)","text":"factor more into decisions than they should"}],
+    238: [{"label":"(A)","text":"useless costs turn into productive costs"}],
+    239: [{"label":"(A)","text":"we are looking back in time"}],
+    240: [{"label":"(A)","text":"continued to explore the lives of African-Americans through his painting"}],
+}
 
 TRADE_SUMMARY = "The real barriers to trade lie in transaction costs, but a common currency can help to ㉠________ them, which in turn leads to a(n) ㉡________ in the overall economy."
 
@@ -243,6 +271,8 @@ def main():
                     if question_no == 37:
                         payload["content_blocks"] = city_tour_blocks(True)
                         payload["target_ranges"] = CITY_TOUR_TARGETS
+                    if question_no in TARGET_RANGE_REPAIRS:
+                        payload["target_ranges"] = TARGET_RANGE_REPAIRS[question_no]
                     if question_no == 38:
                         payload["content_blocks"] = city_tour_blocks(False)
                         payload.pop("variant_text", None)

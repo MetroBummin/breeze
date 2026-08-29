@@ -40,18 +40,21 @@ assert.match(edge,/accepted_response_sets[\s\S]*acceptedSets\.some/,'Linked writ
 assert.match(edge,/inlineOptionGroups[\s\S]*inlineSelected[\s\S]*inlineAnswer/,'Inline passage-option grading is missing');
 assert.match(edge,/detectedGroups[\s\S]*choicesMatchGroups\(detectedGroups, choices\)/,'Inline options can leak from a shared Passage into choices that do not encode those groups');
 assert.match(edge,/\[ⓐ-ⓩ\]\|\\\(\[A-H\]\\\)/,'Parenthesized inline option groups are missing');
-assert.match(edge,/sourceQuestionNo === 123/,'Verified 23번 target repair is missing');
+assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*123:[\s\S]*to hedge/,'Verified 23번 target repair is missing');
 assert.match(edge,/\/요약\/\.test[\s\S]*sourceQuestionNo === 125 \? "vocabulary"/,'Summary prompts and 23번 vocabulary skill are not repaired');
 assert.match(edge,/targetRanges[\s\S]*const interaction = "choices"/,'Passage metadata must point while MCQ answers stay in the plain choice list');
 assert.match(edge,/choicesMatchGroups[\s\S]*inlineGroups[\s\S]*흐름상\|문맥상/,'Combination questions are not recognized from their own choices');
-assert.match(edge,/sourceQuestionNo === 97[\s\S]*to take part[\s\S]*is related/,'18번 밑줄 범위 repair is missing');
-assert.match(edge,/canonicalText: "related"[\s\S]*canonicalText: "interested"/,'Deliberately transformed targets do not retain their canonical anchors');
+assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*97:[\s\S]*to take part[\s\S]*is related/,'18번 밑줄 범위 repair is missing');
+assert.match(edge,/canonicalText:"related"[\s\S]*canonicalText:"interested"/,'Deliberately transformed targets do not retain their canonical anchors');
 assert.match(edge,/SUMMARY_REPAIRS[\s\S]*101:[\s\S]*137:/,'Imported summary material is not repaired for existing rows');
 assert.match(edge,/CHOICE_PART_REPAIRS[\s\S]*119:[\s\S]*122:/,'Multi-column source choices are not structurally repaired');
-assert.match(edge,/sourceQuestionNo === 118[\s\S]*can define[\s\S]*the most[\s\S]*playing/,'22번 underline targets are not repaired');
-assert.match(edge,/sourceQuestionNo === 128[\s\S]*to reach[\s\S]*familiar[\s\S]*were/,'24번 grammar targets do not point to complete expressions');
-assert.match(edge,/publicWritingGuide[\s\S]*questionNo === 295[\s\S]*questionNo === 296[\s\S]*questionNo === 297/,'Written questions do not expose structured task guides');
-assert.match(edge,/sourceQuestionNo === 295[\s\S]*that glows in the Orion constellation[\s\S]*sourceQuestionNo === 297/,'Written Passage focus ranges are incomplete');
+assert.match(edge,/CHOICE_PART_REPAIRS[\s\S]*19:[\s\S]*23:[\s\S]*28:[\s\S]*35:/,'Section 1 combination choices are still visually concatenated');
+assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*118:[\s\S]*can define[\s\S]*the most[\s\S]*playing/,'22번 underline targets are not repaired');
+assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*128:[\s\S]*to reach[\s\S]*familiar[\s\S]*were/,'24번 grammar targets do not point to complete expressions');
+assert.match(edge,/WRITING_GUIDE_REPAIRS[\s\S]*277:[\s\S]*300:[\s\S]*343:[\s\S]*350:/,'18~28 written questions do not expose structured task guides');
+for(const questionNo of [...Array.from({length:24},(_,index)=>277+index),...Array.from({length:8},(_,index)=>343+index)])assert.match(edge,new RegExp(`\\b${questionNo}:`),`Section 4 question ${questionNo} has no explicit UI contract`);
+assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*295:[\s\S]*that glows in the Orion constellation[\s\S]*297:/,'Written Passage focus ranges are incomplete');
+assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*236:[\s\S]*bare imagination of a feast[\s\S]*240:[\s\S]*continued to explore/,'Meaning questions with label-only prompts lack their full source expressions');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
 
@@ -64,6 +67,7 @@ assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written res
 assert.match(app,/writingGuideHtml[\s\S]*writing-conditions[\s\S]*writing-bank/,'Writing conditions and word bank are not separated from the prompt');
 assert.match(app,/written-workspace correction[\s\S]*고친 말만 입력/,'Correction questions are not presented as expression-to-answer tasks');
 assert.match(app,/sentence-answer[\s\S]*textarea[\s\S]*완성한 영어 문장/,'Sentence completion does not provide a usable writing area');
+assert.match(app,/writtenSlotsHtml[\s\S]*multi-correction[\s\S]*summary-slots/,'Multi-slot summary and correction tasks are still flattened into one field');
 assert.match(app,/writingGuide\?\.title\|\|question\.prompt/,'Flattened PDF prompts still override structured writing titles');
 assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
 assert.match(app,/function setBasePassage[\s\S]*function currentQuestionPassage[\s\S]*function questionPassageHtml/,'A question set does not keep an immutable base Passage with current-question overlays');
@@ -115,6 +119,7 @@ assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a questio
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
 assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*written-response/,'Question family styling is incomplete');
 assert.match(css,/written-workspace\.correction[\s\S]*writing-conditions[\s\S]*writing-bank/,'Structured writing workspace styling is incomplete');
+assert.match(css,/correction-reference[\s\S]*written-slot-list/,'Complex correction and summary answers do not have readable field layouts');
 assert.match(css,/@media\(max-width:700px\)[\s\S]*written-workspace\.correction\{grid-template-columns:1fr\}/,'Writing correction cards do not stack on mobile');
 assert.match(css,/passage-pointer[\s\S]*question-set-nav/,'Question-set pointing styling is missing');
 assert.match(css,/passage-blank[\s\S]*white-space:nowrap/,'Inline blanks can still expand into an awkward wrapped bar');
@@ -125,6 +130,8 @@ assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/stimulu
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/\("요약", "summary"\)[\s\S]*\("빈칸", "blank"\)/,'Summary questions are still misclassified as generic blanks');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/family == "summary"[\s\S]*summary_text/,'Summary material is not imported explicitly');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/TABLE_CHOICE_PARTS[\s\S]*119:[\s\S]*122:/,'Importer still flattens multi-column choices into ambiguous strings');
+assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/TABLE_CHOICE_PARTS[\s\S]*19:[\s\S]*23:[\s\S]*28:[\s\S]*35:/,'Importer still flattens Section 1 grammar columns');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/question_no == 128[\s\S]*"text": "to reach"/,'Importer does not preserve the full 24번 grammar target');
+assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/TARGET_RANGE_REPAIRS[\s\S]*102:[\s\S]*133:[\s\S]*240:/,'Importer lacks verified full-expression underline spans');
 
 console.log('READY Question-first core checks passed');
