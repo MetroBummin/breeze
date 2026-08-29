@@ -223,6 +223,14 @@ def main():
                         payload.pop("variant_text", None)
                     if question_no == 123:
                         payload["target_ranges"] = TRADE_TARGETS
+                    if question_no == 97:
+                        payload["target_ranges"] = [
+                            {"label": "ⓐ", "text": "Although"},
+                            {"label": "ⓑ", "text": "to take part"},
+                            {"label": "ⓒ", "text": "is related"},
+                            {"label": "ⓓ", "text": "interesting"},
+                            {"label": "ⓔ", "text": "submit"},
+                        ]
                     if question_no == 125:
                         payload["skill"] = "vocabulary"
                     if question_no == 127:

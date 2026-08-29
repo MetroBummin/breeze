@@ -275,6 +275,16 @@ function publicTargetRanges(value: unknown) {
   return (Array.isArray(value) ? value : []).slice(0, 8).map((target: any) => ({ label: clean(target?.label, 20), text: clean(target?.text, 200) })).filter(target => target.label && target.text);
 }
 function normalizedCombination(value: unknown) { return clean(value, 1_000).normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
+function choicesMatchGroups(groups: Array<{ label: string; options: string[] }>, choices: string[]) {
+  if (!groups.length || !choices.length) return false;
+  const combinations = new Set<string>();
+  function visit(index: number, parts: string[]) {
+    if (index === groups.length) { combinations.add(normalizedCombination(parts.join(" "))); return; }
+    for (const option of groups[index].options) visit(index + 1, [...parts, option]);
+  }
+  visit(0, []);
+  return choices.every(choice => combinations.has(normalizedCombination(choice)));
+}
 function inlineAnswer(payload: any, choiceCount: number) {
   const groups = inlineOptionGroups(payload?.variant_text), answer = answerIndexes(payload?.answer, choiceCount);
   if (!groups.length || answer.length !== 1) return [];
@@ -294,10 +304,15 @@ function publicQuestion(row: any, passageText = "") {
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
   const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
   const sourceQuestionNo = Number(payload.source?.source_question_no) || null;
-  const storedSkill = clean(payload.skill, 40), skill = sourceQuestionNo === 125 ? "vocabulary" : sourceQuestionNo === 127 ? "summary" : storedSkill;
-  const inlineGroups = type === "multiple_choice" && ["grammar", "vocabulary"].includes(skill) ? inlineOptionGroups(payload.variant_text) : [];
+  const storedSkill = clean(payload.skill, 40);
+  let skill = sourceQuestionNo === 125 ? "vocabulary" : sourceQuestionNo === 127 ? "summary" : storedSkill;
+  const detectedGroups = type === "multiple_choice" ? inlineOptionGroups(payload.variant_text) : [];
+  const inlineGroups = choicesMatchGroups(detectedGroups, choices) ? detectedGroups : [];
+  if (inlineGroups.length && !["grammar", "vocabulary"].includes(skill)) skill = /흐름상|문맥상/.test(clean(payload.prompt, 1_000)) ? "vocabulary" : "grammar";
   const storedTargets = publicTargetRanges(payload.target_ranges), targetRanges = storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
     { label: "ⓐ", text: "exists" }, { label: "ⓑ", text: "to hedge" }, { label: "ⓒ", text: "what" }, { label: "ⓓ", text: "reinvesting" }, { label: "ⓔ", text: "from which" },
+  ] : sourceQuestionNo === 97 ? [
+    { label: "ⓐ", text: "Although" }, { label: "ⓑ", text: "to take part" }, { label: "ⓒ", text: "is related" }, { label: "ⓓ", text: "interesting" }, { label: "ⓔ", text: "submit" },
   ] : [];
   // Keep answering deliberately plain: the passage may point at evidence, but
   // every multiple-choice answer is selected from the normal choice list.
