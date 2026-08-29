@@ -49,6 +49,9 @@ assert.match(edge,/canonicalText: "related"[\s\S]*canonicalText: "interested"/,'
 assert.match(edge,/SUMMARY_REPAIRS[\s\S]*101:[\s\S]*137:/,'Imported summary material is not repaired for existing rows');
 assert.match(edge,/CHOICE_PART_REPAIRS[\s\S]*119:[\s\S]*122:/,'Multi-column source choices are not structurally repaired');
 assert.match(edge,/sourceQuestionNo === 118[\s\S]*can define[\s\S]*the most[\s\S]*playing/,'22번 underline targets are not repaired');
+assert.match(edge,/sourceQuestionNo === 128[\s\S]*to reach[\s\S]*familiar[\s\S]*were/,'24번 grammar targets do not point to complete expressions');
+assert.match(edge,/publicWritingGuide[\s\S]*questionNo === 295[\s\S]*questionNo === 296[\s\S]*questionNo === 297/,'Written questions do not expose structured task guides');
+assert.match(edge,/sourceQuestionNo === 295[\s\S]*that glows in the Orion constellation[\s\S]*sourceQuestionNo === 297/,'Written Passage focus ranges are incomplete');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
 
@@ -58,6 +61,10 @@ assert.match(app,/family\|\|'standard'[\s\S]*questionPassageHtml/,'Question fami
 assert.match(app,/contentBlocks/,'Structured Passage blocks are not rendered');
 assert.match(app,/setBasePassage[\s\S]*summaryText/,'Stable Passage variants and summary blocks are not rendered');
 assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written response UI is missing');
+assert.match(app,/writingGuideHtml[\s\S]*writing-conditions[\s\S]*writing-bank/,'Writing conditions and word bank are not separated from the prompt');
+assert.match(app,/written-workspace correction[\s\S]*고친 말만 입력/,'Correction questions are not presented as expression-to-answer tasks');
+assert.match(app,/sentence-answer[\s\S]*textarea[\s\S]*완성한 영어 문장/,'Sentence completion does not provide a usable writing area');
+assert.match(app,/writingGuide\?\.title\|\|question\.prompt/,'Flattened PDF prompts still override structured writing titles');
 assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
 assert.match(app,/function setBasePassage[\s\S]*function currentQuestionPassage[\s\S]*function questionPassageHtml/,'A question set does not keep an immutable base Passage with current-question overlays');
 assert.match(app,/applyAlternativeOverlay[\s\S]*applyTargetOverlay[\s\S]*applyStructuralOverlay[\s\S]*pointedPassageHtml/,'Question overlays are not isolated by interaction type');
@@ -107,6 +114,8 @@ assert.match(app,/continuationQuestion[\s\S]*question_count/,'Quick start can se
 assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a question session can show a stale Review count');
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
 assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*written-response/,'Question family styling is incomplete');
+assert.match(css,/written-workspace\.correction[\s\S]*writing-conditions[\s\S]*writing-bank/,'Structured writing workspace styling is incomplete');
+assert.match(css,/@media\(max-width:700px\)[\s\S]*written-workspace\.correction\{grid-template-columns:1fr\}/,'Writing correction cards do not stack on mobile');
 assert.match(css,/passage-pointer[\s\S]*question-set-nav/,'Question-set pointing styling is missing');
 assert.match(css,/passage-blank[\s\S]*white-space:nowrap/,'Inline blanks can still expand into an awkward wrapped bar');
 assert.match(css,/question-choice\.eliminated[\s\S]*question-choice\.candidate/,'Choice deliberation states are missing');
@@ -116,5 +125,6 @@ assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/stimulu
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/\("요약", "summary"\)[\s\S]*\("빈칸", "blank"\)/,'Summary questions are still misclassified as generic blanks');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/family == "summary"[\s\S]*summary_text/,'Summary material is not imported explicitly');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/TABLE_CHOICE_PARTS[\s\S]*119:[\s\S]*122:/,'Importer still flattens multi-column choices into ambiguous strings');
+assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/question_no == 128[\s\S]*"text": "to reach"/,'Importer does not preserve the full 24번 grammar target');
 
 console.log('READY Question-first core checks passed');

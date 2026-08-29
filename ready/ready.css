@@ -296,6 +296,13 @@ body[data-ready-mode="student"] .question-passage{
 .written-response label{display:grid;grid-template-columns:minmax(72px,auto) minmax(0,1fr);align-items:center;gap:12px}
 .written-response label>span{font:750 13px/1.4 var(--ready-ui);color:var(--soft)}
 .written-response input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:9px;background:var(--sheet);color:var(--ink);font:500 15px/1.4 var(--ready-ui)}
+.written-workspace{display:grid;gap:14px;margin:16px 0 18px;padding:16px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--sheet) 88%,var(--paper2))}
+.written-workspace.correction{grid-template-columns:repeat(3,minmax(0,1fr))}
+.written-workspace.correction>label{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:11px;background:var(--sheet)}
+.correction-source,.correction-answer{display:grid;gap:6px;min-width:0}.correction-source b{color:var(--brand-strong);font:850 14px/1 var(--ready-ui)}.correction-source em{overflow-wrap:anywhere;font:600 14px/1.45 var(--ready-ui);font-style:normal}.correction-answer{grid-column:1/-1}.correction-answer small,.sentence-answer>span{color:var(--soft);font:750 12px/1.4 var(--ready-ui)}
+.written-workspace input,.written-workspace textarea{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:9px;background:var(--sheet);color:var(--ink);font:500 16px/1.5 var(--ready-ui)}
+.written-workspace textarea{min-height:92px;resize:vertical}.writing-conditions{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;padding:14px;border-radius:11px;background:var(--paper2)}.writing-conditions strong,.writing-bank>strong{color:var(--brand-strong);font:850 12px/1.5 var(--ready-ui)}.writing-conditions ul{display:grid;gap:5px;margin:0;padding-left:18px;color:var(--ink);font:600 13px/1.55 var(--ready-ui)}
+.writing-bank{display:grid;gap:8px}.writing-bank>div{display:flex;flex-wrap:wrap;gap:7px}.writing-bank span{padding:6px 9px;border:1px solid color-mix(in srgb,var(--brand) 36%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--brand) 8%,var(--sheet));font:700 13px/1.2 var(--ready-ui)}.sentence-answer{display:grid;gap:7px}
 .home-tabs button span{display:inline-grid;place-items:center;min-width:20px;height:20px;margin-left:4px;padding:0 6px;border-radius:999px;background:var(--danger);color:white;font:800 11px/1 var(--ready-ui)}
 .question-stimulus strong{display:block;margin-bottom:6px;color:var(--brand-strong);font:800 11px/1.2 var(--ready-ui);letter-spacing:.08em}
 .inline-answer{display:inline-flex;align-items:center;gap:4px;margin:1px 3px;padding:4px 8px;border:1px solid color-mix(in srgb,var(--brand) 42%,var(--line));border-radius:8px;background:var(--paper2);color:var(--ink-body);font:750 .88em/1.25 var(--ready-ui);vertical-align:baseline;cursor:pointer;transition:.15s}
@@ -325,6 +332,7 @@ body[data-ready-mode="student"] .question-passage{
   body[data-ready-mode] main,body[data-ready-mode="student"] .question-layout,body[data-ready-mode="student"] .question-layout .reader-shell{width:100%;min-width:0;max-width:100%}
   body[data-ready-mode] input,body[data-ready-mode] textarea,body[data-ready-mode] select,.written-response input{font-size:16px!important}
   .written-response label{grid-template-columns:1fr;gap:5px}
+  .written-workspace.correction{grid-template-columns:1fr}.writing-conditions{grid-template-columns:1fr;gap:6px}
   .inline-answer{margin:2px 2px;padding:5px 7px}
   .inline-option-group{display:inline-flex;max-width:100%;flex-wrap:wrap;white-space:normal}
   .question-set-nav{display:flex;overflow-x:auto;margin-inline:-2px;padding:9px}.question-set-nav>div{display:none}.question-set-nav>button{flex:0 0 82px}

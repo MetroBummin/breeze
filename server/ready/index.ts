@@ -305,6 +305,28 @@ const CHOICE_PART_REPAIRS: Record<number, string[][]> = {
 function publicChoiceParts(value: unknown) {
   return (Array.isArray(value) ? value : []).slice(0, 8).map(row => cleanList(row, 4, 200)).filter(row => row.length > 1);
 }
+function publicWritingGuide(questionNo: number | null) {
+  if (questionNo === 295) return {
+    kind: "correction", title: "밑줄 친 ⓐ~ⓒ에서 어법상 어색한 부분을 찾아 각각 알맞게 고쳐 쓰세요.",
+    slotLabels: ["ⓐ 고친 말", "ⓑ 고친 말", "ⓒ 고친 말"],
+    targets: [
+      { label: "ⓐ", text: "that glows in the Orion constellation" },
+      { label: "ⓑ", text: "is even further away" },
+      { label: "ⓒ", text: "what we have a chance of understanding the history of the universe" },
+    ],
+  };
+  if (questionNo === 296) return {
+    kind: "sentence", title: "밑줄 친 (A)의 우리말을 조건에 맞게 영어 문장으로 완성하세요.", slotLabels: ["완성 문장"],
+    conditions: ["‘the+비교급 ~, the+비교급 ...’ 구문을 사용할 것", "보기의 단어와 표현을 사용하고 필요하면 변형할 것", "각 빈칸에 한 단어씩 쓸 것"],
+    wordBank: ["can", "from", "look", "light", "collect", "further"],
+  };
+  if (questionNo === 297) return {
+    kind: "sentence", title: "밑줄 친 (B)의 우리말을 조건에 맞게 영어 문장으로 완성하세요.", slotLabels: ["완성 문장"],
+    conditions: ["현재완료를 사용할 것", "부사적 용법의 to부정사를 사용할 것", "보기의 단어와 표현을 사용할 것", "각 빈칸에 한 단어씩 쓸 것"],
+    wordBank: ["to", "at least 1,000 years", "familiar", "have", "reach", "travel", "light"],
+  };
+  return null;
+}
 function normalizedCombination(value: unknown) { return clean(value, 1_000).normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
 function choicesMatchGroups(groups: Array<{ label: string; options: string[] }>, choices: string[]) {
   if (!groups.length || !choices.length) return false;
@@ -331,11 +353,13 @@ function inlineAnswer(payload: any, choiceCount: number) {
 }
 function publicQuestion(row: any, passageText = "") {
   const payload = row.payload || {}, type = clean(row.type, 40), sourceQuestionNo = Number(payload.source?.source_question_no) || null;
+  const writingGuide = publicWritingGuide(sourceQuestionNo);
   const storedChoiceParts = publicChoiceParts(payload.choice_parts), choiceParts = storedChoiceParts.length ? storedChoiceParts : sourceQuestionNo ? CHOICE_PART_REPAIRS[sourceQuestionNo] || [] : [];
   const choices = choiceParts.length ? choiceParts.map(parts => parts.join(" ")) : Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
   if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
-  const responseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
+  const storedResponseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
+  const responseSlots = writingGuide?.slotLabels?.map(label => ({ label })) || storedResponseSlots;
   const storedSkill = clean(payload.skill, 40);
   let skill = /요약/.test(clean(payload.prompt, 1_000)) ? "summary" : sourceQuestionNo === 125 ? "vocabulary" : storedSkill;
   const detectedGroups = type === "multiple_choice" ? inlineOptionGroups(payload.variant_text) : [];
@@ -345,6 +369,16 @@ function publicQuestion(row: any, passageText = "") {
     { label: "ⓐ", text: "Although", canonicalText: "Although" }, { label: "ⓑ", text: "to take part", canonicalText: "to take part" }, { label: "ⓒ", text: "is related", canonicalText: "related" }, { label: "ⓓ", text: "interesting", canonicalText: "interested" }, { label: "ⓔ", text: "submit", canonicalText: "submit" },
   ] : sourceQuestionNo === 118 ? [
     { label: "ⓐ", text: "that", canonicalText: "that" }, { label: "ⓑ", text: "can define", canonicalText: "can be defined" }, { label: "ⓒ", text: "the most", canonicalText: "the more" }, { label: "ⓓ", text: "playing", canonicalText: "play" }, { label: "ⓔ", text: "is", canonicalText: "are" },
+  ] : sourceQuestionNo === 128 ? [
+    { label: "ⓐ", text: "to reach", canonicalText: "to reach" }, { label: "ⓑ", text: "it", canonicalText: "it" }, { label: "ⓒ", text: "is", canonicalText: "is" }, { label: "ⓓ", text: "familiar", canonicalText: "familiar" }, { label: "ⓔ", text: "were", canonicalText: "were" },
+  ] : sourceQuestionNo === 295 ? [
+    { label: "ⓐ", text: "that glows in the Orion constellation", canonicalText: "that glows in the Orion constellation" },
+    { label: "ⓑ", text: "is even further away", canonicalText: "is even further away" },
+    { label: "ⓒ", text: "what we have a chance of understanding the history of the universe", canonicalText: "what we have a chance of understanding the history of the universe" },
+  ] : sourceQuestionNo === 296 ? [
+    { label: "(A)", text: "우리가 더 먼 곳으로부터 온 빛을 모을 수 있을수록, 우리는 시간상으로 더 먼 과거를 볼 수 있다.", canonicalText: "우리가 더 먼 곳으로부터 온 빛을 모을 수 있을수록, 우리는 시간상으로 더 먼 과거를 볼 수 있다." },
+  ] : sourceQuestionNo === 297 ? [
+    { label: "(B)", text: "여러 세대의 인간에게 익숙한, 그것들의 빛은 최소 1,000년을 이동하여 우리에게 도달했다.", canonicalText: "여러 세대의 인간에게 익숙한, 그것들의 빛은 최소 1,000년을 이동하여 우리에게 도달했다." },
   ] : storedTargets.length ? storedTargets : sourceQuestionNo === 123 ? [
     { label: "ⓐ", text: "exists" }, { label: "ⓑ", text: "to hedge" }, { label: "ⓒ", text: "what" }, { label: "ⓓ", text: "reinvesting" }, { label: "ⓔ", text: "from which" },
   ] : [];
@@ -354,7 +388,7 @@ function publicQuestion(row: any, passageText = "") {
   const summaryText = clean(payload.summary_text, 10_000) || (sourceQuestionNo ? SUMMARY_REPAIRS[sourceQuestionNo] || "" : "");
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
-    prompt: clean(payload.prompt, 1_000), choices, choiceParts, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots,
+    prompt: clean(payload.prompt, 1_000), choices, choiceParts, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots, writingGuide,
     passageText: clean(passageText, 30_000), variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
     stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20) } : null,
   };

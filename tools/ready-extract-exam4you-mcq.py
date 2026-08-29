@@ -264,6 +264,14 @@ def main():
                             {"label": "ⓓ", "text": "playing", "canonical_text": "play"},
                             {"label": "ⓔ", "text": "is", "canonical_text": "are"},
                         ]
+                    if question_no == 128:
+                        payload["target_ranges"] = [
+                            {"label": "ⓐ", "text": "to reach", "canonical_text": "to reach"},
+                            {"label": "ⓑ", "text": "it", "canonical_text": "it"},
+                            {"label": "ⓒ", "text": "is", "canonical_text": "is"},
+                            {"label": "ⓓ", "text": "familiar", "canonical_text": "familiar"},
+                            {"label": "ⓔ", "text": "were", "canonical_text": "were"},
+                        ]
                     if question_no == 125:
                         payload["skill"] = "vocabulary"
                     if question_no == 127:
