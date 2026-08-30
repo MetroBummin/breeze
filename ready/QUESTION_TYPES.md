@@ -133,6 +133,11 @@ stimulus, summaryText, source
 }
 ```
 
+NE 교과서 문제는 `payload.source_kind`를 `textbook_main`, `dialogue`,
+`supplemental`중 하나로 검증한다. 학생 풀이, Home 미풀이 개수, Review queue는
+`textbook_main`만 공유한다. 과거 import에서 `source_kind`가 없는 경우에만 canonical
+Passage와의 영어 bigram 일치를 하위 호환 검증으로 사용한다.
+
 ## Review rule
 
 현재 Exam에서 학생·Question별 마지막 Attempt가 오답이면 복습 대상이다. 이후 복습 Attempt가 정답이면 마지막 Attempt가 정답으로 바뀌어 자동 해결된다. 원시 Attempt는 수정하거나 삭제하지 않는다.

@@ -226,6 +226,25 @@ body[data-ready-mode="student"] .question-variant{cursor:default!important}
 .question-feedback.correct{border-color:var(--success);background:var(--success-bg);color:var(--success)}.question-feedback.wrong{border-color:var(--danger);background:var(--danger-bg);color:var(--danger)}
 .question-nav{display:flex;justify-content:space-between;gap:12px;margin:18px 0 42px}
 
+/* Focused study shell: the exercise owns the screen. */
+body.study-mode #topbar{display:none}
+body.study-mode main{padding-top:calc(70px + env(safe-area-inset-top))}
+.study-back{position:fixed;z-index:80;top:calc(16px + env(safe-area-inset-top));left:clamp(14px,3vw,32px);display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:50%;background:color-mix(in srgb,var(--sheet) 92%,transparent);box-shadow:var(--shadow-card);color:var(--ink);cursor:pointer;backdrop-filter:blur(10px)}
+.study-back span{font:400 32px/1 var(--ready-ui);transform:translateY(-1px)}
+.question-topline{display:flex;justify-content:flex-end;min-height:18px;margin-bottom:20px}
+
+/* Reader hierarchy comes from the source, not invented decoration. */
+.reader-document{max-width:760px!important}
+.reader-document>h1{margin-bottom:22px!important;font-size:clamp(30px,4vw,48px)!important}
+.reader-lede{margin:0 0 34px;color:var(--ink);font:500 clamp(21px,2.8vw,28px)/1.55 var(--serif);letter-spacing:-.018em}
+.reader-prose{display:grid;gap:30px;padding:8px 0 54px;color:var(--ink-body)}
+.reader-prose p{margin:0;font:400 clamp(18px,2vw,22px)/1.82 var(--serif);letter-spacing:-.008em}
+
+.feedback-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.feedback-actions button{padding:7px 10px;border:1px solid currentColor;border-radius:9px;background:transparent;color:inherit;font:750 12px/1 var(--ready-ui);cursor:pointer}
+.answer-reveal,.explanation-reveal{margin:7px 0 0;padding:11px 12px;border-radius:9px;background:color-mix(in srgb,var(--sheet) 74%,transparent);color:var(--ink-body);white-space:pre-wrap;font:650 13px/1.6 var(--ready-ui)}
+.explanation-reveal{font-weight:550}
+
 @media(max-width:700px){
   body[data-ready-mode] #topbar{min-height:60px;padding:calc(11px + env(safe-area-inset-top)) 14px 11px}
   body[data-ready-mode] main{padding:30px 16px calc(52px + env(safe-area-inset-bottom))}
@@ -237,6 +256,9 @@ body[data-ready-mode="student"] .question-variant{cursor:default!important}
   body[data-ready-mode="student"] .passage-row{gap:8px}body[data-ready-mode="student"] .passage-question{padding:8px 9px;font-size:11px}
   body[data-ready-mode="student"] .question-passage{margin:16px -2px 15px;padding:16px 15px;font-size:16px;line-height:1.62}
   .question-choice{padding:9px 10px;grid-template-columns:24px minmax(0,1fr)}.question-choice-copy{font-size:14px;line-height:1.55}
+  body.study-mode main{padding-top:calc(64px + env(safe-area-inset-top))}
+  .study-back{top:calc(10px + env(safe-area-inset-top));left:12px;width:42px;height:42px}
+  .reader-document>h1{font-size:30px!important}.reader-lede{font-size:20px}.reader-prose{gap:24px}.reader-prose p{font-size:18px;line-height:1.76}
   body[data-ready-mode] .filter-toolbar{display:grid;grid-template-columns:1fr 1fr}
   body[data-ready-mode] .filter-toolbar label{min-width:0}
 }

@@ -44,7 +44,7 @@ def clean_noise(value: str) -> str:
     value = re.sub(r"NE능률\s*\(\s*민병천\s*\)\s*[12]\s*과", " ", value)
     value = re.sub(r"공통영어2|고등\s*2022\s*개정|-\s*\d+\s*-", " ", value)
     value = re.sub(r"(?:^|\s)-(?=\s|$)", " ", value)
-    value = re.sub(r"(?:\s*)?다음\s+(?:글|대화)를\s+읽고\s+물음에\s+답하시오\.", " ", value)
+    value = re.sub(r"(?:\s*)?다음\s*(?:글|대화)(?:을|를)\s*읽고\s*(?:다음\s*)?물음에\s*답하시오\s*[.!?]?", " ", value)
     return compact(value)
 
 
@@ -218,9 +218,28 @@ def writing_guide(prompt: str, body: str, slots: list[dict]) -> dict:
     bank = []
     view = re.search(r"<보기>\s*(.+?)(?=→|$)", condition_area, re.S)
     if view:
-        bank = [compact(item) for item in re.split(r"[,/]", view.group(1)) if compact(item)]
+        for item in re.split(r"[,/]", view.group(1)):
+            item = compact(item)
+            if re.search(r"[A-Za-z]", item) and not re.search(r"[가-힣]", item):
+                bank.append(item)
     kind = "multi-correction" if "고쳐" in prompt and len(slots) > 1 else "sentence"
     return {"kind": kind, "title": prompt, "slot_labels": [slot["label"] for slot in slots], "conditions": conditions, "word_bank": bank}
+
+
+def english_tokens(value: str) -> list[str]:
+    return re.findall(r"[a-z]+(?:['’][a-z]+)?", value.lower())
+
+
+def source_kind(set_text: str, textbook_text: str) -> str:
+    if len(re.findall(r"(?:^|\s)[A-Z]{1,3}:\s", set_text)) >= 3:
+        return "dialogue"
+    source, candidate = english_tokens(textbook_text), english_tokens(set_text)
+    if len(source) < 12 or len(candidate) < 12:
+        return "supplemental"
+    source_bigrams = set(zip(source, source[1:]))
+    candidate_bigrams = list(zip(candidate, candidate[1:]))
+    coverage = sum(pair in source_bigrams for pair in candidate_bigrams) / max(1, len(candidate_bigrams))
+    return "textbook_main" if coverage >= .34 else "supplemental"
 
 
 def extract_exam(path: Path, exam_index: int, written_answers: dict[str, list]) -> list[dict]:
@@ -239,9 +258,22 @@ def extract_exam(path: Path, exam_index: int, written_answers: dict[str, list]) 
         written = number in WRITTEN[exam_index - 1]
         if written:
             source_before_conditions = clean_noise(body.split("<조건>", 1)[0])
-            set_text = source_before_conditions if prompt.startswith("다음 글") and len(source_before_conditions) > 40 else current_context
+            if prompt.startswith("다음 글") and len(source_before_conditions) > 40:
+                set_text = source_before_conditions
+                current_context = source_before_conditions
+            else:
+                set_text = current_context
         else:
-            if inline_context and len(inline_context) > 24:
+            # A long answer stem is not necessarily a new passage. In several
+            # worksheets, Korean student comments appear before the five
+            # choices; treating those comments as `current_context` poisoned
+            # every following question in the set. Only an English passage can
+            # replace the shared passage context.
+            if (
+                inline_context
+                and len(english_tokens(inline_context)) >= 12
+                and re.match(r"^[A-Za-z“‘'\"]", inline_context)
+            ):
                 current_context = inline_context
             set_text = current_context
         if trailing_context:
@@ -345,6 +377,11 @@ def main() -> None:
     manifest = {"lessons": textbook_lessons(args.textbook), "questions": []}
     for index, path in enumerate(paths, 1):
         manifest["questions"].extend(extract_exam(path, index, written_answers))
+    lesson_text = {index + 1: " ".join(row["text"] for row in lesson["rows"]) for index, lesson in enumerate(manifest["lessons"])}
+    for question in manifest["questions"]:
+        payload = question["payload"]
+        lesson = int(payload["source"]["passage_no"])
+        payload["source_kind"] = source_kind(payload.get("set_text", ""), lesson_text[lesson])
     stats = validate(manifest)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

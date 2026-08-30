@@ -23,6 +23,7 @@ const neRelinkMigration=read('supabase/migrations/20260830130000_ready_relink_ne
 const edge=read('server/ready/index.ts');
 const app=read('ready/app.js');
 const css=read('ready/ready.css');
+const extractor=read('tools/ready-extract-ne-minbyeongcheon.py');
 
 assert.match(baseline,/ready_questions[\s\S]*type text[\s\S]*payload jsonb/,'Question must remain generic JSON-backed data');
 assert.match(baseline,/ready_attempts_are_immutable[\s\S]*before update or delete/,'Attempts must remain append-only');
@@ -59,10 +60,14 @@ for(const questionNo of [...Array.from({length:24},(_,index)=>277+index),...Arra
 assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*295:[\s\S]*that glows in the Orion constellation[\s\S]*297:/,'Written Passage focus ranges are incomplete');
 assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*236:[\s\S]*bare imagination of a feast[\s\S]*240:[\s\S]*continued to explore/,'Meaning questions with label-only prompts lack their full source expressions');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
-assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
+assert.match(edge,/studentReviewQuestions[\s\S]*eligibleUnresolvedQuestionIds/,'Review queue endpoint is missing');
+assert.match(edge,/isMainTextQuestion[\s\S]*isDialogueText[\s\S]*sourceBigrams/,'Textbook questions are not positively matched to the canonical main text');
+assert.match(edge,/normalizeMainTextQuestionRows[\s\S]*refersToPrevious[\s\S]*currentMain/,'Legacy shared-passage state is not repaired before filtering');
+assert.match(edge,/attemptedQuestionIds[\s\S]*!attempted\.has/,'Solved questions are not removed from the new-question queue');
+assert.match(edge,/cleanQuestionText[\s\S]*물음에\\s\*답하시오/,'Worksheet directions can still leak into the passage');
 assert.match(edge,/setScopePassages[\s\S]*ready_relink_ne_minbyeongcheon_lessons[\s\S]*importQuestions[\s\S]*ready_relink_ne_minbyeongcheon_lessons/,'Scope changes and question imports do not repair textbook aliases');
 assert.match(edge,/legacyWorkbook[\s\S]*publicStoredWritingGuide[\s\S]*CHOICE_PART_REPAIRS/,'Workbook-specific repairs are not scoped by source identity');
-assert.match(edge,/setText: clean\(payload\.set_text[\s\S]*setId: clean\(payload\.source\.set_id/,'Question-set passage identity is not exposed to the student UI');
+assert.match(edge,/setText: cleanQuestionText\(payload\.set_text[\s\S]*setId: clean\(payload\.source\.set_id/,'Question-set passage identity is not exposed to the student UI');
 
 assert.match(app,/function renderReader[\s\S]*plainPassage/,'Reader does not render continuous prose');
 assert.doesNotMatch(app,/openLexical|openSentence|translation_view|save_sentence|savedWord|savedSentence/,'Lexical/sentence study remains connected to the student frontend');
@@ -122,6 +127,8 @@ const orderSession={items:[{question:{...orderQuestion,id:'order'}}],index:0};
 assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:orderSession}),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)/,'Order question loses its explicit A/B/C blocks');
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
+assert.match(app,/resultFeedbackHtml[\s\S]*data-toggle-answer[\s\S]*data-toggle-explanation/,'Wrong answers do not reveal the answer and explanation progressively');
+assert.match(app,/readerParagraphs[\s\S]*study-back/,'Focused study navigation or paragraph Reader is missing');
 assert.doesNotMatch(app,/function continuationQuestion|class="start-study"|class="home-tabs"/,'Home still exposes quick-start or study-mode tabs');
 assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a question session can show a stale Review count');
 assert.match(css,/Question-first reset[\s\S]*reading-passage\{[\s\S]*display:block/,'Reader prose reset is missing');
@@ -133,6 +140,10 @@ assert.match(css,/passage-pointer[\s\S]*question-set-nav/,'Question-set pointing
 assert.match(css,/passage-blank[\s\S]*white-space:nowrap/,'Inline blanks can still expand into an awkward wrapped bar');
 assert.match(css,/question-choice\.eliminated[\s\S]*question-choice\.candidate/,'Choice deliberation states are missing');
 assert.match(css,/font-size:16px!important/,'iOS Safari input zoom prevention is missing');
+assert.match(css,/body\.study-mode #topbar\{display:none\}[\s\S]*\.study-back/,'Study mode still exposes the global top bar');
+assert.match(extractor,/payload\["source_kind"\]\s*=\s*source_kind/,'Textbook import does not persist source boundaries');
+for(const kind of ['textbook_main','dialogue','supplemental'])assert.match(extractor,new RegExp(`"${kind}"`),`Textbook source kind ${kind} is missing`);
+assert.match(extractor,/current_context = source_before_conditions/,'A new written-response passage does not update the following shared context');
 assert.match(css,/reader-shell>\.question-prompt\{[^}]*clamp\(18px,1\.65vw,22px\)/,'Question prompt has regressed to an oversized display heading');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/stimulus[\s\S]*target_ranges[\s\S]*city_tour_blocks/,'Question-set source repairs are missing from the importer');
 assert.match(readFileSync('tools/ready-extract-exam4you-mcq.py','utf8'),/\("요약", "summary"\)[\s\S]*\("빈칸", "blank"\)/,'Summary questions are still misclassified as generic blanks');

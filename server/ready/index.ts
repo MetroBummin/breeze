@@ -234,24 +234,94 @@ async function studentExamAccess(examId: string, student: Student) {
   const result = await db.from("ready_exams").select("id").eq("id", examId).eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle();
   if (result.error) throw new ApiError(500, result.error.message); if (!result.data) throw new ApiError(404, "현재 배정된 시험범위가 아닙니다."); return result.data as any;
 }
-async function scopePassages(examId: string) {
+function questionStudyText(payload: any) { return clean(payload?.set_text || payload?.variant_text, 30_000); }
+function englishTokens(value: unknown) { return clean(value, 40_000).toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g) || []; }
+function isDialogueText(value: unknown) {
+  const text = clean(value, 40_000);
+  return (text.match(/(?:^|\s)[A-Z]{1,3}:\s/g) || []).length >= 3;
+}
+function isNeTextbookQuestion(row: any, passage: any) {
+  return /민병천|ne\s*능률|공통영어\s*2/i.test([row?.payload?.source?.exam, passage?.source_label, passage?.title].map(value => clean(value, 300)).join(" "));
+}
+function isMainTextQuestion(row: any, passage: any, passageText: string) {
+  if (!isNeTextbookQuestion(row, passage)) return true;
+  const declared = clean(row?.payload?.source_kind, 40);
+  if (declared) return declared === "textbook_main";
+  const studyText = questionStudyText(row?.payload);
+  if (!studyText || isDialogueText(studyText)) return false;
+  const source = englishTokens(passageText), candidate = englishTokens(studyText);
+  if (source.length < 12 || candidate.length < 12) return false;
+  const sourceBigrams = new Set(source.slice(0, -1).map((token, index) => `${token} ${source[index + 1]}`));
+  const candidateBigrams = candidate.slice(0, -1).map((token, index) => `${token} ${candidate[index + 1]}`);
+  const matched = candidateBigrams.filter(bigram => sourceBigrams.has(bigram)).length;
+  return matched / Math.max(1, candidateBigrams.length) >= .34;
+}
+function questionSourceKey(row: any) {
+  const source = row?.payload?.source || {};
+  return [clean(source.exam, 200), clean(source.section, 40), Number(source.passage_no) || 0].join("|");
+}
+function normalizeMainTextQuestionRows(questionRows: any[], passage: any, passageText: string) {
+  const grouped = new Map<string, any[]>();
+  for (const row of questionRows) {
+    const key = questionSourceKey(row);
+    grouped.set(key, [...(grouped.get(key) || []), row]);
+  }
+  const normalized: any[] = [];
+  for (const group of grouped.values()) {
+    group.sort((a, b) => (Number(a?.payload?.source?.source_question_no) || Number(a?.payload?.position) || 0) - (Number(b?.payload?.source?.source_question_no) || Number(b?.payload?.position) || 0));
+    let currentMain: any = null;
+    for (const original of group) {
+      let row = original;
+      const declared = clean(original?.payload?.source_kind, 40);
+      const prompt = clean(original?.payload?.prompt, 1_200);
+      const startsNewSource = /^(?:▶\s*)?다음\s*(?:글|대화)|^read\s+the\s+following/i.test(prompt);
+      const refersToPrevious = /윗글|text\s+above|above\s+text/i.test(prompt);
+      if (!declared && !isDialogueText(questionStudyText(original?.payload)) && refersToPrevious && currentMain) {
+        row = {
+          ...original,
+          payload: {
+            ...original.payload,
+            set_text: questionStudyText(currentMain.payload),
+            source: { ...original.payload?.source, set_id: clean(currentMain.payload?.source?.set_id, 120) || original.payload?.source?.set_id },
+          },
+        };
+      }
+      if (isMainTextQuestion(row, passage, passageText)) currentMain = row;
+      else if (startsNewSource) currentMain = null;
+      normalized.push(row);
+    }
+  }
+  return normalized.sort((a, b) => (Number(a?.payload?.position) || 0) - (Number(b?.payload?.position) || 0));
+}
+async function attemptedQuestionIds(studentId: string, examId: string) {
+  const attempts = rows<any[]>(await db.from("ready_attempts").select("question_id").eq("student_id", studentId).eq("exam_id", examId));
+  return new Set(attempts.map(attempt => attempt.question_id));
+}
+async function scopePassages(examId: string, studentId: string) {
   const links = rows<any[]>(await db.from("ready_exam_passages").select("passage_id,position").eq("exam_id", examId).order("position"));
   const linkedIds = links.map(item => item.passage_id);
   const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", linkedIds)) : [];
-  const availableQuestions = linkedIds.length ? rows<any[]>(await db.from("ready_questions").select("passage_id").in("passage_id", linkedIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available")) : [];
+  const sentenceRows = linkedIds.length ? rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", linkedIds).order("sentence_index")) : [];
+  const availableQuestions = linkedIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,payload").in("passage_id", linkedIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available")) : [];
+  const attempted = await attemptedQuestionIds(studentId, examId);
   const questionCounts = new Map<string, number>();
-  availableQuestions.forEach(question => questionCounts.set(question.passage_id, (questionCounts.get(question.passage_id) || 0) + 1));
   const byId = new Map(sourcePassages.map(item => [item.id, item]));
+  const passageText = new Map(linkedIds.map(id => [id, sentenceRows.filter(sentence => sentence.passage_id === id).map(sentence => sentence.text).join(" ")]));
+  const normalizedQuestions = linkedIds.flatMap(passageId => normalizeMainTextQuestionRows(availableQuestions.filter(question => question.passage_id === passageId), byId.get(passageId), passageText.get(passageId) || ""));
+  normalizedQuestions.forEach(question => {
+    const passage = byId.get(question.passage_id);
+    if (!attempted.has(question.id) && isMainTextQuestion(question, passage, passageText.get(question.passage_id) || "")) questionCounts.set(question.passage_id, (questionCounts.get(question.passage_id) || 0) + 1);
+  });
   const passages = links.map(link => ({ ...byId.get(link.passage_id), position: link.position, question_count: questionCounts.get(link.passage_id) || 0 })).filter(item => item.id);
   return passages;
 }
 async function studentBootstrap(session: ReadySession) {
   const student = await studentForSession(session), scope = rows<any>(await db.from("ready_exams").select("id,school,grade").eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle());
-  const passages = scope ? await scopePassages(scope.id) : [];
-  const reviewCount = scope ? (await unresolvedQuestionIds(student.id, scope.id)).length : 0;
+  const passages = scope ? await scopePassages(scope.id, student.id) : [];
+  const reviewCount = scope ? (await eligibleUnresolvedQuestionIds(student.id, scope.id)).length : 0;
   return { student: { id: student.id, school: student.school, grade: student.grade }, scope, passages, reviewCount };
 }
-async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,updated_at").eq("id", passageId).single()); }
+async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,source_type,source_label,updated_at").eq("id", passageId).single()); }
 async function studentPassage(body: any, session: ReadySession) {
   const student=await studentForSession(session),examId=required(body.examId,"Exam",80),passageId=required(body.passageId,"지문",80),passage=await studentPassageAccess(examId,passageId,student);
   const sentences=await db.from("ready_passage_sentences").select("id,sentence_index,text").eq("passage_id",passageId).order("sentence_index");
@@ -396,17 +466,38 @@ const WRITING_GUIDE_REPAIRS: Record<number, any> = {
   350: { kind:"summary", title:"제목의 빈칸에 들어갈 말을 지문에서 찾아 한 단어씩 쓰세요.", slotLabels:["빈칸 1","빈칸 2"] },
 };
 function publicWritingGuide(questionNo: number | null) { return questionNo ? WRITING_GUIDE_REPAIRS[questionNo] || null : null; }
+function cleanWritingBank(value: unknown) {
+  const result: string[] = [];
+  for (const raw of cleanList(value, 60, 500)) {
+    const relevant = raw.includes("<보기>") ? raw.split("<보기>").pop() || "" : raw;
+    const pieces = relevant.split(/\s*[,/]\s*|\s{2,}/).map(item => item.replace(/^[^A-Za-z]+|[^A-Za-z0-9'’., -]+$/g, "").trim()).filter(Boolean);
+    for (const piece of pieces) if (/[A-Za-z]/.test(piece) && !/[가-힣]/.test(piece) && !result.includes(piece)) result.push(piece);
+  }
+  return result.slice(0, 40);
+}
 function publicStoredWritingGuide(value: any) {
   if (!value || typeof value !== "object") return null;
+  const rawConditions = cleanList(value.conditions, 20, 500), bankFromConditions: string[] = [];
+  const conditions = rawConditions.filter(item => {
+    const english = item.match(/[A-Za-z]+(?:['’ -][A-Za-z0-9]+)*/g) || [];
+    const looksLikeBank = !/[가-힣]/.test(item) && english.length >= 4;
+    if (looksLikeBank) bankFromConditions.push(item);
+    return !looksLikeBank && !item.includes("<보기>");
+  });
   const guide = {
     kind: clean(value.kind, 40) || "sentence",
     title: clean(value.title, 1_000),
     slotLabels: cleanList(value.slot_labels, 12, 80),
-    conditions: cleanList(value.conditions, 12, 500),
-    wordBank: cleanList(value.word_bank, 40, 200),
+    conditions: conditions.slice(0, 12),
+    wordBank: cleanWritingBank([...(Array.isArray(value.word_bank) ? value.word_bank : []), ...bankFromConditions]),
     targets: publicTargetRanges(value.targets),
   };
   return guide.title || guide.slotLabels.length || guide.conditions.length || guide.wordBank.length || guide.targets.length ? guide : null;
+}
+function cleanQuestionText(value: unknown) {
+  return clean(value, 30_000)
+    .replace(/^\s*(?:[※]\s*)?다음\s*(?:글|대화)(?:을|를)\s*읽고\s*(?:다음\s*)?물음에\s*답하시오\s*[.!?]?\s*/u, "")
+    .replace(/\s+/g, " ").trim();
 }
 function normalizedCombination(value: unknown) { return clean(value, 1_000).normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
 function choicesMatchGroups(groups: Array<{ label: string; options: string[] }>, choices: string[]) {
@@ -459,16 +550,19 @@ function publicQuestion(row: any, passageText = "") {
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
     prompt: clean(payload.prompt, 1_000), choices, choiceParts, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots, writingGuide,
-    passageText: clean(passageText, 30_000), setText: clean(payload.set_text, 30_000) || null, variantText: clean(payload.variant_text, 30_000) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
+    passageText: cleanQuestionText(passageText), setText: cleanQuestionText(payload.set_text) || null, variantText: cleanQuestionText(payload.variant_text) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
     stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20), setId: clean(payload.source.set_id, 120) || null } : null,
   };
 }
 async function studentQuestions(body: any, session: ReadySession) {
+  const student = await studentForSession(session), examId = required(body.examId, "Exam", 80);
   const study = await studentPassage(body, session), passageId = study.passage.id;
   const questionRows = rows<any[]>(await db.from("ready_questions").select("id,type,payload,created_at").eq("passage_id", passageId).in("type", ["multiple_choice", "written_response"]).eq("status", "available").order("created_at"));
   questionRows.sort((a, b) => (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
   const passageText = study.sentences.map((sentence: any) => sentence.text).join(" ");
-  return { ...study, questions: questionRows.map(row => publicQuestion(row, passageText)) };
+  const attempted = await attemptedQuestionIds(student.id, examId);
+  const normalizedQuestions = normalizeMainTextQuestionRows(questionRows, study.passage, passageText);
+  return { ...study, questions: normalizedQuestions.filter(row => !attempted.has(row.id) && isMainTextQuestion(row, study.passage, passageText)).map(row => publicQuestion(row, passageText)) };
 }
 async function unresolvedQuestionIds(studentId: string, examId: string) {
   const attempts = rows<any[]>(await db.from("ready_attempts").select("question_id,correct,created_at").eq("student_id", studentId).eq("exam_id", examId).order("created_at", { ascending: false }));
@@ -476,19 +570,38 @@ async function unresolvedQuestionIds(studentId: string, examId: string) {
   for (const attempt of attempts) if (!latest.has(attempt.question_id)) latest.set(attempt.question_id, attempt.correct === true);
   return [...latest.entries()].filter(([, correct]) => !correct).map(([questionId]) => questionId);
 }
+async function eligibleUnresolvedQuestionIds(studentId: string, examId: string) {
+  const questionIds = await unresolvedQuestionIds(studentId, examId);
+  if (!questionIds.length) return [];
+  const unresolvedQuestions = rows<any[]>(await db.from("ready_questions").select("id,passage_id,payload").in("id", questionIds).eq("status", "available"));
+  const passageIds = [...new Set(unresolvedQuestions.map(question => question.passage_id))];
+  const questions = passageIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,payload").in("passage_id", passageIds).eq("status", "available")) : [];
+  const passages = passageIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", passageIds)) : [];
+  const sentences = passageIds.length ? rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index")) : [];
+  const passageById = new Map(passages.map(passage => [passage.id, passage]));
+  const textById = new Map(passageIds.map(id => [id, sentences.filter(sentence => sentence.passage_id === id).map(sentence => sentence.text).join(" ")]));
+  const unresolved = new Set(questionIds);
+  return passageIds.flatMap(passageId => normalizeMainTextQuestionRows(questions.filter(question => question.passage_id === passageId), passageById.get(passageId), textById.get(passageId) || ""))
+    .filter(question => unresolved.has(question.id) && isMainTextQuestion(question, passageById.get(question.passage_id), textById.get(question.passage_id) || "")).map(question => question.id);
+}
 async function studentReviewQuestions(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80);
   await studentExamAccess(examId, student);
-  const questionIds = await unresolvedQuestionIds(student.id, examId);
+  const questionIds = await eligibleUnresolvedQuestionIds(student.id, examId);
   if (!questionIds.length) return { items: [] };
-  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,created_at").in("id", questionIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
-  if (!questionRows.length) return { items: [] };
-  const passageIds = [...new Set(questionRows.map(question => question.passage_id))];
+  const unresolvedRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,created_at").in("id", questionIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
+  if (!unresolvedRows.length) return { items: [] };
+  const passageIds = [...new Set(unresolvedRows.map(question => question.passage_id))];
+  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,created_at").in("passage_id", passageIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
   const sentenceRows = rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index"));
+  const passageRows = rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", passageIds));
+  const passages = new Map(passageRows.map(passage => [passage.id, passage]));
   const passageText = new Map<string, string>();
   for (const passageId of passageIds) passageText.set(passageId, sentenceRows.filter(sentence => sentence.passage_id === passageId).map(sentence => sentence.text).join(" "));
-  questionRows.sort((a, b) => (Number(a.payload?.source?.passage_no) || 0) - (Number(b.payload?.source?.passage_no) || 0) || (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
-  return { items: questionRows.map(row => ({ question: publicQuestion(row, passageText.get(row.passage_id) || "") })) };
+  const unresolved = new Set(questionIds);
+  const normalizedQuestions = passageIds.flatMap(passageId => normalizeMainTextQuestionRows(questionRows.filter(row => row.passage_id === passageId), passages.get(passageId), passageText.get(passageId) || ""));
+  normalizedQuestions.sort((a, b) => (Number(a.payload?.source?.passage_no) || 0) - (Number(b.payload?.source?.passage_no) || 0) || (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
+  return { items: normalizedQuestions.filter(row => unresolved.has(row.id) && isMainTextQuestion(row, passages.get(row.passage_id), passageText.get(row.passage_id) || "")).map(row => ({ question: publicQuestion(row, passageText.get(row.passage_id) || "") })) };
 }
 async function submitAttempt(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), questionId = required(body.questionId, "문제", 80);
@@ -519,7 +632,8 @@ async function submitAttempt(body: any, session: ReadySession) {
   }
   const elapsedMs = Math.max(0, Math.min(3_600_000, Math.round(Number(body.elapsedMs) || 0)));
   const attempt = rows<any>(await db.from("ready_attempts").insert({ student_id: student.id, question_id: question.id, exam_id: examId, response, correct, elapsed_ms: elapsedMs }).select("id,correct,created_at").single());
-  return { attempt, correct, answer };
+  const explanation = clean(question.payload?.explanation, 4_000);
+  return { attempt, correct, answer: correct ? null : answer, explanation: correct ? "" : explanation };
 }
 function normalizedWord(value: unknown) { return clean(value, 100).toLowerCase().replace(/[^a-z']/g, "").replace(/^'+|'+$/g, ""); }
 async function studyContext(body: any, session: ReadySession, sentenceRequired = false) { const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), passageId = required(body.passageId, "지문", 80), passage = await studentPassageAccess(examId, passageId, student), sentenceId = clean(body.sentenceId, 80); let sentence:any = null; if (sentenceRequired || sentenceId) { sentence = rows<any>(await db.from("ready_passage_sentences").select("id,text,translation").eq("id", required(sentenceId, "문장", 80)).eq("passage_id", passage.id).single()); } return { student, examId, passage, sentence }; }

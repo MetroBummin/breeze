@@ -46,7 +46,8 @@ PDF
       "passage_no": 20,
       "source_question_no": 11,
       "section": "1"
-    }
+    },
+    "source_kind": "textbook_main"
   }
 }
 ```
@@ -64,6 +65,8 @@ PDF
 7. raw HTML을 payload에 넣지 않는다.
 8. Passage 25 chart처럼 외부 asset이 없으면 `draft`로 유지한다.
 9. public response에 `answer`/`accepted_answers`가 없는지 contract test로 확인한다.
+10. 교과서 bundle은 본문 일치 검증 후 `source_kind`를 넣고, 대화문과 본문 외
+    자료는 각각 `dialogue`, `supplemental`로 보존하되 학생 풀이에서 제외한다.
 
 Dry-run:
 
