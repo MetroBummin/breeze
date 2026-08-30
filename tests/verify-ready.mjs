@@ -24,6 +24,7 @@ const edge=read('server/ready/index.ts');
 const app=read('ready/app.js');
 const css=read('ready/ready.css');
 const extractor=read('tools/ready-extract-ne-minbyeongcheon.py');
+const busanExtractor=read('tools/ready-extract-busan-explanations.py');
 const explanationMigration=read('supabase/migrations/20260830223000_ready_pdf_explanations.sql');
 
 assert.match(baseline,/ready_questions[\s\S]*type text[\s\S]*payload jsonb/,'Question must remain generic JSON-backed data');
@@ -127,8 +128,12 @@ const orderQuestion={skill:'order',passageText:'Canonical prose.',variantText:'O
 assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:orderQuestion}),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)/,'Order question loses its explicit A/B/C blocks');
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
-assert.match(app,/resultFeedbackHtml[\s\S]*data-toggle-explanation/,'Wrong answers cannot reveal an explanation progressively');
+assert.match(app,/resultFeedbackHtml[\s\S]*data-toggle-explanation/,'Submitted answers cannot reveal an explanation progressively');
+assert.doesNotMatch(app,/toggleExplanation[\s\S]{0,240}result\.correct/,'Correct answers are still blocked from revealing their explanation');
+assert.match(edge,/return \{ attempt, correct, answer: correct \? null : answer, explanation \}/,'Correct attempts do not receive the verified explanation');
 assert.match(extractor,/explanation_table[\s\S]*explanations\[number\]/,'Publisher explanations are not extracted into each Question payload');
+assert.match(busanExtractor,/range\(1, 41\)[\s\S]*range\(97, 138\)[\s\S]*range\(211, 219\)[\s\S]*range\(343, 351\)/,'The 18-28 Busan explanation inventory is incomplete');
+assert.match(busanExtractor,/for expected in range\(1, 365\)[\s\S]*len\(rows\) != 137/,'Busan explanations are not bounded by the complete PDF sequence and READY identity count');
 assert.doesNotMatch(app,/data-toggle-answer|정답 보기|answer-reveal|showAnswer/,'A redundant answer-reveal control remains in the student UI');
 assert.match(app,/readerParagraphs[\s\S]*study-back/,'Focused study navigation or paragraph Reader is missing');
 assert.doesNotMatch(app,/function continuationQuestion|class="start-study"|class="home-tabs"/,'Home still exposes quick-start or study-mode tabs');
