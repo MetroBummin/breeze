@@ -16,7 +16,7 @@ function supabaseAdminKey() {
   return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", supabaseAdminKey(), { auth: { persistSession: false } });
-const adminOps = new Set(["teacher_bootstrap", "delete_impact", "assign_scope_passages", "set_scope_passages", "create_passage", "update_passage", "delete_passage", "create_student", "set_student_pin", "delete_student", "import_questions"]);
+const adminOps = new Set(["teacher_bootstrap", "delete_impact", "assign_scope_passages", "set_scope_passages", "create_passage", "update_passage", "delete_passage", "create_student", "set_student_pin", "delete_student", "import_questions", "import_explanations"]);
 const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt"]);
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
 // Match Breeze's free Gemini dictionary defaults. The API key remains a
@@ -229,6 +229,12 @@ async function importQuestions(body: any) {
   if (relink.error) throw new ApiError(500, relink.error.message);
   return { imported: Number(result.data) || 0 };
 }
+async function importExplanations(body: any) {
+  if (!Array.isArray(body.explanations)) throw new ApiError(400, "검증된 PDF 해설 배열이 필요합니다.");
+  const result = await db.rpc("ready_import_question_explanations", { p_explanations: body.explanations });
+  if (result.error) throw new ApiError(400, result.error.message);
+  return { imported: Number(result.data) || 0 };
+}
 
 async function studentExamAccess(examId: string, student: Student) {
   const result = await db.from("ready_exams").select("id").eq("id", examId).eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle();
@@ -261,37 +267,11 @@ function questionSourceKey(row: any) {
   return [clean(source.exam, 200), clean(source.section, 40), Number(source.passage_no) || 0].join("|");
 }
 function normalizeMainTextQuestionRows(questionRows: any[], passage: any, passageText: string) {
-  const grouped = new Map<string, any[]>();
-  for (const row of questionRows) {
-    const key = questionSourceKey(row);
-    grouped.set(key, [...(grouped.get(key) || []), row]);
-  }
-  const normalized: any[] = [];
-  for (const group of grouped.values()) {
-    group.sort((a, b) => (Number(a?.payload?.source?.source_question_no) || Number(a?.payload?.position) || 0) - (Number(b?.payload?.source?.source_question_no) || Number(b?.payload?.position) || 0));
-    let currentMain: any = null;
-    for (const original of group) {
-      let row = original;
-      const declared = clean(original?.payload?.source_kind, 40);
-      const prompt = clean(original?.payload?.prompt, 1_200);
-      const startsNewSource = /^(?:▶\s*)?다음\s*(?:글|대화)|^read\s+the\s+following/i.test(prompt);
-      const refersToPrevious = /윗글|text\s+above|above\s+text/i.test(prompt);
-      if (!declared && !isDialogueText(questionStudyText(original?.payload)) && refersToPrevious && currentMain) {
-        row = {
-          ...original,
-          payload: {
-            ...original.payload,
-            set_text: questionStudyText(currentMain.payload),
-            source: { ...original.payload?.source, set_id: clean(currentMain.payload?.source?.set_id, 120) || original.payload?.source?.set_id },
-          },
-        };
-      }
-      if (isMainTextQuestion(row, passage, passageText)) currentMain = row;
-      else if (startsNewSource) currentMain = null;
-      normalized.push(row);
-    }
-  }
-  return normalized.sort((a, b) => (Number(a?.payload?.position) || 0) - (Number(b?.payload?.position) || 0));
+  // A Question is the scheduling and rendering unit.  Never infer its text
+  // from a previous row: that made a later question inherit question 1's
+  // blanks and labels, and prevented random/type/difficulty composition.
+  void passage; void passageText;
+  return [...questionRows].sort((a, b) => (Number(a?.payload?.position) || 0) - (Number(b?.payload?.position) || 0));
 }
 async function attemptedQuestionIds(studentId: string, examId: string) {
   const attempts = rows<any[]>(await db.from("ready_attempts").select("question_id").eq("student_id", studentId).eq("exam_id", examId));
@@ -538,7 +518,7 @@ function publicQuestion(row: any, passageText = "") {
   const responseSlots = storedResponseSlots.length && guideSlots.length !== storedResponseSlots.length ? storedResponseSlots : guideSlots.length ? guideSlots : storedResponseSlots;
   const storedSkill = clean(payload.skill, 40);
   let skill = /요약/.test(clean(payload.prompt, 1_000)) ? "summary" : sourceQuestionNo === 125 ? "vocabulary" : storedSkill;
-  const detectedGroups = type === "multiple_choice" ? inlineOptionGroups(payload.variant_text) : [];
+  const detectedGroups = type === "multiple_choice" ? inlineOptionGroups(payload.set_text || payload.variant_text) : [];
   const inlineGroups = choicesMatchGroups(detectedGroups, choices) ? detectedGroups : [];
   if (inlineGroups.length && !["grammar", "vocabulary"].includes(skill)) skill = /흐름상|문맥상/.test(clean(payload.prompt, 1_000)) ? "vocabulary" : "grammar";
   const storedTargets = publicTargetRanges(payload.target_ranges);
@@ -686,7 +666,7 @@ async function dispatch(op: string, body: any, session: ReadySession | null) {
   switch (op) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);
     case "teacher_bootstrap": return teacherBootstrap(); case "delete_impact": return deleteImpact(body); case "create_student": return createStudent(body); case "set_student_pin": return setStudentPin(body); case "delete_student": return deleteStudent(body);
-    case "assign_scope_passages": return setScopePassages(body, false); case "set_scope_passages": return setScopePassages(body, true); case "create_passage": return createPassage(body); case "update_passage": return updatePassage(body); case "delete_passage": return deletePassage(body); case "import_questions": return importQuestions(body);
+    case "assign_scope_passages": return setScopePassages(body, false); case "set_scope_passages": return setScopePassages(body, true); case "create_passage": return createPassage(body); case "update_passage": return updatePassage(body); case "delete_passage": return deletePassage(body); case "import_questions": return importQuestions(body); case "import_explanations": return importExplanations(body);
     case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_passage": return studentPassage(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "student_review_questions": return studentReviewQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession);
     default: throw new ApiError(404, "알 수 없는 READY 작업입니다.");
   }

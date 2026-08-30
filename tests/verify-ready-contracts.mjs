@@ -16,7 +16,7 @@ const importer=read('tools/ready-import-questions.mjs');
 const operationPattern=/(?:call|readyApi|record)\(['"]([a-z_]+)['"]/g;
 const clientOps=new Set([...admin.matchAll(operationPattern),...student.matchAll(operationPattern)].map(match=>match[1]));
 const serverOps=new Set([...edge.matchAll(/case "([a-z_]+)"/g)].map(match=>match[1]));
-const serverOnlyOps=new Set(['create_passage','delete_student','delete_passage','import_questions']);
+const serverOnlyOps=new Set(['create_passage','delete_student','delete_passage','import_questions','import_explanations']);
 for(const op of clientOps)assert(serverOps.has(op),`Frontend operation has no server contract: ${op}`);
 for(const op of serverOps)assert(clientOps.has(op)||serverOnlyOps.has(op),`Server operation has no active caller: ${op}`);
 
@@ -34,7 +34,7 @@ for(const passage of [18,19,20,21,22,23,24,25,26,27,28])assert.match(inventory,n
 assert.match(inventory,/Question 32 \(Passage 25 chart\)/,'Chart asset limitation is not reported');
 
 const migrations=readdirSync(resolve(root,'supabase/migrations')).filter(name=>name.endsWith('.sql')).sort();
-assert.equal(migrations.at(-1),'20260828150000_ready_question_first.sql');
+assert.ok(migrations.includes('20260828150000_ready_question_first.sql'),'Question-first migration is missing');
 assert.doesNotMatch(student+admin,/SUPABASE_SERVICE_ROLE_KEY|READY_ADMIN_PASSWORD|GEMINI_API_KEY/,'A server secret name leaked into frontend code');
 assert.doesNotMatch(student,/reader-token|learning-sheet|data-save-sentence/,'Student frontend still exposes lexical study controls');
 

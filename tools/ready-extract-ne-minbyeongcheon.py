@@ -111,6 +111,43 @@ def answer_table(reader: PdfReader) -> dict[int, list[int] | None]:
     return answers
 
 
+def explanation_table(reader: PdfReader) -> dict[int, str]:
+    """Extract the fixed, publisher-authored explanation for each question.
+
+    The answer pages sometimes OCR ``10)`` as ``1 0 )``.  We therefore parse
+    the heading as two optional digit groups, then enforce the 1..20 sequence
+    so years and numbered examples can never become question boundaries.
+    """
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    if "정답 및 해설" not in text:
+        raise ValueError("explanation section not found")
+    area = text.rsplit("정답 및 해설", 1)[-1]
+    candidates = []
+    for match in re.finditer(r"(?m)^\s*(\d)\s*(\d?)\s*\)\s+", area):
+        number = int(match.group(1) + match.group(2))
+        if 1 <= number <= 20:
+            candidates.append((number, match.start(), match.end()))
+    positions = []
+    cursor = 0
+    for expected in range(1, 21):
+        found = next((item for item in candidates if item[1] >= cursor and item[0] == expected), None)
+        if not found:
+            raise ValueError(f"explanation {expected}: heading not found")
+        positions.append(found)
+        cursor = found[2]
+    explanations = {}
+    for index, (number, _start, content_start) in enumerate(positions):
+        end = positions[index + 1][1] if index < 19 else len(area)
+        chunk = area[content_start:end]
+        # The final explanation is followed by a separate written-answer key.
+        chunk = re.split(r"(?m)^\s*공통영어2.*?-\s*주관식", chunk, maxsplit=1)[0]
+        explanation = clean_noise(chunk)
+        if len(explanation) < 8:
+            raise ValueError(f"explanation {number}: empty or too short")
+        explanations[number] = explanation
+    return explanations
+
+
 def question_positions(problem_text: str) -> list[tuple[int, int, int]]:
     # Some generated PDFs concatenate the next heading directly after choice ⑤
     # ("...setting15. 윗글..."). The Korean/Who look-ahead rejects dates such
@@ -248,6 +285,7 @@ def extract_exam(path: Path, exam_index: int, written_answers: dict[str, list]) 
     round_ = (exam_index - 1) % 4 + 1
     reader = PdfReader(str(path))
     answers = answer_table(reader)
+    explanations = explanation_table(reader)
     problem_text = problem_pages(path)
     positions = question_positions(problem_text)
     current_context = clean_noise(problem_text[:positions[0][1]].split("")[-1])
@@ -299,6 +337,7 @@ def extract_exam(path: Path, exam_index: int, written_answers: dict[str, list]) 
             "position": (lesson - 1) * 1000 + round_ * 100 + number,
             "set_text": set_text,
             "source": source,
+            "explanation": explanations[number],
         }
         if payload["skill"] == "insertion":
             stimulus = re.match(r"^(.+?[.!?])\s+(?=[A-Z(])", set_text)
@@ -347,15 +386,18 @@ def validate(manifest: dict) -> dict:
             errors.append(f"choice count: {identity}")
         if question["type"] == "written_response" and not payload.get("accepted_answers"):
             errors.append(f"written answer: {identity}")
+        if len(payload.get("explanation", "")) < 8:
+            errors.append(f"explanation: {identity}")
     stats = {
         "lessons": len(manifest["lessons"]),
         "questions": len(questions),
         "objective": sum(q["type"] == "multiple_choice" for q in questions),
         "written": sum(q["type"] == "written_response" for q in questions),
         "sets": len({q["payload"]["source"]["set_id"] for q in questions}),
+        "explanations": sum(bool(q["payload"].get("explanation")) for q in questions),
         "errors": errors,
     }
-    if stats["questions"] != 160 or stats["objective"] != 131 or stats["written"] != 29 or errors:
+    if stats["questions"] != 160 or stats["objective"] != 131 or stats["written"] != 29 or stats["explanations"] != 160 or errors:
         raise ValueError(f"manifest contract failed: {stats}")
     return stats
 

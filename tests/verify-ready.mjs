@@ -24,12 +24,14 @@ const edge=read('server/ready/index.ts');
 const app=read('ready/app.js');
 const css=read('ready/ready.css');
 const extractor=read('tools/ready-extract-ne-minbyeongcheon.py');
+const explanationMigration=read('supabase/migrations/20260830223000_ready_pdf_explanations.sql');
 
 assert.match(baseline,/ready_questions[\s\S]*type text[\s\S]*payload jsonb/,'Question must remain generic JSON-backed data');
 assert.match(baseline,/ready_attempts_are_immutable[\s\S]*before update or delete/,'Attempts must remain append-only');
 assert.match(questionMigration,/ready_import_question_bundle[\s\S]*jsonb_array_elements[\s\S]*return imported/,'Atomic bundle import is missing');
 assert.match(questionMigration,/multiple_choice[\s\S]*written_response/,'Both deterministic response types are not indexed/importable');
 assert.match(questionMigration,/source_question_no[\s\S]*section/,'Source identity is not validated');
+assert.match(explanationMigration,/ready_import_question_explanations[\s\S]*matched <> 1/,'PDF explanations are not imported by one exact Question identity');
 assert.match(neRelinkMigration,/lesson\\s\*1[\s\S]*공통영어2[\s\S]*민병천[\s\S]*question_count desc/,'NE textbook aliases do not resolve to the question-bearing lesson');
 assert.match(neRelinkMigration,/ready_exam_passages[\s\S]*surviving_passage_id[\s\S]*scope relink contract failed/,'NE scope relink is not atomic or verified');
 
@@ -62,7 +64,7 @@ assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*236:[\s\S]*bare imagination of a f
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*eligibleUnresolvedQuestionIds/,'Review queue endpoint is missing');
 assert.match(edge,/isMainTextQuestion[\s\S]*isDialogueText[\s\S]*sourceBigrams/,'Textbook questions are not positively matched to the canonical main text');
-assert.match(edge,/normalizeMainTextQuestionRows[\s\S]*refersToPrevious[\s\S]*currentMain/,'Legacy shared-passage state is not repaired before filtering');
+assert.match(edge,/normalizeMainTextQuestionRows[\s\S]*Never infer its text[\s\S]*questionRows/,'Question text can still be inherited from an adjacent row');
 assert.match(edge,/attemptedQuestionIds[\s\S]*!attempted\.has/,'Solved questions are not removed from the new-question queue');
 assert.match(edge,/cleanQuestionText[\s\S]*물음에\\s\*답하시오/,'Worksheet directions can still leak into the passage');
 assert.match(edge,/setScopePassages[\s\S]*ready_relink_ne_minbyeongcheon_lessons[\s\S]*importQuestions[\s\S]*ready_relink_ne_minbyeongcheon_lessons/,'Scope changes and question imports do not repair textbook aliases');
@@ -93,7 +95,7 @@ assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*p
 assert.match(app,/combinationChoiceParts[\s\S]*choice-separator/,'Grammar and vocabulary combination choices are not visually separated');
 assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned from standalone questions');
 
-const passageFunctionNames=['canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','questionBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage'];
+const passageFunctionNames=['referencedLabels','canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','activeQuestionLabels','cleanQuestionApparatus','questionAnchorTexts','canonicalQuestionWindow','questionBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage'];
 const passageFunctions=passageFunctionNames.map(name=>app.match(new RegExp(`function ${name}\\([^\\n]+`))?.[0]||'').join('\n');
 const canonical18='Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme Sustainable Future. Although we announced the fair last month, student registration is still lower than expected. Therefore, we would like to encourage more of you to take part. You are invited to present a project. You will have the opportunity to showcase your work. If you are interested, please submit a description. We look forward to your participation.';
 const worksheet18='Dear students, The annual Riverdale Science Fair will ⓐ[hold / be held] on July 18 with the theme “㉠________.” (A) Although we announced the fair last month, student registration is still lower than expected. (B) You are ⓑ[inviting / invited] to present a project. (C) You will have the opportunity ⓒ[showcase / to showcase] your work. (D) If you are interested, please submit a description. (E) We look forward to your participation.';
@@ -105,7 +107,7 @@ const setQuestions=[
   {skill:'content',passageText:canonical18,setText:canonical18,source:sharedSource},
 ];
 const basePassages=setQuestions.map((question,index)=>runInNewContext(`${passageFunctions}; questionBasePassage(question)`,{question:{...question,id:`question-${index}`}}));
-assert.match(basePassages[0],/ⓐ\[hold \/ be held\]/,'The grammar question does not preserve its own worksheet apparatus');
+assert.match(basePassages[0],/ⓐbe held/,'The grammar question does not retain its own target before overlay composition');
 assert.match(basePassages[1],/㉠_{4,}/,'The blank question does not preserve its own blank');
 assert.doesNotMatch(basePassages[3],/[ⓐⓑⓒ]|㉠_{4,}/,'A content question inherits another question apparatus');
 const overlayFor=index=>runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:{...setQuestions[index],id:`question-${index}`}});
@@ -126,6 +128,7 @@ assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(questi
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
 assert.match(app,/resultFeedbackHtml[\s\S]*data-toggle-explanation/,'Wrong answers cannot reveal an explanation progressively');
+assert.match(extractor,/explanation_table[\s\S]*explanations\[number\]/,'Publisher explanations are not extracted into each Question payload');
 assert.doesNotMatch(app,/data-toggle-answer|정답 보기|answer-reveal|showAnswer/,'A redundant answer-reveal control remains in the student UI');
 assert.match(app,/readerParagraphs[\s\S]*study-back/,'Focused study navigation or paragraph Reader is missing');
 assert.doesNotMatch(app,/function continuationQuestion|class="start-study"|class="home-tabs"/,'Home still exposes quick-start or study-mode tabs');
