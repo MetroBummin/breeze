@@ -503,14 +503,24 @@ function inlineAnswer(payload: any, choiceCount: number) {
   }
   return visit(0, []) ? selected : [];
 }
+function inferredChoiceParts(payload: any, choices: string[]) {
+  const prompt = clean(payload?.prompt, 1_000), labels = [...new Set(prompt.match(/\([A-H]\)/g) || [])];
+  if (labels.length < 2 || labels.length > 4 || choices.length < 2) return [];
+  const parts = choices.map(choice => choice.split(/\s+/).filter(Boolean));
+  // Only infer an unambiguous table: every row must contain exactly one cell
+  // for every labelled blank. Multi-word cells remain importer-owned data.
+  return parts.every(row => row.length === labels.length) ? parts : [];
+}
 function publicQuestion(row: any, passageText = "") {
   const payload = row.payload || {}, type = clean(row.type, 40), sourceQuestionNo = Number(payload.source?.source_question_no) || null;
   // Legacy repairs belong to one named workbook. A bare source question number
   // is not a global identity: every new PDF also has a question 1, 2, 3, ...
   const legacyWorkbook = /2026\s*[-년]?\s*0?6|부산/.test(clean(payload.source?.exam, 160));
   const writingGuide = publicStoredWritingGuide(payload.writing_guide) || (legacyWorkbook ? publicWritingGuide(sourceQuestionNo) : null);
-  const storedChoiceParts = publicChoiceParts(payload.choice_parts), choiceParts = storedChoiceParts.length ? storedChoiceParts : legacyWorkbook && sourceQuestionNo ? CHOICE_PART_REPAIRS[sourceQuestionNo] || [] : [];
-  const choices = choiceParts.length ? choiceParts.map(parts => parts.join(" ")) : Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
+  const rawChoices = Array.isArray(payload.choices) ? payload.choices.map((item: unknown) => clean(item, 1_000)).filter(Boolean) : [];
+  const storedChoiceParts = publicChoiceParts(payload.choice_parts), repairedChoiceParts = legacyWorkbook && sourceQuestionNo ? CHOICE_PART_REPAIRS[sourceQuestionNo] || [] : [];
+  const choiceParts = storedChoiceParts.length ? storedChoiceParts : repairedChoiceParts.length ? repairedChoiceParts : inferredChoiceParts(payload, rawChoices);
+  const choices = choiceParts.length ? choiceParts.map(parts => parts.join(" ")) : rawChoices;
   if (type === "multiple_choice" && (choices.length < 2 || choices.length > 8)) throw new ApiError(500, "문제 선택지 형식이 올바르지 않습니다.");
   if (!["multiple_choice", "written_response"].includes(type)) throw new ApiError(500, "지원하지 않는 문제 형식입니다.");
   const storedResponseSlots = (Array.isArray(payload.response_slots) ? payload.response_slots : []).slice(0, 12).map((slot: any, index: number) => ({ label: clean(slot?.label, 80) || `답 ${index + 1}` }));
