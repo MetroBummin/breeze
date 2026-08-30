@@ -25,7 +25,8 @@
 
 - 문제 identity: `교재 + 단원 + 회차 + 원문 문제번호`
 - 학습 identity: 단원 전체 Passage
-- 풀이 문맥 identity: PDF에서 같은 글을 공유하는 `source.set_id`
+- 풀이 identity: 개별 Question ID
+- 출처 문맥: `source.set_id`는 PDF에서 같은 글을 공유했다는 provenance이며 UI 묶음이나 출제 단위로 사용하지 않는다.
 - 객관식: 모든 문제는 선택지 5개와 정답표를 대조한다.
 - 복수 정답: 정답표의 복수 기호를 그대로 보존한다.
 - 서술형: 29문항 모두 응답 칸 수와 허용 정답 수를 대조한다.

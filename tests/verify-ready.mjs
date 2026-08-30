@@ -73,61 +73,60 @@ assert.match(app,/function renderReader[\s\S]*plainPassage/,'Reader does not ren
 assert.doesNotMatch(app,/openLexical|openSentence|translation_view|save_sentence|savedWord|savedSentence/,'Lexical/sentence study remains connected to the student frontend');
 assert.match(app,/family\|\|'standard'[\s\S]*questionPassageHtml/,'Question family renderer is missing');
 assert.match(app,/contentBlocks/,'Structured Passage blocks are not rendered');
-assert.match(app,/setBasePassage[\s\S]*summaryText/,'Stable Passage variants and summary blocks are not rendered');
+assert.match(app,/questionBasePassage[\s\S]*summaryText/,'Question-local Passage variants and summary blocks are not rendered');
 assert.match(app,/responseType==='written'[\s\S]*data-written-slot/,'Written response UI is missing');
 assert.match(app,/writingGuideHtml[\s\S]*writing-conditions[\s\S]*writing-bank/,'Writing conditions and word bank are not separated from the prompt');
 assert.match(app,/written-workspace correction[\s\S]*고친 말만 입력/,'Correction questions are not presented as expression-to-answer tasks');
 assert.match(app,/sentence-answer[\s\S]*textarea[\s\S]*완성한 영어 문장/,'Sentence completion does not provide a usable writing area');
 assert.match(app,/writtenSlotsHtml[\s\S]*multi-correction[\s\S]*summary-slots/,'Multi-slot summary and correction tasks are still flattened into one field');
 assert.match(app,/writingGuide\?\.title\|\|question\.prompt/,'Flattened PDF prompts still override structured writing titles');
-assert.match(app,/questionSetKey[\s\S]*question-set-nav[\s\S]*data-question-index/,'Passage question-set navigation is missing');
-assert.match(app,/question\.source[\s\S]*source\?\.setId[\s\S]*source-set:/,'Question sets do not use the source-scoped set identity');
-assert.match(app,/setBasePassage[\s\S]*question\.setText/,'Question sets do not prefer their immutable worksheet context');
-assert.match(app,/function setBasePassage[\s\S]*function currentQuestionPassage[\s\S]*function questionPassageHtml/,'A question set does not keep an immutable base Passage with current-question overlays');
+assert.doesNotMatch(app,/question-set-nav|questionSetKey|questionSetIndices|data-question-index/,'Questions are still bundled into a worksheet-set UI');
+assert.match(app,/questionBasePassage\(question\)[\s\S]*question\.setText\|\|question\.variantText\|\|question\.passageText/,'A question does not prefer its own immutable worksheet context');
+assert.match(app,/function questionBasePassage[\s\S]*function currentQuestionPassage[\s\S]*function questionPassageHtml/,'Current-question Passage composition is missing');
 assert.match(app,/applyAlternativeOverlay[\s\S]*applyTargetOverlay[\s\S]*applyStructuralOverlay[\s\S]*pointedPassageHtml/,'Question overlays are not isolated by interaction type');
 assert.match(app,/target\.canonicalText\|\|target\.text/,'Target overlays cannot distinguish source anchors from displayed expressions');
 assert.match(app,/\['implication','order'\]\.includes\(question\.skill\)[\s\S]*question\.variantText/,'Standalone implication and order questions do not use their explicit question material');
-assert.match(app,/worksheetPassageText[\s\S]*questionSetIndices\(session\)\.length>1[\s\S]*setBasePassage/,'Question sets do not preserve one original worksheet Passage');
+assert.match(app,/currentQuestionPassage\(question\)[\s\S]*questionPassageHtml\(question,result,selected\)/,'Question rendering still depends on adjacent questions');
 assert.match(app,/canonicalOption[\s\S]*sort\(\(a,b\)=>b\.length-a\.length\)/,'Overlapping alternatives do not prefer the specific longer option');
 assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointing and footnote rendering is missing');
 assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');
 assert.match(app,/combinationChoiceParts[\s\S]*choice-separator/,'Grammar and vocabulary combination choices are not visually separated');
-assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned when moving within a question set');
+assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned from standalone questions');
 
-const passageFunctionNames=['canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','setBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage','questionSetKey','questionSetIndices'];
+const passageFunctionNames=['canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','questionBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage'];
 const passageFunctions=passageFunctionNames.map(name=>app.match(new RegExp(`function ${name}\\([^\\n]+`))?.[0]||'').join('\n');
 const canonical18='Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme Sustainable Future. Although we announced the fair last month, student registration is still lower than expected. Therefore, we would like to encourage more of you to take part. You are invited to present a project. You will have the opportunity to showcase your work. If you are interested, please submit a description. We look forward to your participation.';
 const worksheet18='Dear students, The annual Riverdale Science Fair will ⓐ[hold / be held] on July 18 with the theme “㉠________.” (A) Although we announced the fair last month, student registration is still lower than expected. (B) You are ⓑ[inviting / invited] to present a project. (C) You will have the opportunity ⓒ[showcase / to showcase] your work. (D) If you are interested, please submit a description. (E) We look forward to your participation.';
 const sharedSource={passageNo:18,section:'1',questionNo:1};
 const setQuestions=[
-  {skill:'grammar',passageText:canonical18,variantText:worksheet18,inlineGroups:[{label:'ⓐ',options:['hold','be held']},{label:'ⓑ',options:['inviting','invited']},{label:'ⓒ',options:['showcase','to showcase']}],source:sharedSource},
-  {skill:'blank',choices:['Space Tourism','Sustainable Future'],passageText:canonical18,variantText:worksheet18,source:sharedSource},
-  {skill:'insertion',stimulus:'Therefore, we would like to encourage more of you to take part.',passageText:canonical18,variantText:worksheet18,source:sharedSource},
-  {skill:'content',passageText:canonical18,variantText:worksheet18,source:sharedSource},
+  {skill:'grammar',passageText:canonical18,setText:worksheet18,inlineGroups:[{label:'ⓐ',options:['hold','be held']},{label:'ⓑ',options:['inviting','invited']},{label:'ⓒ',options:['showcase','to showcase']}],source:sharedSource},
+  {skill:'blank',choices:['Space Tourism','Sustainable Future'],passageText:canonical18,setText:canonical18.replace('Sustainable Future','㉠______________________'),variantText:'㉠______________________',prompt:'빈칸 ㉠',source:sharedSource},
+  {skill:'insertion',stimulus:'Therefore, we would like to encourage more of you to take part.',passageText:canonical18,variantText:'Opening. (A) First block. (B) Second block. (C) Third block. (D) Last block.',source:sharedSource},
+  {skill:'content',passageText:canonical18,setText:canonical18,source:sharedSource},
 ];
-const setSession={items:setQuestions.map((question,index)=>({question:{...question,id:`set-${index}`}})),index:0};
-const basePassages=setQuestions.map((_question,index)=>runInNewContext(`${passageFunctions}; setBasePassage(session)`,{session:{...setSession,index}}));
-assert.equal(new Set(basePassages).size,1,'The same question set does not share one immutable base Passage');
-assert.doesNotMatch(basePassages[0],/Therefore, we would like/,'Insertion stimulus remains in the set base Passage');
-assert.match(basePassages[0],/㉠_{4,}/,'The shared blank was not preserved in the set base Passage');
-assert.match(basePassages[0],/ⓐhold \/ be held[\s\S]*\(A\)[\s\S]*\(E\)/,'The original worksheet apparatus is not preserved as the set master');
-const overlayFor=index=>runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[session.index].question)`,{session:{...setSession,index}});
+const basePassages=setQuestions.map((question,index)=>runInNewContext(`${passageFunctions}; questionBasePassage(question)`,{question:{...question,id:`question-${index}`}}));
+assert.match(basePassages[0],/ⓐ\[hold \/ be held\]/,'The grammar question does not preserve its own worksheet apparatus');
+assert.match(basePassages[1],/㉠_{4,}/,'The blank question does not preserve its own blank');
+assert.doesNotMatch(basePassages[3],/[ⓐⓑⓒ]|㉠_{4,}/,'A content question inherits another question apparatus');
+const overlayFor=index=>runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:{...setQuestions[index],id:`question-${index}`}});
 assert.match(overlayFor(0),/ⓐhold \/ be held[\s\S]*ⓑinviting \/ invited[\s\S]*ⓒshowcase \/ to showcase/,'Grammar alternatives are not presented without revealing the answer');
-assert.match(overlayFor(2),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)[\s\S]*\(D\)[\s\S]*\(E\)/,'Insertion positions are missing from the insertion question');
-assert.equal(new Set(setQuestions.map((_question,index)=>overlayFor(index))).size,1,'A set question changes the original worksheet Passage between tabs');
+assert.match(overlayFor(1),/㉠_{4,}/,'The blank disappears when the current question is rendered');
+assert.match(overlayFor(2),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)[\s\S]*\(D\)/,'Insertion positions are missing from the insertion question');
+assert.doesNotMatch(overlayFor(3),/[ⓐⓑⓒ]|㉠_{4,}|\(A\)/,'A content question is contaminated by a neighbouring question');
+assert.ok(new Set(setQuestions.map((_question,index)=>overlayFor(index))).size>1,'Independent questions still collapse to one shared worksheet variant');
+const grammarTargets={skill:'grammar',prompt:'밑줄 친 ⓐ~ⓒ 중 어법상 어색한 것은?',passageText:'Light takes four years to reach us. It glows nearby and was familiar.',setText:'Light takes four years ⓐ to reach us. It ⓑglows nearby and ⓒ was familiar.',targetRanges:[{label:'ⓐ',text:'to reach'},{label:'ⓑ',text:'glows'},{label:'ⓒ',text:'was familiar'}],source:sharedSource};
+assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:grammarTargets}),/ⓐto reach[\s\S]*ⓑglows[\s\S]*ⓒwas familiar/,'Grammar pointing does not cover each full target expression');
 const targetCanonical='You are invited to present a model related to conservation. If you are interested, please submit it.';
 const transformedTarget={skill:'grammar',passageText:targetCanonical,variantText:targetCanonical,targetRanges:[{label:'ⓒ',text:'is related',canonicalText:'related'},{label:'ⓓ',text:'interesting',canonicalText:'interested'}],source:sharedSource};
-const transformedSession={items:[{question:{...transformedTarget,id:'target-transform'}}],index:0};
-assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:transformedSession}),/ⓒis related[\s\S]*ⓓinteresting/,'Variant-only target expressions cannot be anchored to canonical prose');
+assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:transformedTarget}),/ⓒis related[\s\S]*ⓓinteresting/,'Variant-only target expressions cannot be anchored to canonical prose');
 const implication={skill:'implication',passageText:'Canonical prose without a label.',variantText:'Context. (A)encourage more of you to take part. Ending.',source:{passageNo:18,section:'3',questionNo:233}};
-const implicationSession={items:[{question:{...implication,id:'implication'}}],index:0};
-assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:implicationSession}),/\(A\)encourage more of you to take part/,'Implication question loses its explicit underlined expression');
+assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:implication}),/\(A\)encourage more of you to take part/,'Implication question loses its explicit underlined expression');
 const orderQuestion={skill:'order',passageText:'Canonical prose.',variantText:'Opening. (A) First block. (B) Second block. (C) Third block.',source:{passageNo:18,section:'3',questionNo:255}};
-const orderSession={items:[{question:{...orderQuestion,id:'order'}}],index:0};
-assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(session,session.items[0].question)`,{session:orderSession}),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)/,'Order question loses its explicit A/B/C blocks');
+assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:orderQuestion}),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)/,'Order question loses its explicit A/B/C blocks');
 assert.doesNotMatch(app.match(/function renderScope\(\)[\s\S]*?\n\}/)?.[0]||'',/data-open-review/,'Home still duplicates the top-level wrong-answer review route');
 assert.match(app,/student_review_questions[\s\S]*복습 문제/,'Wrong-answer review UI is missing');
-assert.match(app,/resultFeedbackHtml[\s\S]*data-toggle-answer[\s\S]*data-toggle-explanation/,'Wrong answers do not reveal the answer and explanation progressively');
+assert.match(app,/resultFeedbackHtml[\s\S]*data-toggle-explanation/,'Wrong answers cannot reveal an explanation progressively');
+assert.doesNotMatch(app,/data-toggle-answer|정답 보기|answer-reveal|showAnswer/,'A redundant answer-reveal control remains in the student UI');
 assert.match(app,/readerParagraphs[\s\S]*study-back/,'Focused study navigation or paragraph Reader is missing');
 assert.doesNotMatch(app,/function continuationQuestion|class="start-study"|class="home-tabs"/,'Home still exposes quick-start or study-mode tabs');
 assert.match(app,/function exitQuestions[\s\S]*loadDashboard/,'Leaving a question session can show a stale Review count');
@@ -136,7 +135,8 @@ assert.match(css,/question-block\.group[\s\S]*question-segment\.blank[\s\S]*writ
 assert.match(css,/written-workspace\.correction[\s\S]*writing-conditions[\s\S]*writing-bank/,'Structured writing workspace styling is incomplete');
 assert.match(css,/correction-reference[\s\S]*written-slot-list/,'Complex correction and summary answers do not have readable field layouts');
 assert.match(css,/@media\(max-width:700px\)[\s\S]*written-workspace\.correction\{grid-template-columns:1fr\}/,'Writing correction cards do not stack on mobile');
-assert.match(css,/passage-pointer[\s\S]*question-set-nav/,'Question-set pointing styling is missing');
+assert.match(css,/passage-pointer/,'Passage pointing styling is missing');
+assert.doesNotMatch(css,/question-set-nav/,'Removed question-set navigation still has active styling');
 assert.match(css,/passage-blank[\s\S]*white-space:nowrap/,'Inline blanks can still expand into an awkward wrapped bar');
 assert.match(css,/question-choice\.eliminated[\s\S]*question-choice\.candidate/,'Choice deliberation states are missing');
 assert.match(css,/font-size:16px!important/,'iOS Safari input zoom prevention is missing');

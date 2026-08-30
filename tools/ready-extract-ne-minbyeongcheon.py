@@ -3,8 +3,9 @@
 
 The eight workbooks and their answers remain private course content. This tool
 writes a local manifest only; it never commits the extracted questions. The
-canonical learning identity is one whole lesson, while `source.set_id` keeps
-the smaller worksheet context shared by adjacent questions stable in the UI.
+canonical reading identity is one whole lesson. Every Question remains an
+independent scheduling/grading unit; `source.set_id` is provenance only and
+must never make adjacent questions one UI bundle.
 """
 
 from __future__ import annotations

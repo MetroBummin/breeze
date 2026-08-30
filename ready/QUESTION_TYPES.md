@@ -138,6 +138,10 @@ NE 교과서 문제는 `payload.source_kind`를 `textbook_main`, `dialogue`,
 `textbook_main`만 공유한다. 과거 import에서 `source_kind`가 없는 경우에만 canonical
 Passage와의 영어 bigram 일치를 하위 호환 검증으로 사용한다.
 
+`payload.source.set_id`는 같은 PDF 지문에서 파생되었다는 출처 정보일 뿐이다. 출제,
+풀이 상태, 랜덤/유형/난이도 필터의 최소 단위는 항상 개별 Question ID다. 학생 화면은
+현재 Question의 `set_text`와 장치만 렌더링하며 이웃 Question의 빈칸·밑줄·기호를 합치지 않는다.
+
 ## Review rule
 
 현재 Exam에서 학생·Question별 마지막 Attempt가 오답이면 복습 대상이다. 이후 복습 Attempt가 정답이면 마지막 Attempt가 정답으로 바뀌어 자동 해결된다. 원시 Attempt는 수정하거나 삭제하지 않는다.
