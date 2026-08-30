@@ -191,7 +191,10 @@ async function setScopePassages(body: any, replace: boolean) {
   const passageIds = ids(body.passageIds), school = required(body.school, "학교", 80), grade = required(body.grade, "학년", 40);
   if (!replace && !passageIds.length) throw new ApiError(400, "배정할 지문을 하나 이상 선택해 주세요.");
   const result = await db.rpc("ready_set_current_scope_passages", { p_school: school, p_grade: grade, p_passage_ids: passageIds, p_replace: replace });
-  if (result.error) throw new ApiError(400, result.error.message); return { scopeId: result.data as string };
+  if (result.error) throw new ApiError(400, result.error.message);
+  const relink = await db.rpc("ready_relink_ne_minbyeongcheon_lessons");
+  if (relink.error) throw new ApiError(500, relink.error.message);
+  return { scopeId: result.data as string };
 }
 async function createPassage(body: any) {
   if (!Array.isArray(body.sentenceRows)) throw new ApiError(400, "영어와 한국어 2열 rows가 필요합니다.");
@@ -222,6 +225,8 @@ async function importQuestions(body: any) {
   if (!Array.isArray(body.questions)) throw new ApiError(400, "검증된 Question 배열이 필요합니다.");
   const result = await db.rpc("ready_import_question_bundle", { p_questions: body.questions });
   if (result.error) throw new ApiError(400, result.error.message);
+  const relink = await db.rpc("ready_relink_ne_minbyeongcheon_lessons");
+  if (relink.error) throw new ApiError(500, relink.error.message);
   return { imported: Number(result.data) || 0 };
 }
 

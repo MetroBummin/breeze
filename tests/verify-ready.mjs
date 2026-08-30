@@ -19,6 +19,7 @@ assert.equal(secureEqual('same-secret','same-secret'),true);
 
 const baseline=read('supabase/migrations/20260826150000_ready_current_baseline.sql');
 const questionMigration=read('supabase/migrations/20260828150000_ready_question_first.sql');
+const neRelinkMigration=read('supabase/migrations/20260830130000_ready_relink_ne_textbook_aliases.sql');
 const edge=read('server/ready/index.ts');
 const app=read('ready/app.js');
 const css=read('ready/ready.css');
@@ -28,6 +29,8 @@ assert.match(baseline,/ready_attempts_are_immutable[\s\S]*before update or delet
 assert.match(questionMigration,/ready_import_question_bundle[\s\S]*jsonb_array_elements[\s\S]*return imported/,'Atomic bundle import is missing');
 assert.match(questionMigration,/multiple_choice[\s\S]*written_response/,'Both deterministic response types are not indexed/importable');
 assert.match(questionMigration,/source_question_no[\s\S]*section/,'Source identity is not validated');
+assert.match(neRelinkMigration,/lesson\\s\*1[\s\S]*공통영어2[\s\S]*민병천[\s\S]*question_count desc/,'NE textbook aliases do not resolve to the question-bearing lesson');
+assert.match(neRelinkMigration,/ready_exam_passages[\s\S]*surviving_passage_id[\s\S]*scope relink contract failed/,'NE scope relink is not atomic or verified');
 
 assert.match(edge,/studentOps = new Set\(\["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt"\]\)/,'Student runtime exposes operations outside the Question-first path');
 assert.doesNotMatch(edge.match(/async function dispatch[\s\S]*?\n\}/)?.[0]||'',/word_lookup|save_word|save_sentence|personal_library/,'Dormant lexical operations remain dispatched');
@@ -57,6 +60,7 @@ assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*295:[\s\S]*that glows in the Orion
 assert.match(edge,/TARGET_RANGE_REPAIRS[\s\S]*236:[\s\S]*bare imagination of a feast[\s\S]*240:[\s\S]*continued to explore/,'Meaning questions with label-only prompts lack their full source expressions');
 assert.match(edge,/unresolvedQuestionIds[\s\S]*latest\.has[\s\S]*!correct/,'Review is not derived from the latest append-only Attempt');
 assert.match(edge,/studentReviewQuestions[\s\S]*unresolvedQuestionIds/,'Review queue endpoint is missing');
+assert.match(edge,/setScopePassages[\s\S]*ready_relink_ne_minbyeongcheon_lessons[\s\S]*importQuestions[\s\S]*ready_relink_ne_minbyeongcheon_lessons/,'Scope changes and question imports do not repair textbook aliases');
 assert.match(edge,/legacyWorkbook[\s\S]*publicStoredWritingGuide[\s\S]*CHOICE_PART_REPAIRS/,'Workbook-specific repairs are not scoped by source identity');
 assert.match(edge,/setText: clean\(payload\.set_text[\s\S]*setId: clean\(payload\.source\.set_id/,'Question-set passage identity is not exposed to the student UI');
 
