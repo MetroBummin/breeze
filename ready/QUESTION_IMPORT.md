@@ -63,11 +63,14 @@ PDF
 3. `answer` 또는 `accepted_answers`를 정답/해설 쪽과 대조한다.
 4. single/multi를 문제 지시문과 대조한다.
 5. canonical 문제는 variant를 넣지 않는다.
-6. 문제용 변형은 `variant_text`, `variant_segments`, `content_blocks` 중 최소 표현을 사용한다.
-7. raw HTML을 payload에 넣지 않는다.
-8. Passage 25 chart처럼 외부 asset이 없으면 `draft`로 유지한다.
-9. public response에 `answer`/`accepted_answers`가 없는지 contract test로 확인한다.
-10. 교과서 bundle은 본문 일치 검증 후 `source_kind`를 넣고, 대화문과 본문 외
+6. 원문에 문제 장치만 올리는 경우는 `variant_mode: "canonical_overlay"`, 출제자가
+   내용을 요약·바꿔 쓰거나 다른 단어로 표현한 지문은 `variant_mode: "authored_variant"`로
+   명시한다. 후자는 canonical 복원 대상이 아니다.
+7. 문제용 변형은 `variant_text`, `variant_segments`, `content_blocks` 중 최소 표현을 사용한다.
+8. raw HTML을 payload에 넣지 않는다.
+9. Passage 25 chart처럼 외부 asset이 없으면 `draft`로 유지한다.
+10. public response에 `answer`/`accepted_answers`가 없는지 contract test로 확인한다.
+11. 교과서 bundle은 본문 일치 검증 후 `source_kind`를 넣고, 대화문과 본문 외
     자료는 각각 `dialogue`, `supplemental`로 보존하되 학생 풀이에서 제외한다.
 
 Dry-run:

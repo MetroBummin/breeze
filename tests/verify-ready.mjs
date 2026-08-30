@@ -26,6 +26,9 @@ const css=read('ready/ready.css');
 const extractor=read('tools/ready-extract-ne-minbyeongcheon.py');
 const busanExtractor=read('tools/ready-extract-busan-explanations.py');
 const explanationMigration=read('supabase/migrations/20260830223000_ready_pdf_explanations.sql');
+const workbookMigration=read('supabase/migrations/20260830234500_ready_workbook_attempts.sql');
+const workbookExtractor=read('tools/ready-extract-ne-workbook.py');
+const {NE_MINBYEONGCHEON_L1_WORKBOOK}=await import('../server/ready/workbook-ne-l1.mjs');
 
 assert.match(baseline,/ready_questions[\s\S]*type text[\s\S]*payload jsonb/,'Question must remain generic JSON-backed data');
 assert.match(baseline,/ready_attempts_are_immutable[\s\S]*before update or delete/,'Attempts must remain append-only');
@@ -36,7 +39,7 @@ assert.match(explanationMigration,/ready_import_question_explanations[\s\S]*matc
 assert.match(neRelinkMigration,/lesson\\s\*1[\s\S]*공통영어2[\s\S]*민병천[\s\S]*question_count desc/,'NE textbook aliases do not resolve to the question-bearing lesson');
 assert.match(neRelinkMigration,/ready_exam_passages[\s\S]*surviving_passage_id[\s\S]*scope relink contract failed/,'NE scope relink is not atomic or verified');
 
-assert.match(edge,/studentOps = new Set\(\["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt"\]\)/,'Student runtime exposes operations outside the Question-first path');
+assert.match(edge,/studentOps = new Set\(\["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt", "student_workbook", "submit_workbook_attempt"\]\)/,'Student runtime exposes operations outside the Question and Workbook paths');
 assert.doesNotMatch(edge.match(/async function dispatch[\s\S]*?\n\}/)?.[0]||'',/word_lookup|save_word|save_sentence|personal_library/,'Dormant lexical operations remain dispatched');
 assert.match(edge,/function publicQuestion[\s\S]*responseSlots[\s\S]*variantSegments[\s\S]*contentBlocks/,'Structured public Question contract is incomplete');
 assert.doesNotMatch(edge.match(/function publicQuestion[\s\S]*?\n\}/)?.[0]||'',/accepted_answers|payload\.answer/,'Public Question exposes grading data');
@@ -95,10 +98,20 @@ assert.match(app,/passage-pointer[\s\S]*question-footnote/,'Plain Passage pointi
 assert.match(app,/markQuestionChoice[\s\S]*choiceSwipe[\s\S]*pointerdown[\s\S]*pointermove/,'Choice candidate swipe states are missing');
 assert.match(app,/combinationChoiceParts[\s\S]*choice-separator/,'Grammar and vocabulary combination choices are not visually separated');
 assert.match(edge,/inferredChoiceParts[\s\S]*row\.length === labels\.length/,'Unambiguous multi-blank choice columns are not preserved');
-assert.match(app,/workbookAsset[\s\S]*data-open-workbook/,'The supplied Lesson 1 workbook is not reachable beside its Passage');
+assert.match(app,/hasWorkbook[\s\S]*data-start-workbook/,'The interactive Lesson 1 Workbook is not reachable beside its Passage');
+assert.doesNotMatch(app,/data-open-workbook|window\.open\([^)]*workbook/i,'Workbook still opens a passive PDF instead of an exercise');
+assert.match(app,/student_workbook[\s\S]*submit_workbook_attempt[\s\S]*data-workbook-retry/,'Workbook input, grading, or retry flow is incomplete');
+assert.match(app,/slotResults[\s\S]*틀린 칸 다시 풀기[\s\S]*event\.key!==['"]Enter['"]/,'Workbook does not identify the exact correction or support keyboard progression');
+assert.match(edge,/slotResults = responses\.map[\s\S]*slotResults\.every\(Boolean\)[\s\S]*slotResults/,'Workbook grading does not report correctness per blank');
+assert.match(workbookMigration,/create table if not exists public\.ready_workbook_attempts[\s\S]*ready_workbook_attempts_are_immutable[\s\S]*before update or delete/,'Workbook attempts must remain append-only');
+assert.match(workbookExtractor,/STAGE_ANSWERS[\s\S]*for number in range\(1, 42\)[\s\S]*blank_count != len\(answers\)/,'Workbook extraction is not deterministically bounded');
+assert.equal(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.length,2,'Workbook milestone must contain two implemented stages');
+assert.equal(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.flatMap(stage=>stage.items).length,82,'Workbook milestone must contain all 82 Stage 2/3 items');
+assert.equal(new Set(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.flatMap(stage=>stage.items.map(item=>item.key))).size,82,'Workbook item identities are not unique');
+for(const stage of NE_MINBYEONGCHEON_L1_WORKBOOK.stages)for(const item of stage.items)assert.equal((item.prompt.match(/_{5,}/g)||[]).length,item.answers.length,`${item.key} prompt/answer mismatch`);
 assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned from standalone questions');
 
-const passageFunctionNames=['referencedLabels','canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','activeQuestionLabels','englishWordSpans','matchingTokenSequence','canonicalGap','restoreInactiveQuestionDevices','cleanQuestionApparatus','questionAnchorTexts','canonicalQuestionWindow','questionBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage'];
+const passageFunctionNames=['cleanDisplayText','referencedLabels','canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','activeQuestionLabels','englishWordSpans','matchingTokenSequence','canonicalGap','restoreInactiveQuestionDevices','cleanQuestionApparatus','questionAnchorTexts','canonicalQuestionWindow','questionBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage'];
 const passageFunctions=passageFunctionNames.map(name=>app.match(new RegExp(`function ${name}\\([^\\n]+`))?.[0]||'').join('\n');
 const canonical18='Dear students, The annual Riverdale Science Fair will be held on July 18 with the theme Sustainable Future. Although we announced the fair last month, student registration is still lower than expected. Therefore, we would like to encourage more of you to take part. You are invited to present a project. You will have the opportunity to showcase your work. If you are interested, please submit a description. We look forward to your participation.';
 const worksheet18='Dear students, The annual Riverdale Science Fair will ⓐ[hold / be held] on July 18 with the theme “㉠________.” (A) Although we announced the fair last month, student registration is still lower than expected. (B) You are ⓑ[inviting / invited] to present a project. (C) You will have the opportunity ⓒ[showcase / to showcase] your work. (D) If you are interested, please submit a description. (E) We look forward to your participation.';
@@ -128,6 +141,8 @@ const implication={skill:'implication',passageText:'Canonical prose without a la
 assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:implication}),/\(A\)encourage more of you to take part/,'Implication question loses its explicit underlined expression');
 const orderQuestion={skill:'order',prompt:'다음 글에 이어질 순서로 알맞은 것은?',choices:['(A)-(C)-(B)','(B)-(A)-(C)'],passageText:'Canonical prose.',variantText:'Opening. (A) First block. (B) Second block. (C) Third block.',source:{passageNo:18,section:'3',questionNo:255}};
 assert.match(runInNewContext(`${passageFunctions}; currentQuestionPassage(question)`,{question:orderQuestion}),/\(A\)[\s\S]*\(B\)[\s\S]*\(C\)/,'Order question loses its explicit A/B/C blocks');
+const authoredVariant={variantMode:'authored_variant',skill:'content',passageText:'Original canonical prose.',variantText:'The author deliberately paraphrased the original idea with different wording.',source:sharedSource};
+assert.equal(runInNewContext(`${passageFunctions}; questionBasePassage(question)`,{question:authoredVariant}),authoredVariant.variantText,'An authored variant is incorrectly repaired back into canonical prose');
 const leeCanonical='Her dream was to attend Harvard Medical School, but at that time, the school did not accept women. She had no choice but to get married. It was not until she was in her fifties that Lee was able to start a career in medicine. He wanted to change the investigation system. She decided to devote the rest of her life to developing this field.';
 const leeSet='Her dream was to attend Harvard Medical School, but at that time, the school did not accept women. ⓐ그녀는 결혼할 수밖에 없었다. It was not until she was in her fifties that Lee was able to start a career in medicine. He wanted to change the (A)____________ system. She decided to devote the rest of her life to (B)____________ this field.';
 const leeBlank={skill:'blank',prompt:'윗글의 빈칸 (A), (B)에 들어갈 말은?',choices:['inquiry weakening','investigation developing'],passageText:leeCanonical,setText:leeSet,variantText:leeSet};

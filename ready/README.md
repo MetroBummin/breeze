@@ -35,6 +35,14 @@ Review를 책임집니다.
 기존 renderer 재사용을 먼저 검토하고, Question에 맞추기 위해 canonical Passage를 수정하지
 않습니다. 새 패턴이나 contract 변경은 구현과 같은 commit에서 두 문서에 기록합니다.
 
+## Workbook 작업 필수 절차
+
+**Any READY workbook-related task must read `ready/WORKBOOK_TYPES.md` first.**
+
+워크북은 PDF 링크가 아니라 학생이 입력하고 즉시 채점받으며 진행률이 저장되는 별도 학습
+runtime입니다. PDF는 원본과 정답의 근거로만 사용합니다. 현재 첫 구현 범위는 NE능률(민병천)
+공통영어2 1과의 2·3단계 82문항이며, 한 문항씩 독립적으로 저장·채점합니다.
+
 ## 데이터 계약
 
 - 구조화된 `sentenceRows` 항목 하나는 `PassageSentence` 한 개입니다.

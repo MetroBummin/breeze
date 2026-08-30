@@ -103,6 +103,11 @@
 
 - 변형 없음: canonical sentence를 이어 붙인 `passageText`를 서버가 제공한다.
 - 단순 전체 변형: `payload.variant_text`.
+- 출제자가 문장 내용이나 표현을 의도적으로 바꾼 변형 지문: `payload.variant_text`와
+  `payload.variant_mode: "authored_variant"`를 함께 둔다. 이 모드에서는 READY가
+  canonical Passage와 다르다는 이유로 문장을 복원하거나 교체하지 않는다.
+- 원문을 유지하고 현재 문제의 빈칸·기호·밑줄만 올리는 기본값은
+  `payload.variant_mode: "canonical_overlay"`다. 필드를 생략해도 이 기본값으로 본다.
 - 빈칸/밑줄/표지: `payload.variant_segments`.
 - 순서/안내문/도표: `payload.content_blocks`.
 - 허용 block kind: `heading`, `paragraph`, `given`, `group`, `bullet`, `note`, `image`.
@@ -113,7 +118,7 @@ Question public contract:
 ```text
 id, type, family, skill, prompt, choices, multiSelect,
 responseType, responseSlots,
-passageText, variantText, variantSegments, contentBlocks,
+passageText, variantText, variantMode, variantSegments, contentBlocks,
 stimulus, summaryText, source
 ```
 

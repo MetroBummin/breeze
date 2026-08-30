@@ -4,6 +4,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearerToken, randomSessionToken, secureEqual, sha256Hex, validPin } from "./auth-core.mjs";
 import { lemma, tokenizeSentence } from "./lexical-core.mjs";
+import { NE_MINBYEONGCHEON_L1_WORKBOOK } from "./workbook-ne-l1.mjs";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -17,7 +18,7 @@ function supabaseAdminKey() {
 }
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", supabaseAdminKey(), { auth: { persistSession: false } });
 const adminOps = new Set(["teacher_bootstrap", "delete_impact", "assign_scope_passages", "set_scope_passages", "create_passage", "update_passage", "delete_passage", "create_student", "set_student_pin", "delete_student", "import_questions", "import_explanations"]);
-const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt"]);
+const studentOps = new Set(["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt", "student_workbook", "submit_workbook_attempt"]);
 const publicOps = new Set(["list_students", "student_login", "admin_login"]);
 // Match Breeze's free Gemini dictionary defaults. The API key remains a
 // Supabase Edge Function Secret and is never part of any public response.
@@ -540,7 +541,9 @@ function publicQuestion(row: any, passageText = "") {
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
     prompt: clean(payload.prompt, 1_000), choices, choiceParts, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots, writingGuide,
-    passageText: cleanQuestionText(passageText), setText: cleanQuestionText(payload.set_text) || null, variantText: cleanQuestionText(payload.variant_text) || null, variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
+    passageText: cleanQuestionText(passageText), setText: cleanQuestionText(payload.set_text) || null, variantText: cleanQuestionText(payload.variant_text) || null,
+    variantMode: payload.variant_mode === "authored_variant" ? "authored_variant" : "canonical_overlay",
+    variantSegments: publicSegments(payload.variant_segments), contentBlocks: publicBlocks(payload.content_blocks),
     stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20), setId: clean(payload.source.set_id, 120) || null } : null,
   };
 }
@@ -625,6 +628,51 @@ async function submitAttempt(body: any, session: ReadySession) {
   const explanation = clean(question.payload?.explanation, 4_000);
   return { attempt, correct, answer: correct ? null : answer, explanation };
 }
+
+function workbookForPassage(passage: any) {
+  const identity = [passage?.title, passage?.source_label].map(value => clean(value, 300)).join(" ");
+  return /(?:민병천|NE\s*능률)/i.test(identity) && /(?:Lesson|레슨|제)\s*1|1\s*과/i.test(identity)
+    ? NE_MINBYEONGCHEON_L1_WORKBOOK
+    : null;
+}
+function workbookItem(catalog: any, itemKey: string) {
+  return catalog?.stages?.flatMap((stage: any) => stage.items || []).find((item: any) => item.key === itemKey) || null;
+}
+function normalizeWorkbookAnswer(value: unknown) {
+  return clean(value, 1_000).normalize("NFKC").toLowerCase()
+    .replace(/[“”‘’'".,!?;:()[\]{}]/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+async function studentWorkbook(body: any, session: ReadySession) {
+  const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), passageId = required(body.passageId, "지문", 80);
+  const passage = await studentPassageAccess(examId, passageId, student), catalog = workbookForPassage(passage);
+  if (!catalog) throw new ApiError(404, "이 지문에는 아직 READY 워크북이 없습니다.");
+  const attempts = rows<any[]>(await db.from("ready_workbook_attempts").select("item_key,correct,created_at").eq("student_id", student.id).eq("exam_id", examId).eq("passage_id", passageId).eq("workbook_key", catalog.workbookKey).order("created_at", { ascending: false }));
+  const latest = new Map<string, boolean>();
+  for (const attempt of attempts) if (!latest.has(attempt.item_key)) latest.set(attempt.item_key, attempt.correct === true);
+  const stages = catalog.stages.map((stage: any) => ({
+    stage: stage.stage, title: stage.title, instruction: stage.instruction,
+    total: stage.items.length,
+    attempted: stage.items.filter((item: any) => latest.has(item.key)).length,
+    completed: stage.items.filter((item: any) => latest.get(item.key) === true).length,
+    items: stage.items.map((item: any) => ({ key: item.key, stage: item.stage, number: item.number, source: item.source, prompt: item.prompt, slotCount: item.answers.length, completed: latest.get(item.key) === true })),
+  }));
+  return { workbookKey: catalog.workbookKey, title: catalog.title, passage: { id: passage.id, title: passage.title }, stages };
+}
+async function submitWorkbookAttempt(body: any, session: ReadySession) {
+  const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), passageId = required(body.passageId, "지문", 80), itemKey = required(body.itemKey, "워크북 문제", 120);
+  const passage = await studentPassageAccess(examId, passageId, student), catalog = workbookForPassage(passage), item = workbookItem(catalog, itemKey);
+  if (!catalog || !item) throw new ApiError(404, "현재 풀 수 없는 워크북 문제입니다.");
+  const responses = cleanList(body.responses, 12, 1_000);
+  if (responses.length !== item.answers.length) throw new ApiError(400, "모든 빈칸을 입력해 주세요.");
+  const slotResults = responses.map((response, index) => normalizeWorkbookAnswer(response) === normalizeWorkbookAnswer(item.answers[index]));
+  const correct = slotResults.every(Boolean);
+  const inserted = rows<any>(await db.from("ready_workbook_attempts").insert({
+    student_id: student.id, exam_id: examId, passage_id: passageId, workbook_key: catalog.workbookKey,
+    item_key: item.key, stage: item.stage, response: { responses }, correct,
+  }).select("id,correct,created_at").single());
+  return { attempt: inserted, correct, answers: item.answers, slotResults };
+}
 function normalizedWord(value: unknown) { return clean(value, 100).toLowerCase().replace(/[^a-z']/g, "").replace(/^'+|'+$/g, ""); }
 async function studyContext(body: any, session: ReadySession, sentenceRequired = false) { const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), passageId = required(body.passageId, "지문", 80), passage = await studentPassageAccess(examId, passageId, student), sentenceId = clean(body.sentenceId, 80); let sentence:any = null; if (sentenceRequired || sentenceId) { sentence = rows<any>(await db.from("ready_passage_sentences").select("id,text,translation").eq("id", required(sentenceId, "문장", 80)).eq("passage_id", passage.id).single()); } return { student, examId, passage, sentence }; }
 async function wordLookup(body: any, session: ReadySession) {
@@ -677,7 +725,7 @@ async function dispatch(op: string, body: any, session: ReadySession | null) {
     case "list_students": return listStudents(); case "student_login": return studentLogin(body); case "admin_login": return adminLogin(body); case "logout": return revokeSession(session as ReadySession);
     case "teacher_bootstrap": return teacherBootstrap(); case "delete_impact": return deleteImpact(body); case "create_student": return createStudent(body); case "set_student_pin": return setStudentPin(body); case "delete_student": return deleteStudent(body);
     case "assign_scope_passages": return setScopePassages(body, false); case "set_scope_passages": return setScopePassages(body, true); case "create_passage": return createPassage(body); case "update_passage": return updatePassage(body); case "delete_passage": return deletePassage(body); case "import_questions": return importQuestions(body); case "import_explanations": return importExplanations(body);
-    case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_passage": return studentPassage(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "student_review_questions": return studentReviewQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession);
+    case "student_bootstrap": return studentBootstrap(session as ReadySession); case "student_passage": return studentPassage(body, session as ReadySession); case "student_questions": return studentQuestions(body, session as ReadySession); case "student_review_questions": return studentReviewQuestions(body, session as ReadySession); case "submit_attempt": return submitAttempt(body, session as ReadySession); case "student_workbook": return studentWorkbook(body, session as ReadySession); case "submit_workbook_attempt": return submitWorkbookAttempt(body, session as ReadySession);
     default: throw new ApiError(404, "알 수 없는 READY 작업입니다.");
   }
 }
