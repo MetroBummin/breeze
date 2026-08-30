@@ -5,6 +5,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { bearerToken, randomSessionToken, secureEqual, sha256Hex, validPin } from "./auth-core.mjs";
 import { lemma, tokenizeSentence } from "./lexical-core.mjs";
 import { NE_MINBYEONGCHEON_L1_WORKBOOK } from "./workbook-ne-l1.mjs";
+import { validateQuestionSpec } from "./question-spec.mjs";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -224,6 +225,12 @@ async function deletePassage(body: any) {
 }
 async function importQuestions(body: any) {
   if (!Array.isArray(body.questions)) throw new ApiError(400, "검증된 Question 배열이 필요합니다.");
+  for (const [index, question] of body.questions.entries()) {
+    const validation = validateQuestionSpec(question?.payload || {}, clean(question?.type, 40), clean(question?.status, 20) || "draft");
+    if (validation.errors.length) throw new ApiError(400, `${index + 1}번 문제의 출제 명세가 불완전합니다: ${validation.errors.join(", ")}`);
+    if (validation.spec.importStatus === "ready" && question?.status !== "available") throw new ApiError(400, `${index + 1}번 문제는 ready이므로 available 상태여야 합니다.`);
+    if (validation.spec.importStatus !== "ready" && question?.status === "available") throw new ApiError(400, `${index + 1}번 문제는 검수 전이므로 공개할 수 없습니다.`);
+  }
   const result = await db.rpc("ready_import_question_bundle", { p_questions: body.questions });
   if (result.error) throw new ApiError(400, result.error.message);
   const relink = await db.rpc("ready_relink_ne_minbyeongcheon_lessons");
@@ -283,7 +290,7 @@ async function scopePassages(examId: string, studentId: string) {
   const linkedIds = links.map(item => item.passage_id);
   const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", linkedIds)) : [];
   const sentenceRows = linkedIds.length ? rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", linkedIds).order("sentence_index")) : [];
-  const availableQuestions = linkedIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,payload").in("passage_id", linkedIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available")) : [];
+  const availableQuestions = linkedIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,status,payload").in("passage_id", linkedIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available")) : [];
   const attempted = await attemptedQuestionIds(studentId, examId);
   const questionCounts = new Map<string, number>();
   const byId = new Map(sourcePassages.map(item => [item.id, item]));
@@ -291,7 +298,7 @@ async function scopePassages(examId: string, studentId: string) {
   const normalizedQuestions = linkedIds.flatMap(passageId => normalizeMainTextQuestionRows(availableQuestions.filter(question => question.passage_id === passageId), byId.get(passageId), passageText.get(passageId) || ""));
   normalizedQuestions.forEach(question => {
     const passage = byId.get(question.passage_id);
-    if (!attempted.has(question.id) && isMainTextQuestion(question, passage, passageText.get(question.passage_id) || "")) questionCounts.set(question.passage_id, (questionCounts.get(question.passage_id) || 0) + 1);
+    if (!attempted.has(question.id) && isReadyQuestion(question) && isMainTextQuestion(question, passage, passageText.get(question.passage_id) || "")) questionCounts.set(question.passage_id, (questionCounts.get(question.passage_id) || 0) + 1);
   });
   const passages = links.map(link => ({ ...byId.get(link.passage_id), position: link.position, question_count: questionCounts.get(link.passage_id) || 0 })).filter(item => item.id);
   return passages;
@@ -514,6 +521,7 @@ function inferredChoiceParts(payload: any, choices: string[]) {
 }
 function publicQuestion(row: any, passageText = "") {
   const payload = row.payload || {}, type = clean(row.type, 40), sourceQuestionNo = Number(payload.source?.source_question_no) || null;
+  const specValidation = validateQuestionSpec(payload, type, row.status || "available"), renderSpec = specValidation.spec;
   // Legacy repairs belong to one named workbook. A bare source question number
   // is not a global identity: every new PDF also has a question 1, 2, 3, ...
   const legacyWorkbook = /2026\s*[-년]?\s*0?6|부산/.test(clean(payload.source?.exam, 160));
@@ -540,6 +548,7 @@ function publicQuestion(row: any, passageText = "") {
   const summaryText = clean(payload.summary_text, 10_000) || (legacyWorkbook && sourceQuestionNo ? SUMMARY_REPAIRS[sourceQuestionNo] || "" : "");
   return {
     id: row.id, type, family: clean(payload.family, 40) || (type === "written_response" ? "written" : "standard"), skill,
+    taxonomy: renderSpec.taxonomy, renderer: renderSpec.renderer, renderSpec, importStatus: renderSpec.importStatus,
     prompt: clean(payload.prompt, 1_000), choices, choiceParts, multiSelect: payload.multi_select === true, responseType: type === "written_response" ? "written" : "choice", responseSlots, writingGuide,
     passageText: cleanQuestionText(passageText), setText: cleanQuestionText(payload.set_text) || null, variantText: cleanQuestionText(payload.variant_text) || null,
     variantMode: payload.variant_mode === "authored_variant" ? "authored_variant" : "canonical_overlay",
@@ -547,15 +556,16 @@ function publicQuestion(row: any, passageText = "") {
     stimulus: clean(payload.stimulus, 10_000), summaryText, interaction, inlineGroups, targetRanges, source: payload.source ? { exam: clean(payload.source.exam, 160), passageNo: Number(payload.source.passage_no) || null, questionNo: sourceQuestionNo, section: clean(payload.source.section, 20), setId: clean(payload.source.set_id, 120) || null } : null,
   };
 }
+function isReadyQuestion(row: any) { return validateQuestionSpec(row?.payload || {}, clean(row?.type, 40), row?.status || "available").ready; }
 async function studentQuestions(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80);
   const study = await studentPassage(body, session), passageId = study.passage.id;
-  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,type,payload,created_at").eq("passage_id", passageId).in("type", ["multiple_choice", "written_response"]).eq("status", "available").order("created_at"));
+  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,type,payload,status,created_at").eq("passage_id", passageId).in("type", ["multiple_choice", "written_response"]).eq("status", "available").order("created_at"));
   questionRows.sort((a, b) => (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
   const passageText = study.sentences.map((sentence: any) => sentence.text).join(" ");
   const attempted = await attemptedQuestionIds(student.id, examId);
   const normalizedQuestions = normalizeMainTextQuestionRows(questionRows, study.passage, passageText);
-  return { ...study, questions: normalizedQuestions.filter(row => !attempted.has(row.id) && isMainTextQuestion(row, study.passage, passageText)).map(row => publicQuestion(row, passageText)) };
+  return { ...study, questions: normalizedQuestions.filter(row => !attempted.has(row.id) && isReadyQuestion(row) && isMainTextQuestion(row, study.passage, passageText)).map(row => publicQuestion(row, passageText)) };
 }
 async function unresolvedQuestionIds(studentId: string, examId: string) {
   const attempts = rows<any[]>(await db.from("ready_attempts").select("question_id,correct,created_at").eq("student_id", studentId).eq("exam_id", examId).order("created_at", { ascending: false }));
@@ -582,10 +592,10 @@ async function studentReviewQuestions(body: any, session: ReadySession) {
   await studentExamAccess(examId, student);
   const questionIds = await eligibleUnresolvedQuestionIds(student.id, examId);
   if (!questionIds.length) return { items: [] };
-  const unresolvedRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,created_at").in("id", questionIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
+  const unresolvedRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,status,created_at").in("id", questionIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
   if (!unresolvedRows.length) return { items: [] };
   const passageIds = [...new Set(unresolvedRows.map(question => question.passage_id))];
-  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,created_at").in("passage_id", passageIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
+  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,status,created_at").in("passage_id", passageIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
   const sentenceRows = rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index"));
   const passageRows = rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", passageIds));
   const passages = new Map(passageRows.map(passage => [passage.id, passage]));
@@ -594,12 +604,13 @@ async function studentReviewQuestions(body: any, session: ReadySession) {
   const unresolved = new Set(questionIds);
   const normalizedQuestions = passageIds.flatMap(passageId => normalizeMainTextQuestionRows(questionRows.filter(row => row.passage_id === passageId), passages.get(passageId), passageText.get(passageId) || ""));
   normalizedQuestions.sort((a, b) => (Number(a.payload?.source?.passage_no) || 0) - (Number(b.payload?.source?.passage_no) || 0) || (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
-  return { items: normalizedQuestions.filter(row => unresolved.has(row.id) && isMainTextQuestion(row, passages.get(row.passage_id), passageText.get(row.passage_id) || "")).map(row => ({ question: publicQuestion(row, passageText.get(row.passage_id) || "") })) };
+  return { items: normalizedQuestions.filter(row => unresolved.has(row.id) && isReadyQuestion(row) && isMainTextQuestion(row, passages.get(row.passage_id), passageText.get(row.passage_id) || "")).map(row => ({ question: publicQuestion(row, passageText.get(row.passage_id) || "") })) };
 }
 async function submitAttempt(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), questionId = required(body.questionId, "문제", 80);
   const question = rows<any>(await db.from("ready_questions").select("id,passage_id,type,payload,status").eq("id", questionId).in("type", ["multiple_choice", "written_response"]).eq("status", "available").maybeSingle());
   if (!question) throw new ApiError(404, "현재 풀 수 없는 문제입니다.");
+  if (!isReadyQuestion(question)) throw new ApiError(409, "검수가 끝나지 않은 문제입니다.");
   await studentPassageAccess(examId, question.passage_id, student);
   const spec = publicQuestion(question); let response: any, answer: any, correct = false;
   if (question.type === "multiple_choice") {
@@ -652,10 +663,18 @@ async function studentWorkbook(body: any, session: ReadySession) {
   for (const attempt of attempts) if (!latest.has(attempt.item_key)) latest.set(attempt.item_key, attempt.correct === true);
   const stages = catalog.stages.map((stage: any) => ({
     stage: stage.stage, title: stage.title, instruction: stage.instruction,
+    locked: stage.stage === 2, lockReason: stage.stage === 2 ? "AI 채점 준비 중" : "",
     total: stage.items.length,
     attempted: stage.items.filter((item: any) => latest.has(item.key)).length,
     completed: stage.items.filter((item: any) => latest.get(item.key) === true).length,
-    items: stage.items.map((item: any) => ({ key: item.key, stage: item.stage, number: item.number, source: item.source, prompt: item.prompt, slotCount: item.answers.length, completed: latest.get(item.key) === true })),
+    items: stage.items.map((item: any) => ({
+      key: item.key, stage: item.stage, number: item.number, kind: item.kind || "blank_input",
+      source: item.source, prompt: item.prompt, slotCount: item.answers.length,
+      hints: Array.isArray(item.hints) ? item.hints : [],
+      groups: Array.isArray(item.groups) ? item.groups : [],
+      pairCount: Number(item.pairCount) || 0, subtype: clean(item.subtype, 40),
+      completed: latest.get(item.key) === true,
+    })),
   }));
   return { workbookKey: catalog.workbookKey, title: catalog.title, passage: { id: passage.id, title: passage.title }, stages };
 }
@@ -663,6 +682,7 @@ async function submitWorkbookAttempt(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80), passageId = required(body.passageId, "지문", 80), itemKey = required(body.itemKey, "워크북 문제", 120);
   const passage = await studentPassageAccess(examId, passageId, student), catalog = workbookForPassage(passage), item = workbookItem(catalog, itemKey);
   if (!catalog || !item) throw new ApiError(404, "현재 풀 수 없는 워크북 문제입니다.");
+  if (item.stage === 2) throw new ApiError(409, "2단계는 채점 준비 중입니다.");
   const responses = cleanList(body.responses, 12, 1_000);
   if (responses.length !== item.answers.length) throw new ApiError(400, "모든 빈칸을 입력해 주세요.");
   const slotResults = responses.map((response, index) => normalizeWorkbookAnswer(response) === normalizeWorkbookAnswer(item.answers[index]));

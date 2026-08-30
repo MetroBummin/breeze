@@ -208,6 +208,39 @@ def skill_for(prompt: str, written: bool) -> str:
     return next((skill for token, skill in rules if token in prompt), "comprehension")
 
 
+def taxonomy_for(prompt: str, written: bool, multi: bool = False) -> str:
+    skill = skill_for(prompt, written)
+    if written:
+        if "배열" in prompt: return "arrangement"
+        if "고쳐" in prompt: return "correction"
+        if "해석" in prompt: return "translation"
+        if "요약" in prompt: return "summary_completion"
+        return "guided_writing"
+    if skill == "grammar": return "grammar_multi_error" if multi else "grammar_single_error"
+    if skill == "vocabulary": return "vocabulary_context"
+    if skill == "summary": return "summary_two_blank"
+    if skill == "blank": return "blank_phrase"
+    if skill == "insertion": return "sentence_insertion"
+    if skill == "irrelevant": return "irrelevant_sentence"
+    if skill == "order": return "paragraph_order"
+    if skill in ("topic", "title"): return skill
+    if "답할 수 없는" in prompt: return "unanswerable"
+    if "일치하지" in prompt: return "content_false"
+    return "content_true"
+
+
+def attach_spec(payload: dict, question_type: str) -> None:
+    written = question_type == "written_response"
+    family = payload["family"]
+    renderer = "written_input" if written else {"standard": "standard_mcq", "annotated": "annotated_passage_mcq", "structural": "structural", "summary": "summary"}.get(family, "standard_mcq")
+    source = "canonical" if renderer in ("standard_mcq", "summary") else "blocks" if payload.get("content_blocks") else "segments" if payload.get("variant_segments") else "authored_variant" if payload.get("set_text") or payload.get("variant_text") else "canonical"
+    multi = payload.get("multi_select") is True
+    payload["taxonomy"] = taxonomy_for(payload["prompt"], written, multi)
+    payload["import_status"] = "ready"
+    extras = [name for name, present in (("stimulus", payload.get("stimulus")), ("summary", payload.get("summary_text"))) if present]
+    payload["spec"] = {"renderer": renderer, "passage": {"source": source, "annotations": payload.get("target_ranges", [])}, "extras": extras, "choiceMode": "none" if written else "multi" if multi else "single", "responseMode": "input" if written else "choice", "gradingMode": "accepted_variants" if written else "exact_set" if multi else "exact"}
+
+
 def inline_groups(text: str) -> list[dict]:
     return [{"label": match.group(1), "options": [compact(value) for value in match.group(2).split("/")]} for match in re.finditer(r"(ⓐ|ⓑ|ⓒ|ⓓ|ⓔ|ⓕ|\([A-H]\))\s*\[([^\]]+)\]", text)]
 
@@ -363,6 +396,7 @@ def extract_exam(path: Path, exam_index: int, written_answers: dict[str, list]) 
             if targets:
                 payload["target_ranges"] = targets
             question_type = "multiple_choice"
+        attach_spec(payload, question_type)
         questions.append({"passage_key": f"ne-minbyeongcheon-l{lesson}", "type": question_type, "status": "available", "payload": payload})
         if next_context:
             current_context = clean_noise(next_context)

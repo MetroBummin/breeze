@@ -4,6 +4,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { bearerToken, randomSessionToken, secureEqual, sha256Hex, validPin } from '../server/ready/auth-core.mjs';
+import { READY_RENDERERS, READY_TAXONOMY, validateQuestionSpec } from '../server/ready/question-spec.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const read=path=>readFileSync(resolve(root,path),'utf8');
@@ -16,6 +17,13 @@ assert.match(token,/^[A-Za-z0-9_-]{43}$/);
 assert.equal(bearerToken(`Bearer ${token}`),token);
 assert.equal((await sha256Hex(token)).length,64);
 assert.equal(secureEqual('same-secret','same-secret'),true);
+assert.deepEqual(READY_RENDERERS,['standard_mcq','annotated_passage_mcq','structural','summary','written_input']);
+assert.ok(READY_TAXONOMY.includes('grammar_multi_error')&&READY_TAXONOMY.includes('summary_two_blank')&&READY_TAXONOMY.includes('guided_writing'));
+const explicitSpec=validateQuestionSpec({taxonomy:'grammar_multi_error',import_status:'ready',spec:{renderer:'annotated_passage_mcq',passage:{source:'canonical',annotations:[{kind:'target',label:'ⓐ',text:'to reach'}]},choiceMode:'multi',responseMode:'choice',gradingMode:'exact_set'}},'multiple_choice','available');
+assert.equal(explicitSpec.ready,true);
+assert.equal(explicitSpec.spec.legacyAdapter,false);
+assert.deepEqual(validateQuestionSpec({taxonomy:'sentence_insertion',import_status:'ready',stimulus:'Given.',spec:{renderer:'structural',passage:{source:'canonical'},extras:['stimulus'],choiceMode:'single',responseMode:'choice',gradingMode:'exact'}},'multiple_choice','available').spec.extras,['stimulus']);
+assert.equal(validateQuestionSpec({taxonomy:'grammar_multi_error',import_status:'ready',spec:{renderer:'mystery'}},'multiple_choice','available').ready,false);
 
 const baseline=read('supabase/migrations/20260826150000_ready_current_baseline.sql');
 const questionMigration=read('supabase/migrations/20260828150000_ready_question_first.sql');
@@ -42,6 +50,8 @@ assert.match(neRelinkMigration,/ready_exam_passages[\s\S]*surviving_passage_id[\
 assert.match(edge,/studentOps = new Set\(\["student_bootstrap", "student_passage", "student_questions", "student_review_questions", "submit_attempt", "student_workbook", "submit_workbook_attempt"\]\)/,'Student runtime exposes operations outside the Question and Workbook paths');
 assert.doesNotMatch(edge.match(/async function dispatch[\s\S]*?\n\}/)?.[0]||'',/word_lookup|save_word|save_sentence|personal_library/,'Dormant lexical operations remain dispatched');
 assert.match(edge,/function publicQuestion[\s\S]*responseSlots[\s\S]*variantSegments[\s\S]*contentBlocks/,'Structured public Question contract is incomplete');
+assert.match(edge,/validateQuestionSpec[\s\S]*renderSpec[\s\S]*importStatus/,'Public Question does not expose its explicit render specification');
+assert.match(edge,/isReadyQuestion[\s\S]*검수가 끝나지 않은 문제/,'Incomplete imports can reach students');
 assert.doesNotMatch(edge.match(/function publicQuestion[\s\S]*?\n\}/)?.[0]||'',/accepted_answers|payload\.answer/,'Public Question exposes grading data');
 assert.match(edge,/type === "multiple_choice"[\s\S]*selected\.length === answer\.length[\s\S]*selected\.every/,'MCQ grading is not deterministic set equality');
 assert.match(edge,/type === "written_response"|question\.type === "written_response"/,'Written response grading is missing');
@@ -70,6 +80,7 @@ assert.match(edge,/studentReviewQuestions[\s\S]*eligibleUnresolvedQuestionIds/,'
 assert.match(edge,/isMainTextQuestion[\s\S]*isDialogueText[\s\S]*sourceBigrams/,'Textbook questions are not positively matched to the canonical main text');
 assert.match(edge,/normalizeMainTextQuestionRows[\s\S]*Never infer its text[\s\S]*questionRows/,'Question text can still be inherited from an adjacent row');
 assert.match(edge,/attemptedQuestionIds[\s\S]*!attempted\.has/,'Solved questions are not removed from the new-question queue');
+assert.match(edge,/select\("id,passage_id,type,status,payload"\)[\s\S]*isReadyQuestion\(question\)/,'Home counts can include questions that have not passed spec review');
 assert.match(edge,/cleanQuestionText[\s\S]*물음에\\s\*답하시오/,'Worksheet directions can still leak into the passage');
 assert.match(edge,/setScopePassages[\s\S]*ready_relink_ne_minbyeongcheon_lessons[\s\S]*importQuestions[\s\S]*ready_relink_ne_minbyeongcheon_lessons/,'Scope changes and question imports do not repair textbook aliases');
 assert.match(edge,/legacyWorkbook[\s\S]*publicStoredWritingGuide[\s\S]*CHOICE_PART_REPAIRS/,'Workbook-specific repairs are not scoped by source identity');
@@ -101,14 +112,30 @@ assert.match(edge,/inferredChoiceParts[\s\S]*row\.length === labels\.length/,'Un
 assert.match(app,/hasWorkbook[\s\S]*data-start-workbook/,'The interactive Lesson 1 Workbook is not reachable beside its Passage');
 assert.doesNotMatch(app,/data-open-workbook|window\.open\([^)]*workbook/i,'Workbook still opens a passive PDF instead of an exercise');
 assert.match(app,/student_workbook[\s\S]*submit_workbook_attempt[\s\S]*data-workbook-retry/,'Workbook input, grading, or retry flow is incomplete');
-assert.match(app,/slotResults[\s\S]*틀린 칸 다시 풀기[\s\S]*event\.key!==['"]Enter['"]/,'Workbook does not identify the exact correction or support keyboard progression');
+assert.match(app,/stage\.locked[\s\S]*준비 중[\s\S]*disabled/,'Workbook Stage 2 is not visibly locked');
+assert.match(edge,/stage\.stage === 2[\s\S]*AI 채점 준비 중[\s\S]*item\.stage === 2/,'Workbook Stage 2 is not protected by the server');
+assert.match(app,/workbookTaskHtml[\s\S]*choice_groups[\s\S]*correction_pairs[\s\S]*reorder_groups/,'Workbook exercise specs do not select the four deterministic UI primitives');
+assert.match(app,/data-workbook-choice-group/,'Workbook inline choice interaction is missing');
+assert.match(app,/data-workbook-order-remove[\s\S]*data-workbook-order-add/,'Workbook reorder interaction is missing');
+assert.match(edge,/kind: item\.kind[\s\S]*hints:[\s\S]*groups:[\s\S]*pairCount:/,'Workbook public specs omit renderer fields');
+assert.match(app,/explicitPassageHtml[\s\S]*renderSpec\.legacyAdapter[\s\S]*questionPassageHtml/,'Explicit Question specs do not drive whitelist rendering');
+assert.match(app,/slotResults[\s\S]*틀린 부분 다시 풀기[\s\S]*event\.key!==['"]Enter['"]/,'Workbook does not identify the exact correction or support keyboard progression');
 assert.match(edge,/slotResults = responses\.map[\s\S]*slotResults\.every\(Boolean\)[\s\S]*slotResults/,'Workbook grading does not report correctness per blank');
 assert.match(workbookMigration,/create table if not exists public\.ready_workbook_attempts[\s\S]*ready_workbook_attempts_are_immutable[\s\S]*before update or delete/,'Workbook attempts must remain append-only');
 assert.match(workbookExtractor,/STAGE_ANSWERS[\s\S]*for number in range\(1, 42\)[\s\S]*blank_count != len\(answers\)/,'Workbook extraction is not deterministically bounded');
-assert.equal(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.length,2,'Workbook milestone must contain two implemented stages');
-assert.equal(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.flatMap(stage=>stage.items).length,82,'Workbook milestone must contain all 82 Stage 2/3 items');
-assert.equal(new Set(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.flatMap(stage=>stage.items.map(item=>item.key))).size,82,'Workbook item identities are not unique');
-for(const stage of NE_MINBYEONGCHEON_L1_WORKBOOK.stages)for(const item of stage.items)assert.equal((item.prompt.match(/_{5,}/g)||[]).length,item.answers.length,`${item.key} prompt/answer mismatch`);
+assert.equal(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.length,6,'Workbook must contain Stages 2, 3, 5, 6, 7, and 8');
+const workbookItems=NE_MINBYEONGCHEON_L1_WORKBOOK.stages.flatMap(stage=>stage.items);
+assert.equal(workbookItems.length,213,'Workbook must contain all deterministic Stage 2/3/5/6/7/8 items');
+assert.equal(new Set(workbookItems.map(item=>item.key)).size,213,'Workbook item identities are not unique');
+assert.deepEqual(Object.fromEntries(NE_MINBYEONGCHEON_L1_WORKBOOK.stages.map(stage=>[stage.stage,stage.items.length])),{2:41,3:41,5:41,6:41,7:8,8:41},'Workbook stage counts drifted from the PDF');
+for(const item of workbookItems){
+  assert.ok(['blank_input','verb_form','choice_groups','correction_pairs','reorder_groups'].includes(item.kind),`${item.key} has no supported exercise kind`);
+  if(['blank_input','verb_form'].includes(item.kind))assert.equal((item.prompt.match(/_{5,}/g)||[]).length,item.answers.length,`${item.key} prompt/answer mismatch`);
+  if(item.kind==='verb_form')assert.equal(item.hints.length,item.answers.length,`${item.key} hint/answer mismatch`);
+  if(item.kind==='choice_groups'){assert.equal(item.groups.length,item.answers.length,`${item.key} choice/answer mismatch`);assert.equal((item.prompt.match(/⟦CHOICE:\d+⟧/g)||[]).length,item.answers.length,`${item.key} choice markers mismatch`);}
+  if(item.kind==='correction_pairs')assert.equal(item.pairCount*2,item.answers.length,`${item.key} correction pair mismatch`);
+  if(item.kind==='reorder_groups'){assert.equal(item.groups.length,item.answers.length,`${item.key} reorder/answer mismatch`);assert.equal((item.prompt.match(/⟦ORDER:\d+⟧/g)||[]).length,item.answers.length,`${item.key} reorder markers mismatch`);}
+}
 assert.match(app,/inactiveVariantText[\s\S]*question\.interaction!==['"]inline_options['"][\s\S]*canonicalHasOption/,'Inactive annotations are not cleaned from standalone questions');
 
 const passageFunctionNames=['cleanDisplayText','referencedLabels','canonicalHasOption','canonicalOption','resolvedSetPassageText','labelNeedleIndex','replaceNeedle','maskBlank','worksheetPassageText','activeQuestionLabels','englishWordSpans','matchingTokenSequence','canonicalGap','restoreInactiveQuestionDevices','cleanQuestionApparatus','questionAnchorTexts','canonicalQuestionWindow','questionBasePassage','applyAlternativeOverlay','applyTargetOverlay','structuralMarkerPositions','applyStructuralOverlay','currentQuestionPassage'];

@@ -198,6 +198,31 @@ def skill_for(prompt: str) -> str:
     return "comprehension"
 
 
+def taxonomy_for(prompt: str, multi: bool) -> str:
+    skill = skill_for(prompt)
+    if skill == "grammar": return "grammar_multi_error" if multi else "grammar_single_error"
+    if skill == "vocabulary": return "vocabulary_context"
+    if skill == "summary": return "summary_two_blank"
+    if skill == "blank": return "blank_phrase"
+    if skill == "insertion": return "sentence_insertion"
+    if skill == "irrelevant": return "irrelevant_sentence"
+    if skill == "order": return "paragraph_order"
+    if skill in ("topic", "title", "purpose", "emotion"): return skill
+    if skill == "implication": return "implication"
+    if "일치하지" in prompt: return "content_false"
+    return "content_true"
+
+
+def attach_spec(payload: dict, status: str) -> None:
+    family = payload["family"]
+    renderer = {"standard": "standard_mcq", "annotated": "annotated_passage_mcq", "structural": "structural", "summary": "summary"}.get(family, "standard_mcq")
+    source = "canonical" if renderer in ("standard_mcq", "summary") else "blocks" if payload.get("content_blocks") else "segments" if payload.get("variant_segments") else "authored_variant" if payload.get("variant_text") else "canonical"
+    payload["taxonomy"] = taxonomy_for(payload["prompt"], payload.get("multi_select") is True)
+    payload["import_status"] = "ready" if status == "available" else "needs_review"
+    extras = [name for name, present in (("stimulus", payload.get("stimulus")), ("summary", payload.get("summary_text"))) if present]
+    payload["spec"] = {"renderer": renderer, "passage": {"source": source, "annotations": payload.get("target_ranges", [])}, "extras": extras, "choiceMode": "multi" if payload.get("multi_select") else "single", "responseMode": "choice", "gradingMode": "exact_set" if payload.get("multi_select") else "exact"}
+
+
 def extract_answers(reader: PdfReader):
     text = "\n".join(reader.pages[index - 1].extract_text() or "" for index in range(111, 150))
     answers = {}
@@ -308,6 +333,7 @@ def main():
                         payload["skill"] = "summary"
                         payload["summary_text"] = TRADE_SUMMARY
                     status = "draft" if question_no == 32 else "available"
+                    attach_spec(payload, status)
                     questions.append({"passage_id": passage_map[passage_no], "type": "multiple_choice", "status": status, "payload": payload})
 
     questions.sort(key=lambda item: (item["payload"]["source"]["passage_no"], item["payload"]["position"], item["payload"]["source"]["source_question_no"]))

@@ -1,5 +1,26 @@
 # READY Question Import Workflow
 
+새 bundle은 명시적인 render spec을 반드시 포함한다. importer는 누락되거나 서로 모순되는 명세를 기본적으로 거부한다. `--allow-legacy`는 이미 검수된 과거 bundle에만 사용하고 새 PDF에는 사용하지 않는다.
+
+```json
+{
+  "status": "available",
+  "payload": {
+    "taxonomy": "grammar_multi_error",
+    "import_status": "ready",
+    "spec": {
+      "renderer": "annotated_passage_mcq",
+      "passage": { "source": "canonical", "annotations": [] },
+      "choiceMode": "multi",
+      "responseMode": "choice",
+      "gradingMode": "exact_set"
+    }
+  }
+}
+```
+
+깨끗한 본문 출처나 정확한 target을 확정할 수 없으면 `status=draft`, `import_status=needs_review`로 저장한다. 공개한 뒤 프런트엔드에서 PDF 장치를 지우는 방식은 허용하지 않는다.
+
 이 문서는 PDF를 private structured Question bundle로 바꾸고 READY에 원자적으로 반영하는 절차다. 콘텐츠 추출은 teacher-side에서 수행하며 READY 학생/Admin UI에 PDF parser나 AI pipeline을 넣지 않는다.
 
 ## Required flow

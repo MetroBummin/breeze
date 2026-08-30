@@ -1,5 +1,13 @@
 # READY Question Type Contract
 
+## Render specification
+
+데이터의 문제 유형은 세밀하게 분류하되 학생 화면은 `standard_mcq`, `annotated_passage_mcq`, `structural`, `summary`, `written_input` 다섯 renderer만 사용한다.
+
+renderer는 taxonomy 이름이나 한국어 발문을 보고 화면을 추측하지 않는다. 새 Question은 `payload.taxonomy`, `payload.import_status`, `payload.spec`으로 본문 출처, 허용 annotation/block, 응답 방식과 채점 방식을 완전히 선언한다. 명세에 없는 요소는 처음부터 렌더하지 않는다.
+
+`import_status`는 `ready`, `needs_review`, `unsupported` 중 하나다. 검증된 `ready`만 `status=available`로 공개하며, 애매한 추출 결과는 학생 화면의 휴리스틱으로 수리하지 않고 검수 대상으로 보낸다.
+
 이 문서와 `QUESTION_IMPORT.md`는 READY Question 작업의 source of truth다. 현재 계약은 2026년 6월 부산 고2 예상문제 원문 18~28번의 137문항을 조사한 결과만 반영한다.
 
 ## Product boundary

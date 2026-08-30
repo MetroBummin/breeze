@@ -1,12 +1,14 @@
 import { readFile } from 'node:fs/promises';
+import { validateQuestionSpec } from '../server/ready/question-spec.mjs';
 
 function usage() {
-  console.error('Usage: node tools/ready-import-questions.mjs <bundle.json> [--apply]');
+  console.error('Usage: node tools/ready-import-questions.mjs <bundle.json> [--apply] [--allow-legacy]');
   process.exit(2);
 }
 
 const file=process.argv[2];
 const apply=process.argv.includes('--apply');
+const allowLegacy=process.argv.includes('--allow-legacy');
 if(!file)usage();
 
 const questions=JSON.parse(await readFile(file,'utf8'));
@@ -24,6 +26,11 @@ for(const [index,item] of questions.entries()){
   identities.add(identity);
   if(item.type==='multiple_choice'&&(!Array.isArray(item.payload.choices)||item.payload.choices.length<2||!Array.isArray(item.payload.answer)||!item.payload.answer.length))throw new Error(`Row ${index+1}: multiple-choice contract is incomplete.`);
   if(item.type==='written_response'&&(!Array.isArray(item.payload.accepted_answers)||!item.payload.accepted_answers.length))throw new Error(`Row ${index+1}: written-response accepted_answers are required.`);
+  if(!item.payload.spec&&!allowLegacy)throw new Error(`Row ${index+1}: explicit payload.spec is required (use --allow-legacy only for old verified bundles).`);
+  const validation=validateQuestionSpec(item.payload,item.type,item.status||'draft');
+  if(validation.errors.length)throw new Error(`Row ${index+1}: invalid render spec: ${validation.errors.join(', ')}.`);
+  if(validation.spec.importStatus==='ready'&&item.status!=='available')throw new Error(`Row ${index+1}: ready questions must use status=available.`);
+  if(validation.spec.importStatus!=='ready'&&item.status==='available')throw new Error(`Row ${index+1}: review/unsupported questions cannot be published.`);
 }
 
 const counts=questions.reduce((out,item)=>{const family=item.payload.family||item.type;out[family]=(out[family]||0)+1;return out;},{});
