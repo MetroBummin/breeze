@@ -376,16 +376,13 @@ const epubOriginalSource = readFileSync(resolve(root, 'scripts/reader/epub-origi
 const epubSource = readFileSync(resolve(root, 'scripts/reader/epub-original.js'), 'utf8');
 const modesSource = readFileSync(resolve(root, 'scripts/reader/reader-modes.js'), 'utf8');
 assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily');
-/* ---- 확대는 PDF 버튼이 합니다 ----
+/* ---- 확대는 PDF 핀치가 합니다 ----
    쪽마다 주던 가로 스크롤 칸은 없습니다. 쪽은 늘 글 폭에 꽉 차고,
    문서 전체가 종이 한 장처럼 같은 축에서 움직입니다. */
 assert.doesNotMatch(pdfSource,/pdf-page-lane|pdfZoom|panRatio/,
   'The per-page zoom lane is back, so pages no longer share one horizontal axis');
-assert.match(index,/id="pdfzoom-out"[^>]*changeOriginalZoom\(-1\)/,
-  'The PDF zoom-out button is missing');
-assert.match(index,/id="pdfzoom-in"[^>]*changeOriginalZoom\(1\)/,
-  'The PDF zoom-in button is missing');
-/* 버튼으로 키운 캔버스는 다시 그려 또렷하게 남겨야 합니다. */
+assert.doesNotMatch(index,/id="(?:pdfzoom-out|pdfzoom-in|aa-pdfzoom)"/,
+  'PDF zoom buttons must be removed');
 assert.match(pdfSource,/PDF_OVERSAMPLE/,
   'PDF canvases are drawn at screen resolution again, so pinching makes them blurry');
 /* ---- 확대는 종이 안쪽 일입니다 ----
@@ -406,10 +403,6 @@ for(const [file, source] of [['scripts/ui/interactions.js', interactionsSource],
 }
 assert.match(scrollSource,/function setOriginalZoom/,
   'The reader no longer owns its zoom, so the browser scales the chrome with the paper');
-assert.match(scrollSource,/function changeOriginalZoom/,
-  'The PDF zoom buttons have no single-step zoom action');
-assert.doesNotMatch(scrollSource,/originalZoomPinch(Start|Move|End)|originalPinch/,
-  'Pinch zoom handling survived the switch to buttons');
 assert.match(scrollSource,/transform-origin|scale\(/,
   'Zoom is not a transform on the paper any more');
 /* 문서 폭이 화면보다 넓어지면 폰 브라우저는 스크롤바를 주는 대신 화면을 통째로
@@ -774,8 +767,6 @@ assert.match(pdfOriginalSource,
   /if\(!\(session\.wordBoxes\.get\(pageNumber\)\|\|\[\]\)\.length\)\{[\s\S]{0,140}await renderOriginalPdfPage\(session,pageNumber\)/,
   'The first PDF tap is discarded while its word map is still loading');
 const readerScrollSource=readFileSync(resolve(root,'scripts/reader/reader-scroll.js'),'utf8');
-assert.match(readerScrollSource,/const panelOpen=document\.getElementById\('panel'\)\?\.classList\.contains\('on'\)/,
-  'PDF zoom controls can overlap the open dictionary panel');
 /* ── 표제어는 고치지 않습니다 ──
    화면의 낱말은 원문 색칠·캐시·동기화가 모두 기대는 열쇠에서 나온 글자입니다.
    그 자리에서 글자만 갈아 끼우면 고친 이름으로는 본문이 칠해지지 않고, 캐시는
@@ -920,15 +911,6 @@ assert.match(index, /<div id="readfabs">\s*<button id="aafab"[\s\S]{0,120}<butto
   'Aa and the mode toggle are no longer two independent one-tap controls in one capsule');
 assert.doesNotMatch(readerCss.replace(/\/\*[\s\S]*?\*\//g,' '), /#readfabs\{[^}]*bottom:/,
   'A floating control is back at the bottom of the reading screen');
-/* PDF 확대 −/+ 는 예전처럼 따로 떠 있지 않습니다 — 뜨는 조각을 늘리지 않으려고
-   Aa popover 안, 다른 설정들 아래 한 줄로 들어갔습니다. 단추가 부르는 함수는
-   그대로입니다(위의 384/386번 검사). */
-assert.match(index,/id="aa-pdfzoom"[\s\S]{0,200}id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
-  'The original PDF has not got its +/- controls inside the Aa popover');
-assert.ok(index.indexOf('id="aa-pdfzoom"') > index.indexOf('id="aa-dark"'),
-  'The PDF zoom row is no longer the last row below the existing Aa settings');
-assert.doesNotMatch(index, /id="pdfzoomfabs"/,
-  'The old floating PDF zoom control was not removed');
 /* 단추에는 글자가 없습니다. 두 그림이 서로 자리를 바꿔야 어느 쪽으로 가는지 보입니다. */
 for(const glyph of ['mf-original', 'mf-text']){
   assert.match(index, new RegExp(`class="${glyph}"`), `The mode button lost its ${glyph} glyph`);

@@ -1,17 +1,16 @@
 {
-  "total": 45,
+  "total": 38,
   "files": {
-    "scripts/dictionary/dictionary.js": 10,
+    "scripts/dictionary/dictionary.js": 6,
     "scripts/importers/article.js": 5,
     "scripts/importers/importers.js": 5,
-    "scripts/importers/rss.js": 2,
+    "scripts/importers/rss.js": 1,
     "scripts/library/book-edit.js": 4,
     "scripts/library/library.js": 6,
     "scripts/reader/epub-original.js": 4,
     "scripts/reader/original-session.js": 2,
     "scripts/reader/pdf-original.js": 1,
     "scripts/reader/reader-modes.js": 2,
-    "scripts/reader/reader-scroll.js": 2,
     "scripts/reader/reader.js": 2
   }
 }

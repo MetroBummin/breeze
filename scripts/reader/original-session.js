@@ -155,6 +155,7 @@ function originalAnchorFromProgress(book){
 }
 
 async function restoreOriginalAnchor(source,changeToken){
+  if(changeToken!=null && changeToken!==readerModeChangeToken) return false;
   const format=originalFormat();
   if(!format){ readerScrollTo(0); return false; }
   const target=source || originalAnchorFromProgress(curBook);
@@ -201,7 +202,6 @@ function leaveOriginalReader(){
   (originalSession.urls||[]).forEach(url=>URL.revokeObjectURL(url));
   if(originalSession.pdf){ try{ originalSession.pdf.destroy(); }catch(e){} }
   originalSession = null;
-  if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   const content = document.getElementById('original-content');
   if(content){ content.innerHTML=''; content.className='original-content'; }
 }

@@ -109,11 +109,6 @@
     cursor:pointer; font-size:13px; color:var(--ink); font-family:var(--ui);}
   .aa-size button:hover{background:var(--sky);}
   #aa-fs{font-size:13.5px; min-width:24px; text-align:center; color:var(--ink);}
-  /* PDF 원본을 열었을 때만 켭니다 — updateOriginalZoomControls() 가 켜고 끕니다.
-     `.aa-row{display:flex}` 가 저작 스타일이라 UA 의 `[hidden]{display:none}` 을
-     덮어써서, 여기서 다시 명시해야 실제로 접힙니다. */
-  #aa-pdfzoom[hidden]{display:none;}
-  #aa-pdfzoom-pct{font-size:13.5px; min-width:34px; text-align:center; color:var(--ink);}
   .aa-size button:disabled{opacity:.35; cursor:default;}
   .aa-size button:disabled:hover{background:none;}
   .aa-toggle{width:46px; height:26px; border-radius:13px; border:none; background:var(--toggle-off); cursor:pointer;
@@ -204,11 +199,6 @@
   #modefab .mf-text{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-text{opacity:1; transform:none;}
-
-  /* PDF 확대 −/+ 는 이제 Aa popover 안, `.aa-size` 한 줄입니다 — 뜨는 조각을
-     늘리지 않으려고 따로 띄우던 자리를 없앴습니다. 버튼이 부르는
-     `changeOriginalZoom` 과 그 안의 배율·범위·저장은 그대로입니다
-     (scripts/reader/reader-scroll.js). */
 
   /* ---- 상단바는 읽는 방향을 따릅니다 (지금 읽는 화면에서는 잠자코 있습니다) ----
      내려 읽으면 걷히고, 올리거나 글머리에 닿으면 돌아옵니다. 읽는 화면에서는
@@ -330,7 +320,11 @@
   /* 확대된 종이가 차지할 자리. 크기는 자바스크립트가 적습니다 (기준 크기 × 배율).
      이 칸이 넓어지면 스크롤 칸 안에 가로로 밀 거리가 생깁니다 — 문서 폭은
      한 픽셀도 안 변하므로 폰 브라우저가 화면을 축소할 이유가 없습니다. */
+  body.reader-original #reader-scroll:has(.pdf-original){overflow-anchor:none;}
   #original-stage{position:relative;}
+  /* Preview must not change scroll extents while native touch scrolling is suspended. */
+  #original-stage.pinching{overflow:clip;}
+  #original-stage.pinching #original-zoom{will-change:transform;}
   /* 종이 자체. 레이아웃 폭은 늘 기준 폭이고 커지는 것은 `transform` 뿐입니다.
      그래서 벌려도 글이 다시 흐르지 않습니다 — PDF 캔버스가 보는 `clientWidth`
      가 그대로이기 때문입니다. */

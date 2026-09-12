@@ -19,7 +19,7 @@ const out = resolve(root, 'www');
 
 /* 브라우저가 실제로 읽는 것만. 여기 없는 것은 앱에 들어가지 않습니다. */
 const FILES = ['index.html', 'config.js'];
-const DIRS  = ['scripts', 'styles', 'assets'];
+const DIRS  = ['scripts', 'styles', 'assets', 'modules'];
 
 /* 내장 고전 3종은 앱에 함께 넣습니다. 현재 실행 경로에서 떼어 둔 옛 맛보기 글은
    저장소에 보관하되 네이티브 앱 용량에는 포함하지 않습니다. */

@@ -54,6 +54,7 @@ const PDF_KEEP_REACH = 4000;
    다음 렌더가 다시 훑으므로 영영 남지 않습니다. */
 function releaseDistantPdfPages(session,exceptPage){
   if(!session || session!==originalSession || session.kind!=='pdf') return;
+  if(originalPdfPaintPaused()) return;
   session.settled.forEach(pageNumber=>{
     if(pageNumber===exceptPage) return;
     const pageElement=session.pages[pageNumber-1];
@@ -108,7 +109,6 @@ async function openOriginalPdf(book,record,token){
     content.appendChild(page); pages.push(page);
   }
   originalSession=session;
-  if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const observer=new IntersectionObserver(entries=>{
@@ -121,6 +121,7 @@ async function openOriginalPdf(book,record,token){
 
 async function renderOriginalPdfPage(session,pageNumber,options){
   if(!session || session!==originalSession) return;
+  if(originalPdfPaintPaused()) return;
   const zoom=Math.min(PDF_MAX_RENDER_ZOOM,Math.max(1,originalZoom()));
   const drawn=session.rendering.get(pageNumber);
   if(drawn){
@@ -130,6 +131,7 @@ async function renderOriginalPdfPage(session,pageNumber,options){
     if(zoom <= (session.drawnAt.get(pageNumber)||1) * 1.25) return drawn;
   }
   const redraw=!!drawn;
+  const previousZoom=session.drawnAt.get(pageNumber)||1;
   session.drawnAt.set(pageNumber,zoom);
   /* 이 쪽에 대해 지금 유효한 일감. 도중에 이 쪽을 놓아 주면 이 표가 지워지고,
      그러면 아래의 `alive()` 가 거짓이 되어 일감이 조용히 물러납니다. */
@@ -144,6 +146,11 @@ async function renderOriginalPdfPage(session,pageNumber,options){
     const pageElement=session.pages[pageNumber-1];
     const page=await session.pdf.getPage(pageNumber);
     if(!alive()) return;
+    if(originalPdfPaintPaused()){
+      if(redraw) session.drawnAt.set(pageNumber,previousZoom);
+      else { session.rendering.delete(pageNumber); session.drawnAt.delete(pageNumber); }
+      return;
+    }
     const base=page.getViewport({scale:1});
     /* 레이아웃 폭은 벌려도 안 변합니다 — 커지는 것은 바깥의 `transform` 뿐입니다.
        그래서 이 값은 늘 같고, 벌릴 때마다 문서가 다시 흐르지 않습니다. */
@@ -162,7 +169,14 @@ async function renderOriginalPdfPage(session,pageNumber,options){
          지금 눌러 둔 낱말 표시가 함께 지워집니다 — 뜻을 보는 중에 벌리면
          보고 있던 그 낱말의 표시가 사라졌습니다. */
       await page.render({canvasContext:context,viewport,transform}).promise;
-      if(!alive()) return;
+      if(!alive()){ canvas.width=0; canvas.height=0; return; }
+      // A new pinch may have started while PDF.js was painting. Its Touch.target
+      // must stay attached until release; retry sharpening after that gesture.
+      if(originalPdfPaintPaused()){
+        canvas.width=0; canvas.height=0;
+        session.drawnAt.set(pageNumber,previousZoom);
+        return;
+      }
       const old=pageElement.querySelector('canvas');
       if(old){ old.replaceWith(canvas); old.width=0; old.height=0; }
       else pageElement.insertBefore(canvas,pageElement.firstChild);
@@ -194,7 +208,7 @@ async function renderOriginalPdfPage(session,pageNumber,options){
   /* 다 그려진 쪽만 놓아 줄 수 있습니다. 이 쪽 자신은 빼고 훑습니다 — 자리를
      되돌리기 전에 미리 그려 두는 곳이 있어서(restorePdfSentence), 방금 그린
      것을 그 자리에서 도로 놓으면 헛일이 됩니다. */
-  if(alive()) session.settled.add(pageNumber);
+  if(alive() && session.rendering.has(pageNumber)) session.settled.add(pageNumber);
   releaseDistantPdfPages(session,pageNumber);
   return job;
 }
@@ -202,13 +216,13 @@ async function renderOriginalPdfPage(session,pageNumber,options){
 /* ---- 손을 뗀 뒤 다시 또렷하게 ----
    벌리는 도중에는 안 합니다. 긴 PDF 에서 쪽마다 캔버스를 다시 그리면 손짓이
    끊깁니다. 보이는 쪽과 그 위아래 한 화면씩만 손봅니다.
-   부르는 곳은 `scripts/reader/reader-scroll.js` 의 손짓이 끝나는 자리입니다. */
+   부르는 곳은 `scripts/reader/pdf-pinch.js` 의 손짓이 끝나는 자리입니다. */
 function resharpenOriginalPages(){
+  originalPdfRenderPending = false;
   const session=originalSession;
   if(!session || session.kind!=='pdf') return;
   const reach=readerViewHeight();
   session.pages.forEach((pageElement,index)=>{
-    if(!session.rendering.has(index+1)) return;
     const rect=pageElement.getBoundingClientRect();
     if(rect.bottom < -reach || rect.top > reach*2) return;
     renderOriginalPdfPage(session,index+1,{resharpen:true});

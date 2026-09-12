@@ -52,7 +52,7 @@
   <link rel="stylesheet" href="styles/tokens.css?v=ed7b30a4">
   <link rel="stylesheet" href="styles/base.css?v=b3e4ae3e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=bbd230d1">
+  <link rel="stylesheet" href="styles/reader.css?v=09dcf38a">
   <link rel="stylesheet" href="styles/dictionary.css?v=9e60beab">
   <link rel="stylesheet" href="styles/components.css?v=275062fa">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
@@ -80,10 +80,11 @@
   <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
-  <script defer src="scripts/reader/reader-scroll.js?v=c3039932"></script>
+  <script defer src="scripts/reader/reader-scroll.js?v=ae2f1f5f"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
-  <script defer src="scripts/reader/gesture.js?v=5c3637d0"></script>
+  <script defer src="scripts/reader/gesture.js?v=bf4e6ba3"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=740fc16f"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=f63be3ea"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
@@ -93,14 +94,14 @@
   <script defer src="scripts/importers/rss.js?v=f33bf95e"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=66373926"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=9bbeb6ea"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=c50422c8"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
-  <script defer src="scripts/reader/original-session.js?v=58024bbf"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=4590f9f7"></script>
+  <script defer src="scripts/reader/original-session.js?v=4aade677"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=8497359d"></script>
   <script defer src="scripts/reader/epub-original.js?v=b19c3853"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=9f784320"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=1f628903"></script>
   <script defer src="scripts/reader/reader.js?v=8e090dd2"></script>
   <script defer src="scripts/ui/preferences.js?v=e1e7fbb1"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -537,17 +538,7 @@
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
-  <!-- PDF 원본에서만 켭니다 — updateOriginalZoomControls() 가 예전에 떠 있던
-       #pdfzoomfabs 대신 이 자리를 켜고 끕니다. 버튼이 부르는 changeOriginalZoom
-       은 그대로입니다 — 옮긴 것은 자리뿐입니다. -->
-  <div class="aa-row" id="aa-pdfzoom" hidden>
-    <span class="aa-label">PDF 확대</span>
-    <div class="aa-size">
-      <button id="pdfzoom-out" type="button" title="PDF 축소" aria-label="PDF 축소" onclick="changeOriginalZoom(-1)">−</button>
-      <span id="aa-pdfzoom-pct"></span>
-      <button id="pdfzoom-in" type="button" title="PDF 확대" aria-label="PDF 확대" onclick="changeOriginalZoom(1)">+</button>
-    </div>
-  </div>
+
 </div>
 <div id="minitoast"></div>
 <div id="toast"></div>
