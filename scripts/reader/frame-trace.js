@@ -459,3 +459,55 @@
 
   console.log('[breeze] frame trace on — breezeFrameSummary() / breezeFrameReset()');
 })();
+
+/* Opt-in viewport diagnostics: no gesture cancellation or timing heuristics.
+   ?viewport=1 enables recording; ?viewport=0 disables it. Device console:
+   breezeViewportSnapshot(), breezeTouchPolicyAt(x,y), __breezeViewport.
+   No selected text is recorded. */
+function breezeTouchPolicy(target){
+  const chain=[];
+  for(let node=target&&target.nodeType===1 ? target : target?.parentElement;
+      node && chain.length<12; node=node.parentElement){
+    const style=getComputedStyle(node);
+    chain.push({node:node.id ? '#'+node.id
+      : String(node.tagName||'').toLowerCase()+([...node.classList||[]].slice(0,2).map(name=>'.'+name).join('')),
+      touchAction:style.touchAction,position:style.position,
+      overflowX:style.overflowX,overflowY:style.overflowY});
+    if(node.id==='reader-scroll') break;
+  }
+  return chain;
+}
+window.breezeTouchPolicyAt = function(x,y){
+  return breezeTouchPolicy(document.elementFromPoint(x,y));
+};
+window.breezeViewportSnapshot = function(target){
+  const viewport=window.visualViewport;
+  return {at:Date.now(),scale:viewport ? viewport.scale : null,
+    width:viewport ? viewport.width : null,innerWidth:window.innerWidth,
+    view:document.querySelector('.view.on')?.id || null,
+    mode:typeof currentReaderMode==='undefined' ? null : currentReaderMode,
+    originalZoomLevel:typeof originalZoom==='function' ? originalZoom() : null,
+    touchPolicy:breezeTouchPolicy(target)};
+};
+(function(){
+  let on=false;
+  try{
+    const value=new URLSearchParams(location.search).get('viewport');
+    if(value==='1') localStorage.setItem('breeze.debug.viewport','1');
+    if(value==='0') localStorage.removeItem('breeze.debug.viewport');
+    on=localStorage.getItem('breeze.debug.viewport')==='1';
+  }catch(error){}
+  if(!on) return;
+  const samples=window.__breezeViewport=[];
+  const record=event=>{
+    const sample={...window.breezeViewportSnapshot(event?.target),event:event?.type || 'initial'};
+    samples.push(sample);
+    if(samples.length>200) samples.shift();
+    console.info('[breeze viewport]',JSON.stringify(sample));
+  };
+  window.visualViewport?.addEventListener('resize',record,{passive:true});
+  document.addEventListener('pointerdown',record,{capture:true,passive:true});
+  document.addEventListener('pointerup',record,{capture:true,passive:true});
+  new MutationObserver(()=>record({type:'view-change'})).observe(document.body,{attributes:true,attributeFilter:['class']});
+  record(null);
+})();

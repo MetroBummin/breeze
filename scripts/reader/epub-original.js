@@ -183,7 +183,7 @@ async function sanitiseEpubChapter(archive,chapter,resources,viewport){
   const geometrySafety=viewportState.viewportDependent
     ? 'html,body{height:auto!important;overflow:visible!important}*,*::before,*::after{animation:none!important;transition:none!important}'
     : '';
-  const safety=`:root{${epubViewportProperties(viewport)}}html,body{max-width:100%;min-height:1px}${geometrySafety}img,svg,video{max-width:100%;height:auto}
+  const safety=`:root{${epubViewportProperties(viewport)}}html,body{max-width:100%;min-height:1px;touch-action:pan-x pan-y}${geometrySafety}img,svg,video{max-width:100%;height:auto}
     body{-webkit-touch-callout:none}
     p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th{cursor:pointer}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}

@@ -155,6 +155,7 @@ function originalAnchorFromProgress(book){
 }
 
 async function restoreOriginalAnchor(source,changeToken){
+  if(changeToken!=null && changeToken!==readerModeChangeToken) return false;
   const format=originalFormat();
   if(!format){ readerScrollTo(0); return false; }
   const target=source || originalAnchorFromProgress(curBook);

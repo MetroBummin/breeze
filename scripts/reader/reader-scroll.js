@@ -102,6 +102,7 @@ function originalZoomActive(){
 function layoutOriginalZoom(){
   const stage = originalZoomStage(), layer = originalZoomLayer(), box = readerScroller();
   if(!stage || !layer || !box) return;
+  if(originalPinchBusy()) return;
   const baseWidth = box.clientWidth;
   if(baseWidth > 0) layer.style.width = baseWidth + 'px';
   /* `offsetHeight` 는 레이아웃 값이라 `transform` 을 타지 않습니다 — 딱 필요한
@@ -132,12 +133,12 @@ function originalZoomOrigin(){
 /* 배율을 바꾸면서 `focus` 아래에 있던 종이의 한 점을 그 자리에 붙들어 둡니다.
    붙들지 않으면 벌릴 때마다 보던 줄이 화면 밖으로 흘러 나갑니다.
    `focus` 는 화면 좌표(손가락 두 개의 한가운데)이고, 없으면 화면 한가운데입니다. */
-function setOriginalZoom(next, focus){
+function setOriginalZoom(next, focus, position){
   const box = readerScroller();
   if(!box) return;
   const from = originalZoomLevel;
   const to = Math.max(ORIGINAL_ZOOM_MIN, Math.min(ORIGINAL_ZOOM_MAX, next || 1));
-  if(Math.abs(to - from) < 0.0005) return;
+  if(Math.abs(to - from) < 0.0005 && !position) return;
   const outer = box.getBoundingClientRect();
   const fx = focus ? focus.x - outer.left : box.clientWidth / 2;
   const fy = focus ? focus.y - outer.top  : box.clientHeight / 2;
@@ -146,8 +147,8 @@ function setOriginalZoom(next, focus){
   const py = (box.scrollTop  + fy - origin.y) / from;
   originalZoomLevel = to;
   applyOriginalZoomTransform();
-  box.scrollLeft = Math.max(0, origin.x + px * to - fx);
-  box.scrollTop  = Math.max(0, origin.y + py * to - fy);
+  box.scrollLeft = Math.max(0, position ? position.x : origin.x + px * to - fx);
+  readerScrollTo(position ? position.y : origin.y + py * to - fy);
   updateOriginalZoomControls();
 }
 
@@ -155,6 +156,8 @@ function setOriginalZoom(next, focus){
    반복 수정하지 않으므로 iOS의 관성 스크롤과 충돌하지 않습니다. */
 function changeOriginalZoom(direction){
   if(!originalZoomActive()) return;
+  if(originalPinchBusy()) return;
+  readerModeChangeToken++;
   setOriginalZoom(originalZoomLevel + (direction > 0 ? ORIGINAL_ZOOM_STEP : -ORIGINAL_ZOOM_STEP));
   if(typeof resharpenOriginalPages === 'function') resharpenOriginalPages();
   if(typeof saveReadingState === 'function') saveReadingState();
@@ -179,6 +182,7 @@ function updateOriginalZoomControls(){
    을 얹었다 400ms 뒤에 떼는 꼼수였습니다 — 브라우저 배율을 내리는 API 가 없어서
    였습니다. 이제 배율은 우리 것이라 그냥 1 을 씁니다. */
 function resetOriginalZoom(){
+  cancelOriginalPinch();
   if(originalZoomLevel === 1){ updateOriginalZoomControls(); return; }
   const box = readerScroller();
   originalZoomLevel = 1;
@@ -188,10 +192,11 @@ function resetOriginalZoom(){
 }
 
 /* ---- 브라우저의 벌리기는 어디서도 안 씁니다 ----
-   PDF 확대는 버튼만 담당합니다. Safari가 화면 전체를 확대하면 단추와 사전
-   시트까지 함께 커지므로, 손가락 두 개는 읽기 화면에서 하지 않습니다.
-   EPUB 틀(iframe)은 제 문서라 우리 쪽 귀가 안 닿습니다. 그래서 저쪽에도 이
-   함수를 한 번 겁니다 (`scripts/reader/epub-original.js`).
+   PDF 확대는 기존 버튼과 PDF touch pinch가 같은 배율로 담당합니다. Safari가 화면 전체를 확대하면 단추와 사전
+   시트까지 함께 커지므로, 브라우저 자체 확대는 막습니다.
+   EPUB 틀(iframe)은 제 문서라 부모의 CSS만 믿지 않습니다. sanitise 단계에서
+   iframe의 html/body에도 같은 `pan-x pan-y` 정책을 넣습니다
+   (`scripts/reader/epub-original.js`).
 
    예전에는 읽는 동안(`body.reading`)만 막았습니다. 그런데 서재·단어장에는
    되돌릴 길이 없습니다 — 원생 확대는 앱이 아니라 브라우저(WKWebView)가
@@ -222,10 +227,15 @@ let originalZoomWatchers = [];
       if(Math.abs(layer.offsetHeight - originalZoomBaseHeight) > 0.5) layoutOriginalZoom();
     });
     growth.observe(layer);
-    const reflow = new ResizeObserver(()=>layoutOriginalZoom());
+    const reflow = new ResizeObserver(()=>{
+      cancelOriginalPinch();
+      layoutOriginalZoom();
+    });
     reflow.observe(box);
     originalZoomWatchers = [growth, reflow];
   };
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  // Deferred scripts can yield a ResizeObserver frame before pdf-pinch.js loads.
+  if(document.readyState === 'loading' || typeof cancelOriginalPinch !== 'function')
+    document.addEventListener('DOMContentLoaded', start);
   else start();
 })();

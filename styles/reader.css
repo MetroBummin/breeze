@@ -44,10 +44,18 @@
   /* 높이만 채웁니다. `position:absolute` 로 못 박으면 흐름에서 빠져서, 옆에
      서야 할 낱말 패널이 유일한 흐름 안 칸이 되어 왼쪽으로 갑니다. */
   body.reading #readmain{height:100%;}
-  /* `pan-x pan-y` 는 미는 것은 그대로 두고 브라우저의 벌리기만 뺍니다. 벌리기는
-     이제 우리가 그립니다 (`scripts/reader/reader-scroll.js`). */
+  /* `pan-x pan-y` 는 미는 것은 그대로 두고 브라우저의 벌리기·두 번 눌러 확대만
+     뺍니다. 벌리기는 이제 우리가 그립니다 (`scripts/reader/pdf-pinch.js`).
+
+     이 계약을 absolute 스크롤러 한 곳에만 맡기지 않습니다. iOS WebKit에는
+     absolute positioned element의 `touch-action`을 double-tap zoom에서 놓치는
+     알려진 경로가 있습니다. 그래서 실제 종이를 품는 static 경계에도 같은 값을
+     둡니다. Text는 `#readwrap`, PDF·EPUB은 `#originalwrap`을 반드시 지나므로
+     OS나 포맷별 예외 없이 같은 교집합을 만듭니다. `manipulation`은 native pinch를
+     다시 허용하므로 쓰지 않습니다. */
   #reader-scroll{position:absolute; inset:0; overflow:auto; overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y;}
+  #readwrap,#originalwrap{touch-action:pan-x pan-y;}
   /* ---- 스크롤 막대는 가늘게 ----
      맥에서 "스크롤 막대 항상 표시"를 켜 두면 이 칸의 막대가 15px 를 차지합니다.
      그 자리가 하필 글과 낱말 창 사이라, 두 칸을 가르는 굵은 선처럼 보였습니다.
@@ -330,7 +338,10 @@
   /* 확대된 종이가 차지할 자리. 크기는 자바스크립트가 적습니다 (기준 크기 × 배율).
      이 칸이 넓어지면 스크롤 칸 안에 가로로 밀 거리가 생깁니다 — 문서 폭은
      한 픽셀도 안 변하므로 폰 브라우저가 화면을 축소할 이유가 없습니다. */
+  body.reader-original #reader-scroll:has(.pdf-original){overflow-anchor:none;}
   #original-stage{position:relative;}
+  #original-stage.pinching{overflow:clip;}
+  #original-stage.pinching #original-zoom{will-change:transform;}
   /* 종이 자체. 레이아웃 폭은 늘 기준 폭이고 커지는 것은 `transform` 뿐입니다.
      그래서 벌려도 글이 다시 흐르지 않습니다 — PDF 캔버스가 보는 `clientWidth`
      가 그대로이기 때문입니다. */

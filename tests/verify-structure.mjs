@@ -6,6 +6,7 @@ import { Script } from 'node:vm';
 import assert from 'node:assert/strict';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+assert.match(readFileSync(resolve(root,'tools/build-www.mjs'),'utf8'), /const DIRS\s*=\s*\[[^\]]*'modules'[^\]]*\]/, 'iOS bundle must include lexical modules');
 const required = [
   'index.html',
   'styles/base.css',
@@ -408,8 +409,6 @@ assert.match(scrollSource,/function setOriginalZoom/,
   'The reader no longer owns its zoom, so the browser scales the chrome with the paper');
 assert.match(scrollSource,/function changeOriginalZoom/,
   'The PDF zoom buttons have no single-step zoom action');
-assert.doesNotMatch(scrollSource,/originalZoomPinch(Start|Move|End)|originalPinch/,
-  'Pinch zoom handling survived the switch to buttons');
 assert.match(scrollSource,/transform-origin|scale\(/,
   'Zoom is not a transform on the paper any more');
 /* 문서 폭이 화면보다 넓어지면 폰 브라우저는 스크롤바를 주는 대신 화면을 통째로
@@ -1349,6 +1348,19 @@ assert.doesNotMatch(readerSource, /suppressReaderSelection/,
   'Text Reader retains a redundant per-format selection guard');
 assert.doesNotMatch(pdfSource, /suppressReaderSelection/,
   'PDF Reader retains a redundant per-format selection guard');
+
+/* ---- browser viewport zoom has no Reader surface ----
+   The absolute scroller keeps the normal standards path, while each format's
+   non-absolute content boundary closes WebKit's absolute-element double-tap
+   hole. `manipulation` is forbidden because it gives native pinch back. */
+assert.match(readerCss, /#reader-scroll\{[^}]*position:absolute;[^}]*touch-action:pan-x pan-y/,
+  'The native reader scroller no longer permits one-finger pan while excluding browser zoom');
+assert.match(readerCss, /#readwrap,#originalwrap\{touch-action:pan-x pan-y;\}/,
+  'Text and Original formats depend only on the absolute scroller touch-action');
+assert.doesNotMatch(readerCss, /touch-action:\s*manipulation/,
+  'Reader gives native pinch back through touch-action: manipulation');
+assert.match(epubOriginalSource, /html,body\{[^}]*touch-action:pan-x pan-y/,
+  'The EPUB document has no explicit browser-zoom exclusion of its own');
 
 /* ---- callout 은 끄되 EPUB caret hit-test 는 살립니다 ----
    `user-select:none` 은 브라우저에 따라 caret hit-test 까지 함께 끕니다. 원본

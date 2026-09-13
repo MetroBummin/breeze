@@ -1,0 +1,104 @@
+[
+  {
+    "format": "Text",
+    "initial": {
+      "at": 1789280620818,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-read",
+      "mode": "text",
+      "pdfZoom": 1
+    },
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "last": {
+      "at": 1789280633245,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-read",
+      "mode": "text",
+      "pdfZoom": 1
+    },
+    "home": {
+      "at": 1789280633287,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-home",
+      "mode": "text",
+      "pdfZoom": 1
+    }
+  },
+  {
+    "format": "PDF",
+    "initial": {
+      "at": 1789280644145,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-read",
+      "mode": "original",
+      "pdfZoom": 1
+    },
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "last": {
+      "at": 1789280652763,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-read",
+      "mode": "original",
+      "pdfZoom": 1
+    },
+    "home": {
+      "at": 1789280652861,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-home",
+      "mode": "original",
+      "pdfZoom": 1
+    }
+  },
+  {
+    "format": "EPUB",
+    "initial": {
+      "at": 1789280654430,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-read",
+      "mode": "original",
+      "pdfZoom": 1
+    },
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "last": {
+      "at": 1789280660944,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-read",
+      "mode": "original",
+      "pdfZoom": 1
+    },
+    "home": {
+      "at": 1789280660996,
+      "scale": 1,
+      "width": 390,
+      "innerWidth": 390,
+      "view": "v-home",
+      "mode": "original",
+      "pdfZoom": 1
+    }
+  }
+]

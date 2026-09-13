@@ -1,0 +1,90 @@
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-home";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-home";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}
+{
+    innerWidth = 375;
+    scale = 1;
+    view = "v-read";
+    width = 375;
+}

@@ -117,9 +117,19 @@ PDF 원본의 확대는 `#pdfzoom-out`, `#pdfzoom-in`이 `#original-zoom`의 배
 않고 Aa popover(`#aa-pdfzoom`) 안, 다른 설정들 아래 한 줄에 삽니다 — PDF 원본일
 때만 `updateOriginalZoomControls()`가 그 줄을 켭니다.
 
-핀치 확대는 iOS 홈 화면 웹앱에서 브라우저가 viewport와 스크롤 앵커를 동시에 바꾸며
-페이지가 튀는 문제가 있어 사용하지 않습니다. EPUB 원본과 글자 모드는 PDF 배율을 쓰지
-않고 `Aa` 설정을 사용합니다.
+`pdf-pinch.js`의 touch pinch도 같은 `originalZoomLevel`(1–4배)을 씁니다.
+미리보기는 rAF transform만 변경하고 마지막 손가락이 떨어진 뒤 배율과 스크롤을
+한 번 확정합니다. 버튼의 기존 0.5배 간격과 Aa 퍼센트 표시는 유지합니다.
+접촉 중 PDF canvas 교체·선명화·제거를 미루고, 이미 시작한 한 손가락 스크롤은
+핀치가 가져가지 않습니다. 데스크톱 wheel 경로는 추가하지 않습니다.
+EPUB 원본과 글자 모드는 PDF 배율을 쓰지 않고 `Aa` 설정을 사용합니다.
+
+Reader의 browser viewport zoom은 어떤 포맷에서도 쓰지 않습니다. 한 손가락 pan만
+브라우저에 맡기는 `touch-action: pan-x pan-y`를 absolute `#reader-scroll`과
+비-absolute 포맷 경계(`#readwrap`, `#originalwrap`)에 함께 둡니다. 이는 absolute
+element에서 double-tap zoom이 정책을 빠져나오는 iOS WebKit 경로를 막으면서도
+native pinch를 다시 허용하는 `manipulation`은 피합니다. EPUB은 iframe 문서의
+`html,body`에도 같은 값을 넣습니다.
 
 상단바는 아래로 읽으면 사라지지만, 파란 진행 줄은 화면 위에 남습니다. `Aa`와
 원본/글자 전환 버튼은 오른쪽 아래에 고정되어 있으며 읽는 동안만 옅어집니다.

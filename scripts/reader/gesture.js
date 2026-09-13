@@ -247,6 +247,7 @@ function finishGesture(gesture, decision, completed){
 /* ================= 손짓의 한살이 ================= */
 
 function beginGesture(event){
+  if(typeof readerManipulationConsumes === 'function' && readerManipulationConsumes(event)) return;
   /* 앞의 손짓이 아직 살아 있다면 그것은 끝난 것입니다 — 손가락 하나가
      기준이므로 새 pointerdown 은 곧 앞것의 끝입니다. */
   if(activeGesture) finishGesture(activeGesture, GESTURE_CANCEL);
@@ -477,6 +478,11 @@ function cancelGesture(reason){
    뒤 그 손가락을 떼면서 나오는 click 이 "바깥을 눌렀다"가 되어 창을 도로
    닫아 버리는 일이 없습니다 — 예전에 열리자마자 닫히던 자리입니다. */
 function clickGesture(event){
+  if(typeof readerManipulationConsumes === 'function' && readerManipulationConsumes(event)){
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
   if(lastGesture && !lastGesture.tailClickUsed){
     lastGesture.tailClickUsed = true;
     /* 이미 뜻 있는 일을 한 손짓의 꼬리는 여기서 완전히 멈춥니다. 그래야 해석
