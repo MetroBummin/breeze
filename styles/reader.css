@@ -310,6 +310,9 @@
     /* 저장한 색이 아닌데 잠깐 회색 네모가 생기는 것은 Safari/Chrome의 기본 탭 표시입니다.
        단어 자체가 클릭 단추라 이 브라우저 효과는 남길 이유가 없습니다. */
     -webkit-tap-highlight-color:transparent;}
+  /* Text에서 실제로 연타를 받는 단어만 double-tap zoom 후보에서 뺍니다.
+     PDF/EPUB 표면과 공용 gesture controller에는 이 실험을 넓히지 않습니다. */
+  #rtext .w{touch-action:manipulation;}
   /* iOS는 터치한 낱말에도 hover를 남겨 두고, 다음 스크롤에서야 지웁니다.
      저장하지 않은 낱말이 회색 상자로 남아 보이던 원인이라 마우스 환경에서만
      hover 색을 씁니다. */

@@ -1352,13 +1352,17 @@ assert.doesNotMatch(pdfSource, /suppressReaderSelection/,
 /* ---- browser viewport zoom has no Reader surface ----
    The absolute scroller keeps the normal standards path, while each format's
    non-absolute content boundary closes WebKit's absolute-element double-tap
-   hole. `manipulation` is forbidden because it gives native pinch back. */
+   hole. The release-candidate experiment adds `manipulation` only to the Text
+   word that receives rapid taps; PDF/EPUB and shared gesture code stay out. */
 assert.match(readerCss, /#reader-scroll\{[^}]*position:absolute;[^}]*touch-action:pan-x pan-y/,
   'The native reader scroller no longer permits one-finger pan while excluding browser zoom');
 assert.match(readerCss, /#readwrap,#originalwrap\{touch-action:pan-x pan-y;\}/,
   'Text and Original formats depend only on the absolute scroller touch-action');
-assert.doesNotMatch(readerCss, /touch-action:\s*manipulation/,
-  'Reader gives native pinch back through touch-action: manipulation');
+assert.match(readerCss, /#rtext \.w\{touch-action:manipulation;\}/,
+  'Text words no longer carry the scoped rapid-tap policy');
+assert.doesNotMatch(readerCss.replace(/#rtext \.w\{touch-action:manipulation;\}/, ''),
+  /touch-action:\s*manipulation/,
+  'The Text-only rapid-tap experiment leaked into another Reader surface');
 assert.match(epubOriginalSource, /html,body\{[^}]*touch-action:pan-x pan-y/,
   'The EPUB document has no explicit browser-zoom exclusion of its own');
 

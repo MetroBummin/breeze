@@ -57,6 +57,10 @@ const url=`http://127.0.0.1:${server.address().port}`;
    return {x:150,y:300};
   });
   const policy=await p.evaluate(({x,y})=>breezeTouchPolicyAt(x,y),point);
+  if(n===0) assert.equal(policy[0]?.touchAction,'manipulation',
+    'Text word is not the only rapid-tap policy target');
+  else assert.ok(policy.every(entry=>entry.touchAction!=='manipulation'),
+    'Text rapid-tap policy leaked into PDF or EPUB');
   assert.ok(policy.some(entry=>entry.touchAction==='pan-x pan-y'),
     'actual touch path has no browser-zoom exclusion');
   assert.ok(policy.some(entry=>entry.touchAction==='pan-x pan-y'&&entry.position!=='absolute'),
