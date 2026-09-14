@@ -137,8 +137,19 @@ assert.doesNotMatch(syncSource, /auth\.signUp\(|resetPasswordForEmail\(/,
 assert.doesNotMatch(syncSource, /localStorage[^\n]*password|save\([^\n]*password/,
   'A password is being persisted in the client');
 const project = readFileSync(resolve(root, 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
-assert.match(project, /CURRENT_PROJECT_VERSION = 100;/,
+assert.match(project, /CURRENT_PROJECT_VERSION = 104;/,
   'The App Review access change was not assigned the next iOS build number');
+const componentsCss = readFileSync(resolve(root, 'styles/components.css'), 'utf8');
+for(const selector of ['#sm-email','#sm-password-email','#sm-password','.sm-secret input',
+  '.sm-reset-confirm input','.sm-delete-confirm input','.sm-device-move input','#am-text','#am-url','#ed-title']){
+  assert.ok(componentsCss.includes(`html.native-shell ${selector}`),
+    `The iOS text field can still trigger focus zoom: ${selector}`);
+}
+assert.match(componentsCss, /html\.native-shell #ed-title\{font-size:16px;\}/,
+  'Native text fields are not held at the iOS no-focus-zoom threshold');
+assert.doesNotMatch(readFileSync(resolve(root, 'index.html'), 'utf8'),
+  /user-scalable\s*=\s*no|maximum-scale\s*=\s*1/i,
+  'Viewport zoom was disabled instead of fixing undersized inputs');
 /* 계정을 지울 길이 없으면 애플 심사 5.1.1(v) 에서 그대로 반려됩니다. */
 assert.match(syncSource, /op:'delete_account'/,
   'The in-app account deletion path is gone');

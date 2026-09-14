@@ -215,6 +215,19 @@
     .sm-btn{padding:11px; font-size:14px; margin-bottom:8px;}
   }
 
+  /* iOS WKWebView는 16px보다 작은 편집 칸에 초점을 주면 화면을 자동 확대합니다.
+     native shell의 실제 텍스트 입력만 올려 Reader의 수동 확대는 그대로 둡니다. */
+  html.native-shell #sm-email,
+  html.native-shell #sm-password-email,
+  html.native-shell #sm-password,
+  html.native-shell .sm-secret input,
+  html.native-shell .sm-reset-confirm input,
+  html.native-shell .sm-delete-confirm input,
+  html.native-shell .sm-device-move input,
+  html.native-shell #am-text,
+  html.native-shell #am-url,
+  html.native-shell #ed-title{font-size:16px;}
+
   #minitoast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:140;
     background:var(--minitoast-bg); color:var(--minitoast-ink); font-size:11.5px; letter-spacing:.2px;
     padding:5px 13px; border-radius:20px; opacity:0; pointer-events:none;
