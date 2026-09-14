@@ -1,0 +1,53 @@
+/* Breeze Support는 랜딩·앱과 같은 종이, 잉크, 하늘색 토큰을 사용합니다. */
+
+.support-page,
+.support-footer{position:relative; z-index:1; width:min(100% - 40px, 720px); margin-inline:auto;}
+
+.support-page{padding:calc(34px + env(safe-area-inset-top)) 0 44px;}
+
+.support-header{padding-bottom:42px; border-bottom:1px solid var(--line2);}
+
+.brand{display:inline-block; color:var(--brand-strong); font-family:var(--display); font-size:28px; font-weight:600; letter-spacing:-1.45px; line-height:1.1; text-decoration:none;}
+.brand:focus-visible,
+.support-footer a:focus-visible,
+.contact-link:focus-visible,
+summary:focus-visible{outline:3px solid var(--blue-ring); outline-offset:3px; border-radius:6px;}
+
+.eyebrow{margin-top:34px; color:var(--brand-strong); font:700 12px/1.2 var(--ui); letter-spacing:.09em; text-transform:uppercase;}
+h1,h2{color:var(--ink); font-family:var(--display); font-weight:600; letter-spacing:-.035em;}
+h1{margin-top:10px; font-size:clamp(40px, 11vw, 56px); line-height:1.02;}
+h2{font-size:clamp(28px, 7vw, 36px); line-height:1.12;}
+.intro{max-width:520px; margin-top:18px; color:var(--ink-body); font:400 clamp(16px, 4.3vw, 18px)/1.72 var(--ui); word-break:keep-all;}
+
+.support-section{padding-top:42px;}
+.section-heading .eyebrow{margin-top:0; margin-bottom:8px;}
+.faq-list{margin-top:22px; border-top:1px solid var(--line2);}
+details{border-bottom:1px solid var(--line2);}
+summary{display:flex; align-items:center; gap:14px; min-height:64px; padding:15px 4px; color:var(--ink); cursor:pointer; font:600 16px/1.45 var(--ui); list-style:none;}
+summary::-webkit-details-marker{display:none;}
+summary::after{content:'+'; flex:0 0 auto; margin-left:auto; color:var(--brand-strong); font:400 28px/1 var(--ui); transition:transform .18s ease;}
+details[open] summary::after{transform:rotate(45deg);}
+details p{max-width:620px; padding:0 32px 20px 4px; color:var(--soft); font:400 15px/1.7 var(--ui); word-break:keep-all;}
+
+.contact-card{margin-top:42px; padding:28px; border:1px solid var(--ai-line); border-radius:20px; background:linear-gradient(135deg, var(--ai-bg2), var(--sky)); box-shadow:var(--shadow-card);}
+.contact-card .eyebrow{margin-top:0; margin-bottom:8px;}
+.contact-card h2{font-size:clamp(28px, 7vw, 34px);}
+.contact-card p:not(.eyebrow){margin-top:12px; color:var(--ink-body); font:400 16px/1.65 var(--ui); word-break:keep-all;}
+.contact-link{display:inline-flex; align-items:center; min-height:48px; margin-top:18px; padding:10px 16px; border-radius:12px; background:var(--brand-strong); color:#fff; font:700 15px/1.2 var(--ui); overflow-wrap:anywhere; text-decoration:none; transition:background-color .18s ease, transform .18s ease;}
+.contact-link:hover{background:var(--brand); transform:translateY(-1px);}
+
+.support-footer{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:24px 0 calc(28px + env(safe-area-inset-bottom)); border-top:1px solid var(--line2); color:var(--soft); font:400 13px/1.4 var(--ui);}
+.support-footer nav{display:flex; flex-wrap:wrap; gap:18px;}
+.support-footer a{display:inline-flex; align-items:center; min-height:32px; color:var(--soft); text-decoration:none;}
+.support-footer a:hover{color:var(--brand-strong);}
+
+@media (min-width:700px){
+  .support-page{padding-top:56px; padding-bottom:56px;}
+  .support-header{padding-bottom:52px;}
+  .support-section{padding-top:52px;}
+  .contact-card{margin-top:52px; padding:34px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  summary::after,.contact-link{transition:none;}
+}
