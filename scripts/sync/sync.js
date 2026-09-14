@@ -14,7 +14,7 @@ const LS_HIDDEN='breeze.hidden';
 let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[];
 let pendingRecoveryKey='', vaultInfoOpen=false, vaultRecoveryError='', recoveryRotateOpen=false;
 let pendingPair=null, pairingPoll=null, pairingError='';
-let accountDeleteOpen=false, accountDeleteError='';
+let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
 /** @param {string} id */
 const syncInput=id=>/** @type {HTMLInputElement} */(document.getElementById(id));
 
@@ -145,14 +145,22 @@ function renderSyncModal(){
       <button class="sm-btn primary" onclick="doSync(true)">지금 동기화</button>
       <button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>
       ${deleteArea}`;
+  }else if(passwordLoginOpen){
+    body.innerHTML=`<div class="desc">이미 비밀번호가 설정된 계정으로 로그인합니다.
+      새 비밀번호를 만들거나 바꾸는 곳은 아니에요.</div>
+      <input id="sm-password-email" type="email" placeholder="you@example.com" autocomplete="email">
+      <input id="sm-password" type="password" placeholder="비밀번호" autocomplete="current-password">
+      <button class="sm-btn primary" onclick="sbPasswordLogin()">비밀번호로 로그인</button>
+      <button class="sm-linkish neutral" onclick="closePasswordLogin()">이메일 코드 로그인으로 돌아가기</button>`;
   }else{
     body.innerHTML=`<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
-      비밀번호는 없습니다. 로그인하면 단어장이 기기 간에 암호화되어 동기화됩니다.</div>
+      로그인하면 단어장이 기기 간에 암호화되어 동기화됩니다.</div>
       <input id="sm-email" type="email" placeholder="you@example.com" autocomplete="email">
       <button class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
       <div id="sm-codewrap"><div class="hint">메일에 온 <b>6자리 코드</b>를 입력해도 로그인돼요</div>
       <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
-      <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>`;
+      <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
+      <button class="sm-linkish neutral" onclick="openPasswordLogin()">비밀번호로 로그인</button>`;
   }
   syncStatus('');
 }
@@ -175,8 +183,20 @@ async function sbVerifyCode(){
   const result=await sb.auth.verifyOtp({email,token,type:'email'});
   if(result.error) syncStatus('코드 확인 실패: '+result.error.message);
 }
+function openPasswordLogin(){ passwordLoginOpen=true; renderSyncModal(); syncInput('sm-password-email')?.focus(); }
+function closePasswordLogin(){ passwordLoginOpen=false; renderSyncModal(); syncInput('sm-email')?.focus(); }
+async function sbPasswordLogin(){
+  const email=(syncInput('sm-password-email').value||'').trim();
+  const password=syncInput('sm-password').value||'';
+  if(!/.+@.+\..+/.test(email)){ syncStatus('이메일 형식을 확인해 주세요'); return; }
+  if(!password){ syncStatus('비밀번호를 입력해 주세요'); return; }
+  syncStatus('로그인 중…');
+  const result=await sb.auth.signInWithPassword({email,password});
+  if(result.error) syncStatus('로그인 실패: 이메일 또는 비밀번호를 확인해 주세요');
+}
 document.addEventListener('keydown',event=>{
   if(event.key==='Enter'&&event.target===document.getElementById('sm-code')){ event.preventDefault(); sbVerifyCode(); }
+  if(event.key==='Enter'&&event.target===document.getElementById('sm-password')){ event.preventDefault(); sbPasswordLogin(); }
 });
 async function sbLogout(){
   await sb.auth.signOut({scope:'local'});

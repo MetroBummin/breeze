@@ -127,6 +127,18 @@ assert.match(syncSource,/syncAgain=true/,
    로그아웃한 사람이 폰까지 로그아웃시킵니다. */
 assert.match(syncSource, /signOut\(\{\s*scope:\s*'local'\s*\}\)/,
   'Logging out again revokes the session on every device');
+/* 심사 계정도 실제 Supabase 자격증명으로만 로그인해야 합니다. 비밀번호 가입이나
+   재설정 UI를 만들면 일반 이메일 OTP 흐름이 달라지므로, 서버에서 미리 만든 계정의
+   sign-in 경로만 허용합니다. */
+assert.match(syncSource, /auth\.signInWithPassword\(\{email,password\}\)/,
+  'The provisioned password-account sign-in path is missing');
+assert.doesNotMatch(syncSource, /auth\.signUp\(|resetPasswordForEmail\(/,
+  'Review access added a public password enrollment or reset path');
+assert.doesNotMatch(syncSource, /localStorage[^\n]*password|save\([^\n]*password/,
+  'A password is being persisted in the client');
+const project = readFileSync(resolve(root, 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
+assert.match(project, /CURRENT_PROJECT_VERSION = 100;/,
+  'The App Review access change was not assigned the next iOS build number');
 /* 계정을 지울 길이 없으면 애플 심사 5.1.1(v) 에서 그대로 반려됩니다. */
 assert.match(syncSource, /op:'delete_account'/,
   'The in-app account deletion path is gone');

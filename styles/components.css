@@ -87,12 +87,12 @@
   .sm-account{margin:0 0 13px; color:var(--soft); font-size:11px; line-height:1.4;}
   .sm-account b{display:block; overflow-wrap:anywhere; color:var(--ink); font-size:12px;}
   .sm-account span{display:block; margin-top:2px;}
-  #sm-email{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px;
+  #sm-email, #sm-password-email, #sm-password{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px;
     font-family:var(--ui); outline:none; margin-bottom:12px; background:var(--field);}
-  #sm-email:focus{border-color:var(--blue);}
+  #sm-email:focus, #sm-password-email:focus, #sm-password:focus{border-color:var(--blue);}
   /* input 은 글자색을 물려받지 않습니다(브라우저 기본값이 이깁니다). 어두운
      화면에서만 잉크색을 줘야 검은 글자가 검은 칸에 깔리지 않습니다. */
-  body.dark #vsearch, body.dark #sm-email{color:var(--ink);}
+  body.dark #vsearch, body.dark #sm-email, body.dark #sm-password-email, body.dark #sm-password{color:var(--ink);}
   .sm-btn{width:100%; border:none; border-radius:12px; padding:13px; font-size:15px; font-weight:600;
     font-family:var(--ui); cursor:pointer; margin-bottom:10px;}
   .sm-btn.primary{background:var(--blue); color:var(--on-color);}
@@ -104,6 +104,7 @@
     font:12.5px var(--ui); color:var(--soft2); cursor:pointer; text-decoration:underline;
     text-underline-offset:3px;}
   .sm-linkish:hover{color:var(--danger);}
+  .sm-linkish.neutral:hover{color:var(--blue);}
   .sm-mini{border:1px solid var(--line); background:none; border-radius:14px; padding:4px 10px;
     font-size:11.5px; cursor:pointer; color:var(--soft); font-family:var(--ui);}
   .sm-mini:hover{background:var(--sky); color:var(--blue);}
