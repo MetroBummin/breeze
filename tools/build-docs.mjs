@@ -287,7 +287,7 @@ function page(doc, parts){
 <meta name="description" content="${esc(doc.blurb)}">
 <meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#16181B" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="../assets/favicon/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/favicon/favicon.png" type="image/png">
 <style>${STYLE}</style>
 </head>
 <body>

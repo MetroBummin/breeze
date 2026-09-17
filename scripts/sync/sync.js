@@ -432,6 +432,7 @@ function mergeWordState(remoteWords,remoteDead){
     if(newest===rd||newest===ld){ delete words[key]; dead[key]=newest; }
     else if(newest===upOf(rw)){ words[key]=rw; delete dead[key]; }
   }
+  cleanOrphanWords(words,dead,pendingWord&&pendingWord.key);
 }
 async function mergeVaultPayload(remote,legacyItems){
   if(remote) mergeWordState(remote.words||{},remote.dead||{});
@@ -523,7 +524,11 @@ async function runSyncPass(manual){
     }
     const legacyItems=await readLegacyData(rows);
     await mergeVaultPayload(remote,legacyItems);
-    const payload={v:2,updatedAt:Date.now(),deviceId:vaultDeviceId(),words,dead,items:vaultRemoteItems};
+    /* An in-flight lookup is local UI state, never a vault entry. The merge
+       cleanup above also tombstones old remote orphans before sealing. */
+    const syncedWords={...words};
+    if(pendingWord && !pendingWordResolved(pendingWord.key)) delete syncedWords[pendingWord.key];
+    const payload={v:2,updatedAt:Date.now(),deviceId:vaultDeviceId(),words:syncedWords,dead,items:vaultRemoteItems};
     const envelope=await VaultCrypto.sealJson(master,payload,[sbUser.id,vaultMeta.vaultId,'snapshot'],'breeze/vault/v2');
     const saved=await sb.from('words').upsert(
       [{user_id:sbUser.id,key:VAULT_ROW,data:{v:2,updatedAt:payload.updatedAt,envelope}}],{onConflict:'user_id,key'});
@@ -533,7 +538,7 @@ async function runSyncPass(manual){
     saveWords(); save(LS_DEAD,dead); save(LS_POS,positions); save(VAULT_LOCAL_CHANGED,0);
     lastSync=Date.now(); save('breeze.lastsync',lastSync);
     if(manual){ renderSyncModal(); syncStatus('암호화 동기화를 마쳤어요'); }
-    else miniToast(pendingRecoveryKey?'복구키를 저장해 주세요':'Auto-synced');
+    else if(pendingRecoveryKey) miniToast('복구키를 저장해 주세요');
     renderAllBookViews();
     if(typeof restoreMissingVaultArticles==='function') restoreMissingVaultArticles();
     if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();

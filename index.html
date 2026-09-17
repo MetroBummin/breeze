@@ -22,8 +22,7 @@
   <meta property="og:description" content="원서를 편하게 읽고, 모르는 단어는 눌러서 바로 단어장에.">
   <meta property="og:image" content="assets/favicon/icon-512.png">
 
-  <link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
-  <link rel="alternate icon" href="assets/favicon/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="assets/favicon/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
   <!-- 제목에 쓰는 두 글꼴(Fraunces · 고운바탕)은 우리 서버에 함께 들어 있습니다.
        남의 서버를 부르지 않으므로 비행기 모드에서도 제목이 제 글꼴로 찍히고,
@@ -52,10 +51,11 @@
   <link rel="stylesheet" href="styles/tokens.css?v=ed7b30a4">
   <link rel="stylesheet" href="styles/base.css?v=b3e4ae3e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=09de66ff">
+  <link rel="stylesheet" href="styles/reader.css?v=5cd7d110">
   <link rel="stylesheet" href="styles/dictionary.css?v=9e60beab">
   <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
+  <link rel="stylesheet" href="styles/onboarding.css?v=fffb5627">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -74,7 +74,8 @@
   <script defer src="scripts/core/storage.js?v=40c5cf33"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
-  <script defer src="scripts/core/state.js?v=c9cb62f1"></script>
+  <script defer src="scripts/core/word-integrity.js?v=fa48fb26"></script>
+  <script defer src="scripts/core/state.js?v=70fd6107"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
@@ -84,7 +85,7 @@
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
   <script defer src="scripts/reader/gesture.js?v=bf4e6ba3"></script>
-  <script defer src="scripts/reader/pdf-pinch.js?v=13aad727"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=da7fffc8"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=f63be3ea"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
@@ -93,21 +94,22 @@
   <script defer src="scripts/importers/article.js?v=8633ee61"></script>
   <script defer src="scripts/importers/rss.js?v=f33bf95e"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=66373926"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=9bbeb6ea"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=8f9e4801"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=3dd81077"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=47482381"></script>
   <script defer src="scripts/reader/pdf-original.js?v=aeabeaba"></script>
   <script defer src="scripts/reader/epub-original.js?v=62e473ad"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=9f784320"></script>
-  <script defer src="scripts/reader/reader.js?v=8e090dd2"></script>
-  <script defer src="scripts/ui/preferences.js?v=e1e7fbb1"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=c70cde31"></script>
+  <script defer src="scripts/reader/reader.js?v=584d1dc1"></script>
+  <script defer src="scripts/ui/preferences.js?v=58a57dee"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
-  <script defer src="scripts/sync/sync.js?v=c76e90b3"></script>
+  <script defer src="scripts/sync/sync.js?v=fa7202f1"></script>
   <script defer src="scripts/ui/interactions.js?v=31e4ec05"></script>
-  <script defer src="scripts/main.js?v=b316fa5a"></script>
+  <script defer src="scripts/ui/onboarding.js?v=4407bc85"></script>
+  <script defer src="scripts/main.js?v=5f3cdac1"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=40877d35"></script>
@@ -220,10 +222,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
              stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
       </button>
-      <!-- 한 조각 안에 둘이지만 하는 일은 서로 남입니다. 한 번 누르면 한 가지가
-           일어나고, 둘을 하나로 합치지 않습니다. -->
-      <div id="readfabs">
-        <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
+      <div id="readpill">
         <button id="modefab" title="원본으로 보기" aria-label="원본으로 보기" onclick="toggleReaderMode()" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
@@ -233,7 +232,9 @@
             <g class="mf-text"><path d="M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6"/></g>
           </svg>
         </button>
+        <button id="readpill-title" type="button" onclick="expandReaderChrome()" aria-label="책 제목"></button>
       </div>
+      <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
     </div>
     <!-- 읽는 동안 스크롤하는 것은 문서가 아니라 이 칸 하나입니다.
          까닭은 scripts/reader/reader-scroll.js 맨 위에 적어 두었습니다. -->
@@ -271,7 +272,7 @@
   <div id="sentence-modal" hidden>
     <div id="sentence-scrim"></div>
     <section id="p-sentence" role="dialog" aria-modal="true" aria-live="polite">
-      <div class="cap"><span class="dot"></span><span id="ps-cap">문장 통째로 · AI</span></div>
+      <div class="cap"><span class="dot"></span><span id="ps-cap">문장 해석</span></div>
       <div id="ps-en"></div>
       <div class="aurora" id="ps-wait" aria-hidden="true" hidden><span class="glow"></span></div>
       <div id="ps-ko" hidden></div>
@@ -318,7 +319,7 @@
              뜻이 확정된 낱말일 때만 뜹니다 — 판단은 이미 있는
              `hasResolvedMeaning`/`pendingWordResolved` 를 읽기만 합니다
              (scripts/dictionary/dictionary.js). 한살이는 건드리지 않습니다. -->
-        <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻 · AI</span>
+        <div class="cap"><span class="dot"></span><span id="p-ai-cap-t">문맥 뜻</span>
           <span id="p-ai-saved" hidden>✓ 저장됨</span></div>
         <div class="wind aurora" aria-hidden="true">
           <span class="glow"></span>
@@ -336,7 +337,7 @@
       <!-- 이미 저장해 둔 뜻을 보고 있을 때만 뜹니다. 방금 이 문장을 보고 받아 온
            뜻이라면 다시 물어볼 것이 없습니다. -->
       <button id="p-context" type="button"><span class="sp">✦</span>이 문장에서는?</button>
-      <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">Let AI handle this</span></button>
+      <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">문맥 뜻 찾기</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec p-sec-row" id="p-saved-senses-sec"><span>저장된 뜻</span>
         <button id="p-add-sense" type="button" title="뜻 추가" aria-label="뜻 추가">＋</button></div>
@@ -421,6 +422,10 @@
         </div>
         <button id="set-dark" class="aa-toggle" type="button" aria-label="Dark mode" onclick="toggleDark()"><i></i></button>
       </div>
+      <div class="set-row native-onboarding-setting" hidden>
+        <div class="set-label"><b>온보딩</b><span>처음 읽는 방법을 다시 체험해요.</span></div>
+        <button type="button" class="sm-mini" onclick="startOnboarding(true)">온보딩 다시 보기</button>
+      </div>
 
       <!-- 글자 크기는 여기 두지 않습니다. 읽는 글이 안 보이는 자리에서 A+ 를
            눌러 봐야 무엇이 커졌는지 알 수 없습니다 — 그 설정은 글 위에 떠 있는
@@ -432,6 +437,17 @@
       <div id="sm-status"></div>
     </div>
   </div>
+</div>
+<div id="onboarding" role="dialog" aria-modal="true" aria-label="Breeze 시작하기" hidden>
+  <div class="onboard-header"><span>Breeze</span><button id="onboard-skip" type="button">건너뛰기</button></div>
+  <main class="onboard-reader">
+    <h1>Welcome to Breeze!</h1>
+    <p>A gentle <button id="onboard-word" class="onboard-word" type="button">breeze</button> moves through the trees.</p>
+    <p><button id="onboard-sentence" class="onboard-sentence" type="button">Reading can feel this easy.</button></p>
+    <div id="onboard-prompt" aria-live="polite"></div>
+  </main>
+  <div id="onboard-result" hidden></div>
+  <div class="onboard-footer"><button id="onboard-next" type="button" hidden>계속</button></div>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
 <input type="file" id="reading-backup-input" accept=".zip,.breeze.zip,application/zip" hidden>
@@ -537,6 +553,10 @@
   <div class="aa-row">
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
+  </div>
+  <div class="aa-row" id="aa-epub-mode" hidden>
+    <span class="aa-label">보기 모드</span>
+    <button id="aa-epub-mode-button" class="sm-mini" type="button" onclick="toggleReaderMode()">글자로 보기</button>
   </div>
   <!-- PDF 원본에서만 켭니다 — updateOriginalZoomControls() 가 예전에 떠 있던
        #pdfzoomfabs 대신 이 자리를 켜고 끕니다. 버튼이 부르는 changeOriginalZoom

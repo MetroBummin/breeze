@@ -15,6 +15,10 @@ const homeReady=loadBooks().then(renderHome).catch(error=>{
   console.error('서가를 읽지 못했습니다:',error);
   renderHome();
 });
+homeReady.then(()=>{
+  if(document.readyState==='complete') setTimeout(maybeShowOnboarding,850);
+  else window.addEventListener('load',()=>setTimeout(maybeShowOnboarding,850),{once:true});
+});
 /* CSS 배경은 로드가 늦으면 검은 바탕 위에 뒤늦게 나타납니다. 시작 그림 한 장을
    명시적으로 기다리면 모바일에서 검정→그림의 한 번 더 있는 전환을 없앨 수 있습니다. */
 const splashSceneReady=nativeSplash ? new Promise(resolve=>{

@@ -65,8 +65,8 @@ function toggleAa(e){
      재는 것이 단추 자신이라 창도 함께 따라갑니다. */
   if(btn){
     const r = btn.getBoundingClientRect();
-    p.style.bottom = 'auto';
-    p.style.top = Math.round(r.bottom + 10) + 'px';
+    p.style.top = 'auto';
+    p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
     p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
   }
   p.classList.toggle('on');
@@ -178,6 +178,8 @@ window.addEventListener('load', syncTopbarH);
 syncTopbarH();
 let miniTimer;
 function miniToast(msg){
+  if(document.body.classList.contains('reading') &&
+      (msg==='Text mode' || msg==='Original mode')){ readerPillStatus(msg); return; }
   const t = document.getElementById('minitoast');
   if(!t) return;
   t.textContent = msg; t.classList.add('on');

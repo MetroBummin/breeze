@@ -36,6 +36,9 @@ function save(k, v){
 const LS_DEAD='breeze.dead';
 let words = load(LS_WORDS, {});
 let dead = load(LS_DEAD, {});
+if(cleanOrphanWords(words,dead)){
+  save(LS_WORDS,words); save(LS_DEAD,dead);
+}
 let books = [];                       // 본문은 IndexedDB에 저장(부팅 시 로드)
 /* 부팅할 때마다 돌던 옛 판 변환들(localStorage 에 있던 책 옮기기, AI 조판
    결과 `tidy` 를 `formatting` 으로 옮기기, `readerSchema` 찍기)은 뗐습니다.
@@ -53,7 +56,10 @@ async function loadBooks(){
 }
 let positions = load(LS_POS, {});   // bookId -> text anchor + original source anchor
 let curBook = null, selKey = null;
-const saveWords = () => save(LS_WORDS, words);
+/* A lookup may need a temporary in-memory card while its sheet is open. It is
+   not vocabulary yet and must never become a persisted orphan on failure. */
+const saveWords = () => save(LS_WORDS,
+  Object.fromEntries(Object.entries(words).filter(([,item])=>validWordMeaning(item))));
 const posOf = id => positions[id] || {y:0, p:0, t:0, mode:'text', original:null};
 
 /* ================= views ================= */
@@ -62,13 +68,12 @@ const posOf = id => positions[id] || {y:0, p:0, t:0, mode:'text', original:null}
    바뀌면(좌우 여백, A+/A−, 화면 회전) 같은 px이 다른 문장을 가리키게 됩니다.
    그래서 위치를 "몇 번째 문단이 화면 위에서 몇 px 떨어져 있었는지"로 기억합니다. */
 function topInset(){
-  /* 읽는 화면에는 상단바가 없습니다. 글 위를 덮고 있는 것은 떠 있는 조작 조각
-     뿐이라, 되돌린 문단이 그 밑에 깔리지 않으려면 그 조각의 아랫변을 봐야
-     합니다(styles/reader.css 의 `#readchrome`). 그 밖의 화면에서는 예전대로
-     상단바 높이입니다. */
-  const chrome = document.body.classList.contains('reading')
-    ? document.getElementById('readchrome') : null;
-  if(chrome) return chrome.getBoundingClientRect().bottom + 8;
+  /* The control is now at the bottom. Anchoring to its bottom would make every
+     restore aim near the home indicator; use the text's safe-area top instead. */
+  if(document.body.classList.contains('reading')){
+    const wrap=document.getElementById('readwrap');
+    return (wrap ? parseFloat(getComputedStyle(wrap).paddingTop) : 24) + 8;
+  }
   const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h'));
   return (isNaN(v) ? 0 : v) + 8;
 }

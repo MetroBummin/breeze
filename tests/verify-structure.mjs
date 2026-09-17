@@ -137,7 +137,7 @@ assert.doesNotMatch(syncSource, /auth\.signUp\(|resetPasswordForEmail\(/,
 assert.doesNotMatch(syncSource, /localStorage[^\n]*password|save\([^\n]*password/,
   'A password is being persisted in the client');
 const project = readFileSync(resolve(root, 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
-assert.match(project, /CURRENT_PROJECT_VERSION = 104;/,
+assert.match(project, /CURRENT_PROJECT_VERSION = 105;/,
   'The App Review access change was not assigned the next iOS build number');
 const componentsCss = readFileSync(resolve(root, 'styles/components.css'), 'utf8');
 for(const selector of ['#sm-email','#sm-password-email','#sm-password','.sm-secret input',
@@ -931,17 +931,17 @@ assert.ok(index.indexOf('id="p-colloc"') < index.indexOf('id="p-ai"'),
   'The phrase suggestion no longer sits directly under the word');
 assert.ok(index.indexOf('id="p-alts"') > index.indexOf('id="p-saved-senses"'),
   'Suggested meanings are no longer a separate row below the saved ones');
-/* 읽는 화면의 조작은 두 덩어리뿐입니다 — 왼쪽 위에 나가는 길, 오른쪽 위에
-   보기 설정과 글자↔원본. 아래쪽에는 떠 있는 단추가 남지 않습니다. */
-assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button id="readback"[\s\S]{0,900}<div id="readfabs">/,
-  'The reading controls are no longer one back control on the left and one capsule on the right');
+/* One persistent centered title pill owns the PDF switch; side controls are
+   independent and become inert when collapsed. */
+assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button id="readback"[\s\S]{0,900}<div id="readpill">/,
+  'Reader is missing its centered persistent title pill');
 assert.ok(index.indexOf('id="readchrome"') > index.indexOf('id="readmain"')
        && index.indexOf('id="readchrome"') < index.indexOf('id="reader-scroll"'),
   'The floating reader controls left #readmain, so the word panel no longer pushes them aside');
-assert.match(index, /<div id="readfabs">\s*<button id="aafab"[\s\S]{0,120}<button id="modefab"/,
-  'Aa and the mode toggle are no longer two independent one-tap controls in one capsule');
-assert.doesNotMatch(readerCss.replace(/\/\*[\s\S]*?\*\//g,' '), /#readfabs\{[^}]*bottom:/,
-  'A floating control is back at the bottom of the reading screen');
+assert.match(index, /<div id="readpill">\s*<button id="modefab"[\s\S]*?id="readpill-title"[\s\S]*?<button id="aafab"/,
+  'The PDF destination and title are not in the same pill');
+assert.match(readerCss, /#readchrome\{[^}]*bottom:calc\(env\(safe-area-inset-bottom\)/,
+  'Reader controls do not clear the bottom safe area');
 /* PDF 확대 −/+ 는 예전처럼 따로 떠 있지 않습니다 — 뜨는 조각을 늘리지 않으려고
    Aa popover 안, 다른 설정들 아래 한 줄로 들어갔습니다. 단추가 부르는 함수는
    그대로입니다(위의 384/386번 검사). */
@@ -957,6 +957,10 @@ for(const glyph of ['mf-original', 'mf-text']){
 }
 assert.match(readerCss, /body\.reader-original #modefab \.mf-text\{opacity:1/,
   'The mode button no longer flips its icon, so it always points the same way');
+assert.match(modesSource, /fab\.hidden = kind!=='pdf'/,
+  'The title pill shows a mode icon for a non-PDF book');
+assert.match(index, /id="aa-epub-mode"[\s\S]{0,250}onclick="toggleReaderMode\(\)"/,
+  'EPUB lost its mode-switch access after removing its pill icon');
 /* 빠른 글자↔원본 왕복은 위치 검색을 생략할 수 있어도, 출발지와 목적지의
    '여기 있었어요' 표시는 생략하면 안 됩니다. */
 assert.match(modesSource, /const sourceCueBridge=sentenceBridge/,
@@ -1000,21 +1004,14 @@ assert.match(readerCss, /\.pdf-source-page>\.reader-mode-cue\{[\s\S]{0,220}backg
 assert.doesNotMatch(readerCss, /reader-mode-cue[^}]*linear-gradient/,
   'A spatial gradient returned to the paragraph cue');
 
-/* ---- 읽는 화면에서 상단바는 감춰져 있습니다. 지워진 것이 아닙니다 ----
-   넓은 화면에서는 예전 상단바를 고정형으로 다시 세울 수 있습니다. 그래서
-   DOM · navigation · 걷힘 규칙 · 문턱은 전부 제자리에 두고, **읽는 화면에
-   연결되던 한 줄만** 끊었습니다: 읽는 칸의 `scroll` 이 더 이상
-   `followScrollDirection()` 을 부르지 않습니다.
-
-   그 한 줄이 끊겼는지를 여기서 지킵니다. 다시 이어지면 새 조작 조각과 진행줄이
-   스크롤을 따라 움직이기 시작합니다 — "자리도 진하기도 늘 같다"가 깨집니다. */
+/* The old navigation stays hidden in Reader, while its direction machinery
+   now drives the bottom pill without moving the text or the progress rail. */
 assert.match(readerCss, /body\.reading #topbar\{display:none/,
   'The reading screen shows the old top bar again');
 const readerScroll = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'utf8');
 /* 주석은 "무엇을 왜 끊었는지" 설명하느라 끊은 이름을 그대로 적습니다. 실제로
    도는 코드만 봅니다 (아래의 `runningCode` 와 같은 일, 여기서 먼저 필요합니다). */
 const readerRunning = readerScroll.replace(/\/\*[\s\S]*?\*\//g,' ').replace(/(^|[^:])\/\/.*$/gm,'$1');
-/* 되살릴 때 그대로 쓸 부품들 — 지우지 않았는지 확인합니다. */
 for(const name of ['followScrollDirection', 'setReaderChrome', 'showReaderChrome',
                    'pinReaderChrome', 'whileRestoringChrome', 'CHROME_STEP', 'CHROME_BACK']){
   assert.match(readerRunning, new RegExp(name),
@@ -1026,40 +1023,25 @@ assert.match(readerCss, /body\.chrome-hidden #topbar\{[^}]*transform:translateY\
 const readerScrollListener = /\(readerScroller\(\) \|\| window\)\.addEventListener\('scroll',[\s\S]*?\}, \{passive:true\}\);/
   .exec(readerRunning);
 assert.ok(readerScrollListener, 'The reading pane no longer listens for scroll at all');
-assert.doesNotMatch(readerScrollListener[0], /followScrollDirection/,
-  'Scrolling drives the chrome again, so the floating controls move and fade with the page');
-/* 새 조각과 진행줄에는 그 상태가 걸리지 않습니다. 걸리는 순간 스크롤이 다시
-   조작 조각의 임자가 됩니다. */
+assert.match(readerScrollListener[0], /requestAnimationFrame\(\(\)=>\{ chromeFrame=0; if\(curBook\) followScrollDirection\(\)/,
+  'Scroll-driven chrome is not frame-coalesced');
 const readerCssRules = readerCss.replace(/\/\*[\s\S]*?\*\//g, ' ');
-for(const selector of ['#readchrome', '#readback', '#readfabs', '#rbar']){
-  assert.doesNotMatch(readerCssRules, new RegExp(`body\\.chrome-hidden[^{]*${selector}`),
-    `The scroll-driven chrome state reaches ${selector} again`);
-}
-/* 조각은 자리도 진하기도 늘 같습니다. 스크롤에 따라 흐려지거나 움직이는 규칙이
-   하나라도 돌아오면 "상태 없는 UI" 가 아니게 됩니다. */
+assert.match(readerCssRules, /body\.chrome-hidden #readpill\{width:/,
+  'The persistent pill does not morph in place');
+assert.match(readerCssRules, /body\.chrome-hidden #readback,body\.chrome-hidden #aafab\{[^}]*pointer-events:none/,
+  'Collapsed side buttons retain a hit target');
+assert.match(readerRunning, /button\.inert=hidden/,
+  'Collapsed buttons retain keyboard focus');
 assert.doesNotMatch(readerCssRules, /#readchrome[^}]*transition/,
-  'The floating reader controls animate again, so they have a state to be in');
-/* 조각은 안전 영역 **밑에서** 시작합니다 — 노치·시계 자리를 침범하지 않습니다. */
-assert.match(readerCss, /#readchrome\{[\s\S]{0,220}padding:calc\(env\(safe-area-inset-top\) \+ \d+px\)/,
-  'The floating reader controls no longer clear the iOS safe area');
+  'The reader chrome container itself should not animate or shift the text');
 /* 조각 사이의 빈 자리는 본문의 것입니다. 여기가 손짓을 먹으면 그 폭만큼 글을
    못 누릅니다. */
 assert.match(readerCss, /#readchrome\{[\s\S]{0,320}pointer-events:none;\}/,
   'The gap between the floating controls swallows touches meant for the page');
 assert.match(readerCss, /#readchrome > \*\{pointer-events:auto;\}/,
   'The floating controls themselves stopped taking touches');
-/* 왼쪽 원과 오른쪽 조각은 한 줄에 나란히 섭니다 — 윗변은 `#readchrome` 의 여백
-   하나가 정하고, 높이는 둘이 같은 숫자로 적혀 있어야 합니다. 한쪽만 1px 달라도
-   줄이 어긋나 보입니다. */
-const backHeight = /#readback\{[^}]*height:(\d+)px/.exec(readerCssRules);
-const capsuleHeight = /#readfabs\{[^}]*height:(\d+)px/.exec(readerCssRules);
-assert.ok(backHeight && capsuleHeight, 'One of the two floating controls no longer states its height');
-assert.equal(backHeight[1], capsuleHeight[1],
-  'The back circle and the Aa/mode capsule are different heights, so the row is uneven');
-for(const selector of ['#readback', '#readfabs']){
-  assert.doesNotMatch(readerCssRules, new RegExp(`${selector}\\{[^}]*(top|margin-top):`),
-    `${selector} sets its own vertical offset, so the two controls can drift apart`);
-}
+assert.match(readerCssRules, /#readback,#aafab\{[^}]*height:42px/,
+  'The side controls no longer share a common height');
 assert.doesNotMatch(readerScroll, /classList\.add\('scrolling'\)/,
   'The old any-scroll fade is back alongside the direction signal');
 

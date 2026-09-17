@@ -48,13 +48,14 @@ function addWord(k, span){
   const acro = isAcro(raw);
   const display = acro ? raw.replace(/s$/,'') : k;
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
+  const buried = dead[k] || 0;
   words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
-    example:sentenceOf(span), book:curBook.title, status:1, mark:true, addedAt:Date.now(), up:Date.now() };
+    example:sentenceOf(span), book:curBook.title, status:1, mark:true,
+    addedAt:Date.now(), up:Math.max(Date.now(),buried+1) };
   recentWordOpens.set(k, Date.now());
   /* 이제 이 기기에 잃을 것이 생겼습니다 — 저장소를 영구로 표시해 달라고 부탁합니다.
      한 번만 물어보고, 이미 물어봤으면 조용히 지나갑니다. */
   requestDurableLocalStorage();
-  const buried = dead[k] || 0;
   delete dead[k]; save(LS_DEAD, dead);
   /* 여기서는 이 기기에만 적어 둡니다. 아직 뜻이 하나도 없는 낱말이라 다른 기기로
      보낼 것이 없고, 그대로 닫히면 없던 일이 되기 때문입니다 — 올려 보낸 뒤에
@@ -114,7 +115,7 @@ function meaningWaitLine(off, hasCandidates){
                          : '오프라인이라 뜻을 찾을 수 없어요';
   }
   const why =
-      off === 'quota'   ? '오늘 AI 사전을 다 썼어요'
+      off === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요'
     : off === 'trial'   ? '무료 체험을 다 썼어요'
     : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
     : off === 'error'   ? '문맥 뜻을 받지 못했어요'
@@ -222,7 +223,7 @@ function meaningCards(root, activeId){
      이유로 대표 카드를 목록에서 빼면, 첫 번째로 적은 뜻이 화면에서 사라진 채
      저장소에만 남습니다. 걸러 낼 것은 "다른 표현 카드"뿐입니다. */
   const cards=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
-    && item.ko && (id===root || !item.phraseParts));
+    && validWordMeaning(item) && (id===root || !item.phraseParts));
   cards.sort(([a,aw],[b,bw])=>(a===activeId?-1:0)-(b===activeId?-1:0)
     || meaningPickedAt(bw)-meaningPickedAt(aw));
   const unique=new Set();
@@ -264,6 +265,7 @@ function createMeaning(root, text, source){
      두 시각이 같은 순간에 찍히면 합칠 때 부고가 이깁니다. 만드는 순간 뗍니다
      (낱말을 다시 넣을 때 `addWord` 가 하는 일과 같습니다). */
   const id=senseCardKey(root,meaning), previous=words[id];
+  const buried=dead[id]||0;
   if(dead[id]){ delete dead[id]; save(LS_DEAD,dead); }
   words[id]={...(previous||{}), word:base.word, root, sense:true,
     clicked:from.clicked||base.clicked||base.word, forms:base.forms||[base.word],
@@ -271,7 +273,7 @@ function createMeaning(root, text, source){
     status:previous?previous.status:(base.status||1), mark:previous?previous.mark:base.mark!==false,
     ko:meaning, ai, alts:Array.isArray(from.alts)?from.alts:[], phrase:from.phrase||'',
     defs:[], kodict:[], addedAt:previous?previous.addedAt:Date.now(),
-    pickedAt:Date.now(), up:Date.now()};
+    pickedAt:Date.now(), up:Math.max(Date.now(),buried+1)};
   dropSuggestion(root,meaning); saveWords(); queueSync();
   return id;
 }
@@ -288,23 +290,23 @@ function dropSuggestion(root, meaning){
 
    지우는 문은 둘입니다: 지금 보는 뜻은 메인 뜻 칸에서, 나머지는 그 칩에서.
    지금 보던 뜻을 지우면 남은 것 중 가장 최근에 봤던 것이 곧바로 지금 뜻이 되고,
-   다른 뜻을 지우면 보고 있던 뜻은 그대로 있습니다. 하나도 남지 않으면 낱말은
-   단어장에 그대로 두고 뜻자리만 비웁니다(＋ 와 추천 뜻은 그 자리에 있습니다). */
+   다른 뜻을 지우면 보고 있던 뜻은 그대로 있습니다. 마지막 뜻을 지우면
+   낱말도 지우고 부고를 남겨 다른 기기의 예전 사본이 되살리지 못하게 합니다. */
 function deleteMeaning(id){
   const item=words[id]; if(!item) return;
+  const panelWasOpen=document.getElementById('panel').classList.contains('on');
   const root=item.root||id;
   const wasActive=id===selKey;
   const rest=meaningCards(root,null).filter(([mid])=>mid!==id);
-  const bury=key=>{ delete words[key]; dead[key]=Date.now(); save(LS_DEAD,dead); };
+  const bury=key=>{
+    dead[key]=Math.max(Date.now(),(words[key]&&(words[key].up||words[key].addedAt)||0)+1);
+    delete words[key]; save(LS_DEAD,dead);
+  };
   let next=wasActive ? '' : selKey;
   if(!rest.length){
-    if(id!==root && words[root]) bury(id);
-    else{
-      const base=words[root];
-      base.ko=''; base.ai={...(base.ai||{}),ko:'',note:'',gloss:''}; delete base.koEdited;
-      base.up=Date.now();
-    }
-    next=root;
+    Object.keys(words).filter(key=>key===root || (words[key]&&words[key].root===root))
+      .forEach(key=>bury(key));
+    next='';
   }else if(id===root){
     /* 대표 카드의 주소는 원문 색칠이 기대는 열쇠라 비울 수 없습니다. 다른 뜻 하나를
        그 자리로 올립니다 — 보고 있던 뜻이 따로 있으면 그것을 올려, 칩 하나 지웠을
@@ -320,11 +322,15 @@ function deleteMeaning(id){
     bury(id);
     if(wasActive){ const [nextId]=rest[0]; touchMeaning(nextId); next=nextId; }
   }
-  if(!next || !words[next]) next=root;
+  if(!next || !words[next]) next=words[root]?root:'';
   addingMeaning=false;
   saveWords(); queueSync(); paintWord(root); refreshReaderWords();
   if(typeof renderVocab==='function' && document.getElementById('v-vocab').classList.contains('on')) renderVocab();
-  contextView=null; selectWord(next,null);
+  contextView=null;
+  if(panelWasOpen){
+    if(next) selectWord(next,null);
+    else closePanel();
+  }
 }
 
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
@@ -523,7 +529,7 @@ function renderPanel(){
   const freeCands = (!phrase && !aiAnswered) ? freeDictCandidates(base) : [];
   if(asking){
     aiBox.className = 'on load';
-    aiCap.textContent = '문맥 뜻 · AI';
+    aiCap.textContent = '문맥 뜻';
   }else if(!shown){
     /* 뜻이 아직 없습니다. 칸을 접지 않고 무슨 일인지 그 자리에 적습니다 —
        칸이 사라졌다 나타나면 화면이 출렁이고, 무엇을 기다렸는지도 남지 않습니다. */
@@ -539,7 +545,7 @@ function renderPanel(){
        AI 가 답했던 사실이 사라져 보이지 않게 함께 봅니다. */
     aiCap.textContent = w.koEdited ? '내가 적은 뜻'
       : ai.cached ? '전에 찾아본 뜻'
-      : ((ai.done || ai.noteDone) ? '문맥 뜻 · AI' : '뜻');
+      : ((ai.done || ai.noteDone) ? '문맥 뜻' : '뜻');
     aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
     /* 뜻 아래 한 줄은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질은
@@ -589,7 +595,7 @@ function renderPanel(){
   document.getElementById('p-aibtn-t').textContent =
       (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
     : (off === 'error' || w.aiSlow)        ? '다시 시도'
-    :                                        'Let AI handle this';
+    :                                        '문맥 뜻 찾기';
   /* 맛보기가 몇 번 안 남았으면 미리 말해 둡니다. 다음 낱말에서 갑자기 막히는 것보다
      낫습니다. 아직 넉넉할 때는 아무 말도 하지 않습니다 — 읽는 중이니까요. */
   const trialWarn = (!sbUser && !off && anonLooksLeft !== null && anonLooksLeft <= 3)
@@ -606,7 +612,7 @@ function renderPanel(){
   aiHint.textContent =
       hintOff === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
     : hintOff === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
-    : hintOff === 'quota'   ? '오늘 AI 사전을 다 썼어요. 자정에 다시 채워집니다'
+    : hintOff === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요. 자정에 다시 채워집니다'
     /* 무료 사전도 남의 서버입니다 — 오프라인이면 그쪽도 못 부릅니다. 보이는
        뜻은 전에 받아 둔 것뿐이라, "무료 사전은 된다"고 적으면 거짓말입니다. */
     : hintOff === 'offline' ? '오프라인이라 새로운 뜻은 불러올 수 없어요'
@@ -751,7 +757,7 @@ async function openPhrase(k){
   try{
     const cacheKey=lookKey('phrase:'+text,view.sentence);
     const hit=await dictGet(cacheKey);
-    if(hit && hit.ko){
+    if(hit && String(hit.ko||'').trim()){
       if(!sheetAlive(life)) return;
       view.answer=answerFromLook(hit,!hit.seed); adoptPhrase(k,view); return;
     }
@@ -816,9 +822,11 @@ document.getElementById('p-know').onclick = ()=>{
   /* 대표 단어를 빼면 그 아래의 문맥 카드도 함께 빼야 유령 카드가 남지 않습니다.
      반대로 take의 두 번째 뜻 카드만 빼는 경우에는 그 카드 하나만 지웁니다. */
   if(!root){
-    Object.keys(words).filter(id=>words[id]&&words[id].root===k).forEach(id=>delete words[id]);
+    Object.keys(words).filter(id=>words[id]&&words[id].root===k).forEach(id=>{
+      dead[id]=Math.max(Date.now(),(words[id].up||0)+1); delete words[id];
+    });
   }
-  delete words[k]; dead[k] = Date.now(); save(LS_DEAD, dead);
+  dead[k] = Math.max(Date.now(),(words[k].up||0)+1); delete words[k]; save(LS_DEAD, dead);
   saveWords(); paintWord(k); closePanel(); queueSync(); toast('단어장에서 뺐어요');
 };
 function refreshReaderWords(){
@@ -1124,7 +1132,7 @@ async function askCurrentContext(k){
       sentence:context.sentence,book:context.book||'',device:sbUser?'':deviceId()}, sig);
     /* 빈손으로 끊긴 것만 없던 일입니다. 끊기보다 답이 빨랐다면 그것은 답입니다. */
     if(!j && sig && sig.aborted) return;
-    if(!j || j.error || !j.ko){
+    if(!j || j.error || !String(j.ko||'').trim()){
       context.error=(j&&j.error)==='anon_exhausted' ? 'trial' : (j&&j.error)||'error';
       return;
     }
@@ -1212,7 +1220,7 @@ async function fetchLook(k, opt){
               : e === 'login_required' ? 'login' : 'error';
       /* 예전에는 "무료 사전으로 보여줄게요" 였습니다 — 그때는 번역기의 첫 줄을
          뜻자리에 슬쩍 넣었기 때문입니다. 이제 고르는 사람은 사람입니다. */
-      if(w.aiOff === 'quota') toast('오늘 AI 사전 한도를 다 썼어요. 무료 사전 뜻에서 골라 주세요');
+      if(w.aiOff === 'quota') readerPillStatus('오늘의 문맥 뜻 사용량을 모두 썼어요');
       if(w.aiOff === 'trial'){ anonLooksLeft = 0; toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요'); }
       return false;
     }
@@ -1367,7 +1375,8 @@ async function fetchDict(k){
    자리를 기억할 곳이 어딘가에는 있어야 합니다. */
 const vocabOpen = new Set();
 function renderVocab(){
-  const list = Object.entries(words).sort((a,b)=>b[1].addedAt-a[1].addedAt);
+  const list = Object.entries(words).filter(([,item])=>validWordMeaning(item))
+    .sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
   const grouped=new Map();
   list.forEach(([k,w])=>{
@@ -1442,9 +1451,13 @@ function renderVocab(){
       const sense = /** @type {HTMLElement} */(row);
       const k = sense.dataset.k;
       const del = /** @type {HTMLElement} */(sense.querySelector('.rowdel'));
-      if(del) del.onclick = ()=>{ delete words[k]; dead[k]=Date.now(); save(LS_DEAD,dead); saveWords(); queueSync(); renderVocab(); };
+      if(del) del.onclick = ()=>{ deleteMeaning(k); renderVocab(); };
       sense.querySelector('.vko').addEventListener('blur', event=>{
-        if(words[k]){ words[k].ko = (/** @type {HTMLElement} */(event.target)).textContent.trim(); words[k].up = Date.now(); saveWords(); queueSync(); }
+        if(!words[k]) return;
+        const value=(/** @type {HTMLElement} */(event.target)).textContent.trim();
+        if(!value){ deleteMeaning(k); renderVocab(); return; }
+        words[k].ko=value; words[k].koEdited=true; words[k].up=Date.now();
+        saveWords(); queueSync();
       });
     });
   });
@@ -1458,7 +1471,7 @@ function csvCell(value){
   return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g,'""') + '"' : text;
 }
 document.getElementById('btn-export').onclick = ()=>{
-  const list = Object.values(words).sort((a,b)=>b.addedAt-a.addedAt);
+  const list = Object.values(words).filter(validWordMeaning).sort((a,b)=>b.addedAt-a.addedAt);
   if(!list.length){ toast('내보낼 단어가 없어요'); return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
   const rows = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],

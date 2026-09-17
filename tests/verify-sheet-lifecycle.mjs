@@ -144,10 +144,12 @@ function makeContext(world, net, store){
     LS_DEAD:'dead', LS_POS:'pos',
     load:()=>'', save(){},
     saveWords(){ world.saves++; },
+    validWordMeaning:item=>!!(item && String(item.ko||'').trim()),
     queueSync(){ world.syncs++; },
     keyOf:k=>k,
     esc:s=>String(s==null?'':s),
     toast(){},
+    readerPillStatus(){},
     pinReaderChrome(){},
     closeSentence(){},
     refreshOriginalSavedWords(){},
@@ -469,21 +471,14 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
     'AI 가 답하지 못한 낱말이 뜻 없이 단어장에 남았습니다');
 }
 {
-  /* 이미 있던 낱말은 절대 안 지웁니다 — 뜻이 있든 없든 */
+  /* 기존 저장 뜻은 새 조회가 실패해도 유지합니다. */
   const { ctx } = boot();
   ctx.words.harbour = savedWord('harbour', '항구');
-  ctx.words.hollow  = savedWord('hollow', '');     // 사람이 뜻만 지워 둔 자리
   ctx.openWord('harbour', newWordSpan('harbour'));
   await settle();
   ctx.closePanel();
   await settle();
-  ctx.openWord('hollow', newWordSpan('hollow'));
-  await settle();
-  ctx.closePanel();
-  await settle();
   assert.ok(ctx.words.harbour, '이미 저장해 둔 낱말이 다시 열었다 닫는 것만으로 사라졌습니다');
-  assert.ok(ctx.words.hollow,
-    '뜻자리를 비워 둔 낱말이 사라졌습니다 — 버리는 기준은 "비었다"가 아니라 "이번에 만들었다"입니다');
 }
 {
   /* 닫지 않고 옆 낱말로 건너뛰어도 껍데기는 안 남습니다 */
@@ -497,8 +492,7 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   assert.ok(ctx.words.mullion, '방금 연 낱말까지 함께 사라졌습니다');
 }
 {
-  /* 뜻을 받은 뒤에 사람이 그 뜻을 × 로 지우는 것은 단어장을 손보는 일입니다 —
-     이 규칙이 볼 일이 아닙니다. `deleteMeaning` 은 빈 뜻자리를 남깁니다. */
+  /* 마지막으로 저장한 뜻을 지우면 낱말도 제거하고 tombstone을 남깁니다. */
   const { net, ctx } = boot();
   tapBrandNewWord(ctx, 'tessera');
   await settle();
@@ -508,9 +502,8 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   await settle();
   ctx.closePanel();
   await settle();
-  assert.ok(ctx.words.tessera,
-    '뜻을 받은 뒤 그 뜻 하나를 지웠을 뿐인데 낱말까지 사라졌습니다');
-  assert.equal(ctx.words.tessera.ko, '', '뜻자리가 비지 않았습니다');
+  assert.equal(ctx.words.tessera,undefined,'마지막 뜻을 지운 낱말이 남았습니다');
+  assert.ok(ctx.dead.tessera,'삭제한 낱말의 tombstone이 없습니다');
 }
 
 {

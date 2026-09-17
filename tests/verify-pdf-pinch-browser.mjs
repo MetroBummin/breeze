@@ -86,7 +86,8 @@ try{
    const snapshot=()=>page.evaluate(()=>({
      zoom:originalZoom(),left:readerScroller().scrollLeft,top:readerScrollTop(),
      rect:originalZoomLayer().getBoundingClientRect().toJSON(),
-     chrome:document.getElementById('readfabs').getBoundingClientRect().toJSON(),
+     chrome:document.getElementById('readpill').getBoundingClientRect().toJSON(),
+     chromeHidden:document.body.classList.contains('chrome-hidden'),
      busy:originalPinchBusy(),owned:originalPinchTouches,
      panel:wordPanelOpen(),sentence:sentenceModalOpen(),viewport:visualViewport.scale,wordActions:window.qaWordActions,
    }));
@@ -124,7 +125,7 @@ try{
      assert.equal(after.busy,false);assert.equal(after.owned,false);
      assert.equal(after.panel,false);assert.equal(after.sentence,false);
      assert.equal(after.wordActions,before.wordActions,'pinch also dispatched a word tap');
-     assert.equal(after.chrome.width,before.chrome.width);assert.equal(after.chrome.x,before.chrome.x);
+     assert.equal(after.chromeHidden,before.chromeHidden,'pinch changed toolbar state');
      assert.equal(after.viewport,1,'browser viewport zoomed');
      return after;
    };
@@ -202,7 +203,10 @@ try{
      await touch('touchEnd',[]);
      await page.evaluate(()=>closeSentence());await page.waitForTimeout(300);
    }
-   // Aa owns touches; there is no PDF zoom row.
+   // Aa is intentionally hidden in the compact toolbar; expand the title
+   // pill first, then let Aa own the next touch.
+   if(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')))
+     await page.locator('#readpill-title').click();
    await page.locator('#aafab').click();
    const blockedZoom=(await snapshot()).zoom;
    await touch('touchStart',points(90));await touch('touchMove',points(180));await touch('touchEnd',[]);
@@ -212,6 +216,8 @@ try{
    await page.evaluate(async()=>{resetOriginalZoom();await restorePdfAnchor({page:1,y:.3},100);});
    await page.waitForTimeout(300);
    await pinch(100,132);
+   if(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')))
+     await page.locator('#readpill-title').click();
    await page.locator('#aafab').click();
    assert.equal(await page.locator('#aa-pdfzoom-pct').textContent(),'132%');
    await page.locator('#pdfzoom-in').click();

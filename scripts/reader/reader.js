@@ -201,6 +201,8 @@ async function openBook(b){
      숨기는 게 아니라, 그 앞에서 끝내는 편이 낫습니다 — AI 도 한도도 쓰지 않습니다. */
   warmDict();
   document.getElementById('rtitle').textContent = b.title;
+  document.getElementById('readpill-title').textContent = b.title;
+  document.getElementById('readpill-title').setAttribute('aria-label',b.title+' · 컨트롤 펼치기');
   /* 기사에는 연결할 "원본 파일"이 없습니다. 사진과 소제목까지 담아 오지만
      사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을
      하나 남겨 둡니다. */
@@ -337,9 +339,40 @@ function whileRestoringChrome(job){
   return result;
 }
 function setReaderChrome(hidden){
+  if(document.body.classList.contains('chrome-hidden')===hidden) return;
   document.body.classList.toggle('chrome-hidden', hidden);
+  const side=[document.getElementById('readback'),document.getElementById('aafab'),
+    document.getElementById('modefab')];
+  side.forEach(button=>{
+    if(!button) return;
+    button.inert=hidden;
+    if(hidden && document.activeElement===button) document.getElementById('readpill-title').focus();
+  });
+  if(hidden && typeof closeAa==='function') closeAa();
+}
+function expandReaderChrome(){
+  if(!document.body.classList.contains('chrome-hidden')) return;
+  chromeRun=0; chromeLastY=readerScrollTop(); chromeHoldUntil=Date.now()+500;
+  setReaderChrome(false);
+}
+let readerPillTimer=0, readerPillMessage='';
+function readerPillStatus(message){
+  const title=document.getElementById('readpill-title');
+  if(!title || !curBook || !document.getElementById('v-read').classList.contains('on')) return;
+  const next=String(message||'').trim();
+  if(!next || (next===readerPillMessage && readerPillTimer)) return;
+  readerPillMessage=next;
+  title.textContent=next;
+  clearTimeout(readerPillTimer);
+  readerPillTimer=setTimeout(()=>{
+    readerPillTimer=0; readerPillMessage='';
+    title.textContent=curBook ? curBook.title : '';
+  },1400);
 }
 function showReaderChrome(){
+  clearTimeout(readerPillTimer); readerPillTimer=0; readerPillMessage='';
+  const title=document.getElementById('readpill-title');
+  if(title) title.textContent=curBook ? curBook.title : '';
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
   chromeLastY = readerScrollTop(); chromeRun = 0;
   setReaderChrome(false);
@@ -354,6 +387,9 @@ function followScrollDirection(){
   if(chromePinned || Date.now() < chromeHoldUntil){ chromeRun = 0; return; }
   /* 모드를 바꾸며 프로그램이 옮겨 놓은 화면은 내가 읽어 내려간 것이 아닙니다 */
   if(Date.now() < readerScrollPauseUntil){ chromeRun = 0; return; }
+  if(readerScrollWasProgrammatic() || (typeof originalPinchBusy==='function' && originalPinchBusy())){
+    chromeRun=0; return;
+  }
   if(y < CHROME_TOP){ chromeRun = 0; setReaderChrome(false); return; }
   if(!step) return;
   /* 방향이 바뀌면 거리를 처음부터 다시 셉니다. 그래야 관성이 남긴 몇 픽셀이
@@ -369,8 +405,10 @@ function followScrollDirection(){
    여기서 하는 일은 둘뿐입니다 — 진행줄을 다시 그리고, 잠시 뒤에 읽은 자리를
    적어 두기. **위의 `followScrollDirection()` 은 여기서 부르지 않습니다.**
    끊은 연결은 이 한 줄이고, 그것이 "스크롤은 글을 옮기는 일일 뿐"의 전부입니다. */
+let chromeFrame=0;
 (readerScroller() || window).addEventListener('scroll', ()=>{
   if(!curBook) return;
+  if(!chromeFrame) chromeFrame=requestAnimationFrame(()=>{ chromeFrame=0; if(curBook) followScrollDirection(); });
   invalidateReaderMeasurements();
   scheduleProgressUpdate();
   if(Date.now()<readerScrollPauseUntil) return;

@@ -47,6 +47,7 @@ function originalPinchDistance(points){
                     points[0].clientY-points[1].clientY);
 }
 function beginOriginalPinch(center, distance, ids){
+  if(typeof pinReaderChrome==='function') pinReaderChrome(true,'zoom');
   const box = readerScroller(), layer = originalZoomLayer(), stage = originalZoomStage();
   // A deliberate pinch supersedes delayed mode-landing restores (360/900ms).
   readerModeChangeToken++;
@@ -97,6 +98,7 @@ function finishOriginalPinch(){
   setOriginalZoom(pinch.next,null,pinch.position);
   resharpenOriginalPages();
   saveReadingState();
+  if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function cancelOriginalPinch(){
   cancelAnimationFrame(originalPinchFrame);
@@ -110,6 +112,7 @@ function cancelOriginalPinch(){
     applyOriginalZoomTransform();
   }
   resumeOriginalPdfPaint();
+  if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function originalPinchStart(event){
   countOriginalPdfContacts(event);

@@ -27,17 +27,23 @@ document.addEventListener('DOMContentLoaded',()=>{
    단추는 지금 모드의 반대쪽을 그리므로, 누르면 그 그림으로 갑니다. */
 function toggleReaderMode(){
   const next = currentReaderMode==='original' ? 'text' : 'original';
-  miniToast(next==='original' ? '원본' : '글자');   // 글자 없는 단추라 한 번 알려 줍니다
+  readerPillStatus(next==='original' ? 'Original mode' : 'Text mode');
   switchReaderMode(next);
 }
 
 function updateReaderModeControls(){
   const fab = document.getElementById('modefab');
   if(!fab) return;
-  fab.hidden = !bookSupportsOriginal(curBook);
+  const kind=curBook && (curBook.kind || (curBook.original && curBook.original.kind));
+  fab.hidden = kind!=='pdf';
   const label = currentReaderMode==='original' ? '글자로 보기' : '원본으로 보기';
   fab.title = label;
   fab.setAttribute('aria-label', label);
+  const other=document.getElementById('aa-epub-mode');
+  if(other){
+    other.hidden=!bookSupportsOriginal(curBook) || kind==='pdf';
+    document.getElementById('aa-epub-mode-button').textContent=label;
+  }
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
 }
 

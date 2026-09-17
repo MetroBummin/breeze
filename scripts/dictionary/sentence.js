@@ -103,7 +103,7 @@ function paintSentence(state){
      것은 다시 눌러도 같은 답이 오므로 여기서 권하지 않습니다. */
   const retry = document.getElementById('ps-retry');
   if(retry) retry.hidden = !state.retry;
-  document.getElementById('ps-cap').textContent = state.cached ? '전에 물어본 문장' : '문장 통째로 · AI';
+  document.getElementById('ps-cap').textContent = state.cached ? '전에 해석한 문장' : '문장 해석';
 }
 
 /* 실패한 것은 요청 하나뿐입니다. 어느 문장이었는지는 창이 떠 있는 동안 여기
@@ -159,7 +159,7 @@ async function openSentence(text){
     const stuck = why === 'login_required' || why === 'quota_exceeded';
     paintSentenceFor(life,{ en:clean, retry:!stuck, foot:
         why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
-      : why === 'quota_exceeded' ? '오늘 AI 조회가 부족해요. 문장 해석에는 2회가 필요해요'
+      : why === 'quota_exceeded' ? '오늘의 사용량이 부족해요. 문장 해석에는 2회가 필요해요'
       :                            '잠깐 문제가 있었어요' });
     return;
   }

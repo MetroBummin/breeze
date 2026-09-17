@@ -76,9 +76,10 @@ function makeWorld(){
      여기서 시작한 손짓은 판정 계층이 통째로 UI 로 보냅니다. */
   element('readchrome', 'v-read');
   element('readback', 'readchrome');
-  element('readfabs', 'readchrome');
-  element('aafab', 'readfabs');
-  element('modefab', 'readfabs');
+  element('readpill', 'readchrome');
+  element('readpill-title', 'readpill');
+  element('aafab', 'readchrome');
+  element('modefab', 'readpill');
   element('sheetbg', 'v-read');
   element('panel', 'v-read');
   element('p-close', 'panel');
