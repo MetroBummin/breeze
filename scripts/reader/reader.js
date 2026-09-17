@@ -237,7 +237,7 @@ async function openBook(b){
   else requestAnimationFrame(()=>{
     const pos=posOf(b.id);
     if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
-    lastAnchor=captureAnchor(); updatePfill();
+    lastAnchor=captureAnchor(); updatePfill(true);
   });
 }
 /* Book titles and file names end up inside HTML attributes, so quotes have to
@@ -247,21 +247,57 @@ function esc(s){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function updatePfill(){
+function updatePfill(instant=false){
   if(!curBook || readerPillProgressHeld) return;
   const progress=visibleReaderProgress();
-  setReaderPillProgress(progress);
+  setReaderPillProgress(progress,instant);
 }
 let readerPillProgressHeld=false;
-function setReaderPillProgress(progress){
+let readerPillRawProgress=0, readerPillVisualProgress=0;
+let readerPillAnimationFrame=0, readerPillAnimationAt=0;
+const readerPillMotion=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+function paintReaderPillProgress(){
   document.getElementById('readpill-progress').style.transform =
-    `scaleX(${Math.max(0,Math.min(1,Number(progress)||0))})`;
+    `scaleX(${readerPillVisualProgress})`;
 }
-function holdReaderPillProgress(){ readerPillProgressHeld=true; }
+/* One visual target follows the canonical position. New scroll samples retarget
+   the same animation instead of restarting a CSS transition each frame. */
+function animateReaderPillProgress(now){
+  readerPillAnimationFrame=0;
+  const elapsed=readerPillAnimationAt ? Math.min(64,now-readerPillAnimationAt) : 16;
+  readerPillAnimationAt=now;
+  readerPillVisualProgress+=(readerPillRawProgress-readerPillVisualProgress)
+    *(1-Math.exp(-elapsed/85));
+  if(Math.abs(readerPillRawProgress-readerPillVisualProgress)<.001){
+    readerPillVisualProgress=readerPillRawProgress;
+    readerPillAnimationAt=0;
+  }else{
+    readerPillAnimationFrame=requestAnimationFrame(animateReaderPillProgress);
+  }
+  paintReaderPillProgress();
+}
+function setReaderPillProgress(progress,instant=false){
+  readerPillRawProgress=Math.max(0,Math.min(1,Number(progress)||0));
+  if(instant || (readerPillMotion && readerPillMotion.matches)){
+    if(readerPillAnimationFrame) cancelAnimationFrame(readerPillAnimationFrame);
+    readerPillAnimationFrame=0; readerPillAnimationAt=0;
+    readerPillVisualProgress=readerPillRawProgress;
+    paintReaderPillProgress();
+  }else if(!readerPillAnimationFrame && Math.abs(readerPillRawProgress-readerPillVisualProgress)>=.001){
+    readerPillAnimationAt=0;
+    readerPillAnimationFrame=requestAnimationFrame(animateReaderPillProgress);
+  }
+}
+function holdReaderPillProgress(){
+  readerPillProgressHeld=true;
+  if(readerPillAnimationFrame) cancelAnimationFrame(readerPillAnimationFrame);
+  readerPillAnimationFrame=0; readerPillAnimationAt=0;
+  readerPillRawProgress=readerPillVisualProgress;
+}
 function releaseReaderPillProgress(useSavedPosition){
   readerPillProgressHeld=false;
-  if(useSavedPosition) setReaderPillProgress(posOf(curBook.id).p);
-  else updatePfill();
+  if(useSavedPosition) setReaderPillProgress(posOf(curBook.id).p,true);
+  else updatePfill(true);
 }
 let scrollTick = null, readerScrollPauseUntil = 0, progressFrame = 0;
 function suspendReaderScrollSave(duration){
@@ -277,7 +313,7 @@ function scheduleProgressUpdate(){
     if(!curBook) return;
     /* 이 프레임의 자를 여기서 한 번 놓습니다. 아래 둘은 같은 답을 나눠 씁니다. */
     invalidateReaderMeasurements();
-    updatePfill();
+    updatePfill(readerScrollWasProgrammatic());
     if(currentReaderMode==='text' && !readerAnchorHeld()) lastAnchor=readerFrameAnchor();
   });
 }
@@ -387,7 +423,7 @@ function showReaderChrome(){
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
   chromeLastY = readerScrollTop(); chromeRun = 0;
   readerPillProgressHeld=false;
-  setReaderPillProgress(curBook ? posOf(curBook.id).p : 0);
+  setReaderPillProgress(curBook ? posOf(curBook.id).p : 0,true);
   setReaderChrome(false);
 }
 function followScrollDirection(){

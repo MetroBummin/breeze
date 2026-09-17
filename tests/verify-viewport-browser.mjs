@@ -73,7 +73,7 @@ const url=`http://127.0.0.1:${server.address().port}`;
    samples.push(sample);
   }
   await p.evaluate(()=>{readerScroller().scrollTop+=600;});
-  await p.waitForTimeout(250);
+  await p.waitForTimeout(400);
   const pillProgress=await p.evaluate(()=>({
     expected:visibleReaderProgress(),
     actual:Number(document.getElementById('readpill-progress').style.transform.slice(7,-1))

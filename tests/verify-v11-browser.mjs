@@ -55,14 +55,26 @@ try{
   await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
   await page.locator('#readpill-title').waitFor({state:'visible'});
   assert.equal(await page.locator('#modefab').isVisible(),false,'Text should have no mode switch');
-  const expandedPillWidth=await page.locator('#readpill').evaluate(node=>node.getBoundingClientRect().width);
+  const pillGeometry=()=>page.locator('#readpill').evaluate(node=>{
+    const rect=node.getBoundingClientRect(), style=getComputedStyle(node);
+    return {width:rect.width,height:rect.height,centerX:rect.x+rect.width/2,
+      centerY:rect.y+rect.height/2,padX:parseFloat(style.paddingLeft),
+      padY:parseFloat(style.paddingTop),radius:parseFloat(style.borderTopLeftRadius)};
+  });
+  const expandedPill=await pillGeometry();
   await page.waitForTimeout(800); // initial position restoration is programmatic
   await page.evaluate(()=>{readerScroller().scrollTop=300;});
   await page.waitForFunction(()=>document.body.classList.contains('chrome-hidden'));
   await page.waitForTimeout(400); // wait for the width morph, not just its class change
-  const collapsedPillWidth=await page.locator('#readpill').evaluate(node=>node.getBoundingClientRect().width);
-  assert.ok(collapsedPillWidth<expandedPillWidth*0.75,
-    `Collapsed pill is still too wide (${collapsedPillWidth}px vs ${expandedPillWidth}px)`);
+  const collapsedPill=await pillGeometry();
+  assert.ok(collapsedPill.width<expandedPill.width*0.75,
+    `Collapsed pill is still too wide (${collapsedPill.width}px vs ${expandedPill.width}px)`);
+  for(const key of ['height','padX','padY','radius']){
+    assert.ok(collapsedPill[key]<expandedPill[key],`Collapsed pill did not shrink ${key}`);
+  }
+  assert.ok(Math.abs(collapsedPill.centerX-expandedPill.centerX)<1
+    && Math.abs(collapsedPill.centerY-expandedPill.centerY)<1,
+    'The pill moved off center while settling into compact geometry');
   const fillBeforeToast=await page.locator('#readpill-progress').evaluate(node=>node.style.transform);
   assert.match(fillBeforeToast,/^scaleX\(0\.\d+\)$/,'Text progress did not reach the pill');
   assert.ok(Math.abs(Number(fillBeforeToast.slice(7,-1))
@@ -88,6 +100,22 @@ try{
   await page.waitForFunction(()=>document.body.classList.contains('chrome-hidden'));
   await page.evaluate(()=>{readerScroller().scrollTop=560;});
   await page.waitForFunction(()=>!document.body.classList.contains('chrome-hidden'));
+  await page.evaluate(()=>readerScrollTo(1200));
+  await page.waitForTimeout(100);
+  assert.ok(await page.evaluate(()=>Math.abs(readerPillRawProgress-readerPillVisualProgress)<.001
+    && !readerPillAnimationFrame),
+    'A programmatic page jump should settle without a long fill sweep');
+  await page.evaluate(()=>{show('home');setReaderPillProgress(0,true);setReaderPillProgress(.8);});
+  await page.waitForTimeout(80);
+  const moving=await page.evaluate(()=>({raw:readerPillRawProgress,visual:readerPillVisualProgress}));
+  assert.equal(moving.raw,.8);
+  assert.ok(moving.visual>0 && moving.visual<.8,'Progress did not ease toward its target');
+  await page.evaluate(()=>setReaderPillProgress(.2));
+  const retargeted=await page.evaluate(()=>readerPillVisualProgress);
+  assert.ok(Math.abs(retargeted-moving.visual)<.08,'A new target restarted the fill from zero');
+  await page.waitForTimeout(350);
+  assert.ok(Math.abs(await page.evaluate(()=>readerPillVisualProgress)-.2)<.02,
+    'The visual fill did not settle near the newest target');
   console.log('Native onboarding fixture, isolation, replay, and Reader pill verified');
   await context.close();
 }finally{await browser.close();await new Promise(done=>server.close(done));}

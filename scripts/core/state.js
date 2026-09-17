@@ -137,7 +137,7 @@ function restoreAnchor(a){
   if(!el) return false;
   /* 스크롤하는 것은 문서가 아니라 읽는 칸입니다 — scripts/reader/reader-scroll.js */
   readerScrollTo(readerScrollTop() + el.getBoundingClientRect().top - (a.dy||0));
-  updatePfill();
+  updatePfill(true);
   return true;
 }
 /* 레이아웃을 바꾸는 동작을 이 함수로 감싸면 보던 문장이 제자리에 남습니다 */

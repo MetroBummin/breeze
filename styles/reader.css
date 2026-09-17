@@ -166,14 +166,15 @@
      지고, 자리를 줄이면 걸어가며 못 누릅니다 — 둘을 따로 정합니다. */
   #readback::after{content:''; position:absolute; inset:-6px;}
   #aafab{font:600 15px var(--ui);}
-  #readpill{position:absolute; left:50%; transform:translateX(-50%);
+  #readpill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     width:min(56vw,400px); height:44px; border-radius:24px;
-    display:flex; align-items:center; justify-content:center; padding:0 12px; overflow:hidden;
-    transition:width .34s cubic-bezier(.2,.75,.25,1),padding .34s cubic-bezier(.2,.75,.25,1),
+    display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;
+    transition:width .34s cubic-bezier(.2,.75,.25,1),height .34s cubic-bezier(.2,.75,.25,1),
+      padding .34s cubic-bezier(.2,.75,.25,1),border-radius .34s cubic-bezier(.2,.75,.25,1),
       box-shadow .34s ease;}
   #readpill-progress{position:absolute; inset:0; pointer-events:none;
     background:var(--chrome-progress); transform:scaleX(0); transform-origin:left center;
-    transition:transform .16s linear; will-change:transform;}
+    will-change:transform;}
   #readpill-title,#readpill #modefab{position:relative; z-index:1;}
   #readpill-title{border:0; background:none; color:inherit; cursor:default;
     min-width:0; max-width:100%; padding:0 5px; overflow:hidden; text-overflow:ellipsis;
@@ -184,7 +185,7 @@
     transition:width .3s ease,opacity .18s ease,margin .3s ease;}
   #readpill #modefab[hidden]{display:none;}
   #readback,#aafab{transition:opacity .2s ease,transform .3s ease,visibility 0s;}
-  body.chrome-hidden #readpill{width:min(36vw,180px); padding:0 10px;}
+  body.chrome-hidden #readpill{width:min(36vw,180px); height:34px; padding:2px 8px; border-radius:18px;}
   body.chrome-hidden #readpill #modefab{width:0; opacity:0; visibility:hidden; pointer-events:none;}
   body.chrome-hidden #readback,body.chrome-hidden #aafab{
     opacity:0; transform:translateY(8px); visibility:hidden; pointer-events:none;
@@ -204,7 +205,7 @@
     #readchrome{padding:0 22px;}
   }
   @media (prefers-reduced-motion:reduce){
-    #readpill,#readback,#aafab,#readpill #modefab,#readpill-progress{transition-duration:.01ms;}
+    #readpill,#readback,#aafab,#readpill #modefab{transition-duration:.01ms;}
   }
   /* 여기 있던 서른 줄은 "벌리면 커진 만큼 다시 줄여 놓는" 보정이었습니다 —
      `--vv-k`(배율의 역수)와 `--vv-x`·`--vv-y`·`--vv-dx`·`--vv-dy`(보이는 화면이
