@@ -72,6 +72,14 @@ const url=`http://127.0.0.1:${server.address().port}`;
    assert.equal(sample.scale,1);assert.equal(sample.width,390);assert.equal(sample.innerWidth,390);
    samples.push(sample);
   }
+  await p.evaluate(()=>{readerScroller().scrollTop+=600;});
+  await p.waitForTimeout(250);
+  const pillProgress=await p.evaluate(()=>({
+    expected:visibleReaderProgress(),
+    actual:Number(document.getElementById('readpill-progress').style.transform.slice(7,-1))
+  }));
+  assert.ok(Math.abs(pillProgress.actual-pillProgress.expected)<0.02,
+    `${['Text','PDF','EPUB'][n]} pill progress diverged from its canonical position`);
   await p.evaluate(()=>show('home'));
   const home=await p.evaluate(()=>breezeViewportSnapshot());
   assert.equal(home.scale,1);assert.equal(home.width,390);assert.equal(home.innerWidth,390);

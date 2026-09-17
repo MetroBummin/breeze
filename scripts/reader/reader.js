@@ -248,9 +248,20 @@ function esc(s){
 }
 
 function updatePfill(){
-  if(!curBook) return;
+  if(!curBook || readerPillProgressHeld) return;
   const progress=visibleReaderProgress();
-  document.getElementById('pfill').style.width = Math.max(0,Math.min(100,progress*100))+'%';
+  setReaderPillProgress(progress);
+}
+let readerPillProgressHeld=false;
+function setReaderPillProgress(progress){
+  document.getElementById('readpill-progress').style.transform =
+    `scaleX(${Math.max(0,Math.min(1,Number(progress)||0))})`;
+}
+function holdReaderPillProgress(){ readerPillProgressHeld=true; }
+function releaseReaderPillProgress(useSavedPosition){
+  readerPillProgressHeld=false;
+  if(useSavedPosition) setReaderPillProgress(posOf(curBook.id).p);
+  else updatePfill();
 }
 let scrollTick = null, readerScrollPauseUntil = 0, progressFrame = 0;
 function suspendReaderScrollSave(duration){
@@ -375,6 +386,8 @@ function showReaderChrome(){
   if(title) title.textContent=curBook ? curBook.title : '';
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
   chromeLastY = readerScrollTop(); chromeRun = 0;
+  readerPillProgressHeld=false;
+  setReaderPillProgress(curBook ? posOf(curBook.id).p : 0);
   setReaderChrome(false);
 }
 function followScrollDirection(){
@@ -402,7 +415,7 @@ function followScrollDirection(){
 /* 듣는 곳이 문서(`window`)에서 읽는 칸으로 옮겨졌습니다. 아이폰 사파리가 주소창을
    여닫으며 흘리던 가짜 스크롤이 여기까지 오지 않는 것도 덤입니다.
 
-   여기서 하는 일은 둘뿐입니다 — 진행줄을 다시 그리고, 잠시 뒤에 읽은 자리를
+   여기서 하는 일은 둘뿐입니다 — 제목 pill의 진행 채움을 다시 그리고, 잠시 뒤에 읽은 자리를
    적어 두기. **위의 `followScrollDirection()` 은 여기서 부르지 않습니다.**
    끊은 연결은 이 한 줄이고, 그것이 "스크롤은 글을 옮기는 일일 뿐"의 전부입니다. */
 let chromeFrame=0;

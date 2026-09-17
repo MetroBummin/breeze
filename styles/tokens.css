@@ -178,11 +178,11 @@
   /* ---- 상단바·떠 있는 단추의 반투명 면 ---- */
   --bar-bg:rgba(250,248,242,.9);
   --bar-line:rgba(215,225,222,.42);
-  --rbar-bg:transparent;
   /* 읽는 동안 떠 있는 조각 — 유리가 아니라 책 위에 얹은 얇은 종이입니다.
      그래서 흰색이 아니라 바탕 종이색(`--paper`)을 옅게 깔고, 테두리는 반짝이는
      흰 줄이 아니라 잉크가 아주 약하게 앉은 정도입니다. */
   --chrome-paper:rgba(250,248,242,.72);
+  --chrome-progress:rgba(77,174,214,.14);
   --chrome-press:rgba(23,55,71,.06);
   --sec-act-bg:rgba(253,251,246,.56);
   --sec-act-hover:#EFEDE4;
@@ -381,8 +381,8 @@ body.dark{
 
   --bar-bg:rgba(23,24,22,.88);
   --bar-line:rgba(77,76,68,.42);
-  --rbar-bg:rgba(23,24,22,.93);
   --chrome-paper:rgba(23,24,22,.62);
+  --chrome-progress:rgba(77,174,214,.17);
   --chrome-press:rgba(255,255,255,.07);
   --sec-act-bg:#20211F;
   --sec-act-hover:#2A2C28;

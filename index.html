@@ -48,10 +48,10 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=ed7b30a4">
+  <link rel="stylesheet" href="styles/tokens.css?v=0f959ad8">
   <link rel="stylesheet" href="styles/base.css?v=b3e4ae3e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=5cd7d110">
+  <link rel="stylesheet" href="styles/reader.css?v=8f0623e3">
   <link rel="stylesheet" href="styles/dictionary.css?v=9e60beab">
   <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
@@ -102,8 +102,8 @@
   <script defer src="scripts/reader/pdf-original.js?v=aeabeaba"></script>
   <script defer src="scripts/reader/epub-original.js?v=62e473ad"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=c70cde31"></script>
-  <script defer src="scripts/reader/reader.js?v=584d1dc1"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=fe35c193"></script>
+  <script defer src="scripts/reader/reader.js?v=795f65d1"></script>
   <script defer src="scripts/ui/preferences.js?v=58a57dee"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=fa7202f1"></script>
@@ -203,11 +203,6 @@
 <!-- ================= READER ================= -->
 <div class="view" id="v-read">
   <div id="readmain">
-    <!-- 상단바와 이 진행줄은 아래 스크롤 칸 **바깥**입니다. 흐름 밖에 떠 있으므로
-         글은 처음부터 노치 옆까지 뻗고, 종이를 벌려도 이 둘은 제 크기입니다. -->
-    <div id="rbar">
-      <div id="ptrack"><div id="pfill"></div></div>
-    </div>
     <!-- ================= 읽는 동안의 조작 =================
          읽는 화면에는 상단바가 없습니다. Breeze·Home·Words·Settings 는 모두
          서재에서 만나는 것들이라, 책을 펴 놓고 늘 보고 있을 이유가 없었습니다.
@@ -223,6 +218,7 @@
              stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
       </button>
       <div id="readpill">
+        <div id="readpill-progress" aria-hidden="true"></div>
         <button id="modefab" title="원본으로 보기" aria-label="원본으로 보기" onclick="toggleReaderMode()" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">

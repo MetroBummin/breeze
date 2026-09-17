@@ -358,6 +358,7 @@ async function switchReaderMode(mode,options){
   }
   clearReaderModeCue();
   suspendReaderScrollSave(1400);
+  holdReaderPillProgress();
   currentReaderMode = mode;
   rememberReaderMode(mode);
   closePanel();
@@ -409,7 +410,7 @@ async function switchReaderMode(mode,options){
         originalAnchor:previousMode==='original' ? bridge : null};
       textModeMovedByUser=false;
       suspendReaderScrollSave(450);
-      updatePfill();
+      releaseReaderPillProgress();
     }));
     return;
   }
@@ -417,7 +418,7 @@ async function switchReaderMode(mode,options){
   const record = await originalGetForBook(curBook);
   if(!record){
     showOriginalReconnect(curBook);
-    updatePfill();
+    releaseReaderPillProgress(true);
     return;
   }
   if(options.reload) leaveOriginalReader();
@@ -455,10 +456,11 @@ async function switchReaderMode(mode,options){
     }
     stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
     suspendReaderScrollSave(500);
-    updatePfill();
+    releaseReaderPillProgress();
   }catch(error){
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
     console.error(error);
     showOriginalError(error);
+    releaseReaderPillProgress(true);
   }
 }

@@ -55,14 +55,33 @@ try{
   await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
   await page.locator('#readpill-title').waitFor({state:'visible'});
   assert.equal(await page.locator('#modefab').isVisible(),false,'Text should have no mode switch');
+  const expandedPillWidth=await page.locator('#readpill').evaluate(node=>node.getBoundingClientRect().width);
   await page.waitForTimeout(800); // initial position restoration is programmatic
   await page.evaluate(()=>{readerScroller().scrollTop=300;});
   await page.waitForFunction(()=>document.body.classList.contains('chrome-hidden'));
+  await page.waitForTimeout(400); // wait for the width morph, not just its class change
+  const collapsedPillWidth=await page.locator('#readpill').evaluate(node=>node.getBoundingClientRect().width);
+  assert.ok(collapsedPillWidth<expandedPillWidth*0.75,
+    `Collapsed pill is still too wide (${collapsedPillWidth}px vs ${expandedPillWidth}px)`);
+  const fillBeforeToast=await page.locator('#readpill-progress').evaluate(node=>node.style.transform);
+  assert.match(fillBeforeToast,/^scaleX\(0\.\d+\)$/,'Text progress did not reach the pill');
+  assert.ok(Math.abs(Number(fillBeforeToast.slice(7,-1))
+    -await page.evaluate(()=>visibleReaderProgress()))<0.01,
+    'The pill fill diverged from the canonical reading position');
+  await page.evaluate(()=>readerPillStatus('Test status'));
+  assert.equal(await page.locator('#readpill-progress').evaluate(node=>node.style.transform),fillBeforeToast,
+    'A title toast changed the reading progress');
+  await page.waitForTimeout(1500);
+  assert.equal(await page.locator('#readpill-title').textContent(),'Toolbar');
+  assert.equal(await page.locator('#readpill-progress').evaluate(node=>node.style.transform),fillBeforeToast,
+    'The pill lost progress after its title returned');
   await page.locator('#readback').waitFor({state:'hidden'});
   assert.equal(await page.locator('#readback').isVisible(),false);
   assert.equal(await page.locator('#aafab').isVisible(),false);
   await page.locator('#readpill-title').click();
   assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),false);
+  assert.equal(await page.locator('#readpill-progress').evaluate(node=>node.style.transform),fillBeforeToast,
+    'Expanding the pill changed its progress');
   assert.equal(await page.locator('#v-read').isVisible(),true,'pill tap must not leave Reader');
   await page.waitForTimeout(550);
   await page.evaluate(()=>{readerScroller().scrollTop=650;});

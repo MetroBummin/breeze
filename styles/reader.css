@@ -81,10 +81,6 @@
       #reader-scroll{scrollbar-width:thin; scrollbar-color:var(--sb-thumb) transparent;}
     }
   }
-  /* 읽은 자리는 화면 맨 아래 edge의 가는 선 하나로 남습니다. Home indicator 위로
-     올리지 않고 실제 viewport 끝에 붙이며, 자리는 스크롤과 무관하게 고정입니다. */
-  #rbar{position:fixed; bottom:0; left:0; right:0; z-index:40; pointer-events:none;
-    background:var(--rbar-bg); height:3px;}
   .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
   .iconbtn:hover{background:var(--hover-quiet);}
   #readwrap,#originalwrap{transition:opacity .22s ease,filter .22s ease;}
@@ -175,6 +171,10 @@
     display:flex; align-items:center; justify-content:center; padding:0 12px; overflow:hidden;
     transition:width .34s cubic-bezier(.2,.75,.25,1),padding .34s cubic-bezier(.2,.75,.25,1),
       box-shadow .34s ease;}
+  #readpill-progress{position:absolute; inset:0; pointer-events:none;
+    background:var(--chrome-progress); transform:scaleX(0); transform-origin:left center;
+    transition:transform .16s linear; will-change:transform;}
+  #readpill-title,#readpill #modefab{position:relative; z-index:1;}
   #readpill-title{border:0; background:none; color:inherit; cursor:default;
     min-width:0; max-width:100%; padding:0 5px; overflow:hidden; text-overflow:ellipsis;
     white-space:nowrap; font:600 13px var(--ui);}
@@ -184,7 +184,7 @@
     transition:width .3s ease,opacity .18s ease,margin .3s ease;}
   #readpill #modefab[hidden]{display:none;}
   #readback,#aafab{transition:opacity .2s ease,transform .3s ease,visibility 0s;}
-  body.chrome-hidden #readpill{width:min(46vw,250px); padding:0 10px;}
+  body.chrome-hidden #readpill{width:min(36vw,180px); padding:0 10px;}
   body.chrome-hidden #readpill #modefab{width:0; opacity:0; visibility:hidden; pointer-events:none;}
   body.chrome-hidden #readback,body.chrome-hidden #aafab{
     opacity:0; transform:translateY(8px); visibility:hidden; pointer-events:none;
@@ -204,7 +204,7 @@
     #readchrome{padding:0 22px;}
   }
   @media (prefers-reduced-motion:reduce){
-    #readpill,#readback,#aafab,#readpill #modefab{transition-duration:.01ms;}
+    #readpill,#readback,#aafab,#readpill #modefab,#readpill-progress{transition-duration:.01ms;}
   }
   /* 여기 있던 서른 줄은 "벌리면 커진 만큼 다시 줄여 놓는" 보정이었습니다 —
      `--vv-k`(배율의 역수)와 `--vv-x`·`--vv-y`·`--vv-dx`·`--vv-dy`(보이는 화면이
@@ -256,8 +256,6 @@
     #topbar{transition:none;}
     body.chrome-hidden #topbar{transition:none;}
   }
-  #ptrack{height:3px; background:var(--line2);}
-  #pfill{height:3px; background:var(--blue); width:0; transition:width .15s;}
   /* 글 폭과 좌우 여백은 Aa 안에서 고릅니다. 스크롤에 따라 바뀌지는 않습니다 —
      읽는 도중 줄바꿈이 흔들리면 보던 자리를 놓칩니다.
 

@@ -938,8 +938,12 @@ assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button id="readback"[\s\
 assert.ok(index.indexOf('id="readchrome"') > index.indexOf('id="readmain"')
        && index.indexOf('id="readchrome"') < index.indexOf('id="reader-scroll"'),
   'The floating reader controls left #readmain, so the word panel no longer pushes them aside');
-assert.match(index, /<div id="readpill">\s*<button id="modefab"[\s\S]*?id="readpill-title"[\s\S]*?<button id="aafab"/,
+assert.match(index, /<div id="readpill">\s*<div id="readpill-progress"[\s\S]*?<button id="modefab"[\s\S]*?id="readpill-title"[\s\S]*?<button id="aafab"/,
   'The PDF destination and title are not in the same pill');
+assert.doesNotMatch(index, /id="ptrack"|id="pfill"/,
+  'The title pill should replace the separate progress bar');
+assert.match(readerCss, /#readpill-progress\{[^}]*transform:scaleX\(0\); transform-origin:left center/,
+  'The progress fill no longer uses a composited transform inside the title pill');
 assert.match(readerCss, /#readchrome\{[^}]*bottom:calc\(env\(safe-area-inset-bottom\)/,
   'Reader controls do not clear the bottom safe area');
 /* PDF 확대 −/+ 는 예전처럼 따로 떠 있지 않습니다 — 뜨는 조각을 늘리지 않으려고
