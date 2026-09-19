@@ -137,7 +137,7 @@ assert.doesNotMatch(syncSource, /auth\.signUp\(|resetPasswordForEmail\(/,
 assert.doesNotMatch(syncSource, /localStorage[^\n]*password|save\([^\n]*password/,
   'A password is being persisted in the client');
 const project = readFileSync(resolve(root, 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
-assert.match(project, /CURRENT_PROJECT_VERSION = 105;/,
+assert.match(project, /CURRENT_PROJECT_VERSION = 109;/,
   'The App Review access change was not assigned the next iOS build number');
 const componentsCss = readFileSync(resolve(root, 'styles/components.css'), 'utf8');
 for(const selector of ['#sm-email','#sm-password-email','#sm-password','.sm-secret input',

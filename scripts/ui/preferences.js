@@ -193,14 +193,42 @@ function nativeSpeechHandler(){
   const webkit=/** @type {any} */ (window).webkit;
   return webkit&&webkit.messageHandlers&&webkit.messageHandlers.breezeSpeech;
 }
+function nativeSpeechDiagnosticText(detail){
+  const session=detail.audioSession||{};
+  const app=detail.app||{};
+  return [
+    `stage: ${detail.stage||'unknown'}`,
+    `NSError domain: ${detail.errorDomain||'n/a'}`,
+    `NSError code: ${detail.errorCode??'n/a'}`,
+    `description: ${detail.message||'n/a'}`,
+    `category: ${session.category||'playback'}`,
+    `mode: ${session.mode||'default'}`,
+    `options: ${(session.options||['duckOthers']).join(', ')}`,
+    `app version: ${app.version||'unknown'}`,
+    `build: ${app.build||'unknown'}`
+  ].join('\n');
+}
+function showNativeSpeechDiagnostic(detail){
+  /* prompt의 텍스트 필드는 iOS에서도 전체 선택/복사를 제공한다. 별도 디버그
+     화면을 만들지 않으면서 실기기 오류를 그대로 전달하기 위한 테스트 수단이다. */
+  window.prompt('발음 오류 상세 — 텍스트를 선택해 복사하세요',nativeSpeechDiagnosticText(detail));
+}
 window.addEventListener('breezeNativeSpeech', event=>{
   const detail=(/** @type {CustomEvent} */ (event)).detail||{};
+  (/** @type {any} */ (window)).__breezeLastNativeSpeechEvent=detail;
+  if(detail.state==='error'){
+    (/** @type {any} */ (window)).__breezeLastNativeSpeechDiagnostic=detail;
+    console.error('[BreezeSpeech]',detail);
+  }else console.info('[BreezeSpeech]',detail);
   if(Number(detail.generation)!==speakGeneration) return;
   const btn=document.getElementById('p-speak');
   if(detail.state==='start') btn&&btn.classList.add('playing');
   if(detail.state==='end'||detail.state==='cancel'||detail.state==='error')
     btn&&btn.classList.remove('playing');
-  if(detail.state==='error') toast('발음을 재생하지 못했어요');
+  if(detail.state==='error'){
+    toast(`발음을 재생하지 못했어요${detail.stage?` (${detail.stage})`:''}`);
+    showNativeSpeechDiagnostic(detail);
+  }
 });
 function speak(text){
   const btn = document.getElementById('p-speak');
@@ -211,7 +239,14 @@ function speak(text){
   const native=nativeSpeechHandler();
   if(native){
     try{ native.postMessage({command:'speak',text:String(text||''),generation}); }
-    catch(error){ mark(false); toast('발음을 재생하지 못했어요'); }
+    catch(error){
+      const detail={generation,state:'error',stage:'bridge-postMessage',message:String(error),
+        audioSession:{category:'playback',mode:'default',options:['duckOthers']}};
+      (/** @type {any} */ (window)).__breezeLastNativeSpeechDiagnostic=detail;
+      console.error('[BreezeSpeech]',detail);
+      mark(false); toast('발음을 재생하지 못했어요 (bridge-postMessage)');
+      showNativeSpeechDiagnostic(detail);
+    }
     return;
   }
   if(!window.speechSynthesis){ toast('이 브라우저는 발음 재생을 지원하지 않아요'); return; }

@@ -11,6 +11,10 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var speechGenerations: [ObjectIdentifier: Int] = [:]
     private var activeSpeechGeneration: Int?
+    private var speechStartDeadline: DispatchWorkItem?
+    private static let speechCategory = "playback"
+    private static let speechMode = "default"
+    private static let speechOptions = ["duckOthers"]
 
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
@@ -51,6 +55,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
     private func handleSpeechRequest(_ request: [String: Any]) {
         let generation = (request["generation"] as? NSNumber)?.intValue ?? 0
+        logSpeech(stage: "bridge-received", generation: generation)
         if request["command"] as? String == "cancel" {
             speechSynthesizer.stopSpeaking(at: .immediate)
             return
@@ -59,47 +64,124 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
               let raw = request["text"] as? String else { return }
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
-            reportSpeech(generation: generation, state: "error", message: "empty text")
+            reportSpeechError(generation: generation, stage: "request-text", message: "empty text")
             return
         }
 
+        speechStartDeadline?.cancel()
         speechSynthesizer.stopSpeaking(at: .immediate)
+        let session = AVAudioSession.sharedInstance()
         do {
-            let session = AVAudioSession.sharedInstance()
             try session.setCategory(
                 .playback,
-                mode: .spokenAudio,
-                options: [.duckOthers, .allowBluetoothA2DP, .allowAirPlay]
+                mode: .default,
+                options: [.duckOthers]
             )
-            try session.setActive(true)
         } catch {
-            reportSpeech(generation: generation, state: "error", message: error.localizedDescription)
+            reportSpeechError(generation: generation, stage: "audio-session-category", error: error)
             return
         }
+        logSpeech(stage: "audio-session-category", generation: generation, message: "ok")
+        do {
+            try session.setActive(true)
+        } catch {
+            reportSpeechError(generation: generation, stage: "audio-session-activate", error: error)
+            return
+        }
+        logSpeech(stage: "audio-session-activate", generation: generation, message: "ok")
 
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        guard let voice = AVSpeechSynthesisVoice(language: "en-US") else {
+            reportSpeechError(generation: generation, stage: "voice-selection", message: "en-US voice unavailable")
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            return
+        }
+        utterance.voice = voice
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
         speechGenerations[ObjectIdentifier(utterance)] = generation
         activeSpeechGeneration = generation
         speechSynthesizer.speak(utterance)
+        logSpeech(stage: "speak-called", generation: generation, message: voice.identifier)
+        let deadline = DispatchWorkItem { [weak self, weak utterance] in
+            guard let self, let utterance,
+                  self.activeSpeechGeneration == generation,
+                  self.speechGenerations[ObjectIdentifier(utterance)] == generation else { return }
+            self.reportSpeechError(
+                generation: generation,
+                stage: "delegate-didStart-timeout",
+                message: "didStart was not received within 5 seconds"
+            )
+            self.speechGenerations.removeValue(forKey: ObjectIdentifier(utterance))
+            self.activeSpeechGeneration = nil
+            self.speechSynthesizer.stopSpeaking(at: .immediate)
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+        }
+        speechStartDeadline = deadline
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: deadline)
     }
 
     @objc private func stopSpeechForBackground() {
+        speechStartDeadline?.cancel()
         speechSynthesizer.stopSpeaking(at: .immediate)
     }
 
     private func finishSpeech(_ utterance: AVSpeechUtterance, state: String) {
         let generation = speechGenerations.removeValue(forKey: ObjectIdentifier(utterance)) ?? 0
+        logSpeech(stage: state == "end" ? "delegate-didFinish" : "delegate-didCancel", generation: generation)
         reportSpeech(generation: generation, state: state)
+        // stopSpeaking() can deliver the previous utterance's cancellation after
+        // a new request has activated its session. Only the active generation may
+        // tear that session down.
         guard activeSpeechGeneration == generation else { return }
+        speechStartDeadline?.cancel()
         activeSpeechGeneration = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    private func reportSpeech(generation: Int, state: String, message: String? = nil) {
+    private func reportSpeechError(generation: Int, stage: String, error: Error) {
+        let nsError = error as NSError
+        logSpeech(stage: stage, generation: generation, message: nsError.localizedDescription)
+        reportSpeech(
+            generation: generation,
+            state: "error",
+            stage: stage,
+            message: nsError.localizedDescription,
+            errorDomain: nsError.domain,
+            errorCode: nsError.code
+        )
+    }
+
+    private func reportSpeechError(generation: Int, stage: String, message: String) {
+        logSpeech(stage: stage, generation: generation, message: message)
+        reportSpeech(generation: generation, state: "error", stage: stage, message: message)
+    }
+
+    private func logSpeech(stage: String, generation: Int, message: String? = nil) {
+        NSLog("[BreezeSpeech] generation=%d stage=%@ %@", generation, stage, message ?? "")
+    }
+
+    private func reportSpeech(
+        generation: Int,
+        state: String,
+        stage: String? = nil,
+        message: String? = nil,
+        errorDomain: String? = nil,
+        errorCode: Int? = nil
+    ) {
         var detail: [String: Any] = ["generation": generation, "state": state]
+        if let stage { detail["stage"] = stage }
         if let message { detail["message"] = message }
+        if let errorDomain { detail["errorDomain"] = errorDomain }
+        if let errorCode { detail["errorCode"] = errorCode }
+        detail["audioSession"] = [
+            "category": Self.speechCategory,
+            "mode": Self.speechMode,
+            "options": Self.speechOptions
+        ]
+        detail["app"] = [
+            "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
+            "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        ]
         guard let data = try? JSONSerialization.data(withJSONObject: detail),
               let json = String(data: data, encoding: .utf8) else { return }
         webView?.evaluateJavaScript(
@@ -109,6 +191,12 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         let generation = speechGenerations[ObjectIdentifier(utterance)] ?? 0
+        guard activeSpeechGeneration == generation else {
+            logSpeech(stage: "delegate-didStart-stale", generation: generation)
+            return
+        }
+        speechStartDeadline?.cancel()
+        logSpeech(stage: "delegate-didStart", generation: generation)
         reportSpeech(generation: generation, state: "start")
     }
 

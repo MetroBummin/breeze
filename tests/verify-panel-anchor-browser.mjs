@@ -220,14 +220,40 @@ try{
 
   const preferences=readFileSync(resolve(root,'scripts/ui/preferences.js'),'utf8');
   const native=readFileSync(resolve(root,'ios/App/App/SceneDelegate.swift'),'utf8');
+  const index=readFileSync(resolve(root,'index.html'),'utf8');
+  const main=readFileSync(resolve(root,'scripts/main.js'),'utf8');
+  const base=readFileSync(resolve(root,'styles/base.css'),'utf8');
+  const launch=readFileSync(resolve(root,'ios/App/App/Base.lproj/LaunchScreen.storyboard'),'utf8');
   assert.match(preferences,/breezeSpeech[\s\S]*postMessage\(\{command:'speak'/,
     'iOS speech is not routed through the native bridge');
-  assert.match(native,/setCategory\([\s\S]*\.playback[\s\S]*\.spokenAudio/,
+  assert.match(native,/setCategory\([\s\S]*\.playback[\s\S]*\.default[\s\S]*options:\s*\[\.duckOthers\]/,
     'Native speech does not opt into audible playback');
+  assert.doesNotMatch(native,/options:\s*\[[^\]]*\.(?:allowAirPlay|allowBluetooth|allowBluetoothA2DP|defaultToSpeaker)/,
+    'Playback must not explicitly request additional routing options');
+  for(const stage of ['bridge-received','audio-session-category','audio-session-activate','voice-selection','speak-called','delegate-didStart','delegate-didStart-timeout'])
+    assert.match(native,new RegExp(stage),`Native speech diagnostics lost the ${stage} stage`);
+  assert.match(preferences,/__breezeLastNativeSpeechDiagnostic[\s\S]*bridge-postMessage/,
+    'The web bridge no longer retains actionable native speech diagnostics');
+  for(const field of ['errorDomain','errorCode','audioSession','CFBundleShortVersionString','CFBundleVersion'])
+    assert.match(native,new RegExp(field),`Native speech diagnostics lost ${field}`);
+  assert.match(preferences,/window\.prompt\([\s\S]*nativeSpeechDiagnosticText/,
+    'Physical-device speech diagnostics are no longer visible or copyable');
+  assert.match(preferences,/__breezeLastNativeSpeechEvent[\s\S]*if\(detail\.state==='error'\)[\s\S]*__breezeLastNativeSpeechDiagnostic/,
+    'Successful speech events can overwrite the retained last error');
+  assert.match(native,/guard activeSpeechGeneration == generation[\s\S]*delegate-didStart-stale/,
+    'A stale didStart callback can cancel the active generation deadline');
   assert.match(native,/stopSpeaking\(at: \.immediate\)/,
     'Repeated taps can still queue native utterances');
   assert.match(native,/willResignActiveNotification/,
     'Backgrounding can leave stale speech state alive');
+  assert.doesNotMatch(index,/id="splash"|data-native-splash-preload/,
+    'The branded startup splash is still present');
+  assert.doesNotMatch(main,/nativeSplash|splashSceneReady|hideSplash/,
+    'Startup still waits for or dismisses a branded splash');
+  assert.doesNotMatch(base,/#splash|scene-breathe/,
+    'Branded splash styling is still shipped');
+  assert.match(launch,/red="0\.9803921569" green="0\.9725490196" blue="0\.9490196078"/,
+    'The mandatory iOS launch surface no longer matches the light paper background');
 
   console.log(`Panel anchor regression verified (Text/PDF@200%/EPUB; Text restores=${metrics.restores}, max=${Math.max(...metrics.durations).toFixed(1)}ms); native speech contract verified`);
 }finally{
