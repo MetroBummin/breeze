@@ -649,8 +649,10 @@ const readerSource = readFileSync(resolve(root, 'scripts/reader/reader.js'), 'ut
 assert.match(readerSource,/suspendReaderScrollSave/,
   'Programmatic mode-switch scrolling can still overwrite progress');
 const dictionaryCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8');
-assert.match(dictionaryCss,/pointer:fine/,
-  'Desktop browser zoom still falls into the oversized mobile dictionary');
+assert.doesNotMatch(dictionaryCss,/pointer:fine/,
+  'Word lookup presentation is split by input-device heuristics again');
+assert.match(dictionaryCss,/#panel\{position:fixed;[\s\S]{0,180}left:50%; top:50%/,
+  'Word details are no longer a centered fixed overlay');
 const preferencesSource = readFileSync(resolve(root, 'scripts/ui/preferences.js'), 'utf8');
 assert.doesNotMatch(preferencesSource,/function setOriginalMarkMode/,
   'The saved-word display preference is back');
@@ -797,9 +799,9 @@ assert.match(pdfOriginalSource,
   'The first PDF tap is discarded while its word map is still loading');
 const readerScrollSource=readFileSync(resolve(root,'scripts/reader/reader-scroll.js'),'utf8');
 assert.match(readerScrollSource,/controls\.hidden=!active;/,
-  'PDF zoom controls disappear while a side panel is open');
-assert.match(readerSource,/prepareReaderPanelGeometry[\s\S]*waitForOriginalZoomGeometry[\s\S]*restoreReaderPanelAnchor/,
-  'PDF panel restore can run before the resized zoom stage geometry is final');
+  'PDF zoom controls no longer follow PDF mode state');
+assert.doesNotMatch(readerSource,/prepareReaderPanelGeometry|restoreReaderPanelAnchor|readerPanelChange/,
+  'Removed sidebar geometry restoration is still wired into the Reader');
 /* ── 표제어는 고치지 않습니다 ──
    화면의 낱말은 원문 색칠·캐시·동기화가 모두 기대는 열쇠에서 나온 글자입니다.
    그 자리에서 글자만 갈아 끼우면 고친 이름으로는 본문이 칠해지지 않고, 캐시는
@@ -1487,7 +1489,7 @@ assert.match(gestureSource,
   'The compact sentence sheet no longer supports downward swipe dismissal');
 assert.ok(!/closeSentence/.test(index),
   'index.html reaches into the sentence close path directly instead of letting the gesture owner do it');
-assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',\s*\n\s*OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_AA = 'AA', OWNER_UI = 'UI'/,
+assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',\s*\n\s*OWNER_WORD_MODAL = 'WORD_MODAL', OWNER_AA = 'AA', OWNER_UI = 'UI'/,
   'A gesture no longer has an owner, so a modal and the reader can share one physical gesture');
 /* 임자는 pointerdown 에서 정해집니다 — 판정보다 먼저, 그리고 딱 한 번. */
 assert.match(gestureSource,
@@ -1527,47 +1529,37 @@ for(const clockGuard of ['ignoreNextClickUntil','dismissGuardUntil','modalCloseA
     `The outside dismiss is refereed by a wall clock ("${clockGuard}") instead of by ownership`);
 }
 
-/* ================= 낱말 시트도 같은 규칙입니다 =================
-
-   해석 창을 고친 뒤에도 낱말 시트의 바깥(`#sheetbg`)만은 제 `onclick` 으로
-   혼자 닫히는 예외로 남아 있었습니다. 실기기에서 그 길로 닫으면 렉이 나고,
-   그 상태에서 해석 창을 열었다 임자 방식으로 닫으면 다시 부드러워졌습니다 —
-   같은 화면에서 예외 있는 길과 예외 없는 길을 나란히 비교한 A/B 였습니다.
-   (그 렉이 모든 책에서 나지는 않습니다. 기사에서는 안 나고 개츠비처럼 긴 책
-   에서 납니다 — 바깥 누르기는 방아쇠이고, 그리는 양이 조건입니다. 그래서
-   이 줄들이 지키는 것은 "렉이 없다"가 아니라 "예외가 없다" 입니다.) */
-assert.doesNotMatch(index, /id="sheetbg"[^>]*onclick/,
-  'The sheet scrim closes the word panel through its own onclick again, outside the gesture controller');
-assert.doesNotMatch(index, /id="p-close"[^>]*onclick/,
-  'The word panel X button closes the panel outside the gesture controller again');
+/* ================= 낱말 popup도 같은 규칙입니다 ================= */
+assert.match(index, /id="word-peek"[\s\S]{0,240}id="word-peek-more"/,
+  'The near-word meaning pill or its detail chevron is missing');
+assert.match(index, /id="word-modal-scrim"/,
+  'The centered word popup has no outside-dismiss scrim');
+assert.doesNotMatch(index, /id="(?:sheetbg|p-close|p-handle)"/,
+  'A sidebar or sheet-only word control is still in the document');
 assert.ok(!/closePanel/.test(index),
   'index.html reaches into the word panel close path directly instead of letting the gesture owner do it');
-/* 손잡이를 끌어내려 닫는 길도 손짓입니다. 그림은 `interactions.js` 가 그리되,
-   닫을지 말지는 판정 계층만 정합니다 — 예전에는 두 곳이 같은 한 손짓을
-   각자 판정했습니다. */
 assert.ok(!/closePanel/.test(runningCode(interactionsSource)),
-  'The sheet drag handle decides on its own to close the panel again, so one gesture is judged twice');
-assert.match(gestureSource, /const SHEET_PULL_DISMISS = 90/,
-  'The pull-to-dismiss distance no longer lives with the judging layer');
-/* 임자가 되는 조건은 "열려 있는가"가 아니라 "덮고 있는가"입니다. 넓은 화면의
-   옆 칸까지 종이의 손짓을 가져가면, 뜻을 열어 둔 채 다음 낱말을 누를 수 없습니다. */
+  'A second UI controller closes the centered word popup');
 assert.match(gestureSource,
-  /function wordSheetCovers\(\)\{\s*\n\s*return wordPanelOpen\(\) && typeof panelIsSheet === 'function' && panelIsSheet\(\);/,
-  'The word panel takes over reader gestures even when it is a side panel that covers nothing');
+  /function wordModalCovers\(\)\{\s*\n\s*return wordPanelOpen\(\);/,
+  'The centered word popup no longer owns the covered Reader');
+assert.match(gestureSource, /function wordDismissTarget[\s\S]{0,180}target\.closest\('#word-modal-scrim'\)/,
+  'Outside taps no longer belong to the word popup gesture owner');
 assert.match(gestureSource,
-  /function beginGesture[\s\S]{0,2200}if\(wordSheetCovers\(\) \|\| \(wordPanelOpen\(\) && wordDismissTarget\(target\)\)\)\{\s*\n\s*gesture\.owner = OWNER_WORD_SHEET;[\s\S]{0,240}activeGesture = gesture;\s*\n\s*return;/,
-  'The word sheet owner is not decided at pointerdown, so that gesture can change hands halfway through');
-assert.match(gestureSource, /if\(gesture\.owner === OWNER_WORD_SHEET\)\{ endWordSheetGesture\(gesture\); return; \}/,
-  'A sheet-owned gesture falls through to the reader WORD path again');
+  /function beginGesture[\s\S]{0,2200}if\(wordModalCovers\(\) \|\| \(wordPanelOpen\(\) && wordDismissTarget\(target\)\)\)\{\s*\n\s*gesture\.owner = OWNER_WORD_MODAL;[\s\S]{0,240}activeGesture = gesture;\s*\n\s*return;/,
+  'The word popup owner is not decided at pointerdown, so that gesture can change hands halfway through');
+assert.match(gestureSource, /if\(gesture\.owner === OWNER_WORD_MODAL\)\{ endWordModalGesture\(gesture\); return; \}/,
+  'A word-popup gesture falls through to the reader WORD path again');
 assert.match(gestureSource, /countDispatch\(gesture, 'DISMISS_WORD'\)/,
   'A DISMISS_WORD dispatch is not counted against the one-gesture-one-action invariant');
-assert.ok((runningCode(gestureSource).match(/closePanel\(\);/g) || []).length === 1,
-  'The gesture controller closes the word panel from more than one place');
 assert.match(gestureSource,
-  /function endWordSheetGesture[\s\S]{0,700}finishGesture\(gesture, GESTURE_DISMISS_WORD, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_WORD'\);[\s\S]{0,200}closePanel\(\)/,
+  /function endWordModalGesture[\s\S]{0,700}finishGesture\(gesture, GESTURE_DISMISS_WORD, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_WORD'\);[\s\S]{0,200}closePanel\(\)/,
+  'The popup outside-dismiss path no longer ends in the shared word cleanup');
+assert.match(gestureSource,
+  /function endWordModalGesture[\s\S]{0,700}finishGesture\(gesture, GESTURE_DISMISS_WORD, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_WORD'\);[\s\S]{0,200}closePanel\(\)/,
   'DISMISS_WORD no longer ends in exactly one closePanel() call');
 assert.match(gestureSource, /\|\| lastGesture\.decision === GESTURE_DISMISS_WORD\s*\n/,
-  'The click trailing a sheet dismiss is let through to the reader again');
+  'The click trailing a word-popup dismiss is let through to the reader again');
 /* ================= Aa 도 같은 규칙입니다 =================
 
    보기 설정은 화면을 덮지 않는 작은 창이라 바깥에 scrim 이 없습니다 — 바깥이
@@ -1598,64 +1590,30 @@ assert.ok((runningCode(gestureSource).match(/closeAa\(\);/g) || []).length === 1
 assert.match(gestureSource, /\|\| lastGesture\.decision === GESTURE_DISMISS_AA\)\{/,
   'The click that closed Aa is let through to the reader again, so it opens a word on the way out');
 
-/* ---- 닫힌 것은 화면에서 빠집니다 ----
-   닫힌 시트의 바깥이 `display:block` 인 채 `opacity:0` 으로 남으면, 읽는 내내
-   화면 전체 크기의 고정 판이 본문 위에 얹혀 있게 됩니다. 해석 창은 `[hidden]`
-   으로 통째로 빠지고, 넓은 화면의 낱말 창도 `display:none` 입니다 — 폰의
-   시트만 예외였습니다. */
-assert.match(dictionaryCss, /#sheetbg\{display:none;[\s\S]{0,400}?\}\s*\n\s*#sheetbg\.on\{display:block;/,
-  'The closed sheet scrim stays in the render tree as a full-viewport fixed layer again');
+/* ---- 닫힌 것은 화면에서 빠집니다 ---- */
+assert.match(dictionaryCss, /#word-modal-scrim\{display:none;[\s\S]{0,300}?\}\s*\n\s*#word-modal-scrim\.on\{display:block;/,
+  'The closed word popup scrim stays in the render tree as a full-viewport fixed layer');
 assert.match(dictionaryCss, /#sentence-modal\[hidden\]\{display:none;\}/,
   'The closed sentence window stays in the render tree again');
-/* ---- 스르르 뜨고 지는 그림은 얹는 것입니다 ----
-   뜨고 지는 일 자체는 `display` 두 줄로 끝나야 합니다. 전환이 기본 규칙에
-   섞이면, 그것을 모르는 브라우저에서 `transition` 선언 하나가 통째로 버려질 때
-   무엇까지 함께 버려지는지가 브라우저 사정에 달리게 됩니다. `@supports` 안에만
-   두면 못 알아보는 쪽은 규칙 자체를 안 보고, 하는 일은 똑같습니다. */
 {
-  const scrimBlock = dictionaryCss.slice(dictionaryCss.indexOf('#sheetbg{display:none; position:fixed'));
-  const functional = scrimBlock.slice(0, scrimBlock.indexOf('@supports'));
-  assert.ok(functional.length && !/transition|allow-discrete|@starting-style/.test(functional),
-    'The sheet scrim needs a transition to open and close, so an engine without allow-discrete is left broken');
-  assert.match(scrimBlock, /@supports \(transition-behavior:allow-discrete\)\{[\s\S]{0,300}?@starting-style/,
-    'The scrim fade is no longer fenced behind @supports as a pure enhancement');
-}
-/* ---- 덮고 있는 판은 고를 수 없어야 합니다 ----
-   시트가 떠 있는 동안 본문 쪽 좌표의 손짓은 전부 `#sheetbg` 가 받습니다 —
-   재 보면 본문 위 어느 점을 짚어도 `elementFromPoint` 가 이 판을 돌려줍니다.
-   그런데 이 판은 이 앱에서 가장 큰 **빈 상자**였습니다. PDF 종이에서 먼저 겪은
-   그대로, iOS 는 고를 글자가 없는 자리에서 꾹 누르면 가장 가까운 상자 전체를
-   골라 버립니다 — 화면이 통째로 파래지고 빠져나오기 어려웠습니다.
-
-   막는 자리는 이 판과 손잡이뿐입니다. 밑의 종이는 건드리지 않습니다: 글자
-   종이와 PDF 는 이미 스스로 막고 있고, EPUB 은 제 문서라 caret 으로 낱말을
-   짚습니다. "덮고 있는 동안만"이라는 조건도 따로 세지 않습니다 — 이 판은
-   덮고 있을 때만 렌더 트리에 있으므로 판의 수명이 곧 그 조건입니다. */
-{
-  const scrimRule = dictionaryCss.slice(dictionaryCss.indexOf('#sheetbg{display:none; position:fixed'));
+  const scrimRule = dictionaryCss.slice(dictionaryCss.indexOf('#word-modal-scrim{display:none; position:fixed'));
   const functional = scrimRule.slice(0, scrimRule.indexOf('}') + 1);
   assert.match(functional, /-webkit-user-select:none; user-select:none; -webkit-touch-callout:none/,
-    'The sheet scrim is selectable again, so a long press over the reader selects the nearest box whole');
-  const handleRule = dictionaryCss.slice(dictionaryCss.indexOf('#p-handle{display:flex'));
-  assert.match(handleRule.slice(0, handleRule.indexOf('}') + 1),
-    /-webkit-user-select:none; user-select:none; -webkit-touch-callout:none/,
-    'The sheet handle is selectable again, so grabbing it selects the sheet contents');
-  /* 여기서 막는 것으로 끝나야 합니다 — 종이까지 끄면 EPUB 의 낱말 찾기가
-     함께 꺼집니다(styles/reader.css 의 그 사고). */
+    'The word popup scrim is selectable, so a long press can select the nearest box whole');
   assert.doesNotMatch(dictionaryCss, /#rtext|epub-chapter-frame|\.pdf-original/,
-    'The word sheet stylesheet now reaches into the reader papers to suppress selection');
+    'The word popup stylesheet reaches into the reader papers to suppress selection');
 }
 
 /* ================= 한 번의 열림이 제 조회의 임자 =================
    손짓의 임자가 `pointerdown`~`click` 이라면 이쪽 임자는 **창이 열려 있는
    동안**입니다. 늦게 온 답이 죽은 창을 조종하던 자리들을 여기서 지킵니다 —
-   자세한 것은 tests/verify-sheet-lifecycle.mjs 가 실제로 돌려서 봅니다. */
-assert.match(dictionarySource, /function beginSheetLife\(\)\{\s*\n\s*endSheetLife\(\);/,
-  'A new sheet opening no longer ends the previous one');
-assert.match(dictionarySource, /function selectWord\(k, span\)\{[\s\S]{0,200}?beginSheetLife\(\);/,
-  'Opening the word sheet no longer starts a new lookup lifetime');
-assert.match(dictionarySource, /function closePanel\(\)\{[\s\S]{0,700}?endSheetLife\(\);/,
-  'Closing the word sheet no longer ends its lookup lifetime');
+   자세한 것은 tests/verify-word-lifecycle.mjs 가 실제로 돌려서 봅니다. */
+assert.match(dictionarySource, /function beginWordLookupLife\(\)\{\s*\n\s*endWordLookupLife\(\);/,
+  'A new word lookup no longer ends the previous one');
+assert.match(dictionarySource, /function selectWord\(k, span, peek\)\{[\s\S]{0,200}?beginWordLookupLife\(\);/,
+  'Opening word lookup no longer starts a new lookup lifetime');
+assert.match(dictionarySource, /function closePanel\(\)\{[\s\S]{0,700}?endWordLookupLife\(\);/,
+  'Closing word lookup no longer ends its lookup lifetime');
 assert.doesNotMatch(runningCode(dictionarySource), /abortLook|lookCtrl/,
   'The old single-call abort is back alongside the opening lifetime — two owners for one thing');
 /* 세 무료 사전은 모두 취소표를 들고 가야 합니다. 하나라도 맨몸이면 창을 닫은
@@ -1664,20 +1622,20 @@ for(const free of ['translate.googleapis.com', 'api.dictionaryapi.dev', 'en.wikt
   const calls = runningCode(dictionarySource).split('\n').filter(line => line.includes(free));
   assert.ok(calls.length > 0, `The free dictionary ${free} is gone`);
   calls.forEach(line => assert.match(line, /\{signal\}/,
-    `A request to ${free} goes out with no way to stop it when the sheet closes`));
+    `A request to ${free} goes out with no way to stop it when word lookup closes`));
 }
 /* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
-assert.match(dictionarySource, /if\(!sheetAlive\(life\)\) return;\s*\n\s*adoptContextAnswer\(k,context,answerFromLook\(j,false\)\)/,
-  'A late "in this sentence" answer can reopen a dismissed sheet again');
-assert.match(dictionarySource, /if\(!sheetAlive\(life\)\) return;\s*\n\s*view\.answer=answerFromLook\(j,false\);\s*\n\s*adoptPhrase/,
-  'A late phrase answer can rebuild the whole book body under a dismissed sheet again');
-assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!sheetAlive\(life\)\) return;/,
-  'A late "another meaning" answer can reselect a word on a dismissed sheet again');
+assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\) return;\s*\n\s*adoptContextAnswer\(k,context,answerFromLook\(j,false\)\)/,
+  'A late "in this sentence" answer can reopen a dismissed word lookup again');
+assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\) return;\s*\n\s*view\.answer=answerFromLook\(j,false\);\s*\n\s*adoptPhrase/,
+  'A late phrase answer can rebuild the whole book body under a dismissed word lookup again');
+assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
+  'A late "another meaning" answer can reselect a word on a dismissed word lookup again');
 /* 그리는 문지기는 열림 번호입니다. `selKey === k` 로는 **같은 낱말을 닫았다
    다시 연** 경우를 가릴 수 없습니다 — 열쇠가 같다고 같은 열림은 아닙니다. */
 assert.doesNotMatch(runningCode(dictionarySource), /if\(selKey===k\) renderPanel\(\)/,
-  'Rendering is gated on the word key again, so a reopened sheet accepts the previous opening\'s answer');
+  'Rendering is gated on the word key again, so a reopened lookup accepts the previous opening\'s answer');
 /* 도착한 답까지 버리면 한도만 쓰고 낱말은 빈 채로 남습니다. 끊겨서 **빈손으로**
    돌아온 것만 없던 일입니다. */
 assert.match(dictionarySource, /if\(!j && ctrl && ctrl\.signal\.aborted\) return false;/,

@@ -178,6 +178,10 @@ function setOriginalZoom(next, focus, position){
 function changeOriginalZoom(direction){
   if(!originalZoomActive()) return;
   if(originalPinchBusy()) return;
+  /* 단어 곁 필은 탭한 화면 좌표에 붙어 있습니다. 버튼 확대가 시작되면 그 좌표가
+     더는 같은 단어를 가리키지 않으므로, 확대하기 전에 lookup presentation만
+     정리합니다. 상세 popup은 scrim이 확대 단추 입력 자체를 막습니다. */
+  if(typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
   readerModeChangeToken++;
   setOriginalZoom(originalZoomLevel + (direction > 0 ? ORIGINAL_ZOOM_STEP : -ORIGINAL_ZOOM_STEP));
   if(typeof resharpenOriginalPages === 'function') resharpenOriginalPages();
@@ -189,10 +193,8 @@ function updateOriginalZoomControls(){
   const out=document.getElementById('pdfzoom-out'), inButton=document.getElementById('pdfzoom-in');
   if(!controls || !out || !inButton) return;
   const active=originalZoomActive();
-  /* 옆 패널은 종이를 가리지 않고 Reader 폭만 줄입니다. 그 상태에서도 Aa의 PDF
-     확대를 쓸 수 있어야 panel -> zoom -> close 순서를 같은 geometry 계약으로
-     검증할 수 있습니다. 모바일 sheet가 열렸을 때는 Aa 자체가 gesture owner에
-     의해 열리지 않으므로 별도 예외가 필요하지 않습니다. */
+  /* 상세 popup은 Reader 위 overlay이므로 열린 동안에는 scrim이 확대 단추 입력을
+     막습니다. 작은 뜻 필은 Reader를 계속 쓸 수 있고 확대 시작 시 위에서 닫힙니다. */
   controls.hidden=!active;
   out.disabled=!active || originalZoomLevel<=ORIGINAL_ZOOM_MIN;
   inButton.disabled=!active || originalZoomLevel>=ORIGINAL_ZOOM_MAX;

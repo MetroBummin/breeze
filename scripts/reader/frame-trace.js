@@ -238,9 +238,7 @@
     const target = event.target;
     if(!target || typeof target.closest !== 'function'){ pressedOn = ''; return; }
     pressedOn = target.closest('#sentence-scrim') ? '문장 바깥'
-              : target.closest('#p-close') ? '낱말 X'
-              : target.closest('#p-handle') ? '낱말 손잡이'
-              : target.closest('#sheetbg') ? '낱말 바깥' : '';
+              : target.closest('#word-modal-scrim') ? '낱말 바깥' : '';
   }, true);
   document.addEventListener('pointerup', ()=>{
     const how = pressedOn;
@@ -250,10 +248,8 @@
     bump('닫기: ' + how);
     /* 닫힌 뒤에 세야 합니다 — 이 pointerup 이 아직 판정 계층에 닿기 전입니다. */
     setTimeout(()=>{
-      /* 닫힌 뒤에도 화면 전체를 덮은 채 렌더 트리에 남는 것이 있는지 — 해석 창은
-         `[hidden]` 으로 통째로 빠지고, 낱말 시트의 바깥은 `display:block` 인 채
-         `opacity:0` 으로 남습니다. 그 차이를 실기기에서 눈으로 보려고 적습니다. */
-      const scrim = document.getElementById('sheetbg');
+      /* 닫힌 뒤에도 화면 전체를 덮은 채 렌더 트리에 남는 것이 있는지 봅니다. */
+      const scrim = document.getElementById('word-modal-scrim');
       const scrimStyle = scrim ? getComputedStyle(scrim) : null;
       dismissMarks.push({how,
         highlights: (window.CSS && CSS.highlights) ? CSS.highlights.size : -1,
@@ -273,7 +269,7 @@
   }catch(error){}
   if(tapHighlightOff){
     const style = document.createElement('style');
-    style.textContent = '#sentence-scrim,#sheetbg{-webkit-tap-highlight-color:transparent}';
+    style.textContent = '#sentence-scrim,#word-modal-scrim{-webkit-tap-highlight-color:transparent}';
     (document.head || document.documentElement).appendChild(style);
     console.log('[breeze] scrim tap highlight 꺼짐 (?taphl=on 으로 되돌립니다)');
   }

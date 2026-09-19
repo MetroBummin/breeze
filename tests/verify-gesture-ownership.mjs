@@ -13,12 +13,12 @@
    ---- 왜 이 파일이 생겼는지 ----
    실기기에서 잰 A/B 하나가 근거입니다. 같은 화면에서:
 
-     낱말 시트를 바깥(`#sheetbg` 의 `onclick`)으로 닫으면  → 렉 · 빈 화면
+     낱말 popup을 바깥 scrim의 `onclick`으로 닫으면       → 렉 · 빈 화면
      해석 창을 바깥(임자 방식)으로 닫으면                  → 다시 부드러워짐
 
    두 길이 남기는 JS/DOM 상태를 떠서 비교하면 한 글자도 다르지 않았습니다.
    다른 것은 **손짓의 한살이** 였습니다 — 한쪽만 판정 계층 바깥에 있었습니다.
-   그래서 낱말 시트도 임자를 갖게 했고, 그 사실을 여기서 지킵니다.
+   그래서 낱말 popup도 임자를 갖게 했고, 그 사실을 여기서 지킵니다.
 
    (렉 자체가 모든 책에서 나지는 않습니다. 기사에서는 안 나고 긴 책에서 납니다.
     바깥 누르기는 방아쇠이고 그리는 양이 조건입니다. 그러니 이 파일이 지키는
@@ -80,10 +80,8 @@ function makeWorld(){
   element('readpill-title', 'readpill');
   element('aafab', 'readchrome');
   element('modefab', 'readpill');
-  element('sheetbg', 'v-read');
+  element('word-modal-scrim', 'v-read');
   element('panel', 'v-read');
-  element('p-close', 'panel');
-  element('p-handle', 'panel');
   element('p-body', 'panel');
   element('p-input', 'panel'); nodes['p-input'].tagName = 'INPUT';
   element('p-textarea', 'panel'); nodes['p-textarea'].tagName = 'TEXTAREA';
@@ -105,11 +103,10 @@ function makeWorld(){
     nodes, doc, listeners, selection,
     calls: { closeSentence: 0, closePanel: 0, closeAa: 0, openSentence: 0, openWordAt: 0, sentenceAt: 0 },
     errors: [], timers: [],
-    sheetLayout: true,          // 폰(바텀시트)인가, 넓은 화면(옆 칸)인가
     /* 실제 화면에서 하는 일을 그대로 흉내 냅니다 — 닫으면 정말로 닫힙니다.
        그래야 "손짓 도중에 창이 닫힌다"를 진짜로 재현할 수 있습니다. */
     openSentenceModal(){ nodes['sentence-modal'].hidden = false; },
-    openWordPanel(){ nodes.panel.classList.add('on'); nodes.sheetbg.classList.add('on'); },
+    openWordPanel(){ nodes.panel.classList.add('on'); nodes['word-modal-scrim'].classList.add('on'); },
     openAa(){ nodes['aa-pop'].classList.add('on'); },
   };
   return world;
@@ -133,10 +130,9 @@ function makeContext(world){
     closePanel(){
       world.calls.closePanel++;
       nodes.panel.classList.remove('on');
-      nodes.sheetbg.classList.remove('on');
+      nodes['word-modal-scrim'].classList.remove('on');
     },
     closeAa(){ world.calls.closeAa++; nodes['aa-pop'].classList.remove('on'); },
-    panelIsSheet: () => world.sheetLayout,
     openSentence(){ world.calls.openSentence++; },
     clearReaderModeCue(){},
     readerScroller: () => null,
@@ -247,60 +243,34 @@ function scenario(setup){
   assert.equal(context.readerGestureDocument().getElementById('rtext').id, 'rtext', '가짜 화면이 어긋났습니다');
 }
 
-/* ================= 낱말 시트 =================
-   `#sheetbg` 의 `onclick` 을 지우고 여기로 옮긴 길입니다. 위의 해석 창과
+/* ================= 낱말 중앙 popup =================
+   scrim의 `onclick` 을 지우고 여기로 옮긴 길입니다. 위의 해석 창과
    **똑같은 줄들이** 통과해야 합니다 — 그것이 이 migration 의 목적입니다. */
 {
   const { world } = scenario(w => w.openWordPanel());
   world.clickTarget = world.nodes.word;
-  const click = tap(world, world.nodes.sheetbg, 100, 100);
-  assert.equal(world.calls.closePanel, 1, '바깥으로 닫는 손짓이 낱말 시트를 한 번 닫지 않습니다');
+  const click = tap(world, world.nodes['word-modal-scrim'], 100, 100);
+  assert.equal(world.calls.closePanel, 1, '바깥으로 닫는 손짓이 낱말 popup을 한 번 닫지 않습니다');
   assert.equal(world.calls.openWordAt, 0,
-    '시트가 닫힌 뒤 드러난 종이로 꼬리 click 이 내려가 낱말이 함께 열립니다');
-  assert.ok(click.stopped && click.prevented, '시트 바깥 닫기의 꼬리 click 이 그대로 흘러갑니다');
+    'popup이 닫힌 뒤 드러난 종이로 꼬리 click 이 내려가 낱말이 함께 열립니다');
+  assert.ok(click.stopped && click.prevented, 'popup 바깥 닫기의 꼬리 click 이 그대로 흘러갑니다');
   assert.deepEqual(world.errors, [], '한 손짓이 두 가지 일을 했습니다');
 }
 {
-  const { world } = scenario(w => w.openWordPanel());
-  tap(world, world.nodes['p-close'], 300, 20);
-  assert.equal(world.calls.closePanel, 1, '낱말 창의 X 가 창을 한 번 닫지 않습니다');
-}
-{
-  /* 시트 안을 눌렀다 뗀 손짓은 아무 일도 하지 않고, 꼬리 click 도 막지
-     않습니다 — 그 click 은 시트 안의 단추가 받아야 할 자기 것입니다. */
+  /* popup 안을 눌렀다 뗀 손짓은 아무 일도 하지 않고, 꼬리 click 도 막지
+     않습니다 — 그 click 은 popup 안의 단추가 받아야 할 자기 것입니다. */
   const { world } = scenario(w => w.openWordPanel());
   const click = tap(world, world.nodes['p-body'], 180, 500);
-  assert.equal(world.calls.closePanel, 0, '시트 안을 눌렀는데 시트가 닫혔습니다');
-  assert.ok(!click.stopped && !click.prevented, '시트 안의 단추가 받을 click 을 판정 계층이 삼켰습니다');
-}
-{
-  /* 손잡이를 조금 당긴 것은 닫는 손짓이 아닙니다. */
-  const { world } = scenario(w => w.openWordPanel());
-  tap(world, world.nodes['p-handle'], 180, 400, [[180, 440]]);
-  assert.equal(world.calls.closePanel, 0, '손잡이를 조금 당겼을 뿐인데 시트가 닫혔습니다');
-}
-{
-  /* 끝까지 끌어내리면 닫습니다 — 예전에는 이 판정을 interactions.js 가
-     따로 했습니다(한 손짓, 두 판정). */
-  const { world } = scenario(w => w.openWordPanel());
-  tap(world, world.nodes['p-handle'], 180, 400, [[180, 460], [180, 540]]);
-  assert.equal(world.calls.closePanel, 1, '손잡이를 끝까지 끌어내려도 시트가 닫히지 않습니다');
-  assert.deepEqual(world.errors, [], '끌어내려 닫는 한 손짓이 두 가지 일을 했습니다');
-}
-{
-  /* 시트를 위로 미는 것은 시트 안의 스크롤입니다 — 거리만 보고 닫으면
-     시트를 훑어 올릴 때마다 닫힙니다. */
-  const { world } = scenario(w => w.openWordPanel());
-  tap(world, world.nodes['p-handle'], 180, 500, [[180, 380], [180, 300]]);
-  assert.equal(world.calls.closePanel, 0, '시트를 위로 밀었는데 닫혔습니다');
+  assert.equal(world.calls.closePanel, 0, 'popup 안을 눌렀는데 popup이 닫혔습니다');
+  assert.ok(!click.stopped && !click.prevented, 'popup 안의 단추가 받을 click 을 판정 계층이 삼켰습니다');
 }
 
-/* ---- 시트가 덮고 있는 동안에는 종이가 손짓을 못 가져갑니다 ---- */
+/* ---- popup이 덮고 있는 동안에는 종이가 손짓을 못 가져갑니다 ---- */
 {
   const { world } = scenario(w => w.openWordPanel());
   tap(world, world.nodes.word, 100, 300);
-  assert.equal(world.calls.openWordAt, 0, '시트가 덮고 있는데 그 밑의 낱말이 열렸습니다');
-  assert.equal(world.calls.closePanel, 0, '시트 밑을 눌렀을 뿐인데 시트가 닫혔습니다');
+  assert.equal(world.calls.openWordAt, 0, 'popup이 덮고 있는데 그 밑의 낱말이 열렸습니다');
+  assert.equal(world.calls.closePanel, 0, 'popup 밑을 눌렀을 뿐인데 popup이 닫혔습니다');
 }
 {
   /* 시트가 임자인 손짓에는 꾹 누르기 타이머 **자체가** 걸리지 않습니다. 종이의
@@ -312,36 +282,20 @@ function scenario(setup){
   const covered = scenario(w => w.openWordPanel());
   fire(covered.world, 'pointerdown', covered.world.nodes.word, 100, 300);
   assert.deepEqual(covered.world.timers, [],
-    '시트가 덮고 있는데 그 밑의 종이가 꾹 누르기 시간을 재기 시작했습니다');
+    'popup이 덮고 있는데 그 밑의 종이가 꾹 누르기 시간을 재기 시작했습니다');
   fire(covered.world, 'pointerup', covered.world.nodes.word, 100, 300);
-  assert.equal(covered.world.calls.sentenceAt, 0, '시트가 덮고 있는데 그 밑에서 문장 해석이 떴습니다');
+  assert.equal(covered.world.calls.sentenceAt, 0, 'popup이 덮고 있는데 그 밑에서 문장 해석이 떴습니다');
 
   const modal = scenario(w => w.openSentenceModal());
   fire(modal.world, 'pointerdown', modal.world.nodes['sentence-scrim'], 100, 100);
   assert.deepEqual(modal.world.timers, [], '해석 창 위의 손짓이 꾹 누르기 시간을 재기 시작했습니다');
 }
 
-/* ---- 옆 칸일 때는 종이가 그대로 종이 것입니다 ----
-   넓은 화면의 낱말 창은 본문을 가리지 않습니다. 여기까지 손짓을 가져가면
-   뜻을 하나 열어 둔 채로 다음 낱말을 누를 수 없게 됩니다. */
-{
-  const { world } = scenario(w => { w.sheetLayout = false; w.openWordPanel(); });
-  tap(world, world.nodes.word, 100, 300);
-  assert.equal(world.calls.openWordAt, 1, '옆 칸이 열려 있으면 다음 낱말을 누를 수 없습니다');
-  assert.equal(world.calls.closePanel, 0, '옆 칸일 때 종이를 누른 것이 창을 닫았습니다');
-}
-{
-  /* 옆 칸일 때도 그 칸의 닫기 단추만은 창의 손짓입니다. */
-  const { world } = scenario(w => { w.sheetLayout = false; w.openWordPanel(); });
-  tap(world, world.nodes['p-close'], 700, 90);
-  assert.equal(world.calls.closePanel, 1, '옆 칸의 X 가 창을 닫지 않습니다');
-}
-
 /* ================= Aa 보기 설정 =================
 
    Aa 에는 scrim 이 없습니다 — 바깥이 곧 읽는 종이입니다. 그래서 "바깥을 눌러
    닫는 손짓"이 동시에 "글자를 누른 손짓"이었고, 실사용에서 설정을 닫는 터치가
-   낱말 팝업이나 문장 해석을 함께 열었습니다. 해석 창·낱말 시트와 같은 규칙으로
+   낱말 팝업이나 문장 해석을 함께 열었습니다. 해석 창·낱말 popup와 같은 규칙으로
    옮긴 뒤에는, 그 한 터치가 Aa 를 닫고 **거기서 끝나야** 합니다. */
 {
   const { world } = scenario(w => w.openAa());
@@ -427,12 +381,12 @@ for(const id of ['readback', 'aafab', 'modefab']){
   assert.equal(world.calls.openWordAt, 0, '조각에서 시작해 글 위에서 뗀 손짓이 낱말을 열었습니다');
 }
 {
-  /* 겹쳐 있으면 위에 있는 것이 임자입니다 — 낱말 시트가 덮고 있으면 Aa 가
-     아니라 시트의 손짓입니다. */
+  /* 겹쳐 있으면 위에 있는 것이 임자입니다 — 낱말 popup이 덮고 있으면 Aa가
+     아니라 popup의 손짓입니다. */
   const { world } = scenario(w => { w.openAa(); w.openWordPanel(); });
-  tap(world, world.nodes.sheetbg, 100, 100);
-  assert.equal(world.calls.closePanel, 1, '시트가 덮고 있는데 바깥 누르기가 시트를 닫지 않습니다');
-  assert.equal(world.calls.closeAa, 0, '시트를 닫는 손짓이 Aa 까지 닫았습니다');
+  tap(world, world.nodes['word-modal-scrim'], 100, 100);
+  assert.equal(world.calls.closePanel, 1, 'popup이 덮고 있는데 바깥 누르기가 popup을 닫지 않습니다');
+  assert.equal(world.calls.closeAa, 0, 'popup을 닫는 손짓이 Aa까지 닫았습니다');
 }
 
 /* ---- 겹쳐 있으면 위에 있는 것이 임자입니다 ---- */
@@ -447,21 +401,21 @@ for(const id of ['readback', 'aafab', 'modefab']){
    실기기에서 닫자마자 빠르게 스크롤하던 자리입니다. */
 {
   const { world, context } = scenario(w => w.openWordPanel());
-  fire(world, 'pointerdown', world.nodes.sheetbg, 100, 100);
+  fire(world, 'pointerdown', world.nodes['word-modal-scrim'], 100, 100);
   context.__scroll = null;
   /* 읽는 칸의 scroll 은 gesture.js 안의 `scrollGesture` 가 받습니다. 여기서는
      그 함수를 직접 불러 "화면이 굴렀다"를 만듭니다. */
   context.scrollGesture();
-  fire(world, 'pointerup', world.nodes.sheetbg, 100, 100);
-  assert.equal(world.calls.closePanel, 1, '누르는 도중 화면이 구르면 시트가 안 닫힙니다');
+  fire(world, 'pointerup', world.nodes['word-modal-scrim'], 100, 100);
+  assert.equal(world.calls.closePanel, 1, '누르는 도중 화면이 구르면 popup이 안 닫힙니다');
   assert.deepEqual(world.errors, [], '구르는 도중의 손짓이 두 가지 일을 했습니다');
 }
 
 /* ---- pointer 조각 없이 click 만 오는 길 (자판의 Enter 포함) ---- */
 {
   const { world } = scenario(w => w.openWordPanel());
-  fire(world, 'click', world.nodes['p-close'], 300, 20);
-  assert.equal(world.calls.closePanel, 1, 'click 만 오는 기기에서 낱말 창을 닫을 수 없습니다');
+  fire(world, 'click', world.nodes['word-modal-scrim'], 100, 100);
+  assert.equal(world.calls.closePanel, 1, 'click 만 오는 기기에서 낱말 popup을 닫을 수 없습니다');
 }
 {
   const { world } = scenario(w => w.openSentenceModal());
@@ -478,7 +432,7 @@ for(const id of ['readback', 'aafab', 'modefab']){
     tap(world, world.nodes.word, 100, 300);        // 낱말 열기
     world.openWordPanel();                          // 실제 화면이 하는 일
     world.clickTarget = world.nodes.word;           // 닫히면 그 밑의 종이가 드러납니다
-    tap(world, world.nodes.sheetbg, 100, 100);      // 바깥으로 닫기
+    tap(world, world.nodes['word-modal-scrim'], 100, 100); // 바깥으로 닫기
     context.scrollGesture();                        // 곧바로 스크롤
   }
   assert.equal(world.calls.openWordAt, 200, '200번 도는 사이에 낱말이 열리지 않은 회차가 있습니다');
@@ -487,4 +441,4 @@ for(const id of ['readback', 'aafab', 'modefab']){
   assert.deepEqual(world.errors, [], '반복하는 동안 한 손짓이 두 가지 일을 했습니다');
 }
 
-console.log('손짓 임자 기준선 통과 — 해석 창 · 낱말 시트 같은 규칙, 200회 반복 무결');
+console.log('손짓 임자 기준선 통과 — 해석 창 · 낱말 popup 같은 규칙, 200회 반복 무결');

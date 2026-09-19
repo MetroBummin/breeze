@@ -191,30 +191,13 @@ try{
    assert.ok(word,'visible PDF has no working word map');
    const tapsBefore=(await snapshot()).wordActions;
    await page.touchscreen.tap(word.x,word.y);
-   await page.waitForFunction(()=>wordPanelOpen());
+   await page.waitForFunction(()=>wordPeekOpen());
    assert.equal((await snapshot()).wordActions,tapsBefore+1,'tap was dispatched more than once');
-   if(width>=1000){
-     const panelAnchor=await page.evaluate(()=>{
-       const anchor=readerPanelSession&&readerPanelSession.anchor;
-       if(!anchor) return null;
-       return {...anchor,source:{...anchor.source}};
-     });
-     assert.ok(panelAnchor,'side-panel pinch stress lost its source anchor');
-     await pinch(100,140,{dx:8,dy:-10,split:true});
-     await pinch(140,100,{dx:-6,dy:8});
-     await pinch(100,125,{dx:5,dy:-4,split:true});
-     assert.equal((await snapshot()).panel,true,'side panel closed during pinch stress');
-     await page.locator('#p-close').click();
-     await page.waitForTimeout(200);
-     const afterY=await page.evaluate(anchor=>{
-       const page=originalSession.pages[anchor.source.page-1],rect=page.getBoundingClientRect();
-       return rect.top+anchor.source.y*rect.height;
-     },panelAnchor);
-     assert.ok(Math.abs(afterY-panelAnchor.screenY)<3,
-       `side-panel pinch close drifted ${afterY-panelAnchor.screenY}px`);
-   }else{
-     await page.evaluate(()=>closePanel());await page.waitForTimeout(400);
-   }
+   await page.locator('#word-peek-more').click();
+   await page.waitForFunction(()=>wordPanelOpen());
+   assert.equal((await snapshot()).panel,true,'near-word pill did not open the centered detail popup');
+   await page.locator('#word-modal-scrim').click({position:{x:4,y:4}});
+   await page.waitForFunction(()=>!wordLookupOpen());
    // A fresh long press after a pinch must still enter the shared pending pill.
    // If the result is already ready, it stays hidden until the held finger lifts.
    if(cdp){

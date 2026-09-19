@@ -52,7 +52,7 @@ applyReadMargin();
    닫는다"를 혼자 판정했습니다. 그 한 줄이 판정 계층 바깥에 있는 유일한 입력이라,
    뒤에 글자가 있는 자리를 눌러 Aa 를 닫으면 같은 터치가 종이에서 한 번 더
    판정되어 낱말 창·문장 해석이 함께 떴습니다. 해석 창(`#sentence-scrim`)과
-   낱말 시트(`#sheetbg`)의 `onclick` 을 걷어 낸 것과 같은 이유, 같은 자리입니다.
+   낱말 popup scrim의 `onclick` 을 걷어 낸 것과 같은 이유, 같은 자리입니다.
    이제 Aa 가 열려 있는 동안의 손짓은 임자가 Aa 이고, 임자가 `DISMISS_AA` 로
    판정한 그 자리에서 아래 `closeAa()` 를 한 번 부릅니다
    (scripts/reader/gesture.js). */

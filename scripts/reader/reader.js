@@ -341,18 +341,10 @@ function scheduleProgressUpdate(){
    글 폭은 여기서 건드리지 않습니다. */
 const CHROME_STEP = 12, CHROME_BACK = 44, CHROME_TOP = 80;
 let chromeLastY = 0, chromeRun = 0;    // chromeRun: 같은 방향으로 이어서 간 거리
-/* ---- 낱말 창이 열려 있는 동안에는 상단바를 건드리지 않습니다 ----
-   걷힌 상단바는 읽어 내려간 결과입니다. 그런데 낱말 하나를 누르면 시트가
-   올라오고, 그 사이에 화면이 조금씩 움직입니다 — 시트가 미끄러져 들어오고,
-   아이폰은 손을 뗀 뒤에도 관성으로 몇 픽셀을 더 흘리며, 폰이 아닌 화면에서는
-   옆 패널이 열리느라 글 폭이 바뀌어 보던 자리를 다시 맞춥니다. 그 몇 픽셀이
-   "위로 올렸다"로 읽혀서, 뜻 한 번 보고 나면 상단바가 돌아와 있었습니다.
-   낱말 창은 읽기를 멈춘 것이 아니라 읽는 도중이므로, 그동안의 움직임은
-   방향으로 세지 않고 창을 닫을 때 거리만 0에서 다시 시작합니다. */
-/* 붙잡는 이유가 여럿이라 이름을 붙여 셉니다 — 낱말 창(`panel`), 자리 되돌리기
-   (`restore`). 하나가 놓아도 다른 하나가 잡고 있으면 상단바는 그대로입니다.
-   참·거짓 하나로 두면, 되돌리는 도중에 창을 닫는 순간 아직 옮기고 있는데도
-   풀립니다.
+/* ---- 프로그램이 Reader 자리를 복원하는 동안에는 상단바를 건드리지 않습니다 ----
+   실제 viewport resize나 mode 전환이 자리를 맞추는 몇 픽셀을 사용자 스크롤로
+   오해하지 않도록 이유별 pin을 셉니다. 하나가 놓아도 다른 하나가 잡고 있으면
+   상단바는 그대로입니다.
 
    `zoom` 핀은 없앴습니다. 벌리는 것이 브라우저 몫이던 시절에는 벌리는 동안
    `scrollY` 가 크게 흔들려서 상단바가 걷혔다 돌아왔다 했고, 그것을 막으려고
@@ -450,218 +442,8 @@ function followScrollDirection(){
   else if(chromeRun <= -CHROME_BACK){ chromeRun = 0; setReaderChrome(false); }
 }
 
-/* ================= 낱말 창 한 번의 자리 이동 =================
-   옆 패널은 본문 폭을 바꿉니다. 문단 꼭대기를 붙들면 긴 문단 안의 눌렀던 낱말은
-   줄바꿈 뒤에 다른 줄로 밀립니다. 여기서는 패널 한 번을 한 작업으로 다룹니다:
-   원문 글자 위치와 화면 y를 먼저 얻고, 폭을 바꾸고, 그 글자를 한 번 되찾습니다.
-   ResizeObserver는 이 작업을 재실행하지 않습니다. */
-let readerPanelGeneration=0;
-let readerPanelSession=null;
-let readerPanelChange=null;
-let readerPanelIgnoredWidth=null;
-
-function readerNodeRect(node){
-  if(!node || !node.getBoundingClientRect) return null;
-  const rect=node.getBoundingClientRect();
-  const doc=node.ownerDocument;
-  if(!doc || doc===document) return rect;
-  const frame=doc.defaultView&&doc.defaultView.frameElement;
-  if(!frame) return rect;
-  const outer=frame.getBoundingClientRect();
-  return {top:outer.top+rect.top,left:outer.left+rect.left,width:rect.width,height:rect.height};
-}
-
-function textOffsetInBlock(block,node,offset){
-  try{
-    const range=(block.ownerDocument||document).createRange();
-    range.selectNodeContents(block);
-    if(offset==null) range.setEndBefore(node);
-    else range.setEnd(node,offset);
-    return range.toString().length;
-  }catch(error){ return 0; }
-}
-
-function textPanelAnchorFromNode(node){
-  const block=node&&node.closest&&node.closest('[data-pi]');
-  const rect=readerNodeRect(node);
-  if(!block||!rect) return null;
-  return {mode:'text',source:{pi:+block.dataset.pi,char:textOffsetInBlock(block,node)},screenY:rect.top};
-}
-
-function textPanelAnchorAt(screenY){
-  const readmain=document.getElementById('readmain');
-  const bounds=readmain&&readmain.getBoundingClientRect();
-  const x=bounds ? bounds.left+bounds.width/2 : window.innerWidth/2;
-  let caret=null;
-  try{
-    if(document.caretPositionFromPoint){
-      const hit=document.caretPositionFromPoint(x,screenY);
-      if(hit) caret={node:hit.offsetNode,offset:hit.offset};
-    }else if(document.caretRangeFromPoint){
-      const hit=document.caretRangeFromPoint(x,screenY);
-      if(hit) caret={node:hit.startContainer,offset:hit.startOffset};
-    }
-  }catch(error){}
-  const owner=caret&&caret.node&&(caret.node.nodeType===Node.TEXT_NODE
-    ? caret.node.parentElement : /** @type {Element} */ (caret.node));
-  let block=owner&&owner.closest ? owner.closest('#rtext [data-pi]') : null;
-  if(!block){
-    const elements=readerParagraphs();
-    block=elements.length ? firstElementBelow(elements,screenY) : null;
-  }
-  if(!block) return null;
-  const char=caret&&block.contains(caret.node) ? textOffsetInBlock(block,caret.node,caret.offset) : 0;
-  let y=screenY;
-  if(typeof domRangeForOffsets==='function'){
-    try{
-      const range=domRangeForOffsets(block,char,Math.min(block.textContent.length,char+1));
-      const rect=range&&range.getClientRects()[0];
-      if(rect) y=rect.top;
-    }catch(error){}
-  }
-  return {mode:'text',source:{pi:+block.getAttribute('data-pi'),char},screenY:y};
-}
-
-function originalPanelAnchorAt(screenY,node){
-  let direct=null;
-  try{ direct=node&&node.dataset&&node.dataset.readerAnchor
-    ? JSON.parse(node.dataset.readerAnchor) : null; }catch(error){}
-  const source=direct || (originalFormat()&&originalFormat().captureAnchor(screenY));
-  return source ? {mode:'original',source:{...source},screenY} : null;
-}
-
-function captureReaderPanelAnchor(node,screenY){
-  if(!curBook) return null;
-  if(currentReaderMode==='text') return node ? textPanelAnchorFromNode(node) : textPanelAnchorAt(screenY);
-  const rect=node&&readerNodeRect(node);
-  return originalPanelAnchorAt(rect ? rect.top : screenY,node);
-}
-
-function readerPanelReferenceY(){
-  const box=readerScroller();
-  const rect=box&&box.getBoundingClientRect();
-  return rect ? rect.top+rect.height/2 : window.innerHeight/2;
-}
-
-function restoreTextPanelAnchor(anchor){
-  const source=anchor&&anchor.source;
-  const block=source&&document.querySelector(`#rtext [data-pi="${source.pi}"]`);
-  if(!block) return false;
-  let top=block.getBoundingClientRect().top;
-  if(source.char!=null&&typeof domRangeForOffsets==='function'){
-    try{
-      const at=Math.max(0,Math.min(block.textContent.length,Number(source.char)||0));
-      const range=domRangeForOffsets(block,at,Math.min(block.textContent.length,at+1));
-      const rect=range&&range.getClientRects()[0];
-      if(rect) top=rect.top;
-    }catch(error){}
-  }
-  readerScrollTo(readerScrollTop()+top-anchor.screenY);
-  lastAnchor={pi:source.pi,dy:Math.round(block.getBoundingClientRect().top)};
-  return true;
-}
-
-async function restoreReaderPanelAnchor(change){
-  if(!change||change.generation!==readerPanelGeneration||!curBook
-      || curBook.id!==change.bookId||currentReaderMode!==change.mode) return false;
-  if(change.mode==='text') return restoreTextPanelAnchor(change.anchor);
-  const format=originalFormat();
-  if(!format) return false;
-  const current=()=>change===readerPanelChange&&change.generation===readerPanelGeneration
-    && curBook&&curBook.id===change.bookId&&currentReaderMode===change.mode;
-  const restored=await format.restoreAnchor(
-    change.anchor.source,change.anchor.screenY,change.modeToken,current);
-  if(restored) lastOriginalAnchor=change.anchor.source;
-  return restored;
-}
-
-/* 패널의 display 변경과 PDF 확대 stage 갱신은 서로 다른 ResizeObserver가 보던
-   일이었습니다. 그러면 source anchor를 되찾은 뒤에 stage가 새 폭으로 줄어들어
-   같은 scrollTop이 더 뒤의 쪽을 가리킬 수 있습니다. 패널 작업이 폭 변경의
-   주인이므로, 이 작업 안에서 실제 Reader 폭 ResizeObserver 알림과 그에 따른
-   stage 계산을 먼저 기다립니다. 시간이나 프레임 수를 추측하는 보정 반복은
-   필요하지 않습니다. EPUB은 restoreAnchor 자체가 frame geometry를 기다립니다. */
-async function prepareReaderPanelGeometry(change){
-  if(!change||change.mode!=='original'||!originalSession) return true;
-  if(originalSession.kind==='pdf'&&typeof waitForOriginalZoomGeometry==='function'){
-    const current=()=>change===readerPanelChange&&change.generation===readerPanelGeneration
-      && curBook&&curBook.id===change.bookId&&currentReaderMode===change.mode;
-    const width=document.getElementById('readmain').getBoundingClientRect().width;
-    if(!await waitForOriginalZoomGeometry(width,current)) return false;
-    const page=originalSession.pages&&originalSession.pages[change.anchor.source.page-1];
-    if(page) page.getBoundingClientRect();
-  }
-  return true;
-}
-
-function beginReaderPanelOpen(node){
-  const panel=document.getElementById('panel');
-  const wasOpen=!!(panel&&panel.classList.contains('on'));
-  const anchor=node ? captureReaderPanelAnchor(node,readerPanelReferenceY()) : null;
-  /* 패널 안에서 저장 뜻을 바꾸는 selectWord(k,null)는 레이아웃도 기준 단어도
-     바꾸지 않습니다. 막 시작한 열기 복원을 취소하지 않고 그대로 둡니다. */
-  if(wasOpen&&!anchor) return null;
-  if(anchor) readerPanelSession={bookId:curBook.id,mode:currentReaderMode,anchor,userMoved:false,
-    lastTop:readerScrollTop()};
-  const generation=++readerPanelGeneration;
-  readerPanelChange=null;
-  if(wasOpen||!anchor) return null;
-  return readerPanelChange={generation,bookId:curBook.id,mode:currentReaderMode,
-    modeToken:readerModeChangeToken,anchor,beforeWidth:document.getElementById('readmain').getBoundingClientRect().width};
-}
-
-function beginReaderPanelClose(){
-  const session=readerPanelSession;
-  const generation=++readerPanelGeneration;
-  readerPanelChange=null;
-  if(!session||!curBook||session.bookId!==curBook.id||session.mode!==currentReaderMode){
-    readerPanelSession=null; return null;
-  }
-  const anchor=session.userMoved
-    ? captureReaderPanelAnchor(null,readerPanelReferenceY()) : session.anchor;
-  readerPanelSession=null;
-  if(!anchor) return null;
-  return readerPanelChange={generation,bookId:curBook.id,mode:currentReaderMode,
-    modeToken:readerModeChangeToken,anchor,beforeWidth:document.getElementById('readmain').getBoundingClientRect().width};
-}
-
-function commitReaderPanelChange(change){
-  if(!change||change!==readerPanelChange) return;
-  requestAnimationFrame(async()=>{
-    if(change!==readerPanelChange||change.generation!==readerPanelGeneration) return;
-    const width=document.getElementById('readmain').getBoundingClientRect().width;
-    if(Math.abs(width-change.beforeWidth)<1){ readerPanelChange=null; return; }
-    readerPanelIgnoredWidth=Math.round(width);
-    try{
-      if(!await prepareReaderPanelGeometry(change)) return;
-      await whileRestoringChrome(()=>restoreReaderPanelAnchor(change));
-    }
-    finally{
-      if(change===readerPanelChange){
-        readerPanelChange=null;
-        if(readerPanelSession) readerPanelSession.lastTop=readerScrollTop();
-      }
-    }
-  });
-}
-
-function noteReaderPanelScroll(){
-  const session=readerPanelSession;
-  if(!session) return;
-  const top=readerScrollTop();
-  const moved=Math.abs(top-session.lastTop)>1;
-  session.lastTop=top;
-  if(moved&&!readerPanelChange&&!readerScrollWasProgrammatic()&&!readerAnchorHeld()) session.userMoved=true;
-}
-
-function readerPanelOwnsResize(width){
-  if(readerPanelChange) return true;
-  if(readerPanelIgnoredWidth!=null&&Math.abs(readerPanelIgnoredWidth-width)<1){
-    readerPanelIgnoredWidth=null;
-    return true;
-  }
-  return false;
-}
+/* 단어 상세는 Reader 밖의 fixed 중앙 overlay입니다. 열고 닫을 때 본문 폭이
+   바뀌지 않으므로 과거 사이드패널 전용 anchor capture/restore 작업은 없습니다. */
 /* 듣는 곳이 문서(`window`)에서 읽는 칸으로 옮겨졌습니다. 아이폰 사파리가 주소창을
    여닫으며 흘리던 가짜 스크롤이 여기까지 오지 않는 것도 덤입니다.
 
@@ -671,11 +453,9 @@ function readerPanelOwnsResize(width){
 let chromeFrame=0;
 (readerScroller() || window).addEventListener('scroll', ()=>{
   if(!curBook) return;
-  noteReaderPanelScroll();
   if(!chromeFrame) chromeFrame=requestAnimationFrame(()=>{ chromeFrame=0; if(curBook) followScrollDirection(); });
   invalidateReaderMeasurements();
   scheduleProgressUpdate();
-  if(readerPanelChange) return;
   if(Date.now()<readerScrollPauseUntil) return;
   if(scrollTick) return;
   const scheduledBook=curBook;
@@ -689,9 +469,8 @@ let chromeFrame=0;
   }, 800);
 }, {passive:true});
 
-/* 사전 패널이 열리고 닫히면 읽는 영역의 폭이 바뀝니다. 글자판은 글이 다시
-   흐르고, 원본 페이지는 비율대로 높이가 줄어듭니다. 그대로 두면 보고 있던
-   줄이 화면에서 밀려나므로, 폭이 바뀔 때마다 방금 그 자리로 되돌립니다. */
+/* 실제 viewport/창 크기 변경은 여전히 본문을 reflow할 수 있으므로 일반적인
+   위치 보존은 유지합니다. 단어 overlay 개폐는 이 observer의 폭을 바꾸지 않습니다. */
 if(window.ResizeObserver){
   let readerWidth = 0;
   new ResizeObserver(entries=>{
@@ -699,7 +478,6 @@ if(window.ResizeObserver){
     if(!readerWidth || width===readerWidth){ readerWidth = width; return; }
     readerWidth = width;
     if(!curBook || !document.getElementById('v-read').classList.contains('on')) return;
-    if(readerPanelOwnsResize(width)) return;
     invalidateReaderMeasurements();   // 폭이 바뀌면 글이 다시 흐릅니다
     suspendReaderScrollSave(600);
     /* The panel animates its width, so this fires many times. Freeze the

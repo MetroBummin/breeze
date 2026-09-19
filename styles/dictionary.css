@@ -1,48 +1,71 @@
-/* Dictionary panel and mobile sheet */
+/* Dictionary meaning pill and centered detail popup */
 
-/* ---- 옆 칸이냐 아래에서 올라오는 시트냐 ----
-   기준은 기기가 아니라 **옆 칸을 열고도 본문에 읽을 폭이 남는가** 하나입니다.
-   옆 칸은 `min(340px,28vw)` 를 가져가므로, 화면이 1000px 는 되어야 본문 쪽에
-   읽을 만한 폭이 남습니다. 그보다 좁으면 아이패드 세로처럼 넉넉해 보이는
-   화면이어도 둘 다 좁아지기만 합니다 — 뜻은 두 글자마다 줄이 바뀌고 본문은
-   한 줄이 짧아집니다. 그 구간은 폰과 같은 시트가 낫습니다.
+/* ---- 단어 곁의 transient 뜻 필 ----
+   상세 단어창과 Reader 레이아웃은 그대로 두고, 탭 직후의 기다림과 대표 뜻만
+   fixed overlay로 보여 줍니다. PDF/EPUB의 확대 레이어 밖이라 필 자체는 커지지
+   않습니다. 위치는 scripts/dictionary/dictionary.js가 실제 선택 rect로 정합니다. */
+#word-peek{position:fixed; z-index:78; isolation:isolate; display:flex; align-items:stretch; min-height:44px;
+  max-width:calc(100vw - 32px); overflow:hidden; border:1px solid var(--sentence-glass-line);
+  border-radius:999px; background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
+  box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
+  animation:word-peek-in var(--sentence-transition) cubic-bezier(.2,.7,.25,1);}
+#word-peek[hidden]{display:none;}
+#word-peek::before{content:""; position:absolute; z-index:-1; inset:0; pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(145deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.07) 44%,rgba(255,255,255,.16) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42);}
+body.dark #word-peek::before{
+  background:linear-gradient(145deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.025) 46%,rgba(255,255,255,.07) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14);}
+#word-peek .word-peek-spinner{flex:0 0 auto; align-self:center; width:13px; height:13px;
+  margin:0 0 0 15px; border:1.5px solid var(--sentence-glass-spinner);
+  border-top-color:var(--sentence-glass-spinner-on); border-radius:50%;
+  animation:sentence-spin .82s linear infinite;}
+#word-peek:not(.loading) .word-peek-spinner{display:none;}
+#word-peek-meaning{display:block; min-width:0; max-width:min(280px,calc(100vw - 92px));
+  padding:11px 14px 10px 16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font:600 14px/22px var(--ui); pointer-events:none;}
+#word-peek.loading #word-peek-meaning{padding-left:9px;}
+#word-peek-more{position:relative; flex:0 0 44px; width:44px; min-height:44px; padding:0; border:0;
+  background:transparent; color:var(--sentence-glass-secondary); font:500 23px/1 var(--ui); cursor:pointer;
+  touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
+#word-peek-more::before{content:""; position:absolute; z-index:-1; inset:5px; border-radius:50%;
+  border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-action);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 1px 3px rgba(24,28,30,.10);
+  transition:background-color .16s ease,transform .16s ease;}
+#word-peek-more:hover::before{background:var(--sentence-glass-action-hover);}
+#word-peek-more:active::before{transform:scale(.94);}
+#word-peek-more:focus-visible{outline:2px solid var(--blue); outline-offset:-3px; border-radius:50%;}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #word-peek{background:var(--sentence-glass-pill); backdrop-filter:blur(19px) saturate(122%);
+    -webkit-backdrop-filter:blur(19px) saturate(122%);}
+}
+@keyframes word-peek-in{from{opacity:0; transform:translateY(3px) scale(.97)}to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){
+  #word-peek{animation:word-peek-fade var(--sentence-transition) linear;}
+  @keyframes word-peek-fade{from{opacity:0}to{opacity:1}}
+}
 
-   마우스 화면은 이 셈에서 빠집니다(`pointer:fine`). 창을 줄였거나 브라우저를
-   확대해서 좁아진 것뿐이라, 화면을 덮는 큰 시트로 바뀌면 오히려 낯섭니다.
-   기기 이름을 묻는 곳은 여기에도 자바스크립트에도 없습니다. 자바스크립트가
-   같은 경계를 봐야 하는 자리는 `panelIsSheet()` 하나입니다
-   (scripts/dictionary/dictionary.js). */
-
-  #sheetbg{display:none;}
-  #panel{width:min(340px,28vw); flex-shrink:0; background:var(--sheet); border-radius:26px 0 0 0; box-shadow:var(--shadow-panel);
-    overscroll-behavior:contain;
-    height:calc(100vh - 56px); position:sticky; top:56px; overflow-y:auto; display:none;}
+  #word-modal-scrim{display:none; position:fixed; inset:0; z-index:80;
+    background:var(--sentence-glass-scrim); touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  #word-modal-scrim.on{display:block;}
+  #panel{position:fixed; z-index:90; left:50%; top:50%; width:min(520px,calc(100vw - 32px));
+    max-height:min(76vh,760px); overflow-y:auto; display:none; transform:translate(-50%,-50%);
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    border:1px solid var(--sentence-glass-line); border-radius:22px;
+    background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
+    box-shadow:var(--sentence-glass-shadow);
+    animation:word-detail-in var(--sentence-transition) cubic-bezier(.2,.7,.25,1);}
   #panel.on{display:block;}
-  @media (min-width:1000px), (min-width:761px) and (pointer:fine){
-    #panel{margin-top:8px; top:calc(var(--topbar-h,56px) + 8px);
-      height:calc(100vh - var(--topbar-h,56px) - 8px);}
-    /* 읽는 동안에는 화면이 못 박혀 있어 `sticky` 가 붙을 스크롤이 없습니다.
-       그리고 읽는 화면에는 상단바가 없으므로, 안전 영역 바로 밑에서 시작해
-       남는 높이를 채우는 평범한 칸이면 됩니다. */
-    body.reading #panel{position:relative; top:auto;
-      margin-top:calc(env(safe-area-inset-top) + 10px);
-      height:calc(100% - env(safe-area-inset-top) - 10px);}
-    /* 옆 칸의 막대는 감춥니다. 뜻 몇 줄이 들어가는 좁은 칸이라 막대가 서면 그
-       폭만큼 글이 밀리고, 창의 오른쪽 가장자리에 밝은 띠가 하나 더 생깁니다.
-       미는 길(휠·트랙패드·손)은 그대로입니다 — 그림만 없앱니다. 바닥에서
-       올라오는 시트는 이 미디어 밖이라 손대지 않았습니다. */
-    #panel{scrollbar-width:none;}
-    #panel::-webkit-scrollbar{display:none;}
-    body.reader-original #panel{width:min(310px,26vw);}
-    body.reader-original #panel .inner{padding:21px 20px 34px;}
-    body.reader-original #p-word{font-size:clamp(24px,2.2vw,30px);}
-    body.reader-original .p-sec{margin-top:13px;}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    #panel{background:var(--sentence-glass-surface); backdrop-filter:blur(18px) saturate(112%);
+      -webkit-backdrop-filter:blur(18px) saturate(112%);}
   }
+  @keyframes word-detail-in{from{opacity:0; transform:translate(-50%,-48%) scale(.985)}
+    to{opacity:1; transform:translate(-50%,-50%)}}
   #panel .inner{padding:22px 22px 36px;}
-  #p-handle{display:none; touch-action:none;}
   #p-top{display:flex; align-items:flex-start; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--divider);}
-  #p-close{flex:none; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
-    font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #p-head{min-width:0; flex:1; display:flex; align-items:center; gap:8px; margin-bottom:4px;}
   /* 표제어는 제목이지 입력칸이 아닙니다 — 테두리와 배경을 두면 "여기를 고치세요"로
      읽힙니다. 고치는 길은 없습니다(scripts/dictionary/dictionary.js). */
@@ -60,10 +83,8 @@
      때만 파랑이 옅게 들고, 빼기는 한 번 누르면 이 낱말이 단어장에서 사라지는,
      되돌리려면 다시 찾아 눌러야 하는 일입니다. 그래서 옅은 벽돌빛을 입힙니다 —
      쨍한 빨강이 아니라 창의 다른 곳에서 이미 쓰는 `--danger` 한 벌입니다. */
-  /* 좁은 옆 칸(약 875px 아래의 마우스 화면)에서는 이 두 단추가 한 줄에 다 서지
-     못합니다. 글자를 줄이는 대신 줄을 바꿉니다 — 넉넉할 때는 지금까지처럼 한
-     줄이고, 모자랄 때만 아래로 내려섭니다. 넘쳐서 창에 가로 스크롤을 만드는 것보다
-     낫습니다. */
+  /* 팝업 폭 안에서 이 두 단추가 한 줄에 다 서지 못하면 글자를 줄이는 대신
+     줄을 바꿉니다. 넘쳐서 창에 가로 스크롤을 만드는 것보다 낫습니다. */
   #p-word-tools{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
   .p-tool{flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 12px;
     border:1px solid var(--mark-line); border-radius:9px; background:var(--mark-bg); color:var(--soft2);
@@ -330,81 +351,6 @@
   /* 빼기 단추는 창 맨 아래의 큰 단추가 아니라 "모르는 정도" 줄로 올라갔습니다 —
      위의 `.p-tool` 을 봐 주세요. 긴 낱말 창에서 끝까지 내려야 보이던 자리였습니다. */
 
-  @media (min-width:1000px), (min-width:761px) and (pointer:fine){
-    /* 붙어 있는 머리글은 창의 좌우 끝까지 배경을 깔아야 하므로, `.inner` 의
-       여백만큼 음수 여백으로 되물러 나갔다가 같은 값을 안쪽 여백으로 되돌려
-       놓습니다. 그래서 이 값은 바로 위 `#panel .inner` 의 여백과 **같은 수**여야
-       합니다 — 여백을 26 에서 22 로 줄이면서 여기를 26 인 채 두었더니, 머리글이
-       창보다 4px 넓어져 옆 칸에 가로 스크롤이 생겼습니다. */
-    #p-top{position:sticky; top:0; z-index:6; margin:-22px -22px 0; padding:22px 20px 13px 22px;
-      background:var(--sheet); border-bottom:1px solid var(--sticky-line);}
-    body.reader-original #p-top{margin:-21px -20px 0; padding:22px 16px 9px 20px;}
-  }
-
-  /* 아래에서 올라오는 시트. 폰과, 옆 칸을 두기에는 좁은 손가락 화면(아이패드
-     세로)이 여기 삽니다 — 위의 "옆 칸이냐 시트냐"를 봐 주세요. */
-  @media (max-width:760px), (max-width:999px) and (pointer:coarse){
-    #v-read.on{display:block;}
-    /* ---- 닫힌 시트의 바깥은 화면에서 아예 빠집니다 ----
-       예전에는 닫혀도 `display:block` 인 채 `opacity:0` 으로 남았습니다. 그러면
-       읽는 내내 화면 전체 크기의 `position:fixed` 판 하나가 본문 위에 얹혀
-       있습니다 — 게다가 `opacity` 전환이 한 번 돌고 난 뒤라 WebKit 이 따로
-       떼어 그리기 좋은 상태입니다. 남아 있어야 할 이유는 없었습니다: 닫힌
-       동안 이 판이 하는 일이 없고, `touchmove` 를 막는 귀는 요소가 살아 있기만
-       하면 되며(요소는 지워지지 않고 `display` 만 바뀝니다), 넓은 화면에서는
-       이미 `display:none` 입니다. 해석 창도 `[hidden]` 으로 통째로 빠집니다.
-
-       동작은 이 두 줄이 전부입니다 — `display` 하나로 뜨고 집니다. 아래의
-       스르르 뜨고 지는 그림은 **얹는 것**이라 없어도 됩니다. 그래서 전환을
-       기본 규칙에 섞지 않고 `@supports` 안에만 둡니다: 그것을 모르는 브라우저는
-       규칙 자체를 못 보고, 그림 없이 바로 뜨고 질 뿐 하는 일은 똑같습니다.
-       때를 재는 자바스크립트도, 따로 기억하는 상태도 없습니다. */
-    /* ---- 이 판은 고를 글자가 없는 화면만 한 상자입니다 ----
-       PDF 종이에서 먼저 겪은 그대로입니다(styles/reader.css): 고를 글자가 없는
-       자리에서 꾹 누르면 iOS 는 가장 가까운 **상자 전체**를 골라 버립니다.
-       `#sheetbg` 는 이 앱에서 가장 큰 빈 상자이고, 시트가 덮고 있는 동안 본문
-       쪽 좌표의 손짓은 **전부 이 판이 받습니다** — 재 보면 본문 위 어느 점을
-       짚어도 `elementFromPoint` 가 `#sheetbg` 를 돌려줍니다. 그래서 화면 전체가
-       파래지고, 시트를 닫아도 선택이 남았습니다.
-
-       막을 자리는 여기 하나면 됩니다. 밑의 종이에 손대지 않는 것이 중요합니다:
-       글자 종이와 PDF 는 이미 스스로 막고 있고, EPUB 은 제 문서(iframe)라
-       caret 으로 낱말을 짚습니다 — 거기서 선택을 끄면 낱말 찾기가 함께 꺼집니다.
-
-       "덮고 있는 동안만"이라는 조건도 따로 만들지 않습니다. 이 판은 덮고 있을
-       때만 렌더 트리에 있으므로(위의 `display`), 판의 수명이 곧 그 조건입니다.
-       손짓의 임자를 정하는 것도 같은 판이고(scripts/reader/gesture.js 의
-       `wordSheetCovers`), 시트가 닫히면 판이 사라지면서 계약도 함께 풀립니다.
-       상태를 따로 세는 곳은 없습니다. */
-    #sheetbg{display:none; position:fixed; inset:0; background:var(--scrim-sheet); z-index:80;
-      touch-action:none; opacity:0; pointer-events:none;
-      -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
-    #sheetbg.on{display:block; opacity:1; pointer-events:auto;}
-    /* ---- 여기부터는 있으면 좋은 것 ---- */
-    @supports (transition-behavior:allow-discrete){
-      #sheetbg{transition:opacity .25s, display .25s allow-discrete;}
-      @starting-style{ #sheetbg.on{opacity:0;} }
-    }
-    #panel{position:fixed; left:0; right:0; bottom:0; top:auto; width:100%; height:auto; max-height:72vh;
-      overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
-      border-radius:26px 26px 0 0; z-index:90; display:block; transform:translateY(105%); transition:transform .3s ease;
-      box-shadow:var(--shadow-sheet);}
-    #panel.on{transform:translateY(0);}
-    /* 시트가 벌어진 화면을 따라 커지던 문제가 이 앱의 확대를 두 번 갈아엎게 한
-       원인이었습니다. 이제 커지는 것은 종이(`#original-zoom`)뿐이고 시트는 그
-       바깥이라, 되돌리는 계산이 아예 필요 없습니다
-       (`scripts/reader/reader-scroll.js`). */
-    /* 손잡이도 글자가 없는 상자입니다 — 끌어내리려고 꾹 잡으면 시트 안의 글이
-       통째로 파래졌습니다. 뜻은 골라서 복사할 수 있어야 하므로 시트 전체를
-       막지는 않고, 잡는 자리만 막습니다. */
-    #p-handle{display:flex; position:sticky; top:0; z-index:5; background:var(--sheet); padding:12px 0 10px;
-      justify-content:center; cursor:grab; width:100%; margin:0;
-      -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
-    #p-handle::after{content:''; width:52px; height:5px; border-radius:3px; background:var(--handle);}
-    #p-close{display:none;}
-    #p-top{position:static; margin:0; padding:0 0 13px; background:transparent; border-bottom:1px solid var(--divider);}
-    #panel .inner{padding:16px 22px calc(34px + env(safe-area-inset-bottom));}
-  }
   /* 시트와 상관없는 좁은 화면 규칙. 단어창의 경계가 넓어져도 이쪽은 폰 기준
      그대로입니다 — 읽는 쪽 여백은 아이패드 세로에서 좁힐 이유가 없습니다.
      단어장 규칙은 styles/responsive.css 한 곳에만 둡니다(예전에는 같은 줄이
@@ -412,20 +358,7 @@
   @media (max-width:760px){
     .page{padding:26px 22px;}
   }
-  /* 브라우저 확대 때문에 CSS 폭만 좁아진 데스크톱에서는 거대한 모바일
-     바텀시트로 바꾸지 않습니다. 마우스 환경이면 작은 옆 패널을 유지합니다. */
-  @media (max-width:760px) and (pointer:fine){
-    #v-read.on{display:flex;}
-    #sheetbg{display:none!important;}
-    #panel{position:sticky; left:auto; right:auto; bottom:auto; top:56px; width:min(300px,42vw);
-      height:calc(100vh - 56px); max-height:none; border-radius:22px 0 0 0; z-index:70;
-      display:none; transform:none; transition:none;}
-    body.reading #panel{position:relative; top:auto;
-      margin-top:calc(env(safe-area-inset-top) + 10px);
-      height:calc(100% - env(safe-area-inset-top) - 10px);}
-    #panel.on{display:block; transform:none;}
-    #p-handle{display:none;}
-    #p-close{display:block;}
-    #panel .inner{padding:18px 17px 30px;}
-    #p-word{font-size:clamp(21px,4vw,27px);}
+  @media (prefers-reduced-motion:reduce){
+    #panel{animation:word-detail-fade var(--sentence-transition) linear;}
+    @keyframes word-detail-fade{from{opacity:0}to{opacity:1}}
   }

@@ -63,7 +63,7 @@ function addWord(k, span){
      `applyLook`(그리고 `createMeaning`)이 올려 보냅니다. */
   saveWords();
   paintWord(k);
-  selectWord(k, span);
+  selectWord(k, span, true);
   markPendingWord(k, buried);
   fetchDict(k);
 }
@@ -336,6 +336,7 @@ function deleteMeaning(id){
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
    저장된 단어를 다시 만났을 때만 별을 하나 올립니다. */
 function openWord(k, node){
+  if(wordPeekSameTarget(k,node)) return;
   if(!words[k]){ addWord(k, node); return; }
   const nextExample = sentenceOf(node);
   const root=words[k].root||k;
@@ -343,7 +344,7 @@ function openWord(k, node){
   if(savedContext){
     const now=Date.now(), seenAt=recentWordOpens.get(savedContext)||0;
     if(now-seenAt>=RECENT_WORD_OPEN_MS && words[savedContext].status<3) setStatus(savedContext,words[savedContext].status+1);
-    recentWordOpens.set(savedContext,now); contextView=null; selectWord(savedContext,node); return;
+    recentWordOpens.set(savedContext,now); contextView=null; selectWord(savedContext,node,true); return;
   }
   /* 저장해 둔 낱말은 마지막으로 보던 뜻으로 열립니다 — 캐시된 뜻이 곧바로 메인
      뜻입니다. 기다림도, 한도도 쓰지 않습니다. */
@@ -359,25 +360,96 @@ function openWord(k, node){
     const w = words[active];
     contextView = { key:active, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
       book:(curBook&&curBook.title)||w.book };
-    selectWord(active, node);
+    selectWord(active, node, true);
     return;
   }
   contextView = null;
-  selectWord(active, node);
-}
-/* 낱말 창은 두 가지 물건입니다. 폰에서는 화면을 덮는 바텀시트, 넓은 화면에서는
-   본문 옆에 나란히 서는 칸. 상단바를 어떻게 다룰지가 여기서 갈립니다. */
-function panelIsSheet(){
-  if(!window.matchMedia) return false;
-  /* 경계는 styles/dictionary.css 의 "옆 칸이냐 시트냐"와 같은 값입니다 — 옆 칸을
-     열고도 본문에 읽을 폭이 남는가. 1000px 아래의 손가락 화면은 아이패드 세로여도
-     시트입니다. 마우스 화면은 창이 좁아졌을 뿐이라 옆 칸을 그대로 둡니다. */
-  return window.matchMedia('(max-width:999px)').matches && !window.matchMedia('(pointer:fine)').matches;
+  selectWord(active, node, true);
 }
 /* 한 번의 word opening 이 선택 표시 하나를 소유합니다. 선택을 만든 node 를 이미
    받았는데 닫을 때 다시 책 전체와 모든 EPUB frame 에서 `.sel` 을 찾는 것은
    ownership 을 버렸다가 interaction 순간에 재발견하는 일이었습니다. */
 let activeSelectedWordNode=null;
+let wordPeekActive=false;
+let wordPeekAnchor=null;
+function wordPeekOpen(){ return wordPeekActive; }
+function wordLookupOpen(){
+  const panel=document.getElementById('panel');
+  return wordPeekActive||!!(panel&&panel.classList.contains('on'));
+}
+function wordPeekNodeRect(node){
+  if(!node||!node.getBoundingClientRect) return null;
+  const rect=node.getBoundingClientRect(),doc=node.ownerDocument;
+  if(!doc||doc===document) return {left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom,
+    width:rect.width,height:rect.height};
+  const frame=doc.defaultView&&doc.defaultView.frameElement;
+  if(!frame) return null;
+  const outer=frame.getBoundingClientRect();
+  return {left:outer.left+rect.left,top:outer.top+rect.top,right:outer.left+rect.right,
+    bottom:outer.top+rect.bottom,width:rect.width,height:rect.height};
+}
+function rememberWordPeekAnchor(node){
+  const rect=wordPeekNodeRect(node);
+  if(!rect) return null;
+  wordPeekAnchor={...rect,direction:null};
+  return wordPeekAnchor;
+}
+function wordPeekSameTarget(k,node){
+  if(!wordPeekActive||!selKey||!words[selKey]||!wordPeekAnchor) return false;
+  const root=words[selKey].root||selKey;
+  if(k!==root&&k!==selKey) return false;
+  const rect=wordPeekNodeRect(node);
+  if(!rect) return node===activeSelectedWordNode;
+  return Math.hypot((rect.left+rect.right-wordPeekAnchor.left-wordPeekAnchor.right)/2,
+    (rect.top+rect.bottom-wordPeekAnchor.top-wordPeekAnchor.bottom)/2)<6;
+}
+function wordPeekState(w){
+  const meaning=String((w&&(w.ko||(w.ai&&w.ai.ko)))||'').trim();
+  if(meaning) return {text:meaning,loading:false};
+  const candidates=freeDictCandidates(w);
+  if(w&&(w.loading||w.aiLoading)&&!w.aiSlow) return {text:'뜻 찾는 중',loading:true};
+  if(candidates.length) return {text:'뜻 선택하기',loading:false};
+  const off=navigator.onLine===false?'offline':(w&&w.aiOff)||'';
+  if(off==='quota') return {text:'오늘 뜻 사용량을 다 썼어요',loading:false};
+  if(off==='trial'||off==='login') return {text:'로그인하고 뜻 보기',loading:false};
+  if(off==='offline') return {text:'오프라인이에요',loading:false};
+  if(off==='error'||(w&&w.aiSlow)) return {text:'뜻을 찾지 못했어요',loading:false};
+  return {text:'뜻 찾는 중',loading:true};
+}
+function placeWordPeek(){
+  const pill=document.getElementById('word-peek');
+  if(!pill||pill.hidden||!wordPeekAnchor) return;
+  const view=window.visualViewport;
+  const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
+  const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
+  const gap=8,edge=16,box=pill.getBoundingClientRect();
+  if(!wordPeekAnchor.direction){
+    wordPeekAnchor.direction=wordPeekAnchor.top-vy-gap>=box.height+edge?'above':'below';
+  }
+  let left=(wordPeekAnchor.left+wordPeekAnchor.right-box.width)/2;
+  left=Math.max(vx+edge,Math.min(left,vx+vw-edge-box.width));
+  let top=wordPeekAnchor.direction==='above' ? wordPeekAnchor.top-gap-box.height : wordPeekAnchor.bottom+gap;
+  if(top<vy+edge||top+box.height>vy+vh-edge){
+    const other=wordPeekAnchor.direction==='above' ? wordPeekAnchor.bottom+gap : wordPeekAnchor.top-gap-box.height;
+    if(other>=vy+edge&&other+box.height<=vy+vh-edge) top=other;
+    else top=Math.max(vy+edge,Math.min(top,vy+vh-edge-box.height));
+  }
+  pill.style.left=`${Math.round(left)}px`;pill.style.top=`${Math.round(top)}px`;
+}
+function renderWordPeek(){
+  settlePendingWord();
+  const pill=document.getElementById('word-peek'),w=words[selKey];
+  if(!wordPeekActive||!w){pill.hidden=true;return;}
+  const state=wordPeekState(w);
+  document.getElementById('word-peek-meaning').textContent=state.text;
+  pill.classList.toggle('loading',state.loading);
+  pill.hidden=false;
+  requestAnimationFrame(placeWordPeek);
+}
+function renderWordLookup(){
+  if(wordPeekActive) renderWordPeek();
+  else renderPanel();
+}
 function clearActiveWordSelection(){
   const node=activeSelectedWordNode;
   activeSelectedWordNode=null;
@@ -387,10 +459,10 @@ function clearActiveWordSelection(){
     if(node.classList&&node.classList.contains('original-selection-marker')&&node.remove) node.remove();
   }catch(error){}
 }
-function selectWord(k, span){
-  const panelChange=typeof beginReaderPanelOpen==='function' ? beginReaderPanelOpen(span) : null;
+function selectWord(k, span, peek){
+  const panel=document.getElementById('panel');
   /* 여기서부터가 새 열림입니다. 앞 열림에 딸린 조회는 이 줄에서 임자를 잃습니다. */
-  beginSheetLife();
+  beginWordLookupLife();
   /* 다른 낱말을 열면 앞 문장의 해석 창은 남겨 둘 이유가 없습니다. */
   if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
@@ -400,49 +472,68 @@ function selectWord(k, span){
   if(words[k] && words[k].ko){ touchMeaning(k); saveWords(); }
   selKey = k;
   clearActiveWordSelection();
-  if(span){ span.classList.add('sel'); activeSelectedWordNode=span; }
+  if(span){ span.classList.add('sel'); activeSelectedWordNode=span; rememberWordPeekAnchor(span); }
+  if(peek){
+    wordPeekActive=true;
+    panel.classList.remove('on');
+    panel.setAttribute('aria-hidden','true');
+    document.getElementById('word-modal-scrim').classList.remove('on');
+    if(typeof updateOriginalZoomControls==='function') updateOriginalZoomControls();
+    renderWordPeek();
+    return;
+  }
+  wordPeekActive=false;
+  document.getElementById('word-peek').hidden=true;
   renderPanel();
-  const panel=document.getElementById('panel');
   /* 패널은 한 번 열린 뒤에도 자기 안의 스크롤 위치를 기억합니다. 다른 낱말을
      눌렀는데 중간부터 보였던 이유가 이것입니다. 내용을 바꾼 직후와 레이아웃이
      한 번 그려진 뒤에 모두 0으로 돌려, 항상 낱말 제목부터 열리게 합니다. */
   const resetPanelScroll=()=>{ panel.scrollTop=0; };
   resetPanelScroll();
   panel.classList.add('on');
-  if(typeof commitReaderPanelChange==='function') commitReaderPanelChange(panelChange);
+  panel.setAttribute('aria-hidden','false');
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
-  document.getElementById('sheetbg').classList.add('on');
+  document.getElementById('word-modal-scrim').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
-  /* 폰의 바텀시트가 미끄러져 들어오는 동안의 몇 픽셀이 "위로 올렸다"로 읽히지
-     않게 붙잡습니다. 읽는 화면에는 지금 걷힐 상단바가 없어 아무것도 안 움직이지만,
-     상단바가 다시 서는 날을 위해 배선은 그대로 둡니다 (scripts/reader/reader.js). */
-  pinReaderChrome(panelIsSheet());
 }
+function expandWordDetail(){
+  if(!wordPeekActive||!selKey||!words[selKey]) return;
+  wordPeekActive=false;
+  document.getElementById('word-peek').hidden=true;
+  renderPanel();
+  const panel=document.getElementById('panel');
+  panel.scrollTop=0;panel.classList.add('on');
+  panel.setAttribute('aria-hidden','false');
+  if(typeof updateOriginalZoomControls==='function') updateOriginalZoomControls();
+  document.getElementById('word-modal-scrim').classList.add('on');
+  if(typeof rememberAppView==='function') rememberAppView(activeAppView());
+  try{panel.focus({preventScroll:true});}catch(error){panel.focus();}
+}
+document.getElementById('word-peek-more').onclick=expandWordDetail;
 /* ---- 낱말 창을 치우는 일도 여기 하나뿐입니다 ----
-   닫는 길은 넷입니다 — 시트 바깥 · 손잡이 끌어내리기 · 넓은 화면의 X · 뒤로가기.
-   앞의 셋은 손짓이므로 판정 계층이 `DISMISS_WORD` 하나로 끝내고 여기로 옵니다
-   (scripts/reader/gesture.js). 그래서 이 파일에도, `index.html` 에도, 시트를
-   끄는 `onclick` 은 없습니다.
+   상세 popup은 바깥 · Escape · 뒤로가기로 닫히고, 작은 필은 빈 곳 · 스크롤 ·
+   페이지 이동 · 확대 · 다른 lookup으로 닫힙니다. 어느 길이든 이 cleanup 하나로
+   끝납니다. 바깥 탭은 gesture owner가 받아 Reader로 관통하지 않습니다.
 
-   해석 창에서 먼저 겪은 일입니다: 바깥으로 닫는 길만 판정 계층 밖에 있었고,
-   두 길이 남기는 JS/DOM 상태는 한 글자도 다르지 않은데 실기기에서는 바깥으로
-   닫을 때만 렉이 났습니다. 낱말 시트의 바깥도 같은 예외였습니다. */
+   해석 창에서 먼저 겪은 일입니다: 바깥으로 닫는 길만 판정 계층 밖에 있으면
+   같은 탭이 뒤의 Reader까지 내려갈 수 있습니다. 낱말 popup도 그 예외를 두지
+   않습니다. */
 function closePanel(){
-  const panelChange=typeof beginReaderPanelClose==='function' ? beginReaderPanelClose() : null;
+  const panel=document.getElementById('panel');
+  wordPeekActive=false;wordPeekAnchor=null;
   selKey=null;
   contextView=null; phraseView=null; addingMeaning=false;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. 끊는 것은 AI
      한 번이 아니라 이 열림에 딸린 전부입니다 — 무료 사전 셋도 함께입니다. */
-  endSheetLife();
-  const panel=document.getElementById('panel');
+  endWordLookupLife();
   panel.classList.remove('on');
-  if(typeof commitReaderPanelChange==='function') commitReaderPanelChange(panelChange);
+  panel.setAttribute('aria-hidden','true');
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   panel.scrollTop=0;
-  document.getElementById('sheetbg').classList.remove('on');
-  pinReaderChrome(false);
+  document.getElementById('word-modal-scrim').classList.remove('on');
+  document.getElementById('word-peek').hidden=true;
   clearActiveWordSelection();
 }
 /* 원본의 PDF 표시는 지우고 다시 만듭니다. 그래서 칠하기가 먼저면 방금 칠한
@@ -463,7 +554,7 @@ function setStatus(k, st){
   selKey=resolved;
   words[resolved].status = st; words[resolved].up = Date.now();
   saveWords(); paintWord(resolved); queueSync();
-  renderPanel();
+  renderWordLookup();
 }
 function renderPanel(){
   settlePendingWord();
@@ -755,29 +846,29 @@ document.getElementById('p-mark').onclick=()=>{
 async function openPhrase(k){
   const base=words[k], text=base&&base.phrase;
   if(!base || !text || (phraseView && phraseView.key===k && phraseView.loading)) return;
-  const life=sheetLife;
+  const life=wordLookupLife;
   const view={key:k, phrase:text, sentence:base.example||'', book:base.book||'', loading:true};
   phraseView=view; renderPanel();
   try{
     const cacheKey=lookKey('phrase:'+text,view.sentence);
     const hit=await dictGet(cacheKey);
     if(hit && String(hit.ko||'').trim()){
-      if(!sheetAlive(life)) return;
+      if(!wordLookupAlive(life)) return;
       view.answer=answerFromLook(hit,!hit.seed); adoptPhrase(k,view); return;
     }
-    const sig=sheetSignal();
+    const sig=wordLookupSignal();
     const j=await dictCall({op:'look',word:text,clicked:text,cands:[text.toLowerCase()],
       sentence:view.sentence,book:view.book}, sig);
     if(!j && sig && sig.aborted) return;
     if(!j || j.error || !j.ko){ view.error=(j&&j.error)||'error'; return; }
     /* 답은 남깁니다. 본문을 다시 조립하는 것만 산 열림의 일입니다. */
     await dictPut(cacheKey,Object.assign({},j,{done:true}));
-    if(!sheetAlive(life)) return;
+    if(!wordLookupAlive(life)) return;
     view.answer=answerFromLook(j,false);
     adoptPhrase(k,view);
   }finally{
     view.loading=false;
-    if(currentPhrase(k)===view && sheetAlive(life)) renderPanel();
+    if(currentPhrase(k)===view && wordLookupAlive(life)) renderPanel();
   }
 }
 
@@ -958,7 +1049,7 @@ function deviceId(){
    수명(열림)과 셈의 수명(요청)이 애초에 섞이지 않습니다:
 
      캐시에서 꺼냄        요청이 없으므로 0회
-     열림이 먼저 끝남     요청을 보내지 않으므로 0회 (fetchDict 의 `sheetAlive`)
+     열림이 먼저 끝남     요청을 보내지 않으므로 0회 (fetchDict 의 `wordLookupAlive`)
      보냈고 답이 옴       서버가 1회 뺀 수를 알려 주고, 우리는 받아 적습니다
      보냈는데 우리가 끊음 서버는 이미 받았습니다. 되돌리지 않습니다 —
                           끊은 것은 우리 쪽 기다림이지 서버의 계산이 아닙니다
@@ -1039,8 +1130,8 @@ function logDict(action, k, extra){
 
    번호와 함께 취소표(AbortController)도 하나씩 답니다. 번호는 "돌아온 답에게
    화면을 안 준다"이고 취소표는 "애초에 더 달리지 않는다"입니다. 둘 다 필요합니다 —
-   무료 사전은 셋을 차례로 다녀오므로, 번호만으로는 창을 닫은 뒤에도 다음
-   요청이 새로 출발합니다. 실제로 시트를 닫고 2초 뒤에 번역 요청이 나갔습니다.
+   무료 사전은 셋을 차례로 다녀오므로, 번호만으로는 lookup을 닫은 뒤에도 다음
+   요청이 새로 출발합니다. 실제로 닫고 2초 뒤에 번역 요청이 나갔습니다.
 
    ---- 무엇을 끊고 무엇을 남기는가 ----
    끊는 것은 **아직 안 끝난 일**입니다. 버리는 것은 **화면을 만질 권리**뿐이고,
@@ -1055,19 +1146,19 @@ function logDict(action, k, extra){
 
    한 줄로: **죽은 열림은 이후의 답으로 화면을 조종할 권리가 없습니다.** 답을
    잃는 것이 목적이 아닙니다. */
-let sheetLife = 0;
-let sheetCtrl = null;
+let wordLookupLife = 0;
+let wordLookupCtrl = null;
 /* 새 열림을 시작합니다 — 앞 열림은 여기서 끝납니다. */
-function beginSheetLife(){
-  endSheetLife();
-  sheetCtrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-  return sheetLife;
+function beginWordLookupLife(){
+  endWordLookupLife();
+  wordLookupCtrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  return wordLookupLife;
 }
 /* 창이 닫혔습니다. 번호를 올려 앞 번호를 죽이고, 달리던 것은 끊습니다 —
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
-function endSheetLife(){
-  sheetLife++;
-  if(sheetCtrl){ try{ sheetCtrl.abort(); }catch(e){} sheetCtrl = null; }
+function endWordLookupLife(){
+  wordLookupLife++;
+  if(wordLookupCtrl){ try{ wordLookupCtrl.abort(); }catch(e){} wordLookupCtrl = null; }
   /* 이 열림이 끝나는 자리는 여기 하나입니다 — 창을 닫았든, 다른 낱말을 열었든.
      그래서 "확정 못 한 새 낱말을 버린다"도 여기 하나면 됩니다. 닫기에만 달면
      빈 낱말을 띄워 둔 채 옆 낱말을 눌렀을 때 껍데기가 그대로 남습니다.
@@ -1075,10 +1166,10 @@ function endSheetLife(){
      오는 답이 다시 붙잡을 표가 남지 않습니다. */
   discardPendingWord();
 }
-function sheetAlive(life){ return life === sheetLife; }
-function sheetSignal(){ return sheetCtrl ? sheetCtrl.signal : null; }
+function wordLookupAlive(life){ return life === wordLookupLife; }
+function wordLookupSignal(){ return wordLookupCtrl ? wordLookupCtrl.signal : null; }
 /* 이 열림이 아직 그 열림이면 다시 그립니다. 아니면 그릴 창이 없습니다. */
-function renderIfAlive(life){ if(sheetAlive(life)) renderPanel(); }
+function renderIfAlive(life){ if(wordLookupAlive(life)) renderWordLookup(); }
 
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
 
@@ -1098,7 +1189,7 @@ async function loadCachedLook(k, began, life){
        `applyLook` 이 `life` 로 가립니다. */
     if(hit && hit.ko){
       /* 바람을 보여 주는 기다림입니다. 볼 사람이 없으면 기다릴 이유도 없습니다. */
-      if(hit.seed && sheetAlive(life)){
+      if(hit.seed && wordLookupAlive(life)){
         const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
         if(left > 0) await new Promise(res => setTimeout(res, left));
       }
@@ -1119,7 +1210,7 @@ async function loadCachedLook(k, began, life){
 async function askCurrentContext(k){
   const w=words[k], context=currentContext(k);
   if(!w || !context || context.loading) return;
-  const life=sheetLife;
+  const life=wordLookupLife;
   if(navigator.onLine===false){ context.error='offline'; renderPanel(); return; }
   if(!sb){ context.error='login'; renderPanel(); return; }
   context.loading=true; delete context.error; renderPanel();
@@ -1127,11 +1218,11 @@ async function askCurrentContext(k){
     for(const key of entryKeys(w)){
       const hit=await dictGet(lookKey(key,context.sentence));
       if(hit && hit.ko){
-        if(!sheetAlive(life)) return;
+        if(!wordLookupAlive(life)) return;
         adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed)); return;
       }
     }
-    const sig=sheetSignal();
+    const sig=wordLookupSignal();
     const j=await dictCall({op:'look',word:w.word||k,clicked:context.clicked||'',cands:entryKeys(w),
       sentence:context.sentence,book:context.book||'',device:sbUser?'':deviceId()}, sig);
     /* 빈손으로 끊긴 것만 없던 일입니다. 끊기보다 답이 빨랐다면 그것은 답입니다. */
@@ -1144,11 +1235,11 @@ async function askCurrentContext(k){
     /* 답은 닫혔어도 캐시에 남깁니다 — 다시 물으면 0원, 기다림 없음.
        다만 뜻 카드를 만들고 창을 다시 여는 것은 산 열림의 일입니다. */
     await dictPut(lookKey(j.lemma||w.word||k,context.sentence),Object.assign({},j,{done:true}));
-    if(!sheetAlive(life)) return;
+    if(!wordLookupAlive(life)) return;
     adoptContextAnswer(k,context,answerFromLook(j,false));
   }finally{
     context.loading=false;
-    if(currentContext(k)===context && sheetAlive(life)) renderPanel();
+    if(currentContext(k)===context && wordLookupAlive(life)) renderPanel();
   }
 }
 
@@ -1169,7 +1260,7 @@ async function fetchLook(k, opt){
   const w = words[k]; if(!w) return false;
   opt = opt || {};
   /* 이 요청이 어느 열림의 것인지. 단추에서 바로 부를 때는 지금 열려 있는 것입니다. */
-  if(opt.life === undefined) opt.life = sheetLife;
+  if(opt.life === undefined) opt.life = wordLookupLife;
   const life = opt.life;
   const querySentence=opt.sentence || w.example || '';
   /* `hold` 는 답을 카드에 바르지 않고 그대로 돌려 달라는 뜻입니다. 넓은 문맥으로
@@ -1184,10 +1275,10 @@ async function fetchLook(k, opt){
      하나 더 만들되, 열림의 표에 매답니다. 임자는 여전히 열림 하나입니다:
      열림이 끝나면 이 표도 함께 끊기고, 반대 방향은 없습니다. */
   const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-  const sheetSig = sheetSignal();
-  if(ctrl && sheetSig){
-    if(sheetSig.aborted) try{ ctrl.abort(); }catch(e){}
-    else sheetSig.addEventListener('abort', ()=>{ try{ ctrl.abort(); }catch(e){} }, {once:true});
+  const lookupSig = wordLookupSignal();
+  if(ctrl && lookupSig){
+    if(lookupSig.aborted) try{ ctrl.abort(); }catch(e){}
+    else lookupSig.addEventListener('abort', ()=>{ try{ ctrl.abort(); }catch(e){} }, {once:true});
   }
   w.aiLoading = true;
   delete w.aiSlow; delete w.aiOff;
@@ -1235,7 +1326,7 @@ async function fetchLook(k, opt){
        기기에 이미 있던 답은 그냥 띄웁니다 — 기다린 척할 이유가 없습니다. */
     const left = AI_MIN_WAIT - (Date.now() - began);
     /* 볼 사람이 있을 때만 뜸을 들입니다. */
-    if(left > 0 && sheetAlive(life)) await new Promise(res=>setTimeout(res, left));
+    if(left > 0 && wordLookupAlive(life)) await new Promise(res=>setTimeout(res, left));
     if(opt.hold) return j;
     applyLook(w, j, k, opt);
     return true;
@@ -1278,14 +1369,14 @@ function applyLook(w, j, k, opt){
    지금 뜻을 덮지 않고 새 Meaning 이 됩니다. */
 async function askWiderContext(k){
   const w=words[k]; if(!w || w.aiLoading) return;
-  const life=sheetLife;
+  const life=wordLookupLife;
   const root=w.root||k;
   const sentence=expandedContextFor(w, w.example||'');
   /* 이미 저장해 둔 뜻은 빼고 물어봅니다. 같은 답을 한 번 더 받고 한도만 쓰는 일이
      없도록, 그리고 "다른 뜻"을 달라는 뜻이 서버에도 그대로 전해지도록. */
   const avoid=meaningCards(root,null).map(([,item])=>item.ko).filter(Boolean).slice(0,4);
   const answer=await fetchLook(k, {sentence, wider:true, hold:true, avoid, life});
-  if(!sheetAlive(life)) return;
+  if(!wordLookupAlive(life)) return;
   if(!answer || !answer.ko) return;
   const id=createMeaning(root, answer.ko, {clicked:w.clicked, example:w.example, book:w.book,
     ai:answerFromLook(answer,false).ai, alts:answer.alts, phrase:answer.phrase});
@@ -1309,28 +1400,28 @@ document.getElementById('p-aibtn').onclick   = ()=>askAI();
 document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey]) askWiderContext(selKey); };
 /* 단어창을 열어 둔 채로 연결이 끊기거나 돌아올 수 있습니다. 안내 한 줄은 지금
    연결 상태를 그대로 읽으므로(위 `off`), 그 순간 한 번 다시 그리면 됩니다. */
-addEventListener('online',  () => { if(selKey) renderPanel(); });
-addEventListener('offline', () => { if(selKey) renderPanel(); });
+addEventListener('online',  () => { if(selKey) renderWordLookup(); });
+addEventListener('offline', () => { if(selKey) renderWordLookup(); });
 
 /* 무료 사전. 발음과 영어 뜻은 여기서만 오고, AI 가 답하지 못했을 때는 뜻자리도 지킵니다.
    fetchKo 는 w.ko 가 비어 있을 때만 채우므로 AI 답을 밀어내지 않습니다. */
 async function fillFromFreeDicts(k, life){
   const w = words[k]; if(!w) return;
-  const signal = sheetSignal();
+  const signal = wordLookupSignal();
   const forms = w.forms && w.forms.length ? w.forms : [k];
   let validated = null;
   /* 이 열림이 끝났으면 다음 형태를 물어볼 이유가 없습니다. `try/catch` 가 취소를
      삼키므로, 다음 바퀴로 넘어가기 전에 여기서 한 번 봅니다. */
-  for(const f of forms){ if(!sheetAlive(life)) return;
+  for(const f of forms){ if(!wordLookupAlive(life)) return;
     try{ if(await fetchEn(w,f,false,signal)){ validated=f; break; } }catch(e){} }
-  if(!validated){ for(const f of forms){ if(!sheetAlive(life)) return;
+  if(!validated){ for(const f of forms){ if(!wordLookupAlive(life)) return;
     try{ if(await fetchEnWik(w,f,signal)){ validated=f; break; } }catch(e){} } }
   /* AI 가 표제어를 정했으면 그것을 씁니다. 무료 사전은 "뜻이 실려 있는 형태"를 찾아 준
      것일 뿐이라, 둘이 다를 때 무료 사전을 따르면 AI 가 답한 낱말과 화면의 낱말이 어긋납니다. */
   if(!w.aiLemma && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
   renderIfAlive(life);
   const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
-  for(const f of koForms){ if(!sheetAlive(life)) return;
+  for(const f of koForms){ if(!wordLookupAlive(life)) return;
     try{ if(await fetchKo(w,f,signal)) break; }catch(e){} }
   renderIfAlive(life);
 }
@@ -1338,7 +1429,7 @@ async function fillFromFreeDicts(k, life){
 async function fetchDict(k){
   const w = words[k]; if(!w) return;
   /* 이 조회는 방금 열린 창의 것입니다 — `addWord` 가 `selectWord` 다음에 부릅니다. */
-  const life = sheetLife;
+  const life = wordLookupLife;
   const began = Date.now();
   /* 창이 열리는 순간부터 바람이 붑니다. 답이 어디서 오든 — 씨앗이든, 예전에
      물어본 것이든, 지금 AI 에게 묻든 — 사용자가 보는 것은 같은 한 번의 바람입니다. */
@@ -1354,7 +1445,7 @@ async function fetchDict(k){
   /* ② 없으면 AI. 뜻의 유일한 출처입니다.
      fetchLook 은 오프라인·설정없음일 때 aiLoading 을 건드리지 않고 빠져나가므로,
      넘기기 전에 여기서 내려놓습니다 — 안 그러면 바람이 영영 붑니다. */
-  if(!cached && sheetAlive(life)){ delete w.aiLoading; await fetchLook(k, {life}); }
+  if(!cached && wordLookupAlive(life)){ delete w.aiLoading; await fetchLook(k, {life}); }
 
   await free;
   /* 창이 닫혔어도 여기까지 온 것은 **적어 둡니다**. 창을 닫는 순간 요청이 끊기므로
@@ -1365,6 +1456,17 @@ async function fetchDict(k){
   saveWords(); queueSync();
   renderIfAlive(life);
 }
+
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&wordLookupOpen()){
+    event.preventDefault();closePanel();
+  }
+});
+function wordPeekViewportChanged(){
+  if(wordPeekActive) requestAnimationFrame(placeWordPeek);
+}
+window.addEventListener('resize',wordPeekViewportChanged,{passive:true});
+if(window.visualViewport) window.visualViewport.addEventListener('resize',wordPeekViewportChanged,{passive:true});
 
 /* ================= vocab ================= */
 /* 단어장은 **먼저 단어를 훑는 곳**입니다. 그래서 접혀 있을 때 한 줄에 있는 것은

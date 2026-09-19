@@ -40,7 +40,7 @@
    손짓에는 시작하는 순간 **임자**가 정해집니다:
 
      SENTENCE_MODAL  해석 창이 떠 있는 동안의 모든 손짓
-     WORD_SHEET      낱말 시트가 화면을 덮고 있는 동안의 모든 손짓
+     WORD_SHEET      낱말 상세 popup이 화면을 덮고 있는 동안의 모든 손짓
      READER          종이(surface) 위에서 시작한 손짓
      UI              그 밖에서 시작한 손짓
 
@@ -50,11 +50,9 @@
    `ignoreNextClickUntil` 같은 것은 여기 없습니다) 애초에 남의 손짓이라서
    해석하지 않는 것입니다.
 
-   "덮고 있는 동안"이 조건인 이유가 있습니다. 낱말 창은 두 가지 물건입니다 —
-   폰에서는 화면을 덮는 바텀시트, 넓은 화면에서는 본문 옆에 나란히 서는 칸.
-   옆 칸일 때는 덮은 것이 없으므로 종이의 손짓은 그대로 종이 것입니다.
-   임자를 정하는 것은 "무엇이 열려 있는가"가 아니라 **무엇이 손가락을 받는가**
-   입니다.
+   작은 뜻 필은 scrim이 없어 Reader를 계속 쓸 수 있지만, 상세 popup은 모든
+   viewport에서 scrim과 함께 Reader 위를 덮습니다. 임자를 정하는 것은 "무엇이
+   열려 있는가"가 아니라 **무엇이 손가락을 받는가**입니다.
 
    ---- 형식을 모릅니다 ----
    여기서는 "이번 손짓은 WORD 다"까지만 정합니다. 그 자리의 낱말을 실제로
@@ -101,11 +99,10 @@ function readerSurfaceFor(event){
    창 안을 눌렀든 창 밖을 눌렀든 똑같습니다 — 둘이 하는 일은 다르지만
    임자가 같아야 reader 가 같은 손짓에 끼어들 수 없습니다.
 
-   낱말 시트도 같습니다. 다만 시트는 폰에서만 화면을 덮습니다 — 넓은 화면에서는
-   본문 옆의 칸이라 종이를 가리지 않으므로, 그때는 종이의 손짓을 가져가지
-   않습니다. 옆 칸일 때도 임자가 되는 것은 그 칸의 닫기 단추 하나뿐입니다. */
+   낱말 상세도 같습니다. 중앙 popup은 scrim과 함께 Reader 위를 덮고, 작은 뜻
+   필은 scrim 없이 Reader를 그대로 사용할 수 있게 둡니다. */
 const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',
-      OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_AA = 'AA', OWNER_UI = 'UI';
+      OWNER_WORD_MODAL = 'WORD_MODAL', OWNER_AA = 'AA', OWNER_UI = 'UI';
 
 function sentenceModalOpen(){
   const modal = document.getElementById('sentence-modal');
@@ -126,21 +123,15 @@ function wordPanelOpen(){
   const panel = document.getElementById('panel');
   return !!panel && panel.classList.contains('on');
 }
-/* 화면을 덮고 있는가. 덮고 있을 때만 그 동안의 손짓이 통째로 시트의 것입니다. */
-function wordSheetCovers(){
-  return wordPanelOpen() && typeof panelIsSheet === 'function' && panelIsSheet();
+/* 중앙 상세 popup은 항상 Reader 위를 덮습니다. */
+function wordModalCovers(){
+  return wordPanelOpen();
 }
-/* 시트를 닫는 자리는 셋입니다 — 시트 바깥(`#sheetbg`), 넓은 화면의 X(`#p-close`),
-   그리고 끌어내리는 손잡이(`#p-handle`). 손잡이만 제자리가 아니라 거리로 닫습니다. */
+/* 중앙 popup의 바깥 scrim만 닫는 자리입니다. 명시적인 X와 drag handle은 없습니다. */
 function wordDismissTarget(target){
   if(!target || typeof target.closest !== 'function') return false;
-  return !!(target.closest('#sheetbg') || target.closest('#p-close'));
+  return !!target.closest('#word-modal-scrim');
 }
-function wordPullTarget(target){
-  if(!target || typeof target.closest !== 'function') return false;
-  return !!target.closest('#p-handle');
-}
-
 /* ---- Aa 도 임자입니다 ----
    보기 설정은 화면을 덮지 않는 작은 창이라, 그 바깥에는 scrim 이 없습니다 —
    바깥이 곧 읽는 종이입니다. 그래서 닫는 일만 판정 계층 **바깥의** document
@@ -294,7 +285,7 @@ function beginGesture(event){
      scrim 이 사라져도 이 손짓은 계속 창의 것이고, 그래서 뒤따라오는
      `pointerup` 도 `click` 도 종이로 내려가지 않습니다.
 
-     둘 다 떠 있을 수 있습니다 — 낱말 시트 위에 해석 창이 겹칩니다. 위에 있는
+     둘 다 떠 있을 수 있습니다 — 낱말 popup 위에 해석 창이 겹칩니다. 위에 있는
      것이 손가락을 받으므로 해석 창을 먼저 봅니다. */
   if(sentenceModalOpen() || (typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
       && sentenceDismissTarget(target))){
@@ -306,12 +297,10 @@ function beginGesture(event){
     return;
   }
 
-  /* 시트가 덮고 있으면 그 동안의 모든 손짓이 시트의 것이고, 옆 칸일 때는
-     그 칸의 닫기 단추에서 시작한 손짓만 시트의 것입니다. */
-  if(wordSheetCovers() || (wordPanelOpen() && wordDismissTarget(target))){
-    gesture.owner = OWNER_WORD_SHEET;
+  /* 중앙 popup이 덮고 있으면 그 동안의 모든 손짓이 popup의 것입니다. */
+  if(wordModalCovers() || (wordPanelOpen() && wordDismissTarget(target))){
+    gesture.owner = OWNER_WORD_MODAL;
     gesture.dismisses = wordDismissTarget(target);
-    gesture.pulls = wordPullTarget(target);
     activeGesture = gesture;
     return;
   }
@@ -360,16 +349,12 @@ function endSentenceModalGesture(gesture){
   if(typeof closeSentence === 'function') closeSentence();
 }
 
-/* ---- 낱말 시트의 손짓이 끝나는 자리 ----
-   닫는 길이 둘입니다. 바깥이나 X 를 짚고 제자리에서 뗐거나, 손잡이를 잡고
-   `SHEET_PULL_DISMISS` 만큼 끌어내렸거나. 끌어내리는 그림(시트가 손가락을
-   따라 내려오는 것)은 여전히 `scripts/ui/interactions.js` 가 그리지만, 닫을지
-   말지를 정하는 일은 이제 여기 하나뿐입니다 — 예전에는 그 파일이 제 손으로
-   `closePanel()` 을 불러서, 한 손짓이 두 곳에서 판정됐습니다. */
-function endWordSheetGesture(gesture){
+/* ---- 낱말 상세 popup의 손짓이 끝나는 자리 ----
+   scrim을 제자리에서 누른 경우만 닫습니다. popup 내부의 스크롤과 버튼 입력은
+   그대로 통과하고, 닫는 탭은 Reader로 내려가지 않습니다. */
+function endWordModalGesture(gesture){
   const tapped = gesture.dismisses && gesture.moved <= GESTURE_SLOP;
-  const pulled = gesture.pulls && gesture.dy > SHEET_PULL_DISMISS;
-  if(!tapped && !pulled){
+  if(!tapped){
     finishGesture(gesture, GESTURE_MODAL_UI);
     return;
   }
@@ -411,6 +396,7 @@ function holdGesture(gesture){
        사람은 아무 답도 못 받습니다. 떼는 순간 낱말로 갑니다. */
     return;
   }
+  if(typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
   sentenceHoldPointerId=gesture.pointerId;
   finishGesture(gesture, GESTURE_SENTENCE, true);
   countDispatch(gesture, 'SENTENCE');
@@ -446,7 +432,7 @@ function endGesture(event){
   if(event.pointerId != null && event.pointerId !== gesture.pointerId) return;
   if(gesture.decision) return;
   if(gesture.owner === OWNER_SENTENCE_MODAL){ endSentenceModalGesture(gesture); return; }
-  if(gesture.owner === OWNER_WORD_SHEET){ endWordSheetGesture(gesture); return; }
+  if(gesture.owner === OWNER_WORD_MODAL){ endWordModalGesture(gesture); return; }
   if(gesture.owner === OWNER_AA){ endAaGesture(gesture); return; }
   finishGesture(gesture, GESTURE_WORD);
   gesture.adapterCall = `${gesture.surface.name}.openWordAt(${Math.round(event.clientX)},${Math.round(event.clientY)})`;
@@ -462,11 +448,14 @@ function dispatchWord(gesture, clientX, clientY){
   try{ result = gesture.surface.openWordAt(clientX, clientY); }
   catch(error){ result = false; }
   if(result && typeof result.then === 'function'){
-    result.then(ok=>{ gesture.completed = !!ok; gestureLog(gesture,'(async)'); },
+    result.then(ok=>{ gesture.completed = !!ok;
+      if(!ok&&typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
+      gestureLog(gesture,'(async)'); },
                 ()=>{ gesture.completed = false; });
     return;
   }
   gesture.completed = !!result;
+  if(!result&&typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
 }
 
 /* pointer 조각 없이 `click` 하나만 오는 길(일부 모바일 캔버스, 그리고 자판의
@@ -532,11 +521,11 @@ function clickGesture(event){
     }
     return;
   }
-  if(wordSheetCovers() || (wordPanelOpen() && wordDismissTarget(event.target))){
-    const sheetGesture = syntheticGesture(event, OWNER_WORD_SHEET,
+  if(wordModalCovers() || (wordPanelOpen() && wordDismissTarget(event.target))){
+    const modalGesture = syntheticGesture(event, OWNER_WORD_MODAL,
                                           wordDismissTarget(event.target));
-    endWordSheetGesture(sheetGesture);
-    if(sheetGesture.decision === GESTURE_DISMISS_WORD){
+    endWordModalGesture(modalGesture);
+    if(modalGesture.decision === GESTURE_DISMISS_WORD){
       event.stopPropagation();
       event.preventDefault();
     }
@@ -581,6 +570,9 @@ function scrollGesture(){
       && !(typeof readerScrollWasProgrammatic==='function' && readerScrollWasProgrammatic())){
     if(typeof closeSentence==='function') closeSentence();
   }
+  if(typeof wordPeekOpen==='function'&&wordPeekOpen()
+      && !(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic())
+      && typeof closePanel==='function') closePanel();
   if(!activeGesture) return;
   /* 창이 임자인 손짓은 화면이 움직여도 창의 것입니다. */
   if(activeGesture.owner !== OWNER_READER) return;

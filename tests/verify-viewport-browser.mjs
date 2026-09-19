@@ -48,13 +48,28 @@ const url=`http://127.0.0.1:${server.address().port}`;
   const count=await p.evaluate(()=>books.length);await p.locator('#fileinput').setInputFiles(inputs[n]);
   await p.waitForFunction(count=>books.length>count,count,{timeout:120000});
   await p.evaluate(()=>openBook(books[0]));await p.waitForTimeout(1100);
+  if(n===2){
+   await p.waitForFunction(()=>originalSession&&originalSession.kind==='epub'
+     &&originalSession.frames.some(frame=>frame&&frame.contentDocument&&/[A-Za-z]{3}/.test(frame.contentDocument.body.innerText)),
+     null,{timeout:20000});
+   await p.evaluate(()=>{
+    const frame=originalSession.frames.find(item=>item&&item.contentDocument
+      &&/[A-Za-z]{3}/.test(item.contentDocument.body.innerText));
+    const rect=frame.parentElement.getBoundingClientRect();
+    readerScrollTo(readerScrollTop()+rect.top-120);
+   });
+   await p.waitForTimeout(400);
+  }
   const initial=await p.evaluate(()=>breezeViewportSnapshot());
   const point=await p.evaluate(()=>{
    if(currentReaderMode==='text'){
     const e=[...document.querySelectorAll('#rtext .w')].find(e=>{const r=e.getBoundingClientRect();return r.top>130&&r.bottom<innerHeight-200});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};
    }
    if(originalSession.kind==='pdf')for(const page of originalSession.pages){const r=page.getBoundingClientRect();for(const w of originalSession.wordBoxes.get(+page.dataset.page)||[]){const x=r.x+(w.x+w.w/2)*r.width,y=r.y+(w.y+w.h/2)*r.height;if(x>30&&x<350&&y>150&&y<550)return {x,y};}}
-   return {x:150,y:300};
+   if(originalSession.kind==='epub')for(let y=150;y<550;y+=8)for(let x=40;x<350;x+=8){
+    const at=epubFrameAtPoint(x,y);if(at&&epubWordRangeAtPoint(at.doc,at.x,at.y))return {x,y};
+   }
+   throw new Error('No visible word point');
   });
   const policy=await p.evaluate(({x,y})=>breezeTouchPolicyAt(x,y),point);
   if(n===0) assert.equal(policy[0]?.touchAction,'manipulation',
@@ -65,6 +80,14 @@ const url=`http://127.0.0.1:${server.address().port}`;
     'actual touch path has no browser-zoom exclusion');
   assert.ok(policy.some(entry=>entry.touchAction==='pan-x pan-y'&&entry.position!=='absolute'),
     'browser-zoom exclusion depends only on an absolute positioned element');
+  await p.touchscreen.tap(point.x,point.y);
+  await p.waitForFunction(()=>wordPeekOpen(),null,{timeout:10000});
+  const peek=await p.locator('#word-peek').boundingBox();
+  assert.ok(peek&&peek.x>=15&&peek.x+peek.width<=375,
+    `${['Text','PDF','EPUB'][n]} word pill escaped the viewport`);
+  assert.equal(await p.locator('#panel').isVisible(),false,
+    `${['Text','PDF','EPUB'][n]} word tap opened details automatically`);
+  await p.evaluate(()=>closePanel());
   const samples=[];
   for(let i=0;i<40;i++){
    await c.send('Input.synthesizeTapGesture',{...point,tapCount:2,gestureSourceType:'touch',duration:30});

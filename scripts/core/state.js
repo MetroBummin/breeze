@@ -150,7 +150,6 @@ function keepPlace(fn){
 
 function saveReadingState(){
   if(!curBook) return;
-  if(typeof readerPanelChange!=='undefined'&&readerPanelChange) return;
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
@@ -223,7 +222,8 @@ window.addEventListener('popstate',event=>{
     closeSentence(); return;
   }
   const panel=document.getElementById('panel');
-  if(panel&&panel.classList.contains('on')){ closePanel(); return; }
+  if((typeof wordLookupOpen==='function'&&wordLookupOpen())
+      || (panel&&panel.classList.contains('on'))){ closePanel(); return; }
   const settingsModal=document.getElementById('settings-modal');
   if(settingsModal&&settingsModal.classList.contains('on')){ closeSettings(); return; }
   const target=event.state&&event.state.breeze ? event.state.view : 'home';

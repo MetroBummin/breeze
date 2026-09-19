@@ -11,8 +11,8 @@
    실기기에서 온 말 한 줄이 근거입니다: "뜻이 완성되기 전에 바로 나가면 렉이 훨씬
    잘 걸린다." 브라우저에서 재 보니 실제로 이런 일이 있었습니다.
 
-     ① 시트를 닫고 **2초 뒤에 번역 요청이 새로 출발**했습니다. 닫힌 창을 위해서.
-     ② "이 문장에서는?" 의 답이 늦게 오면 `selectWord` 를 불러 **시트가 저 혼자
+     ① lookup를 닫고 **2초 뒤에 번역 요청이 새로 출발**했습니다. 닫힌 창을 위해서.
+     ② "이 문장에서는?" 의 답이 늦게 오면 `selectWord` 를 불러 **lookup가 저 혼자
         다시 열렸습니다.** 손은 이미 떠나서 글을 넘기고 있는데.
      ③ 표현 칩의 답이 늦게 오면 `renderBookBody` 로 **본문 전체를 다시
         조립했습니다** — 개츠비에서 문단 1600여 개를.
@@ -319,15 +319,15 @@ function tapNewWord(ctx, key){
   ctx.closePanel();
   await settle();
   const rendersAfterClose = world.renders;
-  const panel = world.el('panel'), scrim = world.el('sheetbg');
+  const panel = world.el('panel'), scrim = world.el('word-modal-scrim');
   net.deliver();                // 답은 도착합니다 — 창이 닫힌 뒤에
   await asking;
   await settle();
 
   assert.equal(panel.classList.contains('on'), false,
-    '닫은 시트가 늦은 답을 받고 저 혼자 다시 열렸습니다');
+    '닫은 lookup가 늦은 답을 받고 저 혼자 다시 열렸습니다');
   assert.equal(scrim.classList.contains('on'), false,
-    '닫은 시트의 바깥판이 늦은 답을 받고 다시 화면을 덮었습니다');
+    '닫은 lookup의 바깥판이 늦은 답을 받고 다시 화면을 덮었습니다');
   assert.equal(ctx.selKey, null, '늦은 답이 `selectWord` 로 낱말을 다시 골랐습니다');
   assert.equal(world.renders, rendersAfterClose, '늦은 답이 닫힌 창을 그렸습니다');
   assert.ok(world.puts.length >= 1,
@@ -350,9 +350,9 @@ function tapNewWord(ctx, key){
   await settle();
 
   assert.equal(world.bookRebuilds, 0,
-    '시트를 닫은 뒤 늦은 답이 본문 전체를 다시 조립했습니다 — 스크롤 한복판에서');
+    'lookup를 닫은 뒤 늦은 답이 본문 전체를 다시 조립했습니다 — 스크롤 한복판에서');
   assert.equal(world.el('panel').classList.contains('on'), false,
-    '표현의 늦은 답이 닫은 시트를 다시 열었습니다');
+    '표현의 늦은 답이 닫은 lookup를 다시 열었습니다');
 }
 
 /* ================= ⑦ 같은 낱말을 닫았다 다시 열어도 섞이지 않는다 =================
@@ -392,7 +392,7 @@ function tapNewWord(ctx, key){
     await settle(3);
   }
   assert.equal(world.el('panel').classList.contains('on'), false,
-    '60번을 여닫았더니 시트가 열린 채로 남았습니다');
+    '60번을 여닫았더니 lookup가 열린 채로 남았습니다');
   assert.equal(net.pending.length, 0, '주인 없는 요청이 남았습니다');
   assert.equal(ctx.selKey, null, '고른 낱말이 남았습니다');
   const stuck = Object.keys(ctx.words).filter(k=>ctx.words[k].loading || ctx.words[k].aiLoading);
@@ -612,5 +612,5 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   assert.equal(frameQueries,1,'Original mode 의 active EPUB frame 까지 제외했습니다');
 }
 
-console.log('낱말 창 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)');
+console.log('낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)');
 console.log('확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다');

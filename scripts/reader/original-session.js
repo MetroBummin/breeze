@@ -140,8 +140,7 @@ function captureOriginalAnchor(){
   const format=originalFormat();
   if(!format) return null;
   const anchor=format.captureAnchor(topInset()+10);
-  if(anchor && !readerAnchorHeld()
-      && !(typeof readerPanelChange!=='undefined'&&readerPanelChange)) lastOriginalAnchor=anchor;
+  if(anchor && !readerAnchorHeld()) lastOriginalAnchor=anchor;
   return anchor;
 }
 
