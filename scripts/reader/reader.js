@@ -574,6 +574,25 @@ async function restoreReaderPanelAnchor(change){
   return restored;
 }
 
+/* 패널의 display 변경과 PDF 확대 stage 갱신은 서로 다른 ResizeObserver가 보던
+   일이었습니다. 그러면 source anchor를 되찾은 뒤에 stage가 새 폭으로 줄어들어
+   같은 scrollTop이 더 뒤의 쪽을 가리킬 수 있습니다. 패널 작업이 폭 변경의
+   주인이므로, 이 작업 안에서 실제 Reader 폭 ResizeObserver 알림과 그에 따른
+   stage 계산을 먼저 기다립니다. 시간이나 프레임 수를 추측하는 보정 반복은
+   필요하지 않습니다. EPUB은 restoreAnchor 자체가 frame geometry를 기다립니다. */
+async function prepareReaderPanelGeometry(change){
+  if(!change||change.mode!=='original'||!originalSession) return true;
+  if(originalSession.kind==='pdf'&&typeof waitForOriginalZoomGeometry==='function'){
+    const current=()=>change===readerPanelChange&&change.generation===readerPanelGeneration
+      && curBook&&curBook.id===change.bookId&&currentReaderMode===change.mode;
+    const width=document.getElementById('readmain').getBoundingClientRect().width;
+    if(!await waitForOriginalZoomGeometry(width,current)) return false;
+    const page=originalSession.pages&&originalSession.pages[change.anchor.source.page-1];
+    if(page) page.getBoundingClientRect();
+  }
+  return true;
+}
+
 function beginReaderPanelOpen(node){
   const panel=document.getElementById('panel');
   const wasOpen=!!(panel&&panel.classList.contains('on'));
@@ -612,7 +631,10 @@ function commitReaderPanelChange(change){
     const width=document.getElementById('readmain').getBoundingClientRect().width;
     if(Math.abs(width-change.beforeWidth)<1){ readerPanelChange=null; return; }
     readerPanelIgnoredWidth=Math.round(width);
-    try{ await whileRestoringChrome(()=>restoreReaderPanelAnchor(change)); }
+    try{
+      if(!await prepareReaderPanelGeometry(change)) return;
+      await whileRestoringChrome(()=>restoreReaderPanelAnchor(change));
+    }
     finally{
       if(change===readerPanelChange){
         readerPanelChange=null;

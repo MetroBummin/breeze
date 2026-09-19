@@ -43,7 +43,7 @@ const url=`http://127.0.0.1:${server.address().port}`;
 const pdf=process.env.BREEZE_QA_PDF?readFileSync(process.env.BREEZE_QA_PDF):fixturePdf();
 const reports=[];
 try{
- for(const [engine,width,height] of [[chromium,390,844],[chromium,768,1024],[webkit,390,844]].filter(([engine])=>!process.env.BREEZE_QA_ENGINE||engine.name()===process.env.BREEZE_QA_ENGINE)){
+ for(const [engine,width,height] of [[chromium,390,844],[chromium,768,1024],[chromium,1180,900],[webkit,390,844]].filter(([engine])=>!process.env.BREEZE_QA_ENGINE||engine.name()===process.env.BREEZE_QA_ENGINE)){
   const profile=mkdtempSync(resolve(tmpdir(),'breeze-pinch-'));
   const browser=await engine.launchPersistentContext(profile,{headless:true,viewport:{width,height},hasTouch:true,isMobile:true,deviceScaleFactor:2,serviceWorkers:'block'});
   try{
@@ -123,7 +123,8 @@ try{
      assert.ok(Math.abs(preview.rect.left-after.rect.left)<1.2,'release jumped horizontally');
      if(after.busy||after.owned) console.log('UNRELEASED',await page.evaluate(()=>window.qaEvents.slice(-18)));
      assert.equal(after.busy,false);assert.equal(after.owned,false);
-     assert.equal(after.panel,false);assert.equal(after.sentence,false);
+     assert.equal(after.panel,before.panel,'pinch changed the dictionary panel state');
+     assert.equal(after.sentence,before.sentence,'pinch changed the sentence state');
      assert.equal(after.wordActions,before.wordActions,'pinch also dispatched a word tap');
      assert.equal(after.chromeHidden,before.chromeHidden,'pinch changed toolbar state');
      assert.equal(after.viewport,1,'browser viewport zoomed');
@@ -192,7 +193,28 @@ try{
    await page.touchscreen.tap(word.x,word.y);
    await page.waitForFunction(()=>wordPanelOpen());
    assert.equal((await snapshot()).wordActions,tapsBefore+1,'tap was dispatched more than once');
-   await page.evaluate(()=>closePanel());await page.waitForTimeout(400);
+   if(width>=1000){
+     const panelAnchor=await page.evaluate(()=>{
+       const anchor=readerPanelSession&&readerPanelSession.anchor;
+       if(!anchor) return null;
+       return {...anchor,source:{...anchor.source}};
+     });
+     assert.ok(panelAnchor,'side-panel pinch stress lost its source anchor');
+     await pinch(100,140,{dx:8,dy:-10,split:true});
+     await pinch(140,100,{dx:-6,dy:8});
+     await pinch(100,125,{dx:5,dy:-4,split:true});
+     assert.equal((await snapshot()).panel,true,'side panel closed during pinch stress');
+     await page.locator('#p-close').click();
+     await page.waitForTimeout(200);
+     const afterY=await page.evaluate(anchor=>{
+       const page=originalSession.pages[anchor.source.page-1],rect=page.getBoundingClientRect();
+       return rect.top+anchor.source.y*rect.height;
+     },panelAnchor);
+     assert.ok(Math.abs(afterY-panelAnchor.screenY)<3,
+       `side-panel pinch close drifted ${afterY-panelAnchor.screenY}px`);
+   }else{
+     await page.evaluate(()=>closePanel());await page.waitForTimeout(400);
+   }
    // A fresh long press after a pinch must still open exactly the sentence modal.
    if(cdp){
      await touch('touchStart',[{id:1,...word}]);

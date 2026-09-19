@@ -144,6 +144,7 @@ try{
 
   const metrics=await page.evaluate(()=>qaPanelMetrics);
   assert.ok(Math.max(...metrics.durations)<50,`A Text restoration took ${Math.max(...metrics.durations).toFixed(1)}ms`);
+  const pdfRestoresStart=metrics.restores;
 
   await page.locator('#fileinput').setInputFiles({name:'panel-anchor.pdf',mimeType:'application/pdf',buffer:fixturePdf()});
   await page.waitForFunction(()=>books.some(book=>book.kind==='pdf'));
@@ -152,29 +153,76 @@ try{
     await switchReaderMode('original');
   });
   await page.waitForFunction(()=>originalSession?.kind==='pdf'&&originalSession.settled.size>0);
-  const pdfResult=await page.evaluate(async()=>{
+  const pdfTap=await page.evaluate(async()=>{
     await restorePdfAnchor({page:8,y:.42},readerPanelReferenceY());
     setOriginalZoom(2); await qaFrames(5);
     let chosen=null;
     for(const page of originalSession.pages){
       const rect=page.getBoundingClientRect();
       for(const box of originalSession.wordBoxes.get(+page.dataset.page)||[]){
+        const x=rect.left+(box.x+box.w/2)*rect.width;
         const y=rect.top+(box.y+box.h/2)*rect.height;
-        if(y>180&&y<700){chosen={page,box};break;}
+        if(x>40&&x<1240&&y>180&&y<700){chosen={page,box};break;}
       }
       if(chosen) break;
     }
     if(!chosen) return null;
-    openPdfWord(chosen.page,chosen.box); await qaFrames(5);
-    const anchor={...readerPanelSession.anchor,source:{...readerPanelSession.anchor.source}};
-    const openY=qaAnchorY(anchor);
-    closePanel(); await qaFrames(5);
-    return {target:anchor.screenY,openY,closedY:qaAnchorY(anchor),zoom:originalZoom()};
+    const rect=chosen.page.getBoundingClientRect();
+    return {x:rect.left+(chosen.box.x+chosen.box.w/2)*rect.width,
+      y:rect.top+(chosen.box.y+chosen.box.h/2)*rect.height};
   });
-  assert.ok(pdfResult,'The zoomed PDF fixture had no visible word');
-  assert.equal(pdfResult.zoom,2,'PDF panel test did not retain the active zoom');
-  assert.ok(Math.abs(pdfResult.openY-pdfResult.target)<3,`Zoomed PDF open drifted ${pdfResult.openY-pdfResult.target}px (${JSON.stringify(pdfResult)})`);
+  assert.ok(pdfTap,'The zoomed PDF fixture had no visible word');
+  await page.mouse.click(pdfTap.x,pdfTap.y);
+  await page.waitForFunction(()=>wordPanelOpen()&&readerPanelSession);
+  await page.waitForFunction(()=>readerPanelChange===null);
+  await page.evaluate(()=>qaFrames(5));
+  const pdfOpen=await page.evaluate(()=>{
+    const anchor={...readerPanelSession.anchor,source:{...readerPanelSession.anchor.source}};
+    return {target:anchor.screenY,openY:qaAnchorY(anchor),source:anchor.source};
+  });
+  const controlsLayout=await page.evaluate(()=>{
+    const reader=document.getElementById('readmain').getBoundingClientRect();
+    const panel=document.getElementById('panel').getBoundingClientRect();
+    const chrome=document.getElementById('readchrome').getBoundingClientRect();
+    const pill=document.getElementById('readpill').getBoundingClientRect();
+    return {reader:{left:reader.left,right:reader.right,width:reader.width},
+      panel:{left:panel.left,right:panel.right},chrome:{left:chrome.left,right:chrome.right},
+      pillCenter:pill.left+pill.width/2,readerCenter:reader.left+reader.width/2};
+  });
+  assert.ok(controlsLayout.chrome.right<=controlsLayout.reader.right+.5,
+    `Reader controls escaped the remaining Reader area: ${JSON.stringify(controlsLayout)}`);
+  assert.ok(controlsLayout.reader.right<=controlsLayout.panel.left+.5,
+    `Reader controls overlap the dictionary panel: ${JSON.stringify(controlsLayout)}`);
+  assert.ok(Math.abs(controlsLayout.pillCenter-controlsLayout.readerCenter)<1,
+    `Reader controls are centered on the viewport instead of the Reader: ${JSON.stringify(controlsLayout)}`);
+
+  await page.locator('#aafab').click();
+  assert.equal(await page.locator('#aa-pdfzoom').isVisible(),true,
+    'PDF button zoom disappeared while the side panel was open');
+  await page.locator('#pdfzoom-in').click();
+  await page.locator('#pdfzoom-in').click();
+  await page.locator('#pdfzoom-out').click();
+  await page.evaluate(()=>closeAa());
+  const speechBefore=await page.evaluate(()=>({paper:originalZoom(),viewport:visualViewport.scale}));
+  await page.locator('#p-speak').click({clickCount:4,delay:18});
+  const speechAfter=await page.evaluate(()=>({paper:originalZoom(),viewport:visualViewport.scale}));
+  assert.deepEqual(speechAfter,speechBefore,
+    'Rapid pronunciation taps escaped the control and changed a zoom owner');
+  const pdfBeforeClose=await page.evaluate(()=>{
+    const anchor={...readerPanelSession.anchor,source:{...readerPanelSession.anchor.source}};
+    return {anchor,target:anchor.screenY,zoom:originalZoom()};
+  });
+  await page.locator('#p-close').click();
+  await page.evaluate(()=>qaFrames(5));
+  const pdfResult=await page.evaluate(before=>({...before,closedY:qaAnchorY(before.anchor)}),pdfBeforeClose);
+  assert.equal(pdfResult.zoom,2.5,'PDF panel button zoom did not retain the active zoom');
+  assert.ok(Math.abs(pdfOpen.openY-pdfOpen.target)<3,`Zoomed PDF open drifted ${pdfOpen.openY-pdfOpen.target}px (${JSON.stringify(pdfOpen)})`);
   assert.ok(Math.abs(pdfResult.closedY-pdfResult.target)<3,`Zoomed PDF close drifted ${pdfResult.closedY-pdfResult.target}px (${JSON.stringify(pdfResult)})`);
+  const pdfMetrics=await page.evaluate(()=>qaPanelMetrics);
+  assert.equal(pdfMetrics.restores-pdfRestoresStart,2,
+    'PDF panel open/close performed more than one anchor restore per layout change');
+  assert.ok(Math.max(...pdfMetrics.durations)<100,
+    `A panel restoration took ${Math.max(...pdfMetrics.durations).toFixed(1)}ms`);
 
   await page.locator('#fileinput').setInputFiles(resolve(root,'assets/classics/alice-in-wonderland.epub'));
   await page.waitForFunction(()=>books.some(book=>book.kind==='epub'));
@@ -255,7 +303,7 @@ try{
   assert.match(launch,/red="0\.9803921569" green="0\.9725490196" blue="0\.9490196078"/,
     'The mandatory iOS launch surface no longer matches the light paper background');
 
-  console.log(`Panel anchor regression verified (Text/PDF@200%/EPUB; Text restores=${metrics.restores}, max=${Math.max(...metrics.durations).toFixed(1)}ms); native speech contract verified`);
+  console.log(`Panel anchor regression verified (Text/PDF+button zoom/EPUB; PDF restores=${pdfMetrics.restores-pdfRestoresStart}, max=${Math.max(...pdfMetrics.durations).toFixed(1)}ms); native speech contract verified`);
 }finally{
   await browser.close();
   await new Promise(done=>server.close(done));

@@ -86,6 +86,8 @@ function readerContentHeight(){
 const ORIGINAL_ZOOM_MIN = 1, ORIGINAL_ZOOM_MAX = 4, ORIGINAL_ZOOM_STEP = .5;
 let originalZoomLevel = 1;
 let originalZoomBaseHeight = 0;
+let originalZoomObservedWidth = null;
+let originalZoomGeometryWaiters = [];
 
 function originalZoomStage(){ return document.getElementById('original-stage'); }
 function originalZoomLayer(){ return document.getElementById('original-zoom'); }
@@ -117,6 +119,25 @@ function applyOriginalZoomTransform(){
   if(!layer) return;
   layer.style.transform = originalZoomLevel === 1 ? '' : 'scale(' + originalZoomLevel + ')';
   layoutOriginalZoom();
+}
+
+/* Reader 폭 변경의 최종 geometry는 실제 ResizeObserver 알림이 확정합니다.
+   패널 작업은 이 Promise 하나를 기다린 뒤 source anchor를 복원합니다. 시간이나
+   프레임 수를 추측하지 않고, 다음 폭 알림이 기대한 작업의 것인지도 확인합니다. */
+function waitForOriginalZoomGeometry(width,isCurrent){
+  const expected=Math.round(width||0);
+  if(!window.ResizeObserver){ layoutOriginalZoom(); return Promise.resolve(true); }
+  if(originalZoomObservedWidth!=null&&Math.abs(originalZoomObservedWidth-expected)<1){
+    layoutOriginalZoom(); return Promise.resolve(!isCurrent||isCurrent());
+  }
+  return new Promise(resolve=>originalZoomGeometryWaiters.push({expected,isCurrent,resolve}));
+}
+
+function settleOriginalZoomGeometry(width){
+  originalZoomObservedWidth=Math.round(width||0);
+  const waiters=originalZoomGeometryWaiters.splice(0);
+  waiters.forEach(waiter=>waiter.resolve((!waiter.isCurrent||waiter.isCurrent())
+    && Math.abs(waiter.expected-originalZoomObservedWidth)<1));
 }
 
 /* 종이의 왼쪽 위가 스크롤 칸 안쪽 어디에 있는지. 위쪽 안내줄과 여백은 확대를
@@ -168,10 +189,11 @@ function updateOriginalZoomControls(){
   const out=document.getElementById('pdfzoom-out'), inButton=document.getElementById('pdfzoom-in');
   if(!controls || !out || !inButton) return;
   const active=originalZoomActive();
-  /* 확대 단추는 종이를 위한 도구입니다. 단어창이 열려 있으면 그 자리에는 사전
-     조작이 우선이므로, 패널 위에 겹쳐 보이는 대신 잠시 접어 둡니다. */
-  const panelOpen=document.getElementById('panel')?.classList.contains('on');
-  controls.hidden=!active || panelOpen;
+  /* 옆 패널은 종이를 가리지 않고 Reader 폭만 줄입니다. 그 상태에서도 Aa의 PDF
+     확대를 쓸 수 있어야 panel -> zoom -> close 순서를 같은 geometry 계약으로
+     검증할 수 있습니다. 모바일 sheet가 열렸을 때는 Aa 자체가 gesture owner에
+     의해 열리지 않으므로 별도 예외가 필요하지 않습니다. */
+  controls.hidden=!active;
   out.disabled=!active || originalZoomLevel<=ORIGINAL_ZOOM_MIN;
   inButton.disabled=!active || originalZoomLevel>=ORIGINAL_ZOOM_MAX;
   const pct=document.getElementById('aa-pdfzoom-pct');
@@ -227,9 +249,10 @@ let originalZoomWatchers = [];
       if(Math.abs(layer.offsetHeight - originalZoomBaseHeight) > 0.5) layoutOriginalZoom();
     });
     growth.observe(layer);
-    const reflow = new ResizeObserver(()=>{
+    const reflow = new ResizeObserver(entries=>{
       cancelOriginalPinch();
       layoutOriginalZoom();
+      settleOriginalZoomGeometry(entries[0].contentRect.width);
     });
     reflow.observe(box);
     originalZoomWatchers = [growth, reflow];

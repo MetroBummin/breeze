@@ -796,8 +796,10 @@ assert.match(pdfOriginalSource,
   /if\(!\(session\.wordBoxes\.get\(pageNumber\)\|\|\[\]\)\.length\)\{[\s\S]{0,140}await renderOriginalPdfPage\(session,pageNumber\)/,
   'The first PDF tap is discarded while its word map is still loading');
 const readerScrollSource=readFileSync(resolve(root,'scripts/reader/reader-scroll.js'),'utf8');
-assert.match(readerScrollSource,/const panelOpen=document\.getElementById\('panel'\)\?\.classList\.contains\('on'\)/,
-  'PDF zoom controls can overlap the open dictionary panel');
+assert.match(readerScrollSource,/controls\.hidden=!active;/,
+  'PDF zoom controls disappear while a side panel is open');
+assert.match(readerSource,/prepareReaderPanelGeometry[\s\S]*waitForOriginalZoomGeometry[\s\S]*restoreReaderPanelAnchor/,
+  'PDF panel restore can run before the resized zoom stage geometry is final');
 /* ── 표제어는 고치지 않습니다 ──
    화면의 낱말은 원문 색칠·캐시·동기화가 모두 기대는 열쇠에서 나온 글자입니다.
    그 자리에서 글자만 갈아 끼우면 고친 이름으로는 본문이 칠해지지 않고, 캐시는
@@ -946,6 +948,8 @@ assert.match(readerCss, /#readpill-progress\{[^}]*transform:scaleX\(0\); transfo
   'The progress fill no longer uses a composited transform inside the title pill');
 assert.match(readerCss, /#readchrome\{[^}]*bottom:calc\(env\(safe-area-inset-bottom\)/,
   'Reader controls do not clear the bottom safe area');
+assert.match(dictionaryCss, /#p-speak\{[^}]*touch-action:manipulation/,
+  'Rapid pronunciation taps can leak into browser double-tap zoom');
 /* PDF 확대 −/+ 는 예전처럼 따로 떠 있지 않습니다 — 뜨는 조각을 늘리지 않으려고
    Aa popover 안, 다른 설정들 아래 한 줄로 들어갔습니다. 단추가 부르는 함수는
    그대로입니다(위의 384/386번 검사). */

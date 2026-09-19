@@ -50,7 +50,7 @@
     letter-spacing:-.9px; color:var(--ink);}
   #p-speak{flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid var(--speak-line);
     background:var(--speak-bg); cursor:pointer; display:flex; align-items:center; justify-content:center;
-    color:var(--blue); transition:.15s;}
+    color:var(--blue); transition:.15s; touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
   #p-speak:hover{background:var(--sky);}
   #p-speak.playing{background:var(--blue); color:var(--on-color); border-color:var(--blue);}
   /* ── 낱말 하나를 화면에서 어떻게 다룰지 ──
