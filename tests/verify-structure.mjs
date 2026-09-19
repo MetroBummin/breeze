@@ -1222,8 +1222,8 @@ assert.ok(
 );
 
 /* ── 문장 통째로 ──
-   낱말 Tap 은 단어 팝업, 낱말 Long Press 는 이 문장. 팝업 안에는 문장 해석의
-   단추도 남은 횟수도 없고, 해석은 자기 창(화면 한가운데)에 뜹니다. */
+   낱말 Tap 은 단어 팝업, 낱말 Long Press 는 이 문장. 대기는 모든 viewport에서
+   하단 필 하나이고, 결과만 좁은 화면의 시트/넓은 화면의 중앙 modal로 갈립니다. */
 const sentenceSource = readFileSync(resolve(root, 'scripts/dictionary/sentence.js'), 'utf8');
 assert.doesNotMatch(index, /id="p-explain"|id="p-explain-note"/,
   'The word popup carries the sentence button or its usage note again');
@@ -1254,8 +1254,18 @@ assert.match(gestureSource,
   /holdTimer = setTimeout\(\(\)=>holdGesture\(gesture\), GESTURE_HOLD_MS\)/,
   'The sentence press no longer waits for its own timer');
 assert.match(gestureSource,
-  /function holdGesture[\s\S]{0,900}surface\.sentenceAt\([\s\S]{0,1200}openSentence\(found\.sentence\)/,
+  /function holdGesture[\s\S]{0,1200}surface\.sentenceAt\([\s\S]{0,1800}openSentence\(found\.sentence\)/,
   'The pressed sentence is resolved or painted before the press is confirmed');
+assert.match(sentenceSource,
+  /const SENTENCE_COMPACT_MAX_WIDTH = 640;[\s\S]{0,120}const SENTENCE_COMPACT_MAX_HEIGHT = 500;/,
+  'Sentence result presentation thresholds are no longer owned by one JavaScript boundary');
+assert.match(sentenceSource,
+  /if\(state\.waiting\)\{[\s\S]{0,180}beginSentenceWaiting\(\)/,
+  'Pending no longer uses the same Reader pill on every viewport');
+assert.match(dictionaryCss, /body\.sentence-compact #p-sentence[\s\S]{0,250}max-height:min\(60svh/,
+  'Compact sentence results are no longer a bounded bottom sheet');
+assert.match(dictionaryCss, /#sentence-modal\{position:fixed; inset:0;[\s\S]{0,120}align-items:center; justify-content:center/,
+  'Wide sentence results are no longer the existing centered overlay');
 
 /* ---- 판정자는 하나 ---- */
 assert.ok((gestureSource.match(/addEventListener\('pointerdown'/g) || []).length === 1,
@@ -1464,19 +1474,24 @@ assert.doesNotMatch(sentenceSource, /function dismissSentence/,
    "창이 떠 있는 동안의 입력은 창이 가진다" 하나입니다. */
 assert.doesNotMatch(index, /id="sentence-scrim"[^>]*onclick/,
   'The scrim closes the sentence window through its own onclick again, outside the gesture controller');
-/* 닫는 자리는 창 바깥 하나입니다. X 를 도로 넣으면 닫는 길이 둘이 되고, 그러면
-   "닫은 뒤에 무엇이 남았는가"를 두 벌 확인해야 합니다. */
-assert.ok(!/id="ps-close"/.test(index),
-  'The sentence window grew a second way to close again — the scrim is the only one');
-assert.ok(!/ps-close/.test(gestureSource),
-  'The gesture controller treats an X button as a dismiss target again');
+/* temporary lookup에는 명시적인 X가 없습니다. 바깥 탭과 좁은 시트의 아래 스와이프는
+   같은 owner/종료 함수로 합쳐져야 합니다. */
+assert.doesNotMatch(index, /id="(?:ps-close|sentence-pill-cancel)"/,
+  'The temporary sentence lookup exposes an explicit X button again');
+assert.doesNotMatch(index, /id="ps-cap"/,
+  'The sentence result shows a redundant visible title again');
+assert.match(gestureSource, /function sentenceDismissTarget[\s\S]{0,160}target\.closest\('#sentence-scrim'\)/,
+  'Outside tap no longer belongs to the sentence gesture owner');
+assert.match(gestureSource,
+  /function endSentenceModalGesture[\s\S]{0,260}gesture\.pulls && gesture\.dy > SHEET_PULL_DISMISS/,
+  'The compact sentence sheet no longer supports downward swipe dismissal');
 assert.ok(!/closeSentence/.test(index),
   'index.html reaches into the sentence close path directly instead of letting the gesture owner do it');
 assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL = 'SENTENCE_MODAL',\s*\n\s*OWNER_WORD_SHEET = 'WORD_SHEET', OWNER_AA = 'AA', OWNER_UI = 'UI'/,
   'A gesture no longer has an owner, so a modal and the reader can share one physical gesture');
 /* 임자는 pointerdown 에서 정해집니다 — 판정보다 먼저, 그리고 딱 한 번. */
 assert.match(gestureSource,
-  /function beginGesture[\s\S]{0,1600}if\(sentenceModalOpen\(\)\)\{\s*\n\s*gesture\.owner = OWNER_SENTENCE_MODAL;[\s\S]{0,200}activeGesture = gesture;\s*\n\s*return;/,
+  /function beginGesture[\s\S]{0,2600}if\(sentenceModalOpen\(\) \|\| \(typeof sentenceWaitingActive==='function'[\s\S]{0,180}sentenceDismissTarget\(target\)\)\)\{\s*\n\s*gesture\.owner = OWNER_SENTENCE_MODAL;[\s\S]{0,200}activeGesture = gesture;\s*\n\s*return;/,
   'The owner is not decided at pointerdown, so a gesture can change hands halfway through');
 /* ---- 임자는 손짓이 끝날 때까지 바뀌지 않습니다 ----
    창이 닫혀 눌렀던 자리가 사라지고 그 밑에서 종이가 드러나도 마찬가지입니다.
@@ -1497,8 +1512,6 @@ assert.match(gestureSource, /if\(activeGesture\.owner !== OWNER_READER\) return;
 /* `DISMISS_SENTENCE` 도 다른 판정과 똑같이 한 번만 셉니다. */
 assert.match(gestureSource, /countDispatch\(gesture, 'DISMISS_SENTENCE'\)/,
   'A DISMISS_SENTENCE dispatch is not counted against the one-gesture-one-action invariant');
-assert.ok((runningCode(gestureSource).match(/closeSentence\(\);/g) || []).length === 1,
-  'The gesture controller closes the sentence window from more than one place');
 assert.match(gestureSource,
   /function endSentenceModalGesture[\s\S]{0,600}finishGesture\(gesture, GESTURE_DISMISS_SENTENCE, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_SENTENCE'\);[\s\S]{0,200}closeSentence\(\)/,
   'DISMISS_SENTENCE no longer ends in exactly one closeSentence() call');
@@ -1725,12 +1738,11 @@ assert.doesNotMatch(dictServerSource, /seoulDayBounds/,
 const dictCss = readFileSync(resolve(root, 'styles/dictionary.css'), 'utf8');
 assert.match(dictCss, /\.aurora \.glow/, 'The shared AI waiting state is gone');
 const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
-assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 2,
-  'The word panel and the sentence window no longer wait in the same way');
-/* 색도 하나입니다. AI 가 나오는 세 자리가 같은 변수만 씁니다 — 뜻 상자에 초록빛이,
-   문장 창에 흰 종이가 깔려 있으면 같은 목소리로 들리지 않습니다. */
+assert.strictEqual((indexHtml.match(/class="[^"]*aurora[^"]*"/g) || []).length, 1,
+  'Sentence pending grew an animated aurora instead of the single restrained spinner');
+/* 낱말 뜻은 기존 AI 팔레트를 유지하고, 문장 lookup만 중립 유리 팔레트를 씁니다. */
 assert.match(readFileSync(resolve(root, 'styles/tokens.css'), 'utf8'), /--ai-bg1:/,
-  'The shared AI palette is gone, so each AI surface picks its own colour again');
+  'The word lookup AI palette disappeared during sentence-only refinement');
 /* 디자인 값은 tokens.css 한 곳에 삽니다. 다른 스타일 파일이 색을 직접 적기
    시작하면, "여기만 고치면 된다"가 다시 거짓말이 됩니다. */
 for(const sheet of ['base.css','home.css','components.css','dictionary.css','reader.css']){
@@ -1741,8 +1753,10 @@ for(const sheet of ['base.css','home.css','components.css','dictionary.css','rea
 }
 assert.match(dictCss, /#p-ai\{[^}]*var\(--ai-panel\)/,
   'The word meaning box has its own colour again');
-assert.match(dictCss, /#p-sentence\{[^}]*var\(--ai-bg1\)/,
-  'The sentence window has its own colour again');
+assert.match(dictCss, /#p-sentence\{[^}]*var\(--sentence-glass-solid\)/,
+  'The sentence window lost its neutral glass fallback');
+assert.doesNotMatch(dictCss, /#p-sentence\{[^}]*(?:--ai-bg|linear-gradient)/,
+  'The sentence window returned to a blue or gradient AI card');
 
 assert.match(readerSource, /function beginLazyWordSpans/,
   'Long text is no longer prepared for lazy word spans');

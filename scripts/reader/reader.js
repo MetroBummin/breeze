@@ -183,6 +183,7 @@ function renderBookBody(b){
   beginLazyWordSpans(wordSpanTargets);
 }
 async function openBook(b){
+  if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
   leaveOriginalReader();
   /* 예전에 넣어 둔 책에 남아 있는 네모(□)를 여기서 한 번 고칩니다 —

@@ -193,6 +193,7 @@ function show(v,options){
     v==='home' || v==='casuals' || v==='longform');
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
   if(v!=='read'){
+    if(typeof closeSentence==='function') closeSentence();
     leaveOriginalReader();
     curBook=null; closePanel(); showReaderChrome();
     /* 벌린 것은 종이였습니다. 두고 나갑니다 — scripts/reader/reader-scroll.js */
@@ -218,6 +219,9 @@ function show(v,options){
    되돌립니다. 그래서 Google에서 들어온 사람도 책을 읽다 한 번 뒤로 갔다고 곧장
    바깥 사이트로 나가지 않습니다. */
 window.addEventListener('popstate',event=>{
+  if(typeof sentenceLookupOpen==='function' && sentenceLookupOpen()){
+    closeSentence(); return;
+  }
   const panel=document.getElementById('panel');
   if(panel&&panel.classList.contains('on')){ closePanel(); return; }
   const settingsModal=document.getElementById('settings-modal');

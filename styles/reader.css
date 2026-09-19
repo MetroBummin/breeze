@@ -184,7 +184,30 @@
     cursor:pointer; overflow:hidden; opacity:1;
     transition:width .3s ease,opacity .18s ease,margin .3s ease;}
   #readpill #modefab[hidden]{display:none;}
-  #readback,#aafab{transition:opacity .2s ease,transform .3s ease,visibility 0s;}
+  #sentence-pill-status{position:relative; z-index:2; width:100%; min-width:0;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    color:var(--sentence-glass-ink); font:600 13px var(--ui); white-space:nowrap;}
+  #sentence-pill-status[hidden]{display:none;}
+  .sentence-spinner{width:14px; height:14px; flex:none; border:2px solid var(--sentence-glass-spinner);
+    border-top-color:var(--sentence-glass-spinner-on); border-radius:50%; animation:sentence-spin .8s linear infinite;}
+  @keyframes sentence-spin{to{transform:rotate(1turn)}}
+  body.sentence-pill-waiting #readpill,
+  body.sentence-pill-waiting.chrome-hidden #readpill{width:min(calc(100vw - 28px),520px); height:48px;
+    border-radius:26px; background:var(--sentence-glass-solid); border-color:var(--sentence-glass-line);
+    box-shadow:var(--sentence-glass-shadow-pill); transition-duration:var(--sentence-transition);}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    body.sentence-pill-waiting #readpill,
+    body.sentence-pill-waiting.chrome-hidden #readpill{background:var(--sentence-glass-pill);
+      backdrop-filter:blur(16px) saturate(115%); -webkit-backdrop-filter:blur(16px) saturate(115%);}
+  }
+  body.sentence-pill-waiting #readpill-progress,
+  body.sentence-pill-waiting #readpill-title,
+  body.sentence-pill-waiting #readpill #modefab{display:none;}
+  body.sentence-pill-waiting #readback,
+  body.sentence-pill-waiting #aafab{opacity:0; visibility:hidden; pointer-events:none;
+    transform:translateY(6px) scale(.94);}
+  #readback,#aafab{transition:opacity var(--sentence-transition) ease,
+    transform var(--sentence-transition) cubic-bezier(.2,.7,.25,1),visibility 0s;}
   body.chrome-hidden #readpill{width:min(36vw,180px); height:34px; padding:2px 8px; border-radius:18px;}
   body.chrome-hidden #readpill #modefab{width:0; opacity:0; visibility:hidden; pointer-events:none;}
   body.chrome-hidden #readback,body.chrome-hidden #aafab{
@@ -205,7 +228,9 @@
     #readchrome{padding:0 22px;}
   }
   @media (prefers-reduced-motion:reduce){
-    #readpill,#readback,#aafab,#readpill #modefab{transition-duration:.01ms;}
+    #readpill,#readback,#aafab,#readpill #modefab{transition-duration:var(--sentence-transition);
+      transition-property:opacity,visibility,background-color;}
+    .sentence-spinner{animation-duration:1.25s;}
   }
   /* 여기 있던 서른 줄은 "벌리면 커진 만큼 다시 줄여 놓는" 보정이었습니다 —
      `--vv-k`(배율의 역수)와 `--vv-x`·`--vv-y`·`--vv-dx`·`--vv-dy`(보이는 화면이

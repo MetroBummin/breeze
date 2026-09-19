@@ -22,8 +22,9 @@
    예전 구현이 통째로 걷힌 이유가 그것이었습니다.
 
    확정되면 문장이 앵커 문장처럼 파랗게 차오르고(모드마다 같은 `reader-mode-cue`),
-   화면 한가운데에 해석이 뜹니다. 세 화면(글자 · 원본 PDF · 원본 EPUB)이 모두
-   같은 손짓, 같은 그림입니다 — 문이 하나여야 기기마다 다르게 굴지 않습니다.
+   모든 화면의 하단 필이 먼저 대기를 알립니다. 답은 좁은 화면에서는 바텀시트,
+   넓은 화면에서는 종전 중앙 창에 뜹니다. 세 화면(글자 · 원본 PDF · 원본 EPUB)이
+   모두 같은 요청 수명과 같은 표시 문법을 씁니다.
 
    ── 문장은 서버에 남지 않습니다 ──
    AI 에게는 보냅니다(보내지 않으면 답할 것이 없습니다). 서버 기록에 남는 것은
@@ -50,7 +51,7 @@ function rememberSentLeft(left, day){
 /* ================= 해석 창 ================= */
 
 /* ---- 치우는 일은 여기 하나뿐입니다 ----
-   닫는 길은 둘입니다 — 창 바깥(scrim) · Esc. 둘 다 이 함수 하나로 끝납니다.
+   창 바깥, 시트 끌어내리기, Esc와 뒤로가기는 모두 이 함수로 끝납니다.
 
    한때 바깥을 눌러 닫는 길만 따로 `dismissSentence()` 라는 이름을 갖고 있었고,
    그다음에는 이름은 같아졌지만 길이 달랐습니다: X 와 바깥은 각자 `onclick` 으로
@@ -63,18 +64,84 @@ function rememberSentLeft(left, day){
    창이고, 임자가 `DISMISS_SENTENCE` 로 판정한 그 자리에서 이 함수를 한 번
    부릅니다 (scripts/reader/gesture.js). 여기 남는 것은 "무엇을 치우는가" 뿐입니다.
 
-   X 단추도 뗐습니다. 태블릿에서 X 로 닫은 직후 한 박자 굳는 것처럼 느껴진
-   사례가 있었는데, X 가 원인이라고 확정하지는 못했습니다. 다만 닫는 길이 둘이면
-   "닫은 뒤에 무엇이 남았는가"를 두 벌 확인해야 하고, 이 창은 scrim 을 깔고
-   뜨므로 창이 아닌 곳은 전부 바깥입니다 — 하나로 줄여도 잃는 길이 없습니다.
+   이 표면은 잠깐 보는 lookup이라 명시적인 X는 두지 않습니다. 바깥 탭과 시트의
+   끌어내리기는 같은 gesture owner가 이 종료 함수로 보내므로, 닫힌 뒤 상태는 한 벌입니다.
 
    창은 누르고 있던 손가락 **아래로** 올라오므로, 손을 떼는 그 한 번이 곧바로
    "바깥을 눌렀다"가 될 수 있습니다 — 열리자마자 닫혀서 아무 일도 안 일어난 것처럼
    보이던 자리입니다. 예전에는 여기서 600ms 유예를 봤습니다. 이제 그 `click` 은
    창을 연 손짓의 꼬리로 판정되어 문서 capture 단계에서 멈추므로, 여기까지 오지
    않습니다. */
+/* 분기 기준은 이곳 한 군데에만 둡니다. CSS는 계산 결과(body 표)만 보고 그립니다. */
+const SENTENCE_COMPACT_MAX_WIDTH = 640;
+const SENTENCE_COMPACT_MAX_HEIGHT = 500;
+function sentenceViewport(){
+  const view = typeof window !== 'undefined' && window.visualViewport;
+  return { width:view ? view.width : (typeof innerWidth === 'number' ? innerWidth : 1024),
+           height:view ? view.height : (typeof innerHeight === 'number' ? innerHeight : 768) };
+}
+function sentenceCompactViewport(){
+  const view=sentenceViewport();
+  return view.width < SENTENCE_COMPACT_MAX_WIDTH || view.height < SENTENCE_COMPACT_MAX_HEIGHT;
+}
+
+let sentenceView = 'closed';
+let sentenceCompact = false;
+let sentenceWaitingFrame = 0;
+let sentencePendingPaint = null;
+function sentenceLookupOpen(){ return sentenceView !== 'closed'; }
+function sentenceWaitingActive(){ return sentenceView === 'waiting'; }
+function sentenceSheetOpen(){ return sentenceView === 'sheet'; }
+function sentenceBodyClass(name,on){
+  const body=document.body;
+  if(body && body.classList) body.classList.toggle(name,!!on);
+}
+function sentenceWaitingControls(waiting){
+  const status=document.getElementById('sentence-pill-status');
+  if(status) status.hidden=!waiting;
+  ['readback','aafab','modefab'].forEach(id=>{
+    const button=document.getElementById(id);
+    if(button) button.inert=!!waiting || !!(document.body&&document.body.classList
+      && document.body.classList.contains('chrome-hidden'));
+  });
+  const title=document.getElementById('readpill-title');
+  if(title) title.inert=!!waiting;
+  if(!waiting) sentenceBodyClass('sentence-pill-waiting',false);
+}
+function beginSentenceWaiting(){
+  sentenceView='waiting';
+  sentenceWaitingControls(true);
+  if(sentenceWaitingFrame) cancelAnimationFrame(sentenceWaitingFrame);
+  sentenceWaitingFrame=requestAnimationFrame(()=>{
+    sentenceWaitingFrame=0;
+    if(sentenceView==='waiting') sentenceBodyClass('sentence-pill-waiting',true);
+  });
+}
+function revealSentenceResult(){
+  if(!sentencePendingPaint || !sentenceAlive(sentencePendingPaint.life)) return;
+  sentencePendingPaint=null;
+  sentenceView=sentenceCompact ? 'sheet' : 'modal';
+  sentenceWaitingControls(false);
+  sentenceBodyClass('sentence-compact',sentenceCompact);
+  const viewport=sentenceViewport();
+  sentenceBodyClass('sentence-low-viewport',sentenceCompact && viewport.height < SENTENCE_COMPACT_MAX_HEIGHT);
+  const modal=document.getElementById('sentence-modal');
+  modal.hidden=false;
+}
+/* gesture.js가 롱프레스를 확정한 손가락의 pointerup을 받으면 부릅니다. 빠른 답이
+   손가락 아래에 시트를 만들고, 그 손짓의 click이 곧바로 닫는 일을 막습니다. */
+function sentenceGestureReleased(){
+  if(sentencePendingPaint) revealSentenceResult();
+}
 function closeSentence(){
   sentenceLife++;
+  sentenceView='closed';
+  sentencePendingPaint=null;
+  if(sentenceWaitingFrame) cancelAnimationFrame(sentenceWaitingFrame);
+  sentenceWaitingFrame=0;
+  sentenceWaitingControls(false);
+  sentenceBodyClass('sentence-compact',false);
+  sentenceBodyClass('sentence-low-viewport',false);
   const modal = document.getElementById('sentence-modal');
   if(modal) modal.hidden = true;
   if(typeof clearReaderModeCue === 'function') clearReaderModeCue();
@@ -82,9 +149,8 @@ function closeSentence(){
 }
 function paintSentence(state){
   const modal = document.getElementById('sentence-modal');
-  modal.hidden = false;
-  document.getElementById('ps-en').textContent = state.en || '';
-  document.getElementById('ps-wait').hidden = !state.waiting;
+  const english=state.en || '';
+  document.getElementById('ps-en').textContent = english;
   const ko = document.getElementById('ps-ko');
   ko.textContent = state.ko || '';
   ko.hidden = !state.ko;
@@ -95,7 +161,11 @@ function paintSentence(state){
     item.textContent = line;
     points.appendChild(item);
   });
-  points.hidden = !(state.points || []).length;
+  const extra=document.getElementById('ps-extra');
+  if(extra){
+    extra.hidden=!(state.points || []).length;
+    extra.removeAttribute('open');
+  }
   const foot = document.getElementById('ps-foot');
   foot.textContent = state.foot || '';
   foot.hidden = !state.foot;
@@ -103,7 +173,14 @@ function paintSentence(state){
      것은 다시 눌러도 같은 답이 오므로 여기서 권하지 않습니다. */
   const retry = document.getElementById('ps-retry');
   if(retry) retry.hidden = !state.retry;
-  document.getElementById('ps-cap').textContent = state.cached ? '전에 해석한 문장' : '문장 해석';
+  if(state.waiting){
+    modal.hidden=true;
+    beginSentenceWaiting();
+    return;
+  }
+  sentencePendingPaint={life:sentenceLife};
+  if(typeof sentenceGestureStillPressed === 'function' && sentenceGestureStillPressed()) return;
+  revealSentenceResult();
 }
 
 /* 실패한 것은 요청 하나뿐입니다. 어느 문장이었는지는 창이 떠 있는 동안 여기
@@ -125,6 +202,10 @@ async function openSentence(text){
   const life=++sentenceLife;
   if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl=null; }
   sentAsked = clean;
+  sentenceCompact=sentenceCompactViewport();
+  sentenceLastCompact=sentenceCompact;
+  sentenceBodyClass('sentence-compact',false);
+  sentenceBodyClass('sentence-low-viewport',false);
   paintSentenceFor(life,{ en:clean, waiting:true });
 
   /* ① 전에 물어본 적 있는 문장이면 그대로 내놓습니다. 한도를 쓰지 않습니다. */
@@ -169,5 +250,18 @@ async function openSentence(text){
 }
 
 document.addEventListener('keydown', event=>{
-  if(event.key === 'Escape' && !document.getElementById('sentence-modal').hidden) closeSentence();
+  if(event.key === 'Escape' && sentenceLookupOpen()) closeSentence();
 });
+
+/* 주소창이 드나드는 작은 높이 변화는 같은 분기에 머무는 한 아무 일도 아닙니다.
+   실제 분기가 바뀔 때만 현재 조회를 끝내며 자동으로 다시 묻지 않습니다. */
+let sentenceLastCompact=sentenceCompactViewport();
+function sentenceViewportChanged(){
+  const next=sentenceCompactViewport();
+  if(next!==sentenceLastCompact && sentenceLookupOpen()) closeSentence();
+  sentenceLastCompact=next;
+}
+if(typeof window!=='undefined'){
+  window.addEventListener('resize',sentenceViewportChanged,{passive:true});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',sentenceViewportChanged,{passive:true});
+}

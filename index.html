@@ -36,11 +36,11 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=0f959ad8">
+  <link rel="stylesheet" href="styles/tokens.css?v=c3a83b33">
   <link rel="stylesheet" href="styles/base.css?v=8fadfe0e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=7145fd3e">
-  <link rel="stylesheet" href="styles/dictionary.css?v=364dd367">
+  <link rel="stylesheet" href="styles/reader.css?v=1fcb5217">
+  <link rel="stylesheet" href="styles/dictionary.css?v=6074d818">
   <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
   <link rel="stylesheet" href="styles/onboarding.css?v=fffb5627">
@@ -63,7 +63,7 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=fa48fb26"></script>
-  <script defer src="scripts/core/state.js?v=951517d9"></script>
+  <script defer src="scripts/core/state.js?v=6de8bc96"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
@@ -72,8 +72,8 @@
   <script defer src="scripts/reader/reader-scroll.js?v=070886c2"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
-  <script defer src="scripts/reader/gesture.js?v=bf4e6ba3"></script>
-  <script defer src="scripts/reader/pdf-pinch.js?v=da7fffc8"></script>
+  <script defer src="scripts/reader/gesture.js?v=49c1e69f"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=94506e75"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=f63be3ea"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
@@ -82,7 +82,7 @@
   <script defer src="scripts/importers/article.js?v=8633ee61"></script>
   <script defer src="scripts/importers/rss.js?v=f33bf95e"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=8f9e4801"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=59c06c86"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=70f8af44"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -90,8 +90,8 @@
   <script defer src="scripts/reader/pdf-original.js?v=bef6d049"></script>
   <script defer src="scripts/reader/epub-original.js?v=e6256459"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=fe35c193"></script>
-  <script defer src="scripts/reader/reader.js?v=e445ab37"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=efa1362f"></script>
+  <script defer src="scripts/reader/reader.js?v=a531ec9c"></script>
   <script defer src="scripts/ui/preferences.js?v=449e46af"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/sync.js?v=fa7202f1"></script>
@@ -206,6 +206,10 @@
           </svg>
         </button>
         <button id="readpill-title" type="button" onclick="expandReaderChrome()" aria-label="책 제목"></button>
+        <div id="sentence-pill-status" role="status" aria-live="polite" hidden>
+          <span class="sentence-spinner" aria-hidden="true"></span>
+          <span>문장 해석 중</span>
+        </div>
       </div>
       <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
     </div>
@@ -234,22 +238,24 @@
       </div>
     </div>
   </div>
-  <!-- 문장 해석은 낱말 창과 별개입니다. 낱말을 꾹 누르면 문장이 파랗게 차오르고
-       화면 한가운데에 이 창이 뜹니다 — scripts/dictionary/sentence.js
-
-       닫는 자리는 창 바깥(scrim) 하나이고, 거기에도 `onclick` 은 없습니다. 창이
-       떠 있는 동안의 손짓은 Gesture Controller 가 임자로서 통째로 가집니다 —
-       scripts/reader/gesture.js 의 `sentenceDismissTarget`. 오른쪽 위에 X 가 하나
-       더 있었지만, 닫는 길이 둘이면 "닫은 뒤에 무엇이 남았는가"를 두 벌 확인해야
-       합니다. 창 안을 누르면 아무 일도 일어나지 않고, 자판에서는 Esc 로 닫습니다. -->
+  <!-- 모든 화면에서 기존 가운데 필이 요청 대기를 알립니다. 답이 오면 좁은 화면은
+       같은 표면처럼 바텀시트로 이어지고, 넓은 화면은 종전 중앙 창을 사용합니다.
+       명시적인 X는 두지 않으며, 바깥 탭·시트 끌어내리기·Back/Escape는 모두
+       scripts/reader/gesture.js가 소유한 한 종료 경로로 끝납니다. -->
   <div id="sentence-modal" hidden>
     <div id="sentence-scrim"></div>
-    <section id="p-sentence" role="dialog" aria-modal="true" aria-live="polite">
-      <div class="cap"><span class="dot"></span><span id="ps-cap">문장 해석</span></div>
-      <div id="ps-en"></div>
-      <div class="aurora" id="ps-wait" aria-hidden="true" hidden><span class="glow"></span></div>
+    <section id="p-sentence" role="dialog" aria-modal="true" aria-label="문장 해석 결과" aria-live="polite">
+      <header id="ps-head">
+        <span id="ps-grabber" aria-hidden="true"></span>
+      </header>
+      <div id="ps-source">
+        <div id="ps-en"></div>
+      </div>
       <div id="ps-ko" hidden></div>
-      <ul id="ps-points" hidden></ul>
+      <details id="ps-extra" hidden>
+        <summary>문장 구조와 표현</summary>
+        <ul id="ps-points"></ul>
+      </details>
       <div id="ps-foot" hidden></div>
       <!-- 요청만 실패했는데 손짓부터 다시 할 이유는 없습니다. 같은 문장을 그대로
            다시 물어봅니다 — 창은 닫지 않습니다(scripts/dictionary/sentence.js).

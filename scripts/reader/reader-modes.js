@@ -313,6 +313,7 @@ async function switchReaderMode(mode,options){
   options = options || {};
   if(!curBook || (mode!=='text' && mode!=='original')) return;
   if(mode==='original' && !bookSupportsOriginal(curBook)) return;
+  if(typeof closeSentence==='function') closeSentence();
 
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;

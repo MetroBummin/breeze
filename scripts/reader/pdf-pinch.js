@@ -47,6 +47,8 @@ function originalPinchDistance(points){
                     points[0].clientY-points[1].clientY);
 }
 function beginOriginalPinch(center, distance, ids){
+  if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
+      && typeof closeSentence==='function') closeSentence();
   if(typeof pinReaderChrome==='function') pinReaderChrome(true,'zoom');
   const box = readerScroller(), layer = originalZoomLayer(), stage = originalZoomStage();
   // A deliberate pinch supersedes delayed mode-landing restores (360/900ms).

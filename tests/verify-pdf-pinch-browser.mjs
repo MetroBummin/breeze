@@ -215,14 +215,17 @@ try{
    }else{
      await page.evaluate(()=>closePanel());await page.waitForTimeout(400);
    }
-   // A fresh long press after a pinch must still open exactly the sentence modal.
+   // A fresh long press after a pinch must still enter the shared pending pill.
+   // If the result is already ready, it stays hidden until the held finger lifts.
    if(cdp){
      await touch('touchStart',[{id:1,...word}]);
      await page.waitForTimeout(900);
-     assert.equal((await snapshot()).sentence,true,'fresh long press was swallowed');
+     assert.equal(await page.evaluate(()=>sentenceWaitingActive()),true,'fresh long press was swallowed');
+     assert.equal((await snapshot()).sentence,false,'result opened under the held long-press finger');
      assert.equal((await snapshot()).panel,false,'long press also opened a word');
      assert.equal((await snapshot()).wordActions,tapsBefore+1);
      await touch('touchEnd',[]);
+     await page.waitForFunction(()=>sentenceModalOpen());
      await page.evaluate(()=>closeSentence());await page.waitForTimeout(300);
    }
    // Aa is intentionally hidden in the compact toolbar; expand the title

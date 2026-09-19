@@ -18,7 +18,8 @@
     "test:pdf-pinch": "node tests/verify-pdf-pinch-browser.mjs",
     "test:viewport": "node tests/verify-viewport-browser.mjs",
     "test:v11": "node tests/verify-v11-browser.mjs",
-    "test:panel-anchor": "node tests/verify-panel-anchor-browser.mjs"
+    "test:panel-anchor": "node tests/verify-panel-anchor-browser.mjs",
+    "test:sentence": "node tests/verify-sentence-presentation-browser.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

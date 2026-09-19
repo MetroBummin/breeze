@@ -182,35 +182,86 @@
   #p-aihint.tight{margin-top:-8px;}
   /* ── 문장 해석 ──
      낱말 창은 본문 옆의 보조 칸이지만, 문장 해석은 지금 읽던 한 문장에 대한
-     답이라 화면 한가운데에 뜹니다. 파랗게 차오른 문장이 그 뒤에 보입니다. */
+     답이라 화면 한가운데에 뜹니다. 문장 선택의 파랑은 뒤에 남지만, 답 자체는
+     색보다 재질이 먼저 보이는 중립 유리입니다. */
   #sentence-modal{position:fixed; inset:0; z-index:120; display:flex; align-items:center; justify-content:center;
     padding:20px;}
   #sentence-modal[hidden]{display:none;}
-  #sentence-scrim{position:absolute; inset:0; background:var(--scrim-read);}
+  #sentence-scrim{position:absolute; inset:0; background:var(--sentence-glass-scrim); touch-action:none;}
   #p-sentence{position:relative; width:min(520px,100%); max-height:76vh; overflow-y:auto;
-    padding:18px 20px 20px; border:1px solid var(--ai-line); border-radius:18px;
-    background:linear-gradient(135deg,var(--ai-bg1),var(--ai-bg2)); box-shadow:var(--shadow-sheet);}
-  #p-sentence .cap{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
-    letter-spacing:.08em; color:var(--ai-key); margin-bottom:7px;}
-  #p-sentence .dot{width:5px; height:5px; border-radius:50%; background:var(--ai-key);}
-  /* 오른쪽 여백 24px 은 X 단추가 앉을 자리였습니다. 단추가 없으니 문장이 카드
-     폭을 다 씁니다. */
-  #ps-en{font-family:var(--serif); font-size:14.5px; line-height:1.62; color:var(--ai-ink);
-    padding:0 0 10px; border-bottom:1px solid var(--ai-line); margin-bottom:10px; overflow-wrap:anywhere;}
-  #ps-wait{margin-top:2px;}
-  #ps-ko{font-size:15.5px; font-weight:600; line-height:1.62; color:var(--ai-ink);}
+    padding:20px 22px 22px; border:1px solid var(--sentence-glass-line); border-radius:22px;
+    background:var(--sentence-glass-solid); box-shadow:var(--sentence-glass-shadow);
+    color:var(--sentence-glass-ink); animation:sentence-modal-in var(--sentence-transition) cubic-bezier(.2,.7,.25,1);}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    #p-sentence{background:var(--sentence-glass-surface); backdrop-filter:blur(18px) saturate(112%);
+      -webkit-backdrop-filter:blur(18px) saturate(112%);}
+  }
+  #ps-head{display:none;}
+  #ps-grabber{display:none;}
+  #ps-source{margin:0;}
+  #ps-en{font-family:var(--serif); font-size:14.5px; line-height:1.62;
+    color:var(--sentence-glass-secondary); padding:0 0 11px;
+    border-bottom:1px solid var(--sentence-glass-line-soft); margin-bottom:12px;
+    overflow-wrap:anywhere;}
+  #ps-ko{font-size:16px; font-weight:650; line-height:1.65; color:var(--sentence-glass-ink);}
+  #ps-extra{margin-top:10px;}
+  #ps-extra>summary{color:var(--sentence-glass-muted); cursor:pointer; font:600 12px var(--ui);}
   #ps-points{list-style:none; margin-top:10px; display:flex; flex-direction:column; gap:7px;}
-  #ps-points li{position:relative; padding-left:13px; font-size:12.5px; line-height:1.6; color:var(--ai-note);}
+  #ps-points li{position:relative; padding-left:13px; font-size:12.5px; line-height:1.6;
+    color:var(--sentence-glass-secondary);}
   #ps-points li::before{content:''; position:absolute; left:0; top:8px; width:5px; height:5px;
-    border-radius:50%; background:var(--ai-key); opacity:.45;}
-  #ps-foot{margin-top:10px; color:var(--soft2); text-align:center; font-size:11px; line-height:1.45;}
+    border-radius:50%; background:var(--sentence-glass-muted); opacity:.48;}
+  #ps-foot{margin-top:10px; color:var(--sentence-glass-muted); text-align:center;
+    font-size:11px; line-height:1.45;}
   /* 실패했을 때만 뜨는 한 줄. 뜻 칸의 "이 문장에서는?" 과 같은 문법을 씁니다 —
      둘 다 이 카드 안에서 다시 물어보는 자리라 모양이 같아야 합니다. */
   #ps-retry{display:block; margin:10px auto 0; padding:8px 16px; border-radius:12px;
-    border:1px dashed var(--ai-line); background:transparent; color:var(--ai-key);
+    border:1px solid var(--sentence-glass-line-soft); background:var(--sentence-glass-action);
+    color:var(--sentence-glass-secondary);
     font:600 12px var(--ui); cursor:pointer;}
-  #ps-retry:hover{background:var(--ai-bg2); border-style:solid;}
+  #ps-retry:hover{background:var(--sentence-glass-action-hover);}
   #ps-retry[hidden]{display:none;}
+  /* 좁은 화면의 문장 결과는 Reader를 밀지 않는 독립 overlay입니다. 분기값은
+     sentence.js 한 곳에서 계산해 body 표로 전달하므로 CSS에 폭/높이 기준을
+     복제하지 않습니다. */
+  body.sentence-compact #sentence-modal{align-items:flex-end; justify-content:center; padding:0;}
+  body.sentence-compact #sentence-scrim{background:var(--sentence-glass-scrim);}
+  body.sentence-compact #p-sentence{display:flex; flex-direction:column;
+    width:min(calc(100% - 20px),520px); max-height:min(60svh,calc(100svh - env(safe-area-inset-top) - 14px));
+    margin:0 10px calc(env(safe-area-inset-bottom) + 8px); padding:16px 18px 18px;
+    border-radius:26px; background:var(--sentence-glass-solid);
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    transform-origin:bottom center; animation:sentence-sheet-in var(--sentence-transition) cubic-bezier(.2,.75,.25,1);}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    body.sentence-compact #p-sentence{background:var(--sentence-glass-sheet);}
+  }
+  body.sentence-compact.sentence-low-viewport #p-sentence{max-height:calc(100svh - env(safe-area-inset-top) - 10px);
+    width:min(calc(100% - 20px),480px);}
+  body.sentence-compact #ps-head{order:0; position:sticky; top:-16px; z-index:2;
+    display:flex; justify-content:center; margin:-16px -18px 0; padding:9px 18px 7px;
+    background:var(--sentence-glass-solid); touch-action:none;}
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    body.sentence-compact #ps-head{background:var(--sentence-glass-sheet);}
+  }
+  body.sentence-compact #ps-grabber{display:block; width:34px; height:4px; border-radius:3px;
+    background:var(--sentence-glass-muted); opacity:.34;}
+  body.sentence-compact #ps-source{order:1;}
+  body.sentence-compact #ps-en{padding:8px 0 10px; margin:0; border-bottom:0;}
+  body.sentence-compact #ps-ko{order:2; font-size:17px; line-height:1.65; padding:11px 0 14px;
+    border-top:1px solid var(--sentence-glass-line-soft);}
+  body.sentence-compact #ps-extra{order:3; border-top:1px solid var(--sentence-glass-line-soft);
+    padding-top:11px;}
+  body.sentence-compact #ps-foot{order:4;}
+  body.sentence-compact #ps-retry{order:5;}
+  @keyframes sentence-sheet-in{from{opacity:0; transform:translateY(18px) scale(.96)}
+    to{opacity:1; transform:none}}
+  @keyframes sentence-modal-in{from{opacity:0; transform:translateY(7px) scale(.985)}
+    to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    #p-sentence,body.sentence-compact #p-sentence{animation:sentence-surface-fade var(--sentence-transition) linear;}
+    @keyframes sentence-surface-fade{from{opacity:0}to{opacity:1}}
+    @keyframes sentence-sheet-in{from{opacity:0}to{opacity:1}}
+  }
   .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}
   /* 머리글 오른쪽 끝에 그 칸의 유일한 단추가 붙습니다 — 저장된 뜻의 ＋, 모르는 정도의 색칠. */
   .p-sec-row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px;}
