@@ -388,6 +388,7 @@ function clearActiveWordSelection(){
   }catch(error){}
 }
 function selectWord(k, span){
+  const panelChange=typeof beginReaderPanelOpen==='function' ? beginReaderPanelOpen(span) : null;
   /* 여기서부터가 새 열림입니다. 앞 열림에 딸린 조회는 이 줄에서 임자를 잃습니다. */
   beginSheetLife();
   /* 다른 낱말을 열면 앞 문장의 해석 창은 남겨 둘 이유가 없습니다. */
@@ -408,6 +409,7 @@ function selectWord(k, span){
   const resetPanelScroll=()=>{ panel.scrollTop=0; };
   resetPanelScroll();
   panel.classList.add('on');
+  if(typeof commitReaderPanelChange==='function') commitReaderPanelChange(panelChange);
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   document.getElementById('sheetbg').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
@@ -427,6 +429,7 @@ function selectWord(k, span){
    두 길이 남기는 JS/DOM 상태는 한 글자도 다르지 않은데 실기기에서는 바깥으로
    닫을 때만 렉이 났습니다. 낱말 시트의 바깥도 같은 예외였습니다. */
 function closePanel(){
+  const panelChange=typeof beginReaderPanelClose==='function' ? beginReaderPanelClose() : null;
   selKey=null;
   contextView=null; phraseView=null; addingMeaning=false;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
@@ -435,6 +438,7 @@ function closePanel(){
   endSheetLife();
   const panel=document.getElementById('panel');
   panel.classList.remove('on');
+  if(typeof commitReaderPanelChange==='function') commitReaderPanelChange(panelChange);
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   panel.scrollTop=0;
   document.getElementById('sheetbg').classList.remove('on');

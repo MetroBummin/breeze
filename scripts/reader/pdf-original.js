@@ -278,6 +278,7 @@ function makePdfWordMarker(page,box,className,status,wordKey){
   marker.textContent=box.word;
   marker.dataset.w=wordKey||keyOf(box.word);
   marker.dataset.example=box.example||'';
+  marker.dataset.readerAnchor=JSON.stringify({kind:'pdf',page:+page.dataset.page,y:box.y});
   marker.setAttribute('aria-hidden','true');
   marker.style.cssText=`left:${box.x*100}%;top:${box.y*100}%;width:${box.w*100}%;height:${box.h*100}%`;
   page.appendChild(marker);
@@ -438,7 +439,7 @@ function capturePdfAnchor(inset){
           y:Math.max(0,Math.min(1,(inset-rect.top)/Math.max(1,rect.height)))};
 }
 
-async function restorePdfAnchor(source,inset,changeToken){
+async function restorePdfAnchor(source,inset,changeToken,isCurrent){
   const pageNumber=Math.max(1,Math.min(originalSession.pages.length,Number(source.page)||1));
   const page=originalSession.pages[pageNumber-1];
   if(!page) return false;
@@ -446,7 +447,8 @@ async function restorePdfAnchor(source,inset,changeToken){
      `scrollTop` 도 같은 단위입니다. 그래서 이 셈은 배율이 얼마든 그대로입니다. */
   readerScrollTo(readerScrollTop()+page.getBoundingClientRect().top-inset);
   await renderOriginalPdfPage(originalSession,pageNumber);
-  if(changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original')) return false;
+  if((changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original'))
+      || (isCurrent&&!isCurrent())) return false;
   const rect=page.getBoundingClientRect();
   readerScrollTo(readerScrollTop()+rect.top-inset
     +Math.max(0,Math.min(1,Number(source.y)||0))*rect.height);

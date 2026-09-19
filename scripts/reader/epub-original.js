@@ -743,6 +743,20 @@ function openOriginalRange(doc,range,raw,owner,rect){
   marker.textContent=raw;
   const key=keyOf(raw); marker.dataset.w=key;
   const block=owner.closest&&owner.closest('p,li,blockquote,h1,h2,h3,h4');
+  const indexed=(block||owner).closest&&((block||owner).closest('[data-breeze-ei]'));
+  const frame=doc.defaultView&&doc.defaultView.frameElement;
+  const section=frame&&frame.closest('.epub-source-chapter');
+  let char=0;
+  try{
+    const before=doc.createRange();
+    before.selectNodeContents(indexed||block||owner);
+    before.setEnd(range.startContainer,range.startOffset);
+    char=before.toString().length;
+  }catch(error){}
+  if(indexed&&section) marker.dataset.readerAnchor=JSON.stringify({
+    kind:'epub',href:section.dataset.href||'',spine:+section.dataset.spine,
+    element:+indexed.dataset.breezeEi,char,
+  });
   marker.dataset.example=originalSentence((block||owner).textContent,raw);
   marker.setAttribute('aria-hidden','true');
   if(words[key] && words[key].mark !== false) marker.classList.add('s'+words[key].status);
@@ -761,12 +775,38 @@ function captureEpubAnchor(inset){
   const frame=originalSession.frames[spine];
   const doc=frame&&frame.contentDocument;
   let element=0;
+  let char=null;
   if(doc){
     const frameTop=frame.getBoundingClientRect().top;
-    const found=firstElementBelow([...doc.querySelectorAll('[data-breeze-ei]')],inset-frameTop);
-    if(found) element=+found.dataset.breezeEi;
+    const localY=inset-frameTop;
+    const localX=Math.max(1,Math.min(frame.clientWidth-1,frame.clientWidth/2));
+    let caret=null;
+    try{
+      if(doc.caretPositionFromPoint){
+        const hit=doc.caretPositionFromPoint(localX,localY);
+        if(hit) caret={node:hit.offsetNode,offset:hit.offset};
+      }else if(doc.caretRangeFromPoint){
+        const hit=doc.caretRangeFromPoint(localX,localY);
+        if(hit) caret={node:hit.startContainer,offset:hit.startOffset};
+      }
+    }catch(error){}
+    const owner=caret&&caret.node&&(caret.node.nodeType===Node.TEXT_NODE
+      ? caret.node.parentElement : caret.node);
+    const found=owner&&owner.closest ? owner.closest('[data-breeze-ei]')
+      : firstElementBelow([...doc.querySelectorAll('[data-breeze-ei]')],localY);
+    if(found){
+      element=+found.dataset.breezeEi;
+      if(caret&&found.contains(caret.node)){
+        try{
+          const before=doc.createRange();
+          before.selectNodeContents(found);
+          before.setEnd(caret.node,caret.offset);
+          char=before.toString().length;
+        }catch(error){}
+      }
+    }
   }
-  return {kind:'epub',href:section.dataset.href||'',spine,element};
+  return {kind:'epub',href:section.dataset.href||'',spine,element,...(char==null?{}:{char})};
 }
 
 function epubElementAt(spine,elementIndex){
@@ -775,7 +815,7 @@ function epubElementAt(spine,elementIndex){
   return doc ? doc.querySelector(`[data-breeze-ei="${Math.max(0,Number(elementIndex)||0)}"]`) : null;
 }
 
-async function restoreEpubAnchor(source,inset){
+async function restoreEpubAnchor(source,inset,_changeToken,isCurrent){
   const spine=Math.max(0,Math.min(originalSession.frames.length-1,Number(source.spine)||0));
   const frame=originalSession.frames[spine];
   if(!frame) return false;
@@ -788,8 +828,17 @@ async function restoreEpubAnchor(source,inset){
   if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(600);
   try{ await waitForEpubAnchorGeometry(source); }
   finally{ clearInterval(holdSave); }
+  if(isCurrent&&!isCurrent()) return false;
   const element=epubElementAt(spine,source.element);
-  const offset=element ? element.getBoundingClientRect().top : 0;
+  let offset=element ? element.getBoundingClientRect().top : 0;
+  if(element&&source.char!=null&&typeof domRangeForOffsets==='function'){
+    try{
+      const at=Math.max(0,Math.min(element.textContent.length,Number(source.char)||0));
+      const range=domRangeForOffsets(element,at,Math.min(element.textContent.length,at+1));
+      const rect=range&&range.getClientRects()[0];
+      if(rect) offset=rect.top;
+    }catch(error){}
+  }
   readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);
   /* 아직 크기가 확정되지 않은 장이 위에 있으면, 그 장이 자리를 잡을 때 이 앵커를
      다시 앉힙니다(`reapplyEpubAnchorIfPending`). 전부 확정돼 있으면 들고 있을

@@ -448,6 +448,197 @@ function followScrollDirection(){
   if(chromeRun >= CHROME_STEP){ chromeRun = 0; setReaderChrome(true); }
   else if(chromeRun <= -CHROME_BACK){ chromeRun = 0; setReaderChrome(false); }
 }
+
+/* ================= 낱말 창 한 번의 자리 이동 =================
+   옆 패널은 본문 폭을 바꿉니다. 문단 꼭대기를 붙들면 긴 문단 안의 눌렀던 낱말은
+   줄바꿈 뒤에 다른 줄로 밀립니다. 여기서는 패널 한 번을 한 작업으로 다룹니다:
+   원문 글자 위치와 화면 y를 먼저 얻고, 폭을 바꾸고, 그 글자를 한 번 되찾습니다.
+   ResizeObserver는 이 작업을 재실행하지 않습니다. */
+let readerPanelGeneration=0;
+let readerPanelSession=null;
+let readerPanelChange=null;
+let readerPanelIgnoredWidth=null;
+
+function readerNodeRect(node){
+  if(!node || !node.getBoundingClientRect) return null;
+  const rect=node.getBoundingClientRect();
+  const doc=node.ownerDocument;
+  if(!doc || doc===document) return rect;
+  const frame=doc.defaultView&&doc.defaultView.frameElement;
+  if(!frame) return rect;
+  const outer=frame.getBoundingClientRect();
+  return {top:outer.top+rect.top,left:outer.left+rect.left,width:rect.width,height:rect.height};
+}
+
+function textOffsetInBlock(block,node,offset){
+  try{
+    const range=(block.ownerDocument||document).createRange();
+    range.selectNodeContents(block);
+    if(offset==null) range.setEndBefore(node);
+    else range.setEnd(node,offset);
+    return range.toString().length;
+  }catch(error){ return 0; }
+}
+
+function textPanelAnchorFromNode(node){
+  const block=node&&node.closest&&node.closest('[data-pi]');
+  const rect=readerNodeRect(node);
+  if(!block||!rect) return null;
+  return {mode:'text',source:{pi:+block.dataset.pi,char:textOffsetInBlock(block,node)},screenY:rect.top};
+}
+
+function textPanelAnchorAt(screenY){
+  const readmain=document.getElementById('readmain');
+  const bounds=readmain&&readmain.getBoundingClientRect();
+  const x=bounds ? bounds.left+bounds.width/2 : window.innerWidth/2;
+  let caret=null;
+  try{
+    if(document.caretPositionFromPoint){
+      const hit=document.caretPositionFromPoint(x,screenY);
+      if(hit) caret={node:hit.offsetNode,offset:hit.offset};
+    }else if(document.caretRangeFromPoint){
+      const hit=document.caretRangeFromPoint(x,screenY);
+      if(hit) caret={node:hit.startContainer,offset:hit.startOffset};
+    }
+  }catch(error){}
+  const owner=caret&&caret.node&&(caret.node.nodeType===Node.TEXT_NODE
+    ? caret.node.parentElement : /** @type {Element} */ (caret.node));
+  let block=owner&&owner.closest ? owner.closest('#rtext [data-pi]') : null;
+  if(!block){
+    const elements=readerParagraphs();
+    block=elements.length ? firstElementBelow(elements,screenY) : null;
+  }
+  if(!block) return null;
+  const char=caret&&block.contains(caret.node) ? textOffsetInBlock(block,caret.node,caret.offset) : 0;
+  let y=screenY;
+  if(typeof domRangeForOffsets==='function'){
+    try{
+      const range=domRangeForOffsets(block,char,Math.min(block.textContent.length,char+1));
+      const rect=range&&range.getClientRects()[0];
+      if(rect) y=rect.top;
+    }catch(error){}
+  }
+  return {mode:'text',source:{pi:+block.getAttribute('data-pi'),char},screenY:y};
+}
+
+function originalPanelAnchorAt(screenY,node){
+  let direct=null;
+  try{ direct=node&&node.dataset&&node.dataset.readerAnchor
+    ? JSON.parse(node.dataset.readerAnchor) : null; }catch(error){}
+  const source=direct || (originalFormat()&&originalFormat().captureAnchor(screenY));
+  return source ? {mode:'original',source:{...source},screenY} : null;
+}
+
+function captureReaderPanelAnchor(node,screenY){
+  if(!curBook) return null;
+  if(currentReaderMode==='text') return node ? textPanelAnchorFromNode(node) : textPanelAnchorAt(screenY);
+  const rect=node&&readerNodeRect(node);
+  return originalPanelAnchorAt(rect ? rect.top : screenY,node);
+}
+
+function readerPanelReferenceY(){
+  const box=readerScroller();
+  const rect=box&&box.getBoundingClientRect();
+  return rect ? rect.top+rect.height/2 : window.innerHeight/2;
+}
+
+function restoreTextPanelAnchor(anchor){
+  const source=anchor&&anchor.source;
+  const block=source&&document.querySelector(`#rtext [data-pi="${source.pi}"]`);
+  if(!block) return false;
+  let top=block.getBoundingClientRect().top;
+  if(source.char!=null&&typeof domRangeForOffsets==='function'){
+    try{
+      const at=Math.max(0,Math.min(block.textContent.length,Number(source.char)||0));
+      const range=domRangeForOffsets(block,at,Math.min(block.textContent.length,at+1));
+      const rect=range&&range.getClientRects()[0];
+      if(rect) top=rect.top;
+    }catch(error){}
+  }
+  readerScrollTo(readerScrollTop()+top-anchor.screenY);
+  lastAnchor={pi:source.pi,dy:Math.round(block.getBoundingClientRect().top)};
+  return true;
+}
+
+async function restoreReaderPanelAnchor(change){
+  if(!change||change.generation!==readerPanelGeneration||!curBook
+      || curBook.id!==change.bookId||currentReaderMode!==change.mode) return false;
+  if(change.mode==='text') return restoreTextPanelAnchor(change.anchor);
+  const format=originalFormat();
+  if(!format) return false;
+  const current=()=>change===readerPanelChange&&change.generation===readerPanelGeneration
+    && curBook&&curBook.id===change.bookId&&currentReaderMode===change.mode;
+  const restored=await format.restoreAnchor(
+    change.anchor.source,change.anchor.screenY,change.modeToken,current);
+  if(restored) lastOriginalAnchor=change.anchor.source;
+  return restored;
+}
+
+function beginReaderPanelOpen(node){
+  const panel=document.getElementById('panel');
+  const wasOpen=!!(panel&&panel.classList.contains('on'));
+  const anchor=node ? captureReaderPanelAnchor(node,readerPanelReferenceY()) : null;
+  /* 패널 안에서 저장 뜻을 바꾸는 selectWord(k,null)는 레이아웃도 기준 단어도
+     바꾸지 않습니다. 막 시작한 열기 복원을 취소하지 않고 그대로 둡니다. */
+  if(wasOpen&&!anchor) return null;
+  if(anchor) readerPanelSession={bookId:curBook.id,mode:currentReaderMode,anchor,userMoved:false,
+    lastTop:readerScrollTop()};
+  const generation=++readerPanelGeneration;
+  readerPanelChange=null;
+  if(wasOpen||!anchor) return null;
+  return readerPanelChange={generation,bookId:curBook.id,mode:currentReaderMode,
+    modeToken:readerModeChangeToken,anchor,beforeWidth:document.getElementById('readmain').getBoundingClientRect().width};
+}
+
+function beginReaderPanelClose(){
+  const session=readerPanelSession;
+  const generation=++readerPanelGeneration;
+  readerPanelChange=null;
+  if(!session||!curBook||session.bookId!==curBook.id||session.mode!==currentReaderMode){
+    readerPanelSession=null; return null;
+  }
+  const anchor=session.userMoved
+    ? captureReaderPanelAnchor(null,readerPanelReferenceY()) : session.anchor;
+  readerPanelSession=null;
+  if(!anchor) return null;
+  return readerPanelChange={generation,bookId:curBook.id,mode:currentReaderMode,
+    modeToken:readerModeChangeToken,anchor,beforeWidth:document.getElementById('readmain').getBoundingClientRect().width};
+}
+
+function commitReaderPanelChange(change){
+  if(!change||change!==readerPanelChange) return;
+  requestAnimationFrame(async()=>{
+    if(change!==readerPanelChange||change.generation!==readerPanelGeneration) return;
+    const width=document.getElementById('readmain').getBoundingClientRect().width;
+    if(Math.abs(width-change.beforeWidth)<1){ readerPanelChange=null; return; }
+    readerPanelIgnoredWidth=Math.round(width);
+    try{ await whileRestoringChrome(()=>restoreReaderPanelAnchor(change)); }
+    finally{
+      if(change===readerPanelChange){
+        readerPanelChange=null;
+        if(readerPanelSession) readerPanelSession.lastTop=readerScrollTop();
+      }
+    }
+  });
+}
+
+function noteReaderPanelScroll(){
+  const session=readerPanelSession;
+  if(!session) return;
+  const top=readerScrollTop();
+  const moved=Math.abs(top-session.lastTop)>1;
+  session.lastTop=top;
+  if(moved&&!readerPanelChange&&!readerScrollWasProgrammatic()&&!readerAnchorHeld()) session.userMoved=true;
+}
+
+function readerPanelOwnsResize(width){
+  if(readerPanelChange) return true;
+  if(readerPanelIgnoredWidth!=null&&Math.abs(readerPanelIgnoredWidth-width)<1){
+    readerPanelIgnoredWidth=null;
+    return true;
+  }
+  return false;
+}
 /* 듣는 곳이 문서(`window`)에서 읽는 칸으로 옮겨졌습니다. 아이폰 사파리가 주소창을
    여닫으며 흘리던 가짜 스크롤이 여기까지 오지 않는 것도 덤입니다.
 
@@ -457,9 +648,11 @@ function followScrollDirection(){
 let chromeFrame=0;
 (readerScroller() || window).addEventListener('scroll', ()=>{
   if(!curBook) return;
+  noteReaderPanelScroll();
   if(!chromeFrame) chromeFrame=requestAnimationFrame(()=>{ chromeFrame=0; if(curBook) followScrollDirection(); });
   invalidateReaderMeasurements();
   scheduleProgressUpdate();
+  if(readerPanelChange) return;
   if(Date.now()<readerScrollPauseUntil) return;
   if(scrollTick) return;
   const scheduledBook=curBook;
@@ -483,6 +676,7 @@ if(window.ResizeObserver){
     if(!readerWidth || width===readerWidth){ readerWidth = width; return; }
     readerWidth = width;
     if(!curBook || !document.getElementById('v-read').classList.contains('on')) return;
+    if(readerPanelOwnsResize(width)) return;
     invalidateReaderMeasurements();   // 폭이 바뀌면 글이 다시 흐릅니다
     suspendReaderScrollSave(600);
     /* The panel animates its width, so this fires many times. Freeze the

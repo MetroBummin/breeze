@@ -189,19 +189,43 @@ function miniToast(msg){
    1순위: 사전이 주는 원어민 녹음(mp3)   2순위: 기기 내장 음성(TTS)
    앱(Capacitor)으로 옮길 때도 이 함수 안쪽만 교체하면 됩니다.            */
 let curAudio = null, speakGeneration = 0;
+function nativeSpeechHandler(){
+  const webkit=/** @type {any} */ (window).webkit;
+  return webkit&&webkit.messageHandlers&&webkit.messageHandlers.breezeSpeech;
+}
+window.addEventListener('breezeNativeSpeech', event=>{
+  const detail=(/** @type {CustomEvent} */ (event)).detail||{};
+  if(Number(detail.generation)!==speakGeneration) return;
+  const btn=document.getElementById('p-speak');
+  if(detail.state==='start') btn&&btn.classList.add('playing');
+  if(detail.state==='end'||detail.state==='cancel'||detail.state==='error')
+    btn&&btn.classList.remove('playing');
+  if(detail.state==='error') toast('발음을 재생하지 못했어요');
+});
 function speak(text){
   const btn = document.getElementById('p-speak');
   const mark = on => btn && btn.classList.toggle('playing', on);
   const generation=++speakGeneration;
   try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
+  const native=nativeSpeechHandler();
+  if(native){
+    try{ native.postMessage({command:'speak',text:String(text||''),generation}); }
+    catch(error){ mark(false); toast('발음을 재생하지 못했어요'); }
+    return;
+  }
   if(!window.speechSynthesis){ toast('이 브라우저는 발음 재생을 지원하지 않아요'); return; }
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US'; u.rate = 0.95;
   const v = speechSynthesis.getVoices().find(v=>/^en(-|_)/i.test(v.lang));
   if(v) u.voice = v;
   u.onstart = ()=>{ if(generation===speakGeneration) mark(true); };
-  u.onend = u.onerror = ()=>{ if(generation===speakGeneration) mark(false); };
+  u.onend = ()=>{ if(generation===speakGeneration) mark(false); };
+  u.onerror = event=>{
+    if(generation!==speakGeneration) return;
+    mark(false);
+    if(!event || !/canceled|interrupted/i.test(event.error||'')) toast('발음을 재생하지 못했어요');
+  };
   /* 원어민 mp3는 내려받고 실패하는 동안 뒤늦게 여러 TTS를 쌓았습니다. 발음은
      사전 정보보다 즉시성이 중요하므로, 기기 음성만 바로 재생합니다. */
   speechSynthesis.speak(u);

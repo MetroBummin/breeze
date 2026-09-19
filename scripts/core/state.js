@@ -150,6 +150,7 @@ function keepPlace(fn){
 
 function saveReadingState(){
   if(!curBook) return;
+  if(typeof readerPanelChange!=='undefined'&&readerPanelChange) return;
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
