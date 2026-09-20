@@ -11,26 +11,37 @@
 
 ## 2. 실제 확인한 환경 / 생성 리소스 / URL
 
-2026-09-20 도구 조회: Breeze 프로젝트 `hrtfhojbhqvaoiulspto`,
+2026-09-20 재확인: Breeze 프로젝트 `hrtfhojbhqvaoiulspto`,
 Organization `nxnssinjzlxqnkwlbwmp` / `Breeze` / **Free**,
-`ACTIVE_HEALTHY`, 서울 리전. 프로젝트·조직 목록은 이전 연결 범위를 반환했지만
-프로젝트 ID 직접 조회와 Org 직접 조회는 성공했다. 관련 기존 테이블 구조만 읽었다.
+`ACTIVE_HEALTHY`, 서울 리전. 프로젝트 ID·Org ID 직접 조회는 성공했다.
+일반 project/org list는 이전 연결 범위를 반환하므로 직접 ID 조회 결과를 기준으로 한다.
 
-실제로 생성한 것은 위 **GitHub 브랜치와 커밋**이다.
-Cloudflare 호출 도구는 이 세션에 노출되지 않아 계정·요금제·기존 리소스를 확인하지 못했다.
-Worker/R2/secret/lifecycle/개발 DB는 생성하지 않았다. **Worker URL: 없음.**
-`breeze-book-relay-dev` Worker·private bucket, rate-limit namespace `26092001`은 후보 이름일 뿐이다.
+Cloudflare 호출 도구는 이번 세션에도 노출되지 않아 **계정별 요금제·기존 Worker/R2를 실제 조회하지 못했다.**
+따라서 Worker/R2/secret/lifecycle은 생성·변경하지 않았다. **Worker URL: 없음.**
+`breeze-book-relay-dev` Worker·private bucket, rate-limit namespace `26092001`은 아직 후보 이름이다.
+공개 Cloudflare 문서상 Workers Free/R2 Standard 무료 포함량은 존재하지만, 계정 상태 확인 전 생성하지 않는다.
 
 ## 3. 적용 여부 / 승인 대기
 
-코드·설정·migration 파일·테스트 작성 완료. **Cloudflare 배포 0건, DB 적용 0건**.
-공개 엔드포인트, main 병합, 유료 전환, 기존 데이터 삭제도 하지 않았다.
-`RELAY_ENABLED=false`, `INFRA_VERIFIED=false`, `workers_dev=false`가 기본값이다.
+코드·설정·migration 파일·테스트 작성 완료. **Cloudflare 배포 0건. Supabase relay schema는 실제 적용 완료.**
+Breeze project `hrtfhojbhqvaoiulspto`에 migration
+`20260920053847 / add_breeze_relay_v1`로 적용했다. Ready에는 적용하지 않았다.
 
-계정·요금·이름 충돌 확인 후 개발용 새 private R2/Worker 생성·제한 배포, 필요한 secret 설정,
-Breeze 추가 스키마 적용은 사용자 승인을 받아야 한다. 현재 Breeze는 운영 DB다.
-먼저 승인된 별도 TEST Postgres/Supabase에서 SQL을 실행·검증하고 운영 반영을 별도 승인받는다.
-자동 유료 개발 브랜치 생성 금지. 순서는 [배포 절차](../server/relay/README.md)를 따른다.
+실제 생성된 relay DB 객체:
+- tables: `relay_accounts`, `relay_files`, `relay_events`, `relay_nonces`, `relay_maintenance`
+- functions: `relay_context`, `relay_commit`, `relay_events_page`, `relay_snapshot_page`,
+  `relay_due`, `relay_sweep_cursor`, `relay_prune`, `relay_bootstrap`
+- indexes: `relay_due_idx`, `relay_events_retention_idx`, `relay_nonces_expiry_idx`
+
+5개 relay table 모두 RLS ON이고 anon/authenticated table grant·RPC EXECUTE가 없으며,
+`service_role` RPC EXECUTE grant가 존재한다. 적용 직후 relay data row는
+accounts/files/events/nonces 모두 0, maintenance만 초기 row 1개다.
+공개 엔드포인트, main 병합, 유료 전환, 기존 데이터 삭제는 하지 않았다.
+`RELAY_ENABLED=false`, `INFRA_VERIFIED=false`, `workers_dev=false`는 그대로다.
+
+별도 Supabase dev branch는 없었고 추가 비용 없이 만들 수 있음이 확인되지 않아 생성하지 않았다.
+Cloudflare 계정·요금·이름 충돌 확인 후 개발용 새 private R2/Worker 생성·제한 배포와 secret 설정만 남아 있다.
+순서는 [배포 절차](../server/relay/README.md)를 따른다.
 
 JWT의 실제 활성 서명 알고리즘/키 목록은 확인하지 못했다. 이를 추정하는 대신 해당 프로젝트
 `/auth/v1/user`에 토큰을 검증시킨다. JWT 키 회전·Auth 설정 변경은 하지 않는다.
@@ -106,11 +117,24 @@ Node 22.16.0에서 `cd server/relay && npm test && npm run check`: **39 통과 /
 서명 URL은 독립 botocore 1.43.18 생성 벡터 3개와 일치했다.
 [원본 테스트 로그](../server/relay/test-results.txt) 참조.
 
-**테스트 대역:** Supabase 상태/인증, R2 HTTP 저장소, Cloudflare rate limiter.
-**미실행:** SQL 실행 및 실제 RLS/CAS 동시성, 실제 Supabase JWT 검증,
-Cloudflare/Wrangler build·배포·R2 조건부 헤더/길이·lifecycle, Safari Blob 업로드,
-전체 책 package codec, 앱/iPhone/iPad/iOS 백그라운드.
-[DB 검사 SQL](../server/relay/test/database-checks.sql)과 README의 실제 환경 검사까지 통과 전 활성화하지 않는다.
+**테스트 대역:** 로컬 테스트의 Supabase 상태/인증, R2 HTTP 저장소, Cloudflare rate limiter.
+
+**실제 Supabase에서 검증 완료:**
+- migration `20260920053847 / add_breeze_relay_v1` 적용 성공
+- relay 5개 table 생성 및 RLS ON 확인
+- `test/database-checks.sql` 실행 성공: anon/authenticated table 권한·RPC EXECUTE 없음,
+  service_role RPC EXECUTE 존재, 예상 밖 relay policy 없음
+- Supabase advisor 재실행. relay의 `RLS enabled, no policy` INFO는 browser 완전 차단 설계상 의도됨.
+- 실패한 함수 smoke transaction 뒤 accounts/files/events/nonces 0 row를 재확인해 운영 테스트 찌꺼기 없음
+
+**실제 환경에서 아직 미검증:**
+- 연결된 SQL 실행기는 `supabase_read_only_user`이며 service_role로 SET ROLE할 수 없어,
+  service-role 실제 RPC 실행/CAS 동시성은 이 커넥터에서 수행 불가
+- 실제 Supabase 사용자 JWT를 통한 `/auth/v1/user` 검증
+- Cloudflare/Wrangler build·배포, 실제 R2 PUT/GET/HEAD/CopyObject·조건부 헤더·길이·lifecycle·URL 만료
+- Safari Blob 업로드, 전체 책 package codec, 앱/iPhone/iPad/iOS 백그라운드
+
+Cloudflare 실제 smoke와 service-role 경로 검증 전 `INFRA_VERIFIED`/relay feature flag를 켜지 않는다.
 
 ## 8. Codex의 앱 측 작업만
 
