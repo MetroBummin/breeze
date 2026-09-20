@@ -326,6 +326,16 @@ function tapNewWord(ctx, key){
   assert.equal(ctx.words[ctx.selKey].ko,'위성','Jev가 고른 기존 뜻을 재사용하지 않았습니다');
   assert.equal(world.el('word-peek-meaning').textContent,'위성','Jev가 고른 기존 뜻이 필에 표시되지 않았습니다');
   assert.deepEqual(world.sent,['judge'],'기존 뜻을 골랐는데 생성형 lookup까지 호출했습니다');
+
+  /* 같은 word + 같은 sentence를 다시 열면 방금 고른 sense를 즉시 재사용합니다.
+     phrase/Jev까지 다시 돌면 이 cache는 사용자에게 체감되지 않습니다. */
+  ctx.closePanel();await settle();
+  const callsAfterFirst=world.sent.length;
+  ctx.openWord('moon',span);await settle();
+  assert.equal(world.el('word-peek-meaning').textContent,'위성',
+    '같은 문장에서 같은 단어를 다시 눌렀는데 직전 sense가 즉시 뜨지 않았습니다');
+  assert.equal(world.sent.length,callsAfterFirst,
+    '같은 문장 context cache가 있는데 phrase/Jev를 다시 호출했습니다');
 }
 {
   const { world, net, ctx } = boot();
