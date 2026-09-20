@@ -191,8 +191,11 @@ Node 22.16.0에서 `cd server/relay && npm test && npm run check`: **39 통과 /
 정리 완료를 확인하기 전 Worker/Cron/DB/정리 권한을 먼저 제거하지 않는다. DB/플랫폼 장애가 있으면
 승인된 관리 경로에서 전용 prefix만 청소한다. 기존 다른 bucket/데이터는 삭제하지 않는다.
 현재 개발 Worker는 OFF이므로 추가 운영 롤백은 필요 없다. smoke의 테스트 transfer object는 0개다.
-Supabase에는 테스트 계정 row와 terminal relay file/event/nonce 기록 및 승인된 임시 기기 identity가
-남아 있으며, 이는 실제 R2 payload가 아니고 30일 prune/기존 retention 계약의 대상이다.
+Supabase에는 테스트 계정 row, 승인 3대/revoked 1대의 임시 device identity, `deleted` file 2건,
+event 26건, nonce 24건이 마지막 확인 시점에 남았다. file/event/nonce는 기존 retention/prune 대상이지만
+account/device identity는 자동 prune되지 않는다. 연결된 SQL 도구는 read-only라 보호 조건을 건 삭제도
+거부됐고, UI 삭제는 별도 확인이 필요한 파괴 작업이라 자동 실행하지 않았다. 앱 integration 시작 전
+이 정확한 relay test account row만 승인된 관리 경로에서 reset해야 한다.
 로컬 JWT와 임시 P-256 private-key state 파일은 검증 후 삭제했다.
 main에는 병합하지 않았다.
 클라이언트 활성화 전 [개인정보 안내 수정안](relay-privacy-proposal.md)을 최종 검토한다.
