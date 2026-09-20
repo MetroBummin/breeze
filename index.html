@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=6ec67ced">
   <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
-  <link rel="stylesheet" href="styles/onboarding.css?v=fffb5627">
+  <link rel="stylesheet" href="styles/onboarding.css?v=da44f980">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -97,7 +97,7 @@
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=404fc5ae"></script>
   <script defer src="scripts/ui/interactions.js?v=578ca721"></script>
-  <script defer src="scripts/ui/onboarding.js?v=4407bc85"></script>
+  <script defer src="scripts/ui/onboarding.js?v=c957c641"></script>
   <script defer src="scripts/main.js?v=9ebf8c4e"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
@@ -423,14 +423,35 @@
   </div>
 </div>
 <div id="onboarding" role="dialog" aria-modal="true" aria-label="Breeze 시작하기" hidden>
-  <div class="onboard-header"><span>Breeze</span><button id="onboard-skip" type="button">건너뛰기</button></div>
-  <main class="onboard-reader">
-    <h1>Welcome to Breeze!</h1>
-    <p>A gentle <button id="onboard-word" class="onboard-word" type="button">breeze</button> moves through the trees.</p>
-    <p><button id="onboard-sentence" class="onboard-sentence" type="button">Reading can feel this easy.</button></p>
-    <div id="onboard-prompt" aria-live="polite"></div>
-  </main>
-  <div id="onboard-result" hidden></div>
+  <!-- Reader와 같은 표면을 쓰되, 이 fixture의 상태·조회는 온보딩 안에서만 끝냅니다. -->
+  <div id="onboard-chrome">
+    <button id="onboard-skip" type="button" title="건너뛰기" aria-label="건너뛰기">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
+    </button>
+    <div id="onboard-pill">
+      <div id="onboard-pill-progress" aria-hidden="true"></div>
+      <button id="onboard-mode" type="button" title="원본으로 보기" aria-label="원본으로 보기">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g class="onboard-mode-original"><path d="M6.6 3.7h6.9L17.4 7.7v12.6H6.6z"/><path d="M13.5 3.7v4h3.9"/><path d="M9.3 12.1h5.4M9.3 15.1h5.4M9.3 18h3.4"/></g><g class="onboard-mode-text"><path d="M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6"/></g></svg>
+      </button>
+      <span id="onboard-pill-title">Breeze 시작하기</span>
+      <div id="onboard-sentence-status" role="status" aria-live="polite" hidden><span class="onboard-spinner" aria-hidden="true"></span><span>문장 해석 중</span></div>
+    </div>
+    <button id="onboard-aa" type="button" title="보기 설정" aria-label="보기 설정">Aa</button>
+  </div>
+  <div id="onboard-scroll">
+    <main class="onboard-reader">
+      <h1>Welcome to Breeze!</h1>
+      <p>A gentle <button id="onboard-word" class="onboard-word" type="button">breeze</button> moves through the trees.</p>
+      <p><button id="onboard-sentence" class="onboard-sentence" type="button">Reading can feel this easy.</button></p>
+      <div id="onboard-prompt" aria-live="polite"></div>
+    </main>
+  </div>
+  <section id="onboard-aa-pop" aria-label="보기 설정" hidden>
+    <div class="onboard-aa-row"><span>글자 크기</span><div class="onboard-aa-size"><button id="onboard-font-down" type="button" aria-label="글자 작게">A−</button><span id="onboard-font-size">19</span><button id="onboard-font-up" type="button" aria-label="글자 크게">A+</button></div></div>
+    <div class="onboard-aa-row"><span>다크 모드</span><button id="onboard-dark" class="aa-toggle" type="button" aria-label="다크 모드"><i></i></button></div>
+  </section>
+  <div id="onboard-word-peek" role="status" aria-live="polite" hidden><span class="onboard-spinner" aria-hidden="true"></span><span id="onboard-word-meaning">뜻 찾는 중</span></div>
+  <div id="onboard-sentence-modal" hidden><div id="onboard-sentence-scrim"></div><section id="onboard-sentence-result" role="dialog" aria-modal="true" aria-label="문장 해석 결과" aria-live="polite"><header><span aria-hidden="true"></span></header><div id="onboard-result"></div></section></div>
   <div class="onboard-footer"><button id="onboard-next" type="button" hidden>계속</button></div>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
