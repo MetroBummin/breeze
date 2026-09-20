@@ -1655,9 +1655,9 @@ assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'
   'EPUB highlighting does not use the token/gap phrase matcher');
 /* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
-assert.match(dictionarySource,/if\(!wordLookupAlive\(life\)\)return;\s*\n\s*await lookupNewContextMeaning/,
+assert.match(dictionarySource,/if\(!wordLookupAlive\(life\)\)return;[\s\S]{0,160}await lookupNewContextMeaning/,
   'A late Jev answer can start contextual generation after dismissal');
-assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)return;\s*\n\s*saveDetectedPhrase/,
+assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)[\s\S]{0,220}saveDetectedPhrase/,
   'A late Jev phrase answer can save or rebuild under a dismissed word lookup');
 assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
   'A late "another meaning" answer can reselect a word on a dismissed word lookup again');

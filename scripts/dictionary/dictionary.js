@@ -180,7 +180,7 @@ function deferWordOpenBump(id){
   });
 }
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 저장한 뜻을
-   그대로 먼저 보여 주고 Jev가 기존 뜻 또는 NEW를 자동으로 고릅니다. 읽는 중의
+   먼저 노출하지 않고 판정 상태를 보여 준 뒤 Jev가 기존 뜻 또는 NEW를 자동으로 고릅니다. 읽는 중의
    문장은 저장 카드에 덮어 쓰지 않습니다. 새 뜻이 필요하면 그 순간 Meaning 이 하나
    생깁니다 — 미리보기 상태도, 저장 여부를 묻는 단계도 없습니다. */
 let contextView = null;
@@ -351,8 +351,8 @@ function openWord(k, node){
   const nextExample = sentenceOf(node);
   const root=words[k].root||k;
   const savedContext=nextExample&&(findContextCard(root,nextExample)||findSavedSense(root,nextExample));
-  /* phrase 판정이 끝나기 전에도 저장한 뜻은 즉시 보여 줍니다. 같은 문맥 카드가
-     있으면 그것을, 아니면 마지막으로 보던 뜻을 먼저 그립니다. */
+  /* 같은 문맥 카드가 있으면 바로 보여 줍니다. 새 문맥이면 Jev가 고르기 전의 저장
+     뜻을 정답처럼 먼저 보여 주지 않고, 판정 중임을 필 한 줄로 알립니다. */
   const active=savedContext||((meaningCards(root,null)[0]||[k])[0]);
   const now = Date.now();
   const seenAt = recentWordOpens.get(active) || 0;
@@ -361,7 +361,7 @@ function openWord(k, node){
   if(!savedContext&&nextExample&&nextExample!==words[active].example){
     const w = words[active];
     contextView = { key:active, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
-      book:(curBook&&curBook.title)||w.book };
+      book:(curBook&&curBook.title)||w.book, loading:'checking' };
   }else contextView=null;
   selectWord(active, node, true);
   if(bump)deferWordOpenBump(active);
@@ -405,7 +405,8 @@ function wordPeekSameTarget(k,node){
   return Math.hypot((rect.left+rect.right-wordPeekAnchor.left-wordPeekAnchor.right)/2,
     (rect.top+rect.bottom-wordPeekAnchor.top-wordPeekAnchor.bottom)/2)<6;
 }
-function wordPeekState(w){
+function wordPeekState(w,context){
+  if(context&&context.loading)return {text:context.loading==='new'?'새 뜻 찾는 중':'뜻 확인 중',loading:true};
   const meaning=String((w&&(w.ko||(w.ai&&w.ai.ko)))||'').trim();
   if(meaning) return {text:meaning,loading:false};
   if(w&&(w.loading||w.aiLoading)&&!w.aiSlow) return {text:'뜻 찾는 중',loading:true};
@@ -440,7 +441,7 @@ function renderWordPeek(){
   settlePendingWord();
   const pill=document.getElementById('word-peek'),w=words[selKey];
   if(!wordPeekActive||!w){pill.hidden=true;return;}
-  const state=wordPeekState(w);
+  const state=wordPeekState(w,currentContext(selKey));
   document.getElementById('word-peek-meaning').textContent=state.text;
   pill.classList.toggle('loading',state.loading);
   pill.hidden=false;
@@ -562,11 +563,12 @@ function renderPanel(){
   const base = words[selKey]; if(!base) return;
   const k = selKey;
   const context = currentContext(k);
-  /* 다른 문장에서 만난 낱말은 저장해 둔 뜻을 그대로 보여 줍니다 — 화면에 뜬
-     문장만 지금 읽는 문장으로 바꿔서. Jev가 NEW를 고르거나 실패하면 새 뜻을
+  /* 다른 문장에서 만난 낱말은 판정 중 저장 뜻을 가리고 지금 읽는 문장만 보여
+     줍니다. Jev가 NEW를 고르거나 실패하면 새 뜻을
      조회하고, 생기는 순간 저장된 뜻이 되므로 미리보기 상태가 없습니다. */
   const w = context ? Object.assign({}, base, {
     example:context.sentence, clicked:context.clicked, book:context.book,
+    ko:context.loading?'':base.ko, ai:context.loading?Object.assign({},base.ai||{},{ko:''}):base.ai,
     aiLoading:!!context.loading, aiSlow:false, aiOff:context.error||'',
   }) : base;
   /* 화면의 단어 칸은 내부 key 가 아니라 지금 열어 둔 카드의 표시값입니다. 읽는
@@ -1047,8 +1049,8 @@ async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
 
 async function resolveDetectedPhrase(k,phrase,sentence,book,life){
   const id=phraseCardKeyFromParts(phrase.parts),stored=words[id];
-  contextView=null;
   if(stored&&validWordMeaning(stored)){
+    contextView=null;
     const root=stored.root||id;
     const same=sentence&&(findContextCard(root,sentence)||findSavedSense(root,sentence));
     selKey=same||id;renderIfAlive(life);
@@ -1058,9 +1060,14 @@ async function resolveDetectedPhrase(k,phrase,sentence,book,life){
     }
     return;
   }
+  const context=currentContext(k);
+  if(context){context.loading='new';context.clicked=phrase.surface;renderIfAlive(life);}
   const answer=await fetchLook(k,{word:phrase.canonical,clicked:phrase.surface,cands:[phrase.canonical],
     sentence,book,hold:true,life});
-  if(!wordLookupAlive(life)||!answer||!answer.ko)return;
+  if(!wordLookupAlive(life)||!answer||!answer.ko){
+    if(wordLookupAlive(life)&&currentContext(k)===context){context.loading='';renderIfAlive(life);}
+    return;
+  }
   saveDetectedPhrase(k,phrase,sentence,book,answer,life);
 }
 
@@ -1114,11 +1121,11 @@ async function loadCachedLook(k, began, life){
 /* 저장한 낱말을 다른 문장에서 만나면 Jev가 기존 뜻만 분류합니다. Jev는 뜻을
    만들지 않으며, NEW 또는 어떤 실패든 기존 문맥 AI 조회로 이어집니다. */
 async function resolveSavedWordContext(k, context, life){
-  const w=words[k];if(!w||!context||context.loading)return;
+  const w=words[k];if(!w||!context||context.started)return;
   const root=w.root||k;
   const senses=meaningCards(root,null).map(([id,item],index)=>({id,choice:`sense_${index}`,meaning:item.ko}));
   if(!senses.length)return;
-  context.loading=true;delete context.error;renderIfAlive(life);
+  context.started=true;context.loading='checking';delete context.error;renderIfAlive(life);
   try{
     const signal=wordLookupSignal();
     const verdict=await dictCall({op:'judge',word:w.aiLemma||w.word||root,lemma:w.aiLemma||w.word||root,
@@ -1131,9 +1138,10 @@ async function resolveSavedWordContext(k, context, life){
       }
     }
     if(!wordLookupAlive(life))return;
+    context.loading='new';renderIfAlive(life);
     await lookupNewContextMeaning(k,context,life);
   }finally{
-    context.loading=false;
+    context.loading='';
     if(currentContext(k)===context&&wordLookupAlive(life))renderWordLookup();
   }
 }

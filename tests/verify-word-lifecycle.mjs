@@ -319,10 +319,12 @@ function tapNewWord(ctx, key){
   ctx.openWord('moon', span);
   await settle();
   assert.deepEqual(world.sent,['judge'],'저장 뜻의 다른 문장이 Jev 판단으로 시작하지 않았습니다');
-  assert.equal(ctx.words[ctx.selKey].ko,'달','Jev를 기다리는 동안 저장 뜻을 먼저 보여 주지 않았습니다');
+  assert.equal(world.el('word-peek-meaning').textContent,'뜻 확인 중','Jev 판정 전에 저장 뜻이 먼저 노출됐습니다');
+  assert.equal(world.el('word-peek').classList.contains('loading'),true,'뜻 확인 중 필에 spinner가 없습니다');
   net.deliver({selected:'sense_1',confidence:.9});
   await settle();
   assert.equal(ctx.words[ctx.selKey].ko,'위성','Jev가 고른 기존 뜻을 재사용하지 않았습니다');
+  assert.equal(world.el('word-peek-meaning').textContent,'위성','Jev가 고른 기존 뜻이 필에 표시되지 않았습니다');
   assert.deepEqual(world.sent,['judge'],'기존 뜻을 골랐는데 생성형 lookup까지 호출했습니다');
 }
 {
@@ -333,6 +335,7 @@ function tapNewWord(ctx, key){
   ctx.openWord('run',span);await settle();
   net.deliver({selected:'NEW',confidence:.8});await settle();
   assert.deepEqual(world.sent,['judge','look'],'NEW가 기존 contextual AI lookup으로 이어지지 않았습니다');
+  assert.equal(world.el('word-peek-meaning').textContent,'새 뜻 찾는 중','NEW 뒤의 contextual lookup 상태가 필에 드러나지 않았습니다');
   net.deliver({ko:'운영하다',pos:'동사',gloss:'조직을 맡아 관리하다',lemma:'run',alts:[]});
   await rest(AI_MIN_WAIT);await settle();
   assert.ok(Object.values(ctx.words).some(item=>item&&item.root==='run'&&item.ko==='운영하다'),
@@ -748,6 +751,8 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   net.deliver({accepted:true,threshold:.86,members:[{index:1,confidence:.96},{index:4,confidence:.95},{index:5,confidence:.98}]});
   await settle(20);
   assert.deepEqual(world.sent,['phrase','look'],'확정 phrase가 contextual lookup으로 이어지지 않았습니다');
+  assert.equal(ctx.wordPeekOpen(),true,'phrase 확정 순간 현재 word pill이 닫혔습니다');
+  assert.equal(world.el('word-peek').hidden,false,'phrase 뜻을 찾는 동안 현재 word pill이 사라졌습니다');
   assert.equal(world.payloads[1].word,'take into account','생성형 AI에 자유 생성 phrase가 아니라 canonical identity를 보내지 않았습니다');
   net.deliver({ko:'고려하다',pos:'동사',gloss:'판단할 때 반영하다',lemma:'take into account',alts:[]});
   await rest(AI_MIN_WAIT);await settle(20);
