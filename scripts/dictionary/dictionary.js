@@ -1036,27 +1036,67 @@ function wordLookupSignal(){ return wordLookupCtrl ? wordLookupCtrl.signal : nul
 /* 이 열림이 아직 그 열림이면 다시 그립니다. 아니면 그릴 창이 없습니다. */
 function renderIfAlive(life){ if(wordLookupAlive(life)) renderWordLookup(); }
 
-/* 문장 전체와 클릭 위치만 보냅니다. Jev의 답은 기존 token index 목록뿐이며,
-   phrase 문자열을 자유 생성할 수 없습니다. 실패·애매함·index 불일치는 word-only입니다. */
-async function detectJevPhrase(k,node,sentence,life){
-  const tokens=jevSentenceTokens(sentence);
-  const clickedIndex=jevClickedTokenIndex(node,sentence,tokens);
-  if(tokens.length<2||clickedIndex<0||!wordLookupAlive(life))return null;
+/* 다른 문장에서는 Jev 왕복을 하나만 씁니다.
+   같은 요청에서 ① 저장된 sense 재사용 ② phrase ③ NONE 을 고르고,
+   PHRASE일 때만 함께 받은 token membership을 사용합니다. */
+function jevSenseCandidates(root){
+  return meaningCards(root,null).map(([id,item],index)=>({
+    id,choice:`sense_${index}`,meaning:item.ko,
+    pos:String((item.ai&&item.ai.pos)||item.pos||'').trim(),
+    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim()
+  }));
+}
+async function routeJevTarget(k,node,sentence,life){
+  const w=words[k];if(!w||!sentence||!wordLookupAlive(life))return null;
+  const root=w.root||k,senses=jevSenseCandidates(root);
+  const tokens=jevSentenceTokens(sentence),clickedIndex=jevClickedTokenIndex(node,sentence,tokens);
+  /* 저장 sense도 없고 phrase 위치도 특정할 수 없으면 Jev에게 물을 정보가 없습니다. */
+  if(!senses.length&&(tokens.length<2||clickedIndex<0))return {kind:'none',senses};
   const signal=wordLookupSignal();
-  const verdict=await dictCall({op:'phrase',sentence,clickedIndex,tokens:tokens.map(token=>({text:token.text}))},signal);
-  if(!wordLookupAlive(life)||(!verdict&&signal&&signal.aborted)||!verdict||verdict.error||!verdict.accepted)return null;
-  const indexes=(Array.isArray(verdict.members)?verdict.members:[]).map(item=>Number(item&&item.index))
-    .filter(index=>Number.isInteger(index)&&index>=0&&index<tokens.length);
-  if(indexes.length<2||!indexes.includes(clickedIndex))return null;
-  const identity=jevPhraseIdentity(tokens,indexes);
-  return identity.parts.length>=2?identity:null;
+  const verdict=await dictCall({op:'route',word:w.aiLemma||w.word||root,lemma:w.aiLemma||w.word||root,
+    sentence,clickedIndex,tokens:tokens.map(token=>({text:token.text})),
+    senses:senses.map(item=>({meaning:item.meaning,pos:item.pos,gloss:item.gloss}))},signal);
+  if(!wordLookupAlive(life)||(!verdict&&signal&&signal.aborted))return null;
+  if(!verdict||verdict.error)return {kind:'error',senses};
+  if(verdict.selected==='PHRASE'){
+    const indexes=(Array.isArray(verdict.members)?verdict.members:[]).map(item=>Number(item&&item.index))
+      .filter(index=>Number.isInteger(index)&&index>=0&&index<tokens.length);
+    if(indexes.length>=2&&indexes.includes(clickedIndex)){
+      const phrase=jevPhraseIdentity(tokens,indexes);
+      if(phrase.parts.length>=2)return {kind:'phrase',phrase,senses};
+    }
+    return {kind:'none',senses};
+  }
+  if(verdict.selected==='NONE')return {kind:'none',senses};
+  const picked=senses.find(item=>item.choice===verdict.selected);
+  return picked&&words[picked.id]?{kind:'sense',id:picked.id,senses}:{kind:'error',senses};
 }
 
 async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
-  const phrase=await detectJevPhrase(k,node,sentence,life);
-  if(!wordLookupAlive(life))return;
-  if(phrase){await resolveDetectedPhrase(k,phrase,sentence,(curBook&&curBook.title)||'',life);return;}
-  if(wordContext)await resolveSavedWordContext(k,wordContext,life);
+  if(!wordContext)return;
+  wordContext.started=true;wordContext.loading='checking';delete wordContext.error;renderIfAlive(life);
+  try{
+    const routed=await routeJevTarget(k,node,sentence,life);
+    if(!wordLookupAlive(life)||!routed)return;
+    if(routed.kind==='sense'){
+      rememberSenseContext(routed.id,wordContext.sentence);
+      contextView=null;selKey=routed.id;touchMeaning(routed.id);saveWords();renderWordLookup();return;
+    }
+    if(routed.kind==='phrase'){
+      await resolveDetectedPhrase(k,routed.phrase,sentence,(curBook&&curBook.title)||'',life);return;
+    }
+    if(routed.kind==='error'){
+      /* unified route 자체가 실패한 경우에만 예전 word-only judge를 안전망으로 씁니다.
+         정상 경로에서는 route 한 번뿐입니다. */
+      wordContext.started=false;
+      await resolveSavedWordContext(k,wordContext,life);return;
+    }
+    wordContext.loading='new';renderIfAlive(life);
+    await lookupNewContextMeaning(k,wordContext,life);
+  }finally{
+    wordContext.loading='';
+    if(currentContext(k)===wordContext&&wordLookupAlive(life))renderWordLookup();
+  }
 }
 
 async function resolveDetectedPhrase(k,phrase,sentence,book,life){
@@ -1135,11 +1175,7 @@ async function loadCachedLook(k, began, life){
 async function resolveSavedWordContext(k, context, life){
   const w=words[k];if(!w||!context||context.started)return;
   const root=w.root||k;
-  const senses=meaningCards(root,null).map(([id,item],index)=>({
-    id,choice:`sense_${index}`,meaning:item.ko,
-    pos:String((item.ai&&item.ai.pos)||item.pos||'').trim(),
-    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim()
-  }));
+  const senses=jevSenseCandidates(root);
   if(!senses.length)return;
   context.started=true;context.loading='checking';delete context.error;renderIfAlive(life);
   try{
@@ -1357,11 +1393,11 @@ async function fetchDict(k,node){
 
   const metadata = fillDictionaryMetadata(k, life);
 
-  /* 생성형 뜻 조회보다 먼저 Jev가 phrase membership을 판정합니다. 확정되면 phrase
-     identity로만 뜻을 찾고, 애매하거나 실패하면 아래 word-only 경로로 내려갑니다. */
-  const phrase=await detectJevPhrase(k,node,w.example||'',life);
-  if(phrase&&wordLookupAlive(life)){
-    await resolveDetectedPhrase(k,phrase,w.example||'',w.book||'',life);
+  /* 처음 보는 낱말도 같은 router를 씁니다. 저장 sense가 없으므로 이때의 선택지는
+     PHRASE/NONE뿐입니다. PHRASE면 표현 전체로, NONE이면 아래 word AI로 갑니다. */
+  const routed=await routeJevTarget(k,node,w.example||'',life);
+  if(routed&&routed.kind==='phrase'&&wordLookupAlive(life)){
+    await resolveDetectedPhrase(k,routed.phrase,w.example||'',w.book||'',life);
     await metadata;
     delete w.loading;delete w.aiLoading;w.up=Date.now();saveWords();queueSync();renderIfAlive(life);
     return;
