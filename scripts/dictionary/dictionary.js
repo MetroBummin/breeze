@@ -202,10 +202,19 @@ function findContextCard(root, sentence){
   const id=contextCardKey(root,sentence);
   return words[id] ? id : null;
 }
+function rememberSenseContext(id, sentence){
+  const item=words[id],hash=sentenceHash(sentence);
+  if(!item||!hash)return;
+  const prior=Array.isArray(item.contextHashes)?item.contextHashes.filter(value=>typeof value==='string'&&value&&value!==hash):[];
+  item.contextHashes=[hash,...prior].slice(0,32);
+}
 function findSavedSense(root, sentence){
+  const hash=sentenceHash(sentence);
   return Object.keys(words).find(id=>{
     const item=words[id];
-    return item && item.sense && item.root===root && item.example===sentence;
+    if(!item||(id!==root&&item.root!==root)||!validWordMeaning(item))return false;
+    return item.example===sentence
+      || (Array.isArray(item.contextHashes)&&item.contextHashes.includes(hash));
   }) || null;
 }
 function findSenseByMeaning(root, meaning){
@@ -365,6 +374,9 @@ function openWord(k, node){
   }else contextView=null;
   selectWord(active, node, true);
   if(bump)deferWordOpenBump(active);
+  /* 같은 word + 같은 문장은 이미 sense까지 확정된 결과입니다.
+     다시 phrase/Jev를 돌리지 않고 지금 저장된 sense를 즉시 보여 줍니다. */
+  if(savedContext)return;
   const life=wordLookupLife,wordContext=contextView;
   resolveOpenedWordTarget(active,node,nextExample,wordContext,life);
 }
@@ -1138,6 +1150,7 @@ async function resolveSavedWordContext(k, context, life){
     if(wordLookupAlive(life)&&verdict&&!verdict.error&&verdict.selected!=='NEW'){
       const picked=senses.find(item=>item.choice===verdict.selected);
       if(picked&&words[picked.id]){
+        rememberSenseContext(picked.id,context.sentence);
         contextView=null;selKey=picked.id;touchMeaning(picked.id);saveWords();renderWordLookup();return;
       }
     }
@@ -1168,6 +1181,7 @@ function adoptContextAnswer(k, context, answer){
   const id=createMeaning(root, answer.ko, {clicked:context.clicked||'', example:context.sentence,
     book:context.book||'', ai:answer.ai, alts:answer.alts});
   if(!id) return;
+  rememberSenseContext(id,context.sentence);saveWords();
   context.loading=false; contextView=null;
   paintWord(root);
   if(wordPeekActive){selKey=id;renderWordPeek();}
