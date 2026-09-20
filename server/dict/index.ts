@@ -93,6 +93,73 @@ async function opLook(body:any,userId:string|null,seeding=false){
   const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase()),aiLemma=clean(parsed.lemma,60).toLowerCase();const lemma=cands.includes(aiLemma)||aiLemma===word?aiLemma:(word||cands[0]||"");const ko=clean(parsed.ko,60);const answer={lemma,pos:clean(parsed.pos,12),ko,gloss:clean(parsed.gloss,300),alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})};if(!answer.ko)return json({error:"empty_answer"},502);return json(answer);
 }
 
+/* One Jev request routes a click to an existing sense, a phrase, or NONE.
+   Phrase token membership is asked in the same System One request, so the normal
+   saved-word path no longer pays phrase + judge as two serial HTTP round trips. */
+async function opRoute(body:any,signal:AbortSignal){
+  const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
+  const word=clean(body.word,60),sentence=clean(body.sentence,600);
+  const rawSenses=Array.isArray(body.senses)?body.senses:[];
+  const senses=rawSenses.slice(0,16).map((item:any,index:number)=>({
+    id:`sense_${index}`,meaning:clean(item&&item.meaning,60),
+    pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,300)
+  })).filter(item=>item.meaning);
+  const rawTokens=Array.isArray(body.tokens)?body.tokens:[];
+  const tokens=rawTokens.slice(0,500).map((item:any)=>clean(item&&item.text,60));
+  const clickedIndex=Number(body.clickedIndex);
+  const phraseEligible=tokens.length>=2&&Number.isInteger(clickedIndex)&&clickedIndex>=0&&clickedIndex<tokens.length;
+  if(!word||!sentence)return json({error:"bad_route_request"},400);
+
+  const criteria:Record<string,string>=Object.fromEntries(senses.map(item=>[
+    item.id,[item.meaning,item.pos?`품사: ${item.pos}`:"",item.gloss?`설명: ${item.gloss}`:""].filter(Boolean).join(" · ")
+  ]));
+  if(phraseEligible)criteria.PHRASE="클릭한 token이 현재 문장에서 phrasal verb, idiom, fixed expression 또는 하나의 사전 단위로 봐야 하는 multiword lexical expression의 구성원임";
+  criteria.NONE="클릭한 것은 이 문장에서 독립적인 word로 쓰였지만, 저장된 sense 중 맞는 것이 없음";
+
+  const questions:Record<string,unknown>={
+    route:{
+      type:"choice",
+      instructions:"현재 문장에서 클릭한 target을 분류하세요. 저장된 sense가 정확히 맞으면 해당 sense를 고르세요. 짧은 한국어 뜻뿐 아니라 품사와 gloss를 함께 비교하세요. 클릭 token이 phrasal verb, idiom, fixed expression 또는 하나의 사전 단위로 봐야 하는 multiword lexical expression의 구성원이면 PHRASE를 고르세요. design philosophy, economic pressure처럼 의미가 그대로 합쳐지는 일반 수식어+명사 조합이나 단순 collocation은 PHRASE가 아닙니다. 저장 sense가 맞지 않고 phrase도 아니면 NONE을 고르세요. 저장 sense가 얼핏 비슷해도 실제로 phrase 안에서 다른 의미가 생긴 경우에는 PHRASE가 우선입니다.",
+      criteria
+    }
+  };
+  if(phraseEligible){
+    tokens.forEach((text,index)=>{
+      questions[`token_${index}`]={
+        type:"choice",
+        instructions:`문장 전체에서 사용자가 클릭한 token은 ${clickedIndex}번 '${tokens[clickedIndex]}'입니다. ${index}번 token '${text}'이 클릭 token과 함께 하나의 lexical expression(phrasal verb, idiom, fixed expression, 의미 단위로 함께 봐야 하는 multiword expression)을 이루는 구성원인지 판단하세요. 학습자가 사전에서 찾아야 할 완전한 표현을 만드세요. 전치사·particle은 완전한 표현의 일부라면 반드시 YES입니다(예: take care of, look forward to는 세 token 모두 YES). 활용된 be동사는 표제어 자체가 be를 요구할 때만 YES입니다(be interested in의 is는 YES). 시제·수동태만 만드는 auxiliary는 NO입니다(were taken care of의 were는 NO). 분리 가능한 목적어도 구성원이 아닙니다(give the idea up의 idea는 NO, give/up은 YES). 같은 단어 조합처럼 보여도 현재 문맥이 문자 그대로의 방향·공간 이동이면 숙어가 아닙니다(looked forward across the field의 looked/forward는 모두 NO이고, look forward to에서만 look/forward/to가 YES). 단순히 의미적으로 관련되거나 가까이 있다는 이유만으로 YES를 선택하지 마세요. 여러 후보가 가능하면 현재 문맥에서 가장 확실한 하나만 선택하고, 애매하면 NO를 선택하세요.`,
+        criteria:{YES:"같은 lexical expression의 사전형을 이루는 구성원",NO:"그 expression의 구성원이 아님"}
+      };
+    });
+  }
+
+  const trace=newAiTrace("route"),combined=AbortSignal.any([signal,AbortSignal.timeout(2200)]);
+  const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{
+    method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},
+    body:JSON.stringify({model:JEV_MODEL,state:{word,sentence,clickedIndex,tokens},questions}),signal:combined
+  });
+  if(!r.ok)return json({error:"jev_failed",status:r.status},502);
+  const data=await r.json(),selected=clean(data?.answers?.route?.choice,40);
+  if(!(selected in criteria))return json({error:"jev_invalid_response"},502);
+  const confidence=Number(data?.answers?.route?.confidence??0);
+  if(selected!=="PHRASE")return json({selected,confidence,members:[],threshold:JEV_PHRASE_CONFIDENCE,provider:"jev"});
+
+  const candidates:Array<{index:number;confidence:number}>=[];
+  for(let index=0;index<tokens.length;index++){
+    const answer=data?.answers?.[`token_${index}`],choice=clean(answer?.choice,8).toUpperCase();
+    if(choice!=="YES"&&choice!=="NO")return json({error:"jev_invalid_response"},502);
+    const tokenConfidence=Number(answer?.confidence??answer?.probabilities?.[choice]??0);
+    if(choice==="YES")candidates.push({index,confidence:Number.isFinite(tokenConfidence)?tokenConfidence:0});
+  }
+  const members=candidates.filter(item=>item.confidence>=JEV_PHRASE_CONFIDENCE);
+  const clicked=members.find(item=>item.index===clickedIndex);
+  if(!clicked||members.length<2){
+    return json({selected:"NONE",confidence,members:[],candidates,threshold:JEV_PHRASE_CONFIDENCE,
+      phraseRejected:true,provider:"jev"});
+  }
+  return json({selected:"PHRASE",confidence,members,candidates,threshold:JEV_PHRASE_CONFIDENCE,provider:"jev"});
+}
+
 /* Jev only chooses from meanings the device supplied. It never writes a meaning. */
 async function opJudge(body:any,signal:AbortSignal){
   const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
@@ -144,4 +211,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="judge")return await opJudge(body,req.signal);if(op==="phrase")return await opPhrase(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="route")return await opRoute(body,req.signal);if(op==="judge")return await opJudge(body,req.signal);if(op==="phrase")return await opPhrase(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
