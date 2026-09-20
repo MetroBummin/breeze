@@ -936,6 +936,10 @@ assert.doesNotMatch(dictionarySource, /function .*[Ss]avedState|let .*savedFlag/
   'The saved badge grew a state of its own');
 assert.doesNotMatch(`${index}\n${dictionaryCss}\n${dictionarySource}`,/p-colloc|phrase-suggestion|openPhrase|adoptPhrase/,
   'The generative phrase-suggestion UI or lifecycle survived Jev phrase detection');
+assert.match(dictServer, /console\.error\("dict_request_failed",e instanceof Error\?e\.name:"Error"\)/,
+  'The dict endpoint no longer records a safe error class for unexpected failures');
+assert.doesNotMatch(dictServer, /json\(\{error:"internal",message:/,
+  'The dict endpoint can expose an unexpected exception message to the client');
 assert.ok(index.indexOf('id="p-alts"') > index.indexOf('id="p-saved-senses"'),
   'Suggested meanings are no longer a separate row below the saved ones');
 /* One persistent centered title pill owns the PDF switch; side controls are
@@ -1637,10 +1641,10 @@ assert.match(dictServer,/criteria\.NEW="기존 뜻 중 현재 문장에 맞는 �
   'Jev has no explicit NEW choice');
 assert.match(dictionarySource,/op:'phrase',sentence,clickedIndex,tokens:/,
   'The client does not send the full token map and clicked index for Jev phrase detection');
-assert.match(dictServer,/const JEV_PHRASE_CONFIDENCE=0\.86;/,
+assert.match(dictServer,/const JEV_PHRASE_CONFIDENCE=0\.75;/,
   'The conservative phrase threshold is no longer a single testable constant');
-assert.match(dictServer,/members\.every\(item=>item\.confidence>=JEV_PHRASE_CONFIDENCE\)/,
-  'A low-confidence required token can still promote a phrase');
+assert.match(dictServer,/const members=candidates\.filter\(item=>item\.confidence>=JEV_PHRASE_CONFIDENCE\)/,
+  'A low-confidence YES token can still contaminate an accepted phrase');
 assert.match(dictionarySource,/phraseParts:phrase\.parts,phraseGaps:phrase\.gaps/,
   'Discontinuous phrase identity no longer preserves selected parts and gaps');
 assert.match(readerSource,/new Array\(parts\.length-1\)\.fill\(0\)/,

@@ -1,6 +1,32 @@
 /* Saved meanings are cards. Dictionary candidates and an AI suggestion are not
    saved meanings; only a non-blank card.ko makes a vocabulary entry. */
 function validWordMeaning(item){ return !!(item && typeof item.ko === 'string' && item.ko.trim()); }
+/* Storage truth and presentation truth are deliberately different. The Words UI
+   may hide legacy phrase children or dedupe equal labels, but either record is
+   still a saved meaning and must prevent a one-card delete from becoming a
+   whole-word delete. */
+function savedMeaningRecords(root, items){
+  const source=items || (typeof words!=='undefined' ? words : {});
+  return Object.entries(source).filter(([key,item])=>item&&(key===root||item.root===root)
+    && validWordMeaning(item));
+}
+/* Promote a meaning into the stable Reader/root address. Meaning-specific fields
+   come from the survivor; word identity and learning state stay with the root.
+   In particular, stray legacy phrase metadata on a child must not change which
+   Reader spans this root highlights. */
+function promotedRootMeaning(base, survivor, now){
+  const promoted={...survivor,word:base.word||survivor.word,
+    clicked:base.clicked||survivor.clicked,forms:base.forms||survivor.forms,
+    status:base.status==null?survivor.status:base.status,
+    mark:base.mark==null?survivor.mark:base.mark,
+    addedAt:base.addedAt||survivor.addedAt,up:now};
+  delete promoted.root; delete promoted.sense;
+  ['phrase','phraseParts','phraseGaps'].forEach(key=>{
+    if(Object.prototype.hasOwnProperty.call(base,key)) promoted[key]=base[key];
+    else delete promoted[key];
+  });
+  return promoted;
+}
 function cleanOrphanWords(items, tombstones, protectedKey){
   let changed=false;
   const groups=new Map();
@@ -18,7 +44,7 @@ function cleanOrphanWords(items, tombstones, protectedKey){
   });
   groups.forEach((cards,root)=>{
     if(root===protectedKey) return; // a live lookup is still waiting for its answer
-    const valid=cards.filter(([,item])=>validWordMeaning(item));
+    const valid=savedMeaningRecords(root,items);
     const empty=cards.filter(([,item])=>!validWordMeaning(item));
     if(!empty.length) return;
     const bury=(key,item)=>{
@@ -30,10 +56,7 @@ function cleanOrphanWords(items, tombstones, protectedKey){
       /* Keep the root identity used by Reader highlighting, not an empty root
          plus a floating sense. Preserve its status and original metadata. */
       const [key,item]=valid[0],base=items[root];
-      items[root]={...item,root:undefined,sense:undefined,word:base.word||item.word,
-        clicked:base.clicked||item.clicked,forms:base.forms||item.forms,
-        status:base.status||item.status,mark:base.mark,
-        addedAt:base.addedAt||item.addedAt,up:Math.max(Date.now(),base.up||0,item.up||0)+1};
+      items[root]=promotedRootMeaning(base,item,Math.max(Date.now(),base.up||0,item.up||0)+1);
       bury(key,item);
     }
     empty.forEach(([key,item])=>{ if(items[key] && !validWordMeaning(items[key])) bury(key,item); });

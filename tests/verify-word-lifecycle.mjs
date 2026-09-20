@@ -36,6 +36,10 @@ import assert from 'node:assert/strict';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), 'utf8');
 const lexicalCore = readFileSync(resolve(root, 'modules/lexical/core.js'), 'utf8');
+const wordIntegrity = readFileSync(resolve(root, 'scripts/core/word-integrity.js'), 'utf8');
+const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
+const mergeWordStateSource = syncSource.slice(syncSource.indexOf('function mergeWordState('),
+  syncSource.indexOf('async function mergeVaultPayload('));
 
 /* ---- 가짜 화면 ----
    사전 창은 그리는 자리가 많습니다. 여기서 보고 싶은 것은 그 내용이 아니라
@@ -193,7 +197,10 @@ function boot(){
   const store = new Map();
   const context = makeContext(world, net, store);
   new Script(lexicalCore, { filename:'modules/lexical/core.js' }).runInNewContext(context);
+  new Script(wordIntegrity, { filename:'scripts/core/word-integrity.js' }).runInNewContext(context);
   new Script(source, { filename:'dictionary.js' }).runInNewContext(context);
+  new Script('const upOf=word=>word?(word.up||word.addedAt||0):0;\n'+mergeWordStateSource,
+    { filename:'scripts/sync/sync.js#mergeWordState' }).runInNewContext(context);
   /* `dictCall` 은 이 파일이 스스로 선언하므로, 올려놓은 **뒤에** 갈아 끼웁니다. */
   context.dictCall = net.dictCall;
   /* 그리는 횟수는 창을 그리는 문 하나만 세면 됩니다. */
@@ -520,6 +527,112 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   await settle();
   assert.equal(ctx.words.tessera,undefined,'마지막 뜻을 지운 낱말이 남았습니다');
   assert.ok(ctx.dead.tessera,'삭제한 낱말의 tombstone이 없습니다');
+}
+
+{
+  /* 실제 Words 목록에는 둘 다 보이지만 popup presentation은 legacy phrase metadata가
+     붙은 child를 숨깁니다. UI용 목록이 삭제 판단에 쓰이면 root 하나를 지운 것이
+     whole-word 삭제로 커지는 실사용 회귀입니다. */
+  const { ctx } = boot();
+  ctx.words.run = savedWord('run', '달리다');
+  ctx.words['run::legacy-phrase'] = {
+    ...savedWord('run', '운영하다'), root:'run', sense:true, phrase:'run a company',
+    phraseParts:['run','company'], phraseGaps:[1]
+  };
+  ctx.deleteMeaning('run');
+  assert.ok(ctx.words.run,'legacy phrase metadata child가 있는데 root 뜻 삭제가 단어 전체 삭제로 확대됐습니다');
+  assert.equal(ctx.words.run.ko,'운영하다','남은 뜻이 root identity로 승격되지 않았습니다');
+  assert.equal(ctx.dead.run,undefined,'살아 있는 root identity에 tombstone이 생겼습니다');
+  assert.ok(ctx.dead['run::legacy-phrase'],'승격되어 사라진 child identity의 tombstone이 없습니다');
+  assert.deepEqual(Array.from(ctx.words.run.forms),['run'],'root forms가 legacy child metadata로 바뀌었습니다');
+  assert.equal(ctx.words.run.phraseParts,undefined,'legacy child phrase identity가 word root로 승격됐습니다');
+}
+
+{
+  /* presentation dedupe는 같은 뜻을 한 줄로 보이게 할 뿐, 실제 저장 레코드의
+     존재를 없애지 않습니다. */
+  const { ctx } = boot();
+  ctx.words.echo = savedWord('echo', '메아리');
+  ctx.words['echo::duplicate'] = {...savedWord('echo', '메아리'),root:'echo',sense:true};
+  ctx.deleteMeaning('echo');
+  assert.ok(ctx.words.echo,'duplicate meaning child가 있는데 root 삭제가 whole-word 삭제로 확대됐습니다');
+  assert.equal(ctx.words.echo.ko,'메아리');
+  assert.equal(ctx.dead.echo,undefined,'duplicate survivor root가 tombstone됐습니다');
+}
+
+{
+  /* A/B/C 어느 카드를 지워도 실제 survivor가 있으면 root identity와 학습 상태가
+     유지됩니다. active/non-active 분기는 선택 상태만 바꾸고 파괴 범위를 넓히지 않습니다. */
+  const { ctx } = boot();
+  ctx.words.run={...savedWord('run','A'),clicked:'ran',forms:['run','ran'],status:3,mark:false,addedAt:17,up:20};
+  ctx.words['run::B']={...savedWord('run','B'),root:'run',sense:true,pickedAt:30,up:30};
+  ctx.words['run::C']={...savedWord('run','C'),root:'run',sense:true,pickedAt:25,up:25};
+  ctx.selectWord('run::B',null);
+  ctx.deleteMeaning('run::C');                         // non-active middle/child
+  assert.deepEqual(Object.values(ctx.words).map(item=>item.ko).sort(),['A','B']);
+  ctx.deleteMeaning('run::B');                         // active child
+  assert.equal(ctx.words.run.ko,'A');
+  ctx.words['run::D']={...savedWord('run','D'),root:'run',sense:true,pickedAt:40,up:40};
+  ctx.deleteMeaning('run');                            // active root promotion
+  assert.equal(ctx.words.run.ko,'D');
+  assert.equal(ctx.words.run.clicked,'ran');
+  assert.deepEqual(Array.from(ctx.words.run.forms),['run','ran']);
+  assert.equal(ctx.words.run.status,3);
+  assert.equal(ctx.words.run.mark,false);
+  assert.equal(ctx.words.run.addedAt,17);
+  assert.equal(ctx.dead.run,undefined);
+  assert.ok(ctx.dead['run::B']&&ctx.dead['run::C']&&ctx.dead['run::D']);
+}
+
+{
+  /* 삭제 뒤 old remote snapshot을 합쳐도 child는 tombstone으로 막히고, 승격된 root는
+     오래된 root 사본이나 unrelated child tombstone에 같이 사라지지 않습니다. */
+  const { ctx } = boot();
+  ctx.words.run={...savedWord('run','달리다'),up:100};
+  ctx.words['run::operate']={...savedWord('run','운영하다'),root:'run',sense:true,up:110};
+  ctx.deleteMeaning('run');
+  const promotedUp=ctx.words.run.up;
+  const childDead=ctx.dead['run::operate'];
+  ctx.mergeWordState({
+    run:{...savedWord('run','달리다'),up:100},
+    'run::operate':{...savedWord('run','운영하다'),root:'run',sense:true,up:110}
+  },{});
+  assert.equal(ctx.words.run.ko,'운영하다','old remote root가 승격된 survivor를 되돌렸습니다');
+  assert.equal(ctx.words['run::operate'],undefined,'삭제된 child가 old remote copy로 부활했습니다');
+  assert.equal(ctx.dead['run::operate'],childDead);
+  assert.equal(ctx.dead.run,undefined,'child tombstone이 survivor root까지 지웠습니다');
+  assert.ok(ctx.words.run.up===promotedUp&&ctx.words.run.up>100);
+  ctx.cleanOrphanWords(ctx.words,ctx.dead);
+  assert.equal(ctx.words.run.ko,'운영하다','cleanOrphanWords가 승격된 root invariant를 깨뜨렸습니다');
+}
+
+{
+  /* 수백 회의 delete/add/promote/merge/cleanup 순환에서도 root는 하나이고 삭제된
+     child는 되살아나지 않아야 합니다. */
+  for(let cycle=0;cycle<500;cycle++){
+    const { ctx } = boot();
+    const rootKey=`stress-${cycle}`;
+    ctx.words[rootKey]={...savedWord(rootKey,'A'),up:10,status:2,mark:cycle%2===0};
+    for(const [at,ko] of ['B','C','D','E'].entries())
+      ctx.words[`${rootKey}::${ko}`]={...savedWord(rootKey,ko),root:rootKey,sense:true,up:20+at,pickedAt:20+at};
+    ctx.deleteMeaning(rootKey);                        // B/C/D/E, promote E
+    ctx.deleteMeaning(`${rootKey}::C`);               // E/B/D
+    const added=ctx.createMeaning(rootKey,'F',{example:'new'});
+    ctx.selectWord(added,null);
+    ctx.deleteMeaning(rootKey);                        // promote active F
+    const snapshot=structuredClone(ctx.words);
+    const deadSnapshot=structuredClone(ctx.dead);
+    ctx.mergeWordState({...snapshot,
+      [`${rootKey}::C`]:{...savedWord(rootKey,'C'),root:rootKey,sense:true,up:21}},{});
+    ctx.cleanOrphanWords(ctx.words,ctx.dead);
+    const records=ctx.savedMeaningRecords(rootKey);
+    assert.equal(records.length,3,`cycle ${cycle}: meaning count drift`);
+    assert.ok(ctx.words[rootKey],`cycle ${cycle}: root identity missing`);
+    assert.equal(ctx.words[`${rootKey}::C`],undefined,`cycle ${cycle}: deleted sense resurrected`);
+    assert.equal(ctx.dead[rootKey],undefined,`cycle ${cycle}: unexpected whole-word tombstone`);
+    assert.ok(ctx.dead[`${rootKey}::C`]>=deadSnapshot[`${rootKey}::C`],`cycle ${cycle}: child tombstone lost`);
+    assert.equal(records.filter(([id])=>id===rootKey).length,1,`cycle ${cycle}: root multiplicity`);
+  }
 }
 
 {

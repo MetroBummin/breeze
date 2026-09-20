@@ -227,8 +227,7 @@ function meaningCards(root, activeId){
   /* `areca nut` 같은 표현도 자기 뜻을 여러 개 가질 수 있는 표제어입니다. 표현이라는
      이유로 대표 카드를 목록에서 빼면, 첫 번째로 적은 뜻이 화면에서 사라진 채
      저장소에만 남습니다. 걸러 낼 것은 "다른 표현 카드"뿐입니다. */
-  const cards=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
-    && validWordMeaning(item) && (id===root || !item.phraseParts));
+  const cards=savedMeaningRecords(root).filter(([id,item])=>id===root || !item.phraseParts);
   cards.sort(([a,aw],[b,bw])=>(a===activeId?-1:0)-(b===activeId?-1:0)
     || meaningPickedAt(bw)-meaningPickedAt(aw));
   const unique=new Set();
@@ -302,12 +301,16 @@ function deleteMeaning(id){
   const panelWasOpen=document.getElementById('panel').classList.contains('on');
   const root=item.root||id;
   const wasActive=id===selKey;
-  const rest=meaningCards(root,null).filter(([mid])=>mid!==id);
+  let next=wasActive ? '' : selKey;
+  /* Destructive decisions use every stored meaning, never the filtered/deduped
+     presentation cards. */
+  const rest=savedMeaningRecords(root).filter(([mid])=>mid!==id);
+  rest.sort(([a,aw],[b,bw])=>(a===selKey?-1:0)-(b===selKey?-1:0)
+    || meaningPickedAt(bw)-meaningPickedAt(aw));
   const bury=key=>{
     dead[key]=Math.max(Date.now(),(words[key]&&(words[key].up||words[key].addedAt)||0)+1);
     delete words[key]; save(LS_DEAD,dead);
   };
-  let next=wasActive ? '' : selKey;
   if(!rest.length){
     Object.keys(words).filter(key=>key===root || (words[key]&&words[key].root===root))
       .forEach(key=>bury(key));
@@ -318,9 +321,9 @@ function deleteMeaning(id){
        뿐인데 화면의 뜻이 바뀌는 일이 없게 합니다. */
     const keep=!wasActive && rest.some(([mid])=>mid===selKey) ? selKey : rest[0][0];
     const promote=words[keep];
-    words[root]={...promote, root:undefined, sense:undefined, word:item.word,
-      clicked:item.clicked, forms:item.forms, addedAt:item.addedAt,
-      pickedAt:wasActive ? Date.now() : (promote.pickedAt||Date.now()), up:Date.now()};
+    const now=Math.max(Date.now(),item.up||item.addedAt||0,promote.up||promote.addedAt||0)+1;
+    words[root]=promotedRootMeaning(item,promote,now);
+    words[root].pickedAt=wasActive ? now : (promote.pickedAt||now);
     bury(keep);
     next=root;
   }else{

@@ -63,10 +63,10 @@ assert.ok(took>80,'long fixture did not exercise a late clicked index');
 assert.equal(jevClickedTokenIndex({textContent:'took',dataset:{clickedTokenIndex:String(took)}},longSentence,longTokens),took,
   'long-sentence clicked index drifted');
 
-assert.match(server,/const JEV_PHRASE_CONFIDENCE=0\.86;/,'phrase confidence threshold is not a single testable constant');
+assert.match(server,/const JEV_PHRASE_CONFIDENCE=0\.75;/,'phrase confidence threshold is not a single testable constant');
 assert.match(server,/tokens\.forEach\([^]*questions\[`token_\$\{index\}`\]/,'server no longer asks one structured question per token');
-assert.match(server,/members\.every\(item=>item\.confidence>=JEV_PHRASE_CONFIDENCE\)/,
-  'one low-confidence required token no longer rejects the phrase');
+assert.match(server,/const members=candidates\.filter\(item=>item\.confidence>=JEV_PHRASE_CONFIDENCE\)/,
+  'low-confidence YES answers can still contaminate accepted phrase membership');
 assert.match(server,/members\.length>=2/,'one token can be promoted into a phrase');
 
 console.log(`JEV phrase stress passed: ${fixtures.length*200} mappings + word-only + long-sentence boundaries`);

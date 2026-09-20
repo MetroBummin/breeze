@@ -7,7 +7,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 
 const OPENROUTER_MODEL="deepseek/deepseek-v4-flash-0731";
 const JEV_MODEL="jev-latest";
-const JEV_PHRASE_CONFIDENCE=0.86;
+const JEV_PHRASE_CONFIDENCE=0.75;
 const GEMINI_MODEL="gemini-3.5-flash-lite";
 const CLAUDE_MODEL="claude-haiku-4-5";
 const DEFAULT_DAILY_LIMIT=300;
@@ -73,7 +73,7 @@ async function opJudge(body:any,signal:AbortSignal){
 
 /* The client owns tokenisation and sends the exact clicked index. Jev may only
    classify those tokens; it never invents a phrase string. A phrase is accepted
-   only when every selected token clears one conservative threshold. */
+   only from YES tokens that clear one conservative threshold. */
 async function opPhrase(body:any,signal:AbortSignal){
   const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
   const sentence=clean(body.sentence,4000),raw=Array.isArray(body.tokens)?body.tokens:[];
@@ -81,20 +81,21 @@ async function opPhrase(body:any,signal:AbortSignal){
   const clickedIndex=Number(body.clickedIndex);
   if(!sentence||tokens.length<2||!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=tokens.length)return json({error:"bad_phrase_request"},400);
   const questions:Record<string,unknown>={};
-  tokens.forEach((text,index)=>{questions[`token_${index}`]={type:"choice",instructions:`문장 전체에서 사용자가 클릭한 token은 ${clickedIndex}번 '${tokens[clickedIndex]}'입니다. ${index}번 token '${text}'이 클릭 token과 함께 하나의 lexical expression(phrasal verb, idiom, fixed expression, 의미 단위로 함께 봐야 하는 multiword expression)을 이루는 구성원인지 판단하세요. 단순히 의미적으로 관련되거나 가까이 있다는 이유만으로 YES를 선택하지 마세요. 여러 후보가 가능하면 현재 문맥에서 가장 확실한 하나만 선택하고, 애매하면 NO를 선택하세요.`,criteria:{YES:"같은 lexical expression의 필수 구성원",NO:"그 expression의 구성원이 아님"}}});
+  tokens.forEach((text,index)=>{questions[`token_${index}`]={type:"choice",instructions:`문장 전체에서 사용자가 클릭한 token은 ${clickedIndex}번 '${tokens[clickedIndex]}'입니다. ${index}번 token '${text}'이 클릭 token과 함께 하나의 lexical expression(phrasal verb, idiom, fixed expression, 의미 단위로 함께 봐야 하는 multiword expression)을 이루는 구성원인지 판단하세요. 학습자가 사전에서 찾아야 할 완전한 표현을 만드세요. 전치사·particle은 완전한 표현의 일부라면 반드시 YES입니다(예: take care of, look forward to는 세 token 모두 YES). 활용된 be동사는 표제어 자체가 be를 요구할 때만 YES입니다(be interested in의 is는 YES). 시제·수동태만 만드는 auxiliary는 NO입니다(were taken care of의 were는 NO). 분리 가능한 목적어도 구성원이 아닙니다(give the idea up의 idea는 NO, give/up은 YES). 같은 단어 조합처럼 보여도 현재 문맥이 문자 그대로의 방향·공간 이동이면 숙어가 아닙니다(looked forward across the field의 looked/forward는 모두 NO이고, look forward to에서만 look/forward/to가 YES). 단순히 의미적으로 관련되거나 가까이 있다는 이유만으로 YES를 선택하지 마세요. 여러 후보가 가능하면 현재 문맥에서 가장 확실한 하나만 선택하고, 애매하면 NO를 선택하세요.`,criteria:{YES:"같은 lexical expression의 사전형을 이루는 구성원",NO:"그 expression의 구성원이 아님"}}});
   const trace=newAiTrace("phrase");const combined=AbortSignal.any([signal,AbortSignal.timeout(2200)]);
   const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify({model:JEV_MODEL,state:{sentence,clickedIndex,tokens},questions}),signal:combined});
   if(!r.ok)return json({error:"jev_failed",status:r.status},502);
-  const data=await r.json(),members:Array<{index:number;confidence:number}>=[];
+  const data=await r.json(),candidates:Array<{index:number;confidence:number}>=[];
   for(let index=0;index<tokens.length;index++){
     const answer=data?.answers?.[`token_${index}`],choice=clean(answer?.choice,8).toUpperCase();
     if(choice!=="YES"&&choice!=="NO")return json({error:"jev_invalid_response"},502);
     const confidence=Number(answer?.confidence??answer?.probabilities?.[choice]??0);
-    if(choice==="YES")members.push({index,confidence:Number.isFinite(confidence)?confidence:0});
+    if(choice==="YES")candidates.push({index,confidence:Number.isFinite(confidence)?confidence:0});
   }
+  const members=candidates.filter(item=>item.confidence>=JEV_PHRASE_CONFIDENCE);
   const clicked=members.find(item=>item.index===clickedIndex);
-  const accepted=!!clicked&&members.length>=2&&members.every(item=>item.confidence>=JEV_PHRASE_CONFIDENCE);
-  return json({accepted,members,threshold:JEV_PHRASE_CONFIDENCE,provider:"jev"});
+  const accepted=!!clicked&&members.length>=2;
+  return json({accepted,members,candidates,threshold:JEV_PHRASE_CONFIDENCE,provider:"jev"});
 }
 
 const EXPLAIN_SCHEMA={type:"object",additionalProperties:false,required:["ko","points"],properties:{ko:{type:"string"},points:{type:"array",items:{type:"string"}}}};
@@ -109,4 +110,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="judge")return await opJudge(body,req.signal);if(op==="phrase")return await opPhrase(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){console.error(e);const message=String(e);if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal",message},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="judge")return await opJudge(body,req.signal);if(op==="phrase")return await opPhrase(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});

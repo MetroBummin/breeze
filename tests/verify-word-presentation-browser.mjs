@@ -135,7 +135,95 @@ try{
   assert.equal(await page.evaluate(()=>document.querySelectorAll('#sheetbg,#p-close,#p-handle').length),0,
     'removed sidebar or sheet DOM is still reachable');
 
-  console.log('Word near-pill cache/pending placement, same-request detail popup, dismissal, and Reader geometry verified');
+  /* Real Words DOM: the legacy phrase child is visible in this screen even though
+     popup presentation filters it. Removing the first row must therefore leave
+     the group, promote the survivor, and keep folding behavior intact. */
+  await page.evaluate(()=>{
+    closePanel();
+    const base=(ko,up,extra={})=>({word:'run',clicked:'ran',forms:['run','ran'],ko,
+      example:'They run the company.',book:'QA',status:2,mark:false,addedAt:7,up,...extra});
+    words={
+      run:base('달리다',10),
+      'run::legacy-phrase':base('운영하다',11,{root:'run',sense:true,
+        phrase:'run a company',phraseParts:['run','company'],phraseGaps:[1]})
+    };
+    dead={}; vocabOpen.clear(); show('vocab'); renderVocab();
+  });
+  assert.equal(await page.locator('#vcnt').textContent(),'2개 저장됨');
+  await page.locator('.vgroup[data-g="run"] .vword').click();
+  assert.equal(await page.locator('.vgroup[data-g="run"] .rowdel').count(),2,
+    'expanded Words group did not expose both stored meanings');
+  await page.locator('.vsense[data-k="run"] .rowdel').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.vgroup[data-g="run"] .vsense').length===1);
+  assert.equal(await page.locator('#vcnt').textContent(),'1개 저장됨');
+  assert.equal(await page.locator('.vgroup[data-g="run"] .vko').textContent(),'운영하다');
+  assert.equal(await page.locator('.vgroup[data-g="run"]').getAttribute('data-head'),'run');
+  assert.equal(await page.locator('.vgroup[data-g="run"]').evaluate(node=>node.classList.contains('open')),true,
+    'deleting a meaning unexpectedly collapsed the surviving group');
+  const promoted=await page.evaluate(()=>({root:words.run,old:words['run::legacy-phrase'],dead:{...dead}}));
+  assert.equal(promoted.old,undefined);
+  assert.equal(promoted.root.ko,'운영하다');
+  assert.deepEqual(promoted.root.forms,['run','ran']);
+  assert.equal(promoted.root.status,2);
+  assert.equal(promoted.root.mark,false);
+  assert.equal(promoted.root.phraseParts,undefined);
+  assert.equal(promoted.dead.run,undefined);
+  assert.ok(promoted.dead['run::legacy-phrase']);
+  await page.locator('.vgroup[data-g="run"] .vword').click();
+  assert.equal(await page.locator('.vgroup[data-g="run"]').evaluate(node=>node.classList.contains('open')),false);
+  await page.locator('.vgroup[data-g="run"] .vword').click();
+  assert.equal(await page.locator('.vgroup[data-g="run"] .rowdel').count(),1);
+
+  /* Middle and rapid consecutive deletes travel through the same live buttons,
+     not a direct helper call. */
+  await page.evaluate(()=>{
+    const base=(ko,up,extra={})=>({word:'triad',clicked:'triad',forms:['triad'],ko,
+      example:'A triad.',book:'QA',status:1,mark:true,addedAt:9,up,...extra});
+    words={triad:base('A',10),'triad::B':base('B',11,{root:'triad',sense:true}),
+      'triad::C':base('C',12,{root:'triad',sense:true}),'triad::D':base('D',13,{root:'triad',sense:true})};
+    dead={}; vocabOpen.clear(); renderVocab();
+  });
+  await page.locator('.vgroup[data-g="triad"] .vword').click();
+  await page.locator('.vsense[data-k="triad::B"] .rowdel').click();
+  await page.locator('.vsense[data-k="triad::C"] .rowdel').click();
+  assert.deepEqual((await page.locator('.vgroup[data-g="triad"] .vko').allTextContents()).sort(),['A','D']);
+  assert.equal(await page.locator('#vcnt').textContent(),'2개 저장됨');
+  assert.equal(await page.locator('.vgroup[data-g="triad"]').count(),1);
+
+  /* Active/non-active popup deletion plus delete -> add -> delete. */
+  await page.evaluate(()=>{
+    const base=(ko,up,extra={})=>({word:'poly',clicked:'poly',forms:['poly'],ko,
+      example:'Poly has several meanings.',book:'QA',status:1,mark:true,addedAt:15,up,...extra});
+    words={poly:base('A',10),'poly::B':base('B',11,{root:'poly',sense:true,pickedAt:20}),
+      'poly::C':base('C',12,{root:'poly',sense:true,pickedAt:15})};
+    dead={}; openBook(books.find(book=>book.kind==='txt')); selectWord('poly::B',null);
+  });
+  await page.waitForFunction(()=>wordPanelOpen()&&!document.getElementById('p-meaning-del').hidden);
+  await page.locator('#p-meaning-del').click();
+  assert.deepEqual((await page.evaluate(()=>Object.values(words).map(item=>item.ko).sort())),['A','C']);
+  assert.equal(await page.evaluate(()=>!!words.poly),true);
+  /* The current chip is C; remove the non-active A through its nested × target. */
+  await page.locator('.saved-sense[data-k="poly"] .sense-remove').click();
+  assert.deepEqual(await page.evaluate(()=>Object.values(words).map(item=>item.ko)),['C']);
+  assert.equal(await page.evaluate(()=>dead.poly),undefined);
+  await page.locator('#p-add-sense').click();
+  await page.locator('#p-sense-input').fill('D');
+  await page.locator('#p-sense-input').press('Enter');
+  assert.deepEqual((await page.evaluate(()=>Object.values(words).map(item=>item.ko).sort())),['C','D']);
+  await page.locator('#p-meaning-del').click();
+  assert.deepEqual(await page.evaluate(()=>Object.values(words).map(item=>item.ko)),['C']);
+  assert.equal(await page.evaluate(()=>!!words.poly),true,'delete-add-delete removed the whole word');
+
+  /* Whole-group removal remains exclusive to the explicit #p-know control. */
+  await page.evaluate(()=>{
+    words['poly::E']={...words.poly,root:'poly',sense:true,ko:'E',up:Date.now()+1};
+    selectWord('poly',null);
+  });
+  await page.locator('#p-know').click();
+  assert.equal(await page.evaluate(()=>Object.keys(words).filter(key=>key==='poly'||words[key]?.root==='poly').length),0);
+  assert.ok(await page.evaluate(()=>dead.poly&&dead['poly::E']));
+
+  console.log('Word near-pill and multi-meaning Words deletion interactions verified');
   await page.close();
 }finally{
   await browser.close();
