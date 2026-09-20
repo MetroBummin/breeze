@@ -1,0 +1,252 @@
+
+> test
+> node --test test/*.test.mjs
+
+TAP version 13
+# Subtest: AWS SigV4 agrees with independent botocore: PUT relay/test/stage
+ok 1 - AWS SigV4 agrees with independent botocore: PUT relay/test/stage
+  ---
+  duration_ms: 9.043165
+  type: 'test'
+  ...
+# Subtest: AWS SigV4 agrees with independent botocore: GET relay/test/ready
+ok 2 - AWS SigV4 agrees with independent botocore: GET relay/test/ready
+  ---
+  duration_ms: 1.670836
+  type: 'test'
+  ...
+# Subtest: AWS SigV4 agrees with independent botocore: PUT relay/test/ready
+ok 3 - AWS SigV4 agrees with independent botocore: PUT relay/test/ready
+  ---
+  duration_ms: 1.043291
+  type: 'test'
+  ...
+# Subtest: presigner refuses nonpositive or longer than 60-second grants
+ok 4 - presigner refuses nonpositive or longer than 60-second grants
+  ---
+  duration_ms: 0.592422
+  type: 'test'
+  ...
+# Subtest: Auth uses actual project Auth server, never an unverified JWT claim
+ok 5 - Auth uses actual project Auth server, never an unverified JWT claim
+  ---
+  duration_ms: 15.884244
+  type: 'test'
+  ...
+# Subtest: R2 completion checks size and sends conditional server-side CopyObject
+ok 6 - R2 completion checks size and sends conditional server-side CopyObject
+  ---
+  duration_ms: 5.438758
+  type: 'test'
+  ...
+# Subtest: CopyObject HTTP 200 XML error is not accepted; XML is bounded
+ok 7 - CopyObject HTTP 200 XML error is not accepted; XML is bounded
+  ---
+  duration_ms: 2.97587
+  type: 'test'
+  ...
+# Subtest: delete is verified and orphan sweep is bounded to dedicated prefix/age
+ok 8 - delete is verified and orphan sweep is bounded to dedicated prefix/age
+  ---
+  duration_ms: 0.380472
+  type: 'test'
+  ...
+# Subtest: Supabase adapter uses only small relay RPC records and hides upstream errors
+ok 9 - Supabase adapter uses only small relay RPC records and hides upstream errors
+  ---
+  duration_ms: 1.125415
+  type: 'test'
+  ...
+# Subtest: bounded control reader cancels an oversized stream
+ok 10 - bounded control reader cancels an oversized stream
+  ---
+  duration_ms: 0.859284
+  type: 'test'
+  ...
+# Subtest: local HTTP: encrypted dummy upload -> HEAD/copy -> decrypt/fsync -> ACK -> immediate delete -> settled
+ok 11 - local HTTP: encrypted dummy upload -> HEAD/copy -> decrypt/fsync -> ACK -> immediate delete -> settled
+  ---
+  duration_ms: 99.372705
+  type: 'test'
+  ...
+# Subtest: cross-account, pending device, and forged device proof are denied
+ok 12 - cross-account, pending device, and forged device proof are denied
+  ---
+  duration_ms: 44.790089
+  type: 'test'
+  ...
+# Subtest: duplicate request/upload/complete/ACK is idempotent with fresh proofs
+ok 13 - duplicate request/upload/complete/ACK is idempotent with fresh proofs
+  ---
+  duration_ms: 39.353588
+  type: 'test'
+  ...
+# Subtest: two recipients: first ACK keeps ready object; final ACK deletes
+ok 14 - two recipients: first ACK keeps ready object; final ACK deletes
+  ---
+  duration_ms: 33.721645
+  type: 'test'
+  ...
+# Subtest: expiry denies API and issued URL, never auto-renews; explicit retry waits for source
+ok 15 - expiry denies API and issued URL, never auto-renews; explicit retry waits for source
+  ---
+  duration_ms: 40.931904
+  type: 'test'
+  ...
+# Subtest: cipher size is bounded and completion verifies actual object size
+ok 16 - cipher size is bounded and completion verifies actual object size
+  ---
+  duration_ms: 29.416277
+  type: 'test'
+  ...
+# Subtest: PUT replay cannot overwrite stage; old upload capability never writes ready key
+ok 17 - PUT replay cannot overwrite stage; old upload capability never writes ready key
+  ---
+  duration_ms: 25.258598
+  type: 'test'
+  ...
+# Subtest: ACK cleanup failure is retried; completed transfer cannot grant downloads
+ok 18 - ACK cleanup failure is retried; completed transfer cannot grant downloads
+  ---
+  duration_ms: 29.598241
+  type: 'test'
+  ...
+# Subtest: multiple senders are coordinated by one atomic lease
+ok 19 - multiple senders are coordinated by one atomic lease
+  ---
+  duration_ms: 23.067399
+  type: 'test'
+  ...
+# Subtest: revocation waives remaining receiver, blocks access, and allows final cleanup
+ok 20 - revocation waives remaining receiver, blocks access, and allows final cleanup
+  ---
+  duration_ms: 31.574607
+  type: 'test'
+  ...
+# Subtest: new-recipient join versus final ACK is serialized
+ok 21 - new-recipient join versus final ACK is serialized
+  ---
+  duration_ms: 30.391205
+  type: 'test'
+  ...
+# Subtest: proof replay, altered JSON, and stale timestamp are rejected
+ok 22 - proof replay, altered JSON, and stale timestamp are rejected
+  ---
+  duration_ms: 17.749232
+  type: 'test'
+  ...
+# Subtest: copy finishing after expiry never makes the transfer ready
+ok 23 - copy finishing after expiry never makes the transfer ready
+  ---
+  duration_ms: 23.58678
+  type: 'test'
+  ...
+# Subtest: source revoked while CopyObject is in flight cannot publish ready
+ok 24 - source revoked while CopyObject is in flight cannot publish ready
+  ---
+  duration_ms: 21.336563
+  type: 'test'
+  ...
+# Subtest: recipient ACK requires explicit verified + durably stored attestations
+ok 25 - recipient ACK requires explicit verified + durably stored attestations
+  ---
+  duration_ms: 24.038561
+  type: 'test'
+  ...
+# Subtest: durable account rate limit applies to incremental events
+ok 26 - durable account rate limit applies to incremental events
+  ---
+  duration_ms: 138.984566
+  type: 'test'
+  ...
+# Subtest: cross-file byte budget includes stage and ready copies
+ok 27 - cross-file byte budget includes stage and ready copies
+  ---
+  duration_ms: 28.14258
+  type: 'test'
+  ...
+# Subtest: upload attempts are bounded and do not extend transfer expiry
+ok 28 - upload attempts are bounded and do not extend transfer expiry
+  ---
+  duration_ms: 46.613158
+  type: 'test'
+  ...
+# Subtest: re-request cycles are bounded; no scheduled auto-reupload
+ok 29 - re-request cycles are bounded; no scheduled auto-reupload
+  ---
+  duration_ms: 40.08161
+  type: 'test'
+  ...
+# Subtest: cursor polling is incremental; old cursor requires bounded snapshot recovery
+ok 30 - cursor polling is incremental; old cursor requires bounded snapshot recovery
+  ---
+  duration_ms: 21.704307
+  type: 'test'
+  ...
+# Subtest: canceling one receiver does not cancel other receivers
+ok 31 - canceling one receiver does not cancel other receivers
+  ---
+  duration_ms: 22.854368
+  type: 'test'
+  ...
+# Subtest: plaintext fields, raw original hashes, and private JWK fields are rejected
+ok 32 - plaintext fields, raw original hashes, and private JWK fields are rejected
+  ---
+  duration_ms: 15.149739
+  type: 'test'
+  ...
+# Subtest: consent withdrawal blocks grants without affecting vault/sync
+ok 33 - consent withdrawal blocks grants without affecting vault/sync
+  ---
+  duration_ms: 28.185324
+  type: 'test'
+  ...
+# Subtest: production entry point is off and fails closed on unverified infrastructure
+ok 34 - production entry point is off and fails closed on unverified infrastructure
+  ---
+  duration_ms: 0.574264
+  type: 'test'
+  ...
+# Subtest: cleanup failure backoff is respected and a dead letter needs explicit retry
+ok 35 - cleanup failure backoff is respected and a dead letter needs explicit retry
+  ---
+  duration_ms: 24.597052
+  type: 'test'
+  ...
+# Subtest: source reporting missing invalidates its in-flight completion lease
+ok 36 - source reporting missing invalidates its in-flight completion lease
+  ---
+  duration_ms: 21.495622
+  type: 'test'
+  ...
+# Subtest: download grant budget is enforced and GET grant is scoped to immutable ETag
+ok 37 - download grant budget is enforced and GET grant is scoped to immutable ETag
+  ---
+  duration_ms: 55.58175
+  type: 'test'
+  ...
+# Subtest: CORS origin is allowlisted and control-plane requests have a hard byte limit
+ok 38 - CORS origin is allowlisted and control-plane requests have a hard byte limit
+  ---
+  duration_ms: 14.316755
+  type: 'test'
+  ...
+# Subtest: idempotent offers and requests do not emit an event feedback loop
+ok 39 - idempotent offers and requests do not emit an event feedback loop
+  ---
+  duration_ms: 17.449721
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1062.253691
+
+> check
+> node --check core.mjs && node --check security.mjs && node --check adapters.mjs && node --check worker.mjs
+
