@@ -13,15 +13,17 @@ const progressMergeSource=readFileSync(resolve(root,'scripts/sync/progress-merge
 
 assert.doesNotMatch(sync,/setInterval\([^\n]*doSync/,
   'Idle foreground time still polls the complete sync path');
-assert.doesNotMatch(sync,/from\('words'\)\.select\('key,data'\)\.eq\('user_id',sbUser\.id\);/,
+assert.doesNotMatch(sync,/from\('words'\)\.select\('key,data'\)\.eq\('user_id',(?:sbUser\.id|session\.userId)\);/,
   'Normal v2 sync still downloads every words row');
-assert.match(sync,/select\('data'\)\.eq\('user_id',sbUser\.id\)\.eq\('key',VAULT_META_ROW\)\.maybeSingle\(\)/,
-  'Sync does not use the small metadata row as its first remote check');
-assert.match(sync,/select\('data'\)\.eq\('user_id',sbUser\.id\)\.eq\('key',VAULT_ROW\)\.maybeSingle\(\)/,
+assert.match(sync,/select\('data'\)\.eq\('user_id',session\.userId\)\.eq\('key',VAULT_META_ROW\)\.maybeSingle\(\)/,
+  'Sync does not fetch the small recovery metadata row');
+assert.match(sync,/select\('revision:data->>revision,updatedAt:data->updatedAt,sync:data->sync'\)/,
+  'Version checks must project a small header from the same row as the vault');
+assert.match(sync,/select\('data'\)\.eq\('user_id',session\.userId\)\.eq\('key',VAULT_ROW\)\.maybeSingle\(\)/,
   'Vault download is not restricted to the encrypted vault key');
-assert.match(sync,/vaultMeta\.legacyCleanedAt\|\|vaultMeta\.legacyMigratedAt/,
+assert.match(sync,/state\.legacyCleanedAt\|\|state\.legacyMigratedAt/,
   'Completed legacy migration does not skip legacy tables');
-assert.match(sync,/if\(migrationNeeded\)\{[\s\S]*readLegacyData\(await readLegacyRows\(\)\)/,
+assert.match(sync,/if\(migrationNeeded&&!legacy\)\{[\s\S]*readLegacyData\(await readLegacyRows\(\)\)/,
   'Legacy reads are not gated behind migration state');
 assert.doesNotMatch(sync,/from\('(?:words|books|positions)'\)\.delete\(\)|storage\.from\('books'\)\.list\(/,
   'Emergency hardening still deletes or lists legacy server data');
@@ -41,7 +43,7 @@ assert.match(sync,/queueReadingProgressSync\(\)[\s\S]{0,500}doProgressSync\(fals
   'Reading progress still schedules the vocabulary sync path');
 assert.doesNotMatch(sync,/function queueReadingProgressSync\(\)[\s\S]{0,500}queueSync\(\)/,
   'Progress-only changes still mark the vocabulary vault dirty');
-assert.match(sync,/\[sbUser\.id,vaultMeta\.vaultId,'progress'\],'breeze\/progress\/v1'/,
+assert.match(sync,/\[session\.userId,vaultId,'progress'\],'breeze\/progress\/v1'/,
   'Progress payload is not sealed with a distinct authenticated context');
 assert.match(sync,/const rawHash=original\.hash\|\|book\.sourceHash\|\|'';[\s\S]{0,700}updatedAt:Math\.max\(book\.renamedAt/,
   'Vault book metadata is not independent from reading position');
@@ -70,8 +72,14 @@ assert.equal(result.records.book.updatedAt,300,'Newest offline local progress di
 assert.equal(result.serverChanged,true,'Newer offline progress would not upload');
 result=merge(remote,remote,'');
 assert.equal(result.serverChanged,false,'Identical progress schedules a duplicate upload');
-assert.match(sync,/if\(merged\.serverChanged\)\{/,
+assert.match(sync,/if\(merged\.serverChanged\|\|!previous\)\{/,
   'A later-arriving stale device snapshot cannot be repaired on reconnect');
+assert.match(sync,/compareAndSwapSyncRow\(VAULT_ROW,previous,data,session\)/,
+  'Vocabulary snapshot bypasses conditional saving');
+assert.match(sync,/compareAndSwapSyncRow\(PROGRESS_ROW,previous,data,session\)/,
+  'Progress snapshot bypasses conditional saving');
+assert.match(sync,/query\.select\('key'\)\.maybeSingle\(\)/,
+  'A successful CAS must not return the entire encrypted snapshot');
 
 const cryptoContext={crypto:webcrypto,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,String,btoa,atob};
 new Script(readFileSync(resolve(root,'scripts/sync/vault-crypto.js'),'utf8')+
