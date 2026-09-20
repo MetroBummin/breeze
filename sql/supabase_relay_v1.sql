@@ -1,5 +1,6 @@
--- Breeze relay v1. ADDITIVE, NOT APPLIED. Target: hrtfhojbhqvaoiulspto only.
--- Run only after explicit DB approval; no words/positions/sync_pairings changes.
+-- Breeze relay v1. ADDITIVE. Target: hrtfhojbhqvaoiulspto only.
+-- Applied 2026-09-20 as migration 20260920053847 / add_breeze_relay_v1.
+-- Source retained for audit/rebuild; do not re-run blindly. No words/positions/sync_pairings changes.
 -- All access is Worker service-role RPC. Browser roles deliberately get NO policies.
 begin;
 create table public.relay_accounts (
