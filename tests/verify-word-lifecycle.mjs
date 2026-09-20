@@ -11,9 +11,8 @@
    실기기에서 온 말 한 줄이 근거입니다: "뜻이 완성되기 전에 바로 나가면 렉이 훨씬
    잘 걸린다." 브라우저에서 재 보니 실제로 이런 일이 있었습니다.
 
-     ① lookup를 닫고 **2초 뒤에 번역 요청이 새로 출발**했습니다. 닫힌 창을 위해서.
-     ② "이 문장에서는?" 의 답이 늦게 오면 `selectWord` 를 불러 **lookup가 저 혼자
-        다시 열렸습니다.** 손은 이미 떠나서 글을 넘기고 있는데.
+     ① lookup를 닫고 **2초 뒤에 metadata 요청이 새로 출발**했습니다. 닫힌 창을 위해서.
+     ② 다른 문장의 늦은 분류·생성 답이 **lookup를 저 혼자 다시 열었습니다.**
      ③ 표현 칩의 답이 늦게 오면 `renderBookBody` 로 **본문 전체를 다시
         조립했습니다** — 개츠비에서 문단 1600여 개를.
 
@@ -90,7 +89,7 @@ function makeNet(world){
   net.dictCall = (payload, signal) => {
     if(payload && payload.op === 'log') return Promise.resolve(null);
     if(payload && payload.op === 'warm') return Promise.resolve(null);
-    world.sent.push(payload.op);
+    world.sent.push(payload.op);world.payloads=(world.payloads||[]).concat(payload);
     return new Promise(res => {
       const entry = { res, signal, done:false };
       /* `outran` 은 "답이 끊기보다 빨랐다"입니다 — 이미 선을 타고 오던 답은
@@ -163,7 +162,7 @@ function makeContext(world, net, store){
     dictGet:key=>Promise.resolve(store.get(key) || null),
     dictPut:(key,value)=>{ store.set(key,value); world.puts.push(key); return Promise.resolve(); },
     dictCall:net.dictCall,
-    /* 무료 사전은 이 시험의 주제가 아닙니다 — 취소표를 받았는지만 봅니다. */
+    /* 영어 metadata는 이 시험의 주제가 아닙니다 — 취소표만 봅니다. */
     fetch:(url, opt)=>{
       const signal = opt && opt.signal;
       world.timers.push(signal ? 'signal' : 'bare');
@@ -173,7 +172,7 @@ function makeContext(world, net, store){
           if(done) return; done = true;
           rej(Object.assign(new Error('끊김'), { name:'AbortError' }));
         }, {once:true});
-        /* 무료 사전이 빈손으로 돌아온 셈 칩니다 — 여기서 보는 것은 답의 내용이
+        /* metadata가 빈손으로 돌아온 셈 칩니다 — 여기서 보는 것은 답의 내용이
            아니라 취소표를 들고 갔는가입니다. */
         setTimeout(()=>{ if(done) return; done = true; res({ ok:false, status:404, json:()=>Promise.resolve(null) }); }, 1);
       });
@@ -207,6 +206,7 @@ const AI_MIN_WAIT = 400;    // dictionary.js 의 280ms 보다 넉넉하게
 const tick = () => new Promise(res => setTimeout(res, 0));
 /* 미세 작업이 여러 겹 쌓입니다 — 몇 번 돌려 다 가라앉힌 뒤에 봅니다. */
 const settle = async (n=12) => { for(let i=0;i<n;i++) await tick(); };
+const rest = ms => new Promise(res => setTimeout(res, ms));
 
 /* 낱말 하나를 새로 누른 것과 같은 자리 — `addWord` 가 하는 일 그대로. */
 function tapNewWord(ctx, key){
@@ -235,7 +235,7 @@ function tapNewWord(ctx, key){
   assert.equal(world.renders, rendersWhileOpen,
     '닫힌 창을 늦은 답이 다시 그렸습니다');
   assert.ok(!world.timers.includes('bare'),
-    '무료 사전 요청 하나가 취소표 없이 나갔습니다 — 닫아도 안 멈춥니다');
+    'metadata 요청 하나가 취소표 없이 나갔습니다 — 닫아도 안 멈춥니다');
   assert.ok(!ctx.words.flutter.aiOff,
     '끊긴 요청을 오류로 적었습니다 — 다시 열면 "안 됐다"가 먼저 보입니다');
   assert.equal(ctx.selKey, null, '닫힌 뒤에도 고른 낱말이 남아 있습니다');
@@ -301,27 +301,50 @@ function tapNewWord(ctx, key){
     '창이 이미 닫혔는데 AI 요청이 출발했습니다 — 아무도 안 볼 답에 한도를 씁니다');
 }
 
-/* ================= ⑤ 늦은 답이 창을 다시 열지 못한다 ================= */
+/* ================= ⑤ 자동 Jev 분류와 fallback ================= */
 {
   const { world, net, ctx } = boot();
-  net.outran = true;
   ctx.words.moon = { word:'moon', clicked:'moon', forms:['moon'], ko:'달', ai:{ko:'달',done:true},
-    example:'첫 문장', book:'시험책', status:1, mark:true, addedAt:1, up:1 };
-  /* 저장해 둔 낱말을 **다른 문장에서** 만난 자리 — 그때만 "이 문장에서는?" 이
-     뜹니다. 그 상태는 `openWord` 가 만듭니다. */
+    example:'첫 문장', book:'시험책', status:1, mark:true, pickedAt:2, addedAt:1, up:1 };
+  ctx.words['moon::sense:other']={...ctx.words.moon,root:'moon',sense:true,ko:'위성',example:'둘째 문장',pickedAt:1};
   const span = { textContent:'moon', dataset:{ example:'아주 다른 문장입니다.' },
                  classList:{ add(){}, remove(){} }, closest:()=>null };
   ctx.openWord('moon', span);
-  const asking = ctx.askCurrentContext('moon');
   await settle();
-  assert.equal(world.sent.length, 1, '"이 문장에서는?" 이 서버에 묻지 않았습니다');
+  assert.deepEqual(world.sent,['judge'],'저장 뜻의 다른 문장이 Jev 판단으로 시작하지 않았습니다');
+  assert.equal(ctx.words[ctx.selKey].ko,'달','Jev를 기다리는 동안 저장 뜻을 먼저 보여 주지 않았습니다');
+  net.deliver({selected:'sense_1',confidence:.9});
+  await settle();
+  assert.equal(ctx.words[ctx.selKey].ko,'위성','Jev가 고른 기존 뜻을 재사용하지 않았습니다');
+  assert.deepEqual(world.sent,['judge'],'기존 뜻을 골랐는데 생성형 lookup까지 호출했습니다');
+}
+{
+  const { world, net, ctx } = boot();
+  ctx.words.run={word:'run',clicked:'run',forms:['run'],ko:'달리다',ai:{ko:'달리다',done:true},
+    example:'He runs daily.',book:'시험책',status:1,mark:true,addedAt:1,up:1};
+  const span={textContent:'run',dataset:{example:'She runs the company.'},classList:{add(){},remove(){}},closest:()=>null};
+  ctx.openWord('run',span);await settle();
+  net.deliver({selected:'NEW',confidence:.8});await settle();
+  assert.deepEqual(world.sent,['judge','look'],'NEW가 기존 contextual AI lookup으로 이어지지 않았습니다');
+  net.deliver({ko:'운영하다',pos:'동사',gloss:'조직을 맡아 관리하다',lemma:'run',alts:[]});
+  await rest(AI_MIN_WAIT);await settle();
+  assert.ok(Object.values(ctx.words).some(item=>item&&item.root==='run'&&item.ko==='운영하다'),
+    'NEW contextual 답이 새 Meaning으로 저장되지 않았습니다');
+}
+
+/* ================= ⑥ 늦은 답이 창을 다시 열지 못한다 ================= */
+{
+  const { world, net, ctx } = boot();net.outran=true;
+  ctx.words.moon={word:'moon',clicked:'moon',forms:['moon'],ko:'달',ai:{ko:'달',done:true},
+    example:'첫 문장',book:'시험책',status:1,mark:true,addedAt:1,up:1};
+  const span={textContent:'moon',dataset:{example:'다른 문장'},classList:{add(){},remove(){}},closest:()=>null};
+  ctx.openWord('moon',span);await settle();
 
   ctx.closePanel();
   await settle();
   const rendersAfterClose = world.renders;
   const panel = world.el('panel'), scrim = world.el('word-modal-scrim');
-  net.deliver();                // 답은 도착합니다 — 창이 닫힌 뒤에
-  await asking;
+  net.deliver({selected:'NEW'}); // 판단은 도착하지만 생성형 요청을 시작하면 안 됩니다
   await settle();
 
   assert.equal(panel.classList.contains('on'), false,
@@ -330,29 +353,23 @@ function tapNewWord(ctx, key){
     '닫은 lookup의 바깥판이 늦은 답을 받고 다시 화면을 덮었습니다');
   assert.equal(ctx.selKey, null, '늦은 답이 `selectWord` 로 낱말을 다시 골랐습니다');
   assert.equal(world.renders, rendersAfterClose, '늦은 답이 닫힌 창을 그렸습니다');
-  assert.ok(world.puts.length >= 1,
-    '늦게 왔다는 이유로 답을 캐시에서도 뺐습니다 — 다시 물으면 한도를 또 씁니다');
+  assert.deepEqual(world.sent,['judge'],'닫힌 lookup의 늦은 Jev 답이 생성형 lookup을 시작했습니다');
 }
 
-/* ================= ⑥ 늦은 답이 본문을 다시 조립하지 못한다 ================= */
+/* ================= ⑦ 기존 phrase 데이터 read compatibility ================= */
 {
-  const { world, net, ctx } = boot();
-  net.outran = true;
-  ctx.words.care = { word:'care', clicked:'care', forms:['care'], ko:'돌봄', phrase:'takes care of',
-    example:'She takes care of it.', book:'시험책', status:1, mark:true, addedAt:1, up:1 };
-  ctx.selectWord('care', null);
-  const opening = ctx.openPhrase('care');
-  await settle();
-  ctx.closePanel();
-  await settle();
-  net.deliver();
-  await opening;
-  await settle();
-
-  assert.equal(world.bookRebuilds, 0,
-    'lookup를 닫은 뒤 늦은 답이 본문 전체를 다시 조립했습니다 — 스크롤 한복판에서');
-  assert.equal(world.el('panel').classList.contains('on'), false,
-    '표현의 늦은 답이 닫은 lookup를 다시 열었습니다');
+  const {world,ctx}=boot();
+  const id='phrase:take care of';
+  ctx.words[id]={word:'take care of',clicked:'takes care of',forms:['take','care','of'],
+    phraseParts:['take','care','of'],ko:'돌보다',ai:{ko:'돌보다',done:true},
+    example:'She takes care of it.',book:'시험책',status:1,mark:true,addedAt:1,up:1};
+  ctx.words.care={word:'care',clicked:'care',forms:['care'],ko:'돌봄',ai:{ko:'돌봄',done:true},
+    phrase:'takes care of',example:'첫 문장',book:'시험책',status:1,mark:true,addedAt:1,up:1}; // 예전 suggestion metadata
+  ctx.selectWord(id,null);await settle();
+  assert.equal(ctx.words[id].ko,'돌보다','기존 저장 phrase meaning을 읽지 못했습니다');
+  ctx.selectWord('care',null);await settle();
+  assert.equal(ctx.words.care.ko,'돌봄','예전 suggestion metadata가 일반 word meaning을 훼손했습니다');
+  assert.equal(world.bookRebuilds,0,'legacy phrase를 읽는 것만으로 Reader를 다시 조립했습니다');
 }
 
 /* ================= ⑦ 같은 낱말을 닫았다 다시 열어도 섞이지 않는다 =================
@@ -426,7 +443,6 @@ function newWordSpan(key){
 const tapBrandNewWord = (ctx, key) => ctx.openWord(key, newWordSpan(key));
 /* 창이 열려 있는 채로 답이 오면 `AI_MIN_WAIT`(280ms) 만큼 바람을 더 보여 준 뒤에
    놓습니다 — 미세 작업만 돌려서는 그 자리를 못 지납니다. */
-const rest = ms => new Promise(res => setTimeout(res, ms));
 const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?{ko,done:true}:undefined,
   phon:'', defs:[], kodict:[], example:'첫 문장', book:'시험책', status:1, mark:true, addedAt:1, up:1 });
 
@@ -507,30 +523,22 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
 }
 
 {
-  /* 무료 사전 후보만 있는 채로 닫음 — 후보가 여럿이라는 사실은 대표 뜻이 아닙니다.
-     번역기가 실제로 돌려주는 모양 그대로 답하게 해서, `fetchKo` 가 지나는 길을
-     진짜로 밟습니다. 여기서 함께 지키는 것이 하나 더 있습니다: **무료 사전은
-     뜻자리에 들어오지 않는다.** 예전에는 후보의 맨 앞 하나가 슬쩍 뜻자리에
-     앉았고, 그래서 화면은 "정해졌다"고 말하는데 닫으면 사라지는 낱말이
-     생겼습니다 — 사람이 본 것과 안에 든 것이 갈라지던 자리입니다. */
+  /* 영어 metadata 응답은 한국어 뜻이나 후보를 만들지 않습니다. */
   const { net, ctx } = boot();
   const bare = ctx.fetch;
-  ctx.fetch = (url, opt) => String(url).includes('translate.googleapis.com')
-    ? Promise.resolve({ ok:true, json:()=>Promise.resolve(
-        [[['양보하다','yield']], [['동사',['양보하다','굴복하다']],['명사',['산출하다','생산량']]]]) })
+  ctx.fetch = (url, opt) => String(url).includes('api.dictionaryapi.dev')
+    ? Promise.resolve({ok:true,json:()=>Promise.resolve([{phonetic:'/jiːld/',phonetics:[],meanings:[{partOfSpeech:'verb',definitions:[{definition:'give way'}]}]}])})
     : bare(url, opt);
   tapBrandNewWord(ctx, 'yield');
   net.deliver({ error:'quota_exceeded' });
   await settle(40);
-  assert.equal(ctx.words.yield.ko, '',
-    '무료 사전이 뜻자리를 채웠습니다 — 화면은 정해졌다고 말하는데 안은 아직 아닙니다');
-  assert.ok(ctx.words.yield.kodict.length >= 2, '무료 사전 후보가 여러 개인 상태여야 합니다');
-  assert.ok(ctx.words.yield.kodict.some(group=>(group.terms||[]).includes('굴복하다')),
-    '무료 사전 후보가 고를 수 있는 모양으로 남지 않았습니다');
+  assert.equal(ctx.words.yield.ko,'','영어 metadata가 한국어 뜻자리를 채웠습니다');
+  assert.equal(ctx.words.yield.phon,'/jiːld/','실제로 쓰는 IPA metadata가 사라졌습니다');
+  assert.equal(ctx.words.yield.defs[0].def,'give way','실제로 쓰는 영어 정의 metadata가 사라졌습니다');
   ctx.closePanel();
   await settle();
   assert.equal(ctx.words.yield, undefined,
-    '무료 사전 후보만 보고 닫았는데 낱말이 남았습니다 — 어느 뜻을 원했는지 아무도 모릅니다');
+    '한국어 뜻을 못 받은 새 낱말이 metadata만으로 저장됐습니다');
 }
 {
   /* 늦게 도착한 답이 버린 낱말을 되살리지 않습니다.
@@ -610,6 +618,67 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   ctx.currentReaderMode='original';
   ctx.readerWordNodes('.w');
   assert.equal(frameQueries,1,'Original mode 의 active EPUB frame 까지 제외했습니다');
+}
+
+/* ================= JEV phrase membership → phrase sense ================= */
+{
+  const {world,net,ctx}=boot();
+  const sentence='He took the criticism into account.';
+  const span={textContent:'took',dataset:{example:sentence,clickedTokenIndex:'1'},
+    classList:{add(){},remove(){}},closest:()=>null};
+  ctx.openWord('take',span);await settle(20);
+  assert.deepEqual(world.sent,['phrase'],'새 낱말의 생성형 뜻보다 phrase membership이 먼저 나가지 않았습니다');
+  assert.equal(world.payloads[0].sentence,sentence,'Jev phrase 판정에 문장 전체가 가지 않았습니다');
+  assert.equal(world.payloads[0].clickedIndex,1,'클릭 token index가 drift했습니다');
+  assert.deepEqual(Array.from(world.payloads[0].tokens,item=>item.text),['He','took','the','criticism','into','account'],
+    '문장 token mapping이 달라졌습니다');
+  net.deliver({accepted:true,threshold:.86,members:[{index:1,confidence:.96},{index:4,confidence:.95},{index:5,confidence:.98}]});
+  await settle(20);
+  assert.deepEqual(world.sent,['phrase','look'],'확정 phrase가 contextual lookup으로 이어지지 않았습니다');
+  assert.equal(world.payloads[1].word,'take into account','생성형 AI에 자유 생성 phrase가 아니라 canonical identity를 보내지 않았습니다');
+  net.deliver({ko:'고려하다',pos:'동사',gloss:'판단할 때 반영하다',lemma:'take into account',alts:[]});
+  await rest(AI_MIN_WAIT);await settle(20);
+  const phrase=ctx.words['phrase:take into account'];
+  assert.ok(phrase,'비연속 phrase가 실제 저장 phrase 카드가 되지 않았습니다');
+  assert.deepEqual(Array.from(phrase.phraseParts),['take','into','account'],'phrase identity가 선택 token 순서를 잃었습니다');
+  assert.deepEqual(Array.from(phrase.phraseGaps),[2,0],'비연속 token gap이 저장되지 않았습니다');
+  assert.equal(phrase.ko,'고려하다','phrase 뜻이 저장되지 않았습니다');
+  assert.equal(ctx.words.take,undefined,'phrase와 함께 이번 탭이 만든 빈 word 껍데기가 남았습니다');
+}
+{
+  const {world,net,ctx}=boot();
+  const sentence='She took a book from the shelf.';
+  const span={textContent:'took',dataset:{example:sentence,clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
+  ctx.openWord('take',span);await settle(20);
+  net.deliver({accepted:false,threshold:.86,members:[{index:1,confidence:.73}]});await settle(20);
+  assert.deepEqual(world.sent,['phrase','look'],'애매하거나 일반적인 사용이 word-only fallback으로 내려가지 않았습니다');
+  assert.equal(world.payloads[1].word,'take','word-only fallback이 클릭 낱말 identity를 잃었습니다');
+}
+{
+  const {world,net,ctx}=boot();
+  const id='phrase:take into account';
+  ctx.words.take=savedWord('take','가져가다');
+  ctx.words[id]={...savedWord('take into account','고려하다'),word:'take into account',
+    clicked:'took … into account',forms:['take','into','account'],phraseParts:['take','into','account'],phraseGaps:[2,0]};
+  const span={textContent:'took',dataset:{example:'He took the criticism into account.',clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
+  ctx.openWord('take',span);await settle(20);
+  net.deliver({accepted:true,threshold:.86,members:[{index:1,confidence:.97},{index:4,confidence:.96},{index:5,confidence:.98}]});await settle(20);
+  assert.deepEqual(world.sent,['phrase','judge'],'저장 phrase의 다른 문맥이 phrase sense reuse로 이어지지 않았습니다');
+  net.deliver({selected:'sense_0',confidence:.95});await settle(20);
+  assert.equal(ctx.selKey,id,'Jev가 고른 기존 phrase 뜻을 재사용하지 않았습니다');
+  assert.deepEqual(world.sent,['phrase','judge'],'기존 phrase sense 뒤에 생성형 lookup이 호출됐습니다');
+}
+{
+  const {world,net,ctx}=boot();net.outran=true;
+  const sentence='They gave the idea up yesterday.';
+  const span={textContent:'gave',dataset:{example:sentence,clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
+  ctx.openWord('give',span);await settle(20);
+  net.deliver({accepted:true,threshold:.86,members:[{index:1,confidence:.97},{index:4,confidence:.96}]});await settle(20);
+  assert.deepEqual(world.sent,['phrase','look'],'비연속 phrase lookup이 시작되지 않았습니다');
+  ctx.closePanel();net.deliver({ko:'포기하다',lemma:'give up',pos:'동사',gloss:'그만두다',alts:[]});
+  await rest(AI_MIN_WAIT);await settle(20);
+  assert.equal(ctx.words['phrase:give up'],undefined,'닫힌 lookup의 늦은 답이 phrase를 저장했습니다');
+  assert.equal(world.el('panel').classList.contains('on'),false,'늦은 phrase 답이 popup을 다시 열었습니다');
 }
 
 console.log('낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)');

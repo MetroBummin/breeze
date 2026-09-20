@@ -8,7 +8,7 @@
   max-width:calc(100vw - 32px); overflow:hidden; border:1px solid var(--sentence-glass-line);
   border-radius:999px; background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
   box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
-  animation:word-peek-in var(--sentence-transition) cubic-bezier(.2,.7,.25,1);}
+  animation:word-peek-in 120ms cubic-bezier(.2,.7,.25,1);}
 #word-peek[hidden]{display:none;}
 #word-peek::before{content:""; position:absolute; z-index:-1; inset:0; pointer-events:none;
   border-radius:inherit;
@@ -37,8 +37,8 @@ body.dark #word-peek::before{
 #word-peek-more:active::before{transform:scale(.94);}
 #word-peek-more:focus-visible{outline:2px solid var(--blue); outline-offset:-3px; border-radius:50%;}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  #word-peek{background:var(--sentence-glass-pill); backdrop-filter:blur(19px) saturate(122%);
-    -webkit-backdrop-filter:blur(19px) saturate(122%);}
+  #word-peek{background:var(--sentence-glass-pill); backdrop-filter:blur(12px) saturate(118%);
+    -webkit-backdrop-filter:blur(12px) saturate(118%);}
 }
 @keyframes word-peek-in{from{opacity:0; transform:translateY(3px) scale(.97)}to{opacity:1; transform:none}}
 @media (prefers-reduced-motion:reduce){
@@ -187,14 +187,6 @@ body.dark #word-peek::before{
   #p-aibtn:hover{background:var(--sky); border-style:solid;}
   #p-aibtn:disabled{opacity:.6; cursor:default;}
   #p-aibtn .sp{font-size:15px;}
-  /* 캐시된 뜻을 보고 있을 때만 열리는 문. 이미 이 문장으로 받아 온 뜻이면
-     아예 뜨지 않습니다 — 누를 이유가 없는 단추는 자리도 차지하지 않습니다. */
-  #p-context{display:none; align-items:center; justify-content:center; gap:6px; width:100%;
-    margin:-2px 0 12px; padding:9px 11px; border-radius:12px; font:600 12px var(--ui); cursor:pointer;}
-  #p-context.on{display:flex; border:1px dashed var(--ai-line); background:transparent; color:var(--ai-key);}
-  #p-context.on:hover{background:var(--ai-bg2); border-style:solid;}
-  #p-context:disabled{opacity:.55; cursor:default;}
-  #p-context .sp{font-size:11px;}
   /* 기본은 보통 흐름의 위 여백입니다 — 바로 위 형제가 아무것도 안 그려질 때
      (quota·offline: 단추가 숨습니다) 이 여백이 그 위의 낱말 칸과 부딪히지
      않게. 단추가 실제로 있을 때만(.tight, scripts/dictionary/dictionary.js)
@@ -234,8 +226,7 @@ body.dark #word-peek::before{
     border-radius:50%; background:var(--sentence-glass-muted); opacity:.48;}
   #ps-foot{margin-top:10px; color:var(--sentence-glass-muted); text-align:center;
     font-size:11px; line-height:1.45;}
-  /* 실패했을 때만 뜨는 한 줄. 뜻 칸의 "이 문장에서는?" 과 같은 문법을 씁니다 —
-     둘 다 이 카드 안에서 다시 물어보는 자리라 모양이 같아야 합니다. */
+  /* 문장 설명 요청이 실패했을 때만 뜨는 다시 시도 단추입니다. */
   #ps-retry{display:block; margin:10px auto 0; padding:8px 16px; border-radius:12px;
     border:1px solid var(--sentence-glass-line-soft); background:var(--sentence-glass-action);
     color:var(--sentence-glass-secondary);
@@ -302,9 +293,6 @@ body.dark #word-peek::before{
   #p-sense-input{width:100%; box-sizing:border-box; border:1px solid var(--blue); border-radius:12px;
     padding:9px 11px; background:var(--field); color:var(--ink); font:400 16px var(--ui); outline:none;
     box-shadow:0 0 0 2px var(--blue-ring);}
-  /* 숙어는 낱말 바로 아래 한 줄입니다. 뜻 칩과 섞이지 않게 자기 자리를 따로 씁니다. */
-  #p-colloc{display:none; flex-wrap:wrap; gap:6px; margin-top:11px;}
-  #p-colloc.on{display:flex;}
   #p-alts{display:none; flex-wrap:wrap; gap:7px;}
   #p-alts.on{display:flex;}
   #p-saved-senses{display:none; flex-wrap:wrap; gap:6px;}
@@ -321,14 +309,6 @@ body.dark #word-peek::before{
   .saved-sense .sense-remove{display:inline-block; margin:-2px -3px -2px 5px; padding:2px 4px;
     color:var(--blue); opacity:.5; font:700 13px/1 var(--ui); vertical-align:-1px;}
   .saved-sense:hover .sense-remove{opacity:1; color:var(--danger);}
-  /* 표현은 있을 때만 나타납니다. 그래서 여러 후보 중 하나처럼 묻히지 않고,
-     통째로 봐야 한다는 신호 하나만 또렷하게 남깁니다. */
-  .phrase-suggestion{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--ai-line);
-    border-radius:16px; padding:7px 12px; background:linear-gradient(110deg,var(--ai-bg1),var(--ai-bg2));
-    color:var(--ai-ink); font:italic 600 14px var(--serif); box-shadow:var(--shadow-phrase); cursor:pointer;}
-  .phrase-suggestion:hover{border-color:var(--blue); transform:translateY(-1px);}
-  .phrase-star{font:12px var(--ui); color:var(--ai-key); font-style:normal;}
-  .phrase-go{font:13px var(--ui); color:var(--ai-key); font-style:normal;}
   .kochip{border:none; background:var(--chipbg); color:var(--chiptx); border-radius:16px; padding:7px 13px;
     font-size:13px; cursor:pointer; font-family:var(--ui);}
   .kochip:hover{background:var(--chip-hover);}

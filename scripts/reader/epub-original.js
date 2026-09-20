@@ -477,10 +477,20 @@ function renderEpubSavedWordHighlights(doc){
   const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
   let node;
   while((node=walker.nextNode())){
-    pattern.lastIndex=0;
-    let match;
-    while((match=pattern.exec(node.data))){
-      const saved=words[keyOf(match[0])];
+    pattern.lastIndex=0;const matches=[];let match;
+    while((match=pattern.exec(node.data)))matches.push(match);
+    const claimed=new Map();
+    if(typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'){
+      const starts=savedPhraseStarts();
+      for(let index=0;index<matches.length;index++){
+        const choices=[];lemmaCands(matches[index][0]).forEach(part=>(starts.get(part)||[]).forEach(item=>{if(!choices.includes(item))choices.push(item);}));
+        for(const item of choices){const found=savedPhraseMatch(matches,index,item);if(!found)continue;
+          found.selected.forEach(at=>claimed.set(at,item));index=found.end;break;}
+      }
+    }
+    for(let index=0;index<matches.length;index++){
+      match=matches[index];const phrase=claimed.get(index);
+      const saved=phrase?phrase.w:words[keyOf(match[0])];
       if(!saved || saved.mark === false) continue;
       const range=doc.createRange();
       range.setStart(node,match.index); range.setEnd(node,match.index+match[0].length);
@@ -757,7 +767,11 @@ function openOriginalRange(doc,range,raw,owner,rect){
     kind:'epub',href:section.dataset.href||'',spine:+section.dataset.spine,
     element:+indexed.dataset.breezeEi,char,
   });
-  marker.dataset.example=originalSentence((block||owner).textContent,raw);
+  const blockText=(block||owner).textContent||'',parts=typeof bridgeSentences==='function'?bridgeSentences(blockText):[];
+  const part=parts.find(item=>char>=item.start&&char<item.end)||parts[0];
+  marker.dataset.example=part?part.text.replace(/\s+/g,' ').trim():originalSentence(blockText,raw);
+  if(part&&typeof jevSentenceTokens==='function')
+    marker.dataset.clickedTokenIndex=String(jevSentenceTokens(blockText.slice(part.start,char)).length);
   marker.setAttribute('aria-hidden','true');
   if(words[key] && words[key].mark !== false) marker.classList.add('s'+words[key].status);
   marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;background:rgba(37,137,190,.25);border-radius:3px`;

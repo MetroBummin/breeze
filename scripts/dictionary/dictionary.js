@@ -16,6 +16,28 @@ function sentenceOf(span){
   const re = new RegExp('\\b'+span.textContent.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
   return (sents.find(s=>re.test(s)) || sents[0]).trim();
 }
+const JEV_TOKEN_RE=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+function jevSentenceTokens(sentence){
+  const tokens=[];let match;JEV_TOKEN_RE.lastIndex=0;
+  while((match=JEV_TOKEN_RE.exec(String(sentence||'')))) tokens.push({text:match[0],start:match.index,end:match.index+match[0].length});
+  return tokens;
+}
+function jevClickedTokenIndex(span,sentence,tokens){
+  const hinted=Number(span&&span.dataset&&span.dataset.clickedTokenIndex);
+  if(Number.isInteger(hinted)&&hinted>=0&&hinted<tokens.length)return hinted;
+  const spot=typeof textSentencePartAt==='function'?textSentencePartAt(span):null;
+  if(spot&&Number.isInteger(spot.tokenIndex)&&spot.tokenIndex>=0&&spot.tokenIndex<tokens.length)return spot.tokenIndex;
+  const raw=String((span&&span.textContent)||'').replace(/’/g,"'").toLowerCase();
+  const matches=tokens.map((token,index)=>({token,index})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===raw);
+  return matches.length===1?matches[0].index:-1;
+}
+function jevPhraseIdentity(tokens,indexes){
+  const ordered=[...new Set(indexes)].sort((a,b)=>a-b);
+  const parts=ordered.map(index=>lemmaCands(tokens[index].text)[0]||tokens[index].text.toLowerCase());
+  const gaps=ordered.slice(1).map((index,at)=>Math.max(0,index-ordered[at]-1));
+  const surface=ordered.map((index,at)=>`${at&&gaps[at-1]>0?' … ':at?' ':''}${tokens[index].text}`).join('');
+  return {parts,gaps,surface,canonical:parts.join(' '),indexes:ordered};
+}
 /* 한 문장만으로는 뜻이 안 잡히는 자리가 있습니다. 앞뒤 문장을 한 번 더 붙여
    물어보면 대명사·생략·비유가 풀립니다. */
 function expandedContextFor(w, sentence){
@@ -49,70 +71,47 @@ function addWord(k, span){
   const display = acro ? raw.replace(/s$/,'') : k;
   const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];
   const buried = dead[k] || 0;
-  words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[], kodict:[],
+  words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[],
     example:sentenceOf(span), book:curBook.title, status:1, mark:true,
     addedAt:Date.now(), up:Math.max(Date.now(),buried+1) };
   recentWordOpens.set(k, Date.now());
-  /* 이제 이 기기에 잃을 것이 생겼습니다 — 저장소를 영구로 표시해 달라고 부탁합니다.
-     한 번만 물어보고, 이미 물어봤으면 조용히 지나갑니다. */
-  requestDurableLocalStorage();
-  delete dead[k]; save(LS_DEAD, dead);
-  /* 여기서는 이 기기에만 적어 둡니다. 아직 뜻이 하나도 없는 낱말이라 다른 기기로
-     보낼 것이 없고, 그대로 닫히면 없던 일이 되기 때문입니다 — 올려 보낸 뒤에
-     지우면 지웠다는 부고까지 한 번 더 오가야 합니다. 뜻이 붙는 그 자리에서
-     `applyLook`(그리고 `createMeaning`)이 올려 보냅니다. */
-  saveWords();
-  paintWord(k);
+  /* 먼저 필을 그립니다. 저장·색칠·네트워크는 첫 paint 다음 프레임으로 미뤄
+     탭한 손가락에 보이는 반응이 다른 모든 일보다 앞서게 합니다. */
   selectWord(k, span, true);
   markPendingWord(k, buried);
-  fetchDict(k);
+  const life=wordLookupLife;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(!wordLookupAlive(life)||!words[k]) return;
+    requestDurableLocalStorage();
+    delete dead[k]; save(LS_DEAD, dead);
+    saveWords(); paintWord(k);
+    fetchDict(k,span);
+  }));
 }
 /* ---- 뜻이 확정된 낱말 ----
    낱말을 확정시키는 길은 둘뿐입니다.
 
      ① AI 가 지금 문장의 대표 뜻을 답했다      `applyLook`
      ② 사람이 뜻을 채택했다                    `createMeaning`
-                                               (추천 뜻 클릭 · ＋ 직접 입력 ·
-                                                "이 문장에서는?" 의 답)
+                                               (추천 뜻 클릭 · ＋ 직접 입력)
 
    둘 다 `ko` 를 남깁니다. 그래서 확정 여부를 묻는 자리는 여기 하나면 됩니다.
    묻는 것은 "AI 가 답했나" 가 아니라 **"쓸 뜻 하나가 정해졌나"** 입니다 — 그래서
    AI 가 한도에 걸리든 실패하든, 사람이 고른 뜻은 그대로 확정입니다.
 
-   **무료 사전은 뜻자리에 들어오지 않습니다.** 번역기가 주는 것은 "이 문장에서
-   어떤 뜻인가"가 아니라 후보 목록입니다 — `yield` 를 누르면 양보하다·산출하다·
-   굴복하다·생산량이 함께 옵니다. 예전에는 그 목록의 맨 앞 하나를 빈 뜻자리에
-   슬쩍 넣었고, 그래서 화면은 "정해진 뜻"처럼 보이는데 속으로는 확정이 아닌
-   상태가 생겼습니다 — 그대로 닫으면 낱말이 사라졌습니다. 이제 후보는 후보 줄에만
-   서고(`freeDictCandidates`), 사람이 하나를 고르는 순간 `createMeaning` 을 지나
-   확정됩니다. 무료 사전은 뜻이 아니라 조회 정보입니다. */
+   한국어 뜻은 저장된 Meaning 또는 문맥 AI 답만 채웁니다. */
 function hasResolvedMeaning(word){
   if(!word) return false;
   return !!(String(word.ko||'').trim() || String((word.ai&&word.ai.ko)||'').trim());
 }
-/* 무료 사전이 모아 둔 후보들. `kodict` 는 예전부터 받아 두고 화면에서는 한 번도
-   쓰지 않던 자리입니다 — 새 그릇을 만들지 않고 그대로 폅니다. */
-/** @param {any} word @returns {string[]} */
-function freeDictCandidates(word){
-  if(!word || !Array.isArray(word.kodict)) return [];
-  const out=[];
-  word.kodict.forEach(group=>{
-    (group && Array.isArray(group.terms) ? group.terms : []).forEach(term=>{
-      const text=String(term||'').replace(/\s+/g,' ').trim();
-      if(text) out.push(text);
-    });
-  });
-  return [...new Set(out)];
-}
 /* 뜻이 아직 없을 때 그 자리에 적는 한 줄. 왜 못 정했는지와, 아래에서 고를 수
    있는지를 말합니다. */
-/** @param {string} off @param {boolean} hasCandidates @returns {string} */
-function meaningWaitLine(off, hasCandidates){
+/** @param {string} off @returns {string} */
+function meaningWaitLine(off){
   /* 연결이 없다는 것만 말합니다. "문맥 뜻"이 무엇인지, 어디서 못 받았는지는
      안에서 벌어진 일이지 읽는 사람이 알 바가 아닙니다. */
   if(off === 'offline'){
-    return hasCandidates ? '오프라인이에요 · 아래 뜻에서 골라 주세요'
-                         : '오프라인이라 뜻을 찾을 수 없어요';
+    return '오프라인이라 뜻을 찾을 수 없어요';
   }
   const why =
       off === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요'
@@ -120,7 +119,7 @@ function meaningWaitLine(off, hasCandidates){
     : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
     : off === 'error'   ? '문맥 뜻을 받지 못했어요'
     :                     '아직 뜻이 정해지지 않았어요';
-  return hasCandidates ? why + ' · 아래에서 뜻을 골라 주세요' : why;
+  return why;
 }
 /* ---- 이번 조회에서 처음 만들어진 낱말 ----
    낱말을 누르는 그 순간 단어장에 자리가 하나 생기고, 뜻은 그 뒤에 옵니다. 그래서
@@ -173,25 +172,31 @@ function discardPendingWord(){
    잠깐의 손짓이므로 기기 메모리에만 둡니다. */
 const RECENT_WORD_OPEN_MS = 30000;
 const recentWordOpens = new Map();
+function deferWordOpenBump(id){
+  requestAnimationFrame(()=>{
+    const item=words[id];if(!item||item.status>=3)return;
+    item.status++;item.up=Date.now();saveWords();paintWord(item.root||id);queueSync();
+    if(selKey===id)renderWordLookup();
+  });
+}
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 저장한 뜻을
-   그대로 보여 주면서 "이 문장에서는?" 하나를 더 내밀 뿐이고, 읽는 중의 문장을
-   저장 카드에 덮어 쓰지 않습니다. 눌러서 새 뜻을 받으면 그 순간 Meaning 이 하나
+   그대로 먼저 보여 주고 Jev가 기존 뜻 또는 NEW를 자동으로 고릅니다. 읽는 중의
+   문장은 저장 카드에 덮어 쓰지 않습니다. 새 뜻이 필요하면 그 순간 Meaning 이 하나
    생깁니다 — 미리보기 상태도, 저장 여부를 묻는 단계도 없습니다. */
-let contextView = null, phraseView = null;
+let contextView = null;
 /* ＋ 로 뜻을 직접 적는 동안만 켜지는 칸입니다. */
 let addingMeaning = false;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
-function currentPhrase(k){ return phraseView && phraseView.key === k ? phraseView : null; }
 function answerFromLook(j, cached){
   const oldAi=j.ai||{};
   /* `gloss` 는 옛 이름입니다 — 기기에 남아 있는 예전 답을 그대로 읽기 위해 함께 봅니다. */
   return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',
       note:j.note||j.gloss||oldAi.note||oldAi.gloss||'',done:true,cached:!!cached},
-    alts:Array.isArray(j.alts)?j.alts:[], phrase:j.phrase||'', aiLemma:j.lemma||'' };
+    alts:Array.isArray(j.alts)?j.alts:[], aiLemma:j.lemma||'' };
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
 function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }
-function phraseCardKey(text){ return `phrase:${phraseParts(text).join(' ')}`; }
+function phraseCardKeyFromParts(parts){return `phrase:${parts.join(' ')}`;}
 function meaningKey(meaning){ return String(meaning||'').trim().replace(/\s+/g,' ').toLowerCase(); }
 function findContextCard(root, sentence){
   const id=contextCardKey(root,sentence);
@@ -238,7 +243,7 @@ function touchMeaning(id){
   item.pickedAt=Date.now();
 }
 /* 뜻을 만드는 곳은 여기 하나입니다 — ＋ 직접 입력도, 추천 뜻 클릭도,
-   "이 문장에서는?" 의 AI 답도 모두 이 문을 지납니다. 만들면 곧바로 저장이고
+   다른 문장에서 NEW로 판정된 AI 답도 모두 이 문을 지납니다. 만들면 곧바로 저장이고
    곧바로 지금 뜻입니다. 물어보는 단계는 없습니다. */
 function createMeaning(root, text, source){
   const meaning=String(text||'').replace(/\s+/g,' ').trim();
@@ -271,8 +276,8 @@ function createMeaning(root, text, source){
     clicked:from.clicked||base.clicked||base.word, forms:base.forms||[base.word],
     example:from.example||base.example||'', book:from.book||base.book||'',
     status:previous?previous.status:(base.status||1), mark:previous?previous.mark:base.mark!==false,
-    ko:meaning, ai, alts:Array.isArray(from.alts)?from.alts:[], phrase:from.phrase||'',
-    defs:[], kodict:[], addedAt:previous?previous.addedAt:Date.now(),
+    ko:meaning, ai, alts:Array.isArray(from.alts)?from.alts:[],
+    defs:[], addedAt:previous?previous.addedAt:Date.now(),
     pickedAt:Date.now(), up:Math.max(Date.now(),buried+1)};
   dropSuggestion(root,meaning); saveWords(); queueSync();
   return id;
@@ -338,33 +343,27 @@ function deleteMeaning(id){
 function openWord(k, node){
   if(wordPeekSameTarget(k,node)) return;
   if(!words[k]){ addWord(k, node); return; }
+  /* 이미 저장된 표현 span을 누른 경우에는 다시 phrase detection을 할 필요가 없습니다. */
+  if(Array.isArray(words[k].phraseParts)&&words[k].phraseParts.length>1){contextView=null;selectWord(k,node,true);return;}
   const nextExample = sentenceOf(node);
   const root=words[k].root||k;
-  const savedContext=nextExample && (findContextCard(root,nextExample)||findSavedSense(root,nextExample));
-  if(savedContext){
-    const now=Date.now(), seenAt=recentWordOpens.get(savedContext)||0;
-    if(now-seenAt>=RECENT_WORD_OPEN_MS && words[savedContext].status<3) setStatus(savedContext,words[savedContext].status+1);
-    recentWordOpens.set(savedContext,now); contextView=null; selectWord(savedContext,node,true); return;
-  }
-  /* 저장해 둔 낱말은 마지막으로 보던 뜻으로 열립니다 — 캐시된 뜻이 곧바로 메인
-     뜻입니다. 기다림도, 한도도 쓰지 않습니다. */
-  const active = (meaningCards(root, null)[0] || [k])[0];
+  const savedContext=nextExample&&(findContextCard(root,nextExample)||findSavedSense(root,nextExample));
+  /* phrase 판정이 끝나기 전에도 저장한 뜻은 즉시 보여 줍니다. 같은 문맥 카드가
+     있으면 그것을, 아니면 마지막으로 보던 뜻을 먼저 그립니다. */
+  const active=savedContext||((meaningCards(root,null)[0]||[k])[0]);
   const now = Date.now();
   const seenAt = recentWordOpens.get(active) || 0;
-  if(now - seenAt >= RECENT_WORD_OPEN_MS && words[active].status < 3) setStatus(active, words[active].status + 1);
+  const bump=now-seenAt>=RECENT_WORD_OPEN_MS&&words[active].status<3;
   recentWordOpens.set(active, now);
-
-  /* 새 문장에서는 저장한 뜻을 그대로 보여 주고 "이 문장에서는?" 하나만 더 내밉니다.
-     자동으로 AI를 부르거나 저장한 예문을 바꾸지 않습니다. */
-  if(nextExample && nextExample !== words[active].example){
+  if(!savedContext&&nextExample&&nextExample!==words[active].example){
     const w = words[active];
     contextView = { key:active, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
       book:(curBook&&curBook.title)||w.book };
-    selectWord(active, node, true);
-    return;
-  }
-  contextView = null;
+  }else contextView=null;
   selectWord(active, node, true);
+  if(bump)deferWordOpenBump(active);
+  const life=wordLookupLife,wordContext=contextView;
+  resolveOpenedWordTarget(active,node,nextExample,wordContext,life);
 }
 /* 한 번의 word opening 이 선택 표시 하나를 소유합니다. 선택을 만든 node 를 이미
    받았는데 닫을 때 다시 책 전체와 모든 EPUB frame 에서 `.sel` 을 찾는 것은
@@ -406,9 +405,7 @@ function wordPeekSameTarget(k,node){
 function wordPeekState(w){
   const meaning=String((w&&(w.ko||(w.ai&&w.ai.ko)))||'').trim();
   if(meaning) return {text:meaning,loading:false};
-  const candidates=freeDictCandidates(w);
   if(w&&(w.loading||w.aiLoading)&&!w.aiSlow) return {text:'뜻 찾는 중',loading:true};
-  if(candidates.length) return {text:'뜻 선택하기',loading:false};
   const off=navigator.onLine===false?'offline':(w&&w.aiOff)||'';
   if(off==='quota') return {text:'오늘 뜻 사용량을 다 썼어요',loading:false};
   if(off==='trial'||off==='login') return {text:'로그인하고 뜻 보기',loading:false};
@@ -466,10 +463,9 @@ function selectWord(k, span, peek){
   /* 다른 낱말을 열면 앞 문장의 해석 창은 남겨 둘 이유가 없습니다. */
   if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
-  if(!phraseView || phraseView.key !== k) phraseView = null;
   if(selKey!==k) addingMeaning=false;
   /* 칩을 눌러 고른 뜻은 다음에 열 때 맨 앞에서 만납니다. */
-  if(words[k] && words[k].ko){ touchMeaning(k); saveWords(); }
+  const remember=!!(words[k]&&words[k].ko);
   selKey = k;
   clearActiveWordSelection();
   if(span){ span.classList.add('sel'); activeSelectedWordNode=span; rememberWordPeekAnchor(span); }
@@ -480,6 +476,7 @@ function selectWord(k, span, peek){
     document.getElementById('word-modal-scrim').classList.remove('on');
     if(typeof updateOriginalZoomControls==='function') updateOriginalZoomControls();
     renderWordPeek();
+    if(remember) requestAnimationFrame(()=>{ if(words[k]){ touchMeaning(k); saveWords(); } });
     return;
   }
   wordPeekActive=false;
@@ -496,6 +493,7 @@ function selectWord(k, span, peek){
   document.getElementById('word-modal-scrim').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
+  if(remember) requestAnimationFrame(()=>{ if(words[k]){ touchMeaning(k); saveWords(); } });
 }
 function expandWordDetail(){
   if(!wordPeekActive||!selKey||!words[selKey]) return;
@@ -523,10 +521,10 @@ function closePanel(){
   const panel=document.getElementById('panel');
   wordPeekActive=false;wordPeekAnchor=null;
   selKey=null;
-  contextView=null; phraseView=null; addingMeaning=false;
+  contextView=null; addingMeaning=false;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. 끊는 것은 AI
-     한 번이 아니라 이 열림에 딸린 전부입니다 — 무료 사전 셋도 함께입니다. */
+     한 번이 아니라 이 열림에 딸린 전부입니다. */
   endWordLookupLife();
   panel.classList.remove('on');
   panel.setAttribute('aria-hidden','true');
@@ -561,16 +559,12 @@ function renderPanel(){
   const base = words[selKey]; if(!base) return;
   const k = selKey;
   const context = currentContext(k);
-  const phrase = !context && currentPhrase(k);
   /* 다른 문장에서 만난 낱말은 저장해 둔 뜻을 그대로 보여 줍니다 — 화면에 뜬
-     문장만 지금 읽는 문장으로 바꿔서. 새 뜻은 "이 문장에서는?" 을 눌렀을 때만
-     생기고, 생기는 순간 저장된 뜻이 되므로 미리보기 상태가 없습니다. */
+     문장만 지금 읽는 문장으로 바꿔서. Jev가 NEW를 고르거나 실패하면 새 뜻을
+     조회하고, 생기는 순간 저장된 뜻이 되므로 미리보기 상태가 없습니다. */
   const w = context ? Object.assign({}, base, {
     example:context.sentence, clicked:context.clicked, book:context.book,
     aiLoading:!!context.loading, aiSlow:false, aiOff:context.error||'',
-  }) : phrase ? Object.assign({}, base, phrase.answer || { ko:'', ai:{}, phrase:'' }, {
-    word:phrase.phrase, clicked:'', example:phrase.sentence, book:phrase.book,
-    aiLoading:!!phrase.loading, aiSlow:false, aiOff:phrase.error||'',
   }) : base;
   /* 화면의 단어 칸은 내부 key 가 아니라 지금 열어 둔 카드의 표시값입니다. 읽는
      글자일 뿐, 고치는 칸이 아닙니다 — 표제어를 손으로 바꾸면 원문 색칠이 기대는
@@ -578,8 +572,7 @@ function renderPanel(){
   document.getElementById('p-word').textContent=w.word;
   /* 표제어 아래 한 줄. 원형이 따로 있을 때만 뜹니다 — "spared에서 찾음". */
   const clickedLine=document.getElementById('p-clicked');
-  const original = phrase ? `표현 뜻 보기 · ${phrase.phrase}`
-    : (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `${w.clicked}에서 찾음` : '';
+  const original = (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `${w.clicked}에서 찾음` : '';
   clickedLine.textContent = original;
   clickedLine.classList.toggle('on', !!original);
   document.getElementById('p-ex').textContent = w.example || '—';
@@ -601,8 +594,7 @@ function renderPanel(){
   const aiN = document.getElementById('p-ai-note');
   const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
   const ai = w.ai || {};
-  /* 이 자리에 글자가 오르는 것은 뜻이 정해진 뒤입니다. 무료 사전 후보는 여기
-     오지 않고 아래 후보 줄에 섭니다 — 고르는 순간 정해지고, 그때 올라옵니다. */
+  /* 이 자리에 글자가 오르는 것은 뜻이 정해진 뒤입니다. */
   const shown = w.ko || ai.ko || '';
   /* 오로라는 **이 칸에 아직 들어올 것이 남았을 때**만 붑니다. 뜻이 정해졌으면
      달리던 물음은 이 칸을 바꾸지 못합니다 — 늦게 와도 후보 줄로 갑니다
@@ -616,12 +608,6 @@ function renderPanel(){
   const off = offline ? 'offline'
     : asking ? ''
     : (w.aiOff === 'offline' || shown) ? '' : (w.aiOff || '');
-  /* AI 가 이 문장의 뜻을 답했으면 그 답이 추천까지 데리고 옵니다. 그 전에는 —
-     기다리는 동안에도, 한도에 걸렸을 때도, 사람이 후보 하나를 고른 뒤에도 —
-     무료 사전이 이미 가져다 둔 나머지 후보를 붙들고 있을 이유가 없습니다.
-     기다림은 AI 쪽 사정이고, 손에 들어온 것을 못 보게 할 까닭은 아닙니다. */
-  const aiAnswered = !!(ai.done && String(ai.ko||'').trim());
-  const freeCands = (!phrase && !aiAnswered) ? freeDictCandidates(base) : [];
   if(asking){
     aiBox.className = 'on load';
     aiCap.textContent = '문맥 뜻';
@@ -631,7 +617,7 @@ function renderPanel(){
     aiBox.className = 'on wait';
     aiCap.textContent = '뜻';
     aiKo.textContent = ''; aiPos.textContent = '';
-    aiN.textContent = meaningWaitLine(off, freeCands.length > 0);
+    aiN.textContent = meaningWaitLine(off);
     aiN.style.display = 'block';
     aiRetry.hidden = true;
   }else{
@@ -643,10 +629,8 @@ function renderPanel(){
       : ((ai.done || ai.noteDone) ? '문맥 뜻' : '뜻');
     aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
-    /* 뜻 아래 한 줄은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질은
-       사전이 이미 말해 주는 것이고, 이 자리에서 Breeze 만 할 수 있는 말은 이쪽입니다.
-       그래서 화면에 뜬 문장이 이 뜻이 배운 그 문장일 때만 답니다 — 다른 문장에서
-       만난 낱말에는 바로 아래 "이 문장에서는?" 이 그 문장의 줄을 새로 받아 옵니다. */
+    /* 뜻 아래 한 줄은 이 뜻이 어떤 상황에서 쓰이는지를 말합니다. 저장한 문맥에서
+       받은 줄만 보여 주고, 다른 문장에서는 Jev 판정이 끝날 때까지 기존 뜻만 둡니다. */
     const said = context ? '' : (ai.note || ai.gloss || '');
     const top = said || (w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : '');
     aiN.textContent = top;
@@ -662,19 +646,9 @@ function renderPanel(){
      확정됐는지 묻는 자는 이미 `pendingWordResolved` 하나뿐이고(그 안에서
      `hasResolvedMeaning`), 그 답을 그대로 뜻 카드 머리에 적을 뿐입니다.
 
-     기다리는 동안에는 적지 않습니다. 무료 사전 후보만 있는 낱말도 아직 아닙니다 —
-     그 규칙 역시 저 함수가 이미 알고 있습니다. 표현(phrase)은 아직 저장된 표제어가
-     아니라 미리 보는 카드라 여기서 빠집니다. */
+     기다리는 동안에는 적지 않습니다. */
   const savedBadge = document.getElementById('p-ai-saved');
-  if(savedBadge) savedBadge.hidden = !(!phrase && !asking && words[k] && pendingWordResolved(k));
-
-  /* 이미 저장해 둔 뜻을 다른 문장에서 보고 있을 때만 여는 문입니다. 방금 이 문장으로
-     받아 온 뜻이면 다시 물어볼 것이 없으므로 아예 뜨지 않습니다. */
-  const contextBtn=/** @type {HTMLButtonElement} */(document.getElementById('p-context'));
-  contextBtn.classList.toggle('on', !!context && !!shown);
-  contextBtn.disabled=!!(context && context.loading);
-  contextBtn.innerHTML = context && context.loading ? '이 문장을 살펴보는 중…'
-    : `<span class="sp">✦</span>${context && context.error ? '이 문장에서 다시 보기' : '이 문장에서는?'}`;
+  if(savedBadge) savedBadge.hidden = !(!asking && words[k] && pendingWordResolved(k));
 
   /* 단추는 AI 가 답하지 못한 이유가 있을 때만 나옵니다. 평소에는 클릭한 순간
      이미 다녀왔으므로 누를 것이 없고, 뜻이 안 맞을 때는 박스 안의 링크가 받습니다.
@@ -708,31 +682,19 @@ function renderPanel(){
       hintOff === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
     : hintOff === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
     : hintOff === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요. 자정에 다시 채워집니다'
-    /* 무료 사전도 남의 서버입니다 — 오프라인이면 그쪽도 못 부릅니다. 보이는
-       뜻은 전에 받아 둔 것뿐이라, "무료 사전은 된다"고 적으면 거짓말입니다. */
     : hintOff === 'offline' ? '오프라인이라 새로운 뜻은 불러올 수 없어요'
     : hintOff === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
     : trialWarn         ? trialWarn
     :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
 
-  /* 숙어는 뜻이 아니라 다른 표제어입니다. 그래서 뜻 칩들과 섞지 않고 낱말 바로
-     아래에, 이 문장에서 확신이 설 때만 한 줄로 둡니다. */
-  const col = document.getElementById('p-colloc');
-  if(w.phrase){
-    col.className = 'on';
-    col.innerHTML = '<button type="button" class="phrase-suggestion" title="표현 전체의 뜻 보기"><span class="phrase-star">✦</span>'+esc(w.phrase)+'<span class="phrase-go">→</span></button>';
-    col.querySelector('button').onclick=()=>openPhrase(k);
-  }else{
-    col.className = ''; col.innerHTML = '';
-  }
   /* ── 저장된 뜻 ──
      칩 = 선택. ＋ = 생성. 칩 안에 × 를 넣지 않는 이유는 두 가지입니다: 작은 칩
      안에서 두 손짓의 터치 자리가 겹치고, 지우는 문이 둘이 되면 "칩을 누르면 이
      뜻을 본다"는 한 줄짜리 규칙이 깨집니다. */
   const root=base.root||k, savedSec=document.getElementById('p-saved-senses-sec');
-  const savedBox=document.getElementById('p-saved-senses'), meanings=phrase?[]:meaningCards(root,k);
-  const canAdd=!phrase;
-  savedSec.className='p-sec p-sec-row'+(canAdd?' on':'');
+  const savedBox=document.getElementById('p-saved-senses'), meanings=meaningCards(root,k);
+  const canAdd=true;
+  savedSec.className='p-sec p-sec-row on';
   if(meanings.length){
     savedBox.className='on';
     /* 첫 칩은 지금 보고 있는 뜻이라 지우는 문이 이미 메인 뜻 칸에 있습니다. 두 번째
@@ -744,14 +706,14 @@ function renderPanel(){
         const id=chip.dataset.k||'';
         if((/** @type {HTMLElement} */(event.target)).closest('.sense-remove')){ deleteMeaning(id); return; }
         if(id===selKey) return;
-        addingMeaning=false; contextView=null; phraseView=null; selectWord(id,null);
+        addingMeaning=false; contextView=null; selectWord(id,null);
       };
     });
   }else{ savedBox.className=''; savedBox.innerHTML=''; }
   /* 뜻이 하나뿐이면 지우는 문을 닫아 둡니다. 뜻 없는 낱말을 만들 수 있는 유일한
      길이었고, 그렇게 만들어 두면 다음에 열었을 때 빈 칸부터 마주칩니다.
      낱말째로 빼는 것은 아래 "단어장에서 빼기"가 맡습니다. */
-  document.getElementById('p-meaning-del').hidden = !(shown && !asking && !phrase && meanings.length>1);
+  document.getElementById('p-meaning-del').hidden = !(shown && !asking && meanings.length>1);
   const addBox=document.getElementById('p-sense-add');
   const addInput=/** @type {HTMLInputElement} */(document.getElementById('p-sense-input'));
   addBox.hidden=!(canAdd && addingMeaning);
@@ -760,18 +722,12 @@ function renderPanel(){
      떠납니다. 싫은 추천에는 × 를 두지 않습니다 — 그냥 지나치면 됩니다. */
   const altSec=document.getElementById('p-alt-sec'), altBox=document.getElementById('p-alts');
   const savedKeys=new Set(meanings.map(([,item])=>meaningKey(item.ko)));
-  /* AI 가 뜻을 정했으면 예전 그대로 "다른 뜻" 몇 개입니다. 못 정했을 때만 무료
-     사전이 모아 둔 후보가 같은 칩으로 이어 섭니다 — 누르면 `adoptSuggestion` 이
-     받으므로 확정되는 길은 지금까지와 하나입니다. */
-  const pool=[...(w.alts||[]), ...freeCands];
-  const alts=[...new Set(pool.map(item=>String(item||'').trim())
+  const alts=[...new Set((w.alts||[]).map(item=>String(item||'').trim())
     .filter(item=>item && !savedKeys.has(meaningKey(item)) && meaningKey(item)!==meaningKey(shown)))]
-    .slice(0, aiAnswered ? 3 : 6);
-  if(alts.length && !phrase){
+    .slice(0, 3);
+  if(alts.length){
     altSec.className='p-sec on'; altBox.className='on';
-    /* 어디서 온 후보인지 이름을 다르게 답니다 — AI 가 고른 다른 뜻과 사전이
-       늘어놓은 후보는 같은 무게가 아닙니다. */
-    altSec.textContent = (w.alts||[]).length ? '추천 뜻' : '무료 사전 뜻';
+    altSec.textContent = '추천 뜻';
     altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip" data-meaning="${esc(item)}">${esc(item)}</button>`).join('');
     [...altBox.querySelectorAll('.kochip')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
@@ -791,7 +747,7 @@ function adoptSuggestion(k, meaning){
   const id=createMeaning(root, meaning, {clicked:base.clicked, example:base.example, book:base.book, ai:base.ai});
   if(!id) return;
   logDict('pick', id);
-  addingMeaning=false; contextView=null; phraseView=null;
+  addingMeaning=false; contextView=null;
   paintWord(root); selectWord(id,null);
 }
 /* ＋ 로 적어 넣는 뜻. 적어서 Enter 를 누르면 그 자리에서 저장되고 지금 뜻이 됩니다. */
@@ -807,7 +763,7 @@ function addMeaningFromInput(){
   const card=words[id];
   if(card){ card.koEdited=true; card.up=Date.now(); saveWords(); queueSync(); }
   logDict('edit', id);
-  input.value=''; addingMeaning=false; contextView=null; phraseView=null;
+  input.value=''; addingMeaning=false; contextView=null;
   paintWord(root); selectWord(id,null);
 }
 /* 뜻과 관련해 외울 손짓은 셋뿐입니다: 칩을 누르면 이 뜻을 본다, ＋ 는 만든다,
@@ -838,77 +794,6 @@ document.getElementById('p-mark').onclick=()=>{
   w.up=Date.now(); saveWords(); paintWord(selKey); queueSync(); renderPanel();
 };
 
-/* 고정 표현은 낱말 하나와 뜻이 달라질 수 있습니다. 칩을 누르면 대표 단어를
-   바꾸지 않고, 지금 열린 패널에서만 표현 전체를 하나의 표제어로 다시 풉니다. */
-/* `adoptPhrase` 는 글자 화면을 통째로 다시 조립합니다(`renderBookBody`). 개츠비
-   에서는 문단 1600여 개입니다 — 시트를 닫은 뒤에 이것이 늦게 돌면 스크롤 한복판
-   에서 본문 전체가 다시 만들어집니다. 이 파일에서 가장 무거운 늦은 일입니다. */
-async function openPhrase(k){
-  const base=words[k], text=base&&base.phrase;
-  if(!base || !text || (phraseView && phraseView.key===k && phraseView.loading)) return;
-  const life=wordLookupLife;
-  const view={key:k, phrase:text, sentence:base.example||'', book:base.book||'', loading:true};
-  phraseView=view; renderPanel();
-  try{
-    const cacheKey=lookKey('phrase:'+text,view.sentence);
-    const hit=await dictGet(cacheKey);
-    if(hit && String(hit.ko||'').trim()){
-      if(!wordLookupAlive(life)) return;
-      view.answer=answerFromLook(hit,!hit.seed); adoptPhrase(k,view); return;
-    }
-    const sig=wordLookupSignal();
-    const j=await dictCall({op:'look',word:text,clicked:text,cands:[text.toLowerCase()],
-      sentence:view.sentence,book:view.book}, sig);
-    if(!j && sig && sig.aborted) return;
-    if(!j || j.error || !j.ko){ view.error=(j&&j.error)||'error'; return; }
-    /* 답은 남깁니다. 본문을 다시 조립하는 것만 산 열림의 일입니다. */
-    await dictPut(cacheKey,Object.assign({},j,{done:true}));
-    if(!wordLookupAlive(life)) return;
-    view.answer=answerFromLook(j,false);
-    adoptPhrase(k,view);
-  }finally{
-    view.loading=false;
-    if(currentPhrase(k)===view && wordLookupAlive(life)) renderPanel();
-  }
-}
-
-/* 표현 칩을 고른 것은 "이 낱말 하나"가 아니라 "이 덩어리"를 외우겠다는 선택입니다.
-   따라서 flare 카드를 남겨 두지 않고 표현 카드로 바꾸며, 글자 화면도 같은 기준으로
-   다시 조립합니다. */
-function adoptPhrase(k, view){
-  const base=words[k], answer=view.answer, parts=phraseParts(view.phrase);
-  if(!base || !answer || parts.length<2) return;
-  const id=phraseCardKey(view.phrase), previous=words[id];
-  words[id]={
-    ...(previous||{}), word:view.phrase, clicked:view.phrase, forms:parts, phraseParts:parts,
-    example:view.sentence||base.example, book:view.book||base.book, status:previous?previous.status:base.status,
-    mark:previous?previous.mark:base.mark, ko:answer.ko, ai:answer.ai||{}, alts:answer.alts||[], phrase:'',
-    defs:[], kodict:[], addedAt:previous?previous.addedAt:Date.now(), up:Date.now()
-  };
-  if(id!==k){ delete words[k]; dead[k]=Date.now(); }
-  contextView=null; phraseView=null; selKey=id;
-  saveWords(); save(LS_DEAD,dead); queueSync();
-  if(curBook && currentReaderMode==='text'){
-    const anchor=captureAnchor();
-    renderBookBody(curBook);
-    requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
-  }
-  paintWord(id); renderPanel(); announcePhraseSaved(view.phrase);
-}
-/* 표현의 색칠은 원문의 낱말이 저장한 순서 그대로 붙어 있을 때만 앉습니다.
-   `takes care of` · `taken care of` 같은 변형은 잡지만, `take good care of`
-   처럼 사이에 낱말이 끼거나 원본(PDF·EPUB) 모드에서는 안 칠해집니다.
-   여기를 더 똑똑하게 만드는 값보다, 처음 한 번 그렇다고 말해 두는 값이
-   큽니다 — 표현의 핵심은 발견하고 뜻을 알고 저장하는 것이지 색칠이 아닙니다. */
-const LS_PHRASE_HINT='breeze.phraseHint';
-function announcePhraseSaved(text){
-  let seen=false;
-  try{ seen=localStorage.getItem(LS_PHRASE_HINT)==='1'; }catch(e){}
-  if(seen){ toast(`“${text}”을(를) 표현으로 저장했어요`); return; }
-  try{ localStorage.setItem(LS_PHRASE_HINT,'1'); }catch(e){}
-  toast('표현을 저장했어요 · 문장 모양에 따라 본문에서 색칠되지 않을 수 있어요');
-}
-document.getElementById('p-context').onclick=()=>{ if(selKey) askCurrentContext(selKey); };
 document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k = selKey;
@@ -936,26 +821,10 @@ function refreshReaderWords(){
    갈라집니다(고친 이름으로는 본문이 안 칠해지고, 캐시도 옛 이름으로 남습니다).
    잘못 잡힌 표제어는 "단어장에서 빼기" 뒤에 원하는 낱말을 다시 누르면 됩니다. */
 
-/* ---- dictionary lookups ---- */
-/* 세 무료 사전은 모두 취소표를 받습니다. 예전에는 창을 닫아도 이 셋만은 계속
-   달렸고, 앞의 답이 늦게 오면 **닫힌 창을 위해 다음 요청이 새로 출발**했습니다. */
-/* 받아 온 것은 후보 목록입니다. 뜻자리(`ko`)에는 손대지 않습니다 — 그 자리는
-   확정된 뜻 하나만 앉는 자리이고, 여기서 채우면 화면은 "정해졌다"고 말하는데
-   속으로는 아닌 상태가 생깁니다. 번역기의 첫 줄도 후보 하나로 같이 세웁니다. */
-async function fetchKo(w, form, signal){
-  const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&dt=bd&q='+encodeURIComponent(form), {signal});
-  const j = await r.json();
-  const ko = (j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('').trim();
-  const dict = (j[1]||[]).map(e=>({pos:e[0]||'', terms:(e[1]||[]).slice(0,5)}));
-  const groups = [];
-  if(ko && ko.toLowerCase()!==form.toLowerCase()) groups.push({pos:'', terms:[ko]});
-  dict.forEach(group=>groups.push(group));
-  if(!groups.length) return false;
-  w.kodict = groups;
-  return true;
-}
-/* metaOnly = 발음만 받아 오고 영어 뜻은 건드리지 않습니다. */
-async function fetchEn(w, form, metaOnly, signal){
+/* ---- metadata-only English dictionary lookup ----
+   한국어 뜻이나 문맥 판단에는 관여하지 않습니다. 상세 화면에서 실제로 쓰는 IPA,
+   녹음 URL, 영어 정의만 채우며 lookup lifecycle의 취소표를 그대로 받습니다. */
+async function fetchEnMetadata(w, form, signal){
   let r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form), {signal});
   /* 이 공개 사전은 가끔 첫 요청에 502를 돌려줍니다. IPA가 사라지면 사전창이
      반쯤 비어 보이므로, 한 번만 짧게 다시 물어봅니다. */
@@ -965,28 +834,10 @@ async function fetchEn(w, form, metaOnly, signal){
   if(!j || !j[0]) return false;
   w.phon = j[0].phonetic || ((j[0].phonetics||[]).find(p=>p.text)||{}).text || '';
   w.audio = ((j[0].phonetics||[]).find(p=>p.audio) || {}).audio || '';   // 원어민 녹음
-  if(metaOnly) return true;
   w.defs = [];
   for(const m of j[0].meanings||[]){
     for(const d of m.definitions.slice(0,2)){
       w.defs.push({pos:m.partOfSpeech, def:d.definition});
-      if(w.defs.length>=5) break;
-    }
-    if(w.defs.length>=5) break;
-  }
-  return w.defs.length>0;
-}
-async function fetchEnWik(w, form, signal){
-  const r = await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(form)+'?redirect=true', {signal});
-  if(!r.ok) return false;
-  const j = await r.json();
-  const entries = j.en || j[Object.keys(j)[0]];
-  if(!entries) return false;
-  w.defs = [];
-  for(const e of entries){
-    for(const d of (e.definitions||[]).slice(0,2)){
-      const txt = (d.definition||'').replace(/<[^>]*>/g,'').trim();
-      if(txt) w.defs.push({pos:e.partOfSpeech||'', def:txt});
       if(w.defs.length>=5) break;
     }
     if(w.defs.length>=5) break;
@@ -1006,8 +857,7 @@ async function fetchEnWik(w, form, signal){
 
      l:<낱말>|<문장 해시>   이 문장에서의 뜻 · 설명 · 다른 뜻 후보
 
-   무료 사전은 이제 경쟁하는 답이 아닙니다. 발음과 영어 뜻을 채우고,
-   로그인 전·한도 초과·오프라인·서버 장애일 때 뜻자리를 대신 지킵니다. */
+   영어 metadata 조회는 이 한국어 뜻 경로와 완전히 분리되어 있습니다. */
 const AI_TIMEOUT  = 9000;   // 이보다 오래 걸리면 기다림을 끊고 "다시 시도"를 내밉니다
 const AI_MIN_WAIT = 280;    // 갓 받은 답은 이만큼은 바람을 보여 준 뒤에 놓습니다
 
@@ -1028,8 +878,7 @@ const lookKey = (word, sentence) =>
 
 /* ---- 로그인 전 맛보기 ----
    Breeze 가 남과 다른 점은 "이 문장에서는 이런 뜻" 하나입니다. 그게 로그인 뒤에만
-   보이면 처음 온 사람이 보는 것은 구글 번역 결과이고, 그 상태로 "로그인하면
-   좋아져요"라고 말해 봐야 믿을 이유가 없습니다. 먼저 보여 주고 나서 물어봅니다.
+   보이면 처음 온 사람은 문맥 뜻을 경험할 수 없습니다. 먼저 보여 주고 나서 물어봅니다.
 
    이 표시는 "몇 번 남았나"를 세기 위한 것뿐입니다. 서버의 기록 표에는 들어가지
    않습니다 — 로그인 전 사람을 이어 붙일 수 있게 되는 순간 다른 종류의 기록이 됩니다. */
@@ -1130,8 +979,7 @@ function logDict(action, k, extra){
 
    번호와 함께 취소표(AbortController)도 하나씩 답니다. 번호는 "돌아온 답에게
    화면을 안 준다"이고 취소표는 "애초에 더 달리지 않는다"입니다. 둘 다 필요합니다 —
-   무료 사전은 셋을 차례로 다녀오므로, 번호만으로는 lookup을 닫은 뒤에도 다음
-   요청이 새로 출발합니다. 실제로 닫고 2초 뒤에 번역 요청이 나갔습니다.
+   metadata 조회도 같은 취소표를 받아 닫힌 lookup을 위해 계속 달리지 않습니다.
 
    ---- 무엇을 끊고 무엇을 남기는가 ----
    끊는 것은 **아직 안 끝난 일**입니다. 버리는 것은 **화면을 만질 권리**뿐이고,
@@ -1171,6 +1019,66 @@ function wordLookupSignal(){ return wordLookupCtrl ? wordLookupCtrl.signal : nul
 /* 이 열림이 아직 그 열림이면 다시 그립니다. 아니면 그릴 창이 없습니다. */
 function renderIfAlive(life){ if(wordLookupAlive(life)) renderWordLookup(); }
 
+/* 문장 전체와 클릭 위치만 보냅니다. Jev의 답은 기존 token index 목록뿐이며,
+   phrase 문자열을 자유 생성할 수 없습니다. 실패·애매함·index 불일치는 word-only입니다. */
+async function detectJevPhrase(k,node,sentence,life){
+  const tokens=jevSentenceTokens(sentence);
+  const clickedIndex=jevClickedTokenIndex(node,sentence,tokens);
+  if(tokens.length<2||clickedIndex<0||!wordLookupAlive(life))return null;
+  const signal=wordLookupSignal();
+  const verdict=await dictCall({op:'phrase',sentence,clickedIndex,tokens:tokens.map(token=>({text:token.text}))},signal);
+  if(!wordLookupAlive(life)||(!verdict&&signal&&signal.aborted)||!verdict||verdict.error||!verdict.accepted)return null;
+  const indexes=(Array.isArray(verdict.members)?verdict.members:[]).map(item=>Number(item&&item.index))
+    .filter(index=>Number.isInteger(index)&&index>=0&&index<tokens.length);
+  if(indexes.length<2||!indexes.includes(clickedIndex))return null;
+  const identity=jevPhraseIdentity(tokens,indexes);
+  return identity.parts.length>=2?identity:null;
+}
+
+async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
+  const phrase=await detectJevPhrase(k,node,sentence,life);
+  if(!wordLookupAlive(life))return;
+  if(phrase){await resolveDetectedPhrase(k,phrase,sentence,(curBook&&curBook.title)||'',life);return;}
+  if(wordContext)await resolveSavedWordContext(k,wordContext,life);
+}
+
+async function resolveDetectedPhrase(k,phrase,sentence,book,life){
+  const id=phraseCardKeyFromParts(phrase.parts),stored=words[id];
+  contextView=null;
+  if(stored&&validWordMeaning(stored)){
+    const root=stored.root||id;
+    const same=sentence&&(findContextCard(root,sentence)||findSavedSense(root,sentence));
+    selKey=same||id;renderIfAlive(life);
+    if(!same&&sentence&&sentence!==words[selKey].example){
+      const view={key:selKey,sentence,clicked:phrase.surface,book:book||stored.book};
+      contextView=view;renderIfAlive(life);await resolveSavedWordContext(selKey,view,life);
+    }
+    return;
+  }
+  const answer=await fetchLook(k,{word:phrase.canonical,clicked:phrase.surface,cands:[phrase.canonical],
+    sentence,book,hold:true,life});
+  if(!wordLookupAlive(life)||!answer||!answer.ko)return;
+  saveDetectedPhrase(k,phrase,sentence,book,answer,life);
+}
+
+function saveDetectedPhrase(k,phrase,sentence,book,answer,life){
+  const base=words[k];if(!base||!wordLookupAlive(life))return '';
+  const id=phraseCardKeyFromParts(phrase.parts),previous=words[id],resolved=answerFromLook(answer,false);
+  words[id]={...(previous||{}),word:phrase.canonical,clicked:phrase.surface,forms:phrase.parts,
+    phraseParts:phrase.parts,phraseGaps:phrase.gaps,example:sentence||base.example,book:book||base.book,
+    status:previous?previous.status:base.status,mark:previous?previous.mark:base.mark,
+    ko:resolved.ko,ai:resolved.ai,alts:resolved.alts||[],defs:[],
+    addedAt:previous?previous.addedAt:Date.now(),pickedAt:Date.now(),up:Date.now()};
+  /* 이번 탭이 만든 빈 word 껍데기는 phrase 카드와 함께 남기지 않습니다. 기존에
+     저장돼 있던 word는 pending 표에 없으므로 그대로 보존됩니다. */
+  if(pendingWord&&pendingWord.key===k&&id!==k){
+    const held=pendingWord;pendingWord=null;delete words[k];
+    if(held.deadAt){dead[k]=held.deadAt;save(LS_DEAD,dead);}
+  }
+  selKey=id;contextView=null;
+  saveWords();queueSync();refreshReaderWords();renderIfAlive(life);return id;
+}
+
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
 
    ① 씨앗 — 이 사람은 이 낱말을 물어본 적이 없습니다. 앱이 미리 받아 뒀을
@@ -1200,47 +1108,42 @@ async function loadCachedLook(k, began, life){
   return false;
 }
 
-/* 이미 저장한 낱말을 다른 문장에서 만났을 때의 문입니다. 답이 오면 그것으로 끝나지
-   않고 곧바로 Meaning 이 하나 생깁니다 — 저장할지 묻지 않고, 기존 뜻도 지우지
-   않습니다. 예전 뜻으로 돌아가고 싶으면 칩을 한 번 누르면 됩니다. */
-/* 이 문은 답을 받아 **창을 다시 엽니다**(`adoptContextAnswer` → `selectWord`).
-   그래서 늦은 답이 제일 위험한 자리입니다 — 시트를 닫고 손을 뗀 뒤에 시트가
-   저 혼자 돌아왔습니다. 실기기에서 "닫았는데 렉"으로 보이던 그림입니다.
-   이제 이 열림이 끝났으면 답은 저장만 되고 화면은 건드리지 않습니다. */
-async function askCurrentContext(k){
-  const w=words[k], context=currentContext(k);
-  if(!w || !context || context.loading) return;
-  const life=wordLookupLife;
-  if(navigator.onLine===false){ context.error='offline'; renderPanel(); return; }
-  if(!sb){ context.error='login'; renderPanel(); return; }
-  context.loading=true; delete context.error; renderPanel();
+/* 저장한 낱말을 다른 문장에서 만나면 Jev가 기존 뜻만 분류합니다. Jev는 뜻을
+   만들지 않으며, NEW 또는 어떤 실패든 기존 문맥 AI 조회로 이어집니다. */
+async function resolveSavedWordContext(k, context, life){
+  const w=words[k];if(!w||!context||context.loading)return;
+  const root=w.root||k;
+  const senses=meaningCards(root,null).map(([id,item],index)=>({id,choice:`sense_${index}`,meaning:item.ko}));
+  if(!senses.length)return;
+  context.loading=true;delete context.error;renderIfAlive(life);
   try{
-    for(const key of entryKeys(w)){
-      const hit=await dictGet(lookKey(key,context.sentence));
-      if(hit && hit.ko){
-        if(!wordLookupAlive(life)) return;
-        adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed)); return;
+    const signal=wordLookupSignal();
+    const verdict=await dictCall({op:'judge',word:w.aiLemma||w.word||root,lemma:w.aiLemma||w.word||root,
+      sentence:context.sentence,senses:senses.map(item=>({meaning:item.meaning}))},signal);
+    if(!verdict&&signal&&signal.aborted)return;
+    if(wordLookupAlive(life)&&verdict&&!verdict.error&&verdict.selected!=='NEW'){
+      const picked=senses.find(item=>item.choice===verdict.selected);
+      if(picked&&words[picked.id]){
+        contextView=null;selKey=picked.id;touchMeaning(picked.id);saveWords();renderWordLookup();return;
       }
     }
-    const sig=wordLookupSignal();
-    const j=await dictCall({op:'look',word:w.word||k,clicked:context.clicked||'',cands:entryKeys(w),
-      sentence:context.sentence,book:context.book||'',device:sbUser?'':deviceId()}, sig);
-    /* 빈손으로 끊긴 것만 없던 일입니다. 끊기보다 답이 빨랐다면 그것은 답입니다. */
-    if(!j && sig && sig.aborted) return;
-    if(!j || j.error || !String(j.ko||'').trim()){
-      context.error=(j&&j.error)==='anon_exhausted' ? 'trial' : (j&&j.error)||'error';
-      return;
-    }
-    if(typeof j.left==='number') rememberAiLeft(j.left);
-    /* 답은 닫혔어도 캐시에 남깁니다 — 다시 물으면 0원, 기다림 없음.
-       다만 뜻 카드를 만들고 창을 다시 여는 것은 산 열림의 일입니다. */
-    await dictPut(lookKey(j.lemma||w.word||k,context.sentence),Object.assign({},j,{done:true}));
-    if(!wordLookupAlive(life)) return;
-    adoptContextAnswer(k,context,answerFromLook(j,false));
+    if(!wordLookupAlive(life))return;
+    await lookupNewContextMeaning(k,context,life);
   }finally{
     context.loading=false;
-    if(currentContext(k)===context && wordLookupAlive(life)) renderPanel();
+    if(currentContext(k)===context&&wordLookupAlive(life))renderWordLookup();
   }
+}
+
+async function lookupNewContextMeaning(k,context,life){
+  const w=words[k];if(!w)return;
+  for(const key of entryKeys(w)){
+    const hit=await dictGet(lookKey(key,context.sentence));
+    if(hit&&hit.ko){if(!wordLookupAlive(life))return;adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed));return;}
+  }
+  const answer=await fetchLook(k,{sentence:context.sentence,clicked:context.clicked,book:context.book,hold:true,life});
+  if(!wordLookupAlive(life)||!answer||!answer.ko)return;
+  adoptContextAnswer(k,context,answerFromLook(answer,false));
 }
 
 /* AI 문맥 분석 → Meaning 생성 → saved → active. 특별한 상태를 만들지 않습니다. */
@@ -1248,10 +1151,12 @@ function adoptContextAnswer(k, context, answer){
   const w=words[k]; if(!w || !answer || !answer.ko) return;
   const root=w.root||k;
   const id=createMeaning(root, answer.ko, {clicked:context.clicked||'', example:context.sentence,
-    book:context.book||'', ai:answer.ai, alts:answer.alts, phrase:answer.phrase});
+    book:context.book||'', ai:answer.ai, alts:answer.alts});
   if(!id) return;
   context.loading=false; contextView=null;
-  paintWord(root); selectWord(id,null);
+  paintWord(root);
+  if(wordPeekActive){selKey=id;renderWordPeek();}
+  else selectWord(id,null);
 }
 
 /* 낱말 하나 · 문장 하나 · 왕복 한 번. 뜻과 이 문장에서의 설명과 다른 뜻 후보가
@@ -1294,8 +1199,8 @@ async function fetchLook(k, opt){
   try{
     const j = await dictCall({
       op:'look',
-      word: w.word || k, clicked: w.clicked || '', cands: entryKeys(w),
-      sentence: querySentence, book: w.book || '',
+      word: opt.word || w.word || k, clicked: opt.clicked || w.clicked || '', cands: opt.cands || entryKeys(w),
+      sentence: querySentence, book: opt.book || w.book || '',
       retry: !!opt.wider, avoid: opt.wider ? (opt.avoid || []) : [],
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
@@ -1313,8 +1218,6 @@ async function fetchLook(k, opt){
       w.aiOff = e === 'quota_exceeded' ? 'quota'
               : e === 'anon_exhausted' ? 'trial'
               : e === 'login_required' ? 'login' : 'error';
-      /* 예전에는 "무료 사전으로 보여줄게요" 였습니다 — 그때는 번역기의 첫 줄을
-         뜻자리에 슬쩍 넣었기 때문입니다. 이제 고르는 사람은 사람입니다. */
       if(w.aiOff === 'quota') readerPillStatus('오늘의 문맥 뜻 사용량을 모두 썼어요');
       if(w.aiOff === 'trial'){ anonLooksLeft = 0; toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요'); }
       return false;
@@ -1357,7 +1260,6 @@ function applyLook(w, j, k, opt){
   w.alts = Array.isArray(j.alts) ? j.alts : [];
   if(keep && j.ko) w.alts = [j.ko, ...w.alts];
   w.colloc = [];
-  w.phrase = j.phrase || '';
   if(j.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(j.lemma)) w.word = j.lemma.toLowerCase();
   w.up = Date.now();
   saveWords(); queueSync();
@@ -1379,7 +1281,7 @@ async function askWiderContext(k){
   if(!wordLookupAlive(life)) return;
   if(!answer || !answer.ko) return;
   const id=createMeaning(root, answer.ko, {clicked:w.clicked, example:w.example, book:w.book,
-    ai:answerFromLook(answer,false).ai, alts:answer.alts, phrase:answer.phrase});
+    ai:answerFromLook(answer,false).ai, alts:answer.alts});
   if(!id) return;
   paintWord(root); selectWord(id,null);
 }
@@ -1387,8 +1289,8 @@ function askAI(){
   const k = selKey; if(!k || !words[k]) return;
   /* 이미 묻고 있는 중이면 한 번 더 묻는 것은 한도만 쓰는 일입니다. 예전에는
      `fetchLook` 이 앞의 요청을 끊는 것으로 이 일을 했는데, 이제 끊는 표는 열림
-     전체의 것이라 여기서 막습니다 — 옆에서 달리는 무료 사전까지 끊을 이유가
-     없기 때문입니다. `askWiderContext` 는 처음부터 이렇게 막고 있었습니다. */
+     전체의 것이라 여기서 막습니다. `askWiderContext` 는 처음부터 이렇게
+     막고 있었습니다. */
   if(words[k].aiLoading) return;
   const off = words[k].aiOff;
   /* 맛보기를 다 썼거나 서버가 로그인을 요구하면, 다시 부르는 것은 같은 답을
@@ -1403,30 +1305,18 @@ document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey])
 addEventListener('online',  () => { if(selKey) renderWordLookup(); });
 addEventListener('offline', () => { if(selKey) renderWordLookup(); });
 
-/* 무료 사전. 발음과 영어 뜻은 여기서만 오고, AI 가 답하지 못했을 때는 뜻자리도 지킵니다.
-   fetchKo 는 w.ko 가 비어 있을 때만 채우므로 AI 답을 밀어내지 않습니다. */
-async function fillFromFreeDicts(k, life){
+async function fillDictionaryMetadata(k, life){
   const w = words[k]; if(!w) return;
   const signal = wordLookupSignal();
   const forms = w.forms && w.forms.length ? w.forms : [k];
   let validated = null;
-  /* 이 열림이 끝났으면 다음 형태를 물어볼 이유가 없습니다. `try/catch` 가 취소를
-     삼키므로, 다음 바퀴로 넘어가기 전에 여기서 한 번 봅니다. */
   for(const f of forms){ if(!wordLookupAlive(life)) return;
-    try{ if(await fetchEn(w,f,false,signal)){ validated=f; break; } }catch(e){} }
-  if(!validated){ for(const f of forms){ if(!wordLookupAlive(life)) return;
-    try{ if(await fetchEnWik(w,f,signal)){ validated=f; break; } }catch(e){} } }
-  /* AI 가 표제어를 정했으면 그것을 씁니다. 무료 사전은 "뜻이 실려 있는 형태"를 찾아 준
-     것일 뿐이라, 둘이 다를 때 무료 사전을 따르면 AI 가 답한 낱말과 화면의 낱말이 어긋납니다. */
+    try{ if(await fetchEnMetadata(w,f,signal)){ validated=f; break; } }catch(e){} }
   if(!w.aiLemma && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
-  renderIfAlive(life);
-  const koForms = validated ? [validated, ...forms.filter(f=>f!==validated)] : forms;
-  for(const f of koForms){ if(!wordLookupAlive(life)) return;
-    try{ if(await fetchKo(w,f,signal)) break; }catch(e){} }
   renderIfAlive(life);
 }
 
-async function fetchDict(k){
+async function fetchDict(k,node){
   const w = words[k]; if(!w) return;
   /* 이 조회는 방금 열린 창의 것입니다 — `addWord` 가 `selectWord` 다음에 부릅니다. */
   const life = wordLookupLife;
@@ -1436,9 +1326,17 @@ async function fetchDict(k){
   w.loading = true; w.aiLoading = true;
   renderIfAlive(life);
 
-  /* 무료 사전은 AI 와 서로 기다릴 이유가 없으므로 같이 출발합니다. 발음과 영어 뜻이
-     먼저 도착해서, AI 를 기다리는 동안에도 패널이 채워집니다. */
-  const free = fillFromFreeDicts(k, life);
+  const metadata = fillDictionaryMetadata(k, life);
+
+  /* 생성형 뜻 조회보다 먼저 Jev가 phrase membership을 판정합니다. 확정되면 phrase
+     identity로만 뜻을 찾고, 애매하거나 실패하면 아래 word-only 경로로 내려갑니다. */
+  const phrase=await detectJevPhrase(k,node,w.example||'',life);
+  if(phrase&&wordLookupAlive(life)){
+    await resolveDetectedPhrase(k,phrase,w.example||'',w.book||'',life);
+    await metadata;
+    delete w.loading;delete w.aiLoading;w.up=Date.now();saveWords();queueSync();renderIfAlive(life);
+    return;
+  }
 
   /* ① 이 기기에 이 문장으로 물어본 적 있나 — 0원, 기다림 없음 */
   const cached = await loadCachedLook(k, began, life);
@@ -1447,7 +1345,7 @@ async function fetchDict(k){
      넘기기 전에 여기서 내려놓습니다 — 안 그러면 바람이 영영 붑니다. */
   if(!cached && wordLookupAlive(life)){ delete w.aiLoading; await fetchLook(k, {life}); }
 
-  await free;
+  await metadata;
   /* 창이 닫혔어도 여기까지 온 것은 **적어 둡니다**. 창을 닫는 순간 요청이 끊기므로
      이 줄은 늦게 오지 않고 닫는 그 자리에서 돕니다 — 예전에는 닫고 2초 뒤에
      혼자 돌아, 스크롤 한복판에서 낱말장 전체를 다시 써 내려갔습니다. */

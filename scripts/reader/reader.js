@@ -17,10 +17,22 @@ function savedPhraseStarts(){
     if(!Array.isArray(parts)||parts.length<2) return;
     const first=parts[0];
     if(!starts.has(first)) starts.set(first,[]);
-    starts.get(first).push({key,w,parts});
+    const gaps=Array.isArray(w.phraseGaps)&&w.phraseGaps.length===parts.length-1
+      ? w.phraseGaps.map(value=>Math.max(0,Math.min(12,Number(value)||0)))
+      : new Array(parts.length-1).fill(0);
+    starts.get(first).push({key,w,parts,gaps});
   });
   starts.forEach(list=>list.sort((a,b)=>b.parts.length-a.parts.length));
   return starts;
+}
+function savedPhraseMatch(matches,start,item){
+  const selected=[start];let cursor=start;
+  for(let part=1;part<item.parts.length;part++){
+    cursor+=1+(item.gaps[part-1]||0);
+    if(!matches[cursor]||!lemmaCands(matches[cursor][0]).includes(item.parts[part]))return null;
+    selected.push(cursor);
+  }
+  return {selected,end:cursor};
 }
 /* 글자를 단어 단위로 감쌉니다. 글자 화면과 쇼츠가 같은 함수를 씁니다. */
 function wordSpans(text,starts){
@@ -34,14 +46,24 @@ function wordSpans(text,starts){
     lemmaCands(match[0]).forEach(part=>(starts.get(part)||[]).forEach(item=>{
       if(!choices.includes(item)) choices.push(item);
     }));
-    const phrase=choices.find(item=>item.parts.every((part,n)=>
-      matches[i+n] && lemmaCands(matches[i+n][0]).includes(part)));
+    let phrase=null,phraseMatch=null;
+    for(const item of choices){const found=savedPhraseMatch(matches,i,item);if(found){phrase=item;phraseMatch=found;break;}}
     html += esc(text.slice(last, match.index));
-    if(phrase){
-      const end=matches[i+phrase.parts.length-1].index+matches[i+phrase.parts.length-1][0].length;
+    if(phrase&&phraseMatch){
+      const end=matches[phraseMatch.end].index+matches[phraseMatch.end][0].length;
       const status=phrase.w.mark!==false ? ' s'+phrase.w.status : '';
-      html += `<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(text.slice(match.index,end))}</span>`;
-      last=end; i+=phrase.parts.length; continue;
+      if(phrase.gaps.every(gap=>gap===0)){
+        html += `<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(text.slice(match.index,end))}</span>`;
+      }else{
+        const selected=new Set(phraseMatch.selected);
+        for(let at=i;at<=phraseMatch.end;at++){
+          const token=matches[at];
+          if(at>i)html+=esc(text.slice(matches[at-1].index+matches[at-1][0].length,token.index));
+          if(selected.has(at))html+=`<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(token[0])}</span>`;
+          else{const key=keyOf(token[0]),wordStatus=words[key]&&words[key].mark!==false?' s'+words[key].status:'';html+=`<span class="w${wordStatus}" data-w="${key}">${esc(token[0])}</span>`;}
+        }
+      }
+      last=end;i=phraseMatch.end+1;continue;
     }
     const key = keyOf(match[0]);
     const status = words[key] && words[key].mark !== false ? ' s'+words[key].status : '';
@@ -532,7 +554,9 @@ function textSentencePartAt(span){
   const parts=bridgeSentences(block.textContent);
   const part=parts.find(item=>at>=item.start && at<item.end) || parts[0];
   if(!part) return null;
-  return { block, part, sentence:part.text.replace(/\s+/g,' ').trim() };
+  const tokenIndex=typeof jevSentenceTokens==='function'
+    ? jevSentenceTokens(block.textContent.slice(part.start,at)).length : -1;
+  return { block, part, tokenIndex, sentence:part.text.replace(/\s+/g,' ').trim() };
 }
 
 function textWordSpanAt(clientX, clientY){

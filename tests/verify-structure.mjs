@@ -39,6 +39,8 @@ const required = [
   'modules/dict-seed/README.md',
   'modules/dict-seed/build-dict-seed.js',
   'server/article/index.ts',
+  'server/dict/index.ts',
+  'server/dict/telemetry.ts',
 ];
 
 for(const relative of required){
@@ -863,9 +865,11 @@ assert.match(dictionarySource, /const said = context \? '' : \(ai\.note \|\| ai\
 assert.doesNotMatch(index, /id="p-ai-gloss"/,
   'The second, general explanation line is back under the meaning');
 const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
-assert.match(dictServer, /required: \["lemma", "pos", "ko", "note", "phrase", "alts"\]/,
-  'The AI is asked for a general gloss instead of what this sentence shows');
-assert.match(dictServer, /\*\*이 문장에서\*\* 어떻게 쓰였는지/,
+assert.match(dictServer, /required:\["lemma","pos","ko","gloss","alts"\]/,
+  'The production contextual lookup schema was not reconciled');
+assert.doesNotMatch(dictServer,/required:\[[^\]]*"phrase"|\n- phrase:/,
+  'Generative contextual lookup still invents phrase suggestions');
+assert.match(dictServer, /이 문장에서 클릭한/,
   'The look prompt no longer asks about this sentence');
 
 /* ── 운영 기록으로 나가는 것 ──
@@ -879,11 +883,8 @@ assert.doesNotMatch(logDictBody, /sentence|book|user_ko|ai_ko|clicked/,
 const opLogBody = (dictServer.match(/async function opLog\([\s\S]*?\n\}/)||[''])[0];
 assert.doesNotMatch(opLogBody, /body\.(sentence|book|ai_ko|user_ko|clicked|word)\b/,
   'The log op reads the sentence, book title or meanings out of the request again');
-const logEventBody = (dictServer.match(/async function logEvent\([\s\S]*?\n\}\n/)||[''])[0];
-assert.doesNotMatch(logEventBody, /sentence|book|aiKo|userKo|clicked/,
-  'logEvent stores the sentence, book title or meanings again');
-assert.match(logEventBody, /word: String\(e\.lemma \|\| ""\)/,
-  'dict_events no longer records which headword the action was about');
+assert.doesNotMatch(opLogBody, /\.from\("dict_events"\)|logEvent/,
+  'The reconciled production log op writes private word events again');
 /* ── 단어 팝업의 뜻 문법 ──
    외울 손짓은 셋뿐입니다: 칩 = 이 뜻을 본다, ＋ = 뜻을 만든다, 메인 × = 지금 뜻을
    없앤다. 이 셋을 깨는 예외가 다시 생기지 않았는지 봅니다. */
@@ -929,13 +930,12 @@ assert.doesNotMatch(index, /id="p-controls"/,
    새 상태를 만들면 낱말 한살이가 다시 둘로 갈립니다. */
 assert.match(index, /id="p-ai-cap-t"[\s\S]{0,120}id="p-ai-saved"/,
   'The saved badge left the meaning card caption');
-assert.match(dictionarySource, /savedBadge\.hidden = !\(!phrase && !asking && words\[k\] && pendingWordResolved\(k\)\)/,
+assert.match(dictionarySource, /savedBadge\.hidden = !\(!asking && words\[k\] && pendingWordResolved\(k\)\)/,
   'The saved badge stopped reading the existing resolved-meaning truth');
 assert.doesNotMatch(dictionarySource, /function .*[Ss]avedState|let .*savedFlag/,
   'The saved badge grew a state of its own');
-/* 숙어는 뜻이 아닙니다. 낱말 바로 아래, 추천 뜻 칩과 다른 줄에 삽니다. */
-assert.ok(index.indexOf('id="p-colloc"') < index.indexOf('id="p-ai"'),
-  'The phrase suggestion no longer sits directly under the word');
+assert.doesNotMatch(`${index}\n${dictionaryCss}\n${dictionarySource}`,/p-colloc|phrase-suggestion|openPhrase|adoptPhrase/,
+  'The generative phrase-suggestion UI or lifecycle survived Jev phrase detection');
 assert.ok(index.indexOf('id="p-alts"') > index.indexOf('id="p-saved-senses"'),
   'Suggested meanings are no longer a separate row below the saved ones');
 /* One persistent centered title pill owns the PDF switch; side controls are
@@ -1619,20 +1619,42 @@ assert.match(dictionarySource, /function closePanel\(\)\{[\s\S]{0,700}?endWordLo
   'Closing word lookup no longer ends its lookup lifetime');
 assert.doesNotMatch(runningCode(dictionarySource), /abortLook|lookCtrl/,
   'The old single-call abort is back alongside the opening lifetime — two owners for one thing');
-/* 세 무료 사전은 모두 취소표를 들고 가야 합니다. 하나라도 맨몸이면 창을 닫은
-   뒤에 **다음 요청이 새로 출발**합니다 — 실제로 2초 뒤에 나갔습니다. */
-for(const free of ['translate.googleapis.com', 'api.dictionaryapi.dev', 'en.wiktionary.org']){
-  const calls = runningCode(dictionarySource).split('\n').filter(line => line.includes(free));
-  assert.ok(calls.length > 0, `The free dictionary ${free} is gone`);
-  calls.forEach(line => assert.match(line, /\{signal\}/,
-    `A request to ${free} goes out with no way to stop it when word lookup closes`));
-}
+/* 한국어 뜻 경로에서는 무료 사전을 제거합니다. 실제 상세 화면이 쓰는 IPA와 영어
+   정의만 metadata-only 요청 하나로 남고 lookup 취소표를 받습니다. */
+assert.doesNotMatch(dictionarySource,/translate\.googleapis\.com|en\.wiktionary\.org|fetchKo|freeDictCandidates|fillFromFreeDicts/,
+  'A free Korean meaning or fallback path survived');
+const metadataCalls=runningCode(dictionarySource).split('\n').filter(line=>line.includes('api.dictionaryapi.dev'));
+assert.ok(metadataCalls.length>0,'The IPA and English-definition metadata source is gone');
+metadataCalls.forEach(line=>assert.match(line,/\{signal\}/,
+  'The metadata request cannot be cancelled with its word lookup'));
+assert.doesNotMatch(index,/id="p-context"/,'The manual "in this sentence" button is back');
+assert.doesNotMatch(dictionaryCss,/#p-context/,'Removed context-button styling survived');
+assert.match(dictionarySource,/op:'judge'/,'Saved words in a new sentence do not call Jev automatically');
+assert.match(dictServer,/Deno\.env\.get\("JEV_API_KEY"\)/,'Jev does not use the existing server Secret');
+assert.doesNotMatch(`${index}\n${dictionarySource}`,/JEV_API_KEY/,'The Jev Secret leaked into client code');
+assert.match(dictServer,/https:\/\/api\.typesafe\.ai\/v1\/systemone/,'The server does not call TypeSafe Jev');
+assert.match(dictServer,/criteria\.NEW="기존 뜻 중 현재 문장에 맞는 뜻이 없음"/,
+  'Jev has no explicit NEW choice');
+assert.match(dictionarySource,/op:'phrase',sentence,clickedIndex,tokens:/,
+  'The client does not send the full token map and clicked index for Jev phrase detection');
+assert.match(dictServer,/const JEV_PHRASE_CONFIDENCE=0\.86;/,
+  'The conservative phrase threshold is no longer a single testable constant');
+assert.match(dictServer,/members\.every\(item=>item\.confidence>=JEV_PHRASE_CONFIDENCE\)/,
+  'A low-confidence required token can still promote a phrase');
+assert.match(dictionarySource,/phraseParts:phrase\.parts,phraseGaps:phrase\.gaps/,
+  'Discontinuous phrase identity no longer preserves selected parts and gaps');
+assert.match(readerSource,/new Array\(parts\.length-1\)\.fill\(0\)/,
+  'Legacy phraseParts records no longer default to contiguous read compatibility');
+assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),/savedPhraseMatch\(matches,index,item\)/,
+  'PDF highlighting does not use the token/gap phrase matcher');
+assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'),/savedPhraseMatch\(matches,index,item\)/,
+  'EPUB highlighting does not use the token/gap phrase matcher');
 /* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
-assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\) return;\s*\n\s*adoptContextAnswer\(k,context,answerFromLook\(j,false\)\)/,
-  'A late "in this sentence" answer can reopen a dismissed word lookup again');
-assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\) return;\s*\n\s*view\.answer=answerFromLook\(j,false\);\s*\n\s*adoptPhrase/,
-  'A late phrase answer can rebuild the whole book body under a dismissed word lookup again');
+assert.match(dictionarySource,/if\(!wordLookupAlive\(life\)\)return;\s*\n\s*await lookupNewContextMeaning/,
+  'A late Jev answer can start contextual generation after dismissal');
+assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)return;\s*\n\s*saveDetectedPhrase/,
+  'A late Jev phrase answer can save or rebuild under a dismissed word lookup');
 assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
   'A late "another meaning" answer can reselect a word on a dismissed word lookup again');
 /* 그리는 문지기는 열림 번호입니다. `selKey === k` 로는 **같은 낱말을 닫았다
@@ -1662,10 +1684,10 @@ assert.match(dictionarySource, /function aiDay\(\)/,
 /* 서버 쪽: 테스트 기간에는 하루 100회 풀을 쓰고 문장 해석만 2회를 씁니다. */
 const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
 assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
-assert.match(dictServerSource, /DAILY_LIMIT.*100/, 'The test daily AI allowance is not 100');
-assert.match(dictServerSource, /EXPLAIN_COST = 2/, 'Sentence explanations do not spend two AI calls');
+assert.match(dictServerSource, /DEFAULT_DAILY_LIMIT=300/, 'The reconciled production daily AI allowance is not 300');
+assert.match(dictServerSource, /EXPLAIN_COST=2/, 'Sentence explanations do not spend two AI calls');
 assert.ok(
-  dictServerSource.indexOf('if (op === "explain")') < dictServerSource.indexOf('if (!/^[A-Za-z]'),
+  dictServerSource.indexOf('if(op==="explain")') < dictServerSource.indexOf('if(!/^[A-Za-z]'),
   'The sentence op is rejected by the single-word guard it should have run before',
 );
 /* 클라이언트는 한국 날짜로 하루를 셉니다("자정에 다시 채워집니다"). 서버가 UTC 로

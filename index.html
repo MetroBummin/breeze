@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="styles/base.css?v=8fadfe0e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
   <link rel="stylesheet" href="styles/reader.css?v=1fcb5217">
-  <link rel="stylesheet" href="styles/dictionary.css?v=6ec67ced">
+  <link rel="stylesheet" href="styles/dictionary.css?v=fca7186a">
   <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
   <link rel="stylesheet" href="styles/onboarding.css?v=da44f980">
@@ -83,15 +83,15 @@
   <script defer src="scripts/importers/rss.js?v=f33bf95e"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=59c06c86"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=171c9e44"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=f7ddc533"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=47482381"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=bef6d049"></script>
-  <script defer src="scripts/reader/epub-original.js?v=e6256459"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=47f625d0"></script>
+  <script defer src="scripts/reader/epub-original.js?v=66624e5b"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=f0e9ecdd"></script>
-  <script defer src="scripts/reader/reader.js?v=bdcd8903"></script>
+  <script defer src="scripts/reader/reader.js?v=8099c247"></script>
   <script defer src="scripts/ui/preferences.js?v=aaa3475d"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
@@ -293,7 +293,6 @@
       <div id="p-clicked"></div>
       <!-- 숙어는 뜻이 아닙니다. 그래서 뜻 칩들과 섞지 않고 낱말 바로 아래,
            이 문장에서 확신이 설 때만 한 줄로 뜹니다. -->
-      <div id="p-colloc"></div>
       <!-- 지금 보고 있는 뜻 하나. 만들기(＋)·고르기(칩)·지우기(×) 중 지우기가
            여기 삽니다 — 작은 칩 안에서 고르기와 지우기가 부딪히지 않게. -->
       <div id="p-ai">
@@ -318,9 +317,6 @@
              지금 뜻을 덮지 않고 뜻 하나로 더해집니다. -->
         <button id="p-airetry" type="button" hidden>↻ 넓은 문맥으로</button>
       </div>
-      <!-- 이미 저장해 둔 뜻을 보고 있을 때만 뜹니다. 방금 이 문장을 보고 받아 온
-           뜻이라면 다시 물어볼 것이 없습니다. -->
-      <button id="p-context" type="button"><span class="sp">✦</span>이 문장에서는?</button>
       <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">문맥 뜻 찾기</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec p-sec-row" id="p-saved-senses-sec"><span>저장된 뜻</span>

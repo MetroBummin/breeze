@@ -109,6 +109,8 @@ const words = {
                           phraseParts:['point','charge']},
   'electric field line': {word:'electric field line', status:1, mark:true,
                           phraseParts:['electric','field','line']},
+  'take into account':  {word:'take into account', status:2, mark:true,
+                          phraseParts:['take','into','account'],phraseGaps:[2,0]},
 };
 
 const SAMPLES = [
@@ -133,6 +135,11 @@ const SAMPLES = [
 
 /* ---- 찍기 ------------------------------------------------------------------ */
 Object.assign(context.words, words);
+const discontinuous=wordSpans('They took the issue into account.');
+assert.equal((discontinuous.match(/data-w="take into account"/g)||[]).length,3,
+  'A discontinuous phrase does not highlight exactly its selected tokens');
+assert.match(discontinuous,/data-w="take into account">took<\/span> <span class="w" data-w="the">the<\/span> <span class="w" data-w="issue">issue<\/span> <span class="w phrase s2" data-w="take into account">into<\/span> <span class="w phrase s2" data-w="take into account">account<\/span>/,
+  'A discontinuous phrase was flattened into substring matching or lost its gaps');
 const rendered = SAMPLES.map(([name, text]) =>
   `### ${name}\n<<<${text}>>>\n${wordSpans(text)}`).join('\n\n');
 /* 낱말표가 비어 있을 때도 함께 떠 둡니다. 새 사용자의 화면이 이쪽입니다. */

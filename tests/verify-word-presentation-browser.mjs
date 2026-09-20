@@ -83,7 +83,8 @@ try{
     fetchDict=()=>{wordQa.calls++;words[key].loading=true;renderWordLookup();return new Promise(()=>{});};
     openWord(key,span);
   });
-  await page.waitForFunction(()=>wordPeekOpen()&&document.getElementById('word-peek').classList.contains('loading'));
+  await page.waitForFunction(()=>wordPeekOpen()&&document.getElementById('word-peek').classList.contains('loading')
+    &&window.wordQa.calls===1);
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 찾는 중','pending copy changed');
   assert.equal(await page.evaluate(()=>wordQa.calls),1,'new word did not start exactly one lookup');
   await page.evaluate(()=>{

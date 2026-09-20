@@ -265,8 +265,13 @@ function buildPdfWordBoxes(textContent,viewport,glyphs){
     pdfFontAscentRatio(styles[item.fontName]||{}),
     (styles[item.fontName]||{}).fontFamily));
   const {boxes,text}=pdfPageWords(entries,pdfWordMeasurer(),viewport.width,viewport.height);
-  const sentenceAt=bridgeSentenceFinder(text);
-  boxes.forEach(box=>{ box.example=sentenceAt(box.offset); });
+  const sentenceAt=bridgeSentenceFinder(text),parts=bridgeSentences(text);
+  boxes.forEach(box=>{
+    box.example=sentenceAt(box.offset);
+    const part=parts.find(item=>box.offset>=item.start&&box.offset<=item.end);
+    box.tokenIndex=part&&typeof jevSentenceTokens==='function'
+      ? jevSentenceTokens(text.slice(part.start,box.offset)).length : -1;
+  });
   return boxes;
 }
 
@@ -278,6 +283,7 @@ function makePdfWordMarker(page,box,className,status,wordKey){
   marker.textContent=box.word;
   marker.dataset.w=wordKey||keyOf(box.word);
   marker.dataset.example=box.example||'';
+  if(Number.isInteger(box.tokenIndex)&&box.tokenIndex>=0)marker.dataset.clickedTokenIndex=String(box.tokenIndex);
   marker.dataset.readerAnchor=JSON.stringify({kind:'pdf',page:+page.dataset.page,y:box.y});
   marker.setAttribute('aria-hidden','true');
   marker.style.cssText=`left:${box.x*100}%;top:${box.y*100}%;width:${box.w*100}%;height:${box.h*100}%`;
@@ -288,7 +294,19 @@ function makePdfWordMarker(page,box,className,status,wordKey){
 function renderPdfSavedWordMarkers(page,boxes){
   if(!page) return;
   page.querySelectorAll('.original-saved-marker').forEach(marker=>marker.remove());
-  (boxes||[]).forEach(box=>{
+  const list=boxes||[],matches=list.map(box=>[box.word]);
+  const claimed=new Map();
+  if(typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'){
+    const starts=savedPhraseStarts();
+    for(let index=0;index<matches.length;index++){
+      const choices=[];lemmaCands(matches[index][0]).forEach(part=>(starts.get(part)||[]).forEach(item=>{if(!choices.includes(item))choices.push(item);}));
+      for(const item of choices){const found=savedPhraseMatch(matches,index,item);if(!found)continue;
+        found.selected.forEach(at=>claimed.set(at,item));index=found.end;break;}
+    }
+  }
+  list.forEach((box,index)=>{
+    const phrase=claimed.get(index);
+    if(phrase&&phrase.w.mark!==false){makePdfWordMarker(page,box,'original-saved-marker phrase',phrase.w.status,phrase.key);return;}
     const key=keyOf(box.word);
     const saved=words[key];
     if(saved && saved.mark !== false) makePdfWordMarker(page,box,'original-saved-marker',saved.status,key);
