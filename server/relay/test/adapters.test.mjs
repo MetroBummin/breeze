@@ -18,7 +18,7 @@ test('Auth uses actual project Auth server, never an unverified JWT claim', asyn
   let calls = 0;
   const id = '11111111-1111-4111-8111-111111111111';
   const verified = await authenticate(env, 'arbitrary-token', async (url, init) => {
-    calls++; assert.equal(url, 'https://test.invalid/auth/v1/user'); assert.equal(init.redirect, 'error');
+    calls++; assert.equal(url, 'https://test.invalid/auth/v1/user'); assert.equal(init.redirect, 'manual');
     assert.equal(init.headers.authorization, 'Bearer arbitrary-token'); return Response.json({ id });
   });
   assert.equal(verified, id); assert.equal(calls, 1);

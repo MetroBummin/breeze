@@ -2,6 +2,12 @@ import { RelayError, fail, uuidOK } from './core.mjs';
 import { sha256, hex, smallText } from './security.mjs';
 const enc = s => new TextEncoder().encode(s);
 const escape = s => encodeURIComponent(s).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+async function timedFetch(fetcher, input, init, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try { return await fetcher(input, { ...init, signal: controller.signal }); }
+  finally { clearTimeout(timer); }
+}
 async function hmac(key, data) {
   const k = await crypto.subtle.importKey('raw', typeof key === 'string' ? enc(key) : key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return new Uint8Array(await crypto.subtle.sign('HMAC', k, enc(data)));
@@ -29,9 +35,9 @@ export class SupabaseStore {
   constructor(env, fetcher = fetch) { this.env = env; this.fetch = fetcher; }
   async rpc(name, body) {
     const e = this.env;
-    const r = await this.fetch(`${e.SUPABASE_URL}/rest/v1/rpc/${name}`, { method: 'POST', redirect: 'error',
+    const r = await timedFetch(this.fetch, `${e.SUPABASE_URL}/rest/v1/rpc/${name}`, { method: 'POST', redirect: 'manual',
       headers: { apikey: e.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${e.SUPABASE_SERVICE_ROLE_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify(body), signal: AbortSignal.timeout(10_000) });
+      body: JSON.stringify(body) }, 10_000);
     if (!r.ok) fail('STATE_BACKEND_UNAVAILABLE', 503); // Never expose/log upstream body or secrets.
     return r.json();
   }
@@ -48,8 +54,8 @@ export class SupabaseStore {
   prune() { return this.rpc('relay_prune', {}); }
 }
 export async function authenticate(env, token, fetcher = fetch) {
-  const response = await fetcher(`${env.SUPABASE_URL}/auth/v1/user`, { redirect: 'error',
-    headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) });
+  const response = await timedFetch(fetcher, `${env.SUPABASE_URL}/auth/v1/user`, { redirect: 'manual',
+    headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, authorization: `Bearer ${token}` } }, 8000);
   if ([401, 403].includes(response.status)) fail('UNAUTHENTICATED', 401);
   if (!response.ok) fail('AUTH_UNAVAILABLE', 503);
   const user = await response.json();
@@ -82,8 +88,8 @@ export class R2Objects {
       'x-amz-copy-source-if-match': object.httpEtag, 'x-amz-metadata-directive': 'REPLACE',
       'content-type': 'application/octet-stream', 'cache-control': 'private, no-store' };
     const now = Date.now();
-    const r = await this.fetch(await this.url(u.ready, 'PUT', headers, now, now + 60_000), {
-      method: 'PUT', headers, redirect: 'error', signal: AbortSignal.timeout(20_000) });
+    const r = await timedFetch(this.fetch, await this.url(u.ready, 'PUT', headers, now, now + 60_000), {
+      method: 'PUT', headers, redirect: 'manual' }, 20_000);
     // CopyObject can return HTTP 200 containing an XML Error. Read only small control XML.
     if (!r.ok) fail('OBJECT_COPY_FAILED', 502);
     const xml = await smallText(r, 8192);

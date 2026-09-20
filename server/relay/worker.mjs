@@ -114,6 +114,10 @@ export function createRelay({ store, objects, auth, allowedUsers, origins = new 
       return response(saved.result, saved.status, corsOrigin);
     } catch (error) {
       // No request bodies, tokens, URLs, object keys, or upstream errors in logs.
+      if (!(error instanceof RelayError)) {
+        console.error(JSON.stringify({ event: 'relay_request_failed',
+          name: error instanceof Error ? error.name : typeof error }));
+      }
       return response({ error: error instanceof RelayError ? error.code : 'RELAY_UNAVAILABLE' },
         error instanceof RelayError ? error.status : 503, corsOrigin);
     }

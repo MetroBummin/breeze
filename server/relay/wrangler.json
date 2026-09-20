@@ -7,7 +7,7 @@
   "keep_vars": true,
   "vars": {
     "RELAY_ENABLED": "false",
-    "INFRA_VERIFIED": "false",
+    "INFRA_VERIFIED": "true",
     "CLEANUP_ENABLED": "true",
     "SUPABASE_URL": "https://hrtfhojbhqvaoiulspto.supabase.co",
     "R2_ACCOUNT_ID": "dc26cb1d2297ca2206a0434ff88e24b4",
