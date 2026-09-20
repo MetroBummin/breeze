@@ -2,13 +2,15 @@
   "name": "breeze-book-relay-dev",
   "main": "worker.mjs",
   "compatibility_date": "2026-09-20",
-  "workers_dev": false,
+  "workers_dev": true,
   "preview_urls": false,
+  "keep_vars": true,
   "vars": {
     "RELAY_ENABLED": "false",
     "INFRA_VERIFIED": "false",
     "CLEANUP_ENABLED": "true",
     "SUPABASE_URL": "https://hrtfhojbhqvaoiulspto.supabase.co",
+    "R2_ACCOUNT_ID": "dc26cb1d2297ca2206a0434ff88e24b4",
     "R2_BUCKET_NAME": "breeze-book-relay-dev",
     "TEMP_TTL_SECONDS": "86400",
     "ALLOWED_ORIGINS": "http://localhost:8787"
