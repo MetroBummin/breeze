@@ -16,10 +16,21 @@ Organization `nxnssinjzlxqnkwlbwmp` / `Breeze` / **Free**,
 `ACTIVE_HEALTHY`, 서울 리전. 프로젝트 ID·Org ID 직접 조회는 성공했다.
 일반 project/org list는 이전 연결 범위를 반환하므로 직접 ID 조회 결과를 기준으로 한다.
 
-Cloudflare 호출 도구는 이번 세션에도 노출되지 않아 **계정별 요금제·기존 Worker/R2를 실제 조회하지 못했다.**
-따라서 Worker/R2/secret/lifecycle은 생성·변경하지 않았다. **Worker URL: 없음.**
+Cloudflare 호출 도구는 이번 세션에도 노출되지 않아 직접 계정 API를 호출할 수 없었다.
+대신 relay 브랜치에서 일회성 GitHub Actions probe를 실행해 repository Actions secrets 존재 여부를
+**값을 출력하지 않고** 확인했다. Run `35492445580`은 성공했지만 아래 6개가 모두 미설정이었다:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `ALLOWED_USER_IDS`
+
+따라서 Cloudflare 계정 인증 자체를 시작할 수 없어 Worker/R2/secret/lifecycle은 생성·변경하지 않았다.
+**Worker URL: 없음.** 진단 workflow는 검사 후 제거했다.
 `breeze-book-relay-dev` Worker·private bucket, rate-limit namespace `26092001`은 아직 후보 이름이다.
-공개 Cloudflare 문서상 Workers Free/R2 Standard 무료 포함량은 존재하지만, 계정 상태 확인 전 생성하지 않는다.
+공개 Cloudflare 문서상 Workers Free/R2 Standard 무료 포함량은 존재하지만, 실제 계정 상태 확인 전 생성하지 않는다.
 
 ## 3. 적용 여부 / 승인 대기
 
