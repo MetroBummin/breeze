@@ -155,22 +155,27 @@ function saveReadingState(){
     const previous = posOf(curBook.id);
     const measured = sourceProgressForBook(curBook,original);
     const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);
-    positions[curBook.id] = {...previous,
+    const candidate = {...previous,
       p:logical, t:Date.now(), mode:'original',
       original:original || previous.original || null};
+    const changed=!sameProgressLocation(previous,candidate);
+    const next=changed?candidate:{...candidate,t:previous.t||0};
+    positions[curBook.id] = next;
     save(LS_POS, positions);
-    if(typeof queueReadingProgressSync==='function') queueReadingProgressSync();
+    if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
     return;
   }
   const a = readerFrameAnchor();
   const previous = posOf(curBook.id);
   const measured = textProgressForBook(curBook,a);
   const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);
-  positions[curBook.id] = {...previous, y:readerScrollTop(),
-                            p:logical, t:Date.now(), mode:'text',
-                            pi: a ? a.pi : null, dy: a ? a.dy : 0 };
+  const candidate = {...previous, y:readerScrollTop(),p:logical, t:Date.now(), mode:'text',
+    pi: a ? a.pi : null, dy: a ? a.dy : 0 };
+  const changed=!sameProgressLocation(previous,candidate);
+  const next=changed?candidate:{...candidate,t:previous.t||0};
+  positions[curBook.id] = next;
   save(LS_POS, positions);
-  if(typeof queueReadingProgressSync==='function') queueReadingProgressSync();
+  if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
 }
 let appHistoryReady=false, appHistoryRestoring=false;
 function activeAppView(){

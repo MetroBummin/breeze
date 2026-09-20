@@ -161,8 +161,9 @@ native pinch를 다시 허용하는 `manipulation`은 피합니다. EPUB은 ifra
 본문 텍스트가 아니라 원본 파일 전체 SHA-256을 마스터 키로 HMAC한 식별값을 사용합니다.
 
 `scripts/sync/vault-crypto.js`가 AES-256-GCM/HKDF/HMAC을 맡습니다. 서버에는 단어·예문·
-복습 기록과 읽던 위치를 담은 E2EE 암호문만 두고, PDF·EPUB·`paras`·기사 본문·사진은
-IndexedDB에만 둡니다. 자세한 흐름은 [SYNC.md](SYNC.md)를 봐 주세요.
+복습 기록을 담은 vocabulary vault와 읽던 위치를 담은 작은 progress record를 각각 E2EE
+암호문으로 두고, PDF·EPUB·`paras`·기사 본문·사진은 IndexedDB에만 둡니다. 두 record는
+dirty state와 전송 trigger도 분리됩니다. 자세한 흐름은 [SYNC.md](SYNC.md)를 봐 주세요.
 
 ## URL 가져오기
 

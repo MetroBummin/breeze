@@ -28,6 +28,7 @@ const required = [
   'scripts/reader/reader-modes.js',
   'scripts/reader/mode-bridge.js',
   'scripts/reader/reader.js',
+  'scripts/sync/progress-merge.js',
   'scripts/sync/sync.js',
   // 떼어 둔 기출 Shorts. 지우지 않고 언제든 다시 붙일 수 있게 남겨 둡니다.
   'modules/exam-shorts/README.md',

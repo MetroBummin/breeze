@@ -49,8 +49,12 @@ function updateReaderModeControls(){
 
 function rememberReaderMode(mode){
   if(!curBook) return;
-  positions[curBook.id] = {...posOf(curBook.id),mode,t:Date.now()};
+  const previous=posOf(curBook.id),candidate={...previous,mode,t:Date.now()};
+  const changed=!sameProgressLocation(previous,candidate);
+  const next=changed?candidate:{...candidate,t:previous.t||0};
+  positions[curBook.id] = next;
   save(LS_POS,positions);
+  if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
 }
 
 function readerModeDelay(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }

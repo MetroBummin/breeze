@@ -8,12 +8,16 @@ let sbUser=null, syncTimer=null, syncPromise=null, syncAgain=false, syncAgainMan
 let lastSync=load('breeze.lastsync',0);
 let progressSyncTimer=null, lastProgressSyncAt=0;
 let syncCooldownUntil=0, syncFailureCount=0;
+let progressSyncPromise=null, progressSyncAgain=false, progressSyncAgainRemote=false;
+let remoteSyncPromise=null, remoteSyncManual=false;
 
 const VAULT_ROW='__breeze_vault_v2__';
 const VAULT_META_ROW='__breeze_vault_meta_v2__';
 const VAULT_LOCAL_CHANGED='breeze.vault.changed';
+const PROGRESS_ROW='__breeze_progress_v1__';
+const PROGRESS_LOCAL_CHANGED='breeze.progress.changed';
 const LS_HIDDEN='breeze.hidden';
-let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[];
+let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[],progressRemoteRecords={};
 let pendingRecoveryKey='', vaultInfoOpen=false, vaultRecoveryError='', recoveryRotateOpen=false;
 let pendingPair=null, pairingPoll=null, pairingError='';
 let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
@@ -144,7 +148,7 @@ function renderSyncModal(){
       : `<button class="sm-linkish" onclick="openAccountDelete()">계정 지우기</button>`;
     body.innerHTML=`<div class="sm-account"><b>${esc(sbUser.email||'')}</b><span>마지막 동기화 · ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</span></div>
       ${recoveryPanel()}
-      <button class="sm-btn primary" onclick="doSync(true)">지금 동기화</button>
+      <button class="sm-btn primary" onclick="syncRemoteChanges(true)">지금 동기화</button>
       <button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>
       ${deleteArea}`;
   }else if(passwordLoginOpen){
@@ -269,7 +273,7 @@ async function restoreRecoveryKey(){
     const recovery=VaultCrypto.recoveryDecode((input&&input.value)||'');
     const master=await VaultCrypto.openBytes(recovery,vaultMeta.recoveryWrap,
       [sbUser.id,vaultMeta.vaultId,'recovery'],'breeze/recovery/v2');
-    await saveMasterForDevice(master); vaultRecoveryError=''; renderSyncModal(); await doSync(true);
+    await saveMasterForDevice(master); vaultRecoveryError=''; renderSyncModal(); await syncRemoteChanges(true);
   }catch(error){ vaultRecoveryError='복구키가 맞지 않아요. 공백과 하이픈은 상관없습니다.'; renderSyncModal(); }
 }
 document.getElementById('recovery-fileinput').addEventListener('change',async event=>{
@@ -313,7 +317,7 @@ async function checkDevicePairing(){
     const key=await VaultCrypto.pairingKey(pendingPair.privateKey,row.response_pub,pendingPair.salt,'breeze/pair/v2');
     const master=await VaultCrypto.pairingOpen(key,row.wrapped_key,[sbUser.id,row.id,'pair']);
     await saveMasterForDevice(master); await sb.from('sync_pairings').delete().eq('id',row.id);
-    clearInterval(pairingPoll); pairingPoll=null; pendingPair=null; pairingError=''; renderSyncModal(); await doSync(true);
+    clearInterval(pairingPoll); pairingPoll=null; pendingPair=null; pairingError=''; renderSyncModal(); await syncRemoteChanges(true);
   }catch(error){ pairingError='연결 응답을 확인하지 못했어요. 다시 시도해 주세요.'; renderSyncModal(); }
 }
 async function cancelDevicePairing(){
@@ -368,11 +372,16 @@ function queueSync(){
    보냅니다. */
 function queueReadingProgressSync(){
   if(!sb||!sbUser) return;
+  save(PROGRESS_LOCAL_CHANGED,Date.now());
   const wait=Math.max(0,25000-(Date.now()-lastProgressSyncAt));
   clearTimeout(progressSyncTimer);
   progressSyncTimer=setTimeout(()=>{
-    progressSyncTimer=null; lastProgressSyncAt=Date.now(); queueSync();
+    progressSyncTimer=null; lastProgressSyncAt=Date.now(); doProgressSync(false,false);
   },wait);
+}
+function sameProgressLocation(left,right){
+  const clean=value=>{ const safe=safePosition(value); if(safe) delete safe.t; return safe; };
+  return JSON.stringify(clean(left))===JSON.stringify(clean(right));
 }
 const upOf=word=>word?(word.up||word.addedAt||0):0;
 function doSync(manual){
@@ -386,13 +395,13 @@ function doSync(manual){
     return syncPromise;
   }
   syncPromise=(async()=>{
-    let nextManual=!!manual;
+    let nextManual=!!manual,completed=true;
     do{
       syncAgain=false; const passManual=nextManual||syncAgainManual; syncAgainManual=false;
       const ok=await runSyncPass(passManual); nextManual=false;
-      if(!ok){ syncAgain=false; break; }
+      if(!ok){ completed=false; syncAgain=false; break; }
     }while(syncAgain&&sb&&sbUser);
-    return true;
+    return completed;
   })().finally(()=>{ syncPromise=null; });
   return syncPromise;
 }
@@ -434,11 +443,11 @@ async function localVaultItem(book){
   if(['pdf','epub'].includes(book.kind||'')&&!original.hash){
     const record=await originalGetForBook(book); if(record) original=record;
   }
-  const rawHash=original.hash||book.sourceHash||'',position=safePosition(positions[book.id]);
+  const rawHash=original.hash||book.sourceHash||'';
   return {id:book.id,title:book.title||'(제목 없음)',author:book.author||'',kind:book.kind||'',site:book.site||'',
     sourceUrl:book.sourceUrl||'',classicId:book.classicId||'',identity:await vaultSourceIdentity(book,rawHash),originalKind:original.kind||'',
     fileSize:Number(original.size||book.sourceSize)||0,fileModified:Number(original.lastModified||book.sourceModified)||0,addedAt:book.addedAt||Date.now(),
-    updatedAt:Math.max(book.renamedAt||0,book.coverUpdatedAt||0,position&&position.t||0,book.addedAt||0),position};
+    updatedAt:Math.max(book.renamedAt||0,book.coverUpdatedAt||0,book.addedAt||0)};
 }
 function itemIdentity(item){
   return item.identity||'id:'+item.id;
@@ -455,10 +464,15 @@ function mergeWordState(remoteWords,remoteDead){
 }
 async function mergeVaultPayload(remote,legacyItems){
   if(remote) mergeWordState(remote.words||{},remote.dead||{});
-  const map=new Map();
+  const map=new Map(),embeddedProgress={};
   [...(remote&&remote.items||[]),...(legacyItems||[]),...vaultRemoteItems].forEach(item=>{
     if(!item) return; const key=itemIdentity(item),old=map.get(key);
-    if(!old||(item.updatedAt||0)>=(old.updatedAt||0)) map.set(key,item);
+    if(item.position){
+      const position=safePosition(item.position),record={position,updatedAt:position&&position.t||0};
+      if(position&&(!embeddedProgress[key]||record.updatedAt>embeddedProgress[key].updatedAt)) embeddedProgress[key]=record;
+    }
+    const clean={...item}; delete clean.position;
+    if(!old||(clean.updatedAt||0)>=(old.updatedAt||0)) map.set(key,clean);
   });
   const localByIdentity=new Map();
   for(const book of books){
@@ -470,19 +484,23 @@ async function mergeVaultPayload(remote,legacyItems){
   vaultRemoteItems=[...map.values()];
   serverBooks=vaultRemoteItems.map(item=>{
     const local=localByIdentity.get(item.identity)||books.find(book=>book.id===item.id);
-    return {book_id:item.id,meta:{...item,localId:local?local.id:''}};
+    const progress=progressRemoteRecords[itemIdentity(item)]||embeddedProgress[itemIdentity(item)];
+    return {book_id:item.id,meta:{...item,position:progress&&progress.position||null,localId:local?local.id:''}};
   });
-  for(const item of vaultRemoteItems){
-    const local=localByIdentity.get(item.identity)||books.find(book=>book.id===item.id);
-    if(!local||!item.position) continue;
-    const current=positions[local.id],active=curBook&&curBook.id===local.id&&document.getElementById('v-read').classList.contains('on');
-    if(!active&&(!current||(item.position.t||0)>(current.t||0))) positions[local.id]=item.position;
+  for(const [identity,record] of Object.entries(embeddedProgress)){
+    const previous=progressRemoteRecords[identity];
+    if(!previous||record.updatedAt>previous.updatedAt) progressRemoteRecords[identity]=record;
+    const local=localByIdentity.get(identity);
+    const active=local&&curBook&&curBook.id===local.id&&document.getElementById('v-read').classList.contains('on');
+    if(local&&!active&&(!positions[local.id]||record.updatedAt>(positions[local.id].t||0))) positions[local.id]=record.position;
   }
+  if(Object.keys(embeddedProgress).length) save(PROGRESS_LOCAL_CHANGED,Date.now());
+  return Object.keys(embeddedProgress).length>0;
 }
 async function readLegacyData(rows){
   const legacyWords={},legacyDead={},items=[];
   (rows||[]).forEach(row=>{
-    if(row.key===VAULT_ROW||row.key===VAULT_META_ROW) return;
+    if(row.key===VAULT_ROW||row.key===VAULT_META_ROW||row.key===PROGRESS_ROW) return;
     const value=row.data||{}; if(value.deleted) legacyDead[row.key]=value.up||Date.now(); else legacyWords[row.key]=value;
   });
   mergeWordState(legacyWords,legacyDead);
@@ -508,7 +526,7 @@ async function readLegacyData(rows){
 }
 async function readLegacyRows(){
   const result=await sb.from('words').select('key,data').eq('user_id',sbUser.id)
-    .not('key','in',`(${VAULT_ROW},${VAULT_META_ROW})`);
+    .not('key','in',`(${VAULT_ROW},${VAULT_META_ROW},${PROGRESS_ROW})`);
   if(result.error) throw result.error;
   return result.data||[];
 }
@@ -531,8 +549,9 @@ async function runSyncPass(manual){
     const hasLocalData=Object.keys(words).length||Object.keys(dead).length||books.some(book=>!book.sampleId);
     const localDirty=!!dirtyAt||(firstRemoteCheck&&!!hasLocalData);
     const migrationNeeded=!(vaultMeta&&(vaultMeta.legacyCleanedAt||vaultMeta.legacyMigratedAt));
+    const progressSeparationNeeded=!(vaultMeta&&vaultMeta.progressSeparatedAt);
     const remoteChanged=firstRemoteCheck||!remoteVersion||remoteVersion!==seenVersion;
-    const needsVault=localDirty||remoteChanged||migrationNeeded;
+    const needsVault=localDirty||remoteChanged||migrationNeeded||progressSeparationNeeded;
     if(!needsVault){
       noteSyncSuccess(); lastSync=Date.now(); save('breeze.lastsync',lastSync);
       if(manual){ renderSyncModal(); syncStatus('이미 최신 상태예요'); }
@@ -552,7 +571,10 @@ async function runSyncPass(manual){
       legacyItems=legacy.items; legacyAudit=legacy.audit;
       if(legacyAudit.readError) throw new Error(legacyAudit.readError);
     }
-    await mergeVaultPayload(remote,legacyItems);
+    const migratedProgress=await mergeVaultPayload(remote,legacyItems);
+    if(progressSeparationNeeded&&(migratedProgress||Object.values(positions).some(position=>position&&position.t))){
+      save(PROGRESS_LOCAL_CHANGED,Date.now());
+    }
     if(legacyAudit){
       legacyAudit={...legacyAudit,vaultWordCount:Object.keys(words).length,
         vaultTombstoneCount:Object.keys(dead).length,vaultItemCount:vaultRemoteItems.length,
@@ -563,13 +585,13 @@ async function runSyncPass(manual){
     const syncedWords={...words};
     if(pendingWord && !pendingWordResolved(pendingWord.key)) delete syncedWords[pendingWord.key];
     let appliedVersion=remoteVersion||Number(vaultRow&&vaultRow.data&&vaultRow.data.updatedAt)||0;
-    if(localDirty||migrationNeeded||!vaultRow){
+    if(localDirty||migrationNeeded||progressSeparationNeeded||migratedProgress||!vaultRow){
       const payload={v:2,updatedAt:Date.now(),deviceId:vaultDeviceId(),words:syncedWords,dead,items:vaultRemoteItems};
       const envelope=await VaultCrypto.sealJson(master,payload,[sbUser.id,vaultMeta.vaultId,'snapshot'],'breeze/vault/v2');
       appliedVersion=payload.updatedAt;
       /* Vault and its tiny version marker move in one PostgREST statement. A
          client can therefore compare metadata without downloading the vault. */
-      vaultMeta={...vaultMeta,vaultUpdatedAt:appliedVersion,
+      vaultMeta={...vaultMeta,vaultUpdatedAt:appliedVersion,progressSeparatedAt:Date.now(),
         ...(legacyAudit?{legacyMigratedAt:Date.now(),legacyAudit}: {})};
       const saved=await sb.from('words').upsert([
         {user_id:sbUser.id,key:VAULT_ROW,data:{v:2,updatedAt:payload.updatedAt,envelope}},
@@ -592,6 +614,111 @@ async function runSyncPass(manual){
     noteSyncFailure(error); console.error(error); if(manual) syncStatus('동기화 실패: '+(error.message||error));
     return false;
   }
+}
+
+async function localProgressRecords(){
+  const records={},localByIdentity=new Map();
+  for(const book of books){
+    if(book.sampleId) continue;
+    const item=await localVaultItem(book),position=safePosition(positions[book.id]);
+    localByIdentity.set(item.identity,book);
+    if(position&&position.t) records[item.identity]={position,updatedAt:position.t};
+  }
+  return {records,localByIdentity};
+}
+function refreshServerBookProgress(){
+  serverBooks=(serverBooks||[]).map(row=>{
+    const meta=row.meta||{},record=progressRemoteRecords[itemIdentity(meta)];
+    return {...row,meta:{...meta,position:record&&record.position||null}};
+  });
+}
+async function runProgressSyncPass(manual,checkRemote){
+  const dirtyAt=Number(load(PROGRESS_LOCAL_CHANGED,0))||0;
+  if(!dirtyAt&&!checkRemote&&!manual) return true;
+  try{
+    if(!vaultMeta) await fetchVaultMeta();
+    const master=vaultMaster||await loadMasterForDevice();
+    if(!master) return true;
+    const result=await sb.from('words').select('data').eq('user_id',sbUser.id).eq('key',PROGRESS_ROW).maybeSingle();
+    if(result.error) throw result.error;
+    let remoteRecords={};
+    if(result.data&&result.data.data&&result.data.data.envelope){
+      const payload=await VaultCrypto.openJson(master,result.data.data.envelope,
+        [sbUser.id,vaultMeta.vaultId,'progress'],'breeze/progress/v1');
+      remoteRecords=payload&&payload.records||{};
+    }
+    const local=await localProgressRecords();
+    let activeIdentity='';
+    if(curBook&&document.getElementById('v-read').classList.contains('on')){
+      const activeItem=await localVaultItem(curBook); activeIdentity=activeItem.identity;
+    }
+    /* Embedded v2 positions collected while stripping the old vault are also
+       candidates for the first progress upload. */
+    const localCandidates={...progressRemoteRecords,...local.records};
+    const merged=BreezeProgressMerge.merge(remoteRecords,localCandidates,activeIdentity);
+    for(const [identity,record] of Object.entries(merged.apply)){
+      const book=local.localByIdentity.get(identity);
+      if(book) positions[book.id]=record.position;
+    }
+    progressRemoteRecords=merged.records;
+    if(Object.keys(merged.apply).length) save(LS_POS,positions);
+    /* A device may have written an older snapshot after this device's newer
+       write. Repair that on the next remote check even if our dirty flag was
+       already cleared; updatedAt remains the authority. */
+    if(merged.serverChanged){
+      const updatedAt=Date.now(),payload={v:1,updatedAt,deviceId:vaultDeviceId(),records:merged.records};
+      const envelope=await VaultCrypto.sealJson(master,payload,
+        [sbUser.id,vaultMeta.vaultId,'progress'],'breeze/progress/v1');
+      const saved=await sb.from('words').upsert([
+        {user_id:sbUser.id,key:PROGRESS_ROW,data:{v:1,updatedAt,envelope}}
+      ],{onConflict:'user_id,key'});
+      if(saved.error) throw saved.error;
+    }
+    if(!dirtyAt||Number(load(PROGRESS_LOCAL_CHANGED,0))===dirtyAt) save(PROGRESS_LOCAL_CHANGED,0);
+    lastProgressSyncAt=Date.now(); refreshServerBookProgress(); noteSyncSuccess(); renderAllBookViews();
+    return true;
+  }catch(error){
+    noteSyncFailure(error); console.error(error);
+    if(manual) syncStatus('진행도 동기화 실패: '+(error.message||error));
+    return false;
+  }
+}
+function doProgressSync(manual,checkRemote){
+  if(!sb||!sbUser) return Promise.resolve(false);
+  if(!manual&&Date.now()<syncCooldownUntil) return Promise.resolve(false);
+  if(progressSyncPromise){
+    if(manual||checkRemote||Number(load(PROGRESS_LOCAL_CHANGED,0))){
+      progressSyncAgain=true; progressSyncAgainRemote=progressSyncAgainRemote||!!checkRemote;
+    }
+    return progressSyncPromise;
+  }
+  progressSyncPromise=(async()=>{
+    let nextManual=!!manual,nextRemote=!!checkRemote,completed=true;
+    do{
+      progressSyncAgain=false;
+      const ok=await runProgressSyncPass(nextManual,nextRemote||progressSyncAgainRemote);
+      nextManual=false; nextRemote=false; progressSyncAgainRemote=false;
+      if(!ok){ completed=false; progressSyncAgain=false; break; }
+    }while(progressSyncAgain&&sb&&sbUser);
+    return completed;
+  })().finally(()=>{ progressSyncPromise=null; });
+  return progressSyncPromise;
+}
+function syncRemoteChanges(manual){
+  if(remoteSyncPromise){ remoteSyncManual=remoteSyncManual||!!manual; return remoteSyncPromise; }
+  remoteSyncPromise=(async()=>{
+    let nextManual=!!manual,completed=true;
+    do{
+      remoteSyncManual=false;
+      const vaultOk=await doSync(nextManual);
+      const progressOk=vaultOk&&await doProgressSync(nextManual,true);
+      completed=completed&&!!vaultOk&&!!progressOk;
+      nextManual=remoteSyncManual;
+    }while(nextManual&&sb&&sbUser);
+    if(manual&&completed){ renderSyncModal(); syncStatus('암호화 동기화를 마쳤어요'); }
+    return completed;
+  })().finally(()=>{ remoteSyncPromise=null; });
+  return remoteSyncPromise;
 }
 
 /* 읽기자료 백업은 Breeze 서버를 거치지 않습니다. 각 항목을 현재 보관함 키로
@@ -733,7 +860,7 @@ async function importReadingBackup(file){
       if(imported&&(!current||(imported.t||0)>(current.t||0))) positions[id]=imported;
     }
     save(LS_POS,positions);
-    books.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)); renderAllBookViews(); queueSync();
+    books.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)); renderAllBookViews(); queueSync(); queueReadingProgressSync();
     syncStatus('읽기자료를 이 기기에 불러왔어요');
   }catch(error){ console.error(error); syncStatus('백업을 열지 못했어요. 같은 계정의 복구키인지 확인해 주세요.'); }
 }
@@ -777,7 +904,7 @@ function attachSupabaseAuth(){
     if(!next||(sbUser&&sbUser.id!==next.id)){ vaultMaster=null; vaultMeta=null; vaultRemoteItems=[]; serverBooks=[]; }
     sbUser=next; syncBadge();
     if(typeof selKey!=='undefined'&&selKey&&typeof renderPanel==='function') renderPanel();
-    if(sbUser) doSync(false);
+    if(sbUser) syncRemoteChanges(false);
     if(document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
   };
   /* 부팅하는 그 자리에서 한 번. `getSession()` 이 오프라인에서 돌아오지 않아도
@@ -789,6 +916,10 @@ function attachSupabaseAuth(){
 initSupabase();
 document.addEventListener('visibilitychange',()=>{
   if(!sb||!sbUser) return; clearTimeout(syncTimer);
-  if(document.hidden&&curBook&&typeof scrollTick!=='undefined'&&scrollTick){ clearTimeout(scrollTick); scrollTick=null; saveReadingState(); }
-  doSync(false);
+  if(document.hidden){
+    if(curBook&&typeof scrollTick!=='undefined'&&scrollTick){ clearTimeout(scrollTick); scrollTick=null; saveReadingState(); }
+    clearTimeout(progressSyncTimer); progressSyncTimer=null;
+    if(Number(load(VAULT_LOCAL_CHANGED,0))) doSync(false);
+    if(Number(load(PROGRESS_LOCAL_CHANGED,0))) doProgressSync(false,false);
+  }else syncRemoteChanges(false);
 });
