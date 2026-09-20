@@ -1,0 +1,85 @@
+name: Relay Cloudflare Probe
+
+on:
+  push:
+    branches:
+      - chatgpt/book-relay-server-dev-20260920
+    paths:
+      - .github/workflows/relay-cloudflare-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SUPABASE_SERVICE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      R2_ACCESS: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      RELAY_USERS: ${{ secrets.ALLOWED_USER_IDS }}
+    steps:
+      - name: Check secret availability without printing values
+        shell: bash
+        run: |
+          set -euo pipefail
+          check() {
+            local name="$1"
+            local value="$2"
+            if [ -n "$value" ]; then
+              echo "$name=present"
+            else
+              echo "$name=missing"
+            fi
+          }
+          check CLOUDFLARE_API_TOKEN "$CF_TOKEN"
+          check CLOUDFLARE_ACCOUNT_ID "$CF_ACCOUNT"
+          check SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE"
+          check R2_ACCESS_KEY_ID "$R2_ACCESS"
+          check R2_SECRET_ACCESS_KEY "$R2_SECRET"
+          check ALLOWED_USER_IDS "$RELAY_USERS"
+
+      - name: Probe Cloudflare account and existing relay resources
+        if: ${{ env.CF_TOKEN != '' && env.CF_ACCOUNT != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api() {
+            local path="$1"
+            local out="$2"
+            curl -sS -o "$out" -w '%{http_code}' \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              "https://api.cloudflare.com/client/v4$path"
+          }
+
+          status="$(api "/accounts/$CF_ACCOUNT" /tmp/account.json)"
+          echo "cloudflare_account_http=$status"
+          if [ "$status" = "200" ]; then
+            jq -r '"cloudflare_account_name=" + (.result.name // "unknown")' /tmp/account.json
+          fi
+
+          status="$(api "/accounts/$CF_ACCOUNT/r2/buckets" /tmp/r2.json)"
+          echo "r2_list_http=$status"
+          if [ "$status" = "200" ]; then
+            count="$(jq '.result.buckets | length' /tmp/r2.json)"
+            echo "r2_bucket_count=$count"
+            jq -r '.result.buckets[]?.name | "r2_bucket=" + .' /tmp/r2.json
+          fi
+
+          status="$(api "/accounts/$CF_ACCOUNT/workers/scripts" /tmp/workers.json)"
+          echo "workers_list_http=$status"
+          if [ "$status" = "200" ]; then
+            count="$(jq '.result | length' /tmp/workers.json)"
+            echo "worker_script_count=$count"
+            jq -r '.result[]?.id | "worker_script=" + .' /tmp/workers.json
+          fi
+
+          status="$(api "/accounts/$CF_ACCOUNT/subscriptions" /tmp/subscriptions.json)"
+          echo "subscriptions_http=$status"
+          if [ "$status" = "200" ]; then
+            jq -r '.result[]? | "subscription=" + ((.rate_plan.public_name // .rate_plan.id // "unknown")|tostring)' /tmp/subscriptions.json
+          fi
