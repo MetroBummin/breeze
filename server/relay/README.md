@@ -17,18 +17,18 @@ optional (`python test/sigv4-vectors.py`). Runtime has no npm dependencies.
 `test/database-checks.sql` is a separate, NOT EXECUTED database acceptance check.
 Wrangler build/deploy, real JWTs, S3 behavior and iOS are NOT established by these tests.
 
-## Approval-gated infrastructure steps — not run
+## Infrastructure status — Supabase applied, Cloudflare not run
 
 1. Restore callable Cloudflare connection. Read actual account ID, Workers plan,
    R2 enablement/billing, existing Workers/buckets, usage and rate-limit namespaces.
    Confirm creating NEW `breeze-book-relay-dev` names is collision-free. Never overwrite.
    `26092001` is only a proposed namespace; replace if used. No D1/DO/KV needed.
-2. Obtain owner approval before resource creation or applying
-   `../../sql/supabase_relay_v1.sql`. Target must be **Breeze** ref
-   `hrtfhojbhqvaoiulspto`, Org `nxnssinjzlxqnkwlbwmp` (Free verified 2026-09-20).
-   The current project is production; no development DB has been created.
-   Prefer an independently approved isolated Supabase/Postgres test environment
-   for SQL acceptance first. Do not create a paid Supabase branch implicitly.
+2. Supabase relay schema was applied on 2026-09-20 to **Breeze** ref
+   `hrtfhojbhqvaoiulspto`, Org `nxnssinjzlxqnkwlbwmp` as migration
+   `20260920053847 / add_breeze_relay_v1`. Ready was not touched.
+   `test/database-checks.sql` passed after apply. The available SQL connector runs as
+   `supabase_read_only_user`, so service-role runtime RPC/CAS still requires the Worker path.
+   Do not create a paid Supabase branch implicitly and do not blindly re-apply the migration.
 3. Create a NEW Standard R2 bucket, PRIVATE, with r2.dev disabled and no public
    custom domain. Restrict S3 credentials to this bucket. Verify via API/dashboard;
    R2 does not implement AWS bucket ACL/public-access-block settings identically.
@@ -46,10 +46,10 @@ Wrangler build/deploy, real JWTs, S3 behavior and iOS are NOT established by the
    Read back both policies. Permit only approved actual app/dev origins in BOTH
    Worker and R2 CORS; never `*`. No multipart upload API is issued by v1, but
    incomplete multipart cleanup is still configured as a safety net.
-5. Review/apply additive migration only with approval. Run database checks with
-   disposable users in the approved TEST database. All browser access is denied;
-   only Worker service-role RPC can mutate/read relay rows. No vault/progress tables
-   are changed. The service-role secret itself has broader project privilege: isolate it.
+5. Database acceptance already confirms RLS ON, no anon/authenticated grants or relay policies,
+   and service-role-only RPC grants. No vault/progress tables were changed. Still run the
+   real Worker/service-role CAS/JWT path once Cloudflare is available. The service-role secret
+   itself has broader project privilege: isolate it.
 6. Install/review Wrangler >=4.36, pin the chosen version in your deployment toolchain.
    This environment could not install/build Wrangler. Run a dry build first.
    Set names from `.dev.vars.example` with `wrangler secret put NAME` on this NEW
