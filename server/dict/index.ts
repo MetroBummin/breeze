@@ -47,27 +47,61 @@ function parseJson(raw:string):Record<string,unknown>|null{try{return JSON.parse
 const clean=(v:unknown,max:number)=>String(v??"").trim().slice(0,max);
 const cleanList=(v:unknown,n:number,max:number)=>(Array.isArray(v)?v:[]).map(x=>clean(x,max)).filter(Boolean).slice(0,n);
 
-const LOOK_SCHEMA={type:"object",additionalProperties:false,required:["lemma","pos","ko","gloss","alts"],properties:{lemma:{type:"string"},pos:{type:"string"},ko:{type:"string"},gloss:{type:"string"},alts:{type:"array",items:{type:"string"}}}};
+const LOOK_SCHEMA={type:"object",additionalProperties:false,required:["lemma","pos","ko","gloss"],properties:{lemma:{type:"string"},pos:{type:"string"},ko:{type:"string"},gloss:{type:"string"}}};
 function lookPrompt(word:string,clicked:string,sentence:string,avoid:string[]){
-  const isPhrase=/\s/.test(word.trim());const form=isPhrase?`표현: ${word}`:clicked&&clicked.toLowerCase()!==word.toLowerCase()?`단어: ${word} (문장에서는 "${clicked}")`:`단어: ${word}`;const skip=avoid.length?`\n이 뜻들은 이미 보여 줬으니 고르지 마세요: ${avoid.join(", ")}\n`:"";
-  return `${form}\n문장: ${sentence||"(문장 없음 — 일반적인 뜻으로 답하세요)"}\n${skip}\n이 문장에서 클릭한 ${isPhrase?"표현 전체가":"단어나 표현이"} 실제로 어떤 뜻으로 쓰였는지 문맥을 기준으로 판단하세요.\n\n- lemma: 사전 표제어(원형). 표현이면 표현 전체를 그대로, 고유명사나 약어면 그대로 적으세요.\n- pos: 명사|동사|형용사|부사|전치사|기타 중 하나.\n- ko: 이 문장에서의 뜻. 한국어로 짧고 자연스럽게, 약 8자 내외. 설명이 아니라 사전에 실릴 짧은 뜻만 적으세요.\n- gloss: 이 뜻 자체가 어떤 상황에서 쓰이는지 한국어 한 문장으로 설명하세요.\n  현재 문장의 특정 인물·사물·사건에 종속되지 않게, 같은 뜻이 다른 문맥에서 다시 나와도 자연스럽게 재사용할 수 있는 설명으로 쓰세요.\n  예문을 만들지 말고, ko를 장황하게 반복하지 마세요.\n- alts: 현재 pos와 같은 품사에 해당하는 흔한 다른 한국어 뜻을 최대 3개 적으세요.\n  현재 문맥의 뜻과 겹치는 뜻은 빼세요. 다른 품사의 뜻은 절대 넣지 마세요.\n  숙어 속에서만 생기는 특수한 뜻도 일반적인 단어 뜻처럼 넣지 말고, 자신 없는 것은 빼세요.\n\n{"lemma":"","pos":"","ko":"","gloss":"","alts":[""]}`;
+  const isPhrase=/\s/.test(word.trim());
+  const form=isPhrase
+    ? `표현: ${word}`
+    : clicked&&clicked.toLowerCase()!==word.toLowerCase()
+      ? `단어: ${word} (문장에서는 "${clicked}")`
+      : `단어: ${word}`;
+  const skip=avoid.length?`\n이미 보여 준 뜻이므로 같은 sense를 다시 만들지 마세요: ${avoid.join(", ")}\n`:"";
+  return `${form}
+문장: ${sentence||"(문장 없음 — 가장 일반적이고 재사용 가능한 사전 뜻으로 답하세요)"}
+${skip}
+현재 문맥을 근거로 target의 사전 sense를 정확히 하나 만드세요. 문장을 번역하지 말고, 다른 문장에서도 같은 의미라면 그대로 재사용할 수 있는 dictionary sense를 만드세요.
+
+중요:
+- 문장은 어떤 sense인지 판단하기 위한 증거입니다. 현재 문장의 주변 단어를 ko에 번역해 붙이지 마세요.
+- target이 한 단어라면 ko는 그 단어 자체의 뜻만 나타내야 합니다.
+  예: "design philosophy"에서 target이 philosophy라면 "철학"은 좋고 "디자인 철학"은 나쁩니다.
+- target이 이미 여러 단어로 이루어진 표현이라면 그 표현 전체의 사전식 뜻을 만드세요.
+  예: take off → "이륙하다".
+- 새로운 phrase를 임의로 발명하거나 target 바깥의 단어를 sense에 끌어들이지 마세요.
+- 현재 필요한 sense 하나만 만드세요. 다른 흔한 뜻이나 대체 sense를 추가로 생성하지 마세요.
+
+- lemma: 사전 표제어(원형). 표현이면 전달된 표현 전체를 그대로, 고유명사나 약어면 그대로 적으세요.
+- pos: 명사|동사|형용사|부사|전치사|기타 중 하나.
+- ko: 재사용 가능한 짧은 한국어 사전 뜻 하나.
+  * 설명문이 아니라 한 단어 또는 짧은 구를 우선하세요.
+  * 현재 문장의 특정 인물·사물·상황을 포함하지 마세요.
+  * 정확성을 해치지 않는 범위에서 한국 중·고등학생이나 일반 학습자가 바로 이해할 수 있는 쉬운 한국어를 우선하세요.
+  * 드문 한자어, 지나치게 사전적인 문어체, 불필요한 전문 번역어보다 흔하고 직관적인 표현을 우선하세요.
+  * 전문용어가 더 정확하더라도 쉬운 표현으로 같은 sense를 정확히 전달할 수 있으면 쉬운 표현을 ko에 쓰고, 전문적인 차이는 gloss에서 설명하세요.
+  * 예: extrapolate는 문맥상 가능하다면 "추정하다"처럼 이해하기 쉬운 뜻을 우선하고, 외삽 개념은 gloss에서 정확히 설명하세요.
+- gloss: 이 sense가 무엇을 뜻하는지 쉬운 한국어 한 문장으로 설명하세요.
+  * 현재 문장의 특정 사건에 종속되지 않아야 합니다.
+  * 다른 문장의 같은 sense에도 그대로 재사용 가능해야 합니다.
+  * ko만으로 구분하기 어려운 의미 차이나 전문적 정확성은 여기서 보완하세요.
+
+{"lemma":"","pos":"","ko":"","gloss":""}`;
 }
 async function opLook(body:any,userId:string|null,seeding=false){
   const word=clean(body.word,60).toLowerCase(),clicked=clean(body.clicked,60),sentence=clean(body.sentence,600),avoid=cleanList(body.avoid,4,40),retry=!!body.retry;let anonLeft:number|null=null,userLeft:number|null=null;
   if(seeding){}else if(!userId){const verdict=await takeAnonQuota(clean(body.device,64));if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);if(verdict.status!=="ok")return json({error:"login_required"},401);anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE))}else{const quota=await takeQuota(userId);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);userLeft=quota.left}
   const out=await ask({action:seeding?"seed":retry?"retry":"look",prompt:lookPrompt(word,clicked,sentence,avoid),maxTokens:450,schema:LOOK_SCHEMA});const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
-  const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase()),aiLemma=clean(parsed.lemma,60).toLowerCase();const lemma=cands.includes(aiLemma)||aiLemma===word?aiLemma:(word||cands[0]||"");const ko=clean(parsed.ko,60);const answer={lemma,pos:clean(parsed.pos,12),ko,gloss:clean(parsed.gloss,300),alts:cleanList(parsed.alts,3,40).filter(item=>item!==ko),provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})};if(!answer.ko)return json({error:"empty_answer"},502);return json(answer);
+  const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase()),aiLemma=clean(parsed.lemma,60).toLowerCase();const lemma=cands.includes(aiLemma)||aiLemma===word?aiLemma:(word||cands[0]||"");const ko=clean(parsed.ko,60);const answer={lemma,pos:clean(parsed.pos,12),ko,gloss:clean(parsed.gloss,300),alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})};if(!answer.ko)return json({error:"empty_answer"},502);return json(answer);
 }
 
 /* Jev only chooses from meanings the device supplied. It never writes a meaning. */
 async function opJudge(body:any,signal:AbortSignal){
   const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
   const word=clean(body.word,60),sentence=clean(body.sentence,600);const raw=Array.isArray(body.senses)?body.senses:[];
-  const senses=raw.slice(0,16).map((item:any,index:number)=>({id:`sense_${index}`,meaning:clean(item&&item.meaning,60)})).filter(item=>item.meaning);
+  const senses=raw.slice(0,16).map((item:any,index:number)=>({id:`sense_${index}`,meaning:clean(item&&item.meaning,60),pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,300)})).filter(item=>item.meaning);
   if(!word||!sentence||!senses.length)return json({error:"bad_judge_request"},400);
-  const criteria:Record<string,string>=Object.fromEntries(senses.map(item=>[item.id,item.meaning]));criteria.NEW="기존 뜻 중 현재 문장에 맞는 뜻이 없음";
+  const criteria:Record<string,string>=Object.fromEntries(senses.map(item=>[item.id,[item.meaning,item.pos?`품사: ${item.pos}`:"",item.gloss?`설명: ${item.gloss}`:""].filter(Boolean).join(" · ")]));criteria.NEW="기존 뜻과 설명을 함께 봐도 현재 문장에 맞는 sense가 없음";
   const trace=newAiTrace("judge");const combined=AbortSignal.any([signal,AbortSignal.timeout(1800)]);
-  const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify({model:JEV_MODEL,state:{word,sentence},questions:{reuse:{type:"choice",instructions:"현재 문장에서 이 단어의 의미와 가장 잘 맞는 기존 저장 뜻을 선택하세요. 기존 뜻 중 맞는 것이 없을 때만 NEW를 선택하세요.",criteria}}}),signal:combined});
+  const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify({model:JEV_MODEL,state:{word,sentence},questions:{reuse:{type:"choice",instructions:"현재 문장의 의미와 가장 잘 맞는 기존 저장 sense를 선택하세요. 각 후보의 짧은 한국어 뜻뿐 아니라 품사와 설명(gloss)도 함께 비교하세요. 뜻 글자가 비슷하더라도 gloss가 현재 문맥과 다르면 고르지 마세요. 기존 후보 중 맞는 sense가 없을 때는 NEW를 선택하세요.",criteria}}}),signal:combined});
   if(!r.ok)return json({error:"jev_failed",status:r.status},502);const data=await r.json();const selected=clean(data?.answers?.reuse?.choice,40);if(!(selected in criteria))return json({error:"jev_invalid_response"},502);return json({selected,confidence:Number(data?.answers?.reuse?.confidence??0),provider:"jev"});
 }
 
