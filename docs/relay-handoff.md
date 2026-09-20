@@ -3,7 +3,8 @@
 ## 1. 기준 / 완료 커밋과 브랜치
 
 - 기준: `main` / `08e230bec0d03f756d7f2bcf1f85541f0a866fd1`.
-- 서버 코드·테스트 커밋: `702d3df8b3725560175e79c77049a6256252b479`.
+- 서버 코드·테스트 기준 커밋: `702d3df8b3725560175e79c77049a6256252b479`.
+- 실제 E2E 호환 수정·라이브 smoke 러너 커밋: `ddb2b482d85db29048247ecb9c3efe254471c221`.
 - 브랜치: `chatgpt/book-relay-server-dev-20260920`. 이후 문서 커밋까지 checkout한다.
   최종 문서 커밋은 `git log -1 --format=%H -- docs/relay-handoff.md`로 확인한다.
 - 기존 파일 수정 없이 `server/relay/`, 추가 SQL, 이 문서와 관련 초안만 추가.
@@ -16,25 +17,25 @@ Organization `nxnssinjzlxqnkwlbwmp` / `Breeze` / **Free**,
 `ACTIVE_HEALTHY`, 서울 리전. 프로젝트 ID·Org ID 직접 조회는 성공했다.
 일반 project/org list는 이전 연결 범위를 반환하므로 직접 ID 조회 결과를 기준으로 한다.
 
-Cloudflare 호출 도구는 이번 세션에도 노출되지 않아 직접 계정 API를 호출할 수 없었다.
-대신 relay 브랜치에서 일회성 GitHub Actions probe를 실행해 repository Actions secrets 존재 여부를
-**값을 출력하지 않고** 확인했다. Run `35492445580`은 성공했지만 아래 6개가 모두 미설정이었다:
+2026-09-20 실제 Cloudflare 개발 환경 배포와 smoke를 완료했다.
 
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
-- `ALLOWED_USER_IDS`
+- Worker: `breeze-book-relay-dev`
+- URL: `https://breeze-book-relay-dev.iamthefreeman.workers.dev`
+- 실제 E2E version: `76727070-6a16-4bae-8401-e57dc8a926ca`
+- E2E 종료 후 OFF version: `d4f4f99f-04dd-47c6-b6e4-d691c31cc7d5`
+- R2 binding: `BOOK_RELAY` -> private bucket `breeze-book-relay-dev`
+- rate limiter: `RATE_LIMITER`, namespace `26092001`, 120 requests / 60 seconds
+- Cron: `*/5 * * * *`; 실제 scheduled invocation `outcome: ok` 확인
+- `workers_dev=true`, preview URL disabled, `keep_vars=true`
+- R2 public access disabled, CORS/lifecycle 적용, smoke 종료 후 bucket size `0 B`와 빈 object list 확인
 
-따라서 Cloudflare 계정 인증 자체를 시작할 수 없어 Worker/R2/secret/lifecycle은 생성·변경하지 않았다.
-**Worker URL: 없음.** 진단 workflow는 검사 후 제거했다.
-`breeze-book-relay-dev` Worker·private bucket, rate-limit namespace `26092001`은 아직 후보 이름이다.
-공개 Cloudflare 문서상 Workers Free/R2 Standard 무료 포함량은 존재하지만, 실제 계정 상태 확인 전 생성하지 않는다.
+Dashboard/Wrangler secret 값은 조회하거나 출력하지 않았다. E2E JWT도 사용자-visible 로그나 문서에
+기록하지 않고 로컬 mode `0600` 임시 파일로만 전달했다.
 
 ## 3. 적용 여부 / 승인 대기
 
-코드·설정·migration 파일·테스트 작성 완료. **Cloudflare 배포 0건. Supabase relay schema는 실제 적용 완료.**
+코드·설정·migration 파일·테스트 작성 및 **Cloudflare 개발 Worker 배포 완료.**
+Supabase relay schema도 실제 적용 완료했다.
 Breeze project `hrtfhojbhqvaoiulspto`에 migration
 `20260920053847 / add_breeze_relay_v1`로 적용했다. Ready에는 적용하지 않았다.
 
@@ -47,12 +48,13 @@ Breeze project `hrtfhojbhqvaoiulspto`에 migration
 5개 relay table 모두 RLS ON이고 anon/authenticated table grant·RPC EXECUTE가 없으며,
 `service_role` RPC EXECUTE grant가 존재한다. 적용 직후 relay data row는
 accounts/files/events/nonces 모두 0, maintenance만 초기 row 1개다.
-공개 엔드포인트, main 병합, 유료 전환, 기존 데이터 삭제는 하지 않았다.
-`RELAY_ENABLED=false`, `INFRA_VERIFIED=false`, `workers_dev=false`는 그대로다.
+main 병합, 유료 전환, 기존 Breeze 데이터 삭제는 하지 않았다. 최종 배포 상태는
+`RELAY_ENABLED=false`, `INFRA_VERIFIED=true`, `CLEANUP_ENABLED=true`다. API는 실제로
+`503 {"error":"RELAY_DISABLED"}`를 반환한다. `INFRA_VERIFIED=true`는 실제 개발 인프라 smoke의
+결과일 뿐 production 사용자 활성화를 뜻하지 않는다.
 
 별도 Supabase dev branch는 없었고 추가 비용 없이 만들 수 있음이 확인되지 않아 생성하지 않았다.
-Cloudflare 계정·요금·이름 충돌 확인 후 개발용 새 private R2/Worker 생성·제한 배포와 secret 설정만 남아 있다.
-순서는 [배포 절차](../server/relay/README.md)를 따른다.
+향후 재배포와 운영 확인 순서는 [배포 절차](../server/relay/README.md)를 따른다.
 
 JWT의 실제 활성 서명 알고리즘/키 목록은 확인하지 못했다. 이를 추정하는 대신 해당 프로젝트
 `/auth/v1/user`에 토큰을 검증시킨다. JWT 키 회전·Auth 설정 변경은 하지 않는다.
@@ -113,12 +115,13 @@ URL은 1회용이 아니며 유출/기기 해제 후에도 잔여 유효기간 �
 ## 6. Secret 이름 / 설정 위치 (값 없음)
 
 신규 Worker의 Wrangler secret 또는 로컬의 Git 제외 `.dev.vars`:
-`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `R2_ACCOUNT_ID`,
+`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
 `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `ALLOWED_USER_IDS`.
 `BOOK_RELAY` R2 binding, `RATE_LIMITER` binding과 `SUPABASE_URL`, `R2_BUCKET_NAME`,
-`TEMP_TTL_SECONDS`, `ALLOWED_ORIGINS`, 활성화 플래그는 `server/relay/wrangler.json`.
+`R2_ACCOUNT_ID`, `TEMP_TTL_SECONDS`, `ALLOWED_ORIGINS`, 활성화 플래그는
+`server/relay/wrangler.json`. Cloudflare account ID는 secret이 아니다.
 service-role은 relay 외 프로젝트 권한도 가지므로 서버에서 격리한다. 앱에 넣지 않는다.
-실제 계정/자격증명/허용 사용자 값은 이번에 조회·저장하지 않았다.
+실제 자격증명과 허용 사용자 값은 조회·문서화하지 않았다.
 
 ## 7. 실행한 테스트 / 미검증
 
@@ -136,16 +139,37 @@ Node 22.16.0에서 `cd server/relay && npm test && npm run check`: **39 통과 /
 - `test/database-checks.sql` 실행 성공: anon/authenticated table 권한·RPC EXECUTE 없음,
   service_role RPC EXECUTE 존재, 예상 밖 relay policy 없음
 - Supabase advisor 재실행. relay의 `RLS enabled, no policy` INFO는 browser 완전 차단 설계상 의도됨.
-- 실패한 함수 smoke transaction 뒤 accounts/files/events/nonces 0 row를 재확인해 운영 테스트 찌꺼기 없음
+- live E2E 전 초기 실패 함수 smoke transaction 뒤 accounts/files/events/nonces 0 row를 재확인
 
-**실제 환경에서 아직 미검증:**
-- 연결된 SQL 실행기는 `supabase_read_only_user`이며 service_role로 SET ROLE할 수 없어,
-  service-role 실제 RPC 실행/CAS 동시성은 이 커넥터에서 수행 불가
-- 실제 Supabase 사용자 JWT를 통한 `/auth/v1/user` 검증
-- Cloudflare/Wrangler build·배포, 실제 R2 PUT/GET/HEAD/CopyObject·조건부 헤더·길이·lifecycle·URL 만료
-- Safari Blob 업로드, 전체 책 package codec, 앱/iPhone/iPad/iOS 백그라운드
+**실제 Cloudflare + Supabase + R2에서 검증 완료:**
+- Breeze 웹 로그인 세션에서 갱신한 실제 Supabase JWT -> Worker `/auth/v1/user` 인증
+- Worker -> Supabase service-role `relay_context` / `relay_commit` RPC
+- 새 P-256 pending 기기 등록, fingerprint 일치 확인 후 service-only `relay_bootstrap`
+- 승인된 source가 수신 기기 2대를 protocol의 `approve`로 승인
+- transfer 생성, 실제 presigned PUT, 96-byte dummy ciphertext 업로드
+- `complete`의 실제 R2 HEAD/size 확인과 조건부 CopyObject, 실제 GET byte 일치
+- 첫 수신자 ACK 후 object 유지, 두 번째 ACK 후 object 삭제
+- 별도 64-byte 전송으로 실제 presigned GET URL 60초 만료 후 HTTP 403 확인
+- 미승인 pending 기기의 signed request가 `DEVICE_NOT_APPROVED` 403인지 확인 후 revoke
+- 실제 Cron scheduled invocation이 배포 version에서 `outcome: ok`로 완료
+- 종료 후 R2 bucket `0 B`, object list empty, API flag OFF 응답 확인
+- OFF version의 다음 Cron도 `outcome: ok`; 두 transfer 모두 `deleted`, `reserved_bytes=0`,
+  `active_count=0`으로 수렴 확인
 
-Cloudflare 실제 smoke와 service-role 경로 검증 전 `INFRA_VERIFIED`/relay feature flag를 켜지 않는다.
+라이브 smoke 중 발견한 Workers runtime 호환 문제는 `AbortSignal.timeout()` 대신 명시적
+`AbortController` timer를 사용하고, upstream redirect를 `manual`로 fail-closed 처리하도록 수정했다.
+비-`RelayError`는 이름만 구조화 로그로 남기며 upstream body/secret/token은 기록하지 않는다.
+
+**mock/local에서만 검증:**
+- 다른 실제 계정의 유효 JWT를 준비하지 않아 cross-account 차단은 deterministic local test만 유지
+- transfer 자체의 24시간 expiry
+- 의도적 R2 cleanup failure, exponential retry와 `cleanup_failed` / explicit retry
+- CAS 동시성 경합, 파일/계정 용량 한도, forged proof/replay, stage overwrite 방지
+
+운영 TTL/cleanup 설정을 훼손해야 하는 transfer expiry와 의도적 cleanup failure는 실제 환경에서
+억지로 재현하지 않았다. Safari Blob 업로드, 전체 책 package codec, 앱/iPhone/iPad/iOS
+백그라운드도 앱 integration 단계의 미검증 항목이다. 앱 integration과 출시 승인 전
+`RELAY_ENABLED`를 켜지 않는다.
 
 ## 8. Codex의 앱 측 작업만
 
@@ -166,5 +190,9 @@ Cloudflare 실제 smoke와 service-role 경로 검증 전 `INFRA_VERIFIED`/relay
 
 정리 완료를 확인하기 전 Worker/Cron/DB/정리 권한을 먼저 제거하지 않는다. DB/플랫폼 장애가 있으면
 승인된 관리 경로에서 전용 prefix만 청소한다. 기존 다른 bucket/데이터는 삭제하지 않는다.
-이번 변경은 main 미병합·배포/DB 미적용이므로 현재 운영 롤백은 필요 없다.
+현재 개발 Worker는 OFF이므로 추가 운영 롤백은 필요 없다. smoke의 테스트 transfer object는 0개다.
+Supabase에는 테스트 계정 row와 terminal relay file/event/nonce 기록 및 승인된 임시 기기 identity가
+남아 있으며, 이는 실제 R2 payload가 아니고 30일 prune/기존 retention 계약의 대상이다.
+로컬 JWT와 임시 P-256 private-key state 파일은 검증 후 삭제했다.
+main에는 병합하지 않았다.
 클라이언트 활성화 전 [개인정보 안내 수정안](relay-privacy-proposal.md)을 최종 검토한다.
