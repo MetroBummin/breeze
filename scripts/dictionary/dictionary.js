@@ -1123,13 +1123,17 @@ async function loadCachedLook(k, began, life){
 async function resolveSavedWordContext(k, context, life){
   const w=words[k];if(!w||!context||context.started)return;
   const root=w.root||k;
-  const senses=meaningCards(root,null).map(([id,item],index)=>({id,choice:`sense_${index}`,meaning:item.ko}));
+  const senses=meaningCards(root,null).map(([id,item],index)=>({
+    id,choice:`sense_${index}`,meaning:item.ko,
+    pos:String((item.ai&&item.ai.pos)||item.pos||'').trim(),
+    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim()
+  }));
   if(!senses.length)return;
   context.started=true;context.loading='checking';delete context.error;renderIfAlive(life);
   try{
     const signal=wordLookupSignal();
     const verdict=await dictCall({op:'judge',word:w.aiLemma||w.word||root,lemma:w.aiLemma||w.word||root,
-      sentence:context.sentence,senses:senses.map(item=>({meaning:item.meaning}))},signal);
+      sentence:context.sentence,senses:senses.map(item=>({meaning:item.meaning,pos:item.pos,gloss:item.gloss}))},signal);
     if(!verdict&&signal&&signal.aborted)return;
     if(wordLookupAlive(life)&&verdict&&!verdict.error&&verdict.selected!=='NEW'){
       const picked=senses.find(item=>item.choice===verdict.selected);
