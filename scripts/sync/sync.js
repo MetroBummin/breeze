@@ -1,11 +1,13 @@
 /* ================= Breeze E2EE sync =================
    서버에 올라가는 것은 단어·학습 기록·읽기자료의 제목과 진행도를 담은 암호문
    하나뿐입니다. PDF·EPUB·paras·기사 본문·사진은 이 파일의 어떤 서버 요청에도
-   들어가지 않습니다. 기존 평문 동기화 자료는 암호문 저장 성공 뒤에 지웁니다. */
+   들어가지 않습니다. 옛 평문 자료는 암호문으로 옮겨도 이 경로에서 지우지 않고,
+   별도 migration을 위한 개수 audit만 vault metadata에 남깁니다. */
 let SB_URL='', SB_KEY='', sb=null, sbInitProblem='', authListenerAttached=false;
 let sbUser=null, syncTimer=null, syncPromise=null, syncAgain=false, syncAgainManual=false;
 let lastSync=load('breeze.lastsync',0);
 let progressSyncTimer=null, lastProgressSyncAt=0;
+let syncCooldownUntil=0, syncFailureCount=0;
 
 const VAULT_ROW='__breeze_vault_v2__';
 const VAULT_META_ROW='__breeze_vault_meta_v2__';
@@ -375,17 +377,34 @@ function queueReadingProgressSync(){
 const upOf=word=>word?(word.up||word.addedAt||0):0;
 function doSync(manual){
   if(!sb||!sbUser) return Promise.resolve(false);
-  if(syncPromise){ syncAgain=true; syncAgainManual=syncAgainManual||!!manual; return syncPromise; }
+  if(!manual&&Date.now()<syncCooldownUntil) return Promise.resolve(false);
+  if(syncPromise){
+    /* Auth can report the same session more than once during startup. A second
+       remote check is not useful; only a manual request or a real local write
+       earns another pass. */
+    if(manual||Number(load(VAULT_LOCAL_CHANGED,0))){ syncAgain=true; syncAgainManual=syncAgainManual||!!manual; }
+    return syncPromise;
+  }
   syncPromise=(async()=>{
     let nextManual=!!manual;
     do{
       syncAgain=false; const passManual=nextManual||syncAgainManual; syncAgainManual=false;
-      await runSyncPass(passManual); nextManual=false;
+      const ok=await runSyncPass(passManual); nextManual=false;
+      if(!ok){ syncAgain=false; break; }
     }while(syncAgain&&sb&&sbUser);
     return true;
   })().finally(()=>{ syncPromise=null; });
   return syncPromise;
 }
+function vaultRemoteVersionKey(){ return `breeze.vault.remote:${sbUser?sbUser.id:'none'}`; }
+function syncErrorStatus(error){ return Number(error&&(error.status||error.statusCode||error.code))||0; }
+function noteSyncFailure(error){
+  syncFailureCount=Math.min(syncFailureCount+1,5);
+  const quota=syncErrorStatus(error)===402||/quota|egress|restriction|payment required/i.test(String(error&&(error.message||error)));
+  const delay=quota?15*60*1000:Math.min(15*60*1000,30000*(2**(syncFailureCount-1)));
+  syncCooldownUntil=Date.now()+delay;
+}
+function noteSyncSuccess(){ syncFailureCount=0; syncCooldownUntil=0; }
 function safePosition(position){
   if(!position) return null;
   return {p:Number(position.p)||0,t:Number(position.t)||0,mode:position.mode==='original'?'original':'text',
@@ -467,40 +486,31 @@ async function readLegacyData(rows){
     const value=row.data||{}; if(value.deleted) legacyDead[row.key]=value.up||Date.now(); else legacyWords[row.key]=value;
   });
   mergeWordState(legacyWords,legacyDead);
+  let bookRows=0,positionRows=0,readError='';
   try{
     const booksResult=await sb.from('books').select('book_id,meta').eq('user_id',sbUser.id);
-    if(!booksResult.error) (booksResult.data||[]).forEach(row=>{
+    if(booksResult.error) throw booksResult.error;
+    bookRows=(booksResult.data||[]).length;
+    (booksResult.data||[]).forEach(row=>{
       const meta=row.meta||{}; if(meta.deleted) return;
       items.push({id:row.book_id,title:meta.title||'(제목 없음)',author:meta.author||'',kind:meta.kind||'',
         identity:'legacy:'+row.book_id,addedAt:meta.addedAt||0,updatedAt:meta.renamedAt||meta.addedAt||0,position:null});
     });
     const positionsResult=await sb.from('positions').select('book_id,data').eq('user_id',sbUser.id);
-    if(!positionsResult.error) (positionsResult.data||[]).forEach(row=>{
+    if(positionsResult.error) throw positionsResult.error;
+    positionRows=(positionsResult.data||[]).length;
+    (positionsResult.data||[]).forEach(row=>{
       const item=items.find(one=>one.id===row.book_id);
       if(item){ item.position=safePosition(row.data); item.updatedAt=Math.max(item.updatedAt,item.position&&item.position.t||0); }
     });
-  }catch(error){ console.warn('옛 동기화 메타데이터 이전을 건너뛰었어요:',error); }
-  return items;
+  }catch(error){ readError=String(error&&error.message||error); console.warn('옛 동기화 메타데이터 이전을 건너뛰었어요:',error); }
+  return {items,audit:{wordRows:(rows||[]).length,bookRows,positionRows,readError,auditedAt:Date.now()}};
 }
-async function cleanLegacyServer(rows){
-  if(vaultMeta&&vaultMeta.legacyCleanedAt) return;
-  const legacyKeys=(rows||[]).map(row=>row.key).filter(key=>key!==VAULT_ROW&&key!==VAULT_META_ROW);
-  if(legacyKeys.length){
-    const removed=await sb.from('words').delete().eq('user_id',sbUser.id).in('key',legacyKeys);
-    if(removed.error) throw removed.error;
-  }
-  const positionsRemoved=await sb.from('positions').delete().eq('user_id',sbUser.id);
-  if(positionsRemoved.error) throw positionsRemoved.error;
-  const booksRemoved=await sb.from('books').delete().eq('user_id',sbUser.id);
-  if(booksRemoved.error) throw booksRemoved.error;
-  const listed=await sb.storage.from('books').list(sbUser.id,{limit:1000});
-  if(!listed.error&&listed.data&&listed.data.length){
-    const removed=await sb.storage.from('books').remove(listed.data.map(file=>`${sbUser.id}/${file.name}`));
-    if(removed.error) throw removed.error;
-  }
-  vaultMeta={...vaultMeta,legacyCleanedAt:Date.now()};
-  const saved=await sb.from('words').upsert([{user_id:sbUser.id,key:VAULT_META_ROW,data:vaultMeta}],{onConflict:'user_id,key'});
-  if(saved.error) throw saved.error;
+async function readLegacyRows(){
+  const result=await sb.from('words').select('key,data').eq('user_id',sbUser.id)
+    .not('key','in',`(${VAULT_ROW},${VAULT_META_ROW})`);
+  if(result.error) throw result.error;
+  return result.data||[];
 }
 async function purgePrivateDictionaryLogs(){
   const flag=`breeze.private-logs-purged:${sbUser.id}`;
@@ -514,36 +524,73 @@ async function runSyncPass(manual){
     const master=await ensureVaultReady();
     if(!master){ if(manual){ renderSyncModal(); syncStatus('복구키로 보관함을 먼저 열어 주세요'); } return; }
     await approvePairingFromUrl();
-    const rowsResult=await sb.from('words').select('key,data').eq('user_id',sbUser.id);
-    if(rowsResult.error) throw rowsResult.error;
-    const rows=rowsResult.data||[],vaultRow=rows.find(row=>row.key===VAULT_ROW);
+    const dirtyAt=Number(load(VAULT_LOCAL_CHANGED,0))||0;
+    const remoteVersion=Number(vaultMeta&&vaultMeta.vaultUpdatedAt)||0;
+    const seenVersion=Number(load(vaultRemoteVersionKey(),0))||0;
+    const firstRemoteCheck=!seenVersion;
+    const hasLocalData=Object.keys(words).length||Object.keys(dead).length||books.some(book=>!book.sampleId);
+    const localDirty=!!dirtyAt||(firstRemoteCheck&&!!hasLocalData);
+    const migrationNeeded=!(vaultMeta&&(vaultMeta.legacyCleanedAt||vaultMeta.legacyMigratedAt));
+    const remoteChanged=firstRemoteCheck||!remoteVersion||remoteVersion!==seenVersion;
+    const needsVault=localDirty||remoteChanged||migrationNeeded;
+    if(!needsVault){
+      noteSyncSuccess(); lastSync=Date.now(); save('breeze.lastsync',lastSync);
+      if(manual){ renderSyncModal(); syncStatus('이미 최신 상태예요'); }
+      return true;
+    }
+    const vaultResult=await sb.from('words').select('data').eq('user_id',sbUser.id).eq('key',VAULT_ROW).maybeSingle();
+    if(vaultResult.error) throw vaultResult.error;
+    const vaultRow=vaultResult.data;
     let remote=null;
     if(vaultRow&&vaultRow.data&&vaultRow.data.envelope){
       remote=await VaultCrypto.openJson(master,vaultRow.data.envelope,
         [sbUser.id,vaultMeta.vaultId,'snapshot'],'breeze/vault/v2');
     }
-    const legacyItems=await readLegacyData(rows);
+    let legacyItems=[],legacyAudit=null;
+    if(migrationNeeded){
+      const legacy=await readLegacyData(await readLegacyRows());
+      legacyItems=legacy.items; legacyAudit=legacy.audit;
+      if(legacyAudit.readError) throw new Error(legacyAudit.readError);
+    }
     await mergeVaultPayload(remote,legacyItems);
+    if(legacyAudit){
+      legacyAudit={...legacyAudit,vaultWordCount:Object.keys(words).length,
+        vaultTombstoneCount:Object.keys(dead).length,vaultItemCount:vaultRemoteItems.length,
+        storageInspection:'deferred-to-separate-migration'};
+    }
     /* An in-flight lookup is local UI state, never a vault entry. The merge
        cleanup above also tombstones old remote orphans before sealing. */
     const syncedWords={...words};
     if(pendingWord && !pendingWordResolved(pendingWord.key)) delete syncedWords[pendingWord.key];
-    const payload={v:2,updatedAt:Date.now(),deviceId:vaultDeviceId(),words:syncedWords,dead,items:vaultRemoteItems};
-    const envelope=await VaultCrypto.sealJson(master,payload,[sbUser.id,vaultMeta.vaultId,'snapshot'],'breeze/vault/v2');
-    const saved=await sb.from('words').upsert(
-      [{user_id:sbUser.id,key:VAULT_ROW,data:{v:2,updatedAt:payload.updatedAt,envelope}}],{onConflict:'user_id,key'});
-    if(saved.error) throw saved.error;
-    await cleanLegacyServer(rows);
+    let appliedVersion=remoteVersion||Number(vaultRow&&vaultRow.data&&vaultRow.data.updatedAt)||0;
+    if(localDirty||migrationNeeded||!vaultRow){
+      const payload={v:2,updatedAt:Date.now(),deviceId:vaultDeviceId(),words:syncedWords,dead,items:vaultRemoteItems};
+      const envelope=await VaultCrypto.sealJson(master,payload,[sbUser.id,vaultMeta.vaultId,'snapshot'],'breeze/vault/v2');
+      appliedVersion=payload.updatedAt;
+      /* Vault and its tiny version marker move in one PostgREST statement. A
+         client can therefore compare metadata without downloading the vault. */
+      vaultMeta={...vaultMeta,vaultUpdatedAt:appliedVersion,
+        ...(legacyAudit?{legacyMigratedAt:Date.now(),legacyAudit}: {})};
+      const saved=await sb.from('words').upsert([
+        {user_id:sbUser.id,key:VAULT_ROW,data:{v:2,updatedAt:payload.updatedAt,envelope}},
+        {user_id:sbUser.id,key:VAULT_META_ROW,data:vaultMeta}
+      ],{onConflict:'user_id,key'});
+      if(saved.error) throw saved.error;
+    }
     await purgePrivateDictionaryLogs();
-    saveWords(); save(LS_DEAD,dead); save(LS_POS,positions); save(VAULT_LOCAL_CHANGED,0);
+    saveWords(); save(LS_DEAD,dead); save(LS_POS,positions);
+    if(!dirtyAt||Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt) save(VAULT_LOCAL_CHANGED,0);
+    save(vaultRemoteVersionKey(),appliedVersion); noteSyncSuccess();
     lastSync=Date.now(); save('breeze.lastsync',lastSync);
     if(manual){ renderSyncModal(); syncStatus('암호화 동기화를 마쳤어요'); }
     else if(pendingRecoveryKey) miniToast('복구키를 저장해 주세요');
     renderAllBookViews();
     if(typeof restoreMissingVaultArticles==='function') restoreMissingVaultArticles();
     if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
+    return true;
   }catch(error){
-    console.error(error); if(manual) syncStatus('동기화 실패: '+(error.message||error));
+    noteSyncFailure(error); console.error(error); if(manual) syncStatus('동기화 실패: '+(error.message||error));
+    return false;
   }
 }
 
@@ -745,4 +792,3 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&curBook&&typeof scrollTick!=='undefined'&&scrollTick){ clearTimeout(scrollTick); scrollTick=null; saveReadingState(); }
   doSync(false);
 });
-setInterval(()=>{ if(sb&&sbUser&&!document.hidden) doSync(false); },3*60*1000);

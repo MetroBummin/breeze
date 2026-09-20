@@ -109,8 +109,10 @@ assert.equal(segmented, joined, 'Fingerprint changed with paragraph segmentation
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
 assert.match(syncSource,/VaultCrypto\.sealJson\(master,payload/,
   'The sync snapshot is sent without end-to-end encryption');
-assert.match(syncSource,/await cleanLegacyServer\(rows\)/,
-  'Legacy plaintext is not removed after the encrypted snapshot succeeds');
+assert.match(syncSource,/legacyMigratedAt:Date\.now\(\),legacyAudit/,
+  'Legacy migration is not recorded after the encrypted snapshot succeeds');
+assert.doesNotMatch(syncSource,/from\('(?:words|books|positions)'\)\.delete\(\)|storage\.from\('books'\)\.remove\(/,
+  'Normal sync still deletes legacy data before a separately audited migration');
 assert.doesNotMatch(syncSource,/bookUpload|bookDownload|collectBookPhotos|storeBookPhotos/,
   'The removed plaintext book transfer path is still callable');
 assert.doesNotMatch(syncSource,/paras:|imgSrc:|cover:/,
