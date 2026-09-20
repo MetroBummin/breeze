@@ -1,0 +1,7 @@
+# Names only. Set real values in Wrangler secrets or ignored .dev.vars, never in Git/chat.
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+ALLOWED_USER_IDS=

@@ -1,0 +1,17 @@
+{
+  "Rules": [
+    {
+      "ID": "breeze-relay-expiration-v1",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "relay/"
+      },
+      "Expiration": {
+        "Days": 1
+      },
+      "AbortIncompleteMultipartUpload": {
+        "DaysAfterInitiation": 1
+      }
+    }
+  ]
+}

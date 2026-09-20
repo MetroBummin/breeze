@@ -1,0 +1,56 @@
+[
+  {
+    "input": {
+      "endpoint": "https://00000000000000000000000000000000.r2.cloudflarestorage.com",
+      "bucket": "breeze-book-relay-dev",
+      "key": "relay/test/stage",
+      "method": "PUT",
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "64",
+        "if-none-match": "*"
+      },
+      "accessKey": "TEST_ONLY_ACCESS",
+      "secretKey": "TEST_ONLY_SECRET",
+      "at": 1789876800000,
+      "seconds": 60
+    },
+    "url": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/breeze-book-relay-dev/relay/test/stage?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=TEST_ONLY_ACCESS%2F20260920%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260920T040000Z&X-Amz-Expires=60&X-Amz-SignedHeaders=content-length%3Bcontent-type%3Bhost%3Bif-none-match&X-Amz-Signature=66071215d0a28ddf4f36c338162d2f09acd64c7848cc2aaab9a43091987d0e39"
+  },
+  {
+    "input": {
+      "endpoint": "https://00000000000000000000000000000000.r2.cloudflarestorage.com",
+      "bucket": "breeze-book-relay-dev",
+      "key": "relay/test/ready",
+      "method": "GET",
+      "headers": {
+        "if-match": "\"dummy-etag\""
+      },
+      "accessKey": "TEST_ONLY_ACCESS",
+      "secretKey": "TEST_ONLY_SECRET",
+      "at": 1789876800000,
+      "seconds": 60
+    },
+    "url": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/breeze-book-relay-dev/relay/test/ready?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=TEST_ONLY_ACCESS%2F20260920%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260920T040000Z&X-Amz-Expires=60&X-Amz-SignedHeaders=host%3Bif-match&X-Amz-Signature=a40d20486a99fb4510d7a7b6e08f7cac1600745a9a839a47e0e54f6d883045f9"
+  },
+  {
+    "input": {
+      "endpoint": "https://00000000000000000000000000000000.r2.cloudflarestorage.com",
+      "bucket": "breeze-book-relay-dev",
+      "key": "relay/test/ready",
+      "method": "PUT",
+      "headers": {
+        "x-amz-copy-source": "/breeze-book-relay-dev/relay/test/stage",
+        "x-amz-copy-source-if-match": "\"dummy-etag\"",
+        "x-amz-metadata-directive": "REPLACE",
+        "content-type": "application/octet-stream",
+        "cache-control": "private, no-store"
+      },
+      "accessKey": "TEST_ONLY_ACCESS",
+      "secretKey": "TEST_ONLY_SECRET",
+      "at": 1789876800000,
+      "seconds": 60
+    },
+    "url": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/breeze-book-relay-dev/relay/test/ready?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=TEST_ONLY_ACCESS%2F20260920%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20260920T040000Z&X-Amz-Expires=60&X-Amz-SignedHeaders=cache-control%3Bcontent-type%3Bhost%3Bx-amz-copy-source%3Bx-amz-copy-source-if-match%3Bx-amz-metadata-directive&X-Amz-Signature=3eb6ec17eaadb27fa8ae445c18323cfd84ef1c957c214fbd6d1ba6afe94744e8"
+  }
+]

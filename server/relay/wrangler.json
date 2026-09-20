@@ -1,0 +1,40 @@
+{
+  "name": "breeze-book-relay-dev",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-20",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "RELAY_ENABLED": "false",
+    "INFRA_VERIFIED": "false",
+    "CLEANUP_ENABLED": "true",
+    "SUPABASE_URL": "https://hrtfhojbhqvaoiulspto.supabase.co",
+    "R2_BUCKET_NAME": "breeze-book-relay-dev",
+    "TEMP_TTL_SECONDS": "86400",
+    "ALLOWED_ORIGINS": "http://localhost:8787"
+  },
+  "r2_buckets": [
+    {
+      "binding": "BOOK_RELAY",
+      "bucket_name": "breeze-book-relay-dev"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "26092001",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": false
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "breeze-book-relay-dev",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check core.mjs && node --check security.mjs && node --check adapters.mjs && node --check worker.mjs"
+  }
+}
