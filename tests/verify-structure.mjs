@@ -1699,13 +1699,14 @@ assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text
 /* 남은 횟수를 세는 날짜는 낱말 쪽에 삽니다 — 두 기능이 같은 하루를 봅니다. */
 assert.match(dictionarySource, /function aiDay\(\)/,
   'The Korean-day helper is gone, so the AI allowance loses its calendar');
-/* 서버 쪽: 테스트 기간에는 하루 100회 풀을 쓰고 문장 해석만 2회를 씁니다. */
+/* 서버 쪽: 현재 하루 300회 풀을 쓰고 문장 해석만 2회를 씁니다. */
 const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
 assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
 assert.match(dictServerSource, /DEFAULT_DAILY_LIMIT=300/, 'The reconciled production daily AI allowance is not 300');
 assert.match(dictServerSource, /EXPLAIN_COST=2/, 'Sentence explanations do not spend two AI calls');
+const serveRouter=(dictServerSource.match(/Deno\.serve\([\s\S]*$/)||[''])[0];
 assert.ok(
-  dictServerSource.indexOf('if(op==="explain")') < dictServerSource.indexOf('if(!/^[A-Za-z]'),
+  serveRouter.indexOf('if(op==="explain")') < serveRouter.indexOf('if(!/^[A-Za-z]'),
   'The sentence op is rejected by the single-word guard it should have run before',
 );
 /* 클라이언트는 한국 날짜로 하루를 셉니다("자정에 다시 채워집니다"). 서버가 UTC 로
