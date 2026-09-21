@@ -21,7 +21,7 @@
    미리 준비해 두면 짧은 탭까지 문장 선택으로 오인되어 낱말 탭과 부딪힙니다 —
    예전 구현이 통째로 걷힌 이유가 그것이었습니다.
 
-   확정되면 문장이 앵커 문장처럼 파랗게 차오르고(모드마다 같은 `reader-mode-cue`),
+   확정되면 문장이 앵커 문장처럼 파랗게 차오르고(모드마다 같은 문장 전용 표시),
    모든 화면의 하단 필이 먼저 대기를 알립니다. 답은 좁은 화면에서는 바텀시트,
    넓은 화면에서는 종전 중앙 창에 뜹니다. 세 화면(글자 · 원본 PDF · 원본 EPUB)이
    모두 같은 요청 수명과 같은 표시 문법을 씁니다.
@@ -154,18 +154,6 @@ function paintSentence(state){
   const ko = document.getElementById('ps-ko');
   ko.textContent = state.ko || '';
   ko.hidden = !state.ko;
-  const points = document.getElementById('ps-points');
-  points.innerHTML = '';
-  (state.points || []).forEach(line => {
-    const item = document.createElement('li');
-    item.textContent = line;
-    points.appendChild(item);
-  });
-  const extra=document.getElementById('ps-extra');
-  if(extra){
-    extra.hidden=!(state.points || []).length;
-    extra.removeAttribute('open');
-  }
   const foot = document.getElementById('ps-foot');
   foot.textContent = state.foot || '';
   foot.hidden = !state.foot;
@@ -213,17 +201,16 @@ async function openSentence(text){
   const hit = await dictGet(key);
   if(!sentenceAlive(life)) return;
   if(hit && hit.ko){
-    paintSentenceFor(life,{ en:clean, ko:hit.ko, points:hit.points || [], cached:true,
-                    foot:'전에 물어본 문장이라 오늘 몫을 쓰지 않았어요' });
+    paintSentenceFor(life,{ en:clean, ko:hit.ko });
     return;
   }
 
   if(!sb || navigator.onLine === false){
-    paintSentenceFor(life,{ en:clean, retry:true, foot:'오프라인이라 문장 설명은 나중에 볼 수 있어요' });
+    paintSentenceFor(life,{ en:clean, retry:true, foot:'오프라인이라 문장 해석은 나중에 볼 수 있어요' });
     return;
   }
   if(!sbUser){
-    paintSentenceFor(life,{ en:clean, foot:'문장 설명은 로그인하면 쓸 수 있어요' });
+    paintSentenceFor(life,{ en:clean, foot:'문장 해석은 로그인하면 쓸 수 있어요' });
     return;
   }
 
@@ -239,14 +226,14 @@ async function openSentence(text){
     if(!sentenceAlive(life)) return;
     const stuck = why === 'login_required' || why === 'quota_exceeded';
     paintSentenceFor(life,{ en:clean, retry:!stuck, foot:
-        why === 'login_required' ? '문장 설명은 로그인하면 쓸 수 있어요'
+        why === 'login_required' ? '문장 해석은 로그인하면 쓸 수 있어요'
       : why === 'quota_exceeded' ? '오늘의 사용량이 부족해요. 문장 해석에는 2회가 필요해요'
       :                            '잠깐 문제가 있었어요' });
     return;
   }
   rememberSentLeft(answer.left,answer.day);
-  await dictPut(key, { ko:answer.ko, points:answer.points || [], done:true });
-  paintSentenceFor(life,{ en:clean, ko:answer.ko, points:answer.points || [] });
+  await dictPut(key, { ko:answer.ko, done:true });
+  paintSentenceFor(life,{ en:clean, ko:answer.ko });
 }
 
 document.addEventListener('keydown', event=>{

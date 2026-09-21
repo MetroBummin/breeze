@@ -428,6 +428,9 @@
   .pdf-source-page canvas{position:absolute; inset:0; display:block; width:100%!important; height:100%!important;}
   .pdf-page-loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--source-wait); font:13px var(--ui); background:var(--source-page);}
+  /* Multiply preserves dark PDF ink while retaining the existing fill colors.
+     Page isolation keeps blending inside the paper, including in dark mode. */
+  .pdf-source-page>.breeze-original-word{mix-blend-mode:multiply;}
   .pdf-source-page>.original-selection-marker{position:absolute; z-index:3; display:block; box-sizing:border-box;
     color:transparent; background:var(--pick-fill); border:1px solid var(--pick-line);
     border-radius:3px; pointer-events:none; overflow:hidden; white-space:nowrap;}

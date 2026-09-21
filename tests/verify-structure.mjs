@@ -606,10 +606,9 @@ assert.match(modesSource,/bridgeFindSequence/,
 const geometryContext = {};
 new Script(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'))
   .runInNewContext(geometryContext);
-assert.equal(geometryContext.pdfFontAscentRatio({ascent:.82,descent:-.18}),.82,
-  'Normal PDF font metrics were unexpectedly changed');
-assert.ok(Math.abs(geometryContext.pdfFontAscentRatio({ascent:1.19628906,descent:-.43945313})-.7315)<.002,
-  'Exceptional Charis SIL metrics were not normalized for Holes');
+assert.doesNotMatch(readFileSync(resolve(root, 'scripts/reader/pdf-word-geometry.js'), 'utf8'),
+  /measureText|pdfFontAscentRatio/,
+  'PDF highlights must use glyph geometry without independent font measurement or metric correction');
 
 /* Verity ships one text item per glyph. Tokenising each item on its own turned
    every letter into a word, so the reader underlined every saved "h" and a tap
@@ -621,16 +620,16 @@ const glyphEntries = (line, startX, startY) => {
   let x = startX;
   for(const character of line){
     if(character === ' '){ x += SPACE_GAP; continue; }
-    entries.push(geometryContext.pdfTextEntry(
-      [GLYPH_HEIGHT, 0, 0, GLYPH_HEIGHT, x, startY], character, GLYPH_WIDTH, .89, 'sans-serif'));
+    entries.push({text:character,origin:{x,y:startY},direction:{x:1,y:0},normal:{x:0,y:-1},
+      angle:0,fontHeight:GLYPH_HEIGHT,width:GLYPH_WIDTH,
+      chars:[{left:x,top:startY-GLYPH_HEIGHT,right:x+GLYPH_WIDTH,bottom:startY}]});
     x += GLYPH_WIDTH;
   }
   return entries;
 };
-const measureByLength = value => value.length * GLYPH_WIDTH;
 const glyphPage = geometryContext.pdfPageWords(
   [...glyphEntries('the man is here.', 20, 200), ...glyphEntries('He left.', 20, 220)],
-  measureByLength, 600, 800);
+  600, 800);
 assert.equal(glyphPage.text, 'the man is here. He left.',
   'Glyph-per-item PDF text was not reassembled into words');
 assert.deepEqual(Array.from(glyphPage.boxes, box => box.word),
@@ -643,10 +642,11 @@ assert.equal(glyphPage.boxes[4].offset, glyphPage.text.indexOf('He'),
   'A rebuilt word lost the character offset that gives it its own sentence');
 
 // A PDF that already hands out whole lines must come through unchanged.
+const lineGlyphs=glyphEntries('the man is here.',20,200);
 const wholeLine = geometryContext.pdfPageWords(
-  [geometryContext.pdfTextEntry([GLYPH_HEIGHT,0,0,GLYPH_HEIGHT,20,200],
-    'the man is here.', 16 * GLYPH_WIDTH, .89, 'sans-serif')],
-  measureByLength, 600, 800);
+  [{...lineGlyphs[0],text:'the man is here.',width:90,
+    chars:Array.from('the man is here.',(_,i)=>({left:20+i*6,top:188,right:26+i*6,bottom:200}))}],
+  600,800);
 assert.equal(wholeLine.text, 'the man is here.', 'Line-per-item PDF text was altered');
 assert.deepEqual(Array.from(wholeLine.boxes, box => box.word), ['the','man','is','here'],
   'Line-per-item PDF words regressed');
@@ -1237,6 +1237,8 @@ assert.doesNotMatch(index, /id="p-explain"|id="p-explain-note"/,
   'The word popup carries the sentence button or its usage note again');
 assert.match(index, /id="sentence-modal"[\s\S]{0,400}id="p-sentence"/,
   'The sentence explanation is not a window of its own any more');
+assert.doesNotMatch(index,/id="ps-extra"|id="ps-points"/, 'Sentence result still includes grammar/expression UI');
+assert.doesNotMatch(sentenceSource,/state\.points|hit\.points|answer\.points/, 'Sentence rendering still consumes explanation points');
 /* ================= 한 손짓, 한 판정 =================
 
    여기 아래의 검사들은 기능이 아니라 **경계**를 지킵니다. 예전에는 이 자리에
@@ -1343,14 +1345,14 @@ assert.match(readerScrollSource, /function readerScrollWasProgrammatic/,
 assert.match(gestureSource, /readerScrollWasProgrammatic\(\)\) return/,
   'A programmatic scroll can steal the finger that is pressing for a sentence');
 
-/* 문장이 차오르는 그림은 모드 전환 표시와 같은 것을 씁니다. 다만 스캔본은
+/* 문장 표시는 조회를 닫을 때까지 유지되는 별도 표면입니다. PDF는
    문단이 아니라 그 문장의 줄만 칠합니다 — 무엇을 물어봤는지가 곧 그 문장이라
    문단을 칠하면 답과 질문이 어긋납니다. 어느 그림인지는 종이가 정합니다. */
-assert.match(textReaderSource, /showRangeModeCue\(range, 0\)/,
+assert.match(textReaderSource, /showSentenceRangeCue\(range\)/,
   'The pressed sentence in 글자 mode paints something other than the shared reader cue');
-assert.match(pdfSource, /paint\(\)\{ showPdfSentenceCue\(page,boxes,0\); \}/,
+assert.match(pdfSource, /paint\(\)\{ showPdfSentenceCue\(page,boxes\); \}/,
   'A pressed sentence paints the whole paragraph on a scan');
-assert.match(epubOriginalSource, /paint\(\)\{ showRangeModeCue\(range, 0\); \}/,
+assert.match(epubOriginalSource, /paint\(\)\{ showSentenceRangeCue\(range\); \}/,
   'The pressed sentence in EPUB original paints something other than the shared reader cue');
 /* 원본 EPUB 도 "이 문장" 하나여야 합니다. 낱말이 들어 있는 문장을 글자로 찾으면
    짧은 문단은 통째로, 같은 낱말이 두 번 나오면 늘 앞의 것이 잡힙니다. */
