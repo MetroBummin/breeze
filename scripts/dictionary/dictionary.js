@@ -31,6 +31,42 @@ function jevClickedTokenIndex(span,sentence,tokens){
   const matches=tokens.map((token,index)=>({token,index})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===raw);
   return matches.length===1?matches[0].index:-1;
 }
+/* ================= Breeze Base Dictionary =================
+   OEWN sense identity is the source of truth. Korean text in the PoC is a draft:
+   the first time a generated sense is actually selected, AI repairs only that
+   Korean layer and the device keeps the repaired overlay by stable sense_id. */
+const BREEZE_LEXICON_URL='public/lexicon/lexicon.min.json?v=oewn-2025-ko-500-poc.1';
+const LS_LEXICON_REPAIRS='breeze.lexicon.repairs.v1';
+let breezeLexicon=null,breezeLexiconPromise=null;
+let lexiconRepairs=load(LS_LEXICON_REPAIRS,{});
+if(!lexiconRepairs||typeof lexiconRepairs!=='object'||Array.isArray(lexiconRepairs))lexiconRepairs={};
+async function ensureBreezeLexicon(){
+  if(breezeLexicon)return breezeLexicon;
+  if(breezeLexiconPromise)return breezeLexiconPromise;
+  if(typeof fetch!=='function')return null;
+  breezeLexiconPromise=fetch(BREEZE_LEXICON_URL).then(r=>r.ok?r.json():null).then(data=>{
+    breezeLexicon=data&&data.entries?data:null;return breezeLexicon;
+  }).catch(()=>null).finally(()=>{breezeLexiconPromise=null;});
+  return breezeLexiconPromise;
+}
+function saveLexiconRepair(senseId,repair){
+  if(!senseId||!repair||!repair.ko)return;
+  lexiconRepairs[senseId]={ko:String(repair.ko).trim(),gloss:String(repair.gloss||'').trim(),
+    quality:'repaired',updatedAt:Date.now()};
+  save(LS_LEXICON_REPAIRS,lexiconRepairs);
+}
+async function breezeBaseSenseCandidates(root){
+  const lexicon=await ensureBreezeLexicon();
+  const list=lexicon&&lexicon.entries&&Array.isArray(lexicon.entries[root])?lexicon.entries[root]:[];
+  return list.map(sense=>{
+    const repair=lexiconRepairs[sense.id]||null;
+    const draft=Array.isArray(sense.ko)?String(sense.ko[0]||'').trim():'';
+    return {source:'base',senseId:String(sense.id||''),meaning:repair&&repair.ko?repair.ko:draft,
+      pos:String(sense.pos||'').trim(),gloss:repair&&repair.gloss?repair.gloss:String(sense.gloss||'').trim(),
+      enGloss:String(sense.en||'').trim(),quality:repair?'repaired':String(sense.quality||'generated')};
+  }).filter(item=>item.senseId&&item.enGloss);
+}
+
 function jevPhraseIdentity(tokens,indexes){
   const ordered=[...new Set(indexes)].sort((a,b)=>a-b);
   const parts=ordered.map(index=>lemmaCands(tokens[index].text)[0]||tokens[index].text.toLowerCase());
@@ -258,7 +294,11 @@ function createMeaning(root, text, source){
   const base=words[root]; if(!meaning || !base) return '';
   const from=source||{};
   const already=findSenseByMeaning(root,meaning);
-  if(already){ touchMeaning(already); dropSuggestion(root,meaning); saveWords(); queueSync(); return already; }
+  if(already){
+    if(from.baseSenseId)words[already].baseSenseId=from.baseSenseId;
+    if(from.translationQuality)words[already].translationQuality=from.translationQuality;
+    touchMeaning(already); dropSuggestion(root,meaning); saveWords(); queueSync(); return already;
+  }
   const ai={...(from.ai||{}),ko:meaning,note:(from.ai&&(from.ai.note||from.ai.gloss))||''};
   /* 아직 뜻이 하나도 없는 낱말이면 대표 카드의 빈 뜻자리를 채웁니다. 빈 카드를
      남겨 두고 옆에 새 카드를 만들면, 화면에 없는 뜻이 저장소에만 생깁니다. */
@@ -269,6 +309,8 @@ function createMeaning(root, text, source){
     delete base.aiOff; delete base.aiSlow;
     if(from.example) base.example=from.example;
     if(from.book) base.book=from.book;
+    if(from.baseSenseId)base.baseSenseId=from.baseSenseId;
+    if(from.translationQuality)base.translationQuality=from.translationQuality;
     base.pickedAt=Date.now(); base.up=Date.now();
     dropSuggestion(root,meaning); saveWords(); queueSync(); return root;
   }
@@ -285,6 +327,8 @@ function createMeaning(root, text, source){
     example:from.example||base.example||'', book:from.book||base.book||'',
     status:previous?previous.status:(base.status||1), mark:previous?previous.mark:base.mark!==false,
     ko:meaning, ai, alts:Array.isArray(from.alts)?from.alts:[],
+    baseSenseId:from.baseSenseId||(previous&&previous.baseSenseId)||'',
+    translationQuality:from.translationQuality||(previous&&previous.translationQuality)||'',
     defs:[], addedAt:previous?previous.addedAt:Date.now(),
     pickedAt:Date.now(), up:Math.max(Date.now(),buried+1)};
   dropSuggestion(root,meaning); saveWords(); queueSync();
@@ -418,7 +462,7 @@ function wordPeekSameTarget(k,node){
     (rect.top+rect.bottom-wordPeekAnchor.top-wordPeekAnchor.bottom)/2)<6;
 }
 function wordPeekState(w,context){
-  if(context&&context.loading)return {text:context.loading==='new'?'새 뜻 찾는 중':'뜻 확인 중',loading:true};
+  if(context&&context.loading)return {text:context.loading==='new'?'새 뜻 찾는 중':context.loading==='repair'?'뜻 다듬는 중':'뜻 확인 중',loading:true};
   const meaning=String((w&&(w.ko||(w.ai&&w.ai.ko)))||'').trim();
   if(meaning) return {text:meaning,loading:false};
   if(w&&(w.loading||w.aiLoading)&&!w.aiSlow) return {text:'뜻 찾는 중',loading:true};
@@ -1039,23 +1083,30 @@ function renderIfAlive(life){ if(wordLookupAlive(life)) renderWordLookup(); }
 /* 다른 문장에서는 Jev 왕복을 하나만 씁니다.
    같은 요청에서 ① 저장된 sense 재사용 ② phrase ③ NONE 을 고르고,
    PHRASE일 때만 함께 받은 token membership을 사용합니다. */
-function jevSenseCandidates(root){
-  return meaningCards(root,null).map(([id,item],index)=>({
-    id,choice:`sense_${index}`,meaning:item.ko,
+async function jevSenseCandidates(root){
+  const saved=meaningCards(root,null).map(([id,item])=>({
+    source:'saved',id,senseId:String(item.baseSenseId||''),meaning:item.ko,
     pos:String((item.ai&&item.ai.pos)||item.pos||'').trim(),
-    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim()
+    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim(),
+    enGloss:'',quality:String(item.translationQuality||'saved')
   }));
+  const base=await breezeBaseSenseCandidates(root);
+  const usedSenseIds=new Set(saved.map(item=>item.senseId).filter(Boolean));
+  const usedMeanings=new Set(saved.map(item=>meaningKey(item.meaning)).filter(Boolean));
+  const merged=[...saved,...base.filter(item=>!usedSenseIds.has(item.senseId)&&!usedMeanings.has(meaningKey(item.meaning)))];
+  return merged.slice(0,64).map((item,index)=>({...item,choice:`sense_${index}`}));
 }
 async function routeJevTarget(k,node,sentence,life){
   const w=words[k];if(!w||!sentence||!wordLookupAlive(life))return null;
-  const root=w.root||k,senses=jevSenseCandidates(root);
+  const root=w.root||k,senses=await jevSenseCandidates(root);
   const tokens=jevSentenceTokens(sentence),clickedIndex=jevClickedTokenIndex(node,sentence,tokens);
   /* 저장 sense도 없고 phrase 위치도 특정할 수 없으면 Jev에게 물을 정보가 없습니다. */
   if(!senses.length&&(tokens.length<2||clickedIndex<0))return {kind:'none',senses};
   const signal=wordLookupSignal();
   const verdict=await dictCall({op:'route',word:w.aiLemma||w.word||root,lemma:w.aiLemma||w.word||root,
     sentence,clickedIndex,tokens:tokens.map(token=>({text:token.text})),
-    senses:senses.map(item=>({meaning:item.meaning,pos:item.pos,gloss:item.gloss}))},signal);
+    senses:senses.map(item=>({senseId:item.senseId,meaning:item.meaning,pos:item.pos,gloss:item.gloss,
+      enGloss:item.enGloss,quality:item.quality}))},signal);
   if(!wordLookupAlive(life)||(!verdict&&signal&&signal.aborted))return null;
   if(!verdict||verdict.error)return {kind:'error',senses};
   if(verdict.selected==='PHRASE'){
@@ -1069,7 +1120,35 @@ async function routeJevTarget(k,node,sentence,life){
   }
   if(verdict.selected==='NONE')return {kind:'none',senses};
   const picked=senses.find(item=>item.choice===verdict.selected);
-  return picked&&words[picked.id]?{kind:'sense',id:picked.id,senses}:{kind:'error',senses};
+  if(!picked)return {kind:'error',senses};
+  return picked.source==='base'?{kind:'base',candidate:picked,senses}
+    :(picked.id&&words[picked.id]?{kind:'sense',id:picked.id,senses}:{kind:'error',senses});
+}
+
+async function repairBaseSense(k,candidate,life){
+  if(!candidate||candidate.quality!=='generated')return candidate;
+  const signal=wordLookupSignal();
+  const answer=await dictCall({op:'repair',word:(words[k]&&(words[k].aiLemma||words[k].word))||k,
+    senseId:candidate.senseId,pos:candidate.pos,enGloss:candidate.enGloss,
+    draftKo:candidate.meaning,draftGloss:candidate.gloss,device:sbUser?'':deviceId()},signal);
+  if(!wordLookupAlive(life)||(!answer&&signal&&signal.aborted))return null;
+  if(!answer||answer.error||!answer.ko)return candidate;
+  saveLexiconRepair(candidate.senseId,answer);
+  return {...candidate,meaning:String(answer.ko||'').trim(),gloss:String(answer.gloss||'').trim(),
+    quality:'repaired'};
+}
+async function adoptBaseSense(k,candidate,context,life){
+  const w=words[k];if(!w||!candidate||!context)return false;
+  context.loading=candidate.quality==='generated'?'repair':'checking';renderIfAlive(life);
+  const chosen=await repairBaseSense(k,candidate,life);
+  if(!wordLookupAlive(life)||!chosen)return false;
+  const root=w.root||k;
+  const id=createMeaning(root,chosen.meaning,{clicked:context.clicked||w.clicked||'',example:context.sentence||w.example||'',
+    book:context.book||w.book||'',baseSenseId:chosen.senseId,translationQuality:chosen.quality,
+    ai:{ko:chosen.meaning,pos:chosen.pos,note:chosen.gloss,done:true,cached:chosen.quality!=='generated'}});
+  if(!id)return false;
+  rememberSenseContext(id,context.sentence||w.example||'');saveWords();
+  context.loading='';contextView=null;paintWord(root);selKey=id;renderIfAlive(life);return true;
 }
 
 async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
@@ -1082,15 +1161,13 @@ async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
       rememberSenseContext(routed.id,wordContext.sentence);
       contextView=null;selKey=routed.id;touchMeaning(routed.id);saveWords();renderWordLookup();return;
     }
+    if(routed.kind==='base'){
+      await adoptBaseSense(k,routed.candidate,wordContext,life);return;
+    }
     if(routed.kind==='phrase'){
       await resolveDetectedPhrase(k,routed.phrase,sentence,(curBook&&curBook.title)||'',life);return;
     }
-    if(routed.kind==='error'){
-      /* unified route 자체가 실패한 경우에만 예전 word-only judge를 안전망으로 씁니다.
-         정상 경로에서는 route 한 번뿐입니다. */
-      wordContext.started=false;
-      await resolveSavedWordContext(k,wordContext,life);return;
-    }
+    /* NONE 또는 route 실패는 의미를 억지로 재사용하지 않고 기존 AI fallback으로 갑니다. */
     wordContext.loading='new';renderIfAlive(life);
     await lookupNewContextMeaning(k,wordContext,life);
   }finally{
@@ -1175,7 +1252,7 @@ async function loadCachedLook(k, began, life){
 async function resolveSavedWordContext(k, context, life){
   const w=words[k];if(!w||!context||context.started)return;
   const root=w.root||k;
-  const senses=jevSenseCandidates(root);
+  const senses=await jevSenseCandidates(root);
   if(!senses.length)return;
   context.started=true;context.loading='checking';delete context.error;renderIfAlive(life);
   try{
@@ -1400,6 +1477,13 @@ async function fetchDict(k,node){
     await resolveDetectedPhrase(k,routed.phrase,w.example||'',w.book||'',life);
     await metadata;
     delete w.loading;delete w.aiLoading;w.up=Date.now();saveWords();queueSync();renderIfAlive(life);
+    return;
+  }
+  if(routed&&routed.kind==='base'&&wordLookupAlive(life)){
+    const view={key:k,sentence:w.example||'',clicked:w.clicked||w.word||k,book:w.book||'',loading:'repair'};
+    contextView=view;await adoptBaseSense(k,routed.candidate,view,life);
+    await metadata;
+    delete w.loading;delete w.aiLoading;if(words[k])words[k].up=Date.now();saveWords();queueSync();renderIfAlive(life);
     return;
   }
 
