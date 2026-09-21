@@ -1535,8 +1535,23 @@ for(const clockGuard of ['ignoreNextClickUntil','dismissGuardUntil','modalCloseA
 }
 
 /* ================= 낱말 popup도 같은 규칙입니다 ================= */
-assert.match(index, /id="word-peek"[\s\S]{0,240}id="word-peek-more"/,
+assert.match(index, /id="word-peek"[\s\S]{0,700}id="word-peek-retry"[\s\S]{0,500}id="word-peek-more"/,
   'The near-word meaning pill or its detail chevron is missing');
+assert.match(index,
+  /id="readback"[\s\S]{0,240}stroke-width="2\.1"[\s\S]*?id="word-peek-retry"[\s\S]{0,240}stroke-width="2\.1"[\s\S]*?id="word-peek-more"[\s\S]{0,240}stroke-width="2\.1"/,
+  'Back, retry, and chevron icons no longer share the same visual weight');
+assert.match(dictionaryCss,
+  /#word-peek \.word-peek-actions\{[\s\S]{0,360}#word-peek \.word-peek-actions::before[\s\S]{0,700}#word-peek-more::after/,
+  'Retry and chevron no longer share one capsule with a subtle divider');
+assert.match(dictionarySource,
+  /async function retryWordPeek\(\)[\s\S]{0,1200}fetchLook\(k,\{sentence,clicked,clickedIndex,book,node:activeSelectedWordNode,[\s\S]{0,80}retry:true,hold:true,life\}\)/,
+  'Word retry no longer sends the current sentence through the existing lookup request flow');
+assert.match(readerCss,
+  /#readback, #aafab, #readpill\{[\s\S]{0,260}var\(--sentence-glass-line\)[\s\S]{0,260}var\(--sentence-glass-shadow-pill\)/,
+  'Bottom Reader controls no longer use the Lookup glass material tokens');
+assert.match(readerCss,
+  /#readback, #aafab, #readpill\{background:var\(--sentence-glass-pill\);\s*\n\s*backdrop-filter:blur\(19px\) saturate\(122%\)/,
+  'Bottom Reader controls no longer match the word pill blur and opacity treatment');
 assert.match(index, /id="word-modal-scrim"/,
   'The centered word popup has no outside-dismiss scrim');
 assert.doesNotMatch(index, /id="(?:sheetbg|p-close|p-handle)"/,

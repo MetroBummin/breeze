@@ -385,6 +385,7 @@ function openWord(k, node){
 let activeSelectedWordNode=null;
 let wordPeekActive=false;
 let wordPeekAnchor=null;
+let wordPeekRetryState=null;
 function wordPeekOpen(){ return wordPeekActive; }
 function wordLookupOpen(){
   const panel=document.getElementById('panel');
@@ -418,6 +419,14 @@ function wordPeekSameTarget(k,node){
 }
 function wordPeekState(w,context){
   if(context&&context.loading)return {text:context.loading==='new'?'새 뜻 찾는 중':context.loading==='repair'?'뜻 다듬는 중':'뜻 확인 중',loading:true};
+  if(wordPeekRetryState && wordPeekRetryState.key===selKey){
+    if(wordPeekRetryState.loading) return {text:'뜻 다시 찾는 중',loading:true};
+    const retryOff=wordPeekRetryState.error||'';
+    if(retryOff==='quota') return {text:'오늘 뜻 사용량을 다 썼어요',loading:false};
+    if(retryOff==='trial'||retryOff==='login') return {text:'로그인하고 뜻 보기',loading:false};
+    if(retryOff==='offline') return {text:'오프라인이에요',loading:false};
+    if(retryOff) return {text:'뜻을 찾지 못했어요',loading:false};
+  }
   const meaning=String((w&&(w.ko||(w.ai&&w.ai.ko)))||'').trim();
   if(meaning) return {text:meaning,loading:false};
   if(w&&(w.loading||w.aiLoading)&&!w.aiSlow) return {text:'뜻 찾는 중',loading:true};
@@ -455,6 +464,9 @@ function renderWordPeek(){
   const state=wordPeekState(w,currentContext(selKey));
   document.getElementById('word-peek-meaning').textContent=state.text;
   pill.classList.toggle('loading',state.loading);
+  const retry=document.getElementById('word-peek-retry');
+  if(state.loading) retry.setAttribute('disabled','');
+  else retry.removeAttribute('disabled');
   pill.hidden=false;
   requestAnimationFrame(placeWordPeek);
 }
@@ -475,6 +487,7 @@ function selectWord(k, span, peek){
   const panel=document.getElementById('panel');
   /* 여기서부터가 새 열림입니다. 앞 열림에 딸린 조회는 이 줄에서 임자를 잃습니다. */
   beginWordLookupLife();
+  wordPeekRetryState=null;
   /* 다른 낱말을 열면 앞 문장의 해석 창은 남겨 둘 이유가 없습니다. */
   if(typeof closeSentence === 'function') closeSentence();
   if(!currentContext(k)) contextView = null;
@@ -524,6 +537,46 @@ function expandWordDetail(){
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   try{panel.focus({preventScroll:true});}catch(error){panel.focus();}
 }
+/* 미니필의 보조 동작입니다. 저장된 대표 뜻을 다시 펼치는 것이 아니라, 지금 누른
+   자리의 문장을 서버에 다시 보내 판정합니다. 결과는 기존 Meaning 저장 규칙을
+   그대로 지나고, 미니필은 상세창으로 바뀌지 않습니다. */
+async function retryWordPeek(){
+  const k=selKey,w=words[k];
+  if(!wordPeekActive||!k||!w||w.loading||w.aiLoading||
+     (wordPeekRetryState&&wordPeekRetryState.key===k&&wordPeekRetryState.loading)) return;
+  const context=currentContext(k);
+  const sentence=(context&&context.sentence)||sentenceOf(activeSelectedWordNode)||w.example||'';
+  const clicked=(context&&context.clicked)||
+    (activeSelectedWordNode&&activeSelectedWordNode.textContent.replace(/’/g,"'"))||w.clicked||'';
+  const book=(context&&context.book)||(curBook&&curBook.title)||w.book||'';
+  const lookupTokens=lookupSentenceTokens(sentence);
+  const clickedIndex=context&&Number.isInteger(context.clickedIndex) ? context.clickedIndex
+    : lookupClickedTokenIndex(activeSelectedWordNode,sentence,lookupTokens);
+  const root=w.root||k,life=wordLookupLife;
+  wordPeekRetryState={key:k,loading:true,error:''};
+  renderWordPeek();
+  const answer=await fetchLook(k,{sentence,clicked,clickedIndex,book,node:activeSelectedWordNode,
+    retry:true,hold:true,life});
+  if(!wordLookupAlive(life)||!wordPeekActive||!words[k]) return;
+  if(!answer||!String(answer.ko||'').trim()){
+    wordPeekRetryState={key:k,loading:false,error:words[k].aiOff||'error'};
+    renderWordPeek();
+    return;
+  }
+  const parsed=answerFromLook(answer,false);
+  const phrase=expressionFromMini(answer,sentence,clicked,clickedIndex);
+  if(phrase){
+    wordPeekRetryState=null;
+    saveDetectedExpression(k,phrase,sentence,book,answer,life);
+    return;
+  }
+  const id=createMeaning(root,parsed.ko,{clicked,example:sentence,book,ai:parsed.ai,
+    alts:parsed.alts,phrase:parsed.phrase});
+  if(id){ selKey=id; contextView=null; paintWord(root); }
+  wordPeekRetryState=null;
+  renderWordPeek();
+}
+document.getElementById('word-peek-retry').onclick=retryWordPeek;
 document.getElementById('word-peek-more').onclick=expandWordDetail;
 /* ---- 낱말 창을 치우는 일도 여기 하나뿐입니다 ----
    상세 popup은 바깥 · Escape · 뒤로가기로 닫히고, 작은 필은 빈 곳 · 스크롤 ·
@@ -536,6 +589,7 @@ document.getElementById('word-peek-more').onclick=expandWordDetail;
 function closePanel(){
   const panel=document.getElementById('panel');
   wordPeekActive=false;wordPeekAnchor=null;
+  wordPeekRetryState=null;
   selKey=null;
   contextView=null; addingMeaning=false;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
@@ -1148,7 +1202,7 @@ async function fetchLook(k, opt){
       word: opt.word || w.word || k, clicked: opt.clicked || w.clicked || '', cands: opt.cands || entryKeys(w),
       sentence: querySentence, book: opt.book || w.book || '',
       tokens:lookupTokens.map(token=>({text:token.text})),clickedIndex,
-      retry: !!opt.wider, avoid: opt.wider ? (opt.avoid || []) : [],
+      retry: !!(opt.wider||opt.retry), avoid: (opt.wider||opt.retry) ? (opt.avoid || []) : [],
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
     }, ctrl ? ctrl.signal : null);

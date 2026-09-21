@@ -65,6 +65,47 @@ try{
     'meaning pill covers the tapped word');
   assert.deepEqual(await geometry(),before,'near-word pill changed Reader geometry or scroll');
 
+  const siblingActions=await page.locator('#word-peek').evaluate(node=>{
+    const retry=node.querySelector('#word-peek-retry'),more=node.querySelector('#word-peek-more');
+    const rr=retry.getBoundingClientRect(),mr=more.getBoundingClientRect();
+    const rs=getComputedStyle(retry),ms=getComputedStyle(more);
+    return {retry:{width:rr.width,height:rr.height,borderRadius:rs.borderRadius,background:rs.backgroundColor},
+      more:{width:mr.width,height:mr.height,borderRadius:ms.borderRadius,background:ms.backgroundColor}};
+  });
+  assert.deepEqual(siblingActions.retry,siblingActions.more,
+    'retry does not look like a sibling of the existing chevron action');
+  const glassMaterial=()=>page.evaluate(()=>{
+    const read=node=>{
+      const css=getComputedStyle(node);
+      return {background:css.backgroundColor,border:css.borderTopColor,shadow:css.boxShadow,
+        blur:css.backdropFilter||css.webkitBackdropFilter};
+    };
+    return {word:read(document.getElementById('word-peek')),bottom:read(document.getElementById('readpill'))};
+  });
+  const lightGlass=await glassMaterial();
+  assert.deepEqual(lightGlass.bottom,lightGlass.word,'light Reader controls and Lookup use different glass materials');
+  await page.evaluate(()=>{document.documentElement.classList.add('dark');document.body.classList.add('dark');});
+  await page.locator('#readpill').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
+  const darkGlass=await glassMaterial();
+  assert.deepEqual(darkGlass.bottom,darkGlass.word,'dark Reader controls and Lookup use different glass materials');
+  assert.notDeepEqual(darkGlass.word,lightGlass.word,'light and dark glass materials did not adapt to theme');
+  await page.evaluate(()=>{document.documentElement.classList.remove('dark');document.body.classList.remove('dark');});
+  await page.evaluate(()=>{
+    window.wordRetryQa={calls:0};
+    window.wordRetryOriginalFetchLook=fetchLook;
+    fetchLook=async(k,opt)=>{
+      wordRetryQa={calls:wordRetryQa.calls+1,key:k,opt:{sentence:opt.sentence,retry:opt.retry,hold:opt.hold}};
+      return {ko:'환자',pos:'noun',note:'문맥 재판정',alts:[],phrase:''};
+    };
+  });
+  await page.locator('#word-peek-retry').click();
+  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='환자');
+  assert.deepEqual(await page.evaluate(()=>wordRetryQa),{calls:1,key:'patient',opt:{
+    sentence:'A patient reader keeps resilient words close to their context.',retry:true,hold:true}},
+  'retry did not re-query the current sentence through the lookup flow');
+  assert.equal(await page.locator('#panel').isVisible(),false,'retry opened a separate detail UI');
+  await page.evaluate(()=>{fetchLook=wordRetryOriginalFetchLook;});
+
   await page.locator('#word-peek-more').click();
   await page.waitForFunction(()=>wordPanelOpen());
   assert.equal(await page.locator('#word-peek').isVisible(),false,'pill remained visible behind details');
@@ -81,6 +122,13 @@ try{
   assert.deepEqual(await geometry(),before,'opening centered details changed Reader geometry or scroll');
   await page.locator('#word-modal-scrim').click({position:{x:4,y:4}});
   await page.waitForFunction(()=>!wordLookupOpen());
+  /* 위 Retry 검증이 만든 두 번째 Meaning은 아래의 "기존 Meaning 즉시 재사용"
+     fixture와 별개입니다. 다음 계약이 원래 저장 뜻 하나만 가진 상태를 보도록 되돌립니다. */
+  await page.evaluate(()=>{
+    Object.keys(words).filter(id=>words[id]&&words[id].root==='patient'&&words[id].ko==='환자')
+      .forEach(id=>delete words[id]);
+    words.patient.pickedAt=Date.now();
+  });
 
   /* 저장 단어는 새 문장에서도 서버 판정 없이 저장 Meaning을 즉시 보여 줍니다. */
   await page.evaluate(()=>{
@@ -175,6 +223,24 @@ try{
   assert.ok(compact.x>=15&&compact.x+compact.width<=375,'compact detail escaped viewport padding');
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>!wordLookupOpen());
+  await page.setViewportSize({width:375,height:667});
+  await page.evaluate(()=>{
+    const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='patient');
+    openWord(keyOf('patient'),span);
+  });
+  await page.waitForFunction(()=>wordPeekOpen());
+  await page.locator('#word-peek').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
+  const smallIphone=await page.locator('#word-peek').evaluate(node=>{
+    const pill=node.getBoundingClientRect(),meaning=node.querySelector('#word-peek-meaning').getBoundingClientRect();
+    const retry=node.querySelector('#word-peek-retry').getBoundingClientRect();
+    const more=node.querySelector('#word-peek-more').getBoundingClientRect();
+    return {left:pill.left,right:pill.right,meaningRight:meaning.right,retryLeft:retry.left,
+      retryRight:retry.right,moreLeft:more.left};
+  });
+  assert.ok(smallIphone.left>=15&&smallIphone.right<=360,'small-iPhone pill escaped viewport padding');
+  assert.ok(smallIphone.meaningRight<=smallIphone.retryLeft&&smallIphone.retryRight<=smallIphone.moreLeft,
+    'small-iPhone meaning, retry, and chevron overlap');
+  await page.evaluate(()=>closePanel());
   await page.evaluate(()=>{
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='another');
     const key=keyOf('another');

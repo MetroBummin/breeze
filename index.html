@@ -36,11 +36,11 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=c3a83b33">
+  <link rel="stylesheet" href="styles/tokens.css?v=64ecb568">
   <link rel="stylesheet" href="styles/base.css?v=8fadfe0e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=1fcb5217">
-  <link rel="stylesheet" href="styles/dictionary.css?v=ada210eb">
+  <link rel="stylesheet" href="styles/reader.css?v=79c66430">
+  <link rel="stylesheet" href="styles/dictionary.css?v=821112ad">
   <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
   <link rel="stylesheet" href="styles/onboarding.css?v=da44f980">
@@ -83,7 +83,7 @@
   <script defer src="scripts/importers/rss.js?v=f33bf95e"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=59c06c86"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=fab2a73f"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=793c2e42"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=47482381"></script>
@@ -192,7 +192,7 @@
          머뭅니다 — 화면에 못 박았다면 낱말 칸 위에 겹쳐 앉았을 자리입니다. -->
     <div id="readchrome">
       <button id="readback" type="button" title="서재로" aria-label="서재로" onclick="show('home')">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"
              stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
       </button>
       <div id="readpill">
@@ -270,7 +270,18 @@
   <div id="word-peek" role="status" aria-live="polite" hidden>
     <span class="word-peek-spinner" aria-hidden="true"></span>
     <span id="word-peek-meaning">뜻 찾는 중</span>
-    <button id="word-peek-more" type="button" aria-label="단어 상세 보기">›</button>
+    <span class="word-peek-actions">
+      <button id="word-peek-retry" class="word-peek-action" type="button" aria-label="현재 문맥으로 다시 찾기">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 8.5A7.5 7.5 0 1 0 19.2 15"/><path d="M19 4.5v4h-4"/>
+        </svg>
+      </button>
+      <button id="word-peek-more" class="word-peek-action" type="button" aria-label="단어 상세 보기">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"
+             stroke-linecap="round" stroke-linejoin="round"><path d="m8.75 5 7 7-7 7"/></svg>
+      </button>
+    </span>
   </div>
   <!-- 상세 popup의 scrim도 Gesture Controller가 소유합니다. 바깥 탭은 뒤의
        Reader로 관통하지 않고 같은 lookup 종료 경로에서 끝납니다. -->

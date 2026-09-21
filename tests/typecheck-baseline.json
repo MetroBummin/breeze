@@ -1,7 +1,7 @@
 {
-  "total": 40,
+  "total": 39,
   "files": {
-    "scripts/dictionary/dictionary.js": 6,
+    "scripts/dictionary/dictionary.js": 5,
     "scripts/importers/article.js": 5,
     "scripts/importers/importers.js": 5,
     "scripts/importers/rss.js": 1,
