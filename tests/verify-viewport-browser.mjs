@@ -82,6 +82,7 @@ const url=`http://127.0.0.1:${server.address().port}`;
     'browser-zoom exclusion depends only on an absolute positioned element');
   await p.touchscreen.tap(point.x,point.y);
   await p.waitForFunction(()=>wordPeekOpen(),null,{timeout:10000});
+  await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   const peek=await p.locator('#word-peek').boundingBox();
   assert.ok(peek&&peek.x>=15&&peek.x+peek.width<=375,
     `${['Text','PDF','EPUB'][n]} word pill escaped the viewport`);
