@@ -157,7 +157,7 @@ function makeContext(world, net, store){
     closeSentence(){},
     refreshOriginalSavedWords(){},
     renderBookBody(){ world.bookRebuilds++; },
-    captureAnchor:()=>null, restoreAnchor:()=>false,
+    captureAnchor:()=>null, restoreAnchor:()=>false, readerScrollTop:()=>0, readerScrollTo:()=>{},
     requestDurableLocalStorage(){},
     updateOriginalZoomControls(){},
     rememberAppView(){}, activeAppView:()=>'read',
@@ -308,15 +308,17 @@ function tapNewWord(ctx, key){
     '창이 이미 닫혔는데 AI 요청이 출발했습니다 — 아무도 안 볼 답에 한도를 씁니다');
 }
 
-/* A saved word in a new sentence is classified once; same occurrence reuses the result. */
+/* A saved word is immediate even in a new sentence; explicit retry alone reclassifies. */
 {
   const {world,ctx,net}=boot();
   ctx.words.moon={word:'moon',clicked:'moon',forms:['moon'],ko:'달',ai:{ko:'달',done:true},example:'The moon is bright.',book:'시험책',status:1,mark:true,addedAt:1,up:1};
   const span={textContent:'moon',dataset:{example:'The moon orbits the planet.'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('moon',span);await settle();
+  assert.deepEqual(world.sent,[]);
+  assert.equal(world.el('word-peek-meaning').textContent,'달');
+  const retry=ctx.retryWordPeek();await settle();
   assert.deepEqual(world.sent,['look']);
-  assert.equal(world.el('word-peek-meaning').textContent,'뜻 확인 중');
-  net.deliver({kind:'word',canonical:'moon',members:[1],ko:'위성'});await settle(320);
+  net.deliver({kind:'word',canonical:'moon',members:[1],ko:'위성'});await retry;await settle(320);
   assert.equal(world.el('word-peek-meaning').textContent,'위성');
   ctx.closePanel();ctx.openWord('moon',span);await settle();
   assert.deepEqual(world.sent,['look'],'same occurrence spent another request');
@@ -732,7 +734,9 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   ctx.words.take=savedWord('take','가져가다');
   const span={textContent:'took',dataset:{example:'He took the criticism into account.',clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('take',span);await settle(20);
-  assert.deepEqual(world.sent,['look'],'new sentence must identify the lexical unit');
+  assert.deepEqual(world.sent,[],'saved word was automatically reclassified');
+  ctx.retryWordPeek();await settle(20);
+  assert.deepEqual(world.sent,['look'],'explicit retry did not identify the lexical unit');
   net.deliver({kind:'expression',canonical:'take into account',members:[1,4,5],ko:'고려하다'});
   await rest(AI_MIN_WAIT);await settle();
   assert.equal(ctx.words['phrase:take into account'].ko,'고려하다');

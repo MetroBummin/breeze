@@ -1,15 +1,25 @@
 /* The tutorial supplies a temporary book and prepared answers to the real Reader.
    It never inserts a book, Meaning, cache entry, progress row or sync payload. */
 const ONBOARD_KEY='breeze.onboarding.v1';
-const ONBOARD_DELAY_MS=500;
+const ONBOARD_DELAY_MS=1000;
 const ONBOARD_PASSAGES=[
   ['Every story begins with a little curiosity.','모든 이야기는 작은 호기심에서 시작돼요.'],
-  ['Tap a word to discover its meaning.','단어를 탭해 뜻을 알아보세요.'],
-  ['Press and hold a word to understand the whole sentence.','단어를 길게 눌러 문장 전체의 뜻을 이해해 보세요.'],
+  ['Reading should feel easy.','독서는 편안해야 하니까요.'],
+  ['There is always another story waiting for you.','당신을 기다리는 이야기는 언제나 있어요.'],
   ['Let your reading flow with Breeze.','Breeze와 함께 막힘없이 읽어 나가세요.'],
 ];
 // Each tappable word has an authored meaning and short English definition.
 const ONBOARD_WORDS={
+  should:['~해야 한다','modal verb','Used to say what is right or expected.'],
+  feel:['느껴지다','verb','Give a particular impression or feeling.'],
+  easy:['편안한','adjective','Requiring little effort or difficulty.'],
+  there:['그곳에','adverb','Used with be to say that something exists.'],
+  is:['있다','verb','Exists or is present.'],
+  always:['언제나','adverb','At all times.'],
+  another:['또 다른','determiner','One more or a different one.'],
+  waiting:['기다리는','verb','Staying ready for someone or something.'],
+  for:['~을 위해','preposition','Intended for someone or something.'],
+  you:['당신','pronoun','The person being spoken to.'],
   every:['모든','determiner','Used to refer to all members of a group.'],
   story:['이야기','noun','An account of events, real or imagined.'],
   begins:['시작된다','verb','Starts to happen.'],
@@ -137,7 +147,6 @@ async function openOnboardingWord(node,retry=false){
 function renderOnboardingWordDetail(card){
   // Reuse the normal meaning/metadata/utterance surface, without vocabulary actions.
   document.getElementById('p-ai-saved').hidden=true;
-  document.getElementById('p-airetry').hidden=true;
   document.getElementById('p-aibtn').style.display='none';
   document.getElementById('p-aihint').style.display='none';
   document.getElementById('p-meaning-del').hidden=true;
@@ -186,5 +195,5 @@ function maybeShowOnboarding(){
   if(books.length || Object.keys(words).length || Object.keys(dead).length || Object.keys(positions).length){
     save(ONBOARD_KEY,'done');return;
   }
-  startOnboarding(false);
+  return startOnboarding(false);
 }

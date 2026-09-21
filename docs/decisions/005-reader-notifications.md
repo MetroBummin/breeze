@@ -11,8 +11,11 @@ progress, scroll position or the book title. Controls keep their event handlers.
 
 Duplicate pending messages are coalesced; at most 20 pending notices are kept.
 Notices expire after 60 seconds. Reader exit or opening another book clears them
-so stale notices cannot appear in a different reading session. Outside Reader,
-the existing toast surfaces remain. Messages are plain text in a polite live
+so stale notices cannot appear in a different reading session. Home and both shelves use the same queue in the resume pill. Home notices defer
+for dialogs, typing, pointer activity and opening a book, without inheriting
+Reader gesture or restoration locks. Navigation clears the queue; titles,
+progress and button actions are never rewritten by a notice. Wordbook retains
+its existing toast surface. Messages are plain text in a polite live
 region. Interruptions replay the notice with its full display duration.
 
 Validate with `node tests/verify-reader-notifications-browser.mjs`, the Reader

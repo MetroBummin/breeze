@@ -65,10 +65,34 @@ for(const engine of [chromium,webkit]){
  await page.evaluate(()=>{readerNotices.reset();toast('Scroll keeps this');document.getElementById('reader-scroll').scrollTop=600;});
  await notice.waitFor({state:'visible'});assert.equal(await notice.textContent(),'Scroll keeps this');
  await page.evaluate(()=>{toast('Old session');show('home');});assert.equal(await notice.isVisible(),false);
- await page.evaluate(()=>toast('Home notice'));assert.equal(await page.locator('#toast').textContent(),'Home notice');
+ const homeNotice=page.locator('#home-notice');
+ const homeTitle=await page.locator('#home-resume-title').textContent();
+ const homeProgress=await page.locator('#home-resume-progress').getAttribute('style');
+ const homeRect=await page.locator('#home-resume').boundingBox();
+ await page.evaluate(()=>{toast('Home notice');toast('Home notice');miniToast('Next home notice');});
+ await homeNotice.waitFor({state:'visible'});
+ assert.equal(await homeNotice.textContent(),'Home notice');
+ assert.equal(await page.locator('#toast').evaluate(e=>e.classList.contains('on')),false);
+ assert.equal(await page.locator('#home-resume-title').textContent(),homeTitle);
+ assert.equal(await page.locator('#home-resume-progress').getAttribute('style'),homeProgress);
+ assert.deepEqual(await page.locator('#home-resume').boundingBox(),homeRect);
+ await page.evaluate(()=>openSettings());await homeNotice.waitFor({state:'hidden'});
+ await page.waitForTimeout(750);assert.equal(await homeNotice.isVisible(),false);
+ await page.evaluate(()=>closeSettings());await homeNotice.waitFor({state:'visible'});
+ assert.equal(await homeNotice.textContent(),'Home notice');
+ await page.waitForFunction(()=>document.getElementById('home-notice').textContent==='Next home notice');
+ await homeNotice.waitFor({state:'hidden'});
+ assert.equal(await page.locator('.home-resume-copy').evaluate(e=>getComputedStyle(e).opacity),'1');
+ for(const view of ['casuals','longform']){
+   await page.evaluate(view=>{show(view);toast('Shelf notice');},view);
+   await homeNotice.waitFor({state:'visible'});assert.equal(await homeNotice.textContent(),'Shelf notice');
+ }
+ await page.evaluate(()=>{show('home');toast('Leave this behind');});
+ await homeNotice.waitFor({state:'visible'});
  await page.evaluate(async()=>openBook(books.find(b=>b.kind==='txt')));
  await page.waitForTimeout(800);assert.equal(await notice.isVisible(),false);
  assert.equal(await page.locator('#toast').evaluate(e=>e.classList.contains('on')),false);
+ assert.equal(await homeNotice.isVisible(),false);
  // Queue bounds, deduplication, expiry and background suppression under a fake wall clock.
  await page.evaluate(()=>{readerNotices.reset();window.noticeRealNow=Date.now;window.noticeNow=Date.now();Date.now=()=>window.noticeNow;beginSentenceWaiting();for(let i=0;i<25;i++)toast('Queued '+i);closeSentence();});
  await notice.waitFor({state:'visible'});assert.equal(await notice.textContent(),'Queued 5');

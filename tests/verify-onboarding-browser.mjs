@@ -20,16 +20,30 @@ try{
  for(const native of [false,true]){
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
   if(native) await context.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true};});
+  await context.addInitScript(()=>{
+    window.homePaintedBeforeOnboarding=false;
+    const inspect=()=>{
+      const home=document.getElementById('v-home');
+      if(document.body && document.body.classList.contains('onboarding-active')) return;
+      if(home && home.classList.contains('on') && getComputedStyle(home).visibility==='visible') window.homePaintedBeforeOnboarding=true;
+      requestAnimationFrame(inspect);
+    };
+    requestAnimationFrame(inspect);
+  });
   const page=await context.newPage(),requests=[],errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/*',route=>{
     const href=route.request().url();
+    if(href.includes('/scripts/main.js')) return new Promise(resolve=>setTimeout(resolve,250)).then(()=>route.continue());
     if(href.startsWith(url)||href.startsWith('blob:'))return route.continue();
     requests.push(href);return route.abort();
   });
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:120000});
   await page.locator('#onboarding').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
+  await page.evaluate(()=>homeReady);
+  assert.equal(await page.evaluate(()=>window.homePaintedBeforeOnboarding),false,'Home painted before the tutorial');
+  assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('boot-pending')),false);
   assert.equal(await page.locator('#v-read').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').textContent(),'Welcome to Breeze');
   assert.equal(await page.locator('#modefab').isVisible(),false);
@@ -44,7 +58,7 @@ try{
   await page.waitForTimeout(180);
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 찾는 중');
   await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='호기심');
-  assert.ok(Date.now()-start>=450,'prepared answer skipped its first lookup delay');
+  assert.ok(Date.now()-start>=950,'prepared answer skipped its first lookup delay');
   await page.locator('#word-peek-more').tap();
   assert.equal(await page.locator('#p-ai-ko').textContent(),'호기심');
   assert.equal(await page.locator('#p-ai-saved').isVisible(),false);
@@ -56,14 +70,14 @@ try{
   await word.tap();
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'호기심','repeat lookup was not immediate');
   await page.keyboard.press('Escape');
-  const sentence=page.locator('#rtext .w').filter({hasText:/^Tap$/}).first();
+  const sentence=page.locator('#rtext .w').filter({hasText:/^Reading$/}).first();
   const rect=await sentence.boundingBox();
   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);
   await page.mouse.down();await page.waitForTimeout(820);
   assert.equal(await page.locator('#sentence-pill-status').isVisible(),true);
   await page.mouse.up();
   await page.locator('#sentence-modal').waitFor({state:'visible'});
-  assert.equal(await page.locator('#ps-ko').textContent(),'단어를 탭해 뜻을 알아보세요.');
+  assert.equal(await page.locator('#ps-ko').textContent(),'독서는 편안해야 하니까요.');
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-sentence.png`});
   await page.keyboard.press('Escape');
   await page.locator('#onboarding[data-stage="2"]').waitFor();
@@ -90,14 +104,14 @@ try{
   assert.equal(await page.locator('#rtext .phrase,#rtext .s2').count(),0,'personal highlights leaked into the tutorial');
   await page.locator('#rtext .w').first().tap();
   await page.evaluate(()=>endOnboarding(true));
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(1150);
   assert.equal(await page.locator('#word-peek').isVisible(),false,'late word reopened after exit');
   assert.deepEqual(await snapshot(),replayBefore,'replay modified personal data');
   await page.evaluate(()=>startOnboarding(true));
   await page.evaluate(()=>openSentence(ONBOARD_PASSAGES[0][0]));
   // Awaiting openSentence finishes the prepared answer; a second pending lookup is cancelled on Back.
   await page.evaluate(()=>{closeSentence();openSentence(ONBOARD_PASSAGES[1][0]);show('home');});
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(1150);
   assert.equal(await page.locator('#sentence-modal').isVisible(),false,'late sentence reopened after Back');
   assert.equal(await page.locator('#onboarding').isVisible(),false);
   assert.equal(await page.evaluate(()=>positions['breeze-onboarding']),undefined);

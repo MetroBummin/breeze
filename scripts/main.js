@@ -1,14 +1,14 @@
 syncHomeNavigation();
-/* 서가를 먼저 읽고 홈을 그립니다. 스플래시가 먼저 걷히고 빈 홈이 그려졌다가
-   책 카드가 뒤늦게 붙는 것이 첫 실행 때의 "새로고침" 같은 깜빡임이었습니다. */
-const homeReady=loadBooks().then(renderHome).catch(error=>{
-  console.error('서가를 읽지 못했습니다:',error);
+/* Choose the initial surface before revealing the app; first-time readers never
+   paint Home between the launch screen and the tutorial. */
+const homeReady=loadBooks().then(async()=>{
   renderHome();
-});
-homeReady.then(()=>{
-  if(document.readyState==='complete') setTimeout(maybeShowOnboarding,850);
-  else window.addEventListener('load',()=>setTimeout(maybeShowOnboarding,850),{once:true});
-});
+  await maybeShowOnboarding();
+}).catch(error=>{
+  console.error('첫 화면을 준비하지 못했습니다:',error);
+  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()) endOnboarding(false);
+  renderHome();
+}).finally(()=>document.documentElement.classList.remove('boot-pending'));
 /* ---- 다음부터는 네트워크를 기다리지 않고 켜집니다 ----
    무엇을 어떻게 담는지는 sw.js 맨 위에 적혀 있습니다. 여기서는 등록만 합니다.
 

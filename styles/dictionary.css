@@ -139,14 +139,6 @@ body.dark #word-peek::before{
   #p-meaning-del:hover{background:var(--danger-bg); color:var(--danger);}
   #p-meaning-del[hidden]{display:none;}
   #p-ai .cap{padding-right:26px;}
-  /* 되묻는 길은 한 줄짜리 작은 글씨입니다. 뜻보다 커지면 "이 답은 틀렸다"가
-     먼저 읽힙니다 — 대개는 맞고, 가끔만 필요한 문입니다. */
-  #p-airetry{display:block; margin:8px 0 0 auto; border:none; background:none; padding:0;
-    color:var(--ai-quiet); font:500 10.5px var(--ui); cursor:pointer;
-    text-decoration:underline; text-underline-offset:3px;}
-  #p-airetry:hover{color:var(--ai-key);}
-  #p-airetry[hidden]{display:none;}
-  #p-ai.load #p-airetry{display:none;}
   /* ══ 오로라 ══════════════════════════════════════════════
      AI 를 기다리는 동안 뜨는 장치. 낱말 하나든 문장 하나든 같은 것을 씁니다 —
      기다림의 모양이 자리마다 다르면 "무엇을 기다리는지"가 아니라 "여기가 어디인지"를

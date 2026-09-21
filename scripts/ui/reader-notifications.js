@@ -1,29 +1,38 @@
-/* Low-priority Reader notices. Lookup and input always own the controls first.
+/* Low-priority Reader and Home notices. Lookup and input always own the controls first.
    Only a nonempty queue runs a timer; no scroll/layout measurements are needed. */
 const readerNotices = (()=>{
   const queue=[];
   const MAX_PENDING=20, MAX_AGE=60000, QUIET_MS=600;
-  let timer=0, active=null, shownAt=0, quietUntil=0;
+  let timer=0, active=null, shownAt=0, quietUntil=0, owner='';
   function reading(){ return !!curBook && document.body.classList.contains('reading'); }
+  function surface(){
+    if(reading()) return 'read';
+    const view=activeAppView();
+    return ['home','casuals','longform'].includes(view) ? view : '';
+  }
+  function noticeNode(){ return document.getElementById(owner==='read'?'reader-notice':'home-notice'); }
   function blocked(){
-    return document.hidden || Date.now()<quietUntil || chromePinned || Date.now()<chromeHoldUntil
-      || Date.now()<readerScrollPauseUntil || !!activeGesture
-      || sentenceLookupOpen() || wordLookupOpen() || originalPinchBusy()
+    return document.hidden || Date.now()<quietUntil
+      || (owner==='read' && (chromePinned || Date.now()<chromeHoldUntil
+        || Date.now()<readerScrollPauseUntil || !!activeGesture
+        || sentenceLookupOpen() || wordLookupOpen() || originalPinchBusy()))
+      || (owner!=='read' && homeResumeOpening)
       || !!document.querySelector('#aa-pop.on, #settings-modal.on, #sync-modal.on, #add-modal.on')
       || !!document.querySelector('input:focus, textarea:focus, [contenteditable="true"]:focus');
   }
   function hide(){
-    const node=document.getElementById('reader-notice');
-    node.hidden=true; node.textContent='';
-    document.body.classList.remove('reader-notice-visible');
+    for(const id of ['reader-notice','home-notice']){
+      const node=document.getElementById(id);node.hidden=true;node.textContent='';
+    }
+    document.body.classList.remove('reader-notice-visible','home-notice-visible');
     active=null;
   }
   function reset(){
-    clearTimeout(timer); timer=0; queue.length=0; hide(); quietUntil=0;
+    clearTimeout(timer); timer=0; queue.length=0; hide(); quietUntil=0; owner='';
   }
   function pump(){
     clearTimeout(timer); timer=0;
-    if(!reading()){ reset(); return; }
+    if(!surface() || surface()!==owner){ reset(); return; }
     const now=Date.now();
     while(queue.length && now-queue[0].created>MAX_AGE) queue.shift();
     if(active && (blocked() || now-active.created>MAX_AGE)){
@@ -34,14 +43,17 @@ const readerNotices = (()=>{
     }
     if(!active && queue.length && !blocked()){
       active=queue.shift(); shownAt=now;
-      const node=document.getElementById('reader-notice');
+      const node=noticeNode();
       node.textContent=active.message; node.hidden=false;
-      document.body.classList.add('reader-notice-visible');
+      document.body.classList.add(owner==='read'?'reader-notice-visible':'home-notice-visible');
     }
     if(active || queue.length) timer=setTimeout(pump,150);
   }
   function enqueue(message,duration){
-    if(!reading()) return false;
+    const next=surface();
+    if(!next) return false;
+    if(owner && owner!==next) reset();
+    owner=next;
     const text=String(message||'').trim();
     if(!text) return true;
     if((active && active.message===text) || queue.some(item=>item.message===text)) return true;
@@ -67,5 +79,6 @@ const readerNotices = (()=>{
     const node=document.getElementById(id);
     if(node) observer.observe(node,{attributes:true,attributeFilter:['hidden','class']});
   });
+  document.querySelectorAll('.view').forEach(node=>observer.observe(node,{attributes:true,attributeFilter:['class']}));
   return {enqueue,reset};
 })();

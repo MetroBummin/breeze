@@ -22,10 +22,10 @@ try{
  results.deleteChild=await page.evaluate(()=>{const k=auditSeed();const id=createMeaning(k,'강둑',{});selKey=id;document.getElementById('p-know').onclick();return {selected:id,remaining:Object.keys(words),tombstones:Object.keys(dead)};});
  results.deleteRoot=await page.evaluate(()=>{const k=auditSeed();createMeaning(k,'강둑',{});selKey=k;document.getElementById('p-know').onclick();return {remaining:Object.keys(words)};});
  results.savedWrongContext=await page.evaluate(()=>{const k=auditSeed();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];auditCalls=[];openWord(k,node);return {visible:document.getElementById('word-peek-meaning').textContent,current:currentContext(selKey)?.sentence,saved:words[selKey].example,calls:auditCalls.length};});
- await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='강둑');
- assert.equal(await page.evaluate(()=>words[selKey].example),'He sat by the bank of the river.','A new context meaning inherited the unrelated old example');
+ assert.equal(results.savedWrongContext.calls,0);
  results.pillRetry=await page.evaluate(async()=>{auditCalls=[];await retryWordPeek();return auditCalls;});
- results.detailRetry=await page.evaluate(async()=>{const k=auditSeed();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord(k,node);await new Promise(r=>setTimeout(r,350));expandWordDetail();auditCalls=[];await askWiderContext(selKey);return auditCalls;});
+ await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='강둑');
+ assert.equal(await page.evaluate(()=>words[selKey].example),'He sat by the bank of the river.');
  // Reusing an existing meaning preserves its saved example but shows the current occurrence.
  await page.evaluate(()=>{const k=auditSeed();words[k].ko='강둑';words[k].ai.ko='강둑';const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord(k,node);});
  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='강둑');
@@ -48,12 +48,10 @@ try{
  results.deletionStress=await page.evaluate(()=>{let leftover=0;for(let i=0;i<100;i++){const k=auditSeed();createMeaning(k,'강둑',{});const last=createMeaning(k,'비축분',{});selKey=last;document.getElementById('p-know').onclick();if(Object.keys(words).length)leftover++;}return {iterations:100,leftover};});
  assert.deepEqual(results.deleteChild.remaining,[]);
  assert.equal(results.deletionStress.leftover,0);
- assert.equal(results.savedWrongContext.visible,'뜻 확인 중');
+ assert.equal(results.savedWrongContext.visible,'은행');
  assert.equal(results.pillRetry[0].clickedIndex,4);
  assert.ok(results.pillRetry[0].before.includes('loan'));
  assert.ok(results.pillRetry[0].after.includes('overflowing'));
- assert.equal(results.detailRetry[0].clickedIndex,4);
- assert.equal(results.detailRetry[0].sentence,'He sat by the bank of the river.');
  assert.equal(results.expansion.includesTarget,true);
  assert.equal(results.expressionTombstone.dead,undefined);
  assert.equal(results.expressionOverwrite.ko,'사용자가 적은 뜻');

@@ -1687,8 +1687,7 @@ assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'
   'EPUB highlighting does not use the token/gap phrase matcher');
 /* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
-assert.match(dictionarySource, /const answer=await fetchLook\(k,\{\.\.\.input,wider:true,hold:true,life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
-  'A late "another meaning" answer can reselect a word on a dismissed word lookup again');
+assert.doesNotMatch(index, /id="p-airetry"/, 'Removed detail retry action returned');
 /* 그리는 문지기는 열림 번호입니다. `selKey === k` 로는 **같은 낱말을 닫았다
    다시 연** 경우를 가릴 수 없습니다 — 열쇠가 같다고 같은 열림은 아닙니다. */
 assert.doesNotMatch(runningCode(dictionarySource), /if\(selKey===k\) renderPanel\(\)/,

@@ -30,9 +30,12 @@ Generic position preservation for real viewport resize, rotation, Reader mode ch
 - The chevron never starts a second lookup, request, quota charge, count, or saved card.
 - The detail popup reuses the short Korean Meaning and dictionaryapi.dev metadata; it does not load or display an AI gloss.
 - A cached meaning appears immediately; pending state continues in the detail popup if it is opened early.
-- An unseen sentence/word occurrence is classified once by the same AI lookup. The previous sentence's meaning is not shown as the answer while it is pending. Confirmed occurrences are reused locally.
-- Both retry buttons send the selected sentence with its occurrence index and up to one preceding/following sentence. Surrounding context never displaces the selected sentence. Output stays one short lexical result.
+- Saved meanings appear immediately, including in a new sentence. No automatic reclassification hides a saved meaning. An occurrence-specific saved meaning wins; otherwise the selected saved meaning is reused. Only an explicit retry asks for a fresh contextual result.
+- The pill retry sends the selected sentence with its occurrence index and up to one preceding/following sentence. Surrounding context never displaces the selected sentence. Output stays one short lexical result.
 - Whole-word removal deletes the root and all its meanings; a meaning's delete button removes only that meaning. Automatic results respect deleted meanings, and explicit re-adds advance past their deletion timestamps.
+- The detail popup has no duplicate wider-context action.
+- The 30-second recheck cooldown follows the lexical root across Meaning selection and expression promotion.
+- Expression repaint restores scroll synchronously before scroll events can dismiss the active pill.
 - Expression results use the same meaning ownership rules as single words and do not overwrite manually edited meanings.
 - A stale response may update cache but cannot replace or reopen a newer lookup presentation.
 - The detail scrim owns its gesture so outside dismissal cannot pass through to the Reader.

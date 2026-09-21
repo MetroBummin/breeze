@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium,webkit} from 'playwright';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2','.svg':'image/svg+xml'};
@@ -16,7 +16,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await chromium.launch();
+const browser=await (process.env.BROWSER==='webkit'?webkit:chromium).launch();
 
 try{
   const page=await browser.newPage({viewport:{width:1100,height:800},serviceWorkers:'block'});
@@ -133,18 +133,17 @@ try{
     words.patient.pickedAt=Date.now();
   });
 
-  /* New context is resolved once; the chevron still owns no second request. */
+  /* A saved meaning is immediate in a new context without a request. */
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
     dictCall=payload=>{wordQa.calls.push(payload);return new Promise(resolve=>wordQa.pending.push(resolve));};
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
     openWord(keyOf('patient'),span);
   });
-  await page.waitForFunction(()=>wordQa.calls.length===1);
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 확인 중');
-  await page.evaluate(()=>wordQa.pending.shift()({kind:'word',canonical:'patient',members:[1],ko:'참을성 있는'}));
-  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='참을성 있는');
-  assert.equal(await page.evaluate(()=>wordQa.calls.length),1);
+  assert.equal(await page.locator('#word-peek-meaning').textContent(),'참을성 있는');
+  assert.equal(await page.evaluate(()=>wordQa.calls.length),0);
+  await page.evaluate(()=>expandWordDetail());
+  assert.equal(await page.locator('#p-airetry').count(),0);
   await page.evaluate(()=>closePanel());
   await page.evaluate(()=>{
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='another');
@@ -160,11 +159,14 @@ try{
   assert.equal(await page.locator('#p-aibtn-t').textContent(),'로그인하고 계속 쓰기','signed-out lookup lost its single login action');
   await page.evaluate(()=>closePanel());
 
+  await page.evaluate(()=>readerScrollTo(1500));
+  await page.waitForTimeout(200);
+  const expressionScroll=await page.evaluate(()=>readerScrollTop());
   /* 처음 보는 lexical item을 DeepSeek가 expression으로 판정해도 같은 필이 lookup
      중부터 결과가 도착한 뒤까지 계속 화면을 소유해야 합니다. */
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
-    const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='carefully');
+    const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='carefully' && node.getBoundingClientRect().top>80 && node.getBoundingClientRect().bottom<700);
     openWord(keyOf('carefully'),span);
   });
   await page.waitForFunction(()=>wordQa.calls[0]?.op==='look');
@@ -177,6 +179,36 @@ try{
   });
   await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='매우 조심스럽게');
   assert.equal(await page.locator('#word-peek').isVisible(),true,'expression 뜻 도착 뒤 word pill이 유지되지 않았습니다');
+  await page.waitForTimeout(250);
+  assert.equal(await page.locator('#word-peek').isVisible(),true,'expression repaint scroll dismissed the pill');
+  assert.ok(Math.abs(await page.evaluate(()=>readerScrollTop())-expressionScroll)<2,'expression repaint moved the Reader');
+  const phraseStatus=await page.evaluate(()=>words[selKey].status);
+  await page.evaluate(()=>{
+    const root=words[selKey].root||selKey;closePanel();
+    const node=[...document.querySelectorAll('#rtext .phrase')].find(n=>n.dataset.w===root && n.getBoundingClientRect().top>80 && n.getBoundingClientRect().bottom<700);
+    openWord(root,node);
+  });
+  await page.waitForTimeout(80);
+  assert.equal(await page.evaluate(()=>words[selKey].status),phraseStatus,'expression identity lost the 30-second cooldown');
+  assert.equal(await page.locator('#word-peek-meaning').textContent(),'매우 조심스럽게');
+  // A second Meaning under the same root shares the cooldown; expiry still bumps.
+  await page.evaluate(()=>{
+    const root=words[selKey].root||selKey;window.cooldownRoot=root;
+    const node=activeSelectedWordNode;closePanel();
+    const id=createMeaning(root,'주의 깊게',{});words[id].status=1;words[id].pickedAt=Date.now()+100;
+    const sentence=sentenceOf(node);rememberSenseContext(id,sentence,-1);
+    openWord(root,node);
+  });
+  await page.waitForTimeout(80);
+  assert.equal(await page.evaluate(()=>words[selKey].status),1,'Meaning switch bypassed cooldown');
+  await page.evaluate(()=>{
+    const node=activeSelectedWordNode;closePanel();recentWordOpens.set(window.cooldownRoot,Date.now()-31000);openWord(window.cooldownRoot,node);
+  });
+  await page.waitForTimeout(80);
+  assert.equal(await page.evaluate(()=>words[selKey].status),2,'expired cooldown did not bump');
+  await page.evaluate(()=>{closePanel();readerScrollTo(0);});
+  await page.waitForTimeout(100);
+
   await page.evaluate(()=>closePanel());
 
   await page.evaluate(()=>{

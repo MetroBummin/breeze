@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <!-- viewport-fit=cover 가 있어야 env(safe-area-inset-*) 이 값을 냅니다.
        네이티브 셸(Capacitor)과 아이폰 사파리 둘 다 여기에 기댑니다. -->
+  <style>html.boot-pending #app{visibility:hidden;opacity:0;pointer-events:none;}</style>
   <script>
+    document.documentElement.classList.add('boot-pending');
+    // Fail open even if a later script cannot load. Normal startup clears this early.
+    setTimeout(()=>document.documentElement.classList.remove('boot-pending'),8000);
     /* Capacitor 는 document 시작 전에 이 bridge 를 넣습니다. CSS 가 그려지기 전에
        native shell 범위의 입력 크기와 safe-area 동작을 적용합니다. */
     try{
@@ -39,13 +43,13 @@
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
   <link rel="stylesheet" href="styles/home.css?v=2b9dfee7">
-  <link rel="stylesheet" href="styles/reader.css?v=0fc2a984">
-  <link rel="stylesheet" href="styles/dictionary.css?v=5adf83a7">
+  <link rel="stylesheet" href="styles/reader.css?v=3fc550f0">
+  <link rel="stylesheet" href="styles/dictionary.css?v=9ed6a458">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=62cd7fff">
   <link rel="stylesheet" href="styles/wordbook.css?v=3d0c76ff">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=c0b1821a">
+  <link rel="stylesheet" href="styles/home-shell.css?v=d05d4d70">
   <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -60,7 +64,7 @@
   <script defer src="config.js?v=f079b481"></script>
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
-  <script defer src="scripts/core/boot-safety.js?v=02c5a426"></script>
+  <script defer src="scripts/core/boot-safety.js?v=01738380"></script>
   <script defer src="scripts/core/lazy-lib.js?v=e6159b27"></script>
   <script defer src="scripts/core/storage.js?v=40c5cf33"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
@@ -78,7 +82,7 @@
   <script defer src="scripts/reader/gesture.js?v=6e8f85ba"></script>
   <script defer src="scripts/reader/pdf-pinch.js?v=b4b7fb0f"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=cd886701"></script>
+  <script defer src="scripts/library/library.js?v=8f2289a3"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
   <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
@@ -86,7 +90,7 @@
   <script defer src="scripts/importers/rss.js?v=4117786a"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=bd0c648a"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=9f0efc09"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=8fbb9447"></script>
   <script defer src="scripts/ui/wordbook.js?v=6f9d5a26"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=17b378a5"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -96,15 +100,15 @@
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=481d47b6"></script>
   <script defer src="scripts/reader/reader.js?v=99b0081b"></script>
-  <script defer src="scripts/ui/reader-notifications.js?v=19af6d20"></script>
+  <script defer src="scripts/ui/reader-notifications.js?v=9825a1ae"></script>
   <script defer src="scripts/ui/preferences.js?v=41e504f5"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=e663a882"></script>
   <script defer src="scripts/ui/interactions.js?v=578ca721"></script>
-  <script defer src="scripts/ui/onboarding.js?v=ed000464"></script>
-  <script defer src="scripts/ui/library-refresh.js?v=41c739bb"></script>
-  <script defer src="scripts/main.js?v=b395b9e7"></script>
+  <script defer src="scripts/ui/onboarding.js?v=ce7ac12f"></script>
+  <script defer src="scripts/ui/library-refresh.js?v=ca4b0ceb"></script>
+  <script defer src="scripts/main.js?v=31587112"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
@@ -131,8 +135,8 @@
   <span id="login-nudge" role="img" aria-label="로그인 필요"></span>
 </div>
 
-  <div id="home-controls" class="control-dock"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">읽던 책 없음</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
-<div id="library-refresh" class="control-glass" role="status" aria-live="polite" hidden><span aria-hidden="true">↓</span><span class="refresh-label">당겨서 새로고침</span></div>
+  <div id="home-controls" class="control-dock"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-notice" role="status" aria-live="polite" aria-atomic="true" hidden></span><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">Welcome to Breeze</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
+<div id="library-refresh" role="status" aria-live="polite" hidden><span class="refresh-spinner" aria-hidden="true"></span></div>
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
 
@@ -315,7 +319,6 @@
         <div class="note" id="p-ai-note"></div>
         <!-- 이 문장만으로 안 풀릴 때. 앞뒤 문장까지 붙여 다시 묻고, 돌아온 답은
              지금 뜻을 덮지 않고 뜻 하나로 더해집니다. -->
-        <button id="p-airetry" type="button" hidden>↻ 넓은 문맥으로</button>
       </div>
       <button id="p-aibtn"><span class="sp">✨</span><span id="p-aibtn-t">문맥 뜻 찾기</span></button>
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>

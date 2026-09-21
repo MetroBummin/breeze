@@ -517,10 +517,12 @@ body:not(.dark) :is(#readback,#aafab,#readpill button,.control-glass):active{bac
 
 /* Notices share only the title slot; mode/back/settings keep their input targets.
    The title remains in the layout and restores without rewriting book state. */
-#reader-notice{position:absolute;inset:4px 12px;z-index:2;pointer-events:none;
+#reader-notice,#home-notice{position:absolute;inset:4px 12px;z-index:2;pointer-events:none;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
   font:600 12px/1.35 var(--ui);text-align:center;overflow-wrap:anywhere;}
-#reader-notice[hidden]{display:none;}
+#reader-notice[hidden],#home-notice[hidden]{display:none;}
+body.home-notice-visible #home-resume .home-resume-copy{opacity:0;}
+body.home-notice-visible #home-resume .completion-badge{visibility:hidden;}
 body.reader-notice-visible #readpill-title{opacity:0;}
 body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
 body.reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{left:48px;}

@@ -8,11 +8,14 @@ detail popup and translation-only sentence result are authoritative. Onboarding
 adds only a guidance card and Skip. No copied Reader controls or lookup surfaces
 remain. The existing completion marker is retained; returning readers with local
 books, vocabulary, tombstones or reading positions are not interrupted. Settings
-provides replay on both platforms.
+provides replay on both platforms. Startup waits for the local library and chooses
+the initial Reader or Home before revealing the app, without a post-Home delay.
+A boot error or an eight-second script-load watchdog reveals the app so a failed
+startup cannot leave the interface permanently hidden.
 
 The short authored story has a prepared Korean meaning and English definition
 for every tappable word, plus translations for every sentence. The first lookup
-of an occurrence waits 500 ms using the real loading UI; a repeat is immediate.
+of an occurrence waits 1000 ms using the real loading UI; a repeat is immediate.
 The normal 750 ms long-press threshold and release-before-result rule remain.
 The word detail can open during that same pending lookup. No AI request, metadata
 request, quota charge or dictionary-cache write is made for these answers.
@@ -40,7 +43,7 @@ rules are unchanged.
 ## Verification
 
 `npm run test:onboarding` covers fresh web/native sessions, prepared word coverage,
-500 ms first lookup, immediate repeats, shared detail and real long-press behavior,
+1000 ms first lookup, immediate repeats, shared detail and real long-press behavior,
 Aa, completion, replay, cancellation, history/storage isolation and zero lookup
 requests. Screenshots include phone, desktop and dark completion. Normal Reader,
 word/sentence lifecycle, signed-out states, shared controls and full-suite checks

@@ -749,11 +749,11 @@ function homeResumeBook(){
 function renderHomeResume(){
   const book=homeResumeBook();
   const button=/** @type {HTMLButtonElement} */(document.getElementById('home-resume'));
-  document.getElementById('home-resume-title').textContent=book ? book.title : (uiLang==='ko' ? '읽던 책 없음' : 'No book in progress');
+  document.getElementById('home-resume-title').textContent=book ? book.title : 'Welcome to Breeze';
   const progress=book ? Math.max(0,Math.min(1,Number(posOf(book.id).p)||0)) : 0;
   document.getElementById('home-resume-progress').style.transform=`scaleX(${progress})`;
   document.getElementById('home-resume-percent').textContent=book ? `${Math.floor(progress*100)}%` : '';
   updateCompletionBadge(button,progress,book ? book.id : '');
   button.disabled=!book;
-  button.setAttribute('aria-label',book ? book.title+` · ${Math.floor(progress*100)}% · `+(progress===1 ? (uiLang==='ko' ? '완독 · ' : 'Completed · ') : '')+(uiLang==='ko' ? '이어서 읽기' : 'Continue reading') : (uiLang==='ko' ? '읽던 책 없음' : 'No book in progress'));
+  button.setAttribute('aria-label',book ? book.title+` · ${Math.floor(progress*100)}% · `+(progress===1 ? (uiLang==='ko' ? '완독 · ' : 'Completed · ') : '')+(uiLang==='ko' ? '이어서 읽기' : 'Continue reading') : 'Welcome to Breeze');
 }

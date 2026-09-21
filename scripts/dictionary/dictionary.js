@@ -397,15 +397,16 @@ function openWord(k, node, point){
   const request=lookupRequestFor(words[k],node,false);
   const savedContext=findSavedSense(root,request.sentence,request.clickedIndex);
   const active=savedContext||((meaningCards(root,null)[0]||[k])[0]);
-  const now=Date.now(),seenAt=recentWordOpens.get(active)||0;
+  const now=Date.now(),seenAt=recentWordOpens.get(root)||0;
   const bump=now-seenAt>=RECENT_WORD_OPEN_MS&&words[active].status<3;
-  recentWordOpens.set(active,now);
-  contextView=savedContext
+  recentWordOpens.set(root,now);
+  const ready=!!String(words[active].ko||(words[active].ai&&words[active].ai.ko)||'').trim();
+  contextView=ready
     ? (words[active].example===request.sentence?null:{key:active,...request,loading:''})
     : {key:active,...request,loading:'checking'};
   selectWord(active,node,true);
   if(bump)deferWordOpenBump(active);
-  if(!savedContext)resolveCurrentLookup(active,request,wordLookupLife);
+  if(!ready)resolveCurrentLookup(active,request,wordLookupLife);
 }
 async function resolveCurrentLookup(k,input,life){
   const w=words[k];if(!w)return;
@@ -713,7 +714,7 @@ function renderPanel(){
   const aiBox = document.getElementById('p-ai');
   const aiKo = document.getElementById('p-ai-ko'), aiPos = document.getElementById('p-ai-pos');
   const aiN = document.getElementById('p-ai-note');
-  const aiCap = document.getElementById('p-ai-cap-t'), aiRetry = document.getElementById('p-airetry');
+  const aiCap = document.getElementById('p-ai-cap-t');
   const ai = w.ai || {};
   /* 이 자리에 글자가 오르는 것은 뜻이 정해진 뒤입니다. */
   const shown = w.ko || ai.ko || '';
@@ -733,7 +734,7 @@ function renderPanel(){
     aiBox.className = 'on load';
     aiCap.textContent = '문맥 뜻';
     aiKo.textContent = ''; aiPos.textContent = ''; aiN.textContent = '';
-    aiN.style.display = 'none'; aiRetry.hidden = true;
+    aiN.style.display = 'none';
   }else if(!shown){
     /* 뜻이 아직 없습니다. 칸을 접지 않고 무슨 일인지 그 자리에 적습니다 —
        칸이 사라졌다 나타나면 화면이 출렁이고, 무엇을 기다렸는지도 남지 않습니다. */
@@ -743,7 +744,6 @@ function renderPanel(){
     const waitLine = meaningWaitLine(off);
     aiN.textContent = waitLine;
     aiN.style.display = waitLine ? 'block' : 'none';
-    aiRetry.hidden = true;
   }else{
     aiBox.className = 'on' + (w.koEdited ? ' edited' : '');
     /* noteDone 은 예전 모양입니다. 이미 저장된 단어를 다시 눌렀을 때
@@ -756,9 +756,6 @@ function renderPanel(){
     const top = w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : '';
     aiN.textContent = top;
     aiN.style.display = top ? 'block' : 'none';
-    /* 이 문장만으로 안 풀릴 때 앞뒤 문장까지 붙여 한 번 더 묻는 길입니다.
-       새 답은 지금 뜻을 덮지 않고 뜻 하나로 더해집니다 — 마음에 안 들면 × 입니다. */
-    aiRetry.hidden = !(sb && sbUser && w.example);
   }
 
   /* ── 담겼습니다 ──
@@ -925,9 +922,11 @@ document.getElementById('p-know').onclick = ()=>{
 };
 function refreshReaderWords(){
   if(curBook && currentReaderMode==='text'){
-    const anchor=captureAnchor();
+    const anchor=captureAnchor(),top=readerScrollTop();
     renderBookBody(curBook);
-    requestAnimationFrame(()=>{ if(anchor) restoreAnchor(anchor); });
+    // Restore within the same task. A deferred restoration lets the rebuild's
+    // scroll event dismiss the pill as if the user had scrolled.
+    if(!anchor || !restoreAnchor(anchor)) readerScrollTo(top);
   }else if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
 }
 /* 표제어를 손으로 고치는 칸은 없습니다. 화면의 낱말은 원문 색칠·캐시·동기화가
@@ -1173,6 +1172,9 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
     const held=pendingWord;pendingWord=null;delete words[k];
     if(held.deadAt){dead[k]=held.deadAt;save(LS_DEAD,dead);}
   }
+  // A single lookup can change identity from a token to an expression/Meaning.
+  // Carry its cooldown so an immediate recheck is not a new learning event.
+  recentWordOpens.set(id,Math.max(recentWordOpens.get(id)||0,recentWordOpens.get(base.root||k)||0,Date.now()));
   selKey=active;contextView=null;
   saveWords();queueSync();refreshReaderWords();renderIfAlive(life);return active;
 }
@@ -1332,28 +1334,12 @@ function applyLook(w, j, k, opt){
   renderIfAlive(opt.life);
 }
 
-/* 두 재시도 버튼 모두 현재 occurrence와 앞뒤 문장을 사용합니다. */
-async function askWiderContext(k){
-  const w=words[k]; if(!w || w.aiLoading) return;
-  const life=wordLookupLife;
-  const root=w.root||k;
-  const input=lookupRequestFor(w,activeSelectedWordNode,true),{sentence,clicked,clickedIndex,book}=input;
-  const answer=await fetchLook(k,{...input,wider:true,hold:true,life});
-  if(!wordLookupAlive(life)) return;
-  if(!answer || !answer.ko) return;
-  const phrase=expressionFromMini(answer,sentence,clicked,clickedIndex);
-  if(phrase){saveDetectedExpression(k,phrase,sentence,book,answer,life,{explicit:true,clickedIndex});return;}
-  const id=createMeaning(root, answer.ko, {clicked,example:sentence,book,
-    ai:answerFromLook(answer,false).ai, alts:answer.alts});
-  if(!id) return;
-  rememberSenseContext(id,sentence,clickedIndex);saveWords();paintWord(root); selectWord(id,null);
-}
+/* A failed first lookup can still be retried from its detail state. */
 function askAI(){
   const k = selKey; if(!k || !words[k]) return;
   /* 이미 묻고 있는 중이면 한 번 더 묻는 것은 한도만 쓰는 일입니다. 예전에는
      `fetchLook` 이 앞의 요청을 끊는 것으로 이 일을 했는데, 이제 끊는 표는 열림
-     전체의 것이라 여기서 막습니다. `askWiderContext` 는 처음부터 이렇게
-     막고 있었습니다. */
+     전체의 것이라 여기서 막습니다. */
   if(words[k].aiLoading) return;
   const off = words[k].aiOff;
   /* 맛보기를 다 썼거나 서버가 로그인을 요구하면, 다시 부르는 것은 같은 답을
@@ -1362,7 +1348,6 @@ function askAI(){
   fetchLook(k, {});
 }
 document.getElementById('p-aibtn').onclick   = ()=>askAI();
-document.getElementById('p-airetry').onclick = ()=>{ if(selKey && words[selKey]) askWiderContext(selKey); };
 /* 단어창을 열어 둔 채로 연결이 끊기거나 돌아올 수 있습니다. 안내 한 줄은 지금
    연결 상태를 그대로 읽으므로(위 `off`), 그 순간 한 번 다시 그리면 됩니다. */
 addEventListener('online',  () => { if(selKey) renderWordLookup(); });

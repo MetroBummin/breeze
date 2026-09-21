@@ -44,8 +44,11 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        if message.name == Self.themeMessageHandler, let theme = message.body as? String {
-            applyReaderBackground(isDark: theme == "dark")
+        if message.name == Self.themeMessageHandler {
+            guard let rgb = message.body as? [Double], rgb.count == 3,
+                  rgb.allSatisfy({ $0.isFinite && (0...255).contains($0) }) else { return }
+            applyPageBackground(UIColor(red: CGFloat(rgb[0] / 255), green: CGFloat(rgb[1] / 255),
+                                        blue: CGFloat(rgb[2] / 255), alpha: 1))
             return
         }
         guard message.name == Self.speechMessageHandler,
@@ -209,21 +212,33 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     private func applyReaderBackground(isDark: Bool) {
-        let color = isDark ? Self.darkReaderBackground : Self.lightReaderBackground
+        applyPageBackground(isDark ? Self.darkReaderBackground : Self.lightReaderBackground)
+    }
+
+    private func applyPageBackground(_ color: UIColor) {
         view.backgroundColor = color
         webView?.backgroundColor = color
         webView?.scrollView.backgroundColor = color
+        webView?.underPageBackgroundColor = color
     }
 
     private static let themeReporterScript = """
     (() => {
-      const report = () => window.webkit?.messageHandlers?.breezeReaderTheme
-        ?.postMessage(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+      let previous = '';
+      const report = () => {
+        const color = getComputedStyle(document.documentElement).backgroundColor;
+        if (color === previous) return;
+        const rgb = color.match(/[0-9.]+/g)?.slice(0, 3).map(Number);
+        if (!rgb || rgb.length !== 3) return;
+        previous = color;
+        window.webkit?.messageHandlers?.breezeReaderTheme?.postMessage(rgb);
+      };
       report();
-      new MutationObserver(report).observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class']
-      });
+      window.addEventListener('load', report, {once:true});
+      const observer = new MutationObserver(report);
+      observer.observe(document.documentElement, {attributes:true, attributeFilter:['class']});
+      document.querySelectorAll('.view').forEach(view =>
+        observer.observe(view, {attributes:true, attributeFilter:['class']}));
     })();
     """
 }

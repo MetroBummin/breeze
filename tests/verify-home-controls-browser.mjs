@@ -29,6 +29,9 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   await page.locator('#fileinput').setInputFiles({name:'Control comparison.txt',mimeType:'text/plain',buffer:Buffer.from(('A gentle breeze moves through the trees. Reading can feel this easy.\n\n').repeat(70))});
   await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='txt'));show('home')});
+  const nativeTheme=readFileSync(resolve(root,'ios/App/App/SceneDelegate.swift'),'utf8').match(/private static let themeReporterScript = "{3}([\s\S]*?)"{3}/)[1];
+  await page.evaluate(()=>{window.nativeBackground=null;window.webkit={messageHandlers:{breezeReaderTheme:{postMessage:rgb=>window.nativeBackground=rgb}}};});
+  await page.evaluate(nativeTheme);
  for(const dark of [false,true]){
   await page.evaluate(d=>{darkMode=d;applyDark();show('home')},dark);
   assert.equal(await page.locator('#greet,#bigq').count(),0);
@@ -36,12 +39,13 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   assert.equal(await page.locator('#topbar #nav-settings svg').count(),1);
   assert.equal(await page.locator('#home-controls #nav-settings').count(),0);
   assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),dark?'rgb(44, 44, 46)':'rgb(242, 242, 247)');
+  assert.deepEqual(await page.evaluate(()=>window.nativeBackground),dark?[44,44,46]:[242,242,247]);
   await page.evaluate(d=>setLang(d?'en':'ko'),dark);
   assert.equal(await page.locator('#nav-settings svg').count(),1,'Language update removed Settings icon');
   const home=await capture(page,['nav-vocab','home-resume','home-add']);
   for(const {rect} of home) assert.ok(rect.x>=0 && rect.x+rect.w<=width && rect.y+rect.h<=height,'Control overflows viewport');
   await page.evaluate(()=>toast('Home notification'));
-  assert.ok(await page.locator('#toast').evaluate(e=>e.getBoundingClientRect().bottom) < home[1].rect.y,'Toast covers Home controls');
+  assert.equal(await page.locator('#toast').evaluate(e=>e.classList.contains('on')),false,'Home used a separate toast');
   await page.evaluate(()=>{document.body.classList.add('chrome-hidden');window.scrollTo(0,document.body.scrollHeight)});
   assert.deepEqual(await capture(page,['nav-vocab','home-resume','home-add']),home,'Home changed on scroll/collapse state');
   await page.locator('#nav-settings').click();
@@ -64,6 +68,7 @@ assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   await page.locator('#home-resume').click();
   await page.waitForFunction(()=>activeAppView()==='read' && !homeResumeOpening);
   assert.equal(await page.evaluate(()=>curBook.title),'Control comparison');
+  assert.deepEqual(await page.evaluate(()=>window.nativeBackground),dark?[23,24,22]:[250,248,242]);
   await page.waitForTimeout(450); // Reader's existing expand transition
   const reader=await capture(page,['readback','readpill','aafab']);
   assert.deepEqual(home,reader,`Home/Reader mismatch ${width} dark=${dark}`);

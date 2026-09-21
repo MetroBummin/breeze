@@ -1,5 +1,27 @@
 /* Shared pull-to-refresh for Home and both shelves. Never owns Reader gestures. */
 let libraryRefreshTask=null;
+// Translate only shelf content, never the fixed dock or Reader geometry.
+const libraryRefreshMotion=(()=>{
+  const root=document.documentElement,indicator=document.getElementById('library-refresh');
+  let timer=0,owner='';
+  function clear(){
+    clearTimeout(timer);owner='';
+    root.classList.remove('library-pulling','library-refresh-motion');
+    ['--library-pull','--library-pull-progress','--library-pull-spin'].forEach(name=>root.style.removeProperty(name));
+    indicator.hidden=true;
+  }
+  function draw(distance,pulling=false){
+    clearTimeout(timer);owner=activeAppView();
+    root.classList.add('library-refresh-motion');
+    root.classList.toggle('library-pulling',pulling);
+    root.style.setProperty('--library-pull',distance+'px');
+    root.style.setProperty('--library-pull-progress',String(Math.min(1,distance/44)));
+    root.style.setProperty('--library-pull-spin',distance*4+'deg');
+    if(distance>0) indicator.hidden=false;
+    else timer=setTimeout(clear,460);
+  }
+  return {draw,clear,changed:()=>!!owner && owner!==activeAppView()};
+})();
 function libraryRefreshAllowed(){
   return ['home','casuals','longform'].includes(activeAppView()) &&
     !document.querySelector('#settings-modal.on,#add-modal.on,#edit-modal.on,#onboarding:not([hidden])');
@@ -9,11 +31,9 @@ function refreshLibrary(){
   if(!libraryRefreshAllowed()) return Promise.resolve();
   const view=activeAppView();
   const indicator=document.getElementById('library-refresh');
-  indicator.hidden=false;
   indicator.classList.add('refreshing');
-  indicator.style.setProperty('--refresh-offset','0px');
-  indicator.querySelector('span').textContent='↻';
-  indicator.querySelector('.refresh-label').textContent='새로고침 중';
+  indicator.setAttribute('aria-label','새로고침 중');
+  libraryRefreshMotion.draw(44);
   const redraw=()=>{
     if(activeAppView()!==view) return;
     if(view==='home') renderHome();
@@ -33,8 +53,10 @@ function refreshLibrary(){
       redraw();
       if(activeAppView()===view) toast('새로고침하지 못했어요. 연결을 확인해 주세요.');
     }finally{
-      indicator.hidden=true;
+      if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
+      else libraryRefreshMotion.clear();
       indicator.classList.remove('refreshing');
+      indicator.removeAttribute('aria-label');
       libraryRefreshTask=null;
     }
   })();
@@ -45,7 +67,10 @@ function refreshLibrary(){
   const indicator=document.getElementById('library-refresh');
   let start=null;
   let distance=0;
-  const reset=()=>{start=null;distance=0;if(!libraryRefreshTask) indicator.hidden=true;};
+  const reset=()=>{
+    const pulled=distance>0;start=null;distance=0;
+    if(pulled && !libraryRefreshTask) libraryRefreshMotion.draw(0);
+  };
   document.addEventListener('touchstart',event=>{
     reset();
     if(event.touches.length!==1 || libraryRefreshTask || !libraryRefreshAllowed() || window.scrollY>0) return;
@@ -59,23 +84,25 @@ function refreshLibrary(){
     if(event.touches.length!==1 || !libraryRefreshAllowed() || activeAppView()!==start.view || window.scrollY>0){reset();return;}
     const touch=event.touches[0],dx=touch.clientX-start.x,dy=touch.clientY-start.y;
     if(dy<0 || (Math.abs(dx)>10 && Math.abs(dx)>dy)){reset();return;}
-    if(dy<10) return;
+    if(dy<10){
+      if(distance>0){distance=0;libraryRefreshMotion.draw(0,true);}
+      return;
+    }
     if(event.cancelable) event.preventDefault();
-    distance=Math.min(100,dy*.5);
-    indicator.hidden=false;
-    indicator.style.setProperty('--refresh-offset',Math.min(distance,50)+'px');
-    indicator.querySelector('span').textContent=distance>=64?'↻':'↓';
-    indicator.querySelector('.refresh-label').textContent=distance>=64?'놓아서 새로고침':'당겨서 새로고침';
+    distance=96*(1-Math.exp(-dy/120));
+    libraryRefreshMotion.draw(distance,true);
   },{passive:false});
   document.addEventListener('touchend',event=>{
-    const ready=start && distance>=64 && libraryRefreshAllowed() && activeAppView()===start.view;
+    const ready=event.touches.length===0 && start && distance>=64 && libraryRefreshAllowed() && activeAppView()===start.view;
     if(distance>0 && event.cancelable) event.preventDefault();
     reset();
     if(ready) void refreshLibrary();
   },{passive:false});
   document.addEventListener('touchcancel',reset,{passive:true});
   const observer=new MutationObserver(()=>{
-    if(!libraryRefreshAllowed()) {reset();indicator.hidden=true;}
+    if(!libraryRefreshAllowed() || libraryRefreshMotion.changed()) {
+      start=null;distance=0;libraryRefreshMotion.clear();
+    }
   });
   document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden']}));
 })();
