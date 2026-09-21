@@ -189,9 +189,8 @@ let addingMeaning = false;
 function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }
 function answerFromLook(j, cached){
   const oldAi=j.ai||{};
-  /* `gloss` 는 옛 이름입니다 — 기기에 남아 있는 예전 답을 그대로 읽기 위해 함께 봅니다. */
   return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',
-      note:j.note||j.gloss||oldAi.note||oldAi.gloss||'',done:true,cached:!!cached},
+      done:true,cached:!!cached},
     alts:Array.isArray(j.alts)?j.alts:[], aiLemma:j.lemma||'' };
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
@@ -261,7 +260,7 @@ function createMeaning(root, text, source){
   if(already){
     touchMeaning(already); dropSuggestion(root,meaning); saveWords(); queueSync(); return already;
   }
-  const ai={...(from.ai||{}),ko:meaning,note:(from.ai&&(from.ai.note||from.ai.gloss))||''};
+  const ai={...(from.ai||{}),ko:meaning};
   /* 아직 뜻이 하나도 없는 낱말이면 대표 카드의 빈 뜻자리를 채웁니다. 빈 카드를
      남겨 두고 옆에 새 카드를 만들면, 화면에 없는 뜻이 저장소에만 생깁니다. */
   if(!String(base.ko||'').trim()){
@@ -509,34 +508,7 @@ function selectWord(k, span, peek){
   document.getElementById('word-modal-scrim').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
-  const life=wordLookupLife;requestAnimationFrame(()=>ensureMeaningDetail(k,life));
   if(remember) requestAnimationFrame(()=>{ if(words[k]){ touchMeaning(k); saveWords(); } });
-}
-const detailKey=(canonical,meaning)=>'d:'+String(canonical||'').toLowerCase()+'|'+sentenceHash(meaning);
-async function ensureMeaningDetail(k,life){
-  const w=words[k];if(!w||!String(w.ko||'').trim()||w.detailLoading)return;
-  const ai=w.ai||{};
-  if(String(ai.note||ai.gloss||'').trim())return;
-  const canonical=w.aiLemma||w.word||k,key=detailKey(canonical,w.ko);
-  const cached=await dictGet(key);
-  if(cached&&cached.gloss){
-    w.ai={...ai,ko:w.ko,pos:cached.pos||ai.pos||'',note:cached.gloss,done:true,cached:true};
-    saveWords();renderIfAlive(life);return;
-  }
-  if(navigator.onLine===false||!sb)return;
-  w.detailLoading=true;renderIfAlive(life);
-  try{
-    const answer=await dictCall({op:'detail',canonical,ko:w.ko,sentence:w.example||'',
-      device:sbUser?'':deviceId()},wordLookupSignal());
-    if(!answer||answer.error||!answer.gloss)return;
-    if(typeof answer.left==='number')rememberAiLeft(answer.left);
-    await dictPut(key,{pos:answer.pos||'',gloss:answer.gloss,done:true});
-    w.ai={...(w.ai||{}),ko:w.ko,pos:answer.pos||'',note:answer.gloss,done:true};
-    w.up=Date.now();saveWords();queueSync();
-  }finally{
-    if(words[k])delete words[k].detailLoading;
-    renderIfAlive(life);
-  }
 }
 
 function expandWordDetail(){
@@ -551,7 +523,6 @@ function expandWordDetail(){
   document.getElementById('word-modal-scrim').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   try{panel.focus({preventScroll:true});}catch(error){panel.focus();}
-  const life=wordLookupLife;requestAnimationFrame(()=>ensureMeaningDetail(selKey,life));
 }
 document.getElementById('word-peek-more').onclick=expandWordDetail;
 /* ---- 낱말 창을 치우는 일도 여기 하나뿐입니다 ----
@@ -621,7 +592,6 @@ function renderPanel(){
   clickedLine.textContent = original;
   clickedLine.classList.toggle('on', !!original);
   document.getElementById('p-ex').textContent = w.example || '—';
-  document.getElementById('p-naver').href = 'https://en.dict.naver.com/#/search?query='+encodeURIComponent(w.word);
   document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
   const mark = document.getElementById('p-mark');
   const marked = base.mark !== false;
@@ -674,9 +644,7 @@ function renderPanel(){
       : ((ai.done || ai.noteDone) ? '문맥 뜻' : '뜻');
     aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
-    /* 저장된 gloss는 어느 문장에서 다시 열어도 같은 Meaning 설명으로 재사용합니다. */
-    const said = ai.note || ai.gloss || '';
-    const top = said || (base.detailLoading ? '뜻 설명 불러오는 중…' : (w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : ''));
+    const top = w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : '';
     aiN.textContent = top;
     aiN.style.display = top ? 'block' : 'none';
     /* 이 문장만으로 안 풀릴 때 앞뒤 문장까지 붙여 한 번 더 묻는 길입니다.
@@ -802,7 +770,7 @@ function addMeaningFromInput(){
   if(!text){ addingMeaning=false; renderPanel(); return; }
   const root=base.root||selKey;
   const id=createMeaning(root, text, {clicked:base.clicked, example:base.example, book:base.book,
-    ai:{ko:text, pos:'', note:'', done:false}});
+    ai:{ko:text, pos:'', done:false}});
   if(!id) return;
   const card=words[id];
   if(card){ card.koEdited=true; card.up=Date.now(); saveWords(); queueSync(); }
@@ -1231,7 +1199,7 @@ function applyLook(w, j, k, opt){
   const settled = String(w.ko||'').trim();
   const keep = !!settled && (!!w.koEdited || meaningKey(j.ko||'') !== meaningKey(settled));
   if(!keep){
-    w.ai = { ko: j.ko || '', pos: j.pos || '', note: j.note || j.gloss || '', done:true,
+    w.ai = { ko: j.ko || '', pos: j.pos || '', done:true,
              /* 이 기기가 전에 물어봤던 답인지. 머리글 한 줄이 달라집니다 —
                 한도를 쓰지 않았다는 것을 그 자리에서 알 수 있게. */
              cached: !!opt.cached };

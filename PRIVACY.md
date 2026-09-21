@@ -99,15 +99,16 @@ Breeze와 저장소 제공자는 마스터 키·복구키 원문을 보유하지
 보내지 않습니다. 사용자가 새 뜻 찾기를 직접 요청한 경우에만 위의 생성 AI lookup이
 새로 실행됩니다.
 
-**상세창을 처음 열 때** — 저장된 Meaning에 detail cache가 없으면 canonical, 저장된
-한국어 Meaning, 그 Meaning을 처음 저장한 예문이 생성 AI 제공자에게 전달되어
-품사와 짧은 한국어 gloss를 만듭니다.
+**단어 상세창을 열 때** — 별도의 생성 AI 요청을 하지 않습니다. 이미 기기에 있는
+짧은 한국어 Meaning과 아래 영어 사전 metadata만 표시합니다. 과거 버전에 저장된
+`ai.note`/`ai.gloss` 값은 삭제 마이그레이션하지 않지만 새 런타임은 사용하지 않습니다.
 
 기기 표시(`breeze.device`)나 계정 식별자는 한도 확인을 위해 Breeze 서버까지만 가며,
 외부 AI 제공자에게는 보내지 않습니다.
 
 **생성 제공자** — OpenRouter를 통한 DeepSeek가 기본이고, 실패하면 Google(Gemini),
-Anthropic(Claude) 순으로 대체합니다. 처음 보는 item·사용자가 요청한 새 뜻 lookup과 lazy detail lookup에 사용합니다.
+Anthropic(Claude) 순으로 대체합니다. 처음 보는 item 또는 사용자가 직접 요청한 새 뜻
+lookup에만 사용합니다.
 
 **서버에 남는 것** — 한도와 운영 확인을 위한 호출 종류, 사용한 제공자와 모델,
 성공 여부, 응답 시간, 토큰 사용량입니다. 표제어, 읽던 문장과 그 지문·앞뒤 단어,

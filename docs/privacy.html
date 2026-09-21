@@ -125,9 +125,9 @@ tbody tr:last-child td{border-bottom:0}
 <ul><li>누른 낱말과 화면에 있던 형태</li><li><strong>그 낱말이 있던 문장 하나</strong> (최대 600자)</li><li>문장의 영어 token 목록과 사용자가 누른 token index</li></ul>
 <p>생성 AI는 word/expression 여부, 저장할 canonical, 현재 문장의 lexical member token, 짧은 한국어 뜻을 반환합니다. 작은 뜻 필에서는 이 최소 결과만 사용합니다.</p>
 <p><strong>저장한 lexical item을 다른 문장에서 다시 만난 경우</strong> — 기기에 저장된 Meaning을 즉시 보여 줍니다. 이 재사용 자체로 문장이나 저장된 Meaning 후보를 외부 AI 제공자에게 보내지 않습니다. 사용자가 새 뜻 찾기를 직접 요청한 경우에만 위의 생성 AI lookup이 새로 실행됩니다.</p>
-<p><strong>상세창을 처음 열 때</strong> — 저장된 Meaning에 detail cache가 없으면 canonical, 저장된 한국어 Meaning, 그 Meaning을 처음 저장한 예문이 생성 AI 제공자에게 전달되어 품사와 짧은 한국어 gloss를 만듭니다.</p>
+<p><strong>단어 상세창을 열 때</strong> — 별도의 생성 AI 요청을 하지 않습니다. 이미 기기에 있는 짧은 한국어 Meaning과 아래 영어 사전 metadata만 표시합니다. 과거 버전에 저장된 <code>ai.note</code>/<code>ai.gloss</code> 값은 삭제 마이그레이션하지 않지만 새 런타임은 사용하지 않습니다.</p>
 <p>기기 표시(<code>breeze.device</code>)나 계정 식별자는 한도 확인을 위해 Breeze 서버까지만 가며, 외부 AI 제공자에게는 보내지 않습니다.</p>
-<p><strong>생성 제공자</strong> — OpenRouter를 통한 DeepSeek가 기본이고, 실패하면 Google(Gemini), Anthropic(Claude) 순으로 대체합니다. 처음 보는 item·사용자가 요청한 새 뜻 lookup과 lazy detail lookup에 사용합니다.</p>
+<p><strong>생성 제공자</strong> — OpenRouter를 통한 DeepSeek가 기본이고, 실패하면 Google(Gemini), Anthropic(Claude) 순으로 대체합니다. 처음 보는 item 또는 사용자가 직접 요청한 새 뜻 lookup에만 사용합니다.</p>
 <p><strong>서버에 남는 것</strong> — 한도와 운영 확인을 위한 호출 종류, 사용한 제공자와 모델, 성공 여부, 응답 시간, 토큰 사용량입니다. 표제어, 읽던 문장과 그 지문·앞뒤 단어, 책 제목과 책 지문, 저장된 뜻 후보, AI가 준 한국어 뜻, 사용자가 직접 적은 뜻은 운영 기록에 저장하지 않습니다.</p>
 <p>하루에 몇 번 불렀는지(<code>ai_usage</code>)는 한도를 지키기 위해 따로 셉니다.</p>
 <p>자세한 설계는 <a href="dictionary.html">DICT.md</a> 에 있습니다.</p>

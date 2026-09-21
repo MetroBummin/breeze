@@ -10,8 +10,7 @@ const telemetry=readFileSync(resolve(root,'server/dict/telemetry.ts'),'utf8');
 assert.match(server,/OPENROUTER_MODEL="deepseek\/deepseek-v4-flash-0731"/);
 assert.match(server,/required:\["kind","canonical","members","ko"\]/);
 assert.match(server,/maxTokens:120,schema:LOOK_SCHEMA/);
-assert.match(server,/const DETAIL_SCHEMA=.*required:\["pos","gloss"\]/);
-assert.match(server,/maxTokens:180,schema:DETAIL_SCHEMA/);
+assert.doesNotMatch(server,/DETAIL_SCHEMA|detailPrompt|opDetail|op==="detail"/);
 
 assert.doesNotMatch(server,/JEV_API_KEY|JEV_MODEL|api\.typesafe\.ai|function opJudge|AI_REQUIRED/);
 assert.doesNotMatch(server,/function opRoute|function opPhrase|function opRepair|JEV_PHRASE_CONFIDENCE/);
@@ -31,10 +30,8 @@ assert.match(firstLookup,/loadCachedLook/);
 assert.match(firstLookup,/fetchLook\(k,\{life,node\}\)/);
 assert.doesNotMatch(firstLookup,/op:'judge'|ensureMeaningDetail|routeJevTarget/);
 
-assert.match(client,/function ensureMeaningDetail/);
-assert.match(client,/op:'detail'/);
-assert.match(client,/function expandWordDetail\([\s\S]*?ensureMeaningDetail/);
-assert.doesNotMatch((client.match(/function renderWordPeek\([\s\S]*?\n\}/)||[''])[0],/ensureMeaningDetail/);
+assert.doesNotMatch(client,/ensureMeaningDetail|detailKey|op:'detail'|detailLoading/);
+assert.doesNotMatch(client,/ai\.note\b|ai\.gloss\b|j\.note\b|j\.gloss\b|oldAi\.note\b|oldAi\.gloss\b/);
 
 for(const path of [
   'public/lexicon/lexicon.min.json',
@@ -47,7 +44,7 @@ for(const path of [
   assert.equal(existsSync(resolve(root,path)),false,`${path} survived the OEWN rollback`);
 }
 
-assert.match(telemetry,/\|"detail"/);
+assert.doesNotMatch(telemetry,/\|"detail"/);
 assert.doesNotMatch(telemetry,/\|"judge"|\|"route"|\|"phrase"|\|"repair"|\|"jev"/);
 
 console.log('Lookup architecture checks passed');

@@ -856,18 +856,17 @@ assert.match(index, /<div id="p-word"><\/div>/,
 for(const gone of [/\.p-inline-edit/, /#p-word\[contenteditable/, /#p-word-wrap/]){
   assert.doesNotMatch(dictionaryCss, gone, `The headword editor's styling survived (${gone})`);
 }
-/* ── 뜻 아래 한 줄 ──
-   detail gloss는 특정 문장의 번역이 아니라 저장 Meaning 자체의 짧은 설명입니다.
-   따라서 저장 Meaning을 다른 문장에서 즉시 재사용할 때도 같은 gloss를 함께 쓸 수 있습니다. */
-assert.match(dictionarySource, /const said = ai\.note \|\| ai\.gloss \|\| '';/,
-  'Saved Meaning detail gloss is hidden again when the same Meaning is reused locally');
+/* 상세창은 이미 가진 짧은 Meaning과 사전 metadata만 씁니다. 예전 ai.note/gloss는
+   저장소에서 파괴적으로 지우지 않되 새 런타임이 읽거나 표시하지 않습니다. */
+assert.doesNotMatch(dictionarySource, /ai\.note\b|ai\.gloss\b|j\.note\b|j\.gloss\b|oldAi\.note\b|oldAi\.gloss\b/,
+  'The client still consumes legacy AI gloss data');
 assert.doesNotMatch(index, /id="p-ai-gloss"/,
   'The second, general explanation line is back under the meaning');
 const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
 assert.match(dictServer, /required:\["kind","canonical","members","ko"\]/,
   'The mini lookup no longer returns only lexical identity plus the short Korean meaning');
-assert.match(dictServer, /const DETAIL_SCHEMA=.*required:\["pos","gloss"\]/,
-  'Gloss enrichment is no longer a separate lazy detail contract');
+assert.doesNotMatch(dictServer, /DETAIL_SCHEMA|detailPrompt|opDetail|op==="detail"/,
+  'The Edge Function still exposes AI detail enrichment');
 assert.match(dictServer, /clicked_index:/,
   'The mini lookup no longer knows which token the reader actually tapped');
 
@@ -1650,12 +1649,16 @@ assert.match(dictionarySource,/phraseParts:phrase\.parts,phraseGaps:phrase\.gaps
   'DeepSeek member indexes no longer preserve discontinuous expression identity');
 assert.match(dictionarySource,/phraseCardKey\(phrase\.canonical\)/,
   'Stored expression identity is rebuilt from members instead of the AI canonical form');
-assert.match(dictionarySource,/op:'detail'/,
-  'Opening word details cannot lazy-load the gloss');
-assert.match(dictionarySource,/function ensureMeaningDetail/,
-  'Gloss enrichment is not isolated from the mini-pill lookup path');
+assert.doesNotMatch(dictionarySource,/op:'detail'|ensureMeaningDetail|detailKey|detailLoading/,
+  'Opening word details can still lazy-load an AI gloss');
 assert.doesNotMatch((dictionarySource.match(/async function fetchDict\([\s\S]*?\n\}/)||[''])[0],/op:'judge'|op:'detail'/,
   'A brand-new mini lookup still pays remote-judge or detail latency');
+assert.doesNotMatch(index,/id="p-naver"|네이버 사전에서 보기/,
+  'The word popup still links readers to Naver Dictionary');
+assert.doesNotMatch(dictionaryCss,/#p-naver/,
+  'Removed Naver Dictionary link styling survived');
+assert.doesNotMatch(dictionarySource,/dict\.naver\.com|p-naver/,
+  'The word popup still builds a Naver Dictionary URL');
 assert.match(readerSource,/new Array\(parts\.length-1\)\.fill\(0\)/,
   'Legacy phraseParts records no longer default to contiguous read compatibility');
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),/savedPhraseMatch\(matches,index,item\)/,

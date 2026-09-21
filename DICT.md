@@ -25,9 +25,9 @@
      → DeepSeek mini lookup
 
 작은 뜻 필에서 상세창 열기
-  → detail cache가 있으면 즉시 표시
-  → 없으면 DeepSeek detail lookup
-     → 품사 + 짧은 한국어 gloss
+  → 저장된 짧은 한국어 Meaning을 그대로 표시
+  → IPA·음성·영어 정의는 dictionaryapi.dev metadata를 사용
+  → 추가 AI 호출 없음
 ```
 
 ### DeepSeek의 역할
@@ -91,8 +91,9 @@ members: [gave, up]
 
 - 저장한 뜻은 작은 필에서 즉시 보여 줍니다.
 - 처음 보는 item이나 사용자가 새 뜻 찾기를 요청한 경우에만 AI mini lookup을 기다립니다.
-- 필을 눌러 상세창에 들어갈 때만 품사·gloss를 lazy-load합니다.
+- 필을 눌러 상세창에 들어가도 별도의 AI lookup을 시작하지 않습니다.
 - IPA·음성·영어 정의는 `api.dictionaryapi.dev`에서 별도로 받으며 한국어 뜻을 결정하지 않습니다.
+- 외부 사전으로 보내는 링크는 제공하지 않습니다.
 - 뜻에 필요한 손짓은 만들기(＋) · 고르기(칩) · 지우기(×)입니다.
 - 사용자가 직접 만든 뜻을 AI가 덮어쓰지 않습니다.
 - 낱말을 길게 누르는 문장 해석은 word lookup과 별개의 기능입니다.
@@ -102,7 +103,7 @@ members: [gave, up]
 | 기능 | 로그인 전 | 로그인 후 |
 | --- | --- | --- |
 | 영어 사전 metadata·기기 단어장 | 가능 | 가능 |
-| AI 낱말 뜻/상세 | 기기당 체험 횟수 안에서 가능 | 서버 설정 하루 한도 안에서 가능 |
+| AI 낱말 뜻 | 기기당 체험 횟수 안에서 가능 | 서버 설정 하루 한도 안에서 가능 |
 | 문장 전체 설명 | 불가 | 같은 AI 사용량 풀에서 더 높은 비용으로 차감 |
 | 기기 간 동기화 | 불가 | 가능 |
 
@@ -114,10 +115,12 @@ members: [gave, up]
 ### 기기 안
 
 - 문맥별 mini lookup cache
-- Meaning별 detail cache
 - 영어 사전 metadata
 - 단어장: lexical item, 뜻, 별표, 예문, 책 제목
 - 사용자가 직접 만든 뜻
+
+기존 기기에 남아 있는 `ai.note`/`ai.gloss` 또는 과거 detail cache는 파괴적으로
+마이그레이션하지 않습니다. 새 런타임은 이 값을 읽거나 표시하거나 새로 만들지 않습니다.
 
 ### Breeze 서버와 AI 제공자
 
@@ -126,9 +129,6 @@ token 목록과 클릭 token index가 생성 AI 제공자에게 전달됩니다.
 
 이미 저장한 lexical item의 Meaning을 다시 보여 주는 것만으로는 문장이나 Meaning 후보를
 외부 판정 제공자에게 보내지 않습니다.
-
-상세창을 처음 열어 gloss가 필요할 때는 저장된 canonical, 한국어 Meaning, 최초 예문이
-생성 AI 제공자에게 전달됩니다.
 
 Breeze 서버는 문장 본문이나 Meaning 후보를 공용 사전 데이터로 저장하지 않습니다.
 운영·한도 확인을 위해 호출 종류, 제공자/모델, 성공 여부, 응답 시간, 토큰 사용량은
@@ -142,7 +142,7 @@ Breeze 서버는 문장 본문이나 Meaning 후보를 공용 사전 데이터�
 - DeepSeek = lexical intelligence.
 - Saved Meaning reuse = local-only.
 - Mini pill = 최소 생성.
-- Detail = lazy enrichment.
+- Detail popup = 이미 가진 Meaning과 dictionaryapi.dev metadata만 표시.
 - `dictionaryapi.dev` = IPA·음성·영어 정의 metadata only.
 - OEWN/Breeze Lexicon/lazy Korean repair = lookup critical path에 없음.
 - 같은 문장 cache는 네트워크보다 먼저 확인합니다.
@@ -152,7 +152,7 @@ Breeze 서버는 문장 본문이나 Meaning 후보를 공용 사전 데이터�
 
 | 위치 | 역할 |
 | --- | --- |
-| `scripts/dictionary/dictionary.js` | mini lookup, local Meaning reuse, detail cache, 단어장 |
+| `scripts/dictionary/dictionary.js` | mini lookup, local Meaning reuse, 단어 상세창, 단어장 |
 | `scripts/dictionary/sentence.js` | 꾹 누르기 · 문장 해석 창 |
 | `server/dict/index.ts` | DeepSeek/fallback 요청, 한도 |
 | `server/dict/telemetry.ts` | 제공자 latency/token telemetry |

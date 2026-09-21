@@ -44,7 +44,8 @@ try{
     const key=keyOf('patient');
     words[key]={word:'patient',clicked:'patient',forms:[key],ko:'참을성 있는',phon:'',defs:[],kodict:[],
       example:'A patient reader keeps resilient words close to their context.',book:curBook.title,
-      status:1,mark:true,addedAt:1,up:1,ai:{ko:'참을성 있는',done:true}};
+      status:1,mark:true,addedAt:1,up:1,
+      ai:{ko:'참을성 있는',note:'옛 설명',gloss:'옛 gloss',done:true}};
     openWord(key,span);
   });
   await page.waitForFunction(()=>wordPeekOpen());
@@ -69,6 +70,10 @@ try{
   assert.equal(await page.locator('#word-peek').isVisible(),false,'pill remained visible behind details');
   assert.equal(await page.locator('#p-word').textContent(),'patient','existing detail content was not reused');
   assert.equal(await page.locator('#p-close').count(),0,'centered detail popup still exposes an X button');
+  assert.equal(await page.locator('#p-ai-note').textContent(),'','legacy AI gloss is still displayed');
+  assert.equal(await page.locator('#p-naver').count(),0,'Naver Dictionary link survived');
+  assert.deepEqual(await page.evaluate(()=>({note:words.patient.ai.note,gloss:words.patient.ai.gloss})),
+    {note:'옛 설명',gloss:'옛 gloss'},'opening details destructively migrated legacy AI gloss data');
   await page.locator('#panel').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const centered=await page.locator('#panel').boundingBox();
   assert.ok(centered&&Math.abs(centered.x+centered.width/2-550)<2&&Math.abs(centered.y+centered.height/2-400)<2,

@@ -95,28 +95,7 @@ async function opLook(body:any,userId:string|null,seeding=false){
   if(kind==="word"){const lower=canonical.toLowerCase();canonical=cands.includes(lower)||lower===word?lower:(word||cands[0]||lower)}
   else if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(canonical))canonical=word;
   const ko=clean(parsed.ko,60);if(!ko)return json({error:"empty_answer"},502);
-  return json({kind,canonical,members,ko,lemma:canonical,pos:"",gloss:"",note:"",phrase:"",alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
-}
-
-const DETAIL_SCHEMA={type:"object",additionalProperties:false,required:["pos","gloss"],properties:{pos:{type:"string"},gloss:{type:"string"}}};
-function detailPrompt(canonical:string,ko:string,sentence:string){return `표제어: ${canonical}
-저장된 한국어 뜻: ${ko}
-처음 저장된 문장: ${sentence||"(없음)"}
-
-저장된 이 뜻 하나를 한국인 영어 학습자에게 짧게 설명하세요. 새로운 뜻을 만들거나 다른 sense를 추가하지 마세요.
-- pos: 명사|동사|형용사|부사|전치사|기타 중 하나
-- gloss: 저장된 한국어 뜻이 정확히 어떤 의미인지 쉬운 한국어 한 문장. 특정 문장 번역이 아니라 같은 sense에 재사용 가능해야 합니다.
-
-{"pos":"","gloss":""}`}
-async function opDetail(body:any,userId:string|null){
-  const canonical=clean(body.canonical||body.word,120),ko=clean(body.ko,80),sentence=clean(body.sentence,600);
-  if(!canonical||!ko)return json({error:"bad_detail_request"},400);
-  let anonLeft:number|null=null,userLeft:number|null=null;
-  if(!userId){const verdict=await takeAnonQuota(clean(body.device,64));if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);if(verdict.status!=="ok")return json({error:"login_required"},401);anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE))}else{const quota=await takeQuota(userId);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);userLeft=quota.left}
-  const out=await ask({action:"detail",prompt:detailPrompt(canonical,ko,sentence),maxTokens:180,schema:DETAIL_SCHEMA});
-  const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
-  const gloss=clean(parsed.gloss,400);if(!gloss)return json({error:"empty_answer"},502);
-  return json({pos:clean(parsed.pos,20),gloss,provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
+  return json({kind,canonical,members,ko,lemma:canonical,pos:"",phrase:"",alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
 }
 
 const EXPLAIN_SCHEMA={type:"object",additionalProperties:false,required:["ko","points"],properties:{ko:{type:"string"},points:{type:"array",items:{type:"string"}}}};
@@ -131,4 +110,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="detail")return await opDetail(body,userId);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});

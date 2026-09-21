@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="styles/base.css?v=8fadfe0e">
   <link rel="stylesheet" href="styles/home.css?v=b266230a">
   <link rel="stylesheet" href="styles/reader.css?v=1fcb5217">
-  <link rel="stylesheet" href="styles/dictionary.css?v=fca7186a">
+  <link rel="stylesheet" href="styles/dictionary.css?v=ada210eb">
   <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
   <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
   <link rel="stylesheet" href="styles/onboarding.css?v=da44f980">
@@ -83,7 +83,7 @@
   <script defer src="scripts/importers/rss.js?v=f33bf95e"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=59c06c86"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=9f1232aa"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=18fee05e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=47482381"></script>
@@ -310,8 +310,7 @@
         <div class="m">
           <span class="mk" id="p-ai-ko"></span><span class="pos" id="p-ai-pos"></span>
         </div>
-        <!-- 뜻 아래 한 줄은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질은
-             사전이 이미 하는 말이라, 이 자리에는 문장 이야기만 둡니다. -->
+        <!-- 뜻을 아직 받지 못했거나 다시 찾기가 오래 걸릴 때만 상태를 알리는 줄입니다. -->
         <div class="note" id="p-ai-note"></div>
         <!-- 이 문장만으로 안 풀릴 때. 앞뒤 문장까지 붙여 다시 묻고, 돌아온 답은
              지금 뜻을 덮지 않고 뜻 하나로 더해집니다. -->
@@ -348,7 +347,6 @@
       <div id="p-defs"></div>
       <div class="p-sec">저장된 예문</div>
       <div id="p-ex"></div>
-      <a id="p-naver" target="_blank" rel="noopener">네이버 사전에서 보기 ↗</a>
     </div>
   </div>
 </div>
