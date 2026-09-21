@@ -1,220 +1,175 @@
-    'const { lemma, lemmaCands, isAcro } = globalThis.BreezeLexical || {};\n' +
-    "if (!lemma || !lemmaCands || !isAcro) throw new Error('BreezeLexical core failed to load');\n" +
-    '\n' +
-    'function sentenceOf(span){\n' +
-    '  if(span && span.dataset && span.dataset.example) return span.dataset.example;\n' +
-    '  /* 글자판에서는 누른 **자리**가 문장을 정합니다. 아래의 글자로 찾는 길은 한\n' +
-    '     문단에 같은 낱말이 두 번 나오면 늘 앞의 것을 집었습니다 — 꾹 눌러 문장을\n' +
-    '     물어볼 때 옆 문장이 뜨던 까닭이 그것이었고, 낱말 카드에 적히는 예문도\n' +
-    '     같은 자리에서 어긋났습니다(scripts/reader/reader.js 의 `textSentencePartAt`). */\n' +
-    "  const spot = typeof textSentencePartAt === 'function' ? textSentencePartAt(span) : null;\n" +
-    '  if(spot && spot.sentence) return spot.sentence;\n' +
-    "  const paragraph = span && span.closest ? span.closest('[data-pi]') : null;\n" +
-    "  const paraText = paragraph ? (curBook.paras[+paragraph.dataset.pi]||'') : '';\n" +
-    '  const sents = paraText.match(/[^.!?…]+[.!?…]*/g) || [paraText];\n' +
-    "  const re = new RegExp('\\\\b'+span.textContent.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\\\b','i');\n" +
-    '  return (sents.find(s=>re.test(s)) || sents[0]).trim();\n' +
-    '}\n' +
-    "const LOOKUP_TOKEN_RE=/[A-Za-z](?:[A-Za-z'’\\-]*[A-Za-z])?/g;\n" +
-    'function lookupSentenceTokens(sentence){\n' +
-    '  const tokens=[];let match;LOOKUP_TOKEN_RE.lastIndex=0;\n' +
-    "  while((match=LOOKUP_TOKEN_RE.exec(String(sentence||'')))) tokens.push({text:match[0],start:match.index,end:match.index+match[0].length});\n" +
-    '  return tokens;\n' +
-    '}\n' +
-    'function lookupClickedTokenIndex(span,sentence,tokens){\n' +
-    '  const hinted=Number(span&&span.dataset&&span.dataset.clickedTokenIndex);\n' +
-    '  if(Number.isInteger(hinted)&&hinted>=0&&hinted<tokens.length)return hinted;\n' +
-    "  const spot=typeof textSentencePartAt==='function'?textSentencePartAt(span):null;\n" +
-    '  if(spot&&Number.isInteger(spot.tokenIndex)&&spot.tokenIndex>=0&&spot.tokenIndex<tokens.length)return spot.tokenIndex;\n' +
-    `  const raw=String((span&&span.textContent)||'').replace(/’/g,"'").toLowerCase();\n` +
-    `  const matches=tokens.map((token,index)=>({token,index})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===raw);\n` +
-    '  return matches.length===1?matches[0].index:-1;\n' +
-    '}\n' +
-    'function lexicalIdentityFromMembers(tokens,indexes,canonical){\n' +
-    '  const ordered=[...new Set(indexes)].sort((a,b)=>a-b);\n' +
-    '  const parts=ordered.map(index=>lemmaCands(tokens[index].text)[0]||tokens[index].text.toLowerCase());\n' +
-    '  const gaps=ordered.slice(1).map((index,at)=>Math.max(0,index-ordered[at]-1));\n' +
-    "  const surface=ordered.map((index,at)=>`${at&&gaps[at-1]>0?' … ':at?' ':''}${tokens[index].text}`).join('');\n" +
-    "  return {parts,gaps,surface,canonical:String(canonical||'').replace(/\\s+/g,' ').trim(),indexes:ordered};\n" +
-    '}\n' +
-    '/* 한 문장만으로는 뜻이 안 잡히는 자리가 있습니다. 앞뒤 문장을 한 번 더 붙여\n' +
-    '   물어보면 대명사·생략·비유가 풀립니다. */\n' +
-    'function expandedContextFor(w, sentence){\n' +
-    "  const target=String(sentence||'').replace(/\\s+/g,' ').trim();\n" +
-    '  if(!target || !curBook || !Array.isArray(curBook.paras)) return target;\n' +
-    "  const normalized=value=>String(value||'').replace(/\\s+/g,' ').trim();\n" +
-    '  const index=curBook.paras.findIndex(para=>normalized(para).includes(target));\n' +
-    '  if(index<0) return target;\n' +
-    '  const here=normalized(curBook.paras[index]);\n' +
-    '  const parts=here.match(/[^.!?…]+[.!?…]*/g)||[here];\n' +
-    '  const at=Math.max(0,parts.findIndex(part=>normalized(part)===target || normalized(part).includes(target)));\n' +
-    '  const before=at>0 ? parts[at-1] : curBook.paras[index-1];\n' +
-    '  const after=at<parts.length-1 ? parts[at+1] : curBook.paras[index+1];\n' +
-    "  return [before,target,after].filter(Boolean).map(normalized).join(' ').slice(0, 600);\n" +
-    '}\n' +
-    'function readerWordNodes(selector){\n' +
-    '  const nodes=[...document.querySelectorAll(selector)];\n' +
-    '  /* 숨겨 둔 original session 은 다음 mode switch 를 위한 보관물이지 Text interaction\n' +
-    '     의 surface 가 아닙니다. Text 에서 단어 하나를 만질 때 EPUB spine 비용을 내지\n' +
-    '     않습니다. */\n' +
-    "  if(currentReaderMode==='original' && originalSession && originalSession.frames){\n" +
-    '    originalSession.frames.forEach(frame=>{\n' +
-    '      try{ if(frame&&frame.contentDocument) nodes.push(...frame.contentDocument.querySelectorAll(selector)); }catch(e){}\n' +
-    '    });\n' +
-    '  }\n' +
-    '  return nodes;\n' +
-    '}\n' +
-    'function addWord(k, span){\n' +
-    `  const raw = span.textContent.replace(/’/g,"'");\n` +
-    '  const acro = isAcro(raw);\n' +
-    "  const display = acro ? raw.replace(/s$/,'') : k;\n" +
-    '  const forms = acro ? [display] : [...new Set([k, ...lemmaCands(raw), raw.toLowerCase()])];\n' +
-    '  const buried = dead[k] || 0;\n' +
-    "  words[k] = { word:display, clicked:raw, forms, ko:'', phon:'', defs:[],\n" +
-    '    example:sentenceOf(span), book:curBook.title, status:1, mark:true,\n' +
-    '    addedAt:Date.now(), up:Math.max(Date.now(),buried+1) };\n' +
-    '  recentWordOpens.set(k, Date.now());\n' +
-    '  /* 먼저 필을 그립니다. 저장·색칠·네트워크는 첫 paint 다음 프레임으로 미뤄\n' +
-    '     탭한 손가락에 보이는 반응이 다른 모든 일보다 앞서게 합니다. */\n' +
-    '  selectWord(k, span, true);\n' +
-    '  markPendingWord(k, buried);\n' +
-    '  const life=wordLookupLife;\n' +
-    '  requestAnimationFrame(()=>requestAnimationFrame(()=>{\n' +
-    '    if(!wordLookupAlive(life)||!words[k]) return;\n' +
-    '    requestDurableLocalStorage();\n' +
-    '    delete dead[k]; save(LS_DEAD, dead);\n' +
-    '    saveWords(); paintWord(k);\n' +
-    '    fetchDict(k,span);\n' +
-    '  }));\n' +
-    '}\n' +
-    '/* ---- 뜻이 확정된 낱말 ----\n' +
-    '   낱말을 확정시키는 길은 둘뿐입니다.\n' +
-    '\n' +
-    '     ① AI 가 지금 문장의 대표 뜻을 답했다      `applyLook`\n' +
-    '     ② 사람이 뜻을 채택했다                    `createMeaning`\n' +
-    '                                               (추천 뜻 클릭 · ＋ 직접 입력)\n' +
-    '\n' +
-    '   둘 다 `ko` 를 남깁니다. 그래서 확정 여부를 묻는 자리는 여기 하나면 됩니다.\n' +
-    '   묻는 것은 "AI 가 답했나" 가 아니라 **"쓸 뜻 하나가 정해졌나"** 입니다 — 그래서\n' +
-    '   AI 가 한도에 걸리든 실패하든, 사람이 고른 뜻은 그대로 확정입니다.\n' +
-    '\n' +
-    '   한국어 뜻은 저장된 Meaning 또는 문맥 AI 답만 채웁니다. */\n' +
-    'function hasResolvedMeaning(word){\n' +
-    '  if(!word) return false;\n' +
-    "  return !!(String(word.ko||'').trim() || String((word.ai&&word.ai.ko)||'').trim());\n" +
-    '}\n' +
-    '/* 뜻이 아직 없을 때 그 자리에 적는 한 줄. 왜 못 정했는지와, 아래에서 고를 수\n' +
-    '   있는지를 말합니다. */\n' +
-    '/** @param {string} off @returns {string} */\n' +
-    'function meaningWaitLine(off){\n' +
-    '  /* 연결이 없다는 것만 말합니다. "문맥 뜻"이 무엇인지, 어디서 못 받았는지는\n' +
-    '     안에서 벌어진 일이지 읽는 사람이 알 바가 아닙니다. */\n' +
-    "  if(off === 'offline'){\n" +
-    "    return '오프라인이라 뜻을 찾을 수 없어요';\n" +
-    '  }\n' +
-    '  const why =\n' +
-    "      off === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요'\n" +
-    "    : off === 'trial'   ? '무료 체험을 다 썼어요'\n" +
-    "    : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'\n" +
-    "    : off === 'error'   ? '문맥 뜻을 받지 못했어요'\n" +
-    "    :                     '아직 뜻이 정해지지 않았어요';\n" +
-    '  return why;\n' +
-    '}\n' +
-    '/* ---- 이번 조회에서 처음 만들어진 낱말 ----\n' +
-    '   낱말을 누르는 그 순간 단어장에 자리가 하나 생기고, 뜻은 그 뒤에 옵니다. 그래서\n' +
-    '   AI 를 기다리는 동안 창을 닫으면 뜻이 하나도 없는 낱말이 남았습니다. 한도가\n' +
-    '   떨어졌을 때도, 요청이 실패했을 때도 같은 껍데기가 남습니다 — 실사용에서 제일\n' +
-    '   자주 만나는 쓰레기입니다.\n' +
-    '\n' +
-    '   규칙은 하나입니다: **새 조회는 창이 살아 있는 동안에만 낱말이 될 수 있습니다.**\n' +
-    '   확정되지 않은 채로 창이 끝나면 그 조회는 그 자리에서 없던 일입니다.\n' +
-    '\n' +
-    '   그래서 이 표는 **창이 열려 있는 동안만** 삽니다. 닫힌 뒤에도 남아 답을 기다리는\n' +
-    '   자리는 없습니다 — 늦게 온 답이 낱말을 되살리는 길을 아예 만들지 않기 위해서,\n' +
-    '   그리고 동기화가 신경 쓸 것이 애초에 안 생기게 하기 위해서입니다. 지우는 것은\n' +
-    '   이 조회가 만든 것뿐이라, 전에 저장해 둔 낱말은 여기 적히지도 않습니다\n' +
-    '   (`addWord` 만 적습니다). */\n' +
-    'let pendingWord = null;\n' +
-    'function markPendingWord(k, buried){ pendingWord = { key:k, deadAt:buried || 0 }; }\n' +
-    '/* 대표 카드가 확정됐거나, 이 낱말에 딸린 뜻 카드가 하나라도 확정됐으면 확정입니다\n' +
-    '   — ＋ 로 적은 두 번째 뜻부터는 딸린 카드가 되기 때문입니다. */\n' +
-    'function pendingWordResolved(key){\n' +
-    '  const w = words[key];\n' +
-    '  if(!w) return true;\n' +
-    '  if(hasResolvedMeaning(w)) return true;\n' +
-    '  return Object.values(words).some(item=>item && item.root===key && hasResolvedMeaning(item));\n' +
-    '}\n' +
-    '/* 확정되는 순간 이 낱말은 더 이상 "이번 조회가 만든 껍데기"가 아닙니다. 표를\n' +
-    '   그때 떼지 않으면, 뜻을 받은 뒤에 사람이 그 뜻을 × 로 지웠을 때 낱말까지 함께\n' +
-    '   사라집니다 — 그것은 이 규칙이 볼 일이 아니라 단어장을 손보는 일이고,\n' +
-    '   `deleteMeaning` 은 빈 뜻자리를 남기기로 되어 있습니다.\n' +
-    '   화면을 다시 그리는 자리에서 봅니다. 사람이 뜻을 만질 수 있으려면 그 뜻이 먼저\n' +
-    '   화면에 그려져야 하므로, 여기를 지나지 않고 지워지는 뜻은 없습니다. */\n' +
-    'function settlePendingWord(){\n' +
-    '  if(pendingWord && pendingWordResolved(pendingWord.key)) pendingWord = null;\n' +
-    '}\n' +
-    'function discardPendingWord(){\n' +
-    '  const held = pendingWord;\n' +
-    '  pendingWord = null;\n' +
-    '  if(!held || pendingWordResolved(held.key)) return;\n' +
-    '  delete words[held.key];\n' +
-    '  /* 지웠던 낱말을 다시 눌렀다가 그냥 닫은 것이라면, `addWord` 가 떼어 낸 부고를\n' +
-    '     그 시각 그대로 도로 붙입니다. 새 부고를 쓰는 것이 아니라 `addWord` 가 한 일을\n' +
-    '     되돌리는 것이라, 이 조회 전후의 저장소가 한 글자도 다르지 않게 됩니다. */\n' +
-    '  if(held.deadAt){ dead[held.key]=held.deadAt; save(LS_DEAD, dead); }\n' +
-    '  saveWords();\n' +
-    '  paintWord(held.key);\n' +
-    '}\n' +
-    '/* 같은 낱말을 눌러 사전 창을 막 닫았다 다시 여는 것은 "더 모른다"가 아니라\n' +
-    '   화면을 다시 확인하는 일입니다. 별은 읽는 동안 쌓이는 소음이 아니라, 시간을\n' +
-    '   두고 다시 막혔을 때만 하나 올립니다. 이 기록은 동기화할 학습 데이터가 아니라\n' +
-    '   잠깐의 손짓이므로 기기 메모리에만 둡니다. */\n' +
-    'const RECENT_WORD_OPEN_MS = 30000;\n' +
-    'const recentWordOpens = new Map();\n' +
-    'function deferWordOpenBump(id){\n' +
-    '  requestAnimationFrame(()=>{\n' +
-    '    const item=words[id];if(!item||item.status>=3)return;\n' +
-    '    item.status++;item.up=Date.now();saveWords();paintWord(item.root||id);queueSync();\n' +
-    '    if(selKey===id)renderWordLookup();\n' +
-    '  });\n' +
-    '}\n' +
-    '/* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 저장한 뜻을\n' +
-    '   저장된 뜻은 즉시 보여 주고, 새 뜻이 필요할 때만 사용자가 다시 찾기를 선택합니다. 읽는 중의\n' +
-    '   문장은 저장 카드에 덮어 쓰지 않습니다. 새 뜻이 필요하면 그 순간 Meaning 이 하나\n' +
-    '   생깁니다 — 미리보기 상태도, 저장 여부를 묻는 단계도 없습니다. */\n' +
-    'let contextView = null;\n' +
-    '/* ＋ 로 뜻을 직접 적는 동안만 켜지는 칸입니다. */\n' +
-    'let addingMeaning = false;\n' +
-    'function currentContext(k){ return contextView && contextView.key === k ? contextView : null; }\n' +
-    'function answerFromLook(j, cached){\n' +
-    '  const oldAi=j.ai||{};\n' +
-    '  /* `gloss` 는 옛 이름입니다 — 기기에 남아 있는 예전 답을 그대로 읽기 위해 함께 봅니다. */\n' +
-    "  return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',\n" +
-    "      note:j.note||j.gloss||oldAi.note||oldAi.gloss||'',done:true,cached:!!cached},\n" +
-    "    alts:Array.isArray(j.alts)?j.alts:[], aiLemma:j.lemma||'' };\n" +
-    '}\n' +
-    'function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }\n' +
-    'function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }\n' +
-    "function phraseCardKey(canonical){return 'phrase:'+String(canonical||'').trim().replace(/\\s+/g,' ').toLowerCase();}\n" +
-    "function meaningKey(meaning){ return String(meaning||'').trim().replace(/\\s+/g,' ').toLowerCase(); }\n" +
-    'function findContextCard(root, sentence){\n' +
-    '  const id=contextCardKey(root,sentence);\n' +
-    '  return words[id] ? id : null;\n' +
-    '}\n' +
-    'function rememberSenseContext(id, sentence){\n' +
-    '  const item=words[id],hash=sentenceHash(sentence);\n' +
-    '  if(!item||!hash)return;\n' +
-    "  const prior=Array.isArray(item.contextHashes)?item.contextHashes.filter(value=>typeof value==='string'&&value&&value!==hash):[];\n" +
-    '  item.contextHashes=[hash,...prior].slice(0,32);\n' +
-    '}\n' +
-    'function findSavedSense(root, sentence){\n' +
-    '  const hash=sentenceHash(sentence);\n' +
-    '  return Object.keys(words).find(id=>{\n' +
-    '    const item=words[id];\n' +
-    '    if(!item||(id!==root&&item.root!'... 56563 more characters,
-  expected: /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)[\s\S]{0,220}saveDetectedExpression/,
-  operator: 'match',
-  diff: 'simple'
-}
 
-Node.js v22.23.2
+> breeze-refactored@1.1.0 test
+> node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-lookup-architecture.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs
+
+Stamped 48 local assets
+Service worker 77c6f622
+Built 7 doc pages → docs/
+타입 검사 통과 — 남은 지적 40개 (늘지 않음)
+Breeze checks passed: 37 active + 4 parked JavaScript files
+(node:2659) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/breeze/breeze/server/dict/telemetry.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/runner/work/breeze/breeze/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Dictionary telemetry persists behind the provider response
+Lookup architecture checks passed
+Sync egress hardening checks passed
+Sync request-count harness passed (vocabulary 4, progress 2; no full vault on unchanged sync)
+TAP version 13
+# Subtest: concurrent vocabulary additions both survive the initial sync
+ok 1 - concurrent vocabulary additions both survive the initial sync
+  ---
+  duration_ms: 10.582279
+  type: 'test'
+  ...
+# Subtest: concurrent deletion and stale snapshot do not resurrect a tombstone
+ok 2 - concurrent deletion and stale snapshot do not resurrect a tombstone
+  ---
+  duration_ms: 3.570093
+  type: 'test'
+  ...
+# Subtest: two first inserts cannot overwrite each other
+ok 3 - two first inserts cannot overwrite each other
+  ---
+  duration_ms: 3.233071
+  type: 'test'
+  ...
+# Subtest: old rows without revision are upgraded with a guarded CAS
+ok 4 - old rows without revision are upgraded with a guarded CAS
+  ---
+  duration_ms: 3.762223
+  type: 'test'
+  ...
+# Subtest: clean local winners repair previously lost server words and deletions
+ok 5 - clean local winners repair previously lost server words and deletions
+  ---
+  duration_ms: 2.157334
+  type: 'test'
+  ...
+# Subtest: migration failure leaves embedded remote-only progress intact; restart retries
+ok 6 - migration failure leaves embedded remote-only progress intact; restart retries
+  ---
+  duration_ms: 5.819891
+  type: 'test'
+  ...
+# Subtest: interruption after progress commit but before vault commit is restart-safe
+ok 7 - interruption after progress commit but before vault commit is restart-safe
+  ---
+  duration_ms: 3.5368
+  type: 'test'
+  ...
+# Subtest: lost acknowledgement after vault commit cannot orphan migrated progress
+ok 8 - lost acknowledgement after vault commit cannot orphan migrated progress
+  ---
+  duration_ms: 3.770098
+  type: 'test'
+  ...
+# Subtest: migration preserves a newer cached position without jumping an active reader
+ok 9 - migration preserves a newer cached position without jumping an active reader
+  ---
+  duration_ms: 2.865362
+  type: 'test'
+  ...
+# Subtest: concurrent progress snapshots preserve different books
+ok 10 - concurrent progress snapshots preserve different books
+  ---
+  duration_ms: 3.052271
+  type: 'test'
+  ...
+# Subtest: logout resets cached progress and queued work
+ok 11 - logout resets cached progress and queued work
+  ---
+  duration_ms: 2.080953
+  type: 'test'
+  ...
+# Subtest: account-change auth event clears old progress and cancels late responses
+ok 12 - account-change auth event clears old progress and cancels late responses
+  ---
+  duration_ms: 2.601687
+  type: 'test'
+  ...
+# Subtest: logout and login to the same account also invalidate old responses
+ok 13 - logout and login to the same account also invalidate old responses
+  ---
+  duration_ms: 1.404253
+  type: 'test'
+  ...
+# Subtest: same-millisecond local vocab edit during a write retains dirty state
+ok 14 - same-millisecond local vocab edit during a write retains dirty state
+  ---
+  duration_ms: 1.833998
+  type: 'test'
+  ...
+# Subtest: local progress changed during identity collection remains pending
+ok 15 - local progress changed during identity collection remains pending
+  ---
+  duration_ms: 2.116017
+  type: 'test'
+  ...
+# Subtest: CAS retries are bounded and conflicts retain unsynced data
+ok 16 - CAS retries are bounded and conflicts retain unsynced data
+  ---
+  duration_ms: 41.747482
+  type: 'test'
+  ...
+# Subtest: 402 retains dirty state and suppresses automatic requests during cooldown
+ok 17 - 402 retains dirty state and suppresses automatic requests during cooldown
+  ---
+  duration_ms: 1.762835
+  type: 'test'
+  ...
+# Subtest: unchanged startup uses only small headers and progress; idle schedules nothing
+ok 18 - unchanged startup uses only small headers and progress; idle schedules nothing
+  ---
+  duration_ms: 2.319949
+  type: 'test'
+  ...
+# Subtest: progress-only sync remains two requests with no vocabulary traffic
+ok 19 - progress-only sync remains two requests with no vocabulary traffic
+  ---
+  duration_ms: 2.019296
+  type: 'test'
+  ...
+# Subtest: vocabulary edit is two small reads, a vault read, and a key-only CAS response
+ok 20 - vocabulary edit is two small reads, a vault read, and a key-only CAS response
+  ---
+  duration_ms: 2.277389
+  type: 'test'
+  ...
+# Subtest: legacy read failure never marks migration complete or erases server data
+ok 21 - legacy read failure never marks migration complete or erases server data
+  ---
+  duration_ms: 2.338314
+  type: 'test'
+  ...
+# Subtest: unique revisions expose writes even when every wall-clock timestamp is equal
+ok 22 - unique revisions expose writes even when every wall-clock timestamp is equal
+  ---
+  duration_ms: 3.311598
+  type: 'test'
+  ...
+# Subtest: equal-time metadata with a different local book ID does not cause repair churn
+ok 23 - equal-time metadata with a different local book ID does not cause repair churn
+  ---
+  duration_ms: 1.518025
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 188.908569
+손짓 임자 기준선 통과 — 해석 창 · 낱말 popup 같은 규칙, 200회 반복 무결
+낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)
+확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다
+Word meaning cleanup and sync resurrection checks passed
+Sentence lifecycle ownership verified
+EPUB geometry contract verified
+낱말 상자 기준선 통과 — 글 17개, 상자 105개, 성질 9가지
+원형 기준선 통과 — 44개
+READY Question-first core checks passed
+READY deterministic Reader tokenization verified
