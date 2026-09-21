@@ -1659,6 +1659,8 @@ assert.doesNotMatch(dictionaryCss,/#p-naver/,
   'Removed Naver Dictionary link styling survived');
 assert.doesNotMatch(dictionarySource,/dict\.naver\.com|p-naver/,
   'The word popup still builds a Naver Dictionary URL');
+assert.doesNotMatch(dictionarySource,/로그인하면 이 문장에 맞는 뜻을 찾아줘요/,
+  'Signed-out word lookup still repeats the sentence-specific login prompt');
 assert.match(readerSource,/new Array\(parts\.length-1\)\.fill\(0\)/,
   'Legacy phraseParts records no longer default to contiguous read compatibility');
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),/savedPhraseMatch\(matches,index,item\)/,

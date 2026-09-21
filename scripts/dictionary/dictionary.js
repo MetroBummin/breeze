@@ -116,7 +116,7 @@ function meaningWaitLine(off){
   const why =
       off === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요'
     : off === 'trial'   ? '무료 체험을 다 썼어요'
-    : off === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
+    : off === 'login'   ? ''
     : off === 'error'   ? '문맥 뜻을 받지 못했어요'
     :                     '아직 뜻이 정해지지 않았어요';
   return why;
@@ -632,8 +632,9 @@ function renderPanel(){
     aiBox.className = 'on wait';
     aiCap.textContent = '뜻';
     aiKo.textContent = ''; aiPos.textContent = '';
-    aiN.textContent = meaningWaitLine(off);
-    aiN.style.display = 'block';
+    const waitLine = meaningWaitLine(off);
+    aiN.textContent = waitLine;
+    aiN.style.display = waitLine ? 'block' : 'none';
     aiRetry.hidden = true;
   }else{
     aiBox.className = 'on' + (w.koEdited ? ' edited' : '');
@@ -671,7 +672,7 @@ function renderPanel(){
      하기 때문입니다. 여기서 다시 정하면 두 자리가 다른 말을 할 수 있습니다. */
   /* 뜻 칸이 이미 이유를 말한 상태에서는 아래에서 되풀이하지 않습니다. 누를 것이
      있는 상태(체험 소진·로그인·오류)만 단추와 함께 한 줄을 남깁니다. */
-  const hintOff = (!shown && (off === 'quota' || off === 'offline')) ? '' : off;
+  const hintOff = (!shown && (off === 'quota' || off === 'offline' || off === 'login')) ? '' : off;
   aiBtn.style.display = (off && off !== 'quota' && off !== 'offline') ? 'flex' : 'none';
   document.getElementById('p-aibtn-t').textContent =
       (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
@@ -692,7 +693,6 @@ function renderPanel(){
   aiHint.classList.toggle('tight', aiBtn.style.display !== 'none');
   aiHint.textContent =
       hintOff === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
-    : hintOff === 'login'   ? '로그인하면 이 문장에 맞는 뜻을 찾아줘요'
     : hintOff === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요. 자정에 다시 채워집니다'
     : hintOff === 'offline' ? '오프라인이라 새로운 뜻은 불러올 수 없어요'
     : hintOff === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'

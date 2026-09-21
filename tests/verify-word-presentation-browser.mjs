@@ -98,6 +98,19 @@ try{
   assert.equal(await page.evaluate(()=>wordQa.calls.length),0,
     'saved meaning reuse unexpectedly contacted the dictionary server');
   await page.evaluate(()=>closePanel());
+  await page.evaluate(()=>{
+    const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='another');
+    const key=keyOf('another');
+    words[key]={word:'another',clicked:'another',forms:[key],ko:'',phon:'',defs:[],kodict:[],
+      example:'Another patient reader checks every repeated word carefully.',book:curBook.title,
+      status:1,mark:true,addedAt:1,up:1,aiOff:'login'};
+    selectWord(key,span,false);
+  });
+  await page.waitForFunction(()=>wordPanelOpen());
+  assert.equal(await page.locator('#p-ai-note').textContent(),'','signed-out lookup repeats a sentence-specific login prompt');
+  assert.equal(await page.locator('#p-aihint').isVisible(),false,'signed-out lookup repeats a login hint below the action');
+  assert.equal(await page.locator('#p-aibtn-t').textContent(),'로그인하고 계속 쓰기','signed-out lookup lost its single login action');
+  await page.evaluate(()=>closePanel());
 
   /* 처음 보는 lexical item을 DeepSeek가 expression으로 판정해도 같은 필이 lookup
      중부터 결과가 도착한 뒤까지 계속 화면을 소유해야 합니다. */
