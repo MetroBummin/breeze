@@ -770,8 +770,8 @@ function openOriginalRange(doc,range,raw,owner,rect){
   const blockText=(block||owner).textContent||'',parts=typeof bridgeSentences==='function'?bridgeSentences(blockText):[];
   const part=parts.find(item=>char>=item.start&&char<item.end)||parts[0];
   marker.dataset.example=part?part.text.replace(/\s+/g,' ').trim():originalSentence(blockText,raw);
-  if(part&&typeof jevSentenceTokens==='function')
-    marker.dataset.clickedTokenIndex=String(jevSentenceTokens(blockText.slice(part.start,char)).length);
+  if(part&&typeof lookupSentenceTokens==='function')
+    marker.dataset.clickedTokenIndex=String(lookupSentenceTokens(blockText.slice(part.start,char)).length);
   marker.setAttribute('aria-hidden','true');
   if(words[key] && words[key].mark !== false) marker.classList.add('s'+words[key].status);
   marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;background:rgba(37,137,190,.25);border-radius:3px`;
