@@ -554,8 +554,8 @@ function textSentencePartAt(span){
   const parts=bridgeSentences(block.textContent);
   const part=parts.find(item=>at>=item.start && at<item.end) || parts[0];
   if(!part) return null;
-  const tokenIndex=typeof jevSentenceTokens==='function'
-    ? jevSentenceTokens(block.textContent.slice(part.start,at)).length : -1;
+  const tokenIndex=typeof lookupSentenceTokens==='function'
+    ? lookupSentenceTokens(block.textContent.slice(part.start,at)).length : -1;
   return { block, part, tokenIndex, sentence:part.text.replace(/\s+/g,' ').trim() };
 }
 
