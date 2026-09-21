@@ -13,17 +13,13 @@ assert.match(server,/maxTokens:120,schema:LOOK_SCHEMA/);
 assert.match(server,/const DETAIL_SCHEMA=.*required:\["pos","gloss"\]/);
 assert.match(server,/maxTokens:180,schema:DETAIL_SCHEMA/);
 
-assert.match(server,/criteria\.AI_REQUIRED=/);
-assert.match(server,/ordinary collocation/);
-assert.match(server,/확신이 낮으면 AI_REQUIRED/);
+assert.doesNotMatch(server,/JEV_API_KEY|JEV_MODEL|api\.typesafe\.ai|function opJudge|AI_REQUIRED/);
 assert.doesNotMatch(server,/function opRoute|function opPhrase|function opRepair|JEV_PHRASE_CONFIDENCE/);
 assert.doesNotMatch(server,/BREEZE_LEXICON|OEWN|baseSenseId|translationQuality/);
 
-assert.match(client,/function savedMeaningCandidates/);
-assert.match(client,/senses:senses\.map\(item=>\(\{id:item\.id,meaning:item\.meaning,pos:item\.pos,gloss:item\.gloss\}\)\)/);
-assert.match(client,/verdict\.selected!=='AI_REQUIRED'/);
-assert.equal((client.match(/op:'judge'/g)||[]).length,1);
+assert.doesNotMatch(client,/op:'judge'|savedMeaningCandidates|resolveSavedWordContext|AI_REQUIRED/);
 assert.doesNotMatch(client,/op:'route'|op:'phrase'|op:'repair'/);
+assert.match(client,/저장된 lexical item은 네트워크 판정 없이 기기에 있는 Meaning을 즉시 보여 줍니다/);
 
 assert.match(client,/function expressionFromMini/);
 assert.match(client,/phraseCardKey\(phrase\.canonical\)/);
@@ -52,6 +48,6 @@ for(const path of [
 }
 
 assert.match(telemetry,/\|"detail"/);
-assert.doesNotMatch(telemetry,/\|"route"|\|"phrase"|\|"repair"/);
+assert.doesNotMatch(telemetry,/\|"judge"|\|"route"|\|"phrase"|\|"repair"|\|"jev"/);
 
 console.log('Lookup architecture checks passed');

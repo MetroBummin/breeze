@@ -857,11 +857,10 @@ for(const gone of [/\.p-inline-edit/, /#p-word\[contenteditable/, /#p-word-wrap/
   assert.doesNotMatch(dictionaryCss, gone, `The headword editor's styling survived (${gone})`);
 }
 /* ── 뜻 아래 한 줄 ──
-   여기 적히는 것은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질(gloss)은
-   사전이 이미 하는 말이라 이 자리를 차지할 이유가 없습니다. 그리고 다른 문장에서
-   만난 낱말에는 달지 않습니다 — 그 줄이 설명하는 문장이 화면에 없기 때문입니다. */
-assert.match(dictionarySource, /const said = context \? '' : \(ai\.note \|\| ai\.gloss \|\| ''\);/,
-  'The meaning box explains the sense in general again, or talks about a sentence that is not on screen');
+   detail gloss는 특정 문장의 번역이 아니라 저장 Meaning 자체의 짧은 설명입니다.
+   따라서 저장 Meaning을 다른 문장에서 즉시 재사용할 때도 같은 gloss를 함께 쓸 수 있습니다. */
+assert.match(dictionarySource, /const said = ai\.note \|\| ai\.gloss \|\| '';/,
+  'Saved Meaning detail gloss is hidden again when the same Meaning is reused locally');
 assert.doesNotMatch(index, /id="p-ai-gloss"/,
   'The second, general explanation line is back under the meaning');
 const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
@@ -901,7 +900,7 @@ assert.match(dictionarySource, /const wasActive=id===selKey;[\s\S]{0,400}let nex
   'Deleting a chip that is not the one on show moves the reader to another meaning');
 assert.match(dictionarySource, /function createMeaning\(root, text, source\)/,
   'Meanings are created in more than one place again');
-for(const caller of ['adoptSuggestion', 'addMeaningFromInput', 'adoptContextAnswer']){
+for(const caller of ['adoptSuggestion', 'addMeaningFromInput']){
   assert.match(dictionarySource, new RegExp(`function ${caller}[\\s\\S]{0,700}createMeaning\\(`),
     `${caller} builds a meaning of its own instead of going through createMeaning`);
 }
@@ -935,7 +934,7 @@ assert.match(dictionarySource, /savedBadge\.hidden = !\(!asking && words\[k\] &&
 assert.doesNotMatch(dictionarySource, /function .*[Ss]avedState|let .*savedFlag/,
   'The saved badge grew a state of its own');
 assert.doesNotMatch(`${index}\n${dictionaryCss}\n${dictionarySource}`,/p-colloc|phrase-suggestion|openPhrase|adoptPhrase/,
-  'The generative phrase-suggestion UI or lifecycle survived Jev phrase detection');
+  'The generative phrase-suggestion UI or lifecycle survived the retired phrase detector');
 assert.match(dictServer, /console\.error\("dict_request_failed",e instanceof Error\?e\.name:"Error"\)/,
   'The dict endpoint no longer records a safe error class for unexpected failures');
 assert.doesNotMatch(dictServer, /json\(\{error:"internal",message:/,
@@ -1633,18 +1632,14 @@ metadataCalls.forEach(line=>assert.match(line,/\{signal\}/,
   'The metadata request cannot be cancelled with its word lookup'));
 assert.doesNotMatch(index,/id="p-context"/,'The manual "in this sentence" button is back');
 assert.doesNotMatch(dictionaryCss,/#p-context/,'Removed context-button styling survived');
-assert.match(dictionarySource,/op:'judge'/,'Saved words in a new sentence do not call Jev automatically');
-assert.match(dictServer,/Deno\.env\.get\("JEV_API_KEY"\)/,'Jev does not use the existing server Secret');
-assert.doesNotMatch(`${index}\n${dictionarySource}`,/JEV_API_KEY/,'The Jev Secret leaked into client code');
-assert.match(dictServer,/https:\/\/api\.typesafe\.ai\/v1\/systemone/,'The server does not call TypeSafe Jev');
-assert.match(dictServer,/criteria\.AI_REQUIRED=/,
-  'Jev cannot explicitly send uncertain or novel contexts back to DeepSeek');
-assert.match(dictionarySource,/verdict\.selected!=='AI_REQUIRED'/,
-  'The client no longer treats Jev as saved-Meaning selector plus AI gate');
+assert.doesNotMatch(dictionarySource,/op:'judge'|savedMeaningCandidates|resolveSavedWordContext|AI_REQUIRED/,
+  'Saved-word lookup still contains the removed remote Meaning selector path');
+assert.doesNotMatch(dictServer,/JEV_API_KEY|JEV_MODEL|api\.typesafe\.ai|function opJudge|AI_REQUIRED/,
+  'The dict Edge Function still contains a TypeSafe/JEV dependency');
 assert.doesNotMatch(dictionarySource,/op:'route'|op:'phrase'|op:'repair'|routeJevTarget|repairBaseSense/,
-  'Jev or OEWN still owns lexical analysis instead of only saved-Meaning reuse');
+  'A retired lexical routing path survived');
 assert.doesNotMatch(dictServer,/function opRoute|function opPhrase|function opRepair|JEV_PHRASE_CONFIDENCE/,
-  'The server still exposes the removed JEV phrase/router/repair pipeline');
+  'The server still exposes a retired phrase/router/repair pipeline');
 assert.doesNotMatch(dictionarySource,/BREEZE_LEXICON|breezeBaseSense|baseSenseId|translationQuality/,
   'The OEWN/lazy-Korean sense pipeline survived the architecture reset');
 assert.match(dictionarySource,/op:'look'[\s\S]{0,500}tokens:lookupTokens\.map[\s\S]{0,120}clickedIndex/,
@@ -1660,7 +1655,7 @@ assert.match(dictionarySource,/op:'detail'/,
 assert.match(dictionarySource,/function ensureMeaningDetail/,
   'Gloss enrichment is not isolated from the mini-pill lookup path');
 assert.doesNotMatch((dictionarySource.match(/async function fetchDict\([\s\S]*?\n\}/)||[''])[0],/op:'judge'|op:'detail'/,
-  'A brand-new mini lookup still pays Jev or detail latency');
+  'A brand-new mini lookup still pays remote-judge or detail latency');
 assert.match(readerSource,/new Array\(parts\.length-1\)\.fill\(0\)/,
   'Legacy phraseParts records no longer default to contiguous read compatibility');
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),/savedPhraseMatch\(matches,index,item\)/,
@@ -1669,10 +1664,6 @@ assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'
   'EPUB highlighting does not use the token/gap phrase matcher');
 /* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
-assert.match(dictionarySource,/if\(!wordLookupAlive\(life\)\)return;[\s\S]{0,160}await lookupNewContextMeaning/,
-  'A late Jev answer can start contextual generation after dismissal');
-assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)[\s\S]{0,220}saveDetectedExpression/,
-  'A late DeepSeek expression answer can save or rebuild under a dismissed word lookup');
 assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
   'A late "another meaning" answer can reselect a word on a dismissed word lookup again');
 /* 그리는 문지기는 열림 번호입니다. `selKey === k` 로는 **같은 낱말을 닫았다

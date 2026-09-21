@@ -1,6 +1,6 @@
 # 개인정보처리방침
 
-**시행일: 2026년 8월 10일**
+**시행일: 2026년 9월 21일**
 
 Breeze(<https://breeze.io.kr>, 그리고 같은 코드로 만든 iOS 앱)가 무엇을 받고,
 어디에 두고, 언제 지우는지 적은 문서입니다. 코드와 같은 저장소에 있고, 코드가
@@ -12,8 +12,9 @@ Breeze(<https://breeze.io.kr>, 그리고 같은 코드로 만든 iOS 앱)가 무
 
 계정 없이도 거의 전부 씁니다. PDF·EPUB·기사 본문·사진은 **내 기기 안에만** 있고,
 로그인하면 단어장과 읽던 자리 같은 작은 기록만 종단간 암호화되어 동기화됩니다.
-낱말을 누르면 그 **낱말과 그 문장 하나**가
-AI 에게 갑니다 — Breeze 서버는 문장 본문을 저장하지 않습니다. 다만 기사 URL 가져오기는
+AI 뜻을 새로 찾을 때만 **낱말과 그 문장 하나**가
+AI 에게 갑니다. 이미 저장한 뜻을 다시 보는 것만으로는 외부 AI를 부르지 않으며,
+Breeze 서버는 문장 본문을 저장하지 않습니다. 다만 기사 URL 가져오기는
 CORS 때문에 Breeze 중계 서버에 그 URL을 요청합니다. 광고·추적기·분석 SDK는 없고,
 개인정보를 팔지 않습니다.
 
@@ -93,12 +94,10 @@ Breeze와 저장소 제공자는 마스터 키·복구키 원문을 보유하지
 생성 AI는 word/expression 여부, 저장할 canonical, 현재 문장의 lexical member token,
 짧은 한국어 뜻을 반환합니다. 작은 뜻 필에서는 이 최소 결과만 사용합니다.
 
-**저장한 lexical item을 다른 문장에서 다시 만난 경우** — TypeSafe(Jev)에는
-현재 문장(최대 600자)과 **이 기기에 이미 저장된 서로 다른 한국어 Meaning 후보**가
-전달됩니다. 저장된 detail이 있다면 품사·짧은 gloss도 후보 설명으로 함께 갈 수 있습니다.
-Jev는 이 후보 중 하나 또는 `AI_REQUIRED`만 고릅니다. expression 범위나 token membership을
-판정하거나 한국어 뜻을 생성하지 않습니다. `AI_REQUIRED` 또는 Jev 실패일 때만 생성 AI가
-새 lexical analysis를 합니다.
+**저장한 lexical item을 다른 문장에서 다시 만난 경우** — 기기에 저장된 Meaning을
+즉시 보여 줍니다. 이 재사용 자체로 문장이나 저장된 Meaning 후보를 외부 AI 제공자에게
+보내지 않습니다. 사용자가 새 뜻 찾기를 직접 요청한 경우에만 위의 생성 AI lookup이
+새로 실행됩니다.
 
 **상세창을 처음 열 때** — 저장된 Meaning에 detail cache가 없으면 canonical, 저장된
 한국어 Meaning, 그 Meaning을 처음 저장한 예문이 생성 AI 제공자에게 전달되어
@@ -107,10 +106,8 @@ Jev는 이 후보 중 하나 또는 `AI_REQUIRED`만 고릅니다. expression �
 기기 표시(`breeze.device`)나 계정 식별자는 한도 확인을 위해 Breeze 서버까지만 가며,
 외부 AI 제공자에게는 보내지 않습니다.
 
-**판정 제공자** — TypeSafe(Jev). 저장된 Meaning 재사용 여부만 판정합니다.
-
 **생성 제공자** — OpenRouter를 통한 DeepSeek가 기본이고, 실패하면 Google(Gemini),
-Anthropic(Claude) 순으로 대체합니다. 첫/new mini lookup과 lazy detail lookup에 사용합니다.
+Anthropic(Claude) 순으로 대체합니다. 처음 보는 item·사용자가 요청한 새 뜻 lookup과 lazy detail lookup에 사용합니다.
 
 **서버에 남는 것** — 한도와 운영 확인을 위한 호출 종류, 사용한 제공자와 모델,
 성공 여부, 응답 시간, 토큰 사용량입니다. 표제어, 읽던 문장과 그 지문·앞뒤 단어,
@@ -188,7 +185,6 @@ Anthropic(Claude) 순으로 대체합니다. 첫/new mini lookup과 lazy detail 
 | 어디 | 무엇을 | 어디에 |
 | --- | --- | --- |
 | Supabase | 로그인, E2EE 암호문 · 기기 연결 임시 우편함 | 프로젝트가 놓인 리전 |
-| TypeSafe (Jev) | 저장한 뜻의 현재 문장 재사용 판정 | 제공자 운영 리전 |
 | OpenRouter / DeepSeek | 낱말 뜻 생성 | 제공자 운영 리전 |
 | Google (Gemini) | 낱말 뜻 생성 (대체 경로) | 미국 |
 | Anthropic (Claude) | 낱말 뜻 생성 (대체 경로) | 미국 |
