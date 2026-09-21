@@ -865,12 +865,12 @@ assert.match(dictionarySource, /const said = context \? '' : \(ai\.note \|\| ai\
 assert.doesNotMatch(index, /id="p-ai-gloss"/,
   'The second, general explanation line is back under the meaning');
 const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
-assert.match(dictServer, /required:\["lemma","pos","ko","gloss","alts"\]/,
-  'The production contextual lookup schema was not reconciled');
-assert.doesNotMatch(dictServer,/required:\[[^\]]*"phrase"|\n- phrase:/,
-  'Generative contextual lookup still invents phrase suggestions');
-assert.match(dictServer, /이 문장에서 클릭한/,
-  'The look prompt no longer asks about this sentence');
+assert.match(dictServer, /required:\["kind","canonical","members","ko"\]/,
+  'The mini lookup no longer returns only lexical identity plus the short Korean meaning');
+assert.match(dictServer, /const DETAIL_SCHEMA=.*required:\["pos","gloss"\]/,
+  'Gloss enrichment is no longer a separate lazy detail contract');
+assert.match(dictServer, /clicked_index:/,
+  'The mini lookup no longer knows which token the reader actually tapped');
 
 /* ── 운영 기록으로 나가는 것 ──
    서버가 버려 주기를 믿지 않습니다. 사람이 읽던 문장·책 제목·뜻은 앱에서 아예
@@ -1637,16 +1637,30 @@ assert.match(dictionarySource,/op:'judge'/,'Saved words in a new sentence do not
 assert.match(dictServer,/Deno\.env\.get\("JEV_API_KEY"\)/,'Jev does not use the existing server Secret');
 assert.doesNotMatch(`${index}\n${dictionarySource}`,/JEV_API_KEY/,'The Jev Secret leaked into client code');
 assert.match(dictServer,/https:\/\/api\.typesafe\.ai\/v1\/systemone/,'The server does not call TypeSafe Jev');
-assert.match(dictServer,/criteria\.NEW="기존 뜻 중 현재 문장에 맞는 뜻이 없음"/,
-  'Jev has no explicit NEW choice');
-assert.match(dictionarySource,/op:'phrase',sentence,clickedIndex,tokens:/,
-  'The client does not send the full token map and clicked index for Jev phrase detection');
-assert.match(dictServer,/const JEV_PHRASE_CONFIDENCE=0\.75;/,
-  'The conservative phrase threshold is no longer a single testable constant');
-assert.match(dictServer,/const members=candidates\.filter\(item=>item\.confidence>=JEV_PHRASE_CONFIDENCE\)/,
-  'A low-confidence YES token can still contaminate an accepted phrase');
+assert.match(dictServer,/criteria\.AI_REQUIRED=/,
+  'Jev cannot explicitly send uncertain or novel contexts back to DeepSeek');
+assert.match(dictionarySource,/verdict\.selected!=='AI_REQUIRED'/,
+  'The client no longer treats Jev as saved-Meaning selector plus AI gate');
+assert.doesNotMatch(dictionarySource,/op:'route'|op:'phrase'|op:'repair'|routeJevTarget|repairBaseSense/,
+  'Jev or OEWN still owns lexical analysis instead of only saved-Meaning reuse');
+assert.doesNotMatch(dictServer,/function opRoute|function opPhrase|function opRepair|JEV_PHRASE_CONFIDENCE/,
+  'The server still exposes the removed JEV phrase/router/repair pipeline');
+assert.doesNotMatch(dictionarySource,/BREEZE_LEXICON|breezeBaseSense|baseSenseId|translationQuality/,
+  'The OEWN/lazy-Korean sense pipeline survived the architecture reset');
+assert.match(dictionarySource,/op:'look'[\s\S]{0,500}tokens:lookupTokens\.map[\s\S]{0,120}clickedIndex/,
+  'DeepSeek mini lookup is not given the sentence token map and tapped index');
+assert.match(dictionarySource,/function expressionFromMini/,
+  'DeepSeek expression results have no client-side typed boundary');
 assert.match(dictionarySource,/phraseParts:phrase\.parts,phraseGaps:phrase\.gaps/,
-  'Discontinuous phrase identity no longer preserves selected parts and gaps');
+  'DeepSeek member indexes no longer preserve discontinuous expression identity');
+assert.match(dictionarySource,/phraseCardKey\(phrase\.canonical\)/,
+  'Stored expression identity is rebuilt from members instead of the AI canonical form');
+assert.match(dictionarySource,/op:'detail'/,
+  'Opening word details cannot lazy-load the gloss');
+assert.match(dictionarySource,/function ensureMeaningDetail/,
+  'Gloss enrichment is not isolated from the mini-pill lookup path');
+assert.doesNotMatch((dictionarySource.match(/async function fetchDict\([\s\S]*?\n\}/)||[''])[0],/op:'judge'|op:'detail'/,
+  'A brand-new mini lookup still pays Jev or detail latency');
 assert.match(readerSource,/new Array\(parts\.length-1\)\.fill\(0\)/,
   'Legacy phraseParts records no longer default to contiguous read compatibility');
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),/savedPhraseMatch\(matches,index,item\)/,
@@ -1657,8 +1671,8 @@ assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
 assert.match(dictionarySource,/if\(!wordLookupAlive\(life\)\)return;[\s\S]{0,160}await lookupNewContextMeaning/,
   'A late Jev answer can start contextual generation after dismissal');
-assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)[\s\S]{0,220}saveDetectedPhrase/,
-  'A late Jev phrase answer can save or rebuild under a dismissed word lookup');
+assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)[\s\S]{0,220}saveDetectedExpression/,
+  'A late DeepSeek expression answer can save or rebuild under a dismissed word lookup');
 assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
   'A late "another meaning" answer can reselect a word on a dismissed word lookup again');
 /* 그리는 문지기는 열림 번호입니다. `selKey === k` 로는 **같은 낱말을 닫았다
