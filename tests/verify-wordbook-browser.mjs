@@ -30,6 +30,14 @@ try{
   await page.setViewportSize({width,height:844});
   await page.evaluate(d=>{darkMode=d;applyDark()},dark);
   assert.equal(await page.locator('#topbar').isVisible(),false);
+  const colors=await page.evaluate(()=>[1,2,3].map(n=>{
+   const reader=document.querySelector(`.stbtn[data-s="${n}"]`),chip=document.querySelector(`#v-vocab .chip.s${n}`),filter=document.querySelector(`#vstars button[data-status="${n}"]`);
+   const wasOn=reader.classList.contains('on');reader.classList.add('on');filter.setAttribute('aria-pressed','true');
+   const color=e=>{const s=getComputedStyle(e);return [s.backgroundColor,s.color]};
+   const result=[color(reader),color(chip),color(filter)];
+   reader.classList.toggle('on',wasOn);filter.setAttribute('aria-pressed','false');return result;
+  }));
+  for(const [reader,chip,filter] of colors){assert.deepEqual(chip,reader);assert.deepEqual(filter,reader);}
   const alignment=await page.evaluate(()=>{
    const label=document.querySelector('.wordbook-sort>span').getBoundingClientRect(),sort=document.getElementById('vsort-menu').getBoundingClientRect(),stars=document.getElementById('vstars').getBoundingClientRect(),books=document.getElementById('vbooks').getBoundingClientRect();
    return {sortGap:sort.left-label.right,bookGap:books.left-stars.right};

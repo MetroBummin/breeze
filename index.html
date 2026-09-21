@@ -38,12 +38,12 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
-  <link rel="stylesheet" href="styles/home.css?v=a7d9ce58">
-  <link rel="stylesheet" href="styles/reader.css?v=4b4f8d11">
+  <link rel="stylesheet" href="styles/home.css?v=2b9dfee7">
+  <link rel="stylesheet" href="styles/reader.css?v=a4c08d37">
   <link rel="stylesheet" href="styles/dictionary.css?v=821112ad">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=62cd7fff">
-  <link rel="stylesheet" href="styles/wordbook.css?v=f37b9134">
+  <link rel="stylesheet" href="styles/wordbook.css?v=3d0c76ff">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=c0b1821a">
   <link rel="stylesheet" href="styles/onboarding.css?v=da44f980">
@@ -130,7 +130,7 @@
   <span id="login-nudge" role="img" aria-label="로그인 필요"></span>
 </div>
 
-  <div id="home-controls"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">읽던 책 없음</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
+  <div id="home-controls" class="control-dock"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">읽던 책 없음</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
 <div id="library-refresh" class="control-glass" role="status" aria-live="polite" hidden><span aria-hidden="true">↓</span><span class="refresh-label">당겨서 새로고침</span></div>
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
@@ -365,9 +365,9 @@
   <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
   <div id="vtablewrap"></div>
   <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
-  <div id="wordbook-controls"><nav class="control-bar" aria-label="단어장 메뉴">
+  <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
     <button id="btn-export" class="control-glass control-circle" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button>
-    <button class="control-glass control-pill" type="button" onclick="show('home')">Home</button>
+    <button id="wordbook-home" class="control-glass control-pill" type="button" onclick="show('home')">Home</button>
     <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
   </nav></div>
 </div>

@@ -2,7 +2,6 @@
 
   #v-home, #v-casuals, #v-longform{max-width:960px; margin:0 auto; padding:28px 26px 90px;}
   /* Home only changes placement; Reader owns the shared control surfaces/geometry. */
-  #home-controls{position:fixed; inset:auto 0 0; height:calc(env(safe-area-inset-bottom) + 59px); z-index:70; pointer-events:none;}
   #primary-nav svg{display:none;}
   #home-controls #primary-nav svg{display:block; width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
   #home-controls .control-circle span{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap;}
