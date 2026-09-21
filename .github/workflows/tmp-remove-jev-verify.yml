@@ -18,24 +18,37 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Capture npm test result
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Final verification
         shell: bash
         run: |
           set +e
           npm ci > /tmp/npm-ci.log 2>&1
           CI_STATUS=$?
           TEST_STATUS=99
+          WORD_STATUS=99
+          DENO_STATUS=99
           if [ "$CI_STATUS" -eq 0 ]; then
             npm test > /tmp/npm-test.log 2>&1
             TEST_STATUS=$?
-          else
-            cp /tmp/npm-ci.log /tmp/npm-test.log
+            npx playwright install --with-deps chromium > /tmp/playwright-install.log 2>&1
+            INSTALL_STATUS=$?
+            if [ "$INSTALL_STATUS" -eq 0 ]; then
+              npm run test:word > /tmp/word.log 2>&1
+              WORD_STATUS=$?
+            else
+              WORD_STATUS=$INSTALL_STATUS
+            fi
+            deno check --node-modules-dir=auto server/dict/index.ts > /tmp/deno.log 2>&1
+            DENO_STATUS=$?
           fi
-          printf 'npm_ci=%s\nnpm_test=%s\n' "$CI_STATUS" "$TEST_STATUS" > .github/jev-removal-verified
-          tail -n 220 /tmp/npm-test.log > .github/jev-removal-test.log
+          printf 'npm_ci=%s\nnpm_test=%s\ntest_word=%s\ndeno_check=%s\n' "$CI_STATUS" "$TEST_STATUS" "$WORD_STATUS" "$DENO_STATUS" > .github/jev-removal-verified
+          cat /tmp/npm-test.log /tmp/word.log /tmp/deno.log 2>/dev/null | tail -n 220 > .github/jev-removal-test.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/jev-removal-verified .github/jev-removal-test.log
-          git commit -m "ci: capture JEV removal test failure"
+          git commit -m "ci: record final JEV removal verification"
           git push origin HEAD:chatgpt/remove-jev-lookup-20260921
           exit 0
