@@ -308,7 +308,7 @@ function tapNewWord(ctx, key){
     '창이 이미 닫혔는데 AI 요청이 출발했습니다 — 아무도 안 볼 답에 한도를 씁니다');
 }
 
-/* ================= ⑤ 자동 Jev 분류와 fallback ================= */
+/* ================= ⑤ 저장 Meaning selector와 AI_REQUIRED fallback ================= */
 {
   const { world, net, ctx } = boot();
   ctx.words.moon = { word:'moon', clicked:'moon', forms:['moon'], ko:'달', ai:{ko:'달',done:true},
@@ -318,39 +318,40 @@ function tapNewWord(ctx, key){
                  classList:{ add(){}, remove(){} }, closest:()=>null };
   ctx.openWord('moon', span);
   await settle();
-  assert.deepEqual(world.sent,['route'],'저장 뜻의 다른 문장이 Jev 판단으로 시작하지 않았습니다');
+  assert.deepEqual(world.sent,['judge'],'저장 뜻의 다른 문장이 Jev Meaning selector로 시작하지 않았습니다');
   assert.equal(world.el('word-peek-meaning').textContent,'뜻 확인 중','Jev 판정 전에 저장 뜻이 먼저 노출됐습니다');
   assert.equal(world.el('word-peek').classList.contains('loading'),true,'뜻 확인 중 필에 spinner가 없습니다');
-  net.deliver({selected:'sense_1',confidence:.9});
+  assert.deepEqual(Array.from(world.payloads[0].senses,item=>item.id),['moon','moon::sense:other'],
+    'Jev에 실제 저장 Meaning identity가 전달되지 않았습니다');
+  assert.equal(world.payloads[0].tokens,undefined,'Meaning selector가 phrase token map까지 받았습니다');
+  net.deliver({selected:'moon::sense:other',confidence:.9});
   await settle();
   assert.equal(ctx.words[ctx.selKey].ko,'위성','Jev가 고른 기존 뜻을 재사용하지 않았습니다');
   assert.equal(world.el('word-peek-meaning').textContent,'위성','Jev가 고른 기존 뜻이 필에 표시되지 않았습니다');
-  assert.deepEqual(world.sent,['route'],'기존 뜻을 골랐는데 생성형 lookup까지 호출했습니다');
-  assert.equal(world.sent.filter(op=>op==='route').length,1,'일반 saved-word lookup이 JEV route를 두 번 호출했습니다');
+  assert.deepEqual(world.sent,['judge'],'기존 뜻을 골랐는데 생성형 lookup까지 호출했습니다');
 
-  /* 같은 word + 같은 sentence를 다시 열면 방금 고른 sense를 즉시 재사용합니다.
-     phrase/Jev까지 다시 돌면 이 cache는 사용자에게 체감되지 않습니다. */
+  /* 같은 lexical item + 같은 sentence를 다시 열면 방금 고른 Meaning을 즉시 재사용합니다. */
   ctx.closePanel();await settle();
   const callsAfterFirst=world.sent.length;
   ctx.openWord('moon',span);await settle();
   assert.equal(world.el('word-peek-meaning').textContent,'위성',
-    '같은 문장에서 같은 단어를 다시 눌렀는데 직전 sense가 즉시 뜨지 않았습니다');
+    '같은 문장에서 같은 lexical item을 다시 눌렀는데 직전 Meaning이 즉시 뜨지 않았습니다');
   assert.equal(world.sent.length,callsAfterFirst,
-    '같은 문장 context cache가 있는데 phrase/Jev를 다시 호출했습니다');
+    '같은 문장 context cache가 있는데 Jev를 다시 호출했습니다');
 }
 {
   const { world, net, ctx } = boot();
   ctx.words.run={word:'run',clicked:'run',forms:['run'],ko:'달리다',ai:{ko:'달리다',done:true},
     example:'He runs daily.',book:'시험책',status:1,mark:true,addedAt:1,up:1};
-  const span={textContent:'run',dataset:{example:'She runs the company.'},classList:{add(){},remove(){}},closest:()=>null};
+  const span={textContent:'run',dataset:{example:'She runs the company.',clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('run',span);await settle();
-  net.deliver({selected:'NONE',confidence:.8});await settle();
-  assert.deepEqual(world.sent,['route','look'],'NEW가 기존 contextual AI lookup으로 이어지지 않았습니다');
-  assert.equal(world.el('word-peek-meaning').textContent,'새 뜻 찾는 중','NEW 뒤의 contextual lookup 상태가 필에 드러나지 않았습니다');
-  net.deliver({ko:'운영하다',pos:'동사',gloss:'조직을 맡아 관리하다',lemma:'run',alts:[]});
+  net.deliver({selected:'AI_REQUIRED',confidence:.8});await settle();
+  assert.deepEqual(world.sent,['judge','look'],'AI_REQUIRED가 DeepSeek mini lookup으로 이어지지 않았습니다');
+  assert.equal(world.el('word-peek-meaning').textContent,'새 뜻 찾는 중','AI_REQUIRED 뒤의 lookup 상태가 필에 드러나지 않았습니다');
+  net.deliver({kind:'word',canonical:'run',members:[1],ko:'운영하다',lemma:'run',pos:'',gloss:'',alts:[]});
   await rest(AI_MIN_WAIT);await settle();
   assert.ok(Object.values(ctx.words).some(item=>item&&item.root==='run'&&item.ko==='운영하다'),
-    'NEW contextual 답이 새 Meaning으로 저장되지 않았습니다');
+    'DeepSeek의 새 문맥 뜻이 새 Meaning으로 저장되지 않았습니다');
 }
 
 /* ================= ⑥ 늦은 답이 창을 다시 열지 못한다 ================= */
@@ -365,7 +366,7 @@ function tapNewWord(ctx, key){
   await settle();
   const rendersAfterClose = world.renders;
   const panel = world.el('panel'), scrim = world.el('word-modal-scrim');
-  net.deliver({selected:'NONE'}); // 판단은 도착하지만 생성형 요청을 시작하면 안 됩니다
+  net.deliver({selected:'AI_REQUIRED'}); // 판단은 도착하지만 생성형 요청을 시작하면 안 됩니다
   await settle();
 
   assert.equal(panel.classList.contains('on'), false,
@@ -374,7 +375,7 @@ function tapNewWord(ctx, key){
     '닫은 lookup의 바깥판이 늦은 답을 받고 다시 화면을 덮었습니다');
   assert.equal(ctx.selKey, null, '늦은 답이 `selectWord` 로 낱말을 다시 골랐습니다');
   assert.equal(world.renders, rendersAfterClose, '늦은 답이 닫힌 창을 그렸습니다');
-  assert.deepEqual(world.sent,['route'],'닫힌 lookup의 늦은 Jev 답이 생성형 lookup을 시작했습니다');
+  assert.deepEqual(world.sent,['judge'],'닫힌 lookup의 늦은 Jev 답이 생성형 lookup을 시작했습니다');
 }
 
 /* ================= ⑦ 기존 phrase 데이터 read compatibility ================= */
@@ -747,43 +748,42 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   assert.equal(frameQueries,1,'Original mode 의 active EPUB frame 까지 제외했습니다');
 }
 
-/* ================= JEV phrase membership → phrase sense ================= */
+/* ================= DeepSeek mini lookup → expression identity ================= */
 {
   const {world,net,ctx}=boot();
   const sentence='He took the criticism into account.';
   const span={textContent:'took',dataset:{example:sentence,clickedTokenIndex:'1'},
     classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('take',span);await settle(20);
-  assert.deepEqual(world.sent,['route'],'새 낱말의 생성형 뜻보다 phrase membership이 먼저 나가지 않았습니다');
-  assert.equal(world.payloads[0].sentence,sentence,'Jev phrase 판정에 문장 전체가 가지 않았습니다');
+  assert.deepEqual(world.sent,['look'],'새 lexical item이 Jev를 거치지 않고 DeepSeek으로 가지 않았습니다');
+  assert.equal(world.payloads[0].sentence,sentence,'DeepSeek mini lookup에 문장 전체가 가지 않았습니다');
   assert.equal(world.payloads[0].clickedIndex,1,'클릭 token index가 drift했습니다');
   assert.deepEqual(Array.from(world.payloads[0].tokens,item=>item.text),['He','took','the','criticism','into','account'],
     '문장 token mapping이 달라졌습니다');
-  net.deliver({selected:'PHRASE',threshold:.86,members:[{index:1,confidence:.96},{index:4,confidence:.95},{index:5,confidence:.98}]});
-  await settle(20);
-  assert.deepEqual(world.sent,['route','look'],'확정 phrase가 contextual lookup으로 이어지지 않았습니다');
-  assert.equal(ctx.wordPeekOpen(),true,'phrase 확정 순간 현재 word pill이 닫혔습니다');
-  assert.equal(world.el('word-peek').hidden,false,'phrase 뜻을 찾는 동안 현재 word pill이 사라졌습니다');
-  assert.equal(world.payloads[1].word,'take into account','생성형 AI에 자유 생성 phrase가 아니라 canonical identity를 보내지 않았습니다');
-  net.deliver({ko:'고려하다',pos:'동사',gloss:'판단할 때 반영하다',lemma:'take into account',alts:[]});
+  net.deliver({kind:'expression',canonical:'take into account',members:[1,4,5],ko:'고려하다',
+    lemma:'take into account',pos:'',gloss:'',alts:[]});
   await rest(AI_MIN_WAIT);await settle(20);
+  assert.deepEqual(world.sent,['look'],'expression 하나를 저장하는 데 추가 AI/Jev 호출이 생겼습니다');
   const phrase=ctx.words['phrase:take into account'];
-  assert.ok(phrase,'비연속 phrase가 실제 저장 phrase 카드가 되지 않았습니다');
-  assert.deepEqual(Array.from(phrase.phraseParts),['take','into','account'],'phrase identity가 선택 token 순서를 잃었습니다');
-  assert.deepEqual(Array.from(phrase.phraseGaps),[2,0],'비연속 token gap이 저장되지 않았습니다');
-  assert.equal(phrase.ko,'고려하다','phrase 뜻이 저장되지 않았습니다');
-  assert.equal(ctx.words.take,undefined,'phrase와 함께 이번 탭이 만든 빈 word 껍데기가 남았습니다');
+  assert.ok(phrase,'DeepSeek expression이 실제 저장 phrase 카드가 되지 않았습니다');
+  assert.deepEqual(Array.from(phrase.phraseParts),['take','into','account'],'expression member 순서를 잃었습니다');
+  assert.deepEqual(Array.from(phrase.phraseGaps),[2,0],'비연속 member gap이 저장되지 않았습니다');
+  assert.equal(phrase.ko,'고려하다','expression 뜻이 저장되지 않았습니다');
+  assert.equal(ctx.words.take,undefined,'expression과 함께 이번 탭이 만든 빈 word 껍데기가 남았습니다');
 }
 {
   const {world,net,ctx}=boot();
   const sentence='She took a book from the shelf.';
   const span={textContent:'took',dataset:{example:sentence,clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('take',span);await settle(20);
-  net.deliver({selected:'NONE',threshold:.86,members:[{index:1,confidence:.73}]});await settle(20);
-  assert.deepEqual(world.sent,['route','look'],'애매하거나 일반적인 사용이 word-only fallback으로 내려가지 않았습니다');
-  assert.equal(world.payloads[1].word,'take','word-only fallback이 클릭 낱말 identity를 잃었습니다');
+  assert.deepEqual(world.sent,['look'],'평범한 새 단어가 DeepSeek mini lookup으로 바로 가지 않았습니다');
+  net.deliver({kind:'word',canonical:'take',members:[1],ko:'가져가다',lemma:'take',pos:'',gloss:'',alts:[]});
+  await rest(AI_MIN_WAIT);await settle(20);
+  assert.equal(ctx.words.take.ko,'가져가다','word mini result가 단어 Meaning으로 저장되지 않았습니다');
+  assert.equal(ctx.words['phrase:take'],undefined,'word result가 expression 카드로 승격됐습니다');
 }
 {
+  /* 저장된 word 뜻으로는 부족한 expression 문맥이면 Jev는 분석하지 않고 AI_REQUIRED만 냅니다. */
   const {world,net,ctx}=boot();
   const id='phrase:take into account';
   ctx.words.take=savedWord('take','가져가다');
@@ -791,23 +791,26 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
     clicked:'took … into account',forms:['take','into','account'],phraseParts:['take','into','account'],phraseGaps:[2,0]};
   const span={textContent:'took',dataset:{example:'He took the criticism into account.',clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('take',span);await settle(20);
-  net.deliver({selected:'PHRASE',threshold:.86,members:[{index:1,confidence:.97},{index:4,confidence:.96},{index:5,confidence:.98}]});await settle(20);
-  assert.deepEqual(world.sent,['route','judge'],'저장 phrase의 다른 문맥이 phrase sense reuse로 이어지지 않았습니다');
-  net.deliver({selected:'sense_0',confidence:.95});await settle(20);
-  assert.equal(ctx.selKey,id,'Jev가 고른 기존 phrase 뜻을 재사용하지 않았습니다');
-  assert.deepEqual(world.sent,['route','judge'],'기존 phrase sense 뒤에 생성형 lookup이 호출됐습니다');
+  assert.deepEqual(world.sent,['judge'],'저장 word의 새 문맥이 Meaning selector로 시작하지 않았습니다');
+  net.deliver({selected:'AI_REQUIRED',confidence:.93});await settle(20);
+  assert.deepEqual(world.sent,['judge','look'],'AI_REQUIRED가 lexical re-analysis로 이어지지 않았습니다');
+  net.deliver({kind:'expression',canonical:'take into account',members:[1,4,5],ko:'고려하다',
+    lemma:'take into account',pos:'',gloss:'',alts:[]});
+  await rest(AI_MIN_WAIT);await settle(20);
+  assert.equal(ctx.selKey,id,'DeepSeek가 기존 canonical expression identity를 재사용하지 않았습니다');
+  assert.equal(ctx.words[id].ko,'고려하다','기존 expression Meaning이 손실됐습니다');
 }
 {
   const {world,net,ctx}=boot();net.outran=true;
   const sentence='They gave the idea up yesterday.';
   const span={textContent:'gave',dataset:{example:sentence,clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('give',span);await settle(20);
-  net.deliver({selected:'PHRASE',threshold:.86,members:[{index:1,confidence:.97},{index:4,confidence:.96}]});await settle(20);
-  assert.deepEqual(world.sent,['route','look'],'비연속 phrase lookup이 시작되지 않았습니다');
-  ctx.closePanel();net.deliver({ko:'포기하다',lemma:'give up',pos:'동사',gloss:'그만두다',alts:[]});
+  assert.deepEqual(world.sent,['look'],'새 expression 후보가 Jev를 먼저 호출했습니다');
+  ctx.closePanel();
+  net.deliver({kind:'expression',canonical:'give up',members:[1,4],ko:'포기하다',lemma:'give up',pos:'',gloss:'',alts:[]});
   await rest(AI_MIN_WAIT);await settle(20);
-  assert.equal(ctx.words['phrase:give up'],undefined,'닫힌 lookup의 늦은 답이 phrase를 저장했습니다');
-  assert.equal(world.el('panel').classList.contains('on'),false,'늦은 phrase 답이 popup을 다시 열었습니다');
+  assert.equal(ctx.words['phrase:give up'],undefined,'닫힌 lookup의 늦은 DeepSeek 답이 expression을 저장했습니다');
+  assert.equal(world.el('panel').classList.contains('on'),false,'늦은 expression 답이 popup을 다시 열었습니다');
 }
 
 console.log('낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)');

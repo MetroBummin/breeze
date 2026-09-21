@@ -2,117 +2,170 @@
 
 ## 한 줄 요약
 
-낱말을 누르면 Breeze가 **그 낱말이 들어 있던 문장**을 함께 보고 뜻을 정합니다.
-처음 만난 낱말은 문맥 AI가 뜻을 만들고, 저장한 낱말을 다른 문장에서 다시 만나면
-Jev가 기존 뜻을 그대로 쓸 수 있는지 먼저 고릅니다.
+낱말을 누르면 Breeze는 **그 낱말이 들어 있던 문장**을 함께 보고 현재 문맥의 뜻을 정합니다.
+처음 보는 lexical item은 DeepSeek가 직접 분석하고, 이미 저장한 item을 다른 문장에서 다시
+만났을 때만 Jev가 **저장된 Meaning을 그대로 재사용할 수 있는지** 고릅니다.
 
 ## 조회 흐름
 
 ```text
 낱말 선택
-  → 문장 전체와 클릭 token index를 Jev에 전달
-     → token별 YES/NO·confidence로 word 또는 phrase identity 결정
-     → 애매하거나 실패하면 클릭한 word로 보수적 fallback
-  → 처음 만난 word/phrase면 저장 필을 먼저 표시
-     → 문맥 AI가 한국어 뜻을 생성
-     → 영어 사전 메타데이터(발음·영어 뜻)를 별도로 보완
-  → 저장한 낱말이면 기존 뜻을 즉시 표시
-     → 같은 문장이면 여기서 끝(네트워크 요청 없음)
-     → 다른 문장이면 Jev가 기존 뜻 후보 또는 NEW를 선택
-        → 기존 뜻: 그대로 재사용
-        → NEW 또는 Jev 실패: 문맥 AI가 새 뜻을 생성
-  → 사용자가 뜻을 고치거나 단어장에 저장
+  → 같은 문장 캐시가 있으면 즉시 사용
+  → 처음 보는 문맥이면 DeepSeek mini lookup
+     → word / expression
+     → canonical
+     → 현재 문장의 member token indexes
+     → 짧은 한국어 뜻
+  → 영어 사전 메타데이터(발음·음성·영어 정의)는 별도로 보완
+
+이미 저장한 lexical item을 다른 문장에서 다시 선택
+  → Jev
+     → meaning_1 / meaning_2 / ... / AI_REQUIRED
+     → 저장 Meaning 선택: DeepSeek 호출 없이 즉시 재사용
+     → AI_REQUIRED 또는 Jev 실패: DeepSeek mini lookup
+
+작은 뜻 필을 눌러 상세창 열기
+  → detail cache가 있으면 즉시 표시
+  → 없으면 DeepSeek detail lookup
+     → 품사 + 짧은 한국어 gloss
 ```
 
-- **문맥 AI**는 현재 문장에 맞는 한국어 뜻과 짧은 설명, 다른 뜻 후보를 만듭니다.
-- **Jev**는 먼저 문장의 각 token이 클릭 token과 하나의 lexical expression을
-  이루는지 구조화된 YES/NO로 판정합니다. 선택 token의 confidence가 모두
-  `0.75` 이상인 YES token만 phrase 구성원으로 사용합니다. 클릭 token을 포함해
-  두 token 이상이 이 기준을 통과할 때만 phrase로 묶습니다. 그 다음 저장된 한국어 뜻 후보와
-  `NEW` 중 하나만 고르며, 뜻을 만들거나 고치지 않습니다.
-- **영어 사전 메타데이터**는 발음·음성·영어 뜻만 보완하며 한국어 뜻의 대체 경로가 아닙니다.
-- 같은 낱말이라도 문장이 다르면 다른 답으로 취급합니다. `run`이 소설 속에서
-  쓰인 뜻과 기사에서 쓰인 뜻을 섞지 않기 위해서입니다.
+### DeepSeek의 역할
+
+DeepSeek가 lexical analysis의 유일한 생성 엔진입니다.
+
+Mini lookup은 다음 네 필드만 만듭니다.
+
+```json
+{"kind":"word","canonical":"yield","members":[7],"ko":"양보하다"}
+```
+
+또는 표현이라면:
+
+```json
+{"kind":"expression","canonical":"give up","members":[4,8],"ko":"포기하다"}
+```
+
+- 기본값은 **word**입니다. 단일 단어 뜻만으로 현재 의미를 충분히 정확하게 전달할 수 있으면
+  expression으로 올리지 않습니다.
+- phrasal verb, idiom, fixed expression처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나
+  중요한 lexical identity를 잃을 때만 expression으로 처리합니다.
+- `canonical`은 저장할 표제형입니다.
+- `members`는 **현재 문장에서 색칠할 lexical member token**입니다. 저장 표제어를
+  `members`를 이어 붙여 만들지 않습니다.
+- 연속된 표현 안의 `of`, `to`, `at` 같은 function word가 lexical identity의 일부라면
+  빼지 않습니다.
+- 분리 가능한 구동사의 목적어·변수는 member가 아닙니다. 예: `gave the plan up`은
+  `give/up`만 member이고 저장 표제어는 `give up`입니다.
+- Mini lookup에서는 긴 gloss·다른 뜻 후보·설명을 만들지 않습니다.
+
+### Jev의 역할
+
+Jev는 **saved Meaning selector + AI-call gate** 하나만 담당합니다.
+
+입력은 현재 문장과 이 기기에 이미 저장된 Meaning 후보입니다. 선택지는:
+
+```text
+meaning_1
+meaning_2
+...
+AI_REQUIRED
+```
+
+- 기존 Meaning 하나를 그대로 보여 줘도 충분히 정확하면 그것을 고릅니다.
+- ordinary collocation이나 의미가 그대로 합쳐지는 전치사 결합이라는 이유만으로
+  `AI_REQUIRED`를 남발하지 않습니다.
+- 다른 sense이거나, 더 큰 lexical expression의 일부라서 기존 단어 뜻만 보여 주면 의미를
+  오해하거나 중요한 lexical identity를 잃을 때는 `AI_REQUIRED`를 고릅니다.
+- Jev는 expression 범위, token membership, canonical, 한국어 뜻을 생성하지 않습니다.
+- OEWN/영영 sense DB와 lazy Korean translation 경로는 사용하지 않습니다.
+
+## 저장 모델
+
+lexical identity와 문장 annotation을 분리합니다.
+
+```text
+Lexical Item
+canonical: give up
+
+Meaning
+ko: 포기하다
+
+Context
+sentence: He gave the whole plan up.
+members: [gave, up]
+```
+
+비연속 표현은 기존 저장 포맷인 `phraseParts`와 `phraseGaps`로 보존합니다.
+이 포맷은 Jev용이 아니라 Text/PDF/EPUB에서 같은 표현을 색칠하기 위한 문장 annotation입니다.
 
 ## 화면에서 할 수 있는 것
 
-- 뜻에 필요한 손짓은 셋뿐입니다 — 만들기(＋) · 고르기(칩) · 지우기(×). 뜻은 고치지 않고
-  지우고 새로 적습니다. 내가 적은 뜻은 이후 AI가 덮어쓰지 않습니다.
-- 뜻 아래 한 줄은 **그 뜻이 어떤 상황에서 쓰이는지**를 말합니다. 저장한 낱말을 다른
-  문장에서 만나면 기존 뜻이 먼저 보이고, Jev 판정과 필요한 새 뜻 조회는 자동으로
-  진행됩니다.
-- 표제어(영어 낱말)는 읽는 글자입니다. 손으로 고치지 않습니다 — 그 글자는 원문 색칠과
-  캐시가 기대는 열쇠에서 나오므로, 화면에서만 바꾸면 둘이 갈라집니다. 잘못 잡힌 낱말은
-  단어장에서 뺀 뒤 원하는 낱말을 다시 누릅니다.
-- 다른 후보를 고르거나 `넓은 문맥으로` 다시 물어볼 수 있습니다.
-- 낱말 창의 `이 문장이 통째로 안 읽힐 때`는 선택한 문장을 번역하고 어려운 구조를 설명합니다.
-- 저장한 낱말에는 별표로 모르는 정도를 표시합니다. 복습 간격 기능은 아직 없습니다.
+- 작은 필에는 현재 뜻 하나만 빠르게 보여 줍니다.
+- 필을 눌러 상세창에 들어갈 때만 품사·gloss를 lazy-load합니다.
+- IPA·음성·영어 정의는 `api.dictionaryapi.dev`에서 별도로 받으며 한국어 뜻을 결정하지 않습니다.
+- 뜻에 필요한 손짓은 만들기(＋) · 고르기(칩) · 지우기(×)입니다.
+- 사용자가 직접 만든 뜻을 AI가 덮어쓰지 않습니다.
+- 낱말을 길게 누르는 문장 해석은 word lookup과 별개의 기능입니다.
 
 ## 로그인과 한도
 
 | 기능 | 로그인 전 | 로그인 후 |
 | --- | --- | --- |
 | 영어 사전 메타데이터·기기 단어장 | 가능 | 가능 |
-| AI 낱말 뜻 | 기기당 체험 횟수 안에서 가능 | 가능 |
-| 문장 전체 설명 | 불가 | 하루 5회 |
+| AI 낱말 뜻/상세 | 기기당 체험 횟수 안에서 가능 | 서버 설정 하루 한도 안에서 가능 |
+| 문장 전체 설명 | 불가 | 같은 AI 사용량 풀에서 더 높은 비용으로 차감 |
 | 기기 간 동기화 | 불가 | 가능 |
 
 로그인 전 AI 체험 횟수는 서버 설정 `AI_ANON_FREE`로 정하며 기본값은 10회입니다.
-이 값은 기기 저장소에 연결된 첫 경험용 한도일 뿐, 계정 보안 수단은 아닙니다.
+로그인 후 기본 일일 풀은 서버의 `AI_DAILY_LIMIT`/기본값으로 관리됩니다.
 
 ## 무엇이 어디에 남나
 
 ### 기기 안
 
-- 문맥별 AI 답과 영어 사전 메타데이터
-- 단어장: 낱말, 뜻, 별표, 예문, 책 제목
-- 사용자가 직접 고친 뜻
-
-브라우저 또는 앱의 사이트 데이터를 지우면 기기 안 데이터도 지워질 수 있습니다.
+- 문맥별 mini lookup 캐시
+- Meaning별 detail cache
+- 영어 사전 메타데이터
+- 단어장: lexical item, 뜻, 별표, 예문, 책 제목
+- 사용자가 직접 만든 뜻
 
 ### Breeze 서버와 AI 제공자
 
-Jev 판정을 요청할 때 낱말, 선택한 문장(최대 600자), 이 기기에 저장된 서로 다른 한국어
-뜻 후보가 Breeze 서버를 거쳐 TypeSafe에 전달됩니다. `NEW`가 선택되거나 Jev 요청이
-실패하면 낱말과 문장이 문맥 AI 제공자에게 전달됩니다. Breeze 서버는 문장 본문이나
-뜻 후보를 사전 데이터로 저장하지 않습니다.
+처음 보는 문맥이나 `AI_REQUIRED`에서는 낱말, 문장(최대 600자), token 목록과 클릭 token
+index가 생성 AI 제공자에게 전달됩니다.
 
-운영·한도·품질 개선을 위해 서버에는 다음과 같은 기록이 남을 수 있습니다.
+저장한 lexical item을 다른 문장에서 만났을 때는 현재 문장과 이 기기에 저장된 Meaning
+후보가 Breeze 서버를 거쳐 TypeSafe(Jev)에 전달됩니다. Jev에는 expression membership을
+찾기 위한 token-by-token 질문을 보내지 않습니다.
 
-- 계정 또는 로그인 전 기기 식별자, 호출 시각과 횟수
-- 호출 종류, 사용한 제공자와 모델, 성공 여부, 응답 시간과 토큰 사용량
+상세창을 처음 열어 gloss가 필요할 때는 저장된 canonical, 한국어 Meaning, 최초 예문이
+생성 AI 제공자에게 전달됩니다.
 
-운영 기록에는 표제어, 문장·문장 지문, 책 제목, 저장된 뜻 후보, AI 뜻, 사용자가 적은
-뜻을 저장하지 않습니다.
+Breeze 서버는 문장 본문이나 Meaning 후보를 공용 사전 데이터로 저장하지 않습니다.
+운영·한도 확인을 위해 호출 종류, 제공자/모델, 성공 여부, 응답 시간, 토큰 사용량은
+남을 수 있습니다.
 
-로그인하면 단어장 전체(저장 예문과 책 제목 포함)는 기기에서 암호화되어 자동
-동기화됩니다. 서버에는 E2EE 암호문만 남습니다. 정확한 데이터 처리와 삭제 방법은
+로그인한 단어장과 읽던 자리는 기기에서 암호화되어 동기화됩니다. 자세한 데이터 처리는
 [PRIVACY.md](PRIVACY.md)를 봐 주세요.
 
 ## 구현의 경계
 
-- AI는 항상 맞을 수 없으므로, 사용자가 직접 뜻을 만들고 고르는 길을 AI 답보다 앞에 둡니다.
-  단어 팝업에서 뜻에 필요한 동작은 셋뿐입니다 — 생성(＋) · 선택(칩) · 삭제(메인 ×).
-  AI가 새 뜻을 가져와도 사용자가 저장해 둔 뜻을 지우거나 덮지 않습니다.
-- 단어 뜻을 모든 사용자에게 재사용하는 공용 한국어 사전은 사용하지 않습니다. Jev는
-  현재 기기가 보내 준 기존 뜻만 분류하고, 맞는 것이 없으면 `NEW`를 고릅니다.
-- 비연속 표현은 선택된 token의 표제어 순서(`phraseParts`)와 사이 token 개수
-  (`phraseGaps`)를 저장합니다. 기존 `phraseParts`만 있는 레코드는 모든 간격이 0인
-  연속 phrase로 계속 읽습니다. 생성형 AI의 phrase suggestion은 사용하지 않습니다.
-- 문장 설명은 낱말 조회보다 비용과 개인정보 민감도가 높아 로그인 및 하루 한도를 둡니다.
-  단어 팝업 안의 단추가 아니라 **낱말을 꾹 누르는** 별개의 손짓입니다 — 팝업은 뜻 하나만
-  다루고, 해석은 화면 한가운데 자기 창에 뜹니다. 꾹 누르기는 넉넉히 길고(1000ms), 손가락이
-  움직이면 취소되며, 확정되기 전에는 문장을 짚지도 칠하지도 않습니다. 확정되면 그 문장만
-  파랗게 차오릅니다 — 스캔본에서도 문단이 아니라 문장의 줄들만 칠하고, 해석 창 뒤의 덮개는
-  그 파란 문장이 비치도록 아주 옅습니다(무엇을 물어봤는지가 곧 답의 절반이라서).
-- 앞으로 단어 복습을 추가하더라도 Anki의 코드를 가져오지 않고, 단순한 간격 반복 상태를
-  Breeze 데이터에 추가하는 방식으로 만듭니다.
+- DeepSeek = lexical intelligence.
+- Jev = saved Meaning selector + AI-call gate.
+- Mini pill = 최소 생성.
+- Detail = lazy enrichment.
+- `dictionaryapi.dev` = IPA·음성·영어 정의 metadata only.
+- OEWN/Breeze Lexicon/lazy Korean repair = lookup critical path에 없음.
+- 같은 문장 캐시는 네트워크보다 먼저 확인합니다.
+- 늦게 도착한 답은 닫힌 lookup을 다시 열거나 화면을 조종할 수 없습니다.
 
 ## 관련 코드
 
 | 위치 | 역할 |
 | --- | --- |
-| `scripts/dictionary/dictionary.js` | 낱말 선택, 캐시, 패널, 단어장 |
+| `scripts/dictionary/dictionary.js` | mini lookup, Jev selector, detail cache, 단어장 |
 | `scripts/dictionary/sentence.js` | 꾹 누르기 · 문장 해석 창 |
-| `server/dict/index.ts` | AI 요청, 한도, 행동 기록 |
-| `sql/supabase_dict.sql` | AI 사용량과 사전 기록 테이블 |
+| `server/dict/index.ts` | DeepSeek/Jev 요청, 한도 |
+| `server/dict/telemetry.ts` | 제공자 latency/token telemetry |
+| `sql/supabase_dict.sql` | AI 사용량 테이블 |

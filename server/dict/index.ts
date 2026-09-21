@@ -7,7 +7,6 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 
 const OPENROUTER_MODEL="deepseek/deepseek-v4-flash-0731";
 const JEV_MODEL="jev-latest";
-const JEV_PHRASE_CONFIDENCE=0.75;
 const GEMINI_MODEL="gemini-3.5-flash-lite";
 const CLAUDE_MODEL="claude-haiku-4-5";
 const DEFAULT_DAILY_LIMIT=300;
@@ -47,196 +46,97 @@ function parseJson(raw:string):Record<string,unknown>|null{try{return JSON.parse
 const clean=(v:unknown,max:number)=>String(v??"").trim().slice(0,max);
 const cleanList=(v:unknown,n:number,max:number)=>(Array.isArray(v)?v:[]).map(x=>clean(x,max)).filter(Boolean).slice(0,n);
 
-const LOOK_SCHEMA={type:"object",additionalProperties:false,required:["lemma","pos","ko","gloss"],properties:{lemma:{type:"string"},pos:{type:"string"},ko:{type:"string"},gloss:{type:"string"}}};
-function lookPrompt(word:string,clicked:string,sentence:string,avoid:string[]){
-  const isPhrase=/\s/.test(word.trim());
-  const form=isPhrase
-    ? `표현: ${word}`
-    : clicked&&clicked.toLowerCase()!==word.toLowerCase()
-      ? `단어: ${word} (문장에서는 "${clicked}")`
-      : `단어: ${word}`;
-  const skip=avoid.length?`\n이미 보여 준 뜻이므로 같은 sense를 다시 만들지 마세요: ${avoid.join(", ")}\n`:"";
-  return `${form}
-문장: ${sentence||"(문장 없음 — 가장 일반적이고 재사용 가능한 사전 뜻으로 답하세요)"}
+const LOOK_SCHEMA={type:"object",additionalProperties:false,required:["kind","canonical","members","ko"],properties:{kind:{type:"string"},canonical:{type:"string"},members:{type:"array",items:{type:"integer"}},ko:{type:"string"}}};
+function fallbackTokens(sentence:string){const out:string[]=[];for(const match of String(sentence||"").matchAll(/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g))out.push(match[0]);return out}
+function miniPrompt(word:string,clicked:string,sentence:string,tokens:string[],clickedIndex:number,avoid:string[]){
+  const skip=avoid.length?`\n이미 보여 준 뜻이므로 같은 뜻은 다시 만들지 마세요: ${avoid.join(", ")}\n`:"";
+  return `target: ${word}
+clicked: ${clicked||word}
+sentence: ${sentence||"(문장 없음)"}
+tokens: ${tokens.map((token,index)=>`${index}:${token}`).join(" | ")}
+clicked_index: ${clickedIndex}
 ${skip}
-현재 문맥을 근거로 target의 사전 sense를 정확히 하나 만드세요. 문장을 번역하지 말고, 다른 문장에서도 같은 의미라면 그대로 재사용할 수 있는 dictionary sense를 만드세요.
+한국인 영어 학습자가 지금 누른 target을 바로 이해하도록 하나의 lexical lookup 결과만 만드세요.
 
-중요:
-- 문장은 어떤 sense인지 판단하기 위한 증거입니다. 현재 문장의 주변 단어를 ko에 번역해 붙이지 마세요.
-- target이 한 단어라면 ko는 그 단어 자체의 뜻만 나타내야 합니다.
-  예: "design philosophy"에서 target이 philosophy라면 "철학"은 좋고 "디자인 철학"은 나쁩니다.
-- target이 이미 여러 단어로 이루어진 표현이라면 그 표현 전체의 사전식 뜻을 만드세요.
-  예: take off → "이륙하다".
-- 새로운 phrase를 임의로 발명하거나 target 바깥의 단어를 sense에 끌어들이지 마세요.
-- 현재 필요한 sense 하나만 만드세요. 다른 흔한 뜻이나 대체 sense를 추가로 생성하지 마세요.
+반드시 다음 원칙을 지키세요.
+- kind는 word 또는 expression.
+- 기본값은 word입니다. expression을 남발하지 마세요.
+- 단일 단어의 짧은 한국어 뜻만으로 현재 의미를 충분히 정확하게 전달할 수 있으면 word로 처리하세요.
+- phrasal verb, idiom, fixed expression, 전문적인 고정 용어처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나 중요한 lexical identity를 잃을 때만 expression으로 처리하세요.
+- 단순 collocation, 일반적인 수식어+명사, 의미가 그대로 합쳐지는 전치사 결합은 expression으로 올리지 마세요.
+- canonical은 저장할 사전형입니다. word면 원형 단어, expression이면 재사용 가능한 표제형을 적으세요.
+- members는 현재 sentence의 token index입니다. clicked_index는 반드시 포함하세요.
+- word면 members는 clicked_index 하나뿐입니다.
+- expression이면 lexical identity를 이루는 token만 포함하세요. 다만 contiguous expression 안의 of/to/at 같은 function word를 임의로 빼면 안 됩니다.
+- 표제형에서 one's/someone/something처럼 바뀔 수 있는 variable slot은 members에 넣지 마세요. 예: "a feather in your cap"은 고정된 a/feather/in/cap이 members이고 your는 variable gap입니다.
+- 분리 가능한 구동사의 목적어/변수도 members에 넣지 마세요. 예: "gave the plan up"의 give up은 give/up만.
+- 반대로 고정된 function word는 빼지 마세요. "policy of benign neglect"를 하나의 expression으로 판단했다면 of도 member입니다.
+- members를 이어 붙여 canonical을 만들지 마세요. canonical은 별도로 올바른 사전형을 작성하세요.
+- ko는 현재 sense의 짧고 자연스러운 한국어 사전 뜻 하나만. 설명, gloss, 다른 뜻은 쓰지 마세요.
 
-- lemma: 사전 표제어(원형). 표현이면 전달된 표현 전체를 그대로, 고유명사나 약어면 그대로 적으세요.
-- pos: 명사|동사|형용사|부사|전치사|기타 중 하나.
-- ko: 재사용 가능한 짧은 한국어 사전 뜻 하나.
-  * 설명문이 아니라 한 단어 또는 짧은 구를 우선하세요.
-  * 현재 문장의 특정 인물·사물·상황을 포함하지 마세요.
-  * 정확성을 해치지 않는 범위에서 한국 중·고등학생이나 일반 학습자가 바로 이해할 수 있는 쉬운 한국어를 우선하세요.
-  * 드문 한자어, 지나치게 사전적인 문어체, 불필요한 전문 번역어보다 흔하고 직관적인 표현을 우선하세요.
-  * 전문용어가 더 정확하더라도 쉬운 표현으로 같은 sense를 정확히 전달할 수 있으면 쉬운 표현을 ko에 쓰고, 전문적인 차이는 gloss에서 설명하세요.
-  * 예: extrapolate는 문맥상 가능하다면 "추정하다"처럼 이해하기 쉬운 뜻을 우선하고, 외삽 개념은 gloss에서 정확히 설명하세요.
-- gloss: 이 sense가 무엇을 뜻하는지 쉬운 한국어 한 문장으로 설명하세요.
-  * 현재 문장의 특정 사건에 종속되지 않아야 합니다.
-  * 다른 문장의 같은 sense에도 그대로 재사용 가능해야 합니다.
-  * ko만으로 구분하기 어려운 의미 차이나 전문적 정확성은 여기서 보완하세요.
-
-{"lemma":"","pos":"","ko":"","gloss":""}`;
+{"kind":"word","canonical":"","members":[${clickedIndex}],"ko":""}`;
 }
 async function opLook(body:any,userId:string|null,seeding=false){
-  const word=clean(body.word,60).toLowerCase(),clicked=clean(body.clicked,60),sentence=clean(body.sentence,600),avoid=cleanList(body.avoid,4,40),retry=!!body.retry;let anonLeft:number|null=null,userLeft:number|null=null;
-  if(seeding){}else if(!userId){const verdict=await takeAnonQuota(clean(body.device,64));if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);if(verdict.status!=="ok")return json({error:"login_required"},401);anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE))}else{const quota=await takeQuota(userId);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);userLeft=quota.left}
-  const out=await ask({action:seeding?"seed":retry?"retry":"look",prompt:lookPrompt(word,clicked,sentence,avoid),maxTokens:450,schema:LOOK_SCHEMA});const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
-  const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase()),aiLemma=clean(parsed.lemma,60).toLowerCase();const lemma=cands.includes(aiLemma)||aiLemma===word?aiLemma:(word||cands[0]||"");const ko=clean(parsed.ko,60);const answer={lemma,pos:clean(parsed.pos,12),ko,gloss:clean(parsed.gloss,300),alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})};if(!answer.ko)return json({error:"empty_answer"},502);return json(answer);
-}
-
-const REPAIR_SCHEMA={type:"object",additionalProperties:false,required:["ko","gloss"],properties:{ko:{type:"string"},gloss:{type:"string"}}};
-function repairPrompt(word:string,pos:string,enGloss:string,draftKo:string,draftGloss:string){
-  return `표제어: ${word}
-품사: ${pos||"(없음)"}
-영어 sense 정의: ${enGloss}
-기존 한국어 짧은 뜻: ${draftKo||"(없음)"}
-기존 한국어 설명: ${draftGloss||"(없음)"}
-
-이 영어 sense 하나의 한국어 사전 표현만 교정하세요. 새 sense를 만들거나 문맥을 추측하지 마세요.
-- ko: 한국 중·고등학생이나 일반 학습자가 바로 이해할 수 있는 짧고 자연스러운 사전 뜻. 가능하면 한 단어 또는 짧은 구.
-- gloss: 위 영어 sense를 정확히 보존하는 쉬운 한국어 한 문장.
-- 기존 한국어가 이미 좋으면 자연스럽게 다듬는 정도만 하세요.
-- 드문 전문 번역어보다 정확성을 해치지 않는 쉬운 표현을 우선하세요.
-
-{"ko":"","gloss":""}`;
-}
-async function opRepair(body:any,userId:string|null){
-  const word=clean(body.word,60).toLowerCase(),pos=clean(body.pos,20),enGloss=clean(body.enGloss,500),
-    draftKo=clean(body.draftKo,80),draftGloss=clean(body.draftGloss,400);
-  if(!word||!enGloss)return json({error:"bad_repair_request"},400);
+  const word=clean(body.word,60).toLowerCase(),clicked=clean(body.clicked,60),sentence=clean(body.sentence,600),avoid=cleanList(body.avoid,4,40),retry=!!body.retry;
   let anonLeft:number|null=null,userLeft:number|null=null;
-  if(!userId){
-    const verdict=await takeAnonQuota(clean(body.device,64));
-    if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);
-    if(verdict.status!=="ok")return json({error:"login_required"},401);
-    anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE));
-  }else{
-    const quota=await takeQuota(userId);
-    if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);
-    userLeft=quota.left;
-  }
-  const out=await ask({action:"repair",prompt:repairPrompt(word,pos,enGloss,draftKo,draftGloss),maxTokens:260,schema:REPAIR_SCHEMA});
+  if(seeding){}else if(!userId){const verdict=await takeAnonQuota(clean(body.device,64));if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);if(verdict.status!=="ok")return json({error:"login_required"},401);anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE))}else{const quota=await takeQuota(userId);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);userLeft=quota.left}
+  const supplied:string[]=Array.isArray(body.tokens)?body.tokens.slice(0,300).map((item:any)=>clean(item&&item.text!==undefined?item.text:item,60)):[];
+  const tokens:string[]=supplied.length?supplied:fallbackTokens(sentence);
+  let clickedIndex=Number(body.clickedIndex);
+  if(!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=tokens.length){const needle=(clicked||word).replace(/’/g,"'").toLowerCase();const matches=tokens.map((token:string,index:number)=>({token,index})).filter((item:{token:string;index:number})=>item.token.replace(/’/g,"'").toLowerCase()===needle);clickedIndex=matches.length===1?matches[0].index:Math.max(0,matches[0]?.index??0)}
+  const out=await ask({action:seeding?"seed":retry?"retry":"look",prompt:miniPrompt(word,clicked,sentence,tokens,clickedIndex,avoid),maxTokens:120,schema:LOOK_SCHEMA});
   const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
-  const ko=clean(parsed.ko,80),gloss=clean(parsed.gloss,400);if(!ko||!gloss)return json({error:"empty_answer"},502);
-  return json({ko,gloss,provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
+  const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase());
+  let kind=clean(parsed.kind,20).toLowerCase()==="expression"?"expression":"word";
+  let members:number[]=(Array.isArray(parsed.members)?parsed.members:[]).map((value:unknown)=>Number(value)).filter((index:number)=>Number.isInteger(index)&&index>=0&&index<tokens.length);
+  members=[...new Set(members)].sort((a,b)=>a-b);
+  if(kind==="word")members=[clickedIndex];
+  if(kind==="expression"&&(members.length<2||!members.includes(clickedIndex))){kind="word";members=[clickedIndex]}
+  let canonical=clean(parsed.canonical,120).replace(/\s+/g," ").trim();
+  if(kind==="word"){const lower=canonical.toLowerCase();canonical=cands.includes(lower)||lower===word?lower:(word||cands[0]||lower)}
+  else if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(canonical))canonical=word;
+  const ko=clean(parsed.ko,60);if(!ko)return json({error:"empty_answer"},502);
+  return json({kind,canonical,members,ko,lemma:canonical,pos:"",gloss:"",note:"",phrase:"",alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
 }
 
-/* One Jev request routes a click to an existing sense, a phrase, or NONE.
-   Phrase token membership is asked in the same System One request, so the normal
-   saved-word path no longer pays phrase + judge as two serial HTTP round trips. */
-async function opRoute(body:any,signal:AbortSignal){
-  const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
-  const word=clean(body.word,60),sentence=clean(body.sentence,600);
-  const rawSenses=Array.isArray(body.senses)?body.senses:[];
-  const senses=rawSenses.slice(0,64).map((item:any,index:number)=>({
-    id:`sense_${index}`,senseId:clean(item&&item.senseId,120),meaning:clean(item&&item.meaning,80),
-    pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,400),
-    enGloss:clean(item&&item.enGloss,500),quality:clean(item&&item.quality,20)
-  })).filter(item=>item.meaning||item.enGloss);
-  const rawTokens=Array.isArray(body.tokens)?body.tokens:[];
-  const tokens=rawTokens.slice(0,500).map((item:any)=>clean(item&&item.text,60));
-  const clickedIndex=Number(body.clickedIndex);
-  const phraseEligible=tokens.length>=2&&Number.isInteger(clickedIndex)&&clickedIndex>=0&&clickedIndex<tokens.length;
-  if(!word||!sentence)return json({error:"bad_route_request"},400);
+const DETAIL_SCHEMA={type:"object",additionalProperties:false,required:["pos","gloss"],properties:{pos:{type:"string"},gloss:{type:"string"}}};
+function detailPrompt(canonical:string,ko:string,sentence:string){return `표제어: ${canonical}
+저장된 한국어 뜻: ${ko}
+처음 저장된 문장: ${sentence||"(없음)"}
 
-  const criteria:Record<string,string>=Object.fromEntries(senses.map(item=>[
-    item.id,[item.senseId?`sense_id: ${item.senseId}`:"",item.pos?`품사: ${item.pos}`:"",
-      item.enGloss?`English gloss: ${item.enGloss}`:"",item.meaning?`한국어 뜻: ${item.meaning}`:"",
-      item.gloss?`한국어 설명: ${item.gloss}`:""].filter(Boolean).join(" · ")
-  ]));
-  if(phraseEligible)criteria.PHRASE="클릭한 token이 현재 문장에서 phrasal verb, idiom, fixed expression 또는 하나의 사전 단위로 봐야 하는 multiword lexical expression의 구성원임";
-  criteria.NONE="클릭한 것은 이 문장에서 독립적인 word로 쓰였지만, 저장된 sense 중 맞는 것이 없음";
+저장된 이 뜻 하나를 한국인 영어 학습자에게 짧게 설명하세요. 새로운 뜻을 만들거나 다른 sense를 추가하지 마세요.
+- pos: 명사|동사|형용사|부사|전치사|기타 중 하나
+- gloss: 저장된 한국어 뜻이 정확히 어떤 의미인지 쉬운 한국어 한 문장. 특정 문장 번역이 아니라 같은 sense에 재사용 가능해야 합니다.
 
-  const questions:Record<string,unknown>={
-    route:{
-      type:"choice",
-      instructions:"현재 문장에서 클릭한 target을 분류하세요. 저장된 sense가 정확히 맞으면 해당 sense를 고르세요. 영어 gloss를 의미의 기준으로 삼고, 품사와 한국어 뜻·설명도 함께 비교하세요. 한국어 번역이 어색하거나 짧게 잘렸더라도 영어 gloss가 현재 문맥에 정확히 맞으면 그 sense를 선택하세요. 클릭 token이 phrasal verb, idiom, fixed expression 또는 하나의 사전 단위로 봐야 하는 multiword lexical expression의 구성원이면 PHRASE를 고르세요. design philosophy, economic pressure처럼 의미가 그대로 합쳐지는 일반 수식어+명사 조합이나 단순 collocation은 PHRASE가 아닙니다. 저장 sense가 맞지 않고 phrase도 아니면 NONE을 고르세요. 저장 sense가 얼핏 비슷해도 실제로 phrase 안에서 다른 의미가 생긴 경우에는 PHRASE가 우선입니다.",
-      criteria
-    }
-  };
-  if(phraseEligible){
-    tokens.forEach((text,index)=>{
-      questions[`token_${index}`]={
-        type:"choice",
-        instructions:`문장 전체에서 사용자가 클릭한 token은 ${clickedIndex}번 '${tokens[clickedIndex]}'입니다. ${index}번 token '${text}'이 클릭 token과 함께 하나의 lexical expression(phrasal verb, idiom, fixed expression, 의미 단위로 함께 봐야 하는 multiword expression)을 이루는 구성원인지 판단하세요. 학습자가 사전에서 찾아야 할 완전한 표현을 만드세요. 전치사·particle은 완전한 표현의 일부라면 반드시 YES입니다(예: take care of, look forward to는 세 token 모두 YES). 활용된 be동사는 표제어 자체가 be를 요구할 때만 YES입니다(be interested in의 is는 YES). 시제·수동태만 만드는 auxiliary는 NO입니다(were taken care of의 were는 NO). 분리 가능한 목적어도 구성원이 아닙니다(give the idea up의 idea는 NO, give/up은 YES). 같은 단어 조합처럼 보여도 현재 문맥이 문자 그대로의 방향·공간 이동이면 숙어가 아닙니다(looked forward across the field의 looked/forward는 모두 NO이고, look forward to에서만 look/forward/to가 YES). 단순히 의미적으로 관련되거나 가까이 있다는 이유만으로 YES를 선택하지 마세요. 여러 후보가 가능하면 현재 문맥에서 가장 확실한 하나만 선택하고, 애매하면 NO를 선택하세요.`,
-        criteria:{YES:"같은 lexical expression의 사전형을 이루는 구성원",NO:"그 expression의 구성원이 아님"}
-      };
-    });
-  }
-
-  const trace=newAiTrace("route"),combined=AbortSignal.any([signal,AbortSignal.timeout(2200)]);
-  const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{
-    method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},
-    body:JSON.stringify({model:JEV_MODEL,state:{word,sentence,clickedIndex,tokens},questions}),signal:combined
-  });
-  if(!r.ok)return json({error:"jev_failed",status:r.status},502);
-  const data=await r.json(),selected=clean(data?.answers?.route?.choice,40);
-  if(!(selected in criteria))return json({error:"jev_invalid_response"},502);
-  const confidence=Number(data?.answers?.route?.confidence??0);
-  if(selected!=="PHRASE")return json({selected,confidence,members:[],threshold:JEV_PHRASE_CONFIDENCE,provider:"jev"});
-
-  const candidates:Array<{index:number;confidence:number}>=[];
-  for(let index=0;index<tokens.length;index++){
-    const answer=data?.answers?.[`token_${index}`],choice=clean(answer?.choice,8).toUpperCase();
-    if(choice!=="YES"&&choice!=="NO")return json({error:"jev_invalid_response"},502);
-    const tokenConfidence=Number(answer?.confidence??answer?.probabilities?.[choice]??0);
-    if(choice==="YES")candidates.push({index,confidence:Number.isFinite(tokenConfidence)?tokenConfidence:0});
-  }
-  const members=candidates.filter(item=>item.confidence>=JEV_PHRASE_CONFIDENCE);
-  const clicked=members.find(item=>item.index===clickedIndex);
-  if(!clicked||members.length<2){
-    return json({selected:"NONE",confidence,members:[],candidates,threshold:JEV_PHRASE_CONFIDENCE,
-      phraseRejected:true,provider:"jev"});
-  }
-  return json({selected:"PHRASE",confidence,members,candidates,threshold:JEV_PHRASE_CONFIDENCE,provider:"jev"});
+{"pos":"","gloss":""}`}
+async function opDetail(body:any,userId:string|null){
+  const canonical=clean(body.canonical||body.word,120),ko=clean(body.ko,80),sentence=clean(body.sentence,600);
+  if(!canonical||!ko)return json({error:"bad_detail_request"},400);
+  let anonLeft:number|null=null,userLeft:number|null=null;
+  if(!userId){const verdict=await takeAnonQuota(clean(body.device,64));if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);if(verdict.status!=="ok")return json({error:"login_required"},401);anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE))}else{const quota=await takeQuota(userId);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);userLeft=quota.left}
+  const out=await ask({action:"detail",prompt:detailPrompt(canonical,ko,sentence),maxTokens:180,schema:DETAIL_SCHEMA});
+  const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
+  const gloss=clean(parsed.gloss,400);if(!gloss)return json({error:"empty_answer"},502);
+  return json({pos:clean(parsed.pos,20),gloss,provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
 }
 
-/* Jev only chooses from meanings the device supplied. It never writes a meaning. */
+/* Jev has one job: choose a saved Meaning, or require fresh AI lexical analysis. */
+type SavedMeaningChoice={id:string;clientId:string;meaning:string;pos:string;gloss:string};
 async function opJudge(body:any,signal:AbortSignal){
   const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
-  const word=clean(body.word,60),sentence=clean(body.sentence,600);const raw=Array.isArray(body.senses)?body.senses:[];
-  const senses=raw.slice(0,16).map((item:any,index:number)=>({id:`sense_${index}`,meaning:clean(item&&item.meaning,60),pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,300)})).filter(item=>item.meaning);
+  const word=clean(body.word,120),sentence=clean(body.sentence,600),raw=Array.isArray(body.senses)?body.senses:[];
+  const senses:SavedMeaningChoice[]=raw.slice(0,16).map((item:any,index:number)=>({id:`meaning_${index}`,clientId:clean(item&&item.id,120),meaning:clean(item&&item.meaning,80),pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,400)})).filter((item:SavedMeaningChoice)=>item.meaning);
   if(!word||!sentence||!senses.length)return json({error:"bad_judge_request"},400);
-  const criteria:Record<string,string>=Object.fromEntries(senses.map(item=>[item.id,[item.meaning,item.pos?`품사: ${item.pos}`:"",item.gloss?`설명: ${item.gloss}`:""].filter(Boolean).join(" · ")]));criteria.NEW="기존 뜻과 설명을 함께 봐도 현재 문장에 맞는 sense가 없음";
-  const trace=newAiTrace("judge");const combined=AbortSignal.any([signal,AbortSignal.timeout(1800)]);
-  const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify({model:JEV_MODEL,state:{word,sentence},questions:{reuse:{type:"choice",instructions:"현재 문장의 의미와 가장 잘 맞는 기존 저장 sense를 선택하세요. 각 후보의 짧은 한국어 뜻뿐 아니라 품사와 설명(gloss)도 함께 비교하세요. 뜻 글자가 비슷하더라도 gloss가 현재 문맥과 다르면 고르지 마세요. 기존 후보 중 맞는 sense가 없을 때는 NEW를 선택하세요.",criteria}}}),signal:combined});
-  if(!r.ok)return json({error:"jev_failed",status:r.status},502);const data=await r.json();const selected=clean(data?.answers?.reuse?.choice,40);if(!(selected in criteria))return json({error:"jev_invalid_response"},502);return json({selected,confidence:Number(data?.answers?.reuse?.confidence??0),provider:"jev"});
-}
-
-/* The client owns tokenisation and sends the exact clicked index. Jev may only
-   classify those tokens; it never invents a phrase string. A phrase is accepted
-   only from YES tokens that clear one conservative threshold. */
-async function opPhrase(body:any,signal:AbortSignal){
-  const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
-  const sentence=clean(body.sentence,4000),raw=Array.isArray(body.tokens)?body.tokens:[];
-  const tokens=raw.slice(0,500).map((item:any)=>clean(item&&item.text,60));
-  const clickedIndex=Number(body.clickedIndex);
-  if(!sentence||tokens.length<2||!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=tokens.length)return json({error:"bad_phrase_request"},400);
-  const questions:Record<string,unknown>={};
-  tokens.forEach((text,index)=>{questions[`token_${index}`]={type:"choice",instructions:`문장 전체에서 사용자가 클릭한 token은 ${clickedIndex}번 '${tokens[clickedIndex]}'입니다. ${index}번 token '${text}'이 클릭 token과 함께 하나의 lexical expression(phrasal verb, idiom, fixed expression, 의미 단위로 함께 봐야 하는 multiword expression)을 이루는 구성원인지 판단하세요. 학습자가 사전에서 찾아야 할 완전한 표현을 만드세요. 전치사·particle은 완전한 표현의 일부라면 반드시 YES입니다(예: take care of, look forward to는 세 token 모두 YES). 활용된 be동사는 표제어 자체가 be를 요구할 때만 YES입니다(be interested in의 is는 YES). 시제·수동태만 만드는 auxiliary는 NO입니다(were taken care of의 were는 NO). 분리 가능한 목적어도 구성원이 아닙니다(give the idea up의 idea는 NO, give/up은 YES). 같은 단어 조합처럼 보여도 현재 문맥이 문자 그대로의 방향·공간 이동이면 숙어가 아닙니다(looked forward across the field의 looked/forward는 모두 NO이고, look forward to에서만 look/forward/to가 YES). 단순히 의미적으로 관련되거나 가까이 있다는 이유만으로 YES를 선택하지 마세요. 여러 후보가 가능하면 현재 문맥에서 가장 확실한 하나만 선택하고, 애매하면 NO를 선택하세요.`,criteria:{YES:"같은 lexical expression의 사전형을 이루는 구성원",NO:"그 expression의 구성원이 아님"}}});
-  const trace=newAiTrace("phrase");const combined=AbortSignal.any([signal,AbortSignal.timeout(2200)]);
-  const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify({model:JEV_MODEL,state:{sentence,clickedIndex,tokens},questions}),signal:combined});
+  const criteria:Record<string,string>=Object.fromEntries(senses.map((item:SavedMeaningChoice)=>[item.id,[item.meaning,item.pos?`품사: ${item.pos}`:"",item.gloss?`설명: ${item.gloss}`:""].filter(Boolean).join(" · ")]));
+  criteria.AI_REQUIRED="저장된 Meaning 어느 것도 그대로 재사용하기에 충분히 정확하지 않거나, target이 더 큰 lexical expression의 일부여서 새 lexical analysis가 필요함";
+  const trace=newAiTrace("judge"),combined=AbortSignal.any([signal,AbortSignal.timeout(1800)]);
+  const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify({model:JEV_MODEL,state:{word,sentence},questions:{reuse:{type:"choice",instructions:"현재 문장에서 target을 읽을 때 저장된 Meaning 중 하나를 그대로 보여 줘도 충분히 정확한지 판단하세요. 가능하면 가장 정확한 기존 Meaning을 고르세요. ordinary collocation, 일반적인 전치사 결합, 단순 수식 관계 때문에 불필요하게 AI_REQUIRED를 고르지 마세요. 반대로 target이 phrasal verb, idiom, fixed expression, 전문 고정 용어 등 더 큰 lexical unit의 일부여서 기존 단어 뜻만 보여 주면 의미를 오해하거나 중요한 lexical identity를 잃는 경우, 또는 기존 Meaning과 다른 sense인 경우에는 AI_REQUIRED를 고르세요. 확신이 낮으면 AI_REQUIRED를 고르세요.",criteria}}}),signal:combined});
   if(!r.ok)return json({error:"jev_failed",status:r.status},502);
-  const data=await r.json(),candidates:Array<{index:number;confidence:number}>=[];
-  for(let index=0;index<tokens.length;index++){
-    const answer=data?.answers?.[`token_${index}`],choice=clean(answer?.choice,8).toUpperCase();
-    if(choice!=="YES"&&choice!=="NO")return json({error:"jev_invalid_response"},502);
-    const confidence=Number(answer?.confidence??answer?.probabilities?.[choice]??0);
-    if(choice==="YES")candidates.push({index,confidence:Number.isFinite(confidence)?confidence:0});
-  }
-  const members=candidates.filter(item=>item.confidence>=JEV_PHRASE_CONFIDENCE);
-  const clicked=members.find(item=>item.index===clickedIndex);
-  const accepted=!!clicked&&members.length>=2;
-  return json({accepted,members,candidates,threshold:JEV_PHRASE_CONFIDENCE,provider:"jev"});
+  const data=await r.json(),selected=clean(data?.answers?.reuse?.choice,40);
+  if(!(selected in criteria))return json({error:"jev_invalid_response"},502);
+  if(selected==="AI_REQUIRED")return json({selected,confidence:Number(data?.answers?.reuse?.confidence??0),provider:"jev"});
+  const picked=senses.find((item:SavedMeaningChoice)=>item.id===selected);
+  return json({selected:picked?.clientId||selected,confidence:Number(data?.answers?.reuse?.confidence??0),provider:"jev"});
 }
 
 const EXPLAIN_SCHEMA={type:"object",additionalProperties:false,required:["ko","points"],properties:{ko:{type:"string"},points:{type:"array",items:{type:"string"}}}};
@@ -251,4 +151,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="repair")return await opRepair(body,userId);if(op==="route")return await opRoute(body,req.signal);if(op==="judge")return await opJudge(body,req.signal);if(op==="phrase")return await opPhrase(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="detail")return await opDetail(body,userId);if(op==="judge")return await opJudge(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});

@@ -1,4 +1,4 @@
-export type AiAction="look"|"retry"|"explain"|"seed"|"judge"|"phrase"|"route"|"repair";
+export type AiAction="look"|"retry"|"explain"|"seed"|"judge"|"detail";
 export type AiTrace={requestId:string;action:AiAction;attempt:number};
 type Provider="openrouter"|"gemini"|"claude"|"jev";
 type RpcClient={rpc:(name:string,args:Record<string,unknown>)=>any};

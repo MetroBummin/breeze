@@ -16,13 +16,13 @@ function sentenceOf(span){
   const re = new RegExp('\\b'+span.textContent.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
   return (sents.find(s=>re.test(s)) || sents[0]).trim();
 }
-const JEV_TOKEN_RE=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
-function jevSentenceTokens(sentence){
-  const tokens=[];let match;JEV_TOKEN_RE.lastIndex=0;
-  while((match=JEV_TOKEN_RE.exec(String(sentence||'')))) tokens.push({text:match[0],start:match.index,end:match.index+match[0].length});
+const LOOKUP_TOKEN_RE=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+function lookupSentenceTokens(sentence){
+  const tokens=[];let match;LOOKUP_TOKEN_RE.lastIndex=0;
+  while((match=LOOKUP_TOKEN_RE.exec(String(sentence||'')))) tokens.push({text:match[0],start:match.index,end:match.index+match[0].length});
   return tokens;
 }
-function jevClickedTokenIndex(span,sentence,tokens){
+function lookupClickedTokenIndex(span,sentence,tokens){
   const hinted=Number(span&&span.dataset&&span.dataset.clickedTokenIndex);
   if(Number.isInteger(hinted)&&hinted>=0&&hinted<tokens.length)return hinted;
   const spot=typeof textSentencePartAt==='function'?textSentencePartAt(span):null;
@@ -31,48 +31,12 @@ function jevClickedTokenIndex(span,sentence,tokens){
   const matches=tokens.map((token,index)=>({token,index})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===raw);
   return matches.length===1?matches[0].index:-1;
 }
-/* ================= Breeze Base Dictionary =================
-   OEWN sense identity is the source of truth. Korean text in the PoC is a draft:
-   the first time a generated sense is actually selected, AI repairs only that
-   Korean layer and the device keeps the repaired overlay by stable sense_id. */
-const BREEZE_LEXICON_URL='public/lexicon/lexicon.min.json?v=oewn-2025-ko-500-poc.1';
-const LS_LEXICON_REPAIRS='breeze.lexicon.repairs.v1';
-let breezeLexicon=null,breezeLexiconPromise=null;
-let lexiconRepairs=load(LS_LEXICON_REPAIRS,{});
-if(!lexiconRepairs||typeof lexiconRepairs!=='object'||Array.isArray(lexiconRepairs))lexiconRepairs={};
-async function ensureBreezeLexicon(){
-  if(breezeLexicon)return breezeLexicon;
-  if(breezeLexiconPromise)return breezeLexiconPromise;
-  if(typeof fetch!=='function')return null;
-  breezeLexiconPromise=fetch(BREEZE_LEXICON_URL).then(r=>r.ok?r.json():null).then(data=>{
-    breezeLexicon=data&&data.entries?data:null;return breezeLexicon;
-  }).catch(()=>null).finally(()=>{breezeLexiconPromise=null;});
-  return breezeLexiconPromise;
-}
-function saveLexiconRepair(senseId,repair){
-  if(!senseId||!repair||!repair.ko)return;
-  lexiconRepairs[senseId]={ko:String(repair.ko).trim(),gloss:String(repair.gloss||'').trim(),
-    quality:'repaired',updatedAt:Date.now()};
-  save(LS_LEXICON_REPAIRS,lexiconRepairs);
-}
-async function breezeBaseSenseCandidates(root){
-  const lexicon=await ensureBreezeLexicon();
-  const list=lexicon&&lexicon.entries&&Array.isArray(lexicon.entries[root])?lexicon.entries[root]:[];
-  return list.map(sense=>{
-    const repair=lexiconRepairs[sense.id]||null;
-    const draft=Array.isArray(sense.ko)?String(sense.ko[0]||'').trim():'';
-    return {source:'base',senseId:String(sense.id||''),meaning:repair&&repair.ko?repair.ko:draft,
-      pos:String(sense.pos||'').trim(),gloss:repair&&repair.gloss?repair.gloss:String(sense.gloss||'').trim(),
-      enGloss:String(sense.en||'').trim(),quality:repair?'repaired':String(sense.quality||'generated')};
-  }).filter(item=>item.senseId&&item.enGloss);
-}
-
-function jevPhraseIdentity(tokens,indexes){
+function lexicalIdentityFromMembers(tokens,indexes,canonical){
   const ordered=[...new Set(indexes)].sort((a,b)=>a-b);
   const parts=ordered.map(index=>lemmaCands(tokens[index].text)[0]||tokens[index].text.toLowerCase());
   const gaps=ordered.slice(1).map((index,at)=>Math.max(0,index-ordered[at]-1));
   const surface=ordered.map((index,at)=>`${at&&gaps[at-1]>0?' … ':at?' ':''}${tokens[index].text}`).join('');
-  return {parts,gaps,surface,canonical:parts.join(' '),indexes:ordered};
+  return {parts,gaps,surface,canonical:String(canonical||'').replace(/\s+/g,' ').trim(),indexes:ordered};
 }
 /* 한 문장만으로는 뜻이 안 잡히는 자리가 있습니다. 앞뒤 문장을 한 번 더 붙여
    물어보면 대명사·생략·비유가 풀립니다. */
@@ -232,7 +196,7 @@ function answerFromLook(j, cached){
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
 function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }
-function phraseCardKeyFromParts(parts){return `phrase:${parts.join(' ')}`;}
+function phraseCardKey(canonical){return 'phrase:'+String(canonical||'').trim().replace(/\s+/g,' ').toLowerCase();}
 function meaningKey(meaning){ return String(meaning||'').trim().replace(/\s+/g,' ').toLowerCase(); }
 function findContextCard(root, sentence){
   const id=contextCardKey(root,sentence);
@@ -295,8 +259,6 @@ function createMeaning(root, text, source){
   const from=source||{};
   const already=findSenseByMeaning(root,meaning);
   if(already){
-    if(from.baseSenseId)words[already].baseSenseId=from.baseSenseId;
-    if(from.translationQuality)words[already].translationQuality=from.translationQuality;
     touchMeaning(already); dropSuggestion(root,meaning); saveWords(); queueSync(); return already;
   }
   const ai={...(from.ai||{}),ko:meaning,note:(from.ai&&(from.ai.note||from.ai.gloss))||''};
@@ -309,8 +271,6 @@ function createMeaning(root, text, source){
     delete base.aiOff; delete base.aiSlow;
     if(from.example) base.example=from.example;
     if(from.book) base.book=from.book;
-    if(from.baseSenseId)base.baseSenseId=from.baseSenseId;
-    if(from.translationQuality)base.translationQuality=from.translationQuality;
     base.pickedAt=Date.now(); base.up=Date.now();
     dropSuggestion(root,meaning); saveWords(); queueSync(); return root;
   }
@@ -327,8 +287,6 @@ function createMeaning(root, text, source){
     example:from.example||base.example||'', book:from.book||base.book||'',
     status:previous?previous.status:(base.status||1), mark:previous?previous.mark:base.mark!==false,
     ko:meaning, ai, alts:Array.isArray(from.alts)?from.alts:[],
-    baseSenseId:from.baseSenseId||(previous&&previous.baseSenseId)||'',
-    translationQuality:from.translationQuality||(previous&&previous.translationQuality)||'',
     defs:[], addedAt:previous?previous.addedAt:Date.now(),
     pickedAt:Date.now(), up:Math.max(Date.now(),buried+1)};
   dropSuggestion(root,meaning); saveWords(); queueSync();
@@ -413,7 +371,9 @@ function openWord(k, node){
   recentWordOpens.set(active, now);
   if(!savedContext&&nextExample&&nextExample!==words[active].example){
     const w = words[active];
+    const contextTokens=lookupSentenceTokens(nextExample);
     contextView = { key:active, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
+      clickedIndex:lookupClickedTokenIndex(node,nextExample,contextTokens),
       book:(curBook&&curBook.title)||w.book, loading:'checking' };
   }else contextView=null;
   selectWord(active, node, true);
@@ -553,8 +513,36 @@ function selectWord(k, span, peek){
   document.getElementById('word-modal-scrim').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
+  const life=wordLookupLife;requestAnimationFrame(()=>ensureMeaningDetail(k,life));
   if(remember) requestAnimationFrame(()=>{ if(words[k]){ touchMeaning(k); saveWords(); } });
 }
+const detailKey=(canonical,meaning)=>'d:'+String(canonical||'').toLowerCase()+'|'+sentenceHash(meaning);
+async function ensureMeaningDetail(k,life){
+  const w=words[k];if(!w||!String(w.ko||'').trim()||w.detailLoading)return;
+  const ai=w.ai||{};
+  if(String(ai.note||ai.gloss||'').trim())return;
+  const canonical=w.aiLemma||w.word||k,key=detailKey(canonical,w.ko);
+  const cached=await dictGet(key);
+  if(cached&&cached.gloss){
+    w.ai={...ai,ko:w.ko,pos:cached.pos||ai.pos||'',note:cached.gloss,done:true,cached:true};
+    saveWords();renderIfAlive(life);return;
+  }
+  if(navigator.onLine===false||!sb)return;
+  w.detailLoading=true;renderIfAlive(life);
+  try{
+    const answer=await dictCall({op:'detail',canonical,ko:w.ko,sentence:w.example||'',
+      device:sbUser?'':deviceId()},wordLookupSignal());
+    if(!answer||answer.error||!answer.gloss)return;
+    if(typeof answer.left==='number')rememberAiLeft(answer.left);
+    await dictPut(key,{pos:answer.pos||'',gloss:answer.gloss,done:true});
+    w.ai={...(w.ai||{}),ko:w.ko,pos:answer.pos||'',note:answer.gloss,done:true};
+    w.up=Date.now();saveWords();queueSync();
+  }finally{
+    if(words[k])delete words[k].detailLoading;
+    renderIfAlive(life);
+  }
+}
+
 function expandWordDetail(){
   if(!wordPeekActive||!selKey||!words[selKey]) return;
   wordPeekActive=false;
@@ -567,6 +555,7 @@ function expandWordDetail(){
   document.getElementById('word-modal-scrim').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   try{panel.focus({preventScroll:true});}catch(error){panel.focus();}
+  const life=wordLookupLife;requestAnimationFrame(()=>ensureMeaningDetail(selKey,life));
 }
 document.getElementById('word-peek-more').onclick=expandWordDetail;
 /* ---- 낱말 창을 치우는 일도 여기 하나뿐입니다 ----
@@ -693,7 +682,7 @@ function renderPanel(){
     /* 뜻 아래 한 줄은 이 뜻이 어떤 상황에서 쓰이는지를 말합니다. 저장한 문맥에서
        받은 줄만 보여 주고, 다른 문장에서는 Jev 판정이 끝날 때까지 기존 뜻만 둡니다. */
     const said = context ? '' : (ai.note || ai.gloss || '');
-    const top = said || (w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : '');
+    const top = said || (base.detailLoading ? '뜻 설명 불러오는 중…' : (w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : ''));
     aiN.textContent = top;
     aiN.style.display = top ? 'block' : 'none';
     /* 이 문장만으로 안 풀릴 때 앞뒤 문장까지 붙여 한 번 더 묻는 길입니다.
@@ -1080,142 +1069,41 @@ function wordLookupSignal(){ return wordLookupCtrl ? wordLookupCtrl.signal : nul
 /* 이 열림이 아직 그 열림이면 다시 그립니다. 아니면 그릴 창이 없습니다. */
 function renderIfAlive(life){ if(wordLookupAlive(life)) renderWordLookup(); }
 
-/* 다른 문장에서는 Jev 왕복을 하나만 씁니다.
-   같은 요청에서 ① 저장된 sense 재사용 ② phrase ③ NONE 을 고르고,
-   PHRASE일 때만 함께 받은 token membership을 사용합니다. */
-async function jevSenseCandidates(root){
-  const saved=meaningCards(root,null).map(([id,item])=>({
-    source:'saved',id,senseId:String(item.baseSenseId||''),meaning:item.ko,
-    pos:String((item.ai&&item.ai.pos)||item.pos||'').trim(),
-    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim(),
-    enGloss:'',quality:String(item.translationQuality||'saved')
-  }));
-  const base=await breezeBaseSenseCandidates(root);
-  const usedSenseIds=new Set(saved.map(item=>item.senseId).filter(Boolean));
-  const usedMeanings=new Set(saved.map(item=>meaningKey(item.meaning)).filter(Boolean));
-  const merged=[...saved,...base.filter(item=>!usedSenseIds.has(item.senseId)&&!usedMeanings.has(meaningKey(item.meaning)))];
-  return merged.slice(0,64).map((item,index)=>({...item,choice:`sense_${index}`}));
-}
-async function routeJevTarget(k,node,sentence,life){
-  const w=words[k];if(!w||!sentence||!wordLookupAlive(life))return null;
-  const root=w.root||k,senses=await jevSenseCandidates(root);
-  const tokens=jevSentenceTokens(sentence),clickedIndex=jevClickedTokenIndex(node,sentence,tokens);
-  /* 저장 sense도 없고 phrase 위치도 특정할 수 없으면 Jev에게 물을 정보가 없습니다. */
-  if(!senses.length&&(tokens.length<2||clickedIndex<0))return {kind:'none',senses};
-  const signal=wordLookupSignal();
-  const verdict=await dictCall({op:'route',word:w.aiLemma||w.word||root,lemma:w.aiLemma||w.word||root,
-    sentence,clickedIndex,tokens:tokens.map(token=>({text:token.text})),
-    senses:senses.map(item=>({senseId:item.senseId,meaning:item.meaning,pos:item.pos,gloss:item.gloss,
-      enGloss:item.enGloss,quality:item.quality}))},signal);
-  if(!wordLookupAlive(life)||(!verdict&&signal&&signal.aborted))return null;
-  if(!verdict||verdict.error)return {kind:'error',senses};
-  if(verdict.selected==='PHRASE'){
-    const indexes=(Array.isArray(verdict.members)?verdict.members:[]).map(item=>Number(item&&item.index))
-      .filter(index=>Number.isInteger(index)&&index>=0&&index<tokens.length);
-    if(indexes.length>=2&&indexes.includes(clickedIndex)){
-      const phrase=jevPhraseIdentity(tokens,indexes);
-      if(phrase.parts.length>=2)return {kind:'phrase',phrase,senses};
-    }
-    return {kind:'none',senses};
+/* DeepSeek owns lexical analysis. JEV never discovers expressions or generates meanings.
+   These helpers only turn DeepSeek's typed mini result into the existing saved-expression record. */
+function expressionFromMini(answer,sentence,clicked,clickedIndex){
+  if(!answer||answer.kind!=='expression'||!answer.canonical)return null;
+  const tokens=lookupSentenceTokens(sentence);
+  let index=Number(clickedIndex);
+  if(!Number.isInteger(index)||index<0||index>=tokens.length){
+    const needle=String(clicked||'').replace(/’/g,"'").toLowerCase();
+    const matches=tokens.map((token,i)=>({token,i})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===needle);
+    index=matches.length===1?matches[0].i:-1;
   }
-  if(verdict.selected==='NONE')return {kind:'none',senses};
-  const picked=senses.find(item=>item.choice===verdict.selected);
-  if(!picked)return {kind:'error',senses};
-  return picked.source==='base'?{kind:'base',candidate:picked,senses}
-    :(picked.id&&words[picked.id]?{kind:'sense',id:picked.id,senses}:{kind:'error',senses});
+  const indexes=(Array.isArray(answer.members)?answer.members:[]).map(Number)
+    .filter(i=>Number.isInteger(i)&&i>=0&&i<tokens.length);
+  if(index<0||indexes.length<2||!indexes.includes(index))return null;
+  const phrase=lexicalIdentityFromMembers(tokens,indexes,answer.canonical);
+  return phrase.canonical&&phrase.parts.length>=2?phrase:null;
 }
-
-async function repairBaseSense(k,candidate,life){
-  if(!candidate||candidate.quality!=='generated')return candidate;
-  const signal=wordLookupSignal();
-  const answer=await dictCall({op:'repair',word:(words[k]&&(words[k].aiLemma||words[k].word))||k,
-    senseId:candidate.senseId,pos:candidate.pos,enGloss:candidate.enGloss,
-    draftKo:candidate.meaning,draftGloss:candidate.gloss,device:sbUser?'':deviceId()},signal);
-  if(!wordLookupAlive(life)||(!answer&&signal&&signal.aborted))return null;
-  if(!answer||answer.error||!answer.ko)return candidate;
-  saveLexiconRepair(candidate.senseId,answer);
-  return {...candidate,meaning:String(answer.ko||'').trim(),gloss:String(answer.gloss||'').trim(),
-    quality:'repaired'};
-}
-async function adoptBaseSense(k,candidate,context,life){
-  const w=words[k];if(!w||!candidate||!context)return false;
-  context.loading=candidate.quality==='generated'?'repair':'checking';renderIfAlive(life);
-  const chosen=await repairBaseSense(k,candidate,life);
-  if(!wordLookupAlive(life)||!chosen)return false;
-  const root=w.root||k;
-  const id=createMeaning(root,chosen.meaning,{clicked:context.clicked||w.clicked||'',example:context.sentence||w.example||'',
-    book:context.book||w.book||'',baseSenseId:chosen.senseId,translationQuality:chosen.quality,
-    ai:{ko:chosen.meaning,pos:chosen.pos,note:chosen.gloss,done:true,cached:chosen.quality!=='generated'}});
-  if(!id)return false;
-  rememberSenseContext(id,context.sentence||w.example||'');saveWords();
-  context.loading='';contextView=null;paintWord(root);selKey=id;renderIfAlive(life);return true;
-}
-
-async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
-  if(!wordContext)return;
-  wordContext.started=true;wordContext.loading='checking';delete wordContext.error;renderIfAlive(life);
-  try{
-    const routed=await routeJevTarget(k,node,sentence,life);
-    if(!wordLookupAlive(life)||!routed)return;
-    if(routed.kind==='sense'){
-      rememberSenseContext(routed.id,wordContext.sentence);
-      contextView=null;selKey=routed.id;touchMeaning(routed.id);saveWords();renderWordLookup();return;
-    }
-    if(routed.kind==='base'){
-      await adoptBaseSense(k,routed.candidate,wordContext,life);return;
-    }
-    if(routed.kind==='phrase'){
-      await resolveDetectedPhrase(k,routed.phrase,sentence,(curBook&&curBook.title)||'',life);return;
-    }
-    /* NONE 또는 route 실패는 의미를 억지로 재사용하지 않고 기존 AI fallback으로 갑니다. */
-    wordContext.loading='new';renderIfAlive(life);
-    await lookupNewContextMeaning(k,wordContext,life);
-  }finally{
-    wordContext.loading='';
-    if(currentContext(k)===wordContext&&wordLookupAlive(life))renderWordLookup();
-  }
-}
-
-async function resolveDetectedPhrase(k,phrase,sentence,book,life){
-  const id=phraseCardKeyFromParts(phrase.parts),stored=words[id];
-  if(stored&&validWordMeaning(stored)){
-    contextView=null;
-    const root=stored.root||id;
-    const same=sentence&&(findContextCard(root,sentence)||findSavedSense(root,sentence));
-    selKey=same||id;renderIfAlive(life);
-    if(!same&&sentence&&sentence!==words[selKey].example){
-      const view={key:selKey,sentence,clicked:phrase.surface,book:book||stored.book};
-      contextView=view;renderIfAlive(life);await resolveSavedWordContext(selKey,view,life);
-    }
-    return;
-  }
-  const context=currentContext(k);
-  if(context){context.loading='new';context.clicked=phrase.surface;renderIfAlive(life);}
-  const answer=await fetchLook(k,{word:phrase.canonical,clicked:phrase.surface,cands:[phrase.canonical],
-    sentence,book,hold:true,life});
-  if(!wordLookupAlive(life)||!answer||!answer.ko){
-    if(wordLookupAlive(life)&&currentContext(k)===context){context.loading='';renderIfAlive(life);}
-    return;
-  }
-  saveDetectedPhrase(k,phrase,sentence,book,answer,life);
-}
-
-function saveDetectedPhrase(k,phrase,sentence,book,answer,life){
-  const base=words[k];if(!base||!wordLookupAlive(life))return '';
-  const id=phraseCardKeyFromParts(phrase.parts),previous=words[id],resolved=answerFromLook(answer,false);
+function saveDetectedExpression(k,phrase,sentence,book,answer,life){
+  const base=words[k];if(!base||!phrase||!answer||!answer.ko||!wordLookupAlive(life))return '';
+  const id=phraseCardKey(phrase.canonical),previous=words[id],resolved=answerFromLook(answer,false);
   words[id]={...(previous||{}),word:phrase.canonical,clicked:phrase.surface,forms:phrase.parts,
     phraseParts:phrase.parts,phraseGaps:phrase.gaps,example:sentence||base.example,book:book||base.book,
     status:previous?previous.status:base.status,mark:previous?previous.mark:base.mark,
-    ko:resolved.ko,ai:resolved.ai,alts:resolved.alts||[],defs:[],
+    ko:resolved.ko,ai:resolved.ai,alts:[],defs:[],
     addedAt:previous?previous.addedAt:Date.now(),pickedAt:Date.now(),up:Date.now()};
-  /* 이번 탭이 만든 빈 word 껍데기는 phrase 카드와 함께 남기지 않습니다. 기존에
-     저장돼 있던 word는 pending 표에 없으므로 그대로 보존됩니다. */
   if(pendingWord&&pendingWord.key===k&&id!==k){
     const held=pendingWord;pendingWord=null;delete words[k];
     if(held.deadAt){dead[k]=held.deadAt;save(LS_DEAD,dead);}
   }
   selKey=id;contextView=null;
   saveWords();queueSync();refreshReaderWords();renderIfAlive(life);return id;
+}
+async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
+  if(!wordContext)return;
+  await resolveSavedWordContext(k,wordContext,life);
 }
 
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
@@ -1240,28 +1128,38 @@ async function loadCachedLook(k, began, life){
         const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
         if(left > 0) await new Promise(res => setTimeout(res, left));
       }
-      applyLook(w, hit, k, { cached:!hit.seed, life });
+      const tokens=lookupSentenceTokens(w.example||'');
+      const index=lookupClickedTokenIndex(null,w.example||'',tokens);
+      const phrase=expressionFromMini(hit,w.example||'',w.clicked,index);
+      if(phrase)saveDetectedExpression(k,phrase,w.example||'',w.book||'',hit,life);
+      else applyLook(w,hit,k,{cached:!hit.seed,life});
       return true;
     }
   }
   return false;
 }
 
-/* 저장한 낱말을 다른 문장에서 만나면 Jev가 기존 뜻만 분류합니다. Jev는 뜻을
-   만들지 않으며, NEW 또는 어떤 실패든 기존 문맥 AI 조회로 이어집니다. */
-async function resolveSavedWordContext(k, context, life){
+/* 저장한 lexical item을 다른 문장에서 만나면 Jev는 저장된 Meaning 중 하나 또는
+   AI_REQUIRED만 고릅니다. 생성·숙어 탐지·span 분석은 모두 DeepSeek의 일입니다. */
+function savedMeaningCandidates(root){
+  return meaningCards(root,null).map(([id,item])=>({
+    id,meaning:String(item.ko||'').trim(),
+    pos:String((item.ai&&item.ai.pos)||item.pos||'').trim(),
+    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim()
+  })).filter(item=>item.id&&item.meaning).slice(0,16);
+}
+async function resolveSavedWordContext(k,context,life){
   const w=words[k];if(!w||!context||context.started)return;
-  const root=w.root||k;
-  const senses=await jevSenseCandidates(root);
+  const root=w.root||k,senses=savedMeaningCandidates(root);
   if(!senses.length)return;
   context.started=true;context.loading='checking';delete context.error;renderIfAlive(life);
   try{
     const signal=wordLookupSignal();
-    const verdict=await dictCall({op:'judge',word:w.aiLemma||w.word||root,lemma:w.aiLemma||w.word||root,
-      sentence:context.sentence,senses:senses.map(item=>({meaning:item.meaning,pos:item.pos,gloss:item.gloss}))},signal);
+    const verdict=await dictCall({op:'judge',word:w.aiLemma||w.word||root,sentence:context.sentence,
+      senses:senses.map(item=>({id:item.id,meaning:item.meaning,pos:item.pos,gloss:item.gloss}))},signal);
     if(!verdict&&signal&&signal.aborted)return;
-    if(wordLookupAlive(life)&&verdict&&!verdict.error&&verdict.selected!=='NEW'){
-      const picked=senses.find(item=>item.choice===verdict.selected);
+    if(wordLookupAlive(life)&&verdict&&!verdict.error&&verdict.selected!=='AI_REQUIRED'){
+      const picked=senses.find(item=>item.id===verdict.selected);
       if(picked&&words[picked.id]){
         rememberSenseContext(picked.id,context.sentence);
         contextView=null;selKey=picked.id;touchMeaning(picked.id);saveWords();renderWordLookup();return;
@@ -1280,10 +1178,18 @@ async function lookupNewContextMeaning(k,context,life){
   const w=words[k];if(!w)return;
   for(const key of entryKeys(w)){
     const hit=await dictGet(lookKey(key,context.sentence));
-    if(hit&&hit.ko){if(!wordLookupAlive(life))return;adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed));return;}
+    if(hit&&hit.ko){
+      if(!wordLookupAlive(life))return;
+      const phrase=expressionFromMini(hit,context.sentence,context.clicked,context.clickedIndex);
+      if(phrase){saveDetectedExpression(k,phrase,context.sentence,context.book,hit,life);return;}
+      adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed));return;
+    }
   }
-  const answer=await fetchLook(k,{sentence:context.sentence,clicked:context.clicked,book:context.book,hold:true,life});
+  const answer=await fetchLook(k,{sentence:context.sentence,clicked:context.clicked,clickedIndex:context.clickedIndex,
+    book:context.book,hold:true,life});
   if(!wordLookupAlive(life)||!answer||!answer.ko)return;
+  const phrase=expressionFromMini(answer,context.sentence,context.clicked,context.clickedIndex);
+  if(phrase){saveDetectedExpression(k,phrase,context.sentence,context.book,answer,life);return;}
   adoptContextAnswer(k,context,answerFromLook(answer,false));
 }
 
@@ -1310,6 +1216,15 @@ async function fetchLook(k, opt){
   if(opt.life === undefined) opt.life = wordLookupLife;
   const life = opt.life;
   const querySentence=opt.sentence || w.example || '';
+  const lookupTokens=lookupSentenceTokens(querySentence);
+  let clickedIndex=Number(opt.clickedIndex);
+  if(!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=lookupTokens.length)
+    clickedIndex=lookupClickedTokenIndex(opt.node||null,querySentence,lookupTokens);
+  if(clickedIndex<0){
+    const needle=String(opt.clicked||w.clicked||w.word||k).replace(/’/g,"'").toLowerCase();
+    const matches=lookupTokens.map((token,index)=>({token,index})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===needle);
+    clickedIndex=matches.length===1?matches[0].index:0;
+  }
   /* `hold` 는 답을 카드에 바르지 않고 그대로 돌려 달라는 뜻입니다. 넓은 문맥으로
      다시 물어본 답은 지금 뜻을 덮는 것이 아니라 새 뜻이 되기 때문입니다. */
   if(navigator.onLine === false){ w.aiOff = 'offline'; renderIfAlive(life); return false; }
@@ -1343,6 +1258,7 @@ async function fetchLook(k, opt){
       op:'look',
       word: opt.word || w.word || k, clicked: opt.clicked || w.clicked || '', cands: opt.cands || entryKeys(w),
       sentence: querySentence, book: opt.book || w.book || '',
+      tokens:lookupTokens.map(token=>({text:token.text})),clickedIndex,
       retry: !!opt.wider, avoid: opt.wider ? (opt.avoid || []) : [],
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
@@ -1365,7 +1281,7 @@ async function fetchLook(k, opt){
       return false;
     }
     if(typeof j.left === 'number') rememberAiLeft(j.left);
-    await dictPut(lookKey(j.lemma || w.word || k, querySentence), Object.assign({}, j, { done:true }));
+    await dictPut(lookKey(opt.word || w.word || k, querySentence), Object.assign({}, j, { done:true }));
     /* 갓 받은 답은 최소 0.28초는 바람을 보여 준 뒤에 놓습니다. 답이 너무 빨리 오면
        화면이 튄 것처럼 느껴져서, 무슨 일이 일어났는지 못 알아챕니다.
        기기에 이미 있던 답은 그냥 띄웁니다 — 기다린 척할 이유가 없습니다. */
@@ -1373,6 +1289,8 @@ async function fetchLook(k, opt){
     /* 볼 사람이 있을 때만 뜸을 들입니다. */
     if(left > 0 && wordLookupAlive(life)) await new Promise(res=>setTimeout(res, left));
     if(opt.hold) return j;
+    const phrase=expressionFromMini(j,querySentence,opt.clicked||w.clicked,clickedIndex);
+    if(phrase){saveDetectedExpression(k,phrase,querySentence,opt.book||w.book||'',j,life);return true;}
     applyLook(w, j, k, opt);
     return true;
   }finally{
@@ -1398,7 +1316,7 @@ function applyLook(w, j, k, opt){
              cached: !!opt.cached };
     if(!w.koEdited) w.ko = j.ko || w.ko;
   }
-  w.aiLemma = j.lemma || w.aiLemma || '';
+  w.aiLemma = j.canonical || j.lemma || w.aiLemma || '';
   w.alts = Array.isArray(j.alts) ? j.alts : [];
   if(keep && j.ko) w.alts = [j.ko, ...w.alts];
   w.colloc = [];
@@ -1422,6 +1340,8 @@ async function askWiderContext(k){
   const answer=await fetchLook(k, {sentence, wider:true, hold:true, avoid, life});
   if(!wordLookupAlive(life)) return;
   if(!answer || !answer.ko) return;
+  const phrase=expressionFromMini(answer,sentence,w.clicked,-1);
+  if(phrase){saveDetectedExpression(k,phrase,sentence,w.book||'',answer,life);return;}
   const id=createMeaning(root, answer.ko, {clicked:w.clicked, example:w.example, book:w.book,
     ai:answerFromLook(answer,false).ai, alts:answer.alts});
   if(!id) return;
@@ -1459,49 +1379,16 @@ async function fillDictionaryMetadata(k, life){
 }
 
 async function fetchDict(k,node){
-  const w = words[k]; if(!w) return;
-  /* 이 조회는 방금 열린 창의 것입니다 — `addWord` 가 `selectWord` 다음에 부릅니다. */
-  const life = wordLookupLife;
-  const began = Date.now();
-  /* 창이 열리는 순간부터 바람이 붑니다. 답이 어디서 오든 — 씨앗이든, 예전에
-     물어본 것이든, 지금 AI 에게 묻든 — 사용자가 보는 것은 같은 한 번의 바람입니다. */
-  w.loading = true; w.aiLoading = true;
-  renderIfAlive(life);
-
-  const metadata = fillDictionaryMetadata(k, life);
-
-  /* 처음 보는 낱말도 같은 router를 씁니다. 저장 sense가 없으므로 이때의 선택지는
-     PHRASE/NONE뿐입니다. PHRASE면 표현 전체로, NONE이면 아래 word AI로 갑니다. */
-  const routed=await routeJevTarget(k,node,w.example||'',life);
-  if(routed&&routed.kind==='phrase'&&wordLookupAlive(life)){
-    await resolveDetectedPhrase(k,routed.phrase,w.example||'',w.book||'',life);
-    await metadata;
-    delete w.loading;delete w.aiLoading;w.up=Date.now();saveWords();queueSync();renderIfAlive(life);
-    return;
-  }
-  if(routed&&routed.kind==='base'&&wordLookupAlive(life)){
-    const view={key:k,sentence:w.example||'',clicked:w.clicked||w.word||k,book:w.book||'',loading:'repair'};
-    contextView=view;await adoptBaseSense(k,routed.candidate,view,life);
-    await metadata;
-    delete w.loading;delete w.aiLoading;if(words[k])words[k].up=Date.now();saveWords();queueSync();renderIfAlive(life);
-    return;
-  }
-
-  /* ① 이 기기에 이 문장으로 물어본 적 있나 — 0원, 기다림 없음 */
-  const cached = await loadCachedLook(k, began, life);
-  /* ② 없으면 AI. 뜻의 유일한 출처입니다.
-     fetchLook 은 오프라인·설정없음일 때 aiLoading 을 건드리지 않고 빠져나가므로,
-     넘기기 전에 여기서 내려놓습니다 — 안 그러면 바람이 영영 붑니다. */
-  if(!cached && wordLookupAlive(life)){ delete w.aiLoading; await fetchLook(k, {life}); }
-
+  const w=words[k];if(!w)return;
+  const life=wordLookupLife,began=Date.now();
+  w.loading=true;w.aiLoading=true;renderIfAlive(life);
+  const metadata=fillDictionaryMetadata(k,life);
+  const cached=await loadCachedLook(k,began,life);
+  if(!cached&&wordLookupAlive(life)){delete w.aiLoading;await fetchLook(k,{life,node});}
   await metadata;
-  /* 창이 닫혔어도 여기까지 온 것은 **적어 둡니다**. 창을 닫는 순간 요청이 끊기므로
-     이 줄은 늦게 오지 않고 닫는 그 자리에서 돕니다 — 예전에는 닫고 2초 뒤에
-     혼자 돌아, 스크롤 한복판에서 낱말장 전체를 다시 써 내려갔습니다. */
-  delete w.loading; delete w.aiLoading;
-  w.up = Date.now();
-  saveWords(); queueSync();
-  renderIfAlive(life);
+  if(!words[k]&&selKey!==k)return;
+  if(words[k]){delete words[k].loading;delete words[k].aiLoading;words[k].up=Date.now();}
+  saveWords();queueSync();renderIfAlive(life);
 }
 
 document.addEventListener('keydown',event=>{

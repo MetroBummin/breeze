@@ -28,7 +28,8 @@ try{
   await page.goto(url,{waitUntil:'domcontentloaded'});
   await page.locator('#fileinput').setInputFiles({name:'word-overlay.txt',mimeType:'text/plain',
     buffer:Buffer.from(('A patient reader keeps resilient words close to their context. '+
-      'Another patient reader checks every repeated word carefully.\n\n').repeat(50))});
+      'Another patient reader checks every repeated word carefully. '+
+      'The patient waited calmly for the doctor.\n\n').repeat(50))});
   await page.waitForFunction(()=>books.some(book=>book.kind==='txt'));
   await page.evaluate(()=>openBook(books.find(book=>book.kind==='txt')));
   await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
@@ -85,13 +86,10 @@ try{
       node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
     openWord(keyOf('patient'),span);
   });
-  await page.waitForFunction(()=>wordQa.calls[0]?.op==='phrase');
+  await page.waitForFunction(()=>wordQa.calls[0]?.op==='judge');
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 확인 중');
   assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);
-  await page.evaluate(()=>wordQa.pending.shift()({accepted:false,members:[]}));
-  await page.waitForFunction(()=>wordQa.calls[1]?.op==='judge');
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 확인 중');
-  await page.evaluate(()=>wordQa.pending.shift()({selected:'sense_0',confidence:.97}));
+  await page.evaluate(()=>wordQa.pending.shift()({selected:wordQa.calls[0].senses[0].id,confidence:.97}));
   await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='참을성 있는');
   assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),false);
   await page.evaluate(()=>closePanel());
@@ -99,38 +97,38 @@ try{
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>
-      node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
+      node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('The patient waited'));
     openWord(keyOf('patient'),span);
   });
-  await page.waitForFunction(()=>wordQa.calls[0]?.op==='phrase');
-  await page.evaluate(()=>wordQa.pending.shift()({accepted:false,members:[]}));
-  await page.waitForFunction(()=>wordQa.calls[1]?.op==='judge');
-  await page.evaluate(()=>wordQa.pending.shift()({selected:'NEW',confidence:.93}));
-  await page.waitForFunction(()=>wordQa.calls[2]?.op==='look');
+  await page.waitForFunction(()=>wordQa.calls[0]?.op==='judge');
+  await page.evaluate(()=>wordQa.pending.shift()({selected:'AI_REQUIRED',confidence:.93}));
+  await page.waitForFunction(()=>wordQa.calls[1]?.op==='look');
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'새 뜻 찾는 중');
   assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);
-  await page.evaluate(()=>wordQa.pending.shift()({ko:'환자',pos:'명사',note:'치료를 받는 사람',lemma:'patient',alts:[]}));
+  await page.evaluate(()=>{
+    const call=wordQa.calls[1];
+    wordQa.pending.shift()({kind:'word',canonical:'patient',members:[call.clickedIndex],ko:'환자'});
+  });
   await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='환자');
   await page.evaluate(()=>closePanel());
 
-  /* phrase가 확정되어 word lookup이 phrase lookup으로 승격되는 순간에도 같은 필이
-     계속 화면을 소유해야 합니다. */
+  /* 처음 보는 lexical item을 DeepSeek가 expression으로 판정해도 같은 필이 lookup
+     중부터 결과가 도착한 뒤까지 계속 화면을 소유해야 합니다. */
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='carefully');
     openWord(keyOf('carefully'),span);
   });
-  await page.waitForFunction(()=>wordQa.calls[0]?.op==='phrase');
-  await page.evaluate(()=>{
-    const call=wordQa.calls[0],other=call.clickedIndex>0?call.clickedIndex-1:call.clickedIndex+1;
-    wordQa.pending.shift()({accepted:true,members:[{index:other,confidence:.98},{index:call.clickedIndex,confidence:.99}]});
-  });
-  await page.waitForFunction(()=>wordQa.calls[1]?.op==='look');
-  assert.equal(await page.locator('#word-peek').isVisible(),true,'phrase 확정 순간 word pill이 사라졌습니다');
+  await page.waitForFunction(()=>wordQa.calls[0]?.op==='look');
+  assert.equal(await page.locator('#word-peek').isVisible(),true,'expression lookup 중 word pill이 사라졌습니다');
   assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);
-  await page.evaluate(()=>wordQa.pending.shift()({ko:'매우 조심스럽게',pos:'부사구',note:'주의를 기울여',lemma:'word carefully',alts:[]}));
+  await page.evaluate(()=>{
+    const call=wordQa.calls[0];
+    const checkIndex=call.tokens.findIndex(token=>String(token.text||token).toLowerCase()==='checks');
+    wordQa.pending.shift()({kind:'expression',canonical:'check carefully',members:[checkIndex,call.clickedIndex],ko:'매우 조심스럽게'});
+  });
   await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='매우 조심스럽게');
-  assert.equal(await page.locator('#word-peek').isVisible(),true,'phrase 뜻 도착 뒤 word pill이 유지되지 않았습니다');
+  assert.equal(await page.locator('#word-peek').isVisible(),true,'expression 뜻 도착 뒤 word pill이 유지되지 않았습니다');
   await page.evaluate(()=>closePanel());
 
   await page.evaluate(()=>{
