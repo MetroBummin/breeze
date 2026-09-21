@@ -1,5 +1,6 @@
-// Breeze — dictionary Edge Function (OpenRouter/DeepSeek primary, Gemini/Claude fallback)
+// Breeze — dictionary Edge Function (OpenRouter/DeepSeek primary, Gemini fallback)
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { LOOK_SCHEMA, lookupInput, miniPrompt, validateLook } from "./lookup.ts";
 import { meteredFetch, newAiTrace, type AiAction, type AiTrace } from "./telemetry.ts";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
@@ -7,7 +8,6 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 
 const OPENROUTER_MODEL="deepseek/deepseek-v4-flash-0731";
 const GEMINI_MODEL="gemini-3.5-flash-lite";
-const CLAUDE_MODEL="claude-haiku-4-5";
 const DEFAULT_DAILY_LIMIT=300;
 const EXPLAIN_COST=2;
 const ANON_FREE=Number(Deno.env.get("AI_ANON_FREE")??10);
@@ -15,87 +15,60 @@ const ANON_DAILY_CAP=Number(Deno.env.get("AI_ANON_DAILY_CAP")??2000);
 
 const SYSTEM="You are a precise bilingual dictionary for Korean learners reading English books. Reply with ONLY minified JSON. No markdown, no code fence, no commentary.";
 const SR=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
-type Ask={prompt:string;maxTokens:number;schema?:unknown;system?:string;action:AiAction;trace?:AiTrace};
+type Ask={prompt:string;maxTokens:number;schema?:unknown;system?:string;action:AiAction;trace?:AiTrace;temperature?:number;signal?:AbortSignal;validate?:(value:any)=>unknown};
 
 async function callOpenRouter(key:string,ask:Ask){
-  const body:Record<string,unknown>={model:OPENROUTER_MODEL,messages:[{role:"system",content:ask.system??SYSTEM},{role:"user",content:ask.prompt}],temperature:0.2,max_tokens:ask.maxTokens,stream:false,reasoning:{enabled:false},provider:{sort:"throughput",max_price:{prompt:0.10,completion:0.30}}};
+  const body:Record<string,unknown>={model:OPENROUTER_MODEL,messages:[{role:"system",content:ask.system??SYSTEM},{role:"user",content:ask.prompt}],temperature:ask.temperature??0.2,max_tokens:ask.maxTokens,stream:false,reasoning:{enabled:false},provider:{sort:"throughput",max_price:{prompt:0.10,completion:0.30}}};
   if(ask.schema)body.response_format={type:"json_object"};
-  const r=await meteredFetch(SR,ask.trace!,"openrouter",OPENROUTER_MODEL,"https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`,"HTTP-Referer":"https://breeze.io.kr","X-Title":"Breeze"},body:JSON.stringify(body)});
+  const r=await meteredFetch(SR,ask.trace!,"openrouter",OPENROUTER_MODEL,"https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`,"HTTP-Referer":"https://breeze.io.kr","X-Title":"Breeze"},body:JSON.stringify(body),signal:ask.signal});
   if(!r.ok){console.error("openrouter error",r.status,(await r.text()).slice(0,300));throw new Error(`openrouter_${r.status}`)}
   const d=await r.json();const raw=d?.choices?.[0]?.message?.content;const text=Array.isArray(raw)?raw.map((part:{text?:string})=>part?.text??"").join(""):String(raw??"");return{text:text.trim(),usage:d?.usage??null};
 }
 async function callGemini(key:string,ask:Ask){
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;const base:Record<string,unknown>={maxOutputTokens:ask.maxTokens,temperature:0.2};if(ask.schema)base.responseMimeType="application/json";
-  const r=await meteredFetch(SR,ask.trace!,"gemini",GEMINI_MODEL,url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:ask.system??SYSTEM}]},contents:[{role:"user",parts:[{text:ask.prompt}]}],generationConfig:base})});
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;const base:Record<string,unknown>={maxOutputTokens:ask.maxTokens,temperature:ask.temperature??0.2};if(ask.schema)base.responseMimeType="application/json";
+  const r=await meteredFetch(SR,ask.trace!,"gemini",GEMINI_MODEL,url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:ask.system??SYSTEM}]},contents:[{role:"user",parts:[{text:ask.prompt}]}],generationConfig:base}),signal:ask.signal});
   if(!r.ok){console.error("gemini error",r.status,(await r.text()).slice(0,300));throw new Error(`gemini_${r.status}`)}const d=await r.json();const text=d?.candidates?.[0]?.content?.parts?.map((p:{text?:string})=>p?.text??"").join("")??"";return{text:text.trim(),usage:d?.usageMetadata??null};
 }
-async function callClaude(key:string,ask:Ask){
-  const body:Record<string,unknown>={model:CLAUDE_MODEL,max_tokens:ask.maxTokens,system:ask.system??SYSTEM,messages:[{role:"user",content:ask.prompt}]};if(ask.schema)body.output_config={format:{type:"json_schema",schema:ask.schema}};
-  const r=await meteredFetch(SR,ask.trace!,"claude",CLAUDE_MODEL,"https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},body:JSON.stringify(body)});
-  if(!r.ok){console.error("claude error",r.status,(await r.text()).slice(0,300));throw new Error(`claude_${r.status}`)}const d=await r.json();return{text:(d?.content?.[0]?.text??"").trim(),usage:d?.usage??null};
-}
-function providerKeys(){return{oKey:Deno.env.get("OPENROUTER_API_KEY"),gKey:Deno.env.get("GEMINI_API_KEY"),cKey:Deno.env.get("ANTHROPIC_API_KEY")}}
+function providerKeys(){return{oKey:Deno.env.get("OPENROUTER_API_KEY"),gKey:Deno.env.get("GEMINI_API_KEY")}}
 async function ask(input:Ask){
-  const a={...input,trace:newAiTrace(input.action)};const{oKey,gKey,cKey}=providerKeys();const attempts:Array<{provider:"openrouter"|"gemini"|"claude";run:()=>Promise<{text:string;usage:any}>}>=[];
-  if(oKey)attempts.push({provider:"openrouter",run:()=>callOpenRouter(oKey,a)});if(gKey)attempts.push({provider:"gemini",run:()=>callGemini(gKey,a)});if(cKey)attempts.push({provider:"claude",run:()=>callClaude(cKey,a)});if(!attempts.length)throw new Error("server_not_configured");
-  let lastError:unknown=new Error("server_not_configured");for(let index=0;index<attempts.length;index++){const attempt=attempts[index];try{const out=await attempt.run();return{...out,provider:attempt.provider}}catch(error){lastError=error;if(index<attempts.length-1)console.warn(`${attempt.provider} failed, falling back:`,String(error))}}throw lastError;
+  const a={...input,trace:newAiTrace(input.action)};const{oKey,gKey}=providerKeys();const attempts:Array<{provider:"openrouter"|"gemini";run:()=>Promise<{text:string;usage:any}>}>=[];
+  if(oKey){attempts.push({provider:"openrouter",run:()=>callOpenRouter(oKey,a)});if(input.validate)attempts.push({provider:"openrouter",run:()=>callOpenRouter(oKey,a)});}if(gKey)attempts.push({provider:"gemini",run:()=>callGemini(gKey,a)});if(!attempts.length)throw new Error("server_not_configured");
+  let lastError:unknown=new Error("server_not_configured");
+  const compact=input.maxTokens<=120;
+  const deadline=Date.now()+(compact?8000:25000);
+  for(let index=0;index<attempts.length;index++){
+    const remaining=deadline-Date.now();if(remaining<250||input.signal?.aborted)break;
+    const timeout=AbortSignal.timeout(Math.min(compact?5000:15000,remaining));
+    a.signal=input.signal?AbortSignal.any([input.signal,timeout]):timeout;
+    try{
+      const out=await attempts[index].run();
+      if(input.validate)input.validate(parseJson(out.text));
+      return {...out,provider:attempts[index].provider,attempts:index+1};
+    }catch(error){
+      lastError=error;if(input.signal?.aborted)throw error;
+      const reason=String((error as Error).message);
+      if(/^(invalid_|missing_fixed_word)/.test(reason))a.prompt=input.prompt+"\nCorrection: the previous response failed "+reason+". Recheck the selected token, headword and fixed member indices. Return the same four fields only.";
+    }
+  }
+  throw lastError;
 }
 
 function parseJson(raw:string):Record<string,unknown>|null{try{return JSON.parse(raw)}catch{}const m=raw.match(/\{[\s\S]*\}/);if(m){try{return JSON.parse(m[0])}catch{}}return null}
 const clean=(v:unknown,max:number)=>String(v??"").trim().slice(0,max);
 const cleanList=(v:unknown,n:number,max:number)=>(Array.isArray(v)?v:[]).map(x=>clean(x,max)).filter(Boolean).slice(0,n);
 
-const LOOK_SCHEMA={type:"object",additionalProperties:false,required:["kind","canonical","members","ko"],properties:{kind:{type:"string"},canonical:{type:"string"},members:{type:"array",items:{type:"integer"}},ko:{type:"string"}}};
-function fallbackTokens(sentence:string){const out:string[]=[];for(const match of String(sentence||"").matchAll(/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g))out.push(match[0]);return out}
-function miniPrompt(word:string,clicked:string,sentence:string,tokens:string[],clickedIndex:number,avoid:string[]){
-  const skip=avoid.length?`\n이미 보여 준 뜻이므로 같은 뜻은 다시 만들지 마세요: ${avoid.join(", ")}\n`:"";
-  return `target: ${word}
-clicked: ${clicked||word}
-sentence: ${sentence||"(문장 없음)"}
-tokens: ${tokens.map((token,index)=>`${index}:${token}`).join(" | ")}
-clicked_index: ${clickedIndex}
-${skip}
-한국인 영어 학습자가 지금 누른 target을 바로 이해하도록 하나의 lexical lookup 결과만 만드세요.
-
-반드시 다음 원칙을 지키세요.
-- kind는 word 또는 expression.
-- 기본값은 word입니다. expression을 남발하지 마세요.
-- 단일 단어의 짧은 한국어 뜻만으로 현재 의미를 충분히 정확하게 전달할 수 있으면 word로 처리하세요.
-- phrasal verb, idiom, fixed expression, 전문적인 고정 용어처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나 중요한 lexical identity를 잃을 때만 expression으로 처리하세요.
-- 단순 collocation, 일반적인 수식어+명사, 의미가 그대로 합쳐지는 전치사 결합은 expression으로 올리지 마세요.
-- canonical은 저장할 사전형입니다. word면 원형 단어, expression이면 재사용 가능한 표제형을 적으세요.
-- members는 현재 sentence의 token index입니다. clicked_index는 반드시 포함하세요.
-- word면 members는 clicked_index 하나뿐입니다.
-- expression이면 lexical identity를 이루는 token만 포함하세요. 다만 contiguous expression 안의 of/to/at 같은 function word를 임의로 빼면 안 됩니다.
-- 표제형에서 one's/someone/something처럼 바뀔 수 있는 variable slot은 members에 넣지 마세요. 예: "a feather in your cap"은 고정된 a/feather/in/cap이 members이고 your는 variable gap입니다.
-- 분리 가능한 구동사의 목적어/변수도 members에 넣지 마세요. 예: "gave the plan up"의 give up은 give/up만.
-- 반대로 고정된 function word는 빼지 마세요. "policy of benign neglect"를 하나의 expression으로 판단했다면 of도 member입니다.
-- members를 이어 붙여 canonical을 만들지 마세요. canonical은 별도로 올바른 사전형을 작성하세요.
-- ko는 현재 sense의 짧고 자연스러운 한국어 사전 뜻 하나만. 설명, gloss, 다른 뜻은 쓰지 마세요.
-
-{"kind":"word","canonical":"","members":[${clickedIndex}],"ko":""}`;
-}
-async function opLook(body:any,userId:string|null,seeding=false){
-  const word=clean(body.word,60).toLowerCase(),clicked=clean(body.clicked,60),sentence=clean(body.sentence,600),avoid=cleanList(body.avoid,4,40),retry=!!body.retry;
+async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSignal){
+  let input;try{input=lookupInput(body)}catch(error){return json({error:String((error as Error).message)},400)}
   let anonLeft:number|null=null,userLeft:number|null=null;
   if(seeding){}else if(!userId){const verdict=await takeAnonQuota(clean(body.device,64));if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);if(verdict.status!=="ok")return json({error:"login_required"},401);anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE))}else{const quota=await takeQuota(userId);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);userLeft=quota.left}
-  const supplied:string[]=Array.isArray(body.tokens)?body.tokens.slice(0,300).map((item:any)=>clean(item&&item.text!==undefined?item.text:item,60)):[];
-  const tokens:string[]=supplied.length?supplied:fallbackTokens(sentence);
-  let clickedIndex=Number(body.clickedIndex);
-  if(!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=tokens.length){const needle=(clicked||word).replace(/’/g,"'").toLowerCase();const matches=tokens.map((token:string,index:number)=>({token,index})).filter((item:{token:string;index:number})=>item.token.replace(/’/g,"'").toLowerCase()===needle);clickedIndex=matches.length===1?matches[0].index:Math.max(0,matches[0]?.index??0)}
-  const out=await ask({action:seeding?"seed":retry?"retry":"look",prompt:miniPrompt(word,clicked,sentence,tokens,clickedIndex,avoid),maxTokens:120,schema:LOOK_SCHEMA});
-  const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
-  const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase());
-  let kind=clean(parsed.kind,20).toLowerCase()==="expression"?"expression":"word";
-  let members:number[]=(Array.isArray(parsed.members)?parsed.members:[]).map((value:unknown)=>Number(value)).filter((index:number)=>Number.isInteger(index)&&index>=0&&index<tokens.length);
-  members=[...new Set(members)].sort((a,b)=>a-b);
-  if(kind==="word")members=[clickedIndex];
-  if(kind==="expression"&&(members.length<2||!members.includes(clickedIndex))){kind="word";members=[clickedIndex]}
-  let canonical=clean(parsed.canonical,120).replace(/\s+/g," ").trim();
-  if(kind==="word"){const lower=canonical.toLowerCase();canonical=cands.includes(lower)||lower===word?lower:(word||cands[0]||lower)}
-  else if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(canonical))canonical=word;
-  const ko=clean(parsed.ko,60);if(!ko)return json({error:"empty_answer"},502);
-  return json({kind,canonical,members,ko,lemma:canonical,pos:"",phrase:"",alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
+  try{
+    const out=await ask({action:seeding?"seed":input.retry?"retry":"look",prompt:miniPrompt(input),maxTokens:120,schema:LOOK_SCHEMA,temperature:0.2,signal,validate:value=>validateLook(value,input)});
+    const result=validateLook(parseJson(out.text),input);
+    return json({...result,lemma:result.canonical,pos:"",phrase:"",alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
+  }catch(error){
+    if(signal?.aborted)throw error;
+    return json({error:"lookup_failed"},502);
+  }
 }
 
 const EXPLAIN_SCHEMA={type:"object",additionalProperties:false,required:["ko","points"],properties:{ko:{type:"string"},points:{type:"array",items:{type:"string"}}}};
@@ -110,4 +83,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed,req.signal);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});

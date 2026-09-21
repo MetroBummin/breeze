@@ -1,0 +1,18 @@
+{
+  "candidate": {
+    "n": 129,
+    "koreanPass": 119,
+    "koreanN": 129,
+    "httpOK": 129,
+    "exact": 115,
+    "expressionRecall": 83,
+    "expressionN": 84,
+    "falseExpressions": 4,
+    "wordN": 45,
+    "valid": 129,
+    "p50": 969,
+    "p95": 1850,
+    "inputTokens": 106074,
+    "outputTokens": 3539
+  }
+}

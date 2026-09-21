@@ -83,7 +83,10 @@ try{
     return {word:read(document.getElementById('word-peek')),bottom:read(document.getElementById('readpill'))};
   });
   const lightGlass=await glassMaterial();
-  assert.deepEqual(lightGlass.bottom,lightGlass.word,'light Reader controls and Lookup use different glass materials');
+  // PR 11 gives shared bottom controls their own light reflection tokens.
+  // Lookup keeps the existing sentence-glass material; dark material stays shared.
+  assert.equal(lightGlass.bottom.blur,lightGlass.word.blur,'Lookup lost its shared glass blur');
+  assert.notEqual(lightGlass.word.background,'rgba(0, 0, 0, 0)','Lookup lost its readable glass surface');
   await page.evaluate(()=>{document.documentElement.classList.add('dark');document.body.classList.add('dark');});
   await page.locator('#readpill').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const darkGlass=await glassMaterial();
@@ -130,21 +133,18 @@ try{
     words.patient.pickedAt=Date.now();
   });
 
-  /* 저장 단어는 새 문장에서도 서버 판정 없이 저장 Meaning을 즉시 보여 줍니다. */
+  /* New context is resolved once; the chevron still owns no second request. */
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
     dictCall=payload=>{wordQa.calls.push(payload);return new Promise(resolve=>wordQa.pending.push(resolve));};
-    const span=[...document.querySelectorAll('#rtext .w')].find(node=>
-      node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
+    const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
     openWord(keyOf('patient'),span);
   });
-  await page.waitForFunction(()=>wordPeekOpen());
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'참을성 있는',
-    'saved meaning did not appear immediately in a new sentence');
-  assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),false,
-    'saved meaning unnecessarily showed a loading state');
-  assert.equal(await page.evaluate(()=>wordQa.calls.length),0,
-    'saved meaning reuse unexpectedly contacted the dictionary server');
+  await page.waitForFunction(()=>wordQa.calls.length===1);
+  assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 확인 중');
+  await page.evaluate(()=>wordQa.pending.shift()({kind:'word',canonical:'patient',members:[1],ko:'참을성 있는'}));
+  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='참을성 있는');
+  assert.equal(await page.evaluate(()=>wordQa.calls.length),1);
   await page.evaluate(()=>closePanel());
   await page.evaluate(()=>{
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='another');
@@ -270,13 +270,13 @@ try{
     };
     dead={}; vocabOpen.clear(); show('vocab'); renderVocab();
   });
-  assert.equal(await page.locator('#vcnt').textContent(),'2개 저장됨');
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 1단어');
   await page.locator('.vgroup[data-g="run"] .vword').click();
   assert.equal(await page.locator('.vgroup[data-g="run"] .rowdel').count(),2,
     'expanded Words group did not expose both stored meanings');
   await page.locator('.vsense[data-k="run"] .rowdel').click();
   await page.waitForFunction(()=>document.querySelectorAll('.vgroup[data-g="run"] .vsense').length===1);
-  assert.equal(await page.locator('#vcnt').textContent(),'1개 저장됨');
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 1단어');
   assert.equal(await page.locator('.vgroup[data-g="run"] .vko').textContent(),'운영하다');
   assert.equal(await page.locator('.vgroup[data-g="run"]').getAttribute('data-head'),'run');
   assert.equal(await page.locator('.vgroup[data-g="run"]').evaluate(node=>node.classList.contains('open')),true,
@@ -308,7 +308,7 @@ try{
   await page.locator('.vsense[data-k="triad::B"] .rowdel').click();
   await page.locator('.vsense[data-k="triad::C"] .rowdel').click();
   assert.deepEqual((await page.locator('.vgroup[data-g="triad"] .vko').allTextContents()).sort(),['A','D']);
-  assert.equal(await page.locator('#vcnt').textContent(),'2개 저장됨');
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 1단어');
   assert.equal(await page.locator('.vgroup[data-g="triad"]').count(),1);
 
   /* Active/non-active popup deletion plus delete -> add -> delete. */

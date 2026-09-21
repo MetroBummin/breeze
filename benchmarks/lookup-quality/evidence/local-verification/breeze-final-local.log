@@ -1,0 +1,9 @@
+
+> breeze-refactored@1.1.0 test:lookup-quality
+> node tests/verify-lookup-contract.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-lookup-quality-browser.mjs && node tests/verify-word-presentation-browser.mjs
+
+Lookup contract, target alignment, malformed-output fallback, cancellation and fail-closed checks passed
+낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)
+확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다
+Lookup quality browser regressions passed (100 whole-word deletions, context, cache, expressions, split geometry).
+Word near-pill and multi-meaning Words deletion interactions verified

@@ -1,9 +1,6 @@
-/* Original PDF reader: lazy PDF.js canvases plus a page-ratio word map.
-   PDF.js의 글자 레이어는 눈에 보이는 캔버스와 별개의 좌표계입니다.
-   패널이 열려 페이지 폭이 바뀌면 브라우저 selection 사각형은 쉽게 밀립니다.
-   그래서 PDF 자체 좌표에서 단어 상자를 한 번 만들고 페이지 크기의 비율로
-   저장합니다. 하이라이트와 클릭 판정이 같은 상자를 사용하므로 서로 어긋나지
-   않으며, 화면 폭이 바뀌어도 다시 계산할 필요가 없습니다. */
+/* Original PDF reader: lazy PDF.js canvases and glyph-based page geometry.
+   Lookup and every word/phrase marker share the same normalized boxes. CSS
+   scales canvas and markers together; scroll/resize/pinch never measure text. */
 
 let pdfDrawToken = 0;
 
@@ -194,9 +191,8 @@ async function renderOriginalPdfPage(session,pageNumber,options){
     const after=pageElement.getBoundingClientRect();
     if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
     await page.render({canvasContext:context,viewport,transform}).promise;
-    const textContent=await page.getTextContent();
     if(!alive()) return;
-    const wordBoxes=buildPdfWordBoxes(textContent,viewport,session.glyphs);
+    const wordBoxes=await buildPdfWordBoxes(page,base,session.glyphs,session.pdf);
     if(!alive()) return;
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
@@ -232,43 +228,32 @@ function resharpenOriginalPages(){
 
 /* ================= word map ================= */
 
-function pdfTextTransform(viewport,item){
-  if(pdfjsLib.Util && pdfjsLib.Util.transform){
-    return pdfjsLib.Util.transform(viewport.transform,item.transform);
-  }
-  const a=viewport.transform, b=item.transform;
-  return [a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],
-    a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],
-    a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
-}
-
-/* Widths come from the browser's own text metrics and are then rescaled to the
-   width PDF.js reports for the item, so an unavailable embedded font only
-   changes how the characters are distributed inside a known total. */
-function pdfWordMeasurer(){
-  const context=document.createElement('canvas').getContext('2d');
-  if(!context) return value=>value.length;
-  return (value,entry)=>{
-    context.font=`${entry.fontHeight}px ${entry.fontFamily}`;
-    return context.measureText(value).width;
-  };
-}
-
-/* 글자 화면에서 되살린 붙임글자는 원본 화면에서도 같아야 합니다. 다르면
-   같은 문장이 두 화면에서 다른 낱말이 되어, 모드를 바꿀 때 자리를 못 찾습니다. */
-function buildPdfWordBoxes(textContent,viewport,glyphs){
-  const styles=textContent.styles||{};
-  const entries=(textContent.items||[]).map(item=>pdfTextEntry(
-    pdfTextTransform(viewport,item),
-    applyLigatures(item.str,glyphs),
-    Math.abs((Number(item.width)||0)*viewport.scale),
-    pdfFontAscentRatio(styles[item.fontName]||{}),
-    (styles[item.fontName]||{}).fontFamily));
-  const {boxes,text}=pdfPageWords(entries,pdfWordMeasurer(),viewport.width,viewport.height);
+/* Read the same glyph widths, TJ adjustments, text state and font metrics
+   used by PDF.js canvas rendering. Work only when a lazy page is first drawn;
+   resharpen replaces canvas pixels while keeping these scale-free boxes. */
+async function buildPdfWordBoxes(page,viewport,glyphs,pdf){
+  const ops=pdfjsLib.OPS;
+  const operatorList=await page.getOperatorList({annotationMode:pdfjsLib.AnnotationMode.DISABLE});
+  const ids=new Set();
+  operatorList.fnArray.forEach((op,index)=>{
+    const args=operatorList.argsArray[index];
+    if(op===ops.setFont) ids.add(args[0]);
+    if(op===ops.setGState) args[0].forEach(([key,value])=>{if(key==='Font') ids.add(value[0]);});
+  });
+  const fonts=new Map();
+  await Promise.all(Array.from(ids,async id=>{
+    fonts.set(id,await new Promise(resolve=>page.commonObjs.get(id,resolve)));
+  }));
+  const optionalContent=await pdf.getOptionalContentConfig();
+  const entries=pdfOperatorEntries(operatorList,fonts,viewport,ops,
+    group=>optionalContent.isVisible(group));
+  const {boxes,text}=pdfPageWords(entries,viewport.width,viewport.height,
+    value=>applyLigatures(value,glyphs));
   const sentenceAt=bridgeSentenceFinder(text),parts=bridgeSentences(text);
   boxes.forEach(box=>{
     box.example=sentenceAt(box.offset);
     const part=parts.find(item=>box.offset>=item.start&&box.offset<=item.end);
+    box.sentenceStart=part ? part.start : box.offset;
     box.tokenIndex=part&&typeof lookupSentenceTokens==='function'
       ? lookupSentenceTokens(text.slice(part.start,box.offset)).length : -1;
   });
@@ -358,29 +343,22 @@ function showPdfModeCue(page,boxes,duration,paragraphHint){
    가리키는 일이라 넓을수록 찾기 쉽습니다. 꾹 눌러 문장을 물어볼 때는 반대입니다 —
    무엇을 물어봤는지가 곧 그 문장이라, 문단을 칠하면 답과 질문이 어긋납니다.
 
-   스캔본에는 줄이라는 것이 따로 없고 낱말 상자만 있습니다. 세로 자리가 비슷한
-   것끼리 한 줄로 묶어, 줄마다 왼쪽 끝에서 오른쪽 끝까지 하나씩 칠합니다 —
+   PDF 글리프 지도에 저장된 줄 ID로 묶어, 줄마다 실제 낱말의 경계까지 칠합니다 —
    글자 화면에서 문장 하나에 색이 차오르는 것과 같은 그림입니다. */
-const PDF_LINE_GAP = .012;
-function showPdfSentenceCue(page,boxes,duration){
+function showPdfSentenceCue(page,boxes){
   if(!page || !boxes || !boxes.length) return;
-  const sorted=boxes.slice().sort((a,b)=>a.y-b.y||a.x-b.x);
-  const lines=[];
-  sorted.forEach(box=>{
-    const line=lines[lines.length-1];
-    if(line && Math.abs(box.y-line.y)<PDF_LINE_GAP) line.items.push(box);
-    else lines.push({y:box.y,items:[box]});
+  const layer=createReaderSentenceCue(page,true),lines=new Map();
+  boxes.forEach(box=>{
+    if(!lines.has(box.line)) lines.set(box.line,[]);
+    lines.get(box.line).push(box);
   });
-  lines.forEach(line=>{
-    const left=Math.max(0,Math.min(...line.items.map(box=>box.x))-.004);
-    const right=Math.min(1,Math.max(...line.items.map(box=>box.x+box.w))+.004);
-    const top=Math.max(0,Math.min(...line.items.map(box=>box.y))-.003);
-    const bottom=Math.min(1,Math.max(...line.items.map(box=>box.y+box.h))+.003);
-    const cue=document.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-block';
+  lines.forEach(items=>{
+    const left=Math.min(...items.map(b=>b.x)),right=Math.max(...items.map(b=>b.x+b.w));
+    const top=Math.min(...items.map(b=>b.y)),bottom=Math.max(...items.map(b=>b.y+b.h));
+    const cue=document.createElement('span');cue.className='reader-sentence-cue';
     cue.style.cssText=`left:${left*100}%;top:${top*100}%;width:${(right-left)*100}%;height:${(bottom-top)*100}%`;
-    page.appendChild(cue);
+    layer.appendChild(cue);
   });
-  if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
 }
 
 function showPdfParagraphModeCue(paragraph,duration,preferredPage){
@@ -583,8 +561,8 @@ registerReaderSurface({
        아니라 그 문장의 줄들만 칠합니다: 무엇을 물어봤는지가 곧 그 문장이라
        문단을 칠하면 질문과 답이 어긋납니다. */
     const boxes=(originalSession.wordBoxes.get(+page.dataset.page)||[])
-      .filter(item=>item.example===box.example);
-    return { sentence, paint(){ showPdfSentenceCue(page,boxes,0); } };
+      .filter(item=>item.sentenceStart===box.sentenceStart);
+    return { sentence, paint(){ showPdfSentenceCue(page,boxes); } };
   },
 });
 

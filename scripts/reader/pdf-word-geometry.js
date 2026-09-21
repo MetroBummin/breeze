@@ -1,181 +1,207 @@
-/* Pure PDF word-box geometry shared by the original reader and its tests.
-   Everything here works in viewport pixels and never touches the DOM. */
+/* PDF.js 3.11 glyph advances are the geometry source for both lookup and paint.
+   No browser fonts, DOM ranges, or independent text-width measurements.
+   This small adapter follows CanvasGraphics' text state (canvas.js in the
+   pinned PDF.js release). Keep its operator/position tests when upgrading. */
 
-function pdfFontAscentRatio(style){
-  const rawAscent=Number(style&&style.ascent);
-  const rawDescent=Math.abs(Number(style&&style.descent));
-  let ratio=Number.isFinite(rawAscent)&&rawAscent>0 ? rawAscent : .8;
-
-  /* Some embedded fonts describe their full design box instead of a normal
-     reading line. Charis SIL in Holes is one example: 1.196 / -0.439. Using
-     that ascent literally puts the whole hit box above the visible word.
-     Only normalize metrics whose combined height is clearly exceptional;
-     ordinary PDFs therefore keep their previous position. */
-  const metricSpan=ratio+(Number.isFinite(rawDescent) ? rawDescent : 0);
-  if(metricSpan>1.25) ratio=ratio/metricSpan;
-
-  return Math.max(.55,Math.min(.95,ratio));
+function pdfMatrix(a,b){
+  return [a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],
+    a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],
+    a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
+}
+function pdfPoint(m,x,y){ return {x:m[0]*x+m[2]*y+m[4],y:m[1]*x+m[3]*y+m[5]}; }
+function pdfGlyphBounds(matrix,left,bottom,right,top){
+  const points=[pdfPoint(matrix,left,bottom),pdfPoint(matrix,right,bottom),
+    pdfPoint(matrix,left,top),pdfPoint(matrix,right,top)];
+  return {left:Math.min(...points.map(p=>p.x)),top:Math.min(...points.map(p=>p.y)),
+    right:Math.max(...points.map(p=>p.x)),bottom:Math.max(...points.map(p=>p.y))};
+}
+function pdfFontExtents(font){
+  if(Number.isFinite(font.ascent)&&Number.isFinite(font.descent)&&font.ascent>font.descent)
+    return {top:font.ascent,bottom:font.descent};
+  const m=font.fontMatrix||[.001,0,0,.001,0,0];
+  if(font.bbox){
+    const b=pdfGlyphBounds(m,...font.bbox);
+    return {top:b.bottom,bottom:b.top};
+  }
+  // A font without metrics still has its PDF em square. Never invent widths.
+  return {top:1,bottom:0};
 }
 
-function pdfWordBounds(origin,direction,normal,offset,width,ascent,height){
-  const baseX=origin.x+direction.x*offset;
-  const baseY=origin.y+direction.y*offset;
-  const topX=baseX+normal.x*ascent;
-  const topY=baseY+normal.y*ascent;
-  const endX=topX+direction.x*width;
-  const endY=topY+direction.y*width;
-  const bottomX=topX-normal.x*height;
-  const bottomY=topY-normal.y*height;
-  const farX=endX-normal.x*height;
-  const farY=endY-normal.y*height;
-  return {
-    left:Math.min(topX,endX,bottomX,farX),
-    top:Math.min(topY,endY,bottomY,farY),
-    right:Math.max(topX,endX,bottomX,farX),
-    bottom:Math.max(topY,endY,bottomY,farY),
+function pdfOperatorEntries(operatorList,fonts,viewport,ops,isVisible=group=>true){
+  const identity=[1,0,0,1,0,0];
+  let state={ctm:viewport.transform,textMatrix:identity,font:null,fontSize:0,
+    direction:1,hScale:1,charSpacing:0,wordSpacing:0,leading:0,rise:0,
+    x:0,y:0,lineX:0,lineY:0,mask:false};
+  const stack=[],visibility=[true],entries=[];
+  const save=()=>stack.push({...state});
+  const restore=()=>{ if(stack.length) state=stack.pop(); };
+  const setFont=(id,size)=>{
+    state.font=fonts.get(id);state.fontSize=Math.abs(size);state.direction=size<0?-1:1;
   };
+  const move=(x,y)=>{state.x=state.lineX+=x;state.y=state.lineY+=y;};
+  const show=glyphs=>{
+    const s=state,font=s.font,size=s.fontSize;
+    if(!font||!size) return;
+    const fm=font.fontMatrix||[.001,0,0,.001,0,0],extents=pdfFontExtents(font);
+    const hScale=s.hScale*s.direction,vertical=font.vertical&&!font.isType3Font;
+    let matrix=pdfMatrix(s.ctm,s.textMatrix);
+    matrix=pdfMatrix(matrix,[1,0,0,1,s.x,s.y+(font.isType3Font?0:s.rise)]);
+    matrix=pdfMatrix(matrix,[hScale,0,0,s.direction,0,0]);
+    const origin=pdfPoint(matrix,0,0);
+    const axis=vertical ? {x:-matrix[2],y:-matrix[3]} : {x:matrix[0],y:matrix[1]};
+    const axisLength=Math.hypot(axis.x,axis.y);
+    if(!axisLength) return;
+    const direction={x:axis.x/axisLength,y:axis.y/axisLength};
+    const entry={text:'',chars:[],origin,direction,normal:{x:direction.y,y:-direction.x},
+      angle:Math.atan2(direction.y,direction.x),fontHeight:Math.hypot(matrix[2],matrix[3])*size,width:0};
+    let advance=0,pendingGap=0;
+    for(const glyph of glyphs){
+      if(typeof glyph==='number'){
+        const gap=(vertical?1:-1)*glyph*size/1000;
+        advance+=gap;pendingGap+=gap;continue;
+      }
+      // TJ may express a word separator without a Unicode space. Keep that
+      // separator in the lookup text without assigning it any glyph rectangle.
+      if(pendingGap>size*PDF_SPACE_GAP&&entry.text&&!/\s$/.test(entry.text)&&!/^\s/.test(glyph.unicode||'')){
+        entry.text+=' ';entry.chars.push(null);
+      }
+      pendingGap=0;
+      const spacing=(glyph.isSpace?s.wordSpacing:0)+s.charSpacing;
+      let width=glyph.width*size*fm[0],left=advance,baseline=0,step;
+      if(vertical){
+        const vm=glyph.vmetric||font.defaultVMetrics;
+        if(!vm) continue;
+        left=-(glyph.vmetric?vm[1]:glyph.width/2)*size*fm[0];
+        baseline=-(advance+vm[2]*size*fm[0]);
+        step=-vm[0]*size*fm[0]-spacing*s.direction;
+      }else if(font.isType3Font){
+        width=pdfPoint(fm,glyph.width,0).x*size;
+        step=width+spacing;
+      }else step=width+spacing*s.direction;
+      const bounds=pdfGlyphBounds(matrix,left,baseline+extents.bottom*size,
+        left+width,baseline+extents.top*size);
+      // A Unicode ligature may expand to several characters. Each character
+      // retains the same indivisible glyph geometry, never a guessed fraction.
+      const text=glyph.unicode||'';
+      for(let i=0;i<text.length;i++) entry.chars.push(bounds);
+      entry.text+=text;
+      advance+=step;
+    }
+    entry.width=advance*axisLength;
+    if(vertical) s.y-=advance;
+    else s.x+=advance*hScale;
+    // Invisible text may be the OCR layer of a scan, so it remains searchable.
+    // Soft-mask/hidden optional-content text is not page content.
+    if(entry.text&&!s.mask&&visibility[visibility.length-1]) entries.push(entry);
+  };
+  for(let i=0;i<operatorList.fnArray.length;i++){
+    const op=operatorList.fnArray[i],a=operatorList.argsArray[i]||[];
+    switch(op){
+      case ops.save: save();break;
+      case ops.restore: restore();break;
+      case ops.transform: state.ctm=pdfMatrix(state.ctm,a);break;
+      case ops.beginText:
+        state.textMatrix=identity;state.x=state.y=state.lineX=state.lineY=0;break;
+      case ops.setFont: setFont(a[0],a[1]);break;
+      case ops.setCharSpacing: state.charSpacing=a[0];break;
+      case ops.setWordSpacing: state.wordSpacing=a[0];break;
+      case ops.setHScale: state.hScale=a[0]/100;break;
+      case ops.setLeading: state.leading=-a[0];break;
+      case ops.setTextRise: state.rise=a[0];break;
+      case ops.moveText: move(a[0],a[1]);break;
+      case ops.setLeadingMoveText: state.leading=a[1];move(a[0],a[1]);break;
+      case ops.setTextMatrix:
+        state.textMatrix=a;state.x=state.y=state.lineX=state.lineY=0;break;
+      case ops.nextLine: move(0,state.leading);break;
+      case ops.showText: show(a[0]);break;
+      case ops.nextLineShowText: move(0,state.leading);show(a[0]);break;
+      case ops.nextLineSetSpacingShowText:
+        state.wordSpacing=a[0];state.charSpacing=a[1];move(0,state.leading);show(a[2]);break;
+      case ops.setGState:
+        for(const [key,value] of a[0]) if(key==='Font') setFont(value[0],value[1]);
+        break;
+      case ops.paintFormXObjectBegin:
+        save();if(a[0]) state.ctm=pdfMatrix(state.ctm,a[0]);break;
+      case ops.paintFormXObjectEnd: restore();break;
+      case ops.beginGroup:
+        // The group matrix bounds its offscreen canvas; its content keeps the
+        // incoming CTM (CanvasGraphics.beginGroup), with Form applying its own.
+        save();state.mask=state.mask||!!a[0].smask;break;
+      case ops.endGroup: restore();break;
+      case ops.beginMarkedContent: visibility.push(visibility[visibility.length-1]);break;
+      case ops.beginMarkedContentProps:
+        visibility.push(visibility[visibility.length-1]&&(a[0]!=='OC'||isVisible(a[1])));break;
+      case ops.endMarkedContent: if(visibility.length>1) visibility.pop();break;
+    }
+  }
+  return entries;
 }
-
-/* ---------------------------------------------------------------------------
-   A PDF has no words, only positioned text items. Many books hand out one item
-   per line, but plenty — Verity among them — hand out one item per glyph:
-
-     "t" x=72   "h" x=76   "e" x=83.2   " " x=89.6   "t" x=93.4 …
-
-   Tokenising each item on its own then turns every single letter into a word,
-   so the reader underlines every "h" it has ever saved and a tap looks up the
-   letter instead of the word. Items are therefore put back on their shared
-   baseline first; only the rebuilt line is tokenised. Word spacing comes from
-   the horizontal gaps, exactly like the importer's line rebuilder, because a
-   space item's reported width cannot be trusted (Verity reports 0.26pt for a
-   gap that measures 3.8pt).
---------------------------------------------------------------------------- */
 
 const PDF_WORD_PATTERN=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
-/* A same-baseline neighbour is part of this line; anything further across is
-   another line, and a gap wider than this is another column or a leader dot. */
+// These thresholds reconstruct reading order/word separators only. They never
+// adjust a glyph's geometry or distribute a run's width among its characters.
 const PDF_LINE_ACROSS=.35, PDF_LINE_BACK=.6, PDF_LINE_AHEAD=2.5, PDF_SPACE_GAP=.16;
-
-/* `transform` and `width` are already in viewport pixels; `ascentRatio` is what
-   pdfFontAscentRatio() resolved for this item's font. */
-function pdfTextEntry(transform,text,width,ascentRatio,fontFamily){
-  const angle=Math.atan2(transform[1],transform[0]);
-  const fontHeight=Math.max(1,Math.hypot(transform[2],transform[3]));
-  const ratio=Number(ascentRatio)>0 ? Number(ascentRatio) : .8;
-  return {
-    text:String(text||''),
-    angle,
-    direction:{x:Math.cos(angle),y:Math.sin(angle)},
-    normal:{x:Math.sin(angle),y:-Math.cos(angle)},
-    origin:{x:transform[4],y:transform[5]},
-    fontHeight,
-    ascent:ratio*fontHeight,
-    width:Math.max(0,Number(width)||0),
-    fontFamily:fontFamily||'sans-serif',
-  };
-}
-
-/* Distance from the line's origin: `along` runs with the text, `across` is the
-   perpendicular offset that tells two stacked lines apart. */
 function pdfEntryOffsets(line,entry){
-  const dx=entry.origin.x-line.origin.x;
-  const dy=entry.origin.y-line.origin.y;
-  return {
-    along:dx*line.direction.x+dy*line.direction.y,
-    across:dx*line.normal.x+dy*line.normal.y,
-  };
+  const dx=entry.origin.x-line.origin.x,dy=entry.origin.y-line.origin.y;
+  return {along:dx*line.direction.x+dy*line.direction.y,
+    across:dx*line.normal.x+dy*line.normal.y};
 }
-
 function pdfLineFits(line,entry){
   if(Math.abs(line.angle-entry.angle)>.02) return false;
-  const height=Math.max(line.fontHeight,entry.fontHeight);
-  const {along,across}=pdfEntryOffsets(line,entry);
-  if(Math.abs(across)>height*PDF_LINE_ACROSS) return false;
-  return along>line.cursor-height*PDF_LINE_BACK && along<line.cursor+height*PDF_LINE_AHEAD;
+  const height=Math.max(line.fontHeight,entry.fontHeight),{along,across}=pdfEntryOffsets(line,entry);
+  return Math.abs(across)<=height*PDF_LINE_ACROSS&&
+    along>line.cursor-height*PDF_LINE_BACK&&along<line.cursor+height*PDF_LINE_AHEAD;
 }
-
-function pdfStartLine(entry){
-  return {angle:entry.angle,origin:entry.origin,direction:entry.direction,normal:entry.normal,
-          fontHeight:entry.fontHeight,cursor:0,text:'',chars:[]};
-}
-
-function pdfAppendEntry(line,entry,measureText){
-  const {along}=pdfEntryOffsets(line,entry);
-  const height=Math.max(line.fontHeight,entry.fontHeight);
-  if(line.text && along-line.cursor>Math.max(height*PDF_SPACE_GAP,.4)
-      && !/\s$/.test(line.text) && !/^\s/.test(entry.text)){
-    line.text+=' ';
-    line.chars.push({start:line.cursor,end:along,ascent:entry.ascent,height:entry.fontHeight});
-  }
-  const measured=Math.max(0,measureText(entry.text,entry));
-  /* pdf.js occasionally reports a zero width. The measured width is already in
-     the item's own pixel size, so it is a usable stand-in for the advance. */
-  const advance=entry.width>0 ? entry.width : measured;
-  const unit=entry.width>0&&measured>0 ? entry.width/measured : 1;
-  let previous=0;
-  for(let index=0; index<entry.text.length; index++){
-    const through=Math.max(previous,measureText(entry.text.slice(0,index+1),entry));
-    line.chars.push({start:along+previous*unit,end:along+through*unit,
-                     ascent:entry.ascent,height:entry.fontHeight});
-    previous=through;
-  }
-  line.text+=entry.text;
-  line.cursor=along+advance;
-  line.fontHeight=Math.max(line.fontHeight,entry.fontHeight);
-}
-
-function pdfTextLines(entries,measureText){
-  const measure=typeof measureText==='function' ? measureText : (value=>value.length);
+function pdfTextLines(entries,normalizeText=value=>value){
   const lines=[];
   let line=null;
-  for(const entry of entries||[]){
-    /* Whitespace-only items carry no glyph and an unreliable width; the gap
-       they leave behind is what actually separates the words. */
-    if(!entry || !entry.text || !entry.text.trim()) continue;
-    if(!line || !pdfLineFits(line,entry)){ line=pdfStartLine(entry); lines.push(line); }
-    pdfAppendEntry(line,entry,measure);
+  for(const entry of entries){
+    if(!entry.text) continue;
+    if(!line||!pdfLineFits(line,entry)){
+      line={...entry,text:'',chars:[],cursor:0};lines.push(line);
+    }
+    const {along}=pdfEntryOffsets(line,entry);
+    if(line.text&&along-line.cursor>Math.max(line.fontHeight,entry.fontHeight)*PDF_SPACE_GAP
+        &&!/\s$/.test(line.text)&&!/^\s/.test(entry.text)){
+      line.text+=' ';line.chars.push(null);
+    }
+    line.text+=entry.text;
+    for(const char of entry.chars) line.chars.push(char);
+    line.cursor=along+entry.width;
+    line.fontHeight=Math.max(line.fontHeight,entry.fontHeight);
+  }
+  for(const line of lines){
+    const chars=[];
+    for(let i=0;i<line.text.length;i++){
+      for(let j=0;j<normalizeText(line.text[i]).length;j++) chars.push(line.chars[i]);
+    }
+    line.text=normalizeText(line.text);line.chars=chars;
   }
   return lines;
 }
-
-/* Word boxes are stored as page-size ratios so they survive a width change
-   (the dictionary panel opening, a rotation) without being recomputed. */
 function pdfLineWordBoxes(lines,pageWidth,pageHeight){
   const boxes=[];
   let text='';
-  (lines||[]).forEach(line=>{
+  lines.forEach((line,lineIndex)=>{
     if(text) text+=' ';
-    const base=text.length;
-    text+=line.text;
+    const base=text.length;text+=line.text;
     PDF_WORD_PATTERN.lastIndex=0;
     let match;
     while((match=PDF_WORD_PATTERN.exec(line.text))){
-      const span=line.chars.slice(match.index,match.index+match[0].length);
+      const span=line.chars.slice(match.index,match.index+match[0].length).filter(Boolean);
       if(!span.length) continue;
-      const first=span[0], last=span[span.length-1];
-      const ascent=span.reduce((max,item)=>Math.max(max,item.ascent),0);
-      const height=span.reduce((max,item)=>Math.max(max,item.height),0);
-      const bounds=pdfWordBounds(line.origin,line.direction,line.normal,
-        first.start,Math.max(1,last.end-first.start),ascent,height);
-      const left=Math.max(0,Math.min(pageWidth,bounds.left));
-      const top=Math.max(0,Math.min(pageHeight,bounds.top));
-      const right=Math.max(left,Math.min(pageWidth,bounds.right));
-      const bottom=Math.max(top,Math.min(pageHeight,bounds.bottom));
-      boxes.push({
-        word:match[0],
-        x:left/pageWidth,
-        y:top/pageHeight,
-        w:Math.max(1,right-left)/pageWidth,
-        h:Math.max(1,bottom-top)/pageHeight,
-        /* Character offset of this very occurrence inside `text`. Repeated
-           words therefore keep their own sentence instead of the first one. */
-        offset:base+match.index,
-      });
+      const left=Math.max(0,Math.min(pageWidth,...span.map(b=>b.left)));
+      const top=Math.max(0,Math.min(pageHeight,...span.map(b=>b.top)));
+      const right=Math.max(left,Math.min(pageWidth,Math.max(...span.map(b=>b.right))));
+      const bottom=Math.max(top,Math.min(pageHeight,Math.max(...span.map(b=>b.bottom))));
+      if(right<=left||bottom<=top) continue;
+      boxes.push({word:match[0],x:left/pageWidth,y:top/pageHeight,
+        w:(right-left)/pageWidth,h:(bottom-top)/pageHeight,line:lineIndex,
+        offset:base+match.index});
     }
   });
   return {boxes,text};
 }
-
-function pdfPageWords(entries,measureText,pageWidth,pageHeight){
-  return pdfLineWordBoxes(pdfTextLines(entries,measureText),pageWidth,pageHeight);
+function pdfPageWords(entries,pageWidth,pageHeight,normalizeText=value=>value){
+  return pdfLineWordBoxes(pdfTextLines(entries,normalizeText),pageWidth,pageHeight);
 }

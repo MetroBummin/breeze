@@ -77,6 +77,11 @@ for(const engine of [chromium,webkit]){
  await page.evaluate(()=>{delete document.hidden;document.dispatchEvent(new Event('visibilitychange'));});await notice.waitFor({state:'visible'});
  await page.evaluate(()=>{readerNotices.reset();toast('<img src=x onerror=alert(1)>');});
  await notice.waitFor({state:'visible'});assert.equal(await notice.locator('img').count(),0);
+ await page.setViewportSize({width:320,height:740});
+ await page.evaluate(()=>{readerNotices.reset();document.getElementById('modefab').hidden=false;toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요');});
+ await notice.waitFor({state:'visible'});await page.waitForTimeout(400);
+ assert.equal(await notice.evaluate(e=>e.scrollHeight<=e.clientHeight),true,'Notice clipped at narrow Reader width');
+ await page.screenshot({path:'/tmp/breeze-notice-'+engine.name()+'.png'});
  assert.deepEqual(errors,[]);
  console.log(engine.name()+': Reader notice FIFO, interruption/resume, lookup/dialog/restore priority, scroll, compact controls, exit, bounds, expiry and visibility passed.');
  }finally{await browser.close();}

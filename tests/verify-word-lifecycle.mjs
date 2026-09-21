@@ -308,25 +308,19 @@ function tapNewWord(ctx, key){
     '창이 이미 닫혔는데 AI 요청이 출발했습니다 — 아무도 안 볼 답에 한도를 씁니다');
 }
 
-/* ================= ⑤ 저장 Meaning은 네트워크 없이 즉시 재사용 ================= */
+/* A saved word in a new sentence is classified once; same occurrence reuses the result. */
 {
-  const { world, ctx } = boot();
-  ctx.words.moon = { word:'moon', clicked:'moon', forms:['moon'], ko:'달', ai:{ko:'달',done:true},
-    example:'첫 문장', book:'시험책', status:1, mark:true, pickedAt:2, addedAt:1, up:1 };
-  ctx.words['moon::sense:other']={...ctx.words.moon,root:'moon',sense:true,ko:'위성',example:'둘째 문장',pickedAt:1};
-  const span = { textContent:'moon', dataset:{ example:'아주 다른 문장입니다.' },
-                 classList:{ add(){}, remove(){} }, closest:()=>null };
-  ctx.openWord('moon', span);
-  await settle();
-  assert.deepEqual(world.sent,[],'저장 단어의 새 문장에서 서버 판정이 다시 시작됐습니다');
-  assert.equal(ctx.words[ctx.selKey].ko,'달','최근 저장 Meaning을 즉시 재사용하지 않았습니다');
-  assert.equal(world.el('word-peek-meaning').textContent,'달','저장 Meaning이 미니필에 즉시 표시되지 않았습니다');
-  assert.equal(world.el('word-peek').classList.contains('loading'),false,'저장 Meaning 재사용에 불필요한 loading이 떴습니다');
-
-  ctx.closePanel();await settle();
+  const {world,ctx,net}=boot();
+  ctx.words.moon={word:'moon',clicked:'moon',forms:['moon'],ko:'달',ai:{ko:'달',done:true},example:'The moon is bright.',book:'시험책',status:1,mark:true,addedAt:1,up:1};
+  const span={textContent:'moon',dataset:{example:'The moon orbits the planet.'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('moon',span);await settle();
-  assert.equal(world.el('word-peek-meaning').textContent,'달','같은 저장 단어를 다시 눌렀을 때 로컬 Meaning이 즉시 뜨지 않았습니다');
-  assert.deepEqual(world.sent,[],'저장 Meaning 재확인 때문에 네트워크 요청이 생겼습니다');
+  assert.deepEqual(world.sent,['look']);
+  assert.equal(world.el('word-peek-meaning').textContent,'뜻 확인 중');
+  net.deliver({kind:'word',canonical:'moon',members:[1],ko:'위성'});await settle(320);
+  assert.equal(world.el('word-peek-meaning').textContent,'위성');
+  ctx.closePanel();ctx.openWord('moon',span);await settle();
+  assert.deepEqual(world.sent,['look'],'same occurrence spent another request');
+  assert.equal(world.el('word-peek-meaning').textContent,'위성');
 }
 
 /* ================= ⑦ 기존 phrase 데이터 read compatibility ================= */
@@ -410,7 +404,7 @@ function tapNewWord(ctx, key){
         있어도 남고, 늦게 온 답이 버린 낱말을 되살리지도 않습니다
    ①만 지키면 단어장이 조용히 줄어듭니다. */
 function newWordSpan(key){
-  return { textContent:key, dataset:{}, classList:{ add(){}, remove(){} }, closest:()=>null };
+  return { textContent:key, dataset:{example:'A sentence with '+key+' in it.'}, classList:{ add(){}, remove(){} }, closest:()=>null };
 }
 /* 진짜 손짓이 지나는 문 그대로 — `addWord` 를 건너뛰면 이 규칙 자체가 안 걸립니다. */
 const tapBrandNewWord = (ctx, key) => ctx.openWord(key, newWordSpan(key));
@@ -734,16 +728,15 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   assert.equal(ctx.words['phrase:take'],undefined,'word result가 expression 카드로 승격됐습니다');
 }
 {
-  /* 저장된 word는 새 문장이 expression처럼 보여도 자동 재판정하지 않습니다.
-     사용자가 새 뜻 찾기를 요청하기 전까지 로컬 Meaning을 즉시 보여 줍니다. */
-  const {world,ctx}=boot();
+  const {world,ctx,net}=boot();
   ctx.words.take=savedWord('take','가져가다');
-  const span={textContent:'took',dataset:{example:'He took the criticism into account.',clickedTokenIndex:'1'},
-    classList:{add(){},remove(){}},closest:()=>null};
+  const span={textContent:'took',dataset:{example:'He took the criticism into account.',clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('take',span);await settle(20);
-  assert.deepEqual(world.sent,[],'저장 word의 새 문맥이 자동 AI lookup을 시작했습니다');
-  assert.equal(world.el('word-peek-meaning').textContent,'가져가다','저장 Meaning을 즉시 보여 주지 않았습니다');
-  assert.equal(world.el('word-peek').classList.contains('loading'),false,'저장 Meaning에 불필요한 loading이 떴습니다');
+  assert.deepEqual(world.sent,['look'],'new sentence must identify the lexical unit');
+  net.deliver({kind:'expression',canonical:'take into account',members:[1,4,5],ko:'고려하다'});
+  await rest(AI_MIN_WAIT);await settle();
+  assert.equal(ctx.words['phrase:take into account'].ko,'고려하다');
+  assert.equal(ctx.words.take.ko,'가져가다','existing independent word was deleted by expression discovery');
 }
 {
   const {world,net,ctx}=boot();net.outran=true;

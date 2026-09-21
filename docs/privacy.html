@@ -101,7 +101,7 @@ tbody tr:last-child td{border-bottom:0}
 <p>Breeze(<a href="https://breeze.io.kr" target="_blank" rel="noopener">https://breeze.io.kr</a>, 그리고 같은 코드로 만든 iOS 앱)가 무엇을 받고, 어디에 두고, 언제 지우는지 적은 문서입니다. 코드와 같은 저장소에 있고, 코드가 바뀌면 이 문서도 같은 커밋에서 바뀝니다.</p>
 <hr>
 <h2 id="한-문단-요약">한 문단 요약</h2>
-<p>계정 없이도 거의 전부 씁니다. PDF·EPUB·기사 본문·사진은 <strong>내 기기 안에만</strong> 있고, 로그인하면 단어장과 읽던 자리 같은 작은 기록만 종단간 암호화되어 동기화됩니다. AI 뜻을 새로 찾을 때만 <strong>낱말과 그 문장 하나</strong>가 AI 에게 갑니다. 이미 저장한 뜻을 다시 보는 것만으로는 외부 AI를 부르지 않으며, Breeze 서버는 문장 본문을 저장하지 않습니다. 다만 기사 URL 가져오기는 CORS 때문에 Breeze 중계 서버에 그 URL을 요청합니다. 광고·추적기·분석 SDK는 없고, 개인정보를 팔지 않습니다.</p>
+<p>계정 없이도 거의 전부 씁니다. PDF·EPUB·기사 본문·사진은 <strong>내 기기 안에만</strong> 있고, 로그인하면 단어장과 읽던 자리 같은 작은 기록만 종단간 암호화되어 동기화됩니다. AI 뜻을 새로 찾을 때만 <strong>낱말과 그 문장 하나</strong>가 AI 에게 갑니다. 같은 문장/단어 위치에서 확인한 뜻을 다시 보는 것만으로는 외부 AI를 부르지 않으며, Breeze 서버는 문장 본문을 저장하지 않습니다. 다만 기사 URL 가져오기는 CORS 때문에 Breeze 중계 서버에 그 URL을 요청합니다. 광고·추적기·분석 SDK는 없고, 개인정보를 팔지 않습니다.</p>
 <hr>
 <h2 id="1-로그인하지-않으면">1. 로그인하지 않으면</h2>
 <p>기사 URL 가져오기와 AI/영어 사전 메타데이터 조회를 제외하면, 아래는 전부 브라우저(앱) 안에만 있습니다. URL 가져오기는 CORS를 넘기기 위해 해당 URL을 Breeze 중계 서버에 요청하며, 서버는 받은 HTML·이미지를 저장하지 않고 전달합니다. AI·영어 사전 조회의 범위는 각각 3절·5절입니다.</p>
@@ -122,12 +122,12 @@ tbody tr:last-child td{border-bottom:0}
 <h2 id="3-문맥-뜻을-정할-때">3. 문맥 뜻을 정할 때</h2>
 <p>낱말을 눌러 문맥 뜻을 받을 때만 일어나는 일입니다. 로그인 전에는 기기당 정해진 체험 횟수, 로그인 후에는 서버가 정한 일일 사용량 풀 안에서 사용할 수 있습니다. 문장 전체 설명도 같은 AI 사용량 풀을 사용하며 낱말 lookup보다 더 많이 차감될 수 있습니다.</p>
 <p><strong>처음 보는 문맥 또는 새 분석이 필요한 경우</strong> — Breeze 서버(<code>server/dict</code>)를 거쳐 생성 AI 제공자에게 다음이 갑니다.</p>
-<ul><li>누른 낱말과 화면에 있던 형태</li><li><strong>그 낱말이 있던 문장 하나</strong> (최대 600자)</li><li>문장의 영어 token 목록과 사용자가 누른 token index</li></ul>
+<ul><li>누른 낱말과 화면에 있던 형태</li><li><strong>그 낱말이 있던 문장</strong> (클릭 위치를 보존해 최대 2400자). 다시 찾기를 누르면 앞뒤 한 문장도 각각 최대 400자까지 전달합니다.</li><li>문장의 영어 token 목록과 사용자가 누른 token index</li></ul>
 <p>생성 AI는 word/expression 여부, 저장할 canonical, 현재 문장의 lexical member token, 짧은 한국어 뜻을 반환합니다. 작은 뜻 필에서는 이 최소 결과만 사용합니다.</p>
-<p><strong>저장한 lexical item을 다른 문장에서 다시 만난 경우</strong> — 기기에 저장된 Meaning을 즉시 보여 줍니다. 이 재사용 자체로 문장이나 저장된 Meaning 후보를 외부 AI 제공자에게 보내지 않습니다. 사용자가 새 뜻 찾기를 직접 요청한 경우에만 위의 생성 AI lookup이 새로 실행됩니다.</p>
+<p><strong>확인한 문장/단어 위치의 Meaning을 다시 보는 경우</strong> — 기기에 저장된 Meaning을 즉시 보여 줍니다. 이 재사용 자체로 문장이나 저장된 Meaning 후보를 외부 AI 제공자에게 보내지 않습니다. 처음 만나는 문맥이나 사용자가 다시 찾기를 요청한 경우에는 위의 생성 AI lookup을 실행합니다.</p>
 <p><strong>단어 상세창을 열 때</strong> — 별도의 생성 AI 요청을 하지 않습니다. 이미 기기에 있는 짧은 한국어 Meaning과 아래 영어 사전 metadata만 표시합니다. 과거 버전에 저장된 <code>ai.note</code>/<code>ai.gloss</code> 값은 삭제 마이그레이션하지 않지만 새 런타임은 사용하지 않습니다.</p>
 <p>기기 표시(<code>breeze.device</code>)나 계정 식별자는 한도 확인을 위해 Breeze 서버까지만 가며, 외부 AI 제공자에게는 보내지 않습니다.</p>
-<p><strong>생성 제공자</strong> — OpenRouter를 통한 DeepSeek가 기본이고, 실패하면 Google(Gemini), Anthropic(Claude) 순으로 대체합니다. 처음 보는 item 또는 사용자가 직접 요청한 새 뜻 lookup에만 사용합니다.</p>
+<p><strong>생성 제공자</strong> — OpenRouter를 통한 DeepSeek가 기본이고, 실패하면 Google(Gemini)로 대체합니다. 처음 보는 item 또는 사용자가 직접 요청한 새 뜻 lookup에만 사용합니다.</p>
 <p><strong>서버에 남는 것</strong> — 한도와 운영 확인을 위한 호출 종류, 사용한 제공자와 모델, 성공 여부, 응답 시간, 토큰 사용량입니다. 표제어, 읽던 문장과 그 지문·앞뒤 단어, 책 제목과 책 지문, 저장된 뜻 후보, AI가 준 한국어 뜻, 사용자가 직접 적은 뜻은 운영 기록에 저장하지 않습니다.</p>
 <p>하루에 몇 번 불렀는지(<code>ai_usage</code>)는 한도를 지키기 위해 따로 셉니다.</p>
 <p>자세한 설계는 <a href="dictionary.html">DICT.md</a> 에 있습니다.</p>
@@ -152,7 +152,7 @@ tbody tr:last-child td{border-bottom:0}
 <p>열람 · 정정 · 삭제 · 처리정지를 따로 요청하고 싶다면 아래 문의처로 알려 주세요.</p>
 <hr>
 <h2 id="9-맡기는-곳">9. 맡기는 곳</h2>
-<div class="tablewrap"><table><thead><tr><th>어디</th><th>무엇을</th><th>어디에</th></tr></thead><tbody><tr><td>Supabase</td><td>로그인, E2EE 암호문 · 기기 연결 임시 우편함</td><td>프로젝트가 놓인 리전</td></tr><tr><td>OpenRouter / DeepSeek</td><td>낱말 뜻 생성</td><td>제공자 운영 리전</td></tr><tr><td>Google (Gemini)</td><td>낱말 뜻 생성 (대체 경로)</td><td>미국</td></tr><tr><td>Anthropic (Claude)</td><td>낱말 뜻 생성 (대체 경로)</td><td>미국</td></tr><tr><td>GitHub Pages</td><td>웹 사이트 제공</td><td>전 세계 CDN</td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>어디</th><th>무엇을</th><th>어디에</th></tr></thead><tbody><tr><td>Supabase</td><td>로그인, E2EE 암호문 · 기기 연결 임시 우편함</td><td>프로젝트가 놓인 리전</td></tr><tr><td>OpenRouter / DeepSeek</td><td>낱말 뜻 생성</td><td>제공자 운영 리전</td></tr><tr><td>Google (Gemini)</td><td>낱말 뜻 생성 (대체 경로)</td><td>미국</td></tr><tr><td>GitHub Pages</td><td>웹 사이트 제공</td><td>전 세계 CDN</td></tr></tbody></table></div>
 <p>AI 제공자에게는 낱말과 문장만 가고, 이메일 주소는 가지 않습니다. 국외로 이전되는 항목은 이 표가 전부입니다.</p>
 <hr>
 <h2 id="10-아동">10. 아동</h2>

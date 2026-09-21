@@ -1,0 +1,190 @@
+{
+  "deleteChild": {
+    "selected": "bank::sense:ovdrzn",
+    "remaining": [
+      "bank"
+    ],
+    "tombstones": [
+      "bank::sense:ovdrzn"
+    ]
+  },
+  "deleteRoot": {
+    "remaining": []
+  },
+  "savedWrongContext": {
+    "visible": "은행",
+    "current": "He sat by the bank of the river.",
+    "saved": "He visited the bank for a loan.",
+    "calls": 0
+  },
+  "pillRetry": [
+    {
+      "op": "look",
+      "word": "bank",
+      "clicked": "bank",
+      "cands": [
+        "bank"
+      ],
+      "sentence": "He sat by the bank of the river.",
+      "book": "audit",
+      "tokens": [
+        {
+          "text": "He"
+        },
+        {
+          "text": "sat"
+        },
+        {
+          "text": "by"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "bank"
+        },
+        {
+          "text": "of"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "river"
+        }
+      ],
+      "clickedIndex": 4,
+      "retry": true,
+      "avoid": [],
+      "device": "0cfe1f02-a2de-4912-a782-ba960bc19a5b"
+    }
+  ],
+  "detailRetry": [
+    {
+      "op": "look",
+      "word": "bank",
+      "clicked": "bank",
+      "cands": [
+        "bank"
+      ],
+      "sentence": "He visited the bank for a loan. He sat by the bank of the river.",
+      "book": "audit",
+      "tokens": [
+        {
+          "text": "He"
+        },
+        {
+          "text": "visited"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "bank"
+        },
+        {
+          "text": "for"
+        },
+        {
+          "text": "a"
+        },
+        {
+          "text": "loan"
+        },
+        {
+          "text": "He"
+        },
+        {
+          "text": "sat"
+        },
+        {
+          "text": "by"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "bank"
+        },
+        {
+          "text": "of"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "river"
+        }
+      ],
+      "clickedIndex": 0,
+      "retry": true,
+      "avoid": [
+        "은행"
+      ],
+      "device": "0cfe1f02-a2de-4912-a782-ba960bc19a5b"
+    }
+  ],
+  "expansion": {
+    "length": 600,
+    "includesTarget": false,
+    "expanded": "Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. Earlier background. "
+  },
+  "expressionTombstone": {
+    "id": "phrase:give up",
+    "alive": true,
+    "dead": 1789998278003,
+    "up": 1789998268003,
+    "tombstoneWins": true
+  },
+  "expressionOverwrite": {
+    "ko": "포기하다",
+    "koEdited": true
+  },
+  "repeatedCache": {
+    "word": "take",
+    "ko": "떠나다",
+    "phrase": false,
+    "key": "l:take|1tk0kvv"
+  },
+  "splitGeometry": {
+    "fragments": [
+      {
+        "left": 255,
+        "right": 308.015625,
+        "top": 149,
+        "bottom": 176,
+        "width": 53.015625,
+        "height": 27
+      },
+      {
+        "left": 26,
+        "right": 146.421875,
+        "top": 194.59375,
+        "bottom": 221.59375,
+        "width": 120.421875,
+        "height": 27
+      }
+    ],
+    "anchor": {
+      "left": 26,
+      "top": 149,
+      "right": 308.015625,
+      "bottom": 221.59375,
+      "width": 282.015625,
+      "height": 72.59375,
+      "direction": "above"
+    },
+    "pill": {
+      "left": 93.34515380859375,
+      "right": 244.99859619140625,
+      "top": 99.69000244140625,
+      "bottom": 144.30999755859375,
+      "width": 151.6534423828125,
+      "height": 44.6199951171875
+    }
+  },
+  "deletionStress": {
+    "iterations": 100,
+    "leftover": 100
+  }
+}

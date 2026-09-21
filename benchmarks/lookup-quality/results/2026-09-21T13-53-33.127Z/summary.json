@@ -1,0 +1,30 @@
+{
+  "baseline": {
+    "n": 188,
+    "httpOK": 188,
+    "exact": 87,
+    "expressionRecall": 31,
+    "expressionN": 128,
+    "falseExpressions": 0,
+    "wordN": 60,
+    "valid": 182,
+    "p50": 908,
+    "p95": 1919,
+    "inputTokens": 111903,
+    "outputTokens": 4562
+  },
+  "candidate": {
+    "n": 188,
+    "httpOK": 188,
+    "exact": 134,
+    "expressionRecall": 124,
+    "expressionN": 128,
+    "falseExpressions": 16,
+    "wordN": 60,
+    "valid": 170,
+    "p50": 1082,
+    "p95": 2441,
+    "inputTokens": 124932,
+    "outputTokens": 5236
+  }
+}

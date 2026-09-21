@@ -1,0 +1,189 @@
+{
+  "deleteChild": {
+    "selected": "bank::sense:ovdrzn",
+    "remaining": [],
+    "tombstones": [
+      "bank::sense:r7mswy",
+      "bank",
+      "bank::sense:ovdrzn"
+    ]
+  },
+  "deleteRoot": {
+    "remaining": []
+  },
+  "savedWrongContext": {
+    "visible": "뜻 확인 중",
+    "current": "He sat by the bank of the river.",
+    "saved": "He visited the bank for a loan.",
+    "calls": 0
+  },
+  "pillRetry": [
+    {
+      "op": "look",
+      "word": "bank",
+      "clicked": "bank",
+      "cands": [
+        "bank"
+      ],
+      "sentence": "He sat by the bank of the river.",
+      "before": "He visited the bank for a loan.",
+      "after": "The river was overflowing.",
+      "book": "audit",
+      "tokens": [
+        {
+          "text": "He"
+        },
+        {
+          "text": "sat"
+        },
+        {
+          "text": "by"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "bank"
+        },
+        {
+          "text": "of"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "river"
+        }
+      ],
+      "clickedIndex": 4,
+      "retry": true,
+      "avoid": [],
+      "device": "76c8f841-6b3d-4101-a3f0-38ca53059224"
+    }
+  ],
+  "detailRetry": [
+    {
+      "op": "look",
+      "word": "bank",
+      "clicked": "bank",
+      "cands": [
+        "bank"
+      ],
+      "sentence": "He sat by the bank of the river.",
+      "before": "He visited the bank for a loan.",
+      "after": "The river was overflowing.",
+      "book": "audit",
+      "tokens": [
+        {
+          "text": "He"
+        },
+        {
+          "text": "sat"
+        },
+        {
+          "text": "by"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "bank"
+        },
+        {
+          "text": "of"
+        },
+        {
+          "text": "the"
+        },
+        {
+          "text": "river"
+        }
+      ],
+      "clickedIndex": 4,
+      "retry": true,
+      "avoid": [],
+      "device": "76c8f841-6b3d-4101-a3f0-38ca53059224"
+    }
+  ],
+  "expansion": {
+    "length": 19,
+    "includesTarget": true,
+    "expanded": "He sat by the bank."
+  },
+  "expressionTombstone": {
+    "id": "phrase:give up",
+    "alive": true,
+    "up": 1790000003753,
+    "tombstoneWins": false
+  },
+  "expressionOverwrite": {
+    "ko": "사용자가 적은 뜻",
+    "koEdited": true
+  },
+  "repeatedCache": {
+    "word": "take",
+    "ko": "",
+    "phrase": true,
+    "key": "l2:take|1tk0kvv|-1"
+  },
+  "sensePriority": {
+    "expected": "bank::sense:13vha4y",
+    "actual": "bank::sense:13vha4y"
+  },
+  "deletedSense": {
+    "automatic": "",
+    "explicit": "bank::sense:ovdrzn",
+    "up": 1790000003758,
+    "stamp": 1790000003757
+  },
+  "longContext": {
+    "length": 308,
+    "tokens": 152,
+    "selected": "bank"
+  },
+  "splitGeometry": {
+    "fragments": [
+      {
+        "left": 255,
+        "right": 308.0078125,
+        "top": 149.162109375,
+        "bottom": 176.431640625,
+        "width": 53.0078125,
+        "height": 27.26953125
+      },
+      {
+        "left": 26,
+        "right": 146.4140625,
+        "top": 194.76953125,
+        "bottom": 222.0390625,
+        "width": 120.4140625,
+        "height": 27.26953125
+      }
+    ],
+    "anchor": {
+      "left": 255,
+      "top": 149.162109375,
+      "right": 308.0078125,
+      "bottom": 176.431640625,
+      "width": 53.0078125,
+      "height": 27.26953125,
+      "direction": "above"
+    },
+    "pill": {
+      "left": 208.33999633789062,
+      "right": 359.9934387207031,
+      "top": 100.69000244140625,
+      "bottom": 145.30999755859375,
+      "width": 151.6534423828125,
+      "height": 44.6199951171875
+    }
+  },
+  "secondFragment": {
+    "expected": 26,
+    "actual": 26
+  },
+  "deletionStress": {
+    "iterations": 100,
+    "leftover": 0
+  }
+}
