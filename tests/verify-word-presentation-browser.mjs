@@ -77,8 +77,7 @@ try{
   await page.locator('#word-modal-scrim').click({position:{x:4,y:4}});
   await page.waitForFunction(()=>!wordLookupOpen());
 
-  /* 같은 문장/cache hit은 즉시 보여 주되, 저장 단어의 새 문맥은 Jev가 고르기
-     전까지 옛 뜻을 정답처럼 노출하지 않습니다. */
+  /* 저장 단어는 새 문장에서도 서버 판정 없이 저장 Meaning을 즉시 보여 줍니다. */
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
     dictCall=payload=>{wordQa.calls.push(payload);return new Promise(resolve=>wordQa.pending.push(resolve));};
@@ -86,30 +85,13 @@ try{
       node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
     openWord(keyOf('patient'),span);
   });
-  await page.waitForFunction(()=>wordQa.calls[0]?.op==='judge');
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 확인 중');
-  assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);
-  await page.evaluate(()=>wordQa.pending.shift()({selected:wordQa.calls[0].senses[0].id,confidence:.97}));
-  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='참을성 있는');
-  assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),false);
-  await page.evaluate(()=>closePanel());
-
-  await page.evaluate(()=>{
-    window.wordQa={calls:[],pending:[]};
-    const span=[...document.querySelectorAll('#rtext .w')].find(node=>
-      node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('The patient waited'));
-    openWord(keyOf('patient'),span);
-  });
-  await page.waitForFunction(()=>wordQa.calls[0]?.op==='judge');
-  await page.evaluate(()=>wordQa.pending.shift()({selected:'AI_REQUIRED',confidence:.93}));
-  await page.waitForFunction(()=>wordQa.calls[1]?.op==='look');
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'새 뜻 찾는 중');
-  assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);
-  await page.evaluate(()=>{
-    const call=wordQa.calls[1];
-    wordQa.pending.shift()({kind:'word',canonical:'patient',members:[call.clickedIndex],ko:'환자'});
-  });
-  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='환자');
+  await page.waitForFunction(()=>wordPeekOpen());
+  assert.equal(await page.locator('#word-peek-meaning').textContent(),'참을성 있는',
+    'saved meaning did not appear immediately in a new sentence');
+  assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),false,
+    'saved meaning unnecessarily showed a loading state');
+  assert.equal(await page.evaluate(()=>wordQa.calls.length),0,
+    'saved meaning reuse unexpectedly contacted the dictionary server');
   await page.evaluate(()=>closePanel());
 
   /* 처음 보는 lexical item을 DeepSeek가 expression으로 판정해도 같은 필이 lookup
