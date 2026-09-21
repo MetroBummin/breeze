@@ -180,7 +180,7 @@ function deferWordOpenBump(id){
   });
 }
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 저장한 뜻을
-   먼저 노출하지 않고 판정 상태를 보여 준 뒤 Jev가 기존 뜻 또는 NEW를 자동으로 고릅니다. 읽는 중의
+   저장된 뜻은 즉시 보여 주고, 새 뜻이 필요할 때만 사용자가 다시 찾기를 선택합니다. 읽는 중의
    문장은 저장 카드에 덮어 쓰지 않습니다. 새 뜻이 필요하면 그 순간 Meaning 이 하나
    생깁니다 — 미리보기 상태도, 저장 여부를 묻는 단계도 없습니다. */
 let contextView = null;
@@ -357,13 +357,14 @@ function deleteMeaning(id){
 function openWord(k, node){
   if(wordPeekSameTarget(k,node)) return;
   if(!words[k]){ addWord(k, node); return; }
-  /* 이미 저장된 표현 span을 누른 경우에는 다시 phrase detection을 할 필요가 없습니다. */
+  /* 이미 저장된 표현 span을 누른 경우에는 다시 lexical analysis를 할 필요가 없습니다. */
   if(Array.isArray(words[k].phraseParts)&&words[k].phraseParts.length>1){contextView=null;selectWord(k,node,true);return;}
   const nextExample = sentenceOf(node);
   const root=words[k].root||k;
   const savedContext=nextExample&&(findContextCard(root,nextExample)||findSavedSense(root,nextExample));
-  /* 같은 문맥 카드가 있으면 바로 보여 줍니다. 새 문맥이면 Jev가 고르기 전의 저장
-     뜻을 정답처럼 먼저 보여 주지 않고, 판정 중임을 필 한 줄로 알립니다. */
+  /* 저장된 lexical item은 네트워크 판정 없이 기기에 있는 Meaning을 즉시 보여 줍니다.
+     같은 문장에서 확정해 둔 카드가 있으면 그것을, 아니면 최근에 본 Meaning을 씁니다.
+     현재 문장은 화면에만 들고 있어 상세창의 예문은 지금 읽는 문장을 보여 줍니다. */
   const active=savedContext||((meaningCards(root,null)[0]||[k])[0]);
   const now = Date.now();
   const seenAt = recentWordOpens.get(active) || 0;
@@ -374,15 +375,10 @@ function openWord(k, node){
     const contextTokens=lookupSentenceTokens(nextExample);
     contextView = { key:active, sentence:nextExample, clicked:node.textContent.replace(/’/g,"'"),
       clickedIndex:lookupClickedTokenIndex(node,nextExample,contextTokens),
-      book:(curBook&&curBook.title)||w.book, loading:'checking' };
+      book:(curBook&&curBook.title)||w.book, loading:'' };
   }else contextView=null;
   selectWord(active, node, true);
   if(bump)deferWordOpenBump(active);
-  /* 같은 word + 같은 문장은 이미 sense까지 확정된 결과입니다.
-     다시 phrase/Jev를 돌리지 않고 지금 저장된 sense를 즉시 보여 줍니다. */
-  if(savedContext)return;
-  const life=wordLookupLife,wordContext=contextView;
-  resolveOpenedWordTarget(active,node,nextExample,wordContext,life);
 }
 /* 한 번의 word opening 이 선택 표시 하나를 소유합니다. 선택을 만든 node 를 이미
    받았는데 닫을 때 다시 책 전체와 모든 EPUB frame 에서 `.sel` 을 찾는 것은
@@ -608,9 +604,8 @@ function renderPanel(){
   const base = words[selKey]; if(!base) return;
   const k = selKey;
   const context = currentContext(k);
-  /* 다른 문장에서 만난 낱말은 판정 중 저장 뜻을 가리고 지금 읽는 문장만 보여
-     줍니다. Jev가 NEW를 고르거나 실패하면 새 뜻을
-     조회하고, 생기는 순간 저장된 뜻이 되므로 미리보기 상태가 없습니다. */
+  /* 저장 단어를 다른 문장에서 열어도 기존 Meaning을 즉시 보여 주고,
+     현재 문장만 화면용 context로 바꿉니다. */
   const w = context ? Object.assign({}, base, {
     example:context.sentence, clicked:context.clicked, book:context.book,
     ko:context.loading?'':base.ko, ai:context.loading?Object.assign({},base.ai||{},{ko:''}):base.ai,
@@ -679,9 +674,8 @@ function renderPanel(){
       : ((ai.done || ai.noteDone) ? '문맥 뜻' : '뜻');
     aiKo.textContent = shown;
     aiPos.textContent = ai.pos || '';
-    /* 뜻 아래 한 줄은 이 뜻이 어떤 상황에서 쓰이는지를 말합니다. 저장한 문맥에서
-       받은 줄만 보여 주고, 다른 문장에서는 Jev 판정이 끝날 때까지 기존 뜻만 둡니다. */
-    const said = context ? '' : (ai.note || ai.gloss || '');
+    /* 저장된 gloss는 어느 문장에서 다시 열어도 같은 Meaning 설명으로 재사용합니다. */
+    const said = ai.note || ai.gloss || '';
     const top = said || (base.detailLoading ? '뜻 설명 불러오는 중…' : (w.aiSlow ? '조금 오래 걸렸어요. 다시 시도할 수 있어요.' : ''));
     aiN.textContent = top;
     aiN.style.display = top ? 'block' : 'none';
@@ -1069,7 +1063,7 @@ function wordLookupSignal(){ return wordLookupCtrl ? wordLookupCtrl.signal : nul
 /* 이 열림이 아직 그 열림이면 다시 그립니다. 아니면 그릴 창이 없습니다. */
 function renderIfAlive(life){ if(wordLookupAlive(life)) renderWordLookup(); }
 
-/* DeepSeek owns lexical analysis. JEV never discovers expressions or generates meanings.
+/* DeepSeek owns lexical analysis. Stored meanings are reused locally without a remote judge.
    These helpers only turn DeepSeek's typed mini result into the existing saved-expression record. */
 function expressionFromMini(answer,sentence,clicked,clickedIndex){
   if(!answer||answer.kind!=='expression'||!answer.canonical)return null;
@@ -1101,11 +1095,6 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life){
   selKey=id;contextView=null;
   saveWords();queueSync();refreshReaderWords();renderIfAlive(life);return id;
 }
-async function resolveOpenedWordTarget(k,node,sentence,wordContext,life){
-  if(!wordContext)return;
-  await resolveSavedWordContext(k,wordContext,life);
-}
-
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
 
    ① 씨앗 — 이 사람은 이 낱말을 물어본 적이 없습니다. 앱이 미리 받아 뒀을
@@ -1137,74 +1126,6 @@ async function loadCachedLook(k, began, life){
     }
   }
   return false;
-}
-
-/* 저장한 lexical item을 다른 문장에서 만나면 Jev는 저장된 Meaning 중 하나 또는
-   AI_REQUIRED만 고릅니다. 생성·숙어 탐지·span 분석은 모두 DeepSeek의 일입니다. */
-function savedMeaningCandidates(root){
-  return meaningCards(root,null).map(([id,item])=>({
-    id,meaning:String(item.ko||'').trim(),
-    pos:String((item.ai&&item.ai.pos)||item.pos||'').trim(),
-    gloss:String((item.ai&&(item.ai.note||item.ai.gloss))||item.note||item.gloss||'').trim()
-  })).filter(item=>item.id&&item.meaning).slice(0,16);
-}
-async function resolveSavedWordContext(k,context,life){
-  const w=words[k];if(!w||!context||context.started)return;
-  const root=w.root||k,senses=savedMeaningCandidates(root);
-  if(!senses.length)return;
-  context.started=true;context.loading='checking';delete context.error;renderIfAlive(life);
-  try{
-    const signal=wordLookupSignal();
-    const verdict=await dictCall({op:'judge',word:w.aiLemma||w.word||root,sentence:context.sentence,
-      senses:senses.map(item=>({id:item.id,meaning:item.meaning,pos:item.pos,gloss:item.gloss}))},signal);
-    if(!verdict&&signal&&signal.aborted)return;
-    if(wordLookupAlive(life)&&verdict&&!verdict.error&&verdict.selected!=='AI_REQUIRED'){
-      const picked=senses.find(item=>item.id===verdict.selected);
-      if(picked&&words[picked.id]){
-        rememberSenseContext(picked.id,context.sentence);
-        contextView=null;selKey=picked.id;touchMeaning(picked.id);saveWords();renderWordLookup();return;
-      }
-    }
-    if(!wordLookupAlive(life))return;
-    context.loading='new';renderIfAlive(life);
-    await lookupNewContextMeaning(k,context,life);
-  }finally{
-    context.loading='';
-    if(currentContext(k)===context&&wordLookupAlive(life))renderWordLookup();
-  }
-}
-
-async function lookupNewContextMeaning(k,context,life){
-  const w=words[k];if(!w)return;
-  for(const key of entryKeys(w)){
-    const hit=await dictGet(lookKey(key,context.sentence));
-    if(hit&&hit.ko){
-      if(!wordLookupAlive(life))return;
-      const phrase=expressionFromMini(hit,context.sentence,context.clicked,context.clickedIndex);
-      if(phrase){saveDetectedExpression(k,phrase,context.sentence,context.book,hit,life);return;}
-      adoptContextAnswer(k,context,answerFromLook(hit,!hit.seed));return;
-    }
-  }
-  const answer=await fetchLook(k,{sentence:context.sentence,clicked:context.clicked,clickedIndex:context.clickedIndex,
-    book:context.book,hold:true,life});
-  if(!wordLookupAlive(life)||!answer||!answer.ko)return;
-  const phrase=expressionFromMini(answer,context.sentence,context.clicked,context.clickedIndex);
-  if(phrase){saveDetectedExpression(k,phrase,context.sentence,context.book,answer,life);return;}
-  adoptContextAnswer(k,context,answerFromLook(answer,false));
-}
-
-/* AI 문맥 분석 → Meaning 생성 → saved → active. 특별한 상태를 만들지 않습니다. */
-function adoptContextAnswer(k, context, answer){
-  const w=words[k]; if(!w || !answer || !answer.ko) return;
-  const root=w.root||k;
-  const id=createMeaning(root, answer.ko, {clicked:context.clicked||'', example:context.sentence,
-    book:context.book||'', ai:answer.ai, alts:answer.alts});
-  if(!id) return;
-  rememberSenseContext(id,context.sentence);saveWords();
-  context.loading=false; contextView=null;
-  paintWord(root);
-  if(wordPeekActive){selKey=id;renderWordPeek();}
-  else selectWord(id,null);
 }
 
 /* 낱말 하나 · 문장 하나 · 왕복 한 번. 뜻과 이 문장에서의 설명과 다른 뜻 후보가
