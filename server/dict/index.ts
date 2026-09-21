@@ -68,7 +68,9 @@ ${skip}
 - members는 현재 sentence의 token index입니다. clicked_index는 반드시 포함하세요.
 - word면 members는 clicked_index 하나뿐입니다.
 - expression이면 lexical identity를 이루는 token만 포함하세요. 다만 contiguous expression 안의 of/to/at 같은 function word를 임의로 빼면 안 됩니다.
-- 분리 가능한 구동사의 목적어/변수는 members에 넣지 마세요. 예: "gave the plan up"의 give up은 give/up만.
+- 표제형에서 one's/someone/something처럼 바뀔 수 있는 variable slot은 members에 넣지 마세요. 예: "a feather in your cap"은 고정된 a/feather/in/cap이 members이고 your는 variable gap입니다.
+- 분리 가능한 구동사의 목적어/변수도 members에 넣지 마세요. 예: "gave the plan up"의 give up은 give/up만.
+- 반대로 고정된 function word는 빼지 마세요. "policy of benign neglect"를 하나의 expression으로 판단했다면 of도 member입니다.
 - members를 이어 붙여 canonical을 만들지 마세요. canonical은 별도로 올바른 사전형을 작성하세요.
 - ko는 현재 sense의 짧고 자연스러운 한국어 사전 뜻 하나만. 설명, gloss, 다른 뜻은 쓰지 마세요.
 
