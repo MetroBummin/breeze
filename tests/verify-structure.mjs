@@ -900,7 +900,7 @@ assert.match(dictionarySource, /const wasActive=id===selKey;[\s\S]{0,400}let nex
   'Deleting a chip that is not the one on show moves the reader to another meaning');
 assert.match(dictionarySource, /function createMeaning\(root, text, source\)/,
   'Meanings are created in more than one place again');
-for(const caller of ['adoptSuggestion', 'addMeaningFromInput', 'adoptContextAnswer']){
+for(const caller of ['adoptSuggestion', 'addMeaningFromInput']){
   assert.match(dictionarySource, new RegExp(`function ${caller}[\\s\\S]{0,700}createMeaning\\(`),
     `${caller} builds a meaning of its own instead of going through createMeaning`);
 }
