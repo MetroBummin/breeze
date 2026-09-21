@@ -76,8 +76,9 @@ try{
     'compact result does not place English above Korean');
   assert.ok(await page.locator('#ps-en').evaluate(node=>node.scrollHeight===node.clientHeight),
     'compact English sentence is clipped or folded');
-  assert.equal(await page.locator('#ps-extra').getAttribute('open'),null,
-    'compact structure details should start collapsed');
+  assert.equal(await page.locator('#ps-extra, #ps-points').count(),0,
+    'compact result still includes grammar/expression details');
+  assert.equal(await page.locator('#ps-foot').isVisible(),false,'cached success adds text beyond English and Korean');
   assert.deepEqual(await geometry(),before,'sentence overlay changed Reader geometry, scroll, or PDF zoom');
   const grabber=await page.locator('#ps-grabber').boundingBox();
   assert.ok(grabber,'compact grabber has no geometry');
@@ -124,8 +125,8 @@ try{
     'wide modal does not place English above Korean');
   assert.ok(await page.locator('#ps-en').evaluate(node=>node.scrollHeight===node.clientHeight),
     'wide English sentence is clipped or folded');
-  assert.equal(await page.locator('#ps-extra').getAttribute('open'),null,
-    'wide structure details should start collapsed');
+  assert.equal(await page.locator('#ps-extra, #ps-points').count(),0,
+    'wide result still includes grammar/expression details');
   await page.evaluate(()=>{
     document.documentElement.classList.add('dark');
     document.body.classList.add('dark');

@@ -587,7 +587,7 @@ registerReaderSurface({
        찾지 않으므로 둘이 어긋날 자리가 없습니다. */
     const range=domRangeForOffsets(block, found.part.start, found.part.end);
     return { sentence:found.sentence, paint(){
-      if(range && typeof showRangeModeCue==='function') showRangeModeCue(range, 0);
+      if(range && typeof showSentenceRangeCue==='function') showSentenceRangeCue(range);
       else if(block && typeof showElementModeCue==='function') showElementModeCue(block, 0);
     } };
   },

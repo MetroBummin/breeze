@@ -201,6 +201,7 @@ async function restoreTextSentence(candidates,targetPi){
 /* ================= the "you were here" cue ================= */
 
 function clearReaderModeCue(){
+  clearReaderSentenceCue();
   clearTimeout(readerModeCueTimer); readerModeCueTimer=0;
   document.querySelectorAll('.reader-mode-cue').forEach(node=>node.remove());
   document.querySelectorAll('.reader-mode-cue-block').forEach(node=>node.classList.remove('reader-mode-cue-block'));
@@ -268,6 +269,99 @@ function showRangeModeCue(range,duration){
     });
   }
   if(duration) readerModeCueTimer=setTimeout(clearReaderModeCue,duration);
+}
+
+/* Sentence selection has its own lifetime and visual surface. Unlike a mode
+   landing cue it never times out while translation is pending or open. Shared
+   CSS is installed in the owning document, including EPUB's sandboxed frame. */
+let readerSentenceCue = null;
+const READER_SENTENCE_CUE_CSS = `
+.reader-sentence-cue-layer{position:absolute;left:0;top:0;width:100%;height:100%;
+  pointer-events:none;z-index:38;mix-blend-mode:var(--sentence-cue-blend,multiply);}
+.reader-sentence-cue{position:absolute;display:block;pointer-events:none;
+  border-radius:8px;background:var(--sentence-cue-color,rgba(77,174,214,.34));
+  transform-origin:center;animation:breeze-sentence-cue-in 260ms cubic-bezier(.16,1,.3,1) both;}
+.reader-sentence-cue-layer.is-leaving{opacity:0;transition:opacity 160ms ease-out;}
+@keyframes breeze-sentence-cue-in{from{opacity:0;transform:scaleY(.88)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .reader-sentence-cue{animation:none}.reader-sentence-cue-layer.is-leaving{transition:none}}
+`;
+function clearReaderSentenceCue(immediate=false){
+  const active=readerSentenceCue;
+  readerSentenceCue=null;
+  if(!active) return;
+  if(active.observer) active.observer.disconnect();
+  const layer=active.layer,view=layer.ownerDocument.defaultView;
+  if(immediate || (view.matchMedia&&view.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    layer.remove();return;
+  }
+  layer.classList.add('is-leaving');
+  // The callback owns only the outgoing layer, never a subsequently selected sentence.
+  layer.addEventListener('transitionend',()=>layer.remove(),{once:true});
+  // Parent timer also runs when WebKit suspends a sandboxed EPUB frame.
+  setTimeout(()=>layer.remove(),200);
+}
+function createReaderSentenceCue(host,pdf=false){
+  clearReaderSentenceCue(true);
+  const doc=host.ownerDocument;
+  if(!doc.getElementById('breeze-sentence-cue-style')){
+    const style=doc.createElement('style');style.id='breeze-sentence-cue-style';
+    style.textContent=READER_SENTENCE_CUE_CSS;doc.head.appendChild(style);
+  }
+  const layer=doc.createElement('div');layer.className='reader-sentence-cue-layer';
+  layer.setAttribute('aria-hidden','true');
+  const dark=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
+  layer.style.setProperty('--sentence-cue-color',getComputedStyle(document.documentElement).getPropertyValue('--cue'));
+  layer.style.setProperty('--sentence-cue-blend',!pdf&&dark?'screen':'multiply');
+  host.appendChild(layer);
+  readerSentenceCue={layer,observer:null};
+  return layer;
+}
+function sentenceLineRects(rects){
+  const lines=[];
+  Array.from(rects).filter(r=>r.width>0&&r.height>0)
+    .sort((a,b)=>a.top-b.top||a.left-b.left).forEach(rect=>{
+      const line=lines.find(l=>Math.min(l.bottom,rect.bottom)-Math.max(l.top,rect.top)
+        >=Math.min(l.bottom-l.top,rect.height)*.5
+        &&rect.left<=l.right+rect.height&&rect.right>=l.left-rect.height);
+      if(line){
+        line.left=Math.min(line.left,rect.left);line.top=Math.min(line.top,rect.top);
+        line.right=Math.max(line.right,rect.right);line.bottom=Math.max(line.bottom,rect.bottom);
+      }else lines.push({left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom});
+    });
+  return lines;
+}
+function showSentenceRangeCue(range){
+  if(!range) return;
+  const doc=range.startContainer.ownerDocument,view=doc.defaultView;
+  const layer=createReaderSentenceCue(doc===document?readerScroller():doc.body);
+  const active=readerSentenceCue;
+  let signature='';
+  const paint=()=>{
+    if(readerSentenceCue!==active) return;
+    if(!range.startContainer.isConnected){clearReaderSentenceCue(true);return;}
+    const lines=sentenceLineRects(range.getClientRects());
+    const base=layer.getBoundingClientRect();
+    const sx=base.width/layer.offsetWidth||1,sy=base.height/layer.offsetHeight||1;
+    const rects=lines.map(r=>[(r.left-base.left)/sx,(r.top-base.top)/sy,
+      (r.right-r.left)/sx,(r.bottom-r.top)/sy]);
+    const next=JSON.stringify(rects);
+    if(next===signature) return;
+    signature=next;layer.replaceChildren();
+    for(const [x,y,w,h] of rects){
+      const cue=doc.createElement('span');cue.className='reader-sentence-cue';
+      cue.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+      layer.appendChild(cue);
+    }
+  };
+  paint();
+  // Only this selected sentence is remeasured when its layout changes. Scroll
+  // moves the layer naturally with its document and performs no range reads.
+  if(view.ResizeObserver){
+    const owner=range.commonAncestorContainer;
+    const block=owner.nodeType===1?owner:owner.parentElement;
+    if(block){active.observer=new view.ResizeObserver(paint);active.observer.observe(block);}
+  }
 }
 
 function showBridgeSourceCue(bridge){
