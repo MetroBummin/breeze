@@ -93,6 +93,43 @@ async function opLook(body:any,userId:string|null,seeding=false){
   const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase()),aiLemma=clean(parsed.lemma,60).toLowerCase();const lemma=cands.includes(aiLemma)||aiLemma===word?aiLemma:(word||cands[0]||"");const ko=clean(parsed.ko,60);const answer={lemma,pos:clean(parsed.pos,12),ko,gloss:clean(parsed.gloss,300),alts:[],provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})};if(!answer.ko)return json({error:"empty_answer"},502);return json(answer);
 }
 
+const REPAIR_SCHEMA={type:"object",additionalProperties:false,required:["ko","gloss"],properties:{ko:{type:"string"},gloss:{type:"string"}}};
+function repairPrompt(word:string,pos:string,enGloss:string,draftKo:string,draftGloss:string){
+  return `표제어: ${word}
+품사: ${pos||"(없음)"}
+영어 sense 정의: ${enGloss}
+기존 한국어 짧은 뜻: ${draftKo||"(없음)"}
+기존 한국어 설명: ${draftGloss||"(없음)"}
+
+이 영어 sense 하나의 한국어 사전 표현만 교정하세요. 새 sense를 만들거나 문맥을 추측하지 마세요.
+- ko: 한국 중·고등학생이나 일반 학습자가 바로 이해할 수 있는 짧고 자연스러운 사전 뜻. 가능하면 한 단어 또는 짧은 구.
+- gloss: 위 영어 sense를 정확히 보존하는 쉬운 한국어 한 문장.
+- 기존 한국어가 이미 좋으면 자연스럽게 다듬는 정도만 하세요.
+- 드문 전문 번역어보다 정확성을 해치지 않는 쉬운 표현을 우선하세요.
+
+{"ko":"","gloss":""}`;
+}
+async function opRepair(body:any,userId:string|null){
+  const word=clean(body.word,60).toLowerCase(),pos=clean(body.pos,20),enGloss=clean(body.enGloss,500),
+    draftKo=clean(body.draftKo,80),draftGloss=clean(body.draftGloss,400);
+  if(!word||!enGloss)return json({error:"bad_repair_request"},400);
+  let anonLeft:number|null=null,userLeft:number|null=null;
+  if(!userId){
+    const verdict=await takeAnonQuota(clean(body.device,64));
+    if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);
+    if(verdict.status!=="ok")return json({error:"login_required"},401);
+    anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE));
+  }else{
+    const quota=await takeQuota(userId);
+    if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);
+    userLeft=quota.left;
+  }
+  const out=await ask({action:"repair",prompt:repairPrompt(word,pos,enGloss,draftKo,draftGloss),maxTokens:260,schema:REPAIR_SCHEMA});
+  const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
+  const ko=clean(parsed.ko,80),gloss=clean(parsed.gloss,400);if(!ko||!gloss)return json({error:"empty_answer"},502);
+  return json({ko,gloss,provider:out.provider,...(anonLeft!==null?{left:anonLeft}:userLeft!==null?{left:userLeft}:{})});
+}
+
 /* One Jev request routes a click to an existing sense, a phrase, or NONE.
    Phrase token membership is asked in the same System One request, so the normal
    saved-word path no longer pays phrase + judge as two serial HTTP round trips. */
@@ -100,10 +137,11 @@ async function opRoute(body:any,signal:AbortSignal){
   const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
   const word=clean(body.word,60),sentence=clean(body.sentence,600);
   const rawSenses=Array.isArray(body.senses)?body.senses:[];
-  const senses=rawSenses.slice(0,16).map((item:any,index:number)=>({
-    id:`sense_${index}`,meaning:clean(item&&item.meaning,60),
-    pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,300)
-  })).filter(item=>item.meaning);
+  const senses=rawSenses.slice(0,64).map((item:any,index:number)=>({
+    id:`sense_${index}`,senseId:clean(item&&item.senseId,120),meaning:clean(item&&item.meaning,80),
+    pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,400),
+    enGloss:clean(item&&item.enGloss,500),quality:clean(item&&item.quality,20)
+  })).filter(item=>item.meaning||item.enGloss);
   const rawTokens=Array.isArray(body.tokens)?body.tokens:[];
   const tokens=rawTokens.slice(0,500).map((item:any)=>clean(item&&item.text,60));
   const clickedIndex=Number(body.clickedIndex);
@@ -111,7 +149,9 @@ async function opRoute(body:any,signal:AbortSignal){
   if(!word||!sentence)return json({error:"bad_route_request"},400);
 
   const criteria:Record<string,string>=Object.fromEntries(senses.map(item=>[
-    item.id,[item.meaning,item.pos?`품사: ${item.pos}`:"",item.gloss?`설명: ${item.gloss}`:""].filter(Boolean).join(" · ")
+    item.id,[item.senseId?`sense_id: ${item.senseId}`:"",item.pos?`품사: ${item.pos}`:"",
+      item.enGloss?`English gloss: ${item.enGloss}`:"",item.meaning?`한국어 뜻: ${item.meaning}`:"",
+      item.gloss?`한국어 설명: ${item.gloss}`:""].filter(Boolean).join(" · ")
   ]));
   if(phraseEligible)criteria.PHRASE="클릭한 token이 현재 문장에서 phrasal verb, idiom, fixed expression 또는 하나의 사전 단위로 봐야 하는 multiword lexical expression의 구성원임";
   criteria.NONE="클릭한 것은 이 문장에서 독립적인 word로 쓰였지만, 저장된 sense 중 맞는 것이 없음";
@@ -119,7 +159,7 @@ async function opRoute(body:any,signal:AbortSignal){
   const questions:Record<string,unknown>={
     route:{
       type:"choice",
-      instructions:"현재 문장에서 클릭한 target을 분류하세요. 저장된 sense가 정확히 맞으면 해당 sense를 고르세요. 짧은 한국어 뜻뿐 아니라 품사와 gloss를 함께 비교하세요. 클릭 token이 phrasal verb, idiom, fixed expression 또는 하나의 사전 단위로 봐야 하는 multiword lexical expression의 구성원이면 PHRASE를 고르세요. design philosophy, economic pressure처럼 의미가 그대로 합쳐지는 일반 수식어+명사 조합이나 단순 collocation은 PHRASE가 아닙니다. 저장 sense가 맞지 않고 phrase도 아니면 NONE을 고르세요. 저장 sense가 얼핏 비슷해도 실제로 phrase 안에서 다른 의미가 생긴 경우에는 PHRASE가 우선입니다.",
+      instructions:"현재 문장에서 클릭한 target을 분류하세요. 저장된 sense가 정확히 맞으면 해당 sense를 고르세요. 영어 gloss를 의미의 기준으로 삼고, 품사와 한국어 뜻·설명도 함께 비교하세요. 한국어 번역이 어색하거나 짧게 잘렸더라도 영어 gloss가 현재 문맥에 정확히 맞으면 그 sense를 선택하세요. 클릭 token이 phrasal verb, idiom, fixed expression 또는 하나의 사전 단위로 봐야 하는 multiword lexical expression의 구성원이면 PHRASE를 고르세요. design philosophy, economic pressure처럼 의미가 그대로 합쳐지는 일반 수식어+명사 조합이나 단순 collocation은 PHRASE가 아닙니다. 저장 sense가 맞지 않고 phrase도 아니면 NONE을 고르세요. 저장 sense가 얼핏 비슷해도 실제로 phrase 안에서 다른 의미가 생긴 경우에는 PHRASE가 우선입니다.",
       criteria
     }
   };
@@ -211,4 +251,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="route")return await opRoute(body,req.signal);if(op==="judge")return await opJudge(body,req.signal);if(op==="phrase")return await opPhrase(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="repair")return await opRepair(body,userId);if(op==="route")return await opRoute(body,req.signal);if(op==="judge")return await opJudge(body,req.signal);if(op==="phrase")return await opPhrase(body,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"jev_timeout"},504);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
