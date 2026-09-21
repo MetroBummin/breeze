@@ -1,17 +1,19 @@
 name: Temporary verify JEV removal
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [chatgpt/remove-jev-lookup-20260921]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/remove-jev-lookup-20260921
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -24,3 +26,11 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno check --node-modules-dir=auto server/dict/index.ts
+      - name: Mark successful verification
+        run: |
+          printf '%s\n' "npm test: PASS" "test:word: PASS" "deno check: PASS" > .github/jev-removal-verified
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/jev-removal-verified
+          git commit -m "ci: mark JEV removal verification"
+          git push origin HEAD:chatgpt/remove-jev-lookup-20260921
