@@ -212,7 +212,7 @@
     '  return Object.keys(words).find(id=>{\n' +
     '    const item=words[id];\n' +
     '    if(!item||(id!==root&&item.root!'... 56563 more characters,
-  expected: /function adoptContextAnswer[\s\S]{0,700}createMeaning\(/,
+  expected: /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)[\s\S]{0,220}saveDetectedExpression/,
   operator: 'match',
   diff: 'simple'
 }
