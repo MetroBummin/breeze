@@ -269,8 +269,8 @@ function buildPdfWordBoxes(textContent,viewport,glyphs){
   boxes.forEach(box=>{
     box.example=sentenceAt(box.offset);
     const part=parts.find(item=>box.offset>=item.start&&box.offset<=item.end);
-    box.tokenIndex=part&&typeof jevSentenceTokens==='function'
-      ? jevSentenceTokens(text.slice(part.start,box.offset)).length : -1;
+    box.tokenIndex=part&&typeof lookupSentenceTokens==='function'
+      ? lookupSentenceTokens(text.slice(part.start,box.offset)).length : -1;
   });
   return boxes;
 }
