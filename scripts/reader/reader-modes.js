@@ -514,15 +514,18 @@ async function switchReaderMode(mode,options){
     return;
   }
 
-  const record = await originalGetForBook(curBook);
+  const record = options.record || await originalGetForBook(curBook);
   if(!record){
     showOriginalReconnect(curBook);
+    if(options.onPresented) options.onPresented();
     releaseReaderPillProgress(true);
     return;
   }
   if(options.reload) leaveOriginalReader();
   try{
-    await renderOriginalBook(curBook,record);
+    const rendering=renderOriginalBook(curBook,record);
+    if(options.onPresented) options.onPresented();
+    await rendering;
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
     let target = bridge || posOf(curBook.id).original;
     // 처음 여는 책은 맨 앞부터 — 형식별 "맨 앞"은 형식 표가 압니다.

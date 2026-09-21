@@ -31,3 +31,18 @@ share one operation. The Reader never participates in the shelf pull handler.
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper
 behind its native edge bounce. Colors come from the existing CSS palette.
+
+## Home resume transition
+
+Prepare local ligature repair and original-file lookup before starting the browser
+view transition. Its update callback waits only for the Reader shell or original
+loading surface; PDF/EPUB rendering and position restoration finish independently.
+A slow file must not hold the snapshot callback until the browser cancels it.
+The resume action remains single-flight until both animation and book opening
+finish. Navigation during preparation cancels the pending open. Failures release
+the busy state and allow retry. Reduced motion and unsupported browsers use the
+same opening path without the animation. Live Reader geometry is never scaled.
+
+`tests/verify-home-resume-browser.mjs` checks both engines with slow preparation,
+slow original rendering, rapid repeat taps, cancelled navigation, failed opening,
+reduced motion and preserved Text scroll position.

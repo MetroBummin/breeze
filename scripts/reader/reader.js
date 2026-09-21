@@ -204,14 +204,16 @@ function renderBookBody(b){
   rt.appendChild(frag);
   beginLazyWordSpans(wordSpanTargets);
 }
-async function openBook(b){
+/** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void}} [options] */
+async function openBook(b,options={}){
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
   leaveOriginalReader();
   /* 예전에 넣어 둔 책에 남아 있는 네모(□)를 여기서 한 번 고칩니다 —
      scripts/importers/ligatures.js */
-  if(!b.transient) await repairBookLigatures(b);
+  const prepared=options.prepared && options.prepared.book===b ? options.prepared : null;
+  if(!b.transient && !prepared) await repairBookLigatures(b);
   /* The width observer below fires as the reader appears. It must not aim at
      wherever the previous book was being read. */
   lastAnchor = null;
@@ -254,17 +256,20 @@ async function openBook(b){
      시간표는 실제 스크롤이 남깁니다. */
   if(firstOpen && !b.transient){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
   updateReaderModeControls();
-  const original = bookSupportsOriginal(b) ? await originalGetForBook(b) : null;
+  const original = prepared ? prepared.original : (bookSupportsOriginal(b) ? await originalGetForBook(b) : null);
   const desired = initialPosition.mode==='original'
     ? (original ? 'original' : 'text')
     : (firstOpen && original ? 'original' : 'text');
-  if(desired==='original') await switchReaderMode('original',{initial:true});
-  else requestAnimationFrame(()=>{
-    if(curBook!==b) return;
-    const pos=posOf(b.id);
-    if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
-    lastAnchor=captureAnchor(); updatePfill(true);
-  });
+  if(desired==='original') await switchReaderMode('original',{initial:true,record:original,onPresented:options.onPresented});
+  else{
+    if(options.onPresented) options.onPresented();
+    requestAnimationFrame(()=>{
+      if(curBook!==b) return;
+      const pos=posOf(b.id);
+      if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
+      lastAnchor=captureAnchor(); updatePfill(true);
+    });
+  }
 }
 /* Book titles and file names end up inside HTML attributes, so quotes have to
    be escaped too — otherwise a title containing " breaks out of the markup. */

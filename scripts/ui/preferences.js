@@ -192,27 +192,57 @@ function syncHomeNavigation(){
 let homeResumeTransition=null;
 let homeResumeOpening=false;
 async function resumeHomeBook(button){
-  const book=homeResumeBook();
+  const book=homeResumeBook(),view=activeAppView();
   if(!book || homeResumeOpening) return;
   homeResumeOpening=true;
-  const origin=button.getBoundingClientRect();
+  button.setAttribute('aria-busy','true');
+  const root=document.documentElement;
+  let cancelled=false,committed=false,opening=null;
+  // Navigation during preparation must not pull the user back into this book.
+  const observer=new MutationObserver(()=>{if(!committed)cancelled=true;});
+  document.querySelectorAll('.view,#settings-modal,#add-modal').forEach(node=>
+    observer.observe(node,{attributes:true,attributeFilter:['class']}));
+  const current=()=>!cancelled && !document.hidden && activeAppView()===view && homeResumeBook()===book;
   try{
+    // Disk work runs while Home is still usable, outside the browser's short
+    // view-transition update deadline. No Reader history/progress is changed here.
+    await repairBookLigatures(book);
+    const original=bookSupportsOriginal(book)?await originalGetForBook(book):null;
+    if(!current()) return;
+    const prepared={book,original};
+    const present=()=>{
+      if(!current()) return Promise.resolve();
+      committed=true;
+      return new Promise((resolve,reject)=>{
+        opening=openBook(book,{prepared,onPresented:()=>resolve()});
+        // The shell (or original-file loader) releases the snapshot immediately.
+        // Full rendering remains awaited separately, without timing out animation.
+        opening.then(()=>resolve(),reject);
+      });
+    };
     if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){
-      await openBook(book); return;
+      await present();
+    }else{
+      const origin=button.getBoundingClientRect();
+      root.style.setProperty('--resume-x',origin.x+'px');
+      root.style.setProperty('--resume-y',origin.y+'px');
+      root.style.setProperty('--resume-sx',String(origin.width/innerWidth));
+      root.style.setProperty('--resume-sy',String(origin.height/innerHeight));
+      root.classList.add('home-resuming');
+      homeResumeTransition=document.startViewTransition(present);
+      void homeResumeTransition.ready.catch(()=>{});
+      await homeResumeTransition.finished;
     }
-    // Animate browser snapshots, never scale live Reader geometry during position restoration.
-    const root=document.documentElement;
-    root.style.setProperty('--resume-x',origin.x+'px');
-    root.style.setProperty('--resume-y',origin.y+'px');
-    root.style.setProperty('--resume-sx',String(origin.width/innerWidth));
-    root.style.setProperty('--resume-sy',String(origin.height/innerHeight));
-    root.classList.add('home-resuming');
-    homeResumeTransition=document.startViewTransition(async()=>{
-      await openBook(book);
-    });
-    void homeResumeTransition.ready.catch(()=>{});
-    try{await homeResumeTransition.finished;}finally{root.classList.remove('home-resuming');homeResumeTransition=null;}
-  }finally{homeResumeOpening=false;}
+    if(opening) await opening;
+  }catch(error){
+    console.error('이어서 읽기를 열지 못했습니다:',error);
+    toast('책을 열지 못했어요. 다시 눌러 주세요.');
+  }finally{
+    observer.disconnect();
+    root.classList.remove('home-resuming');
+    homeResumeTransition=null;homeResumeOpening=false;
+    button.removeAttribute('aria-busy');
+  }
 }
 
 /* 설정 옆의 로그인 상태 점은 로그인 전만 보입니다. 동기화 모듈이 뒤늦게

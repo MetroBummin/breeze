@@ -26,7 +26,7 @@
     "test:lookup-quality": "node tests/verify-lookup-contract.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-lookup-quality-browser.mjs && node tests/verify-word-presentation-browser.mjs",
     "test:pdf-geometry": "node tests/verify-pdf-glyph-geometry.mjs && node tests/verify-pdf-highlight-browser.mjs",
     "test:sentence-cue": "node tests/verify-sentence-cue-browser.mjs",
-    "test:home-ui": "node tests/verify-home-controls-browser.mjs && node tests/verify-library-refresh-browser.mjs && node tests/verify-reader-progress-browser.mjs && node tests/verify-wordbook-browser.mjs",
+    "test:home-ui": "node tests/verify-home-resume-browser.mjs && node tests/verify-home-controls-browser.mjs && node tests/verify-library-refresh-browser.mjs && node tests/verify-reader-progress-browser.mjs && node tests/verify-wordbook-browser.mjs",
     "test:reader-notices": "node tests/verify-reader-notifications-browser.mjs"
   },
   "devDependencies": {
