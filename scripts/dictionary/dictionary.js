@@ -397,7 +397,9 @@ function openWord(k, node, point){
   const now=Date.now(),seenAt=recentWordOpens.get(active)||0;
   const bump=now-seenAt>=RECENT_WORD_OPEN_MS&&words[active].status<3;
   recentWordOpens.set(active,now);
-  contextView=savedContext?null:{key:active,...request,loading:'checking'};
+  contextView=savedContext
+    ? (words[active].example===request.sentence?null:{key:active,...request,loading:''})
+    : {key:active,...request,loading:'checking'};
   selectWord(active,node,true);
   if(bump)deferWordOpenBump(active);
   if(!savedContext)resolveCurrentLookup(active,request,wordLookupLife);
@@ -412,8 +414,12 @@ async function resolveCurrentLookup(k,input,life){
   if(!answer||!answer.ko){if(context){context.loading='';context.error=w.aiOff||'error';}renderWordLookup();return;}
   const phrase=expressionFromMini(answer,input.sentence,input.clicked,input.clickedIndex);
   if(phrase){saveDetectedExpression(k,phrase,input.sentence,input.book,answer,life,{automatic:true,clickedIndex:input.clickedIndex});return;}
-  const id=createMeaning(w.root||k,answer.ko,{...input,ai:answerFromLook(answer,false).ai,automatic:true});
-  if(id){rememberSenseContext(id,input.sentence,input.clickedIndex);selKey=id;contextView=null;saveWords();}
+  const id=createMeaning(w.root||k,answer.ko,{...input,example:input.sentence,ai:answerFromLook(answer,false).ai,automatic:true});
+  if(id){
+    rememberSenseContext(id,input.sentence,input.clickedIndex);selKey=id;
+    contextView=words[id].example===input.sentence?null:{key:id,...input,loading:''};
+    saveWords();
+  }
   else if(context){context.loading='';context.error='deleted';}
   renderWordLookup();
 }

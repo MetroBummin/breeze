@@ -23,8 +23,17 @@ try{
  results.deleteRoot=await page.evaluate(()=>{const k=auditSeed();createMeaning(k,'강둑',{});selKey=k;document.getElementById('p-know').onclick();return {remaining:Object.keys(words)};});
  results.savedWrongContext=await page.evaluate(()=>{const k=auditSeed();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];auditCalls=[];openWord(k,node);return {visible:document.getElementById('word-peek-meaning').textContent,current:currentContext(selKey)?.sentence,saved:words[selKey].example,calls:auditCalls.length};});
  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='강둑');
+ assert.equal(await page.evaluate(()=>words[selKey].example),'He sat by the bank of the river.','A new context meaning inherited the unrelated old example');
  results.pillRetry=await page.evaluate(async()=>{auditCalls=[];await retryWordPeek();return auditCalls;});
  results.detailRetry=await page.evaluate(async()=>{const k=auditSeed();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord(k,node);await new Promise(r=>setTimeout(r,350));expandWordDetail();auditCalls=[];await askWiderContext(selKey);return auditCalls;});
+ // Reusing an existing meaning preserves its saved example but shows the current occurrence.
+ await page.evaluate(()=>{const k=auditSeed();words[k].ko='강둑';words[k].ai.ko='강둑';const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord(k,node);});
+ await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='강둑');
+ for(let repeat=0;repeat<2;repeat++){
+   if(repeat)await page.evaluate(()=>{closePanel();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord(keyOf('bank'),node);});
+   assert.equal(await page.evaluate(()=>currentContext(selKey).sentence),'He sat by the bank of the river.');
+   assert.equal(await page.evaluate(()=>words[selKey].example),'He visited the bank for a loan.');
+ }
  results.expansion=await page.evaluate(()=>{closePanel();const old=curBook.paras;const target='He sat by the bank.';curBook.paras=['Earlier background. '.repeat(60),target,'Water was rising.'];contextView=null;const request=lookupRequestFor({example:target,clicked:'bank',word:'bank'},null,true);const expanded=request.sentence;curBook.paras=old;return {length:expanded.length,includesTarget:expanded.includes(target),expanded};});
  results.expressionTombstone=await page.evaluate(()=>{const k=auditSeed();selKey=k;const sentence='He gave the plan up.';const answer={kind:'expression',canonical:'give up',members:[1,4],ko:'포기하다'};const phrase=expressionFromMini(answer,sentence,'gave',1);const id=phraseCardKey('give up');dead[id]=Date.now()+10000;saveDetectedExpression(k,phrase,sentence,'audit',answer,wordLookupLife,{explicit:true});return {id,alive:!!words[id],dead:dead[id],up:words[id]?.up,tombstoneWins:dead[id]>=words[id]?.up};});
  results.expressionOverwrite=await page.evaluate(()=>{const k=auditSeed();selKey=k;const sentence='He gave the plan up.';const id=phraseCardKey('give up');words[id]={word:'give up',ko:'사용자가 적은 뜻',koEdited:true,phraseParts:['give','up'],forms:['give','up'],example:sentence,up:1,status:2};const a={kind:'expression',canonical:'give up',members:[1,4],ko:'포기하다'};saveDetectedExpression(k,expressionFromMini(a,sentence,'gave',1),sentence,'audit',a,wordLookupLife);return {ko:words[id].ko,koEdited:words[id].koEdited};});
