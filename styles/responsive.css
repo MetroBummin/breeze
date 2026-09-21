@@ -6,7 +6,6 @@
     #topbar nav{gap:13px;}
     .navbtn{padding:7px 0; font-size:15px; letter-spacing:-.25px; white-space:nowrap;}
     #v-home, #v-casuals, #v-longform{padding:20px 18px 90px;}
-    #bigq{margin-bottom:26px;}
     /* 레일은 화면 끝까지 흘러야 다음 카드가 잘려 보입니다. 좌우 여백과 같은 값. */
     #casual-rail{padding:14px 18px 6px; margin:0 -18px; scroll-padding-left:18px;}
     .casual{flex:0 0 136px;}
@@ -26,6 +25,9 @@
     #v-vocab{padding:22px 20px 90px;}
     #v-vocab .head{gap:10px 12px; margin-bottom:14px;}
     #vsearch{order:3; flex:1 0 100%; width:auto; margin-left:0;}
-    #btn-export{margin-left:auto;}
     .vrow{column-gap:11px; padding:9px 2px;}
   }
+
+@media (max-width:760px){
+  #v-home{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
+}

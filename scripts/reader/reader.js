@@ -215,6 +215,7 @@ async function openBook(b){
      wherever the previous book was being read. */
   lastAnchor = null;
   curBook = b;
+  setReaderPillProgress(posOf(b.id).p||0,true);
   currentReaderMode = 'text';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.getElementById('v-read').classList.add('on');
@@ -279,6 +280,17 @@ let readerPillProgressHeld=false;
 let readerPillRawProgress=0, readerPillVisualProgress=0;
 let readerPillAnimationFrame=0, readerPillAnimationAt=0;
 const readerPillMotion=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+/* Completion is presentation of canonical progress, never a separate saved state. */
+function updateCompletionBadge(pill,progress,bookId){
+  const badge=pill.querySelector('.completion-badge');
+  const complete=progress===1;
+  const changed=pill.dataset.completionBook!==String(bookId);
+  if(changed) pill.classList.remove('is-complete');
+  pill.dataset.completionBook=String(bookId);
+  badge.hidden=!complete;
+  badge.querySelector('.completion-label').textContent=uiLang==='ko' ? '완독' : 'Done';
+  pill.classList.toggle('is-complete',complete);
+}
 function paintReaderPillProgress(){
   document.getElementById('readpill-progress').style.transform =
     `scaleX(${readerPillVisualProgress})`;
@@ -301,6 +313,7 @@ function animateReaderPillProgress(now){
 }
 function setReaderPillProgress(progress,instant=false){
   readerPillRawProgress=Math.max(0,Math.min(1,Number(progress)||0));
+  updateCompletionBadge(document.getElementById('readpill'),readerPillRawProgress,curBook ? curBook.id : '');
   if(instant || (readerPillMotion && readerPillMotion.matches)){
     if(readerPillAnimationFrame) cancelAnimationFrame(readerPillAnimationFrame);
     readerPillAnimationFrame=0; readerPillAnimationAt=0;
@@ -417,22 +430,12 @@ function expandReaderChrome(){
   chromeRun=0; chromeLastY=readerScrollTop(); chromeHoldUntil=Date.now()+500;
   setReaderChrome(false);
 }
-let readerPillTimer=0, readerPillMessage='';
 function readerPillStatus(message){
-  const title=document.getElementById('readpill-title');
-  if(!title || !curBook || !document.getElementById('v-read').classList.contains('on')) return;
-  const next=String(message||'').trim();
-  if(!next || (next===readerPillMessage && readerPillTimer)) return;
-  readerPillMessage=next;
-  title.textContent=next;
-  clearTimeout(readerPillTimer);
-  readerPillTimer=setTimeout(()=>{
-    readerPillTimer=0; readerPillMessage='';
-    title.textContent=curBook ? curBook.title : '';
-  },1400);
+  if(typeof readerNotices!=='undefined') readerNotices.enqueue(message,1800);
 }
 function showReaderChrome(){
-  clearTimeout(readerPillTimer); readerPillTimer=0; readerPillMessage='';
+  if(typeof readerNotices!=='undefined') readerNotices.reset();
+  ['toast','minitoast'].forEach(id=>document.getElementById(id).classList.remove('on'));
   const title=document.getElementById('readpill-title');
   if(title) title.textContent=curBook ? curBook.title : '';
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;

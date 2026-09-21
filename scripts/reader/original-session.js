@@ -109,8 +109,17 @@ function textProgressForBook(book,anchor){
    맨 위에 닿지 못해 같은 이유로 100%가 되지 않았습니다.
    마지막 한 화면만은 남은 스크롤로 메꿉니다. 바닥에 닿으면 정확히 1입니다. */
 function readerProgressAtEnd(value){
-  const reach=Math.max(1,readerViewHeight());
-  const left=Math.max(0,readerContentHeight()-reach-readerScrollTop());
+  const height=Math.max(1,readerViewHeight());
+  const extent=Math.max(0,readerContentHeight()-height);
+  const top=Math.max(0,readerScrollTop());
+  // A short article may start inside the final viewport. Its end ramp must
+  // span only its actual scroll range, and opening at the top is always 0%.
+  if(currentReaderMode==='text' && (top===0 || extent===0)) return 0;
+  const reach=currentReaderMode==='text' ? Math.min(height,extent) : height;
+  const left=Math.max(0,extent-top);
+  // scrollHeight/clientHeight are rounded, while scrollTop can be fractional.
+  // At the physical text end, allow that rounding gap without completing on open.
+  if(currentReaderMode==='text' && left<=1) return 1;
   if(left>=reach) return value;
   const closing=1-left/reach;
   return Math.max(0,Math.min(1,value+(1-value)*closing));

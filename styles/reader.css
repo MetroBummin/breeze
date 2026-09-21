@@ -141,31 +141,32 @@
 
      위치와 크기는 Reader 조작에 맞춘 채, 재질은 낱말·문장 Lookup과 같은 Breeze
      Glass를 씁니다. 서로 다른 기능이라도 한 화면에서 같은 표면처럼 읽혀야 합니다. */
-  #readchrome{position:absolute; bottom:calc(env(safe-area-inset-bottom) + 15px); left:0; right:0; z-index:70;
+  .control-dock{position:fixed;inset:auto 0 0;height:calc(env(safe-area-inset-bottom) + 59px);z-index:70;pointer-events:none;}
+  #readchrome, .control-bar{position:absolute; bottom:calc(env(safe-area-inset-bottom) + 15px); left:0; right:0; z-index:70;
     display:flex; align-items:center; justify-content:space-between;
     padding:0 14px;
     /* 조각 사이의 빈 자리는 본문의 것입니다 — 손짓이 여기서 막히면 안 됩니다. */
     pointer-events:none;}
-  #readchrome > *{pointer-events:auto;}
-  #readback, #aafab, #readpill{isolation:isolate; overflow:hidden;
+  #readchrome > *, .control-bar > *{pointer-events:auto;}
+  .control-glass{isolation:isolate; overflow:hidden;
     border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-solid);
     box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
     color:var(--sentence-glass-ink);}
-  #readback::before, #aafab::before, #readpill::before{content:""; position:absolute; z-index:-1;
+  .control-glass::before{content:""; position:absolute; z-index:-1;
     inset:0; pointer-events:none; border-radius:inherit;
     background:linear-gradient(145deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.07) 44%,rgba(255,255,255,.16) 100%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.42);}
-  body.dark #readback::before, body.dark #aafab::before, body.dark #readpill::before{
+  body.dark .control-glass::before{
     background:linear-gradient(145deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.025) 46%,rgba(255,255,255,.07) 100%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14);}
   @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    #readback, #aafab, #readpill{background:var(--sentence-glass-pill);
+    .control-glass{background:var(--sentence-glass-pill);
       backdrop-filter:blur(19px) saturate(122%); -webkit-backdrop-filter:blur(19px) saturate(122%);}
   }
   /* 왼쪽 원과 오른쪽 조각은 **같은 높이·같은 윗변**입니다(36px · 안전 영역 + 10px).
      둘이 한 줄에 나란히 서는 물건이라, 한쪽만 1px 달라도 줄이 어긋나 보입니다.
      아래 `#readfabs` 의 높이도 같은 36px 이어야 합니다. */
-  #readback,#aafab{position:relative; width:42px; height:42px; border-radius:50%; padding:0;
+  #readback,#aafab, .control-circle{position:relative; width:42px; height:42px; border-radius:50%; padding:0;
     display:flex; align-items:center; justify-content:center; cursor:pointer;}
   /* 그림은 상자 한가운데 놓여 있지만, 화살표의 **잉크**는 그렇지 않습니다.
      `<` 는 24칸 중 8~14.2 만 차지해서 잉크의 한가운데가 11.1 — 상자 한가운데(12)
@@ -177,13 +178,13 @@
      지고, 자리를 줄이면 걸어가며 못 누릅니다 — 둘을 따로 정합니다. */
   #readback::after{content:''; position:absolute; inset:-6px;}
   #aafab{font:600 15px var(--ui);}
-  #readpill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  #readpill, .control-pill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     width:min(56vw,400px); height:44px; border-radius:24px;
-    display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;
-    transition:width .34s cubic-bezier(.2,.75,.25,1),height .34s cubic-bezier(.2,.75,.25,1),
+    display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
+  #readpill{transition:width .34s cubic-bezier(.2,.75,.25,1),height .34s cubic-bezier(.2,.75,.25,1),
       padding .34s cubic-bezier(.2,.75,.25,1),border-radius .34s cubic-bezier(.2,.75,.25,1),
       box-shadow .34s ease;}
-  #readpill-progress{position:absolute; inset:0; pointer-events:none;
+  #readpill-progress,#home-resume-progress{position:absolute; inset:0; pointer-events:none;
     background:var(--chrome-progress); transform:scaleX(0); transform-origin:left center;
     will-change:transform;}
   #readpill-title,#readpill #modefab{position:relative; z-index:1;}
@@ -225,9 +226,9 @@
     opacity:0; transform:translateY(8px); visibility:hidden; pointer-events:none;
     transition:opacity .2s ease,transform .3s ease,visibility 0s .3s;}
   body.chrome-hidden #readpill-title{cursor:pointer;}
-  #readback:active, #aafab:active, #readpill button:active{background:var(--chrome-press);}
+  #readback:active, #aafab:active, #readpill button:active, .control-glass:active{background:var(--chrome-press);}
   @media (hover:hover){
-    #readback:hover, #aafab:hover{background:var(--chrome-press);}
+    #readback:hover, #aafab:hover, .control-circle:hover{background:var(--chrome-press);}
   }
   /* 넓은 화면에서도 정보 구조는 같습니다 — 왼쪽에 나가는 길, 오른쪽에 둘.
      데스크톱 전용 길은 만들지 않습니다. 넓어진 만큼 조각이 가장자리에서 조금
@@ -236,7 +237,7 @@
      같은 색(`--paper`)을 옅게 깐 것이라, 자국까지 지우면 조각이 통째로 사라집니다 —
      글자가 없는 왼쪽 여백 위의 back 이 특히 그렇습니다. */
   @media (min-width:761px){
-    #readchrome{padding:0 22px;}
+    #readchrome, .control-bar{padding:0 22px;}
   }
   @media (prefers-reduced-motion:reduce){
     #readpill,#readback,#aafab,#readpill #modefab{transition-duration:var(--sentence-transition);
@@ -487,3 +488,42 @@
     #readwrap,#originalwrap{transition:none;}
     .pdf-source-page>.reader-mode-cue{animation:none;}
   }
+
+/* Shared completion treatment for the Reader and Home resume capsule. */
+.completion-badge{position:relative;z-index:1;display:flex;align-items:center;gap:4px;flex:none;font:600 11px var(--ui);white-space:nowrap;}
+.completion-badge[hidden]{display:none;}
+.completion-badge svg{width:22px;height:22px;color:var(--completion-blue);flex:none;}
+#home-controls #primary-nav .completion-badge svg{width:22px;height:22px;stroke:none;}
+.is-complete .completion-badge{animation:completion-reveal .55s cubic-bezier(.2,.8,.2,1);}
+body.sentence-pill-waiting #readpill .completion-badge{display:none;}
+@keyframes completion-reveal{0%{opacity:0;transform:scale(.35) rotate(-18deg)}65%{opacity:1;transform:scale(1.12) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
+@media(prefers-reduced-motion:reduce){.is-complete .completion-badge{animation:none;}}
+
+/* One light material for Reader and Home. Dark mode intentionally uses the existing rules. */
+body:not(.dark) .control-glass{
+  border-color:var(--control-light-line);box-shadow:var(--control-light-shadow);
+}
+body:not(.dark) .control-glass::before{
+  background:var(--control-light-reflection);box-shadow:var(--control-light-edge);
+  z-index:2; /* Reflection sits above the progress tint, never beneath it. */
+}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body:not(.dark) .control-glass{background:var(--control-light-surface);}
+}
+body:not(.dark) :is(#readpill-progress,#home-resume-progress){
+  background:var(--control-light-progress);box-shadow:var(--control-light-progress-edge);
+}
+body:not(.dark) :is(#readback,#aafab,#readpill button,.control-glass):active{background:var(--chrome-press);}
+
+/* Notices share only the title slot; mode/back/settings keep their input targets.
+   The title remains in the layout and restores without rewriting book state. */
+#reader-notice{position:absolute;inset:4px 12px;z-index:2;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font:600 12px/1.35 var(--ui);text-align:center;overflow-wrap:anywhere;}
+#reader-notice[hidden]{display:none;}
+body.reader-notice-visible #readpill-title{opacity:0;}
+body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
+body.reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{left:48px;}
+body.reader-notice-visible.chrome-hidden #readpill{width:min(56vw,400px);height:44px;}
+body.reader-notice-visible.chrome-hidden #readpill #reader-notice{left:12px;}
+body.sentence-pill-waiting #reader-notice{display:none;}

@@ -1,7 +1,3 @@
-function greet(){
-  const h = new Date().getHours();
-  return tr(h<5 ? 'greet.night' : h<12 ? 'greet.morning' : h<18 ? 'greet.afternoon' : 'greet.evening');
-}
 /* 꾹 누르면(약 0.55초) 이름 바꾸기. 손가락이 움직이면(스크롤) 취소됩니다. */
 function attachLongPress(el, fn){
   let timer = null, sx = 0, sy = 0, fired = false;
@@ -332,8 +328,7 @@ function longformAddCard(){
 }
 
 function renderHome(){
-  document.getElementById('greet').textContent = greet();
-
+  renderHomeResume();
   const casuals = casualBooks();
   const rail = document.getElementById('casual-rail');
   const nowCasual = nowReadingIn(casuals);
@@ -342,9 +337,7 @@ function renderHome(){
   serverOnlyCasuals().slice(0,Math.max(0,HOME_CASUAL_LIMIT-casuals.length)).forEach(row=>rail.appendChild(cloudCasualCard(row)));
   if(casuals.length > HOME_CASUAL_LIMIT) rail.appendChild(casualMoreCard(casuals.length - HOME_CASUAL_LIMIT));
   rail.appendChild(casualAddCard());
-  document.querySelector('#casuals .sec-sub').textContent = casuals.length
-    ? `기사 · 스레드 · 짧은 글 ${casuals.length}편`
-    : '기사 · 스레드 · 짧은 글';
+
   if(typeof appendRssCards === 'function') appendRssCards(rail);
 
   const longform = longformBooks();
@@ -356,9 +349,7 @@ function renderHome(){
   serverOnlyBooks().forEach(row => shelf.appendChild(cloudBookCard(row)));
   pendingClassics().forEach(classic => shelf.appendChild(classicCard(classic)));
   shelf.appendChild(longformAddCard());
-  document.querySelector('#longform .sec-sub').textContent = longform.length
-    ? `원서 · PDF · EPUB ${longform.length}권 — 꾹 누르면 정보 바꾸기`
-    : '원서 · PDF · EPUB';
+
 }
 
 /* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에
@@ -748,4 +739,21 @@ async function importFile(file, extra){
     }
     toast('파일을 읽지 못했어요: '+(error.message||error));
   }
+}
+
+/* Reuse the existing saved progress timestamps; do not create a second reading history. */
+function homeResumeBook(){
+  const id=nowReadingIn(books);
+  return books.find(book=>book.id===id) || null;
+}
+function renderHomeResume(){
+  const book=homeResumeBook();
+  const button=/** @type {HTMLButtonElement} */(document.getElementById('home-resume'));
+  document.getElementById('home-resume-title').textContent=book ? book.title : (uiLang==='ko' ? '읽던 책 없음' : 'No book in progress');
+  const progress=book ? Math.max(0,Math.min(1,Number(posOf(book.id).p)||0)) : 0;
+  document.getElementById('home-resume-progress').style.transform=`scaleX(${progress})`;
+  document.getElementById('home-resume-percent').textContent=book ? `${Math.floor(progress*100)}%` : '';
+  updateCompletionBadge(button,progress,book ? book.id : '');
+  button.disabled=!book;
+  button.setAttribute('aria-label',book ? book.title+` · ${Math.floor(progress*100)}% · `+(progress===1 ? (uiLang==='ko' ? '완독 · ' : 'Completed · ') : '')+(uiLang==='ko' ? '이어서 읽기' : 'Continue reading') : (uiLang==='ko' ? '읽던 책 없음' : 'No book in progress'));
 }

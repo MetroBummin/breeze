@@ -83,7 +83,10 @@ try{
     return {word:read(document.getElementById('word-peek')),bottom:read(document.getElementById('readpill'))};
   });
   const lightGlass=await glassMaterial();
-  assert.deepEqual(lightGlass.bottom,lightGlass.word,'light Reader controls and Lookup use different glass materials');
+  // PR 11 gives shared bottom controls their own light reflection tokens.
+  // Lookup keeps the existing sentence-glass material; dark material stays shared.
+  assert.equal(lightGlass.bottom.blur,lightGlass.word.blur,'Lookup lost its shared glass blur');
+  assert.notEqual(lightGlass.word.background,'rgba(0, 0, 0, 0)','Lookup lost its readable glass surface');
   await page.evaluate(()=>{document.documentElement.classList.add('dark');document.body.classList.add('dark');});
   await page.locator('#readpill').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const darkGlass=await glassMaterial();
@@ -267,13 +270,13 @@ try{
     };
     dead={}; vocabOpen.clear(); show('vocab'); renderVocab();
   });
-  assert.equal(await page.locator('#vcnt').textContent(),'2개 저장됨');
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 1단어');
   await page.locator('.vgroup[data-g="run"] .vword').click();
   assert.equal(await page.locator('.vgroup[data-g="run"] .rowdel').count(),2,
     'expanded Words group did not expose both stored meanings');
   await page.locator('.vsense[data-k="run"] .rowdel').click();
   await page.waitForFunction(()=>document.querySelectorAll('.vgroup[data-g="run"] .vsense').length===1);
-  assert.equal(await page.locator('#vcnt').textContent(),'1개 저장됨');
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 1단어');
   assert.equal(await page.locator('.vgroup[data-g="run"] .vko').textContent(),'운영하다');
   assert.equal(await page.locator('.vgroup[data-g="run"]').getAttribute('data-head'),'run');
   assert.equal(await page.locator('.vgroup[data-g="run"]').evaluate(node=>node.classList.contains('open')),true,
@@ -305,7 +308,7 @@ try{
   await page.locator('.vsense[data-k="triad::B"] .rowdel').click();
   await page.locator('.vsense[data-k="triad::C"] .rowdel').click();
   assert.deepEqual((await page.locator('.vgroup[data-g="triad"] .vko').allTextContents()).sort(),['A','D']);
-  assert.equal(await page.locator('#vcnt').textContent(),'2개 저장됨');
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 1단어');
   assert.equal(await page.locator('.vgroup[data-g="triad"]').count(),1);
 
   /* Active/non-active popup deletion plus delete -> add -> delete. */
