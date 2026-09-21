@@ -98,42 +98,37 @@ tbody tr:last-child td{border-bottom:0}
 <main>
 <h1 id="breeze-사전은-어떻게-움직이나">Breeze 사전은 어떻게 움직이나</h1>
 <h2 id="한-줄-요약">한 줄 요약</h2>
-<p>낱말을 누르면 Breeze는 <strong>그 낱말이 들어 있던 문장</strong>을 함께 보고 현재 문맥의 뜻을 정합니다. 처음 보는 lexical item은 DeepSeek가 직접 분석하고, 이미 저장한 item을 다른 문장에서 다시 만났을 때만 Jev가 <strong>저장된 Meaning을 그대로 재사용할 수 있는지</strong> 고릅니다.</p>
+<p>처음 보는 lexical item은 DeepSeek가 문맥을 보고 분석합니다. 이미 저장한 lexical item은 <strong>네트워크 재판정 없이 기기에 저장된 Meaning을 즉시 보여 줍니다.</strong> 새 뜻이 필요할 때만 사용자가 다시 AI lookup을 요청합니다.</p>
 <h2 id="조회-흐름">조회 흐름</h2>
-<pre data-lang="text"><code>낱말 선택
-  → 같은 문장 캐시가 있으면 즉시 사용
-  → 처음 보는 문맥이면 DeepSeek mini lookup
+<pre data-lang="text"><code>처음 보는 낱말 선택
+  → 같은 문장 cache가 있으면 즉시 사용
+  → 없으면 DeepSeek mini lookup
      → word / expression
      → canonical
      → 현재 문장의 member token indexes
      → 짧은 한국어 뜻
-  → 영어 사전 메타데이터(발음·음성·영어 정의)는 별도로 보완
+  → 영어 사전 metadata(발음·음성·영어 정의)는 별도로 보완
 
-이미 저장한 lexical item을 다른 문장에서 다시 선택
-  → Jev
-     → meaning_1 / meaning_2 / ... / AI_REQUIRED
-     → 저장 Meaning 선택: DeepSeek 호출 없이 즉시 재사용
-     → AI_REQUIRED 또는 Jev 실패: DeepSeek mini lookup
+이미 저장한 lexical item을 다시 선택
+  → 저장된 Meaning을 기기에서 즉시 표시
+  → 서버 판정 없음
+  → 새 뜻이 필요하면 사용자가 다시 찾기를 요청
+     → DeepSeek mini lookup
 
-작은 뜻 필을 눌러 상세창 열기
+작은 뜻 필에서 상세창 열기
   → detail cache가 있으면 즉시 표시
   → 없으면 DeepSeek detail lookup
      → 품사 + 짧은 한국어 gloss</code></pre>
 <h3 id="deepseek의-역할">DeepSeek의 역할</h3>
-<p>DeepSeek가 lexical analysis의 유일한 생성 엔진입니다.</p>
+<p>DeepSeek가 lexical analysis의 생성 엔진입니다.</p>
 <p>Mini lookup은 다음 네 필드만 만듭니다.</p>
 <pre data-lang="json"><code>{"kind":"word","canonical":"yield","members":[7],"ko":"양보하다"}</code></pre>
 <p>또는 표현이라면:</p>
 <pre data-lang="json"><code>{"kind":"expression","canonical":"give up","members":[4,8],"ko":"포기하다"}</code></pre>
 <ul><li>기본값은 <strong>word</strong>입니다. 단일 단어 뜻만으로 현재 의미를 충분히 정확하게 전달할 수 있으면 expression으로 올리지 않습니다.</li><li>phrasal verb, idiom, fixed expression처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나 중요한 lexical identity를 잃을 때만 expression으로 처리합니다.</li><li><code>canonical</code>은 저장할 표제형입니다.</li><li><code>members</code>는 <strong>현재 문장에서 색칠할 lexical member token</strong>입니다. 저장 표제어를 <code>members</code>를 이어 붙여 만들지 않습니다.</li><li>연속된 표현 안의 <code>of</code>, <code>to</code>, <code>at</code> 같은 function word가 lexical identity의 일부라면 빼지 않습니다.</li><li>분리 가능한 구동사의 목적어·변수는 member가 아닙니다. 예: <code>gave the plan up</code>은 <code>give/up</code>만 member이고 저장 표제어는 <code>give up</code>입니다.</li><li>Mini lookup에서는 긴 gloss·다른 뜻 후보·설명을 만들지 않습니다.</li></ul>
-<h3 id="jev의-역할">Jev의 역할</h3>
-<p>Jev는 <strong>saved Meaning selector + AI-call gate</strong> 하나만 담당합니다.</p>
-<p>입력은 현재 문장과 이 기기에 이미 저장된 Meaning 후보입니다. 선택지는:</p>
-<pre data-lang="text"><code>meaning_1
-meaning_2
-...
-AI_REQUIRED</code></pre>
-<ul><li>기존 Meaning 하나를 그대로 보여 줘도 충분히 정확하면 그것을 고릅니다.</li><li>ordinary collocation이나 의미가 그대로 합쳐지는 전치사 결합이라는 이유만으로 <code>AI_REQUIRED</code>를 남발하지 않습니다.</li><li>다른 sense이거나, 더 큰 lexical expression의 일부라서 기존 단어 뜻만 보여 주면 의미를 오해하거나 중요한 lexical identity를 잃을 때는 <code>AI_REQUIRED</code>를 고릅니다.</li><li>Jev는 expression 범위, token membership, canonical, 한국어 뜻을 생성하지 않습니다.</li><li>OEWN/영영 sense DB와 lazy Korean translation 경로는 사용하지 않습니다.</li></ul>
+<h2 id="저장된-meaning-재사용">저장된 Meaning 재사용</h2>
+<p>이미 단어장에 있는 lexical item은 새 문장에서 다시 눌러도 서버에 보내지 않습니다.</p>
+<ul><li>같은 문장에 확정해 둔 Meaning이 있으면 그것을 바로 보여 줍니다.</li><li>그렇지 않으면 최근에 본 저장 Meaning을 바로 보여 줍니다.</li><li>저장된 Meaning이 현재 문장과 맞지 않는다고 느낄 때만 사용자가 새 뜻 찾기를 요청합니다.</li><li>저장된 Meaning을 다시 보여 주는 것 자체에는 AI 비용이나 네트워크 대기가 없습니다.</li></ul>
 <h2 id="저장-모델">저장 모델</h2>
 <p>lexical identity와 문장 annotation을 분리합니다.</p>
 <pre data-lang="text"><code>Lexical Item
@@ -145,27 +140,27 @@ ko: 포기하다
 Context
 sentence: He gave the whole plan up.
 members: [gave, up]</code></pre>
-<p>비연속 표현은 기존 저장 포맷인 <code>phraseParts</code>와 <code>phraseGaps</code>로 보존합니다. 이 포맷은 Jev용이 아니라 Text/PDF/EPUB에서 같은 표현을 색칠하기 위한 문장 annotation입니다.</p>
+<p>비연속 표현은 기존 저장 포맷인 <code>phraseParts</code>와 <code>phraseGaps</code>로 보존합니다. 이 포맷은 Text/PDF/EPUB에서 같은 표현을 색칠하기 위한 문장 annotation입니다.</p>
 <h2 id="화면에서-할-수-있는-것">화면에서 할 수 있는 것</h2>
-<ul><li>작은 필에는 현재 뜻 하나만 빠르게 보여 줍니다.</li><li>필을 눌러 상세창에 들어갈 때만 품사·gloss를 lazy-load합니다.</li><li>IPA·음성·영어 정의는 <code>api.dictionaryapi.dev</code>에서 별도로 받으며 한국어 뜻을 결정하지 않습니다.</li><li>뜻에 필요한 손짓은 만들기(＋) · 고르기(칩) · 지우기(×)입니다.</li><li>사용자가 직접 만든 뜻을 AI가 덮어쓰지 않습니다.</li><li>낱말을 길게 누르는 문장 해석은 word lookup과 별개의 기능입니다.</li></ul>
+<ul><li>저장한 뜻은 작은 필에서 즉시 보여 줍니다.</li><li>처음 보는 item이나 사용자가 새 뜻 찾기를 요청한 경우에만 AI mini lookup을 기다립니다.</li><li>필을 눌러 상세창에 들어갈 때만 품사·gloss를 lazy-load합니다.</li><li>IPA·음성·영어 정의는 <code>api.dictionaryapi.dev</code>에서 별도로 받으며 한국어 뜻을 결정하지 않습니다.</li><li>뜻에 필요한 손짓은 만들기(＋) · 고르기(칩) · 지우기(×)입니다.</li><li>사용자가 직접 만든 뜻을 AI가 덮어쓰지 않습니다.</li><li>낱말을 길게 누르는 문장 해석은 word lookup과 별개의 기능입니다.</li></ul>
 <h2 id="로그인과-한도">로그인과 한도</h2>
-<div class="tablewrap"><table><thead><tr><th>기능</th><th>로그인 전</th><th>로그인 후</th></tr></thead><tbody><tr><td>영어 사전 메타데이터·기기 단어장</td><td>가능</td><td>가능</td></tr><tr><td>AI 낱말 뜻/상세</td><td>기기당 체험 횟수 안에서 가능</td><td>서버 설정 하루 한도 안에서 가능</td></tr><tr><td>문장 전체 설명</td><td>불가</td><td>같은 AI 사용량 풀에서 더 높은 비용으로 차감</td></tr><tr><td>기기 간 동기화</td><td>불가</td><td>가능</td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>기능</th><th>로그인 전</th><th>로그인 후</th></tr></thead><tbody><tr><td>영어 사전 metadata·기기 단어장</td><td>가능</td><td>가능</td></tr><tr><td>AI 낱말 뜻/상세</td><td>기기당 체험 횟수 안에서 가능</td><td>서버 설정 하루 한도 안에서 가능</td></tr><tr><td>문장 전체 설명</td><td>불가</td><td>같은 AI 사용량 풀에서 더 높은 비용으로 차감</td></tr><tr><td>기기 간 동기화</td><td>불가</td><td>가능</td></tr></tbody></table></div>
 <p>로그인 전 AI 체험 횟수는 서버 설정 <code>AI_ANON_FREE</code>로 정하며 기본값은 10회입니다. 로그인 후 기본 일일 풀은 서버의 <code>AI_DAILY_LIMIT</code>/기본값으로 관리됩니다.</p>
 <h2 id="무엇이-어디에-남나">무엇이 어디에 남나</h2>
 <h3 id="기기-안">기기 안</h3>
-<ul><li>문맥별 mini lookup 캐시</li><li>Meaning별 detail cache</li><li>영어 사전 메타데이터</li><li>단어장: lexical item, 뜻, 별표, 예문, 책 제목</li><li>사용자가 직접 만든 뜻</li></ul>
+<ul><li>문맥별 mini lookup cache</li><li>Meaning별 detail cache</li><li>영어 사전 metadata</li><li>단어장: lexical item, 뜻, 별표, 예문, 책 제목</li><li>사용자가 직접 만든 뜻</li></ul>
 <h3 id="breeze-서버와-ai-제공자">Breeze 서버와 AI 제공자</h3>
-<p>처음 보는 문맥이나 <code>AI_REQUIRED</code>에서는 낱말, 문장(최대 600자), token 목록과 클릭 token index가 생성 AI 제공자에게 전달됩니다.</p>
-<p>저장한 lexical item을 다른 문장에서 만났을 때는 현재 문장과 이 기기에 저장된 Meaning 후보가 Breeze 서버를 거쳐 TypeSafe(Jev)에 전달됩니다. Jev에는 expression membership을 찾기 위한 token-by-token 질문을 보내지 않습니다.</p>
+<p>처음 보는 lexical item이나 사용자가 새 뜻 찾기를 요청한 경우에는 낱말, 문장(최대 600자), token 목록과 클릭 token index가 생성 AI 제공자에게 전달됩니다.</p>
+<p>이미 저장한 lexical item의 Meaning을 다시 보여 주는 것만으로는 문장이나 Meaning 후보를 외부 판정 제공자에게 보내지 않습니다.</p>
 <p>상세창을 처음 열어 gloss가 필요할 때는 저장된 canonical, 한국어 Meaning, 최초 예문이 생성 AI 제공자에게 전달됩니다.</p>
 <p>Breeze 서버는 문장 본문이나 Meaning 후보를 공용 사전 데이터로 저장하지 않습니다. 운영·한도 확인을 위해 호출 종류, 제공자/모델, 성공 여부, 응답 시간, 토큰 사용량은 남을 수 있습니다.</p>
 <p>로그인한 단어장과 읽던 자리는 기기에서 암호화되어 동기화됩니다. 자세한 데이터 처리는 <a href="privacy.html">PRIVACY.md</a>를 봐 주세요.</p>
 <h2 id="구현의-경계">구현의 경계</h2>
-<ul><li>DeepSeek = lexical intelligence.</li><li>Jev = saved Meaning selector + AI-call gate.</li><li>Mini pill = 최소 생성.</li><li>Detail = lazy enrichment.</li><li><code>dictionaryapi.dev</code> = IPA·음성·영어 정의 metadata only.</li><li>OEWN/Breeze Lexicon/lazy Korean repair = lookup critical path에 없음.</li><li>같은 문장 캐시는 네트워크보다 먼저 확인합니다.</li><li>늦게 도착한 답은 닫힌 lookup을 다시 열거나 화면을 조종할 수 없습니다.</li></ul>
+<ul><li>DeepSeek = lexical intelligence.</li><li>Saved Meaning reuse = local-only.</li><li>Mini pill = 최소 생성.</li><li>Detail = lazy enrichment.</li><li><code>dictionaryapi.dev</code> = IPA·음성·영어 정의 metadata only.</li><li>OEWN/Breeze Lexicon/lazy Korean repair = lookup critical path에 없음.</li><li>같은 문장 cache는 네트워크보다 먼저 확인합니다.</li><li>늦게 도착한 답은 닫힌 lookup을 다시 열거나 화면을 조종할 수 없습니다.</li></ul>
 <h2 id="관련-코드">관련 코드</h2>
-<div class="tablewrap"><table><thead><tr><th>위치</th><th>역할</th></tr></thead><tbody><tr><td><code>scripts/dictionary/dictionary.js</code></td><td>mini lookup, Jev selector, detail cache, 단어장</td></tr><tr><td><code>scripts/dictionary/sentence.js</code></td><td>꾹 누르기 · 문장 해석 창</td></tr><tr><td><code>server/dict/index.ts</code></td><td>DeepSeek/Jev 요청, 한도</td></tr><tr><td><code>server/dict/telemetry.ts</code></td><td>제공자 latency/token telemetry</td></tr><tr><td><code>sql/supabase_dict.sql</code></td><td>AI 사용량 테이블</td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>위치</th><th>역할</th></tr></thead><tbody><tr><td><code>scripts/dictionary/dictionary.js</code></td><td>mini lookup, local Meaning reuse, detail cache, 단어장</td></tr><tr><td><code>scripts/dictionary/sentence.js</code></td><td>꾹 누르기 · 문장 해석 창</td></tr><tr><td><code>server/dict/index.ts</code></td><td>DeepSeek/fallback 요청, 한도</td></tr><tr><td><code>server/dict/telemetry.ts</code></td><td>제공자 latency/token telemetry</td></tr><tr><td><code>sql/supabase_dict.sql</code></td><td>AI 사용량 테이블</td></tr></tbody></table></div>
 </main>
-<aside><div class="lbl">이 문서 안</div><a class="" href="#한-줄-요약">한 줄 요약</a><a class="" href="#조회-흐름">조회 흐름</a><a class="sub" href="#deepseek의-역할">DeepSeek의 역할</a><a class="sub" href="#jev의-역할">Jev의 역할</a><a class="" href="#저장-모델">저장 모델</a><a class="" href="#화면에서-할-수-있는-것">화면에서 할 수 있는 것</a><a class="" href="#로그인과-한도">로그인과 한도</a><a class="" href="#무엇이-어디에-남나">무엇이 어디에 남나</a><a class="sub" href="#기기-안">기기 안</a><a class="sub" href="#breeze-서버와-ai-제공자">Breeze 서버와 AI 제공자</a><a class="" href="#구현의-경계">구현의 경계</a><a class="" href="#관련-코드">관련 코드</a></aside>
+<aside><div class="lbl">이 문서 안</div><a class="" href="#한-줄-요약">한 줄 요약</a><a class="" href="#조회-흐름">조회 흐름</a><a class="sub" href="#deepseek의-역할">DeepSeek의 역할</a><a class="" href="#저장된-meaning-재사용">저장된 Meaning 재사용</a><a class="" href="#저장-모델">저장 모델</a><a class="" href="#화면에서-할-수-있는-것">화면에서 할 수 있는 것</a><a class="" href="#로그인과-한도">로그인과 한도</a><a class="" href="#무엇이-어디에-남나">무엇이 어디에 남나</a><a class="sub" href="#기기-안">기기 안</a><a class="sub" href="#breeze-서버와-ai-제공자">Breeze 서버와 AI 제공자</a><a class="" href="#구현의-경계">구현의 경계</a><a class="" href="#관련-코드">관련 코드</a></aside>
 </div>
 <div class="foot">
   이 문서는 저장소의 <code>DICT.md</code> 에서 자동으로 만들어집니다 ·
