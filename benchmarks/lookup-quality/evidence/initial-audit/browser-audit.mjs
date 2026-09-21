@@ -1,0 +1,35 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createServer} from 'node:http';
+import {resolve,extname} from 'node:path';
+import {chromium} from '../breeze-reader-layout-stability/node_modules/playwright/index.mjs';
+const root=resolve(import.meta.dirname,'../breeze-reader-layout-stability');
+const out=import.meta.dirname;
+const server=createServer((req,res)=>{try{const p=resolve(root,'.'+(new URL(req.url,'http://localhost').pathname==='/'?'/index.html':decodeURIComponent(new URL(req.url,'http://localhost').pathname)));if(!p.startsWith(root+'/'))throw Error();res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const url=`http://127.0.0.1:${server.address().port}/`;
+const browser=await chromium.launch();const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
+const results={};
+try{
+ await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
+ await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
+ await page.goto(url,{waitUntil:'domcontentloaded'});
+ await page.locator('#fileinput').setInputFiles({name:'audit.txt',mimeType:'text/plain',buffer:Buffer.from('He visited the bank for a loan. He sat by the bank of the river. The river was overflowing.\n\n'+('A reader keeps extraordinary words close. ').repeat(30))});
+ await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));
+ await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
+ await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>5);
+ await page.evaluate(()=>{window.auditSeed=()=>{closePanel();words={};dead={};const k=keyOf('bank');words[k]={word:'bank',clicked:'bank',forms:['bank'],ko:'은행',example:'He visited the bank for a loan.',book:curBook.title,status:1,mark:true,addedAt:1,up:1,ai:{ko:'은행',done:true}};return k;};window.auditCalls=[];dictCall=async p=>{auditCalls.push(p);return {kind:'word',canonical:p.word,members:[p.clickedIndex],ko:'강둑'};};sb={};});
+ results.deleteChild=await page.evaluate(()=>{const k=auditSeed();const id=createMeaning(k,'강둑',{});selKey=id;document.getElementById('p-know').onclick();return {selected:id,remaining:Object.keys(words),tombstones:Object.keys(dead)};});
+ results.deleteRoot=await page.evaluate(()=>{const k=auditSeed();createMeaning(k,'강둑',{});selKey=k;document.getElementById('p-know').onclick();return {remaining:Object.keys(words)};});
+ results.savedWrongContext=await page.evaluate(()=>{const k=auditSeed();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];auditCalls=[];openWord(k,node);return {visible:document.getElementById('word-peek-meaning').textContent,current:currentContext(selKey)?.sentence,saved:words[selKey].example,calls:auditCalls.length};});
+ results.pillRetry=await page.evaluate(async()=>{auditCalls=[];await retryWordPeek();return auditCalls;});
+ results.detailRetry=await page.evaluate(async()=>{const k=auditSeed();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord(k,node);expandWordDetail();auditCalls=[];await askWiderContext(k);return auditCalls;});
+ results.expansion=await page.evaluate(()=>{closePanel();const old=curBook.paras;const target='He sat by the bank.';curBook.paras=['Earlier background. '.repeat(60),target,'Water was rising.'];const expanded=expandedContextFor({},target);curBook.paras=old;return {length:expanded.length,includesTarget:expanded.includes(target),expanded};});
+ results.expressionTombstone=await page.evaluate(()=>{const k=auditSeed();selKey=k;const sentence='He gave the plan up.';const answer={kind:'expression',canonical:'give up',members:[1,4],ko:'포기하다'};const phrase=expressionFromMini(answer,sentence,'gave',1);const id=phraseCardKey('give up');dead[id]=Date.now()+10000;saveDetectedExpression(k,phrase,sentence,'audit',answer,wordLookupLife);return {id,alive:!!words[id],dead:dead[id],up:words[id]?.up,tombstoneWins:dead[id]>=words[id]?.up};});
+ results.expressionOverwrite=await page.evaluate(()=>{const k=auditSeed();selKey=k;const sentence='He gave the plan up.';const id=phraseCardKey('give up');words[id]={word:'give up',ko:'사용자가 적은 뜻',koEdited:true,phraseParts:['give','up'],forms:['give','up'],example:sentence,up:1,status:2};const a={kind:'expression',canonical:'give up',members:[1,4],ko:'포기하다'};saveDetectedExpression(k,expressionFromMini(a,sentence,'gave',1),sentence,'audit',a,wordLookupLife);return {ko:words[id].ko,koEdited:words[id].koEdited};});
+ results.repeatedCache=await page.evaluate(async()=>{const k=auditSeed();words[k].ko='';words[k].ai={};words[k].word='take';words[k].clicked='take';words[k].forms=['take'];words[k].example='I take notes and take off.';const old=dictGet;dictGet=async()=>({kind:'expression',canonical:'take off',members:[4,5],ko:'떠나다'});selKey=k;await loadCachedLook(k,Date.now(),wordLookupLife);dictGet=old;return {word:words[k]?.word,ko:words[k]?.ko,phrase:!!words['phrase:take off'],key:lookKey('take',words[k]?.example)};});
+ results.splitGeometry=await page.evaluate(async()=>{const k=auditSeed();const r=document.getElementById('rtext');r.innerHTML='<p style="width:300px;font-size:24px;line-height:1.9"><span style="display:inline-block;width:230px">prefix</span><span class="w">well-established</span> continues</p>';await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));const n=r.querySelector('.w');words.extraordinary={...words[k],word:'extraordinary',clicked:'extraordinary',forms:['extraordinary'],ko:'특별한',example:'extraordinary'};selectWord('extraordinary',n,true);placeWordPeek();const rect=v=>({left:v.left,right:v.right,top:v.top,bottom:v.bottom,width:v.width,height:v.height});return {fragments:[...n.getClientRects()].map(rect),anchor:wordPeekAnchor,pill:rect(document.getElementById('word-peek').getBoundingClientRect())};});
+ await page.locator('#word-peek').evaluate(n=>Promise.all(n.getAnimations().map(a=>a.finished)));
+ await page.screenshot({path:resolve(out,'split-word.png')});
+ results.deletionStress=await page.evaluate(()=>{let leftover=0;for(let i=0;i<100;i++){const k=auditSeed();createMeaning(k,'강둑',{});const last=createMeaning(k,'비축분',{});selKey=last;document.getElementById('p-know').onclick();if(Object.keys(words).length)leftover++;}return {iterations:100,leftover};});
+ console.log(JSON.stringify(results,null,2));writeFileSync(resolve(out,'browser-results.json'),JSON.stringify(results,null,2));
+}finally{await browser.close();server.close();}

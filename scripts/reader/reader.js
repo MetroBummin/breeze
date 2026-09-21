@@ -574,7 +574,7 @@ registerReaderSurface({
   openWordAt(clientX, clientY){
     const span=textWordSpanAt(clientX, clientY);
     if(!span) return false;
-    openWord(span.dataset.w, span);
+    openWord(span.dataset.w,span,{x:clientX,y:clientY});
     return true;
   },
   sentenceAt(clientX, clientY){

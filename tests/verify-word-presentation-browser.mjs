@@ -130,21 +130,18 @@ try{
     words.patient.pickedAt=Date.now();
   });
 
-  /* 저장 단어는 새 문장에서도 서버 판정 없이 저장 Meaning을 즉시 보여 줍니다. */
+  /* New context is resolved once; the chevron still owns no second request. */
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
     dictCall=payload=>{wordQa.calls.push(payload);return new Promise(resolve=>wordQa.pending.push(resolve));};
-    const span=[...document.querySelectorAll('#rtext .w')].find(node=>
-      node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
+    const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='patient'&&sentenceOf(node).startsWith('Another patient'));
     openWord(keyOf('patient'),span);
   });
-  await page.waitForFunction(()=>wordPeekOpen());
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'참을성 있는',
-    'saved meaning did not appear immediately in a new sentence');
-  assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),false,
-    'saved meaning unnecessarily showed a loading state');
-  assert.equal(await page.evaluate(()=>wordQa.calls.length),0,
-    'saved meaning reuse unexpectedly contacted the dictionary server');
+  await page.waitForFunction(()=>wordQa.calls.length===1);
+  assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 확인 중');
+  await page.evaluate(()=>wordQa.pending.shift()({kind:'word',canonical:'patient',members:[1],ko:'참을성 있는'}));
+  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='참을성 있는');
+  assert.equal(await page.evaluate(()=>wordQa.calls.length),1);
   await page.evaluate(()=>closePanel());
   await page.evaluate(()=>{
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='another');

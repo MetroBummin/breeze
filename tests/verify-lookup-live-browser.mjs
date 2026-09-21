@@ -1,0 +1,40 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createServer} from 'node:http';
+import {resolve,extname} from 'node:path';
+import {chromium,webkit} from 'playwright';
+import assert from 'node:assert/strict';
+const root=resolve(import.meta.dirname,'..');
+const out=process.env.AUDIT_OUTPUT||'/tmp';
+const server=createServer((req,res)=>{try{const p=resolve(root,'.'+(new URL(req.url,'http://localhost').pathname==='/'?'/index.html':decodeURIComponent(new URL(req.url,'http://localhost').pathname)));if(!p.startsWith(root+'/'))throw Error();res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const url=`http://127.0.0.1:${server.address().port}/`;
+const browser=await (process.env.BROWSER==='webkit'?webkit:chromium).launch();const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
+const access=JSON.parse(readFileSync(process.env.BREEZE_EVAL_ACCESS||'/tmp/breeze-eval-access.json','utf8'));
+let calls=0;
+try{
+ await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
+ await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
+ await page.exposeFunction('liveLookup',async payload=>{
+  calls++;const r=await fetch(access.url,{method:'POST',headers:{'content-type':'application/json','x-eval-token':access.token},body:JSON.stringify({...payload,variant:'candidate'}),signal:AbortSignal.timeout(12000)});
+  const result=await r.json();if(!r.ok)throw Error(result.error);return result.answer;
+ });
+ await page.goto(url,{waitUntil:'domcontentloaded'});
+ await page.locator('#fileinput').setInputFiles({name:'live-lookup-fixture.txt',mimeType:'text/plain',buffer:Buffer.from('His announcement upset the apple cart. He visited the bank for a loan. He sat on the bank of the river. Water was rising.')});
+ await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));
+ await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
+ await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>10);
+ await page.evaluate(()=>{sb={};dictCall=p=>p.op==='look'?window.liveLookup(p):Promise.resolve({});const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent==='apple');openWord(keyOf('apple'),node);});
+ await page.waitForFunction(()=>!!words['phrase:upset the apple cart'],null,{timeout:12000});
+ const phrase=await page.evaluate(()=>words['phrase:upset the apple cart']);
+ assert.deepEqual(phrase.phraseParts,['upset','the','apple','cart']);assert.match(phrase.ko,/망치|뒤엎|혼란|흐트|어그러/);
+ await page.waitForFunction(()=>[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank').length===2);
+ await page.evaluate(()=>{closePanel();words.bank={word:'bank',clicked:'bank',forms:['bank'],ko:'은행',ai:{ko:'은행',done:true},example:'He visited the bank for a loan.',book:curBook.title,status:1,mark:true,up:1,addedAt:1};const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord('bank',node);});
+ await page.waitForFunction(()=>/둑|강가/.test(document.getElementById('word-peek-meaning').textContent),null,{timeout:12000});
+ const afterFirst=calls;
+ await page.evaluate(()=>{closePanel();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord('bank',node);});
+ assert.equal(calls,afterFirst,'Confirmed occurrence repeated a live lookup');
+ await page.evaluate(()=>retryWordPeek());
+ await page.waitForFunction(()=>/둑|강가/.test(document.getElementById('word-peek-meaning').textContent),null,{timeout:12000});
+ assert.equal(calls,afterFirst+1);
+ console.log('Live browser integration passed: expression membership, new-context sense, cache reuse and wider retry; calls='+calls);
+}finally{await browser.close();server.close();}
