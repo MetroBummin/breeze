@@ -265,8 +265,7 @@ window.addEventListener('load', syncTopbarH);
 syncTopbarH();
 let miniTimer;
 function miniToast(msg){
-  if(document.body.classList.contains('reading') &&
-      (msg==='Text mode' || msg==='Original mode')){ readerPillStatus(msg); return; }
+  if(readerNotices.enqueue(msg,1800)) return;
   const t = document.getElementById('minitoast');
   if(!t) return;
   t.textContent = msg; t.classList.add('on');
@@ -359,6 +358,7 @@ function speakWord(){
 
 let toastTimer;
 function toast(msg){
+  if(readerNotices.enqueue(msg,2600)) return;
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),2600);
 }

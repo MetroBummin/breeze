@@ -39,7 +39,7 @@
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
   <link rel="stylesheet" href="styles/home.css?v=2b9dfee7">
-  <link rel="stylesheet" href="styles/reader.css?v=a4c08d37">
+  <link rel="stylesheet" href="styles/reader.css?v=48e24eca">
   <link rel="stylesheet" href="styles/dictionary.css?v=821112ad">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=62cd7fff">
@@ -95,8 +95,9 @@
   <script defer src="scripts/reader/epub-original.js?v=8ae1637a"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=f0e9ecdd"></script>
-  <script defer src="scripts/reader/reader.js?v=9362211b"></script>
-  <script defer src="scripts/ui/preferences.js?v=c20cce59"></script>
+  <script defer src="scripts/reader/reader.js?v=8f620ee1"></script>
+  <script defer src="scripts/ui/reader-notifications.js?v=19af6d20"></script>
+  <script defer src="scripts/ui/preferences.js?v=6146aaaf"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=e663a882"></script>
@@ -199,6 +200,7 @@
           </svg>
         </button>
         <button id="readpill-title" type="button" onclick="expandReaderChrome()" aria-label="책 제목"></button>
+        <span id="reader-notice" role="status" aria-live="polite" aria-atomic="true" hidden></span>
         <div id="sentence-pill-status" role="status" aria-live="polite" hidden>
           <span class="sentence-spinner" aria-hidden="true"></span>
           <span>문장 해석 중</span>

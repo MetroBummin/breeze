@@ -430,22 +430,12 @@ function expandReaderChrome(){
   chromeRun=0; chromeLastY=readerScrollTop(); chromeHoldUntil=Date.now()+500;
   setReaderChrome(false);
 }
-let readerPillTimer=0, readerPillMessage='';
 function readerPillStatus(message){
-  const title=document.getElementById('readpill-title');
-  if(!title || !curBook || !document.getElementById('v-read').classList.contains('on')) return;
-  const next=String(message||'').trim();
-  if(!next || (next===readerPillMessage && readerPillTimer)) return;
-  readerPillMessage=next;
-  title.textContent=next;
-  clearTimeout(readerPillTimer);
-  readerPillTimer=setTimeout(()=>{
-    readerPillTimer=0; readerPillMessage='';
-    title.textContent=curBook ? curBook.title : '';
-  },1400);
+  if(typeof readerNotices!=='undefined') readerNotices.enqueue(message,1800);
 }
 function showReaderChrome(){
-  clearTimeout(readerPillTimer); readerPillTimer=0; readerPillMessage='';
+  if(typeof readerNotices!=='undefined') readerNotices.reset();
+  ['toast','minitoast'].forEach(id=>document.getElementById(id).classList.remove('on'));
   const title=document.getElementById('readpill-title');
   if(title) title.textContent=curBook ? curBook.title : '';
   chromePins.clear(); chromePinned = false; chromeHoldUntil = 0;
