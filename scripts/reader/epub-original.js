@@ -769,6 +769,9 @@ function openOriginalRange(doc,range,raw,owner,rect){
   });
   const blockText=(block||owner).textContent||'',parts=typeof bridgeSentences==='function'?bridgeSentences(blockText):[];
   const part=parts.find(item=>char>=item.start&&char<item.end)||parts[0];
+  const partIndex=parts.indexOf(part);
+  marker.dataset.contextBefore=partIndex>0?parts[partIndex-1].text:'';
+  marker.dataset.contextAfter=partIndex>=0&&partIndex<parts.length-1?parts[partIndex+1].text:'';
   marker.dataset.example=part?part.text.replace(/\s+/g,' ').trim():originalSentence(blockText,raw);
   if(part&&typeof lookupSentenceTokens==='function')
     marker.dataset.clickedTokenIndex=String(lookupSentenceTokens(blockText.slice(part.start,char)).length);

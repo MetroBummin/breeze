@@ -5,10 +5,11 @@ import { resolve } from 'node:path';
 const root=resolve(import.meta.dirname,'..');
 const client=readFileSync(resolve(root,'scripts/dictionary/dictionary.js'),'utf8');
 const server=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
+const contract=readFileSync(resolve(root,'server/dict/lookup.ts'),'utf8');
 const telemetry=readFileSync(resolve(root,'server/dict/telemetry.ts'),'utf8');
 
 assert.match(server,/OPENROUTER_MODEL="deepseek\/deepseek-v4-flash-0731"/);
-assert.match(server,/required:\["kind","canonical","members","ko"\]/);
+assert.match(contract,/required:\["kind","canonical","members","ko"\]/);
 assert.match(server,/maxTokens:120,schema:LOOK_SCHEMA/);
 assert.doesNotMatch(server,/DETAIL_SCHEMA|detailPrompt|opDetail|op==="detail"/);
 
@@ -18,7 +19,8 @@ assert.doesNotMatch(server,/BREEZE_LEXICON|OEWN|baseSenseId|translationQuality/)
 
 assert.doesNotMatch(client,/op:'judge'|savedMeaningCandidates|resolveSavedWordContext|AI_REQUIRED/);
 assert.doesNotMatch(client,/op:'route'|op:'phrase'|op:'repair'/);
-assert.match(client,/저장된 lexical item은 네트워크 판정 없이 기기에 있는 Meaning을 즉시 보여 줍니다/);
+assert.match(client,/resolveCurrentLookup/);
+assert.match(client,/lookKey\(w.word,input.sentence,input.clickedIndex\)/);
 
 assert.match(client,/function expressionFromMini/);
 assert.match(client,/phraseCardKey\(phrase\.canonical\)/);
