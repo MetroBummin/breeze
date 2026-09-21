@@ -857,11 +857,10 @@ for(const gone of [/\.p-inline-edit/, /#p-word\[contenteditable/, /#p-word-wrap/
   assert.doesNotMatch(dictionaryCss, gone, `The headword editor's styling survived (${gone})`);
 }
 /* ── 뜻 아래 한 줄 ──
-   여기 적히는 것은 "이 문장에서 어떻게 쓰였나" 입니다. 뜻의 일반적인 성질(gloss)은
-   사전이 이미 하는 말이라 이 자리를 차지할 이유가 없습니다. 그리고 다른 문장에서
-   만난 낱말에는 달지 않습니다 — 그 줄이 설명하는 문장이 화면에 없기 때문입니다. */
-assert.match(dictionarySource, /const said = context \? '' : \(ai\.note \|\| ai\.gloss \|\| ''\);/,
-  'The meaning box explains the sense in general again, or talks about a sentence that is not on screen');
+   detail gloss는 특정 문장의 번역이 아니라 저장 Meaning 자체의 짧은 설명입니다.
+   따라서 저장 Meaning을 다른 문장에서 즉시 재사용할 때도 같은 gloss를 함께 쓸 수 있습니다. */
+assert.match(dictionarySource, /const said = ai\.note \|\| ai\.gloss \|\| '';/,
+  'Saved Meaning detail gloss is hidden again when the same Meaning is reused locally');
 assert.doesNotMatch(index, /id="p-ai-gloss"/,
   'The second, general explanation line is back under the meaning');
 const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
