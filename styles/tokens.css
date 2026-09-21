@@ -304,7 +304,6 @@ body.lang-ko{--display:'Fraunces','Gowun Batang',Georgia,'Times New Roman',serif
 body.lang-ko #greet{font-size:14px;}
 body.lang-ko #bigq{font-size:clamp(27px,4vw,37px); line-height:1.1;}
 body.lang-ko .sec-head h2{font-size:21px; line-height:1.2;}
-body.lang-ko #v-vocab h1,
 body.lang-ko #v-casuals h1,
 body.lang-ko #v-longform h1{font-size:22px; line-height:1.2;}
 body.lang-ko #set-card h2{font-size:20px; line-height:1.2;}
@@ -490,3 +489,27 @@ body.dark{
      `--soft`(6.6:1)보다 눈에 덜 띄게 두어 뜻보다 앞서지 않게 합니다. */
   --ex-ink:#8FA6B0;
 }
+
+/* Penpot Home / Settings palette, scoped by home-shell.css. */
+:root{--home-background:#F2F2F7;--settings-group:#FFF;--settings-ink:#1C1C1E;--settings-muted:#6D6D72;--settings-line:#D1D1D6;--settings-close:#E5E5EA;--settings-handle:#C7C7CC;--settings-scrim:rgba(0,0,0,.18);--settings-danger:#FF6B6B;}
+html.dark,body.dark{--home-background:#2C2C2E;--settings-group:#363638;--settings-ink:#F2F2F7;--settings-muted:#AEAEB2;--settings-line:#48484A;--settings-close:#48484A;--settings-handle:#636366;}
+
+:root{--completion-blue:#1689f5;}
+
+/* Light control glass: cool transmission, edge reflection and a tinted progress lens.
+   Scoped by reader.css so lookup materials and dark mode keep their own treatment. */
+:root{
+  --control-light-surface:rgba(247,252,253,.57);
+  --control-light-line:rgba(255,255,255,.90);
+  --control-light-shadow:0 5px 16px rgba(30,64,76,.15),0 1px 3px rgba(30,64,76,.10),inset 0 1px 0 rgba(255,255,255,.94),inset 0 -1px 0 rgba(44,95,110,.14);
+  --control-light-reflection:linear-gradient(180deg,rgba(255,255,255,.58) 0%,rgba(255,255,255,.16) 16%,rgba(255,255,255,0) 42%,rgba(255,255,255,0) 72%,rgba(255,255,255,.18) 100%);
+  --control-light-edge:inset 1px 1px 0 rgba(255,255,255,.88),inset -1px -1px 0 rgba(255,255,255,.40);
+  --control-light-progress:linear-gradient(180deg,rgba(77,174,214,.20) 0%,rgba(77,174,214,.25) 48%,rgba(77,174,214,.29) 100%);
+  --control-light-progress-edge:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(77,174,214,.12);
+}
+
+:root{--wordbook-field:#fff;--wordbook-star:#fff0c7;--wordbook-star-ink:#8d5a00;}
+body.dark{--wordbook-field:#3a3a3c;--wordbook-star:#4a3a20;--wordbook-star-ink:#ffd778;}
+
+:root{--wordbook-toolbar-line:rgba(35,55,72,.06);--wordbook-row-hover:rgba(77,174,214,.08);}
+body.dark{--wordbook-toolbar-line:rgba(255,255,255,.06);--wordbook-row-hover:rgba(121,190,223,.08);}

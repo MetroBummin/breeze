@@ -21,7 +21,8 @@
     "test:v11": "node tests/verify-v11-browser.mjs",
     "test:word": "node tests/verify-word-presentation-browser.mjs",
     "test:sentence": "node tests/verify-sentence-presentation-browser.mjs",
-    "test:meaning-deletion": "node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs"
+    "test:meaning-deletion": "node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs",
+    "test:home-ui": "node tests/verify-home-controls-browser.mjs && node tests/verify-library-refresh-browser.mjs && node tests/verify-reader-progress-browser.mjs && node tests/verify-wordbook-browser.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

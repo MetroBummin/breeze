@@ -94,8 +94,8 @@ function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); appl
 applyDark();
 
 /* ---- 설정 ----------------------------------------------------------------
-   설정은 탭 두 개짜리 시트 하나입니다. "일반"에는 이 앱이 쓰는 말(언어)이,
-   "다른 기기와 연결하기"에는 예전의 동기화 화면이 통째로 들어와 있습니다.
+   설정은 계정과 동기화 옵션을 보여 주는 시트 하나입니다. 계정 상태 렌더링은
+   기존 동기화 화면에서 가져옵니다.
    동기화 쪽 내용을 그리는 것은 여전히 scripts/sync/sync.js 하나뿐입니다. */
 function settingsModal(){ return document.getElementById('settings-modal'); }
 /** @param {string} name */
@@ -112,21 +112,109 @@ function settingsTab(name){
     if(typeof renderSyncModal==='function') renderSyncModal();
   }
 }
+let settingsReturnFocus=null;
 /** @param {string} [tab] */
 function openSettings(tab){
+  settingsReturnFocus=document.activeElement;
+  settingsModal().inert=false;
   settingsModal().classList.add('on');
+  document.body.classList.add('settings-open');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   /* 시트를 닫아 둔 사이에 읽는 화면에서 바꿔 놓았을 수 있습니다. 열 때마다
      지금 값으로 맞춥니다. */
   applyDark();
-  settingsTab(tab || 'general');
+  settingsTab('sync');
+  document.getElementById('set-card').scrollTop=0;
+  document.getElementById('set-close').focus({preventScroll:true});
 }
-function closeSettings(){ settingsModal().classList.remove('on'); }
+function closeSettings(){
+  settingsModal().classList.remove('on');
+  settingsModal().inert=true;
+  document.body.classList.remove('settings-open');
+  if(settingsReturnFocus instanceof HTMLElement && settingsReturnFocus.isConnected) settingsReturnFocus.focus({preventScroll:true});
+}
+document.addEventListener('keydown',event=>{
+  if(!settingsModal().classList.contains('on')) return;
+  if(event.key==='Escape'){ event.preventDefault(); closeSettings(); }
+  if(event.key==='Tab'){
+    const focusable=Array.from(settingsModal().querySelectorAll('button,input,a[href],[tabindex="0"]')).filter(el=>el instanceof HTMLElement && el.offsetParent!==null && !el.hasAttribute('disabled'));
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(event.shiftKey && document.activeElement===first){event.preventDefault();if(last instanceof HTMLElement) last.focus();}
+    else if(!event.shiftKey && document.activeElement===last){event.preventDefault();if(first instanceof HTMLElement) first.focus();}
+  }
+});
 settingsModal().addEventListener('click', event => {
   if(event.target===settingsModal()) closeSettings();
 });
 
-/* 홈 상단의 작은 Login! 말풍선은 로그인 전만 보입니다. 동기화 모듈이 뒤늦게
+/* Move the existing buttons, preserving their IDs, destinations and focus order.
+   Home and shelves use the always-expanded Reader primitives. Wordbook owns its controls. */
+function syncHomeNavigation(){
+  const home=['home','casuals','longform'].includes(activeAppView());
+  const nav=document.getElementById('primary-nav');
+  const top=document.getElementById('topbar');
+  const controls=document.getElementById('home-controls');
+  const settings=document.getElementById('nav-settings');
+  const add=document.getElementById('home-add');
+  const resume=document.getElementById('home-resume');
+  const homeButton=document.getElementById('nav-home');
+  const shelf=home && activeAppView()!=='home';
+  const words=document.getElementById('nav-vocab');
+  if(home){
+    if(homeButton.parentElement!==controls) controls.append(homeButton);
+    if(resume.parentElement!==nav) nav.append(resume);
+    if(nav.parentElement!==controls) controls.append(nav);
+    if(settings.parentElement!==top) top.append(settings);
+    if(add.parentElement!==nav) nav.append(add);
+    if(shelf){ controls.append(words); nav.prepend(homeButton); }
+    else if(words.parentElement!==nav) nav.prepend(words);
+  }else{
+    if(words.parentElement!==nav) nav.prepend(words);
+    if(resume.parentElement!==controls) controls.append(resume);
+    if(homeButton.parentElement!==nav) nav.prepend(homeButton);
+    if(add.parentElement!==controls) controls.append(add);
+    if(settings.parentElement!==nav) nav.append(settings);
+    if(nav.parentElement!==top) top.append(nav);
+  }
+  if(home) renderHomeResume();
+  nav.classList.toggle('control-bar',home);
+  for(const id of ['nav-home','nav-vocab','nav-settings']){
+    const button=document.getElementById(id);
+    button.classList.toggle('navbtn',!home);
+    button.classList.toggle('control-glass',home);
+    button.classList.toggle('control-circle',home);
+  }
+  syncTopbarH();
+}
+
+/* Only the resume capsule expands; it opens the saved book through the existing Reader path. */
+let homeResumeTransition=null;
+let homeResumeOpening=false;
+async function resumeHomeBook(button){
+  const book=homeResumeBook();
+  if(!book || homeResumeOpening) return;
+  homeResumeOpening=true;
+  const origin=button.getBoundingClientRect();
+  try{
+    if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){
+      await openBook(book); return;
+    }
+    // Animate browser snapshots, never scale live Reader geometry during position restoration.
+    const root=document.documentElement;
+    root.style.setProperty('--resume-x',origin.x+'px');
+    root.style.setProperty('--resume-y',origin.y+'px');
+    root.style.setProperty('--resume-sx',String(origin.width/innerWidth));
+    root.style.setProperty('--resume-sy',String(origin.height/innerHeight));
+    root.classList.add('home-resuming');
+    homeResumeTransition=document.startViewTransition(async()=>{
+      await openBook(book);
+    });
+    void homeResumeTransition.ready.catch(()=>{});
+    try{await homeResumeTransition.finished;}finally{root.classList.remove('home-resuming');homeResumeTransition=null;}
+  }finally{homeResumeOpening=false;}
+}
+
+/* 설정 옆의 로그인 상태 점은 로그인 전만 보입니다. 동기화 모듈이 뒤늦게
    준비되는 경우에도 이 함수를 다시 불러 현재 상태로 맞춥니다. */
 function syncLoginNudge(){
   const nudge=document.getElementById('login-nudge');
@@ -135,16 +223,15 @@ function syncLoginNudge(){
   let signedIn=false;
   try{ signedIn=!!sbUser; }catch(error){}
   const label=uiLang==='ko' ? '로그인' : 'Sign in';
-  nudge.querySelector('span').textContent=label;
   nudge.setAttribute('aria-label',label);
-  /* 말풍선·꼬리의 중심을 Settings 글자 중앙에 붙입니다. 한국어/영어 길이와
-     모바일 폭이 달라도 고정 좌표를 쓰지 않아 같은 자리를 정확히 가리킵니다. */
+  /* 설정 버튼 오른쪽 위에 붙입니다. 화면 크기가 바뀌어도 버튼을 따라갑니다. */
   if(settingsButton){
-    const bar=document.getElementById('topbar').getBoundingClientRect();
+    const bar=nudge.parentElement.getBoundingClientRect();
     const button=settingsButton.getBoundingClientRect();
-    nudge.style.setProperty('--login-nudge-x',(button.left-bar.left+button.width/2)+'px');
+    nudge.style.setProperty('--login-nudge-x',(button.right-bar.left-1)+'px');
+    nudge.style.setProperty('--login-nudge-y',(button.top-bar.top+3)+'px');
   }
-  nudge.classList.toggle('on',!signedIn && activeAppView()==='home');
+  nudge.classList.toggle('on',!signedIn && ['home','casuals','longform'].includes(activeAppView()));
 }
 window.addEventListener('load',syncLoginNudge);
 window.addEventListener('resize',syncLoginNudge);

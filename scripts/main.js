@@ -1,3 +1,4 @@
+syncHomeNavigation();
 /* 서가를 먼저 읽고 홈을 그립니다. 스플래시가 먼저 걷히고 빈 홈이 그려졌다가
    책 카드가 뒤늦게 붙는 것이 첫 실행 때의 "새로고침" 같은 깜빡임이었습니다. */
 const homeReady=loadBooks().then(renderHome).catch(error=>{

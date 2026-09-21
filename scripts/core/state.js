@@ -215,6 +215,7 @@ function show(v,options){
   window.scrollTo(0,0);
   const box = readerScroller();
   if(box && v!=='read'){ box.scrollTop = 0; box.scrollLeft = 0; }
+  if(typeof syncHomeNavigation==='function') syncHomeNavigation();
   if(typeof syncLoginNudge==='function') syncLoginNudge();
   if(appHistoryReady && !settings.fromHistory) rememberAppView(v,!!settings.replace);
 }

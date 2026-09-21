@@ -96,7 +96,10 @@ export function device(db,label,{user='user',words={},dead={},books=[],positions
     setInterval(fn,delay){timers.set(++timerId,{fn,delay});return timerId;},clearInterval(id){timers.delete(id);},
     window:{BREEZE_CONFIG:{}},location:{href:'https://breeze.test/',pathname:'/',hash:''},history:{replaceState(){}},
     localStorage:{getItem(){return null;}},
-    document:{hidden:false,addEventListener(){},getElementById(id){
+    document:{hidden:false,addEventListener(){},querySelector(selector){
+      if(selector==='#nav-settings [data-i18n="nav.settings"]') return this.getElementById('nav-settings-label');
+      return null;
+    },getElementById(id){
       if(!elements.has(id))elements.set(id,{classList:{contains:()=>views.has(id)},addEventListener(){},style:{},textContent:'',innerHTML:''});
       return elements.get(id);
     }},

@@ -183,8 +183,3 @@ function appendRssCards(rail, force){
       groups.flat().forEach(card => rail.insertBefore(card, before));
     }).catch(error => { console.error(error); });
 }
-document.getElementById('rss-refresh').onclick = () => {
-  rssPage++;
-  rssLoadedAt = 0;
-  renderHome();
-};

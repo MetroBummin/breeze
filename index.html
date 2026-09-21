@@ -36,13 +36,16 @@
   <link rel="stylesheet" href="styles/fonts.css?v=5945ece6">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=64ecb568">
-  <link rel="stylesheet" href="styles/base.css?v=8fadfe0e">
-  <link rel="stylesheet" href="styles/home.css?v=b266230a">
-  <link rel="stylesheet" href="styles/reader.css?v=79c66430">
+  <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
+  <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
+  <link rel="stylesheet" href="styles/home.css?v=a7d9ce58">
+  <link rel="stylesheet" href="styles/reader.css?v=4b4f8d11">
   <link rel="stylesheet" href="styles/dictionary.css?v=821112ad">
-  <link rel="stylesheet" href="styles/components.css?v=db8ffdd2">
-  <link rel="stylesheet" href="styles/responsive.css?v=ea9e096d">
+  <link rel="stylesheet" href="styles/components.css?v=d347f199">
+  <link rel="stylesheet" href="styles/responsive.css?v=62cd7fff">
+  <link rel="stylesheet" href="styles/wordbook.css?v=f37b9134">
+  <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
+  <link rel="stylesheet" href="styles/home-shell.css?v=c0b1821a">
   <link rel="stylesheet" href="styles/onboarding.css?v=da44f980">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -63,7 +66,7 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=67c432ed"></script>
-  <script defer src="scripts/core/state.js?v=71be0235"></script>
+  <script defer src="scripts/core/state.js?v=688b5940"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
@@ -75,30 +78,32 @@
   <script defer src="scripts/reader/gesture.js?v=6e8f85ba"></script>
   <script defer src="scripts/reader/pdf-pinch.js?v=b4b7fb0f"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=f63be3ea"></script>
+  <script defer src="scripts/library/library.js?v=cd886701"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
   <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=8633ee61"></script>
-  <script defer src="scripts/importers/rss.js?v=f33bf95e"></script>
+  <script defer src="scripts/importers/rss.js?v=4117786a"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=59c06c86"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=793c2e42"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=23b71fff"></script>
+  <script defer src="scripts/ui/wordbook.js?v=6f9d5a26"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=e942f3ea"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
-  <script defer src="scripts/reader/original-session.js?v=47482381"></script>
+  <script defer src="scripts/reader/original-session.js?v=bf91888c"></script>
   <script defer src="scripts/reader/pdf-original.js?v=665434b1"></script>
   <script defer src="scripts/reader/epub-original.js?v=8ae1637a"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=f0e9ecdd"></script>
-  <script defer src="scripts/reader/reader.js?v=146dfb76"></script>
-  <script defer src="scripts/ui/preferences.js?v=aaa3475d"></script>
+  <script defer src="scripts/reader/reader.js?v=9362211b"></script>
+  <script defer src="scripts/ui/preferences.js?v=c20cce59"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
-  <script defer src="scripts/sync/sync.js?v=404fc5ae"></script>
+  <script defer src="scripts/sync/sync.js?v=e663a882"></script>
   <script defer src="scripts/ui/interactions.js?v=578ca721"></script>
   <script defer src="scripts/ui/onboarding.js?v=c957c641"></script>
-  <script defer src="scripts/main.js?v=9ebf8c4e"></script>
+  <script defer src="scripts/ui/library-refresh.js?v=41c739bb"></script>
+  <script defer src="scripts/main.js?v=b395b9e7"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
@@ -109,49 +114,38 @@
 <!-- ================= TOP BAR ================= -->
 <div id="topbar">
   <div id="logo" onclick="show('home')">
-    <span class="mark">Breeze</span>
+    <img class="home-brand-icon" src="assets/favicon/icon-192.png" alt="" width="38" height="38"><span class="mark">Breeze</span>
   </div>
-  <!-- 상단바에는 갈 곳만 둡니다. "+" 는 각 섹션 머리(가벼운 글·긴 글)에 이미
-       있고, 거기서는 무엇이 추가될지가 자리로 드러납니다. 같은 일을 하는 단추가
-       화면에 둘 있으면 둘 다 덜 믿게 됩니다. -->
-  <nav>
-    <button class="navbtn on" id="nav-home" onclick="show('home')" data-i18n="nav.home">Home</button>
-    <button class="navbtn" id="nav-vocab" onclick="show('vocab')" data-i18n="nav.words">Words</button>
-    <button class="navbtn" id="nav-settings" onclick="openSettings()" data-i18n="nav.settings">Settings</button>
+  <nav id="primary-nav" aria-label="Main navigation">
+    <button class="navbtn on" id="nav-home" type="button" onclick="show('home')">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg>
+      <span data-i18n="nav.home">Home</span>
+    </button>
+    <button class="navbtn" id="nav-vocab" type="button" onclick="show('vocab')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H6a4 4 0 0 1-.2-8 6 6 0 0 1 11.6-1.5A4.8 4.8 0 0 1 19 19Z"/><path d="m12.6 9.5-3 4.4h3l-1.2 3.4"/></svg><span data-i18n="nav.words">Words</span></button>
+    <button class="navbtn" id="nav-settings" type="button" onclick="openSettings()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-2 .9-2.1-.6-2.5 4.2 1.6 1.7v2.3L2.3 15.5l2.5 4.2 2.1-.6 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.6 2.5-4.2-1.6-1.7v-2.3l1.6-1.7-2.5-4.2-2.1.6-2-.9-.6-2.3z" transform="translate(0 -1) scale(1 .96)"/><circle cx="12" cy="12" r="3"/></svg>
+      <span data-i18n="nav.settings">Settings</span>
+    </button>
   </nav>
-  <button id="login-nudge" type="button" onclick="openSettings('sync')" aria-label="로그인"><span>Sign in</span></button>
+  <span id="login-nudge" role="img" aria-label="로그인 필요"></span>
 </div>
 
+  <div id="home-controls"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">읽던 책 없음</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
+<div id="library-refresh" class="control-glass" role="status" aria-live="polite" hidden><span aria-hidden="true">↓</span><span class="refresh-label">당겨서 새로고침</span></div>
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
-  <div id="greet">GOOD MORNING</div>
-  <div id="bigq" data-i18n="home.q">Where shall we read?</div>
+
 
   <section id="casuals">
     <div class="sec-head">
-      <h2 data-i18n="sec.casuals">Casuals</h2>
-      <span class="sec-sub">기사 · 스레드 · 짧은 글</span>
-      <div class="sec-acts">
-        <button id="rss-refresh" title="새 글 새로고침" aria-label="새 글 새로고침">↻</button>
-        <button title="캐주얼 리딩 모아보기" aria-label="캐주얼 리딩 모아보기" onclick="show('casuals')">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h3.5v15H5zM10.5 4.5H14v15h-3.5z"/><path d="m16.4 5.6 3.3.9-3.5 13-3.3-.9z"/></svg>
-        </button>
-        <button id="casual-add" title="캐주얼 리딩 추가" aria-label="캐주얼 리딩 추가" onclick="openAddModal('casual')">+</button>
-      </div>
+      <h2><button class="section-link" type="button" aria-label="캐주얼 리딩 모아보기" onclick="show('casuals')"><span data-i18n="sec.casuals">Casuals</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></h2>
     </div>
     <div id="casual-rail"></div>
   </section>
 
   <section id="longform">
     <div class="sec-head">
-      <h2 data-i18n="sec.books">Books</h2>
-      <span class="sec-sub">원서 · PDF · EPUB</span>
-      <div class="sec-acts">
-        <button title="책 모아보기" aria-label="책 모아보기" onclick="show('longform')">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h3.5v15H5zM10.5 4.5H14v15h-3.5z"/><path d="m16.4 5.6 3.3.9-3.5 13-3.3-.9z"/></svg>
-        </button>
-        <button id="longform-add" title="PDF · EPUB 파일 추가" aria-label="PDF · EPUB 파일 추가" onclick="pickBookFile()">+</button>
-      </div>
+      <h2><button class="section-link" type="button" aria-label="책 모아보기" onclick="show('longform')"><span data-i18n="sec.books">Books</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></h2>
     </div>
     <div id="shelf"></div>
   </section>
@@ -162,7 +156,6 @@
 <div class="view" id="v-casuals">
   <div class="head">
     <h1 data-i18n="sec.casuals">Casuals</h1><span class="cnt" id="casual-cnt"></span>
-    <button class="sm-mini" onclick="openAddModal('casual')">+ 추가</button>
   </div>
   <div id="casual-grid"></div>
   <div id="casual-empty" hidden></div>
@@ -172,7 +165,6 @@
 <div class="view" id="v-longform">
   <div class="head">
     <h1 data-i18n="sec.books">Books</h1><span class="cnt" id="longform-cnt"></span>
-    <button class="sm-mini" onclick="pickBookFile()">+ 파일 추가</button>
   </div>
   <div id="longform-grid"></div>
   <div id="longform-empty" hidden></div>
@@ -191,12 +183,12 @@
          `#readmain` 이 그만큼 좁아지므로, 조각들도 글이 있는 쪽에 그대로
          머뭅니다 — 화면에 못 박았다면 낱말 칸 위에 겹쳐 앉았을 자리입니다. -->
     <div id="readchrome">
-      <button id="readback" type="button" title="서재로" aria-label="서재로" onclick="show('home')">
+      <button class="control-glass" id="readback" type="button" title="서재로" aria-label="서재로" onclick="show('home')">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"
              stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
       </button>
-      <div id="readpill">
-        <div id="readpill-progress" aria-hidden="true"></div>
+      <div id="readpill" class="control-glass">
+        <div id="readpill-progress" aria-hidden="true"></div><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span>
         <button id="modefab" title="원본으로 보기" aria-label="원본으로 보기" onclick="toggleReaderMode()" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
@@ -212,7 +204,7 @@
           <span>문장 해석 중</span>
         </div>
       </div>
-      <button id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
+      <button class="control-glass" id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
     </div>
     <!-- 읽는 동안 스크롤하는 것은 문서가 아니라 이 칸 하나입니다.
          까닭은 scripts/reader/reader-scroll.js 맨 위에 적어 두었습니다. -->
@@ -364,67 +356,43 @@
 
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
-  <div class="head">
-    <h1 data-i18n="nav.words">Words</h1><span class="cnt" id="vcnt"></span>
-    <input id="vsearch" placeholder="단어 · 뜻 · 책 검색…">
-    <button id="btn-export" class="p-tool" title="저장한 단어를 CSV로 내보내기">⬇ CSV 내보내기</button>
+  <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Thunderhead</h1></header>
+  <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
+  <div class="wordbook-filters">
+    <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><span aria-hidden="true">⌄</span></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details></div>
+    <div class="wordbook-filter-row"><span>별점</span><div id="vstars" role="group" aria-label="별점 필터"><button type="button" data-status="1" aria-label="별 1개 필터" aria-pressed="false">★</button><button type="button" data-status="2" aria-label="별 2개 필터" aria-pressed="false">★★</button><button type="button" data-status="3" aria-label="별 3개 필터" aria-pressed="false">★★★</button></div><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><span aria-hidden="true">⌄</span></summary><div id="vbook-options"></div></details></div>
   </div>
+  <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
   <div id="vtablewrap"></div>
+  <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
+  <div id="wordbook-controls"><nav class="control-bar" aria-label="단어장 메뉴">
+    <button id="btn-export" class="control-glass control-circle" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button>
+    <button class="control-glass control-pill" type="button" onclick="show('home')">Home</button>
+    <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
+  </nav></div>
 </div>
+<dialog id="wordbook-add-dialog" aria-labelledby="wordbook-add-title"><form id="wordbook-add-form">
+  <h2 id="wordbook-add-title">단어 추가</h2>
+  <label>단어<input id="wordbook-new-word" required maxlength="120" autocomplete="off"></label>
+  <label>뜻<input id="wordbook-new-meaning" required maxlength="500" autocomplete="off"></label>
+  <div><button type="button" onclick="document.getElementById('wordbook-add-dialog').close()">취소</button><button type="submit">저장</button></div>
+</form></dialog>
 
 <!-- ================= SETTINGS =================
      동기화는 이제 설정 안의 한 탭입니다. 상단바에서 곧장 열리던 시절에는
      "동기화"가 앱의 세 기둥 중 하나처럼 보였지만, 한 번 맞춰 두면 다시 열 일이
      거의 없는 자리입니다. `#sm-*` 이름은 동기화 탭 안에서 그대로 삽니다 —
      scripts/sync/sync.js 가 그 이름으로 그립니다. -->
-<div id="settings-modal">
-  <div id="set-card">
-    <button id="set-close" onclick="closeSettings()">✕</button>
-    <h2 data-i18n="settings.title">Settings</h2>
-    <div class="set-tabs" role="tablist">
-      <button type="button" class="set-tab on" data-tab="general" role="tab"
-              onclick="settingsTab('general')" data-i18n="settings.tab.general">General</button>
-      <!-- 이 탭 이름은 로그인 여부를 따릅니다 — scripts/ui/i18n.js 의
-           settingsSyncTabLabel(). 로그인 전에 "다른 기기와 연결하기"라고 적어
-           두면, 눌러 놓고 기기를 찾다가 로그인 화면을 만납니다. -->
-      <button type="button" class="set-tab" id="set-tab-sync" data-tab="sync" role="tab"
-              onclick="settingsTab('sync')">Sign in</button>
-    </div>
-
-    <div class="set-panel on" data-panel="general">
-      <div class="set-row">
-        <div class="set-label">
-          <b data-i18n="settings.language">Language</b>
-          <span data-i18n="settings.language.note">Changes the app's own wording only.</span>
-        </div>
-        <div class="set-seg" id="set-lang" role="group" aria-label="Language">
-          <button type="button" data-lang="en" onclick="setLang('en')">English</button>
-          <button type="button" data-lang="ko" onclick="setLang('ko')">한국어</button>
-        </div>
-      </div>
-
-      <!-- 보기 설정은 읽는 화면의 Aa 에도 그대로 있습니다. 거기서는 글을 보면서
-           고르고, 여기서는 읽기 전에 정해 둡니다 — 둘은 같은 값 하나를 봅니다. -->
-      <div class="set-row">
-        <div class="set-label">
-          <b data-i18n="settings.dark">Dark mode</b>
-        </div>
-        <button id="set-dark" class="aa-toggle" type="button" aria-label="Dark mode" onclick="toggleDark()"><i></i></button>
-      </div>
-      <div class="set-row native-onboarding-setting" hidden>
-        <div class="set-label"><b>온보딩</b><span>처음 읽는 방법을 다시 체험해요.</span></div>
-        <button type="button" class="sm-mini" onclick="startOnboarding(true)">온보딩 다시 보기</button>
-      </div>
-
-      <!-- 글자 크기는 여기 두지 않습니다. 읽는 글이 안 보이는 자리에서 A+ 를
-           눌러 봐야 무엇이 커졌는지 알 수 없습니다 — 그 설정은 글 위에 떠 있는
-           Aa 안에서만 뜻이 있습니다. -->
-    </div>
-
+<div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" inert>
+  <div id="set-card" tabindex="-1">
+    <div class="settings-handle" aria-hidden="true"></div>
+    <button id="set-close" type="button" aria-label="설정 닫기" onclick="closeSettings()">×</button>
+    <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
     <div class="set-panel" data-panel="sync">
       <div id="sm-body"></div>
       <div id="sm-status"></div>
     </div>
+
   </div>
 </div>
 <div id="onboarding" role="dialog" aria-modal="true" aria-label="Breeze 시작하기" hidden>

@@ -1367,11 +1367,12 @@ function renderVocab(){
     if(!grouped.has(groupKey)) grouped.set(groupKey,[]);
     grouped.get(groupKey).push([k,w]);
   });
-  const groups=[...grouped.entries()].filter(([,entries])=>entries.some(([,w])=>!q || w.word.toLowerCase().includes(q)
-    || (w.ko||'').includes(q) || (w.book||'').toLowerCase().includes(q)));
-  document.getElementById('vcnt').textContent = `${list.length}개 저장됨`;
+  const groups=filterWordbookGroups([...grouped.entries()],q);
+  renderWordbookBookOptions(list);
+  document.getElementById('vcnt').textContent = groups.length===grouped.size ? `전체 ${grouped.size}단어` : `전체 ${grouped.size}단어 · ${groups.length}개 표시`;
+  syncWordbookFilterLabels();
   const wrap = document.getElementById('vtablewrap');
-  if(!groups.length){ wrap.innerHTML = '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 눌러 보세요!</div>'; return; }
+  if(!groups.length){ wrap.innerHTML = list.length ? '<div id="vempty">검색·필터에 맞는 단어가 없어요.</div>' : '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 누르거나 +로 추가해 보세요.</div>'; return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
   wrap.innerHTML = groups.map(([groupKey,entries])=>{
     /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 단어 한 칸 아래로 묶습니다.

@@ -685,19 +685,18 @@ assert.match(librarySource, /nowReadingIn\(casuals\)/,
 assert.match(librarySource, /nowReadingIn\(longform\)/,
   'The long-form shelf shares its last-read marker with Casuals again');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
-assert.match(index, /aria-label="캐주얼 리딩 모아보기"[\s\S]{0,500}id="casual-add"/,
-  'The Casuals header lost its library and add buttons');
-assert.match(index, /aria-label="책 모아보기"[\s\S]{0,500}id="longform-add"/,
-  'The long-form header lost its library and add buttons');
+assert.match(index, /class="section-link"[^>]*aria-label="캐주얼 리딩 모아보기"[^>]*onclick="show\('casuals'\)"/,
+  'The Casuals heading lost its shelf chevron');
+assert.match(index, /class="section-link"[^>]*aria-label="책 모아보기"[^>]*onclick="show\('longform'\)"/,
+  'The Books heading lost its shelf chevron');
 assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
 assert.match(librarySource, /function renderLongformLibrary/,
   'Nothing fills the long-form library view');
 /* Casuals 의 + 는 파일 버튼을 감춥니다 — 짧은 글에 EPUB 을 넣을 수는 없습니다. */
 assert.match(librarySource, /\.am-file'\)\.hidden = mode === 'casual'/,
   'The Casuals + sheet offers a file picker again');
-/* Long-form 의 + 는 시트를 거치지 않고 곧장 파일 고르기입니다 — 고를 것이 하나뿐입니다. */
-assert.match(index, /id="longform-add"[^>]*onclick="pickBookFile\(\)"/,
-  'The long-form + no longer opens the file picker directly');
+assert.doesNotMatch(index, /id="(?:casual-add|longform-add|rss-refresh)"/,
+  'Shelves duplicate the shared Add or pull-to-refresh controls');
 const homeCss = readFileSync(resolve(root, 'styles/home.css'), 'utf8');
 assert.match(homeCss, /#casual-rail\{[^}]*overflow-x:auto/,
   'The Casuals rail no longer scrolls sideways');
@@ -942,18 +941,18 @@ assert.ok(index.indexOf('id="p-alts"') > index.indexOf('id="p-saved-senses"'),
   'Suggested meanings are no longer a separate row below the saved ones');
 /* One persistent centered title pill owns the PDF switch; side controls are
    independent and become inert when collapsed. */
-assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button id="readback"[\s\S]{0,900}<div id="readpill">/,
+assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button class="control-glass" id="readback"[\s\S]{0,900}<div id="readpill" class="control-glass">/,
   'Reader is missing its centered persistent title pill');
 assert.ok(index.indexOf('id="readchrome"') > index.indexOf('id="readmain"')
        && index.indexOf('id="readchrome"') < index.indexOf('id="reader-scroll"'),
   'The floating reader controls left #readmain, so the word panel no longer pushes them aside');
-assert.match(index, /<div id="readpill">\s*<div id="readpill-progress"[\s\S]*?<button id="modefab"[\s\S]*?id="readpill-title"[\s\S]*?<button id="aafab"/,
+assert.match(index, /<div id="readpill" class="control-glass">\s*<div id="readpill-progress"[\s\S]*?<button id="modefab"[\s\S]*?id="readpill-title"[\s\S]*?<button class="control-glass" id="aafab"/,
   'The PDF destination and title are not in the same pill');
 assert.doesNotMatch(index, /id="ptrack"|id="pfill"/,
   'The title pill should replace the separate progress bar');
-assert.match(readerCss, /#readpill-progress\{[^}]*transform:scaleX\(0\); transform-origin:left center/,
+assert.match(readerCss, /#readpill-progress,#home-resume-progress\{[^}]*transform:scaleX\(0\); transform-origin:left center/,
   'The progress fill no longer uses a composited transform inside the title pill');
-assert.match(readerCss, /#readchrome\{[^}]*bottom:calc\(env\(safe-area-inset-bottom\)/,
+assert.match(readerCss, /#readchrome, \.control-bar\{[^}]*bottom:calc\(env\(safe-area-inset-bottom\)/,
   'Reader controls do not clear the bottom safe area');
 assert.match(dictionaryCss, /#p-speak\{[^}]*touch-action:manipulation/,
   'Rapid pronunciation taps can leak into browser double-tap zoom');
@@ -1051,11 +1050,11 @@ assert.doesNotMatch(readerCssRules, /#readchrome[^}]*transition/,
   'The reader chrome container itself should not animate or shift the text');
 /* 조각 사이의 빈 자리는 본문의 것입니다. 여기가 손짓을 먹으면 그 폭만큼 글을
    못 누릅니다. */
-assert.match(readerCss, /#readchrome\{[\s\S]{0,320}pointer-events:none;\}/,
+assert.match(readerCss, /#readchrome, \.control-bar\{[\s\S]{0,320}pointer-events:none;\}/,
   'The gap between the floating controls swallows touches meant for the page');
-assert.match(readerCss, /#readchrome > \*\{pointer-events:auto;\}/,
+assert.match(readerCss, /#readchrome > \*, \.control-bar > \*\{pointer-events:auto;\}/,
   'The floating controls themselves stopped taking touches');
-assert.match(readerCssRules, /#readback,#aafab\{[^}]*height:42px/,
+assert.match(readerCssRules, /#readback,#aafab, \.control-circle\{[^}]*height:42px/,
   'The side controls no longer share a common height');
 assert.doesNotMatch(readerScroll, /classList\.add\('scrolling'\)/,
   'The old any-scroll fade is back alongside the direction signal');
@@ -1547,10 +1546,10 @@ assert.match(dictionarySource,
   /async function retryWordPeek\(\)[\s\S]{0,1200}fetchLook\(k,\{sentence,clicked,clickedIndex,book,node:activeSelectedWordNode,[\s\S]{0,80}retry:true,hold:true,life\}\)/,
   'Word retry no longer sends the current sentence through the existing lookup request flow');
 assert.match(readerCss,
-  /#readback, #aafab, #readpill\{[\s\S]{0,260}var\(--sentence-glass-line\)[\s\S]{0,260}var\(--sentence-glass-shadow-pill\)/,
+  /\.control-glass\{[\s\S]{0,260}var\(--sentence-glass-line\)[\s\S]{0,260}var\(--sentence-glass-shadow-pill\)/,
   'Bottom Reader controls no longer use the Lookup glass material tokens');
 assert.match(readerCss,
-  /#readback, #aafab, #readpill\{background:var\(--sentence-glass-pill\);\s*\n\s*backdrop-filter:blur\(19px\) saturate\(122%\)/,
+  /\.control-glass\{background:var\(--sentence-glass-pill\);\s*\n\s*backdrop-filter:blur\(19px\) saturate\(122%\)/,
   'Bottom Reader controls no longer match the word pill blur and opacity treatment');
 assert.match(index, /id="word-modal-scrim"/,
   'The centered word popup has no outside-dismiss scrim');

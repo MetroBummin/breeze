@@ -42,7 +42,7 @@ function syncStatus(message){ const el=document.getElementById('sm-status'); if(
 /* 상단바에는 이제 "설정"이 섭니다. 로그인해 두었다는 사실은 그 이름 옆의 ✓
    하나로만 알립니다 — 이름표를 쓰는 곳은 여기 한 곳뿐입니다(i18n 이 덮지 않게). */
 function syncBadge(){
-  const el=document.getElementById('nav-settings');
+  const el=document.querySelector('#nav-settings [data-i18n="nav.settings"]');
   if(el) el.textContent=tr('nav.settings')+(sbUser?' ✓':'');
   if(typeof syncLoginNudge==='function') syncLoginNudge();
   /* 두 번째 탭 이름도 로그인 여부를 따릅니다 — scripts/ui/i18n.js */
@@ -223,11 +223,16 @@ function renderSyncModal(){
     const deleteArea=accountDeleteOpen
       ? `<div class="sm-delete-confirm"><b>계정과 서버의 암호화 보관함을 지울까요?</b><span>이 기기의 책과 단어장은 그대로 남습니다. 계속하려면 DELETE를 입력하세요.</span><input id="sm-delete-input" autocomplete="off" spellcheck="false" placeholder="DELETE"><div><button class="sm-reset" onclick="cancelAccountDelete()">취소</button><button class="sm-mini danger" onclick="confirmAccountDelete()">계정 지우기</button></div>${accountDeleteError?`<small class="sm-vault-error">${esc(accountDeleteError)}</small>`:''}</div>`
       : `<button class="sm-linkish" onclick="openAccountDelete()">계정 지우기</button>`;
-    body.innerHTML=`<div class="sm-account"><b>${esc(sbUser.email||'')}</b><span>마지막 동기화 · ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</span></div>
-      ${recoveryPanel()}
-      <button class="sm-btn primary" onclick="syncRemoteChanges(true)">지금 동기화</button>
-      <button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>
-      ${deleteArea}`;
+    body.innerHTML=`<h3 class="settings-section-title">계정</h3>
+      <div class="settings-account-group">
+        <div class="sm-account"><small>로그인된 계정</small><b>${esc(sbUser.email||'')}</b></div>
+        <div class="settings-sync-row"><b>동기화</b><span>마지막 동기화 · ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</span>
+          <button class="sm-mini" onclick="syncRemoteChanges(true)">지금 동기화</button></div>
+      </div>
+      <h3 class="settings-section-title">계정 관리</h3>
+      <div class="settings-actions-group"><button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>${deleteArea}</div>
+      <p class="settings-sync-note">기존 동기화 설정에 따라 독서 기록과 단어장이 동기화됩니다.</p>
+      ${recoveryPanel()}`;
   }else if(passwordLoginOpen){
     body.innerHTML=`<div class="desc">이미 비밀번호가 설정된 계정으로 로그인합니다.
       새 비밀번호를 만들거나 바꾸는 곳은 아니에요.</div>

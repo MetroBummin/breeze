@@ -1,13 +1,13 @@
 /* Home: Casuals rail, long-form shelf, and the one "+" sheet */
 
   #v-home, #v-casuals, #v-longform{max-width:960px; margin:0 auto; padding:28px 26px 90px;}
-  #greet{font-size:12.5px; color:var(--soft); letter-spacing:2.1px; margin:14px 2px 10px; font-weight:600;}
-  /* 한국어 인사말은 대문자로 눌러 쓸 수 없고, 넓은 자간은 한글을 흩어 놓기만
-     합니다. 자간을 풀고 아래 큰 물음과 같은 글꼴로 한 단계 키웁니다. */
-  body.lang-ko #greet{font-family:var(--display); font-size:15.5px; letter-spacing:.2px; font-weight:500;}
-  /* 이 문장은 기능 안내가 아니라 독서를 시작하는 표지입니다. 제목에만 인쇄물 같은
-     Display serif를 써서, 버튼과 본문은 여전히 빠르고 편하게 읽히게 둡니다. */
-  #bigq{font-family:var(--display); font-size:clamp(29px,4.4vw,40px); font-weight:600; letter-spacing:-1.5px; line-height:1.12; margin-bottom:34px;}
+  /* Home only changes placement; Reader owns the shared control surfaces/geometry. */
+  #home-controls{position:fixed; inset:auto 0 0; height:calc(env(safe-area-inset-bottom) + 59px); z-index:70; pointer-events:none;}
+  #primary-nav svg{display:none;}
+  #home-controls #primary-nav svg{display:block; width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
+  #home-controls .control-circle span{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap;}
+  #home-controls .control-pill{cursor:pointer; font:600 13px var(--ui);}
+  #v-home{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
 
   /* ---- section headers ---- */
   .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:4px;}
