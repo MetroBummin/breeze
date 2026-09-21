@@ -4,7 +4,7 @@ document.documentElement.style.setProperty('--fs', fs+'px');
 function fontSize(d){
   keepPlace(()=>{
     fs = Math.min(26, Math.max(14, fs+d));
-    save(LS_FS, fs);
+    if(!curBook || !curBook.transient) save(LS_FS, fs);
     document.documentElement.style.setProperty('--fs', fs+'px');
   });
   showFontSize();
@@ -40,7 +40,7 @@ function setReadMargin(next){
   if(!READ_MARGINS[next]) return;
   keepPlace(()=>{                       // 글 폭이 바뀌어도 보던 문장 유지
     readMargin = next;
-    save('breeze.margin', next);
+    if(!curBook || !curBook.transient) save('breeze.margin', next);
     applyReadMargin();
   });
 }
@@ -70,6 +70,7 @@ function toggleAa(e){
     p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
   }
   p.classList.toggle('on');
+  if(p.classList.contains('on') && typeof onboardingAppearanceOpened==='function') onboardingAppearanceOpened();
   document.getElementById('aa-fs').textContent = fs;
 }
 /* 치우는 일은 여기 하나뿐입니다 — 무엇이 닫기로 판정했는지는 여기서 묻지 않습니다. */
@@ -90,7 +91,7 @@ function applyDark(){
     toggle.setAttribute('aria-pressed', darkMode ? 'true' : 'false');
   });
 }
-function toggleDark(){ darkMode = !darkMode; save('breeze.dark', darkMode); applyDark(); }
+function toggleDark(){ darkMode = !darkMode; if(!curBook || !curBook.transient) save('breeze.dark', darkMode); applyDark(); }
 applyDark();
 
 /* ---- 설정 ----------------------------------------------------------------
@@ -352,7 +353,7 @@ function speak(text){
   speechSynthesis.speak(u);
 }
 function speakWord(){
-  const w = words[selKey]; if(!w) return;
+  const w = displayedWord(selKey); if(!w) return;
   speak(w.word);
 }
 

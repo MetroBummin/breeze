@@ -18,62 +18,10 @@ const url=`http://127.0.0.1:${server.address().port}/`;
 const browser=await chromium.launch();
 try{
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
-  await context.addInitScript(()=>{ window.Capacitor={isNativePlatform:()=>true}; });
+  await context.addInitScript(()=>{ window.Capacitor={isNativePlatform:()=>true}; localStorage.setItem('breeze.onboarding.v1','"done"'); });
   const page=await context.newPage();
-  const external=[];
-  await page.route('**/*',route=>{
-    if(route.request().url().startsWith(url)||route.request().url().startsWith('blob:')) return route.continue();
-    external.push(route.request().url()); return route.abort();
-  });
+  await page.route('**/*',route=>route.request().url().startsWith(url)||route.request().url().startsWith('blob:') ? route.continue() : route.abort());
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:120000});
-  await page.locator('#onboarding').waitFor({state:'visible',timeout:20000});
-  const chromeParity=await page.evaluate(()=>{
-    const read=getComputedStyle(document.getElementById('readpill'));
-    const onboard=getComputedStyle(document.getElementById('onboard-pill'));
-    return {read:{height:read.height,radius:read.borderRadius},onboard:{height:onboard.height,radius:onboard.borderRadius}};
-  });
-  assert.deepEqual(chromeParity.onboard,chromeParity.read,'onboarding title/progress pill drifted from Reader chrome');
-  await page.locator('#onboard-aa').click();
-  await page.locator('#onboard-aa-pop').waitFor({state:'visible'});
-  await page.locator('#onboard-font-up').click();
-  assert.equal(await page.locator('#onboard-font-size').textContent(),'20');
-  await page.locator('#onboard-dark').click();
-  assert.equal(await page.locator('#onboarding').evaluate(node=>node.classList.contains('onboard-dark')),true);
-  assert.equal(await page.evaluate(()=>document.body.classList.contains('dark')),false,'onboarding changed Reader/app dark-mode state');
-  await page.locator('#onboard-mode').click();
-  assert.equal(await page.locator('#onboarding').evaluate(node=>node.classList.contains('onboard-original')),true);
-  await page.locator('#onboard-mode').click();
-  await page.locator('#onboard-aa').click();
-  assert.equal(await page.locator('#onboard-prompt').textContent(),'파란 단어를 눌러 보세요.');
-  await page.locator('#onboard-word').click();
-  await page.locator('#onboard-word-peek').waitFor({state:'visible'});
-  await page.waitForFunction(()=>document.getElementById('onboard-word-meaning').textContent==='산들바람');
-  await page.locator('#onboard-next').click();
-  await page.locator('#onboard-sentence').dispatchEvent('pointerdown',{clientX:150,clientY:300});
-  await page.waitForTimeout(800);
-  assert.equal(await page.locator('#onboarding').evaluate(node=>node.classList.contains('onboard-waiting')),true,
-    'long press did not use the Reader-style sentence loading pill');
-  await page.locator('#onboard-sentence').dispatchEvent('pointerup',{clientX:150,clientY:300});
-  await page.locator('#onboard-sentence-modal').waitFor({state:'visible'});
-  assert.match(await page.locator('#onboard-result').innerText(),/읽기는 이렇게 편안할 수 있어요/);
-  const sentenceParity=await page.evaluate(()=>{document.body.classList.add('sentence-compact');const reader=getComputedStyle(document.getElementById('p-sentence')).borderRadius;document.body.classList.remove('sentence-compact');return {reader,onboard:getComputedStyle(document.getElementById('onboard-sentence-result')).borderRadius};});
-  assert.equal(sentenceParity.onboard,sentenceParity.reader,'onboarding sentence surface drifted from Reader');
-  await page.locator('#onboard-sentence-scrim').click({position:{x:1,y:1}});
-  assert.equal(await page.locator('#onboard-sentence-modal').isVisible(),false,'sentence scrim did not use the one dismissal path');
-  await page.locator('#onboard-next').click();
-  await page.locator('#onboard-next').click();
-  assert.equal(await page.locator('#onboarding').isVisible(),false);
-  assert.deepEqual(await page.evaluate(()=>({words,dead,marker:load('breeze.onboarding.v1',''),session:onboardingSession})),
-    {words:{},dead:{},marker:'done',session:null});
-  assert.equal(external.filter(href=>/functions\/v1\/dict|translate\.googleapis/.test(href)).length,0,
-    'tutorial requested a lookup: '+external.join(', '));
-  await page.reload({waitUntil:'domcontentloaded',timeout:120000});
-  await page.waitForTimeout(1300);
-  assert.equal(await page.locator('#onboarding').isVisible(),false,'completed tutorial reopened');
-  await page.evaluate(()=>startOnboarding(true));
-  await page.locator('#onboard-skip').click();
-  assert.equal(await page.locator('#onboarding').isVisible(),false,'Skip did not close');
-
   const text=Buffer.from(('The gentle breeze moves through the trees. Reading can feel this easy.\n\n').repeat(70));
   await page.locator('#fileinput').setInputFiles({name:'Toolbar.txt',mimeType:'text/plain',buffer:text});
   await page.waitForFunction(()=>books.some(b=>b.kind==='txt'),null,{timeout:20000});
@@ -141,6 +89,6 @@ try{
   await page.waitForTimeout(350);
   assert.ok(Math.abs(await page.evaluate(()=>readerPillVisualProgress)-.2)<.02,
     'The visual fill did not settle near the newest target');
-  console.log('Native onboarding fixture, isolation, replay, and Reader pill verified');
+  console.log('Reader pill geometry, collapse and progress verified');
   await context.close();
 }finally{await browser.close();await new Promise(done=>server.close(done));}

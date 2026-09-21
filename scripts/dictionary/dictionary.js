@@ -384,9 +384,12 @@ function deleteMeaning(id){
 
 /* 단어를 누르는 규칙은 한 곳에만 둡니다. 처음 누르면 단어장에 넣고, 이미
    저장된 단어를 다시 만났을 때만 별을 하나 올립니다. */
+let previewWordCard=null;
+function displayedWord(k){ return previewWordCard && previewWordCard.key===k ? previewWordCard : words[k]; }
 const wordTapPoints=new WeakMap();
 function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
+  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
   if(wordPeekSameTarget(k,node)) return;
   if(!words[k]){ addWord(k, node); return; }
   const root=words[k].root||k;
@@ -467,7 +470,8 @@ function wordPeekSameTarget(k,node){
     (rect.top+rect.bottom-wordPeekAnchor.top-wordPeekAnchor.bottom)/2)<6;
 }
 function wordPeekState(w,context){
-  if(context&&context.error)return {text:context.error==='deleted'?'지운 뜻이에요':meaningWaitLine(context.error),loading:false};
+  if(context&&context.error)return {text:context.error==='deleted'?'지운 뜻이에요'
+    : (context.error==='trial'||context.error==='login')?'로그인하고 뜻 보기':meaningWaitLine(context.error),loading:false};
   if(context&&context.loading)return {text:context.loading==='new'?'새 뜻 찾는 중':context.loading==='repair'?'뜻 다듬는 중':'뜻 확인 중',loading:true};
   if(wordPeekRetryState && wordPeekRetryState.key===selKey){
     if(wordPeekRetryState.loading) return {text:'뜻 다시 찾는 중',loading:true};
@@ -509,7 +513,7 @@ function placeWordPeek(){
 }
 function renderWordPeek(){
   settlePendingWord();
-  const pill=document.getElementById('word-peek'),w=words[selKey];
+  const pill=document.getElementById('word-peek'),w=displayedWord(selKey);
   if(!wordPeekActive||!w){pill.hidden=true;return;}
   const state=wordPeekState(w,currentContext(selKey));
   document.getElementById('word-peek-meaning').textContent=state.text;
@@ -575,7 +579,7 @@ function selectWord(k, span, peek){
 }
 
 function expandWordDetail(){
-  if(!wordPeekActive||!selKey||!words[selKey]) return;
+  if(!wordPeekActive||!selKey||!displayedWord(selKey)) return;
   wordPeekActive=false;
   document.getElementById('word-peek').hidden=true;
   renderPanel();
@@ -591,7 +595,11 @@ function expandWordDetail(){
    자리의 문장을 서버에 다시 보내 판정합니다. 결과는 기존 Meaning 저장 규칙을
    그대로 지나고, 미니필은 상세창으로 바뀌지 않습니다. */
 async function retryWordPeek(){
+  if(previewWordCard){ openOnboardingWord(activeSelectedWordNode,true); return; }
   const k=selKey,w=words[k];
+  const blocked=currentContext(k);
+  const reason=(blocked&&blocked.error)||(wordPeekRetryState&&wordPeekRetryState.error)||(w&&w.aiOff);
+  if(w && (reason==='trial'||reason==='login')){ openSyncModal(); return; }
   if(!wordPeekActive||!k||!w||w.loading||w.aiLoading||
      (wordPeekRetryState&&wordPeekRetryState.key===k&&wordPeekRetryState.loading)) return;
   const input=lookupRequestFor(w,activeSelectedWordNode,true);
@@ -635,6 +643,7 @@ function closePanel(){
   wordPeekActive=false;wordPeekAnchor=null;
   wordPeekRetryState=null;
   selKey=null;
+  previewWordCard=null;
   contextView=null; addingMeaning=false;
   /* 창을 닫았으면 그 답은 아무도 안 봅니다. 그런데 하루 한도는 이미 나갔습니다 —
      훑어 읽을 때 이 손실이 제일 큽니다. 그래서 여기서 끊습니다. 끊는 것은 AI
@@ -670,7 +679,7 @@ function setStatus(k, st){
 }
 function renderPanel(){
   settlePendingWord();
-  const base = words[selKey]; if(!base) return;
+  const base = displayedWord(selKey); if(!base) return;
   const k = selKey;
   const context = currentContext(k);
   /* 다른 문장의 저장 뜻을 정답처럼 먼저 보여 주지 않습니다. */
@@ -716,13 +725,15 @@ function renderPanel(){
   /* 지금 연결이 없다는 것은 이 낱말에 무슨 일이 있었는지와 상관없는 사실입니다.
      거꾸로 뜻이 정해진 낱말에는 지난 실패를 붙들고 있지 않습니다 — 화면과 속이
      어긋나는 자리가 거기였습니다. */
-  const offline = navigator.onLine === false;
+  const offline = !previewWordCard && navigator.onLine === false;
   const off = offline ? 'offline'
     : asking ? ''
     : (w.aiOff === 'offline' || shown) ? '' : (w.aiOff || '');
   if(asking){
     aiBox.className = 'on load';
     aiCap.textContent = '문맥 뜻';
+    aiKo.textContent = ''; aiPos.textContent = ''; aiN.textContent = '';
+    aiN.style.display = 'none'; aiRetry.hidden = true;
   }else if(!shown){
     /* 뜻이 아직 없습니다. 칸을 접지 않고 무슨 일인지 그 자리에 적습니다 —
        칸이 사라졌다 나타나면 화면이 출렁이고, 무엇을 기다렸는지도 남지 않습니다. */
@@ -769,20 +780,14 @@ function renderPanel(){
      하기 때문입니다. 여기서 다시 정하면 두 자리가 다른 말을 할 수 있습니다. */
   /* 뜻 칸이 이미 이유를 말한 상태에서는 아래에서 되풀이하지 않습니다. 누를 것이
      있는 상태(체험 소진·로그인·오류)만 단추와 함께 한 줄을 남깁니다. */
-  const hintOff = (!shown && (off === 'quota' || off === 'offline' || off === 'login')) ? '' : off;
+  const hintOff = (!shown && (off === 'quota' || off === 'offline' || off === 'login' || off === 'trial')) ? '' : off;
   aiBtn.style.display = (off && off !== 'quota' && off !== 'offline') ? 'flex' : 'none';
   document.getElementById('p-aibtn-t').textContent =
       (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
     : (off === 'error' || w.aiSlow)        ? '다시 시도'
     :                                        '문맥 뜻 찾기';
-  /* 맛보기가 몇 번 안 남았으면 미리 말해 둡니다. 다음 낱말에서 갑자기 막히는 것보다
-     낫습니다. 아직 넉넉할 때는 아무 말도 하지 않습니다 — 읽는 중이니까요. */
-  const trialWarn = (!sbUser && !off && anonLooksLeft !== null && anonLooksLeft <= 3)
-    ? (anonLooksLeft > 0
-        ? `무료 체험 ${anonLooksLeft}번 남았어요 · 로그인하면 계속 쓸 수 있어요`
-        : '무료 체험을 다 썼어요')
-    : '';
-  aiHint.style.display = (hintOff || trialWarn) ? 'block' : 'none';
+  // Successful signed-out lookups use the same quiet surface as signed-in lookups.
+  aiHint.style.display = hintOff ? 'block' : 'none';
   /* `#p-aihint` 는 단추 바로 아래 붙도록 음수 margin 으로 당겨져 있습니다
      (styles/dictionary.css). 단추가 사라지면(quota·offline) 끌어당길 것이
      없어서 그 위의 낱말 칸(`#p-clicked`)까지 겹쳐 올라갑니다 — 그래서 단추가
@@ -793,13 +798,16 @@ function renderPanel(){
     : hintOff === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요. 자정에 다시 채워집니다'
     : hintOff === 'offline' ? '오프라인이라 새로운 뜻은 불러올 수 없어요'
     : hintOff === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
-    : trialWarn         ? trialWarn
     :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
 
   /* ── 저장된 뜻 ──
      칩 = 선택. ＋ = 생성. 칩 안에 × 를 넣지 않는 이유는 두 가지입니다: 작은 칩
      안에서 두 손짓의 터치 자리가 겹치고, 지우는 문이 둘이 되면 "칩을 누르면 이
      뜻을 본다"는 한 줄짜리 규칙이 깨집니다. */
+  if(previewWordCard){
+    renderOnboardingWordDetail(w);
+    return;
+  }
   const root=base.root||k, savedSec=document.getElementById('p-saved-senses-sec');
   const savedBox=document.getElementById('p-saved-senses'), meanings=meaningCards(root,k);
   const canAdd=true;
@@ -1275,7 +1283,7 @@ async function fetchLook(k, opt){
               : e === 'anon_exhausted' ? 'trial'
               : e === 'login_required' ? 'login' : 'error';
       if(w.aiOff === 'quota') readerPillStatus('오늘의 문맥 뜻 사용량을 모두 썼어요');
-      if(w.aiOff === 'trial'){ anonLooksLeft = 0; toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요'); }
+      if(w.aiOff === 'trial') anonLooksLeft = 0;
       return false;
     }
     if(typeof j.left === 'number') rememberAiLeft(j.left);

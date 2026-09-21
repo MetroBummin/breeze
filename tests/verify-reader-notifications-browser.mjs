@@ -21,6 +21,7 @@ for(const engine of [chromium,webkit]){
  const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
+ await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
  await page.goto(url);await page.evaluate(()=>homeReady);
  await page.locator('#fileinput').setInputFiles({name:'Notices.txt',mimeType:'text/plain',buffer:Buffer.from(('A gentle breeze moves through the trees. Reading can feel this easy.\n\n').repeat(80))});
  await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));

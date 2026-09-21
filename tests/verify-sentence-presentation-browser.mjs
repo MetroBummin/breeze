@@ -22,7 +22,7 @@ const browser=await chromium.launch();
 try{
   const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,
     serviceWorkers:'block'});
-  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
+  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.route('**/*',route=>{
     const href=route.request().url();
     return href.startsWith(url)||href.startsWith('blob:') ? route.continue() : route.abort();

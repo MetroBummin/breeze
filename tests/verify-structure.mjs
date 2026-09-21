@@ -919,7 +919,7 @@ assert.doesNotMatch(dictionarySource, /function commitMeaningEdit/,
   'Editing a meaning is back as its own state');
 /* 빼기와 색칠은 "모르는 정도" 아래 한 줄에, 같은 모양으로 섭니다. 빼기가 창 맨
    아래 큰 단추였을 때는 긴 낱말 창에서 끝까지 내려야 보였습니다. */
-assert.match(index, /<div class="p-sec">모르는 정도<\/div>[\s\S]{0,600}<div id="p-word-tools">[\s\S]{0,600}id="p-know" class="p-tool"[\s\S]{0,400}id="p-mark" class="p-tool"[\s\S]{0,300}<\/div>\s*<div id="p-status">/,
+assert.match(index, /<div class="p-sec"(?: id="p-status-label")?>모르는 정도<\/div>[\s\S]{0,600}<div id="p-word-tools">[\s\S]{0,600}id="p-know" class="p-tool"[\s\S]{0,400}id="p-mark" class="p-tool"[\s\S]{0,300}<\/div>\s*<div id="p-status">/,
   'The remove-word and colouring buttons no longer share one row above the stars');
 assert.ok(index.indexOf('id="p-know"') < index.indexOf('id="p-status"'),
   'The remove-word button sank back below the difficulty stars');

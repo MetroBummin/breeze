@@ -20,6 +20,7 @@ const browser=await chromium.launch();
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block',reducedMotion:'reduce'});
  await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
+ await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
  await page.goto(url);await page.evaluate(()=>homeReady);
  for(const count of [1,5,70]){
   await page.evaluate(()=>{show('home');readerScroller().style.zoom=''});

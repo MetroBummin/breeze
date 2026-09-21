@@ -35,11 +35,11 @@ function savedPhraseMatch(matches,start,item){
   return {selected,end:cursor};
 }
 /* 글자를 단어 단위로 감쌉니다. 글자 화면과 쇼츠가 같은 함수를 씁니다. */
-function wordSpans(text,starts){
+function wordSpans(text,starts,preview=false){
   const matches=[]; let match, last = 0, html = '';
   WORD_RE.lastIndex = 0;
   while((match = WORD_RE.exec(text))) matches.push(match);
-  starts=starts||savedPhraseStarts();
+  starts=preview ? new Map() : (starts||savedPhraseStarts());
   for(let i=0;i<matches.length;){
     match=matches[i];
     const choices=[];
@@ -66,7 +66,7 @@ function wordSpans(text,starts){
       last=end;i=phraseMatch.end+1;continue;
     }
     const key = keyOf(match[0]);
-    const status = words[key] && words[key].mark !== false ? ' s'+words[key].status : '';
+    const status = !preview && words[key] && words[key].mark !== false ? ' s'+words[key].status : '';
     html += `<span class="w${status}" data-w="${key}">${esc(match[0])}</span>`;
     last = match.index + match[0].length;
     i++;
@@ -80,7 +80,7 @@ function hydrateWordSpanBatch(elements){
   const starts=savedPhraseStarts();
   elements.forEach(el=>{
     if(!el || el.dataset.wordSpans==='1') return;
-    el.innerHTML=wordSpans(el.textContent,starts);
+    el.innerHTML=wordSpans(el.textContent,starts,!!(curBook && curBook.transient));
     el.dataset.wordSpans='1';
   });
 }
@@ -205,12 +205,13 @@ function renderBookBody(b){
   beginLazyWordSpans(wordSpanTargets);
 }
 async function openBook(b){
+  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
   leaveOriginalReader();
   /* 예전에 넣어 둔 책에 남아 있는 네모(□)를 여기서 한 번 고칩니다 —
      scripts/importers/ligatures.js */
-  await repairBookLigatures(b);
+  if(!b.transient) await repairBookLigatures(b);
   /* The width observer below fires as the reader appears. It must not aim at
      wherever the previous book was being read. */
   lastAnchor = null;
@@ -223,7 +224,7 @@ async function openBook(b){
   document.getElementById('nav-home').classList.remove('on');
   /* 읽기 시작하는 순간 사전 함수를 깨워 둡니다. 콜드스타트를 첫 낱말 클릭 뒤에
      숨기는 게 아니라, 그 앞에서 끝내는 편이 낫습니다 — AI 도 한도도 쓰지 않습니다. */
-  warmDict();
+  if(!b.transient) warmDict();
   document.getElementById('rtitle').textContent = b.title;
   document.getElementById('readpill-title').textContent = b.title;
   document.getElementById('readpill-title').setAttribute('aria-label',b.title+' · 컨트롤 펼치기');
@@ -251,7 +252,7 @@ async function openBook(b){
   /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
      다른 기기의 위치를 이길 수 있습니다. 처음 연 책만 자리를 만들고, 이후의
      시간표는 실제 스크롤이 남깁니다. */
-  if(firstOpen){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
+  if(firstOpen && !b.transient){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
   updateReaderModeControls();
   const original = bookSupportsOriginal(b) ? await originalGetForBook(b) : null;
   const desired = initialPosition.mode==='original'
@@ -259,6 +260,7 @@ async function openBook(b){
     : (firstOpen && original ? 'original' : 'text');
   if(desired==='original') await switchReaderMode('original',{initial:true});
   else requestAnimationFrame(()=>{
+    if(curBook!==b) return;
     const pos=posOf(b.id);
     if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
     lastAnchor=captureAnchor(); updatePfill(true);

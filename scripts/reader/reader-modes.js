@@ -48,7 +48,7 @@ function updateReaderModeControls(){
 }
 
 function rememberReaderMode(mode){
-  if(!curBook) return;
+  if(!curBook || curBook.transient) return;
   const previous=posOf(curBook.id),candidate={...previous,mode,t:Date.now()};
   const changed=!sameProgressLocation(previous,candidate);
   const next=changed?candidate:{...candidate,t:previous.t||0};

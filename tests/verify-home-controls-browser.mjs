@@ -24,7 +24,8 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
-  await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+ await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#fileinput').setInputFiles({name:'Control comparison.txt',mimeType:'text/plain',buffer:Buffer.from(('A gentle breeze moves through the trees. Reading can feel this easy.\n\n').repeat(70))});
   await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='txt'));show('home')});

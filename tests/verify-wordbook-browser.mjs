@@ -21,6 +21,7 @@ try{
  const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block',reducedMotion:'reduce'});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
+ await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
  await page.goto(url);await page.evaluate(()=>homeReady);
  await page.evaluate(()=>{
   words={and:{word:'and',ko:'그리고',status:2,book:'Book A',addedAt:1},port:{word:'port',ko:'항구',status:1,book:'Book B',addedAt:2},cognitive:{word:'cognitive',ko:'인지적인',status:3,book:'Book A',addedAt:3}};

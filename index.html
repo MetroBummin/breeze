@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="styles/wordbook.css?v=3d0c76ff">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=c0b1821a">
-  <link rel="stylesheet" href="styles/onboarding.css?v=da44f980">
+  <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -66,7 +66,7 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=67c432ed"></script>
-  <script defer src="scripts/core/state.js?v=688b5940"></script>
+  <script defer src="scripts/core/state.js?v=534d1d77"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
@@ -85,8 +85,8 @@
   <script defer src="scripts/importers/article.js?v=8633ee61"></script>
   <script defer src="scripts/importers/rss.js?v=4117786a"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=31629823"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=c44a1496"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=bd0c648a"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=9f0efc09"></script>
   <script defer src="scripts/ui/wordbook.js?v=6f9d5a26"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=17b378a5"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -94,15 +94,15 @@
   <script defer src="scripts/reader/pdf-original.js?v=8df61672"></script>
   <script defer src="scripts/reader/epub-original.js?v=354cac91"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=7201520d"></script>
-  <script defer src="scripts/reader/reader.js?v=6de4d083"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=481d47b6"></script>
+  <script defer src="scripts/reader/reader.js?v=99b0081b"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=19af6d20"></script>
-  <script defer src="scripts/ui/preferences.js?v=6146aaaf"></script>
+  <script defer src="scripts/ui/preferences.js?v=41e504f5"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=e663a882"></script>
   <script defer src="scripts/ui/interactions.js?v=578ca721"></script>
-  <script defer src="scripts/ui/onboarding.js?v=c957c641"></script>
+  <script defer src="scripts/ui/onboarding.js?v=ed000464"></script>
   <script defer src="scripts/ui/library-refresh.js?v=41c739bb"></script>
   <script defer src="scripts/main.js?v=b395b9e7"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
@@ -326,7 +326,7 @@
         spellcheck="false" placeholder="새 뜻을 적고 Enter" aria-label="새 뜻"></div>
       <div class="p-sec" id="p-alt-sec">추천 뜻</div>
       <div id="p-alts"></div>
-      <div class="p-sec">모르는 정도</div>
+      <div class="p-sec" id="p-status-label">모르는 정도</div>
       <!-- 이 낱말을 화면에서 어떻게 다룰지 정하는 두 단추입니다 — 단어장에서 빼기,
            본문 색칠. 같은 일의 두 갈래라 한 줄에 같은 모양으로 섭니다. 빼기는
            예전에 창 맨 아래 큰 단추였는데, 긴 낱말 창에서는 끝까지 내려야 보였습니다.
@@ -386,6 +386,10 @@
     <div class="settings-handle" aria-hidden="true"></div>
     <button id="set-close" type="button" aria-label="설정 닫기" onclick="closeSettings()">×</button>
     <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
+    <div class="set-row onboarding-setting">
+      <div class="set-label"><b>온보딩</b><span>처음 읽는 방법을 다시 체험해요.</span></div>
+      <button type="button" class="sm-mini" onclick="startOnboarding(true)">온보딩 다시 보기</button>
+    </div>
     <div class="set-panel" data-panel="sync">
       <div id="sm-body"></div>
       <div id="sm-status"></div>
@@ -393,37 +397,15 @@
 
   </div>
 </div>
-<div id="onboarding" role="dialog" aria-modal="true" aria-label="Breeze 시작하기" hidden>
-  <!-- Reader와 같은 표면을 쓰되, 이 fixture의 상태·조회는 온보딩 안에서만 끝냅니다. -->
-  <div id="onboard-chrome">
-    <button id="onboard-skip" type="button" title="건너뛰기" aria-label="건너뛰기">
-      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
-    </button>
-    <div id="onboard-pill">
-      <div id="onboard-pill-progress" aria-hidden="true"></div>
-      <button id="onboard-mode" type="button" title="원본으로 보기" aria-label="원본으로 보기">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g class="onboard-mode-original"><path d="M6.6 3.7h6.9L17.4 7.7v12.6H6.6z"/><path d="M13.5 3.7v4h3.9"/><path d="M9.3 12.1h5.4M9.3 15.1h5.4M9.3 18h3.4"/></g><g class="onboard-mode-text"><path d="M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6"/></g></svg>
-      </button>
-      <span id="onboard-pill-title">Breeze 시작하기</span>
-      <div id="onboard-sentence-status" role="status" aria-live="polite" hidden><span class="onboard-spinner" aria-hidden="true"></span><span>문장 해석 중</span></div>
-    </div>
-    <button id="onboard-aa" type="button" title="보기 설정" aria-label="보기 설정">Aa</button>
-  </div>
-  <div id="onboard-scroll">
-    <main class="onboard-reader">
-      <h1>Welcome to Breeze!</h1>
-      <p>A gentle <button id="onboard-word" class="onboard-word" type="button">breeze</button> moves through the trees.</p>
-      <p><button id="onboard-sentence" class="onboard-sentence" type="button">Reading can feel this easy.</button></p>
-      <div id="onboard-prompt" aria-live="polite"></div>
-    </main>
-  </div>
-  <section id="onboard-aa-pop" aria-label="보기 설정" hidden>
-    <div class="onboard-aa-row"><span>글자 크기</span><div class="onboard-aa-size"><button id="onboard-font-down" type="button" aria-label="글자 작게">A−</button><span id="onboard-font-size">19</span><button id="onboard-font-up" type="button" aria-label="글자 크게">A+</button></div></div>
-    <div class="onboard-aa-row"><span>다크 모드</span><button id="onboard-dark" class="aa-toggle" type="button" aria-label="다크 모드"><i></i></button></div>
+<!-- Guidance only: the book, controls and lookup surfaces are the real Reader. -->
+<div id="onboarding" aria-label="Breeze 시작하기" hidden>
+  <button id="onboard-skip" type="button">건너뛰기</button>
+  <section id="onboard-coach" aria-labelledby="onboard-prompt">
+    <span id="onboard-step"></span>
+    <p id="onboard-prompt" role="status" aria-live="polite"></p>
+    <p id="onboard-note" hidden>내 책의 문장 해석은 로그인 후 이용할 수 있어요.</p>
+    <button id="onboard-next" type="button" hidden>책 추가하기</button>
   </section>
-  <div id="onboard-word-peek" role="status" aria-live="polite" hidden><span class="onboard-spinner" aria-hidden="true"></span><span id="onboard-word-meaning">뜻 찾는 중</span></div>
-  <div id="onboard-sentence-modal" hidden><div id="onboard-sentence-scrim"></div><section id="onboard-sentence-result" role="dialog" aria-modal="true" aria-label="문장 해석 결과" aria-live="polite"><header><span aria-hidden="true"></span></header><div id="onboard-result"></div></section></div>
-  <div class="onboard-footer"><button id="onboard-next" type="button" hidden>계속</button></div>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
 <input type="file" id="reading-backup-input" accept=".zip,.breeze.zip,application/zip" hidden>

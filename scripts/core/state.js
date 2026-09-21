@@ -149,7 +149,7 @@ function keepPlace(fn){
 }
 
 function saveReadingState(){
-  if(!curBook) return;
+  if(!curBook || curBook.transient) return;
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
@@ -183,12 +183,13 @@ function activeAppView(){
   return view ? view.id.replace(/^v-/,'') : 'home';
 }
 function rememberAppView(view,replace){
-  if(appHistoryRestoring) return;
+  if(appHistoryRestoring || (curBook && curBook.transient)) return;
   const state={breeze:true,view:view||activeAppView()};
   if(replace) history.replaceState(state,'');
   else history.pushState(state,'');
 }
 function show(v,options){
+  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && v!=='read') endOnboarding(true,false);
   const settings=options||{};
   saveReadingState();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));

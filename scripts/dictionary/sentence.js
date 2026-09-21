@@ -196,6 +196,11 @@ async function openSentence(text){
   sentenceBodyClass('sentence-low-viewport',false);
   paintSentenceFor(life,{ en:clean, waiting:true });
 
+  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){
+    await explainOnboardingSentence(clean,life);
+    return;
+  }
+
   /* ① 전에 물어본 적 있는 문장이면 그대로 내놓습니다. 한도를 쓰지 않습니다. */
   const key = sentKey(clean);
   const hit = await dictGet(key);
