@@ -23,7 +23,9 @@
     "test:sentence": "node tests/verify-sentence-presentation-browser.mjs",
     "test:jev-phrase": "node tests/verify-jev-phrase-stress.mjs",
     "test:meaning-deletion": "node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs",
-    "test:jev-live": "node tests/verify-jev-live.mjs && node tests/verify-jev-flow-live.mjs && node tests/verify-jev-lifecycle-live-browser.mjs"
+    "test:jev-live": "node tests/verify-jev-live.mjs && node tests/verify-jev-flow-live.mjs && node tests/verify-jev-lifecycle-live-browser.mjs",
+    "lexicon:validate": "node scripts/lexicon/validate-lexicon.mjs",
+    "lexicon:build": "node scripts/lexicon/build-lexicon.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
