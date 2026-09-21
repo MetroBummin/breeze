@@ -935,7 +935,7 @@ assert.match(dictionarySource, /savedBadge\.hidden = !\(!asking && words\[k\] &&
 assert.doesNotMatch(dictionarySource, /function .*[Ss]avedState|let .*savedFlag/,
   'The saved badge grew a state of its own');
 assert.doesNotMatch(`${index}\n${dictionaryCss}\n${dictionarySource}`,/p-colloc|phrase-suggestion|openPhrase|adoptPhrase/,
-  'The generative phrase-suggestion UI or lifecycle survived Jev phrase detection');
+  'The generative phrase-suggestion UI or lifecycle survived the retired phrase detector');
 assert.match(dictServer, /console\.error\("dict_request_failed",e instanceof Error\?e\.name:"Error"\)/,
   'The dict endpoint no longer records a safe error class for unexpected failures');
 assert.doesNotMatch(dictServer, /json\(\{error:"internal",message:/,
@@ -1633,18 +1633,14 @@ metadataCalls.forEach(line=>assert.match(line,/\{signal\}/,
   'The metadata request cannot be cancelled with its word lookup'));
 assert.doesNotMatch(index,/id="p-context"/,'The manual "in this sentence" button is back');
 assert.doesNotMatch(dictionaryCss,/#p-context/,'Removed context-button styling survived');
-assert.match(dictionarySource,/op:'judge'/,'Saved words in a new sentence do not call Jev automatically');
-assert.match(dictServer,/Deno\.env\.get\("JEV_API_KEY"\)/,'Jev does not use the existing server Secret');
-assert.doesNotMatch(`${index}\n${dictionarySource}`,/JEV_API_KEY/,'The Jev Secret leaked into client code');
-assert.match(dictServer,/https:\/\/api\.typesafe\.ai\/v1\/systemone/,'The server does not call TypeSafe Jev');
-assert.match(dictServer,/criteria\.AI_REQUIRED=/,
-  'Jev cannot explicitly send uncertain or novel contexts back to DeepSeek');
-assert.match(dictionarySource,/verdict\.selected!=='AI_REQUIRED'/,
-  'The client no longer treats Jev as saved-Meaning selector plus AI gate');
+assert.doesNotMatch(dictionarySource,/op:'judge'|savedMeaningCandidates|resolveSavedWordContext|AI_REQUIRED/,
+  'Saved-word lookup still contains the removed remote Meaning selector path');
+assert.doesNotMatch(dictServer,/JEV_API_KEY|JEV_MODEL|api\.typesafe\.ai|function opJudge|AI_REQUIRED/,
+  'The dict Edge Function still contains a TypeSafe/JEV dependency');
 assert.doesNotMatch(dictionarySource,/op:'route'|op:'phrase'|op:'repair'|routeJevTarget|repairBaseSense/,
-  'Jev or OEWN still owns lexical analysis instead of only saved-Meaning reuse');
+  'A retired lexical routing path survived');
 assert.doesNotMatch(dictServer,/function opRoute|function opPhrase|function opRepair|JEV_PHRASE_CONFIDENCE/,
-  'The server still exposes the removed JEV phrase/router/repair pipeline');
+  'The server still exposes a retired phrase/router/repair pipeline');
 assert.doesNotMatch(dictionarySource,/BREEZE_LEXICON|breezeBaseSense|baseSenseId|translationQuality/,
   'The OEWN/lazy-Korean sense pipeline survived the architecture reset');
 assert.match(dictionarySource,/op:'look'[\s\S]{0,500}tokens:lookupTokens\.map[\s\S]{0,120}clickedIndex/,
@@ -1660,7 +1656,7 @@ assert.match(dictionarySource,/op:'detail'/,
 assert.match(dictionarySource,/function ensureMeaningDetail/,
   'Gloss enrichment is not isolated from the mini-pill lookup path');
 assert.doesNotMatch((dictionarySource.match(/async function fetchDict\([\s\S]*?\n\}/)||[''])[0],/op:'judge'|op:'detail'/,
-  'A brand-new mini lookup still pays Jev or detail latency');
+  'A brand-new mini lookup still pays remote-judge or detail latency');
 assert.match(readerSource,/new Array\(parts\.length-1\)\.fill\(0\)/,
   'Legacy phraseParts records no longer default to contiguous read compatibility');
 assert.match(readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8'),/savedPhraseMatch\(matches,index,item\)/,
@@ -1669,8 +1665,6 @@ assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'
   'EPUB highlighting does not use the token/gap phrase matcher');
 /* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
-assert.match(dictionarySource,/if\(!wordLookupAlive\(life\)\)return;[\s\S]{0,160}await lookupNewContextMeaning/,
-  'A late Jev answer can start contextual generation after dismissal');
 assert.match(dictionarySource, /if\(!wordLookupAlive\(life\)\|\|!answer\|\|!answer\.ko\)[\s\S]{0,220}saveDetectedExpression/,
   'A late DeepSeek expression answer can save or rebuild under a dismissed word lookup');
 assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
