@@ -80,15 +80,15 @@ async function opLook(body:any,userId:string|null,seeding=false){
   const word=clean(body.word,60).toLowerCase(),clicked=clean(body.clicked,60),sentence=clean(body.sentence,600),avoid=cleanList(body.avoid,4,40),retry=!!body.retry;
   let anonLeft:number|null=null,userLeft:number|null=null;
   if(seeding){}else if(!userId){const verdict=await takeAnonQuota(clean(body.device,64));if(verdict.status==="spent")return json({error:"anon_exhausted",free:ANON_FREE},429);if(verdict.status!=="ok")return json({error:"login_required"},401);anonLeft=Math.max(0,ANON_FREE-(verdict.calls??ANON_FREE))}else{const quota=await takeQuota(userId);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit},429);userLeft=quota.left}
-  const supplied=Array.isArray(body.tokens)?body.tokens.slice(0,300).map((item:any)=>clean(item&&item.text!==undefined?item.text:item,60)):[];
-  const tokens=supplied.length?supplied:fallbackTokens(sentence);
+  const supplied:string[]=Array.isArray(body.tokens)?body.tokens.slice(0,300).map((item:any)=>clean(item&&item.text!==undefined?item.text:item,60)):[];
+  const tokens:string[]=supplied.length?supplied:fallbackTokens(sentence);
   let clickedIndex=Number(body.clickedIndex);
-  if(!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=tokens.length){const needle=(clicked||word).replace(/’/g,"'").toLowerCase();const matches=tokens.map((token,index)=>({token,index})).filter(item=>item.token.replace(/’/g,"'").toLowerCase()===needle);clickedIndex=matches.length===1?matches[0].index:Math.max(0,matches[0]?.index??0)}
+  if(!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=tokens.length){const needle=(clicked||word).replace(/’/g,"'").toLowerCase();const matches=tokens.map((token:string,index:number)=>({token,index})).filter((item:{token:string;index:number})=>item.token.replace(/’/g,"'").toLowerCase()===needle);clickedIndex=matches.length===1?matches[0].index:Math.max(0,matches[0]?.index??0)}
   const out=await ask({action:seeding?"seed":retry?"retry":"look",prompt:miniPrompt(word,clicked,sentence,tokens,clickedIndex,avoid),maxTokens:120,schema:LOOK_SCHEMA});
   const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);
   const cands=cleanList(body.cands,8,60).map(c=>c.toLowerCase());
   let kind=clean(parsed.kind,20).toLowerCase()==="expression"?"expression":"word";
-  let members=(Array.isArray(parsed.members)?parsed.members:[]).map(Number).filter(index=>Number.isInteger(index)&&index>=0&&index<tokens.length);
+  let members:number[]=(Array.isArray(parsed.members)?parsed.members:[]).map((value:unknown)=>Number(value)).filter((index:number)=>Number.isInteger(index)&&index>=0&&index<tokens.length);
   members=[...new Set(members)].sort((a,b)=>a-b);
   if(kind==="word")members=[clickedIndex];
   if(kind==="expression"&&(members.length<2||!members.includes(clickedIndex))){kind="word";members=[clickedIndex]}
@@ -121,12 +121,13 @@ async function opDetail(body:any,userId:string|null){
 }
 
 /* Jev has one job: choose a saved Meaning, or require fresh AI lexical analysis. */
+type SavedMeaningChoice={id:string;clientId:string;meaning:string;pos:string;gloss:string};
 async function opJudge(body:any,signal:AbortSignal){
   const key=Deno.env.get("JEV_API_KEY");if(!key)return json({error:"jev_not_configured"},503);
   const word=clean(body.word,120),sentence=clean(body.sentence,600),raw=Array.isArray(body.senses)?body.senses:[];
-  const senses=raw.slice(0,16).map((item:any,index:number)=>({id:`meaning_${index}`,clientId:clean(item&&item.id,120),meaning:clean(item&&item.meaning,80),pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,400)})).filter(item=>item.meaning);
+  const senses:SavedMeaningChoice[]=raw.slice(0,16).map((item:any,index:number)=>({id:`meaning_${index}`,clientId:clean(item&&item.id,120),meaning:clean(item&&item.meaning,80),pos:clean(item&&item.pos,20),gloss:clean(item&&item.gloss,400)})).filter((item:SavedMeaningChoice)=>item.meaning);
   if(!word||!sentence||!senses.length)return json({error:"bad_judge_request"},400);
-  const criteria:Record<string,string>=Object.fromEntries(senses.map(item=>[item.id,[item.meaning,item.pos?`품사: ${item.pos}`:"",item.gloss?`설명: ${item.gloss}`:""].filter(Boolean).join(" · ")]));
+  const criteria:Record<string,string>=Object.fromEntries(senses.map((item:SavedMeaningChoice)=>[item.id,[item.meaning,item.pos?`품사: ${item.pos}`:"",item.gloss?`설명: ${item.gloss}`:""].filter(Boolean).join(" · ")]));
   criteria.AI_REQUIRED="저장된 Meaning 어느 것도 그대로 재사용하기에 충분히 정확하지 않거나, target이 더 큰 lexical expression의 일부여서 새 lexical analysis가 필요함";
   const trace=newAiTrace("judge"),combined=AbortSignal.any([signal,AbortSignal.timeout(1800)]);
   const r=await meteredFetch(SR,trace,"jev",JEV_MODEL,"https://api.typesafe.ai/v1/systemone",{method:"POST",headers:{"content-type":"application/json","authorization":`Bearer ${key}`},body:JSON.stringify({model:JEV_MODEL,state:{word,sentence},questions:{reuse:{type:"choice",instructions:"현재 문장에서 target을 읽을 때 저장된 Meaning 중 하나를 그대로 보여 줘도 충분히 정확한지 판단하세요. 가능하면 가장 정확한 기존 Meaning을 고르세요. ordinary collocation, 일반적인 전치사 결합, 단순 수식 관계 때문에 불필요하게 AI_REQUIRED를 고르지 마세요. 반대로 target이 phrasal verb, idiom, fixed expression, 전문 고정 용어 등 더 큰 lexical unit의 일부여서 기존 단어 뜻만 보여 주면 의미를 오해하거나 중요한 lexical identity를 잃는 경우, 또는 기존 Meaning과 다른 sense인 경우에는 AI_REQUIRED를 고르세요. 확신이 낮으면 AI_REQUIRED를 고르세요.",criteria}}}),signal:combined});
@@ -134,7 +135,7 @@ async function opJudge(body:any,signal:AbortSignal){
   const data=await r.json(),selected=clean(data?.answers?.reuse?.choice,40);
   if(!(selected in criteria))return json({error:"jev_invalid_response"},502);
   if(selected==="AI_REQUIRED")return json({selected,confidence:Number(data?.answers?.reuse?.confidence??0),provider:"jev"});
-  const picked=senses.find(item=>item.id===selected);
+  const picked=senses.find((item:SavedMeaningChoice)=>item.id===selected);
   return json({selected:picked?.clientId||selected,confidence:Number(data?.answers?.reuse?.confidence??0),provider:"jev"});
 }
 
