@@ -1,175 +1,220 @@
-
-> breeze-refactored@1.1.0 test
-> node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-lookup-architecture.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs
-
-Stamped 48 local assets
-Service worker 77c6f622
-Built 7 doc pages → docs/
-타입 검사 통과 — 남은 지적 40개 (늘지 않음)
-Breeze checks passed: 37 active + 4 parked JavaScript files
-(node:2659) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/breeze/breeze/server/dict/telemetry.ts is not specified and it doesn't parse as CommonJS.
-Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
-To eliminate this warning, add "type": "module" to /home/runner/work/breeze/breeze/package.json.
-(Use `node --trace-warnings ...` to show where the warning was created)
-Dictionary telemetry persists behind the provider response
-Lookup architecture checks passed
-Sync egress hardening checks passed
-Sync request-count harness passed (vocabulary 4, progress 2; no full vault on unchanged sync)
-TAP version 13
-# Subtest: concurrent vocabulary additions both survive the initial sync
-ok 1 - concurrent vocabulary additions both survive the initial sync
-  ---
-  duration_ms: 10.582279
-  type: 'test'
-  ...
-# Subtest: concurrent deletion and stale snapshot do not resurrect a tombstone
-ok 2 - concurrent deletion and stale snapshot do not resurrect a tombstone
-  ---
-  duration_ms: 3.570093
-  type: 'test'
-  ...
-# Subtest: two first inserts cannot overwrite each other
-ok 3 - two first inserts cannot overwrite each other
-  ---
-  duration_ms: 3.233071
-  type: 'test'
-  ...
-# Subtest: old rows without revision are upgraded with a guarded CAS
-ok 4 - old rows without revision are upgraded with a guarded CAS
-  ---
-  duration_ms: 3.762223
-  type: 'test'
-  ...
-# Subtest: clean local winners repair previously lost server words and deletions
-ok 5 - clean local winners repair previously lost server words and deletions
-  ---
-  duration_ms: 2.157334
-  type: 'test'
-  ...
-# Subtest: migration failure leaves embedded remote-only progress intact; restart retries
-ok 6 - migration failure leaves embedded remote-only progress intact; restart retries
-  ---
-  duration_ms: 5.819891
-  type: 'test'
-  ...
-# Subtest: interruption after progress commit but before vault commit is restart-safe
-ok 7 - interruption after progress commit but before vault commit is restart-safe
-  ---
-  duration_ms: 3.5368
-  type: 'test'
-  ...
-# Subtest: lost acknowledgement after vault commit cannot orphan migrated progress
-ok 8 - lost acknowledgement after vault commit cannot orphan migrated progress
-  ---
-  duration_ms: 3.770098
-  type: 'test'
-  ...
-# Subtest: migration preserves a newer cached position without jumping an active reader
-ok 9 - migration preserves a newer cached position without jumping an active reader
-  ---
-  duration_ms: 2.865362
-  type: 'test'
-  ...
-# Subtest: concurrent progress snapshots preserve different books
-ok 10 - concurrent progress snapshots preserve different books
-  ---
-  duration_ms: 3.052271
-  type: 'test'
-  ...
-# Subtest: logout resets cached progress and queued work
-ok 11 - logout resets cached progress and queued work
-  ---
-  duration_ms: 2.080953
-  type: 'test'
-  ...
-# Subtest: account-change auth event clears old progress and cancels late responses
-ok 12 - account-change auth event clears old progress and cancels late responses
-  ---
-  duration_ms: 2.601687
-  type: 'test'
-  ...
-# Subtest: logout and login to the same account also invalidate old responses
-ok 13 - logout and login to the same account also invalidate old responses
-  ---
-  duration_ms: 1.404253
-  type: 'test'
-  ...
-# Subtest: same-millisecond local vocab edit during a write retains dirty state
-ok 14 - same-millisecond local vocab edit during a write retains dirty state
-  ---
-  duration_ms: 1.833998
-  type: 'test'
-  ...
-# Subtest: local progress changed during identity collection remains pending
-ok 15 - local progress changed during identity collection remains pending
-  ---
-  duration_ms: 2.116017
-  type: 'test'
-  ...
-# Subtest: CAS retries are bounded and conflicts retain unsynced data
-ok 16 - CAS retries are bounded and conflicts retain unsynced data
-  ---
-  duration_ms: 41.747482
-  type: 'test'
-  ...
-# Subtest: 402 retains dirty state and suppresses automatic requests during cooldown
-ok 17 - 402 retains dirty state and suppresses automatic requests during cooldown
-  ---
-  duration_ms: 1.762835
-  type: 'test'
-  ...
-# Subtest: unchanged startup uses only small headers and progress; idle schedules nothing
-ok 18 - unchanged startup uses only small headers and progress; idle schedules nothing
-  ---
-  duration_ms: 2.319949
-  type: 'test'
-  ...
-# Subtest: progress-only sync remains two requests with no vocabulary traffic
-ok 19 - progress-only sync remains two requests with no vocabulary traffic
-  ---
-  duration_ms: 2.019296
-  type: 'test'
-  ...
-# Subtest: vocabulary edit is two small reads, a vault read, and a key-only CAS response
-ok 20 - vocabulary edit is two small reads, a vault read, and a key-only CAS response
-  ---
-  duration_ms: 2.277389
-  type: 'test'
-  ...
-# Subtest: legacy read failure never marks migration complete or erases server data
-ok 21 - legacy read failure never marks migration complete or erases server data
-  ---
-  duration_ms: 2.338314
-  type: 'test'
-  ...
-# Subtest: unique revisions expose writes even when every wall-clock timestamp is equal
-ok 22 - unique revisions expose writes even when every wall-clock timestamp is equal
-  ---
-  duration_ms: 3.311598
-  type: 'test'
-  ...
-# Subtest: equal-time metadata with a different local book ID does not cause repair churn
-ok 23 - equal-time metadata with a different local book ID does not cause repair churn
-  ---
-  duration_ms: 1.518025
-  type: 'test'
-  ...
-1..23
-# tests 23
-# suites 0
-# pass 23
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 188.908569
-손짓 임자 기준선 통과 — 해석 창 · 낱말 popup 같은 규칙, 200회 반복 무결
-낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)
-확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다
-Word meaning cleanup and sync resurrection checks passed
-Sentence lifecycle ownership verified
-EPUB geometry contract verified
-낱말 상자 기준선 통과 — 글 17개, 상자 105개, 성질 9가지
-원형 기준선 통과 — 44개
-READY Question-first core checks passed
-READY deterministic Reader tokenization verified
+[0m[32mDownload[0m https://registry.npmjs.org/untildify/-/untildify-4.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/slice-ansi/-/slice-ansi-4.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/glob/-/glob-13.0.6.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/is-docker/-/is-docker-2.2.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/define-lazy-prop/-/define-lazy-prop-2.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/is-wsl/-/is-wsl-2.2.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-15.1.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@xmldom/xmldom/-/xmldom-0.9.12.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/universalify/-/universalify-2.0.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/jsonfile/-/jsonfile-6.2.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-11.0.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/sax/-/sax-1.1.4.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/minipass/-/minipass-7.1.3.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@isaacs/fs-minipass/-/fs-minipass-4.0.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/chownr/-/chownr-3.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/minizlib/-/minizlib-3.1.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/yallist/-/yallist-5.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@ionic/utils-fs/-/utils-fs-3.1.7.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/elementtree/-/elementtree-0.1.7.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/bplist-parser/-/bplist-parser-0.3.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/ini/-/ini-4.1.3.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/through2/-/through2-4.0.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/yauzl/-/yauzl-2.10.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/split2/-/split2-4.2.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/uuid/-/uuid-7.0.3.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/simple-plist/-/simple-plist-1.3.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@ionic/utils-stream/-/utils-stream-3.1.7.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@ionic/utils-process/-/utils-process-2.1.12.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@ionic/utils-array/-/utils-array-2.1.6.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/ms/-/ms-2.1.3.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/astral-regex/-/astral-regex-2.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/path-scurry/-/path-scurry-2.0.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/minimatch/-/minimatch-10.2.6.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@types/fs-extra/-/fs-extra-8.1.5.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/fs-extra/-/fs-extra-9.1.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/big-integer/-/big-integer-1.6.52.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/buffer-crc32/-/buffer-crc32-0.2.13.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/fd-slicer/-/fd-slicer-1.1.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/bplist-parser/-/bplist-parser-0.3.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/bplist-creator/-/bplist-creator-0.1.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/which/-/which-2.0.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@ionic/utils-object/-/utils-object-2.1.6.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/tree-kill/-/tree-kill-1.2.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/lru-cache/-/lru-cache-11.5.3.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.12.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@types/node/-/node-26.6.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/at-least-node/-/at-least-node-1.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/pend/-/pend-1.2.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/stream-buffers/-/stream-buffers-2.2.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/shebang-regex/-/shebang-regex-3.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/isexe/-/isexe-2.0.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/undici-types/-/undici-types-8.9.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz
+[0m[32mInitialize[0m tslib@2.8.1
+[0m[32mInitialize[0m open@8.4.2
+[0m[32mInitialize[0m @capacitor/core@8.5.2
+[0m[32mInitialize[0m @ionic/cli-framework-output@2.2.8
+[0m[32mInitialize[0m untildify@4.0.0
+[0m[32mInitialize[0m @types/slice-ansi@4.0.0
+[0m[32mInitialize[0m @ionic/utils-subprocess@3.0.1
+[0m[32mInitialize[0m jsonfile@6.2.1
+[0m[32mInitialize[0m commander@12.1.0
+[0m[32mInitialize[0m xcode@3.0.1
+[0m[32mInitialize[0m kleur@3.0.3
+[0m[32mInitialize[0m sisteransi@1.0.5
+[0m[32mInitialize[0m base64-js@1.5.1
+[0m[32mInitialize[0m semver@7.8.5
+[0m[32mInitialize[0m string-width@4.2.3
+[0m[32mInitialize[0m graceful-fs@4.2.11
+[0m[32mInitialize[0m kleur@4.1.5
+[0m[32mInitialize[0m is-wsl@2.2.0
+[0m[32mInitialize[0m rimraf@6.1.3
+[0m[32mInitialize[0m is-docker@2.2.1
+[0m[32mInitialize[0m env-paths@2.2.1
+[0m[32mInitialize[0m wrap-ansi@7.0.0
+[0m[32mInitialize[0m @capacitor/ios@8.5.2
+[0m[32mInitialize[0m package-json-from-dist@1.0.1
+[0m[32mInitialize[0m slice-ansi@4.0.0
+[0m[32mInitialize[0m universalify@2.0.1
+[0m[32mInitialize[0m define-lazy-prop@2.0.0
+[0m[32mInitialize[0m signal-exit@3.0.7
+[0m[32mInitialize[0m strip-ansi@6.0.1
+[0m[32mInitialize[0m debug@4.4.3
+[0m[32mInitialize[0m fs-extra@11.4.0
+[0m[32mInitialize[0m astral-regex@2.0.0
+[0m[32mInitialize[0m which@2.0.2
+[0m[32mInitialize[0m sax@1.1.4
+[0m[32mInitialize[0m color-name@1.1.4
+[0m[32mInitialize[0m through2@4.0.2
+[0m[32mInitialize[0m bplist-parser@0.3.2
+[0m[32mInitialize[0m minipass@7.1.3
+[0m[32mInitialize[0m ini@4.1.3
+[0m[32mInitialize[0m elementtree@0.1.7
+[0m[32mInitialize[0m ms@2.1.3
+[0m[32mInitialize[0m prompts@2.4.2
+[0m[32mInitialize[0m ansi-styles@4.3.0
+[0m[32mInitialize[0m chownr@3.0.0
+[0m[32mInitialize[0m uuid@7.0.3
+[0m[32mInitialize[0m minizlib@3.1.0
+[0m[32mInitialize[0m fs-extra@9.1.0
+[0m[32mInitialize[0m plist@3.1.1
+[0m[32mInitialize[0m xmlbuilder@15.1.1
+[0m[32mInitialize[0m xmlbuilder@11.0.1
+[0m[32mInitialize[0m big-integer@1.6.52
+[0m[32mInitialize[0m bplist-creator@0.1.0
+[0m[32mInitialize[0m tree-kill@1.2.2
+[0m[32mInitialize[0m @ionic/utils-array@2.1.6
+[0m[32mInitialize[0m undici-types@8.9.0
+[0m[32mInitialize[0m safe-buffer@5.2.1
+[0m[32mInitialize[0m is-fullwidth-code-point@3.0.0
+[0m[32mInitialize[0m yauzl@2.10.0
+[0m[32mInitialize[0m ansi-regex@5.0.1
+[0m[32mInitialize[0m @ionic/utils-fs@3.1.7
+[0m[32mInitialize[0m yallist@5.0.0
+[0m[32mInitialize[0m isexe@2.0.0
+[0m[32mInitialize[0m @isaacs/fs-minipass@4.0.1
+[0m[32mInitialize[0m cross-spawn@7.0.6
+[0m[32mInitialize[0m buffer-crc32@0.2.13
+[0m[32mInitialize[0m bplist-parser@0.3.1
+[0m[32mInitialize[0m path-scurry@2.0.2
+[0m[32mInitialize[0m split2@4.2.0
+[0m[32mInitialize[0m emoji-regex@8.0.0
+[0m[32mInitialize[0m @ionic/utils-terminal@2.3.5
+[0m[32mInitialize[0m shebang-command@2.0.0
+[0m[32mInitialize[0m @types/fs-extra@8.1.5
+[0m[32mInitialize[0m pend@1.2.0
+[0m[32mInitialize[0m shebang-regex@3.0.0
+[0m[32mInitialize[0m util-deprecate@1.0.2
+[0m[32mInitialize[0m @ionic/utils-object@2.1.6
+[0m[32mInitialize[0m @ionic/utils-process@2.1.12
+[0m[32mInitialize[0m string_decoder@1.3.0
+[0m[32mInitialize[0m @ionic/utils-stream@3.1.7
+[0m[32mInitialize[0m color-convert@2.0.1
+[0m[32mInitialize[0m inherits@2.0.4
+[0m[32mInitialize[0m fd-slicer@1.1.0
+[0m[32mInitialize[0m at-least-node@1.0.0
+[0m[32mInitialize[0m path-key@3.1.1
+[0m[32mInitialize[0m balanced-match@4.0.4
+[0m[32mInitialize[0m minimatch@10.2.6
+[0m[32mInitialize[0m stream-buffers@2.2.0
+[0m[32mInitialize[0m simple-plist@1.3.1
+[0m[32mInitialize[0m @capacitor/cli@8.5.2
+[0m[32mInitialize[0m brace-expansion@5.0.12
+[0m[32mInitialize[0m readable-stream@3.6.2
+[0m[32mInitialize[0m xml2js@0.6.2
+[0m[32mInitialize[0m @xmldom/xmldom@0.9.12
+[0m[32mInitialize[0m playwright@1.63.0
+[0m[32mInitialize[0m @types/node@26.6.2
+[0m[32mInitialize[0m glob@13.0.6
+[0m[32mInitialize[0m native-run@2.0.3
+[0m[32mInitialize[0m lru-cache@11.5.3
+[0m[32mInitialize[0m tar@7.5.22
+[0m[32mInitialize[0m playwright-core@1.63.0
+[0m[32mInitialize[0m typescript@5.9.3
+[0m[33m╭[0m [0m[1m[33mWarning[0m
+[0m[33m│[0m
+[0m[33m│[0m  The following packages are deprecated:
+[0m[33m│[0m  [0m[38;5;245mnpm:uuid@7.0.3 (uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).)[0m
+[0m[33m╰─[0m
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/meta.json
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0_meta.json
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/index.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/SupabaseClient.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/types.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/constants.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/fetch.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/helpers.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/SupabaseAuthClient.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/rest/types/common/rpc.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/rest/types/common/common.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/version.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/_internal/tracing/index.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/lib/tracingRegistry.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/_internal/tracing/types.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/_internal/tracing/create-extractor.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/_internal/tracing/parse.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/_internal/tracing/validate.ts
+[0m[32mDownload[0m https://jsr.io/@supabase/supabase-js/2.116.0/src/_internal/tracing/defaults.ts
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase%2fauth-js
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase%2fpostgrest-js
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase%2fstorage-js
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase%2ffunctions-js
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase%2frealtime-js
+[0m[32mDownload[0m https://registry.npmjs.org/iceberg-js
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase%2fphoenix
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.116.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-2.116.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.116.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.116.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.116.0.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/@supabase/phoenix/-/phoenix-0.4.5.tgz
+[0m[32mDownload[0m https://registry.npmjs.org/iceberg-js/-/iceberg-js-0.8.1.tgz
+[0m[32mInitialize[0m iceberg-js@0.8.1
+[0m[32mInitialize[0m @supabase/storage-js@2.116.0
+[0m[32mInitialize[0m @supabase/functions-js@2.116.0
+[0m[32mInitialize[0m @supabase/postgrest-js@2.116.0
+[0m[32mInitialize[0m @supabase/phoenix@0.4.5
+[0m[32mInitialize[0m @supabase/realtime-js@2.116.0
+[0m[32mInitialize[0m @supabase/auth-js@2.116.0
+[0m[32mCheck[0m server/dict/index.ts

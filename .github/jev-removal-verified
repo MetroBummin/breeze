@@ -1,2 +1,4 @@
 npm_ci=0
 npm_test=0
+test_word=0
+deno_check=0
