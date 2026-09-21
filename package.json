@@ -14,18 +14,14 @@
     "ios": "npm run www && cap sync ios && cap open ios",
     "ios:sync": "npm run www && cap sync ios",
     "typecheck": "node tools/typecheck.mjs",
-    "test": "node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-jev-phrase-stress.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs",
+    "test": "node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-lookup-architecture.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs",
     "test:sync": "node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs",
     "test:pdf-pinch": "node tests/verify-pdf-pinch-browser.mjs",
     "test:viewport": "node tests/verify-viewport-browser.mjs",
     "test:v11": "node tests/verify-v11-browser.mjs",
     "test:word": "node tests/verify-word-presentation-browser.mjs",
     "test:sentence": "node tests/verify-sentence-presentation-browser.mjs",
-    "test:jev-phrase": "node tests/verify-jev-phrase-stress.mjs",
-    "test:meaning-deletion": "node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs",
-    "test:jev-live": "node tests/verify-jev-live.mjs && node tests/verify-jev-flow-live.mjs && node tests/verify-jev-lifecycle-live-browser.mjs",
-    "lexicon:validate": "node scripts/lexicon/validate-lexicon.mjs",
-    "lexicon:build": "node scripts/lexicon/build-lexicon.mjs"
+    "test:meaning-deletion": "node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
