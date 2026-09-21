@@ -1,0 +1,121 @@
+[
+  {
+    "id": "invalid-expression-members-retains-phrase-meaning",
+    "body": {
+      "word": "apple",
+      "clicked": "apple",
+      "sentence": "He upset the apple cart.",
+      "clickedIndex": 3
+    },
+    "answer": {
+      "kind": "expression",
+      "canonical": "upset the apple cart",
+      "members": [
+        1
+      ],
+      "ko": "계획을 망치다"
+    },
+    "status": 200,
+    "response": {
+      "kind": "word",
+      "canonical": "apple",
+      "members": [
+        3
+      ],
+      "ko": "계획을 망치다",
+      "lemma": "apple",
+      "pos": "",
+      "phrase": "",
+      "alts": [],
+      "provider": "mock"
+    }
+  },
+  {
+    "id": "null-members-coerce-zero",
+    "body": {
+      "word": "he",
+      "clicked": "He",
+      "sentence": "He gave up.",
+      "clickedIndex": 0
+    },
+    "answer": {
+      "kind": "expression",
+      "canonical": "give up",
+      "members": [
+        null,
+        1,
+        2
+      ],
+      "ko": "포기하다"
+    },
+    "status": 200,
+    "response": {
+      "kind": "expression",
+      "canonical": "give up",
+      "members": [
+        0,
+        1,
+        2
+      ],
+      "ko": "포기하다",
+      "lemma": "give up",
+      "pos": "",
+      "phrase": "",
+      "alts": [],
+      "provider": "mock"
+    }
+  },
+  {
+    "id": "tokens-disagree-with-truncated-sentence",
+    "body": {
+      "word": "bank",
+      "clicked": "bank",
+      "sentence": "Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background The bank flooded.",
+      "tokens": [
+        {
+          "text": "The"
+        },
+        {
+          "text": "bank"
+        },
+        {
+          "text": "flooded"
+        }
+      ],
+      "clickedIndex": 1
+    },
+    "answer": {
+      "kind": "word",
+      "canonical": "bank",
+      "members": [
+        1
+      ],
+      "ko": "둑"
+    },
+    "status": 200,
+    "response": {
+      "kind": "word",
+      "canonical": "bank",
+      "members": [
+        1
+      ],
+      "ko": "둑",
+      "lemma": "bank",
+      "pos": "",
+      "phrase": "",
+      "alts": [],
+      "provider": "mock"
+    }
+  },
+  {
+    "id": "malformed-output-no-provider-fallback",
+    "status": 502,
+    "response": {
+      "error": "parse_failed",
+      "raw": "not json"
+    },
+    "calls": [
+      "openrouter"
+    ]
+  }
+]

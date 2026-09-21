@@ -1,0 +1,16 @@
+{
+  "candidate": {
+    "n": 188,
+    "httpOK": 188,
+    "exact": 172,
+    "expressionRecall": 123,
+    "expressionN": 128,
+    "falseExpressions": 6,
+    "wordN": 60,
+    "valid": 188,
+    "p50": 861,
+    "p95": 2742,
+    "inputTokens": 151773,
+    "outputTokens": 5133
+  }
+}

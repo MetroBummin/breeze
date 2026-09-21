@@ -1,0 +1,7853 @@
+[
+  {
+    "id": "holdout-expr-1",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "spill the beans",
+      "members": [
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "비밀|털어놓|누설",
+    "korean": true,
+    "sentence": "After months of secrecy, she spilled the beans.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 3868,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "spill the beans",
+        "members": [
+          5,
+          6,
+          7
+        ],
+        "ko": "비밀을 누설하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 886,
+        "completion_tokens": 32,
+        "total_tokens": 918,
+        "cost": 0.0000838,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 256,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000838,
+          "upstream_inference_prompt_cost": 0.0000758,
+          "upstream_inference_completions_cost": 0.000008
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-1",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "spill the beans",
+      "members": [
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "비밀|털어놓|누설",
+    "korean": true,
+    "sentence": "After months of secrecy, she spilled the beans.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 3869,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "spill the beans",
+        "members": [
+          5,
+          6,
+          7
+        ],
+        "ko": "비밀을 누설하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 886,
+        "completion_tokens": 32,
+        "total_tokens": 918,
+        "cost": 0.0000838,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 256,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000838,
+          "upstream_inference_prompt_cost": 0.0000758,
+          "upstream_inference_completions_cost": 0.000008
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-2",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "bite the bullet",
+      "members": [
+        8,
+        9,
+        10
+      ]
+    },
+    "expectedKo": "감수|참|결심|받아들",
+    "korean": false,
+    "sentence": "The repair was expensive, but we had to bite the bullet.",
+    "clickedIndex": 10,
+    "status": 200,
+    "ms": 4007,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "bite the bullet",
+        "members": [
+          8,
+          9,
+          10
+        ],
+        "ko": "꿋꿋이 견디다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 899,
+        "completion_tokens": 36,
+        "total_tokens": 935,
+        "cost": 0.0000861,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 256,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000861,
+          "upstream_inference_prompt_cost": 0.0000771,
+          "upstream_inference_completions_cost": 0.000009
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-1",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "spill the beans",
+      "members": [
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "비밀|털어놓|누설",
+    "korean": true,
+    "sentence": "After months of secrecy, she spilled the beans.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 4067,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "spill the beans",
+        "members": [
+          5,
+          6,
+          7
+        ],
+        "ko": "비밀을 누설하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 886,
+        "completion_tokens": 32,
+        "total_tokens": 918,
+        "cost": 0.0000838,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 256,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000838,
+          "upstream_inference_prompt_cost": 0.0000758,
+          "upstream_inference_completions_cost": 0.000008
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-3",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "get cold feet",
+      "members": [
+        1,
+        2,
+        3
+      ]
+    },
+    "expectedKo": "겁|망설|주저",
+    "korean": true,
+    "sentence": "He got cold feet just before the wedding.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 2998,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "get cold feet",
+        "members": [
+          1,
+          2,
+          3
+        ],
+        "ko": "겁먹다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 30,
+        "total_tokens": 911,
+        "cost": 0.0000572,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000572,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-3",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "get cold feet",
+      "members": [
+        1,
+        2,
+        3
+      ]
+    },
+    "expectedKo": "겁|망설|주저",
+    "korean": true,
+    "sentence": "He got cold feet just before the wedding.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 3481,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "get cold feet",
+        "members": [
+          1,
+          2,
+          3
+        ],
+        "ko": "겁을 내다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 30,
+        "total_tokens": 911,
+        "cost": 0.0000572,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000572,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-2",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "bite the bullet",
+      "members": [
+        8,
+        9,
+        10
+      ]
+    },
+    "expectedKo": "감수|참|결심|받아들",
+    "korean": true,
+    "sentence": "The repair was expensive, but we had to bite the bullet.",
+    "clickedIndex": 10,
+    "status": 200,
+    "ms": 3631,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "bite the bullet",
+        "members": [
+          8,
+          9,
+          10
+        ],
+        "ko": "참고 받아들이다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 899,
+        "completion_tokens": 32,
+        "total_tokens": 931,
+        "cost": 0.0000595,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000595,
+          "upstream_inference_prompt_cost": 0.0000515,
+          "upstream_inference_completions_cost": 0.000008
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-3",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "get cold feet",
+      "members": [
+        1,
+        2,
+        3
+      ]
+    },
+    "expectedKo": "겁|망설|주저",
+    "korean": true,
+    "sentence": "He got cold feet just before the wedding.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 662,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "get cold feet",
+        "members": [
+          1,
+          2,
+          3
+        ],
+        "ko": "겁을 내다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 30,
+        "total_tokens": 911,
+        "cost": 0.0000956,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000956,
+          "upstream_inference_prompt_cost": 0.0000881,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-2",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "bite the bullet",
+      "members": [
+        8,
+        9,
+        10
+      ]
+    },
+    "expectedKo": "감수|참|결심|받아들",
+    "korean": true,
+    "sentence": "The repair was expensive, but we had to bite the bullet.",
+    "clickedIndex": 10,
+    "status": 200,
+    "ms": 4016,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "bite the bullet",
+        "members": [
+          8,
+          9,
+          10
+        ],
+        "ko": "꿀꺽 참고 받아들이다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 899,
+        "completion_tokens": 37,
+        "total_tokens": 936,
+        "cost": 0.00006075,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00006075,
+          "upstream_inference_prompt_cost": 0.0000515,
+          "upstream_inference_completions_cost": 0.00000925
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-4",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "out of the blue",
+      "members": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "expectedKo": "갑자기|뜻밖|느닷",
+    "korean": true,
+    "sentence": "Her invitation arrived out of the blue.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 707,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "out of the blue",
+        "members": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "ko": "뜻밖에"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 876,
+        "completion_tokens": 34,
+        "total_tokens": 910,
+        "cost": 0.0000577,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000577,
+          "upstream_inference_prompt_cost": 0.0000492,
+          "upstream_inference_completions_cost": 0.0000085
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-4",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "out of the blue",
+      "members": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "expectedKo": "갑자기|뜻밖|느닷",
+    "korean": true,
+    "sentence": "Her invitation arrived out of the blue.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 700,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "out of the blue",
+        "members": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "ko": "뜻밖에"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 876,
+        "completion_tokens": 34,
+        "total_tokens": 910,
+        "cost": 0.0000577,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000577,
+          "upstream_inference_prompt_cost": 0.0000492,
+          "upstream_inference_completions_cost": 0.0000085
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-5",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "pull one's leg",
+      "members": [
+        3,
+        5
+      ]
+    },
+    "expectedKo": "놀리|농담|장난",
+    "korean": true,
+    "sentence": "Relax, I am pulling your leg.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 983,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "pull one's leg",
+        "members": [
+          3,
+          5
+        ],
+        "ko": "놀리다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 870,
+        "completion_tokens": 28,
+        "total_tokens": 898,
+        "cost": 0.0000556,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000556,
+          "upstream_inference_prompt_cost": 0.0000486,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-5",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "pull one's leg",
+      "members": [
+        3,
+        5
+      ]
+    },
+    "expectedKo": "놀리|농담|장난",
+    "korean": true,
+    "sentence": "Relax, I am pulling your leg.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 739,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "pull one's leg",
+        "members": [
+          3,
+          5
+        ],
+        "ko": "놀리다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 870,
+        "completion_tokens": 28,
+        "total_tokens": 898,
+        "cost": 0.0000556,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000556,
+          "upstream_inference_prompt_cost": 0.0000486,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-5",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "pull one's leg",
+      "members": [
+        3,
+        5
+      ]
+    },
+    "expectedKo": "놀리|농담|장난",
+    "korean": true,
+    "sentence": "Relax, I am pulling your leg.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 744,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "pull one's leg",
+        "members": [
+          3,
+          4,
+          5
+        ],
+        "ko": "농담하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 870,
+        "completion_tokens": 30,
+        "total_tokens": 900,
+        "cost": 0.0000561,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000561,
+          "upstream_inference_prompt_cost": 0.0000486,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": false,
+    "exact": false
+  },
+  {
+    "id": "holdout-expr-4",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "out of the blue",
+      "members": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "expectedKo": "갑자기|뜻밖|느닷",
+    "korean": true,
+    "sentence": "Her invitation arrived out of the blue.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 1253,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "out of the blue",
+        "members": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "ko": "갑자기"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 876,
+        "completion_tokens": 32,
+        "total_tokens": 908,
+        "cost": 0.0000572,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000572,
+          "upstream_inference_prompt_cost": 0.0000492,
+          "upstream_inference_completions_cost": 0.000008
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-7",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "burn the midnight oil",
+      "members": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "밤|늦게",
+    "korean": true,
+    "sentence": "She burned the midnight oil to finish her thesis.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 727,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "burn the midnight oil",
+        "members": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "ko": "밤새워 일하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 891,
+        "completion_tokens": 35,
+        "total_tokens": 926,
+        "cost": 0.00005945,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005945,
+          "upstream_inference_prompt_cost": 0.0000507,
+          "upstream_inference_completions_cost": 0.00000875
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-7",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "burn the midnight oil",
+      "members": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "밤|늦게",
+    "korean": true,
+    "sentence": "She burned the midnight oil to finish her thesis.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1011,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "burn the midnight oil",
+        "members": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "ko": "밤을 새워 일하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 891,
+        "completion_tokens": 35,
+        "total_tokens": 926,
+        "cost": 0.00005945,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005945,
+          "upstream_inference_prompt_cost": 0.0000507,
+          "upstream_inference_completions_cost": 0.00000875
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-6",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "take with a grain of salt",
+      "members": [
+        0,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "곧이|의심|걸러|그대로|비판",
+    "korean": true,
+    "sentence": "Take his promises with a grain of salt.",
+    "clickedIndex": 7,
+    "status": 200,
+    "ms": 2379,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "a grain of salt",
+        "members": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "ko": "의심하며 받아들이다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 35,
+        "total_tokens": 916,
+        "cost": 0.00005845,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005845,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.00000875
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": false,
+    "members": false,
+    "exact": false
+  },
+  {
+    "id": "holdout-expr-6",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "take with a grain of salt",
+      "members": [
+        0,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "곧이|의심|걸러|그대로|비판",
+    "korean": true,
+    "sentence": "Take his promises with a grain of salt.",
+    "clickedIndex": 7,
+    "status": 200,
+    "ms": 2909,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "take with a grain of salt",
+        "members": [
+          0,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "ko": "곧이곧대로 믿지 않다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 45,
+        "total_tokens": 926,
+        "cost": 0.00006095,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00006095,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.00001125
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-6",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "take with a grain of salt",
+      "members": [
+        0,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "곧이|의심|걸러|그대로|비판",
+    "korean": true,
+    "sentence": "Take his promises with a grain of salt.",
+    "clickedIndex": 7,
+    "status": 200,
+    "ms": 3057,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "take with a grain of salt",
+        "members": [
+          0,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "ko": "곧이곧대로 믿지 않다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 45,
+        "total_tokens": 926,
+        "cost": 0.00006095,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00006095,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.00001125
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-8",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "out of hand",
+      "members": [
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "즉시|단번|고려|일축",
+    "korean": true,
+    "sentence": "The committee rejected the proposal out of hand.",
+    "clickedIndex": 7,
+    "status": 200,
+    "ms": 1690,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "out of hand",
+        "members": [
+          5,
+          6,
+          7
+        ],
+        "ko": "단번에, 즉각"
+      },
+      "valid": false,
+      "validationError": "invalid_text",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 31,
+        "total_tokens": 912,
+        "cost": 0.00005745,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005745,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.00000775
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-7",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "burn the midnight oil",
+      "members": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "밤|늦게",
+    "korean": true,
+    "sentence": "She burned the midnight oil to finish her thesis.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 2435,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "burn the midnight oil",
+        "members": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "ko": "밤을 새우다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 891,
+        "completion_tokens": 34,
+        "total_tokens": 925,
+        "cost": 0.0000592,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000592,
+          "upstream_inference_prompt_cost": 0.0000507,
+          "upstream_inference_completions_cost": 0.0000085
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-8",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "out of hand",
+      "members": [
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "즉시|단번|고려|일축",
+    "korean": true,
+    "sentence": "The committee rejected the proposal out of hand.",
+    "clickedIndex": 7,
+    "status": 200,
+    "ms": 1437,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "out of hand",
+        "members": [
+          5,
+          6,
+          7
+        ],
+        "ko": "단번에"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 28,
+        "total_tokens": 909,
+        "cost": 0.0000567,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000567,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-9",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "on the ball",
+      "members": [
+        4,
+        5,
+        6
+      ]
+    },
+    "expectedKo": "유능|기민|빠르|눈치|능숙",
+    "korean": false,
+    "sentence": "Our new assistant is on the ball.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 1267,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "on the ball",
+        "members": [
+          4,
+          5,
+          6
+        ],
+        "ko": "영리한, 민첩한"
+      },
+      "valid": false,
+      "validationError": "invalid_text",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 33,
+        "total_tokens": 908,
+        "cost": 0.00009575,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00009575,
+          "upstream_inference_prompt_cost": 0.0000875,
+          "upstream_inference_completions_cost": 0.00000825
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-8",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "out of hand",
+      "members": [
+        5,
+        6,
+        7
+      ]
+    },
+    "expectedKo": "즉시|단번|고려|일축",
+    "korean": false,
+    "sentence": "The committee rejected the proposal out of hand.",
+    "clickedIndex": 7,
+    "status": 200,
+    "ms": 2797,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "out of hand",
+        "members": [
+          5,
+          6,
+          7
+        ],
+        "ko": "단칼에 거절하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 32,
+        "total_tokens": 913,
+        "cost": 0.0000577,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000577,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.000008
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-10",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "throw in the towel",
+      "members": [
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "expectedKo": "포기",
+    "korean": true,
+    "sentence": "After six failed attempts, they threw in the towel.",
+    "clickedIndex": 8,
+    "status": 200,
+    "ms": 1662,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "throw in the towel",
+        "members": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "ko": "포기하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 891,
+        "completion_tokens": 31,
+        "total_tokens": 922,
+        "cost": 0.00005845,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005845,
+          "upstream_inference_prompt_cost": 0.0000507,
+          "upstream_inference_completions_cost": 0.00000775
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-10",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "throw in the towel",
+      "members": [
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "expectedKo": "포기",
+    "korean": true,
+    "sentence": "After six failed attempts, they threw in the towel.",
+    "clickedIndex": 8,
+    "status": 200,
+    "ms": 1261,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "throw in the towel",
+        "members": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "ko": "포기하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 891,
+        "completion_tokens": 31,
+        "total_tokens": 922,
+        "cost": 0.00005845,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005845,
+          "upstream_inference_prompt_cost": 0.0000507,
+          "upstream_inference_completions_cost": 0.00000775
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-9",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "on the ball",
+      "members": [
+        4,
+        5,
+        6
+      ]
+    },
+    "expectedKo": "유능|기민|빠르|눈치|능숙",
+    "korean": true,
+    "sentence": "Our new assistant is on the ball.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 2961,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "on the ball",
+        "members": [
+          4,
+          5,
+          6
+        ],
+        "ko": "능숙하다, 영리하다"
+      },
+      "valid": false,
+      "validationError": "invalid_text",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 33,
+        "total_tokens": 908,
+        "cost": 0.00005735,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005735,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.00000825
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-9",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "on the ball",
+      "members": [
+        4,
+        5,
+        6
+      ]
+    },
+    "expectedKo": "유능|기민|빠르|눈치|능숙",
+    "korean": false,
+    "sentence": "Our new assistant is on the ball.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 3178,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "on the ball",
+        "members": [
+          4,
+          5,
+          6
+        ],
+        "ko": "능력이 뛰어난"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 33,
+        "total_tokens": 908,
+        "cost": 0.00005735,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005735,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.00000825
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-11",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "put up with",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "참|견디",
+    "korean": true,
+    "sentence": "I cannot put up with this noise any longer.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 1471,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "put up with",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "참다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 887,
+        "completion_tokens": 28,
+        "total_tokens": 915,
+        "cost": 0.0000573,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000573,
+          "upstream_inference_prompt_cost": 0.0000503,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-10",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "throw in the towel",
+      "members": [
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "expectedKo": "포기",
+    "korean": true,
+    "sentence": "After six failed attempts, they threw in the towel.",
+    "clickedIndex": 8,
+    "status": 200,
+    "ms": 1861,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "throw in the towel",
+        "members": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "ko": "포기하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 891,
+        "completion_tokens": 31,
+        "total_tokens": 922,
+        "cost": 0.00005845,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005845,
+          "upstream_inference_prompt_cost": 0.0000507,
+          "upstream_inference_completions_cost": 0.00000775
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-11",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "put up with",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "참|견디",
+    "korean": true,
+    "sentence": "I cannot put up with this noise any longer.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 1859,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "put up with",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "참다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 887,
+        "completion_tokens": 28,
+        "total_tokens": 915,
+        "cost": 0.0000573,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000573,
+          "upstream_inference_prompt_cost": 0.0000503,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-11",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "put up with",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "참|견디",
+    "korean": true,
+    "sentence": "I cannot put up with this noise any longer.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 1740,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "put up with",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "참다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 887,
+        "completion_tokens": 28,
+        "total_tokens": 915,
+        "cost": 0.0000573,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000573,
+          "upstream_inference_prompt_cost": 0.0000503,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-13",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "look down on",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "무시|깔보|경멸",
+    "korean": true,
+    "sentence": "She never looked down on people without degrees.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 858,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "look down on",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "무시하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 28,
+        "total_tokens": 910,
+        "cost": 0.0000568,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000568,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-12",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "look up to",
+      "members": [
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "존경|우러러",
+    "korean": true,
+    "sentence": "The younger players look up to their captain.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 1057,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "look up to",
+        "members": [
+          3,
+          4,
+          5
+        ],
+        "ko": "존경하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 28,
+        "total_tokens": 909,
+        "cost": 0.0000567,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000567,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-12",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "look up to",
+      "members": [
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "존경|우러러",
+    "korean": true,
+    "sentence": "The younger players look up to their captain.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 1342,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "look up to",
+        "members": [
+          3,
+          4,
+          5
+        ],
+        "ko": "우러러보다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 29,
+        "total_tokens": 910,
+        "cost": 0.00005695,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005695,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.00000725
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-13",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "look down on",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "무시|깔보|경멸",
+    "korean": false,
+    "sentence": "She never looked down on people without degrees.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 639,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "look down on",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "업신여기다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 30,
+        "total_tokens": 912,
+        "cost": 0.0000573,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000573,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-13",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "look down on",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "무시|깔보|경멸",
+    "korean": false,
+    "sentence": "She never looked down on people without degrees.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 842,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "look down on",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "억보다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 27,
+        "total_tokens": 909,
+        "cost": 0.00005655,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005655,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-12",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "look up to",
+      "members": [
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "존경|우러러",
+    "korean": true,
+    "sentence": "The younger players look up to their captain.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 1738,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "look up to",
+        "members": [
+          3,
+          4,
+          5
+        ],
+        "ko": "존경하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 28,
+        "total_tokens": 909,
+        "cost": 0.0000567,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000567,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-14",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "back out of",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "철회|발|취소|물러",
+    "korean": false,
+    "sentence": "The buyer backed out of the agreement at the last minute.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 651,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "back out of",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "손을 떼다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 902,
+        "completion_tokens": 30,
+        "total_tokens": 932,
+        "cost": 0.0000849,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 256,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000849,
+          "upstream_inference_prompt_cost": 0.0000774,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-14",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "back out of",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "철회|발|취소|물러",
+    "korean": false,
+    "sentence": "The buyer backed out of the agreement at the last minute.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 838,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "back out",
+        "members": [
+          2,
+          3
+        ],
+        "ko": "빠지다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 902,
+        "completion_tokens": 26,
+        "total_tokens": 928,
+        "cost": 0.0000583,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000583,
+          "upstream_inference_prompt_cost": 0.0000518,
+          "upstream_inference_completions_cost": 0.0000065
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": false,
+    "members": false,
+    "exact": false
+  },
+  {
+    "id": "holdout-expr-14",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "back out of",
+      "members": [
+        2,
+        3,
+        4
+      ]
+    },
+    "expectedKo": "철회|발|취소|물러",
+    "korean": false,
+    "sentence": "The buyer backed out of the agreement at the last minute.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 995,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "back out of",
+        "members": [
+          2,
+          3,
+          4
+        ],
+        "ko": "손을 떼다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 902,
+        "completion_tokens": 30,
+        "total_tokens": 932,
+        "cost": 0.0000593,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000593,
+          "upstream_inference_prompt_cost": 0.0000518,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-15",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "come across",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "우연|발견",
+    "korean": true,
+    "sentence": "I came across an old photograph while cleaning.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1581,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "come across",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "우연히 발견하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 883,
+        "completion_tokens": 27,
+        "total_tokens": 910,
+        "cost": 0.00005665,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005665,
+          "upstream_inference_prompt_cost": 0.0000499,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-15",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "come across",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "우연|발견",
+    "korean": true,
+    "sentence": "I came across an old photograph while cleaning.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1583,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "come across",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "우연히 발견하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 883,
+        "completion_tokens": 27,
+        "total_tokens": 910,
+        "cost": 0.00005665,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005665,
+          "upstream_inference_prompt_cost": 0.0000499,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-15",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "come across",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "우연|발견",
+    "korean": true,
+    "sentence": "I came across an old photograph while cleaning.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 780,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "come across",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "우연히 발견하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 883,
+        "completion_tokens": 27,
+        "total_tokens": 910,
+        "cost": 0.00009505,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00009505,
+          "upstream_inference_prompt_cost": 0.0000883,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-16",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "run into",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "부딪|겪|직면|맞닥",
+    "korean": true,
+    "sentence": "We ran into serious difficulties during construction.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1643,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "run into",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "(문제·어려움에) 부딪치다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 35,
+        "total_tokens": 912,
+        "cost": 0.00005805,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005805,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.00000875
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-17",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "work out",
+      "members": [
+        2,
+        5
+      ]
+    },
+    "expectedKo": "풀|해결|알아|계산",
+    "korean": true,
+    "sentence": "We eventually worked the answer out together.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 1122,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "work out",
+        "members": [
+          2,
+          5
+        ],
+        "ko": "해결하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 25,
+        "total_tokens": 900,
+        "cost": 0.00005535,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005535,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.00000625
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-16",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "run into",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "부딪|겪|직면|맞닥",
+    "korean": true,
+    "sentence": "We ran into serious difficulties during construction.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1125,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "run into",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "부딪히다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 27,
+        "total_tokens": 904,
+        "cost": 0.00005605,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005605,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-16",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "run into",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "부딪|겪|직면|맞닥",
+    "korean": true,
+    "sentence": "We ran into serious difficulties during construction.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1168,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "run into",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "부딪치다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 27,
+        "total_tokens": 904,
+        "cost": 0.00005605,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005605,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-18",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "turn out",
+      "members": [
+        2,
+        3
+      ]
+    },
+    "expectedKo": "드러|판명|밝혀",
+    "korean": true,
+    "sentence": "The rumor turned out to be false.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 658,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "turn out",
+        "members": [
+          2,
+          3
+        ],
+        "ko": "판명되다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 26,
+        "total_tokens": 901,
+        "cost": 0.000094,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.000094,
+          "upstream_inference_prompt_cost": 0.0000875,
+          "upstream_inference_completions_cost": 0.0000065
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-17",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "work out",
+      "members": [
+        2,
+        5
+      ]
+    },
+    "expectedKo": "풀|해결|알아|계산",
+    "korean": true,
+    "sentence": "We eventually worked the answer out together.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 851,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "work out",
+        "members": [
+          2,
+          5
+        ],
+        "ko": "해결하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 25,
+        "total_tokens": 900,
+        "cost": 0.00005535,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005535,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.00000625
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-17",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "work out",
+      "members": [
+        2,
+        5
+      ]
+    },
+    "expectedKo": "풀|해결|알아|계산",
+    "korean": true,
+    "sentence": "We eventually worked the answer out together.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 817,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "work out",
+        "members": [
+          2,
+          5
+        ],
+        "ko": "해결하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 25,
+        "total_tokens": 900,
+        "cost": 0.00005535,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005535,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.00000625
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-18",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "turn out",
+      "members": [
+        2,
+        3
+      ]
+    },
+    "expectedKo": "드러|판명|밝혀",
+    "korean": true,
+    "sentence": "The rumor turned out to be false.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 706,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "turn out",
+        "members": [
+          2,
+          3
+        ],
+        "ko": "밝혀지다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 28,
+        "total_tokens": 903,
+        "cost": 0.0000561,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000561,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-18",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "turn out",
+      "members": [
+        2,
+        3
+      ]
+    },
+    "expectedKo": "드러|판명|밝혀",
+    "korean": true,
+    "sentence": "The rumor turned out to be false.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 1544,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "turn out",
+        "members": [
+          2,
+          3
+        ],
+        "ko": "밝혀지다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 28,
+        "total_tokens": 903,
+        "cost": 0.0000561,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000561,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-20",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "end up",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "결국|끝내",
+    "korean": true,
+    "sentence": "They ended up spending the night at the station.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 648,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "end up",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "결국 ~하게 되다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 887,
+        "completion_tokens": 28,
+        "total_tokens": 915,
+        "cost": 0.0000573,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000573,
+          "upstream_inference_prompt_cost": 0.0000503,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-19",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "make up for",
+      "members": [
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "보상|만회|벌충|보완",
+    "korean": true,
+    "sentence": "Extra effort cannot make up for poor planning.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 1677,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "make up for",
+        "members": [
+          3,
+          4,
+          5
+        ],
+        "ko": "보상하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 28,
+        "total_tokens": 910,
+        "cost": 0.0000568,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000568,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-19",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "make up for",
+      "members": [
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "보상|만회|벌충|보완",
+    "korean": false,
+    "sentence": "Extra effort cannot make up for poor planning.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 1751,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "make up for",
+        "members": [
+          3,
+          4,
+          5
+        ],
+        "ko": "보충하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 28,
+        "total_tokens": 910,
+        "cost": 0.0000568,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000568,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-19",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "make up for",
+      "members": [
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "보상|만회|벌충|보완",
+    "korean": false,
+    "sentence": "Extra effort cannot make up for poor planning.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 1127,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "make up for",
+        "members": [
+          3,
+          4,
+          5
+        ],
+        "ko": "보충하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 28,
+        "total_tokens": 910,
+        "cost": 0.0000568,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000568,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-20",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "end up",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "결국|끝내",
+    "korean": true,
+    "sentence": "They ended up spending the night at the station.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 875,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "end up",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "결국 ~하게 되다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 887,
+        "completion_tokens": 28,
+        "total_tokens": 915,
+        "cost": 0.0000573,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000573,
+          "upstream_inference_prompt_cost": 0.0000503,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-21",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "silver lining",
+      "members": [
+        4,
+        5
+      ]
+    },
+    "expectedKo": "위안|희망|긍정|좋은",
+    "korean": false,
+    "sentence": "The delay had a silver lining: we could rest.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 804,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "silver lining",
+        "members": [
+          4,
+          5
+        ],
+        "ko": "은전 같은 장점"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 888,
+        "completion_tokens": 28,
+        "total_tokens": 916,
+        "cost": 0.0000574,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000574,
+          "upstream_inference_prompt_cost": 0.0000504,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-21",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "silver lining",
+      "members": [
+        4,
+        5
+      ]
+    },
+    "expectedKo": "위안|희망|긍정|좋은",
+    "korean": true,
+    "sentence": "The delay had a silver lining: we could rest.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 763,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "silver lining",
+        "members": [
+          4,
+          5
+        ],
+        "ko": "은혜가 되는 좋은 점"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 888,
+        "completion_tokens": 31,
+        "total_tokens": 919,
+        "cost": 0.00005815,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005815,
+          "upstream_inference_prompt_cost": 0.0000504,
+          "upstream_inference_completions_cost": 0.00000775
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-20",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "end up",
+      "members": [
+        1,
+        2
+      ]
+    },
+    "expectedKo": "결국|끝내",
+    "korean": true,
+    "sentence": "They ended up spending the night at the station.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 845,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "end up",
+        "members": [
+          1,
+          2
+        ],
+        "ko": "결국 ~하게 되다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 887,
+        "completion_tokens": 28,
+        "total_tokens": 915,
+        "cost": 0.0000573,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000573,
+          "upstream_inference_prompt_cost": 0.0000503,
+          "upstream_inference_completions_cost": 0.000007
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-21",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "silver lining",
+      "members": [
+        4,
+        5
+      ]
+    },
+    "expectedKo": "위안|희망|긍정|좋은",
+    "korean": true,
+    "sentence": "The delay had a silver lining: we could rest.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1065,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "silver lining",
+        "members": [
+          4,
+          5
+        ],
+        "ko": "은전한 면, 좋은 점"
+      },
+      "valid": false,
+      "validationError": "invalid_text",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 888,
+        "completion_tokens": 31,
+        "total_tokens": 919,
+        "cost": 0.00005815,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005815,
+          "upstream_inference_prompt_cost": 0.0000504,
+          "upstream_inference_completions_cost": 0.00000775
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-22",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "tipping point",
+      "members": [
+        5,
+        6
+      ]
+    },
+    "expectedKo": "임계|전환|변곡",
+    "korean": true,
+    "sentence": "The ecosystem is nearing a tipping point.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 889,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "tipping point",
+        "members": [
+          5,
+          6
+        ],
+        "ko": "임계점, 전환점"
+      },
+      "valid": false,
+      "validationError": "invalid_text",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 30,
+        "total_tokens": 907,
+        "cost": 0.0000568,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000568,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-22",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "tipping point",
+      "members": [
+        5,
+        6
+      ]
+    },
+    "expectedKo": "임계|전환|변곡",
+    "korean": true,
+    "sentence": "The ecosystem is nearing a tipping point.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 892,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "tipping point",
+        "members": [
+          5,
+          6
+        ],
+        "ko": "전환점, 임계점"
+      },
+      "valid": false,
+      "validationError": "invalid_text",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 30,
+        "total_tokens": 907,
+        "cost": 0.0000568,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000568,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.0000075
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-22",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "tipping point",
+      "members": [
+        5,
+        6
+      ]
+    },
+    "expectedKo": "임계|전환|변곡",
+    "korean": true,
+    "sentence": "The ecosystem is nearing a tipping point.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 851,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "tipping point",
+        "members": [
+          5,
+          6
+        ],
+        "ko": "임계점"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 26,
+        "total_tokens": 903,
+        "cost": 0.0000558,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000558,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.0000065
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-23",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "status quo",
+      "members": [
+        5,
+        6
+      ]
+    },
+    "expectedKo": "현상|현 상태|현재 상태",
+    "korean": true,
+    "sentence": "They wanted to preserve the status quo.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 705,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "status quo",
+        "members": [
+          5,
+          6
+        ],
+        "ko": "현상 유지"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 26,
+        "total_tokens": 901,
+        "cost": 0.0000556,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000556,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.0000065
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-23",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "status quo",
+      "members": [
+        5,
+        6
+      ]
+    },
+    "expectedKo": "현상|현 상태|현재 상태",
+    "korean": true,
+    "sentence": "They wanted to preserve the status quo.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 834,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "status quo",
+        "members": [
+          5,
+          6
+        ],
+        "ko": "현상"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 875,
+        "completion_tokens": 24,
+        "total_tokens": 899,
+        "cost": 0.0000551,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000551,
+          "upstream_inference_prompt_cost": 0.0000491,
+          "upstream_inference_completions_cost": 0.000006
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-24",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "carbon footprint",
+      "members": [
+        4,
+        5
+      ]
+    },
+    "expectedKo": "탄소",
+    "korean": true,
+    "sentence": "The company reduced its carbon footprint.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1043,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "carbon footprint",
+        "members": [
+          4,
+          5
+        ],
+        "ko": "탄소 발자국"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 27,
+        "total_tokens": 896,
+        "cost": 0.00005525,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005525,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-25",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "due process",
+      "members": [
+        3,
+        4
+      ]
+    },
+    "expectedKo": "적법|법적 절차",
+    "korean": false,
+    "sentence": "Every defendant deserves due process.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 709,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "due",
+        "members": [
+          3
+        ],
+        "ko": "정당한"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 864,
+        "completion_tokens": 22,
+        "total_tokens": 886,
+        "cost": 0.0000535,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000535,
+          "upstream_inference_prompt_cost": 0.000048,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": false,
+    "canonical": false,
+    "members": false,
+    "exact": false
+  },
+  {
+    "id": "holdout-expr-24",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "carbon footprint",
+      "members": [
+        4,
+        5
+      ]
+    },
+    "expectedKo": "탄소",
+    "korean": true,
+    "sentence": "The company reduced its carbon footprint.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1071,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "carbon",
+        "members": [
+          4
+        ],
+        "ko": "탄소"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 21,
+        "total_tokens": 890,
+        "cost": 0.00005375,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005375,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": false,
+    "canonical": false,
+    "members": false,
+    "exact": false
+  },
+  {
+    "id": "holdout-expr-24",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "carbon footprint",
+      "members": [
+        4,
+        5
+      ]
+    },
+    "expectedKo": "탄소",
+    "korean": true,
+    "sentence": "The company reduced its carbon footprint.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1372,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "carbon footprint",
+        "members": [
+          4,
+          5
+        ],
+        "ko": "탄소 발자국"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 27,
+        "total_tokens": 896,
+        "cost": 0.00005525,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005525,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-25",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "due process",
+      "members": [
+        3,
+        4
+      ]
+    },
+    "expectedKo": "적법|법적 절차",
+    "korean": true,
+    "sentence": "Every defendant deserves due process.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 615,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "due process",
+        "members": [
+          3,
+          4
+        ],
+        "ko": "적법한 절차"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 864,
+        "completion_tokens": 27,
+        "total_tokens": 891,
+        "cost": 0.00005475,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005475,
+          "upstream_inference_prompt_cost": 0.000048,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-25",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "due process",
+      "members": [
+        3,
+        4
+      ]
+    },
+    "expectedKo": "적법|법적 절차",
+    "korean": true,
+    "sentence": "Every defendant deserves due process.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 818,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "due process",
+        "members": [
+          3,
+          4
+        ],
+        "ko": "적법한 절차"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 864,
+        "completion_tokens": 27,
+        "total_tokens": 891,
+        "cost": 0.00005475,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005475,
+          "upstream_inference_prompt_cost": 0.000048,
+          "upstream_inference_completions_cost": 0.00000675
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-1",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "apple",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "사과",
+    "korean": true,
+    "sentence": "The apple fell into the wooden cart.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1809,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "apple",
+        "members": [
+          1
+        ],
+        "ko": "사과"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 874,
+        "completion_tokens": 21,
+        "total_tokens": 895,
+        "cost": 0.00005425,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005425,
+          "upstream_inference_prompt_cost": 0.000049,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-1",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "apple",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "사과",
+    "korean": true,
+    "sentence": "The apple fell into the wooden cart.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1406,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "apple",
+        "members": [
+          1
+        ],
+        "ko": "사과"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 874,
+        "completion_tokens": 21,
+        "total_tokens": 895,
+        "cost": 0.00005425,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005425,
+          "upstream_inference_prompt_cost": 0.000049,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-1",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "apple",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "사과",
+    "korean": true,
+    "sentence": "The apple fell into the wooden cart.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1355,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "apple",
+        "members": [
+          1
+        ],
+        "ko": "사과"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 874,
+        "completion_tokens": 21,
+        "total_tokens": 895,
+        "cost": 0.00005425,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005425,
+          "upstream_inference_prompt_cost": 0.000049,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-2",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "Apple",
+      "members": [
+        0
+      ]
+    },
+    "expectedKo": "애플",
+    "korean": true,
+    "sentence": "Apple announced a new computer yesterday.",
+    "clickedIndex": 0,
+    "status": 200,
+    "ms": 1585,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "Apple",
+        "members": [
+          0
+        ],
+        "ko": "애플"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 21,
+        "total_tokens": 890,
+        "cost": 0.00005375,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005375,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-2",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "Apple",
+      "members": [
+        0
+      ]
+    },
+    "expectedKo": "애플",
+    "korean": true,
+    "sentence": "Apple announced a new computer yesterday.",
+    "clickedIndex": 0,
+    "status": 200,
+    "ms": 1587,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "Apple",
+        "members": [
+          0
+        ],
+        "ko": "애플"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 21,
+        "total_tokens": 890,
+        "cost": 0.00005375,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005375,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-2",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "Apple",
+      "members": [
+        0
+      ]
+    },
+    "expectedKo": "애플",
+    "korean": true,
+    "sentence": "Apple announced a new computer yesterday.",
+    "clickedIndex": 0,
+    "status": 200,
+    "ms": 1654,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "Apple",
+        "members": [
+          0
+        ],
+        "ko": "애플"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 21,
+        "total_tokens": 890,
+        "cost": 0.00005375,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005375,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-3",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "kick",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "차|찼",
+    "korean": true,
+    "sentence": "He kicked the empty bucket across the yard.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1572,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "kick",
+        "members": [
+          1
+        ],
+        "ko": "차다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 21,
+        "total_tokens": 903,
+        "cost": 0.00005505,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005505,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-3",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "kick",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "차|찼",
+    "korean": true,
+    "sentence": "He kicked the empty bucket across the yard.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1702,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "kick",
+        "members": [
+          1
+        ],
+        "ko": "차다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 21,
+        "total_tokens": 903,
+        "cost": 0.00005505,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005505,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-3",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "kick",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "차|찼",
+    "korean": true,
+    "sentence": "He kicked the empty bucket across the yard.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1679,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "kick",
+        "members": [
+          1
+        ],
+        "ko": "차다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 882,
+        "completion_tokens": 21,
+        "total_tokens": 903,
+        "cost": 0.00005505,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005505,
+          "upstream_inference_prompt_cost": 0.0000498,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-4",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "leg",
+      "members": [
+        5
+      ]
+    },
+    "expectedKo": "다리",
+    "korean": true,
+    "sentence": "The doctor examined her injured leg.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 581,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "leg",
+        "members": [
+          5
+        ],
+        "ko": "다리"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 21,
+        "total_tokens": 890,
+        "cost": 0.00005375,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005375,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-4",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "leg",
+      "members": [
+        5
+      ]
+    },
+    "expectedKo": "다리",
+    "korean": true,
+    "sentence": "The doctor examined her injured leg.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 713,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "leg",
+        "members": [
+          5
+        ],
+        "ko": "다리"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 21,
+        "total_tokens": 890,
+        "cost": 0.00005375,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005375,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-4",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "leg",
+      "members": [
+        5
+      ]
+    },
+    "expectedKo": "다리",
+    "korean": true,
+    "sentence": "The doctor examined her injured leg.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 690,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "leg",
+        "members": [
+          5
+        ],
+        "ko": "다리"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 869,
+        "completion_tokens": 21,
+        "total_tokens": 890,
+        "cost": 0.00005375,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005375,
+          "upstream_inference_prompt_cost": 0.0000485,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-expr-23",
+    "category": "holdout-expression",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "status quo",
+      "members": [
+        5,
+        6
+      ]
+    },
+    "expectedKo": "현상|현 상태|현재 상태",
+    "korean": false,
+    "sentence": "They wanted to preserve the status quo.",
+    "clickedIndex": 5,
+    "status": 502,
+    "ms": 8166,
+    "response": {
+      "error": "TimeoutError: Signal timed out."
+    },
+    "kind": false,
+    "canonical": false,
+    "members": false,
+    "exact": false
+  },
+  {
+    "id": "holdout-word-5",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "red",
+      "members": [
+        5
+      ]
+    },
+    "expectedKo": "빨|붉",
+    "korean": true,
+    "sentence": "They painted the wooden herring red.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 1724,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "red",
+        "members": [
+          5
+        ],
+        "ko": "빨간"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 22,
+        "total_tokens": 893,
+        "cost": 0.0000542,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000542,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-5",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "red",
+      "members": [
+        5
+      ]
+    },
+    "expectedKo": "빨|붉",
+    "korean": true,
+    "sentence": "They painted the wooden herring red.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 2229,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "paint the town red",
+        "members": [
+          5
+        ],
+        "ko": "빨간"
+      },
+      "valid": false,
+      "validationError": "invalid_expression",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 26,
+        "total_tokens": 897,
+        "cost": 0.0000552,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000552,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.0000065
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": false,
+    "canonical": false,
+    "members": true,
+    "exact": false
+  },
+  {
+    "id": "holdout-word-5",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "red",
+      "members": [
+        5
+      ]
+    },
+    "expectedKo": "빨|붉",
+    "korean": true,
+    "sentence": "They painted the wooden herring red.",
+    "clickedIndex": 5,
+    "status": 200,
+    "ms": 2345,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "red",
+        "members": [
+          5
+        ],
+        "ko": "빨간"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 22,
+        "total_tokens": 893,
+        "cost": 0.0000542,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000542,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-6",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "cold",
+      "members": [
+        4
+      ]
+    },
+    "expectedKo": "차가|찬",
+    "korean": true,
+    "sentence": "The child washed his cold feet in warm water.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 3089,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "cold",
+        "members": [
+          4
+        ],
+        "ko": "찬"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 886,
+        "completion_tokens": 21,
+        "total_tokens": 907,
+        "cost": 0.00005545,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005545,
+          "upstream_inference_prompt_cost": 0.0000502,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-7",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "wait",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "기다",
+    "korean": true,
+    "sentence": "We waited beside the bus stop until noon.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1079,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "wait",
+        "members": [
+          1
+        ],
+        "ko": "기다리다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 883,
+        "completion_tokens": 23,
+        "total_tokens": 906,
+        "cost": 0.00005565,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005565,
+          "upstream_inference_prompt_cost": 0.0000499,
+          "upstream_inference_completions_cost": 0.00000575
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-6",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "cold",
+      "members": [
+        4
+      ]
+    },
+    "expectedKo": "차가|찬",
+    "korean": true,
+    "sentence": "The child washed his cold feet in warm water.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1623,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "cold",
+        "members": [
+          4
+        ],
+        "ko": "찬"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 886,
+        "completion_tokens": 21,
+        "total_tokens": 907,
+        "cost": 0.00005545,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005545,
+          "upstream_inference_prompt_cost": 0.0000502,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-6",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "cold",
+      "members": [
+        4
+      ]
+    },
+    "expectedKo": "차가|찬",
+    "korean": true,
+    "sentence": "The child washed his cold feet in warm water.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1469,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "cold",
+        "members": [
+          4
+        ],
+        "ko": "차가운"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 886,
+        "completion_tokens": 22,
+        "total_tokens": 908,
+        "cost": 0.0000557,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000557,
+          "upstream_inference_prompt_cost": 0.0000502,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-8",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "listen",
+      "members": [
+        2
+      ]
+    },
+    "expectedKo": "듣|경청",
+    "korean": true,
+    "sentence": "The students listened to the lecturer carefully.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 603,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "listen",
+        "members": [
+          2
+        ],
+        "ko": "듣다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 22,
+        "total_tokens": 899,
+        "cost": 0.0000548,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000548,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-7",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "wait",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "기다",
+    "korean": true,
+    "sentence": "We waited beside the bus stop until noon.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 848,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "wait",
+        "members": [
+          1
+        ],
+        "ko": "기다리다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 883,
+        "completion_tokens": 23,
+        "total_tokens": 906,
+        "cost": 0.00005565,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005565,
+          "upstream_inference_prompt_cost": 0.0000499,
+          "upstream_inference_completions_cost": 0.00000575
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-7",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "wait",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "기다",
+    "korean": true,
+    "sentence": "We waited beside the bus stop until noon.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 858,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "wait",
+        "members": [
+          1
+        ],
+        "ko": "기다리다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 883,
+        "completion_tokens": 23,
+        "total_tokens": 906,
+        "cost": 0.00005565,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005565,
+          "upstream_inference_prompt_cost": 0.0000499,
+          "upstream_inference_completions_cost": 0.00000575
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-8",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "listen",
+      "members": [
+        2
+      ]
+    },
+    "expectedKo": "듣|경청",
+    "korean": true,
+    "sentence": "The students listened to the lecturer carefully.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 783,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "listen",
+        "members": [
+          2
+        ],
+        "ko": "듣다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 22,
+        "total_tokens": 899,
+        "cost": 0.0000548,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000548,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-8",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "listen",
+      "members": [
+        2
+      ]
+    },
+    "expectedKo": "듣|경청",
+    "korean": true,
+    "sentence": "The students listened to the lecturer carefully.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 676,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "listen",
+        "members": [
+          2
+        ],
+        "ko": "듣다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 877,
+        "completion_tokens": 22,
+        "total_tokens": 899,
+        "cost": 0.0000548,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000548,
+          "upstream_inference_prompt_cost": 0.0000493,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-10",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "send",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "보내",
+    "korean": true,
+    "sentence": "Please send the receipt to my assistant.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1205,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "send",
+        "members": [
+          1
+        ],
+        "ko": "보내다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 876,
+        "completion_tokens": 22,
+        "total_tokens": 898,
+        "cost": 0.0000547,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000547,
+          "upstream_inference_prompt_cost": 0.0000492,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-9",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "depend",
+      "members": [
+        2
+      ]
+    },
+    "expectedKo": "달려|의존",
+    "korean": true,
+    "sentence": "The outcome depends on the weather.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 1636,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "depend",
+        "members": [
+          2
+        ],
+        "ko": "의존하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 23,
+        "total_tokens": 894,
+        "cost": 0.00005445,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005445,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.00000575
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-9",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "depend",
+      "members": [
+        2
+      ]
+    },
+    "expectedKo": "달려|의존",
+    "korean": true,
+    "sentence": "The outcome depends on the weather.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 2000,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "depend",
+        "members": [
+          2
+        ],
+        "ko": "~에 달려 있다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 25,
+        "total_tokens": 896,
+        "cost": 0.00005495,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005495,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.00000625
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-9",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "depend",
+      "members": [
+        2
+      ]
+    },
+    "expectedKo": "달려|의존",
+    "korean": true,
+    "sentence": "The outcome depends on the weather.",
+    "clickedIndex": 2,
+    "status": 200,
+    "ms": 2044,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "depend",
+        "members": [
+          2
+        ],
+        "ko": "달려 있다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 23,
+        "total_tokens": 894,
+        "cost": 0.00005445,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005445,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.00000575
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-10",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "send",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "보내",
+    "korean": true,
+    "sentence": "Please send the receipt to my assistant.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1172,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "send",
+        "members": [
+          1
+        ],
+        "ko": "보내다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 876,
+        "completion_tokens": 22,
+        "total_tokens": 898,
+        "cost": 0.0000547,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000547,
+          "upstream_inference_prompt_cost": 0.0000492,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-10",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "send",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "보내",
+    "korean": true,
+    "sentence": "Please send the receipt to my assistant.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1062,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "send",
+        "members": [
+          1
+        ],
+        "ko": "보내다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 876,
+        "completion_tokens": 22,
+        "total_tokens": 898,
+        "cost": 0.0000547,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000547,
+          "upstream_inference_prompt_cost": 0.0000492,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-11",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "cash",
+      "members": [
+        6
+      ]
+    },
+    "expectedKo": "현금",
+    "korean": true,
+    "sentence": "She paid for the tickets in cash.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 1193,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "cash",
+        "members": [
+          6
+        ],
+        "ko": "현금"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 874,
+        "completion_tokens": 21,
+        "total_tokens": 895,
+        "cost": 0.00005425,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005425,
+          "upstream_inference_prompt_cost": 0.000049,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-11",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "cash",
+      "members": [
+        6
+      ]
+    },
+    "expectedKo": "현금",
+    "korean": true,
+    "sentence": "She paid for the tickets in cash.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 1194,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "cash",
+        "members": [
+          6
+        ],
+        "ko": "현금"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 874,
+        "completion_tokens": 21,
+        "total_tokens": 895,
+        "cost": 0.00005425,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005425,
+          "upstream_inference_prompt_cost": 0.000049,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-11",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "cash",
+      "members": [
+        6
+      ]
+    },
+    "expectedKo": "현금",
+    "korean": true,
+    "sentence": "She paid for the tickets in cash.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 662,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "cash",
+        "members": [
+          6
+        ],
+        "ko": "현금"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 874,
+        "completion_tokens": 21,
+        "total_tokens": 895,
+        "cost": 0.00005425,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005425,
+          "upstream_inference_prompt_cost": 0.000049,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-12",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "bank",
+      "members": [
+        9
+      ]
+    },
+    "expectedKo": "둑|강둑|강가",
+    "korean": true,
+    "sentence": "After leaving the bank, he rested on the river bank.",
+    "clickedIndex": 9,
+    "status": 200,
+    "ms": 1233,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "bank",
+        "members": [
+          9
+        ],
+        "ko": "둑"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 895,
+        "completion_tokens": 21,
+        "total_tokens": 916,
+        "cost": 0.00005635,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005635,
+          "upstream_inference_prompt_cost": 0.0000511,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-12",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "bank",
+      "members": [
+        9
+      ]
+    },
+    "expectedKo": "둑|강둑|강가",
+    "korean": true,
+    "sentence": "After leaving the bank, he rested on the river bank.",
+    "clickedIndex": 9,
+    "status": 200,
+    "ms": 1595,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "bank",
+        "members": [
+          9
+        ],
+        "ko": "강둑"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 895,
+        "completion_tokens": 22,
+        "total_tokens": 917,
+        "cost": 0.0000566,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000566,
+          "upstream_inference_prompt_cost": 0.0000511,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-12",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "bank",
+      "members": [
+        9
+      ]
+    },
+    "expectedKo": "둑|강둑|강가",
+    "korean": true,
+    "sentence": "After leaving the bank, he rested on the river bank.",
+    "clickedIndex": 9,
+    "status": 200,
+    "ms": 1391,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "bank",
+        "members": [
+          9
+        ],
+        "ko": "둑"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 895,
+        "completion_tokens": 21,
+        "total_tokens": 916,
+        "cost": 0.00005635,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005635,
+          "upstream_inference_prompt_cost": 0.0000511,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-13",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "take",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "적|쓰|기록",
+    "korean": true,
+    "sentence": "I take notes before the planes take off.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1202,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "take",
+        "members": [
+          1
+        ],
+        "ko": "적다, 기록하다"
+      },
+      "valid": false,
+      "validationError": "invalid_text",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 879,
+        "completion_tokens": 24,
+        "total_tokens": 903,
+        "cost": 0.0000555,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000555,
+          "upstream_inference_prompt_cost": 0.0000495,
+          "upstream_inference_completions_cost": 0.000006
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-14",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "charge",
+      "members": [
+        4
+      ]
+    },
+    "expectedKo": "청구|받|부과",
+    "korean": true,
+    "sentence": "The hotel did not charge us for breakfast.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 697,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "charge",
+        "members": [
+          4
+        ],
+        "ko": "청구하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 22,
+        "total_tokens": 903,
+        "cost": 0.0000552,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000552,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-14",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "charge",
+      "members": [
+        4
+      ]
+    },
+    "expectedKo": "청구|받|부과",
+    "korean": true,
+    "sentence": "The hotel did not charge us for breakfast.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 808,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "charge",
+        "members": [
+          4
+        ],
+        "ko": "청구하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 22,
+        "total_tokens": 903,
+        "cost": 0.0000552,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000552,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-13",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "take",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "적|쓰|기록",
+    "korean": true,
+    "sentence": "I take notes before the planes take off.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1109,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "take",
+        "members": [
+          1
+        ],
+        "ko": "적다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 879,
+        "completion_tokens": 21,
+        "total_tokens": 900,
+        "cost": 0.00005475,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005475,
+          "upstream_inference_prompt_cost": 0.0000495,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-13",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "take",
+      "members": [
+        1
+      ]
+    },
+    "expectedKo": "적|쓰|기록",
+    "korean": true,
+    "sentence": "I take notes before the planes take off.",
+    "clickedIndex": 1,
+    "status": 200,
+    "ms": 1227,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "take",
+        "members": [
+          1
+        ],
+        "ko": "쓰다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 879,
+        "completion_tokens": 22,
+        "total_tokens": 901,
+        "cost": 0.000055,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.000055,
+          "upstream_inference_prompt_cost": 0.0000495,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-14",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "charge",
+      "members": [
+        4
+      ]
+    },
+    "expectedKo": "청구|받|부과",
+    "korean": true,
+    "sentence": "The hotel did not charge us for breakfast.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 622,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "charge",
+        "members": [
+          4
+        ],
+        "ko": "청구하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 881,
+        "completion_tokens": 22,
+        "total_tokens": 903,
+        "cost": 0.0000552,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000552,
+          "upstream_inference_prompt_cost": 0.0000497,
+          "upstream_inference_completions_cost": 0.0000055
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-15",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "word",
+      "canonical": "head",
+      "members": [
+        9
+      ]
+    },
+    "expectedKo": "머리",
+    "korean": true,
+    "sentence": "The injury was on the left side of his head.",
+    "clickedIndex": 9,
+    "status": 200,
+    "ms": 660,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "head",
+        "members": [
+          9
+        ],
+        "ko": "머리"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 892,
+        "completion_tokens": 21,
+        "total_tokens": 913,
+        "cost": 0.00005605,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005605,
+          "upstream_inference_prompt_cost": 0.0000508,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-15",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "word",
+      "canonical": "head",
+      "members": [
+        9
+      ]
+    },
+    "expectedKo": "머리",
+    "korean": true,
+    "sentence": "The injury was on the left side of his head.",
+    "clickedIndex": 9,
+    "status": 200,
+    "ms": 705,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "head",
+        "members": [
+          9
+        ],
+        "ko": "머리"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 892,
+        "completion_tokens": 21,
+        "total_tokens": 913,
+        "cost": 0.00005605,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005605,
+          "upstream_inference_prompt_cost": 0.0000508,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "holdout-word-15",
+    "category": "holdout-word",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "word",
+      "canonical": "head",
+      "members": [
+        9
+      ]
+    },
+    "expectedKo": "머리",
+    "korean": true,
+    "sentence": "The injury was on the left side of his head.",
+    "clickedIndex": 9,
+    "status": 200,
+    "ms": 661,
+    "response": {
+      "answer": {
+        "kind": "word",
+        "canonical": "head",
+        "members": [
+          9
+        ],
+        "ko": "머리"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 892,
+        "completion_tokens": 21,
+        "total_tokens": 913,
+        "cost": 0.00005605,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.00005605,
+          "upstream_inference_prompt_cost": 0.0000508,
+          "upstream_inference_completions_cost": 0.00000525
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-apple",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "upset the apple cart",
+      "members": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "망치|뒤엎|혼란|흐트|어그러",
+    "korean": true,
+    "sentence": "His announcement upset the apple cart.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1092,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "upset the apple cart",
+        "members": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "ko": "계획을 망치다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 36,
+        "total_tokens": 907,
+        "cost": 0.0000577,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000577,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.000009
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-feather",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "a feather in one's cap",
+      "members": [
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    "expectedKo": "자랑|명예|업적|영광",
+    "korean": true,
+    "sentence": "Winning was a feather in your cap.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 924,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "a feather in one's cap",
+        "members": [
+          2,
+          3,
+          4,
+          6
+        ],
+        "ko": "큰 영광"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 878,
+        "completion_tokens": 34,
+        "total_tokens": 912,
+        "cost": 0.0000579,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000579,
+          "upstream_inference_prompt_cost": 0.0000494,
+          "upstream_inference_completions_cost": 0.0000085
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-apple",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "upset the apple cart",
+      "members": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "망치|뒤엎|혼란|흐트|어그러",
+    "korean": true,
+    "sentence": "His announcement upset the apple cart.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1289,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "upset the apple cart",
+        "members": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "ko": "계획을 뒤엎다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 36,
+        "total_tokens": 907,
+        "cost": 0.0000833,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 256,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000833,
+          "upstream_inference_prompt_cost": 0.0000743,
+          "upstream_inference_completions_cost": 0.000009
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-apple",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "upset the apple cart",
+      "members": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedKo": "망치|뒤엎|혼란|흐트|어그러",
+    "korean": true,
+    "sentence": "His announcement upset the apple cart.",
+    "clickedIndex": 4,
+    "status": 200,
+    "ms": 1638,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "upset the apple cart",
+        "members": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "ko": "계획을 망치다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 871,
+        "completion_tokens": 36,
+        "total_tokens": 907,
+        "cost": 0.0000577,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000577,
+          "upstream_inference_prompt_cost": 0.0000487,
+          "upstream_inference_completions_cost": 0.000009
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-feather",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "a feather in one's cap",
+      "members": [
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    "expectedKo": "자랑|명예|업적|영광",
+    "korean": true,
+    "sentence": "Winning was a feather in your cap.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 710,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "a feather in one's cap",
+        "members": [
+          2,
+          3,
+          4,
+          6
+        ],
+        "ko": "큰 영광"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 878,
+        "completion_tokens": 34,
+        "total_tokens": 912,
+        "cost": 0.0000579,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000579,
+          "upstream_inference_prompt_cost": 0.0000494,
+          "upstream_inference_completions_cost": 0.0000085
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-feather",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "a feather in one's cap",
+      "members": [
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    "expectedKo": "자랑|명예|업적|영광",
+    "korean": true,
+    "sentence": "Winning was a feather in your cap.",
+    "clickedIndex": 3,
+    "status": 200,
+    "ms": 847,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "a feather in one's cap",
+        "members": [
+          2,
+          3,
+          4,
+          6
+        ],
+        "ko": "명예"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 878,
+        "completion_tokens": 32,
+        "total_tokens": 910,
+        "cost": 0.0000574,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000574,
+          "upstream_inference_prompt_cost": 0.0000494,
+          "upstream_inference_completions_cost": 0.000008
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-repeat",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 1,
+    "expected": {
+      "kind": "expression",
+      "canonical": "take off",
+      "members": [
+        6,
+        7
+      ]
+    },
+    "expectedKo": "이륙",
+    "korean": true,
+    "sentence": "I take notes before the planes take off.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 839,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "take off",
+        "members": [
+          6,
+          7
+        ],
+        "ko": "이륙하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 879,
+        "completion_tokens": 26,
+        "total_tokens": 905,
+        "cost": 0.0000816,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 256,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.0000816,
+          "upstream_inference_prompt_cost": 0.0000751,
+          "upstream_inference_completions_cost": 0.0000065
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-repeat",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 2,
+    "expected": {
+      "kind": "expression",
+      "canonical": "take off",
+      "members": [
+        6,
+        7
+      ]
+    },
+    "expectedKo": "이륙",
+    "korean": true,
+    "sentence": "I take notes before the planes take off.",
+    "clickedIndex": 6,
+    "status": 200,
+    "ms": 1460,
+    "response": {
+      "answer": {
+        "kind": "expression",
+        "canonical": "take off",
+        "members": [
+          6,
+          7
+        ],
+        "ko": "이륙하다"
+      },
+      "valid": true,
+      "validationError": "",
+      "provider": "openrouter",
+      "usage": {
+        "prompt_tokens": 879,
+        "completion_tokens": 26,
+        "total_tokens": 905,
+        "cost": 0.000056,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 768,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.000056,
+          "upstream_inference_prompt_cost": 0.0000495,
+          "upstream_inference_completions_cost": 0.0000065
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      }
+    },
+    "kind": true,
+    "canonical": true,
+    "members": true,
+    "exact": true
+  },
+  {
+    "id": "regression-repeat",
+    "category": "reported",
+    "variant": "candidate",
+    "repeat": 0,
+    "expected": {
+      "kind": "expression",
+      "canonical": "take off",
+      "members": [
+        6,
+        7
+      ]
+    },
+    "expectedKo": "이륙",
+    "korean": false,
+    "sentence": "I take notes before the planes take off.",
+    "clickedIndex": 6,
+    "status": 502,
+    "ms": 8140,
+    "response": {
+      "error": "TimeoutError: Signal timed out."
+    },
+    "kind": false,
+    "canonical": false,
+    "members": false,
+    "exact": false
+  }
+]

@@ -1,0 +1,59 @@
+
+> breeze-refactored@1.1.0 test
+> node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-lookup-architecture.mjs && node tests/verify-lookup-contract.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs
+
+Stamped 48 local assets (변경 없음)
+Service worker 2cc86538 (변경 없음)
+Built 7 doc pages → docs/
+타입 검사 통과 — 남은 지적 39개 (늘지 않음)
+Breeze checks passed: 37 active + 4 parked JavaScript files
+(node:93483) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kosangbum/Desktop/breeze/breeze-lookup-quality/server/dict/telemetry.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kosangbum/Desktop/breeze/breeze-lookup-quality/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Dictionary telemetry persists behind the provider response
+Lookup architecture checks passed
+Lookup contract, target alignment, malformed-output fallback, cancellation and fail-closed checks passed
+Sync egress hardening checks passed
+Sync request-count harness passed (vocabulary 4, progress 2; no full vault on unchanged sync)
+✔ concurrent vocabulary additions both survive the initial sync (5.568875ms)
+✔ concurrent deletion and stale snapshot do not resurrect a tombstone (1.969875ms)
+✔ two first inserts cannot overwrite each other (2.082666ms)
+✔ old rows without revision are upgraded with a guarded CAS (1.876834ms)
+✔ clean local winners repair previously lost server words and deletions (1.267417ms)
+✔ migration failure leaves embedded remote-only progress intact; restart retries (2.593042ms)
+✔ interruption after progress commit but before vault commit is restart-safe (2.050125ms)
+✔ lost acknowledgement after vault commit cannot orphan migrated progress (1.696875ms)
+✔ migration preserves a newer cached position without jumping an active reader (1.198458ms)
+✔ concurrent progress snapshots preserve different books (1.742166ms)
+✔ logout resets cached progress and queued work (0.803875ms)
+✔ account-change auth event clears old progress and cancels late responses (1.011084ms)
+✔ logout and login to the same account also invalidate old responses (1.125667ms)
+✔ same-millisecond local vocab edit during a write retains dirty state (0.952292ms)
+✔ local progress changed during identity collection remains pending (0.826ms)
+✔ CAS retries are bounded and conflicts retain unsynced data (35.82375ms)
+✔ 402 retains dirty state and suppresses automatic requests during cooldown (1.046208ms)
+✔ unchanged startup uses only small headers and progress; idle schedules nothing (0.721791ms)
+✔ progress-only sync remains two requests with no vocabulary traffic (0.682833ms)
+✔ vocabulary edit is two small reads, a vault read, and a key-only CAS response (0.686375ms)
+✔ legacy read failure never marks migration complete or erases server data (1.078ms)
+✔ unique revisions expose writes even when every wall-clock timestamp is equal (1.357583ms)
+✔ equal-time metadata with a different local book ID does not cause repair churn (0.619708ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.844791
+손짓 임자 기준선 통과 — 해석 창 · 낱말 popup 같은 규칙, 200회 반복 무결
+낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)
+확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다
+Word meaning cleanup and sync resurrection checks passed
+Sentence lifecycle ownership verified
+EPUB geometry contract verified
+낱말 상자 기준선 통과 — 글 17개, 상자 105개, 성질 9가지
+원형 기준선 통과 — 44개
+READY Question-first core checks passed
+READY deterministic Reader tokenization verified

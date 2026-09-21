@@ -1,0 +1,124 @@
+[
+  {
+    "id": "invalid-expression-members-retains-phrase-meaning",
+    "body": {
+      "word": "apple",
+      "clicked": "apple",
+      "sentence": "He upset the apple cart.",
+      "clickedIndex": 3
+    },
+    "answer": {
+      "kind": "expression",
+      "canonical": "upset the apple cart",
+      "members": [
+        1
+      ],
+      "ko": "계획을 망치다"
+    },
+    "status": 200,
+    "response": {
+      "kind": "word",
+      "canonical": "apple",
+      "members": [
+        3
+      ],
+      "ko": "계획을 망치다",
+      "lemma": "apple",
+      "pos": "",
+      "phrase": "",
+      "alts": [],
+      "provider": "mock"
+    },
+    "prompt": "target: apple\nclicked: apple\nsentence: He upset the apple cart.\ntokens: 0:He | 1:upset | 2:the | 3:apple | 4:cart\nclicked_index: 3\n\n한국인 영어 학습자가 지금 누른 target을 바로 이해하도록 하나의 lexical lookup 결과만 만드세요.\n\n반드시 다음 원칙을 지키세요.\n- kind는 word 또는 expression.\n- 기본값은 word입니다. expression을 남발하지 마세요.\n- 단일 단어의 짧은 한국어 뜻만으로 현재 의미를 충분히 정확하게 전달할 수 있으면 word로 처리하세요.\n- phrasal verb, idiom, fixed expression, 전문적인 고정 용어처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나 중요한 lexical identity를 잃을 때만 expression으로 처리하세요.\n- 단순 collocation, 일반적인 수식어+명사, 의미가 그대로 합쳐지는 전치사 결합은 expression으로 올리지 마세요.\n- canonical은 저장할 사전형입니다. word면 원형 단어, expression이면 재사용 가능한 표제형을 적으세요.\n- members는 현재 sentence의 token index입니다. clicked_index는 반드시 포함하세요.\n- word면 members는 clicked_index 하나뿐입니다.\n- expression이면 lexical identity를 이루는 token만 포함하세요. 다만 contiguous expression 안의 of/to/at 같은 function word를 임의로 빼면 안 됩니다.\n- 표제형에서 one's/someone/something처럼 바뀔 수 있는 variable slot은 members에 넣지 마세요. 예: \"a feather in your cap\"은 고정된 a/feather/in/cap이 members이고 your는 variable gap입니다.\n- 분리 가능한 구동사의 목적어/변수도 members에 넣지 마세요. 예: \"gave the plan up\"의 give up은 give/up만.\n- 반대로 고정된 function word는 빼지 마세요. \"policy of benign neglect\"를 하나의 expression으로 판단했다면 of도 member입니다.\n- members를 이어 붙여 canonical을 만들지 마세요. canonical은 별도로 올바른 사전형을 작성하세요.\n- ko는 현재 sense의 짧고 자연스러운 한국어 사전 뜻 하나만. 설명, gloss, 다른 뜻은 쓰지 마세요.\n\n{\"kind\":\"word\",\"canonical\":\"\",\"members\":[3],\"ko\":\"\"}"
+  },
+  {
+    "id": "null-members-coerce-zero",
+    "body": {
+      "word": "he",
+      "clicked": "He",
+      "sentence": "He gave up.",
+      "clickedIndex": 0
+    },
+    "answer": {
+      "kind": "expression",
+      "canonical": "give up",
+      "members": [
+        null,
+        1,
+        2
+      ],
+      "ko": "포기하다"
+    },
+    "status": 200,
+    "response": {
+      "kind": "expression",
+      "canonical": "give up",
+      "members": [
+        0,
+        1,
+        2
+      ],
+      "ko": "포기하다",
+      "lemma": "give up",
+      "pos": "",
+      "phrase": "",
+      "alts": [],
+      "provider": "mock"
+    },
+    "prompt": "target: he\nclicked: He\nsentence: He gave up.\ntokens: 0:He | 1:gave | 2:up\nclicked_index: 0\n\n한국인 영어 학습자가 지금 누른 target을 바로 이해하도록 하나의 lexical lookup 결과만 만드세요.\n\n반드시 다음 원칙을 지키세요.\n- kind는 word 또는 expression.\n- 기본값은 word입니다. expression을 남발하지 마세요.\n- 단일 단어의 짧은 한국어 뜻만으로 현재 의미를 충분히 정확하게 전달할 수 있으면 word로 처리하세요.\n- phrasal verb, idiom, fixed expression, 전문적인 고정 용어처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나 중요한 lexical identity를 잃을 때만 expression으로 처리하세요.\n- 단순 collocation, 일반적인 수식어+명사, 의미가 그대로 합쳐지는 전치사 결합은 expression으로 올리지 마세요.\n- canonical은 저장할 사전형입니다. word면 원형 단어, expression이면 재사용 가능한 표제형을 적으세요.\n- members는 현재 sentence의 token index입니다. clicked_index는 반드시 포함하세요.\n- word면 members는 clicked_index 하나뿐입니다.\n- expression이면 lexical identity를 이루는 token만 포함하세요. 다만 contiguous expression 안의 of/to/at 같은 function word를 임의로 빼면 안 됩니다.\n- 표제형에서 one's/someone/something처럼 바뀔 수 있는 variable slot은 members에 넣지 마세요. 예: \"a feather in your cap\"은 고정된 a/feather/in/cap이 members이고 your는 variable gap입니다.\n- 분리 가능한 구동사의 목적어/변수도 members에 넣지 마세요. 예: \"gave the plan up\"의 give up은 give/up만.\n- 반대로 고정된 function word는 빼지 마세요. \"policy of benign neglect\"를 하나의 expression으로 판단했다면 of도 member입니다.\n- members를 이어 붙여 canonical을 만들지 마세요. canonical은 별도로 올바른 사전형을 작성하세요.\n- ko는 현재 sense의 짧고 자연스러운 한국어 사전 뜻 하나만. 설명, gloss, 다른 뜻은 쓰지 마세요.\n\n{\"kind\":\"word\",\"canonical\":\"\",\"members\":[0],\"ko\":\"\"}"
+  },
+  {
+    "id": "tokens-disagree-with-truncated-sentence",
+    "body": {
+      "word": "bank",
+      "clicked": "bank",
+      "sentence": "Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background The bank flooded.",
+      "tokens": [
+        {
+          "text": "The"
+        },
+        {
+          "text": "bank"
+        },
+        {
+          "text": "flooded"
+        }
+      ],
+      "clickedIndex": 1
+    },
+    "answer": {
+      "kind": "word",
+      "canonical": "bank",
+      "members": [
+        1
+      ],
+      "ko": "둑"
+    },
+    "status": 200,
+    "response": {
+      "kind": "word",
+      "canonical": "bank",
+      "members": [
+        1
+      ],
+      "ko": "둑",
+      "lemma": "bank",
+      "pos": "",
+      "phrase": "",
+      "alts": [],
+      "provider": "mock"
+    },
+    "prompt": "target: bank\nclicked: bank\nsentence: Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Background Backgr\ntokens: 0:The | 1:bank | 2:flooded\nclicked_index: 1\n\n한국인 영어 학습자가 지금 누른 target을 바로 이해하도록 하나의 lexical lookup 결과만 만드세요.\n\n반드시 다음 원칙을 지키세요.\n- kind는 word 또는 expression.\n- 기본값은 word입니다. expression을 남발하지 마세요.\n- 단일 단어의 짧은 한국어 뜻만으로 현재 의미를 충분히 정확하게 전달할 수 있으면 word로 처리하세요.\n- phrasal verb, idiom, fixed expression, 전문적인 고정 용어처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나 중요한 lexical identity를 잃을 때만 expression으로 처리하세요.\n- 단순 collocation, 일반적인 수식어+명사, 의미가 그대로 합쳐지는 전치사 결합은 expression으로 올리지 마세요.\n- canonical은 저장할 사전형입니다. word면 원형 단어, expression이면 재사용 가능한 표제형을 적으세요.\n- members는 현재 sentence의 token index입니다. clicked_index는 반드시 포함하세요.\n- word면 members는 clicked_index 하나뿐입니다.\n- expression이면 lexical identity를 이루는 token만 포함하세요. 다만 contiguous expression 안의 of/to/at 같은 function word를 임의로 빼면 안 됩니다.\n- 표제형에서 one's/someone/something처럼 바뀔 수 있는 variable slot은 members에 넣지 마세요. 예: \"a feather in your cap\"은 고정된 a/feather/in/cap이 members이고 your는 variable gap입니다.\n- 분리 가능한 구동사의 목적어/변수도 members에 넣지 마세요. 예: \"gave the plan up\"의 give up은 give/up만.\n- 반대로 고정된 function word는 빼지 마세요. \"policy of benign neglect\"를 하나의 expression으로 판단했다면 of도 member입니다.\n- members를 이어 붙여 canonical을 만들지 마세요. canonical은 별도로 올바른 사전형을 작성하세요.\n- ko는 현재 sense의 짧고 자연스러운 한국어 사전 뜻 하나만. 설명, gloss, 다른 뜻은 쓰지 마세요.\n\n{\"kind\":\"word\",\"canonical\":\"\",\"members\":[1],\"ko\":\"\"}"
+  },
+  {
+    "id": "malformed-output-no-provider-fallback",
+    "status": 502,
+    "response": {
+      "error": "parse_failed",
+      "raw": "not json"
+    },
+    "calls": [
+      "openrouter"
+    ]
+  }
+]

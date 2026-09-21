@@ -863,11 +863,12 @@ assert.doesNotMatch(dictionarySource, /ai\.note\b|ai\.gloss\b|j\.note\b|j\.gloss
 assert.doesNotMatch(index, /id="p-ai-gloss"/,
   'The second, general explanation line is back under the meaning');
 const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
-assert.match(dictServer, /required:\["kind","canonical","members","ko"\]/,
+const dictLookup=readFileSync(resolve(root,'server/dict/lookup.ts'),'utf8');
+assert.match(dictLookup, /required:\["kind","canonical","members","ko"\]/,
   'The mini lookup no longer returns only lexical identity plus the short Korean meaning');
 assert.doesNotMatch(dictServer, /DETAIL_SCHEMA|detailPrompt|opDetail|op==="detail"/,
   'The Edge Function still exposes AI detail enrichment');
-assert.match(dictServer, /clicked_index:/,
+assert.match(dictLookup, /selected_index:/,
   'The mini lookup no longer knows which token the reader actually tapped');
 
 /* ── 운영 기록으로 나가는 것 ──
@@ -1544,7 +1545,7 @@ assert.match(dictionaryCss,
   /#word-peek \.word-peek-actions\{[\s\S]{0,360}#word-peek \.word-peek-actions::before[\s\S]{0,700}#word-peek-more::after/,
   'Retry and chevron no longer share one capsule with a subtle divider');
 assert.match(dictionarySource,
-  /async function retryWordPeek\(\)[\s\S]{0,1200}fetchLook\(k,\{sentence,clicked,clickedIndex,book,node:activeSelectedWordNode,[\s\S]{0,80}retry:true,hold:true,life\}\)/,
+  /async function retryWordPeek\(\)[\s\S]{0,1200}fetchLook\(k,\{\.\.\.input,node:activeSelectedWordNode,[\s\S]{0,80}retry:true,hold:true,life\}\)/,
   'Word retry no longer sends the current sentence through the existing lookup request flow');
 assert.match(readerCss,
   /#readback, #aafab, #readpill\{[\s\S]{0,260}var\(--sentence-glass-line\)[\s\S]{0,260}var\(--sentence-glass-shadow-pill\)/,
@@ -1684,7 +1685,7 @@ assert.match(readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8'
   'EPUB highlighting does not use the token/gap phrase matcher');
 /* 늦은 답이 화면을 되찾는 세 갈래 — 창을 다시 열기 · 낱말을 다시 고르기 ·
    본문을 다시 조립하기. 셋 다 산 열림의 일입니다. */
-assert.match(dictionarySource, /const answer=await fetchLook\(k, \{sentence, wider:true, hold:true, avoid, life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
+assert.match(dictionarySource, /const answer=await fetchLook\(k,\{\.\.\.input,wider:true,hold:true,life\}\);\s*\n\s*if\(!wordLookupAlive\(life\)\) return;/,
   'A late "another meaning" answer can reselect a word on a dismissed word lookup again');
 /* 그리는 문지기는 열림 번호입니다. `selKey === k` 로는 **같은 낱말을 닫았다
    다시 연** 경우를 가릴 수 없습니다 — 열쇠가 같다고 같은 열림은 아닙니다. */
