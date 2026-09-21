@@ -1,6 +1,6 @@
-export type AiAction="look"|"retry"|"explain"|"seed"|"judge"|"detail";
+export type AiAction="look"|"retry"|"explain"|"seed"|"detail";
 export type AiTrace={requestId:string;action:AiAction;attempt:number};
-type Provider="openrouter"|"gemini"|"claude"|"jev";
+type Provider="openrouter"|"gemini"|"claude";
 type RpcClient={rpc:(name:string,args:Record<string,unknown>)=>any};
 type Usage=Record<string,number|null>;
 export function newAiTrace(action:AiAction):AiTrace{return{requestId:crypto.randomUUID(),action,attempt:0}}
@@ -12,7 +12,7 @@ export function tokenUsage(provider:Provider,raw:any):Usage|null{
     if(input===null&&output===null&&reportedTotal===null)return null;
     return{input_tokens:input,output_tokens:output,thinking_tokens:thinking,total_tokens:reportedTotal??(input!==null&&output!==null&&thinking!==null?input+output+thinking:null),cached_input_tokens:token(raw.cachedContentTokenCount??0),cache_creation_input_tokens:0,tool_input_tokens:token(raw.toolUsePromptTokenCount??0)};
   }
-  if(provider==="openrouter"||provider==="jev"){
+  if(provider==="openrouter"){
     const input=token(raw.prompt_tokens??raw.promptTokens??raw.input_tokens),output=token(raw.completion_tokens??raw.completionTokens??raw.output_tokens),total=token(raw.total_tokens??raw.totalTokens),thinking=token(raw?.completion_tokens_details?.reasoning_tokens??raw?.completionTokensDetails?.reasoningTokens??0),cached=token(raw?.prompt_tokens_details?.cached_tokens??raw?.promptTokensDetails?.cachedTokens??0);
     if(input===null&&output===null&&total===null)return null;
     return{input_tokens:input,output_tokens:output,thinking_tokens:thinking,total_tokens:total??(input!==null&&output!==null?input+output:null),cached_input_tokens:cached,cache_creation_input_tokens:0,tool_input_tokens:0};
