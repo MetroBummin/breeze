@@ -268,8 +268,7 @@ body.dark #word-peek::before{
   .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}
   /* 머리글 오른쪽 끝에 그 칸의 유일한 단추가 붙습니다 — 저장된 뜻의 ＋, 모르는 정도의 색칠. */
   .p-sec-row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px;}
-  #p-saved-senses-sec,#p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
-  #p-saved-senses-sec.on{display:flex;}
+  #p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
   #p-alt-sec.on{display:block;}
   #p-add-sense{flex:0 0 auto; width:26px; height:26px; border:1px solid var(--line); border-radius:50%;
     background:var(--paper2); color:var(--soft); font:400 14px/1 var(--ui); cursor:pointer;}
@@ -350,13 +349,16 @@ body.dark #word-peek::before{
 #panel #p-top,#panel #p-clicked,#panel #p-ai,#panel #p-aibtn,#panel #p-aihint{order:0;}
 #panel #p-en-section{order:3;}
 #panel #p-ex-fold{order:4;}
-#panel #p-senses-fold,#panel #p-sense-add,#panel #p-alt-sec,#panel #p-alts{order:5;}
+#panel #p-sense-add,#panel #p-alt-sec,#panel #p-alts{order:5;}
 #panel #p-tools-fold{order:6;}
 #panel details{font:13px/1.5 var(--ui);}
 #panel summary{cursor:pointer;color:var(--sentence-glass-secondary);padding:5px 0;}
 #panel .p-sec{margin:0 0 5px;}
-#panel #p-saved-senses-sec{display:none;}
-#panel #p-saved-senses{margin:5px 0 0;}
+#panel #p-saved-senses{margin:10px 0 0;gap:7px;}
+#panel .saved-sense{display:inline-flex;align-items:center;gap:7px;min-height:30px;max-width:100%;padding:4px 9px;border:1px solid var(--sentence-glass-line);border-radius:11px;background:linear-gradient(155deg,color-mix(in srgb,var(--sentence-glass-ink) 11%,transparent),color-mix(in srgb,var(--sentence-glass-action) 88%,transparent));color:var(--sentence-glass-ink);font:500 12px/1.25 var(--ui);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--sentence-glass-ink) 19%,transparent),0 2px 8px color-mix(in srgb,#000 9%,transparent);backdrop-filter:blur(12px) saturate(135%);-webkit-backdrop-filter:blur(12px) saturate(135%);cursor:pointer;}
+#panel .saved-sense:not(.on):hover{border-color:color-mix(in srgb,var(--sentence-glass-ink) 32%,var(--sentence-glass-line));background:linear-gradient(155deg,color-mix(in srgb,var(--sentence-glass-ink) 17%,transparent),color-mix(in srgb,var(--sentence-glass-action) 92%,transparent));}
+#panel .saved-sense .sense-remove{margin:0;padding:0 1px;color:var(--sentence-glass-secondary);opacity:.85;font:400 15px/1 var(--ui);}
+#panel .saved-sense:hover .sense-remove{color:var(--sentence-glass-ink);}
 #panel #p-defs{font-size:14px;line-height:1.55;margin:0;}
 #panel #p-ex{font-size:15px;line-height:1.6;margin:5px 0 0;}
 #panel #p-word-tools{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0;}
