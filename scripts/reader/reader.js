@@ -95,8 +95,17 @@ function beginLazyWordSpans(elements){
   },{root:readerScroller(),rootMargin:'900px 0px'});
   elements.forEach(element=>wordSpanObserver.observe(element));
 }
+let readerBodyImageGeneration=0;
+const readerBodyImageUrls=new Set();
+function releaseReaderBodyImages(){
+  readerBodyImageGeneration++;
+  readerBodyImageUrls.forEach(url=>URL.revokeObjectURL(url));
+  readerBodyImageUrls.clear();
+}
 /* Render source text using formatting metadata without changing the source. */
 function renderBookBody(b){
+  releaseReaderBodyImages();
+  const imageGeneration=readerBodyImageGeneration;
   const formatting = b.formatting || null;
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
@@ -141,7 +150,12 @@ function renderBookBody(b){
       const img = document.createElement('img');
       img.alt = '삽화';
       bookImageBlob(b, bl.t.slice(IMG_MARK.length)).then(blob=>{
-        if(blob) img.src = URL.createObjectURL(blob);
+        if(imageGeneration!==readerBodyImageGeneration || !fig.isConnected) return;
+        if(blob){
+          const url=URL.createObjectURL(blob);
+          readerBodyImageUrls.add(url);
+          img.src=url;
+        }
         else fig.remove();
       });
       fig.appendChild(img);
@@ -200,16 +214,48 @@ function renderBookBody(b){
   rt.appendChild(frag);
   beginLazyWordSpans(wordSpanTargets);
 }
+// Keep one recently closed Reader for quick Home round trips, for at most 60s.
+let retainedReader=null,retainedReaderTimer=0,readerPreparedOriginal=null;
+function releaseRetainedReader(){
+  clearTimeout(retainedReaderTimer);retainedReaderTimer=0;
+  if(!retainedReader)return;
+  retainedReader=null;readerPreparedOriginal=null;
+  leaveOriginalReader();releaseReaderBodyImages();
+  if(wordSpanObserver){wordSpanObserver.disconnect();wordSpanObserver=null;}
+  readerParagraphCache=null;
+  document.getElementById('rtext').replaceChildren();
+}
+function retainReaderForHome(){
+  if(!curBook||curBook.transient||originalOpenJob)return false;
+  const b=curBook;
+  retainedReader={book:b,paras:b.paras.slice(),formatting:b.formatting,
+    sourceMap:b.sourceMap,sourceSignature:JSON.stringify([b.original,b.formatting,b.title,b.kind]),original:readerPreparedOriginal};
+  currentReaderMode='text'; // Hidden original frames must not perform viewport work.
+  readerModeChangeToken++;
+  clearTimeout(retainedReaderTimer);
+  retainedReaderTimer=setTimeout(releaseRetainedReader,60000);
+  return true;
+}
+function canReuseReader(b){
+  const held=retainedReader;
+  return !!(held&&held.book===b&&held.formatting===b.formatting&&held.sourceMap===b.sourceMap&&held.sourceSignature===JSON.stringify([b.original,b.formatting,b.title,b.kind])
+    &&held.paras.length===b.paras.length&&held.paras.every((text,i)=>text===b.paras[i])
+    &&document.getElementById('rtext').childElementCount);
+}
+window.addEventListener('pagehide',releaseRetainedReader);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseRetainedReader();});
 /** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void}} [options] */
 async function openBook(b,options={}){
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
-  leaveOriginalReader();
+  const reuse=canReuseReader(b);
+  if(reuse){clearTimeout(retainedReaderTimer);retainedReaderTimer=0;retainedReader=null;}
+  else{releaseRetainedReader();leaveOriginalReader();}
   /* 예전에 넣어 둔 책에 남아 있는 네모(□)를 여기서 한 번 고칩니다 —
      scripts/importers/ligatures.js */
   const prepared=options.prepared && options.prepared.book===b ? options.prepared : null;
-  if(!b.transient && !prepared) await repairBookLigatures(b);
+  if(!b.transient && !prepared && !reuse) await repairBookLigatures(b);
   /* The width observer below fires as the reader appears. It must not aim at
      wherever the previous book was being read. */
   lastAnchor = null;
@@ -244,7 +290,7 @@ async function openBook(b,options={}){
   showReaderChrome();                 // 상단바가 다시 서는 날을 위한 배선입니다
   document.getElementById('readwrap').hidden=false;
   document.getElementById('originalwrap').hidden=true;
-  renderBookBody(b);
+  if(reuse)refreshReaderWords();else renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
   /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
@@ -253,18 +299,24 @@ async function openBook(b,options={}){
   if(firstOpen && !b.transient){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
   updateReaderModeControls();
   const original = prepared ? prepared.original : (bookSupportsOriginal(b) ? await originalGetForBook(b) : null);
+  readerPreparedOriginal=original;
   const desired = initialPosition.mode==='original'
     ? (original ? 'original' : 'text')
     : (firstOpen && original ? 'original' : 'text');
-  if(desired==='original') await switchReaderMode('original',{initial:true,record:original,onPresented:options.onPresented});
+  if(desired==='original'){
+    await switchReaderMode('original',{initial:true,record:original,onPresented:options.onPresented});
+    if(curBook===b&&reuse)refreshOriginalSavedWords();
+  }
   else{
     if(options.onPresented) options.onPresented();
-    requestAnimationFrame(()=>{
-      if(curBook!==b) return;
-      const pos=posOf(b.id);
-      if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
-      lastAnchor=captureAnchor(); updatePfill(true);
-    });
+    await new Promise(resolve=>requestAnimationFrame(()=>{
+      if(curBook===b){
+        const pos=posOf(b.id);
+        if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
+        lastAnchor=captureAnchor(); updatePfill(true);
+      }
+      resolve();
+    }));
   }
 }
 /* Book titles and file names end up inside HTML attributes, so quotes have to
@@ -356,28 +408,16 @@ function scheduleProgressUpdate(){
     if(currentReaderMode==='text' && !readerAnchorHeld()) lastAnchor=readerFrameAnchor();
   });
 }
-/* ---- 상단바는 읽는 방향을 따릅니다 (지금은 읽는 화면에 연결돼 있지 않습니다) ----
+/* 하단 컨트롤은 읽는 방향을 따릅니다. 작은 스크롤에는 펼친 상태를 유지하고,
+   읽어 내려가면 접고 위로 올리면 다시 펼칩니다.
 
-   읽는 화면에서 상단바를 걷어내면서(styles/reader.css 의 `#readchrome`) 이
-   장치를 **부르는 곳**이 하나 없어졌습니다 — 읽는 칸의 `scroll` 이 더 이상
-   `followScrollDirection()` 을 부르지 않습니다. 장치 자체는 그대로 둡니다:
-   넓은 화면에서는 예전 상단바를 다시 세울 수 있고, 그때 필요한 것이 정확히
-   이 문턱 둘과 붙잡기 표이기 때문입니다. 지우면 그날 다시 써야 합니다.
-
-   `pinReaderChrome` · `whileRestoringChrome` 을 부르는 자리들도 그대로입니다.
-   지금은 아무것도 안 움직이지만(움직일 상단바가 없으므로), 상단바가 돌아오는
-   날 배선을 다시 깔지 않기 위해서입니다.
-
-   집중 모드 스위치를 대신하는 장치입니다. 아래로 읽어 내려가면 상단바가
-   걷히고 단추가 흐려지며, 위로 올리거나 글머리에 닿으면 돌아옵니다.
-
-   두 문턱이 다릅니다. 걷히는 데는 12px 이면 되지만, 돌아오는 데는 44px 이
+   두 문턱이 다릅니다. 걷히는 데는 24px 이면 되지만, 돌아오는 데는 44px 이
    필요합니다. 아이폰은 손가락을 뗀 뒤에도 관성으로 한동안 흐르는데, 그 끝이
    깔끔하게 멈추지 않고 몇 픽셀 되튑니다. 문턱이 같으면 그 되튐이 "위로
    올렸다"로 읽혀서, 읽기를 멈출 때마다 상단바가 한 번 깜빡였습니다.
    되돌리려는 손짓은 몇 픽셀로 끝나지 않으니, 위쪽만 높여도 잃는 것이 없습니다.
    글 폭은 여기서 건드리지 않습니다. */
-const CHROME_STEP = 12, CHROME_BACK = 44, CHROME_TOP = 80;
+const CHROME_STEP = 24, CHROME_BACK = 44, CHROME_TOP = 80;
 let chromeLastY = 0, chromeRun = 0;    // chromeRun: 같은 방향으로 이어서 간 거리
 /* ---- 프로그램이 Reader 자리를 복원하는 동안에는 상단바를 건드리지 않습니다 ----
    실제 viewport resize나 mode 전환이 자리를 맞추는 몇 픽셀을 사용자 스크롤로
@@ -476,8 +516,8 @@ function followScrollDirection(){
    여닫으며 흘리던 가짜 스크롤이 여기까지 오지 않는 것도 덤입니다.
 
    여기서 하는 일은 둘뿐입니다 — 제목 pill의 진행 채움을 다시 그리고, 잠시 뒤에 읽은 자리를
-   적어 두기. **위의 `followScrollDirection()` 은 여기서 부르지 않습니다.**
-   끊은 연결은 이 한 줄이고, 그것이 "스크롤은 글을 옮기는 일일 뿐"의 전부입니다. */
+   적어 두기. 스크롤 방향에 따라 하단 컨트롤을 접거나 펼칩니다.
+   프레임당 한 번만 갱신합니다. */
 let chromeFrame=0;
 (readerScroller() || window).addEventListener('scroll', ()=>{
   if(!curBook) return;

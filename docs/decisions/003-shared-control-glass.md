@@ -48,7 +48,7 @@ slow original rendering, rapid repeat taps, cancelled navigation, failed opening
 reduced motion and preserved Text scroll position.
 
 The Home/Reader transition reveals and closes a rounded surface with clip-path and
-a brief blur, never stretching text. The Reader back control reverses the reveal
+no full-screen blur, never stretching text. The Reader back control reverses the reveal
 toward the current Home resume pill. Reduced motion skips both directions.
 
 All saved-progress labels use `readingPercent`: floor the canonical ratio, with
@@ -57,3 +57,42 @@ All saved-progress labels use `readingPercent`: floor the canonical ratio, with
 Home keeps keyed card/image nodes while progress changes. RSS replacement occurs only after replacement data and images are ready. Both transition directions keep the Home snapshot opaque behind the moving Reader surface, so the animation never reveals an empty canvas.
 
 Both morph animations use fill-mode `both`. In particular the departing Reader must retain its terminal opacity/clip until the browser removes the snapshot; resetting to the underlying opacity 1 at the animation boundary briefly restores the full Reader. Browser regression seeks past the close animation duration and asserts opacity 0.
+
+Home long-form card reconciliation does not calculate reading time: these cards do not display it. Casual cards retain their existing reading-time labels.
+
+Casual reading-time calculations reuse a weakly held paragraph-array cache. A
+string/length comparison detects in-place edits as well as replaced source arrays;
+cached counts are presentation-only and never persisted into a book.
+
+Text Reader image Blob URLs belong to one body render. Replacing the body or
+leaving Reader outside the bounded Home cache revokes them; late image reads from an abandoned render cannot
+create a URL or update the detached body. Home cover URLs have separate ownership.
+
+Library data refreshes render only the active Home/Casuals/Long-form view. While
+Reader or Wordbook is active they render none of these hidden views. `show()`
+already renders each destination on entry from current data, so no dirty flags
+or background DOM rebuilding are required to keep later navigation up to date.
+
+
+## Bounded Home round trips (1.3)
+
+Keep at most one complete Text/PDF/EPUB Reader for 60 seconds after returning to
+Home. Reuse the body, parsed original document and its live nodes for the same
+unchanged book; restore the latest saved anchor. Source paragraphs, formatting,
+source map, original metadata, title and kind invalidate reuse. Another destination,
+another book, expiry, pagehide or hidden application releases cached DOM, original
+resources and Blob URLs. Transient onboarding and unfinished original loads are
+never retained. This trades a bounded period of retained memory for avoiding repeat
+parsing; it is not a general multi-book cache.
+
+Home and Reader name their visible pill `reader-control` during navigation so its
+surface connects both endpoints. Both directions use 340 ms and the same easing;
+the closing Reader stays opaque through 85% before its terminal fade. Full-screen
+blur is removed. Fill-mode `both` remains. Compact control geometry transitions
+use 260 ms; collapsing requires 24 px of downward travel (previously 12), while
+44 px upward still expands it. Native interactive drag-to-dismiss is not added.
+
+`tests/verify-reader-reuse-browser.mjs` checks actual EPUB/PDF session and DOM
+identity, Text scroll restoration, source-edit invalidation and explicit release
+in Chromium/WebKit. Existing Home, sentence, onboarding and lookup regressions
+remain required; simulated browsers do not establish physical iPhone frame rate.

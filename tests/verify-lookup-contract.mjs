@@ -46,3 +46,22 @@ const abort=new AbortController();abort.abort();box.calls=[];
 await assert.rejects(()=>box.opLook({word:'apple',clicked:'apple',sentence:'An apple.',clickedIndex:1},null,true,abort.signal));
 assert.equal(box.calls.length,0);
 console.log('Lookup contract, target alignment, malformed-output fallback, cancellation and fail-closed checks passed');
+
+// Sentence lookup generates only the translation while preserving quota/errors.
+run(`globalThis.explainCalls=[];
+takeQuota=async()=>({ok:true,left:8});
+ask=async options=>{explainCalls.push(options);return {text:JSON.stringify({ko:'원문의 의미를 보존한 번역입니다.'}),provider:'fixture'}};`);
+response=await box.opExplain({sentence:'A reader follows the meaning of the sentence.'},'fixture-user');
+assert.deepEqual(await response.json(),{ko:'원문의 의미를 보존한 번역입니다.',provider:'fixture',left:8});
+assert.deepEqual(Array.from(box.explainCalls[0].schema.required),['ko']);
+assert.deepEqual(Object.keys(box.explainCalls[0].schema.properties),['ko']);
+assert.equal(box.explainCalls[0].maxTokens,600);
+assert.doesNotMatch(box.explainCalls[0].prompt,/points/);
+assert.equal((await box.opExplain({sentence:'A complete sentence.'},null)).status,401);
+assert.equal((await box.opExplain({sentence:'short'},'fixture-user')).status,400);
+run(`takeQuota=async()=>({ok:false,limit:10});`);
+assert.equal((await box.opExplain({sentence:'A complete sentence.'},'fixture-user')).status,429);
+assert.equal(box.explainCalls.length,1);
+run(`takeQuota=async()=>({ok:true,left:7});ask=async()=>({text:'{"ko":""}',provider:'fixture'});`);
+assert.equal((await box.opExplain({sentence:'A complete sentence.'},'fixture-user')).status,502);
+console.log('Sentence translation-only contract passed');

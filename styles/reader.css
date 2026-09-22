@@ -181,8 +181,8 @@
   #readpill, .control-pill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     width:min(56vw,400px); height:44px; border-radius:24px;
     display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
-  #readpill{transition:width .34s cubic-bezier(.2,.75,.25,1),height .34s cubic-bezier(.2,.75,.25,1),
-      padding .34s cubic-bezier(.2,.75,.25,1),border-radius .34s cubic-bezier(.2,.75,.25,1),
+  #readpill{transition:width .26s cubic-bezier(.2,.75,.25,1),height .26s cubic-bezier(.2,.75,.25,1),
+      padding .26s cubic-bezier(.2,.75,.25,1),border-radius .26s cubic-bezier(.2,.75,.25,1),
       box-shadow .34s ease;}
   #readpill-progress,#home-resume-progress{position:absolute; inset:0; pointer-events:none;
     background:var(--chrome-progress); transform:scaleX(0); transform-origin:left center;

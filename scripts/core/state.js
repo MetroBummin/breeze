@@ -12,6 +12,7 @@ function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return 
 const SAVE_FAIL_NAMES = {
   'breeze.words': '단어장을 이 기기에 저장하지 못했어요',
   'breeze.dead':  '단어장을 이 기기에 저장하지 못했어요',
+  'breeze.word-write.pending': '단어장을 이 기기에 저장하지 못했어요',
 };
 const SAVE_FAIL_QUIET = new Set(['breeze.pos']);
 let lastSaveWarnAt = 0;
@@ -34,11 +35,25 @@ function save(k, v){
   }
 }
 const LS_DEAD='breeze.dead';
-let words = load(LS_WORDS, {});
-let dead = load(LS_DEAD, {});
-if(cleanOrphanWords(words,dead)){
-  save(LS_WORDS,words); save(LS_DEAD,dead);
+const WORD_ITEM_PREFIX='breeze.word-item.';
+const WORD_WRITE_PENDING='breeze.word-write.pending';
+function loadWordState(){
+  const result=load(LS_WORDS,{});
+  const apply=(key,item)=>{if(item===null)delete result[key];else result[key]=item;};
+  try{for(let i=0;i<localStorage.length;i++){
+    const name=localStorage.key(i);
+    if(name&&name.startsWith(WORD_ITEM_PREFIX)){
+      try{apply(name.slice(WORD_ITEM_PREFIX.length),JSON.parse(localStorage.getItem(name)));}catch(e){}
+    }
+  }
+  }catch(e){}
+  Object.entries(load(WORD_WRITE_PENDING,{})).forEach(([key,item])=>apply(key,item));
+  return result;
 }
+let words = loadWordState();
+const persistedWordItems=new Map(Object.entries(words).map(([key,item])=>[key,JSON.stringify(item)]));
+let dead = load(LS_DEAD, {});
+
 let books = [];                       // 본문은 IndexedDB에 저장(부팅 시 로드)
 /* 부팅할 때마다 돌던 옛 판 변환들(localStorage 에 있던 책 옮기기, AI 조판
    결과 `tidy` 를 `formatting` 으로 옮기기, `readerSchema` 찍기)은 뗐습니다.
@@ -58,8 +73,29 @@ let positions = load(LS_POS, {});   // bookId -> text anchor + original source a
 let curBook = null, selKey = null;
 /* A lookup may need a temporary in-memory card while its sheet is open. It is
    not vocabulary yet and must never become a persisted orphan on failure. */
-const saveWords = () => save(LS_WORDS,
-  Object.fromEntries(Object.entries(words).filter(([,item])=>validWordMeaning(item))));
+const saveWords = (keys) => {
+  const pending=load(WORD_WRITE_PENDING,{});
+  const changes={...pending};
+  const candidates=keys ? (Array.isArray(keys)?keys:[keys])
+    : new Set([...persistedWordItems.keys(),...Object.keys(words)]);
+  for(const key of candidates){
+    const item=validWordMeaning(words[key])?words[key]:null;
+    const encoded=item===null?undefined:JSON.stringify(item);
+    if(encoded!==persistedWordItems.get(key)||Object.prototype.hasOwnProperty.call(pending,key))changes[key]=item;
+  }
+  const entries=Object.entries(changes);
+  if(!entries.length)return true;
+  // Publish the complete small transaction first. A reload can replay it even
+  // if quota exhaustion or termination interrupts the individual record writes.
+  if(!save(WORD_WRITE_PENDING,changes))return false;
+  for(const [key,item] of entries)if(!save(WORD_ITEM_PREFIX+key,item))return false;
+  try{localStorage.removeItem(WORD_WRITE_PENDING);}catch(e){return false;}
+  entries.forEach(([key,item])=>{if(item===null)persistedWordItems.delete(key);else persistedWordItems.set(key,JSON.stringify(item));});
+  return true;
+};
+if(cleanOrphanWords(words,dead)){
+  saveWords();save(LS_DEAD,dead);
+}
 const posOf = id => positions[id] || {y:0, p:0, t:0, mode:'text', original:null};
 
 /* ================= views ================= */
@@ -199,7 +235,12 @@ function show(v,options){
   document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
   if(v!=='read'){
     if(typeof closeSentence==='function') closeSentence();
-    leaveOriginalReader();
+    const retained=v==='home'&&typeof retainReaderForHome==='function'&&retainReaderForHome();
+    if(!retained){
+      if(typeof releaseRetainedReader==='function')releaseRetainedReader();
+      leaveOriginalReader();
+      if(typeof releaseReaderBodyImages==='function') releaseReaderBodyImages();
+    }
     curBook=null; closePanel(); showReaderChrome();
     /* 벌린 것은 종이였습니다. 두고 나갑니다 — scripts/reader/reader-scroll.js */
     resetOriginalZoom();

@@ -36,8 +36,10 @@ text, preserving the source ink. Existing sentence result glass/sheet presentati
 is retained. Successful results contain only English source and Korean
 translation. Grammar/expression details are removed from DOM, CSS, renderer and
 new client cache writes. Old cache entries remain readable; their extra fields
-are ignored. Failures retain necessary status and retry controls. The backend
-API is unchanged.
+are ignored. Failures retain necessary status and retry controls. The backend now requests and returns only `ko` (plus provider/quota metadata),
+without generating unused grammar `points`. The 600-token ceiling is retained
+to protect long translations. Authentication, quota and legacy cache handling
+are unchanged. This server change requires a separate deployment.
 
 ## Verification
 

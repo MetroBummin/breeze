@@ -875,10 +875,8 @@ assert.match(dictLookup, /selected_index:/,
    서버가 버려 주기를 믿지 않습니다. 사람이 읽던 문장·책 제목·뜻은 앱에서 아예
    만들지 않고, 서버도 몸통에서 집지 않습니다. 두 겹 다 확인합니다 — 여기가
    느슨해지면 화면은 그대로인데 읽기 기록만 조용히 서버로 흘러갑니다. */
-const logDictBody = (dictionarySource.match(/function logDict\([\s\S]*?\n\}/)||[''])[0];
-assert.match(logDictBody, /lemma:/, 'logDict no longer sends the headword to log against');
-assert.doesNotMatch(logDictBody, /sentence|book|user_ko|ai_ko|clicked/,
-  'logDict ships the reader sentence, book title or meanings to the server again');
+assert.doesNotMatch(dictionarySource, /\blogDict\s*\(|op:\s*['"]log['"]/,
+  'Retired no-op dictionary event requests must not be sent');
 const opLogBody = (dictServer.match(/async function opLog\([\s\S]*?\n\}/)||[''])[0];
 assert.doesNotMatch(opLogBody, /body\.(sentence|book|ai_ko|user_ko|clicked|word)\b/,
   'The log op reads the sentence, book title or meanings out of the request again');
@@ -1630,7 +1628,7 @@ assert.match(dictionaryCss, /#sentence-modal\[hidden\]\{display:none;\}/,
    자세한 것은 tests/verify-word-lifecycle.mjs 가 실제로 돌려서 봅니다. */
 assert.match(dictionarySource, /function beginWordLookupLife\(\)\{\s*\n\s*endWordLookupLife\(\);/,
   'A new word lookup no longer ends the previous one');
-assert.match(dictionarySource, /function selectWord\(k, span, peek\)\{[\s\S]{0,650}?beginWordLookupLife\(\);/,
+assert.match(dictionarySource, /function selectWord\(k, span, peek, bump=false\)\{[\s\S]{0,650}?beginWordLookupLife\(\);/,
   'Opening word lookup no longer starts a new lookup lifetime');
 assert.match(dictionarySource, /function closePanel\(\)\{[\s\S]{0,700}?endWordLookupLife\(\);/,
   'Closing word lookup no longer ends its lookup lifetime');

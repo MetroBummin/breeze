@@ -456,9 +456,37 @@ async function openOriginalEpub(book,record,token){
 
 /* ================= saved vocabulary ================= */
 
-function renderEpubSavedWordHighlights(doc){
+// Documents own live ranges weakly; closing an EPUB does not retain its frames.
+const epubSavedHighlightCache=new WeakMap();
+function epubSavedWordSnapshot(){
+  return new Map(Object.entries(words).map(([key,w],order)=>[key,{
+    shape:JSON.stringify([w.phraseParts||null,w.phraseGaps||null,Array.isArray(w.phraseParts)?order:null]),
+    first:Array.isArray(w.phraseParts)&&w.phraseParts.length>1?w.phraseParts[0]:key,
+    bucket:w.mark===false?-1:Math.max(0,Math.min(2,(w.status||1)-1))
+  }]));
+}
+function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   const view=doc&&doc.defaultView;
   if(!doc || !view || !view.CSS || !view.CSS.highlights || !view.Highlight) return;
+  const cached=epubSavedHighlightCache.get(doc);
+  if(cached){
+    const changed=[];let rebuild=false;
+    for(const key of new Set([...cached.snapshot.keys(),...snapshot.keys()])){
+      const before=cached.snapshot.get(key),after=snapshot.get(key);
+      if(!before||!after||before.shape!==after.shape){
+        if(cached.byKey.has(key)||cached.candidates.has(before?.first)||cached.candidates.has(after?.first)){
+          rebuild=true;break;
+        }
+      }else if(before.bucket!==after.bucket)changed.push({key,before,after});
+    }
+    if(!rebuild){
+      changed.forEach(({key,before,after})=>(cached.byKey.get(key)||[]).forEach(range=>{
+        if(before.bucket>=0)cached.highlights[before.bucket].delete(range);
+        if(after.bucket>=0)cached.highlights[after.bucket].add(range);
+      }));
+      cached.snapshot=snapshot;return;
+    }
+  }
   ['breeze-saved-1','breeze-saved-2','breeze-saved-3'].forEach(name=>view.CSS.highlights.delete(name));
   /* 저장한 단어는 글자 화면과 같은 블록으로 칠합니다. 밑줄·끄기를 더 고를 수
      있었지만 아무도 고르지 않는 설정이었습니다. */
@@ -467,7 +495,7 @@ function renderEpubSavedWordHighlights(doc){
   markStyle.textContent=`::highlight(breeze-saved-1){background:rgba(255,226,138,.34)}
     ::highlight(breeze-saved-2){background:rgba(255,171,120,.31)}
     ::highlight(breeze-saved-3){background:rgba(255,140,140,.33)}`;
-  const ranges=[[],[],[]];
+  const ranges=[[],[],[]],byKey=new Map(),candidates=new Set();
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const parent=node.parentElement;
     if(!parent || !node.data || !/[A-Za-z]/.test(node.data)
@@ -475,13 +503,15 @@ function renderEpubSavedWordHighlights(doc){
     return NodeFilter.FILTER_ACCEPT;
   }});
   const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+  // One index per highlight pass; vocabulary is unchanged during this walk.
+  const starts=typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'
+    ? savedPhraseStarts() : null;
   let node;
   while((node=walker.nextNode())){
     pattern.lastIndex=0;const matches=[];let match;
-    while((match=pattern.exec(node.data)))matches.push(match);
+    while((match=pattern.exec(node.data))){matches.push(match);lemmaCands(match[0]).forEach(part=>candidates.add(part));}
     const claimed=new Map();
-    if(typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'){
-      const starts=savedPhraseStarts();
+    if(starts){
       for(let index=0;index<matches.length;index++){
         const choices=[];lemmaCands(matches[index][0]).forEach(part=>(starts.get(part)||[]).forEach(item=>{if(!choices.includes(item))choices.push(item);}));
         for(const item of choices){const found=savedPhraseMatch(matches,index,item);if(!found)continue;
@@ -490,16 +520,19 @@ function renderEpubSavedWordHighlights(doc){
     }
     for(let index=0;index<matches.length;index++){
       match=matches[index];const phrase=claimed.get(index);
-      const saved=phrase?phrase.w:words[keyOf(match[0])];
-      if(!saved || saved.mark === false) continue;
+      const key=phrase?phrase.key:keyOf(match[0]);
+      const saved=words[key];
+      if(!saved) continue;
       const range=doc.createRange();
       range.setStart(node,match.index); range.setEnd(node,match.index+match[0].length);
-      ranges[Math.max(0,Math.min(2,(saved.status||1)-1))].push(range);
+      if(!byKey.has(key))byKey.set(key,[]);
+      byKey.get(key).push(range);
+      if(saved.mark!==false)ranges[Math.max(0,Math.min(2,(saved.status||1)-1))].push(range);
     }
   }
-  ranges.forEach((items,index)=>{
-    if(items.length) view.CSS.highlights.set(`breeze-saved-${index+1}`,new view.Highlight(...items));
-  });
+  const highlights=ranges.map(items=>new view.Highlight(...items));
+  highlights.forEach((highlight,index)=>view.CSS.highlights.set(`breeze-saved-${index+1}`,highlight));
+  epubSavedHighlightCache.set(doc,{snapshot,byKey,candidates,highlights});
 }
 
 /* ================= selecting a word ================= */
@@ -923,7 +956,8 @@ function epubSourceProgress(map,source,session){
   return Math.max(0,Math.min(1,(spine+inside)/total));
 }
 function refreshEpubSavedWords(session){
+  const snapshot=epubSavedWordSnapshot();
   (session.frames||[]).forEach(frame=>{
-    try{ if(frame&&frame.contentDocument) renderEpubSavedWordHighlights(frame.contentDocument); }catch(e){}
+    try{ if(frame&&frame.contentDocument) renderEpubSavedWordHighlights(frame.contentDocument,snapshot); }catch(e){}
   });
 }

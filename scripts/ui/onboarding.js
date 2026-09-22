@@ -149,8 +149,6 @@ function renderOnboardingWordDetail(card){
   document.getElementById('p-ai-saved').hidden=true;
   document.getElementById('p-aibtn').style.display='none';
   document.getElementById('p-aihint').style.display='none';
-  document.getElementById('p-meaning-del').hidden=true;
-  document.getElementById('p-sense-add').hidden=true;
   document.getElementById('p-alt-sec').className='p-sec';
   document.getElementById('p-alts').innerHTML='';
   document.getElementById('p-defs').innerHTML=card.loading?'불러오는 중…':
