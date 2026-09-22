@@ -8,8 +8,8 @@ function phraseParts(text){
   return (String(text||'').toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g)||[])
     .map(part=>lemmaCands(part)[0]||part);
 }
-/* 저장한 표현은 단어 둘을 따로 칠하는 것이 아니라, 원문 속의 한 덩어리로 감쌉니다.
-   그래야 flare만 남고 up이 빠지는 일이 없습니다. */
+/* Expressions share one lexical key across stable token spans. Recognition changes
+   paint and identity only; it never changes inline boundaries or line wrapping. */
 function savedPhraseStarts(){
   const starts=new Map();
   Object.entries(words).forEach(([key,w])=>{
@@ -52,16 +52,12 @@ function wordSpans(text,starts,preview=false){
     if(phrase&&phraseMatch){
       const end=matches[phraseMatch.end].index+matches[phraseMatch.end][0].length;
       const status=phrase.w.mark!==false ? ' s'+phrase.w.status : '';
-      if(phrase.gaps.every(gap=>gap===0)){
-        html += `<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(text.slice(match.index,end))}</span>`;
-      }else{
-        const selected=new Set(phraseMatch.selected);
-        for(let at=i;at<=phraseMatch.end;at++){
-          const token=matches[at];
-          if(at>i)html+=esc(text.slice(matches[at-1].index+matches[at-1][0].length,token.index));
-          if(selected.has(at))html+=`<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(token[0])}</span>`;
-          else{const key=keyOf(token[0]),wordStatus=words[key]&&words[key].mark!==false?' s'+words[key].status:'';html+=`<span class="w${wordStatus}" data-w="${key}">${esc(token[0])}</span>`;}
-        }
+      const selected=new Set(phraseMatch.selected);
+      for(let at=i;at<=phraseMatch.end;at++){
+        const token=matches[at];
+        if(at>i)html+=esc(text.slice(matches[at-1].index+matches[at-1][0].length,token.index));
+        if(selected.has(at))html+=`<span class="w phrase${status}" data-w="${esc(phrase.key)}">${esc(token[0])}</span>`;
+        else{const key=keyOf(token[0]),wordStatus=words[key]&&words[key].mark!==false?' s'+words[key].status:'';html+=`<span class="w${wordStatus}" data-w="${key}">${esc(token[0])}</span>`;}
       }
       last=end;i=phraseMatch.end+1;continue;
     }

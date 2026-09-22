@@ -1,3 +1,8 @@
+/* One display rule everywhere; 100% is reserved for canonical completion. */
+function readingPercent(value){
+  const progress=Math.max(0,Math.min(1,Number(value)||0));
+  return progress===1?100:Math.floor(progress*100);
+}
 /* 꾹 누르면(약 0.55초) 이름 바꾸기. 손가락이 움직이면(스크롤) 취소됩니다. */
 function attachLongPress(el, fn){
   let timer = null, sx = 0, sy = 0, fired = false;
@@ -123,7 +128,7 @@ function nowReadingIn(list){
    출처 줄을 가려 버립니다. */
 function nowReadingLabel(book, current){
   const position = posOf(book.id);
-  const percent = position.t ? Math.round(position.p*100)+'% 읽음' : '';
+  const percent = position.t ? readingPercent(position.p)+'% 읽음' : '';
   if(book.id !== current) return percent;
   return percent ? '이어서 · '+percent : '이어서 읽기';
 }
@@ -134,7 +139,7 @@ function nowReadingLabel(book, current){
 function applyCover(host, book){
   if(!book.cover) return;
   bookImageBlob(book, book.cover).then(blob => {
-    if(!blob) return;
+    if(!blob || !host.isConnected) return;
     const image = host.querySelector('.cover');
     image.src = URL.createObjectURL(blob);
     image.hidden = false;
@@ -150,8 +155,9 @@ function applyCover(host, book){
    아무것도 없는 자리를 비켜서서 혼자 어정쩡하게 떠 있었습니다. 지우는 길은
    꾹 누르기로 이미 있고, 그쪽이 "이 기기에서만/모든 기기에서"까지 물어봅니다. */
 function wireBookCard(card, book){
-  const pressed = attachLongPress(card, ()=>openEditSheet(book));
-  card.onclick = () => { if(!pressed()) openBook(book); };
+  const currentBook=()=>books.find(item=>item.id===book.id)||book;
+  const pressed = attachLongPress(card, ()=>openEditSheet(currentBook()));
+  card.onclick = () => { if(!pressed()) openBook(currentBook()); };
   return card;
 }
 
@@ -175,7 +181,7 @@ function casualCard(book, current){
       <img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>
       ${WAVE('#FFFFFF','.35')}
-      ${position.t ? `<div class="bar"><i style="width:${Math.round(position.p*100)}%"></i></div>` : ''}
+      ${position.t ? `<div class="bar"><i style="width:${readingPercent(position.p)}%"></i></div>` : ''}
     </div>
     <div class="ct"></div><div class="cm"></div>`;
   fillCard(card, {
@@ -301,7 +307,7 @@ function cloudBookCard(row){
   const meta = row.meta || {};
   const classic=classicForMeta(meta);
   const card = el('div', 'bookcard cloud');
-  const progress=meta.position&&meta.position.t?Math.round((meta.position.p||0)*100)+'%부터 이어 읽기':'';
+  const progress=meta.position&&meta.position.t?readingPercent(meta.position.p)+'%부터 이어 읽기':'';
   card.innerHTML = `${classic?'<img class="cover" alt="" hidden>':''}<div class="author"></div><div class="bt"></div>
     <button class="getbtn" type="button">${classic?'무료로 다시 받아서':'파일 연결해서'} ${progress||'마저 읽기'}</button>
     <button class="del" type="button" title="이 기기에서 지우기">✕</button>`;
@@ -327,29 +333,75 @@ function longformAddCard(){
   return card;
 }
 
+/* Reconcile identities instead of clearing the shelf. Async cover images and RSS
+   keep their decoded pixels across sync and Reader return. */
+function reconcileHomeCards(container,specs){
+  const existing=new Map([...container.children].map(node=>[node.getAttribute('data-home-key'),node]));
+  const wanted=new Set(specs.map(spec=>spec.key));
+  for(const node of [...container.children]){
+    if(!wanted.has(node.getAttribute('data-home-key'))&&!node.classList.contains('rss-card')){
+      const cover=node.querySelector('img.cover');
+      if(cover&&cover.getAttribute('src')?.startsWith('blob:'))URL.revokeObjectURL(cover.getAttribute('src'));
+      node.remove();
+    }
+  }
+  let before=container.firstElementChild;
+  for(const spec of specs){
+    let node=existing.get(spec.key);
+    if(!node||node.getAttribute('data-home-stamp')!==spec.stamp){
+      const next=spec.create();
+      next.setAttribute('data-home-key',spec.key);next.setAttribute('data-home-stamp',spec.stamp);
+      if(node){
+        const oldCover=node.querySelector('img.cover');
+        if(oldCover?.getAttribute('src')?.startsWith('blob:'))URL.revokeObjectURL(oldCover.getAttribute('src'));
+        node.replaceWith(next);if(before===node)before=next;
+      }
+      node=next;
+    }
+    if(node!==before)container.insertBefore(node,before);
+    if(spec.update)spec.update(node);
+    before=node.nextElementSibling;
+  }
+  const add=container.querySelector('.casual.add');
+  if(add)for(const node of container.querySelectorAll('.rss-card'))container.insertBefore(node,add);
+}
+function homeBookSpec(book,current,casual){
+  // Closures read the current record by id, even after sync replaces its object.
+  const stamp=JSON.stringify([book.title,book.cover,book.site,book.author,book.kind,cardLede(book),readMinutes(book)]);
+  return {key:'book:'+book.id,stamp,
+    create:()=>casual?casualCard(book,current):bookCard(book,current),
+    update:card=>{
+      const label=nowReadingLabel(book,current);
+      if(casual){
+        card.querySelector('.cm').textContent=label?`${label} · ${readMinutes(book)}분`:`${readMinutes(book)}분 읽기`;
+        const thumb=card.querySelector('.thumb');thumb.classList.toggle('now-ring',book.id===current);
+        let bar=thumb.querySelector('.bar');
+        if(posOf(book.id).t&&!bar){bar=el('div','bar');bar.appendChild(document.createElement('i'));thumb.appendChild(bar);}
+        if(bar)bar.querySelector('i').style.width=readingPercent(posOf(book.id).p)+'%';
+      }else{
+        card.classList.toggle('now-ring',book.id===current);
+        let progress=card.querySelector('.prog');
+        if(label&&!progress){progress=el('div','prog');card.appendChild(progress);}
+        if(progress){progress.textContent=label;progress.hidden=!label;}
+      }
+    }};
+}
 function renderHome(){
   renderHomeResume();
-  const casuals = casualBooks();
-  const rail = document.getElementById('casual-rail');
-  const nowCasual = nowReadingIn(casuals);
-  rail.innerHTML = '';
-  casuals.slice(0, HOME_CASUAL_LIMIT).forEach(book => rail.appendChild(casualCard(book, nowCasual)));
-  serverOnlyCasuals().slice(0,Math.max(0,HOME_CASUAL_LIMIT-casuals.length)).forEach(row=>rail.appendChild(cloudCasualCard(row)));
-  if(casuals.length > HOME_CASUAL_LIMIT) rail.appendChild(casualMoreCard(casuals.length - HOME_CASUAL_LIMIT));
-  rail.appendChild(casualAddCard());
-
-  if(typeof appendRssCards === 'function') appendRssCards(rail);
-
-  const longform = longformBooks();
-  const shelf = document.getElementById('shelf');
-  const nowLongform = nowReadingIn(longform);
-  shelf.innerHTML = '';
-  longform.forEach(book => shelf.appendChild(bookCard(book, nowLongform)));
-  /* 서버에만 있는 책은 내 책 다음, 권유하는 고전 앞에 옵니다 — 이미 내 것이니까요. */
-  serverOnlyBooks().forEach(row => shelf.appendChild(cloudBookCard(row)));
-  pendingClassics().forEach(classic => shelf.appendChild(classicCard(classic)));
-  shelf.appendChild(longformAddCard());
-
+  const casuals=casualBooks(),nowCasual=nowReadingIn(casuals),rail=document.getElementById('casual-rail');
+  const casualSpecs=casuals.slice(0,HOME_CASUAL_LIMIT).map(book=>homeBookSpec(book,nowCasual,true));
+  for(const row of serverOnlyCasuals().slice(0,Math.max(0,HOME_CASUAL_LIMIT-casuals.length)))
+    casualSpecs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>cloudCasualCard(row)});
+  if(casuals.length>HOME_CASUAL_LIMIT)casualSpecs.push({key:'more',stamp:String(casuals.length),create:()=>casualMoreCard(casuals.length-HOME_CASUAL_LIMIT)});
+  casualSpecs.push({key:'add',stamp:'',create:casualAddCard});
+  reconcileHomeCards(rail,casualSpecs);
+  if(typeof appendRssCards==='function')appendRssCards(rail);
+  const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');
+  const specs=longform.map(book=>homeBookSpec(book,current,false));
+  for(const row of serverOnlyBooks())specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>cloudBookCard(row)});
+  for(const classic of pendingClassics())specs.push({key:'classic:'+classic.id,stamp:JSON.stringify(classic),create:()=>classicCard(classic)});
+  specs.push({key:'add',stamp:'',create:longformAddCard});
+  reconcileHomeCards(shelf,specs);
 }
 
 /* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에
@@ -490,7 +542,7 @@ async function reconnectVaultItem(row,file){
     books=books.filter(one=>one.id!==book.id); books.unshift(book);
     if(meta.position) positions[book.id]=meta.position;
     save(LS_POS,positions); unhideBookLocally(row.book_id); await bookPut(book); queueSync(); renderAllBookViews();
-    toast(meta.position&&meta.position.t?`${Math.round((meta.position.p||0)*100)}%부터 이어 읽을 수 있어요`:'파일을 연결했어요');
+    toast(meta.position&&meta.position.t?`${readingPercent(meta.position.p)}%부터 이어 읽을 수 있어요`:'파일을 연결했어요');
   }catch(error){
     if(prepared) await imgPurge(prepared.tmpId+'|');
     console.error(error); toast('파일을 연결하지 못했어요: '+(error.message||error));
@@ -700,7 +752,7 @@ async function importFile(file, extra){
       save(LS_POS,positions); unhideBookLocally(saved.id); unhideBookLocally(book.id);
       await bookPut(book); queueSync(); renderAllBookViews();
       toast(saved.position&&saved.position.t
-        ? `${Math.round((saved.position.p||0)*100)}%부터 이어 읽을 수 있어요`
+        ? `${readingPercent(saved.position.p)}%부터 이어 읽을 수 있어요`
         : '이전에 보관한 책을 다시 연결했어요');
       return;
     }
@@ -752,8 +804,8 @@ function renderHomeResume(){
   document.getElementById('home-resume-title').textContent=book ? book.title : 'Welcome to Breeze';
   const progress=book ? Math.max(0,Math.min(1,Number(posOf(book.id).p)||0)) : 0;
   document.getElementById('home-resume-progress').style.transform=`scaleX(${progress})`;
-  document.getElementById('home-resume-percent').textContent=book ? `${Math.floor(progress*100)}%` : '';
+  document.getElementById('home-resume-percent').textContent=book ? `${readingPercent(progress)}%` : '';
   updateCompletionBadge(button,progress,book ? book.id : '');
   button.disabled=!book;
-  button.setAttribute('aria-label',book ? book.title+` · ${Math.floor(progress*100)}% · `+(progress===1 ? (uiLang==='ko' ? '완독 · ' : 'Completed · ') : '')+(uiLang==='ko' ? '이어서 읽기' : 'Continue reading') : 'Welcome to Breeze');
+  button.setAttribute('aria-label',book ? book.title+` · ${readingPercent(progress)}% · `+(progress===1 ? (uiLang==='ko' ? '완독 · ' : 'Completed · ') : '')+(uiLang==='ko' ? '이어서 읽기' : 'Continue reading') : 'Welcome to Breeze');
 }

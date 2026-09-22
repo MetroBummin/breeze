@@ -27,7 +27,9 @@
     "test:pdf-geometry": "node tests/verify-pdf-glyph-geometry.mjs && node tests/verify-pdf-highlight-browser.mjs",
     "test:sentence-cue": "node tests/verify-sentence-cue-browser.mjs",
     "test:home-ui": "node tests/verify-home-resume-browser.mjs && node tests/verify-home-controls-browser.mjs && node tests/verify-library-refresh-browser.mjs && node tests/verify-reader-progress-browser.mjs && node tests/verify-wordbook-browser.mjs",
-    "test:reader-notices": "node tests/verify-reader-notifications-browser.mjs"
+    "test:reader-notices": "node tests/verify-reader-notifications-browser.mjs",
+    "test:reader-refinements": "node tests/verify-reader-refinements-browser.mjs",
+    "test:word-morph": "node tests/verify-word-morph-browser.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

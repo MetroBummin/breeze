@@ -323,3 +323,6 @@
     .lp-link i,.lp-new{animation:none!important; opacity:1;}
     .lp-link i{opacity:.5;}
   }
+
+.dictionary-credit{position:relative;padding:24px;text-align:center;font:11px/1.5 var(--ui);color:var(--soft);}
+.dictionary-credit a{color:inherit;}

@@ -435,7 +435,9 @@ let activeSelectedWordNode=null;
 let wordPeekActive=false;
 let wordPeekAnchor=null;
 let wordPeekRetryState=null;
+let wordDetailAnchored=false,wordMorphAnimation=null,wordMorphGeneration=0;
 function wordPeekOpen(){ return wordPeekActive; }
+function wordSurfaceAnchored(){ return wordPeekActive||wordDetailAnchored; }
 function wordLookupOpen(){
   const panel=document.getElementById('panel');
   return wordPeekActive||!!(panel&&panel.classList.contains('on'));
@@ -499,18 +501,70 @@ function placeWordPeek(){
   const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
   const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
   const gap=8,edge=16,box=pill.getBoundingClientRect();
+  const chrome=document.getElementById('readchrome').getBoundingClientRect();
+  const safeTop=vy+edge+(parseFloat(getComputedStyle(pill).getPropertyValue('--word-safe-top'))||0);
+  const safeBottom=Math.min(vy+vh-edge,chrome.height&&chrome.top>safeTop?chrome.top-gap:vy+vh-edge);
+  const above=Math.max(0,wordPeekAnchor.top-gap-safeTop);
+  const below=Math.max(0,safeBottom-wordPeekAnchor.bottom-gap);
+  // Reserve room for the future detail surface, not only today's 44px pill.
+  // Freeze the chosen side for the lookup lifetime so async text cannot flip it.
   if(!wordPeekAnchor.direction){
-    wordPeekAnchor.direction=wordPeekAnchor.top-vy-gap>=box.height+edge?'above':'below';
+    const detailHeight=Math.min(420,(safeBottom-safeTop)*.7);
+    wordPeekAnchor.direction=below>=detailHeight?'below':above>=detailHeight?'above':below>=above?'below':'above';
   }
   let left=(wordPeekAnchor.left+wordPeekAnchor.right-box.width)/2;
   left=Math.max(vx+edge,Math.min(left,vx+vw-edge-box.width));
   let top=wordPeekAnchor.direction==='above' ? wordPeekAnchor.top-gap-box.height : wordPeekAnchor.bottom+gap;
-  if(top<vy+edge||top+box.height>vy+vh-edge){
-    const other=wordPeekAnchor.direction==='above' ? wordPeekAnchor.bottom+gap : wordPeekAnchor.top-gap-box.height;
-    if(other>=vy+edge&&other+box.height<=vy+vh-edge) top=other;
-    else top=Math.max(vy+edge,Math.min(top,vy+vh-edge-box.height));
-  }
+  top=Math.max(safeTop,Math.min(top,safeBottom-box.height));
+  pill.dataset.expandDirection=wordPeekAnchor.direction;
+  pill.style.transformOrigin=wordPeekAnchor.direction==='below'?'50% 0%':'50% 100%';
   pill.style.left=`${Math.round(left)}px`;pill.style.top=`${Math.round(top)}px`;
+
+}
+function stopWordMorph(){
+  wordMorphGeneration++;
+  if(wordMorphAnimation) wordMorphAnimation.cancel();
+  wordMorphAnimation=null;
+  document.getElementById('panel').classList.remove('morphing');
+  document.getElementById('word-peek').style.visibility='';
+}
+function anchoredDetailRect(){
+  const viewport=window.visualViewport,edge=16,gap=8;
+  const x=viewport?viewport.offsetLeft:0,y=viewport?viewport.offsetTop:0;
+  const width=viewport?viewport.width:innerWidth,height=viewport?viewport.height:innerHeight;
+  const chrome=document.getElementById('readchrome').getBoundingClientRect();
+  const safeTop=y+edge+(parseFloat(getComputedStyle(document.getElementById('word-peek')).getPropertyValue('--word-safe-top'))||0);
+  const bottom=Math.min(y+height-edge,chrome.height&&chrome.top>safeTop?chrome.top-gap:y+height-edge);
+  const below=wordPeekAnchor.direction==='below';
+  const hinge=below?Math.min(bottom-44,Math.max(safeTop,wordPeekAnchor.bottom+gap)):Math.max(safeTop+44,Math.min(bottom,wordPeekAnchor.top-gap));
+  const h=Math.max(44,Math.min(380,below?bottom-hinge:hinge-safeTop));
+  const w=Math.min(360,width-edge*2);
+  const left=Math.max(x+edge,Math.min((wordPeekAnchor.left+wordPeekAnchor.right-w)/2,x+width-edge-w));
+  return {left,top:below?hinge:hinge-h,width:w,height:h};
+}
+function placeWordDetail(){
+  if(!wordDetailAnchored||!wordPeekAnchor) return;
+  const panel=document.getElementById('panel'),r=anchoredDetailRect();
+  for(const key of ['left','top','width','height']) panel.style[key]=r[key]+'px';
+}
+function morphWordSurface(from,to,collapsing=false){
+  const panel=document.getElementById('panel'),pill=document.getElementById('word-peek');
+  stopWordMorph();
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!panel.animate){
+    if(collapsing){panel.classList.remove('on','anchored');pill.style.visibility='';}
+    return;
+  }
+  const generation=wordMorphGeneration;
+  panel.classList.add('morphing');
+  if(collapsing)pill.style.visibility='hidden';
+  const frame=(r,radius)=>({left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',borderRadius:radius+'px'});
+  wordMorphAnimation=panel.animate([frame(from,collapsing?24:28),frame(to,collapsing?28:24)],
+    {duration:collapsing?220:280,easing:'cubic-bezier(.2,.8,.2,1)',fill:'none'});
+  wordMorphAnimation.finished.then(()=>{
+    if(generation!==wordMorphGeneration)return;
+    wordMorphAnimation=null;panel.classList.remove('morphing');
+    if(collapsing){panel.classList.remove('on','anchored');pill.style.visibility='';}
+  }).catch(()=>{});
 }
 function renderWordPeek(){
   settlePendingWord();
@@ -540,6 +594,9 @@ function clearActiveWordSelection(){
 }
 function selectWord(k, span, peek){
   const panel=document.getElementById('panel');
+  const keepAnchor=wordDetailAnchored&&!span;
+  stopWordMorph();
+  if(!keepAnchor){wordDetailAnchored=false;panel.classList.remove('anchored');panel.removeAttribute('style');}
   /* 여기서부터가 새 열림입니다. 앞 열림에 딸린 조회는 이 줄에서 임자를 잃습니다. */
   beginWordLookupLife();
   wordPeekRetryState=null;
@@ -550,7 +607,9 @@ function selectWord(k, span, peek){
   /* 칩을 눌러 고른 뜻은 다음에 열 때 맨 앞에서 만납니다. */
   const remember=!!(words[k]&&words[k].ko);
   selKey = k;
-  clearActiveWordSelection();
+  if(!keepAnchor) clearActiveWordSelection();
+  const metadataLife=wordLookupLife;
+  if(!previewWordCard) requestAnimationFrame(()=>{if(wordLookupAlive(metadataLife))void fillDictionaryMetadata(k,metadataLife);});
   if(span){ span.classList.add('sel'); activeSelectedWordNode=span; rememberWordPeekAnchor(span); }
   if(peek){
     wordPeekActive=true;
@@ -573,7 +632,9 @@ function selectWord(k, span, peek){
   panel.classList.add('on');
   panel.setAttribute('aria-hidden','false');
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
-  document.getElementById('word-modal-scrim').classList.add('on');
+  document.getElementById('word-modal-scrim').classList.toggle('on',!wordDetailAnchored);
+  panel.setAttribute('aria-modal',String(!wordDetailAnchored));
+  if(wordDetailAnchored) placeWordDetail();
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
   if(remember) requestAnimationFrame(()=>{ if(words[k]){ touchMeaning(k); saveWords(); } });
@@ -581,16 +642,21 @@ function selectWord(k, span, peek){
 
 function expandWordDetail(){
   if(!wordPeekActive||!selKey||!displayedWord(selKey)) return;
-  wordPeekActive=false;
-  document.getElementById('word-peek').hidden=true;
+  const pill=document.getElementById('word-peek');placeWordPeek();
+  const from=pill.getBoundingClientRect();
+  if(!previewWordCard)void fillDictionaryMetadata(selKey,wordLookupLife);
+  wordPeekActive=false;wordDetailAnchored=true;
+  pill.hidden=true;
   renderPanel();
   const panel=document.getElementById('panel');
-  panel.scrollTop=0;panel.classList.add('on');
-  panel.setAttribute('aria-hidden','false');
+  panel.classList.add('on','anchored');panel.scrollTop=0;
+  panel.setAttribute('aria-hidden','false');panel.setAttribute('aria-modal','false');
+  document.getElementById('word-modal-scrim').classList.remove('on');
+  placeWordDetail();
+  morphWordSurface(from,panel.getBoundingClientRect());
   if(typeof updateOriginalZoomControls==='function') updateOriginalZoomControls();
-  document.getElementById('word-modal-scrim').classList.add('on');
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
-  try{panel.focus({preventScroll:true});}catch(error){panel.focus();}
+  panel.focus({preventScroll:true});
 }
 /* 미니필의 보조 동작입니다. 저장된 대표 뜻을 다시 펼치는 것이 아니라, 지금 누른
    자리의 문장을 서버에 다시 보내 판정합니다. 결과는 기존 Meaning 저장 규칙을
@@ -631,6 +697,7 @@ async function retryWordPeek(){
 }
 document.getElementById('word-peek-retry').onclick=retryWordPeek;
 document.getElementById('word-peek-more').onclick=expandWordDetail;
+
 /* ---- 낱말 창을 치우는 일도 여기 하나뿐입니다 ----
    상세 popup은 바깥 · Escape · 뒤로가기로 닫히고, 작은 필은 빈 곳 · 스크롤 ·
    페이지 이동 · 확대 · 다른 lookup으로 닫힙니다. 어느 길이든 이 cleanup 하나로
@@ -641,6 +708,9 @@ document.getElementById('word-peek-more').onclick=expandWordDetail;
    않습니다. */
 function closePanel(){
   const panel=document.getElementById('panel');
+  stopWordMorph();wordDetailAnchored=false;
+  panel.classList.remove('anchored');panel.removeAttribute('style');
+  for(const fold of panel.querySelectorAll('details')) fold.open=false;
   wordPeekActive=false;wordPeekAnchor=null;
   wordPeekRetryState=null;
   selKey=null;
@@ -699,12 +769,18 @@ function renderPanel(){
   clickedLine.textContent = original;
   clickedLine.classList.toggle('on', !!original);
   document.getElementById('p-ex').textContent = w.example || '—';
-  document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('on', +b.dataset.s===w.status));
+  document.getElementById('p-ex-preview').textContent=w.example||'';
+  document.getElementById('p-know').hidden=!!previewWordCard;
+  document.getElementById('p-highlight-row').hidden=!!previewWordCard;
+  document.querySelectorAll('.stbtn').forEach(b=>{
+    const active=+b.dataset.s===w.status;b.classList.toggle('on',active);
+    b.setAttribute('aria-pressed',String(active));b.setAttribute('aria-label','모르는 정도 '+b.getAttribute('data-s'));
+  });
   const mark = document.getElementById('p-mark');
   const marked = base.mark !== false;
   mark.classList.toggle('on', marked);
   mark.setAttribute('aria-pressed', String(marked));
-  mark.querySelector('span').textContent = marked ? '색칠 ON' : '색칠 OFF';
+  mark.querySelector('span').textContent = marked ? '켜짐' : '꺼짐';
   mark.title = marked ? '이 단어의 본문 색칠 끄기' : '이 단어의 본문 색칠 켜기';
 
   /* ── 뜻이 사는 칸. 하나뿐입니다 ──
@@ -801,19 +877,25 @@ function renderPanel(){
      칩 = 선택. ＋ = 생성. 칩 안에 × 를 넣지 않는 이유는 두 가지입니다: 작은 칩
      안에서 두 손짓의 터치 자리가 겹치고, 지우는 문이 둘이 되면 "칩을 누르면 이
      뜻을 본다"는 한 줄짜리 규칙이 깨집니다. */
+  document.getElementById('p-ex-fold').hidden=!w.example;
   if(previewWordCard){
+    document.getElementById('p-senses-fold').hidden=true;
+    document.getElementById('p-en-section').hidden=!(w.defs&&w.defs.length);
     renderOnboardingWordDetail(w);
     return;
   }
   const root=base.root||k, savedSec=document.getElementById('p-saved-senses-sec');
   const savedBox=document.getElementById('p-saved-senses'), meanings=meaningCards(root,k);
+  const otherMeanings=meanings.filter(([id])=>id!==k);
+  document.getElementById('p-senses-fold').hidden=!otherMeanings.length;
+  document.getElementById('p-senses-label').textContent=`다른 뜻 ${otherMeanings.length}개`;
   const canAdd=true;
   savedSec.className='p-sec p-sec-row on';
   if(meanings.length){
     savedBox.className='on';
     /* 첫 칩은 지금 보고 있는 뜻이라 지우는 문이 이미 메인 뜻 칸에 있습니다. 두 번째
        칩부터는 그 문이 없으므로, 정리할 길을 칩 안에 하나 둡니다. */
-    savedBox.innerHTML=meanings.map(([id,item],index)=>`<button type="button" class="saved-sense${index===0?' on':''}" data-k="${esc(id)}">${index===0?'<span class="sense-tick">✓</span>':''}${esc(item.ko)}${index===0?'':'<span class="sense-remove" role="img" aria-label="이 뜻 지우기">×</span>'}</button>`).join('');
+    savedBox.innerHTML=otherMeanings.map(([id,item],index)=>`<button type="button" class="saved-sense${id===k?' on':''}" data-k="${esc(id)}">${esc(item.ko)}<span class="sense-remove" role="img" aria-label="이 뜻 지우기">×</span></button>`).join('');
     [...savedBox.querySelectorAll('.saved-sense')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
       chip.onclick=event=>{
@@ -827,11 +909,6 @@ function renderPanel(){
   /* 뜻이 하나뿐이면 지우는 문을 닫아 둡니다. 뜻 없는 낱말을 만들 수 있는 유일한
      길이었고, 그렇게 만들어 두면 다음에 열었을 때 빈 칸부터 마주칩니다.
      낱말째로 빼는 것은 아래 "단어장에서 빼기"가 맡습니다. */
-  document.getElementById('p-meaning-del').hidden = !(shown && !asking && meanings.length>1);
-  const addBox=document.getElementById('p-sense-add');
-  const addInput=/** @type {HTMLInputElement} */(document.getElementById('p-sense-input'));
-  addBox.hidden=!(canAdd && addingMeaning);
-  if(addBox.hidden) addInput.value='';
   /* 추천 뜻은 아직 Meaning 이 아닙니다. 한 번 누르면 저장된 뜻이 되어 이 줄을
      떠납니다. 싫은 추천에는 × 를 두지 않습니다 — 그냥 지나치면 됩니다. */
   const altSec=document.getElementById('p-alt-sec'), altBox=document.getElementById('p-alts');
@@ -849,9 +926,17 @@ function renderPanel(){
     });
   }else{ altSec.className='p-sec'; altBox.className=''; altBox.innerHTML=''; }
   const defs = document.getElementById('p-defs');
-  if(w.loading) defs.innerHTML = '<span style="color:var(--soft2)">불러오는 중…</span>';
-  else if(!w.defs || !w.defs.length) defs.innerHTML = '<span style="color:var(--soft2)">영어 뜻을 찾지 못했어요</span>';
-  else defs.innerHTML = w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
+  document.getElementById('p-en-section').hidden=!(w.enLoading||(w.defs&&w.defs.length)||w.enError);
+  if(w.defs&&w.defs.length) defs.innerHTML=w.defs.map(d=>`<div><span class="pos">${esc(d.pos)}</span>${esc(d.def)}</div>`).join('');
+  else if(w.enLoading) defs.textContent='영어 뜻 찾는 중…';
+  else if(w.enError) defs.innerHTML='<button type="button" id="p-en-retry" aria-label="영어 뜻 다시 시도" title="다시 시도"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M20 12a8 8 0 1 0-2.3 5.7"/></svg></button>';
+  else defs.textContent='';
+  if(w.defs?.length&&w.definitionSource==='wiktionary'){
+    defs.insertAdjacentHTML('beforeend',`<small class="p-dict-source"><a href="https://en.wiktionary.org/wiki/${encodeURIComponent(w.definitionSourceWord||w.word)}#English" target="_blank" rel="noopener">Wiktionary</a> · <a href="https://freedictionaryapi.com/" target="_blank" rel="noopener">FreeDictionaryAPI</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></small>`);
+  }
+  const retry=document.getElementById('p-en-retry');
+  if(retry)retry.onclick=()=>{delete words[k].enRetryAt;void fillDictionaryMetadata(k,wordLookupLife,true);};
+
 }
 /* 추천 뜻 클릭 = 그 뜻을 저장하고 지금 뜻으로 삼기. 확인은 묻지 않습니다 —
    누른 것 자체가 대답입니다. */
@@ -865,47 +950,15 @@ function adoptSuggestion(k, meaning){
   paintWord(root); selectWord(id,null);
 }
 /* ＋ 로 적어 넣는 뜻. 적어서 Enter 를 누르면 그 자리에서 저장되고 지금 뜻이 됩니다. */
-function addMeaningFromInput(){
-  const input=/** @type {HTMLInputElement} */(document.getElementById('p-sense-input'));
-  const base=words[selKey], text=input.value.replace(/\s+/g,' ').trim();
-  if(!base){ addingMeaning=false; renderPanel(); return; }
-  if(!text){ addingMeaning=false; renderPanel(); return; }
-  const root=base.root||selKey;
-  const id=createMeaning(root, text, {clicked:base.clicked, example:base.example, book:base.book,
-    ai:{ko:text, pos:'', done:false}});
-  if(!id) return;
-  const card=words[id];
-  if(card){ card.koEdited=true; card.up=Date.now(); saveWords(); queueSync(); }
-  logDict('edit', id);
-  input.value=''; addingMeaning=false; contextView=null;
-  paintWord(root); selectWord(id,null);
-}
-/* 뜻과 관련해 외울 손짓은 셋뿐입니다: 칩을 누르면 이 뜻을 본다, ＋ 는 만든다,
-   × 는 지금 뜻을 없앤다. 그 셋을 여기서 한 번에 답니다. */
-document.getElementById('p-meaning-del').onclick=()=>{ if(selKey && words[selKey]) deleteMeaning(selKey); };
-document.getElementById('p-add-sense').onclick=()=>{
-  if(!selKey || !words[selKey]) return;
-  addingMeaning=!addingMeaning; renderPanel();
-  if(addingMeaning) requestAnimationFrame(()=>document.getElementById('p-sense-input').focus());
-};
-const senseInput=/** @type {HTMLInputElement} */(document.getElementById('p-sense-input'));
-senseInput.addEventListener('keydown',event=>{
-  if(event.key==='Enter'){ event.preventDefault(); addMeaningFromInput(); }
-  if(event.key==='Escape'){ event.preventDefault(); addingMeaning=false; renderPanel(); }
-});
-senseInput.addEventListener('blur',()=>{
-  /* 비어 있는 칸은 조용히 접습니다. 적다 만 글자는 남겨 둡니다 — 스크롤하다
-     초점을 잃었을 뿐일 수 있으니까요. */
-  if(!senseInput.value.trim()){ addingMeaning=false; renderPanel(); }
-});
 document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
   logDict('star', selKey, { meta:{ status:+b.dataset.s } });
 });
 document.getElementById('p-mark').onclick=()=>{
-  const w=words[selKey]; if(!w) return;
+  const selected=words[selKey];if(!selected)return;
+  const key=selected.root||selKey,w=words[key]||selected;
   w.mark = w.mark === false;
-  w.up=Date.now(); saveWords(); paintWord(selKey); queueSync(); renderPanel();
+  w.up=Date.now(); saveWords(); paintWord(key); queueSync(); renderPanel();
 };
 
 document.getElementById('p-know').onclick = ()=>{
@@ -918,15 +971,24 @@ document.getElementById('p-know').onclick = ()=>{
     if(item.ko)dead[senseCardKey(k,item.ko)]=stamp;
     dead[id]=stamp;delete words[id];
   });
-  save(LS_DEAD,dead);closePanel();saveWords();paintWord(k);if(expression)refreshReaderWords();queueSync();toast('단어장에서 뺐어요');
+  save(LS_DEAD,dead);closePanel();saveWords();paintWord(k);if(expression)refreshReaderWords();queueSync();
 };
 function refreshReaderWords(){
   if(curBook && currentReaderMode==='text'){
-    const anchor=captureAnchor(),top=readerScrollTop();
-    renderBookBody(curBook);
-    // Restore within the same task. A deferred restoration lets the rebuild's
-    // scroll event dismiss the pill as if the user had scrolled.
-    if(!anchor || !restoreAnchor(anchor)) readerScrollTo(top);
+    // Lexical identity is metadata, not document structure. Keep the paragraphs,
+    // text nodes and selected token alive; no scroll restoration is necessary.
+    const starts=savedPhraseStarts();
+    document.querySelectorAll('#rtext [data-word-spans="1"]').forEach(paragraph=>{
+      const template=document.createElement('template');
+      template.innerHTML=wordSpans(paragraph.textContent,starts,!!curBook.transient);
+      const next=template.content.querySelectorAll('.w');
+      paragraph.querySelectorAll('.w').forEach((node,index)=>{
+        const replacement=next[index];
+        if(!replacement) return;
+        for(const name of ['phrase','s1','s2','s3']) node.classList.toggle(name,replacement.classList.contains(name));
+        node.setAttribute('data-w',replacement.getAttribute('data-w'));
+      });
+    });
   }else if(typeof refreshOriginalSavedWords==='function') refreshOriginalSavedWords();
 }
 /* 표제어를 손으로 고치는 칸은 없습니다. 화면의 낱말은 원문 색칠·캐시·동기화가
@@ -936,26 +998,42 @@ function refreshReaderWords(){
 
 /* ---- metadata-only English dictionary lookup ----
    한국어 뜻이나 문맥 판단에는 관여하지 않습니다. 상세 화면에서 실제로 쓰는 IPA,
-   녹음 URL, 영어 정의만 채우며 lookup lifecycle의 취소표를 그대로 받습니다. */
-async function fetchEnMetadata(w, form, signal){
-  let r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form), {signal});
-  /* 이 공개 사전은 가끔 첫 요청에 502를 돌려줍니다. IPA가 사라지면 사전창이
-     반쯤 비어 보이므로, 한 번만 짧게 다시 물어봅니다. */
-  if(!r.ok && r.status>=500){ await new Promise(resolve=>setTimeout(resolve,300)); r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(form), {signal}); }
-  if(!r.ok) return false;
-  const j = await r.json();
-  if(!j || !j[0]) return false;
-  w.phon = j[0].phonetic || ((j[0].phonetics||[]).find(p=>p.text)||{}).text || '';
-  w.audio = ((j[0].phonetics||[]).find(p=>p.audio) || {}).audio || '';   // 원어민 녹음
-  w.defs = [];
-  for(const m of j[0].meanings||[]){
-    for(const d of m.definitions.slice(0,2)){
-      w.defs.push({pos:m.partOfSpeech, def:d.definition});
-      if(w.defs.length>=5) break;
-    }
-    if(w.defs.length>=5) break;
-  }
-  return w.defs.length>0;
+   녹음 URL, 영어 정의만 채웁니다. 공유 캐시는 독립적으로 완료하고 카드 반영은 살아 있는 lookup만 합니다. */
+// Public dictionary data has a word-level lifetime, separate from contextual AI.
+// A completed response may warm the cache; it can never recreate a deleted card.
+const englishMetadataRequests=new Map();
+const englishCardRequests=new WeakMap();
+async function fetchEnMetadata(form,force=false){
+  const key='en:v2:'+form;
+  if(englishMetadataRequests.has(key))return englishMetadataRequests.get(key);
+  const request=(async()=>{
+    const cached=force?null:await dictGet(key);
+    if(cached&&cached.expires>Date.now())return cached;
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),3500);
+    try{
+      const response=await fetch('https://freedictionaryapi.com/api/v1/entries/en/'+encodeURIComponent(form)+'?translations=false',{signal:controller.signal});
+      if(response.status===404){const missing={missing:true,expires:Date.now()+86400000};await dictPut(key,missing);return missing;}
+      if(!response.ok)throw new Error('Dictionary unavailable');
+      const data=await response.json();
+      if(!Array.isArray(data.entries))throw new Error('Invalid dictionary response');
+      const entries=data.entries.filter(entry=>entry.language?.code==='en');
+      const definitions=[];
+      for(const entry of entries){
+        for(const sense of (entry.senses||[]).slice(0,2)){
+          if(typeof sense.definition==='string'&&sense.definition.trim())definitions.push({pos:entry.partOfSpeech||'',def:sense.definition});
+          if(definitions.length>=5)break;
+        }
+        if(definitions.length>=5)break;
+      }
+      if(!definitions.length){const missing={missing:true,expires:Date.now()+86400000};await dictPut(key,missing);return missing;}
+      const value={defs:definitions,phon:entries.flatMap(entry=>entry.pronunciations||[]).find(p=>p.type==='ipa')?.text||'',
+        source:'wiktionary',sourceWord:data.word||form,expires:Date.now()+30*86400000};
+      await dictPut(key,value);return value;
+    }finally{clearTimeout(timer);}
+  })();
+  englishMetadataRequests.set(key,request);
+  try{return await request;}finally{englishMetadataRequests.delete(key);}
 }
 /* ---- AI 사전: Edge Function 경유 (키는 서버에만) ----
 
@@ -1284,7 +1362,6 @@ async function fetchLook(k, opt){
       w.aiOff = e === 'quota_exceeded' ? 'quota'
               : e === 'anon_exhausted' ? 'trial'
               : e === 'login_required' ? 'login' : 'error';
-      if(w.aiOff === 'quota') readerPillStatus('오늘의 문맥 뜻 사용량을 모두 썼어요');
       if(w.aiOff === 'trial') anonLooksLeft = 0;
       return false;
     }
@@ -1353,15 +1430,40 @@ document.getElementById('p-aibtn').onclick   = ()=>askAI();
 addEventListener('online',  () => { if(selKey) renderWordLookup(); });
 addEventListener('offline', () => { if(selKey) renderWordLookup(); });
 
-async function fillDictionaryMetadata(k, life){
-  const w = words[k]; if(!w) return;
-  const signal = wordLookupSignal();
-  const forms = w.forms && w.forms.length ? w.forms : [k];
-  let validated = null;
-  for(const f of forms){ if(!wordLookupAlive(life)) return;
-    try{ if(await fetchEnMetadata(w,f,signal)){ validated=f; break; } }catch(e){} }
-  if(!w.aiLemma && validated && !isAcro(w.word) && validated!==w.word) w.word = validated;
-  renderIfAlive(life);
+async function fillDictionaryMetadata(k,life,force=false){
+  const w=words[k];if(!w||previewWordCard)return;
+  if(w.defs&&w.defs.length)return;
+  if(englishCardRequests.has(w)){
+    await englishCardRequests.get(w);
+    if(wordLookupAlive(life)&&words[k]===w)return fillDictionaryMetadata(k,life,force);
+    return;
+  }
+  if(!force&&w.enProvider==='v2'&&w.enRetryAt>Date.now())return;
+  w.enProvider='v2';
+  // An expression is looked up as an expression, never as one of its members.
+  const canonical=String(w.word||w.root||k).trim().toLowerCase();
+  const forms=[...new Set([canonical,...(/\s/.test(canonical)?[]:(w.forms||[]))])]
+    .filter(f=>/^[a-z][a-z'’ -]*$/i.test(f)).slice(0,2);
+  if(!forms.length)return;
+  w.enLoading=true;delete w.enError;
+  const work=(async()=>{
+    try{
+      for(const form of forms){
+        const result=await fetchEnMetadata(form,force);
+        if(!wordLookupAlive(life)||words[k]!==w)return;
+        if(result.missing)continue;
+        Object.assign(w,{defs:result.defs,phon:result.phon,definitionSource:result.source,definitionSourceWord:result.sourceWord});
+        delete w.enRetryAt;return;
+      }
+      if(words[k]===w)w.enRetryAt=Date.now()+86400000;
+    }catch(error){
+      if(words[k]===w&&wordLookupAlive(life)){w.enError=true;w.enRetryAt=Date.now()+30000;}
+    }finally{
+      delete w.enLoading;englishCardRequests.delete(w);
+      if(words[k]===w&&wordLookupAlive(life)){saveWords();renderIfAlive(life);}
+    }
+  })();
+  englishCardRequests.set(w,work);return work;
 }
 
 async function fetchDict(k,node){
@@ -1384,6 +1486,7 @@ document.addEventListener('keydown',event=>{
 });
 function wordPeekViewportChanged(){
   if(wordPeekActive) requestAnimationFrame(placeWordPeek);
+  if(wordDetailAnchored){stopWordMorph();requestAnimationFrame(placeWordDetail);}
 }
 window.addEventListener('resize',wordPeekViewportChanged,{passive:true});
 if(window.visualViewport) window.visualViewport.addEventListener('resize',wordPeekViewportChanged,{passive:true});
@@ -1497,7 +1600,33 @@ function csvCell(value){
   const text = String(value == null ? '' : value);
   return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g,'""') + '"' : text;
 }
-document.getElementById('btn-export').onclick = ()=>{
+async function deliverVocabularyCsv(csv){
+  const file=new File([csv],'breeze_vocab.csv',{type:'text/csv;charset=utf-8'});
+  const bridge=/** @type {any} */(window).webkit?.messageHandlers?.breezeVocabularyExport;
+  if(bridge){
+    await new Promise((resolve,reject)=>{
+      const id=String(Date.now())+'-'+Math.random().toString(36).slice(2);
+      const done=event=>{
+        if(event.detail?.id!==id) return;
+        window.removeEventListener('breeze-vocabulary-export',done);
+        event.detail.error?reject(new Error(event.detail.error)):resolve(undefined);
+      };
+      window.addEventListener('breeze-vocabulary-export',done);
+      try{bridge.postMessage({id,csv});}catch(error){window.removeEventListener('breeze-vocabulary-export',done);reject(error);}
+    });
+    return;
+  }
+  if(navigator.canShare?.({files:[file]}) && navigator.share){
+    await navigator.share({files:[file]});
+    return;
+  }
+  if(isNativeShell()) throw new Error('내보내기를 지원하는 앱 버전이 필요해요');
+  const url=URL.createObjectURL(file),link=document.createElement('a');
+  link.href=url;link.download=file.name;
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+document.getElementById('btn-export').onclick = async ()=>{
   const list = Object.values(words).filter(validWordMeaning).sort((a,b)=>b.addedAt-a.addedAt);
   if(!list.length){ toast('내보낼 단어가 없어요'); return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
@@ -1506,8 +1635,10 @@ document.getElementById('btn-export').onclick = ()=>{
       w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
   /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
   const csv = '﻿' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
-  const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-  const link = document.createElement('a');
-  link.href = url; link.download = 'breeze_vocab.csv'; link.click();
-  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  const button=/** @type {HTMLButtonElement} */(document.getElementById('btn-export'));
+  if(button.disabled) return;
+  button.disabled=true;
+  try{await deliverVocabularyCsv(csv);}
+  catch(error){if(error.name!=='AbortError') toast('단어장을 내보내지 못했어요. 다시 시도해 주세요.');}
+  finally{button.disabled=false;}
 };

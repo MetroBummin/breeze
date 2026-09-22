@@ -157,6 +157,7 @@ function makeContext(world, net, store){
     closeSentence(){},
     refreshOriginalSavedWords(){},
     renderBookBody(){ world.bookRebuilds++; },
+    savedPhraseStarts:()=>new Map(),
     captureAnchor:()=>null, restoreAnchor:()=>false, readerScrollTop:()=>0, readerScrollTo:()=>{},
     requestDurableLocalStorage(){},
     updateOriginalZoomControls(){},
@@ -601,8 +602,8 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   /* 영어 metadata 응답은 한국어 뜻이나 후보를 만들지 않습니다. */
   const { net, ctx } = boot();
   const bare = ctx.fetch;
-  ctx.fetch = (url, opt) => String(url).includes('api.dictionaryapi.dev')
-    ? Promise.resolve({ok:true,json:()=>Promise.resolve([{phonetic:'/jiːld/',phonetics:[],meanings:[{partOfSpeech:'verb',definitions:[{definition:'give way'}]}]}])})
+  ctx.fetch = (url, opt) => String(url).includes('freedictionaryapi.com/api')
+    ? Promise.resolve({ok:true,json:()=>Promise.resolve({word:'yield',entries:[{language:{code:'en'},partOfSpeech:'verb',pronunciations:[{type:'ipa',text:'/jiːld/'}],senses:[{definition:'give way'}]}]})})
     : bare(url, opt);
   tapBrandNewWord(ctx, 'yield');
   net.deliver({ error:'quota_exceeded' });

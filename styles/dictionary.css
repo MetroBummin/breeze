@@ -4,7 +4,7 @@
    상세 단어창과 Reader 레이아웃은 그대로 두고, 탭 직후의 기다림과 대표 뜻만
    fixed overlay로 보여 줍니다. PDF/EPUB의 확대 레이어 밖이라 필 자체는 커지지
    않습니다. 위치는 scripts/dictionary/dictionary.js가 실제 선택 rect로 정합니다. */
-#word-peek{position:fixed; z-index:78; isolation:isolate; display:flex; align-items:stretch; min-height:44px;
+#word-peek{--word-safe-top:env(safe-area-inset-top,0px);position:fixed; z-index:78; isolation:isolate; display:flex; align-items:stretch; min-height:44px;
   max-width:calc(100vw - 32px); overflow:hidden; border:1px solid var(--sentence-glass-line);
   border-radius:999px; background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
   box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
@@ -330,3 +330,83 @@ body.dark #word-peek::before{
     #panel{animation:word-detail-fade var(--sentence-transition) linear;}
     @keyframes word-detail-fade{from{opacity:0}to{opacity:1}}
   }
+
+/* Compact detail grows from the selected word; content never scales. */
+#panel.anchored{transform:none;max-height:none;max-width:calc(100vw - 32px);border-radius:24px;animation:none;
+  background:var(--sentence-glass-solid);overflow-y:auto;scrollbar-width:thin;}
+#panel.anchored.morphing{overflow:hidden;}
+#panel.anchored.morphing .inner{opacity:0;}
+#panel .inner{padding:14px 16px 18px;display:flex;flex-direction:column;gap:10px;}
+#panel #p-top{padding:0;border:0;position:static;background:transparent;}
+#panel #p-head{margin:0;gap:8px;}
+#panel #p-word{font-size:24px;letter-spacing:-.4px;}
+#panel #p-ai{margin:0;padding:12px;border-radius:16px;}
+#panel #p-ai .cap{font-size:10px;margin-bottom:5px;}
+#panel #p-ai .mk{font-size:19px;line-height:1.4;}
+#panel #p-ai-saved{font-size:10px;}
+#panel #p-status-label{display:none;}
+#panel #p-status{order:2;display:flex;gap:8px;margin:0;}
+#panel .stbtn{flex:1;min-height:36px;padding:4px;font-size:16px;border-radius:12px;}
+#panel #p-top,#panel #p-clicked,#panel #p-ai,#panel #p-aibtn,#panel #p-aihint{order:0;}
+#panel #p-en-section{order:3;}
+#panel #p-ex-fold{order:4;}
+#panel #p-senses-fold,#panel #p-sense-add,#panel #p-alt-sec,#panel #p-alts{order:5;}
+#panel #p-tools-fold{order:6;}
+#panel details{font:13px/1.5 var(--ui);}
+#panel summary{cursor:pointer;color:var(--sentence-glass-secondary);padding:5px 0;}
+#panel .p-sec{margin:0 0 5px;}
+#panel #p-saved-senses-sec{display:none;}
+#panel #p-saved-senses{margin:5px 0 0;}
+#panel #p-defs{font-size:14px;line-height:1.55;margin:0;}
+#panel #p-ex{font-size:15px;line-height:1.6;margin:5px 0 0;}
+#panel #p-word-tools{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0;}
+#panel #p-word-tools button{position:static;width:auto;height:auto;min-height:36px;padding:6px 10px;border:1px solid var(--sentence-glass-line);border-radius:10px;background:transparent;color:inherit;font:12px var(--ui);}
+#panel #p-en-retry{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--sentence-glass-line);border-radius:50%;background:transparent;color:var(--sentence-glass-secondary);padding:0;cursor:pointer;}
+#panel [hidden]{display:none!important;}
+
+#panel .inner{transition:opacity .1s ease;}
+#p-ex-preview{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:italic 14px/1.55 var(--ui);color:var(--ink-body);margin-top:4px;}
+#p-ex-fold[open] #p-ex-preview{display:none;}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #panel.anchored{background:var(--sentence-glass-pill);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}
+}
+@media(prefers-reduced-motion:reduce){#panel .inner{transition:none;}}
+
+/* Quiet vocabulary controls: meaning first, frequent actions within reach. */
+#panel #p-actions{display:flex;align-items:center;flex:none;border:1px solid var(--sentence-glass-line);border-radius:22px;overflow:hidden;background:var(--sentence-glass-action);}
+#panel #p-actions button{height:40px;border:0;background:transparent;color:var(--sentence-glass-ink);cursor:pointer;}
+#panel #p-know{padding:0 13px;font:12px var(--ui);border-radius:0;}
+#panel #p-speak{width:40px;border-radius:0;border-left:1px solid var(--sentence-glass-line);display:grid;place-items:center;}
+#panel #p-actions button:hover{background:var(--sentence-glass-line);box-shadow:none;}
+#panel #p-know:hover{color:var(--danger);}
+#panel #p-ai{background:transparent;border:0;border-radius:0;padding:8px 0 12px;border-bottom:1px solid var(--sentence-glass-line);}
+#panel #p-ai .cap{color:var(--sentence-glass-secondary);font-weight:400;letter-spacing:0;}
+#panel #p-ai .dot{display:none;}
+#panel #p-ai .mk{color:var(--sentence-glass-ink);font-size:20px;font-weight:600;}
+#panel #p-ai-saved{background:none;color:var(--sentence-glass-secondary);padding:0;font-weight:400;}
+#panel .stbtn{font-size:11px;letter-spacing:2px;font-weight:400;background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);border:1px solid var(--sentence-glass-line);}
+#panel .stbtn.on{background:color-mix(in srgb,var(--sentence-glass-ink) 12%,transparent);border-color:color-mix(in srgb,var(--sentence-glass-ink) 30%,transparent);color:var(--sentence-glass-ink);}
+#panel #p-highlight-row{order:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 0 8px;font:12px var(--ui);color:var(--sentence-glass-secondary);}
+#p-highlight-row small{display:block;font-size:10px;margin-top:3px;opacity:.8;}
+#panel #p-mark{display:flex;align-items:center;gap:9px;min-height:44px;min-width:76px;justify-content:flex-end;flex:none;padding:0;border:0;background:none;color:var(--sentence-glass-secondary);font:11px var(--ui);cursor:pointer;}
+#p-mark i{display:block;box-sizing:border-box;width:42px;height:26px;border-radius:16px;background:var(--sentence-glass-line);padding:3px;}
+#p-mark i::after{content:'';display:block;width:20px;height:20px;border-radius:50%;background:var(--sentence-glass-secondary);transition:transform .15s;}
+#panel #p-mark.on i{background:color-mix(in srgb,var(--sentence-glass-ink) 25%,transparent);}
+#p-mark.on i::after{transform:translateX(16px);background:var(--sentence-glass-ink);}
+/* Keep scrolling inside the glass surface without a protruding scroll indicator. */
+#panel,#panel.anchored{scrollbar-width:none;overscroll-behavior:contain;}
+#panel::-webkit-scrollbar{display:none;width:0;height:0;}
+/* A restrained hint of the matching reading highlight, only for the selected level. */
+#panel .stbtn[data-s="1"].on{color:var(--s1-ink);background:color-mix(in srgb,var(--s1) 36%,var(--sentence-glass-solid));border-color:color-mix(in srgb,var(--s1-line) 55%,var(--sentence-glass-line));}
+#panel .stbtn[data-s="2"].on{color:var(--s2-ink);background:color-mix(in srgb,var(--s2) 36%,var(--sentence-glass-solid));border-color:color-mix(in srgb,var(--s2-line) 55%,var(--sentence-glass-line));}
+#panel .stbtn[data-s="3"].on{color:var(--s3-ink);background:color-mix(in srgb,var(--s3) 36%,var(--sentence-glass-solid));border-color:color-mix(in srgb,var(--s3-line) 55%,var(--sentence-glass-line));}
+
+#panel #p-head{align-items:center;min-height:40px;}
+#panel #p-word{font-size:23px;line-height:1.2;letter-spacing:-.35px;}
+#panel #p-actions button{height:36px;}
+#panel #p-speak{width:38px;}
+body.dark #panel .stbtn[data-s="1"].on{color:var(--s1);}
+body.dark #panel .stbtn[data-s="2"].on{color:var(--s2);}
+body.dark #panel .stbtn[data-s="3"].on{color:var(--s3);}
+.p-dict-source{display:block;margin-top:10px;font:10px/1.5 var(--ui);color:var(--sentence-glass-secondary);}
+.p-dict-source a{color:inherit;text-decoration:none;}

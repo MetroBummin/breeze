@@ -120,10 +120,10 @@ try{
     {note:'옛 설명',gloss:'옛 gloss'},'opening details destructively migrated legacy AI gloss data');
   await page.locator('#panel').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const centered=await page.locator('#panel').boundingBox();
-  assert.ok(centered&&Math.abs(centered.x+centered.width/2-550)<2&&Math.abs(centered.y+centered.height/2-400)<2,
-    'wide word detail is not centered');
+  assert.ok(centered&&centered.width<=360&&centered.height<=380,'anchored detail exceeds its reading budget');
+  assert.equal(await page.locator('#panel').getAttribute('aria-modal'),'false');
   assert.deepEqual(await geometry(),before,'opening centered details changed Reader geometry or scroll');
-  await page.locator('#word-modal-scrim').click({position:{x:4,y:4}});
+  await page.mouse.click(4,4);
   await page.waitForFunction(()=>!wordLookupOpen());
   /* 위 Retry 검증이 만든 두 번째 Meaning은 아래의 "기존 Meaning 즉시 재사용"
      fixture와 별개입니다. 다음 계약이 원래 저장 뜻 하나만 가진 상태를 보도록 되돌립니다. */
@@ -167,6 +167,8 @@ try{
   await page.evaluate(()=>{
     window.wordQa={calls:[],pending:[]};
     const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='carefully' && node.getBoundingClientRect().top>80 && node.getBoundingClientRect().bottom<700);
+    window.expressionNode=span;window.expressionTextNode=span.firstChild;window.expressionParagraph=span.closest('[data-pi]');
+    window.expressionY=span.getBoundingClientRect().top;
     openWord(keyOf('carefully'),span);
   });
   await page.waitForFunction(()=>wordQa.calls[0]?.op==='look');
@@ -182,6 +184,8 @@ try{
   await page.waitForTimeout(250);
   assert.equal(await page.locator('#word-peek').isVisible(),true,'expression repaint scroll dismissed the pill');
   assert.ok(Math.abs(await page.evaluate(()=>readerScrollTop())-expressionScroll)<2,'expression repaint moved the Reader');
+  assert.equal(await page.evaluate(()=>expressionNode.isConnected && expressionNode.firstChild===expressionTextNode && expressionNode.closest('[data-pi]')===expressionParagraph),true,'expression rebuilt the reading DOM');
+  assert.ok(await page.evaluate(()=>Math.abs(expressionNode.getBoundingClientRect().top-expressionY)<1),'expression moved the tapped token');
   const phraseStatus=await page.evaluate(()=>words[selKey].status);
   await page.evaluate(()=>{
     const root=words[selKey].root||selKey;closePanel();
@@ -250,8 +254,7 @@ try{
   await page.locator('#word-peek-more').click();
   await page.locator('#panel').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const compact=await page.locator('#panel').boundingBox();
-  assert.ok(compact&&Math.abs(compact.x+compact.width/2-195)<2&&Math.abs(compact.y+compact.height/2-422)<2,
-    'compact word detail is not centered');
+  assert.ok(compact&&compact.width<=360&&compact.height<=380,'compact detail exceeds reading budget');
   assert.ok(compact.x>=15&&compact.x+compact.width<=375,'compact detail escaped viewport padding');
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>!wordLookupOpen());
@@ -343,29 +346,14 @@ try{
   assert.equal(await page.locator('#vcnt').textContent(),'전체 1단어');
   assert.equal(await page.locator('.vgroup[data-g="triad"]').count(),1);
 
-  /* Active/non-active popup deletion plus delete -> add -> delete. */
+  /* Other saved meanings can still be removed without management controls. */
   await page.evaluate(()=>{
-    const base=(ko,up,extra={})=>({word:'poly',clicked:'poly',forms:['poly'],ko,
-      example:'Poly has several meanings.',book:'QA',status:1,mark:true,addedAt:15,up,...extra});
-    words={poly:base('A',10),'poly::B':base('B',11,{root:'poly',sense:true,pickedAt:20}),
-      'poly::C':base('C',12,{root:'poly',sense:true,pickedAt:15})};
-    dead={}; openBook(books.find(book=>book.kind==='txt')); selectWord('poly::B',null);
+    words={poly:{word:'poly',ko:'A',status:1},'poly::B':{word:'poly',root:'poly',ko:'B',status:1}};
+    dead={};openBook(books.find(book=>book.kind==='txt'));selectWord('poly',null);
   });
-  await page.waitForFunction(()=>wordPanelOpen()&&!document.getElementById('p-meaning-del').hidden);
-  await page.locator('#p-meaning-del').click();
-  assert.deepEqual((await page.evaluate(()=>Object.values(words).map(item=>item.ko).sort())),['A','C']);
-  assert.equal(await page.evaluate(()=>!!words.poly),true);
-  /* The current chip is C; remove the non-active A through its nested × target. */
-  await page.locator('.saved-sense[data-k="poly"] .sense-remove').click();
-  assert.deepEqual(await page.evaluate(()=>Object.values(words).map(item=>item.ko)),['C']);
-  assert.equal(await page.evaluate(()=>dead.poly),undefined);
-  await page.locator('#p-add-sense').click();
-  await page.locator('#p-sense-input').fill('D');
-  await page.locator('#p-sense-input').press('Enter');
-  assert.deepEqual((await page.evaluate(()=>Object.values(words).map(item=>item.ko).sort())),['C','D']);
-  await page.locator('#p-meaning-del').click();
-  assert.deepEqual(await page.evaluate(()=>Object.values(words).map(item=>item.ko)),['C']);
-  assert.equal(await page.evaluate(()=>!!words.poly),true,'delete-add-delete removed the whole word');
+  await page.locator('#p-senses-fold').evaluate(node=>node.open=true);
+  await page.locator('.saved-sense[data-k="poly::B"] .sense-remove').click();
+  assert.equal(await page.evaluate(()=>!!words.poly&&!words['poly::B']),true);
 
   /* Whole-group removal remains exclusive to the explicit #p-know control. */
   await page.evaluate(()=>{

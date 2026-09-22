@@ -229,10 +229,10 @@ function renderSyncModal(){
         <div class="settings-sync-row"><b>동기화</b><span>마지막 동기화 · ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</span>
           <button class="sm-mini" onclick="syncRemoteChanges(true)">지금 동기화</button></div>
       </div>
-      <h3 class="settings-section-title">계정 관리</h3>
-      <div class="settings-actions-group"><button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>${deleteArea}</div>
       <p class="settings-sync-note">기존 동기화 설정에 따라 독서 기록과 단어장이 동기화됩니다.</p>
-      ${recoveryPanel()}`;
+      ${recoveryPanel()}
+      <h3 class="settings-section-title">계정 관리</h3>
+      <div class="settings-actions-group"><button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>${deleteArea}</div>`;
   }else if(passwordLoginOpen){
     body.innerHTML=`<div class="desc">이미 비밀번호가 설정된 계정으로 로그인합니다.
       새 비밀번호를 만들거나 바꾸는 곳은 아니에요.</div>

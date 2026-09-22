@@ -46,3 +46,14 @@ same opening path without the animation. Live Reader geometry is never scaled.
 `tests/verify-home-resume-browser.mjs` checks both engines with slow preparation,
 slow original rendering, rapid repeat taps, cancelled navigation, failed opening,
 reduced motion and preserved Text scroll position.
+
+The Home/Reader transition reveals and closes a rounded surface with clip-path and
+a brief blur, never stretching text. The Reader back control reverses the reveal
+toward the current Home resume pill. Reduced motion skips both directions.
+
+All saved-progress labels use `readingPercent`: floor the canonical ratio, with
+100 reserved for an actual ratio of 1. Cards and resume controls share this rule.
+
+Home keeps keyed card/image nodes while progress changes. RSS replacement occurs only after replacement data and images are ready. Both transition directions keep the Home snapshot opaque behind the moving Reader surface, so the animation never reveals an empty canvas.
+
+Both morph animations use fill-mode `both`. In particular the departing Reader must retain its terminal opacity/clip until the browser removes the snapshot; resetting to the underlying opacity 1 at the animation boundary briefly restores the full Reader. Browser regression seeks past the close animation duration and asserts opacity 0.

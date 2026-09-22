@@ -173,13 +173,16 @@ async function rssFeedCards(entries, renderId){
   return cards;
 }
 function appendRssCards(rail, force){
-  const renderId = ++rssRenderId;
-  rail.querySelectorAll('.rss-card').forEach(card => card.remove());
-  loadRss(force)
-    .then(groups => Promise.all(groups.map(entries => rssFeedCards(entries, renderId))))
-    .then(groups => {
-      if(renderId !== rssRenderId || !rail.isConnected) return;
-      const before = rail.querySelector('.casual.add');
-      groups.flat().forEach(card => rail.insertBefore(card, before));
-    }).catch(error => { console.error(error); });
+  const renderId=++rssRenderId;
+  loadRss(force).then(async groups=>{
+    const stamp=JSON.stringify([groups,books.map(book=>book.sourceUrl||'')]);
+    if(rail.dataset.rssStamp===stamp)return;
+    const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId)))).flat();
+    if(renderId!==rssRenderId||!rail.isConnected)return;
+    // Keep the previous shelf visible until replacement images are decoded.
+    rail.querySelectorAll('.rss-card').forEach(card=>card.remove());
+    const before=rail.querySelector('.casual.add');
+    cards.forEach(card=>rail.insertBefore(card,before));
+    rail.dataset.rssStamp=stamp;
+  }).catch(error=>console.error(error));
 }

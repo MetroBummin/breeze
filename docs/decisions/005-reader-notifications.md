@@ -20,3 +20,7 @@ region. Interruptions replay the notice with its full display duration.
 
 Validate with `node tests/verify-reader-notifications-browser.mjs`, the Reader
 lookup/gesture lifecycle tests, and shared Home/Reader controls regressions.
+
+## Quiet feedback
+
+Word removal is visible in the card and highlight, so it has no toast. Mode switching is visible in the document and mode button, so it has no announcement. Quota errors stay in the lookup that owns the failure, without a second delayed pill notice. Playback failures, storage failures, recovery-key and device-pairing notices remain actionable feedback.

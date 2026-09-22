@@ -38,7 +38,11 @@ try{
    const result=[color(reader),color(chip),color(filter)];
    reader.classList.toggle('on',wasOn);filter.setAttribute('aria-pressed','false');return result;
   }));
-  for(const [reader,chip,filter] of colors){assert.deepEqual(chip,reader);assert.deepEqual(filter,reader);}
+  for(const [reader,chip,filter] of colors){
+    assert.deepEqual(filter,chip);
+    assert.notEqual(reader[0],chip[0],'Reader detail should use the softer selected fill');
+    if(!dark)assert.equal(reader[1],chip[1]);
+  }
   const alignment=await page.evaluate(()=>{
    const label=document.querySelector('.wordbook-sort>span').getBoundingClientRect(),sort=document.getElementById('vsort-menu').getBoundingClientRect(),stars=document.getElementById('vstars').getBoundingClientRect(),books=document.getElementById('vbooks').getBoundingClientRect();
    return {sortGap:sort.left-label.right,bookGap:books.left-stars.right};

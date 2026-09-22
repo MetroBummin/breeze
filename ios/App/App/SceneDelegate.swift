@@ -6,6 +6,7 @@ import AVFoundation
 final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, AVSpeechSynthesizerDelegate {
     private static let themeMessageHandler = "breezeReaderTheme"
     private static let speechMessageHandler = "breezeSpeech"
+    private static let vocabularyExportHandler = "breezeVocabularyExport"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
     private let speechSynthesizer = AVSpeechSynthesizer()
@@ -27,6 +28,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
+        webView.configuration.userContentController.add(self, name: Self.vocabularyExportHandler)
         speechSynthesizer.delegate = self
         NotificationCenter.default.addObserver(
             self,
@@ -44,6 +46,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == Self.vocabularyExportHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let request = message.body as? [String: Any],
+                  let id = request["id"] as? String,
+                  let csv = request["csv"] as? String else { return }
+            exportVocabulary(csv, id: id)
+            return
+        }
         if message.name == Self.themeMessageHandler {
             guard let rgb = message.body as? [Double], rgb.count == 3,
                   rgb.allSatisfy({ $0.isFinite && (0...255).contains($0) }) else { return }
@@ -54,6 +66,37 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         guard message.name == Self.speechMessageHandler,
               let request = message.body as? [String: Any] else { return }
         handleSpeechRequest(request)
+    }
+
+    private func reportVocabularyExport(id: String, error: String? = nil) {
+        let payload: [String: Any] = ["id": id, "error": error ?? ""]
+        guard let data = try? JSONSerialization.data(withJSONObject: payload),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('breeze-vocabulary-export',{detail:\(json)}))", completionHandler: nil)
+    }
+
+    private func exportVocabulary(_ csv: String, id: String) {
+        guard presentedViewController == nil else {
+            reportVocabularyExport(id: id, error: "Another sheet is open")
+            return
+        }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let file = directory.appendingPathComponent("breeze_vocab.csv")
+            try csv.write(to: file, atomically: true, encoding: .utf8)
+            let sheet = UIActivityViewController(activityItems: [file], applicationActivities: nil)
+            sheet.popoverPresentationController?.sourceView = view
+            sheet.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.maxY - view.safeAreaInsets.bottom - 44, width: 1, height: 1)
+            sheet.completionWithItemsHandler = { [weak self] _, _, _, error in
+                try? FileManager.default.removeItem(at: directory)
+                self?.reportVocabularyExport(id: id, error: error?.localizedDescription)
+            }
+            present(sheet, animated: true)
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            reportVocabularyExport(id: id, error: error.localizedDescription)
+        }
     }
 
     private func handleSpeechRequest(_ request: [String: Any]) {

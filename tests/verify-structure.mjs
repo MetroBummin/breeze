@@ -718,7 +718,7 @@ assert.doesNotMatch(librarySource, /queueServerBookDelete|flushPendingBookDelete
 assert.doesNotMatch(librarySource, /confirm\(`"\$\{b\.title\}" 책을 삭제/,
   'The old two-button confirm is back in front of the scope question');
 assert.match(editSource, /function openEditSheet/, 'Nothing opens the edit sheet');
-assert.match(librarySource, /attachLongPress\(card, \(\)=>openEditSheet\(book\)\)/,
+assert.match(librarySource, /attachLongPress\(card, \(\)=>openEditSheet\(currentBook\(\)\)\)/,
   'A long press no longer opens the edit sheet');
 assert.doesNotMatch(index, /class="am-big ed-all"/,
   'The obsolete delete-everywhere choice is still visible');
@@ -889,18 +889,17 @@ assert.doesNotMatch(opLogBody, /\.from\("dict_events"\)|logEvent/,
    없앤다. 이 셋을 깨는 예외가 다시 생기지 않았는지 봅니다. */
 /* 지금 보는 뜻(첫 칩)에는 × 가 없습니다 — 그 문은 메인 뜻 칸에 있습니다. 두 번째
    칩부터만 × 를 달아, 보고 있는 뜻을 고르는 손짓과 지우는 손짓이 겹치지 않게 합니다. */
-assert.match(dictionarySource, /index===0\?'':'<span class="sense-remove"/,
+assert.match(dictionarySource, /otherMeanings\.map/,
   'The active chip carries its own delete target, or the other chips lost theirs');
 assert.match(dictionarySource, /closest\('\.sense-remove'\)\)\{ deleteMeaning\(id\); return; \}/,
   'A chip delete no longer deletes that meaning');
-assert.match(dictionarySource, /p-meaning-del'\)\.onclick=\(\)=>\{ if\(selKey && words\[selKey\]\) deleteMeaning\(selKey\); \}/,
-  'The meaning on show is no longer deleted from the main meaning box');
+assert.doesNotMatch(index,/id="p-tools-fold"/,'Removed word management returned');
 /* 다른 뜻을 정리했다고 보고 있던 뜻이 바뀌면 안 됩니다. */
 assert.match(dictionarySource, /const wasActive=id===selKey;[\s\S]{0,400}let next=wasActive \? '' : selKey;/,
   'Deleting a chip that is not the one on show moves the reader to another meaning');
 assert.match(dictionarySource, /function createMeaning\(root, text, source\)/,
   'Meanings are created in more than one place again');
-for(const caller of ['adoptSuggestion', 'addMeaningFromInput']){
+for(const caller of ['adoptSuggestion']){
   assert.match(dictionarySource, new RegExp(`function ${caller}[\\s\\S]{0,700}createMeaning\\(`),
     `${caller} builds a meaning of its own instead of going through createMeaning`);
 }
@@ -919,10 +918,8 @@ assert.doesNotMatch(dictionarySource, /function commitMeaningEdit/,
   'Editing a meaning is back as its own state');
 /* 빼기와 색칠은 "모르는 정도" 아래 한 줄에, 같은 모양으로 섭니다. 빼기가 창 맨
    아래 큰 단추였을 때는 긴 낱말 창에서 끝까지 내려야 보였습니다. */
-assert.match(index, /<div class="p-sec"(?: id="p-status-label")?>모르는 정도<\/div>[\s\S]{0,600}<div id="p-word-tools">[\s\S]{0,600}id="p-know" class="p-tool"[\s\S]{0,400}id="p-mark" class="p-tool"[\s\S]{0,300}<\/div>\s*<div id="p-status">/,
-  'The remove-word and colouring buttons no longer share one row above the stars');
-assert.ok(index.indexOf('id="p-know"') < index.indexOf('id="p-status"'),
-  'The remove-word button sank back below the difficulty stars');
+assert.match(index, /id="p-actions"[\s\S]*?id="p-know"[\s\S]*?id="p-speak"/,
+  'Word management left its compact disclosure');
 assert.doesNotMatch(index, /id="p-controls"/,
   'The old stand-alone colouring row is back');
 /* 저장됐다는 표시는 뜻 카드 머리에서, 이미 있는 확정 판단을 읽기만 합니다.
@@ -1564,7 +1561,7 @@ assert.ok(!/closePanel/.test(index),
 assert.ok(!/closePanel/.test(runningCode(interactionsSource)),
   'A second UI controller closes the centered word popup');
 assert.match(gestureSource,
-  /function wordModalCovers\(\)\{\s*\n\s*return wordPanelOpen\(\);/,
+  /function wordModalCovers\(\)\{\s*\n\s*return wordPanelOpen\(\) && !document\.getElementById\('panel'\)\.classList\.contains\('anchored'\);/,
   'The centered word popup no longer owns the covered Reader');
 assert.match(gestureSource, /function wordDismissTarget[\s\S]{0,180}target\.closest\('#word-modal-scrim'\)/,
   'Outside taps no longer belong to the word popup gesture owner');
@@ -1633,7 +1630,7 @@ assert.match(dictionaryCss, /#sentence-modal\[hidden\]\{display:none;\}/,
    자세한 것은 tests/verify-word-lifecycle.mjs 가 실제로 돌려서 봅니다. */
 assert.match(dictionarySource, /function beginWordLookupLife\(\)\{\s*\n\s*endWordLookupLife\(\);/,
   'A new word lookup no longer ends the previous one');
-assert.match(dictionarySource, /function selectWord\(k, span, peek\)\{[\s\S]{0,200}?beginWordLookupLife\(\);/,
+assert.match(dictionarySource, /function selectWord\(k, span, peek\)\{[\s\S]{0,650}?beginWordLookupLife\(\);/,
   'Opening word lookup no longer starts a new lookup lifetime');
 assert.match(dictionarySource, /function closePanel\(\)\{[\s\S]{0,700}?endWordLookupLife\(\);/,
   'Closing word lookup no longer ends its lookup lifetime');
@@ -1641,12 +1638,12 @@ assert.doesNotMatch(runningCode(dictionarySource), /abortLook|lookCtrl/,
   'The old single-call abort is back alongside the opening lifetime — two owners for one thing');
 /* 한국어 뜻 경로에서는 무료 사전을 제거합니다. 실제 상세 화면이 쓰는 IPA와 영어
    정의만 metadata-only 요청 하나로 남고 lookup 취소표를 받습니다. */
-assert.doesNotMatch(dictionarySource,/translate\.googleapis\.com|en\.wiktionary\.org|fetchKo|freeDictCandidates|fillFromFreeDicts/,
+assert.doesNotMatch(dictionarySource,/translate\.googleapis\.com|fetchKo|freeDictCandidates|fillFromFreeDicts/,
   'A free Korean meaning or fallback path survived');
-const metadataCalls=runningCode(dictionarySource).split('\n').filter(line=>line.includes('api.dictionaryapi.dev'));
+const metadataCalls=runningCode(dictionarySource).split('\n').filter(line=>line.includes('freedictionaryapi.com/api'));
 assert.ok(metadataCalls.length>0,'The IPA and English-definition metadata source is gone');
-metadataCalls.forEach(line=>assert.match(line,/\{signal\}/,
-  'The metadata request cannot be cancelled with its word lookup'));
+metadataCalls.forEach(line=>assert.match(line,/\{signal:controller\.signal\}/,
+  'The independent metadata request has no bounded abort signal'));
 assert.doesNotMatch(index,/id="p-context"/,'The manual "in this sentence" button is back');
 assert.doesNotMatch(dictionaryCss,/#p-context/,'Removed context-button styling survived');
 assert.doesNotMatch(dictionarySource,/op:'judge'|savedMeaningCandidates|resolveSavedWordContext|AI_REQUIRED/,

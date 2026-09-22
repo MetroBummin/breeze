@@ -203,11 +203,11 @@ assert.doesNotMatch(wordSpans('The quiet room'), /class="w s\d"[^>]*data-w="quie
 /* ⑦ 긴 표현이 짧은 표현을 이깁니다. "electric field line" 안에서 "electric
       field" 만 잡히면, 저장해 둔 긴 표현을 영영 다시 만나지 못합니다. */
 assert.match(wordSpans('an electric field line here'),
-  /data-w="electric field line">electric field line</,
+  /data-w="electric field line">electric<\/span> <span class="w phrase s1" data-w="electric field line">field<\/span> <span class="w phrase s1" data-w="electric field line">line</,
   '긴 표현보다 짧은 표현이 먼저 잡혔습니다');
-/* ⑧ 표현 하나는 span 하나입니다. 둘로 쪼개지면 한 낱말만 색이 앉습니다. */
-assert.equal((wordSpans('a point charge here').match(/<span/g)||[]).length, 3,
-  '두 낱말 표현이 하나로 묶이지 않았습니다');
+/* ⑧ Stable tokens retain their boundaries; every expression member shares its key. */
+assert.equal((wordSpans('a point charge here').match(/data-w="point charge"/g)||[]).length, 2,
+  'Expression members lost their shared identity');
 /* ⑨ 열쇠는 굴절형을 원형으로 되돌립니다 — 화면의 "fields" 와 단어장의
       "field" 가 같은 것을 가리켜야 색이 앉습니다. */
 assert.equal(keyOf('Fields'), 'field', '굴절형이 단어장 열쇠로 되돌아가지 않습니다');

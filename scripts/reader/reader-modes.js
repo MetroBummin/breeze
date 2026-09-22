@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded',()=>{
    단추는 지금 모드의 반대쪽을 그리므로, 누르면 그 그림으로 갑니다. */
 function toggleReaderMode(){
   const next = currentReaderMode==='original' ? 'text' : 'original';
-  readerPillStatus(next==='original' ? 'Original mode' : 'Text mode');
   switchReaderMode(next);
 }
 

@@ -125,12 +125,12 @@ function wordPanelOpen(){
 }
 /* 중앙 상세 popup은 항상 Reader 위를 덮습니다. */
 function wordModalCovers(){
-  return wordPanelOpen();
+  return wordPanelOpen() && !document.getElementById('panel').classList.contains('anchored');
 }
 /* 중앙 popup의 바깥 scrim만 닫는 자리입니다. 명시적인 X와 drag handle은 없습니다. */
 function wordDismissTarget(target){
   if(!target || typeof target.closest !== 'function') return false;
-  return !!target.closest('#word-modal-scrim');
+  return !!target.closest('#word-modal-scrim') || (wordPanelOpen()&&!wordModalCovers()&&!target.closest('#panel,#word-peek,#readchrome'));
 }
 /* ---- Aa 도 임자입니다 ----
    보기 설정은 화면을 덮지 않는 작은 창이라, 그 바깥에는 scrim 이 없습니다 —
@@ -396,7 +396,7 @@ function holdGesture(gesture){
        사람은 아무 답도 못 받습니다. 떼는 순간 낱말로 갑니다. */
     return;
   }
-  if(typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
+  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
   sentenceHoldPointerId=gesture.pointerId;
   finishGesture(gesture, GESTURE_SENTENCE, true);
   countDispatch(gesture, 'SENTENCE');
@@ -449,13 +449,13 @@ function dispatchWord(gesture, clientX, clientY){
   catch(error){ result = false; }
   if(result && typeof result.then === 'function'){
     result.then(ok=>{ gesture.completed = !!ok;
-      if(!ok&&typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
+      if(!ok&&typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
       gestureLog(gesture,'(async)'); },
                 ()=>{ gesture.completed = false; });
     return;
   }
   gesture.completed = !!result;
-  if(!result&&typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
+  if(!result&&typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
 }
 
 /* pointer 조각 없이 `click` 하나만 오는 길(일부 모바일 캔버스, 그리고 자판의
@@ -570,7 +570,7 @@ function scrollGesture(){
       && !(typeof readerScrollWasProgrammatic==='function' && readerScrollWasProgrammatic())){
     if(typeof closeSentence==='function') closeSentence();
   }
-  if(typeof wordPeekOpen==='function'&&wordPeekOpen()
+  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()
       && !(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic())
       && typeof closePanel==='function') closePanel();
   if(!activeGesture) return;
