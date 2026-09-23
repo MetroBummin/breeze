@@ -110,10 +110,12 @@ const joined = identityContext.bookContentFingerprint(['Hello world.', 'Next pag
 assert.equal(segmented, joined, 'Fingerprint changed with paragraph segmentation');
 
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
-assert.match(syncSource,/VaultCrypto\.sealJson\(master,payload/,
-  'The sync snapshot is sent without end-to-end encryption');
-assert.match(syncSource,/legacyMigratedAt:Date\.now\(\),legacyAudit/,
-  'Legacy migration is not recorded after the encrypted snapshot succeeds');
+assert.match(syncSource,/const WORDBOOK_ROW='__breeze_wordbook_v1__'/,
+  'The account wordbook row is missing');
+assert.match(syncSource,/compareAndSwapSyncRow\(WORDBOOK_ROW,previous,data,session\)/,
+  'Wordbook writes are not conditional');
+assert.match(syncSource,/legacyImportedAt:previous&&previous\.legacyImportedAt\|\|Date\.now\(\)/,
+  'Legacy word import completion is not recorded with the new wordbook');
 assert.doesNotMatch(syncSource,/from\('(?:words|books|positions)'\)\.delete\(\)|storage\.from\('books'\)\.remove\(/,
   'Normal sync still deletes legacy data before a separately audited migration');
 assert.doesNotMatch(syncSource,/bookUpload|bookDownload|collectBookPhotos|storeBookPhotos/,

@@ -4,20 +4,21 @@
 import {readFileSync} from 'node:fs';
 import {Script,createContext} from 'node:vm';
 import {randomUUID} from 'node:crypto';
-export const VAULT='__breeze_vault_v2__',META='__breeze_vault_meta_v2__',PROGRESS='__breeze_progress_v1__';
+export const VAULT='__breeze_vault_v2__',META='__breeze_vault_meta_v2__',PROGRESS='__breeze_progress_v1__',WORD='__breeze_wordbook_v1__';
 export const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
 export const pos=(p,t)=>({position:{p,t,mode:'text',pi:null,dy:0,original:null},updatedAt:t});
 export const word=t=>({up:t,ko:'뜻'});
 export const book=id=>({id,kind:'paste',title:id,addedAt:1});
 export const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
 export function barrier(count){let entered=0;const gate=deferred();return async()=>{if(++entered===count)gate.resolve();if(entered<=count)await gate.promise;};}
-export function server({words={apple:word(100)},dead={},items=[],separated=true,revision='base',legacy=true,progress={}}={}){
+export function server({words={apple:word(100)},dead={},items=[],separated=true,revision='base',legacy=true,progress={},wordbook=true}={}){
   const rows=new Map(),calls=[],hooks={};
   const put=(user,key,data)=>rows.set(`${user}/${key}`,clone(data));
   const peek=(key,user='user')=>clone(rows.get(`${user}/${key}`));
   const seed=(user='user')=>{
     put(user,META,{v:2,vaultId:'vault',vaultUpdatedAt:100,...(legacy?{legacyMigratedAt:1}:{}),...(separated?{progressSeparatedAt:1}:{})});
     put(user,VAULT,{v:2,updatedAt:100,...(revision?{revision}:{}),envelope:{payload:{v:2,words,dead,items}}});
+    if(wordbook)put(user,WORD,{v:1,updatedAt:100,...(revision?{revision}:{}),legacyImportedAt:1,words,dead});
     if(progress!==null)put(user,PROGRESS,{v:1,updatedAt:100,revision:'progress-base',envelope:{payload:{v:1,records:progress}}});
   };
   seed();
@@ -85,7 +86,7 @@ export function server({words={apple:word(100)},dead={},items=[],separated=true,
   });
   return {rows,calls,hooks,client,peek,put,seed};
 }
-export function device(db,label,{user='user',words={},dead={},books=[],positions={},active=null,dirty=0,progressDirty=0,seen='old'}={}){
+export function device(db,label,{user='user',words={},dead={},books=[],positions={},active=null,dirty=0,progressDirty=0,seen='old',legacyImported=true}={}){
   const memory=new Map(),timers=new Map(),views=new Set(active?['v-read']:[]),errors=[];
   const elements=new Map();let timerId=0;
   class Clock extends Date{static now(){return 200000;}}
@@ -121,12 +122,16 @@ export function device(db,label,{user='user',words={},dead={},books=[],positions
   new Script(source+`\n;globalThis.syncTest={
     setup(client,user,meta){sb=client;sbUser={id:user};vaultMaster={};vaultMeta=meta;},
     vault:doSync,progress:doProgressSync,all:syncRemoteChanges,logout:sbLogout,attach:attachSupabaseAuth,
+    queueWords:queueSync,queueProgress:queueReadingProgressSync,
+    render:()=>{renderSyncModal();return document.getElementById('sm-body').innerHTML;},
+    clearLegacyKey:()=>{vaultMaster=null;},
     snapshot:()=>({words,dead,positions,progressRemoteRecords,vaultRemoteItems,vaultMeta,vaultMaster,sbUser}),
     change:(key)=>{if(typeof markSyncDirty==='function')markSyncDirty(key);else save(key,Date.now());}
   };`,{filename:'actual-sync.js'}).runInContext(context);
   context.syncTest.setup(db.client(label),user,db.peek(META,user));
   memory.set('breeze.vault.remote:'+user,seen);memory.set('breeze.private-logs-purged:'+user,true);
   memory.set('breeze.vault.changed',dirty);memory.set('breeze.progress.changed',progressDirty);
+  memory.set('breeze.wordbook.legacy-imported:'+user,legacyImported);
   return {api:context.syncTest,context,memory,timers,views,errors,snapshot:()=>clone(context.syncTest.snapshot()),
     add(key,value){context.words[key]=clone(value);context.syncTest.change('breeze.vault.changed');},
     move(id,position){context.positions[id]=clone(position);context.syncTest.change('breeze.progress.changed');}};

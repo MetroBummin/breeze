@@ -1,8 +1,7 @@
-/* ================= Breeze E2EE sync =================
-   서버에는 단어·학습 기록·읽기자료 제목의 vault와 진행도 암호문만 보냅니다.
-   두 snapshot은 revision 조건부 저장으로 다른 기기의 변경을 덮지 않습니다. PDF·EPUB·paras·기사 본문·사진은 이 파일의 어떤 서버 요청에도
-   들어가지 않습니다. 옛 평문 자료는 암호문으로 옮겨도 이 경로에서 지우지 않고,
-   별도 migration을 위한 개수 audit만 vault metadata에 남깁니다. */
+/* ================= Breeze wordbook sync =================
+   The signed-in account owns one conditional-write wordbook row. Old encrypted
+   vault rows are read only for word migration and are never deleted or changed.
+   Reading progress and book content stay local. */
 let SB_URL='', SB_KEY='', sb=null, sbInitProblem='', authListenerAttached=false;
 let sbUser=null, syncTimer=null, syncPromise=null, syncAgain=false, syncAgainManual=false;
 let lastSync=load('breeze.lastsync',0);
@@ -12,9 +11,12 @@ let progressSyncPromise=null, progressSyncAgain=false, progressSyncAgainRemote=f
 let remoteSyncPromise=null, remoteSyncManual=false;
 let syncSessionEpoch=0;
 const SYNC_CAS_ATTEMPTS=4;
+let lastQueuedWordState='';
+let legacyWordbookPending=false;
 
 const VAULT_ROW='__breeze_vault_v2__';
 const VAULT_META_ROW='__breeze_vault_meta_v2__';
+const WORDBOOK_ROW='__breeze_wordbook_v1__';
 const VAULT_LOCAL_CHANGED='breeze.vault.changed';
 const PROGRESS_ROW='__breeze_progress_v1__';
 const PROGRESS_LOCAL_CHANGED='breeze.progress.changed';
@@ -73,6 +75,7 @@ function resetSyncSession(){
   syncAgain=false; syncAgainManual=false; progressSyncAgain=false; progressSyncAgainRemote=false; remoteSyncManual=false;
   vaultMaster=null; vaultMeta=null; vaultRemoteItems=[]; serverBooks=[]; progressRemoteRecords={};
   pendingRecoveryKey=''; lastProgressSyncAt=0; noteSyncSuccess();
+  legacyWordbookPending=false;
 }
 function markSyncDirty(key){
   // Distinct writes in the same millisecond must not clear each other's dirty flag.
@@ -114,15 +117,8 @@ function syncStableJson(value){
   return JSON.stringify(stable(value));
 }
 function vaultNeedsRepair(remote,syncedWords){
-  const remoteItems=new Map((remote&&remote.items||[]).map(item=>[itemIdentity(item),item]));
-  // Equal-time metadata can have different device-local book IDs. Do not
-  // repeatedly "repair" those harmless differences back and forth.
   return !remote||syncStableJson(remote.words||{})!==syncStableJson(syncedWords)
-    ||syncStableJson(remote.dead||{})!==syncStableJson(dead)
-    ||vaultRemoteItems.some(item=>{
-      const old=remoteItems.get(itemIdentity(item));
-      return !old||(item.updatedAt||0)>(old.updatedAt||0);
-    });
+    ||syncStableJson(remote.dead||{})!==syncStableJson(dead);
 }
 
 async function saveMasterForDevice(master){
@@ -190,7 +186,7 @@ function recoveryPanel(){
          <button class="sm-reset" onclick="cancelDevicePairing()">연결 취소</button>`
       : `<button class="sm-pair-start" onclick="startDevicePairing()">이전 기기로 연결</button>`;
     return `<section class="sm-vault locked"><div class="sm-vault-head"><div><span class="sm-vault-kicker">END-TO-END ENCRYPTED</span><b>단어 보관함이 잠겨 있어요</b></div><button class="sm-info" onclick="toggleVaultInfo()" aria-label="암호화 설명">i</button></div>
-      ${vaultInfoOpen?'<div class="sm-vault-info">이 기기에는 열쇠가 없어요. 저장해 둔 복구키를 입력하면 단어장과 진행도를 되찾을 수 있어요.</div>':''}
+      ${vaultInfoOpen?'<div class="sm-vault-info">이 기기에는 열쇠가 없어요. 저장해 둔 복구키를 입력하면 단어장을 되찾을 수 있어요.</div>':''}
       <div class="sm-secret"><input id="sm-recovery-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="복구키 붙여넣기"><button onclick="pickRecoveryFile()">파일</button></div>
       ${vaultRecoveryError?`<div class="sm-vault-error">${esc(vaultRecoveryError)}</div>`:''}
       <div class="sm-vault-actions"><button class="sm-mini primary" onclick="restoreRecoveryKey()">복원하기</button></div>
@@ -205,10 +201,9 @@ function recoveryPanel(){
       ? `<div class="sm-reset-confirm"><b>새 복구키를 만들까요?</b><span>기존 데이터는 그대로지만, 이전 복구키는 사용할 수 없게 됩니다.</span><div><button class="sm-reset" onclick="cancelRecoveryRotate()">취소</button><button class="sm-mini danger" onclick="confirmRecoveryRotate()">새로 만들기</button></div></div>`
       : `<button class="sm-reset" onclick="openRecoveryRotate()">새 복구키 만들기</button>`;
   return `<section class="sm-vault"><div class="sm-vault-head"><div><span class="sm-vault-kicker">END-TO-END ENCRYPTED</span><b>단어 보관함 · 자동 동기화 중</b></div><button class="sm-info" onclick="toggleVaultInfo()" aria-label="암호화 설명">i</button></div>
-    ${vaultInfoOpen?'<div class="sm-vault-info">단어·숙어·뜻·예문과 읽던 위치만 기기에서 암호화해 동기화해요. PDF·EPUB·기사 본문과 사진은 이 기기 밖으로 보내지 않아요. Breeze는 복호화 키를 보유하지 않습니다.</div>':''}
+    ${vaultInfoOpen?'<div class="sm-vault-info">단어·숙어·뜻·예문을 기기에서 암호화해 동기화해요. 책과 읽던 위치는 이 기기에만 남습니다. Breeze는 복호화 키를 보유하지 않습니다.</div>':''}
     <p>${pendingRecoveryKey?'기기를 잃어도 단어장을 되찾을 수 있도록 복구키를 안전한 곳에 저장해 주세요.':'이 기기의 열쇠로 자동 동기화하고 있어요. 이전에 저장한 복구키는 앱에서 다시 표시되지 않습니다.'}</p>${recovery}
-    <details class="sm-fold"><summary><b>다른 기기 연결</b><span>6자리 코드 또는 QR</span></summary><div class="sm-device-move"><span>새 기기에 표시된 6자리 코드를 입력해 열쇠를 보내세요.</span><input id="sm-pair-code" inputmode="numeric" maxlength="6" placeholder="6자리 코드"><button onclick="approvePairingCode()">코드로 동기화</button><small>새 기기가 QR을 띄우면 이 기기의 카메라로 스캔해도 됩니다.</small></div></details>
-    <details class="sm-fold"><summary><b>읽기자료 옮기기</b><span>이 기기에만 보관</span></summary><div class="sm-device-move"><span>서버에 올리지 않고 암호화 파일로 직접 옮겨요.</span><button onclick="exportReadingBackup()">내 책·글 내보내기</button><button onclick="pickReadingBackup()">백업 파일 불러오기</button></div></details></section>`;
+    <details class="sm-fold"><summary><b>다른 기기 연결</b><span>6자리 코드 또는 QR</span></summary><div class="sm-device-move"><span>새 기기에 표시된 6자리 코드를 입력해 열쇠를 보내세요.</span><input id="sm-pair-code" inputmode="numeric" maxlength="6" placeholder="6자리 코드"><button onclick="approvePairingCode()">코드로 동기화</button><small>새 기기가 QR을 띄우면 이 기기의 카메라로 스캔해도 됩니다.</small></div></details></section>`;
 }
 
 function renderSyncModal(){
@@ -221,16 +216,16 @@ function renderSyncModal(){
   }
   if(sbUser){
     const deleteArea=accountDeleteOpen
-      ? `<div class="sm-delete-confirm"><b>계정과 서버의 암호화 보관함을 지울까요?</b><span>이 기기의 책과 단어장은 그대로 남습니다. 계속하려면 DELETE를 입력하세요.</span><input id="sm-delete-input" autocomplete="off" spellcheck="false" placeholder="DELETE"><div><button class="sm-reset" onclick="cancelAccountDelete()">취소</button><button class="sm-mini danger" onclick="confirmAccountDelete()">계정 지우기</button></div>${accountDeleteError?`<small class="sm-vault-error">${esc(accountDeleteError)}</small>`:''}</div>`
+      ? `<div class="sm-delete-confirm"><b>계정과 서버의 단어장을 지울까요?</b><span>이 기기의 책과 단어장은 그대로 남습니다. 계속하려면 DELETE를 입력하세요.</span><input id="sm-delete-input" autocomplete="off" spellcheck="false" placeholder="DELETE"><div><button class="sm-reset" onclick="cancelAccountDelete()">취소</button><button class="sm-mini danger" onclick="confirmAccountDelete()">계정 지우기</button></div>${accountDeleteError?`<small class="sm-vault-error">${esc(accountDeleteError)}</small>`:''}</div>`
       : `<button class="sm-linkish" onclick="openAccountDelete()">계정 지우기</button>`;
     body.innerHTML=`<h3 class="settings-section-title">계정</h3>
       <div class="settings-account-group">
         <div class="sm-account"><small>로그인된 계정</small><b>${esc(sbUser.email||'')}</b></div>
-        <div class="settings-sync-row"><b>동기화</b><span>마지막 동기화 · ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</span>
+        <div class="settings-sync-row"><b>단어장 동기화</b><span>마지막 동기화 · ${lastSync?new Date(lastSync).toLocaleString('ko-KR'):'아직 없음'}</span>
           <button class="sm-mini" onclick="syncRemoteChanges(true)">지금 동기화</button></div>
       </div>
-      <p class="settings-sync-note">기존 동기화 설정에 따라 독서 기록과 단어장이 동기화됩니다.</p>
-      ${recoveryPanel()}
+      <p class="settings-sync-note">단어장은 로그인한 계정에 저장되어 자동으로 동기화됩니다. 책과 읽던 위치는 각 기기에 남습니다.</p>
+      ${legacyWordbookPending?'<p class="settings-sync-note">예전 암호화 단어장은 기존 기기에서 한 번 동기화하면 이 기기로 옮겨집니다.</p>':''}
       <h3 class="settings-section-title">계정 관리</h3>
       <div class="settings-actions-group"><button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>${deleteArea}</div>`;
   }else if(passwordLoginOpen){
@@ -242,7 +237,7 @@ function renderSyncModal(){
       <button class="sm-linkish neutral" onclick="closePasswordLogin()">이메일 코드 로그인으로 돌아가기</button>`;
   }else{
     body.innerHTML=`<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
-      로그인하면 단어장이 기기 간에 암호화되어 동기화됩니다.</div>
+      로그인하면 단어장이 기기 간에 자동으로 동기화됩니다.</div>
       <input id="sm-email" type="email" placeholder="you@example.com" autocomplete="email">
       <button class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
       <div id="sm-codewrap"><div class="hint">메일에 온 <b>6자리 코드</b>를 입력해도 로그인돼요</div>
@@ -438,28 +433,22 @@ async function approvePairingFromUrl(){
 function hiddenBookIds(){ return load(LS_HIDDEN,{}); }
 function hideBookLocally(id){ const hidden=hiddenBookIds(); hidden[id]=Date.now(); save(LS_HIDDEN,hidden); }
 function unhideBookLocally(id){ const hidden=hiddenBookIds(); if(hidden[id]===undefined) return; delete hidden[id]; save(LS_HIDDEN,hidden); }
-function activeServerBooks(){ return serverBooks||[]; }
+function activeServerBooks(){ return []; }
 function serverBookIdFor(book){
   const match=activeServerBooks().find(row=>(row.meta||{}).localId===book.id);
   return match?match.book_id:book.id;
 }
 function queueSync(){
-  if(!sb||!sbUser) return;
+  const current=syncStableJson({words,dead});
+  if(current===lastQueuedWordState) return;
+  lastQueuedWordState=current;
   markSyncDirty(VAULT_LOCAL_CHANGED); clearTimeout(syncTimer);
+  if(!sb||!sbUser) return;
   syncTimer=setTimeout(()=>doSync(false),4000);
 }
-/* 책을 읽는 동안 위치는 자주 바뀌지만, 매 손가락 움직임마다 서버를 부를 이유는
-   없습니다. 25초마다 한 번이면 다른 기기로 옮겨 읽기에 충분히 빠르고 배터리도
-   덜 씁니다. 앱을 숨길 때는 아래 visibilitychange가 이 대기열을 건너뛰고 즉시
-   보냅니다. */
+/* The reader still calls this hook; progress sync is dormant. */
 function queueReadingProgressSync(){
-  if(!sb||!sbUser) return;
-  markSyncDirty(PROGRESS_LOCAL_CHANGED);
-  const wait=Math.max(0,25000-(Date.now()-lastProgressSyncAt));
-  clearTimeout(progressSyncTimer);
-  progressSyncTimer=setTimeout(()=>{
-    progressSyncTimer=null; lastProgressSyncAt=Date.now(); doProgressSync(false,false);
-  },wait);
+  // Reading locations are local until the broader sync feature returns.
 }
 function sameProgressLocation(left,right){
   const clean=value=>{ const safe=safePosition(value); if(safe) delete safe.t; return safe; };
@@ -540,7 +529,7 @@ function mergeWordState(remoteWords,remoteDead){
   for(const key of all){
     const rw=(remoteWords||{})[key],rd=(remoteDead||{})[key]||0,lw=words[key],ld=dead[key]||0;
     const newest=Math.max(upOf(rw),rd,upOf(lw),ld);
-    if(newest===rd||newest===ld){ delete words[key]; dead[key]=newest; }
+    if((rd&&newest===rd)||(ld&&newest===ld)){ delete words[key]; dead[key]=newest; }
     else if(newest===upOf(rw)){ words[key]=rw; delete dead[key]; }
   }
   cleanOrphanWords(words,dead,pendingWord&&pendingWord.key);
@@ -616,7 +605,7 @@ async function readLegacyData(rows){
 async function readLegacyRows(){
   const session=syncSession();
   const result=await sb.from('words').select('key,data').eq('user_id',session.userId)
-    .not('key','in',`(${VAULT_ROW},${VAULT_META_ROW},${PROGRESS_ROW})`);
+    .not('key','in',`(${VAULT_ROW},${VAULT_META_ROW},${PROGRESS_ROW},${WORDBOOK_ROW})`);
   assertSyncSession(session);
   if(result.error) throw result.error;
   return result.data||[];
@@ -627,91 +616,82 @@ async function purgePrivateDictionaryLogs(){
   try{ const answer=await dictCall({op:'purge_private_logs'}); if(answer&&answer.ok) save(flag,true); }
   catch(error){}
 }
+async function importLegacyWordbook(session,wordbook){
+  const flag=`breeze.wordbook.legacy-imported:${session.userId}`;
+  if(wordbook&&wordbook.legacyImportedAt){
+    save(flag,true);legacyWordbookPending=false;return true;
+  }
+  if(load(flag,false)) return true;
+  // Old encrypted vaults need one visit from a device that still has the key.
+  // Keep the old rows untouched, including their book and progress metadata.
+  const metaResult=await sb.from('words').select('data').eq('user_id',session.userId).eq('key',VAULT_META_ROW).maybeSingle();
+  assertSyncSession(session); if(metaResult.error) throw metaResult.error;
+  const meta=metaResult.data&&metaResult.data.data;
+  if(meta){
+    vaultMeta=meta;
+    const master=await loadMasterForDevice(); assertSyncSession(session);
+    if(!master){ legacyWordbookPending=true; return false; }
+    legacyWordbookPending=false;
+    const oldResult=await sb.from('words').select('data').eq('user_id',session.userId).eq('key',VAULT_ROW).maybeSingle();
+    assertSyncSession(session); if(oldResult.error) throw oldResult.error;
+    const old=oldResult.data&&oldResult.data.data;
+    if(old&&old.envelope){
+      const payload=await VaultCrypto.openJson(master,old.envelope,
+        [session.userId,meta.vaultId,'snapshot'],'breeze/vault/v2');
+      assertSyncSession(session);
+      mergeWordState(payload.words||{},payload.dead||{});
+    }
+  }
+  const rows=await readLegacyRows(); assertSyncSession(session);
+  const oldWords={},oldDead={};
+  for(const row of rows){
+    const value=row.data||{};
+    if(value.deleted) oldDead[row.key]=value.up||0;
+    else oldWords[row.key]=value;
+  }
+  mergeWordState(oldWords,oldDead);
+  legacyWordbookPending=false;
+  return true;
+}
+
 async function runSyncPass(manual){
   const session=syncSession();
-  if(manual) syncStatus('암호화해 동기화하는 중…');
+  if(manual) syncStatus('단어장을 동기화하는 중…');
   try{
-    const master=await ensureVaultReady(); assertSyncSession(session);
-    if(!master){ if(manual){ renderSyncModal(); syncStatus('복구키로 보관함을 먼저 열어 주세요'); } return false; }
-    const vaultId=vaultMeta.vaultId;
-    await approvePairingFromUrl(); assertSyncSession(session);
-    // Recovery metadata stays separate. The version is projected from the
-    // snapshot row itself, so it cannot disagree with a completed CAS write.
-    const headerResult=await sb.from('words').select('revision:data->>revision,updatedAt:data->updatedAt,sync:data->sync')
-      .eq('user_id',session.userId).eq('key',VAULT_ROW).maybeSingle();
-    assertSyncSession(session); if(headerResult.error) throw headerResult.error;
-    const header=headerResult.data,remoteVersion=syncRowVersion(header);
-    const seenVersion=String(load(vaultRemoteVersionKey(),'')||'');
-    const state=vaultSyncState(header);
-    const remoteChanged=!remoteVersion||remoteVersion!==seenVersion;
-    const needsVault=Number(load(VAULT_LOCAL_CHANGED,0))||remoteChanged
-      ||!(state.legacyCleanedAt||state.legacyMigratedAt)||!state.progressSeparatedAt;
-    if(!needsVault){
-      noteSyncSuccess(); lastSync=Date.now(); save('breeze.lastsync',lastSync);
-      if(manual){ renderSyncModal(); syncStatus('이미 최신 상태예요'); }
-      return true;
-    }
-    let legacy=null;
     for(let attempt=0;attempt<SYNC_CAS_ATTEMPTS;attempt++){
-      const vaultResult=await sb.from('words').select('data').eq('user_id',session.userId).eq('key',VAULT_ROW).maybeSingle();
-      assertSyncSession(session); if(vaultResult.error) throw vaultResult.error;
-      const previous=vaultResult.data&&vaultResult.data.data;
-      const state=vaultSyncState(previous);
-      const migrationNeeded=!(state.legacyCleanedAt||state.legacyMigratedAt);
-      const progressSeparationNeeded=!state.progressSeparatedAt;
-      const remote=previous&&previous.envelope?await VaultCrypto.openJson(master,previous.envelope,
-        [session.userId,vaultId,'snapshot'],'breeze/vault/v2'):null;
-      assertSyncSession(session);
-      if(migrationNeeded&&!legacy){
-        legacy=await readLegacyData(await readLegacyRows()); assertSyncSession(session);
-        if(legacy.audit.readError) throw new Error(legacy.audit.readError);
-      }
-      const migratedProgress=await mergeVaultPayload(remote,migrationNeeded&&legacy?legacy.items:[]);
-      assertSyncSession(session);
-      saveWords(); save(LS_DEAD,dead); save(LS_POS,positions);
-      if(progressSeparationNeeded||migratedProgress){
-        // Copy first. Until the progress CAS succeeds, the old server vault
-        // still contains every embedded position, including remote-only books.
-        markSyncDirty(PROGRESS_LOCAL_CHANGED);
-        const progressOk=await doProgressSync(manual,true); assertSyncSession(session);
-        if(!progressOk) return false;
-      }
+      const dirtyAt=Number(load(VAULT_LOCAL_CHANGED,0))||0;
+      const result=await sb.from('words').select('data').eq('user_id',session.userId).eq('key',WORDBOOK_ROW).maybeSingle();
+      assertSyncSession(session); if(result.error) throw result.error;
+      const previous=result.data&&result.data.data;
+      const imported=await importLegacyWordbook(session,previous); assertSyncSession(session);
+      if(previous) mergeWordState(previous.words||{},previous.dead||{});
+      saveWords(); save(LS_DEAD,dead);
       const syncedWords={...words};
       if(pendingWord&&!pendingWordResolved(pendingWord.key)) delete syncedWords[pendingWord.key];
-      const repair=vaultNeedsRepair(remote,syncedWords);
-      const needsWrite=Number(load(VAULT_LOCAL_CHANGED,0))||repair||migrationNeeded||progressSeparationNeeded||migratedProgress;
-      let appliedVersion=syncRowVersion(previous);
-      if(needsWrite){
-        if(!Number(load(VAULT_LOCAL_CHANGED,0))) markSyncDirty(VAULT_LOCAL_CHANGED);
-        const dirtyAt=Number(load(VAULT_LOCAL_CHANGED,0));
-        const payload=JSON.parse(JSON.stringify({v:2,updatedAt:Date.now(),deviceId:vaultDeviceId(),words:syncedWords,dead,items:vaultRemoteItems}));
-        const envelope=await VaultCrypto.sealJson(master,payload,[session.userId,vaultId,'snapshot'],'breeze/vault/v2');
-        assertSyncSession(session);
-        const legacyAudit=migrationNeeded&&legacy?{...legacy.audit,vaultWordCount:Object.keys(payload.words).length,
-          vaultTombstoneCount:Object.keys(payload.dead).length,vaultItemCount:payload.items.length,
-          storageInspection:'deferred-to-separate-migration'}:null;
-        const sync={...state,progressSeparatedAt:state.progressSeparatedAt||Date.now(),
-          ...(legacyAudit?{legacyMigratedAt:Date.now(),legacyAudit}: {})};
-        const data={v:2,updatedAt:payload.updatedAt,revision:VaultCrypto.uuid(),sync,envelope};
-        if(!await compareAndSwapSyncRow(VAULT_ROW,previous,data,session)) continue;
-        appliedVersion=data.revision;
-        if(Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt) save(VAULT_LOCAL_CHANGED,0);
+      const changed=!previous||(imported&&!previous.legacyImportedAt)
+        ||syncStableJson(previous.words||{})!==syncStableJson(syncedWords)
+        ||syncStableJson(previous.dead||{})!==syncStableJson(dead);
+      if(changed){
+        const data={v:1,updatedAt:Date.now(),revision:VaultCrypto.uuid(),words:syncedWords,dead:{...dead},
+          ...(imported?{legacyImportedAt:previous&&previous.legacyImportedAt||Date.now()}: {})};
+        if(!await compareAndSwapSyncRow(WORDBOOK_ROW,previous,data,session)) continue;
       }
       assertSyncSession(session);
-      save(vaultRemoteVersionKey(),appliedVersion); noteSyncSuccess();
-      lastSync=Date.now(); save('breeze.lastsync',lastSync);
+      if(imported) save(`breeze.wordbook.legacy-imported:${session.userId}`,true);
+      if(Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt) save(VAULT_LOCAL_CHANGED,0);
+      lastQueuedWordState=syncStableJson({words,dead});
+      noteSyncSuccess();lastSync=Date.now();save('breeze.lastsync',lastSync);
       await purgePrivateDictionaryLogs(); assertSyncSession(session);
-      if(manual){ renderSyncModal(); syncStatus('암호화 동기화를 마쳤어요'); }
-      else if(pendingRecoveryKey) miniToast('복구키를 저장해 주세요');
-      renderAllBookViews();
-      if(typeof restoreMissingVaultArticles==='function') restoreMissingVaultArticles();
+      if(manual||document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
+      if(manual) syncStatus('단어장 동기화를 마쳤어요');
       if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
       return true;
     }
-    throw new Error('다른 기기의 변경과 충돌했어요. 이 기기의 변경은 보관하고 다음 동기화에서 다시 합칩니다.');
+    throw new Error('다른 기기의 변경과 충돌했어요. 이 기기의 단어는 보관하고 다음에 다시 합칩니다.');
   }catch(error){
     if(error.syncCancelled) return false;
-    noteSyncFailure(error); console.error(error); if(manual) syncStatus('동기화 실패: '+(error.message||error));
+    noteSyncFailure(error);console.error(error);
+    if(manual) syncStatus('동기화 실패: '+(error.message||error));
     return false;
   }
 }
@@ -823,11 +803,10 @@ function syncRemoteChanges(manual){
     do{
       remoteSyncManual=false;
       const vaultOk=await doSync(nextManual); if(epoch!==syncSessionEpoch) return false;
-      const progressOk=vaultOk&&await doProgressSync(nextManual,true); if(epoch!==syncSessionEpoch) return false;
-      completed=completed&&!!vaultOk&&!!progressOk;
+      completed=completed&&!!vaultOk;
       nextManual=remoteSyncManual;
     }while(nextManual&&sb&&sbUser);
-    if(manual&&completed){ renderSyncModal(); syncStatus('암호화 동기화를 마쳤어요'); }
+    if(manual&&completed){ renderSyncModal(); syncStatus('단어장 동기화를 마쳤어요'); }
     return completed;
   })().finally(()=>{ if(epoch===syncSessionEpoch) remoteSyncPromise=null; });
   return remoteSyncPromise;
@@ -1025,13 +1004,12 @@ function attachSupabaseAuth(){
   sb.auth.onAuthStateChange((_event,session)=>accept(session));
   sb.auth.getSession().then(({data:{session}})=>accept(session));
 }
+lastQueuedWordState=syncStableJson({words,dead});
 initSupabase();
 document.addEventListener('visibilitychange',()=>{
   if(!sb||!sbUser) return; clearTimeout(syncTimer);
   if(document.hidden){
     if(curBook&&typeof scrollTick!=='undefined'&&scrollTick){ clearTimeout(scrollTick); scrollTick=null; saveReadingState(); }
-    clearTimeout(progressSyncTimer); progressSyncTimer=null;
     if(Number(load(VAULT_LOCAL_CHANGED,0))) doSync(false);
-    if(Number(load(PROGRESS_LOCAL_CHANGED,0))) doProgressSync(false,false);
   }else syncRemoteChanges(false);
 });
