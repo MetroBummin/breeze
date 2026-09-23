@@ -25,18 +25,20 @@ function save(k, v){
     if(Date.now() - lastSaveWarnAt < 5*60*1000) return false;
     lastSaveWarnAt = Date.now();
     const what = SAVE_FAIL_NAMES[k] || '방금 한 변경을 이 기기에 저장하지 못했어요';
-    /* 로그인은 고치는 방법이지 잔소리가 아닙니다 — 서버에 있으면 기기가 차도 남습니다.
-       sbUser 는 이 파일보다 늦게 실행되는 sync.js 의 let 이라, 아직 초기화 전이면
-       읽는 것만으로 던집니다(TDZ). 로그인 여부는 곁가지이므로 조용히 넘깁니다. */
-    let signedIn = false;
-    try{ signedIn = !!sbUser; }catch(e){}
-    toast(what + (signedIn ? ' (서버 사본은 남아 있어요)' : '. 로그인하면 서버에 백업돼요'));
+    /* 로그인 상태만으로 방금 변경이 서버에 반영됐다고 보장할 수 없습니다. */
+    const quota=e && (e.name==='QuotaExceededError'||e.code===22);
+    toast(what + (quota ? ' 기기 저장 공간이 부족해요.' : ' 기기 저장소를 확인해 주세요.'));
     return false;
   }
 }
 const LS_DEAD='breeze.dead';
 const WORD_ITEM_PREFIX='breeze.word-item.';
 const WORD_WRITE_PENDING='breeze.word-write.pending';
+/* Remote and local JSON may have identical fields in a different order. */
+const stableWordJson = value => JSON.stringify(value, (_key,item)=>{
+  if(!item||typeof item!=='object'||Array.isArray(item))return item;
+  return Object.keys(item).sort().reduce((sorted,key)=>{sorted[key]=item[key];return sorted;},{});
+});
 function loadWordState(){
   const result=load(LS_WORDS,{});
   const apply=(key,item)=>{if(item===null)delete result[key];else result[key]=item;};
@@ -47,11 +49,25 @@ function loadWordState(){
     }
   }
   }catch(e){}
-  Object.entries(load(WORD_WRITE_PENDING,{})).forEach(([key,item])=>apply(key,item));
+  const pending=load(WORD_WRITE_PENDING,{});
+  const outstanding={};
+  for(const [key,item] of Object.entries(pending)){
+    /* The pending journal can survive a partially completed batch. Drop only
+       entries already represented by the legacy snapshot or an item record;
+       keep every genuinely newer value until it is written individually. */
+    if(stableWordJson(result[key]===undefined?null:result[key])!==stableWordJson(item))outstanding[key]=item;
+    apply(key,item);
+  }
+  if(Object.keys(outstanding).length!==Object.keys(pending).length){
+    try{
+      if(Object.keys(outstanding).length)localStorage.setItem(WORD_WRITE_PENDING,JSON.stringify(outstanding));
+      else localStorage.removeItem(WORD_WRITE_PENDING);
+    }catch(e){ /* Keep the original journal if compaction cannot be stored. */ }
+  }
   return result;
 }
 let words = loadWordState();
-const persistedWordItems=new Map(Object.entries(words).map(([key,item])=>[key,JSON.stringify(item)]));
+const persistedWordItems=new Map(Object.entries(words).map(([key,item])=>[key,stableWordJson(item)]));
 let dead = load(LS_DEAD, {});
 
 let books = [];                       // 본문은 IndexedDB에 저장(부팅 시 로드)
@@ -80,7 +96,7 @@ const saveWords = (keys) => {
     : new Set([...persistedWordItems.keys(),...Object.keys(words)]);
   for(const key of candidates){
     const item=validWordMeaning(words[key])?words[key]:null;
-    const encoded=item===null?undefined:JSON.stringify(item);
+    const encoded=item===null?undefined:stableWordJson(item);
     if(encoded!==persistedWordItems.get(key)||Object.prototype.hasOwnProperty.call(pending,key))changes[key]=item;
   }
   const entries=Object.entries(changes);
@@ -90,7 +106,7 @@ const saveWords = (keys) => {
   if(!save(WORD_WRITE_PENDING,changes))return false;
   for(const [key,item] of entries)if(!save(WORD_ITEM_PREFIX+key,item))return false;
   try{localStorage.removeItem(WORD_WRITE_PENDING);}catch(e){return false;}
-  entries.forEach(([key,item])=>{if(item===null)persistedWordItems.delete(key);else persistedWordItems.set(key,JSON.stringify(item));});
+  entries.forEach(([key,item])=>{if(item===null)persistedWordItems.delete(key);else persistedWordItems.set(key,stableWordJson(item));});
   return true;
 };
 if(cleanOrphanWords(words,dead)){
