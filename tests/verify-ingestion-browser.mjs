@@ -59,7 +59,6 @@ try{
    assert.equal(await page.evaluate(()=>rssImage(new DOMParser().parseFromString('<item><enclosure url="/cover.jpg" type="image/jpeg"/></item>','application/xml').documentElement,'','https://content.example/')),'https://content.example/cover.jpg');
    assert.equal(await page.evaluate(()=>rssImage(new DOMParser().parseFromString('<item/>','application/xml').documentElement,'<img src="/count.gif" width="1" height="1">','https://content.example/')),'');
    assert.equal(await page.evaluate(()=>['culture','business'].every(category=>RSS_FEEDS.some(feed=>feed.category===category))),true);
-   assert.equal(await page.evaluate(async()=> (await discoverFeed('https://content.example/')).url),'https://content.example/feed');
    const atom='<feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title><entry><title>A post</title><link rel="alternate" href="https://content.example/article"/><summary>Plain summary</summary></entry></feed>';
    assert.equal(await page.evaluate(x=>parseRss(x,{url:'https://content.example/feed',name:'Atom'})[0].url,atom),'https://content.example/article');
    const redditLink=`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>A research article</title><link href="https://www.reddit.com/r/science/comments/abc/research/"/><content type="html"><![CDATA[<table><tr><td>submitted by /u/example <a href="https://content.example/reddit-article">[link]</a> <a href="https://www.reddit.com/r/science/comments/abc/research/">[comments]</a></td></tr></table>]]></content></entry></feed>`;
@@ -71,9 +70,6 @@ try{
    assert.equal(redditSelfEntry.readUrl,'');
    const xEntry=await page.evaluate(xml=>parseRss(xml,{url:'https://feeds.example/x.xml',name:'X posts'})[0],xFeed);
    assert.equal(xEntry.kind,'x');
-   assert.equal(await page.evaluate(async()=> (await discoverFeed('https://www.reddit.com/r/books/')).url),'https://www.reddit.com/r/books/.rss');
-   assert.equal(await page.evaluate(async()=> (await discoverFeed('https://feeds.example/x.xml')).url),'https://feeds.example/x.xml');
-   assert.equal(await page.evaluate(async()=>{try{await discoverFeed('https://x.com/example');return false;}catch(error){return /RSS/.test(error.message);}}),true);
    assert.equal(await page.evaluate(entry=>parseFeedPost(entry)?.blocks.some(block=>block.marks?.some(mark=>mark.kind==='strong')),xEntry),true);
    assert.equal(await page.evaluate(()=>{try{parseRss('<rss><broken>',{url:'https://a.example',name:'bad'});return false;}catch{return true;}}),true);
    assert.equal(await page.evaluate(()=>parseRss('<rss><channel><item><title>A useful English story</title><link>https://example.com/story</link><description>The story follows a writer who finds something strange in the city.</description></item></channel></rss><script>publisher tail</script>',{url:'https://example.com/feed',name:'test'}).length),1);
@@ -191,7 +187,10 @@ try{
    await page.evaluate(()=>{closeSentence();readerScrollTo(500);});
    assert(await page.evaluate(()=>readerScrollTop())>100);
    for(const dark of [false,true]){
-    await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
+    await page.evaluate(dark=>{
+      document.body.classList.toggle('dark',dark);
+      document.documentElement.classList.toggle('dark',dark);
+    },dark);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:process.env.BREEZE_QA_OUTPUT+'/'+engine.name()+'-article-'+(dark?'dark':'light')+'.png'});}
    }
@@ -202,18 +201,14 @@ try{
    assert.equal(await page.locator('.shared-original').count(),0);
    assert.equal(await page.evaluate(()=>sharedLinks[0].url),'https://x.com/a/status/2');
    await page.evaluate(()=>show('casuals'));
-   await page.locator('.feed-discovery summary').click();
-   assert.equal(await page.locator('#feed-sources .feed-source-row').count(),0);
-   await page.locator('#feed-url').fill('https://content.example/');
-   await page.locator('#feed-category').selectOption('culture');
-   await page.locator('#feed-add').click();
-   await page.waitForFunction(()=>document.getElementById('feed-status').textContent==='추가했어요');
-   assert.equal(await page.evaluate(()=>rssSources().length-RSS_FEEDS.length),1);
-   assert.equal(await page.evaluate(()=>rssSources().at(-1).category),'culture');
-   await page.locator('#feed-sources select').last().selectOption('science');
-   assert.equal(await page.evaluate(()=>rssSources().at(-1).category),'science');
-   await page.locator('#feed-sources button').click();
-   assert.equal(await page.evaluate(()=>rssSources().length-RSS_FEEDS.length),0);
+   assert.equal(await page.locator('.feed-discovery').count(),0);
+   assert.equal(await page.evaluate(()=>{
+     const feed={url:'https://content.example/feed',name:'Previously added source',category:'culture'};
+     save('breeze.feed-sources',[feed]);
+     const retained=rssSources().at(-1);
+     save('breeze.feed-sources',[]);
+     return retained.url===feed.url && retained.category==='culture';
+   }),true);
    await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditLinkEntry);
    await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/reddit-article');
    assert.equal(await page.locator('#rdiscovery').getAttribute('href'),redditLinkEntry.url);

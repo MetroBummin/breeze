@@ -29,9 +29,8 @@ URL candidates. Medium, Substack and Reddit have no article-specific parser.
 The built-in sources are Dexerto Entertainment, TMZ, The Daily Dot, Bloody
 Disgusting, All That’s Interesting, The Conversation, ProPublica, NASA
 Technology, WIRED Top Stories, Medium Technology/Culture/Business, and Reddit
-r/science. Users can
-add/remove a small local set of sources without folders, unread counts, or a new
-RSS management screen. Feed
+r/science. The site-add control is removed from Casuals; sources saved before
+its removal continue loading from local storage. Feed
 failures are isolated. Discovery omits cards without a working cover; the saved
 essay remains readable after it is opened.
 
@@ -45,10 +44,8 @@ sources, not guessed from article titles: entertainment, general, society,
 science/technology, culture/lifestyle, and business. The Conversation and WIRED
 default to general, ProPublica to society, NASA, Medium Technology and r/science
 to science/technology, Medium Culture to culture, and Medium Business to
-business. Existing custom sources default to general;
-source addition and the custom source list allow category selection/editing.
-Default sources are not listed as editable form rows; the collapsed site-add
-control shows only a compact address/category form and any custom sources.
+business. Existing custom sources retain their saved category or default to
+general. Casuals no longer shows a source-management form.
 Live checks returned valid XML from NASA Technology (10 entries with image
 metadata) and WIRED Top Stories (50 entries with image metadata). Their cards use
 the same image validation and article ingestion as the other sources. Feed
@@ -159,8 +156,8 @@ RSSHub public route returned 404. X support is conditional on a working feed URL
 `npm test`, `npm run test:ingestion`, `npm run test:home-ui`, sentence cue browser
 and word presentation browser regressions passed. `npm run ios:sync` and the iOS
 simulator Debug build passed. Ingestion tests include a failed persistent write
-before retry, App Group event/mark-read bridge fixtures, image decode, source
-addition/removal, duplicate URL reuse, partial feed failure, unsafe HTML/links,
+before retry, App Group event/mark-read bridge fixtures, image decode, preserved
+custom sources, duplicate URL reuse, partial feed failure, unsafe HTML/links,
 phone light/dark, word tap, sentence hold, scroll and original fallback.
 Share Extension delivery is simulated at its WebView event boundary in these
 browser tests; no new physical-device share round trip has been performed.

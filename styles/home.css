@@ -294,28 +294,17 @@
      그대로 두면 카드 아래 3분의 1이 회색 띠가 됩니다 — tokens.css 가 낮춥니다. */
   .casual .thumb .wave{opacity:var(--wave-dark-opacity);}
 
-.feed-discovery{margin:8px 0 20px;font-size:12px;max-width:520px}
-.feed-discovery summary{cursor:pointer;opacity:.7}
 .rss-loading{pointer-events:none}
 .rss-loading .thumb{display:grid;place-items:center;background:var(--sentence-glass-action);border:1px solid var(--sentence-glass-line);box-shadow:none}
 .rss-spinner{width:18px;height:18px;border:2px solid var(--sentence-glass-spinner);border-top-color:var(--sentence-glass-spinner-on);border-radius:50%;animation:rss-spin .8s linear infinite}
 @keyframes rss-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.rss-spinner{animation:none}}
-.feed-discovery form{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.feed-discovery label{width:100%;color:var(--sentence-glass-secondary)}
-.feed-discovery input{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--field);color:inherit}
-.feed-discovery select{max-width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--field);color:inherit;font:inherit}
 .feed-categories{display:flex;gap:8px;overflow-x:auto;padding:8px 8px 16px;margin:6px -8px 6px;scrollbar-width:none}
 .feed-categories::-webkit-scrollbar{display:none}
 .feed-categories button{position:relative;flex:none;min-height:38px;padding:7px 15px;border-radius:12px;border:1px solid var(--sentence-glass-line);background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);font:500 13px var(--ui);cursor:pointer;touch-action:manipulation}
 .feed-categories button span{position:relative;z-index:3}
 .feed-categories button[aria-pressed="true"]{color:var(--sentence-glass-ink);background:color-mix(in srgb,var(--s1) 18%,var(--sentence-glass-action));border-color:color-mix(in srgb,var(--s1-line) 25%,var(--sentence-glass-line));font-weight:600}
 .feed-categories button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.feed-source-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;width:100%}
-.feed-source-row>span{flex:1;min-width:120px;overflow-wrap:anywhere}
-.feed-discovery button{padding:8px 12px;border-radius:12px;color:inherit;background:var(--quiet);border:1px solid var(--line)}
-#feed-sources{display:flex;flex-wrap:wrap;gap:8px}
-#feed-sources .feed-unavailable{color:var(--danger)}
 
 /* Quiet typographic jackets when no real cover is available. */
 .editorial-cover .cover-art{position:absolute;left:50%;top:19%;width:76%;height:43%;
