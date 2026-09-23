@@ -1,49 +1,30 @@
-/* ================= 기사 URL =================
-   주소만 넣으면 본문만 골라 옵니다. 추출은 전부 기기 안에서, 브라우저가 이미
-   가진 DOMParser로 합니다 — AI를 쓰지 않습니다. 서버가 하는 일은 CORS를 넘겨
-   HTML 원문을 그대로 건네주는 것 하나뿐입니다(`server/article`).
-
-   지금은 무료로 열리는 기사만 됩니다. 로그인·결제가 걸린 기사는 서버가 받아
-   오는 HTML에도 본문이 없어서, 어떤 규칙을 써도 나오지 않습니다. 그럴 때는
-   솔직하게 그렇다고 말하고 붙여넣기를 권합니다. */
+/* Public article ingestion. The existing relay only transports HTML/images.
+   Readability selects content; Breeze rebuilds semantic blocks rather than
+   inserting its HTML. Unsupported or restricted pages keep an original link. */
 
 const ARTICLE_MIN_CHARS = 500;      // 이보다 짧으면 본문이 아니라 미리보기입니다
-const ARTICLE_MIN_PARA = 40;        // 문단으로 칠 최소 길이
-const ARTICLE_TAIL_CHARS = 100;     // 이만큼 긴 문단이 글의 진짜 끝입니다
-/* 이 소제목부터는 글이 아니라 딸린 목록입니다(위키백과·긴 해설 기사). */
-const ARTICLE_END_MATTER = /^(references?|externallinks?|furtherreading|seealso|notes?|bibliography|citations?|sources?|footnotes?|relatedarticles?)$/i;
-/* 기사 자체의 제목·대표 사진도 <header> 안에 듭니다(ProPublica). header는 여기서
-   지우지 말고, 본문을 고른 뒤 nav·주변 장치만 걸러 냅니다. */
-const ARTICLE_DROP = 'script,style,noscript,template,nav,footer,aside,form,iframe,' +
-  'svg,button,select,textarea,label,figure,figcaption,table,video,audio,object,embed';
-/* 클래스·id에 이런 말이 있으면 본문이 아니라 주변 장치입니다. */
-/* `inline-promos`처럼 본문 컨테이너 이름에 우연히 든 말은 광고가 아닙니다
-   (The Conversation). 독립된 promo 또는 명시적인 promo-box/module/banner만 버립니다. */
-const ARTICLE_NOISE = /(comment|(?:^|[\s_-])promo(?:[\s_-](?:box|module|banner)|$)|related|recirc|newsletter|advert|sponsor|share|social|subscribe|cookie|consent|banner|sidebar|breadcrumb|byline|most-read|read-more|trending|tag-list|caption|disclaimer|copyright|reference|reflist|citation|footnote|navbox|infobox|catlinks|editsection|metadata|cite[-_](note|ref))/i;
-
-/* ---------- 사진 ----------
-   사진은 대부분 <figure> 안에 있는데 그 <figure>는 곧 통째로 버려집니다.
-   그래서 버리기 전에 "여기에 사진이 있었다"는 표시로 바꿔 둡니다. */
-/* 크기는 긴 변으로 봅니다. 가로 사진은 250x144 처럼 한쪽이 짧아서, 두 변을
-   모두 재면 진짜 사진이 아이콘과 함께 걸러집니다. 짧은 변은 띠(spacer)만
-   막을 만큼만 봅니다. */
+// Images remain local blobs; original URLs are retained for recovery.
 const ARTICLE_IMG_MIN = 200;   // 긴 변이 이보다 작으면 아이콘·배지입니다
 const ARTICLE_IMG_THIN = 60;   // 짧은 변이 이보다 얇으면 구분선·추적 픽셀입니다
 const ARTICLE_IMG_MAX = 8;     // 기사 한 편에 담을 사진 수
 const ARTICLE_IMG_BAD = /(logo|icon|avatar|profile[-_]image|sprite|spacer|pixel|1x1|placeholder|badge|emoji|blank)/i;
 
-/* srcset 은 "주소 폭w, 주소 폭w …" 입니다. 가장 큰 판을 고릅니다. */
+/* Image URLs may contain commas (for example WIRED's w_120,c_limit path), so
+   only a width descriptor ends a srcset candidate. Reader needs at most a
+   screen-sized image, not the publisher's multi-megabyte original. */
 function articleBestSrc(image){
   const set = image.getAttribute('srcset') || image.getAttribute('data-srcset') || '';
-  let best = '', bestWidth = -1;
-  set.split(',').forEach(part => {
-    const piece = part.trim().split(/\s+/);
-    const width = /^\d+w$/.test(piece[1] || '') ? parseInt(piece[1], 10) : 0;
-    if(piece[0] && width > bestWidth){ best = piece[0]; bestWidth = width; }
-  });
-  return best || image.getAttribute('src') || image.getAttribute('data-src') || '';
+  let best = '', bestWidth = -1, smallestOver = '', overWidth = Infinity;
+  for(const match of set.matchAll(/(?:^|,\s*)(\S+)\s+(\d+)w(?=\s*(?:,|$))/g)){
+    const width=Number(match[2]);
+    if(width<=1600 && width>bestWidth){best=match[1];bestWidth=width;}
+    if(width>1600 && width<overWidth){smallestOver=match[1];overWidth=width;}
+  }
+  const src=image.getAttribute('src') || '';
+  return best || image.getAttribute('data-src') || image.getAttribute('data-original') || src || smallestOver;
 }
 function articleAbsolute(src, base){
+  if(!String(src || '').trim()) return '';
   try{
     const parsed = new URL(String(src || '').trim(), base);
     return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : '';
@@ -55,24 +36,6 @@ function articleTooSmall(image){
   if(!width && !height) return false;             // 크기를 안 적어 둔 곳이 더 많습니다
   const long = Math.max(width, height), short = Math.min(width, height);
   return long < ARTICLE_IMG_MIN || (short > 0 && short < ARTICLE_IMG_THIN);
-}
-function articleMarkImages(doc, url){
-  const seen = new Set();
-  for(const image of doc.querySelectorAll('img')){
-    if(!image.isConnected) continue;               // 앞의 <figure>와 함께 이미 떨어져 나감
-    const src = articleAbsolute(articleBestSrc(image), url);
-    if(!src || articleTooSmall(image) || ARTICLE_IMG_BAD.test(src) || seen.has(src)){
-      /* 버리는 것은 이 <img> 하나뿐입니다. 담고 있는 <figure>까지 지우면
-         안 됩니다 — BBC 는 사진 한 장과 매체 로고를 한 <figure>에 같이
-         넣어 두어서, 로고를 버리다가 사진까지 통째로 날아갔습니다. */
-      image.remove();
-      continue;
-    }
-    seen.add(src);
-    const mark = doc.createElement('breeze-img');
-    mark.setAttribute('data-src', src);
-    (image.closest('figure') || image).replaceWith(mark);
-  }
 }
 /* 그림의 저장 키는 주소에서 만듭니다. 책 ID는 문단이 다 모여야 정해지는데,
    그 문단 안에 이미 그림 표시가 들어가 있어야 하기 때문입니다. 주소에서
@@ -87,129 +50,8 @@ function articleImageKey(url){
   return 'art|' + h1.toString(36) + h2.toString(36);
 }
 
-const articleNoisy = element => ARTICLE_NOISE.test(
-  (element.getAttribute('class') || '') + ' ' + (element.id || '') + ' ' +
-  (element.getAttribute('data-component') || ''));
-/* 각주 항목처럼 자기 자신은 깨끗하고 담긴 상자만 이름을 가진 경우가 있어
-   위로 몇 칸 올려다봅니다. 걸리면 그 덩어리 하나만 버립니다. */
-function articleNoisyChain(element, root){
-  let node = element;
-  for(let depth = 0; node && node !== root && depth < 4; depth++, node = node.parentElement){
-    if(articleNoisy(node)) return true;
-  }
-  return false;
-}
-
-/* 본문 후보 고르기 — 긴 <p>가 가장 많이 모인 곳이 본문입니다.
-   조상으로 올라갈수록 점수를 깎아, 페이지 전체가 이기지 않게 합니다. */
-function articleBestHost(scope){
-  const score = new Map();
-  scope.querySelectorAll('p').forEach(paragraph => {
-    const length = paragraph.textContent.trim().length;
-    if(length < 50) return;
-    let node = paragraph.parentElement;
-    for(let depth = 0; node && depth < 4; depth++, node = node.parentElement){
-      if(articleNoisy(node)) break;
-      score.set(node, (score.get(node) || 0) + length / (depth + 1));
-    }
-  });
-  let best = null, top = 0;
-  score.forEach((value, node) => { if(value > top){ top = value; best = node; } });
-  return best;
-}
-/* ---------- X(트위터) ----------
-   X 의 글 페이지 한 장에는 <article> 이 여럿입니다. 첫 번째가 그 글이고 나머지는
-   답글입니다. 그대로 두면 답글 본문과 답글에 딸린 사진까지 책에 들어옵니다.
-   실제로 그랬습니다 — 남의 책 요약 이미지 두 장이 남의 글 한가운데 끼어 있었습니다. */
-const ARTICLE_X_HOST = /(^|\.)(x|twitter)\.com$/i;
-
-function articleFocusPost(doc, host){
-  if(!ARTICLE_X_HOST.test(host || '')) return;
-  const posts = [...doc.querySelectorAll('article')];
-  if(posts.length < 2) return;
-  /* 본문이 가장 많은 것이 그 글입니다. 답글은 짧아서 긴 문단이 하나도 없습니다.
-     "첫 번째"로 정하지 않는 이유는, 언젠가 순서가 바뀌어도 이 기준은 버티기 때문입니다. */
-  const weigh = post => [...post.querySelectorAll('p')]
-    .filter(p => p.textContent.trim().length > ARTICLE_MIN_PARA).length;
-  let best = posts[0], bestScore = weigh(posts[0]);
-  for(const post of posts.slice(1)){
-    const score = weigh(post);
-    if(score > bestScore){ best = post; bestScore = score; }
-  }
-  posts.forEach(post => { if(post !== best) post.remove(); });
-  return best;
-}
-
-/* X 의 긴 글(Article)은 본문 사진을 <img> 로 그려 두지 않습니다. 페이지에 실려 오는
-   편집기 상태(DraftJS) 안에만 주소가 있고, 화면은 그걸 보고 나중에 그립니다.
-   그래서 DOM 만 보면 표지 한 장만 나오고 글 중간의 그림은 통째로 빠집니다.
-
-   블록 목록에는 문단이 순서대로 들어 있고, 사진 자리는 type:"atomic" 입니다.
-   그 바로 앞 문단의 글자를 열쇠로 삼아 화면의 같은 문단을 찾아 그 뒤에 끼웁니다.
-   남의 내부 형식이라 언젠가 바뀝니다. 그래서 하나라도 어긋나면 아무 일도 하지
-   않고 지금까지처럼 동작합니다 — 엉뚱한 자리에 사진을 넣는 것보다 낫습니다. */
-function articleRecoverXMedia(doc, html, host){
-  if(!ARTICLE_X_HOST.test(host || '')) return;
-  try{
-    const blockRe = /content_state:blocks:(\d+)"[^{]*\{[^}]*?text:"((?:[^"\\]|\\.)*)",type:"([^"]*)"/g;
-    const blocks = [];
-    let found;
-    while((found = blockRe.exec(html))) blocks.push({ i:+found[1], text:found[2], type:found[3] });
-    if(!blocks.length) return;
-    blocks.sort((a, b) => a.i - b.i);
-
-    const slots = [];
-    blocks.forEach((block, index) => {
-      if(block.type !== 'atomic') return;
-      for(let back = index - 1; back >= 0; back--){
-        const anchor = blocks[back].text.replace(/\\"/g, '"').trim();
-        if(anchor.length >= 20){ slots.push(anchor); return; }
-      }
-      slots.push('');
-    });
-    if(!slots.length || slots.some(anchor => !anchor)) return;
-
-    const rendered = new Set([...doc.querySelectorAll('img')]
-      .map(image => (image.getAttribute('src') || '').split('?')[0]));
-    const missing = [...new Set((html.match(/original_img_url:"([^"]+)"/g) || [])
-      .map(one => one.slice(18, -1)))]
-      .filter(src => !rendered.has(src.split('?')[0]));
-    /* 자리 수와 사진 수가 정확히 같을 때만 짝지어 넣습니다. */
-    if(missing.length !== slots.length) return;
-
-    const paragraphs = [...doc.querySelectorAll('article p')];
-    slots.forEach((anchor, index) => {
-      const head = anchor.slice(0, 60);
-      const hits = paragraphs.filter(p => p.textContent.trim().startsWith(head));
-      if(hits.length !== 1) return;                 // 여러 곳에 맞으면 자리를 못 정합니다
-      const mark = doc.createElement('breeze-img');
-      mark.setAttribute('data-src', missing[index]);
-      hits[0].after(mark);
-    });
-  }catch(error){ /* 남의 내부 형식입니다. 실패하면 없던 일로 둡니다. */ }
-}
-
-function articleRoot(doc, preferred){
-  /* 어느 덩어리가 본문인지 이미 아는 경우가 있습니다(X 는 답글을 떼어 내면서 골라 둡니다).
-     그때는 찾지 않습니다 — querySelector 는 문서에 먼저 나오는 것을 주므로, X 에서는
-     <main> 이 <article> 보다 앞이라 화면 제목("Post")까지 본문으로 딸려 왔습니다. */
-  if(preferred && preferred.isConnected) return preferred;
-  const marked = doc.querySelector('article, [itemprop="articleBody"], main');
-  const scored = articleBestHost(doc);
-  if(!marked) return scored || doc.body;
-  if(!scored) return marked;
-  /* 사이트가 붙여 둔 <article> 안에 본문이 다 들어 있으면 그쪽을 믿습니다.
-     밖이면 실제로 글이 모인 쪽을 씁니다(<article>이 목록인 경우). */
-  return marked.contains(scored) ? marked : scored;
-}
-
 const articleText = element => element.textContent.replace(/\s+/g,' ').trim();
 
-function articleSite(doc, host){
-  const meta = doc.querySelector('meta[property="og:site_name"]');
-  const name = meta && (meta.getAttribute('content') || '').trim();
-  return name || articleHostNames(host)[0] || host;
-}
 /* en.wikipedia.org 의 매체 이름은 "en"이 아니라 "wikipedia"입니다.
    맨 뒤 도메인과 흔한 앞자리(www·en·m·amp)를 뺀 나머지가 이름입니다. */
 const ARTICLE_SUBDOMAIN = /^(www|m|amp|mobile|edition|news|[a-z]{2})$/i;
@@ -228,97 +70,113 @@ function articleStripSite(title, site, host){
     new RegExp('\\s*[|\\-–—·]\\s*(' + names.join('|') + ')[^|]{0,20}$','i'), '').trim();
   return trimmed || title;
 }
-function articleTitle(doc, root, site, host){
-  const meta = doc.querySelector('meta[property="og:title"], meta[name="twitter:title"]');
-  const fromMeta = meta && (meta.getAttribute('content') || '').trim();
-  const heading = root.querySelector('h1') || doc.querySelector('h1');
-  /* X 는 og:title 이 늘 "이름 (@아이디) on X" 라 무슨 글인지 알 수 없습니다.
-     긴 글에는 진짜 제목이 본문 h1 에 들어 있으므로 그쪽을 먼저 봅니다. */
-  const raw = (ARTICLE_X_HOST.test(host || '') && heading && articleText(heading))
-    || fromMeta || (heading && articleText(heading)) || (doc.title || '').trim() || host;
-  return articleStripSite(raw, site, host);
-}
-
-function articleBlockRole(element){
-  const tag = element.tagName.toLowerCase();
-  if(tag === 'h1' || tag === 'h2') return 'h2';
-  if(tag === 'h3' || tag === 'h4') return 'h3';
-  if(tag === 'blockquote') return 'quote';
-  return 'p';
-}
-
-/* HTML -> 읽을 수 있는 문단들. 못 찾으면 null 을 돌려줍니다. */
-function parseArticleHtml(html, url){
-  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
-  if(!doc || !doc.body) return null;
-  let host = '';
-  try{ host = new URL(url).hostname; }catch(e){}
-  /* 순서가 중요합니다. 답글을 먼저 떼어 내야 답글 사진이 자리 표시로 바뀌지 않고,
-     빠진 사진을 먼저 끼워 넣어야 그 자리도 함께 표시로 바뀝니다. */
-  const focus = articleFocusPost(doc, host);
-  articleRecoverXMedia(doc, html, host);
-  articleMarkImages(doc, url);      // <figure>를 버리기 전에 사진 자리를 남깁니다
-  doc.querySelectorAll(ARTICLE_DROP).forEach(node => node.remove());
-  doc.querySelectorAll('[aria-hidden="true"],[hidden]').forEach(node => node.remove());
-  /* 각주 번호는 문단 안에 박혀 있어 덩어리째 버릴 수 없습니다.
-     "knows.[1][2][3]" 처럼 읽는 흐름을 끊으므로 낱개로 뗍니다. */
-  doc.querySelectorAll('sup').forEach(node => {
-    if(/^\[?\s*(\d{1,3}|[a-z])\s*\]?$/i.test(node.textContent.trim())) node.remove();
-  });
-
-  const root = articleRoot(doc, focus);
-  const site = articleSite(doc, host);
-  const title = articleTitle(doc, root, site, host);
-
-  let blocks = [];
-  for(const element of root.querySelectorAll('p,h1,h2,h3,h4,blockquote,li,breeze-img')){
-    if(element.tagName.toLowerCase() === 'breeze-img'){
-      if(articleNoisyChain(element, root)) continue;   // 광고·추천 상자에 딸린 사진
-      blocks.push({ r:'img', t:element.getAttribute('data-src') });
-      continue;
+/* Only this boundary sees untrusted HTML. No source nodes/attributes enter Reader. */
+function articleInline(element, url){
+  let text = ''; const marks = [];
+  function visit(node){
+    if(node.nodeType === 3){ text += node.textContent.replace(/\s+/g, ' '); return; }
+    if(node.nodeType !== 1) return;
+    if(node.tagName === 'BR'){ text += ' '; return; }
+    const start = text.length;
+    for(const child of node.childNodes) visit(child);
+    const tag = node.tagName.toLowerCase();
+    if(['strong','b','em','i','a'].includes(tag)){
+      const href = tag === 'a' ? articleAbsolute(node.getAttribute('href'), url) : '';
+      marks.push({start, end:text.length, kind:tag === 'a' ? 'link' : ['b','strong'].includes(tag) ? 'strong' : 'em', href});
     }
-    // 다른 덩어리를 품고 있으면 껍데기입니다. 안쪽에서 다시 만납니다.
-    if(element.querySelector('p,li,blockquote,h1,h2,h3,h4')) continue;
-    if(articleNoisyChain(element, root)) continue;
-    const text = articleText(element);
-    if(!text) continue;
-    const role = articleBlockRole(element);
-    // "References" 아래는 글이 아니라 딸린 목록입니다. 거기서 멈춥니다.
-    if(role !== 'p' && ARTICLE_END_MATTER.test(text.replace(/[\s:[\]]/g,''))) break;
-    const isList = element.tagName.toLowerCase() === 'li';
-    if(role === 'p' && text.length < (isList ? 60 : ARTICLE_MIN_PARA)) continue;
-    if(role !== 'p' && text.length > 200) continue;    // 제목이 이렇게 길 리 없습니다
-    if(blocks.length && blocks[blocks.length-1].t === text) continue; // 큰제목 중복
-    blocks.push({ r:role, t:text });
   }
-
-  /* 글 끝에는 "Most viewed", 분류 목록 같은 것이 따라붙습니다. 규칙으로
-     하나하나 알아보는 대신, 마지막 진짜 문단 뒤를 통째로 자릅니다 —
-     따라붙는 것은 언제나 짧기 때문입니다. */
-  let end = blocks.length;
-  while(end > 0 && !(blocks[end-1].r === 'p' && blocks[end-1].t.length >= ARTICLE_TAIL_CHARS)) end--;
-  blocks.length = Math.max(end, 0);
-
-  /* 사진 수는 여기서 자릅니다. 표시할 때 세면 표 안의 배지처럼 곧 버려질
-     그림까지 자릿수를 차지해, 정작 본문 사진이 밀려납니다. */
-  let photos = 0;
-  blocks = blocks.filter(block => block.r !== 'img' || ++photos <= ARTICLE_IMG_MAX);
-
-  const body = blocks.filter(block => block.r === 'p' || block.r === 'quote');
-  const chars = body.reduce((sum, block) => sum + block.t.length, 0);
-  if(!body.length || chars < ARTICLE_MIN_CHARS) return null;
-
-  // 제목이 첫 덩어리로 또 들어와 있으면 뺍니다.
-  while(blocks.length && blocks[0].r !== 'p' && blocks[0].r !== 'img' && blocks[0].t === title) blocks.shift();
-
-  /* 대표 사진. 매체가 og:image 로 알려주는 것이 가장 정확하고, 없으면 본문
-     첫 사진을 씁니다. Casuals 카드의 표지가 됩니다. */
-  const meta = doc.querySelector('meta[property="og:image"], meta[name="twitter:image"]');
-  const lead = meta ? articleAbsolute(meta.getAttribute('content'), url) : '';
-  const firstInBody = blocks.find(block => block.r === 'img');
-  const cover = lead || (firstInBody ? firstInBody.t : '');
-
-  return { title, site, url, cover, blocks, ...articleAssemble(title, blocks) };
+  visit(element);
+  const leading = text.length - text.trimStart().length;
+  text = text.trim();
+  return {t:text, marks:marks.map(mark => ({...mark, start:Math.max(0,mark.start-leading), end:Math.min(text.length,mark.end-leading)}))
+    .filter(mark => mark.end > mark.start && (mark.kind !== 'link' || mark.href))};
+}
+function parseArticleHtml(html, url){
+  if(String(html).length > 3000000) return null;
+  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+  const host = new URL(url).hostname;
+  // Conversations require a post identity/thread model. Never mistake replies for an article.
+  if(/(^|\.)(x|twitter|reddit)\.com$/i.test(host)) return null;
+  if(doc.querySelectorAll('*').length > 25000) return null;
+  // A publisher's explicit access declaration takes precedence over UI class
+  // names: some free articles still ship an unused paywall modal and CSS hooks.
+  const declaredRestricted=/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html);
+  const declaredFree=/"isAccessibleForFree"\s*:\s*(?:true|"true")/i.test(html);
+  if(declaredRestricted || (!declaredFree && doc.querySelector('[class*="paywall"], [id*="paywall"]'))) return null;
+  const meta = name => doc.querySelector('meta[property="'+name+'"],meta[name="'+name+'"]')?.getAttribute('content') || '';
+  let cover = articleAbsolute(meta('og:image'), url);
+  if(cover){
+    const coverPath=new URL(cover).origin+new URL(cover).pathname;
+    const lead=[...doc.querySelectorAll('article img')].find(image=>{
+      const src=articleAbsolute(image.getAttribute('src') || image.getAttribute('data-src'),url);
+      return src && new URL(src).origin+new URL(src).pathname===coverPath;
+    });
+    if(lead)cover=articleAbsolute(articleBestSrc(lead),url) || cover;
+  }
+  const author = meta('author'); const publishedAt = meta('article:published_time');
+  doc.querySelectorAll('script,style,noscript,template,iframe,object,embed,form,button,nav,[hidden],[aria-hidden="true"]').forEach(node => node.remove());
+  // Supply a trusted base only to the inert extraction document.
+  doc.querySelectorAll('base').forEach(node => node.remove());
+  const base = doc.createElement('base'); base.href = url; doc.head.appendChild(base);
+  const Reader = /** @type {any} */(window).Readability;
+  if(!Reader) return null;
+  const result = new Reader(doc, {charThreshold:ARTICLE_MIN_CHARS, maxElemsToParse:25000, keepClasses:false}).parse();
+  if(!result || result.length < ARTICLE_MIN_CHARS) return null;
+  const body = new DOMParser().parseFromString(result.content, 'text/html').body;
+  body.querySelectorAll('script,style,iframe,object,embed,form,svg,video,audio').forEach(node=>node.remove());
+  const blocks = []; let photos = 0;
+  // Recursive blocks preserve order, short list items, quote paragraphs and captions.
+  function visit(element){
+    const tag = element.tagName.toLowerCase();
+    if(tag === 'img'){
+      const src = articleAbsolute(articleBestSrc(element), url);
+      if(src && !articleTooSmall(element) && !ARTICLE_IMG_BAD.test(src) && photos++ < ARTICLE_IMG_MAX)
+        blocks.push({r:'img',t:src,alt:element.getAttribute('alt') || ''});
+      return;
+    }
+    if(tag === 'pre'){ blocks.push({r:'code',t:element.textContent}); return; }
+    if(tag === 'table'){
+      // A plain row representation keeps cell order without importing site layout.
+      for(const row of element.querySelectorAll('tr')){
+        const t = [...row.children].map(cell=>articleText(cell)).join(' | ');
+        if(t) blocks.push({r:'p',t,table:true});
+      }
+      return;
+    }
+    const blockTags = 'p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,table,figure,figcaption';
+    if(tag === 'li' && element.querySelector('ul,ol') && ![...element.children].some(child=>child.tagName==='P')){
+      const lead = element.cloneNode(true); lead.querySelectorAll('ul,ol').forEach(node=>node.remove());
+      const value = articleInline(lead,url);
+      if(value.t) blocks.push({r:'p',...value,list:element.parentElement.tagName === 'OL' ? String([...element.parentElement.children].indexOf(element)+1)+'.' : '•'});
+      for(const child of element.children) if(['UL','OL'].includes(child.tagName)) visit(child);
+      return;
+    }
+    if(['p','h1','h2','h3','h4','h5','h6','li','blockquote','figcaption','div'].includes(tag) && !element.querySelector(blockTags)){
+      const value = articleInline(element,url);
+      if(value.t){
+        let r = /^h[1-6]$/.test(tag) ? (tag === 'h1' || tag === 'h2' ? 'h2' : 'h3') : element.closest('blockquote') ? 'quote' : 'p';
+        const list = element.closest('li');
+        const listItem = tag === 'li' ? element : list;
+        const ordered = listItem?.parentElement?.tagName === 'OL';
+        blocks.push({r,...value, caption:tag === 'figcaption', list:list ? (ordered ? String([...listItem.parentElement.children].indexOf(listItem)+1)+'.' : '•') : ''});
+      }
+      for(const image of element.querySelectorAll('img')) visit(image);
+      return;
+    }
+    for(const child of element.children) visit(child);
+  }
+  visit(body);
+  // Publisher titles sometimes contain no-break spaces, which force awkward
+  // wrapping in the narrow Reader even though paragraph text is normalized.
+  const title = articleStripSite((result.title || host).replace(/\s+/g,' ').trim(), result.siteName || host,host);
+  while(blocks[0]?.t === title) blocks.shift();
+  if(blocks.filter(b=>b.r !== 'img').reduce((n,b)=>n+b.t.length,0) < ARTICLE_MIN_CHARS) return null;
+  // Readability can discard a publisher's leading figure while preserving the
+  // article text. A declared cover is a safe single image for that empty slot.
+  if(cover && !blocks.some(block=>block.r==='img') && !ARTICLE_IMG_BAD.test(cover))
+    blocks.unshift({r:'img',t:cover,alt:''});
+  return {title, site:result.siteName || host, author:result.byline || author,
+    publishedAt:result.publishedTime || publishedAt, url, cover, blocks, ...articleAssemble(title,blocks)};
 }
 
 /* 덩어리 목록 -> 저장할 문단과 조판. 사진을 못 받아 덩어리가 빠지면 다시
@@ -328,7 +186,7 @@ function articleAssemble(title, blocks){
   const paras = [title, ...blocks.map(block =>
     block.r === 'img' ? IMG_MARK + articleImageKey(block.t) : block.t)];
   const formatted = blocks.map((block, index) => {
-    const out = { r:block.r, t:paras[index+1], f:index+1 };
+    const out = { ...block, t:paras[index+1], f:index+1 };
     if(block.r === 'quote') out.g = ++quotes;   // 인용문은 한 칸씩 따로 묶습니다
     return out;
   });
@@ -358,13 +216,14 @@ function normalizeArticleUrl(raw){
   }catch(e){ return ''; }
 }
 
-async function fetchArticleHtml(url){
+async function fetchArticleHtml(url, location = {}){
   /* 스스로 CORS를 열어 둔 곳(위키백과 등)은 서버를 거치지 않습니다. */
   try{
-    const direct = await fetch(url, { headers:{ Accept:'text/html' } });
+    const direct = await fetch(url, { credentials:'omit', signal:AbortSignal.timeout(3000), headers:{ Accept:'text/html,application/rss+xml,application/atom+xml,application/xml' } });
     if(direct.ok){
       const text = await direct.text();
-      if(text.length > 200) return text;
+      if(text.length > 3000000) throw new Error('페이지가 너무 커요');
+      if(text.length){ location.url = direct.url || url; return text; }
     }
   }catch(e){}
 
@@ -373,20 +232,20 @@ async function fetchArticleHtml(url){
   let response;
   try{
     response = await fetch(endpoint, {
-      headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
+      signal:AbortSignal.timeout(15000), headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
     });
   }catch(networkError){
     /* 함수가 없으면 프리플라이트 응답에 CORS 머리글이 없어서, 브라우저는
        404가 아니라 그냥 "실패"로 알려 줍니다. 둘 다 짚어 줍니다. */
-    throw new Error('기사 서버에 닿지 못했어요. 인터넷 연결을 확인하거나, '
-      + '아직 배포 전이라면 supabase functions deploy article 을 한 번 실행해 주세요.');
+    throw new Error('기사를 가져오지 못했어요. 인터넷 연결을 확인하거나 원문을 열어 주세요.');
   }
   if(response.status === 404) throw new Error(
-    '기사 가져오기 기능이 아직 서버에 배포되지 않았어요 (supabase functions deploy article)');
+    '지금은 기사를 가져올 수 없어요. 원문을 열어 주세요.');
   const payload = await response.json().catch(()=>null);
   if(!response.ok || !payload || !payload.html){
     throw new Error((payload && payload.message) || `기사를 열지 못했어요 (${response.status})`);
   }
+  location.url = articleAbsolute(payload.url,url) || url;
   return payload.html;
 }
 
@@ -394,14 +253,14 @@ async function fetchArticleHtml(url){
    못 받으면 null — 사진 하나 때문에 기사를 통째로 못 읽으면 손해입니다. */
 async function fetchArticleImage(url){
   let response = null;
-  try{ response = await fetch(url); }catch(e){}
+  try{ response = await fetch(url, {credentials:'omit', signal:AbortSignal.timeout(2000)}); }catch(e){}
   if(!response || !response.ok){
     const endpoint = articleProxyUrl(url, 'image');
     if(!endpoint) return null;
     response = null;
     try{
       response = await fetch(endpoint, {
-        headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
+        signal:AbortSignal.timeout(4000), headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
       });
     }catch(e){}
   }
@@ -424,6 +283,9 @@ async function attachArticleImages(parsed, fallbackPhoto){
   parsed.blocks.forEach(block => {
     if(block.r === 'img' && wanted.indexOf(block.t) < 0) wanted.push(block.t);
   });
+  const primary=wanted.length ? [...wanted] : (fallbackPhoto ? [fallbackPhoto] : []);
+  const originalCover=parsed.cover;
+  if(fallbackPhoto && !wanted.includes(fallbackPhoto)) wanted.push(fallbackPhoto);
   if(!wanted.length && !fallbackPhoto) return { wanted:0, missed:0 };
 
   const fetched = await Promise.all(wanted.map(url =>
@@ -436,19 +298,11 @@ async function attachArticleImages(parsed, fallbackPhoto){
 
   parsed.blocks = parsed.blocks.filter(block => block.r !== 'img' || stored.has(block.t));
   parsed.cover = stored.has(parsed.cover) ? articleImageKey(parsed.cover) : '';
-  const missing = wanted.filter(url => !stored.has(url)).length;
+  const missing = primary.filter(url => !stored.has(url)).length;
   /* 표지 자리가 비었을 때만 갑니다 — 원문 사진이 잘 왔으면 여기는 지나갑니다. */
   let rescued = false;
-  if(!parsed.cover && fallbackPhoto && !stored.has(fallbackPhoto)){
-    const blob = await fetchArticleImage(fallbackPhoto);
-    if(blob){
-      try{
-        await imgPut(articleImageKey(fallbackPhoto), blob);
-        stored.add(fallbackPhoto);
-        parsed.cover = articleImageKey(fallbackPhoto);
-        rescued = true;
-      }catch(e){}
-    }
+  if(!parsed.cover && fallbackPhoto && stored.has(fallbackPhoto)){
+    parsed.cover=articleImageKey(fallbackPhoto);rescued=true;
   }
 
   /* 어느 사진이 어느 주소에서 왔는지 적어 둡니다. 다른 기기는 이것만 있으면
@@ -459,7 +313,7 @@ async function attachArticleImages(parsed, fallbackPhoto){
   Object.assign(parsed, articleAssemble(parsed.title, parsed.blocks));
   /* 대신 받아 온 한 장은 표지 몫을 채웠으므로 못 받은 장수에서 뺍니다. 그러지
      않으면 표지가 멀쩡히 떠 있는 화면 위로 "한 장도 못 받았어요" 가 뜹니다. */
-  return { wanted:wanted.length, missed:rescued ? Math.max(missing - 1, 0) : missing };
+  return { wanted:primary.length, missed:rescued && originalCover ? Math.max(missing - 1, 0) : missing };
 }
 
 /* 사진 한 장 꺼내기. 다른 기기에서 받은 기사에는 문단과 사진 주소만 있고
@@ -490,30 +344,62 @@ async function importArticleUrl(){
   button.disabled = true;
   status.textContent = '기사를 가져오는 중…';
   try{
-    const html = await fetchArticleHtml(url);
-    const parsed = parseArticleHtml(html, url);
-    if(!parsed){
-      status.classList.add('bad');
-      status.innerHTML = '본문을 찾지 못했어요.<br>로그인이나 결제가 필요한 기사일 수 있어요 — 본문을 복사해서 붙여넣어 주세요.';
-      return;
-    }
-    status.textContent = '사진을 담는 중…';
-    const photos = await attachArticleImages(parsed);
+    await ingestArticle(url);
     field.value = '';
-    await saveCasualBook(parsed, { kind:'article', site:parsed.site, sourceUrl:parsed.url,
-                                   cover:parsed.cover || null, imgSrc:parsed.imgSrc || null });
-    /* 사진 실패를 조용히 넘기면 "사진이 원래 없는 기사"와 구별되지 않습니다.
-       한 장도 못 받았다면 중계가 배포되지 않은 것이 거의 확실합니다. */
-    if(photos.missed === photos.wanted && photos.wanted > 0){
-      toast('사진을 못 가져왔어요 — supabase functions deploy article 을 한 번 실행해 주세요');
-    }else if(photos.missed){
-      toast(`사진 ${photos.missed}장은 못 가져왔어요`);
-    }
   }catch(error){
     console.error(error);
     status.classList.add('bad');
-    status.textContent = error.message || '기사를 가져오지 못했어요';
+    status.textContent = '본문을 안전하게 가져오지 못했어요. ';
+    status.appendChild(articleOriginalLink(url));
   }finally{
     button.disabled = false;
   }
+}
+
+function articleUrlKey(raw){
+  const url = new URL(raw); url.hash = '';
+  for(const key of [...url.searchParams.keys()]) if(/^utm_|^(fbclid|gclid)$/i.test(key)) url.searchParams.delete(key);
+  return url.href;
+}
+function articleOriginalLink(url){
+  const link = document.createElement('a'); link.href = articleAbsolute(url,url);
+  link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = '원문 열기 ↗';
+  return link;
+}
+// Explicit feed content can already contain the public article. Summaries and
+// visibly truncated/paid previews must still go through the original page.
+function parseFeedArticle(entry){
+  if(!entry.bodyProvided || entry.kind || !entry.contentHtml) return null;
+  const text=rssHtmlText(entry.contentHtml);
+  if(text.length < 1200 || /continue reading|read (?:the )?(?:full (?:story|article)|more)(?:\s*[»→]|$)|member.only|paid subscribers|subscribe to (?:read|continue)|\[\s*…\s*\]/i.test(text)) return null;
+  const doc=new DOMParser().parseFromString('<html><head></head><body><article></article></body></html>','text/html');
+  const title=doc.createElement('title');title.textContent=entry.title;doc.head.appendChild(title);
+  doc.querySelector('article').innerHTML=entry.contentHtml;
+  const parsed=parseArticleHtml(doc.documentElement.outerHTML,entry.url);
+  if(parsed){parsed.title=entry.title;parsed.author=entry.author || '';parsed.publishedAt=entry.publishedAt || '';parsed.site=entry.source;Object.assign(parsed,articleAssemble(parsed.title,parsed.blocks));}
+  return parsed;
+}
+const articleJobs = new Map();
+async function ingestArticle(url, options = {}){
+  const key = articleUrlKey(url);
+  if(articleJobs.has(key)) return articleJobs.get(key);
+  const job = (async()=>{
+    const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === key);
+    if(existing){ await openBook(existing); return existing; }
+    const location = {};
+    let parsed=options.preparedArticle || parseFeedArticle(options);
+    if(!parsed){
+      const html = await fetchArticleHtml(url,location);
+      parsed = parseArticleHtml(html,location.url || url);
+    }
+    if(!parsed) throw new Error('본문을 안전하게 가져오지 못했어요');
+    const photos = await attachArticleImages(parsed, options.photo);
+    const book = await saveCasualBook(parsed, {kind:'article', site:parsed.site || options.source, sourceUrl:url,
+      resolvedUrl:parsed.url, discoveredFromUrl:options.discoveredFromUrl || '',
+      author:parsed.author, publishedAt:parsed.publishedAt, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null});
+    if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
+    return book;
+  })();
+  articleJobs.set(key,job);
+  try{return await job;}finally{articleJobs.delete(key);}
 }

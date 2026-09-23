@@ -181,13 +181,23 @@ function cardLede(book){
   return real || paras[1] || paras[0] || '';
 }
 
+/* Deterministic, local cover ornament; never stands in for an article photo. */
+function coverArtwork(key){
+  const patterns=[
+    '<circle cx="60" cy="48" r="29"/><path d="M18 87h84M26 95h68"/><path d="M31 48a29 29 0 0 1 58 0v39H31Z" fill="currentColor" stroke="none" opacity=".12"/>',
+    '<rect x="25" y="20" width="54" height="70" rx="25"/><rect x="41" y="30" width="54" height="70" rx="25"/><path d="M60 30v60" opacity=".4"/>',
+    '<path d="M22 89V53a38 38 0 0 1 76 0v36M33 89V53a27 27 0 0 1 54 0v36M44 89V53a16 16 0 0 1 32 0v36"/><path d="M18 97h84"/>',
+  ];
+  return '<svg class="cover-art" viewBox="0 0 120 120" aria-hidden="true" focusable="false">'+patterns[paletteOf({id:key},patterns.length)]+'</svg>';
+}
+
 function casualCard(book, current){
   const index = paletteOf(book, 4);
   const position = posOf(book.id);
   const label = nowReadingLabel(book, current);
   const card = el('div', 'casual cpal'+(index%4));
-  card.innerHTML = `<div class="thumb">
-      <img class="cover" alt="" hidden>
+  card.innerHTML = `<div class="thumb editorial-cover">
+      ${coverArtwork(book.id)}<img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>
       ${WAVE('#FFFFFF','.35')}
       ${position.t ? `<div class="bar"><i style="width:${readingPercent(position.p)}%"></i></div>` : ''}
@@ -195,7 +205,7 @@ function casualCard(book, current){
     <div class="ct"></div><div class="cm"></div>`;
   fillCard(card, {
     '.src': book.site || '붙여넣은 글',
-    '.lede': cardLede(book),
+    '.lede': book.title,
     '.ct': book.title,
     '.cm': label ? `${label} · ${readMinutes(book)}분` : `${readMinutes(book)}분 읽기`,
   });
@@ -291,9 +301,9 @@ const cardBusy = new Set();
 function bookCard(book, current){
   const index = paletteOf(book, 3);
   const label = nowReadingLabel(book, current);
-  const card = el('div', 'bookcard pal'+(index%3));
+  const card = el('div', 'bookcard editorial-cover pal'+(index%3));
   card.classList.toggle('now-ring', book.id === current);
-  card.innerHTML = `<img class="cover" alt="" hidden>
+  card.innerHTML = `${coverArtwork(book.id)}<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
     ${label ? '<div class="prog"></div>' : ''}`;
@@ -392,10 +402,10 @@ function renderHome(){
   renderHomeResume();
   const casuals=casualBooks(),nowCasual=nowReadingIn(casuals),rail=document.getElementById('casual-rail');
   const currentCasual=casuals.find(book=>book.id===nowCasual);
-  /* 홈에는 이어 읽던 글만 둡니다. 나머지 저장 글은 내 글 서가에서 찾고,
-     새 RSS 카드는 바로 다음부터 보입니다. */
+  const feedCategory=typeof rssSelectedCategory==='function'?rssSelectedCategory():'all';
   const casualSpecs=[{key:'add',stamp:'',create:casualAddCard}];
-  if(currentCasual)casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
+  if(currentCasual && feedCategory==='all')casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
+  if(feedCategory==='saved' && typeof homeSharedLinkSpecs==='function')casualSpecs.unshift(...homeSharedLinkSpecs());
   reconcileHomeCards(rail,casualSpecs);
   if(typeof appendRssCards==='function')appendRssCards(rail);
   const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');
@@ -416,11 +426,13 @@ function renderCasualLibrary(){
     renderRssCards(discover,false,document.getElementById('casual-discover-empty'));
   const grid = document.getElementById('casual-grid');
   const empty = document.getElementById('casual-empty');
-  document.getElementById('casual-cnt').textContent = casuals.length ? `${casuals.length}편` : '';
   grid.innerHTML = '';
   casuals.forEach(book => grid.appendChild(casualCard(book, current)));
   const cloud=serverOnlyCasuals(); cloud.forEach(row=>grid.appendChild(cloudCasualCard(row)));
-  empty.hidden = casuals.length > 0 || cloud.length > 0;
+  const readLinks = typeof renderReadSharedLinks === 'function' ? renderReadSharedLinks(grid) : 0;
+  const count = casuals.length + readLinks;
+  document.getElementById('casual-cnt').textContent = count ? `${count}편` : '';
+  empty.hidden = count > 0 || cloud.length > 0;
   empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
 }
 
@@ -476,7 +488,7 @@ function updatePastePreview(){
 async function saveCasualBook(parsed, extra){
   const id = bookHash(parsed.paras);
   const existing = books.find(book => book.id === id);
-  if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); openBook(existing); return; }
+  if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); await openBook(existing); return existing; }
   const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
     addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
     textAvailable:true, sourceMap:null, layoutSignals:null,
@@ -485,8 +497,9 @@ async function saveCasualBook(parsed, extra){
   books.unshift(book);
   closeAddModal();
   renderHome();
-  openBook(book);
+  await openBook(book);
   queueSync();                   // 읽기를 막지 않도록 기다리지 않습니다
+  return book;
 }
 
 async function importPastedText(){

@@ -60,15 +60,14 @@ body.dark #add-modal #am-card::before{background:linear-gradient(145deg,rgba(255
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#add-modal #am-card{background:var(--sentence-glass-surface);backdrop-filter:blur(18px) saturate(112%);-webkit-backdrop-filter:blur(18px) saturate(112%);}}
 #add-modal.on #am-card{transform:translateY(0) scale(1);}
 #add-modal #am-card .am-step{position:relative;z-index:1;}
-#add-modal #am-close{position:absolute;z-index:1;top:18px;right:18px;float:none;width:36px;height:36px;padding:0;border:1px solid var(--sentence-glass-line);border-radius:50%;background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);font:400 22px/1 var(--ui);}
-#add-modal #am-card h2{font:650 22px/30px var(--ui);letter-spacing:-.35px;margin:0 48px 7px 0;color:var(--sentence-glass-ink);}
+#add-modal #am-card h2{font:650 22px/30px var(--ui);letter-spacing:-.35px;margin:0 0 7px;color:var(--sentence-glass-ink);}
 #add-modal #am-card .desc{font-size:13.5px;line-height:1.6;color:var(--sentence-glass-muted);margin-bottom:16px;}
 #add-modal #am-card .desc b{color:var(--sentence-glass-ink);}
 #add-modal .am-choices{gap:9px;margin-top:18px;}
 #add-modal .am-big{gap:14px;padding:14px;border:1px solid var(--sentence-glass-line);border-radius:16px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);transition:background .18s ease,transform .18s ease;}
 #add-modal .am-big:hover{background:var(--sentence-glass-action-hover);}
 #add-modal .am-big:active{transform:scale(.985);}
-#add-modal .am-big:focus-visible,#add-modal #am-close:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
+#add-modal .am-big:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
 #add-modal .am-big .am-ico{width:42px;height:42px;min-width:42px;border:1px solid var(--sentence-glass-line);border-radius:13px;background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);}
 #add-modal .am-big .am-t{font-size:15px;font-weight:550;}
 #add-modal .am-big .am-d{font-size:12.5px;color:var(--sentence-glass-muted);}

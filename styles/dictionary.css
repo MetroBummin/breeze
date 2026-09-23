@@ -389,6 +389,8 @@ body.dark #word-peek::before{
 #panel #p-ai .dot{display:none;}
 #panel #p-ai .mk{color:var(--sentence-glass-ink);font-size:20px;font-weight:600;}
 #panel #p-ai-saved{background:none;color:var(--sentence-glass-secondary);padding:0;font-weight:400;}
+#panel .aurora{background:var(--sentence-glass-action);border:1px solid var(--sentence-glass-line);}
+#panel .aurora .glow{background:radial-gradient(ellipse at 30% 45%,color-mix(in srgb,var(--sentence-glass-ink) 12%,transparent),transparent 60%),radial-gradient(ellipse at 75% 60%,color-mix(in srgb,var(--sentence-glass-ink) 7%,transparent),transparent 65%);}
 #panel .stbtn{font-size:11px;letter-spacing:2px;font-weight:400;background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);border:1px solid var(--sentence-glass-line);}
 #panel .stbtn.on{background:color-mix(in srgb,var(--sentence-glass-ink) 12%,transparent);border-color:color-mix(in srgb,var(--sentence-glass-ink) 30%,transparent);color:var(--sentence-glass-ink);}
 #panel #p-highlight-row{order:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 0 8px;font:12px var(--ui);color:var(--sentence-glass-secondary);}

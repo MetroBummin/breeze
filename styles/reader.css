@@ -305,9 +305,9 @@
   #rtitle{font-family:var(--serif); font-size:clamp(24px,3.4vw,30px); color:var(--ink); padding-bottom:18px; overflow-wrap:anywhere;
     border-bottom:1px solid var(--line); margin-bottom:8px;}
   /* 기사에는 연결할 원본 파일이 없습니다. 원문으로 가는 길만 남겨 둡니다. */
-  #rsource{display:block; font-size:12.5px; color:var(--soft2); text-decoration:none; margin:-2px 0 8px;}
-  #rsource:hover{color:var(--blue);}
-  #rsource[hidden]{display:none;}
+  #rsource,#rdiscovery{display:block; font-size:12.5px; color:var(--soft2); text-decoration:none; margin:-2px 0 8px;}
+  #rsource:hover,#rdiscovery:hover{color:var(--blue);}
+  #rsource[hidden],#rdiscovery[hidden]{display:none;}
   #rhint{font-size:13px; color:var(--soft2); margin-bottom:26px; display:flex; align-items:center; gap:8px;}
   #rhint svg{flex-shrink:0;}
   /* 본문 낱말은 탭·꾹 누르기라는 리더의 손짓입니다. native selection 정책은
@@ -529,3 +529,11 @@ body.reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{
 body.reader-notice-visible.chrome-hidden #readpill{width:min(56vw,400px);height:44px;}
 body.reader-notice-visible.chrome-hidden #readpill #reader-notice{left:12px;}
 body.sentence-pill-waiting #reader-notice{display:none;}
+
+/* Imported semantic blocks use Breeze typography, never publisher CSS. */
+#rtext .article-list-item{padding-inline-start:1.4em;position:relative}
+#rtext .article-list-item::before{content:attr(data-marker);position:absolute;inset-inline-start:0;opacity:.65}
+#rtext .article-caption{font-size:.8em;opacity:.7}
+#rtext .article-table-row{font-family:monospace;overflow-wrap:anywhere}
+#rtext .article-links{display:flex;flex-wrap:wrap;gap:.5em 1em;font-size:.7em;margin:-.5em 0 1.4em}
+#rtext .article-links a{color:inherit;text-decoration:underline;overflow-wrap:anywhere}

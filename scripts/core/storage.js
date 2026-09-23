@@ -99,10 +99,29 @@ async function vaultPut(key, value){ const db=await idb(); return new Promise((r
 async function vaultGet(key){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('vault').objectStore('vault').get(key);
   rq.onsuccess=()=>res(rq.result===undefined?null:rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
-async function imgPut(id, blob){ const db=await idb(); return new Promise((res,rej)=>{
-  const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(blob,id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
-async function imgGet(id){ try{ const db=await idb(); return await new Promise(res=>{
-  const rq=db.transaction('imgs').objectStore('imgs').get(id); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function imgPut(id, blob){
+  const db=await idb();
+  const put = value => new Promise((res,rej)=>{
+    const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').put(value,id);
+    tx.oncomplete=res; tx.onerror=()=>rej(tx.error || new Error('Image storage failed'));
+    tx.onabort=()=>rej(tx.error || new Error('Image storage aborted'));
+  });
+  try{ await put(blob); }
+  catch(error){
+    // WebKit can reject Blob writes even when binary records work. Preserve bytes
+    // and MIME type; callers and previously stored images continue to use Blob.
+    if(!(blob instanceof Blob)) throw error;
+    await put({imageBytes:await blob.arrayBuffer(),imageType:blob.type});
+  }
+}
+async function imgGet(id){ try{
+  const db=await idb(); const value=await new Promise(resolve=>{
+    const rq=db.transaction('imgs').objectStore('imgs').get(id);
+    rq.onsuccess=()=>resolve(rq.result); rq.onerror=()=>resolve(null);
+  });
+  return value && value.imageBytes instanceof ArrayBuffer
+    ? new Blob([value.imageBytes],{type:value.imageType}) : value;
+}catch(e){return null;} }
 async function imgDel(id){ try{ const db=await idb(); return await new Promise(res=>{
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').delete(id); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
 async function imgRename(oldPrefix, newPrefix){

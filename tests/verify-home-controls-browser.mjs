@@ -57,7 +57,10 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   await page.keyboard.press('Escape');
   await page.locator('#settings-modal').waitFor({state:'hidden'});
   assert.equal(await page.locator('#nav-settings').evaluate(e=>document.activeElement===e),true);
-  await page.locator('#home-add').click();assert.equal(await page.locator('#add-modal').isVisible(),true);await page.evaluate(()=>closeAddModal());
+  await page.locator('#home-add').click();assert.equal(await page.locator('#add-modal').isVisible(),true);
+  assert.equal(await page.locator('#am-close').count(),0,'Add modal should close through its scrim, without an X button');
+  await page.locator('#am-card .am-step.on h2').click();assert.equal(await page.locator('#add-modal').isVisible(),true,'Tapping the sheet content closed it');
+  await page.locator('#add-modal').click({position:{x:4,y:4}});await page.locator('#add-modal').waitFor({state:'hidden'});
   await page.locator('#nav-vocab').click();assert.equal(await page.locator('#v-vocab').isVisible(),true);
 assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   await page.mouse.move(0,0);

@@ -4,15 +4,68 @@
    완전히 같고, 피드 자체나 카드 사진을 서버/IndexedDB에 쌓지 않습니다. */
 
 const RSS_FEEDS = [
-  { name:'The Conversation', url:'https://theconversation.com/global/articles.atom' },
-  { name:'ProPublica', url:'https://www.propublica.org/feeds/propublica/main' },
+  { name:'Dexerto · Entertainment', url:'https://www.dexerto.com/feed/category/entertainment/', category:'entertainment' },
+  { name:'The Conversation', url:'https://theconversation.com/global/articles.atom', category:'general' },
+  { name:'TMZ', url:'https://www.tmz.com/rss.xml', category:'entertainment' },
+  { name:'The Daily Dot', url:'https://dailydot.com/feed', category:'entertainment' },
+  { name:'ProPublica', url:'https://www.propublica.org/feeds/propublica/main', category:'society' },
+  { name:'NASA', url:'https://www.nasa.gov/technology/feed/', category:'science' },
+  { name:'Bloody Disgusting', url:'https://bloody-disgusting.com/feed/', category:'entertainment' },
+  { name:'WIRED', url:'https://www.wired.com/feed/rss', category:'general' },
+  { name:'All That’s Interesting', url:'https://allthatsinteresting.com/feed', category:'entertainment' },
+  { name:'Medium · Technology', url:'https://medium.com/feed/tag/technology', category:'science' },
+  { name:'Reddit · r/science', url:'https://www.reddit.com/r/science/.rss', category:'science' },
+  { name:'Medium · Culture', url:'https://medium.com/feed/tag/culture', category:'culture' },
+  { name:'Medium · Business', url:'https://medium.com/feed/tag/business', category:'business' },
 ];
+const RSS_CATEGORIES = [
+  {id:'entertainment',label:'엔터테인먼트'}, {id:'general',label:'종합'}, {id:'society',label:'시사·사회'},
+  {id:'science',label:'과학·기술'}, {id:'culture',label:'문화·생활'},
+  {id:'business',label:'경제·비즈니스'},
+];
+function rssCategory(value){return RSS_CATEGORIES.some(item=>item.id===value) ? value : 'general';}
+function rssSelectedCategory(){
+  const value=load('breeze.feed-category','all');
+  return value==='all' || value==='saved' ? value : rssCategory(value);
+}
+function renderFeedCategories(){
+  const selected=rssSelectedCategory();
+  const ordered=[{id:'all',label:'전체'},{id:'saved',label:'저장됨'},...RSS_CATEGORIES];
+  document.querySelectorAll('.feed-categories').forEach(host=>{
+    const current=new Map([...host.querySelectorAll('button')].map(button=>[button.dataset.category,button]));
+    const focused=host.contains(document.activeElement) ? (/** @type {HTMLElement} */(document.activeElement))?.dataset.category : '';
+    const buttons=ordered.map(category=>{
+      const button=current.get(category.id) || document.createElement('button');
+      button.type='button';button.dataset.category=category.id;
+      if(!button.firstChild){const label=document.createElement('span');label.textContent=category.label;button.appendChild(label);}
+      button.setAttribute('aria-pressed',String(category.id===selected));
+      button.onclick=()=>{
+        if(!save('breeze.feed-category',category.id))return;
+        renderFeedCategories();refreshFeedRails();
+        document.querySelectorAll('.feed-categories').forEach(rail=>{rail.scrollLeft=0;});
+      };
+      return button;
+    });
+    host.replaceChildren(...buttons);
+    if(focused)(/** @type {HTMLElement} */(host.querySelector(`[data-category="${focused}"]`)))?.focus({preventScroll:true});
+  });
+}
+function refreshFeedRails(){
+  const home=document.getElementById('casual-rail');delete home.dataset.rssStamp;
+  renderHome();
+  const discover=document.getElementById('casual-discover-rail');delete discover.dataset.rssStamp;
+  renderRssCards(discover,false,document.getElementById('casual-discover-empty'));
+}
 const RSS_PER_FEED = 3;
+const RSS_SOURCE_LIMIT = 20;
 const RSS_CACHE_MS = 10 * 60 * 1000;
-const RSS_PHOTO_MS = 8000;
+const RSS_PHOTO_MS = 4000;
+const rssListeners = new Set();
 let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
+const rssPublicFeedJobs = new Map();
+const rssPreparedArticles = new Map();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 
@@ -36,20 +89,35 @@ function rssHtmlText(html){
   return doc.body.textContent.replace(/\s+/g, ' ').trim();
 }
 function rssAbsolute(url, base){
-  try{ return new URL(url, base).href; }catch(error){ return ''; }
+  if(!String(url || '').trim()) return '';
+  return articleAbsolute(url,base);
 }
 function rssEntryUrl(entry, base){
   const links = [...entry.children].filter(node => rssLocal(node) === 'link');
-  const atom = links.find(link => (link.getAttribute('rel') || 'alternate') === 'alternate') || links[0];
+  const atom = links.find(link => (link.getAttribute('rel') || 'alternate') === 'alternate');
   return rssAbsolute(atom ? (atom.getAttribute('href') || atom.textContent) : rssText(entry, ['link']), base);
 }
 function rssImage(entry, html, base){
-  const media = [...entry.children].find(node => ['content', 'thumbnail'].includes(rssLocal(node)) && node.getAttribute('url'));
-  const image = media && media.getAttribute('url');
-  if(image) return rssAbsolute(image, base);
+  const tooSmall=node=>['width','height'].some(attr=>{const size=parseInt(node.getAttribute(attr)||'0',10);return size>0&&size<60;});
+  const media=[...entry.querySelectorAll('*')].filter(node=>['content','thumbnail','enclosure','link'].includes(rssLocal(node)));
+  const priority={enclosure:0,content:1,thumbnail:2,link:3};
+  media.sort((a,b)=>priority[rssLocal(a)]-priority[rssLocal(b)]);
+  for(const node of media){
+    const kind=rssLocal(node);
+    if(!['content','thumbnail','enclosure','link'].includes(kind))continue;
+    if(kind==='link' && node.getAttribute('rel')!=='enclosure')continue;
+    const type=node.getAttribute('type') || '';
+    if((kind==='enclosure'||kind==='link') && !type.startsWith('image/'))continue;
+    if(type && !type.startsWith('image/'))continue;
+    const src=rssAbsolute(node.getAttribute('url')||node.getAttribute('href'),base);
+    if(src && !tooSmall(node) && !ARTICLE_IMG_BAD.test(src))return src;
+  }
   const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
-  const img = doc.querySelector('img[src]');
-  return img ? rssAbsolute(img.getAttribute('src'), base) : '';
+  for(const img of doc.querySelectorAll('img')){
+    const src=rssAbsolute(articleBestSrc(img),base);
+    if(src && !tooSmall(img) && !ARTICLE_IMG_BAD.test(src))return src;
+  }
+  return '';
 }
 function rssDate(value){
   const date = new Date(value);
@@ -64,38 +132,153 @@ function rssUrlKey(raw){
   }catch(error){ return String(raw || ''); }
 }
 function rssAlreadySaved(entry){
-  const key = rssUrlKey(entry.url);
+  const key = rssUrlKey(entry.readUrl || entry.url);
   return books.some(book => book.sourceUrl && rssUrlKey(book.sourceUrl) === key);
 }
+function rssPostKind(url){
+  try{
+    const host = new URL(url).hostname.replace(/^www\./,'');
+    if(/(^|\.)(x|twitter)\.com$/.test(host)) return 'x';
+    if(/(^|\.)reddit\.com$/.test(host)) return 'reddit';
+  }catch(error){}
+  return '';
+}
+function rssLinkedArticle(html, postUrl){
+  if(rssPostKind(postUrl) !== 'reddit') return '';
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  const link = [...doc.querySelectorAll('a[href]')].find(node => /^\[link\]$/i.test(node.textContent.trim()));
+  const url = link ? articleAbsolute(link.getAttribute('href'),postUrl) : '';
+  return url && !rssPostKind(url) ? url : '';
+}
+// Discovery is for English reading. Judge the supplied prose, not only a title
+// or the script: Indonesian and English both use Latin letters.
+const RSS_ENGLISH_WORDS = new Set('the a an and or but if in on at to of for from with by as is are was were be been being it its this that these those they their them we our you your he she his her who which what when where how not no can could would should will have has had do does did more most some any all one about into over after before than there here also such through between while because only other'.split(' '));
+const RSS_OTHER_WORDS = new Set('yang dan dengan untuk dari pada dalam tidak adalah sebagai juga mereka saya kamu kita ini itu tersebut oleh karena maka akan telah sudah dapat bisa namun tetapi seorang beberapa waktu lalu ketika sebuah serta tentang menurut menjadi orang sangat atau antara dari kepada la les des une un et dans pour avec sur aux est sont nous vous ils elle il ce cette ces pas qui que je de du en mais au se son ses plus una uno los las el ella del por con para como sobre sus este esta estos estas pero porque muy anche della delle sono che non per gli una uno einen eine und der die das nicht ist ich wir sie den dem auf mit ein zu im von es sich des et cette une les dans pour avec qui que pas aux du au est sont nous vous je'.split(' '));
+function rssLooksEnglish(entry){
+  const body=rssHtmlText(entry.contentHtml || entry.summary || '').slice(0,6000);
+  const sample=(body.length>=100 ? body : [entry.title,entry.summary].join(' ')).toLowerCase();
+  const letters=sample.match(/\p{L}/gu)?.length || 0;
+  if(letters>=20 && (sample.match(/[a-z]/g)?.length || 0)/letters<.65)return false;
+  const words=sample.match(/[a-z]+(?:'[a-z]+)?/g)?.slice(0,450) || [];
+  if(words.length<3)return false;
+  const english=words.filter(word=>RSS_ENGLISH_WORDS.has(word)).length;
+  const other=words.filter(word=>RSS_OTHER_WORDS.has(word) && !RSS_ENGLISH_WORDS.has(word)).length;
+  return english>=Math.max(words.length<15?1:2,Math.ceil(words.length*.055)) && english>other;
+}
 function parseRss(xml, feed){
-  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if(String(xml).length > 3000000 || /<!DOCTYPE|<!ENTITY/i.test(xml)) throw new Error('피드를 읽지 못했어요');
+  let source=String(xml);
+  // Some publishers append a script after a complete XML document. Only trim
+  // content beyond the root close; malformed XML inside the feed still fails.
+  const root=source.match(/^\s*(?:<\?xml[^>]*\?>\s*)?<(rss|feed)\b/i)?.[1]?.toLowerCase();
+  const close=root?source.lastIndexOf(`</${root}>`):-1;
+  if(close>=0)source=source.slice(0,close+root.length+3);
+  const doc = new DOMParser().parseFromString(source, 'application/xml');
   if(doc.querySelector('parsererror')) throw new Error('RSS 형식을 읽지 못했어요');
-  const nodes = [...doc.querySelectorAll('entry, item')];
+  if(!['rss','feed','rdf'].includes(rssLocal(doc.documentElement))) throw new Error('RSS 또는 Atom 주소를 확인해 주세요');
+  const nodes = [...doc.querySelectorAll('entry, item')].slice(0,100);
+  const seen = new Set();
   return nodes.map(node => {
-    const content = rssText(node, ['content', 'encoded', 'description', 'summary']);
+    const content = rssText(node, ['encoded', 'content', 'description', 'summary']);
+    const bodyProvided = !!rssText(node, ['encoded', 'content']);
     const title = rssHtmlText(rssText(node, ['title']));
     const url = rssEntryUrl(node, feed.url);
     return {
-      source:feed.name, title, url,
-      summary:rssHtmlText(content), photo:rssImage(node, content, feed.url),
+      source:feed.name, category:rssCategory(feed.category), title, url, author:rssText(node,['author','creator']), publishedAt:rssText(node,['published','updated','pubdate','date']),
+      bodyProvided:bodyProvided && content.length <= 200000, kind:rssPostKind(url), readUrl:rssLinkedArticle(content,url), contentHtml:content.slice(0,200000), feedUrl:feed.url, feedSourceUrl:feed.sourceUrl || feed.url,
+      summary:rssHtmlText(rssText(node,['summary','description']) || content).slice(0,280), photo:rssImage(node, content, feed.url),
       date:rssDate(rssText(node, ['published', 'updated', 'pubdate', 'date'])),
     };
-  }).filter(entry => entry.title && entry.url);
+  }).filter(entry => {
+    if(!entry.title || !entry.url || (!entry.readUrl && !rssLooksEnglish(entry))) return false;
+    const key = articleUrlKey(entry.url); if(seen.has(key)) return false; seen.add(key); return true;
+  });
 }
-/* 후보를 여기서 자르지 않습니다. 사진이 실제로 뜨는지는 카드가 그려질 때
-   `rssCardPhoto()` 가 딱 한 번 봅니다 — 여기서 미리 한 번 더 재 두면 "주소는
-   떴는데 카드에서는 안 뜬다"는 두 가지 상태가 생기고, 사용자가 보는 것은 늘
-   두 번째입니다. 그래서 이 단계는 순서만 정해서 넘깁니다. */
+// Medium topic feeds are discovery summaries. Resolve their public author or
+// publication feed before presenting a card, using the same content parser.
+function rssMediumSource(feed){
+  try{return /(^|\.)medium\.com$/i.test(new URL(feed.url).hostname);}catch{return false;}
+}
+function rssPublicFeedUrl(entry){
+  const url=new URL(entry.url);
+  if(url.hostname==='medium.com' || url.hostname==='www.medium.com'){
+    const owner=url.pathname.split('/').filter(Boolean)[0];
+    return owner ? 'https://medium.com/feed/'+owner : '';
+  }
+  return new URL('/feed',url).href;
+}
+function rssStoryKey(raw){
+  const url=new URL(raw);
+  return url.pathname.match(/-([a-f0-9]{12})\/?$/i)?.[1] || articleUrlKey(raw);
+}
+async function rssPublicArticle(entry){
+  if(parseFeedArticle(entry))return entry;
+  const url=rssPublicFeedUrl(entry);if(!url)return null;
+  let job=rssPublicFeedJobs.get(url);
+  if(!job){
+    if(rssPublicFeedJobs.size>=40)rssPublicFeedJobs.delete(rssPublicFeedJobs.keys().next().value);
+    job=fetchArticleHtml(url).then(xml=>parseRss(xml,{name:entry.source,url})).catch(()=>[]);
+    rssPublicFeedJobs.set(url,job);
+  }
+  const match=(await job).find(item=>rssStoryKey(item.url)===rssStoryKey(entry.url));
+  if(!match || !parseFeedArticle(match))return null;
+  return {...entry,bodyProvided:true,contentHtml:match.contentHtml,
+    author:match.author || entry.author,photo:entry.photo || match.photo};
+}
+async function rssPreparePublicArticles(entries,publish){
+  const ready=[];let cursor=0;
+  // A bounded pair of workers; publish usable bodies without waiting for others.
+  await Promise.all([0,1].map(async()=>{
+    while(cursor<entries.length && ready.length<RSS_PER_FEED){
+      const entry=entries[cursor++];
+      const resolved=await rssPublicArticle(entry);
+      if(resolved && ready.length<RSS_PER_FEED){ready.push(resolved);publish([...ready]);}
+    }
+  }));
+  return ready;
+}
+async function rssPrepareCovers(entries,publish){
+  publish(entries);
+  const missing=entries.slice(0,RSS_PER_FEED).filter(entry=>!entry.photo && !entry.bodyProvided && !entry.kind);
+  await Promise.all(missing.map(async entry=>{
+    try{
+      const location={};
+      const html=await fetchArticleHtml(entry.url,location);
+      const parsed=parseArticleHtml(html,location.url||entry.url);
+      const cover=parsed?.cover || parsed?.blocks.find(block=>block.r==='img')?.t || '';
+      if(!cover || ARTICLE_IMG_BAD.test(cover))return;
+      entry.photo=cover;
+      if(rssPreparedArticles.size>=12)rssPreparedArticles.delete(rssPreparedArticles.keys().next().value);
+      rssPreparedArticles.set(articleUrlKey(entry.url),parsed);
+      publish(entries);
+    }catch(error){}
+  }));
+  return entries;
+}
+/* Publish each source as it arrives; one slow source never gates another. */
 async function loadRss(force){
-  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
   if(rssLoading) return rssLoading;
-  rssLoading = Promise.all(RSS_FEEDS.map(async feed => {
-    const html = await fetchArticleHtml(feed.url);
-    const pictured = parseRss(html, feed).filter(entry => entry.photo);
+  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
+  rssPublicFeedJobs.clear();
+  rssPreparedArticles.clear();
+  const sources = rssSources();
+  const previous = rssCands;
+  rssCands = sources.map((_,i)=>previous[i] || []);
+  rssLoading = Promise.all(sources.map(async (feed,index) => {
+    try{
+    const location = {};
+    const html = await fetchArticleHtml(feed.url,location);
+    const pictured = parseRss(html, {...feed,sourceUrl:feed.url,url:location.url || feed.url});
     /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
        피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
     const start = pictured.length ? (rssPage * RSS_PER_FEED) % pictured.length : 0;
-    return pictured.map((_, step) => pictured[(start + step) % pictured.length]);
+    const ordered=pictured.map((_, step) => pictured[(start + step) % pictured.length]);
+    const publish=entries=>{rssCands[index]=entries;rssListeners.forEach(notify=>notify(rssCands));};
+    if(rssMediumSource(feed))publish(await rssPreparePublicArticles(ordered,publish));
+    else if(ordered.slice(0,RSS_PER_FEED).some(entry=>!entry.photo && !entry.bodyProvided && !entry.kind))await rssPrepareCovers(ordered,publish);
+    else publish(ordered);
+    return rssCands[index];
+    }catch(error){ rssCands[index]=[]; rssListeners.forEach(notify=>notify(rssCands)); console.warn('Feed unavailable:',feed.url); return []; }
   })).then(groups => {
     rssCands = groups;
     rssLoadedAt = Date.now();
@@ -103,101 +286,220 @@ async function loadRss(force){
   }).finally(() => { rssLoading = null; });
   return rssLoading;
 }
-/* 카드에 실제로 붙는 그 `<img>` 하나가 뜰 때까지 기다립니다. 이 약속이 참으로
-   끝난 카드만 rail 에 들어가므로, `#casual-rail` 안의 RSS 카드는 언제나 이미
-   다 뜬 사진을 가집니다 — 빈 칸도, 글자만 남은 카드도 생길 수 없습니다.
+function refreshRssPhotoEmpty(rail){
+  const empty=document.getElementById(rail.id==='casual-rail'?'home-feed-empty':'casual-discover-empty');
+  if(!empty)return;
+  const hasPhoto=!!rail.querySelector('.rss-card:not([hidden])');
+  empty.textContent='사진이 있는 새 글을 찾지 못했어요. 발견에서 다른 출처를 추가해 보세요.';
+  empty.hidden=hasPhoto || !!rssLoading;
+}
 
-   크기까지 보는 이유: 일부 매체는 조회수를 세는 1×1 투명 gif 를 기사 맨 앞에
-   심어 두는데, 그 주소는 정상적으로 "로드"됩니다. 추적 픽셀보다는 훨씬 크고
-   진짜 작은 썸네일보다는 작은 문턱 하나면 충분합니다. */
-function rssCardPhoto(card, entry){
+/* Discovery only shows entries after their cover image has loaded. */
+async function rssCardPhoto(card, entry){
   const image = /** @type {HTMLImageElement} */(card.querySelector('.cover'));
   const thumb = card.querySelector('.thumb');
-  return new Promise(resolve => {
-    const done = ok => { clearTimeout(timer); image.onload = image.onerror = null; resolve(ok); };
-    const timer = setTimeout(() => done(false), RSS_PHOTO_MS);
-    image.onload = () => {
-      if(image.naturalWidth < 60 || image.naturalHeight < 60) return done(false);
-      image.hidden = false; thumb.classList.add('has-cover'); done(true);
-    };
-    image.onerror = () => done(false);
-    /* `loading="lazy"` 는 일부러 두지 않습니다 — 아직 문서에 붙지 않은(그리고
-       `hidden` 인) 엘리먼트는 화면에 자리가 없어 브라우저가 "가까워졌다"를 잴
-       수 없고, 그러면 지연 로드가 영영 안 걸립니다. */
-    image.src = entry.photo;
+  image.referrerPolicy = 'no-referrer';
+  const decode = src => new Promise(resolve=>{
+    const done=ok=>{clearTimeout(timer);image.onload=image.onerror=null;resolve(ok);};
+    const timer=setTimeout(()=>done(false),RSS_PHOTO_MS);
+    image.onload=()=>done(image.naturalWidth>=60 && image.naturalHeight>=60);
+    image.onerror=()=>done(false);image.src=src;
   });
+  let ok=await decode(entry.photo);
+  // Hotlink failures can still be retrieved by the existing image transport.
+  if(!ok && card.isConnected){
+    const blob=await fetchArticleImage(entry.photo);
+    if(blob && card.isConnected){
+      const local=URL.createObjectURL(blob);
+      try{ok=await decode(local);}finally{URL.revokeObjectURL(local);}
+    }
+  }
+  if(ok && card.isConnected){image.hidden=false;thumb.classList.add('has-cover');card.hidden=false;refreshRssPhotoEmpty(card.parentElement);}
+  else if(card.isConnected){
+    const rail=card.parentElement;
+    card.remove();
+    if(rail)refreshRssPhotoEmpty(rail);
+  }
+  return ok;
 }
+
 function rssCard(entry){
   const card = document.createElement('article');
+  card.hidden = true;
   const color = entry.source === 'ProPublica' ? 1 : 0;
   card.className = 'casual rss-card cpal' + color;
-  card.innerHTML = `<div class="thumb rss-thumb"><img class="cover" alt="" hidden>
+  card.dataset.rssUrl=entry.url;
+  card.innerHTML = `<div class="thumb rss-thumb editorial-cover">${coverArtwork(entry.url)}<img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
   card.querySelector('.src').textContent = entry.source;
-  card.querySelector('.lede').textContent = entry.summary;
+  card.querySelector('.lede').textContent = entry.title;
   card.querySelector('.ct').textContent = entry.title;
   card.querySelector('.cm').textContent = entry.date ? `${entry.date} · 탭해서 담기` : '탭해서 담기';
-  card.onclick = () => importRssEntry(entry, card);
+  let pressedAt = 0;
+  card.addEventListener('pointerdown', () => { pressedAt = performance.now(); });
+  card.addEventListener('contextmenu', event => event.preventDefault());
+  card.onclick = event => {
+    if(pressedAt && performance.now() - pressedAt >= 500){event.preventDefault();return;}
+    importRssEntry(entry, card);
+  };
   return card;
 }
 async function importRssEntry(entry, card){
+  if(card.classList.contains('busy')) return;
   card.classList.add('busy');
   try{
-    const html = await fetchArticleHtml(entry.url);
-    const parsed = parseArticleHtml(html, entry.url);
-    if(!parsed) throw new Error('본문을 찾지 못했어요');
-    /* 카드에 떠 있던 그 사진을 함께 넘깁니다 — 원문에서 표지를 못 캐면 이것이
-       대신 들어갑니다. 사진이 보이는 카드를 눌렀는데 사진 없는 글이 담기는
-       일은 없어야 합니다. */
-    const photos = await attachArticleImages(parsed, entry.photo);
-    await saveCasualBook(parsed, { kind:'article', site:parsed.site || entry.source,
-      sourceUrl:parsed.url, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null });
-    if(photos.missed === photos.wanted && photos.wanted > 0) toast('글은 담았지만 사진은 못 가져왔어요');
+    if(entry.readUrl){
+      await ingestArticle(entry.readUrl,{...entry,discoveredFromUrl:entry.url});
+    }else if(entry.kind){
+      await ingestFeedPost(entry);
+    }else{
+      const preparedArticle=rssPreparedArticles.get(articleUrlKey(entry.url));
+      await ingestArticle(entry.url,{...entry,preparedArticle});
+    }
   }catch(error){
-    console.error(error);
-    toast((error && error.message) || '기사를 가져오지 못했어요');
+    // A transient read/storage failure must not delete cards or decoded covers.
+    toast('지금은 글을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
   }finally{ card.classList.remove('busy'); }
 }
-/* 한 피드에서 사진이 실제로 뜬 카드 RSS_PER_FEED 장을 만듭니다. 실패한 후보는
-   그 자리에서 버리고 같은 순서의 다음 기사로 채웁니다 — 카드가 줄어들 뿐, 사진
-   없는 카드가 나가는 일은 없습니다. */
-async function rssFeedCards(entries, renderId, rail){
+/* A feed's own post body is enough for short posts. It never becomes live HTML:
+   only text, explicit marks and validated image URLs enter the existing Reader. */
+function parseFeedPost(entry){
+  if(!entry.kind || !entry.contentHtml || entry.contentHtml.length > 200000) return null;
+  const doc = new DOMParser().parseFromString(entry.contentHtml,'text/html');
+  doc.body.querySelectorAll('script,style,iframe,form,svg,video,audio,object,embed').forEach(node=>node.remove());
+  if(entry.kind === 'reddit') doc.body.querySelectorAll('table').forEach(table=>{
+    if(/submitted by/i.test(table.textContent) && /\[comments\]/i.test(table.textContent)) table.remove();
+  });
+  const blocks = [];
+  for(const node of doc.body.querySelectorAll('p,blockquote,li,h2,h3,img')){
+    if(node.tagName === 'IMG'){
+      const src = articleAbsolute(articleBestSrc(node),entry.url);
+      if(src && !articleTooSmall(node) && !ARTICLE_IMG_BAD.test(src) && blocks.filter(block=>block.r==='img').length < ARTICLE_IMG_MAX)
+        blocks.push({r:'img',t:src,alt:node.getAttribute('alt') || ''});
+      continue;
+    }
+    if(node.querySelector('p,blockquote,li,h2,h3')) continue;
+    const value = articleInline(node,entry.url);
+    if(!value.t) continue;
+    const tag = node.tagName.toLowerCase();
+    const r = tag === 'blockquote' || node.closest('blockquote') ? 'quote'
+      : tag === 'h2' || tag === 'h3' ? tag : 'p';
+    blocks.push({r,...value,list:tag === 'li' ? (node.parentElement?.tagName === 'OL' ? '1.' : '•') : ''});
+  }
+  let bodyLength = blocks.filter(block=>block.r!=='img').reduce((total,block)=>total+block.t.length,0);
+  if(!bodyLength && entry.kind === 'x'){
+    const value = articleInline(doc.body,entry.url);
+    if(value.t) blocks.push({r:'p',...value});
+    bodyLength = value.t.length;
+  }
+  // A Reddit prompt often consists solely of its title. Include it as a
+  // paragraph so lookup works, but reject a bare feed headline as an X body.
+  if(!bodyLength && entry.kind === 'reddit' && entry.title.length >= 40)
+    blocks.push({r:'p',t:entry.title,marks:[]});
+  if(bodyLength > 30000 || blocks.length > 200 ||
+     !blocks.some(block=>block.r!=='img' && block.t.length >= 20)) return null;
+  const title = entry.title || new URL(entry.url).hostname;
+  return {title,site:entry.source,url:entry.url,cover:entry.photo || '',blocks,...articleAssemble(title,blocks)};
+}
+async function ingestFeedPost(entry){
+  const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === articleUrlKey(entry.url));
+  if(existing) return openBook(existing);
+  const parsed = parseFeedPost(entry);
+  if(!parsed) throw new Error('피드에서 읽을 만한 본문을 찾지 못했어요');
+  const photos = await attachArticleImages(parsed);
+  const book = await saveCasualBook(parsed,{kind:'article',contentType:'post',site:entry.source,
+    sourceUrl:entry.url,feedUrl:entry.feedUrl,author:entry.author,publishedAt:entry.publishedAt,
+    cover:parsed.cover || null,imgSrc:parsed.imgSrc || null});
+  if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
+  return book;
+}
+/* A discovery card is shown only when its cover can be displayed. The saved
+   article remains readable without a cover after the user opens it. */
+async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
   const cards = [];
   for(const entry of entries){
-    if(cards.length >= RSS_PER_FEED || renderId !== rssRenderIds.get(rail)) break;
+    if(cards.length >= limit || renderId !== rssRenderIds.get(rail)) break;
     if(rssAlreadySaved(entry)) continue;
+    if(!entry.photo) continue;
     const card = rssCard(entry);
-    if(await rssCardPhoto(card, entry)) cards.push(card);
+    // Covers load only after insertion; text never waits for an image.
+    cards.push(card);
   }
   return cards;
 }
 function renderRssCards(rail, force, empty){
+  renderFeedCategories();
+  const category=rssSelectedCategory();
   const renderId=(rssRenderIds.get(rail)||0)+1;
   rssRenderIds.set(rail,renderId);
-  if(empty && !rail.querySelector('.rss-card')){
-    empty.hidden=false;
-    empty.textContent='새로운 기사를 불러오는 중이에요.';
+  if(category==='saved'){
+    rail.querySelectorAll('.rss-card,.rss-loading').forEach(card=>card.remove());
+    if(rail.id==='casual-discover-rail'){
+      rail.querySelectorAll('.shared-card').forEach(card=>card.remove());
+      if(typeof homeSharedLinkSpecs==='function'){
+        const before=rail.querySelector('.casual.add');
+        homeSharedLinkSpecs().forEach(spec=>rail.insertBefore(spec.create(),before));
+      }
+    }
+    delete rail.dataset.rssStamp;
+    if(empty){empty.textContent='저장한 글이 없어요.';empty.hidden=!!rail.querySelector('.shared-card');}
+    return Promise.resolve();
   }
-  return loadRss(force).then(async groups=>{
-    const stamp=JSON.stringify([groups,books.map(book=>book.sourceUrl||'')]);
+  rail.querySelectorAll('.shared-card').forEach(card=>card.remove());
+  if(!rail.querySelector('.rss-card,.rss-loading')){
+    const placeholder=document.createElement('div');placeholder.className='casual rss-loading';
+    placeholder.setAttribute('role','status');placeholder.setAttribute('aria-label','글 불러오는 중');
+    placeholder.innerHTML='<div class="thumb"><span class="rss-spinner" aria-hidden="true"></span></div>';
+    rail.insertBefore(placeholder,rail.querySelector('.casual.add'));
+  }
+  if(empty)empty.hidden=true;
+  let revision=0;
+  const paint=async groups=>{
+    const current=++revision;
+    if(renderId!==rssRenderIds.get(rail))return;
+    const categories=new Map(rssSources().map(feed=>[feed.url,feed.category]));
+    groups=groups.map(entries=>entries.filter(entry=>category==='all'||rssCategory(categories.get(entry.feedSourceUrl)||entry.category)===category));
+    const stamp=JSON.stringify([category,groups,books.map(book=>book.sourceUrl||'')]);
     if(rail.dataset.rssStamp===stamp){
-      if(empty)empty.hidden=!!rail.querySelector('.rss-card');
+      if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
+      if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;
       return;
     }
-    const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId,rail)))).flat();
-    if(renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
-    // Keep the previous shelf visible until replacement images are decoded.
-    rail.querySelectorAll('.rss-card').forEach(card=>card.remove());
+    const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId,rail,category==='all'?1:RSS_PER_FEED)))).flat();
+    if(current!==revision||renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
+    // Preserve decoded cards and append newly available sources without resetting images.
+    const existing=new Map([...rail.querySelectorAll('.rss-card')].map(card=>[card.dataset.rssUrl,card]));
+    for(let i=0;i<cards.length;i++){const old=existing.get(cards[i].dataset.rssUrl);if(old){cards[i]=old;existing.delete(cards[i].dataset.rssUrl);}}
+    existing.forEach(card=>card.remove());
+    if(cards.length || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(card=>card.remove());
     const before=rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));
+    const entries=groups.flat();
+    cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;
-    if(empty){ empty.textContent=cards.length?'':'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=cards.length>0; }
-  }).catch(error=>{
+    if(empty){ empty.textContent=cards.length?'':category==='all'?'표지 사진이 있는 새 글을 찾지 못했어요.':'이 카테고리에 표지 사진이 있는 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
+  };
+  const notify=groups=>{void paint(groups);};
+  rssListeners.add(notify);
+  const pending=loadRss(force);
+  if(rssCands.some(entries=>entries.length))notify(rssCands);
+  return pending.then(paint).catch(error=>{
+    if(renderId!==rssRenderIds.get(rail))return;
+    rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
     console.error(error);
     if(empty){ empty.textContent='새로운 기사를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=false; }
-  });
+  }).finally(()=>rssListeners.delete(notify));
 }
 function appendRssCards(rail, force){
-  return renderRssCards(rail,force);
+  return renderRssCards(rail,force,document.getElementById('home-feed-empty'));
+}
+
+// Small, local source list. Article feeds provide discovery metadata; a short
+// social post may be read from its feed body when enough text is present.
+function rssSources(){
+  const custom = load('breeze.feed-sources',[]);
+  const categories=load('breeze.feed-source-categories',{}) || {};
+  return [...RSS_FEEDS, ...(Array.isArray(custom) ? custom.filter(feed=>feed && normalizeArticleUrl(feed.url)) : [])].slice(0,RSS_SOURCE_LIMIT)
+    .map(feed=>({...feed,category:rssCategory(categories[feed.url] || feed.category)}));
 }

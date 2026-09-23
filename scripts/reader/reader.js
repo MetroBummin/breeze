@@ -77,6 +77,7 @@ function hydrateWordSpanBatch(elements){
   elements.forEach(el=>{
     if(!el || el.dataset.wordSpans==='1') return;
     el.innerHTML=wordSpans(el.textContent,starts,!!(curBook && curBook.transient));
+    decorateArticleWords(el);
     el.dataset.wordSpans='1';
   });
 }
@@ -148,7 +149,7 @@ function renderBookBody(b){
     if(bl.r === 'img'){
       const fig = document.createElement('figure');
       const img = document.createElement('img');
-      img.alt = '삽화';
+      img.alt = bl.alt || '삽화';
       bookImageBlob(b, bl.t.slice(IMG_MARK.length)).then(blob=>{
         if(imageGeneration!==readerBodyImageGeneration || !fig.isConnected) return;
         if(blob){
@@ -204,8 +205,18 @@ function renderBookBody(b){
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
     el.textContent = bl.v || bl.t;
+    if(Array.isArray(bl.marks)) articleParagraphMarks.set(el,bl.marks);
+    if(bl.list){el.classList.add('article-list-item'); el.dataset.marker=bl.list;}
+    if(bl.caption) el.classList.add('article-caption');
+    if(bl.table) el.classList.add('article-table-row');
     host.appendChild(el);
     wordSpanTargets.push(el);
+    const links = (bl.marks || []).filter(mark=>mark.kind === 'link' && articleAbsolute(mark.href,mark.href));
+    if(links.length){
+      const refs = document.createElement('div'); refs.className='article-links';
+      for(const mark of links){const link=articleOriginalLink(mark.href); link.textContent=bl.t.slice(mark.start,mark.end)+' ↗'; refs.appendChild(link);}
+      host.appendChild(refs);
+    }
     pageChars += bl.t.length;
   });
   const no = document.createElement('div');
@@ -279,7 +290,13 @@ async function openBook(b,options={}){
   source.hidden = !b.sourceUrl;
   if(b.sourceUrl){
     source.href = b.sourceUrl;
-    source.textContent = (b.site ? b.site + '에서 ' : '') + '원문 보기 ↗';
+    source.textContent = [b.site,b.author,b.publishedAt ? rssDate(b.publishedAt) : ''].filter(Boolean).join(' · ') + ' · 원문 보기 ↗';
+  }
+  const discovery = /** @type {HTMLAnchorElement} */(document.getElementById('rdiscovery'));
+  discovery.hidden = !b.discoveredFromUrl;
+  if(b.discoveredFromUrl){
+    discovery.href = b.discoveredFromUrl;
+    discovery.textContent = '게시물 보기 ↗';
   }
   /* 책은 `show('read')` 를 거치지 않고 바로 열립니다. 셸을 켜는 표는 두 곳에
      달아야 합니다 — `body` 만 잠그면 아이폰에서 문서가 여전히 고무줄처럼 늘어나서,
@@ -638,3 +655,22 @@ registerReaderSurface({
     } };
   },
 });
+
+// Styling is metadata on the same word spans; lexical identity and sentence offsets stay unchanged.
+const articleParagraphMarks = new WeakMap();
+function decorateArticleWords(element){
+  const marks = articleParagraphMarks.get(element); if(!marks) return;
+  let offset = 0;
+  for(const node of element.childNodes){
+    const end = offset + node.textContent.length;
+    if(node.nodeType === 1){
+      for(const mark of marks){
+        if(mark.start < end && mark.end > offset){
+          if(mark.kind === 'strong') node.style.fontWeight = '700';
+          if(mark.kind === 'em') node.style.fontStyle = 'italic';
+        }
+      }
+    }
+    offset = end;
+  }
+}

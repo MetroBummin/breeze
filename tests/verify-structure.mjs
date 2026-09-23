@@ -1175,13 +1175,8 @@ assert.equal(articleContext.articleTooSmall({ getAttribute: () => null }), false
   'An image without stated dimensions was thrown out — most sites state none');
 
 const articleSource = readFileSync(resolve(root, 'scripts/importers/article.js'), 'utf8');
-// 사진은 <figure> 안에 있고 <figure> 는 통째로 버려집니다. 순서가 뒤집히면 다 사라집니다.
-assert.match(articleSource, /articleMarkImages\(doc, url\);[\s\S]{0,120}querySelectorAll\(ARTICLE_DROP\)/,
-  'Images are collected after the drop pass removes the figures holding them');
-/* BBC 는 사진 한 장과 매체 로고를 한 <figure>에 같이 넣습니다. 로고를 버리면서
-   그 <figure>까지 지우면 사진도 함께 날아갑니다(실제로 BBC 사진이 0장이었습니다). */
-assert.doesNotMatch(articleSource, /holder\.remove\(\)/,
-  'Rejecting one image removes its whole <figure>, taking the real photo with it');
+assert.match(articleSource, /new Reader\(doc/, 'Articles must use the common extractor');
+assert.doesNotMatch(articleSource, /articleRecoverXMedia/, 'Do not recover platform-internal hidden media');
 
 /* ---- 사진 동기화 ----
    사진 자체는 올리지 않습니다. 이미 공개된 남의 사진을 서버에 쌓아 둘 이유가

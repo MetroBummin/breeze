@@ -6,6 +6,7 @@ struct SharedLink: Codable {
     let originalText: String?
     let title: String?
     let savedAt: Date
+    let openedAt: Date?
 }
 
 enum ShareInboxStore {
@@ -41,15 +42,27 @@ enum ShareInboxStore {
         }
         let now = Date()
         let canonical = url.absoluteString
-        if let recent = try pending().last(where: { $0.url == canonical && now.timeIntervalSince($0.savedAt) < 60 }) {
+        if let recent = try pending().last(where: {
+            $0.url == canonical && $0.openedAt == nil && now.timeIntervalSince($0.savedAt) < 60
+        }) {
             return recent
         }
         let item = SharedLink(id: UUID().uuidString, url: canonical,
-                              originalText: originalText, title: title, savedAt: now)
+                              originalText: originalText, title: title, savedAt: now, openedAt: nil)
         let destination = try directory().appendingPathComponent(item.id).appendingPathExtension("json")
         let data = try JSONEncoder().encode(item)
         try data.write(to: destination, options: .atomic)
         return item
+    }
+
+    static func markOpened(id: String) throws {
+        guard UUID(uuidString: id) != nil else { return }
+        let file = try directory().appendingPathComponent(id).appendingPathExtension("json")
+        let item = try JSONDecoder().decode(SharedLink.self, from: Data(contentsOf: file))
+        guard item.openedAt == nil else { return }
+        let opened = SharedLink(id: item.id, url: item.url, originalText: item.originalText,
+                                title: item.title, savedAt: item.savedAt, openedAt: Date())
+        try JSONEncoder().encode(opened).write(to: file, options: .atomic)
     }
 
     static func acknowledge(ids: [String]) throws {

@@ -37,6 +37,15 @@
      바랜 초록 인쇄선 하나로만 알립니다 — 뱃지나 광택 효과는 쓰지 않습니다. */
   .casual.rss-card .thumb.rss-thumb{box-sizing:border-box; border:2.5px solid var(--rss-fresh-green);
     background:var(--rss-thumb); box-shadow:var(--shadow-card);}
+  .casual.shared-card{border:0; padding:0; background:none; color:var(--ink); text-align:left; font:inherit;}
+  .casual.shared-card .thumb{box-sizing:border-box; border:2.5px solid var(--red);
+    background:var(--danger-tint); color:var(--ink);}
+  .casual.shared-card .src{color:var(--danger); opacity:1; font-weight:700;}
+  .casual.shared-card .lede{font-family:var(--serif); font-size:18px; line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden;}
+  .casual.shared-card .shared-card-hint{margin-top:auto; color:var(--danger); font-size:11px; font-weight:600;}
+  .casual.shared-card .ct{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; word-break:break-word;}
   .casual.rss-card .thumb.rss-thumb .cover{inset:2.5px; width:calc(100% - 5px); height:calc(100% - 5px);
     border-radius:12.5px;}
   .rss-card.busy{opacity:.55; pointer-events:none;}
@@ -241,29 +250,41 @@
   #edit-modal{position:fixed; inset:0; z-index:170; background:var(--scrim); display:none;
     align-items:center; justify-content:center; padding:20px;}
   #edit-modal.on{display:flex;}
-  #ed-card{background:var(--sheet); border-radius:22px; padding:30px 28px; width:100%; max-width:460px;
-    box-shadow:var(--shadow); max-height:88vh; overflow-y:auto;}
+  #ed-card{background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
+    border:1px solid var(--sentence-glass-line);border-radius:22px;padding:22px;
+    width:100%;max-width:460px;box-shadow:var(--sentence-glass-shadow);max-height:88vh;overflow-y:auto;}
   #ed-card h2{font-size:20px; font-weight:600; margin-bottom:14px;}
-  #ed-card .desc{font-size:13.5px; color:var(--soft); line-height:1.7; margin-bottom:4px;}
+  #ed-card .desc{font-size:13px; color:var(--sentence-glass-secondary); line-height:1.6; margin-bottom:4px;}
   #ed-card .desc b{color:var(--ink); font-weight:600;}
   #ed-close{float:right; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
     font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #ed-card .ed-step{display:none;} #ed-card .ed-step.on{display:block;}
-  .ed-lbl{display:block; font-size:12px; color:var(--soft); margin:16px 0 7px; letter-spacing:.3px;}
+  .ed-lbl{display:block;font-size:12px;color:var(--sentence-glass-secondary);margin:16px 0 7px;letter-spacing:.3px;}
   #ed-title{width:100%; border:1px solid var(--field-line); border-radius:14px; padding:12px 14px; font-size:15px;
     font-family:var(--ui); color:var(--ink); background:var(--field-soft); outline:none;}
   #ed-title:focus{border-color:var(--blue);}
   #ed-covers{display:flex; gap:9px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;}
   #ed-covers::-webkit-scrollbar{display:none;}
   .ed-cover{flex:0 0 62px; height:88px; border-radius:11px; overflow:hidden; cursor:pointer; padding:0;
-    border:1px solid var(--field-line); background:var(--field-soft); position:relative; color:var(--cover-pick-ink);
+    border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-action); position:relative; color:var(--sentence-glass-ink);
     font-family:var(--ui); font-size:11.5px;}
   .ed-cover img{width:100%; height:100%; object-fit:cover; display:block;}
-  .ed-cover.on{border-color:var(--blue); outline:2px solid var(--blue); outline-offset:1px;}
-  #ed-pick-file{display:inline-block; margin-top:11px; font-size:13px; color:var(--blue); cursor:pointer;}
-  #ed-pick-file:hover{text-decoration:underline;}
+  .ed-cover.on{border-color:color-mix(in srgb,var(--s1-line) 45%,var(--sentence-glass-line));
+    outline:2px solid color-mix(in srgb,var(--s1) 22%,transparent);outline-offset:1px;}
+  .ed-cover-actions{display:flex;gap:8px;margin-top:12px;}
+  #ed-pick-file{display:grid;place-items:center;flex:1;min-height:38px;
+    padding:7px 9px;border:1px solid var(--sentence-glass-line);border-radius:12px;
+    background:var(--sentence-glass-action);color:var(--sentence-glass-ink);
+    font:500 12px var(--ui);cursor:pointer;text-align:center;}
+  #ed-pick-file:hover{background:var(--sentence-glass-action-hover);}
+  #ed-cover-source{display:block;margin-top:10px;font-size:12px;color:var(--sentence-glass-secondary);}
+  #ed-cover-source[hidden]{display:none;}
   .ed-acts{display:flex; gap:10px; margin-top:26px;}
   .ed-acts .sm-btn{flex:1; margin-bottom:0;}
+  #ed-card .am-back{color:var(--sentence-glass-secondary);}
+  #ed-card .ed-acts .sm-btn.primary{border:1px solid var(--sentence-glass-line);
+    background:color-mix(in srgb,var(--s1) 14%,var(--sentence-glass-action));
+    color:var(--sentence-glass-ink);}
   .sm-btn.danger{background:var(--danger-bg); color:var(--danger);}
   .sm-btn.danger:hover{background:var(--danger-bg-hover);}
   .ed-all .am-ico{background:var(--danger-ico-bg); color:var(--danger);}
@@ -272,3 +293,36 @@
   /* 파도는 밝은 종이 위에서 옅게 보이라고 흰색입니다. 어두운 화면에서는
      그대로 두면 카드 아래 3분의 1이 회색 띠가 됩니다 — tokens.css 가 낮춥니다. */
   .casual .thumb .wave{opacity:var(--wave-dark-opacity);}
+
+.rss-loading{pointer-events:none}
+.rss-loading .thumb{display:grid;place-items:center;background:var(--sentence-glass-action);border:1px solid var(--sentence-glass-line);box-shadow:none}
+.rss-spinner{width:18px;height:18px;border:2px solid var(--sentence-glass-spinner);border-top-color:var(--sentence-glass-spinner-on);border-radius:50%;animation:rss-spin .8s linear infinite}
+@keyframes rss-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.rss-spinner{animation:none}}
+.feed-categories{display:flex;gap:8px;overflow-x:auto;padding:8px 8px 16px;margin:6px -8px 6px;scrollbar-width:none}
+.feed-categories::-webkit-scrollbar{display:none}
+.feed-categories button{position:relative;flex:none;min-height:38px;padding:7px 15px;border-radius:12px;border:1px solid var(--sentence-glass-line);background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);font:500 13px var(--ui);cursor:pointer;touch-action:manipulation}
+.feed-categories button span{position:relative;z-index:3}
+.feed-categories button[aria-pressed="true"]{color:var(--sentence-glass-ink);background:color-mix(in srgb,var(--s1) 18%,var(--sentence-glass-action));border-color:color-mix(in srgb,var(--s1-line) 25%,var(--sentence-glass-line));font-weight:600}
+.feed-categories button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* Quiet typographic jackets when no real cover is available. */
+.editorial-cover .cover-art{position:absolute;left:50%;top:19%;width:76%;height:43%;
+  transform:translateX(-50%);fill:none;stroke:currentColor;stroke-width:1;
+  opacity:.27;pointer-events:none;}
+.editorial-cover.has-cover .cover-art{display:none;}
+.casual .thumb.editorial-cover:not(.has-cover){padding:17px 16px;
+  background-image:linear-gradient(145deg,transparent 35%,color-mix(in srgb,currentColor 5%,transparent));}
+.casual .thumb.editorial-cover:not(.has-cover) .src{font-size:9px;letter-spacing:1.1px;opacity:.65;}
+.casual .thumb.editorial-cover:not(.has-cover) .lede{margin-top:auto;margin-bottom:9px;
+  font-size:16px;line-height:1.3;font-weight:400;-webkit-line-clamp:3;opacity:.9;}
+.casual .thumb.editorial-cover:not(.has-cover) .wave{display:none;}
+.casual .thumb.editorial-cover:not(.has-cover) .shared-card-hint{margin-top:0;font-size:10px;opacity:.65;}
+.bookcard.editorial-cover:not(.has-cover){padding:22px 24px;}
+.bookcard.editorial-cover:not(.has-cover) .author{font-family:var(--ui);font-size:10px;
+  letter-spacing:1px;max-width:85%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.6;}
+.bookcard.editorial-cover:not(.has-cover) .bt{position:relative;z-index:1;margin-top:22px;
+  max-width:85%;font-size:21px;line-height:1.3;-webkit-line-clamp:3;}
+.bookcard.editorial-cover:not(.has-cover) .cover-art{left:auto;right:-26px;top:auto;bottom:-32px;
+  width:155px;height:155px;transform:rotate(-12deg);opacity:.18;}
+.bookcard.editorial-cover:not(.has-cover) .wave{display:none;}

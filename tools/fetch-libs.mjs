@@ -30,6 +30,7 @@ const libDir = resolve(root, 'assets/lib');
 /* 올릴 때는 여기만 고치고 `npm run libs` 를 돌리면 됩니다. `local` 이름이
    그것을 부르는 파일(`wiredIn`)에 적힌 이름과 같아야 하고, 아래에서 맞춰 봅니다. */
 const LIBS = [
+  { local:'readability-0.6.0.js', url:'https://cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.js', wiredIn:'index.html' },
   /* ---- 동기화 SDK 는 늦게 받지 않습니다 ----
      이것만은 index.html 이 곧바로 부릅니다 — `scripts/sync/sync.js` 가 파일을
      읽는 그 자리에서 `initSupabase()` 를 부르기 때문입니다.
@@ -60,6 +61,7 @@ const LIBS = [
 
 /* 남의 코드를 실어 나르는 조건입니다 — 글꼴의 OFL 과 같습니다. */
 const LICENSES = [
+  { file:'LICENSE-readability.txt', url:'https://cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/LICENSE.md' },
   { file: 'LICENSE-supabase-js.txt',
     url: 'https://raw.githubusercontent.com/supabase/supabase-js/v2.112.3/LICENSE' },
   { file: 'LICENSE-pdfjs.txt',

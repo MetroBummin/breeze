@@ -21,11 +21,16 @@ function openEditSheet(book, step){
   document.getElementById('ed-title').value = book.title;
   document.getElementById('ed-what').textContent = book.title;
   renderCoverChoices(book);
+  const source = /** @type {HTMLAnchorElement} */(document.getElementById('ed-cover-source'));
+  source.hidden = !book.coverSourcePage;
+  if(book.coverSourcePage) source.href = book.coverSourcePage;
   document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   editModal().classList.add('on');
   editStep(step || 'edit');
 }
-function closeEditSheet(){ editModal().classList.remove('on'); editTarget = null; }
+function closeEditSheet(){
+  editModal().classList.remove('on'); editTarget = null;
+}
 
 /* 표지 고르기 — 기사라면 그 기사가 데려온 사진 중에서 고릅니다. 그림을
    새로 만들 필요가 없는 가장 흔한 경우입니다. */
@@ -41,6 +46,7 @@ function renderCoverChoices(book){
       wrap.querySelectorAll('.ed-cover').forEach(other => other.classList.remove('on'));
       cell.classList.add('on');
       wrap.dataset.pick = key;
+      document.getElementById('ed-cover-source').hidden = key !== (book.cover || '') || !book.coverSourcePage;
     };
     if(key) bookImageBlob(book, key).then(blob => {
       if(blob) cell.querySelector('img').src = URL.createObjectURL(blob);
@@ -65,9 +71,12 @@ async function pickCoverFile(input){
   const key = editTarget.id + '|cover';
   await imgPut(key, file);
   editTarget.cover = key;
+  editTarget.coverSourcePage = '';
   editTarget.coverUpdatedAt = Date.now();
   await bookPut(editTarget);
+  queueSync();
   renderCoverChoices(editTarget);
+  document.getElementById('ed-cover-source').hidden = true;
   renderAllBookViews();
 }
 
@@ -86,6 +95,7 @@ async function saveEditSheet(){
   if(picked !== (book.cover || '')){
     book.cover = picked || null;
     book.coverUpdatedAt = Date.now();
+    book.coverSourcePage = '';
     changed = true;
   }
   if(!changed){ closeEditSheet(); return; }

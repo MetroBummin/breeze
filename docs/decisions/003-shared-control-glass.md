@@ -10,6 +10,12 @@ The reflection stays subtle at the center so it does not wash out labels. Dark m
 
 ## Regression coverage
 
+Home and Casuals category chips follow the word lookup star buttons: 12px
+corners, neutral action surface and a restrained first-star warm tint for selection. They use
+the shared sentence-glass palette without the floating dock's reflection or
+shadow. The expanded word lookup loading glow uses the same neutral palette,
+scoped to that panel so other loading surfaces retain their own appearance.
+
 Run `npm run test:home-ui` for the cross-view browser checks below, alongside `npm test`.
 
 `tests/verify-home-controls-browser.mjs` checks shared material and expanded geometry in both themes at five widths, plus the compact Reader material, reflection stacking and progress fill. Visual review must include the Reader's plain background and Home's cover background at matching progress. Compare both empty and filled states; do not rely on Home alone.
@@ -103,3 +109,20 @@ use 260 ms; collapsing requires 24 px of downward travel (previously 12), while
 identity, Text scroll restoration, source-edit invalidation and explicit release
 in Chromium/WebKit. Existing Home, sentence, onboarding and lookup regressions
 remain required; simulated browsers do not establish physical iPhone frame rate.
+
+## Covers without photos
+
+Local long-form and shared-link cards use deterministic local SVG line ornaments
+when no cover is available. Casuals use the title (three lines), not a long body
+excerpt. The full title remains available in card metadata; stored article
+content is unchanged. Existing palette tokens supply both themes, and real covers
+hide the ornament. RSS discovery cards require a working cover image and stay
+hidden when the cover is absent or fails to load. Add/loading/cloud-recovery
+controls retain their existing layout. Phone and desktop light/dark screenshots
+were reviewed with WebKit.
+
+The book edit sheet uses the expanded word lookup surface, line, ink and action
+tokens. The own-photo button follows its slightly rectangular 12px controls.
+Imported books can still use an image already in the article or a photo selected
+from the user's library. RSS discovery cards suppress context menus and ignore
+long holds.

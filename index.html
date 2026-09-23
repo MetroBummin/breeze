@@ -42,14 +42,14 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
-  <link rel="stylesheet" href="styles/home.css?v=bd87664c">
-  <link rel="stylesheet" href="styles/reader.css?v=72c97b63">
-  <link rel="stylesheet" href="styles/dictionary.css?v=e81937fd">
+  <link rel="stylesheet" href="styles/home.css?v=c824874b">
+  <link rel="stylesheet" href="styles/reader.css?v=df2a75a1">
+  <link rel="stylesheet" href="styles/dictionary.css?v=2f36b3e7">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=3d0c76ff">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=c1da96ed">
+  <link rel="stylesheet" href="styles/home-shell.css?v=8d05d582">
   <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -66,11 +66,11 @@
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=01738380"></script>
   <script defer src="scripts/core/lazy-lib.js?v=e6159b27"></script>
-  <script defer src="scripts/core/storage.js?v=40c5cf33"></script>
+  <script defer src="scripts/core/storage.js?v=a817a0f9"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=67c432ed"></script>
-  <script defer src="scripts/core/state.js?v=1502fd59"></script>
+  <script defer src="scripts/core/state.js?v=f5098421"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=0f73288e"></script>
@@ -82,12 +82,14 @@
   <script defer src="scripts/reader/gesture.js?v=c2324283"></script>
   <script defer src="scripts/reader/pdf-pinch.js?v=b4b7fb0f"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=06870a61"></script>
-  <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
+  <script defer src="scripts/library/library.js?v=fd4b9c2e"></script>
+  <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
+  <script defer src="scripts/library/book-edit.js?v=6cdb746f"></script>
   <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
-  <script defer src="scripts/importers/article.js?v=8633ee61"></script>
-  <script defer src="scripts/importers/rss.js?v=9c20d5ba"></script>
+  <script defer src="assets/lib/readability-0.6.0.js?v=34dcab3d"></script>
+  <script defer src="scripts/importers/article.js?v=7e3afa49"></script>
+  <script defer src="scripts/importers/rss.js?v=81ff1ec4"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=bd0c648a"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=2d848ebb"></script>
@@ -99,7 +101,7 @@
   <script defer src="scripts/reader/epub-original.js?v=587218d1"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=63481f22"></script>
-  <script defer src="scripts/reader/reader.js?v=3fa955ec"></script>
+  <script defer src="scripts/reader/reader.js?v=eab5f5d1"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=9825a1ae"></script>
   <script defer src="scripts/ui/preferences.js?v=d95bf322"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -145,7 +147,9 @@
     <div class="sec-head">
       <h2><button class="section-link" type="button" aria-label="캐주얼 리딩 모아보기" onclick="show('casuals')"><span data-i18n="sec.casuals">Casuals</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></h2>
     </div>
+    <div class="feed-categories" role="group" aria-label="읽을 거리 카테고리"></div>
     <div id="casual-rail"></div>
+    <p id="home-feed-empty" class="casual-discover-empty" role="status" hidden></p>
   </section>
 
   <section id="longform">
@@ -161,6 +165,7 @@
 <div class="view" id="v-casuals">
   <section class="casual-library-row" aria-labelledby="casual-discover-title">
     <div class="casual-library-head"><h1 id="casual-discover-title">발견</h1></div>
+    <div class="feed-categories" role="group" aria-label="읽을 거리 카테고리"></div>
     <div id="casual-discover-rail" class="casual-rail"></div>
     <div id="casual-discover-empty" class="casual-discover-empty" hidden></div>
   </section>
@@ -225,6 +230,7 @@
       <div id="readwrap">
         <div id="rtitle"></div>
         <a id="rsource" target="_blank" rel="noopener noreferrer" hidden></a>
+        <a id="rdiscovery" target="_blank" rel="noopener noreferrer" hidden></a>
         <div id="rhint">
           <svg width="18" height="18" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#E7F3F1"/><path d="M16 26 C22 18 30 18 36 26 C30 34 22 34 16 26Z" stroke="#2589BE" stroke-width="3"/><circle cx="26" cy="26" r="4" fill="#2589BE"/></svg>
           Tap a word whenever you need it. — 모르는 단어를 누르면 뜻이 뜨고 단어장에 저장돼요.
@@ -412,8 +418,6 @@
 <input type="file" id="reading-backup-input" accept=".zip,.breeze.zip,application/zip" hidden>
 <div id="add-modal" role="dialog" aria-modal="true" aria-label="글 또는 책 추가">
   <div id="am-card">
-    <button id="am-close" type="button" aria-label="닫기" onclick="closeAddModal()">✕</button>
-
     <div class="am-step on" data-step="pick">
       <h2>무엇을 읽을까요?</h2>
       <div class="desc">넣는 순간부터 <b>오프라인</b>에서 읽힙니다.</div>
@@ -464,10 +468,13 @@
       <input id="ed-title" spellcheck="false">
       <label class="ed-lbl">표지</label>
       <div id="ed-covers"></div>
-      <label id="ed-pick-file">
-        그림 파일에서 고르기
-        <input type="file" accept="image/*" onchange="pickCoverFile(this)" hidden>
-      </label>
+      <div class="ed-cover-actions">
+        <label id="ed-pick-file">
+          내 사진에서 고르기
+          <input type="file" accept="image/*" onchange="pickCoverFile(this)" hidden>
+        </label>
+      </div>
+      <a id="ed-cover-source" target="_blank" rel="noopener noreferrer" hidden>표지 사진 출처 ↗</a>
       <div class="ed-acts">
         <button type="button" class="sm-btn danger" onclick="editStep('delete')">삭제…</button>
         <button type="button" class="sm-btn primary" onclick="saveEditSheet()">저장</button>
