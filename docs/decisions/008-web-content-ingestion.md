@@ -9,7 +9,14 @@ recovery is introduced. Existing article/image relay remains the transport.
 
 ## Pipeline
 
-Share Extension -> atomic App Group URL record -> red card under the Saved chip -> explicit tap
+The Share Extension target and App Group inbox remain in the project, but the
+extension is not embedded in the app while external sharing is dormant. The
+Saved chip and pending-link cards are hidden. Existing App Group records are
+neither acknowledged nor deleted; articles already imported into Casuals remain
+ordinary saved books. An old persisted Saved category resets to All.
+
+The retained handoff path, when sharing is enabled again, is Share Extension
+-> atomic App Group URL record -> pending card -> explicit tap
 -> `ingestArticle` -> fetch -> Readability 0.6.0 -> semantic blocks -> existing
 `saveCasualBook`/IndexedDB -> existing Reader. The native record is marked opened
 only after persistence and Reader opening succeed, and is never acknowledged/deleted.
@@ -35,11 +42,11 @@ failures are isolated. Discovery omits cards without a working cover; the saved
 essay remains readable after it is opened.
 
 Home and Casuals discovery share a persisted category chip selection. The chips
-stay in a fixed order: All, Saved, Entertainment, General, Society, Science,
-Culture, and Business. Saved contains
-unread shared URLs, while read articles remain in the existing Casuals shelf.
+stay in a fixed order: All, Entertainment, General, Society, Science,
+Culture, and Business. Read articles remain in the existing Casuals shelf.
 Selecting a chip starts both article rails at the first card, including when
-new source cards arrive after the selection.
+new source cards arrive after the selection. Reconciliation removes every stale
+card even when several sources supplied the same URL.
 All mixes one visible card per source so the larger entertainment selection does
 not bury the existing educational sources. Categories are assigned to feed
 sources, not guessed from article titles: entertainment, general, society,

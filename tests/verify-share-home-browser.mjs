@@ -6,6 +6,9 @@ import {fileURLToPath} from 'node:url';
 import {chromium, webkit} from 'playwright';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+const project = readFileSync(resolve(root,'ios/App/App.xcodeproj/project.pbxproj'),'utf8');
+assert.match(project,/name = "Breeze Share Extension";/,'Share target must remain available for later');
+assert.match(project,/Embed App Extensions[^\n]*files = \( \);/,'Share extension must not be embedded in the app');
 const mime = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.woff2':'font/woff2'};
 const server = createServer((request, response) => {
   const path = resolve(root, '.' + new URL(request.url, 'http://localhost').pathname.replace(/^\/$/, '/index.html'));
@@ -30,8 +33,6 @@ try {
         renderRssCards = async()=>{};
         books = [{id:'reading', title:'읽던 글', kind:'paste', site:'Breeze', paras:['읽던 글', '본문'], addedAt:1}];
         positions = {reading:{t:10,p:.2}};
-        window.breezeShareInbox = {markRead:id => window.openedLink = id};
-        ingestArticle = async()=>({id:'fixture'});
         receiveSharedLinks([
           {id:'x-new', url:'https://x.com/example/status/123', savedAt:'2026-09-23T05:00:00Z'},
           {id:'x-old', url:'https://x.com/example/status/123', savedAt:'2026-09-23T04:00:00Z'},
@@ -46,25 +47,23 @@ try {
         node.classList.contains('shared-card') ? 'saved' : node.classList.contains('rss-card') ? 'rss' :
         node.classList.contains('add') ? 'add' : 'reading')),
         ['reading', 'rss', 'add']);
-      await page.locator('#casuals [data-category="saved"]').click();
-      assert.deepEqual(await page.locator('#casuals .feed-categories button').evaluateAll(nodes=>nodes.slice(0,3).map(node=>node.dataset.category)),['all','saved','entertainment']);
-      assert.deepEqual(await page.locator('#casual-rail > .casual').evaluateAll(nodes => nodes.map(node =>
-        node.classList.contains('shared-card') ? 'saved' : node.classList.contains('rss-card') ? 'rss' :
-        node.classList.contains('add') ? 'add' : 'reading')),['saved','saved','rss','add']);
-      assert.deepEqual(await page.locator('.shared-card .ct').allTextContents(), ['@example의 게시물', '좋은 에세이']);
-      assert.equal(await page.locator('.shared-card .thumb').first().evaluate(node => getComputedStyle(node).borderTopColor), 'rgb(184, 75, 67)');
-      await page.locator('.shared-card').first().click();
-      await page.waitForFunction(()=>window.openedLink === 'x-new');
+      assert.deepEqual(await page.locator('#casuals .feed-categories button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),
+        ['all','entertainment','general','society','science','culture','business']);
+      assert.equal(await page.evaluate(()=>sharedLinks.length),2,'Pending App Group records were discarded');
+      await page.evaluate(()=>{save('breeze.feed-category','saved');renderFeedCategories();renderHome();});
+      assert.equal(await page.locator('#casuals [data-category="all"]').getAttribute('aria-pressed'),'true');
+      assert.equal(await page.evaluate(()=>load('breeze.feed-category','')),'all');
+      assert.equal(await page.locator('.shared-card').count(),0);
       await page.evaluate(() => receiveSharedLinks([
         {id:'x-new', url:'https://x.com/example/status/123', savedAt:'2026-09-23T05:00:00Z', openedAt:'2026-09-23T06:00:00Z'},
         {id:'medium', url:'https://medium.com/example/story', title:'좋은 에세이', savedAt:'2026-09-22T05:00:00Z'}
       ]));
-      assert.deepEqual(await page.locator('#casual-rail .shared-card .ct').allTextContents(), ['좋은 에세이']);
       await page.evaluate(() => show('casuals'));
-      assert.deepEqual(await page.locator('#casual-grid .shared-card .ct').allTextContents(), ['@example의 게시물']);
-      assert.equal(await page.locator('#casual-cnt').textContent(), '2편');
+      assert.equal(await page.locator('#casual-grid .shared-card').count(),0);
+      assert.equal(await page.locator('#casual-cnt').textContent(), '1편');
+      assert.equal(await page.evaluate(()=>sharedLinks.length),2);
       await page.close();
     } finally { await browser.close(); }
   }
-  console.log('Shared links: unread Home order, safe dedupe, open action, and read shelf passed');
+  console.log('Dormant share: target and records retained, no extension embedding or visible Saved cards passed');
 } finally { server.close(); }

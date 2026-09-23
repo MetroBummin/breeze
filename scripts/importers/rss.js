@@ -26,11 +26,12 @@ const RSS_CATEGORIES = [
 function rssCategory(value){return RSS_CATEGORIES.some(item=>item.id===value) ? value : 'general';}
 function rssSelectedCategory(){
   const value=load('breeze.feed-category','all');
-  return value==='all' || value==='saved' ? value : rssCategory(value);
+  if(value==='saved'){save('breeze.feed-category','all');return 'all';}
+  return value==='all' ? value : rssCategory(value);
 }
 function renderFeedCategories(){
   const selected=rssSelectedCategory();
-  const ordered=[{id:'all',label:'전체'},{id:'saved',label:'저장됨'},...RSS_CATEGORIES];
+  const ordered=[{id:'all',label:'전체'},...RSS_CATEGORIES];
   document.querySelectorAll('.feed-categories').forEach(host=>{
     const current=new Map([...host.querySelectorAll('button')].map(button=>[button.dataset.category,button]));
     const focused=host.contains(document.activeElement) ? (/** @type {HTMLElement} */(document.activeElement))?.dataset.category : '';
@@ -444,20 +445,6 @@ function renderRssCards(rail, force, empty){
   }
   const renderId=(rssRenderIds.get(rail)||0)+1;
   rssRenderIds.set(rail,renderId);
-  if(category==='saved'){
-    rail.querySelectorAll('.rss-card,.rss-loading').forEach(card=>card.remove());
-    if(rail.id==='casual-discover-rail'){
-      rail.querySelectorAll('.shared-card').forEach(card=>card.remove());
-      if(typeof homeSharedLinkSpecs==='function'){
-        const before=rail.querySelector('.casual.add');
-        homeSharedLinkSpecs().forEach(spec=>rail.insertBefore(spec.create(),before));
-      }
-    }
-    delete rail.dataset.rssStamp;
-    rail.scrollLeft=0;delete rail.dataset.rssResetStart;
-    if(empty){empty.textContent='저장한 글이 없어요.';empty.hidden=!!rail.querySelector('.shared-card');}
-    return Promise.resolve();
-  }
   rail.querySelectorAll('.shared-card').forEach(card=>card.remove());
   if(!rail.querySelector('.rss-card,.rss-loading')){
     const placeholder=document.createElement('div');placeholder.className='casual rss-loading';
@@ -481,9 +468,17 @@ function renderRssCards(rail, force, empty){
     const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId,rail,category==='all'?1:RSS_PER_FEED)))).flat();
     if(current!==revision||renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
     // Preserve decoded cards and append newly available sources without resetting images.
-    const existing=new Map([...rail.querySelectorAll('.rss-card')].map(card=>[card.dataset.rssUrl,card]));
-    for(let i=0;i<cards.length;i++){const old=existing.get(cards[i].dataset.rssUrl);if(old){cards[i]=old;existing.delete(cards[i].dataset.rssUrl);}}
-    existing.forEach(card=>card.remove());
+    const existing=new Map();
+    for(const card of rail.querySelectorAll('.rss-card')){
+      const url=card.dataset.rssUrl;
+      if(!existing.has(url))existing.set(url,[]);
+      existing.get(url).push(card);
+    }
+    for(let i=0;i<cards.length;i++){
+      const old=existing.get(cards[i].dataset.rssUrl)?.shift();
+      if(old)cards[i]=old;
+    }
+    existing.forEach(duplicates=>duplicates.forEach(card=>card.remove()));
     if(cards.length || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(card=>card.remove());
     const before=rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));

@@ -154,14 +154,13 @@ try{
    },html);
 
    await page.evaluate(()=>{window.readShare=[];window.breezeShareInbox={markRead:id=>window.readShare.push(id)};receiveSharedLinks([{id:'shared-id',url:'https://content.example/article',savedAt:'2026-09-23'}]);});
-   await page.locator('#casuals [data-category="saved"]').click();
    await page.evaluate(()=>{window.ingestionBookPut=bookPut;bookPut=async()=>{throw new Error('Simulated storage quota failure');};});
-   await page.locator('#casual-rail .shared-card').click();
-   await page.waitForFunction(()=>!document.querySelector('#casual-rail .shared-card'));
+   await page.evaluate(()=>openSharedArticle(sharedLinks[0],sharedHomeCard(sharedLinks[0])));
+   assert.equal(await page.locator('#casual-rail .shared-card').count(),0);
    assert.equal(await page.evaluate(()=>window.readShare.length),0);
    assert.equal(await page.evaluate(()=>sharedLinks.length),1);
    await page.evaluate(()=>{bookPut=window.ingestionBookPut;receiveSharedLinks([{...sharedLinks[0],savedAt:'2026-09-24'}]);});
-   await page.locator('#casual-rail .shared-card').click();
+   await page.evaluate(()=>openSharedArticle(sharedLinks[0],sharedHomeCard(sharedLinks[0])));
    await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/article');
    await page.waitForFunction(()=>window.readShare.includes('shared-id'));
    assert.equal(await page.evaluate(()=>!!books.find(b=>b.sourceUrl==='https://content.example/article')),true);
@@ -195,8 +194,8 @@ try{
     if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:process.env.BREEZE_QA_OUTPUT+'/'+engine.name()+'-article-'+(dark?'dark':'light')+'.png'});}
    }
    await page.evaluate(()=>{show('home');receiveSharedLinks([{id:'failure',url:'https://x.com/a/status/2',savedAt:'2026-09-23'}]);});
-   await page.locator('#casual-rail .shared-card').click();
-   await page.waitForFunction(()=>!document.querySelector('#casual-rail .shared-card'));
+   await page.evaluate(()=>openSharedArticle(sharedLinks[0],sharedHomeCard(sharedLinks[0])));
+   assert.equal(await page.locator('#casual-rail .shared-card').count(),0);
    assert(!await page.evaluate(()=>window.readShare.includes('failure')));
    assert.equal(await page.locator('.shared-original').count(),0);
    assert.equal(await page.evaluate(()=>sharedLinks[0].url),'https://x.com/a/status/2');
@@ -257,12 +256,12 @@ try{
    assert.equal(await page.evaluate(()=>rssSources().filter(feed=>feed.category==='science'&&/medium.com|reddit.com/.test(feed.url)).length),2);
    const chips=page.locator('#casuals .feed-categories');
    await chips.locator('[data-category="science"]').click();
-   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','saved','entertainment','general','society','science','culture','business']);
+   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','entertainment','general','society','science','culture','business']);
    assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    assert.equal(await chips.locator('[data-category="science"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.evaluate(()=>document.querySelector('#casual-rail .shared-card')!==null),false);
    await chips.locator('[data-category="business"]').click();
-   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','saved','entertainment','general','society','science','culture','business']);
+   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','entertainment','general','society','science','culture','business']);
    assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    await page.evaluate(()=>{
     document.querySelector('#casuals [data-category="science"]').click();

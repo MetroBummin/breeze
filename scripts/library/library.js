@@ -405,7 +405,6 @@ function renderHome(){
   const feedCategory=typeof rssSelectedCategory==='function'?rssSelectedCategory():'all';
   const casualSpecs=[{key:'add',stamp:'',create:casualAddCard}];
   if(currentCasual && feedCategory==='all')casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
-  if(feedCategory==='saved' && typeof homeSharedLinkSpecs==='function')casualSpecs.unshift(...homeSharedLinkSpecs());
   reconcileHomeCards(rail,casualSpecs);
   if(typeof appendRssCards==='function')appendRssCards(rail);
   const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');
@@ -429,8 +428,7 @@ function renderCasualLibrary(){
   grid.innerHTML = '';
   casuals.forEach(book => grid.appendChild(casualCard(book, current)));
   const cloud=serverOnlyCasuals(); cloud.forEach(row=>grid.appendChild(cloudCasualCard(row)));
-  const readLinks = typeof renderReadSharedLinks === 'function' ? renderReadSharedLinks(grid) : 0;
-  const count = casuals.length + readLinks;
+  const count = casuals.length;
   document.getElementById('casual-cnt').textContent = count ? `${count}편` : '';
   empty.hidden = count > 0 || cloud.length > 0;
   empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
