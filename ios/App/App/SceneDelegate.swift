@@ -51,7 +51,6 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         guard let webView else { return }
 
         webView.scrollView.bounces = true
-        libraryRefreshControl.tintColor = UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
         libraryRefreshControl.addTarget(self, action: #selector(refreshLibraryFromScroll), for: .valueChanged)
         libraryRefreshControl.verticalPlacement = { [weak self] control in
             guard let self, let webView = self.webView else { return 0 }
@@ -365,6 +364,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView?.backgroundColor = color
         webView?.scrollView.backgroundColor = color
         webView?.underPageBackgroundColor = color
+        // Follow the app's actual background, even when its theme differs
+        // from the device setting. UIKit's spinner also needs the local trait.
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        if color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            let isDark = 0.2126 * red + 0.7152 * green + 0.0722 * blue < 0.5
+            libraryRefreshControl.overrideUserInterfaceStyle = isDark ? .dark : .light
+            libraryRefreshControl.tintColor = isDark
+                ? UIColor.label
+                : UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
+        }
     }
 
     private static let themeReporterScript = """
