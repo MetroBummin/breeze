@@ -6,6 +6,8 @@
 const RSS_FEEDS = [
   { name:'The Conversation', url:'https://theconversation.com/global/articles.atom', category:'general' },
   { name:'ProPublica', url:'https://www.propublica.org/feeds/propublica/main', category:'society' },
+  { name:'NASA', url:'https://www.nasa.gov/technology/feed/', category:'science' },
+  { name:'WIRED', url:'https://www.wired.com/feed/rss', category:'general' },
   { name:'Medium · Technology', url:'https://medium.com/feed/tag/technology', category:'science' },
   { name:'Reddit · r/science', url:'https://www.reddit.com/r/science/.rss', category:'science' },
   { name:'Medium · Culture', url:'https://medium.com/feed/tag/culture', category:'culture' },
@@ -256,7 +258,15 @@ async function loadRss(force){
   }).finally(() => { rssLoading = null; });
   return rssLoading;
 }
-/* Prefer a decoded cover, but keep text-only discovery cards when an image fails. */
+function refreshRssPhotoEmpty(rail){
+  const empty=document.getElementById(rail.id==='casual-rail'?'home-feed-empty':'casual-discover-empty');
+  if(!empty)return;
+  const hasPhoto=!!rail.querySelector('.rss-card:not([hidden])');
+  empty.textContent='사진이 있는 새 글을 찾지 못했어요. 발견에서 다른 출처를 추가해 보세요.';
+  empty.hidden=hasPhoto || !!rssLoading;
+}
+
+/* Discovery only shows entries after their cover image has loaded. */
 async function rssCardPhoto(card, entry){
   const image = /** @type {HTMLImageElement} */(card.querySelector('.cover'));
   const thumb = card.querySelector('.thumb');
@@ -276,12 +286,18 @@ async function rssCardPhoto(card, entry){
       try{ok=await decode(local);}finally{URL.revokeObjectURL(local);}
     }
   }
-  if(ok && card.isConnected){image.hidden=false;thumb.classList.add('has-cover');}
+  if(ok && card.isConnected){image.hidden=false;thumb.classList.add('has-cover');card.hidden=false;refreshRssPhotoEmpty(card.parentElement);}
+  else if(card.isConnected){
+    const rail=card.parentElement;
+    card.remove();
+    if(rail)refreshRssPhotoEmpty(rail);
+  }
   return ok;
 }
 
 function rssCard(entry){
   const card = document.createElement('article');
+  card.hidden = true;
   const color = entry.source === 'ProPublica' ? 1 : 0;
   card.className = 'casual rss-card cpal' + color;
   card.dataset.rssUrl=entry.url;
@@ -369,12 +385,14 @@ async function ingestFeedPost(entry){
   if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
   return book;
 }
-/* Images are optional: an essay without a cover remains useful reading. */
+/* A discovery card is shown only when its cover can be displayed. The saved
+   article remains readable without a cover after the user opens it. */
 async function rssFeedCards(entries, renderId, rail){
   const cards = [];
   for(const entry of entries){
     if(cards.length >= RSS_PER_FEED || renderId !== rssRenderIds.get(rail)) break;
     if(rssAlreadySaved(entry)) continue;
+    if(!entry.photo) continue;
     const card = rssCard(entry);
     // Covers load only after insertion; text never waits for an image.
     cards.push(card);
@@ -417,7 +435,7 @@ function renderRssCards(rail, force, empty){
     const entries=groups.flat();
     cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;
-    if(empty){ empty.textContent=cards.length?'':category==='all'?'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.':'이 카테고리에 새 글이 없어요. 발견에서 출처를 추가할 수 있어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
+    if(empty){ empty.textContent=cards.length?'':category==='all'?'표지 사진이 있는 새 글을 찾지 못했어요.':'이 카테고리에 표지 사진이 있는 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
   };
   const notify=groups=>{void paint(groups);};
   rssListeners.add(notify);

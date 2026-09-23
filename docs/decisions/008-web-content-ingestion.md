@@ -26,21 +26,27 @@ Concurrent requests for the same normalized URL share one job.
 URL entry and feed cards call the same ingestion function. Feed discovery accepts
 RSS/Atom directly, advertised HTML alternate links, and small conventional feed
 URL candidates. Medium, Substack and Reddit have no article-specific parser.
-The two existing default feeds remain, with Medium Technology and Reddit
-r/science plus Medium Culture and Business added as automatic discovery sources; users can add/remove a small local set of
-sources without folders, unread counts, or a new RSS management screen. Feed
-failures are isolated. Missing photos do not suppress otherwise useful essays.
+The built-in sources are The Conversation, ProPublica, NASA Technology, WIRED Top
+Stories, Medium Technology/Culture/Business, and Reddit r/science. Users can
+add/remove a small local set of sources without folders, unread counts, or a new
+RSS management screen. Feed
+failures are isolated. Discovery omits cards without a working cover; the saved
+essay remains readable after it is opened.
 
 Home and Casuals discovery share a persisted category chip selection. Categories
 are assigned to feed sources, not guessed from article titles: general, society,
-science/technology, culture/lifestyle, and business. The Conversation defaults to
-general and ProPublica to society; Medium Technology and r/science use
-science/technology. Both new default endpoints returned valid XML in a live
-check (10 and 25 entries respectively). Existing custom sources default to general;
+science/technology, culture/lifestyle, and business. The Conversation and WIRED
+default to general, ProPublica to society, NASA, Medium Technology and r/science
+to science/technology, Medium Culture to culture, and Medium Business to
+business. Existing custom sources default to general;
 source addition and the custom source list allow category selection/editing.
 Default sources are not listed as editable form rows; the collapsed site-add
 control shows only a compact address/category form and any custom sources.
-Culture and Business defaults returned 10 and 9 entries in a live check.
+Live checks returned valid XML from NASA Technology (10 entries with image
+metadata) and WIRED Top Stories (50 entries with image metadata). Their cards use
+the same image validation and article ingestion as the other sources. Feed
+metadata and covers are supported; article extraction still depends on each
+public page being accessible, and paywalled content is never bypassed.
 Loading uses a neutral card placeholder with a spinner and an accessible label,
 without a visible loading sentence. Feed cover discovery ignores known tiny
 tracking images and supports media thumbnails, image enclosures and lazy images.
@@ -137,11 +143,12 @@ browser tests; no new physical-device share round trip has been performed.
 ## Progressive discovery and public feed bodies
 
 Each feed publishes independently to active rails. Already decoded cards are
-reused; the last slow source and cover decoding do not gate ready text cards.
-Old cached candidates remain visible while refreshing. Empty-category messaging
-waits for all source requests to settle. Images use no-referrer direct loading,
-then the existing image transport on failure. No image is invented for feeds
-that have no cover. Lazy image attributes take precedence over placeholder src.
+reused; the last slow source and cover decoding do not gate ready cards that have
+a cover. Old cached candidates remain visible while refreshing. Empty-category
+messaging waits for all source requests to settle. Images use no-referrer direct
+loading, then the existing image transport on failure. Discovery entries without
+a working cover are hidden; opening and reading an article still does not require
+a cover. Lazy image attributes take precedence over placeholder src.
 
 An explicit RSS content:encoded / Atom content body can enter the same inert
 Readability/semantic pipeline directly. Summary-only, oversized, short and

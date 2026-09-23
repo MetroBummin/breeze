@@ -112,22 +112,17 @@ remain required; simulated browsers do not establish physical iPhone frame rate.
 
 ## Covers without photos
 
-Local long-form, Casuals, shared links and RSS cards use deterministic local SVG
-line ornaments when no cover is available. Casuals use the title (three lines),
-not a long body excerpt. The full title remains available in card metadata; stored
-article content is unchanged. Existing palette tokens supply both themes, and
-real covers hide the ornament. Add/loading/cloud-recovery controls retain their
-existing layout. No image generation, remote cover requests or new assets are
-needed. Phone and desktop light/dark screenshots were reviewed with WebKit.
+Local long-form and shared-link cards use deterministic local SVG line ornaments
+when no cover is available. Casuals use the title (three lines), not a long body
+excerpt. The full title remains available in card metadata; stored article
+content is unchanged. Existing palette tokens supply both themes, and real covers
+hide the ornament. RSS discovery cards require a working cover image and stay
+hidden when the cover is absent or fails to load. Add/loading/cloud-recovery
+controls retain their existing layout. Phone and desktop light/dark screenshots
+were reviewed with WebKit.
 
-The book edit sheet and its cover search step use the expanded word lookup
-surface, line, ink and action tokens. Search and own-photo buttons follow its
-slightly rectangular 12px controls, and the picked image gets a quiet first-star
-selection line. The three-column image grid fits the same compact sheet in both
-themes; it adds no bright selection fill. Cover search uses Openverse's public
-image index, limited to CC0/public-domain results, and interleaves providers so
-one source does not dominate the first screen. Broad visual query shortcuts help
-when an exact book title returns literal objects. The chosen image is stored
-locally and its original landing page remains linked from the book. Only an
-imported local book opens this sheet. RSS discovery cards suppress context menus
-and ignore long holds.
+The book edit sheet uses the expanded word lookup surface, line, ink and action
+tokens. The own-photo button follows its slightly rectangular 12px controls.
+Imported books can still use an image already in the article or a photo selected
+from the user's library. RSS discovery cards suppress context menus and ignore
+long holds.

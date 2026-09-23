@@ -98,18 +98,19 @@ try{
        if(await rssPublicArticle({...entry,url:'https://medium.com/@writer/other-aaaaaaaaaaaa'}))throw Error('Unmatched story accepted');
      }finally{fetchArticleHtml=original;rssPublicFeedJobs.clear();}
    },html);
-   // A slow feed and a hung cover must not gate a ready source.
+   // A slow source must not gate another source with a usable cover.
    await page.evaluate(async xml=>{
     if(rssLoading)await rssLoading;
     const original=fetchArticleHtml;let release;
     try{
       save('breeze.feed-category','all');rssCands=[];rssLoadedAt=0;
-      fetchArticleHtml=url=>url.includes('propublica') ? new Promise(resolve=>{release=()=>resolve(xml);}) : Promise.resolve(xml);
+      fetchArticleHtml=url=>url.includes('propublica') ? new Promise(resolve=>{release=()=>resolve(xml);}) :
+        Promise.resolve(xml.replace('</item>','<enclosure url="https://content.example/photo.png" type="image/png"/></item>'));
       const rail=document.getElementById('casual-rail');
       const pending=renderRssCards(rail,true,document.getElementById('home-feed-empty'));
       await new Promise(resolve=>setTimeout(resolve,50));
-      if(!rail.querySelector('.rss-card') || !rssLoading)throw Error('Ready cards waited for slow feed');
-      const first=rail.querySelector('.rss-card');
+      if(!rail.querySelector('.rss-card:not([hidden])') || !rssLoading)throw Error('Ready cards waited for slow feed or photo');
+      const first=rail.querySelector('.rss-card:not([hidden])');
       release();await pending;
       if(!first.isConnected)throw Error('Partial update replaced existing card');
     }finally{fetchArticleHtml=original;}
@@ -223,20 +224,19 @@ try{
    await page.evaluate(async()=>{
     if(rssLoading)await rssLoading;
     receiveSharedLinks([{id:'pending',url:'https://content.example/pending',savedAt:'2026-09-25'}]);
-    rssCands=[[{title:'Science story',source:'Science',category:'science',url:'https://category.example/science',summary:'Science reading'}],
-      [{title:'Culture story',source:'Culture',category:'culture',url:'https://category.example/culture',summary:'Culture reading',photo:'https://content.example/photo.png'}]];
-    rssLoadedAt=Date.now();show('home');
+    rssCands=rssSources().map(feed=>feed.name==='Medium · Technology'?
+      [{title:'Science story without a cover',source:'Science',category:'science',feedSourceUrl:feed.url,url:'https://category.example/science',summary:'Science reading'}]:
+      feed.name==='Medium · Culture'?[{title:'Culture story',source:'Culture',category:'culture',feedSourceUrl:feed.url,url:'https://category.example/culture',summary:'Culture reading',photo:'https://content.example/photo.png'}]:[]);
+    rssLoadedAt=Date.now();refreshFeedRails();show('home');
    });
    assert.equal(await page.evaluate(()=>rssSources().filter(feed=>feed.category==='science'&&/medium.com|reddit.com/.test(feed.url)).length),2);
    const chips=page.locator('#casuals .feed-categories');
    await chips.locator('[data-category="science"]').click();
-   await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card').length===1);
-   assert.equal(await page.locator('#casual-rail .rss-card .ct').textContent(),'Science story');
+   assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    assert.equal(await chips.locator('[data-category="science"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.evaluate(()=>document.querySelector('#casual-rail .shared-card')!==null),true);
    await chips.locator('[data-category="business"]').click();
-   await page.waitForFunction(()=>!document.getElementById('home-feed-empty').hidden);
-   assert.equal(await page.locator('#casual-rail .rss-card').count(),0);
+   assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    await page.evaluate(()=>{
     document.querySelector('#casuals [data-category="science"]').click();
     document.querySelector('#casuals [data-category="culture"]').click();
