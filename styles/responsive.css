@@ -10,6 +10,7 @@
     #casual-rail, #v-casuals .casual-rail{padding:14px 18px 6px; margin-left:-18px; margin-right:-18px; scroll-padding-left:18px;}
     .casual{flex:0 0 136px;}
     #casual-rail > .casual{flex-basis:136px; width:136px; min-width:136px; max-width:136px;}
+    #v-casuals .casual-rail > .casual{flex-basis:136px; width:136px; min-width:136px; max-width:136px;}
     #longform{margin-top:34px;}
     #shelf, #longform-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
     .bookcard{height:206px; padding:18px 18px 0; border-radius:20px;}

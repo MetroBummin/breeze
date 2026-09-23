@@ -394,8 +394,8 @@ function renderHome(){
   const currentCasual=casuals.find(book=>book.id===nowCasual);
   /* 홈에는 이어 읽던 글만 둡니다. 나머지 저장 글은 내 글 서가에서 찾고,
      새 RSS 카드는 바로 다음부터 보입니다. */
-  const casualSpecs=currentCasual?[homeBookSpec(currentCasual,nowCasual,true)]:[];
-  casualSpecs.push({key:'add',stamp:'',create:casualAddCard});
+  const casualSpecs=[{key:'add',stamp:'',create:casualAddCard}];
+  if(currentCasual)casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
   reconcileHomeCards(rail,casualSpecs);
   if(typeof appendRssCards==='function')appendRssCards(rail);
   const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');

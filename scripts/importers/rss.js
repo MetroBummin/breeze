@@ -13,7 +13,7 @@ const RSS_PHOTO_MS = 8000;
 let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
-let rssRenderId = 0;
+const rssRenderIds = new WeakMap();
 let rssPage = 0;
 
 function rssLocal(element){ return (element && (element.localName || element.nodeName) || '').toLowerCase(); }
@@ -162,10 +162,10 @@ async function importRssEntry(entry, card){
 /* 한 피드에서 사진이 실제로 뜬 카드 RSS_PER_FEED 장을 만듭니다. 실패한 후보는
    그 자리에서 버리고 같은 순서의 다음 기사로 채웁니다 — 카드가 줄어들 뿐, 사진
    없는 카드가 나가는 일은 없습니다. */
-async function rssFeedCards(entries, renderId){
+async function rssFeedCards(entries, renderId, rail){
   const cards = [];
   for(const entry of entries){
-    if(cards.length >= RSS_PER_FEED || renderId !== rssRenderId) break;
+    if(cards.length >= RSS_PER_FEED || renderId !== rssRenderIds.get(rail)) break;
     if(rssAlreadySaved(entry)) continue;
     const card = rssCard(entry);
     if(await rssCardPhoto(card, entry)) cards.push(card);
@@ -173,13 +173,20 @@ async function rssFeedCards(entries, renderId){
   return cards;
 }
 function renderRssCards(rail, force, empty){
-  const renderId=++rssRenderId;
-  if(empty){ empty.hidden=true; empty.textContent='새로운 기사를 불러오는 중이에요.'; }
+  const renderId=(rssRenderIds.get(rail)||0)+1;
+  rssRenderIds.set(rail,renderId);
+  if(empty && !rail.querySelector('.rss-card')){
+    empty.hidden=false;
+    empty.textContent='새로운 기사를 불러오는 중이에요.';
+  }
   return loadRss(force).then(async groups=>{
     const stamp=JSON.stringify([groups,books.map(book=>book.sourceUrl||'')]);
-    if(rail.dataset.rssStamp===stamp)return;
-    const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId)))).flat();
-    if(renderId!==rssRenderId||!rail.isConnected)return;
+    if(rail.dataset.rssStamp===stamp){
+      if(empty)empty.hidden=!!rail.querySelector('.rss-card');
+      return;
+    }
+    const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId,rail)))).flat();
+    if(renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
     // Keep the previous shelf visible until replacement images are decoded.
     rail.querySelectorAll('.rss-card').forEach(card=>card.remove());
     const before=rail.querySelector('.casual.add');
