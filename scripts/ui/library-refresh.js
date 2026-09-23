@@ -1,7 +1,11 @@
 /* Pull-to-refresh for the library views. Leave the scroll/bounce to the browser. */
 let libraryRefreshTask=null;
+let libraryRefreshWork=null;
+let libraryRefreshWorkView='';
 const LIBRARY_PULL_START=10;
 const LIBRARY_PULL_THRESHOLD=96;
+const LIBRARY_REFRESH_MIN_MS=450;
+const LIBRARY_REFRESH_MAX_MS=1200;
 /** @type {Window & {webkit?: {messageHandlers?: {breezeRefresh?: {postMessage: (message: object) => void}}}, breezeNativeRefresh?: (sequence: number) => boolean}} */
 const refreshWindow=window;
 const nativeRefreshHandler=refreshWindow.webkit?.messageHandlers?.breezeRefresh || null;
@@ -55,18 +59,35 @@ function refreshLibrary(){
     else if(view==='casuals') renderCasualLibrary();
     else renderLongformLibrary();
   };
+  if(!libraryRefreshWork || libraryRefreshWorkView!==view){
+    libraryRefreshWorkView=view;
+    libraryRefreshWork=(async()=>{
+      try{
+        if((view==='home'||view==='casuals') && !rssLoading){
+          rssPage++;
+          rssLoadedAt=0;
+          // Rendering subscribes to source updates before the requests start.
+          redraw();
+        }
+        await loadBooks();
+        redraw();
+      }catch(error){
+        redraw();
+        if(activeAppView()===view) toast('새로고침하지 못했어요. 연결을 확인해 주세요.');
+      }
+    })();
+    const work=libraryRefreshWork;
+    void work.finally(()=>{
+      if(libraryRefreshWork===work){libraryRefreshWork=null;libraryRefreshWorkView='';}
+    });
+  }
+  const work=libraryRefreshWork;
   libraryRefreshTask=(async()=>{
     try{
-      await loadBooks();
-      if(view==='home'||view==='casuals'){
-        rssPage++;
-        rssLoadedAt=0;
-        await loadRss(true);
-      }
-      redraw();
-    }catch(error){
-      redraw();
-      if(activeAppView()===view) toast('새로고침하지 못했어요. 연결을 확인해 주세요.');
+      await Promise.all([
+        new Promise(resolve=>setTimeout(resolve,LIBRARY_REFRESH_MIN_MS)),
+        Promise.race([work,new Promise(resolve=>setTimeout(resolve,LIBRARY_REFRESH_MAX_MS))]),
+      ]);
     }finally{
       if(!nativeRefreshHandler){
         if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);

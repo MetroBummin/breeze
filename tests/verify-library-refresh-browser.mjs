@@ -82,6 +82,23 @@ try{
  await page.evaluate(()=>show('home'));await page.locator('#longform .section-link').click();assert.equal(await page.locator('#v-longform').isVisible(),true);
  await page.evaluate(()=>{sbUser={email:'fixture@example.test'};syncLoginNudge()});
  assert.equal(await page.locator('#login-nudge').isVisible(),false,'Signed-in account still has dot');
+ await page.evaluate(()=>{
+   show('home');
+   rssCands=RSS_FEEDS.map(()=>[]);
+   loadBooks=async()=>{};
+   loadRss=()=>new Promise(resolve=>window.releaseFeed=resolve);
+   refreshLibrary();
+ });
+ await page.waitForFunction(()=>libraryRefreshTask===null,null,{timeout:2000});
+ assert.equal(await page.evaluate(()=>rssListeners.size>0),true,'Feed updates stopped when pull indicator settled');
+ await page.evaluate(()=>{
+   rssCands[0]=[{title:'Ready source',url:'https://example.com/ready-source',source:'Dexerto',
+     feedSourceUrl:RSS_FEEDS[0].url,photo:'/assets/samples/starship-1.jpg'}];
+   rssListeners.forEach(notify=>notify(rssCands));
+ });
+ await page.locator('#casual-rail .rss-card:not([hidden])').waitFor({timeout:2000});
+ assert.equal(await page.locator('#casual-rail .rss-card .ct').first().textContent(),'Ready source');
+ await page.evaluate(()=>window.releaseFeed(rssCands));
  assert.deepEqual(errors,[]);
  const nativePage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
  await nativePage.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
@@ -104,5 +121,5 @@ try{
  await nativePage.evaluate(()=>show('vocab'));
  await nativePage.waitForFunction(()=>window.nativeMessages.some(message=>message.enabled===false));
  await nativePage.close();
- console.log('Pull refresh: three shelves, direction/threshold/cancel gates, sheet isolation, coalescing and navigation safety passed.');
+ console.log('Pull refresh: bounded indicator, progressive RSS, three shelves, gesture gates, coalescing and navigation safety passed.');
 }finally{await browser.close();await new Promise(done=>server.close(done))}

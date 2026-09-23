@@ -33,6 +33,10 @@ instructions. Release settles with a short eased transition; reduced-motion user
 keep static content. Horizontal, short, cancelled, multi-touch and overlay-owned
 gestures do not refresh. Navigation clears the presentation and concurrent refreshes
 share one operation. The Reader never participates in the shelf pull handler.
+The refresh cue stays up briefly and settles within 1.2 seconds even if local
+book loading is slow. Home and Casuals subscribe to RSS source updates as soon
+as refresh starts; each ready source updates the rail while remaining sources
+continue in the background. Repeated pulls share any ongoing book load.
 
 In the iOS app, WKWebView's scroll view owns the pull gesture and one
 `UIRefreshControl` owns the spinner. The web handler reports whether Home or a
