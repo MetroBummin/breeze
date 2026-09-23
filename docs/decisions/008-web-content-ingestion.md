@@ -13,8 +13,8 @@ Share Extension -> atomic App Group URL record -> unread Home card -> explicit t
 -> `ingestArticle` -> fetch -> Readability 0.6.0 -> semantic blocks -> existing
 `saveCasualBook`/IndexedDB -> existing Reader. The native record is marked opened
 only after persistence and Reader opening succeed, and is never acknowledged/deleted.
-Failed RSS imports are omitted from discovery for the session (manual feed
-refresh allows another attempt). Failed shared cards are hidden from Home for
+Failed RSS opens keep the same card and decoded cover for retry. Medium
+discovery only publishes cards after a usable public feed body is prepared. Failed shared cards are hidden from Home for
 the session without deleting or marking the App Group record read; re-sharing
 with a new saved time or relaunching permits another attempt. No inline failure
 card or original-link button is added to these rails. Explicit URL entry retains
@@ -161,3 +161,33 @@ Summary and explicit continued-reading previews are rejected by that fast path.
 A fresh direct HTTP check of Medium technology/culture/business feeds returned
 403 on 2026-09-23 in this environment; saved XML fixtures passing does not prove
 current network accessibility. Physical-device latency remains to be checked.
+
+## Medium topic-feed correction
+
+Live app transport confirmed Medium topic feeds contain description-only teasers,
+so the previous explicit-body fast path did not apply to those discovery cards.
+For Medium sources, resolve the linked author/publication public RSS endpoint and
+match the exact story ID before publishing a card. Custom publication domains use
+/feed. Two workers per source and a bounded shared feed-job cache avoid duplicate
+requests; ready articles publish progressively. Only substantial unrestricted
+bodies accepted by the existing semantic parser are presented. No hidden content
+or paywall bypass is used; absent, paid, short, or unmatched bodies are omitted
+before display, not after tapping. Public feed availability still varies.
+
+Read failures now leave RSS cards, cover nodes, and retry actions intact, with a
+brief toast. refreshFeedRails no longer removes all cards before reconciliation.
+This fixes the unrelated cover loss caused by re-downloading already shown images
+following one failed tap. Shared inbox record policy is unchanged.
+
+Actual app transport -> public author feed -> local Reader was verified with
+current Medium business and technology articles (104 and 27 paragraphs). Opening
+prepared bodies took 26 ms and 893 ms in the desktop browser sample; these are
+not initial-feed latency or physical iPhone measurements. Regression tests also
+cover teaser resolution, exact story matching, coalesced feed requests, and card
+and decoded-cover identity after failed opens and rail refresh.
+
+The live automatic Home rail was also exercised: clicking “7 Website Mistakes
+That Can Cost Your Business Customers” opened the matching Medium article in
+Reader with 73 paragraphs. Screenshot: /tmp/breeze-medium-reader-verified.png.
+The initial click harness was blocked by onboarding; the completed run used the
+normal onboarding-completed state and a visible Home card.

@@ -50,7 +50,6 @@ function renderFeedCategories(){
 function refreshFeedRails(){
   for(const [id,emptyId] of [['casual-rail','home-feed-empty'],['casual-discover-rail','casual-discover-empty']]){
     const rail=document.getElementById(id);
-    rail.querySelectorAll('.rss-card').forEach(card=>card.remove());
     delete rail.dataset.rssStamp;
     renderRssCards(rail,false,document.getElementById(emptyId));
   }
@@ -63,7 +62,7 @@ let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
 const rssFeedErrors = new Set();
-const rssUnavailableArticles = new Set();
+const rssPublicFeedJobs = new Map();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 
@@ -168,11 +167,54 @@ function parseRss(xml, feed){
     const key = articleUrlKey(entry.url); if(seen.has(key)) return false; seen.add(key); return true;
   });
 }
+// Medium topic feeds are discovery summaries. Resolve their public author or
+// publication feed before presenting a card, using the same content parser.
+function rssMediumSource(feed){
+  try{return /(^|\.)medium\.com$/i.test(new URL(feed.url).hostname);}catch{return false;}
+}
+function rssPublicFeedUrl(entry){
+  const url=new URL(entry.url);
+  if(url.hostname==='medium.com' || url.hostname==='www.medium.com'){
+    const owner=url.pathname.split('/').filter(Boolean)[0];
+    return owner ? 'https://medium.com/feed/'+owner : '';
+  }
+  return new URL('/feed',url).href;
+}
+function rssStoryKey(raw){
+  const url=new URL(raw);
+  return url.pathname.match(/-([a-f0-9]{12})\/?$/i)?.[1] || articleUrlKey(raw);
+}
+async function rssPublicArticle(entry){
+  if(parseFeedArticle(entry))return entry;
+  const url=rssPublicFeedUrl(entry);if(!url)return null;
+  let job=rssPublicFeedJobs.get(url);
+  if(!job){
+    if(rssPublicFeedJobs.size>=40)rssPublicFeedJobs.delete(rssPublicFeedJobs.keys().next().value);
+    job=fetchArticleHtml(url).then(xml=>parseRss(xml,{name:entry.source,url})).catch(()=>[]);
+    rssPublicFeedJobs.set(url,job);
+  }
+  const match=(await job).find(item=>rssStoryKey(item.url)===rssStoryKey(entry.url));
+  if(!match || !parseFeedArticle(match))return null;
+  return {...entry,bodyProvided:true,contentHtml:match.contentHtml,
+    author:match.author || entry.author,photo:entry.photo || match.photo};
+}
+async function rssPreparePublicArticles(entries,publish){
+  const ready=[];let cursor=0;
+  // A bounded pair of workers; publish usable bodies without waiting for others.
+  await Promise.all([0,1].map(async()=>{
+    while(cursor<entries.length && ready.length<RSS_PER_FEED){
+      const entry=entries[cursor++];
+      const resolved=await rssPublicArticle(entry);
+      if(resolved && ready.length<RSS_PER_FEED){ready.push(resolved);publish([...ready]);}
+    }
+  }));
+  return ready;
+}
 /* Publish each source as it arrives; one slow source never gates another. */
 async function loadRss(force){
-  if(force)rssUnavailableArticles.clear();
   if(rssLoading) return rssLoading;
   if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
+  rssPublicFeedJobs.clear();
   const sources = rssSources();
   const previous = rssCands;
   rssCands = sources.map((_,i)=>previous[i] || []);
@@ -185,8 +227,10 @@ async function loadRss(force){
     /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
        피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
     const start = pictured.length ? (rssPage * RSS_PER_FEED) % pictured.length : 0;
-    rssCands[index] = pictured.map((_, step) => pictured[(start + step) % pictured.length]);
-    rssListeners.forEach(notify=>notify(rssCands));
+    const ordered=pictured.map((_, step) => pictured[(start + step) % pictured.length]);
+    const publish=entries=>{rssCands[index]=entries;rssListeners.forEach(notify=>notify(rssCands));};
+    if(rssMediumSource(feed))publish(await rssPreparePublicArticles(ordered,publish));
+    else publish(ordered);
     return rssCands[index];
     }catch(error){ rssFeedErrors.add(feed.url); rssCands[index]=[]; rssListeners.forEach(notify=>notify(rssCands)); console.warn('Feed unavailable:',feed.url); return []; }
   })).then(groups => {
@@ -248,8 +292,8 @@ async function importRssEntry(entry, card){
       await ingestArticle(entry.url,entry);
     }
   }catch(error){
-    rssUnavailableArticles.add(articleUrlKey(entry.url));
-    refreshFeedRails();
+    // A transient read/storage failure must not delete cards or decoded covers.
+    toast('지금은 글을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
   }finally{ card.classList.remove('busy'); }
 }
 /* A feed's own post body is enough for short posts. It never becomes live HTML:
@@ -309,10 +353,9 @@ async function rssFeedCards(entries, renderId, rail){
   const cards = [];
   for(const entry of entries){
     if(cards.length >= RSS_PER_FEED || renderId !== rssRenderIds.get(rail)) break;
-    if(rssAlreadySaved(entry) || rssUnavailableArticles.has(articleUrlKey(entry.url))) continue;
+    if(rssAlreadySaved(entry)) continue;
     const card = rssCard(entry);
     // Covers load only after insertion; text never waits for an image.
-    if(rssUnavailableArticles.has(articleUrlKey(entry.url)))continue;
     cards.push(card);
   }
   return cards;

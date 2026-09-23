@@ -353,7 +353,7 @@ function articleOriginalLink(url){
 function parseFeedArticle(entry){
   if(!entry.bodyProvided || entry.kind || !entry.contentHtml) return null;
   const text=rssHtmlText(entry.contentHtml);
-  if(text.length < 1200 || /continue reading|read (?:the )?(?:full|more)|member.only|paid subscribers|subscribe to (?:read|continue)|\[\s*…\s*\]/i.test(text)) return null;
+  if(text.length < 1200 || /continue reading|read (?:the )?(?:full (?:story|article)|more)(?:\s*[»→]|$)|member.only|paid subscribers|subscribe to (?:read|continue)|\[\s*…\s*\]/i.test(text)) return null;
   const doc=new DOMParser().parseFromString('<html><head></head><body><article></article></body></html>','text/html');
   const title=doc.createElement('title');title.textContent=entry.title;doc.head.appendChild(title);
   doc.querySelector('article').innerHTML=entry.contentHtml;
