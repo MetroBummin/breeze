@@ -42,14 +42,14 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
-  <link rel="stylesheet" href="styles/home.css?v=2b9dfee7">
+  <link rel="stylesheet" href="styles/home.css?v=bd87664c">
   <link rel="stylesheet" href="styles/reader.css?v=72c97b63">
-  <link rel="stylesheet" href="styles/dictionary.css?v=db44b89b">
+  <link rel="stylesheet" href="styles/dictionary.css?v=e81937fd">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
-  <link rel="stylesheet" href="styles/responsive.css?v=62cd7fff">
+  <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=3d0c76ff">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=21f9a457">
+  <link rel="stylesheet" href="styles/home-shell.css?v=c1da96ed">
   <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -82,15 +82,15 @@
   <script defer src="scripts/reader/gesture.js?v=c2324283"></script>
   <script defer src="scripts/reader/pdf-pinch.js?v=b4b7fb0f"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=257ebb4d"></script>
+  <script defer src="scripts/library/library.js?v=06870a61"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
   <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=8633ee61"></script>
-  <script defer src="scripts/importers/rss.js?v=b955331b"></script>
+  <script defer src="scripts/importers/rss.js?v=9c20d5ba"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=bd0c648a"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=ad94e4f8"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=2d848ebb"></script>
   <script defer src="scripts/ui/wordbook.js?v=6f9d5a26"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=17b378a5"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -107,7 +107,7 @@
   <script defer src="scripts/sync/sync.js?v=cf4515e0"></script>
   <script defer src="scripts/ui/interactions.js?v=578ca721"></script>
   <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
-  <script defer src="scripts/ui/library-refresh.js?v=bd58e44b"></script>
+  <script defer src="scripts/ui/library-refresh.js?v=4d66637e"></script>
   <script defer src="scripts/main.js?v=31587112"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
@@ -159,11 +159,18 @@
 
 <!-- ================= CASUALS LIBRARY ================= -->
 <div class="view" id="v-casuals">
-  <div class="head">
-    <h1 data-i18n="sec.casuals">Casuals</h1><span class="cnt" id="casual-cnt"></span>
-  </div>
-  <div id="casual-grid"></div>
-  <div id="casual-empty" hidden></div>
+  <section class="casual-library-row" aria-labelledby="casual-discover-title">
+    <div class="casual-library-head"><h1 id="casual-discover-title">발견</h1></div>
+    <div id="casual-discover-rail" class="casual-rail"></div>
+    <div id="casual-discover-empty" class="casual-discover-empty" hidden></div>
+  </section>
+  <section class="casual-library-row" aria-labelledby="casual-mine-title">
+    <div class="casual-library-head">
+      <h1 id="casual-mine-title">내 글</h1><span class="cnt" id="casual-cnt"></span>
+    </div>
+    <div id="casual-grid" class="casual-rail"></div>
+    <div id="casual-empty" hidden></div>
+  </section>
 </div>
 
 <!-- ================= LONG-FORM LIBRARY ================= -->
@@ -403,9 +410,9 @@
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
 <input type="file" id="reading-backup-input" accept=".zip,.breeze.zip,application/zip" hidden>
-<div id="add-modal">
+<div id="add-modal" role="dialog" aria-modal="true" aria-label="글 또는 책 추가">
   <div id="am-card">
-    <button id="am-close" onclick="closeAddModal()">✕</button>
+    <button id="am-close" type="button" aria-label="닫기" onclick="closeAddModal()">✕</button>
 
     <div class="am-step on" data-step="pick">
       <h2>무엇을 읽을까요?</h2>

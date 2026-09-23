@@ -699,7 +699,7 @@ assert.match(librarySource, /\.am-file'\)\.hidden = mode === 'casual'/,
 assert.doesNotMatch(index, /id="(?:casual-add|longform-add|rss-refresh)"/,
   'Shelves duplicate the shared Add or pull-to-refresh controls');
 const homeCss = readFileSync(resolve(root, 'styles/home.css'), 'utf8');
-assert.match(homeCss, /#casual-rail\{[^}]*overflow-x:auto/,
+assert.match(homeCss, /#casual-rail(?:,\s*\.casual-rail)?\{[^}]*overflow-x:auto/,
   'The Casuals rail no longer scrolls sideways');
 assert.match(homeCss, /\.now-ring\{/, 'The currently-read card lost its ring');
 const addSheet = index.slice(index.indexOf('id="add-modal"'), index.indexOf('id="edit-modal"'));

@@ -28,6 +28,13 @@ keep static content. Horizontal, short, cancelled, multi-touch and overlay-owned
 gestures do not refresh. Navigation clears the presentation and concurrent refreshes
 share one operation. The Reader never participates in the shelf pull handler.
 
+In the iOS app, WKWebView's scroll view owns the pull gesture and one
+`UIRefreshControl` owns the spinner. The web handler reports whether Home or a
+shelf is active and runs the same refresh operation when native refresh fires.
+The spinner uses the measured logo position and live safe area to sit in the
+pulled gap. Browser use retains the touch gesture above. Home and Casuals refresh
+their RSS cards; all three library views reload saved books.
+
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper
 behind its native edge bounce. Colors come from the existing CSS palette.

@@ -62,6 +62,9 @@ body.dark #word-peek::before{
     max-height:min(76vh,760px); overflow-y:auto; display:none; transform:translate(-50%,-50%);
     overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
     border:1px solid var(--sentence-glass-line); border-radius:22px;
+    /* The dialog receives programmatic focus for accessibility. Its native focus
+       outline can wrap the whole card on iPad; buttons keep their own focus ring. */
+    outline:none;
     background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
     box-shadow:var(--sentence-glass-shadow);
     animation:word-detail-in var(--sentence-transition) cubic-bezier(.2,.7,.25,1);}

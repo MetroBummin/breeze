@@ -2,7 +2,9 @@
 let libraryRefreshTask=null;
 const LIBRARY_PULL_START=10;
 const LIBRARY_PULL_THRESHOLD=96;
-const nativeRefreshHandler=window.webkit?.messageHandlers?.breezeRefresh || null;
+/** @type {Window & {webkit?: {messageHandlers?: {breezeRefresh?: {postMessage: (message: object) => void}}}, breezeNativeRefresh?: (sequence: number) => boolean}} */
+const refreshWindow=window;
+const nativeRefreshHandler=refreshWindow.webkit?.messageHandlers?.breezeRefresh || null;
 const libraryRefreshMotion=(()=>{
   const indicator=document.getElementById('library-refresh');
   let frame=0,timer=0,owner='',distance=0;
@@ -56,7 +58,7 @@ function refreshLibrary(){
   libraryRefreshTask=(async()=>{
     try{
       await loadBooks();
-      if(view==='home'){
+      if(view==='home'||view==='casuals'){
         rssPage++;
         rssLoadedAt=0;
         await loadRss(true);
@@ -80,7 +82,7 @@ function refreshLibrary(){
 
 (()=>{
   if(nativeRefreshHandler){
-    window.breezeNativeRefresh=sequence=>{
+    refreshWindow.breezeNativeRefresh=sequence=>{
       Promise.resolve(refreshLibrary()).catch(()=>{}).finally(()=>nativeRefreshHandler.postMessage({finished:sequence}));
       return true;
     };
