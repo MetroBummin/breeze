@@ -3,6 +3,20 @@ import Capacitor
 import WebKit
 import AVFoundation
 
+// Keep UIKit's own pull-progress and loading animation. Offset the whole
+// control after its layout, since UIKit updates its geometry during the pull.
+private final class BreezeRefreshControl: UIRefreshControl {
+    var indicatorOffset: CGFloat = 0 {
+        didSet { if oldValue != indicatorOffset { setNeedsLayout() } }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let placement = CGAffineTransform(translationX: 0, y: indicatorOffset)
+        if transform != placement { transform = placement }
+    }
+}
+
 final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, AVSpeechSynthesizerDelegate {
     private static let themeMessageHandler = "breezeReaderTheme"
     private static let speechMessageHandler = "breezeSpeech"
@@ -14,8 +28,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var speechGenerations: [ObjectIdentifier: Int] = [:]
     private var activeSpeechGeneration: Int?
     private var speechStartDeadline: DispatchWorkItem?
-    private let libraryRefreshControl = UIRefreshControl()
-    private let libraryRefreshIndicator = UIActivityIndicatorView(style: .medium)
+    private let libraryRefreshControl = BreezeRefreshControl()
     private var libraryRefreshSequence = 0
     private var activeLibraryRefreshSequence: Int?
     private static let speechCategory = "playback"
@@ -32,10 +45,6 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView.scrollView.bounces = true
         libraryRefreshControl.tintColor = UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
         libraryRefreshControl.addTarget(self, action: #selector(refreshLibraryFromScroll), for: .valueChanged)
-        libraryRefreshIndicator.color = libraryRefreshControl.tintColor
-        libraryRefreshIndicator.alpha = 0
-        libraryRefreshIndicator.isUserInteractionEnabled = false
-        view.addSubview(libraryRefreshIndicator)
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
@@ -105,7 +114,6 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         libraryRefreshSequence += 1
         let sequence = libraryRefreshSequence
         activeLibraryRefreshSequence = sequence
-        positionLibraryRefreshControl()
         webView?.evaluateJavaScript("typeof window.breezeNativeRefresh === 'function' && (window.breezeNativeRefresh(\(sequence)), true)") { [weak self] result, error in
             if error != nil || (result as? Bool) != true {
                 self?.finishLibraryRefresh(sequence)
@@ -113,31 +121,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
     }
 
-    private func positionLibraryRefreshControl() {
-        guard let webView else { return }
-        // UIKit owns the refresh control's frame. Use it for the pull gesture,
-        // then show a native indicator in the visible gap while loading.
-        libraryRefreshControl.isHidden = true
-        libraryRefreshIndicator.startAnimating()
-        let safeTop = view.safeAreaInsets.top
-        let contentTop = webView.scrollView.convert(.zero, to: view).y + safeTop + 24
-        let centerY = max(safeTop + 16, (safeTop + contentTop) / 2)
-        libraryRefreshIndicator.center = CGPoint(x: view.bounds.midX, y: min(centerY, contentTop - 24))
-        UIView.animate(withDuration: 0.18, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
-            self.libraryRefreshIndicator.alpha = 1
-        }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Home draws its logo below safe-area + 24pt padding. Move the native
+        // spinner below the status bar on every device, including while pulling.
+        libraryRefreshControl.indicatorOffset = view.safeAreaInsets.top + 12
     }
 
     private func finishLibraryRefresh(_ sequence: Int?) {
         guard let sequence, activeLibraryRefreshSequence == sequence else { return }
         libraryRefreshControl.endRefreshing()
-        UIView.animate(withDuration: 0.24, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
-            self.libraryRefreshIndicator.alpha = 0
-        } completion: { _ in
-            guard self.activeLibraryRefreshSequence == nil else { return }
-            self.libraryRefreshIndicator.stopAnimating()
-            self.libraryRefreshControl.isHidden = false
-        }
         activeLibraryRefreshSequence = nil
     }
 
