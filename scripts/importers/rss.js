@@ -41,6 +41,7 @@ function renderFeedCategories(){
       button.setAttribute('aria-pressed',String(category.id===selected));
       button.onclick=()=>{
         if(!save('breeze.feed-category',category.id))return;
+        document.querySelectorAll('#casual-rail,#casual-discover-rail').forEach(rail=>{rail.scrollLeft=0;});
         renderFeedCategories();refreshFeedRails();
         document.querySelectorAll('.feed-categories').forEach(rail=>{rail.scrollLeft=0;});
       };
@@ -314,7 +315,12 @@ async function rssCardPhoto(card, entry){
       try{ok=await decode(local);}finally{URL.revokeObjectURL(local);}
     }
   }
-  if(ok && card.isConnected){image.hidden=false;thumb.classList.add('has-cover');card.hidden=false;refreshRssPhotoEmpty(card.parentElement);}
+  if(ok && card.isConnected){
+    image.hidden=false;thumb.classList.add('has-cover');card.hidden=false;
+    const rail=card.parentElement;
+    if(rail?.dataset.rssResetStart){rail.scrollLeft=0;delete rail.dataset.rssResetStart;}
+    refreshRssPhotoEmpty(rail);
+  }
   else if(card.isConnected){
     const rail=card.parentElement;
     card.remove();
@@ -431,6 +437,11 @@ async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
 function renderRssCards(rail, force, empty){
   renderFeedCategories();
   const category=rssSelectedCategory();
+  if(rail.dataset.rssCategory!==category){
+    rail.dataset.rssCategory=category;
+    rail.dataset.rssResetStart='1';
+    rail.scrollLeft=0;
+  }
   const renderId=(rssRenderIds.get(rail)||0)+1;
   rssRenderIds.set(rail,renderId);
   if(category==='saved'){
@@ -443,6 +454,7 @@ function renderRssCards(rail, force, empty){
       }
     }
     delete rail.dataset.rssStamp;
+    rail.scrollLeft=0;delete rail.dataset.rssResetStart;
     if(empty){empty.textContent='저장한 글이 없어요.';empty.hidden=!!rail.querySelector('.shared-card');}
     return Promise.resolve();
   }
@@ -475,6 +487,10 @@ function renderRssCards(rail, force, empty){
     if(cards.length || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(card=>card.remove());
     const before=rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));
+    if(rail.dataset.rssResetStart){
+      rail.scrollLeft=0;
+      if(cards.some(card=>!card.hidden) || (!rssLoading && !cards.length))delete rail.dataset.rssResetStart;
+    }
     const entries=groups.flat();
     cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;

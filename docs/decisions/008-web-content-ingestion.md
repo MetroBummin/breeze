@@ -38,6 +38,8 @@ Home and Casuals discovery share a persisted category chip selection. The chips
 stay in a fixed order: All, Saved, Entertainment, General, Society, Science,
 Culture, and Business. Saved contains
 unread shared URLs, while read articles remain in the existing Casuals shelf.
+Selecting a chip starts both article rails at the first card, including when
+new source cards arrive after the selection.
 All mixes one visible card per source so the larger entertainment selection does
 not bury the existing educational sources. Categories are assigned to feed
 sources, not guessed from article titles: entertainment, general, society,
