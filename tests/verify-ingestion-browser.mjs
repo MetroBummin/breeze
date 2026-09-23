@@ -262,12 +262,12 @@ try{
    assert.equal(await page.evaluate(()=>rssSources().filter(feed=>feed.category==='science'&&/medium.com|reddit.com/.test(feed.url)).length),2);
    const chips=page.locator('#casuals .feed-categories');
    await chips.locator('[data-category="science"]').click();
-   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.slice(0,3).map(node=>node.dataset.category)),['all','saved','science']);
+   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','saved','entertainment','general','society','science','culture','business']);
    assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    assert.equal(await chips.locator('[data-category="science"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.evaluate(()=>document.querySelector('#casual-rail .shared-card')!==null),false);
    await chips.locator('[data-category="business"]').click();
-   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.slice(0,3).map(node=>node.dataset.category)),['all','saved','business']);
+   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','saved','entertainment','general','society','science','culture','business']);
    assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    await page.evaluate(()=>{
     document.querySelector('#casuals [data-category="science"]').click();

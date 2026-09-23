@@ -35,8 +35,9 @@ RSS management screen. Feed
 failures are isolated. Discovery omits cards without a working cover; the saved
 essay remains readable after it is opened.
 
-Home and Casuals discovery share a persisted category chip selection. All and
-Saved stay first; the last tapped topical category moves third. Saved contains
+Home and Casuals discovery share a persisted category chip selection. The chips
+stay in a fixed order: All, Saved, Entertainment, General, Society, Science,
+Culture, and Business. Saved contains
 unread shared URLs, while read articles remain in the existing Casuals shelf.
 All mixes one visible card per source so the larger entertainment selection does
 not bury the existing educational sources. Categories are assigned to feed
@@ -223,7 +224,7 @@ Reader with 73 paragraphs. Screenshot: /tmp/breeze-medium-reader-verified.png.
 The initial click harness was blocked by onboarding; the completed run used the
 normal onboarding-completed state and a visible Home card.
 
-## English discovery and optional cover choice
+## English discovery and manual cover choice
 
 Discovery checks feed prose for English words and rejects strong non-English
 signals, including Latin-script Indonesian; it does not delete user-saved books
@@ -231,15 +232,9 @@ or shared links. The filter is heuristic because many feeds do not declare item
 language. An Indonesian Medium title/body fixture is rejected while an English
 article and existing Reddit link posts remain supported.
 
-Once a book is imported, its existing long-press edit sheet can search Wikimedia
-Commons for an optional cover. The query is user-initiated and editable. Results
-are restricted to image metadata marked public domain or CC0, supported raster
-formats and reasonable dimensions. A picked thumbnail is copied into local image
-storage before the book's cover key and recovery URL are committed. The Commons
-source page remains linked in the edit sheet. Search/selection has no path from
-RSS discovery cards. Chromium/WebKit fixtures verify the licensing filter, saved
-image/blob recovery metadata, and disabled discovery long press. Live Commons
-search and cover saving were also checked in the desktop browser.
+The book edit sheet keeps manual cover choice from the reader's own photos or
+article images. RSS discovery cards have no edit long press. The public photo
+search experiment was removed; there is no external cover search in the UI.
 
 Feed card images come from feed cover metadata and can render independently of
 the Reader body. Reader extraction retains only semantic body images and locally

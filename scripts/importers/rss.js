@@ -28,12 +28,6 @@ function rssSelectedCategory(){
   const value=load('breeze.feed-category','all');
   return value==='all' || value==='saved' ? value : rssCategory(value);
 }
-function rssRecentCategory(){
-  const value=load('breeze.feed-category-recent','');
-  if(RSS_CATEGORIES.some(item=>item.id===value))return value;
-  const selected=rssSelectedCategory();
-  return RSS_CATEGORIES.some(item=>item.id===selected) ? selected : 'entertainment';
-}
 function rssCategoryOptions(select,value){
   select.replaceChildren();
   for(const category of RSS_CATEGORIES){
@@ -44,9 +38,7 @@ function rssCategoryOptions(select,value){
 }
 function renderFeedCategories(){
   const selected=rssSelectedCategory();
-  const recent=rssRecentCategory();
-  const ordered=[{id:'all',label:'전체'},{id:'saved',label:'저장됨'},
-    RSS_CATEGORIES.find(item=>item.id===recent),...RSS_CATEGORIES.filter(item=>item.id!==recent)];
+  const ordered=[{id:'all',label:'전체'},{id:'saved',label:'저장됨'},...RSS_CATEGORIES];
   document.querySelectorAll('.feed-categories').forEach(host=>{
     const current=new Map([...host.querySelectorAll('button')].map(button=>[button.dataset.category,button]));
     const focused=host.contains(document.activeElement) ? (/** @type {HTMLElement} */(document.activeElement))?.dataset.category : '';
@@ -57,7 +49,6 @@ function renderFeedCategories(){
       button.setAttribute('aria-pressed',String(category.id===selected));
       button.onclick=()=>{
         if(!save('breeze.feed-category',category.id))return;
-        if(category.id!=='all' && category.id!=='saved')save('breeze.feed-category-recent',category.id);
         renderFeedCategories();refreshFeedRails();
         document.querySelectorAll('.feed-categories').forEach(rail=>{rail.scrollLeft=0;});
       };
