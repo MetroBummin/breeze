@@ -33,7 +33,8 @@ function sharedHomeCard(item) {
   card.className = 'casual shared-card';
   card.setAttribute('aria-label', `Breeze에서 읽기: ${label.title}`);
   const thumb = document.createElement('span');
-  thumb.className = 'thumb';
+  thumb.className = 'thumb editorial-cover';
+  thumb.innerHTML = coverArtwork(item.url);
   const source = document.createElement('span');
   source.className = 'src';
   source.textContent = label.source;

@@ -109,3 +109,13 @@ use 260 ms; collapsing requires 24 px of downward travel (previously 12), while
 identity, Text scroll restoration, source-edit invalidation and explicit release
 in Chromium/WebKit. Existing Home, sentence, onboarding and lookup regressions
 remain required; simulated browsers do not establish physical iPhone frame rate.
+
+## Covers without photos
+
+Local long-form, Casuals, shared links and RSS cards use deterministic local SVG
+line ornaments when no cover is available. Casuals use the title (three lines),
+not a long body excerpt. The full title remains available in card metadata; stored
+article content is unchanged. Existing palette tokens supply both themes, and
+real covers hide the ornament. Add/loading/cloud-recovery controls retain their
+existing layout. No image generation, remote cover requests or new assets are
+needed. Phone and desktop light/dark screenshots were reviewed with WebKit.

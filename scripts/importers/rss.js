@@ -270,11 +270,11 @@ function rssCard(entry){
   const color = entry.source === 'ProPublica' ? 1 : 0;
   card.className = 'casual rss-card cpal' + color;
   card.dataset.rssUrl=entry.url;
-  card.innerHTML = `<div class="thumb rss-thumb"><img class="cover" alt="" hidden>
+  card.innerHTML = `<div class="thumb rss-thumb editorial-cover">${coverArtwork(entry.url)}<img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
   card.querySelector('.src').textContent = entry.source;
-  card.querySelector('.lede').textContent = entry.summary;
+  card.querySelector('.lede').textContent = entry.title;
   card.querySelector('.ct').textContent = entry.title;
   card.querySelector('.cm').textContent = entry.date ? `${entry.date} · 탭해서 담기` : '탭해서 담기';
   card.onclick = () => importRssEntry(entry, card);

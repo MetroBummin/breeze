@@ -181,13 +181,23 @@ function cardLede(book){
   return real || paras[1] || paras[0] || '';
 }
 
+/* Deterministic, local cover ornament; never stands in for an article photo. */
+function coverArtwork(key){
+  const patterns=[
+    '<circle cx="60" cy="48" r="29"/><path d="M18 87h84M26 95h68"/><path d="M31 48a29 29 0 0 1 58 0v39H31Z" fill="currentColor" stroke="none" opacity=".12"/>',
+    '<rect x="25" y="20" width="54" height="70" rx="25"/><rect x="41" y="30" width="54" height="70" rx="25"/><path d="M60 30v60" opacity=".4"/>',
+    '<path d="M22 89V53a38 38 0 0 1 76 0v36M33 89V53a27 27 0 0 1 54 0v36M44 89V53a16 16 0 0 1 32 0v36"/><path d="M18 97h84"/>',
+  ];
+  return '<svg class="cover-art" viewBox="0 0 120 120" aria-hidden="true" focusable="false">'+patterns[paletteOf({id:key},patterns.length)]+'</svg>';
+}
+
 function casualCard(book, current){
   const index = paletteOf(book, 4);
   const position = posOf(book.id);
   const label = nowReadingLabel(book, current);
   const card = el('div', 'casual cpal'+(index%4));
-  card.innerHTML = `<div class="thumb">
-      <img class="cover" alt="" hidden>
+  card.innerHTML = `<div class="thumb editorial-cover">
+      ${coverArtwork(book.id)}<img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>
       ${WAVE('#FFFFFF','.35')}
       ${position.t ? `<div class="bar"><i style="width:${readingPercent(position.p)}%"></i></div>` : ''}
@@ -195,7 +205,7 @@ function casualCard(book, current){
     <div class="ct"></div><div class="cm"></div>`;
   fillCard(card, {
     '.src': book.site || '붙여넣은 글',
-    '.lede': cardLede(book),
+    '.lede': book.title,
     '.ct': book.title,
     '.cm': label ? `${label} · ${readMinutes(book)}분` : `${readMinutes(book)}분 읽기`,
   });
@@ -291,9 +301,9 @@ const cardBusy = new Set();
 function bookCard(book, current){
   const index = paletteOf(book, 3);
   const label = nowReadingLabel(book, current);
-  const card = el('div', 'bookcard pal'+(index%3));
+  const card = el('div', 'bookcard editorial-cover pal'+(index%3));
   card.classList.toggle('now-ring', book.id === current);
-  card.innerHTML = `<img class="cover" alt="" hidden>
+  card.innerHTML = `${coverArtwork(book.id)}<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>
     ${WAVE(['#C0DCC9','#9FCAB5','#B5D7C3'][index%3],'.6')}
     ${label ? '<div class="prog"></div>' : ''}`;
