@@ -7,6 +7,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private static let themeMessageHandler = "breezeReaderTheme"
     private static let speechMessageHandler = "breezeSpeech"
     private static let vocabularyExportHandler = "breezeVocabularyExport"
+    private static let shareInboxHandler = "breezeShareInbox"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
     private let speechSynthesizer = AVSpeechSynthesizer()
@@ -29,12 +30,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.vocabularyExportHandler)
+        webView.configuration.userContentController.add(self, name: Self.shareInboxHandler)
         speechSynthesizer.delegate = self
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(stopSpeechForBackground),
             name: UIApplication.willResignActiveNotification,
             object: nil
+        )
+        webView.configuration.userContentController.addUserScript(
+            WKUserScript(source: Self.shareInboxScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         )
         webView.configuration.userContentController.addUserScript(
             WKUserScript(
@@ -46,6 +51,19 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == Self.shareInboxHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let request = message.body as? [String: Any],
+                  let action = request["action"] as? String else { return }
+            if action == "list" { deliverSharedLinks() }
+            if action == "ack", let ids = request["ids"] as? [String] {
+                do { try ShareInboxStore.acknowledge(ids: ids) }
+                catch { NSLog("[BreezeShareInbox] acknowledge failed: %@", error.localizedDescription) }
+            }
+            return
+        }
         if message.name == Self.vocabularyExportHandler {
             guard message.frameInfo.isMainFrame,
                   message.frameInfo.securityOrigin.protocol == "breeze",
@@ -67,6 +85,29 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
               let request = message.body as? [String: Any] else { return }
         handleSpeechRequest(request)
     }
+
+    func deliverSharedLinks() {
+        do {
+            let items = try ShareInboxStore.pending()
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(items)
+            guard let json = String(data: data, encoding: .utf8) else { return }
+            NSLog("[BreezeShareInbox] loaded %d pending links", items.count)
+            webView?.evaluateJavaScript("window.breezeShareInboxPending = \(json); window.dispatchEvent(new CustomEvent('breeze-share-inbox',{detail:window.breezeShareInboxPending}))", completionHandler: nil)
+        } catch {
+            NSLog("[BreezeShareInbox] read failed: %@", error.localizedDescription)
+        }
+    }
+
+    private static let shareInboxScript = """
+    window.breezeShareInboxPending = [];
+    window.breezeShareInbox = {
+      list: () => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'list'}),
+      acknowledge: ids => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'ack', ids})
+    };
+    window.addEventListener('load', () => window.breezeShareInbox.list(), {once:true});
+    """
 
     private func reportVocabularyExport(id: String, error: String? = nil) {
         let payload: [String: Any] = ["id": id, "error": error ?? ""]
@@ -297,6 +338,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        (window?.rootViewController as? BreezeBridgeViewController)?.deliverSharedLinks()
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
