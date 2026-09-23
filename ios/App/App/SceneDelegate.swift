@@ -127,7 +127,12 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                let url = URL(string: item.url),
                let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
                url.host != nil {
-                UIApplication.shared.open(url)
+                UIApplication.shared.open(url) { [weak self] opened in
+                    guard opened else { return }
+                    do { try ShareInboxStore.markOpened(id: id) }
+                    catch { NSLog("[BreezeShareInbox] mark opened failed: %@", error.localizedDescription) }
+                    self?.deliverSharedLinks()
+                }
             }
             if action == "ack", let ids = request["ids"] as? [String] {
                 do { try ShareInboxStore.acknowledge(ids: ids) }
@@ -203,7 +208,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             let data = try encoder.encode(items)
             guard let json = String(data: data, encoding: .utf8) else { return }
             NSLog("[BreezeShareInbox] loaded %d pending links", items.count)
-            webView?.evaluateJavaScript("window.breezeShareInboxPending = \(json); window.dispatchEvent(new CustomEvent('breeze-share-inbox',{detail:window.breezeShareInboxPending}))", completionHandler: nil)
+            webView?.evaluateJavaScript("window.breezeShareInboxPending = \(json); window.dispatchEvent(new CustomEvent('breeze-share-inbox',{detail:window.breezeShareInboxPending}))") { _, error in
+                if let error { NSLog("[BreezeShareInbox] delivery failed: %@", error.localizedDescription) }
+            }
         } catch {
             NSLog("[BreezeShareInbox] read failed: %@", error.localizedDescription)
         }

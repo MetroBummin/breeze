@@ -392,10 +392,10 @@ function renderHome(){
   renderHomeResume();
   const casuals=casualBooks(),nowCasual=nowReadingIn(casuals),rail=document.getElementById('casual-rail');
   const currentCasual=casuals.find(book=>book.id===nowCasual);
-  /* 홈에는 이어 읽던 글만 둡니다. 나머지 저장 글은 내 글 서가에서 찾고,
-     새 RSS 카드는 바로 다음부터 보입니다. */
+  /* 이어 읽던 글 다음에 외부에서 저장한 링크, 그다음 RSS를 둡니다. */
   const casualSpecs=[{key:'add',stamp:'',create:casualAddCard}];
   if(currentCasual)casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
+  if(typeof homeSharedLinkSpecs==='function')casualSpecs.splice(currentCasual?1:0,0,...homeSharedLinkSpecs());
   reconcileHomeCards(rail,casualSpecs);
   if(typeof appendRssCards==='function')appendRssCards(rail);
   const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');
@@ -416,13 +416,14 @@ function renderCasualLibrary(){
     renderRssCards(discover,false,document.getElementById('casual-discover-empty'));
   const grid = document.getElementById('casual-grid');
   const empty = document.getElementById('casual-empty');
-  document.getElementById('casual-cnt').textContent = casuals.length ? `${casuals.length}편` : '';
   grid.innerHTML = '';
   casuals.forEach(book => grid.appendChild(casualCard(book, current)));
   const cloud=serverOnlyCasuals(); cloud.forEach(row=>grid.appendChild(cloudCasualCard(row)));
-  empty.hidden = casuals.length > 0 || cloud.length > 0;
+  const readLinks = typeof renderReadSharedLinks === 'function' ? renderReadSharedLinks(grid) : 0;
+  const count = casuals.length + readLinks;
+  document.getElementById('casual-cnt').textContent = count ? `${count}편` : '';
+  empty.hidden = count > 0 || cloud.length > 0;
   empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
-  if(typeof renderSharedLinks === 'function') renderSharedLinks();
 }
 
 function renderLongformLibrary(){
