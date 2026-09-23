@@ -121,6 +121,14 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                   let request = message.body as? [String: Any],
                   let action = request["action"] as? String else { return }
             if action == "list" { deliverSharedLinks() }
+            if action == "open", let id = request["id"] as? String,
+               UUID(uuidString: id) != nil,
+               let item = try? ShareInboxStore.pending().first(where: { $0.id == id }),
+               let url = URL(string: item.url),
+               let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
+               url.host != nil {
+                UIApplication.shared.open(url)
+            }
             if action == "ack", let ids = request["ids"] as? [String] {
                 do { try ShareInboxStore.acknowledge(ids: ids) }
                 catch { NSLog("[BreezeShareInbox] acknowledge failed: %@", error.localizedDescription) }
@@ -205,7 +213,8 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     window.breezeShareInboxPending = [];
     window.breezeShareInbox = {
       list: () => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'list'}),
-      acknowledge: ids => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'ack', ids})
+      acknowledge: ids => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'ack', ids}),
+      open: id => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'open', id})
     };
     window.addEventListener('load', () => window.breezeShareInbox.list(), {once:true});
     """

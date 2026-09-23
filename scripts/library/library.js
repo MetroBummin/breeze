@@ -422,6 +422,7 @@ function renderCasualLibrary(){
   const cloud=serverOnlyCasuals(); cloud.forEach(row=>grid.appendChild(cloudCasualCard(row)));
   empty.hidden = casuals.length > 0 || cloud.length > 0;
   empty.innerHTML = '아직 담아 둔 짧은 글이 없어요.<br>기사 URL을 넣거나 본문을 붙여넣어 보세요.';
+  if(typeof renderSharedLinks === 'function') renderSharedLinks();
 }
 
 function renderLongformLibrary(){

@@ -42,7 +42,7 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
-  <link rel="stylesheet" href="styles/home.css?v=bd87664c">
+  <link rel="stylesheet" href="styles/home.css?v=af5051d8">
   <link rel="stylesheet" href="styles/reader.css?v=72c97b63">
   <link rel="stylesheet" href="styles/dictionary.css?v=e81937fd">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
@@ -82,7 +82,8 @@
   <script defer src="scripts/reader/gesture.js?v=c2324283"></script>
   <script defer src="scripts/reader/pdf-pinch.js?v=b4b7fb0f"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=06870a61"></script>
+  <script defer src="scripts/library/library.js?v=be87f6a7"></script>
+  <script defer src="scripts/library/shared-links.js?v=a0a468d3"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
   <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
@@ -170,6 +171,10 @@
     </div>
     <div id="casual-grid" class="casual-rail"></div>
     <div id="casual-empty" hidden></div>
+  </section>
+  <section class="casual-library-row" id="shared-links-section" aria-labelledby="shared-links-title" hidden>
+    <div class="casual-library-head"><h1 id="shared-links-title">공유 링크</h1><span class="cnt" id="shared-links-count"></span></div>
+    <div id="shared-links-list" class="shared-links-list"></div>
   </section>
 </div>
 
