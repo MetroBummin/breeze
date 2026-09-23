@@ -127,12 +127,12 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                let url = URL(string: item.url),
                let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
                url.host != nil {
-                UIApplication.shared.open(url) { [weak self] opened in
-                    guard opened else { return }
-                    do { try ShareInboxStore.markOpened(id: id) }
-                    catch { NSLog("[BreezeShareInbox] mark opened failed: %@", error.localizedDescription) }
-                    self?.deliverSharedLinks()
-                }
+                UIApplication.shared.open(url)
+            }
+            if action == "read", let id = request["id"] as? String, UUID(uuidString: id) != nil {
+                do { try ShareInboxStore.markOpened(id: id) }
+                catch { NSLog("[BreezeShareInbox] mark read failed: %@", error.localizedDescription) }
+                deliverSharedLinks()
             }
             if action == "ack", let ids = request["ids"] as? [String] {
                 do { try ShareInboxStore.acknowledge(ids: ids) }
@@ -221,6 +221,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     window.breezeShareInbox = {
       list: () => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'list'}),
       acknowledge: ids => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'ack', ids}),
+      markRead: id => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'read', id}),
       open: id => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'open', id})
     };
     window.addEventListener('load', () => window.breezeShareInbox.list(), {once:true});

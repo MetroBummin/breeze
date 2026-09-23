@@ -29,7 +29,7 @@ function sharedHomeCard(item) {
   const card = document.createElement('button');
   card.type = 'button';
   card.className = 'casual shared-card';
-  card.setAttribute('aria-label', `원문 열기: ${label.title}`);
+  card.setAttribute('aria-label', `Breeze에서 읽기: ${label.title}`);
   const thumb = document.createElement('span');
   thumb.className = 'thumb';
   const source = document.createElement('span');
@@ -40,7 +40,7 @@ function sharedHomeCard(item) {
   lede.textContent = label.title;
   const hint = document.createElement('span');
   hint.className = 'shared-card-hint';
-  hint.textContent = '원문 열기 ↗';
+  hint.textContent = 'Breeze에서 읽기';
   thumb.append(source, lede, hint);
   const title = document.createElement('span');
   title.className = 'ct';
@@ -49,7 +49,7 @@ function sharedHomeCard(item) {
   meta.className = 'cm';
   meta.textContent = [item.openedAt ? '읽은 글' : '저장한 글', sharedLinkDate(item.savedAt)].filter(Boolean).join(' · ');
   card.append(thumb, title, meta);
-  card.addEventListener('click', () => nativeShareWindow.breezeShareInbox?.open(item.id));
+  card.addEventListener('click', () => openSharedArticle(item,card));
   return card;
 }
 
@@ -62,7 +62,7 @@ function homeSharedLinkSpecs() {
 }
 
 function renderReadSharedLinks(container) {
-  const read = sharedLinks.filter(item => item.openedAt);
+  const read = sharedLinks.filter(item => item.openedAt && !sharedArticleBook(item));
   for (const item of read) container.appendChild(sharedHomeCard(item));
   return read.length;
 }
@@ -91,3 +91,24 @@ function receiveSharedLinks(items) {
 
 window.addEventListener('breeze-share-inbox', event => receiveSharedLinks(/** @type {CustomEvent} */ (event).detail));
 if (Array.isArray(nativeShareWindow.breezeShareInboxPending)) receiveSharedLinks(nativeShareWindow.breezeShareInboxPending);
+
+function sharedArticleBook(item){
+  return books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === articleUrlKey(item.url));
+}
+async function openSharedArticle(item,card){
+  if(card.disabled) return;
+  card.disabled = true;
+  const hint = card.querySelector('.shared-card-hint'); hint.textContent = '본문을 가져오는 중…';
+  try{
+    const fallback = card.nextElementSibling?.classList.contains('shared-original') ? card.nextElementSibling : null;
+    await ingestArticle(item.url);
+    fallback?.remove();
+    // Persisted Reader content is the handoff boundary. Never delete the original inbox record.
+    nativeShareWindow.breezeShareInbox?.markRead?.(item.id);
+  }catch(error){
+    hint.textContent = '본문을 가져오지 못했어요 · 다시 시도';
+    if(!card.nextElementSibling?.classList.contains('shared-original')){
+      const link = articleOriginalLink(item.url); link.className = 'shared-original'; card.after(link);
+    }
+  }finally{card.disabled = false;}
+}

@@ -478,7 +478,7 @@ function updatePastePreview(){
 async function saveCasualBook(parsed, extra){
   const id = bookHash(parsed.paras);
   const existing = books.find(book => book.id === id);
-  if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); openBook(existing); return; }
+  if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); await openBook(existing); return existing; }
   const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
     addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
     textAvailable:true, sourceMap:null, layoutSignals:null,
@@ -487,8 +487,9 @@ async function saveCasualBook(parsed, extra){
   books.unshift(book);
   closeAddModal();
   renderHome();
-  openBook(book);
+  await openBook(book);
   queueSync();                   // 읽기를 막지 않도록 기다리지 않습니다
+  return book;
 }
 
 async function importPastedText(){

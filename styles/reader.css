@@ -529,3 +529,11 @@ body.reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{
 body.reader-notice-visible.chrome-hidden #readpill{width:min(56vw,400px);height:44px;}
 body.reader-notice-visible.chrome-hidden #readpill #reader-notice{left:12px;}
 body.sentence-pill-waiting #reader-notice{display:none;}
+
+/* Imported semantic blocks use Breeze typography, never publisher CSS. */
+#rtext .article-list-item{padding-inline-start:1.4em;position:relative}
+#rtext .article-list-item::before{content:attr(data-marker);position:absolute;inset-inline-start:0;opacity:.65}
+#rtext .article-caption{font-size:.8em;opacity:.7}
+#rtext .article-table-row{font-family:monospace;overflow-wrap:anywhere}
+#rtext .article-links{display:flex;flex-wrap:wrap;gap:.5em 1em;font-size:.7em;margin:-.5em 0 1.4em}
+#rtext .article-links a{color:inherit;text-decoration:underline;overflow-wrap:anywhere}

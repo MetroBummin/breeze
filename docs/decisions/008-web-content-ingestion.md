@@ -1,0 +1,92 @@
+# Public web content ingestion
+
+## Product boundary
+
+People want something to read, not an RSS inbox. A URL is a durable source identity;
+only a selected article becomes a local Breeze book. Discovery feeds stay small,
+local and optional. No new content server, platform scraper or hidden-content
+recovery is introduced. Existing article/image relay remains the transport.
+
+## Pipeline
+
+Share Extension -> atomic App Group URL record -> unread Home card -> explicit tap
+-> `ingestArticle` -> fetch -> Readability 0.6.0 -> semantic blocks -> existing
+`saveCasualBook`/IndexedDB -> existing Reader. The native record is marked opened
+only after persistence and Reader opening succeed, and is never acknowledged/deleted.
+Fallback opening alone no longer marks it read. Read articles use the existing
+Casuals shelf; re-sharing can present the URL as unread again. Canonicalization
+removes fragments and common tracking keys, not arbitrary query parameters.
+Concurrent requests for the same normalized URL share one job.
+
+URL entry and feed cards call the same ingestion function. Feed discovery accepts
+RSS/Atom directly, advertised HTML alternate links, and small conventional feed
+URL candidates. Medium, Substack and Reddit have no article-specific parser.
+The two existing default feeds remain; users can add/remove a small local set of
+sources without folders, unread counts, or a new RSS management screen. Feed
+failures are isolated. Missing photos do not suppress otherwise useful essays.
+
+## Content boundary
+
+Readability selects the main content in an inert document, with document/element
+limits. It is not trusted as a sanitizer: Breeze walks its output and builds plain
+text plus explicit metadata. No source HTML, CSS, script, event attribute or custom
+class is inserted into the Reader. Allowed HTTP(S) image/link URLs are rebuilt.
+Known access-restricted pages are rejected; no credentials or hidden platform
+state are used to recover their content.
+
+Blocks use the existing paragraph-indexed representation: headings, paragraphs,
+quotes, list markers, image/alt/caption, code and text table rows. Bold/italic are
+character-offset metadata painted onto existing word spans. Links are explicit
+references immediately below their paragraph, so tapping a word still means
+lookup. Table rows preserve cell order with separators; publisher table layout,
+merged-cell geometry, video and interactive content are not reproduced. Image
+blobs stay local (with an ArrayBuffer record fallback for WebKit Blob write failures), and failed images leave readable text plus a notice and source
+link. Author/date/source are retained locally and displayed by the original link.
+
+X/Twitter and Reddit conversations currently fall back to the original. A thread
+needs reliable post identity and reply boundaries; pretending a long collection
+of replies is one article is worse than a clear fallback. Medium public pages
+use the ordinary extraction path when accessible. Login, paywall, blocked,
+script-only, short/low-content responses and network failures offer retry/original.
+A generic extractor is heuristic: it cannot guarantee complete content on every
+publisher, and cannot infer all undeclared access restrictions.
+
+## Interaction and verification
+
+Paragraph text and word identity do not change when formatting is applied. Lazy
+word hydration restores emphasis; vocabulary repaint keeps the same nodes. Source
+links are outside lookup paragraphs. Existing gesture/sentence ownership remains
+unchanged. Browser tests exercise storage handoff, duplicate URLs, parsing failures,
+unsafe content, semantic blocks, images, phone viewport/themes, word tap, sentence
+hold and scroll. Existing cross-format Reader regressions remain required.
+Physical share sheet -> app activation -> Reader remains a separate device check;
+a successful simulator build or browser-injected inbox event is not that proof.
+
+## Source verification (2026-09-23)
+
+- Medium documents profile/publication/topic RSS and explicitly excludes complete
+  paid stories: https://help.medium.com/hc/en-us/articles/214874118
+- Substack documents `/feed`: https://support.substack.com/hc/en-us/articles/360038239391
+- Reddit's archived API documentation describes `.rss`; availability was checked
+  against the actual subreddit response, not inferred from that old document:
+  https://github.com/reddit-archive/reddit/wiki/API
+- Mozilla documents extraction and its separate sanitation requirement:
+  https://github.com/mozilla/readability
+
+Live HTTP samples: Medium feed 10 entries, One Useful Thing/Substack 20,
+Reddit r/science Atom 25, ProPublica 20, all parsed in Chromium and WebKit.
+Captured public HTML produced Paul Graham's The Need to Read (12 paragraphs),
+Substack's The Overhang (26 including 5 image blocks), and a ProPublica article
+(29). Through the actual browser transport/relay, Paul Graham and Substack opened
+as local Reader books; Substack image requests failed gracefully in that run.
+The sampled Medium article returned 403 and offered original-source fallback.
+Feed availability does not imply full article availability.
+
+`npm test`, `npm run test:ingestion`, `npm run test:home-ui`, sentence cue browser
+and word presentation browser regressions passed. `npm run ios:sync` and the iOS
+simulator Debug build passed. Ingestion tests include a failed persistent write
+before retry, App Group event/mark-read bridge fixtures, image decode, source
+addition/removal, duplicate URL reuse, partial feed failure, unsafe HTML/links,
+phone light/dark, word tap, sentence hold, scroll and original fallback.
+Share Extension delivery is simulated at its WebView event boundary in these
+browser tests; no new physical-device share round trip has been performed.
