@@ -59,6 +59,13 @@ try{
    assert.equal(await page.evaluate(async()=>{try{await discoverFeed('https://x.com/example');return false;}catch(error){return /RSS/.test(error.message);}}),true);
    assert.equal(await page.evaluate(entry=>parseFeedPost(entry)?.blocks.some(block=>block.marks?.some(mark=>mark.kind==='strong')),xEntry),true);
    assert.equal(await page.evaluate(()=>{try{parseRss('<rss><broken>',{url:'https://a.example',name:'bad'});return false;}catch{return true;}}),true);
+   assert.deepEqual(await page.evaluate(()=>{
+     const feed={url:'https://medium.com/feed/tag/culture',name:'Medium'};
+     const bad='<rss><channel><item><title>Ketika Simbol Kesucian Tidak Lagi Menjamin Keselamatan</title><link>https://example.com/id</link><description>Beberapa waktu lalu saya menonton sebuah dokumenter yang dibuat oleh tim BBC mengenai kasus yang terjadi di lingkungan pesantren. Mereka kembali mendatangi tempat di mana kejadian itu berlangsung.</description></item></channel></rss>';
+     const good='<rss><channel><item><title>The quiet pleasure of reading</title><link>https://example.com/en</link><description>Reading helps us notice the world around us. It brings people together and gives them a calm moment to think about what matters.</description></item></channel></rss>';
+     const japanese='<rss><channel><item><title>今日は読書の時間です</title><link>https://example.com/ja</link><description>Photo by Jane on Unsplash. 今日は読書を楽しむために静かな場所を見つけました。新しい本を読みながらゆっくりと過ごします。</description></item></channel></rss>';
+     return [parseRss(bad,feed).length,parseRss(japanese,feed).length,parseRss(good,feed).length];
+   }),[0,0,1]);
    await page.evaluate(async xml=>{
     if(rssLoading)await rssLoading;
     const original=fetchArticleHtml;

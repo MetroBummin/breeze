@@ -119,3 +119,10 @@ article content is unchanged. Existing palette tokens supply both themes, and
 real covers hide the ornament. Add/loading/cloud-recovery controls retain their
 existing layout. No image generation, remote cover requests or new assets are
 needed. Phone and desktop light/dark screenshots were reviewed with WebKit.
+
+The book edit sheet and its cover search step use the expanded word lookup
+surface, line, ink and action tokens. Search and own-photo buttons follow its
+slightly rectangular 12px controls, and the picked image gets a quiet first-star
+selection line. The three-column image grid fits the same compact sheet in both
+themes; it adds no bright selection fill. Only an imported local book opens
+this sheet. RSS discovery cards suppress context menus and ignore long holds.

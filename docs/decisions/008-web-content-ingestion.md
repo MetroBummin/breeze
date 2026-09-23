@@ -191,3 +191,28 @@ That Can Cost Your Business Customers” opened the matching Medium article in
 Reader with 73 paragraphs. Screenshot: /tmp/breeze-medium-reader-verified.png.
 The initial click harness was blocked by onboarding; the completed run used the
 normal onboarding-completed state and a visible Home card.
+
+## English discovery and optional cover choice
+
+Discovery checks feed prose for English words and rejects strong non-English
+signals, including Latin-script Indonesian; it does not delete user-saved books
+or shared links. The filter is heuristic because many feeds do not declare item
+language. An Indonesian Medium title/body fixture is rejected while an English
+article and existing Reddit link posts remain supported.
+
+Once a book is imported, its existing long-press edit sheet can search Wikimedia
+Commons for an optional cover. The query is user-initiated and editable. Results
+are restricted to image metadata marked public domain or CC0, supported raster
+formats and reasonable dimensions. A picked thumbnail is copied into local image
+storage before the book's cover key and recovery URL are committed. The Commons
+source page remains linked in the edit sheet. Search/selection has no path from
+RSS discovery cards. Chromium/WebKit fixtures verify the licensing filter, saved
+image/blob recovery metadata, and disabled discovery long press. Live Commons
+search and cover saving were also checked in the desktop browser.
+
+Feed card images come from feed cover metadata and can render independently of
+the Reader body. Reader extraction retains only semantic body images and locally
+stores successfully fetched blobs, with an eight-image limit. Therefore a cover
+can appear outside without being an inline photo inside, especially when an
+image is only `og:image` or an image download fails. A selected manual cover
+changes the card jacket; it does not insert an image into the article body.

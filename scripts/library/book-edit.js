@@ -7,6 +7,9 @@
    되돌릴 수 없는 쪽을 기본으로 두면 안 됩니다. */
 
 let editTarget = null;
+let selectedCoverPhoto = null;
+let coverSearchId = 0;
+let coverSavePending = false;
 
 const editModal = () => document.getElementById('edit-modal');
 
@@ -18,14 +21,101 @@ function editStep(step){
 function openEditSheet(book, step){
   if(!book) return;
   editTarget = book;
+  selectedCoverPhoto = null;
+  coverSearchId++;
   document.getElementById('ed-title').value = book.title;
   document.getElementById('ed-what').textContent = book.title;
   renderCoverChoices(book);
+  const source = /** @type {HTMLAnchorElement} */(document.getElementById('ed-cover-source'));
+  source.hidden = !book.coverSourcePage;
+  if(book.coverSourcePage) source.href = book.coverSourcePage;
   document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   editModal().classList.add('on');
   editStep(step || 'edit');
 }
-function closeEditSheet(){ editModal().classList.remove('on'); editTarget = null; }
+function closeEditSheet(){
+  editModal().classList.remove('on'); editTarget = null;
+  selectedCoverPhoto = null; coverSearchId++;
+}
+
+function openCoverSearch(){
+  if(!editTarget) return;
+  (/** @type {HTMLInputElement} */(document.getElementById('ed-cover-query'))).value = editTarget.title.slice(0, 90);
+  document.getElementById('ed-cover-search-status').textContent = '';
+  document.getElementById('ed-cover-results').replaceChildren();
+  editStep('cover-search');
+  searchCoverPhotos();
+}
+
+function commonsCoverResults(payload){
+  return Object.values(payload?.query?.pages || {})
+    .sort((a,b)=>(a.index||0)-(b.index||0))
+    .map(page=>{
+      const info=page.imageinfo?.[0], meta=info?.extmetadata || {};
+      const license=String(meta.LicenseShortName?.value || '');
+      const imageUrl=info?.thumburl || '';
+      const pageUrl=info?.descriptionurl || '';
+      if(!/^(?:public domain|cc0)/i.test(license) ||
+         !/^image\/(?:jpeg|png|webp)$/i.test(info?.mime || '') ||
+         Math.min(info.width||0,info.height||0)<300 ||
+         !/^https:\/\/(?:thumb|upload)\.wikimedia\.org\//.test(imageUrl) ||
+         !/^https:\/\/commons\.wikimedia\.org\//.test(pageUrl)) return null;
+      return {title:page.title.replace(/^File:/,''),imageUrl,pageUrl,license};
+    }).filter(Boolean).slice(0,12);
+}
+
+async function searchCoverPhotos(event){
+  event?.preventDefault();
+  if(!editTarget) return;
+  const query=(/** @type {HTMLInputElement} */(document.getElementById('ed-cover-query'))).value.trim().slice(0,90);
+  const status=document.getElementById('ed-cover-search-status');
+  const results=document.getElementById('ed-cover-results');
+  const id=++coverSearchId;
+  results.replaceChildren();
+  if(!query){status.textContent='검색어를 입력해 주세요.';return;}
+  status.textContent='사진을 찾는 중…';
+  const params=new URLSearchParams({action:'query',generator:'search',gsrsearch:query,
+    gsrnamespace:'6',gsrlimit:'40',prop:'imageinfo',iiprop:'url|mime|size|extmetadata',
+    iiurlwidth:'480',format:'json',origin:'*'});
+  try{
+    const response=await fetch('https://commons.wikimedia.org/w/api.php?'+params,
+      {credentials:'omit',signal:AbortSignal.timeout(12000)});
+    if(!response.ok)throw new Error('search unavailable');
+    const photos=commonsCoverResults(await response.json());
+    if(id!==coverSearchId || !editTarget)return;
+    status.textContent=photos.length ? '사진을 누르면 표지로 고를 수 있어요.' : '쓸 수 있는 사진이 없어요. 검색어를 바꿔보세요.';
+    for(const photo of photos){
+      const button=document.createElement('button');
+      button.type='button';button.className='ed-search-result';
+      button.setAttribute('aria-label',photo.title+' 표지로 선택');
+      const image=document.createElement('img');image.alt='';image.loading='lazy';
+      image.referrerPolicy='no-referrer';image.src=photo.imageUrl;
+      const caption=document.createElement('span');caption.textContent=photo.title;
+      button.append(image,caption);
+      button.onclick=()=>selectCoverPhoto(photo);
+      results.appendChild(button);
+    }
+  }catch(error){
+    if(id===coverSearchId && editTarget) status.textContent='사진을 찾지 못했어요. 잠시 후 다시 시도해 주세요.';
+  }
+}
+
+function selectCoverPhoto(photo){
+  if(!editTarget)return;
+  selectedCoverPhoto=photo;
+  editStep('edit');
+  const wrap=document.getElementById('ed-covers');
+  wrap.querySelectorAll('.ed-search-pick').forEach(node=>node.remove());
+  wrap.querySelectorAll('.ed-cover').forEach(node=>node.classList.remove('on'));
+  const cell=document.createElement('button');cell.type='button';cell.className='ed-cover ed-search-pick on';
+  cell.setAttribute('aria-label','선택한 사진');
+  const image=document.createElement('img');image.alt='';image.src=photo.imageUrl;
+  image.referrerPolicy='no-referrer';cell.appendChild(image);
+  cell.onclick=()=>{wrap.querySelectorAll('.ed-cover').forEach(node=>node.classList.remove('on'));cell.classList.add('on');wrap.dataset.pick='__search__';};
+  wrap.appendChild(cell);wrap.dataset.pick='__search__';cell.scrollIntoView({block:'nearest',inline:'nearest'});
+  const source=/** @type {HTMLAnchorElement} */(document.getElementById('ed-cover-source'));
+  source.href=photo.pageUrl;source.hidden=false;
+}
 
 /* 표지 고르기 — 기사라면 그 기사가 데려온 사진 중에서 고릅니다. 그림을
    새로 만들 필요가 없는 가장 흔한 경우입니다. */
@@ -41,6 +131,8 @@ function renderCoverChoices(book){
       wrap.querySelectorAll('.ed-cover').forEach(other => other.classList.remove('on'));
       cell.classList.add('on');
       wrap.dataset.pick = key;
+      selectedCoverPhoto = null;
+      document.getElementById('ed-cover-source').hidden = key !== (book.cover || '') || !book.coverSourcePage;
     };
     if(key) bookImageBlob(book, key).then(blob => {
       if(blob) cell.querySelector('img').src = URL.createObjectURL(blob);
@@ -65,9 +157,12 @@ async function pickCoverFile(input){
   const key = editTarget.id + '|cover';
   await imgPut(key, file);
   editTarget.cover = key;
+  editTarget.coverSourcePage = '';
   editTarget.coverUpdatedAt = Date.now();
   await bookPut(editTarget);
+  queueSync();
   renderCoverChoices(editTarget);
+  document.getElementById('ed-cover-source').hidden = true;
   renderAllBookViews();
 }
 
@@ -78,6 +173,33 @@ async function saveEditSheet(){
   const picked = document.getElementById('ed-covers').dataset.pick || '';
   let changed = false;
 
+  if(picked === '__search__' && selectedCoverPhoto){
+    if(coverSavePending)return;
+    coverSavePending=true;
+    const photo=selectedCoverPhoto;
+    const requestId=coverSearchId;
+    try{
+      const blob=await fetchArticleImage(photo.imageUrl);
+      if(editTarget!==book || requestId!==coverSearchId)return;
+      if(!blob){toast('사진을 저장하지 못했어요. 다른 사진을 골라주세요.');return;}
+      const key=book.id+'|cover|'+(crypto.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36).slice(2));
+      await imgPut(key,blob);
+      try{
+        if(editTarget!==book || requestId!==coverSearchId){await imgDel(key);return;}
+        const next={...book,title:typed || book.title,
+          renamedAt:typed && typed!==book.title ? Date.now() : book.renamedAt,
+          cover:key,coverUpdatedAt:Date.now(),coverSourcePage:photo.pageUrl,
+          imgSrc:{...book.imgSrc,[key]:photo.imageUrl}};
+        await bookPut(next);
+        Object.assign(book,next);
+      }catch(error){await imgDel(key);throw error;}
+    }catch(error){
+      toast('표지를 저장하지 못했어요. 다시 시도해 주세요.');
+      return;
+    }finally{coverSavePending=false;}
+    closeEditSheet();renderAllBookViews();toast('표지를 바꿨어요');queueSync();
+    return;
+  }
   if(typed && typed !== book.title){
     book.title = typed;
     book.renamedAt = Date.now();        // 어느 쪽 이름이 최신인지 판단하는 기준
@@ -86,6 +208,7 @@ async function saveEditSheet(){
   if(picked !== (book.cover || '')){
     book.cover = picked || null;
     book.coverUpdatedAt = Date.now();
+    book.coverSourcePage = '';
     changed = true;
   }
   if(!changed){ closeEditSheet(); return; }

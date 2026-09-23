@@ -144,6 +144,21 @@ function rssLinkedArticle(html, postUrl){
   const url = link ? articleAbsolute(link.getAttribute('href'),postUrl) : '';
   return url && !rssPostKind(url) ? url : '';
 }
+// Discovery is for English reading. Judge the supplied prose, not only a title
+// or the script: Indonesian and English both use Latin letters.
+const RSS_ENGLISH_WORDS = new Set('the a an and or but if in on at to of for from with by as is are was were be been being it its this that these those they their them we our you your he she his her who which what when where how not no can could would should will have has had do does did more most some any all one about into over after before than there here also such through between while because only other'.split(' '));
+const RSS_OTHER_WORDS = new Set('yang dan dengan untuk dari pada dalam tidak adalah sebagai juga mereka saya kamu kita ini itu tersebut oleh karena maka akan telah sudah dapat bisa namun tetapi seorang beberapa waktu lalu ketika sebuah serta tentang menurut menjadi orang sangat atau antara dari kepada la les des une un et dans pour avec sur aux est sont nous vous ils elle il ce cette ces pas qui que je de du en mais au se son ses plus una uno los las el ella del por con para como sobre sus este esta estos estas pero porque muy anche della delle sono che non per gli una uno einen eine und der die das nicht ist ich wir sie den dem auf mit ein zu im von es sich des et cette une les dans pour avec qui que pas aux du au est sont nous vous je'.split(' '));
+function rssLooksEnglish(entry){
+  const body=rssHtmlText(entry.contentHtml || entry.summary || '').slice(0,6000);
+  const sample=(body.length>=100 ? body : [entry.title,entry.summary].join(' ')).toLowerCase();
+  const letters=sample.match(/\p{L}/gu)?.length || 0;
+  if(letters>=20 && (sample.match(/[a-z]/g)?.length || 0)/letters<.65)return false;
+  const words=sample.match(/[a-z]+(?:'[a-z]+)?/g)?.slice(0,450) || [];
+  if(words.length<3)return false;
+  const english=words.filter(word=>RSS_ENGLISH_WORDS.has(word)).length;
+  const other=words.filter(word=>RSS_OTHER_WORDS.has(word) && !RSS_ENGLISH_WORDS.has(word)).length;
+  return english>=Math.max(words.length<15?1:2,Math.ceil(words.length*.055)) && english>other;
+}
 function parseRss(xml, feed){
   if(String(xml).length > 3000000 || /<!DOCTYPE|<!ENTITY/i.test(xml)) throw new Error('피드를 읽지 못했어요');
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -163,7 +178,7 @@ function parseRss(xml, feed){
       date:rssDate(rssText(node, ['published', 'updated', 'pubdate', 'date'])),
     };
   }).filter(entry => {
-    if(!entry.title || !entry.url) return false;
+    if(!entry.title || !entry.url || (!entry.readUrl && !rssLooksEnglish(entry))) return false;
     const key = articleUrlKey(entry.url); if(seen.has(key)) return false; seen.add(key); return true;
   });
 }
@@ -277,7 +292,13 @@ function rssCard(entry){
   card.querySelector('.lede').textContent = entry.title;
   card.querySelector('.ct').textContent = entry.title;
   card.querySelector('.cm').textContent = entry.date ? `${entry.date} · 탭해서 담기` : '탭해서 담기';
-  card.onclick = () => importRssEntry(entry, card);
+  let pressedAt = 0;
+  card.addEventListener('pointerdown', () => { pressedAt = performance.now(); });
+  card.addEventListener('contextmenu', event => event.preventDefault());
+  card.onclick = event => {
+    if(pressedAt && performance.now() - pressedAt >= 500){event.preventDefault();return;}
+    importRssEntry(entry, card);
+  };
   return card;
 }
 async function importRssEntry(entry, card){
