@@ -1,24 +1,36 @@
-/* Shared pull-to-refresh for Home and both shelves. Never owns Reader gestures. */
+/* Pull-to-refresh for the library views. Leave the scroll/bounce to the browser. */
 let libraryRefreshTask=null;
-// Translate only shelf content, never the fixed dock or Reader geometry.
+const LIBRARY_PULL_START=10;
+const LIBRARY_PULL_THRESHOLD=96;
 const libraryRefreshMotion=(()=>{
-  const root=document.documentElement,indicator=document.getElementById('library-refresh');
-  let timer=0,owner='';
-  function clear(){
-    clearTimeout(timer);owner='';
-    root.classList.remove('library-pulling','library-refresh-motion');
-    ['--library-pull','--library-pull-progress','--library-pull-spin'].forEach(name=>root.style.removeProperty(name));
-    indicator.hidden=true;
+  const indicator=document.getElementById('library-refresh');
+  let frame=0,timer=0,owner='',distance=0;
+  function paint(){
+    frame=0;
+    const progress=Math.min(1,distance/LIBRARY_PULL_THRESHOLD);
+    indicator.style.opacity=String(progress);
+    indicator.style.transform=`translate3d(-50%,${Math.round(24*(1-Math.exp(-distance/45)))}px,0)`;
   }
-  function draw(distance,pulling=false){
-    clearTimeout(timer);owner=activeAppView();
-    root.classList.add('library-refresh-motion');
-    root.classList.toggle('library-pulling',pulling);
-    root.style.setProperty('--library-pull',distance+'px');
-    root.style.setProperty('--library-pull-progress',String(Math.min(1,distance/44)));
-    root.style.setProperty('--library-pull-spin',distance*4+'deg');
-    if(distance>0) indicator.hidden=false;
-    else timer=setTimeout(clear,460);
+  function clear(){
+    cancelAnimationFrame(frame);frame=0;
+    clearTimeout(timer);timer=0;owner='';distance=0;
+    indicator.classList.remove('pulling');
+    indicator.hidden=true;
+    indicator.style.removeProperty('opacity');
+    indicator.style.removeProperty('transform');
+  }
+  function draw(next,pulling=false){
+    clearTimeout(timer);
+    owner=activeAppView();distance=next;
+    indicator.classList.toggle('pulling',pulling);
+    if(next>0)indicator.hidden=false;
+    if(pulling){
+      if(!frame)frame=requestAnimationFrame(paint);
+      return;
+    }
+    cancelAnimationFrame(frame);
+    paint();
+    if(next===0)timer=setTimeout(clear,320);
   }
   return {draw,clear,changed:()=>!!owner && owner!==activeAppView()};
 })();
@@ -31,9 +43,9 @@ function refreshLibrary(){
   if(!libraryRefreshAllowed()) return Promise.resolve();
   const view=activeAppView();
   const indicator=document.getElementById('library-refresh');
+  libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
   indicator.classList.add('refreshing');
   indicator.setAttribute('aria-label','새로고침 중');
-  libraryRefreshMotion.draw(44);
   const redraw=()=>{
     if(activeAppView()!==view) return;
     if(view==='home') renderHome();
@@ -64,7 +76,6 @@ function refreshLibrary(){
 }
 
 (()=>{
-  const indicator=document.getElementById('library-refresh');
   let start=null;
   let distance=0;
   const reset=()=>{
@@ -84,20 +95,17 @@ function refreshLibrary(){
     if(event.touches.length!==1 || !libraryRefreshAllowed() || activeAppView()!==start.view || window.scrollY>0){reset();return;}
     const touch=event.touches[0],dx=touch.clientX-start.x,dy=touch.clientY-start.y;
     if(dy<0 || (Math.abs(dx)>10 && Math.abs(dx)>dy)){reset();return;}
-    if(dy<10){
-      if(distance>0){distance=0;libraryRefreshMotion.draw(0,true);}
-      return;
-    }
-    if(event.cancelable) event.preventDefault();
-    distance=96*(1-Math.exp(-dy/120));
-    libraryRefreshMotion.draw(distance,true);
-  },{passive:false});
+    distance=Math.max(0,dy-LIBRARY_PULL_START);
+    if(distance>0)libraryRefreshMotion.draw(distance,true);
+    else if(!document.getElementById('library-refresh').hidden)libraryRefreshMotion.draw(0,true);
+  },{passive:true});
   document.addEventListener('touchend',event=>{
-    const ready=event.touches.length===0 && start && distance>=64 && libraryRefreshAllowed() && activeAppView()===start.view;
-    if(distance>0 && event.cancelable) event.preventDefault();
-    reset();
-    if(ready) void refreshLibrary();
-  },{passive:false});
+    const ready=event.touches.length===0 && start && distance>=LIBRARY_PULL_THRESHOLD && libraryRefreshAllowed() && activeAppView()===start.view;
+    if(ready){
+      start=null;distance=0;
+      void refreshLibrary();
+    }else reset();
+  },{passive:true});
   document.addEventListener('touchcancel',reset,{passive:true});
   const observer=new MutationObserver(()=>{
     if(!libraryRefreshAllowed() || libraryRefreshMotion.changed()) {
