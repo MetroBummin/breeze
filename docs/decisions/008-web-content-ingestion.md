@@ -13,7 +13,12 @@ Share Extension -> atomic App Group URL record -> unread Home card -> explicit t
 -> `ingestArticle` -> fetch -> Readability 0.6.0 -> semantic blocks -> existing
 `saveCasualBook`/IndexedDB -> existing Reader. The native record is marked opened
 only after persistence and Reader opening succeed, and is never acknowledged/deleted.
-Fallback opening alone no longer marks it read. Read articles use the existing
+Failed RSS imports are omitted from discovery for the session (manual feed
+refresh allows another attempt). Failed shared cards are hidden from Home for
+the session without deleting or marking the App Group record read; re-sharing
+with a new saved time or relaunching permits another attempt. No inline failure
+card or original-link button is added to these rails. Explicit URL entry retains
+its original-source fallback. Read articles use the existing
 Casuals shelf; re-sharing can present the URL as unread again. Canonicalization
 removes fragments and common tracking keys, not arbitrary query parameters.
 Concurrent requests for the same normalized URL share one job.
@@ -63,9 +68,10 @@ An accessible X RSS/Atom feed can also supply a post body for the same short-pos
 path. X does not provide an official public profile RSS endpoint, and an X
 profile URL alone cannot create a feed. Breeze does not operate a third-party
 feed generator or collect X account credentials. Direct X post shares and
-posts without useful feed text retain original-source fallback. Medium public pages
+posts without useful feed text are omitted after a failed import. Medium public pages
 use the ordinary extraction path when accessible. Login, paywall, blocked,
-script-only, short/low-content responses and network failures offer retry/original.
+script-only, short/low-content responses and network failures follow the surface's
+failure policy above.
 A generic extractor is heuristic: it cannot guarantee complete content on every
 publisher, and cannot infer all undeclared access restrictions.
 

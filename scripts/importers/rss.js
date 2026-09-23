@@ -60,6 +60,7 @@ let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
 const rssFeedErrors = new Set();
+const rssUnavailableArticles = new Set();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 
@@ -157,6 +158,7 @@ function parseRss(xml, feed){
    떴는데 카드에서는 안 뜬다"는 두 가지 상태가 생기고, 사용자가 보는 것은 늘
    두 번째입니다. 그래서 이 단계는 순서만 정해서 넘깁니다. */
 async function loadRss(force){
+  if(force)rssUnavailableArticles.clear();
   if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
   if(rssLoading) return rssLoading;
   rssLoading = Promise.all(rssSources().map(async feed => {
@@ -222,9 +224,8 @@ async function importRssEntry(entry, card){
       await ingestArticle(entry.url,entry);
     }
   }catch(error){
-    const meta = card.querySelector('.cm');
-    meta.textContent = '본문을 가져오지 못했어요 · ';
-    const link = articleOriginalLink(entry.url); link.onclick = event=>event.stopPropagation(); meta.appendChild(link);
+    rssUnavailableArticles.add(articleUrlKey(entry.url));
+    refreshFeedRails();
   }finally{ card.classList.remove('busy'); }
 }
 /* A feed's own post body is enough for short posts. It never becomes live HTML:
@@ -284,9 +285,10 @@ async function rssFeedCards(entries, renderId, rail){
   const cards = [];
   for(const entry of entries){
     if(cards.length >= RSS_PER_FEED || renderId !== rssRenderIds.get(rail)) break;
-    if(rssAlreadySaved(entry)) continue;
+    if(rssAlreadySaved(entry) || rssUnavailableArticles.has(articleUrlKey(entry.url))) continue;
     const card = rssCard(entry);
     if(entry.photo) await rssCardPhoto(card, entry);
+    if(rssUnavailableArticles.has(articleUrlKey(entry.url)))continue;
     cards.push(card);
   }
   return cards;

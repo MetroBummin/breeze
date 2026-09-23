@@ -67,10 +67,10 @@ try{
    await page.evaluate(()=>{window.readShare=[];window.breezeShareInbox={markRead:id=>window.readShare.push(id)};receiveSharedLinks([{id:'shared-id',url:'https://content.example/article',savedAt:'2026-09-23'}]);});
    await page.evaluate(()=>{window.ingestionBookPut=bookPut;bookPut=async()=>{throw new Error('Simulated storage quota failure');};});
    await page.locator('#casual-rail .shared-card').click();
-   await page.waitForSelector('.shared-original');
+   await page.waitForFunction(()=>!document.querySelector('#casual-rail .shared-card'));
    assert.equal(await page.evaluate(()=>window.readShare.length),0);
    assert.equal(await page.evaluate(()=>sharedLinks.length),1);
-   await page.evaluate(()=>{bookPut=window.ingestionBookPut;});
+   await page.evaluate(()=>{bookPut=window.ingestionBookPut;receiveSharedLinks([{...sharedLinks[0],savedAt:'2026-09-24'}]);});
    await page.locator('#casual-rail .shared-card').click();
    await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/article');
    await page.waitForFunction(()=>window.readShare.includes('shared-id'));
@@ -103,8 +103,10 @@ try{
    }
    await page.evaluate(()=>{show('home');receiveSharedLinks([{id:'failure',url:'https://x.com/a/status/2',savedAt:'2026-09-23'}]);});
    await page.locator('#casual-rail .shared-card').click();
-   await page.waitForSelector('.shared-original');assert(!await page.evaluate(()=>window.readShare.includes('failure')));
-   assert.equal(await page.locator('.shared-original').getAttribute('href'),'https://x.com/a/status/2');
+   await page.waitForFunction(()=>!document.querySelector('#casual-rail .shared-card'));
+   assert(!await page.evaluate(()=>window.readShare.includes('failure')));
+   assert.equal(await page.locator('.shared-original').count(),0);
+   assert.equal(await page.evaluate(()=>sharedLinks[0].url),'https://x.com/a/status/2');
    await page.evaluate(()=>show('casuals'));
    await page.locator('.feed-discovery summary').click();
    await page.locator('#feed-url').fill('https://content.example/');
@@ -156,6 +158,7 @@ try{
    }
    await page.evaluate(async()=>{
     if(rssLoading)await rssLoading;
+    receiveSharedLinks([{id:'pending',url:'https://content.example/pending',savedAt:'2026-09-25'}]);
     rssCands=[[{title:'Science story',source:'Science',category:'science',url:'https://category.example/science',summary:'Science reading'}],
       [{title:'Culture story',source:'Culture',category:'culture',url:'https://category.example/culture',summary:'Culture reading'}]];
     rssLoadedAt=Date.now();show('home');
@@ -176,6 +179,11 @@ try{
    });
    await page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card .ct')?.textContent==='Culture story');
    assert.equal(await page.locator('#casual-rail .rss-card').count(),1);
+   await page.locator('#casual-rail .rss-card').click();
+   await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card').length===0);
+   await page.evaluate(()=>renderHome());
+   assert.equal(await page.locator('#casual-rail .rss-card').count(),0);
+   assert.equal(await page.locator('#casual-rail').textContent().then(text=>text.includes('본문을 가져오지 못했어요')),false);
    for(const dark of [false,true]){
     await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

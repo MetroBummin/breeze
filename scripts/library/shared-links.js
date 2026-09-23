@@ -1,6 +1,8 @@
 /* App Group links stay in the native inbox. Listing them never acknowledges or
    copies them into web storage, so a storage quota error cannot erase a share. */
 let sharedLinks = [];
+const unavailableSharedLinks = new Set();
+const sharedAttemptKey = item => JSON.stringify([item.id,item.savedAt]);
 const nativeShareWindow = /** @type {any} */ (window);
 
 function sharedLinkLabel(item) {
@@ -54,7 +56,7 @@ function sharedHomeCard(item) {
 }
 
 function homeSharedLinkSpecs() {
-  return sharedLinks.filter(item => !item.openedAt).map(item => ({
+  return sharedLinks.filter(item => !item.openedAt && !unavailableSharedLinks.has(sharedAttemptKey(item))).map(item => ({
     key: `shared:${item.url}`,
     stamp: JSON.stringify([item.id, item.title, item.originalText, item.savedAt]),
     create: () => sharedHomeCard(item),
@@ -62,7 +64,7 @@ function homeSharedLinkSpecs() {
 }
 
 function renderReadSharedLinks(container) {
-  const read = sharedLinks.filter(item => item.openedAt && !sharedArticleBook(item));
+  const read = sharedLinks.filter(item => item.openedAt && !sharedArticleBook(item) && !unavailableSharedLinks.has(sharedAttemptKey(item)));
   for (const item of read) container.appendChild(sharedHomeCard(item));
   return read.length;
 }
@@ -100,15 +102,13 @@ async function openSharedArticle(item,card){
   card.disabled = true;
   const hint = card.querySelector('.shared-card-hint'); hint.textContent = '본문을 가져오는 중…';
   try{
-    const fallback = card.nextElementSibling?.classList.contains('shared-original') ? card.nextElementSibling : null;
     await ingestArticle(item.url);
-    fallback?.remove();
+    unavailableSharedLinks.delete(sharedAttemptKey(item));
     // Persisted Reader content is the handoff boundary. Never delete the original inbox record.
     nativeShareWindow.breezeShareInbox?.markRead?.(item.id);
   }catch(error){
-    hint.textContent = '본문을 가져오지 못했어요 · 다시 시도';
-    if(!card.nextElementSibling?.classList.contains('shared-original')){
-      const link = articleOriginalLink(item.url); link.className = 'shared-original'; card.after(link);
-    }
+    unavailableSharedLinks.add(sharedAttemptKey(item));
+    if(activeAppView()==='home')renderHome();
+    else if(activeAppView()==='casuals')renderCasualLibrary();
   }finally{card.disabled = false;}
 }

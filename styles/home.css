@@ -300,4 +300,3 @@
 .feed-discovery button{padding:8px 12px;border-radius:12px;color:inherit;background:var(--quiet);border:1px solid var(--line)}
 #feed-sources{display:flex;flex-wrap:wrap;gap:8px}
 #feed-sources .feed-unavailable{color:var(--danger)}
-.shared-original{align-self:center;max-width:110px;font-size:13px;color:inherit}
