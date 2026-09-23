@@ -3,16 +3,42 @@ import Capacitor
 import WebKit
 import AVFoundation
 
+// Preserve UIKit's spinner and pull animation while placing it in the
+// visible gap. UIKit owns the control's frame, so recalculate after layout.
+private final class BreezeRefreshControl: UIRefreshControl {
+    var verticalPlacement: ((UIRefreshControl) -> CGFloat)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let placement = CATransform3DMakeTranslation(0, verticalPlacement?(self) ?? 0, 0)
+        if !CATransform3DEqualToTransform(layer.sublayerTransform, placement) {
+            layer.sublayerTransform = placement
+        }
+        clipsToBounds = false
+        // The target can overlap the web page's empty safe-area padding.
+        // Keep the system spinner above the opaque WKWebView content there.
+        if superview?.subviews.last !== self { superview?.bringSubviewToFront(self) }
+    }
+}
+
 final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, AVSpeechSynthesizerDelegate {
     private static let themeMessageHandler = "breezeReaderTheme"
     private static let speechMessageHandler = "breezeSpeech"
     private static let vocabularyExportHandler = "breezeVocabularyExport"
+    private static let libraryRefreshHandler = "breezeRefresh"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var speechGenerations: [ObjectIdentifier: Int] = [:]
     private var activeSpeechGeneration: Int?
     private var speechStartDeadline: DispatchWorkItem?
+    private let libraryRefreshControl = BreezeRefreshControl()
+    private var libraryRefreshLogoTop: CGFloat?
+    private var libraryRefreshScrollObservation: NSKeyValueObservation?
+    private var libraryRefreshLayoutSize = CGSize.zero
+    private var libraryRefreshSafeTop: CGFloat = -1
+    private var libraryRefreshSequence = 0
+    private var activeLibraryRefreshSequence: Int?
     private static let speechCategory = "playback"
     private static let speechMode = "default"
     private static let speechOptions = ["duckOthers"]
@@ -25,10 +51,25 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         guard let webView else { return }
 
         webView.scrollView.bounces = true
+        libraryRefreshControl.addTarget(self, action: #selector(refreshLibraryFromScroll), for: .valueChanged)
+        libraryRefreshControl.verticalPlacement = { [weak self] control in
+            guard let self, let webView = self.webView else { return 0 }
+            let safeTop = self.view.safeAreaInsets.top
+            guard let logoTop = self.libraryRefreshLogoTop else { return safeTop }
+            let logoScreenTop = webView.scrollView.convert(CGPoint(x: 0, y: logoTop), to: self.view).y
+            let target = (safeTop + logoScreenTop) / 2
+            let center = control.convert(CGPoint(x: control.bounds.midX, y: control.bounds.midY), to: self.view).y
+            return max(0, target - center)
+        }
+        libraryRefreshScrollObservation = webView.scrollView.observe(\.contentOffset, options: [.new]) { [weak self] scrollView, _ in
+            guard let self, scrollView.refreshControl === self.libraryRefreshControl else { return }
+            self.libraryRefreshControl.setNeedsLayout()
+        }
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.vocabularyExportHandler)
+        webView.configuration.userContentController.add(self, name: Self.libraryRefreshHandler)
         speechSynthesizer.delegate = self
         NotificationCenter.default.addObserver(
             self,
@@ -46,6 +87,28 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == Self.libraryRefreshHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let request = message.body as? [String: Any] else { return }
+            if let enabled = request["enabled"] as? Bool {
+                if enabled {
+                    if webView?.scrollView.refreshControl !== libraryRefreshControl {
+                        webView?.scrollView.refreshControl = libraryRefreshControl
+                        measureLibraryRefreshLogo()
+                    }
+                } else {
+                    finishLibraryRefresh(activeLibraryRefreshSequence)
+                    webView?.scrollView.refreshControl = nil
+                    activeLibraryRefreshSequence = nil
+                }
+            } else if let finished = (request["finished"] as? NSNumber)?.intValue,
+                      finished == activeLibraryRefreshSequence {
+                finishLibraryRefresh(finished)
+            }
+            return
+        }
         if message.name == Self.vocabularyExportHandler {
             guard message.frameInfo.isMainFrame,
                   message.frameInfo.securityOrigin.protocol == "breeze",
@@ -66,6 +129,44 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         guard message.name == Self.speechMessageHandler,
               let request = message.body as? [String: Any] else { return }
         handleSpeechRequest(request)
+    }
+
+    @objc private func refreshLibraryFromScroll() {
+        libraryRefreshSequence += 1
+        let sequence = libraryRefreshSequence
+        activeLibraryRefreshSequence = sequence
+        webView?.evaluateJavaScript("typeof window.breezeNativeRefresh === 'function' && (window.breezeNativeRefresh(\(sequence)), true)") { [weak self] result, error in
+            if error != nil || (result as? Bool) != true {
+                self?.finishLibraryRefresh(sequence)
+            }
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if libraryRefreshLayoutSize != view.bounds.size || libraryRefreshSafeTop != view.safeAreaInsets.top {
+            libraryRefreshLayoutSize = view.bounds.size
+            libraryRefreshSafeTop = view.safeAreaInsets.top
+            measureLibraryRefreshLogo()
+        }
+        libraryRefreshControl.setNeedsLayout()
+    }
+
+    private func measureLibraryRefreshLogo() {
+        guard webView?.scrollView.refreshControl === libraryRefreshControl else { return }
+        // Measure once when enabled or the viewport changes, never on touchmove.
+        // Adding scrollY gives a stable document coordinate even during a pull.
+        webView?.evaluateJavaScript("(() => { const logo = document.getElementById('logo'); return logo ? logo.getBoundingClientRect().top + window.scrollY : null; })()") { [weak self] result, _ in
+            guard let self, let top = (result as? NSNumber)?.doubleValue, top.isFinite, top >= 0 else { return }
+            self.libraryRefreshLogoTop = CGFloat(top)
+            self.libraryRefreshControl.setNeedsLayout()
+        }
+    }
+
+    private func finishLibraryRefresh(_ sequence: Int?) {
+        guard let sequence, activeLibraryRefreshSequence == sequence else { return }
+        libraryRefreshControl.endRefreshing()
+        activeLibraryRefreshSequence = nil
     }
 
     private func reportVocabularyExport(id: String, error: String? = nil) {
@@ -263,6 +364,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView?.backgroundColor = color
         webView?.scrollView.backgroundColor = color
         webView?.underPageBackgroundColor = color
+        // Follow the app's actual background, even when its theme differs
+        // from the device setting. UIKit's spinner also needs the local trait.
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        if color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            let isDark = 0.2126 * red + 0.7152 * green + 0.0722 * blue < 0.5
+            libraryRefreshControl.overrideUserInterfaceStyle = isDark ? .dark : .light
+            libraryRefreshControl.tintColor = isDark
+                ? UIColor.label
+                : UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
+        }
     }
 
     private static let themeReporterScript = """
