@@ -3,17 +3,21 @@ import Capacitor
 import WebKit
 import AVFoundation
 
-// Keep UIKit's own pull-progress and loading animation. Offset the whole
-// control after its layout, since UIKit updates its geometry during the pull.
+// Preserve UIKit's spinner and pull animation while placing it in the
+// visible gap. UIKit owns the control's frame, so recalculate after layout.
 private final class BreezeRefreshControl: UIRefreshControl {
-    var indicatorOffset: CGFloat = 0 {
-        didSet { if oldValue != indicatorOffset { setNeedsLayout() } }
-    }
+    var verticalPlacement: ((UIRefreshControl) -> CGFloat)?
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let placement = CGAffineTransform(translationX: 0, y: indicatorOffset)
-        if transform != placement { transform = placement }
+        let placement = CATransform3DMakeTranslation(0, verticalPlacement?(self) ?? 0, 0)
+        if !CATransform3DEqualToTransform(layer.sublayerTransform, placement) {
+            layer.sublayerTransform = placement
+        }
+        clipsToBounds = false
+        // The target can overlap the web page's empty safe-area padding.
+        // Keep the system spinner above the opaque WKWebView content there.
+        if superview?.subviews.last !== self { superview?.bringSubviewToFront(self) }
     }
 }
 
@@ -29,6 +33,10 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var activeSpeechGeneration: Int?
     private var speechStartDeadline: DispatchWorkItem?
     private let libraryRefreshControl = BreezeRefreshControl()
+    private var libraryRefreshLogoTop: CGFloat?
+    private var libraryRefreshScrollObservation: NSKeyValueObservation?
+    private var libraryRefreshLayoutSize = CGSize.zero
+    private var libraryRefreshSafeTop: CGFloat = -1
     private var libraryRefreshSequence = 0
     private var activeLibraryRefreshSequence: Int?
     private static let speechCategory = "playback"
@@ -45,6 +53,19 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView.scrollView.bounces = true
         libraryRefreshControl.tintColor = UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
         libraryRefreshControl.addTarget(self, action: #selector(refreshLibraryFromScroll), for: .valueChanged)
+        libraryRefreshControl.verticalPlacement = { [weak self] control in
+            guard let self, let webView = self.webView else { return 0 }
+            let safeTop = self.view.safeAreaInsets.top
+            guard let logoTop = self.libraryRefreshLogoTop else { return safeTop }
+            let logoScreenTop = webView.scrollView.convert(CGPoint(x: 0, y: logoTop), to: self.view).y
+            let target = (safeTop + logoScreenTop) / 2
+            let center = control.convert(CGPoint(x: control.bounds.midX, y: control.bounds.midY), to: self.view).y
+            return max(0, target - center)
+        }
+        libraryRefreshScrollObservation = webView.scrollView.observe(\.contentOffset, options: [.new]) { [weak self] scrollView, _ in
+            guard let self, scrollView.refreshControl === self.libraryRefreshControl else { return }
+            self.libraryRefreshControl.setNeedsLayout()
+        }
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
@@ -76,6 +97,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                 if enabled {
                     if webView?.scrollView.refreshControl !== libraryRefreshControl {
                         webView?.scrollView.refreshControl = libraryRefreshControl
+                        measureLibraryRefreshLogo()
                     }
                 } else {
                     finishLibraryRefresh(activeLibraryRefreshSequence)
@@ -123,9 +145,23 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Use the live device safe area, including rotation and window changes.
-        // UIKit continues to position and animate the spinner within the pull.
-        libraryRefreshControl.indicatorOffset = view.safeAreaInsets.top
+        if libraryRefreshLayoutSize != view.bounds.size || libraryRefreshSafeTop != view.safeAreaInsets.top {
+            libraryRefreshLayoutSize = view.bounds.size
+            libraryRefreshSafeTop = view.safeAreaInsets.top
+            measureLibraryRefreshLogo()
+        }
+        libraryRefreshControl.setNeedsLayout()
+    }
+
+    private func measureLibraryRefreshLogo() {
+        guard webView?.scrollView.refreshControl === libraryRefreshControl else { return }
+        // Measure once when enabled or the viewport changes, never on touchmove.
+        // Adding scrollY gives a stable document coordinate even during a pull.
+        webView?.evaluateJavaScript("(() => { const logo = document.getElementById('logo'); return logo ? logo.getBoundingClientRect().top + window.scrollY : null; })()") { [weak self] result, _ in
+            guard let self, let top = (result as? NSNumber)?.doubleValue, top.isFinite, top >= 0 else { return }
+            self.libraryRefreshLogoTop = CGFloat(top)
+            self.libraryRefreshControl.setNeedsLayout()
+        }
     }
 
     private func finishLibraryRefresh(_ sequence: Int?) {
