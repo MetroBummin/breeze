@@ -172,9 +172,10 @@ async function rssFeedCards(entries, renderId){
   }
   return cards;
 }
-function appendRssCards(rail, force){
+function renderRssCards(rail, force, empty){
   const renderId=++rssRenderId;
-  loadRss(force).then(async groups=>{
+  if(empty){ empty.hidden=true; empty.textContent='새로운 기사를 불러오는 중이에요.'; }
+  return loadRss(force).then(async groups=>{
     const stamp=JSON.stringify([groups,books.map(book=>book.sourceUrl||'')]);
     if(rail.dataset.rssStamp===stamp)return;
     const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId)))).flat();
@@ -184,5 +185,12 @@ function appendRssCards(rail, force){
     const before=rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));
     rail.dataset.rssStamp=stamp;
-  }).catch(error=>console.error(error));
+    if(empty){ empty.textContent=cards.length?'':'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=cards.length>0; }
+  }).catch(error=>{
+    console.error(error);
+    if(empty){ empty.textContent='새로운 기사를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=false; }
+  });
+}
+function appendRssCards(rail, force){
+  return renderRssCards(rail,force);
 }

@@ -7,7 +7,7 @@
     .navbtn{padding:7px 0; font-size:15px; letter-spacing:-.25px; white-space:nowrap;}
     #v-home, #v-casuals, #v-longform{padding:20px 18px 90px;}
     /* 레일은 화면 끝까지 흘러야 다음 카드가 잘려 보입니다. 좌우 여백과 같은 값. */
-    #casual-rail{padding:14px 18px 6px; margin:0 -18px; scroll-padding-left:18px;}
+    #casual-rail, #v-casuals .casual-rail{padding:14px 18px 6px; margin-left:-18px; margin-right:-18px; scroll-padding-left:18px;}
     .casual{flex:0 0 136px;}
     #casual-rail > .casual{flex-basis:136px; width:136px; min-width:136px; max-width:136px;}
     #longform{margin-top:34px;}

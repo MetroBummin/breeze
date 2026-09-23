@@ -42,11 +42,11 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
-  <link rel="stylesheet" href="styles/home.css?v=2b9dfee7">
+  <link rel="stylesheet" href="styles/home.css?v=d0c220dd">
   <link rel="stylesheet" href="styles/reader.css?v=72c97b63">
   <link rel="stylesheet" href="styles/dictionary.css?v=db44b89b">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
-  <link rel="stylesheet" href="styles/responsive.css?v=62cd7fff">
+  <link rel="stylesheet" href="styles/responsive.css?v=16bfa03c">
   <link rel="stylesheet" href="styles/wordbook.css?v=3d0c76ff">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=e75c5f61">
@@ -82,12 +82,12 @@
   <script defer src="scripts/reader/gesture.js?v=c2324283"></script>
   <script defer src="scripts/reader/pdf-pinch.js?v=b4b7fb0f"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
-  <script defer src="scripts/library/library.js?v=257ebb4d"></script>
+  <script defer src="scripts/library/library.js?v=549f2f72"></script>
   <script defer src="scripts/library/book-edit.js?v=35f5c0f2"></script>
   <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="scripts/importers/article.js?v=8633ee61"></script>
-  <script defer src="scripts/importers/rss.js?v=b955331b"></script>
+  <script defer src="scripts/importers/rss.js?v=1d523220"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=bd0c648a"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=ad94e4f8"></script>
@@ -159,11 +159,18 @@
 
 <!-- ================= CASUALS LIBRARY ================= -->
 <div class="view" id="v-casuals">
-  <div class="head">
-    <h1 data-i18n="sec.casuals">Casuals</h1><span class="cnt" id="casual-cnt"></span>
-  </div>
-  <div id="casual-grid"></div>
-  <div id="casual-empty" hidden></div>
+  <section class="casual-library-row" aria-labelledby="casual-discover-title">
+    <div class="casual-library-head"><h1 id="casual-discover-title">발견</h1></div>
+    <div id="casual-discover-rail" class="casual-rail"></div>
+    <div id="casual-discover-empty" class="casual-discover-empty" hidden></div>
+  </section>
+  <section class="casual-library-row" aria-labelledby="casual-mine-title">
+    <div class="casual-library-head">
+      <h1 id="casual-mine-title">내 글</h1><span class="cnt" id="casual-cnt"></span>
+    </div>
+    <div id="casual-grid" class="casual-rail"></div>
+    <div id="casual-empty" hidden></div>
+  </section>
 </div>
 
 <!-- ================= LONG-FORM LIBRARY ================= -->
