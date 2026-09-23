@@ -59,15 +59,18 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                   message.frameInfo.securityOrigin.host == "localhost",
                   let request = message.body as? [String: Any] else { return }
             if let enabled = request["enabled"] as? Bool {
-                webView?.scrollView.refreshControl = enabled ? libraryRefreshControl : nil
-                if !enabled {
-                    libraryRefreshControl.endRefreshing()
+                if enabled {
+                    if webView?.scrollView.refreshControl !== libraryRefreshControl {
+                        webView?.scrollView.refreshControl = libraryRefreshControl
+                    }
+                } else {
+                    finishLibraryRefresh(activeLibraryRefreshSequence)
+                    webView?.scrollView.refreshControl = nil
                     activeLibraryRefreshSequence = nil
                 }
             } else if let finished = (request["finished"] as? NSNumber)?.intValue,
                       finished == activeLibraryRefreshSequence {
-                libraryRefreshControl.endRefreshing()
-                activeLibraryRefreshSequence = nil
+                finishLibraryRefresh(finished)
             }
             return
         }
@@ -97,6 +100,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         libraryRefreshSequence += 1
         let sequence = libraryRefreshSequence
         activeLibraryRefreshSequence = sequence
+        positionLibraryRefreshControl()
         webView?.evaluateJavaScript("typeof window.breezeNativeRefresh === 'function' && (window.breezeNativeRefresh(\(sequence)), true)") { [weak self] result, error in
             if error != nil || (result as? Bool) != true {
                 self?.finishLibraryRefresh(sequence)
@@ -104,9 +108,33 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
     }
 
-    private func finishLibraryRefresh(_ sequence: Int) {
-        guard activeLibraryRefreshSequence == sequence else { return }
+    private func positionLibraryRefreshControl() {
+        guard let webView else { return }
+        let scrollView = webView.scrollView
+        libraryRefreshControl.layer.removeAllAnimations()
+        libraryRefreshControl.transform = .identity
+        // Put the indicator halfway between the device's safe area and the
+        // pulled-down Home content. The pull distance and safe area vary by device.
+        let pull = max(0, -scrollView.contentOffset.y - scrollView.adjustedContentInset.top)
+        let safeTop = view.safeAreaInsets.top
+        let contentTop = safeTop + 24 + pull
+        let target = safeTop + (contentTop - safeTop) / 2
+        let current = libraryRefreshControl.convert(
+            CGPoint(x: libraryRefreshControl.bounds.midX, y: libraryRefreshControl.bounds.midY),
+            to: view
+        ).y
+        let travel = min(max(0, target - current), max(0, contentTop - current - 24))
+        UIView.animate(withDuration: 0.18, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.libraryRefreshControl.transform = CGAffineTransform(translationX: 0, y: travel)
+        }
+    }
+
+    private func finishLibraryRefresh(_ sequence: Int?) {
+        guard let sequence, activeLibraryRefreshSequence == sequence else { return }
         libraryRefreshControl.endRefreshing()
+        UIView.animate(withDuration: 0.24, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.libraryRefreshControl.transform = .identity
+        }
         activeLibraryRefreshSequence = nil
     }
 
