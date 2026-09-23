@@ -76,6 +76,17 @@ try{
    assert.equal(await page.evaluate(async()=>{try{await discoverFeed('https://x.com/example');return false;}catch(error){return /RSS/.test(error.message);}}),true);
    assert.equal(await page.evaluate(entry=>parseFeedPost(entry)?.blocks.some(block=>block.marks?.some(mark=>mark.kind==='strong')),xEntry),true);
    assert.equal(await page.evaluate(()=>{try{parseRss('<rss><broken>',{url:'https://a.example',name:'bad'});return false;}catch{return true;}}),true);
+   assert.equal(await page.evaluate(()=>parseRss('<rss><channel><item><title>A useful English story</title><link>https://example.com/story</link><description>The story follows a writer who finds something strange in the city.</description></item></channel></rss><script>publisher tail</script>',{url:'https://example.com/feed',name:'test'}).length),1);
+   assert.equal(await page.evaluate(async()=>{
+     const fetchOriginal=fetchArticleHtml,parseOriginal=parseArticleHtml;
+     const entry={url:'https://example.com/photo-story',title:'A story',bodyProvided:false,photo:''};
+     try{
+       fetchArticleHtml=async()=>'<html><article>Story</article></html>';
+       parseArticleHtml=()=>({cover:'https://example.com/real-cover.jpg',blocks:[{r:'p',t:'A real story'}]});
+       await rssPrepareCovers([entry],()=>{});
+       return entry.photo==='https://example.com/real-cover.jpg' && rssPreparedArticles.has(articleUrlKey(entry.url));
+     }finally{fetchArticleHtml=fetchOriginal;parseArticleHtml=parseOriginal;rssPreparedArticles.clear();}
+   }),true);
    assert.deepEqual(await page.evaluate(()=>{
      const feed={url:'https://medium.com/feed/tag/culture',name:'Medium'};
      const bad='<rss><channel><item><title>Ketika Simbol Kesucian Tidak Lagi Menjamin Keselamatan</title><link>https://example.com/id</link><description>Beberapa waktu lalu saya menonton sebuah dokumenter yang dibuat oleh tim BBC mengenai kasus yang terjadi di lingkungan pesantren. Mereka kembali mendatangi tempat di mana kejadian itu berlangsung.</description></item></channel></rss>';
@@ -88,7 +99,8 @@ try{
     const original=fetchArticleHtml;
     try{fetchArticleHtml=async url=>url.includes('propublica') ? xml : Promise.reject(new Error('broken feed'));
       rssLoadedAt=0; await loadRss(true);
-      if(rssCands.length!==RSS_FEEDS.length || rssCands[0].length!==0 || rssCands[1].length!==1) throw new Error('Feed failure was not isolated');
+      const working=RSS_FEEDS.findIndex(feed=>feed.url.includes('propublica'));
+      if(rssCands.length!==RSS_FEEDS.length || rssCands[0].length!==0 || rssCands[working].length!==1) throw new Error('Feed failure was not isolated');
     }finally{fetchArticleHtml=original;}
    },xml);
 
@@ -146,6 +158,7 @@ try{
    },html);
 
    await page.evaluate(()=>{window.readShare=[];window.breezeShareInbox={markRead:id=>window.readShare.push(id)};receiveSharedLinks([{id:'shared-id',url:'https://content.example/article',savedAt:'2026-09-23'}]);});
+   await page.locator('#casuals [data-category="saved"]').click();
    await page.evaluate(()=>{window.ingestionBookPut=bookPut;bookPut=async()=>{throw new Error('Simulated storage quota failure');};});
    await page.locator('#casual-rail .shared-card').click();
    await page.waitForFunction(()=>!document.querySelector('#casual-rail .shared-card'));
@@ -249,10 +262,12 @@ try{
    assert.equal(await page.evaluate(()=>rssSources().filter(feed=>feed.category==='science'&&/medium.com|reddit.com/.test(feed.url)).length),2);
    const chips=page.locator('#casuals .feed-categories');
    await chips.locator('[data-category="science"]').click();
+   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.slice(0,3).map(node=>node.dataset.category)),['all','saved','science']);
    assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    assert.equal(await chips.locator('[data-category="science"]').getAttribute('aria-pressed'),'true');
-   assert.equal(await page.evaluate(()=>document.querySelector('#casual-rail .shared-card')!==null),true);
+   assert.equal(await page.evaluate(()=>document.querySelector('#casual-rail .shared-card')!==null),false);
    await chips.locator('[data-category="business"]').click();
+   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.slice(0,3).map(node=>node.dataset.category)),['all','saved','business']);
    assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
    await page.evaluate(()=>{
     document.querySelector('#casuals [data-category="science"]').click();

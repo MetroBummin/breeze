@@ -387,7 +387,7 @@ async function ingestArticle(url, options = {}){
     const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === key);
     if(existing){ await openBook(existing); return existing; }
     const location = {};
-    let parsed=parseFeedArticle(options);
+    let parsed=options.preparedArticle || parseFeedArticle(options);
     if(!parsed){
       const html = await fetchArticleHtml(url,location);
       parsed = parseArticleHtml(html,location.url || url);

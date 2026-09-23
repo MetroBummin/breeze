@@ -9,7 +9,7 @@ recovery is introduced. Existing article/image relay remains the transport.
 
 ## Pipeline
 
-Share Extension -> atomic App Group URL record -> unread Home card -> explicit tap
+Share Extension -> atomic App Group URL record -> red card under the Saved chip -> explicit tap
 -> `ingestArticle` -> fetch -> Readability 0.6.0 -> semantic blocks -> existing
 `saveCasualBook`/IndexedDB -> existing Reader. The native record is marked opened
 only after persistence and Reader opening succeed, and is never acknowledged/deleted.
@@ -26,15 +26,21 @@ Concurrent requests for the same normalized URL share one job.
 URL entry and feed cards call the same ingestion function. Feed discovery accepts
 RSS/Atom directly, advertised HTML alternate links, and small conventional feed
 URL candidates. Medium, Substack and Reddit have no article-specific parser.
-The built-in sources are The Conversation, ProPublica, NASA Technology, WIRED Top
-Stories, Medium Technology/Culture/Business, and Reddit r/science. Users can
+The built-in sources are Dexerto Entertainment, TMZ, The Daily Dot, Bloody
+Disgusting, All That’s Interesting, The Conversation, ProPublica, NASA
+Technology, WIRED Top Stories, Medium Technology/Culture/Business, and Reddit
+r/science. Users can
 add/remove a small local set of sources without folders, unread counts, or a new
 RSS management screen. Feed
 failures are isolated. Discovery omits cards without a working cover; the saved
 essay remains readable after it is opened.
 
-Home and Casuals discovery share a persisted category chip selection. Categories
-are assigned to feed sources, not guessed from article titles: general, society,
+Home and Casuals discovery share a persisted category chip selection. All and
+Saved stay first; the last tapped topical category moves third. Saved contains
+unread shared URLs, while read articles remain in the existing Casuals shelf.
+All mixes one visible card per source so the larger entertainment selection does
+not bury the existing educational sources. Categories are assigned to feed
+sources, not guessed from article titles: entertainment, general, society,
 science/technology, culture/lifestyle, and business. The Conversation and WIRED
 default to general, ProPublica to society, NASA, Medium Technology and r/science
 to science/technology, Medium Culture to culture, and Medium Business to
@@ -50,8 +56,15 @@ public page being accessible, and paywalled content is never bypassed.
 Loading uses a neutral card placeholder with a spinner and an accessible label,
 without a visible loading sentence. Feed cover discovery ignores known tiny
 tracking images and supports media thumbnails, image enclosures and lazy images.
-Filtering affects only discovery cards, preserving current reading and saved
-links. Empty categories show a message; rapid chip changes invalidate older
+TMZ's feed gives no cover, so a bounded check of the first few public article
+pages may add a real cover and cache the parsed article for a fast first open.
+Feeds that append non-XML after a complete RSS/Atom root are parsed by discarding
+only that trailing material; malformed content within the root still fails.
+Image enclosures are preferred to small thumbnails. The official Complex feed
+addresses checked returned 404, so Complex is not a default source. Creepypasta's
+current feed uses a repeated site logo instead of article covers; it remains
+excluded under the photo-only discovery rule. Photo-free entries can still be
+added with explicit URL entry. Empty categories show a message; rapid chip changes invalidate older
 asynchronous card renders. Filtering cached feeds requires no new fetch.
 
 ## Content boundary

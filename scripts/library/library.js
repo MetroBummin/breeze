@@ -402,10 +402,10 @@ function renderHome(){
   renderHomeResume();
   const casuals=casualBooks(),nowCasual=nowReadingIn(casuals),rail=document.getElementById('casual-rail');
   const currentCasual=casuals.find(book=>book.id===nowCasual);
-  /* 이어 읽던 글 다음에 외부에서 저장한 링크, 그다음 RSS를 둡니다. */
+  const feedCategory=typeof rssSelectedCategory==='function'?rssSelectedCategory():'all';
   const casualSpecs=[{key:'add',stamp:'',create:casualAddCard}];
-  if(currentCasual)casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
-  if(typeof homeSharedLinkSpecs==='function')casualSpecs.splice(currentCasual?1:0,0,...homeSharedLinkSpecs());
+  if(currentCasual && feedCategory==='all')casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
+  if(feedCategory==='saved' && typeof homeSharedLinkSpecs==='function')casualSpecs.unshift(...homeSharedLinkSpecs());
   reconcileHomeCards(rail,casualSpecs);
   if(typeof appendRssCards==='function')appendRssCards(rail);
   const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');

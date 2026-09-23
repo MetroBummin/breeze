@@ -45,7 +45,12 @@ try {
       assert.deepEqual(await page.locator('#casual-rail > .casual').evaluateAll(nodes => nodes.map(node =>
         node.classList.contains('shared-card') ? 'saved' : node.classList.contains('rss-card') ? 'rss' :
         node.classList.contains('add') ? 'add' : 'reading')),
-        ['reading', 'saved', 'saved', 'rss', 'add']);
+        ['reading', 'rss', 'add']);
+      await page.locator('#casuals [data-category="saved"]').click();
+      assert.deepEqual(await page.locator('#casuals .feed-categories button').evaluateAll(nodes=>nodes.slice(0,3).map(node=>node.dataset.category)),['all','saved','entertainment']);
+      assert.deepEqual(await page.locator('#casual-rail > .casual').evaluateAll(nodes => nodes.map(node =>
+        node.classList.contains('shared-card') ? 'saved' : node.classList.contains('rss-card') ? 'rss' :
+        node.classList.contains('add') ? 'add' : 'reading')),['saved','saved','rss','add']);
       assert.deepEqual(await page.locator('.shared-card .ct').allTextContents(), ['@example의 게시물', '좋은 에세이']);
       assert.equal(await page.locator('.shared-card .thumb').first().evaluate(node => getComputedStyle(node).borderTopColor), 'rgb(184, 75, 67)');
       await page.locator('.shared-card').first().click();
