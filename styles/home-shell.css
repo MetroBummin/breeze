@@ -63,12 +63,12 @@ body:has(:is(#v-home,#v-casuals,#v-longform).on) #home-controls{display:block;}
 #v-casuals h1,#v-longform h1{font:700 28px/34px 'Noto Sans KR',var(--ui);letter-spacing:0;color:var(--settings-ink);}
 #v-casuals,#v-longform{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
 /* Animate the surface boundary; the words inside never stretch into a page. */
-html.home-resuming::view-transition-new(root){animation:home-glass-open .42s cubic-bezier(.2,.75,.25,1) both;mix-blend-mode:normal;}
+html.home-resuming::view-transition-new(root){animation:home-glass-open .34s cubic-bezier(.2,.75,.25,1) both;mix-blend-mode:normal;}
 html.home-resuming::view-transition-old(root){animation:none;opacity:1;mix-blend-mode:normal;}
-html.home-returning::view-transition-old(root){z-index:2;animation:home-glass-close .38s cubic-bezier(.3,0,.2,1) both;mix-blend-mode:normal;}
+html.home-returning::view-transition-old(root){z-index:2;animation:home-glass-close .34s cubic-bezier(.2,.75,.25,1) both;mix-blend-mode:normal;}
 html.home-returning::view-transition-new(root){animation:none;opacity:1;mix-blend-mode:normal;}
-@keyframes home-glass-open{from{clip-path:inset(var(--resume-inset) round 32px);filter:blur(5px);opacity:1;}to{clip-path:inset(0 round 0);filter:blur(0);opacity:1;}}
-@keyframes home-glass-close{from{clip-path:inset(0 round 0);filter:blur(0);opacity:1;}to{clip-path:inset(var(--resume-inset) round 32px);filter:blur(5px);opacity:0;}}
+@keyframes home-glass-open{from{clip-path:inset(var(--resume-inset) round 32px);opacity:1;}to{clip-path:inset(0 round 0);opacity:1;}}
+@keyframes home-glass-close{from{clip-path:inset(0 round 0);opacity:1;}85%{opacity:1;}to{clip-path:inset(var(--resume-inset) round 32px);opacity:0;}}
 html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
 /* Damped content follows the finger; release settles without moving the dock. */
 html.library-refresh-motion :is(#v-home,#v-casuals,#v-longform).on,
@@ -94,3 +94,11 @@ body.dark #home-controls #nav-vocab svg{stroke:#65c6ea;}
 #home-resume .completion-badge{margin-left:7px;}
 
 #settings-modal .set-row.onboarding-setting{border-radius:15px;margin-bottom:20px;}
+
+/* The same control surface owns both ends of the Home/Reader journey. */
+html:is(.home-resuming,.home-returning) :is(#home-resume,#readpill){view-transition-name:reader-control;}
+html:is(.home-resuming,.home-returning)::view-transition-group(reader-control){
+  z-index:3;animation-duration:.34s;animation-timing-function:cubic-bezier(.2,.75,.25,1);
+}
+html:is(.home-resuming,.home-returning)::view-transition-old(reader-control),
+html:is(.home-resuming,.home-returning)::view-transition-new(reader-control){animation-duration:.16s;mix-blend-mode:normal;}

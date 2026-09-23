@@ -20,12 +20,15 @@ function world(initial={},deleted={}){
 const saved=(ko,up=10,extra={})=>({word:'wind',ko,up,addedAt:up,status:1,...extra});
 
 {
-  const saveSource=state.slice(state.indexOf('const saveWords ='),state.indexOf('const posOf ='));
-  let persisted;
-  const c={words:{wind:saved('  '),sun:saved('태양'),moon:saved('달',10,{koEdited:true})},
-    LS_WORDS:'words',save:(_,value)=>{persisted=value;},Object};
-  new Script(helper+'\n'+saveSource+'\nsaveWords();').runInNewContext(c);
-  assert.deepEqual(Object.keys(persisted).sort(),['moon','sun'],
+  const memory=new Map();
+  const localStorage={get length(){return memory.size;},key:i=>[...memory.keys()][i],
+    getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,v),removeItem:k=>memory.delete(k)};
+  const c={localStorage,console,toast(){},Date};
+  const boot=state.slice(0,state.indexOf('const posOf ='));
+  new Script(helper+'\n'+boot+'\nglobalThis.persist={loadWordState,saveWords,set:value=>words=value};').runInNewContext(c);
+  c.persist.set({wind:saved('  '),sun:saved('태양'),moon:saved('달',10,{koEdited:true})});
+  c.persist.saveWords();
+  assert.deepEqual(Object.keys(c.persist.loadWordState()).sort(),['moon','sun'],
     'an in-flight empty lookup must not enter local persistence');
 }
 

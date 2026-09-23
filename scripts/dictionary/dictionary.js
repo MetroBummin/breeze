@@ -200,11 +200,19 @@ function discardPendingWord(){
    잠깐의 손짓이므로 기기 메모리에만 둡니다. */
 const RECENT_WORD_OPEN_MS = 30000;
 const recentWordOpens = new Map();
-function deferWordOpenBump(id){
+function deferWordOpenState(id,bump){
+  const item=words[id];
   requestAnimationFrame(()=>{
-    const item=words[id];if(!item||item.status>=3)return;
-    item.status++;item.up=Date.now();saveWords();paintWord(item.root||id);queueSync();
-    if(selKey===id)renderWordLookup();
+    if(!item||words[id]!==item)return;
+    const changed=bump&&item.status<3;
+    if(item.ko)touchMeaning(id);
+    if(changed){item.status++;item.up=Date.now();}
+    // Pick order and the automatic star bump belong to the same opening.
+    saveWords(id);
+    if(changed){
+      paintWord(item.root||id);queueSync();
+      if(selKey===id)renderWordLookup();
+    }
   });
 }
 /* 다른 문장에서 이미 저장한 낱말을 만났을 때의 임시 화면 상태입니다. 저장한 뜻을
@@ -404,8 +412,7 @@ function openWord(k, node, point){
   contextView=ready
     ? (words[active].example===request.sentence?null:{key:active,...request,loading:''})
     : {key:active,...request,loading:'checking'};
-  selectWord(active,node,true);
-  if(bump)deferWordOpenBump(active);
+  selectWord(active,node,true,bump);
   if(!ready)resolveCurrentLookup(active,request,wordLookupLife);
 }
 async function resolveCurrentLookup(k,input,life){
@@ -592,7 +599,7 @@ function clearActiveWordSelection(){
     if(node.classList&&node.classList.contains('original-selection-marker')&&node.remove) node.remove();
   }catch(error){}
 }
-function selectWord(k, span, peek){
+function selectWord(k, span, peek, bump=false){
   const panel=document.getElementById('panel');
   const keepAnchor=wordDetailAnchored&&!span;
   stopWordMorph();
@@ -618,7 +625,7 @@ function selectWord(k, span, peek){
     document.getElementById('word-modal-scrim').classList.remove('on');
     if(typeof updateOriginalZoomControls==='function') updateOriginalZoomControls();
     renderWordPeek();
-    if(remember) requestAnimationFrame(()=>{ if(words[k]){ touchMeaning(k); saveWords(); } });
+    if(remember||bump) deferWordOpenState(k,bump);
     return;
   }
   wordPeekActive=false;
@@ -637,7 +644,7 @@ function selectWord(k, span, peek){
   if(wordDetailAnchored) placeWordDetail();
   if(typeof rememberAppView==='function') rememberAppView(activeAppView());
   requestAnimationFrame(resetPanelScroll);
-  if(remember) requestAnimationFrame(()=>{ if(words[k]){ touchMeaning(k); saveWords(); } });
+  if(remember||bump) deferWordOpenState(k,bump);
 }
 
 function expandWordDetail(){
@@ -745,7 +752,7 @@ function setStatus(k, st){
   if(!words[resolved]) return;
   selKey=resolved;
   words[resolved].status = st; words[resolved].up = Date.now();
-  saveWords(); paintWord(resolved); queueSync();
+  saveWords(resolved); paintWord(resolved); queueSync();
   renderWordLookup();
 }
 function renderPanel(){
@@ -945,27 +952,24 @@ function adoptSuggestion(k, meaning){
   const root=base.root||k;
   const id=createMeaning(root, meaning, {clicked:base.clicked, example:base.example, book:base.book, ai:base.ai});
   if(!id) return;
-  logDict('pick', id);
   addingMeaning=false; contextView=null;
   paintWord(root); selectWord(id,null);
 }
 /* ＋ 로 적어 넣는 뜻. 적어서 Enter 를 누르면 그 자리에서 저장되고 지금 뜻이 됩니다. */
 document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
-  logDict('star', selKey, { meta:{ status:+b.dataset.s } });
 });
 document.getElementById('p-mark').onclick=()=>{
   const selected=words[selKey];if(!selected)return;
   const key=selected.root||selKey,w=words[key]||selected;
   w.mark = w.mark === false;
-  w.up=Date.now(); saveWords(); paintWord(key); queueSync(); renderPanel();
+  w.up=Date.now(); saveWords(key); paintWord(key); queueSync(); renderPanel();
 };
 
 document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k=words[selKey]&&(words[selKey].root||selKey);if(!k)return;
   const expression=Array.isArray(words[k]&&words[k].phraseParts);
-  logDict('known',k);
   Object.keys(words).filter(id=>id===k||words[id]&&words[id].root===k).forEach(id=>{
     const item=words[id],stamp=Math.max(Date.now(),(item.up||0)+1,dead[id]||0);
     if(item.ko)dead[senseCardKey(k,item.ko)]=stamp;
@@ -1139,22 +1143,6 @@ function warmDict(){
   if(Date.now() - warmedAt < 120000) return;   // Edge Function 이 식기 전에 다시 부를 이유가 없습니다
   warmedAt = Date.now();
   dictCall({ op:'warm' });
-}
-
-/* 사람이 사전으로 무엇을 했는지. 낱말과 뜻 자체는 어디에도 있지만 이 기록은 없습니다.
-   문장 본문은 보내되 서버는 지문만 남깁니다 — 자세한 규칙은 DICT.md. */
-/* 운영 기록으로 나가는 것은 **표제어 하나와 무슨 손짓이었나** 뿐입니다.
-   읽던 문장·책 제목·AI 가 준 뜻·내가 적은 뜻은 보내지 않습니다 — 서버가
-   답하고 싶은 질문("어떤 낱말에서 뜻 추천이 자주 빗나가나")은 표제어만으로
-   전부 답해지고, 나머지는 얻는 것 없이 사람의 읽기 기록만 밖으로 내보냅니다.
-   그래서 여기서 아예 만들지 않습니다. 서버가 버려 주기를 믿지 않습니다. */
-function logDict(action, k, extra){
-  const w = words[k]; if(!w || !sb || !sbUser) return;
-  dictCall(Object.assign({
-    op:'log', action,
-    lemma: w.aiLemma || w.word || '',
-    pos: (w.ai && w.ai.pos) || ''
-  }, extra || {}));
 }
 
 /* ---- 한 번의 열림이 제 조회의 임자입니다 ----

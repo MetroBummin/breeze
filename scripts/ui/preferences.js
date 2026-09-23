@@ -226,8 +226,9 @@ async function resumeHomeBook(button){
   try{
     // Disk work runs while Home is still usable, outside the browser's short
     // view-transition update deadline. No Reader history/progress is changed here.
-    await repairBookLigatures(book);
-    const original=bookSupportsOriginal(book)?await originalGetForBook(book):null;
+    const reuse=canReuseReader(book);
+    if(!reuse)await repairBookLigatures(book);
+    const original=reuse?retainedReader.original:(bookSupportsOriginal(book)?await originalGetForBook(book):null);
     if(!current()) return;
     const prepared={book,original};
     const present=()=>{

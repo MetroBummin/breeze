@@ -29,12 +29,13 @@ function attachLongPress(el, fn){
   el.addEventListener('contextmenu', e=>e.preventDefault());
   return ()=>fired;      // 클릭 처리에서 "길게 눌렀던 건 무시"에 사용
 }
-/* 책 목록이 보이는 곳은 셋입니다. 하나만 다시 그리면 나머지 둘이 옛날 이름을
-   들고 남아 있습니다. */
+/* Navigation always renders the destination from current data in show().
+   Background updates only need to paint the currently visible library. */
 function renderAllBookViews(){
-  renderHome();
-  renderCasualLibrary();
-  renderLongformLibrary();
+  const view=activeAppView();
+  if(view==='home') renderHome();
+  else if(view==='casuals') renderCasualLibrary();
+  else if(view==='longform') renderLongformLibrary();
 }
 
 /* 이 책이 쓰던 그림을 전부 지웁니다. EPUB 삽화는 `책ID|번호`라 접두어로
@@ -115,7 +116,16 @@ function paletteOf(book, count){
   for(let index=0; index<id.length; index++) sum = (sum*31 + id.charCodeAt(index)) >>> 0;
   return sum % count;
 }
-const readMinutes = book => Math.max(1, Math.round(wcOf(book)/180));
+const readingMinutesCache=new WeakMap();
+const readMinutes = book => {
+  const paras=book.paras, cached=readingMinutesCache.get(paras);
+  // Compare immutable strings as well as length, so in-place edits stay correct.
+  if(cached && cached.paras.length===paras.length
+      && paras.every((text,index)=>text===cached.paras[index])) return cached.minutes;
+  const minutes=Math.max(1,Math.round(wcOf(book)/180));
+  readingMinutesCache.set(paras,{paras:paras.slice(),minutes});
+  return minutes;
+};
 
 /* 두 줄이 각자 자기 줄에서 마지막으로 읽던 것을 기억합니다. 지하철에서 기사를
    한 편 봤다고 해서 읽던 원서 표시가 사라지면 안 되니까요. */
@@ -367,7 +377,8 @@ function reconcileHomeCards(container,specs){
 }
 function homeBookSpec(book,current,casual){
   // Closures read the current record by id, even after sync replaces its object.
-  const stamp=JSON.stringify([book.title,book.cover,book.site,book.author,book.kind,cardLede(book),readMinutes(book)]);
+  // Long-form cards do not display reading time; avoid scanning their full text.
+  const stamp=JSON.stringify([book.title,book.cover,book.site,book.author,book.kind,cardLede(book),casual?readMinutes(book):null]);
   return {key:'book:'+book.id,stamp,
     create:()=>casual?casualCard(book,current):bookCard(book,current),
     update:card=>{

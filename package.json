@@ -29,7 +29,8 @@
     "test:home-ui": "node tests/verify-home-resume-browser.mjs && node tests/verify-home-controls-browser.mjs && node tests/verify-library-refresh-browser.mjs && node tests/verify-reader-progress-browser.mjs && node tests/verify-wordbook-browser.mjs",
     "test:reader-notices": "node tests/verify-reader-notifications-browser.mjs",
     "test:reader-refinements": "node tests/verify-reader-refinements-browser.mjs",
-    "test:word-morph": "node tests/verify-word-morph-browser.mjs"
+    "test:word-morph": "node tests/verify-word-morph-browser.mjs",
+    "test:lightweight": "node tests/verify-lightweight-resources-browser.mjs && node tests/verify-epub-incremental-browser.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-reader-reuse-browser.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
