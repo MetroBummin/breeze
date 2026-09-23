@@ -93,7 +93,6 @@ function fillCard(card, parts){
 
 const CASUAL_KINDS = new Set(['paste','article']);
 const isCasual = book => CASUAL_KINDS.has(book.kind);
-const HOME_CASUAL_LIMIT = 4;
 
 function rowLooksCasual(meta){
   return CASUAL_KINDS.has((meta||{}).kind||'');
@@ -212,14 +211,6 @@ function casualAddCard(){
   card.onclick = () => openAddModal('casual');
   return card;
 }
-function casualMoreCard(count){
-  const card = el('div', 'casual more');
-  card.innerHTML = `<div class="thumb"><div class="plus">→</div>
-    <div class="lbl">내 Casual<br>${count}편 더 보기</div></div>`;
-  card.onclick = () => show('casuals');
-  return card;
-}
-
 /* 서버에만 있는 원서. 짧은 글은 저절로 오가므로 여기 나오지 않습니다.
    "이 기기에서만 지운" 책도 나오지 않습니다 — 서버 사본을 남기기로 하고 서가에서
    치운 것인데, 흐린 카드로 도로 올라오면 지운 적이 없는 것과 같습니다. */
@@ -400,11 +391,11 @@ function homeBookSpec(book,current,casual){
 function renderHome(){
   renderHomeResume();
   const casuals=casualBooks(),nowCasual=nowReadingIn(casuals),rail=document.getElementById('casual-rail');
-  const casualSpecs=casuals.slice(0,HOME_CASUAL_LIMIT).map(book=>homeBookSpec(book,nowCasual,true));
-  for(const row of serverOnlyCasuals().slice(0,Math.max(0,HOME_CASUAL_LIMIT-casuals.length)))
-    casualSpecs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>cloudCasualCard(row)});
-  if(casuals.length>HOME_CASUAL_LIMIT)casualSpecs.push({key:'more',stamp:String(casuals.length),create:()=>casualMoreCard(casuals.length-HOME_CASUAL_LIMIT)});
-  casualSpecs.push({key:'add',stamp:'',create:casualAddCard});
+  const currentCasual=casuals.find(book=>book.id===nowCasual);
+  /* 홈에는 이어 읽던 글만 둡니다. 나머지 저장 글은 내 글 서가에서 찾고,
+     새 RSS 카드는 바로 다음부터 보입니다. */
+  const casualSpecs=[{key:'add',stamp:'',create:casualAddCard}];
+  if(currentCasual)casualSpecs.unshift(homeBookSpec(currentCasual,nowCasual,true));
   reconcileHomeCards(rail,casualSpecs);
   if(typeof appendRssCards==='function')appendRssCards(rail);
   const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');
@@ -420,6 +411,9 @@ function renderHome(){
 function renderCasualLibrary(){
   const casuals = casualBooks();
   const current = nowReadingIn(casuals);
+  const discover=document.getElementById('casual-discover-rail');
+  if(discover && typeof renderRssCards==='function')
+    renderRssCards(discover,false,document.getElementById('casual-discover-empty'));
   const grid = document.getElementById('casual-grid');
   const empty = document.getElementById('casual-empty');
   document.getElementById('casual-cnt').textContent = casuals.length ? `${casuals.length}편` : '';
