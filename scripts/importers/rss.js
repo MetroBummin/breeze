@@ -57,7 +57,8 @@ function refreshFeedRails(){
 }
 const RSS_PER_FEED = 3;
 const RSS_CACHE_MS = 10 * 60 * 1000;
-const RSS_PHOTO_MS = 8000;
+const RSS_PHOTO_MS = 4000;
+const rssListeners = new Set();
 let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
@@ -152,12 +153,13 @@ function parseRss(xml, feed){
   const nodes = [...doc.querySelectorAll('entry, item')].slice(0,100);
   const seen = new Set();
   return nodes.map(node => {
-    const content = rssText(node, ['content', 'encoded', 'description', 'summary']);
+    const content = rssText(node, ['encoded', 'content', 'description', 'summary']);
+    const bodyProvided = !!rssText(node, ['encoded', 'content']);
     const title = rssHtmlText(rssText(node, ['title']));
     const url = rssEntryUrl(node, feed.url);
     return {
       source:feed.name, category:rssCategory(feed.category), title, url, author:rssText(node,['author','creator']), publishedAt:rssText(node,['published','updated','pubdate','date']),
-      kind:rssPostKind(url), readUrl:rssLinkedArticle(content,url), contentHtml:content.slice(0,200000), feedUrl:feed.url, feedSourceUrl:feed.sourceUrl || feed.url,
+      bodyProvided:bodyProvided && content.length <= 200000, kind:rssPostKind(url), readUrl:rssLinkedArticle(content,url), contentHtml:content.slice(0,200000), feedUrl:feed.url, feedSourceUrl:feed.sourceUrl || feed.url,
       summary:rssHtmlText(rssText(node,['summary','description']) || content).slice(0,280), photo:rssImage(node, content, feed.url),
       date:rssDate(rssText(node, ['published', 'updated', 'pubdate', 'date'])),
     };
@@ -166,15 +168,15 @@ function parseRss(xml, feed){
     const key = articleUrlKey(entry.url); if(seen.has(key)) return false; seen.add(key); return true;
   });
 }
-/* 후보를 여기서 자르지 않습니다. 사진이 실제로 뜨는지는 카드가 그려질 때
-   `rssCardPhoto()` 가 딱 한 번 봅니다 — 여기서 미리 한 번 더 재 두면 "주소는
-   떴는데 카드에서는 안 뜬다"는 두 가지 상태가 생기고, 사용자가 보는 것은 늘
-   두 번째입니다. 그래서 이 단계는 순서만 정해서 넘깁니다. */
+/* Publish each source as it arrives; one slow source never gates another. */
 async function loadRss(force){
   if(force)rssUnavailableArticles.clear();
-  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
   if(rssLoading) return rssLoading;
-  rssLoading = Promise.all(rssSources().map(async feed => {
+  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
+  const sources = rssSources();
+  const previous = rssCands;
+  rssCands = sources.map((_,i)=>previous[i] || []);
+  rssLoading = Promise.all(sources.map(async (feed,index) => {
     try{
     const location = {};
     const html = await fetchArticleHtml(feed.url,location);
@@ -183,8 +185,10 @@ async function loadRss(force){
     /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
        피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
     const start = pictured.length ? (rssPage * RSS_PER_FEED) % pictured.length : 0;
-    return pictured.map((_, step) => pictured[(start + step) % pictured.length]);
-    }catch(error){ rssFeedErrors.add(feed.url); console.warn('Feed unavailable:',feed.url); return []; }
+    rssCands[index] = pictured.map((_, step) => pictured[(start + step) % pictured.length]);
+    rssListeners.forEach(notify=>notify(rssCands));
+    return rssCands[index];
+    }catch(error){ rssFeedErrors.add(feed.url); rssCands[index]=[]; rssListeners.forEach(notify=>notify(rssCands)); console.warn('Feed unavailable:',feed.url); return []; }
   })).then(groups => {
     rssCands = groups;
     rssLoadedAt = Date.now();
@@ -194,27 +198,34 @@ async function loadRss(force){
   return rssLoading;
 }
 /* Prefer a decoded cover, but keep text-only discovery cards when an image fails. */
-function rssCardPhoto(card, entry){
+async function rssCardPhoto(card, entry){
   const image = /** @type {HTMLImageElement} */(card.querySelector('.cover'));
   const thumb = card.querySelector('.thumb');
-  return new Promise(resolve => {
-    const done = ok => { clearTimeout(timer); image.onload = image.onerror = null; resolve(ok); };
-    const timer = setTimeout(() => done(false), RSS_PHOTO_MS);
-    image.onload = () => {
-      if(image.naturalWidth < 60 || image.naturalHeight < 60) return done(false);
-      image.hidden = false; thumb.classList.add('has-cover'); done(true);
-    };
-    image.onerror = () => done(false);
-    /* `loading="lazy"` 는 일부러 두지 않습니다 — 아직 문서에 붙지 않은(그리고
-       `hidden` 인) 엘리먼트는 화면에 자리가 없어 브라우저가 "가까워졌다"를 잴
-       수 없고, 그러면 지연 로드가 영영 안 걸립니다. */
-    image.src = entry.photo;
+  image.referrerPolicy = 'no-referrer';
+  const decode = src => new Promise(resolve=>{
+    const done=ok=>{clearTimeout(timer);image.onload=image.onerror=null;resolve(ok);};
+    const timer=setTimeout(()=>done(false),RSS_PHOTO_MS);
+    image.onload=()=>done(image.naturalWidth>=60 && image.naturalHeight>=60);
+    image.onerror=()=>done(false);image.src=src;
   });
+  let ok=await decode(entry.photo);
+  // Hotlink failures can still be retrieved by the existing image transport.
+  if(!ok && card.isConnected){
+    const blob=await fetchArticleImage(entry.photo);
+    if(blob && card.isConnected){
+      const local=URL.createObjectURL(blob);
+      try{ok=await decode(local);}finally{URL.revokeObjectURL(local);}
+    }
+  }
+  if(ok && card.isConnected){image.hidden=false;thumb.classList.add('has-cover');}
+  return ok;
 }
+
 function rssCard(entry){
   const card = document.createElement('article');
   const color = entry.source === 'ProPublica' ? 1 : 0;
   card.className = 'casual rss-card cpal' + color;
+  card.dataset.rssUrl=entry.url;
   card.innerHTML = `<div class="thumb rss-thumb"><img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
@@ -300,7 +311,7 @@ async function rssFeedCards(entries, renderId, rail){
     if(cards.length >= RSS_PER_FEED || renderId !== rssRenderIds.get(rail)) break;
     if(rssAlreadySaved(entry) || rssUnavailableArticles.has(articleUrlKey(entry.url))) continue;
     const card = rssCard(entry);
-    if(entry.photo) await rssCardPhoto(card, entry);
+    // Covers load only after insertion; text never waits for an image.
     if(rssUnavailableArticles.has(articleUrlKey(entry.url)))continue;
     cards.push(card);
   }
@@ -318,30 +329,42 @@ function renderRssCards(rail, force, empty){
     rail.insertBefore(placeholder,rail.querySelector('.casual.add'));
   }
   if(empty)empty.hidden=true;
-  return loadRss(force).then(async groups=>{
+  let revision=0;
+  const paint=async groups=>{
+    const current=++revision;
     if(renderId!==rssRenderIds.get(rail))return;
     const categories=new Map(rssSources().map(feed=>[feed.url,feed.category]));
     groups=groups.map(entries=>entries.filter(entry=>category==='all'||rssCategory(categories.get(entry.feedSourceUrl)||entry.category)===category));
     const stamp=JSON.stringify([category,groups,books.map(book=>book.sourceUrl||'')]);
     if(rail.dataset.rssStamp===stamp){
-      rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
-      if(empty)empty.hidden=!!rail.querySelector('.rss-card');
+      if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
+      if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;
       return;
     }
     const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId,rail)))).flat();
-    if(renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
-    // Keep the previous shelf visible until replacement images are decoded.
-    rail.querySelectorAll('.rss-card,.rss-loading').forEach(card=>card.remove());
+    if(current!==revision||renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
+    // Preserve decoded cards and append newly available sources without resetting images.
+    const existing=new Map([...rail.querySelectorAll('.rss-card')].map(card=>[card.dataset.rssUrl,card]));
+    for(let i=0;i<cards.length;i++){const old=existing.get(cards[i].dataset.rssUrl);if(old){cards[i]=old;existing.delete(cards[i].dataset.rssUrl);}}
+    existing.forEach(card=>card.remove());
+    if(cards.length || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(card=>card.remove());
     const before=rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));
+    const entries=groups.flat();
+    cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;
-    if(empty){ empty.textContent=cards.length?'':category==='all'?'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.':'이 카테고리에 새 글이 없어요. 발견에서 출처를 추가할 수 있어요.'; empty.hidden=cards.length>0; }
-  }).catch(error=>{
+    if(empty){ empty.textContent=cards.length?'':category==='all'?'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.':'이 카테고리에 새 글이 없어요. 발견에서 출처를 추가할 수 있어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
+  };
+  const notify=groups=>{void paint(groups);};
+  rssListeners.add(notify);
+  const pending=loadRss(force);
+  if(rssCands.some(entries=>entries.length))notify(rssCands);
+  return pending.then(paint).catch(error=>{
     if(renderId!==rssRenderIds.get(rail))return;
     rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
     console.error(error);
     if(empty){ empty.textContent='새로운 기사를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=false; }
-  });
+  }).finally(()=>rssListeners.delete(notify));
 }
 function appendRssCards(rail, force){
   return renderRssCards(rail,force,document.getElementById('home-feed-empty'));

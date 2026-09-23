@@ -68,6 +68,45 @@ try{
     }finally{fetchArticleHtml=original;}
    },xml);
 
+   await page.evaluate(async()=>{
+     const original=fetchArticleImage;
+     const card=rssCard({title:'Recovered cover',source:'Test',url:'https://content.example/cover-test'});
+     document.getElementById('casual-rail').appendChild(card);
+     try{
+       fetchArticleImage=async()=>await (await fetch('/assets/favicon/icon-512.png')).blob();
+       const ok=await rssCardPhoto(card,{photo:'https://blocked.example/photo.jpg'});
+       if(!ok || !card.querySelector('.thumb').classList.contains('has-cover'))throw Error('Cover relay recovery failed');
+     }finally{fetchArticleImage=original;card.remove();}
+   });
+   // A slow feed and a hung cover must not gate a ready source.
+   await page.evaluate(async xml=>{
+    if(rssLoading)await rssLoading;
+    const original=fetchArticleHtml;let release;
+    try{
+      save('breeze.feed-category','all');rssCands=[];rssLoadedAt=0;
+      fetchArticleHtml=url=>url.includes('propublica') ? new Promise(resolve=>{release=()=>resolve(xml);}) : Promise.resolve(xml);
+      const rail=document.getElementById('casual-rail');
+      const pending=renderRssCards(rail,true,document.getElementById('home-feed-empty'));
+      await new Promise(resolve=>setTimeout(resolve,50));
+      if(!rail.querySelector('.rss-card') || !rssLoading)throw Error('Ready cards waited for slow feed');
+      const first=rail.querySelector('.rss-card');
+      release();await pending;
+      if(!first.isConnected)throw Error('Partial update replaced existing card');
+    }finally{fetchArticleHtml=original;}
+   },xml);
+   assert.equal(await page.evaluate(html=>{
+     const entry={bodyProvided:true,contentHtml:html,title:'Public feed article',url:'https://medium.com/example/public',source:'Medium'};
+     return !!parseFeedArticle(entry) && !parseFeedArticle({...entry,bodyProvided:false}) &&
+       !parseFeedArticle({...entry,contentHtml:html+'<p>Continue reading</p>'});
+   },html),true);
+   await page.evaluate(async html=>{
+     const original=fetchArticleHtml;
+     try{
+       fetchArticleHtml=()=>{throw Error('Full feed body fetched original again');};
+       await ingestArticle('https://medium.com/example/public',{bodyProvided:true,contentHtml:html,title:'Public feed article',url:'https://medium.com/example/public',source:'Medium'});
+     }finally{fetchArticleHtml=original;show('home');}
+   },html);
+
    await page.evaluate(()=>{window.readShare=[];window.breezeShareInbox={markRead:id=>window.readShare.push(id)};receiveSharedLinks([{id:'shared-id',url:'https://content.example/article',savedAt:'2026-09-23'}]);});
    await page.evaluate(()=>{window.ingestionBookPut=bookPut;bookPut=async()=>{throw new Error('Simulated storage quota failure');};});
    await page.locator('#casual-rail .shared-card').click();

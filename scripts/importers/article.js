@@ -18,7 +18,8 @@ function articleBestSrc(image){
     const width = /^\d+w$/.test(piece[1] || '') ? parseInt(piece[1], 10) : 0;
     if(piece[0] && width > bestWidth){ best = piece[0]; bestWidth = width; }
   });
-  return best || image.getAttribute('src') || image.getAttribute('data-src') || '';
+  const src=image.getAttribute('src') || '';
+  return best || image.getAttribute('data-src') || image.getAttribute('data-original') || src;
 }
 function articleAbsolute(src, base){
   if(!String(src || '').trim()) return '';
@@ -200,7 +201,7 @@ function normalizeArticleUrl(raw){
 async function fetchArticleHtml(url, location = {}){
   /* 스스로 CORS를 열어 둔 곳(위키백과 등)은 서버를 거치지 않습니다. */
   try{
-    const direct = await fetch(url, { credentials:'omit', signal:AbortSignal.timeout(12000), headers:{ Accept:'text/html,application/rss+xml,application/atom+xml,application/xml' } });
+    const direct = await fetch(url, { credentials:'omit', signal:AbortSignal.timeout(3000), headers:{ Accept:'text/html,application/rss+xml,application/atom+xml,application/xml' } });
     if(direct.ok){
       const text = await direct.text();
       if(text.length > 3000000) throw new Error('페이지가 너무 커요');
@@ -234,14 +235,14 @@ async function fetchArticleHtml(url, location = {}){
    못 받으면 null — 사진 하나 때문에 기사를 통째로 못 읽으면 손해입니다. */
 async function fetchArticleImage(url){
   let response = null;
-  try{ response = await fetch(url, {credentials:'omit', signal:AbortSignal.timeout(10000)}); }catch(e){}
+  try{ response = await fetch(url, {credentials:'omit', signal:AbortSignal.timeout(2000)}); }catch(e){}
   if(!response || !response.ok){
     const endpoint = articleProxyUrl(url, 'image');
     if(!endpoint) return null;
     response = null;
     try{
       response = await fetch(endpoint, {
-        signal:AbortSignal.timeout(15000), headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
+        signal:AbortSignal.timeout(4000), headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
       });
     }catch(e){}
   }
@@ -264,6 +265,9 @@ async function attachArticleImages(parsed, fallbackPhoto){
   parsed.blocks.forEach(block => {
     if(block.r === 'img' && wanted.indexOf(block.t) < 0) wanted.push(block.t);
   });
+  const primary=wanted.length ? [...wanted] : (fallbackPhoto ? [fallbackPhoto] : []);
+  const originalCover=parsed.cover;
+  if(fallbackPhoto && !wanted.includes(fallbackPhoto)) wanted.push(fallbackPhoto);
   if(!wanted.length && !fallbackPhoto) return { wanted:0, missed:0 };
 
   const fetched = await Promise.all(wanted.map(url =>
@@ -276,19 +280,11 @@ async function attachArticleImages(parsed, fallbackPhoto){
 
   parsed.blocks = parsed.blocks.filter(block => block.r !== 'img' || stored.has(block.t));
   parsed.cover = stored.has(parsed.cover) ? articleImageKey(parsed.cover) : '';
-  const missing = wanted.filter(url => !stored.has(url)).length;
+  const missing = primary.filter(url => !stored.has(url)).length;
   /* 표지 자리가 비었을 때만 갑니다 — 원문 사진이 잘 왔으면 여기는 지나갑니다. */
   let rescued = false;
-  if(!parsed.cover && fallbackPhoto && !stored.has(fallbackPhoto)){
-    const blob = await fetchArticleImage(fallbackPhoto);
-    if(blob){
-      try{
-        await imgPut(articleImageKey(fallbackPhoto), blob);
-        stored.add(fallbackPhoto);
-        parsed.cover = articleImageKey(fallbackPhoto);
-        rescued = true;
-      }catch(e){}
-    }
+  if(!parsed.cover && fallbackPhoto && stored.has(fallbackPhoto)){
+    parsed.cover=articleImageKey(fallbackPhoto);rescued=true;
   }
 
   /* 어느 사진이 어느 주소에서 왔는지 적어 둡니다. 다른 기기는 이것만 있으면
@@ -299,7 +295,7 @@ async function attachArticleImages(parsed, fallbackPhoto){
   Object.assign(parsed, articleAssemble(parsed.title, parsed.blocks));
   /* 대신 받아 온 한 장은 표지 몫을 채웠으므로 못 받은 장수에서 뺍니다. 그러지
      않으면 표지가 멀쩡히 떠 있는 화면 위로 "한 장도 못 받았어요" 가 뜹니다. */
-  return { wanted:wanted.length, missed:rescued ? Math.max(missing - 1, 0) : missing };
+  return { wanted:primary.length, missed:rescued && originalCover ? Math.max(missing - 1, 0) : missing };
 }
 
 /* 사진 한 장 꺼내기. 다른 기기에서 받은 기사에는 문단과 사진 주소만 있고
@@ -352,6 +348,19 @@ function articleOriginalLink(url){
   link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = '원문 열기 ↗';
   return link;
 }
+// Explicit feed content can already contain the public article. Summaries and
+// visibly truncated/paid previews must still go through the original page.
+function parseFeedArticle(entry){
+  if(!entry.bodyProvided || entry.kind || !entry.contentHtml) return null;
+  const text=rssHtmlText(entry.contentHtml);
+  if(text.length < 1200 || /continue reading|read (?:the )?(?:full|more)|member.only|paid subscribers|subscribe to (?:read|continue)|\[\s*…\s*\]/i.test(text)) return null;
+  const doc=new DOMParser().parseFromString('<html><head></head><body><article></article></body></html>','text/html');
+  const title=doc.createElement('title');title.textContent=entry.title;doc.head.appendChild(title);
+  doc.querySelector('article').innerHTML=entry.contentHtml;
+  const parsed=parseArticleHtml(doc.documentElement.outerHTML,entry.url);
+  if(parsed){parsed.title=entry.title;parsed.author=entry.author || '';parsed.publishedAt=entry.publishedAt || '';parsed.site=entry.source;Object.assign(parsed,articleAssemble(parsed.title,parsed.blocks));}
+  return parsed;
+}
 const articleJobs = new Map();
 async function ingestArticle(url, options = {}){
   const key = articleUrlKey(url);
@@ -360,8 +369,11 @@ async function ingestArticle(url, options = {}){
     const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === key);
     if(existing){ await openBook(existing); return existing; }
     const location = {};
-    const html = await fetchArticleHtml(url,location);
-    const parsed = parseArticleHtml(html,location.url || url);
+    let parsed=parseFeedArticle(options);
+    if(!parsed){
+      const html = await fetchArticleHtml(url,location);
+      parsed = parseArticleHtml(html,location.url || url);
+    }
     if(!parsed) throw new Error('본문을 안전하게 가져오지 못했어요');
     const photos = await attachArticleImages(parsed, options.photo);
     const book = await saveCasualBook(parsed, {kind:'article', site:parsed.site || options.source, sourceUrl:url,

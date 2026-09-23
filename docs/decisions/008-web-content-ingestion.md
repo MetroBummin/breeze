@@ -133,3 +133,31 @@ addition/removal, duplicate URL reuse, partial feed failure, unsafe HTML/links,
 phone light/dark, word tap, sentence hold, scroll and original fallback.
 Share Extension delivery is simulated at its WebView event boundary in these
 browser tests; no new physical-device share round trip has been performed.
+
+## Progressive discovery and public feed bodies
+
+Each feed publishes independently to active rails. Already decoded cards are
+reused; the last slow source and cover decoding do not gate ready text cards.
+Old cached candidates remain visible while refreshing. Empty-category messaging
+waits for all source requests to settle. Images use no-referrer direct loading,
+then the existing image transport on failure. No image is invented for feeds
+that have no cover. Lazy image attributes take precedence over placeholder src.
+
+An explicit RSS content:encoded / Atom content body can enter the same inert
+Readability/semantic pipeline directly. Summary-only, oversized, short and
+visibly truncated or restricted bodies use the original article path. This is
+conservative heuristic detection, not a guarantee of completeness on all feeds.
+It adds no platform scraper or access bypass. Full public feed content avoids a
+redundant article request, especially useful for Medium. Direct HTML transport
+gets 3 seconds before relay; optional image fetching gets 2 seconds direct plus
+4 seconds relay, with fallback covers fetched in the same parallel batch.
+Images are still persisted before Reader opens to preserve offline semantics;
+this change bounds that wait rather than changing paragraph identity mid-read.
+
+Regression fixtures in Chromium and WebKit hold one source unresolved while
+asserting another is visible, preserve card nodes through completion, recover a
+blocked cover, and open a full public feed body without an article-page request.
+Summary and explicit continued-reading previews are rejected by that fast path.
+A fresh direct HTTP check of Medium technology/culture/business feeds returned
+403 on 2026-09-23 in this environment; saved XML fixtures passing does not prove
+current network accessibility. Physical-device latency remains to be checked.
