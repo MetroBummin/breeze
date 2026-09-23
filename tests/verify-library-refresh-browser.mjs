@@ -83,5 +83,26 @@ try{
  await page.evaluate(()=>{sbUser={email:'fixture@example.test'};syncLoginNudge()});
  assert.equal(await page.locator('#login-nudge').isVisible(),false,'Signed-in account still has dot');
  assert.deepEqual(errors,[]);
+ const nativePage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
+ await nativePage.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
+ await nativePage.addInitScript(()=>{
+   localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+   window.nativeMessages=[];
+   window.webkit={messageHandlers:{breezeRefresh:{postMessage:message=>window.nativeMessages.push(message)}}};
+ });
+ await nativePage.goto(url);await nativePage.evaluate(()=>homeReady);
+ assert.equal(await nativePage.evaluate(()=>window.nativeMessages.some(message=>message.enabled===true)),true,'Native refresh was not enabled on Home');
+ await nativePage.evaluate(()=>{
+   window.refreshCalls=0;
+   loadBooks=async()=>{window.refreshCalls++};
+   loadRss=async()=>[];
+   window.breezeNativeRefresh(7);
+ });
+ await nativePage.waitForFunction(()=>window.nativeMessages.some(message=>message.finished===7));
+ assert.equal(await nativePage.evaluate(()=>window.refreshCalls),1,'Native refresh did not load books');
+ assert.equal(await nativePage.locator('#library-refresh').isVisible(),false,'Web spinner appeared alongside native control');
+ await nativePage.evaluate(()=>show('vocab'));
+ await nativePage.waitForFunction(()=>window.nativeMessages.some(message=>message.enabled===false));
+ await nativePage.close();
  console.log('Pull refresh: three shelves, direction/threshold/cancel gates, sheet isolation, coalescing and navigation safety passed.');
 }finally{await browser.close();await new Promise(done=>server.close(done))}

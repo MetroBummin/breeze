@@ -2,6 +2,7 @@
 let libraryRefreshTask=null;
 const LIBRARY_PULL_START=10;
 const LIBRARY_PULL_THRESHOLD=96;
+const nativeRefreshHandler=window.webkit?.messageHandlers?.breezeRefresh || null;
 const libraryRefreshMotion=(()=>{
   const indicator=document.getElementById('library-refresh');
   let frame=0,timer=0,owner='',distance=0;
@@ -9,7 +10,6 @@ const libraryRefreshMotion=(()=>{
     frame=0;
     const progress=Math.min(1,distance/LIBRARY_PULL_THRESHOLD);
     indicator.style.opacity=String(progress);
-    indicator.style.transform=`translate3d(-50%,${Math.round(24*(1-Math.exp(-distance/45)))}px,0)`;
   }
   function clear(){
     cancelAnimationFrame(frame);frame=0;
@@ -17,7 +17,6 @@ const libraryRefreshMotion=(()=>{
     indicator.classList.remove('pulling');
     indicator.hidden=true;
     indicator.style.removeProperty('opacity');
-    indicator.style.removeProperty('transform');
   }
   function draw(next,pulling=false){
     clearTimeout(timer);
@@ -43,9 +42,11 @@ function refreshLibrary(){
   if(!libraryRefreshAllowed()) return Promise.resolve();
   const view=activeAppView();
   const indicator=document.getElementById('library-refresh');
-  libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
-  indicator.classList.add('refreshing');
-  indicator.setAttribute('aria-label','새로고침 중');
+  if(!nativeRefreshHandler){
+    libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
+    indicator.classList.add('refreshing');
+    indicator.setAttribute('aria-label','새로고침 중');
+  }
   const redraw=()=>{
     if(activeAppView()!==view) return;
     if(view==='home') renderHome();
@@ -65,10 +66,12 @@ function refreshLibrary(){
       redraw();
       if(activeAppView()===view) toast('새로고침하지 못했어요. 연결을 확인해 주세요.');
     }finally{
-      if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
-      else libraryRefreshMotion.clear();
-      indicator.classList.remove('refreshing');
-      indicator.removeAttribute('aria-label');
+      if(!nativeRefreshHandler){
+        if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
+        else libraryRefreshMotion.clear();
+        indicator.classList.remove('refreshing');
+        indicator.removeAttribute('aria-label');
+      }
       libraryRefreshTask=null;
     }
   })();
@@ -76,6 +79,23 @@ function refreshLibrary(){
 }
 
 (()=>{
+  if(nativeRefreshHandler){
+    window.breezeNativeRefresh=sequence=>{
+      Promise.resolve(refreshLibrary()).catch(()=>{}).finally(()=>nativeRefreshHandler.postMessage({finished:sequence}));
+      return true;
+    };
+    let previous=null;
+    const report=()=>{
+      const enabled=libraryRefreshAllowed();
+      if(enabled===previous)return;
+      previous=enabled;
+      nativeRefreshHandler.postMessage({enabled});
+    };
+    const observer=new MutationObserver(report);
+    document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden']}));
+    report();
+    return;
+  }
   let start=null;
   let distance=0;
   const reset=()=>{

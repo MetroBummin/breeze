@@ -70,8 +70,8 @@ html.home-returning::view-transition-new(root){animation:none;opacity:1;mix-blen
 @keyframes home-glass-open{from{clip-path:inset(var(--resume-inset) round 32px);opacity:1;}to{clip-path:inset(0 round 0);opacity:1;}}
 @keyframes home-glass-close{from{clip-path:inset(0 round 0);opacity:1;}85%{opacity:1;}to{clip-path:inset(var(--resume-inset) round 32px);opacity:0;}}
 html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
-/* The scroll view keeps its native bounce; only the small indicator follows the finger. */
-#library-refresh{position:fixed;z-index:80;left:50%;top:calc(env(safe-area-inset-top) + 10px);width:22px;height:22px;display:grid;place-items:center;pointer-events:none;color:var(--settings-muted);opacity:0;transform:translate3d(-50%,0,0);transition:transform .32s cubic-bezier(.2,.75,.25,1),opacity .2s ease;}
+/* Browser fallback stays above the Home logo; iOS uses UIRefreshControl. */
+#library-refresh{position:fixed;z-index:80;left:50%;top:calc(env(safe-area-inset-top) + 2px);width:22px;height:22px;display:grid;place-items:center;pointer-events:none;color:var(--settings-muted);opacity:0;transform:translateX(-50%);transition:opacity .2s ease;}
 #library-refresh.pulling{transition:none;}
 #library-refresh[hidden]{display:none;}
 .refresh-spinner{width:16px;height:16px;border:1.8px solid currentColor;border-right-color:transparent;border-radius:50%;}
