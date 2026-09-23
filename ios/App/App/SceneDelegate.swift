@@ -117,7 +117,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         guard let webView else { return }
         // UIKit owns the refresh control's frame. Use it for the pull gesture,
         // then show a native indicator in the visible gap while loading.
-        libraryRefreshControl.tintColor = .clear
+        libraryRefreshControl.isHidden = true
         libraryRefreshIndicator.startAnimating()
         let safeTop = view.safeAreaInsets.top
         let contentTop = webView.scrollView.convert(.zero, to: view).y + safeTop + 24
@@ -136,7 +136,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         } completion: { _ in
             guard self.activeLibraryRefreshSequence == nil else { return }
             self.libraryRefreshIndicator.stopAnimating()
-            self.libraryRefreshControl.tintColor = self.libraryRefreshIndicator.color
+            self.libraryRefreshControl.isHidden = false
         }
         activeLibraryRefreshSequence = nil
     }
