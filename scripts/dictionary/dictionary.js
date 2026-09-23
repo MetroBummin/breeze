@@ -164,6 +164,8 @@ function meaningWaitLine(off){
    이 조회가 만든 것뿐이라, 전에 저장해 둔 낱말은 여기 적히지도 않습니다
    (`addWord` 만 적습니다). */
 let pendingWord = null;
+/* The first contextual answer is replaceable during its lookup opening. */
+let firstLookupMeaning = null;
 function markPendingWord(k, buried){ pendingWord = { key:k, deadAt:buried || 0 }; }
 /* 대표 카드가 확정됐거나, 이 낱말에 딸린 뜻 카드가 하나라도 확정됐으면 확정입니다
    — ＋ 로 적은 두 번째 뜻부터는 딸린 카드가 되기 때문입니다. */
@@ -328,6 +330,40 @@ function createMeaning(root, text, source){
   dropSuggestion(root,meaning); saveWords(); queueSync();
   return id;
 }
+/* Keep one replaceable retry slot. During a new word's first lookup, update its
+   initial AI answer in place. For an established word, preserve the old meaning
+   and replace only the previous retry result. */
+function saveRetriedMeaning(root, text, source){
+  const meaning=String(text||'').replace(/\s+/g,' ').trim(),base=words[root];
+  if(!meaning||!base)return '';
+  const from=source||{},ai={...(from.ai||{}),ko:meaning};
+  if(firstLookupMeaning&&firstLookupMeaning.root===root&&firstLookupMeaning.life===wordLookupLife){
+    base.ko=meaning;base.ai=ai;delete base.koEdited;
+    base.alts=Array.isArray(from.alts)?from.alts:[];
+    if(from.example)base.example=from.example;
+    if(from.book)base.book=from.book;
+    base.up=Date.now();base.pickedAt=base.up;
+    saveWords();queueSync();return root;
+  }
+  const retry=Object.entries(words).find(([id,item])=>id!==root&&item&&item.root===root&&item.retryCandidate);
+  const existing=findSenseByMeaning(root,meaning);
+  if(existing){
+    if(retry&&retry[0]!==existing)discardRetryCandidate(retry[0]);
+    const item=words[existing];
+    if(item){if(!retry||retry[0]!==existing)delete item.retryCandidate;touchMeaning(existing);}
+    saveWords();queueSync();return existing;
+  }
+  if(retry&&meaningKey(words[retry[0]].ko)!==meaningKey(meaning))discardRetryCandidate(retry[0]);
+  const id=createMeaning(root,meaning,{...from,ai});
+  if(id&&id!==root){words[id].retryCandidate=true;saveWords();queueSync();}
+  return id;
+}
+function discardRetryCandidate(id){
+  const item=words[id];if(!item||!item.retryCandidate)return;
+  const root=item.root||id,key=senseCardKey(root,item.ko);
+  dead[key]=Math.max(Date.now(),(item.up||item.addedAt||0)+1,(dead[key]||0)+1);
+  delete words[id];save(LS_DEAD,dead);saveWords();queueSync();
+}
 /* 저장한 뜻은 더 이상 추천이 아닙니다. 같은 말이 두 줄에 동시에 있으면
    "칩을 누르면 이 뜻을 본다"는 규칙이 흔들립니다. */
 function dropSuggestion(root, meaning){
@@ -427,6 +463,7 @@ async function resolveCurrentLookup(k,input,life){
   if(phrase){saveDetectedExpression(k,phrase,input.sentence,input.book,answer,life,{automatic:true,clickedIndex:input.clickedIndex});return;}
   const id=createMeaning(w.root||k,answer.ko,{...input,example:input.sentence,ai:answerFromLook(answer,false).ai,automatic:true});
   if(id){
+    if(id===(w.root||k))firstLookupMeaning={root:w.root||k,life};
     rememberSenseContext(id,input.sentence,input.clickedIndex);selKey=id;
     contextView=words[id].example===input.sentence?null:{key:id,...input,loading:''};
     saveWords();
@@ -696,7 +733,7 @@ async function retryWordPeek(){
     saveDetectedExpression(k,phrase,sentence,book,answer,life,{explicit:true,clickedIndex});
     return;
   }
-  const id=createMeaning(root,parsed.ko,{clicked,example:sentence,book,ai:parsed.ai,
+  const id=saveRetriedMeaning(root,parsed.ko,{clicked,example:sentence,book,ai:parsed.ai,
     alts:parsed.alts,phrase:parsed.phrase});
   if(id){ rememberSenseContext(id,sentence,clickedIndex);saveWords();selKey=id; contextView=null; paintWord(root); }
   wordPeekRetryState=null;
@@ -881,28 +918,24 @@ function renderPanel(){
     :                     '뜻이 문맥과 안 맞을 때 눌러보세요';
 
   /* ── 저장된 뜻 ──
-     칩 = 선택. ＋ = 생성. 칩 안에 × 를 넣지 않는 이유는 두 가지입니다: 작은 칩
-     안에서 두 손짓의 터치 자리가 겹치고, 지우는 문이 둘이 되면 "칩을 누르면 이
-     뜻을 본다"는 한 줄짜리 규칙이 깨집니다. */
+     다른 뜻은 문맥 뜻 아래 칩으로 둡니다. 본체는 선택, 끝의 × 는 삭제입니다. */
   document.getElementById('p-ex-fold').hidden=!w.example;
   if(previewWordCard){
-    document.getElementById('p-senses-fold').hidden=true;
+    document.getElementById('p-saved-senses').className='';
+    document.getElementById('p-saved-senses').innerHTML='';
     document.getElementById('p-en-section').hidden=!(w.defs&&w.defs.length);
     renderOnboardingWordDetail(w);
     return;
   }
-  const root=base.root||k, savedSec=document.getElementById('p-saved-senses-sec');
+  const root=base.root||k;
   const savedBox=document.getElementById('p-saved-senses'), meanings=meaningCards(root,k);
   const otherMeanings=meanings.filter(([id])=>id!==k);
-  document.getElementById('p-senses-fold').hidden=!otherMeanings.length;
-  document.getElementById('p-senses-label').textContent=`다른 뜻 ${otherMeanings.length}개`;
   const canAdd=true;
-  savedSec.className='p-sec p-sec-row on';
-  if(meanings.length){
+  if(otherMeanings.length){
     savedBox.className='on';
     /* 첫 칩은 지금 보고 있는 뜻이라 지우는 문이 이미 메인 뜻 칸에 있습니다. 두 번째
        칩부터는 그 문이 없으므로, 정리할 길을 칩 안에 하나 둡니다. */
-    savedBox.innerHTML=otherMeanings.map(([id,item],index)=>`<button type="button" class="saved-sense${id===k?' on':''}" data-k="${esc(id)}">${esc(item.ko)}<span class="sense-remove" role="img" aria-label="이 뜻 지우기">×</span></button>`).join('');
+    savedBox.innerHTML=otherMeanings.map(([id,item])=>`<button type="button" class="saved-sense" data-k="${esc(id)}"><span>${esc(item.ko)}</span><span class="sense-remove" aria-hidden="true">×</span></button>`).join('');
     [...savedBox.querySelectorAll('.saved-sense')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
       chip.onclick=event=>{
@@ -1178,6 +1211,7 @@ let wordLookupCtrl = null;
 /* 새 열림을 시작합니다 — 앞 열림은 여기서 끝납니다. */
 function beginWordLookupLife(){
   endWordLookupLife();
+  firstLookupMeaning=null;
   wordLookupCtrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   return wordLookupLife;
 }
@@ -1185,6 +1219,7 @@ function beginWordLookupLife(){
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
 function endWordLookupLife(){
   wordLookupLife++;
+  firstLookupMeaning=null;
   if(wordLookupCtrl){ try{ wordLookupCtrl.abort(); }catch(e){} wordLookupCtrl = null; }
   /* 이 열림이 끝나는 자리는 여기 하나입니다 — 창을 닫았든, 다른 낱말을 열었든.
      그래서 "확정 못 한 새 낱말을 버린다"도 여기 하나면 됩니다. 닫기에만 달면

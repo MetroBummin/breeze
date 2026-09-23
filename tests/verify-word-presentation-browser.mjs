@@ -98,7 +98,7 @@ try{
     window.wordRetryOriginalFetchLook=fetchLook;
     fetchLook=async(k,opt)=>{
       wordRetryQa={calls:wordRetryQa.calls+1,key:k,opt:{sentence:opt.sentence,retry:opt.retry,hold:opt.hold}};
-      return {ko:'환자',pos:'noun',note:'문맥 재판정',alts:[],phrase:''};
+      return {ko:wordRetryQa.calls===1?'환자':'환자석',pos:'noun',note:'문맥 재판정',alts:[],phrase:''};
     };
   });
   await page.locator('#word-peek-retry').click();
@@ -107,6 +107,14 @@ try{
     sentence:'A patient reader keeps resilient words close to their context.',retry:true,hold:true}},
   'retry did not re-query the current sentence through the lookup flow');
   assert.equal(await page.locator('#panel').isVisible(),false,'retry opened a separate detail UI');
+  assert.deepEqual(await page.evaluate(()=>({original:words.patient.ko,retry:Object.entries(words)
+    .filter(([,item])=>item&&item.retryCandidate).map(([,item])=>item.ko)})),
+  {original:'참을성 있는',retry:['환자']},'retry did not preserve the original saved meaning and save one retry candidate');
+  await page.locator('#word-peek-retry').click();
+  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='환자석');
+  assert.deepEqual(await page.evaluate(()=>({original:words.patient.ko,retry:Object.entries(words)
+    .filter(([,item])=>item&&item.retryCandidate).map(([,item])=>item.ko),oldRetry:!!words['patient::sense:'+sentenceHash('환자')]})),
+  {original:'참을성 있는',retry:['환자석'],oldRetry:false},'a later retry accumulated the previous retry meaning');
   await page.evaluate(()=>{fetchLook=wordRetryOriginalFetchLook;});
 
   await page.locator('#word-peek-more').click();
@@ -125,10 +133,9 @@ try{
   assert.deepEqual(await geometry(),before,'opening centered details changed Reader geometry or scroll');
   await page.mouse.click(4,4);
   await page.waitForFunction(()=>!wordLookupOpen());
-  /* 위 Retry 검증이 만든 두 번째 Meaning은 아래의 "기존 Meaning 즉시 재사용"
-     fixture와 별개입니다. 다음 계약이 원래 저장 뜻 하나만 가진 상태를 보도록 되돌립니다. */
+  /* Keep the following "existing Meaning reuse" fixture separate from the retry slot. */
   await page.evaluate(()=>{
-    Object.keys(words).filter(id=>words[id]&&words[id].root==='patient'&&words[id].ko==='환자')
+    Object.keys(words).filter(id=>words[id]&&words[id].retryCandidate)
       .forEach(id=>delete words[id]);
     words.patient.pickedAt=Date.now();
   });
@@ -351,7 +358,6 @@ try{
     words={poly:{word:'poly',ko:'A',status:1},'poly::B':{word:'poly',root:'poly',ko:'B',status:1}};
     dead={};openBook(books.find(book=>book.kind==='txt'));selectWord('poly',null);
   });
-  await page.locator('#p-senses-fold').evaluate(node=>node.open=true);
   await page.locator('.saved-sense[data-k="poly::B"] .sense-remove').click();
   assert.equal(await page.evaluate(()=>!!words.poly&&!words['poly::B']),true);
 
@@ -363,6 +369,19 @@ try{
   await page.locator('#p-know').click();
   assert.equal(await page.evaluate(()=>Object.keys(words).filter(key=>key==='poly'||words[key]?.root==='poly').length),0);
   assert.ok(await page.evaluate(()=>dead.poly&&dead['poly::E']));
+
+  const firstLookupRetry=await page.evaluate(()=>{
+    const oldWords=words,oldDead=dead,oldSeed=firstLookupMeaning;
+    words={newword:{word:'newword',ko:'',status:1,addedAt:Date.now(),up:Date.now()}};dead={};
+    createMeaning('newword','A',{automatic:true});
+    firstLookupMeaning={root:'newword',life:wordLookupLife};
+    saveRetriedMeaning('newword','B',{ai:{done:true}});
+    saveRetriedMeaning('newword','C',{ai:{done:true}});
+    const result={root:words.newword.ko,children:Object.keys(words).filter(id=>id!=='newword')};
+    words=oldWords;dead=oldDead;firstLookupMeaning=oldSeed;saveWords();
+    return result;
+  });
+  assert.deepEqual(firstLookupRetry,{root:'C',children:[]},'retries for a newly looked up word did not replace its initial answer');
 
   console.log('Word near-pill and multi-meaning Words deletion interactions verified');
   await page.close();

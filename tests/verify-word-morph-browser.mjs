@@ -59,7 +59,7 @@ try{for(const engine of [chromium,webkit]){
   });
   assert.ok(geometry.h<=380&&geometry.top>=16&&geometry.bottom<=828);assert.equal(geometry.scroll,geometry.before);
   assert.ok(geometry.top>=geometry.wordBottom||geometry.bottom<=geometry.wordTop,'detail covered its anchor');assert.equal(geometry.inside,true);
-  assert.equal(await page.locator('#p-senses-fold').isVisible(),false,'active Korean meaning was duplicated');
+  assert.equal(await page.locator('#p-saved-senses .saved-sense').count(),0,'active Korean meaning was duplicated');
   for(const dark of [false,true]){
    await page.evaluate(d=>{darkMode=d;applyDark();},dark);
    await page.waitForTimeout(180);
