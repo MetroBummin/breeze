@@ -11,7 +11,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1
 
 const source=readFileSync(new URL('../scripts/reader/epub-original.js',import.meta.url),'utf8');
 const {execFileSync}=await import('node:child_process');
-const baseline=execFileSync('git',['show','HEAD:scripts/reader/epub-original.js'],{cwd:root,encoding:'utf8'});
+const baseline=execFileSync('git',['show','03288ac4451fe449d1520a462cec997b1fe663d2:scripts/reader/epub-original.js'],{cwd:root,encoding:'utf8'});
 const begin=baseline.indexOf('function renderEpubSavedWordHighlights(doc)');
 const original=baseline.slice(begin,baseline.indexOf('/* ================= selecting a word',begin));
 try{for(const engine of [chromium,webkit]){
