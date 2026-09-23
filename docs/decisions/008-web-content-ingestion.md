@@ -21,9 +21,21 @@ Concurrent requests for the same normalized URL share one job.
 URL entry and feed cards call the same ingestion function. Feed discovery accepts
 RSS/Atom directly, advertised HTML alternate links, and small conventional feed
 URL candidates. Medium, Substack and Reddit have no article-specific parser.
-The two existing default feeds remain; users can add/remove a small local set of
+The two existing default feeds remain, with Medium Technology and Reddit
+r/science added as automatic discovery sources; users can add/remove a small local set of
 sources without folders, unread counts, or a new RSS management screen. Feed
 failures are isolated. Missing photos do not suppress otherwise useful essays.
+
+Home and Casuals discovery share a persisted category chip selection. Categories
+are assigned to feed sources, not guessed from article titles: general, society,
+science/technology, culture/lifestyle, and business. The Conversation defaults to
+general and ProPublica to society; Medium Technology and r/science use
+science/technology. Both new default endpoints returned valid XML in a live
+check (10 and 25 entries respectively). Existing custom sources default to general;
+source addition and the existing source list allow category selection/editing.
+Filtering affects only discovery cards, preserving current reading and saved
+links. Empty categories show a message; rapid chip changes invalidate older
+asynchronous card renders. Filtering cached feeds requires no new fetch.
 
 ## Content boundary
 

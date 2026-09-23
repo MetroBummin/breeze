@@ -10,6 +10,11 @@ The reflection stays subtle at the center so it does not wash out labels. Dark m
 
 ## Regression coverage
 
+Home and Casuals category chips also use `.control-glass`, including its shared
+reflection and theme materials. Selection uses the word lookup highlight
+control's `--mark-on`, `--mark-on-ink`, and `--blue-ring` tokens as an inset tint.
+Chip labels stay above the reflection; the compact chips own their geometry.
+
 Run `npm run test:home-ui` for the cross-view browser checks below, alongside `npm test`.
 
 `tests/verify-home-controls-browser.mjs` checks shared material and expanded geometry in both themes at five widths, plus the compact Reader material, reflection stacking and progress fill. Visual review must include the Reader's plain background and Home's cover background at matching progress. Compare both empty and filled states; do not rely on Home alone.

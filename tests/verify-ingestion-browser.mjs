@@ -56,10 +56,11 @@ try{
    assert.equal(await page.evaluate(entry=>parseFeedPost(entry)?.blocks.some(block=>block.marks?.some(mark=>mark.kind==='strong')),xEntry),true);
    assert.equal(await page.evaluate(()=>{try{parseRss('<rss><broken>',{url:'https://a.example',name:'bad'});return false;}catch{return true;}}),true);
    await page.evaluate(async xml=>{
+    if(rssLoading)await rssLoading;
     const original=fetchArticleHtml;
     try{fetchArticleHtml=async url=>url.includes('propublica') ? xml : Promise.reject(new Error('broken feed'));
       rssLoadedAt=0; await loadRss(true);
-      if(rssCands.length!==2 || rssCands[0].length!==0 || rssCands[1].length!==1) throw new Error('Feed failure was not isolated');
+      if(rssCands.length!==RSS_FEEDS.length || rssCands[0].length!==0 || rssCands[1].length!==1) throw new Error('Feed failure was not isolated');
     }finally{fetchArticleHtml=original;}
    },xml);
 
@@ -107,11 +108,15 @@ try{
    await page.evaluate(()=>show('casuals'));
    await page.locator('.feed-discovery summary').click();
    await page.locator('#feed-url').fill('https://content.example/');
+   await page.locator('#feed-category').selectOption('culture');
    await page.locator('#feed-add').click();
    await page.waitForFunction(()=>document.getElementById('feed-status').textContent==='추가했어요');
-   assert.equal(await page.evaluate(()=>rssSources().length),3);
+   assert.equal(await page.evaluate(()=>rssSources().length-RSS_FEEDS.length),1);
+   assert.equal(await page.evaluate(()=>rssSources().at(-1).category),'culture');
+   await page.locator('#feed-sources select').last().selectOption('science');
+   assert.equal(await page.evaluate(()=>rssSources().at(-1).category),'science');
    await page.locator('#feed-sources button').click();
-   assert.equal(await page.evaluate(()=>rssSources().length),2);
+   assert.equal(await page.evaluate(()=>rssSources().length-RSS_FEEDS.length),0);
    await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditLinkEntry);
    await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/reddit-article');
    assert.equal(await page.locator('#rdiscovery').getAttribute('href'),redditLinkEntry.url);
@@ -149,7 +154,36 @@ try{
       console.log('LIVE NETWORK',JSON.stringify(result));
     }
    }
-   console.log(engine.name(),'ingestion, persisted share handoff, dedupe, fallback, semantics and mobile Reader passed');
+   await page.evaluate(async()=>{
+    if(rssLoading)await rssLoading;
+    rssCands=[[{title:'Science story',source:'Science',category:'science',url:'https://category.example/science',summary:'Science reading'}],
+      [{title:'Culture story',source:'Culture',category:'culture',url:'https://category.example/culture',summary:'Culture reading'}]];
+    rssLoadedAt=Date.now();show('home');
+   });
+   assert.equal(await page.evaluate(()=>rssSources().filter(feed=>feed.category==='science'&&/medium.com|reddit.com/.test(feed.url)).length),2);
+   const chips=page.locator('#casuals .feed-categories');
+   await chips.locator('[data-category="science"]').click();
+   await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card').length===1);
+   assert.equal(await page.locator('#casual-rail .rss-card .ct').textContent(),'Science story');
+   assert.equal(await chips.locator('[data-category="science"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.evaluate(()=>document.querySelector('#casual-rail .shared-card')!==null),true);
+   await chips.locator('[data-category="business"]').click();
+   await page.waitForFunction(()=>!document.getElementById('home-feed-empty').hidden);
+   assert.equal(await page.locator('#casual-rail .rss-card').count(),0);
+   await page.evaluate(()=>{
+    document.querySelector('#casuals [data-category="science"]').click();
+    document.querySelector('#casuals [data-category="culture"]').click();
+   });
+   await page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card .ct')?.textContent==='Culture story');
+   assert.equal(await page.locator('#casual-rail .rss-card').count(),1);
+   for(const dark of [false,true]){
+    await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    if(process.env.BREEZE_QA_OUTPUT)await page.screenshot({path:process.env.BREEZE_QA_OUTPUT+'/'+engine.name()+'-categories-'+(dark?'dark':'light')+'.png'});
+   }
+   await page.reload();await page.evaluate(()=>homeReady);
+   assert.equal(await page.locator('#casuals [data-category="culture"]').getAttribute('aria-pressed'),'true');
+   console.log(engine.name(),'ingestion, category filtering/persistence, persisted share handoff, dedupe, fallback, semantics and mobile Reader passed');
   }finally{await browser.close();}
  }
 }finally{server.close();}

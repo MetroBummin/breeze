@@ -4,9 +4,55 @@
    완전히 같고, 피드 자체나 카드 사진을 서버/IndexedDB에 쌓지 않습니다. */
 
 const RSS_FEEDS = [
-  { name:'The Conversation', url:'https://theconversation.com/global/articles.atom' },
-  { name:'ProPublica', url:'https://www.propublica.org/feeds/propublica/main' },
+  { name:'The Conversation', url:'https://theconversation.com/global/articles.atom', category:'general' },
+  { name:'ProPublica', url:'https://www.propublica.org/feeds/propublica/main', category:'society' },
+  { name:'Medium · Technology', url:'https://medium.com/feed/tag/technology', category:'science' },
+  { name:'Reddit · r/science', url:'https://www.reddit.com/r/science/.rss', category:'science' },
 ];
+const RSS_CATEGORIES = [
+  {id:'general',label:'종합'}, {id:'society',label:'시사·사회'},
+  {id:'science',label:'과학·기술'}, {id:'culture',label:'문화·생활'},
+  {id:'business',label:'경제·비즈니스'},
+];
+function rssCategory(value){return RSS_CATEGORIES.some(item=>item.id===value) ? value : 'general';}
+function rssSelectedCategory(){
+  const value=load('breeze.feed-category','all');
+  return value==='all' ? value : rssCategory(value);
+}
+function rssCategoryOptions(select,value){
+  select.replaceChildren();
+  for(const category of RSS_CATEGORIES){
+    const option=document.createElement('option');option.value=category.id;option.textContent=category.label;
+    select.appendChild(option);
+  }
+  select.value=rssCategory(value);
+}
+function renderFeedCategories(){
+  const selected=rssSelectedCategory();
+  document.querySelectorAll('.feed-categories').forEach(host=>{
+    if(!host.children.length){
+      for(const category of [{id:'all',label:'전체'},...RSS_CATEGORIES]){
+        const button=document.createElement('button');button.type='button';button.className='control-glass';
+        const label=document.createElement('span');label.textContent=category.label;button.appendChild(label);
+        button.dataset.category=category.id;
+        button.onclick=()=>{
+          if(!save('breeze.feed-category',category.id))return;
+          renderFeedCategories();refreshFeedRails();
+        };
+        host.appendChild(button);
+      }
+    }
+    host.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.category===selected)));
+  });
+}
+function refreshFeedRails(){
+  for(const [id,emptyId] of [['casual-rail','home-feed-empty'],['casual-discover-rail','casual-discover-empty']]){
+    const rail=document.getElementById(id);
+    rail.querySelectorAll('.rss-card').forEach(card=>card.remove());
+    delete rail.dataset.rssStamp;
+    renderRssCards(rail,false,document.getElementById(emptyId));
+  }
+}
 const RSS_PER_FEED = 3;
 const RSS_CACHE_MS = 10 * 60 * 1000;
 const RSS_PHOTO_MS = 8000;
@@ -96,8 +142,8 @@ function parseRss(xml, feed){
     const title = rssHtmlText(rssText(node, ['title']));
     const url = rssEntryUrl(node, feed.url);
     return {
-      source:feed.name, title, url, author:rssText(node,['author','creator']), publishedAt:rssText(node,['published','updated','pubdate','date']),
-      kind:rssPostKind(url), readUrl:rssLinkedArticle(content,url), contentHtml:content.slice(0,200000), feedUrl:feed.url,
+      source:feed.name, category:rssCategory(feed.category), title, url, author:rssText(node,['author','creator']), publishedAt:rssText(node,['published','updated','pubdate','date']),
+      kind:rssPostKind(url), readUrl:rssLinkedArticle(content,url), contentHtml:content.slice(0,200000), feedUrl:feed.url, feedSourceUrl:feed.sourceUrl || feed.url,
       summary:rssHtmlText(content).slice(0,280), photo:rssImage(node, content, feed.url),
       date:rssDate(rssText(node, ['published', 'updated', 'pubdate', 'date'])),
     };
@@ -117,7 +163,7 @@ async function loadRss(force){
     try{
     const location = {};
     const html = await fetchArticleHtml(feed.url,location);
-    const pictured = parseRss(html, {...feed,url:location.url || feed.url});
+    const pictured = parseRss(html, {...feed,sourceUrl:feed.url,url:location.url || feed.url});
     rssFeedErrors.delete(feed.url);
     /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
        피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
@@ -246,6 +292,8 @@ async function rssFeedCards(entries, renderId, rail){
   return cards;
 }
 function renderRssCards(rail, force, empty){
+  renderFeedCategories();
+  const category=rssSelectedCategory();
   const renderId=(rssRenderIds.get(rail)||0)+1;
   rssRenderIds.set(rail,renderId);
   if(empty && !rail.querySelector('.rss-card')){
@@ -253,7 +301,10 @@ function renderRssCards(rail, force, empty){
     empty.textContent='새로운 기사를 불러오는 중이에요.';
   }
   return loadRss(force).then(async groups=>{
-    const stamp=JSON.stringify([groups,books.map(book=>book.sourceUrl||'')]);
+    if(renderId!==rssRenderIds.get(rail))return;
+    const categories=new Map(rssSources().map(feed=>[feed.url,feed.category]));
+    groups=groups.map(entries=>entries.filter(entry=>category==='all'||rssCategory(categories.get(entry.feedSourceUrl)||entry.category)===category));
+    const stamp=JSON.stringify([category,groups,books.map(book=>book.sourceUrl||'')]);
     if(rail.dataset.rssStamp===stamp){
       if(empty)empty.hidden=!!rail.querySelector('.rss-card');
       return;
@@ -265,21 +316,24 @@ function renderRssCards(rail, force, empty){
     const before=rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));
     rail.dataset.rssStamp=stamp;
-    if(empty){ empty.textContent=cards.length?'':'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=cards.length>0; }
+    if(empty){ empty.textContent=cards.length?'':category==='all'?'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.':'이 카테고리에 새 글이 없어요. 발견에서 출처를 추가할 수 있어요.'; empty.hidden=cards.length>0; }
   }).catch(error=>{
+    if(renderId!==rssRenderIds.get(rail))return;
     console.error(error);
     if(empty){ empty.textContent='새로운 기사를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=false; }
   });
 }
 function appendRssCards(rail, force){
-  return renderRssCards(rail,force);
+  return renderRssCards(rail,force,document.getElementById('home-feed-empty'));
 }
 
 // Small, local source list. Article feeds provide discovery metadata; a short
 // social post may be read from its feed body when enough text is present.
 function rssSources(){
   const custom = load('breeze.feed-sources',[]);
-  return [...RSS_FEEDS, ...(Array.isArray(custom) ? custom.filter(feed=>feed && normalizeArticleUrl(feed.url)) : [])].slice(0,12);
+  const categories=load('breeze.feed-source-categories',{}) || {};
+  return [...RSS_FEEDS, ...(Array.isArray(custom) ? custom.filter(feed=>feed && normalizeArticleUrl(feed.url)) : [])].slice(0,12)
+    .map(feed=>({...feed,category:rssCategory(categories[feed.url] || feed.category)}));
 }
 async function discoverFeed(raw){
   let url = normalizeArticleUrl(raw); if(!url) throw new Error('주소를 확인해 주세요');
@@ -311,27 +365,43 @@ async function addFeedSource(event){
   button.disabled = true; status.textContent = '읽을 거리를 확인하는 중…';
   try{
     const feed = await discoverFeed(input.value);
+    feed.category=rssCategory((/** @type {HTMLSelectElement} */(document.getElementById('feed-category'))).value);
     const all = rssSources();
     if(all.some(item=>articleUrlKey(item.url) === articleUrlKey(feed.url))) throw new Error('이미 추가한 출처예요');
     if(all.length >= 12) throw new Error('출처는 최대 12개까지 추가할 수 있어요');
     const custom = all.slice(RSS_FEEDS.length); custom.push(feed);
     if(!save('breeze.feed-sources',custom)) throw new Error('출처를 저장하지 못했어요. 다시 시도해 주세요.');
-    rssLoadedAt = 0; input.value = '';
+    rssLoadedAt = 0; rssCands=[]; input.value = '';
     status.textContent = '추가했어요'; renderFeedSources();
-    renderRssCards(document.getElementById('casual-discover-rail'),true,document.getElementById('casual-discover-empty'));
+    refreshFeedRails();
   }catch(error){status.textContent = error.message;}finally{button.disabled = false;}
 }
 function renderFeedSources(){
   const host = document.getElementById('feed-sources'); host.replaceChildren();
-  rssSources().slice(RSS_FEEDS.length).forEach(feed=>{
-    const button = document.createElement('button'); button.type = 'button'; button.textContent = feed.name + ' ×';
+  const categorySelect=/** @type {HTMLSelectElement} */(document.getElementById('feed-category'));
+  if(!categorySelect.options.length)rssCategoryOptions(categorySelect,'general');
+  rssSources().forEach((feed,index)=>{
+    const row=document.createElement('div');row.className='feed-source-row';
+    const name=document.createElement('span');name.textContent=feed.name;row.appendChild(name);
+    const select=document.createElement('select');select.setAttribute('aria-label',feed.name+' 카테고리');
+    rssCategoryOptions(select,feed.category);
+    select.onchange=()=>{
+      const categories=load('breeze.feed-source-categories',{}) || {};
+      if(!save('breeze.feed-source-categories',{...categories,[feed.url]:select.value})){select.value=feed.category;return;}
+      refreshFeedRails();
+    };
+    row.appendChild(select);
+    host.appendChild(row);
+    if(rssFeedErrors.has(feed.url))name.textContent=feed.name+' · 불러오기 실패';
+    if(index<RSS_FEEDS.length)return;
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = '×';
     button.setAttribute('aria-label',feed.name+' 출처 삭제');
     if(rssFeedErrors.has(feed.url)){
       button.classList.add('feed-unavailable');
       button.title = '지금은 피드를 불러오지 못했어요';
-      button.textContent = feed.name + ' · 불러오기 실패 ×';
+      name.textContent = feed.name + ' · 불러오기 실패';
     }
-    button.onclick = ()=>{if(!save('breeze.feed-sources',rssSources().slice(RSS_FEEDS.length).filter(item=>item.url !== feed.url))) return; rssLoadedAt=0; rssCands=[]; renderFeedSources(); renderCasualLibrary();};
-    host.appendChild(button);
+    button.onclick = ()=>{if(!save('breeze.feed-sources',rssSources().slice(RSS_FEEDS.length).filter(item=>item.url !== feed.url))) return; rssLoadedAt=0; rssCands=[]; renderFeedSources(); refreshFeedRails();};
+    row.appendChild(button);
   });
 }
