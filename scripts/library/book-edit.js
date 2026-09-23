@@ -86,11 +86,12 @@ async function searchCoverPhotos(event){
   results.replaceChildren();
   if(!query){status.textContent='검색어를 입력해 주세요.';return;}
   status.textContent='사진을 찾는 중…';
-  const params=new URLSearchParams({q:query,license:'cc0,pdm',page_size:'60'});
+  // Openverse allows at most 20 results per anonymous request.
+  const params=new URLSearchParams({q:query,license:'cc0,pdm',page_size:'20'});
   try{
     const response=await fetch('https://api.openverse.org/v1/images/?'+params,
       {credentials:'omit',signal:AbortSignal.timeout(12000)});
-    if(!response.ok)throw new Error('search unavailable');
+    if(!response.ok)throw response.status;
     const photos=openverseCoverResults(await response.json());
     if(id!==coverSearchId || !editTarget)return;
     status.textContent=photos.length ? '사진을 누르면 표지로 고를 수 있어요.' : '쓸 수 있는 사진이 없어요. 검색어를 바꿔보세요.';
@@ -106,7 +107,12 @@ async function searchCoverPhotos(event){
       results.appendChild(button);
     }
   }catch(error){
-    if(id===coverSearchId && editTarget) status.textContent='사진을 찾지 못했어요. 잠시 후 다시 시도해 주세요.';
+    if(id===coverSearchId && editTarget){
+      const statusCode=typeof error==='number' ? error : 0;
+      status.textContent=statusCode===401 ? '이미지 검색 한도에 도달했어요. 잠시 후 다시 시도해 주세요.' :
+        statusCode===429 ? '검색 요청이 잠시 많아요. 잠시 후 다시 시도해 주세요.' :
+        '사진을 찾지 못했어요. 잠시 후 다시 시도해 주세요.';
+    }
   }
 }
 

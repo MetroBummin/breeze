@@ -36,8 +36,12 @@ try{
       await page.route('**/*',route=>{
         const url=route.request().url();
         if(url.startsWith(base))return route.continue();
-        if(url.startsWith('https://api.openverse.org/v1/images/'))return route.fulfill({
-          headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify(openverse)});
+        if(url.startsWith('https://api.openverse.org/v1/images/')){
+          const requestUrl=new URL(url);
+          assert.equal(requestUrl.searchParams.get('page_size'),'20');
+          assert.equal(requestUrl.searchParams.get('license'),'cc0,pdm');
+          return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify(openverse)});
+        }
         if(url.startsWith('https://thumbs.test/') || url.startsWith('https://images.test/'))return route.fulfill({
           headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/png',body:cover});
         return route.abort();
