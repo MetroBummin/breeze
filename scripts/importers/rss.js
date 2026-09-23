@@ -32,7 +32,7 @@ function renderFeedCategories(){
   document.querySelectorAll('.feed-categories').forEach(host=>{
     if(!host.children.length){
       for(const category of [{id:'all',label:'전체'},...RSS_CATEGORIES]){
-        const button=document.createElement('button');button.type='button';button.className='control-glass';
+        const button=document.createElement('button');button.type='button';
         const label=document.createElement('span');label.textContent=category.label;button.appendChild(label);
         button.dataset.category=category.id;
         button.onclick=()=>{

@@ -10,10 +10,11 @@ The reflection stays subtle at the center so it does not wash out labels. Dark m
 
 ## Regression coverage
 
-Home and Casuals category chips also use `.control-glass`, including its shared
-reflection and theme materials. Selection uses the word lookup highlight
-control's `--mark-on`, `--mark-on-ink`, and `--blue-ring` tokens as an inset tint.
-Chip labels stay above the reflection; the compact chips own their geometry.
+Home and Casuals category chips follow the word lookup star buttons: 12px
+corners, neutral action surface and a restrained first-star warm tint for selection. They use
+the shared sentence-glass palette without the floating dock's reflection or
+shadow. The expanded word lookup loading glow uses the same neutral palette,
+scoped to that panel so other loading surfaces retain their own appearance.
 
 Run `npm run test:home-ui` for the cross-view browser checks below, alongside `npm test`.
 

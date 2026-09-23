@@ -289,12 +289,11 @@
 .feed-discovery label{width:100%}
 .feed-discovery input{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--field);color:inherit}
 .feed-discovery select{max-width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--field);color:inherit;font:inherit}
-.feed-categories{display:flex;gap:8px;overflow-x:auto;padding:8px 8px 16px;margin:-6px -8px 6px;scrollbar-width:none}
+.feed-categories{display:flex;gap:8px;overflow-x:auto;padding:8px 8px 16px;margin:6px -8px 6px;scrollbar-width:none}
 .feed-categories::-webkit-scrollbar{display:none}
-.feed-categories button{position:relative;flex:none;min-height:38px;padding:7px 15px;border-radius:999px;color:var(--sentence-glass-secondary);font:500 13px var(--ui);cursor:pointer;touch-action:manipulation}
+.feed-categories button{position:relative;flex:none;min-height:38px;padding:7px 15px;border-radius:12px;border:1px solid var(--sentence-glass-line);background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);font:500 13px var(--ui);cursor:pointer;touch-action:manipulation}
 .feed-categories button span{position:relative;z-index:3}
-.feed-categories button[aria-pressed="true"]{color:var(--mark-on-ink);font-weight:600}
-.feed-categories button[aria-pressed="true"]::after{content:"";position:absolute;inset:3px;border-radius:inherit;background:var(--mark-on);border:1px solid var(--blue-ring);pointer-events:none}
+.feed-categories button[aria-pressed="true"]{color:var(--sentence-glass-ink);background:color-mix(in srgb,var(--s1) 18%,var(--sentence-glass-action));border-color:color-mix(in srgb,var(--s1-line) 25%,var(--sentence-glass-line));font-weight:600}
 .feed-categories button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .feed-source-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;width:100%}
 .feed-source-row>span{flex:1;min-width:120px;overflow-wrap:anywhere}
