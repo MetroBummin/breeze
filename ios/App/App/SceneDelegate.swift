@@ -123,9 +123,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Home draws its logo below safe-area + 24pt padding. Move the native
-        // spinner below the status bar on every device, including while pulling.
-        libraryRefreshControl.indicatorOffset = view.safeAreaInsets.top + 12
+        // Use the live device safe area, including rotation and window changes.
+        // UIKit continues to position and animate the spinner within the pull.
+        libraryRefreshControl.indicatorOffset = view.safeAreaInsets.top
     }
 
     private func finishLibraryRefresh(_ sequence: Int?) {
