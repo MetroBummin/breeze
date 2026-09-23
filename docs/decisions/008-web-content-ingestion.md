@@ -87,6 +87,17 @@ failure policy above.
 A generic extractor is heuristic: it cannot guarantee complete content on every
 publisher, and cannot infer all undeclared access restrictions.
 
+Readability remains the shared main-content selector. A site's explicit
+`isAccessibleForFree: false` declaration always rejects the page. Some public
+WIRED articles explicitly declare `true` while shipping inactive `paywall` CSS
+hooks; those classes alone no longer reject the article. This does not fetch
+subscriber content. Reader still reconstructs safe semantic blocks rather than
+inserting Readability's HTML. Publisher titles normalize no-break spaces before
+Reader layout. When extraction retains no body photo, a declared cover can fill
+one leading image block; an unavailable image is removed without losing text.
+`srcset` parsing treats commas inside image URLs as URL characters and selects a
+screen-sized candidate so large source images do not delay or fail the local copy.
+
 ## Interaction and verification
 
 Paragraph text and word identity do not change when formatting is applied. Lazy

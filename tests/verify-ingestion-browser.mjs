@@ -36,6 +36,23 @@ try{
    assert(!JSON.stringify(parsed).includes('javascript:'));
    assert.equal(await page.evaluate(h=>parseArticleHtml(h,'https://x.com/person/status/1'),html),null);
    assert.equal(await page.evaluate(h=>parseArticleHtml(h.replace('<head>','<head><script type="application/ld+json">{"isAccessibleForFree":false}</script>'),'https://content.example/paid'),html),null);
+   const freeMarked=html.replace('<head>','<head><script type="application/ld+json">{"isAccessibleForFree":true}</script>')
+     .replace('<article>','<article class="paywall">');
+   assert(await page.evaluate(h=>parseArticleHtml(h,'https://content.example/free'),freeMarked),'Declared public article was rejected by a paywall CSS class');
+   assert.equal(await page.evaluate(h=>parseArticleHtml(h,'https://content.example/unknown'),freeMarked.replace('"isAccessibleForFree":true','"other":true')),null);
+   const coverOnly=html.replaceAll('Reading together','NASA\u00a0Reading\u00a0Together')
+     .replace('<head>','<head><meta property="og:image" content="https://content.example/photo.png">')
+     .replace(/<figure>[\s\S]*?<\/figure>/,'');
+   const coverParsed=await page.evaluate(h=>parseArticleHtml(h,'https://www.nasa.gov/example'),coverOnly);
+   assert.equal(coverParsed.title,'NASA Reading Together');
+   assert.equal(coverParsed.blocks[0].r,'img');
+   assert.equal(coverParsed.blocks[0].t,'https://content.example/photo.png');
+   const responsive=html.replace('<head>','<head><meta property="og:image" content="https://content.example/photo.png">')
+     .replace('src="https://content.example/photo.png"',
+       'src="https://content.example/photo.png?w=1600" srcset="https://content.example/photo.png?w=600,crop 600w, https://content.example/photo.png?w=1200,crop 1200w, https://content.example/photo.png?w=2400,crop 2400w"');
+   const responsiveParsed=await page.evaluate(h=>parseArticleHtml(h,'https://content.example/responsive'),responsive);
+   assert.equal(responsiveParsed.cover,'https://content.example/photo.png?w=1200,crop');
+   assert.equal(responsiveParsed.blocks.find(block=>block.r==='img')?.t,'https://content.example/photo.png?w=1200,crop');
    assert.equal(await page.evaluate(()=>parseArticleHtml('<h1>Sign in</h1>','https://content.example/login')),null);
    assert.equal(await page.evaluate(x=>parseRss(x,{url:'https://content.example/feed',name:'Essays'}).length,xml),1);
    assert.equal(await page.evaluate(()=>rssImage(new DOMParser().parseFromString('<item/>','application/xml').documentElement,'<img src="/count.gif" width="1" height="1"><img data-src="/photo.jpg" width="150" height="150">','https://content.example/')),'https://content.example/photo.jpg');

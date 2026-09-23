@@ -9,17 +9,19 @@ const ARTICLE_IMG_THIN = 60;   // 짧은 변이 이보다 얇으면 구분선·�
 const ARTICLE_IMG_MAX = 8;     // 기사 한 편에 담을 사진 수
 const ARTICLE_IMG_BAD = /(logo|icon|avatar|profile[-_]image|sprite|spacer|pixel|1x1|placeholder|badge|emoji|blank)/i;
 
-/* srcset 은 "주소 폭w, 주소 폭w …" 입니다. 가장 큰 판을 고릅니다. */
+/* Image URLs may contain commas (for example WIRED's w_120,c_limit path), so
+   only a width descriptor ends a srcset candidate. Reader needs at most a
+   screen-sized image, not the publisher's multi-megabyte original. */
 function articleBestSrc(image){
   const set = image.getAttribute('srcset') || image.getAttribute('data-srcset') || '';
-  let best = '', bestWidth = -1;
-  set.split(',').forEach(part => {
-    const piece = part.trim().split(/\s+/);
-    const width = /^\d+w$/.test(piece[1] || '') ? parseInt(piece[1], 10) : 0;
-    if(piece[0] && width > bestWidth){ best = piece[0]; bestWidth = width; }
-  });
+  let best = '', bestWidth = -1, smallestOver = '', overWidth = Infinity;
+  for(const match of set.matchAll(/(?:^|,\s*)(\S+)\s+(\d+)w(?=\s*(?:,|$))/g)){
+    const width=Number(match[2]);
+    if(width<=1600 && width>bestWidth){best=match[1];bestWidth=width;}
+    if(width>1600 && width<overWidth){smallestOver=match[1];overWidth=width;}
+  }
   const src=image.getAttribute('src') || '';
-  return best || image.getAttribute('data-src') || image.getAttribute('data-original') || src;
+  return best || image.getAttribute('data-src') || image.getAttribute('data-original') || src || smallestOver;
 }
 function articleAbsolute(src, base){
   if(!String(src || '').trim()) return '';
@@ -96,11 +98,21 @@ function parseArticleHtml(html, url){
   // Conversations require a post identity/thread model. Never mistake replies for an article.
   if(/(^|\.)(x|twitter|reddit)\.com$/i.test(host)) return null;
   if(doc.querySelectorAll('*').length > 25000) return null;
-  // Respect declared access restrictions even if the response embeds the full body.
-  if(/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html) ||
-    doc.querySelector('[class*="paywall"], [id*="paywall"]')) return null;
+  // A publisher's explicit access declaration takes precedence over UI class
+  // names: some free articles still ship an unused paywall modal and CSS hooks.
+  const declaredRestricted=/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html);
+  const declaredFree=/"isAccessibleForFree"\s*:\s*(?:true|"true")/i.test(html);
+  if(declaredRestricted || (!declaredFree && doc.querySelector('[class*="paywall"], [id*="paywall"]'))) return null;
   const meta = name => doc.querySelector('meta[property="'+name+'"],meta[name="'+name+'"]')?.getAttribute('content') || '';
-  const cover = articleAbsolute(meta('og:image'), url);
+  let cover = articleAbsolute(meta('og:image'), url);
+  if(cover){
+    const coverPath=new URL(cover).origin+new URL(cover).pathname;
+    const lead=[...doc.querySelectorAll('article img')].find(image=>{
+      const src=articleAbsolute(image.getAttribute('src') || image.getAttribute('data-src'),url);
+      return src && new URL(src).origin+new URL(src).pathname===coverPath;
+    });
+    if(lead)cover=articleAbsolute(articleBestSrc(lead),url) || cover;
+  }
   const author = meta('author'); const publishedAt = meta('article:published_time');
   doc.querySelectorAll('script,style,noscript,template,iframe,object,embed,form,button,nav,[hidden],[aria-hidden="true"]').forEach(node => node.remove());
   // Supply a trusted base only to the inert extraction document.
@@ -154,9 +166,15 @@ function parseArticleHtml(html, url){
     for(const child of element.children) visit(child);
   }
   visit(body);
-  const title = articleStripSite(result.title || host, result.siteName || host,host);
+  // Publisher titles sometimes contain no-break spaces, which force awkward
+  // wrapping in the narrow Reader even though paragraph text is normalized.
+  const title = articleStripSite((result.title || host).replace(/\s+/g,' ').trim(), result.siteName || host,host);
   while(blocks[0]?.t === title) blocks.shift();
   if(blocks.filter(b=>b.r !== 'img').reduce((n,b)=>n+b.t.length,0) < ARTICLE_MIN_CHARS) return null;
+  // Readability can discard a publisher's leading figure while preserving the
+  // article text. A declared cover is a safe single image for that empty slot.
+  if(cover && !blocks.some(block=>block.r==='img') && !ARTICLE_IMG_BAD.test(cover))
+    blocks.unshift({r:'img',t:cover,alt:''});
   return {title, site:result.siteName || host, author:result.byline || author,
     publishedAt:result.publishedTime || publishedAt, url, cover, blocks, ...articleAssemble(title,blocks)};
 }
