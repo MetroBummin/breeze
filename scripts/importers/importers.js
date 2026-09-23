@@ -338,12 +338,17 @@ function parsePastedText(raw){
   };
 }
 
-function parseTXT(text){
+function parseTXT(text, options={}){
   const blocks = text.replace(/\r/g,'').split(/\n\s*\n+/)
     .map(blk => blk.split('\n').map(l=>l.trim()).join(' '));
   /* 구텐베르크의 TXT 판은 표시 한 줄로만 본문의 시작과 끝을 알립니다. */
   const cut = trimGutenbergText(blocks);
-  return mergeWrapped(cut ? blocks.slice(cut.from, cut.to) : blocks, null);
+  const selected=cut ? blocks.slice(cut.from,cut.to) : blocks;
+  /* Bundled, source-checked short stories have canonical paragraph boundaries.
+     Keep those when importing them as ordinary TXT; uploaded books retain the
+     established wrapped-line repair below. */
+  if(options.preserveParagraphs) return selected.map(block=>block.trim()).filter(Boolean);
+  return mergeWrapped(selected, null);
 }
 
 /* 줄바꿈이 문단처럼 저장된 파일을 되돌립니다.

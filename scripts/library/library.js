@@ -150,6 +150,7 @@ function applyCover(host, book){
   bookImageBlob(book, book.cover).then(blob => {
     if(!blob || !host.isConnected) return;
     const image = host.querySelector('.cover');
+    image.style.objectPosition=book.coverPosition||'center';
     image.src = URL.createObjectURL(blob);
     image.hidden = false;
     host.classList.add('has-cover');
@@ -241,10 +242,9 @@ function serverOnlyCasuals(){
     .filter(row=>!(row.meta||{}).localId);
 }
 
-/* 기본 고전은 같은 EPUB을 다시 받을 수 있습니다. 다른 기기에서 읽던 앨리스가
-   "파일 연결 필요"와 "무료로 받기" 두 장으로 따로 보이면, 사용자는 같은 책인지
-   알 길이 없습니다. 새 기록에는 classicId를 싣고, 이미 올라간 예전 기록은
-   제목·지은이로 보수적으로 한 번만 알아봅니다. */
+/* 예전에 받은 고전의 원본이 이 기기에 없는 경우에는 같은 앱 번들 EPUB으로
+   복구할 수 있습니다. 목록은 복구 경로에서만 쓰며 새 Long Reads 카드로는
+   더 이상 노출하지 않습니다. */
 function classicForMeta(meta){
   if(typeof CLASSICS==='undefined') return null;
   const byId=CLASSICS.find(classic=>classic.id===(meta&&meta.classicId));
@@ -410,7 +410,7 @@ function renderHome(){
   const longform=longformBooks(),current=nowReadingIn(longform),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,current,false));
   for(const row of serverOnlyBooks())specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>cloudBookCard(row)});
-  for(const classic of pendingClassics())specs.push({key:'classic:'+classic.id,stamp:JSON.stringify(classic),create:()=>classicCard(classic)});
+  for(const read of pendingLongReads())specs.push({key:'longread:'+read.id,stamp:JSON.stringify(read),create:()=>longReadCard(read)});
   specs.push({key:'add',stamp:'',create:longformAddCard});
   reconcileHomeCards(shelf,specs);
 }
@@ -445,8 +445,8 @@ function renderLongformLibrary(){
   longform.forEach(book => grid.appendChild(bookCard(book, current)));
   const cloud = serverOnlyBooks();
   cloud.forEach(row => grid.appendChild(cloudBookCard(row)));
-  const offered = pendingClassics();
-  offered.forEach(classic => grid.appendChild(classicCard(classic)));
+  const offered = pendingLongReads();
+  offered.forEach(read => grid.appendChild(longReadCard(read)));
   empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
   empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
 }
@@ -610,7 +610,7 @@ async function storeLocalOriginal(bookId, file, kind, hash){
   await originalPut(bookId, {...metadata, blob:file.slice(0,file.size,file.type||'application/octet-stream')});
   return metadata;
 }
-async function prepareImportedFile(file){
+async function prepareImportedFile(file, options={}){
   const kind = importKind(file);
   if(!kind) throw new Error('PDF, EPUB, TXT 파일만 지원해요');
   const title = file.name.replace(/\.(pdf|epub|txt)$/i,'').replace(/[-_]+/g,' ').trim();
@@ -620,7 +620,7 @@ async function prepareImportedFile(file){
     let parsed;
     if(kind === 'pdf') parsed = await parsePDF(file);
     else if(kind === 'epub') parsed = await parseEPUB(file, tmpId);
-    else parsed = parseTXT(await file.text());
+    else parsed = parseTXT(await file.text(), options);
 
     const sig0 = parsed.sig || null;
     const keep = [];
@@ -719,7 +719,7 @@ async function reconnectOriginalFile(target,file){
 }
 /* `extra`는 파일에서 알 수 없는 것만 얹습니다 — 지금은 내장 고전의
    지은이와 고전 ID뿐입니다. */
-async function importFile(file, extra){
+async function importFile(file, extra, options={}){
   /* 도서관에서 빌리면 책이 아니라 이 표가 내려옵니다. 확장자만 보고 "지원하지
      않는 형식"이라고 하면, 실제로는 어도비 프로그램으로 받아야 하는 잠긴 책인데
      파일을 잘못 고른 줄 알게 됩니다. */
@@ -731,7 +731,7 @@ async function importFile(file, extra){
   toast('책을 준비하고 있어요…');
   let prepared = null;
   try{
-    prepared = await prepareImportedFile(file);
+    prepared = await prepareImportedFile(file,options);
     let already = books.find(book=>book.id===prepared.id || book.sourceHash===prepared.hash || (book.original&&book.original.hash===prepared.hash));
     if(!already){
       for(const book of books){

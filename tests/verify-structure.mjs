@@ -15,7 +15,7 @@ const required = [
   'scripts/core/storage.js',
   'scripts/core/book-identity.js',
   'scripts/library/library.js',
-  'scripts/library/classics.js',
+  'scripts/library/longreads.js',
   'scripts/library/samples.js',
   'scripts/importers/importers.js',
   'scripts/importers/article.js',
@@ -1097,27 +1097,31 @@ for(const file of [...jsFiles, resolve(root, 'index.html')]){
     `${file.slice(root.length + 1)} still reaches for the removed sample book`);
 }
 
-/* ---- 내장 고전 ---- */
-const classicsContext = { console, Set, books:[] };
-new Script(readFileSync(resolve(root, 'scripts/library/classics.js'), 'utf8'))
-  .runInNewContext(classicsContext);
-const offered = classicsContext.pendingClassics();
-assert.equal(offered.length, 3, 'The bundled classic count changed');
-for(const classic of offered){
-  assert.ok(existsSync(resolve(root, `assets/classics/${classic.id}.epub`)),
-    `Bundled classic file is missing: ${classic.id}`);
-  /* 권유 카드는 아직 받기 전에 뜨므로, 표지 한 장을 보자고 책을 미리 받을 수
-     없습니다. 같은 그림이 파일 밖에도 한 장 있어야 합니다. */
-  assert.ok(existsSync(resolve(root, `assets/classics/${classic.id}.jpg`)),
-    `Bundled classic cover is missing: ${classic.id}`);
+/* ---- built-in Backrooms Long Reads ---- */
+const longReadsContext = { console, Set, books:[] };
+new Script(readFileSync(resolve(root, 'scripts/library/longreads.js'), 'utf8'))
+  .runInNewContext(longReadsContext);
+const offered = longReadsContext.pendingLongReads();
+assert.deepEqual(Array.from(offered, read => read.title), [
+  'Backroom - Homeward Bound','Backroom - The Blackout','Backroom - The Headlights',
+], 'Backrooms Long Reads order or branded titles changed');
+assert.equal(longReadsContext.pendingClassics().length, 0,
+  'Removed classics are still shown in the default recommendation list');
+for(const read of offered){
+  assert.match(read.file,/\.txt$/,`${read.id} is not a local Text book`);
+  assert.ok(existsSync(resolve(root,read.file)),`Local text is missing: ${read.id}`);
+  assert.ok(existsSync(resolve(root,read.cover)),`Supplied cover is missing: ${read.id}`);
+  assert.equal(read.license,'CC BY-SA 3.0');
+  assert.ok(read.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
 }
-// 이미 받은 고전은 권유 카드에서 빠져야 합니다.
-classicsContext.books = [{ classicId: offered[0].id }];
-assert.deepEqual(Array.from(classicsContext.pendingClassics(), classic => classic.id),
-  Array.from(offered.slice(1), classic => classic.id),
-  'An imported classic is still offered as a download card');
-assert.match(readFileSync(resolve(root, 'scripts/library/classics.js'), 'utf8'), /importFile\(file,/,
-  'Classics no longer go through the ordinary EPUB import, so they lose 원본 모드');
+assert.match(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),/importFile\(file,/,
+  'Bundled stories no longer use the normal Text import path');
+for(const slug of ['homewardbound-ch-1','blackout','headlights']){
+  const text=readFileSync(resolve(root,`assets/longreads/${slug}.txt`),'utf8');
+  assert.ok(text.length>1000,`Story body is unexpectedly short: ${slug}`);
+  assert.doesNotMatch(text,/rating:\s*[+-]|Licensing \/ Citation|For more information about on-wiki content/i,
+    `Wikidot page furniture leaked into ${slug}`);
+}
 
 /* ---- 기사 URL ----
    DOM 을 쓰는 추출은 브라우저에서 확인합니다. 여기서는 순수 문자열 규칙만. */
@@ -1212,7 +1216,7 @@ assert.match(librarySource, /CASUAL_KINDS\.has\(\(meta\|\|\{\}\)\.kind/,
 /* ── 고전 표지는 파일 밖의 한 장이 이깁니다 ──
    그래야 `assets/classics/<id>.jpg` 를 갈아 끼우는 것만으로 권유 카드와 서가가
    함께 바뀝니다. EPUB 안의 표지를 그대로 쓰면 파일을 다시 만들어야 합니다. */
-const classicsSource = readFileSync(resolve(root, 'scripts/library/classics.js'), 'utf8');
+const classicsSource = readFileSync(resolve(root, 'scripts/library/longreads.js'), 'utf8');
 assert.match(classicsSource, /async function applyClassicCover/,
   'A downloaded classic keeps the cover buried in its EPUB');
 assert.ok(

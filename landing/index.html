@@ -96,7 +96,7 @@
 
      카드는 앱의 그 카드입니다. `.casual` 도 `.bookcard` 도 파도 그림도
      ../styles/home.css 의 것이고, 표지는 앱이 실제로 딸려 보내는 그 파일입니다
-     (assets/classics/). 랜딩이 정하는 것은 셋이 어떻게 겹쳐 놓이는가뿐입니다 —
+     (assets/longreads/covers/). 랜딩이 정하는 것은 셋이 어떻게 겹쳐 놓이는가뿐입니다 —
      나란한 세 칸으로 세우면 기능 목록이 되고, 겹쳐 놓으면 책상 위가 됩니다.
      누를 수 없습니다(landing.css 의 `pointer-events:none`): 여기 있는 것은
      "가져올 수 있는 것들"이지 단추가 아닙니다. -->
@@ -112,9 +112,10 @@
       <div class="ct">The Gap</div>
       <div class="cm">6분 읽기</div>
     </div>
-    <div class="bookcard pal1 lp-card lp-card-b">
-      <div class="author">F. SCOTT FITZGERALD</div>
-      <div class="bt">The Great Gatsby</div>
+    <div class="bookcard classic has-cover lp-card lp-card-b">
+      <img class="cover" alt="" src="../assets/longreads/covers/backroom-the-blackout.png" style="object-position:center top">
+      <div class="author">BACKROOMS TALE SERIES</div>
+      <div class="bt">Backroom - The Blackout</div>
       <svg class="wave" viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40 C55 15 105 55 160 30 C210 8 260 35 300 18 L300 90 L0 90Z" fill="#9FCAB5" opacity=".6"/></svg>
     </div>
     <div class="bookcard pal0 lp-card lp-card-c">

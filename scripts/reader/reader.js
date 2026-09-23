@@ -255,6 +255,36 @@ function canReuseReader(b){
 }
 window.addEventListener('pagehide',releaseRetainedReader);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseRetainedReader();});
+/* Story credits are book metadata, not story paragraphs: they stay outside word
+   lookup and reading progress, and are tucked into a small disclosure at the end. */
+function renderReaderAttribution(book){
+  const details=/** @type {HTMLDetailsElement} */ (document.getElementById('r-attribution'));
+  if(!details) return;
+  const attribution=book&&book.attribution;
+  const body=details.querySelector('.r-attribution-body');
+  body.replaceChildren();
+  details.open=false;
+  details.hidden=!attribution;
+  if(!attribution) return;
+  const line=document.createElement('p');
+  line.textContent=`${attribution.title} · ${attribution.author}`;
+  const source=document.createElement('p');
+  const sourceLink=/** @type {HTMLAnchorElement} */ (document.createElement('a'));
+  sourceLink.href=attribution.sourceUrl;
+  sourceLink.target='_blank'; sourceLink.rel='noopener noreferrer';
+  sourceLink.textContent=`${attribution.sourceName} · 원문 보기`;
+  source.appendChild(sourceLink);
+  const license=document.createElement('p');
+  license.textContent='Story text: ';
+  const licenseLink=/** @type {HTMLAnchorElement} */ (document.createElement('a'));
+  licenseLink.href=attribution.licenseUrl;
+  licenseLink.target='_blank'; licenseLink.rel='noopener noreferrer';
+  licenseLink.textContent=attribution.license;
+  license.appendChild(licenseLink);
+  const note=document.createElement('p');
+  note.textContent='본문은 원문 표현을 바꾸지 않고 Breeze Text 형식으로 재조판했습니다. 표지는 별도로 제공된 이미지이며 본문 텍스트의 라이선스 대상이 아닙니다.';
+  body.append(line,source,license,note);
+}
 /** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void}} [options] */
 async function openBook(b,options={}){
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
@@ -283,6 +313,7 @@ async function openBook(b,options={}){
   document.getElementById('rtitle').textContent = b.title;
   document.getElementById('readpill-title').textContent = b.title;
   document.getElementById('readpill-title').setAttribute('aria-label',b.title+' · 컨트롤 펼치기');
+  renderReaderAttribution(b);
   /* 기사에는 연결할 "원본 파일"이 없습니다. 사진과 소제목까지 담아 오지만
      사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을
      하나 남겨 둡니다. */
@@ -292,6 +323,7 @@ async function openBook(b,options={}){
     source.href = b.sourceUrl;
     source.textContent = [b.site,b.author,b.publishedAt ? rssDate(b.publishedAt) : ''].filter(Boolean).join(' · ') + ' · 원문 보기 ↗';
   }
+  renderReaderAttribution(b);
   const discovery = /** @type {HTMLAnchorElement} */(document.getElementById('rdiscovery'));
   discovery.hidden = !b.discoveredFromUrl;
   if(b.discoveredFromUrl){

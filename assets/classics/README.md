@@ -47,3 +47,7 @@ refreshClassicCovers()
   작품이 퍼블릭 도메인이어도 표지 디자인은 따로 저작권이 있습니다.
 
 지금 들어 있는 개츠비 표지는 프랜시스 쿠갓의 1925년 초판 표지입니다.
+These EPUBs and covers are retained only for restoring legacy user books and for
+existing cross-format regression fixtures. They are not shown in the default
+Home or Long Reads library recommendations. New Long Reads live in
+`assets/longreads/` as local plain-text books.
