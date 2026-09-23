@@ -8,6 +8,8 @@ const RSS_FEEDS = [
   { name:'ProPublica', url:'https://www.propublica.org/feeds/propublica/main', category:'society' },
   { name:'Medium · Technology', url:'https://medium.com/feed/tag/technology', category:'science' },
   { name:'Reddit · r/science', url:'https://www.reddit.com/r/science/.rss', category:'science' },
+  { name:'Medium · Culture', url:'https://medium.com/feed/tag/culture', category:'culture' },
+  { name:'Medium · Business', url:'https://medium.com/feed/tag/business', category:'business' },
 ];
 const RSS_CATEGORIES = [
   {id:'general',label:'종합'}, {id:'society',label:'시사·사회'},
@@ -93,12 +95,23 @@ function rssEntryUrl(entry, base){
   return rssAbsolute(atom ? (atom.getAttribute('href') || atom.textContent) : rssText(entry, ['link']), base);
 }
 function rssImage(entry, html, base){
-  const media = [...entry.children].find(node => ['content', 'thumbnail'].includes(rssLocal(node)) && node.getAttribute('url'));
-  const image = media && media.getAttribute('url');
-  if(image) return rssAbsolute(image, base);
+  const tooSmall=node=>['width','height'].some(attr=>{const size=parseInt(node.getAttribute(attr)||'0',10);return size>0&&size<60;});
+  for(const node of entry.querySelectorAll('*')){
+    const kind=rssLocal(node);
+    if(!['content','thumbnail','enclosure','link'].includes(kind))continue;
+    if(kind==='link' && node.getAttribute('rel')!=='enclosure')continue;
+    const type=node.getAttribute('type') || '';
+    if((kind==='enclosure'||kind==='link') && !type.startsWith('image/'))continue;
+    if(type && !type.startsWith('image/'))continue;
+    const src=rssAbsolute(node.getAttribute('url')||node.getAttribute('href'),base);
+    if(src && !tooSmall(node) && !ARTICLE_IMG_BAD.test(src))return src;
+  }
   const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
-  const img = doc.querySelector('img[src]');
-  return img ? rssAbsolute(img.getAttribute('src'), base) : '';
+  for(const img of doc.querySelectorAll('img')){
+    const src=rssAbsolute(articleBestSrc(img),base);
+    if(src && !tooSmall(img) && !ARTICLE_IMG_BAD.test(src))return src;
+  }
+  return '';
 }
 function rssDate(value){
   const date = new Date(value);
@@ -145,7 +158,7 @@ function parseRss(xml, feed){
     return {
       source:feed.name, category:rssCategory(feed.category), title, url, author:rssText(node,['author','creator']), publishedAt:rssText(node,['published','updated','pubdate','date']),
       kind:rssPostKind(url), readUrl:rssLinkedArticle(content,url), contentHtml:content.slice(0,200000), feedUrl:feed.url, feedSourceUrl:feed.sourceUrl || feed.url,
-      summary:rssHtmlText(content).slice(0,280), photo:rssImage(node, content, feed.url),
+      summary:rssHtmlText(rssText(node,['summary','description']) || content).slice(0,280), photo:rssImage(node, content, feed.url),
       date:rssDate(rssText(node, ['published', 'updated', 'pubdate', 'date'])),
     };
   }).filter(entry => {
@@ -298,29 +311,34 @@ function renderRssCards(rail, force, empty){
   const category=rssSelectedCategory();
   const renderId=(rssRenderIds.get(rail)||0)+1;
   rssRenderIds.set(rail,renderId);
-  if(empty && !rail.querySelector('.rss-card')){
-    empty.hidden=false;
-    empty.textContent='새로운 기사를 불러오는 중이에요.';
+  if(!rail.querySelector('.rss-card,.rss-loading')){
+    const placeholder=document.createElement('div');placeholder.className='casual rss-loading';
+    placeholder.setAttribute('role','status');placeholder.setAttribute('aria-label','글 불러오는 중');
+    placeholder.innerHTML='<div class="thumb"><span class="rss-spinner" aria-hidden="true"></span></div>';
+    rail.insertBefore(placeholder,rail.querySelector('.casual.add'));
   }
+  if(empty)empty.hidden=true;
   return loadRss(force).then(async groups=>{
     if(renderId!==rssRenderIds.get(rail))return;
     const categories=new Map(rssSources().map(feed=>[feed.url,feed.category]));
     groups=groups.map(entries=>entries.filter(entry=>category==='all'||rssCategory(categories.get(entry.feedSourceUrl)||entry.category)===category));
     const stamp=JSON.stringify([category,groups,books.map(book=>book.sourceUrl||'')]);
     if(rail.dataset.rssStamp===stamp){
+      rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
       if(empty)empty.hidden=!!rail.querySelector('.rss-card');
       return;
     }
     const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId,rail)))).flat();
     if(renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
     // Keep the previous shelf visible until replacement images are decoded.
-    rail.querySelectorAll('.rss-card').forEach(card=>card.remove());
+    rail.querySelectorAll('.rss-card,.rss-loading').forEach(card=>card.remove());
     const before=rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));
     rail.dataset.rssStamp=stamp;
     if(empty){ empty.textContent=cards.length?'':category==='all'?'새로운 기사를 찾지 못했어요. 잠시 후 다시 시도해 주세요.':'이 카테고리에 새 글이 없어요. 발견에서 출처를 추가할 수 있어요.'; empty.hidden=cards.length>0; }
   }).catch(error=>{
     if(renderId!==rssRenderIds.get(rail))return;
+    rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
     console.error(error);
     if(empty){ empty.textContent='새로운 기사를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'; empty.hidden=false; }
   });
@@ -382,7 +400,7 @@ function renderFeedSources(){
   const host = document.getElementById('feed-sources'); host.replaceChildren();
   const categorySelect=/** @type {HTMLSelectElement} */(document.getElementById('feed-category'));
   if(!categorySelect.options.length)rssCategoryOptions(categorySelect,'general');
-  rssSources().forEach((feed,index)=>{
+  rssSources().slice(RSS_FEEDS.length).forEach(feed=>{
     const row=document.createElement('div');row.className='feed-source-row';
     const name=document.createElement('span');name.textContent=feed.name;row.appendChild(name);
     const select=document.createElement('select');select.setAttribute('aria-label',feed.name+' 카테고리');
@@ -395,7 +413,6 @@ function renderFeedSources(){
     row.appendChild(select);
     host.appendChild(row);
     if(rssFeedErrors.has(feed.url))name.textContent=feed.name+' · 불러오기 실패';
-    if(index<RSS_FEEDS.length)return;
     const button = document.createElement('button'); button.type = 'button'; button.textContent = '×';
     button.setAttribute('aria-label',feed.name+' 출처 삭제');
     if(rssFeedErrors.has(feed.url)){

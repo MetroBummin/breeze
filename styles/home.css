@@ -282,11 +282,15 @@
      그대로 두면 카드 아래 3분의 1이 회색 띠가 됩니다 — tokens.css 가 낮춥니다. */
   .casual .thumb .wave{opacity:var(--wave-dark-opacity);}
 
-.feed-discovery{margin:8px 0 20px;font-size:13px}
+.feed-discovery{margin:8px 0 20px;font-size:12px;max-width:520px}
 .feed-discovery summary{cursor:pointer;opacity:.7}
-.feed-discovery-hint{color:var(--soft);line-height:1.4}
+.rss-loading{pointer-events:none}
+.rss-loading .thumb{display:grid;place-items:center;background:var(--sentence-glass-action);border:1px solid var(--sentence-glass-line);box-shadow:none}
+.rss-spinner{width:18px;height:18px;border:2px solid var(--sentence-glass-spinner);border-top-color:var(--sentence-glass-spinner-on);border-radius:50%;animation:rss-spin .8s linear infinite}
+@keyframes rss-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.rss-spinner{animation:none}}
 .feed-discovery form{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.feed-discovery label{width:100%}
+.feed-discovery label{width:100%;color:var(--sentence-glass-secondary)}
 .feed-discovery input{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--field);color:inherit}
 .feed-discovery select{max-width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--field);color:inherit;font:inherit}
 .feed-categories{display:flex;gap:8px;overflow-x:auto;padding:8px 8px 16px;margin:6px -8px 6px;scrollbar-width:none}

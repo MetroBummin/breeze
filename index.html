@@ -42,7 +42,7 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
-  <link rel="stylesheet" href="styles/home.css?v=89b47e7d">
+  <link rel="stylesheet" href="styles/home.css?v=381fb80b">
   <link rel="stylesheet" href="styles/reader.css?v=df2a75a1">
   <link rel="stylesheet" href="styles/dictionary.css?v=2f36b3e7">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
@@ -89,7 +89,7 @@
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="assets/lib/readability-0.6.0.js?v=34dcab3d"></script>
   <script defer src="scripts/importers/article.js?v=1d224874"></script>
-  <script defer src="scripts/importers/rss.js?v=15030aba"></script>
+  <script defer src="scripts/importers/rss.js?v=472b5e33"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=bd0c648a"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=2d848ebb"></script>
@@ -166,10 +166,9 @@
   <section class="casual-library-row" aria-labelledby="casual-discover-title">
     <div class="casual-library-head"><h1 id="casual-discover-title">발견</h1></div>
     <div class="feed-categories" role="group" aria-label="읽을 거리 카테고리"></div>
-    <details class="feed-discovery" ontoggle="if(this.open)renderFeedSources()"><summary>출처 추가</summary>
-      <form onsubmit="addFeedSource(event)"><label for="feed-url">사이트 또는 RSS/Atom 주소</label>
+    <details class="feed-discovery" ontoggle="if(this.open)renderFeedSources()"><summary>사이트 추가</summary>
+      <form onsubmit="addFeedSource(event)"><label class="feed-url-label" for="feed-url">읽고 싶은 사이트</label>
         <input id="feed-url" type="url" required placeholder="https://…"><select id="feed-category" aria-label="출처 카테고리"></select><button id="feed-add" type="submit">추가</button></form>
-      <p class="feed-discovery-hint">subreddit 주소를 넣을 수 있어요. X는 접근 가능한 RSS/Atom 주소가 필요해요.</p>
       <p id="feed-status" role="status"></p><div id="feed-sources"></div>
     </details>
     <div id="casual-discover-rail" class="casual-rail"></div>

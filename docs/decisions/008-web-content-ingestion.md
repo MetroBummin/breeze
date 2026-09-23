@@ -27,7 +27,7 @@ URL entry and feed cards call the same ingestion function. Feed discovery accept
 RSS/Atom directly, advertised HTML alternate links, and small conventional feed
 URL candidates. Medium, Substack and Reddit have no article-specific parser.
 The two existing default feeds remain, with Medium Technology and Reddit
-r/science added as automatic discovery sources; users can add/remove a small local set of
+r/science plus Medium Culture and Business added as automatic discovery sources; users can add/remove a small local set of
 sources without folders, unread counts, or a new RSS management screen. Feed
 failures are isolated. Missing photos do not suppress otherwise useful essays.
 
@@ -37,7 +37,13 @@ science/technology, culture/lifestyle, and business. The Conversation defaults t
 general and ProPublica to society; Medium Technology and r/science use
 science/technology. Both new default endpoints returned valid XML in a live
 check (10 and 25 entries respectively). Existing custom sources default to general;
-source addition and the existing source list allow category selection/editing.
+source addition and the custom source list allow category selection/editing.
+Default sources are not listed as editable form rows; the collapsed site-add
+control shows only a compact address/category form and any custom sources.
+Culture and Business defaults returned 10 and 9 entries in a live check.
+Loading uses a neutral card placeholder with a spinner and an accessible label,
+without a visible loading sentence. Feed cover discovery ignores known tiny
+tracking images and supports media thumbnails, image enclosures and lazy images.
 Filtering affects only discovery cards, preserving current reading and saved
 links. Empty categories show a message; rapid chip changes invalidate older
 asynchronous card renders. Filtering cached feeds requires no new fetch.

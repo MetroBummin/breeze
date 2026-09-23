@@ -38,6 +38,10 @@ try{
    assert.equal(await page.evaluate(h=>parseArticleHtml(h.replace('<head>','<head><script type="application/ld+json">{"isAccessibleForFree":false}</script>'),'https://content.example/paid'),html),null);
    assert.equal(await page.evaluate(()=>parseArticleHtml('<h1>Sign in</h1>','https://content.example/login')),null);
    assert.equal(await page.evaluate(x=>parseRss(x,{url:'https://content.example/feed',name:'Essays'}).length,xml),1);
+   assert.equal(await page.evaluate(()=>rssImage(new DOMParser().parseFromString('<item/>','application/xml').documentElement,'<img src="/count.gif" width="1" height="1"><img data-src="/photo.jpg" width="150" height="150">','https://content.example/')),'https://content.example/photo.jpg');
+   assert.equal(await page.evaluate(()=>rssImage(new DOMParser().parseFromString('<item><enclosure url="/cover.jpg" type="image/jpeg"/></item>','application/xml').documentElement,'','https://content.example/')),'https://content.example/cover.jpg');
+   assert.equal(await page.evaluate(()=>rssImage(new DOMParser().parseFromString('<item/>','application/xml').documentElement,'<img src="/count.gif" width="1" height="1">','https://content.example/')),'');
+   assert.equal(await page.evaluate(()=>['culture','business'].every(category=>RSS_FEEDS.some(feed=>feed.category===category))),true);
    assert.equal(await page.evaluate(async()=> (await discoverFeed('https://content.example/')).url),'https://content.example/feed');
    const atom='<feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title><entry><title>A post</title><link rel="alternate" href="https://content.example/article"/><summary>Plain summary</summary></entry></feed>';
    assert.equal(await page.evaluate(x=>parseRss(x,{url:'https://content.example/feed',name:'Atom'})[0].url,atom),'https://content.example/article');
@@ -109,6 +113,7 @@ try{
    assert.equal(await page.evaluate(()=>sharedLinks[0].url),'https://x.com/a/status/2');
    await page.evaluate(()=>show('casuals'));
    await page.locator('.feed-discovery summary').click();
+   assert.equal(await page.locator('#feed-sources .feed-source-row').count(),0);
    await page.locator('#feed-url').fill('https://content.example/');
    await page.locator('#feed-category').selectOption('culture');
    await page.locator('#feed-add').click();
@@ -191,6 +196,19 @@ try{
    }
    await page.reload();await page.evaluate(()=>homeReady);
    assert.equal(await page.locator('#casuals [data-category="culture"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.evaluate(async()=>{
+    if(rssLoading)await rssLoading;
+    const original=loadRss;let finish;
+    try{
+      loadRss=()=>new Promise(resolve=>{finish=resolve;});
+      const rail=document.getElementById('casual-rail'),empty=document.getElementById('home-feed-empty');
+      rail.querySelectorAll('.rss-card').forEach(node=>node.remove());delete rail.dataset.rssStamp;
+      const pending=renderRssCards(rail,false,empty);
+      const loading=rail.querySelectorAll('.rss-loading .rss-spinner').length===1 && empty.hidden;
+      finish([[]]);await pending;
+      return loading && !rail.querySelector('.rss-loading');
+    }finally{loadRss=original;}
+   }),true);
    console.log(engine.name(),'ingestion, category filtering/persistence, persisted share handoff, dedupe, fallback, semantics and mobile Reader passed');
   }finally{await browser.close();}
  }
