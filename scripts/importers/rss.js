@@ -13,6 +13,7 @@ const RSS_PHOTO_MS = 8000;
 let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
+const rssFeedErrors = new Set();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 
@@ -65,8 +66,23 @@ function rssUrlKey(raw){
   }catch(error){ return String(raw || ''); }
 }
 function rssAlreadySaved(entry){
-  const key = rssUrlKey(entry.url);
+  const key = rssUrlKey(entry.readUrl || entry.url);
   return books.some(book => book.sourceUrl && rssUrlKey(book.sourceUrl) === key);
+}
+function rssPostKind(url){
+  try{
+    const host = new URL(url).hostname.replace(/^www\./,'');
+    if(/(^|\.)(x|twitter)\.com$/.test(host)) return 'x';
+    if(/(^|\.)reddit\.com$/.test(host)) return 'reddit';
+  }catch(error){}
+  return '';
+}
+function rssLinkedArticle(html, postUrl){
+  if(rssPostKind(postUrl) !== 'reddit') return '';
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  const link = [...doc.querySelectorAll('a[href]')].find(node => /^\[link\]$/i.test(node.textContent.trim()));
+  const url = link ? articleAbsolute(link.getAttribute('href'),postUrl) : '';
+  return url && !rssPostKind(url) ? url : '';
 }
 function parseRss(xml, feed){
   if(String(xml).length > 3000000 || /<!DOCTYPE|<!ENTITY/i.test(xml)) throw new Error('피드를 읽지 못했어요');
@@ -81,7 +97,8 @@ function parseRss(xml, feed){
     const url = rssEntryUrl(node, feed.url);
     return {
       source:feed.name, title, url, author:rssText(node,['author','creator']), publishedAt:rssText(node,['published','updated','pubdate','date']),
-      summary:rssHtmlText(content), photo:rssImage(node, content, feed.url),
+      kind:rssPostKind(url), readUrl:rssLinkedArticle(content,url), contentHtml:content.slice(0,200000), feedUrl:feed.url,
+      summary:rssHtmlText(content).slice(0,280), photo:rssImage(node, content, feed.url),
       date:rssDate(rssText(node, ['published', 'updated', 'pubdate', 'date'])),
     };
   }).filter(entry => {
@@ -101,14 +118,16 @@ async function loadRss(force){
     const location = {};
     const html = await fetchArticleHtml(feed.url,location);
     const pictured = parseRss(html, {...feed,url:location.url || feed.url});
+    rssFeedErrors.delete(feed.url);
     /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
        피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
     const start = pictured.length ? (rssPage * RSS_PER_FEED) % pictured.length : 0;
     return pictured.map((_, step) => pictured[(start + step) % pictured.length]);
-    }catch(error){ console.warn('Feed unavailable:',feed.url); return []; }
+    }catch(error){ rssFeedErrors.add(feed.url); console.warn('Feed unavailable:',feed.url); return []; }
   })).then(groups => {
     rssCands = groups;
     rssLoadedAt = Date.now();
+    if(document.querySelector('.feed-discovery[open]')) renderFeedSources();
     return rssCands;
   }).finally(() => { rssLoading = null; });
   return rssLoading;
@@ -149,12 +168,70 @@ async function importRssEntry(entry, card){
   if(card.classList.contains('busy')) return;
   card.classList.add('busy');
   try{
-    await ingestArticle(entry.url,entry);
+    if(entry.readUrl){
+      await ingestArticle(entry.readUrl,{...entry,discoveredFromUrl:entry.url});
+    }else if(entry.kind){
+      await ingestFeedPost(entry);
+    }else{
+      await ingestArticle(entry.url,entry);
+    }
   }catch(error){
     const meta = card.querySelector('.cm');
     meta.textContent = '본문을 가져오지 못했어요 · ';
     const link = articleOriginalLink(entry.url); link.onclick = event=>event.stopPropagation(); meta.appendChild(link);
   }finally{ card.classList.remove('busy'); }
+}
+/* A feed's own post body is enough for short posts. It never becomes live HTML:
+   only text, explicit marks and validated image URLs enter the existing Reader. */
+function parseFeedPost(entry){
+  if(!entry.kind || !entry.contentHtml || entry.contentHtml.length > 200000) return null;
+  const doc = new DOMParser().parseFromString(entry.contentHtml,'text/html');
+  doc.body.querySelectorAll('script,style,iframe,form,svg,video,audio,object,embed').forEach(node=>node.remove());
+  if(entry.kind === 'reddit') doc.body.querySelectorAll('table').forEach(table=>{
+    if(/submitted by/i.test(table.textContent) && /\[comments\]/i.test(table.textContent)) table.remove();
+  });
+  const blocks = [];
+  for(const node of doc.body.querySelectorAll('p,blockquote,li,h2,h3,img')){
+    if(node.tagName === 'IMG'){
+      const src = articleAbsolute(articleBestSrc(node),entry.url);
+      if(src && !articleTooSmall(node) && !ARTICLE_IMG_BAD.test(src) && blocks.filter(block=>block.r==='img').length < ARTICLE_IMG_MAX)
+        blocks.push({r:'img',t:src,alt:node.getAttribute('alt') || ''});
+      continue;
+    }
+    if(node.querySelector('p,blockquote,li,h2,h3')) continue;
+    const value = articleInline(node,entry.url);
+    if(!value.t) continue;
+    const tag = node.tagName.toLowerCase();
+    const r = tag === 'blockquote' || node.closest('blockquote') ? 'quote'
+      : tag === 'h2' || tag === 'h3' ? tag : 'p';
+    blocks.push({r,...value,list:tag === 'li' ? (node.parentElement?.tagName === 'OL' ? '1.' : '•') : ''});
+  }
+  let bodyLength = blocks.filter(block=>block.r!=='img').reduce((total,block)=>total+block.t.length,0);
+  if(!bodyLength && entry.kind === 'x'){
+    const value = articleInline(doc.body,entry.url);
+    if(value.t) blocks.push({r:'p',...value});
+    bodyLength = value.t.length;
+  }
+  // A Reddit prompt often consists solely of its title. Include it as a
+  // paragraph so lookup works, but reject a bare feed headline as an X body.
+  if(!bodyLength && entry.kind === 'reddit' && entry.title.length >= 40)
+    blocks.push({r:'p',t:entry.title,marks:[]});
+  if(bodyLength > 30000 || blocks.length > 200 ||
+     !blocks.some(block=>block.r!=='img' && block.t.length >= 20)) return null;
+  const title = entry.title || new URL(entry.url).hostname;
+  return {title,site:entry.source,url:entry.url,cover:entry.photo || '',blocks,...articleAssemble(title,blocks)};
+}
+async function ingestFeedPost(entry){
+  const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === articleUrlKey(entry.url));
+  if(existing) return openBook(existing);
+  const parsed = parseFeedPost(entry);
+  if(!parsed) throw new Error('피드에서 읽을 만한 본문을 찾지 못했어요');
+  const photos = await attachArticleImages(parsed);
+  const book = await saveCasualBook(parsed,{kind:'article',contentType:'post',site:entry.source,
+    sourceUrl:entry.url,feedUrl:entry.feedUrl,author:entry.author,publishedAt:entry.publishedAt,
+    cover:parsed.cover || null,imgSrc:parsed.imgSrc || null});
+  if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
+  return book;
 }
 /* Images are optional: an essay without a cover remains useful reading. */
 async function rssFeedCards(entries, renderId, rail){
@@ -198,13 +275,16 @@ function appendRssCards(rail, force){
   return renderRssCards(rail,force);
 }
 
-// Small, local source list. Feed bodies are discovery metadata, never assumed to be full articles.
+// Small, local source list. Article feeds provide discovery metadata; a short
+// social post may be read from its feed body when enough text is present.
 function rssSources(){
   const custom = load('breeze.feed-sources',[]);
   return [...RSS_FEEDS, ...(Array.isArray(custom) ? custom.filter(feed=>feed && normalizeArticleUrl(feed.url)) : [])].slice(0,12);
 }
 async function discoverFeed(raw){
   let url = normalizeArticleUrl(raw); if(!url) throw new Error('주소를 확인해 주세요');
+  if(rssPostKind(url) === 'x')
+    throw new Error('X 계정은 공개 RSS를 제공하지 않아요. 접근 가능한 RSS/Atom 주소를 입력해 주세요.');
   const location = {};
   let body = '';
   try{body = await fetchArticleHtml(url,location); url = location.url || url;}catch{}
@@ -246,6 +326,11 @@ function renderFeedSources(){
   rssSources().slice(RSS_FEEDS.length).forEach(feed=>{
     const button = document.createElement('button'); button.type = 'button'; button.textContent = feed.name + ' ×';
     button.setAttribute('aria-label',feed.name+' 출처 삭제');
+    if(rssFeedErrors.has(feed.url)){
+      button.classList.add('feed-unavailable');
+      button.title = '지금은 피드를 불러오지 못했어요';
+      button.textContent = feed.name + ' · 불러오기 실패 ×';
+    }
     button.onclick = ()=>{if(!save('breeze.feed-sources',rssSources().slice(RSS_FEEDS.length).filter(item=>item.url !== feed.url))) return; rssLoadedAt=0; rssCands=[]; renderFeedSources(); renderCasualLibrary();};
     host.appendChild(button);
   });

@@ -292,6 +292,12 @@ async function openBook(b,options={}){
     source.href = b.sourceUrl;
     source.textContent = [b.site,b.author,b.publishedAt ? rssDate(b.publishedAt) : ''].filter(Boolean).join(' · ') + ' · 원문 보기 ↗';
   }
+  const discovery = /** @type {HTMLAnchorElement} */(document.getElementById('rdiscovery'));
+  discovery.hidden = !b.discoveredFromUrl;
+  if(b.discoveredFromUrl){
+    discovery.href = b.discoveredFromUrl;
+    discovery.textContent = '게시물 보기 ↗';
+  }
   /* 책은 `show('read')` 를 거치지 않고 바로 열립니다. 셸을 켜는 표는 두 곳에
      달아야 합니다 — `body` 만 잠그면 아이폰에서 문서가 여전히 고무줄처럼 늘어나서,
      읽는 칸 바깥이 함께 흔들립니다 (styles/reader.css 의 "읽는 동안의 셸"). */

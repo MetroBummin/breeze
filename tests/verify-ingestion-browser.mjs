@@ -20,7 +20,10 @@ try{
     const url=route.request().url();
     if(url.startsWith(base) || url.startsWith('blob:')) return route.continue();
     if(url==='https://content.example/article')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'text/html',body:html});
+    if(url==='https://content.example/reddit-article')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'text/html',body:html.replaceAll('Reading together','A Reddit discovery').replaceAll('thoughtful reader','curious reader')});
     if(url==='https://content.example/feed')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/rss+xml',body:xml});
+    if(url==='https://www.reddit.com/r/books/.rss')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/atom+xml',body:redditSelf});
+    if(url==='https://feeds.example/x.xml')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/rss+xml',body:xFeed});
     if(url==='https://content.example/')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'text/html',body:'<html><head><link rel="alternate" type="application/rss+xml" href="/feed"></head><body>Feed discovery</body></html>'});
     if(url==='https://content.example/photo.png')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/png',body:readFileSync(resolve(root,'assets/favicon/icon-512.png'))});
     return route.abort();
@@ -38,6 +41,19 @@ try{
    assert.equal(await page.evaluate(async()=> (await discoverFeed('https://content.example/')).url),'https://content.example/feed');
    const atom='<feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title><entry><title>A post</title><link rel="alternate" href="https://content.example/article"/><summary>Plain summary</summary></entry></feed>';
    assert.equal(await page.evaluate(x=>parseRss(x,{url:'https://content.example/feed',name:'Atom'})[0].url,atom),'https://content.example/article');
+   const redditLink=`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>A research article</title><link href="https://www.reddit.com/r/science/comments/abc/research/"/><content type="html"><![CDATA[<table><tr><td>submitted by /u/example <a href="https://content.example/reddit-article">[link]</a> <a href="https://www.reddit.com/r/science/comments/abc/research/">[comments]</a></td></tr></table>]]></content></entry></feed>`;
+   const redditSelf=`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>A thoughtful community discussion</title><link href="https://www.reddit.com/r/books/comments/xyz/discussion/"/><content type="html"><![CDATA[<table><tr><td>submitted by /u/example <a href="https://www.reddit.com/r/books/comments/xyz/discussion/">[comments]</a></td></tr></table><div><p>Reading together helped me notice how an author develops a claim over several chapters, and I would like to hear how other readers followed that idea.</p></div>]]></content></entry></feed>`;
+   const xFeed=`<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><title>A note on reading</title><link>https://x.com/example/status/123</link><content:encoded><![CDATA[<p>Reading a long essay with friends helped me understand its main argument. <strong>Careful attention</strong> made the difference.</p><script>window.feedInjected=true</script>]]></content:encoded></item></channel></rss>`;
+   const redditLinkEntry=await page.evaluate(xml=>parseRss(xml,{url:'https://www.reddit.com/r/science/.rss',name:'r/science'})[0],redditLink);
+   assert.equal(redditLinkEntry.readUrl,'https://content.example/reddit-article');
+   const redditSelfEntry=await page.evaluate(xml=>parseRss(xml,{url:'https://www.reddit.com/r/books/.rss',name:'r/books'})[0],redditSelf);
+   assert.equal(redditSelfEntry.readUrl,'');
+   const xEntry=await page.evaluate(xml=>parseRss(xml,{url:'https://feeds.example/x.xml',name:'X posts'})[0],xFeed);
+   assert.equal(xEntry.kind,'x');
+   assert.equal(await page.evaluate(async()=> (await discoverFeed('https://www.reddit.com/r/books/')).url),'https://www.reddit.com/r/books/.rss');
+   assert.equal(await page.evaluate(async()=> (await discoverFeed('https://feeds.example/x.xml')).url),'https://feeds.example/x.xml');
+   assert.equal(await page.evaluate(async()=>{try{await discoverFeed('https://x.com/example');return false;}catch(error){return /RSS/.test(error.message);}}),true);
+   assert.equal(await page.evaluate(entry=>parseFeedPost(entry)?.blocks.some(block=>block.marks?.some(mark=>mark.kind==='strong')),xEntry),true);
    assert.equal(await page.evaluate(()=>{try{parseRss('<rss><broken>',{url:'https://a.example',name:'bad'});return false;}catch{return true;}}),true);
    await page.evaluate(async xml=>{
     const original=fetchArticleHtml;
@@ -96,6 +112,18 @@ try{
    assert.equal(await page.evaluate(()=>rssSources().length),3);
    await page.locator('#feed-sources button').click();
    assert.equal(await page.evaluate(()=>rssSources().length),2);
+   await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditLinkEntry);
+   await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/reddit-article');
+   assert.equal(await page.locator('#rdiscovery').getAttribute('href'),redditLinkEntry.url);
+   await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditSelfEntry);
+   await page.waitForFunction(url=>curBook?.sourceUrl===url,redditSelfEntry.url);
+   assert.equal(await page.evaluate(()=>curBook.contentType),'post');
+   assert.equal(await page.locator('#rtext').evaluate(node=>node.textContent.includes('submitted by')),false);
+   await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),xEntry);
+   await page.waitForFunction(url=>curBook?.sourceUrl===url,xEntry.url);
+   assert.equal(await page.evaluate(()=>curBook.contentType),'post');
+   assert(await page.locator('#rtext .w').count()>10);
+   assert.equal(await page.evaluate(()=>window.feedInjected===true),false);
    if(existsSync('/tmp/breeze-ingestion-live/ordinary.txt')){
     const live=readFileSync('/tmp/breeze-ingestion-live/ordinary.txt','utf8');
     const result=await page.evaluate(h=>parseArticleHtml(h,'https://www.paulgraham.com/read.html'),live);

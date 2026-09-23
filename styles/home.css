@@ -284,9 +284,11 @@
 
 .feed-discovery{margin:8px 0 20px;font-size:13px}
 .feed-discovery summary{cursor:pointer;opacity:.7}
+.feed-discovery-hint{color:var(--soft);line-height:1.4}
 .feed-discovery form{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .feed-discovery label{width:100%}
 .feed-discovery input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--field);color:inherit}
 .feed-discovery button{padding:8px 12px;border-radius:12px;color:inherit;background:var(--quiet);border:1px solid var(--line)}
 #feed-sources{display:flex;flex-wrap:wrap;gap:8px}
+#feed-sources .feed-unavailable{color:var(--danger)}
 .shared-original{align-self:center;max-width:110px;font-size:13px;color:inherit}

@@ -43,9 +43,15 @@ merged-cell geometry, video and interactive content are not reproduced. Image
 blobs stay local (with an ArrayBuffer record fallback for WebKit Blob write failures), and failed images leave readable text plus a notice and source
 link. Author/date/source are retained locally and displayed by the original link.
 
-X/Twitter and Reddit conversations currently fall back to the original. A thread
-needs reliable post identity and reply boundaries; pretending a long collection
-of replies is one article is worse than a clear fallback. Medium public pages
+Reddit's public Atom feeds expose the post URL and, for link posts, a separate
+`[link]` target. The target enters the article pipeline and the Reddit permalink
+stays as discovery provenance. A self post with enough text enters Reader as a
+short post using only the feed's supplied body. No comments are appended.
+An accessible X RSS/Atom feed can also supply a post body for the same short-post
+path. X does not provide an official public profile RSS endpoint, and an X
+profile URL alone cannot create a feed. Breeze does not operate a third-party
+feed generator or collect X account credentials. Direct X post shares and
+posts without useful feed text retain original-source fallback. Medium public pages
 use the ordinary extraction path when accessible. Login, paywall, blocked,
 script-only, short/low-content responses and network failures offer retry/original.
 A generic extractor is heuristic: it cannot guarantee complete content on every
@@ -70,6 +76,11 @@ a successful simulator build or browser-injected inbox event is not that proof.
 - Reddit's archived API documentation describes `.rss`; availability was checked
   against the actual subreddit response, not inferred from that old document:
   https://github.com/reddit-archive/reddit/wiki/API
+- X's documented post API requires bearer authentication; RSSHub's X route uses
+  its own authentication and has reported availability problems. This is why
+  Breeze accepts a working user-supplied feed but does not invent one from an X
+  profile: https://docs.x.com/x-api/posts/english-language-firehose-stream
+  https://github.com/DIYgod/RSSHub/blob/master/lib/routes/twitter/api/web-api/utils.ts
 - Mozilla documents extraction and its separate sanitation requirement:
   https://github.com/mozilla/readability
 
@@ -81,6 +92,14 @@ Substack's The Overhang (26 including 5 image blocks), and a ProPublica article
 as local Reader books; Substack image requests failed gracefully in that run.
 The sampled Medium article returned 403 and offered original-source fallback.
 Feed availability does not imply full article availability.
+
+For the follow-up, the live r/science feed contained a Reddit permalink and a
+distinct NASA article `[link]`, which the parser classified separately. Browser
+fixtures covered subreddit URL discovery, a self post, link-post provenance,
+an X post supplied through an external RSS feed, unsafe markup removal and
+Reader opening in Chromium and WebKit. A public X feed endpoint that could be
+used for a live X round trip was not available in this check; the sampled
+RSSHub public route returned 404. X support is conditional on a working feed URL.
 
 `npm test`, `npm run test:ingestion`, `npm run test:home-ui`, sentence cue browser
 and word presentation browser regressions passed. `npm run ios:sync` and the iOS

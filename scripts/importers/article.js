@@ -365,7 +365,8 @@ async function ingestArticle(url, options = {}){
     if(!parsed) throw new Error('본문을 안전하게 가져오지 못했어요');
     const photos = await attachArticleImages(parsed, options.photo);
     const book = await saveCasualBook(parsed, {kind:'article', site:parsed.site || options.source, sourceUrl:url,
-      resolvedUrl:parsed.url, author:parsed.author, publishedAt:parsed.publishedAt, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null});
+      resolvedUrl:parsed.url, discoveredFromUrl:options.discoveredFromUrl || '',
+      author:parsed.author, publishedAt:parsed.publishedAt, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null});
     if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
     return book;
   })();
