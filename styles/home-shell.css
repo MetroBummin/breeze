@@ -70,20 +70,14 @@ html.home-returning::view-transition-new(root){animation:none;opacity:1;mix-blen
 @keyframes home-glass-open{from{clip-path:inset(var(--resume-inset) round 32px);opacity:1;}to{clip-path:inset(0 round 0);opacity:1;}}
 @keyframes home-glass-close{from{clip-path:inset(0 round 0);opacity:1;}85%{opacity:1;}to{clip-path:inset(var(--resume-inset) round 32px);opacity:0;}}
 html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
-/* Damped content follows the finger; release settles without moving the dock. */
-html.library-refresh-motion :is(#v-home,#v-casuals,#v-longform).on,
-html.library-refresh-motion body:has(:is(#v-home,#v-casuals,#v-longform).on) #topbar{
-  translate:0 var(--library-pull,0px);transition:translate .44s cubic-bezier(.2,.75,.25,1);
-}
-html.library-pulling :is(#v-home,#v-casuals,#v-longform).on,
-html.library-pulling body:has(:is(#v-home,#v-casuals,#v-longform).on) #topbar{transition:none;}
-#library-refresh{position:fixed;z-index:80;left:50%;top:calc(env(safe-area-inset-top) + 10px);width:22px;height:22px;display:grid;place-items:center;pointer-events:none;color:var(--settings-muted);opacity:var(--library-pull-progress,0);transform:translate(-50%,calc(var(--library-pull,0px) * .3));transition:transform .44s cubic-bezier(.2,.75,.25,1),opacity .3s ease;}
-html.library-pulling #library-refresh{transition:none;}
+/* Browser fallback stays above the Home logo; iOS uses UIRefreshControl. */
+#library-refresh{position:fixed;z-index:80;left:50%;top:calc(env(safe-area-inset-top) + 2px);width:22px;height:22px;display:grid;place-items:center;pointer-events:none;color:var(--settings-muted);opacity:0;transform:translateX(-50%);transition:opacity .2s ease;}
+#library-refresh.pulling{transition:none;}
 #library-refresh[hidden]{display:none;}
-.refresh-spinner{width:16px;height:16px;border:1.8px solid currentColor;border-right-color:transparent;border-radius:50%;transform:rotate(var(--library-pull-spin,0deg));}
+.refresh-spinner{width:16px;height:16px;border:1.8px solid currentColor;border-right-color:transparent;border-radius:50%;}
 #library-refresh.refreshing .refresh-spinner{animation:library-refresh-spin .8s linear infinite;}
 @keyframes library-refresh-spin{to{rotate:360deg;}}
-@media(prefers-reduced-motion:reduce){html.library-refresh-motion :is(#v-home,#v-casuals,#v-longform).on,html.library-refresh-motion #topbar{translate:none;transition:none;}#library-refresh{transition:none;}#library-refresh.refreshing .refresh-spinner{animation:none;}}
+@media(prefers-reduced-motion:reduce){#library-refresh{transition:none;}#library-refresh.refreshing .refresh-spinner{animation:none;}}
 
 /* Penpot Thunderhead cloud + lightning, independent of shared glass material. */
 #home-controls #nav-vocab svg{width:24px;height:24px;stroke:#1688b6;stroke-width:1.8;}

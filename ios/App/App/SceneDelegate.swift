@@ -7,12 +7,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private static let themeMessageHandler = "breezeReaderTheme"
     private static let speechMessageHandler = "breezeSpeech"
     private static let vocabularyExportHandler = "breezeVocabularyExport"
+    private static let libraryRefreshHandler = "breezeRefresh"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var speechGenerations: [ObjectIdentifier: Int] = [:]
     private var activeSpeechGeneration: Int?
     private var speechStartDeadline: DispatchWorkItem?
+    private let libraryRefreshControl = UIRefreshControl()
+    private var libraryRefreshSequence = 0
+    private var activeLibraryRefreshSequence: Int?
     private static let speechCategory = "playback"
     private static let speechMode = "default"
     private static let speechOptions = ["duckOthers"]
@@ -25,10 +29,13 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         guard let webView else { return }
 
         webView.scrollView.bounces = true
+        libraryRefreshControl.tintColor = UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
+        libraryRefreshControl.addTarget(self, action: #selector(refreshLibraryFromScroll), for: .valueChanged)
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.vocabularyExportHandler)
+        webView.configuration.userContentController.add(self, name: Self.libraryRefreshHandler)
         speechSynthesizer.delegate = self
         NotificationCenter.default.addObserver(
             self,
@@ -46,6 +53,24 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == Self.libraryRefreshHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let request = message.body as? [String: Any] else { return }
+            if let enabled = request["enabled"] as? Bool {
+                webView?.scrollView.refreshControl = enabled ? libraryRefreshControl : nil
+                if !enabled {
+                    libraryRefreshControl.endRefreshing()
+                    activeLibraryRefreshSequence = nil
+                }
+            } else if let finished = (request["finished"] as? NSNumber)?.intValue,
+                      finished == activeLibraryRefreshSequence {
+                libraryRefreshControl.endRefreshing()
+                activeLibraryRefreshSequence = nil
+            }
+            return
+        }
         if message.name == Self.vocabularyExportHandler {
             guard message.frameInfo.isMainFrame,
                   message.frameInfo.securityOrigin.protocol == "breeze",
@@ -66,6 +91,23 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         guard message.name == Self.speechMessageHandler,
               let request = message.body as? [String: Any] else { return }
         handleSpeechRequest(request)
+    }
+
+    @objc private func refreshLibraryFromScroll() {
+        libraryRefreshSequence += 1
+        let sequence = libraryRefreshSequence
+        activeLibraryRefreshSequence = sequence
+        webView?.evaluateJavaScript("typeof window.breezeNativeRefresh === 'function' && (window.breezeNativeRefresh(\(sequence)), true)") { [weak self] result, error in
+            if error != nil || (result as? Bool) != true {
+                self?.finishLibraryRefresh(sequence)
+            }
+        }
+    }
+
+    private func finishLibraryRefresh(_ sequence: Int) {
+        guard activeLibraryRefreshSequence == sequence else { return }
+        libraryRefreshControl.endRefreshing()
+        activeLibraryRefreshSequence = nil
     }
 
     private func reportVocabularyExport(id: String, error: String? = nil) {
