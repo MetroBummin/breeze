@@ -284,6 +284,10 @@
     padding:10px 12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:inherit;font-size:14px;}
   #ed-cover-search-form .sm-btn{width:auto;margin:0;padding:0 16px;border:1px solid var(--sentence-glass-line);
     border-radius:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);}
+  .ed-cover-presets{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 8px;}
+  .ed-cover-presets button{padding:6px 10px;border:1px solid var(--sentence-glass-line);border-radius:10px;
+    background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);font:500 11px var(--ui);}
+  .ed-cover-presets button:active{background:color-mix(in srgb,var(--s1) 12%,var(--sentence-glass-action));}
   #ed-cover-search-status{min-height:20px;color:var(--sentence-glass-secondary);font-size:12px;margin:8px 0;}
   #ed-cover-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;}
   .ed-search-result{min-width:0;padding:0 0 7px;border:1px solid var(--sentence-glass-line);

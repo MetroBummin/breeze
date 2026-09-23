@@ -47,21 +47,33 @@ function openCoverSearch(){
   searchCoverPhotos();
 }
 
-function commonsCoverResults(payload){
-  return Object.values(payload?.query?.pages || {})
-    .sort((a,b)=>(a.index||0)-(b.index||0))
-    .map(page=>{
-      const info=page.imageinfo?.[0], meta=info?.extmetadata || {};
-      const license=String(meta.LicenseShortName?.value || '');
-      const imageUrl=info?.thumburl || '';
-      const pageUrl=info?.descriptionurl || '';
-      if(!/^(?:public domain|cc0)/i.test(license) ||
-         !/^image\/(?:jpeg|png|webp)$/i.test(info?.mime || '') ||
-         Math.min(info.width||0,info.height||0)<300 ||
-         !/^https:\/\/(?:thumb|upload)\.wikimedia\.org\//.test(imageUrl) ||
-         !/^https:\/\/commons\.wikimedia\.org\//.test(pageUrl)) return null;
-      return {title:page.title.replace(/^File:/,''),imageUrl,pageUrl,license};
-    }).filter(Boolean).slice(0,12);
+function openverseCoverResults(payload){
+  const groups=new Map();
+  for(const item of payload?.results || []){
+    const license=String(item.license || '').toLowerCase();
+    const imageUrl=item.url || '', thumbUrl=item.thumbnail || imageUrl, pageUrl=item.foreign_landing_url || '';
+    if(!['cc0','pdm'].includes(license) || !/^https:\/\//.test(imageUrl) ||
+       !/^https:\/\//.test(thumbUrl) || !/^https:\/\//.test(pageUrl) ||
+       Math.min(Number(item.width)||0,Number(item.height)||0)<300) continue;
+    const provider=String(item.provider || item.source || 'Openverse');
+    const group=groups.get(provider) || [];
+    group.push({title:String(item.title || 'Untitled image'),imageUrl,thumbUrl,pageUrl,license,provider});
+    groups.set(provider,group);
+  }
+  const results=[];
+  while(results.length<18){
+    let added=false;
+    for(const group of groups.values()){
+      if(group.length){results.push(group.shift());added=true;if(results.length===18)break;}
+    }
+    if(!added)break;
+  }
+  return results;
+}
+
+function setCoverSearchPreset(query){
+  (/** @type {HTMLInputElement} */(document.getElementById('ed-cover-query'))).value=query;
+  searchCoverPhotos();
 }
 
 async function searchCoverPhotos(event){
@@ -74,14 +86,12 @@ async function searchCoverPhotos(event){
   results.replaceChildren();
   if(!query){status.textContent='검색어를 입력해 주세요.';return;}
   status.textContent='사진을 찾는 중…';
-  const params=new URLSearchParams({action:'query',generator:'search',gsrsearch:query,
-    gsrnamespace:'6',gsrlimit:'40',prop:'imageinfo',iiprop:'url|mime|size|extmetadata',
-    iiurlwidth:'480',format:'json',origin:'*'});
+  const params=new URLSearchParams({q:query,license:'cc0,pdm',page_size:'60'});
   try{
-    const response=await fetch('https://commons.wikimedia.org/w/api.php?'+params,
+    const response=await fetch('https://api.openverse.org/v1/images/?'+params,
       {credentials:'omit',signal:AbortSignal.timeout(12000)});
     if(!response.ok)throw new Error('search unavailable');
-    const photos=commonsCoverResults(await response.json());
+    const photos=openverseCoverResults(await response.json());
     if(id!==coverSearchId || !editTarget)return;
     status.textContent=photos.length ? '사진을 누르면 표지로 고를 수 있어요.' : '쓸 수 있는 사진이 없어요. 검색어를 바꿔보세요.';
     for(const photo of photos){
@@ -89,8 +99,8 @@ async function searchCoverPhotos(event){
       button.type='button';button.className='ed-search-result';
       button.setAttribute('aria-label',photo.title+' 표지로 선택');
       const image=document.createElement('img');image.alt='';image.loading='lazy';
-      image.referrerPolicy='no-referrer';image.src=photo.imageUrl;
-      const caption=document.createElement('span');caption.textContent=photo.title;
+      image.referrerPolicy='no-referrer';image.src=photo.thumbUrl;
+      const caption=document.createElement('span');caption.textContent=`${photo.title} · ${photo.provider}`;
       button.append(image,caption);
       button.onclick=()=>selectCoverPhoto(photo);
       results.appendChild(button);
@@ -109,7 +119,7 @@ function selectCoverPhoto(photo){
   wrap.querySelectorAll('.ed-cover').forEach(node=>node.classList.remove('on'));
   const cell=document.createElement('button');cell.type='button';cell.className='ed-cover ed-search-pick on';
   cell.setAttribute('aria-label','선택한 사진');
-  const image=document.createElement('img');image.alt='';image.src=photo.imageUrl;
+  const image=document.createElement('img');image.alt='';image.src=photo.thumbUrl || photo.imageUrl;
   image.referrerPolicy='no-referrer';cell.appendChild(image);
   cell.onclick=()=>{wrap.querySelectorAll('.ed-cover').forEach(node=>node.classList.remove('on'));cell.classList.add('on');wrap.dataset.pick='__search__';};
   wrap.appendChild(cell);wrap.dataset.pick='__search__';cell.scrollIntoView({block:'nearest',inline:'nearest'});

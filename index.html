@@ -42,7 +42,7 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
-  <link rel="stylesheet" href="styles/home.css?v=69afa5b5">
+  <link rel="stylesheet" href="styles/home.css?v=0b1c5ad9">
   <link rel="stylesheet" href="styles/reader.css?v=df2a75a1">
   <link rel="stylesheet" href="styles/dictionary.css?v=2f36b3e7">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
@@ -84,7 +84,7 @@
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/library/library.js?v=53b6b388"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
-  <script defer src="scripts/library/book-edit.js?v=851dbe45"></script>
+  <script defer src="scripts/library/book-edit.js?v=9cd591e8"></script>
   <script defer src="scripts/library/classics.js?v=a5db66b4"></script>
   <script defer src="scripts/importers/importers.js?v=f52e935d"></script>
   <script defer src="assets/lib/readability-0.6.0.js?v=34dcab3d"></script>
@@ -492,11 +492,17 @@
     <div class="ed-step" data-step="cover-search">
       <button type="button" class="am-back" onclick="editStep('edit')">← 뒤로</button>
       <h2>표지 사진 찾기</h2>
-      <div class="desc">읽고 있는 글에 어울리는 사진을 골라주세요. Wikimedia Commons에서 퍼블릭 도메인·CC0로 표시된 사진을 보여줘요.</div>
+      <div class="desc">여러 공개 이미지 출처에서 CC0·퍼블릭 도메인 사진을 찾아요. 제목에만 묶이지 않도록 넓은 분위기로도 검색할 수 있어요.</div>
       <form id="ed-cover-search-form" onsubmit="searchCoverPhotos(event)">
         <input id="ed-cover-query" type="search" aria-label="사진 검색어" spellcheck="false">
         <button class="sm-btn" type="submit">검색</button>
       </form>
+      <div class="ed-cover-presets" aria-label="넓은 이미지 검색">
+        <button type="button" onclick="setCoverSearchPreset('dark fantasy illustration')">판타지 일러스트</button>
+        <button type="button" onclick="setCoverSearchPreset('nature landscape')">풍경</button>
+        <button type="button" onclick="setCoverSearchPreset('minimal abstract art')">추상</button>
+        <button type="button" onclick="setCoverSearchPreset('editorial illustration')">에디토리얼</button>
+      </div>
       <div id="ed-cover-search-status" role="status" aria-live="polite"></div>
       <div id="ed-cover-results"></div>
     </div>

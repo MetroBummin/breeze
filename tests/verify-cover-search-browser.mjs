@@ -17,14 +17,16 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
-const commons={query:{pages:{
-  1:{index:1,title:'File:Allowed landscape.jpg',imageinfo:[{mime:'image/jpeg',width:1200,height:800,
-    thumburl:'https://thumb.wikimedia.org/allowed.jpg',descriptionurl:'https://commons.wikimedia.org/wiki/File:Allowed_landscape.jpg',
-    extmetadata:{LicenseShortName:{value:'Public domain'}}}]},
-  2:{index:2,title:'File:Attribution required.jpg',imageinfo:[{mime:'image/jpeg',width:1200,height:800,
-    thumburl:'https://thumb.wikimedia.org/attribution.jpg',descriptionurl:'https://commons.wikimedia.org/wiki/File:Attribution_required.jpg',
-    extmetadata:{LicenseShortName:{value:'CC BY-SA 4.0'}}}]},
-}}};
+const openverse={results:[
+  {title:'Allowed landscape',url:'https://images.test/allowed.jpg',thumbnail:'https://thumbs.test/allowed.jpg',
+    foreign_landing_url:'https://flickr.com/allowed',license:'cc0',provider:'flickr',width:1200,height:800},
+  {title:'Attribution required',url:'https://images.test/by.jpg',thumbnail:'https://thumbs.test/by.jpg',
+    foreign_landing_url:'https://example.com/by',license:'by',provider:'flickr',width:1200,height:800},
+  {title:'Wikimedia art',url:'https://images.test/wikimedia.jpg',thumbnail:'https://thumbs.test/wikimedia.jpg',
+    foreign_landing_url:'https://commons.wikimedia.org/wiki/File:Art',license:'pdm',provider:'wikimedia',width:1200,height:800},
+  {title:'Second Flickr image',url:'https://images.test/second.jpg',thumbnail:'https://thumbs.test/second.jpg',
+    foreign_landing_url:'https://flickr.com/second',license:'cc0',provider:'flickr',width:1200,height:800},
+]};
 try{
   for(const engine of [chromium,webkit]){
     const browser=await engine.launch();
@@ -34,9 +36,9 @@ try{
       await page.route('**/*',route=>{
         const url=route.request().url();
         if(url.startsWith(base))return route.continue();
-        if(url.startsWith('https://commons.wikimedia.org/w/api.php'))return route.fulfill({
-          headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify(commons)});
-        if(url==='https://thumb.wikimedia.org/allowed.jpg')return route.fulfill({
+        if(url.startsWith('https://api.openverse.org/v1/images/'))return route.fulfill({
+          headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify(openverse)});
+        if(url.startsWith('https://thumbs.test/') || url.startsWith('https://images.test/'))return route.fulfill({
           headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/png',body:cover});
         return route.abort();
       });
@@ -47,9 +49,11 @@ try{
         await bookPut(book);books=[book];show('home');renderHome();openEditSheet(book);
       });
       await page.locator('#ed-search-cover').click();
-      await page.waitForFunction(()=>document.querySelectorAll('.ed-search-result').length===1);
-      assert.equal(await page.locator('.ed-search-result').count(),1);
-      await page.locator('.ed-search-result').click();
+      await page.waitForFunction(()=>document.querySelectorAll('.ed-search-result').length===3);
+      assert.equal(await page.locator('.ed-search-result').count(),3);
+      assert.deepEqual(await page.locator('.ed-search-result span').allTextContents(),[
+        'Allowed landscape · flickr','Wikimedia art · wikimedia','Second Flickr image · flickr']);
+      await page.locator('.ed-search-result').first().click();
       assert.equal(await page.locator('#ed-covers .ed-search-pick').count(),1);
       await page.locator('#ed-card [data-step="edit"] .sm-btn.primary').click();
       await page.waitForFunction(()=>!document.getElementById('edit-modal').classList.contains('on'));
@@ -60,13 +64,13 @@ try{
       });
       assert(result.cover.startsWith('cover-qa|cover|'));
       assert.equal(result.hasBlob,true);
-      assert.equal(result.url,'https://thumb.wikimedia.org/allowed.jpg');
-      assert.equal(result.source,'https://commons.wikimedia.org/wiki/File:Allowed_landscape.jpg');
+      assert.equal(result.url,'https://images.test/allowed.jpg');
+      assert.equal(result.source,'https://flickr.com/allowed');
       assert.equal(await page.evaluate(async()=>{
         const book=books.find(item=>item.id==='cover-qa');
         const original=bookPut, previous=book.cover;
         openEditSheet(book);
-        selectCoverPhoto({imageUrl:'https://thumb.wikimedia.org/allowed.jpg',pageUrl:'https://commons.wikimedia.org/wiki/File:Allowed_landscape.jpg'});
+        selectCoverPhoto({imageUrl:'https://images.test/allowed.jpg',thumbUrl:'https://thumbs.test/allowed.jpg',pageUrl:'https://flickr.com/allowed'});
         document.getElementById('ed-title').value='A title that should not persist';
         try{
           bookPut=async()=>{throw Error('Storage unavailable');};
