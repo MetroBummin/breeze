@@ -1116,7 +1116,7 @@ for(const read of offered){
 }
 assert.match(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),/importFile\(file,/,
   'Bundled stories no longer use the normal Text import path');
-for(const slug of ['homewardbound-ch-1']){
+for(const slug of ['homewardbound']){
   const text=readFileSync(resolve(root,`assets/longreads/${slug}.txt`),'utf8');
   assert.ok(text.length>1000,`Story body is unexpectedly short: ${slug}`);
   assert.doesNotMatch(text,/rating:\s*[+-]|Licensing \/ Citation|For more information about on-wiki content/i,

@@ -357,6 +357,9 @@
     box-shadow:var(--page-shadow);}
   .pageno{text-align:center; color:var(--pageno); font-size:12px; margin:18px 0 26px; font-family:var(--serif); user-select:none;}
   #rtext figure{margin:1.5em 0; text-align:center;}
+  #rtext figure.story-illustration{margin:1.8em 0 2em;}
+  #rtext figure.story-illustration img{display:block; width:100%; height:auto; aspect-ratio:3/2;}
+  #rtext .story-scene-break{text-align:center;letter-spacing:.3em;color:var(--soft2);margin:2.5em 0;}
   /* 그림을 꾹 누르면 Safari 는 그것을 집어 옮기려 합니다. 그 끌기가 시작되면
      읽는 손짓이 더 이상 오지 않아 화면이 굳은 것처럼 됩니다 — 홈의 표지 카드가
      이미 같은 선언을 갖고 있습니다(styles/home.css). 판정 계층도 `dragstart` 를

@@ -146,6 +146,26 @@ function renderBookBody(b){
     return !(bl.r && bl.r.charAt(0) === 'h' && String(bl.t||'').trim() === titleText);
   });
   list.forEach(bl=>{
+    if(b.longReadId==='backroom-homeward-bound'&&bl.t==='Chapter 2'&&pageChars>0)newPage();
+    const illustration=longReadIllustrationBefore(b,bl.t);
+    if(illustration){
+      /* Keep the picture with the next passage, without inserting a synthetic
+         paragraph into the Text book or its lookup/progress coordinates. */
+      if(pageChars>PAGE_CHARS*.7) newPage();
+      const fig=document.createElement('figure');
+      fig.className='story-illustration';
+      fig.dataset.scene=illustration.file.split('/').pop();
+      const img=document.createElement('img');
+      img.src=illustration.file;
+      img.alt=illustration.alt;
+      img.width=1536; img.height=1024;
+      img.loading='lazy'; img.decoding='async';
+      img.onerror=()=>fig.remove();
+      fig.appendChild(img);
+      page.appendChild(fig);
+      pageChars+=400;
+      box=null;boxKind='';
+    }
     if(bl.r === 'img'){
       const fig = document.createElement('figure');
       const img = document.createElement('img');
@@ -202,6 +222,7 @@ function renderBookBody(b){
     const host = inBox && box ? box : page;
     const el = document.createElement(isHead ? (lvl===1?'h2':lvl===3?'h4':'h3') : 'p');
     if(bl.r === 'toc') el.classList.add('toc-entry');
+    if(b.longReadId==='backroom-homeward-bound'&&bl.t==='* * *')el.classList.add('story-scene-break');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
     el.textContent = bl.v || bl.t;
@@ -268,22 +289,27 @@ function renderReaderAttribution(book){
   if(!attribution) return;
   const line=document.createElement('p');
   line.textContent=`${attribution.title} · ${attribution.author}`;
-  const source=document.createElement('p');
-  const sourceLink=/** @type {HTMLAnchorElement} */ (document.createElement('a'));
-  sourceLink.href=attribution.sourceUrl;
-  sourceLink.target='_blank'; sourceLink.rel='noopener noreferrer';
-  sourceLink.textContent=`${attribution.sourceName} · 원문 보기`;
-  source.appendChild(sourceLink);
+  const sources=Array.isArray(attribution.sources)&&attribution.sources.length
+    ? attribution.sources : [{title:attribution.title,url:attribution.sourceUrl}];
+  const sourceLines=sources.map(item=>{
+    const source=document.createElement('p');
+    const link=document.createElement('a');
+    link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
+    link.textContent=`${attribution.sourceName} · ${item.title}`;
+    source.appendChild(link);
+    return source;
+  });
   const license=document.createElement('p');
-  license.textContent='Story text: ';
+  license.textContent=book.longReadId==='backroom-homeward-bound'
+    ? 'Story text and scene illustrations: ' : 'Story text: ';
   const licenseLink=/** @type {HTMLAnchorElement} */ (document.createElement('a'));
   licenseLink.href=attribution.licenseUrl;
   licenseLink.target='_blank'; licenseLink.rel='noopener noreferrer';
   licenseLink.textContent=attribution.license;
   license.appendChild(licenseLink);
   const note=document.createElement('p');
-  note.textContent='본문은 원문 표현을 바꾸지 않고 Breeze Text 형식으로 재조판했습니다. 표지는 별도로 제공된 이미지이며 본문 텍스트의 라이선스 대상이 아닙니다.';
-  body.append(line,source,license,note);
+  note.textContent='본문은 원문 표현을 바꾸지 않고 Breeze Text 형식으로 재조판했습니다. 장면 삽화는 원문 내용을 바탕으로 새로 제작했으며 원문 페이지의 이미지는 사용하지 않았습니다. 표지는 별도로 제공된 이미지입니다.';
+  body.append(line,...sourceLines,license,note);
 }
 /** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void}} [options] */
 async function openBook(b,options={}){

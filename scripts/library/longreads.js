@@ -94,18 +94,68 @@ async function refreshClassicCovers(){
    a user-selected .txt book. No website HTML or article renderer enters Reader. */
 const LONG_READS = [
   {
-    id:'backroom-homeward-bound', file:'assets/longreads/homewardbound-ch-1.txt',
+    id:'backroom-homeward-bound', file:'assets/longreads/homewardbound.txt',
     cover:'assets/longreads/covers/backroom-homeward-bound.png', coverPosition:'center top',
-    title:'Backroom - Homeward Bound', originalTitle:'Homeward Bound: Chapter 1',
+    title:'Backroom - Homeward Bound', originalTitle:'Homeward Bound: Chapters 1–2',
     author:'DivineAtlas', sourceUrl:'https://backrooms-wiki.wikidot.com/homewardbound-ch-1',
+    sources:[
+      {title:'Homeward Bound: Chapter 1',url:'https://backrooms-wiki.wikidot.com/homewardbound-ch-1'},
+      {title:'Homeward Bound: Chapter 2',url:'https://backrooms-wiki.wikidot.com/homewardbound-ch-2'},
+    ],
     site:'Backrooms Wiki', license:'CC BY-SA 3.0',
     licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
   },
 ];
+/* These pictures sit above the exact story passage they depict. Match the
+   passage text so a saved Text book keeps its original paragraph indices and
+   reading position, including copies imported before the pictures shipped. */
+const HOMEWARD_ILLUSTRATIONS = [
+  {before:'I sat stunned as the police', file:'assets/longreads/illustrations/homeward-01-police-search.jpg', alt:'경찰이 수색하는 집에서 결혼반지를 쥔 제임스'},
+  {before:'My attention was immediately drawn to the walls', file:'assets/longreads/illustrations/homeward-02-studio.jpg', alt:'그림과 실종자 사진, 붉은 실로 가득한 미아의 작업실'},
+  {before:"I thought about her sister's disappearance", file:'assets/longreads/illustrations/homeward-03-laptop.jpg', alt:'미아의 노트북 화면에 보이는 노란 방 사진'},
+  {before:'As the dilapidated structure came into view', file:'assets/longreads/illustrations/homeward-04-mill.jpg', alt:'밤의 낡은 제분소 앞에 세워진 미아의 빨간 차'},
+  {before:'The invasive stench of mildew', file:'assets/longreads/illustrations/homeward-05-backrooms.jpg', alt:'형광등 아래 축축한 카펫이 끝없이 이어지는 노란 공간'},
+  {before:'The pitch-black night sky loomed', file:'assets/longreads/illustrations/homeward-06-rooftop.jpg', alt:'오렌지색 가로등 아래 얼굴 없는 사람을 내려다보는 두 여성'},
+  {before:"Okay, it's not that gross.", file:'assets/longreads/illustrations/homeward-07-canteen.jpg', alt:'노란 복도에 놓인 찌그러진 물통'},
+  {before:'What in the glorious name', file:'assets/longreads/illustrations/homeward-08-room.jpg', alt:'낡은 복도 옆 작은 방의 매트리스와 탐정의 물통'},
+  {before:'Two M.E.G. operatives stood', file:'assets/longreads/illustrations/homeward-09-hotel.jpg', alt:'마호가니 문 너머 붉은 카펫에 모인 얼굴 없는 무리'},
+  {before:'It was another flickering wall.', file:'assets/longreads/illustrations/homeward-10-wall.jpg', alt:'노란 복도 끝에서 불안정하게 깜빡이는 벽'},
+];
+function longReadIllustrationBefore(book,text){
+  if(book.longReadId!=='backroom-homeward-bound') return null;
+  return HOMEWARD_ILLUSTRATIONS.find(image=>String(text||'').startsWith(image.before))||null;
+}
 const longReadAttribution = read => ({
   title:read.originalTitle, author:read.author, sourceName:read.site,
-  sourceUrl:read.sourceUrl, license:read.license, licenseUrl:read.licenseUrl,
+  sourceUrl:read.sourceUrl, sources:read.sources,
+  license:read.license, licenseUrl:read.licenseUrl,
 });
+/* Upgrade the bundled Chapter 1 copy in place. The first 61 paragraph indices
+   stay identical, so saved Text anchors and lookup context remain meaningful. */
+async function upgradeHomewardLongRead(){
+  const read=LONG_READS[0];
+  const book=books.find(item=>item.longReadId===read.id);
+  if(!book||book.kind!=='txt'||book.paras.length!==61)return;
+  const response=await fetch(read.file);
+  if(!response.ok)return;
+  const text=await response.text();
+  const combined=parseTXT(text,{preserveParagraphs:true});
+  if(combined.length!==107||!book.paras.every((paragraph,index)=>paragraph===combined[index]))return;
+  const oldLength=book.paras.length;
+  book.paras=combined;
+  book.formatting=null;
+  book.fingerprint=bookContentFingerprint(combined);
+  book.originalTitle=read.originalTitle;
+  book.attribution=longReadAttribution(read);
+  const position=positions[book.id];
+  if(position){
+    const oldIndex=position.pi==null?(position.p||0)*(oldLength-1):position.pi;
+    position.p=Math.max(0,Math.min(1,oldIndex/(combined.length-1)));
+    positions[book.id]=position;
+    save(LS_POS,positions);
+  }
+  await bookPut(book);
+}
 function pendingLongReads(){
   const owned=new Set(books.map(book=>book.longReadId).filter(Boolean));
   return LONG_READS.filter(read=>!owned.has(read.id));

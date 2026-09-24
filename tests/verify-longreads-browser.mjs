@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png',
+const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.jpg':'image/jpeg',
   '.woff2':'font/woff2','.svg':'image/svg+xml'};
 const server=createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
@@ -18,7 +18,7 @@ const server=createServer((req,res)=>{
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 const definitions=[
-  {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',file:'homewardbound-ch-1.txt',paras:61,first:'I sat stunned',last:'I had found the Backrooms.'},
+  {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',file:'homewardbound.txt',paras:107,first:'I sat stunned',last:'It was another flickering wall.'},
 ];
 const expectedOrder=definitions.map(read=>read.title);
 const reports=[];
@@ -84,11 +84,24 @@ try{
         assert.equal(await page.locator('#rtitle').textContent(),definition.title);
         assert.equal(await page.locator('#rtext [data-pi]').count(),definition.paras,
           `${definition.id} attribution changed story progress/paragraph count`);
+        assert.equal(await page.locator('#rtext .story-illustration').count(),10,'story scene images are missing');
+        assert.equal(await page.locator('#rtext .story-scene-break').count(),4,'chapter 2 viewpoint breaks are missing');
+        assert.equal(await page.locator('#rtext h3').filter({hasText:'Chapter 2'}).count(),1,'chapter 2 heading is missing');
+        for(const illustration of await page.locator('#rtext .story-illustration').all()){
+          await illustration.scrollIntoViewIfNeeded();
+          await illustration.locator('img').evaluate(image=>image.decode());
+        }
+        assert.equal(await page.locator('#rtext .story-illustration').evaluateAll(nodes=>nodes.every(node=>{
+          const next=node.nextElementSibling;
+          return next&&next.matches('[data-pi]')&&node.querySelector('img').complete&&node.querySelector('img').naturalWidth>0;
+        })),true,'scene image is not immediately above its text or did not load');
+        assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'story widened the small viewport');
         assert.equal(await page.locator('#r-attribution').isVisible(),true,'story attribution is missing');
         await page.locator('#r-attribution summary').click();
         const credits=await page.locator('#r-attribution').innerText();
         assert.ok(credits.includes(saved.originalTitle)&&credits.includes(saved.author)&&credits.includes('Backrooms Wiki'));
         assert.ok(await page.locator('#r-attribution a[href="'+saved.sourceUrl+'"]').count());
+        assert.ok(await page.locator('#r-attribution a[href="https://backrooms-wiki.wikidot.com/homewardbound-ch-2"]').count());
         assert.ok(await page.locator('#r-attribution a[href="https://creativecommons.org/licenses/by-sa/3.0/"]').count());
 
         // Exercise the actual Text Mode word tap with an existing saved meaning.
@@ -153,6 +166,26 @@ try{
         assert.equal(restored.kind,'txt');
         assert.ok(restored.cover&&restored.p>0.1,'saved text, cover, or progress did not survive reload');
         assert.equal(restored.attribution.author,saved.author);
+        await page.evaluate(async id=>{
+          const book=books.find(item=>item.longReadId===id);
+          book.paras=book.paras.slice(0,61);
+          book.originalTitle='Homeward Bound: Chapter 1';
+          book.attribution.sources=undefined;
+          book.fingerprint=bookContentFingerprint(book.paras);
+          positions[book.id]={pi:30,dy:0,p:.5,t:Date.now(),mode:'text'};
+          save(LS_POS,positions);
+          await bookPut(book);
+        },definition.id);
+        await page.reload({waitUntil:'domcontentloaded'});
+        await page.evaluate(()=>homeReady);
+        const migrated=await page.evaluate(id=>{
+          const book=books.find(item=>item.longReadId===id);
+          return {paras:book.paras.length,pos:positions[book.id],sources:book.attribution.sources.length};
+        },definition.id);
+        assert.equal(migrated.paras,107,'existing Chapter 1 book did not become one combined Text book');
+        assert.equal(migrated.pos.pi,30,'existing Chapter 1 reading anchor moved');
+        assert.ok(Math.abs(migrated.pos.p-30/106)<.001,'existing progress was not scaled to the combined book');
+        assert.equal(migrated.sources,2,'existing book did not receive both source credits');
         results.push({title:definition.title,paras:saved.paras.length,kind:saved.kind,
           lookup:true,sentence:true,highlight:true,lightDark:true,progressRestored:true});
       }
