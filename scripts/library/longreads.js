@@ -101,22 +101,6 @@ const LONG_READS = [
     site:'Backrooms Wiki', license:'CC BY-SA 3.0',
     licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
   },
-  {
-    id:'backroom-the-blackout', file:'assets/longreads/blackout.txt',
-    cover:'assets/longreads/covers/backroom-the-blackout.png', coverPosition:'center top',
-    title:'Backroom - The Blackout', originalTitle:'The Blackout',
-    author:'zaskou', sourceUrl:'https://backrooms-wiki.wikidot.com/blackout',
-    site:'Backrooms Wiki', license:'CC BY-SA 3.0',
-    licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
-  },
-  {
-    id:'backroom-headlights', file:'assets/longreads/headlights.txt',
-    cover:'assets/longreads/covers/backroom-headlights.png', coverPosition:'center top',
-    title:'Backroom - The Headlights', originalTitle:'Headlights',
-    author:'Iamalemon', sourceUrl:'https://backrooms-wiki.wikidot.com/headlights',
-    site:'Backrooms Wiki', license:'CC BY-SA 3.0',
-    licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
-  },
 ];
 const longReadAttribution = read => ({
   title:read.originalTitle, author:read.author, sourceName:read.site,

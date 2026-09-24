@@ -302,6 +302,7 @@ function bookCard(book, current){
   const index = paletteOf(book, 3);
   const label = nowReadingLabel(book, current);
   const card = el('div', 'bookcard editorial-cover pal'+(index%3));
+  if(book.longReadId){ card.classList.add('longread'); card.dataset.longreadId=book.longReadId; }
   card.classList.toggle('now-ring', book.id === current);
   card.innerHTML = `${coverArtwork(book.id)}<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>

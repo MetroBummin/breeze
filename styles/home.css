@@ -171,6 +171,15 @@
   .bookcard.classic.has-cover{border-color:transparent;}
   .bookcard.classic.has-cover .get{color:var(--on-color); text-shadow:var(--cover-text-shadow);}
   .bookcard.classic.busy{opacity:.6; pointer-events:none;}
+  /* Backrooms covers already carry their source artwork title. Keep the branded
+     Breeze name and series marker in separate edges so neither covers that art. */
+  .bookcard.longread.has-cover .author{position:absolute; top:12px; right:14px; z-index:2;
+    margin:0; padding:4px 6px; border-radius:999px; background:var(--cover-badge);
+    color:var(--cover-badge-ink); font:600 8px/1.2 var(--ui); letter-spacing:.65px; opacity:.96;}
+  .bookcard.longread.has-cover .bt{position:absolute; left:16px; right:16px; bottom:42px; z-index:2;
+    margin:0; color:var(--on-color); font-size:14px; line-height:1.25; text-shadow:var(--cover-text-shadow);}
+  .bookcard.longread.has-cover .get{left:auto; right:16px; bottom:12px; z-index:2;
+    font-size:11px; color:var(--on-color); text-shadow:var(--cover-text-shadow);}
 
   /* ---- 지금 읽는 중 ----
      따로 "Continue reading" 칸을 두면 같은 책이 화면에 두 번 나옵니다.

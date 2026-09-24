@@ -1,11 +1,10 @@
 # Backrooms Tale Long Reads
 
-The `.txt` files are static, local Breeze Text books. They are extracted once
-from the story body of the linked Backrooms Wiki pages, with paragraph breaks
-kept and no Wikidot page chrome, comments, rating, author panels, or embeds.
-`The Blackout`'s in-story log and chat messages remain in their source order.
-Reader imports each file through Breeze's regular TXT import path; there is no
-runtime request to Wikidot and no article, EPUB, or PDF representation.
+The `.txt` file is a static, local Breeze Text book extracted once from the
+story body of the Backrooms Wiki page, with paragraph breaks kept and no
+Wikidot page chrome, comments, rating, author panels, or embeds. Reader imports
+it through Breeze's regular TXT import path; there is no runtime request to
+Wikidot and no article, EPUB, or PDF representation.
 
 ## Attribution and license
 
@@ -19,8 +18,6 @@ the story-text license statement.
 | Breeze title | Original title | Author | Source |
 | --- | --- | --- | --- |
 | Backroom - Homeward Bound | Homeward Bound: Chapter 1 | DivineAtlas | <https://backrooms-wiki.wikidot.com/homewardbound-ch-1> |
-| Backroom - The Blackout | The Blackout | zaskou | <https://backrooms-wiki.wikidot.com/blackout> |
-| Backroom - The Headlights | Headlights | Iamalemon | <https://backrooms-wiki.wikidot.com/headlights> |
 
 Each source page's citation box states CC-BY-SA-3.0. The Backrooms Wiki's
 [licensing guide](https://backrooms-wiki.wikidot.com/licensing-guide) states
@@ -31,8 +28,6 @@ included here.
 
 ## Covers
 
-`covers/backroom-homeward-bound.png`, `covers/backroom-the-blackout.png`, and
-`covers/backroom-headlights.png` are lossless, equal-width crops from left to
-right of the user-supplied 1536 × 1024 image. Each source panel is 512 × 1024.
-The card uses top alignment so each source title stays visible in Breeze's
-shorter portrait card frame.
+`covers/backroom-homeward-bound.png` is a lossless crop of the left panel from
+the user-supplied 1536 × 1024 image. The card uses top alignment so the source
+title stays visible in Breeze's shorter portrait card frame.

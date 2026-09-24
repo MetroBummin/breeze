@@ -19,8 +19,6 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 const definitions=[
   {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',file:'homewardbound-ch-1.txt',paras:61,first:'I sat stunned',last:'I had found the Backrooms.'},
-  {id:'backroom-the-blackout',title:'Backroom - The Blackout',file:'blackout.txt',paras:35,first:'“What if darkness engulfed the Backrooms?”',last:'<End log>'},
-  {id:'backroom-headlights',title:'Backroom - The Headlights',file:'headlights.txt',paras:27,first:'I was alone.',last:'HEADLIGHTS'},
 ];
 const expectedOrder=definitions.map(read=>read.title);
 const reports=[];
@@ -41,11 +39,11 @@ try{
       assert.equal(await page.evaluate(()=>innerWidth),320,`${engine.name()} did not use the small viewport`);
       assert.deepEqual(await page.locator('#shelf .longread').evaluateAll(nodes=>nodes.map(node=>node.querySelector('.bt').textContent)),
         expectedOrder,`${engine.name()} Home default Long Reads order is wrong`);
-      assert.equal(await page.locator('#shelf .longread img.cover').count(),3,'Home is missing a bundled cover');
+      assert.equal(await page.locator('#shelf .longread img.cover').count(),expectedOrder.length,'Home is missing a bundled cover');
       assert.deepEqual(await page.locator('#shelf .longread img.cover').evaluateAll(nodes=>nodes.map(node=>({
         loaded:node.complete&&node.naturalWidth===512&&node.naturalHeight===1024,
         titleVisible:getComputedStyle(node).objectPosition,
-      }))),Array(3).fill({loaded:true,titleVisible:'50% 0%'}),`${engine.name()} cover crop or title alignment changed`);
+      }))),Array(expectedOrder.length).fill({loaded:true,titleVisible:'50% 0%'}),`${engine.name()} cover crop or title alignment changed`);
       const results=[];
 
       for(let index=0;index<definitions.length;index++){
@@ -66,6 +64,12 @@ try{
         assert.equal(saved.title,definition.title);
         assert.equal(saved.kind,'txt');
         assert.equal(saved.originalKind,null,'TXT should follow the normal saved-text path without an EPUB/PDF original session');
+        const savedCard=page.locator(`#shelf .bookcard.longread[data-longread-id="${definition.id}"]`);
+        await savedCard.waitFor({state:'visible'});
+        await savedCard.waitFor({state:'attached'});
+        await page.waitForFunction(id=>document.querySelector(`#shelf .bookcard.longread[data-longread-id="${id}"]`)?.classList.contains('has-cover'),definition.id);
+        assert.equal(await savedCard.locator('.bt').evaluate(node=>getComputedStyle(node).position),'absolute',
+          `${definition.id} saved-card title overlaps the supplied cover title`);
         assert.equal(saved.paras.length,definition.paras);
         assert.deepEqual(saved.paras,expected,`${definition.id} changed in Breeze TXT import`);
         assert.ok(saved.paras[0].startsWith(definition.first));
@@ -74,13 +78,6 @@ try{
         assert.equal(saved.license,'CC BY-SA 3.0');
         assert.ok(saved.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
         assert.doesNotMatch(saved.paras.join('\n'),/rating:\s*[+-]|Licensing \/ Citation|For more information about on-wiki content/i);
-        if(definition.id==='backroom-the-blackout'){
-          const body=saved.paras.join('\n');
-          for(const marker of ['LOG-074 - 1/24/20?? - 02:35:21','<Begin Log>','Public Chatroom 4',
-            '[buknoi]: ??','[Connection lost. Reconnect?]','LOG-01- 3/12/20?? - 013:02:24','<End log>'])
-            assert.ok(body.includes(marker),`Blackout message/log structure lost ${marker}`);
-        }
-
         await page.locator('#shelf .bookcard').filter({hasText:definition.title}).first().click();
         await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on'));
         await page.waitForFunction(()=>document.querySelectorAll('#rtext [data-pi]').length>0);
