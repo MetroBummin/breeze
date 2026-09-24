@@ -74,7 +74,8 @@ function openCasualPreviewOrReader(book){
   /** @type {HTMLElement} */(dialog.querySelector('#ap-hook')).hidden=true;
   /** @type {HTMLElement} */(dialog.querySelector('.ap-teaser')).hidden=true;
   const excerpt=dialog.querySelector('.ap-excerpt');excerpt.replaceChildren();
-  for(const line of articlePreviewExcerpt(book)){const p=document.createElement('p');p.textContent=line;excerpt.appendChild(p);}
+  const opening=articlePreviewExcerpt(book)[0] || '';
+  if(opening){const p=document.createElement('p');p.textContent=opening.slice(0,260)+(opening.length>260?'…':'');excerpt.appendChild(p);}
   dialog.showModal();
   /** @type {HTMLElement} */(dialog.querySelector('.ap-close')).focus();
   if(book.cover)bookImageBlob(book,book.cover).then(blob=>{

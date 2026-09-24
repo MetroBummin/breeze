@@ -20,8 +20,8 @@ try{
   for(const engine of [chromium,webkit]){
     const browser=await engine.launch();
     try{
-      for(const width of [390,820,1280]){
-        const page=await browser.newPage({viewport:{width,height:844},serviceWorkers:'block'});
+      for(const [width,height] of [[320,568],[390,844],[820,1024],[1280,800]]){
+        const page=await browser.newPage({viewport:{width,height},serviceWorkers:'block'});
         await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
         let calls=0;
         await page.route('**/*',route=>{
@@ -44,9 +44,11 @@ try{
         await page.locator('#casual-grid .casual').filter({hasText:'First article'}).first().click();
         await page.waitForFunction(()=>document.querySelector('#article-preview').open);
         await page.waitForFunction(()=>!document.querySelector('#ap-hook').hidden);
-        assert.equal(await page.locator('.ap-excerpt p').count(),3);
+        assert.equal(await page.locator('.ap-excerpt p').count(),1);
         const box=await page.locator('#article-preview').boundingBox();
-        assert(box.x>=-1 && box.x+box.width<=width+1 && box.height<=844,'preview fits viewport');
+        assert(box.x>=-1 && box.x+box.width<=width+1 && box.height<=height,'preview fits viewport');
+        assert(Math.abs(box.x+(box.width/2)-width/2)<2 && Math.abs(box.y+(box.height/2)-height/2)<2,'preview is centered');
+        assert.equal(await page.locator('.ap-scroll').evaluate(node=>node.scrollHeight<=node.clientHeight+2),true,'preview has no inner scroll');
         assert.equal(calls,1);
         await page.locator('.ap-close').click();
         await page.locator('#casual-grid .casual').filter({hasText:'First article'}).first().click();
@@ -84,7 +86,7 @@ try{
         }
         await page.close();
       }
-      console.log(engine.name(),'article preview, cache, fallback, Reader and three widths passed');
+      console.log(engine.name(),'article preview, cache, fallback, Reader and four sizes passed');
     }finally{await browser.close();}
   }
 }finally{server.close();}

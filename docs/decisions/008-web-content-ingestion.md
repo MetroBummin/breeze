@@ -257,8 +257,10 @@ signal; pressing “읽기 시작” calls the unchanged Reader, which writes th
 Already started articles enter Reader directly. Other book kinds retain their
 existing route. Home card layout and Reader rendering are unchanged.
 
-Preview uses the saved article's cover, source title, and at most three short
-body paragraphs. Korean hook title, faithful translated title and teaser are
+Preview uses the saved article's cover, source title, and a short opening
+excerpt. It is a centered popup using the existing word/add popup glass
+material; content is trimmed to fit without an inner scrollbar. Korean hook
+title, faithful translated title and teaser are
 requested lazily when the Preview opens. A local cache avoids repeat requests on
 one device; the Edge Function stores validated metadata by source URL and text
 fingerprint for reuse across devices and users. Only the server holds the AI key.
