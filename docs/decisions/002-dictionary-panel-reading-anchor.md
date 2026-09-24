@@ -32,6 +32,7 @@ Generic position preservation for real viewport resize, rotation, Reader mode ch
 - A cached meaning appears immediately; pending state continues in the detail popup if it is opened early.
 - Saved meanings appear immediately, including in a new sentence. No automatic reclassification hides a saved meaning. An occurrence-specific saved meaning wins; otherwise the selected saved meaning is reused. Only an explicit retry asks for a fresh contextual result.
 - The pill retry sends the selected sentence with its occurrence index and up to one preceding/following sentence. Surrounding context never displaces the selected sentence. Output stays one short lexical result.
+- The bundled Homeward Bound Text book can answer a reviewed occurrence locally when its chapter paragraphs exactly match the bundled source. An unsaved local hit uses the existing pending pill for about one second and skips the dictionary metadata and AI requests. Previously saved meanings still appear immediately; Retry deliberately enters the existing AI lookup path. The local fixture never bulk-creates Wordbook items.
 - Whole-word removal deletes the root and all its meanings; a meaning's delete button removes only that meaning. Automatic results respect deleted meanings, and explicit re-adds advance past their deletion timestamps.
 - The detail popup has no duplicate wider-context action.
 - The 30-second recheck cooldown follows the lexical root across Meaning selection and expression promotion.

@@ -407,7 +407,7 @@ function holdGesture(gesture){
      낱말 상자의 줄로, EPUB 은 iframe 안의 Range 로. 여기서는 부르기만 합니다. */
   if(typeof clearReaderModeCue === 'function') clearReaderModeCue();
   if(typeof found.paint === 'function'){ try{ found.paint(); }catch(error){} }
-  if(typeof openSentence === 'function') openSentence(found.sentence);
+  if(typeof openSentence === 'function') openSentence(found.sentence,found);
 }
 
 function moveGesture(event){

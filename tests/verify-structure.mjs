@@ -1260,7 +1260,7 @@ assert.match(gestureSource,
   /holdTimer = setTimeout\(\(\)=>holdGesture\(gesture\), GESTURE_HOLD_MS\)/,
   'The sentence press no longer waits for its own timer');
 assert.match(gestureSource,
-  /function holdGesture[\s\S]{0,1200}surface\.sentenceAt\([\s\S]{0,1800}openSentence\(found\.sentence\)/,
+  /function holdGesture[\s\S]{0,1200}surface\.sentenceAt\([\s\S]{0,1800}openSentence\(found\.sentence(?:,found)?\)/,
   'The pressed sentence is resolved or painted before the press is confirmed');
 assert.match(sentenceSource,
   /const SENTENCE_COMPACT_MAX_WIDTH = 640;[\s\S]{0,120}const SENTENCE_COMPACT_MAX_HEIGHT = 500;/,

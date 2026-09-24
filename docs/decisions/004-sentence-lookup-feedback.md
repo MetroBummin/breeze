@@ -14,6 +14,12 @@ The gesture threshold, request ownership, cache policy and release-before-result
 behavior stay in their existing owners. The blue cue remains visible until the
 lookup closes, including slow requests and errors with retry.
 
+For the bundled Homeward Bound Text book, exact chapter source matching enables
+reviewed sentence spans and Korean translations. A local hit keeps the same
+waiting presentation for about one second and does not call the AI endpoint.
+Changed source text or a missing span uses the existing cache/network path.
+Other Text, EPUB and PDF books keep their original sentence segmentation.
+
 The visual surface consists of rounded, borderless line rectangles with a
 260 ms eased opacity/vertical expansion and a 160 ms dismissal fade. Reduced
 motion removes both motion and delayed cleanup. A fading layer owns its own

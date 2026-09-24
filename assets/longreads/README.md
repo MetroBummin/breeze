@@ -10,6 +10,24 @@ Wikidot and no article, EPUB, or PDF representation.
 Existing bundled Chapter 1 books are extended in place when their 61 original
 paragraphs match the shipped text. Their paragraph anchors remain valid.
 
+## Local lookup fixture
+
+`homeward-lookup-data.js` contains the exact 107 source paragraphs, 314 reviewed
+sentence spans and Korean translations, and 77 contextual lexical occurrences
+(43 single words, 34 expressions). The Korean translations are adaptations of
+the credited story text and follow the same CC BY-SA 3.0 attribution/license.
+The user's cover and the separately created illustrations are not part of that
+text fixture.
+
+`scripts/library/homeward-lookup.js` uses the fixture only for the bundled
+Homeward Bound TXT book. It compares every paragraph in the selected chapter
+with the published source before returning a span or answer. Any changed text
+uses the normal Reader lookup pipeline. The fixture never seeds a user's
+Wordbook; only an actual Reader tap follows Breeze's existing save behavior.
+Local answers keep the normal loading UI for about one second, with the normal
+lookup cancellation guard. Do not edit `homewardbound.txt` without reviewing
+the fixture and its translations in the same change.
+
 ## Attribution and license
 
 The story text below, including its plain-text paragraph formatting, is

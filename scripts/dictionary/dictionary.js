@@ -80,6 +80,11 @@ function lookupRequestFor(w,node,wider){
   return {sentence:target,clicked:tokens[clickedIndex]?tokens[clickedIndex].text:w.clicked||w.word,
     clickedIndex:index,before:before.slice(-400),after:after.slice(0,400),book:(context&&context.book)||(curBook&&curBook.title)||w.book||''};
 }
+function homewardWordFor(w,node,input){
+  if(!node||!curBook||curBook.longReadId!=='backroom-homeward-bound'
+    ||typeof homewardWordAnswer!=='function')return null;
+  return homewardWordAnswer(input||lookupRequestFor(w,node,false),node);
+}
 
 function readerWordNodes(selector){
   const nodes=[...document.querySelectorAll(selector)];
@@ -449,11 +454,14 @@ function openWord(k, node, point){
     ? (words[active].example===request.sentence?null:{key:active,...request,loading:''})
     : {key:active,...request,loading:'checking'};
   selectWord(active,node,true,bump);
-  if(!ready)resolveCurrentLookup(active,request,wordLookupLife);
+  if(!ready)resolveCurrentLookup(active,request,wordLookupLife,node);
 }
-async function resolveCurrentLookup(k,input,life){
+async function resolveCurrentLookup(k,input,life,node){
   const w=words[k];if(!w)return;
-  let answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
+  const local=homewardWordFor(w,node,input);
+  let answer=local?homewardAnswerAsLook(local):null;
+  if(local)await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
+  else answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
   if(!wordLookupAlive(life))return;
   if(!answer)answer=await fetchLook(k,{...input,hold:true,life});
   if(!wordLookupAlive(life)||!words[k])return;
@@ -653,7 +661,8 @@ function selectWord(k, span, peek, bump=false){
   selKey = k;
   if(!keepAnchor) clearActiveWordSelection();
   const metadataLife=wordLookupLife;
-  if(!previewWordCard) requestAnimationFrame(()=>{if(wordLookupAlive(metadataLife))void fillDictionaryMetadata(k,metadataLife);});
+  if(!previewWordCard&&!homewardWordFor(words[k],span))
+    requestAnimationFrame(()=>{if(wordLookupAlive(metadataLife))void fillDictionaryMetadata(k,metadataLife);});
   if(span){ span.classList.add('sel'); activeSelectedWordNode=span; rememberWordPeekAnchor(span); }
   if(peek){
     wordPeekActive=true;
@@ -1291,6 +1300,17 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
       그래서 곧장 내놓고, 창의 머리글도 다르게 답니다. */
 async function loadCachedLook(k, began, life, node){
   const w = words[k]; if(!w) return false;
+  const local=homewardWordFor(w,node);
+  if(local){
+    const input=lookupRequestFor(w,node,false);
+    const answer=homewardAnswerAsLook(local);
+    await homewardPresentationWait(began||Date.now(),()=>wordLookupAlive(life));
+    if(!wordLookupAlive(life)||words[k]!==w)return true;
+    const phrase=expressionFromMini(answer,input.sentence,input.clicked,input.clickedIndex);
+    if(phrase)saveDetectedExpression(k,phrase,input.sentence,input.book,answer,life,{clickedIndex:input.clickedIndex});
+    else applyLook(w,answer,k,{life});
+    return true;
+  }
   for(const key of entryKeys(w)){
     const input=lookupRequestFor(w,node,false);
     const hit = await dictGet(lookKey(key,input.sentence,input.clickedIndex));
@@ -1455,6 +1475,8 @@ addEventListener('offline', () => { if(selKey) renderWordLookup(); });
 
 async function fillDictionaryMetadata(k,life,force=false){
   const w=words[k];if(!w||previewWordCard)return;
+  const selected=activeSelectedWordNode;
+  if(homewardWordFor(w,selected))return;
   if(w.defs&&w.defs.length)return;
   if(englishCardRequests.has(w)){
     await englishCardRequests.get(w);
@@ -1493,7 +1515,8 @@ async function fetchDict(k,node){
   const w=words[k];if(!w)return;
   const life=wordLookupLife,began=Date.now();
   w.loading=true;w.aiLoading=true;renderIfAlive(life);
-  const metadata=fillDictionaryMetadata(k,life);
+  const local=homewardWordFor(w,node);
+  const metadata=local?null:fillDictionaryMetadata(k,life);
   const cached=await loadCachedLook(k,began,life,node);
   if(!cached&&wordLookupAlive(life)){delete w.aiLoading;await fetchLook(k,{life,node});}
   await metadata;

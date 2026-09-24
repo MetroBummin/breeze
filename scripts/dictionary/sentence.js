@@ -184,7 +184,7 @@ function paintSentenceFor(life,state){
   if(!sentenceAlive(life)) return false;
   paintSentence(state); return true;
 }
-async function openSentence(text){
+async function openSentence(text,origin){
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if(!clean) return;
   const life=++sentenceLife;
@@ -198,6 +198,15 @@ async function openSentence(text){
 
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){
     await explainOnboardingSentence(clean,life);
+    return;
+  }
+
+  const localStarted=Date.now();
+  const local=typeof homewardSentenceAnswer==='function'
+    ?homewardSentenceAnswer(clean,origin&&origin.pi):null;
+  if(local){
+    await homewardPresentationWait(localStarted,()=>sentenceAlive(life));
+    paintSentenceFor(life,{en:clean,ko:local});
     return;
   }
 

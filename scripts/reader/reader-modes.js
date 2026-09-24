@@ -119,7 +119,8 @@ function textSentenceBridge(){
   const entries=[];
   for(let index=startIndex; index<elements.length && entries.length<5; index++){
     const element=elements[index];
-    const sentences=bridgeSentences(element.textContent);
+    const sentences=(typeof homewardSentenceParts==='function'
+      &&homewardSentenceParts(+(element.getAttribute('data-pi')||0),element.textContent))||bridgeSentences(element.textContent);
     for(const sentence of sentences){
       const range=domRangeForOffsets(element,sentence.start,sentence.end);
       const rects=[...range.getClientRects()];

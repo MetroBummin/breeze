@@ -335,7 +335,7 @@ async function openBook(b,options={}){
   document.getElementById('nav-home').classList.remove('on');
   /* 읽기 시작하는 순간 사전 함수를 깨워 둡니다. 콜드스타트를 첫 낱말 클릭 뒤에
      숨기는 게 아니라, 그 앞에서 끝내는 편이 낫습니다 — AI 도 한도도 쓰지 않습니다. */
-  if(!b.transient) warmDict();
+  if(!b.transient&&b.longReadId!=='backroom-homeward-bound') warmDict();
   document.getElementById('rtitle').textContent = b.title;
   document.getElementById('readpill-title').textContent = b.title;
   document.getElementById('readpill-title').setAttribute('aria-label',b.title+' · 컨트롤 펼치기');
@@ -672,7 +672,9 @@ function textSentencePartAt(span){
     before.setEndBefore(span);
     at=before.toString().length;
   }catch(error){ at=0; }
-  const parts=bridgeSentences(block.textContent);
+  const pi=Number(block.dataset.pi);
+  const parts=(typeof homewardSentenceParts==='function'
+    &&homewardSentenceParts(pi,block.textContent))||bridgeSentences(block.textContent);
   const part=parts.find(item=>at>=item.start && at<item.end) || parts[0];
   if(!part) return null;
   const tokenIndex=typeof lookupSentenceTokens==='function'
@@ -707,7 +709,7 @@ registerReaderSurface({
     /* 물어본 문장과 칠하는 자리가 같은 곳에서 나옵니다 — 문장을 글자로 다시
        찾지 않으므로 둘이 어긋날 자리가 없습니다. */
     const range=domRangeForOffsets(block, found.part.start, found.part.end);
-    return { sentence:found.sentence, paint(){
+    return { sentence:found.sentence, pi:+block.dataset.pi, paint(){
       if(range && typeof showSentenceRangeCue==='function') showSentenceRangeCue(range);
       else if(block && typeof showElementModeCue==='function') showElementModeCue(block, 0);
     } };
