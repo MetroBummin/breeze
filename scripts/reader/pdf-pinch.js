@@ -11,7 +11,7 @@ let originalPinchPan = false;
 let originalPdfContacts = 0;
 let originalPdfRenderPending = false;
 function originalPdfPaintPaused(){
-  if(!originalPinch && !originalPdfContacts) return false;
+  if(!originalPinch && !originalPdfContacts && !(typeof BreezePdfInk!=='undefined' && BreezePdfInk.busy())) return false;
   originalPdfRenderPending = true;
   return true;
 }
@@ -20,8 +20,12 @@ function resumeOriginalPdfPaint(){
   originalPdfRenderPending = false;
   resharpenOriginalPages();
 }
+function originalFingerContacts(event){
+  return Array.from(event.touches).filter(point=>point.touchType!=='stylus'
+    && (typeof BreezePdfInk==='undefined' || BreezePdfInk.finger(point)));
+}
 function countOriginalPdfContacts(event){
-  originalPdfContacts = Array.from(event.touches).filter(point=>
+  originalPdfContacts = originalFingerContacts(event).filter(point=>
     point.target && point.target.closest && point.target.closest('#original-stage')).length;
 }
 
@@ -118,14 +122,15 @@ function cancelOriginalPinch(){
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function originalPinchStart(event){
+  if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/start',event);
   countOriginalPdfContacts(event);
   if(originalPinchTouches){
     if(event.cancelable) event.preventDefault();
     return;
   }
-  if(event.touches.length === 1) originalPinchPan = false;
+  if(originalFingerContacts(event).length === 1) originalPinchPan = false;
   if(originalPinchPan) return;
-  const points = Array.from(event.touches);
+  const points = originalFingerContacts(event);
   if(points.length !== 2 || !points.every(point=>originalPinchTarget(point.target))) return;
   /* A late second finger must not fight a pan the browser already owns. */
   if(!event.cancelable) return;
@@ -137,8 +142,9 @@ function originalPinchStart(event){
   beginOriginalPinch(originalPinchMiddle(points),distance,points.map(point=>point.identifier));
 }
 function originalPinchMove(event){
+  if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/move',event);
   if(!originalPinchTouches){
-    if(event.touches.length === 1) originalPinchPan = true;
+    if(originalFingerContacts(event).length === 1) originalPinchPan = true;
     return;
   }
   if(!event.cancelable){ cancelOriginalPinch(); return; }
@@ -146,18 +152,20 @@ function originalPinchMove(event){
   const pinch = originalPinch;
   if(!pinch) return; // Remaining finger belongs to this pinch until lifted.
   if(!originalZoomActive()){ cancelOriginalPinch(); return; }
-  const points = pinch.ids.map(id=>Array.from(event.touches).find(point=>point.identifier === id));
+  const points = pinch.ids.map(id=>originalFingerContacts(event).find(point=>point.identifier === id));
   if(points.some(point=>!point)) return;
   moveOriginalPinch(pinch.level*originalPinchDistance(points)/pinch.distance,originalPinchMiddle(points));
 }
 function originalPinchEnd(event){
+  if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/end',event);
   countOriginalPdfContacts(event);
+  if(!originalFingerContacts(event).length)originalPinchPan=false;
   if(!originalPinchTouches){ resumeOriginalPdfPaint(); return; }
   if(event.cancelable) event.preventDefault();
   // Keep the touched canvas attached until EVERY finger is lifted. Redrawing
   // after the first lift detaches the remaining Touch.target, so its touchend
   // may never bubble to document and the reader would stay locked.
-  if(event.touches.length === 0){
+  if(originalFingerContacts(event).length === 0){
     finishOriginalPinch();
     originalPinchTouches = false;
   }

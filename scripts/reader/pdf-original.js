@@ -63,6 +63,7 @@ function releaseDistantPdfPages(session,exceptPage){
 }
 
 function releaseOriginalPdfPage(session,pageNumber){
+  BreezePdfInk.release(session,pageNumber);
   session.settled.delete(pageNumber);
   session.rendering.delete(pageNumber);
   session.drawnAt.delete(pageNumber);
@@ -106,6 +107,7 @@ async function openOriginalPdf(book,record,token){
     content.appendChild(page); pages.push(page);
   }
   originalSession=session;
+  BreezePdfInk.open(session);
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
@@ -197,6 +199,7 @@ async function renderOriginalPdfPage(session,pageNumber,options){
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
+    await BreezePdfInk.mount(session,pageNumber,base);
   })().catch(error=>console.warn('PDF page render skipped:',error));
   /* 다시 그리는 동안에도 "이 쪽은 그려졌다"는 사실은 그대로 둡니다 — 실패해도
      옛 캔버스가 그 자리에 남아 있으니까요. */

@@ -1,0 +1,16 @@
+/* The ink has no hit-test surface, including in reading mode. */
+.pdf-source-page > .pdf-ink-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;}
+#pdf-ink-tools{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:5px 8px;border-radius:18px;pointer-events:auto;max-width:calc(100vw - 28px);font-size:12px;}
+#pdf-ink-tools[hidden]{display:none;}
+#pdf-ink-tools button{font:inherit;color:inherit;background:transparent;border:0;border-radius:12px;padding:10px;white-space:nowrap;min-height:44px;}
+#pdf-ink-tools button[aria-pressed="true"]{background:var(--line,rgba(128,128,128,.2));}
+#pdf-ink-tools .pdf-ink-retry{display:none;}
+#pdf-ink-tools.ink-save-failed{flex-wrap:wrap;}
+#pdf-ink-tools.ink-save-failed .pdf-ink-retry{display:block;}
+#pdf-ink-tools{flex-wrap:wrap;justify-content:center;}
+#pdf-ink-tools:not(.ink-editing) .ink-edit-only{display:none;}
+#pdf-ink-tools button:disabled{opacity:.3;}
+#pdf-ink-tools svg{width:21px;height:23px;display:block;}
+#pdf-ink-tools select{font:inherit;color:inherit;background:transparent;border:0;border-radius:12px;padding:8px 3px;min-height:44px;max-width:76px;}
+#pdf-ink-tools [role="status"]:empty{display:none;}
+#pdf-ink-tools :is(button,select):focus-visible{outline:2px solid currentColor;outline-offset:1px;}
