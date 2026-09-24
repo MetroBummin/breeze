@@ -167,7 +167,7 @@ function applyCover(host, book){
 function wireBookCard(card, book){
   const currentBook=()=>books.find(item=>item.id===book.id)||book;
   const pressed = attachLongPress(card, ()=>openEditSheet(currentBook()));
-  card.onclick = () => { if(!pressed()) openBook(currentBook()); };
+  card.onclick = () => { if(!pressed()) openCasualPreviewOrReader(currentBook()); };
   return card;
 }
 
@@ -484,10 +484,10 @@ function updatePastePreview(){
 }
 
 /* 붙여넣은 글과 가져온 기사가 같은 저장 경로를 씁니다. */
-async function saveCasualBook(parsed, extra){
+async function saveCasualBook(parsed, extra, options={}){
   const id = bookHash(parsed.paras);
   const existing = books.find(book => book.id === id);
-  if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); await openBook(existing); return existing; }
+  if(existing){ closeAddModal(); if(options.preview) openCasualPreviewOrReader(existing); else await openBook(existing); return existing; }
   const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
     addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
     textAvailable:true, sourceMap:null, layoutSignals:null,
@@ -496,7 +496,7 @@ async function saveCasualBook(parsed, extra){
   books.unshift(book);
   closeAddModal();
   renderHome();
-  await openBook(book);
+  if(options.preview) openCasualPreviewOrReader(book); else await openBook(book);
   queueSync();                   // 읽기를 막지 않도록 기다리지 않습니다
   return book;
 }

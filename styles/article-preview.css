@@ -1,0 +1,34 @@
+/* Preview uses Breeze's existing surfaces, type, ink and spacing rhythm. */
+#article-preview{border:0;padding:0;width:min(760px,calc(100vw - 32px));max-width:none;
+  max-height:min(860px,calc(100dvh - 32px));background:var(--sheet);color:var(--ink);
+  border-radius:22px;box-shadow:var(--sentence-glass-shadow);overflow:hidden;}
+#article-preview::backdrop{background:var(--scrim);}
+.ap-sheet{display:flex;flex-direction:column;max-height:inherit;position:relative;}
+.ap-scroll{overflow:auto;overscroll-behavior:contain;min-height:0;}
+.ap-hero{height:clamp(230px,37vh,360px);background:var(--paper2);position:relative;overflow:hidden;}
+.ap-hero img{display:block;width:100%;height:100%;object-fit:cover;}
+.ap-hero img[hidden]{display:none;}
+.ap-art{position:absolute;inset:0;display:grid;place-items:center;color:var(--soft);}
+.ap-art svg{width:min(46%,210px);height:min(70%,210px);}
+.ap-hero:has(img:not([hidden])) .ap-art{display:none;}
+.ap-content{padding:28px clamp(24px,5vw,46px) 34px;}
+.ap-source{margin:0 0 12px;color:var(--soft);font:600 13px/1.5 var(--ui);}
+#ap-hook{font:700 clamp(25px,4.5vw,36px)/1.24 var(--ui);letter-spacing:-.04em;margin:0 0 12px;}
+.ap-title{font:600 clamp(19px,3vw,24px)/1.35 var(--display);margin:0 0 20px;overflow-wrap:anywhere;}
+.ap-teaser{font:400 16px/1.7 var(--ui);color:var(--ink-body);margin:0 0 26px;}
+.ap-excerpt{border-top:1px solid var(--line);padding-top:22px;color:var(--ink-body);
+  font:400 16px/1.65 var(--serif);}
+.ap-excerpt p{margin:0 0 14px;}
+.ap-close{position:absolute;z-index:1;top:14px;right:14px;width:38px;height:38px;
+  border:0;border-radius:50%;background:var(--sheet);color:var(--ink);font:16px var(--ui);cursor:pointer;}
+.ap-actions{padding:16px clamp(24px,5vw,46px) max(16px,env(safe-area-inset-bottom));
+  background:var(--sheet);border-top:1px solid var(--line);}
+.ap-start{width:100%;min-height:52px;border:0;border-radius:14px;background:var(--blue);
+  color:var(--brand-cream);font:700 16px var(--ui);cursor:pointer;}
+#article-preview button:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
+@media(max-width:600px){
+  #article-preview{width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0;}
+  .ap-sheet{height:100%;max-height:100%;}
+  .ap-hero{height:34vh;min-height:220px;}
+  .ap-content{padding:26px 24px 30px;}
+}

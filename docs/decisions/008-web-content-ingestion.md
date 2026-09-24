@@ -248,3 +248,20 @@ stores successfully fetched blobs, with an eight-image limit. Therefore a cover
 can appear outside without being an inline photo inside, especially when an
 image is only `og:image` or an image download fails. A selected manual cover
 changes the card jacket; it does not insert an image into the article body.
+
+## Article Preview (Breeze 1.4)
+
+Unread saved articles and newly selected discovery articles open a large Preview
+before Reader. The existing `positions[book.id].t` remains the sole read-start
+signal; pressing “읽기 시작” calls the unchanged Reader, which writes that time.
+Already started articles enter Reader directly. Other book kinds retain their
+existing route. Home card layout and Reader rendering are unchanged.
+
+Preview uses the saved article's cover, source title, and at most three short
+body paragraphs. Korean hook title, faithful translated title and teaser are
+requested lazily when the Preview opens. A local cache avoids repeat requests on
+one device; the Edge Function stores validated metadata by source URL and text
+fingerprint for reuse across devices and users. Only the server holds the AI key.
+If metadata, image, server, or network is unavailable, the source title,
+available body excerpt and Reader CTA still work. The translated title remains
+in metadata but is not displayed in this first UI.
