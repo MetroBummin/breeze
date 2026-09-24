@@ -1,6 +1,6 @@
 export const ARTICLE_PREVIEW_MODEL = "deepseek/deepseek-v4-flash-0731";
 
-const SYSTEM = "You write Korean editorial previews for English reading articles. Use ONLY the supplied title and excerpt as evidence. Never invent events, numbers, trends, causes, quotes, or outcomes. If the excerpt does not support a claim, omit it. Return JSON with hookTitle (short compelling Korean headline), translatedTitle (faithful Korean title translation), teaser (2-3 concise Korean sentences explaining the core and why to read). No markdown.";
+const SYSTEM = "Write a Korean editorial preview using ONLY the supplied English title and excerpt as evidence. Return JSON with hookTitle, translatedTitle, and teaser; no markdown. hookTitle: a short, specific, curiosity-provoking Korean headline based on a concrete person, question, or detail in the source. When several parties dispute a claim, base the hook on the original title's main conflict instead of the contested detail; never assign one party's claim to its critic. translatedTitle: a faithful Korean translation of the original title. teaser: two natural Korean sentences about the subject and why it matters; do not refer to 'this article' or address the reader with phrases like '확인해 보세요'. Use established Korean spellings for names (Saddam Hussein is 사담 후세인), and natural Korean rather than literal translation or stock editorial phrases. Preserve the source's exact level of certainty, attribution, quantity, and meaning in every field. Never change 'some' to 'many' or 'most', private aggregate/statistical data into personal medical records, a speculation into a fact, or a dismissal as 'old news' into a claim of false reporting. Do not use '진실', '실체', or '밝혀졌다' to imply that a disputed or speculative claim was proven; identify whose claim it is. Never invent or intensify events, numbers, trends, causes, quotes, or outcomes. Copy numeric digits in hookTitle only when they appear exactly in the supplied text; otherwise leave numbers out of the hook. Avoid sensational adjectives such as '충격적인', '초대형', and '숨겨진' unless the supplied text supports that strength. Before returning JSON, check every concrete claim against the supplied title and excerpt; omit unsupported claims while keeping the hook engaging.";
 
 function validate(value) {
   if (!value || typeof value !== "object") return null;
@@ -36,9 +36,14 @@ export async function generateArticlePreview(title, excerpt, key, request = fetc
     try { parsed = JSON.parse(raw); } catch { throw new Error("bad_metadata"); }
     const meta = validate(parsed);
     if (!meta) throw new Error("bad_metadata");
-    const sourceNumbers = new Set((title + " " + excerpt).match(/\d+(?:[.,]\d+)*/g) || []);
+    const sourceText = title + " " + excerpt;
+    const sourceNumbers = new Set(sourceText.match(/\d+(?:[.,]\d+)*/g) || []);
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    months.forEach((month, index) => {
+      if (new RegExp(`\\b${month}\\s+\\d+`, "i").test(sourceText)) sourceNumbers.add(String(index + 1));
+    });
     if ((meta.hookTitle.match(/\d+(?:[.,]\d+)*/g) || []).some(number => !sourceNumbers.has(number)))
-      throw new Error("unsupported_number");
+      throw Object.assign(new Error("unsupported_number"), { candidate: meta });
     return { meta, model: data?.model || ARTICLE_PREVIEW_MODEL, usage: data?.usage || null,
       latencyMs: Math.round(performance.now() - started) };
   } finally { clearTimeout(timer); }

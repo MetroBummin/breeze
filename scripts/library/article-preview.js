@@ -35,7 +35,7 @@ async function articlePreviewMetadata(book){
   if(articlePreviewJobs.has(key))return articlePreviewJobs.get(key);
   const job=(async()=>{
     if(!navigator.onLine || !SB_URL || !SB_KEY)return null;
-    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),9000);
+    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),15000);
     try{
       let token=SB_KEY;
       try{const {data:{session}}=await sb.auth.getSession();if(session)token=session.access_token;}catch{}

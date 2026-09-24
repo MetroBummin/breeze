@@ -46,19 +46,28 @@ Judgments compare each output with the title and excerpt actually sent to the mo
 
 The main quality issues are 3 bland hooks (#3, #13, #17), 2 overly dramatic hooks (#9, #11), 1 clear meaning change (#8), 1 personal-data nuance (#1), and 2 translationese/cliché teasers (#2, #7). Some articles have more than one issue.
 
-## Prompt improvements proposed, not applied
+## Prompt changes and focused follow-up
 
-The 18 outputs above were generated with the current prompt. Changing it now would invalidate this sample, so these are recommendations for a later bounded A/B run:
+The 18 outputs above were generated with the original prompt. The PR follow-up changed the prompt to preserve the source's certainty, speaker, quantity, and meaning; avoid unsupported intensifiers and numerical claims; and request more natural Korean. The original 18 results remain a baseline, not results of the revised prompt.
 
-1. Require the hook to preserve the **strength and attribution** of each claim. A source describing a rebuttal as “old news” must not become a claim of “오보”; a possibility or allegation must not become a confirmed event.
-2. Ban empty intensifiers such as “충격적인,” “초대형,” and “숨겨진” unless the supplied title or excerpt specifically justifies them. Ask for concrete curiosity through the article's actors, question, or consequence instead.
-3. Ask for two natural Korean teaser sentences without generic scaffolding such as “이 기사는 … 설명합니다” or “확인하세요.” Translate names and technical terms faithfully, and avoid stock phrases such as “막중한 도전.”
-4. Require a final self-check against the supplied title and excerpt for invented numbers, trends, causes, and quotations. The existing numeric validator remains useful, but the rejected #14 response was not retained, so its specific cause cannot be diagnosed from this run.
+The final prompt was run on 11 selected corpus items (#1, #2, #3, #6, #7, #8, #9, #11, #13, #14, #17), once each. Eight returned accepted metadata and three hit `unsupported_number`. The accepted calls took 2,965–5,994 ms. No prompt run was retried as if it were a cache hit. The #13 failure was traced to a faithful `September 19` → `9월 19일` date translation: the validator recognized source digits but not the English month name. The validator now recognizes a month number only when that named month appears with a day in the source; a mock test accepts September → 9 and rejects September → 12. A fresh #13 call then passed in 4,208 ms. Separate focused runs of #14 and #17 also passed, so their numeric failures were variable model outputs, not a permanent inability to preview those articles. Rejected metadata still falls back to the original preview.
 
-Proposed added instruction: “Write a short, specific Korean hook and two natural teaser sentences. Keep the source's level of certainty and attribution. Never strengthen ‘possible’, ‘alleged’, ‘old news’, or similar wording into a confirmed event or an accusation of false reporting. Do not add sensational adjectives or a number unless the source supports them. Before returning JSON, compare every concrete claim with the supplied title and excerpt.”
+The original meaning change `old news` → `오보` did not recur in the final #8 sample. #9 no longer uses the unsupported adjective `충격적인`; #11 no longer says the court exercises “hidden power.” #7's hook stayed with the title's Smithsonian conflict instead of assigning the exhibit's conjecture to the White House. Remaining quality limits are visible: #3's “결과를 흔든다” is stronger than the source's uncertainty, #6 uses vague dramatic wording, #7's “이념적 포획” remains translationese, and #8's hook can imply more of Collins's response was false than the source's “some.” Prompt constraints and numeric validation reduce risk but do not prove every future generation is factually faithful.
+
+The evaluated corpus and outputs live in local `/tmp` files and are not committed. The script accepts `--indices=1,8,9` for a bounded rerun; each run replaces `/tmp/breeze-article-preview-ai-prompt-targeted-20260925.json`.
+
+## PR-stage browser and regression checks
+
+The Playwright test initially timed out at `DOMContentLoaded`. A diagnostic local server showed several checkout files taking over a second to read, with one RSS script taking about 18 seconds. Raising the navigation limit from 30 to 120 seconds let the existing test complete. It passed in Chromium and WebKit at 320, 390, 820, and 1280 px: first-read Preview, centered layout without inner scrolling, local metadata reuse, Reader entry, previously-read Reader bypass, and source-only fallback after an aborted metadata request.
+
+A separate one-shot browser run routed an actual Preview request to the same OpenRouter generator, using the browser's own title and opening excerpt. The generated Korean hook and teaser appeared beside the original title; closing and reopening caused no second AI call; `읽기 시작` entered Reader and subsequent entry bypassed Preview. The model took 4,433 ms. This proves real AI generation and browser display together, but the HTTP route was intercepted: the Supabase Edge Function, shared database cache, Auth, and quota RPC were not exercised.
+
+`npm run typecheck` passed with 37 existing diagnostics unchanged. `verify-reader-progress-browser.mjs` passed its 1, 5, and 70 paragraph cases. `verify-home-controls-browser.mjs` passed five widths in light and dark. The Preview client request timeout was increased from 9 to 15 seconds because the original 18-call evaluation included a valid 10.7 second AI response; the Edge generator itself has a 12 second timeout. No Preview CSS, Home layout, or Reader UI changed.
+
+Before integration, run one isolated dev/test Supabase E2E through the actual Edge Function and migration: new RSS article → shared cache miss → OpenRouter metadata → Preview display → Reader → same article from another session/device → shared cache hit, plus a forced AI failure. This remains unverified. Do not treat the intercepted browser route or local cache as proof of server cache/Auth/RPC behavior.
 
 ## Reproduce the AI-only evaluation
 
 Store the key in the gitignored `supabase/.env.article-preview.local` file using hidden terminal input. Then run `node tools/evaluate-article-preview-ai.mjs` for a single article. Run `node tools/evaluate-article-preview-ai.mjs --remaining` only after the first succeeds; that evaluates the other 17 without repeating the first. Results are written under `/tmp` with mode `0600` and contain no API key.
 
-Shared cache, Auth, quota RPC, actual RSS click, Preview rendering of real metadata, and fallback after a real Edge Function error remain separate integration checks immediately before rollout. The isolated `/tmp/breeze-article-preview-local-20260925` configuration and migrations were prepared, but its container stack did not complete startup. The local VM was removed after the disk failure. No additional VM or image work is planned in this evaluation.
+Shared cache, Auth, quota RPC, and fallback after a real Edge Function error remain separate integration checks immediately before rollout. The isolated `/tmp/breeze-article-preview-local-20260925` configuration and migrations were prepared, but its container stack did not complete startup. The local VM was removed after the disk failure. No additional VM or image work is planned in this evaluation.
