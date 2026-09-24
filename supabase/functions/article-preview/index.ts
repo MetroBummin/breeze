@@ -1,45 +1,14 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { generateArticlePreview } from "./generate.mjs";
 
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,apikey,content-type,x-client-info","Access-Control-Allow-Methods":"POST,OPTIONS"};
 const reply=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{...cors,"Content-Type":"application/json"}});
 const db=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
 
-function validate(value:unknown){
-  if(!value || typeof value!=="object")return null;
-  const raw=value as Record<string,unknown>;
-  const fields=["hookTitle","translatedTitle","teaser"] as const;
-  if(fields.some(field=>typeof raw[field]!=="string" || !/[가-힣]/.test(raw[field] as string)))return null;
-  const meta={hookTitle:String(raw.hookTitle).trim(),translatedTitle:String(raw.translatedTitle).trim(),teaser:String(raw.teaser).trim()};
-  if(meta.hookTitle.length>90 || meta.translatedTitle.length>180 || meta.teaser.length>500 ||
-    meta.hookTitle.length<5 || meta.teaser.length<25)return null;
-  return meta;
-}
 async function digest(value:string){
   const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
   return [...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,"0")).join("");
 }
-async function generate(title:string,excerpt:string){
-  const key=Deno.env.get("GEMINI_API_KEY");if(!key)throw new Error("not_configured");
-  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
-  try{
-    const response=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key="+key,{
-      method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({system_instruction:{parts:[{text:
-        "You write Korean editorial previews for English reading articles. Use ONLY the supplied title and excerpt as evidence. Never invent events, numbers, trends, causes, quotes, or outcomes. If the excerpt does not support a claim, omit it. Return JSON with hookTitle (short compelling Korean headline), translatedTitle (faithful Korean title translation), teaser (2-3 concise Korean sentences explaining the core and why to read). No markdown."}]},
-        contents:[{role:"user",parts:[{text:JSON.stringify({title,excerpt})}]}],
-        generationConfig:{temperature:0.2,maxOutputTokens:400,responseMimeType:"application/json"}})
-    });
-    if(!response.ok)throw new Error("ai_failed");
-    const data=await response.json();
-    const raw=data?.candidates?.[0]?.content?.parts?.map((part:{text?:string})=>part.text||"").join("")||"";
-    const meta=validate(JSON.parse(raw));if(!meta)throw new Error("bad_metadata");
-    // A new numeral in the hook is an especially misleading form of embellishment.
-    const sourceNumbers=new Set((title+" "+excerpt).match(/\d+(?:[.,]\d+)*/g)||[]);
-    if(((meta.hookTitle.match(/\d+(?:[.,]\d+)*/g))||[]).some(number=>!sourceNumbers.has(number)))throw new Error("unsupported_number");
-    return meta;
-  }finally{clearTimeout(timer);}
-}
-
 Deno.serve(async request=>{
   if(request.method==="OPTIONS")return new Response("ok",{headers:cors});
   if(request.method!=="POST")return reply({error:"method"},405);
@@ -65,7 +34,10 @@ Deno.serve(async request=>{
       const {data,error}=await db.rpc("take_anon_quota",{p_device:device,p_limit:10,p_daily_cap:2000});
       if(error || data?.status!=="ok")return reply({error:"quota"},429);
     }
-    const meta=await generate(title,excerpt);
+    const result=await generateArticlePreview(title,excerpt,Deno.env.get("OPENROUTER_API_KEY"));
+    const meta=result.meta;
+    console.info("article_preview_ai",JSON.stringify({model:result.model,latencyMs:result.latencyMs,
+      promptTokens:result.usage?.prompt_tokens??null,completionTokens:result.usage?.completion_tokens??null}));
     const {error:insertError}=await db.from("article_preview_cache").insert({cache_key:cacheKey,source_url:parsed.href,
       hook_title:meta.hookTitle,translated_title:meta.translatedTitle,teaser:meta.teaser});
     if(insertError && insertError.code!=="23505")return reply({error:"cache_write"},503);
