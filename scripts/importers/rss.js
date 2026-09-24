@@ -24,39 +24,9 @@ const RSS_CATEGORIES = [
   {id:'business',label:'경제·비즈니스'},
 ];
 function rssCategory(value){return RSS_CATEGORIES.some(item=>item.id===value) ? value : 'general';}
-function rssSelectedCategory(){
-  const value=load('breeze.feed-category','all');
-  if(value==='saved'){save('breeze.feed-category','all');return 'all';}
-  return value==='all' ? value : rssCategory(value);
-}
-function renderFeedCategories(){
-  const selected=rssSelectedCategory();
-  const ordered=[{id:'all',label:'전체'},...RSS_CATEGORIES];
-  document.querySelectorAll('.feed-categories').forEach(host=>{
-    const current=new Map([...host.querySelectorAll('button')].map(button=>[button.dataset.category,button]));
-    const focused=host.contains(document.activeElement) ? (/** @type {HTMLElement} */(document.activeElement))?.dataset.category : '';
-    const buttons=ordered.map(category=>{
-      const button=current.get(category.id) || document.createElement('button');
-      button.type='button';button.dataset.category=category.id;
-      if(!button.firstChild){const label=document.createElement('span');label.textContent=category.label;button.appendChild(label);}
-      button.setAttribute('aria-pressed',String(category.id===selected));
-      button.onclick=()=>{
-        if(!save('breeze.feed-category',category.id))return;
-        document.querySelectorAll('#casual-rail,#casual-discover-rail').forEach(rail=>{rail.scrollLeft=0;});
-        renderFeedCategories();refreshFeedRails();
-        document.querySelectorAll('.feed-categories').forEach(rail=>{rail.scrollLeft=0;});
-      };
-      return button;
-    });
-    host.replaceChildren(...buttons);
-    if(focused)(/** @type {HTMLElement} */(host.querySelector(`[data-category="${focused}"]`)))?.focus({preventScroll:true});
-  });
-}
 function refreshFeedRails(){
   const home=document.getElementById('casual-rail');delete home.dataset.rssStamp;
   renderHome();
-  const discover=document.getElementById('casual-discover-rail');delete discover.dataset.rssStamp;
-  renderRssCards(discover,false,document.getElementById('casual-discover-empty'));
 }
 const RSS_PER_FEED = 3;
 const RSS_SOURCE_LIMIT = 20;
@@ -292,7 +262,7 @@ function refreshRssPhotoEmpty(rail){
   const empty=document.getElementById(rail.id==='casual-rail'?'home-feed-empty':'casual-discover-empty');
   if(!empty)return;
   const hasPhoto=!!rail.querySelector('.rss-card:not([hidden])');
-  empty.textContent='사진이 있는 새 글을 찾지 못했어요. 발견에서 다른 출처를 추가해 보세요.';
+  empty.textContent='사진이 있는 새 글을 찾지 못했어요.';
   empty.hidden=hasPhoto || !!rssLoading;
 }
 
@@ -318,6 +288,7 @@ async function rssCardPhoto(card, entry){
   }
   if(ok && card.isConnected){
     image.hidden=false;thumb.classList.add('has-cover');card.hidden=false;
+    if(card.closest('#v-home'))homeSmartCrop(image,entry.photo,3/4,()=>fetchArticleImage(entry.photo));
     const rail=card.parentElement;
     if(rail?.dataset.rssResetStart){rail.scrollLeft=0;delete rail.dataset.rssResetStart;}
     refreshRssPhotoEmpty(rail);
@@ -436,8 +407,7 @@ async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
   return cards;
 }
 function renderRssCards(rail, force, empty){
-  renderFeedCategories();
-  const category=rssSelectedCategory();
+  const category='all';
   if(rail.dataset.rssCategory!==category){
     rail.dataset.rssCategory=category;
     rail.dataset.rssResetStart='1';
@@ -457,8 +427,6 @@ function renderRssCards(rail, force, empty){
   const paint=async groups=>{
     const current=++revision;
     if(renderId!==rssRenderIds.get(rail))return;
-    const categories=new Map(rssSources().map(feed=>[feed.url,feed.category]));
-    groups=groups.map(entries=>entries.filter(entry=>category==='all'||rssCategory(categories.get(entry.feedSourceUrl)||entry.category)===category));
     const stamp=JSON.stringify([category,groups,books.map(book=>book.sourceUrl||'')]);
     if(rail.dataset.rssStamp===stamp){
       if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());

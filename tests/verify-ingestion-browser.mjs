@@ -254,19 +254,12 @@ try{
     rssLoadedAt=Date.now();refreshFeedRails();show('home');
    });
    assert.equal(await page.evaluate(()=>rssSources().filter(feed=>feed.category==='science'&&/medium.com|reddit.com/.test(feed.url)).length),2);
-   const chips=page.locator('#casuals .feed-categories');
-   await chips.locator('[data-category="science"]').click();
-   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','entertainment','general','society','science','culture','business']);
-   assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
-   assert.equal(await chips.locator('[data-category="science"]').getAttribute('aria-pressed'),'true');
+   await page.evaluate(()=>show('casuals'));
+   assert.equal(await page.locator('#v-casuals .feed-categories,#v-casuals #casual-discover-rail').count(),0);
+   assert.equal(await page.locator('#v-casuals .rss-card').count(),0);
+   assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),1);
    assert.equal(await page.evaluate(()=>document.querySelector('#casual-rail .shared-card')!==null),false);
-   await chips.locator('[data-category="business"]').click();
-   assert.deepEqual(await chips.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),['all','entertainment','general','society','science','culture','business']);
-   assert.equal(await page.locator('#casual-rail .rss-card').filter({hasText:'Culture story'}).count(),0);
-   await page.evaluate(()=>{
-    document.querySelector('#casuals [data-category="science"]').click();
-    document.querySelector('#casuals [data-category="culture"]').click();
-   });
+   await page.evaluate(()=>show('home'));
    await page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card .ct')?.textContent==='Culture story');
    assert.equal(await page.locator('#casual-rail .rss-card').count(),1);
    await page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card .has-cover'));
@@ -281,10 +274,10 @@ try{
    for(const dark of [false,true]){
     await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    if(process.env.BREEZE_QA_OUTPUT)await page.screenshot({path:process.env.BREEZE_QA_OUTPUT+'/'+engine.name()+'-categories-'+(dark?'dark':'light')+'.png'});
+    if(process.env.BREEZE_QA_OUTPUT)await page.screenshot({path:process.env.BREEZE_QA_OUTPUT+'/'+engine.name()+'-recommendation-'+(dark?'dark':'light')+'.png'});
    }
    await page.reload();await page.evaluate(()=>homeReady);
-   assert.equal(await page.locator('#casuals [data-category="culture"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('#v-casuals .feed-categories,#v-casuals #casual-discover-rail').count(),0);
    assert.equal(await page.evaluate(async()=>{
     if(rssLoading)await rssLoading;
     const original=loadRss;let finish;
@@ -298,7 +291,7 @@ try{
       return loading && !rail.querySelector('.rss-loading');
     }finally{loadRss=original;}
    }),true);
-   console.log(engine.name(),'ingestion, category filtering/persistence, persisted share handoff, dedupe, fallback, semantics and mobile Reader passed');
+   console.log(engine.name(),'ingestion, Home-only discovery, persisted share handoff, dedupe, fallback, semantics and mobile Reader passed');
   }finally{await browser.close();}
  }
 }finally{server.close();}

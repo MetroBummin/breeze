@@ -72,22 +72,9 @@ try{
         return rail.scrollLeft;
       });
       assert(homeScroll>100,'Home rail did not reach later cards');
-      await page.locator('#casuals [data-category="entertainment"]').click();
-      await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card:not([hidden])').length>=3);
-      assert.equal(await page.evaluate(()=>document.getElementById('casual-rail').scrollLeft),0,
-        'Home category started at a later card');
       await page.evaluate(()=>show('casuals'));
-      await page.waitForFunction(()=>document.querySelectorAll('#casual-discover-rail .rss-card:not([hidden])').length>=3);
-      const discoverScroll=await page.evaluate(()=>{
-        const rail=document.getElementById('casual-discover-rail');rail.scrollLeft=rail.scrollWidth;
-        return rail.scrollLeft;
-      });
-      assert(discoverScroll>100,'Discover rail did not reach later cards');
-      await page.locator('#v-casuals [data-category="science"]').click();
-      await page.waitForFunction(()=>document.querySelectorAll('#casual-discover-rail .rss-card:not([hidden])').length>=2);
-      assert.equal(await page.evaluate(()=>document.getElementById('casual-discover-rail').scrollLeft),0,
-        'Discover category started at a later card');
-      console.log(engine.name(),'RSS cover/tap behavior and category rails start from the first card');
+      assert.equal(await page.locator('#v-casuals .rss-card,#v-casuals .feed-categories').count(),0);
+      console.log(engine.name(),'RSS cover/tap behavior and Home-only discovery passed');
     }finally{await browser.close();}
   }
 }finally{server.close();}

@@ -681,15 +681,15 @@ assert.match(librarySource, /CASUAL_KINDS = new Set\(\['paste','article'\]\)/,
   'Casuals no longer collect both pasted text and fetched articles');
 assert.match(librarySource, /function nowReadingIn\(list\)/,
   'Nothing marks which book is being read now that the hero card is gone');
-/* 두 줄은 각자 자기 줄에서 마지막에 읽던 것을 기억해야 합니다. 기사를 한 편
-   봤다고 읽던 원서 표시가 사라지면 안 됩니다. */
-assert.match(librarySource, /nowReadingIn\(casuals\)/,
-  'The Casuals rail no longer tracks its own last-read item');
-assert.match(librarySource, /nowReadingIn\(longform\)/,
-  'The long-form shelf shares its last-read marker with Casuals again');
+assert.match(librarySource, /homeRegularTile\(casualCard\(book,null,false\)/,
+  'Saved short content should use the neutral regular-card layout');
+assert.match(librarySource, /homeRegularTile\(bookCard\(book,null\)/,
+  'Saved long content should use the neutral regular-card layout');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
-assert.match(index, /class="section-link"[^>]*aria-label="캐주얼 리딩 모아보기"[^>]*onclick="show\('casuals'\)"/,
-  'The Casuals heading lost its shelf chevron');
+assert.match(index, /id="home-recommend-title"[^>]*>추천<\/h2>/,
+  'Home recommendation must be a plain heading');
+assert.match(index, /class="section-link"[^>]*aria-label="가벼운 글 모아보기"[^>]*onclick="show\('casuals'\)"/,
+  'The saved Casuals heading lost its shelf chevron');
 assert.match(index, /class="section-link"[^>]*aria-label="책 모아보기"[^>]*onclick="show\('longform'\)"/,
   'The Books heading lost its shelf chevron');
 assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
