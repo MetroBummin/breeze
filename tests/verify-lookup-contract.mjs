@@ -23,6 +23,15 @@ assert.throws(()=>box.lookupInput({word:'bank',sentence:'x'.repeat(2401)}),/bad_
 const phraseInput=box.lookupInput({word:'give up',clicked:'give up',sentence:'They give up.',clickedIndex:1});
 assert.equal(phraseInput.clickedIndex,1);
 const bank=box.lookupInput({word:'bank',clicked:'bank',sentence:'The bank flooded.',clickedIndex:1});
+const contextual=box.miniPrompt(box.lookupInput({word:'wild',clicked:'wild',sentence:'It was completely wild.',clickedIndex:3,before:'He claimed the room opened into another city.',after:'Nobody believed him.'}));
+assert.match(contextual,/If you were naturally translating the sentence into Korean/);
+assert.match(contextual,/Do not default to the most common dictionary sense/);
+assert.match(contextual,/"selected_index":3/);
+assert.match(contextual,/"before":"He claimed the room opened into another city\."/);
+assert.match(contextual,/"after":"Nobody believed him\."/);
+const backrooms=box.miniPrompt(box.lookupInput({word:'wild',clicked:'wild',sentence:"It was something I hadn't ever seen before, it was completely wild.",clickedIndex:11,before:'Was this the Backrooms thing she had been obsessing over?',after:"I couldn't believe she had bought into this nonsense."}));
+assert.match(backrooms,/"before":"Was this the Backrooms thing she had been obsessing over\?"/);
+assert.match(backrooms,/"after":"I couldn't believe she had bought into this nonsense\."/);
 assert.throws(()=>box.validateLook({kind:'word',canonical:'flood',members:[1],ko:'홍수'},bank),/invalid_lemma/);
 const repeated=box.lookupInput({word:'take',clicked:'take',sentence:'I take notes before the planes take off.',clickedIndex:1});
 for(const members of [[1,6,7],[1,7]])assert.throws(()=>box.validateLook({kind:'expression',canonical:'take off',members,ko:'이륙하다'},repeated));

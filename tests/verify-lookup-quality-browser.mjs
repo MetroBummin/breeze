@@ -26,6 +26,14 @@ try{
  results.pillRetry=await page.evaluate(async()=>{auditCalls=[];await retryWordPeek();return auditCalls;});
  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='강둑');
  assert.equal(await page.evaluate(()=>words[selKey].example),'He sat by the bank of the river.');
+ results.firstAIContext=await page.evaluate(async()=>{const k=auditSeed();const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];const input=lookupRequestFor(words[k],node,false);auditCalls=[];await fetchLook(k,{...input,node,hold:true,life:wordLookupLife});const supplied=auditCalls[0];auditCalls=[];await fetchLook(k,{node,hold:true,life:wordLookupLife});return {supplied,discovered:auditCalls[0]};});
+ for(const call of [results.firstAIContext.supplied,results.firstAIContext.discovered]){
+   assert.equal(call.sentence,'He sat by the bank of the river.');
+   assert.equal(call.clickedIndex,4);
+   assert.ok(call.before.includes('loan'));
+   assert.ok(call.after.includes('overflowing'));
+   assert.equal(call.retry,false);
+ }
  // Reusing an existing meaning preserves its saved example but shows the current occurrence.
  await page.evaluate(()=>{const k=auditSeed();words[k].ko='강둑';words[k].ai.ko='강둑';const node=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='bank')[1];openWord(k,node);});
  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='강둑');

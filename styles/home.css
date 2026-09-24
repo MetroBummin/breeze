@@ -312,7 +312,7 @@
 .feed-categories::-webkit-scrollbar{display:none}
 .feed-categories button{position:relative;flex:none;min-height:38px;padding:7px 15px;border-radius:12px;border:1px solid var(--sentence-glass-line);background:var(--sentence-glass-action);color:var(--sentence-glass-secondary);font:500 13px var(--ui);cursor:pointer;touch-action:manipulation}
 .feed-categories button span{position:relative;z-index:3}
-.feed-categories button[aria-pressed="true"]{color:var(--sentence-glass-ink);background:color-mix(in srgb,var(--s1) 18%,var(--sentence-glass-action));border-color:color-mix(in srgb,var(--s1-line) 25%,var(--sentence-glass-line));font-weight:600}
+.feed-categories button[aria-pressed="true"]{color:var(--sentence-glass-ink);background:color-mix(in srgb,var(--blue) 11%,var(--sentence-glass-action));border-color:color-mix(in srgb,var(--blue) 26%,var(--sentence-glass-line));font-weight:600}
 .feed-categories button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 /* Quiet typographic jackets when no real cover is available. */

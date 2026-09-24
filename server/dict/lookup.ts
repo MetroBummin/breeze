@@ -42,7 +42,7 @@ CONTRASTS:
 "took the evidence into account" => take into account, include took/into/account; "opened an account" => account.
 "a difficult decision" => decision; "a red herring" (misleading clue) => red herring.
 
-ko: one concise, natural Korean dictionary gloss for THIS sense; no explanation, alternatives, example, or literal component gloss for an idiom. Rechecking may confirm the existing sense; never invent a different sense merely because retry=true.
+ko: If you were naturally translating the sentence into Korean, what short Korean word or phrase would you use for the SELECTED lexical unit in this context? Return only that meaning. Do not translate the whole sentence or surrounding words. Do not default to the most common dictionary sense when the context clearly indicates another sense. Rechecking may confirm the existing sense; never invent a different sense merely because retry=true.
 Before emitting, verify selected membership, every fixed function word, canonical/meaning agreement, and exact JSON.
 DATA=${JSON.stringify({sentence:input.sentence,selected_index:input.clickedIndex,selected_text:input.tokens[input.clickedIndex],target_lemma:input.word,indexed_tokens:input.tokens.map((t,i)=>`${i}:${t}`).join(" | "),before:input.before||undefined,after:input.after||undefined,retry:input.retry||undefined})}`;
 }

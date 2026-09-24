@@ -371,17 +371,62 @@ try{
   assert.ok(await page.evaluate(()=>dead.poly&&dead['poly::E']));
 
   const firstLookupRetry=await page.evaluate(()=>{
-    const oldWords=words,oldDead=dead,oldSeed=firstLookupMeaning;
+    const oldWords=words,oldDead=dead,oldSeed=firstLookupMeaning,oldPending=pendingWord;
     words={newword:{word:'newword',ko:'',status:1,addedAt:Date.now(),up:Date.now()}};dead={};
-    createMeaning('newword','A',{automatic:true});
-    firstLookupMeaning={root:'newword',life:wordLookupLife};
+    pendingWord={key:'newword',deadAt:0};
+    applyLook(words.newword,{kind:'word',canonical:'newword',members:[0],ko:'A'},'newword',{life:wordLookupLife});
+    settlePendingWord();
+    const tracked=firstLookupMeaning?.root==='newword';
     saveRetriedMeaning('newword','B',{ai:{done:true}});
     saveRetriedMeaning('newword','C',{ai:{done:true}});
-    const result={root:words.newword.ko,children:Object.keys(words).filter(id=>id!=='newword')};
-    words=oldWords;dead=oldDead;firstLookupMeaning=oldSeed;saveWords();
+    const result={tracked,root:words.newword.ko,children:Object.keys(words).filter(id=>id!=='newword')};
+    words=oldWords;dead=oldDead;firstLookupMeaning=oldSeed;pendingWord=oldPending;saveWords();
     return result;
   });
-  assert.deepEqual(firstLookupRetry,{root:'C',children:[]},'retries for a newly looked up word did not replace its initial answer');
+  assert.deepEqual(firstLookupRetry,{tracked:true,root:'C',children:[]},'retries for a newly looked up word did not replace its initial answer');
+
+  const expressionRetry=await page.evaluate(()=>{
+    const oldWords=words,oldDead=dead,oldSelected=selKey,oldSeed=firstLookupMeaning;
+    const root='phrase:give up',phrase={canonical:'give up',surface:'gave … up',parts:['give','up'],gaps:[2]};
+    words={[root]:{word:'give up',phraseParts:['give','up'],phraseGaps:[2],ko:'포기하다',koEdited:true,status:1,mark:true,addedAt:1,up:1}};
+    dead={};firstLookupMeaning=null;
+    const sentence='She gave her seat up.';
+    const first=saveDetectedExpression(root,phrase,sentence,'시험책',{kind:'expression',canonical:'give up',members:[1,4],ko:'양보하다'},wordLookupLife,{explicit:true,clickedIndex:1});
+    const second=saveDetectedExpression(first,phrase,sentence,'시험책',{kind:'expression',canonical:'give up',members:[1,4],ko:'내주다'},wordLookupLife,{explicit:true,clickedIndex:1});
+    const result={root:words[root].ko,candidates:Object.entries(words).filter(([,item])=>item.retryCandidate).map(([,item])=>item.ko),firstGone:!words[first],selected:words[second]?.ko};
+    words=oldWords;dead=oldDead;selKey=oldSelected;firstLookupMeaning=oldSeed;saveWords();
+    return result;
+  });
+  assert.deepEqual(expressionRetry,{root:'포기하다',candidates:['내주다'],firstGone:true,selected:'내주다'},'expression retries accumulated candidates or replaced an edited saved meaning');
+
+  const changingKindRetry=await page.evaluate(()=>{
+    const oldWords=words,oldDead=dead,oldSelected=selKey,oldSeed=firstLookupMeaning;
+    words={give:{word:'give',clicked:'gave',forms:['give'],ko:'주다',status:1,mark:true,addedAt:1,up:1}};
+    dead={};firstLookupMeaning=null;
+    const phrase={canonical:'give up',surface:'gave … up',parts:['give','up'],gaps:[2]};
+    const sentence='She gave her seat up.';
+    const first=saveDetectedExpression('give',phrase,sentence,'시험책',{kind:'expression',canonical:'give up',members:[1,4],ko:'양보하다'},wordLookupLife,{explicit:true,clickedIndex:1});
+    const second=saveDetectedExpression(first,phrase,sentence,'시험책',{kind:'expression',canonical:'give up',members:[1,4],ko:'내주다'},wordLookupLife,{explicit:true,clickedIndex:1});
+    const third=saveRetriedMeaning('give','건네다',{ai:{done:true}});
+    const result={root:words.give.ko,firstGone:!words[first],secondGone:!words[second],candidates:Object.entries(words).filter(([,item])=>item.retryCandidate).map(([,item])=>item.ko),selected:words[third]?.ko};
+    words=oldWords;dead=oldDead;selKey=oldSelected;firstLookupMeaning=oldSeed;saveWords();
+    return result;
+  });
+  assert.deepEqual(changingKindRetry,{root:'주다',firstGone:true,secondGone:true,candidates:['건네다'],selected:'건네다'},'cross-kind retries left more than one candidate');
+
+  const firstLookupChangesKind=await page.evaluate(()=>{
+    const oldWords=words,oldDead=dead,oldSelected=selKey,oldSeed=firstLookupMeaning;
+    words={give:{word:'give',clicked:'gave',forms:['give'],ko:'주다',status:1,mark:true,addedAt:1,up:1}};
+    dead={};firstLookupMeaning={root:'give',life:wordLookupLife};
+    const phrase={canonical:'give up',surface:'gave … up',parts:['give','up'],gaps:[2]};
+    const sentence='She gave her seat up.';
+    const first=saveDetectedExpression('give',phrase,sentence,'시험책',{kind:'expression',canonical:'give up',members:[1,4],ko:'양보하다'},wordLookupLife,{explicit:true,clickedIndex:1});
+    saveDetectedExpression(first,phrase,sentence,'시험책',{kind:'expression',canonical:'give up',members:[1,4],ko:'내주다'},wordLookupLife,{explicit:true,clickedIndex:1});
+    const result={keys:Object.keys(words),meaning:words[first]?.ko,seed:firstLookupMeaning?.root,children:Object.entries(words).filter(([id,item])=>id!==first&&item.root===first).length};
+    words=oldWords;dead=oldDead;selKey=oldSelected;firstLookupMeaning=oldSeed;saveWords();
+    return result;
+  });
+  assert.deepEqual(firstLookupChangesKind,{keys:['phrase:give up'],meaning:'내주다',seed:'phrase:give up',children:0},'a new word kept its first answer after an expression retry');
 
   console.log('Word near-pill and multi-meaning Words deletion interactions verified');
   await page.close();

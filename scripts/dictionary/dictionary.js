@@ -39,8 +39,8 @@ function lexicalIdentityFromMembers(tokens,indexes,canonical){
   const surface=ordered.map((index,at)=>`${at&&gaps[at-1]>0?' … ':at?' ':''}${tokens[index].text}`).join('');
   return {parts,gaps,surface,canonical:String(canonical||'').replace(/\s+/g,' ').trim(),indexes:ordered};
 }
-/* 한 문장만으로는 뜻이 안 잡히는 자리가 있습니다. 앞뒤 문장을 한 번 더 붙여
-   물어보면 대명사·생략·비유가 풀립니다. */
+/* 한 문장만으로는 뜻이 안 잡히는 자리가 있습니다. 새 AI 조회와 Retry에는
+   앞뒤 문장을 붙이되, 선택 문장과 클릭 위치는 그대로 둡니다. */
 function lookupRequestFor(w,node,wider){
   const context=currentContext(selKey);
   const sentence=(context&&context.sentence)||(node?sentenceOf(node):'')||w.example||'';
@@ -342,7 +342,7 @@ function saveRetriedMeaning(root, text, source){
   const meaning=String(text||'').replace(/\s+/g,' ').trim(),base=words[root];
   if(!meaning||!base)return '';
   const from=source||{},ai={...(from.ai||{}),ko:meaning};
-  if(firstLookupMeaning&&firstLookupMeaning.root===root&&firstLookupMeaning.life===wordLookupLife){
+  if(firstLookupMeaning&&firstLookupMeaning.root===root&&firstLookupMeaning.life===wordLookupLife&&!base.koEdited){
     base.ko=meaning;base.ai=ai;delete base.koEdited;
     base.alts=Array.isArray(from.alts)?from.alts:[];
     if(from.example)base.example=from.example;
@@ -350,7 +350,8 @@ function saveRetriedMeaning(root, text, source){
     base.up=Date.now();base.pickedAt=base.up;
     saveWords();queueSync();return root;
   }
-  const retry=Object.entries(words).find(([id,item])=>id!==root&&item&&item.root===root&&item.retryCandidate);
+  const retry=Object.entries(words).find(([id,item])=>id!==root&&item&&item.retryCandidate
+    &&(item.retryOwner||item.root)===root);
   const existing=findSenseByMeaning(root,meaning);
   if(existing){
     if(retry&&retry[0]!==existing)discardRetryCandidate(retry[0]);
@@ -365,7 +366,8 @@ function saveRetriedMeaning(root, text, source){
 }
 function discardRetryCandidate(id){
   const item=words[id];if(!item||!item.retryCandidate)return;
-  const root=item.root||id,key=senseCardKey(root,item.ko);
+  const root=item.retryOwner||item.root||id;
+  const key=item.root?senseCardKey(root,item.ko):id;
   dead[key]=Math.max(Date.now(),(item.up||item.addedAt||0)+1,(dead[key]||0)+1);
   delete words[id];save(LS_DEAD,dead);saveWords();queueSync();
 }
@@ -463,7 +465,7 @@ async function resolveCurrentLookup(k,input,life,node){
   if(local)await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
   else answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
   if(!wordLookupAlive(life))return;
-  if(!answer)answer=await fetchLook(k,{...input,hold:true,life});
+  if(!answer)answer=await fetchLook(k,{...input,node,hold:true,life});
   if(!wordLookupAlive(life)||!words[k])return;
   const context=currentContext(k);
   if(!answer||!answer.ko){if(context){context.loading='';context.error=w.aiOff||'error';}renderWordLookup();return;}
@@ -724,7 +726,7 @@ async function retryWordPeek(){
      (wordPeekRetryState&&wordPeekRetryState.key===k&&wordPeekRetryState.loading)) return;
   const input=lookupRequestFor(w,activeSelectedWordNode,true);
   const {sentence,clicked,clickedIndex,book}=input;
-  const root=w.root||k,life=wordLookupLife;
+  const root=w.retryOwner||w.root||k,life=wordLookupLife;
   wordPeekRetryState={key:k,loading:true,error:''};
   renderWordPeek();
   const answer=await fetchLook(k,{...input,node:activeSelectedWordNode,
@@ -742,9 +744,25 @@ async function retryWordPeek(){
     saveDetectedExpression(k,phrase,sentence,book,answer,life,{explicit:true,clickedIndex});
     return;
   }
-  const id=saveRetriedMeaning(root,parsed.ko,{clicked,example:sentence,book,ai:parsed.ai,
+  let targetRoot=root;
+  if(firstLookupMeaning&&firstLookupMeaning.root===root&&firstLookupMeaning.life===life
+     &&words[root]?.phraseParts&&answer.kind==='word'){
+    const wordId=keyOf(answer.canonical||clicked);
+    if(wordId&&wordId!==root&&!words[wordId]){
+      const old=words[root],stamp=Math.max(Date.now(),(old.up||old.addedAt||0)+1);
+      words[wordId]={...old,word:answer.canonical||wordId,clicked,
+        forms:[...new Set([wordId,...lemmaCands(clicked)])],ko:'',ai:{},example:sentence,book,
+        up:stamp,pickedAt:stamp};
+      delete words[wordId].phraseParts;delete words[wordId].phraseGaps;
+      delete words[wordId].retryCandidate;delete words[wordId].retryOwner;
+      dead[root]=Math.max(stamp,(dead[root]||0)+1);delete words[root];save(LS_DEAD,dead);
+      firstLookupMeaning={root:wordId,life};targetRoot=wordId;
+      refreshReaderWords();
+    }
+  }
+  const id=saveRetriedMeaning(targetRoot,parsed.ko,{clicked,example:sentence,book,ai:parsed.ai,
     alts:parsed.alts,phrase:parsed.phrase});
-  if(id){ rememberSenseContext(id,sentence,clickedIndex);saveWords();selKey=id; contextView=null; paintWord(root); }
+  if(id){ rememberSenseContext(id,sentence,clickedIndex);saveWords();selKey=id; contextView=null; paintWord(targetRoot); }
   wordPeekRetryState=null;
   renderWordPeek();
 }
@@ -1263,10 +1281,20 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   const base=words[k];if(!base||!phrase||!answer||!answer.ko||!wordLookupAlive(life))return '';
   const id=phraseCardKey(phrase.canonical),previous=words[id],resolved=answerFromLook(answer,false);
   const explicit=!!opt.explicit||!!(pendingWord&&pendingWord.key===k);
+  const initial=!!(pendingWord&&pendingWord.key===k);
+  const owner=base.retryOwner||base.root||k;
+  const first=!!(opt.explicit&&firstLookupMeaning&&firstLookupMeaning.root===owner&&firstLookupMeaning.life===life);
+  const priorRetry=opt.explicit?Object.entries(words).find(([key,item])=>key!==id&&item&&item.retryCandidate
+    &&(item.retryOwner||item.root)===owner):null;
   if(dead[id]&&!explicit){const ctx=currentContext(k);if(ctx){ctx.loading='';ctx.error='deleted';}renderIfAlive(life);return '';}
   let active=id;
   if(previous){
-    if(previous.koEdited){active=id;}
+    if(opt.explicit&&previous.retryCandidate&&previous.retryOwner===owner){
+      previous.ko=resolved.ko;previous.ai=resolved.ai;previous.example=sentence;previous.book=book;
+      previous.up=Date.now();previous.pickedAt=previous.up;
+    }
+    else if(opt.explicit)active=saveRetriedMeaning(id,resolved.ko,{example:sentence,book,ai:resolved.ai});
+    else if(previous.koEdited){active=id;}
     else active=createMeaning(id,resolved.ko,{example:sentence,book,ai:resolved.ai,automatic:!explicit});
     if(!active){const ctx=currentContext(k);if(ctx){ctx.loading='';ctx.error='deleted';}renderIfAlive(life);return '';}
   }else{
@@ -1281,6 +1309,15 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   if(pendingWord&&pendingWord.key===k&&id!==k){
     const held=pendingWord;pendingWord=null;delete words[k];
     if(held.deadAt){dead[k]=held.deadAt;save(LS_DEAD,dead);}
+  }
+  if(initial&&!previous)firstLookupMeaning={root:id,life};
+  if(opt.explicit&&active){
+    if(first&&owner!==id&&!previous){
+      const old=words[owner];
+      if(old){dead[owner]=Math.max(Date.now(),(old.up||old.addedAt||0)+1,(dead[owner]||0)+1);delete words[owner];save(LS_DEAD,dead);}
+      firstLookupMeaning={root:id,life};
+    }else if(!first&&!previous){words[id].retryCandidate=true;words[id].retryOwner=owner;}
+    if(priorRetry)discardRetryCandidate(priorRetry[0]);
   }
   // A single lookup can change identity from a token to an expression/Meaning.
   // Carry its cooldown so an immediate recheck is not a new learning event.
@@ -1342,7 +1379,16 @@ async function fetchLook(k, opt){
   /* 이 요청이 어느 열림의 것인지. 단추에서 바로 부를 때는 지금 열려 있는 것입니다. */
   if(opt.life === undefined) opt.life = wordLookupLife;
   const life = opt.life;
-  if(!opt.sentence)Object.assign(opt,lookupRequestFor(w,opt.node||activeSelectedWordNode,false));
+  const node=opt.node||activeSelectedWordNode;
+  if(!opt.sentence)Object.assign(opt,lookupRequestFor(w,node,!opt.retry&&!opt.wider));
+  else if(!opt.retry&&!opt.wider){
+    // A fresh AI request may already carry the selected sentence/index from the
+    // current occurrence. Keep that target authoritative; borrow only its neighbors.
+    const context=lookupRequestFor(w,node,true);
+    if(context.sentence===opt.sentence&&context.clickedIndex===opt.clickedIndex){
+      opt.before=context.before;opt.after=context.after;
+    }
+  }
   const querySentence=opt.sentence || w.example || '';
   const lookupTokens=lookupSentenceTokens(querySentence);
   let clickedIndex=Number(opt.clickedIndex);
@@ -1430,6 +1476,7 @@ async function fetchLook(k, opt){
 
 function applyLook(w, j, k, opt){
   opt = opt || {};
+  const initial=!!(pendingWord&&pendingWord.key===k&&!String(w.ko||'').trim());
   delete w.aiLoading; delete w.aiOff;
   /* 사람이 이미 뜻을 정해 놨으면 AI 가 갈아 끼우지 않습니다. 직접 적은 뜻도,
      한도가 걸린 사이에 후보에서 고른 뜻도 마찬가지입니다 — 고르자마자 늦은 답이
@@ -1450,6 +1497,7 @@ function applyLook(w, j, k, opt){
   w.colloc = [];
   if(j.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(j.lemma)) w.word = j.lemma.toLowerCase();
   w.up = Date.now();
+  if(initial&&String(w.ko||'').trim())firstLookupMeaning={root:k,life:opt.life===undefined?wordLookupLife:opt.life};
   saveWords(); queueSync();
   renderIfAlive(opt.life);
 }

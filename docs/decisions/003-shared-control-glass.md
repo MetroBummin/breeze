@@ -11,7 +11,7 @@ The reflection stays subtle at the center so it does not wash out labels. Dark m
 ## Regression coverage
 
 Home and Casuals category chips follow the word lookup star buttons: 12px
-corners, neutral action surface and a restrained first-star warm tint for selection. They use
+corners, neutral action surface and a restrained Breeze blue tint for selection. They use
 the shared sentence-glass palette without the floating dock's reflection or
 shadow. The expanded word lookup loading glow uses the same neutral palette,
 scoped to that panel so other loading surfaces retain their own appearance.
