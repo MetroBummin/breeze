@@ -1,18 +1,19 @@
 name: Social import
 on:
-  push:
-    branches: [chatgpt/social-import-hardening-20260925]
   pull_request:
-    paths: ['scripts/importers/**', 'server/article/**', 'tests/*social*', '.github/workflows/social-import.yml']
+    paths: ['scripts/importers/**', 'scripts/library/library.js', 'server/article/**', 'tests/*social*', '.github/workflows/social-import.yml']
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: social-import-${{ github.ref }}
+  group: social-import-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      NODE_OPTIONS: --experimental-strip-types
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,18 +23,10 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Source snapshot for isolated review
-        run: git archive HEAD -o /tmp/social-import-source.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: social-import-source
-          path: /tmp/social-import-source.zip
-          retention-days: 1
-      - name: Social import contracts
-        run: |
-          if test -f tests/verify-social-import-browser.mjs; then
-            npx playwright install --with-deps chromium webkit
-            node tests/verify-social-import-browser.mjs
-          fi
-      - name: Existing contracts
-        run: npm test
+      - name: Type check
+        run: node tools/typecheck.mjs || (npx tsc -p tsconfig.json --pretty false; exit 1)
+      - run: node --test tests/verify-social-import-server.mjs
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/verify-social-import-browser.mjs
+      - run: npm run test:ingestion
+      - run: npm test
