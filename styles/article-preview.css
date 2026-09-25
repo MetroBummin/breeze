@@ -61,3 +61,13 @@ body:has(#article-preview[open]){overflow:hidden;}
   #article-preview[open]{animation:ap-enter 140ms ease-out;}
   @keyframes ap-enter{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 }
+
+/* Loading occupies deliberate placeholders; final failure promotes source text.
+   Outer dialog/CTA stay fixed across all three states. */
+#article-preview[data-metadata="loading"] #ap-hook[hidden],
+#article-preview[data-metadata="loading"] .ap-teaser[hidden]{visibility:visible;color:transparent;border-radius:7px;background:linear-gradient(90deg,var(--sentence-glass-action),var(--sentence-glass-line-soft));}
+#article-preview[data-metadata="fallback"] #ap-hook[hidden],
+#article-preview[data-metadata="fallback"] .ap-teaser[hidden]{display:none;}
+#article-preview[data-metadata="fallback"] .ap-content{padding-top:24px;}
+#article-preview[data-metadata="fallback"] .ap-excerpt p{-webkit-line-clamp:8;}
+#article-preview[data-metadata="fallback"] .ap-excerpt:before{content:'원문 미리보기';display:block;font:600 12px/1.4 var(--ui);margin-bottom:10px;color:var(--sentence-glass-muted);}

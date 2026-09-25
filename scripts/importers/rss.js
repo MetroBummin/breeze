@@ -353,21 +353,20 @@ function rssCard(entry){
   return card;
 }
 async function importRssEntry(entry, card){
-  if(card.classList.contains('busy')) return;
+  if(card.classList.contains('busy'))return;
   card.classList.add('busy');
+  const preparation=articlePreviewPrepare(entry,card);
+  const options={preview:true,present:!preparation};
   try{
-    if(entry.readUrl){
-      await ingestArticle(entry.readUrl,{...entry,discoveredFromUrl:entry.url,preview:true});
-    }else if(entry.kind){
-      await ingestFeedPost(entry,{preview:true});
-    }else{
-      const preparedArticle=rssPreparedArticles.get(articleUrlKey(entry.url));
-      await ingestArticle(entry.url,{...entry,preparedArticle,preview:true});
-    }
+    let book;
+    if(entry.readUrl)book=await ingestArticle(entry.readUrl,{...entry,discoveredFromUrl:entry.url,...options});
+    else if(entry.kind)book=await ingestFeedPost(entry,options);
+    else book=await ingestArticle(entry.url,{...entry,preparedArticle:rssPreparedArticles.get(articleUrlKey(entry.url)),...options});
+    if(preparation)preparation.finish(book);
   }catch(error){
-    // A transient read/storage failure must not delete cards or decoded covers.
-    toast('지금은 글을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
-  }finally{ card.classList.remove('busy'); }
+    if(preparation)preparation.fail(()=>importRssEntry(entry,card));
+    else toast('지금은 글을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }finally{card.classList.remove('busy');}
 }
 /* A feed's own post body is enough for short posts. It never becomes live HTML:
    only text, explicit marks and validated image URLs enter the existing Reader. */
@@ -411,13 +410,13 @@ function parseFeedPost(entry){
 }
 async function ingestFeedPost(entry,options={}){
   const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === articleUrlKey(entry.url));
-  if(existing) return options.preview ? openCasualPreviewOrReader(existing) : openBook(existing);
+  if(existing){if(options.present===false)return existing;return options.preview?openCasualPreviewOrReader(existing):openBook(existing);}
   const parsed = parseFeedPost(entry);
   if(!parsed) throw new Error('피드에서 읽을 만한 본문을 찾지 못했어요');
   const photos = await attachArticleImages(parsed);
   const book = await saveCasualBook(parsed,{kind:'article',contentType:'post',site:entry.source,
     sourceUrl:entry.url,feedUrl:entry.feedUrl,author:entry.author,publishedAt:entry.publishedAt,
-    cover:parsed.cover || null,imgSrc:parsed.imgSrc || null},{preview:!!options.preview});
+    cover:parsed.cover || null,imgSrc:parsed.imgSrc || null},{preview:!!options.preview,present:options.present!==false});
   if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
   return book;
 }

@@ -7,6 +7,7 @@ let articlePreviewBook = null;
 let articlePreviewImageUrl = '';
 let articlePreviewGeneration = 0;
 let articlePreviewOpening = null;
+let articlePreviewOpenController=null;
 
 function articlePreviewExcerpt(book){
   const blocks=Array.isArray(book.formatting?.blocks) ? book.formatting.blocks : book.blocks;
@@ -107,7 +108,10 @@ function articlePreviewActive(generation){
 function articlePreviewStatus(text){
   articlePreviewDialog.querySelector('.ap-status').textContent=text;
 }
-function articlePreviewClose(){
+function articlePreviewClose(cancelOpening=true){
+  if(cancelOpening!==false&&articlePreviewOpenController){articlePreviewOpenController.abort();articlePreviewOpenController=null;articlePreviewOpening=null;}
+
+  articlePreviewDialog.dataset.preparing='false';
   articlePreviewGeneration++;
   articlePreviewBook=null;
   const image=/** @type {HTMLImageElement} */(articlePreviewDialog.querySelector('.ap-hero img'));
@@ -122,7 +126,7 @@ function articlePreviewPaint(meta){
   }
 }
 function openCasualPreviewOrReader(book){
-  if(articlePreviewOpening)return articlePreviewOpening;
+  if(articlePreviewOpening)articlePreviewClose();
   if(book.kind!=='article' || posOf(book.id).t){articlePreviewClose();return openBook(book);}
   if(articlePreviewDialog.open && articlePreviewBook===book)return book;
   articlePreviewClose();articlePreviewBook=book;
@@ -133,10 +137,11 @@ function openCasualPreviewOrReader(book){
   dialog.querySelector('.ap-title').textContent=book.title;
   const cached=articlePreviewCached(articlePreviewKey(book));
   articlePreviewPaint(cached);
+  dialog.dataset.metadata=cached?'ready':articlePreviewInput(book)&&navigator.onLine!==false?'loading':'fallback';
   articlePreviewStatus(cached ? '' : articlePreviewInput(book) && navigator.onLine!==false
     ? '한국어 소개를 준비하고 있어요.' : '원문은 바로 읽을 수 있어요.');
   const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
-  start.disabled=false;start.textContent='읽기 시작';start.removeAttribute('aria-busy');
+  start.onclick=articlePreviewStart;start.disabled=false;start.textContent='읽기 시작';start.removeAttribute('aria-busy');
   const excerpt=dialog.querySelector('.ap-excerpt');excerpt.replaceChildren();
   const opening=articlePreviewExcerpt(book)[0] || '';
   if(opening){const p=document.createElement('p');p.textContent=opening.slice(0,260)+(opening.length>260?'…':'');excerpt.appendChild(p);}
@@ -161,28 +166,55 @@ function openCasualPreviewOrReader(book){
   // never paint another article or reopen the dialog; reopening shares the job.
   if(!cached)void articlePreviewMetadata(book).then(meta=>{
     if(!articlePreviewActive(generation) || articlePreviewOpening)return;
-    articlePreviewPaint(meta);
+    articlePreviewPaint(meta);articlePreviewDialog.dataset.metadata=meta?'ready':'fallback';
     articlePreviewStatus(meta ? '' : '한국어 소개 없이도 바로 읽을 수 있어요.');
   });
   return book;
 }
+/* Show the metadata already available on the RSS card before body/image work.
+   Preparation may finish into the library after dismissal, never into another UI. */
+function articlePreviewPrepare(entry,card){
+  const url=entry.readUrl||entry.url;
+  const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===articleUrlKey(url));
+  if(existing)return null;
+  const provisional={id:'preparing:'+url,kind:'article',title:entry.title,site:entry.source,sourceUrl:url,paras:[]};
+  openCasualPreviewOrReader(provisional);
+  const generation=articlePreviewGeneration,start=/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-start'));
+  articlePreviewDialog.dataset.preparing='true';articlePreviewDialog.dataset.metadata='loading';
+  articlePreviewStatus('본문을 준비하고 있어요.');start.disabled=true;start.textContent='본문 준비 중…';
+  const cover=card?.querySelector('img.cover');
+  const src=cover?.currentSrc||cover?.getAttribute('src')||'';
+  if(/^(https?:|blob:)/.test(src)){
+    const image=/** @type {HTMLImageElement} */(articlePreviewDialog.querySelector('.ap-hero img'));
+    image.src=src;image.hidden=false;
+  }
+  return {
+    finish(book){if(articlePreviewActive(generation))openCasualPreviewOrReader(book);},
+    fail(retry){if(!articlePreviewActive(generation))return;
+      articlePreviewDialog.dataset.metadata='fallback';articlePreviewStatus('본문을 준비하지 못했어요. 다시 시도할 수 있어요.');
+      start.disabled=false;start.textContent='다시 시도';start.onclick=()=>{if(articlePreviewActive(generation)){articlePreviewClose();retry();}};
+    }
+  };
+}
 async function articlePreviewStart(){
-  if(articlePreviewOpening || !articlePreviewBook)return;
+  if(articlePreviewOpening || !articlePreviewBook || articlePreviewDialog.dataset.preparing==='true')return;
   const book=articlePreviewBook,generation=articlePreviewGeneration;
   const start=/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-start'));
   start.disabled=true;start.textContent='글 여는 중…';start.setAttribute('aria-busy','true');
   articlePreviewStatus('');
-  const job=Promise.resolve().then(()=>openBook(book,{onPresented:()=>{
-    if(articlePreviewActive(generation))articlePreviewClose();
-  }}));
+  const controller=new AbortController();articlePreviewOpenController=controller;
+  const deadline=setTimeout(()=>controller.abort(),15000);
+  const openingOptions={signal:controller.signal,onPresented:()=>{if(articlePreviewActive(generation))articlePreviewClose(false);}};
+  const job=articlePreviewUntil(Promise.resolve().then(()=>openBook(book,openingOptions)),controller.signal);
   articlePreviewOpening=job;
   try{
     await job;
-    if(articlePreviewActive(generation))articlePreviewClose();
+    if(articlePreviewActive(generation))articlePreviewClose(false);
   }catch{
     if(articlePreviewActive(generation))articlePreviewStatus('글을 열지 못했어요. 다시 눌러 주세요.');
-    else if(typeof toast==='function')toast('글을 열지 못했어요. 다시 시도해 주세요.');
+    else if(!controller.signal.aborted&&typeof toast==='function')toast('글을 열지 못했어요. 다시 시도해 주세요.');
   }finally{
+    clearTimeout(deadline);if(articlePreviewOpenController===controller)articlePreviewOpenController=null;
     if(articlePreviewOpening===job)articlePreviewOpening=null;
     if(articlePreviewActive(generation)){
       start.disabled=false;start.textContent='읽기 시작';start.removeAttribute('aria-busy');
@@ -197,7 +229,7 @@ const articlePreviewStatusNode=document.createElement('p');
 articlePreviewStatusNode.className='ap-status';articlePreviewStatusNode.setAttribute('role','status');
 articlePreviewStatusNode.setAttribute('aria-live','polite');
 articlePreviewDialog.querySelector('.ap-actions').prepend(articlePreviewStatusNode);
-/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-close')).onclick=articlePreviewClose;
+/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-close')).onclick=()=>articlePreviewClose();
 /** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-start')).onclick=articlePreviewStart;
 articlePreviewDialog.addEventListener('cancel',event=>{event.preventDefault();articlePreviewClose();});
 articlePreviewDialog.addEventListener('close',()=>{
@@ -211,4 +243,4 @@ articlePreviewDialog.addEventListener('click',event=>{
   if(articlePreviewBackdrop && event.target===articlePreviewDialog)articlePreviewClose();
   articlePreviewBackdrop=false;
 });
-window.addEventListener('pagehide',articlePreviewClose);
+window.addEventListener('pagehide',()=>articlePreviewClose());

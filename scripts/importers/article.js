@@ -385,7 +385,7 @@ async function ingestArticle(url, options = {}){
   if(articleJobs.has(key)) return articleJobs.get(key);
   const job = (async()=>{
     const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === key);
-    if(existing){ if(options.preview) openCasualPreviewOrReader(existing); else await openBook(existing); return existing; }
+    if(existing){if(options.present!==false){if(options.preview)openCasualPreviewOrReader(existing);else await openBook(existing);}return existing;}
     const location = {};
     let parsed=options.preparedArticle || parseFeedArticle(options);
     if(!parsed){
@@ -396,7 +396,7 @@ async function ingestArticle(url, options = {}){
     const photos = await attachArticleImages(parsed, options.photo);
     const book = await saveCasualBook(parsed, {kind:'article', site:parsed.site || options.source, sourceUrl:url,
       resolvedUrl:parsed.url, discoveredFromUrl:options.discoveredFromUrl || '',
-      author:parsed.author, publishedAt:parsed.publishedAt, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null}, {preview:!!options.preview});
+      author:parsed.author, publishedAt:parsed.publishedAt, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null}, {preview:!!options.preview,present:options.present!==false});
     if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
     return book;
   })();
