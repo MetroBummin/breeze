@@ -6,7 +6,7 @@ permissions:
   contents: write
 jobs:
   apply-and-verify:
-    if: github.repository == 'MetroBummin/breeze' && github.event.head_commit.message == 'stage: social import hardening'
+    if: github.repository == 'MetroBummin/breeze' && github.event.head_commit.message == 'social-import-stage'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -48,6 +48,8 @@ jobs:
                   old=old[:a]+text+old[b:]
               assert hashlib.sha256(old.encode()).hexdigest()==item['new'], 'Output hash mismatch: '+str(path)
               target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(old.encode());paths.append(str(path))
+          ci=root/'.github/workflows/social-import.yml'
+          ci.write_text(ci.read_text().replace("if: github.event.head_commit.message != 'stage: social import hardening'", "if: github.event.head_commit.message != 'social-import-stage'"))
           subprocess.run(['node','tools/stamp-version.mjs'],check=True)
           for path in (root/'.social-stage').iterdir():path.unlink()
           (root/'.social-stage').rmdir()
