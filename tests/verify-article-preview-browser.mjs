@@ -98,7 +98,7 @@ try{
             ]);
             return {result,selected:articlePreviewBook?.title,saved:books.filter(book=>book.title.startsWith('Race ')).length};
           });
-          assert.deepEqual(latest,{result:'done',selected:'Race second',saved:2},'concurrent imports persist both articles and show only the latest selection');
+          assert.deepEqual(latest,{result:'done',selected:'Race second',saved:0},'concurrent previews persist neither article and show only the latest selection');
         }
         await page.close();
       }

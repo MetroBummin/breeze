@@ -423,7 +423,7 @@ function homeRegularTile(card,title,meta){
   }
   tile.append(card,el('div','home-regular-title',title));
   if(card.dataset.localBook){
-    const menu=document.createElement('button');menu.type='button';menu.className='home-card-menu';menu.textContent='⋯';menu.setAttribute('aria-label',title+' 관리');
+    const menu=document.createElement('button');menu.type='button';menu.className='home-card-actions';menu.textContent='관리';menu.setAttribute('aria-label',title+' 관리');
     menu.onclick=event=>{event.stopPropagation();const book=books.find(item=>item.id===card.dataset.localBook);if(book)openEditSheet(book);};tile.append(menu);
   }
   tile.onclick=event=>{if(!card.contains(event.target))card.click();};

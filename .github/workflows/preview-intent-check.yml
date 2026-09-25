@@ -1,0 +1,39 @@
+name: Preview intent
+on:
+  push:
+    branches: [chatgpt/preview-intent-fix-20260925]
+  pull_request:
+    paths:
+      - 'scripts/library/article-preview.js'
+      - 'scripts/library/library.js'
+      - 'scripts/importers/article.js'
+      - 'scripts/importers/rss.js'
+      - 'styles/article-preview.css'
+      - 'styles/home.css'
+      - 'tests/*preview*'
+      - '.github/workflows/preview-intent-check.yml'
+permissions:
+  contents: read
+concurrency:
+  group: preview-intent-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tools/typecheck.mjs
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/verify-preview-intent-browser.mjs
+      - run: node tests/verify-article-preview-browser.mjs
+      - run: node tests/verify-article-preview-resilience.mjs
