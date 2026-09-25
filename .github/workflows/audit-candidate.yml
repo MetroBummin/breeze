@@ -1,0 +1,68 @@
+name: Audit candidate verification
+on:
+  push:
+    branches: [chatgpt/audit-candidate-check-20260925]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: audit-candidate-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  candidates:
+    name: Candidate ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [release, annotation]
+    env:
+      AUDIT_TARGET: ${{ matrix.target }}
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: payload
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 950c5129dbd917f40e55014e9aedb519ca84a896
+          fetch-depth: 0
+          path: candidate
+          persist-credentials: false
+      - name: Fetch exact original review inputs
+        working-directory: candidate
+        run: |
+          git fetch --no-tags origin 0b1b6bb8f023517e99c54cdfb0e6e1203df7c7b7 911a0aab041ae6e0738b01b32a6a857153135fde 37952f7033ad612941e97e6719c89c7f789225e4 3aa2c410b80641564835f438a55e1bcdb50ec232
+      - name: Reconstruct and verify exact candidate
+        run: python3 payload/.audit/candidate.py prepare
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: candidate/package-lock.json
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install pinned development dependencies
+        working-directory: candidate
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install browser test engines
+        working-directory: candidate
+        run: npx playwright install --with-deps chromium webkit
+      - name: Verify contracts, browser integration, and Deno transport
+        run: python3 payload/.audit/candidate.py verify
+      - name: Preserve candidate tree without touching branches
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 payload/.audit/candidate.py publish
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: audit-result-${{ matrix.target }}
+          retention-days: 3
+          path: ${{ runner.temp }}/audit-${{ matrix.target }}
