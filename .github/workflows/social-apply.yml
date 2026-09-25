@@ -1,0 +1,85 @@
+name: Apply social import changes
+on:
+  push:
+    branches: [chatgpt/social-import-hardening-20260925]
+permissions:
+  contents: write
+jobs:
+  apply-and-verify:
+    if: github.repository == 'MetroBummin/breeze' && github.event.head_commit.message == 'stage: social import hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify and apply exact reviewed source
+        shell: python
+        run: |
+          import pathlib, hashlib, base64, gzip, json, subprocess, os
+          root=pathlib.Path.cwd()
+          parts=[(root/'.social-stage'/('part-'+str(i))).read_text() for i in range(3)]
+          parts[0]=parts[0].replace('XPz9Bqb','XPz9B9qb')
+          parts[1]=parts[1].replace('P39766nPzu2p892r7/tT99vv3s4fmTpw/P39766nP','P39766nP')
+          expected=['240f95f4ef884936ea86476e5ba2d79593bd8a26','943a20df3af26cff3e91580645734bf8b422bfca','7af8b8b3dd42568d4424f51347330a310982bb51']
+          for i,part in enumerate(parts):
+              b=part.encode(); actual=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+              print('chunk',i,len(b),actual,flush=True)
+              assert actual==expected[i], 'Transport chunk mismatch'
+          payload=base64.b64decode(''.join(parts),validate=True)
+          assert hashlib.sha256(payload).hexdigest()=='2b92b83c9978f017c650a390dee66fb37fcea7c261ef45505755b8eaecd989ce'
+          paths=[]
+          for item in json.loads(gzip.decompress(payload)):
+              path=pathlib.PurePosixPath(item['path'])
+              assert not path.is_absolute() and '..' not in path.parts and path.parts[0] not in ('.git','.social-stage')
+              assert path.parts[0]!='.github' or str(path)=='.github/workflows/social-import.yml'
+              target=root/path; old=target.read_bytes().decode() if target.exists() else ''
+              if item['old'] is None: assert not target.exists(), str(path)
+              else: assert hashlib.sha256(old.encode()).hexdigest()==item['old'], 'Concurrent source change: '+str(path)
+              for a,b,text in reversed(item['edits']):
+                  assert 0<=a<=b<=len(old)
+                  old=old[:a]+text+old[b:]
+              assert hashlib.sha256(old.encode()).hexdigest()==item['new'], 'Output hash mismatch: '+str(path)
+              target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(old.encode());paths.append(str(path))
+          subprocess.run(['node','tools/stamp-version.mjs'],check=True)
+          for path in (root/'.social-stage').iterdir():path.unlink()
+          (root/'.social-stage').rmdir()
+          (root/'.github/workflows/social-apply.yml').unlink()
+          subprocess.run(['git','add','--']+paths+['.social-stage','.github/workflows/social-apply.yml'],check=True)
+          subprocess.run(['git','diff','--cached','--check'],check=True)
+          subprocess.run(['git','-c','user.name=github-actions[bot]','-c','user.email=41898282+github-actions[bot]@users.noreply.github.com','commit','-m','feat: safely import public social posts with stress-test coverage'],check=True)
+          branch='chatgpt/social-import-hardening-20260925'
+          current=subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch],text=True).split()[0]
+          assert current==os.environ['GITHUB_SHA'], 'Concurrent remote changes: refusing push'
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
+          print('PUBLISHED',subprocess.check_output(['git','rev-parse','HEAD'],text=True),flush=True)
+      - name: Type and server checks
+        run: |
+          node tools/typecheck.mjs
+          node --test tests/verify-social-import-server.mjs
+      - run: npx playwright install --with-deps chromium webkit
+      - name: One public smoke sample (not a stress test on X)
+        run: node tools/verify-social-live.mjs
+      - name: Whole-app fixture stress and ingestion regressions
+        run: |
+          node tests/verify-social-import-browser.mjs
+          npm run test:ingestion
+      - name: Existing contracts
+        run: npm test
+      - name: Preserve test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: social-import-proof
+          path: |
+            /tmp/social-live.json
+            .social-stage
+          include-hidden-files: true
+          retention-days: 1
