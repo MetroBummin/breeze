@@ -163,3 +163,6 @@ Public API references:
 - https://developer.apple.com/documentation/uikit/uiscrollview/stopscrollingandzooming()
 WebKit precedent (not substituted for the collected iPad trace):
 - https://bugs.webkit.org/show_bug.cgi?id=251513
+
+## Audit follow-up: explicit reading lock
+Document entry defaults to read-only. The small 필기 button enables editing; 읽기 locks editing without hiding persisted ink. Folding the tool UI never changes edit state. Native scope is disabled while read-only. Native scope retains all paper rectangles in content coordinates, cached by session/layout/committed zoom; scrolling reuses those rectangles and pinch previews defer publication until committed. Relevant page/layout mutations invalidate the cache. This avoids a page-count scan on every scroll/pinch frame without dropping pages during fast inertia. This changes native scope/input behaviour and requires renewed physical iPad QA; earlier 21-contact measurements do not validate this revision.

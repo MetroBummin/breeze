@@ -14,3 +14,6 @@
 #pdf-ink-tools select{font:inherit;color:inherit;background:transparent;border:0;border-radius:12px;padding:8px 3px;min-height:44px;max-width:76px;}
 #pdf-ink-tools [role="status"]:empty{display:none;}
 #pdf-ink-tools :is(button,select):focus-visible{outline:2px solid currentColor;outline-offset:1px;}
+
+#pdf-ink-tools.ink-reading .ink-read-lock{display:none;}
+#pdf-ink-tools.ink-reading [role="status"]:not(:empty){max-width:210px;}

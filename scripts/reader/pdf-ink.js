@@ -9,7 +9,7 @@ const BreezePdfInk = (()=>{
   const ns='http://www.w3.org/2000/svg';
   const database=openDb('breeze-pdf-ink',1,db=>db.createObjectStore('pages'));
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
-  let session=null, mode='pen', collapsed=false, active=null, toolbar=null, status=null;
+  let session=null, mode='read', collapsed=false, active=null, toolbar=null, status=null;
   const suppressed=new Set(), blockedPointers=new Set();
   let suppressClick=false;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
@@ -44,13 +44,15 @@ const BreezePdfInk = (()=>{
     if(bridge){bridge.postMessage({rows:traceRows});traceRows.length=0;}
   }
   let scopeFrame=0, lastScope='';
+  let cachedPageScope=null,pageScopeSession=null,pageScopeKey='';
   function publishNativeScope(){
     scopeFrame=0;
     const bridge=Reflect.get(window,'webkit')?.messageHandlers?.breezeInkScope;
     if(!bridge)return;
-    const enabled=!!visible()&&!document.hidden, box=readerScroller();
+    const enabled=!!visible()&&mode!=='read'&&!document.hidden, box=readerScroller();
     let scope={enabled};
     if(enabled&&box){
+      if(originalPinchBusy())return; // Publish committed geometry after the pinch, not every preview frame.
       const outer=box.getBoundingClientRect();
       const bounds=element=>{
         const r=element.getBoundingClientRect();return [r.x,r.y,r.width,r.height];
@@ -58,12 +60,14 @@ const BreezePdfInk = (()=>{
       const excluded=Array.from(document.querySelectorAll('button,input,select,textarea,[role="dialog"],#pdf-ink-tools,#readpill,#word-modal-scrim,#sentence-scrim,#aa-pop'))
         .filter(element=>element.getClientRects().length && getComputedStyle(element).visibility!=='hidden')
         .map(bounds);
-      scope={enabled,viewport:document.documentElement.clientWidth,box:bounds(box),
-        scrollHeight:box.scrollHeight,excluded,
-        pages:session.pages.map(element=>{
+      const geometryKey=[outer.width,outer.height,box.scrollHeight,originalZoom(),session.pages.length].join('|');
+      if(!cachedPageScope||pageScopeSession!==session||pageScopeKey!==geometryKey){
+        cachedPageScope=session.pages.map(element=>{
           const r=element.getBoundingClientRect();
           return [r.x-outer.x+box.scrollLeft,r.y-outer.y+box.scrollTop,r.width,r.height];
-        })};
+        });pageScopeSession=session;pageScopeKey=geometryKey;
+      }
+      scope={enabled,viewport:document.documentElement.clientWidth,box:bounds(box),scrollHeight:box.scrollHeight,excluded,pages:cachedPageScope};
     }
     const json=JSON.stringify(scope);
     if(json!==lastScope){lastScope=json;bridge.postMessage(scope);}
@@ -73,7 +77,7 @@ const BreezePdfInk = (()=>{
       scopeFrame=requestAnimationFrame(publishNativeScope);
   }
   // Geometry only. Drawing/coordinates/storage remain in the existing engine.
-  new MutationObserver(scheduleNativeScope).observe(document.documentElement,
+  new MutationObserver(records=>{if(!originalPinchBusy()&&records.some(record=>record.target instanceof Element&&record.target.matches('.pdf-source-page,#original-content,#original-zoom')))cachedPageScope=null;if(records.some(record=>{const node=record.target;return node===document.body||node===document.documentElement||node instanceof Element&&(!node.closest('.pdf-ink-layer')&&(node.closest('#v-read,#readchrome')||node.matches('[role=dialog],dialog,#word-modal-scrim,#sentence-scrim,#aa-pop')));} ))scheduleNativeScope();}).observe(document.documentElement,
     {subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
   window.addEventListener('resize',scheduleNativeScope);
   document.addEventListener('visibilitychange',publishNativeScope);
@@ -87,17 +91,19 @@ const BreezePdfInk = (()=>{
     toolbar.querySelectorAll('[data-ink-mode]').forEach(button=>{
       button.setAttribute('aria-pressed',String(button.dataset.inkMode===mode));
     });
-    toolbar.classList.toggle('ink-editing',!collapsed);
+    toolbar.classList.toggle('ink-editing',mode!=='read'&&!collapsed);
+    toolbar.classList.toggle('ink-reading',mode==='read');
     const toggle=toolbar.querySelector('[data-ink-toggle]');
-    toggle.setAttribute('aria-expanded',String(!collapsed));
-    toggle.setAttribute('aria-label',collapsed?'필기 도구 펼치기':'필기 도구 접기');
-    toggle.textContent=collapsed?'도구':'접기';
-    toolbar.querySelector('[data-ink-undo]').disabled=!undoStack.length||!!active;
-    toolbar.querySelector('[data-ink-redo]').disabled=!redoStack.length||!!active;
+    toggle.setAttribute('aria-expanded',String(mode!=='read'&&!collapsed));
+    toggle.setAttribute('aria-label',mode==='read'?'필기 시작':collapsed?'필기 중 · 도구 펼치기':'필기 도구 접기');
+    toggle.textContent=mode==='read'?'필기':collapsed?'필기 중':'접기';
+    toolbar.querySelector('[data-ink-undo]').disabled=mode==='read'||!undoStack.length||!!active;
+    toolbar.querySelector('[data-ink-redo]').disabled=mode==='read'||!redoStack.length||!!active;
     if(!visible())cancel();
   }
   function setMode(next){
-    cancel(); mode=next;
+    cancel();suppressed.clear();blockedPointers.clear();suppressClick=false; mode=next;
+    if(next!=='read')collapsed=false;else publishNativeScope();
     if(typeof cancelGesture==='function')cancelGesture('PDF ink mode');
     if(typeof closePanel==='function')closePanel();
     if(typeof closeSentence==='function')closeSentence();
@@ -108,11 +114,11 @@ const BreezePdfInk = (()=>{
     toolbar=document.createElement('div');toolbar.id='pdf-ink-tools';
     toolbar.className='control-glass';toolbar.setAttribute('role','group');
     toolbar.setAttribute('aria-label','PDF 필기');toolbar.hidden=true;
-    for(const [value,label] of [['pen','펜'],['erase','지우개']]){
+    for(const [value,label] of [['read','읽기'],['pen','펜'],['erase','지우개']]){
       const button=document.createElement('button');button.type='button';
       button.dataset.inkMode=value;button.textContent=label;
       button.onclick=()=>setMode(value);
-      button.classList.add('ink-edit-only');
+      button.classList.add(value==='read'?'ink-read-lock':'ink-edit-only');
       toolbar.append(button);
     }
     /** @type {Array<[string,string,Array<string|number>,string[],string|number]>} */
@@ -138,7 +144,7 @@ const BreezePdfInk = (()=>{
       button.onclick=()=>history(kind==='undo');toolbar.append(button);
     }
     const toggle=document.createElement('button');toggle.type='button';toggle.dataset.inkToggle='';
-    toggle.onclick=()=>{collapsed=!collapsed;update();};toolbar.append(toggle);
+    toggle.onclick=()=>{if(mode==='read')setMode('pen');else{collapsed=!collapsed;update();}};toolbar.append(toggle);
     status=document.createElement('span');status.setAttribute('role','status');
     status.setAttribute('aria-live','polite');toolbar.append(status);
     const retry=document.createElement('button');retry.type='button';retry.textContent='저장 재시도';
@@ -205,7 +211,7 @@ const BreezePdfInk = (()=>{
     return {key,strokes:[],revision:0,dirty:false,error:false,saving:null,loading:null,loaded:false,svg:null,element:null};
   }
   function history(undo){
-    if(!visible()||active)return;
+    if(!visible()||mode==='read'||active)return;
     const source=undo?undoStack:redoStack,target=undo?redoStack:undoStack;
     const edit=source.pop();if(!edit)return;
     let state=pages.get(edit.key);
@@ -264,7 +270,7 @@ const BreezePdfInk = (()=>{
         && !Array.from(event.touches).some(finger))stop(event);
   }
   function touchStart(event){
-    if(!visible())return;
+    if(!visible()||mode==='read')return;
     const changed=Array.from(event.changedTouches);
     for(const t of changed){
       if(onPaper(t.target) && (active || t.touchType==='stylus'))suppressed.add(t.identifier);
@@ -326,7 +332,7 @@ const BreezePdfInk = (()=>{
   for(const type of ['pointerdown','pointermove','pointerup','pointercancel','click']){
     window.addEventListener(type,rawEvent=>{
       const event=/** @type {PointerEvent} */(rawEvent);
-      if(!visible())return;
+      if(!visible()||mode==='read')return;
       trace('pointer/capture',event);
       const paper=onPaper(event.target);
       if(type==='pointerdown'){
@@ -364,7 +370,7 @@ const BreezePdfInk = (()=>{
   const interrupt=()=>{cancel();suppressed.clear();blockedPointers.clear();suppressClick=false;resumeOriginalPdfPaint();};
   window.addEventListener('blur',interrupt);
   window.addEventListener('resize',()=>{cancel();resumeOriginalPdfPaint();});
-  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel();}},{capture:true,passive:true});
+  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{
@@ -396,13 +402,13 @@ const BreezePdfInk = (()=>{
     state.svg.setAttribute('aria-hidden','true');element.append(state.svg);paint(state);
   }
   return {
-    open(s){if(!supported()||!s.hash)return;session=s;mode='pen';collapsed=false;undoStack.length=redoStack.length=0;controls();update();},
+    open(s){if(!supported()||!s.hash)return;session=s;mode='read';collapsed=false;undoStack.length=redoStack.length=0;controls();update();},
     mount,
     release(s,n){
       const state=pages.get(keyFor(s,n));if(!state)return;
       if(active?.state===state)cancel();state.svg?.remove();state.svg=null;state.element=null;evict(state);
     },
-    close(s){if(s!==session)return;interrupt();mode='pen';for(let n=1;n<=s.pages.length;n++)this.release(s,n);session=null;undoStack.length=redoStack.length=0;update();},
+    close(s){if(s!==session)return;interrupt();mode='read';for(let n=1;n<=s.pages.length;n++)this.release(s,n);session=null;undoStack.length=redoStack.length=0;update();},
     finger,trace,
     busy(){return !!active||suppressed.size>0;}
   };
