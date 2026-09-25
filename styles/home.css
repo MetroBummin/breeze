@@ -417,3 +417,13 @@
 .bookcard.editorial-cover:not(.has-cover) .cover-art{left:auto;right:-26px;top:auto;bottom:-32px;
   width:155px;height:155px;transform:rotate(-12deg);opacity:.18;}
 .bookcard.editorial-cover:not(.has-cover) .wave{display:none;}
+
+/* No-cover cards identify the actual document rather than a generic pattern. */
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .casual .thumb:not(.has-cover) .lede,
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover) .bt{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;
+  font-size:clamp(17px,2vw,23px);line-height:1.35;overflow-wrap:anywhere;}
+:is(#v-home,#v-casuals,#v-longform) .home-regular-title{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+:is(.casual,.bookcard)[role="button"]:focus-visible{outline:2px solid var(--blue);outline-offset:4px;}
+
+.home-regular-tile{position:relative;}.home-card-menu{position:absolute;top:6px;right:6px;min-width:44px;min-height:44px;border:0;border-radius:50%;background:var(--sentence-glass-solid,var(--bg));color:inherit;font-size:22px;cursor:pointer;}.home-card-menu:focus-visible{outline:2px solid var(--blue);}

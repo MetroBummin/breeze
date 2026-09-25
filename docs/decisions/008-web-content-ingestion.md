@@ -265,3 +265,6 @@ stores successfully fetched blobs, with an eight-image limit. Therefore a cover
 can appear outside without being an inline photo inside, especially when an
 image is only `og:image` or an image download fails. A selected manual cover
 changes the card jacket; it does not insert an image into the article body.
+
+## Audit UI follow-up
+Known face bounds take priority over centre bias; use contain when their union cannot fit. Crop hints use cache v2. Cover-free regular cards retain text identity. Saved-content empty states include an add action. Primary cards expose button semantics/keyboard activation; wired local cards also expose Shift+F10 editing. Native VoiceOver and real-device design QA remain required.

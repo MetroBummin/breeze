@@ -1,6 +1,6 @@
 /* Home-only crop hints. Work on a tiny canvas once per image/ratio and keep the
    result locally; never delay image display or rerun detection while scrolling. */
-const HOME_CROP_CACHE_KEY='breeze.home-crop.v1';
+const HOME_CROP_CACHE_KEY='breeze.home-crop.v2';
 const homeCropJobs=new Map();
 const homeCropWaiting=new WeakMap();
 const homeCropObserver=typeof IntersectionObserver==='function'
@@ -24,6 +24,8 @@ function homeCropStore(key,value){
   try{localStorage.setItem(HOME_CROP_CACHE_KEY,JSON.stringify(cache));}catch(e){}
 }
 function homeCropPosition(boxes,w,h,ratio){
+  if(!boxes.length||!Number.isFinite(w)||!Number.isFinite(h)||w<=0||h<=0||!Number.isFinite(ratio)||ratio<=0)return null;
+  boxes=boxes.filter(b=>[b.x,b.y,b.width,b.height].every(Number.isFinite)&&b.width>0&&b.height>0);
   if(!boxes.length)return null;
   const left=Math.min(...boxes.map(b=>b.x)),right=Math.max(...boxes.map(b=>b.x+b.width));
   const top=Math.min(...boxes.map(b=>b.y)),bottom=Math.max(...boxes.map(b=>b.y+b.height));
@@ -31,10 +33,10 @@ function homeCropPosition(boxes,w,h,ratio){
   const visibleW=Math.min(w,h*ratio),visibleH=Math.min(h,w/ratio);
   const cropX=Math.max(0,Math.min(w-visibleW,focusX*w-visibleW/2));
   const cropY=Math.max(0,Math.min(h-visibleH,focusY*h-visibleH/2));
-  // Small moves protect faces near the edge without producing lopsided cards.
-  const x=w>visibleW?Math.max(.18,Math.min(.82,cropX/(w-visibleW))):.5;
-  const y=h>visibleH?Math.max(.18,Math.min(.82,cropY/(h-visibleH))):.5;
-  return {x,y,focalX:focusX,focalY:focusY};
+  // Preserve known subjects before cosmetic centering.
+  const x=w>visibleW?Math.max(0,Math.min(1,cropX/(w-visibleW))):.5;
+  const y=h>visibleH?Math.max(0,Math.min(1,cropY/(h-visibleH))):.5;
+  return {x,y,fit:right-left>visibleW||bottom-top>visibleH?'contain':'cover',focalX:focusX,focalY:focusY};
 }
 async function homeCropAnalyze(image,ratio){
   const w=image.naturalWidth,h=image.naturalHeight;
@@ -86,7 +88,7 @@ function homeSmartCrop(image,key,ratio,recover){
   if(!image||!key)return;
   const cacheKey=key+'|'+ratio,cache=homeCropEntries();
   const apply=result=>{
-    if(image.isConnected&&result?.x!=null)image.style.objectPosition=`${Math.round(result.x*100)}% ${Math.round(result.y*100)}%`;
+    if(image.isConnected&&result?.x!=null){image.style.objectPosition=`${result.x*100}% ${result.y*100}%`;image.style.objectFit=result.fit==='contain'?'contain':'cover';}
   };
   if(Object.prototype.hasOwnProperty.call(cache,cacheKey)){apply(cache[cacheKey]);return;}
   const run=()=>{

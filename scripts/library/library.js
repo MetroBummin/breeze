@@ -1,3 +1,13 @@
+function accessibleLibraryCard(card,label,edit){
+  card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',label);
+  if(edit){card.setAttribute('aria-description','Shift+F10으로 이름 변경과 삭제 메뉴 열기');}
+  card.addEventListener('keydown',event=>{
+    if(event.target!==card)return;
+    if(edit&&event.shiftKey&&event.key==='F10'){event.preventDefault();edit();return;}
+    if((event.key==='Enter'||event.key===' ')&&!event.repeat){event.preventDefault();card.click();}
+  });
+  return card;
+}
 /* One display rule everywhere; 100% is reserved for canonical completion. */
 function readingPercent(value){
   const progress=Math.max(0,Math.min(1,Number(value)||0));
@@ -168,9 +178,11 @@ function applyCover(host, book){
    아무것도 없는 자리를 비켜서서 혼자 어정쩡하게 떠 있었습니다. 지우는 길은
    꾹 누르기로 이미 있고, 그쪽이 "이 기기에서만/모든 기기에서"까지 물어봅니다. */
 function wireBookCard(card, book){
+  accessibleLibraryCard(card,book.title,()=>openEditSheet(books.find(item=>item.id===book.id)||book));
+  card.dataset.localBook=book.id;
   const currentBook=()=>books.find(item=>item.id===book.id)||book;
   const pressed = attachLongPress(card, ()=>openEditSheet(currentBook()));
-  card.onclick = () => { if(!pressed()) openBook(currentBook()); };
+  card.onclick = event => { if(event?.detail===0||!pressed()) openBook(currentBook()); };
   return card;
 }
 
@@ -389,12 +401,17 @@ function reconcileHomeCards(container,specs){
 }
 function homeRegularTile(card,title,meta){
   const tile=el('div','home-regular-tile');
+  if(!card.hasAttribute('tabindex'))accessibleLibraryCard(card,title||card.getAttribute('aria-label')||'열기');
   if(meta){
     const label=el('div','home-cover-meta',meta);
     const cover=card.classList.contains('bookcard')?card:card.querySelector('.thumb');
     cover?.append(label);
   }
   tile.append(card,el('div','home-regular-title',title));
+  if(card.dataset.localBook){
+    const menu=document.createElement('button');menu.type='button';menu.className='home-card-menu';menu.textContent='⋯';menu.setAttribute('aria-label',title+' 관리');
+    menu.onclick=event=>{event.stopPropagation();const book=books.find(item=>item.id===card.dataset.localBook);if(book)openEditSheet(book);};tile.append(menu);
+  }
   tile.onclick=event=>{if(!card.contains(event.target))card.click();};
   return tile;
 }
@@ -447,7 +464,10 @@ function renderCasualLibrary(){
   cloud.forEach(row=>grid.appendChild(homeRegularTile(cloudCasualCard(row),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')));
   const count = casuals.length;
   document.getElementById('casual-cnt').textContent = count ? `${count}편` : '';
-  empty.hidden = true;
+  const failed=Reflect.get(window,'breezeLibraryLoadFailed')===true;
+  empty.hidden = count>0||cloud.length>0||failed;
+  empty.replaceChildren(document.createTextNode('저장한 링크와 짧은 글이 여기에 모여요. '));
+  const add=document.createElement('button');add.type='button';add.textContent='글 추가';add.onclick=()=>openAddModal('casual');empty.append(add);
 }
 
 function renderLongformLibrary(){

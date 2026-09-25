@@ -307,6 +307,7 @@ function rssCard(entry){
   const color = entry.source === 'ProPublica' ? 1 : 0;
   card.className = 'casual rss-card cpal' + color;
   card.dataset.rssUrl=entry.url;
+  accessibleLibraryCard(card,[entry.title,entry.source,'미리보기 열기'].filter(Boolean).join(' · '));
   card.innerHTML = `<div class="thumb rss-thumb editorial-cover">${coverArtwork(entry.url)}<img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
