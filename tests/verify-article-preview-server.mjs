@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
+import {generateArticlePreview} from '../supabase/functions/article-preview/generate.mjs';
 const source=readFileSync(new URL('../supabase/functions/article-preview/index.ts',import.meta.url),'utf8');
 const executable=ts.transpileModule(source.replace(/^import .*;\n/gm,''),{
   compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}
@@ -91,4 +92,13 @@ test('versioned evidence key normalizes tracking but not changed evidence',async
   assert.equal(state.calls,1);await send({...body,title:'Updated title'});assert.equal(state.calls,2);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v4\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
   assert.equal(state.keys[0],Buffer.from(digest).toString('hex'));
+});
+test('source month and written counts may be rendered as Korean numerals',async()=>{
+  const title='Council approves a library pilot after a divided vote';
+  const excerpt='On September 19, the council voted 7 to 2 for a six-month pilot at two libraries. It may start in November if staffing is arranged; no extension has been approved.';
+  const summaryKo='시의회가 9월 19일 7대 2로 2개 도서관의 6개월 시범 운영을 승인했습니다. 인력 협약이 끝나면 11월 시작할 수 있지만, 연장은 아직 결정되지 않았습니다.';
+  const request=async()=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({summaryKo})}}]}),{status:200});
+  assert.equal((await generateArticlePreview(title,excerpt,'test-key',request)).meta.summaryKo,summaryKo);
+  const unsupported=async()=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({summaryKo:summaryKo+' 30일 후 결과를 확인합니다.'})}}]}),{status:200});
+  await assert.rejects(generateArticlePreview(title,excerpt,'test-key',unsupported),/unsupported_number/);
 });

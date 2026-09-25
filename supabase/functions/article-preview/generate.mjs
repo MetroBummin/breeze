@@ -38,7 +38,11 @@ export async function generateArticlePreview(title, excerpt, key, request = fetc
     const sourceNumbers = new Set(sourceText.match(/\d+(?:[.,]\d+)*/g) || []);
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     months.forEach((month, index) => {
-      if (new RegExp(`\\b${month}\\s+\\d+`, "i").test(sourceText)) sourceNumbers.add(String(index + 1));
+      if (new RegExp(`\\b${month}\\b`).test(sourceText)) sourceNumbers.add(String(index + 1));
+    });
+    const writtenNumbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+    writtenNumbers.forEach((word, number) => {
+      if (new RegExp(`\\b${word}\\b`, "i").test(sourceText)) sourceNumbers.add(String(number));
     });
     if ((meta.summaryKo.match(/\d+(?:[.,]\d+)*/g) || []).some(number => !sourceNumbers.has(number)))
       throw Object.assign(new Error("unsupported_number"), { candidate: meta });
