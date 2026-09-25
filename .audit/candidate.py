@@ -1,18 +1,13 @@
-"""Run verified candidate transfer and publish only immutable tree objects."""
+"""Run verified full candidate tests and publish only immutable tree objects."""
 from pathlib import Path
 import os, sys, runpy
 base=Path(__file__).with_name('base.py').read_text()
 base=base.replace("{'prepare': prepare, 'verify': verify, 'publish': publish_tree}[sys.argv[1]]()",'')
-# This diagnostic pass isolates the failing full-app checks. Final pass runs all.
-base=base.replace('    results = []', '''    commands = [command for command in commands if command in [
-        'node tests/verify-audit-browser.mjs', 'npm run test:ingestion',
-        'npm run test:home-ui', 'node tests/verify-article-preview-browser.mjs',
-        'deno check --no-config server/article/index.ts']]
-    results = []''')
 exec(compile(base,str(Path(__file__).with_name('base.py')),'exec'))
 if sys.argv[1]=='prepare':
     prepare()
     runpy.run_path(str(Path(__file__).with_name('followup.py')))
+    runpy.run_path(str(Path(__file__).with_name('final-fix.py')))
 elif sys.argv[1]=='verify':
     verify()
 elif sys.argv[1]=='publish':
@@ -23,7 +18,7 @@ elif sys.argv[1]=='publish':
     entries=[]
     for name in names:
         if name.startswith('.github/workflows/'):
-            continue # connector overlays reviewed workflow; Actions token cannot publish workflows
+            continue # connector overlays the reviewed CI workflow
         path=valid_path(name)
         if not path.exists():
             entries.append({'path':name,'mode':'100644','type':'blob','sha':None});continue
@@ -37,7 +32,7 @@ elif sys.argv[1]=='publish':
     if process.returncode:
         print(process.stdout,process.stderr);raise SystemExit(process.returncode)
     tests=json.loads((OUT/'tests.json').read_text())
-    result={'target':TARGET,'tree':json.loads(process.stdout)['sha'],'branch':target['branch'],'expectedHead':target['expected'],'allPassed':all(t['exitCode']==0 for t in tests),'tests':tests,'workflowOverlayRequired':True,'diagnosticPass':True}
+    result={'target':TARGET,'tree':json.loads(process.stdout)['sha'],'branch':target['branch'],'expectedHead':target['expected'],'allPassed':all(t['exitCode']==0 for t in tests),'tests':tests,'workflowOverlayRequired':True,'diagnosticPass':False}
     (OUT/'result.json').write_text(json.dumps(result,indent=2))
     print(json.dumps({k:v for k,v in result.items() if k!='tests'}))
     if not result['allPassed']:raise SystemExit(1)
