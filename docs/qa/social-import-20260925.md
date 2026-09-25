@@ -65,16 +65,23 @@ all posts. Artifact `social-import-proof` / `social-live.json` records the resul
 No repeated live requests were used for stress testing. No live Threads/X Article
 success was measured. The final nested-owner fix does not change the oEmbed path.
 
+## Supabase runtime follow-up — 2026-09-26
+The production `article` function was deployed with the pinned transport.
+Supabase's Node shim rejected `ClientRequest.options.lookup`; a direct-IP Node
+request also failed its TLS handshake. The Deno TCP/TLS transport keeps the
+validated IP socket and verifies the original hostname. With this transport,
+the production function returned HTTP 200 for the IANA ordinary HTML sample
+and the public X oEmbed sample above. Private IP and private-redirect requests
+returned `bad_url` (400), and an X profile URL returned `social_unsupported`
+(400). These were one-off live smoke calls, not a throughput or Threads test.
+
 ## Not claimed / release gates
 No exact failing URL was supplied by the user, so that incident is unverified.
 Live Threads/X Article availability, complete multi-post thread retrieval,
 login-restricted content, native iOS share-sheet round-trip, physical iPad
-performance, and actual Supabase runtime/deployment remain separate gates.
-The current native Share Extension remains dormant. Server `article` plus
-`public-fetch.mjs` and `social-embed.mjs` must be deployed together after review,
-including validation of #24's Node-compatible pinned transport in Supabase/Deno.
-Preview #21's early-shell/cancellation path must be integrated hook-by-hook with
-this adapter; existing feature branches were neither overwritten nor merged.
+performance remain separate gates. The current native Share Extension remains
+dormant. Deploy `article`, `public-fetch.mjs` and `social-embed.mjs` together.
+The integrated Preview keeps the deferred-save boundary until Read is pressed.
 PR CI on bot-originated commits may require GitHub approval; a pending or
 approval-required run is not represented as a successful run. See the exact
 completed verification run above. No repository approval policy was weakened.

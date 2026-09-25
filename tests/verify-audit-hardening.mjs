@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {Script,createContext} from 'node:vm';
 import {webcrypto} from 'node:crypto';
 import ts from 'typescript';
-import {publicAddress,publicUrl,publicAddresses,fetchPublic,readBounded} from '../server/article/public-fetch.mjs';
+import {publicAddress,publicUrl,publicAddresses,fetchPublic,readBounded,decodeHttpResponse} from '../server/article/public-fetch.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 function functions(path,names){
   const source=ts.createSourceFile(path,read(path),ts.ScriptTarget.Latest,true);
@@ -80,6 +80,17 @@ test('stream byte limit stops before consuming the remainder',async()=>{
 });
 test('DNS wait honors cancellation',async()=>{
   const controller=new AbortController();const job=fetchPublic('https://example.com',{signal:controller.signal,resolve:()=>new Promise(()=>{})});controller.abort();await assert.rejects(job);
+});
+test('pinned Deno response decoder keeps body bytes and rejects oversized chunks',()=>{
+  const encode=text=>new TextEncoder().encode(text);
+  const raw=encode('HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nTransfer-Encoding: chunked\r\n\r\n4\r\nTest\r\n0\r\n\r\n');
+  const result=decodeHttpResponse(raw,4);
+  assert.equal(new TextDecoder().decode(result.bytes),'Test');
+  assert.equal(result.headers['content-type'],'text/html');
+  assert.throws(()=>decodeHttpResponse(raw,3),/too_big/);
+  assert.equal(new TextDecoder().decode(decodeHttpResponse(encode('HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nTest'),4).bytes),'Test');
+  assert.throws(()=>decodeHttpResponse(encode('HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nTest'),4),/too_big/);
+  assert.deepEqual(decodeHttpResponse(encode('HTTP/1.1 302 Found\r\nLocation: https://example.com/next\r\n\r\n'),4).location,'https://example.com/next');
 });
 test('runtime PDF calls disable eval without upgrading the glyph adapter',()=>{
   for(const path of ['scripts/importers/importers.js','scripts/reader/pdf-original.js'])assert.match(read(path),/getDocument\(\{isEvalSupported:false,/);
