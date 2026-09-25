@@ -102,9 +102,9 @@ try{
         homeCropPosition([{x:132,y:25,width:24,height:24}],160,120,3/4),
         homeCropPosition([{x:4,y:25,width:24,height:24},{x:132,y:25,width:24,height:24}],160,120,3/4),
       ]);
-      assert.ok(crops[0].x<.5&&crops[0].x>=.18,'Left face should stay within crop limit');
-      assert.ok(crops[1].x>.5&&crops[1].x<=.82,'Right face should stay within crop limit');
-      assert.ok(Math.abs(crops[2].x-.5)<.1,'Multiple faces should favor their combined center');
+      assert.equal(crops[0].x,0,'Left edge face should stay visible');
+      assert.equal(crops[1].x,1,'Right edge face should stay visible');
+      assert.equal(crops[2].fit,'contain','Unfittable multiple faces should remain visible');
       await page.evaluate(()=>show('casuals'));
       await page.locator('#v-casuals').waitFor({state:'visible'});
       assert.equal(await page.locator('#v-casuals .rss-card').count(),0);

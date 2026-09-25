@@ -78,7 +78,7 @@ try{
  assert.equal(await page.evaluate(()=>document.getElementById('library-refresh').classList.contains('pulling')),false,'Navigation retained the pull state');
  await page.evaluate(()=>window.pull(0,150));assert.equal(await page.evaluate(()=>window.refreshCalls),4,'Non-shelf view refreshed');
  await page.evaluate(()=>show('home'));
- await page.locator('#casuals .section-link').click();assert.equal(await page.locator('#v-casuals').isVisible(),true);
+ await page.locator('#home-casuals .section-link').click();assert.equal(await page.locator('#v-casuals').isVisible(),true);
  await page.evaluate(()=>show('home'));await page.locator('#longform .section-link').click();assert.equal(await page.locator('#v-longform').isVisible(),true);
  await page.evaluate(()=>{sbUser={email:'fixture@example.test'};syncLoginNudge()});
  assert.equal(await page.locator('#login-nudge').isVisible(),false,'Signed-in account still has dot');

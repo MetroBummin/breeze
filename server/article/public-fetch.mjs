@@ -87,6 +87,10 @@ function requestPinned(url,addresses,{signal,headers,limit}){
     request.on('error',reject);request.end();
   });
 }
+/**
+ * @param {string} raw
+ * @param {{signal?: AbortSignal, headers?: Record<string,string>, limit?: number, resolve?: typeof lookup, transport?: typeof requestPinned}} [options]
+ */
 export async function fetchPublic(raw,{signal,headers={},limit=3000000,resolve=lookup,transport=requestPinned}={}){
   let url=publicUrl(raw);
   const controller=signal?null:new AbortController();signal=signal||controller.signal;
