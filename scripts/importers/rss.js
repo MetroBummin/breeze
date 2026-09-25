@@ -407,6 +407,132 @@ async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
   }
   return cards;
 }
+/* Local discovery ranking. No requests, new tracking, or stored profile: use
+   existing article progress only. Keep feed rotation and Reader/Preview intact. */
+function rssRecommendationUrl(raw){
+  try{
+    const url=new URL(raw);
+    if(!/^https?:$/.test(url.protocol))return '';
+    url.hash='';
+    for(const name of [...url.searchParams.keys()])
+      if(/^utm_|^(fbclid|gclid)$/i.test(name))url.searchParams.delete(name);
+    url.searchParams.sort();
+    return url.href;
+  }catch{return '';}
+}
+function rssRecommendationHost(raw){
+  try{return new URL(raw).hostname.replace(/^www\./,'');}catch{return '';}
+}
+/**
+ * Rank one unread pictured entry per feed, preserving the feed's refresh order.
+ * Progress is an interest hint, not proof of comprehension or dwell time.
+ * @param {Array<Array<any>>} groups
+ * @param {{library?: Array<any>, positions?: Object, sources?: Array<any>, now?: number}} options
+ * @returns {Array<Array<any>>}
+ */
+function rssRankRecommendations(groups, options={}){
+  const day=86400000;
+  const now=Number.isFinite(options.now)?options.now:Date.now();
+  const library=Array.isArray(options.library)?options.library:[];
+  const history=options.positions || {};
+  const sources=Array.isArray(options.sources)?options.sources:[];
+  const byFeed=new Map(), byHost=new Map();
+  for(const feed of sources){
+    if(!feed)continue;
+    const key=rssRecommendationUrl(feed.url), host=rssRecommendationHost(key);
+    if(!key)continue;
+    const category=rssCategory(feed.category);
+    byFeed.set(key,category);
+    if(!byHost.has(host))byHost.set(host,new Set());
+    byHost.get(host).add(category);
+  }
+  const aliases=book=>[book.sourceUrl,book.resolvedUrl,book.discoveredFromUrl]
+    .map(rssRecommendationUrl).filter(Boolean);
+  const saved=new Set(library.filter(Boolean).flatMap(aliases));
+  const sourceWeights=new Map(), categoryWeights=new Map(), learned=new Set();
+  const add=(map,key,value)=>{if(key)map.set(key,(map.get(key)||0)+value);};
+  // A Preview/import without reading progress must not train the ranking.
+  const reads=library.filter(book=>{
+    const position=book && history[book.id];
+    return book?.kind==='article' && !book.transient && position &&
+      Number.isFinite(position.t) && position.t>0 && position.t<=now &&
+      now-position.t<=60*day && Number.isFinite(position.p) && position.p>=.1;
+  }).sort((a,b)=>history[b.id].t-history[a.id].t || String(a.id).localeCompare(String(b.id)));
+  let count=0;
+  for(const book of reads){
+    const keys=aliases(book);
+    if(!keys.length || keys.some(key=>learned.has(key)))continue;
+    if(count++>=50)break;
+    keys.forEach(key=>learned.add(key));
+    const host=rssRecommendationHost(book.resolvedUrl || book.sourceUrl);
+    const categories=byHost.get(host);
+    // Do not guess which Medium topic a saved link belongs to.
+    const category=byFeed.get(rssRecommendationUrl(book.feedUrl)) ||
+      (categories?.size===1?[...categories][0]:'');
+    const position=history[book.id];
+    const weight=Math.min(1,position.p)*Math.pow(.5,(now-position.t)/(14*day));
+    add(sourceWeights,host,weight);add(categoryWeights,category,weight);
+  }
+  const affinity=(map,key,max)=>max*(1-Math.exp(-(map.get(key)||0)/2));
+  const seenFeeds=new Set();
+  const queues=[];
+  for(const group of (Array.isArray(groups)?groups:[]).slice(0,RSS_SOURCE_LIMIT)){
+    if(!Array.isArray(group))continue;
+    const entries=group.slice(0,100).filter(entry=>entry &&
+      typeof entry.title==='string' && entry.title.trim() &&
+      typeof entry.photo==='string' && entry.photo.trim() &&
+      rssRecommendationUrl(entry.url) && (!entry.readUrl || rssRecommendationUrl(entry.readUrl)))
+      .map(entry=>{
+        const keys=[entry.url,entry.readUrl].map(rssRecommendationUrl).filter(Boolean);
+        const host=rssRecommendationHost(entry.readUrl || entry.url);
+        const feed=rssRecommendationUrl(entry.feedSourceUrl || entry.feedUrl);
+        const category=byFeed.get(feed) || rssCategory(entry.category);
+        const published=Date.parse(entry.publishedAt);
+        const age=now-published;
+        // Missing/bogus/future dates get no freshness bonus, not a crash.
+        const freshness=Number.isFinite(published) && age>=0 ? 2/(1+age/(3*day)) : 0;
+        const preference=affinity(categoryWeights,category,2)+affinity(sourceWeights,host,1.5);
+        return {entry,keys,host,feed,category,freshness,preference};
+      }).filter(item=>!item.keys.some(key=>saved.has(key)));
+    if(!entries.length)continue;
+    const feed=entries[0].feed || entries[0].host;
+    if(seenFeeds.has(feed))continue;
+    seenFeeds.add(feed);queues.push(entries);
+  }
+  const result=[], used=new Set(), publishers=new Map(), categories=new Map();
+  let lastCategory='';
+  while(queues.length){
+    // Duplicates across feeds fall through to the next entry in that feed.
+    const choices=queues.map((queue,index)=>({item:queue.find(item=>!item.keys.some(key=>used.has(key))),index}))
+      .filter(choice=>choice.item);
+    if(!choices.length)break;
+    let pool=choices;
+    // Keep the first few cards from being several feeds of the same publisher.
+    if(result.length<4){
+      const diverse=pool.filter(({item})=>!publishers.has(item.host));
+      if(diverse.length)pool=diverse;
+    }
+    const explore=(result.length+1)%4===0 && (sourceWeights.size>0 || categoryWeights.size>0);
+    if(explore){
+      const unfamiliar=pool.filter(({item})=>!categoryWeights.has(item.category));
+      if(unfamiliar.length)pool=unfamiliar;
+      else{
+        const newSource=pool.filter(({item})=>!sourceWeights.has(item.host));
+        if(newSource.length)pool=newSource;
+      }
+    }
+    const score=item=>item.freshness+(explore?0:item.preference)
+      -.65*(publishers.get(item.host)||0)-.35*(categories.get(item.category)||0)
+      -(item.category===lastCategory ? .4 : 0);
+    pool.sort((a,b)=>score(b.item)-score(a.item) || a.item.keys[0].localeCompare(b.item.keys[0]));
+    const {item,index}=pool[0];
+    result.push([item.entry]);item.keys.forEach(key=>used.add(key));
+    add(publishers,item.host,1);add(categories,item.category,1);lastCategory=item.category;
+    queues.splice(index,1);
+  }
+  return result;
+}
+
 function renderRssCards(rail, force, empty){
   const category='all';
   if(rail.dataset.rssCategory!==category){
@@ -425,17 +551,32 @@ function renderRssCards(rail, force, empty){
   }
   if(empty)empty.hidden=true;
   let revision=0;
+  const recommendationContext=rail.id==='casual-rail' && category==='all'
+    ? {library:books,positions,sources:rssSources(),now:Date.now()} : null;
+  const recommendationStamp=recommendationContext ? JSON.stringify([
+    Math.floor(recommendationContext.now/RSS_CACHE_MS),recommendationContext.sources,
+    books.map(book=>[book.id,book.kind,book.sourceUrl,book.resolvedUrl,book.discoveredFromUrl,
+      book.feedUrl,book.transient,positions[book.id]?.p,positions[book.id]?.t]),
+  ]) : '';
   const paint=async groups=>{
     const current=++revision;
     if(renderId!==rssRenderIds.get(rail))return;
     const stamp=JSON.stringify([category,groups,books.map(book=>book.sourceUrl||'')]);
-    if(rail.dataset.rssStamp===stamp){
+    if(!force && rail.dataset.rssStamp===stamp && rail.dataset.rssRecommendationStamp===recommendationStamp){
       if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
       if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;
       return;
     }
-    const cards=(await Promise.all(groups.map(entries=>rssFeedCards(entries,renderId,rail,category==='all'?1:RSS_PER_FEED)))).flat();
+    const selected=recommendationContext?rssRankRecommendations(groups,recommendationContext):groups;
+    const cards=(await Promise.all(selected.map(entries=>rssFeedCards(entries,renderId,rail,category==='all'?1:RSS_PER_FEED)))).flat();
     if(current!==revision||renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
+    // Do not reshuffle cards under a scrolled/focused/pressed recommendation rail
+    // when another feed arrives. New cards append; explicit refresh may rerank.
+    if(rail.id==='casual-rail' && category==='all' && !force &&
+       (rail.scrollLeft>0 || rail.contains(document.activeElement) || rail.querySelector('.rss-card.busy'))){
+      const order=new Map([...rail.querySelectorAll('.rss-card')].map((card,index)=>[card.dataset.rssUrl,index]));
+      cards.sort((a,b)=>(order.get(a.dataset.rssUrl)??Infinity)-(order.get(b.dataset.rssUrl)??Infinity));
+    }
     // Preserve decoded cards and append newly available sources without resetting images.
     const existing=new Map();
     for(const card of rail.querySelectorAll('.rss-card')){
@@ -458,6 +599,7 @@ function renderRssCards(rail, force, empty){
     const entries=groups.flat();
     cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;
+    rail.dataset.rssRecommendationStamp=recommendationStamp;
     if(empty){ empty.textContent=cards.length?'':category==='all'?'표지 사진이 있는 새 글을 찾지 못했어요.':'이 카테고리에 표지 사진이 있는 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
   };
   const notify=groups=>{void paint(groups);};
