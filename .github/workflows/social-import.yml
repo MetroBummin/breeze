@@ -1,0 +1,39 @@
+name: Social import
+on:
+  push:
+    branches: [chatgpt/social-import-hardening-20260925]
+  pull_request:
+    paths: ['scripts/importers/**', 'server/article/**', 'tests/*social*', '.github/workflows/social-import.yml']
+permissions:
+  contents: read
+concurrency:
+  group: social-import-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source snapshot for isolated review
+        run: git archive HEAD -o /tmp/social-import-source.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: social-import-source
+          path: /tmp/social-import-source.zip
+          retention-days: 1
+      - name: Social import contracts
+        run: |
+          if test -f tests/verify-social-import-browser.mjs; then
+            npx playwright install --with-deps chromium webkit
+            node tests/verify-social-import-browser.mjs
+          fi
+      - name: Existing contracts
+        run: npm test
