@@ -25,3 +25,28 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
+      - name: Feature audit contracts
+        run: |
+          for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs; do
+            if test -f "$test"; then node --test "$test"; fi
+          done
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Real IndexedDB and navigation regression
+        run: if test -f tests/verify-integrity-browser.mjs; then node tests/verify-integrity-browser.mjs; fi
+      - run: npm run test:ingestion && npm run test:home-ui
+      - name: Preview regressions when present
+        run: |
+          for test in tests/verify-article-preview-browser.mjs tests/verify-article-preview-resilience.mjs; do
+            if test -f "$test"; then node "$test"; fi
+          done
+      - name: Ink regression when present
+        run: if test -f tests/verify-pdf-ink-browser.mjs; then node tests/verify-pdf-ink-browser.mjs; fi

@@ -46,13 +46,14 @@ try {
       assert.deepEqual(await page.locator('#casual-rail > .casual').evaluateAll(nodes => nodes.map(node =>
         node.classList.contains('shared-card') ? 'saved' : node.classList.contains('rss-card') ? 'rss' :
         node.classList.contains('add') ? 'add' : 'reading')),
-        ['reading', 'rss', 'add']);
-      assert.deepEqual(await page.locator('#casuals .feed-categories button').evaluateAll(nodes=>nodes.map(node=>node.dataset.category)),
-        ['all','entertainment','general','society','science','culture','business']);
+        ['rss']);
+      assert.equal(await page.locator('#casual-rail [data-home-key="book:reading"]').count(),0);
+      assert.equal(await page.locator('#home-casual-rail [data-home-key="book:reading"]').count(),1);
+      assert.equal(await page.locator('#home-casual-rail .casual.add').count(),1);
+      assert.equal(await page.locator('#v-casuals .feed-categories,#v-casuals #casual-discover-rail').count(),0);
       assert.equal(await page.evaluate(()=>sharedLinks.length),2,'Pending App Group records were discarded');
-      await page.evaluate(()=>{save('breeze.feed-category','saved');renderFeedCategories();renderHome();});
-      assert.equal(await page.locator('#casuals [data-category="all"]').getAttribute('aria-pressed'),'true');
-      assert.equal(await page.evaluate(()=>load('breeze.feed-category','')),'all');
+      await page.evaluate(()=>{save('breeze.feed-category','saved');renderHome();});
+      assert.equal(await page.locator('#v-casuals .rss-card').count(),0);
       assert.equal(await page.locator('.shared-card').count(),0);
       await page.evaluate(() => receiveSharedLinks([
         {id:'x-new', url:'https://x.com/example/status/123', savedAt:'2026-09-23T05:00:00Z', openedAt:'2026-09-23T06:00:00Z'},

@@ -41,12 +41,29 @@ its removal continue loading from local storage. Feed
 failures are isolated. Discovery omits cards without a working cover; the saved
 essay remains readable after it is opened.
 
-Home and Casuals discovery share a persisted category chip selection. The chips
-stay in a fixed order: All, Entertainment, General, Society, Science,
-Culture, and Business. Read articles remain in the existing Casuals shelf.
-Selecting a chip starts both article rails at the first card, including when
-new source cards arrive after the selection. Reconciliation removes every stale
-card even when several sources supplied the same URL.
+Home recommendation shows only the external feed discovery rail, always across
+all categories. It has no category chips, locally saved article cards, or action
+card at the end. The Home
+shelves below it show long-form Library content and saved Casuals separately,
+with their existing add cards at the end of each rail.
+Home recommendation cards place source and title over the photo; Home Library
+cards put the source or author inside the cover and only the title below it.
+The two Library rails use the same cover and add-card footprint. Home photos
+may use a cached, bounded focal point when the image can be inspected; a face
+rectangle takes priority, with a small local contrast/subject heuristic and
+center crop as fallbacks. Analysis happens off the scrolling path and does not
+alter the source image, imported book, or feed cache.
+The saved short-content Library now shows only the person's own articles. The
+separate discovery shelf and category controls are absent there; recommendation
+on Home remains the discovery surface. Empty saved shelves omit explanatory
+copy, and Home add-card labels stay inside their covers. The saved short-content
+and long-content Library screens reuse the Home regular-card cover ratio, inside
+source/author label, outside title, and neutral border treatment.
+Imported Share Extension articles are ordinary saved Casuals; pending App Group
+links remain hidden while sharing is dormant. Old persisted discovery category
+preferences no longer affect the Home recommendation rail. Reconciliation removes
+every stale card even when several sources supplied the same URL. Read articles
+remain in the existing Casuals shelf.
 All mixes one visible card per source so the larger entertainment selection does
 not bury the existing educational sources. Categories are assigned to feed
 sources, not guessed from article titles: entertainment, general, society,
@@ -251,3 +268,6 @@ changes the card jacket; it does not insert an image into the article body.
 
 ## Integrity follow-up
 New article/paste identity uses SHA-256 of every paragraph with exact case and boundaries. Exact legacy content retains its existing ID. Durable book/original/owned-image deletion is one IndexedDB transaction and excludes shared references. A failed library read is not an empty library. The article relay validates and pins public DNS destinations per redirect and enforces streaming byte limits; deploy its new transport together with the entry point.
+
+## Audit UI follow-up
+Known face bounds take priority over centre bias; use contain when their union cannot fit. Crop hints use cache v2. Cover-free regular cards retain text identity. Saved-content empty states include an add action. Primary cards expose button semantics/keyboard activation; wired local cards also expose Shift+F10 editing. Native VoiceOver and real-device design QA remain required.
