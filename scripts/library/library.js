@@ -538,8 +538,11 @@ function updatePastePreview(){
 async function saveCasualBook(parsed, extra, options={}){
   const intent=options.present===false?null:++readerOpenIntent;
   const present=()=>options.present!==false&&intent===readerOpenIntent;
-  const id = await casualContentId(parsed.paras);
-  const existing = books.find(book => CASUAL_KINDS.has(book.kind)&&sameCasualContent(book.paras,parsed.paras));
+  // Identical social text posted by different people is not the same source.
+  const socialKey=extra?.social&&extra?.sourceUrl?articleUrlKey(extra.sourceUrl):'';
+  const id = await casualContentId(socialKey?[socialKey,...parsed.paras]:parsed.paras);
+  const existing = books.find(book => CASUAL_KINDS.has(book.kind)&&sameCasualContent(book.paras,parsed.paras)
+    && (!socialKey || book.sourceUrl&&articleUrlKey(book.sourceUrl)===socialKey));
   if(existing){
     if(present()){
       closeAddModal();toast(`이미 있는 글이에요 — "${existing.title}"`);

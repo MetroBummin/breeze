@@ -255,6 +255,7 @@ async function articlePreviewStart(){
     const saved=await commitArticleDraft(book);
     if(controller.signal.aborted||!articlePreviewActive(generation))return;
     await openBook(saved,openingOptions);
+    if(!controller.signal.aborted&&saved.social?.scope==='single-post')toast('게시글 1개를 가져왔어요. 답글·연속 글 전체는 포함하지 않아요.');
   }),controller.signal);
   articlePreviewOpening=job;
   try{

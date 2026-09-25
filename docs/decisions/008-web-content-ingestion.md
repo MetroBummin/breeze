@@ -317,3 +317,50 @@ exposing historical title fields. The prompt must preserve the source's
 uncertainty and avoid inventing a reason to read when the supplied excerpt does
 not support one. Reading state,
 save intent and Reader navigation remain the same.
+
+## Direct social permalinks — 2026-09-25 follow-up
+
+This supersedes the direct-X rejection above. Social source handling is isolated
+in `scripts/importers/social.js`; generic Readability still never consumes X or
+Threads timelines. Supported canonical identities are X status / i-web-status
+(including twitter.com/mobile and media suffixes), X Article, and Threads
+@handle/post on threads.net or threads.com. Profiles/search/Spaces are rejected.
+
+X status imports try the official public oEmbed response, then one public HTML
+response if the body is missing or appears truncated. The relay exposes only
+`as=x-oembed`, constructs a fixed publish.x.com/oembed target, and reuses pinned
+public-DNS, redirect, byte and concurrency defenses. It is not a generic JSON
+proxy. It uses no API key, cookies, account login, private GraphQL or mirror.
+The oEmbed HTML is parsed in an inert document, never injected or executed.
+
+Threads and X Articles require explicit target-matching public JSON-LD body or
+an identified public DOM body. OG description is not full article evidence.
+Login, declared restricted content, malformed/oversized input, target mismatch
+and obvious truncation fail with an original-link recovery path. No empty
+book is saved. Short posts do not use the normal article 500-character floor.
+X Articles keep that minimum and are not accepted from an Article-card teaser.
+
+Line breaks, safe inline links/emphasis, author/date and available image URLs
+are preserved in ordinary Reader blocks. Unsupported video/audio remains an
+original-source reference, not downloaded or transcribed. Imported content
+records `social.platform/id/scope/extraction`. Scope is explicitly single-post
+or article; replies, quotes from other people and a thread's unseen continuation
+are not stitched or represented as a complete thread. The user receives a
+single-post notice. Share Extension delivery/embedding is not re-enabled here.
+
+Concurrent URL aliases share the existing ingestion job, up to four distinct
+social loads run at once, and the entire source-load operation has an 18-second
+abort budget. Failures clear the job for user retry; 403/429 do not trigger
+alternate-provider loops. Real text is not synthetically expanded by an LLM.
+Source IDs participate in social book identity so identical posts from different
+authors are not misattributed through whole-text deduplication. Ordinary article
+and paste identity, latest-intent navigation, offline image storage and read
+progress remain the shared contracts from PR #24.
+
+### Evidence and release boundary
+
+Official X reference: https://docs.x.com/x-for-websites/oembed-api
+That endpoint supplies an embed of one post, not all conversation replies or a
+guaranteed complete X Article. Threads public HTML can omit the required body;
+no universal Threads-import success is claimed. Platform availability is not
+proven by fixtures. See `docs/qa/social-import-20260925.md`.

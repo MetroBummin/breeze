@@ -22,7 +22,7 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, "Content-Type": "application/json" },
+    headers: { ...CORS, "Content-Type": "application/json", "Cache-Control":"no-store" },
   });
 
 const MAX_BYTES = 3_000_000;   // 기사 한 편치고 3MB 를 넘으면 기사가 아닙니다
@@ -31,6 +31,7 @@ const TIMEOUT_MS = 12_000;
 
 // Node-compatible transport pins validated DNS addresses and bounds streaming bodies.
 import {fetchPublic,publicUrl} from "./public-fetch.mjs";
+import {fetchXEmbed} from "./social-embed.mjs";
 let activeRequests=0;
 function safeUrl(raw:string|null):URL|null{try{return raw?publicUrl(raw):null;}catch{return null;}}
 
@@ -48,6 +49,10 @@ Deno.serve(async (req) => {
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
   try {
+    if(params.get("as")==="x-oembed"){
+      const result=await fetchXEmbed(url.href,abort.signal,fetchPublic);
+      return json(result.body,result.status);
+    }
     const upstream = await fetchPublic(url.href, {
       limit:asImage?MAX_IMAGE_BYTES:MAX_BYTES,
       signal: abort.signal,

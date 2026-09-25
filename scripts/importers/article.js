@@ -96,7 +96,7 @@ function parseArticleHtml(html, url){
   const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
   const host = new URL(url).hostname;
   // Conversations require a post identity/thread model. Never mistake replies for an article.
-  if(/(^|\.)(x|twitter|reddit)\.com$/i.test(host)) return null;
+  if(/(^|\.)(x|twitter|reddit)\.com$/i.test(host) || (typeof socialUrlInfo==='function' && socialUrlInfo(url))) return null;
   if(doc.querySelectorAll('*').length > 25000) return null;
   // A publisher's explicit access declaration takes precedence over UI class
   // names: some free articles still ship an unused paywall modal and CSS hooks.
@@ -342,14 +342,14 @@ async function importArticleUrl(){
   if(!url){ status.classList.add('bad'); status.textContent = '주소를 다시 확인해 주세요'; return; }
 
   button.disabled = true;
-  status.textContent = '기사를 가져오는 중…';
+  status.textContent = typeof socialUrlInfo==='function'&&socialUrlInfo(url) ? '게시글을 가져오는 중…' : '기사를 가져오는 중…';
   try{
     await ingestArticle(url);
     field.value = '';
   }catch(error){
     console.error(error);
     status.classList.add('bad');
-    status.textContent = '본문을 안전하게 가져오지 못했어요. ';
+    status.textContent = (error?.code?.startsWith('social_') ? error.message : '본문을 안전하게 가져오지 못했어요.')+' ';
     status.appendChild(articleOriginalLink(url));
   }finally{
     button.disabled = false;
@@ -357,6 +357,8 @@ async function importArticleUrl(){
 }
 
 function articleUrlKey(raw){
+  const social=typeof socialUrlInfo==='function' ? socialUrlInfo(raw) : null;
+  if(social && social.kind!=='unsupported')return social.key;
   const url = new URL(raw); url.hash = '';
   for(const key of [...url.searchParams.keys()]) if(/^utm_|^(fbclid|gclid)$/i.test(key)) url.searchParams.delete(key);
   return url.href;
@@ -419,13 +421,21 @@ async function ingestArticle(url, options = {}){
   let job=articleJobs.get(key);
   if(!job){
     job=(async()=>{
-      const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===key);
+      const existing=books.find(book=>[book.sourceUrl,book.resolvedUrl,book.discoveredFromUrl].some(source=>{try{return source&&articleUrlKey(source)===key;}catch{return false;}}));
       if(existing)return existing;
       const location={};let parsed=options.preparedArticle||parseFeedArticle(options);
-      if(!parsed){const html=await fetchArticleHtml(url,location);parsed=parseArticleHtml(html,location.url||url);}
+      if(!parsed){
+        if(typeof socialUrlInfo==='function' && socialUrlInfo(url))parsed=await loadSocialArticle(url);
+        else{
+          const html=await fetchArticleHtml(url,location),resolved=location.url||url;
+          parsed=typeof socialUrlInfo==='function'&&socialUrlInfo(resolved)
+            ? await loadSocialArticle(resolved,html) : parseArticleHtml(html,resolved);
+        }
+      }
       if(!parsed)throw new Error('본문을 안전하게 가져오지 못했어요');
       return makeArticleDraft(parsed,{kind:'article',site:parsed.site||options.source,sourceUrl:url,
         resolvedUrl:parsed.url,discoveredFromUrl:options.discoveredFromUrl||'',author:parsed.author,
+        ...(parsed.social?{social:parsed.social,contentType:parsed.contentType}:{}),
         publishedAt:parsed.publishedAt},options.photo);
     })();
     articleJobs.set(key,job);
@@ -437,6 +447,7 @@ async function ingestArticle(url, options = {}){
       closeAddModal();
       if(options.preview)openCasualPreviewOrReader(book);
       else{
+        if(book.social?.scope==='single-post')toast('게시글 1개를 가져왔어요. 답글·연속 글 전체는 포함하지 않아요.');
         if(articleDrafts.get(draft)?.missed)toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
         await openBook(book);
       }
