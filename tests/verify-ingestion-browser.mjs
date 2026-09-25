@@ -133,7 +133,10 @@ try{
         Promise.resolve(xml.replace('</item>','<enclosure url="https://content.example/photo.png" type="image/png"/></item>'));
       const rail=document.getElementById('casual-rail');
       const pending=renderRssCards(rail,true,document.getElementById('home-feed-empty'));
-      await new Promise(resolve=>setTimeout(resolve,50));
+      // Wait for the ready card, while the other source is deliberately held.
+      // A fixed 50 ms pause can expire on a busy CI browser before any card paints.
+      for(let i=0;i<80&&!rail.querySelector('.rss-card:not([hidden])');i++)
+        await new Promise(resolve=>setTimeout(resolve,25));
       if(!rail.querySelector('.rss-card:not([hidden])') || !rssLoading)throw Error('Ready cards waited for slow feed or photo');
       const first=rail.querySelector('.rss-card:not([hidden])');
       release();await pending;
