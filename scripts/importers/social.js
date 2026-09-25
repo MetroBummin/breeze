@@ -136,7 +136,7 @@ function parseSocialHtml(html,url){
     const text=node.articleBody||node.text;
     if(typeof text!=='string')continue; // OG/JSON-LD description is never a full body.
     if(socialHasCutoff(text))throw socialImportError('incomplete');
-    const blocks=socialPlainBlocks(text);
+    const blocks=/** @type {any[]} */(socialPlainBlocks(text));
     const images=Array.isArray(node.image)?node.image:[node.image];
     for(const image of images.slice(0,ARTICLE_IMG_MAX)){
       const src=socialHttpUrl(typeof image==='string'?image:image?.url||image?.contentUrl,url);
