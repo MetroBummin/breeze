@@ -526,13 +526,29 @@ async function localVaultItem(book){
 function itemIdentity(item){
   return item.identity||'id:'+item.id;
 }
+/* Keep a local, exportable conflict journal before replacing a different meaning.
+   This preserves both definitions without inventing which device edited which field. */
+function preserveWordConflict(key,left,right){
+  if(!left||!right||!left.ko||!right.ko||left.ko===right.ko)return;
+  const saved=load('breeze.word-conflicts',{});
+  const conflicts=saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{};
+  const id=JSON.stringify([key,...[String(left.ko),String(right.ko)].sort()]);
+  if(Object.prototype.hasOwnProperty.call(conflicts,id))return;
+  conflicts[id]={key,left,right,at:Date.now()};
+  if(!save('breeze.word-conflicts',conflicts))throw new Error('뜻 충돌 사본을 저장하지 못했어요');
+  toast('기기 간 다른 뜻을 발견했어요. 두 뜻을 이 기기에 보존했어요.');
+}
+window['breezeExportWordConflicts']=function(){
+  const blob=new Blob([JSON.stringify(load('breeze.word-conflicts',{}),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='breeze-word-conflicts.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
 function mergeWordState(remoteWords,remoteDead){
   const all=new Set([...Object.keys(remoteWords||{}),...Object.keys(remoteDead||{}),...Object.keys(words),...Object.keys(dead)]);
   for(const key of all){
     const rw=(remoteWords||{})[key],rd=(remoteDead||{})[key]||0,lw=words[key],ld=dead[key]||0;
     const newest=Math.max(upOf(rw),rd,upOf(lw),ld);
     if((rd&&newest===rd)||(ld&&newest===ld)){ delete words[key]; dead[key]=newest; }
-    else if(newest===upOf(rw)){ words[key]=rw; delete dead[key]; }
+    else{preserveWordConflict(key,lw,rw);if(newest===upOf(rw)){words[key]=rw;delete dead[key];}}
   }
   cleanOrphanWords(words,dead,pendingWord&&pendingWord.key);
 }
@@ -667,7 +683,7 @@ async function runSyncPass(manual){
       const previous=result.data&&result.data.data;
       const imported=await importLegacyWordbook(session,previous); assertSyncSession(session);
       if(previous) mergeWordState(previous.words||{},previous.dead||{});
-      saveWords(); save(LS_DEAD,dead);
+      if(!saveWords()||!save(LS_DEAD,dead))throw new Error('이 기기에 단어장을 저장하지 못했어요');
       const syncedWords={...words};
       if(pendingWord&&!pendingWordResolved(pendingWord.key)) delete syncedWords[pendingWord.key];
       const changed=!previous||(imported&&!previous.legacyImportedAt)
@@ -680,7 +696,7 @@ async function runSyncPass(manual){
       }
       assertSyncSession(session);
       if(imported) save(`breeze.wordbook.legacy-imported:${session.userId}`,true);
-      if(Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt) save(VAULT_LOCAL_CHANGED,0);
+      if(Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt&&!save(VAULT_LOCAL_CHANGED,0))throw new Error('동기화 상태를 저장하지 못했어요');
       lastQueuedWordState=syncStableJson({words,dead});
       noteSyncSuccess();lastSync=Date.now();save('breeze.lastsync',lastSync);
       await purgePrivateDictionaryLogs(); assertSyncSession(session);
@@ -837,7 +853,7 @@ async function exportReadingBackup(){
       manifest.originals.push({key,meta:{...record,blob:undefined},envelope});
     }
     for(const entry of await imgEntries()){
-      const key=String(entry[0]),blob=entry[1]; if(!(blob instanceof Blob)) continue;
+      const key=String(entry[0]),blob=imageRecordBlob(entry[1]); if(!(blob instanceof Blob)) continue;
       const envelope=await VaultCrypto.sealBytes(vaultMaster,await blob.arrayBuffer(),[sbUser.id,'backup','image',key],'breeze/backup/v1');
       manifest.images.push({key,type:blob.type||'application/octet-stream',envelope});
     }

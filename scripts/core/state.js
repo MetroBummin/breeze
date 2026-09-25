@@ -77,8 +77,12 @@ let books = [];                       // 본문은 IndexedDB에 저장(부팅 �
 
    지문만 남깁니다. 이건 변환이 아니라 서버와 짝을 맞추는 열쇠라, 어떤
    경로로 들어온 책이든 있어야 합니다. */
+let libraryLoadError=false;
 async function loadBooks(){
-  books = (await bookAll()).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  let loaded;
+  try{loaded=await bookAll();libraryLoadError=false;Reflect.set(window,'breezeLibraryLoadFailed',false);}
+  catch(error){libraryLoadError=true;Reflect.set(window,'breezeLibraryLoadFailed',true);throw error;}
+  books = loaded.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   for(const book of books){
     const previousFingerprint = book.fingerprint || '';
     ensureBookFingerprint(book);
@@ -240,7 +244,10 @@ function rememberAppView(view,replace){
   if(replace) history.replaceState(state,'');
   else history.pushState(state,'');
 }
+let readerOpenIntent=0;
+function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
+  if(v!=='read')cancelPendingBookOpen();
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && v!=='read') endOnboarding(true,false);
   const settings=options||{};
   saveReadingState();

@@ -38,7 +38,7 @@ const source = readFileSync(resolve(root, 'scripts/dictionary/dictionary.js'), '
 const lexicalCore = readFileSync(resolve(root, 'modules/lexical/core.js'), 'utf8');
 const wordIntegrity = readFileSync(resolve(root, 'scripts/core/word-integrity.js'), 'utf8');
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
-const mergeWordStateSource = syncSource.slice(syncSource.indexOf('function mergeWordState('),
+const mergeWordStateSource = syncSource.slice(syncSource.indexOf('function preserveWordConflict('),
   syncSource.indexOf('async function mergeVaultPayload('));
 
 /* ---- 가짜 화면 ----
@@ -145,7 +145,7 @@ function makeContext(world, net, store){
     sb:{ auth:{ getSession:()=>Promise.resolve({ data:{ session:null } }) } },
     sbUser:null, SB_URL:'https://example.test', SB_KEY:'key',
     LS_DEAD:'dead', LS_POS:'pos',
-    load:()=>'', save(){},
+    load:(_key,fallback)=>fallback??'', save(){return true;},
     saveWords(){ world.saves++; },
     validWordMeaning:item=>!!(item && String(item.ko||'').trim()),
     queueSync(){ world.syncs++; },

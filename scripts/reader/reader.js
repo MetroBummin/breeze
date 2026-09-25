@@ -311,8 +311,12 @@ function renderReaderAttribution(book){
   note.textContent='본문은 원문 표현을 바꾸지 않고 Breeze Text 형식으로 재조판했습니다. 장면 삽화는 원문 내용을 바탕으로 새로 제작했으며 원문 페이지의 이미지는 사용하지 않았습니다. 표지는 별도로 제공된 이미지입니다.';
   body.append(line,...sourceLines,license,note);
 }
-/** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void}} [options] */
+/** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void, signal?: AbortSignal}} [options] */
 async function openBook(b,options={}){
+  const intent=++readerOpenIntent;
+  const alive=()=>intent===readerOpenIntent&&!options.signal?.aborted;
+  if(!alive())return;
+  const presented=()=>{if(alive()&&options.onPresented)options.onPresented();};
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
@@ -323,6 +327,7 @@ async function openBook(b,options={}){
      scripts/importers/ligatures.js */
   const prepared=options.prepared && options.prepared.book===b ? options.prepared : null;
   if(!b.transient && !prepared && !reuse) await repairBookLigatures(b);
+  if(!alive())return;
   /* The width observer below fires as the reader appears. It must not aim at
      wherever the previous book was being read. */
   lastAnchor = null;
@@ -374,18 +379,19 @@ async function openBook(b,options={}){
   if(firstOpen && !b.transient){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
   updateReaderModeControls();
   const original = prepared ? prepared.original : (bookSupportsOriginal(b) ? await originalGetForBook(b) : null);
+  if(!alive())return;
   readerPreparedOriginal=original;
   const desired = initialPosition.mode==='original'
     ? (original ? 'original' : 'text')
     : (firstOpen && original ? 'original' : 'text');
   if(desired==='original'){
-    await switchReaderMode('original',{initial:true,record:original,onPresented:options.onPresented});
-    if(curBook===b&&reuse)refreshOriginalSavedWords();
+    await switchReaderMode('original',{initial:true,record:original,onPresented:presented});
+    if(alive()&&curBook===b&&reuse)refreshOriginalSavedWords();
   }
   else{
-    if(options.onPresented) options.onPresented();
+    presented();
     await new Promise(resolve=>requestAnimationFrame(()=>{
-      if(curBook===b){
+      if(alive()&&curBook===b){
         const pos=posOf(b.id);
         if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
         lastAnchor=captureAnchor(); updatePfill(true);

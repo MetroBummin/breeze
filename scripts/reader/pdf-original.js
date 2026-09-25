@@ -80,7 +80,7 @@ function releaseOriginalPdfPage(session,pageNumber){
 
 async function openOriginalPdf(book,record,token){
   await ensurePdfLib();
-  const pdf = await pdfjsLib.getDocument({data:await record.blob.arrayBuffer()}).promise;
+  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data:await record.blob.arrayBuffer()}).promise;
   if(token!==originalLoadToken){ pdf.destroy(); return; }
   const content = document.getElementById('original-content');
   content.innerHTML='';

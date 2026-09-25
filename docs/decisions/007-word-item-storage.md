@@ -19,3 +19,6 @@ The legacy snapshot remains a fallback, not a second current copy; older app cod
 cannot read new overrides. No server migration or deployment is part of this change.
 `tests/verify-word-item-storage.mjs` checks legacy loading, one-item writes among
 5,000 records, interrupted batches, retry, deletion and unresolved lookups.
+
+## 2026-09-25 integrity follow-up
+Local persistence failure now stops sync before CAS/dirty clearing. Different concurrent Korean definitions are preserved in a local conflict journal before record-level LWW replaces a value; export with `breezeExportWordConflicts()`. This is conflict preservation, not automatic field-level merge.

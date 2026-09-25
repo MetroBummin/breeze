@@ -53,17 +53,31 @@ async function purgeBookImages(b){
 /* 원문은 서버에 없으므로 삭제도 이 기기 하나만 다룹니다. 암호화 보관함의
    흐린 카드는 로컬 숨김 표시에 의해 이 기기에서 다시 나타나지 않습니다. */
 async function deleteBook(b){
-  const remoteId = serverBookIdFor(b);
-  /* Deleting the book that is open would leave the reader pointing at content
-     that no longer exists. Leave the reader first. */
-  if(curBook && curBook.id===b.id) show('home');
-  books = books.filter(x=>x.id!==b.id);
-  await bookDel(b.id);
-  await originalDel(b.id);
-  await purgeBookImages(b);
-  delete positions[b.id]; save(LS_POS, positions);
-  hideBookLocally(remoteId); hideBookLocally(b.id); queueSync();
-  renderAllBookViews(); toast('이 기기에서 지웠어요');
+  const remoteId=serverBookIdFor(b);
+  try{await bookDeleteAssets(b);}catch(error){
+    console.error('Book deletion failed:',error);
+    toast('지우지 못했어요. 책은 그대로 두었어요. 다시 시도해 주세요.');return false;
+  }
+  if(curBook&&curBook.id===b.id)show('home');
+  books=books.filter(item=>item.id!==b.id);
+  delete positions[b.id];save(LS_POS,positions);
+  hideBookLocally(remoteId);hideBookLocally(b.id);queueSync();
+  renderAllBookViews();toast('이 기기에서 지웠어요');return true;
+}
+
+function renderLibraryStorageNotice(){
+  let notice=document.getElementById('library-storage-notice');
+  if(!notice){
+    notice=document.createElement('div');notice.id='library-storage-notice';notice.setAttribute('role','alert');
+    notice.style.cssText='padding:12px 18px;margin:12px auto;max-width:960px;border-radius:12px;background:var(--bg);color:var(--text);';
+    const text=document.createElement('span');text.textContent='서재를 불러오지 못했어요. 저장한 자료를 삭제하지 않았어요. ';
+    const retry=document.createElement('button');retry.type='button';retry.textContent='다시 불러오기';
+    retry.onclick=async()=>{retry.disabled=true;try{await loadBooks();renderAllBookViews();}catch{toast('기기 저장소를 확인하고 다시 시도해 주세요.');}finally{retry.disabled=false;notice.hidden=!libraryLoadError;}};
+    notice.append(text,retry);document.getElementById('v-home').prepend(notice);
+  }
+  const view=activeAppView(),host=document.getElementById(['home','casuals','longform'].includes(view)?'v-'+view:'v-home');
+  if(notice.parentElement!==host)host.prepend(notice);
+  notice.hidden=!libraryLoadError;
 }
 
 /* ================= 홈 =================
@@ -400,6 +414,7 @@ function homeBookSpec(book,current,casual){
     }};
 }
 function renderHome(){
+  renderLibraryStorageNotice();
   renderHomeResume();
   const casuals=casualBooks(),nowCasual=nowReadingIn(casuals),rail=document.getElementById('casual-rail');
   const currentCasual=casuals.find(book=>book.id===nowCasual);
@@ -419,6 +434,7 @@ function renderHome(){
 /* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에
    답하는 자리고, 여기는 "그때 그거 어디 갔지"에 답하는 자리입니다. */
 function renderCasualLibrary(){
+  renderLibraryStorageNotice();
   const casuals = casualBooks();
   const current = nowReadingIn(casuals);
   const discover=document.getElementById('casual-discover-rail');
@@ -436,6 +452,7 @@ function renderCasualLibrary(){
 }
 
 function renderLongformLibrary(){
+  renderLibraryStorageNotice();
   const longform = longformBooks();
   const current = nowReadingIn(longform);
   const grid = document.getElementById('longform-grid');
@@ -484,19 +501,20 @@ function updatePastePreview(){
 }
 
 /* 붙여넣은 글과 가져온 기사가 같은 저장 경로를 씁니다. */
-async function saveCasualBook(parsed, extra){
-  const id = bookHash(parsed.paras);
-  const existing = books.find(book => book.id === id);
-  if(existing){ closeAddModal(); toast(`이미 있는 글이에요 — "${existing.title}"`); await openBook(existing); return existing; }
+async function saveCasualBook(parsed, extra, options={}){
+  const intent=options.present===false?null:++readerOpenIntent;
+  const present=()=>options.present!==false&&intent===readerOpenIntent;
+  const id = await casualContentId(parsed.paras);
+  const existing = books.find(book => CASUAL_KINDS.has(book.kind)&&sameCasualContent(book.paras,parsed.paras));
+  if(existing){ if(present()){closeAddModal();toast(`이미 있는 글이에요 — "${existing.title}"`);await openBook(existing);}return existing; }
   const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
     addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
     textAvailable:true, sourceMap:null, layoutSignals:null,
     formatting:parsed.formatting, original:null, localSourceAt:Date.now(), ...extra };
   await bookPut(book);
   books.unshift(book);
-  closeAddModal();
   renderHome();
-  await openBook(book);
+  if(present()){closeAddModal();await openBook(book);}
   queueSync();                   // 읽기를 막지 않도록 기다리지 않습니다
   return book;
 }
@@ -504,8 +522,9 @@ async function saveCasualBook(parsed, extra){
 async function importPastedText(){
   const parsed = parsePastedText(document.getElementById('am-text').value);
   if(!parsed){ toast('읽을 영어 글이 없어요'); return; }
-  document.getElementById('am-text').value = '';
-  await saveCasualBook(parsed, null);
+  const input=/** @type {HTMLTextAreaElement} */(document.getElementById('am-text')),original=input.value;
+  try{await saveCasualBook(parsed,null);if(input.value===original)input.value='';}
+  catch(error){console.error(error);toast('글을 저장하지 못했어요. 입력한 내용은 남겨 두었어요.');}
 }
 
 document.getElementById('am-text').addEventListener('input', updatePastePreview);
@@ -580,6 +599,17 @@ window.addEventListener('drop', e=>{
 /* 책 ID를 "반입한 시각"이 아니라 "내용"으로 만든다.
    같은 파일이면 어느 기기에서 넣어도 같은 ID → 중복이 생기지 않음.
    계산은 전부 기기 안에서 하고, 서버로 가는 건 짧은 문자열 하나뿐입니다. */
+/* New article/paste IDs cover every paragraph and preserve case/boundaries.
+   Existing IDs are never migrated; exact legacy content is still deduplicated. */
+function sameCasualContent(a,b){
+  return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((text,i)=>text===b[i]);
+}
+async function casualContentId(paras){
+  if(!Array.isArray(paras)||paras.some(text=>typeof text!=='string'))throw new Error('Invalid article content');
+  const bytes=new TextEncoder().encode(JSON.stringify(paras));
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return 'text-'+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+}
 function bookHash(paras){
   const head = paras.slice(0, 40).join(' ');
   const tail = paras.slice(-10).join(' ');

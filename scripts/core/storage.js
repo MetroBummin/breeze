@@ -10,14 +10,17 @@ function openDb(name, version, upgrade){
   return function(){
     if(job) return job;
     job = new Promise((res, rej)=>{
-      const r = indexedDB.open(name, version);
+      const r = indexedDB.open(name, version);let settled=false;
+      const timer=setTimeout(()=>{settled=true;rej(new Error('Local storage open timed out'));},10000);
+      r.onblocked=()=>{settled=true;clearTimeout(timer);rej(new Error('Local storage is blocked by another tab'));};
       r.onupgradeneeded = ()=>upgrade(r.result);
       r.onsuccess = ()=>{
+        clearTimeout(timer);if(settled){r.result.close();return;}settled=true;
         /* 다른 탭이 판을 올리려 하면 붙잡고 있지 않습니다. */
         r.result.onversionchange = ()=>{ try{ r.result.close(); }catch(e){} job = null; };
         res(r.result);
       };
-      r.onerror = ()=>{ job = null; rej(r.error); };
+      r.onerror = ()=>{clearTimeout(timer);if(settled)return;settled=true;rej(r.error);};
     }).catch(error => { job = null; throw error; });
     return job;
   };
@@ -50,31 +53,75 @@ async function requestDurableLocalStorage(){
   try{ await navigator.storage.persist(); }catch(e){}
 }
 
-/* ---- 책 저장소: localStorage(5MB 한계)에서 IndexedDB로 이전 ---- */
-async function bookPut(b){ requestDurableLocalStorage(); const db=await idb(); return new Promise((res,rej)=>{
-  const tx=db.transaction('books','readwrite'); tx.objectStore('books').put(b, b.id);
-  tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
-async function bookDel(id){ try{ const db=await idb(); return await new Promise(res=>{
-  const tx=db.transaction('books','readwrite'); tx.objectStore('books').delete(id); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
-async function bookAll(){ try{ const db=await idb(); return await new Promise(res=>{
-  const rq=db.transaction('books').objectStore('books').getAll();
-  rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]); }); }catch(e){ return []; } }
-async function originalPut(id, record){ const db=await idb(); return new Promise((res,rej)=>{
-  const tx=db.transaction('originals','readwrite'); tx.objectStore('originals').put(record,id);
-  tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
-async function originalGet(id){ try{ const db=await idb(); return await new Promise(res=>{
-  const rq=db.transaction('originals').objectStore('originals').get(id);
-  rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
-async function originalAll(){ try{ const db=await idb(); return await new Promise(res=>{
-  const rq=db.transaction('originals').objectStore('originals').getAll();
-  rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]); }); }catch(e){ return []; } }
-async function storeEntries(name){ try{ const db=await idb(); return await new Promise(res=>{
-  const store=db.transaction(name).objectStore(name), kr=store.getAllKeys(), vr=store.getAll();
-  let keys=null,values=null; const done=()=>{ if(keys&&values) res(keys.map((key,index)=>[key,values[index]])); };
-  kr.onsuccess=()=>{ keys=kr.result||[]; done(); }; vr.onsuccess=()=>{ values=vr.result||[]; done(); };
-  kr.onerror=vr.onerror=()=>res([]); }); }catch(e){ return []; } }
+/* Local records are not caches: failures must remain observable. */
+function localTransaction(db, stores, mode, run){
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(stores,mode);let result;
+    tx.oncomplete=()=>resolve(result);
+    tx.onerror=tx.onabort=()=>reject(tx.error || new Error('Local storage transaction failed'));
+    try{run(tx,value=>{result=value;});}catch(error){try{tx.abort();}catch{}reject(error);}
+  });
+}
+async function localPut(store,key,value){
+  return localTransaction(await idb(),store,'readwrite',tx=>tx.objectStore(store).put(value,key));
+}
+async function localDelete(store,key){
+  return localTransaction(await idb(),store,'readwrite',tx=>tx.objectStore(store).delete(key));
+}
+async function localRead(store,key,all=false){
+  return localTransaction(await idb(),store,'readonly',(tx,done)=>{
+    const request=all?tx.objectStore(store).getAll():tx.objectStore(store).get(key);
+    request.onsuccess=()=>done(request.result);
+  });
+}
+async function bookPut(book){void requestDurableLocalStorage();return localPut('books',book.id,book);}
+async function bookDel(id){return localDelete('books',id);}
+async function bookAll(){return await localRead('books',null,true) || [];}
+async function originalPut(id,record){return localPut('originals',id,record);}
+async function originalGet(id){return await localRead('originals',id) || null;}
+async function originalAll(){return await localRead('originals',null,true) || [];}
+async function storeEntries(name){
+  return localTransaction(await idb(),name,'readonly',(tx,done)=>{
+    const store=tx.objectStore(name),kr=store.getAllKeys(),vr=store.getAll();
+    let keys,values;const finish=()=>{if(keys&&values)done(keys.map((key,i)=>[key,values[i]]));};
+    kr.onsuccess=()=>{keys=kr.result;finish();};vr.onsuccess=()=>{values=vr.result;finish();};
+  });
+}
 const originalEntries=()=>storeEntries('originals');
 const imgEntries=()=>storeEntries('imgs');
+function imageRecordBlob(value){
+  return value && value.imageBytes instanceof ArrayBuffer
+    ? new Blob([value.imageBytes],{type:value.imageType || ''}) : value;
+}
+function bookAssetKeys(book){
+  const keys=new Set(Object.keys(book.imgSrc||{}));
+  if(book.cover)keys.add(book.cover);
+  for(const text of book.paras||[])if(typeof text==='string'&&text.startsWith(IMG_MARK))keys.add(text.slice(IMG_MARK.length));
+  return keys;
+}
+/* All durable assets live in this DB. Do not perform a torn multi-step delete,
+   and never remove a shared URL-keyed picture still referenced by another book. */
+async function bookDeleteAssets(book){
+  return localTransaction(await idb(),['books','originals','imgs'],'readwrite',(tx)=>{
+    const store=tx.objectStore('books'),imgs=tx.objectStore('imgs');
+    const list=store.getAll(),keys=imgs.getAllKeys();let others,imageKeys;
+    const finish=()=>{
+      if(!others||!imageKeys)return;
+      const target=others.find(item=>item.id===book.id)||book;
+      const owned=bookAssetKeys(target),retained=new Set();
+      const remaining=others.filter(item=>item.id!==book.id);
+      remaining.forEach(item=>bookAssetKeys(item).forEach(key=>retained.add(key)));
+      for(const key of imageKeys){
+        const mine=owned.has(key)||String(key).startsWith(book.id+'|');
+        const shared=retained.has(key)||remaining.some(item=>String(key).startsWith(item.id+'|'));
+        if(mine&&!shared)imgs.delete(key);
+      }
+      store.delete(book.id);tx.objectStore('originals').delete(book.id);
+    };
+    list.onsuccess=()=>{others=list.result||[];finish();};
+    keys.onsuccess=()=>{imageKeys=keys.result||[];finish();};
+  });
+}
 /* A synced/legacy book can acquire a different local ID even though its raw
    file is already present on this device. Recover it through the file hash and
    repair the direct ID lookup instead of asking the reader to reconnect. */
@@ -90,12 +137,8 @@ async function originalGetForBook(book){
   }
   return recovered;
 }
-async function originalDel(id){ try{ const db=await idb(); return await new Promise(res=>{
-  const tx=db.transaction('originals','readwrite'); tx.objectStore('originals').delete(id);
-  tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
-async function vaultPut(key, value){ const db=await idb(); return new Promise((res,rej)=>{
-  const tx=db.transaction('vault','readwrite'); tx.objectStore('vault').put(value,key);
-  tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function originalDel(id){return localDelete('originals',id);}
+async function vaultPut(key,value){return localPut('vault',key,value);}
 async function vaultGet(key){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('vault').objectStore('vault').get(key);
   rq.onsuccess=()=>res(rq.result===undefined?null:rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
@@ -119,8 +162,7 @@ async function imgGet(id){ try{
     const rq=db.transaction('imgs').objectStore('imgs').get(id);
     rq.onsuccess=()=>resolve(rq.result); rq.onerror=()=>resolve(null);
   });
-  return value && value.imageBytes instanceof ArrayBuffer
-    ? new Blob([value.imageBytes],{type:value.imageType}) : value;
+  return imageRecordBlob(value);
 }catch(e){return null;} }
 async function imgDel(id){ try{ const db=await idb(); return await new Promise(res=>{
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').delete(id); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
@@ -158,7 +200,7 @@ async function imgPurge(prefix){ try{ const db=await idb(); return await new Pro
   const st=tx.objectStore('imgs');
   const rq=st.getAllKeys();
   rq.onsuccess=()=>rq.result.filter(k=>String(k).startsWith(prefix)).forEach(k=>st.delete(k));
-  rq.onerror=()=>reject(rq.error); tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
+  rq.onerror=()=>reject(rq.error); tx.oncomplete=resolve; tx.onerror=tx.onabort=()=>reject(tx.error || new Error('Storage aborted'));
 }); }catch(e){} }
 const IMG_MARK = '[[IMG]]:';
 
@@ -171,7 +213,7 @@ async function dictGet(key){ try{ const db=await ddb(); return await new Promise
   rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
 async function dictPut(key,val){ try{ const db=await ddb(); await new Promise((res,rej)=>{
   const tx=db.transaction('entries','readwrite'); tx.objectStore('entries').put(val,key);
-  tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }catch(e){} }
+  tx.oncomplete=res; tx.onerror=tx.onabort=()=>rej(tx.error || new Error('Storage aborted')); }); }catch(e){} }
 /* 캐시를 JSON으로 내보내기 — 콘솔에서 breezeExportDict() 로 호출 */
 window.breezeExportDict = async function(){
   const db=await ddb();

@@ -29,22 +29,10 @@ const MAX_BYTES = 3_000_000;   // 기사 한 편치고 3MB 를 넘으면 기사�
 const MAX_IMAGE_BYTES = 2_000_000;
 const TIMEOUT_MS = 12_000;
 
-// 열린 중계는 사내망을 찔러 보는 발판이 되기 쉽습니다. 공인 주소만 받습니다.
-const PRIVATE_HOST =
-  /^(localhost$|\[?::1\]?$|0\.|10\.|127\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|.*\.local$|.*\.internal$)/i;
-
-function safeUrl(raw: string | null): URL | null {
-  if (!raw) return null;
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    return null;
-  }
-  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-  if (PRIVATE_HOST.test(url.hostname)) return null;
-  return url;
-}
+// Node-compatible transport pins validated DNS addresses and bounds streaming bodies.
+import {fetchPublic,publicUrl} from "./public-fetch.mjs";
+let activeRequests=0;
+function safeUrl(raw:string|null):URL|null{try{return raw?publicUrl(raw):null;}catch{return null;}}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -54,12 +42,14 @@ Deno.serve(async (req) => {
   const url = safeUrl(params.get("url"));
   if (!url) return json({ error: "bad_url", message: "열 수 없는 주소예요" }, 400);
   const asImage = params.get("as") === "image";
+  if(activeRequests>=8)return json({error:"busy",message:"잠시 후 다시 시도해 주세요"},503);
+  activeRequests++;
 
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
   try {
-    const upstream = await fetch(url.href, {
-      redirect: "follow",
+    const upstream = await fetchPublic(url.href, {
+      limit:asImage?MAX_IMAGE_BYTES:MAX_BYTES,
       signal: abort.signal,
       headers: {
         // 봇 차단에 바로 걸리지 않도록 평범한 브라우저처럼 요청합니다.
@@ -73,7 +63,7 @@ Deno.serve(async (req) => {
       },
     });
 
-    if (!upstream.ok) {
+    if (upstream.status<200 || upstream.status>=300) {
       return json({
         error: "upstream",
         message: upstream.status === 403 || upstream.status === 401
@@ -82,14 +72,14 @@ Deno.serve(async (req) => {
       }, 502);
     }
 
-    const type = upstream.headers.get("content-type") || "";
+    const type = upstream.headers["content-type"] || "";
 
     if (asImage) {
       // SVG 는 그림이 아니라 스크립트를 품을 수 있는 문서라 받지 않습니다.
       if (!/^image\//i.test(type) || /svg/i.test(type)) {
         return json({ error: "not_image", message: "그림이 아니에요" }, 415);
       }
-      const bytes = await upstream.arrayBuffer();
+      const bytes = upstream.bytes;
       if (bytes.byteLength > MAX_IMAGE_BYTES) {
         return json({ error: "too_big", message: "그림이 너무 커요" }, 413);
       }
@@ -102,7 +92,7 @@ Deno.serve(async (req) => {
       return json({ error: "not_html", message: "웹페이지가 아니에요" }, 415);
     }
 
-    const buffer = await upstream.arrayBuffer();
+    const buffer = upstream.bytes;
     if (buffer.byteLength > MAX_BYTES) {
       return json({ error: "too_big", message: "페이지가 너무 커요" }, 413);
     }
@@ -117,7 +107,9 @@ Deno.serve(async (req) => {
 
     return json({ url: upstream.url, html });
   } catch (e) {
-    console.error(e);
+    if(e instanceof Error&&e.message==="bad_url")return json({error:"bad_url",message:"열 수 없는 주소예요"},400);
+    if(e instanceof Error&&e.message==="too_big")return json({error:"too_big",message:"자료가 너무 커요"},413);
+    console.error("article_request_failed",e instanceof Error?e.message:"unknown");
     const timedOut = e instanceof Error && e.name === "AbortError";
     return json({
       error: timedOut ? "timeout" : "internal",
@@ -125,5 +117,6 @@ Deno.serve(async (req) => {
     }, 504);
   } finally {
     clearTimeout(timer);
+    activeRequests--;
   }
 });

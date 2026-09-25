@@ -33,7 +33,7 @@
 /* tools/stamp-version.mjs 가 찍습니다 — 손으로 고치지 마세요.
    값은 "판 번호를 찍은 index.html 의 해시" 입니다. index.html 은 모든 파일의
    해시를 담고 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다. */
-const VERSION = '46998e36';
+const VERSION = '9add5e19';
 const CACHE = `breeze-${VERSION}`;
 
 /* 담을 목록은 index.html 을 읽어서 그때그때 만듭니다. 손으로 적어 두면 파일을
@@ -42,32 +42,37 @@ const CACHE = `breeze-${VERSION}`;
 const LOCAL_TAG = /<(?:script|link)\b[^>]*?\b(?:src|href)="(?!https?:|\/\/|data:|#)([^"]+)"/g;
 const CSS_URL = /url\(\.\.\/([^)"']+)\)/g;
 
-async function shellUrls(){
-  const html = await (await fetch('index.html', {cache:'reload'})).text();
-  const tagged = [...html.matchAll(LOCAL_TAG)].map(match => match[1])
-    .filter(url => /\.(?:js|css)(?:\?|$)/.test(url));
-  const fonts = [];
-  for(const style of tagged.filter(url => url.startsWith('styles/fonts.css'))){
-    const css = await (await fetch(style)).text();
-    for(const match of css.matchAll(CSS_URL)) fonts.push(match[1]);
-  }
-  /* 첫 화면 그림은 여기 없습니다. 화면 비율에 따라 넷 중 하나만 쓰는데 넷을 다
-     담으면 380KB 를 받아 놓고 90KB 만 쓰게 됩니다. 실제로 쓴 한 벌은 아래
-     `cacheFirst` 가 지나가는 길에 담아 둡니다. */
-  return ['./', 'index.html', ...tagged, ...fonts];
+async function verifiedShellResponse(url){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+  try{
+    const response=await fetch(url,{cache:'reload',signal:controller.signal});
+    if(!response.ok)throw new Error('Incomplete shell: '+url);
+    const expected=new URL(url,self.location.href).searchParams.get('v');
+    if(expected&&/^[a-f0-9]{8}$/.test(expected)){
+      const digest=await crypto.subtle.digest('SHA-256',await response.clone().arrayBuffer());
+      const actual=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('').slice(0,8);
+      if(actual!==expected)throw new Error('Mixed shell generation: '+url);
+    }
+    return response;
+  }finally{clearTimeout(timer);}
 }
-
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    const urls = await shellUrls();
-    /* 하나씩 담습니다. `addAll` 은 하나만 실패해도 통째로 실패하고, 그러면
-       서비스워커가 아예 안 켜집니다 — 파일 한 장 때문에 오프라인 실행 전체를
-       잃을 이유가 없습니다. */
-    await Promise.all(urls.map(url => cache.add(url).catch(() => {})));
-    await self.skipWaiting();
-  })());
-});
+async function installShell(){
+  const index=await verifiedShellResponse('index.html'),html=await index.clone().text();
+  const tagged=[...html.matchAll(LOCAL_TAG)].map(match=>match[1]).filter(url=>/\.(?:js|css)(?:\?|$)/.test(url));
+  const cache=await caches.open(CACHE),urls=[...new Set(tagged)];
+  // A rejected install leaves the previous worker and its cache authoritative.
+  await Promise.all(urls.map(async url=>{
+    const response=await verifiedShellResponse(url);
+    if(url.startsWith('styles/fonts.css')){
+      const css=await response.clone().text();
+      await Promise.all([...css.matchAll(CSS_URL)].map(async match=>cache.put(match[1],await verifiedShellResponse(match[1]))));
+    }
+    await cache.put(url,response);
+  }));
+  await cache.put('./',index.clone());await cache.put('index.html',index);
+  await cache.put('__shell_complete__',new Response(VERSION));
+}
+self.addEventListener('install',event=>event.waitUntil(installShell()));
 
 /* ---- 한 벌만은 옮겨 싣습니다 ----
    `assets/lib/` 의 PDF.js · JSZip 은 위 install 이 미리 담지 않습니다 —
@@ -89,7 +94,7 @@ const KEEP_ACROSS_VERSIONS = /\/assets\/lib\/[^/]+$/;
 
 async function carryOverRuntimeLibs(cache){
   for(const name of await caches.keys()){
-    if(name === CACHE) continue;
+    if(name===CACHE || !/^breeze-[a-f0-9]{8}$/.test(name))continue;
     const old = await caches.open(name);
     for(const request of await old.keys()){
       const url = new URL(request.url);
@@ -102,17 +107,15 @@ async function carryOverRuntimeLibs(cache){
   }
 }
 
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    /* 판이 바뀌면 옛 캐시는 통째로 버립니다. 새 캐시는 위 install 에서 이미 다
-       채워진 뒤라 빈 구간이 생기지 않습니다. 주소마다 해시가 붙어 있어서
-       배포할 때마다 옛 주소가 쌓이는데, 이렇게 해야 그것이 끝없이 늘지 않습니다.
-       버리기 전에 위의 한 벌만 새 캐시로 옮겨 싣습니다. */
-    await carryOverRuntimeLibs(await caches.open(CACHE));
-    for(const name of await caches.keys()) if(name !== CACHE) await caches.delete(name);
-    await self.clients.claim();
-  })());
-});
+self.addEventListener('activate',event=>event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE);
+  if(!await cache.match('__shell_complete__'))throw new Error('Incomplete shell');
+  await carryOverRuntimeLibs(cache);
+  const old=(await caches.keys()).filter(name=>name!==CACHE&&/^breeze-[a-f0-9]{8}$/.test(name));
+  // Retain one rollback generation and never remove another app's namespace.
+  for(const name of old.slice(0,-1))await caches.delete(name);
+  // No skipWaiting/clients.claim: running Readers keep their code generation.
+})()));
 
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -145,22 +148,17 @@ async function networkFirst(request){
    한 판 늦게 보이지만 어긋나지는 않습니다: 옛 index.html 이 부르는 주소는
    전부 옛 해시라, 그 짝인 옛 파일이 캐시에 그대로 있습니다. */
 async function staleWhileRevalidate(request){
-  const cache = await caches.open(CACHE);
-  const cached = await cache.match(request, {ignoreSearch:true});
-  const fresh = fetch(request).then(response => {
-    if(response && response.ok) cache.put(request, response.clone());
-    return response;
-  }).catch(() => null);
-  return cached || await fresh || Response.error();
+  const cache=await caches.open(CACHE);
+  return await cache.match(request,{ignoreSearch:true}) || await cache.match('index.html') || Response.error();
 }
 
 async function cacheFirst(request){
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
   if(cached) return cached;
-  const response = await fetch(request);
+  const response = await verifiedShellResponse(request.url);
   /* `basic` 은 우리 서버에서 온, 내용을 읽을 수 있는 응답입니다. 실패한 응답을
      담으면 그 실패가 다음 판까지 굳습니다. */
-  if(response && response.ok && response.type === 'basic') cache.put(request, response.clone());
+  if(response && response.ok && response.type === 'basic') await cache.put(request, response.clone());
   return response;
 }

@@ -248,3 +248,6 @@ stores successfully fetched blobs, with an eight-image limit. Therefore a cover
 can appear outside without being an inline photo inside, especially when an
 image is only `og:image` or an image download fails. A selected manual cover
 changes the card jacket; it does not insert an image into the article body.
+
+## Integrity follow-up
+New article/paste identity uses SHA-256 of every paragraph with exact case and boundaries. Exact legacy content retains its existing ID. Durable book/original/owned-image deletion is one IndexedDB transaction and excludes shared references. A failed library read is not an empty library. The article relay validates and pins public DNS destinations per redirect and enforces streaming byte limits; deploy its new transport together with the entry point.
