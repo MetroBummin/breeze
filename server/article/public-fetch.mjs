@@ -87,11 +87,103 @@ function requestPinned(url,addresses,{signal,headers,limit}){
     request.on('error',reject);request.end();
   });
 }
+// Supabase's Deno Node shim rejects ClientRequest.options.lookup. On that
+// runtime, connect to the already validated IP and upgrade the same socket to
+// TLS using the original hostname for SNI and certificate verification.
+export function decodeHttpResponse(raw,limit){
+  const text=new TextDecoder('latin1').decode(raw);
+  const end=text.indexOf('\r\n\r\n');
+  if(end<0||end>32768)throw new Error('bad_response');
+  const lines=text.slice(0,end).split('\r\n');
+  const match=lines.shift().match(/^HTTP\/1\.[01] (\d{3})(?: |$)/);
+  if(!match)throw new Error('bad_response');
+  const status=Number(match[1]),headers=Object.create(null);
+  for(const line of lines){
+    const colon=line.indexOf(':');
+    if(colon<=0)throw new Error('bad_response');
+    const key=line.slice(0,colon).toLowerCase();
+    if(!/^[a-z0-9-]+$/.test(key))throw new Error('bad_response');
+    if(!(key in headers))headers[key]=line.slice(colon+1).trim();
+  }
+  if([301,302,303,307,308].includes(status))return {status,location:headers.location,headers,bytes:null};
+  if(status<200||status>=300)return {status,headers,bytes:null};
+  const start=end+4,body=raw.subarray(start);
+  if(/(?:^|,)\s*chunked\s*(?:,|$)/i.test(headers['transfer-encoding']||'')){
+    let at=start,total=0;const chunks=[];
+    for(;;){
+      const lineEnd=text.indexOf('\r\n',at);
+      if(lineEnd<0||lineEnd-at>64)throw new Error('bad_response');
+      const sizeText=text.slice(at,lineEnd).split(';',1)[0];
+      if(!/^[0-9a-f]+$/i.test(sizeText))throw new Error('bad_response');
+      const size=parseInt(sizeText,16);
+      if(size===0)break;
+      total+=size;if(total>limit)throw new Error('too_big');
+      at=lineEnd+2;
+      if(at+size+2>raw.length||text.slice(at+size,at+size+2)!=='\r\n')throw new Error('bad_response');
+      chunks.push(raw.subarray(at,at+size));at+=size+2;
+    }
+    const bytes=new Uint8Array(total);let offset=0;
+    for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+    return {status,headers,bytes};
+  }
+  const length=headers['content-length'];
+  if(length!==undefined){
+    if(!/^\d+$/.test(length))throw new Error('bad_response');
+    const count=Number(length);
+    if(count>limit)throw new Error('too_big');
+    if(body.length<count)throw new Error('bad_response');
+    return {status,headers,bytes:body.slice(0,count)};
+  }
+  if(body.length>limit)throw new Error('too_big');
+  return {status,headers,bytes:body.slice()};
+}
+async function requestDenoPinned(url,addresses,{signal,headers,limit}){
+  const host=url.hostname.replace(/^\[|\]$/g,'');
+  const address=(addresses.find(item=>item.family===4)||addresses[0]).address;
+  const port=Number(url.port||(url.protocol==='https:'?443:80));
+  let conn;
+  const abort=()=>{try{conn?.close();}catch{}};
+  if(signal?.aborted)throw signal.reason||new DOMException('Aborted','AbortError');
+  signal?.addEventListener('abort',abort,{once:true});
+  try{
+    conn=await Deno.connect({hostname:address,port});
+    if(signal?.aborted)throw signal.reason||new DOMException('Aborted','AbortError');
+    if(url.protocol==='https:')conn=await Deno.startTls(conn,{hostname:host,alpnProtocols:['http/1.1']});
+    const lines=[`GET ${url.pathname+url.search} HTTP/1.1`,`Host: ${url.host}`,'Connection: close'];
+    for(const [key,value] of Object.entries(headers)){
+      if(!/^[a-z0-9-]+$/i.test(key)||/[\r\n]/.test(String(value)))throw new Error('bad_request');
+      lines.push(`${key}: ${value}`);
+    }
+    const request=new TextEncoder().encode(lines.join('\r\n')+'\r\n\r\n');
+    await conn.write(request);
+    const chunks=[];let size=0,headerEnd=-1;const buffer=new Uint8Array(16384);
+    while(true){
+      const n=await conn.read(buffer);if(n===null)break;
+      size+=n;
+      if(size>limit*2+65536)throw new Error('too_big');
+      chunks.push(buffer.slice(0,n));
+      if(headerEnd<0){
+        const probe=new Uint8Array(size);let at=0;
+        for(const chunk of chunks){probe.set(chunk,at);at+=chunk.length;}
+        headerEnd=new TextDecoder('latin1').decode(probe).indexOf('\r\n\r\n');
+        if(headerEnd<0&&size>32768)throw new Error('bad_response');
+      }
+    }
+    if(signal?.aborted)throw signal.reason||new DOMException('Aborted','AbortError');
+    const raw=new Uint8Array(size);let at=0;
+    for(const chunk of chunks){raw.set(chunk,at);at+=chunk.length;}
+    return decodeHttpResponse(raw,limit);
+  }catch(error){
+    if(signal?.aborted)throw signal.reason||new DOMException('Aborted','AbortError');
+    throw error;
+  }finally{signal?.removeEventListener('abort',abort);try{conn?.close();}catch{}}
+}
 /**
  * @param {string} raw
  * @param {{signal?: AbortSignal, headers?: Record<string,string>, limit?: number, resolve?: typeof lookup, transport?: typeof requestPinned}} [options]
  */
 export async function fetchPublic(raw,{signal,headers={},limit=3000000,resolve=lookup,transport=requestPinned}={}){
+  if(typeof Deno!=='undefined'&&transport===requestPinned)transport=requestDenoPinned;
   let url=publicUrl(raw);
   const controller=signal?null:new AbortController();signal=signal||controller.signal;
   for(let hop=0;hop<=5;hop++){

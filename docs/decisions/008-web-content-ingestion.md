@@ -268,6 +268,11 @@ changes the card jacket; it does not insert an image into the article body.
 
 ## Integrity follow-up
 New article/paste identity uses SHA-256 of every paragraph with exact case and boundaries. Exact legacy content retains its existing ID. Durable book/original/owned-image deletion is one IndexedDB transaction and excludes shared references. A failed library read is not an empty library. The article relay validates and pins public DNS destinations per redirect and enforces streaming byte limits; deploy its new transport together with the entry point.
+On Supabase Edge Runtime, the Node HTTP shim rejects a custom socket `lookup`.
+The relay therefore connects to the validated IP via Deno TCP, upgrades the
+same socket to TLS with the original hostname for SNI and certificate checking,
+and bounds the HTTP/1.1 response. Node tests keep the original pinned lookup
+transport. Never fall back to an unpinned `fetch` after a socket failure.
 
 ## Audit UI follow-up
 Known face bounds take priority over centre bias; use contain when their union cannot fit. Crop hints use cache v2. Cover-free regular cards retain text identity. Saved-content empty states include an add action. Primary cards expose button semantics/keyboard activation; wired local cards also expose Shift+F10 editing. Native VoiceOver and real-device design QA remain required.
