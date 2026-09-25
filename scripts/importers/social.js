@@ -155,12 +155,13 @@ function parseSocialHtml(html,url){
     }
   }else{
     for(const post of doc.querySelectorAll('article,[data-testid="tweet"]')){
-      const permalink=post.querySelector('time')?.closest('a')?.getAttribute('href');
+      const time=[...post.querySelectorAll('time')].find(n=>n.closest('article,[data-testid="tweet"]')===post);
+      const permalink=time?.closest('a')?.getAttribute('href');
       if(!socialSameUrl(socialHttpUrl(permalink,url),url))continue;
       if(post.querySelector('[data-testid="tweet-text-show-more-link"],[data-truncated="true"]'))throw socialImportError('incomplete');
-      const body=post.querySelector('[data-testid="tweetText"],[itemprop="articleBody"]');
+      const body=[...post.querySelectorAll('[data-testid="tweetText"],[itemprop="articleBody"]')].find(n=>n.closest('article,[data-testid="tweet"]')===post);
       if(body)return socialAssemble(info,socialDomBlocks(body,url),{author:post.querySelector('[data-testid="User-Name"]')?.textContent,
-        date:post.querySelector('time')?.getAttribute('datetime')});
+        date:time?.getAttribute('datetime')});
     }
   }
   throw socialImportError('unavailable');

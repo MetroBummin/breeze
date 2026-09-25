@@ -81,6 +81,10 @@ for(const engine of (process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[ch
    const html=`<article data-testid="tweet"><a href="${post}"><time datetime="2026-09-24">date</time></a><div data-testid="tweetText">First line<br>Second <strong>important</strong> line.</div><div data-testid="tweetText">Other user reply</div></article>`;
    const r=await parse(html,post);assert.equal(r.parsed.blocks.length,2);assert(!JSON.stringify(r).includes('Other user reply'));
   });
+  await check('nested quoted permalink cannot misattribute outer body',async()=>{
+ const html=`<article><div data-testid="tweetText">Not the requested author's post.</div><article><a href="${post}"><time datetime="2026-09-24">date</time></a><div data-testid="tweetText">Requested post only.</div></article></article>`;
+ const r=await parse(html,post);assert.equal(r.parsed.blocks[0].t,'Requested post only.');assert(!JSON.stringify(r).includes('Not the requested'));
+});
   await check('80 concurrent alias imports: one fetch, one persisted book, latest opens',async()=>{
    counts.clear();delay=60;
    const result=await page.evaluate(async()=>{
