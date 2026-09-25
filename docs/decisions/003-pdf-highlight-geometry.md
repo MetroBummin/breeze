@@ -108,3 +108,6 @@ geometry runs recorded zero such deferrals.
 Renderer references:
 [CanvasGraphics text positioning](https://github.com/mozilla/pdf.js/blob/v3.11.174/src/display/canvas.js)
 and [TextLayer layout](https://github.com/mozilla/pdf.js/blob/v3.11.174/src/display/text_layer.js).
+
+## Security mitigation
+All runtime PDF.js getDocument calls explicitly disable `isEvalSupported` to apply the published CVE-2024-4367 workaround while retaining the pinned glyph adapter. A patched renderer upgrade and physical-device geometry regression remain separate gates.

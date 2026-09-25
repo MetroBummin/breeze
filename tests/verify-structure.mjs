@@ -1200,8 +1200,9 @@ assert.match(articleSource, /parsed\.blocks\.filter\(block => block\.r !== 'img'
   'An image that failed to download would leave a broken figure in the article');
 
 const articleServer = readFileSync(resolve(root, 'server/article/index.ts'), 'utf8');
-assert.match(articleServer, /PRIVATE_HOST/,
+assert.match(articleServer, /fetchPublic|PRIVATE_HOST/,
   'The article relay would happily fetch private network addresses');
+assert.match(readFileSync(resolve(root,'server/article/public-fetch.mjs'),'utf8'), /publicAddresses[\s\S]*lookup/);
 assert.match(articleServer, /MAX_BYTES/, 'The article relay has no response size limit');
 assert.match(articleServer, /MAX_IMAGE_BYTES/, 'The image relay has no size limit');
 // SVG 는 그림이 아니라 스크립트를 품을 수 있는 문서입니다.

@@ -769,7 +769,7 @@ function assembleParagraphs(pages){
 
 async function parsePDF(f){
   await ensurePdfLib();
-  const pdf = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
+  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data: await f.arrayBuffer()}).promise;
   const pages = [];
   for(let i=1;i<=pdf.numPages;i++){
     if(i===1 || i%20===0) toast(`책 기본판 준비 중… ${i}/${pdf.numPages}쪽`);

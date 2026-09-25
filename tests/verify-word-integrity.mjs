@@ -9,11 +9,14 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const helper=readFileSync(resolve(root,'scripts/core/word-integrity.js'),'utf8');
 const sync=readFileSync(resolve(root,'scripts/sync/sync.js'),'utf8');
 const state=readFileSync(resolve(root,'scripts/core/state.js'),'utf8');
-const merger=sync.slice(sync.indexOf('function mergeWordState('),sync.indexOf('async function mergeVaultPayload('));
-assert.ok(merger.startsWith('function mergeWordState('));
+const merger=sync.slice(sync.indexOf('function preserveWordConflict('),sync.indexOf('async function mergeVaultPayload('));
+assert.ok(merger.startsWith('function preserveWordConflict('));
 
 function world(initial={},deleted={}){
-  const context={words:structuredClone(initial),dead:structuredClone(deleted),pendingWord:null,Date,console};
+  const memory=new Map();
+  const context={words:structuredClone(initial),dead:structuredClone(deleted),pendingWord:null,Date,console,toast(){},
+    load:(key,fallback)=>memory.get(key)??fallback,save:(key,value)=>{memory.set(key,value);return true;}};
+  context.window=context;
   new Script(helper+'\nconst upOf=word=>word?(word.up||word.addedAt||0):0;\n'+merger).runInNewContext(context);
   return context;
 }

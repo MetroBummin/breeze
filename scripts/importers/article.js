@@ -381,25 +381,24 @@ function parseFeedArticle(entry){
 }
 const articleJobs = new Map();
 async function ingestArticle(url, options = {}){
-  const key = articleUrlKey(url);
-  if(articleJobs.has(key)) return articleJobs.get(key);
-  const job = (async()=>{
-    const existing = books.find(book=>book.sourceUrl && articleUrlKey(book.sourceUrl) === key);
-    if(existing){ await openBook(existing); return existing; }
-    const location = {};
-    let parsed=options.preparedArticle || parseFeedArticle(options);
-    if(!parsed){
-      const html = await fetchArticleHtml(url,location);
-      parsed = parseArticleHtml(html,location.url || url);
-    }
-    if(!parsed) throw new Error('본문을 안전하게 가져오지 못했어요');
-    const photos = await attachArticleImages(parsed, options.photo);
-    const book = await saveCasualBook(parsed, {kind:'article', site:parsed.site || options.source, sourceUrl:url,
-      resolvedUrl:parsed.url, discoveredFromUrl:options.discoveredFromUrl || '',
-      author:parsed.author, publishedAt:parsed.publishedAt, cover:parsed.cover || null, imgSrc:parsed.imgSrc || null});
-    if(photos.missed) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
-    return book;
-  })();
-  articleJobs.set(key,job);
-  try{return await job;}finally{articleJobs.delete(key);}
+  const key=articleUrlKey(url),intent=++readerOpenIntent;
+  let job=articleJobs.get(key);
+  if(!job){
+    job=(async()=>{
+      const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===key);
+      if(existing)return existing;
+      const location={};let parsed=options.preparedArticle||parseFeedArticle(options);
+      if(!parsed){const html=await fetchArticleHtml(url,location);parsed=parseArticleHtml(html,location.url||url);}
+      if(!parsed)throw new Error('본문을 안전하게 가져오지 못했어요');
+      const photos=await attachArticleImages(parsed,options.photo);
+      const book=await saveCasualBook(parsed,{kind:'article',site:parsed.site||options.source,sourceUrl:url,
+        resolvedUrl:parsed.url,discoveredFromUrl:options.discoveredFromUrl||'',author:parsed.author,
+        publishedAt:parsed.publishedAt,cover:parsed.cover||null,imgSrc:parsed.imgSrc||null},{present:false});
+      if(photos.missed&&intent===readerOpenIntent)toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
+      return book;
+    })();
+    articleJobs.set(key,job);
+  }
+  try{const book=await job;if(intent===readerOpenIntent){closeAddModal();await openBook(book);}return book;}
+  finally{if(articleJobs.get(key)===job)articleJobs.delete(key);}
 }
