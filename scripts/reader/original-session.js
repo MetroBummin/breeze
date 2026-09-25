@@ -205,6 +205,7 @@ function leaveOriginalReader(){
   /* 배율은 이 종이의 것이었습니다. 다음 책은 제 크기로 엽니다. */
   resetOriginalZoom();
   if(!originalSession) return;
+  BreezePdfInk.close(originalSession);
   if(originalSession.observer) originalSession.observer.disconnect();
   (originalSession.resizeObservers||[]).forEach(observer=>observer.disconnect());
   if(originalSession.viewportListener) window.removeEventListener('resize',originalSession.viewportListener);
