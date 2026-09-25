@@ -8,7 +8,7 @@ const db=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVI
 const generating=new Map<string,Promise<Record<string,unknown>>>();
 function validMetadata(value:any){
   if(!value || typeof value!=="object")return null;
-  const fields=["hookTitle","translatedTitle","teaser"],min=[5,1,25],max=[90,180,500];
+  const fields=["summaryKo"],min=[40],max=[600];
   const meta:Record<string,string>={};
   for(let i=0;i<fields.length;i++){
     const text=typeof value[fields[i]]==="string" ? value[fields[i]].trim() : "";
@@ -48,10 +48,10 @@ Deno.serve(async request=>{
     parsed.hash="";
     for(const key of [...parsed.searchParams.keys()])if(/^utm_|^(fbclid|gclid)$/i.test(key))parsed.searchParams.delete(key);
     // New prompt/validation generations must not reuse older shared metadata.
-    const cacheKey=await digest("article-preview-v2\n"+parsed.href+"\n"+title+"\n"+excerpt);
+    const cacheKey=await digest("article-preview-v4\n"+parsed.href+"\n"+title+"\n"+excerpt);
     const {data:hit,error:readError}=await db.from("article_preview_cache").select("hook_title,translated_title,teaser").eq("cache_key",cacheKey).maybeSingle();
     if(readError)return reply({error:"cache_unavailable"},503);
-    const cached=hit && validMetadata({hookTitle:hit.hook_title,translatedTitle:hit.translated_title,teaser:hit.teaser});
+    const cached=hit && validMetadata({summaryKo:hit.teaser});
     if(cached)return reply({...cached,cached:true});
     if(hit)return reply({error:"cache_invalid"},503);
     const token=(request.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
@@ -79,7 +79,7 @@ Deno.serve(async request=>{
         let persisted=false;
         try{
           const {error}=await db.from("article_preview_cache").insert({cache_key:cacheKey,source_url:parsed.href,
-            hook_title:meta.hookTitle,translated_title:meta.translatedTitle,teaser:meta.teaser});
+            hook_title:"",translated_title:"",teaser:meta.summaryKo});
           persisted=!error || error.code==="23505";
         }catch{/* A storage transport failure must not discard usable metadata. */}
         // A useful, paid-for result remains usable even if shared persistence fails.

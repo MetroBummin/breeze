@@ -279,16 +279,15 @@ signal; pressing “읽기 시작” calls the unchanged Reader, which writes th
 Already started articles enter Reader directly. Other book kinds retain their
 existing route. Home card layout and Reader rendering are unchanged.
 
-Preview uses the saved article's cover, source title, and a short opening
-excerpt. It is a centered popup using the existing word/add popup glass
-material; content is trimmed to fit without an inner scrollbar. Korean hook
-title, faithful translated title and teaser are
-requested lazily when the Preview opens. A local cache avoids repeat requests on
+Preview uses the saved article's cover, source, and original English title.
+It is a centered popup using the existing word/add popup glass material;
+the image leads into scrollable content under a fixed Read action. A natural
+two-to-three-sentence Korean summary is requested lazily when Preview opens.
+A local cache avoids repeat requests on
 one device; the Edge Function stores validated metadata by source URL and text
 fingerprint for reuse across devices and users. Only the server holds the AI key.
-If metadata, image, server, or network is unavailable, the source title,
-available body excerpt and Reader CTA still work. The translated title remains
-in metadata but is not displayed in this first UI.
+If metadata, image, server, or network is unavailable, the source title and
+Reader CTA still work. The summary is optional and can be retried.
 
 ## Audit follow-up
 Preview dismissal aborts its pending Reader navigation; a new selection is never blocked behind a hung old open. This requires the core hardening PR's `openBook(options.signal)` guard when integrated. AI loading has stable placeholders; source-only fallback promotes the excerpt while keeping the dialog/CTA geometry fixed. No model/prompt changes or provider calls in this update.
@@ -303,3 +302,18 @@ progress. Explicit Read commits the source and images once before Reader entry.
 Explicit URL/paste saving is unchanged. Existing saved-but-unread items are not
 automatically deleted. See `docs/qa/preview-intent-20260925.md` for the backend
 deployment gate and regression evidence.
+
+## Preview reading decision layout (2026-09-25)
+
+The Preview answers whether the article is worth reading within a short glance.
+Its image occupies about half the initial scroll area. The source sits above the
+original English title and a two-to-three-sentence Korean summary. The content scrolls
+under a fixed Read action on narrow phones, tablets and desktop windows.
+Successful metadata has no visible internal label. Loading reserves the summary
+space; failure keeps the English title and offers summary retry. The server
+response contract is version 4 (`summaryKo`) with a new cache key. The shared
+table retains its existing columns and stores the summary in `teaser` without
+exposing historical title fields. The prompt must preserve the source's
+uncertainty and avoid inventing a reason to read when the supplied excerpt does
+not support one. Reading state,
+save intent and Reader navigation remain the same.

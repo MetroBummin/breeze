@@ -9,7 +9,7 @@ const css=readFileSync(new URL('styles/article-preview.css',root),'utf8');
 const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
 :root{--ui:Arial,sans-serif;--display:Georgia,serif;--serif:Georgia,serif;--sentence-glass-solid:#fafafa;--sentence-glass-surface:rgba(250,250,250,.94);--sentence-glass-shadow:0 20px 70px #0003;--sentence-glass-line-soft:#ddd;--sentence-glass-ink:#111;--sentence-glass-muted:#555;--sentence-glass-secondary:#444;--sentence-glass-line:#ddd;--sentence-glass-scrim:#0005;--sentence-glass-action:#eee;--s1:#ddd;}body{margin:0;height:2000px;}button{box-sizing:border-box;}${css}</style></head><body>
 <button id="launch">Open article</button><div id="reader" hidden></div>
-<dialog id="article-preview" aria-labelledby="ap-hook"><div class="ap-sheet"><button class="ap-close" type="button" aria-label="미리보기 닫기">✕</button><div class="ap-scroll"><div class="ap-hero"><img alt="" hidden><div class="ap-art" aria-hidden="true"></div></div><div class="ap-content"><p class="ap-source"></p><h2 id="ap-hook" hidden></h2><h3 class="ap-title"></h3><p class="ap-teaser" hidden></p><div class="ap-excerpt" aria-label="원문 미리보기"></div></div></div><div class="ap-actions"><button class="ap-start" type="button">읽기 시작</button></div></div></dialog>
+<dialog id="article-preview" aria-labelledby="ap-original-title"><div class="ap-sheet"><button class="ap-close" type="button" aria-label="미리보기 닫기">✕</button><div class="ap-scroll"><div class="ap-hero"><img alt="" hidden><div class="ap-art" aria-hidden="true"></div></div><div class="ap-content"><p class="ap-source"></p><h2 id="ap-original-title" class="ap-title"></h2><p class="ap-summary" hidden></p></div></div><div class="ap-actions"><button class="ap-start" type="button">읽기 시작</button></div></div></dialog>
 <script>
 const IMG_MARK='__IMG__',SB_URL='https://preview.fixture',SB_KEY='fixture-public-key';
 class FixtureStorage{constructor(){this.values=new Map();}getItem(k){return this.values.get(k)||null;}setItem(k,v){this.values.set(k,String(v));}}
@@ -26,7 +26,7 @@ function bookImageBlob(){return Promise.resolve(QA.image);}function toast(s){QA.
 async function openBook(book,options={}){QA.opens.push(book.id);if(QA.hold)await new Promise(r=>QA.resume=r);if(QA.fail)throw Error('read failure');positions[book.id]={t:1};document.querySelector('#reader').hidden=false;if(options.onPresented)options.onPresented();return book;}
 function book(id='a'){return {id,kind:'article',sourceUrl:'https://example.test/'+id,title:'Original article '+id,site:'Example',paras:['Original article '+id,'The first source paragraph describes the subject with enough detail to let readers decide whether to continue reading the article.']};}
 </script><script>${script}</script><script>document.querySelector('#launch').onclick=()=>openCasualPreviewOrReader(book());</script></body></html>`;
-const meta={hookTitle:'이 글에 담긴 질문은 무엇일까요',translatedTitle:'원문 제목의 충실한 번역',teaser:'이 글은 구체적인 사례를 바탕으로 주제를 소개합니다. 서로 다른 설명과 그 배경을 함께 살펴봅니다.'};
+const meta={summaryKo:'이 글은 구체적인 사례를 바탕으로 주제를 소개합니다. 서로 다른 설명과 그 배경을 함께 살펴봅니다.'};
 let count=0;
 try{
   const engines=process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[chromium,webkit];
@@ -51,31 +51,32 @@ try{
           assert.equal(await p.isEnabled('.ap-start'),true);
           const before=await p.locator('#article-preview').boundingBox(),cta=await p.locator('.ap-start').boundingBox();
           await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond();
-          await p.waitForFunction(()=>!document.querySelector('#ap-hook').hidden);
+          await p.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
           const after=await p.locator('#article-preview').boundingBox(),next=await p.locator('.ap-start').boundingBox();
           assert.deepEqual(after,before);assert.deepEqual(next,cta);
           assert(Math.abs(after.x+after.width/2-width/2)<2 && Math.abs(after.y+after.height/2-height/2)<2);
           assert(next.y>=0 && next.y+next.height<=height);
-          assert(await p.locator('.ap-scroll').evaluate(n=>n.scrollHeight<=n.clientHeight+2),'normal text must fit without internal scrolling');
+          const ratio=await p.locator('.ap-scroll').evaluate(n=>n.querySelector('.ap-hero').getBoundingClientRect().height/n.clientHeight);
+          assert(ratio>=.45&&ratio<=.65,'photo occupies about half the initial view');
           if(process.env.BREEZE_PREVIEW_CAPTURE && width===390)await p.screenshot({path:process.env.BREEZE_PREVIEW_CAPTURE});
         },{width,height});
       }
       await run('A/B out-of-order responses cannot cross-paint',async(p,rs,respond)=>{
         await p.evaluate(()=>openCasualPreviewOrReader(book('a')));await p.waitForFunction(()=>articlePreviewJobs.size===1);
         await p.evaluate(()=>openCasualPreviewOrReader(book('b')));await p.waitForFunction(()=>articlePreviewJobs.size===2);
-        await respond(1,{...meta,hookTitle:'두 번째 글의 한국어 소개입니다'});await respond(0);
-        await p.waitForTimeout(40);assert.equal(await p.textContent('#ap-hook'),'두 번째 글의 한국어 소개입니다');
+        await respond(1,{summaryKo:'두 번째 글의 핵심은 예상과 다른 선택에 있습니다. 이어지는 과정과 그 배경을 원문에서 구체적으로 살펴봅니다.'});await respond(0);
+        await p.waitForTimeout(40);assert.equal(await p.textContent('.ap-summary'),'두 번째 글의 핵심은 예상과 다른 선택에 있습니다. 이어지는 과정과 그 배경을 원문에서 구체적으로 살펴봅니다.');
       });
       await run('close/reopen shares request; queued close is harmless',async(p,rs,respond)=>{
         await p.click('#launch');await p.waitForFunction(()=>articlePreviewJobs.size===1);
         await p.evaluate(()=>{articlePreviewClose();openCasualPreviewOrReader(book());});await respond();
-        await p.waitForFunction(()=>!document.querySelector('#ap-hook').hidden);
+        await p.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
         assert.equal(await p.evaluate(()=>QA.requests.length),1);assert(await p.locator('#article-preview').evaluate(n=>n.open));
         await p.keyboard.press('Escape');assert(!await p.locator('#article-preview').evaluate(n=>n.open));
       });
       await run('cached reopen is synchronous; title/body edits invalidate',async(p,rs,respond)=>{
         await p.click('#launch');await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond();await p.waitForFunction(()=>articlePreviewJobs.size===0);
-        assert(await p.evaluate(()=>{articlePreviewClose();openCasualPreviewOrReader(book());return !document.querySelector('#ap-hook').hidden;}));
+        assert(await p.evaluate(()=>{articlePreviewClose();openCasualPreviewOrReader(book());return !document.querySelector('.ap-summary').hidden;}));
         assert.equal(await p.evaluate(()=>QA.requests.length),1);
         await p.evaluate(()=>{articlePreviewClose();const b=book();b.title='Changed headline';openCasualPreviewOrReader(b);});
         await p.waitForFunction(()=>articlePreviewJobs.size===1);assert.equal(await p.evaluate(()=>QA.requests.length),2);await respond(1);
@@ -97,10 +98,10 @@ try{
       await run('malformed/expired cache and storage failure are nonfatal',async(p,rs,respond)=>{
         await p.evaluate(()=>localStorage.setItem(ARTICLE_PREVIEW_CACHE,'null'));
         await p.click('#launch');await p.waitForFunction(()=>articlePreviewJobs.size===1);
-        await respond(0,{...meta,hookTitle:'',teaser:'x'});await p.waitForFunction(()=>articlePreviewJobs.size===0);
-        assert(await p.locator('#ap-hook').evaluate(n=>n.hidden));
+        await respond(0,{summaryKo:'x'});await p.waitForFunction(()=>articlePreviewJobs.size===0);
+        assert(await p.locator('.ap-summary').evaluate(n=>n.hidden));
         await p.evaluate(m=>{articlePreviewClose();localStorage.setItem(ARTICLE_PREVIEW_CACHE,JSON.stringify({[articlePreviewKey(book())]:{at:Date.now()-31*86400000,meta:m}}));Storage.prototype.setItem=()=>{throw Error('quota');};openCasualPreviewOrReader(book());},meta);
-        await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond(1);await p.waitForFunction(()=>!document.querySelector('#ap-hook').hidden);
+        await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond(1);await p.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
       });
       await run('hung auth hits total deadline and releases dedupe for retry',async(p,rs,respond)=>{
         await p.clock.install();await p.evaluate(()=>{sb.auth.getSession=()=>new Promise(()=>{});openCasualPreviewOrReader(book());});
@@ -124,7 +125,7 @@ try{
         await p.waitForFunction(()=>articlePreviewJobs.size===0);assert(await p.isEnabled('.ap-start'));
         await p.evaluate(()=>{articlePreviewClose();openCasualPreviewOrReader(book());});
         await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond(1);
-        await p.waitForFunction(()=>!document.querySelector('#ap-hook').hidden);
+        await p.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
         assert.equal(await p.evaluate(()=>QA.requests.length),2);
       });
       await run('rapid different previews bound concurrent optional work',async(p,rs,respond)=>{
@@ -134,7 +135,7 @@ try{
         for(let i=0;i<4;i++)await respond(i);
         await p.waitForFunction(()=>articlePreviewJobs.size===0);
         assert.equal(await p.textContent('.ap-title'),'Original article burst4');
-        assert(await p.locator('#ap-hook').evaluate(n=>n.hidden));
+        assert(await p.locator('.ap-summary').evaluate(n=>n.hidden));
       });
       await run('formatting prose and bounded cache contract',async(p)=>{
         const out=await p.evaluate(m=>{
