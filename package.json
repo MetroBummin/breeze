@@ -14,7 +14,7 @@
     "ios": "npm run www && cap sync ios && cap open ios",
     "ios:sync": "npm run www && cap sync ios",
     "typecheck": "node tools/typecheck.mjs",
-    "test": "node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-pdf-glyph-geometry.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-lookup-architecture.mjs && node tests/verify-lookup-contract.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs",
+    "test": "node --test tests/verify-rss-recommendation.mjs && node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-pdf-glyph-geometry.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-lookup-architecture.mjs && node tests/verify-lookup-contract.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs && node tests/verify-gesture-ownership.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs",
     "test:ingestion": "node tests/verify-ingestion-browser.mjs && node tests/verify-share-home-browser.mjs && node tests/verify-rss-card-browser.mjs",
     "test:longreads": "node tests/verify-longreads-browser.mjs",
     "test:homeward-lookup": "node tests/verify-homeward-lookup-browser.mjs",
@@ -33,7 +33,8 @@
     "test:reader-notices": "node tests/verify-reader-notifications-browser.mjs",
     "test:reader-refinements": "node tests/verify-reader-refinements-browser.mjs",
     "test:word-morph": "node tests/verify-word-morph-browser.mjs",
-    "test:lightweight": "node tests/verify-lightweight-resources-browser.mjs && node tests/verify-epub-incremental-browser.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-reader-reuse-browser.mjs"
+    "test:lightweight": "node tests/verify-lightweight-resources-browser.mjs && node tests/verify-epub-incremental-browser.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-reader-reuse-browser.mjs",
+    "test:recommendation": "node --test tests/verify-rss-recommendation.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
