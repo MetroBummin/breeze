@@ -317,6 +317,9 @@ exposing historical title fields. The prompt must preserve the source's
 uncertainty and avoid inventing a reason to read when the supplied excerpt does
 not support one. Reading state,
 save intent and Reader navigation remain the same.
+The numeric validator accepts digits, explicit English number words and month
+names when rendered as Korean numerals; it still rejects numbers absent from
+the supplied title and excerpt. A failed generation is never cached.
 
 ## Direct social permalinks — 2026-09-25 follow-up
 
