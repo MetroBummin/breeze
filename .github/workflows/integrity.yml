@@ -1,22 +1,20 @@
 name: Integrity
-
 on:
   pull_request:
   push:
     branches: [chatgpt/audit-hardening-20260925]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: integrity-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
-
 jobs:
   contracts:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --experimental-strip-types
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,28 +25,3 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
-
-  audit-snapshot:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/chatgpt/audit-hardening-20260925'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Preserve tracked audit inputs only
-        shell: bash
-        run: |
-          mkdir -p "$RUNNER_TEMP/audit-inputs"
-          git archive 0b1b6bb8f023517e99c54cdfb0e6e1203df7c7b7 | gzip > "$RUNNER_TEMP/audit-inputs/main.tar.gz"
-          for pr in 20 21 22 23; do
-            git fetch --no-tags origin "refs/pull/$pr/head:refs/audit/$pr"
-            git rev-parse "refs/audit/$pr" > "$RUNNER_TEMP/audit-inputs/pr$pr.sha"
-            git diff --binary 0b1b6bb8f023517e99c54cdfb0e6e1203df7c7b7 "refs/audit/$pr" > "$RUNNER_TEMP/audit-inputs/pr$pr.patch"
-          done
-      - uses: actions/upload-artifact@v4
-        with:
-          name: audit-source-snapshot
-          retention-days: 1
-          path: ${{ runner.temp }}/audit-inputs
