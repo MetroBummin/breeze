@@ -366,7 +366,7 @@ async function importRssEntry(entry, card){
     }
   }catch(error){
     // A transient read/storage failure must not delete cards or decoded covers.
-    toast('지금은 글을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
+    toast(error?.code?.startsWith('social_') ? error.message : '지금은 글을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
   }finally{ card.classList.remove('busy'); }
 }
 /* A feed's own post body is enough for short posts. It never becomes live HTML:
