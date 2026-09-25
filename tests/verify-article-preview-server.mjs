@@ -9,7 +9,7 @@ const source=readFileSync(new URL('../supabase/functions/article-preview/index.t
 const executable=ts.transpileModule(source.replace(/^import .*;\n/gm,''),{
   compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}
 }).outputText;
-const meta={hookTitle:'이 글이 던지는 중요한 질문',translatedTitle:'기사 원제의 충실한 번역',teaser:'한 가지 사례를 통해 사건의 배경을 소개합니다. 그 의미와 남아 있는 질문을 함께 살펴봅니다.'};
+const meta={summaryKo:'한 가지 사례를 통해 사건의 배경을 소개합니다. 그 의미와 남아 있는 질문을 함께 살펴봅니다.'};
 const body={url:'https://example.test/article',title:'Source title',excerpt:'A source excerpt with enough detail to describe an article and explain what the article is about.',device:'test-device'};
 function setup(options={}){
   const state={calls:0,quota:0,writes:0,keys:[],rows:new Map(),...options};let handler;
@@ -66,7 +66,7 @@ test('bad or unreadable shared cache cannot launch a paid retry loop',async()=>{
 test('cache write/transport failure still returns useful generated result',async()=>{
   for(const options of [{writeError:{code:'db_down'}},{writeThrows:true}]){
     const {send,state}=setup(options);const result=await send();assert.equal(result.status,200);
-    const value=await result.json();assert.equal(value.hookTitle,meta.hookTitle);assert.equal(value.persisted,false);assert.equal(state.calls,1);
+    const value=await result.json();assert.equal(value.summaryKo,meta.summaryKo);assert.equal(value.persisted,false);assert.equal(state.calls,1);
   }
 });
 test('duplicate insert is tolerated',async()=>{
@@ -84,11 +84,11 @@ test('generation failure is not cached and releases single-flight',async()=>{
   state.fail=false;assert.equal((await send()).status,200);assert.equal(state.calls,2);
 });
 test('unusable model output cannot poison shared cache',async()=>{
-  const {send,state}=setup({meta:{...meta,teaser:'bad'}});assert.equal((await send()).status,503);assert.equal(state.writes,0);
+  const {send,state}=setup({meta:{summaryKo:'bad'}});assert.equal((await send()).status,503);assert.equal(state.writes,0);
 });
 test('versioned evidence key normalizes tracking but not changed evidence',async()=>{
   const {send,state}=setup();await send();await send({...body,url:body.url+'?utm_source=home#fragment'});
   assert.equal(state.calls,1);await send({...body,title:'Updated title'});assert.equal(state.calls,2);
-  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v2\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v4\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
   assert.equal(state.keys[0],Buffer.from(digest).toString('hex'));
 });

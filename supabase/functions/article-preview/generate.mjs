@@ -1,15 +1,13 @@
 export const ARTICLE_PREVIEW_MODEL = "deepseek/deepseek-v4-flash-0731";
 
-const SYSTEM = "Write a Korean editorial preview using ONLY the supplied English title and excerpt as evidence. Return JSON with hookTitle, translatedTitle, and teaser; no markdown. hookTitle: a short, specific, curiosity-provoking Korean headline based on a concrete person, question, or detail in the source. When several parties dispute a claim, base the hook on the original title's main conflict instead of the contested detail; never assign one party's claim to its critic. translatedTitle: a faithful Korean translation of the original title. teaser: two natural Korean sentences about the subject and why it matters; do not refer to 'this article' or address the reader with phrases like '확인해 보세요'. Use established Korean spellings for names (Saddam Hussein is 사담 후세인), and natural Korean rather than literal translation or stock editorial phrases. Preserve the source's exact level of certainty, attribution, quantity, and meaning in every field. Never change 'some' to 'many' or 'most', private aggregate/statistical data into personal medical records, a speculation into a fact, or a dismissal as 'old news' into a claim of false reporting. Do not use '진실', '실체', or '밝혀졌다' to imply that a disputed or speculative claim was proven; identify whose claim it is. Never invent or intensify events, numbers, trends, causes, quotes, or outcomes. Copy numeric digits in hookTitle only when they appear exactly in the supplied text; otherwise leave numbers out of the hook. Avoid sensational adjectives such as '충격적인', '초대형', and '숨겨진' unless the supplied text supports that strength. Before returning JSON, check every concrete claim against the supplied title and excerpt; omit unsupported claims while keeping the hook engaging.";
+const SYSTEM = "Using ONLY the supplied English title and excerpt, write a reading-decision preview in natural Korean. Return JSON with exactly one field, summaryKo, containing 2 or 3 sentences; no markdown or title translation. In 5 seconds the reader should understand what this piece covers and, only when the source supports it, why it may be worth reading. Write as a Korean editor introducing an article, not sentence-by-sentence translation. You may lead with a real surprise, conflict, contrast or result from the source, with restrained curiosity. Never invent a person, outcome, cause, trend, quantity or opinion; never strengthen uncertainty or attribution. No clickbait or sensational words such as 충격적, 믿기 힘든, 역대급. Omit numbers, comment counts and likes unless central to understanding the story; if used, preserve them exactly. Avoid generic openings like 이 글은 and calls to click. Check each claim against the supplied text before returning; with sparse evidence, stay appropriately modest.";
 
 function validate(value) {
   if (!value || typeof value !== "object") return null;
-  const fields = ["hookTitle", "translatedTitle", "teaser"];
-  if (fields.some(field => typeof value[field] !== "string" || !/[가-힣]/.test(value[field]))) return null;
-  const meta = Object.fromEntries(fields.map(field => [field, value[field].trim()]));
-  if (meta.hookTitle.length > 90 || meta.translatedTitle.length > 180 || meta.teaser.length > 500 ||
-      meta.hookTitle.length < 5 || meta.teaser.length < 25) return null;
-  return meta;
+  if (Object.keys(value).length !== 1 || typeof value.summaryKo !== "string") return null;
+  const summaryKo = value.summaryKo.trim();
+  if (summaryKo.length < 40 || summaryKo.length > 600 || !/[가-힣]/.test(summaryKo)) return null;
+  return { summaryKo };
 }
 
 export async function generateArticlePreview(title, excerpt, key, request = fetch) {
@@ -42,7 +40,7 @@ export async function generateArticlePreview(title, excerpt, key, request = fetc
     months.forEach((month, index) => {
       if (new RegExp(`\\b${month}\\s+\\d+`, "i").test(sourceText)) sourceNumbers.add(String(index + 1));
     });
-    if ((meta.hookTitle.match(/\d+(?:[.,]\d+)*/g) || []).some(number => !sourceNumbers.has(number)))
+    if ((meta.summaryKo.match(/\d+(?:[.,]\d+)*/g) || []).some(number => !sourceNumbers.has(number)))
       throw Object.assign(new Error("unsupported_number"), { candidate: meta });
     return { meta, model: data?.model || ARTICLE_PREVIEW_MODEL, usage: data?.usage || null,
       latencyMs: Math.round(performance.now() - started) };

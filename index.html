@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="styles/tokens.css?v=77e2e421">
   <link rel="stylesheet" href="styles/base.css?v=96bd0e92">
   <link rel="stylesheet" href="styles/home.css?v=b6953be4">
-  <link rel="stylesheet" href="styles/article-preview.css?v=5d2a35b0">
+  <link rel="stylesheet" href="styles/article-preview.css?v=9e420663">
   <link rel="stylesheet" href="styles/reader.css?v=194c9bd8">
   <link rel="stylesheet" href="styles/dictionary.css?v=2f36b3e7">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
@@ -94,7 +94,7 @@
   <script defer src="assets/lib/readability-0.6.0.js?v=34dcab3d"></script>
   <script defer src="scripts/importers/article.js?v=bc195a8b"></script>
   <script defer src="scripts/importers/rss.js?v=07a5e020"></script>
-  <script defer src="scripts/library/article-preview.js?v=45b64498"></script>
+  <script defer src="scripts/library/article-preview.js?v=7bc65491"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=68f2fe0a"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=94b53b40"></script>
@@ -556,17 +556,15 @@
 <input type="file" id="original-fileinput" accept=".pdf,.epub" hidden>
 </div>
 
-<dialog id="article-preview" aria-labelledby="ap-hook">
+<dialog id="article-preview" aria-labelledby="ap-original-title">
   <div class="ap-sheet">
     <button class="ap-close" type="button" aria-label="미리보기 닫기">✕</button>
     <div class="ap-scroll">
       <div class="ap-hero"><img alt="" hidden><div class="ap-art" aria-hidden="true"></div></div>
       <div class="ap-content">
         <p class="ap-source"></p>
-        <h2 id="ap-hook" hidden></h2>
-        <h3 class="ap-title"></h3>
-        <p class="ap-teaser" hidden></p>
-        <div class="ap-excerpt" aria-label="원문 미리보기"></div>
+        <h2 id="ap-original-title" class="ap-title"></h2>
+        <p class="ap-summary" hidden></p>
       </div>
     </div>
     <div class="ap-actions"><button class="ap-start" type="button">읽기 시작</button></div>

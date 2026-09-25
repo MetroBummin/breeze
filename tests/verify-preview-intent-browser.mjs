@@ -17,7 +17,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
-const meta={hookTitle:'이 글의 이야기는 어디서 시작됐을까요',translatedTitle:'기사를 읽기 전에',teaser:'기사의 내용을 바탕으로 배경과 핵심 질문을 소개합니다. 원문을 읽으며 어떤 이야기가 이어지는지 확인해 보세요.'};
+const meta={summaryKo:'기사의 내용을 바탕으로 배경과 핵심 질문을 소개합니다. 원문을 읽으며 어떤 이야기가 이어지는지 확인해 보세요.'};
 let passed=0;
 try{
   for(const engine of process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[chromium,webkit]){
@@ -133,17 +133,17 @@ try{
       assert(await page.isVisible('.ap-retry'));assert(await page.isEnabled('.ap-start'));
       await page.waitForTimeout(60);assert.equal(requests,before+1,'no automatic paid retry');
       mode='ok';await page.click('.ap-retry');await page.waitForFunction(()=>articlePreviewDialog.dataset.metadata==='ready');
-      assert.equal(requests,before+2);assert.match(await page.textContent('#ap-hook'),/[가-힣]/);
-      assert.match(await page.textContent('.ap-teaser'),/[가-힣]/);
+      assert.equal(requests,before+2);assert.match(await page.textContent('.ap-summary'),/[가-힣]/);
+      assert.equal(await page.locator('.ap-excerpt').count(),0);
       await page.evaluate(()=>articlePreviewClose());
     });
     await check('visible Korean loading state and image/excerpt remain while AI waits',async()=>{
       mode='hold';
       await page.evaluate(async()=>{const e=window.__fixture('waiting-for-korean');await importRssEntry(e,window.__card(e));});
       await page.waitForFunction(()=>articlePreviewJobs.size>0);
-      assert.match(await page.textContent('.ap-metadata-label'),/한국어 소개를 불러오는 중/);
+      assert.match(await page.textContent('.ap-metadata-label'),/한국어 요약을 준비하고 있어요/);
       assert(await page.isVisible('.ap-metadata-spinner'));assert(await page.isEnabled('.ap-start'));
-      assert(await page.locator('.ap-excerpt p').count());
+      assert(await page.locator('.ap-summary').count());
       if(process.env.BREEZE_PREVIEW_CAPTURE_DIR){mkdirSync(process.env.BREEZE_PREVIEW_CAPTURE_DIR,{recursive:true});await page.screenshot({path:process.env.BREEZE_PREVIEW_CAPTURE_DIR+'/'+engine.name()+'-loading.png'});}
       const pending=held.splice(0);for(const route of pending)await route.fulfill({contentType:'application/json',body:JSON.stringify(meta)});
       await page.waitForFunction(()=>articlePreviewDialog.dataset.metadata==='ready');mode='ok';

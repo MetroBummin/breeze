@@ -30,7 +30,7 @@ try{
           if(url.includes('/functions/v1/article-preview')){
             calls++;
             const body=JSON.parse(route.request().postData());
-            return body.title==='Second article' ? route.abort() : route.fulfill({contentType:'application/json',body:JSON.stringify({hookTitle:'이 글이 궁금한 이유',translatedTitle:'첫 번째 기사',teaser:'첫 문단의 핵심을 소개합니다. 읽을 만한 이유를 차분히 짚습니다.'})});
+            return body.title==='Second article' ? route.abort() : route.fulfill({contentType:'application/json',body:JSON.stringify({summaryKo:'첫 문단에서 이 글의 주제와 핵심 질문을 소개합니다. 이어지는 설명을 통해 두 선택지가 어떻게 다른지 살펴봅니다.'})});
           }
           return route.abort();
         });
@@ -43,17 +43,18 @@ try{
         });
         await page.locator('#casual-grid .casual').filter({hasText:'First article'}).first().click();
         await page.waitForFunction(()=>document.querySelector('#article-preview').open);
-        await page.waitForFunction(()=>!document.querySelector('#ap-hook').hidden);
+        await page.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
         await page.locator('#article-preview').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
-        assert.equal(await page.locator('.ap-excerpt p').count(),1);
+        assert.equal(await page.locator('.ap-excerpt').count(),0);
         const box=await page.locator('#article-preview').boundingBox();
         assert(box.x>=-1 && box.x+box.width<=width+1 && box.height<=height,'preview fits viewport');
         assert(Math.abs(box.x+(box.width/2)-width/2)<2 && Math.abs(box.y+(box.height/2)-height/2)<2,`preview is centered at ${width}x${height}: ${JSON.stringify(box)}`);
-        assert.equal(await page.locator('.ap-scroll').evaluate(node=>node.scrollHeight<=node.clientHeight+2),true,'preview has no inner scroll');
+        const heroRatio=await page.locator('.ap-scroll').evaluate(node=>node.querySelector('.ap-hero').getBoundingClientRect().height/node.clientHeight);
+        assert(heroRatio>=.45&&heroRatio<=.65,'photo occupies about half the initial view');
         assert.equal(calls,1);
         await page.locator('.ap-close').click();
         await page.locator('#casual-grid .casual').filter({hasText:'First article'}).first().click();
-        await page.waitForFunction(()=>!document.querySelector('#ap-hook').hidden);
+        await page.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
         assert.equal(calls,1,'cached metadata avoids another AI request');
         await page.locator('.ap-start').click();
         await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
@@ -66,7 +67,7 @@ try{
         await page.locator('#casual-grid .casual').filter({hasText:'Second article'}).first().click();
         await page.waitForFunction(()=>document.querySelector('#article-preview').open);
         await page.waitForTimeout(100);
-        assert.equal(await page.locator('#ap-hook').isVisible(),false,'network failure retains source-only preview');
+        assert.equal(await page.locator('.ap-summary').isVisible(),false,'network failure retains source-only preview');
         assert.equal(await page.locator('.ap-title').textContent(),'Second article');
         await page.locator('.ap-start').click();
         await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
