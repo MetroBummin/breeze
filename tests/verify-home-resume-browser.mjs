@@ -21,7 +21,7 @@ try{
    page.on('pageerror',error=>errors.push(error.message));
    await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
    await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
-   await page.goto(url);await page.evaluate(()=>homeReady);
+   await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
    await page.evaluate(()=>{
     window.resumeQA={transitions:[],opens:0,originalReads:0};
     const nativeTransition=document.startViewTransition.bind(document);

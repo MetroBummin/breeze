@@ -1,6 +1,7 @@
 .DS_Store
 node_modules/
 supabase/.temp/
+supabase/.env.article-preview.local
 
 # Capacitor — 생성물입니다. www/ 는 tools/build-www.mjs 가, public/ 는 cap sync 가 만듭니다.
 www/

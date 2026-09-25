@@ -271,3 +271,26 @@ New article/paste identity uses SHA-256 of every paragraph with exact case and b
 
 ## Audit UI follow-up
 Known face bounds take priority over centre bias; use contain when their union cannot fit. Crop hints use cache v2. Cover-free regular cards retain text identity. Saved-content empty states include an add action. Primary cards expose button semantics/keyboard activation; wired local cards also expose Shift+F10 editing. Native VoiceOver and real-device design QA remain required.
+## Article Preview (Breeze 1.4)
+
+Unread saved articles and newly selected discovery articles open a large Preview
+before Reader. The existing `positions[book.id].t` remains the sole read-start
+signal; pressing “읽기 시작” calls the unchanged Reader, which writes that time.
+Already started articles enter Reader directly. Other book kinds retain their
+existing route. Home card layout and Reader rendering are unchanged.
+
+Preview uses the saved article's cover, source title, and a short opening
+excerpt. It is a centered popup using the existing word/add popup glass
+material; content is trimmed to fit without an inner scrollbar. Korean hook
+title, faithful translated title and teaser are
+requested lazily when the Preview opens. A local cache avoids repeat requests on
+one device; the Edge Function stores validated metadata by source URL and text
+fingerprint for reuse across devices and users. Only the server holds the AI key.
+If metadata, image, server, or network is unavailable, the source title,
+available body excerpt and Reader CTA still work. The translated title remains
+in metadata but is not displayed in this first UI.
+
+## Audit follow-up
+Preview dismissal aborts its pending Reader navigation; a new selection is never blocked behind a hung old open. This requires the core hardening PR's `openBook(options.signal)` guard when integrated. AI loading has stable placeholders; source-only fallback promotes the excerpt while keeping the dialog/CTA geometry fixed. No model/prompt changes or provider calls in this update.
+
+RSS first selection now opens a provisional metadata-only Preview before network/body/image preparation. CTA remains disabled until durable preparation completes. Dismissal invalidates presentation only; successful background persistence may still populate Library. Failure offers explicit retry, and completion of an old article never reopens a dismissed/other Preview. Source image preparation remains bounded by the existing importer.

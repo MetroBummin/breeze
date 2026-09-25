@@ -209,16 +209,22 @@ try{
      return retained.url===feed.url && retained.category==='culture';
    }),true);
    await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditLinkEntry);
+   await page.waitForFunction(()=>document.querySelector('#article-preview').open);
+   await page.locator('#article-preview .ap-start').click();
    await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/reddit-article');
    assert.equal(await page.locator('#rdiscovery').getAttribute('href'),redditLinkEntry.url);
    await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditSelfEntry);
+   await page.waitForFunction(()=>document.querySelector('#article-preview').open);
+   await page.locator('#article-preview .ap-start').click();
    await page.waitForFunction(url=>curBook?.sourceUrl===url,redditSelfEntry.url);
    assert.equal(await page.evaluate(()=>curBook.contentType),'post');
    assert.equal(await page.locator('#rtext').evaluate(node=>node.textContent.includes('submitted by')),false);
    await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),xEntry);
+   await page.waitForFunction(()=>document.querySelector('#article-preview').open);
+   await page.locator('#article-preview .ap-start').click();
    await page.waitForFunction(url=>curBook?.sourceUrl===url,xEntry.url);
    assert.equal(await page.evaluate(()=>curBook.contentType),'post');
-   assert(await page.locator('#rtext .w').count()>10);
+   await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>10);
    assert.equal(await page.evaluate(()=>window.feedInjected===true),false);
    if(existsSync('/tmp/breeze-ingestion-live/ordinary.txt')){
     const live=readFileSync('/tmp/breeze-ingestion-live/ordinary.txt','utf8');

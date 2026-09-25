@@ -399,6 +399,14 @@ async function ingestArticle(url, options = {}){
     })();
     articleJobs.set(key,job);
   }
-  try{const book=await job;if(intent===readerOpenIntent){closeAddModal();await openBook(book);}return book;}
+  try{
+    const book=await job;
+    if(options.present!==false&&intent===readerOpenIntent){
+      closeAddModal();
+      if(options.preview)openCasualPreviewOrReader(book);
+      else await openBook(book);
+    }
+    return book;
+  }
   finally{if(articleJobs.get(key)===job)articleJobs.delete(key);}
 }

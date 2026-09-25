@@ -22,7 +22,7 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
- await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
  assert.equal(await page.locator('#home-resume').isDisabled(),true);
  assert.equal(await page.locator('#login-nudge').textContent(),'');
  await page.evaluate(()=>{

@@ -196,7 +196,7 @@ function wireBookCard(card, book){
   card.dataset.localBook=book.id;
   const currentBook=()=>books.find(item=>item.id===book.id)||book;
   const pressed = attachLongPress(card, ()=>openEditSheet(currentBook()));
-  card.onclick = event => { if(event?.detail===0||!pressed()) openBook(currentBook()); };
+  card.onclick = event => { if(event?.detail===0||!pressed()) openCasualPreviewOrReader(currentBook()); };
   return card;
 }
 
@@ -540,7 +540,14 @@ async function saveCasualBook(parsed, extra, options={}){
   const present=()=>options.present!==false&&intent===readerOpenIntent;
   const id = await casualContentId(parsed.paras);
   const existing = books.find(book => CASUAL_KINDS.has(book.kind)&&sameCasualContent(book.paras,parsed.paras));
-  if(existing){ if(present()){closeAddModal();toast(`이미 있는 글이에요 — "${existing.title}"`);await openBook(existing);}return existing; }
+  if(existing){
+    if(present()){
+      closeAddModal();toast(`이미 있는 글이에요 — "${existing.title}"`);
+      if(options.preview)openCasualPreviewOrReader(existing);
+      else await openBook(existing);
+    }
+    return existing;
+  }
   const book = { id, title:parsed.title, kind:'paste', paras:parsed.paras,
     addedAt:Date.now(), fingerprint:bookContentFingerprint(parsed.paras),
     textAvailable:true, sourceMap:null, layoutSignals:null,
@@ -548,7 +555,11 @@ async function saveCasualBook(parsed, extra, options={}){
   await bookPut(book);
   books.unshift(book);
   renderHome();
-  if(present()){closeAddModal();await openBook(book);}
+  if(present()){
+    closeAddModal();
+    if(options.preview)openCasualPreviewOrReader(book);
+    else await openBook(book);
+  }
   queueSync();                   // 읽기를 막지 않도록 기다리지 않습니다
   return book;
 }
