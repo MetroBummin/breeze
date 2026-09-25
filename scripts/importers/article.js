@@ -379,7 +379,41 @@ function parseFeedArticle(entry){
   if(parsed){parsed.title=entry.title;parsed.author=entry.author || '';parsed.publishedAt=entry.publishedAt || '';parsed.site=entry.source;Object.assign(parsed,articleAssemble(parsed.title,parsed.blocks));}
   return parsed;
 }
+// Discovery preparation is memory-only. Only an explicit read/save intent may
+// persist a book or its images; dismissing a Preview must not change the shelf.
 const articleJobs = new Map();
+const articleDrafts = new WeakMap();
+const articleCommitJobs = new Map();
+function makeArticleDraft(parsed, extra, fallbackPhoto=''){
+  const draft={id:'preview:'+articleUrlKey(extra.sourceUrl),kind:'article',transient:true,
+    title:parsed.title,paras:parsed.paras,formatting:parsed.formatting,...extra,cover:null};
+  articleDrafts.set(draft,{parsed,extra,fallbackPhoto,coverUrl:parsed.cover||fallbackPhoto,saved:null,missed:0});
+  return draft;
+}
+async function commitArticleDraft(draft){
+  const state=articleDrafts.get(draft);
+  if(!state)return draft; // Already saved articles are never recreated.
+  if(state.saved)return state.saved;
+  const key=articleUrlKey(state.extra.sourceUrl);
+  const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===key);
+  if(existing){state.saved=existing;return existing;}
+  let job=articleCommitJobs.get(key);
+  if(!job){
+    job=(async()=>{
+      // Image attachment rewrites blocks. Keep the prepared source intact so a
+      // failed save can be retried, with exactly the same original evidence.
+      const parsed={...state.parsed,blocks:state.parsed.blocks.map(block=>({...block}))};
+      const photos=await attachArticleImages(parsed,state.fallbackPhoto);
+      const book=await saveCasualBook(parsed,{...state.extra,
+        cover:parsed.cover||null,imgSrc:parsed.imgSrc||null},{present:false});
+      state.missed=photos.missed;
+      return book;
+    })();
+    articleCommitJobs.set(key,job);
+  }
+  try{state.saved=await job;return state.saved;}
+  finally{if(articleCommitJobs.get(key)===job)articleCommitJobs.delete(key);}
+}
 async function ingestArticle(url, options = {}){
   const key=articleUrlKey(url),intent=++readerOpenIntent;
   let job=articleJobs.get(key);
@@ -390,21 +424,22 @@ async function ingestArticle(url, options = {}){
       const location={};let parsed=options.preparedArticle||parseFeedArticle(options);
       if(!parsed){const html=await fetchArticleHtml(url,location);parsed=parseArticleHtml(html,location.url||url);}
       if(!parsed)throw new Error('본문을 안전하게 가져오지 못했어요');
-      const photos=await attachArticleImages(parsed,options.photo);
-      const book=await saveCasualBook(parsed,{kind:'article',site:parsed.site||options.source,sourceUrl:url,
+      return makeArticleDraft(parsed,{kind:'article',site:parsed.site||options.source,sourceUrl:url,
         resolvedUrl:parsed.url,discoveredFromUrl:options.discoveredFromUrl||'',author:parsed.author,
-        publishedAt:parsed.publishedAt,cover:parsed.cover||null,imgSrc:parsed.imgSrc||null},{present:false});
-      if(photos.missed&&intent===readerOpenIntent)toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
-      return book;
+        publishedAt:parsed.publishedAt},options.photo);
     })();
     articleJobs.set(key,job);
   }
   try{
-    const book=await job;
+    const draft=await job;
+    const book=options.preview||options.deferSave?draft:await commitArticleDraft(draft);
     if(options.present!==false&&intent===readerOpenIntent){
       closeAddModal();
       if(options.preview)openCasualPreviewOrReader(book);
-      else await openBook(book);
+      else{
+        if(articleDrafts.get(draft)?.missed)toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
+        await openBook(book);
+      }
     }
     return book;
   }

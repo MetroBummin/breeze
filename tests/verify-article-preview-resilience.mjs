@@ -14,6 +14,7 @@ const html=`<!doctype html><html><head><meta name="viewport" content="width=devi
 const IMG_MARK='__IMG__',SB_URL='https://preview.fixture',SB_KEY='fixture-public-key';
 class FixtureStorage{constructor(){this.values=new Map();}getItem(k){return this.values.get(k)||null;}setItem(k,v){this.values.set(k,String(v));}}
 window.Storage=FixtureStorage;Object.defineProperty(window,'localStorage',{value:new FixtureStorage(),configurable:true});
+const articleDrafts=new WeakMap();async function commitArticleDraft(book){return book;}
 const QA={opens:[],fail:false,hold:false,image:null,toasts:[],requests:[]},positions={};
 window.fetch=(url,options)=>new Promise(resolve=>QA.requests.push({url,options,resolve}));
 const sb={auth:{getSession:async()=>({data:{session:null}})}};

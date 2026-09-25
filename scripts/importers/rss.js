@@ -328,7 +328,7 @@ async function importRssEntry(entry, card){
   if(card.classList.contains('busy'))return;
   card.classList.add('busy');
   const preparation=articlePreviewPrepare(entry,card);
-  const options={preview:true,present:!preparation};
+  const options={preview:true,present:!preparation,deferSave:true};
   try{
     let book;
     if(entry.readUrl)book=await ingestArticle(entry.readUrl,{...entry,discoveredFromUrl:entry.url,...options});
@@ -389,14 +389,15 @@ async function ingestFeedPost(entry,options={}){
   }
   const parsed = parseFeedPost(entry);
   if(!parsed) throw new Error('피드에서 읽을 만한 본문을 찾지 못했어요');
-  const photos = await attachArticleImages(parsed);
-  const book = await saveCasualBook(parsed,{kind:'article',contentType:'post',site:entry.source,
-    sourceUrl:entry.url,feedUrl:entry.feedUrl,author:entry.author,publishedAt:entry.publishedAt,
-    cover:parsed.cover || null,imgSrc:parsed.imgSrc || null},{present:false});
-  if(photos.missed && intent===readerOpenIntent) toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
+  const draft=makeArticleDraft(parsed,{kind:'article',contentType:'post',site:entry.source,
+    sourceUrl:entry.url,feedUrl:entry.feedUrl,author:entry.author,publishedAt:entry.publishedAt});
+  const book=options.preview||options.deferSave?draft:await commitArticleDraft(draft);
   if(options.present!==false && intent===readerOpenIntent){
     if(options.preview)openCasualPreviewOrReader(book);
-    else await openBook(book);
+    else{
+      if(articleDrafts.get(draft)?.missed)toast('일부 사진을 가져오지 못했어요. 원문에서 확인할 수 있어요.');
+      await openBook(book);
+    }
   }
   return book;
 }

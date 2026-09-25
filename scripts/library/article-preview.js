@@ -75,10 +75,13 @@ function articlePreviewUntil(value,signal){
 }
 async function articlePreviewMetadata(book){
   const input=articlePreviewInput(book),key=articlePreviewKey(book);
-  if(!input)return null;
-  const cached=articlePreviewCached(key);if(cached)return cached;
+  const failed=reason=>({meta:null,reason});
+  if(!input)return failed('source');
+  const cached=articlePreviewCached(key);if(cached)return {meta:cached,reason:''};
   if(articlePreviewJobs.has(key))return articlePreviewJobs.get(key);
-  if(navigator.onLine===false || !SB_URL || !SB_KEY || articlePreviewJobs.size>=4)return null;
+  if(navigator.onLine===false)return failed('offline');
+  if(!SB_URL || !SB_KEY)return failed('unavailable');
+  if(articlePreviewJobs.size>=4)return failed('busy');
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),ARTICLE_PREVIEW_TIMEOUT);
   const job=(async()=>{
     try{
@@ -86,17 +89,26 @@ async function articlePreviewMetadata(book){
       try{
         const auth=await articlePreviewUntil(sb.auth.getSession(),controller.signal);
         if(auth?.data?.session?.access_token)token=auth.data.session.access_token;
-      }catch{if(controller.signal.aborted)return null;}
+      }catch{if(controller.signal.aborted)return failed('timeout');}
       const response=await articlePreviewUntil(fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/article-preview',{
         method:'POST',signal:controller.signal,
         headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+token},
         body:JSON.stringify({...input,device:deviceId()})
       }),controller.signal);
-      if(!response.ok)return null;
+      if(!response.ok){
+        // Do not swallow every failure into null. Keep a bounded, non-sensitive
+        // cause for honest UX and diagnostics; never render a raw server error.
+        const reason=response.status===404?'unavailable':response.status===401||response.status===403?'auth':
+          response.status===429?'quota':response.status>=500?'service':'request';
+        return failed(reason);
+      }
       const meta=articlePreviewValid(await articlePreviewUntil(response.json(),controller.signal));
-      if(meta && !controller.signal.aborted)articlePreviewSave(key,meta);
-      return controller.signal.aborted ? null : meta;
-    }catch{return null;}finally{clearTimeout(timeout);}
+      if(controller.signal.aborted)return failed('timeout');
+      if(!meta)return failed('invalid');
+      articlePreviewSave(key,meta);
+      return {meta,reason:''};
+    }catch{return failed(controller.signal.aborted?'timeout':'network');}
+    finally{clearTimeout(timeout);}
   })();
   articlePreviewJobs.set(key,job);
   try{return await job;}finally{if(articlePreviewJobs.get(key)===job)articlePreviewJobs.delete(key);}
@@ -125,12 +137,41 @@ function articlePreviewPaint(meta){
     node.textContent=meta ? meta[field] : '';node.hidden=!meta;
   }
 }
-function openCasualPreviewOrReader(book){
+function articlePreviewMetadataState(state,reason=''){
+  articlePreviewDialog.dataset.metadata=state;
+  articlePreviewDialog.dataset.metadataReason=reason;
+  const messages={source:'원문 미리보기',offline:'오프라인이에요. 원문은 바로 읽을 수 있어요.',
+    unavailable:'한국어 소개를 아직 사용할 수 없어요.',auth:'한국어 소개 연결을 확인하지 못했어요.',
+    quota:'한국어 소개의 이용 한도에 도달했어요.',timeout:'한국어 소개가 늦어지고 있어요.',
+    network:'한국어 소개를 불러오지 못했어요.',service:'한국어 소개를 잠시 사용할 수 없어요.',
+    busy:'다른 소개를 준비 중이에요. 잠시 후 다시 시도해 주세요.',
+    invalid:'한국어 소개를 준비하지 못했어요.',request:'한국어 소개를 요청하지 못했어요.',
+    preparing_failed:'본문을 불러오지 못했어요.'};
+  articlePreviewMetaLabel.textContent=state==='loading'?(reason==='preparing'?'본문을 가져오는 중…':'한국어 소개를 불러오는 중…'):
+    state==='ready'?'한국어 소개':messages[reason]||'한국어 소개 없이도 원문을 읽을 수 있어요.';
+  articlePreviewRetry.hidden=state!=='fallback'||['source','preparing_failed',''].includes(reason);
+}
+function articlePreviewRequest(book,generation){
+  articlePreviewMetadataState('loading');
+  articlePreviewRetry.onclick=()=>{
+    if(articlePreviewActive(generation)&&!articlePreviewOpening)articlePreviewRequest(book,generation);
+  };
+  void articlePreviewMetadata(book).then(({meta,reason})=>{
+    if(!articlePreviewActive(generation)||articlePreviewOpening)return;
+    articlePreviewPaint(meta);articlePreviewMetadataState(meta?'ready':'fallback',reason);
+  });
+}
+function openCasualPreviewOrReader(book,options={}){
   if(articlePreviewOpening)articlePreviewClose();
   if(book.kind!=='article' || posOf(book.id).t){articlePreviewClose();return openBook(book);}
   if(articlePreviewDialog.open && articlePreviewBook===book)return book;
   cancelPendingBookOpen();
-  articlePreviewClose();articlePreviewBook=book;
+  const replacing=options.replace===true&&articlePreviewDialog.open;
+  if(replacing){
+    articlePreviewGeneration++;
+    if(articlePreviewImageUrl){URL.revokeObjectURL(articlePreviewImageUrl);articlePreviewImageUrl='';}
+  }else articlePreviewClose();
+  articlePreviewDialog.dataset.preparing='false';articlePreviewBook=book;
   const generation=articlePreviewGeneration,dialog=articlePreviewDialog;
   const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
   dialog.querySelector('.ap-art').innerHTML=coverArtwork(book.id);
@@ -138,17 +179,27 @@ function openCasualPreviewOrReader(book){
   dialog.querySelector('.ap-title').textContent=book.title;
   const cached=articlePreviewCached(articlePreviewKey(book));
   articlePreviewPaint(cached);
-  dialog.dataset.metadata=cached?'ready':articlePreviewInput(book)&&navigator.onLine!==false?'loading':'fallback';
-  articlePreviewStatus(cached ? '' : articlePreviewInput(book) && navigator.onLine!==false
-    ? '한국어 소개를 준비하고 있어요.' : '원문은 바로 읽을 수 있어요.');
+  articlePreviewMetadataState(cached?'ready':'fallback',articlePreviewInput(book)?'':'source');
+  articlePreviewStatus('');
   const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
   start.onclick=articlePreviewStart;start.disabled=false;start.textContent='읽기 시작';start.removeAttribute('aria-busy');
   const excerpt=dialog.querySelector('.ap-excerpt');excerpt.replaceChildren();
   const opening=articlePreviewExcerpt(book)[0] || '';
   if(opening){const p=document.createElement('p');p.textContent=opening.slice(0,260)+(opening.length>260?'…':'');excerpt.appendChild(p);}
   dialog.querySelector('.ap-scroll').scrollTop=0;
-  dialog.showModal();
-  /** @type {HTMLElement} */(dialog.querySelector('.ap-close')).focus({preventScroll:true});
+  if(!dialog.open){
+    dialog.showModal();
+    /** @type {HTMLElement} */(dialog.querySelector('.ap-close')).focus({preventScroll:true});
+  }
+  // A draft uses an existing RSS/public image URL, never an IndexedDB write.
+  const draft=articleDrafts.get(book);
+  const photo=options.photo||draft?.coverUrl||'';
+  image.hidden=true;image.removeAttribute('src');
+  if(photo&&/^(https?:|blob:)/.test(photo)){
+    image.referrerPolicy='no-referrer';image.src=photo;image.hidden=false;
+    image.onerror=()=>{if(articlePreviewActive(generation))image.hidden=true;};
+  }
+
   if(book.cover)void (async()=>{
     try{
       const blob=await bookImageBlob(book,book.cover);
@@ -165,15 +216,11 @@ function openCasualPreviewOrReader(book){
   })();
   // A bounded in-flight request may finish into cache after dismissal. It can
   // never paint another article or reopen the dialog; reopening shares the job.
-  if(!cached)void articlePreviewMetadata(book).then(meta=>{
-    if(!articlePreviewActive(generation) || articlePreviewOpening)return;
-    articlePreviewPaint(meta);articlePreviewDialog.dataset.metadata=meta?'ready':'fallback';
-    articlePreviewStatus(meta ? '' : '한국어 소개 없이도 바로 읽을 수 있어요.');
-  });
+  if(!cached&&articlePreviewInput(book))articlePreviewRequest(book,generation);
   return book;
 }
-/* Show the metadata already available on the RSS card before body/image work.
-   Preparation may finish into the library after dismissal, never into another UI. */
+/* RSS preparation stays in memory after dismissal; neither books nor images
+   are persisted until the user explicitly chooses Read. */
 function articlePreviewPrepare(entry,card){
   const url=entry.readUrl||entry.url;
   const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===articleUrlKey(url));
@@ -181,8 +228,8 @@ function articlePreviewPrepare(entry,card){
   const provisional={id:'preparing:'+url,kind:'article',title:entry.title,site:entry.source,sourceUrl:url,paras:[]};
   openCasualPreviewOrReader(provisional);
   const generation=articlePreviewGeneration,start=/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-start'));
-  articlePreviewDialog.dataset.preparing='true';articlePreviewDialog.dataset.metadata='loading';
-  articlePreviewStatus('본문을 준비하고 있어요.');start.disabled=true;start.textContent='본문 준비 중…';
+  articlePreviewDialog.dataset.preparing='true';articlePreviewMetadataState('loading','preparing');
+  articlePreviewStatus('');start.disabled=true;start.textContent='본문 준비 중…';
   const cover=card?.querySelector('img.cover');
   const src=cover?.currentSrc||cover?.getAttribute('src')||'';
   if(/^(https?:|blob:)/.test(src)){
@@ -190,9 +237,9 @@ function articlePreviewPrepare(entry,card){
     image.src=src;image.hidden=false;
   }
   return {
-    finish(book){if(articlePreviewActive(generation))openCasualPreviewOrReader(book);},
+    finish(book){if(articlePreviewActive(generation))openCasualPreviewOrReader(book,{replace:true,photo:src});},
     fail(retry){if(!articlePreviewActive(generation))return;
-      articlePreviewDialog.dataset.metadata='fallback';articlePreviewStatus('본문을 준비하지 못했어요. 다시 시도할 수 있어요.');
+      articlePreviewMetadataState('fallback','preparing_failed');articlePreviewStatus('본문을 준비하지 못했어요. 다시 시도할 수 있어요.');
       start.disabled=false;start.textContent='다시 시도';start.onclick=()=>{if(articlePreviewActive(generation)){articlePreviewClose();retry();}};
     }
   };
@@ -206,13 +253,18 @@ async function articlePreviewStart(){
   const controller=new AbortController();articlePreviewOpenController=controller;
   const deadline=setTimeout(()=>controller.abort(),15000);
   const openingOptions={signal:controller.signal,onPresented:()=>{if(articlePreviewActive(generation))articlePreviewClose(false);}};
-  const job=articlePreviewUntil(Promise.resolve().then(()=>openBook(book,openingOptions)),controller.signal);
+  const job=articlePreviewUntil(Promise.resolve().then(async()=>{
+    // The CTA is the save boundary. A dismissed preparation never reaches here.
+    const saved=await commitArticleDraft(book);
+    if(controller.signal.aborted||!articlePreviewActive(generation))return;
+    await openBook(saved,openingOptions);
+  }),controller.signal);
   articlePreviewOpening=job;
   try{
     await job;
     if(articlePreviewActive(generation))articlePreviewClose(false);
   }catch{
-    if(articlePreviewActive(generation))articlePreviewStatus('글을 열지 못했어요. 다시 눌러 주세요.');
+    if(articlePreviewActive(generation))articlePreviewStatus('저장하거나 글을 열지 못했어요. 다시 눌러 주세요.');
     else if(!controller.signal.aborted&&typeof toast==='function')toast('글을 열지 못했어요. 다시 시도해 주세요.');
   }finally{
     clearTimeout(deadline);if(articlePreviewOpenController===controller)articlePreviewOpenController=null;
@@ -226,6 +278,19 @@ async function articlePreviewStart(){
 const articlePreviewTitle=articlePreviewDialog.querySelector('.ap-title');
 articlePreviewTitle.id='ap-original-title';
 articlePreviewDialog.setAttribute('aria-labelledby','ap-original-title');
+// Status sits next to the missing Korean content, not only in a quiet footer.
+const articlePreviewMetaStatus=document.createElement('div');
+articlePreviewMetaStatus.className='ap-metadata-status';articlePreviewMetaStatus.setAttribute('role','status');
+articlePreviewMetaStatus.setAttribute('aria-live','polite');
+const articlePreviewMetaSpinner=document.createElement('span');
+articlePreviewMetaSpinner.className='ap-metadata-spinner';articlePreviewMetaSpinner.setAttribute('aria-hidden','true');
+const articlePreviewMetaLabel=document.createElement('span');
+articlePreviewMetaLabel.className='ap-metadata-label';
+const articlePreviewRetry=document.createElement('button');
+articlePreviewRetry.type='button';articlePreviewRetry.className='ap-retry';articlePreviewRetry.textContent='다시 시도';
+articlePreviewRetry.hidden=true;articlePreviewRetry.setAttribute('aria-label','한국어 소개 다시 불러오기');
+articlePreviewMetaStatus.append(articlePreviewMetaSpinner,articlePreviewMetaLabel,articlePreviewRetry);
+articlePreviewDialog.querySelector('.ap-source').after(articlePreviewMetaStatus);
 const articlePreviewStatusNode=document.createElement('p');
 articlePreviewStatusNode.className='ap-status';articlePreviewStatusNode.setAttribute('role','status');
 articlePreviewStatusNode.setAttribute('aria-live','polite');

@@ -294,3 +294,12 @@ in metadata but is not displayed in this first UI.
 Preview dismissal aborts its pending Reader navigation; a new selection is never blocked behind a hung old open. This requires the core hardening PR's `openBook(options.signal)` guard when integrated. AI loading has stable placeholders; source-only fallback promotes the excerpt while keeping the dialog/CTA geometry fixed. No model/prompt changes or provider calls in this update.
 
 RSS first selection now opens a provisional metadata-only Preview before network/body/image preparation. CTA remains disabled until durable preparation completes. Dismissal invalidates presentation only; successful background persistence may still populate Library. Failure offers explicit retry, and completion of an old article never reopens a dismissed/other Preview. Source image preparation remains bounded by the existing importer.
+
+## Preview save-intent correction (2026-09-25)
+
+Discovery taps now prepare a memory-only draft rather than a saved Casuals book.
+Closing Preview before Read does not persist text/images or create reading
+progress. Explicit Read commits the source and images once before Reader entry.
+Explicit URL/paste saving is unchanged. Existing saved-but-unread items are not
+automatically deleted. See `docs/qa/preview-intent-20260925.md` for the backend
+deployment gate and regression evidence.
