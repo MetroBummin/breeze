@@ -17,3 +17,71 @@
 
 #pdf-ink-tools.ink-reading .ink-read-lock{display:none;}
 #pdf-ink-tools.ink-reading [role="status"]:not(:empty){max-width:210px;}
+/* Toolbar concept preview. This query-flagged UI is intentionally visual only:
+   it does not switch the annotation engine's tool, history, or stored ink. */
+#readpill.ink-concept-ready{justify-content:flex-start;gap:0;padding-inline:9px;}
+#readpill.ink-concept-ready #readpill-title{flex:1 1 150px;max-width:none;text-align:left;}
+#readpill.ink-concept-ready{transition:width .38s cubic-bezier(.2,.75,.25,1),height .38s cubic-bezier(.2,.75,.25,1),
+  padding .38s cubic-bezier(.2,.75,.25,1),border-radius .38s cubic-bezier(.2,.75,.25,1),box-shadow .34s ease;}
+#readpill.ink-concept-ready :is(#modefab,#readpill-title){transition:width .32s cubic-bezier(.2,.75,.25,1),
+  max-width .32s cubic-bezier(.2,.75,.25,1),flex-basis .32s cubic-bezier(.2,.75,.25,1),
+  margin .32s cubic-bezier(.2,.75,.25,1),padding .32s cubic-bezier(.2,.75,.25,1),opacity .18s ease;}
+#readpill .ink-concept-entry,#readpill .ink-concept-mini{position:relative;z-index:2;flex:none;
+  display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;
+  border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;}
+#readpill .ink-concept-entry[hidden],#readpill .ink-concept-mini[hidden]{display:none;}
+#readpill .ink-concept-entry>span{position:absolute;display:grid;place-items:center;transition:opacity .2s ease,transform .32s cubic-bezier(.2,.75,.25,1);}
+#readpill .ink-concept-entry svg{width:22px;height:22px;}
+#readpill .ink-entry-read{opacity:0;transform:rotate(-25deg) scale(.8);}
+#readpill .ink-concept-entry.ink-concept-exiting .ink-entry-pen{opacity:0;transform:rotate(25deg) scale(.8);}
+#readpill .ink-concept-entry.ink-concept-exiting .ink-entry-read{opacity:1;transform:none;}
+#readpill .ink-concept-entry[aria-pressed="true"]{background:var(--chrome-press);}
+#readpill .ink-concept-toolbar{position:relative;z-index:2;display:flex;align-items:center;gap:4px;flex:none;
+  max-width:0;overflow:hidden;opacity:0;pointer-events:none;transition:max-width .24s cubic-bezier(.2,.75,.25,1),opacity .15s ease;}
+#readpill .ink-concept-toolbar .ink-concept-control{position:relative;display:flex;align-items:center;justify-content:center;
+  flex:none;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:transparent;
+  color:var(--sentence-glass-secondary);cursor:pointer;}
+#readpill .ink-concept-toolbar .ink-concept-control svg{width:26px;height:26px;}
+#readpill .ink-concept-toolbar .ink-concept-control[aria-pressed="true"]{
+  color:var(--sentence-glass-ink);
+  background:color-mix(in srgb,var(--brand) 8%,var(--sentence-glass-pill));border-radius:13px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand-strong) 20%,transparent);}
+#readpill .ink-concept-toolbar .ink-concept-control:disabled{opacity:.64;cursor:default;}
+#readpill .ink-concept-separator{flex:none;width:1px;height:22px;margin-inline:4px;
+  background:color-mix(in srgb,var(--sentence-glass-ink) 18%,transparent);}
+#readpill .ink-concept-mode-separator{display:none;}
+#readpill .ink-concept-toolbar .ink-concept-control:focus-visible,
+#readpill .ink-concept-entry:focus-visible,#readpill .ink-concept-mini:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--sentence-glass-ink) 58%,transparent);outline-offset:1px;}
+#readpill .ink-concept-color i{width:18px;height:18px;border:2px solid var(--sentence-glass-pill);
+  outline:1px solid color-mix(in srgb,var(--sentence-glass-ink) 34%,transparent);border-radius:50%;}
+#readpill .ink-concept-width i{height:4px;border-radius:3px;background:currentColor;}
+#readpill .ink-concept-mini{display:none;}
+#readpill .ink-concept-mini svg{width:16px;height:16px;}
+#readpill .ink-concept-mini-color{position:absolute;right:3px;bottom:3px;width:7px;height:7px;
+  border:1px solid var(--sentence-glass-solid);border-radius:50%;}
+#readpill.ink-concept-active{width:min(56vw,400px);height:44px;justify-content:center;
+  gap:4px;padding:4px 9px;border-radius:26px;}
+#readpill.ink-concept-active #readpill-progress{display:none;}
+#readpill.ink-concept-active #modefab{width:0;height:0;margin:0;opacity:0;pointer-events:none;}
+#readpill.ink-concept-active #readpill-title{flex:0 1 0;max-width:0;margin:0;padding:0;opacity:0;}
+#readpill.ink-concept-active .ink-concept-toolbar{max-width:340px;opacity:1;pointer-events:auto;}
+#readpill.ink-concept-active .ink-concept-mode-separator{display:block;}
+body.chrome-hidden #readpill.ink-concept-ready:not(.ink-concept-active) .ink-concept-entry{display:none;}
+body.chrome-hidden #readpill.ink-concept-active{width:56px;height:34px;padding:2px;border-radius:18px;justify-content:center;}
+body.chrome-hidden #readpill.ink-concept-active #modefab,
+body.chrome-hidden #readpill.ink-concept-active #readpill-title,
+body.chrome-hidden #readpill.ink-concept-active .ink-concept-mode-separator,
+body.chrome-hidden #readpill.ink-concept-active .ink-concept-entry,
+body.chrome-hidden #readpill.ink-concept-active .ink-concept-toolbar{display:none;}
+body.chrome-hidden #readpill.ink-concept-active .ink-concept-mini{display:flex;}
+@media(max-width:700px){
+  #readpill.ink-concept-active{width:min(56vw,400px);gap:2px;padding-inline:5px;}
+  #readpill .ink-concept-toolbar{gap:2px;}
+  #readpill .ink-concept-toolbar .ink-concept-control{width:36px;height:36px;}
+  #readpill .ink-concept-toolbar .ink-concept-control svg{width:26px;height:26px;}
+}
+@media(prefers-reduced-motion:reduce){
+  #readpill.ink-concept-ready,#readpill.ink-concept-ready :is(#modefab,#readpill-title),
+  #readpill .ink-concept-toolbar,#readpill .ink-concept-entry>span{transition-duration:.01ms;}
+}
