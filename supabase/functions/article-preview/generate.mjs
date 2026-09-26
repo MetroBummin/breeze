@@ -10,19 +10,17 @@ function validate(value) {
   return { summaryKo };
 }
 
-export async function generateArticlePreview(title, excerpt, key, request = fetch) {
+async function generateAttempt(title, excerpt, key, request, signal, repair = false) {
   if (!key) throw new Error("not_configured");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
   const started = performance.now();
-  try {
+  {
     const response = await request("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST", signal: controller.signal,
+      method: "POST", signal,
       headers: { "content-type": "application/json", "authorization": `Bearer ${key}`,
         "HTTP-Referer": "https://breeze.io.kr", "X-Title": "Breeze" },
       body: JSON.stringify({ model: ARTICLE_PREVIEW_MODEL,
-        messages: [{ role: "system", content: SYSTEM }, { role: "user", content: JSON.stringify({ title, excerpt }) }],
-        temperature: 0.2, max_tokens: 400, stream: false, reasoning: { enabled: false },
+        messages: [{ role: "system", content: SYSTEM + (repair ? " Your previous response failed validation. Write a fresh, shorter 2-sentence introduction using only the supplied evidence. Omit ALL numeric details, dates, ages, amounts, rankings and counts instead of reformatting them. Never replace a number with a vague unsupported comparison. Return complete valid JSON." : "") }, { role: "user", content: JSON.stringify({ title, excerpt }) }],
+        temperature: 0.2, max_tokens: 600, stream: false, reasoning: { enabled: false },
         provider: { sort: "throughput", max_price: { prompt: 0.10, completion: 0.30 } },
         response_format: { type: "json_object" } })
     });
@@ -34,19 +32,52 @@ export async function generateArticlePreview(title, excerpt, key, request = fetc
     try { parsed = JSON.parse(raw); } catch { throw new Error("bad_metadata"); }
     const meta = validate(parsed);
     if (!meta) throw new Error("bad_metadata");
-    const sourceText = title + " " + excerpt;
-    const sourceNumbers = new Set(sourceText.match(/\d+(?:[.,]\d+)*/g) || []);
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    months.forEach((month, index) => {
-      if (new RegExp(`\\b${month}\\b`).test(sourceText)) sourceNumbers.add(String(index + 1));
-    });
-    const writtenNumbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
-    writtenNumbers.forEach((word, number) => {
-      if (new RegExp(`\\b${word}\\b`, "i").test(sourceText)) sourceNumbers.add(String(number));
-    });
-    if ((meta.summaryKo.match(/\d+(?:[.,]\d+)*/g) || []).some(number => !sourceNumbers.has(number)))
+    const sourceNumbers = numericEvidence(title + " " + excerpt, true);
+    if ([...numericEvidence(meta.summaryKo)].some(number => !sourceNumbers.has(number)))
       throw Object.assign(new Error("unsupported_number"), { candidate: meta });
     return { meta, model: data?.model || ARTICLE_PREVIEW_MODEL, usage: data?.usage || null,
       latencyMs: Math.round(performance.now() - started) };
-  } finally { clearTimeout(timer); }
+  }
+}
+
+// Compare quantities, not their typography: 100,000 and 10만 are the same
+// amount. Do not admit the coefficient of a scaled value as a separate count.
+export function numericEvidence(text, source = false) {
+  const values = new Set();
+  const scales = {hundred:100,thousand:1000,million:1e6,billion:1e9,trillion:1e12,백:100,천:1000,만:1e4,억:1e8,조:1e12};
+  const pattern = /\d+(?:,\d{3})*(?:\.\d+)?(?:\s*(?:hundred|thousand|million|billion|trillion)\b|\s*[백천만억조](?![가-힣])|[백천만억조](?=[가-힣]|$))?/gi;
+  for (const match of text.matchAll(pattern)) {
+    const raw=match[0].replaceAll(',',''), amount=parseFloat(raw), unit=raw.match(/[a-z]+|[백천만억조]/i)?.[0]?.toLowerCase();
+    values.add(String(Number((amount*(scales[unit]||1)).toPrecision(14))));
+  }
+  if (source) {
+    const months = ['Jan(?:uary)?','Feb(?:ruary)?','Mar(?:ch)?','Apr(?:il)?','May','Jun(?:e)?','Jul(?:y)?','Aug(?:ust)?','Sep(?:t(?:ember)?)?','Oct(?:ober)?','Nov(?:ember)?','Dec(?:ember)?'];
+    months.forEach((month,i)=>{if(new RegExp(`\\b${month}\\b`,'i').test(text))values.add(String(i+1));});
+    const small = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+    const tens = ['twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+    const words = new RegExp(`\\b(${[...small,...tens].join('|')})(?:[- ](${small.slice(1,10).join('|')}))?(?:\\s+(hundred|thousand|million|billion|trillion))?\\b`,'gi');
+    for(const m of text.matchAll(words)){
+      const word=m[1].toLowerCase(),base=small.includes(word)?small.indexOf(word):(tens.indexOf(word)+2)*10;
+      values.add(String((base+(m[2]?small.indexOf(m[2].toLowerCase()):0))*(scales[m[3]?.toLowerCase()]||1)));
+    }
+  }
+  return values;
+}
+
+export async function generateArticlePreview(title, excerpt, key, request = fetch) {
+  if (!key) throw new Error('not_configured');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000),started=performance.now();
+  try {
+    for(let attempt=0;attempt<2;attempt++) {
+      try {
+        const result=await generateAttempt(title,excerpt,key,request,controller.signal,attempt===1);
+        return {...result,attempts:attempt+1,latencyMs:Math.round(performance.now()-started)};
+      } catch(error) {
+        if(controller.signal.aborted)throw new Error('generation_timeout');
+        // One repair within the same quota charge and total deadline. Never
+        // retry auth, quota, network or arbitrary upstream errors automatically.
+        if(attempt || !['unsupported_number','bad_metadata'].includes(error.message))throw error;
+      }
+    }
+  } finally {clearTimeout(timer);}
 }

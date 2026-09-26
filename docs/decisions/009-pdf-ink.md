@@ -26,7 +26,7 @@ UIKit `.pad` idiom with an iOS-on-Mac exclusion, injected into the web document.
 No screen-width/UA heuristic. Old native shells without the flag fail closed.
 
 WebKit's `Touch.touchType === 'stylus'` remains the sole drawing input. PDF
-entry selects pen immediately. Pen/eraser only change Pencil behavior; real finger
+entry now starts read-only (see the explicit reading lock follow-up). Pen/eraser only change Pencil behavior; real finger
 Pointer/Touch events reach the existing word/sentence Lookup, scroll and pinch.
 SVG remains display-only. No synthetic forwarding and no timer-based tap blackout.
 Window capture blocks Pencil Pointer/click propagation on PDF body only; controls
@@ -166,3 +166,15 @@ WebKit precedent (not substituted for the collected iPad trace):
 
 ## Audit follow-up: explicit reading lock
 Document entry defaults to read-only. The small 필기 button enables editing; 읽기 locks editing without hiding persisted ink. Folding the tool UI never changes edit state. Native scope is disabled while read-only. Native scope retains all paper rectangles in content coordinates, cached by session/layout/committed zoom; scrolling reuses those rectangles and pinch previews defer publication until committed. Relevant page/layout mutations invalidate the cache. This avoids a page-count scan on every scroll/pinch frame without dropping pages during fast inertia. This changes native scope/input behaviour and requires renewed physical iPad QA; earlier 21-contact measurements do not validate this revision.
+
+## Production bottom pill (2026-09-26)
+The merged query-only concept was never connected to the engine. Replace both
+that mock state and the separate top toolbar with the approved bottom pill.
+The native iPad gate remains required; no URL flag enables production ink.
+The pen/book switch calls the real mode setter. Color, width, eraser and history
+operate on the same engine and serialized page writer. Read mode keeps ink visible
+but disables edits and native Pencil scope. Writing hides progress and removes
+the invisible reading controls from keyboard focus. The existing Reader chrome
+collapse reveals a mini tool button and does not change editing state. Save
+status stays live for assistive technology; failed saves expose the retry panel.
+Browser synthetic input is separate from fresh physical iPad/Pencil verification.

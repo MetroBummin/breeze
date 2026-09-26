@@ -102,3 +102,29 @@ test('source month and written counts may be rendered as Korean numerals',async(
   const unsupported=async()=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({summaryKo:summaryKo+' 30일 후 결과를 확인합니다.'})}}]}),{status:200});
   await assert.rejects(generateArticlePreview(title,excerpt,'test-key',unsupported),/unsupported_number/);
 });
+
+test('numeric typography and abbreviated source dates retain grounding',async()=>{
+  const title='NASA restores station on Sept. 10';
+  const excerpt='The project cost 100,000 dollars. Twenty-four people attended in 2026. The station serves two million connections.';
+  const summaryKo='NASA가 9월 10일 지상국 복구를 마쳤습니다. 2026년 행사에는 24명이 참석했으며 비용은 10만 달러로, 이 지상국은 200만 연결을 지원합니다.';
+  const response=text=>async()=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({summaryKo:text})}}]}));
+  assert.equal((await generateArticlePreview(title,excerpt,'test',response(summaryKo))).meta.summaryKo,summaryKo);
+  await assert.rejects(generateArticlePreview(title,excerpt,'test',response(summaryKo.replace('10만','100만'))),/unsupported_number/);
+});
+test('one grounded repair, within the same call, after rejected numeric output',async()=>{
+  let calls=0;
+  const request=async(_,options)=>{
+    calls++;const payload=JSON.parse(options.body);
+    if(calls===2)assert.match(payload.messages[0].content,/Omit ALL numeric/);
+    return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(calls===1?{summaryKo:meta.summaryKo+' 999명이 참여했습니다.'}:meta)}}]}));
+  };
+  const result=await generateArticlePreview(body.title,body.excerpt,'test',request);
+  assert.equal(calls,2);assert.equal(result.attempts,2);assert.equal(result.meta.summaryKo,meta.summaryKo);
+});
+test('malformed output repairs once; upstream errors never create a retry loop',async()=>{
+  let calls=0;
+  await assert.rejects(generateArticlePreview(body.title,body.excerpt,'test',async()=>{calls++;return new Response('{}',{status:429});}),/openrouter_429/);
+  assert.equal(calls,1);calls=0;
+  await assert.rejects(generateArticlePreview(body.title,body.excerpt,'test',async()=>{calls++;return new Response(JSON.stringify({choices:[{message:{content:'{broken'}}]}));}),/bad_metadata/);
+  assert.equal(calls,2);
+});

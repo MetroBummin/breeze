@@ -162,7 +162,8 @@ try{
       await run('reduced motion, enlarged text and keyboard focus',async(p,rs,respond)=>{
         await p.emulateMedia({reducedMotion:'reduce'});await p.click('#launch');await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond();
         assert.equal(await p.locator('#article-preview').evaluate(n=>getComputedStyle(n).animationName),'none');
-        assert.equal(await p.evaluate(()=>document.activeElement.className),'ap-close');
+        assert.equal(await p.evaluate(()=>document.activeElement.id),'article-preview');
+        await p.locator('.ap-close').focus();assert.equal(await p.evaluate(()=>document.activeElement.className),'ap-close');
         await p.locator('.ap-start').focus();
         assert.equal(await p.evaluate(()=>document.activeElement.className),'ap-start');
         await p.addStyleTag({content:'.ap-content h2,.ap-content h3,.ap-content p{font-size:32px!important}'});

@@ -21,3 +21,11 @@
 
    벌리기를 막는 일(`gesturestart` 가로채기)도 그쪽으로 옮겼습니다. 글자 화면은
    여전히 안 벌어지고, 원본 화면은 우리 손으로 벌어집니다. */
+
+// WebKit can retain :focus-visible after touch or dialog autofocus. Track actual
+// input modality without blurring controls or removing keyboard/VoiceOver focus.
+document.addEventListener('pointerdown',()=>{document.documentElement.dataset.inputModality='pointer';},{capture:true,passive:true});
+document.addEventListener('keydown',event=>{
+  if(!event.metaKey&&!event.ctrlKey&&!event.altKey&&['Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))
+    document.documentElement.dataset.inputModality='keyboard';
+},true);

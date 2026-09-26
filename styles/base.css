@@ -30,3 +30,8 @@
   #login-nudge.on{visibility:visible;}
 
   .view{display:none;} .view.on{display:block;}
+
+/* Neutral keyboard focus, with no sticky touch ring on native WebKit. */
+:is(button,a,[role="button"],summary){-webkit-tap-highlight-color:transparent;}
+:is(button,a,[role="button"],summary):focus-visible{outline-color:var(--soft)!important;}
+html[data-input-modality="pointer"] :is(button,a,[role="button"],summary):focus{outline:none!important;}
