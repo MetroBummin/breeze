@@ -3,7 +3,7 @@
 const readerNotices = (()=>{
   const queue=[];
   const MAX_PENDING=20, MAX_AGE=60000, QUIET_MS=600;
-  let timer=0, active=null, shownAt=0, quietUntil=0, owner='';
+  let timer=0, active=null, shownAt=0, quietUntil=0, owner='', epoch=0;
   function reading(){ return !!curBook && document.body.classList.contains('reading'); }
   function surface(){
     if(reading()) return 'read';
@@ -29,7 +29,7 @@ const readerNotices = (()=>{
     active=null;
   }
   function reset(){
-    clearTimeout(timer); timer=0; queue.length=0; hide(); quietUntil=0; owner='';
+    clearTimeout(timer); timer=0; queue.length=0; hide(); quietUntil=0; owner=''; epoch++;
   }
   function pump(){
     clearTimeout(timer); timer=0;
@@ -63,6 +63,39 @@ const readerNotices = (()=>{
     queue.push({message:text,created:Date.now(),duration:Math.min(8000,Math.max(duration,text.length*90))});
     pump(); return true;
   }
+  // A file operation owns one replaceable status, not a FIFO of old percentages.
+  // Independent notices retain FIFO order and all existing input/overlay priority.
+  function task(){
+    const next=surface(), key={};
+    if(owner && owner!==next) reset();
+    owner=next;
+    const started=epoch;
+    let finished=false;
+    function update(message,terminal=false){
+      if(finished) return;
+      if(terminal) finished=true;
+      // Navigation/session resets invalidate this operation's presentation only.
+      // The import itself still completes and refreshes the currently visible shelf.
+      if(started!==epoch || surface()!==next) return;
+      const text=String(message||'').trim();
+      if(!text) return;
+      if(!next){ toast(text); return; }
+      const item={key,message:text,created:Date.now(),duration:Math.min(8000,Math.max(2600,text.length*90))};
+      if(active && active.key===key){
+        Object.assign(active,item); shownAt=item.created;
+        noticeNode().textContent=text;
+      }else{
+        const index=queue.findIndex(pending=>pending.key===key);
+        if(index>=0) queue[index]=item;
+        else{
+          if(queue.length>=MAX_PENDING) queue.shift();
+          queue.push(item);
+        }
+      }
+      pump();
+    }
+    return {progress:message=>update(message),finish:message=>update(message,true)};
+  }
   function yieldToInput(){
     quietUntil=Date.now()+QUIET_MS;
     if(active || queue.length) pump();
@@ -81,5 +114,5 @@ const readerNotices = (()=>{
     if(node) observer.observe(node,{attributes:true,attributeFilter:['hidden','class']});
   });
   document.querySelectorAll('.view').forEach(node=>observer.observe(node,{attributes:true,attributeFilter:['class']}));
-  return {enqueue,reset};
+  return {enqueue,reset,task};
 })();
