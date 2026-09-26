@@ -27,7 +27,7 @@ jobs:
       - run: npm test
       - name: Feature audit contracts
         run: |
-          for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs; do
+          for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs tests/verify-pdf-ink-geometry.mjs; do
             if test -f "$test"; then node --test "$test"; fi
           done
   browser:
