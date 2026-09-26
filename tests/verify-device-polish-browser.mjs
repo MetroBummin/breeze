@@ -61,6 +61,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.locator('[data-ink-color="#c43d3d"]').tap();
   assert.equal(await page.locator('[data-ink-color="#c43d3d"]').getAttribute('aria-pressed'),'true');
   await page.locator('[data-ink-mode="erase"]').tap();
+  assert.equal(await page.locator('[data-ink-mode="erase"]').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('#pdf-ink-settings').isVisible(),false);
+  await page.locator('[data-ink-mode="erase"]').tap();
+  assert.equal(await page.locator('[data-ink-panel="erase"]').isVisible(),true);
   assert.equal(await page.locator('[data-ink-panel="pen"]').isVisible(),false);
   assert.equal(await page.locator('[data-ink-radius]').count(),3);
   await page.locator('[data-ink-radius="16"]').tap();
