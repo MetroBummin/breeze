@@ -4,13 +4,15 @@
    Basic Pencil/pan/pinch was confirmed on iPad; expanded physical QA is documented. */
 const BreezePdfInk = (()=>{
   const colors=['#111111','#c43d3d','#2864c5'], widths=[0.75,1.5,3];
+  const eraserRadii=[4,8,16];
   const undoStack=[],redoStack=[];
-  let color=colors[0],width=widths[1];
+  let color=colors[0],width=widths[1],eraserRadius=eraserRadii[1];
   const ns='http://www.w3.org/2000/svg';
   const database=openDb('breeze-pdf-ink',1,db=>db.createObjectStore('pages'));
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
   let session=null, mode='read', active=null, toolbar=null, status=null;
   let inkTools=null,inkEntry=null,inkMini=null,inkReadSeparator=null;
+  let settings=null,settingsTool=null;
   const suppressed=new Set(), blockedPointers=new Set();
   let suppressClick=false;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
@@ -104,17 +106,34 @@ const BreezePdfInk = (()=>{
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{
       button.setAttribute('aria-pressed',String(button.dataset.inkMode===mode));
     });
-    inkTools.querySelector('.ink-pill-color').dataset.value=color;
-    inkTools.querySelector('.ink-pill-width').dataset.value=String(width);
-    inkTools.querySelector('.ink-pill-color i').style.background=color;
-    inkTools.querySelector('.ink-pill-color').setAttribute('aria-label','펜 색상: '+['검정','빨강','파랑'][colors.indexOf(color)]+', 바꾸기');
-    inkTools.querySelector('.ink-pill-width i').style.width=`${Math.round(width*3)}px`;
-    inkTools.querySelector('.ink-pill-width').setAttribute('aria-label','펜 굵기: '+['얇게','보통','굵게'][widths.indexOf(width)]+', 바꾸기');
-    inkTools.querySelector('[data-ink-undo]').disabled=!writing||!undoStack.length||!!active;
-    inkTools.querySelector('[data-ink-redo]').disabled=!writing||!redoStack.length||!!active;
+    if(!writing||document.body.classList.contains('chrome-hidden'))settingsTool=null;
+    updateSettings();updateHistoryControls();
     for(const id of ['modefab','readpill-title'])document.getElementById(id).inert=writing;
     toolbar.hidden=!ready;
     if(!ready)cancel();
+  }
+  function updateHistoryControls(){
+    if(!inkTools)return;
+    const writing=!!visible()&&mode!=='read';
+    for(const [name,stack] of [['undo',undoStack],['redo',redoStack]]){
+      const button=inkTools.querySelector(`[data-ink-${name}]`),disabled=!writing||!stack.length||!!active;
+      if(button.disabled!==disabled)button.disabled=disabled;
+    }
+  }
+  function updateSettings(){
+    if(!settings)return;
+    settings.hidden=!settingsTool;
+    settings.setAttribute('aria-label',settingsTool==='erase'?'지우개 설정':'펜 설정');
+    settings.querySelectorAll('[data-ink-panel]').forEach(panel=>{panel.hidden=panel.dataset.inkPanel!==settingsTool;});
+    settings.querySelectorAll('[data-ink-color]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inkColor===color)));
+    settings.querySelectorAll('[data-ink-width]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.inkWidth)===width)));
+    settings.querySelectorAll('[data-ink-radius]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.inkRadius)===eraserRadius)));
+    inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.inkMode===settingsTool)));
+  }
+  function closeSettings(){if(settingsTool){settingsTool=null;updateSettings();}}
+  function selectTool(tool){
+    const show=settingsTool!==tool;
+    setMode(tool);settingsTool=show?tool:null;updateSettings();
   }
   function icon(path){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;}
   function inkControl(label,path,className=''){
@@ -140,18 +159,11 @@ const BreezePdfInk = (()=>{
       ['pen','펜','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z']
     ]){
       const button=inkControl(label,path);button.dataset.inkMode=tool;
-      button.onclick=()=>setMode(tool);inkTools.append(button);
+      button.onclick=()=>selectTool(tool);inkTools.append(button);
     }
-    const colorButton=inkControl('현재 색상 바꾸기','M12 3s-7 7.1-7 11a7 7 0 0 0 14 0c0-3.9-7-11-7-11Z','ink-pill-color');
-    colorButton.innerHTML='<i aria-hidden="true"></i>';
-    colorButton.dataset.inkSetting='color';
-    colorButton.onclick=()=>{cancel();color=colors[(colors.indexOf(color)+1)%colors.length];update();};inkTools.append(colorButton);
-    const widthButton=inkControl('펜 굵기 바꾸기','M4 12h16','ink-pill-width');
-    widthButton.innerHTML='<i aria-hidden="true"></i>';
-    widthButton.dataset.inkSetting='width';
-    widthButton.onclick=()=>{cancel();width=widths[(widths.indexOf(width)+1)%widths.length];update();};inkTools.append(widthButton,inkSeparator());
+    inkTools.append(inkSeparator());
     const eraser=inkControl('지우개','M7.2 20.4 3.8 17a2 2 0 0 1 0-2.8l9.8-9.8a2 2 0 0 1 2.8 0l3.8 3.8a2 2 0 0 1 0 2.8l-9.4 9.4H7.2ZM8.7 10.7l6.1 6.1M7.2 20.4H21');
-    eraser.dataset.inkMode='erase';eraser.onclick=()=>setMode('erase');inkTools.append(eraser,inkSeparator());
+    eraser.dataset.inkMode='erase';eraser.onclick=()=>selectTool('erase');inkTools.append(eraser,inkSeparator());
     for(const [label,path] of [
       ['실행 취소','M9 5 4 10l5 5M4 10h9a6 6 0 0 1 0 12'],
       ['다시 실행','m15 5 5 5-5 5m5-5h-9a6 6 0 0 0 0 12']
@@ -167,6 +179,25 @@ const BreezePdfInk = (()=>{
     inkMini.innerHTML=`${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}<i class="ink-pill-mini-color" aria-hidden="true"></i>`;
     inkMini.onclick=()=>expandReaderChrome();
     pill.append(inkTools,inkReadSeparator,inkEntry,inkMini);
+    settings=document.createElement('div');settings.id='pdf-ink-settings';settings.className='control-glass';settings.hidden=true;
+    settings.setAttribute('role','dialog');
+    settings.innerHTML='<div data-ink-panel="pen"><div class="ink-setting-label">펜 색상</div><div class="ink-setting-row ink-colors"></div><div class="ink-setting-label">펜 굵기</div><div class="ink-setting-row ink-widths"></div></div><div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii"></div></div>';
+    const options=(kind,values,labels)=>{
+      const row=settings.querySelector(kind==='color'?'.ink-colors':kind==='width'?'.ink-widths':'.ink-radii');
+      values.forEach((value,i)=>{
+        const button=document.createElement('button');button.type='button';button.dataset[`ink${kind[0].toUpperCase()+kind.slice(1)}`]=String(value);
+        button.setAttribute('aria-label',(kind==='color'?'펜 색상: ':kind==='width'?'펜 굵기: ':'지우개 크기: ')+labels[i]);
+        button.innerHTML='<i aria-hidden="true"></i><span>'+labels[i]+'</span>';
+        button.style.setProperty('--ink-option',kind==='color'?String(value):`${kind==='width'?Number(value)*1.6:8+i*7}px`);
+        button.onclick=()=>{cancel();if(kind==='color')color=String(value);else if(kind==='width')width=Number(value);else eraserRadius=Number(value);update();};
+        row.append(button);
+      });
+    };
+    options('color',colors,['검정','빨강','파랑']);options('width',widths,['얇게','보통','굵게']);options('radius',eraserRadii,['작게','보통','크게']);
+    inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',settings.id);});
+    document.getElementById('readchrome').append(settings);
+    document.addEventListener('pointerdown',event=>{if(event.target instanceof Element&&!event.target.closest('#pdf-ink-settings,#pdf-ink-tools'))closeSettings();},true);
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&settingsTool){const tool=settingsTool;closeSettings();inkTools.querySelector(`[data-ink-mode="${tool}"]`).focus();event.preventDefault();}});
     toolbar=document.createElement('div');toolbar.id='pdf-ink-status';toolbar.hidden=true;
     status=document.createElement('span');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
     const retry=document.createElement('button');retry.type='button';retry.className='pdf-ink-retry';retry.textContent='저장 재시도';
@@ -234,7 +265,7 @@ const BreezePdfInk = (()=>{
     // never SVGs or PDF canvases. Bound retained edit history within this session.
     undoStack.push({key:state.key,before,after:state.strokes.slice()});
     if(undoStack.length>50)undoStack.shift();
-    redoStack.length=0;update();
+    redoStack.length=0;updateHistoryControls();
   }
   function newState(key){
     return {key,strokes:[],revision:0,dirty:false,error:false,saving:null,loading:null,loaded:false,svg:null,element:null};
@@ -269,25 +300,37 @@ const BreezePdfInk = (()=>{
     element.setAttribute('stroke-linecap','round');element.setAttribute('stroke-linejoin','round');
     return element;
   }
-  function point(touch,state){
-    const rect=state.element.getBoundingClientRect();
+  function point(touch,state,rect=state.element.getBoundingClientRect()){
     return [(touch.clientX-rect.left)/rect.width*state.width,(touch.clientY-rect.top)/rect.height*state.height];
   }
-  function distance(p,a,b){
-    const dx=b[0]-a[0],dy=b[1]-a[1],length=dx*dx+dy*dy;
-    const t=length?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/length)):0;
-    return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);
+  function erase(state,p,previous=p){
+    let edited=false;
+    const strokes=state.strokes.flatMap(stroke=>{
+      const parts=BreezeInkGeometry.eraseStroke(stroke,previous,p,eraserRadius);
+      if(parts.length!==1||parts[0]!==stroke)edited=true;
+      return parts;
+    });
+    // One eraser contact is one edit. Persist at lift/cancellation, rather than
+    // structured-cloning and writing all fragments on every input sample.
+    if(edited){state.strokes=strokes;state.revision++;state.dirty=true;paint(state);}
   }
-  function erase(state,p){
-    const before=state.strokes.length;
-    state.strokes=state.strokes.filter(s=>!s.points.some((b,i)=>distance(p,s.points[Math.max(0,i-1)],b)<=6+s.width/2));
-    if(before!==state.strokes.length){paint(state);changed(state);}
+  function showEraser(p){
+    if(!active.preview){
+      active.preview=document.createElementNS(ns,'circle');
+      active.preview.classList.add('pdf-ink-eraser-cursor');
+      active.preview.setAttribute('r',String(eraserRadius));
+    }
+    active.preview.setAttribute('cx',String(p[0]));active.preview.setAttribute('cy',String(p[1]));
+    if(!active.preview.isConnected)active.state.svg.append(active.preview);
   }
   function cancel(){
     if(active){
       const current=active;active=null;
-      if(current.tool==='erase')record(current.state,current.before);
-      paint(current.state);update();
+      if(current.tool==='erase'){
+        record(current.state,current.before);
+        if(current.state.dirty)void persist(current.state);
+      }
+      paint(current.state);updateHistoryControls();
     }
     // Discard an interrupted unfinished stroke; completed edits already persist.
   }
@@ -318,11 +361,12 @@ const BreezePdfInk = (()=>{
     const state=pages.get(keyFor(session,Number(element.dataset.page)));
     if(!state?.svg || !state.loaded){message('필기를 불러오는 중이에요. 다시 시도해 주세요');return;}
     cancelGesture('Pencil owns paper');
-    const p=point(pen,state);
-    active={id:pen.identifier,state,tool:mode,before:state.strokes.slice(),stroke:{color,width,points:[p]},preview:null};
+    closeSettings();
+    const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
+    active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:{color,width,points:[p]},preview:null};
     trace('stroke/start',event);
-    update();
-    if(active.tool==='erase')erase(state,p);
+    updateHistoryControls();
+    if(active.tool==='erase'){erase(state,p);showEraser(p);}
     else{active.preview=path(active.stroke);state.svg.append(active.preview);}
   }
   function touchMove(event){
@@ -331,26 +375,43 @@ const BreezePdfInk = (()=>{
     const pen=Array.from(event.changedTouches).find(t=>t.identifier===active.id);
     if(!pen)return; // A moving/lifting palm cannot append or finish Pencil ink.
     if(!event.cancelable){trace('move/noncancelable-cancel',event);cancel();return;}
-    const p=point(pen,active.state);
-    if(p[0]<0||p[1]<0||p[0]>active.state.width||p[1]>active.state.height){cancel();return;}
+    const p=point(pen,active.state,active.bounds),previous=active.stroke.points.at(-1);
+    const size=[active.state.width,active.state.height];
+    const exits=p.some((value,axis)=>value<0||value>size[axis]);
+    if(exits){
+      // A real Pencil can leave the paper while its Touch.target stays on the
+      // starting canvas. Clip this segment; do not erase the whole stroke.
+      let fraction=1;
+      for(let axis=0;axis<2;axis++){
+        if(p[axis]<0||p[axis]>size[axis]){
+          const edge=p[axis]<0?0:size[axis];
+          fraction=Math.min(fraction,(edge-previous[axis])/(p[axis]-previous[axis]));
+        }
+      }
+      for(let axis=0;axis<2;axis++)p[axis]=Math.max(0,Math.min(size[axis],previous[axis]+(p[axis]-previous[axis])*fraction));
+    }
     if(active.tool==='erase'){
-      const previous=active.stroke.points.at(-1);
-      const steps=Math.max(1,Math.ceil(Math.hypot(p[0]-previous[0],p[1]-previous[1])/3));
-      for(let i=1;i<=steps;i++)erase(active.state,[previous[0]+(p[0]-previous[0])*i/steps,previous[1]+(p[1]-previous[1])*i/steps]);
+      erase(active.state,p,previous);
       active.stroke.points=[p];
+      showEraser(p);
     }else{
       active.stroke.points.push(p);
       active.preview.setAttribute('points',active.stroke.points.map(x=>x.join(',')).join(' '));
     }
+    if(exits){trace('stroke/page-exit',event);finishStroke();}
+    // The contact remains suppressed until lift, so crossing a gap or returning
+    // onto paper cannot start another stroke or trigger Lookup.
+  }
+  function finishStroke(){
+    const current=active,state=current.state;active=null;
+    if(current.tool==='pen'){state.strokes.push(current.stroke);changed(state);}
+    else if(state.dirty)void persist(state);
+    record(state,current.before);paint(state);updateHistoryControls();
   }
   function touchEnd(event){
     consumeTouches(event);
     if(active && Array.from(event.changedTouches).some(t=>t.identifier===active.id)){
-      if(event.type==='touchend' && active.tool==='pen'){
-        active.state.strokes.push(active.stroke);changed(active.state);
-      }
-      const current=active,state=current.state;active=null;
-      record(state,current.before);paint(state);update();
+      if(event.type==='touchend')finishStroke();else cancel();
     }
     const live=new Set(Array.from(event.touches,t=>t.identifier));
     for(const id of suppressed)if(!live.has(id))suppressed.delete(id);

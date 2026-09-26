@@ -123,6 +123,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
         #if DEBUG
         if inkPad && ProcessInfo.processInfo.environment["BREEZE_INK_TRACE"] == "1" {
+            inkTraceEnabled = true // Capture native-only failures before any web trace arrives.
             let probe = BreezeInkInputProbe(target: nil, action: nil)
             probe.cancelsTouchesInView = false
             probe.delaysTouchesBegan = false

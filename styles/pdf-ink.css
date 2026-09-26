@@ -34,19 +34,16 @@
 #readpill .ink-pill-toolbar .ink-pill-control:focus-visible,
 #readpill .ink-pill-entry:focus-visible,#readpill .ink-pill-mini:focus-visible{
   outline:2px solid color-mix(in srgb,var(--sentence-glass-ink) 58%,transparent);outline-offset:1px;}
-#readpill .ink-pill-color i{width:18px;height:18px;border:2px solid var(--sentence-glass-pill);
-  outline:1px solid color-mix(in srgb,var(--sentence-glass-ink) 34%,transparent);border-radius:50%;}
-#readpill .ink-pill-width i{height:4px;border-radius:3px;background:currentColor;}
 #readpill .ink-pill-mini{display:none;}
 #readpill .ink-pill-mini svg{width:16px;height:16px;}
 #readpill .ink-pill-mini-color{position:absolute;right:3px;bottom:3px;width:7px;height:7px;
   border:1px solid var(--sentence-glass-solid);border-radius:50%;}
-#readpill.ink-pill-active{width:min(400px,calc(100vw - 128px));height:44px;justify-content:center;
+#readpill.ink-pill-active{width:min(300px,calc(100vw - 128px));height:44px;justify-content:center;
   gap:4px;padding:4px 9px;border-radius:26px;}
 #readpill.ink-pill-active #readpill-progress{display:none;}
 #readpill.ink-pill-active #modefab{width:0;height:0;margin:0;opacity:0;pointer-events:none;}
 #readpill.ink-pill-active #readpill-title{flex:0 1 0;max-width:0;margin:0;padding:0;opacity:0;}
-#readpill.ink-pill-active .ink-pill-toolbar{max-width:340px;flex:0 1 auto;overflow-x:auto;scrollbar-width:none;opacity:1;pointer-events:auto;}
+#readpill.ink-pill-active .ink-pill-toolbar{max-width:240px;flex:0 1 auto;overflow-x:auto;scrollbar-width:none;opacity:1;pointer-events:auto;}
 #readpill.ink-pill-active .ink-pill-mode-separator{display:block;}
 body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entry{display:none;}
 body.chrome-hidden #readpill.ink-pill-active{width:56px;height:34px;padding:2px;border-radius:18px;justify-content:center;}
@@ -57,7 +54,7 @@ body.chrome-hidden #readpill.ink-pill-active .ink-pill-entry,
 body.chrome-hidden #readpill.ink-pill-active .ink-pill-toolbar{display:none;}
 body.chrome-hidden #readpill.ink-pill-active .ink-pill-mini{display:flex;}
 @media(max-width:700px){
-  #readpill.ink-pill-active{width:min(400px,calc(100vw - 128px));gap:2px;padding-inline:5px;}
+  #readpill.ink-pill-active{width:min(300px,calc(100vw - 128px));gap:2px;padding-inline:5px;}
   #readpill .ink-pill-toolbar{gap:2px;}
   #readpill .ink-pill-toolbar .ink-pill-control{width:36px;height:36px;}
   #readpill .ink-pill-toolbar .ink-pill-control svg{width:26px;height:26px;}
@@ -77,3 +74,24 @@ body.chrome-hidden #readpill.ink-pill-active .ink-pill-mini{display:flex;}
 
 #readpill .ink-pill-toolbar::-webkit-scrollbar{display:none;}
 body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-pill-mini,.ink-pill-mode-separator){display:none;}
+
+/* Tool options live above the pill; the paper and its geometry never move. */
+#pdf-ink-settings{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%);
+  width:min(260px,calc(100vw - 28px));padding:14px;border-radius:20px;pointer-events:auto;background:var(--sentence-glass-solid);
+  animation:ink-settings-in .16s ease-out;}
+#pdf-ink-settings[hidden],#pdf-ink-settings [hidden]{display:none;}
+#pdf-ink-settings .ink-setting-label{font:600 12px/1.4 var(--ui);color:var(--sentence-glass-secondary);margin-bottom:8px;}
+#pdf-ink-settings .ink-setting-row{display:flex;gap:7px;}
+#pdf-ink-settings .ink-colors{margin-bottom:14px;}
+#pdf-ink-settings button{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  min-width:0;min-height:56px;border:1px solid transparent;border-radius:12px;background:transparent;color:inherit;
+  font:500 11px/1.2 var(--ui);cursor:pointer;touch-action:manipulation;}
+#pdf-ink-settings button[aria-pressed="true"]{background:var(--sentence-glass-action);border-color:var(--sentence-glass-line);}
+#pdf-ink-settings button:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:1px;}
+#pdf-ink-settings i{display:block;flex:none;}
+#pdf-ink-settings .ink-colors i{width:19px;height:19px;border-radius:50%;background:var(--ink-option);box-shadow:0 0 0 1px var(--sentence-glass-line);}
+#pdf-ink-settings .ink-widths i{width:26px;height:var(--ink-option);border-radius:3px;background:currentColor;}
+#pdf-ink-settings .ink-radii i{width:var(--ink-option);height:var(--ink-option);border-radius:50%;border:1px solid currentColor;background:var(--sentence-glass-action);}
+@keyframes ink-settings-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+@media(prefers-reduced-motion:reduce){#pdf-ink-settings{animation:none;}}
+.pdf-ink-eraser-cursor{fill:rgba(255,255,255,.35);stroke:#666;stroke-width:.8;pointer-events:none;}

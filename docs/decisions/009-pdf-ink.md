@@ -178,3 +178,40 @@ the invisible reading controls from keyboard focus. The existing Reader chrome
 collapse reveals a mini tool button and does not change editing state. Save
 status stays live for assistive technology; failed saves expose the retry panel.
 Browser synthetic input is separate from fresh physical iPad/Pencil verification.
+
+## Physical page-edge follow-up (2026-09-26)
+Build 167 user feedback reported tools appearing without durable Pencil lines.
+A same-source diagnostic run on the connected iPad received six real Pencil
+strokes: four left their starting page and the out-of-bounds branch cancelled
+the complete stroke; two ended inside paper. A browser regression reproduced
+the deletion before the fix. This identifies a concrete failure path, not proof
+that every earlier failed contact had this cause.
+
+When a live stroke leaves its starting page, clip its final segment to that
+page boundary and commit the in-page portion through the existing serialized
+writer/history. Continue suppressing that contact until lift; do not connect
+across page gaps or resume the stroke on re-entry. Actual touch cancellation,
+scroll, resize, blur and mode changes still discard unfinished pen strokes.
+The four-edge/zoom/re-entry/undo/redo/reload regression runs without tracing.
+DEBUG tracing can capture native-only failures before any web trace arrives;
+ordinary Release builds still contain no input trace handler.
+
+### Tool settings, partial erasure and input cost
+The user requested pen/eraser options above the pill. Selecting either tool opens
+a non-modal settings surface; pen contains the existing three colors/widths,
+eraser contains page-coordinate radii 4, 8 and 16. Tap the tool again, tap outside,
+start paper input or press Escape to close it. Settings never reflow the paper.
+
+Eraser input cuts only covered polyline segments, using the swept capsule between
+consecutive samples (plus half the ink width). Sparse, fast movements therefore
+leave no gaps in the erased path. Retained fragments reuse the existing v1 stroke
+format and remain on the same document/page. One contact is one history operation.
+Persist the edited fragments on lift or cancellation, not every movement sample;
+completed erasures remain undoable even when that contact is interrupted.
+
+Cache paper bounds for one active contact: scroll/resize/blur already cancel it,
+and PDF repaint is held during input. A 120-sample regression checks two page
+layout reads including the harness, rather than a read per sample. Update only
+history availability during drawing, not every tool/setting control. Diagnostic
+logging is disabled for final device verification and Release; timing measured
+with the verbose input trace enabled is not ordinary app performance evidence.

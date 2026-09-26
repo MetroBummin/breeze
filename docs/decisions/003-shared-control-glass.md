@@ -137,3 +137,9 @@ and progress yield to editing controls inside the same glass material. The
 expanded width remains capped at 400px with viewport clearance. Other Reader
 modes keep existing geometry. Touch/pointer focus is retained semantically but
 has no sticky outline; keyboard controls keep a neutral visible focus ring.
+
+### Compact PDF tool options (2026-09-26)
+The writing pill is capped at 300px. Pen and eraser each open their options above
+the pill in the same control material. Color/width controls are no longer always
+visible in the row. A non-modal, keyboard-accessible surface contains three
+choices per setting and respects reduced motion and narrow iPad split views.

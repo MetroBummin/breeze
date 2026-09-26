@@ -59,14 +59,14 @@ try{
     else{if(!writing)await page.locator('[data-ink-toggle]').click();await page.locator(`[data-ink-mode="${m}"]`).click();}
    };
    const setting=async(kind,value)=>{
-    for(let i=0;i<3;i++){
-     const current=await page.locator(`[data-ink-setting="${kind}"]`).getAttribute('data-value');
-     if(current===String(value))return;
-     await page.locator(`[data-ink-setting="${kind}"]`).click();
-    }
-    assert.equal(await page.locator(`[data-ink-setting="${kind}"]`).getAttribute('data-value'),String(value));
+    const tool=kind==='radius'?'erase':'pen';
+    const button=page.locator(`[data-ink-mode="${tool}"]`);
+    if(await button.getAttribute('aria-expanded')!=='true')await button.click();
+    await page.locator(`[data-ink-${kind}="${value}"]`).click();
+    assert.equal(await page.locator(`[data-ink-${kind}="${value}"]`).getAttribute('aria-pressed'),'true');
    };
    const stroke=async(points,{pageNumber=1,type='stylus',cancel=false,noncancel=false,palm=false}={})=>page.evaluate(({points,pageNumber,type,cancel,noncancel,palm})=>{
+    const readsBefore=window.qaBoundsReads||0;
     const element=originalSession.pages[pageNumber-1],rect=element.getBoundingClientRect();
     const target=element.querySelector('canvas');
     const touch=(p,id=1,t=type)=>({identifier:id,target,clientX:rect.left+p[0]*rect.width,clientY:rect.top+p[1]*rect.height,touchType:t});
@@ -81,6 +81,7 @@ try{
     send(cancel?'touchcancel':'touchend',[],[pen]);
     target.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerType:type==='stylus'?'pen':'touch',isPrimary:true}));
     target.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:1}));
+    window.qaStrokeBoundsReads=(window.qaBoundsReads||0)-readsBefore;
     return prevented;
    },{points,pageNumber,type,cancel,noncancel,palm});
    assert.equal(await page.locator('[data-ink-mode="pen"]').getAttribute('aria-pressed'),'true');
@@ -144,7 +145,7 @@ try{
    await page.evaluate(()=>renderOriginalPdfPage(originalSession,1));assert.equal(await count(),1);
    await setting('color','#111111');
    await setting('width','1.5');
-   await mode('erase');await stroke([[.1,.2],[.5,.2]]);assert.equal(await count(),0);
+   await mode('erase');await stroke([[.2,.2],[.3,.22],[.4,.2]]);assert.equal(await count(),0);
    await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    await page.locator('[data-ink-redo]').click();assert.equal(await count(),0);
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
@@ -202,7 +203,7 @@ try{
     await page.evaluate(()=>closePanel());
     assert.equal(await page.locator(`[data-ink-mode="${tool}"]`).getAttribute('aria-pressed'),'true');
     await stroke([[.4,.4],[.5,.5]]);
-    assert.ok(tool==='pen'?(await count())===before+2:(await count())<=before);
+    if(tool==='pen')assert.equal(await count(),before+2); // A partial erasure can increase the fragment count.
    }
    // Chromium browser-generated multitouch: native scroll and pinch in BOTH tools.
    if(engine===chromium){
@@ -296,6 +297,61 @@ try{
     return{during,one:after===start+1,oldBlocked,palmDoesNotBlock,freshAllowed,noMixedPinch,lateUnchanged,acquired,survived,zoomed,cancelled,unlocked};
    });
    for(const [key,value] of Object.entries(collision))assert.equal(value,true,`collision: ${key}`);
+   // A long Pencil move uses the contact's stable page bounds, not a layout read per sample.
+   await page.evaluate(()=>{
+    window.qaBoundsReads=0;window.qaBounds=Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect=function(){if(this.matches('.pdf-source-page'))window.qaBoundsReads++;return window.qaBounds.call(this);};
+   });
+   await stroke(Array.from({length:120},(_,i)=>[.15+i/1200,.65]));
+   const reads=await page.evaluate(()=>{Element.prototype.getBoundingClientRect=window.qaBounds;return window.qaStrokeBoundsReads;});
+   assert.ok(reads<=2,`Pencil layout reads stay bounded: ${reads}`);
+   // Tool popovers and partial erasure, including durable fragments and one-contact undo.
+   await stroke([[.1,.8],[.9,.8]]);
+   const uncut=await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('points');
+   const beforeCut=await count();
+   await mode('erase');await setting('radius',4);await stroke([[.5,.8]]);
+   assert.equal(await count(),beforeCut+1,'a tap splits the crossed stroke instead of deleting it');
+   assert.equal(await page.locator('#pdf-ink-settings').isVisible(),false,'paper input dismisses tool options');
+   const fragmentPoints=async()=>page.locator('[data-page="1"] .pdf-ink-layer polyline').evaluateAll(nodes=>nodes.slice(-2).map(n=>n.getAttribute('points')));
+   const small=await fragmentPoints();
+   await page.locator('[data-ink-undo]').click();assert.equal(await count(),beforeCut);
+   assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('points'),uncut);
+   await setting('radius',16);await stroke([[.5,.8]]);assert.equal(await count(),beforeCut+1);
+   const large=await fragmentPoints();
+   const gap=p=>Number(p[1].split(' ')[0].split(',')[0])-Number(p[0].split(' ').at(-1).split(',')[0]);
+   assert.ok(gap(large)>gap(small),'larger eraser removes a wider interval');
+   await page.locator('[data-ink-undo]').click();await page.locator('[data-ink-redo]').click();
+   assert.deepEqual(await fragmentPoints(),large);
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
+   await page.reload();await open();assert.equal(await count(),beforeCut+1);assert.deepEqual(await fragmentPoints(),large);
+   await mode('pen');
+   // Physical iPad trace: leaving a page used to cancel the entire visible stroke.
+   // Keep the clipped portion, never join it across the gap or resume on re-entry.
+   for(const zoom of [1,2]){
+    await page.evaluate(z=>setOriginalZoom(z),zoom);await page.waitForTimeout(600);
+    for(const [outside,axis,boundary] of [[[.5,1.1],1,1],[[.5,-.1],1,0],[[1.1,.5],0,1],[[-.1,.5],0,0]]){
+     const before=await count();
+     await stroke([[.5,.5],outside,[.6,.6]]);
+     assert.equal(await count(),before+1,'page exit preserves the stroke instead of deleting it');
+     const line=page.locator('[data-page="1"] .pdf-ink-layer polyline').last();
+     const clipped=await line.getAttribute('points');
+     const points=clipped.split(' ').map(p=>p.split(',').map(Number));
+     const size=(await page.locator('[data-page="1"] .pdf-ink-layer').getAttribute('viewBox')).split(' ').slice(2).map(Number);
+     assert.equal(points.length,2,'re-entry in the same contact cannot reconnect the stroke');
+     assert.ok(Math.abs(points.at(-1)[axis]-size[axis]*boundary)<.001,'endpoint lies on the page edge');
+     assert.ok(points.every(p=>p.every((v,i)=>v>=0&&v<=size[i])));
+     await page.locator('[data-ink-undo]').click();assert.equal(await count(),before);
+     await page.locator('[data-ink-redo]').click();assert.equal(await count(),before+1);
+     assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('points'),clipped);
+     await page.locator('[data-ink-undo]').click();
+    }
+   }
+   await page.evaluate(()=>setOriginalZoom(1));await page.waitForTimeout(600);
+   const beforeEdge=await count();await stroke([[.5,.9],[.55,1.1]]);
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
+   const durableEdge=await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('points');
+   await page.reload();await open();assert.equal(await count(),beforeEdge+1);
+   assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('points'),durableEdge);
    const finalWord=await wordPoint();assert.ok(finalWord);
    await page.touchscreen.tap(finalWord.x,finalWord.y);await page.waitForFunction(()=>wordPeekOpen());await page.evaluate(()=>closePanel());
    await page.evaluate(()=>{window.breezeInkIPad=false;document.body.classList.toggle('qa-platform');});
