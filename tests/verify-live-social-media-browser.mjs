@@ -51,6 +51,7 @@ async function installChecks(page){
     liveMediaQA.hash=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
     liveMediaQA.textHash=text=>liveMediaQA.hash(new TextEncoder().encode(text));
     liveMediaQA.inspect=async(book,offline=false)=>{
+      window.liveMediaImageProbe=null;
       const keys=book.paras.filter(text=>text.startsWith(IMG_MARK)).map(text=>text.slice(IMG_MARK.length));
       if(keys.length!==8||new Set(keys).size!==8)throw Error('Expected eight distinct saved source images');
       const images=[];
@@ -80,6 +81,34 @@ async function installChecks(page){
         tailSha256:await liveMediaQA.textHash(prose.slice(-3).join('\n')),images};
     };
   });
+}
+async function diagnosticImageProbe(page){
+  return within('Stored image diagnostic',page.evaluate(async()=>{
+    const sample=window.liveMediaDiagnostic,native=await imgGet(sample.key),rebuilt=new Blob([sample.bytes],{type:sample.type});
+    const read=async blob=>{
+      let timer;
+      try{
+        const bytes=await Promise.race([blob.arrayBuffer(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Read deadline')),3000);})]);
+        return {result:'read',bytes:bytes.byteLength,sha256:await liveMediaQA.hash(bytes)};
+      }catch(error){return {result:'error',name:error.name,message:String(error.message).slice(0,100)};}
+      finally{clearTimeout(timer);}
+    };
+    const decode=src=>new Promise(done=>{
+      const image=new Image();let timer;
+      const finish=event=>{clearTimeout(timer);done({event,complete:image.complete,width:image.naturalWidth,height:image.naturalHeight});};
+      timer=setTimeout(()=>finish('timeout'),3000);image.onload=()=>finish('load');image.onerror=()=>finish('error');image.src=src;
+    });
+    const nativeUrl=URL.createObjectURL(native),rebuiltUrl=URL.createObjectURL(rebuilt);
+    const bytes=new Uint8Array(sample.bytes);let binary='';
+    for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
+    try{
+      const [nativeRead,rebuiltRead,nativeImage,rebuiltImage,dataImage]=await Promise.all([
+        read(native),read(rebuilt),decode(nativeUrl),decode(rebuiltUrl),decode('data:'+sample.type+';base64,'+btoa(binary)),
+      ]);
+      return {online:navigator.onLine,key:sample.key,type:sample.type,nativeSize:native.size,
+        nativeRead,rebuiltRead,nativeImage,rebuiltImage,dataImage};
+    }finally{URL.revokeObjectURL(nativeUrl);URL.revokeObjectURL(rebuiltUrl);}
+  }),10000);
 }
 async function openAndCheck(page,id){
   await within('Open saved Reader',page.evaluate(async id=>{
@@ -170,7 +199,24 @@ try{
       await page.evaluate(key=>localStorage.setItem(key,'1'),offlineKey);
       await page.reload({waitUntil:'load'});
       await within('Reload persisted library',page.evaluate(async()=>{await homeReady;if(rssLoading)await rssLoading;}));
-      await context.setOffline(true);await installChecks(page);
+      await installChecks(page);stage='reload stored image decode';
+      const reloaded=await within('Reloaded stored image verification',page.evaluate(async id=>{
+        const stored=(await bookAll()).find(book=>book.id===id);if(!stored)throw Error('Reloaded book is missing');
+        const result=await liveMediaQA.inspect(stored),first=await imgGet(result.images[0].key);
+        window.liveMediaDiagnostic={key:result.images[0].key,type:first.type,bytes:await first.arrayBuffer()};
+        return result;
+      },online.id));
+      assert.equal(reloaded.id,online.id);assert.equal(reloaded.bodySha256,online.bodySha256);assert.equal(reloaded.tailSha256,online.tailSha256);
+      assert.deepEqual(reloaded.images,online.images,'Reloaded image bytes or decoded dimensions changed');
+      console.log(JSON.stringify({result:'RELOAD_STORED_PASS',engine:engine.name(),bookId:reloaded.id,
+        imageCount:reloaded.images.length,bodySha256:reloaded.bodySha256,tailSha256:reloaded.tailSha256}));
+      // Diagnostics use bytes from the same real photo; they never replace the
+      // native stored-image checks or supply pass data to the offline Reader.
+      stage='hard offline diagnostic';await context.setOffline(true);
+      console.log(JSON.stringify({result:'IMAGE_DIAGNOSTIC',engine:engine.name(),mode:'hard-offline',...await diagnosticImageProbe(page)}));
+      stage='external blocked diagnostic';await context.setOffline(false);
+      console.log(JSON.stringify({result:'IMAGE_DIAGNOSTIC',engine:engine.name(),mode:'external-blocked',...await diagnosticImageProbe(page)}));
+      await context.setOffline(true);
       assert.equal(await page.evaluate(()=>navigator.onLine),false);
       stage='offline stored image decode';
       const offline=await within('Offline stored image verification',page.evaluate(async id=>{
