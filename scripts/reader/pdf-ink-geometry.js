@@ -58,5 +58,50 @@ const BreezeInkGeometry = (()=>{
     if(!changed)return [stroke];
     finish();return chunks;
   }
-  return {eraseStroke};
+  // Incremental midpoint quadratics. Only the unsettled tail changes when a
+  // sample arrives; the visible tip always reaches the latest real sample.
+  // Flatten once in PDF coordinates, then display/save/erase the SAME points.
+  // Existing v1 strokes are never re-smoothed (including erased fragments).
+  function createSmoother(first){
+    const points=[first.slice()];
+    let previous=null,last=first.slice(),text=first.join(',');
+    const midpoint=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+    function append(p){
+      const end=points.at(-1);
+      if(Math.hypot(p[0]-end[0],p[1]-end[1])<=epsilon)return;
+      points.push(p);text+=' '+p.join(',');
+    }
+    function flatten(a,b,c,depth=0){
+      // The quadratic's departure from its chord is bounded by half the
+      // control-point distance. 0.04 PDF units is below a pixel at reader zoom.
+      const dx=c[0]-a[0],dy=c[1]-a[1],length=Math.hypot(dx,dy);
+      const deviation=length?Math.abs(dx*(b[1]-a[1])-dy*(b[0]-a[0]))/length:Math.hypot(b[0]-a[0],b[1]-a[1]);
+      if(deviation<=0.08||depth>=10){append(c);return;}
+      const ab=midpoint(a,b),bc=midpoint(b,c),center=midpoint(ab,bc);
+      flatten(a,ab,center,depth+1);flatten(center,bc,c,depth+1);
+    }
+    return {
+      add(p){
+        if(!Array.isArray(p)||p.length!==2||!p.every(Number.isFinite))return;
+        if(Math.hypot(p[0]-last[0],p[1]-last[1])<=epsilon)return;
+        p=p.slice();
+        if(previous){
+          const a=[last[0]-previous[0],last[1]-previous[1]],b=[p[0]-last[0],p[1]-last[1]];
+          const dot=a[0]*b[0]+a[1]*b[1],length=Math.hypot(...a)*Math.hypot(...b);
+          const end=midpoint(last,p);
+          // Preserve deliberate corners/reversals instead of rounding letters
+          // such as ㄱ into arcs. Quadratics stay inside the input convex hull.
+          if(dot<=0.25*length){append(last);append(end);}
+          else flatten(points.at(-1),last,end);
+        }
+        previous=last;last=p;
+      },
+      svgPoints(){return text+' '+last.join(',');},
+      finish(){
+        append(last);
+        return points.slice();
+      }
+    };
+  }
+  return {eraseStroke,createSmoother};
 })();

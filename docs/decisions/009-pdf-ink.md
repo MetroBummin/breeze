@@ -217,3 +217,61 @@ layout reads including the harness, rather than a read per sample. Update only
 history availability during drawing, not every tool/setting control. Diagnostic
 logging is disabled for final device verification and Release; timing measured
 with the verbose input trace enabled is not ordinary app performance evidence.
+
+## Build 170 report: scope lifetime and canonical smoothing (2026-09-26)
+
+The user reports a return of the inertia problem and angular ink in installed
+build 170. The published base for this change is `e51a9483` (PR #35); its Xcode
+project still records build 168. The installed 170 archive, its embedded web
+assets and a new physical trace are not available here. Do not claim an exact
+archive comparison or that a merge deleted the native gate. The native routing
+body from the originally device-verified `37952f7` remains present.
+
+The subsequent web scope cache does have deterministic lifecycle gaps: ancestor
+layout changes can move paper without changing the cache key, invalidations can
+be dropped during pinch, a deferred publication can have no contact-end retry,
+and controls with layout rectangles can remain excluded after becoming inert,
+transparent or pointer-transparent. Mode activation also only scheduled an rAF.
+These are reproduced in the production-function harness, not as UIKit input.
+
+Keep the original native gate and its policy unchanged: the first Pencil during
+actual inertia stops only; the next contact edits immediately. Arm the scope in
+the tool-selection event, invalidate on relevant layout ancestors (including
+while pinching), and publish settled geometry on finger contact end/cancel and
+CSS transition end/cancel. Refresh once at a finger-contact boundary as a safety
+net for layout changes not represented by the old key. Ordinary scroll frames
+reuse content-coordinate paper rectangles. Exclude only visible, interactive
+controls, not invisible/inert overlays. Retain the last committed scope during
+pinch previews; no per-frame full-page scan, fixed delay or synthetic touch.
+
+New pen strokes use incremental midpoint quadratic smoothing, adaptively
+flattened to a maximum normal-geometry chord departure of 0.04 PDF units (with a
+bounded subdivision depth). The tail reaches the latest real sample immediately;
+there is no timer, predicted touch or artificial input delay. Deliberate sharp
+corners/reversals stay sharp and the curve stays in the input convex hull.
+The final touchend position goes through the same page clipping path.
+
+Unlike render-only smoothing of stored raw points, the displayed flattened
+points are the canonical points committed to the existing v1 stroke record.
+Partial erase, repaint, undo/redo and restoration therefore use exactly the
+visible geometry. Already saved strokes and erased fragments are NOT re-smoothed
+or migrated. New strokes may contain more points; dense straight input does not
+receive a fixed oversampling multiplier. A contact retains only its incremental
+smoothing state; release retains the canonical stroke as before.
+
+`tests/verify-pdf-ink-regressions.mjs` is part of `npm test`. At implementation,
+24/24 deterministic tests pass. Running its 10 scope tests against the exact
+upstream source yields 8 failures and 2 passes. Tests cover scope publication,
+ancestor/transition/pinch invalidation, exclusions, constant page reads over 200
+scroll publications, curves/corners/duplicates, preview-save agreement, final
+endpoints, cancellation, page clipping, erasure/history, legacy preservation and
+save failure/retry. These results do not establish physical Pencil latency or
+prove that scope gaps caused every reported build-170 failure.
+
+Before release, run `npm run ios:sync` from the PR source and verify the embedded
+`pdf-ink.js` and `pdf-ink-geometry.js` match it. Then use the same iPad with tracing
+off for ordinary QA: pen and eraser, base and enlarged PDF, repeated finger flick
+-> first Pencil stops without editing -> next Pencil edits; also test immediate
+tool selection, expanded/collapsed chrome, open settings, pinch then flick,
+page gaps, slow/fast curves, Undo/Redo and process restart. If momentum still
+fails, capture a fresh `BREEZE_INK_TRACE=1` run before changing native routing.
