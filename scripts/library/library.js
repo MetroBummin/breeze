@@ -499,6 +499,7 @@ function renderLongformLibrary(){
   cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
   const offered = pendingLongReads();
   offered.forEach(read => grid.appendChild(homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')));
+  grid.appendChild(longformAddCard());
   empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
   empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
 }
