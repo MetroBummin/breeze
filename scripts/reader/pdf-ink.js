@@ -405,12 +405,12 @@ const BreezePdfInk = (()=>{
     cancelGesture('Pencil owns paper');
     closeSettings();
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
-    active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:{color,width,points:[p]},preview:null};
+    active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:{color,width,points:[p]},
+      preview:null,smoother:mode==='pen'?BreezeInkGeometry.createSmoother(p):null};
     trace('stroke/start',event);
     updateHistoryControls();
     if(active.tool==='erase'){erase(state,p);showEraser(p);}
     else{
-      active.smoother=BreezeInkGeometry.createSmoother(p);
       active.preview=path(active.stroke);state.svg.append(active.preview);
     }
   }
