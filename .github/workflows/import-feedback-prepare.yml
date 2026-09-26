@@ -1,0 +1,45 @@
+name: Import feedback preparation
+on:
+  push:
+    branches: [chatgpt/import-feedback-20260926]
+    paths:
+      - tools/apply-import-feedback-fix.mjs
+      - .github/workflows/import-feedback-prepare.yml
+      - tests/verify-import-feedback*.mjs
+permissions:
+  contents: write
+concurrency:
+  group: import-feedback-preparation
+  cancel-in-progress: true
+jobs:
+  prepare:
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/chatgpt/import-feedback-20260926'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Apply guarded presentation-only changes
+        run: node tools/apply-import-feedback-fix.mjs
+      - run: npm test
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Real file import feedback and current shelf
+        run: node tests/verify-import-feedback-browser.mjs
+      - name: Existing Reader notification and Home contracts
+        run: npm run test:reader-notices && npm run test:home-ui
+      - name: Commit validated changes to the isolated branch only
+        run: |
+          git diff --check
+          git add scripts/ui/reader-notifications.js scripts/importers/importers.js scripts/library/library.js tests/verify-import-identity.mjs package.json docs/decisions/005-reader-notifications.md index.html sw.js
+          git diff --cached --stat
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Fix stale file-import progress and refresh the active shelf'
+          git push origin HEAD:refs/heads/chatgpt/import-feedback-20260926
+          git rev-parse HEAD
