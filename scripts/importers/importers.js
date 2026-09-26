@@ -767,12 +767,12 @@ function assembleParagraphs(pages){
   return paras;
 }
 
-async function parsePDF(f){
+async function parsePDF(f, onProgress=toast){
   await ensurePdfLib();
   const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data: await f.arrayBuffer()}).promise;
   const pages = [];
   for(let i=1;i<=pdf.numPages;i++){
-    if(i===1 || i%20===0) toast(`책 기본판 준비 중… ${i}/${pdf.numPages}쪽`);
+    if(i===1 || i%20===0) onProgress(`책 기본판 준비 중… ${i}/${pdf.numPages}쪽`);
     const page = await pdf.getPage(i);
     const h = page.getViewport({scale:1}).height;
     const content = await page.getTextContent();

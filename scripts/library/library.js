@@ -614,22 +614,23 @@ function requestVaultReconnect(row){
 }
 async function reconnectVaultItem(row,file){
   const meta=row.meta||{};
-  toast('같은 읽기자료인지 확인하고 있어요…');
+  const notice=readerNotices.task();
+  notice.progress('같은 읽기자료인지 확인하고 있어요…');
   let prepared=null;
   try{
-    prepared=await prepareImportedFile(file);
+    prepared=await prepareImportedFile(file,{onProgress:notice.progress});
     const same=meta.identity && await vaultFileIdentity(prepared.hash)===meta.identity;
-    if(!same){ await imgPurge(prepared.tmpId+'|'); toast('다른 파일로 보여요. 원래 읽던 파일을 골라주세요'); return; }
+    if(!same){ await imgPurge(prepared.tmpId+'|'); notice.finish('다른 파일로 보여요. 원래 읽던 파일을 골라주세요'); return; }
     const book={id:prepared.id,title:meta.title||prepared.title,author:meta.author||'',kind:prepared.kind,
       paras:[],addedAt:meta.addedAt||Date.now(),fingerprint:prepared.fingerprint};
     await applyPreparedBook(book,prepared,file);
     books=books.filter(one=>one.id!==book.id); books.unshift(book);
     if(meta.position) positions[book.id]=meta.position;
     save(LS_POS,positions); unhideBookLocally(row.book_id); await bookPut(book); queueSync(); renderAllBookViews();
-    toast(meta.position&&meta.position.t?`${readingPercent(meta.position.p)}%부터 이어 읽을 수 있어요`:'파일을 연결했어요');
+    notice.finish(meta.position&&meta.position.t?`${readingPercent(meta.position.p)}%부터 이어 읽을 수 있어요`:'파일을 연결했어요');
   }catch(error){
     if(prepared) await imgPurge(prepared.tmpId+'|');
-    console.error(error); toast('파일을 연결하지 못했어요: '+(error.message||error));
+    console.error(error); notice.finish('파일을 연결하지 못했어요: '+(error.message||error));
   }
 }
 /* Dragging over a child element fires dragleave on the parent, so the overlay
@@ -697,7 +698,7 @@ async function prepareImportedFile(file, options={}){
   try{
     const hash = await rawFileHash(file);
     let parsed;
-    if(kind === 'pdf') parsed = await parsePDF(file);
+    if(kind === 'pdf') parsed = await parsePDF(file,options.onProgress);
     else if(kind === 'epub') parsed = await parseEPUB(file, tmpId);
     else parsed = parseTXT(await file.text(), options);
 
@@ -776,24 +777,26 @@ async function applyPreparedBook(target, prepared, file){
 }
 async function reconnectOriginalFile(target,file){
   if(!/\.(pdf|epub)$/i.test(file.name)){ toast('원본은 PDF 또는 EPUB 파일을 골라주세요'); return; }
-  toast('같은 책인지 확인하고 있어요…');
+  const notice=readerNotices.task();
+  notice.progress('같은 책인지 확인하고 있어요…');
   let prepared = null;
   try{
-    prepared = await prepareImportedFile(file);
+    prepared = await prepareImportedFile(file,{onProgress:notice.progress});
     const record=await originalGetForBook(target);
     const knownHash=(record&&record.hash)||(target.original&&target.original.hash)||target.sourceHash||'';
     if(!knownHash||prepared.hash!==knownHash){
       imgPurge(prepared.tmpId+'|');
-      toast(knownHash?'다른 파일로 보여요. 원래 반입했던 파일을 골라주세요':'이전 기록에는 안전한 파일 ID가 없어 자동 연결할 수 없어요. 새 책으로 추가해 주세요');
+      notice.finish(knownHash?'다른 파일로 보여요. 원래 반입했던 파일을 골라주세요':'이전 기록에는 안전한 파일 ID가 없어 자동 연결할 수 없어요. 새 책으로 추가해 주세요');
       return;
     }
     await applyPreparedBook(target,prepared,file);
-    toast('원본을 연결했어요');
+    renderAllBookViews();
+    notice.finish('원본을 연결했어요');
     if(curBook && curBook.id === target.id) await switchReaderMode('original',{reload:true});
   }catch(error){
     if(prepared) imgPurge(prepared.tmpId+'|');
     console.error(error);
-    toast('원본을 연결하지 못했어요: '+(error.message||error));
+    notice.finish('원본을 연결하지 못했어요: '+(error.message||error));
   }
 }
 /* `extra`는 파일에서 알 수 없는 것만 얹습니다 — 지금은 내장 고전의
@@ -807,22 +810,23 @@ async function importFile(file, extra, options={}){
     return;
   }
   if(!/\.(pdf|epub|txt)$/i.test(file.name)){ toast('PDF, EPUB, TXT 파일만 지원해요'); return; }
-  toast('책을 준비하고 있어요…');
+  const notice=readerNotices.task();
+  notice.progress('책을 준비하고 있어요…');
   let prepared = null;
   try{
-    prepared = await prepareImportedFile(file,options);
+    prepared = await prepareImportedFile(file,{...options,onProgress:notice.progress});
     let already = books.find(book=>book.id===prepared.id || book.sourceHash===prepared.hash || (book.original&&book.original.hash===prepared.hash));
     if(!already) already=await originalBookForHash(books,prepared.hash);
     if(already){
       if(prepared.kind === 'txt'){
         imgPurge(prepared.tmpId+'|');
-        toast(`이미 있는 책이에요 — "${already.title}"`);
+        notice.finish(`이미 있는 책이에요 — "${already.title}"`);
         return;
       }
       Object.assign(already, extra);      // 같은 고전을 다시 받았을 때 표시가 남도록
       await applyPreparedBook(already,prepared,file);
-      renderHome();
-      toast(`기존 책에 원본을 연결했어요 — "${already.title}"`);
+      renderAllBookViews();
+      notice.finish(`기존 책에 원본을 연결했어요 — "${already.title}"`);
       return;
     }
 
@@ -841,7 +845,7 @@ async function importFile(file, extra, options={}){
       books=books.filter(one=>one.id!==book.id); books.unshift(book);
       save(LS_POS,positions); unhideBookLocally(saved.id); unhideBookLocally(book.id);
       await bookPut(book); queueSync(); renderAllBookViews();
-      toast(saved.position&&saved.position.t
+      notice.finish(saved.position&&saved.position.t
         ? `${readingPercent(saved.position.p)}%부터 이어 읽을 수 있어요`
         : '이전에 보관한 책을 다시 연결했어요');
       return;
@@ -850,11 +854,11 @@ async function importFile(file, extra, options={}){
     const id = prepared.id;
     if(prepared.kind === 'epub') await imgRename(prepared.tmpId,id);
     const paras = remapImportedImages(prepared.paras,prepared.tmpId,id);
-    let original = null;
+    let original = null, originalFailed = false;
     try{ original = await storeLocalOriginal(id,file,prepared.kind,prepared.hash); }
     catch(storageError){
       console.warn('Original file storage failed:',storageError);
-      toast('책은 추가했지만 원본 파일을 기기에 보관하지 못했어요');
+      originalFailed = true;
     }
     const book = {id,title:prepared.title,kind:prepared.kind,paras,addedAt:Date.now(),
       cover:prepared.cover ? prepared.cover.replace(prepared.tmpId,id) : '',
@@ -866,9 +870,10 @@ async function importFile(file, extra, options={}){
     book.sourceModified=prepared.lastModified||0;
     await bookPut(book);
     books.unshift(book);
-    renderHome();
-    toast(original
+    renderAllBookViews();
+    notice.finish(original
       ? '추가 완료! 원본과 편한 글자 모드를 모두 준비했어요'
+      : originalFailed ? '책은 추가했지만 원본 파일을 기기에 보관하지 못했어요'
       : '추가 완료! 카드를 눌러 읽기 시작하세요');
   }catch(error){
     if(prepared) imgPurge(prepared.tmpId+'|');
@@ -876,10 +881,10 @@ async function importFile(file, extra, options={}){
     /* 잠긴 책은 실패가 아니라 사실입니다. "읽지 못했어요"라고 하면 앱이 고장 난
        줄 알지만, 잠겼다고 하면 다른 파일을 찾아볼 생각을 합니다. */
     if(error && error.drm){
-      toast('저작권 보호(DRM)가 걸린 책이에요. DRM이 없는 EPUB·PDF는 열려요');
+      notice.finish('저작권 보호(DRM)가 걸린 책이에요. DRM이 없는 EPUB·PDF는 열려요');
       return;
     }
-    toast('파일을 읽지 못했어요: '+(error.message||error));
+    notice.finish('파일을 읽지 못했어요: '+(error.message||error));
   }
 }
 

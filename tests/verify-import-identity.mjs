@@ -59,7 +59,8 @@ function importWorld(localBooks,records){
     remapImportedImages:paras=>paras,
     storeLocalOriginal:async id=>{events.originalWrites.push(id);return {kind:'epub',hash,storedAt:1};},
     bookPut:async book=>events.saved.push(book),
-    renderHome:()=>events.rendered++,toast:message=>events.messages.push(message),
+    renderAllBookViews:()=>events.rendered++,toast:message=>events.messages.push(message),
+    readerNotices:{task:()=>({progress:message=>events.messages.push(message),finish:message=>events.messages.push(message)})},
   });
   return {...fixture,context,events,positions};
 }

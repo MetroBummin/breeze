@@ -24,3 +24,24 @@ lookup/gesture lifecycle tests, and shared Home/Reader controls regressions.
 ## Quiet feedback
 
 Word removal is visible in the card and highlight, so it has no toast. Mode switching is visible in the document and mode button, so it has no announcement. Quota errors stay in the lookup that owns the failure, without a second delayed pill notice. Playback failures, storage failures, recovery-key and device-pairing notices remain actionable feedback.
+
+## File-import progress (2026-09-26)
+
+File addition and original-file reconnection own a per-operation status token.
+Progress replaces that token's active or pending message; it never adds old page
+counts to the FIFO. Success, duplication, a partial original-storage warning, or
+failure replaces the same token and closes it, so late progress cannot overwrite
+the result. A successful/partial addition is reported only after the book write
+has succeeded. Other tasks and ordinary informational notices keep their FIFO
+order, bounds, expiry, input priority and plain-text presentation.
+
+Navigation/session resets invalidate an operation's notice token without
+cancelling its import. No old progress or result follows the user into another
+Reader session. On completion, the existing renderAllBookViews helper refreshes
+the currently visible shelf; hidden Home/shelf DOM is not rebuilt. Destination
+navigation still renders fresh data as before. PDF text extraction, saved book
+identities, Reader/ink/lookup behavior and dormant sharing are unchanged.
+
+Validate with node --test tests/verify-import-feedback.mjs and
+node tests/verify-import-feedback-browser.mjs, plus the existing notification,
+ingestion, storage, Home/Reader and ink regression suites.
