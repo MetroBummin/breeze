@@ -208,6 +208,10 @@ gets 3 seconds before relay; optional image fetching gets 2 seconds direct plus
 4 seconds relay, with fallback covers fetched in the same parallel batch.
 Images are still persisted before Reader opens to preserve offline semantics;
 this change bounds that wait rather than changing paragraph identity mid-read.
+An image attempt includes the complete body read and validation, not only HTTP
+headers. A direct body timeout, empty image or non-image response still tries
+the existing relay within its four-second budget; the two-second direct budget
+is unchanged. A complete valid direct image needs no relay request.
 
 Regression fixtures in Chromium and WebKit hold one source unresolved while
 asserting another is visible, preserve card nodes through completion, recover a

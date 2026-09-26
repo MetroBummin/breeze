@@ -252,22 +252,24 @@ async function fetchArticleHtml(url, location = {}){
 /* 사진 한 장 가져오기. 스스로 CORS를 열어 둔 곳은 바로, 아니면 중계를 거칩니다.
    못 받으면 null — 사진 하나 때문에 기사를 통째로 못 읽으면 손해입니다. */
 async function fetchArticleImage(url){
-  let response = null;
-  try{ response = await fetch(url, {credentials:'omit', signal:AbortSignal.timeout(2000)}); }catch(e){}
-  if(!response || !response.ok){
-    const endpoint = articleProxyUrl(url, 'image');
-    if(!endpoint) return null;
-    response = null;
+  // Headers alone are not a downloaded image. A direct body can still time out,
+  // be empty or contain a challenge page, so validate it before skipping relay.
+  const attempt=async(target,options)=>{
+    let response;
     try{
-      response = await fetch(endpoint, {
-        signal:AbortSignal.timeout(4000), headers:{ 'Authorization':'Bearer ' + SB_KEY, 'apikey': SB_KEY }
-      });
-    }catch(e){}
-  }
-  if(!response || !response.ok) return null;
-  const blob = await response.blob().catch(()=>null);
-  if(!blob || !blob.size || !/^image\//.test(blob.type) || /svg/.test(blob.type)) return null;
-  return blob;
+      response=await fetch(target,options);
+      if(!response.ok)return null;
+      const blob=await response.blob();
+      return blob.size&&/^image\//.test(blob.type)&&!/svg/.test(blob.type)?blob:null;
+    }catch{return null;}
+    finally{if(response?.body&&!response.bodyUsed)void response.body.cancel().catch(()=>{});}
+  };
+  const direct=await attempt(url,{credentials:'omit',signal:AbortSignal.timeout(2000)});
+  if(direct)return direct;
+  const endpoint=articleProxyUrl(url,'image');
+  return endpoint?attempt(endpoint,{
+    signal:AbortSignal.timeout(4000),headers:{'Authorization':'Bearer '+SB_KEY,'apikey':SB_KEY}
+  }):null;
 }
 /* 사진은 넣는 순간 기기에 담습니다. 나중에 비행기 안에서도 같은 화면이
    나와야 하고, 읽을 때마다 그 매체 서버에 발자국을 남기지 않기 위해서입니다.

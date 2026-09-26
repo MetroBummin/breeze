@@ -109,3 +109,36 @@ Chromium/WebKit executables are unavailable in this workspace, so the expanded
 browser suite was not executed here. Browser CI, real iOS storage/rendering,
 device import latency and a physical share-sheet round trip remain separate
 checks. No production deployment or native app build is implied by this report.
+
+
+## Follow-up: complete image responses and live offline verification
+
+After the initial PR, the full Chromium/WebKit CI passed on `ffaacd9`, including
+native IndexedDB and the corrected existing device-polish test. The user then
+authorized actual photo verification followed by main merge and web deployment.
+
+A further image-transport defect was reproduced using a real PNG in a native
+Response stream: HTTP 200 headers followed by a body that exceeded the direct
+two-second deadline returned null without attempting the relay. Image transport
+now treats headers, the complete body, and existing MIME/nonempty validation as
+one attempt. A failed or unusable direct body proceeds to the existing relay.
+The two-second direct and four-second relay budgets and parallel image batch
+remain unchanged. `tests/verify-article-image-transport.mjs` exercises slow and
+interrupted bodies, invalid bodies, relay validation, exact successful bytes,
+and bounded attempts.
+
+`tests/verify-live-social-media-browser.mjs` is the opt-in public-network check
+for the reported URL. It uses the real application, production source relay and
+actual photo bytes in persistent Chromium and WebKit contexts. It requires all
+eight images to be downloaded, stored in native IndexedDB and decoded; after
+reloading the application it disables networking and verifies the saved images
+again through the Reader image resolver, including their byte hashes. It does
+not substitute captured article HTML or synthetic photo responses.
+
+Run it with `node tests/verify-live-social-media-browser.mjs`. The Social import
+workflow exposes a manual `live_media` input and the PR marker
+`[verify-live-social-media]` so public service availability is checked explicitly
+without making every ordinary fixture run depend on X. Live assertions remain
+strict; there is no success skip or extra retry budget. Executed run links and
+deployment status are recorded on PR #37. This browser verification does not
+represent a physical iPhone share-sheet or native App Store build test.
