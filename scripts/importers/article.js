@@ -386,11 +386,40 @@ function parseFeedArticle(entry){
 const articleJobs = new Map();
 const articleDrafts = new WeakMap();
 const articleCommitJobs = new Map();
-function makeArticleDraft(parsed, extra, fallbackPhoto=''){
+function makeArticleDraft(parsed, extra, fallbackPhoto='',repairId=''){
   const draft={id:'preview:'+articleUrlKey(extra.sourceUrl),kind:'article',transient:true,
     title:parsed.title,paras:parsed.paras,formatting:parsed.formatting,...extra,cover:null};
-  articleDrafts.set(draft,{parsed,extra,fallbackPhoto,coverUrl:parsed.cover||fallbackPhoto,saved:null,missed:0});
+  articleDrafts.set(draft,{parsed,extra,fallbackPhoto,repairId,coverUrl:parsed.cover||fallbackPhoto,saved:null,missed:0});
   return draft;
+}
+function articleNeedsSourceRefresh(book){
+  return typeof socialSavedNeedsRefresh==='function'&&socialSavedNeedsRefresh(book);
+}
+const articleBookRepairJobs=new Map();
+async function waitForArticleBookRepair(book){
+  try{await articleBookRepairJobs.get(book.id);}catch{} // A failed repair leaves the old item editable.
+}
+async function repairIncompleteSocialBook(existing,parsed,extra){
+  // Reimporting a known link-only oEmbed artifact repairs the same local item.
+  // Do not mutate memory or discard the old record before the durable write.
+  const title=!existing.renamedAt&&socialLinkOnlyText(existing.title)?parsed.title:existing.title;
+  const content=title===parsed.title?parsed:articleAssemble(title,parsed.blocks);
+  const book={...existing,...extra,id:existing.id,addedAt:existing.addedAt,sourceUrl:existing.sourceUrl,
+    title,paras:content.paras,formatting:content.formatting,fingerprint:bookContentFingerprint(content.paras),
+    textAvailable:true,sourceMap:null,layoutSignals:null,original:null,localSourceAt:Date.now(),
+    cover:existing.coverUpdatedAt?existing.cover:existing.cover||extra.cover,
+    imgSrc:{...(existing.imgSrc||{}),...(extra.imgSrc||{})}};
+  const job=(async()=>{
+    await bookPut(book);
+    Object.assign(existing,book); // Keep Reader/edit-sheet references on this record current.
+    const index=books.findIndex(item=>item.id===existing.id);
+    if(index>=0)books[index]=existing;else books.unshift(existing);
+    renderHome();queueSync();
+    return existing;
+  })();
+  articleBookRepairJobs.set(existing.id,job);
+  try{return await job;}
+  finally{if(articleBookRepairJobs.get(existing.id)===job)articleBookRepairJobs.delete(existing.id);}
 }
 async function commitArticleDraft(draft){
   const state=articleDrafts.get(draft);
@@ -398,7 +427,8 @@ async function commitArticleDraft(draft){
   if(state.saved)return state.saved;
   const key=articleUrlKey(state.extra.sourceUrl);
   const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===key);
-  if(existing){state.saved=existing;return existing;}
+  if(state.repairId&&existing?.id!==state.repairId)throw socialImportError('cancelled');
+  if(existing&&!articleNeedsSourceRefresh(existing)){state.saved=existing;return existing;}
   let job=articleCommitJobs.get(key);
   if(!job){
     job=(async()=>{
@@ -406,8 +436,15 @@ async function commitArticleDraft(draft){
       // failed save can be retried, with exactly the same original evidence.
       const parsed={...state.parsed,blocks:state.parsed.blocks.map(block=>({...block}))};
       const photos=await attachArticleImages(parsed,state.fallbackPhoto);
-      const book=await saveCasualBook(parsed,{...state.extra,
-        cover:parsed.cover||null,imgSrc:parsed.imgSrc||null},{present:false});
+      // If an image-only post loses every photo, it is still not a readable book.
+      if(parsed.social&&!parsed.blocks.some(block=>block.r==='img')
+        &&(!parsed.blocks.length||socialLinkOnlyText(parsed.blocks.map(block=>block.t).join('\n'))))throw socialImportError('incomplete');
+      const extra={...state.extra,cover:parsed.cover||null,imgSrc:parsed.imgSrc||null};
+      const current=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===key);
+      if(state.repairId&&current?.id!==state.repairId)throw socialImportError('cancelled');
+      const book=current&&articleNeedsSourceRefresh(current)
+        ? await repairIncompleteSocialBook(current,parsed,extra)
+        : current||await saveCasualBook(parsed,extra,{present:false});
       state.missed=photos.missed;
       return book;
     })();
@@ -422,7 +459,7 @@ async function ingestArticle(url, options = {}){
   if(!job){
     job=(async()=>{
       const existing=books.find(book=>[book.sourceUrl,book.resolvedUrl,book.discoveredFromUrl].some(source=>{try{return source&&articleUrlKey(source)===key;}catch{return false;}}));
-      if(existing)return existing;
+      if(existing&&!articleNeedsSourceRefresh(existing))return existing;
       const location={};let parsed=options.preparedArticle||parseFeedArticle(options);
       if(!parsed){
         if(typeof socialUrlInfo==='function' && socialUrlInfo(url))parsed=await loadSocialArticle(url);
@@ -436,7 +473,7 @@ async function ingestArticle(url, options = {}){
       return makeArticleDraft(parsed,{kind:'article',site:parsed.site||options.source,sourceUrl:url,
         resolvedUrl:parsed.url,discoveredFromUrl:options.discoveredFromUrl||'',author:parsed.author,
         ...(parsed.social?{social:parsed.social,contentType:parsed.contentType}:{}),
-        publishedAt:parsed.publishedAt},options.photo);
+        publishedAt:parsed.publishedAt},options.photo,existing?.id||'');
     })();
     articleJobs.set(key,job);
   }

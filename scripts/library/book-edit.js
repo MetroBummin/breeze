@@ -68,21 +68,30 @@ async function pickCoverFile(input){
   input.value = '';
   if(!file || !editTarget) return;
   if(!/^image\//.test(file.type)){ toast('그림 파일을 골라주세요'); return; }
-  const key = editTarget.id + '|cover';
+  const book = editTarget;
+  const key = book.id + '|cover';
   await imgPut(key, file);
-  editTarget.cover = key;
-  editTarget.coverSourcePage = '';
-  editTarget.coverUpdatedAt = Date.now();
-  await bookPut(editTarget);
+  if(typeof waitForArticleBookRepair==='function') await waitForArticleBookRepair(book);
+  if(editTarget !== book) return;
+  book.cover = key;
+  book.coverSourcePage = '';
+  book.coverUpdatedAt = Date.now();
+  await bookPut(book);
   queueSync();
-  renderCoverChoices(editTarget);
-  document.getElementById('ed-cover-source').hidden = true;
+  if(editTarget === book){
+    renderCoverChoices(book);
+    document.getElementById('ed-cover-source').hidden = true;
+  }
   renderAllBookViews();
 }
 
 async function saveEditSheet(){
   if(!editTarget) return;
   const book = editTarget;
+  // A source repair keeps this object, but replaces its content only after its
+  // durable write. Save edits after that boundary so old text cannot win later.
+  if(typeof waitForArticleBookRepair==='function') await waitForArticleBookRepair(book);
+  if(editTarget !== book) return;
   const typed = document.getElementById('ed-title').value.trim();
   const picked = document.getElementById('ed-covers').dataset.pick || '';
   let changed = false;
@@ -101,7 +110,7 @@ async function saveEditSheet(){
   if(!changed){ closeEditSheet(); return; }
 
   await bookPut(book);
-  closeEditSheet();
+  if(editTarget === book) closeEditSheet();
   renderAllBookViews();
   toast('바꿨어요');
   queueSync();
@@ -119,5 +128,6 @@ async function runDelete(){
   const book = editTarget;
   if(!book) return;
   closeEditSheet();
+  if(typeof waitForArticleBookRepair==='function') await waitForArticleBookRepair(book);
   await deleteBook(book);
 }

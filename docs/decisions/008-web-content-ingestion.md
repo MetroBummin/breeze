@@ -268,6 +268,17 @@ changes the card jacket; it does not insert an image into the article body.
 
 ## Integrity follow-up
 New article/paste identity uses SHA-256 of every paragraph with exact case and boundaries. Exact legacy content retains its existing ID. Durable book/original/owned-image deletion is one IndexedDB transaction and excludes shared references. A failed library read is not an empty library. The article relay validates and pins public DNS destinations per redirect and enforces streaming byte limits; deploy its new transport together with the entry point.
+
+File imports keep their existing in-memory ID/full-file-hash checks. On a miss,
+the duplicate fallback reads direct original records in book order within one
+readonly transaction, using keys first to avoid reading nonexistent originals.
+Persisted hashes remain checked even when book metadata exists, preserving legacy
+and inconsistent-metadata matches. Orphan originals do not become new books. The
+fallback does not load the full originals collection at once or repair unrelated aliases; the
+existing Reader/reconnect path still performs legacy hash recovery when needed.
+Storage failures remain observable and the transaction must complete before the
+import can proceed. `tests/verify-import-identity.mjs` covers these boundaries.
+
 On Supabase Edge Runtime, the Node HTTP shim rejects a custom socket `lookup`.
 The relay therefore connects to the validated IP via Deno TCP, upgrades the
 same socket to TLS with the original hostname for SNI and certificate checking,
@@ -334,8 +345,11 @@ Threads timelines. Supported canonical identities are X status / i-web-status
 (including twitter.com/mobile and media suffixes), X Article, and Threads
 @handle/post on threads.net or threads.com. Profiles/search/Spaces are rejected.
 
-X status imports try the official public oEmbed response, then one public HTML
-response if the body is missing or appears truncated. The relay exposes only
+X status imports try one public HTML response first, preserving the requested
+post's full Article body and owned photos when present. Official public oEmbed
+remains a short-post fallback when HTML does not provide a usable body, within
+the same 18-second source deadline. Link-only embeds, including opaque t.co
+links, are incomplete content and cannot become saved books. The relay exposes only
 `as=x-oembed`, constructs a fixed publish.x.com/oembed target, and reuses pinned
 public-DNS, redirect, byte and concurrency defenses. It is not a generic JSON
 proxy. It uses no API key, cookies, account login, private GraphQL or mirror.
@@ -343,6 +357,10 @@ The oEmbed HTML is parsed in an inert document, never injected or executed.
 
 Threads and X Articles require explicit target-matching public JSON-LD body or
 an identified public DOM body. OG description is not full article evidence.
+X's public Article microdata can identify a full article inside a status share:
+the canonical page, Article identity and enclosing post permalink must agree.
+Only its rendered article body and declared cover are parsed; nested posts and
+Article scopes are excluded. No hydration state or private endpoint is used.
 Login, declared restricted content, malformed/oversized input, target mismatch
 and obvious truncation fail with an original-link recovery path. No empty
 book is saved. Short posts do not use the normal article 500-character floor.
@@ -350,7 +368,9 @@ X Articles keep that minimum and are not accepted from an Article-card teaser.
 
 Line breaks, safe inline links/emphasis, author/date and available image URLs
 are preserved in ordinary Reader blocks. Unsupported video/audio remains an
-original-source reference, not downloaded or transcribed. Imported content
+original-source reference, not downloaded or transcribed. The importer
+also preserves linked body images and public video poster thumbnails in source
+order within the existing eight-image limit, including the cover. Imported content
 records `social.platform/id/scope/extraction`. Scope is explicitly single-post
 or article; replies, quotes from other people and a thread's unseen continuation
 are not stitched or represented as a complete thread. The user receives a
@@ -364,6 +384,12 @@ Source IDs participate in social book identity so identical posts from different
 authors are not misattributed through whole-text deduplication. Ordinary article
 and paste identity, latest-intent navigation, offline image storage and read
 progress remain the shared contracts from PR #24.
+
+An explicit reimport may repair an existing X oEmbed record whose body contains
+only URLs. It fetches and validates the source before a durable in-place update,
+retaining the local ID, added time, reading positions and manual title/cover
+choices. Failed retrieval or persistence leaves the prior book intact. Ordinary
+short posts, manually pasted links and image-bearing books are not migrated.
 
 ### Evidence and release boundary
 
