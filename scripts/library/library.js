@@ -812,12 +812,7 @@ async function importFile(file, extra, options={}){
   try{
     prepared = await prepareImportedFile(file,options);
     let already = books.find(book=>book.id===prepared.id || book.sourceHash===prepared.hash || (book.original&&book.original.hash===prepared.hash));
-    if(!already){
-      for(const book of books){
-        const record=await originalGetForBook(book);
-        if(record&&record.hash===prepared.hash){ already=book; break; }
-      }
-    }
+    if(!already) already=await originalBookForHash(books,prepared.hash);
     if(already){
       if(prepared.kind === 'txt'){
         imgPurge(prepared.tmpId+'|');

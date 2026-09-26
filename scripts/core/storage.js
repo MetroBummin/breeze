@@ -137,6 +137,34 @@ async function originalGetForBook(book){
   }
   return recovered;
 }
+/* File import calls this only after its in-memory ID/hash checks miss. An alias
+   recovery can then only find a different hash, so inspect direct records in one
+   read transaction instead of recovering unrelated books. Read their hashes even
+   when metadata exists: a legacy/torn record can disagree with that metadata. */
+async function originalBookForHash(candidates,hash){
+  const ordered=(candidates||[]).filter(book=>book&&book.id);
+  if(!hash || !ordered.length) return null;
+  return localTransaction(await idb(),'originals','readonly',(tx,done)=>{
+    const store=tx.objectStore('originals'),keys=store.getAllKeys();
+    keys.onsuccess=()=>{
+      const present=new Set(keys.result);let index=0;
+      const next=()=>{
+        while(index<ordered.length){
+          const book=ordered[index++];
+          if(!present.has(book.id)) continue;
+          const request=store.get(book.id);
+          request.onsuccess=()=>{
+            if(request.result && request.result.hash===hash){done(book);return;}
+            next();
+          };
+          return;
+        }
+        done(null);
+      };
+      next();
+    };
+  });
+}
 async function originalDel(id){return localDelete('originals',id);}
 async function vaultPut(key,value){return localPut('vault',key,value);}
 async function vaultGet(key){ try{ const db=await idb(); return await new Promise(res=>{

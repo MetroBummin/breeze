@@ -3,6 +3,11 @@ on:
   pull_request:
     paths: ['scripts/importers/**', 'scripts/library/library.js', 'server/article/**', 'tests/*social*', '.github/workflows/social-import.yml']
   workflow_dispatch:
+    inputs:
+      live_media:
+        description: 'Check the public X Article and its stored images against live services'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -30,3 +35,22 @@ jobs:
       - run: node tests/verify-social-import-browser.mjs
       - run: npm run test:ingestion
       - run: npm test
+  live-media:
+    # Public network availability is checked explicitly, not on every fixture run.
+    # Opt in from the PR body with [verify-live-social-media], or the manual input.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.live_media) ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.body, '[verify-live-social-media]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/verify-live-social-media-browser.mjs
