@@ -56,11 +56,16 @@ try{
     await page.evaluate(()=>expandReaderChrome());
     const writing=await page.locator('[data-ink-toggle]').getAttribute('aria-pressed')==='true';
     if(m==='read'){if(writing)await page.locator('[data-ink-toggle]').click();}
-    else{if(!writing)await page.locator('[data-ink-toggle]').click();await page.locator(`[data-ink-mode="${m}"]`).click();}
+    else{
+     if(!writing)await page.locator('[data-ink-toggle]').click();
+     const button=page.locator(`[data-ink-mode="${m}"]`);
+     if(await button.getAttribute('aria-pressed')!=='true')await button.click();
+    }
    };
    const setting=async(kind,value)=>{
     const tool=kind==='radius'?'erase':'pen';
     const button=page.locator(`[data-ink-mode="${tool}"]`);
+    if(await button.getAttribute('aria-pressed')!=='true')await button.click();
     if(await button.getAttribute('aria-expanded')!=='true')await button.click();
     await page.locator(`[data-ink-${kind}="${value}"]`).click();
     assert.equal(await page.locator(`[data-ink-${kind}="${value}"]`).getAttribute('aria-pressed'),'true');
@@ -85,9 +90,23 @@ try{
     return prevented;
    },{points,pageNumber,type,cancel,noncancel,palm});
    assert.equal(await page.locator('[data-ink-mode="pen"]').getAttribute('aria-pressed'),'true');
+   const penButton=page.locator('[data-ink-mode="pen"]'),eraserButton=page.locator('[data-ink-mode="erase"]');
+   const settings=page.locator('#pdf-ink-settings');
+   assert.equal(await settings.isVisible(),false,'entry selects pen without opening settings');
+   await penButton.click();assert.equal(await settings.isVisible(),true,'selected pen opens settings');
+   await penButton.click();assert.equal(await settings.isVisible(),false,'selected pen closes settings');
+   await eraserButton.click();
+   assert.equal(await eraserButton.getAttribute('aria-pressed'),'true');
+   assert.equal(await settings.isVisible(),false,'switching to eraser only selects it');
+   await eraserButton.click();assert.equal(await settings.isVisible(),true,'selected eraser opens settings');
+   await penButton.click();
+   assert.equal(await penButton.getAttribute('aria-pressed'),'true');
+   assert.equal(await settings.isVisible(),false,'switching tools closes prior settings');
+   await penButton.click();assert.equal(await settings.isVisible(),true);
    await context.setOffline(true);
    assert.equal(await page.locator('[data-ink-toggle]').isVisible(),true);
    assert.equal(await stroke([[.2,.2],[.3,.22],[.4,.2]],{palm:true}),true);
+   assert.equal(await settings.isVisible(),false,'first Pencil contact closes settings and draws');
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    assert.equal(await count(),1);
    const traceRoutes=await page.evaluate(()=>window.qaInkTrace.map(row=>row.route));
@@ -145,7 +164,10 @@ try{
    await page.evaluate(()=>renderOriginalPdfPage(originalSession,1));assert.equal(await count(),1);
    await setting('color','#111111');
    await setting('width','1.5');
-   await mode('erase');await stroke([[.2,.2],[.3,.22],[.4,.2]]);assert.equal(await count(),0);
+   await mode('erase');assert.equal(await settings.isVisible(),false);
+   await eraserButton.click();assert.equal(await settings.isVisible(),true);
+   await stroke([[.2,.2],[.3,.22],[.4,.2]]);assert.equal(await count(),0);
+   assert.equal(await settings.isVisible(),false,'first eraser contact closes settings and erases');
    await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    await page.locator('[data-ink-redo]').click();assert.equal(await count(),0);
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
