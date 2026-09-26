@@ -197,10 +197,12 @@ DEBUG tracing can capture native-only failures before any web trace arrives;
 ordinary Release builds still contain no input trace handler.
 
 ### Tool settings, partial erasure and input cost
-The user requested pen/eraser options above the pill. Selecting either tool opens
-a non-modal settings surface; pen contains the existing three colors/widths,
-eraser contains page-coordinate radii 4, 8 and 16. Tap the tool again, tap outside,
-start paper input or press Escape to close it. Settings never reflow the paper.
+The user requested pen/eraser options above the pill. Switching tools selects
+the new tool without opening settings; tapping the already selected tool toggles
+its non-modal settings surface. Pen contains the existing three colors/widths,
+eraser contains page-coordinate radii 4, 8 and 16. Tap outside, start paper
+input or press Escape to close settings. The first Pencil contact on paper closes
+settings and edits with that same contact. Settings never reflow the paper.
 
 Eraser input cuts only covered polyline segments, using the swept capsule between
 consecutive samples (plus half the ink width). Sparse, fast movements therefore

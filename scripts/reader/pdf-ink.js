@@ -132,8 +132,13 @@ const BreezePdfInk = (()=>{
   }
   function closeSettings(){if(settingsTool){settingsTool=null;updateSettings();}}
   function selectTool(tool){
-    const show=settingsTool!==tool;
-    setMode(tool);settingsTool=show?tool:null;updateSettings();
+    if(mode!==tool){
+      settingsTool=null;
+      setMode(tool);
+    }else{
+      settingsTool=settingsTool===tool?null:tool;
+      updateSettings();
+    }
   }
   function icon(path){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;}
   function inkControl(label,path,className=''){
