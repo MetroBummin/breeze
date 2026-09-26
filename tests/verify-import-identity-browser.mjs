@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {createServer} from 'node:http';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {chromium,webkit} from 'playwright';
 
 const storage=readFileSync(new URL('../scripts/core/storage.js',import.meta.url),'utf8');
@@ -13,9 +15,13 @@ const url=`http://127.0.0.1:${server.address().port}/`;
 
 try{
   for(const engine of [chromium,webkit]){
-    const browser=await engine.launch();
+    // Match the existing PDF regressions: WebKit needs a persistent profile for
+    // native Blob writes to IndexedDB. Keep real original records and byte checks.
+    const profile=mkdtempSync(join(tmpdir(),'breeze-import-identity-'));
+    let context;
     try{
-      const page=await browser.newPage({serviceWorkers:'block'}),errors=[];
+      context=await engine.launchPersistentContext(profile,{headless:true,serviceWorkers:'block'});
+      const page=await context.newPage(),errors=[];
       page.on('pageerror',error=>errors.push(error.message));
       await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
       await page.goto(url,{waitUntil:'domcontentloaded'});
@@ -35,7 +41,7 @@ try{
           await localTransaction(db,['books','originals'],'readwrite',tx=>{
             const bs=tx.objectStore('books'),os=tx.objectStore('originals');bs.clear();os.clear();
             books.forEach(book=>bs.put(book,book.id));originals.forEach(([key,record])=>os.put(record,key));
-          });
+          }).catch(error=>{throw Error('Seed books/originals: '+error.name+': '+error.message);});
           save('fixture.positions',Object.fromEntries(books.map(book=>[book.id,{p:.63,pi:7,t:123,mode:'original'}])));
         };
         identityQA.snapshot=async()=>({
@@ -155,6 +161,6 @@ try{
       assert.deepEqual(recovery.lookup.value.bytes,old.bytes);assert.equal(recovery.lookup.value.type,old.type);
       assert.deepEqual(errors,[]);
       console.log(engine.name()+': import identity uses native IndexedDB transactions; 120-book miss, stale metadata, abort, empty/orphan originals and byte-preserving legacy recovery passed');
-    }finally{await browser.close();}
+    }finally{try{await context?.close();}finally{rmSync(profile,{recursive:true,force:true});}}
   }
 }finally{await new Promise(resolve=>server.close(resolve));}
