@@ -60,7 +60,7 @@ If the old item disappears while source/images are being fetched, committing
 that repair is cancelled instead of creating a replacement item. Ordinary saved
 posts and pasted URLs are not part of this repair path.
 
-## Executed checks
+## Initial workspace checks
 
 An isolated JSDOM and fake-indexeddb harness executed the production parser,
 loader, image attachment, storage and article save functions. **21 targeted
@@ -99,16 +99,17 @@ successfully. A separate review rechecked native-fallback rejection for a wrong
 Article ID, a hidden Article body and a quoted post's text/photos; the exact
 captured Article still extracted 224 paragraphs and eight image blocks.
 
-## Browser and device boundary
+## Initial browser and device boundary
 
 `tests/verify-social-import-browser.mjs` now includes the public Article fixture,
 short-link rejection, photo ownership, source ordering and repair regressions.
 The fixture contains original synthetic prose and the observed public markup
 shape; the third-party article body is not committed to the repository.
 Chromium/WebKit executables are unavailable in this workspace, so the expanded
-browser suite was not executed here. Browser CI, real iOS storage/rendering,
-device import latency and a physical share-sheet round trip remain separate
-checks. No production deployment or native app build is implied by this report.
+browser suite was executed through CI in the follow-up below. Real iOS
+storage/rendering, device import latency and a physical share-sheet round trip
+remain separate checks. A native app build is not implied by browser CI or a
+web deployment.
 
 
 ## Follow-up: complete image responses and live offline verification
@@ -131,9 +132,40 @@ and bounded attempts.
 for the reported URL. It uses the real application, production source relay and
 actual photo bytes in persistent Chromium and WebKit contexts. It requires all
 eight images to be downloaded, stored in native IndexedDB and decoded; after
-reloading the application it disables networking and verifies the saved images
-again through the Reader image resolver, including their byte hashes. It does
-not substitute captured article HTML or synthetic photo responses.
+reloading the application it denies every HTTP(S) request, including localhost,
+and verifies the saved images again through the Reader image resolver, including
+their byte hashes. It does not substitute captured article HTML or synthetic
+photo responses. Deliberate local/external probes must be intercepted and
+rejected, and no HTTP(S) response may succeed during the final phase. All eight
+images must render in the actual Reader without an application media fetch.
+
+### WebKit offline-emulation diagnosis
+
+The live [diagnostic run on `72c7c65`](https://github.com/MetroBummin/breeze/actions/runs/36238827267)
+used the reported public Article and downloaded all eight real photos in both
+engines. Native IndexedDB records survived a page reload with the same image
+byte hashes, decoded dimensions, full body hash and final-paragraph hash.
+Chromium also passed the full Reader and storage checks with Playwright's native
+offline flag enabled.
+
+WebKit's `context.setOffline(true)` then caused both the persisted native Blob
+and a newly constructed memory Blob containing the same real photo bytes to
+throw `NotReadableError` from `arrayBuffer()`. Both Blob URLs failed to decode;
+the same bytes as a data URL still decoded at 1200 by 480. Disabling that flag,
+while external requests remained blocked, immediately restored native and
+memory Blob reads and decoding with the original SHA-256. No stored record was
+changed. This separates an automation resource-loader failure from corruption
+of persisted photo bytes or a Reader lifecycle failure.
+
+The pinned [Playwright 1.63.0 WebKit patch](https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/webkit/patches/bootstrap.diff)
+adds an unconditional failed-resource-load path when its emulated offline flag
+is active, without restricting that branch to HTTP(S). The final check therefore
+uses continuous browser request interception to deny all HTTP(S) in both
+engines; Chromium additionally enables its native offline flag. WebKit reports
+`http-blocked` mode and leaves `navigator.onLine` unchanged. Service workers are
+blocked, persisted native Blobs are not rewritten or replaced by memory copies,
+and all eight byte/hash/size/pixel/Reader assertions remain in force. This checks
+saved media without network access; it is not physical iOS airplane-mode proof.
 
 Run it with `node tests/verify-live-social-media-browser.mjs`. The Social import
 workflow exposes a manual `live_media` input and the PR marker

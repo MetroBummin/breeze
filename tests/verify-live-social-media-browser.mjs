@@ -82,34 +82,6 @@ async function installChecks(page){
     };
   });
 }
-async function diagnosticImageProbe(page){
-  return within('Stored image diagnostic',page.evaluate(async()=>{
-    const sample=window.liveMediaDiagnostic,native=await imgGet(sample.key),rebuilt=new Blob([sample.bytes],{type:sample.type});
-    const read=async blob=>{
-      let timer;
-      try{
-        const bytes=await Promise.race([blob.arrayBuffer(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Read deadline')),3000);})]);
-        return {result:'read',bytes:bytes.byteLength,sha256:await liveMediaQA.hash(bytes)};
-      }catch(error){return {result:'error',name:error.name,message:String(error.message).slice(0,100)};}
-      finally{clearTimeout(timer);}
-    };
-    const decode=src=>new Promise(done=>{
-      const image=new Image();let timer;
-      const finish=event=>{clearTimeout(timer);done({event,complete:image.complete,width:image.naturalWidth,height:image.naturalHeight});};
-      timer=setTimeout(()=>finish('timeout'),3000);image.onload=()=>finish('load');image.onerror=()=>finish('error');image.src=src;
-    });
-    const nativeUrl=URL.createObjectURL(native),rebuiltUrl=URL.createObjectURL(rebuilt);
-    const bytes=new Uint8Array(sample.bytes);let binary='';
-    for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
-    try{
-      const [nativeRead,rebuiltRead,nativeImage,rebuiltImage,dataImage]=await Promise.all([
-        read(native),read(rebuilt),decode(nativeUrl),decode(rebuiltUrl),decode('data:'+sample.type+';base64,'+btoa(binary)),
-      ]);
-      return {online:navigator.onLine,key:sample.key,type:sample.type,nativeSize:native.size,
-        nativeRead,rebuiltRead,nativeImage,rebuiltImage,dataImage};
-    }finally{URL.revokeObjectURL(nativeUrl);URL.revokeObjectURL(rebuiltUrl);}
-  }),10000);
-}
 async function openAndCheck(page,id){
   await within('Open saved Reader',page.evaluate(async id=>{
     const book=books.find(item=>item.id===id);if(!book)throw Error('Saved book is missing after reload');
@@ -130,6 +102,10 @@ const reports=[];
 try{
   for(const engine of [chromium,webkit]){
     const profile=mkdtempSync(join(tmpdir(),'breeze-live-social-'));let context,page,stage='launch',externalEnabled=true,offlineMediaRequests=0;
+    let httpIsolated=false,blockedHttpRequests=0;
+    const offlineMode=engine.name()==='webkit'?'http-blocked':'browser-offline';
+    const denialProbes=[new URL('__breeze-offline-probe__',base).href,relay.href+'?breeze-offline-probe=1'];
+    const blockedProbes=new Set(),httpStatus=new WeakMap(),httpSuccessAfterIsolation=new Set();
     const network=[],tracked=new Map();
     try{
       context=await engine.launchPersistentContext(profile,{headless:true,serviceWorkers:'block',viewport:{width:820,height:1024}});
@@ -153,12 +129,25 @@ try{
         const row={host:new URL(request.url()).hostname,kind,status:'pending',durationMs:0},start=Date.now();
         network.push(row);tracked.set(request,{row,start});
       });
-      page.on('response',response=>{const item=tracked.get(response.request());if(item){item.row.status=response.status();item.row.durationMs=Date.now()-item.start;}});
+      page.on('response',response=>{
+        const request=response.request(),status=response.status();httpStatus.set(request,status);
+        if(httpIsolated&&/^https?:/.test(request.url())&&status>=200&&status<400)httpSuccessAfterIsolation.add(request);
+        const item=tracked.get(request);if(item){item.row.status=status;item.row.durationMs=Date.now()-item.start;}
+      });
       page.on('requestfailed',request=>{const item=tracked.get(request);if(item){item.row.status='failed';item.row.durationMs=Date.now()-item.start;}});
-      page.on('requestfinished',request=>{const item=tracked.get(request);if(item)item.row.durationMs=Date.now()-item.start;});
+      page.on('requestfinished',request=>{
+        const status=httpStatus.get(request);
+        if(httpIsolated&&/^https?:/.test(request.url())&&status>=200&&status<400)httpSuccessAfterIsolation.add(request);
+        const item=tracked.get(request);if(item)item.row.durationMs=Date.now()-item.start;
+      });
       await page.route('**/*',route=>{
         const raw=route.request().url();
-        if(raw.startsWith(base)||raw.startsWith('blob:')||raw.startsWith('data:'))return route.continue();
+        if(raw.startsWith('blob:')||raw.startsWith('data:'))return route.continue();
+        if(httpIsolated&&/^https?:/.test(raw)){
+          blockedHttpRequests++;if(denialProbes.includes(raw))blockedProbes.add(raw);
+          return route.abort('internetdisconnected');
+        }
+        if(raw.startsWith(base))return route.continue();
         return externalEnabled&&remoteKind(raw)?route.continue():route.abort();
       });
       stage='boot';await page.goto(base,{waitUntil:'load'});
@@ -193,31 +182,25 @@ try{
       console.log(JSON.stringify({result:'ONLINE_PASS',engine:engine.name(),bookId:online.id,imageCount:online.images.length,
         bodySha256:online.bodySha256,tailSha256:online.tailSha256,onlineMs}));
 
-      // Reload the real app shell locally, with all external transport already
-      // blocked, then put the whole browser context offline before reopening.
+      // Load the real shell with external transport already denied, then deny
+      // every HTTP(S) request, including localhost. Routing disables HTTP cache.
       stage='reload and offline';externalEnabled=false;const offlineStart=Date.now();
       await page.evaluate(key=>localStorage.setItem(key,'1'),offlineKey);
       await page.reload({waitUntil:'load'});
       await within('Reload persisted library',page.evaluate(async()=>{await homeReady;if(rssLoading)await rssLoading;}));
-      await installChecks(page);stage='reload stored image decode';
-      const reloaded=await within('Reloaded stored image verification',page.evaluate(async id=>{
-        const stored=(await bookAll()).find(book=>book.id===id);if(!stored)throw Error('Reloaded book is missing');
-        const result=await liveMediaQA.inspect(stored),first=await imgGet(result.images[0].key);
-        window.liveMediaDiagnostic={key:result.images[0].key,type:first.type,bytes:await first.arrayBuffer()};
-        return result;
-      },online.id));
-      assert.equal(reloaded.id,online.id);assert.equal(reloaded.bodySha256,online.bodySha256);assert.equal(reloaded.tailSha256,online.tailSha256);
-      assert.deepEqual(reloaded.images,online.images,'Reloaded image bytes or decoded dimensions changed');
-      console.log(JSON.stringify({result:'RELOAD_STORED_PASS',engine:engine.name(),bookId:reloaded.id,
-        imageCount:reloaded.images.length,bodySha256:reloaded.bodySha256,tailSha256:reloaded.tailSha256}));
-      // Diagnostics use bytes from the same real photo; they never replace the
-      // native stored-image checks or supply pass data to the offline Reader.
-      stage='hard offline diagnostic';await context.setOffline(true);
-      console.log(JSON.stringify({result:'IMAGE_DIAGNOSTIC',engine:engine.name(),mode:'hard-offline',...await diagnosticImageProbe(page)}));
-      stage='external blocked diagnostic';await context.setOffline(false);
-      console.log(JSON.stringify({result:'IMAGE_DIAGNOSTIC',engine:engine.name(),mode:'external-blocked',...await diagnosticImageProbe(page)}));
-      await context.setOffline(true);
-      assert.equal(await page.evaluate(()=>navigator.onLine),false);
+      await page.waitForLoadState('networkidle');await installChecks(page);httpIsolated=true;
+      stage='HTTP isolation probes';
+      const denied=await within('HTTP isolation probes',page.evaluate(async urls=>Promise.all(urls.map(async url=>{
+        try{await fetch(url,{cache:'no-store'});return false;}catch{return true;}
+      })),denialProbes),5000);
+      assert.deepEqual(denied,[true,true],'Local or external HTTP probe escaped isolation');
+      assert.equal(blockedProbes.size,2,'Both HTTP probes must reach the deny-all route');
+      // Playwright 1.63 WebKit's offline switch also rejects local Blob reads and
+      // Blob URLs. Deny all HTTP instead; keep native IDB records and navigator
+      // untouched. Chromium additionally uses the browser's offline switch.
+      if(offlineMode==='browser-offline'){
+        await context.setOffline(true);assert.equal(await page.evaluate(()=>navigator.onLine),false);
+      }
       stage='offline stored image decode';
       const offline=await within('Offline stored image verification',page.evaluate(async id=>{
         const stored=(await bookAll()).filter(book=>book.id===id);if(stored.length!==1)throw Error('Persisted book identity changed');
@@ -229,9 +212,11 @@ try{
       stage='offline Reader';await openAndCheck(page,online.id);
       assert.equal(offlineMediaRequests,0,'Reader attempted external media requests after reload');
       assert.equal(await page.evaluate(()=>window.liveMediaFetchAttempts),0,'Application attempted to fetch offline media');
+      assert.equal(httpSuccessAfterIsolation.size,0,'An HTTP request succeeded after network isolation');
       reports.push({engine:engine.name(),sourceId,bookId:online.id,extraction:online.extraction,paragraphs:online.paragraphs,
         bodyChars:online.bodyChars,bodySha256:online.bodySha256,tailSha256:online.tailSha256,
         imageCount:online.images.length,images:online.images,onlineMs,offlineMs:Date.now()-offlineStart,
+        offlineMode,blockedHttpRequests,blockedHttpProbes:blockedProbes.size,offlineHttpSuccesses:0,
         offlineMediaRequests:0,offlineApplicationMediaFetches:0});
       console.log(JSON.stringify({result:'PASS',...reports.at(-1)}));
     }catch(error){
@@ -245,7 +230,8 @@ try{
           width:image.naturalWidth,height:image.naturalHeight})),
       })),5000).catch(()=>null):null;
       console.error(JSON.stringify({result:'FAIL',engine:engine.name(),stage,
-        error:String(error.message||error.name).replace(/https?:\/\/\S+/g,'[URL]').slice(0,240),state,network:network.slice(-40)}));
+        error:String(error.message||error.name).replace(/https?:\/\/\S+/g,'[URL]').slice(0,240),state,
+        offlineMode,blockedHttpRequests,blockedHttpProbes:blockedProbes.size,offlineHttpSuccesses:httpSuccessAfterIsolation.size,network:network.slice(-40)}));
       throw Error('Live social media verification failed in '+engine.name()+' during '+stage);
     }finally{try{await context?.close();}finally{rmSync(profile,{recursive:true,force:true});}}
   }
