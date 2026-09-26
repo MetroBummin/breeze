@@ -42,7 +42,8 @@ try{
    };
    await open();
    await page.waitForFunction(()=>window.qaInkScope?.enabled===false);
-   assert.equal(await page.locator('[data-ink-mode="read"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('[data-ink-toggle]').getAttribute('aria-pressed'),'false');
+   assert.equal(await page.locator('#readpill .ink-pill-entry').isVisible(),true,'production pill without a query flag');
    await page.locator('[data-ink-toggle]').click();
    await page.waitForFunction(()=>window.qaInkScope?.enabled && window.qaInkScope.pages.length>0);
    assert.ok(await page.evaluate(()=>window.qaInkScope.scrollHeight>=readerScroller().clientHeight));
@@ -51,7 +52,20 @@ try{
     dispatchWord=(...args)=>{window.qaLookup++;return dispatch(...args);};
    });
    const count=()=>page.locator('.pdf-source-page[data-page="1"] .pdf-ink-layer polyline').count();
-   const mode=async m=>{if(!await page.locator(`[data-ink-mode="${m}"]`).isVisible())await page.locator('[data-ink-toggle]').click();await page.locator(`[data-ink-mode="${m}"]`).click();};
+   const mode=async m=>{
+    await page.evaluate(()=>expandReaderChrome());
+    const writing=await page.locator('[data-ink-toggle]').getAttribute('aria-pressed')==='true';
+    if(m==='read'){if(writing)await page.locator('[data-ink-toggle]').click();}
+    else{if(!writing)await page.locator('[data-ink-toggle]').click();await page.locator(`[data-ink-mode="${m}"]`).click();}
+   };
+   const setting=async(kind,value)=>{
+    for(let i=0;i<3;i++){
+     const current=await page.locator(`[data-ink-setting="${kind}"]`).getAttribute('data-value');
+     if(current===String(value))return;
+     await page.locator(`[data-ink-setting="${kind}"]`).click();
+    }
+    assert.equal(await page.locator(`[data-ink-setting="${kind}"]`).getAttribute('data-value'),String(value));
+   };
    const stroke=async(points,{pageNumber=1,type='stylus',cancel=false,noncancel=false,palm=false}={})=>page.evaluate(({points,pageNumber,type,cancel,noncancel,palm})=>{
     const element=originalSession.pages[pageNumber-1],rect=element.getBoundingClientRect();
     const target=element.querySelector('canvas');
@@ -71,9 +85,9 @@ try{
    },{points,pageNumber,type,cancel,noncancel,palm});
    assert.equal(await page.locator('[data-ink-mode="pen"]').getAttribute('aria-pressed'),'true');
    await context.setOffline(true);
-   assert.equal(await page.locator('[data-ink-mode="read"]').isVisible(),true);
+   assert.equal(await page.locator('[data-ink-toggle]').isVisible(),true);
    assert.equal(await stroke([[.2,.2],[.3,.22],[.4,.2]],{palm:true}),true);
-   await page.waitForFunction(()=>document.querySelector('#pdf-ink-tools [role=status]').textContent==='저장됨');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    assert.equal(await count(),1);
    const traceRoutes=await page.evaluate(()=>window.qaInkTrace.map(row=>row.route));
    if(process.env.BREEZE_QA_INK_TRACE==='1'){assert.ok(traceRoutes.includes('stroke/start'));assert.ok(traceRoutes.includes('dispatch/finished'));}
@@ -102,14 +116,14 @@ try{
    await page.evaluate(async()=>{await renderOriginalPdfPage(originalSession,2);});
    await stroke([[.2,.2],[.3,.3]],{pageNumber:2});
    assert.equal(await page.locator('[data-page="2"] .pdf-ink-layer').getAttribute('viewBox'),'0 0 792 612');
-   await page.waitForFunction(()=>document.querySelector('#pdf-ink-tools [role=status]').textContent==='저장됨');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await context.setOffline(false);
    await page.reload();await open();assert.equal(await count(),1);
-   assert.equal(await page.locator('[data-ink-mode="read"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('[data-ink-toggle]').getAttribute('aria-pressed'),'false');
    await mode('pen');assert.equal(await page.locator('[data-ink-undo]').isDisabled(),true);
    for(const c of ['#111111','#c43d3d','#2864c5'])for(const w of ['0.75','1.5','3']){
-    await page.locator('[data-ink-setting="color"]').selectOption(c);
-    await page.locator('[data-ink-setting="width"]').selectOption(w);
+    await setting('color',c);
+    await setting('width',w);
     await stroke([[.5,.5],[.51,.52],[.54,.49]]);
     const last=page.locator('[data-page="1"] .pdf-ink-layer polyline').last();
     assert.equal(await last.getAttribute('stroke'),c);assert.equal(await last.getAttribute('stroke-width'),w);
@@ -123,17 +137,17 @@ try{
    await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    // History can edit a released page without keeping its SVG/canvas alive.
    await page.locator('[data-ink-redo]').click();assert.equal(await count(),2);
-   await page.waitForFunction(()=>document.querySelector('#pdf-ink-tools [role=status]').textContent==='저장됨');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.evaluate(()=>releaseOriginalPdfPage(originalSession,1));
    await page.locator('[data-ink-undo]').click();
-   await page.waitForFunction(()=>document.querySelector('#pdf-ink-tools [role=status]').textContent==='저장됨');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.evaluate(()=>renderOriginalPdfPage(originalSession,1));assert.equal(await count(),1);
-   await page.locator('[data-ink-setting="color"]').selectOption('#111111');
-   await page.locator('[data-ink-setting="width"]').selectOption('1.5');
+   await setting('color','#111111');
+   await setting('width','1.5');
    await mode('erase');await stroke([[.1,.2],[.5,.2]]);assert.equal(await count(),0);
    await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    await page.locator('[data-ink-redo]').click();assert.equal(await count(),0);
-   await page.waitForFunction(()=>document.querySelector('#pdf-ink-tools [role=status]').textContent==='저장됨');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.equal(await count(),0);
    // Failure retains latest ink, makes failure visible, and explicit retry persists it.
    await page.evaluate(()=>{window.qaPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='pages')throw new DOMException('test quota','QuotaExceededError');return window.qaPut.apply(this,args);};});
@@ -141,7 +155,7 @@ try{
    await page.waitForSelector('.ink-save-failed');assert.equal(await count(),2);
    await page.evaluate(()=>{IDBObjectStore.prototype.put=window.qaPut;});
    await page.locator('.pdf-ink-retry').click();
-   await page.waitForFunction(()=>document.querySelector('#pdf-ink-tools [role=status]').textContent==='저장됨');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.equal(await count(),2);
    // Same title, different bytes: no annotations can leak across PDF hashes.
    await page.evaluate(async()=>{
@@ -151,7 +165,10 @@ try{
    });assert.equal(await count(),0);
    await page.evaluate(async()=>{const s=originalSession;BreezePdfInk.close(s);s.hash=window.qaOriginal;BreezePdfInk.open(s);await BreezePdfInk.mount(s,1,(await s.pdf.getPage(1)).getViewport({scale:1}));});
    assert.equal(await count(),2);
-   // Default pen tool has no transparent blocker and still dispatches Lookup.
+   // Reopening starts locked: no Pencil write until explicit entry in the pill.
+   const lockedCount=await count();await stroke([[.7,.7],[.75,.7]]);assert.equal(await count(),lockedCount);
+   await mode('pen');
+   // Pen tool has no transparent blocker and still dispatches Lookup.
    const wordPoint=()=>page.evaluate(()=>{
     const element=originalSession.pages[0],rect=element.getBoundingClientRect();
     for(const b of originalSession.wordBoxes.get(1)){
@@ -162,9 +179,9 @@ try{
    const word=await wordPoint();assert.ok(word);await page.touchscreen.tap(word.x,word.y);await page.waitForFunction(()=>wordPeekOpen());
    await page.evaluate(()=>closePanel());
    if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`ink-${engine.name()}.png`)});}
-   await page.locator('[data-ink-toggle]').click();
+   await page.evaluate(()=>document.body.classList.add('chrome-hidden'));
    const collapsedCount=await count();await stroke([[.7,.7],[.75,.7]]);assert.equal(await count(),collapsedCount+1);
-   await page.locator('[data-ink-toggle]').click();
+   await page.locator('.ink-pill-mini').click();
    await page.evaluate(()=>{
     window.qaInputActions={word:0,sentence:0,requests:0};
     const dw=dispatchWord,os=openSentence,fetcher=window.fetch;
@@ -282,7 +299,7 @@ try{
    const finalWord=await wordPoint();assert.ok(finalWord);
    await page.touchscreen.tap(finalWord.x,finalWord.y);await page.waitForFunction(()=>wordPeekOpen());await page.evaluate(()=>closePanel());
    await page.evaluate(()=>{window.breezeInkIPad=false;document.body.classList.toggle('qa-platform');});
-   await page.waitForFunction(()=>document.getElementById('pdf-ink-tools').hidden && window.qaInkScope?.enabled===false);
+   await page.waitForFunction(()=>document.getElementById('pdf-ink-status').hidden && window.qaInkScope?.enabled===false);
    assert.deepEqual(errors.filter(x=>!x.includes('ResizeObserver loop')),[]);
    console.log(`${engine.name()}: PASS 3 colors/3 widths, undo/redo including evicted pages and durable redo, black ink, stylus/finger separation (synthetic), no-mode-switch word/sentence Lookup, collision IDs, late Pencil during pinch, cancellations, zoom/resize/rotated page, release/reload, durable erase, failed save/retry, document isolation, platform gate`);
    await context.close();

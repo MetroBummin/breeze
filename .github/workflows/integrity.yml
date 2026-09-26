@@ -45,7 +45,7 @@ jobs:
       - run: npm run test:ingestion && npm run test:home-ui
       - name: Preview regressions when present
         run: |
-          for test in tests/verify-article-preview-browser.mjs tests/verify-article-preview-resilience.mjs; do
+          for test in tests/verify-article-preview-browser.mjs tests/verify-article-preview-resilience.mjs tests/verify-device-polish-browser.mjs; do
             if test -f "$test"; then node "$test"; fi
           done
       - name: Ink regression when present

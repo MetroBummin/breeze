@@ -74,7 +74,7 @@ Deno.serve(async request=>{
       job=(async()=>{
         const result=await generateArticlePreview(title,excerpt,Deno.env.get("OPENROUTER_API_KEY"));
         const meta=validMetadata(result.meta);if(!meta)throw new Error("bad_metadata");
-        console.info("article_preview_ai",JSON.stringify({model:result.model,latencyMs:result.latencyMs,
+        console.info("article_preview_ai",JSON.stringify({model:result.model,latencyMs:result.latencyMs,attempts:result.attempts,
           promptTokens:result.usage?.prompt_tokens??null,completionTokens:result.usage?.completion_tokens??null}));
         let persisted=false;
         try{
@@ -89,5 +89,11 @@ Deno.serve(async request=>{
       generating.set(cacheKey,job);
     }
     try{return reply(await job);}finally{if(generating.get(cacheKey)===job)generating.delete(cacheKey);}
-  }catch(error){console.error("article_preview",error instanceof Error?error.message:"unknown");return reply({error:"preview_unavailable"},503);}
+  }catch(error){
+    const cause=error instanceof Error?error.message:"unknown";
+    console.error("article_preview",cause);
+    const reason=["unsupported_number","bad_metadata"].includes(cause)?"validation_failed":
+      cause==="generation_timeout"||cause==="AbortError"?"generation_timeout":"preview_unavailable";
+    return reply({error:reason},503);
+  }
 });

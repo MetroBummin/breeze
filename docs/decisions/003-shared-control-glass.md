@@ -130,3 +130,10 @@ tokens. The own-photo button follows its slightly rectangular 12px controls.
 Imported books can still use an image already in the article or a photo selected
 from the user's library. RSS discovery cards suppress context menus and ignore
 long holds.
+
+## PDF writing variant and input focus (2026-09-26)
+The iPad PDF writing mode uses the approved bottom pill variant: reading controls
+and progress yield to editing controls inside the same glass material. The
+expanded width remains capped at 400px with viewport clearance. Other Reader
+modes keep existing geometry. Touch/pointer focus is retained semantically but
+has no sticky outline; keyboard controls keep a neutral visible focus ring.

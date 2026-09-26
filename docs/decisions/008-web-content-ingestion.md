@@ -314,7 +314,7 @@ The Preview answers whether the article is worth reading within a short glance.
 Its image occupies about half the initial scroll area. The source sits above the
 original English title and a two-to-three-sentence Korean summary. The content scrolls
 under a fixed Read action on narrow phones, tablets and desktop windows.
-Successful metadata has no visible internal label. Loading reserves the summary
+Successful metadata appears inside a neutral card labeled 짧게 살펴보기. Loading reserves the summary
 space; failure keeps the English title and offers summary retry. The server
 response contract is version 4 (`summaryKo`) with a new cache key. The shared
 table retains its existing columns and stores the summary in `teaser` without
@@ -372,3 +372,17 @@ That endpoint supplies an embed of one post, not all conversation replies or a
 guaranteed complete X Article. Threads public HTML can omit the required body;
 no universal Threads-import success is claimed. Platform availability is not
 proven by fixtures. See `docs/qa/social-import-20260925.md`.
+
+## Device polish and numeric validation repair (2026-09-26)
+The summary card owns loading shimmer and a short content reveal, disabled for
+reduced motion. Read uses the neutral action color. Dialog entry focuses the
+named dialog, with Tab continuing into its controls. Actual pointer input hides
+sticky WebKit button/card focus rings; keyboard navigation keeps a neutral ring.
+The deployed v4 logs recorded four unsupported_number failures. Exact numeric
+strings rejected punctuation, abbreviated months and Korean unit conversion.
+Compare normalized quantities and explicit English words/months; reject amounts
+without source evidence. A failed numeric/JSON validation gets one fresh,
+number-free repair in the same 12-second budget and quota charge. Other upstream
+failures never retry automatically. Both attempts must pass validation; failed
+results are not cached. HTTP failures expose only bounded reason codes so the
+client distinguishes validation, timeout and server availability.

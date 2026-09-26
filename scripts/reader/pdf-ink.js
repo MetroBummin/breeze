@@ -4,15 +4,13 @@
    Basic Pencil/pan/pinch was confirmed on iPad; expanded physical QA is documented. */
 const BreezePdfInk = (()=>{
   const colors=['#111111','#c43d3d','#2864c5'], widths=[0.75,1.5,3];
-  const conceptPreview=new URLSearchParams(location.search).get('pdfInkConcept')==='1';
   const undoStack=[],redoStack=[];
   let color=colors[0],width=widths[1];
   const ns='http://www.w3.org/2000/svg';
   const database=openDb('breeze-pdf-ink',1,db=>db.createObjectStore('pages'));
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
-  let session=null, mode='read', collapsed=false, active=null, toolbar=null, status=null;
-  let conceptWriting=false,conceptTool='pen',conceptColor=colors[0],conceptWidth=widths[1];
-  let conceptTools=null,conceptEntry=null,conceptMini=null,conceptReadSeparator=null;
+  let session=null, mode='read', active=null, toolbar=null, status=null;
+  let inkTools=null,inkEntry=null,inkMini=null,inkReadSeparator=null;
   const suppressed=new Set(), blockedPointers=new Set();
   let suppressClick=false;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
@@ -20,10 +18,6 @@ const BreezePdfInk = (()=>{
   const supported=()=>Reflect.get(window,'breezeInkIPad')===true;
   const visible=()=>supported() && session===originalSession && session?.kind==='pdf'
     && document.body.classList.contains('reader-original') && document.body.classList.contains('reading');
-  // `open()` is called only after the original PDF reader has installed its
-  // session. Avoid depending on Reader body classes here: the concept preview
-  // must also appear while the PDF mode transition is still settling.
-  const conceptVisible=()=>conceptPreview && session?.kind==='pdf';
   // Explicit native DEBUG flag only. No text, document bytes, or stored ink in logs.
   const traceRows=[];
   let traceSequence=0;
@@ -93,142 +87,100 @@ const BreezePdfInk = (()=>{
   function message(text){if(status) status.textContent=text;}
   function update(){
     scheduleNativeScope();
-    if(conceptPreview){updateConcept();return;}
-    if(!toolbar)return;
-    toolbar.hidden=!visible();
-    toolbar.querySelectorAll('[data-ink-mode]').forEach(button=>{
+    const pill=document.getElementById('readpill');
+    if(!pill||!inkEntry)return;
+    const ready=!!visible(),writing=ready&&mode!=='read';
+    pill.classList.toggle('ink-pill-ready',ready);
+    pill.classList.toggle('ink-pill-active',writing);
+    inkEntry.hidden=!ready;
+    inkEntry.setAttribute('aria-pressed',String(writing));
+    inkEntry.setAttribute('aria-label',writing?'읽기 모드로 전환':'필기 모드로 전환');
+    inkEntry.title=writing?'읽기 모드로 전환':'필기 모드로 전환';
+    inkEntry.classList.toggle('ink-pill-exiting',writing);
+    inkTools.inert=!writing;
+    inkTools.setAttribute('aria-hidden',String(!writing));
+    inkMini.hidden=!writing;
+    inkMini.querySelector('.ink-pill-mini-color').style.background=color;
+    inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{
       button.setAttribute('aria-pressed',String(button.dataset.inkMode===mode));
     });
-    toolbar.classList.toggle('ink-editing',mode!=='read'&&!collapsed);
-    toolbar.classList.toggle('ink-reading',mode==='read');
-    const toggle=toolbar.querySelector('[data-ink-toggle]');
-    toggle.setAttribute('aria-expanded',String(mode!=='read'&&!collapsed));
-    toggle.setAttribute('aria-label',mode==='read'?'필기 시작':collapsed?'필기 중 · 도구 펼치기':'필기 도구 접기');
-    toggle.textContent=mode==='read'?'필기':collapsed?'필기 중':'접기';
-    toolbar.querySelector('[data-ink-undo]').disabled=mode==='read'||!undoStack.length||!!active;
-    toolbar.querySelector('[data-ink-redo]').disabled=mode==='read'||!redoStack.length||!!active;
-    if(!visible())cancel();
-  }
-  function updateConcept(){
-    const pill=document.getElementById('readpill');
-    const ready=conceptVisible();
-    if(!pill||!conceptEntry)return;
-    pill.classList.toggle('ink-concept-ready',ready);
-    pill.classList.toggle('ink-concept-active',ready&&conceptWriting);
-    conceptEntry.hidden=!ready;
-    conceptEntry.setAttribute('aria-pressed',String(conceptWriting));
-    conceptEntry.setAttribute('aria-label',conceptWriting?'읽기 모드로 전환':'필기 모드로 전환');
-    conceptEntry.title=conceptWriting?'읽기 모드로 전환':'필기 모드로 전환';
-    conceptEntry.classList.toggle('ink-concept-exiting',conceptWriting);
-    conceptTools.inert=!ready||!conceptWriting;
-    conceptTools.setAttribute('aria-hidden',String(!ready||!conceptWriting));
-    conceptMini.hidden=!ready||!conceptWriting;
-    conceptMini.querySelector('.ink-concept-mini-color').style.background=conceptColor;
-    conceptTools.querySelectorAll('[data-concept-tool]').forEach(button=>{
-      button.setAttribute('aria-pressed',String(button.dataset.conceptTool===conceptTool));
-    });
-    conceptTools.querySelector('.ink-concept-color i').style.background=conceptColor;
-    conceptTools.querySelector('.ink-concept-width i').style.width=`${Math.round(conceptWidth*3)}px`;
+    inkTools.querySelector('.ink-pill-color').dataset.value=color;
+    inkTools.querySelector('.ink-pill-width').dataset.value=String(width);
+    inkTools.querySelector('.ink-pill-color i').style.background=color;
+    inkTools.querySelector('.ink-pill-color').setAttribute('aria-label','펜 색상: '+['검정','빨강','파랑'][colors.indexOf(color)]+', 바꾸기');
+    inkTools.querySelector('.ink-pill-width i').style.width=`${Math.round(width*3)}px`;
+    inkTools.querySelector('.ink-pill-width').setAttribute('aria-label','펜 굵기: '+['얇게','보통','굵게'][widths.indexOf(width)]+', 바꾸기');
+    inkTools.querySelector('[data-ink-undo]').disabled=!writing||!undoStack.length||!!active;
+    inkTools.querySelector('[data-ink-redo]').disabled=!writing||!redoStack.length||!!active;
+    for(const id of ['modefab','readpill-title'])document.getElementById(id).inert=writing;
+    toolbar.hidden=!ready;
+    if(!ready)cancel();
   }
   function icon(path){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;}
-  function conceptControl(label,path,className=''){
+  function inkControl(label,path,className=''){
     const button=document.createElement('button');button.type='button';
-    button.className=`ink-concept-control ${className}`.trim();
+    button.className=`ink-pill-control ${className}`.trim();
     button.setAttribute('aria-label',label);button.title=label;button.innerHTML=icon(path);
     return button;
   }
-  function conceptSeparator(){
-    const separator=document.createElement('span');separator.className='ink-concept-separator';
+  function inkSeparator(){
+    const separator=document.createElement('span');separator.className='ink-pill-separator';
     separator.setAttribute('role','separator');separator.setAttribute('aria-orientation','vertical');
     separator.setAttribute('aria-hidden','true');return separator;
   }
-  function setupConceptControls(){
-    if(conceptEntry)return;
+  function controls(){
+    if(inkEntry)return;
     const pill=document.getElementById('readpill');
-    conceptEntry=conceptControl('필기 모드로 전환','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z','ink-concept-entry');
-    conceptEntry.innerHTML=`<span class="ink-entry-pen">${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}</span><span class="ink-entry-read">${icon('M12 7v14M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1h-4a4 4 0 0 0-4 2 4 4 0 0 0-4-2H4a1 1 0 0 1-1-1zM6 8h1m-1 4h2m9-4h1m-2 4h2')}</span>`;
-    conceptEntry.onclick=()=>{conceptWriting=!conceptWriting;updateConcept();};
-    conceptTools=document.createElement('div');conceptTools.className='ink-concept-toolbar';conceptTools.setAttribute('role','group');conceptTools.setAttribute('aria-label','PDF 필기 도구');
+    inkEntry=inkControl('필기 모드로 전환','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z','ink-pill-entry');
+    inkEntry.innerHTML=`<span class="ink-entry-pen">${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}</span><span class="ink-entry-read">${icon('M12 7v14M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1h-4a4 4 0 0 0-4 2 4 4 0 0 0-4-2H4a1 1 0 0 1-1-1zM6 8h1m-1 4h2m9-4h1m-2 4h2')}</span>`;
+    inkEntry.dataset.inkToggle='';
+    inkEntry.onclick=()=>setMode(mode==='read'?'pen':'read');
+    inkTools=document.createElement('div');inkTools.id='pdf-ink-tools';inkTools.className='ink-pill-toolbar';inkTools.setAttribute('role','group');inkTools.setAttribute('aria-label','PDF 필기 도구');
     for(const [tool,label,path] of [
       ['pen','펜','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z']
     ]){
-      const button=conceptControl(label,path);button.dataset.conceptTool=tool;
-      button.onclick=()=>{conceptTool=tool;updateConcept();};conceptTools.append(button);
+      const button=inkControl(label,path);button.dataset.inkMode=tool;
+      button.onclick=()=>setMode(tool);inkTools.append(button);
     }
-    const colorButton=conceptControl('현재 색상 바꾸기','M12 3s-7 7.1-7 11a7 7 0 0 0 14 0c0-3.9-7-11-7-11Z','ink-concept-color');
+    const colorButton=inkControl('현재 색상 바꾸기','M12 3s-7 7.1-7 11a7 7 0 0 0 14 0c0-3.9-7-11-7-11Z','ink-pill-color');
     colorButton.innerHTML='<i aria-hidden="true"></i>';
-    colorButton.onclick=()=>{conceptColor=colors[(colors.indexOf(conceptColor)+1)%colors.length];updateConcept();};conceptTools.append(colorButton);
-    const widthButton=conceptControl('펜 굵기 바꾸기','M4 12h16','ink-concept-width');
+    colorButton.dataset.inkSetting='color';
+    colorButton.onclick=()=>{cancel();color=colors[(colors.indexOf(color)+1)%colors.length];update();};inkTools.append(colorButton);
+    const widthButton=inkControl('펜 굵기 바꾸기','M4 12h16','ink-pill-width');
     widthButton.innerHTML='<i aria-hidden="true"></i>';
-    widthButton.onclick=()=>{conceptWidth=widths[(widths.indexOf(conceptWidth)+1)%widths.length];updateConcept();};conceptTools.append(widthButton,conceptSeparator());
-    const eraser=conceptControl('지우개','M7.2 20.4 3.8 17a2 2 0 0 1 0-2.8l9.8-9.8a2 2 0 0 1 2.8 0l3.8 3.8a2 2 0 0 1 0 2.8l-9.4 9.4H7.2ZM8.7 10.7l6.1 6.1M7.2 20.4H21');
-    eraser.dataset.conceptTool='erase';eraser.onclick=()=>{conceptTool='erase';updateConcept();};conceptTools.append(eraser,conceptSeparator());
+    widthButton.dataset.inkSetting='width';
+    widthButton.onclick=()=>{cancel();width=widths[(widths.indexOf(width)+1)%widths.length];update();};inkTools.append(widthButton,inkSeparator());
+    const eraser=inkControl('지우개','M7.2 20.4 3.8 17a2 2 0 0 1 0-2.8l9.8-9.8a2 2 0 0 1 2.8 0l3.8 3.8a2 2 0 0 1 0 2.8l-9.4 9.4H7.2ZM8.7 10.7l6.1 6.1M7.2 20.4H21');
+    eraser.dataset.inkMode='erase';eraser.onclick=()=>setMode('erase');inkTools.append(eraser,inkSeparator());
     for(const [label,path] of [
       ['실행 취소','M9 5 4 10l5 5M4 10h9a6 6 0 0 1 0 12'],
       ['다시 실행','m15 5 5 5-5 5m5-5h-9a6 6 0 0 0 0 12']
     ]){
-      const button=conceptControl(label,path);button.disabled=true;conceptTools.append(button);
+      const button=inkControl(label,path),undo=label==='실행 취소';
+      button.setAttribute(undo?'data-ink-undo':'data-ink-redo','');button.onclick=()=>history(undo);
+      button.disabled=true;inkTools.append(button);
     }
-    conceptTools.append(conceptSeparator());
-    conceptReadSeparator=conceptSeparator();conceptReadSeparator.classList.add('ink-concept-mode-separator');
-    conceptMini=document.createElement('button');conceptMini.type='button';conceptMini.className='ink-concept-mini';
-    conceptMini.setAttribute('aria-label','필기 도구 펼치기');conceptMini.title='필기 도구 펼치기';
-    conceptMini.innerHTML=`${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}<i class="ink-concept-mini-color" aria-hidden="true"></i>`;
-    conceptMini.onclick=()=>{if(document.body.classList.contains('chrome-hidden'))expandReaderChrome();else{conceptWriting=false;updateConcept();}};
-    pill.append(conceptTools,conceptReadSeparator,conceptEntry,conceptMini);
-    new MutationObserver(updateConcept).observe(document.body,{attributes:true,attributeFilter:['class']});
+    inkTools.append(inkSeparator());
+    inkReadSeparator=inkSeparator();inkReadSeparator.classList.add('ink-pill-mode-separator');
+    inkMini=document.createElement('button');inkMini.type='button';inkMini.className='ink-pill-mini';
+    inkMini.setAttribute('aria-label','필기 도구 펼치기');inkMini.title='필기 도구 펼치기';
+    inkMini.innerHTML=`${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}<i class="ink-pill-mini-color" aria-hidden="true"></i>`;
+    inkMini.onclick=()=>expandReaderChrome();
+    pill.append(inkTools,inkReadSeparator,inkEntry,inkMini);
+    toolbar=document.createElement('div');toolbar.id='pdf-ink-status';toolbar.hidden=true;
+    status=document.createElement('span');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    const retry=document.createElement('button');retry.type='button';retry.className='pdf-ink-retry';retry.textContent='저장 재시도';
+    retry.onclick=()=>{for(const state of pages.values())if(state.dirty)void persist(state);};
+    toolbar.append(status,retry);document.getElementById('readchrome').append(toolbar);
+    new MutationObserver(update).observe(document.body,{attributes:true,attributeFilter:['class']});
   }
   function setMode(next){
     cancel();suppressed.clear();blockedPointers.clear();suppressClick=false; mode=next;
-    if(next!=='read')collapsed=false;else publishNativeScope();
+    if(next==='read')publishNativeScope();
     if(typeof cancelGesture==='function')cancelGesture('PDF ink mode');
     if(typeof closePanel==='function')closePanel();
     if(typeof closeSentence==='function')closeSentence();
     update();
-  }
-  function controls(){
-    if(toolbar)return;
-    toolbar=document.createElement('div');toolbar.id='pdf-ink-tools';
-    toolbar.className='control-glass';toolbar.setAttribute('role','group');
-    toolbar.setAttribute('aria-label','PDF 필기');toolbar.hidden=true;
-    for(const [value,label] of [['read','읽기'],['pen','펜'],['erase','지우개']]){
-      const button=document.createElement('button');button.type='button';
-      button.dataset.inkMode=value;button.textContent=label;
-      button.onclick=()=>setMode(value);
-      button.classList.add(value==='read'?'ink-read-lock':'ink-edit-only');
-      toolbar.append(button);
-    }
-    /** @type {Array<[string,string,Array<string|number>,string[],string|number]>} */
-    const settings=[
-      ['color','펜 색상',colors,['검정','빨강','파랑'],color],
-      ['width','펜 굵기',widths,['얇게','보통','굵게'],width]
-    ];
-    for(const [kind,label,choices,labels,selected] of settings){
-      const select=document.createElement('select');select.className='ink-edit-only';
-      select.dataset.inkSetting=String(kind);select.setAttribute('aria-label',String(label));
-      choices.forEach((value,i)=>{const option=document.createElement('option');option.value=String(value);option.textContent=labels[i];select.append(option);});
-      select.value=String(selected);
-      select.onchange=()=>{cancel();if(kind==='color')color=select.value;else width=Number(select.value);update();};
-      toolbar.append(select);
-    }
-    for(const [kind,label,d] of [
-      ['undo','실행 취소','M9 5 4 10l5 5M4 10h9a6 6 0 0 1 0 12'],
-      ['redo','다시 실행','m15 5 5 5-5 5m5-5h-9a6 6 0 0 0 0 12']
-    ]){
-      const button=document.createElement('button');button.type='button';button.className='ink-edit-only';
-      button.setAttribute(`data-ink-${kind}`,'');button.setAttribute('aria-label',label);button.title=label;
-      button.innerHTML=`<svg viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
-      button.onclick=()=>history(kind==='undo');toolbar.append(button);
-    }
-    const toggle=document.createElement('button');toggle.type='button';toggle.dataset.inkToggle='';
-    toggle.onclick=()=>{if(mode==='read')setMode('pen');else{collapsed=!collapsed;update();}};toolbar.append(toggle);
-    status=document.createElement('span');status.setAttribute('role','status');
-    status.setAttribute('aria-live','polite');toolbar.append(status);
-    const retry=document.createElement('button');retry.type='button';retry.textContent='저장 재시도';
-    retry.onclick=()=>{for(const state of pages.values())if(state.dirty)void persist(state);};
-    retry.className='pdf-ink-retry';toolbar.append(retry);
-    document.getElementById('readchrome').append(toolbar);
-    new MutationObserver(update).observe(document.body,{attributes:true,attributeFilter:['class']});
   }
   async function read(key){
     const db=await database();
@@ -454,7 +406,6 @@ const BreezePdfInk = (()=>{
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{
-    if(conceptPreview)return;
     if(supported() && originalSession?.kind==='pdf'){
       session=originalSession;controls();update();
       const current=session;
@@ -483,8 +434,7 @@ const BreezePdfInk = (()=>{
     state.svg.setAttribute('aria-hidden','true');element.append(state.svg);paint(state);
   }
   return {
-    open(s){if((!supported()&&!conceptPreview)||!s.hash)return;session=s;mode='read';collapsed=false;undoStack.length=redoStack.length=0;
-      if(conceptPreview){conceptWriting=false;conceptTool='pen';conceptColor=colors[0];conceptWidth=widths[1];setupConceptControls();updateConcept();return;}
+    open(s){if(!supported()||!s.hash)return;session=s;mode='read';undoStack.length=redoStack.length=0;
       controls();update();},
     mount,
     release(s,n){
