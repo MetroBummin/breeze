@@ -19,6 +19,7 @@
 - Home UI, ingestion and PDF glyph/highlight geometry suites passed.
 - Live generator: 11 of 12 public article samples generated; one hit the total timeout. This does not establish universal availability or factual validation of all summaries.
 - article-preview v5 deployed. Three public articles generated with HTTP 200 and shared persistence; each repeated request returned HTTP 200 with cached=true (six successful requests).
+- App Store Connect upload succeeded. Xcode discovered existing build 166 and managed the export to 1.4 (167); its terminal result confirmed uploaded package processing. Source archive remains 166; next source build is reserved as 168.
 - iOS sync completed; 112 source/www/native files matched. Archive 1.4 (166) has the same 112 assets, valid signature, bundle kr.io.breeze.app and no embedded Share Extension.
 
 ## Verification boundaries
