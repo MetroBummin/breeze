@@ -59,10 +59,14 @@ async function installChecks(page){
         const blob=offline?await bookImageBlob(book,key):await imgGet(key);
         if(!(blob instanceof Blob)||!blob.size||!blob.type.startsWith('image/'))throw Error('Invalid stored image Blob');
         const bytes=await blob.arrayBuffer(),url=URL.createObjectURL(blob),image=new Image();let timer;
+        const probe=window.liveMediaImageProbe={key,offline,bytes:bytes.byteLength,type:blob.type,
+          storage:raw instanceof Blob?'Blob':raw.imageBytes instanceof ArrayBuffer?'ArrayBuffer':'unknown',
+          protocol:new URL(url).protocol,event:'pending',complete:false,width:0,height:0};
+        const note=event=>Object.assign(probe,{event,complete:image.complete,width:image.naturalWidth,height:image.naturalHeight});
         try{
           await new Promise((done,reject)=>{
-            timer=setTimeout(()=>reject(Error('Stored image decode deadline exceeded')),10000);
-            image.onload=()=>done();image.onerror=()=>reject(Error('Stored image did not decode'));image.src=url;
+            timer=setTimeout(()=>{note('timeout');reject(Error('Stored image decode deadline exceeded'));},10000);
+            image.onload=()=>{note('load');done();};image.onerror=()=>{note('error');reject(Error('Stored image did not decode'));};image.src=url;
           });
           if(!image.naturalWidth||!image.naturalHeight)throw Error('Stored image decoded without pixels');
           images.push({key,bytes:bytes.byteLength,sha256:await liveMediaQA.hash(bytes),
@@ -96,11 +100,11 @@ async function openAndCheck(page,id){
 const reports=[];
 try{
   for(const engine of [chromium,webkit]){
-    const profile=mkdtempSync(join(tmpdir(),'breeze-live-social-'));let context,stage='launch',externalEnabled=true,offlineMediaRequests=0;
+    const profile=mkdtempSync(join(tmpdir(),'breeze-live-social-'));let context,page,stage='launch',externalEnabled=true,offlineMediaRequests=0;
     const network=[],tracked=new Map();
     try{
       context=await engine.launchPersistentContext(profile,{headless:true,serviceWorkers:'block',viewport:{width:820,height:1024}});
-      const page=await context.newPage();page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
+      page=await context.newPage();page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
       await page.addInitScript(({offlineKey,relayOrigin})=>{
         localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
         window.liveMediaFetchAttempts=0;
@@ -157,6 +161,8 @@ try{
       assert.ok(online.bodyChars>500,'Live source is not a full Article');
       assert.equal(online.images.length,8);assert.ok(online.images.every(image=>image.storage!=='unknown'));
       await openAndCheck(page,online.id);const onlineMs=Date.now()-onlineStart;
+      console.log(JSON.stringify({result:'ONLINE_PASS',engine:engine.name(),bookId:online.id,imageCount:online.images.length,
+        bodySha256:online.bodySha256,tailSha256:online.tailSha256,onlineMs}));
 
       // Reload the real app shell locally, with all external transport already
       // blocked, then put the whole browser context offline before reopening.
@@ -166,7 +172,7 @@ try{
       await within('Reload persisted library',page.evaluate(async()=>{await homeReady;if(rssLoading)await rssLoading;}));
       await context.setOffline(true);await installChecks(page);
       assert.equal(await page.evaluate(()=>navigator.onLine),false);
-      await openAndCheck(page,online.id);
+      stage='offline stored image decode';
       const offline=await within('Offline stored image verification',page.evaluate(async id=>{
         const stored=(await bookAll()).filter(book=>book.id===id);if(stored.length!==1)throw Error('Persisted book identity changed');
         return liveMediaQA.inspect(stored[0],true);
@@ -174,6 +180,7 @@ try{
       assert.equal(offline.id,online.id);assert.equal(offline.bodySha256,online.bodySha256);
       assert.equal(offline.tailSha256,online.tailSha256);assert.equal(offline.paragraphs,online.paragraphs);
       assert.deepEqual(offline.images,online.images,'Offline image bytes or decoded dimensions changed');
+      stage='offline Reader';await openAndCheck(page,online.id);
       assert.equal(offlineMediaRequests,0,'Reader attempted external media requests after reload');
       assert.equal(await page.evaluate(()=>window.liveMediaFetchAttempts),0,'Application attempted to fetch offline media');
       reports.push({engine:engine.name(),sourceId,bookId:online.id,extraction:online.extraction,paragraphs:online.paragraphs,
@@ -183,8 +190,16 @@ try{
       console.log(JSON.stringify({result:'PASS',...reports.at(-1)}));
     }catch(error){
       // Only bounded metadata is reported: no source body, full URLs or headers.
+      const state=page?await within('Failure metadata',page.evaluate(()=>({
+        online:navigator.onLine,bookIds:typeof books==='undefined'?[]:books.map(book=>book.id).slice(0,5),
+        readerBookId:typeof curBook==='undefined'?null:curBook?.id,probe:window.liveMediaImageProbe||null,
+        mediaFetchAttempts:window.liveMediaFetchAttempts||0,
+        readerImages:[...document.querySelectorAll('#rtext figure img')].slice(0,10).map(image=>({
+          protocol:image.getAttribute('src')?new URL(image.src).protocol:'',complete:image.complete,
+          width:image.naturalWidth,height:image.naturalHeight})),
+      })),5000).catch(()=>null):null;
       console.error(JSON.stringify({result:'FAIL',engine:engine.name(),stage,
-        error:String(error.message||error.name).replace(/https?:\/\/\S+/g,'[URL]').slice(0,240),network:network.slice(-40)}));
+        error:String(error.message||error.name).replace(/https?:\/\/\S+/g,'[URL]').slice(0,240),state,network:network.slice(-40)}));
       throw Error('Live social media verification failed in '+engine.name()+' during '+stage);
     }finally{try{await context?.close();}finally{rmSync(profile,{recursive:true,force:true});}}
   }
