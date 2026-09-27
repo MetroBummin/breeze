@@ -25,7 +25,10 @@ assert.ok(!methods.includes('writeInkTrace('), 'No synchronous diagnostic IO on 
 assert.match(source, /inkNativeScope = scope\s+pdfRoutingNeedsRefresh = true/);
 assert.match(source, /contacts\.report = .*observePdfContacts\(event\)/);
 assert.match(source, /gate\.begin = .*routePdfPencil\(touch, event: event\)/);
+assert.match(source, /gate\.isStopOnly = [\s\S]*?pdfContacts\.roles\[ObjectIdentifier\(touch\)\] == \.stopOnly/);
 assert.match(source, /gate\.allowedTouchTypes = \[NSNumber\(value: UITouch.TouchType.pencil.rawValue\)\]/);
+assert.match(source, /addScriptMessageHandler\(\s*self, contentWorld: \.page, name: Self\.pencilAdmissionHandler\)/);
+assert.match(source, /replyHandler\(roleForWebPencil\(request\), nil\)/);
 assert.match(source, /super\.viewDidLayoutSubviews\(\)[\s\S]*?schedulePdfRoutingRefresh\(\)/);
 const host = `@MainActor private final class RoutingHost {
 var webView: WKWebView?
@@ -35,6 +38,8 @@ func recordPdfAdmission(role: String, event: UIEvent, scroll: UIScrollView, befo
 func setScope(_ scope: [String: Any]) { applyPdfScope(scope) }
 func observe(_ event: UIEvent) { observePdfContacts(event) }
 func route(_ touch: UITouch, _ event: UIEvent) -> Bool { routePdfPencil(touch, event: event) }
+func stopOnly(_ touch: UITouch) -> Bool { pdfContacts.roles[ObjectIdentifier(touch)] == .stopOnly }
+func webRole(_ request: [String: Any]) -> String { roleForWebPencil(request) }
 func refresh() { refreshPdfRouting() }
 }`;
 const work = mkdtempSync(join(tmpdir(), 'breeze-pdf-ownership-'));

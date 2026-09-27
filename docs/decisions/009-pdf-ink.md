@@ -96,6 +96,43 @@ or intervening edits cannot apply an old undo to a new session.
 
 ## Inertia follow-up (2026-09-25)
 
+### Native-to-web Pencil admission after Debug 189 reproduction (2026-09-28)
+
+Debug 189 physically reproduced a mark on the first momentum-stopping Pencil.
+The captured native gate classified both sampled contacts `stopOnly` while the
+paper was decelerating, yet WebKit delivered each contact to web `stroke/start`
+and `stroke/end`. This disproves the gate-time classification race for those
+contacts. UIKit recognizer prevention alone does not guarantee WebKit will hide
+the same Pencil from the DOM.
+
+On iPad, web ink now waits for the native role before creating a preview,
+erasing or persisting. The existing native gate remains the source of truth for
+`stopOnly`, `ink` and blocked Pencil roles. A WebKit reply message matches the
+native contact by birth time and paper position, never by unrelated UIKit/DOM
+touch identifiers. The match is consumed once. Unknown, stale and rejected
+contacts fail closed; an admitted quick tap can complete after touchend. Web
+cancel, scroll, mode/document changes and blur discard pending ink. The time and
+position bounds are only correlation tolerances, not a motion debounce or a
+delay before assigning native ownership. Existing browser/older-shell fallback
+continues to use the original web Pencil path; physical iPad acceptance applies
+to the new native bridge only after device validation.
+
+This change does not alter page eviction, drawing coordinates, persistence,
+pinch, or the policy that the first Pencil during genuine inertia stops the
+paper for its entire contact and the next contact immediately edits.
+
+Debug 190 then exposed the opposite failure on the connected iPad: later
+Pencil contacts sometimes made no ink. The native diagnostic observer saw the
+new Pencil `began` events, but UIKit reused the same `UITouch` object identifier
+and did not deliver the previous Pencil's end to this observer. The ledger
+retained the old `stopOnly` role, so the native route returned its cached role
+without publishing a fresh web admission; the web correctly rejected the
+unmatched touch. Track each native contact's `.began` timestamp as well as its
+object identifier. A new birth on a reused object retires the old role before
+classification. Repeated callbacks for the same birth keep the assigned role.
+This is contact lifecycle repair, not a wait or debounce, and preserves a
+still-live finger's navigation ownership.
+
 The user reports that rapid finger scrolling can make a subsequent Pencil drag
 scroll the PDF rather than edit. Stationary drawing works. This supersedes the
 previous basic-device confirmation for rapid-input acceptance.
@@ -519,3 +556,27 @@ The diagnostic build is not the fix. Capture an editing-mode failure first,
 then change only the confirmed boundary and check 10–20 physical flick -> first
 Pencil stop-only -> lift -> immediately editable next Pencil sequences with
 varied flick strength. Browser/Swift tests cannot substitute for that evidence.
+
+## Stop-only Pencil delivery correction (2026-09-28 candidate)
+
+The saved 188 native motion trace contains 32 admitted Pencil contacts. Every
+sampled moving contact was assigned stopOnly with isDeceleratingAtGate=true;
+every sampled stationary contact was assigned ink with the gate value false.
+No pre-contact-moving/at-gate-false misclassification appears in that capture.
+This does not rule out a rarer race, but it cannot justify changing the motion
+threshold or adding a time-based hold.
+
+The stop-only gate already stopped the scroller and claimed the Pencil contact,
+but its canPrevent override unconditionally returned false. UIKit could therefore
+let a competing WebKit touch recognizer deliver the same Pencil to the web ink
+path. For a stopOnly role only, the gate now allows UIKit to resolve competing
+recognizers in its favor. It remains non-preventing for a blocked Pencil during
+owned finger navigation; a stationary ink Pencil still fails the gate and goes
+to WebKit. The stopOnly prevention state clears on recognizer reset. Native
+Pencil admission on scroll pan/pinch and all page/zoom/storage logic stay intact.
+
+This is a code-level cause and a proposed narrow correction. Whether UIKit
+actually suppresses the occasional dot on the physical iPad is pending the
+user-operated test. A stopOnly gate row with a new saved mark after this change
+would reject the correction and require a delivery trace, not another timing
+guess.

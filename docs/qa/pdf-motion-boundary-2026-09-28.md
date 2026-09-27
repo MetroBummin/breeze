@@ -31,6 +31,77 @@ control. Do not label synthetic repetitions as physical trials.
 
 No fix, diagnostic install, physical sequence count or acceptance is claimed yet.
 
+188 capture from the connected iPad: 32 admitted Pencil contacts; 19 stopOnly
+have a moving/decelerating pre-contact sample and true gate deceleration, and
+13 ink have settled pre-contact samples and false gate deceleration. No observed
+misclassified motion-to-ink contact. Raw SHA256:
+87aabcbb299ec1e0cc50b75814b3d4b9c2b787d8706409a56b7e660cdfbb3b6a.
+The source trace is preserved outside the repository at
+`../audits/pdf-input-integration-20260927/188-motion/captured-motion.json`.
+The 32 records are diagnostic contact classifications, not 32 user-verified
+absence-of-mark trials.
+
+The next candidate changes only stopOnly gate arbitration: canPrevent becomes
+true while that exact native contact is owned. Blocked contacts during finger
+navigation remain unable to prevent competing recognizers. Test with ordinary
+diagnostics OFF, varied flick strength, 10–20 first-contact stops and immediate
+second-contact strokes; include highlighter and a fully settled control.
+
+Debug 189 was built for the connected physical iPad from the main-based fix
+branch. The signed 1.4 (189) app includes all 113 matching web assets, and the
+production Swift ownership checks pass 35/35 with UIKit/WebKit SDK typecheck.
+It was installed and launched with BREEZE_PDF_MOTION_TRACE=0,
+BREEZE_INK_TRACE=0 and BREEZE_PDF_STATE_TRACE=0. User-operated physical result
+FAILED: the first Pencil still left a mark. With targeted diagnostics enabled
+on the connected iPad, two reproduced native contacts were both classified
+stopOnly during moving deceleration. Each then entered the web stroke/start and
+stroke/end path. Evidence and hashes are in
+`../audits/pdf-input-integration-20260927/189-failure/reproduced-findings.md`.
+This is native-to-web ownership leakage, not a demonstrated gate-time motion
+classification race. No additional 189 input experiment is needed.
+
+The next candidate requires a native reply before web ink starts. Check the
+real production native role code, SDK typecheck, WebKit browser blocked/ink
+reply cases, app build and exact embedded web assets. Then install one normal
+diagnostics-OFF build. User physical acceptance remains: 10–20 weak/medium/
+strong flicks, first moving Pencil stopOnly with no mark through lift, immediate
+second Pencil ink, plus stationary first Pencil and highlighter controls.
+Automated, SDK and installation checks must not be described as this physical
+result. Keep the PR Draft and do not archive until the user confirms the device
+trial.
+
+Debug 190: native-to-web admission candidate built and signed for the connected
+iPad. Native ownership checks 36/36, UIKit/WebKit SDK typecheck, 41 PDF unit
+tests and the full WebKit synthetic ink suite pass. The signed app contains
+113/113 matching web assets. Installed and launched with all PDF diagnostic
+flags unset. Physical stopOnly/next-ink acceptance is awaiting the user's
+device run; installation is not acceptance. The first Xcode attempt in the
+Desktop audit directory failed at codesign because file-provider metadata was
+added to its output; a fresh local /tmp derived-data build succeeded.
+
+Debug 190 physical result FAILED: the first moving Pencil stopped without a
+mark, but later Pencil contacts intermittently failed to draw. In a targeted
+diagnostic relaunch, native saw every Pencil `began`. At uptime 46080.929 the
+gate assigned `stopOnly`; four later web admission requests were rejected
+without any new native gate row. Their native `began` events reused the same
+UITouch object identifier (`0x114acd6c0`) while no corresponding native end
+was observed. A later Pencil with a different native object identifier at
+46084.748 obtained `ink` and drew. The trace is preserved outside the repo in
+`../audits/pdf-input-integration-20260927/190-failure/` (ink trace SHA256
+`c8724938c76c82387f15c185b06d3fe670b1b85f2a1ab6f451914d5a184fb200`).
+
+The next candidate retires a cached native role on a new `.began` timestamp
+for a recycled UIKit touch object. Production ownership regression now covers
+the missing-end/reused-object sequence. Retest the full first-stop/next-ink
+pair physically before treating this as accepted; all other behaviors remain
+outside this narrow change.
+
+Debug 191: the new production reused-UITouch regression passes (37 native
+ownership checks total), UIKit/WebKit SDK typecheck passes, and the signed iPad
+build succeeds with 113/113 embedded web assets matching www. It was installed
+and launched on the connected iPad with all PDF diagnostic flags unset.
+Physical repeated first-stop/next-ink acceptance is pending.
+
 Prepared validation: 33 existing production ownership checks pass. Signed
 device-target Debug 188 build succeeds using the same Xcode toolchain as 187;
 all 113 embedded web assets match www. No new web build or changes were needed.

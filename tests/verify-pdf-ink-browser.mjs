@@ -109,6 +109,28 @@ try{
    assert.equal(await settings.isVisible(),false,'first Pencil contact closes settings and draws');
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    assert.equal(await count(),1);
+   // The actual web admission path must wait for native ownership, including
+   // when a short Pencil contact ends before the asynchronous reply arrives.
+   await page.evaluate(()=>{
+    window.qaAdmissions=[];
+    window.webkit.messageHandlers.breezePencilAdmission={postMessage:request=>
+     new Promise(resolve=>window.qaAdmissions.push({request,resolve}))};
+   });
+   await stroke([[.55,.2],[.58,.22]]);
+   await page.waitForFunction(()=>window.qaAdmissions.length===1);
+   assert.equal(await count(),1,'unadmitted Pencil cannot preview or save');
+   assert.equal(await page.evaluate(()=>Number.isFinite(window.qaAdmissions[0].request.eventAt)),true);
+   await page.evaluate(()=>window.qaAdmissions.shift().resolve('blocked'));
+   await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,0)));
+   assert.equal(await count(),1,'native stopOnly contact cannot leave a mark');
+   await stroke([[.55,.3],[.58,.32]]);
+   await page.waitForFunction(()=>window.qaAdmissions.length===1);
+   assert.equal(await count(),1);
+   await page.evaluate(()=>window.qaAdmissions.shift().resolve('ink'));
+   await page.waitForFunction(()=>document.querySelectorAll('.pdf-source-page[data-page="1"] .pdf-ink-layer polyline').length===2);
+   await page.locator('[data-ink-undo]').click();
+   assert.equal(await count(),1,'admitted quick contact remains undoable');
+   await page.evaluate(()=>delete window.webkit.messageHandlers.breezePencilAdmission);
    const traceRoutes=await page.evaluate(()=>window.qaInkTrace.map(row=>row.route));
    if(process.env.BREEZE_QA_INK_TRACE==='1'){assert.ok(traceRoutes.includes('stroke/start'));assert.ok(traceRoutes.includes('dispatch/finished'));}
    else assert.equal(traceRoutes.length,0,'diagnostics disabled by default');

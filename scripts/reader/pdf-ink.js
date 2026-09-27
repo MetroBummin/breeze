@@ -26,10 +26,10 @@ const BreezePdfInk = (()=>{
   const ns='http://www.w3.org/2000/svg';
   const database=openDb('breeze-pdf-ink',1,db=>db.createObjectStore('pages'));
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
-  let session=null, mode='read', active=null, toolbar=null, status=null;
+  let session=null, mode='read', active=null, pendingAdmission=null, toolbar=null, status=null;
   let inkTools=null,inkEntry=null,inkMini=null,inkReadSeparator=null;
   let settings=null,settingsTool=null;
-  const suppressed=new Set(), blockedPointers=new Set();
+  const suppressed=new Set(), blockedPointers=new Set(), nativeOwnedStylus=new Set();
   let suppressClick=false, paperPenPointer=null;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
   const onPaper=target=>target?.closest?.('.pdf-source-page') && !target.closest('button,input,select,textarea');
@@ -275,7 +275,7 @@ const BreezePdfInk = (()=>{
     new MutationObserver(update).observe(document.body,{attributes:true,attributeFilter:['class']});
   }
   function setMode(next){
-    cancel();suppressed.clear();blockedPointers.clear();suppressClick=false; mode=next;
+    cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false; mode=next;
     if(next!=='read'){lastTool=next;savePreferences();}
     if(next==='read')publishNativeScope();
     if(typeof cancelGesture==='function')cancelGesture('PDF ink mode');
@@ -432,16 +432,53 @@ const BreezePdfInk = (()=>{
     if(!visible()||mode==='read')return;
     const changed=Array.from(event.changedTouches);
     for(const t of changed){
-      if(onPaper(t.target) && (active || t.touchType==='stylus'))suppressed.add(t.identifier);
+      if(onPaper(t.target) && (active || (pendingAdmission && !pendingAdmission.ended)
+          || nativeOwnedStylus.size || t.touchType==='stylus'))suppressed.add(t.identifier);
     }
     const pen=changed.find(t=>t.touchType==='stylus' && onPaper(t.target));
     consumeTouches(event);
-    if(active || !pen){trace('start/no-new-stroke',event);return;}
+    if(active || !pen || (pendingAdmission && !pendingAdmission.ended)){
+      trace('start/no-new-stroke',event);return;
+    }
     // Only eligible direct contacts own a finger gesture; suppressed palms do not.
     const eligible=Array.from(event.touches).filter(finger);
     if(eligible.length || !event.cancelable){
       trace('start/rejected',event);return;
     }
+    // Do not create a preview or persist a point until native confirms that
+    // THIS stylus start is ink. Native Touch IDs and DOM IDs are unrelated.
+    const bridge=Reflect.get(window,'webkit')?.messageHandlers?.breezePencilAdmission;
+    if(bridge){
+      const snapshot=t=>({identifier:t.identifier,target:t.target,clientX:t.clientX,clientY:t.clientY});
+      const request={eventAt:(event.timeStamp>1e12?event.timeStamp:performance.timeOrigin+event.timeStamp)/1000,
+        x:pen.clientX,y:pen.clientY,viewport:document.documentElement.clientWidth};
+      const pending={id:pen.identifier,session,points:[snapshot(pen)],ended:false,pointerId:paperPenPointer};
+      pendingAdmission=pending;
+      trace('admission/request',event);
+      Promise.resolve().then(()=>bridge.postMessage(request)).then(role=>{
+        if(pendingAdmission!==pending)return; // Stale reply cannot act on a new contact.
+        pendingAdmission=null;
+        trace(role==='ink'?'admission/ink':'admission/rejected',undefined,String(role));
+        if(role!=='ink'){
+          if(!pending.ended)nativeOwnedStylus.add(pending.id);
+          return;
+        }
+        if(!visible()||mode==='read'||session!==pending.session)return;
+        beginStroke(pending.points[0],undefined,pending.pointerId);
+        if(!active)return;
+        for(const p of pending.points.slice(1)){
+          if(!active)break;
+          extendStroke(point(p,active.state,active.bounds));
+        }
+        if(pending.ended && active)finishStroke();
+      }).catch(()=>{
+        if(pendingAdmission===pending){pendingAdmission=null;trace('admission/error');}
+      });
+      return;
+    }
+    beginStroke(pen,event);
+  }
+  function beginStroke(pen,event,pointerId=paperPenPointer){
     // A completed finger sequence cannot leave a stale pinch blocking Pencil.
     if(originalPinchBusy())cancelOriginalPinch();
     const element=pen.target.closest('.pdf-source-page');
@@ -452,7 +489,7 @@ const BreezePdfInk = (()=>{
     closeSettings();
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
     if(!p.every(Number.isFinite)||p[0]<0||p[1]<0||p[0]>state.width||p[1]>state.height)return;
-    active={id:pen.identifier,pointerId:paperPenPointer,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
+    active={id:pen.identifier,pointerId,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
       preview:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
     trace('stroke/start',event);
     updateHistoryControls();
@@ -465,6 +502,14 @@ const BreezePdfInk = (()=>{
   }
   function touchMove(event){
     consumeTouches(event);
+    if(pendingAdmission){
+      const pen=Array.from(event.changedTouches).find(t=>t.identifier===pendingAdmission.id);
+      if(pen){
+        if(!event.cancelable){pendingAdmission=null;trace('admission/noncancelable');return;}
+        pendingAdmission.points.push({identifier:pen.identifier,target:pen.target,clientX:pen.clientX,clientY:pen.clientY});
+      }
+      return;
+    }
     if(!active)return;
     const pen=Array.from(event.changedTouches).find(t=>t.identifier===active.id);
     if(!pen)return; // A moving/lifting palm cannot append or finish Pencil ink.
@@ -513,6 +558,17 @@ const BreezePdfInk = (()=>{
   function touchEnd(event){
     if(active)trace('stroke/end',event);
     consumeTouches(event);
+    if(pendingAdmission){
+      const pendingPen=Array.from(event.changedTouches).find(t=>t.identifier===pendingAdmission.id);
+      if(pendingPen){
+        if(event.type==='touchcancel')pendingAdmission=null;
+        else{
+          pendingAdmission.points.push({identifier:pendingPen.identifier,target:pendingPen.target,
+            clientX:pendingPen.clientX,clientY:pendingPen.clientY});
+          pendingAdmission.ended=true;
+        }
+      }
+    }
     const pen=active&&Array.from(event.changedTouches).find(t=>t.identifier===active.id);
     if(pen){
       if(event.type==='touchend'){
@@ -524,6 +580,7 @@ const BreezePdfInk = (()=>{
     }
     const live=new Set(Array.from(event.touches,t=>t.identifier));
     for(const id of suppressed)if(!live.has(id))suppressed.delete(id);
+    for(const id of nativeOwnedStylus)if(!live.has(id))nativeOwnedStylus.delete(id);
     resumeOriginalPdfPaint();
     // Capture-phase delivery precedes the Reader's pinch-end handler. rAF here
     // therefore sees committed geometry, including a cancelled/no-op pinch.
@@ -553,7 +610,10 @@ const BreezePdfInk = (()=>{
       }
       if(blocked){
         event.stopImmediatePropagation(); // Do not disable the following Touch path.
-        if(type==='pointercancel' && event.pointerType==='pen' && active?.pointerId===event.pointerId)cancel('pointercancel');
+        if(type==='pointercancel' && event.pointerType==='pen'){
+          if(active?.pointerId===event.pointerId)cancel('pointercancel');
+          if(pendingAdmission?.pointerId===event.pointerId)pendingAdmission=null;
+        }
       }
       if(type==='pointerup'||type==='pointercancel'){
         blockedPointers.delete(event.pointerId);
@@ -578,10 +638,10 @@ const BreezePdfInk = (()=>{
       }
     },{capture:true,passive:false});
   }
-  const interrupt=()=>{cancel();suppressed.clear();blockedPointers.clear();suppressClick=false;paperPenPointer=null;resumeOriginalPdfPaint();};
+  const interrupt=()=>{cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false;paperPenPointer=null;resumeOriginalPdfPaint();};
   window.addEventListener('blur',interrupt);
   window.addEventListener('resize',()=>{cancel('resize');resumeOriginalPdfPaint();});
-  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel('reader-scroll');}},{capture:true,passive:true});
+  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);pendingAdmission=null;cancel('reader-scroll');}},{capture:true,passive:true});
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{

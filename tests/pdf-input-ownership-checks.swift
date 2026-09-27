@@ -106,10 +106,63 @@
             _=a.reconcile([p],contactsActive:false); assert(a.reconcile([q],contactsActive:false))
             assert(p.allowedTouchTypes.contains(2) && !q.allowedTouchTypes.contains(2))
         }
-        test("gate and observer never prevent navigation recognizers") {
+        test("idle gate and observer never prevent navigation recognizers") {
             let gate=BreezePdfPencilGate(), observer=BreezePdfContactObserver(), pan=UIPanGestureRecognizer()
             assert(!gate.canPrevent(pan) && !gate.canBePrevented(by:pan))
             assert(!observer.canPrevent(pan) && !observer.canBePrevented(by:pan))
+        }
+        test("production stop-only gate wins competing Pencil touch recognizers only for that contact") {
+            let (h,s)=fixture(), gate=BreezePdfPencilGate(), other=UIGestureRecognizer()
+            gate.begin={ touch,event in h.route(touch,event) }
+            gate.isStopOnly={ touch in h.stopOnly(touch) }
+            let first=UITouch(.pencil), event=UIEvent([first]); s.isDecelerating=true
+            gate.touchesBegan([first],with:event)
+            assert(gate.state == .began && gate.canPrevent(other) && s.stops == 1)
+            first.phase = .ended; gate.touchesEnded([first],with:UIEvent([first])); h.observe(UIEvent([first])); gate.reset()
+            assert(!gate.canPrevent(other))
+            let next=UITouch(.pencil); gate.touchesBegan([next],with:UIEvent([next]))
+            assert(gate.state == .failed && !gate.canPrevent(other) && s.stops == 1)
+        }
+        test("a blocked Pencil cannot cancel an existing finger recognizer") {
+            let (h,s)=fixture(), gate=BreezePdfPencilGate(), finger=UITouch(.direct), pen=UITouch(.pencil)
+            let pan=UIPanGestureRecognizer(); h.observe(UIEvent([finger])); s.isDecelerating=true
+            gate.begin={ touch,event in h.route(touch,event) }
+            gate.isStopOnly={ touch in h.stopOnly(touch) }
+            gate.touchesBegan([pen],with:UIEvent([finger,pen]))
+            assert(gate.state == .began && !gate.canPrevent(pan) && s.stops == 0)
+        }
+        test("web admission uses native birth time and position, never DOM touch ID") {
+            let (h,s)=fixture(), stop=UITouch(.pencil,100,100)
+            s.isDecelerating=true
+            assert(h.route(stop,UIEvent([stop])))
+            let eventAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + stop.timestamp
+            func request(_ at: Double, _ x: Double, _ y: Double) -> [String: Any] {
+                ["eventAt":at,"x":x,"y":y,"viewport":600.0]
+            }
+            assert(h.webRole(request(eventAt,100,100)) == "blocked")
+            assert(h.webRole(request(eventAt,400,100)) == "blocked")
+            stop.phase = .ended; h.observe(UIEvent([stop]))
+            let ink=UITouch(.pencil,200,100)
+            assert(!h.route(ink,UIEvent([ink])))
+            let inkAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + ink.timestamp
+            assert(h.webRole(request(inkAt,200,100)) == "ink")
+            assert(h.webRole(request(inkAt,200,100)) == "blocked")
+            assert(h.webRole(request(inkAt+2,200,100)) == "blocked")
+            h.setScope(["enabled":false]); assert(h.webRole(request(inkAt,200,100)) == "blocked")
+        }
+        test("reused UIKit touch object after missing end gets a fresh role") {
+            let (h,s)=fixture(), reused=UITouch(.pencil,250,300)
+            s.isDecelerating=true
+            assert(h.route(reused,UIEvent([reused])) && s.stops == 1)
+            let firstAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + reused.timestamp
+            assert(h.webRole(["eventAt":firstAt,"x":250.0,"y":300.0,"viewport":600.0]) == "blocked")
+            // UIKit can omit the old end and recycle the same UITouch pointer.
+            // Its new .began timestamp, rather than pointer identity, retires stopOnly.
+            reused.timestamp += 0.4
+            s.isDecelerating=false
+            assert(!h.route(reused,UIEvent([reused])) && s.stops == 1)
+            let secondAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + reused.timestamp
+            assert(h.webRole(["eventAt":secondAt,"x":250.0,"y":300.0,"viewport":600.0]) == "ink")
         }
         test("gate owns only its admitted Pencil through end/reset") {
             let g=BreezePdfPencilGate(), pen=UITouch(.pencil), other=UITouch(.direct), event=UIEvent([pen,other])

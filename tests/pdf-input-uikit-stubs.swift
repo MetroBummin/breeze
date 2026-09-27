@@ -52,13 +52,17 @@ import CoreGraphics
     var type: TouchType
     var phase: Phase = .began
     var point: CGPoint
+    var timestamp: TimeInterval = ProcessInfo.processInfo.systemUptime
     init(_ type: TouchType, _ x: CGFloat = 100, _ y: CGFloat = 100) {
         self.type = type; point = CGPoint(x: x, y: y)
     }
     func location(in view: UIView) -> CGPoint { point }
 }
 @MainActor class UIEvent {
-    var timestamp: TimeInterval = 0
+    var timestamp: TimeInterval
     var allTouches: Set<UITouch>?
-    init(_ touches: Set<UITouch>) { allTouches = touches }
+    init(_ touches: Set<UITouch>) {
+        allTouches = touches
+        timestamp = touches.map(\.timestamp).max() ?? ProcessInfo.processInfo.systemUptime
+    }
 }
