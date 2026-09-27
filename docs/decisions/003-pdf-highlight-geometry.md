@@ -111,3 +111,16 @@ and [TextLayer layout](https://github.com/mozilla/pdf.js/blob/v3.11.174/src/disp
 
 ## Security mitigation
 All runtime PDF.js getDocument calls explicitly disable `isEvalSupported` to apply the published CVE-2024-4367 workaround while retaining the pinned glyph adapter. A patched renderer upgrade and physical-device geometry regression remain separate gates.
+
+## Document ownership (2026-09-27)
+
+The original load token, book ID and session object bind the PDF and its page
+map. A delayed first getPage(1) must recheck ownership before touching the DOM
+or assigning originalSession. Every async publication and page hit-test verifies
+the same session; equal page numbers from other sessions are rejected. Selected
+boxes must belong to that page's map, including delayed sentence cue paint and
+mode-bridge searches. Shared lexical meanings and existing Wordbook data remain
+shared; page positions and source sentences never migrate between documents.
+The controlled delayed-page regression reproduces this race. It does not prove
+that all reported device symptoms had this cause. Hidden OCR remains a separate
+source-document possibility, not an explanation for cross-document source text.

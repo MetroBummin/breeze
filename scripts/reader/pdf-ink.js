@@ -47,8 +47,7 @@ const BreezePdfInk = (()=>{
     if(bridge){bridge.postMessage({rows:traceRows});traceRows.length=0;}
   }
   let scopeFrame=0, lastScope='';
-  let cachedPageScope=null,pageScopeSession=null,pageScopeKey='';
-  function invalidatePageScope(){cachedPageScope=null;}
+  function invalidatePageScope(){invalidatePdfPageLayout(session);}
   function scopeControlVisible(element){
     if(!element.getClientRects().length||element.closest('[inert]'))return false;
     // Collapsed/fading controls can still have a layout rectangle. They must
@@ -75,14 +74,9 @@ const BreezePdfInk = (()=>{
       const excluded=Array.from(document.querySelectorAll('button,input,select,textarea,[role="dialog"],#pdf-ink-tools,#readpill,#word-modal-scrim,#sentence-scrim,#aa-pop'))
         .filter(scopeControlVisible)
         .map(bounds);
-      const geometryKey=[outer.width,outer.height,box.scrollHeight,originalZoom(),session.pages.length].join('|');
-      if(!cachedPageScope||pageScopeSession!==session||pageScopeKey!==geometryKey){
-        cachedPageScope=session.pages.map(element=>{
-          const r=element.getBoundingClientRect();
-          return [r.x-outer.x+box.scrollLeft,r.y-outer.y+box.scrollTop,r.width,r.height];
-        });pageScopeSession=session;pageScopeKey=geometryKey;
-      }
-      scope={enabled,viewport:document.documentElement.clientWidth,box:bounds(box),scrollHeight:box.scrollHeight,excluded,pages:cachedPageScope};
+      const layout=pdfPageLayout(session);
+      if(!layout)return;
+      scope={enabled,viewport:document.documentElement.clientWidth,box:bounds(box),scrollHeight:box.scrollHeight,excluded,pages:layout.rects};
     }
     const json=JSON.stringify(scope);
     if(json!==lastScope){lastScope=json;bridge.postMessage(scope);}
@@ -101,7 +95,9 @@ const BreezePdfInk = (()=>{
       if(!(node instanceof Element)||node.closest('.pdf-ink-layer'))continue;
       const layout=node===document.body||node===document.documentElement
         ||node.matches('#v-read,#originalwrap,#original-stage,#original-content,#original-zoom,.pdf-source-page');
-      if(layout)invalidatePageScope();
+      // Canvas/marker insertion does not change paper layout. Aspect ratio,
+      // ancestor sizing and page-list changes do.
+      if(layout&&(record.type!=='childList'||node.matches('#original-content')))invalidatePageScope();
       if(layout||node.closest('#v-read,#readchrome')
           ||node.matches('[role=dialog],dialog,#word-modal-scrim,#sentence-scrim,#aa-pop'))refresh=true;
     }
@@ -250,7 +246,7 @@ const BreezePdfInk = (()=>{
     if(typeof closePanel==='function')closePanel();
     if(typeof closeSentence==='function')closeSentence();
     update();
-    invalidatePageScope();publishNativeScope();
+    publishNativeScope();
   }
   async function read(key){
     const db=await database();
@@ -383,9 +379,6 @@ const BreezePdfInk = (()=>{
   function touchStart(event){
     if(!visible()||mode==='read')return;
     const changed=Array.from(event.changedTouches);
-    if(changed.some(t=>finger(t)&&onPaper(t.target))){
-      invalidatePageScope();publishNativeScope();
-    }
     for(const t of changed){
       if(onPaper(t.target) && (active || t.touchType==='stylus'))suppressed.add(t.identifier);
     }
@@ -400,6 +393,7 @@ const BreezePdfInk = (()=>{
     // A completed finger sequence cannot leave a stale pinch blocking Pencil.
     if(originalPinchBusy())cancelOriginalPinch();
     const element=pen.target.closest('.pdf-source-page');
+    if(!ownsPdfPage(element,session))return;
     const state=pages.get(keyFor(session,Number(element.dataset.page)));
     if(!state?.svg || !state.loaded){message('필기를 불러오는 중이에요. 다시 시도해 주세요');return;}
     cancelGesture('Pencil owns paper');
@@ -478,7 +472,7 @@ const BreezePdfInk = (()=>{
     // Capture-phase delivery precedes the Reader's pinch-end handler. rAF here
     // therefore sees committed geometry, including a cancelled/no-op pinch.
     if(Array.from(event.changedTouches).some(t=>t.touchType!=='stylus')){
-      invalidatePageScope();scheduleNativeScope();
+      scheduleNativeScope();
     }
   }
   // Pointer events only guard Lookup/click. Drawing remains WebKit stylus Touch.
@@ -527,7 +521,7 @@ const BreezePdfInk = (()=>{
   const interrupt=()=>{cancel();suppressed.clear();blockedPointers.clear();suppressClick=false;resumeOriginalPdfPaint();};
   window.addEventListener('blur',interrupt);
   window.addEventListener('resize',()=>{cancel();resumeOriginalPdfPaint();});
-  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel();scheduleNativeScope();}},{capture:true,passive:true});
+  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel();}},{capture:true,passive:true});
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{

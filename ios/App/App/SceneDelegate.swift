@@ -326,7 +326,15 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }), abs(scroll.contentSize.height-expectedHeight) < 4 else { return false }
         let contentPoint = CGPoint(x: point.x-box.minX+scroll.contentOffset.x,
                                    y: point.y-box.minY+scroll.contentOffset.y)
-        guard paperData.contains(where: { rect($0).contains(contentPoint) }) else { return false }
+        // Published paper rectangles remain ordered in content coordinates.
+        // Search all pages without scanning or dropping offscreen Pencil areas.
+        var low = 0, high = paperData.count
+        while low < high {
+            let middle = (low + high) / 2
+            if rect(paperData[middle]).maxY < contentPoint.y { low = middle + 1 }
+            else { high = middle }
+        }
+        guard low < paperData.count, rect(paperData[low]).contains(contentPoint) else { return false }
         let pan = scroll.panGestureRecognizer
         let fingerPan = (pan.state == .began || pan.state == .changed) && pan.numberOfTouches > 0
         let inertia = scroll.isDecelerating && !fingerPan

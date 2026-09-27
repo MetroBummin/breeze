@@ -275,3 +275,22 @@ off for ordinary QA: pen and eraser, base and enlarged PDF, repeated finger flic
 tool selection, expanded/collapsed chrome, open settings, pinch then flick,
 page gaps, slow/fast curves, Undo/Redo and process restart. If momentum still
 fails, capture a fresh `BREEZE_INK_TRACE=1` run before changing native routing.
+
+## Cached layout and bounded page work (2026-09-27)
+
+Native scope, PDF page hit-testing and visible-page scheduling share the session's
+committed content-coordinate page rectangles. Layout/zoom/rotation invalidates
+them; ordinary finger contact and scroll do not. Page lookup is a binary search
+over every page, including unrendered paper; gaps remain excluded. Scope updates
+follow layout and control changes, rather than serializing the entire scope on
+every scroll frame. Tests still cover ancestor changes, transitions and pinch
+commit; the old unobservable fixture rectangle mutation now emits its corresponding
+layout mutation, and a 200-page repeated-contact regression checks cache reuse.
+
+Required initial canvases are serialized and allowed during single-finger pan;
+pinch and active Pencil retain input ownership. Touched placeholder nodes stay
+attached. Canvas and word-map work yield between stages. Sharpening waits for
+160ms without scroll and no active contact. User contact/scroll invalidates the
+existing mode-change token so delayed mode landing cannot pull the view back.
+The native residual-inertia gate still consumes the first moving Pencil contact
+and edits a stationary page immediately. Device validation belongs to the user.

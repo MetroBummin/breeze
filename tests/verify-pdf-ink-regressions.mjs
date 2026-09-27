@@ -8,6 +8,7 @@ import vm from 'node:vm';
 import test from 'node:test';
 const root=process.env.BREEZE_INK_REGRESSION_BASE||fileURLToPath(new URL('../',import.meta.url));
 const source=readFileSync(resolve(root,'scripts/reader/pdf-ink.js'),'utf8');
+const pdfSource=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
 const geometrySource=readFileSync(resolve(root,'scripts/reader/pdf-ink-geometry.js'),'utf8');
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
@@ -43,7 +44,7 @@ function fixture(){
   html.clientWidth=600;box.scrollLeft=0;box.scrollTop=0;box.scrollHeight=1800;
   paper.dataset={page:'1'};const canvas=new Element();canvas.tagName='canvas';paper.append(canvas);
   const svg=new Element('','pdf-ink-layer');svg.tagName='svg';paper.append(svg);
-  const session={hash:'fixture-pdf-sha256',kind:'pdf',pages:[paper],settled:new Set([1])};
+  const session={hash:'fixture-pdf-sha256',kind:'pdf',bookId:'fixture',loadToken:1,pages:[paper],settled:new Set([1])};
   const state={key:JSON.stringify([session.hash,1]),strokes:[],revision:0,dirty:false,error:false,saving:null,loading:null,loaded:true,svg,element:paper,width:600,height:800};
   let controls=[];
   const document={body,documentElement:html,hidden:false,addEventListener:register,
@@ -65,6 +66,7 @@ function fixture(){
     readerScroller:()=>box,originalZoom:()=>1,originalPinchBusy:()=>busy,cancelOriginalPinch:()=>{busy=false;},
     originalPinchPan:false,originalPinch:null,originalPinchTouches:false,originalPdfContacts:0,
     cancelGesture:()=>{},closePanel:()=>{},closeSentence:()=>{},resumeOriginalPdfPaint:()=>{},
+    curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
     structuredClone,queueMicrotask,console:{warn(){}},performance};
   const needle='  return {\n    open(s)';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
@@ -72,7 +74,7 @@ function fixture(){
       setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     open(s)`);
-  vm.createContext(context);vm.runInContext(geometrySource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
+  vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
   const qa=context.engine.qa;qa.configure(session,state);
   const contact=(x,y,id=1,type='stylus')=>({identifier:id,touchType:type,target:canvas,clientX:x,clientY:y});
   const event=(type,touches,changedTouches=touches)=>({type,touches,changedTouches,cancelable:true,preventDefault(){this.defaultPrevented=true;},stopImmediatePropagation(){}});
@@ -125,8 +127,8 @@ test('scope: scrolling retains content-coordinate cache without per-frame page s
   for(let i=1;i<=200;i++){f.box.scrollTop=i;f.emit('scroll',f.box);f.flush();}
   assert.equal(f.paper.reads,reads);assert.equal(f.posted.length,1);
 });
-test('scope: finger contact refreshes previously missed layout before next Pencil',()=>{
-  const f=fixture();f.qa.publishNativeScope();f.paper.rect.x=31;
+test('scope: layout invalidation refreshes paper before the next Pencil',()=>{
+  const f=fixture();f.qa.publishNativeScope();f.paper.rect.x=31;f.mutate(f.stage);f.flush();
   f.qa.touchStart(f.event('touchstart',[f.contact(100,100,2,'direct')]));
   assert.equal(f.posted.at(-1).pages[0][0],31);assert.equal(f.qa.active(),null);
 });
@@ -219,4 +221,12 @@ test('input: failed save retains the latest smoothed stroke and retry persists i
   assert.equal(f.state.dirty,true);assert.equal(f.state.error,true);assert.equal(f.stored.size,0);
   f.failWrite(false);await f.qa.persist(f.state);assert.equal(f.state.dirty,false);
   assert.deepEqual(f.stored.get(f.state.key).strokes,plain(f.state.strokes));
+});
+
+test('scope: ordinary finger contacts reuse all cached page boundaries',()=>{
+ const f=fixture();
+ for(let i=1;i<200;i++){const page=new f.Element('','pdf-source-page');page.rect={x:0,y:i*820,width:600,height:800};f.zoom.append(page);f.session.pages.push(page);}
+ f.qa.publishNativeScope();const reads=f.session.pages.map(p=>p.reads),posts=f.posted.length;
+ for(let i=0;i<100;i++){const t=f.contact(100,100,2,'direct');f.qa.touchStart(f.event('touchstart',[t]));f.qa.touchEnd(f.event('touchend',[],[t]));f.flush();}
+ assert.deepEqual(f.session.pages.map(p=>p.reads),reads);assert.equal(f.posted.length,posts);assert.equal(f.posted.at(-1).pages.length,200);
 });
