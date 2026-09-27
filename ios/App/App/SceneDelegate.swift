@@ -141,6 +141,50 @@ private final class BreezePdfPencilGate: UIGestureRecognizer {
 // END PDF_INPUT_ADAPTERS
 
 #if DEBUG
+// Observation only: never feeds admission or writes scroll positions.
+private final class BreezePdfMotionProbe: NSObject {
+    private final class TickTarget: NSObject {
+        weak var owner: BreezePdfMotionProbe?
+        @objc func tick() { owner?.sample() }
+    }
+    private weak var scroll: UIScrollView?
+    private var link: CADisplayLink?
+    private var samples: [[String: Any]] = []
+    private var previousOffset: CGPoint?
+    deinit { link?.invalidate() }
+    func bind(_ next: UIScrollView?) {
+        guard scroll !== next else { return }
+        link?.invalidate(); link = nil
+        scroll = next; samples.removeAll(); previousOffset = nil
+        guard next != nil else { return }
+        let target = TickTarget(); target.owner = self
+        let display = CADisplayLink(target: target, selector: #selector(TickTarget.tick))
+        display.add(to: .main, forMode: .common)
+        link = display
+    }
+    private func sample() {
+        guard UIApplication.shared.applicationState == .active, let scroll else {
+            samples.removeAll(); previousOffset = nil; return
+        }
+        let offset = scroll.contentOffset
+        let delta = previousOffset.map { [offset.x - $0.x, offset.y - $0.y] }
+        samples.append(["uptime": ProcessInfo.processInfo.systemUptime,
+                        "offset": [offset.x, offset.y],
+                        "offsetDelta": delta as Any? ?? NSNull(),
+                        "decelerating": scroll.isDecelerating,
+                        "dragging": scroll.isDragging, "tracking": scroll.isTracking,
+                        "panState": scroll.panGestureRecognizer.state.rawValue])
+        if samples.count > 12 { samples.removeFirst() }
+        previousOffset = offset
+    }
+    func before(_ timestamp: TimeInterval, scroll expected: UIScrollView) -> [[String: Any]] {
+        guard scroll === expected else { return [] }
+        return Array(samples.filter { ($0["uptime"] as? Double ?? .infinity) < timestamp }.suffix(4))
+    }
+}
+#endif
+
+#if DEBUG
 // Observes UIKit delivery without recognizing, cancelling, delaying, or preventing
 // any gesture. Needed when WKWebView does not send a momentum-time touch to JS.
 private final class BreezeInkInputProbe: UIGestureRecognizer {
@@ -184,6 +228,10 @@ private final class BreezeRefreshControl: UIRefreshControl {
 
 final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, AVSpeechSynthesizerDelegate {
     #if DEBUG
+    private let pdfMotionProbe = BreezePdfMotionProbe()
+    private var pdfMotionTraceEnabled = false
+    private var pdfMotionRows: [[String: Any]] = []
+    private var pdfMotionSavePending = false
     private var inkRawInputRows: [[String: Any]] = []
     private var inkTraceEnabled = false
     private var pdfStateRows: [[String: Any]] = []
@@ -266,6 +314,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
 
         #if DEBUG
+        pdfMotionTraceEnabled = inkPad && ProcessInfo.processInfo.environment["BREEZE_PDF_MOTION_TRACE"] == "1"
         if inkPad && ProcessInfo.processInfo.environment["BREEZE_PDF_STATE_TRACE"] == "1" {
             pdfStateEnabled = true
             webView.configuration.userContentController.add(self, name: "breezePdfState")
@@ -581,6 +630,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
         if pdfNavigationAdmission.reconcile(wanted, contactsActive: !pdfContacts.live.isEmpty) {
             pdfPaperScroller = paper
+            #if DEBUG
+            if pdfMotionTraceEnabled { pdfMotionProbe.bind(paper) }
+            #endif
             pdfRoutingNeedsRefresh = false
         }
     }
@@ -622,11 +674,22 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
         guard low < paperData.count, rect(paperData[low]).contains(contentPoint) else { return false }
         let before = scroll.contentOffset
-        let role = pdfContacts.beginPencil(id, ready: true, decelerating: scroll.isDecelerating)
+        let isDeceleratingAtGate = scroll.isDecelerating
+        #if DEBUG
+        let preContactMotion = pdfMotionTraceEnabled ? pdfMotionProbe.before(touch.timestamp, scroll: scroll) : []
+        #endif
+        let role = pdfContacts.beginPencil(id, ready: true, decelerating: isDeceleratingAtGate)
         if role == .stopOnly {
             if #available(iOS 17.4, *) { scroll.stopScrollingAndZooming() }
             else { scroll.setContentOffset(scroll.contentOffset, animated: false) }
         }
+        #if DEBUG
+        if pdfMotionTraceEnabled {
+            recordPdfMotion(touch: touch, event: event, scroll: scroll, before: before,
+                            preContactMotion: preContactMotion, atGate: isDeceleratingAtGate,
+                            role: String(describing: role))
+        }
+        #endif
         recordPdfAdmission(role: String(describing: role), event: event, scroll: scroll, before: before)
         return role == .stopOnly || role == .blocked
     }
@@ -647,6 +710,37 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     #if DEBUG
+    private func recordPdfMotion(touch: UITouch, event: UIEvent, scroll: UIScrollView,
+                                 before: CGPoint, preContactMotion: [[String: Any]],
+                                 atGate: Bool, role: String) {
+        pdfMotionRows.append(["at": Date().timeIntervalSince1970,
+            "touchTimestamp": touch.timestamp, "eventTimestamp": event.timestamp,
+            "gateUptime": ProcessInfo.processInfo.systemUptime,
+            "contact": String(describing: ObjectIdentifier(touch)),
+            "scroller": String(describing: ObjectIdentifier(scroll)),
+            "preContactMotion": preContactMotion,
+            "isDeceleratingAtGate": atGate, "assignedRole": role,
+            "offsetBefore": [before.x, before.y],
+            "offsetAfter": [scroll.contentOffset.x, scroll.contentOffset.y],
+            "deceleratingAfter": scroll.isDecelerating])
+        if pdfMotionRows.count > 100 { pdfMotionRows.removeFirst() }
+        guard !pdfMotionSavePending else { return }
+        pdfMotionSavePending = true
+        // Only diagnostic export is coalesced; admission has no delay/debounce.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self else { return }
+            self.pdfMotionSavePending = false
+            let payload: [String: Any] = ["build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") ?? "unknown",
+                                         "rows": self.pdfMotionRows]
+            self.inkTraceWriter.async {
+                if let data = try? JSONSerialization.data(withJSONObject: payload),
+                   let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+                    try? data.write(to: directory.appendingPathComponent("breeze-pdf-motion.json"), options: .atomic)
+                }
+            }
+        }
+    }
+
     private static let pdfStateScript = #"""
     (()=>{
       if(window.breezePdfStateTimer)return;

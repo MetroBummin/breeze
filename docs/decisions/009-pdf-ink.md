@@ -496,3 +496,26 @@ current cancel, blur/background and document closure retain unfinished-stroke
 cancellation. No offset clamp, gesture reset or retention bypass is introduced.
 See `docs/qa/pdf-input-integration-2026-09-27.md` for evidence, baseline failure,
 PR relationships and the required uninterrupted physical acceptance sequence.
+
+## 187 Pencil/momentum boundary observation (2026-09-28)
+
+The user excludes the read-mode Pencil-scroll capture from regression scope.
+Editing mode largely works, but the first Pencil during inertia sometimes leaves
+a dot/highlighter mark as well as stopping. A UIKit stop-before-gate race is a
+hypothesis, not established by the earlier read-mode trace.
+
+Before changing admission, an independent DEBUG BREEZE_PDF_MOTION_TRACE=1 probe
+samples only the already-bound paper scroller on display callbacks. It retains
+12 native offset/deceleration/drag/tracking samples and records the four samples
+strictly before the Pencil touch timestamp alongside isDeceleratingAtGate,
+assignedRole, offsetBefore and offsetAfter. Missing/stale samples are observable
+and not treated as proof of movement or settlement. This is observation only:
+no sample enters the production role decision, no timeout/debounce is added,
+and no scrolling/delegate/recognizer mutation occurs. Trace export is bounded,
+coalesced and serialized on the existing utility queue. Detailed ink/state
+traces can stay OFF; neither full hierarchy scanning nor web tracing is needed.
+
+The diagnostic build is not the fix. Capture an editing-mode failure first,
+then change only the confirmed boundary and check 10–20 physical flick -> first
+Pencil stop-only -> lift -> immediately editable next Pencil sequences with
+varied flick strength. Browser/Swift tests cannot substitute for that evidence.
