@@ -251,3 +251,8 @@ test('highlighter: saved records validate attributes without accepting corrupt o
  for(const changed of [{opacity:2},{opacity:undefined},{tool:'unknown'},{width:NaN},{color:'#123456'}])assert.equal(valid({...stroke,...changed}),false);
  assert.equal(valid({color:'#111111',width:1.5,points:[[2,3]]}),true);
 });
+
+test('input: a contact outside starting paper cannot create off-page ink',async()=>{
+ const f=fixture();f.qa.setMode('highlighter');await f.stroke([[200,810],[200,780]]);
+ assert.equal(f.state.strokes.length,0);assert.equal(f.qa.undo().length,0);
+});

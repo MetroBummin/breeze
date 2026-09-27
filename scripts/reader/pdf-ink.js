@@ -63,7 +63,7 @@ const BreezePdfInk = (()=>{
     if(bridge){bridge.postMessage({rows:traceRows});traceRows.length=0;}
   }
   let scopeFrame=0, lastScope='';
-  function invalidatePageScope(){invalidatePdfPageLayout(session);}
+  function invalidatePageScope(){if(typeof invalidatePdfPageLayout==='function')invalidatePdfPageLayout(session||originalSession);}
   function scopeControlVisible(element){
     if(!element.getClientRects().length||element.closest('[inert]'))return false;
     // Collapsed/fading controls can still have a layout rectangle. They must
@@ -436,6 +436,7 @@ const BreezePdfInk = (()=>{
     cancelGesture('Pencil owns paper');
     closeSettings();
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
+    if(!p.every(Number.isFinite)||p[0]<0||p[1]<0||p[0]>state.width||p[1]>state.height)return;
     active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
       preview:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
     trace('stroke/start',event);

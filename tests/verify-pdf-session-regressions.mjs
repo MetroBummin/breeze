@@ -31,3 +31,9 @@ test('word picking rejects a foreign page even when its page number matches',()=
  f.context.originalSession={kind:'pdf',bookId:'A',hash:'hash-A',loadToken:1,pages:[current],wordBoxes:new Map([[1,[{word:'foreign'}]]])};
  assert.equal(f.context.pdfWordAtPoint(foreign,10,10),null);
 });
+
+test('original-byte identity rejects a stale map even for the same book id',()=>{
+ const f=fixture();f.context.curBook={id:'A',original:{hash:'new-file'}};
+ f.context.originalSession={kind:'pdf',bookId:'A',hash:'old-file',loadToken:1};
+ assert.equal(f.context.currentPdfSession(),false);
+});

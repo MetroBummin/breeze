@@ -16,11 +16,11 @@ try{for(const engine of [chromium,webkit]){const browser=await engine.launch();t
  assert.equal(await page.locator('#longform-grid .bookcard.add').evaluate(e=>getComputedStyle(e).borderStyle),'dashed');}
  const chooser=page.waitForEvent('filechooser');await page.locator('#longform-grid .bookcard.add').click();
  await (await chooser).setFiles({name:'card-test.txt',mimeType:'text/plain',buffer:Buffer.from('A reader keeps a book. This is the saved original text.')});
- await page.waitForFunction(()=>books.some(b=>b.title.includes('card-test')));
+ await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));
  await page.evaluate(()=>{renderAllBookViews();show('longform');});
  const check=async()=>{assert.equal(await page.locator('#longform-grid .bookcard.add').count(),1);
  const rects=await page.locator('#longform-grid .bookcard').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect(),s=getComputedStyle(n);return {w:r.width,h:r.height,radius:s.borderRadius};}));
  const add=rects.at(-1);assert.ok(rects.slice(0,-1).every(r=>Math.abs(r.w-add.w)<1&&Math.abs(r.h-add.h)<1&&r.radius===add.radius));};
- await check();await page.reload();await page.waitForFunction(()=>books.some(b=>b.title.includes('card-test')));await page.evaluate(()=>show('longform'));await check();
+ await check();await page.reload();await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));await page.evaluate(()=>show('longform'));await check();
  console.log(engine.name()+': empty/imported/reloaded/resized single dashed add card passed');
  }finally{await browser.close();}}}finally{server.close();}

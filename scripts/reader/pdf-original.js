@@ -8,7 +8,8 @@ let pdfDrawToken = 0;
 // number alone cannot establish ownership across documents (or an A-B-A reopen).
 function currentPdfSession(session=originalSession){
   return !!session && session===originalSession && session.kind==='pdf'
-    && session.loadToken===originalLoadToken && session.bookId===curBook?.id;
+    && session.loadToken===originalLoadToken && session.bookId===curBook?.id
+    && (!(curBook.original?.hash||curBook.sourceHash)||session.hash===(curBook.original?.hash||curBook.sourceHash));
 }
 function ownsPdfPage(page,session=originalSession){
   return currentPdfSession(session) && !!page && page.isConnected
@@ -17,7 +18,7 @@ function ownsPdfPage(page,session=originalSession){
 function ownsPdfBoxes(page,boxes,session=originalSession){
   if(!ownsPdfPage(page,session))return false;
   const map=session.wordBoxes.get(Number(page.dataset.page));
-  return !!map && boxes.every(box=>map.includes(box));
+  return !!map && (boxes===map || boxes.every(box=>map.includes(box)));
 }
 
 // Committed paper rectangles in scroller content coordinates. All pages stay
@@ -268,11 +269,14 @@ async function paintOriginalPdfPage(session,pageNumber,options){
     // Preserve an active finger's Touch.target until it lifts.
     const loading=pageElement.querySelector('.pdf-page-loading');
     if(loading)loading.hidden=true;
-    pageElement.style.aspectRatio=`${viewport.width}/${viewport.height}`;
+    const ratioChanged=Math.abs(before.width/Math.max(1,before.height)-base.width/base.height)>0.0001;
+    if(ratioChanged)pageElement.style.aspectRatio=`${base.width}/${base.height}`;
     pageElement.appendChild(canvas);
-    invalidatePdfPageLayout(session);
-    const after=pageElement.getBoundingClientRect();
-    if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
+    if(ratioChanged){
+      invalidatePdfPageLayout(session);
+      const after=pageElement.getBoundingClientRect();
+      if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
+    }
     await page.render({canvasContext:context,viewport,transform}).promise;
     if(!alive()) return;
     // Yield between canvas work and operator-map work. Only one page job runs.
