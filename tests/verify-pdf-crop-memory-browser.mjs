@@ -50,14 +50,15 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const hit=pdfWordAtPoint(p9.paper,r.left+91/595*r.width,r.top+515/842*r.height)?.word;
    const higher=p9.boxes.filter(b=>b.word==='higher').map(b=>b.y);
    const p13=await inspect(13),bewildered=p13.boxes.filter(b=>b.word==='bewildered').length;
-   const p4=await inspect(4),choice135=[...new Set(p4.boxes.map(b=>b.example).filter(s=>/^[①②③④⑤] (Paper|Metal|What makes paper)/.test(s)))];
+   const p4=await inspect(4),choice135=['Paper does not crack','Paper can resist','Paper can be shaped','Metal foils and plastic','What makes paper'].map(prefix=>p4.boxes.map(b=>b.example).find(s=>s.includes(prefix)));
    const p5=await inspect(5),choice157=p5.boxes.find(b=>b.word==='unparalleled')?.example||'';
    return {hit,higher,bewildered,choice135,choice157};
   });
   assert.equal(supplied.hit,'perceptible');assert.equal(supplied.higher.length,1);
   assert.ok(supplied.higher[0]<.4,'only the genuinely visible higher remains');
   assert.equal(supplied.bewildered,0);
-  assert.equal(supplied.choice135.length,5);
+  assert.equal(new Set(supplied.choice135).size,5);
+  assert.ok(supplied.choice135.every(Boolean));
   assert.ok(supplied.choice135.every(s=>(s.match(/[①②③④⑤]/g)||[]).length===1),'all five punctuated options remain separate');
   // #2 remains explicitly excluded. Record its real source reproduction; this
   // is not an acceptance assertion that the unpunctuated choices are fixed.
