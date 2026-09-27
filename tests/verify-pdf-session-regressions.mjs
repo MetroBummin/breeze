@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {test} from 'node:test';
 const source=readFileSync(new URL('../scripts/reader/pdf-original.js',import.meta.url),'utf8');
 const defer=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
-function fixture(){
+function fixture(realRender=false){
  const gate=defer(),started=defer(),content={innerHTML:'',className:'',appendChild(){}},surfaces=[];
  const a={id:'A'},b={id:'B'},record={hash:'hash-A',blob:{arrayBuffer:async()=>new ArrayBuffer(0)}};
  let destroyed=0;
@@ -15,7 +15,7 @@ function fixture(){
  BreezePdfInk:{open(){}},IntersectionObserver:class{observe(){}},readerScroller:()=>({}),
  registerReaderSurface:s=>surfaces.push(s)};
  vm.createContext(context);vm.runInContext(source,context);
- context.renderOriginalPdfPage=async()=>{};
+ if(!realRender)context.renderOriginalPdfPage=async()=>{};
  return {context,a,b,record,gate,started,content,surfaces,destroyed:()=>destroyed};
 }
 for(const action of ['switch','close','delete','A-B-A'])test(`delayed first page cannot publish after ${action}`,async()=>{
@@ -53,4 +53,54 @@ test('a delayed sentence cue cannot paint boxes from the previous document',()=>
  f.context.originalSession=session;f.context.createReaderSentenceCue=()=>assert.fail('stale English sentence was painted');
  f.context.originalLoadToken=2;f.context.curBook=f.b;f.context.originalSession={kind:'pdf',bookId:'B',loadToken:2,pages:[],wordBoxes:new Map()};
  f.context.showPdfSentenceCue(page,[box]);
+});
+
+function preparedPageFixture(){
+ const f=fixture(true),c=f.context,page={dataset:{page:'1'},isConnected:true};
+ const session={kind:'pdf',bookId:'A',hash:'hash-A',loadToken:1,pages:[page],wordBoxes:new Map(),drawToken:new Map([[1,1]]),settled:new Set([1]),rendering:new Map(),paintQueue:new Map(),lastScrollAt:1000};
+ Object.assign(c,{originalSession:session,originalPdfContacts:0,performance:{now:()=>1000},originalPdfPaintPaused:()=>false,
+  pdfPagesInView:()=>[1],schedulePdfPaint:()=>{},renderPdfSavedWordMarkers:()=>{f.painted++;}});
+ f.painted=0;f.cleaned=0;f.built=0;
+ session.pdf={getPage:async()=>({getViewport:()=>({width:600,height:800}),cleanup(){f.cleaned++;}})};
+ c.buildPdfWordBoxes=async()=>{f.built++;return [{word:'visible'}];};
+ return {...f,c,page,session};
+}
+test('scrollbar movement defers automatic maps but a direct lookup prepares the visible page',async()=>{
+ const {c,session,page}=preparedPageFixture();
+ assert.equal(await c.prepareOriginalPdfPage(session,1,{prefetch:true}),'deferred');
+ assert.equal(session.wordBoxes.size,0);
+ const pending=c.renderOriginalPdfPage(session,1);
+ await c.drainPdfPaint(session);await pending;
+ assert.equal(session.wordBoxes.get(1)[0].word,'visible');assert.equal(page.dataset.wordCount,'1');
+ assert.equal(session.paintQueue.size,0);
+});
+test('a stationary held finger does not block lookup preparation for long press',async()=>{
+ const {c,session}=preparedPageFixture();c.originalPdfContacts=1;session.lastScrollAt=0;
+ await c.prepareOriginalPdfPage(session,1,{prefetch:true});
+ assert.equal(session.wordBoxes.get(1)[0].word,'visible');
+});
+test('deferred map rejects a document switch while its PDF page is loading',async()=>{
+ const {c,session,gate}=preparedPageFixture();session.lastScrollAt=0;
+ session.pdf.getPage=()=>gate.promise;
+ const pending=c.prepareOriginalPdfPage(session,1,{prefetch:true});
+ c.originalLoadToken=2;c.originalSession=null;
+ gate.resolve({cleanup(){},getViewport(){assert.fail('stale page used');}});await pending;
+ assert.equal(session.wordBoxes.size,0);
+});
+test('resumed scroll interrupts preparation before glyph extraction and queues one retry',async()=>{
+ const {c,session,gate}=preparedPageFixture();session.lastScrollAt=0;
+ session.pdf.getPage=()=>gate.promise;
+ const pending=c.renderOriginalPdfPage(session,1,{prepare:true,prefetch:true});
+ const running=c.drainPdfPaint(session);session.lastScrollAt=1000;
+ gate.resolve({cleanup(){},getViewport(){assert.fail('scrolling page extracted');}});
+ await running;await pending;
+ assert.equal(session.wordBoxes.size,0);assert.equal(session.paintQueue.size,1);
+ assert.equal(session.paintQueue.get(1).options.prepare,true);
+});
+test('PDF preparation errors resolve without an unbounded automatic retry',async()=>{
+ const {c,session}=preparedPageFixture();session.lastScrollAt=0;c.console={warn(){}};
+ session.pdf.getPage=async()=>{throw Error('bad PDF');};
+ const pending=c.renderOriginalPdfPage(session,1,{prepare:true,prefetch:true});
+ await c.drainPdfPaint(session);await pending;
+ assert.equal(session.wordBoxes.size,0);assert.equal(session.paintQueue.size,0);assert.equal(session.paintActive,null);
 });

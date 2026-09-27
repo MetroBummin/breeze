@@ -56,8 +56,8 @@ function schedulePdfSharpen(session=originalSession){
   clearTimeout(session.sharpenTimer);
   session.sharpenTimer=setTimeout(()=>{if(currentPdfSession(session))resharpenOriginalPages();},180);
 }
-function pdfScrollBusy(session=originalSession){
-  return originalPdfContacts>0 || performance.now()-(session?.lastScrollAt??-Infinity)<160;
+function pdfScrollBusy(session=originalSession,includeContacts=true){
+  return (includeContacts&&originalPdfContacts>0) || performance.now()-(session?.lastScrollAt??-Infinity)<160;
 }
 function schedulePdfPaint(session=originalSession){
   if(!currentPdfSession(session)||session.paintTimer)return;
@@ -70,25 +70,49 @@ async function drainPdfPaint(session){
     if(job.options?.prefetch&&!nearby.has(n)){session.paintQueue.delete(n);job.resolve();}
   }
   const jobs=[...session.paintQueue.values()].sort((a,b)=>Number(visible.has(b.pageNumber))-Number(visible.has(a.pageNumber)));
-  const job=jobs.find(item=>!originalPdfPaintPaused(!!session.settled.has(item.pageNumber))
+  const job=jobs.find(item=>!originalPdfPaintPaused(item.options?.prepare?false:!!session.settled.has(item.pageNumber))
+    && (!item.options?.prefetch||visible.has(item.pageNumber)||!pdfScrollBusy(session))
+    && (!item.options?.prepare||item.options?.lookup||!pdfScrollBusy(session,false))
     && (!item.options?.resharpen||!pdfScrollBusy(session)));
   if(!jobs.length)return;
   if(!job){session.paintTimer=setTimeout(()=>{session.paintTimer=0;void drainPdfPaint(session);},160);return;}
   session.paintQueue.delete(job.pageNumber);session.paintActive=job;
-  try{await paintOriginalPdfPage(session,job.pageNumber,job.options);}finally{
-    session.paintActive=null;job.resolve();schedulePdfPaint(session);
+  let result;
+  try{result=await paintOriginalPdfPage(session,job.pageNumber,job.options);}
+  catch(error){console.warn('PDF page preparation skipped:',error);}
+  finally{
+    session.paintActive=null;
+    // Retry work interrupted by scrolling, not an operator/PDF failure.
+    if((!job.options?.prepare||result==='deferred')&&currentPdfSession(session)&&session.settled.has(job.pageNumber)&&!session.wordBoxes.has(job.pageNumber))
+      void renderOriginalPdfPage(session,job.pageNumber,{prepare:true,prefetch:true});
+    job.resolve();schedulePdfPaint(session);
   }
 }
 function renderOriginalPdfPage(session,pageNumber,options){
   if(!currentPdfSession(session))return Promise.resolve();
-  if(session.paintActive?.pageNumber===pageNumber)return session.paintActive.promise;
+  if(session.paintActive?.pageNumber===pageNumber){
+    const pending=session.paintActive.promise;
+    return options?.prefetch?pending:pending.then(()=>{
+      if(currentPdfSession(session)&&session.settled.has(pageNumber)&&!session.wordBoxes.has(pageNumber))
+        return renderOriginalPdfPage(session,pageNumber,{prepare:true,lookup:true});
+    });
+  }
+  if(session.settled.has(pageNumber)&&!session.wordBoxes.has(pageNumber)&&!options?.prefetch)
+    options={...options,prepare:true,lookup:true};
   session.paintQueue ||= new Map();
   const existing=session.paintQueue.get(pageNumber);
-  if(existing){if(!options?.prefetch)existing.options={...existing.options,...options,prefetch:false};return existing.promise;}
-  if(session.settled.has(pageNumber)&&!options?.resharpen)return session.rendering.get(pageNumber)||Promise.resolve();
+  if(existing){
+    if(!options?.prefetch)existing.options={...existing.options,...options,prefetch:false};
+    return existing.promise;
+  }
+  if(session.settled.has(pageNumber)&&!options?.resharpen&&!options?.prepare)return session.rendering.get(pageNumber)||Promise.resolve();
   let resolve;const promise=new Promise(done=>{resolve=done;});
   session.paintQueue.set(pageNumber,{pageNumber,options,promise,resolve});schedulePdfPaint(session);
-  return promise;
+  if(options?.prefetch||options?.prepare)return promise;
+  return promise.then(()=>{
+    if(currentPdfSession(session)&&session.settled.has(pageNumber)&&!session.wordBoxes.has(pageNumber))
+      return renderOriginalPdfPage(session,pageNumber,{prepare:true,lookup:true});
+  });
 }
 
 /* ================= 확대 =================
@@ -221,8 +245,26 @@ async function openOriginalPdf(book,record,token){
   await renderOriginalPdfPage(session,1);
 }
 
+async function prepareOriginalPdfPage(session,pageNumber,options){
+  const element=session.pages[pageNumber-1],token=session.drawToken.get(pageNumber);
+  const alive=()=>ownsPdfPage(element,session)&&session.drawToken.get(pageNumber)===token&&session.settled.has(pageNumber);
+  const allowed=()=>alive()&&(options?.lookup||!pdfScrollBusy(session,false));
+  if(!alive()||session.wordBoxes.has(pageNumber))return;
+  if(!allowed())return 'deferred';
+  const page=await session.pdf.getPage(pageNumber);
+  try{
+    if(!allowed())return alive()?'deferred':undefined;
+    const boxes=await buildPdfWordBoxes(page,page.getViewport({scale:1}),session.glyphs,session.pdf,allowed);
+    if(!alive())return;
+    if(!boxes)return 'deferred';
+    session.wordBoxes.set(pageNumber,boxes);element.dataset.wordCount=String(boxes.length);
+    renderPdfSavedWordMarkers(element,boxes);
+  }finally{page.cleanup();}
+}
+
 async function paintOriginalPdfPage(session,pageNumber,options){
   if(!currentPdfSession(session)) return;
+  if(options?.prepare)return prepareOriginalPdfPage(session,pageNumber,options);
   if(originalPdfPaintPaused(session.settled.has(pageNumber))) return;
   const requestedZoom=Math.min(PDF_MAX_RENDER_ZOOM,Math.max(1,originalZoom()));
   // Moving pages need readable pixels first, not a full oversized zoom canvas.
@@ -313,12 +355,16 @@ async function paintOriginalPdfPage(session,pageNumber,options){
     // Yield between canvas work and operator-map work. Only one page job runs.
     await new Promise(resolve=>setTimeout(resolve,0));
     if(!alive())return;
-    const wordBoxes=await buildPdfWordBoxes(page,base,session.glyphs,session.pdf);
-    if(!alive()) return;
+    await BreezePdfInk.mount(session,pageNumber,base);
+    // Native scrollbar drags need not deliver DOM finger contacts. Recent
+    // scroll events defer word/marker work, while the new paper and ink show.
+    const allowed=()=>alive()&&(!options?.prefetch||!pdfScrollBusy(session,false));
+    if(!allowed())return;
+    const wordBoxes=await buildPdfWordBoxes(page,base,session.glyphs,session.pdf,allowed);
+    if(!wordBoxes||!alive())return;
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
-    await BreezePdfInk.mount(session,pageNumber,base);
   })().catch(error=>console.warn('PDF page render skipped:',error));
   /* 다시 그리는 동안에도 "이 쪽은 그려졌다"는 사실은 그대로 둡니다 — 실패해도
      옛 캔버스가 그 자리에 남아 있으니까요. */
@@ -345,7 +391,7 @@ function resharpenOriginalPages(){
   const session=originalSession;
   if(!session || session.kind!=='pdf') return;
   for(const pageNumber of pdfPagesInView(session,readerViewHeight())){
-    const options=session.settled.has(pageNumber)?{resharpen:true}:undefined;
+    const options=session.settled.has(pageNumber)?{resharpen:true,prefetch:true}:{prefetch:true};
     void renderOriginalPdfPage(session,pageNumber,options);
   }
 }
@@ -355,9 +401,10 @@ function resharpenOriginalPages(){
 /* Read the same glyph widths, TJ adjustments, text state and font metrics
    used by PDF.js canvas rendering. Work only when a lazy page is first drawn;
    resharpen replaces canvas pixels while keeping these scale-free boxes. */
-async function buildPdfWordBoxes(page,viewport,glyphs,pdf){
+async function buildPdfWordBoxes(page,viewport,glyphs,pdf,allowed=()=>true){
   const ops=pdfjsLib.OPS;
   const operatorList=await page.getOperatorList({annotationMode:pdfjsLib.AnnotationMode.DISABLE});
+  if(!allowed())return null;
   const ids=new Set();
   operatorList.fnArray.forEach((op,index)=>{
     const args=operatorList.argsArray[index];
@@ -369,6 +416,7 @@ async function buildPdfWordBoxes(page,viewport,glyphs,pdf){
     fonts.set(id,await new Promise(resolve=>page.commonObjs.get(id,resolve)));
   }));
   const optionalContent=await pdf.getOptionalContentConfig();
+  if(!allowed())return null;
   const entries=pdfOperatorEntries(operatorList,fonts,viewport,ops,
     group=>optionalContent.isVisible(group));
   const {boxes,text}=pdfPageWords(entries,viewport.width,viewport.height,

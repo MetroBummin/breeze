@@ -62,7 +62,9 @@ below. No main merge, Archive, production deployment or data reset.
 
 A device JetsamEvent at the reported time records about 1.75 GiB in Breeze's
 WebContent coalition, but does not label that process as the killed process.
-The native freeze/home symptom still needs user-operated confirmation on 176.
+The user confirmed on 176 that clipped/incorrect/blank-space words no longer
+appear, and ordinary finger upward scrolling works. Native scrollbar upward
+drags still stutter; this remains unresolved on the tested device build.
 Browser input is not physical Pencil/palm/inertia proof. Complex arbitrary clip
 paths and inaccurate OCR coordinates are not universally validated by Form tests.
 
@@ -78,3 +80,42 @@ was added here.
 `BREEZE_QA_PDF=/absolute/path/to/the-supplied-13-page.pdf` for the exact source
 regression. The source identity is checked before those page-specific assertions.
 Raw device databases, PDFs and logs stay outside Git.
+
+## Follow-up: remaining native scrollbar stutter
+
+The requested all-process 45-second device recording disconnected after about
+0.9 seconds, so it cannot explain the user's reproduced stutter. A separate
+20-second app-only recording succeeded but does not establish a correlated
+WebContent hotspot. No physical-device cause is claimed from these recordings.
+
+Code and the same 34-page source browser workload did show initial rendering
+continuing into word-map extraction and marker creation while no-touch scroll
+jumps were active. The follow-up separates those stages: visible paper and ink
+remain available, automatic word maps/markers wait for scroll quiet, and explicit
+lookup can promote and await the target page. Offscreen prefetch waits too.
+
+| Same 90-frame down + 90-frame up stream | 176 | Follow-up |
+| --- | --- | --- |
+| Chromium map/marker calls during down/up scroll | 81 / 78 | 0 / 0 |
+| WebKit map/marker calls during down/up scroll | 90 / 90 | 0 / 0 |
+| Chromium maximum sampled frame interval | 40.4 ms | 27.4 ms |
+| WebKit maximum sampled frame interval | 69 ms | 38 ms |
+| App scroll-position writes | 0 | 0 |
+| Visible canvas + lookup ready after settling | yes | yes |
+
+These are one-run browser scheduling observations, not iPad latency measurements.
+`tests/measure-pdf-scrollbar-browser.mjs` preserves the workload and asserts no
+moving automatic map/marker work, no app scroll writes, visible paper and eventual
+lookup. Set `BREEZE_QA_BASELINE=1` only when measuring unchanged old code.
+
+`npm test` and both-engine actual-source clipping/OCR/held-scroll-memory and ink
+browser regressions passed again. Five additional unit cases cover explicit
+lookup, stationary-finger long press, stale-document rejection, resumed-scroll
+interruption and bounded failure handling. Physical scrollbar confirmation on
+the follow-up device build remains pending.
+
+
+Device delivery: Debug **1.4 (177)** built, signature verified, installed and
+launched on the wired iPad. `devicectl device info apps` reports 177. All 113 web
+build files hash-match native public and App.app/public. Physical scrollbar
+feedback is pending; no Archive or production deployment was performed.

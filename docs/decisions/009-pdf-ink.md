@@ -338,3 +338,25 @@ installed 175 exceeded the 450 MiB safety stop after 8 jumps (487.7 MiB canvases
 both Chromium and WebKit, preserving the original contact target and rendering
 every requested page. This measures canvas allocation, not total native memory
 or physical scrolling latency. Fresh user-operated iPad QA remains required.
+
+## Native scrollbar follow-up (2026-09-27)
+
+The user confirmed build 176 no longer shows clipped words or blank-space lookup,
+and ordinary finger upward scrolling works, but large upward native-scrollbar
+drags still stutter. Native scrollbar movement may supply scroll events without
+DOM finger contacts. Initial page rendering previously proceeded immediately
+into glyph-map extraction and saved-marker generation during that movement.
+
+Automatic page work now displays required canvases and saved ink first. It defers
+word maps and markers until 160ms of scroll quiet, checking again after PDF/font
+awaits. Nearby offscreen prefetch also waits; visible paper remains eligible.
+Map-only preparation uses the same serialized queue, draw token and document
+ownership checks. An explicit lookup promotes its page and waits for its map;
+a stationary held finger can prepare a long-press target. New scroll interrupts
+automatic preparation. Errors resolve without an unbounded retry loop. Page gaps,
+all-page Pencil scope, native input routing and storage do not change.
+
+A no-DOM-touch 34-page jump stream in Chromium/WebKit went from 78–90 automatic
+map/marker calls per direction during scroll to zero, retaining visible canvases
+and ready lookups after settling. This browser test models scheduling, not UIKit
+scrollbar tracking or physical iPad latency; user device confirmation is pending.
