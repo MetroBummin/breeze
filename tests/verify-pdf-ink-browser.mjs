@@ -1,6 +1,6 @@
 /* Real PDF.js / IndexedDB; synthetic WebKit stylus events are NOT device proof. */
 import assert from 'node:assert/strict';
-import {readFileSync,mkdirSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
@@ -376,6 +376,43 @@ try{
    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('points'),durableEdge);
    const finalWord=await wordPoint();assert.ok(finalWord);
    await page.touchscreen.tap(finalWord.x,finalWord.y);await page.waitForFunction(()=>wordPeekOpen());await page.evaluate(()=>closePanel());
+   // Freehand highlighter uses the same real PDF/Touch/IDB path as the pen.
+   await mode('highlighter');
+   const highlighter=page.locator('[data-ink-mode="highlighter"]');
+   assert.equal(await settings.isVisible(),false);await highlighter.click();assert.equal(await settings.isVisible(),true);
+   await page.locator('[data-ink-highlight-width="20"]').click();
+   await page.evaluate(()=>{readerScrollTo(0);expandReaderChrome();});await page.waitForTimeout(400);
+   const line=await page.evaluate(()=>{const boxes=originalSession.wordBoxes.get(1),b=boxes[0],same=boxes.filter(x=>x.line===b.line);return {x:b.x,y:b.y+b.h/2,right:Math.max(...same.map(x=>x.x+x.w))};});
+   await stroke([[line.x,line.y],[line.right,line.y],[line.x,line.y]]);
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
+   const highlight=page.locator('[data-page="1"] .pdf-ink-layer g[data-ink-tool="highlighter"]').last();
+   assert.equal(await highlight.getAttribute('opacity'),'0.3');
+   const savedPath=await highlight.locator('polyline').getAttribute('points');
+   assert.equal(await highlight.locator('polyline').getAttribute('stroke-width'),'20');
+   const clip=await page.evaluate(({x,y,right})=>{const r=originalSession.pages[0].getBoundingClientRect();return {x:Math.floor(r.left+x*r.width)-1,y:Math.floor(r.top+y*r.height)-10,width:Math.ceil((right-x)*r.width)+2,height:20};},line);
+   await highlight.evaluate(e=>e.style.visibility='hidden');const plain=await page.screenshot({clip});
+   await highlight.evaluate(e=>e.style.visibility='');const marked=await page.screenshot({clip});
+   const pixels=await page.evaluate(async({plain,marked})=>{
+    async function decode(s){const image=await createImageBitmap(new Blob([Uint8Array.from(atob(s),c=>c.charCodeAt(0))],{type:'image/png'}));const c=document.createElement('canvas');c.width=image.width;c.height=image.height;const x=c.getContext('2d');x.drawImage(image,0,0);return x.getImageData(0,0,c.width,c.height).data;}
+    const a=await decode(plain),b=await decode(marked);let ink=0,lightened=0,colored=0,seams=0;
+    for(let i=0;i<a.length;i+=4){if(Math.max(a[i],a[i+1],a[i+2])<50){ink++;if(Math.max(b[i]-a[i],b[i+1]-a[i+1],b[i+2]-a[i+2])>3)lightened++;}
+     if(Math.min(a[i],a[i+1],a[i+2])>245&&b[i+2]<220){colored++;if(b[i+2]<190)seams++;}}
+    return {ink,lightened,colored,seams};
+   },{plain:plain.toString('base64'),marked:marked.toString('base64')});
+   assert.ok(pixels.ink>5,JSON.stringify(pixels));assert.equal(pixels.lightened,0);assert.ok(pixels.colored>5);assert.equal(pixels.seams,0,'one retraced stroke composites only once');
+   writeFileSync(resolve(tmpdir(),`breeze-highlighter-${engine.name()}.png`),await page.screenshot());
+   await page.reload();await open();
+   assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').last().getAttribute('points'),savedPath);
+   await page.locator('[data-ink-toggle]').click();assert.equal(await page.locator('[data-ink-mode="highlighter"]').getAttribute('aria-pressed'),'true','last editing tool persists');
+   await page.locator('[data-ink-mode="highlighter"]').click();assert.equal(await page.locator('[data-ink-highlight-width="20"]').getAttribute('aria-pressed'),'true');
+   await mode('erase');await stroke([[(line.x+line.right)/2,line.y-.03],[(line.x+line.right)/2,line.y+.03]]);
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
+   assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
+   assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer g').count(),1,'fragments retain one opacity group');
+   await page.evaluate(()=>expandReaderChrome());await page.locator('[data-ink-undo]').click();assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count(),1);
+   await page.locator('[data-ink-redo]').click();assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
+   await page.reload();await open();assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
+   console.log(engine.name()+': highlighter pixels '+JSON.stringify(pixels)+', durable settings, partial eraser/undo/redo/reload passed');
    await page.evaluate(()=>{window.breezeInkIPad=false;document.body.classList.toggle('qa-platform');});
    await page.waitForFunction(()=>document.getElementById('pdf-ink-status').hidden && window.qaInkScope?.enabled===false);
    assert.deepEqual(errors.filter(x=>!x.includes('ResizeObserver loop')),[]);

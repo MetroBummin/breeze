@@ -4,9 +4,25 @@
    Basic Pencil/pan/pinch was confirmed on iPad; expanded physical QA is documented. */
 const BreezePdfInk = (()=>{
   const colors=['#111111','#c43d3d','#2864c5'], widths=[0.75,1.5,3];
-  const eraserRadii=[4,8,16];
+  const eraserRadii=[4,8,16],highlightColors=['#ffe34d','#91df80'],highlightWidths=[12,20],highlightOpacity=0.3;
+  const preferenceKey='__breeze_pdf_ink_tools_v1__';
   const undoStack=[],redoStack=[];
   let color=colors[0],width=widths[1],eraserRadius=eraserRadii[1];
+  let highlightColor=highlightColors[0],highlightWidth=highlightWidths[0],lastTool='pen';
+  try{
+    const prefs=JSON.parse(localStorage.getItem(preferenceKey)||'null');
+    if(prefs){
+      if(colors.includes(prefs.color))color=prefs.color;
+      if(widths.includes(prefs.width))width=prefs.width;
+      if(eraserRadii.includes(prefs.eraserRadius))eraserRadius=prefs.eraserRadius;
+      if(highlightColors.includes(prefs.highlightColor))highlightColor=prefs.highlightColor;
+      if(highlightWidths.includes(prefs.highlightWidth))highlightWidth=prefs.highlightWidth;
+      if(['pen','highlighter','erase'].includes(prefs.tool))lastTool=prefs.tool;
+    }
+  }catch{} // Tool preferences never block reading or loading existing ink.
+  function savePreferences(){
+    try{localStorage.setItem(preferenceKey,JSON.stringify({tool:lastTool,color,width,eraserRadius,highlightColor,highlightWidth,highlightOpacity}));}catch{}
+  }
   const ns='http://www.w3.org/2000/svg';
   const database=openDb('breeze-pdf-ink',1,db=>db.createObjectStore('pages'));
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
@@ -131,7 +147,7 @@ const BreezePdfInk = (()=>{
     inkTools.inert=!writing;
     inkTools.setAttribute('aria-hidden',String(!writing));
     inkMini.hidden=!writing;
-    inkMini.querySelector('.ink-pill-mini-color').style.background=color;
+    inkMini.querySelector('.ink-pill-mini-color').style.background=mode==='highlighter'?highlightColor:color;
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{
       button.setAttribute('aria-pressed',String(button.dataset.inkMode===mode));
     });
@@ -152,10 +168,12 @@ const BreezePdfInk = (()=>{
   function updateSettings(){
     if(!settings)return;
     settings.hidden=!settingsTool;
-    settings.setAttribute('aria-label',settingsTool==='erase'?'지우개 설정':'펜 설정');
+    settings.setAttribute('aria-label',settingsTool==='erase'?'지우개 설정':settingsTool==='highlighter'?'형광펜 설정':'펜 설정');
     settings.querySelectorAll('[data-ink-panel]').forEach(panel=>{panel.hidden=panel.dataset.inkPanel!==settingsTool;});
     settings.querySelectorAll('[data-ink-color]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inkColor===color)));
     settings.querySelectorAll('[data-ink-width]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.inkWidth)===width)));
+    settings.querySelectorAll('[data-ink-highlight-color]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inkHighlightColor===highlightColor)));
+    settings.querySelectorAll('[data-ink-highlight-width]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.inkHighlightWidth)===highlightWidth)));
     settings.querySelectorAll('[data-ink-radius]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.inkRadius)===eraserRadius)));
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.inkMode===settingsTool)));
   }
@@ -187,10 +205,11 @@ const BreezePdfInk = (()=>{
     inkEntry=inkControl('필기 모드로 전환','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z','ink-pill-entry');
     inkEntry.innerHTML=`<span class="ink-entry-pen">${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}</span><span class="ink-entry-read">${icon('M12 7v14M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1h-4a4 4 0 0 0-4 2 4 4 0 0 0-4-2H4a1 1 0 0 1-1-1zM6 8h1m-1 4h2m9-4h1m-2 4h2')}</span>`;
     inkEntry.dataset.inkToggle='';
-    inkEntry.onclick=()=>setMode(mode==='read'?'pen':'read');
+    inkEntry.onclick=()=>setMode(mode==='read'?lastTool:'read');
     inkTools=document.createElement('div');inkTools.id='pdf-ink-tools';inkTools.className='ink-pill-toolbar';inkTools.setAttribute('role','group');inkTools.setAttribute('aria-label','PDF 필기 도구');
     for(const [tool,label,path] of [
-      ['pen','펜','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z']
+      ['pen','펜','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z'],
+      ['highlighter','형광펜','m9 14 7-10 5 4-8 9-4-3Zm0 0-4 5 4 1 4-3M3 22h13']
     ]){
       const button=inkControl(label,path);button.dataset.inkMode=tool;
       button.onclick=()=>selectTool(tool);inkTools.append(button);
@@ -216,18 +235,20 @@ const BreezePdfInk = (()=>{
     settings=document.createElement('div');settings.id='pdf-ink-settings';settings.className='control-glass';settings.hidden=true;
     settings.setAttribute('role','dialog');
     settings.innerHTML='<div data-ink-panel="pen"><div class="ink-setting-label">펜 색상</div><div class="ink-setting-row ink-colors"></div><div class="ink-setting-label">펜 굵기</div><div class="ink-setting-row ink-widths"></div></div><div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii"></div></div>';
+    settings.insertAdjacentHTML('beforeend','<div data-ink-panel="highlighter" hidden><div class="ink-setting-label">형광펜 색상</div><div class="ink-setting-row ink-highlight-colors"></div><div class="ink-setting-label">형광펜 굵기</div><div class="ink-setting-row ink-highlight-widths"></div></div>');
     const options=(kind,values,labels)=>{
-      const row=settings.querySelector(kind==='color'?'.ink-colors':kind==='width'?'.ink-widths':'.ink-radii');
+      const row=settings.querySelector(kind==='color'?'.ink-colors':kind==='width'?'.ink-widths':kind==='highlightColor'?'.ink-highlight-colors':kind==='highlightWidth'?'.ink-highlight-widths':'.ink-radii');
       values.forEach((value,i)=>{
         const button=document.createElement('button');button.type='button';button.dataset[`ink${kind[0].toUpperCase()+kind.slice(1)}`]=String(value);
-        button.setAttribute('aria-label',(kind==='color'?'펜 색상: ':kind==='width'?'펜 굵기: ':'지우개 크기: ')+labels[i]);
+        button.setAttribute('aria-label',(kind==='color'?'펜 색상: ':kind==='width'?'펜 굵기: ':kind==='highlightColor'?'형광펜 색상: ':kind==='highlightWidth'?'형광펜 굵기: ':'지우개 크기: ')+labels[i]);
         button.innerHTML='<i aria-hidden="true"></i><span>'+labels[i]+'</span>';
-        button.style.setProperty('--ink-option',kind==='color'?String(value):`${kind==='width'?Number(value)*1.6:8+i*7}px`);
-        button.onclick=()=>{cancel();if(kind==='color')color=String(value);else if(kind==='width')width=Number(value);else eraserRadius=Number(value);update();};
+        button.style.setProperty('--ink-option',kind==='color'||kind==='highlightColor'?String(value):`${kind==='width'?Number(value)*1.6:kind==='highlightWidth'?Number(value)*0.5:8+i*7}px`);
+        button.onclick=()=>{cancel();if(kind==='color')color=String(value);else if(kind==='width')width=Number(value);else if(kind==='highlightColor')highlightColor=String(value);else if(kind==='highlightWidth')highlightWidth=Number(value);else eraserRadius=Number(value);savePreferences();update();};
         row.append(button);
       });
     };
     options('color',colors,['검정','빨강','파랑']);options('width',widths,['얇게','보통','굵게']);options('radius',eraserRadii,['작게','보통','크게']);
+    options('highlightColor',highlightColors,['노랑','초록']);options('highlightWidth',highlightWidths,['보통','굵게']);
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',settings.id);});
     document.getElementById('readchrome').append(settings);
     document.addEventListener('pointerdown',event=>{if(event.target instanceof Element&&!event.target.closest('#pdf-ink-settings,#pdf-ink-tools'))closeSettings();},true);
@@ -241,6 +262,7 @@ const BreezePdfInk = (()=>{
   }
   function setMode(next){
     cancel();suppressed.clear();blockedPointers.clear();suppressClick=false; mode=next;
+    if(next!=='read'){lastTool=next;savePreferences();}
     if(next==='read')publishNativeScope();
     if(typeof cancelGesture==='function')cancelGesture('PDF ink mode');
     if(typeof closePanel==='function')closePanel();
@@ -266,7 +288,9 @@ const BreezePdfInk = (()=>{
   }
   function valid(data){
     return data?.version===1 && Array.isArray(data.strokes) && data.strokes.every(s=>
-      colors.includes(s.color) && widths.includes(s.width) && Array.isArray(s.points) && s.points.length>0
+      (s.tool==='highlighter' ? highlightColors.includes(s.color)&&highlightWidths.includes(s.width)&&s.opacity===highlightOpacity&&(s.strokeId===undefined||typeof s.strokeId==='string')
+        : (s.tool===undefined||s.tool==='pen')&&colors.includes(s.color)&&widths.includes(s.width)&&(s.opacity===undefined||s.opacity===1))
+      && Array.isArray(s.points) && s.points.length>0
       && s.points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)));
   }
   function summary(){
@@ -323,7 +347,16 @@ const BreezePdfInk = (()=>{
   function paint(state){
     if(!state.svg)return;
     state.svg.replaceChildren();
-    for(const stroke of state.strokes)state.svg.append(path(stroke));
+    // Translucent ink sits beneath pen ink, independent of creation order.
+    const highlights=new Map();
+    for(const stroke of state.strokes.filter(s=>s.tool==='highlighter')){
+      // Erased fragments of one original stroke share one alpha composite.
+      const id=stroke.strokeId||stroke;
+      let group=highlights.get(id);
+      if(!group){group=document.createElementNS(ns,'g');group.setAttribute('opacity',String(stroke.opacity));group.setAttribute('data-ink-tool','highlighter');highlights.set(id,group);state.svg.append(group);}
+      const fragment=path(stroke);fragment.setAttribute('opacity','1');group.append(fragment);
+    }
+    for(const stroke of state.strokes.filter(s=>s.tool!=='highlighter'))state.svg.append(path(stroke));
   }
   function path(stroke){
     const element=document.createElementNS(ns,'polyline');
@@ -332,6 +365,10 @@ const BreezePdfInk = (()=>{
     element.setAttribute('points',points.map(p=>p.join(',')).join(' '));
     element.setAttribute('fill','none');element.setAttribute('stroke',stroke.color);
     element.setAttribute('stroke-width',String(stroke.width));
+    element.setAttribute('data-ink-tool',stroke.tool||'pen');
+    // Element opacity composites a whole stroke once: joins/self crossings do
+    // not accumulate alpha as independently painted segments would.
+    if(stroke.tool==='highlighter')element.setAttribute('opacity',String(stroke.opacity));
     element.setAttribute('stroke-linecap','round');element.setAttribute('stroke-linejoin','round');
     return element;
   }
@@ -399,13 +436,15 @@ const BreezePdfInk = (()=>{
     cancelGesture('Pencil owns paper');
     closeSettings();
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
-    active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:{color,width,points:[p]},
-      preview:null,smoother:mode==='pen'?BreezeInkGeometry.createSmoother(p):null};
+    active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
+      preview:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
     trace('stroke/start',event);
     updateHistoryControls();
     if(active.tool==='erase'){erase(state,p);showEraser(p);}
     else{
-      active.preview=path(active.stroke);state.svg.append(active.preview);
+      active.preview=path(active.stroke);
+      const pen=mode==='highlighter'?Array.from(state.svg.children).find(el=>el.getAttribute('data-ink-tool')==='pen'):null;
+      if(pen)state.svg.insertBefore(active.preview,pen);else state.svg.append(active.preview);
     }
   }
   function touchMove(event){
@@ -448,7 +487,7 @@ const BreezePdfInk = (()=>{
   }
   function finishStroke(){
     const current=active,state=current.state;active=null;
-    if(current.tool==='pen'){
+    if(current.tool!=='erase'){
       current.stroke.points=current.smoother.finish();
       state.strokes.push(current.stroke);changed(state);
     }

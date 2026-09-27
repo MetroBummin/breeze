@@ -33,6 +33,7 @@ function fixture(){
     setAttribute(k,v){this.attributes[k]=String(v);}
     getAttribute(k){return this.attributes[k]??null;}
     append(...nodes){for(const n of nodes){n.parentElement=this;this.children.push(n);}}
+    insertBefore(node,prior){node.parentElement=this;this.children.splice(this.children.indexOf(prior),0,node);}
     replaceChildren(){for(const n of this.children)n.parentElement=null;this.children=[];}
     remove(){if(this.parentElement)this.parentElement.children=this.parentElement.children.filter(x=>x!==this);this.parentElement=null;}
     get isConnected(){return !!this.parentElement;}
@@ -67,11 +68,11 @@ function fixture(){
     originalPinchPan:false,originalPinch:null,originalPinchTouches:false,originalPdfContacts:0,
     cancelGesture:()=>{},closePanel:()=>{},closeSentence:()=>{},resumeOriginalPdfPaint:()=>{},
     curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
-    structuredClone,queueMicrotask,console:{warn(){}},performance};
+    crypto,structuredClone,queueMicrotask,console:{warn(){}},performance};
   const needle='  return {\n    open(s)';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
     qa:{configure(s,state){session=s;mode='pen';pages.set(state.key,state);},
-      setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,
+      valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     open(s)`);
   vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
@@ -229,4 +230,24 @@ test('scope: ordinary finger contacts reuse all cached page boundaries',()=>{
  f.qa.publishNativeScope();const reads=f.session.pages.map(p=>p.reads),posts=f.posted.length;
  for(let i=0;i<100;i++){const t=f.contact(100,100,2,'direct');f.qa.touchStart(f.event('touchstart',[t]));f.qa.touchEnd(f.event('touchend',[],[t]));f.flush();}
  assert.deepEqual(f.session.pages.map(p=>p.reads),reads);assert.equal(f.posted.length,posts);assert.equal(f.posted.at(-1).pages.length,200);
+});
+
+test('highlighter: one translucent path, underneath pens, with durable tool metadata',async()=>{
+ const f=fixture();await f.stroke([[20,100],[280,100]]);const pen=plain(f.state.strokes[0]);
+ f.qa.setMode('highlighter');await f.stroke([[20,100],[280,100],[20,100]]);
+ const highlight=f.state.strokes[1];assert.equal(highlight.tool,'highlighter');assert.equal(highlight.opacity,0.3);assert.equal(highlight.width,12);
+ assert.equal(f.svg.children[0].getAttribute('data-ink-tool'),'highlighter');assert.equal(f.svg.children[0].getAttribute('opacity'),'0.3');
+ assert.equal(f.svg.children[1].getAttribute('data-ink-tool'),'pen');assert.deepEqual(plain(f.state.strokes[0]),pen);
+ assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
+ const original=plain(f.state.strokes);f.qa.setMode('erase');await f.stroke([[150,70],[150,130]]);
+ assert.ok(f.state.strokes.filter(s=>s.tool==='highlighter').length>=2);
+ assert.equal(f.svg.children.filter(n=>n.getAttribute('data-ink-tool')==='highlighter').length,1);
+ assert.ok(f.state.strokes.filter(s=>s.tool==='highlighter').every(s=>s.opacity===0.3&&s.color===highlight.color&&s.width===12));
+ f.qa.history(true);await tick();assert.deepEqual(plain(f.state.strokes),original);f.qa.history(false);await tick();assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
+});
+test('highlighter: saved records validate attributes without accepting corrupt opacity/tool',()=>{
+ const f=fixture(),stroke={tool:'highlighter',color:'#ffe34d',width:12,opacity:0.3,points:[[2,3]]};
+ const valid=s=>f.qa.valid({version:1,strokes:[s]});assert.equal(valid(stroke),true);
+ for(const changed of [{opacity:2},{opacity:undefined},{tool:'unknown'},{width:NaN},{color:'#123456'}])assert.equal(valid({...stroke,...changed}),false);
+ assert.equal(valid({color:'#111111',width:1.5,points:[[2,3]]}),true);
 });

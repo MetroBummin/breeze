@@ -294,3 +294,23 @@ attached. Canvas and word-map work yield between stages. Sharpening waits for
 existing mode-change token so delayed mode landing cannot pull the view back.
 The native residual-inertia gate still consumes the first moving Pencil contact
 and edits a stationary page immediately. Device validation belongs to the user.
+
+## Freehand highlighter (2026-09-27)
+
+A third Pencil tool uses yellow (default) or green at 12/20 PDF units and fixed
+0.30 opacity. Select once; tap the selected tool again for settings. Entry remains
+read-only; the last selected editing tool and tool options persist locally.
+
+Highlighter strokes reuse v1 page records, original hash, normalized viewport
+coordinates, boundary clipping and serialized writes. They add `tool:highlighter`
+and `opacity:0.3`; legacy pen records stay unchanged. Validation rejects unknown
+tool/opacity values without overwriting the record. Partial eraser fragments
+spread all stroke properties; history keeps those same immutable objects.
+
+Each live stroke is one SVG polyline with element opacity, preventing darker
+internal joins/self-overlaps. Completed highlighter fragments share a persisted
+strokeId and one SVG opacity group, so partial erasure cannot darken the remaining
+self-overlap. The SVG multiplies with the actual PDF; highlighter
+paths precede pen paths, so existing pen remains above translucent ink. Separate
+strokes intentionally accumulate where they overlap. Drawing updates only the
+active path; it neither redraws the PDF canvas nor captures finger input.
