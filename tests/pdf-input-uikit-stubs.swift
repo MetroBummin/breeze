@@ -59,7 +59,10 @@ import CoreGraphics
     func location(in view: UIView) -> CGPoint { point }
 }
 @MainActor class UIEvent {
-    var timestamp: TimeInterval = 0
+    var timestamp: TimeInterval
     var allTouches: Set<UITouch>?
-    init(_ touches: Set<UITouch>) { allTouches = touches }
+    init(_ touches: Set<UITouch>) {
+        allTouches = touches
+        timestamp = touches.map(\.timestamp).max() ?? ProcessInfo.processInfo.systemUptime
+    }
 }

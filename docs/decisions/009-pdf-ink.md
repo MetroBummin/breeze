@@ -121,6 +121,18 @@ This change does not alter page eviction, drawing coordinates, persistence,
 pinch, or the policy that the first Pencil during genuine inertia stops the
 paper for its entire contact and the next contact immediately edits.
 
+Debug 190 then exposed the opposite failure on the connected iPad: later
+Pencil contacts sometimes made no ink. The native diagnostic observer saw the
+new Pencil `began` events, but UIKit reused the same `UITouch` object identifier
+and did not deliver the previous Pencil's end to this observer. The ledger
+retained the old `stopOnly` role, so the native route returned its cached role
+without publishing a fresh web admission; the web correctly rejected the
+unmatched touch. Track each native contact's `.began` timestamp as well as its
+object identifier. A new birth on a reused object retires the old role before
+classification. Repeated callbacks for the same birth keep the assigned role.
+This is contact lifecycle repair, not a wait or debounce, and preserves a
+still-live finger's navigation ownership.
+
 The user reports that rapid finger scrolling can make a subsequent Pencil drag
 scroll the PDF rather than edit. Stationary drawing works. This supersedes the
 previous basic-device confirmation for rapid-input acceptance.

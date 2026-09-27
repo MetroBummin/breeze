@@ -79,6 +79,29 @@ device run; installation is not acceptance. The first Xcode attempt in the
 Desktop audit directory failed at codesign because file-provider metadata was
 added to its output; a fresh local /tmp derived-data build succeeded.
 
+Debug 190 physical result FAILED: the first moving Pencil stopped without a
+mark, but later Pencil contacts intermittently failed to draw. In a targeted
+diagnostic relaunch, native saw every Pencil `began`. At uptime 46080.929 the
+gate assigned `stopOnly`; four later web admission requests were rejected
+without any new native gate row. Their native `began` events reused the same
+UITouch object identifier (`0x114acd6c0`) while no corresponding native end
+was observed. A later Pencil with a different native object identifier at
+46084.748 obtained `ink` and drew. The trace is preserved outside the repo in
+`../audits/pdf-input-integration-20260927/190-failure/` (ink trace SHA256
+`c8724938c76c82387f15c185b06d3fe670b1b85f2a1ab6f451914d5a184fb200`).
+
+The next candidate retires a cached native role on a new `.began` timestamp
+for a recycled UIKit touch object. Production ownership regression now covers
+the missing-end/reused-object sequence. Retest the full first-stop/next-ink
+pair physically before treating this as accepted; all other behaviors remain
+outside this narrow change.
+
+Debug 191: the new production reused-UITouch regression passes (37 native
+ownership checks total), UIKit/WebKit SDK typecheck passes, and the signed iPad
+build succeeds with 113/113 embedded web assets matching www. It was installed
+and launched on the connected iPad with all PDF diagnostic flags unset.
+Physical repeated first-stop/next-ink acceptance is pending.
+
 Prepared validation: 33 existing production ownership checks pass. Signed
 device-target Debug 188 build succeeds using the same Xcode toolchain as 187;
 all 113 embedded web assets match www. No new web build or changes were needed.

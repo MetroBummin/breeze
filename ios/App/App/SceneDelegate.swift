@@ -41,6 +41,10 @@ private struct BreezePdfContactLedger<ID: Hashable> {
             if role != .navigation && role != .suppressed && role != .outside { roles[id] = .blocked }
         }
     }
+    mutating func forget(_ id: ID) {
+        roles.removeValue(forKey: id)
+        live.remove(id)
+    }
 }
 // END PDF_CONTACT_POLICY
 
@@ -259,6 +263,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private let pdfNavigationAdmission = BreezePdfNavigationAdmission()
     private weak var pdfPaperScroller: UIScrollView?
     private var pdfLastContactTimestamp: TimeInterval = -1
+    // UIKit may recycle a UITouch object after its end callback was consumed
+    // by another recognizer. A fresh .began timestamp separates the contacts.
+    private var pdfContactBirths: [ObjectIdentifier: TimeInterval] = [:]
     private var pdfRoutingNeedsRefresh = false
     private var pdfRoutingRefreshScheduled = false
     // Native and DOM touch IDs are unrelated. Match the birth time and paper
@@ -586,7 +593,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private func observePdfContacts(_ event: UIEvent) {
         guard event.timestamp >= pdfLastContactTimestamp, let touches = event.allTouches else { return }
         pdfLastContactTimestamp = event.timestamp
+        for touch in touches where touch.phase == .began {
+            let id = ObjectIdentifier(touch)
+            if let prior = pdfContactBirths[id], prior != touch.timestamp {
+                pdfContacts.forget(id)
+            }
+            pdfContactBirths[id] = touch.timestamp
+        }
         let live = touches.filter { $0.phase != .ended && $0.phase != .cancelled }
+        let liveIDs = Set(live.map(ObjectIdentifier.init))
+        pdfContactBirths = pdfContactBirths.filter { liveIDs.contains($0.key) }
         let nonPencil = live.filter { $0.type != .pencil }
         let geometry = pdfScopeGeometry()
         let excluded = inkNativeScope["excluded"] as? [[Double]] ?? []
@@ -599,7 +615,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                               width: data[2]*geometry.scale, height: data[3]*geometry.scale).contains(point)
             }
         }
-        pdfContacts.observe(live: Set(live.map(ObjectIdentifier.init)),
+        pdfContacts.observe(live: liveIDs,
                             nonPencil: Set(nonPencil.map(ObjectIdentifier.init)),
                             navigation: Set(navigation.map(ObjectIdentifier.init)))
         if live.isEmpty && pdfRoutingNeedsRefresh { schedulePdfRoutingRefresh() }

@@ -150,6 +150,20 @@
             assert(h.webRole(request(inkAt+2,200,100)) == "blocked")
             h.setScope(["enabled":false]); assert(h.webRole(request(inkAt,200,100)) == "blocked")
         }
+        test("reused UIKit touch object after missing end gets a fresh role") {
+            let (h,s)=fixture(), reused=UITouch(.pencil,250,300)
+            s.isDecelerating=true
+            assert(h.route(reused,UIEvent([reused])) && s.stops == 1)
+            let firstAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + reused.timestamp
+            assert(h.webRole(["eventAt":firstAt,"x":250.0,"y":300.0,"viewport":600.0]) == "blocked")
+            // UIKit can omit the old end and recycle the same UITouch pointer.
+            // Its new .began timestamp, rather than pointer identity, retires stopOnly.
+            reused.timestamp += 0.4
+            s.isDecelerating=false
+            assert(!h.route(reused,UIEvent([reused])) && s.stops == 1)
+            let secondAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + reused.timestamp
+            assert(h.webRole(["eventAt":secondAt,"x":250.0,"y":300.0,"viewport":600.0]) == "ink")
+        }
         test("gate owns only its admitted Pencil through end/reset") {
             let g=BreezePdfPencilGate(), pen=UITouch(.pencil), other=UITouch(.direct), event=UIEvent([pen,other])
             var decisions=0; g.begin={_,_ in decisions+=1; return true}
