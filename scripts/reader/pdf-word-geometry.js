@@ -27,11 +27,43 @@ function pdfFontExtents(font){
   return {top:1,bottom:0};
 }
 
+// Intersect a glyph cell with the PDF Form's transformed BBox. Cropped page
+// Forms retain the whole source stream; their excluded text must not enter the
+// lookup sentence at all, even where its projected coordinates land on paper.
+function pdfClipPolygon(subject,clip){
+  const area=clip.reduce((sum,p,i)=>{const q=clip[(i+1)%clip.length];return sum+p.x*q.y-q.x*p.y;},0);
+  const sign=area>=0?1:-1;
+  for(let i=0;i<clip.length&&subject.length;i++){
+    const a=clip[i],b=clip[(i+1)%clip.length],input=subject;subject=[];
+    const side=p=>sign*((b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x));
+    let previous=input[input.length-1],d0=side(previous);
+    for(const point of input){
+      const d1=side(point);
+      if((d0>=0)!==(d1>=0)){
+        const t=d0/(d0-d1);subject.push({x:previous.x+t*(point.x-previous.x),y:previous.y+t*(point.y-previous.y)});
+      }
+      if(d1>=0)subject.push(point);
+      previous=point;d0=d1;
+    }
+  }
+  return subject;
+}
+function pdfRectPolygon(m,left,bottom,right,top){
+  return [pdfPoint(m,left,bottom),pdfPoint(m,right,bottom),pdfPoint(m,right,top),pdfPoint(m,left,top)];
+}
+function pdfClippedGlyph(bounds,clips){
+  let polygon=pdfRectPolygon([1,0,0,1,0,0],bounds.left,bounds.top,bounds.right,bounds.bottom);
+  for(const clip of clips){polygon=pdfClipPolygon(polygon,clip);if(!polygon.length)return null;}
+  const left=Math.min(...polygon.map(p=>p.x)),right=Math.max(...polygon.map(p=>p.x));
+  const top=Math.min(...polygon.map(p=>p.y)),bottom=Math.max(...polygon.map(p=>p.y));
+  return right-left>1e-6&&bottom-top>1e-6?{left,right,top,bottom}:null;
+}
+
 function pdfOperatorEntries(operatorList,fonts,viewport,ops,isVisible=group=>true){
   const identity=[1,0,0,1,0,0];
   let state={ctm:viewport.transform,textMatrix:identity,font:null,fontSize:0,
     direction:1,hScale:1,charSpacing:0,wordSpacing:0,leading:0,rise:0,
-    x:0,y:0,lineX:0,lineY:0,mask:false};
+    x:0,y:0,lineX:0,lineY:0,mask:false,clips:[pdfRectPolygon(identity,0,0,viewport.width,viewport.height)]};
   const stack=[],visibility=[true],entries=[];
   const save=()=>stack.push({...state});
   const restore=()=>{ if(stack.length) state=stack.pop(); };
@@ -78,11 +110,11 @@ function pdfOperatorEntries(operatorList,fonts,viewport,ops,isVisible=group=>tru
         width=pdfPoint(fm,glyph.width,0).x*size;
         step=width+spacing;
       }else step=width+spacing*s.direction;
-      const bounds=pdfGlyphBounds(matrix,left,baseline+extents.bottom*size,
-        left+width,baseline+extents.top*size);
+      const bounds=pdfClippedGlyph(pdfGlyphBounds(matrix,left,baseline+extents.bottom*size,
+        left+width,baseline+extents.top*size),s.clips);
       // A Unicode ligature may expand to several characters. Each character
       // retains the same indivisible glyph geometry, never a guessed fraction.
-      const text=glyph.unicode||'';
+      const text=bounds?(glyph.unicode||''):' ';
       for(let i=0;i<text.length;i++) entry.chars.push(bounds);
       entry.text+=text;
       advance+=step;
@@ -92,7 +124,7 @@ function pdfOperatorEntries(operatorList,fonts,viewport,ops,isVisible=group=>tru
     else s.x+=advance*hScale;
     // Invisible text may be the OCR layer of a scan, so it remains searchable.
     // Soft-mask/hidden optional-content text is not page content.
-    if(entry.text&&!s.mask&&visibility[visibility.length-1]) entries.push(entry);
+    if(entry.text.trim()&&!s.mask&&visibility[visibility.length-1]) entries.push(entry);
   };
   for(let i=0;i<operatorList.fnArray.length;i++){
     const op=operatorList.fnArray[i],a=operatorList.argsArray[i]||[];
@@ -121,7 +153,9 @@ function pdfOperatorEntries(operatorList,fonts,viewport,ops,isVisible=group=>tru
         for(const [key,value] of a[0]) if(key==='Font') setFont(value[0],value[1]);
         break;
       case ops.paintFormXObjectBegin:
-        save();if(a[0]) state.ctm=pdfMatrix(state.ctm,a[0]);break;
+        save();if(a[0]) state.ctm=pdfMatrix(state.ctm,a[0]);
+        if(a[1])state.clips=[...state.clips,pdfRectPolygon(state.ctm,...a[1])];
+        break;
       case ops.paintFormXObjectEnd: restore();break;
       case ops.beginGroup:
         // The group matrix bounds its offscreen canvas; its content keeps the

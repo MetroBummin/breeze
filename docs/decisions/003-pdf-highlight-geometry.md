@@ -124,3 +124,22 @@ shared; page positions and source sentences never migrate between documents.
 The controlled delayed-page regression reproduces this race. It does not prove
 that all reported device symptoms had this cause. Hidden OCR remains a separate
 source-document possibility, not an explanation for cross-document source text.
+
+## Cropped source forms reproduced on build 175 (2026-09-27)
+
+Read-only copies of the iPad's two recent original PDFs were matched to their
+IndexedDB book IDs and hashes. The 34-page document places cropped original
+pages as nested Form XObjects. The installed adapter ignored Form BBox clipping:
+page 11 produced 494 word boxes, including `adults` and `consists` on visibly
+blank paper. These words are in excluded source streams inside this same PDF;
+this does not establish that every previously reported cross-document symptom
+had that cause, or negate the independently reproduced session race.
+
+Intersect glyph cells with the viewport and every transformed enclosing Form
+BBox, restoring the clip stack with graphics state. Excluded glyphs contribute
+neither words nor sentence source. Partial cells retain only their intersection;
+no pixel/font heuristic or vocabulary reset is used. For the reproduced page,
+359 English word occurrences now match the independent PDF renderer extraction
+exactly, with zero extra/missing occurrences. Synthetic nested/transformed Form
+fixtures run without checking private user PDFs into the repository. Arbitrary
+path clipping and inaccurate invisible OCR remain separate limitations.

@@ -60,3 +60,20 @@ const group=run([...setup,['beginGroup',[{matrix:[2,0,0,2,100,100]}]],['showText
  ['beginGroup',[{smask:{}}]],['showText',[glyphs('hidden')]],['endGroup']]);
 assert.deepEqual(Array.from(group.boxes,b=>b.word),['world']);near(group.boxes[0].x*600,40,'group CTM');
 console.log('PDF glyph geometry: spacing, fonts, punctuation, ligatures, multiline, transforms, rotation and scale passed');
+// Cropped/reused source pages contain text outside their Form BBox. It must
+// disappear from both hit boxes and source sentences, with nested q/Q restore.
+const cropped=run([
+ ['paintFormXObjectBegin',[[1,0,0,1,100,0],[0,650,100,750]]],
+ ...setup,['showText',[glyphs('inside')]],
+ ['setTextMatrix',[1,0,0,1,10,600]],['showText',[glyphs('foreignblank')]],
+ ['paintFormXObjectBegin',[[1,0,0,1,0,0],[0,650,30,750]]],
+ ['setTextMatrix',[1,0,0,1,40,700]],['showText',[glyphs('nestedhidden')]],
+ ['paintFormXObjectEnd'],['setTextMatrix',[1,0,0,1,40,680]],['showText',[glyphs('again')]],
+ ['paintFormXObjectEnd'],...setup,['showText',[glyphs('outsideform')]]
+]);
+assert.deepEqual(Array.from(cropped.boxes,b=>b.word),['inside','again','outsideform']);
+assert.ok(!cropped.text.includes('foreignblank')&&!cropped.text.includes('nestedhidden'));
+near(box(cropped,'inside').x*600,140,'cropped Form transform');
+const partial=run([['paintFormXObjectBegin',[null,[42,650,48,750]]],...setup,['showText',[glyphs('ill')]],['paintFormXObjectEnd']]);
+assert.ok(partial.boxes.every(b=>b.x*600>=42&&((b.x+b.w)*600)<=48+1e-8));
+console.log('PDF cropped Form text: hidden source excluded; nesting, transforms and partial bounds passed');
