@@ -368,3 +368,17 @@ Cancellation call stacks are captured through opt-in public gesture-state KVO.
 Read-mode DOM event completion is also recorded, including defaultPrevented,
 contextmenu and selection events. These hooks remain disabled in normal launches;
 they diagnose cancellation, and are not a performance fix or production telemetry.
+
+
+179 device cancellation stacks, symbolicated with the matching iPadOS 26.5
+symbols, identify RemoteLayerTreePropertyApplier::applyHierarchyUpdates ->
+UIView._web_setSubviews -> UIView._addSubview -> UIScrollView._willMoveToWindow ->
+UIApplication._cancelGestureRecognizersForView. All three cancellations share
+that path. This establishes layer-tree reparenting as the immediate cause in
+those recordings, rather than an app touch preventDefault or changing page height.
+
+A translateZ(0)/isolation compositor-boundary experiment was not accepted:
+its browser run failed the geometry-cache and partial-highlighter-erase checks.
+The CSS was restored and that build (180) was not installed. Do not treat native
+layer reparenting as resolved. Keep the existing renderer/input behavior while
+a follow-up finds a stable boundary without these regressions.

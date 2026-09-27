@@ -140,3 +140,29 @@ became cancelled; other observed recognizers alone do not establish causality.
 The next opt-in diagnostic records the cancellation call stack through public
 KVO on gesture state. No recognizer is disabled/replaced and no new production
 input behavior is introduced by diagnostics.
+
+
+## Final handoff after bounded follow-up
+
+The user requested a concise stop if a safe fix was not reached. The 179 KVO
+record contains three cancellation stacks. Symbolication used the exact WebKit
+UUID 71A32618-A655-38E5-BB95-C55F7F36DF48 from iPadOS 26.5 (23F77):
+
+RemoteLayerTreePropertyApplier::applyHierarchyUpdates -> UIView._web_setSubviews
+-> UIView._addSubview -> UIScrollView._willMoveToWindow ->
+UIApplication._cancelGestureRecognizersForView.
+
+This confirms native layer hierarchy reparenting as the immediate cancellation
+path in these contacts. It does not yet identify the specific web-layer change
+that causes reparenting. A stable compositor-boundary CSS experiment was built
+as 180 but NOT installed: the concurrent browser run failed the geometry-cache
+and partial-highlighter-erase assertions. The CSS was restored, tests were not
+weakened, and the experiment remains only as a local audit patch. No claim is
+made that both test failures were independently isolated to that CSS.
+
+The iPad remains on 179 (177 behavior plus opt-in diagnostics). Diagnostics are
+turned off for handoff. Scrollbar stutter is unresolved. Suggested next work:
+correlate the native layer-tree cancellation with the precise compositor/DOM
+change, then validate a stable scrolling layer while preserving native scrollbar,
+Pencil, pinch, gaps and active-page rendering. Avoid further glyph-map tuning as
+an assumed cure for the demonstrated cancellation.
