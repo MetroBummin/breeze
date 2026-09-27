@@ -30,7 +30,7 @@ const BreezePdfInk = (()=>{
   let inkTools=null,inkEntry=null,inkMini=null,inkReadSeparator=null;
   let settings=null,settingsTool=null;
   const suppressed=new Set(), blockedPointers=new Set();
-  let suppressClick=false;
+  let suppressClick=false, paperPenPointer=null;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
   const onPaper=target=>target?.closest?.('.pdf-source-page') && !target.closest('button,input,select,textarea');
   const supported=()=>Reflect.get(window,'breezeInkIPad')===true;
@@ -452,7 +452,7 @@ const BreezePdfInk = (()=>{
     closeSettings();
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
     if(!p.every(Number.isFinite)||p[0]<0||p[1]<0||p[0]>state.width||p[1]>state.height)return;
-    active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
+    active={id:pen.identifier,pointerId:paperPenPointer,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
       preview:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
     trace('stroke/start',event);
     updateHistoryControls();
@@ -540,6 +540,7 @@ const BreezePdfInk = (()=>{
       trace('pointer/capture',event);
       const paper=onPaper(event.target);
       if(type==='pointerdown'){
+        if(paper && event.pointerType==='pen')paperPenPointer=event.pointerId;
         blockedPointers.delete(event.pointerId);
         const blocked=paper && (event.pointerType==='pen' || !!active);
         if(blocked)blockedPointers.add(event.pointerId);
@@ -552,9 +553,12 @@ const BreezePdfInk = (()=>{
       }
       if(blocked){
         event.stopImmediatePropagation(); // Do not disable the following Touch path.
-        if(type==='pointercancel' && event.pointerType==='pen')cancel('pointercancel');
+        if(type==='pointercancel' && event.pointerType==='pen' && active?.pointerId===event.pointerId)cancel('pointercancel');
       }
-      if(type==='pointerup'||type==='pointercancel')blockedPointers.delete(event.pointerId);
+      if(type==='pointerup'||type==='pointercancel'){
+        blockedPointers.delete(event.pointerId);
+        if(paperPenPointer===event.pointerId)paperPenPointer=null;
+      }
     },{capture:true,passive:false});
   }
   for(const [type,handler] of Object.entries({touchstart:touchStart,touchmove:touchMove,
@@ -574,7 +578,7 @@ const BreezePdfInk = (()=>{
       }
     },{capture:true,passive:false});
   }
-  const interrupt=()=>{cancel();suppressed.clear();blockedPointers.clear();suppressClick=false;resumeOriginalPdfPaint();};
+  const interrupt=()=>{cancel();suppressed.clear();blockedPointers.clear();suppressClick=false;paperPenPointer=null;resumeOriginalPdfPaint();};
   window.addEventListener('blur',interrupt);
   window.addEventListener('resize',()=>{cancel('resize');resumeOriginalPdfPaint();});
   document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel('reader-scroll');}},{capture:true,passive:true});

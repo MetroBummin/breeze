@@ -476,3 +476,23 @@ are introduced. Diagnostics add native pan touch count and event touch types/
 phases to distinguish true live fingers from stuck native ownership. 185's web
 geometry correction and 183 resource policy remain unchanged for this comparison.
 Native Pencil routing, palm coexistence and boundary recovery require device QA.
+
+## Integrated ownership candidate (2026-09-27, not device accepted)
+
+The integration preserves 183 shell reuse/pixel release, deferred diagnostic IO,
+crop/document ownership checks and 185 current-offset preview math. It supersedes
+186's incomplete removal of Pencil exclusion with PR #40's idle-time type masks
+and native contact ledger, not live `ignore(touch,for:)` calls. Stop-only remains
+an entire contact; next stationary Pencil edits without a timer. Native and web
+IDs are separate. Outside controls never become navigation by later movement,
+and old native snapshots cannot clear newer owners. Scope binding is attempted
+immediately when idle; pending binding/repeated first-stroke rejection remains a
+physical acceptance gate, not a successful fallback.
+
+Web end/cancel applies only to the pinch's owners and keeps an original remaining
+finger; unrelated and stale ends cannot terminate a new pinch. Stroke cancellation
+uses its own Pointer identity independently of Touch identity. Real scroll,
+current cancel, blur/background and document closure retain unfinished-stroke
+cancellation. No offset clamp, gesture reset or retention bypass is introduced.
+See `docs/qa/pdf-input-integration-2026-09-27.md` for evidence, baseline failure,
+PR relationships and the required uninterrupted physical acceptance sequence.

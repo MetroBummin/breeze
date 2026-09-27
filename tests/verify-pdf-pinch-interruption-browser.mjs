@@ -68,14 +68,28 @@ try{
     send([touch(81)]);
     const recovered={pinch:!!originalPinch,owned:originalPinchTouches,transform:originalZoomLayer().style.transform,
      contacts:originalPdfContacts,clipped:originalZoomStage().classList.contains('pinching')};
-    cancelOriginalPinch();setOriginalZoom(1);
-    return {before,after,unchanged,retained,recovered};
+    cancelOriginalPinch();
+    beginOriginalPinch(center,200,[91,92]);originalPinchTouches=true;
+    const end=(type,live,changed)=>{
+     const e=new Event(type,{bubbles:true,cancelable:true});
+     Object.defineProperties(e,{touches:{value:live.map(touch)},changedTouches:{value:changed.map(touch)}});
+     target.dispatchEvent(e);
+    };
+    end('touchcancel',[92],[91]);
+    const partialCancel=!!originalPinch&&originalPinchTouches&&originalPdfContacts===1;
+    end('touchcancel',[],[81]); // delayed callback from the old sequence
+    const staleCancel=!!originalPinch&&originalPinchTouches&&originalPdfContacts===1;
+    end('touchend',[93],[92]); // unrelated new finger cannot retain this pinch
+    const endedOwners=!originalPinch&&!originalPinchTouches&&originalPdfContacts===1;
+    end('touchend',[],[93]);setOriginalZoom(1);
+    return {before,after,unchanged,retained,recovered,partialCancel,staleCancel,endedOwners};
    });
    assert.ok(Math.abs(result.before.x)<1&&Math.abs(result.before.y)<1,JSON.stringify(result));
    assert.ok(Math.abs(result.after.x)<1&&Math.abs(result.after.y)<1,JSON.stringify(result));
    assert.equal(result.unchanged,true,'preview must not write scrolling');
    assert.equal(result.retained,true,'remaining original finger retains pinch ownership');
    assert.deepEqual(result.recovered,{pinch:false,owned:false,transform:'scale(2.5)',contacts:1,clipped:false});
+   assert.ok(result.partialCancel&&result.staleCancel&&result.endedOwners,JSON.stringify(result));
    assert.deepEqual(errors,[]);console.log(JSON.stringify({engine:engine.name(),result}));
   }finally{await browser.close();rmSync(profile,{recursive:true,force:true});}
  }

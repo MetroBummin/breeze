@@ -1,0 +1,22 @@
+name: PDF input ownership
+on:
+  pull_request:
+    paths:
+      - 'ios/App/App/SceneDelegate.swift'
+      - 'tests/verify-pdf-input-ownership.mjs'
+      - 'tests/pdf-input-*.swift'
+      - '.github/workflows/pdf-input-ownership.yml'
+      - 'scripts/reader/pdf-ink.js'
+      - 'scripts/reader/pdf-pinch.js'
+permissions:
+  contents: read
+jobs:
+  ownership:
+    runs-on: macos-14
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Production policy and adapter regression checks
+        run: node tests/verify-pdf-input-ownership.mjs
+      - name: Real UIKit and WebKit SDK typecheck
+        run: node tests/verify-pdf-input-ownership.mjs --ios-typecheck

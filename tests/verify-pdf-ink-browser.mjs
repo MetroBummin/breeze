@@ -329,7 +329,14 @@ try{
     const cancelled=!BreezePdfInk.busy();
     send('touchstart',[pen],[pen]);window.dispatchEvent(new Event('blur'));
     send('touchend',[],[pen]);const unlocked=!BreezePdfInk.busy();
-    return{during,one:after===start+1,oldBlocked,palmDoesNotBlock,freshAllowed,noMixedPinch,lateUnchanged,acquired,survived,zoomed,cancelled,unlocked};
+    const pointer=(type,id)=>target.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:id,pointerType:'pen'}));
+    const pointerCount=n();pointer('pointerdown',801);send('touchstart',[pen],[pen]);
+    pointer('pointercancel',800); // previous contact's delayed cancellation
+    send('touchmove',[t(91,'stylus',.4)],[t(91,'stylus',.4)]);send('touchend',[],[pen]);
+    const stalePointerPreserved=n()===pointerCount+1;
+    pointer('pointerdown',802);send('touchstart',[pen],[pen]);pointer('pointercancel',802);
+    send('touchend',[],[pen]);const currentPointerCancelled=n()===pointerCount+1;
+    return{during,one:after===start+1,oldBlocked,palmDoesNotBlock,freshAllowed,noMixedPinch,lateUnchanged,acquired,survived,zoomed,cancelled,unlocked,stalePointerPreserved,currentPointerCancelled};
    });
    for(const [key,value] of Object.entries(collision))assert.equal(value,true,`collision: ${key}`);
    // A long Pencil move uses the contact's stable page bounds, not a layout read per sample.
