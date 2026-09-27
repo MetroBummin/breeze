@@ -63,12 +63,17 @@ private final class BreezePdfContactObserver: UIGestureRecognizer {
     }
 }
 
-// Consume only this Pencil's stop-only/rejected sequence. Never prevent an
-// already-owned finger pan/pinch; stopping residual motion is an explicit call.
+// Consume only this Pencil's stop-only/rejected sequence. A stop-only contact
+// must also win WebKit's competing touch recognizers, or JS may save a dot after
+// native momentum stops. A blocked Pencil during finger navigation cannot win.
 private final class BreezePdfPencilGate: UIGestureRecognizer {
     var begin: ((UITouch, UIEvent) -> Bool)?
+    var isStopOnly: ((UITouch) -> Bool)?
     private var owned: ObjectIdentifier?
-    override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+    private var preventsCompetingTouch = false
+    override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool {
+        preventsCompetingTouch
+    }
     override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         guard owned == nil else { return }
@@ -77,6 +82,7 @@ private final class BreezePdfPencilGate: UIGestureRecognizer {
             return
         }
         owned = ObjectIdentifier(pencil)
+        preventsCompetingTouch = isStopOnly?(pencil) == true
         state = .began
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -88,7 +94,7 @@ private final class BreezePdfPencilGate: UIGestureRecognizer {
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
         if touches.contains(where: { ObjectIdentifier($0) == owned }) { state = .cancelled }
     }
-    override func reset() { super.reset(); owned = nil }
+    override func reset() { super.reset(); owned = nil; preventsCompetingTouch = false }
 }
 
 // Configure admission BETWEEN native contact sequences, not by removing a live
@@ -310,6 +316,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             gate.delaysTouchesEnded = false
             gate.cancelsTouchesInView = true
             gate.begin = { [weak self] touch, event in self?.routePdfPencil(touch, event: event) ?? false }
+            gate.isStopOnly = { [weak self] touch in
+                self?.pdfContacts.roles[ObjectIdentifier(touch)] == .stopOnly
+            }
             webView.addGestureRecognizer(gate)
         }
 

@@ -519,3 +519,27 @@ The diagnostic build is not the fix. Capture an editing-mode failure first,
 then change only the confirmed boundary and check 10–20 physical flick -> first
 Pencil stop-only -> lift -> immediately editable next Pencil sequences with
 varied flick strength. Browser/Swift tests cannot substitute for that evidence.
+
+## Stop-only Pencil delivery correction (2026-09-28 candidate)
+
+The saved 188 native motion trace contains 32 admitted Pencil contacts. Every
+sampled moving contact was assigned stopOnly with isDeceleratingAtGate=true;
+every sampled stationary contact was assigned ink with the gate value false.
+No pre-contact-moving/at-gate-false misclassification appears in that capture.
+This does not rule out a rarer race, but it cannot justify changing the motion
+threshold or adding a time-based hold.
+
+The stop-only gate already stopped the scroller and claimed the Pencil contact,
+but its canPrevent override unconditionally returned false. UIKit could therefore
+let a competing WebKit touch recognizer deliver the same Pencil to the web ink
+path. For a stopOnly role only, the gate now allows UIKit to resolve competing
+recognizers in its favor. It remains non-preventing for a blocked Pencil during
+owned finger navigation; a stationary ink Pencil still fails the gate and goes
+to WebKit. The stopOnly prevention state clears on recognizer reset. Native
+Pencil admission on scroll pan/pinch and all page/zoom/storage logic stay intact.
+
+This is a code-level cause and a proposed narrow correction. Whether UIKit
+actually suppresses the occasional dot on the physical iPad is pending the
+user-operated test. A stopOnly gate row with a new saved mark after this change
+would reject the correction and require a delivery trace, not another timing
+guess.

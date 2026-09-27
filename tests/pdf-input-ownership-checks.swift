@@ -106,10 +106,30 @@
             _=a.reconcile([p],contactsActive:false); assert(a.reconcile([q],contactsActive:false))
             assert(p.allowedTouchTypes.contains(2) && !q.allowedTouchTypes.contains(2))
         }
-        test("gate and observer never prevent navigation recognizers") {
+        test("idle gate and observer never prevent navigation recognizers") {
             let gate=BreezePdfPencilGate(), observer=BreezePdfContactObserver(), pan=UIPanGestureRecognizer()
             assert(!gate.canPrevent(pan) && !gate.canBePrevented(by:pan))
             assert(!observer.canPrevent(pan) && !observer.canBePrevented(by:pan))
+        }
+        test("production stop-only gate wins competing Pencil touch recognizers only for that contact") {
+            let (h,s)=fixture(), gate=BreezePdfPencilGate(), other=UIGestureRecognizer()
+            gate.begin={ touch,event in h.route(touch,event) }
+            gate.isStopOnly={ touch in h.stopOnly(touch) }
+            let first=UITouch(.pencil), event=UIEvent([first]); s.isDecelerating=true
+            gate.touchesBegan([first],with:event)
+            assert(gate.state == .began && gate.canPrevent(other) && s.stops == 1)
+            first.phase = .ended; gate.touchesEnded([first],with:UIEvent([first])); h.observe(UIEvent([first])); gate.reset()
+            assert(!gate.canPrevent(other))
+            let next=UITouch(.pencil); gate.touchesBegan([next],with:UIEvent([next]))
+            assert(gate.state == .failed && !gate.canPrevent(other) && s.stops == 1)
+        }
+        test("a blocked Pencil cannot cancel an existing finger recognizer") {
+            let (h,s)=fixture(), gate=BreezePdfPencilGate(), finger=UITouch(.direct), pen=UITouch(.pencil)
+            let pan=UIPanGestureRecognizer(); h.observe(UIEvent([finger])); s.isDecelerating=true
+            gate.begin={ touch,event in h.route(touch,event) }
+            gate.isStopOnly={ touch in h.stopOnly(touch) }
+            gate.touchesBegan([pen],with:UIEvent([finger,pen]))
+            assert(gate.state == .began && !gate.canPrevent(pan) && s.stops == 0)
         }
         test("gate owns only its admitted Pencil through end/reset") {
             let g=BreezePdfPencilGate(), pen=UITouch(.pencil), other=UITouch(.direct), event=UIEvent([pen,other])
