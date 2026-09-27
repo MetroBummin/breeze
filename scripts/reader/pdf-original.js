@@ -51,6 +51,11 @@ function pdfPagesInView(session,reach=0){
   for(let i=pdfPageIndexAtY(rects,start);i<rects.length&&rects[i][1]<=end;i++)pages.push(i+1);
   return pages;
 }
+function schedulePdfSharpen(session=originalSession){
+  if(!currentPdfSession(session))return;
+  clearTimeout(session.sharpenTimer);
+  session.sharpenTimer=setTimeout(()=>{if(currentPdfSession(session))resharpenOriginalPages();},180);
+}
 function pdfScrollBusy(session=originalSession){
   return originalPdfContacts>0 || performance.now()-(session?.lastScrollAt??-Infinity)<160;
 }
@@ -60,10 +65,14 @@ function schedulePdfPaint(session=originalSession){
 }
 async function drainPdfPaint(session){
   if(!currentPdfSession(session)||session.paintActive||!session.paintQueue?.size)return;
-  const visible=new Set(pdfPagesInView(session));
+  const visible=new Set(pdfPagesInView(session)),nearby=new Set(pdfPagesInView(session,1300));
+  for(const [n,job] of session.paintQueue){
+    if(job.options?.prefetch&&!nearby.has(n)){session.paintQueue.delete(n);job.resolve();}
+  }
   const jobs=[...session.paintQueue.values()].sort((a,b)=>Number(visible.has(b.pageNumber))-Number(visible.has(a.pageNumber)));
   const job=jobs.find(item=>!originalPdfPaintPaused(!!session.settled.has(item.pageNumber))
     && (!item.options?.resharpen||!pdfScrollBusy(session)));
+  if(!jobs.length)return;
   if(!job){session.paintTimer=setTimeout(()=>{session.paintTimer=0;void drainPdfPaint(session);},160);return;}
   session.paintQueue.delete(job.pageNumber);session.paintActive=job;
   try{await paintOriginalPdfPage(session,job.pageNumber,job.options);}finally{
@@ -74,7 +83,8 @@ function renderOriginalPdfPage(session,pageNumber,options){
   if(!currentPdfSession(session))return Promise.resolve();
   if(session.paintActive?.pageNumber===pageNumber)return session.paintActive.promise;
   session.paintQueue ||= new Map();
-  const existing=session.paintQueue.get(pageNumber);if(existing)return existing.promise;
+  const existing=session.paintQueue.get(pageNumber);
+  if(existing){if(!options?.prefetch)existing.options={...existing.options,...options,prefetch:false};return existing.promise;}
   if(session.settled.has(pageNumber)&&!options?.resharpen)return session.rendering.get(pageNumber)||Promise.resolve();
   let resolve;const promise=new Promise(done=>{resolve=done;});
   session.paintQueue.set(pageNumber,{pageNumber,options,promise,resolve});schedulePdfPaint(session);
@@ -122,17 +132,29 @@ const PDF_MAX_RENDER_ZOOM = 3;   // 이보다 더 벌리면 늘린 그림으로 
    놓아도 자리는 한 톨도 안 움직입니다. 쪽 상자는 첫 렌더에서 제 비율을 이미
    배웠고 그 값은 그대로 두기 때문입니다 — 읽던 줄이 흔들리지 않습니다. */
 const PDF_KEEP_REACH = 4000;
+const PDF_MAX_PAGE_PIXELS = 6 * 1024 * 1024;
+const PDF_MAX_CACHE_PIXELS = 24 * 1024 * 1024;
 
 /* 새로 그릴 때마다 훑습니다. "자리를 새로 얻을 때 남는 자리를 만든다"는 뜻이라,
    가만히 있으면 아무 일도 안 하고 늘어날 때만 정리합니다. 놓친 쪽이 있어도
    다음 렌더가 다시 훑으므로 영영 남지 않습니다. */
-function releaseDistantPdfPages(session,exceptPage){
+function releaseDistantPdfPages(session,exceptPage,reservePixels=0){
   if(!currentPdfSession(session)) return;
-  if(originalPdfPaintPaused()) return;
-  const nearby=new Set(pdfPagesInView(session,PDF_KEEP_REACH));
-  session.settled.forEach(pageNumber=>{
+  // Initial pages can paint during a held finger/scrollbar drag, so eviction
+  // must run then too. Keep Touch.target nodes attached while dropping pixels.
+  const nearby=new Set(pdfPagesInView(session,PDF_KEEP_REACH)),visible=new Set(pdfPagesInView(session));
+  for(const pageNumber of [...session.settled]){
     if(pageNumber!==exceptPage&&!nearby.has(pageNumber))releaseOriginalPdfPage(session,pageNumber);
-  });
+  }
+  const pixels=n=>{const c=session.pages[n-1]?.querySelector('canvas');return c?c.width*c.height:0;};
+  let total=reservePixels;
+  for(const n of session.settled)total+=pixels(n);
+  const candidates=[...session.settled].filter(n=>n!==exceptPage&&!visible.has(n))
+    .sort((a,b)=>Math.abs(b-exceptPage)-Math.abs(a-exceptPage));
+  for(const n of candidates){
+    if(total<=PDF_MAX_CACHE_PIXELS)break;
+    total-=pixels(n);releaseOriginalPdfPage(session,n);
+  }
 }
 
 function releaseOriginalPdfPage(session,pageNumber){
@@ -146,10 +168,11 @@ function releaseOriginalPdfPage(session,pageNumber){
   if(!pageElement) return;
   /* DOM 에서 떼는 것만으로는 모자랍니다. 크기를 0 으로 만들어야 브라우저가 뒤에
      잡아 둔 그림판(iOS 에서는 GPU 쪽)을 그 자리에서 놓습니다. */
-  const canvas=pageElement.querySelector('canvas');
-  if(canvas){ canvas.width=0; canvas.height=0; }
+  pageElement.querySelectorAll('canvas').forEach(canvas=>{canvas.width=0;canvas.height=0;});
   delete pageElement.dataset.wordCount;
-  pageElement.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
+  if(originalPdfContacts){
+    for(const child of pageElement.children){child.setAttribute('data-pdf-retired','');child.style.visibility='hidden';}
+  }else pageElement.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
 }
 
 async function openOriginalPdf(book,record,token){
@@ -191,7 +214,7 @@ async function openOriginalPdf(book,record,token){
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const observer=new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,+entry.target.dataset.page); });
+    entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,Number(entry.target.getAttribute('data-page')),{prefetch:true}); });
   },{root:readerScroller(),rootMargin:'1300px 0px'});
   session.observer=observer;
   pages.forEach(page=>observer.observe(page));
@@ -201,7 +224,9 @@ async function openOriginalPdf(book,record,token){
 async function paintOriginalPdfPage(session,pageNumber,options){
   if(!currentPdfSession(session)) return;
   if(originalPdfPaintPaused(session.settled.has(pageNumber))) return;
-  const zoom=Math.min(PDF_MAX_RENDER_ZOOM,Math.max(1,originalZoom()));
+  const requestedZoom=Math.min(PDF_MAX_RENDER_ZOOM,Math.max(1,originalZoom()));
+  // Moving pages need readable pixels first, not a full oversized zoom canvas.
+  const zoom=!session.settled.has(pageNumber)&&pdfScrollBusy(session)?1/PDF_OVERSAMPLE:requestedZoom;
   const drawn=session.rendering.get(pageNumber);
   if(drawn){
     /* 이미 그려진 쪽입니다. 벌린 만큼 눈에 띄게 흐려졌을 때만 다시 그립니다 —
@@ -221,9 +246,11 @@ async function paintOriginalPdfPage(session,pageNumber,options){
      쪽들과 새 자리의 쪽들이 잠깐 함께 남는데, 앞의 한 번이 그 겹침을 없앱니다 —
      가장 크게 잡히는 순간이 곧 이 기능의 한도라서, 그 봉우리를 깎는 일입니다. */
   releaseDistantPdfPages(session,pageNumber);
+  let cleanupPage=()=>{};
   const job=(async()=>{
     const pageElement=session.pages[pageNumber-1];
     const page=await session.pdf.getPage(pageNumber);
+    cleanupPage=()=>page.cleanup();
     if(!alive()) return;
     if(originalPdfPaintPaused(redraw)){
       if(redraw) session.drawnAt.set(pageNumber,previousZoom);
@@ -236,8 +263,12 @@ async function paintOriginalPdfPage(session,pageNumber,options){
     const cssWidth=Math.max(240,pageElement.clientWidth||document.getElementById('original-content').clientWidth||700);
     const cssScale=cssWidth/base.width;
     const viewport=page.getViewport({scale:cssScale});
-    const outputScale=Math.min(4,(window.devicePixelRatio||1)*PDF_OVERSAMPLE*zoom);
-    const canvas=document.createElement('canvas');
+    const outputScale=Math.min(4,(window.devicePixelRatio||1)*PDF_OVERSAMPLE*zoom,
+      Math.sqrt(PDF_MAX_PAGE_PIXELS/(viewport.width*viewport.height)));
+    releaseDistantPdfPages(session,pageNumber,Math.floor(viewport.width*outputScale)*Math.floor(viewport.height*outputScale));
+    if(!originalPdfContacts)pageElement.querySelectorAll('[data-pdf-retired]').forEach(node=>node.remove());
+    const canvas=pageElement.querySelector('canvas[data-pdf-retired]')||document.createElement('canvas');
+    canvas.removeAttribute('data-pdf-retired');canvas.style.visibility='';
     canvas.width=Math.floor(viewport.width*outputScale);
     canvas.height=Math.floor(viewport.height*outputScale);
     canvas.style.width=viewport.width+'px'; canvas.style.height=viewport.height+'px';
@@ -271,7 +302,7 @@ async function paintOriginalPdfPage(session,pageNumber,options){
     if(loading)loading.hidden=true;
     const ratioChanged=Math.abs(before.width/Math.max(1,before.height)-base.width/base.height)>0.0001;
     if(ratioChanged)pageElement.style.aspectRatio=`${base.width}/${base.height}`;
-    pageElement.appendChild(canvas);
+    if(canvas.parentElement!==pageElement)pageElement.appendChild(canvas);
     if(ratioChanged){
       invalidatePdfPageLayout(session);
       const after=pageElement.getBoundingClientRect();
@@ -293,11 +324,15 @@ async function paintOriginalPdfPage(session,pageNumber,options){
      옛 캔버스가 그 자리에 남아 있으니까요. */
   if(!redraw) session.rendering.set(pageNumber,job);
   await job;
+  // PDF.js keeps operator lists and decoded images separately from our canvas.
+  // cleanup() only releases completed page work; an in-flight task defers it.
+  cleanupPage();
   /* 다 그려진 쪽만 놓아 줄 수 있습니다. 이 쪽 자신은 빼고 훑습니다 — 자리를
      되돌리기 전에 미리 그려 두는 곳이 있어서(restorePdfSentence), 방금 그린
      것을 그 자리에서 도로 놓으면 헛일이 됩니다. */
   if(alive() && session.rendering.has(pageNumber)) session.settled.add(pageNumber);
   releaseDistantPdfPages(session,pageNumber);
+  if(alive()&&zoom<requestedZoom)schedulePdfSharpen(session);
   return job;
 }
 

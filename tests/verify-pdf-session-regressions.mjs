@@ -37,3 +37,20 @@ test('original-byte identity rejects a stale map even for the same book id',()=>
  f.context.originalSession={kind:'pdf',bookId:'A',hash:'old-file',loadToken:1};
  assert.equal(f.context.currentPdfSession(),false);
 });
+test('a lookup waiting for its page cannot select words after a document switch',async()=>{
+ const f=fixture(),page={dataset:{page:'1'},isConnected:true};
+ const session={kind:'pdf',bookId:'A',hash:'hash-A',loadToken:1,pages:[page],wordBoxes:new Map()};
+ f.context.originalSession=session;f.context.pdfPageAtPoint=()=>page;
+ f.context.renderOriginalPdfPage=()=>f.gate.promise;
+ f.context.openPdfWord=()=>assert.fail('stale English word was presented');
+ const lookup=f.context.openPdfWordAt(10,10);
+ f.context.originalLoadToken=2;f.context.curBook=f.b;f.context.originalSession={kind:'pdf',bookId:'B',loadToken:2};
+ f.gate.resolve();assert.equal(await lookup,false);
+});
+test('a delayed sentence cue cannot paint boxes from the previous document',()=>{
+ const f=fixture(),page={dataset:{page:'1'},isConnected:true},box={word:'Alpha',example:'Alpha belongs to A.'};
+ const session={kind:'pdf',bookId:'A',loadToken:1,pages:[page],wordBoxes:new Map([[1,[box]]])};
+ f.context.originalSession=session;f.context.createReaderSentenceCue=()=>assert.fail('stale English sentence was painted');
+ f.context.originalLoadToken=2;f.context.curBook=f.b;f.context.originalSession={kind:'pdf',bookId:'B',loadToken:2,pages:[],wordBoxes:new Map()};
+ f.context.showPdfSentenceCue(page,[box]);
+});

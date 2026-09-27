@@ -18,6 +18,10 @@ function originalPdfPaintPaused(optional=true){
 function resumeOriginalPdfPaint(){
   if(originalPdfContacts || originalPinch || !originalPdfRenderPending) return;
   originalPdfRenderPending = false;
+  if(originalSession?.kind==='pdf'){
+    document.querySelectorAll('.pdf-source-page [data-pdf-retired]').forEach(node=>node.remove());
+    releaseDistantPdfPages(originalSession,0);
+  }
   resharpenOriginalPages();
 }
 function originalFingerContacts(event){
@@ -181,6 +185,7 @@ function originalPinchEnd(event){
         originalSession.lastScrollAt=performance.now();
         if(!readerScrollWasProgrammatic())readerModeChangeToken++;
         schedulePdfPaint(originalSession);
+        schedulePdfSharpen(originalSession);
       }
     },{passive:true});
     box.addEventListener('touchstart',originalPinchStart,{passive:false});

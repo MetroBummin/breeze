@@ -314,3 +314,27 @@ self-overlap. The SVG multiplies with the actual PDF; highlighter
 paths precede pen paths, so existing pen remains above translucent ink. Separate
 strokes intentionally accumulate where they overlap. Drawing updates only the
 active path; it neither redraws the PDF canvas nor captures finger input.
+
+## Held-scroll memory follow-up (2026-09-27)
+
+The user reported read-mode upward scrollbar jumps freezing or returning home
+on installed 1.4 (175). A same-time iPad JetsamEvent records about 1.75 GiB in the
+WebContent process belonging to Breeze's process coalition. The record does not
+identify that WebContent process as the killed process; it is memory-pressure
+evidence, not a confirmed reason for the observed navigation/restart.
+
+The scheduler allowed initial painting during a held finger, while distant-page
+eviction still refused all finger contacts. Eviction now releases pixels during
+that contact and keeps its DOM targets attached until lift. Limit each canvas to
+6 Mi pixels and the retained cache to 24 Mi pixels, preferring visible pages.
+Release completed PDF.js page operator/image resources through page.cleanup().
+Drop obsolete queued prefetch, show initial moving pages at reduced resolution,
+and sharpen after scroll settles. All paper bounds stay in the layout cache and
+native scope regardless of which canvases are retained. Page gaps do not change.
+
+Same 120-page/820px/DPR2 Chromium fixture with a continuous finger contact:
+installed 175 exceeded the 450 MiB safety stop after 8 jumps (487.7 MiB canvases,
+16 retained pages); the fix completed all 15 down/up jumps with 59.7 MiB peak in
+both Chromium and WebKit, preserving the original contact target and rendering
+every requested page. This measures canvas allocation, not total native memory
+or physical scrolling latency. Fresh user-operated iPad QA remains required.
