@@ -69,6 +69,10 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var inkTraceEnabled = false
     private var inkTraceRows: [[String: Any]] = []
     private var inkNativeTraceRows: [[String: Any]] = []
+    private var inkLastPanSignature = ""
+    private var inkObservedPans = Set<ObjectIdentifier>()
+    private var inkPanObservations: [NSKeyValueObservation] = []
+    private var inkCancellationRows: [[String: Any]] = []
     #endif
     private var inkNativeScope: [String: Any] = [:]
     private static let themeMessageHandler = "breezeReaderTheme"
@@ -137,10 +141,20 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                             "phase": touch.phase.rawValue, "x": point.x, "y": point.y,
                             "timestamp": touch.timestamp]
                 }
-                self.inkRawInputRows.append(["phase": phase, "uptime": event.timestamp,
+                if phase == "began" { self.observeInkPanCancellation(webView) }
+                let scrolls = self.inkScrollSnapshots(webView)
+                let signature = scrolls.map { "\($0["panState"] ?? "")/\($0["tracking"] ?? "")" }.joined(separator: "|")
+                var row: [String: Any] = ["phase": phase, "uptime": event.timestamp,
                     "at": Date().timeIntervalSince1970, "changed": touches.map(describe),
-                    "all": (event.allTouches ?? []).map(describe),
-                    "scrollViews": self.inkScrollSnapshots(webView)])
+                    "all": (event.allTouches ?? []).map(describe), "scrollViews": scrolls]
+                // Record recognizer ownership only at transitions, not every move.
+                // This identifies native cancellation without guessing from JS fps.
+                if phase != "moved" || signature != self.inkLastPanSignature {
+                    row["recognizers"] = self.inkGestureSnapshots(webView)
+                    row["touchViews"] = touches.map { touch in touch.view.map { String(describing: type(of: $0)) } ?? "nil" }
+                }
+                self.inkLastPanSignature = signature
+                self.inkRawInputRows.append(row)
                 if self.inkRawInputRows.count > 2000 { self.inkRawInputRows.removeFirst() }
                 if phase != "moved" { self.writeInkTrace() }
             }
@@ -326,7 +340,15 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }), abs(scroll.contentSize.height-expectedHeight) < 4 else { return false }
         let contentPoint = CGPoint(x: point.x-box.minX+scroll.contentOffset.x,
                                    y: point.y-box.minY+scroll.contentOffset.y)
-        guard paperData.contains(where: { rect($0).contains(contentPoint) }) else { return false }
+        // Published paper rectangles remain ordered in content coordinates.
+        // Search all pages without scanning or dropping offscreen Pencil areas.
+        var low = 0, high = paperData.count
+        while low < high {
+            let middle = (low + high) / 2
+            if rect(paperData[middle]).maxY < contentPoint.y { low = middle + 1 }
+            else { high = middle }
+        }
+        guard low < paperData.count, rect(paperData[low]).contains(contentPoint) else { return false }
         let pan = scroll.panGestureRecognizer
         let fingerPan = (pan.state == .began || pan.state == .changed) && pan.numberOfTouches > 0
         let inertia = scroll.isDecelerating && !fingerPan
@@ -363,6 +385,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         if let scroll = view as? UIScrollView {
             let frame = webView.map { scroll.convert(scroll.bounds, to: $0) } ?? .zero
             result.append(["class": String(describing: type(of: scroll)),
+                "id": String(describing: ObjectIdentifier(scroll)),
                 "frame": [frame.minX,frame.minY,frame.width,frame.height],
                 "contentHeight": scroll.contentSize.height,
                 "offsetX": scroll.contentOffset.x, "offsetY": scroll.contentOffset.y,
@@ -374,9 +397,34 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         for child in view.subviews { result += inkScrollSnapshots(child) }
         return result
     }
+    private func observeInkPanCancellation(_ view: UIView) {
+        if let scroll = view as? UIScrollView {
+            let pan = scroll.panGestureRecognizer
+            if inkObservedPans.insert(ObjectIdentifier(pan)).inserted {
+                inkPanObservations.append(pan.observe(\.state, options: [.new]) { [weak self, weak scroll] pan, _ in
+                    guard let self, let scroll, pan.state == .cancelled else { return }
+                    self.inkCancellationRows.append(["at": Date().timeIntervalSince1970,
+                        "view": String(describing: type(of: scroll)), "offset": scroll.contentOffset.y,
+                        "stack": Thread.callStackSymbols])
+                    if self.inkCancellationRows.count > 30 { self.inkCancellationRows.removeFirst() }
+                })
+            }
+        }
+        for child in view.subviews { observeInkPanCancellation(child) }
+    }
+    private func inkGestureSnapshots(_ view: UIView) -> [[String: Any]] {
+        var result = (view.gestureRecognizers ?? []).map { recognizer -> [String: Any] in
+            ["class": String(describing: type(of: recognizer)), "state": recognizer.state.rawValue,
+             "view": String(describing: type(of: view)), "enabled": recognizer.isEnabled,
+             "touches": recognizer.numberOfTouches]
+        }
+        for child in view.subviews { result += inkGestureSnapshots(child) }
+        return result
+    }
     private func writeInkTrace() {
         let payload: [String: Any] = ["rows": inkTraceRows, "native": inkNativeTraceRows,
-                                      "nativeInput": inkRawInputRows, "scope": inkNativeScope]
+                                      "nativeInput": inkRawInputRows, "scope": inkNativeScope,
+                                      "cancellations": inkCancellationRows]
         if let data = try? JSONSerialization.data(withJSONObject: payload),
            let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
             try? data.write(to: directory.appendingPathComponent("breeze-ink-trace.json"), options: .atomic)

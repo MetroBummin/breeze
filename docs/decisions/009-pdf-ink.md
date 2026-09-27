@@ -275,3 +275,110 @@ off for ordinary QA: pen and eraser, base and enlarged PDF, repeated finger flic
 tool selection, expanded/collapsed chrome, open settings, pinch then flick,
 page gaps, slow/fast curves, Undo/Redo and process restart. If momentum still
 fails, capture a fresh `BREEZE_INK_TRACE=1` run before changing native routing.
+
+## Cached layout and bounded page work (2026-09-27)
+
+Native scope, PDF page hit-testing and visible-page scheduling share the session's
+committed content-coordinate page rectangles. Layout/zoom/rotation invalidates
+them; ordinary finger contact and scroll do not. Page lookup is a binary search
+over every page, including unrendered paper; gaps remain excluded. Scope updates
+follow layout and control changes, rather than serializing the entire scope on
+every scroll frame. Tests still cover ancestor changes, transitions and pinch
+commit; the old unobservable fixture rectangle mutation now emits its corresponding
+layout mutation, and a 200-page repeated-contact regression checks cache reuse.
+
+Required initial canvases are serialized and allowed during single-finger pan;
+pinch and active Pencil retain input ownership. Touched placeholder nodes stay
+attached. Canvas and word-map work yield between stages. Sharpening waits for
+160ms without scroll and no active contact. User contact/scroll invalidates the
+existing mode-change token so delayed mode landing cannot pull the view back.
+The native residual-inertia gate still consumes the first moving Pencil contact
+and edits a stationary page immediately. Device validation belongs to the user.
+
+## Freehand highlighter (2026-09-27)
+
+A third Pencil tool uses yellow (default) or green at 12/20 PDF units and fixed
+0.30 opacity. Select once; tap the selected tool again for settings. Entry remains
+read-only; the last selected editing tool and tool options persist locally.
+
+Highlighter strokes reuse v1 page records, original hash, normalized viewport
+coordinates, boundary clipping and serialized writes. They add `tool:highlighter`
+and `opacity:0.3`; legacy pen records stay unchanged. Validation rejects unknown
+tool/opacity values without overwriting the record. Partial eraser fragments
+spread all stroke properties; history keeps those same immutable objects.
+
+Each live stroke is one SVG polyline with element opacity, preventing darker
+internal joins/self-overlaps. Completed highlighter fragments share a persisted
+strokeId and one SVG opacity group, so partial erasure cannot darken the remaining
+self-overlap. The SVG multiplies with the actual PDF; highlighter
+paths precede pen paths, so existing pen remains above translucent ink. Separate
+strokes intentionally accumulate where they overlap. Drawing updates only the
+active path; it neither redraws the PDF canvas nor captures finger input.
+
+## Held-scroll memory follow-up (2026-09-27)
+
+The user reported read-mode upward scrollbar jumps freezing or returning home
+on installed 1.4 (175). A same-time iPad JetsamEvent records about 1.75 GiB in the
+WebContent process belonging to Breeze's process coalition. The record does not
+identify that WebContent process as the killed process; it is memory-pressure
+evidence, not a confirmed reason for the observed navigation/restart.
+
+The scheduler allowed initial painting during a held finger, while distant-page
+eviction still refused all finger contacts. Eviction now releases pixels during
+that contact and keeps its DOM targets attached until lift. Limit each canvas to
+6 Mi pixels and the retained cache to 24 Mi pixels, preferring visible pages.
+Release completed PDF.js page operator/image resources through page.cleanup().
+Drop obsolete queued prefetch, show initial moving pages at reduced resolution,
+and sharpen after scroll settles. All paper bounds stay in the layout cache and
+native scope regardless of which canvases are retained. Page gaps do not change.
+
+Same 120-page/820px/DPR2 Chromium fixture with a continuous finger contact:
+installed 175 exceeded the 450 MiB safety stop after 8 jumps (487.7 MiB canvases,
+16 retained pages); the fix completed all 15 down/up jumps with 59.7 MiB peak in
+both Chromium and WebKit, preserving the original contact target and rendering
+every requested page. This measures canvas allocation, not total native memory
+or physical scrolling latency. Fresh user-operated iPad QA remains required.
+
+## Native scrollbar follow-up (2026-09-27)
+
+The user confirmed build 176 no longer shows clipped words or blank-space lookup,
+and ordinary finger upward scrolling works, but large upward native-scrollbar
+drags still stutter. Native scrollbar movement may supply scroll events without
+DOM finger contacts. Initial page rendering previously proceeded immediately
+into glyph-map extraction and saved-marker generation during that movement.
+
+Automatic page work now displays required canvases and saved ink first. It defers
+word maps and markers until 160ms of scroll quiet, checking again after PDF/font
+awaits. Nearby offscreen prefetch also waits; visible paper remains eligible.
+Map-only preparation uses the same serialized queue, draw token and document
+ownership checks. An explicit lookup promotes its page and waits for its map;
+a stationary held finger can prepare a long-press target. New scroll interrupts
+automatic preparation. Errors resolve without an unbounded retry loop. Page gaps,
+all-page Pencil scope, native input routing and storage do not change.
+
+A no-DOM-touch 34-page jump stream in Chromium/WebKit went from 78–90 automatic
+map/marker calls per direction during scroll to zero, retaining visible canvases
+and ready lookups after settling. This browser test models scheduling, not UIKit
+scrollbar tracking or physical iPad latency; the user subsequently reported similar stutter on installed 177.
+
+
+For the remaining physical cancellation, the existing opt-in DEBUG input trace
+now snapshots recognizer class/state and scroll-view identity at pan transitions.
+Cancellation call stacks are captured through opt-in public gesture-state KVO.
+Read-mode DOM event completion is also recorded, including defaultPrevented,
+contextmenu and selection events. These hooks remain disabled in normal launches;
+they diagnose cancellation, and are not a performance fix or production telemetry.
+
+
+179 device cancellation stacks, symbolicated with the matching iPadOS 26.5
+symbols, identify RemoteLayerTreePropertyApplier::applyHierarchyUpdates ->
+UIView._web_setSubviews -> UIView._addSubview -> UIScrollView._willMoveToWindow ->
+UIApplication._cancelGestureRecognizersForView. All three cancellations share
+that path. This establishes layer-tree reparenting as the immediate cause in
+those recordings, rather than an app touch preventDefault or changing page height.
+
+A translateZ(0)/isolation compositor-boundary experiment was not accepted:
+its browser run failed the geometry-cache and partial-highlighter-erase checks.
+The CSS was restored and that build (180) was not installed. Do not treat native
+layer reparenting as resolved. Keep the existing renderer/input behavior while
+a follow-up finds a stable boundary without these regressions.

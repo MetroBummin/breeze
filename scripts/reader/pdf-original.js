@@ -4,6 +4,117 @@
 
 let pdfDrawToken = 0;
 
+// Reuse the original reader's generation and original-byte identity. A page
+// number alone cannot establish ownership across documents (or an A-B-A reopen).
+function currentPdfSession(session=originalSession){
+  return !!session && session===originalSession && session.kind==='pdf'
+    && session.loadToken===originalLoadToken && session.bookId===curBook?.id
+    && (!(curBook.original?.hash||curBook.sourceHash)||session.hash===(curBook.original?.hash||curBook.sourceHash));
+}
+function ownsPdfPage(page,session=originalSession){
+  return currentPdfSession(session) && !!page && page.isConnected
+    && session.pages[Number(page.dataset.page)-1]===page;
+}
+function ownsPdfBoxes(page,boxes,session=originalSession){
+  if(!ownsPdfPage(page,session))return false;
+  const map=session.wordBoxes.get(Number(page.dataset.page));
+  return !!map && (boxes===map || boxes.every(box=>map.includes(box)));
+}
+
+// Committed paper rectangles in scroller content coordinates. All pages stay
+// represented, including unrendered placeholders and gaps. Only layout changes
+// invalidate this map; scrolling changes the query offset, not the rectangles.
+function invalidatePdfPageLayout(session=originalSession){
+  if(session?.kind==='pdf')session.pageLayout=null;
+}
+function pdfPageLayout(session=originalSession){
+  if(!currentPdfSession(session))return null;
+  const scroller=readerScroller(),outer=scroller.getBoundingClientRect();
+  const key=[outer.width,outer.height,scroller.scrollHeight,originalZoom(),session.pages.length].join('|');
+  if(!session.pageLayout || session.pageLayout.key!==key){
+    session.pageLayout={key,rects:session.pages.map(page=>{
+      const r=page.getBoundingClientRect();
+      return [r.left-outer.left+scroller.scrollLeft,r.top-outer.top+scroller.scrollTop,r.width,r.height];
+    })};
+  }
+  return {rects:session.pageLayout.rects,outer,scroller};
+}
+function pdfPageIndexAtY(rects,y){
+  let low=0,high=rects.length;
+  while(low<high){const mid=(low+high)>>1,r=rects[mid];if(r[1]+r[3]<y)low=mid+1;else high=mid;}
+  return low;
+}
+function pdfPagesInView(session,reach=0){
+  const layout=pdfPageLayout(session);if(!layout)return [];
+  const {rects,scroller}=layout,start=scroller.scrollTop-reach,end=scroller.scrollTop+scroller.clientHeight+reach;
+  const pages=[];
+  for(let i=pdfPageIndexAtY(rects,start);i<rects.length&&rects[i][1]<=end;i++)pages.push(i+1);
+  return pages;
+}
+function schedulePdfSharpen(session=originalSession){
+  if(!currentPdfSession(session))return;
+  clearTimeout(session.sharpenTimer);
+  session.sharpenTimer=setTimeout(()=>{if(currentPdfSession(session))resharpenOriginalPages();},180);
+}
+function pdfScrollBusy(session=originalSession,includeContacts=true){
+  return (includeContacts&&originalPdfContacts>0) || performance.now()-(session?.lastScrollAt??-Infinity)<160;
+}
+function schedulePdfPaint(session=originalSession){
+  if(!currentPdfSession(session)||session.paintTimer)return;
+  session.paintTimer=setTimeout(()=>{session.paintTimer=0;void drainPdfPaint(session);},0);
+}
+async function drainPdfPaint(session){
+  if(!currentPdfSession(session)||session.paintActive||!session.paintQueue?.size)return;
+  const visible=new Set(pdfPagesInView(session)),nearby=new Set(pdfPagesInView(session,1300));
+  for(const [n,job] of session.paintQueue){
+    if(job.options?.prefetch&&!nearby.has(n)){session.paintQueue.delete(n);job.resolve();}
+  }
+  const jobs=[...session.paintQueue.values()].sort((a,b)=>Number(visible.has(b.pageNumber))-Number(visible.has(a.pageNumber)));
+  const job=jobs.find(item=>!originalPdfPaintPaused(item.options?.prepare?false:!!session.settled.has(item.pageNumber))
+    && (!item.options?.prefetch||visible.has(item.pageNumber)||!pdfScrollBusy(session))
+    && (!item.options?.prepare||item.options?.lookup||!pdfScrollBusy(session,false))
+    && (!item.options?.resharpen||!pdfScrollBusy(session)));
+  if(!jobs.length)return;
+  if(!job){session.paintTimer=setTimeout(()=>{session.paintTimer=0;void drainPdfPaint(session);},160);return;}
+  session.paintQueue.delete(job.pageNumber);session.paintActive=job;
+  let result;
+  try{result=await paintOriginalPdfPage(session,job.pageNumber,job.options);}
+  catch(error){console.warn('PDF page preparation skipped:',error);}
+  finally{
+    session.paintActive=null;
+    // Retry work interrupted by scrolling, not an operator/PDF failure.
+    if((!job.options?.prepare||result==='deferred')&&currentPdfSession(session)&&session.settled.has(job.pageNumber)&&!session.wordBoxes.has(job.pageNumber))
+      void renderOriginalPdfPage(session,job.pageNumber,{prepare:true,prefetch:true});
+    job.resolve();schedulePdfPaint(session);
+  }
+}
+function renderOriginalPdfPage(session,pageNumber,options){
+  if(!currentPdfSession(session))return Promise.resolve();
+  if(session.paintActive?.pageNumber===pageNumber){
+    const pending=session.paintActive.promise;
+    return options?.prefetch?pending:pending.then(()=>{
+      if(currentPdfSession(session)&&session.settled.has(pageNumber)&&!session.wordBoxes.has(pageNumber))
+        return renderOriginalPdfPage(session,pageNumber,{prepare:true,lookup:true});
+    });
+  }
+  if(session.settled.has(pageNumber)&&!session.wordBoxes.has(pageNumber)&&!options?.prefetch)
+    options={...options,prepare:true,lookup:true};
+  session.paintQueue ||= new Map();
+  const existing=session.paintQueue.get(pageNumber);
+  if(existing){
+    if(!options?.prefetch)existing.options={...existing.options,...options,prefetch:false};
+    return existing.promise;
+  }
+  if(session.settled.has(pageNumber)&&!options?.resharpen&&!options?.prepare)return session.rendering.get(pageNumber)||Promise.resolve();
+  let resolve;const promise=new Promise(done=>{resolve=done;});
+  session.paintQueue.set(pageNumber,{pageNumber,options,promise,resolve});schedulePdfPaint(session);
+  if(options?.prefetch||options?.prepare)return promise;
+  return promise.then(()=>{
+    if(currentPdfSession(session)&&session.settled.has(pageNumber)&&!session.wordBoxes.has(pageNumber))
+      return renderOriginalPdfPage(session,pageNumber,{prepare:true,lookup:true});
+  });
+}
+
 /* ================= 확대 =================
    손가락으로 벌리면 종이만 커집니다. 단추도, 쪽마다 나뉜 가로 스크롤 칸도
    없습니다 — 문서 전체가 종이 한 장처럼 같은 축에서 움직입니다.
@@ -45,21 +156,29 @@ const PDF_MAX_RENDER_ZOOM = 3;   // 이보다 더 벌리면 늘린 그림으로 
    놓아도 자리는 한 톨도 안 움직입니다. 쪽 상자는 첫 렌더에서 제 비율을 이미
    배웠고 그 값은 그대로 두기 때문입니다 — 읽던 줄이 흔들리지 않습니다. */
 const PDF_KEEP_REACH = 4000;
+const PDF_MAX_PAGE_PIXELS = 6 * 1024 * 1024;
+const PDF_MAX_CACHE_PIXELS = 24 * 1024 * 1024;
 
 /* 새로 그릴 때마다 훑습니다. "자리를 새로 얻을 때 남는 자리를 만든다"는 뜻이라,
    가만히 있으면 아무 일도 안 하고 늘어날 때만 정리합니다. 놓친 쪽이 있어도
    다음 렌더가 다시 훑으므로 영영 남지 않습니다. */
-function releaseDistantPdfPages(session,exceptPage){
-  if(!session || session!==originalSession || session.kind!=='pdf') return;
-  if(originalPdfPaintPaused()) return;
-  session.settled.forEach(pageNumber=>{
-    if(pageNumber===exceptPage) return;
-    const pageElement=session.pages[pageNumber-1];
-    if(!pageElement) return;
-    const rect=pageElement.getBoundingClientRect();
-    if(rect.bottom>-PDF_KEEP_REACH && rect.top<PDF_KEEP_REACH+readerViewHeight()) return;
-    releaseOriginalPdfPage(session,pageNumber);
-  });
+function releaseDistantPdfPages(session,exceptPage,reservePixels=0){
+  if(!currentPdfSession(session)) return;
+  // Initial pages can paint during a held finger/scrollbar drag, so eviction
+  // must run then too. Keep Touch.target nodes attached while dropping pixels.
+  const nearby=new Set(pdfPagesInView(session,PDF_KEEP_REACH)),visible=new Set(pdfPagesInView(session));
+  for(const pageNumber of [...session.settled]){
+    if(pageNumber!==exceptPage&&!nearby.has(pageNumber))releaseOriginalPdfPage(session,pageNumber);
+  }
+  const pixels=n=>{const c=session.pages[n-1]?.querySelector('canvas');return c?c.width*c.height:0;};
+  let total=reservePixels;
+  for(const n of session.settled)total+=pixels(n);
+  const candidates=[...session.settled].filter(n=>n!==exceptPage&&!visible.has(n))
+    .sort((a,b)=>Math.abs(b-exceptPage)-Math.abs(a-exceptPage));
+  for(const n of candidates){
+    if(total<=PDF_MAX_CACHE_PIXELS)break;
+    total-=pixels(n);releaseOriginalPdfPage(session,n);
+  }
 }
 
 function releaseOriginalPdfPage(session,pageNumber){
@@ -73,24 +192,31 @@ function releaseOriginalPdfPage(session,pageNumber){
   if(!pageElement) return;
   /* DOM 에서 떼는 것만으로는 모자랍니다. 크기를 0 으로 만들어야 브라우저가 뒤에
      잡아 둔 그림판(iOS 에서는 GPU 쪽)을 그 자리에서 놓습니다. */
-  const canvas=pageElement.querySelector('canvas');
-  if(canvas){ canvas.width=0; canvas.height=0; }
+  pageElement.querySelectorAll('canvas').forEach(canvas=>{canvas.width=0;canvas.height=0;});
   delete pageElement.dataset.wordCount;
-  pageElement.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
+  if(originalPdfContacts){
+    for(const child of pageElement.children){child.setAttribute('data-pdf-retired','');child.style.visibility='hidden';}
+  }else pageElement.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
 }
 
 async function openOriginalPdf(book,record,token){
+  const alive=()=>token===originalLoadToken && curBook?.id===book.id;
   await ensurePdfLib();
-  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data:await record.blob.arrayBuffer()}).promise;
-  if(token!==originalLoadToken){ pdf.destroy(); return; }
+  if(!alive())return;
+  const data=await record.blob.arrayBuffer();
+  if(!alive())return;
+  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data}).promise;
+  if(!alive()){ void pdf.destroy(); return; }
+  let first;
+  try{first=await pdf.getPage(1);}catch(error){void pdf.destroy();if(alive())throw error;return;}
+  if(!alive()){ void pdf.destroy(); return; }
   const content = document.getElementById('original-content');
   content.innerHTML='';
   content.className='original-content pdf-original';
-  const first = await pdf.getPage(1);
   const firstViewport = first.getViewport({scale:1});
   const ratio = firstViewport.width/firstViewport.height;
   const pages=[];
-  const session={kind:'pdf',bookId:book.id,hash:record.hash,pdf,pages,
+  const session={kind:'pdf',bookId:book.id,hash:record.hash,loadToken:token,pdf,pages,
                  glyphs:book.glyphs||null,
                  /* 쪽마다 "어느 배율로 그렸나". 그보다 많이 벌리면 다시 그립니다. */
                  rendering:new Map(),drawnAt:new Map(),wordBoxes:new Map(),urls:[],
@@ -112,17 +238,37 @@ async function openOriginalPdf(book,record,token){
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const observer=new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,+entry.target.dataset.page); });
+    entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,Number(entry.target.getAttribute('data-page')),{prefetch:true}); });
   },{root:readerScroller(),rootMargin:'1300px 0px'});
   session.observer=observer;
   pages.forEach(page=>observer.observe(page));
   await renderOriginalPdfPage(session,1);
 }
 
-async function renderOriginalPdfPage(session,pageNumber,options){
-  if(!session || session!==originalSession) return;
-  if(originalPdfPaintPaused()) return;
-  const zoom=Math.min(PDF_MAX_RENDER_ZOOM,Math.max(1,originalZoom()));
+async function prepareOriginalPdfPage(session,pageNumber,options){
+  const element=session.pages[pageNumber-1],token=session.drawToken.get(pageNumber);
+  const alive=()=>ownsPdfPage(element,session)&&session.drawToken.get(pageNumber)===token&&session.settled.has(pageNumber);
+  const allowed=()=>alive()&&(options?.lookup||!pdfScrollBusy(session,false));
+  if(!alive()||session.wordBoxes.has(pageNumber))return;
+  if(!allowed())return 'deferred';
+  const page=await session.pdf.getPage(pageNumber);
+  try{
+    if(!allowed())return alive()?'deferred':undefined;
+    const boxes=await buildPdfWordBoxes(page,page.getViewport({scale:1}),session.glyphs,session.pdf,allowed);
+    if(!alive())return;
+    if(!boxes)return 'deferred';
+    session.wordBoxes.set(pageNumber,boxes);element.dataset.wordCount=String(boxes.length);
+    renderPdfSavedWordMarkers(element,boxes);
+  }finally{page.cleanup();}
+}
+
+async function paintOriginalPdfPage(session,pageNumber,options){
+  if(!currentPdfSession(session)) return;
+  if(options?.prepare)return prepareOriginalPdfPage(session,pageNumber,options);
+  if(originalPdfPaintPaused(session.settled.has(pageNumber))) return;
+  const requestedZoom=Math.min(PDF_MAX_RENDER_ZOOM,Math.max(1,originalZoom()));
+  // Moving pages need readable pixels first, not a full oversized zoom canvas.
+  const zoom=!session.settled.has(pageNumber)&&pdfScrollBusy(session)?1/PDF_OVERSAMPLE:requestedZoom;
   const drawn=session.rendering.get(pageNumber);
   if(drawn){
     /* 이미 그려진 쪽입니다. 벌린 만큼 눈에 띄게 흐려졌을 때만 다시 그립니다 —
@@ -137,16 +283,18 @@ async function renderOriginalPdfPage(session,pageNumber,options){
      그러면 아래의 `alive()` 가 거짓이 되어 일감이 조용히 물러납니다. */
   const drawToken=++pdfDrawToken;
   session.drawToken.set(pageNumber,drawToken);
-  const alive=()=>session===originalSession && session.drawToken.get(pageNumber)===drawToken;
+  const alive=()=>currentPdfSession(session) && ownsPdfPage(session.pages[pageNumber-1],session) && session.drawToken.get(pageNumber)===drawToken;
   /* 그리기 전에 한 번, 그리고 나서 또 한 번 훑습니다. 멀리 건너뛰면 떠나온 자리의
      쪽들과 새 자리의 쪽들이 잠깐 함께 남는데, 앞의 한 번이 그 겹침을 없앱니다 —
      가장 크게 잡히는 순간이 곧 이 기능의 한도라서, 그 봉우리를 깎는 일입니다. */
   releaseDistantPdfPages(session,pageNumber);
+  let cleanupPage=()=>{};
   const job=(async()=>{
     const pageElement=session.pages[pageNumber-1];
     const page=await session.pdf.getPage(pageNumber);
+    cleanupPage=()=>page.cleanup();
     if(!alive()) return;
-    if(originalPdfPaintPaused()){
+    if(originalPdfPaintPaused(redraw)){
       if(redraw) session.drawnAt.set(pageNumber,previousZoom);
       else { session.rendering.delete(pageNumber); session.drawnAt.delete(pageNumber); }
       return;
@@ -157,8 +305,12 @@ async function renderOriginalPdfPage(session,pageNumber,options){
     const cssWidth=Math.max(240,pageElement.clientWidth||document.getElementById('original-content').clientWidth||700);
     const cssScale=cssWidth/base.width;
     const viewport=page.getViewport({scale:cssScale});
-    const outputScale=Math.min(4,(window.devicePixelRatio||1)*PDF_OVERSAMPLE*zoom);
-    const canvas=document.createElement('canvas');
+    const outputScale=Math.min(4,(window.devicePixelRatio||1)*PDF_OVERSAMPLE*zoom,
+      Math.sqrt(PDF_MAX_PAGE_PIXELS/(viewport.width*viewport.height)));
+    releaseDistantPdfPages(session,pageNumber,Math.floor(viewport.width*outputScale)*Math.floor(viewport.height*outputScale));
+    if(!originalPdfContacts)pageElement.querySelectorAll('[data-pdf-retired]').forEach(node=>node.remove());
+    const canvas=pageElement.querySelector('canvas[data-pdf-retired]')||document.createElement('canvas');
+    canvas.removeAttribute('data-pdf-retired');canvas.style.visibility='';
     canvas.width=Math.floor(viewport.width*outputScale);
     canvas.height=Math.floor(viewport.height*outputScale);
     canvas.style.width=viewport.width+'px'; canvas.style.height=viewport.height+'px';
@@ -187,29 +339,46 @@ async function renderOriginalPdfPage(session,pageNumber,options){
        push the text the reader is looking at. Move the scroll by the same
        amount so the visible line never moves. */
     const before=pageElement.getBoundingClientRect();
-    pageElement.innerHTML='';
-    pageElement.style.aspectRatio=`${viewport.width}/${viewport.height}`;
-    pageElement.appendChild(canvas);
-    const after=pageElement.getBoundingClientRect();
-    if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
+    // Preserve an active finger's Touch.target until it lifts.
+    const loading=pageElement.querySelector('.pdf-page-loading');
+    if(loading)loading.hidden=true;
+    const ratioChanged=Math.abs(before.width/Math.max(1,before.height)-base.width/base.height)>0.0001;
+    if(ratioChanged)pageElement.style.aspectRatio=`${base.width}/${base.height}`;
+    if(canvas.parentElement!==pageElement)pageElement.appendChild(canvas);
+    if(ratioChanged){
+      invalidatePdfPageLayout(session);
+      const after=pageElement.getBoundingClientRect();
+      if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
+    }
     await page.render({canvasContext:context,viewport,transform}).promise;
     if(!alive()) return;
-    const wordBoxes=await buildPdfWordBoxes(page,base,session.glyphs,session.pdf);
-    if(!alive()) return;
+    // Yield between canvas work and operator-map work. Only one page job runs.
+    await new Promise(resolve=>setTimeout(resolve,0));
+    if(!alive())return;
+    await BreezePdfInk.mount(session,pageNumber,base);
+    // Native scrollbar drags need not deliver DOM finger contacts. Recent
+    // scroll events defer word/marker work, while the new paper and ink show.
+    const allowed=()=>alive()&&(!options?.prefetch||!pdfScrollBusy(session,false));
+    if(!allowed())return;
+    const wordBoxes=await buildPdfWordBoxes(page,base,session.glyphs,session.pdf,allowed);
+    if(!wordBoxes||!alive())return;
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
-    await BreezePdfInk.mount(session,pageNumber,base);
   })().catch(error=>console.warn('PDF page render skipped:',error));
   /* 다시 그리는 동안에도 "이 쪽은 그려졌다"는 사실은 그대로 둡니다 — 실패해도
      옛 캔버스가 그 자리에 남아 있으니까요. */
   if(!redraw) session.rendering.set(pageNumber,job);
   await job;
+  // PDF.js keeps operator lists and decoded images separately from our canvas.
+  // cleanup() only releases completed page work; an in-flight task defers it.
+  cleanupPage();
   /* 다 그려진 쪽만 놓아 줄 수 있습니다. 이 쪽 자신은 빼고 훑습니다 — 자리를
      되돌리기 전에 미리 그려 두는 곳이 있어서(restorePdfSentence), 방금 그린
      것을 그 자리에서 도로 놓으면 헛일이 됩니다. */
   if(alive() && session.rendering.has(pageNumber)) session.settled.add(pageNumber);
   releaseDistantPdfPages(session,pageNumber);
+  if(alive()&&zoom<requestedZoom)schedulePdfSharpen(session);
   return job;
 }
 
@@ -221,12 +390,10 @@ function resharpenOriginalPages(){
   originalPdfRenderPending = false;
   const session=originalSession;
   if(!session || session.kind!=='pdf') return;
-  const reach=readerViewHeight();
-  session.pages.forEach((pageElement,index)=>{
-    const rect=pageElement.getBoundingClientRect();
-    if(rect.bottom < -reach || rect.top > reach*2) return;
-    renderOriginalPdfPage(session,index+1,{resharpen:true});
-  });
+  for(const pageNumber of pdfPagesInView(session,readerViewHeight())){
+    const options=session.settled.has(pageNumber)?{resharpen:true,prefetch:true}:{prefetch:true};
+    void renderOriginalPdfPage(session,pageNumber,options);
+  }
 }
 
 /* ================= word map ================= */
@@ -234,9 +401,10 @@ function resharpenOriginalPages(){
 /* Read the same glyph widths, TJ adjustments, text state and font metrics
    used by PDF.js canvas rendering. Work only when a lazy page is first drawn;
    resharpen replaces canvas pixels while keeping these scale-free boxes. */
-async function buildPdfWordBoxes(page,viewport,glyphs,pdf){
+async function buildPdfWordBoxes(page,viewport,glyphs,pdf,allowed=()=>true){
   const ops=pdfjsLib.OPS;
   const operatorList=await page.getOperatorList({annotationMode:pdfjsLib.AnnotationMode.DISABLE});
+  if(!allowed())return null;
   const ids=new Set();
   operatorList.fnArray.forEach((op,index)=>{
     const args=operatorList.argsArray[index];
@@ -248,6 +416,7 @@ async function buildPdfWordBoxes(page,viewport,glyphs,pdf){
     fonts.set(id,await new Promise(resolve=>page.commonObjs.get(id,resolve)));
   }));
   const optionalContent=await pdf.getOptionalContentConfig();
+  if(!allowed())return null;
   const entries=pdfOperatorEntries(operatorList,fonts,viewport,ops,
     group=>optionalContent.isVisible(group));
   const {boxes,text}=pdfPageWords(entries,viewport.width,viewport.height,
@@ -280,7 +449,7 @@ function makePdfWordMarker(page,box,className,status,wordKey){
 }
 
 function renderPdfSavedWordMarkers(page,boxes){
-  if(!page) return;
+  if(!ownsPdfBoxes(page,boxes||[])) return;
   page.querySelectorAll('.original-saved-marker').forEach(marker=>marker.remove());
   const list=boxes||[],matches=list.map(box=>[box.word]);
   const claimed=new Map();
@@ -331,7 +500,7 @@ function pdfParagraphCue(page,matched,paragraphHint){
 }
 
 function showPdfModeCue(page,boxes,duration,paragraphHint){
-  if(!page || !boxes || !boxes.length) return;
+  if(!boxes?.length || !ownsPdfBoxes(page,boxes)) return;
   const block=pdfParagraphCue(page,boxes,paragraphHint);
   if(!block) return;
   const cue=document.createElement('span'); cue.className='reader-mode-cue reader-mode-cue-block';
@@ -349,7 +518,7 @@ function showPdfModeCue(page,boxes,duration,paragraphHint){
    PDF 글리프 지도에 저장된 줄 ID로 묶어, 줄마다 실제 낱말의 경계까지 칠합니다 —
    글자 화면에서 문장 하나에 색이 차오르는 것과 같은 그림입니다. */
 function showPdfSentenceCue(page,boxes){
-  if(!page || !boxes || !boxes.length) return;
+  if(!boxes?.length || !ownsPdfBoxes(page,boxes)) return;
   const layer=createReaderSentenceCue(page,true),lines=new Map();
   boxes.forEach(box=>{
     if(!lines.has(box.line)) lines.set(box.line,[]);
@@ -393,7 +562,7 @@ function showPdfParagraphModeCue(paragraph,duration,preferredPage){
 /* ================= tapping a word ================= */
 
 function pdfWordAtPoint(page,clientX,clientY){
-  if(!originalSession || originalSession.kind!=='pdf' || !page) return null;
+  if(!ownsPdfPage(page)) return null;
   const rect=page.getBoundingClientRect();
   if(!rect.width || !rect.height) return null;
   const boxes=originalSession.wordBoxes.get(+page.dataset.page)||[];
@@ -411,15 +580,16 @@ function pdfWordAtPoint(page,clientX,clientY){
 }
 
 function pdfPageAtPoint(clientX,clientY){
-  if(!originalSession || !originalSession.pages) return null;
-  return originalSession.pages.find(page=>{
-    const rect=page.getBoundingClientRect();
-    return clientX>=rect.left && clientX<=rect.right && clientY>=rect.top && clientY<=rect.bottom;
-  })||null;
+  if(!currentPdfSession()) return null;
+  const layout=pdfPageLayout();if(!layout)return null;
+  const {rects,outer,scroller}=layout;
+  const x=clientX-outer.left+scroller.scrollLeft,y=clientY-outer.top+scroller.scrollTop;
+  const i=pdfPageIndexAtY(rects,y),r=rects[i];
+  return r&&x>=r[0]&&x<=r[0]+r[2]&&y>=r[1]&&y<=r[1]+r[3]?originalSession.pages[i]:null;
 }
 
 function openPdfWord(page,box){
-  if(!page || !box) return;
+  if(!box || !ownsPdfBoxes(page,[box])) return;
   clearOriginalSelectionMarkers();
   const key=keyOf(box.word);
   /* Freeze the resolved key on the marker. keyOf() can legitimately change
@@ -431,14 +601,15 @@ function openPdfWord(page,box){
 /* ================= anchors and mode bridging ================= */
 
 function capturePdfAnchor(inset){
-  const page=firstElementBelow(originalSession.pages,inset);
-  if(!page) return null;
-  const rect=page.getBoundingClientRect();
-  return {kind:'pdf',page:+page.dataset.page,
-          y:Math.max(0,Math.min(1,(inset-rect.top)/Math.max(1,rect.height)))};
+  const layout=pdfPageLayout();if(!layout)return null;
+  const {rects,outer,scroller}=layout,y=inset-outer.top+scroller.scrollTop;
+  const i=pdfPageIndexAtY(rects,y),r=rects[i];if(!r)return null;
+  return {kind:'pdf',page:i+1,y:Math.max(0,Math.min(1,(y-r[1])/Math.max(1,r[3])))};
 }
 
 async function restorePdfAnchor(source,inset,changeToken,isCurrent){
+  const session=originalSession;
+  if(!currentPdfSession(session))return false;
   const pageNumber=Math.max(1,Math.min(originalSession.pages.length,Number(source.page)||1));
   const page=originalSession.pages[pageNumber-1];
   if(!page) return false;
@@ -446,7 +617,7 @@ async function restorePdfAnchor(source,inset,changeToken,isCurrent){
      `scrollTop` 도 같은 단위입니다. 그래서 이 셈은 배율이 얼마든 그대로입니다. */
   readerScrollTo(readerScrollTop()+page.getBoundingClientRect().top-inset);
   await renderOriginalPdfPage(originalSession,pageNumber);
-  if((changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original'))
+  if(!ownsPdfPage(page,session) || (changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original'))
       || (isCurrent&&!isCurrent())) return false;
   const rect=page.getBoundingClientRect();
   readerScrollTo(readerScrollTop()+rect.top-inset
@@ -475,25 +646,31 @@ function pdfSentenceBridge(source){
 }
 
 async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
-  const total=originalSession.pages.length;
+  const session=originalSession;
+  if(!currentPdfSession(session))return false;
+  const alive=()=>currentPdfSession(session)&&changeToken===readerModeChangeToken&&currentReaderMode==='original';
+  const total=session.pages.length;
   const base=Math.max(1,Math.min(total,Number(source&&source.page)||1));
   const pages=[base,base+1,base-1,base+2,base-2,base+3,base-3,base+4,base-4]
     .filter((value,index,list)=>value>=1&&value<=total&&list.indexOf(value)===index);
   for(const pageNumber of pages){
-    let boxes=originalSession.wordBoxes.get(pageNumber)||[];
+    let boxes=session.wordBoxes.get(pageNumber)||[];
     if(!boxes.length){
       /* Looking at nearby page text is cheap; only paint a canvas after a
          sentence match, so the wider fallback does not render nine pages. */
-      const pdfPage=await originalSession.pdf.getPage(pageNumber);
+      const pdfPage=await session.pdf.getPage(pageNumber);
+      if(!alive())return false;
       const textContent=await pdfPage.getTextContent();
+      if(!alive())return false;
       const stream=[];
       (textContent.items||[]).forEach(item=>
-        stream.push(...bridgeTokens(applyLigatures(item.str||'',originalSession.glyphs))));
+        stream.push(...bridgeTokens(applyLigatures(item.str||'',session.glyphs))));
       if(!(candidates||[]).some(candidate=>bridgeFindSequence(stream,candidate))) continue;
-      await renderOriginalPdfPage(originalSession,pageNumber);
-      boxes=originalSession.wordBoxes.get(pageNumber)||[];
+      await renderOriginalPdfPage(session,pageNumber);
+      if(!alive())return false;
+      boxes=session.wordBoxes.get(pageNumber)||[];
     }
-    if(changeToken!==readerModeChangeToken || currentReaderMode!=='original') return false;
+    if(!alive()) return false;
     const list=candidates||[];
     for(let position=0; position<list.length; position++){
       /* 한 쪽 안에서만 찾으므로 near 는 0 이면 충분합니다. 뒤 문장까지 맞는
@@ -502,7 +679,7 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
       if(!match) continue;
       const matched=boxes.slice(match.start,match.start+match.length);
       const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];
-      const page=originalSession.pages[pageNumber-1];
+      const page=session.pages[pageNumber-1];
       const rect=page.getBoundingClientRect();
       readerScrollTo(readerScrollTop()+rect.top-(topInset()+readerViewHeight()*.32)+first.y*rect.height);
       if(!showPdfParagraphModeCue(paragraphHint,10000,pageNumber))
@@ -535,7 +712,7 @@ async function openPdfWordAt(clientX,clientY){
      뒤 사용자가 눌렀던 좌표로 다시 찾습니다. */
   if(!(session.wordBoxes.get(pageNumber)||[]).length){
     await renderOriginalPdfPage(session,pageNumber);
-    if(session!==originalSession) return false;
+    if(!ownsPdfPage(page,session)) return false;
   }
   const box=pdfWordAtPoint(page,clientX,clientY);
   if(!box) return false;
@@ -546,14 +723,14 @@ async function openPdfWordAt(clientX,clientY){
 registerReaderSurface({
   name:'pdf',
   claims(event){
-    if(!originalSession || originalSession.kind!=='pdf') return false;
+    if(!currentPdfSession()) return false;
     const target=event.target;
     return !!(target && target.closest && target.closest('#originalwrap'));
   },
   document(){ return document; },
   openWordAt:openPdfWordAt,
   sentenceAt(clientX,clientY){
-    if(!originalSession) return null;
+    if(!currentPdfSession()) return null;
     const page=pdfPageAtPoint(clientX,clientY);
     if(!page) return null;
     const box=pdfWordAtPoint(page,clientX,clientY);

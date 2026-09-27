@@ -10,14 +10,18 @@ let originalPinchTail = false;
 let originalPinchPan = false;
 let originalPdfContacts = 0;
 let originalPdfRenderPending = false;
-function originalPdfPaintPaused(){
-  if(!originalPinch && !originalPdfContacts && !(typeof BreezePdfInk!=='undefined' && BreezePdfInk.busy())) return false;
+function originalPdfPaintPaused(optional=true){
+  if(!originalPinch && !originalPinchTouches && (!optional || !originalPdfContacts) && !(typeof BreezePdfInk!=='undefined' && BreezePdfInk.busy())) return false;
   originalPdfRenderPending = true;
   return true;
 }
 function resumeOriginalPdfPaint(){
   if(originalPdfContacts || originalPinch || !originalPdfRenderPending) return;
   originalPdfRenderPending = false;
+  if(originalSession?.kind==='pdf'){
+    document.querySelectorAll('.pdf-source-page [data-pdf-retired]').forEach(node=>node.remove());
+    releaseDistantPdfPages(originalSession,0);
+  }
   resharpenOriginalPages();
 }
 function originalFingerContacts(event){
@@ -122,6 +126,8 @@ function cancelOriginalPinch(){
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function originalPinchStart(event){
+  // A reader's contact supersedes delayed automatic mode-landing restores.
+  if(originalFingerContacts(event).some(point=>point.target?.closest?.('#original-stage')))readerModeChangeToken++;
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/start',event);
   countOriginalPdfContacts(event);
   if(originalPinchTouches){
@@ -174,6 +180,14 @@ function originalPinchEnd(event){
   const start = ()=>{
     const box = readerScroller();
     if(!box) return;
+    box.addEventListener('scroll',()=>{
+      if(originalSession?.kind==='pdf'){
+        originalSession.lastScrollAt=performance.now();
+        if(!readerScrollWasProgrammatic())readerModeChangeToken++;
+        schedulePdfPaint(originalSession);
+        schedulePdfSharpen(originalSession);
+      }
+    },{passive:true});
     box.addEventListener('touchstart',originalPinchStart,{passive:false});
     box.addEventListener('touchmove',originalPinchMove,{passive:false});
     document.addEventListener('touchend',originalPinchEnd,{passive:false,capture:true});

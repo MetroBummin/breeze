@@ -196,7 +196,8 @@ try{
    await page.locator('#word-peek-more').click();
    await page.waitForFunction(()=>wordPanelOpen());
    assert.equal((await snapshot()).panel,true,'near-word pill did not open the centered detail popup');
-   await page.locator('#word-modal-scrim').click({position:{x:4,y:4}});
+   // Anchored word details use outside dismissal; the modal-only scrim stays hidden.
+   await page.touchscreen.tap(8,100);
    await page.waitForFunction(()=>!wordLookupOpen());
    // A fresh long press after a pinch must still enter the shared pending pill.
    // If the result is already ready, it stays hidden until the held finger lifts.

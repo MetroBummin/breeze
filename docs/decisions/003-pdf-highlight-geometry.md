@@ -111,3 +111,52 @@ and [TextLayer layout](https://github.com/mozilla/pdf.js/blob/v3.11.174/src/disp
 
 ## Security mitigation
 All runtime PDF.js getDocument calls explicitly disable `isEvalSupported` to apply the published CVE-2024-4367 workaround while retaining the pinned glyph adapter. A patched renderer upgrade and physical-device geometry regression remain separate gates.
+
+## Document ownership (2026-09-27)
+
+The original load token, book ID and session object bind the PDF and its page
+map. A delayed first getPage(1) must recheck ownership before touching the DOM
+or assigning originalSession. Every async publication and page hit-test verifies
+the same session; equal page numbers from other sessions are rejected. Selected
+boxes must belong to that page's map, including delayed sentence cue paint and
+mode-bridge searches. Shared lexical meanings and existing Wordbook data remain
+shared; page positions and source sentences never migrate between documents.
+The controlled delayed-page regression reproduces this race. It does not prove
+that all reported device symptoms had this cause. Hidden OCR remains a separate
+source-document possibility, not an explanation for cross-document source text.
+
+## Cropped source forms reproduced on build 175 (2026-09-27)
+
+Read-only copies of the iPad's two recent original PDFs were matched to their
+IndexedDB book IDs and hashes. The 34-page document places cropped original
+pages as nested Form XObjects. The installed adapter ignored Form BBox clipping:
+page 11 produced 494 word boxes, including `adults` and `consists` on visibly
+blank paper. These words are in excluded source streams inside this same PDF;
+this does not establish that every previously reported cross-document symptom
+had that cause, or negate the independently reproduced session race.
+
+Intersect glyph cells with the viewport and every transformed enclosing Form
+BBox, restoring the clip stack with graphics state. Excluded glyphs contribute
+neither words nor sentence source. Partial cells retain only their intersection;
+no pixel/font heuristic or vocabulary reset is used. For the reproduced page,
+359 English word occurrences now match the independent PDF renderer extraction
+exactly, with zero extra/missing occurrences. Synthetic nested/transformed Form
+fixtures run without checking private user PDFs into the repository. Arbitrary
+path clipping and inaccurate invisible OCR remain separate limitations.
+
+A second pass found tiny font-metric ascender overlaps at adjacent answer crops.
+Lookup requires the glyph's baseline midpoint to remain inside each clip; this
+conservatively excludes those unreadable slivers without inventing ink geometry.
+The visible portion of eligible glyph cells is still clipped. With this rule,
+all 34 pages of that PDF and all 13 pages of the previous PDF match independent
+renderer English-word occurrence counts exactly (47/47, no extra/missing words).
+This verifies source fidelity for these files; it is not a claim that every
+possible clipping path/OCR source has been covered.
+
+The supplied 13-page case is now an optional source regression in
+`verify-pdf-crop-memory-browser.mjs` (`BREEZE_QA_PDF`). It preserves the one visible
+`higher` on page 9, rejects the overlapping hidden one, hits `perceptible`, and
+rejects `bewildered` on page 13. A separate synthetic rendering-mode-3 fixture
+checks that invisible OCR inside a Form remains selectable. Question 135 is
+checked separately; question 157's current merged output is recorded as the
+explicitly excluded block-segmentation issue, not a passing fix.

@@ -8,6 +8,7 @@ import vm from 'node:vm';
 import test from 'node:test';
 const root=process.env.BREEZE_INK_REGRESSION_BASE||fileURLToPath(new URL('../',import.meta.url));
 const source=readFileSync(resolve(root,'scripts/reader/pdf-ink.js'),'utf8');
+const pdfSource=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
 const geometrySource=readFileSync(resolve(root,'scripts/reader/pdf-ink-geometry.js'),'utf8');
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
@@ -32,6 +33,7 @@ function fixture(){
     setAttribute(k,v){this.attributes[k]=String(v);}
     getAttribute(k){return this.attributes[k]??null;}
     append(...nodes){for(const n of nodes){n.parentElement=this;this.children.push(n);}}
+    insertBefore(node,prior){node.parentElement=this;this.children.splice(this.children.indexOf(prior),0,node);}
     replaceChildren(){for(const n of this.children)n.parentElement=null;this.children=[];}
     remove(){if(this.parentElement)this.parentElement.children=this.parentElement.children.filter(x=>x!==this);this.parentElement=null;}
     get isConnected(){return !!this.parentElement;}
@@ -43,7 +45,7 @@ function fixture(){
   html.clientWidth=600;box.scrollLeft=0;box.scrollTop=0;box.scrollHeight=1800;
   paper.dataset={page:'1'};const canvas=new Element();canvas.tagName='canvas';paper.append(canvas);
   const svg=new Element('','pdf-ink-layer');svg.tagName='svg';paper.append(svg);
-  const session={hash:'fixture-pdf-sha256',kind:'pdf',pages:[paper],settled:new Set([1])};
+  const session={hash:'fixture-pdf-sha256',kind:'pdf',bookId:'fixture',loadToken:1,pages:[paper],settled:new Set([1])};
   const state={key:JSON.stringify([session.hash,1]),strokes:[],revision:0,dirty:false,error:false,saving:null,loading:null,loaded:true,svg,element:paper,width:600,height:800};
   let controls=[];
   const document={body,documentElement:html,hidden:false,addEventListener:register,
@@ -65,14 +67,15 @@ function fixture(){
     readerScroller:()=>box,originalZoom:()=>1,originalPinchBusy:()=>busy,cancelOriginalPinch:()=>{busy=false;},
     originalPinchPan:false,originalPinch:null,originalPinchTouches:false,originalPdfContacts:0,
     cancelGesture:()=>{},closePanel:()=>{},closeSentence:()=>{},resumeOriginalPdfPaint:()=>{},
-    structuredClone,queueMicrotask,console:{warn(){}},performance};
+    curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
+    crypto,structuredClone,queueMicrotask,console:{warn(){}},performance};
   const needle='  return {\n    open(s)';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
     qa:{configure(s,state){session=s;mode='pen';pages.set(state.key,state);},
-      setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,
+      valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     open(s)`);
-  vm.createContext(context);vm.runInContext(geometrySource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
+  vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
   const qa=context.engine.qa;qa.configure(session,state);
   const contact=(x,y,id=1,type='stylus')=>({identifier:id,touchType:type,target:canvas,clientX:x,clientY:y});
   const event=(type,touches,changedTouches=touches)=>({type,touches,changedTouches,cancelable:true,preventDefault(){this.defaultPrevented=true;},stopImmediatePropagation(){}});
@@ -125,8 +128,8 @@ test('scope: scrolling retains content-coordinate cache without per-frame page s
   for(let i=1;i<=200;i++){f.box.scrollTop=i;f.emit('scroll',f.box);f.flush();}
   assert.equal(f.paper.reads,reads);assert.equal(f.posted.length,1);
 });
-test('scope: finger contact refreshes previously missed layout before next Pencil',()=>{
-  const f=fixture();f.qa.publishNativeScope();f.paper.rect.x=31;
+test('scope: layout invalidation refreshes paper before the next Pencil',()=>{
+  const f=fixture();f.qa.publishNativeScope();f.paper.rect.x=31;f.mutate(f.stage);f.flush();
   f.qa.touchStart(f.event('touchstart',[f.contact(100,100,2,'direct')]));
   assert.equal(f.posted.at(-1).pages[0][0],31);assert.equal(f.qa.active(),null);
 });
@@ -219,4 +222,37 @@ test('input: failed save retains the latest smoothed stroke and retry persists i
   assert.equal(f.state.dirty,true);assert.equal(f.state.error,true);assert.equal(f.stored.size,0);
   f.failWrite(false);await f.qa.persist(f.state);assert.equal(f.state.dirty,false);
   assert.deepEqual(f.stored.get(f.state.key).strokes,plain(f.state.strokes));
+});
+
+test('scope: ordinary finger contacts reuse all cached page boundaries',()=>{
+ const f=fixture();
+ for(let i=1;i<200;i++){const page=new f.Element('','pdf-source-page');page.rect={x:0,y:i*820,width:600,height:800};f.zoom.append(page);f.session.pages.push(page);}
+ f.qa.publishNativeScope();const reads=f.session.pages.map(p=>p.reads),posts=f.posted.length;
+ for(let i=0;i<100;i++){const t=f.contact(100,100,2,'direct');f.qa.touchStart(f.event('touchstart',[t]));f.qa.touchEnd(f.event('touchend',[],[t]));f.flush();}
+ assert.deepEqual(f.session.pages.map(p=>p.reads),reads);assert.equal(f.posted.length,posts);assert.equal(f.posted.at(-1).pages.length,200);
+});
+
+test('highlighter: one translucent path, underneath pens, with durable tool metadata',async()=>{
+ const f=fixture();await f.stroke([[20,100],[280,100]]);const pen=plain(f.state.strokes[0]);
+ f.qa.setMode('highlighter');await f.stroke([[20,100],[280,100],[20,100]]);
+ const highlight=f.state.strokes[1];assert.equal(highlight.tool,'highlighter');assert.equal(highlight.opacity,0.3);assert.equal(highlight.width,12);
+ assert.equal(f.svg.children[0].getAttribute('data-ink-tool'),'highlighter');assert.equal(f.svg.children[0].getAttribute('opacity'),'0.3');
+ assert.equal(f.svg.children[1].getAttribute('data-ink-tool'),'pen');assert.deepEqual(plain(f.state.strokes[0]),pen);
+ assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
+ const original=plain(f.state.strokes);f.qa.setMode('erase');await f.stroke([[150,70],[150,130]]);
+ assert.ok(f.state.strokes.filter(s=>s.tool==='highlighter').length>=2);
+ assert.equal(f.svg.children.filter(n=>n.getAttribute('data-ink-tool')==='highlighter').length,1);
+ assert.ok(f.state.strokes.filter(s=>s.tool==='highlighter').every(s=>s.opacity===0.3&&s.color===highlight.color&&s.width===12));
+ f.qa.history(true);await tick();assert.deepEqual(plain(f.state.strokes),original);f.qa.history(false);await tick();assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
+});
+test('highlighter: saved records validate attributes without accepting corrupt opacity/tool',()=>{
+ const f=fixture(),stroke={tool:'highlighter',color:'#ffe34d',width:12,opacity:0.3,points:[[2,3]]};
+ const valid=s=>f.qa.valid({version:1,strokes:[s]});assert.equal(valid(stroke),true);
+ for(const changed of [{opacity:2},{opacity:undefined},{tool:'unknown'},{width:NaN},{color:'#123456'}])assert.equal(valid({...stroke,...changed}),false);
+ assert.equal(valid({color:'#111111',width:1.5,points:[[2,3]]}),true);
+});
+
+test('input: a contact outside starting paper cannot create off-page ink',async()=>{
+ const f=fixture();f.qa.setMode('highlighter');await f.stroke([[200,810],[200,780]]);
+ assert.equal(f.state.strokes.length,0);assert.equal(f.qa.undo().length,0);
 });
