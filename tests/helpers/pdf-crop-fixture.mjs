@@ -1,6 +1,6 @@
 // A crop reuses a complete source page, just like an assembled exam handout.
-export function pdfCropFixture(){
- const text='BT /F1 16 Tf 1 0 0 1 40 740 Tm (foreignblank adults consists) Tj 1 0 0 1 40 680 Tm (Visible source belongs here.) Tj 1 0 0 1 40 560 Tm (hidden previous sentence.) Tj ET';
+export function pdfCropFixture({ocr=false}={}){
+ const text='BT /F1 16 Tf '+(ocr?'3 Tr ':'')+' 1 0 0 1 40 740 Tm (foreignblank adults consists) Tj 1 0 0 1 40 680 Tm (Visible source belongs here.) Tj 1 0 0 1 40 560 Tm (hidden previous sentence.) Tj ET';
  const content='/Crop Do';
  const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Count 1 /Kids [3 0 R] >>',
  '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /XObject << /Crop 6 0 R >> >> /Contents 5 0 R >>',

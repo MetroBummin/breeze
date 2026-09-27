@@ -33,6 +33,35 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  });
  if(!baseline){assert.deepEqual(crop.words,['Visible','source','belongs','here']);assert.deepEqual(crop.markers,['Visible']);assert.equal(crop.blank,null);assert.ok(crop.sentences.every(s=>!s.includes('foreignblank')&&!s.includes('previous')));}
  await page.evaluate(()=>show('home'));
+ await open('ocr-fixture.pdf',pdfCropFixture({ocr:true}));
+ const ocr=await page.evaluate(()=>{
+  const paper=originalSession.pages[0],box=originalSession.wordBoxes.get(1).find(b=>b.word==='Visible'),r=paper.getBoundingClientRect();
+  return box&&pdfWordAtPoint(paper,r.left+(box.x+box.w/2)*r.width,r.top+(box.y+box.h/2)*r.height)?.word;
+ });
+ assert.equal(ocr,'Visible','invisible OCR text inside the crop remains selectable');
+ let supplied=null;
+ if(process.env.BREEZE_QA_PDF){
+  await page.evaluate(()=>show('home'));await open('supplied-29-39.pdf',readFileSync(process.env.BREEZE_QA_PDF));
+  supplied=await page.evaluate(async()=>{
+   const session=originalSession;
+   if(session.hash!=='d76805f846feb32cae9458588f6fcd90bf3255a2b254a2e820c66f4c9f660153')throw Error('Expected the supplied 13-page regression PDF');
+   const inspect=async n=>{const paper=session.pages[n-1],scroll=readerScroller();scroll.scrollTop+=paper.getBoundingClientRect().top-scroll.getBoundingClientRect().top;await renderOriginalPdfPage(session,n);return {paper,boxes:session.wordBoxes.get(n)};};
+   const p9=await inspect(9),r=p9.paper.getBoundingClientRect();
+   const hit=pdfWordAtPoint(p9.paper,r.left+91/595*r.width,r.top+515/842*r.height)?.word;
+   const higher=p9.boxes.filter(b=>b.word==='higher').map(b=>b.y);
+   const p13=await inspect(13),bewildered=p13.boxes.filter(b=>b.word==='bewildered').length;
+   const p4=await inspect(4),choice135=p4.boxes.find(b=>b.word==='Metal')?.example||'';
+   const p5=await inspect(5),choice157=p5.boxes.find(b=>b.word==='unparalleled')?.example||'';
+   return {hit,higher,bewildered,choice135,choice157};
+  });
+  assert.equal(supplied.hit,'perceptible');assert.equal(supplied.higher.length,1);
+  assert.ok(supplied.higher[0]<.4,'only the genuinely visible higher remains');
+  assert.equal(supplied.bewildered,0);
+  assert.ok(supplied.choice135.includes('Metal foils')&&!supplied.choice135.includes('What makes paper'));
+  // #2 remains explicitly excluded. Record its real source reproduction; this
+  // is not an acceptance assertion that the unpunctuated choices are fixed.
+ }
+ await page.evaluate(()=>show('home'));
  await open('memory-120.pdf',fixturePdf());
  const memory=await page.evaluate(async()=>{
   const session=originalSession,scroller=readerScroller(),target=session.pages[0].querySelector('canvas');
@@ -51,7 +80,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   return {peak,samples,contacts:originalPdfContacts};
  });
  if(!baseline){assert.equal(memory.samples.length,15);assert.ok(memory.samples.every(s=>s.targetAttached&&s.shown));assert.equal(memory.contacts,0);assert.ok(memory.peak<=110*1024*1024,`canvas peak ${memory.peak}`);}
- assert.deepEqual(errors,[]);const report={engine:engine.name(),baseline,crop,memory};reports.push(report);console.log(JSON.stringify(report));
+ assert.deepEqual(errors,[]);const report={engine:engine.name(),baseline,crop,ocr,supplied,memory};reports.push(report);console.log(JSON.stringify(report));
  }finally{await context.close();rmSync(profile,{recursive:true,force:true});}
 }}finally{server.close();}
 if(process.env.BREEZE_QA_REPORT)writeFileSync(process.env.BREEZE_QA_REPORT,JSON.stringify(reports,null,2));

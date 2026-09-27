@@ -152,3 +152,11 @@ all 34 pages of that PDF and all 13 pages of the previous PDF match independent
 renderer English-word occurrence counts exactly (47/47, no extra/missing words).
 This verifies source fidelity for these files; it is not a claim that every
 possible clipping path/OCR source has been covered.
+
+The supplied 13-page case is now an optional source regression in
+`verify-pdf-crop-memory-browser.mjs` (`BREEZE_QA_PDF`). It preserves the one visible
+`higher` on page 9, rejects the overlapping hidden one, hits `perceptible`, and
+rejects `bewildered` on page 13. A separate synthetic rendering-mode-3 fixture
+checks that invisible OCR inside a Form remains selectable. Question 135 is
+checked separately; question 157's current merged output is recorded as the
+explicitly excluded block-segmentation issue, not a passing fix.
