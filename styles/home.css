@@ -360,11 +360,12 @@
 :is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .casual .thumb:not(.has-cover) .home-cover-meta,
 :is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover) .home-cover-meta{
   color:var(--ink);text-shadow:none;}
-#v-home .home-add-tile > .bookcard.add,#v-home .home-add-tile > .casual.add .thumb{
+:is(#v-home,#v-longform) .home-add-tile > .bookcard.add,#v-home .home-add-tile > .casual.add .thumb{
   box-sizing:border-box;display:flex;align-items:center;justify-content:center;
   width:100%;height:auto;aspect-ratio:4/5;border-radius:14px;}
 #v-home .home-add-tile > .casual.add{height:auto;aspect-ratio:4/5;}
-#v-home .home-add-tile .home-regular-title{visibility:hidden;}
+:is(#v-home,#v-longform) .home-add-tile .home-regular-title{visibility:hidden;}
+:is(#v-home,#v-longform) .home-add-tile > .bookcard.add{border:2px dashed var(--dash);font:inherit;}
 #v-home #home-casual-rail .casual.cloud .thumb{border:0;filter:none;}
 #v-home #home-casual-rail .casual.add:hover .thumb,
 #v-home #shelf .bookcard.add:hover{border-color:var(--dash);color:var(--soft);}
