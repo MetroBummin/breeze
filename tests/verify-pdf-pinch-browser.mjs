@@ -69,7 +69,7 @@ try{
       await page.evaluate(()=>new Promise(requestAnimationFrame));
       return;
     }
-    await page.evaluate(({type,points})=>{
+    await page.evaluate(({type,points,previous})=>{
       window.qaTouchTargets ||= {};
       const touches=points.map(p=>{
         const target=window.qaTouchTargets[p.id] ||= document.elementFromPoint(p.x,p.y);
@@ -77,10 +77,15 @@ try{
       });
       const target=Object.values(window.qaTouchTargets)[0]||readerScroller();
       const event=new Event(type.toLowerCase(),{bubbles:true,cancelable:true});
-      Object.defineProperties(event,{touches:{value:touches},targetTouches:{value:touches},changedTouches:{value:touches}});
+      // Touchend/cancel.changedTouches contains ENDED contacts, not the survivors.
+      const changed=/end|cancel/i.test(type)
+        ? previous.filter(p=>!points.some(q=>q.id===p.id)).map(p=>({identifier:p.id,target:window.qaTouchTargets[p.id],clientX:p.x,clientY:p.y}))
+        : /start/i.test(type) ? touches.filter(t=>!previous.some(p=>p.id===t.identifier)) : touches;
+      Object.defineProperties(event,{touches:{value:touches},targetTouches:{value:touches},changedTouches:{value:changed}});
       target.dispatchEvent(event);
       if(!points.length) window.qaTouchTargets={};
-    },{type,points});
+    },{type,points,previous:previousPoints});
+    previousPoints=points;
     await page.waitForTimeout(17);
    };
    const snapshot=()=>page.evaluate(()=>({

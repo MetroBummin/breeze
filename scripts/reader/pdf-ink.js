@@ -30,16 +30,23 @@ const BreezePdfInk = (()=>{
   let inkTools=null,inkEntry=null,inkMini=null,inkReadSeparator=null;
   let settings=null,settingsTool=null;
   const suppressed=new Set(), blockedPointers=new Set();
-  let suppressClick=false;
+  let suppressClick=false, paperPenPointer=null;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
   const onPaper=target=>target?.closest?.('.pdf-source-page') && !target.closest('button,input,select,textarea');
   const supported=()=>Reflect.get(window,'breezeInkIPad')===true;
   const visible=()=>supported() && session===originalSession && session?.kind==='pdf'
     && document.body.classList.contains('reader-original') && document.body.classList.contains('reading');
   // Explicit native DEBUG flag only. No text, document bytes, or stored ink in logs.
-  const traceRows=[];
+  const traceRows=[],stateTraceRows=[];
   let traceSequence=0;
-  function trace(route,event){
+  function trace(route,event,reason){
+    if(Reflect.get(window,'breezePdfStateDebug')===true &&
+        (route.startsWith('start/')||route==='stroke/start'||route==='stroke/end'||route==='stroke/cancel'||route==='move/noncancelable-cancel')){
+      stateTraceRows.push({at:performance.now(),route,reason,type:event?.type,cancelable:event?.cancelable,
+        live:Array.from(event?.touches||[],t=>({id:t.identifier,type:t.touchType})),
+        active:active?.id??null,suppressed:[...suppressed]});
+      if(stateTraceRows.length>40)stateTraceRows.shift();
+    }
     if(Reflect.get(window,'breezeInkDebug')!==true || !visible())return;
     const box=readerScroller();
     const contacts=list=>Array.from(list||[],t=>({id:t.identifier,type:t.touchType,
@@ -402,8 +409,9 @@ const BreezePdfInk = (()=>{
     active.preview.setAttribute('cx',String(p[0]));active.preview.setAttribute('cy',String(p[1]));
     if(!active.preview.isConnected)active.state.svg.append(active.preview);
   }
-  function cancel(){
+  function cancel(reason='other'){
     if(active){
+      trace('stroke/cancel',undefined,reason);
       const current=active;active=null;
       if(current.tool==='erase'){
         record(current.state,current.before);
@@ -439,12 +447,12 @@ const BreezePdfInk = (()=>{
     const element=pen.target.closest('.pdf-source-page');
     if(!ownsPdfPage(element,session))return;
     const state=pages.get(keyFor(session,Number(element.dataset.page)));
-    if(!state?.svg || !state.loaded){message('필기를 불러오는 중이에요. 다시 시도해 주세요');return;}
+    if(!state?.svg || !state.loaded){trace('start/ink-not-ready',event);message('필기를 불러오는 중이에요. 다시 시도해 주세요');return;}
     cancelGesture('Pencil owns paper');
     closeSettings();
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
     if(!p.every(Number.isFinite)||p[0]<0||p[1]<0||p[0]>state.width||p[1]>state.height)return;
-    active={id:pen.identifier,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
+    active={id:pen.identifier,pointerId:paperPenPointer,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
       preview:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
     trace('stroke/start',event);
     updateHistoryControls();
@@ -460,7 +468,7 @@ const BreezePdfInk = (()=>{
     if(!active)return;
     const pen=Array.from(event.changedTouches).find(t=>t.identifier===active.id);
     if(!pen)return; // A moving/lifting palm cannot append or finish Pencil ink.
-    if(!event.cancelable){trace('move/noncancelable-cancel',event);cancel();return;}
+    if(!event.cancelable){trace('move/noncancelable-cancel',event);cancel('noncancelable-move');return;}
     extendStroke(point(pen,active.state,active.bounds),event);
   }
   function extendStroke(p,event){
@@ -503,6 +511,7 @@ const BreezePdfInk = (()=>{
     record(state,current.before);paint(state);updateHistoryControls();
   }
   function touchEnd(event){
+    if(active)trace('stroke/end',event);
     consumeTouches(event);
     const pen=active&&Array.from(event.changedTouches).find(t=>t.identifier===active.id);
     if(pen){
@@ -511,7 +520,7 @@ const BreezePdfInk = (()=>{
         // including page clipping, without starting a second stroke on re-entry.
         extendStroke(point(pen,active.state,active.bounds),event);
         if(active)finishStroke();
-      }else cancel();
+      }else cancel('touchcancel');
     }
     const live=new Set(Array.from(event.touches,t=>t.identifier));
     for(const id of suppressed)if(!live.has(id))suppressed.delete(id);
@@ -531,6 +540,7 @@ const BreezePdfInk = (()=>{
       trace('pointer/capture',event);
       const paper=onPaper(event.target);
       if(type==='pointerdown'){
+        if(paper && event.pointerType==='pen')paperPenPointer=event.pointerId;
         blockedPointers.delete(event.pointerId);
         const blocked=paper && (event.pointerType==='pen' || !!active);
         if(blocked)blockedPointers.add(event.pointerId);
@@ -543,9 +553,12 @@ const BreezePdfInk = (()=>{
       }
       if(blocked){
         event.stopImmediatePropagation(); // Do not disable the following Touch path.
-        if(type==='pointercancel' && event.pointerType==='pen')cancel();
+        if(type==='pointercancel' && event.pointerType==='pen' && active?.pointerId===event.pointerId)cancel('pointercancel');
       }
-      if(type==='pointerup'||type==='pointercancel')blockedPointers.delete(event.pointerId);
+      if(type==='pointerup'||type==='pointercancel'){
+        blockedPointers.delete(event.pointerId);
+        if(paperPenPointer===event.pointerId)paperPenPointer=null;
+      }
     },{capture:true,passive:false});
   }
   for(const [type,handler] of Object.entries({touchstart:touchStart,touchmove:touchMove,
@@ -565,10 +578,10 @@ const BreezePdfInk = (()=>{
       }
     },{capture:true,passive:false});
   }
-  const interrupt=()=>{cancel();suppressed.clear();blockedPointers.clear();suppressClick=false;resumeOriginalPdfPaint();};
+  const interrupt=()=>{cancel();suppressed.clear();blockedPointers.clear();suppressClick=false;paperPenPointer=null;resumeOriginalPdfPaint();};
   window.addEventListener('blur',interrupt);
-  window.addEventListener('resize',()=>{cancel();resumeOriginalPdfPaint();});
-  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel();}},{capture:true,passive:true});
+  window.addEventListener('resize',()=>{cancel('resize');resumeOriginalPdfPaint();});
+  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);cancel('reader-scroll');}},{capture:true,passive:true});
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{
@@ -593,22 +606,29 @@ const BreezePdfInk = (()=>{
     try{if(state.loading)await state.loading;}catch(error){
       pages.delete(key);message('필기를 불러오지 못했어요. 문서를 다시 열어 주세요');return;
     }
-    if(s!==session || !element.querySelector('canvas') || element.querySelector('.pdf-ink-layer')){evict(state);return;}
+    if(s!==session || !element.querySelector('canvas')?.width || state.svg){evict(state);return;}
     state.element=element;state.width=base.width;state.height=base.height;
-    state.svg=document.createElementNS(ns,'svg');state.svg.classList.add('pdf-ink-layer');
+    state.svg=element.querySelector('.pdf-ink-layer')||document.createElementNS(ns,'svg');state.svg.classList.add('pdf-ink-layer');
     state.svg.setAttribute('viewBox',`0 0 ${base.width} ${base.height}`);
-    state.svg.setAttribute('aria-hidden','true');element.append(state.svg);paint(state);
+    state.svg.setAttribute('aria-hidden','true');if(state.svg.parentElement!==element)element.append(state.svg);paint(state);
   }
   return {
     open(s){if(!supported()||!s.hash)return;session=s;mode='read';undoStack.length=redoStack.length=0;
       controls();update();},
     mount,
-    release(s,n){
+    release(s,n,{keepShell=false}={}){
       const state=pages.get(keyFor(s,n));if(!state)return;
-      if(active?.state===state)cancel();state.svg?.remove();state.svg=null;state.element=null;evict(state);
+      if(active?.state===state)cancel('page-release');
+      if(keepShell)state.svg?.replaceChildren();else state.svg?.remove();
+      state.svg=null;state.element=null;evict(state);
     },
     close(s){if(s!==session)return;interrupt();mode='read';for(let n=1;n<=s.pages.length;n++)this.release(s,n);session=null;undoStack.length=redoStack.length=0;update();},
     finger,trace,
+    diagnosticState(){
+      if(Reflect.get(window,'breezePdfStateDebug')!==true)return null;
+      return {mode,active:active?{id:active.id,page:active.state.element?.dataset.page,tool:active.tool,points:active.stroke.points.length}:null,
+        suppressed:[...suppressed],blockedPointers:[...blockedPointers],events:stateTraceRows.slice()};
+    },
     busy(){return !!active||suppressed.size>0;}
   };
 })();

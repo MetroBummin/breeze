@@ -155,13 +155,26 @@ try{
    for(let i=0;i<9;i++)await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    await stroke([[.6,.6],[.7,.6]]);assert.equal(await page.locator('[data-ink-redo]').isDisabled(),true);
    await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
-   // History can edit a released page without keeping its SVG/canvas alive.
+   // History can edit a released page while empty canvas/SVG shells stay attached.
    await page.locator('[data-ink-redo]').click();assert.equal(await count(),2);
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
-   await page.evaluate(()=>releaseOriginalPdfPage(originalSession,1));
+   const released=await page.evaluate(()=>{
+    const paper=originalSession.pages[0];
+    window.qaReleasedShell={canvas:paper.querySelector('canvas'),svg:paper.querySelector('.pdf-ink-layer')};
+    releaseOriginalPdfPage(originalSession,1);
+    return {contacts:originalPdfContacts,canvasAttached:qaReleasedShell.canvas.isConnected,
+     svgAttached:qaReleasedShell.svg.isConnected,pixels:qaReleasedShell.canvas.width*qaReleasedShell.canvas.height,
+     ink:qaReleasedShell.svg.children.length,settled:originalSession.settled.has(1)};
+   });
+   assert.deepEqual(released,{contacts:0,canvasAttached:true,svgAttached:true,pixels:0,ink:0,settled:false});
    await page.locator('[data-ink-undo]').click();
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.evaluate(()=>renderOriginalPdfPage(originalSession,1));assert.equal(await count(),1);
+   assert.equal(await page.evaluate(()=>{
+    const paper=originalSession.pages[0];
+    return paper.querySelector('canvas')===qaReleasedShell.canvas
+     && paper.querySelector('.pdf-ink-layer')===qaReleasedShell.svg && qaReleasedShell.canvas.width>0;
+   }),true,'repaint and durable undo reuse the same outer nodes');
    await setting('color','#111111');
    await setting('width','1.5');
    await mode('erase');assert.equal(await settings.isVisible(),false);
@@ -316,7 +329,14 @@ try{
     const cancelled=!BreezePdfInk.busy();
     send('touchstart',[pen],[pen]);window.dispatchEvent(new Event('blur'));
     send('touchend',[],[pen]);const unlocked=!BreezePdfInk.busy();
-    return{during,one:after===start+1,oldBlocked,palmDoesNotBlock,freshAllowed,noMixedPinch,lateUnchanged,acquired,survived,zoomed,cancelled,unlocked};
+    const pointer=(type,id)=>target.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:id,pointerType:'pen'}));
+    const pointerCount=n();pointer('pointerdown',801);send('touchstart',[pen],[pen]);
+    pointer('pointercancel',800); // previous contact's delayed cancellation
+    send('touchmove',[t(91,'stylus',.4)],[t(91,'stylus',.4)]);send('touchend',[],[pen]);
+    const stalePointerPreserved=n()===pointerCount+1;
+    pointer('pointerdown',802);send('touchstart',[pen],[pen]);pointer('pointercancel',802);
+    send('touchend',[],[pen]);const currentPointerCancelled=n()===pointerCount+1;
+    return{during,one:after===start+1,oldBlocked,palmDoesNotBlock,freshAllowed,noMixedPinch,lateUnchanged,acquired,survived,zoomed,cancelled,unlocked,stalePointerPreserved,currentPointerCancelled};
    });
    for(const [key,value] of Object.entries(collision))assert.equal(value,true,`collision: ${key}`);
    // A long Pencil move uses the contact's stable page bounds, not a layout read per sample.

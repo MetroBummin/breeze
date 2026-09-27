@@ -67,7 +67,6 @@ function beginOriginalPinch(center, distance, ids){
   const level = originalZoom();
   originalPinch = {
     box, layer, stage, outer, origin, distance, ids, level, next:level,
-    left:box.scrollLeft, top:box.scrollTop,
     width:box.clientWidth, height:originalZoomBaseHeight,
     trailing:Math.max(0,box.scrollHeight-origin.y-originalZoomBaseHeight*level),
     paper:{x:(box.scrollLeft+center.x-outer.left-origin.x)/level,
@@ -91,7 +90,10 @@ function previewOriginalPinch(){
     x:Math.max(0,Math.min(maxX,origin.x+paper.x*next-(center.x-outer.left))),
     y:Math.max(0,Math.min(maxY,origin.y+paper.y*next-(center.y-outer.top))),
   };
-  pinch.layer.style.transform = `translate(${pinch.left-pinch.position.x}px,${pinch.top-pinch.position.y}px) scale(${next})`;
+  // Native scrolling/bounce can change the offset after pinch acquisition.
+  // Cancel that current offset, not the captured one, to keep the paper point
+  // under the fingers without writing scrollLeft/Top during the gesture.
+  pinch.layer.style.transform = `translate(${box.scrollLeft-pinch.position.x}px,${box.scrollTop-pinch.position.y}px) scale(${next})`;
 }
 function moveOriginalPinch(level, center){
   if(!originalPinch) return;
@@ -126,6 +128,11 @@ function cancelOriginalPinch(){
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function originalPinchStart(event){
+  // An end/cancel can be lost when UIKit takes a contact. A fresh event's live
+  // touch list is authoritative; don't let an orphan preview own new fingers.
+  // One remaining owner still belongs to the current pinch until it lifts.
+  if(originalPinch && !originalFingerContacts(event).some(point=>originalPinch.ids.includes(point.identifier)))
+    cancelOriginalPinch();
   // A reader's contact supersedes delayed automatic mode-landing restores.
   if(originalFingerContacts(event).some(point=>point.target?.closest?.('#original-stage')))readerModeChangeToken++;
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/start',event);
@@ -164,14 +171,16 @@ function originalPinchMove(event){
 }
 function originalPinchEnd(event){
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/end',event);
+  const owners=originalPinch?.ids;
+  // A delayed terminal callback for an older contact cannot finish a new pinch.
+  if(owners && !Array.from(event.changedTouches).some(point=>owners.includes(point.identifier)))return;
   countOriginalPdfContacts(event);
   if(!originalFingerContacts(event).length)originalPinchPan=false;
   if(!originalPinchTouches){ resumeOriginalPdfPaint(); return; }
   if(event.cancelable) event.preventDefault();
-  // Keep the touched canvas attached until EVERY finger is lifted. Redrawing
-  // after the first lift detaches the remaining Touch.target, so its touchend
-  // may never bubble to document and the reader would stay locked.
-  if(originalFingerContacts(event).length === 0){
+  // Retain the gesture while either original owner remains, including a partial
+  // touchcancel. Unrelated new fingers must not hold an ended pinch hostage.
+  if(!originalFingerContacts(event).some(point=>!owners || owners.includes(point.identifier))){
     finishOriginalPinch();
     originalPinchTouches = false;
   }
@@ -181,6 +190,8 @@ function originalPinchEnd(event){
     const box = readerScroller();
     if(!box) return;
     box.addEventListener('scroll',()=>{
+      if(originalPinch && !originalPinchFrame)
+        originalPinchFrame=requestAnimationFrame(previewOriginalPinch);
       if(originalSession?.kind==='pdf'){
         originalSession.lastScrollAt=performance.now();
         if(!readerScrollWasProgrammatic())readerModeChangeToken++;
@@ -191,12 +202,7 @@ function originalPinchEnd(event){
     box.addEventListener('touchstart',originalPinchStart,{passive:false});
     box.addEventListener('touchmove',originalPinchMove,{passive:false});
     document.addEventListener('touchend',originalPinchEnd,{passive:false,capture:true});
-    document.addEventListener('touchcancel',()=>{
-      originalPdfContacts = 0;
-      finishOriginalPinch();
-      resumeOriginalPdfPaint();
-      originalPinchTouches = false;
-    },{passive:true});
+    document.addEventListener('touchcancel',originalPinchEnd,{passive:false,capture:true});
   };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded',start);
   else start();

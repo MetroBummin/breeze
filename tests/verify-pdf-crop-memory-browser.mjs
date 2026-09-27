@@ -66,11 +66,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await page.evaluate(()=>show('home'));
  await open('memory-120.pdf',fixturePdf());
  const memory=await page.evaluate(async()=>{
-  const session=originalSession,scroller=readerScroller(),target=session.pages[0].querySelector('canvas');
+  const session=originalSession,scroller=readerScroller(),target=session.pages[0].querySelector('canvas'),ink=session.pages[0].querySelector('.pdf-ink-layer');
   const touch={identifier:37,touchType:'direct',target,clientX:200,clientY:200};
   const send=(type,live)=>{const e=new Event(type,{bubbles:true,cancelable:true});Object.defineProperties(e,{touches:{value:live?[touch]:[]},changedTouches:{value:[touch]}});target.dispatchEvent(e);};
   let peak=0,running=true;const measure=()=>{let pixels=0;document.querySelectorAll('.pdf-source-page canvas').forEach(c=>pixels+=c.width*c.height);peak=Math.max(peak,pixels*4);if(running)requestAnimationFrame(measure);};measure();
-  send('touchstart',true);const samples=[];
+  send('touchstart',true);const samples=[];let noTouchSamples=[];
   try{for(const n of [1,6,12,20,30,40,50,60,50,40,30,20,12,6,1]){
    const paper=session.pages[n-1];scroller.scrollTop+=paper.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
    await renderOriginalPdfPage(session,n);await new Promise(r=>setTimeout(r,30));
@@ -79,9 +79,18 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    samples.push({page:n,bytes:pixels*4,settled:session.settled.size,targetAttached:target.isConnected,shown:!!paper.querySelector('canvas')?.width});
    if(pixels*4>450*1024*1024)break;
   }}finally{send('touchend',false);running=false;}
-  return {peak,samples,contacts:originalPdfContacts};
+  // Native scrollbar tracking may supply no DOM touch at all.
+  for(const n of [20,40,60,40,20,1]){
+   const paper=session.pages[n-1];scroller.scrollTop+=paper.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
+   await renderOriginalPdfPage(session,n);await new Promise(r=>setTimeout(r,30));
+   const bytes=[...document.querySelectorAll('.pdf-source-page canvas')].reduce((sum,c)=>sum+c.width*c.height*4,0);
+   noTouchSamples.push({page:n,bytes,attached:target.isConnected&&ink.isConnected,
+    contacts:originalPdfContacts,released:n===1||target.width===0});
+  }
+  return {peak,samples,noTouchSamples,contacts:originalPdfContacts};
  });
  if(!baseline){assert.equal(memory.samples.length,15);assert.ok(memory.samples.every(s=>s.targetAttached&&s.shown));assert.equal(memory.contacts,0);assert.ok(memory.peak<=110*1024*1024,`canvas peak ${memory.peak}`);}
+ assert.ok(memory.noTouchSamples.every(s=>s.attached&&s.released&&s.contacts===0&&s.bytes<=110*1024*1024),JSON.stringify(memory.noTouchSamples));
  assert.deepEqual(errors,[]);const report={engine:engine.name(),baseline,crop,ocr,supplied,memory};reports.push(report);console.log(JSON.stringify(report));
  }finally{await context.close();rmSync(profile,{recursive:true,force:true});}
 }}finally{server.close();}
