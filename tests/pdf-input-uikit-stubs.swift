@@ -1,6 +1,9 @@
 // Test doubles for executing the PRODUCTION adapter and routing code on Linux.
 // They model public API boundaries, not UIKit arbitration or physical input.
 import Foundation
+#if canImport(CoreGraphics)
+import CoreGraphics
+#endif
 
 @MainActor class UIGestureRecognizer {
     enum State { case possible, began, changed, ended, cancelled, failed }
