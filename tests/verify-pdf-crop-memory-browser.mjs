@@ -44,6 +44,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const paper=session.pages[n-1];scroller.scrollTop+=paper.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
    await renderOriginalPdfPage(session,n);await new Promise(r=>setTimeout(r,30));
    const pixels=[...document.querySelectorAll('.pdf-source-page canvas')].reduce((sum,c)=>sum+c.width*c.height,0);
+   peak=Math.max(peak,pixels*4);
    samples.push({page:n,bytes:pixels*4,settled:session.settled.size,targetAttached:target.isConnected,shown:!!paper.querySelector('canvas')?.width});
    if(pixels*4>450*1024*1024)break;
   }}finally{send('touchend',false);running=false;}
