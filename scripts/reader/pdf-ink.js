@@ -62,6 +62,13 @@ const BreezePdfInk = (()=>{
     const bridge=Reflect.get(window,'webkit')?.messageHandlers?.breezeInkTrace;
     if(bridge){bridge.postMessage({rows:traceRows});traceRows.length=0;}
   }
+  if(Reflect.get(window,'breezeInkDebug')===true){
+    for(const type of ['touchstart','touchmove','touchend','touchcancel','gesturestart','gesturechange','contextmenu','selectstart','dragstart'])
+      window.addEventListener(type,event=>queueMicrotask(()=>{
+        trace('dispatch/final',event);
+        if(type==='touchend'||type==='touchcancel')flushTrace();
+      }),{capture:true,passive:true});
+  }
   let scopeFrame=0, lastScope='';
   function invalidatePageScope(){if(typeof invalidatePdfPageLayout==='function')invalidatePdfPageLayout(session||originalSession);}
   function scopeControlVisible(element){

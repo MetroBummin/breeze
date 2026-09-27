@@ -359,4 +359,12 @@ all-page Pencil scope, native input routing and storage do not change.
 A no-DOM-touch 34-page jump stream in Chromium/WebKit went from 78–90 automatic
 map/marker calls per direction during scroll to zero, retaining visible canvases
 and ready lookups after settling. This browser test models scheduling, not UIKit
-scrollbar tracking or physical iPad latency; user device confirmation is pending.
+scrollbar tracking or physical iPad latency; the user subsequently reported similar stutter on installed 177.
+
+
+For the remaining physical cancellation, the existing opt-in DEBUG input trace
+now snapshots recognizer class/state and scroll-view identity at pan transitions.
+Cancellation call stacks are captured through opt-in public gesture-state KVO.
+Read-mode DOM event completion is also recorded, including defaultPrevented,
+contextmenu and selection events. These hooks remain disabled in normal launches;
+they diagnose cancellation, and are not a performance fix or production telemetry.

@@ -117,5 +117,26 @@ the follow-up device build remains pending.
 
 Device delivery: Debug **1.4 (177)** built, signature verified, installed and
 launched on the wired iPad. `devicectl device info apps` reports 177. All 113 web
-build files hash-match native public and App.app/public. Physical scrollbar
-feedback is pending; no Archive or production deployment was performed.
+build files hash-match native public and App.app/public. The user reported similar scrollbar stutter on installed 177. This optimization
+is not an accepted fix for the physical symptom. Native input/offset tracing is
+being used for the next investigation; no Archive or production deployment was performed.
+
+
+177 native diagnostic recording (user reproduced both finger and scrollbar
+stutter with tracing enabled): the 13-page landscape reader retained a constant
+17,869-point native content height. During the right-edge drag, the finger moved
+from y=649.5 toward y=170.5. The child UIScrollView pan changed from changed (2)
+to cancelled (4) about 0.77s into the contact. Its offset then stayed at 10,814.5
+while the finger continued from y=472 to y=170.5. No Pencil or ink session was
+active. This proves a native cancellation in that recorded contact, but not yet
+which recognizer or action caused it. Diagnostic overhead can affect ordinary
+scroll latency, so these runs are not a before/after performance benchmark.
+
+
+The 178 diagnostic repeated the native scrollbar cancellation on three contacts,
+with the same child scroll-view identity and constant content height. No completed
+DOM event had defaultPrevented=true. The scrollbar long-press and child pan both
+became cancelled; other observed recognizers alone do not establish causality.
+The next opt-in diagnostic records the cancellation call stack through public
+KVO on gesture state. No recognizer is disabled/replaced and no new production
+input behavior is introduced by diagnostics.
