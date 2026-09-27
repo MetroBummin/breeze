@@ -52,7 +52,32 @@ branch. The signed 1.4 (189) app includes all 113 matching web assets, and the
 production Swift ownership checks pass 35/35 with UIKit/WebKit SDK typecheck.
 It was installed and launched with BREEZE_PDF_MOTION_TRACE=0,
 BREEZE_INK_TRACE=0 and BREEZE_PDF_STATE_TRACE=0. User-operated physical result
-is pending; build/install/launch alone do not establish that the dot is fixed.
+FAILED: the first Pencil still left a mark. With targeted diagnostics enabled
+on the connected iPad, two reproduced native contacts were both classified
+stopOnly during moving deceleration. Each then entered the web stroke/start and
+stroke/end path. Evidence and hashes are in
+`../audits/pdf-input-integration-20260927/189-failure/reproduced-findings.md`.
+This is native-to-web ownership leakage, not a demonstrated gate-time motion
+classification race. No additional 189 input experiment is needed.
+
+The next candidate requires a native reply before web ink starts. Check the
+real production native role code, SDK typecheck, WebKit browser blocked/ink
+reply cases, app build and exact embedded web assets. Then install one normal
+diagnostics-OFF build. User physical acceptance remains: 10–20 weak/medium/
+strong flicks, first moving Pencil stopOnly with no mark through lift, immediate
+second Pencil ink, plus stationary first Pencil and highlighter controls.
+Automated, SDK and installation checks must not be described as this physical
+result. Keep the PR Draft and do not archive until the user confirms the device
+trial.
+
+Debug 190: native-to-web admission candidate built and signed for the connected
+iPad. Native ownership checks 36/36, UIKit/WebKit SDK typecheck, 41 PDF unit
+tests and the full WebKit synthetic ink suite pass. The signed app contains
+113/113 matching web assets. Installed and launched with all PDF diagnostic
+flags unset. Physical stopOnly/next-ink acceptance is awaiting the user's
+device run; installation is not acceptance. The first Xcode attempt in the
+Desktop audit directory failed at codesign because file-provider metadata was
+added to its output; a fresh local /tmp derived-data build succeeded.
 
 Prepared validation: 33 existing production ownership checks pass. Signed
 device-target Debug 188 build succeeds using the same Xcode toolchain as 187;

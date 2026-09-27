@@ -232,7 +232,7 @@ private final class BreezeRefreshControl: UIRefreshControl {
     }
 }
 
-final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, AVSpeechSynthesizerDelegate {
+final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate {
     #if DEBUG
     private let pdfMotionProbe = BreezePdfMotionProbe()
     private var pdfMotionTraceEnabled = false
@@ -261,11 +261,15 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var pdfLastContactTimestamp: TimeInterval = -1
     private var pdfRoutingNeedsRefresh = false
     private var pdfRoutingRefreshScheduled = false
+    // Native and DOM touch IDs are unrelated. Match the birth time and paper
+    // point supplied by the web touchstart, then reply before any ink is made.
+    private var pdfRecentPencilRoles: [(at: TimeInterval, point: CGPoint, role: BreezePdfContactLedger<ObjectIdentifier>.Role)] = []
     // END PDF_ROUTING_STATE
     private static let themeMessageHandler = "breezeReaderTheme"
     private static let speechMessageHandler = "breezeSpeech"
     private static let vocabularyExportHandler = "breezeVocabularyExport"
     private static let libraryRefreshHandler = "breezeRefresh"
+    private static let pencilAdmissionHandler = "breezePencilAdmission"
     private static let shareInboxHandler = "breezeShareInbox"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
@@ -302,6 +306,8 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
         if inkPad {
             webView.configuration.userContentController.add(self, name: "breezeInkScope")
+            webView.configuration.userContentController.addScriptMessageHandler(
+                self, contentWorld: .page, name: Self.pencilAdmissionHandler)
             let contacts = BreezePdfContactObserver(target: nil, action: nil)
             contacts.requiresExclusiveTouchType = false
             contacts.delaysTouchesBegan = false
@@ -551,10 +557,25 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         handleSpeechRequest(request)
     }
 
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage,
+                               replyHandler: @escaping (Any?, String?) -> Void) {
+        guard message.name == Self.pencilAdmissionHandler,
+              message.frameInfo.isMainFrame,
+              message.frameInfo.securityOrigin.protocol == "breeze",
+              message.frameInfo.securityOrigin.host == "localhost",
+              let request = message.body as? [String: Any] else {
+            replyHandler("blocked", nil)
+            return
+        }
+        replyHandler(roleForWebPencil(request), nil)
+    }
+
     // BEGIN PDF_ROUTING_METHODS
     private func applyPdfScope(_ scope: [String: Any]) {
         if inkNativeScope["enabled"] as? Bool == true && scope["enabled"] as? Bool != true {
             pdfContacts.interrupt()
+            pdfRecentPencilRoles.removeAll()
         }
         inkNativeScope = scope
         pdfRoutingNeedsRefresh = true
@@ -668,7 +689,8 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             // Do not edit or alter live recognizers while a fresh web scroller
             // is still being bound. This entire contact is rejected, not retried
             // halfway through a stroke. The next contact uses the ready scope.
-            _ = pdfContacts.beginPencil(id, ready: false, decelerating: false)
+            let role = pdfContacts.beginPencil(id, ready: false, decelerating: false)
+            rememberPdfPencilRole(touch, role: role)
             pdfRoutingNeedsRefresh = true
             recordPdfAdmission(role: "blocked-not-ready", event: event, scroll: webView.scrollView, before: webView.scrollView.contentOffset)
             return true
@@ -688,6 +710,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         let preContactMotion = pdfMotionTraceEnabled ? pdfMotionProbe.before(touch.timestamp, scroll: scroll) : []
         #endif
         let role = pdfContacts.beginPencil(id, ready: true, decelerating: isDeceleratingAtGate)
+        rememberPdfPencilRole(touch, role: role)
         if role == .stopOnly {
             if #available(iOS 17.4, *) { scroll.stopScrollingAndZooming() }
             else { scroll.setContentOffset(scroll.contentOffset, animated: false) }
@@ -701,6 +724,41 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         #endif
         recordPdfAdmission(role: String(describing: role), event: event, scroll: scroll, before: before)
         return role == .stopOnly || role == .blocked
+    }
+
+    private func rememberPdfPencilRole(_ touch: UITouch,
+                                       role: BreezePdfContactLedger<ObjectIdentifier>.Role) {
+        guard let webView else { return }
+        // UITouch.timestamp and the web Event.timeStamp describe the contact's
+        // birth, even if WebKit dispatches the DOM event after UIKit has ended it.
+        let at = Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + touch.timestamp
+        pdfRecentPencilRoles.append((at, touch.location(in: webView), role))
+        if pdfRecentPencilRoles.count > 8 { pdfRecentPencilRoles.removeFirst() }
+    }
+
+    private func roleForWebPencil(_ request: [String: Any]) -> String {
+        guard let webView, inkNativeScope["enabled"] as? Bool == true,
+              let eventAt = request["eventAt"] as? Double, eventAt.isFinite,
+              let x = request["x"] as? Double, x.isFinite,
+              let y = request["y"] as? Double, y.isFinite,
+              let viewport = request["viewport"] as? Double, viewport.isFinite, viewport > 0 else {
+            return "blocked"
+        }
+        let scale = webView.bounds.width / CGFloat(viewport)
+        let point = CGPoint(x: x * scale, y: y * scale)
+        let candidates = pdfRecentPencilRoles.indices.filter {
+            abs(pdfRecentPencilRoles[$0].at - eventAt) <= 0.25 &&
+                hypot(pdfRecentPencilRoles[$0].point.x - point.x,
+                      pdfRecentPencilRoles[$0].point.y - point.y) <= 24
+        }
+        guard let index = candidates.min(by: {
+            abs(pdfRecentPencilRoles[$0].at - eventAt) < abs(pdfRecentPencilRoles[$1].at - eventAt)
+        }) else {
+            return "blocked" // Unknown native owner must never become web ink.
+        }
+        // An admission is one-use: a later, unmatched web event cannot borrow
+        // an earlier ink contact's role just because it started nearby.
+        return pdfRecentPencilRoles.remove(at: index).role == .ink ? "ink" : "blocked"
     }
     // END PDF_ROUTING_METHODS
 

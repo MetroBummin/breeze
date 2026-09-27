@@ -52,6 +52,7 @@ import CoreGraphics
     var type: TouchType
     var phase: Phase = .began
     var point: CGPoint
+    var timestamp: TimeInterval = ProcessInfo.processInfo.systemUptime
     init(_ type: TouchType, _ x: CGFloat = 100, _ y: CGFloat = 100) {
         self.type = type; point = CGPoint(x: x, y: y)
     }

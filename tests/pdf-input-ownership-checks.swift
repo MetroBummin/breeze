@@ -131,6 +131,25 @@
             gate.touchesBegan([pen],with:UIEvent([finger,pen]))
             assert(gate.state == .began && !gate.canPrevent(pan) && s.stops == 0)
         }
+        test("web admission uses native birth time and position, never DOM touch ID") {
+            let (h,s)=fixture(), stop=UITouch(.pencil,100,100)
+            s.isDecelerating=true
+            assert(h.route(stop,UIEvent([stop])))
+            let eventAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + stop.timestamp
+            func request(_ at: Double, _ x: Double, _ y: Double) -> [String: Any] {
+                ["eventAt":at,"x":x,"y":y,"viewport":600.0]
+            }
+            assert(h.webRole(request(eventAt,100,100)) == "blocked")
+            assert(h.webRole(request(eventAt,400,100)) == "blocked")
+            stop.phase = .ended; h.observe(UIEvent([stop]))
+            let ink=UITouch(.pencil,200,100)
+            assert(!h.route(ink,UIEvent([ink])))
+            let inkAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + ink.timestamp
+            assert(h.webRole(request(inkAt,200,100)) == "ink")
+            assert(h.webRole(request(inkAt,200,100)) == "blocked")
+            assert(h.webRole(request(inkAt+2,200,100)) == "blocked")
+            h.setScope(["enabled":false]); assert(h.webRole(request(inkAt,200,100)) == "blocked")
+        }
         test("gate owns only its admitted Pencil through end/reset") {
             let g=BreezePdfPencilGate(), pen=UITouch(.pencil), other=UITouch(.direct), event=UIEvent([pen,other])
             var decisions=0; g.begin={_,_ in decisions+=1; return true}

@@ -96,6 +96,31 @@ or intervening edits cannot apply an old undo to a new session.
 
 ## Inertia follow-up (2026-09-25)
 
+### Native-to-web Pencil admission after Debug 189 reproduction (2026-09-28)
+
+Debug 189 physically reproduced a mark on the first momentum-stopping Pencil.
+The captured native gate classified both sampled contacts `stopOnly` while the
+paper was decelerating, yet WebKit delivered each contact to web `stroke/start`
+and `stroke/end`. This disproves the gate-time classification race for those
+contacts. UIKit recognizer prevention alone does not guarantee WebKit will hide
+the same Pencil from the DOM.
+
+On iPad, web ink now waits for the native role before creating a preview,
+erasing or persisting. The existing native gate remains the source of truth for
+`stopOnly`, `ink` and blocked Pencil roles. A WebKit reply message matches the
+native contact by birth time and paper position, never by unrelated UIKit/DOM
+touch identifiers. The match is consumed once. Unknown, stale and rejected
+contacts fail closed; an admitted quick tap can complete after touchend. Web
+cancel, scroll, mode/document changes and blur discard pending ink. The time and
+position bounds are only correlation tolerances, not a motion debounce or a
+delay before assigning native ownership. Existing browser/older-shell fallback
+continues to use the original web Pencil path; physical iPad acceptance applies
+to the new native bridge only after device validation.
+
+This change does not alter page eviction, drawing coordinates, persistence,
+pinch, or the policy that the first Pencil during genuine inertia stops the
+paper for its entire contact and the next contact immediately edits.
+
 The user reports that rapid finger scrolling can make a subsequent Pencil drag
 scroll the PDF rather than edit. Stationary drawing works. This supersedes the
 previous basic-device confirmation for rapid-input acceptance.
