@@ -9,9 +9,9 @@
  * 무대 하나가 `sticky` 로 제자리에 서 있고, 그 바깥의 빈 레일만 길게 흐릅니다.
  * 스크롤이 하는 일은 `body[data-state]` 를 0→5 로 넘기는 것 하나뿐입니다.
  *
- *   0  들판 + 한국어
- *   1  그림이 물러나고 영어 — 여기서부터 진짜 Breeze 처럼 눌립니다
- *   2  같은 문장 + 단어창이 이미 열려 있는 순간
+ *   0  한국어 Hero
+ *   1  영어 Hero — 여기서부터 단어와 문장을 누를 수 있습니다
+ *   2  같은 문장 + 단어 뜻 미니필
  *   3  같은 문장 + 문장 해석이 이미 열려 있는 순간
  *   4  읽고 싶은 걸, 그대로.   — 가져올 수 있는 것들
  *   5  어디서든, 그대로.       — 두 화면에 같은 단어장
@@ -19,44 +19,31 @@
  * 2·3 은 시연이 아니라 **끝난 순간**입니다. 커서가 움직이지도, 창이 열리는 것을
  * 보여 주지도 않습니다 — 눌렀다면 보게 될 화면이 그냥 거기 있습니다.
  *
- * 큰 한 줄이 앉는 자리(`.lp-slot`)는 여섯 내내 같습니다. 좁은 화면에서는 위쪽,
- * 넓은 화면에서는 왼쪽 — 오른쪽은 늘 Breeze 자리입니다(단어창 · 문장창 · 카드 ·
- * 두 화면). 그래서 장면이 넘어가도 눈이 글을 다시 찾지 않습니다.
+ * Hero의 두 줄은 중앙에 머물고, 단어와 문장 카드는 선택한 문장 곁에 놓입니다.
  */
 
-/* ---- 두 줄만을 위한 한글 글꼴 ----
-   앱은 큰 제목 자리에 고운바탕을 씁니다. 그런데 이 페이지는 그 글꼴을 다른
-   어떤 화면보다 크게(최대 50px) 씁니다 — 실측해 보니 "요" 글리프가 다른 글자보다
-   베이스라인에서 9px 위에서 잉크가 끝나고(캔버스로 잰 값입니다), 두 문장이
-   공교롭게 둘 다 "요."로 끝나서 그 자리가 계속 눈에 띕니다. 레이아웃 줄상자는
-   문자마다 정확히 같아서(Range 로 재면 소수점까지 일치) CSS 버그는 아니고,
-   고운바탕이라는 특정 글꼴의 특성입니다.
+/* 랜딩의 큰 문구는 홈 상단 워드마크와 같은 UI 글꼴을 씁니다. */
 
-   그래서 이 두 줄에서만 노토 세리프 KR 로 바꿉니다 — 획 편차가 훨씬 적어
-   "정돈되어" 보입니다. 앱의 styles/fonts.css 는 건드리지 않습니다: 새 글꼴은
-   이 폴더 안(assets/fonts/)에만 있고, 아래 두 줄이 --display 를 다시 정의하는
-   자리도 `#copy` 하나뿐이라 단어창 등 다른 한글에는 영향이 없습니다. 원본
-   text= 로만 골라 받아서(이 두 줄에 실제로 쓰는 18자) 56KB 입니다. */
-  @font-face{
-    font-family:'Noto Serif KR';
-    font-style:normal;
-    font-weight:600;
-    font-display:swap;
-    src:url(assets/fonts/noto-serif-kr-600.woff2?v=2c77ca91) format('woff2');
-  }
-  .lp-slot{--display:'Fraunces','Noto Serif KR',Georgia,'Times New Roman',serif;}
-
-/* ---- 첫 장면 그림 ----
-   앱의 스플래시(`#splash`)를 그대로 가져다 뒷배경으로 세웁니다. 세로·가로 고르기,
-   그 위의 얇은 막, 느린 숨쉬기, 움직임을 줄여 달라는 설정까지 styles/base.css 가
-   이미 하고 있어서 여기서는 층과 물러나는 법만 적습니다. */
-  #splash{z-index:0; transition:opacity .9s ease;}
-  /* 아주 옅게 남깁니다 — 그림이 그대로 보일 만큼 남기면 그 위에 뜬 단어창이
-     사진 위의 상자가 되고, 눌린 낱말의 옅은 하늘색 표시가 그림에 묻힙니다.
-     장면이 물러났다는 것만 남기고 종이에 자리를 내줍니다. */
-  body:not([data-state="0"]) #splash{opacity:.045;}
-  /* 앱은 이 그림을 걷을 때 `hide` 를 씁니다. 여기서는 걷지 않고 물러날 뿐입니다. */
-  #splash.hide{opacity:.045; pointer-events:none;}
+/* ---- 상단 내비게이션 ----
+   Breeze 워드마크와 두 시작 경로만 둡니다. CTA 는 둘 다 같은 크기와 대비로
+   보이고, 색 차이로 웹 시작과 App Store 를 구분합니다. */
+  .lp-nav{position:fixed; inset:0 0 auto; z-index:110; display:flex; align-items:center;
+    justify-content:space-between; gap:16px; padding:18px clamp(20px,4vw,56px);
+    padding-top:calc(18px + env(safe-area-inset-top));
+    background:color-mix(in srgb,var(--paper) 84%,transparent);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);}
+  .lp-wordmark{display:flex; align-items:center; gap:10px; color:var(--settings-ink);
+    font:700 32px/44px var(--ui); letter-spacing:-.8px; text-decoration:none; white-space:nowrap;}
+  .lp-wordmark img{display:block; width:38px; height:38px; flex:none; border-radius:9px;}
+  .lp-actions{display:flex; align-items:center; gap:10px;}
+  .lp-cta{min-height:44px; display:inline-flex; align-items:center; justify-content:center;
+    padding:0 16px; border:1px solid; border-radius:13px;
+    font:700 13px/1 var(--ui); text-decoration:none; white-space:nowrap;
+    box-shadow:0 2px 7px rgba(32,100,143,.12);
+    transition:transform .16s ease,box-shadow .16s ease;}
+  .lp-cta:hover{transform:translateY(-2px); box-shadow:0 5px 12px rgba(32,100,143,.18);}
+  .lp-cta-web{background:#4daed6; border-color:#4daed6; color:#fff;}
+  .lp-cta-store{background:#e3f3f8; border-color:#b6dce9; color:#256483;}
 
 /* ---- 레일과 무대 ----
    레일은 그저 스크롤할 거리입니다. 장면 하나에 화면 하나씩. */
@@ -64,16 +51,12 @@
   #stage{position:sticky; top:0; height:100vh; height:100svh; overflow:hidden;}
 
 /* ---- 두 줄 ----
-   좁은 화면에서는 위쪽에 섭니다. 아래에서 올라오는 시트가 화면의 3분의 2를
-   덮어도 문장이 가려지지 않아야 하고, 장면이 바뀔 때 글이 자리를 옮기지 않아야
-   하기 때문입니다 — 자리를 한 번 정하면 넷 내내 그대로입니다. */
-  .lp-slot{position:absolute; left:0; right:0; top:13svh; padding:0 24px;
-    font-family:var(--display); font-weight:600;
-    font-size:clamp(24px,6.2vw,38px); line-height:1.5; letter-spacing:-.01em;}
-  #copy{color:var(--brand-cream); text-shadow:var(--brand-ink-shadow);
-    transition:color .8s ease, text-shadow .8s ease, opacity .5s ease;}
-  /* 그림이 물러나면 글은 종이 위의 잉크가 됩니다. */
-  body:not([data-state="0"]) #copy{color:var(--ink); text-shadow:none;}
+   중앙 정렬을 유지해 Hero 문구에 시선을 모읍니다. */
+  .lp-slot{position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+    padding:0 clamp(20px,7vw,96px); text-align:center;
+    font-family:var(--ui); font-weight:700;
+    font-size:clamp(24px,6.2vw,38px); line-height:1.5; letter-spacing:-.035em;}
+  #copy{color:var(--ink); text-shadow:none; transition:opacity .5s ease;}
   .lp-line + .lp-line{margin-top:.15em;}
   /* ---- 상표만 남습니다 ----
      한국어가 영어로 바뀔 때, 앞뒤의 말은 흐려졌다 돌아오고 `Breeze` 는 흐려지지
@@ -102,82 +85,63 @@
     text-shadow:none; opacity:0; transition:opacity .9s ease; pointer-events:none;}
   #hint.on{opacity:1;}
 
-/* ================= 단어창 자리 =================
-   좁은 손가락 화면에서 아래에서 올라오는 시트는 styles/dictionary.css 가 이미 다
-   합니다. 여기서 고치는 것은 한 줄뿐입니다: 시트 뒤의 판이 스크롤까지 막지
-   않게. 앱에서는 그 판을 눌러 시트를 닫는데, 그 길은 그대로 둡니다 — 랜딩용
-   손짓을 새로 만들지 않고 앱과 같은 자리에서 같은 방법으로 닫습니다. */
-  @media (max-width:999px) and (pointer:coarse){
-    #sheetbg{touch-action:auto;}
-    #panel{max-height:66svh;}
-  }
-
-/* 넓은 화면 — 앱에서는 본문 옆에 나란히 서는 칸이지만, 이 페이지에는 나란히 설
-   본문이 없습니다(두 줄뿐입니다). 그래서 같은 칸을 문장 옆에 떠 있는 카드로
-   둡니다. 아래 물음은 styles/dictionary.css 의 "옆 칸이냐 시트냐" 를 그대로
-   뒤집은 것입니다 — 경계를 둘로 만들지 않으려고. */
-  @media not all and (max-width:999px) and (pointer:coarse){
-    #panel{position:fixed; left:auto; right:clamp(20px,5vw,64px); bottom:auto;
-      top:50%; transform:translateY(-50%); margin-top:0;
-      width:min(340px,32vw); height:auto; max-height:min(680px,78svh);
-      border:1px solid var(--sheet-line); border-radius:22px;
-      box-shadow:var(--shadow-sheet);}
-  }
+/* 상세창의 실제 left/top/width/height는 선택한 낱말의 위치에서 계산합니다.
+   리더의 미니필 → 상세창 형태 전환과 같은 자리 계산을 landing.js가 맡습니다. */
+  #panel.anchored{right:auto; bottom:auto; transform:none;}
+  #word-modal-scrim{display:none!important;}
 
 /* ================= 문장 해석 자리 =================
    창도 뒤의 막도 앱 그대로입니다. 막이 손가락을 먹지 않게만 풀어 둡니다 —
    장면을 넘기는 일은 스크롤이 하므로. 눌러서 닫는 길은 앱과 같습니다. */
-  #sentence-modal{touch-action:auto;}
+  #sentence-modal{touch-action:auto; align-items:flex-start;}
+  #p-sentence{position:fixed; left:max(16px,calc((100vw - 420px)/2));
+    right:auto; width:min(420px,calc(100vw - 32px)); margin:0;}
   /* 넓은 화면에서는 두 줄을 가리지 않도록 단어창과 같은 쪽에 섭니다. 카드 자체는
      앱의 그 카드 그대로이고, 자리만 가운데에서 옆으로 옮깁니다. */
-  @media not all and (max-width:999px) and (pointer:coarse){
-    #sentence-modal{justify-content:flex-end; padding-right:clamp(20px,5vw,64px);}
-    #p-sentence{width:min(420px,34vw); max-height:78svh;}
-  }
-
-/* ================= 넓은 화면의 두 줄 =================
-   가로 그림에서는 들판의 아이가 오른쪽에 섭니다. 앱의 스플래시가 상표를 왼쪽에
-   세우는 것과 같은 이유로 두 줄도 왼쪽에 섭니다 — 오른쪽은 Breeze 자리입니다.
-
-   경계는 단어창이 옆으로 나오는 그 폭(1000px)과 같습니다. 그보다 좁을 때 두 줄을
-   왼쪽 절반에 밀어 넣으면 "Breeze will handle the rest." 가 세 줄이 됩니다 —
-   두 줄이라는 것이 이 화면의 전부인데. 그 아래에서는 위쪽에 폭을 다 쓰고 섭니다.
-
-   660px 은 가장 긴 줄(영어 둘째 줄, 50px 글자에서 약 610px)에는 좁았습니다 —
-   "Breeze will handle the" 까지 차고 "rest." 만 다음 줄로 밀려, 문장이 두 줄이
-   아니라 세 줄이 되고 파랗게 차오르는 칠도 그 자리에서 끊겨 보였습니다. 820px 은
-   가장 긴 줄보다 넉넉히 넓어서, 이 폭 위에서는(1000px 이상 전부) 두 줄이 항상
-   두 줄입니다. 옆에 뜨는 단어창·문장창(오른쪽 clamp(20px,5vw,64px) 안쪽)과는
-   1000px 에서도 70px 넘게 떨어져 겹치지 않습니다. */
   @media (min-width:1000px){
-    .lp-slot{top:50%; transform:translateY(-54%);
-      width:min(56vw,820px); right:auto; padding:0 0 0 clamp(32px,7vw,112px);
-      font-size:clamp(34px,3.4vw,50px);}
+    #p-sentence{left:auto; right:clamp(20px,5vw,64px); width:min(420px,34vw); max-height:78svh;}
+  }
+  #ps-ko{font-size:18px; font-weight:600; line-height:1.7;}
+  #ps-source[hidden]{display:none!important;}
+  #panel #p-know,#panel #p-speak,#panel #p-mark,#panel .stbtn,
+  #panel .saved-sense,#panel #p-alts button{pointer-events:none;}
+  #panel #p-know,#panel #p-speak{opacity:1;}
+  #panel #p-know,#panel #p-speak,#panel #p-mark,#panel .stbtn,
+  #panel .saved-sense,#panel #p-ex-fold summary{cursor:default;}
+  #panel.anchored{scrollbar-width:none;}
+  #panel.anchored::-webkit-scrollbar{display:none;}
+  #panel .inner{padding-bottom:18px;}
+  #panel #p-defs div{margin-top:4px;}
+  #panel #p-defs .pos{color:var(--sentence-glass-secondary); margin-right:7px;}
+  #word-peek{z-index:95;}
+  @media (max-width:999px){#p-sentence{width:min(420px,calc(100vw - 32px));}}
+
+/* 넓은 화면에서도 Hero의 두 문장을 한 덩어리로 중앙에 놓습니다. */
+  @media (min-width:1000px){
+    .lp-slot{width:min(100%,1040px); left:50%; right:auto; transform:translate(-50%,-50%);
+      padding:0 clamp(32px,7vw,112px); font-size:clamp(34px,3.4vw,50px);}
     #hint{font-size:12.5px;}
   }
 
-
-/* ================= 아래로 이어진다는 표시 =================
-   좁은 화면에서 시트가 올라온 그 한 장면(2)에서만 나옵니다. 시트가 화면 아래
-   3분의 2를 덮는 순간, 종이가 아직 남아 있다는 것을 말해 주는 자리입니다.
-
-   단추가 아닙니다 — 누를 수 없고(pointer-events:none), 바탕도 테두리도 글자도
-   없고, 색은 힌트 한 줄과 같은 `--soft2` 입니다. 움직임은 5px 뿐이고,
-   시트가 다 올라온 뒤에 옵니다. 다음 장면으로 넘어가면 스스로 사라집니다.
-
-   자리는 시트가 가장 높이 올라올 수 있는 높이(`#panel` 의 66svh) 바로 위입니다.
-   시트가 그보다 낮으면 그만큼 종이 위에 떠 있게 되는데, 그때도 두 줄과 시트
-   사이입니다 — 가리는 것도, 겹치는 것도 없습니다. */
-  #scrollcue{position:fixed; left:0; right:0; bottom:calc(66svh + 10px); z-index:95;
-    display:none; justify-content:center; pointer-events:none; color:var(--soft2); opacity:0;}
-  #scrollcue svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.6;
-    stroke-linecap:round; stroke-linejoin:round;}
-  @media (max-width:999px) and (pointer:coarse){
-    body[data-state="2"] #scrollcue{display:flex;
-      animation:lp-cue-in .9s ease .5s both, lp-cue-drift 2.8s ease-in-out 1.4s infinite;}
+  @media (max-width:520px){
+    .lp-nav{gap:7px; padding-left:12px; padding-right:12px;}
+    .lp-wordmark{gap:6px; font-size:23px; line-height:34px;}
+    .lp-wordmark img{width:28px; height:28px; border-radius:7px;}
+    .lp-actions{gap:6px;}
+    .lp-cta{min-height:38px; padding:0 7px; font-size:10.5px; border-radius:10px;}
   }
-  @keyframes lp-cue-in{from{opacity:0} to{opacity:.42}}
-  @keyframes lp-cue-drift{0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)}}
+
+
+/* 첫 화면에서만 페이지가 아래로 이어짐을 조용히 알립니다. */
+  #scrollcue{position:fixed; left:0; right:0; bottom:0; height:clamp(110px,18svh,170px);
+    z-index:95; display:none; align-items:flex-end; justify-content:center;
+    padding-bottom:clamp(23px,4svh,40px); pointer-events:none;
+    color:var(--soft); font:500 12px/1.4 var(--ui); letter-spacing:.04em; opacity:0;}
+  #scrollcue::before{content:""; position:absolute; inset:0;
+    background:linear-gradient(to top,color-mix(in srgb,var(--brand) 9%,transparent),transparent 82%);}
+  #scrollcue span{position:relative; z-index:1;}
+  body[data-state="0"] #scrollcue{display:flex; animation:lp-hero-cue .9s ease .4s both;}
+  @keyframes lp-hero-cue{from{opacity:0} to{opacity:1}}
 
 /* ================= 셋째·넷째 장면 =================
    무대는 그대로 하나입니다. 두 장면도 같은 sticky 무대 안에서 열리고, 큰 한 줄은
@@ -191,32 +155,37 @@
   body[data-state="4"] #copy,
   body[data-state="5"] #copy{opacity:0; pointer-events:none;}
   .lp-head{color:var(--ink); word-break:keep-all;}
+  .lp-subcopy{position:absolute; left:0; right:0; top:calc(50% + 35px);
+    margin:0; padding:0 clamp(20px,7vw,96px); text-align:center;
+    color:var(--soft); font:500 clamp(13px,1.2vw,16px)/1.6 var(--ui); word-break:keep-all;}
   /* 넓은 화면에서 큰 한 줄은 왼쪽 절반을 다 쓰지 않습니다 — 오른쪽에 설 것이
      첫 두 장면의 단어창(340px)보다 넓기 때문입니다. 왼쪽 끝은 두 줄과 같은
      자리에 그대로 두고 폭만 줄입니다. */
   @media (min-width:1000px){
     .lp-head{width:min(34vw,480px);}
+    .lp-subcopy{left:0; right:auto; width:min(40vw,540px); top:calc(50% + 42px);}
   }
 
-/* ---- 셋째 장면: 가져와 읽는 것들 ----
-   카드는 앱의 그 카드입니다(../styles/home.css). 여기서 정하는 것은 셋이 어떻게
-   놓이는가뿐입니다 — 나란한 세 칸이면 기능 목록이 되고, 조금씩 겹쳐 기울여 놓으면
-   책상 위가 됩니다. 가운데 한 장이 맨 앞에 서고 양옆이 뒤로 물러납니다.
-
-   누를 수 없습니다. 여기 있는 것은 "가져올 수 있는 것들"이지 단추가 아니라서,
-   손을 얹어도 카드가 뜨지 않습니다(앱의 `:hover` 는 서재에서만 뜻이 있습니다). */
+/* ---- 셋째 장면: 글과 책이 한 줄로 천천히 흐릅니다 ---- */
   .lp-shelf{position:absolute; left:0; right:0; top:26svh; bottom:14svh;
-    display:flex; align-items:center; justify-content:center; pointer-events:none;}
-  .lp-card{flex:none;}
+    overflow:hidden; pointer-events:none;
+    mask-image:linear-gradient(to right,transparent,#000 7%,#000 93%,transparent);}
+  .lp-carousel-track{display:flex; align-items:center; width:max-content; height:100%;}
+  .lp-carousel-track.ready{animation:lp-carousel 30s linear infinite;}
+  .lp-carousel-set{display:flex; align-items:center; gap:16px; height:100%; padding-right:16px;}
+  @keyframes lp-carousel{to{transform:translateX(-50%);}}
+  .lp-card{flex:none; margin:0!important; transform:none!important;}
   .lp-shelf .bookcard{width:190px; height:238px; padding:20px 20px 0;}
   .lp-shelf .bookcard .bt{font-size:18px;}
-  .lp-shelf .casual{width:150px;}
-  /* 겹치는 깊이는 카드의 안쪽 여백(20px)보다 얕게 둡니다 — 그보다 깊으면 뒤
-     카드의 제목 첫 글자가 앞 카드 밑으로 들어가 "…rigin of Species" 가 됩니다.
-     겹쳐 보이기만 하면 되지, 가릴 필요는 없습니다. */
-  .lp-card-a{margin-right:-16px; transform:rotate(-4.5deg) translateY(14px); z-index:1;}
-  .lp-card-b{z-index:3; box-shadow:var(--shadow);}
-  .lp-card-c{margin-left:-15px; transform:rotate(4.5deg) translateY(16px); z-index:2;}
+  .lp-shelf .casual{width:150px; height:238px; border-radius:15px; overflow:hidden;}
+  .lp-shelf .casual .thumb{height:100%; aspect-ratio:auto; box-sizing:border-box; border-radius:inherit;}
+  .lp-shelf .casual::after{content:""; position:absolute; inset:45% 0 0;
+    background:linear-gradient(transparent,rgba(0,0,0,.62)); pointer-events:none;}
+  .lp-shelf .casual .ct{position:absolute; z-index:1; left:14px; right:14px; bottom:25px;
+    margin:0; color:#fff; text-shadow:0 1px 5px rgba(0,0,0,.4);}
+  .lp-shelf .casual .cm{position:absolute; z-index:1; left:14px; bottom:10px;
+    margin:0; color:rgba(255,255,255,.88);}
+  .lp-card-b{box-shadow:var(--shadow);}
   /* 앱이 파일을 받는 자리에 적어 둔 그 한 줄입니다. 조작 힌트와 같은 세기 —
      카드가 이미 말한 것을 확인해 줄 뿐이라 더 클 이유가 없습니다. */
   .lp-note{position:absolute; left:0; right:0; bottom:7svh; text-align:center;
@@ -228,16 +197,10 @@
     .lp-note{left:clamp(410px,41vw,780px); right:clamp(20px,5vw,64px); bottom:11svh;}
   }
   @media (max-width:420px){
-    /* 폰에서는 셋이 화면 폭보다 넓습니다. 겹치는 깊이를 늘려 억지로 밀어 넣는
-       대신(그러면 양옆 카드의 제목이 가운데 카드 밑으로 들어갑니다) 카드를 한
-       치수 줄이고, 남는 10px 남짓만 양옆으로 흘려보냅니다. 잘리는 것은 카드의
-       가장자리지 글자가 아닙니다 — 안쪽 여백(16px)이 그만큼 지켜 줍니다.
-       글 카드는 앱이 폰에서 쓰는 그 폭 그대로입니다(136px, responsive.css). */
-    .lp-shelf .bookcard{width:146px; height:186px; padding:16px 16px 0;}
-    .lp-shelf .bookcard .bt{font-size:16.5px;}
-    .lp-shelf .casual{width:136px;}
-    .lp-card-a{margin-right:-16px;}
-    .lp-card-c{margin-left:-15px;}
+    .lp-shelf .bookcard{width:clamp(108px,35vw,146px); height:186px; padding:16px 13px 0;}
+    .lp-shelf .bookcard .bt{font-size:clamp(13px,4vw,16.5px);}
+    .lp-shelf .casual{width:clamp(95px,30vw,136px); height:186px;}
+    .lp-carousel-set{gap:10px; padding-right:10px;}
   }
 
 /* ---- 넷째 장면: 두 화면에 같은 단어장 ----
@@ -314,12 +277,31 @@
     .lp-link{flex-direction:row;}
   }
 
+  /* 좁은 화면에서는 제목, 카드와 두 기기를 화면 높이에 맞춰 순서대로 놓습니다. */
+  @media (max-width:999px){
+    #scene3 .lp-head,#scene4 .lp-head{top:clamp(108px,19svh,165px); transform:none;}
+    #scene3 .lp-subcopy{top:clamp(150px,19svh + 45px,210px);}
+    #scene3 .lp-shelf{top:clamp(215px,35svh,290px); bottom:clamp(58px,10svh,90px);}
+    #scene3 .lp-note{bottom:clamp(24px,5svh,42px);}
+    #scene4 .lp-devices{top:clamp(170px,27svh,225px); gap:clamp(8px,1.2svh,12px);}
+    #scene4 .lp-link{flex-direction:row;}
+    #scene4 .lp-mac .lp-glass{width:min(330px,35.2svh,calc(100vw - 40px));}
+    #scene4 .lp-phone .lp-glass{width:min(220px,26svh,62vw); height:min(40svh,330px);}
+    #scene4 .lp-devices .vrow{grid-template-columns:minmax(0,1.2fr) minmax(0,.75fr) auto;
+      column-gap:clamp(3px,.8vw,8px); padding:clamp(4px,.8svh,7px) 2px;}
+    #scene4 .lp-devices .vword{font-size:clamp(10px,1.8svh,14px);}
+    #scene4 .lp-devices .vko{font-size:clamp(9px,1.6svh,12px);}
+    #scene4 .lp-devices .chip{min-width:clamp(27px,5svh,38px);
+      min-height:clamp(19px,3svh,24px); padding:2px 3px; font-size:clamp(8px,1.4svh,11px);}
+  }
+
 /* 움직임을 줄여 달라고 설정한 사람에게는 장면이 그냥 바뀝니다. */
   @media (prefers-reduced-motion:reduce){
-    #splash,#copy,.lp-a,.lp-b,.lp-brand,.lp-sentence,#hint,.lp-scene{transition:none!important;}
+    .lp-carousel-track.ready{animation:none!important;}
+    #copy,.lp-a,.lp-b,.lp-brand,.lp-sentence,#hint,.lp-scene{transition:none!important;}
     /* 움직이는 것들은 전부 끄고, 말하려던 것만 남깁니다 — 아래로 이어진다는
        표시는 제자리에 서 있고, 넷째 장면의 두 단어장은 처음부터 같습니다. */
-    #scrollcue{animation:none!important; opacity:.42;}
+    #scrollcue{animation:none!important; opacity:.78;}
     .lp-link i,.lp-new{animation:none!important; opacity:1;}
     .lp-link i{opacity:.5;}
   }
