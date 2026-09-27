@@ -9,14 +9,14 @@ const server=createServer((req,res)=>{const p=resolve(root,'.'+(req.url.split('?
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}`;
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
  const browser=await engine.launch({headless:true});try{
- const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'}),page=await context.newPage();
+ const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'}),page=await context.newPage();page.on('pageerror',e=>console.error('PAGE_ERROR',e.stack));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{window.breezeInkIPad=true;window.webkit={messageHandlers:{breezeInkScope:{postMessage:s=>{window.qaScope=s;}}}};});
  await page.goto(url);await page.locator('#fileinput').setInputFiles({name:'scroll-120.pdf',mimeType:'application/pdf',buffer:fixturePdf()});
  await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'),null,{timeout:120000});
  for(const mode of ['read','pen'])for(const zoom of [1,2]){
  await page.evaluate(async()=>{show('home');releaseRetainedReader();await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
- await page.waitForFunction(()=>originalSession?.settled.size>0);await page.evaluate(z=>setOriginalZoom(z),zoom);await page.waitForTimeout(1000);
+ await page.waitForFunction(()=>originalSession?.settled.size>0,null,{timeout:60000}).catch(async error=>{console.error('LOAD',await page.evaluate(()=>({mode:currentReaderMode,book:curBook?.id,token:originalLoadToken,session:originalSession&&{book:originalSession.bookId,token:originalSession.loadToken,pending:originalSession.paintQueue?.size,active:originalSession.paintActive?.pageNumber,rendering:[...originalSession.rendering.keys()]},text:document.getElementById('original-content').textContent.slice(0,150)})));throw error;});await page.evaluate(z=>setOriginalZoom(z),zoom);await page.waitForTimeout(1000);
  if(mode==='pen'){await page.evaluate(()=>expandReaderChrome());await page.locator('[data-ink-toggle]').click();await page.waitForTimeout(500);}
  const result=await page.evaluate(async()=>{
  const session=originalSession,scroller=readerScroller(),nativeRect=Element.prototype.getBoundingClientRect;let reads=0,frames=[],longTasks=[],last=performance.now();

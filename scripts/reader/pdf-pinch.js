@@ -177,7 +177,7 @@ function originalPinchEnd(event){
     const box = readerScroller();
     if(!box) return;
     box.addEventListener('scroll',()=>{
-      if(originalSession?.kind!=='pdf'){
+      if(originalSession?.kind==='pdf'){
         originalSession.lastScrollAt=performance.now();
         if(!readerScrollWasProgrammatic())readerModeChangeToken++;
         schedulePdfPaint(originalSession);
