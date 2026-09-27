@@ -182,7 +182,7 @@ function releaseDistantPdfPages(session,exceptPage,reservePixels=0){
 }
 
 function releaseOriginalPdfPage(session,pageNumber){
-  BreezePdfInk.release(session,pageNumber);
+  BreezePdfInk.release(session,pageNumber,{keepShell:true});
   session.settled.delete(pageNumber);
   session.rendering.delete(pageNumber);
   session.drawnAt.delete(pageNumber);
@@ -194,9 +194,14 @@ function releaseOriginalPdfPage(session,pageNumber){
      잡아 둔 그림판(iOS 에서는 GPU 쪽)을 그 자리에서 놓습니다. */
   pageElement.querySelectorAll('canvas').forEach(canvas=>{canvas.width=0;canvas.height=0;});
   delete pageElement.dataset.wordCount;
-  if(originalPdfContacts){
-    for(const child of pageElement.children){child.setAttribute('data-pdf-retired','');child.style.visibility='hidden';}
-  }else pageElement.innerHTML=`<div class="pdf-page-loading">${pageNumber}</div>`;
+  // Keep the page's canvas and ink shell attached, including scrollbar drags
+  // that never appear in originalPdfContacts. Only their payload is released.
+  const loading=pageElement.querySelector('.pdf-page-loading');
+  if(loading)loading.hidden=false;
+  for(const marker of pageElement.querySelectorAll('.breeze-original-word')){
+    if(originalPdfContacts){marker.setAttribute('data-pdf-retired','');marker.style.visibility='hidden';}
+    else marker.remove();
+  }
 }
 
 async function openOriginalPdf(book,record,token){
@@ -309,7 +314,7 @@ async function paintOriginalPdfPage(session,pageNumber,options){
       Math.sqrt(PDF_MAX_PAGE_PIXELS/(viewport.width*viewport.height)));
     releaseDistantPdfPages(session,pageNumber,Math.floor(viewport.width*outputScale)*Math.floor(viewport.height*outputScale));
     if(!originalPdfContacts)pageElement.querySelectorAll('[data-pdf-retired]').forEach(node=>node.remove());
-    const canvas=pageElement.querySelector('canvas[data-pdf-retired]')||document.createElement('canvas');
+    const canvas=(!redraw&&pageElement.querySelector('canvas'))||document.createElement('canvas');
     canvas.removeAttribute('data-pdf-retired');canvas.style.visibility='';
     canvas.width=Math.floor(viewport.width*outputScale);
     canvas.height=Math.floor(viewport.height*outputScale);

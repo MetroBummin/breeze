@@ -67,6 +67,12 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     #if DEBUG
     private var inkRawInputRows: [[String: Any]] = []
     private var inkTraceEnabled = false
+    private var pdfStateRows: [[String: Any]] = []
+    private var pdfGateRows: [[String: Any]] = []
+    private var pdfStateEnabled = false
+    private weak var pdfStateScroll: UIScrollView?
+    private var inkTraceSavePending = false
+    private let inkTraceWriter = DispatchQueue(label: "kr.io.breeze.ink-trace", qos: .utility)
     private var inkTraceRows: [[String: Any]] = []
     private var inkNativeTraceRows: [[String: Any]] = []
     private var inkLastPanSignature = ""
@@ -126,6 +132,15 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
 
         #if DEBUG
+        if inkPad && ProcessInfo.processInfo.environment["BREEZE_PDF_STATE_TRACE"] == "1" {
+            pdfStateEnabled = true
+            webView.configuration.userContentController.add(self, name: "breezePdfState")
+            webView.configuration.userContentController.addUserScript(WKUserScript(
+                source: "window.breezePdfStateDebug=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+            webView.configuration.userContentController.addUserScript(WKUserScript(
+                source: Self.pdfStateScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+            webView.evaluateJavaScript("window.breezePdfStateDebug=true;" + Self.pdfStateScript, completionHandler: nil)
+        }
         if inkPad && ProcessInfo.processInfo.environment["BREEZE_INK_TRACE"] == "1" {
             inkTraceEnabled = true // Capture native-only failures before any web trace arrives.
             let probe = BreezeInkInputProbe(target: nil, action: nil)
@@ -218,6 +233,36 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             return
         }
         #if DEBUG
+        if message.name == "breezePdfState" {
+            guard pdfStateEnabled, message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  var row = message.body as? [String: Any] else { return }
+            row["nativeAt"] = Date().timeIntervalSince1970
+            func scrollState(_ scroll: UIScrollView?) -> [String: Any] {
+                guard let scroll else { return [:] }
+                return ["x": scroll.contentOffset.x, "y": scroll.contentOffset.y,
+                    "width": scroll.contentSize.width, "height": scroll.contentSize.height,
+                    "boundsWidth": scroll.bounds.width, "boundsHeight": scroll.bounds.height,
+                    "tracking": scroll.isTracking, "decelerating": scroll.isDecelerating,
+                    "pan": scroll.panGestureRecognizer.state.rawValue,
+                    "panTouches": scroll.panGestureRecognizer.numberOfTouches, "zoom": scroll.zoomScale]
+            }
+            row["outerNative"] = scrollState(webView?.scrollView)
+            row["paperNative"] = scrollState(pdfStateScroll)
+            pdfStateRows.append(row)
+            if pdfStateRows.count > 60 { pdfStateRows.removeFirst() }
+            let payload: [String: Any] = ["build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") ?? "",
+                "rows": pdfStateRows, "gate": pdfGateRows]
+            // One small sample per second; never serialize/write from an input callback.
+            inkTraceWriter.async {
+                if let data = try? JSONSerialization.data(withJSONObject: payload),
+                   let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+                    try? data.write(to: directory.appendingPathComponent("breeze-pdf-state.json"), options: .atomic)
+                }
+            }
+            return
+        }
         if message.name == "breezeInkTrace" {
             guard message.frameInfo.isMainFrame,
                   message.frameInfo.securityOrigin.protocol == "breeze",
@@ -353,12 +398,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         let fingerPan = (pan.state == .began || pan.state == .changed) && pan.numberOfTouches > 0
         let inertia = scroll.isDecelerating && !fingerPan
         let before = scroll.contentOffset
-        // Ignore this particular Pencil in scrolling, not all contacts or UI.
-        // Existing direct-finger pan/pinch recognizers keep their contacts/state.
-        for owner in [scroll, webView.scrollView] {
-            owner.panGestureRecognizer.ignore(touch, for: event)
-            owner.pinchGestureRecognizer?.ignore(touch, for: event)
-        }
+        // Do not mutate another recognizer's tracked touches mid-gesture.
+        // Ordinary Pencil ownership stays with WebKit's cancelable Touch path;
+        // this gate only consumes an actual inertia-stop contact below.
         if inertia {
             if #available(iOS 17.4, *) {
                 scroll.stopScrollingAndZooming()
@@ -367,6 +409,15 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             }
         }
         #if DEBUG
+        if pdfStateEnabled {
+            pdfStateScroll = scroll
+            pdfGateRows.append(["at": Date().timeIntervalSince1970, "consume": inertia,
+                "fingerPan": fingerPan, "panTouches": pan.numberOfTouches,
+                "touches": (event.allTouches ?? []).map { ["type": $0.type.rawValue, "phase": $0.phase.rawValue] },
+                "beforeX": before.x, "beforeY": before.y,
+                "afterX": scroll.contentOffset.x, "afterY": scroll.contentOffset.y])
+            if pdfGateRows.count > 40 { pdfGateRows.removeFirst() }
+        }
         if inkTraceEnabled {
         inkRawInputRows.append(["phase": "gate", "uptime": event.timestamp,
             "consume": inertia, "fingerPan": fingerPan,
@@ -380,6 +431,34 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     #if DEBUG
+    private static let pdfStateScript = #"""
+    (()=>{
+      if(window.breezePdfStateTimer)return;
+      let last=performance.now();
+      window.breezePdfStateTimer=setInterval(()=>{
+        try{
+          if(typeof originalSession==='undefined'||originalSession?.kind!=='pdf')return;
+          const box=readerScroller(),layer=originalZoomLayer(),stage=originalZoomStage();
+          const rect=e=>{if(!e)return null;const r=e.getBoundingClientRect();
+            return {x:r.x,y:r.y,width:r.width,height:r.height};};
+          const now=performance.now(),p=originalPinch,s=originalSession;
+          const row={at:Date.now(),ms:now,gap:now-last,hidden:document.hidden,zoom:originalZoom(),
+            scroll:{x:box.scrollLeft,y:box.scrollTop,width:box.scrollWidth,height:box.scrollHeight,
+              clientWidth:box.clientWidth,clientHeight:box.clientHeight},
+            box:rect(box),layer:rect(layer),stage:rect(stage),firstPage:rect(s.pages[0]),
+            transform:layer.style.transform,stageStyle:[stage.style.width,stage.style.height],
+            pinch:p?{ids:p.ids,next:p.next,level:p.level,position:p.position,center:p.center,
+              paper:p.paper,origin:p.origin,left:p.left,top:p.top}:null,
+            pinchTouches:originalPinchTouches,pan:originalPinchPan,contacts:originalPdfContacts,
+            render:{active:s.paintActive?.pageNumber??null,queue:s.paintQueue?.size??0,settled:s.settled.size},
+            ink:BreezePdfInk.diagnosticState(),viewport:{scale:visualViewport.scale,
+              x:visualViewport.offsetLeft,y:visualViewport.offsetTop},windowScroll:[scrollX,scrollY]};
+          last=now;window.webkit.messageHandlers.breezePdfState.postMessage(row);
+        }catch(_){}
+      },1000);
+    })();
+    """#
+
     private func inkScrollSnapshots(_ view: UIView) -> [[String: Any]] {
         var result: [[String: Any]] = []
         if let scroll = view as? UIScrollView {
@@ -422,12 +501,22 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         return result
     }
     private func writeInkTrace() {
-        let payload: [String: Any] = ["rows": inkTraceRows, "native": inkNativeTraceRows,
-                                      "nativeInput": inkRawInputRows, "scope": inkNativeScope,
-                                      "cancellations": inkCancellationRows]
-        if let data = try? JSONSerialization.data(withJSONObject: payload),
-           let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
-            try? data.write(to: directory.appendingPathComponent("breeze-ink-trace.json"), options: .atomic)
+        guard inkTraceEnabled, !inkTraceSavePending else { return }
+        inkTraceSavePending = true
+        // Coalesce input callbacks. Take a value snapshot on main later; JSON
+        // encoding and disk IO belong to the serial utility queue, never input.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self else { return }
+            self.inkTraceSavePending = false
+            let payload: [String: Any] = ["rows": self.inkTraceRows, "native": self.inkNativeTraceRows,
+                "nativeInput": self.inkRawInputRows, "scope": self.inkNativeScope,
+                "cancellations": self.inkCancellationRows]
+            self.inkTraceWriter.async {
+                if let data = try? JSONSerialization.data(withJSONObject: payload),
+                   let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+                    try? data.write(to: directory.appendingPathComponent("breeze-ink-trace.json"), options: .atomic)
+                }
+            }
         }
     }
     #endif

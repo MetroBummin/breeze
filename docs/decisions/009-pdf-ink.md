@@ -382,3 +382,97 @@ its browser run failed the geometry-cache and partial-highlighter-erase checks.
 The CSS was restored and that build (180) was not installed. Do not treat native
 layer reparenting as resolved. Keep the existing renderer/input behavior while
 a follow-up finds a stable boundary without these regressions.
+
+
+## Temporary layer-retention diagnosis (181, not an accepted fix)
+An opt-in DEBUG launch flag BREEZE_PDF_LAYER_HOLD=1 bypasses page eviction,
+resharpen canvas replacement and retired-node removal during this diagnostic run.
+This temporarily overrides the release policy only to test existing layer
+removal/replacement as a native cancellation trigger, including scrollbar
+contacts absent from DOM touch events. New layers and chrome remain unchanged.
+Use the same 13-page reproduction; normal launches retain the original policy.
+Physical confirmation is pending; see the bounded follow-up in
+`docs/qa/pdf-stability-2026-09-27.md`. Do not ship this as a scrolling fix.
+
+
+Experiment 182 narrows the temporary hold: resharpen canvas replacement returns
+to normal; only page eviction and retired cleanup remain held. This supersedes
+181's resharpen hold only for the next comparison. The resource-release decision
+for ordinary launches remains unchanged. Physical result pending.
+
+
+Final disposition: both 181/182 retention experiments are rejected as production
+fixes. The user reports severe Pencil first-stroke and enlarged pan/zoom delays,
+despite no observed pan cancellations in the 182 trace. The exact destructive
+layer operation remains unisolated. Diagnostic source changes were removed and
+saved outside Git as an audit patch. The installed 182 binary was relaunched with
+both retention and detailed tracing disabled; this is not a reinstall of 179 or
+proof of restored physical performance. Existing release policy remains in force.
+The bounded investigation stops here; native scrollbar cancellation is unresolved.
+
+## Page eviction with reusable shells (183 candidate)
+The user requested a renewed fix after auditing the confounded 181/182 runs.
+Eviction continues to reset canvas backing dimensions to zero and discard word
+maps and clean ink records, but retains the existing canvas and outer ink SVG
+within its page. SVG children are cleared; mount reads persisted ink and reuses
+that shell. Page loading placeholders are reused instead of replacing innerHTML.
+Dirty/pending ink writes and undo history retain their existing persistence rules.
+Resharpen replacement and marker cleanup are unchanged. This tests structural
+removal separately from backing-store reclamation; zero dimensions and SVG child
+changes may still change WebKit compositing, so device success is not established.
+
+DEBUG trace requests are coalesced for one second, then a value snapshot is
+serialized and saved on a serial utility queue. Input callbacks no longer encode
+JSON or write a file. Detailed hierarchy tracing remains opt-in and is disabled
+for the 183 physical performance check. A force quit within the pending interval
+can lose the last diagnostic events. There is no launch-only retention switch:
+this candidate behaves the same after an icon relaunch.
+
+## 184 diagnostic-only continuation
+User reports a persistent horizontal escape/blank viewport during enlarged
+pan/highlighter stress and asks for reproduce-then-read-device-logs diagnosis.
+A browser candidate for pinch offset drift/orphan ownership is saved outside the
+repo and is NOT included in 184. PDF pinch behavior remains identical to 183.
+Opt-in DEBUG BREEZE_PDF_STATE_TRACE=1 samples geometry and input ownership once
+per second, retaining 60 snapshots and 40 input/gate transitions. It records no
+PDF text or stroke coordinates. No hierarchy walk is added to input callbacks;
+JSON/disk export uses the serial utility queue. Full BREEZE_INK_TRACE stays off.
+Sampling can still have overhead; this build is diagnostic, not a confirmed fix.
+
+## 185 bounded pinch correction from partial evidence
+The user asks to proceed using the available 184 logs rather than require more
+physical reproduction. Those logs show edge overscroll and seven web stroke
+cancellations, but do not prove the full horizontal escape's root cause.
+
+Pinch preview now cancels the current scroller offset instead of its offset at
+acquisition, and refreshes on scroll via one scheduled animation frame. The
+paper coordinate and clamped desired position remain fixed by the gesture;
+preview still never writes scrollLeft/scrollTop. A fresh touchstart with no live
+original pinch owner cancels an orphan preview before accepting new contacts.
+One surviving original owner still retains the pinch. This repairs a constructed
+scroll-during-pinch failure and recovery after a lost terminal event without
+changing page retention, native inertia policy, storage or browser zoom.
+
+Lightweight ink cancel events now include call-site reasons for reader scroll,
+pointer cancellation, touch cancellation, noncancelable movement, page release
+and resize. This is needed because 184's untagged cancel events cannot establish
+which route caused the two cases without native inertia consumption. Full-device
+acceptance of 185 remains pending; do not claim all blank-screen cases resolved.
+
+## 186 isolate native recognizer touch mutation
+185 physically reproduced sustained horizontal escape. The DOM and native paper
+scroll agree on width 3453 / viewport 1180 but x reaches ~3170 (max 2273), with
+unchanged scale and no active web pinch. For roughly 40 seconds native pan stays
+changed, tracking/decelerating true while web contacts/pinch/ink are empty. This
+refutes treating pinch-preview drift as sufficient explanation of this incident.
+
+Remove only the four per-contact ignore(touch,for:) calls made on WebKit-owned
+pan/pinch recognizers from the custom Pencil gate. They mutate other recognizers'
+tracked touch sets during live input. This is a plausible trigger, not proven by
+the sampled logs. The custom gate still stops/consumes actual inertia when no
+native finger pan is active. Ordinary Pencil uses existing web touch prevention;
+no native offset clamps, gesture resets, delegate replacement or scroll polling
+are introduced. Diagnostics add native pan touch count and event touch types/
+phases to distinguish true live fingers from stuck native ownership. 185's web
+geometry correction and 183 resource policy remain unchanged for this comparison.
+Native Pencil routing, palm coexistence and boundary recovery require device QA.
