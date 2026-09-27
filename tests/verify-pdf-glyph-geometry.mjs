@@ -77,3 +77,8 @@ near(box(cropped,'inside').x*600,140,'cropped Form transform');
 const partial=run([['paintFormXObjectBegin',[null,[42,650,48,750]]],...setup,['showText',[glyphs('ill')]],['paintFormXObjectEnd']]);
 assert.ok(partial.boxes.every(b=>b.x*600>=42&&((b.x+b.w)*600)<=48+1e-8));
 console.log('PDF cropped Form text: hidden source excluded; nesting, transforms and partial bounds passed');
+
+// A neighbouring crop may graze only a font metric ascender while the actual
+// text baseline is outside it. Do not offer that sliver as a word/sentence.
+const grazed=run([['paintFormXObjectBegin',[null,[0,707,600,750]]],...setup,['showText',[glyphs('ghost')]],['paintFormXObjectEnd']]);
+assert.equal(grazed.boxes.length,0);assert.ok(!grazed.text.includes('ghost'));

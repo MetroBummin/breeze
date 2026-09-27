@@ -143,3 +143,12 @@ no pixel/font heuristic or vocabulary reset is used. For the reproduced page,
 exactly, with zero extra/missing occurrences. Synthetic nested/transformed Form
 fixtures run without checking private user PDFs into the repository. Arbitrary
 path clipping and inaccurate invisible OCR remain separate limitations.
+
+A second pass found tiny font-metric ascender overlaps at adjacent answer crops.
+Lookup requires the glyph's baseline midpoint to remain inside each clip; this
+conservatively excludes those unreadable slivers without inventing ink geometry.
+The visible portion of eligible glyph cells is still clipped. With this rule,
+all 34 pages of that PDF and all 13 pages of the previous PDF match independent
+renderer English-word occurrence counts exactly (47/47, no extra/missing words).
+This verifies source fidelity for these files; it is not a claim that every
+possible clipping path/OCR source has been covered.

@@ -51,9 +51,14 @@ function pdfClipPolygon(subject,clip){
 function pdfRectPolygon(m,left,bottom,right,top){
   return [pdfPoint(m,left,bottom),pdfPoint(m,right,bottom),pdfPoint(m,right,top),pdfPoint(m,left,top)];
 }
-function pdfClippedGlyph(bounds,clips){
+function pdfClippedGlyph(bounds,clips,anchor){
   let polygon=pdfRectPolygon([1,0,0,1,0,0],bounds.left,bounds.top,bounds.right,bounds.bottom);
-  for(const clip of clips){polygon=pdfClipPolygon(polygon,clip);if(!polygon.length)return null;}
+  for(const clip of clips){
+    // Font ascenders can graze a neighbouring crop although the glyph's text
+    // baseline is outside it. Such a sliver is not a readable lookup target.
+    if(anchor&&!pdfClipPolygon([anchor],clip).length)return null;
+    polygon=pdfClipPolygon(polygon,clip);if(!polygon.length)return null;
+  }
   const left=Math.min(...polygon.map(p=>p.x)),right=Math.max(...polygon.map(p=>p.x));
   const top=Math.min(...polygon.map(p=>p.y)),bottom=Math.max(...polygon.map(p=>p.y));
   return right-left>1e-6&&bottom-top>1e-6?{left,right,top,bottom}:null;
@@ -111,7 +116,7 @@ function pdfOperatorEntries(operatorList,fonts,viewport,ops,isVisible=group=>tru
         step=width+spacing;
       }else step=width+spacing*s.direction;
       const bounds=pdfClippedGlyph(pdfGlyphBounds(matrix,left,baseline+extents.bottom*size,
-        left+width,baseline+extents.top*size),s.clips);
+        left+width,baseline+extents.top*size),s.clips,pdfPoint(matrix,left+width/2,baseline));
       // A Unicode ligature may expand to several characters. Each character
       // retains the same indivisible glyph geometry, never a guessed fraction.
       const text=bounds?(glyph.unicode||''):' ';
