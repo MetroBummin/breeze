@@ -34,6 +34,25 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Implement non-blocking lookup feedback and persistent PDF ink controls'
           git push origin HEAD:refs/heads/chatgpt/reader-lookup-shimmer-20260928
+      - name: Install test dependencies
+        if: hashFiles('tests/verify-reader-feedback-browser.mjs') != ''
+        run: npm ci --ignore-scripts --no-audit --no-fund && npx playwright install --with-deps chromium webkit
+      - name: Reader feedback browser and lifecycle checks
+        if: hashFiles('tests/verify-reader-feedback-browser.mjs') != ''
+        env:
+          BREEZE_QA_OUTPUT: /tmp/reader-feedback-qa
+        run: |
+          node tests/verify-reader-feedback.mjs
+          node tests/verify-word-lifecycle.mjs
+          node tests/verify-reader-feedback-browser.mjs
+          node tests/verify-word-presentation-browser.mjs
+          BROWSER=webkit node tests/verify-word-presentation-browser.mjs
+          node tests/verify-homeward-lookup-browser.mjs
+      - name: PDF geometry and ink regression
+        if: hashFiles('tests/verify-reader-feedback-browser.mjs') != ''
+        env:
+          BREEZE_QA_OUTPUT: /tmp/reader-feedback-qa
+        run: node tests/verify-pdf-highlight-browser.mjs && node tests/verify-pdf-ink-browser.mjs
       - name: Export exact branch source for local verification
         if: always()
         run: git archive --format=tar -o reader-feedback-source.tar HEAD
@@ -42,4 +61,10 @@ jobs:
         with:
           name: reader-feedback-source
           path: reader-feedback-source.tar
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reader-feedback-qa
+          path: /tmp/reader-feedback-qa
           retention-days: 1
