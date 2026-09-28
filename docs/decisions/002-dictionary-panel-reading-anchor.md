@@ -8,7 +8,7 @@ The earlier dictionary side panel changed Reader width and therefore needed Text
 
 Word lookup uses two fixed overlays outside the Reader and original-document zoom layers:
 
-1. Tapping a word highlights that exact node. An unresolved lookup shows a restrained neutral sheen on the word, not a covering pill.
+1. Tapping a word highlights that exact node. An unresolved lookup shows a pale blue glass sheen on the word, not a covering pill.
 2. A confirmed meaning (including a saved/cache hit) or terminal failure reveals the compact pill beside its screen rect without changing Reader geometry.
 3. Its chevron morphs the pill into a near-word detail surface for the same lookup lifetime without starting another AI request.
 4. The anchored surface leaves the Reader undimmed. Outside tap, Escape, and Back use shared cleanup; no redundant collapse button is shown. Unanchored vocabulary detail retains its modal fallback.
@@ -29,8 +29,8 @@ Generic position preservation for real viewport resize, rotation, Reader mode ch
 - Word lookup does not change Reader width, line wrapping, PDF scale, EPUB layout, or scroll position.
 - The chevron never starts a second lookup, request, quota charge, count, or saved card.
 - The detail popup reuses the short Korean Meaning and FreeDictionaryAPI.com metadata; it does not load or display an AI gloss.
-- A cached/saved meaning appears immediately. The hidden pending pill cannot be expanded; a result or failure must arrive first. Explicit pill retry also uses the word cue while waiting, retaining the existing saved-meaning rules.
-- Saved meanings appear immediately, including in a new sentence. No automatic reclassification hides a saved meaning. An occurrence-specific saved meaning wins; otherwise the selected saved meaning is reused. Only an explicit retry asks for a fresh contextual result.
+- A cached/saved meaning appears immediately when motion is idle. The hidden pending pill cannot be expanded; a result or failure must arrive first. Explicit pill retry also uses the word cue while waiting, retaining the existing saved-meaning rules.
+- Saved meanings appear immediately when motion is idle, including in a new sentence. No automatic reclassification hides a saved meaning. An occurrence-specific saved meaning wins; otherwise the selected saved meaning is reused. Only an explicit retry asks for a fresh contextual result.
 - A fresh AI word lookup and the pill retry send the selected sentence with its occurrence index and up to one preceding/following sentence. Surrounding context never displaces the selected sentence. Saved meanings still appear immediately without automatic reclassification. Output stays one short lexical result whose Korean meaning is the selected unit's natural translation in context.
 - During the first lookup of a new word, a successful retry replaces the initial AI meaning in the same root card. For an already saved word or expression, its existing meaning remains and retries replace one candidate slot; an unsuccessful retry leaves the last successful result intact.
 - The bundled Homeward Bound Text book can answer a reviewed occurrence locally when its chapter paragraphs exactly match the bundled source. An unsaved local hit uses the word sheen for about one second and skips the dictionary metadata and AI requests. Previously saved meanings still appear immediately; Retry deliberately enters the existing AI lookup path. The local fixture never bulk-creates Wordbook items.
@@ -41,7 +41,7 @@ Generic position preservation for real viewport resize, rotation, Reader mode ch
 - Expression results use the same meaning ownership rules as single words and do not overwrite manually edited meanings.
 - A stale response may update cache but cannot replace or reopen a newer lookup presentation.
 - Outside dismissal owns its gesture so it cannot pass through to the Reader.
-- Scrolling still closes a visible meaning pill or detail popup. An unresolved hidden shimmer lookup survives scrolling as the single active lookup; another word, page/mode change, zoom start, or Reader exit still ends it. When its terminal result arrives, Breeze re-anchors the pill only if the tapped word is still visible. If the word has left the viewport, a successful result is saved silently and the presentation closes; it never pops up at the stale tap coordinates.
+- User scrolling hides a mini pill while preserving its lookup and result. Results save immediately; presentation waits until 250ms after the last user scroll, including momentum events. At idle, the live target is checked and the pill is placed before reveal; an off-screen target closes silently with the successful meaning retained. A scroll during the reveal frame or immediately after reveal returns the mini pill to hidden presentation. A pill continuously shown for at least 300ms is dismissed by the next user motion and never automatically returns. Shorter reveals return to READY and wait for idle. Leaving the viewport permanently ends presentation, even during LOOKING_UP; its request may still finish and save. Expanded detail still closes on scroll. Actual programmatic motion also delays mini presentation but does not count as a user dismissal; duplicate scroll events at the same position do not reset idle. Another word, page/mode change, zoom start, outside dismissal or Reader exit ends the lifetime and cancels deferred presentation.
 
 ## Verification
 
@@ -57,18 +57,20 @@ The heading scrolls with the card. Word management disclosure and manual meaning
 
 ## Non-covering pending feedback and local diagnostics (2026-09-28)
 
-The cue uses a single shared CSS definition for Text/PDF/EPUB, copying only the
-existing sentence-glass ink/surface tokens into EPUB's isolated document. It
+The cue uses a single shared CSS definition for Text/PDF/EPUB, with a persistent
+pale blue wash, a soft inset edge and a brighter moving glass reflection. The
+same colors apply inside EPUB's isolated document. It
 changes no word dimensions, hit boxes, paragraph structure or scroll position.
 Reduced motion has a static tint. A polite off-screen status announces loading
 and completion without exposing a blank/pending popup. Original-format repeat
 hits transfer the cue to their newly created marker without another request.
 
 The normal lookup lifetime still owns cancellation. User scroll no longer ends
-an unresolved lookup: the word cue may move off-screen while the one request
-continues. Another target, page/zoom/mode changes and exit still clear the cue
-and end that lifetime; stale replies cannot reopen a pill. A terminal result
-recomputes the live word rect once. If that word is outside the Reader viewport,
+a mini lookup: the word cue may move off-screen while the one request
+continues, and a ready result waits for 250ms of scroll idle before presentation.
+Another target, page/zoom/mode changes and exit still clear the cue and cancel
+deferred presentation; stale replies cannot reopen a pill. Reveal
+recomputes the live word rect. If that word is outside the Reader viewport,
 a successful meaning remains saved but no pill is shown. Existing timeout, quota/auth handling and explicit retry behavior are
 unchanged; this PR does not add potentially billable automatic AI retries.
 No general provisional local dictionary/Lightning path is added. Reviewed book

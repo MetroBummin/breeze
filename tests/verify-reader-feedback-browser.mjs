@@ -88,6 +88,7 @@ try{
       assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
       await page.evaluate(()=>expandWordDetail());assert.equal(await page.evaluate(()=>wordPanelOpen()),false);
       await page.evaluate(()=>{words.signal.loading=false;words.signal.ko='신호';renderWordPeek();});
+      await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
       assert.equal(await page.locator('#word-peek').getAttribute('hidden'),null);
       await page.evaluate(()=>closePanel());
 

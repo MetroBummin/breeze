@@ -24,6 +24,7 @@
     "test:v11": "node tests/verify-onboarding-browser.mjs && node tests/verify-v11-browser.mjs",
     "test:onboarding": "node tests/verify-onboarding-browser.mjs",
     "test:reader-feedback": "node tests/verify-reader-feedback.mjs && node tests/verify-reader-feedback-browser.mjs",
+    "test:word-scroll": "node tests/verify-word-scroll-idle.mjs && node tests/verify-word-scroll-idle-browser.mjs && BROWSER=webkit node tests/verify-word-scroll-idle-browser.mjs",
     "test:word": "node tests/verify-word-presentation-browser.mjs",
     "test:sentence": "node tests/verify-sentence-presentation-browser.mjs",
     "test:meaning-deletion": "node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs",

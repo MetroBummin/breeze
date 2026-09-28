@@ -503,9 +503,55 @@ let wordPeekActive=false;
 let wordPeekAnchor=null;
 let wordPeekRetryState=null;
 let wordDetailAnchored=false,wordMorphAnimation=null,wordMorphGeneration=0;
+const WORD_PEEK_SCROLL_IDLE_MS=250;
+const WORD_PEEK_SEEN_MS=300;
+let wordPeekLastScroll=-Infinity,wordPeekRevealTimer=null;
+let wordPeekPresentation='LOOKING_UP',wordPeekShownAt=null,wordPeekPresentationEnded=false;
+let wordPeekScrollPosition=null;
+function wordPeekMotionPosition(){
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  return box?{top:box.scrollTop,left:box.scrollLeft}:null;
+}
+function cancelWordPeekReveal(){
+  clearTimeout(wordPeekRevealTimer);wordPeekRevealTimer=null;
+}
+function wordPeekScrollRemaining(){
+  return Math.max(0,WORD_PEEK_SCROLL_IDLE_MS-(performance.now()-wordPeekLastScroll));
+}
+function deferWordPeekReveal(){
+  cancelWordPeekReveal();
+  const life=wordLookupLife;
+  wordPeekRevealTimer=setTimeout(()=>{
+    wordPeekRevealTimer=null;
+    if(wordLookupAlive(life)&&wordPeekActive)renderWordPeek();
+  },wordPeekScrollRemaining());
+}
+// Scroll changes presentation, not the result or the lookup's ownership.
+function wordPeekUserScrolled(userScroll=true){
+  const position=wordPeekMotionPosition();
+  if(position&&wordPeekScrollPosition&&position.top===wordPeekScrollPosition.top
+      &&position.left===wordPeekScrollPosition.left)return wordPeekActive;
+  wordPeekScrollPosition=position;
+  wordPeekLastScroll=performance.now();
+  if(!wordPeekActive)return false;
+  const offscreen=activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode);
+  const seen=userScroll&&wordPeekPresentation==='SHOWN'&&wordPeekShownAt!==null
+    &&performance.now()-wordPeekShownAt>=WORD_PEEK_SEEN_MS;
+  document.getElementById('word-peek').hidden=true;
+  cancelWordPeekReveal();
+  if(offscreen||seen){
+    wordPeekPresentationEnded=true;
+    if(!wordPeekPending())closePanel();
+    return true;
+  }
+  wordPeekShownAt=null;
+  wordPeekPresentation=wordPeekPending()?'LOOKING_UP':'READY';
+  if(!wordPeekPending())deferWordPeekReveal();
+  return true;
+}
 function wordPeekOpen(){ return wordPeekActive; }
-/* Pending is the one lookup state that may outlive a user scroll. It still owns
-   exactly one lookup lifetime; another word/mode/page/zoom/exit ends it. */
+/* Request readiness and presentation readiness are separate. A mini lookup
+   survives scrolling; another word/mode/page/zoom/exit ends its one lifetime. */
 function wordPeekPending(){
   const w=wordPeekActive&&selKey?displayedWord(selKey):null;
   return !!(w&&wordPeekState(w,currentContext(selKey)).loading);
@@ -659,30 +705,52 @@ function renderWordPeek(){
   const pill=document.getElementById('word-peek'),w=displayedWord(selKey);
   if(!wordPeekActive||!w){pill.hidden=true;return;}
   const state=wordPeekState(w,currentContext(selKey));
+  if(wordPeekPresentationEnded){
+    pill.hidden=true;
+    if(!state.loading)closePanel();
+    return;
+  }
   document.getElementById('word-peek-meaning').textContent=state.text;
   pill.classList.toggle('loading',state.loading);
   const retry=document.getElementById('word-peek-retry');
   if(state.loading) retry.setAttribute('disabled','');
   else retry.removeAttribute('disabled');
   // A pending lookup remains owned without covering the next line. Scrolling may
-  // move its word; when the answer arrives, anchor once to the live rect. If the
-  // word has left the viewport, keep the saved result but do not pop UI elsewhere.
+  // move its word; reveal the answer at the live rect only after scroll idle.
+  // If the word has left the viewport, keep the saved result without a popup.
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.present(wordLookupLife,
     activeSelectedWordNode,state,!state.loading&&hasResolvedMeaning(w)
       &&!(currentContext(selKey)&&currentContext(selKey).error)
       &&!(wordPeekRetryState&&wordPeekRetryState.error));
-  if(state.loading){pill.hidden=true;return;}
+  if(state.loading){wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.hidden=true;return;}
+  if(wordPeekPresentation!=='SHOWN')wordPeekPresentation='READY';
+  if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
+  cancelWordPeekReveal();
   const targetVisible=activeSelectedWordNode?wordPeekTargetVisible(activeSelectedWordNode):!!wordPeekAnchor;
   if(targetVisible){
     if(activeSelectedWordNode)rememberWordPeekAnchor(activeSelectedWordNode);
-    pill.hidden=false;
-    requestAnimationFrame(placeWordPeek);
+    const revealLife=wordLookupLife;
+    requestAnimationFrame(()=>{
+      if(!wordLookupAlive(revealLife)||!wordPeekActive||wordPeekPending())return;
+      if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
+      if(activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode)){closePanel();return;}
+      if(activeSelectedWordNode)rememberWordPeekAnchor(activeSelectedWordNode);
+      // hidden uses display:none, so placement cannot measure it. Keep it
+      // invisible but laid out until its current anchor has been positioned.
+      pill.style.visibility='hidden';pill.hidden=false;
+      placeWordPeek();pill.style.visibility='';
+      if(wordPeekPresentation!=='SHOWN')wordPeekShownAt=performance.now();
+      wordPeekPresentation='SHOWN';
+    });
     return;
   }
   pill.hidden=true;
   const terminalLife=wordLookupLife;
   requestAnimationFrame(()=>{
-    if(wordLookupAlive(terminalLife)&&wordPeekActive&&!wordPeekPending())closePanel();
+    if(!wordLookupAlive(terminalLife)||!wordPeekActive||wordPeekPending())return;
+    if(wordPeekScrollRemaining()>0){deferWordPeekReveal();return;}
+    if(activeSelectedWordNode&&wordPeekTargetVisible(activeSelectedWordNode)){renderWordPeek();return;}
+    closePanel();
   });
 }
 function renderWordLookup(){
@@ -1301,6 +1369,9 @@ function beginWordLookupLife(){
 /* 창이 닫혔습니다. 번호를 올려 앞 번호를 죽이고, 달리던 것은 끊습니다 —
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
 function endWordLookupLife(){
+  cancelWordPeekReveal();
+  wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;wordPeekPresentationEnded=false;
+  wordPeekScrollPosition=wordPeekMotionPosition();
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.end(wordLookupLife);
   wordLookupLife++;
   firstLookupMeaning=null;

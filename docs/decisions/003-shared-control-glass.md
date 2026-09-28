@@ -147,7 +147,7 @@ choices per setting and respects reduced motion and narrow iPad split views.
 
 
 ### Non-covering word lookup and persistent writing controls (2026-09-28)
-Only a pending selected word animates the restrained neutral sheen. General
+Only a pending selected word animates a pale blue tint with a brighter glass sheen. General
 floating controls do not shimmer. The expanded word lookup's legacy retry/login
 action now uses the same neutral sentence-glass action/line/ink tokens and a
 visible neutral keyboard focus ring. PDF writing controls stay expanded; their

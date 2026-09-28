@@ -570,10 +570,11 @@ function scrollGesture(){
   if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive() && userScroll){
     if(typeof closeSentence==='function') closeSentence();
   }
-  /* A visible pill/detail is tied to screen coordinates, so scrolling dismisses it.
-     A hidden pending shimmer is tied to the word itself: keep its single lookup
-     alive and decide presentation only when the terminal result arrives. */
+  /* Mini pills wait for scroll idle, preserving the same lookup/result. Expanded
+     detail keeps its existing scroll dismissal. Only real position changes reset idle. */
+  const retainedWordPeek=typeof wordPeekUserScrolled==='function'&&wordPeekUserScrolled(userScroll);
   if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&userScroll
+      && !retainedWordPeek
       && !(typeof wordPeekPending==='function'&&wordPeekPending())
       && typeof closePanel==='function') closePanel();
   if(!activeGesture) return;

@@ -9,12 +9,12 @@ const wordLookupFeedback = (()=>{
   const append=row=>{rows.push(row);if(rows.length>limit)rows.shift();};
   const styles=`
     .breeze-lookup-pending {
-      --breeze-lookup-wash:color-mix(in srgb,var(--breeze-lookup-ink) 9%,transparent);
+      --breeze-lookup-wash:rgba(74,151,235,.22);
       background-color:var(--breeze-lookup-wash)!important;
-      background-image:linear-gradient(108deg,transparent 30%,color-mix(in srgb,var(--breeze-lookup-paper) 65%,transparent) 48%,transparent 66%)!important;
+      background-image:linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%)!important;
       background-size:240% 100%!important;background-repeat:no-repeat!important;
       border-color:transparent!important;border-radius:5px!important;
-      box-shadow:0 0 0 2px var(--breeze-lookup-wash)!important;
+      box-shadow:0 0 0 2px var(--breeze-lookup-wash),inset 0 0 0 1px rgba(74,151,235,.18)!important;
       -webkit-box-decoration-break:clone;box-decoration-break:clone;
       animation:breeze-word-sheen 1.65s ease-in-out infinite!important;
     }

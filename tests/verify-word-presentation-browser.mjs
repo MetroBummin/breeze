@@ -49,6 +49,7 @@ try{
     openWord(key,span);
   });
   await page.waitForFunction(()=>wordPeekOpen());
+  await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'참을성 있는','cached meaning did not appear immediately');
   assert.equal(await page.locator('#word-peek').getAttribute('class')||'','',
     'cached meaning unnecessarily showed the loading spinner');
@@ -257,6 +258,7 @@ try{
     openWord(keyOf('patient'),span);
   });
   await page.waitForFunction(()=>wordPeekOpen());
+  await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   await page.locator('#word-peek').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const compactPill=await page.locator('#word-peek').boundingBox();
   assert.ok(compactPill&&compactPill.x>=15&&compactPill.x+compactPill.width<=375,
@@ -274,6 +276,7 @@ try{
     openWord(keyOf('patient'),span);
   });
   await page.waitForFunction(()=>wordPeekOpen());
+  await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   await page.locator('#word-peek').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const smallIphone=await page.locator('#word-peek').evaluate(node=>{
     const pill=node.getBoundingClientRect(),meaning=node.querySelector('#word-peek-meaning').getBoundingClientRect();
