@@ -14,11 +14,12 @@ try{
   await db.exec(base.slice(base.indexOf('create table if not exists public.ai_usage'),base.indexOf('-- 2) 행동 기록')));
   const migration=readFileSync(new URL('../supabase/migrations/20260928152749_word_lookup_receipts.sql',import.meta.url),'utf8');
   await db.exec(migration);
+  await db.exec(readFileSync(new URL('../supabase/migrations/20260928160147_lookup_trial_limits.sql',import.meta.url),'utf8'));
   await db.exec('grant usage on schema public to service_role;grant execute on function public.take_ai_quota(uuid,integer,integer) to service_role;');
   const user='00000000-0000-0000-0000-000000000001',id=crypto.randomUUID(),fp='a'.repeat(64);
   const answer={kind:'word',canonical:'patient',members:[0],ko:'참을성 있는'};
-  const receipt=async({u=user,device='',request=id,fingerprint=fp,result=null,cap=2000}={})=>
-    (await db.query('select public.word_lookup_receipt($1,$2,$3,$4,$5,300,10,$6) as r',[u,device,request,fingerprint,result,cap])).rows[0].r;
+  const receipt=async({u=user,device='',request=id,fingerprint=fp,result=null,cap=2000,kind='word'}={})=>
+    (await db.query(`select public.${kind}_lookup_receipt($1,$2,$3,$4,$5,3000,50,$6) as r`,[u,device,request,fingerprint,result,cap])).rows[0].r;
   const calls=async()=>Number((await db.query('select coalesce(sum(calls),0) as n from public.ai_usage where user_id=$1',[user])).rows[0].n);
   assert.equal((await receipt()).status,'ok');assert.equal(await calls(),0);
   await assert.rejects(logicalLookup(result=>receipt({result}),async()=>{throw Error('timeout');}));
@@ -35,15 +36,15 @@ try{
   assert.equal(await calls(),2,'duplicate successful logical request charged twice');
   // Explicit quality retry has a new ID and costs one more.
   await receipt({request:crypto.randomUUID(),result:answer});assert.equal(await calls(),3);
-  await db.query('update public.ai_usage set calls=299 where user_id=$1',[user]);
+  await db.query('update public.ai_usage set calls=2999 where user_id=$1',[user]);
   const last=await Promise.all([receipt({request:crypto.randomUUID(),result:answer}),receipt({request:crypto.randomUUID(),result:answer})]);
-  assert.equal(last.filter(r=>r.status==='replay').length,1);assert.equal(await calls(),300);
+  assert.equal(last.filter(r=>r.status==='replay').length,1);assert.equal(await calls(),3000);
   assert.equal((await receipt()).status,'replay','lost-response recovery rejected at cap');
   assert.equal((await receipt({request:crypto.randomUUID()})).status,'quota_exceeded');
   // Account/device identities cannot spend each other's receipt.
   await receipt({u:'00000000-0000-0000-0000-000000000002',result:answer});
-  for(let n=0;n<10;n++)await receipt({u:null,device:'device-1234',request:crypto.randomUUID(),result:answer});
-  assert.equal((await receipt({u:null,device:'device-1234',request:crypto.randomUUID()})).status,'anon_exhausted');
+  for(let n=0;n<30;n++)await receipt({u:null,device:'device-1234',request:crypto.randomUUID(),result:answer});
+  assert.equal((await receipt({u:null,device:'device-1234',request:crypto.randomUUID()})).status,'ok');
   const anonId=crypto.randomUUID();
   await receipt({u:null,device:'device-5678',request:anonId,result:answer});
   await receipt({u:null,device:'device-5678',request:anonId,result:answer});
@@ -54,8 +55,8 @@ try{
   // Execute the real Edge handler against the real receipt SQL with fake providers.
   let handler,providerCalls=0,broken=false;
   const sr={auth:{getUser:async()=>({data:{user:{id:user}}})},rpc:async(name,p)=>{
-    assert.equal(name,'word_lookup_receipt');
-    const data=await receipt({u:p.p_user,device:p.p_device,request:p.p_request,fingerprint:p.p_fingerprint,result:p.p_answer});
+    assert.ok(['word_lookup_receipt','sentence_lookup_receipt'].includes(name));
+    const data=await receipt({u:p.p_user,device:p.p_device,request:p.p_request,fingerprint:p.p_fingerprint,result:p.p_answer,kind:name.startsWith('sentence')?'sentence':'word'});
     return {data,error:null};
   }};
   const edge=readFileSync(new URL('../server/dict/index.ts',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
@@ -77,6 +78,22 @@ try{
   const beforeReplay=providerCalls;assert.equal((await invoke(edgeId)).body.ko,answer.ko);
   assert.equal(providerCalls,beforeReplay);assert.equal(await calls(),1);
   await invoke(crypto.randomUUID());assert.equal(await calls(),2);
+  await db.exec('reset role;update public.anon_daily set calls=0');
+  for(let n=0;n<10;n++)await receipt({u:null,device:'device-1234',kind:'sentence',request:crypto.randomUUID(),result:{ko:'문장 해석'}});
+  assert.equal((await receipt({u:null,device:'device-1234',kind:'sentence',request:crypto.randomUUID()})).status,'anon_exhausted');
+  assert.equal((await receipt({u:null,device:'device-1234',request:crypto.randomUUID()})).status,'anon_exhausted');
+  assert.equal((await receipt({u:null,device:'new-device',kind:'sentence',request:crypto.randomUUID()})).status,'ok');
+  const sentenceId=crypto.randomUUID();
+  await receipt({u:null,device:'new-device',kind:'sentence',request:sentenceId,result:{ko:'문장 해석'}});
+  await receipt({u:null,device:'new-device',kind:'sentence',request:sentenceId,result:{ko:'문장 해석'}});
+  assert.equal((await db.query("select calls from public.anon_usage where device='new-device'")).rows[0].calls,2);
+  await db.exec("update public.anon_usage set calls=49 where device='new-device'");
+  assert.equal((await receipt({u:null,device:'new-device',kind:'sentence',request:crypto.randomUUID(),result:{ko:'문장 해석'}})).status,'anon_exhausted');
+  await receipt({u:null,device:'new-device',request:crypto.randomUUID(),result:answer});
+  assert.equal((await db.query("select calls from public.anon_usage where device='new-device'")).rows[0].calls,50);
+  const beforeSentence=await calls();
+  await receipt({kind:'sentence',request:crypto.randomUUID(),result:{ko:'문장 해석'}});
+  assert.equal(await calls(),beforeSentence+2);
   // RLS and function privileges deny direct client use.
   await db.exec('reset role;set role anon');
   await assert.rejects(receipt(),/permission denied/);

@@ -4,8 +4,8 @@
 Both the PR base and the deployed Breeze `dict` function debit `take_ai_quota`
 (or anonymous trial quota) before the provider runs. A client retry can therefore
 spend another unit without delivering a usable meaning. The deployed three-arg
-quota RPC has account-specific overrides; the default remains 300/day in Seoul.
-This change preserves that RPC and its overrides, sentence explanation charging,
+quota RPC has account-specific overrides; the default is now 3000 quota/day in Seoul.
+This change preserves that RPC and its overrides,
 existing usage rows, meaning replacement rules and provider telemetry/fallbacks.
 
 ## Contract
@@ -18,7 +18,7 @@ the validated lexical answer, fingerprint and owner, not source sentences/books.
 User receipts cascade on account deletion and are not exposed to client roles.
 
 Before provider work the RPC checks for replay and available quota without
-consuming it. After validateLook succeeds it atomically debits one unit and
+consuming it. After a usable answer it atomically debits one unit for words or two for sentences and
 persists the answer. Same-ID calls serialize with a transaction advisory lock;
 usage upserts retain the cap across different IDs. A lost HTTP response replays
 that answer, including when the user has since reached quota. Technical failures
@@ -47,17 +47,17 @@ visibility before new user motion dismisses it. First live AI reveal gets a
 The mini pill entry animation also uses opacity only, preserving live placement.
 
 ## Deployment boundary
-This PR does not migrate or deploy production. Apply only
+The two scoped migrations were applied to production and dict v53 deployed on 2026-09-29. The web client stays local pending user UX validation; main is not merged. Apply only
 `supabase/migrations/20260928152749_word_lookup_receipts.sql` to the **Breeze**
 project (`hrtfhojbhqvaoiulspto`), then deploy `dict` including `logical-lookup.ts`,
-then ship the client. The repository's existing Supabase config references a
+and `20260928160147_lookup_trial_limits.sql`. Keep the client local until UX approval. The repository's existing Supabase config references a
 separate project; do not blindly push all repository migrations.
 
 `look_v2` deliberately fails closed against the old Edge function's bad_op.
 It must not fall back to unprotected legacy look and automatically retry there.
 Old clients still use look, which the new Edge handles with success-only debit
 and a generated request ID, but cannot recover a lost response by ID. Seed stays
-unmetered; sentence explain stays on its existing quota contract.
+unmetered. Anonymous devices have one shared lifetime 50-quota balance in anon_usage, preserving existing consumption: words cost 1 and sentences cost 2. Sentence receipt replay shares that balance and only charges usable translations. Login defaults to 3000/day with the same costs. Existing account overrides remain. Anonymous global safety cap remains in place.
 
 ## Verification
 `npm run test:word-recovery` executes the real migration/RPC with PGlite, the real

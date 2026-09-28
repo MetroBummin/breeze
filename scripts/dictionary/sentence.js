@@ -32,6 +32,7 @@
 
 const sentKey = text => 's:' + sentenceHash(text);
 const LS_SENT_LEFT = 'breeze.ai-left';
+const sentenceRecoveries=new Map();
 
 /* 서버가 답할 때마다 남은 횟수를 알려 줍니다. 화면에 몇 번 남았는지 적는 줄은
    단어 팝업에서 덜어냈습니다 — 읽는 중에 셈이 보일 이유가 없습니다. */
@@ -223,14 +224,14 @@ async function openSentence(text,origin){
     paintSentenceFor(life,{ en:clean, retry:true, foot:'오프라인이라 문장 해석은 나중에 볼 수 있어요' });
     return;
   }
-  if(!sbUser){
-    paintSentenceFor(life,{ en:clean, foot:'문장 해석은 로그인하면 쓸 수 있어요' });
-    return;
-  }
 
   const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   sentCtrl = ctrl;
-  const answer = await dictCall({ op:'explain', sentence:clean, book:(curBook && curBook.title) || '' },
+  const recoveryKey=JSON.stringify([sbUser?.id||deviceId(),clean]);
+  let lookupId=sentenceRecoveries.get(recoveryKey);
+  if(!lookupId){lookupId=crypto.randomUUID();sentenceRecoveries.set(recoveryKey,lookupId);}
+  if(sentenceRecoveries.size>32)sentenceRecoveries.delete(sentenceRecoveries.keys().next().value);
+  const answer = await dictCall({ op:'explain',lookupId,device:sbUser?'':deviceId(), sentence:clean, book:(curBook && curBook.title) || '' },
                                 ctrl ? ctrl.signal : null);
   if(sentCtrl === ctrl) sentCtrl = null;
 
@@ -238,14 +239,15 @@ async function openSentence(text,origin){
     const why = answer && answer.error;
     if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
     if(!sentenceAlive(life)) return;
-    const stuck = why === 'login_required' || why === 'quota_exceeded';
+    const stuck = why === 'login_required' || why === 'quota_exceeded' || why === 'anon_exhausted';
     paintSentenceFor(life,{ en:clean, retry:!stuck, foot:
-        why === 'login_required' ? '문장 해석은 로그인하면 쓸 수 있어요'
-      : why === 'quota_exceeded' ? '오늘의 사용량이 부족해요. 문장 해석에는 2회가 필요해요'
+        (why === 'login_required'||why === 'anon_exhausted') ? '문장 해석 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
+      : why === 'quota_exceeded' ? '오늘의 사용량을 모두 썼어요. 내일 다시 이용할 수 있어요'
       :                            '잠깐 문제가 있었어요' });
     return;
   }
-  rememberSentLeft(answer.left,answer.day);
+  sentenceRecoveries.delete(recoveryKey);
+  if(sbUser)rememberSentLeft(answer.left,answer.day);
   await dictPut(key, { ko:answer.ko, done:true });
   paintSentenceFor(life,{ en:clean, ko:answer.ko });
 }
