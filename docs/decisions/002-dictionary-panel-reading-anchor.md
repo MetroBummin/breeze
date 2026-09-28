@@ -41,7 +41,7 @@ Generic position preservation for real viewport resize, rotation, Reader mode ch
 - Expression results use the same meaning ownership rules as single words and do not overwrite manually edited meanings.
 - A stale response may update cache but cannot replace or reopen a newer lookup presentation.
 - Outside dismissal owns its gesture so it cannot pass through to the Reader.
-- Scrolling, page navigation, zoom start, another lookup, or Reader exit closes either anchored presentation without a timer.
+- Scrolling still closes a visible meaning pill or detail popup. An unresolved hidden shimmer lookup survives scrolling as the single active lookup; another word, page/mode change, zoom start, or Reader exit still ends it. When its terminal result arrives, Breeze re-anchors the pill only if the tapped word is still visible. If the word has left the viewport, a successful result is saved silently and the presentation closes; it never pops up at the stale tap coordinates.
 
 ## Verification
 
@@ -64,9 +64,12 @@ Reduced motion has a static tint. A polite off-screen status announces loading
 and completion without exposing a blank/pending popup. Original-format repeat
 hits transfer the cue to their newly created marker without another request.
 
-The normal lookup lifetime still owns cancellation. Scroll, another target,
-page/zoom/mode changes and exit clear the cue; stale replies cannot reopen a
-pill. Existing timeout, quota/auth handling and explicit retry behavior are
+The normal lookup lifetime still owns cancellation. User scroll no longer ends
+an unresolved lookup: the word cue may move off-screen while the one request
+continues. Another target, page/zoom/mode changes and exit still clear the cue
+and end that lifetime; stale replies cannot reopen a pill. A terminal result
+recomputes the live word rect once. If that word is outside the Reader viewport,
+a successful meaning remains saved but no pill is shown. Existing timeout, quota/auth handling and explicit retry behavior are
 unchanged; this PR does not add potentially billable automatic AI retries.
 No general provisional local dictionary/Lightning path is added. Reviewed book
 fixtures and confirmed stored meanings remain supported.
