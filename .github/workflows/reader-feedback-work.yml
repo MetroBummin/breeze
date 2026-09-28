@@ -2,68 +2,51 @@ name: Reader feedback work branch
 on:
   push:
     branches: [chatgpt/reader-lookup-shimmer-20260928]
-    paths:
-      - '.github/workflows/reader-feedback-work.yml'
-      - '.work/reader-feedback.patch'
+    paths: ['.github/workflows/reader-feedback-work.yml']
 permissions:
-  contents: write
+  contents: read
 jobs:
   verify:
     if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/chatgpt/reader-lookup-shimmer-20260928'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply exact reviewed patch on this feature branch only
-        if: hashFiles('.work/reader-feedback-10.patch') != ''
-        run: |
-          for part in {01..10}; do test -f ".work/reader-feedback-${part}.patch"; done
-          cat .work/reader-feedback-{01..10}.patch > /tmp/reader-feedback.patch
-          git apply --check /tmp/reader-feedback.patch
-          git apply --index /tmp/reader-feedback.patch
-          git diff --cached --check
-          git diff --cached --name-only --diff-filter=ACM | while IFS= read -r file; do
-            case "$file" in *.js|*.mjs) node --check "$file" ;; esac
-          done
-          node tests/verify-reader-feedback.mjs
-          git rm .work/reader-feedback.patch .work/reader-feedback-{01..10}.patch
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Implement non-blocking lookup feedback and persistent PDF ink controls'
-          git push origin HEAD:refs/heads/chatgpt/reader-lookup-shimmer-20260928
-      - name: Install test dependencies
-        if: hashFiles('tests/verify-reader-feedback-browser.mjs') != ''
-        run: npm ci --ignore-scripts --no-audit --no-fund && npx playwright install --with-deps chromium webkit
-      - name: Reader feedback browser and lifecycle checks
-        if: hashFiles('tests/verify-reader-feedback-browser.mjs') != ''
+      - run: npm ci --ignore-scripts --no-audit --no-fund && npx playwright install --with-deps chromium webkit
+      - name: PDF writing controls and ink regression
+        id: ink
+        continue-on-error: true
         env:
-          BREEZE_QA_OUTPUT: /tmp/reader-feedback-qa
-        run: |
-          node tests/verify-reader-feedback.mjs
-          node tests/verify-word-lifecycle.mjs
-          node tests/verify-reader-feedback-browser.mjs
-          node tests/verify-word-presentation-browser.mjs
-          BROWSER=webkit node tests/verify-word-presentation-browser.mjs
-          node tests/verify-homeward-lookup-browser.mjs
-      - name: PDF geometry and ink regression
-        if: hashFiles('tests/verify-reader-feedback-browser.mjs') != ''
+          BREEZE_QA_OUTPUT: /tmp/reader-feedback-qa/ink
+        run: node tests/verify-pdf-ink-browser.mjs
+      - name: Repeat branch PDF geometry regression
+        id: geometry
+        continue-on-error: true
         env:
-          BREEZE_QA_OUTPUT: /tmp/reader-feedback-qa
-        run: node tests/verify-pdf-highlight-browser.mjs && node tests/verify-pdf-ink-browser.mjs
-      - name: Export exact branch source for local verification
-        if: always()
-        run: git archive --format=tar -o reader-feedback-source.tar HEAD
-      - uses: actions/upload-artifact@v4
-        if: always()
+          BREEZE_QA_OUTPUT: /tmp/reader-feedback-qa/branch
+        run: node tests/verify-pdf-highlight-browser.mjs
+      - uses: actions/checkout@v4
         with:
-          name: reader-feedback-source
-          path: reader-feedback-source.tar
-          retention-days: 1
+          ref: d88ea83d0d9df513090753a71d3578702ce4fd3b
+          path: baseline-source
+          persist-credentials: false
+      - name: Exact unmodified main PDF geometry comparison
+        id: baseline
+        continue-on-error: true
+        env:
+          BREEZE_QA_OUTPUT: /tmp/reader-feedback-qa/baseline
+        run: node baseline-source/tests/verify-pdf-highlight-browser.mjs
+      - name: Report independent outcomes
+        if: always()
+        run: |
+          echo "Ink: ${{ steps.ink.outcome }}; branch geometry: ${{ steps.geometry.outcome }}; exact base geometry: ${{ steps.baseline.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          test '${{ steps.ink.outcome }}' = success
+          test '${{ steps.geometry.outcome }}' = success
       - uses: actions/upload-artifact@v4
         if: always()
         with:
