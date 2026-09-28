@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "headwords": 10000,
+  "senses": 14120,
+  "multiPosHeadwords": 730,
+  "knownPosHeadwords": 9824,
+  "unknownOnlyHeadwords": 176,
+  "sourceBackedForms": 268,
+  "eligibleHeadwords": 11828,
+  "rejected": {
+    "unsuitable-gloss": 1268,
+    "non-lexical-or-rare-sense": 1148,
+    "non-lowercase-single-word": 3013,
+    "excluded-pos": 3
+  },
+  "selection": "bundled-classic surface counts, then source POS; deterministic hash tie-break; NOT general English top-10k",
+  "selectionCorpora": [
+    {
+      "path": "assets/classics/alice-in-wonderland.epub",
+      "sha256": "5c0706a6ad6ed931c1ad1892461490250ea8818a5429db708381d336a25815e9"
+    },
+    {
+      "path": "assets/classics/odyssey.epub",
+      "sha256": "0ce843daddb7a04a2071ce5c90305fa5228deb228127a941f8ea8d9969b75a78"
+    },
+    {
+      "path": "assets/classics/the-great-gatsby.epub",
+      "sha256": "bb322f6ea0bb896f03d63f23ec07c3eeb3ad9312d8ed038fff55423a4f8e510a"
+    }
+  ],
+  "meaningPolicy": "short source gloss (only simple synonym lists reduced); at most 3 per POS; source-first default except documented source-backed preferences",
+  "license": "CC-BY-SA-4.0",
+  "source": {
+    "source": "https://kaikki.org/dictionary/downloads/ko/ko-extract.jsonl.gz",
+    "fetchedAt": "2026-09-28T07:06:56.306781+00:00",
+    "sourceGzipSha256": "eede79c4a64755f13b1a31b507e980bdad03594a8578b7a1f0c0cfe43a14edf7",
+    "englishJsonlSha256": "781557119807dd20890ec3243f507590b70a58bd73cf802094dbe1e9fb3d3834",
+    "englishRows": 17807,
+    "uniqueHeadwords": 16573,
+    "posCounts": {
+      "unknown": 10945,
+      "num": 11,
+      "pron": 35,
+      "verb": 2412,
+      "noun": 2947,
+      "adj": 855,
+      "prep": 51,
+      "adv": 311,
+      "conj": 24,
+      "article": 2,
+      "name": 75,
+      "abbrev": 4,
+      "intj": 28,
+      "suffix": 7,
+      "prefix": 11,
+      "det": 2,
+      "phrase": 60,
+      "proverb": 23,
+      "symbol": 4
+    },
+    "license": "CC-BY-SA-4.0",
+    "attribution": "Korean Wiktionary contributors; extracted by Kaikki / Wiktextract",
+    "sourceIndex": "https://kaikki.org/kowiktionary/",
+    "copyright": "https://en.wiktionary.org/wiki/Wiktionary:Copyrights"
+  },
+  "posCounts": {
+    "article": 1,
+    "interjection": 28,
+    "noun": 5652,
+    "adverb": 561,
+    "adjective": 2003,
+    "verb": 2257,
+    "preposition": 50,
+    "unknown": 178,
+    "conjunction": 15,
+    "pronoun": 29,
+    "numeral": 34,
+    "determiner": 1
+  },
+  "dictionaryBytes": 858549,
+  "gzipBytes": 200116,
+  "dictionarySha256": "ba05be3d8643de29bf85c47899118441b7da48df8db0a27b964f72b8dff51c33",
+  "provenanceRows": 14120,
+  "provenanceSha256": "5f2241a368aa3b2cbdb802f5290a5af78338a8a46cddb56865d3e98c42bb4f9a"
+}
