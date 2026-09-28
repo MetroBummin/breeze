@@ -1,4 +1,4 @@
-name: PR47 scroll-continuity check #2
+name: PR47 scroll-continuity check #3
 on:
   push:
     branches: [chatgpt/reader-lookup-shimmer-20260928]
