@@ -1,0 +1,77 @@
+name: Lightning expansion source audit
+on:
+  push:
+    branches: [chatgpt/lightning-local-expansion-20260928]
+    paths: ['.github/workflows/lightning-expansion-audit.yml']
+permissions:
+  contents: read
+jobs:
+  sources:
+    if: github.ref == 'refs/heads/chatgpt/lightning-local-expansion-20260928'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Acquire source snapshots for review only
+        shell: python
+        run: |
+          import concurrent.futures, urllib.request, gzip, hashlib, json, pathlib, io, time
+          out=pathlib.Path('source-audit'); out.mkdir()
+          def get(url,limit=30000000):
+              req=urllib.request.Request(url,headers={'User-Agent':'Breeze-Lexicon-Source-Audit/1.0'})
+              with urllib.request.urlopen(req,timeout=180) as r:
+                  b=r.read(limit+1)
+              if len(b)>limit: raise RuntimeError('Source exceeds bounded download')
+              return b
+          def kengdic():
+              meta=json.loads(get('https://api.github.com/repos/garfieldnate/kengdic/commits/master'))
+              sha=meta['sha']; base=f'https://raw.githubusercontent.com/garfieldnate/kengdic/{sha}/'
+              body=get(base+'kengdic.tsv')
+              (out/'kengdic.tsv.gz').write_bytes(gzip.compress(body,mtime=0))
+              (out/'kengdic-README.md').write_bytes(get(base+'README.md'))
+              (out/'kengdic-datapackage.json').write_bytes(get(base+'datapackage.json'))
+              return {'id':'kengdic','commit':sha,'url':base+'kengdic.tsv','sha256':hashlib.sha256(body).hexdigest(),'bytes':len(body),'rows':body.count(b'\n')}
+          def english():
+              base='https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl'
+              url=base+'.gz'
+              try: response=urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Breeze-Lexicon-Source-Audit/1.0'}),timeout=180)
+              except Exception:
+                  url=base
+                  response=urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Breeze-Lexicon-Source-Audit/1.0'}),timeout=180)
+              stream=gzip.GzipFile(fileobj=response) if url.endswith('.gz') else response
+              digest=hashlib.sha256(); lines=0; translated=0; lexemes=0; started=time.time()
+              with gzip.open(out/'enwiktionary-ko-translations.jsonl.gz','wt',encoding='utf-8') as f, gzip.open(out/'enwiktionary-lexemes.jsonl.gz','wt',encoding='utf-8') as lex:
+                  for line in stream:
+                      digest.update(line);lines+=1
+                      if time.time()-started>480: raise RuntimeError('Stream audit deadline exceeded; do not treat as complete')
+                      row=json.loads(line)
+                      if row.get('lang_code')!='en': continue
+                      islemma=any(not s.get('form_of') and not s.get('alt_of') and 'form-of' not in s.get('tags',[]) for s in row.get('senses',[]))
+                      if islemma:
+                          lex.write(json.dumps({'word':row.get('word'),'pos':row.get('pos'),'line':lines},ensure_ascii=False)+'\n');lexemes+=1
+                      translations=[t for t in row.get('translations',[]) if t.get('code')=='ko']
+                      if translations:
+                          kept={k:row[k] for k in ['word','lang_code','pos','senses','forms'] if k in row}
+                          kept['translations']=translations;kept['sourceLine']=lines
+                          f.write(json.dumps(kept,ensure_ascii=False)+'\n');translated+=1
+              response.close()
+              return {'id':'enwiktionary','url':url,'uncompressedSha256':digest.hexdigest(),'sourceRows':lines,'translationRows':translated,'lexemeRows':lexemes}
+          reports=[]
+          with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+              futures={pool.submit(fn):name for name,fn in [('kengdic',kengdic),('enwiktionary',english)]}
+              for future in concurrent.futures.as_completed(futures):
+                  name=futures[future]
+                  try: result=future.result();result['complete']=True
+                  except Exception as e: result={'id':name,'complete':False,'error':str(e)}
+                  reports.append(result);print(json.dumps(result,ensure_ascii=False))
+          (out/'report.json').write_text(json.dumps(reports,ensure_ascii=False,indent=2)+'\n')
+          checks={str(p.name):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.iterdir()) if p.is_file()}
+          (out/'SHA256SUMS.json').write_text(json.dumps(checks,indent=2)+'\n')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lightning-expansion-source-audit
+          path: source-audit/
+          retention-days: 14
