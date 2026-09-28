@@ -48,3 +48,4 @@ finally:server.shutdown()
 report={'scope':'Standalone lexicon demo; no Reader/AI/physical-device test','results':results}
 (ROOT/'test-results/expansion-browser.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
 print(json.dumps(report,ensure_ascii=False,indent=2))
+raise SystemExit(0 if all(result['passed'] for result in results) else 1)
