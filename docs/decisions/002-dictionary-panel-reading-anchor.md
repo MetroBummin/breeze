@@ -54,3 +54,23 @@ English definitions come only from FreeDictionaryAPI.com. Metadata has its own l
 Frequent whole-word deletion and pronunciation share the title action pill. Meaning uses an unfilled neutral surface, with small subtly colored selected stars. The visible body-highlight toggle preserves saved vocabulary and controls the lexical root across its meanings. The card scrolls internally with its scrollbar hidden.
 
 The heading scrolls with the card. Word management disclosure and manual meaning input have been removed. The body-highlight switch has a 44px touch area. Failed English lookup uses an accessible retry icon. English entries include visible Wiktionary/provider/license attribution. Provider cache v2 bypasses stale negative cache and retry cooldown from the previous endpoint.
+
+## Lightning experiment (2026-09-28)
+
+Reader Aa has a device-local, default-OFF Lightning switch. Opt-in sends at most the
+current and next sentence to the existing AI provider before a tap. Prepared maps
+live in a bounded, versioned, account/book/context-scoped cache, not the Wordbook.
+Only a real tap passes a result through the existing Meaning/expression lifecycle.
+Saved meanings, manual edits, deletion tombstones and explicit retries retain priority.
+
+An in-memory hit presents readable text immediately with a 200 ms opacity/soft-focus
+arrival, not an artificial loading delay. Reduced motion skips it. A cold miss joins
+an already pending matching prefetch or uses ordinary lookup. Cold network misses retain the ordinary lookup presentation; OFF delegates to the
+unchanged lookup owners.
+The Homeward one-second fixture behavior is unchanged when Lightning is OFF.
+
+Scheduling stops on OFF, offline, Reader exit, hidden tab, book/mode/account change
+and scroll. Only stable viewport work resumes. It does not rebuild a paragraph, change
+PDF ink/zoom, or save untapped vocabulary. Unsupported/oversize sentences use ordinary
+lookup. The server route is separately gated with LIGHTNING_PREFETCH_ENABLED=true,
+requires authentication, and charges one existing AI unit per prepared sentence.

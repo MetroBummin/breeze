@@ -1,0 +1,7 @@
+/* Reader setting only; lookup animation never changes the paper geometry. */
+#aa-lightning-row{align-items:center;gap:12px}
+.aa-lightning-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+#aa-lightning-note{font-size:11px;line-height:1.5;opacity:.68;max-width:210px}
+#aa-lightning{flex-shrink:0;min-width:44px;position:relative}
+
+#aa-lightning::after{content:"";position:absolute;inset:-9px 0}

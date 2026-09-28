@@ -46,6 +46,7 @@
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=7b06b0e3">
   <link rel="stylesheet" href="styles/reader.css?v=194c9bd8">
+  <link rel="stylesheet" href="styles/lightning.css?v=375a45c6">
   <link rel="stylesheet" href="styles/dictionary.css?v=2f36b3e7">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
@@ -119,6 +120,7 @@
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
   <script defer src="scripts/ui/library-refresh.js?v=e6344de7"></script>
+  <script defer src="scripts/dictionary/lightning.js?v=88c3816a"></script>
   <script defer src="scripts/main.js?v=422560d7"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
@@ -532,6 +534,12 @@
   <div class="aa-row">
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" class="aa-toggle" onclick="toggleDark()"><i></i></button>
+  </div>
+  <div class="aa-row" id="aa-lightning-row">
+    <div class="aa-lightning-copy"><span class="aa-label" id="aa-lightning-label">라이트닝 모드 · 실험</span>
+      <small id="aa-lightning-note">현재·다음 문장의 뜻을 AI로 미리 준비해요.</small></div>
+    <button id="aa-lightning" class="aa-toggle" type="button" role="switch" aria-checked="false"
+      aria-labelledby="aa-lightning-label" aria-describedby="aa-lightning-note"><i></i></button>
   </div>
   <div class="aa-row" id="aa-epub-mode" hidden>
     <span class="aa-label">보기 모드</span>

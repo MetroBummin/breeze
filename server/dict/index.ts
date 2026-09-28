@@ -1,7 +1,9 @@
 // Breeze — dictionary Edge Function (OpenRouter/DeepSeek primary, Gemini fallback)
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { LOOK_SCHEMA, lookupInput, miniPrompt, validateLook } from "./lookup.ts";
-import { meteredFetch, newAiTrace, type AiAction, type AiTrace } from "./telemetry.ts";
+import { meteredFetch, newAiTrace, type AiAction, type AiTrace, tokenUsage } from "./telemetry.ts";
+
+import { PREFETCH_VERSION, PREFETCH_SCHEMA, prefetchInput, prefetchPrompt, validatePrefetch } from './prefetch.ts';
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json"}});
@@ -15,7 +17,7 @@ const ANON_DAILY_CAP=Number(Deno.env.get("AI_ANON_DAILY_CAP")??2000);
 
 const SYSTEM="You are a precise bilingual dictionary for Korean learners reading English books. Reply with ONLY minified JSON. No markdown, no code fence, no commentary.";
 const SR=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
-type Ask={prompt:string;maxTokens:number;schema?:unknown;system?:string;action:AiAction;trace?:AiTrace;temperature?:number;signal?:AbortSignal;validate?:(value:any)=>unknown};
+type Ask={prompt:string;maxTokens:number;schema?:unknown;system?:string;action:AiAction;trace?:AiTrace;temperature?:number;signal?:AbortSignal;validate?:(value:any)=>unknown;prefetch?:boolean};
 
 async function callOpenRouter(key:string,ask:Ask){
   const body:Record<string,unknown>={model:OPENROUTER_MODEL,messages:[{role:"system",content:ask.system??SYSTEM},{role:"user",content:ask.prompt}],temperature:ask.temperature??0.2,max_tokens:ask.maxTokens,stream:false,reasoning:{enabled:false},provider:{sort:"throughput",max_price:{prompt:0.10,completion:0.30}}};
@@ -33,8 +35,9 @@ function providerKeys(){return{oKey:Deno.env.get("OPENROUTER_API_KEY"),gKey:Deno
 async function ask(input:Ask){
   const a={...input,trace:newAiTrace(input.action)};const{oKey,gKey}=providerKeys();const attempts:Array<{provider:"openrouter"|"gemini";run:()=>Promise<{text:string;usage:any}>}>=[];
   if(oKey){attempts.push({provider:"openrouter",run:()=>callOpenRouter(oKey,a)});if(input.validate)attempts.push({provider:"openrouter",run:()=>callOpenRouter(oKey,a)});}if(gKey)attempts.push({provider:"gemini",run:()=>callGemini(gKey,a)});if(!attempts.length)throw new Error("server_not_configured");
+  if(input.prefetch)attempts.splice(1); // Speculative work never fans out into retries/fallbacks.
   let lastError:unknown=new Error("server_not_configured");
-  const compact=input.maxTokens<=120;
+  const compact=input.maxTokens<=120||!!input.prefetch;
   const deadline=Date.now()+(compact?8000:25000);
   for(let index=0;index<attempts.length;index++){
     const remaining=deadline-Date.now();if(remaining<250||input.signal?.aborted)break;
@@ -71,6 +74,29 @@ async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSig
   }
 }
 
+// Deploy separately with LIGHTNING_PREFETCH_ENABLED=true after branch QA.
+// Existing quota is authoritative; one prepared sentence costs one AI unit.
+async function opPrefetch(body:any,userId:string|null,signal?:AbortSignal){
+  if(!userId)return json({error:"login_required"},401);
+  if(Deno.env.get("LIGHTNING_PREFETCH_ENABLED")!=="true")return json({error:"prefetch_disabled"},503);
+  let inputs;try{inputs=prefetchInput(body)}catch(error){return json({error:String((error as Error).message)},400)}
+  if(signal?.aborted)throw signal.reason;
+  const quota=await takeQuota(userId,inputs.length);
+  if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit,left:quota.left},429);
+  try{
+    // Uses the existing configured provider and metered transport, never a free third-party route.
+    // The existing telemetry schema records this under 'look'; client counters distinguish prefetch.
+    const out=await ask({action:"look",prompt:prefetchPrompt(inputs),maxTokens:3000,schema:PREFETCH_SCHEMA,
+      temperature:0.2,signal,prefetch:true,validate:value=>validatePrefetch(value,inputs)});
+    const sentences=validatePrefetch(parseJson(out.text),inputs);
+    return json({version:PREFETCH_VERSION,sentences,left:quota.left,
+      usage:tokenUsage(out.provider,out.usage)});
+  }catch(error){
+    if(signal?.aborted)throw error;
+    return json({error:"prefetch_failed",left:quota.left},502);
+  }
+}
+
 const EXPLAIN_SCHEMA={type:"object",additionalProperties:false,required:["ko"],properties:{ko:{type:"string"}}};
 function explainPrompt(sentence:string){return `문장: ${sentence}\n\n영어를 읽는 한국인에게 이 문장을 자연스러운 한국어로 번역하세요.\n\n- ko: 문장 전체의 자연스러운 한국어 해석.\n- 영어 어순과 표현을 그대로 옮기지 말고, 원문의 의미를 보존하면서 한국어 화자가 실제로 말하거나 글로 쓸 법한 자연스러운 문장으로 작성하세요.\n- 해석에서 원문의 의미를 임의로 추가하거나 빼지 마세요.\n\n{"ko":""}`}
 async function opExplain(body:any,userId:string|null){if(!userId)return json({error:"login_required"},401);const sentence=clean(body.sentence,600);if(sentence.length<12)return json({error:"bad_sentence"},400);const quota=await takeQuota(userId,EXPLAIN_COST);if(!quota.ok)return json({error:"quota_exceeded",limit:quota.limit,left:0},429);const out=await ask({action:"explain",prompt:explainPrompt(sentence),maxTokens:600,schema:EXPLAIN_SCHEMA});const parsed=parseJson(out.text);if(!parsed)return json({error:"parse_failed",raw:out.text.slice(0,300)},502);const ko=clean(parsed.ko,500);if(!ko)return json({error:"empty_answer"},502);return json({ko,provider:out.provider,left:quota.left})}
@@ -90,4 +116,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed,req.signal);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("quota_unavailable"))return json({error:"quota_unavailable"},503);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId);if(op==="prefetch")return await opPrefetch(body,userId,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||isSeed)return await opLook(body,userId,isSeed,req.signal);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("quota_unavailable"))return json({error:"quota_unavailable"},503);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
