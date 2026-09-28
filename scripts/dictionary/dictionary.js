@@ -504,6 +504,12 @@ let wordPeekAnchor=null;
 let wordPeekRetryState=null;
 let wordDetailAnchored=false,wordMorphAnimation=null,wordMorphGeneration=0;
 function wordPeekOpen(){ return wordPeekActive; }
+/* Pending is the one lookup state that may outlive a user scroll. It still owns
+   exactly one lookup lifetime; another word/mode/page/zoom/exit ends it. */
+function wordPeekPending(){
+  const w=wordPeekActive&&selKey?displayedWord(selKey):null;
+  return !!(w&&wordPeekState(w,currentContext(selKey)).loading);
+}
 function wordSurfaceAnchored(){ return wordPeekActive||wordDetailAnchored; }
 function wordLookupOpen(){
   const panel=document.getElementById('panel');
@@ -529,6 +535,21 @@ function rememberWordPeekAnchor(node){
   if(!rect) return null;
   wordPeekAnchor={...rect,direction:null};
   return wordPeekAnchor;
+}
+function wordPeekTargetVisible(node){
+  const rect=wordPeekNodeRect(node);
+  if(!rect||rect.width<=0||rect.height<=0)return false;
+  const view=window.visualViewport;
+  const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
+  const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
+  let left=vx,top=vy,right=vx+vw,bottom=vy+vh;
+  const scroller=typeof readerScroller==='function'?readerScroller():null;
+  if(scroller&&scroller.clientWidth>0&&scroller.clientHeight>0&&scroller.getBoundingClientRect){
+    const box=scroller.getBoundingClientRect();
+    left=Math.max(left,box.left);top=Math.max(top,box.top);
+    right=Math.min(right,box.right);bottom=Math.min(bottom,box.bottom);
+  }
+  return rect.right>left&&rect.left<right&&rect.bottom>top&&rect.top<bottom;
 }
 function wordPeekSameTarget(k,node){
   if(!wordPeekActive||!selKey||!words[selKey]||!wordPeekAnchor) return false;
@@ -643,13 +664,26 @@ function renderWordPeek(){
   const retry=document.getElementById('word-peek-retry');
   if(state.loading) retry.setAttribute('disabled','');
   else retry.removeAttribute('disabled');
-  // A pending lookup remains owned/closable, but never covers the next line.
+  // A pending lookup remains owned without covering the next line. Scrolling may
+  // move its word; when the answer arrives, anchor once to the live rect. If the
+  // word has left the viewport, keep the saved result but do not pop UI elsewhere.
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.present(wordLookupLife,
     activeSelectedWordNode,state,!state.loading&&hasResolvedMeaning(w)
       &&!(currentContext(selKey)&&currentContext(selKey).error)
       &&!(wordPeekRetryState&&wordPeekRetryState.error));
-  pill.hidden=state.loading;
-  if(!state.loading)requestAnimationFrame(placeWordPeek);
+  if(state.loading){pill.hidden=true;return;}
+  const targetVisible=activeSelectedWordNode?wordPeekTargetVisible(activeSelectedWordNode):!!wordPeekAnchor;
+  if(targetVisible){
+    if(activeSelectedWordNode)rememberWordPeekAnchor(activeSelectedWordNode);
+    pill.hidden=false;
+    requestAnimationFrame(placeWordPeek);
+    return;
+  }
+  pill.hidden=true;
+  const terminalLife=wordLookupLife;
+  requestAnimationFrame(()=>{
+    if(wordLookupAlive(terminalLife)&&wordPeekActive&&!wordPeekPending())closePanel();
+  });
 }
 function renderWordLookup(){
   if(wordPeekActive) renderWordPeek();
