@@ -14,7 +14,7 @@ try{
   await db.exec(base.slice(base.indexOf('create table if not exists public.ai_usage'),base.indexOf('-- 2) 행동 기록')));
   const migration=readFileSync(new URL('../supabase/migrations/20260928152749_word_lookup_receipts.sql',import.meta.url),'utf8');
   await db.exec(migration);
-  await db.exec('grant usage on schema public to service_role;grant all on public.ai_usage,public.anon_usage,public.anon_daily to service_role;');
+  await db.exec('grant usage on schema public to service_role;grant execute on function public.take_ai_quota(uuid,integer,integer) to service_role;');
   const user='00000000-0000-0000-0000-000000000001',id=crypto.randomUUID(),fp='a'.repeat(64);
   const answer={kind:'word',canonical:'patient',members:[0],ko:'참을성 있는'};
   const receipt=async({u=user,device='',request=id,fingerprint=fp,result=null,cap=2000}={})=>

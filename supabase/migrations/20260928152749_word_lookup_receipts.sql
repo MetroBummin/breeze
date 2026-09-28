@@ -14,6 +14,16 @@ create index word_lookup_receipts_user_idx on public.word_lookup_receipts(user_i
 alter table public.word_lookup_receipts enable row level security;
 revoke all on public.word_lookup_receipts from public, anon, authenticated;
 grant select, insert, delete on public.word_lookup_receipts to service_role;
+-- Existing quota RPCs are definers; the new receipt RPC is an invoker. Grant
+-- only the service role the underlying access it needs, never client roles.
+grant select on public.ai_usage to service_role;
+grant select, insert, update on public.anon_usage, public.anon_daily to service_role;
+do $$ begin
+  if to_regclass('public.ai_quota_overrides') is not null then
+    execute 'grant select on public.ai_quota_overrides to service_role';
+  end if;
+end $$;
+
 
 create function public.word_lookup_receipt(
   p_user uuid, p_device text, p_request uuid, p_fingerprint text,
