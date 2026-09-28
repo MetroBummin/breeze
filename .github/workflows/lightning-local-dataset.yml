@@ -1,0 +1,40 @@
+name: Lightning local dataset experiment
+on:
+  push:
+    branches: [chatgpt/lightning-local-10k-20260928]
+    paths:
+      - '.github/workflows/lightning-local-dataset.yml'
+permissions:
+  contents: read
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download public Kaikki source and preserve provenance
+        shell: python
+        run: |
+          import urllib.request, gzip, json, hashlib, pathlib, datetime, collections
+          out = pathlib.Path('dataset-evidence'); out.mkdir()
+          url = 'https://kaikki.org/dictionary/downloads/ko/ko-extract.jsonl.gz'
+          req = urllib.request.Request(url, headers={'User-Agent':'Breeze-Local-Dictionary-Experiment/1.0 (source attribution retained)'})
+          with urllib.request.urlopen(req, timeout=120) as response:
+              data = response.read(100_000_001)
+              if len(data) > 100_000_000: raise RuntimeError('Unexpected source size')
+          rows = []
+          for line in gzip.decompress(data).splitlines():
+              item = json.loads(line)
+              if item.get('lang_code') == 'en': rows.append(item)
+          target = out / 'kowiktionary-en.jsonl'
+          target.write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in rows),encoding='utf-8')
+          meta = {'source':url,'fetchedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'sourceGzipSha256':hashlib.sha256(data).hexdigest(),'englishJsonlSha256':hashlib.sha256(target.read_bytes()).hexdigest(),'englishRows':len(rows),'uniqueHeadwords':len({r['word'] for r in rows}),'posCounts':dict(collections.Counter(r.get('pos','unknown') for r in rows)),'license':'CC-BY-SA-4.0','attribution':'Korean Wiktionary contributors; extracted by Kaikki / Wiktextract','sourceIndex':'https://kaikki.org/kowiktionary/','copyright':'https://en.wiktionary.org/wiki/Wiktionary:Copyrights'}
+          (out/'source-manifest.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(meta,ensure_ascii=False,indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lightning-kowiktionary-source
+          path: dataset-evidence/
+          retention-days: 7
