@@ -41,7 +41,7 @@ Generic position preservation for real viewport resize, rotation, Reader mode ch
 - Expression results use the same meaning ownership rules as single words and do not overwrite manually edited meanings.
 - A stale response may update cache but cannot replace or reopen a newer lookup presentation.
 - Outside dismissal owns its gesture so it cannot pass through to the Reader.
-- User scrolling hides a mini pill while preserving its lookup and result. Results save immediately; presentation waits until 250ms after the last user scroll, including momentum events. At idle, the live target is checked and the pill is placed before reveal; an off-screen target closes silently with the successful meaning retained. A scroll during the reveal frame or immediately after reveal returns the mini pill to hidden presentation. A pill continuously shown for at least 300ms is dismissed by the next user motion and never automatically returns. Shorter reveals return to READY and wait for idle. Leaving the viewport permanently ends presentation, even during LOOKING_UP; its request may still finish and save. Expanded detail still closes on scroll. Actual programmatic motion also delays mini presentation but does not count as a user dismissal; duplicate scroll events at the same position do not reset idle. Another word, page/mode change, zoom start, outside dismissal or Reader exit ends the lifetime and cancels deferred presentation.
+- User scrolling hides a mini pill while preserving its lookup and result. Results save immediately; presentation waits until 250ms after the last user scroll, including momentum events. At idle, the live target is checked and the pill is placed before reveal; an off-screen target closes silently with the successful meaning retained. A scroll during the reveal frame or immediately after reveal returns the mini pill to hidden presentation. A pill continuously shown for at least 750ms is dismissed by the next user motion and never automatically returns. Shorter reveals return to READY and wait for idle. Leaving the viewport permanently ends presentation, even during LOOKING_UP; its request may still finish and save. Expanded detail still closes on scroll. Actual programmatic motion also delays mini presentation but does not count as a user dismissal; duplicate scroll events at the same position do not reset idle. Another word, page/mode change, zoom start, outside dismissal or Reader exit ends the lifetime and cancels deferred presentation.
 
 ## Verification
 
@@ -90,3 +90,10 @@ that entered pending. These describe the retained local sample, not all users.
 Manual retries keep the original opening's first-outcome metric but have their
 own request timings. Low sample counts and cancellations must not be interpreted
 as direct proof of dissatisfaction.
+
+## Arrival accent (2026-09-29)
+Only a successful live AI result marks the next mini-pill reveal for a 200ms pale
+blue opacity bloom. Deferred READY consumes it on the first actual reveal, not
+on result arrival while hidden. Subsequent scroll-idle reveals and saved/cache
+hits have no bloom. Mini-pill entry and result reveal use opacity only; position and scale stay
+fixed even on repeated scroll-idle reveals. Reduced motion remains neutral.

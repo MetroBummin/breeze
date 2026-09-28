@@ -64,11 +64,14 @@ try{
     return Math.min(Math.abs(p.top-w.bottom),Math.abs(w.top-p.bottom));
   });
   assert.ok(gap<12,'reveal used stale word coordinates');
-  await page.waitForTimeout(350);await move(5);
+  await page.waitForTimeout(800);await move(5);
   await page.waitForTimeout(350);
   assert.equal(await pill.isVisible(),false,'seen pill resurrected');
   assert.equal(await page.evaluate(()=>wordPeekActive),false);
   await open(false);await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
+  await page.waitForTimeout(500);await move(5);
+  assert.equal(await page.evaluate(()=>wordPeekActive),true,'500ms incorrectly counted as seen');
+  await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   await move(900);await move(-900);await page.waitForTimeout(350);
   assert.equal(await pill.isVisible(),false,'offscreen target resurrected');
   assert.equal(await page.evaluate(()=>words.patient.ko),'참을성 있는');
@@ -80,7 +83,7 @@ try{
   await page.evaluate(()=>{words[selKey].ko='참을성 있는';contextView=null;renderWordLookup();closePanel();});
   await page.waitForTimeout(350);assert.equal(await pill.isVisible(),false,'cancelled timer revealed');
   await open(false);await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
-  await page.waitForTimeout(350);
+  await page.waitForTimeout(800);
   await page.evaluate(()=>readerScrollBy(8));
   await page.waitForFunction(()=>document.getElementById('word-peek').hidden);
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);

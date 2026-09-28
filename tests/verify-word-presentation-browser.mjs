@@ -179,7 +179,7 @@ try{
     window.expressionY=span.getBoundingClientRect().top;
     openWord(keyOf('carefully'),span);
   });
-  await page.waitForFunction(()=>wordQa.calls[0]?.op==='look');
+  await page.waitForFunction(()=>wordQa.calls[0]?.op==='look_v2');
   assert.equal(await page.locator('#word-peek').isVisible(),false,'pending expression lookup obscures reading');
   assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
   assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);

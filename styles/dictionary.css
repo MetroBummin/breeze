@@ -10,6 +10,15 @@
   box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
   animation:word-peek-in 120ms cubic-bezier(.2,.7,.25,1);}
 #word-peek[hidden]{display:none;}
+#word-peek.result-accent{animation:word-result-reveal 200ms linear;}
+#word-peek.result-accent::after{content:"";position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;background:rgba(74,151,235,.18);opacity:0;
+  animation:word-result-accent 200ms ease-out;}
+@keyframes word-result-accent{from{opacity:1}to{opacity:0}}
+@keyframes word-result-reveal{from{opacity:.92}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  #word-peek.result-accent{animation:none;}
+  #word-peek.result-accent::after{animation:none;opacity:0;}}
 #word-peek::before{content:""; position:absolute; z-index:-1; inset:0; pointer-events:none;
   border-radius:inherit;
   background:linear-gradient(145deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.07) 44%,rgba(255,255,255,.16) 100%);
@@ -48,7 +57,7 @@ body.dark #word-peek::before{
   #word-peek{background:var(--sentence-glass-pill); backdrop-filter:blur(19px) saturate(122%);
     -webkit-backdrop-filter:blur(19px) saturate(122%);}
 }
-@keyframes word-peek-in{from{opacity:0; transform:translateY(3px) scale(.97)}to{opacity:1; transform:none}}
+@keyframes word-peek-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){
   #word-peek{animation:word-peek-fade var(--sentence-transition) linear;}
   @keyframes word-peek-fade{from{opacity:0}to{opacity:1}}

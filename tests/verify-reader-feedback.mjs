@@ -22,7 +22,7 @@ doc.head=element('head',doc);doc.body=element('body',doc);
 for(const id of ['word-peek','word-peek-meaning','word-peek-retry','panel','readpill','readback','aafab','modefab','readpill-title'])
   registry.set(id,element(id,doc));
 const word=element('word',doc);
-const context=vm.createContext({console,document:doc,performance:{now:()=>clock},
+const context=vm.createContext({console,setTimeout:()=>0,clearTimeout(){},wordLookupAlive:life=>life===context.wordLookupLife,document:doc,performance:{now:()=>clock},
   getComputedStyle:()=>({getPropertyValue:n=>n==='--sentence-glass-ink'?'#293034':'#f6f6f3'}),
   requestAnimationFrame:fn=>fn(),window:{},wordLookupLife:1,wordLookupCtrl:null,firstLookupMeaning:null,
   discardPendingWord(){},settlePendingWord(){},hasResolvedMeaning:w=>!!w.ko,
@@ -31,8 +31,8 @@ const context=vm.createContext({console,document:doc,performance:{now:()=>clock}
   activeSelectedWordNode:word,wordPeekActive:true,placeWordPeek:()=>placed++,
   wordPeekTargetVisible:()=>true,rememberWordPeekAnchor:()=>({}),
   navigator:{onLine:true},meaningWaitLine:()=> '뜻을 찾지 못했어요'});
-vm.runInContext(read('scripts/dictionary/lookup-feedback.js')+'\n'+
-  part('wordPeekState','placeWordPeek')+part('renderWordPeek','renderWordLookup')+
+vm.runInContext(source.slice(source.indexOf('const WORD_PEEK_SCROLL_IDLE_MS'),source.indexOf('function wordPeekOpen'))+'\n'+read('scripts/dictionary/lookup-feedback.js')+'\n'+
+  part('wordPeekPending','wordSurfaceAnchored')+part('wordPeekState','placeWordPeek')+part('renderWordPeek','renderWordLookup')+
   part('endWordLookupLife','wordLookupAlive'),context);
 const api=vm.runInContext('wordLookupFeedback',context);
 api.start(1,'text');context.renderWordPeek();

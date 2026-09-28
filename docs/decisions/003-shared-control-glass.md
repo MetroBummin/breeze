@@ -152,3 +152,7 @@ floating controls do not shimmer. The expanded word lookup's legacy retry/login
 action now uses the same neutral sentence-glass action/line/ink tokens and a
 visible neutral keyboard focus ring. PDF writing controls stay expanded; their
 old miniature collapse rule is removed. Reading-mode collapse remains unchanged.
+
+AI result mini-pill reveal adds a one-time 200ms pale blue opacity bloom that
+returns to the same neutral glass material. It never translates/scales the pill,
+and reduced motion suppresses the bloom. Saved/cache hits retain normal glass.

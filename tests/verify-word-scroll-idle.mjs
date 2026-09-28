@@ -7,7 +7,7 @@ const fn=name=>source.match(new RegExp(`function ${name}\\([^]*?\\n\\}`))[0];
 function fixture(){
   let now=0,id=0,closed=0,placed=0;
   const timers=new Map(),frames=[];
-  const pill={hidden:true,classList:{toggle(){}},style:{},dataset:{},
+  const pill={hidden:true,classList:{toggle(){},add(){},remove(){}},style:{},dataset:{},
     getBoundingClientRect(){return {width:this.hidden?0:180,height:this.hidden?0:44};}};
   const elements={'word-peek':pill,'word-peek-meaning':{},'word-peek-retry':{setAttribute(){},removeAttribute(){}}};
   elements.readchrome={getBoundingClientRect:()=>({height:0,top:800})};
