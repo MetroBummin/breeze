@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "targetHeadwords": 40000,
+  "actualHeadwords": 40000,
+  "addedHeadwords": 30000,
+  "eligibleBeforeTarget": 40764,
+  "totalSenses": 56255,
+  "baseline": {
+    "file": "../en-ko-10k/dictionary.json",
+    "headwords": 10000,
+    "sha256": "ba05be3d8643de29bf85c47899118441b7da48df8db0a27b964f72b8dff51c33"
+  },
+  "packs": [
+    {
+      "id": "ko-additional",
+      "file": "ko-additional/dictionary.json",
+      "headwords": 1828,
+      "senses": 2190,
+      "knownPosHeadwords": 1335,
+      "unknownOnlyHeadwords": 493,
+      "license": "CC-BY-SA-4.0",
+      "experimental": false,
+      "sourceUrlPrefix": "https://ko.wiktionary.org/wiki/",
+      "sourceAnchor": "영어",
+      "dictionaryBytes": 148875,
+      "gzipBytes": 37330,
+      "sha256": "3536bafc8bf8b1fd8baf6da08b24157c05ab262b2d567e775ed2e8a92a6b8561",
+      "provenanceSha256": "96b1abeef9d68354f6b7d4ab4b081ed6acb8b757bcce56c377730bb415dc6b4d"
+    },
+    {
+      "id": "en-translations",
+      "file": "en-translations/dictionary.json",
+      "headwords": 570,
+      "senses": 768,
+      "knownPosHeadwords": 570,
+      "unknownOnlyHeadwords": 0,
+      "license": "CC-BY-SA-4.0",
+      "experimental": false,
+      "sourceUrlPrefix": "https://en.wiktionary.org/wiki/",
+      "sourceAnchor": "English",
+      "dictionaryBytes": 38971,
+      "gzipBytes": 10220,
+      "sha256": "c9bd2103b8de19ca3469b4ccbeb329b2e38fa3b30718d3e634d990f68ff9e271",
+      "provenanceSha256": "2e59420ae1c3121a33e08b551bf94b8034adb5f03ce1ce2fffed82f0679faf1e"
+    },
+    {
+      "id": "kengdic-fallback",
+      "file": "kengdic-fallback/dictionary.json",
+      "headwords": 27602,
+      "senses": 39177,
+      "knownPosHeadwords": 0,
+      "unknownOnlyHeadwords": 27602,
+      "license": "MPL-2.0",
+      "experimental": true,
+      "sourceUrlPrefix": "https://github.com/garfieldnate/kengdic/blob/793de2369c9a98b944154eb4695d26854d2de59b/kengdic.tsv",
+      "sourceAnchor": "",
+      "dictionaryBytes": 2357817,
+      "gzipBytes": 524542,
+      "sha256": "c23234e30f42a7d75f5e0782e14ff0b89b301902dba3066f1acac3e518181938",
+      "provenanceSha256": "d84b2a1e7864c4fecca907320740bd12326ce0772a145b00bc93042099edef3d"
+    }
+  ],
+  "lemmaEvidence": {
+    "file": "en-lemma-evidence.jsonl.gz",
+    "rows": 27602,
+    "license": "CC-BY-SA-4.0",
+    "sha256": "4378ac7546a86438f6dede7b631f1a4f941cd78d314d46337b664565e8c7b5ec"
+  },
+  "rejectedKengdicRows": {
+    "noncompact-or-rejected-Korean": 1049,
+    "not-entire-single-English-headword": 65947,
+    "already-covered-by-Wiktionary": 17966,
+    "not-in-independent-English-lemma-whitelist": 6712,
+    "duplicate-translation": 8,
+    "baseline-alias-not-counted-as-new": 22
+  },
+  "notes": [
+    "Original 10K bytes and meanings preserved. Aliases do not increase the count.",
+    "Not general-English top-40K. No coverage or human-reviewed accuracy claim.",
+    "Kengdic is an experimental fallback with unknown POS; never infer POS from English spelling.",
+    "Separate source licenses. Do not combine data files and label the mixture CC-BY-SA.",
+    "No generated meanings. No runtime/Reader integration or production deployment."
+  ]
+}
