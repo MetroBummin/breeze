@@ -1,0 +1,87 @@
+name: Lightning additive 40K verification
+on:
+  push:
+    branches: [chatgpt/lightning-local-expansion-20260928]
+    paths:
+      - '.github/workflows/lightning-expansion-build.yml'
+      - 'tools/build-lightning-expansion.py'
+      - 'modules/lexicon-expansion/source-lock.json'
+      - 'scripts/dictionary/local-lexicon-packs.js'
+      - 'tests/*lexicon-expansion*'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lightning-expansion-build
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/chatgpt/lightning-local-expansion-20260928'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: lightning-expansion-source-audit
+          run-id: 36402113742
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: source-audit
+      - uses: actions/download-artifact@v4
+        with:
+          name: lightning-kowiktionary-source
+          run-id: 36389875988
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ko-source
+      - name: Build from pinned inputs, trace every sense and test read-only lookups
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+          python3 tools/build-lightning-expansion.py --audit source-audit --ko-source ko-source/kowiktionary-en.jsonl | tee test-results/expansion-build.json
+          python3 tests/verify-lexicon-expansion-source.py --audit source-audit --ko-source ko-source/kowiktionary-en.jsonl | tee test-results/expansion-source.json
+          python3 tests/verify-lexicon-expansion-source.py | tee test-results/expansion-offline.json
+          node --check scripts/dictionary/local-lexicon-packs.js
+          node --test tests/verify-local-lexicon.mjs tests/verify-lexicon-expansion.mjs | tee test-results/expansion-node.txt
+          node --expose-gc tests/benchmark-lexicon-expansion.mjs test-results/expansion-benchmark.json
+      - name: Commit only generated additive assets to this experiment branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/chatgpt/lightning-local-expansion-20260928'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for pack in ko-additional en-translations kengdic-fallback; do
+            git add "assets/dictionaries/en-ko-expansion/$pack/dictionary.json" "assets/dictionaries/en-ko-expansion/$pack/dictionary.json.gz" "assets/dictionaries/en-ko-expansion/$pack/provenance.jsonl.gz"
+          done
+          git add assets/dictionaries/en-ko-expansion/manifest.json assets/dictionaries/en-ko-expansion/en-lemma-evidence.jsonl.gz
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m 'data(lightning): add 30,000 traceable headwords in separately licensed packs'
+            git push origin HEAD:refs/heads/chatgpt/lightning-local-expansion-20260928
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lightning-local-40k-verified
+          path: |
+            assets/dictionaries/en-ko-10k/
+            assets/dictionaries/en-ko-expansion/
+            scripts/dictionary/local-lexicon.js
+            scripts/dictionary/local-lexicon-packs.js
+            modules/lexical/core.js
+            modules/lexicon-expansion/
+            tools/build-lightning-lexicon.py
+            tools/build-lightning-expansion.py
+            tests/*lexicon-expansion*
+            tests/verify-local-lexicon.mjs
+            experiments/lightning-expanded/
+            docs/qa/lightning-local-expansion-20260928.md
+            test-results/expansion-*
+          retention-days: 14

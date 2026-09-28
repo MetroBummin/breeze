@@ -1,0 +1,34 @@
+{
+  "auditRun": 36402113742,
+  "auditCommit": "adf11371a9e2b20198ca908215f938261215eb4c",
+  "auditFiles": {
+    "report.json": "a048782f36480ca5c8ada8bc831f5fa1aa5616d193c2e20b6f58399f74ae00c0",
+    "kengdic.tsv.gz": "eacfc33f5be9cb9f02b05e7d336ec25cab5c976b239f77cc9dc04f3bbd9199b0",
+    "enwiktionary-lexemes.jsonl.gz": "cbe472f122cf5db0a7f1f4d9bc669ef9b5fa9106cb6946c00e725da4a78f716b",
+    "enwiktionary-ko-translations.jsonl.gz": "d87d5a6c302eb36902b756468f13f6206104eb21683c949ad0815e964be2dc59",
+    "kengdic-README.md": "7f2d425989ccb37179f2649154cf89b35ec5717d9d9a68866011ad5a2586e166",
+    "kengdic-datapackage.json": "e568ec76feb0bd2dd171a77a7dedad45f639e58a29e6851fa479b1aacb82e0a1"
+  },
+  "koEnglishJsonlSha256": "781557119807dd20890ec3243f507590b70a58bd73cf802094dbe1e9fb3d3834",
+  "kengdicTsvSha256": "d23236d5676f506514721e605534647ba4735a85bbb76b9e12d1ec067b8cfdb4",
+  "sources": [
+    {
+      "id": "kengdic",
+      "commit": "793de2369c9a98b944154eb4695d26854d2de59b",
+      "url": "https://raw.githubusercontent.com/garfieldnate/kengdic/793de2369c9a98b944154eb4695d26854d2de59b/kengdic.tsv",
+      "sha256": "d23236d5676f506514721e605534647ba4735a85bbb76b9e12d1ec067b8cfdb4",
+      "bytes": 11650286,
+      "rows": 133765,
+      "complete": true
+    },
+    {
+      "id": "enwiktionary",
+      "url": "https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz",
+      "uncompressedSha256": "e6e485811ce4f21910d989c88a90453a3faec05542e46bcab9defaa5ba43fb0e",
+      "sourceRows": 1492836,
+      "translationRows": 2553,
+      "lexemeRows": 808052,
+      "complete": true
+    }
+  ]
+}
