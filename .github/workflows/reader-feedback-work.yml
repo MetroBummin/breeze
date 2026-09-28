@@ -22,8 +22,9 @@ jobs:
       - name: Apply exact reviewed patch on this feature branch only
         if: hashFiles('.work/reader-feedback.patch') != ''
         run: |
-          git apply --check .work/reader-feedback.patch
-          git apply --index .work/reader-feedback.patch
+          python3 -c "import base64,gzip,pathlib; d=pathlib.Path('.work/reader-feedback.patch').read_bytes(); pathlib.Path('/tmp/reader-feedback.patch').write_bytes(d if d.startswith(b'diff --git') else gzip.decompress(base64.b64decode(d)))"
+          git apply --check /tmp/reader-feedback.patch
+          git apply --index /tmp/reader-feedback.patch
           git diff --cached --check
           git diff --cached --name-only --diff-filter=ACM | while IFS= read -r file; do
             case "$file" in *.js|*.mjs) node --check "$file" ;; esac
