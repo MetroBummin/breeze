@@ -173,7 +173,7 @@ try{
    assert(await page.locator('#rtext .w[style*="font-weight"]').count()>0);
    const before=await page.evaluate(()=>books.length);await page.evaluate(()=>ingestArticle('https://content.example/article?utm_source=test#fragment'));assert.equal(await page.evaluate(()=>books.length),before);
    await page.locator('#rtext .w').first().click();
-   await page.waitForTimeout(200);
+   await page.locator('#word-peek').waitFor({state:'visible'});
    assert(await page.locator('#word-peek').isVisible());
    await page.evaluate(()=>{closePanel();readerScrollTo(0);});
    const point=await page.evaluate(()=>{
