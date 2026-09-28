@@ -1,0 +1,45 @@
+name: Reader feedback work branch
+on:
+  push:
+    branches: [chatgpt/reader-lookup-shimmer-20260928]
+    paths:
+      - '.github/workflows/reader-feedback-work.yml'
+      - '.work/reader-feedback.patch'
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/chatgpt/reader-lookup-shimmer-20260928'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply exact reviewed patch on this feature branch only
+        if: hashFiles('.work/reader-feedback.patch') != ''
+        run: |
+          git apply --check .work/reader-feedback.patch
+          git apply --index .work/reader-feedback.patch
+          git diff --cached --check
+          git diff --cached --name-only --diff-filter=ACM | while IFS= read -r file; do
+            case "$file" in *.js|*.mjs) node --check "$file" ;; esac
+          done
+          node tests/verify-reader-feedback.mjs
+          git rm .work/reader-feedback.patch
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Implement non-blocking lookup feedback and persistent PDF ink controls'
+          git push origin HEAD:refs/heads/chatgpt/reader-lookup-shimmer-20260928
+      - name: Export exact branch source for local verification
+        if: always()
+        run: git archive --format=tar -o reader-feedback-source.tar HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reader-feedback-source
+          path: reader-feedback-source.tar
+          retention-days: 1
