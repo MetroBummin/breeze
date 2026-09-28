@@ -42,15 +42,14 @@ when successful. Restarting the app loses this recovery map; no client quota
 arithmetic or remote usage correction is introduced.
 
 READY still waits for 250ms motion idle. SHOWN now needs 750ms of continuous
-visibility before new user motion dismisses it. First live AI reveal gets a
-200ms opacity-only blue bloom; re-reveal, cache and reduced motion remain neutral.
+visibility before new user motion dismisses it. Live AI results, re-reveals and cache hits use the normal glass pill without an arrival accent.
 The mini pill entry animation also uses opacity only, preserving live placement.
 
 ## Deployment boundary
-The two scoped migrations were applied to production and dict v53 deployed on 2026-09-29. The web client stays local pending user UX validation; main is not merged. Apply only
+The two scoped migrations were applied to production and dict v53 deployed on 2026-09-29. The user approved main integration and a local iOS archive on 2026-09-29, with the arrival accent removed. The scoped deployment consists of
 `supabase/migrations/20260928152749_word_lookup_receipts.sql` to the **Breeze**
 project (`hrtfhojbhqvaoiulspto`), then deploy `dict` including `logical-lookup.ts`,
-and `20260928160147_lookup_trial_limits.sql`. Keep the client local until UX approval. The repository's existing Supabase config references a
+and `20260928160147_lookup_trial_limits.sql`. The repository's existing Supabase config references a
 separate project; do not blindly push all repository migrations.
 
 `look_v2` deliberately fails closed against the old Edge function's bad_op.
@@ -62,7 +61,7 @@ unmetered. Anonymous devices have one shared lifetime 50-quota balance in anon_u
 ## Verification
 `npm run test:word-recovery` executes the real migration/RPC with PGlite, the real
 Edge handler with fake provider responses, recovery/cancellation unit tests, and
-Chromium/WebKit AI arrival/accent/explicit retry/cache browser tests.
+Chromium/WebKit AI arrival/explicit retry/cache browser tests.
 `npm run test:word-scroll` covers 500ms unseen versus 750ms seen, idle, off-screen
 non-resurrection and ownership. Existing reader-feedback, lookup lifecycle,
 word-presentation, PDF highlight and lookup contract regressions are also checked.

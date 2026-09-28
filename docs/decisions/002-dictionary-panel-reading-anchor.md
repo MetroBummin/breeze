@@ -91,9 +91,16 @@ Manual retries keep the original opening's first-outcome metric but have their
 own request timings. Low sample counts and cancellations must not be interpreted
 as direct proof of dissatisfaction.
 
-## Arrival accent (2026-09-29)
-Only a successful live AI result marks the next mini-pill reveal for a 200ms pale
-blue opacity bloom. Deferred READY consumes it on the first actual reveal, not
-on result arrival while hidden. Subsequent scroll-idle reveals and saved/cache
-hits have no bloom. Mini-pill entry and result reveal use opacity only; position and scale stay
-fixed even on repeated scroll-idle reveals. Reduced motion remains neutral.
+## Result arrival (2026-09-29)
+
+A ready result uses the normal glass mini-pill appearance with no arrival color,
+reflection or accent animation. The pending word shimmer and scroll-idle reveal
+rules remain unchanged.
+
+## Scroll-safe word occurrence ownership (2026-09-29)
+
+A repeated tap is identified by its source occurrence, never its old screen rect:
+Text keeps its span identity, PDF keeps page identity and page-relative glyph box,
+and EPUB keeps the source Range endpoints. Replacement display markers inherit
+the same pending request. A different occurrence of an unresolved word retires
+the previous provisional record before selecting the new/saved-word path.

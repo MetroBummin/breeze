@@ -108,6 +108,37 @@ try{
   await page.locator('#word-peek-more').click();
   assert.equal(await page.locator('#panel').isVisible(),true);
   await move(10);assert.equal(await page.locator('#panel').isVisible(),false,'expanded detail scroll dismissal changed');
+  // An unsaved occurrence owns one request even after its screen position moves.
+  await page.evaluate(()=>{
+    closePanel();readerScroller().scrollTop=0;words={};dead={};recentWordOpens.clear();
+    window.retapRequests=[];sb=sb||{};dictGet=async()=>null;dictPut=async()=>{};
+    dictCall=(payload,signal)=>new Promise(resolve=>{
+      const request={payload,resolve,aborted:false};retapRequests.push(request);
+      signal?.addEventListener('abort',()=>{request.aborted=true;resolve(null);});
+    });
+    const nodes=[...document.querySelectorAll('#rtext .w')].filter(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>100);
+    window.retapNode=nodes[0];window.otherRetapNode=nodes[1];openWord('patient',retapNode);
+  });
+  await page.waitForFunction(()=>retapRequests.length===1);
+  const retapLife=await page.evaluate(()=>wordLookupLife);
+  await move(18);await page.evaluate(()=>openWord('patient',retapNode));
+  assert.equal(await page.evaluate(()=>wordLookupLife),retapLife,'same source occurrence lost request ownership after scroll');
+  assert.equal(await page.evaluate(()=>retapRequests.length),1);
+  assert.equal(await page.evaluate(()=>retapRequests[0].aborted),false);
+  assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
+  // Same spelling at another occurrence must start cleanly, not reuse a deleted record.
+  await page.evaluate(()=>openWord('patient',otherRetapNode));
+  await page.waitForFunction(()=>retapRequests.length===2);
+  assert.equal(await page.evaluate(()=>retapRequests[0].aborted),true);
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
+  await page.evaluate(()=>{
+    const r=retapRequests[1];r.resolve({kind:'word',canonical:'patient',ko:'참을성 있는',members:[r.payload.clickedIndex]});
+  });
+  await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
+  assert.equal(await page.locator('#word-peek-meaning').textContent(),'참을성 있는');
+  assert.equal(await page.evaluate(()=>activeSelectedWordNode===otherRetapNode),true);
+  assert.equal(await page.locator('.breeze-lookup-pending').count(),0);
   console.log('word scroll lifecycle browser: passed');
 }finally{
   await browser.close();await new Promise(done=>server.close(done));

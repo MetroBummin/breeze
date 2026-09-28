@@ -69,3 +69,23 @@ function fixture(){
   assert.equal(f.pill.hidden,false);assert.equal(f.timers.size,0);
 }
 console.log('word scroll-idle presentation: passed');
+
+// Scrolling changes geometry, never the identity of the tapped occurrence.
+{
+  const sourceNode={},otherNode={},page={},textNode={},endNode={};
+  const context={wordPeekActive:true,selKey:'word',words:{word:{word:'word'}},
+    activeSelectedWordNode:sourceNode,wordLookupTargets:new WeakMap()};
+  runInNewContext(fn('wordPeekSameTarget'),context);
+  assert.equal(context.wordPeekSameTarget('word',sourceNode),true);
+  assert.equal(context.wordPeekSameTarget('word',otherNode),false);
+  for(const target of [{owner:page,start:'0.1:0.2',end:'0.1:0.03'},
+    {owner:textNode,start:12,endNode,end:16}]){
+    context.wordLookupTargets.set(sourceNode,target);
+    context.wordLookupTargets.set(otherNode,{...target});
+    assert.equal(context.wordPeekSameTarget('word',otherNode),true,'replacement marker lost source identity');
+    context.wordLookupTargets.set(otherNode,{...target,start:99});
+    assert.equal(context.wordPeekSameTarget('word',otherNode),false,'different occurrence reused lookup');
+    context.wordLookupTargets.set(otherNode,{...target,owner:{}});
+    assert.equal(context.wordPeekSameTarget('word',otherNode),false,'another document/page reused lookup');
+  }
+}

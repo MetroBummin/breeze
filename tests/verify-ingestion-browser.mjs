@@ -211,18 +211,36 @@ try{
      save('breeze.feed-sources',[]);
      return retained.url===feed.url && retained.category==='culture';
    }),true);
-   await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditLinkEntry);
+   await page.evaluate(async entry=>{
+     // A real feed card is tappable only after its cover has decoded.
+     const readyEntry={...entry,photo:'https://content.example/photo.png'};
+     const card=rssCard(readyEntry);document.getElementById('casual-rail').appendChild(card);
+     if(!await rssCardPhoto(card,readyEntry))throw Error('Fixture cover did not decode');
+     return importRssEntry(readyEntry,card);
+   },redditLinkEntry);
    await page.waitForFunction(()=>document.querySelector('#article-preview').open);
    await page.locator('#article-preview .ap-start').click();
    await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/reddit-article');
    assert.equal(await page.locator('#rdiscovery').getAttribute('href'),redditLinkEntry.url);
-   await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),redditSelfEntry);
+   await page.evaluate(async entry=>{
+     // A real feed card is tappable only after its cover has decoded.
+     const readyEntry={...entry,photo:'https://content.example/photo.png'};
+     const card=rssCard(readyEntry);document.getElementById('casual-rail').appendChild(card);
+     if(!await rssCardPhoto(card,readyEntry))throw Error('Fixture cover did not decode');
+     return importRssEntry(readyEntry,card);
+   },redditSelfEntry);
    await page.waitForFunction(()=>document.querySelector('#article-preview').open);
    await page.locator('#article-preview .ap-start').click();
    await page.waitForFunction(url=>curBook?.sourceUrl===url,redditSelfEntry.url);
    assert.equal(await page.evaluate(()=>curBook.contentType),'post');
    assert.equal(await page.locator('#rtext').evaluate(node=>node.textContent.includes('submitted by')),false);
-   await page.evaluate(async entry=>importRssEntry(entry,rssCard(entry)),xEntry);
+   await page.evaluate(async entry=>{
+     // A real feed card is tappable only after its cover has decoded.
+     const readyEntry={...entry,photo:'https://content.example/photo.png'};
+     const card=rssCard(readyEntry);document.getElementById('casual-rail').appendChild(card);
+     if(!await rssCardPhoto(card,readyEntry))throw Error('Fixture cover did not decode');
+     return importRssEntry(readyEntry,card);
+   },xEntry);
    await page.waitForFunction(()=>document.querySelector('#article-preview').open);
    await page.locator('#article-preview .ap-start').click();
    await page.waitForFunction(url=>curBook?.sourceUrl===url,xEntry.url);
@@ -295,7 +313,7 @@ try{
       const rail=document.getElementById('casual-rail'),empty=document.getElementById('home-feed-empty');
       rail.querySelectorAll('.rss-card').forEach(node=>node.remove());delete rail.dataset.rssStamp;
       const pending=renderRssCards(rail,false,empty);
-      const loading=rail.querySelectorAll('.rss-loading .rss-spinner').length===1 && empty.hidden;
+      const loading=rail.querySelectorAll('.rss-loading .rss-skeleton').length===3 && empty.hidden;
       finish([[]]);await pending;
       return loading && !rail.querySelector('.rss-loading');
     }finally{loadRss=original;}

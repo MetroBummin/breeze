@@ -57,10 +57,10 @@ try{
   assert.equal(requests.length,2);assert.equal(requests[0].op,'look_v2');
   assert.equal(requests[0].lookupId,requests[1].lookupId);
   assert.equal(await page.evaluate(()=>words[selKey].ko),'참을성 있는');
-  assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),true);
+  assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false);
   const rect=await pill.boundingBox();
   await page.waitForTimeout(250);
-  assert.equal(await pill.evaluate(n=>getComputedStyle(n,'::after').opacity),'0','accent did not return to neutral');
+  assert.equal(await pill.evaluate(n=>getComputedStyle(n,'::after').content),'none','arrival added a decorative overlay');
   assert.deepEqual(await pill.boundingBox(),rect,'accent moved the pill');
   // Under 750ms of continuous visibility remains unseen and can reveal again.
   await page.evaluate(()=>readerScroller().scrollTop+=8);
@@ -78,5 +78,5 @@ try{
   await page.evaluate(()=>{const node=qaNode;closePanel();openWord('patient',node);});
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   assert.equal(requests.length,3);assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false);
-  console.log('word recovery + arrival accent browser: passed');
+  console.log('word recovery + neutral arrival browser: passed');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

@@ -1656,7 +1656,7 @@ assert.doesNotMatch(dictServer,/function opRoute|function opPhrase|function opRe
   'The server still exposes a retired phrase/router/repair pipeline');
 assert.doesNotMatch(dictionarySource,/BREEZE_LEXICON|breezeBaseSense|baseSenseId|translationQuality/,
   'The OEWN/lazy-Korean sense pipeline survived the architecture reset');
-assert.match(dictionarySource,/op:'look'[\s\S]{0,500}tokens:lookupTokens\.map[\s\S]{0,120}clickedIndex/,
+assert.match(dictionarySource,/op:'look_v2'[\s\S]{0,500}tokens:lookupTokens\.map[\s\S]{0,120}clickedIndex/,
   'DeepSeek mini lookup is not given the sentence token map and tapped index');
 assert.match(dictionarySource,/function expressionFromMini/,
   'DeepSeek expression results have no client-side typed boundary');
@@ -1691,7 +1691,7 @@ assert.doesNotMatch(runningCode(dictionarySource), /if\(selKey===k\) renderPanel
   'Rendering is gated on the word key again, so a reopened lookup accepts the previous opening\'s answer');
 /* 도착한 답까지 버리면 한도만 쓰고 낱말은 빈 채로 남습니다. 끊겨서 **빈손으로**
    돌아온 것만 없던 일입니다. */
-assert.match(dictionarySource, /if\(!j && ctrl && ctrl\.signal\.aborted\) return false;/,
+assert.match(dictionarySource, /if\(!j && !wordLookupAlive\(life\)\) return false;/,
   'An answer that beat the cancellation is thrown away again');
 /* 세는 곳은 서버 하나입니다 — 여기서 빼지도, 되돌리지도 않습니다. */
 assert.doesNotMatch(runningCode(dictionarySource), /anonLooksLeft\s*(--|\+\+|-=|\+=)/,
@@ -1709,11 +1709,12 @@ assert.match(sentenceSource, /const sentKey = text => 's:' \+ sentenceHash\(text
 /* 남은 횟수를 세는 날짜는 낱말 쪽에 삽니다 — 두 기능이 같은 하루를 봅니다. */
 assert.match(dictionarySource, /function aiDay\(\)/,
   'The Korean-day helper is gone, so the AI allowance loses its calendar');
-/* 서버 쪽: 현재 하루 300회 풀을 쓰고 문장 해석만 2회를 씁니다. */
+/* 서버 쪽: 현재 하루 3000회 풀을 쓰고 문장 해석만 2회를 씁니다. */
 const dictServerSource = readFileSync(resolve(root, 'server/dict/index.ts'), 'utf8');
 assert.match(dictServerSource, /async function opExplain/, 'The server has no sentence explanation op');
-assert.match(dictServerSource, /DEFAULT_DAILY_LIMIT=300/, 'The reconciled production daily AI allowance is not 300');
-assert.match(dictServerSource, /EXPLAIN_COST=2/, 'Sentence explanations do not spend two AI calls');
+assert.match(dictServerSource, /DEFAULT_DAILY_LIMIT=3000;/, 'The reconciled production daily AI allowance is not 3000');
+assert.match(dictServerSource, /SR\.rpc\("sentence_lookup_receipt"/, 'Sentence explanations bypass successful-result receipts');
+assert.match(readFileSync(resolve(root, 'supabase/migrations/20260928160147_lookup_trial_limits.sql'), 'utf8'), /public\.take_ai_quota\(p_user,p_limit,2\)/, 'Sentence explanations do not spend two AI calls');
 const serveRouter=(dictServerSource.match(/Deno\.serve\([\s\S]*$/)||[''])[0];
 assert.ok(
   serveRouter.indexOf('if(op==="explain")') < serveRouter.indexOf('if(!/^[A-Za-z]'),

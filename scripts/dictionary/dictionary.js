@@ -438,6 +438,8 @@ function deleteMeaning(id){
 let previewWordCard=null;
 function displayedWord(k){ return previewWordCard && previewWordCard.key===k ? previewWordCard : words[k]; }
 const wordTapPoints=new WeakMap();
+// Source occurrences survive scroll; disposable original-format markers do not.
+const wordLookupTargets=new WeakMap();
 function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
@@ -452,6 +454,9 @@ function openWord(k, node, point){
     return;
   }
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.switchTarget(wordLookupLife);
+  // A different occurrence of the same unsaved word starts fresh. Retire its
+  // provisional record before choosing the saved/new-word branch.
+  if(pendingWord&&pendingWord.key===k&&!pendingWordResolved(k))endWordLookupLife();
   if(!words[k]){ addWord(k, node); return; }
   const root=words[k].root||k;
   contextView=null;
@@ -505,7 +510,6 @@ let wordPeekRetryState=null;
 let wordDetailAnchored=false,wordMorphAnimation=null,wordMorphGeneration=0;
 const WORD_PEEK_SCROLL_IDLE_MS=250;
 const WORD_PEEK_SEEN_MS=750;
-let wordPeekAccentPending=false;
 let wordPeekLastScroll=-Infinity,wordPeekRevealTimer=null;
 let wordPeekPresentation='LOOKING_UP',wordPeekShownAt=null,wordPeekPresentationEnded=false;
 let wordPeekScrollPosition=null;
@@ -539,7 +543,6 @@ function wordPeekUserScrolled(userScroll=true){
   const seen=userScroll&&wordPeekPresentation==='SHOWN'&&wordPeekShownAt!==null
     &&performance.now()-wordPeekShownAt>=WORD_PEEK_SEEN_MS;
   document.getElementById('word-peek').hidden=true;
-  document.getElementById('word-peek').classList.remove('result-accent');
   cancelWordPeekReveal();
   if(offscreen||seen){
     wordPeekPresentationEnded=true;
@@ -600,13 +603,13 @@ function wordPeekTargetVisible(node){
   return rect.right>left&&rect.left<right&&rect.bottom>top&&rect.top<bottom;
 }
 function wordPeekSameTarget(k,node){
-  if(!wordPeekActive||!selKey||!words[selKey]||!wordPeekAnchor) return false;
+  if(!wordPeekActive||!selKey||!words[selKey]||!node) return false;
   const root=words[selKey].root||selKey;
   if(k!==root&&k!==selKey) return false;
-  const rect=wordPeekNodeRect(node);
-  if(!rect) return node===activeSelectedWordNode;
-  return Math.hypot((rect.left+rect.right-wordPeekAnchor.left-wordPeekAnchor.right)/2,
-    (rect.top+rect.bottom-wordPeekAnchor.top-wordPeekAnchor.bottom)/2)<6;
+  if(node===activeSelectedWordNode)return true;
+  const current=wordLookupTargets.get(activeSelectedWordNode),next=wordLookupTargets.get(node);
+  return !!(current&&next&&current.owner===next.owner&&current.start===next.start
+    &&current.end===next.end&&current.endNode===next.endNode);
 }
 function wordPeekState(w,context){
   if(context&&context.error)return {text:context.error==='deleted'?'지운 뜻이에요'
@@ -724,7 +727,7 @@ function renderWordPeek(){
     activeSelectedWordNode,state,!state.loading&&hasResolvedMeaning(w)
       &&!(currentContext(selKey)&&currentContext(selKey).error)
       &&!(wordPeekRetryState&&wordPeekRetryState.error));
-  if(state.loading){wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.classList.remove('result-accent');pill.hidden=true;return;}
+  if(state.loading){wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.hidden=true;return;}
   if(wordPeekPresentation!=='SHOWN')wordPeekPresentation='READY';
   if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
   cancelWordPeekReveal();
@@ -737,9 +740,6 @@ function renderWordPeek(){
       if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
       if(activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode)){closePanel();return;}
       if(activeSelectedWordNode)rememberWordPeekAnchor(activeSelectedWordNode);
-      if(wordPeekAccentPending){
-        wordPeekAccentPending=false;pill.classList.add('result-accent');
-      }
       // hidden uses display:none, so placement cannot measure it. Keep it
       // invisible but laid out until its current anchor has been positioned.
       pill.style.visibility='hidden';pill.hidden=false;
@@ -1423,8 +1423,6 @@ function beginWordLookupLife(){
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
 function endWordLookupLife(){
   cancelWordPeekReveal();
-  wordPeekAccentPending=false;
-  document.getElementById('word-peek').classList.remove('result-accent');
   wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;wordPeekPresentationEnded=false;
   wordPeekScrollPosition=wordPeekMotionPosition();
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.end(wordLookupLife);
@@ -1628,7 +1626,6 @@ async function fetchLook(k, opt){
       if(w.aiOff === 'trial') anonLooksLeft = 0;
       return false;
     }
-    if(wordLookupAlive(life))wordPeekAccentPending=true;
     if(typeof j.left === 'number') rememberAiLeft(j.left);
     await dictPut(lookKey(opt.word || w.word || k, querySentence,clickedIndex), Object.assign({}, j, { done:true }));
     /* 갓 받은 답은 최소 0.28초는 바람을 보여 준 뒤에 놓습니다. 답이 너무 빨리 오면

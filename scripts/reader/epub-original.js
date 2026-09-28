@@ -780,9 +780,11 @@ registerReaderSurface({
 
 function openOriginalRange(doc,range,raw,owner,rect){
   if(!doc || !range || !raw || !owner || !rect) return;
-  clearOriginalSelectionMarkers();
+  // openWord compares the old source occurrence before transferring marker ownership.
   const marker=doc.createElement('span');
   marker.className='breeze-original-word original-selection-marker';
+  wordLookupTargets.set(marker,{owner:range.startContainer,start:range.startOffset,
+    endNode:range.endContainer,end:range.endOffset});
   marker.textContent=raw;
   const key=keyOf(raw); marker.dataset.w=key;
   const block=owner.closest&&owner.closest('p,li,blockquote,h1,h2,h3,h4');
