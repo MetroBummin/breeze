@@ -1,0 +1,41 @@
+name: PR47 scroll-continuity check
+on:
+  push:
+    branches: [chatgpt/reader-lookup-shimmer-20260928]
+    paths:
+      - '.github/workflows/pr47-scroll-continuity.yml'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Stamp changed assets
+        run: node tools/stamp-version.mjs
+      - name: Unit and structure checks
+        run: |
+          node --check scripts/dictionary/dictionary.js
+          node --check scripts/reader/gesture.js
+          node tests/verify-reader-feedback.mjs
+          git diff --check
+      - name: Browser dependencies
+        run: npx playwright install --with-deps chromium webkit
+      - name: Scroll-continuity browser regression
+        run: node tests/verify-reader-feedback-browser.mjs
+      - name: Commit cache stamps only
+        run: |
+          git add index.html sw.js
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Stamp scroll-continuity reader assets'
+            git push origin HEAD:refs/heads/chatgpt/reader-lookup-shimmer-20260928
+          fi
