@@ -73,8 +73,9 @@ try{
         await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
         assert.equal(await page.locator('#rtitle').textContent(),'Second article');
         if(width===390){
+          await page.evaluate(()=>show('home'));
+          await page.waitForFunction(()=>!rssLoading&&!document.querySelector('#casual-rail .rss-loading'));
           await page.evaluate(async base=>{
-            show('home');
             const url='https://example.com/new-from-feed';
             const blocks=[{r:'p',t:'A fresh article has enough source text to introduce the subject and let readers decide whether to continue. It has several more paragraphs in the original article.'}];
             rssPreparedArticles.set(articleUrlKey(url),{title:'New from feed',site:'Example',url,cover:'',blocks,...articleAssemble('New from feed',blocks)});
