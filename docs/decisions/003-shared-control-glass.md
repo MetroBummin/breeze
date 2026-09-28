@@ -120,8 +120,9 @@ Local long-form and shared-link cards use deterministic local SVG line ornaments
 when no cover is available. Casuals use the title (three lines), not a long body
 excerpt. The full title remains available in card metadata; stored article
 content is unchanged. Existing palette tokens supply both themes, and real covers
-hide the ornament. RSS discovery cards require a working cover image and stay
-hidden when the cover is absent or fails to load. Add/loading/cloud-recovery
+hide the ornament. RSS discovery cards require a working cover image. Home reserves their footprint
+with a graphite glass skeleton while loading; content and interaction appear only
+after the photo succeeds. Absent or failed covers are still excluded. Add/loading/cloud-recovery
 controls retain their existing layout. Phone and desktop light/dark screenshots
 were reviewed with WebKit.
 

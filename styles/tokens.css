@@ -513,3 +513,19 @@ body.dark{--wordbook-field:#3a3a3c;--wordbook-star:#4a3a20;--wordbook-star-ink:#
 
 :root{--wordbook-toolbar-line:rgba(35,55,72,.06);--wordbook-row-hover:rgba(77,174,214,.08);}
 body.dark{--wordbook-toolbar-line:rgba(255,255,255,.06);--wordbook-row-hover:rgba(121,190,223,.08);}
+
+/* Discovery skeleton: polished smoke glass by day, deep graphite at night. */
+:root{
+  --rss-skeleton-surface:linear-gradient(155deg,rgba(255,255,255,.30),transparent 36%),linear-gradient(170deg,#777d84,#646a72 52%,#555b63);
+  --rss-skeleton-edge:inset 0 1px 0 rgba(255,255,255,.38),inset 0 0 0 1px rgba(255,255,255,.16);
+  --rss-skeleton-shimmer:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.055) 48%,rgba(255,255,255,.10) 51%,transparent 65%);
+  --rss-skeleton-line:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,.08));
+  --rss-skeleton-line-edge:inset 0 1px 0 rgba(255,255,255,.14);
+}
+body.dark{
+  --rss-skeleton-surface:linear-gradient(155deg,rgba(255,255,255,.10),transparent 36%),linear-gradient(170deg,#303237,#1b1d21 52%,#111216);
+  --rss-skeleton-edge:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(255,255,255,.07);
+  --rss-skeleton-shimmer:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.045) 48%,rgba(255,255,255,.07) 51%,transparent 65%);
+  --rss-skeleton-line:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.035));
+  --rss-skeleton-line-edge:inset 0 1px 0 rgba(255,255,255,.06);
+}

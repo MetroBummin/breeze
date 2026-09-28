@@ -195,6 +195,7 @@ function renderer({id='casual-rail',category='all',options=personalized()}={}){
   const ctx=environment({document,books:options.library||[],positions:options.positions||{},
     load:(key,fallback)=>key==='breeze.feed-category'?category:fallback});
   // Network and visual DOM are replaced; production ranking/paint stays intact.
+  ctx.rssAlignRailStart=rail=>{rail.scrollLeft=0;delete rail.dataset.rssResetStart;};
   ctx.rssSources=()=>feeds;
   ctx.loadRss=async()=>groupData;
   ctx.rssCard=entry=>{const card=new Node('casual rss-card');card.dataset.rssUrl=entry.url;card.hidden=true;return card;};

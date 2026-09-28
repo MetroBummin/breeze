@@ -266,7 +266,7 @@ function refreshRssPhotoEmpty(rail){
   empty.hidden=hasPhoto || !!rssLoading;
 }
 
-/* Discovery only shows entries after their cover image has loaded. */
+/* Keep the discovery footprint visible while its cover is decoding. */
 async function rssCardPhoto(card, entry){
   const image = /** @type {HTMLImageElement} */(card.querySelector('.cover'));
   const thumb = card.querySelector('.thumb');
@@ -288,9 +288,11 @@ async function rssCardPhoto(card, entry){
   }
   if(ok && card.isConnected){
     image.hidden=false;thumb.classList.add('has-cover');card.hidden=false;
+    card.classList.remove('rss-pending');card.removeAttribute('aria-busy');
+    card.removeAttribute('aria-disabled');card.tabIndex=0;
     if(card.closest('#v-home'))homeSmartCrop(image,entry.photo,3/4,()=>fetchArticleImage(entry.photo));
     const rail=card.parentElement;
-    if(rail?.dataset.rssResetStart){rail.scrollLeft=0;delete rail.dataset.rssResetStart;}
+    if(rail?.dataset.rssResetStart)rssAlignRailStart(rail);
     refreshRssPhotoEmpty(rail);
   }
   else if(card.isConnected){
@@ -301,16 +303,22 @@ async function rssCardPhoto(card, entry){
   return ok;
 }
 
+function rssSkeletonMarkup(){
+  return '<div class="rss-skeleton" aria-hidden="true"><span class="rss-skeleton-source"></span><span class="rss-skeleton-title"><i></i><i></i><i></i></span></div>';
+}
+
 function rssCard(entry){
   const card = document.createElement('article');
-  card.hidden = true;
+  card.hidden = false;
   const color = entry.source === 'ProPublica' ? 1 : 0;
-  card.className = 'casual rss-card cpal' + color;
+  card.className = 'casual rss-card rss-pending cpal' + color;
   card.dataset.rssUrl=entry.url;
   accessibleLibraryCard(card,[entry.title,entry.source,'미리보기 열기'].filter(Boolean).join(' · '));
   card.innerHTML = `<div class="thumb rss-thumb editorial-cover">${coverArtwork(entry.url)}<img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
+  card.insertAdjacentHTML('beforeend',rssSkeletonMarkup());
+  card.setAttribute('aria-busy','true');card.setAttribute('aria-disabled','true');card.tabIndex=-1;
   card.querySelector('.src').textContent = entry.source;
   card.querySelector('.lede').textContent = entry.title;
   card.querySelector('.ct').textContent = entry.title;
@@ -325,7 +333,7 @@ function rssCard(entry){
   return card;
 }
 async function importRssEntry(entry, card){
-  if(card.classList.contains('busy'))return;
+  if(card.classList.contains('busy') || card.classList.contains('rss-pending'))return;
   card.classList.add('busy');
   const preparation=articlePreviewPrepare(entry,card);
   const options={preview:true,present:!preparation,deferSave:true};
@@ -542,9 +550,27 @@ function rssRankRecommendations(groups, options={}){
   return result;
 }
 
+const rssStartFrames=new WeakMap();
+function rssAlignRailStart(rail){
+  cancelAnimationFrame(rssStartFrames.get(rail));
+  // DOM replacement can make CSS snap retain the outgoing card's position.
+  // Keep snap suspended until the new layout has had a frame to settle.
+  rail.style.scrollSnapType='none';
+  rail.scrollLeft=0;
+  rssStartFrames.set(rail,requestAnimationFrame(()=>{
+    rail.scrollLeft=0;
+    rssStartFrames.set(rail,requestAnimationFrame(()=>{
+      rail.style.removeProperty('scroll-snap-type');
+      rail.scrollLeft=0;
+      delete rail.dataset.rssResetStart;
+      rssStartFrames.delete(rail);
+    }));
+  }));
+}
+
 function renderRssCards(rail, force, empty){
   const category='all';
-  if(rail.dataset.rssCategory!==category){
+  if(force || rail.dataset.rssCategory!==category){
     rail.dataset.rssCategory=category;
     rail.dataset.rssResetStart='1';
     rail.scrollLeft=0;
@@ -553,10 +579,13 @@ function renderRssCards(rail, force, empty){
   rssRenderIds.set(rail,renderId);
   rail.querySelectorAll('.shared-card').forEach(card=>card.remove());
   if(!rail.querySelector('.rss-card,.rss-loading')){
-    const placeholder=document.createElement('div');placeholder.className='casual rss-loading';
-    placeholder.setAttribute('role','status');placeholder.setAttribute('aria-label','글 불러오는 중');
-    placeholder.innerHTML='<div class="thumb"><span class="rss-spinner" aria-hidden="true"></span></div>';
-    rail.insertBefore(placeholder,rail.querySelector('.casual.add'));
+    for(let slot=0;slot<3;slot++){
+      const placeholder=document.createElement('article');placeholder.className='casual rss-loading';
+      if(!slot){placeholder.setAttribute('role','status');placeholder.setAttribute('aria-label','글 불러오는 중');}
+      else placeholder.setAttribute('aria-hidden','true');
+      placeholder.innerHTML='<div class="thumb"></div>'+rssSkeletonMarkup();
+      rail.insertBefore(placeholder,rail.querySelector('.casual.add'));
+    }
   }
   if(empty)empty.hidden=true;
   let revision=0;
@@ -574,6 +603,7 @@ function renderRssCards(rail, force, empty){
     if(!force && rail.dataset.rssStamp===stamp && rail.dataset.rssRecommendationStamp===recommendationStamp){
       if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
       if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;
+      if(rail.dataset.rssResetStart)rssAlignRailStart(rail);
       return;
     }
     const selected=recommendationContext?rssRankRecommendations(groups,recommendationContext):groups;
@@ -598,13 +628,12 @@ function renderRssCards(rail, force, empty){
       if(old)cards[i]=old;
     }
     existing.forEach(duplicates=>duplicates.forEach(card=>card.remove()));
-    if(cards.length || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(card=>card.remove());
-    const before=rail.querySelector('.casual.add');
+    const keepStart=!!rail.dataset.rssResetStart || rail.scrollLeft<=1;
+    const slots=[...rail.querySelectorAll('.rss-loading')];
+    const before=slots[0] || rail.querySelector('.casual.add');
     cards.forEach(card=>rail.insertBefore(card,before));
-    if(rail.dataset.rssResetStart){
-      rail.scrollLeft=0;
-      if(cards.some(card=>!card.hidden) || (!rssLoading && !cards.length))delete rail.dataset.rssResetStart;
-    }
+    slots.forEach((slot,index)=>{if(index<cards.length || !rssLoading)slot.remove();});
+    if(keepStart)rssAlignRailStart(rail);
     const entries=groups.flat();
     cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;

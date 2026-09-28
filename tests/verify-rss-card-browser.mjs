@@ -40,14 +40,35 @@ try{
         const qaRail=document.createElement('div');qaRail.id='qa-rail';document.body.append(qaRail);
         const card=rssCard(entry);qaRail.append(card);
         window.rssCoverReady=rssCardPhoto(card,entry);
-        return {noPhotoCount:noPhoto.length,hiddenUntilPhoto:card.hidden};
+        return {noPhotoCount:noPhoto.length,pendingUntilPhoto:card.classList.contains('rss-pending'),hidden:card.hidden};
       });
       assert.equal(state.noPhotoCount,0);
-      assert.equal(state.hiddenUntilPhoto,true);
+      assert.equal(state.pendingUntilPhoto,true);
+      assert.equal(state.hidden,false);
       assert.equal(await page.evaluate(()=>window.rssCoverReady),true);
       const coverState=await page.locator('#qa-rail .rss-card').evaluate(card=>({hidden:card.hidden,loaded:card.querySelector('.cover').naturalWidth}));
       assert.equal(coverState.hidden,false);
       assert(coverState.loaded>=60);
+      const skeletonStates=await page.evaluate(async()=>{
+        if(rssLoading)await rssLoading;
+        const rail=document.getElementById('casual-rail');
+        const results=[];
+        for(const dark of [false,true]){
+          document.body.classList.toggle('dark',dark);
+          const entry={title:'A longer headline across multiple lines',url:'https://example.com/geometry',source:'Example',photo:'https://images.test/rss-cover.png'};
+          const card=rssCard(entry);rail.append(card);
+          const bounds=()=>{const r=card.getBoundingClientRect();return [r.x,r.y,r.width,r.height];};
+          const before=bounds();
+          const material=getComputedStyle(card.querySelector('.rss-skeleton')).backgroundImage;
+          await rssCardPhoto(card,entry);
+          results.push({before,after:bounds(),material,pending:card.classList.contains('rss-pending')});
+          card.remove();
+        }
+        document.body.classList.remove('dark');
+        return results;
+      });
+      for(const state of skeletonStates){assert.deepEqual(state.before,state.after);assert.equal(state.pending,false);}
+      assert.notEqual(skeletonStates[0].material,skeletonStates[1].material);
       await page.evaluate(()=>{
         window.rssOpenCount=0;
         importRssEntry=()=>{window.rssOpenCount++;};
@@ -72,6 +93,22 @@ try{
         return rail.scrollLeft;
       });
       assert(homeScroll>100,'Home rail did not reach later cards');
+      // Refresh must reset a later card, including after DOM replacement/snap.
+      await page.evaluate(async()=>{
+        loadBooks=async()=>{};
+        loadRss=async()=>rssCands;
+        await refreshLibrary();
+      });
+      await page.waitForTimeout(150);
+      assert.equal(await page.locator('#casual-rail').evaluate(rail=>rail.scrollLeft),0,'Refresh retained a horizontal offset');
+      for(let repeat=0;repeat<3;repeat++){
+        await page.evaluate(async()=>{
+          rssCands=rssCands.map((entries,index)=>entries.map(entry=>({...entry,url:entry.url+'-next',title:entry.title+' next'})));
+          await renderRssCards(document.getElementById('casual-rail'),true,document.getElementById('home-feed-empty'));
+        });
+        await page.waitForTimeout(150);
+        assert.equal(await page.locator('#casual-rail').evaluate(rail=>rail.scrollLeft),0,'Replacement shifted the first card');
+      }
       await page.evaluate(()=>show('casuals'));
       assert.equal(await page.locator('#v-casuals .rss-card,#v-casuals .feed-categories').count(),0);
       console.log(engine.name(),'RSS cover/tap behavior and Home-only discovery passed');

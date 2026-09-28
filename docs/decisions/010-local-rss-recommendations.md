@@ -95,3 +95,19 @@ execution environment could not clone/install dependencies over the network.
 Before merging, integrate current Home/Preview, run `npm test`,
 `npm run test:ingestion` and `npm run test:home-ui`, and check real Home refresh,
 card photos, Preview/Reader routing and a few representative reading histories.
+
+## Discovery loading presentation (2026-09-28)
+
+Home reserves three existing 3:4 card footprints during a cold feed load.
+Each arriving card occupies a footprint while its photo loads, with a theme-aware
+graphite glass skeleton covering the image, publisher and headline regions.
+Cards cannot be opened or keyboard-focused until the photo succeeds. Successful
+loads fade the overlay over 650 ms without changing card geometry; reduced motion
+disables the shimmer and fade. Existing decoded cards remain visible on refresh.
+Missing or failed covers still follow the existing exclusion and empty-state path.
+The shared control glass and Lookup materials are unchanged.
+
+Home refresh starts at the first recommendation. When a rail already at its
+start replaces skeletons/cards, CSS snapping is suspended for two animation
+frames and the scroll offset is reset after layout. Ordinary updates while the
+user browses later cards continue preserving their position and order.

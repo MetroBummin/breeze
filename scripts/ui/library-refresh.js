@@ -47,6 +47,11 @@ function refreshLibrary(){
   if(libraryRefreshTask) return libraryRefreshTask;
   if(!libraryRefreshAllowed()) return Promise.resolve();
   const view=activeAppView();
+  if(view==='home'){
+    const rail=document.getElementById('casual-rail');
+    rail.dataset.rssResetStart='1';
+    rssAlignRailStart(rail);
+  }
   const indicator=document.getElementById('library-refresh');
   if(!nativeRefreshHandler){
     libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
