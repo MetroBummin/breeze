@@ -566,12 +566,15 @@ function clickGesture(event){
    같으면 그 스크롤은 우리가 낸 것입니다. 정확하고, 얼마나 걸리든 맞습니다
    (`readerScrollTo` 가 적어 둡니다 — scripts/reader/reader-scroll.js). */
 function scrollGesture(){
-  if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
-      && !(typeof readerScrollWasProgrammatic==='function' && readerScrollWasProgrammatic())){
+  const userScroll=!(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic());
+  if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive() && userScroll){
     if(typeof closeSentence==='function') closeSentence();
   }
-  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()
-      && !(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic())
+  /* A visible pill/detail is tied to screen coordinates, so scrolling dismisses it.
+     A hidden pending shimmer is tied to the word itself: keep its single lookup
+     alive and decide presentation only when the terminal result arrives. */
+  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&userScroll
+      && !(typeof wordPeekPending==='function'&&wordPeekPending())
       && typeof closePanel==='function') closePanel();
   if(!activeGesture) return;
   /* 창이 임자인 손짓은 화면이 움직여도 창의 것입니다. */
