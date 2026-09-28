@@ -29,7 +29,7 @@ const context=vm.createContext({console,document:doc,performance:{now:()=>clock}
   displayedWord:()=>context.card,currentContext:()=>context.current,
   selKey:'private-word-do-not-log',card:{ko:'',loading:true},current:null,wordPeekRetryState:null,
   activeSelectedWordNode:word,wordPeekActive:true,placeWordPeek:()=>placed++,
-  wordPeekTargetVisible:()=>true,
+  wordPeekTargetVisible:()=>true,rememberWordPeekAnchor:()=>({}),
   navigator:{onLine:true},meaningWaitLine:()=> '뜻을 찾지 못했어요'});
 vm.runInContext(read('scripts/dictionary/lookup-feedback.js')+'\n'+
   part('wordPeekState','placeWordPeek')+part('renderWordPeek','renderWordLookup')+
