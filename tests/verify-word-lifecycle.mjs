@@ -95,7 +95,7 @@ function makeNet(world){
     if(payload && payload.op === 'warm') return Promise.resolve(null);
     world.sent.push(payload.op);world.payloads=(world.payloads||[]).concat(payload);
     return new Promise(res => {
-      const entry = { res, signal, done:false };
+      const entry = { res, signal, payload, done:false };
       /* `outran` 은 "답이 끊기보다 빨랐다"입니다 — 이미 선을 타고 오던 답은
          우리가 끊어도 도착합니다. 실기기에서 흔한 쪽이고, 이 시험에서 "그래도
          남아야 한다"를 확인하는 유일한 길입니다. */
@@ -113,7 +113,9 @@ function makeNet(world){
     waiting.forEach(entry => {
       if(entry.done) return;
       entry.done = true;
-      entry.res(value === undefined ? net.answer : value);
+      let answer=value === undefined ? net.answer : value;
+      if(answer?.ko&&!answer.kind)answer={...answer,kind:'word',canonical:entry.payload.word,members:[entry.payload.clickedIndex]};
+      entry.res(answer);
     });
   };
   return net;
@@ -204,6 +206,11 @@ function boot(){
     { filename:'scripts/sync/sync.js#mergeWordState' }).runInNewContext(context);
   /* `dictCall` 은 이 파일이 스스로 선언하므로, 올려놓은 **뒤에** 갈아 끼웁니다. */
   context.dictCall = net.dictCall;
+  // This suite owns lookup/storage, not layout. Give synthetic word spans a
+  // visible rect so the real deferred reveal does not dismiss a missing anchor.
+  context.wordPeekNodeRect=node=>node?{left:100,right:150,top:100,bottom:120,width:50,height:20}:null;
+  context.wordPeekTargetVisible=()=>true;
+  context.placeWordPeek=()=>{};
   /* 그리는 횟수는 창을 그리는 문 하나만 세면 됩니다. */
   const realRender = context.renderPanel;
   context.renderPanel = function(...args){ world.renders++; return realRender.apply(this, args); };
@@ -318,11 +325,11 @@ function tapNewWord(ctx, key){
   assert.deepEqual(world.sent,[]);
   assert.equal(world.el('word-peek-meaning').textContent,'달');
   const retry=ctx.retryWordPeek();await settle();
-  assert.deepEqual(world.sent,['look']);
+  assert.deepEqual(world.sent,['look_v2']);
   net.deliver({kind:'word',canonical:'moon',members:[1],ko:'위성'});await retry;await settle(320);
   assert.equal(world.el('word-peek-meaning').textContent,'위성');
   ctx.closePanel();ctx.openWord('moon',span);await settle();
-  assert.deepEqual(world.sent,['look'],'same occurrence spent another request');
+  assert.deepEqual(world.sent,['look_v2'],'same occurrence spent another request');
   assert.equal(world.el('word-peek-meaning').textContent,'위성');
 }
 
@@ -703,7 +710,7 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   const span={textContent:'took',dataset:{example:sentence,clickedTokenIndex:'1'},
     classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('take',span);await settle(20);
-  assert.deepEqual(world.sent,['look'],'새 lexical item이 DeepSeek mini lookup으로 바로 가지 않았습니다');
+  assert.deepEqual(world.sent,['look_v2'],'새 lexical item이 DeepSeek mini lookup으로 바로 가지 않았습니다');
   assert.equal(world.payloads[0].sentence,sentence,'DeepSeek mini lookup에 문장 전체가 가지 않았습니다');
   assert.equal(world.payloads[0].clickedIndex,1,'클릭 token index가 drift했습니다');
   assert.deepEqual(Array.from(world.payloads[0].tokens,item=>item.text),['He','took','the','criticism','into','account'],
@@ -711,7 +718,7 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   net.deliver({kind:'expression',canonical:'take into account',members:[1,4,5],ko:'고려하다',
     lemma:'take into account',pos:'',gloss:'',alts:[]});
   await rest(AI_MIN_WAIT);await settle(20);
-  assert.deepEqual(world.sent,['look'],'expression 하나를 저장하는 데 추가 AI 호출이 생겼습니다');
+  assert.deepEqual(world.sent,['look_v2'],'expression 하나를 저장하는 데 추가 AI 호출이 생겼습니다');
   const phrase=ctx.words['phrase:take into account'];
   assert.ok(phrase,'DeepSeek expression이 실제 저장 phrase 카드가 되지 않았습니다');
   assert.deepEqual(Array.from(phrase.phraseParts),['take','into','account'],'expression member 순서를 잃었습니다');
@@ -724,7 +731,7 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   const sentence='She took a book from the shelf.';
   const span={textContent:'took',dataset:{example:sentence,clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('take',span);await settle(20);
-  assert.deepEqual(world.sent,['look'],'평범한 새 단어가 DeepSeek mini lookup으로 바로 가지 않았습니다');
+  assert.deepEqual(world.sent,['look_v2'],'평범한 새 단어가 DeepSeek mini lookup으로 바로 가지 않았습니다');
   net.deliver({kind:'word',canonical:'take',members:[1],ko:'가져가다',lemma:'take',pos:'',gloss:'',alts:[]});
   await rest(AI_MIN_WAIT);await settle(20);
   assert.equal(ctx.words.take.ko,'가져가다','word mini result가 단어 Meaning으로 저장되지 않았습니다');
@@ -737,7 +744,7 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   ctx.openWord('take',span);await settle(20);
   assert.deepEqual(world.sent,[],'saved word was automatically reclassified');
   ctx.retryWordPeek();await settle(20);
-  assert.deepEqual(world.sent,['look'],'explicit retry did not identify the lexical unit');
+  assert.deepEqual(world.sent,['look_v2'],'explicit retry did not identify the lexical unit');
   net.deliver({kind:'expression',canonical:'take into account',members:[1,4,5],ko:'고려하다'});
   await rest(AI_MIN_WAIT);await settle();
   assert.equal(ctx.words['phrase:take into account'].ko,'고려하다');
@@ -748,7 +755,7 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   const sentence='They gave the idea up yesterday.';
   const span={textContent:'gave',dataset:{example:sentence,clickedTokenIndex:'1'},classList:{add(){},remove(){}},closest:()=>null};
   ctx.openWord('give',span);await settle(20);
-  assert.deepEqual(world.sent,['look'],'새 expression 후보가 DeepSeek mini lookup으로 바로 가지 않았습니다');
+  assert.deepEqual(world.sent,['look_v2'],'새 expression 후보가 DeepSeek mini lookup으로 바로 가지 않았습니다');
   ctx.closePanel();
   net.deliver({kind:'expression',canonical:'give up',members:[1,4],ko:'포기하다',lemma:'give up',pos:'',gloss:'',alts:[]});
   await rest(AI_MIN_WAIT);await settle(20);

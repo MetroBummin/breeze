@@ -48,7 +48,8 @@ try{
         rssPreparedArticles.set(articleUrlKey(url),parsed);
         return {title:name,source:'Example',url,photo:''};
       };
-      window.__card=entry=>{const card=rssCard(entry);card.hidden=false;document.getElementById('casual-rail').prepend(card);return card;};
+      // Model an already prepared card; cover transport is covered by RSS browser tests.
+      window.__card=entry=>{const card=rssCard(entry);card.classList.remove('rss-pending');card.removeAttribute('aria-busy');card.removeAttribute('aria-disabled');card.tabIndex=0;card.hidden=false;document.getElementById('casual-rail').prepend(card);return card;};
       renderHome();show('home');
     });
     const count=()=>page.evaluate(async()=>({memory:books.length,stored:(await bookAll()).length,positions:Object.keys(positions).length,images:window.__images}));

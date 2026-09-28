@@ -78,8 +78,8 @@ of immutable completed strokes; it does not retain DOM/canvas objects. A Pencil
 eraser contact is one undoable edit, including any deletions already committed
 before its interruption. New edits clear redo. Undo/redo use the same serialized
 page writer and persist their final result. History is cleared on closing the
-document and is never stored or synced. The compact toolbar exposes pen, eraser, color/width and history. Collapsing it
-changes only visibility; it never disables Pencil or finger Lookup.
+document and is never stored or synced. The writing toolbar exposes pen, eraser, color/width and history and stays expanded.
+Reading mode retains its normal collapsing controls; editing state never changes from scrolling.
 
 An in-flight page read delays history application; a deferred operation checks
 that its document and stack head still match before applying, so document changes
@@ -211,8 +211,8 @@ The native iPad gate remains required; no URL flag enables production ink.
 The pen/book switch calls the real mode setter. Color, width, eraser and history
 operate on the same engine and serialized page writer. Read mode keeps ink visible
 but disables edits and native Pencil scope. Writing hides progress and removes
-the invisible reading controls from keyboard focus. The existing Reader chrome
-collapse reveals a mini tool button and does not change editing state. Save
+the invisible reading controls from keyboard focus. Entering writing expands Reader chrome immediately; its central setter refuses
+collapse while the writing variant is active. Read mode still collapses normally. Save
 status stays live for assistive technology; failed saves expose the retry panel.
 Browser synthetic input is separate from fresh physical iPad/Pencil verification.
 

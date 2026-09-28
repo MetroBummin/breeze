@@ -72,7 +72,8 @@ try{
       const began=Date.now();await target.click();
       await page.waitForFunction(()=>wordPeekOpen());
       await page.waitForTimeout(200);
-      assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);
+      assert.equal(await page.locator('#word-peek').isVisible(),false);
+      assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
       await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent.includes('상념'));
       const wordElapsed=Date.now()-began;
       assert.ok(wordElapsed>=850&&wordElapsed<3000,`word presentation timing ${wordElapsed}`);

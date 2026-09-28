@@ -98,6 +98,7 @@ try{
    for(let i=0;i<4;i++){
     await page.evaluate(()=>{readerScrollTo(0);openPdfWord(originalSession.pages[0],qaTarget);});
     await page.waitForFunction(()=>wordPeekOpen());
+    await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
     await page.evaluate(()=>expandWordDetail());await page.waitForFunction(()=>wordPanelOpen());
     await page.evaluate(()=>closePanel());const m=await verify();assert.ok(m.maxError<.12);assert.ok(m.sameCache);
    }

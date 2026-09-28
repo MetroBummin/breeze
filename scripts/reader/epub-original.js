@@ -780,9 +780,11 @@ registerReaderSurface({
 
 function openOriginalRange(doc,range,raw,owner,rect){
   if(!doc || !range || !raw || !owner || !rect) return;
-  clearOriginalSelectionMarkers();
+  // openWord compares the old source occurrence before transferring marker ownership.
   const marker=doc.createElement('span');
   marker.className='breeze-original-word original-selection-marker';
+  wordLookupTargets.set(marker,{owner:range.startContainer,start:range.startOffset,
+    endNode:range.endContainer,end:range.endOffset});
   marker.textContent=raw;
   const key=keyOf(raw); marker.dataset.w=key;
   const block=owner.closest&&owner.closest('p,li,blockquote,h1,h2,h3,h4');
@@ -810,7 +812,11 @@ function openOriginalRange(doc,range,raw,owner,rect){
     marker.dataset.clickedTokenIndex=String(lookupSentenceTokens(blockText.slice(part.start,char)).length);
   marker.setAttribute('aria-hidden','true');
   if(words[key] && words[key].mark !== false) marker.classList.add('s'+words[key].status);
-  marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;background:rgba(37,137,190,.25);border-radius:3px`;
+  const palette=getComputedStyle(document.body);
+  const status=words[key]&&words[key].mark!==false?words[key].status:0;
+  const fill=palette.getPropertyValue(status?'--pick'+status+'-fill':'--pick-fill');
+  marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;box-sizing:border-box;border:0;border-radius:5px`;
+  marker.style.background=fill;marker.style.boxShadow=`0 0 0 2px ${fill}`;
   doc.body.appendChild(marker);
   openWord(key,marker);
 }

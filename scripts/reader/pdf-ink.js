@@ -153,6 +153,7 @@ const BreezePdfInk = (()=>{
     const ready=!!visible(),writing=ready&&mode!=='read';
     pill.classList.toggle('ink-pill-ready',ready);
     pill.classList.toggle('ink-pill-active',writing);
+    if(writing&&typeof setReaderChrome==='function')setReaderChrome(false);
     inkEntry.hidden=!ready;
     inkEntry.setAttribute('aria-pressed',String(writing));
     inkEntry.setAttribute('aria-label',writing?'읽기 모드로 전환':'필기 모드로 전환');

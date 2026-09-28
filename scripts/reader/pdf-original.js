@@ -447,6 +447,8 @@ function makePdfWordMarker(page,box,className,status,wordKey){
   marker.dataset.example=box.example||'';
   if(Number.isInteger(box.tokenIndex)&&box.tokenIndex>=0)marker.dataset.clickedTokenIndex=String(box.tokenIndex);
   marker.dataset.readerAnchor=JSON.stringify({kind:'pdf',page:+page.dataset.page,y:box.y});
+  if(className.includes('original-selection-marker'))wordLookupTargets.set(marker,
+    {owner:page,start:`${box.x}:${box.y}`,end:`${box.w}:${box.h}`});
   marker.setAttribute('aria-hidden','true');
   marker.style.cssText=`left:${box.x*100}%;top:${box.y*100}%;width:${box.w*100}%;height:${box.h*100}%`;
   page.appendChild(marker);
@@ -595,7 +597,7 @@ function pdfPageAtPoint(clientX,clientY){
 
 function openPdfWord(page,box){
   if(!box || !ownsPdfBoxes(page,[box])) return;
-  clearOriginalSelectionMarkers();
+  // openWord compares the old source occurrence before transferring marker ownership.
   const key=keyOf(box.word);
   /* Freeze the resolved key on the marker. keyOf() can legitimately change
      after a new lemma is saved; a selected marker must not change identity. */

@@ -73,15 +73,18 @@ try{
         await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
         assert.equal(await page.locator('#rtitle').textContent(),'Second article');
         if(width===390){
-          await page.evaluate(()=>{
-            show('home');
+          await page.evaluate(()=>show('home'));
+          await page.waitForFunction(()=>!rssLoading&&!document.querySelector('#casual-rail .rss-loading'));
+          await page.evaluate(async base=>{
             const url='https://example.com/new-from-feed';
             const blocks=[{r:'p',t:'A fresh article has enough source text to introduce the subject and let readers decide whether to continue. It has several more paragraphs in the original article.'}];
             rssPreparedArticles.set(articleUrlKey(url),{title:'New from feed',site:'Example',url,cover:'',blocks,...articleAssemble('New from feed',blocks)});
-            const card=rssCard({title:'New from feed',source:'Example',url,photo:''});card.hidden=false;
+            const entry={title:'New from feed',source:'Example',url,photo:base+'assets/favicon/icon-512.png'};
+            const card=rssCard(entry);
             document.getElementById('casual-rail').prepend(card);
+            if(!await rssCardPhoto(card,entry))throw Error('Fixture cover did not decode');
             card.click();
-          });
+          },base);
           await page.waitForFunction(()=>document.querySelector('#article-preview').open);
           assert.equal(await page.locator('.ap-title').textContent(),'New from feed');
           assert.equal(await page.locator('#v-read').isVisible(),false,'new feed selection stays in Preview');

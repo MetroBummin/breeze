@@ -108,7 +108,7 @@ function addWord(k, span){
     example:sentenceOf(span), book:curBook.title, status:1, mark:true,
     addedAt:Date.now(), up:Math.max(Date.now(),buried+1) };
   recentWordOpens.set(k, Date.now());
-  /* 먼저 필을 그립니다. 저장·색칠·네트워크는 첫 paint 다음 프레임으로 미뤄
+  /* 먼저 누른 단어만 밝힙니다. 저장·색칠·네트워크는 첫 paint 다음 프레임으로 미뤄
      탭한 손가락에 보이는 반응이 다른 모든 일보다 앞서게 합니다. */
   selectWord(k, span, true);
   markPendingWord(k, buried);
@@ -438,10 +438,25 @@ function deleteMeaning(id){
 let previewWordCard=null;
 function displayedWord(k){ return previewWordCard && previewWordCard.key===k ? previewWordCard : words[k]; }
 const wordTapPoints=new WeakMap();
+// Source occurrences survive scroll; disposable original-format markers do not.
+const wordLookupTargets=new WeakMap();
 function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
-  if(wordPeekSameTarget(k,node)) return;
+  if(wordPeekSameTarget(k,node)){
+    if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.repeat(wordLookupLife);
+    // Original surfaces replace their display-only marker on each hit. Transfer
+    // ownership without opening another lookup or losing the pending shimmer.
+    if(node!==activeSelectedWordNode){
+      clearActiveWordSelection();activeSelectedWordNode=node;node.classList.add('sel');
+      renderWordPeek();
+    }
+    return;
+  }
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.switchTarget(wordLookupLife);
+  // A different occurrence of the same unsaved word starts fresh. Retire its
+  // provisional record before choosing the saved/new-word branch.
+  if(pendingWord&&pendingWord.key===k&&!pendingWordResolved(k))endWordLookupLife();
   if(!words[k]){ addWord(k, node); return; }
   const root=words[k].root||k;
   contextView=null;
@@ -462,7 +477,10 @@ async function resolveCurrentLookup(k,input,life,node){
   const w=words[k];if(!w)return;
   const local=homewardWordFor(w,node,input);
   let answer=local?homewardAnswerAsLook(local):null;
-  if(local)await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
+  if(local){
+    if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.source(life,'reviewed_local');
+    await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
+  }
   else answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
   if(!wordLookupAlive(life))return;
   if(!answer)answer=await fetchLook(k,{...input,node,hold:true,life});
@@ -490,7 +508,59 @@ let wordPeekActive=false;
 let wordPeekAnchor=null;
 let wordPeekRetryState=null;
 let wordDetailAnchored=false,wordMorphAnimation=null,wordMorphGeneration=0;
+const WORD_PEEK_SCROLL_IDLE_MS=250;
+const WORD_PEEK_SEEN_MS=750;
+let wordPeekLastScroll=-Infinity,wordPeekRevealTimer=null;
+let wordPeekPresentation='LOOKING_UP',wordPeekShownAt=null,wordPeekPresentationEnded=false;
+let wordPeekScrollPosition=null;
+function wordPeekMotionPosition(){
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  return box?{top:box.scrollTop,left:box.scrollLeft}:null;
+}
+function cancelWordPeekReveal(){
+  clearTimeout(wordPeekRevealTimer);wordPeekRevealTimer=null;
+}
+function wordPeekScrollRemaining(){
+  return Math.max(0,WORD_PEEK_SCROLL_IDLE_MS-(performance.now()-wordPeekLastScroll));
+}
+function deferWordPeekReveal(){
+  cancelWordPeekReveal();
+  const life=wordLookupLife;
+  wordPeekRevealTimer=setTimeout(()=>{
+    wordPeekRevealTimer=null;
+    if(wordLookupAlive(life)&&wordPeekActive)renderWordPeek();
+  },wordPeekScrollRemaining());
+}
+// Scroll changes presentation, not the result or the lookup's ownership.
+function wordPeekUserScrolled(userScroll=true){
+  const position=wordPeekMotionPosition();
+  if(position&&wordPeekScrollPosition&&position.top===wordPeekScrollPosition.top
+      &&position.left===wordPeekScrollPosition.left)return wordPeekActive;
+  wordPeekScrollPosition=position;
+  wordPeekLastScroll=performance.now();
+  if(!wordPeekActive)return false;
+  const offscreen=activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode);
+  const seen=userScroll&&wordPeekPresentation==='SHOWN'&&wordPeekShownAt!==null
+    &&performance.now()-wordPeekShownAt>=WORD_PEEK_SEEN_MS;
+  document.getElementById('word-peek').hidden=true;
+  cancelWordPeekReveal();
+  if(offscreen||seen){
+    wordPeekPresentationEnded=true;
+    if(!wordPeekPending())closePanel();
+    return true;
+  }
+  wordPeekShownAt=null;
+  wordPeekPresentation=wordPeekPending()?'LOOKING_UP':'READY';
+  if(!wordPeekPending())deferWordPeekReveal();
+  return true;
+}
 function wordPeekOpen(){ return wordPeekActive; }
+/* Request readiness and presentation readiness are separate. A mini lookup
+   survives scrolling; another word/mode/page/zoom/exit ends its one lifetime. */
+function wordPeekPending(){
+  const w=wordPeekActive&&selKey?displayedWord(selKey):null;
+  return !!(w&&wordPeekState(w,currentContext(selKey)).loading);
+}
 function wordSurfaceAnchored(){ return wordPeekActive||wordDetailAnchored; }
 function wordLookupOpen(){
   const panel=document.getElementById('panel');
@@ -517,14 +587,29 @@ function rememberWordPeekAnchor(node){
   wordPeekAnchor={...rect,direction:null};
   return wordPeekAnchor;
 }
+function wordPeekTargetVisible(node){
+  const rect=wordPeekNodeRect(node);
+  if(!rect||rect.width<=0||rect.height<=0)return false;
+  const view=window.visualViewport;
+  const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
+  const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
+  let left=vx,top=vy,right=vx+vw,bottom=vy+vh;
+  const scroller=typeof readerScroller==='function'?readerScroller():null;
+  if(scroller&&scroller.clientWidth>0&&scroller.clientHeight>0&&scroller.getBoundingClientRect){
+    const box=scroller.getBoundingClientRect();
+    left=Math.max(left,box.left);top=Math.max(top,box.top);
+    right=Math.min(right,box.right);bottom=Math.min(bottom,box.bottom);
+  }
+  return rect.right>left&&rect.left<right&&rect.bottom>top&&rect.top<bottom;
+}
 function wordPeekSameTarget(k,node){
-  if(!wordPeekActive||!selKey||!words[selKey]||!wordPeekAnchor) return false;
+  if(!wordPeekActive||!selKey||!words[selKey]||!node) return false;
   const root=words[selKey].root||selKey;
   if(k!==root&&k!==selKey) return false;
-  const rect=wordPeekNodeRect(node);
-  if(!rect) return node===activeSelectedWordNode;
-  return Math.hypot((rect.left+rect.right-wordPeekAnchor.left-wordPeekAnchor.right)/2,
-    (rect.top+rect.bottom-wordPeekAnchor.top-wordPeekAnchor.bottom)/2)<6;
+  if(node===activeSelectedWordNode)return true;
+  const current=wordLookupTargets.get(activeSelectedWordNode),next=wordLookupTargets.get(node);
+  return !!(current&&next&&current.owner===next.owner&&current.start===next.start
+    &&current.end===next.end&&current.endNode===next.endNode);
 }
 function wordPeekState(w,context){
   if(context&&context.error)return {text:context.error==='deleted'?'지운 뜻이에요'
@@ -625,13 +710,53 @@ function renderWordPeek(){
   const pill=document.getElementById('word-peek'),w=displayedWord(selKey);
   if(!wordPeekActive||!w){pill.hidden=true;return;}
   const state=wordPeekState(w,currentContext(selKey));
+  if(wordPeekPresentationEnded){
+    pill.hidden=true;
+    if(!state.loading)closePanel();
+    return;
+  }
   document.getElementById('word-peek-meaning').textContent=state.text;
   pill.classList.toggle('loading',state.loading);
   const retry=document.getElementById('word-peek-retry');
   if(state.loading) retry.setAttribute('disabled','');
   else retry.removeAttribute('disabled');
-  pill.hidden=false;
-  requestAnimationFrame(placeWordPeek);
+  // A pending lookup remains owned without covering the next line. Scrolling may
+  // move its word; reveal the answer at the live rect only after scroll idle.
+  // If the word has left the viewport, keep the saved result without a popup.
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.present(wordLookupLife,
+    activeSelectedWordNode,state,!state.loading&&hasResolvedMeaning(w)
+      &&!(currentContext(selKey)&&currentContext(selKey).error)
+      &&!(wordPeekRetryState&&wordPeekRetryState.error));
+  if(state.loading){wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.hidden=true;return;}
+  if(wordPeekPresentation!=='SHOWN')wordPeekPresentation='READY';
+  if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
+  cancelWordPeekReveal();
+  const targetVisible=activeSelectedWordNode?wordPeekTargetVisible(activeSelectedWordNode):!!wordPeekAnchor;
+  if(targetVisible){
+    if(activeSelectedWordNode)rememberWordPeekAnchor(activeSelectedWordNode);
+    const revealLife=wordLookupLife;
+    requestAnimationFrame(()=>{
+      if(!wordLookupAlive(revealLife)||!wordPeekActive||wordPeekPending())return;
+      if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
+      if(activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode)){closePanel();return;}
+      if(activeSelectedWordNode)rememberWordPeekAnchor(activeSelectedWordNode);
+      // hidden uses display:none, so placement cannot measure it. Keep it
+      // invisible but laid out until its current anchor has been positioned.
+      pill.style.visibility='hidden';pill.hidden=false;
+      placeWordPeek();pill.style.visibility='';
+      if(wordPeekPresentation!=='SHOWN')wordPeekShownAt=performance.now();
+      wordPeekPresentation='SHOWN';
+    });
+    return;
+  }
+  pill.hidden=true;
+  const terminalLife=wordLookupLife;
+  requestAnimationFrame(()=>{
+    if(!wordLookupAlive(terminalLife)||!wordPeekActive||wordPeekPending())return;
+    if(wordPeekScrollRemaining()>0){deferWordPeekReveal();return;}
+    if(activeSelectedWordNode&&wordPeekTargetVisible(activeSelectedWordNode)){renderWordPeek();return;}
+    closePanel();
+  });
 }
 function renderWordLookup(){
   if(wordPeekActive) renderWordPeek();
@@ -666,6 +791,8 @@ function selectWord(k, span, peek, bump=false){
   if(!previewWordCard&&!homewardWordFor(words[k],span))
     requestAnimationFrame(()=>{if(wordLookupAlive(metadataLife))void fillDictionaryMetadata(k,metadataLife);});
   if(span){ span.classList.add('sel'); activeSelectedWordNode=span; rememberWordPeekAnchor(span); }
+  if(span&&peek&&!previewWordCard&&typeof wordLookupFeedback!=='undefined')
+    wordLookupFeedback.start(wordLookupLife,currentReaderMode==='original'&&originalSession?originalSession.kind:'text');
   if(peek){
     wordPeekActive=true;
     panel.classList.remove('on');
@@ -697,7 +824,9 @@ function selectWord(k, span, peek, bump=false){
 
 function expandWordDetail(){
   if(!wordPeekActive||!selKey||!displayedWord(selKey)) return;
-  const pill=document.getElementById('word-peek');placeWordPeek();
+  const pill=document.getElementById('word-peek');
+  if(pill.hidden)return;
+  placeWordPeek();
   const from=pill.getBoundingClientRect();
   if(!previewWordCard)void fillDictionaryMetadata(selKey,wordLookupLife);
   wordPeekActive=false;wordDetailAnchored=true;
@@ -1113,7 +1242,7 @@ async function fetchEnMetadata(form,force=false){
      l:<낱말>|<문장 해시>   이 문장에서의 뜻 · 설명 · 다른 뜻 후보
 
    영어 metadata 조회는 이 한국어 뜻 경로와 완전히 분리되어 있습니다. */
-const AI_TIMEOUT  = 9000;   // 이보다 오래 걸리면 기다림을 끊고 "다시 시도"를 내밉니다
+const AI_TIMEOUT  = 9000;   // 각 attempt의 제한. 기술적 실패만 같은 logical ID로 1회 자동 복구.
 const AI_MIN_WAIT = 280;    // 갓 받은 답은 이만큼은 바람을 보여 준 뒤에 놓습니다
 
 function sentenceHash(text){
@@ -1155,8 +1284,8 @@ function deviceId(){
      캐시에서 꺼냄        요청이 없으므로 0회
      열림이 먼저 끝남     요청을 보내지 않으므로 0회 (fetchDict 의 `wordLookupAlive`)
      보냈고 답이 옴       서버가 1회 뺀 수를 알려 주고, 우리는 받아 적습니다
-     보냈는데 우리가 끊음 서버는 이미 받았습니다. 되돌리지 않습니다 —
-                          끊은 것은 우리 쪽 기다림이지 서버의 계산이 아닙니다
+     기술적 실패         검증된 답이 없어 서버가 차감하지 않습니다
+     답 완성 후 전송 유실 같은 logical ID의 receipt를 재전송하며 더 빼지 않습니다
 
    끊은 경우에 화면의 남은 횟수는 옛 수인 채로 있습니다. 그것을 여기서 하나
    빼서 맞추지 않습니다 — 서버가 진짜 수를 아는 유일한 곳이고, 다음 답 한 번에
@@ -1192,8 +1321,56 @@ async function dictCall(payload, signal){
     if(!r.ok || !j) console.warn('dict', r.status, j && j.error);
     /* 오류도 답입니다. 한도 초과와 서버 장애는 화면에서 다르게 말해야 하므로
        null 로 뭉개지 않고 그대로 올려 보냅니다. */
-    return j || null;
+    return payload.op==='look_v2'?{...(j||{error:'invalid_response'}),httpStatus:r.status}:j||null;
   }catch(e){ console.warn('dict failed', e); return null; }
+}
+
+const wordLookupRecoveries=new Map();
+function usableLookupAnswer(j,payload){
+  return !!(j&&!j.error&&(!j.httpStatus||j.httpStatus<400)&&['word','expression'].includes(j.kind)
+    &&typeof j.canonical==='string'&&/^[A-Za-z][A-Za-z'’\- ]{0,119}$/.test(j.canonical)
+    &&typeof j.ko==='string'&&j.ko.trim()&&j.ko.length<=60&&!/[\n\r]/.test(j.ko)
+    &&Array.isArray(j.members)&&j.members.includes(payload.clickedIndex)
+    &&(j.kind==='word'?j.members.length===1&&!j.canonical.includes(' '):j.members.length>=2&&j.canonical.includes(' '))
+    &&j.members.every((n,i)=>Number.isInteger(n)&&n>=0&&n<payload.tokens.length&&(i===0||n>j.members[i-1])));
+}
+function technicalLookupFailure(j,payload){
+  if(navigator.onLine===false)return false;
+  if(j&&['quota_exceeded','anon_exhausted','login_required','offline','bad_op','bad_lookup_id','request_conflict'].includes(j.error))return false;
+  if(j?.httpStatus>=400&&j.httpStatus<500)return false;
+  return !j||j.httpStatus>=500||['lookup_failed','request_timeout','invalid_response','invalid_contract'].includes(j.error)
+    ||(!j.error&&!usableLookupAnswer(j,payload));
+}
+async function recoverableWordLookup(payload,life){
+  const actor=sbUser?.id||deviceId();
+  const key=JSON.stringify([actor,payload.word,payload.clicked,payload.sentence,payload.before,payload.after,payload.clickedIndex,payload.cands]);
+  let logical=wordLookupRecoveries.get(key);
+  if(!logical){
+    logical={payload:{...payload,lookupId:crypto.randomUUID()},autoUsed:false};
+    wordLookupRecoveries.set(key,logical);
+    if(wordLookupRecoveries.size>32)wordLookupRecoveries.delete(wordLookupRecoveries.keys().next().value);
+  }
+  while(wordLookupAlive(life)){
+    if(navigator.onLine===false)return {error:'offline'};
+    const controller=new AbortController(),owner=wordLookupSignal();
+    const cancel=()=>controller.abort();
+    if(owner?.aborted)return null;
+    owner?.addEventListener('abort',cancel,{once:true});
+    const timeout=setTimeout(cancel,AI_TIMEOUT);
+    let answer;
+    try{answer=await dictCall(logical.payload,controller.signal);}
+    finally{clearTimeout(timeout);owner?.removeEventListener('abort',cancel);}
+    if(usableLookupAnswer(answer,logical.payload)){
+      wordLookupRecoveries.delete(key);return answer;
+    }
+    if(owner?.aborted||!wordLookupAlive(life))return null;
+    if(!technicalLookupFailure(answer,logical.payload)){
+      wordLookupRecoveries.delete(key);return {error:answer?.error||'lookup_failed'};
+    }
+    if(logical.autoUsed)return {error:'lookup_failed'};
+    logical.autoUsed=true;
+  }
+  return null;
 }
 
 /* 읽기 시작할 때 함수만 깨워 둡니다. AI 도 한도도 쓰지 않습니다. */
@@ -1245,6 +1422,10 @@ function beginWordLookupLife(){
 /* 창이 닫혔습니다. 번호를 올려 앞 번호를 죽이고, 달리던 것은 끊습니다 —
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
 function endWordLookupLife(){
+  cancelWordPeekReveal();
+  wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;wordPeekPresentationEnded=false;
+  wordPeekScrollPosition=wordPeekMotionPosition();
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.end(wordLookupLife);
   wordLookupLife++;
   firstLookupMeaning=null;
   if(wordLookupCtrl){ try{ wordLookupCtrl.abort(); }catch(e){} wordLookupCtrl = null; }
@@ -1339,6 +1520,7 @@ async function loadCachedLook(k, began, life, node){
   const w = words[k]; if(!w) return false;
   const local=homewardWordFor(w,node);
   if(local){
+    if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.source(life,'reviewed_local');
     const input=lookupRequestFor(w,node,false);
     const answer=homewardAnswerAsLook(local);
     await homewardPresentationWait(began||Date.now(),()=>wordLookupAlive(life));
@@ -1408,49 +1590,39 @@ async function fetchLook(k, opt){
   if(!sb){ w.aiOff = 'login'; renderIfAlive(life); return false; }
 
   const began = Date.now();
-  /* 이 물음 하나만 따로 끊을 수 있어야 합니다 — 9초가 넘었을 때. 그래서 표를
-     하나 더 만들되, 열림의 표에 매답니다. 임자는 여전히 열림 하나입니다:
-     열림이 끝나면 이 표도 함께 끊기고, 반대 방향은 없습니다. */
-  const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-  const lookupSig = wordLookupSignal();
-  if(ctrl && lookupSig){
-    if(lookupSig.aborted) try{ ctrl.abort(); }catch(e){}
-    else lookupSig.addEventListener('abort', ()=>{ try{ ctrl.abort(); }catch(e){} }, {once:true});
-  }
   w.aiLoading = true;
   delete w.aiSlow; delete w.aiOff;
   renderIfAlive(life);
-  /* 9초가 넘으면 무작정 기다리게 두지 않습니다. 기다림 자체보다
-     "언제 끝날지 모른다"가 더 답답하기 때문입니다. */
-  const slow = setTimeout(function(){
-    if(!words[k]) return;
-    words[k].aiSlow = true; words[k].aiOff = 'error';
-    if(ctrl) try{ ctrl.abort(); }catch(e){}
-    renderIfAlive(life);
-  }, AI_TIMEOUT);
+  const feedback=typeof wordLookupFeedback!=='undefined'?wordLookupFeedback:null;
+  const requestTicket=feedback?feedback.request(life,currentReaderMode==='original'&&originalSession?originalSession.kind:'text'):null;
+  let responseRecorded=false;
   try{
-    const j = await dictCall({
-      op:'look',
+    const j = await recoverableWordLookup({
+      op:'look_v2',
       word: opt.word || w.word || k, clicked: opt.clicked || w.clicked || '', cands: opt.cands || entryKeys(w),
       sentence: querySentence,before:opt.before||'',after:opt.after||'', book: opt.book || w.book || '',
       tokens:lookupTokens.map(token=>({text:token.text})),clickedIndex,
       retry: !!(opt.wider||opt.retry), avoid: (opt.wider||opt.retry) ? (opt.avoid || []) : [],
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
-    }, ctrl ? ctrl.signal : null);
+    }, life);
+    if(feedback){
+      feedback.response(requestTicket,j&&j.ko&&!j.error?'success':!wordLookupAlive(life)?'cancelled':'error');
+      responseRecorded=true;
+    }
     /* 끊긴 요청도 `dictCall` 은 `null` 로 돌려줍니다. 그것을 오류로 적으면 닫은
        창에 오류가 남고, 다시 열었을 때 "안 됐다"가 먼저 보입니다. 끊긴 것은
        답이 아니라 없던 일입니다 — 여기서만 갈라섭니다.
 
-       반대로 **도착한 답은 창이 닫혔어도 답입니다.** 한도는 이미 나갔고 답은
+       반대로 **도착한 답은 창이 닫혔어도 답입니다.** 검증된 답만 서버가 차감하고 답은
        옳으므로, 아래의 캐시와 카드 바르기는 그대로 지납니다. 닫힌 열림이 잃는
        것은 화면을 만질 권리 하나뿐입니다. */
-    if(!j && ctrl && ctrl.signal.aborted) return false;
+    if(!j && !wordLookupAlive(life)) return false;
     if(!j || j.error || !j.ko){
       const e = j && j.error;
       w.aiOff = e === 'quota_exceeded' ? 'quota'
               : e === 'anon_exhausted' ? 'trial'
-              : e === 'login_required' ? 'login' : 'error';
+              : e === 'login_required' ? 'login' : e === 'offline' ? 'offline' : 'error';
       if(w.aiOff === 'trial') anonLooksLeft = 0;
       return false;
     }
@@ -1468,7 +1640,7 @@ async function fetchLook(k, opt){
     if(words[k]===w){applyLook(w,j,k,opt);rememberSenseContext(k,querySentence,clickedIndex);saveWords();}
     return true;
   }finally{
-    clearTimeout(slow);
+    if(feedback&&!responseRecorded)feedback.response(requestTicket,!wordLookupAlive(life)?'cancelled':'error');
     delete w.aiLoading;
     renderIfAlive(life);
   }

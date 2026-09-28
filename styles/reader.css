@@ -444,19 +444,20 @@
      Page isolation keeps blending inside the paper, including in dark mode. */
   .pdf-source-page>.breeze-original-word{mix-blend-mode:multiply;}
   .pdf-source-page>.original-selection-marker{position:absolute; z-index:3; display:block; box-sizing:border-box;
-    color:transparent; background:var(--pick-fill); border:1px solid var(--pick-line);
-    border-radius:3px; pointer-events:none; overflow:hidden; white-space:nowrap;}
-  .pdf-source-page>.original-selection-marker.s1{background:var(--pick1-fill); border-color:var(--pick1-line);}
-  .pdf-source-page>.original-selection-marker.s2{background:var(--pick2-fill); border-color:var(--pick2-line);}
-  .pdf-source-page>.original-selection-marker.s3{background:var(--pick3-fill); border-color:var(--pick3-line);}
+    color:transparent; --word-mark-fill:var(--pick-fill);background:var(--word-mark-fill); border:1px solid var(--pick-line);
+    box-shadow:0 0 0 1.5px var(--word-mark-fill);border-radius:5px; pointer-events:none; overflow:hidden; white-space:nowrap;}
+  .pdf-source-page>.original-selection-marker.s1{--word-mark-fill:var(--pick1-fill);background:var(--word-mark-fill); border-color:var(--pick1-line);}
+  .pdf-source-page>.original-selection-marker.s2{--word-mark-fill:var(--pick2-fill);background:var(--word-mark-fill); border-color:var(--pick2-line);}
+  .pdf-source-page>.original-selection-marker.s3{--word-mark-fill:var(--pick3-fill);background:var(--word-mark-fill); border-color:var(--pick3-line);}
   /* 저장한 단어는 원본에서도 글자 화면과 똑같이 블록으로 칠합니다.
      밑줄·끄기 두 가지를 더 고를 수 있었지만, 설정을 위한 설정이었습니다. */
   .pdf-source-page>.original-saved-marker{position:absolute; z-index:3; display:block; box-sizing:border-box;
-    color:transparent; pointer-events:none; border:0; border-radius:3px;
+    color:transparent; pointer-events:none; border:0; border-radius:5px;
+    box-shadow:0 0 0 1px var(--word-mark-fill,transparent);
     overflow:hidden; white-space:nowrap;}
-  .pdf-source-page>.original-saved-marker.s1{background:var(--saved1);}
-  .pdf-source-page>.original-saved-marker.s2{background:var(--saved2);}
-  .pdf-source-page>.original-saved-marker.s3{background:var(--saved3);}
+  .pdf-source-page>.original-saved-marker.s1{--word-mark-fill:var(--saved1);background:var(--word-mark-fill);}
+  .pdf-source-page>.original-saved-marker.s2{--word-mark-fill:var(--saved2);background:var(--word-mark-fill);}
+  .pdf-source-page>.original-saved-marker.s3{--word-mark-fill:var(--saved3);background:var(--word-mark-fill);}
   .pdf-source-page>.reader-mode-cue{position:absolute; z-index:2; display:block; pointer-events:none;
     box-sizing:border-box; border-radius:4px;
     background:var(--cue-block); animation:reader-mode-cue-out 6s ease forwards;}

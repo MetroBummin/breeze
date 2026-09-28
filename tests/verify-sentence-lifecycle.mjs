@@ -32,7 +32,7 @@ function boot({get,call,put,width=390,height=844,pressed=false}={}){
     window,innerWidth:width,innerHeight:height,
     requestAnimationFrame:fn=>setTimeout(()=>fn(Date.now()),0),cancelAnimationFrame:clearTimeout,
     document:{body,getElementById:element,createElement:()=>element('node-'+Math.random()),addEventListener(){}},
-    navigator:{onLine:true}, sb:{}, sbUser:{id:'u'}, curBook:{title:'Book'},
+    crypto,deviceId:()=>'qa-device',navigator:{onLine:true}, sb:{}, sbUser:{id:'u'}, curBook:{title:'Book'},
     sentenceHash:text=>text, aiDay:()=>'', save(){}, clearReaderModeCue(){},
     sentenceGestureStillPressed:()=>contact.pressed,
     dictGet:get||(()=>Promise.resolve(null)),
