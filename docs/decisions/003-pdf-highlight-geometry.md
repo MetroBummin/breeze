@@ -160,3 +160,18 @@ rejects `bewildered` on page 13. A separate synthetic rendering-mode-3 fixture
 checks that invisible OCR inside a Form remains selectable. Question 135 is
 checked separately; question 157's current merged output is recorded as the
 explicitly excluded block-segmentation issue, not a passing fix.
+
+
+## Rounded display treatment (2026-09-28)
+
+PDF selected and saved markers use 5px corners and a small matching outer shadow
+for breathing room. Their left/top/width/height, glyph map and multiply blending
+are unchanged. EPUB's active range marker now uses the app's selection tokens,
+5px corners and a 2px outer shadow instead of hard-coded blue/3px corners.
+These are display-only additions, not expansions of the selectable word area.
+
+EPUB's persistent saved-word backgrounds still use CSS Custom Highlights, whose
+supported properties do not include border-radius. They remain native rather
+than wrapping/reflowing publisher text or rebuilding per-range overlay geometry.
+Consequently this PR rounds EPUB's active/pending selection, not every saved
+EPUB highlight. See https://www.w3.org/TR/css-pseudo-4/#highlight-styling .

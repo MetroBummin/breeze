@@ -108,7 +108,7 @@ function addWord(k, span){
     example:sentenceOf(span), book:curBook.title, status:1, mark:true,
     addedAt:Date.now(), up:Math.max(Date.now(),buried+1) };
   recentWordOpens.set(k, Date.now());
-  /* 먼저 필을 그립니다. 저장·색칠·네트워크는 첫 paint 다음 프레임으로 미뤄
+  /* 먼저 누른 단어만 밝힙니다. 저장·색칠·네트워크는 첫 paint 다음 프레임으로 미뤄
      탭한 손가락에 보이는 반응이 다른 모든 일보다 앞서게 합니다. */
   selectWord(k, span, true);
   markPendingWord(k, buried);
@@ -441,7 +441,17 @@ const wordTapPoints=new WeakMap();
 function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
-  if(wordPeekSameTarget(k,node)) return;
+  if(wordPeekSameTarget(k,node)){
+    if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.repeat(wordLookupLife);
+    // Original surfaces replace their display-only marker on each hit. Transfer
+    // ownership without opening another lookup or losing the pending shimmer.
+    if(node!==activeSelectedWordNode){
+      clearActiveWordSelection();activeSelectedWordNode=node;node.classList.add('sel');
+      renderWordPeek();
+    }
+    return;
+  }
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.switchTarget(wordLookupLife);
   if(!words[k]){ addWord(k, node); return; }
   const root=words[k].root||k;
   contextView=null;
@@ -462,7 +472,10 @@ async function resolveCurrentLookup(k,input,life,node){
   const w=words[k];if(!w)return;
   const local=homewardWordFor(w,node,input);
   let answer=local?homewardAnswerAsLook(local):null;
-  if(local)await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
+  if(local){
+    if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.source(life,'reviewed_local');
+    await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
+  }
   else answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
   if(!wordLookupAlive(life))return;
   if(!answer)answer=await fetchLook(k,{...input,node,hold:true,life});
@@ -630,8 +643,13 @@ function renderWordPeek(){
   const retry=document.getElementById('word-peek-retry');
   if(state.loading) retry.setAttribute('disabled','');
   else retry.removeAttribute('disabled');
-  pill.hidden=false;
-  requestAnimationFrame(placeWordPeek);
+  // A pending lookup remains owned/closable, but never covers the next line.
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.present(wordLookupLife,
+    activeSelectedWordNode,state,!state.loading&&hasResolvedMeaning(w)
+      &&!(currentContext(selKey)&&currentContext(selKey).error)
+      &&!(wordPeekRetryState&&wordPeekRetryState.error));
+  pill.hidden=state.loading;
+  if(!state.loading)requestAnimationFrame(placeWordPeek);
 }
 function renderWordLookup(){
   if(wordPeekActive) renderWordPeek();
@@ -666,6 +684,8 @@ function selectWord(k, span, peek, bump=false){
   if(!previewWordCard&&!homewardWordFor(words[k],span))
     requestAnimationFrame(()=>{if(wordLookupAlive(metadataLife))void fillDictionaryMetadata(k,metadataLife);});
   if(span){ span.classList.add('sel'); activeSelectedWordNode=span; rememberWordPeekAnchor(span); }
+  if(span&&peek&&!previewWordCard&&typeof wordLookupFeedback!=='undefined')
+    wordLookupFeedback.start(wordLookupLife,currentReaderMode==='original'&&originalSession?originalSession.kind:'text');
   if(peek){
     wordPeekActive=true;
     panel.classList.remove('on');
@@ -697,7 +717,9 @@ function selectWord(k, span, peek, bump=false){
 
 function expandWordDetail(){
   if(!wordPeekActive||!selKey||!displayedWord(selKey)) return;
-  const pill=document.getElementById('word-peek');placeWordPeek();
+  const pill=document.getElementById('word-peek');
+  if(pill.hidden)return;
+  placeWordPeek();
   const from=pill.getBoundingClientRect();
   if(!previewWordCard)void fillDictionaryMetadata(selKey,wordLookupLife);
   wordPeekActive=false;wordDetailAnchored=true;
@@ -1245,6 +1267,7 @@ function beginWordLookupLife(){
 /* 창이 닫혔습니다. 번호를 올려 앞 번호를 죽이고, 달리던 것은 끊습니다 —
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
 function endWordLookupLife(){
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.end(wordLookupLife);
   wordLookupLife++;
   firstLookupMeaning=null;
   if(wordLookupCtrl){ try{ wordLookupCtrl.abort(); }catch(e){} wordLookupCtrl = null; }
@@ -1339,6 +1362,7 @@ async function loadCachedLook(k, began, life, node){
   const w = words[k]; if(!w) return false;
   const local=homewardWordFor(w,node);
   if(local){
+    if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.source(life,'reviewed_local');
     const input=lookupRequestFor(w,node,false);
     const answer=homewardAnswerAsLook(local);
     await homewardPresentationWait(began||Date.now(),()=>wordLookupAlive(life));
@@ -1428,6 +1452,9 @@ async function fetchLook(k, opt){
     if(ctrl) try{ ctrl.abort(); }catch(e){}
     renderIfAlive(life);
   }, AI_TIMEOUT);
+  const feedback=typeof wordLookupFeedback!=='undefined'?wordLookupFeedback:null;
+  const requestTicket=feedback?feedback.request(life,currentReaderMode==='original'&&originalSession?originalSession.kind:'text'):null;
+  let responseRecorded=false;
   try{
     const j = await dictCall({
       op:'look',
@@ -1438,6 +1465,10 @@ async function fetchLook(k, opt){
       /* 로그인 전에만 보냅니다. 로그인한 뒤에는 계정이 곧 신원이라 필요 없습니다. */
       device: sbUser ? '' : deviceId()
     }, ctrl ? ctrl.signal : null);
+    if(feedback){
+      feedback.response(requestTicket,j&&j.ko&&!j.error?'success':ctrl&&ctrl.signal.aborted?(wordLookupAlive(life)&&w.aiSlow?'timeout':'cancelled'):'error');
+      responseRecorded=true;
+    }
     /* 끊긴 요청도 `dictCall` 은 `null` 로 돌려줍니다. 그것을 오류로 적으면 닫은
        창에 오류가 남고, 다시 열었을 때 "안 됐다"가 먼저 보입니다. 끊긴 것은
        답이 아니라 없던 일입니다 — 여기서만 갈라섭니다.
@@ -1468,6 +1499,7 @@ async function fetchLook(k, opt){
     if(words[k]===w){applyLook(w,j,k,opt);rememberSenseContext(k,querySentence,clickedIndex);saveWords();}
     return true;
   }finally{
+    if(feedback&&!responseRecorded)feedback.response(requestTicket,ctrl&&ctrl.signal.aborted?(wordLookupAlive(life)&&w.aiSlow?'timeout':'cancelled'):'error');
     clearTimeout(slow);
     delete w.aiLoading;
     renderIfAlive(life);

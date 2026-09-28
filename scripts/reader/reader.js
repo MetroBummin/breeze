@@ -538,6 +538,8 @@ function whileRestoringChrome(job){
   return result;
 }
 function setReaderChrome(hidden){
+  // Writing needs immediate tool access. Reading keeps its scroll-collapse policy.
+  if(document.getElementById('readpill')?.classList.contains('ink-pill-active'))hidden=false;
   if(document.body.classList.contains('chrome-hidden')===hidden) return;
   document.body.classList.toggle('chrome-hidden', hidden);
   const side=[document.getElementById('readback'),document.getElementById('aafab'),

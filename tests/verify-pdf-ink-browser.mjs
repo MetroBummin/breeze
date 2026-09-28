@@ -21,7 +21,7 @@ const url=`http://127.0.0.1:${server.address().port}`;
 try{
  for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
   const profile=mkdtempSync(resolve(tmpdir(),'breeze-ink-'));
-  const browser=await engine.launchPersistentContext(profile,{headless:true,viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
+  const browser=await engine.launchPersistentContext(profile,{headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
   try{
    const context=browser;
    const page=await context.newPage(),errors=[];
@@ -237,9 +237,12 @@ try{
    const word=await wordPoint();assert.ok(word);await page.touchscreen.tap(word.x,word.y);await page.waitForFunction(()=>wordPeekOpen());
    await page.evaluate(()=>closePanel());
    if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`ink-${engine.name()}.png`)});}
-   await page.evaluate(()=>document.body.classList.add('chrome-hidden'));
-   const collapsedCount=await count();await stroke([[.7,.7],[.75,.7]]);assert.equal(await count(),collapsedCount+1);
-   await page.locator('.ink-pill-mini').click();
+   await page.evaluate(()=>setReaderChrome(true));
+   assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),false,
+     'writing controls collapsed');
+   assert.equal(await page.locator('#pdf-ink-tools').isVisible(),true);
+   assert.equal(await page.locator('.ink-pill-mini').isVisible(),false);
+   const expandedCount=await count();await stroke([[.7,.7],[.75,.7]]);assert.equal(await count(),expandedCount+1);
    await page.evaluate(()=>{
     window.qaInputActions={word:0,sentence:0,requests:0};
     const dw=dispatchWord,os=openSentence,fetcher=window.fetch;

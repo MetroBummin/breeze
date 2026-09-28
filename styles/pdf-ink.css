@@ -46,13 +46,7 @@
 #readpill.ink-pill-active .ink-pill-toolbar{max-width:280px;flex:0 1 auto;overflow-x:auto;scrollbar-width:none;opacity:1;pointer-events:auto;}
 #readpill.ink-pill-active .ink-pill-mode-separator{display:block;}
 body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entry{display:none;}
-body.chrome-hidden #readpill.ink-pill-active{width:56px;height:34px;padding:2px;border-radius:18px;justify-content:center;}
-body.chrome-hidden #readpill.ink-pill-active #modefab,
-body.chrome-hidden #readpill.ink-pill-active #readpill-title,
-body.chrome-hidden #readpill.ink-pill-active .ink-pill-mode-separator,
-body.chrome-hidden #readpill.ink-pill-active .ink-pill-entry,
-body.chrome-hidden #readpill.ink-pill-active .ink-pill-toolbar{display:none;}
-body.chrome-hidden #readpill.ink-pill-active .ink-pill-mini{display:flex;}
+/* Writing never enters compact chrome; read-mode entry still collapses above. */
 @media(max-width:700px){
   #readpill.ink-pill-active{width:min(340px,calc(100vw - 100px));gap:2px;padding-inline:5px;}
   #readpill .ink-pill-toolbar{gap:2px;}

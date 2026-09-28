@@ -144,3 +144,11 @@ The writing pill is capped at 300px. Pen and eraser each open their options abov
 the pill in the same control material. Color/width controls are no longer always
 visible in the row. A non-modal, keyboard-accessible surface contains three
 choices per setting and respects reduced motion and narrow iPad split views.
+
+
+### Non-covering word lookup and persistent writing controls (2026-09-28)
+Only a pending selected word animates the restrained neutral sheen. General
+floating controls do not shimmer. The expanded word lookup's legacy retry/login
+action now uses the same neutral sentence-glass action/line/ink tokens and a
+visible neutral keyboard focus ring. PDF writing controls stay expanded; their
+old miniature collapse rule is removed. Reading-mode collapse remains unchanged.

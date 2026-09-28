@@ -184,12 +184,13 @@ body.dark #word-peek::before{
      앞서 받은 설명이 그대로 남아 있으면, 새 답이 온 것처럼 보입니다. */
   #p-ai.load .m, #p-ai.load .note{display:none!important;}
   #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
-    border:1px dashed var(--ai-line); background:var(--ai-bg2); color:var(--ai-key); border-radius:12px;
+    border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-action); color:var(--sentence-glass-ink); border-radius:12px;
     padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
     margin-bottom:12px;}
-  #p-aibtn:hover{background:var(--sky); border-style:solid;}
+  #p-aibtn:hover{background:var(--sentence-glass-action-hover);}
+  #p-aibtn:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:2px;}
   #p-aibtn:disabled{opacity:.6; cursor:default;}
-  #p-aibtn .sp{font-size:15px;}
+  #p-aibtn .p-ai-retry-icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
   /* 기본은 보통 흐름의 위 여백입니다 — 바로 위 형제가 아무것도 안 그려질 때
      (quota·offline: 단추가 숨습니다) 이 여백이 그 위의 낱말 칸과 부딪히지
      않게. 단추가 실제로 있을 때만(.tight, scripts/dictionary/dictionary.js)

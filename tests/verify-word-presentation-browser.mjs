@@ -16,7 +16,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await (process.env.BROWSER==='webkit'?webkit:chromium).launch();
+const browser=await (process.env.BROWSER==='webkit'?webkit:chromium).launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
 
 try{
   const page=await browser.newPage({viewport:{width:1100,height:800},serviceWorkers:'block'});
@@ -179,7 +179,8 @@ try{
     openWord(keyOf('carefully'),span);
   });
   await page.waitForFunction(()=>wordQa.calls[0]?.op==='look');
-  assert.equal(await page.locator('#word-peek').isVisible(),true,'expression lookup 중 word pill이 사라졌습니다');
+  assert.equal(await page.locator('#word-peek').isVisible(),false,'pending expression lookup obscures reading');
+  assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
   assert.equal(await page.locator('#word-peek').evaluate(node=>node.classList.contains('loading')),true);
   await page.evaluate(()=>{
     const call=wordQa.calls[0];
@@ -238,11 +239,13 @@ try{
     openWord(keyOf('resilient'),span);
   });
   assert.equal(await page.evaluate(()=>wordQa.calls),1,'repeated tap on the same word duplicated the lookup');
-  await page.locator('#word-peek-more').click();
-  await page.waitForFunction(()=>wordPanelOpen());
-  assert.equal(await page.evaluate(()=>wordQa.calls),1,'chevron started a second lookup');
-  assert.equal(await page.locator('#p-ai').evaluate(node=>node.classList.contains('wait')),true,
-    'detail popup did not continue the same pending state');
+  assert.equal(await page.locator('#word-peek').isVisible(),false,'pending pill covers the next line');
+  assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
+  await page.evaluate(()=>expandWordDetail());
+  assert.equal(await page.evaluate(()=>wordPanelOpen()),false,'hidden pending pill opened a detail panel');
+  assert.equal(await page.evaluate(()=>wordQa.calls),1,'repeated tap started another lookup');
+  assert.ok(await page.evaluate(()=>breezeLookupSummary().events.some(row=>row.kind==='lookup'&&row.repeatTaps>0))
+    || await page.evaluate(()=>breezeLookupSummary().active),'lookup diagnostics are not recording');
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>!wordLookupOpen());
 
