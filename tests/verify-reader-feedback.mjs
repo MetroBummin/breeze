@@ -92,5 +92,10 @@ assert.doesNotMatch(read('styles/pdf-ink.css'),/body\.chrome-hidden #readpill\.i
 assert.match(source,/if\(pill\.hidden\)return;/,'hidden pending pill is expandable');
 assert.match(source,/wordLookupFeedback\.repeat\(wordLookupLife\)/);
 assert.match(source,/wordLookupFeedback\.switchTarget\(wordLookupLife\)/);
+assert.match(source,/function wordPeekPending\(\)/);
+assert.match(source,/wordPeekTargetVisible\(activeSelectedWordNode\)/);
+const gesture=read('scripts/reader/gesture.js');
+assert.match(gesture,/wordPeekPending==='function'&&wordPeekPending\(\)/,
+  'user scroll still kills a pending shimmer lookup');
 assert.match(read('index.html'),/scripts\/dictionary\/lookup-feedback\.js/);
 console.log('Reader feedback: pending/ready/failure, cue ownership, metrics/privacy/bounds, and writing chrome passed.');
