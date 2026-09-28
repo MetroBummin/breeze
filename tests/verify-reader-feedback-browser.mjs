@@ -73,20 +73,44 @@ try{
           await page.evaluate(i=>{wordLookupFeedback.end(i+20);},i);
         }
       }
-      // The actual renderer suppresses pending and exposes ready/error only.
+      // Pending survives user scroll. A visible target gets a freshly anchored
+      // result pill; an off-screen target saves silently and never pops stale UI.
       await page.evaluate(()=>{
         curBook={id:'fixture',title:'not logged',paras:['Read the signal.']};
         words.signal={word:'signal',ko:'',loading:true,status:1,defs:[]};
         selectWord('signal',fixtureNodes[0],true);
       });
       assert.equal(await page.locator('#word-peek').getAttribute('hidden')!==null,true);
+      const pendingLife=await page.evaluate(()=>wordLookupLife);
+      await page.evaluate(()=>scrollGesture());
+      assert.equal(await page.evaluate(()=>wordLookupLife),pendingLife,'scroll ended pending lookup lifetime');
+      assert.equal(await page.evaluate(()=>wordPeekOpen()),true);
+      assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
       await page.evaluate(()=>expandWordDetail());assert.equal(await page.evaluate(()=>wordPanelOpen()),false);
       await page.evaluate(()=>{words.signal.loading=false;words.signal.ko='신호';renderWordPeek();});
       assert.equal(await page.locator('#word-peek').getAttribute('hidden'),null);
-      await page.evaluate(()=>{closePanel();document.getElementById('app').hidden=false;});
+      await page.evaluate(()=>closePanel());
+
+      await page.evaluate(()=>{
+        words.drift={word:'drift',ko:'',loading:true,status:1,defs:[]};
+        document.getElementById('feedback-fixture').style.transform='translateY(0)';
+        selectWord('drift',fixtureNodes[0],true);
+        document.getElementById('feedback-fixture').style.transform='translateY(-2200px)';
+        scrollGesture();
+      });
+      const driftLife=await page.evaluate(()=>wordLookupLife);
+      await page.evaluate(()=>{words.drift.loading=false;words.drift.ko='표류';renderWordPeek();});
+      await page.waitForFunction(life=>wordLookupLife!==life,driftLife);
+      assert.equal(await page.evaluate(()=>words.drift&&words.drift.ko),'표류','off-screen success was discarded');
+      assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'off-screen result left a stale lookup surface');
+      assert.equal(await page.locator('#word-peek').getAttribute('hidden')!==null,true);
+      await page.evaluate(()=>{
+        document.getElementById('feedback-fixture').style.transform='';
+        document.getElementById('app').hidden=false;
+      });
       assert.equal(await page.locator('.breeze-lookup-pending').count(),0);
       assert.deepEqual(errors,[]);
-      console.log(engine.name()+': neutral sheen in 3 formats / 2 themes, reduced motion, unchanged geometry, ready-only pill passed');
+      console.log(engine.name()+': neutral sheen, scroll-continuous single lookup, visible re-anchor and off-screen silent save passed');
     }finally{await browser.close();}
   }
 }finally{await new Promise(done=>server.close(done));}
