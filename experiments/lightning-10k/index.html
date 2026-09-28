@@ -1,0 +1,20 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lightning 10K · 로컬 사전 실험</title>
+<style>body{font:16px/1.65 system-ui,sans-serif;max-width:780px;margin:40px auto;padding:0 20px;background:#f5f5f7;color:#17171b}h1{font-size:26px}textarea{box-sizing:border-box;width:100%;min-height:100px;font:inherit;padding:14px;border:1px solid #ccc;border-radius:16px}button{font:inherit;border:1px solid #ddd;border-radius:12px;padding:9px 13px;background:white;margin:4px;cursor:pointer}#words{margin:20px 0}#result{min-height:40px;border-radius:22px;background:#fff;padding:18px;color:#666}pre{white-space:pre-wrap;font-size:13px}small{display:block;color:#68686d}a{color:inherit}section{background:white;border-radius:20px;padding:20px;margin-top:20px}</style>
+<h1>Lightning · 1만 표제어 실험</h1>
+<p>문장을 입력하고 단어를 눌러, 품사에 따른 로컬 임시 뜻을 확인하세요.</p>
+<small>독립 사전·품사 테스트 화면입니다. AI 호출, 문장 prefetch, 단어장 저장은 하지 않습니다. 기존 400개 리더 실험 UI를 교체하지 않습니다.</small>
+<textarea id="sentence" aria-label="테스트 문장">They record a record before they close the door.</textarea>
+<div id="words"></div><div id="result" role="status">사전을 준비하고 있어요.</div>
+<pre id="detail"></pre><small id="ready"></small>
+<section><strong>확인할 문장</strong><p id="examples"></p><button id="reset">통계 초기화</button><pre id="stats"></pre></section>
+<p><small>사전: 한국어 위키낱말사전 기여자 · Kaikki/Wiktextract 추출 및 Breeze 정제 · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a><br>
+<a href="../../assets/dictionaries/en-ko-10k/dictionary.json">동일 라이선스의 사전 데이터</a> · <a href="../../assets/dictionaries/en-ko-10k/README.md">출처·정제 규칙</a></small></p>
+<script src="../../modules/lexical/core.js"></script><script src="../../scripts/dictionary/local-lexicon.js"></script>
+<script>
+const field=document.getElementById('sentence'),words=document.getElementById('words');let resolver;
+function render(){words.replaceChildren();BreezeLocalLexicon.tokenize(field.value).forEach((token,index)=>{const b=document.createElement('button');b.textContent=token.text;b.disabled=!resolver;b.onclick=()=>{const start=performance.now();const r=resolver.lookup({sentence:field.value,clicked:token.text,clickedIndex:index});const elapsed=performance.now()-start;document.getElementById('result').textContent=r?r.ko:'로컬 뜻 없음 → 리더에서는 기존 AI 조회';document.getElementById('detail').textContent=JSON.stringify(r?{lemma:r.lemma,pos:r.pos||'default fallback',rule:r.rule,provisional:r.provisional,lookupCpuMs:elapsed}:null,null,2);if(r){const a=document.createElement('a');a.href=r.sourceUrl;a.textContent='원문 사전 항목';a.target='_blank';a.rel='noopener noreferrer';document.getElementById('detail').append('\n',a);}document.getElementById('stats').textContent=JSON.stringify(resolver.stats(),null,2);};words.append(b);});}
+field.addEventListener('input',render);
+for(const sentence of ['They recorded everything.','These records matter.','She is running.','A very close friend.','The light box fell.','They saw wood.','I visited Apple.']){const b=document.createElement('button');b.textContent=sentence;b.onclick=()=>{field.value=sentence;render();};document.getElementById('examples').append(b);}
+document.getElementById('reset').onclick=()=>{resolver?.resetStats();document.getElementById('stats').textContent='';};
+(async()=>{try{const start=performance.now();resolver=await BreezeLocalLexicon.load('../../assets/dictionaries/en-ko-10k/dictionary.json');document.getElementById('ready').textContent=`${resolver.stats().headwords.toLocaleString()}개 준비됨 · 다운로드/파싱 포함 ${(performance.now()-start).toFixed(1)}ms. 이후 탭에는 네트워크 요청 없음.`;document.getElementById('result').textContent='위의 단어를 눌러보세요.';render();}catch(e){document.getElementById('result').textContent='사전 준비 실패: '+e.message;}})();render();
+</script></html>

@@ -1,0 +1,13 @@
+{
+  "source": "https://kaikki.org/dictionary/downloads/ko/ko-extract.jsonl.gz",
+  "fetchedAt": "2026-09-28T07:06:56.306781+00:00",
+  "sourceGzipSha256": "eede79c4a64755f13b1a31b507e980bdad03594a8578b7a1f0c0cfe43a14edf7",
+  "englishJsonlSha256": "781557119807dd20890ec3243f507590b70a58bd73cf802094dbe1e9fb3d3834",
+  "englishRows": 17807,
+  "uniqueHeadwords": 16573,
+  "posCounts": {"unknown":10945,"num":11,"pron":35,"verb":2412,"noun":2947,"adj":855,"prep":51,"adv":311,"conj":24,"article":2,"name":75,"abbrev":4,"intj":28,"suffix":7,"prefix":11,"det":2,"phrase":60,"proverb":23,"symbol":4},
+  "license": "CC-BY-SA-4.0",
+  "attribution": "Korean Wiktionary contributors; extracted by Kaikki / Wiktextract",
+  "sourceIndex": "https://kaikki.org/kowiktionary/",
+  "copyright": "https://en.wiktionary.org/wiki/Wiktionary:Copyrights"
+}
