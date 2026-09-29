@@ -444,6 +444,7 @@ function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
   if(wordPeekSameTarget(k,node)){
+    if(!wordPeekHadPending&&!wordPeekPending()){closePanel();return;}
     if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.repeat(wordLookupLife);
     // Original surfaces replace their display-only marker on each hit. Transfer
     // ownership without opening another lookup or losing the pending shimmer.
@@ -510,6 +511,7 @@ let wordPeekRetryState=null;
 let wordDetailAnchored=false,wordMorphAnimation=null,wordMorphGeneration=0;
 const WORD_PEEK_SCROLL_IDLE_MS=250;
 const WORD_PEEK_SEEN_MS=750;
+let wordPeekHadPending=false;
 let wordPeekLastScroll=-Infinity,wordPeekRevealTimer=null;
 let wordPeekPresentation='LOOKING_UP',wordPeekShownAt=null,wordPeekPresentationEnded=false;
 let wordPeekScrollPosition=null;
@@ -541,7 +543,7 @@ function wordPeekUserScrolled(userScroll=true){
   if(!wordPeekActive)return false;
   const offscreen=activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode);
   const seen=userScroll&&wordPeekPresentation==='SHOWN'&&wordPeekShownAt!==null
-    &&performance.now()-wordPeekShownAt>=WORD_PEEK_SEEN_MS;
+    &&(!wordPeekHadPending||performance.now()-wordPeekShownAt>=WORD_PEEK_SEEN_MS);
   document.getElementById('word-peek').hidden=true;
   cancelWordPeekReveal();
   if(offscreen||seen){
@@ -727,7 +729,7 @@ function renderWordPeek(){
     activeSelectedWordNode,state,!state.loading&&hasResolvedMeaning(w)
       &&!(currentContext(selKey)&&currentContext(selKey).error)
       &&!(wordPeekRetryState&&wordPeekRetryState.error));
-  if(state.loading){wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.hidden=true;return;}
+  if(state.loading){wordPeekHadPending=true;wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.hidden=true;return;}
   if(wordPeekPresentation!=='SHOWN')wordPeekPresentation='READY';
   if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
   cancelWordPeekReveal();
@@ -1423,6 +1425,7 @@ function beginWordLookupLife(){
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
 function endWordLookupLife(){
   cancelWordPeekReveal();
+  wordPeekHadPending=false;
   wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;wordPeekPresentationEnded=false;
   wordPeekScrollPosition=wordPeekMotionPosition();
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.end(wordLookupLife);

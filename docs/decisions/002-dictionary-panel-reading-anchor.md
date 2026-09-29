@@ -59,7 +59,9 @@ The heading scrolls with the card. Word management disclosure and manual meaning
 
 The cue uses a single shared CSS definition for Text/PDF/EPUB, with a persistent
 pale blue wash, a soft inset edge and a brighter moving glass reflection. The
-same colors apply inside EPUB's isolated document. It
+same theme palette applies inside EPUB's isolated document. Dark mode uses a
+slightly brighter blue wash (102,170,239 at 24%); light stays at 74,151,235 at 22%.
+The moving reflection, timing and geometry remain the same. It
 changes no word dimensions, hit boxes, paragraph structure or scroll position.
 Reduced motion has a static tint. A polite off-screen status announces loading
 and completion without exposing a blank/pending popup. Original-format repeat
@@ -104,3 +106,11 @@ Text keeps its span identity, PDF keeps page identity and page-relative glyph bo
 and EPUB keeps the source Range endpoints. Replacement display markers inherit
 the same pending request. A different occurrence of an unresolved word retires
 the previous provisional record before selecting the new/saved-word path.
+
+## Immediate saved meanings (2026-09-29)
+
+The 750ms reveal protection applies only after pending feedback in this opening.
+An immediately available saved meaning closes on the next user scroll or same-word
+retap and never returns on idle. Other-word taps still switch targets; mini-pill
+controls retain their existing retry/detail actions. Programmatic motion remains
+non-dismissive. Closing presentation never deletes the saved meaning.

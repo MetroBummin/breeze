@@ -4,7 +4,7 @@ import {runInNewContext} from 'node:vm';
 
 const source=readFileSync(new URL('../scripts/dictionary/dictionary.js',import.meta.url),'utf8');
 const fn=name=>source.match(new RegExp(`function ${name}\\([^]*?\\n\\}`))[0];
-function fixture(){
+function fixture(pending=true){
   let now=0,id=0,closed=0,placed=0;
   const timers=new Map(),frames=[];
   const pill={hidden:true,classList:{toggle(){},add(){},remove(){}},style:{},dataset:{},
@@ -25,6 +25,7 @@ function fixture(){
     wordPeekRetryState:null,loading:true,visible:true};
   const helpers=source.slice(source.indexOf('const WORD_PEEK_SCROLL_IDLE_MS'),source.indexOf('function wordPeekOpen'));
   runInNewContext(helpers+'\n'+fn('wordPeekPending')+'\n'+fn('placeWordPeek')+'\n'+fn('renderWordPeek'),context);
+  if(pending)context.renderWordPeek();
   const realPlace=context.placeWordPeek;
   context.placeWordPeek=()=>{placed++;realPlace();};
   const advance=ms=>{now+=ms;for(const [key,timer] of [...timers])if(timer.at<=now){timers.delete(key);timer.cb();}};
@@ -88,4 +89,12 @@ console.log('word scroll-idle presentation: passed');
     context.wordLookupTargets.set(otherNode,{...target,owner:{}});
     assert.equal(context.wordPeekSameTarget('word',otherNode),false,'another document/page reused lookup');
   }
+}
+
+// An immediate saved result needs no protected reading window or resurrection.
+{
+  const f=fixture(false),c=f.context;c.loading=false;c.renderWordPeek();f.frame();
+  assert.equal(f.pill.hidden,false);f.advance(1);c.wordPeekUserScrolled();
+  assert.equal(f.closed,1);assert.equal(f.pill.hidden,true);
+  f.advance(1000);f.frame();assert.equal(f.pill.hidden,true);
 }
