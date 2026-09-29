@@ -64,7 +64,17 @@ const wordLookupFeedback = (()=>{
     node.style.setProperty('--breeze-lookup-ink',palette.getPropertyValue('--sentence-glass-ink'));
     node.style.setProperty('--breeze-lookup-paper',palette.getPropertyValue('--sentence-glass-solid'));
     node.style.setProperty('--breeze-lookup-wash',palette.getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
-    /* PDF keeps persistent saved markers as a separate translucent layer. While the\n       same occurrence owns a live lookup, hide only the geometrically identical saved\n       underlay so yellow/orange/red cannot mix with the blue pending material. */\n    if(node.classList&&node.classList.contains('original-selection-marker')&&node.parentElement){\n      const left=node.style.left,top=node.style.top,width=node.style.width,height=node.style.height;\n      node.parentElement.querySelectorAll('.original-saved-marker').forEach(saved=>{\n        if(saved.style.left!==left||saved.style.top!==top||saved.style.width!==width||saved.style.height!==height)return;\n        const visibility=saved.style.visibility;pendingUnderlays.push(()=>{saved.style.visibility=visibility;});saved.style.visibility='hidden';\n      });\n    }\n    /* EPUB paints saved words with CSS Custom Highlights rather than DOM markers.
+    /* PDF keeps persistent saved markers as a separate translucent layer. While the
+       same occurrence owns a live lookup, hide only the geometrically identical saved
+       underlay so yellow/orange/red cannot mix with the blue pending material. */
+    if(node.classList&&node.classList.contains('original-selection-marker')&&node.parentElement){
+      const left=node.style.left,top=node.style.top,width=node.style.width,height=node.style.height;
+      node.parentElement.querySelectorAll('.original-saved-marker').forEach(saved=>{
+        if(saved.style.left!==left||saved.style.top!==top||saved.style.width!==width||saved.style.height!==height)return;
+        const visibility=saved.style.visibility;pendingUnderlays.push(()=>{saved.style.visibility=visibility;});saved.style.visibility='hidden';
+      });
+    }
+    /* EPUB paints saved words with CSS Custom Highlights rather than DOM markers.
        Remove only this selected range from its saved bucket while pending, then put
        that same Range back. Other occurrences of the word remain highlighted. */
     if(node.classList&&node.classList.contains('original-selection-marker')
