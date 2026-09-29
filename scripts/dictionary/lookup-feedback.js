@@ -2,7 +2,7 @@
    never include lexical keys, book titles, sentences, account IDs or network data. */
 const wordLookupFeedback = (()=>{
   const limit=240, rows=[];
-  let active=null, pendingNode=null, pendingBusy=null, pendingUnderlays=[], status=null;
+  let active=null, pendingNode=null, pendingBusy=null, selectionNode=null, selectionUnderlays=[], status=null;
   const now=()=>performance.now();
   const format=value=>['text','pdf','epub'].includes(value)?value:'text';
   const elapsed=start=>Math.max(0,Math.round(now()-start));
@@ -42,8 +42,6 @@ const wordLookupFeedback = (()=>{
     if(status.textContent!==text)status.textContent=text;
   }
   function clearCue(){
-    pendingUnderlays.forEach(restore=>{ try{ restore(); }catch(error){} });
-    pendingUnderlays=[];
     if(pendingNode){
       pendingNode.classList.remove('breeze-lookup-pending');
       if(pendingBusy===null)pendingNode.removeAttribute('aria-busy');
@@ -54,7 +52,60 @@ const wordLookupFeedback = (()=>{
     }
     pendingNode=null;pendingBusy=null;
   }
+  function restoreSavedUnderlays(){
+    selectionUnderlays.forEach(restore=>{ try{ restore(); }catch(error){} });
+    selectionUnderlays=[];
+  }
+  function refreshSavedUnderlays(owner=null){
+    if(owner&&selectionNode?.ownerDocument!==owner&&selectionNode?.parentElement!==owner)return;
+    restoreSavedUnderlays();
+    const node=selectionNode;
+    if(!node)return;
+    /* PDF keeps persistent saved markers as a separate translucent layer. While the
+       same occurrence owns a live lookup, hide only the geometrically identical saved
+       underlay so yellow/orange/red cannot mix with the selection material. */
+    if(node.classList&&node.classList.contains('original-selection-marker')&&node.parentElement){
+      const left=node.style.left,top=node.style.top,width=node.style.width,height=node.style.height;
+      node.parentElement.querySelectorAll('.original-saved-marker').forEach(saved=>{
+        if(saved.style.left!==left||saved.style.top!==top||saved.style.width!==width||saved.style.height!==height)return;
+        const visibility=saved.style.visibility;selectionUnderlays.push(()=>{saved.style.visibility=visibility;});saved.style.visibility='hidden';
+      });
+    }
+    /* EPUB paints saved words with CSS Custom Highlights rather than DOM markers.
+       Remove only this selected range from its saved bucket while selected, then put
+       that same Range back. Other occurrences of the word remain highlighted. */
+    if(node.classList&&node.classList.contains('original-selection-marker')
+      &&node.ownerDocument!==document&&typeof epubSavedHighlightCache!=='undefined'
+      &&typeof wordLookupTargets!=='undefined'){
+      const cached=epubSavedHighlightCache.get(node.ownerDocument),target=wordLookupTargets.get(node);
+      if(cached&&target){
+        for(const [key,ranges] of cached.byKey){
+          for(const range of ranges){
+            if(range.startContainer!==target.owner||range.startOffset!==target.start
+              ||range.endContainer!==(target.endNode||target.owner)||range.endOffset!==target.end)continue;
+            const bucket=cached.snapshot.get(key)?.bucket;
+            if(!Number.isInteger(bucket)||bucket<0||!cached.highlights[bucket].has(range))continue;
+            cached.highlights[bucket].delete(range);
+            selectionUnderlays.push(()=>{
+              // A repaint may replace the cache, change status, hide or delete the word.
+              // Restore only a still-current range, into its current saved bucket.
+              const current=epubSavedHighlightCache.get(node.ownerDocument);
+              const next=current?.snapshot.get(key)?.bucket;
+              if(current===cached&&Number.isInteger(next)&&next>=0
+                &&current.byKey.get(key)?.includes(range))current.highlights[next].add(range);
+            });
+          }
+        }
+      }
+    }
+  }
+  function selectCueNode(node){
+    if(selectionNode===node)return;
+    restoreSavedUnderlays();selectionNode=node;
+    refreshSavedUnderlays();
+  }
   function cue(node,pending){
+    selectCueNode(node);
     if(!pending||!node){clearCue();return;}
     if(pendingNode===node)return;
     clearCue();ensureStyle(node.ownerDocument||document);
@@ -64,32 +115,6 @@ const wordLookupFeedback = (()=>{
     node.style.setProperty('--breeze-lookup-ink',palette.getPropertyValue('--sentence-glass-ink'));
     node.style.setProperty('--breeze-lookup-paper',palette.getPropertyValue('--sentence-glass-solid'));
     node.style.setProperty('--breeze-lookup-wash',palette.getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
-    /* PDF keeps persistent saved markers as a separate translucent layer. While the
-       same occurrence owns a live lookup, hide only the geometrically identical saved
-       underlay so yellow/orange/red cannot mix with the blue pending material. */
-    if(node.classList&&node.classList.contains('original-selection-marker')&&node.parentElement){
-      const left=node.style.left,top=node.style.top,width=node.style.width,height=node.style.height;
-      node.parentElement.querySelectorAll('.original-saved-marker').forEach(saved=>{
-        if(saved.style.left!==left||saved.style.top!==top||saved.style.width!==width||saved.style.height!==height)return;
-        const visibility=saved.style.visibility;pendingUnderlays.push(()=>{saved.style.visibility=visibility;});saved.style.visibility='hidden';
-      });
-    }
-    /* EPUB paints saved words with CSS Custom Highlights rather than DOM markers.
-       Remove only this selected range from its saved bucket while pending, then put
-       that same Range back. Other occurrences of the word remain highlighted. */
-    if(node.classList&&node.classList.contains('original-selection-marker')
-      &&node.ownerDocument!==document&&typeof epubSavedHighlightCache!=='undefined'
-      &&typeof wordLookupTargets!=='undefined'){
-      const cached=epubSavedHighlightCache.get(node.ownerDocument),target=wordLookupTargets.get(node),key=node.dataset&&node.dataset.w;
-      const before=cached&&cached.snapshot&&cached.snapshot.get(key),bucket=before&&before.bucket;
-      if(cached&&target&&Number.isInteger(bucket)&&bucket>=0){
-        const range=(cached.byKey.get(key)||[]).find(item=>item.startContainer===target.owner&&item.startOffset===target.start
-          &&item.endContainer===(target.endNode||target.owner)&&item.endOffset===target.end);
-        if(range&&cached.highlights[bucket].has(range)){
-          cached.highlights[bucket].delete(range);pendingUnderlays.push(()=>cached.highlights[bucket].add(range));
-        }
-      }
-    }
     pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
     node.setAttribute('aria-busy','true');node.classList.add('breeze-lookup-pending');
     announce('뜻 찾는 중');
@@ -104,9 +129,10 @@ const wordLookupFeedback = (()=>{
   }
   function end(life){
     if(active&&active.life===life){complete('dismissed');active=null;}
-    clearCue();if(status)status.textContent='';
+    clearCue();selectCueNode(null);if(status)status.textContent='';
   }
   const api={
+    refreshSavedUnderlays,
     start(life,surface){
       active={life,format:format(surface),start:now(),hadPending:false,pending:true,
         repeatTaps:0,pendingRepeatTaps:0,switchedWhilePending:false,source:'saved_or_cache',row:null};

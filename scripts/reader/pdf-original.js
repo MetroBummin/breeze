@@ -475,6 +475,7 @@ function renderPdfSavedWordMarkers(page,boxes){
     const saved=words[key];
     if(saved && saved.mark !== false) makePdfWordMarker(page,box,'original-saved-marker',saved.status,key);
   });
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.refreshSavedUnderlays(page);
 }
 
 function pdfParagraphCue(page,matched,paragraphHint){

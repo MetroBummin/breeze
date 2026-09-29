@@ -484,7 +484,9 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
         if(before.bucket>=0)cached.highlights[before.bucket].delete(range);
         if(after.bucket>=0)cached.highlights[after.bucket].add(range);
       }));
-      cached.snapshot=snapshot;return;
+      cached.snapshot=snapshot;
+      if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.refreshSavedUnderlays(doc);
+      return;
     }
   }
   ['breeze-saved-1','breeze-saved-2','breeze-saved-3'].forEach(name=>view.CSS.highlights.delete(name));
@@ -533,6 +535,7 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   const highlights=ranges.map(items=>new view.Highlight(...items));
   highlights.forEach((highlight,index)=>view.CSS.highlights.set(`breeze-saved-${index+1}`,highlight));
   epubSavedHighlightCache.set(doc,{snapshot,byKey,candidates,highlights});
+  if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.refreshSavedUnderlays(doc);
 }
 
 /* ================= selecting a word ================= */
@@ -978,6 +981,7 @@ function refreshEpubSavedWords(session,statusKey=null){
         // Snapshots can be shared by frames; replace this entry on a private map.
         cached.snapshot=new Map(cached.snapshot);
         cached.snapshot.set(statusKey,{...before,bucket});
+        if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.refreshSavedUnderlays(doc);
       }catch(e){}
     });
     return;
