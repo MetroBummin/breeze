@@ -1,0 +1,109 @@
+name: Lookup performance follow-up validation
+on:
+  push:
+    branches: [chatgpt/lookup-no-redundant-work-20260929]
+    paths: [.github/workflows/lookup-performance-followup.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/chatgpt/lookup-no-redundant-work-20260929'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      candidate: ${{ steps.commit.outputs.candidate }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2}
+      - name: Apply exact test-only follow-up
+        run: |
+          test "$(git rev-parse HEAD^)" = '1cc263e4d737c7e39b5b76f321231011f78ff262'
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          def blob(data):
+              return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          p=Path('tests/verify-word-morph-browser.mjs')
+          assert blob(p.read_bytes())=='b86646ee2c8624b769472f386ff084f7f6130d6e'
+          text=p.read_text()
+          old="  await page.evaluate(()=>{const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500);selectWord('patient',node,true);});"
+          new="""  // Reader restore finishes before lazy word spans have necessarily hydrated.
+            // Reduced-motion testing still needs a real, visible lookup target.
+            await page.waitForFunction(()=>[...document.querySelectorAll('#rtext .w')].some(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500));
+            await page.evaluate(()=>{const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500);openWord('patient',node);});"""
+          assert text.count(old)==1
+          p.write_text(text.replace(old,new))
+          assert blob(p.read_bytes())=='05f1b13c539fa42bac12135cd7e4fcb8239aac40'
+          p=Path('package.json')
+          assert blob(p.read_bytes())=='42b2b6566f3a646b5856fca34dce2065c4b9198f'
+          text=p.read_text();old='node tests/verify-wordbook-browser.mjs",';new='node tests/verify-wordbook-browser.mjs && node tests/verify-lookup-work-browser.mjs",'
+          assert text.count(old)==1
+          p.write_text(text.replace(old,new))
+          assert blob(p.read_bytes())=='04dee233c7f75e65f8ca76778e7b8d3e4c56a67b'
+          PY
+      - name: Commit test coverage and remove temporary workflow
+        id: commit
+        run: |
+          git add tests/verify-word-morph-browser.mjs package.json
+          git rm .github/workflows/lookup-performance-followup.yml
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Retain large-wordbook browser coverage and await real reduced-motion targets'
+          git push origin HEAD:refs/heads/chatgpt/lookup-no-redundant-work-20260929
+          echo "candidate=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  browser:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [startup-wordbook-morph, source-geometry]
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ needs.prepare.outputs.candidate }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - name: Install test dependencies
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund > /tmp/npm-install.log 2>&1 || { tail -60 /tmp/npm-install.log; exit 1; }
+          npx playwright install --with-deps chromium webkit > /tmp/playwright-install.log 2>&1 || { tail -60 /tmp/playwright-install.log; exit 1; }
+      - name: Fetch the exact historical renderer used by the parity test
+        if: matrix.suite == 'source-geometry'
+        run: |
+          git fetch --no-tags --depth=1 origin 03288ac4451fe449d1520a462cec997b1fe663d2
+          git cat-file -e 03288ac4451fe449d1520a462cec997b1fe663d2:scripts/reader/epub-original.js
+      - name: Check each suite independently
+        run: |
+          mkdir -p /tmp/breeze-home-proof /tmp/lookup-results
+          status=0
+          if [ '${{ matrix.suite }}' = 'startup-wordbook-morph' ]; then
+            commands=('npm run test:word-morph' 'npm run test:onboarding' 'npm run test:home-ui')
+          else
+            commands=('node tests/verify-epub-incremental-browser.mjs' 'npm run test:pdf-geometry' 'npm run test:reader-feedback')
+          fi
+          for i in "${!commands[@]}"; do
+            echo "::group::${commands[$i]}"
+            if bash -o pipefail -c "${commands[$i]}" > /tmp/lookup-results/test-$i.log 2>&1; then
+              tail -25 /tmp/lookup-results/test-$i.log
+            else
+              tail -100 /tmp/lookup-results/test-$i.log
+              status=1
+            fi
+            echo '::endgroup::'
+          done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lookup-followup-${{ matrix.suite }}
+          path: |
+            /tmp/lookup-results
+            /tmp/breeze-home-proof
+            /tmp/breeze-word-morph-*.png
+          if-no-files-found: ignore
