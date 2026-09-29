@@ -455,6 +455,8 @@ function makePdfWordMarker(page,box,className,status,wordKey){
   return marker;
 }
 
+// Resolved lexical identity belongs to the source box, not its disposable marker.
+const pdfSavedWordKeys=new WeakMap();
 function renderPdfSavedWordMarkers(page,boxes){
   if(!ownsPdfBoxes(page,boxes||[])) return;
   page.querySelectorAll('.original-saved-marker').forEach(marker=>marker.remove());
@@ -469,11 +471,12 @@ function renderPdfSavedWordMarkers(page,boxes){
     }
   }
   list.forEach((box,index)=>{
-    const phrase=claimed.get(index);
-    if(phrase&&phrase.w.mark!==false){makePdfWordMarker(page,box,'original-saved-marker phrase',phrase.w.status,phrase.key);return;}
-    const key=keyOf(box.word);
+    const phrase=claimed.get(index),key=phrase?phrase.key:keyOf(box.word);
+    // Paint and taps consume this same decision, including hidden saved phrases.
+    pdfSavedWordKeys.set(box,key);
     const saved=words[key];
-    if(saved && saved.mark !== false) makePdfWordMarker(page,box,'original-saved-marker',saved.status,key);
+    if(saved && saved.mark !== false) makePdfWordMarker(page,box,
+      phrase?'original-saved-marker phrase':'original-saved-marker',saved.status,key);
   });
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.refreshSavedUnderlays(page);
 }
@@ -599,7 +602,8 @@ function pdfPageAtPoint(clientX,clientY){
 function openPdfWord(page,box){
   if(!box || !ownsPdfBoxes(page,[box])) return;
   // openWord compares the old source occurrence before transferring marker ownership.
-  const key=keyOf(box.word);
+  const savedKey=pdfSavedWordKeys.get(box);
+  const key=savedKey&&words[savedKey]?savedKey:keyOf(box.word);
   /* Freeze the resolved key on the marker. keyOf() can legitimately change
      after a new lemma is saved; a selected marker must not change identity. */
   const marker=makePdfWordMarker(page,box,'original-selection-marker',words[key]&&words[key].mark!==false&&words[key].status,key);

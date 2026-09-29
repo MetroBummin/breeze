@@ -497,7 +497,7 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   markStyle.textContent=`::highlight(breeze-saved-1){background:rgba(255,226,138,.34)}
     ::highlight(breeze-saved-2){background:rgba(255,171,120,.31)}
     ::highlight(breeze-saved-3){background:rgba(255,140,140,.33)}`;
-  const ranges=[[],[],[]],byKey=new Map(),candidates=new Set();
+  const ranges=[[],[],[]],byKey=new Map(),byNode=new WeakMap(),candidates=new Set();
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const parent=node.parentElement;
     if(!parent || !node.data || !/[A-Za-z]/.test(node.data)
@@ -512,7 +512,7 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   while((node=walker.nextNode())){
     pattern.lastIndex=0;const matches=[];let match;
     while((match=pattern.exec(node.data))){matches.push(match);lemmaCands(match[0]).forEach(part=>candidates.add(part));}
-    const claimed=new Map();
+    const claimed=new Map(),savedAt=new Map();
     if(starts){
       for(let index=0;index<matches.length;index++){
         const choices=[];lemmaCands(matches[index][0]).forEach(part=>(starts.get(part)||[]).forEach(item=>{if(!choices.includes(item))choices.push(item);}));
@@ -525,16 +525,18 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
       const key=phrase?phrase.key:keyOf(match[0]);
       const saved=words[key];
       if(!saved) continue;
+      savedAt.set(match.index,{key,end:match.index+match[0].length});
       const range=doc.createRange();
       range.setStart(node,match.index); range.setEnd(node,match.index+match[0].length);
       if(!byKey.has(key))byKey.set(key,[]);
       byKey.get(key).push(range);
       if(saved.mark!==false)ranges[Math.max(0,Math.min(2,(saved.status||1)-1))].push(range);
     }
+    if(savedAt.size)byNode.set(node,savedAt);
   }
   const highlights=ranges.map(items=>new view.Highlight(...items));
   highlights.forEach((highlight,index)=>view.CSS.highlights.set(`breeze-saved-${index+1}`,highlight));
-  epubSavedHighlightCache.set(doc,{snapshot,byKey,candidates,highlights});
+  epubSavedHighlightCache.set(doc,{snapshot,byKey,byNode,candidates,highlights});
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.refreshSavedUnderlays(doc);
 }
 
@@ -789,7 +791,11 @@ function openOriginalRange(doc,range,raw,owner,rect){
   wordLookupTargets.set(marker,{owner:range.startContainer,start:range.startOffset,
     endNode:range.endContainer,end:range.endOffset});
   marker.textContent=raw;
-  const key=keyOf(raw); marker.dataset.w=key;
+  // Reuse the highlight pass's exact source occurrence; never re-guess a phrase on tap.
+  const saved=epubSavedHighlightCache.get(doc)?.byNode?.get(range.startContainer)?.get(range.startOffset);
+  const key=saved&&range.startContainer===range.endContainer&&saved.end===range.endOffset&&words[saved.key]
+    ? saved.key:keyOf(raw);
+  marker.dataset.w=key;
   const block=owner.closest&&owner.closest('p,li,blockquote,h1,h2,h3,h4');
   const indexed=(block||owner).closest&&((block||owner).closest('[data-breeze-ei]'));
   const frame=doc.defaultView&&doc.defaultView.frameElement;
