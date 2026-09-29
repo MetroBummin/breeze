@@ -109,6 +109,9 @@ function textProgressForBook(book,anchor){
    맨 위에 닿지 못해 같은 이유로 100%가 되지 않았습니다.
    마지막 한 화면만은 남은 스크롤로 메꿉니다. 바닥에 닿으면 정확히 1입니다. */
 function readerProgressAtEnd(value){
+  // A horizontal page's bottom is not the end of the document.
+  if(currentReaderMode==='original'&&typeof pdfHorizontal==='function'&&pdfHorizontal()
+      &&pdfCurrentPage()!==pdfAvailablePages().at(-1))return value;
   const height=Math.max(1,readerViewHeight());
   const extent=Math.max(0,readerContentHeight()-height);
   const top=Math.max(0,readerScrollTop());
@@ -199,6 +202,7 @@ async function renderOriginalBook(book,record){
 }
 
 function leaveOriginalReader(){
+  if(typeof closePdfNavigation==='function')closePdfNavigation();
   originalLoadToken++;
   originalOpenJob=null;
   lastOriginalAnchor=null;

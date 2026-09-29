@@ -770,8 +770,13 @@ function assembleParagraphs(pages){
 async function parsePDF(f, onProgress=toast){
   await ensurePdfLib();
   const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data: await f.arrayBuffer()}).promise;
+  try{return await extractPdfParagraphs(pdf,new Set(),onProgress);}
+  finally{try{await pdf.destroy();}catch(error){}}
+}
+async function extractPdfParagraphs(pdf,excluded=new Set(),onProgress=toast){
   const pages = [];
   for(let i=1;i<=pdf.numPages;i++){
+    if(excluded.has(i))continue;
     if(i===1 || i%20===0) onProgress(`책 기본판 준비 중… ${i}/${pdf.numPages}쪽`);
     const page = await pdf.getPage(i);
     const h = page.getViewport({scale:1}).height;
@@ -792,7 +797,6 @@ async function parsePDF(f, onProgress=toast){
   }
   const paragraphs = assembleParagraphs(pages);
   paragraphs.sheets = pages;          // modules/exam-shorts/exam.js 가 소비합니다
-  try{ await pdf.destroy(); }catch(e){}
   return paragraphs;
 }
 

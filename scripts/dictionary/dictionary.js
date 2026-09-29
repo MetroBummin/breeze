@@ -979,10 +979,12 @@ function renderPanel(){
     b.setAttribute('aria-pressed',String(active));b.setAttribute('aria-label','모르는 정도 '+b.getAttribute('data-s'));
   });
   const mark = document.getElementById('p-mark');
-  const marked = base.mark !== false;
+  const gradeVisible=typeof starVisible!=='function'||starVisible(w.status);
+  /** @type {HTMLButtonElement} */(mark).disabled=!gradeVisible;
+  const marked = base.mark !== false && gradeVisible;
   mark.classList.toggle('on', marked);
   mark.setAttribute('aria-pressed', String(marked));
-  mark.querySelector('span').textContent = marked ? '켜짐' : '꺼짐';
+  mark.querySelector('span').textContent = !gradeVisible ? '설정에서 꺼짐' : marked ? '켜짐' : '꺼짐';
   mark.title = marked ? '이 단어의 본문 색칠 끄기' : '이 단어의 본문 색칠 켜기';
 
   /* ── 뜻이 사는 칸. 하나뿐입니다 ──
@@ -1153,6 +1155,7 @@ document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
 document.getElementById('p-mark').onclick=()=>{
   const selected=words[selKey];if(!selected)return;
   const key=selected.root||selKey,w=words[key]||selected;
+  if(typeof starVisible==='function'&&!starVisible(w.status))return;
   w.mark = w.mark === false;
   w.up=Date.now(); saveWords(key); paintWord(key); queueSync(); renderPanel();
 };

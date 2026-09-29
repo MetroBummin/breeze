@@ -184,7 +184,7 @@ async function sanitiseEpubChapter(archive,chapter,resources,viewport){
     ? 'html,body{height:auto!important;overflow:visible!important}*,*::before,*::after{animation:none!important;transition:none!important}'
     : '';
   const safety=`:root{${epubViewportProperties(viewport)}}html,body{max-width:100%;min-height:1px;touch-action:pan-x pan-y}${geometrySafety}img,svg,video{max-width:100%;height:auto}
-    body{-webkit-touch-callout:none}
+    body{-webkit-touch-callout:none}body{box-sizing:border-box!important;width:auto!important;max-width:46rem!important;margin-inline:auto!important;padding-inline:clamp(16px,4vw,48px)!important;overflow-wrap:break-word}
     p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th{cursor:pointer}
     .breeze-original-word{border-radius:.18em;cursor:pointer}.breeze-original-word:hover{background:rgba(37,137,190,.18)}
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
@@ -468,6 +468,7 @@ function epubSavedWordSnapshot(){
 function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   const view=doc&&doc.defaultView;
   if(!doc || !view || !view.CSS || !view.CSS.highlights || !view.Highlight) return;
+  if(typeof applyEpubStarPreferences==='function')applyEpubStarPreferences(doc);
   const cached=epubSavedHighlightCache.get(doc);
   if(cached){
     const changed=[];let rebuild=false;
@@ -497,6 +498,7 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   markStyle.textContent=`::highlight(breeze-saved-1){background:rgba(255,226,138,.34)}
     ::highlight(breeze-saved-2){background:rgba(255,171,120,.31)}
     ::highlight(breeze-saved-3){background:rgba(255,140,140,.33)}`;
+  if(typeof applyEpubStarPreferences==='function')applyEpubStarPreferences(doc);
   const ranges=[[],[],[]],byKey=new Map(),byNode=new WeakMap(),candidates=new Set();
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const parent=node.parentElement;
