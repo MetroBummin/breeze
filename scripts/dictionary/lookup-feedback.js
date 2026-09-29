@@ -42,7 +42,7 @@ const wordLookupFeedback = (()=>{
     if(status.textContent!==text)status.textContent=text;
   }
   function clearCue(){
-    pendingUnderlays.forEach(item=>{ try{ item.node.style.visibility=item.visibility; }catch(error){} });
+    pendingUnderlays.forEach(restore=>{ try{ restore(); }catch(error){} });
     pendingUnderlays=[];
     if(pendingNode){
       pendingNode.classList.remove('breeze-lookup-pending');
@@ -64,7 +64,23 @@ const wordLookupFeedback = (()=>{
     node.style.setProperty('--breeze-lookup-ink',palette.getPropertyValue('--sentence-glass-ink'));
     node.style.setProperty('--breeze-lookup-paper',palette.getPropertyValue('--sentence-glass-solid'));
     node.style.setProperty('--breeze-lookup-wash',palette.getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
-    /* PDF keeps persistent saved markers as a separate translucent layer. While the\n       same occurrence owns a live lookup, hide only the geometrically identical saved\n       underlay so yellow/orange/red cannot mix with the blue pending material. */\n    if(node.classList&&node.classList.contains('original-selection-marker')&&node.parentElement){\n      const left=node.style.left,top=node.style.top,width=node.style.width,height=node.style.height;\n      node.parentElement.querySelectorAll('.original-saved-marker').forEach(saved=>{\n        if(saved.style.left!==left||saved.style.top!==top||saved.style.width!==width||saved.style.height!==height)return;\n        pendingUnderlays.push({node:saved,visibility:saved.style.visibility});saved.style.visibility='hidden';\n      });\n    }\n    pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
+    /* PDF keeps persistent saved markers as a separate translucent layer. While the\n       same occurrence owns a live lookup, hide only the geometrically identical saved\n       underlay so yellow/orange/red cannot mix with the blue pending material. */\n    if(node.classList&&node.classList.contains('original-selection-marker')&&node.parentElement){\n      const left=node.style.left,top=node.style.top,width=node.style.width,height=node.style.height;\n      node.parentElement.querySelectorAll('.original-saved-marker').forEach(saved=>{\n        if(saved.style.left!==left||saved.style.top!==top||saved.style.width!==width||saved.style.height!==height)return;\n        const visibility=saved.style.visibility;pendingUnderlays.push(()=>{saved.style.visibility=visibility;});saved.style.visibility='hidden';\n      });\n    }\n    /* EPUB paints saved words with CSS Custom Highlights rather than DOM markers.
+       Remove only this selected range from its saved bucket while pending, then put
+       that same Range back. Other occurrences of the word remain highlighted. */
+    if(node.classList&&node.classList.contains('original-selection-marker')
+      &&node.ownerDocument!==document&&typeof epubSavedHighlightCache!=='undefined'
+      &&typeof wordLookupTargets!=='undefined'){
+      const cached=epubSavedHighlightCache.get(node.ownerDocument),target=wordLookupTargets.get(node),key=node.dataset&&node.dataset.w;
+      const before=cached&&cached.snapshot&&cached.snapshot.get(key),bucket=before&&before.bucket;
+      if(cached&&target&&Number.isInteger(bucket)&&bucket>=0){
+        const range=(cached.byKey.get(key)||[]).find(item=>item.startContainer===target.owner&&item.startOffset===target.start
+          &&item.endContainer===(target.endNode||target.owner)&&item.endOffset===target.end);
+        if(range&&cached.highlights[bucket].has(range)){
+          cached.highlights[bucket].delete(range);pendingUnderlays.push(()=>cached.highlights[bucket].add(range));
+        }
+      }
+    }
+    pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
     node.setAttribute('aria-busy','true');node.classList.add('breeze-lookup-pending');
     announce('뜻 찾는 중');
   }
