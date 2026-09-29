@@ -278,6 +278,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private static let libraryRefreshHandler = "breezeRefresh"
     private static let pencilAdmissionHandler = "breezePencilAdmission"
     private static let shareInboxHandler = "breezeShareInbox"
+    private static let readerSelectionHandler = "breezeReaderSelection"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
     private let speechSynthesizer = AVSpeechSynthesizer()
@@ -301,6 +302,14 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         // reader is an inner web scroller, so restoring the native setting
         // brings the same edge bounce to Text, EPUB, and PDF without JS.
         guard let webView else { return }
+
+        // Stop native selection at its owner, before it can take touches away
+        // from DOM gestures. CSS/selectionchange remain the browser fallback.
+        webView.configuration.userContentController.add(self, name: Self.readerSelectionHandler)
+        webView.configuration.userContentController.addUserScript(
+            WKUserScript(source: Self.readerSelectionScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        )
+        refreshReaderSelectionPolicy()
 
         // Native idiom, not viewport width or desktop-mode user agent.
         // Mac Catalyst / iPad apps running on Mac must not expose Pencil tools.
@@ -429,6 +438,20 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == Self.readerSelectionHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let enabled = message.body as? Bool,
+                  let webView else { return }
+            if #available(iOS 14.5, *) {
+                let preferences = webView.configuration.preferences
+                if preferences.isTextInteractionEnabled != enabled {
+                    preferences.isTextInteractionEnabled = enabled
+                }
+            }
+            return
+        }
         if message.name == "breezeInkScope" {
             guard message.frameInfo.isMainFrame,
                   message.frameInfo.securityOrigin.protocol == "breeze",
@@ -1182,7 +1205,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView?.underPageBackgroundColor = color
         // Follow the app's actual background, even when its theme differs
         // from the device setting. UIKit's spinner also needs the local trait.
-        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 1
         if color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
             let isDark = 0.2126 * red + 0.7152 * green + 0.0722 * blue < 0.5
             libraryRefreshControl.overrideUserInterfaceStyle = isDark ? .dark : .light
@@ -1191,6 +1214,60 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                 : UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
         }
     }
+
+    // BEGIN READER_NATIVE_SELECTION
+    func refreshReaderSelectionPolicy() {
+        // Also handles the already-loaded document and app resume. The script
+        // is idempotent; no polling or gesture-recognizer replacement is used.
+        webView?.evaluateJavaScript(Self.readerSelectionScript, completionHandler: nil)
+    }
+
+    private static let readerSelectionScript = #"""
+    (() => {
+      if (location.protocol !== 'breeze:' || location.hostname !== 'localhost') return;
+      if (window.__breezeReaderSelectionPolicy) {
+        window.__breezeReaderSelectionPolicy();
+        return;
+      }
+      let previous;
+      const textControl = element => {
+        if (!element || !element.isConnected) return false;
+        if (element.isContentEditable) return true;
+        if (element.disabled) return false;
+        if (element.tagName === 'TEXTAREA') return true;
+        return element.tagName === 'INPUT' &&
+          ['text', 'search', 'email', 'url', 'tel', 'password', 'number'].includes(element.type);
+      };
+      const report = (force = false) => {
+        const enabled = !document.body?.classList.contains('reading') || textControl(document.activeElement);
+        if (!force && enabled === previous) return;
+        const handler = window.webkit?.messageHandlers?.breezeReaderSelection;
+        if (!handler) return;
+        try {
+          handler.postMessage(enabled);
+          previous = enabled;
+        } catch (_) { /* Retry on the next state/lifecycle event, not a timer. */ }
+      };
+      window.__breezeReaderSelectionPolicy = () => report(true);
+      const observeBody = () => {
+        if (document.body) {
+          new MutationObserver(() => report()).observe(document.body,
+            {attributes: true, attributeFilter: ['class']});
+        }
+        report();
+      };
+      // A global permanent false also disables typing on some iOS releases.
+      // Actual text controls keep cursor, IME, selection and paste. Read-only
+      // controls also retain copying; contenteditable=false is not an editor.
+      document.addEventListener('focusin', () => report(), true);
+      document.addEventListener('focusout', () => queueMicrotask(() => report()), true);
+      document.addEventListener('visibilitychange', () => report(true));
+      window.addEventListener('pageshow', () => report(true));
+      if (document.body) observeBody();
+      else document.addEventListener('DOMContentLoaded', observeBody, {once: true});
+    })();
+    """#
+    // END READER_NATIVE_SELECTION
 
     private static let themeReporterScript = """
     (() => {
@@ -1227,6 +1304,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        (window?.rootViewController as? BreezeBridgeViewController)?.refreshReaderSelectionPolicy()
         (window?.rootViewController as? BreezeBridgeViewController)?.deliverSharedLinks()
     }
 
