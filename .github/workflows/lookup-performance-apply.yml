@@ -1,0 +1,120 @@
+name: Branch-only lookup performance validation
+on:
+  push:
+    branches: [chatgpt/lookup-no-redundant-work-20260929]
+    paths: [.github/performance-edits.json, .github/workflows/lookup-performance-apply.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/chatgpt/lookup-no-redundant-work-20260929'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      candidate: ${{ steps.commit.outputs.candidate }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Apply hash-verified local edits on this branch only
+        run: |
+          test "$(git rev-parse HEAD^)" = '4037bb022a22e23e9dfe5297166260cccad5ff3a'
+          python3 - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          def blob(data):
+              return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          tests={
+              'tests/benchmark-word-cleanup.mjs':'32f862672ce467beaf61e7a346afa26b41ab7046',
+              'tests/verify-lookup-work-browser.mjs':'9a92412ffa502d0ca85f130b69ef081d03bc2fdc',
+              'tests/verify-lookup-work.mjs':'ad1154ba45376427724db23ee74715337b433587',
+          }
+          for name,expected in tests.items():
+              assert blob(Path(name).read_bytes())==expected, name
+          edits=json.loads(Path('.github/performance-edits.json').read_text())
+          pending=[]
+          for entry in edits:
+              p=Path(entry['path'])
+              assert not p.is_absolute() and '..' not in p.parts
+              assert p.parts[0] in ('scripts','tests','docs')
+              original=p.read_bytes()
+              assert blob(original)==entry['before'], ('source mismatch',str(p))
+              lines=original.decode().splitlines(keepends=True)
+              for first,last,text in reversed(entry['edits']):
+                  lines[first:last]=text.splitlines(keepends=True)
+              result=''.join(lines).encode()
+              assert blob(result)==entry['after'], ('result mismatch',str(p))
+              pending.append((p,result))
+          for p,data in pending:p.write_bytes(data)
+          Path('/tmp/lookup-changed-paths').write_text('\n'.join(str(p) for p,_ in pending)+'\n'+'\n'.join(tests)+'\n')
+          PY
+          node tools/stamp-version.mjs
+          node tests/verify-lookup-performance.mjs
+          node tests/verify-word-integrity.mjs
+      - name: Commit only the verified candidate; remove authoring files
+        id: commit
+        run: |
+          xargs -d '\n' git add -- < /tmp/lookup-changed-paths
+          git add index.html sw.js
+          git rm .github/performance-edits.json .github/workflows/lookup-performance-apply.yml
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Remove quadratic cleanup and hidden lookup work; preserve vocabulary contracts'
+          git push origin HEAD:refs/heads/chatgpt/lookup-no-redundant-work-20260929
+          echo "candidate=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  contracts:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ needs.prepare.outputs.candidate }}', fetch-depth: 3, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - run: npm run www && git diff --check && git diff --exit-code
+      - name: Isolated 2100-record baseline comparison
+        run: |
+          git show 4037bb022a22e23e9dfe5297166260cccad5ff3a:scripts/core/word-integrity.js > /tmp/cleanup-before.js
+          BASE_INTEGRITY=/tmp/cleanup-before.js node tests/benchmark-word-cleanup.mjs | tee /tmp/cleanup-results.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: lookup-cleanup-benchmark, path: /tmp/cleanup-results.json, if-no-files-found: ignore}
+  browsers:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: startup-wordbook-morph
+            commands: node tests/verify-lookup-work-browser.mjs && npm run test:word-morph && npm run test:onboarding && npm run test:home-ui
+          - name: lookup-lifecycle
+            commands: npm run test:word-scroll && npm run test:word-recovery && npm run test:lookup-quality
+          - name: source-geometry
+            commands: node tests/verify-epub-incremental-browser.mjs && npm run test:pdf-geometry && npm run test:reader-feedback
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ needs.prepare.outputs.candidate }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: mkdir -p /tmp/breeze-home-proof
+      - run: ${{ matrix.commands }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lookup-browser-${{ matrix.name }}
+          path: /tmp/breeze-home-proof
+          if-no-files-found: ignore
