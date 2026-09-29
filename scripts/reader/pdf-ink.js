@@ -249,14 +249,15 @@ const BreezePdfInk = (()=>{
     pill.append(inkTools,inkReadSeparator,inkEntry,inkMini);
     settings=document.createElement('div');settings.id='pdf-ink-settings';settings.className='control-glass';settings.hidden=true;
     settings.setAttribute('role','dialog');
-    settings.innerHTML='<div data-ink-panel="pen"><div class="ink-setting-label">펜 색상</div><div class="ink-setting-row ink-colors"></div><div class="ink-setting-label">펜 굵기</div><div class="ink-setting-row ink-widths"></div></div><div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii"></div></div>';
-    settings.insertAdjacentHTML('beforeend','<div data-ink-panel="highlighter" hidden><div class="ink-setting-label">형광펜 색상</div><div class="ink-setting-row ink-highlight-colors"></div><div class="ink-setting-label">형광펜 굵기</div><div class="ink-setting-row ink-highlight-widths"></div></div>');
+    settings.innerHTML='<div data-ink-panel="pen"><div class="ink-setting-row ink-colors" role="group" aria-label="펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths" role="group" aria-label="펜 두께"></div></div><div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii"></div></div>';
+    settings.insertAdjacentHTML('beforeend','<div data-ink-panel="highlighter" hidden><div class="ink-setting-row ink-highlight-colors" role="group" aria-label="형광펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-highlight-widths" role="group" aria-label="형광펜 두께"></div></div>');
     const options=(kind,values,labels)=>{
       const row=settings.querySelector(kind==='color'?'.ink-colors':kind==='width'?'.ink-widths':kind==='highlightColor'?'.ink-highlight-colors':kind==='highlightWidth'?'.ink-highlight-widths':'.ink-radii');
       values.forEach((value,i)=>{
         const button=document.createElement('button');button.type='button';button.dataset[`ink${kind[0].toUpperCase()+kind.slice(1)}`]=String(value);
-        button.setAttribute('aria-label',(kind==='color'?'펜 색상: ':kind==='width'?'펜 굵기: ':kind==='highlightColor'?'형광펜 색상: ':kind==='highlightWidth'?'형광펜 굵기: ':'지우개 크기: ')+labels[i]);
-        button.innerHTML='<i aria-hidden="true"></i><span>'+labels[i]+'</span>';
+        button.setAttribute('aria-label',(kind==='color'?'펜 색상: ':kind==='width'?'펜 두께: ':kind==='highlightColor'?'형광펜 색상: ':kind==='highlightWidth'?'형광펜 두께: ':'지우개 크기: ')+labels[i]);
+        const compact=kind==='color'||kind==='highlightColor'||kind==='width'||kind==='highlightWidth';
+        button.innerHTML='<i aria-hidden="true"></i>'+(compact?'':'<span>'+labels[i]+'</span>');
         button.style.setProperty('--ink-option',kind==='color'||kind==='highlightColor'?String(value):`${kind==='width'?Number(value)*1.6:kind==='highlightWidth'?Number(value)*0.5:8+i*7}px`);
         button.onclick=()=>{cancel();if(kind==='color')color=String(value);else if(kind==='width')width=Number(value);else if(kind==='highlightColor')highlightColor=String(value);else if(kind==='highlightWidth')highlightWidth=Number(value);else eraserRadius=Number(value);savePreferences();update();};
         row.append(button);
