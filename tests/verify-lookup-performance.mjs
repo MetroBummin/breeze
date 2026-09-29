@@ -65,3 +65,6 @@ for(const online of [false,true]){
  assert.equal(c.meaningCards('bank',null,shared)[0][0],'bank::river');
  assert.equal(scans,1);assert.equal(records[0][0],'bank','sorting must not mutate shared candidates');
 }
+
+// Work budgets and slow-storage regression checks.
+await import("./verify-lookup-work.mjs");

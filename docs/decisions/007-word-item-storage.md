@@ -32,3 +32,17 @@ Lookup mutations with known changes mark the existing sync dirty flag immediatel
 and retain the four-second upload debounce, without first serializing the whole
 vocabulary. Generic sync callers keep snapshot comparison; a known mutation
 invalidates that comparison baseline. Offline dirty state is preserved.
+
+## Linear integrity cleanup (2026-09-29)
+
+Startup and sync cleanup group records once. A group without empty meanings needs
+no repair work. When an invalid root needs promotion, its existing group supplies
+the first surviving meaning in the original enumeration order; current records
+are rechecked for earlier legacy-chain repairs. Cleanup never enumerates the
+entire vocabulary again for each root. No persistent index, invalidation cache,
+worker, storage schema or synchronization contract is introduced.
+
+Wordbook inline edits persist their one changed key; an unchanged blur is a no-op.
+Row disclosure changes only that row's extra details and editable state, preserving
+other rows, focus and the existing multi-meaning deletion rules. Structural
+filter/sort/deletion and remote changes still use the full render path.

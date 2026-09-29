@@ -615,6 +615,9 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
   tapBrandNewWord(ctx, 'yield');
   net.deliver({ error:'quota_exceeded' });
   await settle(40);
+  assert.equal(ctx.words.yield.phon,'','mini pill fetched hidden IPA metadata');
+  // Request the independent English detail explicitly, without a new lookup.
+  await new Script("fillDictionaryMetadata('yield',wordLookupLife)").runInNewContext(ctx);
   assert.equal(ctx.words.yield.ko,'','영어 metadata가 한국어 뜻자리를 채웠습니다');
   assert.equal(ctx.words.yield.phon,'/jiːld/','실제로 쓰는 IPA metadata가 사라졌습니다');
   assert.equal(ctx.words.yield.defs[0].def,'give way','실제로 쓰는 영어 정의 metadata가 사라졌습니다');

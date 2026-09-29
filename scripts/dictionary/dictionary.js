@@ -689,23 +689,22 @@ function placeWordDetail(){
   const panel=document.getElementById('panel'),r=anchoredDetailRect();
   for(const key of ['left','top','width','height']) panel.style[key]=r[key]+'px';
 }
-function morphWordSurface(from,to,collapsing=false){
-  const panel=document.getElementById('panel'),pill=document.getElementById('word-peek');
+function morphWordSurface(from,to){
+  const panel=document.getElementById('panel');
   stopWordMorph();
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!panel.animate){
-    if(collapsing){panel.classList.remove('on','anchored');pill.style.visibility='';}
-    return;
-  }
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!panel.animate||!to.width||!to.height)return;
   const generation=wordMorphGeneration;
   panel.classList.add('morphing');
-  if(collapsing)pill.style.visibility='hidden';
-  const frame=(r,radius)=>({left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',borderRadius:radius+'px'});
-  wordMorphAnimation=panel.animate([frame(from,collapsing?24:28),frame(to,collapsing?28:24)],
-    {duration:collapsing?220:280,easing:'cubic-bezier(.2,.8,.2,1)',fill:'none'});
+  // Lay out the final detail once. Move/scale its empty glass shell, rather
+  // than reflowing width/height on every animation frame. Content stays hidden
+  // by .morphing until the shell reaches its final, unscaled position.
+  wordMorphAnimation=panel.animate([
+    {transformOrigin:'0 0',transform:`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${from.height/to.height})`},
+    {transformOrigin:'0 0',transform:'none'}
+  ],{duration:280,easing:'cubic-bezier(.2,.8,.2,1)',fill:'none'});
   wordMorphAnimation.finished.then(()=>{
     if(generation!==wordMorphGeneration)return;
     wordMorphAnimation=null;panel.classList.remove('morphing');
-    if(collapsing){panel.classList.remove('on','anchored');pill.style.visibility='';}
   }).catch(()=>{});
 }
 function renderWordPeek(){
@@ -791,7 +790,7 @@ function selectWord(k, span, peek, bump=false){
   selKey = k;
   if(!keepAnchor) clearActiveWordSelection();
   const metadataLife=wordLookupLife;
-  if(!previewWordCard&&!homewardWordFor(words[k],span))
+  if(!peek&&!previewWordCard&&!homewardWordFor(words[k],span))
     requestAnimationFrame(()=>{if(wordLookupAlive(metadataLife))void fillDictionaryMetadata(k,metadataLife);});
   if(span){ span.classList.add('sel'); activeSelectedWordNode=span; rememberWordPeekAnchor(span); }
   if(span&&peek&&!previewWordCard&&typeof wordLookupFeedback!=='undefined')
@@ -1629,7 +1628,9 @@ async function fetchLook(k, opt){
       return false;
     }
     if(typeof j.left === 'number') rememberAiLeft(j.left);
-    await dictPut(lookKey(opt.word || w.word || k, querySentence,clickedIndex), Object.assign({}, j, { done:true }));
+    // This is a reusable cache, not the durable vocabulary transaction. A slow
+    // cache write must not hold a usable answer or a retry's returned result.
+    void dictPut(lookKey(opt.word || w.word || k, querySentence,clickedIndex), Object.assign({}, j, { done:true }));
     /* 갓 받은 답은 최소 0.28초는 바람을 보여 준 뒤에 놓습니다. 답이 너무 빨리 오면
        화면이 튄 것처럼 느껴져서, 무슨 일이 일어났는지 못 알아챕니다.
        기기에 이미 있던 답은 그냥 띄웁니다 — 기다린 척할 이유가 없습니다. */
@@ -1737,11 +1738,8 @@ async function fetchDict(k,node){
   const w=words[k];if(!w)return;
   const life=wordLookupLife,began=Date.now();
   w.loading=true;w.aiLoading=true;renderIfAlive(life);
-  const local=homewardWordFor(w,node);
-  const metadata=local?null:fillDictionaryMetadata(k,life);
   const cached=await loadCachedLook(k,began,life,node);
   if(!cached&&wordLookupAlive(life)){delete w.aiLoading;await fetchLook(k,{life,node});}
-  await metadata;
   if(!words[k]&&selKey!==k)return;
   if(words[k]){delete words[k].loading;delete words[k].aiLoading;words[k].up=Date.now();}
   saveWords(k);if(words[k]&&hasResolvedMeaning(words[k]))queueSync(true);renderIfAlive(life);
@@ -1771,6 +1769,13 @@ if(window.visualViewport) window.visualViewport.addEventListener('resize',wordPe
    않습니다. 별을 누르거나 동기화가 도착하면 목록 전체를 다시 그리므로, 열어 둔
    자리를 기억할 곳이 어딘가에는 있어야 합니다. */
 const vocabOpen = new Set();
+function vocabMoreHtml(w){
+  return `<div class="vmore">
+    ${w.example?`<div class="vex">${esc(w.example)}</div>`:''}
+    <div class="vmeta">${w.book?`📖 ${esc(w.book)} · `:''}${new Date(w.addedAt).toLocaleDateString('ko-KR')}</div>
+    <button class="rowdel" title="이 뜻만 삭제">✕ 이 뜻 삭제</button>
+  </div>`;
+}
 function renderVocab(){
   const list = Object.entries(words).filter(([,item])=>validWordMeaning(item))
     .sort((a,b)=>b[1].addedAt-a[1].addedAt);
@@ -1811,11 +1816,7 @@ function renderVocab(){
         <div class="vsenses">${entries.map(([k,w])=>`
           <div class="vsense" data-k="${esc(k)}">
             <div class="vko"${open?' contenteditable="true" spellcheck="false"':''}>${esc(w.ko||'')}</div>
-            ${open?`<div class="vmore">
-              ${w.example?`<div class="vex">${esc(w.example)}</div>`:''}
-              <div class="vmeta">${w.book?`📖 ${esc(w.book)} · `:''}${new Date(w.addedAt).toLocaleDateString('ko-KR')}</div>
-              <button class="rowdel" title="이 뜻만 삭제">✕ 이 뜻 삭제</button>
-            </div>`:''}
+            ${open?vocabMoreHtml(w):''}
           </div>`).join('')}</div>
         <button class="chip s${head.status}" title="클릭해서 모르는 정도 바꾸기">${stName[head.status]}</button>
       </div>
@@ -1825,8 +1826,23 @@ function renderVocab(){
     const group = /** @type {HTMLElement} */(node);
     const groupKey = group.dataset.g;
     const toggle = ()=>{
-      if(vocabOpen.has(groupKey)) vocabOpen.delete(groupKey); else vocabOpen.add(groupKey);
-      renderVocab();
+      const open=!vocabOpen.has(groupKey);
+      if(open)vocabOpen.add(groupKey);else vocabOpen.delete(groupKey);
+      group.classList.toggle('open',open);
+      group.querySelector('.vword').setAttribute('aria-expanded',String(open));
+      group.querySelectorAll('.vsense').forEach(row=>{
+        const sense=/** @type {HTMLElement} */(row),k=sense.dataset.k,w=words[k];
+        const ko=sense.querySelector('.vko');
+        if(!w)return;
+        if(open){
+          ko.setAttribute('contenteditable','true');ko.setAttribute('spellcheck','false');
+          sense.insertAdjacentHTML('beforeend',vocabMoreHtml(w));
+          /** @type {HTMLElement} */(sense.querySelector('.rowdel')).onclick=()=>{deleteMeaning(k);renderVocab();};
+        }else{
+          ko.removeAttribute('contenteditable');ko.removeAttribute('spellcheck');
+          sense.querySelector('.vmore')?.remove();
+        }
+      });
     };
     /* 접었다 펴는 일은 줄 전체가 받습니다. 별·삭제·펼친 속은 각자 할 일이 있어서
        여기서 한 번에 비켜 줍니다 — 세 곳에 stopPropagation 을 흩뿌리는 것보다
@@ -1854,8 +1870,9 @@ function renderVocab(){
         if(!words[k]) return;
         const value=(/** @type {HTMLElement} */(event.target)).textContent.trim();
         if(!value){ deleteMeaning(k); renderVocab(); return; }
+        if(words[k].ko===value)return;
         words[k].ko=value; words[k].koEdited=true; words[k].up=Date.now();
-        saveWords(); queueSync();
+        saveWords(k); queueSync(true);
       });
     });
   });

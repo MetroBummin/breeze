@@ -3,8 +3,10 @@ syncHomeNavigation();
    paint Home between the launch screen and the tutorial. */
 const homeReady=loadBooks().then(async()=>{
   await upgradeHomewardLongRead();
-  renderHome();
   await maybeShowOnboarding();
+  // First-time readers are in the tutorial, not Home. Do not build its hidden
+  // recommendation cards or start their image/feed work behind the Reader.
+  if(!onboardingOwnsReader())renderHome();
 }).catch(error=>{
   console.error('첫 화면을 준비하지 못했습니다:',error);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()) endOnboarding(false);

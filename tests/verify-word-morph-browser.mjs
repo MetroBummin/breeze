@@ -45,8 +45,9 @@ try{for(const engine of [chromium,webkit]){
    const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>110&&n.getBoundingClientRect().top<300);
    window.beforeMorph={scroll:readerScrollTop(),node,y:node.getBoundingClientRect().top};openWord('patient',node);
   });
-  await page.waitForFunction(()=>words.patient.enLoading);
+  assert.equal(await page.evaluate(()=>!!words.patient.enLoading),false,'mini pill loaded hidden English metadata');
   await page.locator('#word-peek-more').click();
+  await page.waitForFunction(()=>words.patient.enLoading);
   await page.waitForFunction(()=>!wordMorphAnimation);
   assert.equal(await page.locator('#panel').getAttribute('aria-modal'),'false');
   assert.equal(await page.locator('#word-modal-scrim').isVisible(),false);
@@ -77,9 +78,11 @@ try{for(const engine of [chromium,webkit]){
   // Reopening an empty saved card reuses the independent persistent dictionary cache.
   const count=requests.length;
   await page.evaluate(()=>{const node=beforeMorph.node;closePanel();words.patient.defs=[];delete words.patient.enRetryAt;openWord('patient',node);});
+  assert.equal(await page.evaluate(()=>!!words.patient.defs?.length),false);
+  await page.locator('#word-peek-more').click();
   await page.waitForFunction(()=>!!words.patient.defs?.length);assert.equal(requests.length,count);
   // Actual reader scroll dismisses expanded details, while internal scrolling does not.
-  await page.locator('#word-peek-more').click();await page.waitForFunction(()=>!wordMorphAnimation);
+  await page.waitForFunction(()=>!wordMorphAnimation);
   await page.evaluate(()=>{lastProgrammaticScrollTop=null;readerScroller().scrollTop+=60;});
   await page.waitForFunction(()=>!wordLookupOpen());
   // A public-dictionary timeout must release its own loading state without another AI call.
