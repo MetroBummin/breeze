@@ -123,3 +123,17 @@ it does not reconstruct source geometry. New/deleted words and expression change
 retain the complete refresh path. No new delay or gesture ownership is introduced.
 
 Saved-word opening shares one per-call meaning candidate list between context matching and recent-meaning selection. Cache spelling variants reuse one source request snapshot; no persistent index or invalidation state is introduced.
+
+## Remove hidden work and cache barriers (2026-09-29)
+
+Mini lookup no longer starts English metadata loading. The first explicit detail
+opening owns that request; direct detail openings, retry, provider cache, timeout,
+and stale/deleted-card guards remain supported. Korean lookup completion does not
+wait for English metadata or for the reusable AI cache write. Durable vocabulary
+writes and the existing AI minimum feedback interval remain unchanged.
+
+The anchored glass shell is laid out once at its final rectangle, then animated
+using translation and scale only. No width/height/left/top animation causes
+per-frame layout. As before, the inner content is hidden during the 280ms shell
+transition and appears unscaled at completion. Cancellation and reduced motion
+retain the same lifetime behavior; no unused collapse-animation branch remains.

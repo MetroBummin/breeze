@@ -44,7 +44,6 @@ function cleanOrphanWords(items, tombstones, protectedKey){
   });
   groups.forEach((cards,root)=>{
     if(root===protectedKey) return; // a live lookup is still waiting for its answer
-    const valid=savedMeaningRecords(root,items);
     const empty=cards.filter(([,item])=>!validWordMeaning(item));
     if(!empty.length) return;
     const bury=(key,item)=>{
@@ -52,12 +51,20 @@ function cleanOrphanWords(items, tombstones, protectedKey){
       tombstones[key]=Math.max(Date.now(),(item.up||item.addedAt||0)+1,tombstones[key]||0);
       changed=true;
     };
-    if(valid.length && items[root] && !validWordMeaning(items[root])){
-      /* Keep the root identity used by Reader highlighting, not an empty root
-         plus a floating sense. Preserve its status and original metadata. */
-      const [key,item]=valid[0],base=items[root];
-      items[root]=promotedRootMeaning(base,item,Math.max(Date.now(),base.up||0,item.up||0)+1);
-      bury(key,item);
+    if(items[root] && !validWordMeaning(items[root])){
+      // The group already owns its candidates. Read current records because an
+      // earlier legacy-group repair may have promoted or deleted one of them.
+      const survivor=cards.find(([key])=>{
+        const item=items[key];
+        return item && (key===root || item.root===root) && validWordMeaning(item);
+      });
+      if(survivor){
+        /* Keep the root identity used by Reader highlighting, not an empty root
+           plus a floating sense. Preserve its status and original metadata. */
+        const key=survivor[0],item=items[key],base=items[root];
+        items[root]=promotedRootMeaning(base,item,Math.max(Date.now(),base.up||0,item.up||0)+1);
+        bury(key,item);
+      }
     }
     empty.forEach(([key,item])=>{ if(items[key] && !validWordMeaning(items[key])) bury(key,item); });
   });

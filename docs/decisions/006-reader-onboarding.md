@@ -48,3 +48,11 @@ Aa, completion, replay, cancellation, history/storage isolation and zero lookup
 requests. Screenshots include phone, desktop and dark completion. Normal Reader,
 word/sentence lifecycle, signed-out states, shared controls and full-suite checks
 remain required. Browser/native-shell emulation does not prove physical iOS behavior.
+
+## Visible-only startup (2026-09-29)
+
+After local data loads, choose onboarding before rendering Home. A first-time
+Reader does not build recommendation cards or begin their image/feed work for a
+hidden Home. Returning readers still render Home, and leaving onboarding renders
+it through normal navigation. The one-second authored tutorial feedback policy,
+boot failure fallback and local storage ordering are unchanged.

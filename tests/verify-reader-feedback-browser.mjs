@@ -39,8 +39,12 @@ try{
         await new Promise(resolve=>{frame.onload=resolve;frame.srcdoc='<html><head><style>*{animation:none!important}body{margin:30px;font:24px/2 Georgia}</style></head><body><p>Read the signal.</p></body></html>';});
         const d=frame.contentDocument,p=d.querySelector('p'),range=d.createRange();
         range.setStart(p.firstChild,9);range.setEnd(p.firstChild,15);
+        words.signal={word:'signal',ko:'신호',status:1,mark:true,forms:['signal'],addedAt:1,up:1};
+        renderEpubSavedWordHighlights(d);
         const open=openWord;openWord=(_k,node)=>{window.fixtureEpub=node;};
         try{openOriginalRange(d,range,'signal',p,range.getBoundingClientRect());}finally{openWord=open;}
+        window.fixturePdfSaved=makePdfWordMarker(document.getElementById('fixture-pdf'),
+          {word:'signal',x:.1,y:.3,w:.13,h:.2},'original-saved-marker',1,'signal');
         window.fixturePdf=makePdfWordMarker(document.getElementById('fixture-pdf'),
           {word:'signal',x:.1,y:.3,w:.13,h:.2},'original-selection-marker',1,'signal');
         window.fixtureNodes=[document.querySelector('#fixture-text .w'),fixturePdf,fixtureEpub];
@@ -58,19 +62,25 @@ try{
             const before=box();wordLookupFeedback.start(i+20,format);
             wordLookupFeedback.present(i+20,node,{loading:true,text:'뜻 찾는 중'},false);
             const css=node.ownerDocument.defaultView.getComputedStyle(node);
+            const epubCache=format==='epub'?epubSavedHighlightCache.get(node.ownerDocument):null;
             return {before,after:box(),radius:css.borderRadius,animation:css.animationName,
               busy:node.getAttribute('aria-busy'),background:css.backgroundImage,
+              savedUnderlay:format==='pdf'?fixturePdfSaved.style.visibility:(format==='epub'?epubCache.highlights[0].size:null),
               ink:css.getPropertyValue('--breeze-lookup-ink').trim(),expected:getComputedStyle(document.body).getPropertyValue('--sentence-glass-ink').trim()};
           },{i,format});
           assert.deepEqual(result.after,result.before,`${format} shimmer changed geometry`);
           assert.equal(result.radius,'5px');assert.equal(result.animation,'breeze-word-sheen');
           assert.equal(result.busy,'true');assert.equal(result.ink,result.expected);
+          if(format==='pdf')assert.equal(result.savedUnderlay,'hidden','pending PDF mixed saved and lookup colors');
+          if(format==='epub')assert.equal(result.savedUnderlay,0,'pending EPUB mixed saved and lookup colors');
           assert.match(result.background,/linear-gradient/);
           if(output){await page.waitForTimeout(400);await page.screenshot({path:resolve(output,`${engine.name()}-${format}-${dark?'dark':'light'}.png`)});}
           await page.emulateMedia({reducedMotion:'reduce'});
           assert.equal(await page.evaluate(i=>fixtureNodes[i].ownerDocument.defaultView.getComputedStyle(fixtureNodes[i]).animationName,i),'none');
           await page.emulateMedia({reducedMotion:'no-preference'});
           await page.evaluate(i=>{wordLookupFeedback.end(i+20);},i);
+          if(format==='pdf')assert.equal(await page.evaluate(()=>fixturePdfSaved.style.visibility),'','PDF saved color was not restored');
+          if(format==='epub')assert.equal(await page.evaluate(()=>epubSavedHighlightCache.get(fixtureEpub.ownerDocument).highlights[0].size),1,'EPUB saved color was not restored');
         }
       }
       // Pending survives user scroll. A visible target gets a freshly anchored

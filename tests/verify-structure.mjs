@@ -1792,7 +1792,7 @@ assert.match(dictionarySource, /class="vgroup/,
   '단어장의 표제어 묶음이 사라졌습니다');
 /* 접힌 줄에 있는 것은 [단어] [뜻] [★] 셋뿐입니다. 예문·출처·저장일·삭제가 다시
    기본 상태로 올라오면 한 줄이 108px 로 돌아갑니다. */
-assert.match(dictionarySource, /open\?`<div class="vmore">/,
+assert.match(dictionarySource, /open\?vocabMoreHtml\(w\):''/,
   '예문·출처·저장일·삭제가 접힌 줄에도 나옵니다 — 훑는 화면이 다시 길어집니다');
 /* 폭은 clamp 하나로 잡습니다. 고정 px 를 다시 쓰면 좁은 화면이 옆으로 밀립니다. */
 assert.match(vocabCss, /\.vrow\{[^}]*grid-template-columns:minmax\(0,clamp\(/,

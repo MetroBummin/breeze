@@ -45,8 +45,9 @@ try{for(const engine of [chromium,webkit]){
    const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>110&&n.getBoundingClientRect().top<300);
    window.beforeMorph={scroll:readerScrollTop(),node,y:node.getBoundingClientRect().top};openWord('patient',node);
   });
-  await page.waitForFunction(()=>words.patient.enLoading);
+  assert.equal(await page.evaluate(()=>!!words.patient.enLoading),false,'mini pill loaded hidden English metadata');
   await page.locator('#word-peek-more').click();
+  await page.waitForFunction(()=>words.patient.enLoading);
   await page.waitForFunction(()=>!wordMorphAnimation);
   assert.equal(await page.locator('#panel').getAttribute('aria-modal'),'false');
   assert.equal(await page.locator('#word-modal-scrim').isVisible(),false);
@@ -77,9 +78,11 @@ try{for(const engine of [chromium,webkit]){
   // Reopening an empty saved card reuses the independent persistent dictionary cache.
   const count=requests.length;
   await page.evaluate(()=>{const node=beforeMorph.node;closePanel();words.patient.defs=[];delete words.patient.enRetryAt;openWord('patient',node);});
+  assert.equal(await page.evaluate(()=>!!words.patient.defs?.length),false);
+  await page.locator('#word-peek-more').click();
   await page.waitForFunction(()=>!!words.patient.defs?.length);assert.equal(requests.length,count);
   // Actual reader scroll dismisses expanded details, while internal scrolling does not.
-  await page.locator('#word-peek-more').click();await page.waitForFunction(()=>!wordMorphAnimation);
+  await page.waitForFunction(()=>!wordMorphAnimation);
   await page.evaluate(()=>{lastProgrammaticScrollTop=null;readerScroller().scrollTop+=60;});
   await page.waitForFunction(()=>!wordLookupOpen());
   // A public-dictionary timeout must release its own loading state without another AI call.
@@ -119,7 +122,10 @@ try{for(const engine of [chromium,webkit]){
   assert.equal(await page.evaluate(()=>activeAppView()),'home');
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.evaluate(()=>resumeHomeBook(document.getElementById('home-resume')));
-  await page.evaluate(()=>{const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500);selectWord('patient',node,true);});
+  // Reader restore finishes before lazy word spans have necessarily hydrated.
+  // Reduced-motion testing still needs a real, visible lookup target.
+  await page.waitForFunction(()=>[...document.querySelectorAll('#rtext .w')].some(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500));
+  await page.evaluate(()=>{const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500);openWord('patient',node);});
   await page.locator('#word-peek-more').click();assert.equal(await page.evaluate(()=>wordMorphAnimation),null);
   assert.deepEqual(errors,[]);
   console.log(`${engine.name()}: anchored morph/outside dismiss, bounded independent scroll, English early paint/cache/timeout/no AI, stable Home cover and return passed`);
