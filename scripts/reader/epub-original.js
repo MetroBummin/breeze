@@ -961,7 +961,27 @@ function epubSourceProgress(map,source,session){
   const inside=maxElement ? Math.max(0,Math.min(1,(Number(source.element)||0)/(maxElement+1))) : 0;
   return Math.max(0,Math.min(1,(spine+inside)/total));
 }
-function refreshEpubSavedWords(session){
+function refreshEpubSavedWords(session,statusKey=null){
+  if(statusKey!==null){
+    const word=words[statusKey];
+    const bucket=word?.mark===false?-1:Math.max(0,Math.min(2,(word?.status||1)-1));
+    (session.frames||[]).forEach(frame=>{
+      try{
+        const doc=frame?.contentDocument,cached=epubSavedHighlightCache.get(doc);
+        if(!cached){if(doc)renderEpubSavedWordHighlights(doc);return;}
+        const before=cached.snapshot.get(statusKey);
+        if(!before||before.bucket===bucket)return;
+        (cached.byKey.get(statusKey)||[]).forEach(range=>{
+          if(before.bucket>=0)cached.highlights[before.bucket].delete(range);
+          if(bucket>=0)cached.highlights[bucket].add(range);
+        });
+        // Snapshots can be shared by frames; replace this entry on a private map.
+        cached.snapshot=new Map(cached.snapshot);
+        cached.snapshot.set(statusKey,{...before,bucket});
+      }catch(e){}
+    });
+    return;
+  }
   const snapshot=epubSavedWordSnapshot();
   (session.frames||[]).forEach(frame=>{
     try{ if(frame&&frame.contentDocument) renderEpubSavedWordHighlights(frame.contentDocument,snapshot); }catch(e){}

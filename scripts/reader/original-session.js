@@ -243,10 +243,10 @@ function showOriginalError(error){
 
 /* ================= saved vocabulary ================= */
 
-function refreshOriginalSavedWords(){
+function refreshOriginalSavedWords(statusKey=null){
   if(currentReaderMode!=='original') return;
   const format=originalFormat();
-  if(format) format.refreshSavedWords(originalSession);
+  if(format) format.refreshSavedWords(originalSession,statusKey);
 }
 
 function clearOriginalSelectionMarkers(){

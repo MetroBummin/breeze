@@ -67,3 +67,6 @@ Observed on 2026-09-21: all 12 cue configurations passed (Chromium/WebKit ×
 390/768 px × Text/PDF/EPUB), along with the sentence presentation/lifecycle
 regressions, supplied-PDF geometry regression, `npm test`, `npm run www`, and
 `git diff --check`. Physical iPhone/iPad testing remains open.
+
+## Ready result and cache persistence (2026-09-29)
+A usable network translation is presented through the existing lifetime/release gate before awaiting its cache write. Valid stale answers are still cached, but cache completion never paints or reopens a closed lookup.
