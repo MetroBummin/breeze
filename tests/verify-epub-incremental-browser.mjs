@@ -39,7 +39,7 @@ try{for(const engine of [chromium,webkit]){
   });
   const refresh=()=>refreshEpubSavedWords({frames});
   refresh();parity();counts.fill(0);
-  words.quiet.status=3;refresh();check(counts.every(n=>n===0),'status rescanned chapter');parity();counts.fill(0);
+  words.quiet.status=3;refreshEpubSavedWords({frames},'quiet');check(counts.every(n=>n===0),'status rescanned chapter');parity();counts.fill(0);
   words.quiet.mark=false;refresh();check(counts.every(n=>n===0),'mark rescanned chapter');parity();counts.fill(0);
   words.quiet.mark=true;refresh();parity();counts.fill(0);
   words['take walk']={status:2,phraseParts:['take','walk'],phraseGaps:[2]};refresh();
@@ -48,6 +48,10 @@ try{for(const engine of [chromium,webkit]){
   delete words['take walk'];delete words.dog;refresh();parity();counts.fill(0);
   words.running={status:1};refresh();parity();counts.fill(0);
   words.sunny={status:2};refresh();check(counts[0]===0&&counts[1]===1,'new word rescanned unrelated chapter');parity();
+  // Two frames must both move a range even when their prior snapshot was shared.
+  docs[1].body.innerHTML='<p>A quiet day.</p>';epubSavedHighlightCache.delete(docs[1]);refresh();
+  words.quiet.status=1;refreshEpubSavedWords({frames},'quiet');parity();
+  check(docs.every(d=>values(d)[0].some(r=>r.endsWith(':quiet'))),'targeted status missed a frame');
   const t=performance.now();for(let i=0;i<100;i++){words.quiet.status=i%3+1;refresh();}
   const incrementalMs=performance.now()-t;
   return {engine:navigator.userAgent,parity:true,statusAndMarkScans:0,newWordChapters:1,totalChapters:2,updates100Ms:incrementalMs};

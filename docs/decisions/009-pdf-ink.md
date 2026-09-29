@@ -580,3 +580,12 @@ actually suppresses the occasional dot on the physical iPad is pending the
 user-operated test. A stopOnly gate row with a new saved mark after this change
 would reject the correction and require a delivery trace, not another timing
 guess.
+
+## Completed path reuse (2026-09-29)
+Completed stroke objects are immutable. Each attached page retains its SVG path
+by stroke identity, so adding a stroke or erasing does not serialize all unchanged
+points again. Replaced/removed strokes leave the map on the next paint; page
+release drops the map. Highlighter grouping, layering, undo and durable records
+keep their existing semantics. Browser timings are not physical Pencil latency proof.
+
+The save snapshot copies the mutable page array only. Completed stroke objects and their coordinates are immutable, and IndexedDB serializes them at `put`. Revision tracking still writes edits arriving during database acquisition/transaction completion; failure retains dirty data. No extra deep copy is made before the storage copy.

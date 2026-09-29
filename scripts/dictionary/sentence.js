@@ -248,8 +248,8 @@ async function openSentence(text,origin){
   }
   sentenceRecoveries.delete(recoveryKey);
   if(sbUser)rememberSentLeft(answer.left,answer.day);
-  await dictPut(key, { ko:answer.ko, done:true });
   paintSentenceFor(life,{ en:clean, ko:answer.ko });
+  await dictPut(key, { ko:answer.ko, done:true });
 }
 
 document.addEventListener('keydown', event=>{

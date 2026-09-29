@@ -114,3 +114,12 @@ An immediately available saved meaning closes on the next user scroll or same-wo
 retap and never returns on idle. Other-word taps still switch targets; mini-pill
 controls retain their existing retry/detail actions. Programmatic motion remains
 non-dismissive. Closing presentation never deletes the saved meaning.
+
+## Interaction work (2026-09-29)
+A request resolves its source occurrence once and reuses it for the sentence,
+token index and neighboring context. A saved-word revisit that only bumps its
+status recolors existing PDF markers and moves existing EPUB highlight ranges;
+it does not reconstruct source geometry. New/deleted words and expression changes
+retain the complete refresh path. No new delay or gesture ownership is introduced.
+
+Saved-word opening shares one per-call meaning candidate list between context matching and recent-meaning selection. Cache spelling variants reuse one source request snapshot; no persistent index or invalidation state is introduced.

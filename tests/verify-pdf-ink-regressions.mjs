@@ -14,7 +14,7 @@ const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
 function fixture(){
-  const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map();
+  const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map(),writes=[];
   let frameID=0,busy=false,failWrite=false;
   const register=(type,fn)=>{const list=listeners.get(type)||[];list.push(fn);listeners.set(type,list);};
   class Element {
@@ -54,9 +54,9 @@ function fixture(){
   const db={transaction:()=>{
     const tx={error:null,objectStore:()=>({get:key=>{
       const request={result:stored.get(key)};queueMicrotask(()=>tx.oncomplete?.());return request;
-    },put:(value,key)=>{queueMicrotask(()=>{
+    },put:(value,key)=>{const snapshot=structuredClone(value);writes.push(snapshot);queueMicrotask(()=>{
       if(failWrite){tx.error=new Error('simulated write failure');tx.onerror?.();}
-      else {stored.set(key,structuredClone(value));tx.oncomplete?.();}
+      else {stored.set(key,snapshot);tx.oncomplete?.();}
     });}})};return tx;
   }};
   const context={Element,document,window:{breezeInkIPad:true,addEventListener:register,
@@ -68,7 +68,7 @@ function fixture(){
     originalPinchPan:false,originalPinch:null,originalPinchTouches:false,originalPdfContacts:0,
     cancelGesture:()=>{},closePanel:()=>{},closeSentence:()=>{},resumeOriginalPdfPaint:()=>{},
     curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
-    crypto,structuredClone,queueMicrotask,console:{warn(){}},performance};
+    crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,console:{warn(){}},performance};
   const needle='  return {\n    open(s)';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
     qa:{configure(s,state){session=s;mode='pen';pages.set(state.key,state);},
@@ -87,7 +87,7 @@ function fixture(){
     const preview=qa.active()?.preview?.getAttribute('points');
     qa.touchEnd(event('touchend',[],[contact(...end)]));await tick();return preview;
   }
-  return {qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,frames,Element,contact,event,flush,mutate,stroke,
+  return {engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,flush,mutate,stroke,
     controls:v=>{controls=v;},pinch:v=>{busy=v;},failWrite:v=>{failWrite=v;},
     emit:(type,target)=>{for(const fn of listeners.get(type)||[])fn({type,target});}};
 }
@@ -255,4 +255,34 @@ test('highlighter: saved records validate attributes without accepting corrupt o
 test('input: a contact outside starting paper cannot create off-page ink',async()=>{
  const f=fixture();f.qa.setMode('highlighter');await f.stroke([[200,810],[200,780]]);
  assert.equal(f.state.strokes.length,0);assert.equal(f.qa.undo().length,0);
+});
+
+
+test('paint: completed paths survive another stroke; erased paths and released pages are dropped',async()=>{
+ const f=fixture();await f.stroke([[20,100],[280,100]]);
+ const first=f.state.strokes[0],element=f.svg.children[0];
+ await f.stroke([[20,200],[280,200]]);
+ assert.equal(f.svg.children[0],element);
+ assert.equal(f.state.inkPaths.size,2);
+ f.qa.setMode('erase');await f.stroke([[150,70],[150,130]]);
+ assert.equal(f.state.inkPaths.has(first),false);
+ assert.equal(element.isConnected,false);
+ assert.equal(f.state.inkPaths.size,f.state.strokes.length);
+ f.engine.release(f.session,1);assert.equal(f.state.inkPaths,null);
+});
+
+
+test('storage: edits during database acquisition keep independent revisions and persist the latest page',async()=>{
+ const f=fixture();
+ const first=Object.freeze({color:'#111111',width:1.5,points:Object.freeze([Object.freeze([10,20])])});
+ const second=Object.freeze({color:'#111111',width:1.5,points:Object.freeze([Object.freeze([30,40])])});
+ f.state.strokes=[first];f.state.revision=1;f.state.dirty=true;
+ const saving=f.qa.persist(f.state);
+ // write() yields while opening the database. The first snapshot must not grow.
+ f.state.strokes.push(second);f.state.revision++;
+ await saving;
+ assert.equal(f.writes.length,2);
+ assert.deepEqual(f.writes.map(w=>w.strokes.length),[1,2]);
+ assert.deepEqual(f.stored.get(f.state.key).strokes,plain([first,second]));
+ assert.equal(f.state.dirty,false);
 });

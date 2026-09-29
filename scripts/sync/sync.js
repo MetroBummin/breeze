@@ -438,10 +438,15 @@ function serverBookIdFor(book){
   const match=activeServerBooks().find(row=>(row.meta||{}).localId===book.id);
   return match?match.book_id:book.id;
 }
-function queueSync(){
-  const current=syncStableJson({words,dead});
-  if(current===lastQueuedWordState) return;
-  lastQueuedWordState=current;
+function queueSync(changed=false){
+  // Lookup already knows which record it mutated. Mark it dirty immediately
+  // without serializing the entire vocabulary on the interaction frame.
+  if(changed===true)lastQueuedWordState=null;
+  else{
+    const current=syncStableJson({words,dead});
+    if(current===lastQueuedWordState)return;
+    lastQueuedWordState=current;
+  }
   markSyncDirty(VAULT_LOCAL_CHANGED); clearTimeout(syncTimer);
   if(!sb||!sbUser) return;
   syncTimer=setTimeout(()=>doSync(false),4000);

@@ -117,12 +117,14 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   assert.equal(app.element('ps-ko').textContent,'new B');
 }
 
-/* Closing while the cache write is pending also invalidates the final paint. */
+/* A slow cache write cannot delay a usable result or reopen it after close. */
 {
   const answer=deferred(),write=deferred();
   const app=boot({get:()=>Promise.resolve(null),call:()=>answer.promise,put:()=>write.promise});
   const opening=app.context.openSentence('A'); await tick();
   answer.resolve({ko:'late A',points:[],left:7}); await tick();
+  assert.equal(app.element('ps-ko').textContent,'late A','ready answer waited for cache storage');
+  assert.equal(app.element('sentence-modal').hidden,false);
   app.context.closeSentence(); write.resolve(); await opening;
   assert.equal(app.element('sentence-modal').hidden,true,'dictPut completion reopened the sentence');
 }

@@ -240,6 +240,8 @@ try{
    await page.evaluate(()=>setReaderChrome(true));
    assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),false,
      'writing controls collapsed');
+   // WebKit can still be at the zero-width start of the toolbar transition.
+   await page.locator('#pdf-ink-tools').waitFor({state:'visible'});
    assert.equal(await page.locator('#pdf-ink-tools').isVisible(),true);
    assert.equal(await page.locator('.ink-pill-mini').isVisible(),false);
    const expandedCount=await count();await stroke([[.7,.7],[.75,.7]]);assert.equal(await count(),expandedCount+1);

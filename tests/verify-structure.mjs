@@ -602,7 +602,7 @@ assert.match(modesSource,/bridgeFindSequence/,
     /offset:base\+match\.index/,
     'A PDF word box no longer carries its own offset, so repeated words share one sentence');
   /* 낱말 카드에 적히는 예문도 같은 자리에서 어긋났습니다 — 같은 문을 지나야 합니다. */
-  assert.match(dictPaper, /function sentenceOf\(span\)\{[\s\S]{0,700}textSentencePartAt\(span\)/,
+  assert.match(dictPaper, /function sentenceOf\(span,spot\)\{[\s\S]{0,700}textSentencePartAt\(span\)/,
     'The saved example sentence is still found by searching for the word, so it can quote the wrong sentence');
 }
 

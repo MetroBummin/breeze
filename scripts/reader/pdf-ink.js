@@ -323,7 +323,9 @@ const BreezePdfInk = (()=>{
         state.error=false;summary();
         while(state.dirty){
           const revision=state.revision;
-          const snapshot={version:1,strokes:structuredClone(state.strokes)};
+          // Completed strokes are immutable; isolate only the mutable page array.
+          // IndexedDB copies the coordinates when put() accepts the snapshot.
+          const snapshot={version:1,strokes:state.strokes.slice()};
           await write(state.key,snapshot);
           if(revision===state.revision)state.dirty=false;
         }
@@ -362,6 +364,12 @@ const BreezePdfInk = (()=>{
   function paint(state){
     if(!state.svg)return;
     state.svg.replaceChildren();
+    // Completed strokes are immutable. Reuse their SVG paths instead of
+    // serializing every point again on each pen lift or eraser sample.
+    const previous=state.inkPaths||new Map(),next=new Map();
+    const inkPath=stroke=>{
+      const element=previous.get(stroke)||path(stroke);next.set(stroke,element);return element;
+    };
     // Translucent ink sits beneath pen ink, independent of creation order.
     const highlights=new Map();
     for(const stroke of state.strokes.filter(s=>s.tool==='highlighter')){
@@ -369,9 +377,10 @@ const BreezePdfInk = (()=>{
       const id=stroke.strokeId||stroke;
       let group=highlights.get(id);
       if(!group){group=document.createElementNS(ns,'g');group.setAttribute('opacity',String(stroke.opacity));group.setAttribute('data-ink-tool','highlighter');highlights.set(id,group);state.svg.append(group);}
-      const fragment=path(stroke);fragment.setAttribute('opacity','1');group.append(fragment);
+      const fragment=inkPath(stroke);fragment.setAttribute('opacity','1');group.append(fragment);
     }
-    for(const stroke of state.strokes.filter(s=>s.tool!=='highlighter'))state.svg.append(path(stroke));
+    for(const stroke of state.strokes.filter(s=>s.tool!=='highlighter'))state.svg.append(inkPath(stroke));
+    state.inkPaths=next;
   }
   function path(stroke){
     const element=document.createElementNS(ns,'polyline');
@@ -681,7 +690,7 @@ const BreezePdfInk = (()=>{
       const state=pages.get(keyFor(s,n));if(!state)return;
       if(active?.state===state)cancel('page-release');
       if(keepShell)state.svg?.replaceChildren();else state.svg?.remove();
-      state.svg=null;state.element=null;evict(state);
+      state.svg=null;state.inkPaths=null;state.element=null;evict(state);
     },
     close(s){if(s!==session)return;interrupt();mode='read';for(let n=1;n<=s.pages.length;n++)this.release(s,n);session=null;undoStack.length=redoStack.length=0;update();},
     finger,trace,

@@ -770,7 +770,9 @@ function pdfSourceProgress(map,source,session){
   return Math.max(0,Math.min(1,((Math.max(1,Number(source.page)||1)-1)
     + Math.max(0,Math.min(1,Number(source.y)||0)))/total));
 }
-function refreshPdfSavedWords(session){
+function refreshPdfSavedWords(session,statusKey=null){
+  // Existing markers are recolored by paintWord; their source geometry is unchanged.
+  if(statusKey!==null)return;
   session.pages.forEach((page,index)=>{
     if(page.dataset.wordCount) renderPdfSavedWordMarkers(page,session.wordBoxes.get(index+1));
   });

@@ -2,13 +2,13 @@
 const { lemma, lemmaCands, isAcro } = globalThis.BreezeLexical || {};
 if (!lemma || !lemmaCands || !isAcro) throw new Error('BreezeLexical core failed to load');
 
-function sentenceOf(span){
+function sentenceOf(span,spot){
   if(span && span.dataset && span.dataset.example) return span.dataset.example;
   /* 글자판에서는 누른 **자리**가 문장을 정합니다. 아래의 글자로 찾는 길은 한
      문단에 같은 낱말이 두 번 나오면 늘 앞의 것을 집었습니다 — 꾹 눌러 문장을
      물어볼 때 옆 문장이 뜨던 까닭이 그것이었고, 낱말 카드에 적히는 예문도
      같은 자리에서 어긋났습니다(scripts/reader/reader.js 의 `textSentencePartAt`). */
-  const spot = typeof textSentencePartAt === 'function' ? textSentencePartAt(span) : null;
+  if(spot===undefined)spot=typeof textSentencePartAt==='function'?textSentencePartAt(span):null;
   if(spot && spot.sentence) return spot.sentence;
   const paragraph = span && span.closest ? span.closest('[data-pi]') : null;
   const paraText = paragraph ? (curBook.paras[+paragraph.dataset.pi]||'') : '';
@@ -22,11 +22,11 @@ function lookupSentenceTokens(sentence){
   while((match=LOOKUP_TOKEN_RE.exec(String(sentence||'')))) tokens.push({text:match[0],start:match.index,end:match.index+match[0].length});
   return tokens;
 }
-function lookupClickedTokenIndex(span,sentence,tokens){
+function lookupClickedTokenIndex(span,sentence,tokens,spot){
   const hint=span&&span.dataset&&span.dataset.clickedTokenIndex;
   const hinted=hint===undefined||hint===null?NaN:Number(hint);
   if(Number.isInteger(hinted)&&hinted>=0&&hinted<tokens.length)return hinted;
-  const spot=typeof textSentencePartAt==='function'?textSentencePartAt(span):null;
+  if(spot===undefined)spot=typeof textSentencePartAt==='function'?textSentencePartAt(span):null;
   if(spot&&Number.isInteger(spot.tokenIndex)&&spot.tokenIndex>=0&&spot.tokenIndex<tokens.length)return spot.tokenIndex;
   const raw=String((span&&span.textContent)||'').replace(/’/g,"'").toLowerCase();
   const matches=tokens.map((token,index)=>({token,index})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===raw);
@@ -43,9 +43,11 @@ function lexicalIdentityFromMembers(tokens,indexes,canonical){
    앞뒤 문장을 붙이되, 선택 문장과 클릭 위치는 그대로 둡니다. */
 function lookupRequestFor(w,node,wider){
   const context=currentContext(selKey);
-  const sentence=(context&&context.sentence)||(node?sentenceOf(node):'')||w.example||'';
+  // Resolve the source occurrence once for the sentence, token and wider context.
+  const spot=typeof textSentencePartAt==='function'?textSentencePartAt(node):null;
+  const sentence=(context&&context.sentence)||(node?sentenceOf(node,spot):'')||w.example||'';
   const tokens=lookupSentenceTokens(sentence);
-  let clickedIndex=context&&Number.isInteger(context.clickedIndex)?context.clickedIndex:lookupClickedTokenIndex(node,sentence,tokens);
+  let clickedIndex=context&&Number.isInteger(context.clickedIndex)?context.clickedIndex:lookupClickedTokenIndex(node,sentence,tokens,spot);
   if(clickedIndex<0){
     const raw=String(w.clicked||w.word||'').replace(/’/g,"'").toLowerCase();
     const matches=tokens.flatMap((t,i)=>t.text.replace(/’/g,"'").toLowerCase()===raw?[i]:[]);
@@ -53,7 +55,6 @@ function lookupRequestFor(w,node,wider){
   }
   let before='',after='';
   if(wider){
-    const spot=typeof textSentencePartAt==='function'?textSentencePartAt(node):null;
     const partsOf=text=>typeof bridgeSentences==='function'?bridgeSentences(text):[];
     if(spot){
       const parts=partsOf(spot.block.textContent),at=parts.findIndex(p=>p.start===spot.part.start);
@@ -117,7 +118,7 @@ function addWord(k, span){
     if(!wordLookupAlive(life)||!words[k]) return;
     requestDurableLocalStorage();
     delete dead[k]; save(LS_DEAD, dead);
-    saveWords(); paintWord(k);
+    saveWords(k); paintWord(k);
     fetchDict(k,span);
   }));
 }
@@ -198,7 +199,7 @@ function discardPendingWord(){
      그 시각 그대로 도로 붙입니다. 새 부고를 쓰는 것이 아니라 `addWord` 가 한 일을
      되돌리는 것이라, 이 조회 전후의 저장소가 한 글자도 다르지 않게 됩니다. */
   if(held.deadAt){ dead[held.key]=held.deadAt; save(LS_DEAD, dead); }
-  saveWords();
+  saveWords(held.key);
   paintWord(held.key);
 }
 /* 같은 낱말을 눌러 사전 창을 막 닫았다 다시 여는 것은 "더 모른다"가 아니라
@@ -217,7 +218,7 @@ function deferWordOpenState(id,bump){
     // Pick order and the automatic star bump belong to the same opening.
     saveWords(id);
     if(changed){
-      paintWord(item.root||id);queueSync();
+      paintWord(item.root||id,true);queueSync(true);
       if(selKey===id)renderWordLookup();
     }
   });
@@ -250,9 +251,8 @@ function rememberSenseContext(id, sentence, clickedIndex=-1){
   const prior=Array.isArray(item.contextHashes)?item.contextHashes.filter(value=>typeof value==='string'&&value&&value!==hash):[];
   item.contextHashes=[hash,...prior].slice(0,32);
 }
-function findSavedSense(root,sentence,clickedIndex=-1){
+function findSavedSense(root,sentence,clickedIndex=-1,candidates=savedMeaningRecords(root)){
   const hash='v2:'+sentenceHash(sentence)+':'+clickedIndex;
-  const candidates=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)&&validWordMeaning(item));
   const exact=candidates.find(([,item])=>Array.isArray(item.contextHashes)&&item.contextHashes.includes(hash));
   if(exact)return exact[0];
   const legacy=candidates.find(([,item])=>item.example===sentence&&lookupSentenceTokens(sentence)
@@ -274,11 +274,11 @@ function findSenseByMeaning(root, meaning){
    순서 규칙은 하나뿐입니다: 지금 보고 있는 뜻이 늘 맨 앞, 그 뒤는 최근에 고른 순.
    그래야 칩을 눌러 뜻을 바꿨을 때 방금 고른 것이 첫 자리로 올라옵니다. */
 function meaningPickedAt(item){ return (item&&(item.pickedAt||item.up||item.addedAt))||0; }
-function meaningCards(root, activeId){
+function meaningCards(root, activeId, records=savedMeaningRecords(root)){
   /* `areca nut` 같은 표현도 자기 뜻을 여러 개 가질 수 있는 표제어입니다. 표현이라는
      이유로 대표 카드를 목록에서 빼면, 첫 번째로 적은 뜻이 화면에서 사라진 채
      저장소에만 남습니다. 걸러 낼 것은 "다른 표현 카드"뿐입니다. */
-  const cards=savedMeaningRecords(root).filter(([id,item])=>id===root || !item.phraseParts);
+  const cards=records.filter(([id,item])=>id===root || !item.phraseParts);
   cards.sort(([a,aw],[b,bw])=>(a===activeId?-1:0)-(b===activeId?-1:0)
     || meaningPickedAt(bw)-meaningPickedAt(aw));
   const unique=new Set();
@@ -462,8 +462,9 @@ function openWord(k, node, point){
   const root=words[k].root||k;
   contextView=null;
   const request=lookupRequestFor(words[k],node,false);
-  const savedContext=findSavedSense(root,request.sentence,request.clickedIndex);
-  const active=savedContext||((meaningCards(root,null)[0]||[k])[0]);
+  const records=savedMeaningRecords(root);
+  const savedContext=findSavedSense(root,request.sentence,request.clickedIndex,records);
+  const active=savedContext||((meaningCards(root,null,records)[0]||[k])[0]);
   const now=Date.now(),seenAt=recentWordOpens.get(root)||0;
   const bump=now-seenAt>=RECENT_WORD_OPEN_MS&&words[active].status<3;
   recentWordOpens.set(root,now);
@@ -933,9 +934,9 @@ function closePanel(){
 /* 원본의 PDF 표시는 지우고 다시 만듭니다. 그래서 칠하기가 먼저면 방금 칠한
    덩어리가 사라집니다 — 예전에는 뒤에 한 번 더 칠해서 덮었는데, 그러면 한
    프레임 동안 옛 색이 보입니다. 다시 만든 다음에 칠하면 한 번이면 됩니다. */
-function paintWord(k){
+function paintWord(k,statusOnly=false){
   const w = words[k];
-  refreshOriginalSavedWords();
+  refreshOriginalSavedWords(statusOnly?k:null);
   readerWordNodes(`.w[data-w="${CSS.escape(k)}"],.breeze-original-word[data-w="${CSS.escape(k)}"]`)
     .forEach(s=>{
       s.classList.remove('s1','s2','s3');
@@ -1521,10 +1522,10 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
       그래서 곧장 내놓고, 창의 머리글도 다르게 답니다. */
 async function loadCachedLook(k, began, life, node){
   const w = words[k]; if(!w) return false;
-  const local=homewardWordFor(w,node);
+  const input=lookupRequestFor(w,node,false);
+  const local=homewardWordFor(w,node,input);
   if(local){
     if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.source(life,'reviewed_local');
-    const input=lookupRequestFor(w,node,false);
     const answer=homewardAnswerAsLook(local);
     await homewardPresentationWait(began||Date.now(),()=>wordLookupAlive(life));
     if(!wordLookupAlive(life)||words[k]!==w)return true;
@@ -1534,7 +1535,6 @@ async function loadCachedLook(k, began, life, node){
     return true;
   }
   for(const key of entryKeys(w)){
-    const input=lookupRequestFor(w,node,false);
     const hit = await dictGet(lookKey(key,input.sentence,input.clickedIndex));
     /* 기기에 이미 있던 답입니다. 창이 닫혔어도 카드에는 바릅니다 — 여기서
        거르면 그 낱말은 답을 가진 채로 영영 빈 카드가 됩니다. 그리는 것은
@@ -1545,7 +1545,6 @@ async function loadCachedLook(k, began, life, node){
         const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
         if(left > 0) await new Promise(res => setTimeout(res, left));
       }
-      const tokens=lookupSentenceTokens(w.example||'');
       const index=input.clickedIndex;
       const phrase=expressionFromMini(hit,input.sentence,input.clicked,index);
       if(phrase)saveDetectedExpression(k,phrase,input.sentence,w.book||'',hit,life,{clickedIndex:index});
@@ -1640,7 +1639,7 @@ async function fetchLook(k, opt){
     if(opt.hold) return j;
     const phrase=expressionFromMini(j,querySentence,opt.clicked||w.clicked,clickedIndex);
     if(phrase){saveDetectedExpression(k,phrase,querySentence,opt.book||w.book||'',j,life,{clickedIndex});return true;}
-    if(words[k]===w){applyLook(w,j,k,opt);rememberSenseContext(k,querySentence,clickedIndex);saveWords();}
+    if(words[k]===w){applyLook(w,j,k,opt);rememberSenseContext(k,querySentence,clickedIndex);saveWords(k);}
     return true;
   }finally{
     if(feedback&&!responseRecorded)feedback.response(requestTicket,!wordLookupAlive(life)?'cancelled':'error');
@@ -1673,7 +1672,7 @@ function applyLook(w, j, k, opt){
   if(j.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(j.lemma)) w.word = j.lemma.toLowerCase();
   w.up = Date.now();
   if(initial&&String(w.ko||'').trim())firstLookupMeaning={root:k,life:opt.life===undefined?wordLookupLife:opt.life};
-  saveWords(); queueSync();
+  saveWords(k); queueSync(true);
   renderIfAlive(opt.life);
 }
 
@@ -1728,7 +1727,7 @@ async function fillDictionaryMetadata(k,life,force=false){
       if(words[k]===w&&wordLookupAlive(life)){w.enError=true;w.enRetryAt=Date.now()+30000;}
     }finally{
       delete w.enLoading;englishCardRequests.delete(w);
-      if(words[k]===w&&wordLookupAlive(life)){saveWords();renderIfAlive(life);}
+      if(words[k]===w&&wordLookupAlive(life)){saveWords(k);renderIfAlive(life);}
     }
   })();
   englishCardRequests.set(w,work);return work;
@@ -1745,7 +1744,7 @@ async function fetchDict(k,node){
   await metadata;
   if(!words[k]&&selKey!==k)return;
   if(words[k]){delete words[k].loading;delete words[k].aiLoading;words[k].up=Date.now();}
-  saveWords();if(words[k]&&hasResolvedMeaning(words[k]))queueSync();renderIfAlive(life);
+  saveWords(k);if(words[k]&&hasResolvedMeaning(words[k]))queueSync(true);renderIfAlive(life);
 }
 
 document.addEventListener('keydown',event=>{
