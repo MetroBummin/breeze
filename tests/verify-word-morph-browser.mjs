@@ -122,7 +122,10 @@ try{for(const engine of [chromium,webkit]){
   assert.equal(await page.evaluate(()=>activeAppView()),'home');
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.evaluate(()=>resumeHomeBook(document.getElementById('home-resume')));
-  await page.evaluate(()=>{const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500);selectWord('patient',node,true);});
+  // Reader restore finishes before lazy word spans have necessarily hydrated.
+  // Reduced-motion testing still needs a real, visible lookup target.
+  await page.waitForFunction(()=>[...document.querySelectorAll('#rtext .w')].some(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500));
+  await page.evaluate(()=>{const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent==='patient'&&n.getBoundingClientRect().top>60&&n.getBoundingClientRect().top<500);openWord('patient',node);});
   await page.locator('#word-peek-more').click();assert.equal(await page.evaluate(()=>wordMorphAnimation),null);
   assert.deepEqual(errors,[]);
   console.log(`${engine.name()}: anchored morph/outside dismiss, bounded independent scroll, English early paint/cache/timeout/no AI, stable Home cover and return passed`);
