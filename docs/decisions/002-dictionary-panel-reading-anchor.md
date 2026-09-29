@@ -137,3 +137,12 @@ using translation and scale only. No width/height/left/top animation causes
 per-frame layout. As before, the inner content is hidden during the 280ms shell
 transition and appears unscaled at completion. Cancellation and reduced motion
 retain the same lifetime behavior; no unused collapse-animation branch remains.
+
+## Original selection paint ownership (2026-09-29)
+
+PDF/EPUB selection suppresses the persistent saved paint at that exact source
+occurrence for the entire lookup selection, including immediate saved answers
+and pending-to-ready transitions. Other occurrences retain their saved paint.
+Saved-marker rebuilds and EPUB status-bucket updates reapply this suppression.
+Dismissal restores only current saved records and their current status; it never
+restores a deleted range or an obsolete highlight cache. Shimmer remains pending-only.

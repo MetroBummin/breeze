@@ -49,6 +49,62 @@ try{
           {word:'signal',x:.1,y:.3,w:.13,h:.2},'original-selection-marker',1,'signal');
         window.fixtureNodes=[document.querySelector('#fixture-text .w'),fixturePdf,fixtureEpub];
       });
+      // A ready/saved lookup still owns the selection paint until dismissal.
+      for(const format of ['pdf','epub']){
+        const hidden=await page.evaluate(format=>{
+          const node=format==='pdf'?fixturePdf:fixtureEpub;
+          wordLookupFeedback.start(10,format);
+          wordLookupFeedback.present(10,node,{loading:false,text:'신호'},true);
+          return format==='pdf'?fixturePdfSaved.style.visibility==='hidden':
+            epubSavedHighlightCache.get(node.ownerDocument).highlights.every(h=>h.size===0);
+        },format);
+        assert.equal(hidden,true,`${format}: ready saved lookup doubles the saved paint`);
+        await page.evaluate(()=>wordLookupFeedback.end(10));
+      }
+      const repaint=await page.evaluate(()=>{
+        const doc=fixtureEpub.ownerDocument,counts=()=>epubSavedHighlightCache.get(doc).highlights.map(h=>h.size);
+        const result={};
+        // New word saving rebuilds the live highlights during an unresolved lookup.
+        delete words.signal;renderEpubSavedWordHighlights(doc);
+        wordLookupFeedback.start(11,'epub');
+        wordLookupFeedback.present(11,fixtureEpub,{loading:true,text:''},false);
+        words.signal={word:'signal',ko:'신호',status:1,mark:true,forms:['signal'],addedAt:1,up:1};
+        renderEpubSavedWordHighlights(doc);result.savedWhilePending=counts();
+        wordLookupFeedback.present(11,fixtureEpub,{loading:false,text:'신호'},true);
+        result.ready=counts();
+        words.signal.status=2;refreshEpubSavedWords({frames:[{contentDocument:doc}]},'signal');
+        result.recolored=counts();wordLookupFeedback.end(11);result.closed=counts();
+        // Never resurrect a deleted or disabled saved range on close.
+        wordLookupFeedback.start(12,'epub');wordLookupFeedback.present(12,fixtureEpub,{loading:false,text:'신호'},true);
+        words.signal.mark=false;refreshEpubSavedWords({frames:[{contentDocument:doc}]},'signal');
+        wordLookupFeedback.end(12);result.disabled=counts();
+        words.signal.mark=true;renderEpubSavedWordHighlights(doc);
+        wordLookupFeedback.start(13,'epub');wordLookupFeedback.present(13,fixtureEpub,{loading:false,text:'신호'},true);
+        delete words.signal;renderEpubSavedWordHighlights(doc);wordLookupFeedback.end(13);result.deleted=counts();
+        words.signal={word:'signal',ko:'신호',status:1,mark:true,forms:['signal'],addedAt:1,up:1};
+        renderEpubSavedWordHighlights(doc);
+        // Exercise the actual PDF renderer, not a manual style update.
+        const page=document.getElementById('fixture-pdf'),oldSession=originalSession,oldBook=curBook;
+        const boxes=[{word:'signal',x:.1,y:.3,w:.13,h:.2},{word:'signal',x:.5,y:.3,w:.13,h:.2}];
+        try{
+          curBook={id:'paint-fixture'};
+          originalSession={kind:'pdf',bookId:curBook.id,loadToken:originalLoadToken,pages:[page],wordBoxes:new Map([[1,boxes]])};
+          wordLookupFeedback.start(14,'pdf');wordLookupFeedback.present(14,fixturePdf,{loading:true,text:''},false);
+          renderPdfSavedWordMarkers(page,boxes);
+          const markers=()=>[...page.querySelectorAll('.original-saved-marker')].map(n=>n.style.visibility);
+          result.pdfPending=markers();
+          wordLookupFeedback.present(14,fixturePdf,{loading:false,text:'신호'},true);
+          renderPdfSavedWordMarkers(page,boxes);result.pdfReady=markers();
+          wordLookupFeedback.end(14);result.pdfClosed=markers();
+          fixturePdfSaved=page.querySelector('.original-saved-marker');
+        }finally{originalSession=oldSession;curBook=oldBook;}
+        return result;
+      });
+      for(const name of ['savedWhilePending','ready','recolored','disabled','deleted'])assert.deepEqual(repaint[name],[0,0,0],name);
+      assert.deepEqual(repaint.closed,[0,1,0],'dismissal restores latest status only');
+      assert.deepEqual(repaint.pdfPending,['hidden',''],'PDF pending rebuild preserves other occurrence');
+      assert.deepEqual(repaint.pdfReady,['hidden',''],'PDF ready rebuild preserves selection ownership');
+      assert.deepEqual(repaint.pdfClosed,['',''],'PDF dismissal restores saved paint');
       for(const dark of [false,true]){
         await page.evaluate(dark=>{
           document.body.classList.toggle('dark',dark);document.documentElement.classList.toggle('dark',dark);
