@@ -2,7 +2,7 @@
    never include lexical keys, book titles, sentences, account IDs or network data. */
 const wordLookupFeedback = (()=>{
   const limit=240, rows=[];
-  let active=null, pendingNode=null, pendingBusy=null, status=null;
+  let active=null, pendingNode=null, pendingBusy=null, pendingUnderlays=[], status=null;
   const now=()=>performance.now();
   const format=value=>['text','pdf','epub'].includes(value)?value:'text';
   const elapsed=start=>Math.max(0,Math.round(now()-start));
@@ -42,6 +42,8 @@ const wordLookupFeedback = (()=>{
     if(status.textContent!==text)status.textContent=text;
   }
   function clearCue(){
+    pendingUnderlays.forEach(item=>{ try{ item.node.style.visibility=item.visibility; }catch(error){} });
+    pendingUnderlays=[];
     if(pendingNode){
       pendingNode.classList.remove('breeze-lookup-pending');
       if(pendingBusy===null)pendingNode.removeAttribute('aria-busy');
@@ -62,7 +64,7 @@ const wordLookupFeedback = (()=>{
     node.style.setProperty('--breeze-lookup-ink',palette.getPropertyValue('--sentence-glass-ink'));
     node.style.setProperty('--breeze-lookup-paper',palette.getPropertyValue('--sentence-glass-solid'));
     node.style.setProperty('--breeze-lookup-wash',palette.getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
-    pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
+    /* PDF keeps persistent saved markers as a separate translucent layer. While the\n       same occurrence owns a live lookup, hide only the geometrically identical saved\n       underlay so yellow/orange/red cannot mix with the blue pending material. */\n    if(node.classList&&node.classList.contains('original-selection-marker')&&node.parentElement){\n      const left=node.style.left,top=node.style.top,width=node.style.width,height=node.style.height;\n      node.parentElement.querySelectorAll('.original-saved-marker').forEach(saved=>{\n        if(saved.style.left!==left||saved.style.top!==top||saved.style.width!==width||saved.style.height!==height)return;\n        pendingUnderlays.push({node:saved,visibility:saved.style.visibility});saved.style.visibility='hidden';\n      });\n    }\n    pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
     node.setAttribute('aria-busy','true');node.classList.add('breeze-lookup-pending');
     announce('뜻 찾는 중');
   }
