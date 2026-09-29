@@ -48,6 +48,7 @@ const wordLookupFeedback = (()=>{
       else pendingNode.setAttribute('aria-busy',pendingBusy);
       pendingNode.style.removeProperty('--breeze-lookup-ink');
       pendingNode.style.removeProperty('--breeze-lookup-paper');
+      pendingNode.style.removeProperty('--breeze-lookup-wash');
     }
     pendingNode=null;pendingBusy=null;
   }
@@ -55,11 +56,12 @@ const wordLookupFeedback = (()=>{
     if(!pending||!node){clearCue();return;}
     if(pendingNode===node)return;
     clearCue();ensureStyle(node.ownerDocument||document);
-    // EPUB documents do not inherit the app's tokens. Copy only the two material
+    // EPUB documents do not inherit the app's tokens. Copy only the cue material
     // colors to this owned marker, never modify the publisher's page or typography.
     const palette=getComputedStyle(document.body);
     node.style.setProperty('--breeze-lookup-ink',palette.getPropertyValue('--sentence-glass-ink'));
     node.style.setProperty('--breeze-lookup-paper',palette.getPropertyValue('--sentence-glass-solid'));
+    node.style.setProperty('--breeze-lookup-wash',palette.getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
     pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
     node.setAttribute('aria-busy','true');node.classList.add('breeze-lookup-pending');
     announce('뜻 찾는 중');

@@ -41,8 +41,10 @@ recovery, so subsequent explicit quality retry is a new ID and costs one unit
 when successful. Restarting the app loses this recovery map; no client quota
 arithmetic or remote usage correction is introduced.
 
-READY still waits for 250ms motion idle. SHOWN now needs 750ms of continuous
-visibility before new user motion dismisses it. Live AI results, re-reveals and cache hits use the normal glass pill without an arrival accent.
+READY still waits for 250ms motion idle. Only a lookup that showed pending feedback
+needs 750ms of continuous SHOWN visibility before user motion dismisses it.
+An immediately available saved meaning dismisses on its first user scroll or
+same-word retap, with no minimum display time or idle resurrection. Live AI results, re-reveals and cache hits use the normal glass pill without an arrival accent.
 The mini pill entry animation also uses opacity only, preserving live placement.
 
 ## Deployment boundary

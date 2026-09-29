@@ -19,6 +19,7 @@
  */
 
 :root{
+  --word-lookup-wash:rgba(74,151,235,.22);
   --sentence-transition:250ms;
   /* 문장 lookup만 쓰는 중립 유리. 낱말 뜻의 AI 파랑과 분리해, 읽는 종이 위에
      잠깐 머무는 시스템 표면으로 보이게 합니다. 불투명 값은 blur 미지원 fallback,
@@ -322,6 +323,7 @@ body.lang-ko .navbtn{font-size:16px; line-height:1.1;}
 html.dark{--paper:#171816; color-scheme:dark;}
 
 body.dark{
+  --word-lookup-wash:rgba(102,170,239,.24);
   --sentence-glass-solid:#292A2B;
   --sentence-glass-pill:rgba(39,40,41,.76);
   --sentence-glass-surface:rgba(38,39,40,.88);
