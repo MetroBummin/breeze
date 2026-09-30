@@ -87,11 +87,50 @@ const ORIGINAL_ZOOM_MIN = 1, ORIGINAL_ZOOM_MAX = 4, ORIGINAL_ZOOM_STEP = .5;
 let originalZoomLevel = 1;
 let originalZoomBaseHeight = 0;
 let originalZoomObservedWidth = null;
+let originalZoomObservedHeight = null;
 let originalZoomGeometryWaiters = [];
+let originalRotationAnchor = null;
+let originalRotationAnchorGeneration = 0;
 
 function originalZoomStage(){ return document.getElementById('original-stage'); }
 function originalZoomLayer(){ return document.getElementById('original-zoom'); }
 function originalZoom(){ return originalZoomLevel; }
+
+/* iPad 회전은 PDF의 각 쪽 높이를 한 번에 바꿉니다. scrollTop 픽셀을 그대로 두면
+   같은 픽셀이 몇 쪽 뒤를 가리킬 수 있으므로, reflow 전 마지막 PDF 좌표표에서
+   "몇 쪽의 몇 %"였는지를 먼저 잡습니다. 새 DOM geometry를 읽으면 이미 늦습니다. */
+function capturePdfRotationAnchor(session=originalSession){
+  if(currentReaderMode!=='original'||!session||session!==originalSession||session.kind!=='pdf'
+      ||session.readDirection==='horizontal') return null;
+  const box=readerScroller(),cached=session.pageLayout;
+  if(!box||!cached?.rects?.length||typeof pdfPageIndexAtY!=='function') return null;
+  const rects=cached.rects,y=topInset()-box.getBoundingClientRect().top+box.scrollTop;
+  let i=pdfPageIndexAtY(rects,y);
+  if(i>=rects.length){i=rects.length-1;while(i>=0&&!rects[i][3])i--;}
+  const r=rects[i];
+  if(!r||!r[3]) return null;
+  return {kind:'pdf',page:i+1,y:Math.max(0,Math.min(1,(y-r[1])/Math.max(1,r[3])))};
+}
+function keepPdfRotationAnchorAlive(pending){
+  const generation=++originalRotationAnchorGeneration;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(generation===originalRotationAnchorGeneration&&originalRotationAnchor===pending)
+      originalRotationAnchor=null;
+  }));
+}
+function restorePdfRotationAnchor(pending){
+  const {session,anchor}=pending||{};
+  if(!anchor||currentReaderMode!=='original'||session!==originalSession||session?.kind!=='pdf') return;
+  if(typeof currentPdfSession==='function'&&!currentPdfSession(session)) return;
+  if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);
+  const token=++readerModeChangeToken;
+  void restorePdfAnchor(anchor,topInset(),token).then(restored=>{
+    if(!restored||token!==readerModeChangeToken||session!==originalSession) return;
+    if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);
+    if(typeof updatePdfNavigationControls==='function') updatePdfNavigationControls();
+  });
+}
+
 /* PDF만 한 단계씩 키웁니다. EPUB과 글자 화면은 이 배율을 쓰지 않습니다. */
 function originalZoomActive(){
   if(!document.body.classList.contains('reader-original')) return false;
@@ -133,8 +172,9 @@ function waitForOriginalZoomGeometry(width,isCurrent){
   return new Promise(resolve=>originalZoomGeometryWaiters.push({expected,isCurrent,resolve}));
 }
 
-function settleOriginalZoomGeometry(width){
+function settleOriginalZoomGeometry(width,height){
   originalZoomObservedWidth=Math.round(width||0);
+  if(height!=null) originalZoomObservedHeight=Math.round(height||0);
   const waiters=originalZoomGeometryWaiters.splice(0);
   waiters.forEach(waiter=>waiter.resolve((!waiter.isCurrent||waiter.isCurrent())
     && Math.abs(waiter.expected-originalZoomObservedWidth)<1));
@@ -252,9 +292,28 @@ let originalZoomWatchers = [];
     });
     growth.observe(layer);
     const reflow = new ResizeObserver(entries=>{
+      const rect=entries[0].contentRect;
+      const nextWidth=Math.round(rect.width||0),nextHeight=Math.round(rect.height||0);
+      const hadSize=originalZoomObservedWidth!=null&&originalZoomObservedHeight!=null;
+      const orientationFlipped=hadSize
+        &&(originalZoomObservedWidth>originalZoomObservedHeight)!==(nextWidth>nextHeight);
+      const session=typeof originalSession!=='undefined'?originalSession:null;
+      if(orientationFlipped){
+        const anchor=capturePdfRotationAnchor(session);
+        originalRotationAnchor=anchor?{session,anchor}:null;
+      }else if(originalRotationAnchor&&originalRotationAnchor.session!==session){
+        originalRotationAnchor=null;
+      }
       cancelOriginalPinch();
       layoutOriginalZoom();
-      settleOriginalZoomGeometry(entries[0].contentRect.width);
+      settleOriginalZoomGeometry(rect.width,rect.height);
+      /* Rotation can report more than one width. Keep restoring the first logical
+         anchor until two quiet animation frames confirm the new geometry. */
+      if(originalRotationAnchor){
+        const pending=originalRotationAnchor;
+        restorePdfRotationAnchor(pending);
+        keepPdfRotationAnchorAlive(pending);
+      }
     });
     reflow.observe(box);
     originalZoomWatchers = [growth, reflow];
