@@ -11,8 +11,8 @@
   category controls use a single select/add/manage row; rename and delete live
   in the selected category's manage menu with the existing confirmation dialog.
 - Completed local document cards reuse the existing completion badge at top right.
-- PDF navigation uses an upper-left page-count pill in both original reading
-  and writing. Its surface morphs into a vertical floating thumbnail panel without
+- PDF navigation uses a bottom-left page icon grouped with the exit button in both original reading
+  and writing. Its surface morphs upward into a vertical floating thumbnail panel without
   resizing the document. Reading keeps the book title in the bottom pill; writing
   keeps only tools there. Outside taps close without reaching the document. Opening retains page order and scrolls the current
   page into the first visible slot. The current thumbnail has a neutral fill and stronger page label; bookmarks are red.
@@ -67,13 +67,13 @@ Thumbnail bookmarks use an outlined/filled ribbon at the upper left. Page
 navigation is available in reading and writing and closes on leaving PDF original
 mode; the sheet uses an opaque preview palette. Its bookmark-only and close
 actions use ribbon and the shared task-close X with accessible labels. The page
-pill follows the Reader side controls' upward exit motion on chrome collapse.
+pill disappears downward on chrome collapse.
 
 Reader settings expose only per-grade highlight visibility through the same star
 buttons as word lookup. No color picker is shown; stored custom colors and all
 vocabulary data are preserved.
 
-The compact page control shows only a sidebar-with-dots icon in a 44px target;
+The compact page control shows a sidebar-with-dots icon in a 44px target beside the exit button;
 the current page remains in its accessible name. Reader settings use spacing
 instead of row or star-section divider lines.
 The thumbnail panel retains the same navigation, bookmarks and deletion behavior
@@ -100,3 +100,9 @@ page rectangle cache before ResizeObserver runs, so that cache alone is not a
 reliable pre-rotation position. A pending restoration belongs to the same PDF
 session and vertical mode. Initial original-document presentation does not save
 its temporary text surface over stored reading progress.
+
+PDF paper sits above a theme-aware gray desk with 20/24px side margins,
+14/16px page gaps and a subtle paper shadow. These are inside the existing zoom
+layer; source/ink coordinates and vertical trailing scroll space stay intact.
+The combined 88px exit/page slot is a PDF-specific dock variant. Its expansion
+is absolutely positioned so it cannot move the centered title or writing tools.

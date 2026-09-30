@@ -940,7 +940,7 @@ assert.ok(index.indexOf('id="p-alts"') > index.indexOf('id="p-saved-senses"'),
   'Suggested meanings are no longer a separate row below the saved ones');
 /* One persistent centered title pill owns the PDF switch; side controls are
    independent and become inert when collapsed. */
-assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button class="control-glass" id="readback"[\s\S]{0,900}<div id="readpill" class="control-glass">/,
+assert.match(index, /<div id="readchrome">[\s\S]{0,200}<button class="control-glass" id="readback"[\s\S]*?<div id="readpill" class="control-glass">/,
   'Reader is missing its centered persistent title pill');
 assert.ok(index.indexOf('id="readchrome"') > index.indexOf('id="readmain"')
        && index.indexOf('id="readchrome"') < index.indexOf('id="reader-scroll"'),

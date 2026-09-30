@@ -40,12 +40,12 @@
   <link rel="stylesheet" href="styles/fonts.css?v=211a3f46">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=eabc1765">
+  <link rel="stylesheet" href="styles/tokens.css?v=606d419d">
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
   <link rel="stylesheet" href="styles/home.css?v=e2fc1659">
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=c52dc76a">
-  <link rel="stylesheet" href="styles/reader.css?v=2bec710e">
+  <link rel="stylesheet" href="styles/reader.css?v=94863b4b">
   <link rel="stylesheet" href="styles/dictionary.css?v=74247169">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
@@ -128,7 +128,7 @@
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=49712898">
+  <link rel="stylesheet" href="styles/study.css?v=50c29b59">
   <link rel="stylesheet" href="styles/surfaces.css?v=44945e49">
 </head>
 <body>
@@ -207,13 +207,6 @@
 <div class="view" id="v-read">
   <div id="readmain">
     <button id="pdf-navigation-dismiss" type="button" tabindex="-1" aria-label="페이지 탐색 닫기" onclick="closePdfNavigation()" hidden></button>
-    <div id="pdf-page-control" class="control-glass" hidden>
-    <button id="pdf-page-button" type="button" onclick="togglePdfNavigation()" aria-expanded="false" aria-controls="pdf-page-navigation" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2"/><path d="M9 3.5v17"/><circle cx="6" cy="8" r=".7"/><circle cx="6" cy="12" r=".7"/><circle cx="6" cy="16" r=".7"/></svg></button>
-    <section id="pdf-page-navigation" role="dialog" aria-label="PDF 페이지 탐색" hidden>
-        <div class="pdf-navigation-head"><button id="pdf-bookmarks-only" type="button" aria-label="북마크한 페이지만 보기" title="북마크한 페이지만 보기" aria-pressed="false"><svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 1h18v28l-9-6-9 6Z"/></svg></button><button class="pdf-navigation-close task-close" type="button" aria-label="페이지 탐색 닫기" title="닫기" onclick="closePdfNavigation()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-        <div id="pdf-thumbnail-strip" tabindex="0" aria-label="페이지 썸네일"></div>
-      </section>
-    </div>
     <!-- ================= 읽는 동안의 조작 =================
          읽는 화면에는 상단바가 없습니다. Breeze·Home·Words·Settings 는 모두
          서재에서 만나는 것들이라, 책을 펴 놓고 늘 보고 있을 이유가 없었습니다.
@@ -224,10 +217,19 @@
          `#readmain` 이 그만큼 좁아지므로, 조각들도 글이 있는 쪽에 그대로
          머뭅니다 — 화면에 못 박았다면 낱말 칸 위에 겹쳐 앉았을 자리입니다. -->
     <div id="readchrome">
+      <div id="reader-navigation">
       <button class="control-glass" id="readback" type="button" title="서재로" aria-label="서재로" onclick="returnHomeFromReader()">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"
              stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
       </button>
+    <div id="pdf-page-control" class="control-glass" hidden>
+    <button id="pdf-page-button" type="button" onclick="togglePdfNavigation()" aria-expanded="false" aria-controls="pdf-page-navigation" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2"/><path d="M9 3.5v17"/><circle cx="6" cy="8" r=".7"/><circle cx="6" cy="12" r=".7"/><circle cx="6" cy="16" r=".7"/></svg></button>
+    <section id="pdf-page-navigation" role="dialog" aria-label="PDF 페이지 탐색" hidden>
+        <div class="pdf-navigation-head"><button id="pdf-bookmarks-only" type="button" aria-label="북마크한 페이지만 보기" title="북마크한 페이지만 보기" aria-pressed="false"><svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 1h18v28l-9-6-9 6Z"/></svg></button><button class="pdf-navigation-close task-close" type="button" aria-label="페이지 탐색 닫기" title="닫기" onclick="closePdfNavigation()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+        <div id="pdf-thumbnail-strip" tabindex="0" aria-label="페이지 썸네일"></div>
+      </section>
+    </div>
+      </div>
       <div id="readpill" class="control-glass">
         <div id="readpill-progress" aria-hidden="true"></div><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span>
         <button id="modefab" title="원본으로 보기" aria-label="원본으로 보기" onclick="toggleReaderMode()" hidden>

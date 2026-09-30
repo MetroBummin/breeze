@@ -199,3 +199,8 @@ The page pill and vertical panel share one surface whose width, height and corne
 radius transition. Contents never scale. Closed page controls disappear with the existing
 `chrome-hidden` state, with no second scroll owner. Reduced
 motion disables transitions. Closing releases thumbnail resources immediately.
+
+PDF original mode has an explicit left-slot variant: back and page navigation
+share an 88px pill. The page shell expands upward without changing the slot or
+Reader width. Non-PDF slots retain their shared geometry. On narrow screens,
+writing tools keep their separate upper row.

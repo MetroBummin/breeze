@@ -1,20 +1,31 @@
 /* Reader-specific content uses the shared glass material. */
 #readmain{container-type:inline-size;}
 #readpill{max-width:calc(100% - 124px);}
+#reader-navigation{position:relative;flex:none;width:42px;height:42px;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
+#reader-navigation:has(#pdf-page-control:not([hidden])){width:88px;height:44px;}
+#reader-navigation:has(#pdf-page-control:not([hidden])) #readback{z-index:76;width:44px;height:44px;border:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
+#reader-navigation:has(#pdf-page-control:not([hidden])) #readback::before,
+#reader-navigation:has(#pdf-page-control:not([hidden])) #readback::after{display:none;}
+#reader-navigation:has([aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
+#readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){max-width:calc(100% - 180px);}
+#readchrome:has(#pdf-page-button[aria-expanded=true]){z-index:75;}
+#readchrome:has(#pdf-page-button[aria-expanded=true])>:not(#reader-navigation){pointer-events:none;}
+
 #readpill [hidden],#pdf-page-control[hidden],#pdf-page-button[hidden],#pdf-navigation-dismiss[hidden],#pdf-page-navigation[hidden],#aa-pdf-direction[hidden]{display:none!important;}
 /* One surface changes shape; thumbnail text and canvases are never scaled. */
-#pdf-page-control{--pdf-navigation-height:min(660px,calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 100px));position:absolute;z-index:75;top:calc(env(safe-area-inset-top) + 12px);left:max(12px,env(safe-area-inset-left));width:44px;height:44px;box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:22px;color:var(--sentence-glass-ink);overflow:hidden;transition:width 240ms cubic-bezier(.2,.75,.25,1),height 240ms cubic-bezier(.2,.75,.25,1),border-radius 240ms cubic-bezier(.2,.75,.25,1),background-color 180ms ease,opacity .2s ease,transform .3s ease,visibility 0s;}
-#pdf-page-button{position:absolute;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
+#pdf-page-control{--pdf-navigation-height:min(660px,calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 100px));position:absolute;z-index:75;bottom:0;left:0;width:88px;height:44px;box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:22px;color:var(--sentence-glass-ink);overflow:hidden;transition:width 240ms cubic-bezier(.2,.75,.25,1),height 240ms cubic-bezier(.2,.75,.25,1),border-radius 240ms cubic-bezier(.2,.75,.25,1),background-color 180ms ease,opacity .2s ease,transform .3s ease,visibility 0s;}
+#pdf-page-button{position:absolute;right:0;bottom:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
 #pdf-page-button svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
 #pdf-page-button circle{fill:currentColor;stroke:none;}
-#pdf-page-control:has(#pdf-page-button[aria-expanded=true]){width:164px;max-width:calc(100% - 24px);height:var(--pdf-navigation-height);border-radius:18px;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow);}
+#pdf-page-control:has(#pdf-page-button[aria-expanded=true]){width:164px;height:var(--pdf-navigation-height);border-radius:18px;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow);}
 #pdf-page-control:has(#pdf-page-button[aria-expanded=true])::before{display:none;}
 #pdf-page-button[aria-expanded=true]{opacity:0;visibility:hidden;pointer-events:none;}
-body.chrome-hidden #pdf-page-control{visibility:hidden;opacity:0;transform:translateY(-8px);pointer-events:none;transition:width 280ms cubic-bezier(.2,.75,.25,1),height 280ms cubic-bezier(.2,.75,.25,1),border-radius 280ms cubic-bezier(.2,.75,.25,1),opacity .2s ease,transform .3s ease,visibility 0s .3s;}
+body.chrome-hidden #reader-navigation{visibility:hidden;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s ease,transform .3s ease,visibility 0s .3s;}
+body.chrome-hidden #reader-navigation #readback{transform:none;}
 #pdf-navigation-dismiss{position:absolute;inset:0;z-index:74;width:100%;height:100%;border:0;padding:0;background:transparent;}
 #pdf-page-navigation{position:absolute;inset:0;width:162px;height:calc(var(--pdf-navigation-height) - 2px);box-sizing:border-box;padding:8px;color:inherit;display:flex;flex-direction:column;overflow:hidden;animation:pdf-navigation-reveal 220ms ease;}
 @keyframes pdf-navigation-reveal{from{opacity:0}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-navigation{animation:none;}}
+@media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-navigation{animation:none;}}
 .pdf-navigation-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:8px;padding-bottom:0;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
 .pdf-navigation-head button[aria-pressed=true]{color:var(--sentence-glass-ink);background:transparent;}
@@ -67,7 +78,7 @@ body.chrome-hidden #pdf-page-control{visibility:hidden;opacity:0;transform:trans
 .library-folder-controls :is(button,summary):focus-visible,.breeze-folder-picker :is(button,summary):focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 .library-completion{position:absolute!important;top:8px!important;right:8px!important;left:auto!important;bottom:auto!important;z-index:5;display:flex!important;gap:3px;align-items:center;padding:4px 7px;border-radius:12px;background:var(--sentence-glass-solid);color:var(--brand);font:600 10px var(--ui);transform:none!important;}
 .library-completion svg{width:17px;height:17px;}
-/* The writing pill contains tools only; page navigation lives at the upper left. */
+/* The writing pill contains tools only; page navigation shares the bottom-left exit pill. */
 #readpill.ink-pill-active{bottom:0;top:auto;transform:translateX(-50%);width:calc(100% - 124px);max-width:340px;height:auto;min-height:48px;flex-wrap:wrap;justify-content:center;gap:2px;padding:4px 8px;}
 #readpill.ink-pill-active :is(#modefab,#readpill-title,.ink-pill-mini,.ink-pill-mode-separator,.completion-badge){display:none!important;}
 #readpill.ink-pill-active .ink-pill-toolbar{display:contents;}

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
+import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
@@ -13,7 +14,8 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-mkdirSync('/private/tmp/breeze16-qa',{recursive:true});
+const qaDir=resolve(tmpdir(),'breeze16-qa');
+mkdirSync(qaDir,{recursive:true});
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
  const browser=await engine.launchPersistentContext('',{viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
  try{
@@ -53,13 +55,15 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.deepEqual(progressWork,{calls:2,writes:0},'PDF progress reuses one anchor per update and does not rebuild the page icon');
   await page.evaluate(()=>toggleAa());
   assert.equal(await page.locator('#aa-epub-mode').count(),0,'No duplicate hidden mode control');
-  await page.screenshot({path:`/private/tmp/breeze16-qa/${engine.name()}-pdf-settings.png`});
+  await page.screenshot({path:`${qaDir}/${engine.name()}-pdf-settings.png`});
   await page.evaluate(()=>closeAa());
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').isVisible(),true);
   await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);
   assert.equal(await page.locator('#pdf-page-control').isVisible(),false,'Collapsed Reader hides page pill');
   await page.locator('#readpill-title').click();await page.waitForTimeout(320);
+  await page.screenshot({path:`${qaDir}/${engine.name()}-combined-page-pill.png`});
+  assert.equal(await page.locator('#readback').evaluate(e=>{const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'Exit button remains hit-testable in the combined pill');
   const compact=await page.locator('#pdf-page-control').boundingBox();
   await page.evaluate(()=>{window.__morphPaints=0;window.__originalPaintPdfThumbnails=paintPdfThumbnails;paintPdfThumbnails=function(){window.__morphPaints++;return window.__originalPaintPdfThumbnails();};});
   await page.locator('#pdf-page-button').click();
@@ -70,6 +74,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   console.log(engine.name()+': page morph thumbnail layout passes = '+morphPaints);
   assert.ok(morphPaints<=3,'Opening the panel must not relayout thumbnails on every morph frame');
   assert.ok(expanded.height>compact.height&&expanded.width>compact.width,'Same page surface expands');
+  assert.ok(Math.abs(expanded.y+expanded.height-compact.y-compact.height)<2,'Morph stays anchored to the bottom-left pill');
   assert.equal(await page.locator('#pdf-page-control #pdf-page-navigation').count(),1);
   await page.locator('#pdf-navigation-dismiss').click({position:{x:300,y:200}});
   assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false);
@@ -137,17 +142,17 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const rects=await page.evaluate(()=>[...document.querySelectorAll('#readback,#aafab,#pdf-page-button,.ink-pill-entry,.ink-pill-control')].filter(n=>n.getClientRects().length).map(n=>({id:n.id||n.getAttribute('aria-label'),x:n.getBoundingClientRect().x,r:n.getBoundingClientRect().right,w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height,y:n.getBoundingClientRect().top,b:n.getBoundingClientRect().bottom})));
    for(const r of rects){assert.ok(r.x>=0&&r.r<=width+1&&r.y>=0&&r.b<=height,`${width}: ${JSON.stringify(r)}`);assert.ok(r.w>=34&&r.h>=34,JSON.stringify(r));}
    const position=await page.locator('#pdf-page-button').boundingBox();
-   assert.ok(position.x<40&&position.y<70,'Page count must stay upper left');
+   assert.ok(position.x<100&&position.y>height-100,'Page button shares the bottom-left exit pill');
    await page.locator('#pdf-page-button').click();await page.waitForSelector('.pdf-thumbnail');
    await page.waitForFunction(()=>[...document.querySelectorAll('.pdf-thumbnail')].every(cell=>cell.querySelector('canvas')));
    await page.waitForTimeout(300);
    const navBounds=await page.locator('#pdf-page-navigation').boundingBox();
-   assert.ok(navBounds.x<40&&Math.abs(navBounds.y-position.y)<2&&navBounds.y+navBounds.height<=height-70,'Vertical panel must remain inside viewport');
+   assert.ok(navBounds.x<40&&navBounds.y>=0&&navBounds.y+navBounds.height<=height,'Panel opens upward within viewport');
    assert.equal(await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollWidth>e.clientWidth),false,'No horizontal thumbnail scroll');
    await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollTop+=176);
    await page.waitForTimeout(50);
    assert.ok(await page.locator('.pdf-thumbnail').count()<16,'Vertical rendering stays bounded');
-   await page.screenshot({path:`/private/tmp/breeze16-qa/${engine.name()}-${width}-${height}-${dark?'dark':'light'}.png`});
+   await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-${height}-${dark?'dark':'light'}.png`});
    await page.evaluate(()=>closePdfNavigation());
   }
   await page.locator('[data-ink-toggle]').click();
