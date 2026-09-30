@@ -161,8 +161,9 @@ and reduced motion suppresses the bloom. Saved/cache hits retain normal glass.
 
 Reader-specific writing content may use two rows when its actual container is
 650px or narrower. The shared Home/Wordbook dock remains unchanged. Tool targets
-stay 44px; the thumbnail strip and tool options are positioned above the measured
-pill height. The thumbnail UI is a separate strip, not a morph of the pill.
+stay 44px; tool options are positioned above the measured pill height. PDF
+page navigation uses the independent upper-left pill and vertical panel described
+below.
 
 ## Consistent task surfaces (2026-09-30)
 
@@ -180,3 +181,21 @@ remain unchanged. See `DESIGN.md` for roles, responsive rules and exceptions.
 Validate with `npm run test:design-tone`, `npm run test:home-ui`, onboarding and
 word-presentation browser suites plus `npm test`. The former Add test that
 required no close button is superseded by the explicit close requirement.
+
+## Dialog state ownership (2026-09-30)
+Add/Edit visibility uses native dialog `[open]` only. The legacy `.on` display,
+visibility and pointer gating is removed, including dependent refresh/notice
+selectors. Browser dismissal checks must tap the scrim and X, then reopen via
+the real Home control and scroll; checking only the closed attribute is insufficient.
+
+## Upper-left PDF navigation (2026-09-30 refinement)
+The PDF page-count pill is independent of the bottom dock in both original
+reading and writing. Its left vertical panel overlays without reflowing paper;
+the bottom reading title and writing tools keep their own roles. The transparent
+dismissal surface consumes outside taps, including Pencil admission exclusions.
+Thumbnail virtualization uses the visible vertical range and a bounded buffer.
+
+The page pill and vertical panel share one surface whose width, height and corner
+radius transition. Contents never scale. Closed page controls disappear with the existing
+`chrome-hidden` state, with no second scroll owner. Reduced
+motion disables transitions. Closing releases thumbnail resources immediately.

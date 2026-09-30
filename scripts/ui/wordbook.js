@@ -50,7 +50,7 @@ document.getElementById('vsort-menu').addEventListener('keydown',event=>{
 document.querySelectorAll('#vstars button').forEach(button=>button.addEventListener('click',()=>{
   const status=Number(/** @type {HTMLElement} */(button).dataset.status);
   if(wordbookStars.has(status)) wordbookStars.delete(status);else wordbookStars.add(status);
-  button.setAttribute('aria-pressed',String(wordbookStars.has(status)));renderVocab();
+  button.setAttribute('aria-pressed',String(wordbookStars.has(status)));button.classList.toggle('on',wordbookStars.has(status));renderVocab();
 }));
 function openWordbookAdd(){
   /** @type {HTMLFormElement} */(document.getElementById('wordbook-add-form')).reset();
@@ -73,7 +73,7 @@ document.getElementById('wordbook-add-form').addEventListener('submit',event=>{
   /** @type {HTMLDialogElement} */(document.getElementById('wordbook-add-dialog')).close();
   /** @type {HTMLInputElement} */(document.getElementById('vsearch')).value='';
   wordbookStars.clear();wordbookBooks.clear();
-  document.querySelectorAll('#vstars button').forEach(b=>b.setAttribute('aria-pressed','false'));
+  document.querySelectorAll('#vstars button').forEach(b=>{b.setAttribute('aria-pressed','false');b.classList.remove('on');});
   document.getElementById('vbook-options').removeAttribute('data-names');
   renderVocab();toast('단어를 저장했어요');
 });
@@ -86,7 +86,7 @@ function syncWordbookFilterLabels(){
 function clearWordbookFilters(){
   wordbookStars.clear();wordbookBooks.clear();
   /** @type {HTMLInputElement} */(document.getElementById('vsearch')).value='';
-  document.querySelectorAll('#vstars button').forEach(b=>b.setAttribute('aria-pressed','false'));
+  document.querySelectorAll('#vstars button').forEach(b=>{b.setAttribute('aria-pressed','false');b.classList.remove('on');});
   document.getElementById('vbook-options').removeAttribute('data-names');
   renderVocab();
 }

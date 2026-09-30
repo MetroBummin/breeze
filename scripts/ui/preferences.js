@@ -221,7 +221,7 @@ async function resumeHomeBook(button){
   // Navigation during preparation must not pull the user back into this book.
   const observer=new MutationObserver(()=>{if(!committed)cancelled=true;});
   document.querySelectorAll('.view,#settings-modal,#add-modal').forEach(node=>
-    observer.observe(node,{attributes:true,attributeFilter:['class']}));
+    observer.observe(node,{attributes:true,attributeFilter:['class','open']}));
   const current=()=>!cancelled && !document.hidden && activeAppView()===view && homeResumeBook()===book;
   try{
     // Disk work runs while Home is still usable, outside the browser's short

@@ -1,5 +1,6 @@
 /* Short task surfaces own form geometry here. Reader lookup and dock remain in their owners. */
-dialog:is(#add-modal,#edit-modal){inset:0;margin:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;border:0;color:var(--sentence-glass-ink);background:var(--sentence-glass-scrim);padding:16px;align-items:center;justify-content:center;}
+dialog:is(#add-modal,#edit-modal){position:fixed;box-sizing:border-box;overflow:hidden;inset:0;margin:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;border:0;color:var(--sentence-glass-ink);background:var(--sentence-glass-scrim);padding:16px;align-items:center;justify-content:center;}
+dialog:is(#add-modal,#edit-modal)[open]{display:flex;}
 dialog:is(#add-modal,#edit-modal):not([open]){display:none;}
 dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog{position:relative;box-sizing:border-box;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:24px;border:1px solid var(--sentence-glass-line);border-radius:22px;background:var(--sentence-glass-solid);color:var(--sentence-glass-ink);box-shadow:var(--sentence-glass-shadow);overflow:auto;overscroll-behavior:contain;}
@@ -21,7 +22,8 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 .task-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;}
 #ed-card #ed-pick-file{min-height:44px;font-size:14px;}
 #am-card .am-back,#ed-card .am-back{min-height:44px;padding:8px 0;}
-#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close{position:absolute;z-index:2;top:12px;right:12px;display:grid;place-items:center;float:none;width:44px;height:44px;min-height:44px;padding:0;border:1px solid var(--sentence-glass-line-soft);border-radius:50%;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);cursor:pointer;}
+#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close{position:absolute;z-index:2;top:12px;right:12px;display:grid;place-items:center;float:none;width:44px;height:44px;min-height:44px;padding:0;border:1px solid var(--sentence-glass-line-soft);border-radius:50%;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);cursor:pointer;}
+#pdf-page-navigation .task-close{position:static;}
 .task-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
 .task-close:hover{background:var(--sentence-glass-action-hover);}
 .task-surface button:focus-visible,#set-close:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:2px;}
@@ -34,17 +36,20 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #settings-modal .set-label{flex-basis:160px;}
 #settings-modal .set-row .sm-mini{flex-shrink:0;max-width:100%;white-space:normal;}
 /* Aa actions use the same quiet material; switches retain the small visual track. */
-#aa-pop{box-sizing:border-box;width:min(320px,calc(100vw - 24px));padding:16px;background:var(--sentence-glass-solid);border-color:var(--sentence-glass-line);border-radius:22px;box-shadow:var(--sentence-glass-shadow);color:var(--sentence-glass-ink);}
-#aa-pop .aa-row{gap:12px;min-height:52px;}
-#aa-pop .aa-label{color:var(--sentence-glass-secondary);font-size:14px;}
-#aa-pop :is(.aa-size button,.aa-seg button,.sm-mini){min-height:44px;min-width:44px;border-radius:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font-size:14px;}
-#aa-pop .aa-seg{border:0;padding:0;gap:4px;}
-#aa-pop .aa-seg button.on,#aa-pop .aa-seg button[aria-pressed=true]{background:var(--selection-fill);color:var(--selection-ink);}
+#aa-pop{box-sizing:border-box;width:min(320px,calc(100vw - 24px));padding:14px;background:var(--sentence-glass-solid);border-color:var(--sentence-glass-line);border-radius:22px;box-shadow:var(--sentence-glass-shadow);color:var(--sentence-glass-ink);}
+#aa-pop .aa-row{gap:8px;min-height:44px;padding:2px 0;}
+#aa-pop .aa-label{color:var(--sentence-glass-secondary);font-size:13px;white-space:nowrap;}
+#aa-pop :is(.aa-size button,.aa-seg button,.sm-mini){min-height:44px;min-width:44px;border:0;border-radius:10px;background:transparent;color:var(--sentence-glass-ink);font-size:13px;}
+#aa-pop .aa-seg{border:0;padding:0;gap:2px;background:var(--sentence-glass-action);}
+#aa-pop .aa-size{gap:4px;}
+#aa-pop .aa-size>span{min-width:26px;text-align:center;font:500 13px var(--ui);font-variant-numeric:tabular-nums;}
+#aa-pop .aa-seg button{padding:0 8px;}
+#aa-pop .aa-seg button.on,#aa-pop .aa-seg button[aria-pressed=true]{background:var(--sentence-glass-action-hover);color:var(--sentence-glass-ink);}
 #aa-pop .aa-toggle{height:44px;background:transparent;flex:none;position:relative;}
 #aa-pop .aa-toggle::before{content:'';position:absolute;inset:9px 0;border-radius:13px;background:var(--toggle-off);}
 #aa-pop .aa-toggle.on::before{background:var(--brand);}
 #aa-pop .aa-toggle i{top:12px;}
-#aa-pop .aa-row .sm-mini{max-width:160px;}
+#aa-pop .aa-row .sm-mini{max-width:160px;padding:0 10px;background:var(--sentence-glass-action);}
 #v-vocab h1{font-size:clamp(22px,5.8vw,26px);overflow-wrap:anywhere;}
 .wordbook-brand img{width:38px;height:38px;}
 #vsort-menu summary,#vbooks summary,#vstars button,#vsort-options label,#vbook-options label{min-height:44px;box-sizing:border-box;}

@@ -346,7 +346,7 @@ async function importArticleUrl(){
   button.disabled = true;
   status.textContent = typeof socialUrlInfo==='function'&&socialUrlInfo(url) ? '게시글을 가져오는 중…' : '기사를 가져오는 중…';
   try{
-    await ingestArticle(url);
+    await ingestArticle(url,{folderId:addImportFolder});
     field.value = '';
   }catch(error){
     console.error(error);
@@ -423,7 +423,7 @@ async function repairIncompleteSocialBook(existing,parsed,extra){
   try{return await job;}
   finally{if(articleBookRepairJobs.get(existing.id)===job)articleBookRepairJobs.delete(existing.id);}
 }
-async function commitArticleDraft(draft){
+async function commitArticleDraft(draft,folderId){
   const state=articleDrafts.get(draft);
   if(!state)return draft; // Already saved articles are never recreated.
   if(state.saved)return state.saved;
@@ -446,7 +446,7 @@ async function commitArticleDraft(draft){
       if(state.repairId&&current?.id!==state.repairId)throw socialImportError('cancelled');
       const book=current&&articleNeedsSourceRefresh(current)
         ? await repairIncompleteSocialBook(current,parsed,extra)
-        : current||await saveCasualBook(parsed,extra,{present:false});
+        : current||await saveCasualBook(parsed,extra,{present:false,folderId});
       state.missed=photos.missed;
       return book;
     })();
@@ -481,7 +481,7 @@ async function ingestArticle(url, options = {}){
   }
   try{
     const draft=await job;
-    const book=options.preview||options.deferSave?draft:await commitArticleDraft(draft);
+    const book=options.preview||options.deferSave?draft:await commitArticleDraft(draft,options.folderId);
     if(options.present!==false&&intent===readerOpenIntent){
       closeAddModal();
       if(options.preview)openCasualPreviewOrReader(book);

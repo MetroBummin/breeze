@@ -28,12 +28,21 @@ try{for(const engine of [chromium,webkit]){
  await page.evaluate(()=>show('longform'));assert.equal(await page.locator('#v-longform .home-card-actions').count(),1);
  const data=await page.evaluate(()=>JSON.stringify({books,words}));await page.locator('#v-longform .library-folder-menu summary').click();await page.locator('#v-longform .library-folder-actions button').filter({hasText:'삭제'}).click();await page.locator('#task-submit').click();await page.waitForFunction(()=>libraryFolders.folders.length===0);assert.equal(await page.evaluate(()=>JSON.stringify({books,words})),data);
  const check=async(selector)=>{const a=await page.locator(selector).evaluate(e=>{const r=e.getBoundingClientRect();return{x:r.left,y:r.top,right:r.right,bottom:r.bottom,w:innerWidth,h:innerHeight,overflow:e.scrollWidth>e.clientWidth+2};});assert.ok(a.x>=-1&&a.y>=-1&&a.right<=a.w+1&&a.bottom<=a.h+1,selector+JSON.stringify(a));assert.equal(a.overflow,false,selector+' horizontal overflow');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);};
+ await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='txt'));toggleAa();});
+ assert.equal(await page.locator('#aa-pop input[type=color]').count(),0);
+ const starData=await page.evaluate(()=>({colors:studyPrefs.stars.map(s=>s.color),words:JSON.stringify(words)}));
+ await page.locator('[data-star-visibility="1"]').click();
+ assert.equal(await page.locator('[data-star-visibility="1"]').getAttribute('aria-pressed'),'false');
+ assert.equal(await page.locator('[data-star-visibility="2"]').getAttribute('aria-pressed'),'true');
+ assert.deepEqual(await page.evaluate(()=>({colors:studyPrefs.stars.map(s=>s.color),words:JSON.stringify(words)})),starData);
+ await page.locator('[data-star-visibility="1"]').click();await page.evaluate(()=>{closeAa();show('home');});
  await page.evaluate(()=>createLibraryFolder('긴 이름의 읽기 카테고리'));
  for(const [width,height] of [[320,740],[390,844],[820,1180],[1180,820],[1440,900],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();show('home');},dark);const key=`${engine.name()}-${width}-${height}-${dark?'dark':'light'}`;
   await page.evaluate(()=>show('longform'));await check('#v-longform .library-folder-controls');
-  const folderRow=await page.locator('#v-longform .library-folder-controls').evaluate(e=>{const items=[...e.children].map(child=>child.getBoundingClientRect());return{tops:items.map(r=>r.top),right:items.at(-1).right,outer:e.getBoundingClientRect().right};});
+  const folderRow=await page.locator('#v-longform .library-folder-controls').evaluate(e=>{const items=[...e.children].filter(child=>getComputedStyle(child).display!=='none').map(child=>child.getBoundingClientRect());return{tops:items.map(r=>r.top),right:items.at(-1).right,outer:e.getBoundingClientRect().right};});
   assert.ok(folderRow.tops.every(y=>Math.abs(y-folderRow.tops[0])<2)&&folderRow.right<=folderRow.outer+1,`Category controls must stay on one row: ${key} ${JSON.stringify(folderRow)}`);
+  if(width===820)await page.screenshot({path:out+'/'+key+'-category.png'});
   if((width===320&&!dark)||(width===390&&dark)){await page.locator('#v-longform .library-folder-menu summary').click();await check('#v-longform .library-folder-actions');await page.screenshot({path:out+'/'+key+'-category-menu.png'});await page.keyboard.press('Escape');}
   await page.evaluate(()=>show('home'));
   await page.evaluate(()=>openAddModal());await check('#am-card');await page.screenshot({path:out+'/'+key+'-add.png'});await page.locator('#am-close').click();assert.equal(await page.locator('#add-modal').evaluate(e=>e.open),false);
@@ -43,7 +52,7 @@ try{for(const engine of [chromium,webkit]){
   assert.ok(Math.abs(toolbar.sortY-toolbar.booksY)<2&&toolbar.starsY>toolbar.sortY&&toolbar.booksRight<=toolbar.outerRight+1&&toolbar.starsRight<=toolbar.outerRight+1,`Memory toolbar must use two contained rows: ${key} ${JSON.stringify(toolbar)}`);
   if((width===390&&dark)||(width===320&&!dark))await page.screenshot({path:out+'/'+key+'-memory-toolbar.png'});
   await page.evaluate(()=>openSettings());await check('#set-card');await page.screenshot({path:out+'/'+key+'-settings.png'});await page.evaluate(()=>closeSettings());
-  await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));await page.evaluate(()=>toggleAa());await check('#aa-pop');await page.screenshot({path:out+'/'+key+'-aa.png'});await page.evaluate(()=>closeAa());
+  await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));await page.evaluate(()=>toggleAa());await check('#aa-pop');assert.ok(await page.locator('#aa-pop').evaluate(e=>e.getBoundingClientRect().height<350),'Reader preferences should remain compact');assert.ok(await page.locator('#aa-pop').evaluate(e=>!getComputedStyle(e).backgroundColor.startsWith('rgba')),'Reader settings must have an opaque background');await page.screenshot({path:out+'/'+key+'-aa.png'});await page.evaluate(()=>closeAa());
  }
  await page.evaluate(()=>changeLibraryFolder(''));
  // Keyboard-reduced viewport: long input and destructive description stay inside scrollable dialog.

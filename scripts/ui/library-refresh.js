@@ -41,7 +41,7 @@ const libraryRefreshMotion=(()=>{
 })();
 function libraryRefreshAllowed(){
   return ['home','casuals','longform'].includes(activeAppView()) &&
-    !document.querySelector('#settings-modal.on,#add-modal.on,#edit-modal.on,#onboarding:not([hidden])');
+    !document.querySelector('#settings-modal.on,#add-modal[open],#edit-modal[open],#onboarding:not([hidden])');
 }
 function refreshLibrary(){
   if(libraryRefreshTask) return libraryRefreshTask;
@@ -120,7 +120,7 @@ function refreshLibrary(){
       nativeRefreshHandler.postMessage({enabled});
     };
     const observer=new MutationObserver(report);
-    document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden']}));
+    document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden','open']}));
     report();
     return;
   }
@@ -160,5 +160,5 @@ function refreshLibrary(){
       start=null;distance=0;libraryRefreshMotion.clear();
     }
   });
-  document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden']}));
+  document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden','open']}));
 })();

@@ -33,13 +33,13 @@ try{
   assert.equal(await page.locator('#topbar').isVisible(),false);
   const colors=await page.evaluate(()=>[1,2,3].map(n=>{
    const reader=document.querySelector(`.stbtn[data-s="${n}"]`),chip=document.querySelector(`#v-vocab .chip.s${n}`),filter=document.querySelector(`#vstars button[data-status="${n}"]`);
-   const wasOn=reader.classList.contains('on');reader.classList.add('on');filter.setAttribute('aria-pressed','true');
+   const wasOn=reader.classList.contains('on');reader.classList.add('on');filter.classList.add('on');filter.setAttribute('aria-pressed','true');
    const color=e=>{const s=getComputedStyle(e);return [s.backgroundColor,s.color]};
    const result=[color(reader),color(chip),color(filter)];
-   reader.classList.toggle('on',wasOn);filter.setAttribute('aria-pressed','false');return result;
+   reader.classList.toggle('on',wasOn);filter.classList.remove('on');filter.setAttribute('aria-pressed','false');return result;
   }));
   for(const [reader,chip,filter] of colors){
-    assert.deepEqual(filter,chip);
+    assert.deepEqual(filter,reader);
     assert.notEqual(reader[0],chip[0],'Reader detail should use the softer selected fill');
     if(!dark)assert.equal(reader[1],chip[1]);
   }

@@ -528,15 +528,22 @@ function addStep(step){
   }
 }
 /* mode='casual'이면 짧은 글 두 가지만 보여 줍니다. */
+let addImportFolder='';
 function openAddModal(mode){
+  addImportFolder=currentImportFolder();
   /** @type {HTMLDialogElement} */(addModal()).showModal();
-  addModal().classList.add('on');
   addModal().querySelector('.am-file').hidden = mode === 'casual';
   addStep('pick');
 }
-function closeAddModal(){ addModal().classList.remove('on'); /** @type {HTMLDialogElement} */(addModal()).close(); }
+function closeAddModal(){
+  // Release native modal inertness before changing the presentation.
+  /** @type {HTMLDialogElement} */(addModal()).close();
+}
 addModal().addEventListener('cancel',event=>{event.preventDefault();closeAddModal();});
-function pickBookFile(){ closeAddModal(); finput.click(); }
+function pickBookFile(){
+  if(!/** @type {HTMLDialogElement} */(addModal()).open)addImportFolder=currentImportFolder();
+  closeAddModal(); finput.click();
+}
 
 function updatePastePreview(){
   const parsed = parsePastedText(document.getElementById('am-text').value);
@@ -571,7 +578,8 @@ async function saveCasualBook(parsed, extra, options={}){
     formatting:parsed.formatting, original:null, localSourceAt:Date.now(), ...extra };
   await bookPut(book);
   books.unshift(book);
-  renderHome();
+  assignImportedFolder(book.id,options.folderId);
+  renderAllBookViews();
   if(present()){
     closeAddModal();
     if(options.preview)openCasualPreviewOrReader(book);
@@ -585,7 +593,7 @@ async function importPastedText(){
   const parsed = parsePastedText(document.getElementById('am-text').value);
   if(!parsed){ toast('읽을 영어 글이 없어요'); return; }
   const input=/** @type {HTMLTextAreaElement} */(document.getElementById('am-text')),original=input.value;
-  try{await saveCasualBook(parsed,null);if(input.value===original)input.value='';}
+  try{await saveCasualBook(parsed,null,{folderId:addImportFolder});if(input.value===original)input.value='';}
   catch(error){console.error(error);toast('글을 저장하지 못했어요. 입력한 내용은 남겨 두었어요.');}
 }
 
@@ -598,7 +606,7 @@ addModal().addEventListener('click', event => { if(event.target.id === 'add-moda
 /* ================= import ================= */
 const finput = /** @type {HTMLInputElement} */(document.getElementById('fileinput'));
 const originalInput = /** @type {HTMLInputElement} */(document.getElementById('original-fileinput'));
-finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0]); finput.value=''; };
+finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0],null,{folderId:addImportFolder}); finput.value=''; };
 let reconnectTarget = null;
 let vaultReconnectTarget = null;
 originalInput.onchange = async()=>{
@@ -821,6 +829,7 @@ async function reconnectOriginalFile(target,file){
 /* `extra`는 파일에서 알 수 없는 것만 얹습니다 — 지금은 내장 고전의
    지은이와 고전 ID뿐입니다. */
 async function importFile(file, extra, options={}){
+  const folderId=options.folderId??currentImportFolder();
   /* 도서관에서 빌리면 책이 아니라 이 표가 내려옵니다. 확장자만 보고 "지원하지
      않는 형식"이라고 하면, 실제로는 어도비 프로그램으로 받아야 하는 잠긴 책인데
      파일을 잘못 고른 줄 알게 됩니다. */
@@ -889,6 +898,7 @@ async function importFile(file, extra, options={}){
     book.sourceModified=prepared.lastModified||0;
     await bookPut(book);
     books.unshift(book);
+    assignImportedFolder(book.id,folderId);
     renderAllBookViews();
     notice.finish(original
       ? '추가 완료! 원본과 편한 글자 모드를 모두 준비했어요'

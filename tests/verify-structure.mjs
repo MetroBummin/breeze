@@ -1065,7 +1065,7 @@ assert.match(preferencesSource, /keepPlace\(\(\)=>\{[\s\S]*?save\('breeze\.margi
   'Changing the margin no longer keeps the sentence being read in place');
 assert.match(readerCss, /#readwrap\{max-width:var\(--readw,700px\); margin:0 auto;\s*\n?\s*padding:calc\(env\(safe-area-inset-top\) \+ \d+px\) var\(--readpad,26px\)/,
   'The reading column stopped following the margin setting, or lost the room the floating controls need');
-assert.match(index, /class="aa-row stack aa-text-only"[\s\S]*?id="aa-margin"/,
+assert.match(index, /class="aa-row aa-text-only"[\s\S]*?id="aa-margin"/,
   'The 좌우 여백 row is missing from the Aa popover');
 
 /* ---- 일회성 변환은 걷어냈습니다 ---- */

@@ -974,7 +974,7 @@ function renderPanel(){
   document.getElementById('p-ex-preview').textContent=w.example||'';
   document.getElementById('p-know').hidden=!!previewWordCard;
   document.getElementById('p-highlight-row').hidden=!!previewWordCard;
-  document.querySelectorAll('.stbtn').forEach(b=>{
+  document.querySelectorAll('#p-status .stbtn').forEach(b=>{
     const active=+b.dataset.s===w.status;b.classList.toggle('on',active);
     b.setAttribute('aria-pressed',String(active));b.setAttribute('aria-label','모르는 정도 '+b.getAttribute('data-s'));
   });
@@ -1149,7 +1149,7 @@ function adoptSuggestion(k, meaning){
   paintWord(root); selectWord(id,null);
 }
 /* ＋ 로 적어 넣는 뜻. 적어서 Enter 를 누르면 그 자리에서 저장되고 지금 뜻이 됩니다. */
-document.querySelectorAll('.stbtn').forEach(b=>b.onclick=()=>{
+document.querySelectorAll('#p-status .stbtn').forEach(b=>b.onclick=()=>{
   setStatus(selKey, +b.dataset.s);
 });
 document.getElementById('p-mark').onclick=()=>{

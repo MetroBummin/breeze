@@ -90,7 +90,7 @@ try{
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-finish.png`});
   assert.deepEqual(await snapshot(),before,'tutorial changed storage, history or library');
   await page.locator('#onboard-next').tap();
-  assert.equal(await page.locator('#add-modal').evaluate(el=>el.classList.contains('on')),true);
+  assert.equal(await page.locator('#add-modal').evaluate(el=>el.open),true);
   assert.deepEqual(await page.evaluate(()=>({fs,darkMode,readMargin,curBook,previewWordCard})),{fs:19,darkMode:false,readMargin:'normal',curBook:null,previewWordCard:null});
   assert.deepEqual(await snapshot(),before,'completion leaked tutorial data');
   assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
