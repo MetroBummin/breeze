@@ -65,8 +65,6 @@ function updatePdfNavigationControls(measuredAnchor){
   }
   if(!ready){closePdfNavigation();return;}
   const n=measuredAnchor?.kind==='pdf'&&measuredAnchor.page?measuredAnchor.page:pdfCurrentPage();
-  const pages=pdfAvailablePages(),count=`${pages.indexOf(n)+1}/${pages.length}`;
-  const label=document.getElementById('pdf-page-count');if(label.textContent!==count)label.textContent=count;
   const aria=`${n}페이지, 페이지 탐색`;if(button.getAttribute('aria-label')!==aria)button.setAttribute('aria-label',aria);
   if(pdfNavigation&&pdfNavigation.session!==originalSession)closePdfNavigation();
   if(pdfNavigation)for(const button of pdfNavigation.strip.querySelectorAll('.pdf-thumbnail-jump')){

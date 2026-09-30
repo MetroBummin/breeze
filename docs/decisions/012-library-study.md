@@ -73,7 +73,9 @@ Reader settings expose only per-grade highlight visibility through the same star
 buttons as word lookup. No color picker is shown; stored custom colors and all
 vocabulary data are preserved.
 
-The compact page pill keeps the page count beside a sidebar-with-dots icon.
+The compact page control shows only a sidebar-with-dots icon in a 44px target;
+the current page remains in its accessible name. Reader settings use spacing
+instead of row or star-section divider lines.
 The thumbnail panel retains the same navigation, bookmarks and deletion behavior
 with a quieter header and smaller visual elements; all touch targets remain 44px.
 The category disclosure uses an SVG chevron so its open/closed shape is stable

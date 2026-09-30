@@ -121,15 +121,15 @@
   <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=9298a976"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=ee919fff"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=d95ea48a"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=c7747867"></script>
   <script defer src="scripts/main.js?v=b42953a9"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=c2208849">
-  <link rel="stylesheet" href="styles/surfaces.css?v=e09aef5f">
+  <link rel="stylesheet" href="styles/study.css?v=cffc3077">
+  <link rel="stylesheet" href="styles/surfaces.css?v=bea676e2">
 </head>
 <body>
 <div id="app">
@@ -208,7 +208,7 @@
   <div id="readmain">
     <button id="pdf-navigation-dismiss" type="button" tabindex="-1" aria-label="페이지 탐색 닫기" onclick="closePdfNavigation()" hidden></button>
     <div id="pdf-page-control" class="control-glass" hidden>
-    <button id="pdf-page-button" type="button" onclick="togglePdfNavigation()" aria-expanded="false" aria-controls="pdf-page-navigation" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2"/><path d="M9 3.5v17"/><circle cx="6" cy="8" r=".7"/><circle cx="6" cy="12" r=".7"/><circle cx="6" cy="16" r=".7"/></svg><span id="pdf-page-count"></span></button>
+    <button id="pdf-page-button" type="button" onclick="togglePdfNavigation()" aria-expanded="false" aria-controls="pdf-page-navigation" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2"/><path d="M9 3.5v17"/><circle cx="6" cy="8" r=".7"/><circle cx="6" cy="12" r=".7"/><circle cx="6" cy="16" r=".7"/></svg></button>
     <section id="pdf-page-navigation" role="dialog" aria-label="PDF 페이지 탐색" hidden>
         <div class="pdf-navigation-head"><button id="pdf-bookmarks-only" type="button" aria-label="북마크한 페이지만 보기" title="북마크한 페이지만 보기" aria-pressed="false"><svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 1h18v28l-9-6-9 6Z"/></svg></button><button class="pdf-navigation-close task-close" type="button" aria-label="페이지 탐색 닫기" title="닫기" onclick="closePdfNavigation()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
         <div id="pdf-thumbnail-strip" tabindex="0" aria-label="페이지 썸네일"></div>
