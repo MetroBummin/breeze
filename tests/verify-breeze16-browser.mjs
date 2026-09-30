@@ -105,6 +105,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(()=>pdfCurrentPage()===60);
   await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').click();
   assert.ok(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)));
+  await page.locator('#pdf-bookmarks-only').click();
+  assert.equal(await page.locator('.pdf-thumbnail').count(),1,'Bookmark filter retains only bookmarked pages');
+  await page.locator('#pdf-bookmarks-only').click();
   await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').click();
   assert.equal(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)),false);
   await page.evaluate(()=>togglePdfBookmark(originalSession,60));

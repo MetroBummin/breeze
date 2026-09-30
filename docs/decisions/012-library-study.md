@@ -16,7 +16,7 @@
   resizing the document. Reading keeps the book title in the bottom pill; writing
   keeps only tools there. Outside taps close without reaching the document. Opening retains page order and scrolls the current
   page into the first visible slot. The current paper has a gray overlay and centered circular ellipsis action; bookmarks are red.
-  The header uses the same sidebar icon to close; per-page ribbons own bookmarks. Rendering is serial,
+  The header has a bookmarks-only filter and circular sidebar icon to close; per-page ribbons own bookmarks. Rendering is serial,
   virtualized to the viewport plus three slots, and cancelled/guarded on close or
   session change. No eager all-page thumbnail render or unbounded bitmap cache.
 - Bookmarks use source hash (book ID fallback) and original page number, independent
@@ -65,7 +65,7 @@ capture their destination at initiation; duplicate/reconnected documents keep
 their existing assignment. Category deletion still preserves all documents.
 Thumbnail bookmarks use an outlined/filled ribbon at the upper left. Page
 navigation is available in reading and writing and closes on leaving PDF original
-mode; the sidebar uses a translucent light/dark glass palette. Its header has one sidebar toggle with an accessible collapse label. The page
+mode; the sidebar uses a translucent light/dark glass palette. Its header has a bookmarks-only filter and circular sidebar toggle with an accessible collapse label. The page
 pill disappears downward on chrome collapse.
 
 Reader settings expose only per-grade highlight visibility through the same star

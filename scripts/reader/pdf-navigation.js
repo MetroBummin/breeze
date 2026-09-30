@@ -90,7 +90,7 @@ function togglePdfNavigation(){
   closeAa();expandReaderChrome();
   const settings=document.getElementById('pdf-ink-settings');if(settings)settings.hidden=true;
   const panel=document.getElementById('pdf-page-navigation'),strip=document.getElementById('pdf-thumbnail-strip');
-  pdfNavigation={session:originalSession,strip,pages:[],generation:++pdfNavigationGeneration};
+  pdfNavigation={session:originalSession,strip,bookmarksOnly:false,pages:[],generation:++pdfNavigationGeneration};
   panel.hidden=false;document.getElementById('pdf-navigation-dismiss').hidden=false;
   document.getElementById('pdf-page-button').setAttribute('aria-expanded','true');
   // A transparent dismissal surface prevents a closing tap reaching the page.
@@ -100,7 +100,8 @@ function buildPdfNavigation(focusCurrent){
   const nav=pdfNavigation;if(!nav)return;
   pdfNavigationTask?.cancel();pdfNavigationTask=null;nav.generation=++pdfNavigationGeneration;
   const bookmarks=readPdfBookmarks(nav.session)||[];
-  nav.pages=pdfAvailablePages(nav.session).filter(n=>!nav.session.deletedPages?.has(n));
+  nav.pages=(nav.bookmarksOnly?bookmarks:pdfAvailablePages(nav.session)).filter(n=>!nav.session.deletedPages?.has(n));
+  document.getElementById('pdf-bookmarks-only').setAttribute('aria-pressed',String(nav.bookmarksOnly));
   nav.bookmarks=new Set(bookmarks);nav.strip.replaceChildren();
   const track=document.createElement('div');track.className='pdf-thumbnail-track';
   track.style.height=`${nav.pages.length*PDF_THUMB_SLOT+Math.max(0,nav.strip.clientHeight-PDF_THUMB_SLOT)}px`;
@@ -163,6 +164,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('click',event=>{
     if(event.target instanceof Element&&event.target.closest('#aafab,#pdf-ink-tools,[data-ink-toggle]'))closePdfNavigation();
   },true);
+  document.getElementById('pdf-bookmarks-only').onclick=()=>{if(pdfNavigation){pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;buildPdfNavigation(true);}};
   document.getElementById('pdf-thumbnail-strip').addEventListener('scroll',paintPdfThumbnails,{passive:true});
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&pdfNavigation&&!document.querySelector('dialog[open]')){closePdfNavigation();document.getElementById('pdf-page-button').focus();}
