@@ -71,7 +71,9 @@ async function reveal(page){
   assert.equal(await page.locator('#review-confused').isVisible(),true);
 }
 async function persistedWords(page){
-  return page.evaluate(()=>({words:JSON.stringify(words),storage:Object.fromEntries(Object.keys(localStorage).filter(key=>key==='breeze.words'||key==='breeze.dead'||key.startsWith('breeze.word-item.')||key==='breeze.word-write.pending').sort().map(key=>[key,localStorage.getItem(key)]))}));
+  // LocalStorage enumeration order is unspecified after reload. Compare a deep
+  // record snapshot, not JSON object-key order, while retaining exact item bytes.
+  return page.evaluate(()=>({words:JSON.parse(JSON.stringify(words)),storage:Object.fromEntries(Object.keys(localStorage).filter(key=>key==='breeze.words'||key==='breeze.dead'||key.startsWith('breeze.word-item.')||key==='breeze.word-write.pending').sort().map(key=>[key,localStorage.getItem(key)]))}));
 }
 async function reviewState(page){return page.evaluate(key=>localStorage.getItem(key),REVIEW_KEY);}
 async function progress(page){return (await page.locator('#review-progress').innerText()).match(/\d+/g)?.map(Number)||[];}
