@@ -1550,8 +1550,8 @@ assert.match(readerCss,
   /\.control-glass\{[\s\S]{0,260}var\(--sentence-glass-line\)[\s\S]{0,260}var\(--sentence-glass-shadow-pill\)/,
   'Bottom Reader controls no longer use the Lookup glass material tokens');
 assert.match(readerCss,
-  /\.control-glass\{background:var\(--sentence-glass-pill\);\s*\n\s*backdrop-filter:blur\(19px\) saturate\(122%\)/,
-  'Bottom Reader controls no longer match the word pill blur and opacity treatment');
+  /\.control-glass\{background:var\(--control-glass-surface\);\s*\n\s*backdrop-filter:blur\(19px\) saturate\(122%\)/,
+  'Floating controls no longer share the common glass surface and blur');
 assert.match(index, /id="word-modal-scrim"/,
   'The centered word popup has no outside-dismiss scrim');
 assert.doesNotMatch(index, /id="(?:sheetbg|p-close|p-handle)"/,

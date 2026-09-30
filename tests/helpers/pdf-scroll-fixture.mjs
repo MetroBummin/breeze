@@ -1,4 +1,4 @@
-export function fixturePdf(count=120){
+export function fixturePdf(count=120,{tallEvery=0}={}){
   const objects=['','', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
   const kids=[];
   for(let n=0;n<count;n++){
@@ -6,7 +6,8 @@ export function fixturePdf(count=120){
     const landscape=n%7===6;
     const lines=Array.from({length:26},(_,i)=>`1 0 0 1 50 ${landscape?560-i*18:740-i*24} Tm (Page ${n+1} line ${i+1}. Stable reading keeps every word in place.) Tj`).join('\n');
     const content=`BT /F1 13 Tf\n${lines}\nET`;
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${landscape?'792 612':'612 792'}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${stream} 0 R >>`);
+    const size=tallEvery&&(n+1)%tallEvery===0?'612 1400':landscape?'792 612':'612 792';
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${size}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${stream} 0 R >>`);
     objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
   }
   objects[0]='<< /Type /Catalog /Pages 2 0 R >>';

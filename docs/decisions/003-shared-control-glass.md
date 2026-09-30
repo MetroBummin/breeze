@@ -159,11 +159,11 @@ and reduced motion suppresses the bloom. Saved/cache hits retain normal glass.
 
 ## 1.6 Reader content adaptation
 
-Reader-specific writing content may use two rows when its actual container is
-650px or narrower. The shared Home/Wordbook dock remains unchanged. Tool targets
-stay 44px; tool options are positioned above the measured pill height. PDF
-page navigation uses the independent upper-left pill and vertical panel described
-below.
+Reader writing content stays in one bottom row at every supported
+container width. The pill narrows between the PDF navigation and settings slots;
+its tool strip scrolls horizontally while the reading-mode exit remains visible.
+Tool targets stay 44px and options are positioned above the measured pill height.
+Home/Wordbook dock geometry remains unchanged.
 
 ## Consistent task surfaces (2026-09-30)
 
@@ -198,9 +198,26 @@ Thumbnail virtualization uses the visible vertical range and a bounded buffer.
 The page pill and vertical panel share one surface whose width, height and corner
 radius transition. Contents never scale. Closed page controls disappear with the existing
 `chrome-hidden` state, with no second scroll owner. Reduced
-motion disables transitions. Closing releases thumbnail resources immediately.
+motion disables transitions. Closing retains inert thumbnail nodes for the 220ms exit motion, then releases them.
+Reopening cancels that cleanup; reduced motion cleans up immediately.
 
 PDF original mode has an explicit left-slot variant: back and page navigation
 share an 88px pill. The page control opens a full-height glass sidebar at the left edge without changing the slot or
 Reader width. The sidebar header repeats the entry icon to close it. Non-PDF slots retain their shared geometry. On narrow screens,
-writing tools keep their separate upper row.
+writing tools keep the same bottom row and scroll inside the pill.
+
+## Unified Reader glass and responsive writing (2026-10-01)
+
+The floating controls, PDF sidebar and Reader settings share
+`--control-glass-surface`, 19px blur and the same reflection family. Light control
+material uses 78 percent opacity for readable settings; Home and Memory controls
+use that same shared material. Lookup surfaces keep their existing tokens.
+Opaque fallback remains available without backdrop filtering.
+Sidebar entry and exit animate only translation and opacity at final size.
+
+All pills use a 50 percent viewport anchor. In narrow PDF containers (650px or
+less), expanded reading/writing adds a 22px translate to clear the left PDF slot.
+Collapsed reading removes that translate over 260ms and returns to viewport center.
+Reduced motion skips the translation.
+
+Task/import/edit dialogs, article preview and Home settings now share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.

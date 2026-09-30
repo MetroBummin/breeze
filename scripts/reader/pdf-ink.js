@@ -233,6 +233,8 @@ const BreezePdfInk = (()=>{
     inkTools.append(inkSeparator());
     const eraser=inkControl('지우개','M7.2 20.4 3.8 17a2 2 0 0 1 0-2.8l9.8-9.8a2 2 0 0 1 2.8 0l3.8 3.8a2 2 0 0 1 0 2.8l-9.4 9.4H7.2ZM8.7 10.7l6.1 6.1M7.2 20.4H21');
     eraser.dataset.inkMode='erase';eraser.onclick=()=>selectTool('erase');inkTools.append(eraser,inkSeparator());
+    // Keep the two essential writing tools visible before the compact strip scrolls.
+    inkTools.insertBefore(eraser,inkTools.querySelector('[data-ink-mode="highlighter"]'));
     for(const [label,path] of [
       ['실행 취소','M9 5 4 10l5 5M4 10h9a6 6 0 0 1 0 12'],
       ['다시 실행','m15 5 5 5-5 5m5-5h-9a6 6 0 0 0 0 12']

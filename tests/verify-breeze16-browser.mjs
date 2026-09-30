@@ -25,7 +25,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
   await page.addInitScript(()=>{window.breezeInkIPad=true;localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
   await page.goto(url);await page.evaluate(()=>homeReady);
-  await page.locator('#fileinput').setInputFiles({name:'Study.pdf',mimeType:'application/pdf',buffer:fixturePdf(120)});
+  await page.locator('#fileinput').setInputFiles({name:'Study.pdf',mimeType:'application/pdf',buffer:fixturePdf(120,{tallEvery:9})});
   await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
   try{await page.waitForSelector('.pdf-source-page canvas');}catch(error){console.log('OPEN FAILED',errors,await page.evaluate(()=>({body:document.body.className,session:originalSession&&{kind:originalSession.kind,settled:[...originalSession.settled]},html:document.getElementById('original-content').innerHTML.slice(0,1000)})));throw error;}
@@ -81,10 +81,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.ok(Math.abs(expanded.x)<2&&Math.abs(expanded.y)<2&&Math.abs(expanded.height-1180)<2,'Page sidebar fills the left edge');
   assert.equal(await page.locator('#pdf-page-control #pdf-page-navigation').count(),1);
   await page.locator('#pdf-navigation-toggle').click();
-  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false,'Same sidebar icon closes navigation');
+  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),true,'Sidebar stays mounted for its closing motion');
+  await page.locator('#pdf-page-navigation').waitFor({state:'hidden'});
   await page.locator('#pdf-page-button').click();
   await page.locator('#pdf-navigation-dismiss').click({position:{x:300,y:200}});
-  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false);
+  await page.locator('#pdf-page-navigation').waitFor({state:'hidden'});
   assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'Dismissal must not trigger lookup');
   await page.locator('[data-ink-toggle]').click();
   await page.evaluate(()=>goPdfPage(60));
@@ -105,6 +106,12 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.locator('.pdf-thumbnail-jump[aria-label="60페이지로 이동"]').click();
   await page.waitForFunction(()=>pdfCurrentPage()===60);
   await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').click();
+  await page.locator('.pdf-thumbnail-jump[aria-label="60페이지로 이동"] canvas').waitFor();
+  const ribbonOffset=await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').evaluate(button=>{
+    const ribbon=button.getBoundingClientRect(),paper=button.closest('.pdf-thumbnail').querySelector('.pdf-thumbnail-paper').getBoundingClientRect();
+    return {x:ribbon.left-paper.left,y:ribbon.top-paper.top};
+  });
+  assert.ok(Math.abs(ribbonOffset.x)<1&&Math.abs(ribbonOffset.y)<1,`Bookmark ribbon aligns with paper: ${JSON.stringify(ribbonOffset)}`);
   assert.ok(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)));
   await page.locator('#pdf-bookmarks-only').click();
   assert.equal(await page.locator('.pdf-thumbnail').count(),1,'Bookmark filter retains only bookmarked pages');
@@ -153,11 +160,19 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),61);
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'PDF reading also has page navigation');
   assert.equal(await page.locator('#readpill-title').textContent(),await page.evaluate(()=>curBook.title));
+  await page.evaluate(()=>readerNotices.reset());
   for(const width of [320,390,650]){
     await page.setViewportSize({width,height:844});
     await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(350);
     const [nav,pill,settings]=await Promise.all(['#reader-navigation','#readpill','#aafab'].map(id=>page.locator(id).boundingBox()));
     assert.ok(nav.x+nav.width+4<=pill.x&&pill.x+pill.width+4<=settings.x,'Combined PDF navigation must not overlap title or settings');
+    assert.ok(Math.abs(pill.x+pill.width/2-width/2-22)<2,'Expanded narrow reading pill keeps the 22px PDF slot offset');
+    await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-reading-dock.png`,clip:{x:0,y:684,width,height:160}});
+    await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(350);
+    const collapsed=await page.locator('#readpill').boundingBox();
+    assert.ok(Math.abs(collapsed.x+collapsed.width/2-width/2)<2,'Collapsed reading pill stays centered at narrow widths');
+    await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-collapsed-dock.png`,clip:{x:0,y:684,width,height:160}});
+    await page.evaluate(()=>expandReaderChrome());
   }
   // Narrow actual Reader containers, including the writing tools and open strip.
   await page.locator('[data-ink-toggle]').click();
@@ -165,13 +180,33 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    await page.evaluate(d=>{darkMode=d;applyDark();},dark);
    await page.setViewportSize({width,height});await page.evaluate(()=>expandReaderChrome());
    await page.waitForTimeout(420);
-   const rects=await page.evaluate(()=>[...document.querySelectorAll('#readback,#aafab,#pdf-page-button,.ink-pill-entry,.ink-pill-control')].filter(n=>n.getClientRects().length).map(n=>({id:n.id||n.getAttribute('aria-label'),x:n.getBoundingClientRect().x,r:n.getBoundingClientRect().right,w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height,y:n.getBoundingClientRect().top,b:n.getBoundingClientRect().bottom})));
+   const rects=await page.evaluate(()=>[...document.querySelectorAll('#readback,#aafab,#pdf-page-button,.ink-pill-entry,.ink-pill-control')].filter(n=>{
+     if(!n.getClientRects().length)return false;
+     const bar=n.closest('.ink-pill-toolbar');if(!bar)return true;
+     const button=n.getBoundingClientRect(),clip=bar.getBoundingClientRect();return button.left<clip.right&&button.right>clip.left;
+   }).map(n=>({id:n.id||n.getAttribute('aria-label'),x:n.getBoundingClientRect().x,r:n.getBoundingClientRect().right,w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height,y:n.getBoundingClientRect().top,b:n.getBoundingClientRect().bottom})));
    for(const r of rects){assert.ok(r.x>=0&&r.r<=width+1&&r.y>=0&&r.b<=height,`${width}: ${JSON.stringify(r)}`);assert.ok(r.w>=34&&r.h>=34,JSON.stringify(r));}
    const position=await page.locator('#pdf-page-button').boundingBox();
    assert.ok(position.x<100&&position.y>height-100,'Page button shares the bottom-left exit pill');
+   const [inkPill,navPill,aaPill]=await Promise.all(['#readpill','#pdf-page-control','#aafab'].map(id=>page.locator(id).boundingBox()));
+   assert.ok(Math.abs(inkPill.y+inkPill.height-navPill.y-navPill.height)<4&&Math.abs(inkPill.y+inkPill.height-aaPill.y-aaPill.height)<4,`${width}: writing pill stays on the bottom row`);
+   assert.ok(Math.abs(inkPill.x+inkPill.width/2-width/2-(width<=650?22:0))<2,`${width}: expanded writing pill follows the narrow PDF slot offset`);
+   assert.ok(navPill.x+navPill.width+4<=inkPill.x&&inkPill.x+inkPill.width+4<=aaPill.x,`${width}: writing pill stays between navigation and settings`);
+   if(!dark)await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-${height}-writing.png`});
+   if(!dark)await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-${height}-dock.png`,clip:{x:0,y:height-160,width,height:160}});
    await page.locator('#pdf-page-button').click();await page.waitForSelector('.pdf-thumbnail');
    await page.waitForFunction(()=>[...document.querySelectorAll('.pdf-thumbnail')].every(cell=>cell.querySelector('canvas')));
    await page.waitForTimeout(300);
+   const clipped=await page.locator('.pdf-thumbnail canvas').evaluateAll(canvases=>canvases.some(canvas=>{
+     const c=canvas.getBoundingClientRect(),paper=canvas.closest('.pdf-thumbnail-paper').getBoundingClientRect(),cell=canvas.closest('.pdf-thumbnail').getBoundingClientRect();
+     return Math.abs(c.width/c.height-Number(canvas.style.aspectRatio.split('/')[0])/Number(canvas.style.aspectRatio.split('/')[1]))>.01||c.height>180.5||c.left<paper.left-.5||c.right>paper.right+.5||c.top<cell.top-.5||c.bottom>cell.bottom+.5;
+   }));
+   assert.equal(clipped,false,'Portrait, landscape and tall source pages fit entirely without cropping');
+   const gaps=await page.locator('.pdf-thumbnail canvas').evaluateAll(canvases=>{
+     const rects=canvases.map(c=>c.getBoundingClientRect()).sort((a,b)=>a.top-b.top);
+     return rects.slice(1).map((r,i)=>r.top-rects[i].bottom);
+   });
+   assert.ok(gaps.every(gap=>gap>=19&&gap<=21),'Thumbnail rows follow paper height with only a small label and gap');
    const navBounds=await page.locator('#pdf-page-navigation').boundingBox();
    assert.ok(Math.abs(navBounds.x)<2&&Math.abs(navBounds.y)<2&&Math.abs(navBounds.height-height)<2,'Glass sidebar fills the left edge within viewport');
    assert.equal(await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollWidth>e.clientWidth),false,'No horizontal thumbnail scroll');
@@ -238,7 +273,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>switchReaderMode('text'));
   await page.waitForFunction(()=>!readerPillProgressHeld);
   const size=await page.evaluate(()=>{const before=fs;fontSize(1);return {before,after:fs};});assert.equal(size.after,size.before+1);
-  await page.evaluate(()=>{positions[curBook.id]={...posOf(curBook.id),p:1};returnHomeFromReader();renderHome();});
+  await page.evaluate(async()=>{const id=curBook.id;await returnHomeFromReader();positions[id]={...posOf(id),p:1};renderHome();});
   assert.ok(await page.locator('#v-home .library-completion').count()>0,'completed card badge');
   assert.deepEqual(errors,[]);
   console.log(engine.name()+': Breeze 1.6 page navigation/bookmarks/deletion/directions/responsive tools/settings/folders passed');

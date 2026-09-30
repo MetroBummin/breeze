@@ -28,7 +28,7 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 .task-close:hover{background:var(--sentence-glass-action-hover);}
 .task-surface button:focus-visible,#set-close:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:2px;}
 #wordbook-add-form>.task-close,#task-form>.task-close{margin:0;}
-/* Grouped settings keeps its opaque sheet and a blue sign-in primary exception. */
+/* Settings keeps opaque content groups and a blue sign-in primary exception. */
 #settings-modal :is(.sm-mini,.sm-linkish,.settings-actions-group>button,.sm-recovery-actions button,.sm-device-move button){min-height:44px;font-size:14px;}
 #settings-modal .sm-mini{border-radius:12px;}
 #settings-modal .sm-btn{min-height:48px;border-radius:16px;}
@@ -36,7 +36,10 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #settings-modal .set-label{flex:1 1 160px;min-width:0;}
 #settings-modal .set-row .sm-mini{flex-shrink:0;max-width:100%;white-space:normal;}
 /* Aa actions use the same quiet material; switches retain the small visual track. */
-#aa-pop{box-sizing:border-box;width:min(300px,calc(100vw - 24px));padding:10px 12px;background:var(--sentence-glass-solid);border-color:var(--sentence-glass-line);border-radius:18px;box-shadow:var(--sentence-glass-shadow);color:var(--sentence-glass-ink);}
+#aa-pop{box-sizing:border-box;isolation:isolate;width:min(300px,calc(100vw - 24px));padding:10px 12px;background:var(--sentence-glass-solid);border-color:var(--sentence-glass-line);border-radius:18px;box-shadow:var(--sentence-glass-shadow-pill);color:var(--sentence-glass-ink);}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#aa-pop{background:var(--control-glass-surface);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}}
+#aa-pop::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;background:var(--control-light-reflection);box-shadow:var(--control-light-edge);}
+body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.025) 46%,rgba(255,255,255,.07) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.14);}
 #aa-pop .aa-row{gap:8px;min-height:44px;padding:0;}
 #aa-pop [hidden]{display:none!important;}
 #aa-pop .aa-label{color:var(--sentence-glass-secondary);font-size:12px;white-space:nowrap;}
@@ -61,3 +64,46 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 @media(max-width:420px){#am-card h2,#ed-card h2,#wordbook-add-form h2,#task-title{font-size:20px;}}
 @media(max-height:500px){#add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog{padding:18px;}#am-card .am-choices{margin-top:12px;}#am-card .am-big{padding:10px;}#settings-modal #set-card{padding-top:48px;}}
 @media(prefers-reduced-motion:reduce){#add-modal,#add-modal #am-card{transition:none;}}
+
+/* Small metadata tasks use a compact form; book import/edit retain their approved geometry. */
+#wordbook-add-dialog,#task-dialog{width:min(380px,calc(100vw - 32px));padding:20px;border-radius:20px;}
+#wordbook-add-form,#task-form{gap:12px;}
+#wordbook-add-form h2,#task-title{margin:0;min-height:32px;font:600 18px/32px var(--ui);letter-spacing:-.25px;}
+#wordbook-add-form label,#task-input-label{gap:6px;font:500 12px/18px var(--ui);color:var(--sentence-glass-secondary);}
+#task-description{font-size:12px;line-height:1.6;}
+#wordbook-add-form input,#task-input{min-height:44px;padding:9px 10px;border-radius:10px;}
+#wordbook-add-form>div,.task-actions{gap:8px;}
+#wordbook-add-form>div button,.task-actions button{min-height:44px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:500;}
+#wordbook-add-form .task-close,#task-form .task-close{top:12px;right:12px;border:0;background:transparent;}
+#wordbook-add-form .task-close:hover,#task-form .task-close:hover{background:var(--sentence-glass-action-hover);}
+/* Match the lookup and Reader star proportions, with separate 44px touch targets. */
+#vstars{padding:4px 0;gap:8px;}
+#vstars .stbtn{position:relative;min-width:44px;min-height:36px;height:36px;padding:4px;border-radius:12px;}
+#vstars .stbtn::before{content:"";position:absolute;inset:-4px 0;border-radius:inherit;}
+#vsort-menu summary,#vbooks summary{border-top:4px solid transparent;border-bottom:4px solid transparent;background-clip:padding-box;border-radius:14px;padding:0 10px;font-size:12px;gap:8px;}
+.wordbook-filters{padding:10px 12px;gap:2px;border:0;background:transparent;}
+.wordbook-sort,.wordbook-filter-row{gap:10px;}
+#v-vocab .wordbook-brand{gap:10px;margin-bottom:22px;}
+#v-vocab h1{font-size:22px;font-weight:600;}
+#v-vocab .vword{font-size:16px;font-weight:500;}
+#v-vocab .vko{font-size:14px;}
+#v-vocab .chip{min-width:44px;min-height:36px;padding:4px 8px;border-radius:12px;font:400 11px var(--ui);letter-spacing:2px;}
+#v-vocab .chip::after{inset:-4px 0;}
+#vbook-options{box-sizing:border-box;width:min(220px,calc(100vw - 64px));}
+
+/* Dialogs share Reader settings' fill, blur and reflection rather than separate glass recipes. */
+:is(#am-card,#ed-card,#wordbook-add-dialog,#task-dialog,#article-preview),#settings-modal #set-card{background:var(--sentence-glass-solid);background-image:var(--control-light-reflection);}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog,#article-preview,#settings-modal #set-card{background-color:var(--control-glass-surface);background-image:var(--control-light-reflection);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}
+}
+body.dark :is(#am-card,#ed-card,#wordbook-add-dialog,#task-dialog,#article-preview),body.dark #settings-modal #set-card{background-image:linear-gradient(145deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.025) 46%,rgba(255,255,255,.07) 100%);}
+#primary-nav #nav-vocab img,#home-controls #nav-vocab img{display:block;width:28px;height:28px;object-fit:contain;border-radius:7px;flex:none;}
+#vstars{flex:1;max-width:476px;min-width:0;}
+#vstars .stbtn{flex:1;min-width:44px;}
+.memory-chevron{display:block;width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease;}
+#vsort-menu summary,#vbooks summary{align-items:center;}
+#vsort-menu[open] .memory-chevron,#vbooks[open] .memory-chevron{transform:rotate(180deg);}
+@media(prefers-reduced-motion:reduce){.memory-chevron{transition:none;}}
+/* Home Memory is the logo itself, cropped to the shared circular button. */
+#nav-vocab.control-circle{overflow:hidden;}
+#primary-nav #nav-vocab.control-circle img,#home-controls #nav-vocab.control-circle img{position:absolute;inset:0;width:100%;height:100%;max-width:none;border-radius:50%;object-fit:cover;}

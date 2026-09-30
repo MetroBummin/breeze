@@ -78,13 +78,13 @@ body.dark #add-modal #am-card::before{background:linear-gradient(145deg,rgba(255
 #home-controls>#nav-home,#home-controls>#nav-vocab{display:none;}
 #home-resume-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 #home-resume:disabled{cursor:default;}
-#v-home .sec-head h2{font:700 28px/34px 'Noto Sans KR',var(--ui);letter-spacing:0;}
+#v-home .sec-head h2{font:600 22px/30px var(--ui);letter-spacing:0;}
 #v-home .section-link{display:flex;align-items:center;gap:8px;border:0;padding:0;background:none;color:var(--settings-ink);font:inherit;letter-spacing:inherit;cursor:pointer;text-align:left;}
 #v-home .section-link svg{width:20px;height:20px;flex:none;transform:translateY(1px);fill:none;stroke:var(--settings-muted);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
 
 #home-controls{display:none;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #home-controls{display:block;}
-#v-casuals h1,#v-longform h1{font:700 28px/34px 'Noto Sans KR',var(--ui);letter-spacing:0;color:var(--settings-ink);}
+#v-casuals h1,#v-longform h1{font:600 22px/30px var(--ui);letter-spacing:0;color:var(--settings-ink);}
 #v-casuals,#v-longform{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
 /* Animate the surface boundary; the words inside never stretch into a page. */
 html.home-resuming::view-transition-new(root){animation:home-glass-open .34s cubic-bezier(.2,.75,.25,1) both;mix-blend-mode:normal;}
@@ -120,3 +120,7 @@ html:is(.home-resuming,.home-returning)::view-transition-group(reader-control){
 }
 html:is(.home-resuming,.home-returning)::view-transition-old(reader-control),
 html:is(.home-resuming,.home-returning)::view-transition-new(reader-control){animation-duration:.16s;mix-blend-mode:normal;}
+
+/* Shelf headings and cards share one left edge and vertical rhythm. */
+#v-casuals .casual-library-head,#v-longform .head{margin:0;gap:10px;}
+#v-casuals .cnt,#v-longform .cnt{font:400 12px/18px var(--ui);}

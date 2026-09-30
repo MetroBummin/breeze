@@ -40,18 +40,18 @@
   <link rel="stylesheet" href="styles/fonts.css?v=211a3f46">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=bec14f97">
+  <link rel="stylesheet" href="styles/tokens.css?v=90166b83">
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
-  <link rel="stylesheet" href="styles/home.css?v=e2fc1659">
+  <link rel="stylesheet" href="styles/home.css?v=608e679d">
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=c52dc76a">
-  <link rel="stylesheet" href="styles/reader.css?v=5917539b">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=a2b4e75c">
+  <link rel="stylesheet" href="styles/reader.css?v=846a5cef">
   <link rel="stylesheet" href="styles/dictionary.css?v=74247169">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=26bcfce1">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=234eeec9">
+  <link rel="stylesheet" href="styles/home-shell.css?v=1a46bd69">
   <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -106,7 +106,7 @@
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=0c88d224"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=c6e17d1f"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=65e65dc3"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=6a4f39e4"></script>
   <script defer src="scripts/reader/pdf-original.js?v=506755fb"></script>
   <script defer src="scripts/reader/epub-original.js?v=be19a7b6"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
@@ -121,15 +121,15 @@
   <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=9298a976"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=ed632eef"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=44e29929"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
-  <script defer src="scripts/library/folders.js?v=c7747867"></script>
+  <script defer src="scripts/library/folders.js?v=94d238be"></script>
   <script defer src="scripts/main.js?v=b42953a9"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=611a0ccb">
-  <link rel="stylesheet" href="styles/surfaces.css?v=44945e49">
+  <link rel="stylesheet" href="styles/study.css?v=ecbea728">
+  <link rel="stylesheet" href="styles/surfaces.css?v=3f467328">
 </head>
 <body>
 <div id="app">
@@ -144,7 +144,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg>
       <span data-i18n="nav.home">Home</span>
     </button>
-    <button class="navbtn" id="nav-vocab" type="button" onclick="show('vocab')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H6a4 4 0 0 1-.2-8 6 6 0 0 1 11.6-1.5A4.8 4.8 0 0 1 19 19Z"/><path d="m12.6 9.5-3 4.4h3l-1.2 3.4"/></svg><span data-i18n="nav.words">Breeze Memory</span></button>
+    <button class="navbtn" id="nav-vocab" type="button" onclick="show('vocab')"><img src="assets/brand/thunderhead-round.png" alt="" width="28" height="28"><span data-i18n="nav.words">Breeze Memory</span></button>
     <button class="navbtn" id="nav-settings" type="button" onclick="openSettings()">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-2 .9-2.1-.6-2.5 4.2 1.6 1.7v2.3L2.3 15.5l2.5 4.2 2.1-.6 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.6 2.5-4.2-1.6-1.7v-2.3l1.6-1.7-2.5-4.2-2.1.6-2-.9-.6-2.3z" transform="translate(0 -1) scale(1 .96)"/><circle cx="12" cy="12" r="3"/></svg>
       <span data-i18n="nav.settings">Settings</span>
@@ -394,7 +394,7 @@
   <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Breeze Memory</h1></header>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">
-    <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><span aria-hidden="true">⌄</span></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><span aria-hidden="true">⌄</span></summary><div id="vbook-options"></div></details></div>
+    <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><div id="vbook-options"></div></details></div>
     <div class="wordbook-filter-row"><span>별점</span><div id="vstars" role="group" aria-label="별점 필터"><button class="stbtn" type="button" data-s="1" data-status="1" aria-label="별 1개 필터" aria-pressed="false">★</button><button class="stbtn" type="button" data-s="2" data-status="2" aria-label="별 2개 필터" aria-pressed="false">★★</button><button class="stbtn" type="button" data-s="3" data-status="3" aria-label="별 3개 필터" aria-pressed="false">★★★</button></div></div>
   </div>
   <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
@@ -559,7 +559,7 @@
       <button id="pdfzoom-in" type="button" title="PDF 확대" aria-label="PDF 확대" onclick="changeOriginalZoom(1)">+</button>
     </div>
   </div>
-  <div class="aa-star-settings"><span class="aa-label">단어 색칠</span><div class="aa-legend" role="group" aria-label="별점별 단어 색칠 켜기와 끄기"></div></div>
+  <div class="aa-star-settings"><div class="aa-star-heading"><span class="aa-label">단어 색칠</span><span id="aa-star-hint">탭해서 켜고 끄기</span></div><div class="aa-legend" role="group" aria-label="별점별 단어 색칠 켜기와 끄기" aria-describedby="aa-star-hint"></div></div>
 </div>
 <dialog id="task-dialog" class="task-surface" aria-labelledby="task-title" aria-describedby="task-description">
   <form id="task-form">

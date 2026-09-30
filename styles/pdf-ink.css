@@ -2,7 +2,7 @@
 .pdf-source-page > .pdf-ink-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;mix-blend-mode:multiply;}
 #readpill.ink-pill-ready{justify-content:flex-start;gap:0;padding-inline:9px;}
 #readpill.ink-pill-ready #readpill-title{flex:1 1 150px;max-width:none;text-align:left;}
-#readpill.ink-pill-ready{transition:width .38s cubic-bezier(.2,.75,.25,1),height .38s cubic-bezier(.2,.75,.25,1),
+#readpill.ink-pill-ready{transition:translate .26s cubic-bezier(.2,.75,.25,1),width .38s cubic-bezier(.2,.75,.25,1),height .38s cubic-bezier(.2,.75,.25,1),
   padding .38s cubic-bezier(.2,.75,.25,1),border-radius .38s cubic-bezier(.2,.75,.25,1),box-shadow .34s ease;}
 #readpill.ink-pill-ready :is(#modefab,#readpill-title){transition:width .32s cubic-bezier(.2,.75,.25,1),
   max-width .32s cubic-bezier(.2,.75,.25,1),flex-basis .32s cubic-bezier(.2,.75,.25,1),

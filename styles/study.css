@@ -6,6 +6,7 @@
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback{z-index:76;width:44px;height:44px;border:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::before,
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::after{display:none;}
+#readback svg{width:22px;height:22px;stroke-width:2;}
 #reader-navigation:has(#pdf-page-button[aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
 #readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){max-width:calc(100% - 180px);}
 #readchrome:has(#pdf-page-button[aria-expanded=true]){z-index:75;}
@@ -16,25 +17,33 @@
 /* One surface changes shape; thumbnail text and canvases are never scaled. */
 #pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:88px;height:44px;box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:22px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
 #pdf-page-button{position:absolute;right:0;bottom:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
-#pdf-page-button svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+#pdf-page-button svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 #pdf-page-button circle,#pdf-navigation-toggle circle{fill:currentColor;stroke:none;}
-#pdf-page-control:has(#pdf-page-button[aria-expanded=true]){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-15px - env(safe-area-inset-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;backdrop-filter:blur(18px) saturate(115%);-webkit-backdrop-filter:blur(18px) saturate(115%);background:var(--pdf-sidebar-glass);box-shadow:4px 0 20px rgba(0,0,0,.08);animation:pdf-sidebar-reveal 200ms ease-out;}
-#pdf-page-control:has(#pdf-page-button[aria-expanded=true])::before{display:none;}
+#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-15px - env(safe-area-inset-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow-pill);}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){background:var(--control-glass-surface);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}}
+#pdf-page-control:has(#pdf-page-button[aria-expanded=true]){animation:pdf-sidebar-reveal 220ms cubic-bezier(.2,.75,.25,1) both;}
+#pdf-page-control.pdf-navigation-closing{animation:pdf-sidebar-dismiss 220ms cubic-bezier(.45,0,.8,.35) both;pointer-events:none;}
+#reader-navigation:has(.pdf-navigation-closing) #readback,
+#pdf-page-control.pdf-navigation-closing #pdf-page-button{visibility:hidden;pointer-events:none;}
+#readchrome:has(.pdf-navigation-closing){z-index:75;}
+#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing)::before{opacity:.45;}
 #pdf-page-button[aria-expanded=true]{opacity:0;visibility:hidden;pointer-events:none;}
 body.chrome-hidden #reader-navigation{visibility:hidden;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s ease,transform .3s ease,visibility 0s .3s;}
 body.chrome-hidden #reader-navigation #readback{transform:none;}
+body.chrome-hidden #readchrome #readpill:not(.ink-pill-active){left:50%;}
 #pdf-navigation-dismiss{position:absolute;inset:0;z-index:74;width:100%;height:100%;border:0;padding:0;background:transparent;}
 #pdf-page-navigation{position:absolute;inset:0;width:calc(var(--pdf-navigation-width) - 1px);height:var(--pdf-navigation-height);box-sizing:border-box;padding:calc(env(safe-area-inset-top) + 8px) 8px calc(env(safe-area-inset-bottom) + 8px);color:inherit;display:flex;flex-direction:column;overflow:hidden;animation:pdf-navigation-reveal 220ms ease;}
 @keyframes pdf-sidebar-reveal{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pdf-sidebar-dismiss{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-12px)}}
 @keyframes pdf-navigation-reveal{from{opacity:0}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-navigation{animation:none;}}
+@media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-control.pdf-navigation-closing,#pdf-page-navigation{animation:none;}}
 .pdf-navigation-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:8px;padding-bottom:0;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
 .pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;}
 .pdf-navigation-head>button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 #pdf-navigation-toggle{background:var(--sentence-glass-action);}
-#pdf-navigation-toggle svg{width:22px;height:22px;}
-#pdf-bookmarks-only svg{width:15px;height:20px;}
+#pdf-navigation-toggle svg{width:22px;height:22px;stroke-width:2;}
+#pdf-bookmarks-only svg{width:20px;height:26px;stroke-width:1.8;}
 #pdf-bookmarks-only[aria-pressed=true]{background:var(--sentence-glass-action);}
 #pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
 #pdf-thumbnail-strip{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;}
@@ -44,13 +53,14 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 #pdf-thumbnail-strip::-webkit-scrollbar-button{display:none;}
 @supports not selector(::-webkit-scrollbar){#pdf-thumbnail-strip{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent;}}
 .pdf-thumbnail-track{position:relative;width:100%;}
-.pdf-thumbnail{position:absolute;left:0;right:0;height:216px;}
-.pdf-thumbnail-jump{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;border:0;border-radius:12px;background:transparent;color:inherit;overflow:hidden;cursor:pointer;}
+.pdf-thumbnail{position:absolute;left:0;right:0;}
+.pdf-thumbnail-frame{position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;width:max-content;max-width:calc(100% - 8px);}
+.pdf-thumbnail-jump{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;padding:0;border:0;border-radius:12px;background:transparent;color:inherit;cursor:pointer;}
 .pdf-thumbnail-paper{position:relative;line-height:0;border-radius:2px;overflow:hidden;background:var(--source-page);box-shadow:0 1px 3px rgba(0,0,0,.10);}
 .pdf-thumbnail-paper canvas{display:block;}
 .pdf-thumbnail-jump[aria-current=true] .pdf-thumbnail-paper::after{content:"";position:absolute;inset:0;background:rgba(60,64,68,.28);pointer-events:none;}
-.pdf-thumbnail-more{position:absolute;left:50%;top:calc(50% - 9px);transform:translate(-50%,-50%);width:44px;height:44px;padding:14px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--sentence-glass-muted);cursor:pointer;}
-.pdf-thumbnail-actions{position:absolute;left:50%;top:calc(50% - 9px);transform:translate(-50%,-50%);width:88px;height:44px;display:flex;isolation:isolate;animation:pdf-navigation-reveal 140ms ease;}
+.pdf-thumbnail-more{position:absolute;left:50%;top:calc(50% - 6px);transform:translate(-50%,-50%);width:44px;height:44px;padding:14px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--sentence-glass-muted);cursor:pointer;}
+.pdf-thumbnail-actions{position:absolute;left:50%;top:calc(50% - 6px);transform:translate(-50%,-50%);width:88px;height:44px;display:flex;isolation:isolate;animation:pdf-navigation-reveal 140ms ease;}
 .pdf-thumbnail-actions::before{content:"";position:absolute;inset:6px 0;z-index:-1;background:var(--sentence-glass-solid);border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,.10);}
 .pdf-thumbnail-actions[hidden]{display:none;}
 .pdf-thumbnail-actions button{width:44px;height:44px;padding:13px;border:0;background:transparent;color:var(--sentence-glass-muted);cursor:pointer;}
@@ -61,17 +71,20 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-thumbnail-more::before{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--sentence-glass-solid);box-shadow:0 1px 4px rgba(0,0,0,.10);}
 .pdf-thumbnail-more svg{position:relative;width:16px;height:16px;fill:currentColor;}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
-.pdf-thumbnail-jump canvas{max-width:calc(var(--pdf-navigation-width) - 32px);max-height:180px;object-fit:contain;}
-.pdf-thumbnail-jump span{font:500 10px var(--ui);line-height:18px;color:var(--sentence-glass-muted);}
-.pdf-thumbnail-bookmark{position:absolute;left:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-muted);display:grid;place-items:start center;padding:0;cursor:pointer;}
-.pdf-thumbnail-bookmark svg{width:14px;height:22px;fill:var(--sentence-glass-solid);stroke:currentColor;stroke-width:1.5;}
+.pdf-thumbnail-jump canvas{display:block;max-width:100%;object-fit:contain;}
+.pdf-thumbnail-jump span{font:500 9px var(--ui);line-height:12px;color:var(--sentence-glass-muted);}
+.pdf-thumbnail-bookmark{position:absolute;left:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
+.pdf-thumbnail-bookmark svg{width:20px;height:28px;fill:var(--sentence-glass-solid);stroke:currentColor;stroke-width:1.8;}
 .pdf-thumbnail-bookmark[aria-pressed=true]{color:var(--bookmark-ink);}
 .pdf-thumbnail-bookmark[aria-pressed=true] svg{fill:currentColor;}
 .pdf-page-offstage{display:none!important;}
 .aa-star-settings{margin-top:8px;padding-top:4px;}
-.aa-star-settings>.aa-label{display:block;font-size:12px;margin-bottom:4px;}
-.aa-legend{display:flex;flex-direction:row;gap:8px;margin:0;padding:0;border:0;}
-#aa-pop .aa-legend .stbtn{min-width:44px;min-height:44px;}
+.aa-star-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin-bottom:4px;}
+.aa-star-heading .aa-label{font-size:12px;}
+#aa-star-hint{font:400 10px var(--ui);color:var(--sentence-glass-muted);}
+.aa-legend{display:flex;flex-direction:row;gap:8px;margin:0;padding:4px 0;border:0;}
+#aa-pop .aa-legend .stbtn{position:relative;min-width:44px;min-height:36px;height:36px;}
+#aa-pop .aa-legend .stbtn::before{content:"";position:absolute;inset:-4px 0;border-radius:inherit;}
 #aa-pop{max-height:calc(100dvh - 104px);max-width:calc(100vw - 24px);overflow-y:auto;}
 .aa-seg button[aria-pressed=true]{background:var(--sentence-glass-action);color:var(--brand);}
 #p-mark:disabled{opacity:.5;cursor:default;}
@@ -101,15 +114,26 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .library-completion{position:absolute!important;top:8px!important;right:8px!important;left:auto!important;bottom:auto!important;z-index:5;display:flex!important;gap:3px;align-items:center;padding:4px 7px;border-radius:12px;background:var(--sentence-glass-solid);color:var(--brand);font:600 10px var(--ui);transform:none!important;}
 .library-completion svg{width:17px;height:17px;}
 /* The writing pill contains tools only; page navigation shares the bottom-left exit pill. */
-#readpill.ink-pill-active{bottom:0;top:auto;transform:translateX(-50%);width:calc(100% - 124px);max-width:340px;height:auto;min-height:48px;flex-wrap:wrap;justify-content:center;gap:2px;padding:4px 8px;}
+#readpill.ink-pill-active{bottom:0;top:auto;transform:translateX(-50%);width:calc(100% - 124px);max-width:340px;height:52px;min-height:0;flex-wrap:nowrap;justify-content:center;gap:0;padding:4px;}
 #readpill.ink-pill-active :is(#modefab,#readpill-title,.ink-pill-mini,.ink-pill-mode-separator,.completion-badge){display:none!important;}
-#readpill.ink-pill-active .ink-pill-toolbar{display:contents;}
+#readpill.ink-pill-active .ink-pill-toolbar{display:flex;flex:1 1 auto;min-width:0;max-width:none;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
 #readpill.ink-pill-active .ink-pill-toolbar .ink-pill-separator{display:none;}
 #readpill .ink-pill-toolbar .ink-pill-control,#readpill .ink-pill-entry{width:44px;height:44px;flex:none;}
 @container(max-width:650px){
-  #readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){left:calc(50% + 22px);}
-  #readpill.ink-pill-active{bottom:54px;width:calc(100% - 24px);max-width:340px;border-radius:22px;}
+  body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readpill{translate:22px 0;}
+  #readpill.ink-pill-active{left:50%;bottom:0;width:min(340px,calc(100% - 180px));max-width:none;border-radius:26px;}
 }
 .pdf-navigation-head{margin-bottom:8px;}
 #aa-pop{touch-action:pan-y;}
 @media(prefers-reduced-motion:reduce){#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-navigation{animation:none;}}
+
+/* Shelf actions are visually light while each target remains 44px tall. */
+.library-folder-controls{gap:4px;margin:8px 0 12px;}
+.library-folder-controls>.breeze-folder-picker{flex:0 1 240px;}
+.library-folder-controls>.breeze-folder-picker>summary{border:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-radius:14px;background-clip:padding-box;padding:0 10px;font-size:12px;}
+.library-folder-controls .breeze-folder-name{font-size:12px;}
+.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary{border:0;background:transparent;}
+.library-folder-controls :is(.library-folder-add,.library-folder-menu>summary) svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
+.library-folder-controls .library-folder-menu>summary svg{fill:currentColor;stroke:none;}
+.library-folder-controls .library-folder-actions button{font-size:12px;border:0;background:transparent;}
+.library-folder-controls .library-folder-actions button:hover{background:var(--sentence-glass-action-hover);}
