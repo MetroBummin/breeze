@@ -2,15 +2,15 @@
 .pdf-source-page > .pdf-ink-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;mix-blend-mode:multiply;}
 #readpill.ink-pill-ready{justify-content:flex-start;gap:0;padding-inline:9px;}
 #readpill.ink-pill-ready #readpill-title{flex:1 1 150px;max-width:none;text-align:left;}
-#readpill.ink-pill-ready{transition:translate .26s cubic-bezier(.2,.75,.25,1),width .38s cubic-bezier(.2,.75,.25,1),height .38s cubic-bezier(.2,.75,.25,1),
-  padding .38s cubic-bezier(.2,.75,.25,1),border-radius .38s cubic-bezier(.2,.75,.25,1),box-shadow .34s ease;}
-#readpill.ink-pill-ready :is(#modefab,#readpill-title){transition:width .32s cubic-bezier(.2,.75,.25,1),
-  max-width .32s cubic-bezier(.2,.75,.25,1),flex-basis .32s cubic-bezier(.2,.75,.25,1),
-  margin .32s cubic-bezier(.2,.75,.25,1),padding .32s cubic-bezier(.2,.75,.25,1),opacity .18s ease;}
+#readpill.ink-pill-ready #readpill-title{transition:width var(--reader-chrome-duration) var(--reader-chrome-ease),
+  max-width var(--reader-chrome-duration) var(--reader-chrome-ease),flex-basis var(--reader-chrome-duration) var(--reader-chrome-ease),
+  margin var(--reader-chrome-duration) var(--reader-chrome-ease),padding var(--reader-chrome-duration) var(--reader-chrome-ease),opacity .18s ease,visibility 0s;}
 #readpill .ink-pill-entry,#readpill .ink-pill-mini{position:relative;z-index:2;flex:none;
   display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;
   border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;}
 #readpill .ink-pill-entry[hidden],#readpill .ink-pill-mini[hidden]{display:none;}
+#readpill .ink-pill-entry{overflow:hidden;opacity:1;visibility:visible;
+  transition:width var(--reader-chrome-duration) var(--reader-chrome-ease),opacity .18s ease,visibility 0s;}
 #readpill .ink-pill-entry>span{position:absolute;display:grid;place-items:center;transition:opacity .2s ease,transform .32s cubic-bezier(.2,.75,.25,1);}
 #readpill .ink-pill-entry svg{width:22px;height:22px;}
 #readpill .ink-entry-read{opacity:0;transform:rotate(-25deg) scale(.8);}
@@ -45,7 +45,8 @@
 #readpill.ink-pill-active #readpill-title{flex:0 1 0;max-width:0;margin:0;padding:0;opacity:0;}
 #readpill.ink-pill-active .ink-pill-toolbar{max-width:280px;flex:0 1 auto;overflow-x:auto;scrollbar-width:none;opacity:1;pointer-events:auto;}
 #readpill.ink-pill-active .ink-pill-mode-separator{display:block;}
-body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entry{display:none;}
+body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entry{width:0;opacity:0;visibility:hidden;pointer-events:none;
+  transition-delay:0s,0s,var(--reader-chrome-duration);}
 /* Writing never enters compact chrome; read-mode entry still collapses above. */
 @media(max-width:700px){
   #readpill.ink-pill-active{width:min(340px,calc(100vw - 100px));gap:2px;padding-inline:5px;}
@@ -55,7 +56,7 @@ body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entr
 }
 @media(prefers-reduced-motion:reduce){
   #readpill.ink-pill-ready,#readpill.ink-pill-ready :is(#modefab,#readpill-title),
-  #readpill .ink-pill-toolbar,#readpill .ink-pill-entry>span{transition-duration:.01ms;}
+  #readpill .ink-pill-toolbar,#readpill .ink-pill-entry,#readpill .ink-pill-entry>span{transition-duration:.01ms;transition-delay:0s;}
 }
 
 /* Save feedback stays accessible; only failures need an extra visible control. */
