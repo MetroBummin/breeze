@@ -43,7 +43,7 @@ function assignLibraryFolder(bookId,id){
   return saveLibraryFolders(next);
 }
 function renderFolderControls(){
-  for(const hostId of ['v-home','v-casuals','v-longform']){
+  for(const hostId of ['v-casuals','v-longform']){
     const host=document.getElementById(hostId);if(!host)continue;
     let bar=host.querySelector('.library-folder-controls');
     if(!bar){bar=document.createElement('div');bar.className='library-folder-controls';host.prepend(bar);}
@@ -53,15 +53,24 @@ function renderFolderControls(){
       const option=new Option(folder.name,folder.id);select.add(option);
     }
     select.value=activeLibraryFolder;select.onchange=()=>changeLibraryFolder(select.value);bar.append(select);
-    const add=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=()=>{button.focus({preventScroll:true});return action();};bar.append(button);};
-    add('＋ 카테고리',async()=>{const name=await breezeTaskDialog({title:'새 카테고리',input:true});if(name)createLibraryFolder(name);});
+    const add=document.createElement('button');add.type='button';add.className='library-folder-add';add.textContent='＋';add.setAttribute('aria-label','카테고리 추가');add.title='카테고리 추가';
+    add.onclick=async()=>{add.focus({preventScroll:true});const name=await breezeTaskDialog({title:'새 카테고리',input:true});if(name)createLibraryFolder(name);};bar.append(add);
     const folder=libraryFolders.folders.find(f=>f.id===activeLibraryFolder);
     if(folder){
-      add('이름 변경',async()=>{const name=await breezeTaskDialog({title:'카테고리 이름 변경',input:true,value:folder.name});if(name)renameLibraryFolder(folder.id,name);});
-      add('삭제',async()=>{if(await breezeTaskDialog({title:'카테고리만 삭제할까요?',description:'책과 읽기 기록은 그대로 남아요.',action:'삭제',danger:true}))deleteLibraryFolder(folder.id);});
+      const menu=document.createElement('details');menu.className='library-folder-menu';
+      const summary=document.createElement('summary');summary.textContent='⋯';summary.setAttribute('aria-label','카테고리 관리');summary.title='카테고리 관리';
+      const actions=document.createElement('div');actions.className='library-folder-actions';
+      const action=(label,run)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=async()=>{menu.open=false;summary.focus({preventScroll:true});await run();};actions.append(button);};
+      action('이름 변경',async()=>{const name=await breezeTaskDialog({title:'카테고리 이름 변경',input:true,value:folder.name});if(name&&renameLibraryFolder(folder.id,name)){const next=host.querySelector('.library-folder-menu summary');if(next instanceof HTMLElement)next.focus({preventScroll:true});}});
+      action('카테고리 삭제',async()=>{if(await breezeTaskDialog({title:'카테고리만 삭제할까요?',description:'책과 읽기 기록은 그대로 남아요.',action:'삭제',danger:true})&&deleteLibraryFolder(folder.id)){const next=host.querySelector('.library-folder-controls select');if(next instanceof HTMLElement)next.focus({preventScroll:true});}});
+      menu.append(summary,actions);menu.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();menu.open=false;summary.focus({preventScroll:true});}});bar.append(menu);
     }
   }
 }
+document.addEventListener('click',event=>{
+  if(!(event.target instanceof Node))return;
+  for(const menu of document.querySelectorAll('.library-folder-menu[open]'))if(menu instanceof HTMLDetailsElement&&!menu.contains(event.target))menu.open=false;
+});
 function renderBookFolderChoice(book){
   let select=document.getElementById('ed-folder');
   if(!(select instanceof HTMLSelectElement)){

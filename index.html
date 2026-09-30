@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=56b4618c">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=0814424d">
+  <link rel="stylesheet" href="styles/wordbook.css?v=cb28be41">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=8d05d582">
   <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
@@ -85,7 +85,7 @@
   <script defer src="scripts/reader/pdf-pinch.js?v=ec388b55"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=1444caaf"></script>
+  <script defer src="scripts/library/library.js?v=fdfb4607"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
   <script defer src="scripts/library/book-edit.js?v=744833d9"></script>
   <script defer src="scripts/library/longreads.js?v=2e095add"></script>
@@ -123,13 +123,13 @@
   <script defer src="scripts/reader/study-preferences.js?v=39def6c4"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=75ae5757"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
-  <script defer src="scripts/library/folders.js?v=46c23586"></script>
+  <script defer src="scripts/library/folders.js?v=b8557bad"></script>
   <script defer src="scripts/main.js?v=b42953a9"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=6e6bd54a">
-  <link rel="stylesheet" href="styles/surfaces.css?v=c2545aee">
+  <link rel="stylesheet" href="styles/study.css?v=d71152e3">
+  <link rel="stylesheet" href="styles/surfaces.css?v=12cf3a71">
 </head>
 <body>
 <div id="app">
@@ -391,8 +391,8 @@
   <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Breeze Memory</h1></header>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">
-    <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><span aria-hidden="true">⌄</span></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details></div>
-    <div class="wordbook-filter-row"><span>별점</span><div id="vstars" role="group" aria-label="별점 필터"><button type="button" data-status="1" aria-label="별 1개 필터" aria-pressed="false">★</button><button type="button" data-status="2" aria-label="별 2개 필터" aria-pressed="false">★★</button><button type="button" data-status="3" aria-label="별 3개 필터" aria-pressed="false">★★★</button></div><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><span aria-hidden="true">⌄</span></summary><div id="vbook-options"></div></details></div>
+    <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><span aria-hidden="true">⌄</span></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><span aria-hidden="true">⌄</span></summary><div id="vbook-options"></div></details></div>
+    <div class="wordbook-filter-row"><span>별점</span><div id="vstars" role="group" aria-label="별점 필터"><button type="button" data-status="1" aria-label="별 1개 필터" aria-pressed="false">★</button><button type="button" data-status="2" aria-label="별 2개 필터" aria-pressed="false">★★</button><button type="button" data-status="3" aria-label="별 3개 필터" aria-pressed="false">★★★</button></div></div>
   </div>
   <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
   <div id="vtablewrap"></div>

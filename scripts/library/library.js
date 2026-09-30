@@ -184,22 +184,22 @@ function applyCover(host, book){
   });
 }
 
-/* 읽을거리 카드는 전부 같은 방식으로 동작합니다 — 누르면 열리고, 꾹 누르면
-   고칩니다(이름 바꾸기 · 표지 · 삭제). 그 배선을 한 군데에 둡니다.
+/* 읽을거리 카드는 누르면 열립니다. 책장에서는 꾹 눌러 고칠 수 있지만,
+   Home에서는 읽기 진입만 제공합니다. 그 배선을 한 군데에 둡니다.
 
    모서리의 ✕ 는 걷어냈습니다. 오른쪽 위는 이제 백업 화살표 자리인데, 둘이
    한 모서리를 나눠 쓰다 보니 화살표가 안 뜨는 상황(로그인 전)에서는 ✕ 가
    아무것도 없는 자리를 비켜서서 혼자 어정쩡하게 떠 있었습니다. 지우는 길은
    꾹 누르기로 이미 있고, 그쪽이 "이 기기에서만/모든 기기에서"까지 물어봅니다. */
-function wireBookCard(card, book){
+function wireBookCard(card, book, canManage=true){
   if(posOf(book.id).p===1){
     const badge=document.getElementById('readpill').querySelector('.completion-badge').cloneNode(true);
     if(badge instanceof HTMLElement){badge.hidden=false;badge.classList.add('library-completion');card.append(badge);}
   }
-  accessibleLibraryCard(card,book.title,()=>openEditSheet(books.find(item=>item.id===book.id)||book));
+  accessibleLibraryCard(card,book.title,canManage?()=>openEditSheet(books.find(item=>item.id===book.id)||book):null);
   card.dataset.localBook=book.id;
   const currentBook=()=>books.find(item=>item.id===book.id)||book;
-  const pressed = attachLongPress(card, ()=>openEditSheet(currentBook()));
+  const pressed = canManage?attachLongPress(card, ()=>openEditSheet(currentBook())):()=>false;
   card.onclick = event => { if(event?.detail===0||!pressed()) openCasualPreviewOrReader(currentBook()); };
   return card;
 }
@@ -225,7 +225,7 @@ function coverArtwork(key){
   return '<svg class="cover-art" viewBox="0 0 120 120" aria-hidden="true" focusable="false">'+patterns[paletteOf({id:key},patterns.length)]+'</svg>';
 }
 
-function casualCard(book, current, showProgress=true){
+function casualCard(book, current, showProgress=true, canManage=true){
   const index = paletteOf(book, 4);
   const position = posOf(book.id);
   const label = nowReadingLabel(book, current);
@@ -245,7 +245,7 @@ function casualCard(book, current, showProgress=true){
   });
   card.querySelector('.thumb').classList.toggle('now-ring', book.id === current);
   applyCover(card.querySelector('.thumb'), book);
-  return wireBookCard(card, book);
+  return wireBookCard(card, book, canManage);
 }
 
 function casualAddCard(){
@@ -288,7 +288,7 @@ function classicForMeta(meta){
     && (!author || norm(classic.author)===author)) || null;
 }
 
-function cloudCasualCard(row){
+function cloudCasualCard(row, canManage=true){
   const meta=row.meta||{},card=el('div','casual cloud');
   const article=meta.kind==='article'&&meta.sourceUrl;
   card.innerHTML=`<div class="thumb"><div class="src"></div><div class="lede"></div>
@@ -296,7 +296,9 @@ function cloudCasualCard(row){
     <div class="ct"></div><div class="cm"></div>`;
   fillCard(card,{'.src':meta.site||(article?'기사':'붙여넣은 글'),'.lede':article?'원문에서 다시 가져올 수 있어요':'내용을 다시 붙여넣어 이어 읽으세요',
     '.ct':meta.title||'(제목 없음)', '.cm':article?'원문 열기 · 다시 시도':'내용 다시 붙여넣기'});
-  card.querySelector('.del').onclick=event=>{ event.stopPropagation(); hideBookLocally(row.book_id); renderAllBookViews(); toast('이 기기에서 지웠어요'); };
+  const remove=card.querySelector('.del');
+  if(canManage)remove.onclick=event=>{ event.stopPropagation(); hideBookLocally(row.book_id); renderAllBookViews(); toast('이 기기에서 지웠어요'); };
+  else remove.remove();
   card.onclick=()=>article?restoreVaultArticle(row,true):(openAddModal('casual'),addStep('paste'));
   return card;
 }
@@ -331,7 +333,7 @@ async function restoreMissingVaultArticles(){
 
 const cardBusy = new Set();
 
-function bookCard(book, current){
+function bookCard(book, current, canManage=true){
   const index = paletteOf(book, 3);
   const label = nowReadingLabel(book, current);
   const card = el('div', 'bookcard editorial-cover pal'+(index%3));
@@ -343,12 +345,12 @@ function bookCard(book, current){
     ${label ? '<div class="prog"></div>' : ''}`;
   fillCard(card, {'.author': book.author || 'MY BOOK', '.bt': book.title, '.prog': label});
   applyCover(card, book);
-  return wireBookCard(card, book);
+  return wireBookCard(card, book, canManage);
 }
 
 /* 서버에만 있는 책. 이름만 받아 와서 흐린 카드로 둡니다 — 있다는 것은 보이고,
    가운데 단추가 "받으면 읽을 수 있다"를 말합니다. */
-function cloudBookCard(row){
+function cloudBookCard(row, canManage=true){
   const meta = row.meta || {};
   const classic=classicForMeta(meta);
   const card = el('div', 'bookcard cloud');
@@ -363,9 +365,11 @@ function cloudBookCard(row){
     image.onload=()=>{ image.hidden=false; card.classList.add('has-cover'); };
     image.src=classicCoverFile(classic.id);
   }
-  card.querySelector('.del').onclick = event => {
+  const remove=card.querySelector('.del');
+  if(canManage)remove.onclick = event => {
     event.stopPropagation(); hideBookLocally(row.book_id); renderAllBookViews(); toast('이 기기에서 지웠어요');
   };
+  else remove.remove();
   card.onclick = () => classic ? importClassic(classic,card) : requestVaultReconnect(row);
   return card;
 }
@@ -418,7 +422,7 @@ function reconcileHomeCards(container,specs){
   if(add)for(const node of container.querySelectorAll('.rss-card'))container.insertBefore(node,add);
   if(wasAtStart)container.scrollLeft=0;
 }
-function homeRegularTile(card,title,meta){
+function homeRegularTile(card,title,meta,canManage=false){
   const tile=el('div','home-regular-tile');
   if(!card.hasAttribute('tabindex'))accessibleLibraryCard(card,title||card.getAttribute('aria-label')||'열기');
   if(meta){
@@ -427,7 +431,7 @@ function homeRegularTile(card,title,meta){
     cover?.append(label);
   }
   tile.append(card,el('div','home-regular-title',title));
-  if(card.dataset.localBook){
+  if(canManage&&card.dataset.localBook){
     const menu=document.createElement('button');menu.type='button';menu.className='home-card-actions';menu.textContent='관리';menu.setAttribute('aria-label',title+' 관리');
     menu.onclick=event=>{event.stopPropagation();const book=books.find(item=>item.id===card.dataset.localBook);if(book)openEditSheet(book);};tile.append(menu);
   }
@@ -445,30 +449,29 @@ function homeBookSpec(book,casual){
   // Long-form cards do not display reading time; avoid scanning their full text.
   const stamp=JSON.stringify([book.title,book.cover,book.site,book.author,book.kind,posOf(book.id).p===1,casual?readMinutes(book):null]);
   return {key:'book:'+book.id,stamp,
-    create:()=>homeRegularTile(casual?casualCard(book,null,false):bookCard(book,null),
+    create:()=>homeRegularTile(casual?casualCard(book,null,false,false):bookCard(book,null,false),
       book.title,casual?(book.site||'내 글'):(book.author||'내 책'))};
 }
 function renderHome(){
-  renderFolderControls();
   renderLibraryStorageNotice();
   renderHomeResume();
   const rail=document.getElementById('casual-rail');
   reconcileHomeCards(rail,[]);
   if(typeof appendRssCards==='function')appendRssCards(rail);
-  const longform=folderBooks(longformBooks()),shelf=document.getElementById('shelf');
+  const longform=longformBooks(),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,false));
-  for(const row of serverOnlyBooks().filter(row=>folderMatches(row.book_id)))specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
-  for(const read of (activeLibraryFolder?[]:pendingLongReads()))specs.push({key:'longread:'+read.id,stamp:JSON.stringify(read),create:()=>homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')});
+  for(const row of serverOnlyBooks())specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
+  for(const read of pendingLongReads())specs.push({key:'longread:'+read.id,stamp:JSON.stringify(read),create:()=>homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')});
   specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
   reconcileHomeCards(shelf,specs);
   const light=document.getElementById('home-casual-rail');
   const entries=[
-    ...folderBooks(casualBooks()).map(book=>({kind:'book',value:book,readAt:posOf(book.id).t||0,addedAt:book.addedAt||0})),
-    ...serverOnlyCasuals().filter(row=>folderMatches(row.book_id)).map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
+    ...casualBooks().map(book=>({kind:'book',value:book,readAt:posOf(book.id).t||0,addedAt:book.addedAt||0})),
+    ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
   ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
   const lightSpecs=entries.map(entry=>entry.kind==='book'
     ? homeBookSpec(entry.value,true)
-    : {key:'cloud:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
+    : {key:'cloud:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value,false),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
   lightSpecs.push({key:'add',stamp:'',create:()=>homeAddTile(casualAddCard(),'글 추가')});
   reconcileHomeCards(light,lightSpecs);
 }
@@ -482,7 +485,7 @@ function renderCasualLibrary(){
   const grid = document.getElementById('casual-grid');
   const empty = document.getElementById('casual-empty');
   grid.innerHTML = '';
-  casuals.forEach(book => grid.appendChild(homeRegularTile(casualCard(book,null,false),book.title,book.site||'내 글')));
+  casuals.forEach(book => grid.appendChild(homeRegularTile(casualCard(book,null,false),book.title,book.site||'내 글',true)));
   const cloud=serverOnlyCasuals().filter(row=>folderMatches(row.book_id));
   cloud.forEach(row=>grid.appendChild(homeRegularTile(cloudCasualCard(row),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')));
   const count = casuals.length;
@@ -502,7 +505,7 @@ function renderLongformLibrary(){
   const empty = document.getElementById('longform-empty');
   document.getElementById('longform-cnt').textContent = longform.length ? `${longform.length}권` : '';
   grid.innerHTML = '';
-  longform.forEach(book => grid.appendChild(homeRegularTile(bookCard(book,null),book.title,book.author||'내 책')));
+  longform.forEach(book => grid.appendChild(homeRegularTile(bookCard(book,null),book.title,book.author||'내 책',true)));
   const cloud = serverOnlyBooks().filter(row=>folderMatches(row.book_id));
   cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
   const offered = activeLibraryFolder?[]:pendingLongReads();

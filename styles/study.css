@@ -31,9 +31,18 @@
 #aa-pop{max-height:calc(100dvh - 104px);max-width:calc(100vw - 24px);overflow-y:auto;}
 .aa-seg button[aria-pressed=true]{background:var(--sentence-glass-action);color:var(--brand);}
 #p-mark:disabled{opacity:.5;cursor:default;}
-.library-folder-controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px;}
-.library-folder-controls :is(select,button),#ed-folder{min-height:44px;max-width:100%;border:1px solid var(--sentence-glass-line);border-radius:12px;padding:8px 12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:500 13px var(--ui);}
-.library-folder-controls select{min-width:130px;flex:1;max-width:280px;}
+.library-folder-controls{display:flex;align-items:center;gap:8px;max-width:480px;margin:12px 0 20px;}
+.library-folder-controls :is(select,button,summary),#ed-folder{box-sizing:border-box;min-height:44px;border:1px solid var(--sentence-glass-line);border-radius:12px;padding:8px 12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:500 13px var(--ui);}
+.library-folder-controls select{min-width:0;flex:1;height:44px;}
+.library-folder-add,.library-folder-menu{flex:none;width:44px;}
+.library-folder-add,.library-folder-menu summary{display:grid;place-items:center;width:44px;height:44px;padding:0!important;cursor:pointer;}
+.library-folder-add{font-size:21px!important;}
+.library-folder-menu{position:relative;}
+.library-folder-menu summary{list-style:none;font-size:22px;line-height:1;}
+.library-folder-menu summary::-webkit-details-marker{display:none;}
+.library-folder-actions{position:absolute;z-index:10;top:calc(100% + 6px);right:0;display:grid;gap:4px;min-width:168px;padding:6px;border:1px solid var(--sentence-glass-line);border-radius:14px;background:var(--sentence-glass-sheet);box-shadow:var(--sentence-glass-shadow);}
+.library-folder-actions button{width:100%;text-align:left;white-space:nowrap;}
+.library-folder-controls :is(select,button,summary):focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 .library-completion{position:absolute!important;top:8px!important;right:8px!important;left:auto!important;bottom:auto!important;z-index:5;display:flex!important;gap:3px;align-items:center;padding:4px 7px;border-radius:12px;background:var(--sentence-glass-solid);color:var(--brand);font:600 10px var(--ui);transform:none!important;}
 .library-completion svg{width:17px;height:17px;}
 /* Keep a full-width writing row above the back/settings row on narrow Reader

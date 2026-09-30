@@ -5,6 +5,11 @@
   local, durable presentation metadata (`breeze.library-folders.v1`). Removing
   a category never deletes documents, progress, vocabulary or ink. Cloud-only
   placeholders are shown in All; categorization is available after local restore.
+- Category controls and document management live in the Casuals and Long-form
+  shelves. Home shows the full reading selection regardless of the shelf's
+  active category; its cards open content without edit or delete gestures. Shelf
+  category controls use a single select/add/manage row; rename and delete live
+  in the selected category's manage menu with the existing confirmation dialog.
 - Completed local document cards reuse the existing completion badge at top right.
 - PDF navigation is a horizontal strip above the existing bottom controls, in
   both reading and writing. Opening retains page order and scrolls the current

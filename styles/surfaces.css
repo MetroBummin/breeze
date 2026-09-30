@@ -51,9 +51,6 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #vstars button{min-width:44px;}
 #vsort-options,#vbook-options{top:calc(100% + 6px);}
 #vfilter-clear{min-height:44px;}
-.library-folder-controls{align-items:center;}
-.library-folder-controls select{min-width:0;flex:1 1 150px;}
-.library-folder-controls button{flex:0 1 auto;overflow-wrap:anywhere;}
-@media(max-width:420px){.wordbook-filter-row{flex-wrap:wrap;}.wordbook-filters{padding:12px;}.wordbook-filter-row>span{flex-basis:100%;}.wordbook-filter-row #vbooks{margin-left:0;}#am-card h2,#ed-card h2,#wordbook-add-form h2,#task-title{font-size:20px;}}
+@media(max-width:420px){#am-card h2,#ed-card h2,#wordbook-add-form h2,#task-title{font-size:20px;}}
 @media(max-height:500px){#add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog{padding:18px;}#am-card .am-choices{margin-top:12px;}#am-card .am-big{padding:10px;}#settings-modal #set-card{padding-top:48px;}}
 @media(prefers-reduced-motion:reduce){#add-modal,#add-modal #am-card{transition:none;}}

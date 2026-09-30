@@ -151,12 +151,14 @@ try{
       if(process.env.BREEZE_PREVIEW_CAPTURE_DIR)await page.screenshot({path:process.env.BREEZE_PREVIEW_CAPTURE_DIR+'/'+engine.name()+'-ready.png'});
       await page.evaluate(()=>articlePreviewClose());
     });
-    await check('no visible ellipsis overlay; keyboard management is retained',async()=>{
+    await check('Home has no management action; shelf retains keyboard management',async()=>{
       await page.evaluate(()=>{show('home');renderHome();});
       assert.equal(await page.locator('.home-card-menu').count(),0);
-      const action=page.locator('#home-casual-rail .home-card-actions').first();
+      assert.equal(await page.locator('#v-home .home-card-actions,#v-home .library-folder-controls').count(),0);
+      await page.evaluate(()=>show('casuals'));
+      const action=page.locator('#casual-grid .home-card-actions').first();
       const box=await action.boundingBox();assert(box.width<=1&&box.height<=1);
-      const card=page.locator('#home-casual-rail [data-local-book]').first();
+      const card=page.locator('#casual-grid [data-local-book]').first();
       await card.focus();await page.keyboard.press('Shift+F10');
       assert(await page.locator('#edit-modal').isVisible());
     });
