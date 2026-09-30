@@ -24,19 +24,19 @@
   <link rel="preload" href="../assets/fonts/fraunces-latin.woff2?v=48282a41" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/gowun-batang-ui-400.woff2?v=cb182529" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/gowun-batang-ui-700.woff2?v=8fbd485f" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../styles/fonts.css">
-  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/fonts.css?v=211a3f46">
+  <link rel="stylesheet" href="../styles/tokens.css?v=eabc1765">
   <!-- 종이와 종이결 -->
-  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/base.css?v=bdb50d62">
   <!-- 본문 속 낱말(`.w`)의 모양과 문장이 파랗게 차오르는 색 -->
-  <link rel="stylesheet" href="../styles/reader.css">
+  <link rel="stylesheet" href="../styles/reader.css?v=62be9a50">
   <!-- 단어창과 바텀시트, 문장 해석 창 -->
-  <link rel="stylesheet" href="../styles/dictionary.css">
+  <link rel="stylesheet" href="../styles/dictionary.css?v=56b4618c">
   <!-- 저장했다고 알리는 한 줄(`#toast`)과 단어장 한 줄(`.vrow`) -->
-  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/components.css?v=d347f199">
   <!-- 서재의 책·글 카드(`.bookcard` · `.casual`) -->
-  <link rel="stylesheet" href="../styles/home.css">
-  <link rel="stylesheet" href="landing.css?v=20260927-no-intro-1">
+  <link rel="stylesheet" href="../styles/home.css?v=8877e030">
+  <link rel="stylesheet" href="landing.css?v=9b53a4b0">
 </head>
 <!-- `lang-ko` 는 앱과 같은 제목 글꼴 짝(Fraunces + 고운바탕)을 씁니다 — 로마자
      "Breeze" 는 Fraunces 로, 한글만 고운바탕으로 넘어갑니다(styles/tokens.css). -->
@@ -48,7 +48,7 @@
     <span>Breeze</span>
   </a>
   <nav class="lp-actions" aria-label="시작하기">
-    <a class="lp-cta lp-cta-web" href="../?start=library">Try It</a>
+    <a class="lp-cta lp-cta-web" href="../?start=library">웹에서 읽기</a>
     <a class="lp-cta lp-cta-store" href="https://apps.apple.com/kr/app/id6804570182" target="_blank" rel="noopener">App Store</a>
   </nav>
 </header>
@@ -139,7 +139,7 @@
   <div class="lp-devices" aria-hidden="true">
     <div class="lp-device lp-mac">
       <div class="lp-glass">
-        <div class="lp-vhead">Words</div>
+        <div class="lp-vhead">Breeze Memory</div>
         <div class="lp-vtable">
           <div class="vgroup lp-new">
             <div class="vrow">
@@ -169,7 +169,7 @@
     <div class="lp-link" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
     <div class="lp-device lp-phone">
       <div class="lp-glass">
-        <div class="lp-vhead">Words</div>
+        <div class="lp-vhead">Breeze Memory</div>
         <div class="lp-vtable">
           <div class="vgroup lp-new">
             <div class="vrow">
@@ -240,6 +240,7 @@
     <div class="p-sec" id="p-status-label">모르는 정도</div>
     <div id="p-status"><button class="stbtn on" data-s="1">★</button><button class="stbtn" data-s="2">★★</button><button class="stbtn" data-s="3">★★★</button></div>
     <div id="p-highlight-row"><div><span>본문 색칠</span><small>꺼도 단어장에는 남아요</small></div><button id="p-mark" class="on" type="button" aria-pressed="true" aria-label="본문 색칠"><span>켜짐</span><i aria-hidden="true"></i></button></div>
+    <p class="lp-demo-note">체험 예시 · 실제 조회와 저장은 앱에서</p>
     <section id="p-en-section"><div class="p-sec">영어 뜻</div><div id="p-defs"></div></section>
     <details id="p-ex-fold"><summary><span>예문</span><span id="p-ex-preview"></span></summary><div id="p-ex"></div></details>
   </div>
@@ -258,6 +259,6 @@
 <footer class="dictionary-credit">English definitions: <a href="https://en.wiktionary.org/">Wiktionary</a> via <a href="https://freedictionaryapi.com/">FreeDictionaryAPI.com</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></footer>
 <div id="toast"></div>
 
-<script src="landing.js?v=20260927-no-intro-1"></script>
+<script src="landing.js?v=4300221f"></script>
 </body>
 </html>

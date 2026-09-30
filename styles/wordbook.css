@@ -46,10 +46,10 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 .wordbook-sort{justify-content:flex-start;}
 .wordbook-filters select{background:var(--home-background);color:var(--settings-ink);font-weight:500;min-height:36px;border-radius:10px;padding:7px 10px;}
 #vstars{gap:2px;padding:3px;background:var(--home-background);border-radius:12px;}
-#vstars button{background:transparent;min-width:36px;min-height:32px;border-radius:9px;padding:5px 8px;color:var(--settings-muted);}
+#vstars button{background:transparent;min-width:36px;min-height:32px;border-radius:12px;padding:5px 8px;color:var(--settings-muted);}
 #vstars button[aria-pressed=true]{background:var(--wordbook-star);color:var(--wordbook-star-ink);box-shadow:none;}
 #vbooks{margin-left:0;}
-#vbooks summary{display:flex;align-items:center;gap:10px;border-radius:11px;min-height:38px;background:var(--home-background);color:var(--settings-ink);font-weight:500;}
+#vbooks summary{display:flex;align-items:center;gap:10px;border-radius:12px;min-height:38px;background:var(--home-background);color:var(--settings-ink);font-weight:500;}
 #vbooks.filtered summary{color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue-ring);}
 #vbook-options{top:44px;}
 .wordbook-results{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 0 10px;}
@@ -65,7 +65,7 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 .wordbook-search svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
 
 #vsort-menu{position:relative;}
-#vsort-menu summary{display:flex;align-items:center;gap:12px;list-style:none;background:var(--home-background);color:var(--settings-ink);font-weight:500;min-height:38px;border-radius:11px;}
+#vsort-menu summary{display:flex;align-items:center;gap:12px;list-style:none;background:var(--home-background);color:var(--settings-ink);font-weight:500;min-height:38px;border-radius:12px;}
 #vsort-menu summary::-webkit-details-marker{display:none;}
 #vsort-options{position:absolute;left:0;top:44px;z-index:6;width:174px;margin:0;padding:5px;border:1px solid var(--settings-line);border-radius:14px;background:var(--wordbook-field);box-shadow:var(--sentence-glass-shadow);}
 #vsort-options legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}

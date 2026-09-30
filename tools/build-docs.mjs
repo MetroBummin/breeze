@@ -204,7 +204,7 @@ a:hover{border-bottom-color:currentColor}
   gap:16px;flex-wrap:wrap;}
 .top .brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);
   font-size:17px;letter-spacing:-.3px;}
-.top .brand svg{width:26px;height:15px;flex:none}
+.top .brand img{width:32px;height:32px;border-radius:8px;flex:none}
 .top nav{display:flex;gap:4px;flex-wrap:wrap}
 .top nav a{padding:5px 11px;border-radius:999px;font-size:13.5px;color:var(--soft);border:0}
 .top nav a:hover{background:var(--sky);color:var(--blue)}
@@ -292,7 +292,7 @@ function page(doc, parts){
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="../index.html">${mark}<span>Breeze</span></a>
+  <a class="brand" href="../index.html"><img src="../assets/favicon/icon-192.png" alt="" width="32" height="32"><span>Breeze</span></a>
   <nav>${nav}</nav>
 </header>
 <div class="wrap">

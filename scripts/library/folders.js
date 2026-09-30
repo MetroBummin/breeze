@@ -53,12 +53,12 @@ function renderFolderControls(){
       const option=new Option(folder.name,folder.id);select.add(option);
     }
     select.value=activeLibraryFolder;select.onchange=()=>changeLibraryFolder(select.value);bar.append(select);
-    const add=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=action;bar.append(button);};
-    add('＋ 카테고리',()=>{const name=prompt('새 카테고리 이름');if(name)createLibraryFolder(name);});
+    const add=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=()=>{button.focus({preventScroll:true});return action();};bar.append(button);};
+    add('＋ 카테고리',async()=>{const name=await breezeTaskDialog({title:'새 카테고리',input:true});if(name)createLibraryFolder(name);});
     const folder=libraryFolders.folders.find(f=>f.id===activeLibraryFolder);
     if(folder){
-      add('이름 변경',()=>{const name=prompt('카테고리 이름',folder.name);if(name)renameLibraryFolder(folder.id,name);});
-      add('삭제',()=>{if(confirm('카테고리만 삭제할까요? 책과 읽기 기록은 그대로 남아요.'))deleteLibraryFolder(folder.id);});
+      add('이름 변경',async()=>{const name=await breezeTaskDialog({title:'카테고리 이름 변경',input:true,value:folder.name});if(name)renameLibraryFolder(folder.id,name);});
+      add('삭제',async()=>{if(await breezeTaskDialog({title:'카테고리만 삭제할까요?',description:'책과 읽기 기록은 그대로 남아요.',action:'삭제',danger:true}))deleteLibraryFolder(folder.id);});
     }
   }
 }

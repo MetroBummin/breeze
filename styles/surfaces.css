@@ -1,0 +1,59 @@
+/* Short task surfaces own form geometry here. Reader lookup and dock remain in their owners. */
+dialog:is(#add-modal,#edit-modal){inset:0;margin:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;border:0;color:var(--sentence-glass-ink);background:var(--sentence-glass-scrim);padding:16px;align-items:center;justify-content:center;}
+dialog:is(#add-modal,#edit-modal):not([open]){display:none;}
+dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
+#add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog{position:relative;box-sizing:border-box;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:24px;border:1px solid var(--sentence-glass-line);border-radius:22px;background:var(--sentence-glass-solid);color:var(--sentence-glass-ink);box-shadow:var(--sentence-glass-shadow);overflow:auto;overscroll-behavior:contain;}
+#wordbook-add-dialog,#task-dialog{margin:auto;}
+#wordbook-add-dialog::backdrop,#task-dialog::backdrop{background:var(--sentence-glass-scrim);}
+#add-modal #am-card::before{display:none;}
+@supports (backdrop-filter:blur(1px)){#add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog{background:var(--sentence-glass-sheet);backdrop-filter:blur(18px) saturate(112%);-webkit-backdrop-filter:blur(18px) saturate(112%);}}
+#am-card h2,#ed-card h2,#wordbook-add-form h2,#task-title{padding-right:36px;font:650 22px/1.4 var(--ui);letter-spacing:-.35px;overflow-wrap:anywhere;}
+#task-form{display:grid;gap:18px;}
+#task-description{font:400 14px/1.65 var(--ui);color:var(--sentence-glass-secondary);overflow-wrap:anywhere;margin:0;}
+#task-input-label{display:grid;gap:8px;font:500 14px var(--ui);}
+#task-input-label[hidden],#task-description[hidden]{display:none;}
+#am-card :is(input,textarea),#ed-card :is(input,select),#wordbook-add-form input,#task-input{box-sizing:border-box;min-width:0;width:100%;min-height:48px;border:1px solid var(--sentence-glass-line-soft);border-radius:12px;padding:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:400 16px/1.5 var(--ui);}
+#am-card :is(input,textarea):focus,#ed-card :is(input,select):focus,#wordbook-add-form input:focus,#task-input:focus{outline:2px solid var(--sentence-glass-muted);outline-offset:2px;}
+#am-card .sm-btn.primary,#ed-card .ed-acts .sm-btn,#wordbook-add-form>div button,.task-actions button{min-height:48px;border:1px solid var(--sentence-glass-line-soft);border-radius:16px;padding:12px 16px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:600 15px/1.4 var(--ui);cursor:pointer;}
+#am-card .sm-btn.primary:hover,#ed-card .ed-acts .sm-btn.primary:hover,#wordbook-add-form>div button:hover,.task-actions button:hover{background:var(--sentence-glass-action-hover);}
+#wordbook-add-form>div button[type=submit],.task-actions button[type=submit]{border-color:var(--sentence-glass-muted);}
+#ed-card .ed-acts .danger,.task-actions .danger{color:var(--danger);background:var(--danger-tint2);border-color:var(--danger-line);}
+.task-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;}
+#ed-card #ed-pick-file{min-height:44px;font-size:14px;}
+#am-card .am-back,#ed-card .am-back{min-height:44px;padding:8px 0;}
+#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close{position:absolute;z-index:2;top:12px;right:12px;display:grid;place-items:center;float:none;width:44px;height:44px;min-height:44px;padding:0;border:1px solid var(--sentence-glass-line-soft);border-radius:50%;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);cursor:pointer;}
+.task-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
+.task-close:hover{background:var(--sentence-glass-action-hover);}
+.task-surface button:focus-visible,#set-close:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:2px;}
+#wordbook-add-form>.task-close,#task-form>.task-close{margin:0;}
+/* Grouped settings keeps its opaque sheet and a blue sign-in primary exception. */
+#settings-modal :is(.sm-mini,.sm-linkish,.settings-actions-group>button,.sm-recovery-actions button,.sm-device-move button){min-height:44px;font-size:14px;}
+#settings-modal .sm-mini{border-radius:12px;}
+#settings-modal .sm-btn{min-height:48px;border-radius:16px;}
+#settings-modal .set-row{flex-wrap:wrap;}
+#settings-modal .set-label{flex-basis:160px;}
+#settings-modal .set-row .sm-mini{flex-shrink:0;max-width:100%;white-space:normal;}
+/* Aa actions use the same quiet material; switches retain the small visual track. */
+#aa-pop{box-sizing:border-box;width:min(320px,calc(100vw - 24px));padding:16px;background:var(--sentence-glass-solid);border-color:var(--sentence-glass-line);border-radius:22px;box-shadow:var(--sentence-glass-shadow);color:var(--sentence-glass-ink);}
+#aa-pop .aa-row{gap:12px;min-height:52px;}
+#aa-pop .aa-label{color:var(--sentence-glass-secondary);font-size:14px;}
+#aa-pop :is(.aa-size button,.aa-seg button,.sm-mini){min-height:44px;min-width:44px;border-radius:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font-size:14px;}
+#aa-pop .aa-seg{border:0;padding:0;gap:4px;}
+#aa-pop .aa-seg button.on,#aa-pop .aa-seg button[aria-pressed=true]{background:var(--selection-fill);color:var(--selection-ink);}
+#aa-pop .aa-toggle{height:44px;background:transparent;flex:none;position:relative;}
+#aa-pop .aa-toggle::before{content:'';position:absolute;inset:9px 0;border-radius:13px;background:var(--toggle-off);}
+#aa-pop .aa-toggle.on::before{background:var(--brand);}
+#aa-pop .aa-toggle i{top:12px;}
+#aa-pop .aa-row .sm-mini{max-width:160px;}
+#v-vocab h1{font-size:clamp(22px,5.8vw,26px);overflow-wrap:anywhere;}
+.wordbook-brand img{width:38px;height:38px;}
+#vsort-menu summary,#vbooks summary,#vstars button,#vsort-options label,#vbook-options label{min-height:44px;box-sizing:border-box;}
+#vstars button{min-width:44px;}
+#vsort-options,#vbook-options{top:calc(100% + 6px);}
+#vfilter-clear{min-height:44px;}
+.library-folder-controls{align-items:center;}
+.library-folder-controls select{min-width:0;flex:1 1 150px;}
+.library-folder-controls button{flex:0 1 auto;overflow-wrap:anywhere;}
+@media(max-width:420px){.wordbook-filter-row{flex-wrap:wrap;}.wordbook-filters{padding:12px;}.wordbook-filter-row>span{flex-basis:100%;}.wordbook-filter-row #vbooks{margin-left:0;}#am-card h2,#ed-card h2,#wordbook-add-form h2,#task-title{font-size:20px;}}
+@media(max-height:500px){#add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog{padding:18px;}#am-card .am-choices{margin-top:12px;}#am-card .am-big{padding:10px;}#settings-modal #set-card{padding-top:48px;}}
+@media(prefers-reduced-motion:reduce){#add-modal,#add-modal #am-card{transition:none;}}

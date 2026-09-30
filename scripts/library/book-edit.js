@@ -11,6 +11,7 @@ let editTarget = null;
 const editModal = () => document.getElementById('edit-modal');
 
 function editStep(step){
+  editModal().setAttribute('aria-label',step==='delete'?'이 기기에서 지우기':'정보 바꾸기');
   editModal().querySelectorAll('.ed-step').forEach(section =>
     section.classList.toggle('on', section.dataset.step === step));
 }
@@ -26,11 +27,12 @@ function openEditSheet(book, step){
   source.hidden = !book.coverSourcePage;
   if(book.coverSourcePage) source.href = book.coverSourcePage;
   document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
+  /** @type {HTMLDialogElement} */(editModal()).showModal();
   editModal().classList.add('on');
   editStep(step || 'edit');
 }
 function closeEditSheet(){
-  editModal().classList.remove('on'); editTarget = null;
+  editModal().classList.remove('on'); /** @type {HTMLDialogElement} */(editModal()).close(); editTarget = null;
 }
 
 /* 표지 고르기 — 기사라면 그 기사가 데려온 사진 중에서 고릅니다. 그림을
@@ -134,3 +136,5 @@ async function runDelete(){
   if(typeof waitForArticleBookRepair==='function') await waitForArticleBookRepair(book);
   await deleteBook(book);
 }
+
+editModal().addEventListener('cancel',event=>{event.preventDefault();closeEditSheet();});

@@ -7,7 +7,8 @@
 
 .support-header{padding-bottom:42px; border-bottom:1px solid var(--line2);}
 
-.brand{display:inline-block; color:var(--brand-strong); font-family:var(--display); font-size:28px; font-weight:600; letter-spacing:-1.45px; line-height:1.1; text-decoration:none;}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--settings-ink);font:700 30px/44px var(--ui);letter-spacing:-.8px;text-decoration:none;}
+.brand img{border-radius:9px;}
 .brand:focus-visible,
 .support-footer a:focus-visible,
 .contact-link:focus-visible,

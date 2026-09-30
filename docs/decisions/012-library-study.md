@@ -37,3 +37,12 @@
 Validation: `npm test`, `node tests/verify-breeze16-browser.mjs`,
 `npm run test:pdf-ink`, `npm run test:pdf-pinch`. Physical iPad multitasking,
 Pencil admission/palm rejection and real-device latency remain a release gate.
+
+## Task dialogs and semantic colors (2026-09-30)
+
+Category creation, rename and deletion use the shared native task dialog. Cancel
+and Escape do not mutate data; the initiating control regains focus. A pending
+request cannot replace an open decision. PDF deletion awaits the same confirmation
+surface and rechecks the original session before invoking the existing transactional
+delete path. Selection/bookmark appearance uses theme-aware semantic tokens;
+actual ink colors and user-picked grade colors are unchanged.

@@ -109,6 +109,7 @@ function lpSetLang(lang, then){
       brand.style.transition = '';
       brand.style.transform = '';
     }
+    document.querySelectorAll('.lp-sentence .w').forEach(node=>{node.tabIndex=lang==='en'?0:-1;node.setAttribute('role','button');node.setAttribute('aria-label',node.textContent+' 뜻 보기');});
     then();
   };
   if(first || lpQuiet.matches){ write(); return; }
@@ -196,10 +197,11 @@ function lpMorphWordSurface(from,to){
   lpStopWordMorph();
   if(window.matchMedia('(prefers-reduced-motion:reduce)').matches || !lpPanel().animate) return;
   const generation = lpWordMorphGeneration, panel = lpPanel();
-  const frame = (rect,radius) => ({left:rect.left+'px',top:rect.top+'px',
-    width:rect.width+'px',height:rect.height+'px',borderRadius:radius+'px'});
+  // As in the Reader, lay out once and animate only the glass shell transform.
   panel.classList.add('morphing');
-  lpWordMorph = panel.animate([frame(from,28),frame(to,24)],
+  lpWordMorph = panel.animate([
+    {transformOrigin:'0 0',transform:`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${from.height/to.height})`},
+    {transformOrigin:'0 0',transform:'none'}],
     {duration:280,easing:'cubic-bezier(.2,.8,.2,1)',fill:'none'});
   lpWordMorph.finished.then(() => {
     if(generation!==lpWordMorphGeneration) return;
@@ -285,7 +287,7 @@ function lpPickMeaning(key, meaning){
     chip.classList.toggle('on', chip.textContent === meaning));
   document.querySelectorAll('.w[data-w="' + key + '"]').forEach(node =>
     node.classList.add('s1'));
-  lpToast('✓ 단어장에 저장했어요');
+  lpToast('체험 예시예요. 실제 저장은 앱에서 할 수 있어요.');
 }
 
 let lpToastTimer;
@@ -331,7 +333,7 @@ function lpOpenSentence(n){
    문장, 손가락이 움직였으면 읽는 중입니다. 시간과 흔들림의 값도 앱과 같습니다.
    판정하는 자리를 여기 하나로 두는 것도 같습니다: 문장 조각마다 따로 듣지 않고
    문장 하나가 통째로 듣습니다. */
-const LP_HOLD_MS = 1000, LP_SLOP = 10;
+const LP_HOLD_MS = 750, LP_SLOP = 10;
 
 document.querySelectorAll('.lp-sentence').forEach(sentence => {
   let timer = null, x = 0, y = 0, held = false;
@@ -378,6 +380,10 @@ document.addEventListener('pointerdown', event => {
   if(!$('word-peek').hidden || lpPanel().classList.contains('on')) lpCloseWord();
 });
 document.addEventListener('keydown', event => {
+  const target=event.target;
+  if((event.key==='Enter'||event.key===' ')&&target instanceof HTMLElement&&target.matches('.lp-sentence .w')&&lpLang==='en'){
+    event.preventDefault();lpShowWordPeek(target.dataset.w,Number(target.closest('.lp-sentence').getAttribute('data-s')));return;
+  }
   if(event.key !== 'Escape') return;
   lpCloseSentence(); lpCloseWord();
 });

@@ -191,10 +191,12 @@ function stepPdfPage(direction){
   const pages=pdfAvailablePages(),index=pages.indexOf(pdfCurrentPage());
   return goPdfPage(pages[Math.max(0,Math.min(pages.length-1,index+direction))]||1);
 }
-function offerPdfPageDeletion(session,n){
+async function offerPdfPageDeletion(session,n){
   if(pdfDeletionBusy||!currentPdfSession(session))return;
   if(pdfAvailablePages(session).length<=1){toast('마지막 페이지는 삭제할 수 없어요.');return;}
-  if(confirm(`${n}페이지를 삭제할까요? 텍스트 모드에서도 이 페이지의 내용이 사라집니다.`))void deletePdfPage(session,n);
+  if(await breezeTaskDialog({title:`${n}페이지를 삭제할까요?`,description:'텍스트 모드에서도 이 페이지의 내용이 사라집니다.',action:'삭제',danger:true})){
+    if(currentPdfSession(session))void deletePdfPage(session,n);
+  }
 }
 async function deletePdfPage(session,n){
   if(pdfDeletionBusy||!currentPdfSession(session)||BreezePdfInk.busy()||originalPinchBusy()||pdfAvailablePages(session).length<=1)return false;

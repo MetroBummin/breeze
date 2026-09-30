@@ -19,6 +19,9 @@
  */
 
 :root{
+  --selection-ink:#267FA8;
+  --selection-fill:rgba(38,127,168,.12);
+  --bookmark-ink:#BE4540;
   --word-lookup-wash:rgba(74,151,235,.22);
   --sentence-transition:250ms;
   /* 문장 lookup만 쓰는 중립 유리. 낱말 뜻의 AI 파랑과 분리해, 읽는 종이 위에
@@ -323,6 +326,9 @@ body.lang-ko .navbtn{font-size:16px; line-height:1.1;}
 html.dark{--paper:#171816; color-scheme:dark;}
 
 body.dark{
+  --selection-ink:#83C7E5;
+  --selection-fill:rgba(131,199,229,.16);
+  --bookmark-ink:#FF8982;
   --word-lookup-wash:rgba(102,170,239,.24);
   --sentence-glass-solid:#292A2B;
   --sentence-glass-pill:rgba(39,40,41,.76);

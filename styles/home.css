@@ -278,8 +278,8 @@
     border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-action); position:relative; color:var(--sentence-glass-ink);
     font-family:var(--ui); font-size:11.5px;}
   .ed-cover img{width:100%; height:100%; object-fit:cover; display:block;}
-  .ed-cover.on{border-color:color-mix(in srgb,var(--s1-line) 45%,var(--sentence-glass-line));
-    outline:2px solid color-mix(in srgb,var(--s1) 22%,transparent);outline-offset:1px;}
+  .ed-cover.on{border-color:var(--selection-ink);
+    outline:2px solid var(--selection-fill);outline-offset:1px;}
   .ed-cover-actions{display:flex;gap:8px;margin-top:12px;}
   #ed-pick-file{display:grid;place-items:center;flex:1;min-height:38px;
     padding:7px 9px;border:1px solid var(--sentence-glass-line);border-radius:12px;
@@ -292,7 +292,7 @@
   .ed-acts .sm-btn{flex:1; margin-bottom:0;}
   #ed-card .am-back{color:var(--sentence-glass-secondary);}
   #ed-card .ed-acts .sm-btn.primary{border:1px solid var(--sentence-glass-line);
-    background:color-mix(in srgb,var(--s1) 14%,var(--sentence-glass-action));
+    background:var(--sentence-glass-action);
     color:var(--sentence-glass-ink);}
   .sm-btn.danger{background:var(--danger-bg); color:var(--danger);}
   .sm-btn.danger:hover{background:var(--danger-bg-hover);}

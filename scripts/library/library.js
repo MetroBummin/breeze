@@ -526,11 +526,13 @@ function addStep(step){
 }
 /* mode='casual'이면 짧은 글 두 가지만 보여 줍니다. */
 function openAddModal(mode){
+  /** @type {HTMLDialogElement} */(addModal()).showModal();
   addModal().classList.add('on');
   addModal().querySelector('.am-file').hidden = mode === 'casual';
   addStep('pick');
 }
-function closeAddModal(){ addModal().classList.remove('on'); }
+function closeAddModal(){ addModal().classList.remove('on'); /** @type {HTMLDialogElement} */(addModal()).close(); }
+addModal().addEventListener('cancel',event=>{event.preventDefault();closeAddModal();});
 function pickBookFile(){ closeAddModal(); finput.click(); }
 
 function updatePastePreview(){

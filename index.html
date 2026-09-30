@@ -40,16 +40,16 @@
   <link rel="stylesheet" href="styles/fonts.css?v=211a3f46">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=0c99ae2e">
+  <link rel="stylesheet" href="styles/tokens.css?v=eabc1765">
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
-  <link rel="stylesheet" href="styles/home.css?v=47571c30">
+  <link rel="stylesheet" href="styles/home.css?v=8877e030">
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=c085047d">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=c52dc76a">
   <link rel="stylesheet" href="styles/reader.css?v=62be9a50">
   <link rel="stylesheet" href="styles/dictionary.css?v=56b4618c">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=3d0c76ff">
+  <link rel="stylesheet" href="styles/wordbook.css?v=0814424d">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=8d05d582">
   <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
@@ -75,7 +75,7 @@
   <script defer src="scripts/core/state.js?v=0fbbaef5"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
-  <script defer src="scripts/ui/i18n.js?v=c32fa27d"></script>
+  <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=55eac9c5"></script>
@@ -85,9 +85,9 @@
   <script defer src="scripts/reader/pdf-pinch.js?v=ec388b55"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=c372fcc1"></script>
+  <script defer src="scripts/library/library.js?v=1444caaf"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
-  <script defer src="scripts/library/book-edit.js?v=357f82ee"></script>
+  <script defer src="scripts/library/book-edit.js?v=744833d9"></script>
   <script defer src="scripts/library/longreads.js?v=2e095add"></script>
   <script defer src="assets/longreads/homeward-lookup-data.js?v=98cff2b8"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=0b110c50"></script>
@@ -121,13 +121,15 @@
   <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
   <script defer src="scripts/ui/library-refresh.js?v=edf93845"></script>
   <script defer src="scripts/reader/study-preferences.js?v=39def6c4"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=d051f924"></script>
-  <script defer src="scripts/library/folders.js?v=3fa7df20"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=75ae5757"></script>
+  <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
+  <script defer src="scripts/library/folders.js?v=46c23586"></script>
   <script defer src="scripts/main.js?v=b42953a9"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=30f37174">
+  <link rel="stylesheet" href="styles/study.css?v=6e6bd54a">
+  <link rel="stylesheet" href="styles/surfaces.css?v=c2545aee">
 </head>
 <body>
 <div id="app">
@@ -142,7 +144,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg>
       <span data-i18n="nav.home">Home</span>
     </button>
-    <button class="navbtn" id="nav-vocab" type="button" onclick="show('vocab')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H6a4 4 0 0 1-.2-8 6 6 0 0 1 11.6-1.5A4.8 4.8 0 0 1 19 19Z"/><path d="m12.6 9.5-3 4.4h3l-1.2 3.4"/></svg><span data-i18n="nav.words">Words</span></button>
+    <button class="navbtn" id="nav-vocab" type="button" onclick="show('vocab')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H6a4 4 0 0 1-.2-8 6 6 0 0 1 11.6-1.5A4.8 4.8 0 0 1 19 19Z"/><path d="m12.6 9.5-3 4.4h3l-1.2 3.4"/></svg><span data-i18n="nav.words">Breeze Memory</span></button>
     <button class="navbtn" id="nav-settings" type="button" onclick="openSettings()">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-2 .9-2.1-.6-2.5 4.2 1.6 1.7v2.3L2.3 15.5l2.5 4.2 2.1-.6 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.6 2.5-4.2-1.6-1.7v-2.3l1.6-1.7-2.5-4.2-2.1.6-2-.9-.6-2.3z" transform="translate(0 -1) scale(1 .96)"/><circle cx="12" cy="12" r="3"/></svg>
       <span data-i18n="nav.settings">Settings</span>
@@ -386,7 +388,7 @@
 
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
-  <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Thunderhead</h1></header>
+  <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Breeze Memory</h1></header>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">
     <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><span aria-hidden="true">⌄</span></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details></div>
@@ -397,11 +399,12 @@
   <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
     <button id="btn-export" class="control-glass control-circle" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button>
-    <button id="wordbook-home" class="control-glass control-pill" type="button" onclick="show('home')">Home</button>
+    <button id="wordbook-home" class="control-glass control-pill" type="button" onclick="show('home')">홈</button>
     <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
   </nav></div>
 </div>
-<dialog id="wordbook-add-dialog" aria-labelledby="wordbook-add-title"><form id="wordbook-add-form">
+<dialog id="wordbook-add-dialog" class="task-surface" aria-labelledby="wordbook-add-title"><form id="wordbook-add-form">
+  <button class="task-close" type="button" aria-label="단어 추가 닫기" onclick="document.getElementById('wordbook-add-dialog').close()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
   <h2 id="wordbook-add-title">단어 추가</h2>
   <label>단어<input id="wordbook-new-word" required maxlength="120" autocomplete="off"></label>
   <label>뜻<input id="wordbook-new-meaning" required maxlength="500" autocomplete="off"></label>
@@ -416,7 +419,7 @@
 <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" inert>
   <div id="set-card" tabindex="-1">
     <div class="settings-handle" aria-hidden="true"></div>
-    <button id="set-close" type="button" aria-label="설정 닫기" onclick="closeSettings()">×</button>
+    <button id="set-close" type="button" aria-label="설정 닫기" onclick="closeSettings()" class="task-close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
     <div class="set-row onboarding-setting">
       <div class="set-label"><b>온보딩</b><span>처음 읽는 방법을 다시 체험해요.</span></div>
@@ -441,8 +444,9 @@
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
 <input type="file" id="reading-backup-input" accept=".zip,.breeze.zip,application/zip" hidden>
-<div id="add-modal" role="dialog" aria-modal="true" aria-label="글 또는 책 추가">
-  <div id="am-card">
+<dialog id="add-modal" role="dialog" aria-modal="true" aria-label="글 또는 책 추가">
+  <div id="am-card" class="task-surface">
+    <button id="am-close" class="task-close" type="button" aria-label="추가 창 닫기" onclick="closeAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     <div class="am-step on" data-step="pick">
       <h2>무엇을 읽을까요?</h2>
       <div class="desc">넣는 순간부터 <b>오프라인</b>에서 읽힙니다.</div>
@@ -482,13 +486,13 @@
       <button class="sm-btn primary" id="am-url-go" onclick="importArticleUrl()">가져오기</button>
     </div>
   </div>
-</div>
-<div id="edit-modal">
-  <div id="ed-card">
-    <button id="ed-close" onclick="closeEditSheet()">✕</button>
+</dialog>
+<dialog id="edit-modal" aria-label="정보 바꾸기">
+  <div id="ed-card" class="task-surface">
+    <button id="ed-close" class="task-close" type="button" aria-label="책 정보 닫기" onclick="closeEditSheet()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
 
     <div class="ed-step on" data-step="edit">
-      <h2>정보 바꾸기</h2>
+      <h2 id="ed-heading">정보 바꾸기</h2>
       <label class="ed-lbl" for="ed-title">제목</label>
       <input id="ed-title" spellcheck="false">
       <label class="ed-lbl">표지</label>
@@ -518,7 +522,7 @@
       </div>
     </div>
   </div>
-</div>
+</dialog>
 <div id="aa-pop">
   <div class="aa-legend">
     <span><i style="background:var(--s1)"></i>★ 아리송</span>
@@ -562,6 +566,15 @@
     </div>
   </div>
 </div>
+<dialog id="task-dialog" class="task-surface" aria-labelledby="task-title" aria-describedby="task-description">
+  <form id="task-form">
+    <button class="task-close" type="button" data-task-cancel aria-label="창 닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    <h2 id="task-title"></h2>
+    <p id="task-description"></p>
+    <label id="task-input-label">카테고리 이름<input id="task-input" maxlength="60" autocomplete="off"></label>
+    <div class="task-actions"><button type="button" data-task-cancel>취소</button><button type="submit" id="task-submit">저장</button></div>
+  </form>
+</dialog>
 <div id="minitoast"></div>
 <div id="toast"></div>
 <div id="bootfail" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:300;

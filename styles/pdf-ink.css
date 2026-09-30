@@ -92,7 +92,7 @@ body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-
 #pdf-ink-settings :is([data-ink-color],[data-ink-highlight-color]) i{width:24px;height:24px;border-radius:50%;
   background:var(--ink-option);box-shadow:inset 0 0 0 1px color-mix(in srgb,#000 12%,transparent);}
 #pdf-ink-settings :is(.ink-widths,.ink-highlight-widths){gap:8px;}
-#pdf-ink-settings :is([data-ink-width],[data-ink-highlight-width]){min-height:38px;padding:7px 10px;gap:0;}
+#pdf-ink-settings :is([data-ink-width],[data-ink-highlight-width]){min-height:44px;padding:7px 10px;gap:0;}
 #pdf-ink-settings :is(.ink-widths,.ink-highlight-widths) i{width:30px;height:var(--ink-option);border-radius:999px;background:currentColor;}
 #pdf-ink-settings .ink-radii i{width:var(--ink-option);height:var(--ink-option);border-radius:50%;border:1px solid currentColor;background:var(--sentence-glass-action);}
 @keyframes ink-settings-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}

@@ -18,7 +18,7 @@ const LS_LANG = 'breeze.lang';
 const I18N_STRINGS = {
   en: {
     'nav.home':'Home',
-    'nav.words':'Words',
+    'nav.words':'Breeze Memory',
     'nav.settings':'Settings',
     'home.q':'Where shall we read?',
     'home.recommend':'Recommended',
@@ -39,7 +39,7 @@ const I18N_STRINGS = {
   },
   ko: {
     'nav.home':'책장',
-    'nav.words':'단어장',
+    'nav.words':'Breeze Memory',
     'nav.settings':'설정',
     'home.q':'오늘은 무엇을 읽어 볼까요?',
     'home.recommend':'추천',

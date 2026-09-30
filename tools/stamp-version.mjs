@@ -65,3 +65,14 @@ if(existsSync(worker)){
   if(stampedWorker !== source) writeFileSync(worker, stampedWorker);
   console.log(`Service worker ${version}${stampedWorker === source ? ' (변경 없음)' : ''}`);
 }
+
+for(const entry of ['landing/index.html','support/index.html']){
+  const target=resolve(root,entry),source=readFileSync(target,'utf8');
+  const updated=source.replace(local,(all,head,path,tail)=>{
+    if(!/\.(?:js|css)$/.test(path))return all;
+    const file=resolve(dirname(target),path);
+    const hash=createHash('sha256').update(readFileSync(file)).digest('hex').slice(0,8);
+    return `${head}${path}?v=${hash}${tail}`;
+  });
+  if(updated!==source)writeFileSync(target,updated);
+}

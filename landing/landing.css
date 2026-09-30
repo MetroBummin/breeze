@@ -39,11 +39,11 @@
   .lp-cta{min-height:44px; display:inline-flex; align-items:center; justify-content:center;
     padding:0 16px; border:1px solid; border-radius:13px;
     font:700 13px/1 var(--ui); text-decoration:none; white-space:nowrap;
-    box-shadow:0 2px 7px rgba(32,100,143,.12);
+    box-shadow:var(--sentence-glass-shadow-pill);
     transition:transform .16s ease,box-shadow .16s ease;}
-  .lp-cta:hover{transform:translateY(-2px); box-shadow:0 5px 12px rgba(32,100,143,.18);}
-  .lp-cta-web{background:#4daed6; border-color:#4daed6; color:#fff;}
-  .lp-cta-store{background:#e3f3f8; border-color:#b6dce9; color:#256483;}
+  .lp-cta:hover{transform:translateY(-2px); box-shadow:var(--sentence-glass-shadow-pill);}
+  .lp-cta-web{background:var(--sentence-glass-action); border-color:var(--sentence-glass-line-soft); color:var(--sentence-glass-ink);}
+  .lp-cta-store{background:var(--selection-fill); border-color:var(--sentence-glass-line-soft); color:var(--selection-ink);}
 
 /* ---- 레일과 무대 ----
    레일은 그저 스크롤할 거리입니다. 장면 하나에 화면 하나씩. */
@@ -128,7 +128,7 @@
     .lp-wordmark{gap:6px; font-size:23px; line-height:34px;}
     .lp-wordmark img{width:28px; height:28px; border-radius:7px;}
     .lp-actions{gap:6px;}
-    .lp-cta{min-height:38px; padding:0 7px; font-size:10.5px; border-radius:10px;}
+    .lp-cta{min-height:44px; padding:0 9px; font-size:11px; border-radius:12px;}
   }
 
 
@@ -220,7 +220,7 @@
     display:flex; flex-direction:column; align-items:center;
     gap:clamp(10px,1.8svh,16px); pointer-events:none;}
   .lp-device{display:flex; flex-direction:column; align-items:center; max-width:100%;}
-  .lp-glass{background:var(--sheet); border:1px solid var(--line2);
+  .lp-glass{background:var(--home-background); border:1px solid var(--sentence-glass-line-soft);
     box-shadow:var(--shadow-card); overflow:hidden; padding:12px 13px 0;}
   /* 16:10 은 뚜껑의 비율입니다. 이 비율이 낱말을 몇 줄 보여 줄지 정합니다 —
      가장 좁아지는 300px 에서 머리글과 세 줄이 딱 들어갑니다. 그래서 단어장은
@@ -234,7 +234,7 @@
     border-radius:26px;}
   /* 화면 안의 머리글. 앱의 단어장 머리글(#v-vocab h1 · components.css)과 같은
      굵기·색이고, 작은 화면에 맞춰 크기만 한 단계 내려앉습니다. */
-  .lp-vhead{font-size:14px; font-weight:500; letter-spacing:-.4px; color:var(--ink);
+  .lp-vhead{font-family:var(--ui);font-size:14px; font-weight:700; letter-spacing:-.4px; color:var(--ink);
     margin:0 2px 7px;}
   /* 표의 첫 줄 위에 놓이는 선. #vtablewrap 의 그 한 줄입니다. */
   .lp-vtable{border-top:1px solid var(--td-line);}
@@ -308,3 +308,11 @@
 
 .dictionary-credit{position:relative;padding:24px;text-align:center;font:11px/1.5 var(--ui);color:var(--soft);}
 .dictionary-credit a{color:inherit;}
+
+/* Native Reader tokens supply the UI, while the landing keeps its paper stage. */
+.lp-demo-note{color:var(--sentence-glass-muted);font:400 11px/1.5 var(--ui);margin:12px 0;}
+.lp-cta:focus-visible,.lp-sentence .w:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:3px;}
+.lp-vtable .vword{font-family:var(--ui);font-weight:600;}
+.lp-vtable .vko{color:var(--settings-muted);}
+.lp-vtable .chip{border-radius:12px;}
+@media(max-width:359px){.lp-wordmark{font-size:21px;gap:5px;}.lp-wordmark img{width:26px;height:26px;}.lp-cta{padding:0 7px;font-size:10.5px;}.lp-actions{gap:5px;}}

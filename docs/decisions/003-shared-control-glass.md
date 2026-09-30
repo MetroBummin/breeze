@@ -163,3 +163,20 @@ Reader-specific writing content may use two rows when its actual container is
 650px or narrower. The shared Home/Wordbook dock remains unchanged. Tool targets
 stay 44px; the thumbnail strip and tool options are positioned above the measured
 pill height. The thumbnail UI is a separate strip, not a morph of the pill.
+
+## Consistent task surfaces (2026-09-30)
+
+`styles/surfaces.css` owns short-task surface, form, close-button and action
+geometry. Add/Edit use native modal dialogs with explicit close buttons and
+Escape, preserving their existing submit/import/delete paths. Word addition and
+category/PDF confirmations share the sentence-glass palette and 22px surface
+corners. Ordinary task actions use neutral material; account sign-in keeps its
+blue primary action. Learning-grade colors never indicate a general Save action.
+Aa and Memory filters use 44px action targets without changing the established
+Reader lookup or shared bottom-dock geometry. Settings stays an opaque grouped
+sheet. The public Wordbook name is Breeze Memory; persisted identifiers and data
+remain unchanged. See `DESIGN.md` for roles, responsive rules and exceptions.
+
+Validate with `npm run test:design-tone`, `npm run test:home-ui`, onboarding and
+word-presentation browser suites plus `npm test`. The former Add test that
+required no close button is superseded by the explicit close requirement.
