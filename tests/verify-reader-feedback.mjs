@@ -17,7 +17,8 @@ function element(id,doc){
     appendChild(n){this.children.push(n);registry.set(n.id,n);},focus(){},remove(){},
     getBoundingClientRect:()=>({left:10,right:40,top:20,bottom:40,width:30,height:20})};
 }
-const doc={getElementById:id=>registry.get(id)||null,createElement:()=>element('',doc)};
+const doc={getElementById:id=>registry.get(id)||null,createElement:()=>element('',doc),
+  querySelector:selector=>selector==='#readpill .ink-pill-entry'?registry.get('ink-entry')||null:null};
 doc.head=element('head',doc);doc.body=element('body',doc);
 for(const id of ['word-peek','word-peek-meaning','word-peek-retry','panel','readpill','readback','aafab','modefab','readpill-title'])
   registry.set(id,element(id,doc));
@@ -82,10 +83,13 @@ api.reset();assert.equal(api.summary().lookupCount,0);
 const reader=read('scripts/reader/reader.js');
 vm.runInContext(reader.slice(reader.indexOf('function setReaderChrome('),reader.indexOf('function expandReaderChrome(')),context);
 const pill=registry.get('readpill');
+registry.set('ink-entry',element('ink-entry',doc));
 context.setReaderChrome(true);assert.equal(doc.body.classList.contains('chrome-hidden'),true);
+assert.equal(registry.get('ink-entry').inert,true,'Fading ink entry cannot receive input');
 pill.classList.add('ink-pill-active');context.setReaderChrome(true);
 assert.equal(doc.body.classList.contains('chrome-hidden'),false);
 assert.equal(registry.get('aafab').inert,false);
+assert.equal(registry.get('ink-entry').inert,false,'Expanded writing entry is usable');
 pill.classList.remove('ink-pill-active');context.setReaderChrome(true);
 assert.equal(doc.body.classList.contains('chrome-hidden'),true);
 assert.match(read('scripts/reader/pdf-ink.js'),/if\(writing&&typeof setReaderChrome==='function'\)setReaderChrome\(false\)/);

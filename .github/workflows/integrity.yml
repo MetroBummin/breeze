@@ -52,3 +52,5 @@ jobs:
         run: if test -f tests/verify-pdf-ink-browser.mjs; then node tests/verify-pdf-ink-browser.mjs; fi
       - name: Reader page morph and rotation regressions
         run: node tests/verify-breeze16-browser.mjs
+      - name: Reader chrome motion and interruption regressions
+        run: node tests/verify-reader-chrome-motion-browser.mjs

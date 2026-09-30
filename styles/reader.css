@@ -181,8 +181,10 @@
   #readpill, .control-pill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     width:min(56vw,400px); height:44px; border-radius:24px;
     display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
-  #readpill{translate:0 0;transition:translate .26s cubic-bezier(.2,.75,.25,1),width .26s cubic-bezier(.2,.75,.25,1),height .26s cubic-bezier(.2,.75,.25,1),
-      padding .26s cubic-bezier(.2,.75,.25,1),border-radius .26s cubic-bezier(.2,.75,.25,1),
+  #readpill{--reader-chrome-duration:.26s;--reader-chrome-ease:cubic-bezier(.2,.75,.25,1);
+    width:min(56vw,400px,var(--reader-pill-max-width,calc(100% - 124px)));
+    translate:0 0;transition:translate var(--reader-chrome-duration) var(--reader-chrome-ease),width var(--reader-chrome-duration) var(--reader-chrome-ease),height var(--reader-chrome-duration) var(--reader-chrome-ease),
+      padding var(--reader-chrome-duration) var(--reader-chrome-ease),border-radius var(--reader-chrome-duration) var(--reader-chrome-ease),
       box-shadow .34s ease;}
   #readpill-progress,#home-resume-progress{position:absolute; inset:0; pointer-events:none;
     background:var(--chrome-progress); transform:scaleX(0); transform-origin:left center;
@@ -194,7 +196,8 @@
   #readpill #modefab{flex:none; width:34px; height:38px; padding:0; border:0;
     background:none; color:inherit; display:flex; align-items:center; justify-content:center;
     cursor:pointer; overflow:hidden; opacity:1;
-    transition:width .3s ease,opacity .18s ease,margin .3s ease;}
+    transition:width var(--reader-chrome-duration) var(--reader-chrome-ease),opacity .18s ease,
+      margin var(--reader-chrome-duration) var(--reader-chrome-ease),visibility 0s;}
   #readpill #modefab[hidden]{display:none;}
   #sentence-pill-status{position:relative; z-index:2; width:100%; min-width:0;
     display:flex; align-items:center; justify-content:center; gap:9px;
@@ -220,8 +223,9 @@
     transform:translateY(6px) scale(.94);}
   #readback,#aafab{transition:opacity var(--sentence-transition) ease,
     transform var(--sentence-transition) cubic-bezier(.2,.7,.25,1),visibility 0s;}
-  body.chrome-hidden #readpill{width:min(36vw,180px); height:34px; padding:2px 8px; border-radius:18px;}
-  body.chrome-hidden #readpill #modefab{width:0; opacity:0; visibility:hidden; pointer-events:none;}
+  body.chrome-hidden #readpill{width:min(36vw,180px,var(--reader-pill-max-width,calc(100% - 124px))); height:34px; padding:2px 8px; border-radius:18px;}
+  body.chrome-hidden #readpill #modefab{width:0; opacity:0; visibility:hidden; pointer-events:none;
+    transition-delay:0s,0s,0s,var(--reader-chrome-duration);}
   body.chrome-hidden #readback,body.chrome-hidden #aafab{
     opacity:0; transform:translateY(8px); visibility:hidden; pointer-events:none;
     transition:opacity .2s ease,transform .3s ease,visibility 0s .3s;}
@@ -240,6 +244,7 @@
     #readchrome, .control-bar{padding:0 22px;}
   }
   @media (prefers-reduced-motion:reduce){
+    #readpill{--reader-chrome-duration:0s;}
     #readpill,#readback,#aafab,#readpill #modefab{transition-duration:var(--sentence-transition);
       transition-property:opacity,visibility,background-color;}
     .sentence-spinner{animation-duration:1.25s;}
