@@ -40,6 +40,16 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: Vocabulary review in Chromium and WebKit
+        run: node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs
+      - name: Vocabulary review visual proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocabulary-review-proof
+          path: /tmp/breeze-review-proof/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Real IndexedDB and navigation regression
         run: if test -f tests/verify-integrity-browser.mjs; then node tests/verify-integrity-browser.mjs; fi
       - run: npm run test:ingestion && npm run test:home-ui

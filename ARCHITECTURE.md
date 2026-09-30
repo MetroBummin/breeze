@@ -169,6 +169,10 @@ native pinch를 다시 허용하는 `manipulation`은 피합니다. EPUB은 ifra
 암호문으로 두고, PDF·EPUB·`paras`·기사 본문·사진은 IndexedDB에만 둡니다. 두 record는
 dirty state와 전송 trigger도 분리됩니다. 자세한 흐름은 [SYNC.md](SYNC.md)를 봐 주세요.
 
+Memory의 ‘오늘 5개 복습’ 일정과 이어 하기 상태는 별도 로컬 저장소에만 남습니다.
+이 복습 MVP는 vocabulary vault나 서버 동기화 payload를 변경하지 않습니다.
+순수 일정 엔진과 UI 저장 계약은 [결정 013](docs/decisions/013-vocabulary-review.md)을 참고하세요.
+
 ## URL 가져오기
 
 `scripts/importers/article.js`가 브라우저에서 본문과 사진을 골라 읽기 데이터로 바꿉니다.

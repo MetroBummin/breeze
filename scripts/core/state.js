@@ -247,6 +247,7 @@ function rememberAppView(view,replace){
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
+  if(v!=='vocab'&&typeof closeVocabularyReview==='function')closeVocabularyReview();
   if(v!=='read')cancelPendingBookOpen();
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && v!=='read') endOnboarding(true,false);
   const settings=options||{};

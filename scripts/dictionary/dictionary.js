@@ -1780,6 +1780,7 @@ function vocabMoreHtml(w){
   </div>`;
 }
 function renderVocab(){
+  if(typeof refreshVocabularyReviewEntry==='function')refreshVocabularyReviewEntry();
   const list = Object.entries(words).filter(([,item])=>validWordMeaning(item))
     .sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();

@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=74247169">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=26bcfce1">
+  <link rel="stylesheet" href="styles/wordbook.css?v=e1eb8b5d">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=1a46bd69">
   <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
@@ -72,7 +72,7 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=114c4fca"></script>
-  <script defer src="scripts/core/state.js?v=0fbbaef5"></script>
+  <script defer src="scripts/core/state.js?v=5a65c61d"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
@@ -100,7 +100,9 @@
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=133a7bb3"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=2560ce3c"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=1efc73ff"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=b466f317"></script>
+  <script defer src="scripts/core/vocabulary-review.js?v=1b48ed9a"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=b1911af8"></script>
   <script defer src="scripts/ui/wordbook.js?v=bd35bada"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -129,7 +131,7 @@
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
   <link rel="stylesheet" href="styles/study.css?v=ecbea728">
-  <link rel="stylesheet" href="styles/surfaces.css?v=3f467328">
+  <link rel="stylesheet" href="styles/surfaces.css?v=92901999">
 </head>
 <body>
 <div id="app">
@@ -392,6 +394,7 @@
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
   <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Breeze Memory</h1></header>
+  <div class="wordbook-review-entry"><button id="wordbook-review" type="button" onclick="openVocabularyReview()">오늘 5개 복습</button><span>저장한 표현을 문맥 속에서, 한 번에 최대 5개</span></div>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">
     <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><div id="vbook-options"></div></details></div>
@@ -406,6 +409,22 @@
     <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
   </nav></div>
 </div>
+<dialog id="vocabulary-review-dialog" class="task-surface" aria-labelledby="review-title">
+  <button id="review-close" class="task-close" type="button" aria-label="복습 닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+  <h2 id="review-title">오늘의 복습</h2>
+  <p id="review-progress" aria-live="polite"></p>
+  <div id="review-card">
+    <h3 id="review-expression"></h3>
+    <p id="review-sentence"></p>
+    <p id="review-source"></p>
+    <p id="review-meaning" tabindex="-1" hidden></p>
+    <button id="review-reveal" type="button">저장한 뜻 보기</button>
+    <div id="review-grade" hidden><button id="review-confused" type="button">헷갈렸어요</button><button id="review-remember" type="button">기억났어요</button></div>
+  </div>
+  <p id="review-status" role="status" tabindex="-1"></p>
+  <p id="review-error" role="alert" hidden></p>
+  <p class="review-local-note">복습 기록은 이 기기에만 저장돼요. 닫아도 이어서 할 수 있어요.</p>
+</dialog>
 <dialog id="wordbook-add-dialog" class="task-surface" aria-labelledby="wordbook-add-title"><form id="wordbook-add-form">
   <button class="task-close" type="button" aria-label="단어 추가 닫기" onclick="document.getElementById('wordbook-add-dialog').close()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
   <h2 id="wordbook-add-title">단어 추가</h2>
