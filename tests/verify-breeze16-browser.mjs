@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
+import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
@@ -13,7 +14,8 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-mkdirSync('/private/tmp/breeze16-qa',{recursive:true});
+const qaDir=resolve(tmpdir(),'breeze16-qa');
+mkdirSync(qaDir,{recursive:true});
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
  const browser=await engine.launchPersistentContext('',{viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
  try{
@@ -27,18 +29,60 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
   try{await page.waitForSelector('.pdf-source-page canvas');}catch(error){console.log('OPEN FAILED',errors,await page.evaluate(()=>({body:document.body.className,session:originalSession&&{kind:originalSession.kind,settled:[...originalSession.settled]},html:document.getElementById('original-content').innerHTML.slice(0,1000)})));throw error;}
+  // Preserve the same source point across real portrait/landscape layout changes.
+  await page.evaluate(async()=>{
+    await restorePdfAnchor({kind:'pdf',page:30,y:.45},topInset(),++readerModeChangeToken);
+    updatePfill(true);
+  });
+  await page.waitForTimeout(100);
+  assert.equal(await page.evaluate(()=>capturePdfAnchor(topInset()).page),30);
+  for(const viewport of [{width:1180,height:820},{width:820,height:1180}]){
+    await page.setViewportSize(viewport);
+    await page.waitForTimeout(500);
+    const anchor=await page.evaluate(()=>capturePdfAnchor(topInset()));
+    console.log(engine.name()+': rotation anchor '+JSON.stringify(anchor));
+    assert.equal(anchor.page,30,'rotation retains the source page');
+    assert.ok(Math.abs(anchor.y-.45)<.02,'rotation retains the in-page position');
+  }
+  const progressWork=await page.evaluate(()=>{
+    const original=ORIGINAL_FORMATS.pdf.captureAnchor,held=readerPillProgressHeld,label=document.getElementById('pdf-page-button');let calls=0;
+    ORIGINAL_FORMATS.pdf.captureAnchor=function(...args){calls++;return original(...args);};
+    readerPillProgressHeld=false;
+    const observer=new MutationObserver(()=>{});observer.observe(label,{childList:true,subtree:true,characterData:true});
+    try{updatePfill(true);updatePfill(true);return {calls,writes:observer.takeRecords().length};}
+    finally{ORIGINAL_FORMATS.pdf.captureAnchor=original;readerPillProgressHeld=held;observer.disconnect();}
+  });
+  assert.deepEqual(progressWork,{calls:2,writes:0},'PDF progress reuses one anchor per update and does not rebuild the page icon');
+  await page.evaluate(()=>toggleAa());
+  assert.equal(await page.locator('#aa-epub-mode').count(),0,'No duplicate hidden mode control');
+  await page.screenshot({path:`${qaDir}/${engine.name()}-pdf-settings.png`});
+  await page.evaluate(()=>closeAa());
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').isVisible(),true);
   await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);
   assert.equal(await page.locator('#pdf-page-control').isVisible(),false,'Collapsed Reader hides page pill');
   await page.locator('#readpill-title').click();await page.waitForTimeout(320);
+  await page.screenshot({path:`${qaDir}/${engine.name()}-combined-page-pill.png`});
+  assert.equal(await page.locator('#readback').evaluate(e=>{const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'Exit button remains hit-testable in the combined pill');
   const compact=await page.locator('#pdf-page-control').boundingBox();
+  await page.evaluate(()=>{window.__morphPaints=0;window.__originalPaintPdfThumbnails=paintPdfThumbnails;paintPdfThumbnails=function(){window.__morphPaints++;return window.__originalPaintPdfThumbnails();};});
   await page.locator('#pdf-page-button').click();
   await page.waitForSelector('.pdf-thumbnail canvas');
   await page.waitForTimeout(320);
+  const thumbRatios=await page.locator('.pdf-thumbnail canvas').evaluateAll(nodes=>nodes.map(c=>{
+    const r=c.getBoundingClientRect();return Math.abs(r.width/r.height-c.width/c.height);
+  }));
+  assert.ok(thumbRatios.every(error=>error<.01),'Thumbnails preserve the original paper aspect ratio');
   const expanded=await page.locator('#pdf-page-control').boundingBox();
+  const morphPaints=await page.evaluate(()=>{paintPdfThumbnails=window.__originalPaintPdfThumbnails;return window.__morphPaints;});
+  console.log(engine.name()+': page morph thumbnail layout passes = '+morphPaints);
+  assert.ok(morphPaints<=3,'Opening the panel must not relayout thumbnails on every morph frame');
   assert.ok(expanded.height>compact.height&&expanded.width>compact.width,'Same page surface expands');
+  assert.ok(Math.abs(expanded.x)<2&&Math.abs(expanded.y)<2&&Math.abs(expanded.height-1180)<2,'Page sidebar fills the left edge');
   assert.equal(await page.locator('#pdf-page-control #pdf-page-navigation').count(),1);
+  await page.locator('#pdf-navigation-toggle').click();
+  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false,'Same sidebar icon closes navigation');
+  await page.locator('#pdf-page-button').click();
   await page.locator('#pdf-navigation-dismiss').click({position:{x:300,y:200}});
   assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false);
   assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'Dismissal must not trigger lookup');
@@ -49,11 +93,24 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),60);
   assert.ok(await page.locator('.pdf-thumbnail').count()<16,'bounded thumbnail DOM');
   assert.equal(await page.locator('.pdf-thumbnail-jump[aria-current=true]').getAttribute('aria-label'),'60페이지로 이동');
+  await page.locator('.pdf-thumbnail-jump[aria-label="61페이지로 이동"]').click();
+  await page.waitForFunction(()=>pdfCurrentPage()===61);
+  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),true,'Selecting a thumbnail keeps the sidebar open');
+  await page.screenshot({path:`${qaDir}/${engine.name()}-sidebar-selected.png`});
+  await page.locator('.pdf-thumbnail-more[aria-label="61페이지 삭제 옵션"]').click();
+  await page.waitForSelector('.pdf-thumbnail-actions:not([hidden])');
+  assert.equal(await page.locator('dialog[open]').count(),0,'Page deletion stays inline');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>originalSession.deletedPages.has(61)),false,'Cancelling ellipsis deletion preserves the page');
+  await page.locator('.pdf-thumbnail-jump[aria-label="60페이지로 이동"]').click();
+  await page.waitForFunction(()=>pdfCurrentPage()===60);
   await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').click();
+  assert.ok(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)));
   await page.locator('#pdf-bookmarks-only').click();
-  assert.equal(await page.locator('.pdf-thumbnail').count(),1);
-  await page.locator('.pdf-thumbnail-bookmark').click();
-  assert.match(await page.locator('#pdf-thumbnail-strip').innerText(),/북마크한 페이지가 없어요/);
+  assert.equal(await page.locator('.pdf-thumbnail').count(),1,'Bookmark filter retains only bookmarked pages');
+  await page.locator('#pdf-bookmarks-only').click();
+  await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').click();
+  assert.equal(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)),false);
   await page.evaluate(()=>togglePdfBookmark(originalSession,60));
   await page.evaluate(()=>closePdfNavigation());
   await page.evaluate(()=>{
@@ -96,6 +153,12 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),61);
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'PDF reading also has page navigation');
   assert.equal(await page.locator('#readpill-title').textContent(),await page.evaluate(()=>curBook.title));
+  for(const width of [320,390,650]){
+    await page.setViewportSize({width,height:844});
+    await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(350);
+    const [nav,pill,settings]=await Promise.all(['#reader-navigation','#readpill','#aafab'].map(id=>page.locator(id).boundingBox()));
+    assert.ok(nav.x+nav.width+4<=pill.x&&pill.x+pill.width+4<=settings.x,'Combined PDF navigation must not overlap title or settings');
+  }
   // Narrow actual Reader containers, including the writing tools and open strip.
   await page.locator('[data-ink-toggle]').click();
   for(const [width,height] of [[320,900],[390,844],[507,900],[650,900],[820,1180],[1180,820],[1440,900],[844,390]])for(const dark of [false,true]){
@@ -105,23 +168,27 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const rects=await page.evaluate(()=>[...document.querySelectorAll('#readback,#aafab,#pdf-page-button,.ink-pill-entry,.ink-pill-control')].filter(n=>n.getClientRects().length).map(n=>({id:n.id||n.getAttribute('aria-label'),x:n.getBoundingClientRect().x,r:n.getBoundingClientRect().right,w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height,y:n.getBoundingClientRect().top,b:n.getBoundingClientRect().bottom})));
    for(const r of rects){assert.ok(r.x>=0&&r.r<=width+1&&r.y>=0&&r.b<=height,`${width}: ${JSON.stringify(r)}`);assert.ok(r.w>=34&&r.h>=34,JSON.stringify(r));}
    const position=await page.locator('#pdf-page-button').boundingBox();
-   assert.ok(position.x<40&&position.y<70,'Page count must stay upper left');
+   assert.ok(position.x<100&&position.y>height-100,'Page button shares the bottom-left exit pill');
    await page.locator('#pdf-page-button').click();await page.waitForSelector('.pdf-thumbnail');
    await page.waitForFunction(()=>[...document.querySelectorAll('.pdf-thumbnail')].every(cell=>cell.querySelector('canvas')));
    await page.waitForTimeout(300);
    const navBounds=await page.locator('#pdf-page-navigation').boundingBox();
-   assert.ok(navBounds.x<40&&Math.abs(navBounds.y-position.y)<2&&navBounds.y+navBounds.height<=height-70,'Vertical panel must remain inside viewport');
+   assert.ok(Math.abs(navBounds.x)<2&&Math.abs(navBounds.y)<2&&Math.abs(navBounds.height-height)<2,'Glass sidebar fills the left edge within viewport');
    assert.equal(await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollWidth>e.clientWidth),false,'No horizontal thumbnail scroll');
    await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollTop+=176);
    await page.waitForTimeout(50);
    assert.ok(await page.locator('.pdf-thumbnail').count()<16,'Vertical rendering stays bounded');
-   await page.screenshot({path:`/private/tmp/breeze16-qa/${engine.name()}-${width}-${height}-${dark?'dark':'light'}.png`});
+   await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-${height}-${dark?'dark':'light'}.png`});
    await page.evaluate(()=>closePdfNavigation());
   }
   await page.locator('[data-ink-toggle]').click();
   const before=await page.evaluate(()=>({words:JSON.stringify(words),text:curBook.paras.join('\n')}));
   assert.match(before.text,/Page 61 line/);
-  assert.equal(await page.evaluate(()=>deletePdfPage(originalSession,61)),true);
+  await page.evaluate(()=>goPdfPage(61));
+  await page.locator('#pdf-page-button').click();
+  await page.locator('.pdf-thumbnail-more[aria-label="61페이지 삭제 옵션"]').click();
+  await page.locator('.pdf-thumbnail-actions:not([hidden]) [data-pdf-delete-confirm]').click();
+  await page.waitForFunction(()=>originalSession.deletedPages.has(61)&&!pdfDeletionBusy);
   assert.equal(await page.locator('.pdf-source-page[data-page="61"]:visible').count(),0);
   assert.equal(await page.evaluate(()=>curBook.paras.join('\n').includes('Page 61 line')),false);
   assert.equal(await page.evaluate(()=>curBook.paras.join('\n').includes('Page 62 line')),true);

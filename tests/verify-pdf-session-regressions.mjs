@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {test} from 'node:test';
 const source=readFileSync(new URL('../scripts/reader/pdf-original.js',import.meta.url),'utf8');
+const scrollSource=readFileSync(new URL('../scripts/reader/reader-scroll.js',import.meta.url),'utf8');
 const defer=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 function fixture(realRender=false){
  const gate=defer(),started=defer(),content={innerHTML:'',className:'',appendChild(){}},surfaces=[];
@@ -103,4 +104,42 @@ test('PDF preparation errors resolve without an unbounded automatic retry',async
  const pending=c.renderOriginalPdfPage(session,1,{prepare:true,prefetch:true});
  await c.drainPdfPaint(session);await pending;
  assert.equal(session.wordBoxes.size,0);assert.equal(session.paintQueue.size,0);assert.equal(session.paintActive,null);
+});
+
+
+function rotationAnchorFixture(){
+ const box={scrollTop:2450,scrollLeft:0,clientWidth:1180,clientHeight:800,scrollHeight:4000,
+  getBoundingClientRect:()=>({top:0,left:0})};
+ const context={console,Math,Date,setTimeout,clearTimeout,requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame(){},
+  document:{getElementById:id=>id==='reader-scroll'?box:null,addEventListener(){}},
+  window:{addEventListener(){},ResizeObserver:null},
+  originalPinchBusy:()=>false,cancelOriginalPinch(){},readerModeChangeToken:0,currentReaderMode:'original',
+  originalSession:null,topInset:()=>50,
+  pdfPageIndexAtY(rects,y){let i=0;while(i<rects.length&&rects[i][1]+rects[i][3]<y)i++;return i;}};
+ vm.createContext(context);vm.runInContext(scrollSource,context);
+ return {context,box};
+}
+test('tablet rotation captures the logical PDF page before width reflow changes page heights',()=>{
+ const {context}=rotationAnchorFixture();
+ const rects=[0,1,2,3].map(i=>[0,i*1000,700,1000]);
+ const session={kind:'pdf',readDirection:'vertical',pageLayout:{rects}};
+ context.originalSession=session;
+ assert.deepEqual(
+  JSON.parse(JSON.stringify(context.capturePdfRotationAnchor(session))),
+  {kind:'pdf',page:3,y:.5}
+ );
+ const reflowed=[0,1,2,3,4].map(i=>[0,i*700,700,700]);
+ assert.equal(context.pdfPageIndexAtY(reflowed,2500),3,'raw scrollTop would now point at page 4');
+ session.readDirection='horizontal';
+ assert.equal(context.capturePdfRotationAnchor(session),null,'horizontal page navigation must keep its own page owner');
+});
+
+// A scroll callback may have refreshed the geometry cache before ResizeObserver.
+test('rotation uses the last settled reading point even if page layout was already rebuilt',()=>{
+ const {context}=rotationAnchorFixture();
+ const session={kind:'pdf',readDirection:'vertical',readingAnchor:{kind:'pdf',page:3,y:.5},
+  pageLayout:{rects:[0,1,2,3,4].map(i=>[0,i*700,700,700])}};
+ context.originalSession=session;
+ assert.deepEqual(JSON.parse(JSON.stringify(context.capturePdfRotationAnchor(session))),
+  {kind:'pdf',page:3,y:.5});
 });

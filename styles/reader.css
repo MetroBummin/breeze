@@ -404,7 +404,10 @@
   /* 확대된 종이가 차지할 자리. 크기는 자바스크립트가 적습니다 (기준 크기 × 배율).
      이 칸이 넓어지면 스크롤 칸 안에 가로로 밀 거리가 생깁니다 — 문서 폭은
      한 픽셀도 안 변하므로 폰 브라우저가 화면을 축소할 이유가 없습니다. */
-  body.reader-original #reader-scroll:has(.pdf-original){overflow-anchor:none;}
+  body.reader-original #reader-scroll:has(.pdf-original){overflow-anchor:none;background:var(--pdf-desk);}
+  body.reader-original #reader-scroll:has(.pdf-original)::-webkit-scrollbar{width:4px;height:4px;}
+  body.reader-original #reader-scroll:has(.pdf-original)::-webkit-scrollbar-thumb:hover,
+  body.reader-original #reader-scroll:has(.pdf-original)::-webkit-scrollbar-thumb:active{background:var(--sb-thumb);}
   #original-stage{position:relative;}
   #original-stage.pinching{overflow:clip;}
   #original-stage.pinching #original-zoom{will-change:transform;}
@@ -429,7 +432,7 @@
     background:var(--blue); color:var(--on-color); cursor:pointer; font:600 14px var(--ui);}
   .original-empty small{display:block; color:var(--soft2); font-size:11.5px;}
 
-  .pdf-original{display:flex; flex-direction:column; align-items:center; gap:22px;}
+  .pdf-original{display:flex; flex-direction:column; align-items:center; gap:16px;}
   /* A landscape page can be shorter than the viewport. Center that single
      page in its available space instead of leaving all of it below the paper. */
   .pdf-original.pdf-horizontal{min-height:calc(100dvh - env(safe-area-inset-top) - 24px);justify-content:center;}
@@ -441,7 +444,7 @@
      줍니다. 스캔본은 그림이라 그냥 두면 화살표라서, 마우스가 있는 화면에서는
      여기서 무엇을 할 수 있는지 알려 주는 것이 커서밖에 없습니다. */
   .pdf-source-page{position:relative; width:100%; background:var(--source-page);
-    box-shadow:var(--source-shadow); overflow:hidden; isolation:isolate; cursor:pointer;}
+    box-shadow:var(--pdf-paper-shadow); overflow:hidden; isolation:isolate; cursor:pointer;}
   .pdf-source-page canvas{position:absolute; inset:0; display:block; width:100%!important; height:100%!important;}
   .pdf-page-loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--source-wait); font:13px var(--ui); background:var(--source-page);}
@@ -499,7 +502,7 @@
     #originalwrap{padding:calc(env(safe-area-inset-top) + 24px) 0 45vh;}
     #originalwrap:has(.pdf-original.pdf-horizontal){padding-bottom:0;}
     .original-content{padding:0 6px;}
-    .pdf-original{gap:10px;}
+    .original-content.pdf-original{gap:14px;padding-inline:20px;}
     .original-empty{margin:6vh 10px 0; padding:34px 22px;}
   }
   @media(prefers-reduced-motion:reduce){

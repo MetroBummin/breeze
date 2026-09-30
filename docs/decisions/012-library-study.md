@@ -11,12 +11,12 @@
   category controls use a single select/add/manage row; rename and delete live
   in the selected category's manage menu with the existing confirmation dialog.
 - Completed local document cards reuse the existing completion badge at top right.
-- PDF navigation uses an upper-left page-count pill in both original reading
-  and writing. Its surface morphs into a vertical floating thumbnail panel without
+- PDF navigation uses a bottom-left page icon grouped with the exit button in both original reading
+  and writing. It opens a full-height translucent left sidebar without
   resizing the document. Reading keeps the book title in the bottom pill; writing
   keeps only tools there. Outside taps close without reaching the document. Opening retains page order and scrolls the current
-  page into the first visible slot. The current border is blue; bookmarks are red.
-  Bookmarks-only contains only bookmarked, nondeleted pages. Rendering is serial,
+  page into the first visible slot. The current paper has a gray overlay and centered circular ellipsis action; bookmarks are red.
+  The header has a bookmarks-only filter and circular sidebar icon to close; per-page ribbons own bookmarks. Rendering is serial,
   virtualized to the viewport plus three slots, and cancelled/guarded on close or
   session change. No eager all-page thumbnail render or unbounded bitmap cache.
 - Bookmarks use source hash (book ID fallback) and original page number, independent
@@ -28,7 +28,7 @@
   because no next page exists below the visible page. Pages shorter than the
   viewport are centered in the available height. Touch swipes and unmodified
   left/right arrow keys move pages; page-navigation header arrows are absent.
-- Long-pressing a thumbnail or using its context menu offers confirmed page deletion.
+- Selecting a thumbnail navigates without closing the sidebar. The selected paper shows a centered ellipsis button that offers confirmed deletion. Long-press/context-menu deletion is removed.
   At least one page must remain. Deleted page numbers are stored on the book;
   original bytes and original ink IDs are preserved. Text is re-extracted from
   retained PDF pages, then a single IndexedDB book transaction stores text, source
@@ -53,9 +53,7 @@ Pencil admission/palm rejection and real-device latency remain a release gate.
 
 Category creation, rename and deletion use the shared native task dialog. Cancel
 and Escape do not mutate data; the initiating control regains focus. A pending
-request cannot replace an open decision. PDF deletion awaits the same confirmation
-surface and rechecks the original session before invoking the existing transactional
-delete path. Selection/bookmark appearance uses theme-aware semantic tokens;
+request cannot replace an open decision. PDF deletion expands the selected thumbnail ellipsis into inline cancel/delete controls and rechecks the original session before invoking the existing transactional delete path. No implementation-detail message or separate modal is shown. An empty bookmarks filter has no large explanatory text. Selection/bookmark appearance uses theme-aware semantic tokens;
 actual ink colors and user-picked grade colors are unchanged.
 
 ## Shelf/category and page refinement (2026-09-30)
@@ -65,14 +63,43 @@ capture their destination at initiation; duplicate/reconnected documents keep
 their existing assignment. Category deletion still preserves all documents.
 Thumbnail bookmarks use an outlined/filled ribbon at the upper left. Page
 navigation is available in reading and writing and closes on leaving PDF original
-mode; the sheet uses an opaque preview palette. Its bookmark-only and close
-actions use ribbon and the shared task-close X with accessible labels. The page
-pill follows the Reader side controls' upward exit motion on chrome collapse.
+mode; the sidebar uses a translucent light/dark glass palette. Its header has a bookmarks-only filter and circular sidebar toggle with an accessible collapse label. The page
+pill disappears downward on chrome collapse.
 
 Reader settings expose only per-grade highlight visibility through the same star
 buttons as word lookup. No color picker is shown; stored custom colors and all
 vocabulary data are preserved.
 
+The compact page control shows a sidebar-with-dots icon in a 44px target beside the exit button;
+the current page remains in its accessible name. Reader settings use spacing
+instead of row or star-section divider lines.
+The thumbnail panel retains the same navigation, bookmarks and deletion behavior
+with a quieter header and smaller visual elements; all touch targets remain 44px.
+The category disclosure uses an SVG chevron so its open/closed shape is stable
+across fonts and platforms. Reader and Home settings use smaller type and spacing
+without reducing control hit areas.
+
+For PDF scrolling, progress calculation owns the per-frame source-anchor read and
+passes that measurement to the page pill. Unchanged page text and read direction
+do not trigger DOM writes. The thumbnail viewport measures its current page once
+per paint pass. Browser verification counts one PDF anchor read per progress update;
+physical-device frame pacing still needs a separate same-build comparison.
+
 Shelf and Edit category selection use the same Breeze details menu. The hidden
 select retains the existing assignment contract; the visible menu owns the
 selection UI. Wordbook star filters reuse lookup/Reader star button styling.
+
+The page sidebar lays out thumbnails at its final full-height size and animates translation/opacity only. This avoids ResizeObserver-driven viewport repaint on each animation frame. One fixed-size glass surface provides backdrop blur. Ink settings position is measured only while visible and on opening. Reader settings remove the obsolete hidden mode toggle; `hidden` wins over flex-row styles.
+
+PDF viewport rotation preserves the last source page and normalized in-page position
+captured at settled viewport dimensions. Resize/scroll callbacks can refresh the
+page rectangle cache before ResizeObserver runs, so that cache alone is not a
+reliable pre-rotation position. A pending restoration belongs to the same PDF
+session and vertical mode. Initial original-document presentation does not save
+its temporary text surface over stored reading progress.
+
+PDF paper sits above a theme-aware gray desk with 20/24px side margins,
+14/16px page gaps and a subtle paper shadow. These are inside the existing zoom
+layer; source/ink coordinates and vertical trailing scroll space stay intact.
+The combined 88px exit/page slot is a PDF-specific dock variant. Its full-height sidebar
+is absolutely positioned so it cannot move the centered title or writing tools.

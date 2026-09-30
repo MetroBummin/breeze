@@ -128,11 +128,15 @@ function readerProgressAtEnd(value){
   return Math.max(0,Math.min(1,value+(1-value)*closing));
 }
 
+let readerProgressAnchor=null;
 function readerProgressNow(){
-  if(!curBook) return null;
-  return currentReaderMode==='original'
-    ? sourceProgressForBook(curBook,captureOriginalAnchor())
-    : textProgressForBook(curBook,readerFrameAnchor());
+  if(!curBook){readerProgressAnchor=null;return null;}
+  if(currentReaderMode==='original'){
+    readerProgressAnchor=captureOriginalAnchor();
+    return sourceProgressForBook(curBook,readerProgressAnchor);
+  }
+  readerProgressAnchor=null;
+  return textProgressForBook(curBook,readerFrameAnchor());
 }
 
 function visibleReaderProgress(){

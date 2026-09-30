@@ -625,7 +625,13 @@ function capturePdfAnchor(inset){
   let i=originalSession?.readDirection==='horizontal'?((originalSession.navigationPage||1)-1):pdfPageIndexAtY(rects,y);
   if(i>=rects.length){i=rects.length-1;while(i>=0&&!rects[i][3])i--;}
   const r=rects[i];if(!r)return null;
-  return {kind:'pdf',page:i+1,y:Math.max(0,Math.min(1,(y-r[1])/Math.max(1,r[3])))};
+  const anchor={kind:'pdf',page:i+1,y:Math.max(0,Math.min(1,(y-r[1])/Math.max(1,r[3])))};
+  // Resize/scroll callbacks can rebuild pageLayout before the resize observer.
+  // Only commit a reading point while the viewport still matches its settled size.
+  if(Math.round(scroller.clientWidth)===originalZoomObservedWidth
+      &&Math.round(scroller.clientHeight)===originalZoomObservedHeight)
+    originalSession.readingAnchor=anchor;
+  return anchor;
 }
 
 async function restorePdfAnchor(source,inset,changeToken,isCurrent){

@@ -38,11 +38,6 @@ function updateReaderModeControls(){
   const label = currentReaderMode==='original' ? '글자로 보기' : '원본으로 보기';
   fab.title = label;
   fab.setAttribute('aria-label', label);
-  const other=document.getElementById('aa-epub-mode');
-  if(other){
-    other.hidden=true;
-    document.getElementById('aa-epub-mode-button').textContent=label;
-  }
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
 }
@@ -448,7 +443,12 @@ async function switchReaderMode(mode,options){
     bridge=rememberedOriginal;
   }
   if(options.initial) bridge=null;
-  if(previousMode!==mode) saveReadingState();
+  /* Reopening a saved original document starts with the text surface at its
+     default scroll position, before the original anchor has been restored.
+     Saving that transient surface here overwrites real progress (including 100%)
+     with a near-zero text measurement. Initial presentation owns no new reading
+     movement, so preserve the stored position until restoration completes. */
+  if(previousMode!==mode && !options.initial) saveReadingState();
   if(sourceCueBridge){
     showBridgeSourceCue(sourceCueBridge);
     document.body.classList.add('reader-mode-transition');

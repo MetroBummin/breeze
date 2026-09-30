@@ -183,6 +183,7 @@ const BreezePdfInk = (()=>{
   function updateSettings(){
     if(!settings)return;
     settings.hidden=!settingsTool;
+    if(settingsTool&&typeof positionPdfInkSettings==='function')positionPdfInkSettings();
     settings.setAttribute('aria-label',settingsTool==='erase'?'지우개 설정':settingsTool==='highlighter'?'형광펜 설정':'펜 설정');
     settings.querySelectorAll('[data-ink-panel]').forEach(panel=>{panel.hidden=panel.dataset.inkPanel!==settingsTool;});
     settings.querySelectorAll('[data-ink-color]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inkColor===color)));

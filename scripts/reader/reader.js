@@ -408,9 +408,10 @@ function esc(s){
 }
 
 function updatePfill(instant=false){
-  if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
   if(!curBook || readerPillProgressHeld) return;
   const progress=visibleReaderProgress();
+  // visibleReaderProgress already captured the PDF anchor for this frame.
+  if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls(readerProgressAnchor);
   setReaderPillProgress(progress,instant);
 }
 let readerPillProgressHeld=false;
