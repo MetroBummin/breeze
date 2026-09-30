@@ -102,6 +102,7 @@ function originalZoom(){ return originalZoomLevel; }
 function capturePdfRotationAnchor(session=originalSession){
   if(currentReaderMode!=='original'||!session||session!==originalSession||session.kind!=='pdf'
       ||session.readDirection==='horizontal') return null;
+  if(session.readingAnchor) return {...session.readingAnchor};
   const box=readerScroller(),cached=session.pageLayout;
   if(!box||!cached?.rects?.length||typeof pdfPageIndexAtY!=='function') return null;
   const rects=cached.rects,y=topInset()-box.getBoundingClientRect().top+box.scrollTop;
@@ -120,7 +121,8 @@ function keepPdfRotationAnchorAlive(pending){
 }
 function restorePdfRotationAnchor(pending){
   const {session,anchor}=pending||{};
-  if(!anchor||currentReaderMode!=='original'||session!==originalSession||session?.kind!=='pdf') return;
+  if(!anchor||currentReaderMode!=='original'||session!==originalSession||session?.kind!=='pdf'
+      ||session.readDirection==='horizontal') return;
   if(typeof currentPdfSession==='function'&&!currentPdfSession(session)) return;
   if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);
   const token=++readerModeChangeToken;

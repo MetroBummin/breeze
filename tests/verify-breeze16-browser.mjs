@@ -27,6 +27,21 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
   try{await page.waitForSelector('.pdf-source-page canvas');}catch(error){console.log('OPEN FAILED',errors,await page.evaluate(()=>({body:document.body.className,session:originalSession&&{kind:originalSession.kind,settled:[...originalSession.settled]},html:document.getElementById('original-content').innerHTML.slice(0,1000)})));throw error;}
+  // Preserve the same source point across real portrait/landscape layout changes.
+  await page.evaluate(async()=>{
+    await restorePdfAnchor({kind:'pdf',page:30,y:.45},topInset(),++readerModeChangeToken);
+    updatePfill(true);
+  });
+  await page.waitForTimeout(100);
+  assert.equal(await page.evaluate(()=>capturePdfAnchor(topInset()).page),30);
+  for(const viewport of [{width:1180,height:820},{width:820,height:1180}]){
+    await page.setViewportSize(viewport);
+    await page.waitForTimeout(500);
+    const anchor=await page.evaluate(()=>capturePdfAnchor(topInset()));
+    console.log(engine.name()+': rotation anchor '+JSON.stringify(anchor));
+    assert.equal(anchor.page,30,'rotation retains the source page');
+    assert.ok(Math.abs(anchor.y-.45)<.02,'rotation retains the in-page position');
+  }
   const progressWork=await page.evaluate(()=>{
     const original=ORIGINAL_FORMATS.pdf.captureAnchor,held=readerPillProgressHeld,label=document.getElementById('pdf-page-button');let calls=0;
     ORIGINAL_FORMATS.pdf.captureAnchor=function(...args){calls++;return original(...args);};

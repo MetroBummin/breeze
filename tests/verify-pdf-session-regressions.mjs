@@ -133,3 +133,13 @@ test('tablet rotation captures the logical PDF page before width reflow changes 
  session.readDirection='horizontal';
  assert.equal(context.capturePdfRotationAnchor(session),null,'horizontal page navigation must keep its own page owner');
 });
+
+// A scroll callback may have refreshed the geometry cache before ResizeObserver.
+test('rotation uses the last settled reading point even if page layout was already rebuilt',()=>{
+ const {context}=rotationAnchorFixture();
+ const session={kind:'pdf',readDirection:'vertical',readingAnchor:{kind:'pdf',page:3,y:.5},
+  pageLayout:{rects:[0,1,2,3,4].map(i=>[0,i*700,700,700])}};
+ context.originalSession=session;
+ assert.deepEqual(JSON.parse(JSON.stringify(context.capturePdfRotationAnchor(session))),
+  {kind:'pdf',page:3,y:.5});
+});

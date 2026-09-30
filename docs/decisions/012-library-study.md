@@ -93,3 +93,10 @@ select retains the existing assignment contract; the visible menu owns the
 selection UI. Wordbook star filters reuse lookup/Reader star button styling.
 
 The page panel lays out thumbnails at its final size before morphing its outer shell. This avoids ResizeObserver-driven viewport repaint on each animation frame. The opaque expanded surface disables inherited backdrop blur. Ink settings position is measured only while visible and on opening. Reader settings remove the obsolete hidden mode toggle; `hidden` wins over flex-row styles.
+
+PDF viewport rotation preserves the last source page and normalized in-page position
+captured at settled viewport dimensions. Resize/scroll callbacks can refresh the
+page rectangle cache before ResizeObserver runs, so that cache alone is not a
+reliable pre-rotation position. A pending restoration belongs to the same PDF
+session and vertical mode. Initial original-document presentation does not save
+its temporary text surface over stored reading progress.
