@@ -36,16 +36,24 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     finally{ORIGINAL_FORMATS.pdf.captureAnchor=original;readerPillProgressHeld=held;observer.disconnect();}
   });
   assert.deepEqual(progressWork,{calls:2,writes:0},'PDF progress reuses one anchor per update and does not rebuild the page icon');
+  await page.evaluate(()=>toggleAa());
+  assert.equal(await page.locator('#aa-epub-mode').count(),0,'No duplicate hidden mode control');
+  await page.screenshot({path:`/private/tmp/breeze16-qa/${engine.name()}-pdf-settings.png`});
+  await page.evaluate(()=>closeAa());
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').isVisible(),true);
   await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);
   assert.equal(await page.locator('#pdf-page-control').isVisible(),false,'Collapsed Reader hides page pill');
   await page.locator('#readpill-title').click();await page.waitForTimeout(320);
   const compact=await page.locator('#pdf-page-control').boundingBox();
+  await page.evaluate(()=>{window.__morphPaints=0;window.__originalPaintPdfThumbnails=paintPdfThumbnails;paintPdfThumbnails=function(){window.__morphPaints++;return window.__originalPaintPdfThumbnails();};});
   await page.locator('#pdf-page-button').click();
   await page.waitForSelector('.pdf-thumbnail canvas');
   await page.waitForTimeout(320);
   const expanded=await page.locator('#pdf-page-control').boundingBox();
+  const morphPaints=await page.evaluate(()=>{paintPdfThumbnails=window.__originalPaintPdfThumbnails;return window.__morphPaints;});
+  console.log(engine.name()+': page morph thumbnail layout passes = '+morphPaints);
+  assert.ok(morphPaints<=3,'Opening the panel must not relayout thumbnails on every morph frame');
   assert.ok(expanded.height>compact.height&&expanded.width>compact.width,'Same page surface expands');
   assert.equal(await page.locator('#pdf-page-control #pdf-page-navigation').count(),1);
   await page.locator('#pdf-navigation-dismiss').click({position:{x:300,y:200}});

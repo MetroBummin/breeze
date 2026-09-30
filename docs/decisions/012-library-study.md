@@ -91,3 +91,5 @@ physical-device frame pacing still needs a separate same-build comparison.
 Shelf and Edit category selection use the same Breeze details menu. The hidden
 select retains the existing assignment contract; the visible menu owns the
 selection UI. Wordbook star filters reuse lookup/Reader star button styling.
+
+The page panel lays out thumbnails at its final size before morphing its outer shell. This avoids ResizeObserver-driven viewport repaint on each animation frame. The opaque expanded surface disables inherited backdrop blur. Ink settings position is measured only while visible and on opening. Reader settings remove the obsolete hidden mode toggle; `hidden` wins over flex-row styles.

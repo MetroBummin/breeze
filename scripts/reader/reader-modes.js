@@ -38,11 +38,6 @@ function updateReaderModeControls(){
   const label = currentReaderMode==='original' ? '글자로 보기' : '원본으로 보기';
   fab.title = label;
   fab.setAttribute('aria-label', label);
-  const other=document.getElementById('aa-epub-mode');
-  if(other){
-    other.hidden=true;
-    document.getElementById('aa-epub-mode-button').textContent=label;
-  }
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
 }

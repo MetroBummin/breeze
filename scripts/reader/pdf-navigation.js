@@ -168,7 +168,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(currentReaderMode!=='original'||!pdfHorizontal()||document.activeElement?.matches('input,textarea,select,[contenteditable]')||document.querySelector('dialog[open]')||sentenceModalOpen()||wordPanelOpen()||aaPopOpen()||pdfNavigation||BreezePdfInk.busy()||originalPinchBusy())return;
     event.preventDefault();void stepPdfPage(event.key==='ArrowRight'?1:-1);
   });
-  const resize=new ResizeObserver(()=>{positionPdfInkSettings();if(pdfNavigation)paintPdfThumbnails();});
+  const resize=new ResizeObserver(entries=>{
+    if(entries.some(entry=>entry.target.id!=='pdf-thumbnail-strip'))positionPdfInkSettings();
+    if(pdfNavigation&&entries.some(entry=>entry.target.id!=='readpill'))paintPdfThumbnails();
+  });
   resize.observe(document.getElementById('readmain'));resize.observe(document.getElementById('readpill'));resize.observe(document.getElementById('pdf-thumbnail-strip'));
   /* Observe single direct-finger swipes; never claim a Pencil, palm or pinch.
      The existing gesture controller cancels lookup when movement exceeds slop. */
@@ -243,9 +246,11 @@ async function deletePdfPage(session,n){
 }
 
 function positionPdfInkSettings(){
+  const panel=document.getElementById('pdf-ink-settings');
+  if(!panel||panel.hidden)return;
   const chrome=document.getElementById('readchrome'),pill=document.getElementById('readpill');
   if(!chrome||!pill)return;
   const bottom=chrome.getBoundingClientRect().bottom-pill.getBoundingClientRect().top+12;
-  const panel=document.getElementById('pdf-ink-settings');
-  if(panel)panel.style.bottom=`${Math.max(56,bottom)}px`;
+  const value=`${Math.max(56,bottom)}px`;
+  if(panel.style.bottom!==value)panel.style.bottom=value;
 }

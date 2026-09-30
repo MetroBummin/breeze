@@ -106,11 +106,11 @@
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=0c88d224"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=c6e17d1f"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=5a7eb126"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=65e65dc3"></script>
   <script defer src="scripts/reader/pdf-original.js?v=8486e8a0"></script>
   <script defer src="scripts/reader/epub-original.js?v=be19a7b6"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=744db00e"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=62c733ec"></script>
   <script defer src="scripts/reader/reader.js?v=07d86429"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=2a6fea27"></script>
   <script defer src="scripts/ui/preferences.js?v=ce9cfb89"></script>
@@ -121,15 +121,15 @@
   <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=9298a976"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=d95ea48a"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=8848bf76"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=c7747867"></script>
   <script defer src="scripts/main.js?v=b42953a9"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=cffc3077">
-  <link rel="stylesheet" href="styles/surfaces.css?v=bea676e2">
+  <link rel="stylesheet" href="styles/study.css?v=dc58a964">
+  <link rel="stylesheet" href="styles/surfaces.css?v=44945e49">
 </head>
 <body>
 <div id="app">
@@ -545,14 +545,10 @@
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" aria-label="다크 모드" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
-  <div class="aa-row" id="aa-epub-mode" hidden>
-    <span class="aa-label">보기 모드</span>
-    <button id="aa-epub-mode-button" class="sm-mini" type="button" onclick="toggleReaderMode()">글자로 보기</button>
-  </div>
   <!-- PDF 원본에서만 켭니다 — updateOriginalZoomControls() 가 예전에 떠 있던
        #pdfzoomfabs 대신 이 자리를 켜고 끕니다. 버튼이 부르는 changeOriginalZoom
        은 그대로입니다 — 옮긴 것은 자리뿐입니다. -->
-  <div class="aa-row" id="aa-pdf-direction" hidden><span class="aa-label">PDF 읽기 방향</span><div class="aa-seg"><button type="button" data-pdf-direction="vertical" onclick="setPdfReadDirection('vertical')">세로</button><button type="button" data-pdf-direction="horizontal" onclick="setPdfReadDirection('horizontal')">가로</button></div></div>
+  <div class="aa-row" id="aa-pdf-direction" hidden><span class="aa-label">페이지 넘김</span><div class="aa-seg"><button type="button" data-pdf-direction="vertical" onclick="setPdfReadDirection('vertical')">세로</button><button type="button" data-pdf-direction="horizontal" onclick="setPdfReadDirection('horizontal')">가로</button></div></div>
   <div class="aa-row" id="aa-pdfzoom" hidden>
     <span class="aa-label">PDF 확대</span>
     <div class="aa-size">
