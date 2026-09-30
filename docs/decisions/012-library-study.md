@@ -53,9 +53,7 @@ Pencil admission/palm rejection and real-device latency remain a release gate.
 
 Category creation, rename and deletion use the shared native task dialog. Cancel
 and Escape do not mutate data; the initiating control regains focus. A pending
-request cannot replace an open decision. PDF deletion awaits the same confirmation
-surface and rechecks the original session before invoking the existing transactional
-delete path. Selection/bookmark appearance uses theme-aware semantic tokens;
+request cannot replace an open decision. PDF deletion expands the selected thumbnail ellipsis into inline cancel/delete controls and rechecks the original session before invoking the existing transactional delete path. No implementation-detail message or separate modal is shown. An empty bookmarks filter has no large explanatory text. Selection/bookmark appearance uses theme-aware semantic tokens;
 actual ink colors and user-picked grade colors are unchanged.
 
 ## Shelf/category and page refinement (2026-09-30)

@@ -98,7 +98,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.locator('#pdf-page-navigation').isVisible(),true,'Selecting a thumbnail keeps the sidebar open');
   await page.screenshot({path:`${qaDir}/${engine.name()}-sidebar-selected.png`});
   await page.locator('.pdf-thumbnail-more[aria-label="61페이지 삭제 옵션"]').click();
-  await page.waitForSelector('dialog[open]');
+  await page.waitForSelector('.pdf-thumbnail-actions:not([hidden])');
+  assert.equal(await page.locator('dialog[open]').count(),0,'Page deletion stays inline');
   await page.keyboard.press('Escape');
   assert.equal(await page.evaluate(()=>originalSession.deletedPages.has(61)),false,'Cancelling ellipsis deletion preserves the page');
   await page.locator('.pdf-thumbnail-jump[aria-label="60페이지로 이동"]').click();
@@ -186,7 +187,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>goPdfPage(61));
   await page.locator('#pdf-page-button').click();
   await page.locator('.pdf-thumbnail-more[aria-label="61페이지 삭제 옵션"]').click();
-  await page.locator('#task-submit').click();
+  await page.locator('.pdf-thumbnail-actions:not([hidden]) [data-pdf-delete-confirm]').click();
   await page.waitForFunction(()=>originalSession.deletedPages.has(61)&&!pdfDeletionBusy);
   assert.equal(await page.locator('.pdf-source-page[data-page="61"]:visible').count(),0);
   assert.equal(await page.evaluate(()=>curBook.paras.join('\n').includes('Page 61 line')),false);

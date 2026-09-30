@@ -61,9 +61,11 @@ try{for(const engine of [chromium,webkit]){
   await page.setViewportSize({width:820,height:1180});
   await page.locator('#fileinput').setInputFiles({name:'Dialogs.pdf',mimeType:'application/pdf',buffer:fixturePdf(4)});await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});await page.waitForSelector('.pdf-source-page canvas');
-  await page.evaluate(()=>{void offerPdfPageDeletion(originalSession,2);});await page.locator('#task-dialog .task-actions [data-task-cancel]').click();assert.equal(await page.evaluate(()=>originalSession.deletedPages.has(2)),false);
-  await page.evaluate(()=>{void offerPdfPageDeletion(originalSession,2);});await page.locator('#task-submit').click();await page.waitForFunction(()=>originalSession.deletedPages.has(2));
-  await page.evaluate(()=>{void offerPdfPageDeletion(originalSession,3);show('home');});await page.locator('#task-submit').click();await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>books.find(b=>b.kind==='pdf').deletedPdfPages.includes(3)),false,'Late confirmation must not mutate an abandoned PDF session');
+  await page.evaluate(async()=>{await goPdfPage(2);togglePdfNavigation();offerPdfPageDeletion(originalSession,2);});
+  await page.locator('[data-pdf-delete-cancel]:visible').click();assert.equal(await page.evaluate(()=>originalSession.deletedPages.has(2)),false);
+  await page.evaluate(()=>offerPdfPageDeletion(originalSession,2));await page.locator('[data-pdf-delete-confirm]:visible').click();await page.waitForFunction(()=>originalSession.deletedPages.has(2)&&!pdfDeletionBusy);
+  await page.evaluate(async()=>{await goPdfPage(3);togglePdfNavigation();offerPdfPageDeletion(originalSession,3);const action=document.querySelector('.pdf-thumbnail-actions:not([hidden]) [data-pdf-delete-confirm]').onclick;show('home');action();});
+  await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>books.find(b=>b.kind==='pdf').deletedPdfPages.includes(3)),false,'Stale inline action must not mutate an abandoned PDF session');
  }
  await page.goto(url+'landing/');for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]]){
   await page.setViewportSize({width,height});for(let state=0;state<=5;state++){
