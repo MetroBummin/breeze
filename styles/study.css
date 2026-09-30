@@ -1,45 +1,54 @@
 /* Reader-specific content uses the shared glass material. */
 #readmain{container-type:inline-size;}
 #readpill{max-width:calc(100% - 124px);}
-#reader-navigation{position:relative;flex:none;width:42px;height:42px;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
+#reader-navigation{--reader-dock-gutter:14px;position:relative;flex:none;width:42px;height:42px;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
 #reader-navigation:has(#pdf-page-control:not([hidden])){width:88px;height:44px;}
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback{z-index:76;width:44px;height:44px;border:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::before,
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::after{display:none;}
-#reader-navigation:has([aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
+#reader-navigation:has(#pdf-page-button[aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
 #readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){max-width:calc(100% - 180px);}
 #readchrome:has(#pdf-page-button[aria-expanded=true]){z-index:75;}
 #readchrome:has(#pdf-page-button[aria-expanded=true])>:not(#reader-navigation){pointer-events:none;}
 
+@media(min-width:761px){#reader-navigation{--reader-dock-gutter:22px;}}
 #readpill [hidden],#pdf-page-control[hidden],#pdf-page-button[hidden],#pdf-navigation-dismiss[hidden],#pdf-page-navigation[hidden],#aa-pdf-direction[hidden]{display:none!important;}
 /* One surface changes shape; thumbnail text and canvases are never scaled. */
-#pdf-page-control{--pdf-navigation-height:min(660px,calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 100px));position:absolute;z-index:75;bottom:0;left:0;width:88px;height:44px;box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:22px;color:var(--sentence-glass-ink);overflow:hidden;transition:width 240ms cubic-bezier(.2,.75,.25,1),height 240ms cubic-bezier(.2,.75,.25,1),border-radius 240ms cubic-bezier(.2,.75,.25,1),background-color 180ms ease,opacity .2s ease,transform .3s ease,visibility 0s;}
+#pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:88px;height:44px;box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:22px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
 #pdf-page-button{position:absolute;right:0;bottom:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
 #pdf-page-button svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
-#pdf-page-button circle{fill:currentColor;stroke:none;}
-#pdf-page-control:has(#pdf-page-button[aria-expanded=true]){width:164px;height:var(--pdf-navigation-height);border-radius:18px;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow);}
+#pdf-page-button circle,#pdf-navigation-toggle circle{fill:currentColor;stroke:none;}
+#pdf-page-control:has(#pdf-page-button[aria-expanded=true]){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-15px - env(safe-area-inset-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;backdrop-filter:blur(18px) saturate(115%);-webkit-backdrop-filter:blur(18px) saturate(115%);background:var(--pdf-sidebar-glass);box-shadow:4px 0 20px rgba(0,0,0,.08);animation:pdf-sidebar-reveal 200ms ease-out;}
 #pdf-page-control:has(#pdf-page-button[aria-expanded=true])::before{display:none;}
 #pdf-page-button[aria-expanded=true]{opacity:0;visibility:hidden;pointer-events:none;}
 body.chrome-hidden #reader-navigation{visibility:hidden;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s ease,transform .3s ease,visibility 0s .3s;}
 body.chrome-hidden #reader-navigation #readback{transform:none;}
 #pdf-navigation-dismiss{position:absolute;inset:0;z-index:74;width:100%;height:100%;border:0;padding:0;background:transparent;}
-#pdf-page-navigation{position:absolute;inset:0;width:162px;height:calc(var(--pdf-navigation-height) - 2px);box-sizing:border-box;padding:8px;color:inherit;display:flex;flex-direction:column;overflow:hidden;animation:pdf-navigation-reveal 220ms ease;}
+#pdf-page-navigation{position:absolute;inset:0;width:calc(var(--pdf-navigation-width) - 1px);height:var(--pdf-navigation-height);box-sizing:border-box;padding:calc(env(safe-area-inset-top) + 8px) 8px calc(env(safe-area-inset-bottom) + 8px);color:inherit;display:flex;flex-direction:column;overflow:hidden;animation:pdf-navigation-reveal 220ms ease;}
+@keyframes pdf-sidebar-reveal{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
 @keyframes pdf-navigation-reveal{from{opacity:0}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-navigation{animation:none;}}
-.pdf-navigation-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:8px;padding-bottom:0;}
+@media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-navigation{animation:none;}}
+.pdf-navigation-head{display:flex;flex:none;justify-content:flex-end;align-items:center;gap:8px;padding-bottom:0;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
-.pdf-navigation-head button[aria-pressed=true]{color:var(--sentence-glass-ink);background:transparent;}
 .pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;}
 .pdf-navigation-head>button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-#pdf-bookmarks-only svg{width:14px;height:20px;fill:transparent;}
-#pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
-#pdf-thumbnail-strip{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;scrollbar-width:thin;}
+#pdf-thumbnail-strip{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;}
+#pdf-thumbnail-strip::-webkit-scrollbar{width:4px;height:4px;}
+#pdf-thumbnail-strip::-webkit-scrollbar-track,#pdf-thumbnail-strip::-webkit-scrollbar-track:hover,#pdf-thumbnail-strip::-webkit-scrollbar-corner{background:transparent;}
+#pdf-thumbnail-strip::-webkit-scrollbar-thumb,#pdf-thumbnail-strip::-webkit-scrollbar-thumb:hover,#pdf-thumbnail-strip::-webkit-scrollbar-thumb:active{background:var(--sb-thumb);border-radius:4px;}
+#pdf-thumbnail-strip::-webkit-scrollbar-button{display:none;}
+@supports not selector(::-webkit-scrollbar){#pdf-thumbnail-strip{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent;}}
 .pdf-thumbnail-track{position:relative;width:100%;}
-.pdf-thumbnail{position:absolute;left:0;right:0;height:168px;}
+.pdf-thumbnail{position:absolute;left:0;right:0;height:216px;}
 .pdf-thumbnail-jump{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;border:0;border-radius:12px;background:transparent;color:inherit;overflow:hidden;cursor:pointer;}
-.pdf-thumbnail-jump[aria-current=true]{background:var(--sentence-glass-action);}
+.pdf-thumbnail-paper{position:relative;line-height:0;border-radius:2px;overflow:hidden;background:var(--source-page);box-shadow:0 1px 3px rgba(0,0,0,.10);}
+.pdf-thumbnail-paper canvas{display:block;}
+.pdf-thumbnail-jump[aria-current=true] .pdf-thumbnail-paper::after{content:"";position:absolute;inset:0;background:rgba(60,64,68,.28);pointer-events:none;}
+.pdf-thumbnail-more{position:absolute;left:50%;top:calc(50% - 9px);transform:translate(-50%,-50%);width:44px;height:44px;padding:12px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--sentence-glass-solid);color:var(--sentence-glass-muted);box-shadow:0 1px 5px rgba(0,0,0,.12);cursor:pointer;}
+.pdf-thumbnail-more[hidden]{display:none;}
+.pdf-thumbnail-more svg{width:20px;height:20px;fill:currentColor;}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
-.pdf-thumbnail-jump canvas{max-width:112px;max-height:132px;object-fit:contain;box-shadow:0 1px 3px #0001;}
+.pdf-thumbnail-jump canvas{max-width:calc(var(--pdf-navigation-width) - 32px);max-height:180px;object-fit:contain;}
 .pdf-thumbnail-jump span{font:500 10px var(--ui);line-height:18px;color:var(--sentence-glass-muted);}
 .pdf-thumbnail-bookmark{position:absolute;left:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-muted);display:grid;place-items:start center;padding:0;cursor:pointer;}
 .pdf-thumbnail-bookmark svg{width:14px;height:22px;fill:var(--sentence-glass-solid);stroke:currentColor;stroke-width:1.5;}
@@ -90,4 +99,4 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 }
 .pdf-navigation-head{margin-bottom:8px;}
 #aa-pop{touch-action:pan-y;}
-@media(prefers-reduced-motion:reduce){#pdf-page-navigation{animation:none;}}
+@media(prefers-reduced-motion:reduce){#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-navigation{animation:none;}}

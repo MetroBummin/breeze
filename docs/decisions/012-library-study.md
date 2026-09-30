@@ -12,11 +12,11 @@
   in the selected category's manage menu with the existing confirmation dialog.
 - Completed local document cards reuse the existing completion badge at top right.
 - PDF navigation uses a bottom-left page icon grouped with the exit button in both original reading
-  and writing. Its surface morphs upward into a vertical floating thumbnail panel without
+  and writing. It opens a full-height translucent left sidebar without
   resizing the document. Reading keeps the book title in the bottom pill; writing
   keeps only tools there. Outside taps close without reaching the document. Opening retains page order and scrolls the current
-  page into the first visible slot. The current thumbnail has a neutral fill and stronger page label; bookmarks are red.
-  Bookmarks-only contains only bookmarked, nondeleted pages. Rendering is serial,
+  page into the first visible slot. The current paper has a gray overlay and centered circular ellipsis action; bookmarks are red.
+  The header uses the same sidebar icon to close; per-page ribbons own bookmarks. Rendering is serial,
   virtualized to the viewport plus three slots, and cancelled/guarded on close or
   session change. No eager all-page thumbnail render or unbounded bitmap cache.
 - Bookmarks use source hash (book ID fallback) and original page number, independent
@@ -28,7 +28,7 @@
   because no next page exists below the visible page. Pages shorter than the
   viewport are centered in the available height. Touch swipes and unmodified
   left/right arrow keys move pages; page-navigation header arrows are absent.
-- Long-pressing a thumbnail or using its context menu offers confirmed page deletion.
+- Selecting a thumbnail navigates without closing the sidebar. The selected paper shows a centered ellipsis button that offers confirmed deletion. Long-press/context-menu deletion is removed.
   At least one page must remain. Deleted page numbers are stored on the book;
   original bytes and original ink IDs are preserved. Text is re-extracted from
   retained PDF pages, then a single IndexedDB book transaction stores text, source
@@ -65,8 +65,7 @@ capture their destination at initiation; duplicate/reconnected documents keep
 their existing assignment. Category deletion still preserves all documents.
 Thumbnail bookmarks use an outlined/filled ribbon at the upper left. Page
 navigation is available in reading and writing and closes on leaving PDF original
-mode; the sheet uses an opaque preview palette. Its bookmark-only and close
-actions use ribbon and the shared task-close X with accessible labels. The page
+mode; the sidebar uses a translucent light/dark glass palette. Its header has one sidebar toggle with an accessible collapse label. The page
 pill disappears downward on chrome collapse.
 
 Reader settings expose only per-grade highlight visibility through the same star
@@ -92,7 +91,7 @@ Shelf and Edit category selection use the same Breeze details menu. The hidden
 select retains the existing assignment contract; the visible menu owns the
 selection UI. Wordbook star filters reuse lookup/Reader star button styling.
 
-The page panel lays out thumbnails at its final size before morphing its outer shell. This avoids ResizeObserver-driven viewport repaint on each animation frame. The opaque expanded surface disables inherited backdrop blur. Ink settings position is measured only while visible and on opening. Reader settings remove the obsolete hidden mode toggle; `hidden` wins over flex-row styles.
+The page sidebar lays out thumbnails at its final full-height size and animates translation/opacity only. This avoids ResizeObserver-driven viewport repaint on each animation frame. One fixed-size glass surface provides backdrop blur. Ink settings position is measured only while visible and on opening. Reader settings remove the obsolete hidden mode toggle; `hidden` wins over flex-row styles.
 
 PDF viewport rotation preserves the last source page and normalized in-page position
 captured at settled viewport dimensions. Resize/scroll callbacks can refresh the
@@ -104,5 +103,5 @@ its temporary text surface over stored reading progress.
 PDF paper sits above a theme-aware gray desk with 20/24px side margins,
 14/16px page gaps and a subtle paper shadow. These are inside the existing zoom
 layer; source/ink coordinates and vertical trailing scroll space stay intact.
-The combined 88px exit/page slot is a PDF-specific dock variant. Its expansion
+The combined 88px exit/page slot is a PDF-specific dock variant. Its full-height sidebar
 is absolutely positioned so it cannot move the centered title or writing tools.

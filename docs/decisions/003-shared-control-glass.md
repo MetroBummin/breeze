@@ -201,6 +201,6 @@ radius transition. Contents never scale. Closed page controls disappear with the
 motion disables transitions. Closing releases thumbnail resources immediately.
 
 PDF original mode has an explicit left-slot variant: back and page navigation
-share an 88px pill. The page shell expands upward without changing the slot or
-Reader width. Non-PDF slots retain their shared geometry. On narrow screens,
+share an 88px pill. The page control opens a full-height glass sidebar at the left edge without changing the slot or
+Reader width. The sidebar header repeats the entry icon to close it. Non-PDF slots retain their shared geometry. On narrow screens,
 writing tools keep their separate upper row.

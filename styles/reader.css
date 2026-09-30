@@ -405,6 +405,9 @@
      이 칸이 넓어지면 스크롤 칸 안에 가로로 밀 거리가 생깁니다 — 문서 폭은
      한 픽셀도 안 변하므로 폰 브라우저가 화면을 축소할 이유가 없습니다. */
   body.reader-original #reader-scroll:has(.pdf-original){overflow-anchor:none;background:var(--pdf-desk);}
+  body.reader-original #reader-scroll:has(.pdf-original)::-webkit-scrollbar{width:4px;height:4px;}
+  body.reader-original #reader-scroll:has(.pdf-original)::-webkit-scrollbar-thumb:hover,
+  body.reader-original #reader-scroll:has(.pdf-original)::-webkit-scrollbar-thumb:active{background:var(--sb-thumb);}
   #original-stage{position:relative;}
   #original-stage.pinching{overflow:clip;}
   #original-stage.pinching #original-zoom{will-change:transform;}

@@ -2,7 +2,7 @@
    lexical geometry and ink retain their document/session ownership. */
 let pdfNavigation=null,pdfNavigationGeneration=0,pdfNavigationTask=null;
 let lastPdfDirectionState=null;
-const PDF_THUMB_SLOT=176;
+const PDF_THUMB_SLOT=224;
 function pdfHorizontal(session=originalSession){return session?.kind==='pdf'&&session.readDirection==='horizontal';}
 function pdfCurrentPage(){
   if(!currentPdfSession())return 1;
@@ -42,12 +42,12 @@ async function setPdfReadDirection(direction){
   if(currentPdfSession(session)){saveReadingState();updatePfill(true);}
   if(direction==='horizontal')toast('좌우 방향키나 스와이프로 페이지를 넘겨요.');
 }
-async function goPdfPage(n){
+async function goPdfPage(n,{keepNavigation=false}={}){
   const session=originalSession;
   if(currentReaderMode!=='original'||!currentPdfSession(session)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
   n=pdfNearestPage(session,n);
   if(typeof closePanel==='function')closePanel();
-  closePdfNavigation();expandReaderChrome();
+  if(!keepNavigation)closePdfNavigation();expandReaderChrome();
   const token=++readerModeChangeToken;
   await restorePdfAnchor({kind:'pdf',page:n,y:0},topInset(),token);
   if(!currentPdfSession(session)||token!==readerModeChangeToken)return;
@@ -70,6 +70,7 @@ function updatePdfNavigationControls(measuredAnchor){
   if(pdfNavigation)for(const button of pdfNavigation.strip.querySelectorAll('.pdf-thumbnail-jump')){
     const index=Number(button.parentElement.dataset.index),current=String(pdfNavigation.pages[index]===n);
     if(button.getAttribute('aria-current')!==current)button.setAttribute('aria-current',current);
+    const more=button.parentElement.querySelector('.pdf-thumbnail-more');if(more)more.hidden=current!=='true';
   }
 }
 function closePdfNavigation(){
@@ -89,7 +90,7 @@ function togglePdfNavigation(){
   closeAa();expandReaderChrome();
   const settings=document.getElementById('pdf-ink-settings');if(settings)settings.hidden=true;
   const panel=document.getElementById('pdf-page-navigation'),strip=document.getElementById('pdf-thumbnail-strip');
-  pdfNavigation={session:originalSession,strip,bookmarksOnly:false,pages:[],generation:++pdfNavigationGeneration};
+  pdfNavigation={session:originalSession,strip,pages:[],generation:++pdfNavigationGeneration};
   panel.hidden=false;document.getElementById('pdf-navigation-dismiss').hidden=false;
   document.getElementById('pdf-page-button').setAttribute('aria-expanded','true');
   // A transparent dismissal surface prevents a closing tap reaching the page.
@@ -99,9 +100,8 @@ function buildPdfNavigation(focusCurrent){
   const nav=pdfNavigation;if(!nav)return;
   pdfNavigationTask?.cancel();pdfNavigationTask=null;nav.generation=++pdfNavigationGeneration;
   const bookmarks=readPdfBookmarks(nav.session)||[];
-  nav.pages=(nav.bookmarksOnly?bookmarks:pdfAvailablePages(nav.session)).filter(n=>!nav.session.deletedPages?.has(n));
+  nav.pages=pdfAvailablePages(nav.session).filter(n=>!nav.session.deletedPages?.has(n));
   nav.bookmarks=new Set(bookmarks);nav.strip.replaceChildren();
-  document.getElementById('pdf-bookmarks-only').setAttribute('aria-pressed',String(nav.bookmarksOnly));
   const track=document.createElement('div');track.className='pdf-thumbnail-track';
   track.style.height=`${nav.pages.length*PDF_THUMB_SLOT+Math.max(0,nav.strip.clientHeight-PDF_THUMB_SLOT)}px`;
   nav.strip.append(track);nav.track=track;
@@ -126,13 +126,16 @@ function paintPdfThumbnails(){
     const n=nav.pages[i],cell=document.createElement('div');cell.className='pdf-thumbnail';cell.dataset.index=String(i);cell.style.top=`${i*PDF_THUMB_SLOT}px`;
     const jump=document.createElement('button');jump.type='button';jump.className='pdf-thumbnail-jump';jump.setAttribute('aria-label',`${n}페이지로 이동`);
     jump.setAttribute('aria-current',String(n===currentPage));
-    const pressed=attachLongPress(jump,()=>offerPdfPageDeletion(nav.session,n));
-    jump.onclick=event=>{if(event.detail===0||!pressed())void goPdfPage(n);};
-    jump.oncontextmenu=event=>{event.preventDefault();offerPdfPageDeletion(nav.session,n);};
+    jump.onclick=()=>void goPdfPage(n,{keepNavigation:true});
+    const paper=document.createElement('div');paper.className='pdf-thumbnail-paper';jump.append(paper);
+    const more=document.createElement('button');more.type='button';more.className='pdf-thumbnail-more';more.hidden=n!==currentPage;
+    more.setAttribute('aria-label',`${n}페이지 삭제 옵션`);more.setAttribute('aria-haspopup','dialog');
+    more.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+    more.onclick=()=>offerPdfPageDeletion(nav.session,n);
     const label=document.createElement('span');label.textContent=String(n);jump.append(label);
     const bookmark=document.createElement('button');bookmark.type='button';bookmark.className='pdf-thumbnail-bookmark';bookmark.innerHTML='<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 1h18v28l-9-6-9 6Z"/></svg>';
     bookmark.setAttribute('aria-label',`${n}페이지 북마크`);bookmark.setAttribute('aria-pressed',String(nav.bookmarks.has(n)));
-    bookmark.onclick=()=>togglePdfBookmark(nav.session,n);cell.append(jump,bookmark);nav.track.append(cell);
+    bookmark.onclick=()=>togglePdfBookmark(nav.session,n);cell.append(jump,bookmark,more);nav.track.append(cell);
   }
   void renderPdfThumbnailQueue(nav);
 }
@@ -145,12 +148,12 @@ async function renderPdfThumbnailQueue(nav){
       cell.dataset.rendered='true';const n=nav.pages[+cell.dataset.index];
       const page=await nav.session.pdf.getPage(n);
       if(pdfNavigation!==nav||nav.generation!==generation||!cell.isConnected)continue;
-      const base=page.getViewport({scale:1}),viewport=page.getViewport({scale:Math.min(176/base.width,208/base.height)});
+      const base=page.getViewport({scale:1}),viewport=page.getViewport({scale:Math.min(176/base.width,208/base.height)*Math.min(2,window.devicePixelRatio||1)});
       const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
       const task=page.render({canvasContext:canvas.getContext('2d'),viewport});pdfNavigationTask=task;
       try{await task.promise;}catch(error){if(error.name!=='RenderingCancelledException')console.warn('Thumbnail unavailable',error);}
       if(pdfNavigationTask===task)pdfNavigationTask=null;
-      if(pdfNavigation===nav&&nav.generation===generation&&cell.isConnected)cell.querySelector('.pdf-thumbnail-jump').prepend(canvas);
+      if(pdfNavigation===nav&&nav.generation===generation&&cell.isConnected)cell.querySelector('.pdf-thumbnail-paper').append(canvas);
       else{canvas.width=0;canvas.height=0;}
     }
   }catch(error){console.warn('Thumbnail unavailable',error);}
@@ -161,9 +164,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(event.target instanceof Element&&event.target.closest('#aafab,#pdf-ink-tools,[data-ink-toggle]'))closePdfNavigation();
   },true);
   document.getElementById('pdf-thumbnail-strip').addEventListener('scroll',paintPdfThumbnails,{passive:true});
-  document.getElementById('pdf-bookmarks-only').onclick=()=>{if(pdfNavigation){pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;buildPdfNavigation(true);}};
   document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&pdfNavigation){closePdfNavigation();document.getElementById('pdf-page-button').focus();}
+    if(event.key==='Escape'&&pdfNavigation&&!document.querySelector('dialog[open]')){closePdfNavigation();document.getElementById('pdf-page-button').focus();}
     if(!['ArrowLeft','ArrowRight'].includes(event.key)||event.defaultPrevented||event.repeat||event.metaKey||event.ctrlKey||event.altKey||event.shiftKey)return;
     if(currentReaderMode!=='original'||!pdfHorizontal()||document.activeElement?.matches('input,textarea,select,[contenteditable]')||document.querySelector('dialog[open]')||sentenceModalOpen()||wordPanelOpen()||aaPopOpen()||pdfNavigation||BreezePdfInk.busy()||originalPinchBusy())return;
     event.preventDefault();void stepPdfPage(event.key==='ArrowRight'?1:-1);

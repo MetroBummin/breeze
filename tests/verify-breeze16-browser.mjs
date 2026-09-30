@@ -69,13 +69,20 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.locator('#pdf-page-button').click();
   await page.waitForSelector('.pdf-thumbnail canvas');
   await page.waitForTimeout(320);
+  const thumbRatios=await page.locator('.pdf-thumbnail canvas').evaluateAll(nodes=>nodes.map(c=>{
+    const r=c.getBoundingClientRect();return Math.abs(r.width/r.height-c.width/c.height);
+  }));
+  assert.ok(thumbRatios.every(error=>error<.01),'Thumbnails preserve the original paper aspect ratio');
   const expanded=await page.locator('#pdf-page-control').boundingBox();
   const morphPaints=await page.evaluate(()=>{paintPdfThumbnails=window.__originalPaintPdfThumbnails;return window.__morphPaints;});
   console.log(engine.name()+': page morph thumbnail layout passes = '+morphPaints);
   assert.ok(morphPaints<=3,'Opening the panel must not relayout thumbnails on every morph frame');
   assert.ok(expanded.height>compact.height&&expanded.width>compact.width,'Same page surface expands');
-  assert.ok(Math.abs(expanded.y+expanded.height-compact.y-compact.height)<2,'Morph stays anchored to the bottom-left pill');
+  assert.ok(Math.abs(expanded.x)<2&&Math.abs(expanded.y)<2&&Math.abs(expanded.height-1180)<2,'Page sidebar fills the left edge');
   assert.equal(await page.locator('#pdf-page-control #pdf-page-navigation').count(),1);
+  await page.locator('#pdf-navigation-toggle').click();
+  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false,'Same sidebar icon closes navigation');
+  await page.locator('#pdf-page-button').click();
   await page.locator('#pdf-navigation-dismiss').click({position:{x:300,y:200}});
   assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false);
   assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'Dismissal must not trigger lookup');
@@ -86,11 +93,20 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),60);
   assert.ok(await page.locator('.pdf-thumbnail').count()<16,'bounded thumbnail DOM');
   assert.equal(await page.locator('.pdf-thumbnail-jump[aria-current=true]').getAttribute('aria-label'),'60페이지로 이동');
+  await page.locator('.pdf-thumbnail-jump[aria-label="61페이지로 이동"]').click();
+  await page.waitForFunction(()=>pdfCurrentPage()===61);
+  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),true,'Selecting a thumbnail keeps the sidebar open');
+  await page.screenshot({path:`${qaDir}/${engine.name()}-sidebar-selected.png`});
+  await page.locator('.pdf-thumbnail-more[aria-label="61페이지 삭제 옵션"]').click();
+  await page.waitForSelector('dialog[open]');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>originalSession.deletedPages.has(61)),false,'Cancelling ellipsis deletion preserves the page');
+  await page.locator('.pdf-thumbnail-jump[aria-label="60페이지로 이동"]').click();
+  await page.waitForFunction(()=>pdfCurrentPage()===60);
   await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').click();
-  await page.locator('#pdf-bookmarks-only').click();
-  assert.equal(await page.locator('.pdf-thumbnail').count(),1);
-  await page.locator('.pdf-thumbnail-bookmark').click();
-  assert.match(await page.locator('#pdf-thumbnail-strip').innerText(),/북마크한 페이지가 없어요/);
+  assert.ok(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)));
+  await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').click();
+  assert.equal(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)),false);
   await page.evaluate(()=>togglePdfBookmark(originalSession,60));
   await page.evaluate(()=>closePdfNavigation());
   await page.evaluate(()=>{
@@ -153,7 +169,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    await page.waitForFunction(()=>[...document.querySelectorAll('.pdf-thumbnail')].every(cell=>cell.querySelector('canvas')));
    await page.waitForTimeout(300);
    const navBounds=await page.locator('#pdf-page-navigation').boundingBox();
-   assert.ok(navBounds.x<40&&navBounds.y>=0&&navBounds.y+navBounds.height<=height,'Panel opens upward within viewport');
+   assert.ok(Math.abs(navBounds.x)<2&&Math.abs(navBounds.y)<2&&Math.abs(navBounds.height-height)<2,'Glass sidebar fills the left edge within viewport');
    assert.equal(await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollWidth>e.clientWidth),false,'No horizontal thumbnail scroll');
    await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollTop+=176);
    await page.waitForTimeout(50);
@@ -164,7 +180,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.locator('[data-ink-toggle]').click();
   const before=await page.evaluate(()=>({words:JSON.stringify(words),text:curBook.paras.join('\n')}));
   assert.match(before.text,/Page 61 line/);
-  assert.equal(await page.evaluate(()=>deletePdfPage(originalSession,61)),true);
+  await page.evaluate(()=>goPdfPage(61));
+  await page.locator('#pdf-page-button').click();
+  await page.locator('.pdf-thumbnail-more[aria-label="61페이지 삭제 옵션"]').click();
+  await page.locator('#task-submit').click();
+  await page.waitForFunction(()=>originalSession.deletedPages.has(61)&&!pdfDeletionBusy);
   assert.equal(await page.locator('.pdf-source-page[data-page="61"]:visible').count(),0);
   assert.equal(await page.evaluate(()=>curBook.paras.join('\n').includes('Page 61 line')),false);
   assert.equal(await page.evaluate(()=>curBook.paras.join('\n').includes('Page 62 line')),true);
