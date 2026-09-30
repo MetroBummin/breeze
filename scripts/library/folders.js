@@ -57,7 +57,7 @@ function makeFolderPicker(select){
   const picker=document.createElement('details');picker.className='breeze-folder-picker';
   const trigger=document.createElement('summary');trigger.setAttribute('aria-label',select.getAttribute('aria-label')||'카테고리 선택');
   const name=document.createElement('span');name.className='breeze-folder-name';
-  const chevron=document.createElement('span');chevron.className='breeze-folder-chevron';chevron.textContent='⌄';chevron.setAttribute('aria-hidden','true');
+  const chevron=document.createElement('span');chevron.className='breeze-folder-chevron';chevron.innerHTML='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>';chevron.setAttribute('aria-hidden','true');
   trigger.append(name,chevron);
   const options=document.createElement('div');options.className='breeze-folder-options';options.setAttribute('role','group');options.setAttribute('aria-label','카테고리 목록');
   for(const option of select.options){

@@ -33,16 +33,17 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #settings-modal .sm-mini{border-radius:12px;}
 #settings-modal .sm-btn{min-height:48px;border-radius:16px;}
 #settings-modal .set-row{flex-wrap:wrap;}
-#settings-modal .set-label{flex-basis:160px;}
+#settings-modal .set-label{flex:1 1 160px;min-width:0;}
 #settings-modal .set-row .sm-mini{flex-shrink:0;max-width:100%;white-space:normal;}
 /* Aa actions use the same quiet material; switches retain the small visual track. */
-#aa-pop{box-sizing:border-box;width:min(320px,calc(100vw - 24px));padding:14px;background:var(--sentence-glass-solid);border-color:var(--sentence-glass-line);border-radius:22px;box-shadow:var(--sentence-glass-shadow);color:var(--sentence-glass-ink);}
-#aa-pop .aa-row{gap:8px;min-height:44px;padding:2px 0;}
-#aa-pop .aa-label{color:var(--sentence-glass-secondary);font-size:13px;white-space:nowrap;}
-#aa-pop :is(.aa-size button,.aa-seg button,.sm-mini){min-height:44px;min-width:44px;border:0;border-radius:10px;background:transparent;color:var(--sentence-glass-ink);font-size:13px;}
+#aa-pop{box-sizing:border-box;width:min(300px,calc(100vw - 24px));padding:10px 12px;background:var(--sentence-glass-solid);border-color:var(--sentence-glass-line);border-radius:18px;box-shadow:var(--sentence-glass-shadow);color:var(--sentence-glass-ink);}
+#aa-pop .aa-row{gap:8px;min-height:44px;padding:0;}
+#aa-pop .aa-row+.aa-row{border-top:1px solid var(--sentence-glass-line-soft);}
+#aa-pop .aa-label{color:var(--sentence-glass-secondary);font-size:12px;white-space:nowrap;}
+#aa-pop :is(.aa-size button,.aa-seg button,.sm-mini){min-height:44px;min-width:44px;border:0;border-radius:10px;background:transparent;color:var(--sentence-glass-ink);font-size:12px;}
 #aa-pop .aa-seg{border:0;padding:0;gap:2px;background:var(--sentence-glass-action);}
 #aa-pop .aa-size{gap:4px;}
-#aa-pop .aa-size>span{min-width:26px;text-align:center;font:500 13px var(--ui);font-variant-numeric:tabular-nums;}
+#aa-pop .aa-size>span{min-width:26px;text-align:center;font:500 12px var(--ui);font-variant-numeric:tabular-nums;}
 #aa-pop .aa-seg button{padding:0 8px;}
 #aa-pop .aa-seg button.on,#aa-pop .aa-seg button[aria-pressed=true]{background:var(--sentence-glass-action-hover);color:var(--sentence-glass-ink);}
 #aa-pop .aa-toggle{height:44px;background:transparent;flex:none;position:relative;}

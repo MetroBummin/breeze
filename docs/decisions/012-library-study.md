@@ -73,6 +73,19 @@ Reader settings expose only per-grade highlight visibility through the same star
 buttons as word lookup. No color picker is shown; stored custom colors and all
 vocabulary data are preserved.
 
+The compact page pill keeps the page count beside a sidebar-with-dots icon.
+The thumbnail panel retains the same navigation, bookmarks and deletion behavior
+with a quieter header and smaller visual elements; all touch targets remain 44px.
+The category disclosure uses an SVG chevron so its open/closed shape is stable
+across fonts and platforms. Reader and Home settings use smaller type and spacing
+without reducing control hit areas.
+
+For PDF scrolling, progress calculation owns the per-frame source-anchor read and
+passes that measurement to the page pill. Unchanged page text and read direction
+do not trigger DOM writes. The thumbnail viewport measures its current page once
+per paint pass. Browser verification counts one PDF anchor read per progress update;
+physical-device frame pacing still needs a separate same-build comparison.
+
 Shelf and Edit category selection use the same Breeze details menu. The hidden
 select retains the existing assignment contract; the visible menu owns the
 selection UI. Wordbook star filters reuse lookup/Reader star button styling.

@@ -27,6 +27,15 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
   try{await page.waitForSelector('.pdf-source-page canvas');}catch(error){console.log('OPEN FAILED',errors,await page.evaluate(()=>({body:document.body.className,session:originalSession&&{kind:originalSession.kind,settled:[...originalSession.settled]},html:document.getElementById('original-content').innerHTML.slice(0,1000)})));throw error;}
+  const progressWork=await page.evaluate(()=>{
+    const original=ORIGINAL_FORMATS.pdf.captureAnchor,held=readerPillProgressHeld,label=document.getElementById('pdf-page-count');let calls=0;
+    ORIGINAL_FORMATS.pdf.captureAnchor=function(...args){calls++;return original(...args);};
+    readerPillProgressHeld=false;
+    const observer=new MutationObserver(()=>{});observer.observe(label,{childList:true,subtree:true,characterData:true});
+    try{updatePfill(true);updatePfill(true);return {calls,writes:observer.takeRecords().length};}
+    finally{ORIGINAL_FORMATS.pdf.captureAnchor=original;readerPillProgressHeld=held;observer.disconnect();}
+  });
+  assert.deepEqual(progressWork,{calls:2,writes:0},'PDF progress reuses one anchor per update and does not rewrite unchanged count');
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').isVisible(),true);
   await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);

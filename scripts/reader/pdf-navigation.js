@@ -1,6 +1,7 @@
 /* A bounded vertical thumbnail panel beside the PDF. Source pages,
    lexical geometry and ink retain their document/session ownership. */
 let pdfNavigation=null,pdfNavigationGeneration=0,pdfNavigationTask=null;
+let lastPdfDirectionState=null;
 const PDF_THUMB_SLOT=176;
 function pdfHorizontal(session=originalSession){return session?.kind==='pdf'&&session.readDirection==='horizontal';}
 function pdfCurrentPage(){
@@ -52,18 +53,25 @@ async function goPdfPage(n){
   if(!currentPdfSession(session)||token!==readerModeChangeToken)return;
   saveReadingState();updatePfill(true);updatePdfNavigationControls();
 }
-function updatePdfNavigationControls(){
+function updatePdfNavigationControls(measuredAnchor){
   const button=document.getElementById('pdf-page-button');if(!button)return;
   const ready=currentReaderMode==='original'&&currentPdfSession();
-  button.hidden=!ready;
-  document.getElementById('pdf-page-control').hidden=!ready;
-  document.getElementById('aa-pdf-direction').hidden=!ready;
-  for(const direction of ['vertical','horizontal'])document.querySelector(`[data-pdf-direction="${direction}"]`)?.setAttribute('aria-pressed',String(studyPrefs.direction===direction));
+  if(button.hidden===ready)button.hidden=!ready;
+  const control=document.getElementById('pdf-page-control');if(control.hidden===ready)control.hidden=!ready;
+  const directionRow=document.getElementById('aa-pdf-direction');if(directionRow.hidden===ready)directionRow.hidden=!ready;
+  if(lastPdfDirectionState!==studyPrefs.direction){
+    for(const direction of ['vertical','horizontal'])document.querySelector(`[data-pdf-direction="${direction}"]`)?.setAttribute('aria-pressed',String(studyPrefs.direction===direction));
+    lastPdfDirectionState=studyPrefs.direction;
+  }
   if(!ready){closePdfNavigation();return;}
-  const n=pdfCurrentPage();button.textContent=`${pdfAvailablePages().indexOf(n)+1}/${pdfAvailablePages().length}`;button.setAttribute('aria-label',`${n}페이지, 페이지 탐색`);
+  const n=measuredAnchor?.kind==='pdf'&&measuredAnchor.page?measuredAnchor.page:pdfCurrentPage();
+  const pages=pdfAvailablePages(),count=`${pages.indexOf(n)+1}/${pages.length}`;
+  const label=document.getElementById('pdf-page-count');if(label.textContent!==count)label.textContent=count;
+  const aria=`${n}페이지, 페이지 탐색`;if(button.getAttribute('aria-label')!==aria)button.setAttribute('aria-label',aria);
   if(pdfNavigation&&pdfNavigation.session!==originalSession)closePdfNavigation();
   if(pdfNavigation)for(const button of pdfNavigation.strip.querySelectorAll('.pdf-thumbnail-jump')){
-    const index=Number(button.parentElement.dataset.index);button.setAttribute('aria-current',String(pdfNavigation.pages[index]===n));
+    const index=Number(button.parentElement.dataset.index),current=String(pdfNavigation.pages[index]===n);
+    if(button.getAttribute('aria-current')!==current)button.setAttribute('aria-current',current);
   }
 }
 function closePdfNavigation(){
@@ -105,7 +113,11 @@ function buildPdfNavigation(focusCurrent){
 }
 function paintPdfThumbnails(){
   const nav=pdfNavigation;if(!nav||!currentPdfSession(nav.session))return;
-  if(nav.pages.length)nav.track.style.height=`${nav.pages.length*PDF_THUMB_SLOT+Math.max(0,nav.strip.clientHeight-PDF_THUMB_SLOT)}px`;
+  const currentPage=pdfCurrentPage();
+  if(nav.pages.length){
+    const height=`${nav.pages.length*PDF_THUMB_SLOT+Math.max(0,nav.strip.clientHeight-PDF_THUMB_SLOT)}px`;
+    if(nav.track.style.height!==height)nav.track.style.height=height;
+  }
   const start=Math.max(0,Math.floor(nav.strip.scrollTop/PDF_THUMB_SLOT)-1);
   const end=Math.min(nav.pages.length,start+Math.ceil(nav.strip.clientHeight/PDF_THUMB_SLOT)+3);
   for(const child of [...nav.track.children])if(+child.dataset.index<start||+child.dataset.index>=end){
@@ -115,7 +127,7 @@ function paintPdfThumbnails(){
     if(nav.track.querySelector(`[data-index="${i}"]`))continue;
     const n=nav.pages[i],cell=document.createElement('div');cell.className='pdf-thumbnail';cell.dataset.index=String(i);cell.style.top=`${i*PDF_THUMB_SLOT}px`;
     const jump=document.createElement('button');jump.type='button';jump.className='pdf-thumbnail-jump';jump.setAttribute('aria-label',`${n}페이지로 이동`);
-    jump.setAttribute('aria-current',String(n===pdfCurrentPage()));
+    jump.setAttribute('aria-current',String(n===currentPage));
     const pressed=attachLongPress(jump,()=>offerPdfPageDeletion(nav.session,n));
     jump.onclick=event=>{if(event.detail===0||!pressed())void goPdfPage(n);};
     jump.oncontextmenu=event=>{event.preventDefault();offerPdfPageDeletion(nav.session,n);};
