@@ -82,12 +82,12 @@ function renderFolderControls(){
       const option=new Option(folder.name,folder.id);select.add(option);
     }
     select.value=activeLibraryFolder;select.onchange=()=>changeLibraryFolder(select.value);bar.append(select,makeFolderPicker(select));
-    const add=document.createElement('button');add.type='button';add.className='library-folder-add';add.textContent='＋';add.setAttribute('aria-label','카테고리 추가');add.title='카테고리 추가';
+    const add=document.createElement('button');add.type='button';add.className='library-folder-add';add.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';add.setAttribute('aria-label','카테고리 추가');add.title='카테고리 추가';
     add.onclick=async()=>{add.focus({preventScroll:true});const name=await breezeTaskDialog({title:'새 카테고리',input:true});if(name)createLibraryFolder(name);};bar.append(add);
     const folder=libraryFolders.folders.find(f=>f.id===activeLibraryFolder);
     if(folder){
       const menu=document.createElement('details');menu.className='library-folder-menu';
-      const summary=document.createElement('summary');summary.textContent='⋯';summary.setAttribute('aria-label','카테고리 관리');summary.title='카테고리 관리';
+      const summary=document.createElement('summary');summary.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>';summary.setAttribute('aria-label','카테고리 관리');summary.title='카테고리 관리';
       const actions=document.createElement('div');actions.className='library-folder-actions';
       const action=(label,run)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=async()=>{menu.open=false;summary.focus({preventScroll:true});await run();};actions.append(button);};
       action('이름 변경',async()=>{const name=await breezeTaskDialog({title:'카테고리 이름 변경',input:true,value:folder.name});if(name&&renameLibraryFolder(folder.id,name)){const next=host.querySelector('.library-folder-menu summary');if(next instanceof HTMLElement)next.focus({preventScroll:true});}});

@@ -69,6 +69,8 @@ pill disappears downward on chrome collapse.
 Reader settings expose only per-grade highlight visibility through the same star
 buttons as word lookup. No color picker is shown; stored custom colors and all
 vocabulary data are preserved.
+The heading includes a small tap-to-toggle hint. Star buttons share lookup's
+36px visible height; an extra 4px hit region above and below keeps a 44px target.
 
 The compact page control shows a sidebar-with-dots icon in a 44px target beside the exit button;
 the current page remains in its accessible name. Reader settings use spacing
@@ -103,3 +105,25 @@ PDF paper sits above a theme-aware gray desk with 20/24px side margins,
 layer; source/ink coordinates and vertical trailing scroll space stay intact.
 The combined 88px exit/page slot is a PDF-specific dock variant. Its full-height sidebar
 is absolutely positioned so it cannot move the centered title or writing tools.
+
+## Full-page thumbnails and dock continuity (2026-10-01)
+
+Render each thumbnail from its complete PDF viewport with an explicit source
+aspect ratio, fitting the strip width and 180px maximum height. Do not crop paper
+inside a fixed-height button. Variable-height virtual slots follow each source
+aspect ratio, with a 12px number line and 8px gap; there is no artificial trailing
+blank viewport. Page labels remain a 9px secondary line. Bookmark
+targets align to the paper top and left after rendering and container resizing.
+Sidebar closing uses the same fixed geometry as opening and releases inert
+content after its 220ms exit. Rapid reopening cancels pending cleanup.
+The writing pill remains on the bottom row, narrows between the side slots,
+and scrolls only its tool strip. Narrow expanded PDF pills translate 22px right;
+collapsed reading returns to the viewport center. Pen and eraser lead that strip; reading
+mode exit stays visible.
+
+Reader exit, sidebar entry and sidebar collapse use 22px outline icons with
+2px strokes. Thumbnail bookmarks use a 20 by 28px ribbon with 1.8px stroke and
+secondary-ink contrast; their 44px target remains aligned inside the paper.
+
+### Compact category and Memory surfaces (2026-10-01)
+Shelf grids start at the heading/category left edge rather than centering leftover columns. Category and manual-word tasks use compact 380px forms with 44px input/action targets. Memory stars match lookup/Reader visual proportions while preserving 44px hit areas. These changes do not alter assignments, vocabulary, or persistence.

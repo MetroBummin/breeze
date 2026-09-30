@@ -175,7 +175,7 @@
   --page-shadow:0 3px 16px rgba(60,50,30,.05);
   --pageno:#B9B09E;
   --pdf-desk:#f0f0f3;
-  --pdf-sidebar-glass:rgba(238,240,242,.70);
+  --control-glass-surface:var(--control-light-surface);
   --pdf-paper-shadow:0 2px 8px rgba(25,31,35,.12),0 1px 2px rgba(25,31,35,.05);
   --source-page:#fff;                          /* PDF·EPUB 원본 쪽 */
   --source-shadow:0 8px 28px rgba(25,31,35,.18);
@@ -330,7 +330,7 @@ html.dark{--paper:#171816; color-scheme:dark;}
 
 body.dark{
   --pdf-desk:#202124;
-  --pdf-sidebar-glass:rgba(36,39,42,.72);
+  --control-glass-surface:var(--sentence-glass-pill);
   --pdf-paper-shadow:0 2px 8px rgba(0,0,0,.28);
   --selection-ink:#83C7E5;
   --selection-fill:rgba(131,199,229,.16);
@@ -513,7 +513,7 @@ html.dark,body.dark{--home-background:#2C2C2E;--settings-group:#363638;--setting
 /* Light control glass: cool transmission, edge reflection and a tinted progress lens.
    Scoped by reader.css so lookup materials and dark mode keep their own treatment. */
 :root{
-  --control-light-surface:rgba(247,252,253,.57);
+  --control-light-surface:rgba(247,252,253,.78);
   --control-light-line:rgba(255,255,255,.90);
   --control-light-shadow:0 5px 16px rgba(30,64,76,.15),0 1px 3px rgba(30,64,76,.10),inset 0 1px 0 rgba(255,255,255,.94),inset 0 -1px 0 rgba(44,95,110,.14);
   --control-light-reflection:linear-gradient(180deg,rgba(255,255,255,.58) 0%,rgba(255,255,255,.16) 16%,rgba(255,255,255,0) 42%,rgba(255,255,255,0) 72%,rgba(255,255,255,.18) 100%);
