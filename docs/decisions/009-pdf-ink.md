@@ -589,3 +589,16 @@ release drops the map. Highlighter grouping, layering, undo and durable records
 keep their existing semantics. Browser timings are not physical Pencil latency proof.
 
 The save snapshot copies the mutable page array only. Completed stroke objects and their coordinates are immutable, and IndexedDB serializes them at `put`. Revision tracking still writes edits arriving during database acquisition/transaction completion; failure retains dirty data. No extra deep copy is made before the storage copy.
+
+## 1.6 page navigation and direction
+
+The page indicator remains available in writing mode. A bounded thumbnail strip
+opens above the controls. Narrow Reader containers use a second tool row with
+44px targets; the native scope continues to discover these actual control bounds.
+Horizontal reading shows one original page at a time; single direct-finger swipes
+at base zoom turn pages. At enlarged zoom, fingers pan/zoom and explicit previous /
+next buttons turn pages. Pencil, suppressed palm, multi-touch, cancelled contact
+and active ink/pinch never turn a page. Ink remains keyed by original hash/page;
+page direction, bookmarks and deletion do not renumber or erase ink records.
+Navigation supersedes pending mode-landing timers using the existing change token.
+Browser regressions do not establish physical iPad Pencil or palm behavior.

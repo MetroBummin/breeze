@@ -192,6 +192,10 @@ function applyCover(host, book){
    아무것도 없는 자리를 비켜서서 혼자 어정쩡하게 떠 있었습니다. 지우는 길은
    꾹 누르기로 이미 있고, 그쪽이 "이 기기에서만/모든 기기에서"까지 물어봅니다. */
 function wireBookCard(card, book){
+  if(posOf(book.id).p===1){
+    const badge=document.getElementById('readpill').querySelector('.completion-badge').cloneNode(true);
+    if(badge instanceof HTMLElement){badge.hidden=false;badge.classList.add('library-completion');card.append(badge);}
+  }
   accessibleLibraryCard(card,book.title,()=>openEditSheet(books.find(item=>item.id===book.id)||book));
   card.dataset.localBook=book.id;
   const currentBook=()=>books.find(item=>item.id===book.id)||book;
@@ -439,27 +443,28 @@ function homeAddTile(card,title){
 function homeBookSpec(book,casual){
   // Closures read the current record by id, even after sync replaces its object.
   // Long-form cards do not display reading time; avoid scanning their full text.
-  const stamp=JSON.stringify([book.title,book.cover,book.site,book.author,book.kind,casual?readMinutes(book):null]);
+  const stamp=JSON.stringify([book.title,book.cover,book.site,book.author,book.kind,posOf(book.id).p===1,casual?readMinutes(book):null]);
   return {key:'book:'+book.id,stamp,
     create:()=>homeRegularTile(casual?casualCard(book,null,false):bookCard(book,null),
       book.title,casual?(book.site||'내 글'):(book.author||'내 책'))};
 }
 function renderHome(){
+  renderFolderControls();
   renderLibraryStorageNotice();
   renderHomeResume();
   const rail=document.getElementById('casual-rail');
   reconcileHomeCards(rail,[]);
   if(typeof appendRssCards==='function')appendRssCards(rail);
-  const longform=longformBooks(),shelf=document.getElementById('shelf');
+  const longform=folderBooks(longformBooks()),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,false));
-  for(const row of serverOnlyBooks())specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
-  for(const read of pendingLongReads())specs.push({key:'longread:'+read.id,stamp:JSON.stringify(read),create:()=>homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')});
+  for(const row of serverOnlyBooks().filter(row=>folderMatches(row.book_id)))specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
+  for(const read of (activeLibraryFolder?[]:pendingLongReads()))specs.push({key:'longread:'+read.id,stamp:JSON.stringify(read),create:()=>homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')});
   specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
   reconcileHomeCards(shelf,specs);
   const light=document.getElementById('home-casual-rail');
   const entries=[
-    ...casualBooks().map(book=>({kind:'book',value:book,readAt:posOf(book.id).t||0,addedAt:book.addedAt||0})),
-    ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
+    ...folderBooks(casualBooks()).map(book=>({kind:'book',value:book,readAt:posOf(book.id).t||0,addedAt:book.addedAt||0})),
+    ...serverOnlyCasuals().filter(row=>folderMatches(row.book_id)).map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
   ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
   const lightSpecs=entries.map(entry=>entry.kind==='book'
     ? homeBookSpec(entry.value,true)
@@ -471,13 +476,14 @@ function renderHome(){
 /* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에
    답하는 자리고, 여기는 "그때 그거 어디 갔지"에 답하는 자리입니다. */
 function renderCasualLibrary(){
+  renderFolderControls();
   renderLibraryStorageNotice();
-  const casuals = casualBooks();
+  const casuals = folderBooks(casualBooks());
   const grid = document.getElementById('casual-grid');
   const empty = document.getElementById('casual-empty');
   grid.innerHTML = '';
   casuals.forEach(book => grid.appendChild(homeRegularTile(casualCard(book,null,false),book.title,book.site||'내 글')));
-  const cloud=serverOnlyCasuals();
+  const cloud=serverOnlyCasuals().filter(row=>folderMatches(row.book_id));
   cloud.forEach(row=>grid.appendChild(homeRegularTile(cloudCasualCard(row),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')));
   const count = casuals.length;
   document.getElementById('casual-cnt').textContent = count ? `${count}편` : '';
@@ -488,17 +494,18 @@ function renderCasualLibrary(){
 }
 
 function renderLongformLibrary(){
+  renderFolderControls();
   renderLibraryStorageNotice();
-  const longform = longformBooks();
+  const longform = folderBooks(longformBooks());
   const grid = document.getElementById('longform-grid');
   if(!grid) return;
   const empty = document.getElementById('longform-empty');
   document.getElementById('longform-cnt').textContent = longform.length ? `${longform.length}권` : '';
   grid.innerHTML = '';
   longform.forEach(book => grid.appendChild(homeRegularTile(bookCard(book,null),book.title,book.author||'내 책')));
-  const cloud = serverOnlyBooks();
+  const cloud = serverOnlyBooks().filter(row=>folderMatches(row.book_id));
   cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
-  const offered = pendingLongReads();
+  const offered = activeLibraryFolder?[]:pendingLongReads();
   offered.forEach(read => grid.appendChild(homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')));
   grid.appendChild(homeAddTile(longformAddCard(),'파일 추가'));
   empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
@@ -747,6 +754,11 @@ function remapImportedImages(paras, fromId, toId){
   return paras.map(text=>text.startsWith(IMG_MARK) ? text.replace(fromId,toId) : text);
 }
 async function applyPreparedBook(target, prepared, file){
+  // Reconnecting identical bytes must not resurrect deleted-page text.
+  if(prepared.kind==='pdf'&&target.sourceHash===prepared.hash&&target.deletedPdfPages?.length){
+    prepared={...prepared,paras:target.paras,sourceMap:target.sourceMap,packedSignals:target.layoutSignals,
+      formatting:target.formatting,textAvailable:target.textAvailable};
+  }
   const original = await storeLocalOriginal(target.id,file,prepared.kind,prepared.hash);
   if(prepared.kind === 'epub'){
     await imgPurge(target.id+'|');

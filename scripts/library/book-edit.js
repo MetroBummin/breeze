@@ -18,6 +18,7 @@ function editStep(step){
 function openEditSheet(book, step){
   if(!book) return;
   editTarget = book;
+  renderBookFolderChoice(book);
   document.getElementById('ed-title').value = book.title;
   document.getElementById('ed-what').textContent = book.title;
   renderCoverChoices(book);
@@ -107,7 +108,9 @@ async function saveEditSheet(){
     book.coverSourcePage = '';
     changed = true;
   }
-  if(!changed){ closeEditSheet(); return; }
+  const folder=document.getElementById('ed-folder');
+  if(folder&&typeof assignLibraryFolder==='function'&&!assignLibraryFolder(book.id,Reflect.get(folder,'value')))return;
+  if(!changed){ closeEditSheet(); renderAllBookViews(); return; }
 
   await bookPut(book);
   if(editTarget === book) closeEditSheet();

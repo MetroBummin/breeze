@@ -408,6 +408,7 @@ function esc(s){
 }
 
 function updatePfill(instant=false){
+  if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
   if(!curBook || readerPillProgressHeld) return;
   const progress=visibleReaderProgress();
   setReaderPillProgress(progress,instant);

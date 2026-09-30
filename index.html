@@ -85,13 +85,13 @@
   <script defer src="scripts/reader/pdf-pinch.js?v=ec388b55"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=802860ee"></script>
+  <script defer src="scripts/library/library.js?v=c372fcc1"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
-  <script defer src="scripts/library/book-edit.js?v=e44d0d75"></script>
+  <script defer src="scripts/library/book-edit.js?v=357f82ee"></script>
   <script defer src="scripts/library/longreads.js?v=2e095add"></script>
   <script defer src="assets/longreads/homeward-lookup-data.js?v=98cff2b8"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=0b110c50"></script>
-  <script defer src="scripts/importers/importers.js?v=b7b7e8d8"></script>
+  <script defer src="scripts/importers/importers.js?v=8baa9909"></script>
   <script defer src="assets/lib/readability-0.6.0.js?v=34dcab3d"></script>
   <script defer src="scripts/importers/article.js?v=008cda63"></script>
   <script defer src="scripts/importers/social.js?v=888fa510"></script>
@@ -100,18 +100,18 @@
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=133a7bb3"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=2560ce3c"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=218df51c"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=9ed6f2f7"></script>
   <script defer src="scripts/ui/wordbook.js?v=6f9d5a26"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
-  <script defer src="scripts/reader/original-session.js?v=fa05efb7"></script>
+  <script defer src="scripts/reader/original-session.js?v=76d76fea"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=c6e17d1f"></script>
   <script defer src="scripts/reader/pdf-ink.js?v=9e2bb33c"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=1bffc490"></script>
-  <script defer src="scripts/reader/epub-original.js?v=4d4c5fe0"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=8486e8a0"></script>
+  <script defer src="scripts/reader/epub-original.js?v=be19a7b6"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=05208d3a"></script>
-  <script defer src="scripts/reader/reader.js?v=a0c85c61"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=744db00e"></script>
+  <script defer src="scripts/reader/reader.js?v=138ba3cb"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=391ee356"></script>
   <script defer src="scripts/ui/preferences.js?v=d95bf322"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -120,10 +120,14 @@
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
   <script defer src="scripts/ui/library-refresh.js?v=edf93845"></script>
+  <script defer src="scripts/reader/study-preferences.js?v=39def6c4"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=d051f924"></script>
+  <script defer src="scripts/library/folders.js?v=3fa7df20"></script>
   <script defer src="scripts/main.js?v=b42953a9"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
+  <link rel="stylesheet" href="styles/study.css?v=30f37174">
 </head>
 <body>
 <div id="app">
@@ -225,6 +229,9 @@
             <g class="mf-text"><path d="M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6"/></g>
           </svg>
         </button>
+        <button id="pdf-page-prev" type="button" aria-label="이전 페이지" onclick="stepPdfPage(-1)" hidden>‹</button>
+        <button id="pdf-page-button" type="button" onclick="togglePdfNavigation()" aria-expanded="false" aria-controls="pdf-page-navigation" hidden></button>
+        <button id="pdf-page-next" type="button" aria-label="다음 페이지" onclick="stepPdfPage(1)" hidden>›</button>
         <button id="readpill-title" type="button" onclick="expandReaderChrome()" aria-label="책 제목"></button>
         <span id="reader-notice" role="status" aria-live="polite" aria-atomic="true" hidden></span>
         <div id="sentence-pill-status" role="status" aria-live="polite" hidden>
@@ -232,6 +239,10 @@
           <span>문장 해석 중</span>
         </div>
       </div>
+      <section id="pdf-page-navigation" class="control-glass" aria-label="PDF 페이지 탐색" hidden>
+        <div class="pdf-navigation-head"><button id="pdf-bookmarks-only" type="button" aria-pressed="false">⚑ 북마크만</button><span>페이지</span><button type="button" aria-label="페이지 탐색 닫기" onclick="closePdfNavigation()">닫기</button></div>
+        <div id="pdf-thumbnail-strip" tabindex="0" aria-label="페이지 썸네일"></div>
+      </section>
       <button class="control-glass" id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
     </div>
     <!-- 읽는 동안 스크롤하는 것은 문서가 아니라 이 칸 하나입니다.
@@ -541,6 +552,7 @@
   <!-- PDF 원본에서만 켭니다 — updateOriginalZoomControls() 가 예전에 떠 있던
        #pdfzoomfabs 대신 이 자리를 켜고 끕니다. 버튼이 부르는 changeOriginalZoom
        은 그대로입니다 — 옮긴 것은 자리뿐입니다. -->
+  <div class="aa-row" id="aa-pdf-direction" hidden><span class="aa-label">PDF 읽기 방향</span><div class="aa-seg"><button type="button" data-pdf-direction="vertical" onclick="setPdfReadDirection('vertical')">세로</button><button type="button" data-pdf-direction="horizontal" onclick="setPdfReadDirection('horizontal')">가로</button></div></div>
   <div class="aa-row" id="aa-pdfzoom" hidden>
     <span class="aa-label">PDF 확대</span>
     <div class="aa-size">

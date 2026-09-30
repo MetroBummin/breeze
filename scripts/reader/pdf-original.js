@@ -32,8 +32,11 @@ function pdfPageLayout(session=originalSession){
   const scroller=readerScroller(),outer=scroller.getBoundingClientRect();
   const key=[outer.width,outer.height,scroller.scrollHeight,originalZoom(),session.pages.length].join('|');
   if(!session.pageLayout || session.pageLayout.key!==key){
+    let precedingBottom=0;
     session.pageLayout={key,rects:session.pages.map(page=>{
+      if(page.classList.contains('pdf-page-offstage'))return [0,precedingBottom,0,0];
       const r=page.getBoundingClientRect();
+      precedingBottom=r.bottom-outer.top+scroller.scrollTop;
       return [r.left-outer.left+scroller.scrollLeft,r.top-outer.top+scroller.scrollTop,r.width,r.height];
     })};
   }
@@ -42,13 +45,15 @@ function pdfPageLayout(session=originalSession){
 function pdfPageIndexAtY(rects,y){
   let low=0,high=rects.length;
   while(low<high){const mid=(low+high)>>1,r=rects[mid];if(r[1]+r[3]<y)low=mid+1;else high=mid;}
+  while(low<rects.length&&!rects[low][3])low++;
   return low;
 }
 function pdfPagesInView(session,reach=0){
+  if(session?.readDirection==='horizontal')return [session.navigationPage||1];
   const layout=pdfPageLayout(session);if(!layout)return [];
   const {rects,scroller}=layout,start=scroller.scrollTop-reach,end=scroller.scrollTop+scroller.clientHeight+reach;
   const pages=[];
-  for(let i=pdfPageIndexAtY(rects,start);i<rects.length&&rects[i][1]<=end;i++)pages.push(i+1);
+  for(let i=pdfPageIndexAtY(rects,start);i<rects.length&&rects[i][1]<=end;i++)if(rects[i][3])pages.push(i+1);
   return pages;
 }
 function schedulePdfSharpen(session=originalSession){
@@ -238,6 +243,8 @@ async function openOriginalPdf(book,record,token){
     content.appendChild(page); pages.push(page);
   }
   originalSession=session;
+  session.deletedPages=new Set(book.deletedPdfPages||[]);
+  if(typeof applyPdfDirection==='function')applyPdfDirection(session);
   BreezePdfInk.open(session);
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   const hint=document.getElementById('original-selection-hint');
@@ -247,7 +254,7 @@ async function openOriginalPdf(book,record,token){
   },{root:readerScroller(),rootMargin:'1300px 0px'});
   session.observer=observer;
   pages.forEach(page=>observer.observe(page));
-  await renderOriginalPdfPage(session,1);
+  await renderOriginalPdfPage(session,session.availablePages?.[0]||1);
 }
 
 async function prepareOriginalPdfPage(session,pageNumber,options){
@@ -615,16 +622,19 @@ function openPdfWord(page,box){
 function capturePdfAnchor(inset){
   const layout=pdfPageLayout();if(!layout)return null;
   const {rects,outer,scroller}=layout,y=inset-outer.top+scroller.scrollTop;
-  const i=pdfPageIndexAtY(rects,y),r=rects[i];if(!r)return null;
+  let i=originalSession?.readDirection==='horizontal'?((originalSession.navigationPage||1)-1):pdfPageIndexAtY(rects,y);
+  if(i>=rects.length){i=rects.length-1;while(i>=0&&!rects[i][3])i--;}
+  const r=rects[i];if(!r)return null;
   return {kind:'pdf',page:i+1,y:Math.max(0,Math.min(1,(y-r[1])/Math.max(1,r[3])))};
 }
 
 async function restorePdfAnchor(source,inset,changeToken,isCurrent){
   const session=originalSession;
   if(!currentPdfSession(session))return false;
-  const pageNumber=Math.max(1,Math.min(originalSession.pages.length,Number(source.page)||1));
+  const pageNumber=typeof pdfNearestPage==='function'?pdfNearestPage(session,Number(source.page)||1):Math.max(1,Math.min(session.pages.length,Number(source.page)||1));
   const page=originalSession.pages[pageNumber-1];
   if(!page) return false;
+  if(session?.readDirection==='horizontal')applyPdfDirection(session,pageNumber);
   /* 화면 좌표(`getBoundingClientRect`)는 벌린 배율을 이미 담고 있고, 읽는 칸의
      `scrollTop` 도 같은 단위입니다. 그래서 이 셈은 배율이 얼마든 그대로입니다. */
   readerScrollTo(readerScrollTop()+page.getBoundingClientRect().top-inset);
@@ -664,7 +674,7 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
   const total=session.pages.length;
   const base=Math.max(1,Math.min(total,Number(source&&source.page)||1));
   const pages=[base,base+1,base-1,base+2,base-2,base+3,base-3,base+4,base-4]
-    .filter((value,index,list)=>value>=1&&value<=total&&list.indexOf(value)===index);
+    .filter((value,index,list)=>value>=1&&value<=total&&!session.deletedPages?.has(value)&&list.indexOf(value)===index);
   for(const pageNumber of pages){
     let boxes=session.wordBoxes.get(pageNumber)||[];
     if(!boxes.length){
@@ -678,6 +688,7 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
       (textContent.items||[]).forEach(item=>
         stream.push(...bridgeTokens(applyLigatures(item.str||'',session.glyphs))));
       if(!(candidates||[]).some(candidate=>bridgeFindSequence(stream,candidate))) continue;
+      if(session.readDirection==='horizontal')applyPdfDirection(session,pageNumber);
       await renderOriginalPdfPage(session,pageNumber);
       if(!alive())return false;
       boxes=session.wordBoxes.get(pageNumber)||[];
@@ -692,6 +703,7 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
       const matched=boxes.slice(match.start,match.start+match.length);
       const first=matched.slice().sort((a,b)=>a.y-b.y||a.x-b.x)[0];
       const page=session.pages[pageNumber-1];
+      if(session?.readDirection==='horizontal')applyPdfDirection(session,pageNumber);
       const rect=page.getBoundingClientRect();
       readerScrollTo(readerScrollTop()+rect.top-(topInset()+readerViewHeight()*.32)+first.y*rect.height);
       if(!showPdfParagraphModeCue(paragraphHint,10000,pageNumber))
@@ -761,6 +773,10 @@ registerReaderSurface({
 /* ---- 형식 표에 넘겨줄 조각들 (scripts/reader/original-formats.js) ---- */
 
 function pdfAnchorFromProgress(session,progress){
+  if(session.deletedPages?.size&&session.availablePages?.length){
+    const pages=session.availablePages,exact=progress*pages.length,index=Math.min(pages.length-1,Math.floor(exact));
+    return {kind:'pdf',page:pages[index],y:Math.max(0,Math.min(1,exact-index))};
+  }
   const total=Math.max(1,session.pages.length);
   const exact=progress*total;
   const page=Math.max(1,Math.min(total,Math.floor(exact)+1));
@@ -769,6 +785,10 @@ function pdfAnchorFromProgress(session,progress){
 /* 진행도는 쪽 번호로 셉니다. 세션이 열려 있으면 진짜 쪽수를, 아니면 좌표
    지도가 아는 마지막 쪽을 전체로 봅니다. */
 function pdfSourceProgress(map,source,session){
+  if(session?.deletedPages?.size&&session.availablePages?.length){
+    const pages=session.availablePages,index=Math.max(0,pages.indexOf(Number(source.page)));
+    return (index+Math.max(0,Math.min(1,Number(source.y)||0)))/pages.length;
+  }
   const mapped=sourceMapFact(map,'lastPage',
     list=>list.reduce((max,item)=>Math.max(max,(item&&item.page)||0),0));
   const total=Math.max(1,session ? session.pages.length : 0,mapped,Number(source.page)||1);

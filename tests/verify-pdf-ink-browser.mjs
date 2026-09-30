@@ -458,6 +458,8 @@ try{
    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer g').count(),1,'fragments retain one opacity group');
    await page.evaluate(()=>expandReaderChrome());await page.locator('[data-ink-undo]').click();assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count(),1);
    await page.locator('[data-ink-redo]').click();assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
+   // Reload only after the serialized redo transaction is durable.
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
    console.log(engine.name()+': highlighter pixels '+JSON.stringify(pixels)+', durable settings, partial eraser/undo/redo/reload passed');
    await page.evaluate(()=>{window.breezeInkIPad=false;document.body.classList.toggle('qa-platform');});

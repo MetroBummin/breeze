@@ -156,3 +156,10 @@ old miniature collapse rule is removed. Reading-mode collapse remains unchanged.
 AI result mini-pill reveal adds a one-time 200ms pale blue opacity bloom that
 returns to the same neutral glass material. It never translates/scales the pill,
 and reduced motion suppresses the bloom. Saved/cache hits retain normal glass.
+
+## 1.6 Reader content adaptation
+
+Reader-specific writing content may use two rows when its actual container is
+650px or narrower. The shared Home/Wordbook dock remains unchanged. Tool targets
+stay 44px; the thumbnail strip and tool options are positioned above the measured
+pill height. The thumbnail UI is a separate strip, not a morph of the pill.

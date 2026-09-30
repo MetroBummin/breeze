@@ -112,7 +112,7 @@ test('production PDF parser reports through its callback without changing its pa
     pdfjsLib:{getDocument:()=>({promise:Promise.resolve({numPages:80,getPage:async i=>{
       pages.push(i);return {getViewport:()=>({height:800,width:600}),getTextContent:async()=>({items:[]})};
     },destroy:async()=>destroyed++})})},pdfPageColumns:()=>[],assembleParagraphs:()=>[]});
-  runInContext(declaration('scripts/importers/importers.js','parsePDF'),e.context);
+  runInContext(declaration('scripts/importers/importers.js','extractPdfParagraphs')+'\n'+declaration('scripts/importers/importers.js','parsePDF'),e.context);
   const file={arrayBuffer:async()=>new ArrayBuffer(0)};
   await e.context.parsePDF(file,message=>seen.push(message));
   assert.deepEqual(seen.map(text=>Number(text.match(/(\d+)\/80/)[1])),[1,20,40,60,80]);

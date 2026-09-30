@@ -34,16 +34,17 @@ function updateReaderModeControls(){
   const fab = document.getElementById('modefab');
   if(!fab) return;
   const kind=curBook && (curBook.kind || (curBook.original && curBook.original.kind));
-  fab.hidden = kind!=='pdf';
+  fab.hidden = !bookSupportsOriginal(curBook);
   const label = currentReaderMode==='original' ? '글자로 보기' : '원본으로 보기';
   fab.title = label;
   fab.setAttribute('aria-label', label);
   const other=document.getElementById('aa-epub-mode');
   if(other){
-    other.hidden=!bookSupportsOriginal(curBook) || kind==='pdf';
+    other.hidden=true;
     document.getElementById('aa-epub-mode-button').textContent=label;
   }
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
+  if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
 }
 
 function rememberReaderMode(mode){

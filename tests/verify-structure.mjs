@@ -970,10 +970,10 @@ for(const glyph of ['mf-original', 'mf-text']){
 }
 assert.match(readerCss, /body\.reader-original #modefab \.mf-text\{opacity:1/,
   'The mode button no longer flips its icon, so it always points the same way');
-assert.match(modesSource, /fab\.hidden = kind!=='pdf'/,
-  'The title pill shows a mode icon for a non-PDF book');
+assert.match(modesSource, /fab\.hidden = !bookSupportsOriginal\(curBook\)/,
+  'The title pill must expose the mode toggle for both PDF and EPUB');
 assert.match(index, /id="aa-epub-mode"[\s\S]{0,250}onclick="toggleReaderMode\(\)"/,
-  'EPUB lost its mode-switch access after removing its pill icon');
+  'Legacy EPUB settings element remains harmless and hidden');
 /* 빠른 글자↔원본 왕복은 위치 검색을 생략할 수 있어도, 출발지와 목적지의
    '여기 있었어요' 표시는 생략하면 안 됩니다. */
 assert.match(modesSource, /const sourceCueBridge=sentenceBridge/,
