@@ -35,10 +35,12 @@ try{
     resumeQA.repair=repairBookLigatures;resumeQA.open=openBook;resumeQA.render=renderOriginalBook;
     originalGetForBook=async book=>{resumeQA.originalReads++;return {kind:book.kind,hash:'fixture'};};
     openBook=(book,options)=>{resumeQA.opens++;return resumeQA.open(book,options);};
-    resumeQA.seed=(kind='txt')=>{
+    resumeQA.seed=(kind='txt',progress=.2)=>{
       show('home');readerNotices.reset();resumeQA.transitions=[];resumeQA.opens=0;resumeQA.originalReads=0;
       books=[{id:'resume-fixture',title:'Resume fixture',kind,paras:Array.from({length:60},()=>('A gentle breeze makes reading feel easy. ').repeat(8))}];
-      positions={'resume-fixture':{t:1,p:.2,y:900,mode:kind==='txt'?'text':'original'}};
+      const original=kind==='pdf'?{kind:'pdf',page:12,y:.4}
+        : kind==='epub'?{kind:'epub',href:'chapter.xhtml',spine:4,element:18}:null;
+      positions={'resume-fixture':{t:1,p:progress,y:900,mode:kind==='txt'?'text':'original',original}};
       renderHomeResume();
     };
     resumeQA.seed();
@@ -61,19 +63,21 @@ try{
    assert.equal(await page.evaluate(()=>resumeQA.opens),1);
    assert.deepEqual(await page.evaluate(()=>resumeQA.transitions),[{ready:true,error:'',finished:true}]);
    // PDF/EPUB keep their real loading shell while heavy rendering is pending.
-   for(const kind of ['pdf','epub']){
-    await page.evaluate(kind=>{
-      repairBookLigatures=resumeQA.repair;resumeQA.seed(kind);
+   for(const [kind,savedProgress] of [['pdf',.2],['epub',1]]){
+    await page.evaluate(({kind,savedProgress})=>{
+      repairBookLigatures=resumeQA.repair;resumeQA.seed(kind,savedProgress);
       renderOriginalBook=()=>{
         document.getElementById('original-content').innerHTML='<div class="original-loading"><i></i><span>원본을 여는 중…</span></div>';
         return new Promise(resolve=>resumeQA.releaseRender=resolve);
       };
-    },kind);
+    },{kind,savedProgress});
     await page.locator('#home-resume').click();
     await page.waitForFunction(()=>resumeQA.transitions[0]?.finished,{},{timeout:2500});
     assert.equal(await page.evaluate(()=>homeResumeOpening),true,'rendering was abandoned');
     assert.equal(await page.locator('#originalwrap').isVisible(),true);
     assert.equal(await page.locator('.original-loading').isVisible(),true);
+    assert.equal(await page.evaluate(()=>posOf('resume-fixture').p),savedProgress,
+      'initial original reopen must not overwrite saved progress before anchor restoration');
     await page.waitForTimeout(4500);
     assert.deepEqual(await page.evaluate(()=>resumeQA.transitions),[{ready:true,error:'',finished:true}]);
     assert.equal(await page.evaluate(()=>resumeQA.originalReads),1,'prepared original was loaded twice');
