@@ -220,4 +220,19 @@ less), expanded reading/writing adds a 22px translate to clear the left PDF slot
 Collapsed reading removes that translate over 260ms and returns to viewport center.
 Reduced motion skips the translation.
 
+Reader collapse/expand uses one 260ms easing for translation, width, height,
+padding and corner radius, including the PDF reading variant. Resolve the
+viewport width cap inside both endpoint widths, rather than clipping an
+animated larger width with max-width: clipping stalls the visible shrink while
+translation is already running. The ink entry retains its layout slot while
+its width and opacity transition; it becomes inert immediately on collapse and
+hidden at the end. Reversals retarget the current CSS presentation without
+timers or an animation queue. Reduced motion applies geometry immediately.
+
+`tests/verify-reader-chrome-motion-browser.mjs` samples intermediate geometry in
+Chromium and WebKit at phone, tablet, desktop and short viewport sizes in both
+themes. It checks synchronized trajectories, interruption continuity, input
+gating, writing-mode expansion and reduced motion. Browser evidence does not
+establish physical iPhone frame rate.
+
 Task/import/edit dialogs, article preview and Home settings now share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.

@@ -544,8 +544,9 @@ function setReaderChrome(hidden){
   if(document.getElementById('readpill')?.classList.contains('ink-pill-active'))hidden=false;
   if(document.body.classList.contains('chrome-hidden')===hidden) return;
   document.body.classList.toggle('chrome-hidden', hidden);
+  const inkEntry=/** @type {HTMLElement|null} */(document.querySelector('#readpill .ink-pill-entry'));
   const side=[document.getElementById('readback'),document.getElementById('aafab'),document.getElementById('pdf-page-control'),
-    document.getElementById('modefab')];
+    document.getElementById('modefab'),inkEntry];
   side.forEach(button=>{
     if(!button) return;
     button.inert=hidden;
