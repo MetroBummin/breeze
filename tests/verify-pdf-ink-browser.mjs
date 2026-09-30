@@ -103,6 +103,15 @@ try{
    assert.equal(await penButton.getAttribute('aria-pressed'),'true');
    assert.equal(await settings.isVisible(),false,'switching tools closes prior settings');
    await penButton.click();assert.equal(await settings.isVisible(),true);
+   assert.deepEqual(await settings.locator('[data-ink-panel="pen"] .ink-setting-label').allTextContents(),['두께'],'pen panel keeps only the thickness heading');
+   assert.deepEqual(await settings.locator('[data-ink-panel="highlighter"] .ink-setting-label').allTextContents(),['두께'],'highlighter panel keeps only the thickness heading');
+   assert.equal(await settings.locator('[data-ink-color] span,[data-ink-highlight-color] span').count(),0,'color swatches have no visible color-name copy');
+   assert.equal(await settings.locator('[data-ink-width] span,[data-ink-highlight-width] span').count(),0,'thickness choices are visual only');
+   const selectedSwatch=await settings.locator('[data-ink-color][aria-pressed="true"]').evaluate(node=>({
+    border:getComputedStyle(node).borderTopColor,overflow:getComputedStyle(node.parentElement).overflowX
+   }));
+   assert.equal(selectedSwatch.border,'rgb(38, 127, 168)','selected color uses the Breeze blue ring');
+   assert.equal(selectedSwatch.overflow,'auto','color row can horizontally scroll when the palette grows');
    await context.setOffline(true);
    assert.equal(await page.locator('[data-ink-toggle]').isVisible(),true);
    assert.equal(await stroke([[.2,.2],[.3,.22],[.4,.2]],{palm:true}),true);
