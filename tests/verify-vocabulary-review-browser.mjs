@@ -55,6 +55,7 @@ async function openReview(page){
   await page.locator('#wordbook-review').click();
   assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.open),true);
   assert.equal(await page.locator('#vocabulary-review-dialog:modal').count(),1,'Review must use native modal semantics');
+  assert.equal(await page.locator('#vtablewrap').isVisible(),false,'Background Memory meanings cannot leak through the glass');
   assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.contains(document.activeElement)),true,'Focus enters the review dialog');
 }
 async function assertHiddenAnswer(page){
@@ -88,6 +89,7 @@ async function closeReview(page,keyboard=false){
   if(keyboard)await page.keyboard.press('Escape');else await page.locator('#review-close').click();
   await page.waitForFunction(()=>!document.getElementById('vocabulary-review-dialog').open);
   assert.equal(await page.locator('dialog:modal').count(),0,'Dismissal releases the native top layer');
+  assert.equal(await page.locator('#vtablewrap').isVisible(),true,'Dismissal restores the unchanged Memory list');
   assert.equal(await page.locator('#wordbook-review').evaluate(element=>element===document.activeElement),true,'Dismissal restores initiating control focus');
 }
 
