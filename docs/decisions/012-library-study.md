@@ -15,7 +15,7 @@
   and writing. Its surface morphs into a vertical floating thumbnail panel without
   resizing the document. Reading keeps the book title in the bottom pill; writing
   keeps only tools there. Outside taps close without reaching the document. Opening retains page order and scrolls the current
-  page into the first visible slot. The current border is blue; bookmarks are red.
+  page into the first visible slot. The current thumbnail has a neutral fill and stronger page label; bookmarks are red.
   Bookmarks-only contains only bookmarked, nondeleted pages. Rendering is serial,
   virtualized to the viewport plus three slots, and cancelled/guarded on close or
   session change. No eager all-page thumbnail render or unbounded bitmap cache.
