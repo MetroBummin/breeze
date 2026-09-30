@@ -41,7 +41,11 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
       - name: Vocabulary review in Chromium and WebKit
-        run: node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs
+        run: |
+          status=0
+          node tests/verify-vocabulary-review-browser.mjs || status=1
+          BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs || status=1
+          exit "$status"
       - name: Vocabulary review visual proof
         if: always()
         uses: actions/upload-artifact@v4

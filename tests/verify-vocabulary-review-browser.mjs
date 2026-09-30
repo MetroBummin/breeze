@@ -10,6 +10,7 @@ import {chromium,webkit} from 'playwright';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=process.env.BREEZE_REVIEW_PROOF||'/tmp/breeze-review-proof';
 const REVIEW_KEY='breeze.vocabulary-review.v1';
+const failures=[];
 const NOW=Date.parse('2026-09-30T12:00:00Z');
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2'};
@@ -47,7 +48,7 @@ async function scenario(name,records,run){
     console.log(`${engine.name()}: ${name} passed`);
   }catch(error){
     await page.screenshot({path:`${out}/${engine.name()}-failure-${name.replace(/\W+/g,'-')}.png`,fullPage:true}).catch(()=>{});
-    throw error;
+    failures.push(error);console.error(`${engine.name()}: ${name} failed`,error);
   }finally{await context.close();}
 }
 async function openReview(page){
@@ -282,6 +283,10 @@ try{
       await page.keyboard.press('Tab');
       assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.contains(document.activeElement)),true,'Tab remains inside the native modal');
     }
+    for(let i=0;i<4;i++){
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.contains(document.activeElement)),true,'Reverse Tab remains inside the native modal');
+    }
     await page.locator('#review-reveal').focus();await page.keyboard.press('Space');
     assert.equal(await page.locator('#review-meaning').isVisible(),true);
     await page.locator('#review-remember').focus();await page.keyboard.press('Enter');await assertHiddenAnswer(page);
@@ -329,5 +334,6 @@ try{
       await closeReview(page,true);
     }
   });
+  if(failures.length)throw new AggregateError(failures,`${engine.name()}: ${failures.length} review scenarios failed`);
   console.log(`Vocabulary review browser regression passed (${engine.name()}); screenshots: ${out}`);
 }finally{await browser.close();await new Promise(done=>server.close(done));}

@@ -110,6 +110,22 @@ function closeVocabularyReview(){
   if(vocabularyReviewDialog.open)vocabularyReviewDialog.close();
 }
 document.getElementById('review-close').addEventListener('click',closeVocabularyReview);
+// Native modality makes the page inert, but browsers may still tab into chrome.
+// Keep keyboard recall inside visible controls, including after answer/status focus.
+vocabularyReviewDialog.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  const controls=Array.from(vocabularyReviewDialog.querySelectorAll('button:not([disabled])'))
+    .filter(node=>node.getClientRects().length>0);
+  if(!controls.length)return;
+  event.preventDefault();
+  const active=document.activeElement,index=controls.indexOf(active);
+  let next;
+  if(index>=0)next=controls[(index+(event.shiftKey?-1:1)+controls.length)%controls.length];
+  else if(event.shiftKey)next=[...controls].reverse().find(node=>active&&(active.compareDocumentPosition(node)&Node.DOCUMENT_POSITION_PRECEDING))||controls[controls.length-1];
+  else next=controls.find(node=>active&&(active.compareDocumentPosition(node)&Node.DOCUMENT_POSITION_FOLLOWING))||controls[0];
+  /** @type {HTMLElement} */(next).focus();
+});
+
 vocabularyReviewDialog.addEventListener('close',()=>{
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
   refreshVocabularyReviewEntry();
