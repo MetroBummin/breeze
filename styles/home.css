@@ -214,9 +214,6 @@
     background:var(--cover-veil);}
 
   /* ---- 하나뿐인 추가 시트 ---- */
-  #add-modal{position:fixed; inset:0; z-index:160; background:var(--scrim); display:none;
-    align-items:center; justify-content:center; padding:20px;}
-  #add-modal.on{display:flex;}
   #am-card{background:var(--sheet); border-radius:22px; padding:30px 28px; width:100%; max-width:520px;
     box-shadow:var(--shadow); max-height:88vh; overflow-y:auto;}
   #am-card h2{font-size:20px; font-weight:600; margin-bottom:6px;}
@@ -256,9 +253,6 @@
   #am-url-status.bad{color:var(--danger);}
   /* ---- 정보 바꾸기 시트 (꾹 누르기) ----
      추가 시트와 상자·큰 버튼 모양을 같이 씁니다(.am-big, .am-choices). */
-  #edit-modal{position:fixed; inset:0; z-index:170; background:var(--scrim); display:none;
-    align-items:center; justify-content:center; padding:20px;}
-  #edit-modal.on{display:flex;}
   #ed-card{background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
     border:1px solid var(--sentence-glass-line);border-radius:22px;padding:22px;
     width:100%;max-width:460px;box-shadow:var(--sentence-glass-shadow);max-height:88vh;overflow-y:auto;}

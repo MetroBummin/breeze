@@ -13,8 +13,6 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 .wordbook-sort,.wordbook-filter-row{display:flex;align-items:center;gap:10px;min-height:30px;}
 .wordbook-filters select,.wordbook-filters button,.wordbook-filters summary{border:0;border-radius:18px;background:var(--wordbook-field);color:var(--settings-muted);font:inherit;padding:7px 12px;min-height:30px;cursor:pointer;}
 #vstars{display:flex;gap:4px;}
-#vstars button{padding:7px 10px;}
-#vstars button[aria-pressed=true]{background:var(--wordbook-star);color:var(--wordbook-star-ink);box-shadow:inset 0 0 0 1px currentColor;}
 #vbooks{position:relative;}
 #vbooks summary{list-style:none;}
 #vbooks summary::-webkit-details-marker{display:none;}
@@ -46,9 +44,8 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 .wordbook-sort{display:grid;grid-template-columns:auto minmax(0,max-content) auto;justify-content:start;min-width:0;}
 .wordbook-sort>span,.wordbook-filter-row>span{flex:none;}
 .wordbook-filters select{background:var(--home-background);color:var(--settings-ink);font-weight:500;min-height:36px;border-radius:10px;padding:7px 10px;}
-#vstars{gap:2px;padding:3px;background:var(--home-background);border-radius:12px;}
-#vstars button{background:transparent;min-width:36px;min-height:32px;border-radius:12px;padding:5px 8px;color:var(--settings-muted);}
-#vstars button[aria-pressed=true]{background:var(--wordbook-star);color:var(--wordbook-star-ink);box-shadow:none;}
+#vstars{gap:8px;}
+#vstars .stbtn{min-width:44px;min-height:44px;padding:4px;}
 #vbooks{margin-left:0;min-width:0;}
 #vbooks summary{display:flex;align-items:center;gap:10px;border-radius:12px;min-height:38px;background:var(--home-background);color:var(--settings-ink);font-weight:500;}
 #vbooks.filtered summary{color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue-ring);}
@@ -80,6 +77,6 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 @media(hover:hover){#vsort-options label:hover{background:var(--wordbook-row-hover);}}
 
 /* Same difficulty palette as Reader .stbtn, for both saved rows and filters. */
-#v-vocab .chip.s1,#vstars button[data-status="1"][aria-pressed=true]{background:var(--s1);color:var(--s1-ink);}
-#v-vocab .chip.s2,#vstars button[data-status="2"][aria-pressed=true]{background:var(--s2);color:var(--s2-ink);}
-#v-vocab .chip.s3,#vstars button[data-status="3"][aria-pressed=true]{background:var(--s3);color:var(--s3-ink);}
+#v-vocab .chip.s1{background:var(--s1);color:var(--s1-ink);}
+#v-vocab .chip.s2{background:var(--s2);color:var(--s2-ink);}
+#v-vocab .chip.s3{background:var(--s3);color:var(--s3-ink);}

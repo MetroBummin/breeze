@@ -134,6 +134,7 @@ function importEnvironment({kind='pdf',parseFailure=false,saveFailure=false,orig
     vaultFileIdentity:async()=>null,imgRename:async()=>{},imgPurge:async()=>{},remapImportedImages:p=>p,
     storeLocalOriginal:async()=>{if(originalFailure)throw Error('Original failure');return kind==='txt'?null:{storedAt:1};},
     bookPut:async book=>{if(delaySave)await delaySave;if(saveFailure)throw Error('Save failure');events.persisted.push(book);},
+    currentImportFolder:()=>'',assignImportedFolder:()=>{},
     renderAllBookViews:()=>events.refreshes++,
     renderHome:()=>assert.fail('Import repainted hidden Home instead of current shelf'),
   });

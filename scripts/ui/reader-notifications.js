@@ -18,7 +18,7 @@ const readerNotices = (()=>{
         || sentenceLookupOpen() || wordLookupOpen() || originalPinchBusy()
         || document.getElementById('readpill').classList.contains('ink-pill-active')))
       || (owner!=='read' && homeResumeOpening)
-      || !!document.querySelector('#aa-pop.on, #settings-modal.on, #sync-modal.on, #add-modal.on')
+      || !!document.querySelector('#aa-pop.on, #settings-modal.on, #sync-modal.on, #add-modal[open]')
       || !!document.querySelector('input:focus, textarea:focus, [contenteditable="true"]:focus');
   }
   function hide(){
@@ -111,7 +111,7 @@ const readerNotices = (()=>{
   const observer=new MutationObserver(()=>{ if(active || queue.length) pump(); });
   ['sentence-modal','sentence-pill-status','panel','word-peek','aa-pop','settings-modal','sync-modal','add-modal'].forEach(id=>{
     const node=document.getElementById(id);
-    if(node) observer.observe(node,{attributes:true,attributeFilter:['hidden','class']});
+    if(node) observer.observe(node,{attributes:true,attributeFilter:['hidden','class','open']});
   });
   document.querySelectorAll('.view').forEach(node=>observer.observe(node,{attributes:true,attributeFilter:['class']}));
   return {enqueue,reset,task};

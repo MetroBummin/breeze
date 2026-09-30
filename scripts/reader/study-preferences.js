@@ -24,10 +24,8 @@ function applyStarPreferences(){
     root.setProperty('--s'+n,s.color);root.setProperty('--pick'+n+'-fill',fill);
     root.setProperty('--pick'+n+'-line',s.visible?s.color:'transparent');
     document.querySelectorAll(`[data-star-visibility="${n}"]`).forEach(button=>{
-      button.textContent=s.visible?'켜짐':'꺼짐';button.setAttribute('aria-pressed',String(s.visible));
+      button.textContent='★'.repeat(n);button.classList.toggle('on',s.visible);button.setAttribute('aria-pressed',String(s.visible));
     });
-    const input=document.querySelector(`input[data-star-color="${n}"]`);
-    if(input instanceof HTMLInputElement)input.value=s.color;
   });
   document.querySelectorAll('.epub-chapter-frame').forEach(frame=>{
     if(frame instanceof HTMLIFrameElement&&frame.contentDocument)applyEpubStarPreferences(frame.contentDocument);
@@ -51,13 +49,9 @@ function setStarPreference(index,patch){
 document.addEventListener('DOMContentLoaded',()=>{
   const legend=document.querySelector('.aa-legend');legend.replaceChildren();
   for(const n of [1,2,3]){
-    const row=document.createElement('div');row.className='study-star-row';
-    const label=document.createElement('span');label.className='study-star-label';label.textContent='★'.repeat(n);label.dataset.s=String(n);
-    const toggle=document.createElement('button');toggle.type='button';toggle.dataset.starVisibility=String(n);toggle.setAttribute('aria-label',`별 ${n}개 본문 표시`);
+    const toggle=document.createElement('button');toggle.type='button';toggle.className='stbtn';toggle.dataset.starVisibility=String(n);toggle.dataset.s=String(n);toggle.setAttribute('aria-label',`별 ${n}개 본문 표시`);
     toggle.onclick=()=>setStarPreference(n,{visible:!starVisible(n)});
-    const color=document.createElement('input');color.type='color';color.dataset.starColor=String(n);color.setAttribute('aria-label',`별 ${n}개 색상 변경`);
-    color.onchange=()=>setStarPreference(n,{color:color.value});
-    row.append(label,toggle,color);legend.append(row);
+    legend.append(toggle);
   }
   applyStarPreferences();
 });

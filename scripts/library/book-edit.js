@@ -28,11 +28,10 @@ function openEditSheet(book, step){
   if(book.coverSourcePage) source.href = book.coverSourcePage;
   document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   /** @type {HTMLDialogElement} */(editModal()).showModal();
-  editModal().classList.add('on');
   editStep(step || 'edit');
 }
 function closeEditSheet(){
-  editModal().classList.remove('on'); /** @type {HTMLDialogElement} */(editModal()).close(); editTarget = null;
+  /** @type {HTMLDialogElement} */(editModal()).close(); editTarget = null;
 }
 
 /* 표지 고르기 — 기사라면 그 기사가 데려온 사진 중에서 고릅니다. 그림을

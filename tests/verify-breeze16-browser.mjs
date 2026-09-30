@@ -27,6 +27,22 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
   try{await page.waitForSelector('.pdf-source-page canvas');}catch(error){console.log('OPEN FAILED',errors,await page.evaluate(()=>({body:document.body.className,session:originalSession&&{kind:originalSession.kind,settled:[...originalSession.settled]},html:document.getElementById('original-content').innerHTML.slice(0,1000)})));throw error;}
+  assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
+  assert.equal(await page.locator('#readpill-title').isVisible(),true);
+  await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);
+  assert.equal(await page.locator('#pdf-page-control').isVisible(),false,'Collapsed Reader hides page pill');
+  await page.locator('#readpill-title').click();await page.waitForTimeout(320);
+  const compact=await page.locator('#pdf-page-control').boundingBox();
+  await page.locator('#pdf-page-button').click();
+  await page.waitForSelector('.pdf-thumbnail canvas');
+  await page.waitForTimeout(320);
+  const expanded=await page.locator('#pdf-page-control').boundingBox();
+  assert.ok(expanded.height>compact.height&&expanded.width>compact.width,'Same page surface expands');
+  assert.equal(await page.locator('#pdf-page-control #pdf-page-navigation').count(),1);
+  await page.locator('#pdf-navigation-dismiss').click({position:{x:300,y:200}});
+  assert.equal(await page.locator('#pdf-page-navigation').isVisible(),false);
+  assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'Dismissal must not trigger lookup');
+  await page.locator('[data-ink-toggle]').click();
   await page.evaluate(()=>goPdfPage(60));
   await page.locator('#pdf-page-button').click();
   await page.waitForSelector('.pdf-thumbnail canvas');
@@ -40,7 +56,6 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.match(await page.locator('#pdf-thumbnail-strip').innerText(),/북마크한 페이지가 없어요/);
   await page.evaluate(()=>togglePdfBookmark(originalSession,60));
   await page.evaluate(()=>closePdfNavigation());
-  await page.locator('[data-ink-toggle]').click();
   await page.evaluate(()=>{
    const target=originalSession.pages[59],r=target.getBoundingClientRect();
    const touch=x=>({identifier:801,target,touchType:'stylus',clientX:r.left+r.width*x,clientY:r.top+r.height*.3});
@@ -51,6 +66,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   const inkPath=await page.locator('[data-page="60"] .pdf-ink-layer polyline').getAttribute('points');
   await page.locator('[data-ink-toggle]').click();
   await page.evaluate(()=>setPdfReadDirection('horizontal'));
+  assert.equal(await page.locator('#originalwrap').evaluate(node=>getComputedStyle(node).paddingBottom),'0px','Horizontal single-page reading must not retain vertical trailing scroll space');
+  await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>pdfCurrentPage()===61);
+  await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>pdfCurrentPage()===60);
   assert.equal(await page.locator('[data-page="60"] .pdf-ink-layer polyline').getAttribute('points'),inkPath);
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),60);
   assert.equal(await page.locator('.pdf-source-page:visible').count(),1);
@@ -58,9 +76,12 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   const readButtons=await page.evaluate(()=>[...document.querySelectorAll('#readpill button')].filter(n=>n.getClientRects().length&&!n.closest('[inert]')&&getComputedStyle(n).opacity!=='0').map(n=>({id:n.id,x:n.getBoundingClientRect().left,r:n.getBoundingClientRect().right})));
   for(const r of readButtons)assert.ok(r.x>=12&&r.r<=308,JSON.stringify(r));
   await page.setViewportSize({width:820,height:1180});
+  await page.waitForFunction(()=>originalZoomObservedWidth===readerScroller().clientWidth&&!readerAnchorHeld()&&Date.now()>=readerScrollPauseUntil);
   assert.ok(await page.evaluate(()=>{readerScrollTo(readerScroller().scrollHeight);saveReadingState();return posOf(curBook.id).p<.6;}),'page bottom must not complete a horizontal document');
-  await page.locator('#pdf-page-next').click();
+  await page.waitForFunction(()=>!originalPinchBusy()&&!BreezePdfInk.busy());
+  await page.evaluate(()=>stepPdfPage(1));
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),61);
+  await page.waitForFunction(()=>!originalPinchBusy()&&!BreezePdfInk.busy());
   const swipe=async(type,cancel=false)=>page.evaluate(({type,cancel})=>{
    const target=originalSession.pages[pdfCurrentPage()-1],r=target.getBoundingClientRect();
    const touch=x=>({identifier:802,target,touchType:type,clientX:r.left+r.width*x,clientY:r.top+100});
@@ -73,16 +94,28 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>goPdfPage(61));
   await page.evaluate(()=>setPdfReadDirection('vertical'));
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),61);
+  assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'PDF reading also has page navigation');
+  assert.equal(await page.locator('#readpill-title').textContent(),await page.evaluate(()=>curBook.title));
   // Narrow actual Reader containers, including the writing tools and open strip.
   await page.locator('[data-ink-toggle]').click();
-  for(const width of [320,390,507,650,820,1180]){
-   await page.setViewportSize({width,height:900});await page.evaluate(()=>expandReaderChrome());
+  for(const [width,height] of [[320,900],[390,844],[507,900],[650,900],[820,1180],[1180,820],[1440,900],[844,390]])for(const dark of [false,true]){
+   await page.evaluate(d=>{darkMode=d;applyDark();},dark);
+   await page.setViewportSize({width,height});await page.evaluate(()=>expandReaderChrome());
    await page.waitForTimeout(420);
    const rects=await page.evaluate(()=>[...document.querySelectorAll('#readback,#aafab,#pdf-page-button,.ink-pill-entry,.ink-pill-control')].filter(n=>n.getClientRects().length).map(n=>({id:n.id||n.getAttribute('aria-label'),x:n.getBoundingClientRect().x,r:n.getBoundingClientRect().right,w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height,y:n.getBoundingClientRect().top,b:n.getBoundingClientRect().bottom})));
-   for(const r of rects){assert.ok(r.x>=0&&r.r<=width+1&&r.y>=0&&r.b<=900,`${width}: ${JSON.stringify(r)}`);assert.ok(r.w>=34&&r.h>=34,JSON.stringify(r));}
+   for(const r of rects){assert.ok(r.x>=0&&r.r<=width+1&&r.y>=0&&r.b<=height,`${width}: ${JSON.stringify(r)}`);assert.ok(r.w>=34&&r.h>=34,JSON.stringify(r));}
+   const position=await page.locator('#pdf-page-button').boundingBox();
+   assert.ok(position.x<40&&position.y<70,'Page count must stay upper left');
    await page.locator('#pdf-page-button').click();await page.waitForSelector('.pdf-thumbnail');
    await page.waitForFunction(()=>[...document.querySelectorAll('.pdf-thumbnail')].every(cell=>cell.querySelector('canvas')));
-   await page.screenshot({path:`/private/tmp/breeze16-qa/${engine.name()}-${width}.png`});
+   await page.waitForTimeout(300);
+   const navBounds=await page.locator('#pdf-page-navigation').boundingBox();
+   assert.ok(navBounds.x<40&&Math.abs(navBounds.y-position.y)<2&&navBounds.y+navBounds.height<=height-70,'Vertical panel must remain inside viewport');
+   assert.equal(await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollWidth>e.clientWidth),false,'No horizontal thumbnail scroll');
+   await page.locator('#pdf-thumbnail-strip').evaluate(e=>e.scrollTop+=176);
+   await page.waitForTimeout(50);
+   assert.ok(await page.locator('.pdf-thumbnail').count()<16,'Vertical rendering stays bounded');
+   await page.screenshot({path:`/private/tmp/breeze16-qa/${engine.name()}-${width}-${height}-${dark?'dark':'light'}.png`});
    await page.evaluate(()=>closePdfNavigation());
   }
   await page.locator('[data-ink-toggle]').click();
@@ -125,6 +158,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='epub'));await switchReaderMode('original');});
   await page.waitForFunction(()=>originalSession?.kind==='epub'&&originalSession.frames.some(frame=>frame.contentDocument?.getElementById('breeze-saved-mark-style')));
   assert.equal(await page.locator('#modefab').isVisible(),true,'EPUB bottom mode toggle');
+  assert.equal(await page.locator('#pdf-page-button').isVisible(),false);
+  assert.equal(await page.locator('#readpill-title').textContent(),await page.evaluate(()=>curBook.title));
   for(const width of [320,820,1180]){
    await page.setViewportSize({width,height:900});await page.waitForTimeout(200);
    const metrics=await page.evaluate(()=>{
