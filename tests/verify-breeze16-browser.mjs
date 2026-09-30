@@ -133,6 +133,12 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(()=>pdfCurrentPage()),61);
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'PDF reading also has page navigation');
   assert.equal(await page.locator('#readpill-title').textContent(),await page.evaluate(()=>curBook.title));
+  for(const width of [320,390,650]){
+    await page.setViewportSize({width,height:844});
+    await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(350);
+    const [nav,pill,settings]=await Promise.all(['#reader-navigation','#readpill','#aafab'].map(id=>page.locator(id).boundingBox()));
+    assert.ok(nav.x+nav.width+4<=pill.x&&pill.x+pill.width+4<=settings.x,'Combined PDF navigation must not overlap title or settings');
+  }
   // Narrow actual Reader containers, including the writing tools and open strip.
   await page.locator('[data-ink-toggle]').click();
   for(const [width,height] of [[320,900],[390,844],[507,900],[650,900],[820,1180],[1180,820],[1440,900],[844,390]])for(const dark of [false,true]){

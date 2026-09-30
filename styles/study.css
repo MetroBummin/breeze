@@ -85,6 +85,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 #readpill.ink-pill-active .ink-pill-toolbar .ink-pill-separator{display:none;}
 #readpill .ink-pill-toolbar .ink-pill-control,#readpill .ink-pill-entry{width:44px;height:44px;flex:none;}
 @container(max-width:650px){
+  #readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){left:calc(50% + 22px);}
   #readpill.ink-pill-active{bottom:54px;width:calc(100% - 24px);max-width:340px;border-radius:22px;}
 }
 .pdf-navigation-head{margin-bottom:8px;}
