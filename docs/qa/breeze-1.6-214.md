@@ -24,3 +24,16 @@ Browser/native-shell emulation is not physical iOS evidence. Xcode Cloud archive
 and App Store Connect delivery are verified separately after the authorized merge.
 The user reviewed screenshots and approved release provided typography remained
 unchanged; the condition is satisfied.
+
+
+## Xcode Cloud build number correction
+
+The project CURRENT_PROJECT_VERSION was set to 214, but Xcode Cloud assigns its
+own monotonically increasing archive number. The user confirmed that the first
+archive from 69a990b appeared in TestFlight as 1.6 (213). Project configuration
+and a successful archive check did not verify the distributed build number.
+
+This documentation-only commit triggers the next main-branch archive, expected
+to receive Cloud build number 214. The application source remains identical to
+69a990b. Archive status is observable through GitHub; the actual TestFlight build
+number and processing state require App Store Connect evidence.
