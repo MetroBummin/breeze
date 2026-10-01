@@ -129,6 +129,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.locator('.pdf-thumbnail-bookmark').getAttribute('aria-pressed'),'true');
   await page.locator('.pdf-thumbnail-bookmark').click();
   assert.equal(await page.evaluate(()=>readEpubBookmarks(originalSession).length),0);
+  await page.waitForFunction(()=>!document.querySelector('.pdf-thumbnail'));
   assert.equal(await page.locator('.pdf-thumbnail').count(),0,'Removing the last filtered bookmark shows an empty list');
   assert.equal(await page.locator('#pdf-navigation-scrollbar').isVisible(),false);
   await page.locator('#pdf-bookmarks-only').click();
@@ -145,10 +146,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
 
   await page.evaluate(()=>{pdfNavigation.strip.scrollTop=0;paintEpubThumbnails();});
   await page.locator('[data-epub-page="2"]').click();
-  assert.ok(await page.evaluate(()=>{
+  await page.waitForFunction(()=>{
     const nav=pdfNavigation,page=nav.pages[1],frame=nav.session.frames[page.spine];
     return Math.abs(frame.getBoundingClientRect().top+page.y*originalZoom()-topInset())<3;
-  }),'A preview jumps to its exact source slice');
+  });
   await page.evaluate(()=>{pdfNavigation.strip.scrollTop=pdfNavigation.strip.scrollHeight;paintEpubThumbnails();});
   await page.locator(`[data-epub-page="${epubPages}"]`).click();
   await page.waitForFunction(()=>originalSession.navigationSpine===1);

@@ -1,7 +1,8 @@
 /* The ink has no hit-test surface, including in reading mode. */
 .pdf-source-page > .pdf-ink-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;mix-blend-mode:multiply;}
 #readpill.ink-pill-ready{justify-content:flex-start;gap:0;padding-inline:9px;}
-#readpill.ink-pill-ready #readpill-title{flex:1 1 150px;max-width:none;text-align:left;}
+#readpill.ink-pill-ready #reader-pill-copy{flex:1 1 150px;}
+#readpill.ink-pill-ready #readpill-title{max-width:none;text-align:left;}
 #readpill.ink-pill-ready #readpill-title{transition:width var(--reader-chrome-duration) var(--reader-chrome-ease),
   max-width var(--reader-chrome-duration) var(--reader-chrome-ease),flex-basis var(--reader-chrome-duration) var(--reader-chrome-ease),
   margin var(--reader-chrome-duration) var(--reader-chrome-ease),padding var(--reader-chrome-duration) var(--reader-chrome-ease),opacity .18s ease,visibility 0s;}

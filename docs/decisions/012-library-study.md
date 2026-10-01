@@ -197,3 +197,27 @@ never less than its browsing viewport, so wider reflow could not shrink a chapte
 For viewport-independent chapters, reset that floor once per changed width
 before measuring actual content. No reset runs on ordinary scroll or unchanged
 width. A regression widens a wrapping chapter and rejects the old empty tail.
+
+## EPUB navigation contact and motion (212)
+
+Late chapter reflow previously replaced the whole thumbnail track, including the
+button between a contact's down and click. Defer EPUB track rebuild and
+virtualization until the contact finishes; process deferred work on the next
+animation frame after the click. Preview creation also yields during a contact.
+Closing the sidebar clears contact ownership. No gesture is cancelled or captured.
+
+Preview selection resolves its current slice, clears obsolete pending source
+restoration, and moves the existing Reader scroller over 200ms (ease out). New
+selections supersede old motion through the existing reader mode token; direct
+scroll interrupts it. Reduced motion applies the destination immediately. Save
+the actual settled source position. CSS-pixel scroll truncation must not report
+the preceding page at an exact slice boundary.
+
+EPUB layout slices remain navigation positions rather than fixed source pages.
+PDF-only deletion remains hidden. A persistent EPUB deletion feature would need
+a source-content/chapter contract, not deletion by transient viewport page number.
+
+`tests/verify-epub-navigation-input-browser.mjs` reproduces a trusted down/up
+across late source reflow, repeats touchscreen selections in five sizes/themes,
+and checks exact source alignment, latest selection and reduced motion. The 211
+worktree fails because the pressed button is disconnected.

@@ -190,6 +190,8 @@
   #readpill-progress,#home-resume-progress{position:absolute; inset:0; pointer-events:none;
     background:var(--chrome-progress); transform:scaleX(0); transform-origin:left center;
     will-change:transform;}
+  #reader-pill-copy{position:relative;display:flex;align-items:center;align-self:stretch;flex:1 1 auto;min-width:0;}
+  #reader-pill-copy #readpill-title{width:100%;height:auto;align-self:stretch;}
   #readpill-title,#readpill #modefab{position:relative; z-index:1;}
   #readpill-title{border:0; background:none; color:inherit; cursor:default;
     min-width:0; max-width:100%; padding:0 5px; overflow:hidden; text-overflow:ellipsis;
@@ -217,6 +219,7 @@
       backdrop-filter:blur(16px) saturate(115%); -webkit-backdrop-filter:blur(16px) saturate(115%);}
   }
   body.sentence-pill-waiting #readpill-progress,
+  body.sentence-pill-waiting #reader-pill-copy,
   body.sentence-pill-waiting #readpill-title,
   body.sentence-pill-waiting #readpill #modefab{display:none;}
   body.sentence-pill-waiting #readback,
@@ -557,12 +560,10 @@ body:not(.dark) :is(#readback,#aafab,#readpill button,.control-glass):active{bac
 #reader-notice[hidden],#home-notice[hidden]{display:none;}
 body.home-notice-visible #home-resume .home-resume-copy{opacity:0;}
 body.home-notice-visible #home-resume .completion-badge{visibility:hidden;}
-body.reader-notice-visible #readpill-title{opacity:0;}
+/* Replace before first paint, rather than fading the title under the notice. */
+body.reader-notice-visible #readpill-title{opacity:0;transition:none;}
+#reader-pill-copy #reader-notice{inset:auto 5px;top:50%;}
 body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
-body.reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{left:48px;}
-body.reader-notice-visible:not(.chrome-hidden) #readpill.ink-pill-ready #reader-notice{right:56px;}
-body.reader-notice-visible.chrome-hidden #readpill{width:min(56vw,400px,var(--reader-pill-max-width));height:44px;}
-body.reader-notice-visible.chrome-hidden #readpill #reader-notice{left:12px;}
 body.sentence-pill-waiting #reader-notice{display:none;}
 
 /* Imported semantic blocks use Breeze typography, never publisher CSS. */

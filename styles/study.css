@@ -115,7 +115,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .library-completion svg{width:17px;height:17px;}
 /* The writing pill contains tools only; page navigation shares the bottom-left exit pill. */
 #readpill.ink-pill-active{bottom:0;top:auto;transform:none;width:calc(100% - 124px);max-width:340px;height:52px;min-height:0;flex-wrap:nowrap;justify-content:center;gap:0;padding:4px;}
-#readpill.ink-pill-active :is(#modefab,#readpill-title,.ink-pill-mini,.ink-pill-mode-separator,.completion-badge){display:none!important;}
+#readpill.ink-pill-active :is(#modefab,#reader-pill-copy,#readpill-title,.ink-pill-mini,.ink-pill-mode-separator,.completion-badge){display:none!important;}
 #readpill.ink-pill-active .ink-pill-toolbar{display:flex;flex:1 1 auto;min-width:0;max-width:none;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
 #readpill.ink-pill-active .ink-pill-toolbar .ink-pill-separator{display:none;}
 #readpill .ink-pill-toolbar .ink-pill-control,#readpill .ink-pill-entry{width:44px;height:44px;flex:none;}
