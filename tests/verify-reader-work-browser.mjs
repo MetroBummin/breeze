@@ -96,13 +96,43 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.ok(epubPages>2,'Flowing chapters must produce multiple reader-sized page previews');
   await page.waitForFunction(()=>document.querySelectorAll('.epub-page-preview').length>0&&!pdfNavigation.previewRendering&&[...document.querySelectorAll('.epub-page-preview')].every(frame=>frame.contentDocument?.body?.textContent.trim()));
   assert.ok(await page.locator('#pdf-navigation-toggle').evaluate(button=>{const r=button.getBoundingClientRect(),h=button.parentElement.getBoundingClientRect();return Math.abs(r.right-h.right)<1;}),'EPUB collapse control shares the PDF right-hand header position');
-  assert.equal(await page.locator('#pdf-bookmarks-only').isVisible(),false);
+  assert.equal(await page.locator('#pdf-bookmarks-only').isVisible(),true);
   assert.equal(await page.locator('#aa-pdf-direction').isVisible(),false);
   const previewReuse=await page.evaluate(()=>{
     const nav=pdfNavigation,frame=nav.track.querySelector('iframe');closePdfNavigation();togglePdfNavigation();
     return frame.isConnected&&nav.track.contains(frame);
   });
   assert.equal(previewReuse,true,'Reopening the same pages reuses loaded previews');
+  await page.evaluate(()=>{pdfNavigation.strip.scrollTop=0;paintEpubThumbnails();});
+  await page.locator('.pdf-thumbnail-bookmark[aria-label="2페이지 북마크"]').click();
+  assert.equal(await page.locator('.pdf-thumbnail-bookmark[aria-label="2페이지 북마크"]').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.evaluate(()=>readEpubBookmarks(originalSession).length),1);
+  await page.locator('#pdf-bookmarks-only').click();
+  assert.equal(await page.locator('.pdf-thumbnail').count(),1);
+  assert.equal(await page.locator('.pdf-thumbnail-jump').getAttribute('data-epub-page'),'2');
+  await page.evaluate(()=>{closePdfNavigation({release:true});togglePdfNavigation();});
+  await page.locator('#pdf-bookmarks-only').click();
+  assert.equal(await page.locator('.pdf-thumbnail').count(),1,'Stored EPUB bookmarks survive navigation cache release');
+  await page.setViewportSize({width:820,height:1180});await page.waitForTimeout(300);
+  assert.equal(await page.locator('.pdf-thumbnail').count(),1,'Reflow keeps the bookmarked source location');
+  assert.equal(await page.evaluate(()=>+pdfNavigation.track.firstElementChild.dataset.pageIndex),await page.evaluate(()=>epubBookmarkPage(pdfNavigation,readEpubBookmarks(originalSession)[0])),'The filtered preview follows the live anchor after reflow');
+  assert.equal(await page.locator('.pdf-thumbnail-bookmark').getAttribute('aria-pressed'),'true');
+  await page.locator('.pdf-thumbnail-bookmark').click();
+  assert.equal(await page.evaluate(()=>readEpubBookmarks(originalSession).length),0);
+  assert.equal(await page.locator('.pdf-thumbnail').count(),0,'Removing the last filtered bookmark shows an empty list');
+  assert.equal(await page.locator('#pdf-navigation-scrollbar').isVisible(),false);
+  await page.locator('#pdf-bookmarks-only').click();
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
+  // Grab the actual shared thumb. Scrolling the sidebar must not scroll the book.
+  const readerBeforeDrag=await page.evaluate(()=>readerScrollTop());
+  const thumb=await page.locator('#pdf-navigation-scrollbar').boundingBox();
+  await page.mouse.move(thumb.x+thumb.width/2,thumb.y+10);await page.mouse.down();
+  await page.mouse.move(thumb.x+thumb.width/2,thumb.y+160,{steps:10});await page.mouse.up();
+  assert.ok(await page.evaluate(()=>pdfNavigation.strip.scrollTop>100),'Scrollbar dragging moves the EPUB list');
+  assert.equal(await page.evaluate(()=>readerScrollTop()),readerBeforeDrag);
+  await page.locator('#pdf-navigation-scrollbar').focus();await page.keyboard.press('Home');
+  assert.equal(await page.evaluate(()=>pdfNavigation.strip.scrollTop),0);
+
   await page.evaluate(()=>{pdfNavigation.strip.scrollTop=0;paintEpubThumbnails();});
   await page.locator('[data-epub-page="2"]').click();
   assert.ok(await page.evaluate(()=>{
@@ -115,10 +145,16 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.ok(await page.evaluate(()=>pdfNavigation.track.querySelectorAll('iframe').length<=Math.ceil(pdfNavigation.strip.clientHeight/pdfNavigation.cellHeight)+3),'Only nearby page previews exist');
   for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);await page.waitForTimeout(240);
-   assert.ok(await page.locator('.epub-thumbnail-paper').first().evaluate(paper=>{
+   const previewSize=await page.locator('.epub-thumbnail-paper').first().evaluate(paper=>{
      const r=paper.getBoundingClientRect(),strip=document.getElementById('pdf-thumbnail-strip').getBoundingClientRect();
-     return Math.abs(r.height/r.width-Math.SQRT2)<.02&&r.width/strip.width>.9;
-   }),'EPUB slices fill the sidebar width with book-page proportions');
+     return {width:r.width,height:r.height,strip:strip.width};
+   });
+   assert.ok(Math.abs(previewSize.height/previewSize.width-Math.SQRT2)<.02&&previewSize.width/previewSize.strip>.9,`EPUB page proportions at ${width} dark=${dark}: ${JSON.stringify(previewSize)}`);
+   assert.ok(await page.evaluate(()=>{
+     const thumb=document.getElementById('pdf-navigation-scrollbar');if(thumb.hidden)return true;
+     const left=thumb.getBoundingClientRect().left;
+     return [...document.querySelectorAll('.pdf-thumbnail-paper,.pdf-thumbnail-bookmark')].every(node=>node.getBoundingClientRect().right<=left);
+   }),'Scrollbar grip never overlaps a page or bookmark hit target');
    const box=await page.locator('#pdf-page-navigation').boundingBox();
    assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,'EPUB page sidebar stays inside the viewport');
    await page.screenshot({path:`/tmp/breeze209-epub-${engine.name()}-${width}-${dark?'dark':'light'}.png`});
@@ -133,6 +169,17 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.locator('.epub-page-preview').count(),0,'Leaving EPUB releases preview frames');
   await page.evaluate(()=>togglePdfNavigation());
   await page.waitForFunction(()=>pdfNavigation&&!pdfNavigation.rendering&&document.querySelectorAll('#pdf-thumbnail-strip canvas').length>0);
+  const pdfThumb=await page.locator('#pdf-navigation-scrollbar').boundingBox();
+  const pdfTop=await page.evaluate(()=>readerScrollTop());
+  assert.ok(await page.evaluate(()=>{const left=document.getElementById('pdf-navigation-scrollbar').getBoundingClientRect().left;return [...document.querySelectorAll('.pdf-thumbnail-paper,.pdf-thumbnail-bookmark')].every(node=>node.getBoundingClientRect().right<=left);}), 'PDF scrollbar grip does not overlap thumbnails or bookmarks');
+  await page.mouse.move(pdfThumb.x+pdfThumb.width/2,pdfThumb.y+10);await page.mouse.down();
+  await page.mouse.move(pdfThumb.x+pdfThumb.width/2,pdfThumb.y+150,{steps:10});await page.mouse.up();
+  assert.ok(await page.evaluate(()=>pdfNavigation.strip.scrollTop>100),'Scrollbar dragging moves the PDF list');
+  assert.equal(await page.evaluate(()=>readerScrollTop()),pdfTop);
+  await page.locator('#pdf-navigation-scrollbar').focus();await page.keyboard.press('Home');
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.waitForFunction(()=>pdfNavigation&&!pdfNavigation.rendering);
+
   const sidebar=await page.evaluate(async()=>{
    const canvases=[...document.querySelectorAll('#pdf-thumbnail-strip canvas')];
    closePdfNavigation();await new Promise(r=>setTimeout(r,260));togglePdfNavigation();

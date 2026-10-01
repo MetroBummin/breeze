@@ -20,6 +20,11 @@ thumbnail proportions. Source app and share-extension build numbers are 210.
 - Slice continuous EPUB chapters into 1:sqrt(2) navigation pages that fill the
   strip width with an 8px allowance, a 12px page-number line and an 8px gap.
   Source reading layout stays untouched; preview selection uses those slices.
+- EPUB bookmarks persist source-element anchors across reflow, with right-hand
+  ribbons and the same bookmarks-only filter as PDF. Both sidebars have a
+  draggable, keyboard-accessible scroll thumb that leaves the book stationary.
+  Its reserved rail keeps the entire grip separate from paper and bookmark hit
+  targets; responsive browser assertions check that separation.
 - Present the sidebar before creating EPUB preview documents, then admit one
   nearby preview per frame. Session/generation ownership cancels stale work.
 
@@ -28,7 +33,8 @@ thumbnail proportions. Source app and share-extension build numbers are 210.
 Chromium and WebKit: Home UI (including slow opens, cancellation, failure and
 reduced motion), retained Text/PDF/EPUB identity and scroll, saved-word changes,
 PDF navigation/bookmarks/deletion/direction, Reader chrome motion/reversal,
-Reader work/sidebar reuse, and design-tone checks. EPUB ratio/width assertions
+Reader work/sidebar reuse, EPUB bookmark/filter persistence and reflow, actual
+scroll-thumb dragging in both formats, and design-tone checks. EPUB ratio/width assertions
 and screenshots cover 320/390/820/1440px and short landscape, both themes.
 
 `npm test`, unchanged 34-diagnostic typecheck baseline, Capacitor iOS sync and

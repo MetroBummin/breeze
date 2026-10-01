@@ -136,7 +136,7 @@ EPUB star visibility uses one persistent highlight stylesheet and changed-only r
 
 The shared original-navigation entry exposes the same visual page sidebar for EPUB and PDF. EPUB source layout is sliced at each chapter width times sqrt(2); page numbers describe the current layout rather than publisher-fixed pagination. Selecting a preview scrolls to that exact source slice. Publisher typography and images come from the already-sanitized source documents; no source Blob reread, extraction or render library is added. Only visible slices plus one neighbor on each side instantiate sandboxed, inert preview frames. Cached source markup and loaded previews are reused until source geometry changes, and session release clears ownership. Chapter headings are not used as the navigation UI.
 
-PDF-specific bookmarks, deletion and direction controls remain hidden on EPUB. Existing measured EPUB anchors supply the current spine without another source anchor capture. Frame geometry changes coalesce sidebar layout into one animation frame; source width/height changes invalidate slices and rotation updates page numbering.
+PDF-specific deletion and direction controls remain hidden on EPUB. EPUB bookmarks use source anchors rather than layout page numbers. Existing measured EPUB anchors supply the current spine without another source anchor capture. Frame geometry changes coalesce sidebar layout into one animation frame; source width/height changes invalidate slices and rotation updates page numbering.
 
 ## Shared sidebar presentation (210)
 
@@ -154,3 +154,17 @@ chapter remains continuous; preview clicks and current-page detection use the
 same per-chapter slice height. The last slice retains paper proportions. PDF
 keeps its existing uncropped source aspect ratios. This follows the supplied
 Apple Preview reference without scaling or reflowing the reading document.
+
+EPUB bookmarks persist per source hash as chapter/element/relative-element-offset
+anchors under `breeze.epub-bookmarks.v1`. Reflow remaps those anchors to the
+current preview pages; a full-frame height that happens not to change does not
+skip bookmark remapping. Right-hand ribbons and the bookmarks-only filter share
+PDF presentation. Removing a filtered bookmark updates the list; invalid storage
+or failed writes report an error and never replace the saved data.
+
+Both formats expose the same draggable scrollbar: a 4px visual thumb with a
+24px-wide touch grip and at least 44px height, pointer capture, and Home/End,
+PageUp/PageDown and arrow-key support. A reserved 20px rail plus the strip's inner paper gutter separates its entire
+hit target from thumbnail paper and bookmark targets. This scrollbar is
+intentionally narrower than an action button to preserve the thumbnail width. It owns only the sidebar
+scroll position; paper reading position and gestures remain independent.

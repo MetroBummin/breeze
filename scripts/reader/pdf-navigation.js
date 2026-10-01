@@ -29,6 +29,42 @@ function togglePdfBookmark(session,n){
   if(pdfNavigation){const left=pdfNavigation.strip.scrollTop;buildPdfNavigation(false);pdfNavigation.strip.scrollTop=left;paintPdfThumbnails();}
   return true;
 }
+function epubBookmarkKey(session){return 'breeze.epub-bookmarks.v1:'+String(session.hash||session.bookId);}
+function readEpubBookmarks(session){
+  try{
+    const value=JSON.parse(localStorage.getItem(epubBookmarkKey(session))||'[]');
+    if(!Array.isArray(value)||value.some(a=>!a||!Number.isInteger(a.spine)||a.spine<0||!Number.isInteger(a.element)||a.element< -1||!Number.isFinite(a.offset)||a.offset<0||a.offset>1))throw Error('Invalid bookmarks');
+    return value;
+  }catch(error){toast('북마크 정보를 읽지 못했어요.');return null;}
+}
+function epubBookmarkPage(nav,anchor){
+  const frame=nav.session.frames[anchor.spine],height=nav.pageHeights[anchor.spine];
+  if(!frame||!height)return null;
+  const element=anchor.element===-1?frame.contentDocument?.body:frame.contentDocument?.querySelector(`[data-breeze-ei="${anchor.element}"]`);
+  if(!element)return null;
+  const rect=element.getBoundingClientRect(),y=Math.max(0,rect.top+rect.height*anchor.offset);
+  const last=(nav.firstPages[anchor.spine+1]??nav.pages.length)-1;
+  return Math.min(last,nav.firstPages[anchor.spine]+Math.floor(y/height));
+}
+function toggleEpubBookmark(nav,pageIndex){
+  if(pdfNavigation!==nav||!currentEpubNavigationSession())return false;
+  const bookmarks=readEpubBookmarks(nav.session);if(!bookmarks)return false;
+  const keys=new Set((nav.bookmarkAnchors.get(pageIndex)||[]).map(anchor=>JSON.stringify(anchor)));
+  const marked=keys.size>0;
+  let next=bookmarks.filter(anchor=>!keys.has(JSON.stringify(anchor)));
+  if(!marked){
+    const page=nav.pages[pageIndex],doc=nav.session.frames[page.spine].contentDocument;
+    const elements=[...doc.querySelectorAll('[data-breeze-ei]')];
+    const element=firstElementBelow(elements,page.y+1)||elements.at(-1)||doc.body;
+    if(!element){toast('이 페이지의 북마크 위치를 찾지 못했어요.');return false;}
+    const rect=element.getBoundingClientRect();
+    const offset=Math.max(0,Math.min(1,(page.y+1-rect.top)/Math.max(1,rect.height)));
+    next.push({spine:page.spine,element:element.dataset.breezeEi===undefined?-1:+element.dataset.breezeEi,offset});
+  }
+  try{localStorage.setItem(epubBookmarkKey(nav.session),JSON.stringify(next));}
+  catch(error){toast('북마크를 저장하지 못했어요.');return false;}
+  buildEpubNavigation(false);return true;
+}
 function applyPdfDirection(session,page=1){
   if(!currentPdfSession(session))return;
   session.readDirection=studyPrefs.direction;
@@ -64,7 +100,7 @@ function updatePdfNavigationControls(measuredAnchor){
   if(button.hidden===ready)button.hidden=!ready;
   const control=document.getElementById('pdf-page-control');if(control.hidden===ready)control.hidden=!ready;
   const directionRow=document.getElementById('aa-pdf-direction');if(directionRow.hidden===!!pdfReady)directionRow.hidden=!pdfReady;
-  const bookmarks=document.getElementById('pdf-bookmarks-only');if(bookmarks.hidden===!!pdfReady)bookmarks.hidden=!pdfReady;
+  const bookmarks=document.getElementById('pdf-bookmarks-only');if(bookmarks.hidden===ready)bookmarks.hidden=!ready;
   const panel=document.getElementById('pdf-page-navigation'),label=epubReady?'EPUB 페이지 탐색':'PDF 페이지 탐색';
   if(panel.getAttribute('aria-label')!==label)panel.setAttribute('aria-label',label);
   if(lastPdfDirectionState!==studyPrefs.direction){
@@ -167,24 +203,37 @@ function buildEpubNavigation(focusCurrent=true){
   const widthChanged=nav.width!==width;nav.width=width;
   nav.previewWidth=width;
   nav.cellHeight=width*EPUB_NAV_PAGE_RATIO+20;
-  nav.track.style.height=`${nav.pages.length*nav.cellHeight}px`;
-  if(widthChanged)nav.track.replaceChildren();
-  if(focusCurrent)nav.strip.scrollTop=(first-1)*nav.cellHeight;
+  const bookmarks=readEpubBookmarks(nav.session)||[];
+  nav.bookmarkAnchors=new Map();
+  for(const anchor of bookmarks){
+    const index=epubBookmarkPage(nav,anchor);if(index===null)continue;
+    if(!nav.bookmarkAnchors.has(index))nav.bookmarkAnchors.set(index,[]);
+    nav.bookmarkAnchors.get(index).push(anchor);
+  }
+  nav.bookmarkPages=new Set(nav.bookmarkAnchors.keys());
+  const visible=nav.pages.map((_,index)=>index).filter(index=>!nav.bookmarksOnly||nav.bookmarkPages.has(index));
+  const filterChanged=!nav.visiblePages||visible.length!==nav.visiblePages.length||visible.some((index,i)=>index!==nav.visiblePages[i]);
+  nav.visiblePages=visible;
+  document.getElementById('pdf-bookmarks-only').setAttribute('aria-pressed',String(nav.bookmarksOnly));
+  nav.track.style.height=`${visible.length*nav.cellHeight}px`;
+  if(widthChanged||filterChanged)nav.track.replaceChildren();
+  if(focusCurrent)nav.strip.scrollTop=Math.max(0,visible.indexOf(first-1))*nav.cellHeight;
+  for(const cell of nav.track.children)cell.querySelector('.pdf-thumbnail-bookmark')?.setAttribute('aria-pressed',String(nav.bookmarkPages.has(+cell.dataset.pageIndex)));
   paintEpubThumbnails();updatePdfNavigationControls();
 }
 function paintEpubThumbnails(){
   const nav=pdfNavigation;if(!nav||nav.session.kind!=='epub'||!nav.track)return;
   const start=Math.max(0,Math.floor(nav.strip.scrollTop/nav.cellHeight)-1);
-  const end=Math.min(nav.pages.length,Math.ceil((nav.strip.scrollTop+nav.strip.clientHeight)/nav.cellHeight)+1);
+  const end=Math.min(nav.visiblePages.length,Math.ceil((nav.strip.scrollTop+nav.strip.clientHeight)/nav.cellHeight)+1);
   for(const cell of [...nav.track.children])if(+cell.dataset.index<start||+cell.dataset.index>=end)cell.remove();
   for(let i=start;i<end;i++){
     if(nav.track.querySelector(`[data-index="${i}"]`))continue;
-    const page=nav.pages[i],source=nav.session.frames[page.spine];
-    const cell=document.createElement('div');cell.className='pdf-thumbnail';cell.dataset.index=String(i);
+    const pageIndex=nav.visiblePages[i],page=nav.pages[pageIndex],source=nav.session.frames[page.spine];
+    const cell=document.createElement('div');cell.className='pdf-thumbnail';cell.dataset.index=String(i);cell.dataset.pageIndex=String(pageIndex);
     cell.style.top=`${i*nav.cellHeight}px`;cell.style.height=`${nav.cellHeight-8}px`;
     const holder=document.createElement('div');holder.className='pdf-thumbnail-frame';
-    const jump=document.createElement('button');jump.type='button';jump.className='pdf-thumbnail-jump';jump.dataset.epubPage=String(i+1);
-    jump.setAttribute('aria-label',`${i+1}페이지로 이동`);jump.setAttribute('aria-current',String(i+1===epubNavigationCurrentPage(nav)));
+    const jump=document.createElement('button');jump.type='button';jump.className='pdf-thumbnail-jump';jump.dataset.epubPage=String(pageIndex+1);
+    jump.setAttribute('aria-label',`${pageIndex+1}페이지로 이동`);jump.setAttribute('aria-current',String(pageIndex+1===epubNavigationCurrentPage(nav)));
     jump.onclick=()=>{
       if(pdfNavigation!==nav||!currentEpubNavigationSession())return;
       ++readerModeChangeToken;
@@ -194,9 +243,14 @@ function paintEpubThumbnails(){
     };
     const paper=document.createElement('div');paper.className='pdf-thumbnail-paper epub-thumbnail-paper';
     paper.style.width=`${nav.previewWidth}px`;paper.style.height=`${nav.previewWidth*EPUB_NAV_PAGE_RATIO}px`;
-    const label=document.createElement('span');label.textContent=String(i+1);
-    jump.append(paper,label);holder.append(jump);cell.append(holder);nav.track.append(cell);
+    const label=document.createElement('span');label.textContent=String(pageIndex+1);
+    const bookmark=document.createElement('button');bookmark.type='button';bookmark.className='pdf-thumbnail-bookmark';
+    bookmark.innerHTML='<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 1h18v28l-9-6-9 6Z"/></svg>';
+    bookmark.setAttribute('aria-label',`${pageIndex+1}페이지 북마크`);bookmark.setAttribute('aria-pressed',String(nav.bookmarkPages.has(pageIndex)));
+    bookmark.onclick=()=>toggleEpubBookmark(nav,pageIndex);
+    jump.append(paper,label);holder.append(jump,bookmark);cell.append(holder);nav.track.append(cell);
   }
+  syncPdfNavigationScrollbar();
   void renderEpubPreviewQueue(nav);
 }
 /* Let the shared sidebar land before laying out publisher documents. One
@@ -211,7 +265,7 @@ async function renderEpubPreviewQueue(nav){
     while(pdfNavigation===nav&&nav.generation===generation){
       const paper=nav.track.querySelector('.epub-thumbnail-paper:not(:has(iframe))');
       if(!paper)break;
-      const page=nav.pages[+paper.closest('.pdf-thumbnail').dataset.index];
+      const page=nav.pages[+paper.closest('.pdf-thumbnail').dataset.pageIndex];
       const source=nav.session.frames[page.spine],scale=nav.previewWidth/page.width;
       const preview=document.createElement('iframe');preview.className='epub-page-preview';preview.tabIndex=-1;preview.setAttribute('aria-hidden','true');
       preview.setAttribute('sandbox','allow-same-origin');preview.setAttribute('scrolling','no');
@@ -280,6 +334,7 @@ function layoutPdfThumbnails(nav){
   if(previous)nav.strip.scrollTop=(offsets[index]||0)+delta;
 }
 function paintPdfThumbnails(){
+  syncPdfNavigationScrollbar();
   if(pdfNavigation?.session.kind==='epub'){paintEpubThumbnails();return;}
   const nav=pdfNavigation;if(!nav||!currentPdfSession(nav.session))return;
   const currentPage=pdfCurrentPage();
@@ -355,11 +410,54 @@ async function renderPdfThumbnailQueue(nav){
     }
   }
 }
+/* A narrow visual thumb with a larger touch target works in WKWebView too,
+   where overlay scrollbars cannot reliably be grabbed with a finger. */
+function syncPdfNavigationScrollbar(){
+  const strip=document.getElementById('pdf-thumbnail-strip'),thumb=document.getElementById('pdf-navigation-scrollbar');
+  if(!strip||!thumb)return;
+  const height=strip.clientHeight,range=Math.max(0,strip.scrollHeight-height);
+  thumb.hidden=!pdfNavigation||range<1||height<1;
+  if(thumb.hidden)return;
+  const size=Math.min(height,Math.max(44,height*height/strip.scrollHeight));
+  const top=(height-size)*Math.max(0,Math.min(1,strip.scrollTop/range));
+  const h=`${size}px`,y=`translateY(${top}px)`;
+  if(thumb.style.height!==h)thumb.style.height=h;
+  if(thumb.style.transform!==y)thumb.style.transform=y;
+  thumb.setAttribute('aria-valuenow',String(Math.round(100*Math.max(0,Math.min(1,strip.scrollTop/range)))));
+}
+function installPdfNavigationScrollbar(){
+  const strip=document.getElementById('pdf-thumbnail-strip'),thumb=document.getElementById('pdf-navigation-scrollbar');
+  let drag=null;
+  thumb.addEventListener('pointerdown',event=>{
+    if(event.button!==0||thumb.hidden)return;
+    const range=strip.scrollHeight-strip.clientHeight,travel=strip.clientHeight-thumb.offsetHeight;
+    if(range<=0||travel<=0)return;
+    event.preventDefault();event.stopPropagation();
+    drag={id:event.pointerId,y:event.clientY,top:strip.scrollTop,ratio:range/travel};
+    thumb.setPointerCapture(event.pointerId);thumb.classList.add('dragging');
+  });
+  thumb.addEventListener('pointermove',event=>{
+    if(!drag||drag.id!==event.pointerId)return;
+    event.preventDefault();strip.scrollTop=drag.top+(event.clientY-drag.y)*drag.ratio;
+  });
+  const finish=event=>{
+    if(!drag||drag.id!==event.pointerId)return;
+    drag=null;thumb.classList.remove('dragging');
+    if(thumb.hasPointerCapture(event.pointerId))thumb.releasePointerCapture(event.pointerId);
+  };
+  for(const name of ['pointerup','pointercancel','lostpointercapture'])thumb.addEventListener(name,finish);
+  thumb.addEventListener('keydown',event=>{
+    const step=event.key==='ArrowDown'?44:event.key==='ArrowUp'?-44:event.key==='PageDown'?strip.clientHeight:event.key==='PageUp'?-strip.clientHeight:0;
+    if(!step&&!['Home','End'].includes(event.key))return;
+    event.preventDefault();strip.scrollTop=event.key==='Home'?0:event.key==='End'?strip.scrollHeight:strip.scrollTop+step;
+  });
+}
 document.addEventListener('DOMContentLoaded',()=>{
+  installPdfNavigationScrollbar();
   document.addEventListener('click',event=>{
     if(event.target instanceof Element&&event.target.closest('#aafab,#pdf-ink-tools,[data-ink-toggle]'))closePdfNavigation();
   },true);
-  document.getElementById('pdf-bookmarks-only').onclick=()=>{if(pdfNavigation){pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;buildPdfNavigation(true);}};
+  document.getElementById('pdf-bookmarks-only').onclick=()=>{if(pdfNavigation){pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;if(pdfNavigation.session.kind==='epub')buildEpubNavigation(true);else buildPdfNavigation(true);}};
   document.getElementById('pdf-thumbnail-strip').addEventListener('scroll',paintPdfThumbnails,{passive:true});
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&pdfNavigation&&!document.querySelector('dialog[open]')){
