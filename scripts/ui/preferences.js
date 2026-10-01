@@ -198,6 +198,7 @@ function setHomeMorphOrigin(button){
 }
 let homeReturnTransition=null;
 async function returnHomeFromReader(){
+  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()) return;
   if(homeReturnTransition) return;
   if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){show('home');return;}
   const root=document.documentElement;
