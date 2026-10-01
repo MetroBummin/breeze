@@ -215,12 +215,15 @@ use that same shared material. Lookup surfaces keep their existing tokens.
 Opaque fallback remains available without backdrop filtering.
 Sidebar entry and exit animate only translation and opacity at final size.
 
-All pills use a 50 percent viewport anchor. In narrow PDF containers (650px or
-less), expanded reading/writing adds a 22px translate to clear the left PDF slot.
-Collapsed reading removes that translate over 260ms and returns to viewport center.
-Reduced motion skips the translation.
+Reader pills use absolute left/right insets and auto inline margins to center
+their animated width in layout. No width-relative horizontal transform is used:
+on-device build 205 footage showed transient overshoot despite synchronized
+CSS timing and correct DOM trajectories. In narrow PDF containers (650px or
+less), expanded reading/writing uses a 44px left inset and a zero right inset,
+placing its center 22px right of the viewport center. Collapsed reading returns
+the left inset to zero over 260ms. Reduced motion applies geometry immediately.
 
-Reader collapse/expand uses one 260ms easing for translation, width, height,
+Reader collapse/expand uses one 260ms easing for the left inset, width, height,
 padding and corner radius, including the PDF reading variant. Resolve the
 viewport width cap inside both endpoint widths, rather than clipping an
 animated larger width with max-width: clipping stalls the visible shrink while

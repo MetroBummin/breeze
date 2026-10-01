@@ -182,8 +182,11 @@
     width:min(56vw,400px); height:44px; border-radius:24px;
     display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
   #readpill{--reader-chrome-duration:.26s;--reader-chrome-ease:cubic-bezier(.2,.75,.25,1);
+    /* Center resizing geometry in layout. Percentage X transforms can lag the
+       animated width in WKWebView's compositor during a scrolling frame. */
+    left:0;right:0;margin-inline:auto;transform:translateY(-50%);
     width:min(56vw,400px,var(--reader-pill-max-width,calc(100% - 124px)));
-    translate:0 0;transition:translate var(--reader-chrome-duration) var(--reader-chrome-ease),width var(--reader-chrome-duration) var(--reader-chrome-ease),height var(--reader-chrome-duration) var(--reader-chrome-ease),
+    transition:left var(--reader-chrome-duration) var(--reader-chrome-ease),width var(--reader-chrome-duration) var(--reader-chrome-ease),height var(--reader-chrome-duration) var(--reader-chrome-ease),
       padding var(--reader-chrome-duration) var(--reader-chrome-ease),border-radius var(--reader-chrome-duration) var(--reader-chrome-ease),
       box-shadow .34s ease;}
   #readpill-progress,#home-resume-progress{position:absolute; inset:0; pointer-events:none;
