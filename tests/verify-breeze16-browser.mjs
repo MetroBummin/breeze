@@ -59,7 +59,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>closeAa());
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').isVisible(),true);
-  await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);
+  await page.evaluate(()=>setReaderChrome(true));
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),true);
+  await page.locator('#pdf-page-control').waitFor({state:'hidden',timeout:3000});
   assert.equal(await page.locator('#pdf-page-control').isVisible(),false,'Collapsed Reader hides page pill');
   await page.locator('#readpill-title').click();await page.waitForTimeout(320);
   await page.screenshot({path:`${qaDir}/${engine.name()}-combined-page-pill.png`});
