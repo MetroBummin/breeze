@@ -34,12 +34,19 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const before=await sample();
    // Enqueue and inspect the first paint synchronously: no title fade beneath a notice.
    await page.evaluate(()=>{window.firstNoticeOpacity=null;const observer=new MutationObserver(()=>{if(!document.body.classList.contains('reader-notice-visible'))return;window.firstNoticeOpacity=getComputedStyle(document.getElementById('readpill-title')).opacity;observer.disconnect();});observer.observe(document.body,{attributes:true,attributeFilter:['class']});toast('저장을 마쳤어요. 다시 읽어도 이 위치에서 이어져요.');});
-   await notice.waitFor({state:'visible'});assert.equal(await page.evaluate(()=>window.firstNoticeOpacity),'0','Title must yield before the first notice paint');await page.waitForTimeout(300);assert.deepEqual(await sample(),before,'Notices must not move or resize input targets');
-   const bounds=await notice.evaluate(e=>{const r=e.getBoundingClientRect(),title=document.getElementById('readpill-title').getBoundingClientRect(),pill=document.getElementById('readpill').getBoundingClientRect();return {inside:r.left>=title.left-1&&r.right<=title.right+1&&r.top>=pill.top-1&&r.bottom<=pill.bottom+1,pointer:getComputedStyle(e).pointerEvents};});
-   assert.equal(bounds.inside,true,JSON.stringify({width,height,dark,mode,compact,bounds,rects:await page.evaluate(()=>['reader-notice','readpill-title','reader-pill-copy','readpill'].map(id=>[id,JSON.stringify(document.getElementById(id).getBoundingClientRect().toJSON())]))}));assert.equal(bounds.pointer,'none');
+   await notice.waitFor({state:'visible'});assert.equal(await page.evaluate(()=>window.firstNoticeOpacity),'0','Title must yield before the first notice paint');await page.waitForTimeout(300);
+   // Capture visibility, bounds and hit targets in one browser task. Source
+   // reflow may legitimately defer a notice again between separate IPC reads.
+   const snapshot=await(await page.waitForFunction(()=>{
+    const e=document.getElementById('reader-notice');if(e.hidden)return false;
+    const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return [r.x,r.y,r.width,r.height];};
+    const r=e.getBoundingClientRect(),title=document.getElementById('readpill-title').getBoundingClientRect(),pill=document.getElementById('readpill').getBoundingClientRect();
+    return {controls:{pill:rect('readpill'),title:rect('readpill-title'),aa:rect('aafab'),mode:rect('modefab')},inside:r.left>=title.left-1&&r.right<=title.right+1&&r.top>=pill.top-1&&r.bottom<=pill.bottom+1,pointer:getComputedStyle(e).pointerEvents};
+   })).jsonValue();
+   assert.deepEqual(snapshot.controls,before,'Notices must not move or resize input targets');assert.equal(snapshot.inside,true,'Notice stays within the title slot');assert.equal(snapshot.pointer,'none');
    if(width===390&&mode==='original')await page.screenshot({path:`${proof}/${engine.name()}-${dark?'dark':'light'}-${compact?'compact':'expanded'}.png`});
    // Trusted touch at the visible notice's edge, not just the invisible title's center.
-   if(compact){const r=await notice.boundingBox();await page.touchscreen.tap(r.x+2,r.y+r.height/2);assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),false,'Notice area must still expand Reader controls');await page.waitForTimeout(350);}
+   if(compact){const [x,y,,height]=snapshot.controls.title;await page.touchscreen.tap(x+6,y+height/2);assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),false,'Notice area must still expand Reader controls');await page.waitForTimeout(350);}
    await page.evaluate(()=>{readerNotices.reset();chromeHoldUntil=0;readerScrollPauseUntil=0;toast('설정도 바로 열 수 있어요');});await notice.waitFor({state:'visible'});
    await page.locator('#aafab').tap();assert.equal(await page.locator('#aa-pop').evaluate(e=>e.classList.contains('on')),true);assert.equal(await notice.isVisible(),false);
    await page.evaluate(()=>{closeAa();readerNotices.reset();});
