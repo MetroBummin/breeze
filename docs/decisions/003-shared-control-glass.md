@@ -245,3 +245,7 @@ Task/import/edit dialogs, article preview and Home settings now share Reader set
 Keep the existing +22 px narrow PDF expanded-pill position and centered collapsed position. Decorative control transitions must not invalidate PDF paper measurements. Original paper-growth and viewport watchers share one EPUB frame layout, coalescing paper growth in a frame and writing sizes only when changed; PDF viewport changes settle immediately to preserve pinch and rotation coordinates; hidden originals are skipped. Cached mode returns restore scroll synchronously before presenting the source.
 
 Window resize no longer independently restores the Reader anchor. Text/EPUB width restoration stays with the Reader width observer; PDF viewport restoration stays with its paper observer. PDF width changes use the logical page anchor as well as rotation. Three competing original restorations caused scroll writes during newly started pinches.
+
+## Home capsule continuity (208)
+
+Both root reveal and named control geometry use one easing curve, cubic-bezier(.18,.86,.22,1), with a 480ms opening and 440ms closing duration. This extends the terminal deceleration compared with the former 340ms timing. Closing remains opaque through 90 percent and retains its terminal frame with fill-mode both. Text remains unscaled, Home snapshots remain opaque, and reduced motion follows the existing immediate path. The user supplied an Apple Music screen recording as the motion reference; this does not introduce interactive sheet dragging.

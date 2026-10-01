@@ -131,3 +131,7 @@ Shelf grids start at the heading/category left edge rather than centering leftov
 ## 2026-10-01: reuse Reader work
 
 EPUB star visibility uses one persistent highlight stylesheet and changed-only root CSS variables; toggles do not rebuild chapter marks. PDF sidebar close retains its bounded virtualized strip and rendered canvases within the live document session. Reopen reuses them, updates geometry/bookmarks, and cancels stale rendering by generation. Leaving the original session releases the cache. Mode returns reuse live documents instead of retrieving their Blob again. Sentence search starts near the mapped paragraph and falls back to the full search when needed.
+
+## EPUB original chapter navigation (208)
+
+The shared original-navigation entry also appears for EPUB. Its sidebar lists spine chapters using their heading/title and source order, falling back to chapter numbers. Selection restores the existing EPUB source anchor with session/token guards. EPUB exposes no PDF bookmarks, deletion or direction controls. Progress updates reuse their measured EPUB anchor for the accessible entry/current chapter; unchanged attributes are not rewritten.

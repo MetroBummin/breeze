@@ -457,6 +457,7 @@ async function openOriginalEpub(book,record,token){
     session.frames[index]=frame; session.frameReady[index]=ready; session.frameGeometryReady[index]=geometryReady;
   }
   await Promise.all(session.frameReady.filter(Boolean).slice(0,2));
+  if(originalSession===session)updatePdfNavigationControls();
 }
 
 /* ================= saved vocabulary ================= */

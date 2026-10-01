@@ -70,3 +70,7 @@ regressions, supplied-PDF geometry regression, `npm test`, `npm run www`, and
 
 ## Ready result and cache persistence (2026-09-29)
 A usable network translation is presented through the existing lifetime/release gate before awaiting its cache write. Valid stale answers are still cached, but cache completion never paints or reopens a closed lookup.
+
+## One waiting surface across original formats (208)
+
+Sentence waiting closes source navigation and makes the complete back/page slot inert and invisible, alongside settings/mode controls. It hides PDF writing entry/tools and centers the 48px waiting pill with full available width, overriding original-navigation offsets and writing geometry. Closing or result presentation restores the existing chrome and tool state. No request, cue or release policy changes.

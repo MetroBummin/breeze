@@ -260,7 +260,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='epub'));await switchReaderMode('original');});
   await page.waitForFunction(()=>originalSession?.kind==='epub'&&originalSession.frames.some(frame=>frame.contentDocument?.getElementById('breeze-saved-mark-style')));
   assert.equal(await page.locator('#modefab').isVisible(),true,'EPUB bottom mode toggle');
-  assert.equal(await page.locator('#pdf-page-button').isVisible(),false);
+  assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'EPUB original exposes the shared chapter navigation icon');
   assert.equal(await page.locator('#readpill-title').textContent(),await page.evaluate(()=>curBook.title));
   for(const width of [320,820,1180]){
    await page.setViewportSize({width,height:900});await page.waitForTimeout(200);

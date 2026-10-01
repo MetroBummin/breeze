@@ -43,9 +43,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    await ensureZipLib();const zip=new JSZip();
    zip.file('mimetype','application/epub+zip');
    zip.file('META-INF/container.xml','<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="book.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
-   zip.file('book.opf','<package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata/><manifest><item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="chapter"/></spine></package>');
+   zip.file('book.opf','<package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata/><manifest><item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/><item id="second" href="second.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="chapter"/><itemref idref="second"/></spine></package>');
    const paras=Array.from({length:120},(_,i)=>`The gentle signal crosses the quiet forest in paragraph ${i}.`);
    zip.file('chapter.xhtml','<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Chapter</title></head><body>'+paras.map(p=>'<p>'+p+'</p>').join('')+'</body></html>');
+   zip.file('second.xhtml','<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Second chapter</title></head><body><h1>Second chapter</h1>'+('<p>A quiet reader follows the next chapter.</p>'.repeat(40))+'</body></html>');
    const record={kind:'epub',hash:'work-epub',blob:await zip.generateAsync({type:'blob'})};
    const book={id:'work-epub',title:'Work EPUB',kind:'epub',original:{hash:record.hash},paras};
    books=[book];positions[book.id]={mode:'original',p:0,y:0};
@@ -87,6 +88,22 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(stars.headChanges,0,'Star toggles must not rebuild/reorder EPUB stylesheets');
   assert.equal(stars.walks,0,'Star visibility must not rescan chapter text');
   assert.equal(stars.selectionUnchanged,true,'Selected blue paint must not become saved yellow or transparent');
+  await page.evaluate(()=>{closePanel();expandReaderChrome();});
+  assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'EPUB original exposes chapter navigation');
+  await page.locator('#pdf-page-button').click();
+  assert.equal(await page.locator('.epub-navigation-entry').count(),2);
+  assert.equal(await page.locator('#pdf-bookmarks-only').isVisible(),false);
+  assert.equal(await page.locator('#aa-pdf-direction').isVisible(),false);
+  await page.locator('[data-epub-spine="1"]').click();
+  await page.waitForFunction(()=>originalSession.navigationSpine===1);
+  assert.ok(await page.evaluate(()=>{const frame=originalSession.frames[1],heading=frame.contentDocument.querySelector('h1');const y=frame.getBoundingClientRect().top+heading.getBoundingClientRect().top;return y>=0&&y<innerHeight-80;}),'Chapter navigation makes the selected heading visible');
+  for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
+   await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);await page.waitForTimeout(240);
+   const box=await page.locator('#pdf-page-navigation').boundingBox();
+   assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,'EPUB chapter sidebar stays inside the viewport');
+   await page.screenshot({path:`/tmp/breeze208-epub-${engine.name()}-${width}-${dark?'dark':'light'}.png`});
+  }
+  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();closePdfNavigation();});
   await page.locator('#fileinput').setInputFiles({name:'Work.pdf',mimeType:'application/pdf',buffer:fixturePdf(12)});
   await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
@@ -115,6 +132,26 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    originalSession.pages.forEach((p,i)=>p.getBoundingClientRect=originals[i]);return reads;
   });
   assert.equal(controls,0,'Chrome-only motion must not invalidate and remeasure PDF paper');
+  // A pending PDF sentence owns the center pill, in reading and writing,
+  // even with the sidebar open or collapsed chrome at admission.
+  for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true])for(const writing of [false,true])for(const hidden of [false,true]){
+   await page.setViewportSize({width,height});
+   await page.evaluate(d=>{darkMode=d;applyDark();},dark);
+   await page.evaluate(({writing,hidden})=>{closeSentence();expandReaderChrome();if(document.getElementById('readpill').classList.contains('ink-pill-active')!==writing)document.querySelector('[data-ink-toggle]').click();if(!writing)setReaderChrome(hidden);togglePdfNavigation();beginSentenceWaiting();},{writing,hidden});
+   await page.waitForFunction(()=>document.body.classList.contains('sentence-pill-waiting'));
+   await page.waitForTimeout(320);
+   assert.equal(await page.locator('#sentence-pill-status').isVisible(),true);
+   assert.equal(await page.locator('#reader-navigation').isVisible(),false,'Sentence loading must hide the complete back/page surface');
+   assert.equal(await page.locator('.ink-pill-toolbar').isVisible(),false);
+   const pill=await page.locator('#readpill').boundingBox();
+   assert.ok(Math.abs(pill.x+pill.width/2-width/2)<1,'Pending sentence pill is centered');
+   assert.ok(pill.width>Math.min(width-60,500),'Pending label has the full center surface');
+   assert.equal(await page.locator('#reader-navigation').evaluate(n=>n.inert),true);
+   if(!hidden&&!writing)await page.screenshot({path:`/tmp/breeze208-${engine.name()}-${width}-${dark?'dark':'light'}-waiting.png`});
+   await page.evaluate(()=>closeSentence());
+  }
+  await page.evaluate(()=>{if(document.getElementById('readpill').classList.contains('ink-pill-active'))document.querySelector('[data-ink-toggle]').click();});
+  await page.screenshot({path:'/tmp/breeze208-reader-'+engine.name()+'.png'});
   assert.deepEqual(errors,[]);
   console.log(engine.name(),JSON.stringify({text,modes,stars,sidebar,paperReadsDuringChrome:controls}));
  }finally{await browser.close();}

@@ -100,7 +100,8 @@ function sentenceBodyClass(name,on){
 function sentenceWaitingControls(waiting){
   const status=document.getElementById('sentence-pill-status');
   if(status) status.hidden=!waiting;
-  ['readback','aafab','modefab'].forEach(id=>{
+  if(waiting&&typeof closePdfNavigation==='function')closePdfNavigation();
+  ['readback','aafab','modefab','reader-navigation','pdf-page-control'].forEach(id=>{
     const button=document.getElementById(id);
     if(button) button.inert=!!waiting || !!(document.body&&document.body.classList
       && document.body.classList.contains('chrome-hidden'));

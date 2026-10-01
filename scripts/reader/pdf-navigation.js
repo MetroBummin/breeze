@@ -2,6 +2,10 @@
    lexical geometry and ink retain their document/session ownership. */
 let pdfNavigation=null,pdfNavigationGeneration=0,pdfNavigationTask=null,pdfNavigationCloseTimer=null;
 let lastPdfDirectionState=null;
+function currentEpubNavigationSession(){
+  return currentReaderMode==='original'&&originalSession?.kind==='epub'
+    &&originalSession.bookId===curBook?.id&&originalSession.frames.some(Boolean);
+}
 function pdfHorizontal(session=originalSession){return session?.kind==='pdf'&&session.readDirection==='horizontal';}
 function pdfCurrentPage(){
   if(!currentPdfSession())return 1;
@@ -55,15 +59,29 @@ async function goPdfPage(n,{keepNavigation=false}={}){
 }
 function updatePdfNavigationControls(measuredAnchor){
   const button=document.getElementById('pdf-page-button');if(!button)return;
-  const ready=currentReaderMode==='original'&&currentPdfSession();
+  const pdfReady=currentReaderMode==='original'&&currentPdfSession();
+  const epubReady=currentEpubNavigationSession(),ready=!!(pdfReady||epubReady);
   if(button.hidden===ready)button.hidden=!ready;
   const control=document.getElementById('pdf-page-control');if(control.hidden===ready)control.hidden=!ready;
-  const directionRow=document.getElementById('aa-pdf-direction');if(directionRow.hidden===ready)directionRow.hidden=!ready;
+  const directionRow=document.getElementById('aa-pdf-direction');if(directionRow.hidden===!!pdfReady)directionRow.hidden=!pdfReady;
+  const bookmarks=document.getElementById('pdf-bookmarks-only');if(bookmarks.hidden===!!pdfReady)bookmarks.hidden=!pdfReady;
+  const panel=document.getElementById('pdf-page-navigation'),label=epubReady?'EPUB 장 탐색':'PDF 페이지 탐색';
+  if(panel.getAttribute('aria-label')!==label)panel.setAttribute('aria-label',label);
   if(lastPdfDirectionState!==studyPrefs.direction){
     for(const direction of ['vertical','horizontal'])document.querySelector(`[data-pdf-direction="${direction}"]`)?.setAttribute('aria-pressed',String(studyPrefs.direction===direction));
     lastPdfDirectionState=studyPrefs.direction;
   }
   if(!ready){closePdfNavigation();return;}
+  if(epubReady){
+    const spine=measuredAnchor?.kind==='epub'?measuredAnchor.spine:originalSession.navigationSpine??0;
+    originalSession.navigationSpine=spine;
+    const aria=`${spine+1}장, 장 탐색`;if(button.getAttribute('aria-label')!==aria)button.setAttribute('aria-label',aria);
+    if(pdfNavigation&&pdfNavigation.session!==originalSession)closePdfNavigation();
+    if(pdfNavigation)for(const entry of pdfNavigation.strip.querySelectorAll('[data-epub-spine]')){
+      const current=String(+entry.dataset.epubSpine===spine);if(entry.getAttribute('aria-current')!==current)entry.setAttribute('aria-current',current);
+    }
+    return;
+  }
   const n=measuredAnchor?.kind==='pdf'&&measuredAnchor.page?measuredAnchor.page:pdfCurrentPage();
   const aria=`${n}페이지, 페이지 탐색`;if(button.getAttribute('aria-label')!==aria)button.setAttribute('aria-label',aria);
   if(pdfNavigation&&pdfNavigation.session!==originalSession)closePdfNavigation();
@@ -105,7 +123,7 @@ function closePdfNavigation({release=false}={}){
 }
 function togglePdfNavigation(){
   if(pdfNavigation){closePdfNavigation();return;}
-  if(currentReaderMode!=='original'||!currentPdfSession()||BreezePdfInk.busy()||originalPinchBusy())return;
+  if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||document.getElementById('originalwrap').hasAttribute('data-reader-preparing')||sentenceWaitingActive()||BreezePdfInk.busy()||originalPinchBusy())return;
   if(pdfNavigationCloseTimer){clearTimeout(pdfNavigationCloseTimer);pdfNavigationCloseTimer=null;}
   document.getElementById('pdf-page-control').classList.remove('pdf-navigation-closing');
   closeAa();expandReaderChrome();
@@ -117,7 +135,28 @@ function togglePdfNavigation(){
   panel.hidden=false;panel.inert=false;document.getElementById('pdf-navigation-dismiss').hidden=false;
   document.getElementById('pdf-page-button').setAttribute('aria-expanded','true');
   // A transparent dismissal surface prevents a closing tap reaching the page.
-  pinReaderChrome(true,'page-navigation');buildPdfNavigation(true);
+  pinReaderChrome(true,'page-navigation');
+  if(currentEpubNavigationSession())buildEpubNavigation();else buildPdfNavigation(true);
+}
+function buildEpubNavigation(){
+  const nav=pdfNavigation;if(!nav)return;
+  nav.strip.replaceChildren();
+  for(const section of document.querySelectorAll('.epub-source-chapter')){
+    const spine=Number(section.getAttribute('data-spine')),doc=nav.session.frames[spine]?.contentDocument;
+    const title=(doc?.querySelector('h1,h2')||doc?.querySelector('title'))?.textContent?.trim();
+    const entry=document.createElement('button');entry.type='button';entry.className='epub-navigation-entry';entry.dataset.epubSpine=String(spine);
+    entry.textContent=title||`${spine+1}장`;
+    entry.onclick=async()=>{
+      if(pdfNavigation!==nav||!currentEpubNavigationSession())return;
+      const token=++readerModeChangeToken,session=nav.session;
+      if(typeof closePanel==='function')closePanel();
+      await restoreEpubAnchor({kind:'epub',spine,element:0},topInset()+10,token,()=>originalSession===session&&currentReaderMode==='original'&&token===readerModeChangeToken);
+      if(originalSession!==session||currentReaderMode!=='original'||token!==readerModeChangeToken)return;
+      session.navigationSpine=spine;saveReadingState();updatePfill(true);updatePdfNavigationControls({kind:'epub',spine});
+    };
+    nav.strip.append(entry);
+  }
+  updatePdfNavigationControls();
 }
 function buildPdfNavigation(focusCurrent){
   const nav=pdfNavigation;if(!nav)return;
@@ -255,7 +294,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   const resize=new ResizeObserver(entries=>{
     if(entries.some(entry=>entry.target.id!=='pdf-thumbnail-strip'))positionPdfInkSettings();
-    if(pdfNavigation&&entries.some(entry=>entry.target.id!=='readpill')){
+    if(pdfNavigation&&currentPdfSession(pdfNavigation.session)&&entries.some(entry=>entry.target.id!=='readpill')){
       paintPdfThumbnails();
       pdfNavigation.track.querySelectorAll('.pdf-thumbnail').forEach(alignPdfBookmark);
     }
