@@ -173,3 +173,21 @@ Both sidebar header controls share a 44px circular neutral surface and 22px
 icons with 2px strokes. The bookmark filter alone becomes red and filled when
 selected. The header bookmark uses a square viewBox; page ribbons retain their
 existing tall paper-edge geometry. This presentation is shared by PDF and EPUB.
+
+## Horizontal progress and bounded EPUB preview viewports (211)
+Horizontal PDF progress uses the retained-page ordinal plus the current paper's
+scroll fraction, divided by retained page count. A paper that fits in the Reader
+is fully visible and contributes its full share. A tall or zoomed paper advances
+from its top alignment to its visible bottom, bounded to that page's share.
+Deleted pages do not count. Source anchors still store the original page and
+normalized location, and vertical-mode progress is unchanged.
+
+EPUB previews previously transformed a full-chapter-height browsing viewport for
+each page slice. Keep each viewport at one slice height (remaining height on the
+last slice), scale it, and scroll its own document to the source offset on load
+and font readiness. Retain source root height and eagerly load cloned images so
+layout matches the source. This bounds painted surfaces independently of chapter
+length; source text, sandboxing, numbered slices and navigation are unchanged.
+Long-chapter regressions verify actual colored pixels on pages 43, 44 and 45 in
+Chromium and WebKit. This is constructed-book evidence, not reproduction with
+the user's original EPUB, which was not supplied.

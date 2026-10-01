@@ -29,6 +29,12 @@ on skip, navigation, another lookup, replay, and completion. A settings replay
 can return to the user's existing book without deleting or replacing its data.
 
 Guidance advances on completed actions and yields while lookup/Aa is open.
+Each step names and outlines its target: tap “curiosity”, press and hold “Reading”,
+then tap Aa. Korean guidance uses short action-first instructions. The Reader
+Back button is disabled throughout the tutorial, including lookups and Aa, and
+the Home-return action also rejects tutorial requests. Exit restores the button's
+previous state; Skip, completion and Escape remain available. Settings labels
+the replay action “튜토리얼 다시보기”.
 Completion offers the existing Add dialog. The final note explains that sentence
 translation in the user's own books requires login; the tutorial grants no extra
 production access.

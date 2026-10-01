@@ -191,13 +191,9 @@ function syncHomeNavigation(){
 /* Only the resume capsule expands; it opens the saved book through the existing Reader path. */
 let homeResumeTransition=null;
 let homeResumeOpening=false;
-function setHomeMorphOrigin(button){
-  const rect=button.getBoundingClientRect();
-  document.documentElement.style.setProperty('--resume-inset',
-    `${rect.top}px ${Math.max(0,innerWidth-rect.right)}px ${Math.max(0,innerHeight-rect.bottom)}px ${rect.left}px`);
-}
 let homeReturnTransition=null;
 async function returnHomeFromReader(){
+  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()) return;
   if(homeReturnTransition) return;
   if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){show('home');return;}
   const root=document.documentElement;
@@ -205,7 +201,6 @@ async function returnHomeFromReader(){
   try{
     homeReturnTransition=document.startViewTransition(()=>{
       show('home');
-      setHomeMorphOrigin(document.getElementById('home-resume'));
     });
     void homeReturnTransition.ready.catch(()=>{});
     await homeReturnTransition.finished;
@@ -244,7 +239,6 @@ async function resumeHomeBook(button){
     if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){
       await present();
     }else{
-      setHomeMorphOrigin(button);
       root.classList.add('home-resuming');
       homeResumeTransition=document.startViewTransition(present);
       void homeResumeTransition.ready.catch(()=>{});

@@ -269,16 +269,28 @@ async function renderEpubPreviewQueue(nav){
       const source=nav.session.frames[page.spine],scale=nav.previewWidth/page.width;
       const preview=document.createElement('iframe');preview.className='epub-page-preview';preview.tabIndex=-1;preview.setAttribute('aria-hidden','true');
       preview.setAttribute('sandbox','allow-same-origin');preview.setAttribute('scrolling','no');
-      preview.style.width=`${page.width}px`;preview.style.height=`${page.height}px`;
-      preview.style.transform=`translateY(${-page.y*scale}px) scale(${scale})`;
+      preview.style.width=`${page.width}px`;preview.style.height=`${Math.min(nav.pageHeights[page.spine],page.height-page.y)}px`;
+      preview.style.transform=`scale(${scale})`;
       if(!nav.previewHtml.has(page.spine)){
         const root=source.contentDocument.documentElement.cloneNode(true);
         root.querySelectorAll('.original-selection-marker,script').forEach(node=>node.remove());
+        root.querySelectorAll('img[loading]').forEach(img=>img.setAttribute('loading','eager'));
         [...root.querySelectorAll('style')].forEach((style,index)=>{
           try{style.textContent=[...source.contentDocument.querySelectorAll('style')[index].sheet.cssRules].map(rule=>rule.cssText).join('\n');}catch(error){}
         });
         nav.previewHtml.set(page.spine,'<!doctype html>'+root.outerHTML);
       }
+      // Keep the browsing viewport one slice high. Translating a chapter-tall
+      // iframe can leave distant WebKit tiles unpainted (and allocates a huge
+      // surface for each tiny thumbnail). Scroll inside the bounded viewport.
+      preview.addEventListener('load',async()=>{
+        const doc=preview.contentDocument;if(!doc||!preview.isConnected)return;
+        doc.documentElement.style.height=`${page.height}px`;
+        doc.documentElement.style.scrollBehavior='auto';
+        preview.contentWindow.scrollTo(0,page.y);
+        await doc.fonts?.ready;
+        if(preview.isConnected){preview.contentWindow.scrollTo(0,page.y);preview.dataset.ready='true';}
+      },{once:true});
       preview.srcdoc=nav.previewHtml.get(page.spine);
       paper.append(preview);
       await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));

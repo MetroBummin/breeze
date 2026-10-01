@@ -271,3 +271,12 @@ changed while Home was visible. A changed vocabulary or mode still refreshes
 the target; source edits still invalidate the Reader. Browser regression verifies
 zero refresh calls on unchanged Text/PDF/EPUB round trips and an actual repaint
 after a saved-word change. No new persistent cache or sync state is introduced.
+
+## Remove full-screen clipping (211)
+The user reports stutter in both directions on build 210. Remove the animated
+full-viewport clip-path and its measured inset. Reader snapshots use only a
+28px translation and opacity; the named capsule still connects both controls
+with intrinsic-size text, unchanged 480/440ms easing and reduced-motion behavior.
+This removes per-frame clipping work without another animation coordinator.
+The duplicate attribution render on book open is removed. Browser state and
+animation checks do not establish physical-device frame pacing.

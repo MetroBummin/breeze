@@ -51,8 +51,8 @@
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=26bcfce1">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=95efcedb">
-  <link rel="stylesheet" href="styles/onboarding.css?v=f162c1ae">
+  <link rel="stylesheet" href="styles/home-shell.css?v=41313a09">
+  <link rel="stylesheet" href="styles/onboarding.css?v=ca8aae12">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -104,24 +104,24 @@
   <script defer src="scripts/ui/wordbook.js?v=bd35bada"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
-  <script defer src="scripts/reader/original-session.js?v=56dcc8ab"></script>
+  <script defer src="scripts/reader/original-session.js?v=7aab9a31"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=c6e17d1f"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=08857708"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=c577d892"></script>
   <script defer src="scripts/reader/pdf-original.js?v=506755fb"></script>
   <script defer src="scripts/reader/epub-original.js?v=910a1cbc"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=15b2c61b"></script>
-  <script defer src="scripts/reader/reader.js?v=dd85eb3d"></script>
+  <script defer src="scripts/reader/reader.js?v=a9728d06"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=2a6fea27"></script>
-  <script defer src="scripts/ui/preferences.js?v=1e163e84"></script>
+  <script defer src="scripts/ui/preferences.js?v=5c11ae0e"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=eb027cd7"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=974a1bb9"></script>
+  <script defer src="scripts/ui/onboarding.js?v=9e8050bd"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=06447ebf"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=5ca80c01"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=10eefb4e"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=94d238be"></script>
   <script defer src="scripts/main.js?v=b42953a9"></script>
@@ -425,8 +425,8 @@
     <button id="set-close" type="button" aria-label="설정 닫기" onclick="closeSettings()" class="task-close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
     <div class="set-row onboarding-setting">
-      <div class="set-label"><b>온보딩</b><span>처음 읽는 방법을 다시 체험해요.</span></div>
-      <button type="button" class="sm-mini" onclick="startOnboarding(true)">온보딩 다시 보기</button>
+      <div class="set-label"><b>튜토리얼</b><span>단어와 문장 뜻 보는 방법을 따라 해봐요.</span></div>
+      <button type="button" class="sm-mini" onclick="startOnboarding(true)">튜토리얼 다시보기</button>
     </div>
     <div class="set-panel" data-panel="sync">
       <div id="sm-body"></div>
@@ -436,7 +436,7 @@
   </div>
 </div>
 <!-- Guidance only: the book, controls and lookup surfaces are the real Reader. -->
-<div id="onboarding" aria-label="Breeze 시작하기" hidden>
+<div id="onboarding" aria-label="브리즈 튜토리얼" hidden>
   <button id="onboard-skip" type="button">건너뛰기</button>
   <section id="onboard-coach" aria-labelledby="onboard-prompt">
     <span id="onboard-step"></span>
