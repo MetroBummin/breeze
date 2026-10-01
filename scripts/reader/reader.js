@@ -551,17 +551,27 @@ function whileRestoringChrome(job){
 function setReaderChrome(hidden){
   // Writing needs immediate tool access. Reading keeps its scroll-collapse policy.
   if(document.getElementById('readpill')?.classList.contains('ink-pill-active'))hidden=false;
-  if(document.body.classList.contains('chrome-hidden')===hidden) return;
   document.body.classList.toggle('chrome-hidden', hidden);
-  const inkEntry=/** @type {HTMLElement|null} */(document.querySelector('#readpill .ink-pill-entry'));
-  const side=[document.getElementById('readback'),document.getElementById('aafab'),document.getElementById('pdf-page-control'),
-    document.getElementById('modefab'),inkEntry];
+  syncReaderControlInteractivity();
+  if(hidden && typeof closeAa==='function') closeAa();
+}
+/* Visibility and sentence waiting share one input policy, including parent slots.
+   Reconcile even when visibility is unchanged: lookup cleanup can run between
+   collapse and expansion, and an inert parent blocks every restored child. */
+function syncReaderControlInteractivity(){
+  const collapsed=document.body.classList.contains('chrome-hidden');
+  const waiting=typeof sentenceWaitingActive==='function' && sentenceWaitingActive();
+  const hidden=collapsed || waiting;
+  const side=['readback','aafab','reader-navigation','pdf-page-control','modefab']
+    .map(id=>document.getElementById(id));
+  side.push(document.querySelector('#readpill .ink-pill-entry'));
   side.forEach(button=>{
     if(!button) return;
     button.inert=hidden;
     if(hidden && document.activeElement===button) document.getElementById('readpill-title').focus();
   });
-  if(hidden && typeof closeAa==='function') closeAa();
+  const title=document.getElementById('readpill-title');
+  if(title) title.inert=waiting;
 }
 function expandReaderChrome(){
   if(!document.body.classList.contains('chrome-hidden')) return;

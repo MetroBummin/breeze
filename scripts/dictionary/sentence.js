@@ -101,13 +101,7 @@ function sentenceWaitingControls(waiting){
   const status=document.getElementById('sentence-pill-status');
   if(status) status.hidden=!waiting;
   if(waiting&&typeof closePdfNavigation==='function')closePdfNavigation();
-  ['readback','aafab','modefab','reader-navigation','pdf-page-control'].forEach(id=>{
-    const button=document.getElementById(id);
-    if(button) button.inert=!!waiting || !!(document.body&&document.body.classList
-      && document.body.classList.contains('chrome-hidden'));
-  });
-  const title=document.getElementById('readpill-title');
-  if(title) title.inert=!!waiting;
+  syncReaderControlInteractivity();
   if(!waiting) sentenceBodyClass('sentence-pill-waiting',false);
 }
 function beginSentenceWaiting(){

@@ -24,7 +24,26 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   const record={kind:'epub',hash:'nav212',blob:await zip.generateAsync({type:'blob'})},book={id:'nav212',title:'EPUB navigation',kind:'epub',original:{hash:'nav212'},paras};
   books=[book];positions[book.id]={mode:'original',p:0,y:0};await openBook(book,{prepared:{book,original:record}});await Promise.all(originalSession.frameGeometryReady);
  });
+ // Word selection while chrome is collapsed used to leave the navigation parent inert.
+ await page.evaluate(()=>{
+  setReaderChrome(true);
+  words.patient={word:'patient',ko:'인내심 있는',status:1,addedAt:1};
+  const marker=document.createElement('span');marker.className='original-selection-marker';
+  marker.style.cssText='position:fixed;left:200px;top:160px;width:50px;height:22px';
+  document.getElementById('v-read').append(marker);
+  selectWord('patient',marker,true);
+ });
+ await page.locator('#readpill-title').tap();
+ await page.waitForFunction(()=>!document.body.classList.contains('chrome-hidden'));
+ assert.equal(await page.locator('#reader-navigation').evaluate(n=>n.inert),false,'Expanded navigation retains an inert parent');
  await page.locator('#pdf-page-button').tap();await page.waitForSelector('[data-epub-page="2"]');
+ assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'Sidebar must retire the word presentation');
+ await page.locator('#pdf-navigation-toggle').tap();
+ await page.locator('#pdf-page-navigation').waitFor({state:'hidden'});
+ await page.locator('#aafab').tap();assert.equal(await page.locator('#aa-pop').isVisible(),true);
+ await page.locator('#aafab').tap();
+ await page.locator('#pdf-page-button').tap();await page.waitForSelector('[data-epub-page="2"]');
+
  await page.evaluate(async()=>{await Promise.allSettled(document.getElementById('pdf-page-control').getAnimations().map(a=>a.finished));});
  // Simulate late image/font reflow between a trusted down and up. The pressed
  // DOM button must survive so its click reaches navigation exactly once.

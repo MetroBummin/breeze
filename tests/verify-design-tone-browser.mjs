@@ -22,7 +22,7 @@ try{for(const engine of [chromium,webkit]){
  await page.evaluate(()=>show('home'));assert.equal(await page.locator('#shelf [data-local-book]').count(),1,'Home must show an uncategorized book while a shelf category is selected');
  await page.locator('#shelf [data-local-book]').focus();await page.keyboard.press('Shift+F10');assert.equal(await page.locator('#edit-modal').isVisible(),false,'Home cards must not open management');
  await page.evaluate(()=>show('longform'));
- await page.evaluate(()=>assignLibraryFolder(books.find(b=>b.kind==='txt').id,activeLibraryFolder));
+ await page.evaluate(()=>assignLibraryFolder(books.find(b=>b.kind==='txt').id,currentLibraryFolder()));
  await page.evaluate(()=>show('home'));assert.equal(await page.locator('#v-home .library-folder-controls,#v-home .home-card-actions,#v-home .cloud .del').count(),0);assert.equal(await page.locator('#shelf [data-local-book]').count(),1);
  await page.evaluate(()=>show('casuals'));assert.equal(await page.locator('#v-casuals .library-folder-controls').count(),1);
  await page.evaluate(()=>show('longform'));assert.equal(await page.locator('#v-longform .home-card-actions').count(),1);

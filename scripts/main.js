@@ -2,6 +2,7 @@ syncHomeNavigation();
 /* Choose the initial surface before revealing the app; first-time readers never
    paint Home between the launch screen and the tutorial. */
 const homeReady=loadBooks().then(async()=>{
+  migrateLibraryFolders();
   await upgradeHomewardLongRead();
   await maybeShowOnboarding();
   // First-time readers are in the tutorial, not Home. Do not build its hidden
