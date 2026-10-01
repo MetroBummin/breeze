@@ -38,12 +38,10 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 @media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-control.pdf-navigation-closing,#pdf-page-navigation{animation:none;}}
 .pdf-navigation-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:8px;padding-bottom:0;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
-.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;}
-.pdf-navigation-head>button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-#pdf-navigation-toggle{margin-left:auto;background:var(--sentence-glass-action);}
-#pdf-navigation-toggle svg{width:22px;height:22px;stroke-width:2;}
-#pdf-bookmarks-only svg{width:20px;height:26px;stroke-width:1.8;}
-#pdf-bookmarks-only[aria-pressed=true]{background:var(--sentence-glass-action);}
+.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;background:var(--sentence-glass-action);}
+.pdf-navigation-head>button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#pdf-navigation-toggle{margin-left:auto;}
+#pdf-bookmarks-only[aria-pressed=true]{color:var(--bookmark-ink);}
 #pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
 .pdf-thumbnail-viewport{position:relative;flex:1;min-height:0;padding-right:14px;box-sizing:border-box;}
 #pdf-thumbnail-strip{height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;scrollbar-width:none;}

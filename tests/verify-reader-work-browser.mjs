@@ -98,6 +98,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.ok(await page.locator('#pdf-navigation-toggle').evaluate(button=>{const r=button.getBoundingClientRect(),h=button.parentElement.getBoundingClientRect();return Math.abs(r.right-h.right)<1;}),'EPUB collapse control shares the PDF right-hand header position');
   assert.equal(await page.locator('#pdf-bookmarks-only').isVisible(),true);
   assert.equal(await page.locator('#aa-pdf-direction').isVisible(),false);
+  const headerButtons=await page.evaluate(()=>['pdf-bookmarks-only','pdf-navigation-toggle'].map(id=>{
+    const button=document.getElementById(id),s=getComputedStyle(button),icon=getComputedStyle(button.querySelector('svg'));
+    return [s.width,s.height,s.borderRadius,s.backgroundColor,icon.width,icon.height,icon.strokeWidth];
+  }));
+  assert.deepEqual(headerButtons[0],headerButtons[1],'Sidebar header buttons share geometry, material and icon weight');
   const previewReuse=await page.evaluate(()=>{
     const nav=pdfNavigation,frame=nav.track.querySelector('iframe');closePdfNavigation();togglePdfNavigation();
     return frame.isConnected&&nav.track.contains(frame);

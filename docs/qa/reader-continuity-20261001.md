@@ -24,7 +24,8 @@ thumbnail proportions. Source app and share-extension build numbers are 210.
   ribbons and the same bookmarks-only filter as PDF. Both sidebars have a
   draggable, keyboard-accessible scroll thumb that leaves the book stationary.
   Its reserved rail keeps the entire grip separate from paper and bookmark hit
-  targets; responsive browser assertions check that separation.
+  targets; responsive browser assertions check that separation. Header controls
+  share 44px circles, 22px icons and 2px strokes; selected bookmarks alone turn red.
 - Present the sidebar before creating EPUB preview documents, then admit one
   nearby preview per frame. Session/generation ownership cancels stale work.
 

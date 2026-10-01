@@ -168,3 +168,8 @@ PageUp/PageDown and arrow-key support. A reserved 14px rail plus the strip's inn
 hit target from thumbnail paper and bookmark targets. This scrollbar is
 intentionally narrower than an action button to preserve the thumbnail width. It owns only the sidebar
 scroll position; paper reading position and gestures remain independent.
+
+Both sidebar header controls share a 44px circular neutral surface and 22px
+icons with 2px strokes. The bookmark filter alone becomes red and filled when
+selected. The header bookmark uses a square viewBox; page ribbons retain their
+existing tall paper-edge geometry. This presentation is shared by PDF and EPUB.
