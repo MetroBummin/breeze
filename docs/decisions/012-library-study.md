@@ -221,3 +221,33 @@ a source-content/chapter contract, not deletion by transient viewport page numbe
 across late source reflow, repeats touchscreen selections in five sizes/themes,
 and checks exact source alignment, latest selection and reduced motion. The 211
 worktree fails because the pressed button is disconnected.
+
+## Reader input ownership (214)
+
+Collapsed chrome and sentence waiting now derive control interactivity from one
+shared policy, including the reader-navigation parent. Previously word selection
+called sentence cleanup while chrome was collapsed, marking that parent inert;
+expansion restored only its children, leaving visible navigation unresponsive.
+Reconciliation runs even when the visibility class has not changed. Opening the
+page sidebar ends the previous word/sentence presentation through normal lifetime
+cleanup, so pending answers cannot reappear over navigation.
+
+
+## Independent shelf categories (214)
+
+Casuals and Long-form own separate category lists, names, active filters and
+assignment choices. Imported content accepts only a category belonging to its
+actual shelf, even if the import began elsewhere. Categories remain device-local
+metadata; no category sync contract or book/content identity changes.
+
+After the local library loads, existing unscoped categories are assigned using
+their member documents. A category used on both shelves is split into independent
+IDs and its memberships retained. Unused categories are preserved on both shelves
+because their original creation shelf was never stored. Migration writes the
+whole metadata record atomically; failed writes preserve the previous data and
+block editing until a clean reload. Deleting one shelf's category never affects
+the other shelf's assignments or any document.
+
+The Reader settings direction selection uses a separate 32px rounded neutral
+background within its existing 44px button. It no longer clips a rounded fill
+with transparent borders. Other setting controls keep their existing appearance.

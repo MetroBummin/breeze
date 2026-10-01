@@ -31,7 +31,7 @@ function boot({get,call,put,width=390,height=844,pressed=false}={}){
     console,Promise,Date,String,AbortController,
     window,innerWidth:width,innerHeight:height,
     requestAnimationFrame:fn=>setTimeout(()=>fn(Date.now()),0),cancelAnimationFrame:clearTimeout,
-    document:{body,getElementById:element,createElement:()=>element('node-'+Math.random()),addEventListener(){}},
+    document:{body,querySelector:()=>null,getElementById:element,createElement:()=>element('node-'+Math.random()),addEventListener(){}},
     crypto,deviceId:()=>'qa-device',navigator:{onLine:true}, sb:{}, sbUser:{id:'u'}, curBook:{title:'Book'},
     sentenceHash:text=>text, aiDay:()=>'', save(){}, clearReaderModeCue(){},
     sentenceGestureStillPressed:()=>contact.pressed,
@@ -39,6 +39,8 @@ function boot({get,call,put,width=390,height=844,pressed=false}={}){
     dictCall:call||(()=>Promise.resolve({ko:'ok',points:[]})),
     dictPut:put||(()=>Promise.resolve()),
   });
+  const reader=readFileSync(resolve(root,'scripts/reader/reader.js'),'utf8');
+  new Script(reader.slice(reader.indexOf('function syncReaderControlInteractivity('),reader.indexOf('function expandReaderChrome('))).runInContext(context);
   new Script(source,{filename:'sentence.js'}).runInContext(context);
   return {context,elements,element,classes,contact,visualViewport,listeners};
 }

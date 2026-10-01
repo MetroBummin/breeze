@@ -243,7 +243,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    return {same:before===JSON.stringify(words),color:studyPrefs.stars[0].color,fill:starFill(1)};
   });assert.deepEqual(saved,{same:true,color:'#123456',fill:'transparent'});
   const folder=await page.evaluate(()=>{
-   createLibraryFolder('School');const id=activeLibraryFolder;assignLibraryFolder(books[0].id,id);
+   createLibraryFolder('School');const id=currentLibraryFolder();assignLibraryFolder(books[0].id,id);
    renameLibraryFolder(id,'학교');return {id,bookId:books[0].id};
   });
   await page.reload();await page.evaluate(()=>homeReady);

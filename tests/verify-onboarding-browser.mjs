@@ -45,10 +45,22 @@ try{
   assert.equal(await page.evaluate(()=>window.homePaintedBeforeOnboarding),false,'Home painted before the tutorial');
   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('boot-pending')),false);
   assert.equal(await page.locator('#v-read').isVisible(),true);
-  assert.equal(await page.locator('#readpill-title').textContent(),'브리즈 튜토리얼');
+  assert.equal(await page.locator('#readpill-title').textContent(),'Breeze Tutorial');
   assert.equal(await page.locator('#readback').isDisabled(),true);
-  assert.match(await page.locator('#onboard-prompt').textContent(),/curiosity.*눌러보세요!/);
+  assert.match(await page.locator('#onboard-prompt').textContent(),/curiosity.*눌러보세요/);
   assert.equal(await page.locator('#rtext .onboard-target').textContent(),'curiosity');
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#rtext .onboard-target')).backgroundColor!=='rgba(0, 0, 0, 0)');
+  const cue=await page.locator('#rtext .onboard-target').evaluate(node=>{
+    const before=node.getBoundingClientRect(),style=getComputedStyle(node);
+    const paint={outline:style.outlineStyle,shadow:style.boxShadow,fill:style.backgroundColor};
+    node.classList.remove('onboard-target');const after=node.getBoundingClientRect();
+    node.classList.add('onboard-target');
+    return {...paint,widthDelta:before.width-after.width,heightDelta:before.height-after.height};
+  });
+  assert.equal(cue.outline,'none');assert.equal(cue.shadow,'none');
+  assert.notEqual(cue.fill,'rgba(0, 0, 0, 0)');
+  assert.equal(cue.widthDelta,0);assert.equal(cue.heightDelta,0);
+
   const backRect=await page.locator('#readback').boundingBox();
   await page.mouse.click(backRect.x+backRect.width/2,backRect.y+backRect.height/2);
   await page.evaluate(()=>returnHomeFromReader());
@@ -75,7 +87,7 @@ try{
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#onboarding').isVisible(),true,'detail Escape ended tutorial');
   await page.locator('#onboarding[data-stage="1"]').waitFor();
-  assert.match(await page.locator('#onboard-prompt').textContent(),/Reading.*꾹 눌러보세요!/);
+  assert.match(await page.locator('#onboard-prompt').textContent(),/Reading.*길게 눌러보세요/);
   assert.equal(await page.locator('#rtext .onboard-target').textContent(),'Reading');
   await word.tap();
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'호기심','repeat lookup was not immediate');
@@ -99,11 +111,13 @@ try{
   assert.equal(await page.evaluate(()=>darkMode),true);
   await page.evaluate(()=>closeAa());
   await page.locator('#onboarding[data-stage="3"]').waitFor();
+  assert.doesNotMatch(await page.locator('#onboard-coach').innerText(),/로그인/);
+  await page.locator('#onboard-finish').waitFor({state:'visible'});
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-finish.png`});
   assert.deepEqual(await snapshot(),before,'tutorial changed storage, history or library');
-  await page.locator('#onboard-next').tap();
+  await page.locator(native?'#onboard-finish':'#onboard-next').tap();
   assert.equal(await page.locator('#readback').isEnabled(),true,'completion left Back disabled');
-  assert.equal(await page.locator('#add-modal').evaluate(el=>el.open),true);
+  assert.equal(await page.locator('#add-modal').evaluate(el=>el.open),!native);
   assert.deepEqual(await page.evaluate(()=>({fs,darkMode,readMargin,curBook,previewWordCard})),{fs:19,darkMode:false,readMargin:'normal',curBook:null,previewWordCard:null});
   assert.deepEqual(await snapshot(),before,'completion leaked tutorial data');
   assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');

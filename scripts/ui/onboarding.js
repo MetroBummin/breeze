@@ -58,7 +58,7 @@ async function startOnboarding(replay){
   if(onboardingSession) endOnboarding(false,false);
   saveReadingState(); closePanel(); closeSentence(); closeAa(); closeSettings();
   const session={
-    book:{id:'breeze-onboarding',title:'브리즈 튜토리얼',kind:'txt',transient:true,
+    book:{id:'breeze-onboarding',title:'Breeze Tutorial',kind:'txt',transient:true,
       paras:ONBOARD_PASSAGES.map(part=>part[0]),textAvailable:true},
     previousBook:curBook,previousView:activeAppView(),
     appearance:{fs,darkMode,readMargin},controller:new AbortController(),
@@ -83,6 +83,7 @@ async function startOnboarding(replay){
   // The real Reader hydrates word spans lazily; mark targets after they arrive.
   session.observer.observe(document.getElementById('rtext'),{childList:true,subtree:true});
   document.getElementById('onboard-skip').addEventListener('click',()=>endOnboarding(true),{signal});
+  document.getElementById('onboard-finish').addEventListener('click',()=>endOnboarding(true),{signal});
   document.getElementById('onboard-next').addEventListener('click',()=>{endOnboarding(true);openAddModal();},{signal});
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape' && !wordLookupOpen() && !sentenceLookupOpen()
@@ -117,14 +118,15 @@ function drawOnboarding(){
   // Guidance yields the whole surface while a lookup or Aa owns the interaction.
   document.getElementById('onboard-skip').hidden=coach.hidden;
   const prompts=[
-    '위의 “curiosity”를 눌러보세요!\n단어 뜻이 나와요.',
-    '위의 “Reading”을 꾹 눌러보세요!\n문장 전체의 뜻이 나와요.',
-    '아래 “Aa”를 눌러보세요!\n글자 크기와 화면 색을 바꿀 수 있어요.',
-    '이제 내 책으로 읽어볼까요?\n아래 “책 추가하기”를 눌러보세요!',
+    '“curiosity”를 눌러보세요.\n단어 뜻을 확인할 수 있어요.',
+    '“Reading”을 길게 눌러보세요.\n문장 전체의 뜻을 확인할 수 있어요.',
+    '“Aa”를 눌러보세요.\n글자 크기와 화면 색을 바꿀 수 있어요.',
+    '이제 내 책으로 읽어볼까요?\n책을 추가하거나 나중에 시작할 수 있어요.',
   ];
   document.getElementById('onboard-step').textContent=stage===3?'준비됐어요':`${stage+1} / 3 · ${['단어 눌러보기','문장 꾹 눌러보기','읽기 화면 바꾸기'][stage]}`;
   document.getElementById('onboard-prompt').textContent=prompts[stage];
   document.getElementById('onboard-next').hidden=stage!==3;
+  document.getElementById('onboard-finish').hidden=stage!==3;
   document.getElementById('onboard-note').hidden=stage!==3;
   document.getElementById('aafab').classList.toggle('onboard-target',stage===2 && !aaOpen);
   document.querySelectorAll('#rtext .w').forEach(node=>{

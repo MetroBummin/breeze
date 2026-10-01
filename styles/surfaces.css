@@ -50,6 +50,12 @@ body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15
 #aa-pop .aa-seg button{box-sizing:border-box;padding:0 10px;border-top:6px solid transparent;border-bottom:6px solid transparent;border-radius:14px;background-clip:padding-box;font-weight:500;color:var(--sentence-glass-muted);}
 #aa-pop .aa-seg button.on,#aa-pop .aa-seg button[aria-pressed=true]{background-color:var(--sentence-glass-action-hover);background-clip:padding-box;color:var(--sentence-glass-ink);}
 #aa-pop .aa-seg button:hover{background-color:var(--sentence-glass-action);background-clip:padding-box;}
+/* Direction selection paints its own 32px rounded surface inside a 44px hit area.
+   Transparent top/bottom borders clipped the inner corners into a flattened box. */
+#aa-pop #aa-pdf-direction .aa-seg button{position:relative;isolation:isolate;border:0;border-radius:10px;background:transparent;}
+#aa-pop #aa-pdf-direction .aa-seg button::before{content:'';position:absolute;inset:6px 0;z-index:-1;border-radius:10px;pointer-events:none;}
+#aa-pop #aa-pdf-direction .aa-seg button:hover::before{background:var(--sentence-glass-action);}
+#aa-pop #aa-pdf-direction .aa-seg button[aria-pressed=true]::before{background:var(--sentence-glass-action-hover);}
 #aa-pop .aa-toggle{height:44px;background:transparent;flex:none;position:relative;}
 #aa-pop .aa-toggle::before{content:'';position:absolute;inset:9px 0;border-radius:13px;background:var(--toggle-off);}
 #aa-pop .aa-toggle.on::before{background:var(--brand);}

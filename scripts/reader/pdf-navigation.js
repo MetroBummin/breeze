@@ -162,7 +162,7 @@ function togglePdfNavigation(){
   if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||document.getElementById('originalwrap').hasAttribute('data-reader-preparing')||sentenceWaitingActive()||BreezePdfInk.busy()||originalPinchBusy())return;
   if(pdfNavigationCloseTimer){clearTimeout(pdfNavigationCloseTimer);pdfNavigationCloseTimer=null;}
   document.getElementById('pdf-page-control').classList.remove('pdf-navigation-closing');
-  closeAa();expandReaderChrome();
+  closePanel();closeSentence();closeAa();expandReaderChrome();
   const settings=document.getElementById('pdf-ink-settings');if(settings)settings.hidden=true;
   const panel=document.getElementById('pdf-page-navigation'),strip=document.getElementById('pdf-thumbnail-strip');
   pdfNavigation=originalSession.navigationPreview||{session:originalSession,strip,bookmarksOnly:false,pages:[]};

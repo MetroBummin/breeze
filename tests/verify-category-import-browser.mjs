@@ -18,8 +18,8 @@ try{for(const engine of [chromium,webkit]){
  await page.locator('#v-longform .breeze-folder-picker summary').click();
  assert.equal(await page.locator('#v-longform .breeze-folder-option').count(),3);
  await page.locator('#v-longform .breeze-folder-option').filter({hasText:'학교'}).click();
- assert.equal(await page.evaluate(()=>activeLibraryFolder),await page.evaluate(()=>libraryFolders.folders[0].id));
- const folder=await page.evaluate(()=>activeLibraryFolder);
+ assert.equal(await page.evaluate(()=>currentLibraryFolder()),await page.evaluate(()=>libraryFolders.folders[0].id));
+ const folder=await page.evaluate(()=>currentLibraryFolder());
  const chooser=page.waitForEvent('filechooser');await page.locator('#longform-grid .bookcard.add').click();
  await (await chooser).setFiles({name:'Categorized.txt',mimeType:'text/plain',buffer:Buffer.from('A new book belongs to the category where it was added. '.repeat(30))});
  await page.waitForFunction(()=>books.some(b=>b.title==='Categorized'));
@@ -35,15 +35,27 @@ try{for(const engine of [chromium,webkit]){
  await page.evaluate(()=>changeLibraryFolder(INBOX_FOLDER));assert.equal(await page.locator('#longform-grid [data-local-book]').count(),0);
  await page.evaluate(()=>openAddModal());const inboxChooser=page.waitForEvent('filechooser');await page.locator('.am-file').click();await (await inboxChooser).setFiles({name:'Inbox.txt',mimeType:'text/plain',buffer:Buffer.from('This is a different book with no category. '.repeat(30))});
  await page.waitForFunction(()=>books.some(b=>b.title==='Inbox'));assert.equal(await page.locator('#longform-grid [data-local-book]').count(),1);
- await page.evaluate(id=>{show('casuals');changeLibraryFolder(id);openAddModal('casual');addStep('paste');},folder);
+ await page.evaluate(()=>show('casuals'));
+ assert.equal(await page.locator('#v-casuals .breeze-folder-option').count(),2,'Long-form category leaked into Casuals');
+ assert.equal(await page.evaluate(id=>changeLibraryFolder(id),folder),false,'Cross-shelf selection must be rejected');
+ await page.evaluate(()=>createLibraryFolder('학교'));
+ const casualFolder=await page.evaluate(()=>currentLibraryFolder());assert.notEqual(casualFolder,folder);
+ assert.equal(await page.evaluate(()=>createLibraryFolder('학교')),false,'Same-shelf duplicates must be rejected');
+ await page.evaluate(()=>{openAddModal('casual');addStep('paste');});
  await page.locator('#am-text').fill('A short article\n\nThis short article should remember the selected category even when the view changes.');
  await page.evaluate(()=>importPastedText());
- assert.equal(await page.evaluate(()=>libraryFolders.assignments[books.find(b=>b.kind==='paste').id]),folder);
+ assert.equal(await page.evaluate(()=>libraryFolders.assignments[books.find(b=>b.kind==='paste').id]),casualFolder);
+ assert.equal(await page.evaluate(id=>assignLibraryFolder(books.find(b=>b.kind==='paste').id,id),folder),false,'Cross-shelf assignment must be rejected');
+ await page.evaluate(id=>renameLibraryFolder(id,'가벼운 글'),casualFolder);
+ assert.equal(await page.evaluate(id=>libraryFolders.folders.find(f=>f.id===id).name,folder),'학교');
  await page.evaluate(()=>{show('longform');changeLibraryFolder(INBOX_FOLDER);});
  const duplicate=page.waitForEvent('filechooser');await page.locator('#longform-grid .bookcard.add').click();await (await duplicate).setFiles({name:'Categorized.txt',mimeType:'text/plain',buffer:Buffer.from('A new book belongs to the category where it was added. '.repeat(30))});
  await page.waitForTimeout(200);assert.equal(await page.evaluate(id=>libraryFolders.assignments[id],bookId),folder);
  await page.evaluate(id=>deleteLibraryFolder(id),folder);await page.evaluate(()=>changeLibraryFolder(INBOX_FOLDER));assert.equal(await page.locator('#longform-grid [data-local-book]').count(),2);
  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('longform');changeLibraryFolder(INBOX_FOLDER);});assert.equal(await page.locator('#longform-grid [data-local-book]').count(),2);
+ await page.evaluate(()=>show('casuals'));
+ assert.equal(await page.evaluate(id=>libraryFolders.assignments[books.find(b=>b.kind==='paste').id]===id,casualFolder),true,'Long-form deletion must preserve Casuals assignments');
+ assert.equal(await page.locator('#v-casuals .breeze-folder-option').filter({hasText:'가벼운 글'}).count(),1);
  assert.deepEqual(errors,[]);console.log(engine.name()+': category capture, file/paste import, Inbox, duplicate preservation, deletion and reload passed');
  }finally{await browser.close();}
 }}finally{await new Promise(r=>server.close(r));}

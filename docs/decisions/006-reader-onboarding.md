@@ -35,9 +35,9 @@ Back button is disabled throughout the tutorial, including lookups and Aa, and
 the Home-return action also rejects tutorial requests. Exit restores the button's
 previous state; Skip, completion and Escape remain available. Settings labels
 the replay action “튜토리얼 다시보기”.
-Completion offers the existing Add dialog. The final note explains that sentence
-translation in the user's own books requires login; the tutorial grants no extra
-production access.
+Completion offers the existing Add dialog or a later exit. The final note reminds
+readers of tap/long-press gestures; it makes no login claim. The tutorial grants no
+extra production access.
 
 Signed-out and signed-in lookups share the same renderer. Successful anonymous
 lookups show no legacy explanations or repeated trial counters. Login/exhaustion
@@ -62,3 +62,11 @@ Reader does not build recommendation cards or begin their image/feed work for a
 hidden Home. Returning readers still render Home, and leaving onboarding renders
 it through normal navigation. The one-second authored tutorial feedback policy,
 boot failure fallback and local storage ordering are unchanged.
+
+## Compact targets and optional completion (214)
+
+Word guidance uses the existing pale-blue selection fill on the actual span,
+without an outline or expansion into neighboring text. Aa retains a separate
+control outline. The temporary book is titled “Breeze Tutorial”.
+The final coach offers both Add Book and “나중에 할게요”; either completes the
+same transient session, but the latter exits without opening the Add dialog.
