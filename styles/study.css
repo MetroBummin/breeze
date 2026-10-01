@@ -45,7 +45,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 #pdf-bookmarks-only svg{width:20px;height:26px;stroke-width:1.8;}
 #pdf-bookmarks-only[aria-pressed=true]{background:var(--sentence-glass-action);}
 #pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
-.pdf-thumbnail-viewport{position:relative;flex:1;min-height:0;padding-right:20px;box-sizing:border-box;}
+.pdf-thumbnail-viewport{position:relative;flex:1;min-height:0;padding-right:14px;box-sizing:border-box;}
 #pdf-thumbnail-strip{height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;scrollbar-width:none;}
 #pdf-thumbnail-strip::-webkit-scrollbar{display:none;}
 #pdf-navigation-scrollbar{position:absolute;right:-8px;top:0;width:24px;min-height:44px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;z-index:3;}
