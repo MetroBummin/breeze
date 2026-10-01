@@ -110,6 +110,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(previewReuse,true,'Reopening the same pages reuses loaded previews');
   await page.evaluate(()=>{pdfNavigation.strip.scrollTop=0;paintEpubThumbnails();});
   await page.locator('.pdf-thumbnail-bookmark[aria-label="2페이지 북마크"]').click();
+  await page.waitForFunction(()=>!pdfNavigation?.contact);
   assert.equal(await page.locator('.pdf-thumbnail-bookmark[aria-label="2페이지 북마크"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.evaluate(()=>readEpubBookmarks(originalSession).length),1);
   await page.locator('#pdf-bookmarks-only').click();
@@ -128,6 +129,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   })),'Wider reflow must shrink chapter frames instead of retaining blank tail pages');
   assert.equal(await page.locator('.pdf-thumbnail-bookmark').getAttribute('aria-pressed'),'true');
   await page.locator('.pdf-thumbnail-bookmark').click();
+  await page.waitForFunction(()=>!pdfNavigation?.contact);
   assert.equal(await page.evaluate(()=>readEpubBookmarks(originalSession).length),0);
   await page.waitForFunction(()=>!document.querySelector('.pdf-thumbnail'));
   assert.equal(await page.locator('.pdf-thumbnail').count(),0,'Removing the last filtered bookmark shows an empty list');

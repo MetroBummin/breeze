@@ -190,7 +190,7 @@ function epubNavigationCurrentPage(nav){
 function buildEpubNavigation(focusCurrent=true){
   const nav=pdfNavigation;if(!nav||!currentEpubNavigationSession())return;
   // Reflow must not remove the button between contact down and its click.
-  if(nav.contact!=null){nav.needsLayout=true;return;}
+  if(nav.contact!=null){nav.needsLayout={focusCurrent:focusCurrent||!!nav.needsLayout?.focusCurrent};return;}
   const signature=nav.session.frames.map(frame=>frame?`${frame.clientWidth}:${frame.clientHeight}`:'').join('|');
   if(nav.signature!==signature){
     nav.signature=signature;nav.pageHeights=[];nav.pages=[];nav.firstPages=[];nav.previewHtml=new Map();
@@ -258,7 +258,7 @@ function installEpubNavigationContact(){
     requestAnimationFrame(()=>{
       if(pdfNavigation!==nav||nav.contact!==contact)return;
       nav.contact=null;
-      if(nav.needsLayout){nav.needsLayout=false;buildEpubNavigation(false);}
+      if(nav.needsLayout){const focus=nav.needsLayout.focusCurrent;nav.needsLayout=null;buildEpubNavigation(focus);}
       else paintEpubThumbnails();
     });
   };
