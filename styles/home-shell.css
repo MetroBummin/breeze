@@ -119,6 +119,10 @@ body.dark #home-controls #nav-vocab svg{stroke:#65c6ea;}
 html:is(.home-resuming,.home-returning) :is(#home-resume,#readpill){view-transition-name:reader-control;}
 html:is(.home-resuming,.home-returning)::view-transition-group(reader-control){
   z-index:3;animation-duration:var(--home-morph-duration);animation-timing-function:var(--home-morph-ease);
+  /* The snapshot already contains the glass. The browser's generated group
+     animation also transfers its backdrop filter onto a rectangular surface.
+     Suppress that second filter, without clipping the capsule's soft shadow. */
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
 html:is(.home-resuming,.home-returning)::view-transition-old(reader-control),
 html:is(.home-resuming,.home-returning)::view-transition-new(reader-control){animation-duration:.16s;mix-blend-mode:normal;object-fit:none;object-position:center;}
