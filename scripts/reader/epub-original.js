@@ -207,7 +207,12 @@ function epubFrameHeight(frame){
 }
 function setEpubFrameHeight(frame,height){
   const value=Math.max(60,Math.ceil(height))+'px';
-  if(frame.style.height!==value)frame.style.height=value;
+  if(frame.style.height!==value){
+    frame.style.height=value;
+    if(typeof pdfNavigation!=='undefined'&&pdfNavigation?.session.kind==='epub'&&!pdfNavigation.layoutFrame){
+      const nav=pdfNavigation;nav.layoutFrame=requestAnimationFrame(()=>{nav.layoutFrame=0;if(pdfNavigation===nav)buildEpubNavigation(false);});
+    }
+  }
 }
 function applyEpubStableViewport(frame,viewport){
   const root=frame&&frame.contentDocument&&frame.contentDocument.documentElement;

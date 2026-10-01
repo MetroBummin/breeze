@@ -89,19 +89,33 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(stars.walks,0,'Star visibility must not rescan chapter text');
   assert.equal(stars.selectionUnchanged,true,'Selected blue paint must not become saved yellow or transparent');
   await page.evaluate(()=>{closePanel();expandReaderChrome();});
-  assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'EPUB original exposes chapter navigation');
+  assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'EPUB original exposes page previews');
   await page.locator('#pdf-page-button').click();
-  assert.equal(await page.locator('.epub-navigation-entry').count(),2);
+  const epubPages=await page.evaluate(()=>pdfNavigation.pages.length);
+  assert.ok(epubPages>2,'Flowing chapters must produce multiple reader-sized page previews');
+  await page.waitForFunction(()=>[...document.querySelectorAll('.epub-page-preview')].every(frame=>frame.contentDocument?.body?.textContent.trim()));
   assert.equal(await page.locator('#pdf-bookmarks-only').isVisible(),false);
   assert.equal(await page.locator('#aa-pdf-direction').isVisible(),false);
-  await page.locator('[data-epub-spine="1"]').click();
+  const previewReuse=await page.evaluate(()=>{
+    const nav=pdfNavigation,frame=nav.track.querySelector('iframe');closePdfNavigation();togglePdfNavigation();
+    return frame.isConnected&&nav.track.contains(frame);
+  });
+  assert.equal(previewReuse,true,'Reopening the same pages reuses loaded previews');
+  await page.evaluate(()=>{pdfNavigation.strip.scrollTop=0;paintEpubThumbnails();});
+  await page.locator('[data-epub-page="2"]').click();
+  assert.ok(await page.evaluate(()=>{
+    const nav=pdfNavigation,page=nav.pages[1],frame=nav.session.frames[page.spine];
+    return Math.abs(frame.getBoundingClientRect().top+page.y*originalZoom()-topInset())<3;
+  }),'A preview jumps to its exact source slice');
+  await page.evaluate(()=>{pdfNavigation.strip.scrollTop=pdfNavigation.strip.scrollHeight;paintEpubThumbnails();});
+  await page.locator(`[data-epub-page="${epubPages}"]`).click();
   await page.waitForFunction(()=>originalSession.navigationSpine===1);
-  assert.ok(await page.evaluate(()=>{const frame=originalSession.frames[1],heading=frame.contentDocument.querySelector('h1');const y=frame.getBoundingClientRect().top+heading.getBoundingClientRect().top;return y>=0&&y<innerHeight-80;}),'Chapter navigation makes the selected heading visible');
+  assert.ok(await page.evaluate(()=>pdfNavigation.track.querySelectorAll('iframe').length<=Math.ceil(pdfNavigation.strip.clientHeight/pdfNavigation.cellHeight)+3),'Only nearby page previews exist');
   for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);await page.waitForTimeout(240);
    const box=await page.locator('#pdf-page-navigation').boundingBox();
-   assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,'EPUB chapter sidebar stays inside the viewport');
-   await page.screenshot({path:`/tmp/breeze208-epub-${engine.name()}-${width}-${dark?'dark':'light'}.png`});
+   assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,'EPUB page sidebar stays inside the viewport');
+   await page.screenshot({path:`/tmp/breeze209-epub-${engine.name()}-${width}-${dark?'dark':'light'}.png`});
   }
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();closePdfNavigation();});
   await page.locator('#fileinput').setInputFiles({name:'Work.pdf',mimeType:'application/pdf',buffer:fixturePdf(12)});
@@ -110,6 +124,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   try{await page.waitForSelector('.pdf-source-page canvas');}
   catch(error){console.log(errors,await page.evaluate(()=>({mode:currentReaderMode,kind:originalSession?.kind,preparing:document.getElementById('originalwrap').dataset.readerPreparing,content:document.getElementById('original-content').innerHTML.slice(0,500)})));throw error;}
   await page.waitForTimeout(600);
+  assert.equal(await page.locator('.epub-page-preview').count(),0,'Leaving EPUB releases preview frames');
   await page.evaluate(()=>togglePdfNavigation());
   await page.waitForFunction(()=>pdfNavigation&&!pdfNavigation.rendering&&document.querySelectorAll('#pdf-thumbnail-strip canvas').length>0);
   const sidebar=await page.evaluate(async()=>{

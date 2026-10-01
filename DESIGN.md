@@ -162,8 +162,8 @@ Reader 뒤로가기와 사이드바 진입·접기는 22px 아이콘과 2px 선 
 
 Keep notices inside the bottom title pill, with a stable two-line area and one message at a time. Selected words use one blue surface independent of saved star colors. Mode switches have no fixed departure delay: reuse live original documents and restore their scroll before the first frame. First EPUB opens show a preparation surface until the source anchor is ready. Hidden originals do not participate in zoom layout.
 
-## 원본 장 탐색과 문장 대기 (208)
+## 원본 페이지 탐색과 문장 대기 (209)
 
-EPUB 원본도 좌하단 페이지 아이콘으로 출판 순서의 장 목록을 연다. EPUB은 고정 페이지 수가 없으므로 장 제목을 사용하고 PDF 전용 북마크·삭제·가로 넘김은 노출하지 않는다. 문장 해석 대기 중에는 소스 형식과 필기 상태에 관계없이 중앙의 상태 필 하나만 남기고, 뒤로가기·페이지 필·필기 도구는 숨기며 입력도 막는다.
+EPUB 원본도 좌하단 페이지 아이콘으로 PDF와 같은 페이지 미리보기 사이드바를 연다. 원본 레이아웃을 현재 읽기 화면 높이로 나눈 페이지를 번호와 함께 보여 주고 누르면 그 위치로 이동한다. 화면 크기에 따라 EPUB 페이지 구분은 달라진다. PDF 전용 북마크·삭제·가로 넘김은 노출하지 않는다. 화면 주변의 미리보기만 만들고 같은 크기로 다시 열 때 재사용한다. 문장 해석 대기 중에는 소스 형식과 필기 상태에 관계없이 중앙의 상태 필 하나만 남기고, 뒤로가기·페이지 필·필기 도구는 숨기며 입력도 막는다.
 
 홈 필에서 리더가 펼쳐지는 전환은 480ms, 홈 필로 돌아오는 전환은 440ms로 끝에서 충분히 감속한다. 전체 본문 blur나 글자 scale 없이 표면 경계를 이어 주고, Home 바탕은 불투명하게 유지한다. reduced motion에서는 기존 즉시 전환을 유지한다.
