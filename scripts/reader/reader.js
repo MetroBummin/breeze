@@ -248,6 +248,11 @@ function renderBookBody(b){
 }
 // Keep one recently closed Reader for quick Home round trips, for at most 60s.
 let retainedReader=null,retainedReaderTimer=0,readerPreparedOriginal=null;
+// Only lexical paint affects retained pages; definitions and metadata do not.
+function readerWordPresentation(){
+  return JSON.stringify(Object.entries(words).map(([key,word])=>
+    [key,word?.status,word?.mark,word?.phraseParts,word?.phraseGaps]));
+}
 function releaseRetainedReader(){
   clearTimeout(retainedReaderTimer);retainedReaderTimer=0;
   if(!retainedReader)return;
@@ -261,6 +266,7 @@ function retainReaderForHome(){
   if(!curBook||curBook.transient||originalOpenJob)return false;
   const b=curBook;
   retainedReader={book:b,paras:b.paras.slice(),formatting:b.formatting,
+    mode:currentReaderMode,wordPresentation:readerWordPresentation(),
     sourceMap:b.sourceMap,sourceSignature:JSON.stringify([b.original,b.formatting,b.title,b.kind]),original:readerPreparedOriginal};
   currentReaderMode='text'; // Hidden original frames must not perform viewport work.
   readerModeChangeToken++;
@@ -321,6 +327,8 @@ async function openBook(b,options={}){
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
   const reuse=canReuseReader(b);
+  const reusedMode=reuse?retainedReader.mode:null;
+  const reusedWords=reuse&&retainedReader.wordPresentation===readerWordPresentation();
   if(reuse){clearTimeout(retainedReaderTimer);retainedReaderTimer=0;retainedReader=null;}
   else{releaseRetainedReader();leaveOriginalReader();}
   /* 예전에 넣어 둔 책에 남아 있는 네모(□)를 여기서 한 번 고칩니다 —
@@ -332,6 +340,7 @@ async function openBook(b,options={}){
      wherever the previous book was being read. */
   lastAnchor = null;
   curBook = b;
+  if(!b.transient)save(HOME_RESUME_KEY,b.id);
   setReaderPillProgress(posOf(b.id).p||0,true);
   currentReaderMode = 'text';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
@@ -370,7 +379,7 @@ async function openBook(b,options={}){
   showReaderChrome();                 // 상단바가 다시 서는 날을 위한 배선입니다
   document.getElementById('readwrap').hidden=false;
   document.getElementById('originalwrap').hidden=true;
-  if(reuse)refreshReaderWords();else renderBookBody(b);
+  if(!reuse)renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
   /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
@@ -386,9 +395,10 @@ async function openBook(b,options={}){
     : (firstOpen && original ? 'original' : 'text');
   if(desired==='original'){
     await switchReaderMode('original',{initial:true,record:original,onPresented:presented});
-    if(alive()&&curBook===b&&reuse)refreshOriginalSavedWords();
+    if(alive()&&curBook===b&&reuse&&(!reusedWords||reusedMode!=='original'))refreshOriginalSavedWords();
   }
   else{
+    if(reuse&&(!reusedWords||reusedMode!=='text'))refreshReaderWords();
     presented();
     await new Promise(resolve=>requestAnimationFrame(()=>{
       if(alive()&&curBook===b){

@@ -249,3 +249,25 @@ Window resize no longer independently restores the Reader anchor. Text/EPUB widt
 ## Home capsule continuity (208)
 
 Both root reveal and named control geometry use one easing curve, cubic-bezier(.18,.86,.22,1), with a 480ms opening and 440ms closing duration. This extends the terminal deceleration compared with the former 340ms timing. Closing remains opaque through 90 percent and retains its terminal frame with fill-mode both. Text remains unscaled, Home snapshots remain opaque, and reduced motion follows the existing immediate path. The user supplied an Apple Music screen recording as the motion reference; this does not introduce interactive sheet dragging.
+
+## Local resume identity and unscaled capsule snapshots (210)
+
+The Home resume target is the most recently opened local book, persisted as one
+book ID in `breeze.home-resume.v1`. Opening does not advance the cloud progress
+timestamp; scrolling still owns progress updates. A deleted/missing local target
+falls back to the existing saved-progress ordering, and transient onboarding is
+never remembered. Titles and actions resolve the same target.
+
+Home/Reader snapshots use intrinsic-size, centered capsule contents clipped by
+the moving rounded surface, so the browser does not stretch title text between
+different pill widths. Both directions use cubic-bezier(.32,.72,0,1), keeping the
+480/440ms durations, opaque Home, terminal fill, and reduced-motion fallback.
+
+Unchanged Home round trips reuse lexical paint as well as document nodes. The
+bounded retained Reader stores its visible mode and a small signature of saved
+word keys, grades, visibility and phrase shape. Reopening the same mode skips
+retokenizing text and recreating PDF/EPUB highlights unless that presentation
+changed while Home was visible. A changed vocabulary or mode still refreshes
+the target; source edits still invalidate the Reader. Browser regression verifies
+zero refresh calls on unchanged Text/PDF/EPUB round trips and an actual repaint
+after a saved-word change. No new persistent cache or sync state is introduced.

@@ -38,19 +38,20 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 @media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-control.pdf-navigation-closing,#pdf-page-navigation{animation:none;}}
 .pdf-navigation-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:8px;padding-bottom:0;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
-.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;}
-.pdf-navigation-head>button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-#pdf-navigation-toggle{background:var(--sentence-glass-action);}
-#pdf-navigation-toggle svg{width:22px;height:22px;stroke-width:2;}
-#pdf-bookmarks-only svg{width:20px;height:26px;stroke-width:1.8;}
-#pdf-bookmarks-only[aria-pressed=true]{background:var(--sentence-glass-action);}
+.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;background:var(--sentence-glass-action);}
+.pdf-navigation-head>button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#pdf-navigation-toggle{margin-left:auto;}
+#pdf-bookmarks-only[aria-pressed=true]{color:var(--bookmark-ink);}
 #pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
-#pdf-thumbnail-strip{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;}
-#pdf-thumbnail-strip::-webkit-scrollbar{width:4px;height:4px;}
-#pdf-thumbnail-strip::-webkit-scrollbar-track,#pdf-thumbnail-strip::-webkit-scrollbar-track:hover,#pdf-thumbnail-strip::-webkit-scrollbar-corner{background:transparent;}
-#pdf-thumbnail-strip::-webkit-scrollbar-thumb,#pdf-thumbnail-strip::-webkit-scrollbar-thumb:hover,#pdf-thumbnail-strip::-webkit-scrollbar-thumb:active{background:var(--sb-thumb);border-radius:4px;}
-#pdf-thumbnail-strip::-webkit-scrollbar-button{display:none;}
-@supports not selector(::-webkit-scrollbar){#pdf-thumbnail-strip{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent;}}
+.pdf-thumbnail-viewport{position:relative;flex:1;min-height:0;padding-right:14px;box-sizing:border-box;}
+#pdf-thumbnail-strip{height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;scrollbar-width:none;}
+#pdf-thumbnail-strip::-webkit-scrollbar{display:none;}
+#pdf-navigation-scrollbar{position:absolute;right:-8px;top:0;width:24px;min-height:44px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;z-index:3;}
+#pdf-navigation-scrollbar[hidden]{display:none;}
+#pdf-navigation-scrollbar::before{content:"";position:absolute;right:8px;top:0;bottom:0;width:4px;border-radius:4px;background:var(--sb-thumb);}
+#pdf-navigation-scrollbar:is(:hover,:focus-visible,.dragging)::before{width:6px;background:var(--sentence-glass-secondary);}
+#pdf-navigation-scrollbar.dragging{cursor:grabbing;}
+#pdf-navigation-scrollbar:focus-visible{outline:2px solid var(--blue);outline-offset:-4px;border-radius:8px;}
 .pdf-thumbnail-track{position:relative;width:100%;}
 .pdf-thumbnail{position:absolute;left:0;right:0;}
 .pdf-thumbnail-frame{position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;width:max-content;max-width:calc(100% - 8px);}
@@ -72,7 +73,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
 .pdf-thumbnail-jump canvas{display:block;max-width:100%;object-fit:contain;}
 .pdf-thumbnail-jump span{font:500 9px var(--ui);line-height:12px;color:var(--sentence-glass-muted);}
-.pdf-thumbnail-bookmark{position:absolute;left:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
+.pdf-thumbnail-bookmark{position:absolute;right:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
 .pdf-thumbnail-bookmark svg{width:20px;height:28px;fill:var(--sentence-glass-solid);stroke:currentColor;stroke-width:1.8;}
 .pdf-thumbnail-bookmark[aria-pressed=true]{color:var(--bookmark-ink);}
 .pdf-thumbnail-bookmark[aria-pressed=true] svg{fill:currentColor;}
@@ -144,4 +145,5 @@ body.sentence-pill-waiting #readchrome #readpill{left:0;right:0;--reader-pill-ma
 body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-pill-mini){display:none!important;}
 #pdf-bookmarks-only[hidden]{display:none;}
 
+.epub-thumbnail-paper{border-radius:6px;}
 .epub-page-preview{position:absolute;left:0;top:0;border:0;pointer-events:none;transform-origin:top left;}

@@ -19,6 +19,10 @@ try{for(const engine of [chromium,webkit]){
   const check=(v,m)=>{if(!v)throw Error(m);};
   const settle=()=>new Promise(r=>setTimeout(r,100));
   const b={id:'retained',title:'Retained',kind:'txt',paras:Array.from({length:100},()=>('A gentle breeze makes reading easy. ').repeat(10))};
+  window.reuseWork={text:0,original:0};
+  const refreshText=refreshReaderWords,refreshOriginal=refreshOriginalSavedWords;
+  refreshReaderWords=(...args)=>{reuseWork.text++;return refreshText(...args);};
+  refreshOriginalSavedWords=(...args)=>{reuseWork.original++;return refreshOriginal(...args);};
   books=[b];positions={};await openBook(b);await settle();readerScrollTo(900);await settle();
   const first=document.getElementById('rtext').firstChild;
   const returning=returnHomeFromReader();
@@ -32,6 +36,7 @@ try{for(const engine of [chromium,webkit]){
   check(getComputedStyle(root,'::view-transition-old(root)').filter==='none','full-screen blur remains');
   check(getComputedStyle(root,'::view-transition-old(root)').opacity==='1','Reader fades before landing');
   check(motions.some(a=>String(a.animationName).includes('reader-control')),'shared control animation missing');
+  check(getComputedStyle(root,'::view-transition-old(reader-control)').objectFit==='none','Capsule snapshots must keep title text at its intrinsic size');
   closing.currentTime=closing.effect.getTiming().duration+1;
   check(getComputedStyle(root,'::view-transition-old(root)').opacity==='0','Closing terminal frame must stay hidden');
   motions.forEach(a=>a.finish());await returning;
@@ -42,6 +47,11 @@ try{for(const engine of [chromium,webkit]){
   check(opening&&opening.effect.getTiming().duration===480,'Opening must ease to rest over 480ms');
   await resuming;await settle();
   check(first===document.getElementById('rtext').firstChild,'same book rebuilt text');
+  check(reuseWork.text===0,'Unchanged Home round trips must not retokenize retained text');
+  show('home');words.gentle={status:2,mark:true};
+  await resumeHomeBook(document.getElementById('home-resume'));await settle();
+  check(reuseWork.text===1,'Vocabulary changes while Home is open must refresh retained text');
+  check(!!document.querySelector('#rtext .w.s2[data-w=gentle]'),'Refreshed vocabulary must paint');
   check(Math.abs(readerScrollTop()-900)<5,'resume lost position');
   show('home');b.paras[0]='Changed source paragraph.';
   await resumeHomeBook(document.getElementById('home-resume'));await settle();
@@ -57,11 +67,16 @@ try{for(const engine of [chromium,webkit]){
     await openBook(book,{prepared:{book,original:record}});await settle();
     check(originalSession&&originalSession.kind===kind,'original failed to load');
     const session=originalSession,node=document.getElementById('original-content').firstChild;
+    const refreshes=reuseWork.original,textRefreshes=reuseWork.text;
     show('home');check(canReuseReader(book),'original reader not retained');
     await resumeHomeBook(document.getElementById('home-resume'));await settle();
     check(originalSession===session,'original session rebuilt');
     check(document.getElementById('original-content').firstChild===node,'original DOM rebuilt');
     check(currentReaderMode==='original','original mode lost');
+    check(reuseWork.original===refreshes&&reuseWork.text===textRefreshes,'Unchanged originals must not repaint every saved marker or hidden text');
+    show('home');words.gentle.status=words.gentle.status===2?3:2;
+    await resumeHomeBook(document.getElementById('home-resume'));await settle();
+    check(reuseWork.original===refreshes+1,'Changed saved words must refresh original paint');
     originalResults.push(kind);
     show('home');releaseRetainedReader();check(!originalSession,'original session not released');
   }
