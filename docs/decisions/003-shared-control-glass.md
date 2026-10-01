@@ -238,7 +238,7 @@ themes. It checks synchronized trajectories, interruption continuity, input
 gating, writing-mode expansion and reduced motion. Browser evidence does not
 establish physical iPhone frame rate.
 
-Task/import/edit dialogs, article preview and Home settings now share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.
+Task/import/edit dialogs and article preview share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.
 
 ## 2026-10-01: reduce Reader transition work
 
@@ -271,3 +271,16 @@ changed while Home was visible. A changed vocabulary or mode still refreshes
 the target; source edits still invalidate the Reader. Browser regression verifies
 zero refresh calls on unchanged Text/PDF/EPUB round trips and an actual repaint
 after a saved-word change. No new persistent cache or sync state is introduced.
+
+## Remove full-screen clipping (211)
+The user reports stutter in both directions on build 210. Remove the animated
+full-viewport clip-path and its measured inset. Reader snapshots use only a
+28px translation and opacity; the named capsule still connects both controls
+with intrinsic-size text, unchanged 480/440ms easing and reduced-motion behavior.
+This removes per-frame clipping work without another animation coordinator.
+The duplicate attribution render on book open is removed. Browser state and
+animation checks do not establish physical-device frame pacing.
+
+## Build 211: matte Home settings
+
+Home settings intentionally use the opaque `--settings-sheet-surface` token (light `#F2F2F7`, dark `#2C2C2E`). Covers showing through the full-height sheet distracted from settings. Remove this sheet from shared glass selectors instead of adding another blur/reflection override. `styles/home-shell.css` owns the fill; `styles/tokens.css` owns its theme values. Reader Aa, bottom controls and other dialogs retain their existing glass.

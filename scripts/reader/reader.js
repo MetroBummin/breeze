@@ -353,7 +353,6 @@ async function openBook(b,options={}){
   document.getElementById('rtitle').textContent = b.title;
   document.getElementById('readpill-title').textContent = b.title;
   document.getElementById('readpill-title').setAttribute('aria-label',b.title+' · 컨트롤 펼치기');
-  renderReaderAttribution(b);
   /* 기사에는 연결할 "원본 파일"이 없습니다. 사진과 소제목까지 담아 오지만
      사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을
      하나 남겨 둡니다. */

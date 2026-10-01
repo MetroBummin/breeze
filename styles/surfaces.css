@@ -92,11 +92,11 @@ body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15
 #vbook-options{box-sizing:border-box;width:min(220px,calc(100vw - 64px));}
 
 /* Dialogs share Reader settings' fill, blur and reflection rather than separate glass recipes. */
-:is(#am-card,#ed-card,#wordbook-add-dialog,#task-dialog,#article-preview),#settings-modal #set-card{background:var(--sentence-glass-solid);background-image:var(--control-light-reflection);}
+:is(#am-card,#ed-card,#wordbook-add-dialog,#task-dialog,#article-preview){background:var(--sentence-glass-solid);background-image:var(--control-light-reflection);}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  #add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog,#article-preview,#settings-modal #set-card{background-color:var(--control-glass-surface);background-image:var(--control-light-reflection);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}
+  #add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog,#article-preview{background-color:var(--control-glass-surface);background-image:var(--control-light-reflection);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}
 }
-body.dark :is(#am-card,#ed-card,#wordbook-add-dialog,#task-dialog,#article-preview),body.dark #settings-modal #set-card{background-image:linear-gradient(145deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.025) 46%,rgba(255,255,255,.07) 100%);}
+body.dark :is(#am-card,#ed-card,#wordbook-add-dialog,#task-dialog,#article-preview){background-image:linear-gradient(145deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.025) 46%,rgba(255,255,255,.07) 100%);}
 #primary-nav #nav-vocab img,#home-controls #nav-vocab img{display:block;width:28px;height:28px;object-fit:contain;border-radius:7px;flex:none;}
 #vstars{flex:1;max-width:476px;min-width:0;}
 #vstars .stbtn{flex:1;min-width:44px;}

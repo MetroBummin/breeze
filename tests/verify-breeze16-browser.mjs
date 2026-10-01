@@ -59,7 +59,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>closeAa());
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').isVisible(),true);
-  await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);
+  await page.evaluate(()=>setReaderChrome(true));
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),true);
+  await page.locator('#pdf-page-control').waitFor({state:'hidden',timeout:3000});
   assert.equal(await page.locator('#pdf-page-control').isVisible(),false,'Collapsed Reader hides page pill');
   await page.locator('#readpill-title').click();await page.waitForTimeout(320);
   await page.screenshot({path:`${qaDir}/${engine.name()}-combined-page-pill.png`});
@@ -70,7 +72,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForSelector('.pdf-thumbnail canvas');
   await page.waitForTimeout(320);
   const thumbRatios=await page.locator('.pdf-thumbnail canvas').evaluateAll(nodes=>nodes.map(c=>{
-    const r=c.getBoundingClientRect();return Math.abs(r.width/r.height-c.width/c.height);
+    const r=c.getBoundingClientRect(),[width,height]=c.style.aspectRatio.split('/').map(Number);
+    // Bitmap dimensions round up to whole device pixels; compare source paper
+    // geometry instead (a 145x113 bitmap can represent 792:612 paper).
+    return Math.abs(r.width/r.height-width/height);
   }));
   assert.ok(thumbRatios.every(error=>error<.01),'Thumbnails preserve the original paper aspect ratio');
   const expanded=await page.locator('#pdf-page-control').boundingBox();

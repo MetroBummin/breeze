@@ -56,3 +56,5 @@ jobs:
         run: node tests/verify-reader-chrome-motion-browser.mjs
       - name: Reader work, selection and original round-trip regressions
         run: node tests/verify-reader-work-browser.mjs
+      - name: Horizontal progress and long EPUB preview regressions
+        run: node tests/verify-reader-211-browser.mjs

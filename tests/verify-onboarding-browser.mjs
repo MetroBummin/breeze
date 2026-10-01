@@ -45,7 +45,15 @@ try{
   assert.equal(await page.evaluate(()=>window.homePaintedBeforeOnboarding),false,'Home painted before the tutorial');
   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('boot-pending')),false);
   assert.equal(await page.locator('#v-read').isVisible(),true);
-  assert.equal(await page.locator('#readpill-title').textContent(),'Welcome to Breeze');
+  assert.equal(await page.locator('#readpill-title').textContent(),'브리즈 튜토리얼');
+  assert.equal(await page.locator('#readback').isDisabled(),true);
+  assert.match(await page.locator('#onboard-prompt').textContent(),/curiosity.*눌러보세요!/);
+  assert.equal(await page.locator('#rtext .onboard-target').textContent(),'curiosity');
+  const backRect=await page.locator('#readback').boundingBox();
+  await page.mouse.click(backRect.x+backRect.width/2,backRect.y+backRect.height/2);
+  await page.evaluate(()=>returnHomeFromReader());
+  assert.equal(await page.locator('#onboarding').isVisible(),true,'Back ended the tutorial');
+  assert.equal(await page.locator('#v-read').isVisible(),true);
   assert.equal(await page.locator('#modefab').isVisible(),false);
   assert.equal(await page.locator('#onboard-chrome').count(),0);
   assert.equal(await page.locator('#onboard-word-peek').count(),0);
@@ -67,6 +75,8 @@ try{
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#onboarding').isVisible(),true,'detail Escape ended tutorial');
   await page.locator('#onboarding[data-stage="1"]').waitFor();
+  assert.match(await page.locator('#onboard-prompt').textContent(),/Reading.*꾹 눌러보세요!/);
+  assert.equal(await page.locator('#rtext .onboard-target').textContent(),'Reading');
   await word.tap();
   assert.equal(await page.locator('#word-peek-meaning').textContent(),'호기심','repeat lookup was not immediate');
   await page.keyboard.press('Escape');
@@ -77,11 +87,13 @@ try{
   assert.equal(await page.locator('#sentence-pill-status').isVisible(),true);
   await page.mouse.up();
   await page.locator('#sentence-modal').waitFor({state:'visible'});
+  assert.equal(await page.locator('#readback').isDisabled(),true,'sentence controls re-enabled Back');
   assert.equal(await page.locator('#ps-ko').textContent(),'독서는 편안해야 하니까요.');
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-sentence.png`});
   await page.keyboard.press('Escape');
   await page.locator('#onboarding[data-stage="2"]').waitFor();
   await page.locator('#aafab').tap();
+  assert.equal(await page.locator('#readback').isDisabled(),true);
   await page.evaluate(()=>{fontSize(1);toggleDark();setReadMargin('wide');});
   assert.equal(await page.evaluate(()=>fs),20);
   assert.equal(await page.evaluate(()=>darkMode),true);
@@ -90,20 +102,24 @@ try{
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-finish.png`});
   assert.deepEqual(await snapshot(),before,'tutorial changed storage, history or library');
   await page.locator('#onboard-next').tap();
+  assert.equal(await page.locator('#readback').isEnabled(),true,'completion left Back disabled');
   assert.equal(await page.locator('#add-modal').evaluate(el=>el.open),true);
   assert.deepEqual(await page.evaluate(()=>({fs,darkMode,readMargin,curBook,previewWordCard})),{fs:19,darkMode:false,readMargin:'normal',curBook:null,previewWordCard:null});
   assert.deepEqual(await snapshot(),before,'completion leaked tutorial data');
   assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
-  await page.reload({waitUntil:'domcontentloaded'});await page.waitForTimeout(1000);
+  await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
   assert.equal(await page.locator('#onboarding').isVisible(),false);
   // Replay works on both platforms and preserves an existing vocabulary/tombstone.
   await page.evaluate(()=>{words.curiosity={word:'curiosity',ko:'기존 뜻',status:2,mark:true,addedAt:1,up:1};words['phrase:little curiosity']={word:'little curiosity',ko:'기존 표현',status:2,mark:true,phraseParts:['little','curiosity'],addedAt:1,up:1};dead.unfamiliar=42;saveWords();save(LS_DEAD,dead);});
+  await page.evaluate(()=>openSettings());
+  await page.locator('#set-card').evaluate(async card=>{await Promise.allSettled(card.getAnimations().map(a=>a.finished));});
   const replayBefore=await snapshot();
-  await page.evaluate(()=>startOnboarding(true));
+  await page.getByRole('button',{name:'튜토리얼 다시보기',exact:true}).tap();
   await page.waitForFunction(()=>document.querySelector('#rtext .w'));
   assert.equal(await page.locator('#rtext .phrase,#rtext .s2').count(),0,'personal highlights leaked into the tutorial');
   await page.locator('#rtext .w').first().tap();
   await page.evaluate(()=>endOnboarding(true));
+  assert.equal(await page.locator('#readback').isEnabled(),true,'exit left Back disabled');
   await page.waitForTimeout(1150);
   assert.equal(await page.locator('#word-peek').isVisible(),false,'late word reopened after exit');
   assert.deepEqual(await snapshot(),replayBefore,'replay modified personal data');
@@ -126,12 +142,39 @@ try{
  await page.goto(url,{waitUntil:'domcontentloaded'});await page.waitForTimeout(1100);
  assert.equal(await page.locator('#onboarding').isVisible(),false);
  await page.evaluate(()=>startOnboarding(true));
+ for(const [name,width,height] of [['phone',390,844],['narrow',320,640],['tablet',820,1180],['desktop',1440,900],['short',844,390]]){
+  await page.setViewportSize({width,height});
+  for(const dark of [false,true]){
+   await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
+   for(const stage of [0,1,2,3]){
+    await page.evaluate(stage=>{
+      onboardingSession.wordSeen=stage>0;onboardingSession.sentenceSeen=stage>1;onboardingSession.aaSeen=stage>2;
+      drawOnboarding();
+    },stage);
+    const coach=await page.locator('#onboard-coach').boundingBox();
+    assert.ok(coach.x>=0 && coach.y>=0 && coach.x+coach.width<=width+1 && coach.y+coach.height<=height+1,`${name} stage ${stage} coach overflow`);
+    const prompt=await page.locator('#onboard-prompt').boundingBox();
+    assert.ok(prompt.x>=coach.x && prompt.x+prompt.width<=coach.x+coach.width+1,`${name} prompt overflow`);
+    await page.screenshot({path:`${artifact}/${name}-${dark?'dark':'light'}-step-${stage+1}.png`});
+   }
+  }
+ }
+ await page.setViewportSize({width:1100,height:800});
  await page.screenshot({path:`artifact-desktop.png`.replace('artifact',artifact+'/web')});
  await page.locator('#onboard-skip').click();
+ assert.equal(await page.locator('#readback').isEnabled(),true,'Skip left Back disabled');
  assert.equal(await page.locator('#onboarding').isVisible(),false);
  // Signed-out UI is the current renderer, including legacy cached data and blocked contexts.
  await page.evaluate(()=>openBook({id:'signedout-ui',title:'Signed-out reader',kind:'txt',paras:['This is a demo.']}));
  await page.waitForFunction(()=>document.querySelector('#rtext .w'));
+ // A replay returns to the original Reader and restores normal Back navigation.
+ await page.evaluate(()=>startOnboarding(true));
+ await page.locator('#onboard-skip').click();
+ await page.waitForFunction(()=>curBook && curBook.id==='signedout-ui');
+ assert.equal(await page.locator('#readback').isEnabled(),true);
+ await page.evaluate(()=>returnHomeFromReader());
+ await page.locator('#v-home').waitFor({state:'visible'});
+ await page.evaluate(()=>openBook({id:'signedout-ui',title:'Signed-out reader',kind:'txt',paras:['This is a demo.']}));
  await page.evaluate(()=>{
    sbUser=null;anonLooksLeft=1;
    words.demo={word:'demo',clicked:'demo',ko:'체험',example:'This is a demo.',status:1,mark:true,

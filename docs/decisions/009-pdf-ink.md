@@ -608,3 +608,13 @@ Browser regressions do not establish physical iPad Pencil or palm behavior.
 Only changes to reading/original layout classes invalidate cached paper boundaries. Decorative chrome and notice mutations update native control scope without rereading every page. Native toolbar updates are limited to reading, original and chrome visibility changes. Rotation and panel geometry restoration remain source-anchor based.
 
 Resize notifications from a completed zoom do not cancel a new pinch that has already captured the current viewport. Pinch width and viewport height identify actual viewport changes; rotation/resize still cancels ownership and restores the source anchor.
+
+## Attached-path reconciliation (211)
+Path caching alone still detached every SVG child on each changed eraser sample.
+Reconcile only removed, inserted or reordered nodes. Unchanged pen paths and
+highlighter opacity groups remain attached; fragments of one highlight still
+share one group. The live cursor stays attached during erasure and disappears
+on completion/cancellation. Release clears both caches. Input ownership,
+geometry, undo/redo and serialized persistence are unchanged. Regression tests
+cover 80 untouched strokes plus a highlight and prove zero detachments while
+erasing a separate stroke and undoing/redoing that edit.

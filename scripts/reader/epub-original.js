@@ -437,6 +437,11 @@ async function openOriginalEpub(book,record,token){
         const frameDoc=frame.contentDocument;
         const resize=()=>{
           if(!frameDoc||meta.viewportDependent||originalSession!==session||currentReaderMode!=='original') return;
+          // scrollHeight is at least the iframe viewport height. On a width
+          // change release that old floor before measuring, or a shorter
+          // reflow leaves whole blank navigation pages at the chapter end.
+          const width=frame.clientWidth;
+          if(width&&meta.width!==width){meta.width=width;frame.style.height='60px';}
           setEpubFrameHeight(frame,epubFrameHeight(frame));
         };
         applyEpubStableViewport(frame,session.viewport);

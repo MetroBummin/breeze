@@ -34,7 +34,8 @@ try{for(const engine of [chromium,webkit]){
   check(closing.effect.getTiming().duration===440,'Closing must use its eased 440ms duration');
   motions.forEach(a=>{a.pause();a.currentTime=170;});
   check(getComputedStyle(root,'::view-transition-old(root)').filter==='none','full-screen blur remains');
-  check(getComputedStyle(root,'::view-transition-old(root)').opacity==='1','Reader fades before landing');
+  check(getComputedStyle(root,'::view-transition-old(root)').clipPath==='none','Full-screen clipping must not run on each transition frame');
+  check(Number(getComputedStyle(root,'::view-transition-old(root)').opacity)<1,'Reader uses compositor opacity during return');
   check(motions.some(a=>String(a.animationName).includes('reader-control')),'shared control animation missing');
   check(getComputedStyle(root,'::view-transition-old(reader-control)').objectFit==='none','Capsule snapshots must keep title text at its intrinsic size');
   closing.currentTime=closing.effect.getTiming().duration+1;

@@ -373,26 +373,40 @@ const BreezePdfInk = (()=>{
     target.push(edit);paint(state);changed(state);update();
   }
   function changed(state){state.revision++;state.dirty=true;void persist(state);}
+  function reconcileInkChildren(parent,children){
+    const keep=new Set(children);
+    for(const child of [...parent.children])if(!keep.has(child))child.remove();
+    let cursor=parent.firstChild;
+    for(const child of children){
+      if(child===cursor)cursor=cursor.nextSibling;
+      else parent.insertBefore(child,cursor);
+    }
+  }
   function paint(state){
     if(!state.svg)return;
-    state.svg.replaceChildren();
-    // Completed strokes are immutable. Reuse their SVG paths instead of
-    // serializing every point again on each pen lift or eraser sample.
+    // Immutable strokes keep both their path AND its attachment. An eraser
+    // sample must not detach/repaint every unrelated stroke on the page.
     const previous=state.inkPaths||new Map(),next=new Map();
-    const inkPath=stroke=>{
-      const element=previous.get(stroke)||path(stroke);next.set(stroke,element);return element;
-    };
-    // Translucent ink sits beneath pen ink, independent of creation order.
-    const highlights=new Map();
-    for(const stroke of state.strokes.filter(s=>s.tool==='highlighter')){
-      // Erased fragments of one original stroke share one alpha composite.
+    const oldGroups=state.inkGroups||new Map(),groups=new Map(),pens=[];
+    for(const stroke of state.strokes){
+      let element=previous.get(stroke);
+      if(!element){element=path(stroke);if(stroke.tool==='highlighter')element.setAttribute('opacity','1');}
+      next.set(stroke,element);
+      if(stroke.tool!=='highlighter'){pens.push(element);continue;}
       const id=stroke.strokeId||stroke;
-      let group=highlights.get(id);
-      if(!group){group=document.createElementNS(ns,'g');group.setAttribute('opacity',String(stroke.opacity));group.setAttribute('data-ink-tool','highlighter');highlights.set(id,group);state.svg.append(group);}
-      const fragment=inkPath(stroke);fragment.setAttribute('opacity','1');group.append(fragment);
+      let entry=groups.get(id);
+      if(!entry){
+        const group=oldGroups.get(id)||document.createElementNS(ns,'g');
+        if(!oldGroups.has(id)){group.setAttribute('opacity',String(stroke.opacity));group.setAttribute('data-ink-tool','highlighter');}
+        entry={group,children:[]};groups.set(id,entry);
+      }
+      entry.children.push(element);
     }
-    for(const stroke of state.strokes.filter(s=>s.tool!=='highlighter'))state.svg.append(inkPath(stroke));
-    state.inkPaths=next;
+    for(const {group,children} of groups.values())reconcileInkChildren(group,children);
+    const children=[...groups.values()].map(entry=>entry.group).concat(pens);
+    if(active?.state===state&&active.preview)children.push(active.preview);
+    reconcileInkChildren(state.svg,children);
+    state.inkPaths=next;state.inkGroups=new Map([...groups].map(([id,entry])=>[id,entry.group]));
   }
   function path(stroke){
     const element=document.createElementNS(ns,'polyline');
@@ -702,7 +716,7 @@ const BreezePdfInk = (()=>{
       const state=pages.get(keyFor(s,n));if(!state)return;
       if(active?.state===state)cancel('page-release');
       if(keepShell)state.svg?.replaceChildren();else state.svg?.remove();
-      state.svg=null;state.inkPaths=null;state.element=null;evict(state);
+      state.svg=null;state.inkPaths=null;state.inkGroups=null;state.element=null;evict(state);
     },
     close(s){if(s!==session)return;interrupt();mode='read';for(let n=1;n<=s.pages.length;n++)this.release(s,n);session=null;undoStack.length=redoStack.length=0;update();},
     finger,trace,

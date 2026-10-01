@@ -17,7 +17,7 @@ body:has(:is(#v-home,#v-casuals,#v-longform).on) #toast,body:has(:is(#v-home,#v-
 body.settings-open{overflow:hidden;}
 #settings-modal{display:flex;align-items:flex-end;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 0 0;overflow:hidden;background:var(--settings-scrim);visibility:hidden;opacity:0;pointer-events:none;transition:opacity .36s ease,visibility 0s .36s;}
 #settings-modal.on{visibility:visible;opacity:1;pointer-events:auto;transition-delay:0s;}
-#settings-modal #set-card{position:relative;box-sizing:border-box;width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:44px max(20px,calc((100vw - 640px)/2)) calc(28px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:var(--home-background);color:var(--settings-ink);box-shadow:none;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.75,.25,1);--ink:var(--settings-ink);--soft:var(--settings-muted);--sheet:var(--settings-group);--line:var(--settings-line);}
+#settings-modal #set-card{position:relative;box-sizing:border-box;width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:44px max(20px,calc((100vw - 640px)/2)) calc(28px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:var(--settings-sheet-surface);color:var(--settings-ink);box-shadow:none;overflow-y:auto;overscroll-behavior:contain;transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.75,.25,1);--ink:var(--settings-ink);--soft:var(--settings-muted);--sheet:var(--settings-group);--line:var(--settings-line);}
 #settings-modal.on #set-card{transform:translateY(0);}
 .settings-handle{position:absolute;top:12px;left:calc(50% - 18px);width:36px;height:4px;border-radius:2px;background:var(--settings-handle);}
 #settings-modal #set-card h2{font:650 23px/32px var(--ui);letter-spacing:-.35px;margin:0 0 16px;}
@@ -93,8 +93,8 @@ html.home-resuming::view-transition-new(root){animation:home-glass-open var(--ho
 html.home-resuming::view-transition-old(root){animation:none;opacity:1;mix-blend-mode:normal;}
 html.home-returning::view-transition-old(root){z-index:2;animation:home-glass-close var(--home-morph-duration) var(--home-morph-ease) both;mix-blend-mode:normal;}
 html.home-returning::view-transition-new(root){animation:none;opacity:1;mix-blend-mode:normal;}
-@keyframes home-glass-open{from{clip-path:inset(var(--resume-inset) round 32px);opacity:1;}to{clip-path:inset(0 round 0);opacity:1;}}
-@keyframes home-glass-close{from{clip-path:inset(0 round 0);opacity:1;}90%{opacity:1;}to{clip-path:inset(var(--resume-inset) round 32px);opacity:0;}}
+@keyframes home-glass-open{from{transform:translateY(28px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+@keyframes home-glass-close{from{transform:translateY(0);opacity:1;}to{transform:translateY(28px);opacity:0;}}
 html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
 /* Browser fallback stays above the Home logo; iOS uses UIRefreshControl. */
 #library-refresh{position:fixed;z-index:80;left:50%;top:calc(env(safe-area-inset-top) + 2px);width:22px;height:22px;display:grid;place-items:center;pointer-events:none;color:var(--settings-muted);opacity:0;transform:translateX(-50%);transition:opacity .2s ease;}

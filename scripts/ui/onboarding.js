@@ -58,7 +58,7 @@ async function startOnboarding(replay){
   if(onboardingSession) endOnboarding(false,false);
   saveReadingState(); closePanel(); closeSentence(); closeAa(); closeSettings();
   const session={
-    book:{id:'breeze-onboarding',title:'Welcome to Breeze',kind:'txt',transient:true,
+    book:{id:'breeze-onboarding',title:'브리즈 튜토리얼',kind:'txt',transient:true,
       paras:ONBOARD_PASSAGES.map(part=>part[0]),textAvailable:true},
     previousBook:curBook,previousView:activeAppView(),
     appearance:{fs,darkMode,readMargin},controller:new AbortController(),
@@ -66,6 +66,9 @@ async function startOnboarding(replay){
     frame:0,observer:null,
   };
   onboardingSession=session;
+  const back=/** @type {HTMLButtonElement} */(document.getElementById('readback'));
+  session.backDisabled=back.disabled;
+  back.disabled=true;
   document.body.classList.add('onboarding-active');
   document.getElementById('onboarding').hidden=false;
   const signal=session.controller.signal;
@@ -77,6 +80,8 @@ async function startOnboarding(replay){
   for(const id of ['word-peek','panel','sentence-modal','aa-pop']){
     session.observer.observe(document.getElementById(id),{attributes:true,attributeFilter:['hidden','class']});
   }
+  // The real Reader hydrates word spans lazily; mark targets after they arrive.
+  session.observer.observe(document.getElementById('rtext'),{childList:true,subtree:true});
   document.getElementById('onboard-skip').addEventListener('click',()=>endOnboarding(true),{signal});
   document.getElementById('onboard-next').addEventListener('click',()=>{endOnboarding(true);openAddModal();},{signal});
   document.addEventListener('keydown',event=>{
@@ -112,16 +117,20 @@ function drawOnboarding(){
   // Guidance yields the whole surface while a lookup or Aa owns the interaction.
   document.getElementById('onboard-skip').hidden=coach.hidden;
   const prompts=[
-    'Breeze에 오신 것을 환영합니다.\n궁금한 단어를 탭해 보세요.',
-    '문장의 뜻도 궁금하신가요?\n문장 속 단어를 길게 눌러 보세요.',
-    '나에게 편한 읽기 화면을 만들어 보세요.\n아래 Aa에서 글자 크기와 화면 색을 바꿀 수 있어요.',
-    '이제, 읽고 싶었던 이야기 속으로.\nBreeze와 함께 내 책을 읽어 보세요.',
+    '위의 “curiosity”를 눌러보세요!\n단어 뜻이 나와요.',
+    '위의 “Reading”을 꾹 눌러보세요!\n문장 전체의 뜻이 나와요.',
+    '아래 “Aa”를 눌러보세요!\n글자 크기와 화면 색을 바꿀 수 있어요.',
+    '이제 내 책으로 읽어볼까요?\n아래 “책 추가하기”를 눌러보세요!',
   ];
-  document.getElementById('onboard-step').textContent=stage===3?'준비됐어요':`${stage+1} / 3 · ${['단어 뜻','문장 해석','보기 설정'][stage]}`;
+  document.getElementById('onboard-step').textContent=stage===3?'준비됐어요':`${stage+1} / 3 · ${['단어 눌러보기','문장 꾹 눌러보기','읽기 화면 바꾸기'][stage]}`;
   document.getElementById('onboard-prompt').textContent=prompts[stage];
   document.getElementById('onboard-next').hidden=stage!==3;
   document.getElementById('onboard-note').hidden=stage!==3;
   document.getElementById('aafab').classList.toggle('onboard-target',stage===2 && !aaOpen);
+  document.querySelectorAll('#rtext .w').forEach(node=>{
+    node.classList.toggle('onboard-target',!coach.hidden &&
+      ((stage===0 && node.textContent==='curiosity') || (stage===1 && node.textContent==='Reading')));
+  });
 }
 async function openOnboardingWord(node,retry=false){
   const session=onboardingSession;
@@ -175,7 +184,10 @@ function endOnboarding(remember,returnToPrevious=true){
   onboardingSession=null;
   document.getElementById('onboarding').hidden=true;
   document.body.classList.remove('onboarding-active');
+  const back=/** @type {HTMLButtonElement} */(document.getElementById('readback'));
+  back.disabled=session.backDisabled;
   document.getElementById('aafab').classList.remove('onboard-target');
+  document.querySelectorAll('#rtext .onboard-target').forEach(node=>node.classList.remove('onboard-target'));
   document.getElementById('rhint').hidden=false;
   document.getElementById('rtitle').removeAttribute('tabindex');
   fs=session.appearance.fs;darkMode=session.appearance.darkMode;readMargin=session.appearance.readMargin;

@@ -109,9 +109,19 @@ function textProgressForBook(book,anchor){
    맨 위에 닿지 못해 같은 이유로 100%가 되지 않았습니다.
    마지막 한 화면만은 남은 스크롤로 메꿉니다. 바닥에 닿으면 정확히 1입니다. */
 function readerProgressAtEnd(value){
-  // A horizontal page's bottom is not the end of the document.
-  if(currentReaderMode==='original'&&typeof pdfHorizontal==='function'&&pdfHorizontal()
-      &&pdfCurrentPage()!==pdfAvailablePages().at(-1))return value;
+  // Horizontal mode displays one paper, so its scroll extent belongs only to
+  // that page. Count a fully visible page, and bound a tall page's scroll
+  // progress to its own share of the book (including locally deleted pages).
+  if(currentReaderMode==='original'&&typeof pdfHorizontal==='function'&&pdfHorizontal()){
+    const pages=pdfAvailablePages(),index=pages.indexOf(pdfCurrentPage());
+    if(index<0||!pages.length)return value;
+    const layout=pdfPageLayout(),rect=layout?.rects[pages[index]-1];
+    if(!rect||!rect[3])return value;
+    const start=Math.max(0,rect[1]-topInset());
+    const end=Math.max(start,rect[1]+rect[3]-readerViewHeight());
+    const fraction=end-start<=1?1:Math.max(0,Math.min(1,(readerScrollTop()-start)/(end-start)));
+    return (index+fraction)/pages.length;
+  }
   const height=Math.max(1,readerViewHeight());
   const extent=Math.max(0,readerContentHeight()-height);
   const top=Math.max(0,readerScrollTop());
