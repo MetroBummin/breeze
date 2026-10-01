@@ -59,7 +59,9 @@ faded for 180ms and compact notices changed pill width/height. An invisible shor
 title also did not own the full visible notice area.
 
 `#reader-pill-copy` now owns one flexible title slot between mode and ink entry.
-Notices are absolute inside that slot, remain pointer-transparent, and replace
+Remove the ink-title opacity transition as well: its more specific CSS rule
+otherwise fades the title beneath the first notice paint. Notices are absolute
+inside that slot, remain pointer-transparent, and replace
 the title before first paint. The existing title button fills the slot and keeps
 its action/accessible name. Showing, interrupting and hiding a notice never
 resizes the pill or its controls. Writing and sentence waiting hide the entire

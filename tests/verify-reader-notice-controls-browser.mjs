@@ -15,7 +15,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const browser=await engine.launchPersistentContext('',{viewport:{width:390,height:844},serviceWorkers:'block',hasTouch:true});try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
- await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.addInitScript(()=>{window.breezeInkIPad=true;localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});await page.goto(url);await page.evaluate(()=>homeReady);
  await page.locator('#fileinput').setInputFiles({name:'A.pdf',mimeType:'application/pdf',buffer:fixturePdf(4)});await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
  await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');readerNotices.reset();});
  const notice=page.locator('#reader-notice');
@@ -27,7 +27,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);
   for(const mode of ['original','text'])for(const compact of [false,true]){
    await page.evaluate(async({mode,compact})=>{readerNotices.reset();closeAa();await switchReaderMode(mode);chromeHoldUntil=0;readerScrollPauseUntil=0;setReaderChrome(compact);},{mode,compact});
-   await page.waitForTimeout(350);await page.waitForFunction(()=>!chromePinned&&!originalPinchBusy()&&Date.now()>readerScrollPauseUntil+300&&Date.now()>chromeHoldUntil);
+   await page.waitForFunction(()=>!chromePinned&&!originalPinchBusy()&&Date.now()>readerScrollPauseUntil+300&&Date.now()>chromeHoldUntil);
+   await page.evaluate(async()=>Promise.allSettled(document.getElementById('readchrome').getAnimations({subtree:true}).map(a=>a.finished)));
    await page.evaluate(()=>{readerNotices.reset();chromeHoldUntil=0;readerScrollPauseUntil=0;});
    const sample=()=>page.evaluate(()=>{const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return [r.x,r.y,r.width,r.height];};return {pill:rect('readpill'),title:rect('readpill-title'),aa:rect('aafab'),mode:rect('modefab')};});
    const before=await sample();

@@ -5,7 +5,7 @@
 #readpill.ink-pill-ready #readpill-title{max-width:none;text-align:left;}
 #readpill.ink-pill-ready #readpill-title{transition:width var(--reader-chrome-duration) var(--reader-chrome-ease),
   max-width var(--reader-chrome-duration) var(--reader-chrome-ease),flex-basis var(--reader-chrome-duration) var(--reader-chrome-ease),
-  margin var(--reader-chrome-duration) var(--reader-chrome-ease),padding var(--reader-chrome-duration) var(--reader-chrome-ease),opacity .18s ease,visibility 0s;}
+  margin var(--reader-chrome-duration) var(--reader-chrome-ease),padding var(--reader-chrome-duration) var(--reader-chrome-ease),visibility 0s;}
 #readpill .ink-pill-entry,#readpill .ink-pill-mini{position:relative;z-index:2;flex:none;
   display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;
   border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;}

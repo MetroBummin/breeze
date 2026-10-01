@@ -191,6 +191,7 @@ function buildEpubNavigation(focusCurrent=true){
   const nav=pdfNavigation;if(!nav||!currentEpubNavigationSession())return;
   // Reflow must not remove the button between contact down and its click.
   if(nav.contact!=null){nav.needsLayout={focusCurrent:focusCurrent||!!nav.needsLayout?.focusCurrent};return;}
+  nav.needsLayout=null;
   const signature=nav.session.frames.map(frame=>frame?`${frame.clientWidth}:${frame.clientHeight}`:'').join('|');
   if(nav.signature!==signature){
     nav.signature=signature;nav.pageHeights=[];nav.pages=[];nav.firstPages=[];nav.previewHtml=new Map();
@@ -237,7 +238,7 @@ async function goEpubNavigationPage(nav,index){
   else await new Promise(resolve=>{
     const began=performance.now();let applied=start;
     const step=now=>{
-      if(!current()||Math.abs(readerScrollTop()-applied)>2){resolve();return;}
+      if(!current()||!!activeGesture||Math.abs(readerScrollTop()-applied)>2){resolve();return;}
       const t=Math.min(1,(now-began)/200);
       readerScrollTo(start+(target-start)*(1-Math.pow(1-t,3)));applied=readerScrollTop();
       if(t<1)requestAnimationFrame(step);else resolve();
