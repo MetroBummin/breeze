@@ -602,3 +602,9 @@ and active ink/pinch never turn a page. Ink remains keyed by original hash/page;
 page direction, bookmarks and deletion do not renumber or erase ink records.
 Navigation supersedes pending mode-landing timers using the existing change token.
 Browser regressions do not establish physical iPad Pencil or palm behavior.
+
+## 2026-10-01: distinguish paper and control geometry
+
+Only changes to reading/original layout classes invalidate cached paper boundaries. Decorative chrome and notice mutations update native control scope without rereading every page. Native toolbar updates are limited to reading, original and chrome visibility changes. Rotation and panel geometry restoration remain source-anchor based.
+
+Resize notifications from a completed zoom do not cancel a new pinch that has already captured the current viewport. Pinch width and viewport height identify actual viewport changes; rotation/resize still cancels ownership and restores the source anchor.

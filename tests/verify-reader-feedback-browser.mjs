@@ -47,10 +47,24 @@ try{
           {word:'signal',x:.1,y:.3,w:.13,h:.2},'original-saved-marker',1,'signal');
         window.fixturePdf=makePdfWordMarker(document.getElementById('fixture-pdf'),
           {word:'signal',x:.1,y:.3,w:.13,h:.2},'original-selection-marker',1,'signal');
+        fixturePdf.classList.add('sel');fixtureEpub.classList.add('sel');
         window.fixtureNodes=[document.querySelector('#fixture-text .w'),fixturePdf,fixtureEpub];
       });
       // A ready/saved lookup still owns the selection paint until dismissal.
       for(const format of ['pdf','epub']){
+        const material=await page.evaluate(format=>{
+          const node=format==='pdf'?fixturePdf:fixtureEpub,doc=node.ownerDocument;
+          const expected=doc.createElement('i');expected.style.background=getComputedStyle(document.body).getPropertyValue('--pick-fill');doc.body.append(expected);
+          const before=doc.defaultView.getComputedStyle(node).backgroundColor;
+          const blue=doc.defaultView.getComputedStyle(expected).backgroundColor;expected.remove();
+          setStarPreference(1,{visible:false});
+          const after=doc.defaultView.getComputedStyle(node).backgroundColor;
+          setStarPreference(1,{visible:true});
+          return {blue,before,after,shadow:doc.defaultView.getComputedStyle(node).boxShadow};
+        },format);
+        assert.equal(material.before,material.blue,`${format}: selected saved word is uniformly blue`);
+        assert.equal(material.after,material.blue,`${format}: star visibility must not change selection paint`);
+        assert.equal(material.shadow,'none',`${format}: selection must not have a second colored ring`);
         const hidden=await page.evaluate(format=>{
           const node=format==='pdf'?fixturePdf:fixtureEpub;
           wordLookupFeedback.start(10,format);

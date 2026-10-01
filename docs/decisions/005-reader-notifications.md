@@ -45,3 +45,7 @@ identities, Reader/ink/lookup behavior and dormant sharing are unchanged.
 Validate with node --test tests/verify-import-feedback.mjs and
 node tests/verify-import-feedback-browser.mjs, plus the existing notification,
 ingestion, storage, Home/Reader and ink regression suites.
+
+## 2026-10-01: stable in-pill notices
+
+Guide notices remain in the bottom-center pill and its existing queue. The title becomes transparent while one absolute notice occupies a bounded two-line area; long visual messages are clamped while the live region retains the complete text. Horizontal-reading guidance is concise. Selecting the active direction is a no-op, avoiding duplicate layout and notices.

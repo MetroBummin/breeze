@@ -127,3 +127,7 @@ secondary-ink contrast; their 44px target remains aligned inside the paper.
 
 ### Compact category and Memory surfaces (2026-10-01)
 Shelf grids start at the heading/category left edge rather than centering leftover columns. Category and manual-word tasks use compact 380px forms with 44px input/action targets. Memory stars match lookup/Reader visual proportions while preserving 44px hit areas. These changes do not alter assignments, vocabulary, or persistence.
+
+## 2026-10-01: reuse Reader work
+
+EPUB star visibility uses one persistent highlight stylesheet and changed-only root CSS variables; toggles do not rebuild chapter marks. PDF sidebar close retains its bounded virtualized strip and rendered canvases within the live document session. Reopen reuses them, updates geometry/bookmarks, and cancels stale rendering by generation. Leaving the original session releases the cache. Mode returns reuse live documents instead of retrieving their Blob again. Sentence search starts near the mapped paragraph and falls back to the full search when needed.

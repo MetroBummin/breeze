@@ -201,7 +201,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
      const c=canvas.getBoundingClientRect(),paper=canvas.closest('.pdf-thumbnail-paper').getBoundingClientRect(),cell=canvas.closest('.pdf-thumbnail').getBoundingClientRect();
      return Math.abs(c.width/c.height-Number(canvas.style.aspectRatio.split('/')[0])/Number(canvas.style.aspectRatio.split('/')[1]))>.01||c.height>180.5||c.left<paper.left-.5||c.right>paper.right+.5||c.top<cell.top-.5||c.bottom>cell.bottom+.5;
    }));
-   assert.equal(clipped,false,'Portrait, landscape and tall source pages fit entirely without cropping');
+   assert.equal(clipped,false,`${engine.name()} ${width}x${height} dark=${dark}: source pages fit entirely without cropping`);
    const gaps=await page.locator('.pdf-thumbnail canvas').evaluateAll(canvases=>{
      const rects=canvases.map(c=>c.getBoundingClientRect()).sort((a,b)=>a.top-b.top);
      return rects.slice(1).map((r,i)=>r.top-rects[i].bottom);
@@ -267,7 +267,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const metrics=await page.evaluate(()=>{
     const frame=originalSession.frames.find(f=>f.contentDocument?.getElementById('breeze-saved-mark-style')),doc=frame.contentDocument,style=frame.contentWindow.getComputedStyle(doc.body);
     setStarPreference(1,{visible:true,color:'#123456'});
-    return {padding:parseFloat(style.paddingLeft),body:doc.body.getBoundingClientRect().width,frame:frame.clientWidth,star:doc.getElementById('breeze-star-preferences').textContent};
+    return {padding:parseFloat(style.paddingLeft),body:doc.body.getBoundingClientRect().width,frame:frame.clientWidth,star:doc.documentElement.style.getPropertyValue('--breeze-saved-1')};
    });assert.ok(metrics.padding>=16&&metrics.padding<=48,JSON.stringify(metrics));assert.ok(metrics.body<=metrics.frame+1,JSON.stringify(metrics));assert.match(metrics.star,/#12345666/);
   }
   await page.evaluate(()=>switchReaderMode('text'));

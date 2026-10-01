@@ -299,16 +299,8 @@ function syncTopbarH(){
   document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight+'px');
 }
 let lastAnchor = null;
-window.addEventListener('resize', ()=>{
-  syncTopbarH();
-  if(!curBook) return;
-  holdReaderAnchor(400);
-  requestAnimationFrame(()=>{
-    if(currentReaderMode==='original'){
-      if(lastOriginalAnchor) restoreOriginalAnchor(lastOriginalAnchor);
-    }else if(lastAnchor) restoreAnchor(lastAnchor);
-  });
-});
+// Reader width and original viewport observers own reading-position restoration.
+window.addEventListener('resize',syncTopbarH);
 window.addEventListener('load', syncTopbarH);
 syncTopbarH();
 let miniTimer;

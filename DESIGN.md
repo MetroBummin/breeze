@@ -157,3 +157,7 @@ Reader 뒤로가기와 사이드바 진입·접기는 22px 아이콘과 2px 선 
 ## Reader 필 중심 고정 (205 실기기 후속)
 
 펼친 PDF 필의 22px 오른쪽 위치와 접힌 필의 화면 중앙은 유지한다. 폭을 바꾸는 필에는 가로 `translate(-50%)`를 사용하지 않는다. 좌우 inset과 auto margin으로 중심을 잡고, 좁은 PDF 화면에서는 왼쪽 inset 44px/오른쪽 0px로 22px 이동을 표현한다. inset과 폭은 같은 260ms 전환으로 레이아웃에서 함께 계산한다. 필·글자는 scale로 늘리지 않으며 reduced motion은 즉시 적용한다. 실기기 영상의 일시적인 좌우 초과 이동을 브라우저 DOM 검사만으로 해결됐다고 판단하지 않는다.
+
+### Reader motion and work (2026-10-01)
+
+Keep notices inside the bottom title pill, with a stable two-line area and one message at a time. Selected words use one blue surface independent of saved star colors. Mode switches have no fixed departure delay: reuse live original documents and restore their scroll before the first frame. First EPUB opens show a preparation surface until the source anchor is ready. Hidden originals do not participate in zoom layout.

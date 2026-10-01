@@ -80,7 +80,7 @@ function fixture(){
   const contact=(x,y,id=1,type='stylus')=>({identifier:id,touchType:type,target:canvas,clientX:x,clientY:y});
   const event=(type,touches,changedTouches=touches)=>({type,touches,changedTouches,cancelable:true,preventDefault(){this.defaultPrevented=true;},stopImmediatePropagation(){}});
   const flush=()=>{const pending=[...frames.values()];frames.clear();for(const fn of pending)fn();};
-  const mutate=(target,attributeName='class')=>observers[0]([{target,type:'attributes',attributeName}]);
+  const mutate=(target,attributeName='class',oldValue=null)=>observers[0]([{target,type:'attributes',attributeName,oldValue}]);
   async function stroke(points,end=points.at(-1)){
     qa.touchStart(event('touchstart',[contact(...points[0])]));
     for(const p of points.slice(1))qa.touchMove(event('touchmove',[contact(...p)]));
@@ -103,6 +103,11 @@ test('scope: ancestor layout changes invalidate paper even with unchanged extent
 test('scope: body layout changes also invalidate cached paper',()=>{
   const f=fixture();f.qa.publishNativeScope();f.paper.rect.y=27;f.mutate(f.body);f.flush();
   assert.equal(f.posted.at(-1).pages[0][1],27);
+});
+test('scope: chrome-only body changes retain cached paper geometry',()=>{
+  const f=fixture();f.qa.publishNativeScope();const reads=f.paper.reads;
+  const prior=f.body.className;f.body.classList.add('chrome-hidden');f.mutate(f.body,'class',prior);f.flush();
+  assert.equal(f.paper.reads,reads,'decorative control state must not rescan paper');
 });
 test('scope: pinch dirty geometry survives deferral and refreshes after contact end',()=>{
   const f=fixture();f.qa.publishNativeScope();f.pinch(true);f.paper.rect.x=45;f.mutate(f.zoom);f.flush();

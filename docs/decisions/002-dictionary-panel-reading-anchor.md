@@ -146,3 +146,7 @@ and pending-to-ready transitions. Other occurrences retain their saved paint.
 Saved-marker rebuilds and EPUB status-bucket updates reapply this suppression.
 Dismissal restores only current saved records and their current status; it never
 restores a deleted range or an obsolete highlight cache. Shimmer remains pending-only.
+
+## 2026-10-01: one selection surface
+
+Active PDF/EPUB word selection uses one blue fill, without the status-dependent inner fill or outer shadow. Saved-underlay suppression continues to target the exact selected occurrence and ends with selection. Star visibility affects saved marks only; it does not recolor selection or render a hidden dictionary panel.

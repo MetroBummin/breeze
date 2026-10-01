@@ -632,6 +632,9 @@ if(window.ResizeObserver){
     if(!readerWidth || width===readerWidth){ readerWidth = width; return; }
     readerWidth = width;
     if(!curBook || !document.getElementById('v-read').classList.contains('on')) return;
+    // PDF viewport restoration belongs to reader-scroll.js. Restoring its old
+    // generic anchor here also moves paper during a new pinch.
+    if(currentReaderMode==='original'&&originalSession?.kind==='pdf')return;
     invalidateReaderMeasurements();   // 폭이 바뀌면 글이 다시 흐릅니다
     suspendReaderScrollSave(600);
     /* The panel animates its width, so this fires many times. Freeze the

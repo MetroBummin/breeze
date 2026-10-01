@@ -52,8 +52,6 @@ function rememberReaderMode(mode){
   if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
 }
 
-function readerModeDelay(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
-
 /* ================= DOM text helpers ================= */
 
 function domPositionAt(root,offset){
@@ -111,7 +109,7 @@ function rangeForWordMatch(stream,match){
 function textSentenceBridge(){
   const inset=topInset()+8;
   const elements=[...document.querySelectorAll('#rtext [data-pi]')];
-  const startIndex=Math.max(0,elements.findIndex(element=>element.getBoundingClientRect().bottom>inset));
+  const startIndex=Math.max(0,elements.indexOf(firstElementBelow(elements,inset)));
   const entries=[];
   for(let index=startIndex; index<elements.length && entries.length<5; index++){
     const element=elements[index];
@@ -135,8 +133,7 @@ function textSentenceBridge(){
     block:chosen.block};
 }
 
-function originalSentenceBridge(){
-  const source=captureOriginalAnchor();
+function originalSentenceBridge(source=captureOriginalAnchor()){
   const format=originalFormat();
   if(!source || !format) return null;
   return format.sentenceBridge(source);
@@ -149,18 +146,30 @@ function originalSentenceBridge(){
 function findTextSentence(candidates,targetPi){
   const elements=[...document.querySelectorAll('#rtext [data-pi]')];
   if(!elements.length) return null;
-  const stream=[], starts=[];
-  elements.forEach(element=>{ starts.push(stream.length); stream.push(...domWordStream(element)); });
   const index=targetPi==null ? -1
     : elements.findIndex(element=>+element.dataset.pi>=targetPi);
-  const near=index<0 ? null : starts[index];
-  const list=candidates||[];
-  for(let position=0; position<list.length; position++){
-    const match=bridgeFindSequence(stream,list[position],{follow:list[position+1]||'',near});
-    const range=rangeForWordMatch(stream,match);
-    if(range) return {range,stream,match};
+  function search(nodes,nearIndex){
+    const stream=[],starts=[];
+    nodes.forEach(element=>{starts.push(stream.length);stream.push(...domWordStream(element));});
+    const near=nearIndex<0 ? null : starts[nearIndex];
+    const list=candidates||[];
+    for(let position=0;position<list.length;position++){
+      const match=bridgeFindSequence(stream,list[position],{follow:list[position+1]||'',near});
+      const range=rangeForWordMatch(stream,match);
+      if(range)return {range,stream,match};
+    }
+    return null;
   }
-  return null;
+  // Source maps already identify the paragraph. Search its neighborhood first;
+  // an unmapped or mismatching document retains the complete search fallback.
+  if(index>=0){
+    const first=Math.max(0,index-4),last=Math.min(elements.length,index+8);
+    if(last-first<elements.length){
+      const found=search(elements.slice(first,last),index-first);
+      if(found)return found;
+    }
+  }
+  return search(elements,index);
 }
 
 async function restoreTextSentence(candidates,targetPi){
@@ -360,16 +369,6 @@ function showSentenceRangeCue(range){
   }
 }
 
-function showBridgeSourceCue(bridge){
-  clearReaderModeCue();
-  if(!bridge) return;
-  if(bridge.block) showElementModeCue(bridge.block,0);
-  else if(bridge.source&&bridge.source.kind==='pdf'&&originalSession&&originalSession.pages){
-    if(!showPdfParagraphModeCue(bridge.paragraph,0,bridge.source.page))
-      showPdfModeCue(originalSession.pages[bridge.source.page-1],bridge.boxes,0,bridge.paragraph);
-  }else if(bridge.range) showRangeModeCue(bridge.range,0);
-}
-
 function showOriginalLandingCue(record,target,paragraphHint){
   if(!record || !target || !originalSession) return false;
   const format=ORIGINAL_FORMATS[record.kind];
@@ -407,29 +406,25 @@ async function switchReaderMode(mode,options){
   options = options || {};
   if(!curBook || (mode!=='text' && mode!=='original')) return;
   if(mode==='original' && !bookSupportsOriginal(curBook)) return;
+  if(mode===currentReaderMode&&!options.initial&&!options.reload)return;
   if(typeof closeSentence==='function') closeSentence();
 
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;
   const previousMode = currentReaderMode;
-  let sentenceBridge = !options.initial && previousMode!==mode
-    ? (previousMode==='text' ? textSentenceBridge() : originalSentenceBridge())
-    : null;
-  /* 어디를 찾을지는 왕복 안정성을 위해 아래에서 바뀔 수 있지만, 출발 화면에서
-     무엇을 읽고 있었는지는 지금 이미 확정돼 있습니다. 둘을 같은 변수로 쓰면
-     빠른 왕복의 문장 검색을 끌 때 출발지의 파란 표시까지 사라집니다. */
-  const sourceCueBridge=sentenceBridge;
   const textAnchor = previousMode==='text' ? captureAnchor() : null;
   let bridge = previousMode==='text'
     ? sourceAnchorForParagraph(curBook,(textAnchor||{}).pi)
     : captureOriginalAnchor();
+  const returning=previousMode==='text'&&recentModeLanding?.bookId===curBook.id
+    &&recentModeLanding.mode==='text'&&Date.now()-recentModeLanding.at<12000&&!textModeMovedByUser;
+  let sentenceBridge = !options.initial && previousMode!==mode&&!returning
+    ? (previousMode==='text' ? textSentenceBridge() : originalSentenceBridge(bridge))
+    : null;
   /* 원본→글자 직후 다시 원본으로 돌아갈 때는, 사용자가 글자를 실제로 스크롤하지
      않았다면 방금 떠난 원본 좌표가 가장 정확합니다. 매번 화면 첫 문단을 다시 고르면
      위에 걸친 문단 때문에 왕복할수록 한 쪽씩 위로 기어갑니다. */
-  if(previousMode==='text' && recentModeLanding
-      && recentModeLanding.bookId===curBook.id && recentModeLanding.mode==='text'
-      && Date.now()-recentModeLanding.at<12000
-      && !textModeMovedByUser){
+  if(returning){
     bridge=recentModeLanding.originalAnchor;
     /* 이 경우 정확한 원본 좌표가 이미 있습니다. 문장 검색까지 다시 하면 그 문장의
        첫 줄을 가운데 놓느라 좌표가 덮여, 반복할수록 이전 쪽으로 밀립니다. */
@@ -449,13 +444,8 @@ async function switchReaderMode(mode,options){
      with a near-zero text measurement. Initial presentation owns no new reading
      movement, so preserve the stored position until restoration completes. */
   if(previousMode!==mode && !options.initial) saveReadingState();
-  if(sourceCueBridge){
-    showBridgeSourceCue(sourceCueBridge);
-    document.body.classList.add('reader-mode-transition');
-    const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    await readerModeDelay(reduced ? 180 : 600);
-    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
-  }
+  if(previousMode==='original'&&originalSession?.bookId===curBook.id)
+    originalSession.lastScrollTop=readerScrollTop();
   clearReaderModeCue();
   suspendReaderScrollSave(1400);
   holdReaderPillProgress();
@@ -478,12 +468,19 @@ async function switchReaderMode(mode,options){
      다녀온 사람에게 배율까지 뺏을 이유는 없습니다. */
   if(mode==='text') resetOriginalZoom();
   document.getElementById('readwrap').hidden = mode==='original';
-  document.getElementById('originalwrap').hidden = mode!=='original';
-  /* 숨어 있는 동안에는 잴 것이 없습니다. 드러난 다음 프레임에 한 번 재 둡니다 —
-     확대된 종이가 차지할 자리는 여기서 정해집니다. */
-  if(mode==='original') requestAnimationFrame(layoutOriginalZoom);
+  const originalWrap=document.getElementById('originalwrap');
+  originalWrap.hidden = mode!=='original';
+  const reusedOriginal=mode==='original'&&!options.reload&&originalSession?.bookId===curBook.id
+    &&originalSession.hash===curBook.original?.hash&&originalSession.presented===true;
+  if(mode==='original'&&!reusedOriginal&&(curBook.kind||curBook.original?.kind)==='epub'){originalWrap.dataset.readerPreparing='true';originalWrap.setAttribute('aria-busy','true');}
+  else{delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');}
+  /* Restore the live paper's extent and last position before the first paint.
+     An asynchronous anchor refinement must never expose the cover first. */
+  if(mode==='original'){
+    layoutOriginalZoom();
+    if(reusedOriginal&&Number.isFinite(originalSession.lastScrollTop))readerScrollTo(originalSession.lastScrollTop);
+  }
   updateReaderModeControls();
-  requestAnimationFrame(()=>document.body.classList.remove('reader-mode-transition'));
 
   if(mode==='text'){
     const targetPi = paragraphForSource(curBook,bridge);
@@ -515,9 +512,15 @@ async function switchReaderMode(mode,options){
     return;
   }
 
-  const record = options.record || await originalGetForBook(curBook);
+  const reusable=!options.reload&&originalSession?.bookId===curBook.id
+    &&originalSession.hash===curBook.original?.hash
+    &&document.getElementById('original-content').childElementCount;
+  const record = options.record || (reusable
+    ? {kind:originalSession.kind,hash:originalSession.hash}
+    : await originalGetForBook(curBook));
   if(!record){
     showOriginalReconnect(curBook);
+    delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
     if(options.onPresented) options.onPresented();
     releaseReaderPillProgress(true);
     return;
@@ -545,6 +548,7 @@ async function switchReaderMode(mode,options){
          still a stable and useful fallback. */
       const sentenceFound=await ORIGINAL_FORMATS[record.kind].restoreSentence(
         sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
+      if(changeToken!==readerModeChangeToken||curBook!==bookAtStart||currentReaderMode!=='original')return;
       if(record.kind==='pdf'){
         clearReaderModeCue();
         showPdfParagraphModeCue(sentenceBridge.paragraph,10000,target&&target.page);
@@ -552,7 +556,7 @@ async function switchReaderMode(mode,options){
         const canonical=sourceAnchorForParagraph(curBook,sentenceBridge.paragraph)||target;
         showOriginalLandingCue(record,canonical,sentenceBridge.paragraph);
       }
-    }else if(sourceCueBridge){
+    }else if(returning){
       /* 빠른 왕복에서는 정확한 원본 좌표를 지키려고 문장 재검색을 생략합니다.
          좌표는 건드리지 않고, 그 좌표의 문단만 목적지 표시로 다시 칠합니다. */
       showOriginalLandingCue(record,target);
@@ -560,10 +564,13 @@ async function switchReaderMode(mode,options){
     stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
     suspendReaderScrollSave(500);
     releaseReaderPillProgress();
+    originalSession.presented=true;originalSession.lastScrollTop=readerScrollTop();
+    delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
   }catch(error){
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
     console.error(error);
     showOriginalError(error);
     releaseReaderPillProgress(true);
+    delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
   }
 }

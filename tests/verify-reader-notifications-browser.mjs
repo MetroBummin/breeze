@@ -105,7 +105,11 @@ for(const engine of [chromium,webkit]){
  await page.setViewportSize({width:320,height:740});
  await page.evaluate(()=>{readerNotices.reset();document.getElementById('modefab').hidden=false;toast('무료 체험을 다 썼어요. 로그인하면 계속 쓸 수 있어요');});
  await notice.waitFor({state:'visible'});await page.waitForTimeout(400);
- assert.equal(await notice.evaluate(e=>e.scrollHeight<=e.clientHeight),true,'Notice clipped at narrow Reader width');
+ assert.equal(await notice.evaluate(e=>{
+  const r=e.getBoundingClientRect(),pill=document.getElementById('readpill').getBoundingClientRect(),s=getComputedStyle(e);
+  return r.height<=30&&r.top>=pill.top&&r.bottom<=pill.bottom&&s.webkitLineClamp==='2';
+ }),true,'Long notices retain complete live-region text with a bounded two-line display');
+ assert.equal(await page.locator('#readpill-title').evaluate(e=>getComputedStyle(e).opacity),'0','Title cannot paint under a notice');
  await page.screenshot({path:'/tmp/breeze-notice-'+engine.name()+'.png'});
  assert.deepEqual(errors,[]);
  console.log(engine.name()+': Reader notice FIFO, interruption/resume, lookup/dialog/restore priority, scroll, compact controls, exit, bounds, expiry and visibility passed.');

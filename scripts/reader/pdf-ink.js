@@ -123,17 +123,19 @@ const BreezePdfInk = (()=>{
     for(const record of records){
       const node=record.target;
       if(!(node instanceof Element)||node.closest('.pdf-ink-layer'))continue;
-      const layout=node===document.body||node===document.documentElement
+      const bodyLayout=node===document.body&&(record.attributeName!=='class'||record.oldValue==null
+        ||['reading','reader-original'].some(name=>(' '+record.oldValue+' ').includes(' '+name+' ')!==node.classList.contains(name)));
+      const layout=bodyLayout||node===document.documentElement
         ||node.matches('#v-read,#originalwrap,#original-stage,#original-content,#original-zoom,.pdf-source-page');
       // Canvas/marker insertion does not change paper layout. Aspect ratio,
       // ancestor sizing and page-list changes do.
       if(layout&&(record.type!=='childList'||node.matches('#original-content')))invalidatePageScope();
-      if(layout||node.closest('#v-read,#readchrome')
+      if(node===document.body||layout||node.closest('#v-read,#readchrome')
           ||node.matches('[role=dialog],dialog,#word-modal-scrim,#sentence-scrim,#aa-pop'))refresh=true;
     }
     if(refresh)scheduleNativeScope();
   }).observe(document.documentElement,
-    {subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden','inert']});
+    {subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['class','style','hidden','inert']});
   window.addEventListener('resize',()=>{invalidatePageScope();scheduleNativeScope();});
   document.addEventListener('visibilitychange',()=>{invalidatePageScope();publishNativeScope();});
   // getBoundingClientRect during a CSS transition is an intermediate snapshot.
@@ -141,7 +143,10 @@ const BreezePdfInk = (()=>{
   for(const type of ['transitionend','transitioncancel'])document.addEventListener(type,event=>{
     const target=event.target;
     if(target instanceof Element&&(target===document.body||target===document.documentElement
-        ||target.closest('#v-read,#readchrome'))){invalidatePageScope();scheduleNativeScope();}
+        ||target.closest('#v-read,#readchrome'))){
+      if(!target.closest('#readchrome'))invalidatePageScope();
+      scheduleNativeScope();
+    }
   },true);
   const keyFor=(s,n)=>JSON.stringify([s.hash,n]); // Existing SHA-256 of original bytes.
   const stop=e=>{if(e.cancelable)e.preventDefault();e.stopImmediatePropagation();};
@@ -277,7 +282,10 @@ const BreezePdfInk = (()=>{
     const retry=document.createElement('button');retry.type='button';retry.className='pdf-ink-retry';retry.textContent='저장 재시도';
     retry.onclick=()=>{for(const state of pages.values())if(state.dirty)void persist(state);};
     toolbar.append(status,retry);document.getElementById('readchrome').append(toolbar);
-    new MutationObserver(update).observe(document.body,{attributes:true,attributeFilter:['class']});
+    new MutationObserver(records=>{
+      if(toolbar.hidden===!!visible()||records.some(record=>record.oldValue==null||['reading','reader-original','chrome-hidden'].some(name=>
+        (' '+record.oldValue+' ').includes(' '+name+' ')!==document.body.classList.contains(name))))update();
+    }).observe(document.body,{attributes:true,attributeOldValue:true,attributeFilter:['class']});
   }
   function setMode(next){
     cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false; mode=next;

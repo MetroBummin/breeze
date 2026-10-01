@@ -239,3 +239,9 @@ gating, writing-mode expansion and reduced motion. Browser evidence does not
 establish physical iPhone frame rate.
 
 Task/import/edit dialogs, article preview and Home settings now share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.
+
+## 2026-10-01: reduce Reader transition work
+
+Keep the existing +22 px narrow PDF expanded-pill position and centered collapsed position. Decorative control transitions must not invalidate PDF paper measurements. Original paper-growth and viewport watchers share one EPUB frame layout, coalescing paper growth in a frame and writing sizes only when changed; PDF viewport changes settle immediately to preserve pinch and rotation coordinates; hidden originals are skipped. Cached mode returns restore scroll synchronously before presenting the source.
+
+Window resize no longer independently restores the Reader anchor. Text/EPUB width restoration stays with the Reader width observer; PDF viewport restoration stays with its paper observer. PDF width changes use the logical page anchor as well as rotation. Three competing original restorations caused scroll writes during newly started pinches.

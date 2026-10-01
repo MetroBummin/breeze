@@ -206,7 +206,7 @@ async function renderOriginalBook(book,record){
 }
 
 function leaveOriginalReader(){
-  if(typeof closePdfNavigation==='function')closePdfNavigation();
+  if(typeof closePdfNavigation==='function')closePdfNavigation({release:true});
   originalLoadToken++;
   originalOpenJob=null;
   lastOriginalAnchor=null;

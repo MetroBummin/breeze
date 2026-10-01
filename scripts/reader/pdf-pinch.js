@@ -42,7 +42,6 @@ function readerManipulationConsumes(event){
 }
 function originalPinchTarget(target){
   if(!originalZoomActive() || !target || typeof target.closest !== 'function') return false;
-  if(document.body.classList.contains('reader-mode-transition')) return false;
   if(sentenceModalOpen() || wordModalCovers() || aaPopOpen()) return false;
   return !!target.closest('#original-stage');
 }
@@ -67,7 +66,7 @@ function beginOriginalPinch(center, distance, ids){
   const level = originalZoom();
   originalPinch = {
     box, layer, stage, outer, origin, distance, ids, level, next:level,
-    width:box.clientWidth, height:originalZoomBaseHeight,
+    width:box.clientWidth, viewportHeight:box.clientHeight, height:originalZoomBaseHeight,
     trailing:Math.max(0,box.scrollHeight-origin.y-originalZoomBaseHeight*level),
     paper:{x:(box.scrollLeft+center.x-outer.left-origin.x)/level,
            y:(box.scrollTop+center.y-outer.top-origin.y)/level},
