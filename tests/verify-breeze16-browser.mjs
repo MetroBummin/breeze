@@ -109,7 +109,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.locator('.pdf-thumbnail-jump[aria-label="60페이지로 이동"] canvas').waitFor();
   const ribbonOffset=await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').evaluate(button=>{
     const ribbon=button.getBoundingClientRect(),paper=button.closest('.pdf-thumbnail').querySelector('.pdf-thumbnail-paper').getBoundingClientRect();
-    return {x:ribbon.left-paper.left,y:ribbon.top-paper.top};
+    return {x:ribbon.right-paper.right,y:ribbon.top-paper.top};
   });
   assert.ok(Math.abs(ribbonOffset.x)<1&&Math.abs(ribbonOffset.y)<1,`Bookmark ribbon aligns with paper: ${JSON.stringify(ribbonOffset)}`);
   assert.ok(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)));

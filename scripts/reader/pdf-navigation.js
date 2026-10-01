@@ -139,32 +139,34 @@ function togglePdfNavigation(){
   pinReaderChrome(true,'page-navigation');
   if(currentEpubNavigationSession())buildEpubNavigation();else buildPdfNavigation(true);
 }
-/* EPUB has flowing source pages. Slice its already-laid-out source into reader-
-   sized pages; preview only the nearby slices, retaining publisher typography. */
+/* EPUB has flowing source pages. A book-shaped slice (1:sqrt(2)) fills the
+   sidebar without turning tall phone viewports into narrow thumbnail strips.
+   This is navigation pagination only; publisher layout stays untouched. */
+const EPUB_NAV_PAGE_RATIO=Math.SQRT2;
 function epubNavigationCurrentPage(nav){
   const inset=topInset(),spine=nav.session.navigationSpine??0;
   const frame=nav.session.frames[spine];
   const offset=Math.max(0,(inset-(frame?.getBoundingClientRect().top||0))/originalZoom());
-  const local=Math.floor(offset/nav.pageHeight);
+  const local=Math.floor(offset/(nav.pageHeights[spine]||1));
   const first=nav.firstPages[spine]??0;
   return Math.min(nav.pages.length,Math.max(1,first+local+1));
 }
 function buildEpubNavigation(focusCurrent=true){
   const nav=pdfNavigation;if(!nav||!currentEpubNavigationSession())return;
-  const pageHeight=nav.session.viewport.height;
-  const signature=nav.session.frames.map(frame=>frame?`${frame.clientWidth}:${frame.clientHeight}`:'').join('|')+':'+pageHeight;
+  const signature=nav.session.frames.map(frame=>frame?`${frame.clientWidth}:${frame.clientHeight}`:'').join('|');
   if(nav.signature!==signature){
-    nav.signature=signature;nav.pageHeight=pageHeight;nav.pages=[];nav.firstPages=[];nav.previewHtml=new Map();
+    nav.signature=signature;nav.pageHeights=[];nav.pages=[];nav.firstPages=[];nav.previewHtml=new Map();
     nav.session.frames.forEach((frame,spine)=>{
-      if(!frame)return;nav.firstPages[spine]=nav.pages.length;
+      if(!frame||!frame.clientWidth)return;nav.firstPages[spine]=nav.pages.length;
+      const pageHeight=frame.clientWidth*EPUB_NAV_PAGE_RATIO;nav.pageHeights[spine]=pageHeight;
       for(let y=0;y<frame.clientHeight;y+=pageHeight)nav.pages.push({spine,y,width:frame.clientWidth,height:frame.clientHeight});
     });
     nav.strip.replaceChildren();nav.track=document.createElement('div');nav.track.className='pdf-thumbnail-track';nav.strip.append(nav.track);
   }
   const width=Math.max(44,nav.strip.clientWidth-8),first=epubNavigationCurrentPage(nav);
   const widthChanged=nav.width!==width;nav.width=width;
-  nav.previewWidth=Math.min(width,180*nav.session.viewport.width/pageHeight);
-  nav.cellHeight=nav.previewWidth*pageHeight/nav.session.viewport.width+20;
+  nav.previewWidth=width;
+  nav.cellHeight=width*EPUB_NAV_PAGE_RATIO+20;
   nav.track.style.height=`${nav.pages.length*nav.cellHeight}px`;
   if(widthChanged)nav.track.replaceChildren();
   if(focusCurrent)nav.strip.scrollTop=(first-1)*nav.cellHeight;
@@ -177,7 +179,7 @@ function paintEpubThumbnails(){
   for(const cell of [...nav.track.children])if(+cell.dataset.index<start||+cell.dataset.index>=end)cell.remove();
   for(let i=start;i<end;i++){
     if(nav.track.querySelector(`[data-index="${i}"]`))continue;
-    const page=nav.pages[i],source=nav.session.frames[page.spine],scale=nav.previewWidth/page.width;
+    const page=nav.pages[i],source=nav.session.frames[page.spine];
     const cell=document.createElement('div');cell.className='pdf-thumbnail';cell.dataset.index=String(i);
     cell.style.top=`${i*nav.cellHeight}px`;cell.style.height=`${nav.cellHeight-8}px`;
     const holder=document.createElement('div');holder.className='pdf-thumbnail-frame';
@@ -191,24 +193,48 @@ function paintEpubThumbnails(){
       nav.session.navigationSpine=page.spine;saveReadingState();updatePfill(true);updatePdfNavigationControls();
     };
     const paper=document.createElement('div');paper.className='pdf-thumbnail-paper epub-thumbnail-paper';
-    paper.style.width=`${nav.previewWidth}px`;paper.style.height=`${nav.pageHeight*scale}px`;
-    const preview=document.createElement('iframe');preview.className='epub-page-preview';preview.tabIndex=-1;preview.setAttribute('aria-hidden','true');
-    preview.setAttribute('sandbox','allow-same-origin');preview.setAttribute('scrolling','no');
-    preview.style.width=`${page.width}px`;preview.style.height=`${page.height}px`;
-    preview.style.transform=`translateY(${-page.y*scale}px) scale(${scale})`;
-    if(!nav.previewHtml.has(page.spine)){
-      const root=source.contentDocument.documentElement.cloneNode(true);
-      root.querySelectorAll('.original-selection-marker,script').forEach(node=>node.remove());
-      [...root.querySelectorAll('style')].forEach((style,index)=>{
-        try{style.textContent=[...source.contentDocument.querySelectorAll('style')[index].sheet.cssRules].map(rule=>rule.cssText).join('\n');}catch(error){}
-      });
-      nav.previewHtml.set(page.spine,'<!doctype html>'+root.outerHTML);
-    }
-    preview.srcdoc=nav.previewHtml.get(page.spine);
-    paper.append(preview);const label=document.createElement('span');label.textContent=String(i+1);
+    paper.style.width=`${nav.previewWidth}px`;paper.style.height=`${nav.previewWidth*EPUB_NAV_PAGE_RATIO}px`;
+    const label=document.createElement('span');label.textContent=String(i+1);
     jump.append(paper,label);holder.append(jump);cell.append(holder);nav.track.append(cell);
   }
+  void renderEpubPreviewQueue(nav);
 }
+/* Let the shared sidebar land before laying out publisher documents. One
+   visible preview per turn keeps navigation responsive; close/reopen cancels
+   stale work through the same generation used by PDF rendering. */
+async function renderEpubPreviewQueue(nav){
+  if(nav.previewRendering)return;
+  nav.previewRendering=true;
+  const generation=nav.generation;
+  try{
+    await Promise.allSettled(document.getElementById('pdf-page-control').getAnimations().map(animation=>animation.finished));
+    while(pdfNavigation===nav&&nav.generation===generation){
+      const paper=nav.track.querySelector('.epub-thumbnail-paper:not(:has(iframe))');
+      if(!paper)break;
+      const page=nav.pages[+paper.closest('.pdf-thumbnail').dataset.index];
+      const source=nav.session.frames[page.spine],scale=nav.previewWidth/page.width;
+      const preview=document.createElement('iframe');preview.className='epub-page-preview';preview.tabIndex=-1;preview.setAttribute('aria-hidden','true');
+      preview.setAttribute('sandbox','allow-same-origin');preview.setAttribute('scrolling','no');
+      preview.style.width=`${page.width}px`;preview.style.height=`${page.height}px`;
+      preview.style.transform=`translateY(${-page.y*scale}px) scale(${scale})`;
+      if(!nav.previewHtml.has(page.spine)){
+        const root=source.contentDocument.documentElement.cloneNode(true);
+        root.querySelectorAll('.original-selection-marker,script').forEach(node=>node.remove());
+        [...root.querySelectorAll('style')].forEach((style,index)=>{
+          try{style.textContent=[...source.contentDocument.querySelectorAll('style')[index].sheet.cssRules].map(rule=>rule.cssText).join('\n');}catch(error){}
+        });
+        nav.previewHtml.set(page.spine,'<!doctype html>'+root.outerHTML);
+      }
+      preview.srcdoc=nav.previewHtml.get(page.spine);
+      paper.append(preview);
+      await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+    }
+  }finally{
+    nav.previewRendering=false;
+    if(pdfNavigation===nav&&nav.generation!==generation)void renderEpubPreviewQueue(nav);
+  }
+}
+
 function buildPdfNavigation(focusCurrent){
   const nav=pdfNavigation;if(!nav)return;
   pdfNavigationTask?.cancel();pdfNavigationTask=null;nav.generation=++pdfNavigationGeneration;
@@ -293,7 +319,7 @@ function paintPdfThumbnails(){
 }
 function alignPdfBookmark(cell){
   const paper=cell.querySelector('.pdf-thumbnail-paper'),bookmark=cell.querySelector('.pdf-thumbnail-bookmark');
-  if(paper&&bookmark)bookmark.style.left=`${paper.getBoundingClientRect().left-cell.querySelector('.pdf-thumbnail-frame').getBoundingClientRect().left}px`;
+  if(paper&&bookmark)bookmark.style.right=`${cell.querySelector('.pdf-thumbnail-frame').getBoundingClientRect().right-paper.getBoundingClientRect().right}px`;
 }
 async function renderPdfThumbnailQueue(nav){
   if(nav.rendering)return;nav.rendering=true;

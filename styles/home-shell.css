@@ -87,7 +87,7 @@ body:has(:is(#v-home,#v-casuals,#v-longform).on) #home-controls{display:block;}
 #v-casuals h1,#v-longform h1{font:600 22px/30px var(--ui);letter-spacing:0;color:var(--settings-ink);}
 #v-casuals,#v-longform{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
 /* Animate the surface boundary; the words inside never stretch into a page. */
-html:is(.home-resuming,.home-returning){--home-morph-duration:.48s;--home-morph-ease:cubic-bezier(.18,.86,.22,1);}
+html:is(.home-resuming,.home-returning){--home-morph-duration:.48s;--home-morph-ease:cubic-bezier(.32,.72,0,1);}
 html.home-returning{--home-morph-duration:.44s;}
 html.home-resuming::view-transition-new(root){animation:home-glass-open var(--home-morph-duration) var(--home-morph-ease) both;mix-blend-mode:normal;}
 html.home-resuming::view-transition-old(root){animation:none;opacity:1;mix-blend-mode:normal;}
@@ -121,7 +121,8 @@ html:is(.home-resuming,.home-returning)::view-transition-group(reader-control){
   z-index:3;animation-duration:var(--home-morph-duration);animation-timing-function:var(--home-morph-ease);
 }
 html:is(.home-resuming,.home-returning)::view-transition-old(reader-control),
-html:is(.home-resuming,.home-returning)::view-transition-new(reader-control){animation-duration:.16s;mix-blend-mode:normal;}
+html:is(.home-resuming,.home-returning)::view-transition-new(reader-control){animation-duration:.16s;mix-blend-mode:normal;object-fit:none;object-position:center;}
+html:is(.home-resuming,.home-returning)::view-transition-image-pair(reader-control){overflow:clip;border-radius:24px;}
 
 /* Shelf headings and cards share one left edge and vertical rhythm. */
 #v-casuals .casual-library-head,#v-longform .head{margin:0;gap:10px;}

@@ -114,7 +114,7 @@ test('late Reader preparation cannot replace a newer selection',async()=>{
   let release;const delayed=new Promise(resolve=>release=resolve),shown=[];
   const values={readerOpenIntent:0,readerModeChangeToken:0,onboardingOwnsReader:()=>false,closeSentence(){},canReuseReader:()=>false,releaseRetainedReader(){},leaveOriginalReader(){},repairBookLigatures:b=>b.id==='a'?delayed:Promise.resolve(),curBook:null,setReaderPillProgress(){},posOf:()=>({}),
     document:{querySelectorAll:()=>[],getElementById(id){return {classList:{add(){},remove(){}},set textContent(v){shown.push(v);},setAttribute(){},hidden:false};},body:{classList:{add(){},remove(){}}},documentElement:{classList:{add(){}}}},
-    warmDict(){},renderReaderAttribution(){},rssDate:()=>'',showReaderChrome(){},renderBookBody(){},positions:{},save(){},LS_POS:'pos',updateReaderModeControls(){},bookSupportsOriginal:()=>false,requestAnimationFrame:fn=>{fn();},restoreAnchor:()=>false,readerScrollTo(){},captureAnchor:()=>null,updatePfill(){}};
+    warmDict(){},renderReaderAttribution(){},rssDate:()=>'',showReaderChrome(){},renderBookBody(){},positions:{},save(){},LS_POS:'pos',HOME_RESUME_KEY:'breeze.home-resume.v1',updateReaderModeControls(){},bookSupportsOriginal:()=>false,requestAnimationFrame:fn=>{fn();},restoreAnchor:()=>false,readerScrollTo(){},captureAnchor:()=>null,updatePfill(){}};
   const c=world(functions('scripts/reader/reader.js',['openBook']),values);
   const a=c.openBook({id:'a',title:'A'});await c.openBook({id:'b',title:'B'});release();await a;assert.equal(c.curBook.id,'b');assert.ok(!shown.includes('A'));
 });

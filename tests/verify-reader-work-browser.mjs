@@ -90,10 +90,12 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(stars.selectionUnchanged,true,'Selected blue paint must not become saved yellow or transparent');
   await page.evaluate(()=>{closePanel();expandReaderChrome();});
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'EPUB original exposes page previews');
-  await page.locator('#pdf-page-button').click();
+  const eagerPreviews=await page.evaluate(()=>{togglePdfNavigation();return document.querySelectorAll('.epub-page-preview').length;});
+  assert.equal(eagerPreviews,0,'Opening must present the shared sidebar before creating EPUB documents');
   const epubPages=await page.evaluate(()=>pdfNavigation.pages.length);
   assert.ok(epubPages>2,'Flowing chapters must produce multiple reader-sized page previews');
-  await page.waitForFunction(()=>[...document.querySelectorAll('.epub-page-preview')].every(frame=>frame.contentDocument?.body?.textContent.trim()));
+  await page.waitForFunction(()=>document.querySelectorAll('.epub-page-preview').length>0&&!pdfNavigation.previewRendering&&[...document.querySelectorAll('.epub-page-preview')].every(frame=>frame.contentDocument?.body?.textContent.trim()));
+  assert.ok(await page.locator('#pdf-navigation-toggle').evaluate(button=>{const r=button.getBoundingClientRect(),h=button.parentElement.getBoundingClientRect();return Math.abs(r.right-h.right)<1;}),'EPUB collapse control shares the PDF right-hand header position');
   assert.equal(await page.locator('#pdf-bookmarks-only').isVisible(),false);
   assert.equal(await page.locator('#aa-pdf-direction').isVisible(),false);
   const previewReuse=await page.evaluate(()=>{
@@ -113,6 +115,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.ok(await page.evaluate(()=>pdfNavigation.track.querySelectorAll('iframe').length<=Math.ceil(pdfNavigation.strip.clientHeight/pdfNavigation.cellHeight)+3),'Only nearby page previews exist');
   for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);await page.waitForTimeout(240);
+   assert.ok(await page.locator('.epub-thumbnail-paper').first().evaluate(paper=>{
+     const r=paper.getBoundingClientRect(),strip=document.getElementById('pdf-thumbnail-strip').getBoundingClientRect();
+     return Math.abs(r.height/r.width-Math.SQRT2)<.02&&r.width/strip.width>.9;
+   }),'EPUB slices fill the sidebar width with book-page proportions');
    const box=await page.locator('#pdf-page-navigation').boundingBox();
    assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,'EPUB page sidebar stays inside the viewport');
    await page.screenshot({path:`/tmp/breeze209-epub-${engine.name()}-${width}-${dark?'dark':'light'}.png`});
@@ -152,6 +158,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true])for(const writing of [false,true])for(const hidden of [false,true]){
    await page.setViewportSize({width,height});
    await page.evaluate(d=>{darkMode=d;applyDark();},dark);
+   // Viewport restoration closes stale lookup state; admit the new request after it settles.
+   await page.waitForTimeout(240);
    await page.evaluate(({writing,hidden})=>{closeSentence();expandReaderChrome();if(document.getElementById('readpill').classList.contains('ink-pill-active')!==writing)document.querySelector('[data-ink-toggle]').click();if(!writing)setReaderChrome(hidden);togglePdfNavigation();beginSentenceWaiting();},{writing,hidden});
    await page.waitForFunction(()=>document.body.classList.contains('sentence-pill-waiting'));
    await page.waitForTimeout(320);

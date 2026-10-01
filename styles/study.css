@@ -40,7 +40,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
 .pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;}
 .pdf-navigation-head>button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-#pdf-navigation-toggle{background:var(--sentence-glass-action);}
+#pdf-navigation-toggle{margin-left:auto;background:var(--sentence-glass-action);}
 #pdf-navigation-toggle svg{width:22px;height:22px;stroke-width:2;}
 #pdf-bookmarks-only svg{width:20px;height:26px;stroke-width:1.8;}
 #pdf-bookmarks-only[aria-pressed=true]{background:var(--sentence-glass-action);}
@@ -72,7 +72,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
 .pdf-thumbnail-jump canvas{display:block;max-width:100%;object-fit:contain;}
 .pdf-thumbnail-jump span{font:500 9px var(--ui);line-height:12px;color:var(--sentence-glass-muted);}
-.pdf-thumbnail-bookmark{position:absolute;left:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
+.pdf-thumbnail-bookmark{position:absolute;right:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
 .pdf-thumbnail-bookmark svg{width:20px;height:28px;fill:var(--sentence-glass-solid);stroke:currentColor;stroke-width:1.8;}
 .pdf-thumbnail-bookmark[aria-pressed=true]{color:var(--bookmark-ink);}
 .pdf-thumbnail-bookmark[aria-pressed=true] svg{fill:currentColor;}
@@ -144,4 +144,5 @@ body.sentence-pill-waiting #readchrome #readpill{left:0;right:0;--reader-pill-ma
 body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-pill-mini){display:none!important;}
 #pdf-bookmarks-only[hidden]{display:none;}
 
+.epub-thumbnail-paper{border-radius:6px;}
 .epub-page-preview{position:absolute;left:0;top:0;border:0;pointer-events:none;transform-origin:top left;}

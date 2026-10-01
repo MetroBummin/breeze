@@ -113,7 +113,7 @@ aspect ratio, fitting the strip width and 180px maximum height. Do not crop pape
 inside a fixed-height button. Variable-height virtual slots follow each source
 aspect ratio, with a 12px number line and 8px gap; there is no artificial trailing
 blank viewport. Page labels remain a 9px secondary line. Bookmark
-targets align to the paper top and left after rendering and container resizing.
+targets align to the paper top and right after rendering and container resizing.
 Sidebar closing uses the same fixed geometry as opening and releases inert
 content after its 220ms exit. Rapid reopening cancels pending cleanup.
 The writing pill remains on the bottom row, narrows between the side slots,
@@ -134,6 +134,23 @@ EPUB star visibility uses one persistent highlight stylesheet and changed-only r
 
 ## EPUB original page previews (209)
 
-The shared original-navigation entry exposes the same visual page sidebar for EPUB and PDF. EPUB source layout is sliced at the stable Reader viewport height; page numbers describe the current layout rather than publisher-fixed pagination. Selecting a preview scrolls to that exact source slice. Publisher typography and images come from the already-sanitized source documents; no source Blob reread, extraction or render library is added. Only visible slices plus one neighbor on each side instantiate sandboxed, inert preview frames. Cached source markup and loaded previews are reused until source geometry changes, and session release clears ownership. Chapter headings are not used as the navigation UI.
+The shared original-navigation entry exposes the same visual page sidebar for EPUB and PDF. EPUB source layout is sliced at each chapter width times sqrt(2); page numbers describe the current layout rather than publisher-fixed pagination. Selecting a preview scrolls to that exact source slice. Publisher typography and images come from the already-sanitized source documents; no source Blob reread, extraction or render library is added. Only visible slices plus one neighbor on each side instantiate sandboxed, inert preview frames. Cached source markup and loaded previews are reused until source geometry changes, and session release clears ownership. Chapter headings are not used as the navigation UI.
 
 PDF-specific bookmarks, deletion and direction controls remain hidden on EPUB. Existing measured EPUB anchors supply the current spine without another source anchor capture. Frame geometry changes coalesce sidebar layout into one animation frame; source width/height changes invalidate slices and rotation updates page numbering.
+
+## Shared sidebar presentation (210)
+
+PDF bookmark ribbons and their 44px targets align inside the paper's upper-right
+edge. EPUB keeps the same right-aligned collapse control even without the PDF
+bookmark filter. Both formats retain the existing sidebar surface and motion.
+EPUB lays out preview placeholders first, waits for the sidebar entrance to
+finish, then creates one nearby source preview per frame. Close/reopen cancels
+stale work by generation; loaded previews remain reusable in the live session.
+
+EPUB navigation slices use a 1:sqrt(2) paper aspect ratio, independent of tall
+phone viewport proportions. Each thumbnail uses the strip width minus 8px,
+with a 12px number line, 8px inter-page gap and 6px paper corners. The source
+chapter remains continuous; preview clicks and current-page detection use the
+same per-chapter slice height. The last slice retains paper proportions. PDF
+keeps its existing uncropped source aspect ratios. This follows the supplied
+Apple Preview reference without scaling or reflowing the reading document.

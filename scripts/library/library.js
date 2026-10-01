@@ -917,10 +917,14 @@ async function importFile(file, extra, options={}){
   }
 }
 
-/* Reuse the existing saved progress timestamps; do not create a second reading history. */
+/* Opening a book is local navigation, not a newer cloud progress position. */
+const HOME_RESUME_KEY='breeze.home-resume.v1';
 function homeResumeBook(){
-  const id=nowReadingIn(books);
-  return books.find(book=>book.id===id) || null;
+  const localId=load(HOME_RESUME_KEY,null);
+  const local=books.find(book=>book.id===localId);
+  if(local)return local;
+  const fallbackId=nowReadingIn(books);
+  return books.find(book=>book.id===fallbackId) || null;
 }
 function renderHomeResume(){
   const book=homeResumeBook();
