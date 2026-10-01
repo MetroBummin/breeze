@@ -284,3 +284,19 @@ animation checks do not establish physical-device frame pacing.
 ## Build 211: matte Home settings
 
 Home settings intentionally use the opaque `--settings-sheet-surface` token (light `#F2F2F7`, dark `#2C2C2E`). Covers showing through the full-height sheet distracted from settings. Remove this sheet from shared glass selectors instead of adding another blur/reflection override. `styles/home-shell.css` owns the fill; `styles/tokens.css` owns its theme values. Reader Aa, bottom controls and other dialogs retain their existing glass.
+
+## Prevent rectangular capsule backdrops (215)
+
+The browser-generated `reader-control` group animation transfers the live pill's
+backdrop filter to the rectangular transition group. Rounding its child image
+pair does not constrain that outer filter, leaving a brief rectangular patch in
+both navigation directions. Disable the group's additional backdrop filter with
+an important declaration, which takes precedence over generated keyframes.
+Keep the glass inside the captured capsule, intrinsic text, rounded image pair,
+soft outer shadow, timing, and live control material unchanged. Do not clip the
+whole group: doing so also cuts off the approved shadow.
+
+Browser coverage samples both directions, themes and viewport sizes, checks the
+animated filter and settled controls, and compares painted capsule corners with
+the underlying scene. Linux WebKit cannot establish physical iPhone rendering;
+real-device confirmation remains separate from these browser checks.
