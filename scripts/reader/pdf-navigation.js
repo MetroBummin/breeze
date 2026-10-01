@@ -80,7 +80,6 @@ async function setPdfReadDirection(direction){
   if(!persistStudyPrefs({...studyPrefs,direction}))return;
   if(anchor){const token=++readerModeChangeToken;applyPdfDirection(session,anchor.page);await restorePdfAnchor(anchor,topInset(),token);}
   if(currentPdfSession(session)){saveReadingState();updatePfill(true);}
-  if(direction==='horizontal')toast('스와이프나 ← →로 넘겨요.');
 }
 async function goPdfPage(n,{keepNavigation=false}={}){
   const session=originalSession;
@@ -143,7 +142,7 @@ function closePdfNavigation({release=false}={}){
   pdfNavigationGeneration++;pdfNavigationTask?.cancel();pdfNavigationTask=null;
   const panel=document.getElementById('pdf-page-navigation'),control=document.getElementById('pdf-page-control');
   const nav=pdfNavigation,strip=nav.strip,restoreFocus=panel.contains(document.activeElement);
-  nav.generation=pdfNavigationGeneration;
+  nav.generation=pdfNavigationGeneration;nav.contact=null;
   for(const cell of strip.querySelectorAll('.pdf-thumbnail[data-rendered]'))if(!cell.querySelector('canvas'))delete cell.dataset.rendered;
   if(release)nav.session.navigationPreview=null;
   control.classList.add('pdf-navigation-closing');panel.inert=true;
@@ -183,12 +182,16 @@ function epubNavigationCurrentPage(nav){
   const inset=topInset(),spine=nav.session.navigationSpine??0;
   const frame=nav.session.frames[spine];
   const offset=Math.max(0,(inset-(frame?.getBoundingClientRect().top||0))/originalZoom());
-  const local=Math.floor(offset/(nav.pageHeights[spine]||1));
+  // WebKit scroll offsets can truncate a CSS pixel below the requested slice.
+  const local=Math.floor((offset+1/originalZoom())/(nav.pageHeights[spine]||1));
   const first=nav.firstPages[spine]??0;
   return Math.min(nav.pages.length,Math.max(1,first+local+1));
 }
 function buildEpubNavigation(focusCurrent=true){
   const nav=pdfNavigation;if(!nav||!currentEpubNavigationSession())return;
+  // Reflow must not remove the button between contact down and its click.
+  if(nav.contact!=null){nav.needsLayout={focusCurrent:focusCurrent||!!nav.needsLayout?.focusCurrent};return;}
+  nav.needsLayout=null;
   const signature=nav.session.frames.map(frame=>frame?`${frame.clientWidth}:${frame.clientHeight}`:'').join('|');
   if(nav.signature!==signature){
     nav.signature=signature;nav.pageHeights=[];nav.pages=[];nav.firstPages=[];nav.previewHtml=new Map();
@@ -221,26 +224,63 @@ function buildEpubNavigation(focusCurrent=true){
   for(const cell of nav.track.children)cell.querySelector('.pdf-thumbnail-bookmark')?.setAttribute('aria-pressed',String(nav.bookmarkPages.has(+cell.dataset.pageIndex)));
   paintEpubThumbnails();updatePdfNavigationControls();
 }
+// One source slice, one bounded motion. A newer selection or user scroll wins.
+async function goEpubNavigationPage(nav,index){
+  if(pdfNavigation!==nav||!currentEpubNavigationSession())return;
+  const page=nav.pages[index],source=page&&nav.session.frames[page.spine];if(!source)return;
+  const session=nav.session,token=++readerModeChangeToken;
+  if(typeof closePanel==='function')closePanel();
+  session.pendingAnchor=null;
+  const start=readerScrollTop(),target=Math.max(0,Math.min(readerContentHeight()-readerViewHeight(),
+    start+source.getBoundingClientRect().top+page.y*originalZoom()-topInset()));
+  const current=()=>session===originalSession&&currentReaderMode==='original'&&token===readerModeChangeToken;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)readerScrollTo(target);
+  else await new Promise(resolve=>{
+    const began=performance.now();let applied=start;
+    const step=now=>{
+      if(!current()||!!activeGesture||Math.abs(readerScrollTop()-applied)>2){resolve();return;}
+      const t=Math.min(1,(now-began)/200);
+      readerScrollTo(start+(target-start)*(1-Math.pow(1-t,3)));applied=readerScrollTop();
+      if(t<1)requestAnimationFrame(step);else resolve();
+    };requestAnimationFrame(step);
+  });
+  if(!current())return;
+  // Capture where the motion actually ended if direct input interrupted it.
+  session.navigationSpine=page.spine;saveReadingState();updatePfill(true);updatePdfNavigationControls();
+}
+function installEpubNavigationContact(){
+  const strip=document.getElementById('pdf-thumbnail-strip');
+  strip.addEventListener('pointerdown',event=>{
+    const nav=pdfNavigation;if(nav?.session.kind==='epub'&&event.isPrimary!==false)nav.contact={id:event.pointerId};
+  },{capture:true,passive:true});
+  const finish=event=>{
+    const nav=pdfNavigation,contact=nav?.contact;if(!contact||contact.id!==event.pointerId)return;
+    // The click belongs to the pressed button before deferred reflow/virtualization.
+    requestAnimationFrame(()=>{
+      if(pdfNavigation!==nav||nav.contact!==contact)return;
+      nav.contact=null;
+      if(nav.needsLayout){const focus=nav.needsLayout.focusCurrent;nav.needsLayout=null;buildEpubNavigation(focus);}
+      else paintEpubThumbnails();
+    });
+  };
+  document.addEventListener('pointerup',finish,{capture:true,passive:true});
+  document.addEventListener('pointercancel',finish,{capture:true,passive:true});
+}
 function paintEpubThumbnails(){
   const nav=pdfNavigation;if(!nav||nav.session.kind!=='epub'||!nav.track)return;
+  if(nav.contact!=null)return;
   const start=Math.max(0,Math.floor(nav.strip.scrollTop/nav.cellHeight)-1);
   const end=Math.min(nav.visiblePages.length,Math.ceil((nav.strip.scrollTop+nav.strip.clientHeight)/nav.cellHeight)+1);
   for(const cell of [...nav.track.children])if(+cell.dataset.index<start||+cell.dataset.index>=end)cell.remove();
   for(let i=start;i<end;i++){
     if(nav.track.querySelector(`[data-index="${i}"]`))continue;
-    const pageIndex=nav.visiblePages[i],page=nav.pages[pageIndex],source=nav.session.frames[page.spine];
+    const pageIndex=nav.visiblePages[i],page=nav.pages[pageIndex];
     const cell=document.createElement('div');cell.className='pdf-thumbnail';cell.dataset.index=String(i);cell.dataset.pageIndex=String(pageIndex);
     cell.style.top=`${i*nav.cellHeight}px`;cell.style.height=`${nav.cellHeight-8}px`;
     const holder=document.createElement('div');holder.className='pdf-thumbnail-frame';
     const jump=document.createElement('button');jump.type='button';jump.className='pdf-thumbnail-jump';jump.dataset.epubPage=String(pageIndex+1);
     jump.setAttribute('aria-label',`${pageIndex+1}페이지로 이동`);jump.setAttribute('aria-current',String(pageIndex+1===epubNavigationCurrentPage(nav)));
-    jump.onclick=()=>{
-      if(pdfNavigation!==nav||!currentEpubNavigationSession())return;
-      ++readerModeChangeToken;
-      if(typeof closePanel==='function')closePanel();
-      readerScrollTo(readerScrollTop()+source.getBoundingClientRect().top+page.y*originalZoom()-topInset());
-      nav.session.navigationSpine=page.spine;saveReadingState();updatePfill(true);updatePdfNavigationControls();
-    };
+    jump.onclick=()=>void goEpubNavigationPage(nav,pageIndex);
     const paper=document.createElement('div');paper.className='pdf-thumbnail-paper epub-thumbnail-paper';
     paper.style.width=`${nav.previewWidth}px`;paper.style.height=`${nav.previewWidth*EPUB_NAV_PAGE_RATIO}px`;
     const label=document.createElement('span');label.textContent=String(pageIndex+1);
@@ -262,7 +302,7 @@ async function renderEpubPreviewQueue(nav){
   const generation=nav.generation;
   try{
     await Promise.allSettled(document.getElementById('pdf-page-control').getAnimations().map(animation=>animation.finished));
-    while(pdfNavigation===nav&&nav.generation===generation){
+    while(pdfNavigation===nav&&nav.generation===generation&&nav.contact==null){
       const paper=nav.track.querySelector('.epub-thumbnail-paper:not(:has(iframe))');
       if(!paper)break;
       const page=nav.pages[+paper.closest('.pdf-thumbnail').dataset.pageIndex];
@@ -465,7 +505,7 @@ function installPdfNavigationScrollbar(){
   });
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  installPdfNavigationScrollbar();
+  installPdfNavigationScrollbar();installEpubNavigationContact();
   document.addEventListener('click',event=>{
     if(event.target instanceof Element&&event.target.closest('#aafab,#pdf-ink-tools,[data-ink-toggle]'))closePdfNavigation();
   },true);

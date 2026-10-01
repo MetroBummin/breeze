@@ -48,4 +48,25 @@ ingestion, storage, Home/Reader and ink regression suites.
 
 ## 2026-10-01: stable in-pill notices
 
-Guide notices remain in the bottom-center pill and its existing queue. The title becomes transparent while one absolute notice occupies a bounded two-line area; long visual messages are clamped while the live region retains the complete text. Horizontal-reading guidance is concise. Selecting the active direction is a no-op, avoiding duplicate layout and notices.
+In build 211, guide notices remained in the bottom-center pill and its existing queue. The title becomes transparent while one absolute notice occupies a bounded two-line area; long visual messages are clamped while the live region retains the complete text. Horizontal-reading guidance is concise. Selecting the active direction is a no-op, avoiding duplicate layout and notices.
+
+## Stable input targets (212)
+
+Horizontal direction selection no longer queues swipe/arrow guidance: the selected
+control and document already show the mode. In 211 the queued hint appeared after
+Aa closed. Notices used fixed offsets over the entire pill, while the title
+faded for 180ms and compact notices changed pill width/height. An invisible short
+title also did not own the full visible notice area.
+
+`#reader-pill-copy` now owns one flexible title slot between mode and ink entry.
+Remove the ink-title opacity transition as well: its more specific CSS rule
+otherwise fades the title beneath the first notice paint. Notices are absolute
+inside that slot, remain pointer-transparent, and replace
+the title before first paint. The existing title button fills the slot and keeps
+its action/accessible name. Showing, interrupting and hiding a notice never
+resizes the pill or its controls. Writing and sentence waiting hide the entire
+copy slot. Queue priority, plain-text live regions and Home notices are unchanged.
+
+Run notification and shared-control regressions plus
+`tests/verify-reader-notice-controls-browser.mjs`: trusted Aa/mode taps and edge
+taps on compact notices at five sizes in both themes and browser engines.
