@@ -191,3 +191,9 @@ length; source text, sandboxing, numbered slices and navigation are unchanged.
 Long-chapter regressions verify actual colored pixels on pages 43, 44 and 45 in
 Chromium and WebKit. This is constructed-book evidence, not reproduction with
 the user's original EPUB, which was not supplied.
+
+A second blank-page cause was the source frame's old height: scrollHeight is
+never less than its browsing viewport, so wider reflow could not shrink a chapter.
+For viewport-independent chapters, reset that floor once per changed width
+before measuring actual content. No reset runs on ordinary scroll or unchanged
+width. A regression widens a wrapping chapter and rejects the old empty tail.

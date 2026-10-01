@@ -122,6 +122,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.locator('.pdf-thumbnail').count(),1,'Reflow keeps the bookmarked source location');
   await page.waitForFunction(()=>pdfNavigation?.track.firstElementChild && +pdfNavigation.track.firstElementChild.dataset.pageIndex===epubBookmarkPage(pdfNavigation,readEpubBookmarks(originalSession)[0]));
   assert.equal(await page.evaluate(()=>+pdfNavigation.track.firstElementChild.dataset.pageIndex),await page.evaluate(()=>epubBookmarkPage(pdfNavigation,readEpubBookmarks(originalSession)[0])),'The filtered preview follows the live anchor after reflow');
+  assert.ok(await page.evaluate(()=>originalSession.frames.every(frame=>{
+    const body=frame.contentDocument.body.getBoundingClientRect();
+    return frame.clientHeight-body.bottom<60;
+  })),'Wider reflow must shrink chapter frames instead of retaining blank tail pages');
   assert.equal(await page.locator('.pdf-thumbnail-bookmark').getAttribute('aria-pressed'),'true');
   await page.locator('.pdf-thumbnail-bookmark').click();
   assert.equal(await page.evaluate(()=>readEpubBookmarks(originalSession).length),0);

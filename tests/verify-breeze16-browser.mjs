@@ -70,7 +70,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForSelector('.pdf-thumbnail canvas');
   await page.waitForTimeout(320);
   const thumbRatios=await page.locator('.pdf-thumbnail canvas').evaluateAll(nodes=>nodes.map(c=>{
-    const r=c.getBoundingClientRect();return Math.abs(r.width/r.height-c.width/c.height);
+    const r=c.getBoundingClientRect(),[width,height]=c.style.aspectRatio.split('/').map(Number);
+    // Bitmap dimensions round up to whole device pixels; compare source paper
+    // geometry instead (a 145x113 bitmap can represent 792:612 paper).
+    return Math.abs(r.width/r.height-width/height);
   }));
   assert.ok(thumbRatios.every(error=>error<.01),'Thumbnails preserve the original paper aspect ratio');
   const expanded=await page.locator('#pdf-page-control').boundingBox();

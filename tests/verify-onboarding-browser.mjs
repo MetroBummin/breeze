@@ -107,11 +107,12 @@ try{
   assert.deepEqual(await page.evaluate(()=>({fs,darkMode,readMargin,curBook,previewWordCard})),{fs:19,darkMode:false,readMargin:'normal',curBook:null,previewWordCard:null});
   assert.deepEqual(await snapshot(),before,'completion leaked tutorial data');
   assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
-  await page.reload({waitUntil:'domcontentloaded'});await page.waitForTimeout(1000);
+  await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
   assert.equal(await page.locator('#onboarding').isVisible(),false);
   // Replay works on both platforms and preserves an existing vocabulary/tombstone.
   await page.evaluate(()=>{words.curiosity={word:'curiosity',ko:'기존 뜻',status:2,mark:true,addedAt:1,up:1};words['phrase:little curiosity']={word:'little curiosity',ko:'기존 표현',status:2,mark:true,phraseParts:['little','curiosity'],addedAt:1,up:1};dead.unfamiliar=42;saveWords();save(LS_DEAD,dead);});
   await page.evaluate(()=>openSettings());
+  await page.locator('#set-card').evaluate(async card=>{await Promise.allSettled(card.getAnimations().map(a=>a.finished));});
   const replayBefore=await snapshot();
   await page.getByRole('button',{name:'튜토리얼 다시보기',exact:true}).tap();
   await page.waitForFunction(()=>document.querySelector('#rtext .w'));
