@@ -21,7 +21,7 @@ function publicEntry(entry,article,url,key,now,verdict) {
     author:entry.author,publishedAt:entry.publishedAt,summary:'',bodyProvided:false,contentHtml:'',kind:'',
     quality:{status:verdict.status,eligibility:verdict.eligibility,ranking:verdict.ranking || 0,version:VERSION,key,checkedAt:now,resolvedUrl:url}};
 }
-export function createQualityService({store,key,fetchDoc=fetchDocument,load=loadArticle,evaluate=evaluateArticle,now=Date.now,mode='off',log=()=>{}}) {
+export function createQualityService({store,key,fetchDoc=fetchDocument,load=loadArticle,evaluate=evaluateArticle,now=Date.now,mode='off',log=(_event)=>{}}) {
   const inflight=new Map();
   async function refresh(id) {
     if(!['shadow','active'].includes(mode))return;
