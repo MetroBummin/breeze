@@ -58,7 +58,7 @@ export function createQualityService({store,key,fetchDoc=fetchDocument,load=load
                 await store.finishEvaluation(hash,evaluation.token,verdict);
                 log({stage:verdict.stage,code:verdict.status,reason:verdict.reason,usage:verdict.usage,key:hash,feed:id});
               } catch(error) {
-                const diagnostic=safeDiagnostic(error);log({...diagnostic,key:hash,feed:id});
+                const diagnostic=safeDiagnostic(error,'provider');log({...diagnostic,key:hash,feed:id});
                 await store.retryEvaluation(hash,evaluation.token,diagnostic);
                 verdict=null;
               }
@@ -114,8 +114,8 @@ export function candidateInventory(entries,now=Date.now()){
     Number.isFinite(e.quality.checkedAt) && e.quality.checkedAt<=now && now-e.quality.checkedAt<7*DAY)
     .sort((a,b)=>(b.quality.status==='approved')-(a.quality.status==='approved') || (b.quality.ranking||0)-(a.quality.ranking||0)).slice(0,20);
 }
-export function safeDiagnostic(error){
+export function safeDiagnostic(error,fallbackStage='extraction'){
   if(error?.diagnostic)return error.diagnostic;
   const code=['bad_url','restricted','incomplete','body_limit','body_too_short','encoding_damage','language_unavailable','unsupported_post','source_unavailable','provider_unavailable','not_configured','cache_unavailable','lease_lost'].includes(error?.message)?error.message:'transient_failure';
-  return {stage:['provider_unavailable','not_configured'].includes(code)?'provider':['cache_unavailable','lease_lost'].includes(code)?'cache':'extraction',code};
+  return {stage:['provider_unavailable','not_configured'].includes(code)?'provider':['cache_unavailable','lease_lost'].includes(code)?'cache':fallbackStage,code};
 }

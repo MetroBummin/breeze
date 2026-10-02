@@ -33,7 +33,7 @@ subjective review were **not** reconstructed or compared and never enter prompts
 
 ## Verification
 
-- 45 quality tests pass, including readiness, schema, fallback, cache and paired reporting; 26 audit/security and 31 recommendation tests also pass.
+- 46 quality tests pass, including readiness, schema, fallback, cache and paired reporting; 26 audit/security and 31 recommendation tests also pass.
 - Full `npm test` passes; browser typecheck remains at the existing 34 diagnostics.
 - System Chromium passes quality pending/approved/rejected/outage/saved states
   and eight viewport/theme checks. Legacy ingestion, RSS card and Article Preview
