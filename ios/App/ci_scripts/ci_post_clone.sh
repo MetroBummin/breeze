@@ -18,5 +18,11 @@ then
   export PATH
 fi
 
-npm ci
+# Xcode Cloud has its own build counter and can override project settings.
+if [ -n "${CI_BUILD_NUMBER:-}" ] && [ "$CI_BUILD_NUMBER" != "221" ]; then
+  echo "Expected Xcode Cloud build 221; got $CI_BUILD_NUMBER. Review the release number before archiving." >&2
+  exit 1
+fi
+npm ci --ignore-scripts --no-audit --no-fund
+npm test
 npm run ios:sync

@@ -1,13 +1,17 @@
 /* Local-only, deterministic review engine. The caller supplies time, reads the
    latest state and commits one value before advancing. No vocabulary writes. */
 const BreezeReview = (() => {
-  const VERSION=2, DAY=86400000, RETRY=600000, INTERVALS=[1,3,7,14,30];
+  const VERSION=3;
+  const ratings={confused:1,uncertain:2,remembered:3,easy:4};
+  const scheduler=FSRS.fsrs({request_retention:.9,enable_fuzz:false,enable_short_term:true,
+    learning_steps:['1m','10m'],relearning_steps:['10m']});
+  const schedulerVersion='ts-fsrs@5.4.2/90/1m,10m/10m';
   const own=(object,key)=>Object.prototype.hasOwnProperty.call(object,key);
   const record=value=>!!value && typeof value==='object' && !Array.isArray(value);
   const count=value=>Number.isSafeInteger(value) && value>=0;
   const text=value=>typeof value==='string' ? value : '';
   const compare=(a,b)=>a<b?-1:a>b?1:0;
-  const nowValue=value=>count(value)?value:0;
+  const nowValue=value=>{if(!count(value)||value>8640000000000000-36500*86400000)throw new RangeError('Invalid review time');return value;};
   const dayKey=at=>{const d=new Date(at);return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;};
   const defaults={newLimit:20,reviewLimit:100,batchSize:5,dailyLimit:null};
   function settings(raw){
@@ -24,15 +28,15 @@ const BreezeReview = (() => {
   function session(saved){
     if(!record(saved)||!text(saved.id)||!count(saved.startedAt)||!Array.isArray(saved.queue)||!saved.queue.length
       ||!count(saved.index)||saved.index>saved.queue.length||!count(saved.remembered)||!count(saved.confused)
-      ||(saved.uncertain!==undefined&&!count(saved.uncertain))
-      ||saved.remembered+saved.confused+(saved.uncertain||0)>saved.index)return null;
+      ||(saved.uncertain!==undefined&&!count(saved.uncertain))||(saved.easy!==undefined&&!count(saved.easy))
+      ||saved.remembered+saved.confused+(saved.uncertain||0)+(saved.easy||0)>saved.index)return null;
     const keys=new Set(),queue=[];
     for(const item of saved.queue){
       if(!record(item)||!text(item.key)||!text(item.identity)||keys.has(item.key))return null;
       keys.add(item.key);queue.push({key:item.key,identity:identity(item.identity)});
     }
     return {id:saved.id,startedAt:saved.startedAt,queue,index:saved.index,
-      remembered:saved.remembered,confused:saved.confused,uncertain:saved.uncertain||0,
+      remembered:saved.remembered,confused:saved.confused,uncertain:saved.uncertain||0,easy:saved.easy||0,
       practice:saved.practice===true,journey:saved.journey===true,extraDay:text(saved.extraDay),
       batchStart:count(saved.batchStart)&&saved.batchStart<=saved.index?saved.batchStart:0,
       batchEnd:count(saved.batchEnd)&&saved.batchEnd>=saved.index&&saved.batchEnd<=queue.length?saved.batchEnd:queue.length};
@@ -40,8 +44,9 @@ const BreezeReview = (() => {
   function normalize(raw){
     const state={version:VERSION,sequence:0,progress:Object.create(null),session:null,
       suspended:[],settings:settings(null),daily:Object.create(null),history:[]};
-    if(!record(raw)||!own(raw,'version')||![1,VERSION].includes(raw.version))return state;
+    if(!record(raw)||!own(raw,'version')||![1,2,VERSION].includes(raw.version))return state;
     state.sequence=count(raw.sequence)?raw.sequence:0;
+    if(record(raw.recovery)&&text(raw.recovery.backupKey))state.recovery={backupKey:raw.recovery.backupKey};
     state.settings=settings(raw.settings);
     if(record(raw.daily))for(const [day,value] of Object.entries(raw.daily)){
       if(!record(value))continue;
@@ -55,10 +60,12 @@ const BreezeReview = (() => {
     }
     if(record(raw.progress))for(const [key,item] of Object.entries(raw.progress)){
       if(!record(item)||!['identity','streak','dueAt','lastReviewedAt'].every(field=>own(item,field))
-        ||!text(item.identity)||!count(item.streak)||item.streak>INTERVALS.length
+        ||!text(item.identity)||!count(item.streak)||item.streak>5
         ||!count(item.dueAt)||!count(item.lastReviewedAt)||item.dueAt<item.lastReviewedAt)continue;
       state.progress[key]={identity:identity(item.identity),streak:item.streak,dueAt:item.dueAt,
-        lastReviewedAt:item.lastReviewedAt,relearning:item.relearning===true||(raw.version===1&&item.streak===0)};
+        lastReviewedAt:item.lastReviewedAt,relearning:item.relearning===true||(raw.version===1&&item.streak===0),
+        fsrs:validMemory(item.fsrs)?JSON.parse(JSON.stringify(item.fsrs)):null,
+        legacy:(record(item.legacy)?JSON.parse(JSON.stringify(item.legacy)):null)||(!validMemory(item.fsrs)?{streak:item.streak,dueAt:item.dueAt,lastReviewedAt:item.lastReviewedAt}:null)};
       if(raw.version===1){
         // v1 has no event history. Reserve both budgets conservatively for its
         // last known day; do not invent outcomes or exact first-learning dates.
@@ -73,9 +80,10 @@ const BreezeReview = (() => {
       const ids=new Set();
       for(const event of raw.history){
         if(!record(event)||!text(event.id)||ids.has(event.id)||!count(event.at)||!text(event.identity)
-          ||!['new','review','relearning','practice'].includes(event.kind)
-          ||!['remembered','confused','uncertain'].includes(event.outcome))continue;
-        ids.add(event.id);state.history.push({id:event.id,at:event.at,identity:identity(event.identity),kind:event.kind,outcome:event.outcome});
+          ||!['new','learning','review','relearning','practice'].includes(event.kind)
+          ||!['remembered','confused','uncertain','easy'].includes(event.outcome))continue;
+        ids.add(event.id);state.history.push({id:event.id,at:event.at,identity:identity(event.identity),kind:event.kind,outcome:event.outcome,
+          ...(record(event.schedule)?{schedule:JSON.parse(JSON.stringify(event.schedule))}:{})});
         // Older v2 values predate the journey; recover distinct answers from real
         // events only, never from v1's ambiguous last-review timestamps.
         if(event.kind!=='practice'){const key=dayKey(event.at),day=state.daily[key]||emptyDay();
@@ -100,7 +108,7 @@ const BreezeReview = (() => {
     }
     return byKey;
   }
-  function kind(state,card){const p=state.progress[card.key];return !p?'new':p.relearning?'relearning':'review';}
+  function kind(state,card){const p=state.progress[card.key];return !p?'new':p.fsrs?.state===1?'learning':p.relearning?'relearning':'review';}
   function allowed(state,card,at,extra=false){
     const type=kind(state,card),p=state.progress[card.key],used=state.daily[dayKey(at)]||emptyDay();
     if(p&&p.dueAt>at)return false;
@@ -114,7 +122,7 @@ const BreezeReview = (() => {
     const used=state.daily[dayKey(at)]||emptyDay();
     let newLeft=Math.max(0,state.settings.newLimit-used.new.length),reviewLeft=Math.max(0,state.settings.reviewLimit-used.review.length);
     let totalLeft=count(state.settings.dailyLimit)?Math.max(0,state.settings.dailyLimit-new Set([...used.new,...used.review]).size):null;
-    const priority={relearning:0,review:1,new:2};
+    const priority={relearning:0,learning:0,review:1,new:2};
     return available.filter(card=>allowed(state,card,at,extra)).sort((a,b)=>
       priority[kind(state,a)]-priority[kind(state,b)]||
       (state.progress[a.key]?.dueAt??a.addedAt)-(state.progress[b.key]?.dueAt??b.addedAt)||compare(a.key,b.key))
@@ -169,19 +177,30 @@ const BreezeReview = (() => {
     state.daily[key]=day;
     return day;
   }
-  function schedule(previous,outcome){
-    const prior=previous?.streak||0;
-    const streak=outcome==='remembered'?Math.min(prior+1,INTERVALS.length):outcome==='uncertain'?Math.max(1,prior):0;
-    return {streak,delay:outcome==='confused'?RETRY:INTERVALS[streak-1]*DAY,relearning:outcome==='confused'};
+  function validMemory(card){
+    return record(card)&&[1,2,3].includes(card.state)&&Number.isFinite(Date.parse(card.due))
+      &&Number.isFinite(Date.parse(card.last_review))&&Date.parse(card.due)>=Date.parse(card.last_review)
+      &&['stability','difficulty','elapsed_days','scheduled_days','learning_steps','reps','lapses']
+        .every(key=>typeof card[key]==='number'&&Number.isFinite(card[key])&&card[key]>=0)
+      &&card.stability>0&&card.difficulty>=1&&card.difficulty<=10
+      &&['learning_steps','reps','lapses'].every(key=>Number.isSafeInteger(card[key]));
+  }
+  function schedule(previous,outcome,at){
+    // A legacy interval is not a memory model. Initialize only at a real answer.
+    const card=previous?.fsrs||FSRS.createEmptyCard(new Date(at));
+    const next=scheduler.next(card,new Date(at),ratings[outcome]);
+    return {delay:next.card.due.getTime()-at,card:JSON.parse(JSON.stringify(next.card)),
+      log:JSON.parse(JSON.stringify(next.log))};
   }
   function snapshot(state,available,at){
     const byKey=reconcile(state,available),saved=state.session,due=eligible(state,available,at);
     const used=state.daily[dayKey(at)]||emptyDay();
-    let nextDueAt=null,nextRelearningAt=null,dueReviewCount=0,newCount=0,relearningCount=0;
+    let nextDueAt=null,nextRelearningAt=null,dueReviewCount=0,newCount=0,relearningCount=0,learningCount=0;
     for(const card of available){
       const p=state.progress[card.key];
       if(!p){newCount++;continue;}
-      if(p.relearning){relearningCount++;if(p.dueAt>at&&(nextRelearningAt===null||p.dueAt<nextRelearningAt))nextRelearningAt=p.dueAt;}
+      if(p.fsrs?.state===1)learningCount++;
+      if(p.relearning||p.fsrs?.state===1){relearningCount++;if(p.dueAt>at&&(nextRelearningAt===null||p.dueAt<nextRelearningAt))nextRelearningAt=p.dueAt;}
       else if(p.dueAt<=at)dueReviewCount++;
       if(p.dueAt>at&&(nextDueAt===null||p.dueAt<nextDueAt))nextDueAt=p.dueAt;
     }
@@ -199,10 +218,10 @@ const BreezeReview = (() => {
     if(journey?.milestone){status='complete';card=null;token='';}
     return {state,status,card,token,journey,completed:saved?saved.index-saved.batchStart:0,total:saved?saved.batchEnd-saved.batchStart:0,
       practiceRemaining:saved?.practice?saved.queue.length-saved.index:0,
-      remembered:saved?.remembered||0,confused:saved?.confused||0,uncertain:saved?.uncertain||0,
-      intervals:card?Object.fromEntries(['confused','uncertain','remembered'].map(outcome=>[outcome,schedule(state.progress[card.key],outcome).delay])):null,
-      eligibleCount:due.length,nextDueAt,nextRelearningAt,relearningCount,dueReviewCount,newCount,
-      dueRelearningCount:available.filter(card=>state.progress[card.key]?.relearning&&state.progress[card.key].dueAt<=at).length,
+      remembered:saved?.remembered||0,confused:saved?.confused||0,uncertain:saved?.uncertain||0,easy:saved?.easy||0,
+      intervals:card?Object.fromEntries(['confused','uncertain','remembered','easy'].map(outcome=>[outcome,schedule(state.progress[card.key],outcome,at).delay])):null,
+      eligibleCount:due.length,nextDueAt,nextRelearningAt,relearningCount,learningCount,dueReviewCount,newCount,
+      dueRelearningCount:available.filter(card=>(state.progress[card.key]?.relearning||state.progress[card.key]?.fsrs?.state===1)&&state.progress[card.key].dueAt<=at).length,
       uniqueUsed:new Set([...used.new,...used.review]).size,newUsed:used.new.length,reviewUsed:used.review.length,responses:used.responses,practiceResponses:used.practice,legacyUsage:used.legacy,
       limitReached:eligible(state,available,at,true).length>due.length&&(!count(state.settings.dailyLimit)||new Set([...used.new,...used.review]).size>=state.settings.dailyLimit)};
   }
@@ -218,18 +237,18 @@ const BreezeReview = (() => {
     if(!chosen.length)return;
     state.sequence=state.sequence<Number.MAX_SAFE_INTEGER?state.sequence+1:1;
     state.session={id:JSON.stringify([at,state.sequence]),startedAt:at,
-      queue:chosen.map(card=>({key:card.key,identity:card.identity})),index:0,remembered:0,confused:0,uncertain:0,practice,journey:false,extraDay:extra?dayKey(at):'',batchStart:0,batchEnd:chosen.length};
+      queue:chosen.map(card=>({key:card.key,identity:card.identity})),index:0,remembered:0,confused:0,uncertain:0,easy:0,practice,journey:false,extraDay:extra?dayKey(at):'',batchStart:0,batchEnd:chosen.length};
   }
   function start(raw,words,now,extra=false){
     const state=normalize(raw),available=cards(words),at=nowValue(now);reconcile(state,available);
     if(activate(state,saved=>!saved.practice)){
       if(state.session.index>=state.session.batchEnd){const saved=state.session;saved.batchStart=saved.index;
-        saved.batchEnd=Math.min(saved.queue.length,saved.index+state.settings.batchSize);saved.remembered=0;saved.confused=0;saved.uncertain=0;}
+        saved.batchEnd=Math.min(saved.queue.length,saved.index+state.settings.batchSize);saved.remembered=0;saved.confused=0;saved.uncertain=0;saved.easy=0;}
       if(extra)state.session.extraDay=dayKey(at);
       // A resumed new-card queue must not hide relearning or reviews that became
       // due while away. Park it intact and serve higher-priority work first.
       const saved=state.session,current=available.find(card=>card.key===saved.queue[saved.index].key);
-      const priority={relearning:0,review:1,new:2},pending=new Set(saved.queue.slice(saved.index).map(ref=>ref.key));
+      const priority={relearning:0,learning:0,review:1,new:2},pending=new Set(saved.queue.slice(saved.index).map(ref=>ref.key));
       const ready=eligible(state,available,at,extra);
       const urgent=ready.filter(card=>!pending.has(card.key)&&(priority[kind(state,card)]<priority[kind(state,current)]
         ||!allowed(state,current,at,saved.extraDay===dayKey(at))));
@@ -259,7 +278,7 @@ const BreezeReview = (() => {
     }else if(state.session.index>=state.session.batchEnd){
       const saved=state.session;saved.batchStart=saved.index;
       saved.batchEnd=Math.min(saved.queue.length,saved.index+(count(batchSize)&&batchSize>0?batchSize:state.settings.batchSize));
-      saved.remembered=0;saved.confused=0;saved.uncertain=0;
+      saved.remembered=0;saved.confused=0;saved.uncertain=0;saved.easy=0;
     }
     return snapshot(state,available,at);
   }
@@ -269,11 +288,16 @@ const BreezeReview = (() => {
     if(state.session?.journey&&!state.session.practice)ensurePlan(state,available,at);
     const current=snapshot(state,available,at);
     if(current.status!=='active'||typeof token!=='string'||token!==current.token
-      ||!['remembered','confused','uncertain'].includes(outcome)||state.history.some(event=>event.id===token))return {...current,accepted:false};
+      ||!['remembered','confused','uncertain','easy'].includes(outcome)||state.history.some(event=>event.id===token))return {...current,accepted:false};
     const card=current.card,type=state.session.practice?'practice':kind(state,card),used=state.daily[dayKey(at)]||emptyDay();
+    let eventSchedule=null;
     if(type!=='practice'){
-      const {streak,delay,relearning}=schedule(state.progress[card.key],outcome);
-      state.progress[card.key]={identity:card.identity,streak,dueAt:Math.min(at+delay,Number.MAX_SAFE_INTEGER),lastReviewedAt:at,relearning};
+      const previous=state.progress[card.key],next=schedule(previous,outcome,at);
+      eventSchedule={version:schedulerVersion,scheduledAt:previous?.dueAt??null,answeredAt:at,
+        rating:ratings[outcome],before:previous?.fsrs||null,after:next.card,log:next.log};
+      state.progress[card.key]={identity:card.identity,streak:previous?.streak||0,
+        dueAt:Date.parse(next.card.due),lastReviewedAt:at,relearning:next.card.state===3,
+        fsrs:next.card,legacy:previous?.legacy||null};
       if(!used.new.includes(card.identity)&&!used.review.includes(card.identity))used[type==='new'?'new':'review'].push(card.identity);
       const before=stageProgress(used).completed;
       if(!used.studied.includes(card.identity))used.studied.push(card.identity);
@@ -282,7 +306,7 @@ const BreezeReview = (() => {
       if(state.session.journey&&used.plan&&after>before)used.plan.pendingStage=after;
     }else used.practice++;
     state.daily[dayKey(at)]=used;
-    state.history.push({id:token,at,identity:card.identity,kind:type,outcome});
+    state.history.push({id:token,at,identity:card.identity,kind:type,outcome,...(eventSchedule?{schedule:eventSchedule}:{})});
     state.session.index++;state.session[outcome]++;
     return {...snapshot(state,available,at),accepted:true};
   }

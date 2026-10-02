@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Script } from 'node:vm';
 import { test } from 'node:test';
+import {fsrs,createEmptyCard} from 'ts-fsrs';
+const oracle=fsrs({request_retention:.9,enable_fuzz:false,enable_short_term:true,learning_steps:['1m','10m'],relearning_steps:['10m']});
 
-const source=readFileSync(new URL('../scripts/core/vocabulary-review.js',import.meta.url),'utf8');
+const source=readFileSync(new URL('../scripts/vendor/ts-fsrs-5.4.2.js',import.meta.url),'utf8')+'\n'+readFileSync(new URL('../scripts/core/vocabulary-review.js',import.meta.url),'utf8');
 const context={};
 new Script(source+'\nglobalThis.review=BreezeReview;').runInNewContext(context);
 const review=context.review;
@@ -49,10 +51,10 @@ test('empty, fewer than five, missing optional source, and not-yet-due states',(
   assert.equal(start.card.book,'');
   const complete=remembered(start,words);
   assert.equal(complete.status,'complete');
-  assert.equal(complete.nextDueAt,NOW+DAY);
+  assert.equal(complete.nextDueAt,NOW+10*MINUTE);
   assert.equal(complete.eligibleCount,0);
-  assert.equal(review.start(complete.state,words,NOW+DAY-1).status,'waiting');
-  assert.equal(review.start(complete.state,words,NOW+DAY).status,'active');
+  assert.equal(review.start(complete.state,words,NOW+10*MINUTE-1).status,'waiting');
+  assert.equal(review.start(complete.state,words,NOW+10*MINUTE).status,'active');
 });
 
 test('selects at most five deterministically, without locale or insertion-order dependence',()=>{
@@ -78,38 +80,40 @@ test('oldest reviewed due cards precede oldest new cards, with stable key ties',
   assert.equal(start.nextDueAt,NOW+DAY);
 });
 
-test('remembered schedules 1, 3, 7, 14, 30 days and caps at 30 days',()=>{
+test('all four ratings match upstream FSRS through learning, delayed review and relearning',()=>{
   const words={wind:saved('wind')};
-  let state=null,at=NOW;
-  for(const [index,days] of [1,3,7,14,30,30,30].entries()){
-    const start=review.start(state,words,at);
-    const complete=remembered(start,words,at);
-    assert.equal(complete.accepted,true);
-    assert.equal(complete.state.progress.wind.streak,Math.min(index+1,5));
-    assert.equal(complete.state.progress.wind.lastReviewedAt,at);
-    assert.equal(complete.state.progress.wind.dueAt,at+days*DAY);
-    assert.equal(complete.remembered,1);
-    state=plain(complete.state);
-    at+=days*DAY;
+  for(const initial of ['confused','uncertain','remembered','easy']){
+    let state=null,at=NOW,memory=createEmptyCard(new Date(at));
+    for(const outcome of [initial,'remembered','easy','confused','uncertain','remembered','remembered']){
+      const start=review.start(state,words,at),rating={confused:1,uncertain:2,remembered:3,easy:4}[outcome];
+      for(const [name,r] of Object.entries({confused:1,uncertain:2,remembered:3,easy:4})){
+        const expected=oracle.next(memory,new Date(at),r);
+        assert.equal(start.intervals[name],expected.card.due.getTime()-at);
+        const branch=review.grade(start.state,words,start.token,name,at);
+        assert.deepEqual(plain(branch.state.progress.wind.fsrs),plain(expected.card));
+        assert.equal(branch.state.history.at(-1).schedule.rating,r);
+      }
+      const expected=oracle.next(memory,new Date(at),rating);
+      const done=review.grade(start.state,words,start.token,outcome,at);
+      assert.equal(done.accepted,true);
+      assert.deepEqual(plain(done.state.history.at(-1).schedule.log),plain(expected.log));
+      state=plain(done.state);memory=expected.card;at=memory.due.getTime()+3*DAY;
+    }
   }
 });
-
-test('confused schedules ten minutes, resets streak, and restarts remembered at one day',()=>{
-  const words={wind:saved('wind')};
-  let result=remembered(review.start(null,words,NOW),words);
-  result=remembered(review.start(result.state,words,NOW+DAY),words,NOW+DAY);
-  assert.equal(result.state.progress.wind.streak,2);
-  const at=NOW+4*DAY;
-  const start=review.start(result.state,words,at);
-  const confused=review.grade(start.state,words,start.token,'confused',at);
-  assert.equal(confused.state.progress.wind.streak,0);
-  assert.equal(confused.state.progress.wind.dueAt,at+10*MINUTE);
-  assert.equal(confused.confused,1);
-  assert.equal(confused.remembered,0);
-  assert.equal(review.start(confused.state,words,at+10*MINUTE-1).status,'waiting');
-  const retried=remembered(review.start(confused.state,words,at+10*MINUTE),words,at+10*MINUTE);
-  assert.equal(retried.state.progress.wind.streak,1);
-  assert.equal(retried.state.progress.wind.dueAt,at+10*MINUTE+DAY);
+test('new learning steps and a lapse have distinct states, and previews equal saved schedules',()=>{
+  const words={wind:saved('wind')};let start=review.start(null,words,NOW);
+  let done=review.grade(start.state,words,start.token,'easy',NOW);
+  assert.equal(done.state.progress.wind.fsrs.state,2);
+  const at=done.state.progress.wind.dueAt+4*DAY;
+  start=review.start(done.state,words,at);done=review.grade(start.state,words,start.token,'confused',at);
+  assert.equal(done.state.progress.wind.fsrs.state,3);
+  assert.equal(done.state.progress.wind.dueAt,at+10*MINUTE);
+  assert.equal(review.start(done.state,words,at+10*MINUTE-1).status,'waiting');
+  start=review.start(done.state,words,at+10*MINUTE);
+  done=remembered(start,words,at+10*MINUTE);
+  assert.equal(done.state.progress.wind.fsrs.state,2);
+  assert.equal(done.state.progress.wind.dueAt,at+10*MINUTE+start.intervals.remembered);
 });
 
 test('resumes the exact persisted queue/index, without appending newly saved words',()=>{
@@ -239,7 +243,7 @@ test('prototype-looking keys are ordinary Meaning keys and cannot pollute state'
 test('invalid top-level schemas reset, malformed records drop, valid progress survives',()=>{
   for(const raw of [null,undefined,[],42,'{}',{}, {version:99},Object.create({version:1})]){
     const normalized=review.normalize(raw);
-    assert.equal(normalized.version,2);
+    assert.equal(normalized.version,3);
     assert.equal(normalized.session,null);
     assert.equal(Object.keys(normalized.progress).length,0);
   }
@@ -296,7 +300,7 @@ test('returned state and card do not alias mutable inputs or one another',()=>{
   const done=remembered(start,words);
   const restored=review.normalize(done.state);
   restored.progress.a.streak=4;
-  assert.equal(done.state.progress.a.streak,1);
+  assert.equal(done.state.progress.a.streak,0);
 });
 
 test('large dictionaries remain bounded to five persisted session references',()=>{
@@ -321,8 +325,7 @@ test('no external APIs, Date clock, AI dependencies or stored answer visibility 
   assert.equal(isolated.fetch,undefined);
   assert.equal(isolated.words,undefined);
   assert.equal(JSON.stringify(result.state).includes('revealed'),false);
-  assert.equal(review.grade(result.state,{a:saved('a')},result.token,'remembered',
-    Number.MAX_SAFE_INTEGER).state.progress.a.dueAt,Number.MAX_SAFE_INTEGER);
+  assert.throws(()=>review.grade(result.state,{a:saved('a')},result.token,'remembered',Number.MAX_SAFE_INTEGER),/Invalid review time/);
 });
 
 test('explicit selection includes future-due meanings and preserves unrelated progress',()=>{
@@ -346,19 +349,13 @@ test('manual selection resumes its own queue and supports more than the daily fi
   assert.equal(fresh.total,1);assert.equal(fresh.card.key,'w7');
 });
 
-test('three grades publish actual intervals; difficult correct recall retains its day step',()=>{
-  const words={wind:saved('wind')};let start=review.start(null,words,NOW);
-  assert.deepEqual(plain(start.intervals),{confused:10*MINUTE,uncertain:DAY,remembered:DAY});
-  let done=remembered(start,words,NOW);start=review.start(done.state,words,NOW+DAY);
-  done=remembered(start,words,NOW+DAY);const at=NOW+4*DAY;start=review.start(done.state,words,at);
-  assert.equal(start.intervals.remembered,7*DAY);
-  const uncertain=review.grade(start.state,words,start.token,'uncertain',at);
-  assert.equal(uncertain.accepted,true);assert.equal(uncertain.state.progress.wind.streak,2);
-  assert.equal(uncertain.state.progress.wind.dueAt,at+start.intervals.uncertain);
-  assert.equal(uncertain.uncertain,1);assert.equal(review.normalize(plain(uncertain.state)).session.uncertain,1);
-  assert.equal(review.grade(uncertain.state,words,start.token,'uncertain',at).accepted,false);
-  assert.equal(review.start(uncertain.state,words,at+3*DAY-1).status,'waiting');
-  assert.equal(review.start(uncertain.state,words,at+3*DAY).intervals.remembered,7*DAY);
+test('four grades publish exact new-card learning intervals and reject duplicate answers',()=>{
+  const words={wind:saved('wind')},start=review.start(null,words,NOW);
+  assert.deepEqual(plain(start.intervals),{confused:MINUTE,uncertain:6*MINUTE,remembered:10*MINUTE,easy:8*DAY});
+  const done=review.grade(start.state,words,start.token,'uncertain',NOW);
+  assert.equal(done.state.progress.wind.dueAt,NOW+start.intervals.uncertain);
+  assert.equal(done.uncertain,1);
+  assert.equal(review.grade(done.state,words,start.token,'uncertain',NOW).accepted,false);
 });
 test('malformed uncertain counts cannot corrupt a saved session',()=>{
   const start=review.start(null,{wind:saved('wind')},NOW);
@@ -383,7 +380,7 @@ test('2,000 new cards never become overdue; daily unused allocation does not rol
   let done=finish(review.start(null,words,NOW),words);
   assert.equal(done.newUsed,5);assert.equal(done.newCount,1995);assert.equal(done.dueReviewCount,0);
   const next=review.start(done.state,words,NOW+DAY);
-  assert.equal(next.newUsed,0);assert.equal(next.dueReviewCount,5);
+  assert.equal(next.newUsed,0);assert.equal(next.dueRelearningCount,5);
   assert.equal(next.eligibleCount,25); // Five due + today's 20 new, never yesterday's 15.
   assert.equal(next.total,5);
 });
@@ -415,18 +412,17 @@ test('daily relearning increases responses, not distinct new/review card counts'
   const raw=review.configure(null,{newLimit:1,reviewLimit:0});
   let result=finish(review.start(raw,words,NOW),words,NOW,'confused');
   assert.equal(result.newUsed,1);assert.equal(result.reviewUsed,0);assert.equal(result.responses,1);
-  assert.equal(result.relearningCount,1);assert.equal(result.nextRelearningAt,NOW+10*MINUTE);
-  assert.equal(review.start(result.state,words,NOW+9*MINUTE).status,'waiting');
+  assert.equal(result.relearningCount,1);assert.equal(result.nextRelearningAt,NOW+MINUTE);
+  assert.equal(review.start(result.state,words,NOW+MINUTE-1).status,'waiting');
   result=finish(review.start(result.state,words,NOW+10*MINUTE),words,NOW+10*MINUTE,'confused');
   result=finish(review.start(result.state,words,NOW+20*MINUTE),words,NOW+20*MINUTE);
   assert.equal(result.newUsed,1);assert.equal(result.reviewUsed,0);assert.equal(result.responses,3);
-  assert.equal(result.relearningCount,0);
-  assert.deepEqual(plain(result.state.history.map(event=>event.kind)),['new','relearning','relearning']);
+  assert.equal(result.learningCount,1);
+  assert.deepEqual(plain(result.state.history.map(event=>event.kind)),['new','learning','learning']);
 });
-test('due relearning precedes overdue reviews, which precede allowed new cards',()=>{
-  const words={a:saved('a'),b:saved('b'),c:saved('c')};
-  let state=finish(review.start(null,{a:words.a},NOW-DAY),{a:words.a},NOW-DAY).state;
-  state=finish(review.start(state,{a:words.a,b:words.b},NOW-10*MINUTE),{a:words.a,b:words.b},NOW-10*MINUTE,'confused').state;
+test('due relearning precedes overdue review, then new cards',()=>{
+  const words={a:saved('a'),b:saved('b'),c:saved('c')},state=review.normalize(null);
+  for(const key of ['a','b'])state.progress[key]={identity:JSON.stringify([key,words[key].word,words[key].ko,words[key].addedAt]),streak:1,dueAt:NOW-1,lastReviewedAt:NOW-DAY,relearning:key==='b'};
   const view=review.start(state,words,NOW);
   assert.deepEqual(plain(view.state.session.queue.map(ref=>ref.key)),['b','a','c']);
 });
@@ -491,7 +487,7 @@ test('v1 migration preserves progress, due times and partial sessions with sourc
   const raw={version:1,sequence:7,progress:{a:{identity:refs[0].identity,streak:2,dueAt:NOW+DAY,lastReviewedAt:NOW}},
     session:{id:'legacy',startedAt:NOW,queue:refs,index:1,remembered:1,confused:0}};
   const view=review.start(raw,{a:{...words.a,book:'Edited'},b:{...words.b,example:'Edited'}},NOW);
-  assert.equal(view.state.version,2);assert.equal(view.card.key,'b');assert.equal(view.completed,1);
+  assert.equal(view.state.version,3);assert.equal(view.card.key,'b');assert.equal(view.completed,1);
   assert.equal(view.state.progress.a.streak,2);assert.equal(view.state.progress.a.dueAt,NOW+DAY);
   assert.equal(view.legacyUsage,true);assert.equal(view.newUsed,1);assert.equal(view.reviewUsed,1);
   const migrated=review.normalize(plain(view.state));
@@ -663,4 +659,54 @@ test('combined zero cap, reduction, repeated failures and next-day reset preserv
   view=answerJourney(view,words,3,'remembered',NOW+10*MINUTE);
   assert.equal(view.uniqueUsed,3);assert.equal(view.responses,6);
   view=review.startJourney(view.state,words,NOW+DAY);assert.equal(view.uniqueUsed,0);assert.ok(view.card);
+});
+
+test('v2 migration retains real history and due dates without inventing FSRS memory or answers',()=>{
+  const words={a:saved('a')},ref=review.start(null,words,NOW).card.identity;
+  const event={id:'actual-v2-answer',at:NOW-DAY,identity:ref,kind:'review',outcome:'uncertain'};
+  const old={version:2,progress:{a:{identity:ref,streak:4,dueAt:NOW+2*DAY,lastReviewedAt:NOW-DAY}},history:[event]};
+  const migrated=review.normalize(old);
+  assert.deepEqual(plain(migrated.history),[event]);
+  assert.equal(migrated.progress.a.fsrs,null);
+  assert.equal(migrated.progress.a.dueAt,old.progress.a.dueAt);
+  assert.equal(review.start(migrated,words,NOW).status,'waiting');
+  const at=NOW+5*DAY,start=review.start(migrated,words,at);
+  const done=review.grade(start.state,words,start.token,'easy',at);
+  assert.equal(done.state.history.length,2);
+  const log=done.state.history[1].schedule;
+  assert.equal(log.before,null);assert.equal(log.scheduledAt,NOW+2*DAY);assert.equal(log.answeredAt,at);
+  assert.deepEqual(plain(done.state.progress.a.fsrs),plain(oracle.next(createEmptyCard(new Date(at)),new Date(at),4).card));
+  assert.equal(done.state.progress.a.legacy.streak,4);
+});
+
+test('timezone and DST boundaries reset unique caps but preserve absolute FSRS dates',()=>{
+  const previous=process.env.TZ;
+  try{for(const zone of ['UTC','Asia/Seoul','America/New_York']){
+    process.env.TZ=zone;
+    for(const [year,month,date] of [[2026,2,8],[2026,10,1]]){
+      const at=new Date(year,month,date,23,59,30).getTime(),after=at+60000,words={a:saved('a'),b:saved('b')};
+      const start=review.startJourney(review.configure(null,{dailyLimit:1}),words,at);
+      const first=review.grade(start.state,words,start.token,'confused',at);
+      assert.equal(first.uniqueUsed,1);assert.equal(first.journey.done,1);
+      const due=first.state.progress.a.dueAt;
+      assert.equal(due,after);
+      const resume=review.startJourney(plain(first.state),words,after);
+      assert.equal(resume.uniqueUsed,0);assert.equal(resume.card.key,'a');
+      const second=review.grade(resume.state,words,resume.token,'confused',after);
+      assert.equal(second.uniqueUsed,1);assert.equal(second.newUsed,0);assert.equal(second.reviewUsed,1);
+      assert.equal(second.state.history[1].schedule.scheduledAt,due);
+      assert.equal(Object.keys(second.state.daily).length,2);
+    }
+  }}finally{if(previous===undefined)delete process.env.TZ;else process.env.TZ=previous;}
+});
+
+test('elapsed time uses the actual answer timestamp and memory survives serialization',()=>{
+  const words={a:saved('a')},start=review.start(null,words,NOW);
+  const first=review.grade(start.state,words,start.token,'easy',NOW);
+  const original=first.state.progress.a.fsrs,at=first.state.progress.a.dueAt+21*DAY;
+  const next=review.start(plain(first.state),words,at);
+  const answeredAt=at+3*DAY,done=review.grade(next.state,words,next.token,'remembered',answeredAt);
+  assert.equal(done.state.history.at(-1).at,answeredAt);
+  assert.deepEqual(plain(done.state.progress.a.fsrs),plain(oracle.next(original,new Date(answeredAt),3).card));
+  assert.notDeepEqual(plain(done.state.progress.a.fsrs),plain(oracle.next(original,new Date(at),3).card));
 });

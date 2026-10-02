@@ -153,7 +153,7 @@ body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) 
 .review-complete-check{stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;}
 .review-complete-sparks{stroke:currentColor;stroke-width:3;stroke-linecap:round;opacity:.45;}
 #vocabulary-review-page #review-celebration h2{font:700 30px/1.3 var(--ui);letter-spacing:-.6px;}
-#review-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:440px;margin:32px 0 0;}
+#review-results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%;max-width:440px;margin:32px 0 0;}
 #review-results>div{padding:0 6px;}
 #review-results dt{font:400 12px/1.5 var(--ui);color:var(--sentence-glass-secondary);}
 #review-results dd{margin:8px 0 0;font:600 25px/1.3 var(--ui);font-variant-numeric:tabular-nums;}
@@ -180,7 +180,7 @@ body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) 
 #review-stage-track span{flex:1;height:5px;border-radius:3px;background:linear-gradient(to right,var(--selection-ink) var(--stage-fill),var(--sentence-glass-line-soft) var(--stage-fill));}
 #review-mascot-scene{position:relative;isolation:isolate;width:clamp(200px,64vw,260px);height:clamp(200px,64vw,260px);margin:0 auto 12px;}
 #review-stage-mascot{position:relative;z-index:1;display:block;width:100%;height:100%;object-fit:contain;animation:review-complete-arrive .35s ease-out;}
-#review-mascot-scene::before{content:"";position:absolute;z-index:0;pointer-events:none;inset:2%;border-radius:50%;background:radial-gradient(ellipse at 30% 36%,#74EDD8 0,transparent 58%),radial-gradient(ellipse at 72% 36%,#B299FF 0,transparent 60%),radial-gradient(ellipse at 48% 72%,#58C7FF 0,transparent 62%);filter:blur(20px);opacity:calc(.1 + var(--review-stage)*.1);transform:scale(calc(.55 + var(--review-stage)*.12));}
+#review-mascot-scene::before{content:"";position:absolute;z-index:0;pointer-events:none;inset:2%;border-radius:50%;background:radial-gradient(ellipse at 35% 38%,var(--review-glow-core) 0,transparent 60%),radial-gradient(ellipse at 65% 50%,var(--review-glow-soft) 0,transparent 64%),radial-gradient(ellipse at 48% 68%,var(--review-glow-core) 0,transparent 62%);filter:blur(20px);opacity:calc(.12 + var(--review-stage)*.1);transform:scale(calc(.35 + var(--review-stage)*.13));}
 @media(max-height:500px){#review-mascot-scene{width:140px;height:140px;margin-bottom:8px;}}
 @media(prefers-reduced-motion:reduce){#review-stage-mascot{animation:none;}}
 

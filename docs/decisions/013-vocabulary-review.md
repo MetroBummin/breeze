@@ -75,25 +75,55 @@ no new artwork is generated. Their manifest's percentages document the nominal
 [Duolingo flashcards](https://blog.duolingo.com/duolingo-flashcards/) and
 [Practice Hub](https://blog.duolingo.com/guide-to-duolingo-practice-hub/).
 
-## Three assessments, without an algorithm claim
+## FSRS-6 scheduling and four ratings (1.7 / 221)
 
-Judge the answer recalled **before** revealing the saved meaning:
+Use upstream **ts-fsrs 5.4.2**, MIT, published by open-spaced-repetition; npm
+metadata checked 2026-10-02 (modified 2026-09-29). Node >=20 is required by its
+package; Breeze tooling uses Node >=22. The unmodified UMD distribution runs
+as a classic script in browsers and Capacitor WKWebView, with no network or
+runtime npm dependency. `verify-fsrs-vendor.mjs` checks exact package and license
+bytes. Its library version reports FSRS-6.0. Browser checks cover Chromium/WebKit;
+physical iOS and signed archive validation remain separate.
 
-- **다시 학습**: failed recall / incorrect. Reset the stage, mark relearning and
-  schedule 10 minutes later. Repeated failures repeat the same step.
-- **어렵게 맞힘**: correct recall with difficulty. Retain the current day stage,
-  with a one-day minimum for new cards or completed relearning. No one-hour
-  penalty, stage demotion or failure classification.
-- **기억함**: correct normal recall. Advance through 1, 3, 7, 14, 30 days, capped
-  at 30. Successful relearning returns to one day.
+Settings are pinned per scheduler version: requested retention **0.90**, the
+upstream default 21 FSRS-6 weights, maximum interval 36,500 days, short-term mode
+on, fuzz off. 90% is the Anki/FSRS default starting tradeoff between retention and
+workload, not a measured guarantee for Breeze learners. Fuzz is disabled so
+previews and commits agree deterministically; this differs from Anki's workload
+spreading. Default weights are:
+`[0.212,1.2931,2.3065,8.2956,6.4133,0.8334,3.0194,0.001,1.8722,0.1666,0.796,1.4835,0.0614,0.2629,1.6483,0.6014,1.8729,0.5425,0.0912,0.0658,0.1542]`.
 
-Buttons publish the exact delay applied by the engine. The first successful new
-or relearning answer has a one-day interval for both success grades; later Hard
-retains the interval while normal recall advances it. These are Breeze's fixed
-rules, **not FSRS and not the Anki scheduling algorithm**. FSRS, its parameters,
-retention controls and validated history migration are a separate follow-up.
-Principles: [daily limits](https://docs.ankiweb.net/deck-options.html#daily-limits),
-[answer buttons](https://docs.ankiweb.net/studying.html#answer-buttons).
+Upstream handles learning steps `[1m,10m]` and relearning `[10m]`; Breeze does
+not approximate FSRS formulas or override its due dates. These short steps give
+immediate recall practice; FSRS stability/difficulty and real elapsed time govern
+the long intervals once a card graduates. Persist New (no response yet), Learning
+(1), Review (2), Relearning (3). Pending learning is included with relearning in
+short-step work priority and remains visible after the daily goal is earned.
+
+Judge recall **before** seeing the answer, not familiarity after reading it:
+
+- **다시** / Again (1): incorrect or no recall. New cards restart at 1 minute;
+  a Review lapse enters Relearning at 10 minutes.
+- **어려움** / Hard (2): correct but slow/effortful. Never a substitute for failure.
+- **알겠음** / Good (3): normal correct recall.
+- **쉬움** / Easy (4): immediate, confident correct recall.
+
+All four earn the same unique-card effort credit. Button intervals use the same
+upstream calculation as commit. A stale interval across a time boundary is
+refreshed before accepting an answer with a changed interval. A normal new card
+previews 1m / 6m / 10m / 8d under the pinned parameters. Future intervals adapt.
+Store each actual response's timestamp, rating, preceding scheduled due time,
+FSRS state before/after, library review log and scheduler version. Practice keeps
+its real response event but never updates regular FSRS memory or budgets.
+
+There is **no personal parameter optimizer in this release**. Insufficient legacy
+history must never be optimized or reconstructed. A future optimizer needs enough
+real regular dated ratings, upstream optimizer support and held-out calibration;
+there is no automatic enablement based on a guessed small history threshold.
+
+Sources: https://github.com/open-spaced-repetition/ts-fsrs (MIT),
+https://docs.ankiweb.net/deck-options.html#fsrs,
+https://docs.ankiweb.net/studying.html#answer-buttons.
 
 ## Explicit practice and selection
 
@@ -109,11 +139,9 @@ Large selections are split into the automatic batch size; the unprocessed select
 queue persists through completion and reload.
 All reconciliation uses the full vocabulary so filtering cannot prune progress.
 
-## Identity and safe v1 migration
+## Identity, v1/v2 migration and damaged storage recovery
 
-Schema v2 remains under the existing local-only storage key. The first successful
-migration saves the original v1 JSON to a `.backup` key before replacing the
-working value. A failed backup or main write prevents advancement. Newer schemas
+Schema v3 remains under the existing local-only storage key. Each migration/recovery saves the exact original bytes to `.backup` (or a free numbered backup) before replacing the working value. Both read and commit share one safe decoder; malformed JSON, JSON null, arrays and scalar values never get reparsed unsafely during commit. Recognizable objects preserve individually valid records and real history. The UI announces recovery; a future numeric schema is refused. A failed backup or main write prevents advancement. Newer schemas
 are rejected by the UI instead of being overwritten. Malformed individual
 progress records are dropped; invalid sessions are discarded whole.
 
@@ -155,7 +183,7 @@ actual responses and says “이번 묶음 완료”, not completion of all lear
 Validation and remaining limits: [2026-10-02 QA](../qa/vocabulary-review-20261002.md).
 
 Stage completion uses a large 200–260px mascot (140px in short viewports), one
-heading, today's count and three unboxed outcome counts. These classify each
+heading, today's count and four unboxed outcome counts. These classify each
 unique card by its latest regular answer today; retries do not duplicate cards.
 Redundant mode/percentage labels are hidden on the celebration. A single Next
 Stage CTA uses user-requested vivid blue (#008DF0) and bold white 20px text,
@@ -164,6 +192,28 @@ normal neutral button tone; all other controls retain the shared design tokens.
 The duplicate Stop button is removed: the existing back arrow saves the same
 progress. Pending relearning remains visible even after goal completion.
 
-A static cyan/mint/lilac aurora behind the mascot increases in radius and opacity
+A static warm yellow aurora behind the mascot increases in radius and opacity
 with stages 1–5. It has no looping motion, does not cover text or intercept input,
 and the mascot entrance respects reduced-motion preferences.
+
+
+v1/v2 dates, streak metadata, real history and unfinished queues survive migration.
+Legacy `streak` is retained only for provenance, never used for an FSRS interval.
+`fsrs:null` explicitly means unknown memory; existing due dates stay in force until
+the next real answer initializes FSRS as New. No fabricated old answers or
+inverse inference from fixed intervals. Invalid memory is treated as unknown;
+its exact original is retained by the recovery backup. Valid vocabulary storage
+is never rewritten by this process. Pending legacy cards may need learning steps
+again because their true FSRS memory was never observed.
+
+Daily cap accounting (tested): new first answer = one unique slot; scheduled
+review first answer = one; same-day Learning/Relearning repeats = zero extra;
+first Learning/Relearning answer on another local date = one review slot; practice
+= zero; explicit extra = may exceed today's cap without changing due times.
+The screen separately shows scheduled review inventory, Learning, Relearning,
+new inventory, and today's unique goal. Excess due cards remain overdue tomorrow.
+Timezone changes affect the local day budget; due timestamps stay absolute.
+
+Known storage limits: localStorage cannot provide multi-tab compare-and-swap;
+backup or history quota failure stops advancement and requires space/retry.
+History is intentionally not silently trimmed. There is no cloud FSRS sync.

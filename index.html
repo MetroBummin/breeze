@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="styles/fonts.css?v=211a3f46">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=88e19280">
+  <link rel="stylesheet" href="styles/tokens.css?v=9d652d07">
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
   <link rel="stylesheet" href="styles/home.css?v=608e679d">
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=2347c5ac">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=a4aab45f">
+  <link rel="stylesheet" href="styles/wordbook.css?v=d216f355">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=3ef1ca39">
   <link rel="stylesheet" href="styles/onboarding.css?v=e80ba10b">
@@ -103,8 +103,9 @@
   <script defer src="scripts/dictionary/lookup-feedback.js?v=27737332"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=6e8b28de"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=84bf9f35"></script>
-  <script defer src="scripts/core/vocabulary-review.js?v=6703daf4"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=0ea84687"></script>
+  <script defer src="scripts/vendor/ts-fsrs-5.4.2.js?v=59b74441"></script>
+  <script defer src="scripts/core/vocabulary-review.js?v=a4845295"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=d228bf19"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -454,14 +455,15 @@
       <div id="review-back" class="review-face" hidden>
         <p id="review-back-expression"></p>
         <p id="review-meaning" tabindex="-1" hidden></p>
-        <p class="review-recall-hint">정답 공개 전에 떠올린 답을 기준으로 평가하세요. 오답·못 떠올림은 다시 학습해요.</p>
+        <p class="review-recall-hint">정답을 보기 전에 떠올린 답으로 평가하세요. 보고 익숙한 느낌은 정답이 아니에요. 못 떠올렸다면 ‘다시’.</p>
       </div>
     </div>
     <button id="review-reveal" type="button">정답 확인</button>
     <div id="review-grade" hidden>
-      <button id="review-confused" type="button"><span>다시 학습</span><small id="review-confused-interval">10분</small></button>
-      <button id="review-uncertain" type="button"><span>어렵게 맞힘</span><small id="review-uncertain-interval">1일</small></button>
-      <button id="review-remember" type="button"><span>기억함</span><small id="review-remember-interval">1일</small></button>
+      <button id="review-confused" type="button" title="떠올리지 못했거나 틀림"><span>다시</span><small id="review-confused-interval"></small></button>
+      <button id="review-uncertain" type="button" title="맞게 떠올렸지만 어렵고 오래 걸림"><span>어려움</span><small id="review-uncertain-interval">1일</small></button>
+      <button id="review-remember" type="button" title="정상적으로 맞게 떠올림"><span>알겠음</span><small id="review-remember-interval">1일</small></button>
+      <button id="review-easy" type="button" title="거의 즉시, 확실하게 떠올림"><span>쉬움</span><small id="review-easy-interval"></small></button>
     </div>
   </div>
   <section id="review-result" hidden>
@@ -477,11 +479,14 @@
     </div>
     <p id="review-status" role="status" tabindex="-1"></p>
     <dl id="review-results" hidden>
-      <div><dt>기억함</dt><dd id="review-result-known">0</dd></div>
-      <div><dt>어렵게 맞힘</dt><dd id="review-result-uncertain">0</dd></div>
-      <div><dt>다시 학습</dt><dd id="review-result-unknown">0</dd></div>
+      <div><dt>쉬움</dt><dd id="review-result-easy">0</dd></div>
+      <div><dt>알겠음</dt><dd id="review-result-known">0</dd></div>
+      <div><dt>어려움</dt><dd id="review-result-uncertain">0</dd></div>
+      <div><dt>다시</dt><dd id="review-result-unknown">0</dd></div>
     </dl>
   </section>
+  <p id="review-recovery" class="review-recall-hint" hidden>이전·손상 기록의 원본을 이 기기에 백업했어요. 읽을 수 있는 기록은 보존했어요.</p>
+  <p id="review-inventory" class="review-recall-hint"></p>
   <p id="review-pending" class="review-recall-hint" aria-live="polite"></p>
   <button id="review-more" type="button" hidden>더 하기</button>
   <button id="review-extra" type="button" hidden>일일 한도 넘어 추가 학습</button>
