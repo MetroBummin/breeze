@@ -93,7 +93,6 @@ function renderEasyExplanation(){
   section.classList.toggle('expanded',expanded);
   button.disabled=state.loading;button.hidden=expanded;
   document.getElementById('p-easy-retry').hidden=!state.error;
-  button.textContent='쉽게 설명';
   button.setAttribute('aria-expanded',String(expanded));
   const card=document.getElementById('p-easy-card');card.hidden=!expanded;card.setAttribute('aria-busy',String(state.loading));
   const text=document.getElementById('p-easy-text');
