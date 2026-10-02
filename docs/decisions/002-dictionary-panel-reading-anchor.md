@@ -150,3 +150,19 @@ restores a deleted range or an obsolete highlight cache. Shimmer remains pending
 ## 2026-10-01: one selection surface
 
 Active PDF/EPUB word selection uses one blue fill, without the status-dependent inner fill or outer shadow. Saved-underlay suppression continues to target the exact selected occurrence and ends with selection. Star visibility affects saved marks only; it does not recolor selection or render a hidden dictionary panel.
+
+## On-demand easy explanation (1.7)
+
+Reader detail hides the repeated example block; stored examples remain available
+to Memory and review. The displayed saved meaning is labelled as saved when a
+new context has not been revalidated. “쉽게 설명” explicitly requests a short
+explanation of a difficult word/concept and, when needed, its contextual meaning.
+Each explicit request includes the current sentence and up to two neighbors on
+either side. Text/EPUB use the source occurrence and adjacent paragraphs; PDF
+falls back to the exact visible page window if book text cannot resolve it.
+Absent or ambiguous neighbors are omitted. Each sentence is bounded at 2,400
+characters. The action label appears once; the card has no repeated heading.
+It uses Preview summary's quiet inset-card styling inside the existing detail
+surface and scroll budget. Closing/changing lookup cancels its display ownership.
+Explanation text is transient page/account memory only; see DICT.md for request
+metering and the provider boundary. No automatic call on expand.

@@ -434,10 +434,16 @@ async function buildPdfWordBoxes(page,viewport,glyphs,pdf,allowed=()=>true){
   const {boxes,text}=pdfPageWords(entries,viewport.width,viewport.height,
     value=>applyLigatures(value,glyphs));
   const sentenceAt=bridgeSentenceFinder(text),parts=bridgeSentences(text);
+  const explanationWindows=new Map(parts.map((part,index)=>[part,{
+    before:parts.slice(Math.max(0,index-2),index).map(item=>item.text.slice(-2400)),
+    after:parts.slice(index+1,index+3).map(item=>item.text.slice(0,2400))
+  }]));
   boxes.forEach(box=>{
     box.example=sentenceAt(box.offset);
     const part=parts.find(item=>box.offset>=item.start&&box.offset<=item.end);
     box.sentenceStart=part ? part.start : box.offset;
+    const explanationWindow=explanationWindows.get(part);
+    box.easyBefore=explanationWindow?.before||[];box.easyAfter=explanationWindow?.after||[];
     box.tokenIndex=part&&typeof lookupSentenceTokens==='function'
       ? lookupSentenceTokens(text.slice(part.start,box.offset)).length : -1;
   });
@@ -452,6 +458,8 @@ function makePdfWordMarker(page,box,className,status,wordKey){
   marker.textContent=box.word;
   marker.dataset.w=wordKey||keyOf(box.word);
   marker.dataset.example=box.example||'';
+  marker.dataset.easyBefore=JSON.stringify(box.easyBefore||[]);
+  marker.dataset.easyAfter=JSON.stringify(box.easyAfter||[]);
   if(Number.isInteger(box.tokenIndex)&&box.tokenIndex>=0)marker.dataset.clickedTokenIndex=String(box.tokenIndex);
   marker.dataset.readerAnchor=JSON.stringify({kind:'pdf',page:+page.dataset.page,y:box.y});
   if(className.includes('original-selection-marker'))wordLookupTargets.set(marker,

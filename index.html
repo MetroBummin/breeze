@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=22832259">
   <link rel="stylesheet" href="styles/reader.css?v=7b53053d">
-  <link rel="stylesheet" href="styles/dictionary.css?v=74247169">
+  <link rel="stylesheet" href="styles/dictionary.css?v=e0f0bcfe">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=26bcfce1">
@@ -100,14 +100,15 @@
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=97a7f38a"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=27737332"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=1efc73ff"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=143a37a3"></script>
+  <script defer src="scripts/dictionary/easy-explanation.js?v=622b0054"></script>
   <script defer src="scripts/ui/wordbook.js?v=bd35bada"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=7aab9a31"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=c6e17d1f"></script>
   <script defer src="scripts/reader/pdf-ink.js?v=c577d892"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=506755fb"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=71e1fe27"></script>
   <script defer src="scripts/reader/epub-original.js?v=b7c63d7a"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=15b2c61b"></script>
@@ -373,6 +374,13 @@
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec" id="p-alt-sec">추천 뜻</div>
       <div id="p-alts"></div>
+      <section id="p-easy" aria-label="쉬운 설명" hidden>
+        <button id="p-easy-button" type="button" aria-expanded="false" aria-controls="p-easy-card">쉽게 설명</button>
+        <div id="p-easy-card" hidden>
+          <p id="p-easy-text" role="status" aria-live="polite"></p>
+          <p class="p-easy-note">AI 설명 · 이 설명은 저장하지 않아요</p>
+        </div>
+      </section>
       <div class="p-sec" id="p-status-label">모르는 정도</div>
       <!-- 이 낱말을 화면에서 어떻게 다룰지 정하는 두 단추입니다 — 단어장에서 빼기,
            본문 색칠. 같은 일의 두 갈래라 한 줄에 같은 모양으로 섭니다. 빼기는

@@ -970,8 +970,8 @@ function renderPanel(){
   const original = (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `${w.clicked}에서 찾음` : '';
   clickedLine.textContent = original;
   clickedLine.classList.toggle('on', !!original);
-  document.getElementById('p-ex').textContent = w.example || '—';
-  document.getElementById('p-ex-preview').textContent=w.example||'';
+  document.getElementById('p-ex').textContent = base.example || '—';
+  document.getElementById('p-ex-preview').textContent=base.example||'';
   document.getElementById('p-know').hidden=!!previewWordCard;
   document.getElementById('p-highlight-row').hidden=!!previewWordCard;
   document.querySelectorAll('#p-status .stbtn').forEach(b=>{
@@ -1079,7 +1079,9 @@ function renderPanel(){
 
   /* ── 저장된 뜻 ──
      다른 뜻은 문맥 뜻 아래 칩으로 둡니다. 본체는 선택, 끝의 × 는 삭제입니다. */
-  document.getElementById('p-ex-fold').hidden=!w.example;
+  document.getElementById('p-ex-fold').hidden=activeAppView()==='read'||!base.example;
+  if(context&&shown&&!asking)aiCap.textContent='저장된 뜻';
+  if(typeof renderEasyExplanation==='function')renderEasyExplanation();
   if(previewWordCard){
     document.getElementById('p-saved-senses').className='';
     document.getElementById('p-saved-senses').innerHTML='';
@@ -1427,6 +1429,7 @@ function beginWordLookupLife(){
 /* 창이 닫혔습니다. 번호를 올려 앞 번호를 죽이고, 달리던 것은 끊습니다 —
    아무도 안 볼 답에 하루 한도가 새 나가던 자리이기도 합니다. */
 function endWordLookupLife(){
+  if(typeof cancelEasyExplanation==='function')cancelEasyExplanation();
   cancelWordPeekReveal();
   wordPeekHadPending=false;
   wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;wordPeekPresentationEnded=false;
