@@ -1,104 +1,128 @@
 # Local saved-Meaning review
 
 Review reads saved Meaning records with a nonblank `word` and `ko`. It presents
-their exact stored word, Korean contextual definition, source example and book.
-An absent example or book stays absent. Dictionary candidates and `ai.ko` do not
-become answers, and review makes no network or AI requests.
+their exact saved word, contextual definition, source example and book. Missing
+source stays missing. Dictionary candidates and `ai.ko` never become answers.
+Review makes no network/AI requests and never edits vocabulary, stars, marks,
+word-item storage, tombstones or sync payloads (decision 007).
 
-`BreezeReview` is a pure classic-script engine. Its input is the current vocabulary,
-separate versioned review state and an explicit time. It never edits vocabulary,
-stars, marks, word-item storage, tombstones or sync payloads. The UI persists each
-returned review state as one local-only value before advancing. Failed persistence
-must leave the previous card retryable. Existing vocabulary persistence remains
-as described in decision 007.
+`BreezeReview` is a classic-script engine with explicit vocabulary, review state
+and time inputs. All calls return fresh state. The UI reads the latest durable
+state and commits one local value before advancing; a failed write leaves the
+same revealed answer retryable. The opaque session/index/identity token rejects
+repeated callbacks. A grade commits progress, daily counters, event history and
+queue advancement together. This is not cross-tab compare-and-swap; concurrent
+writers across tabs remain a limitation of the existing local storage contract.
 
-The default Today start selects up to five cards. Previously reviewed cards due now
-come first, ordered by due time; new cards follow, oldest saved first. Raw Meaning
-key breaks ties independently of locale and object enumeration. Remembered
-advances through 1, 3, 7, 14 and 30 days, capped at 30. Unknown resets that streak
-and schedules ten minutes later. Uncertain schedules one hour later and lowers
-the streak by one step, floored at zero. No early review of a future-due card is selected by Today.
+## Limits, batches and due work
 
-The persisted queue, index and result counts resume an interrupted session. New
-vocabulary does not change its queue. Answer visibility is transient UI state;
-reopening or changing cards always conceals the answer. Completed sessions remain
-a summary until the user explicitly starts again. Missing or changed queued
-Meanings are skipped, never graded under the old token.
+Daily new and review limits are independent, defaulting to 20 and 100; either
+allows zero. A new card is counted at its first saved regular assessment, not
+when queued or merely revealed. The review budget counts distinct previously
+learned cards receiving a scheduled review that local calendar day. Relearning
+never consumes another card slot, including on a later day. Regular response
+counts include relearning; practice responses are separate. Daily identity sets
+and response totals persist, with no unused allocation carried to the next day.
+Local calendar dates use the device timezone and supplied time; this is not
+Anki's configurable rollover hour.
 
-Identity uses the exact key, word, `ko`, example, book and `addedAt` tuple rather
-than a collision-prone hash. Root promotion, contextual edits and key recreation
-therefore invalidate stale progress. Mutable `up`, picked timestamps, stars,
-marks, suggestions and metadata do not. Deleted progress is pruned when observed.
-An identical delete/re-add that preserves every identity field between observations
-is indistinguishable from the same card; existing creation normally changes
-`addedAt`. No new vocabulary identity field is introduced.
+Only learned cards whose due time has arrived are scheduled reviews. Unlearned
+cards are not overdue. Queue priority is due relearning, due review, then new
+cards within their separate budgets. Backlog counts describe inventory, not a
+recommended daily workload. A batch selects 5, 10, 20 or a positive custom count.
+Reducing the limits can pause an unfinished queue, never delete or complete it.
+Changing batch size applies to the next batch; an already started queue stays
+intact. Explicit extra study bypasses daily limits for that batch and local day;
+it does not alter configured limits or authorize future batches.
 
-Each grade checks the displayed opaque session/index/identity token against the
-latest review state. Repeated callbacks cannot grade the next card or grade the
-same card twice. The UI reads the latest persisted state before grading. This
-small local storage contract does not provide cross-tab compare-and-swap; no
-distributed or synchronized review guarantee is introduced.
+Unfinished queues resume, with answer visibility reset. On regular resumption,
+higher-priority work that became due while away is served first and the original
+queue is parked intact. Switching to another practice scope or regular study
+also parks unfinished work. New vocabulary does not silently expand a started
+scope. Missing or substantively changed references skip without being graded.
+Completion describes only the current batch, reports remaining due reviews and
+pending relearning separately, and offers More / Stop for today. Timed relearning
+is available in the next batch or on resume; a finished batch does not auto-start.
 
-Unknown schemas reset practice only. Bad individual progress entries are dropped;
-bad sessions are discarded whole so malformed queue entries cannot shift indexes.
-Progress uses a null-prototype dictionary; prototype-looking Meaning keys remain
-valid. All public engine calls return fresh state and leave their inputs unchanged.
+## Three assessments, without an algorithm claim
 
-Validation: `node --test tests/verify-vocabulary-review.mjs` covers scheduling,
-resumption, exactly-once sequential grading, malformed data, contextual changes,
-deletion, special keys, immutability and bounded sessions over 5,000 Meanings.
+Judge the answer recalled **before** revealing the saved meaning:
 
-## Explicit practice and entry
+- **다시 학습**: failed recall / incorrect. Reset the stage, mark relearning and
+  schedule 10 minutes later. Repeated failures repeat the same step.
+- **어렵게 맞힘**: correct recall with difficulty. Retain the current day stage,
+  with a one-day minimum for new cards or completed relearning. No one-hour
+  penalty, stage demotion or failure classification.
+- **기억함**: correct normal recall. Advance through 1, 3, 7, 14, 30 days, capped
+  at 30. Successful relearning returns to one day.
 
-Memory's shared dock is Home / Today review / CSV export. Add Word lives in
-its header; dock geometry remains owned by the shared control primitives.
-The center action shows a recommended count or resumes unfinished practice.
+Buttons publish the exact delay applied by the engine. The first successful new
+or relearning answer has a one-day interval for both success grades; later Hard
+retains the interval while normal recall advances it. These are Breeze's fixed
+rules, **not FSRS and not the Anki scheduling algorithm**. FSRS, its parameters,
+retention controls and validated history migration are a separate follow-up.
+Principles: [daily limits](https://docs.ankiweb.net/deck-options.html#daily-limits),
+[answer buttons](https://docs.ankiweb.net/studying.html#answer-buttons).
 
-Book, root-star and search filters select individual Meaning rows, not every
-meaning of a matching lexical item. Selection mode adds per-Meaning checkboxes
-and Select All for the visible rows. Filtered/checked practice includes exactly
-that scope, including future-due cards; its size is not limited to Today's five.
-A separate quiet “오늘 추천으로 복습” action bypasses the filters. Selection itself
-is transient; the started queue and its practice flag persist for resumption.
-Starting a different scope replaces the unfinished queue, not graded progress.
-All reconciliation uses the full vocabulary so filtering cannot delete progress
-outside the current scope. Manual grades use the same intervals as Today.
+## Explicit practice and selection
 
-The saved sentence is visible and its target expression highlighted before the
-meaning is revealed. This MVP practices contextual recall; it does not claim
-context-free mastery or Anki/FSRS scheduling. A short cue asks users to choose
-Uncertain if they inferred the answer but could not recall the word's meaning.
+Book, root-star and search filters select individual Meaning rows. Selection
+completion preserves checks; only explicit cancellation/unchecking clears them.
+Filtering narrows their visible intersection without expanding an empty scope.
+An explicit action opens regular study over all books without filters.
 
-## Study navigation
+Filtered/checked practice includes precisely that scope, including future-due
+cards. It is labeled “연습 · 복습 일정에 영향 없음”. Assessments are recorded as
+practice events and do not change progress, due dates or regular daily budgets.
+Large selections are split into the chosen batch size; the unprocessed selected
+queue persists through completion, reload and changing the next batch size.
+All reconciliation uses the full vocabulary so filtering cannot prune progress.
 
-The center action navigates to the dedicated `study` view rather than opening a
-modal. Memory filters/selection stay on the Memory page; the study page contains
-only the current recall task and a Memory back action. Browser Back/Forward
-restore the persisted queue with its answer hidden. There is no dialog top layer,
-scrim or focus trap. Leaving via Escape/Memory hides the answer and restores the
-entry focus. Long content scrolls as a normal page.
+## Identity and safe v1 migration
 
-## Flashcards and three grades
+Schema v2 remains under the existing local-only storage key. The first successful
+migration saves the original v1 JSON to a `.backup` key before replacing the
+working value. A failed backup or main write prevents advancement. Newer schemas
+are rejected by the UI instead of being overwritten. Malformed individual
+progress records are dropped; invalid sessions are discarded whole.
 
-The front presents the saved expression in its original sentence. Tapping the
-card, Enter/Space, or Show Answer flips to the exact saved meaning. Once revealed,
-the user can flip back to the original sentence and grade Unknown / Uncertain /
-Known. Every button shows its actual next interval from the same engine function
-that applies the grade. Unknown: 10 minutes and reset. Uncertain: 1 hour and one
-step down. Known: 1, 3, 7, 14, 30 days, capped. No grading before reveal.
-The optional uncertain counter defaults to zero for older v1 sessions; old
-queues/progress remain readable. Flashcard behavior borrows familiar recall
-patterns while retaining Breeze type, surface and muted color tokens.
+Identity is the exact `[key, word, ko, addedAt]` tuple. v1's six-field tuple is
+projected to it, preserving due times, stages and queued work. Editing the book
+name or example no longer resets progress. Editing the word/definition, root
+promotion or reusing a key with a changed creation time still invalidates stale
+answers. Identical deletion/recreation between observations remains
+indistinguishable when all identity fields are preserved. No vocabulary schema
+or cloud migration is introduced.
 
-## Card-first presentation and completion
+v1 stored only the latest assessment time, not complete response history or
+new/review classification. Migration does not fabricate those events. Its last
+known reviewed identities conservatively reserve both daily budgets for their
+recorded day; the settings disclose that ambiguity. From v2 onward, budgets and
+event categories are exact. v1 zero-stage progress retains its due time and is
+classified as relearning; the old format cannot distinguish every uncertain
+answer from a failed one. A previously lost/reset progress record is not recoverable.
 
-Memory omits scheduling/resume explanation copy; the filtered-scope escape to
-Today appears only when needed. Study has an icon-only 44px back target and a
-viewport-filling card, with progress at the card's top right. Page titles and
-resume footnotes are omitted. The accessible main/back labels remain.
+## Study entry and presentation
 
-A completed session with actual grades gets a brief completion mark, heading,
-reviewed-expression count and the three recorded self-assessment counts. This
-is a completion moment, not an accuracy or mastery claim. Empty/waiting states
-and sessions exhausted only by deleted cards do not celebrate unperformed work.
-The Done button returns to Memory. Completion motion respects reduced motion.
+Memory keeps its approved shared Home / center / CSV dock geometry. Below the
+star filters, one inline amount row provides a draggable range and numeric input.
+The range normally spans 1–50; direct input allows larger batches and extends its
+maximum. Daily new/review limits and usage/due inventory live in app settings.
+Memory keeps the existing book/search/star scope controls and shows extra copy
+only for practice, unfinished batches, pending relearning or a reached limit.
+No duplicate preset buttons, entry dialog or dock morph is used.
+
+The center pill shows the actual batch count and starts immediately. Amount and
+limit changes save on change/release in their respective surfaces, with a
+retryable storage error;
+invalid input cannot start study. Controls use Memory's existing type, neutral
+colors and 44px targets. Keyboard arrows and numeric entry complement dragging.
+Changing settings does not replace a persisted queue or mark its cards complete.
+
+Starting navigates to the existing `study` page. The saved sentence and its
+highlighted target precede the answer. Tap, Enter/Space or Show Answer flips the
+card; grades remain unavailable before reveal. Browser navigation and Escape
+retain durable queues while concealing the answer. Completion celebrates only
+actual responses and says “이번 묶음 완료”, not completion of all learning.
+
+Validation and remaining limits: [2026-10-02 QA](../qa/vocabulary-review-20261002.md).

@@ -163,3 +163,25 @@ body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) 
 @keyframes review-complete-arrive{from{opacity:0;transform:translateY(8px) scale(.9);}to{opacity:1;transform:none;}}
 @media(max-height:500px){.review-complete-mark{width:96px;height:96px;margin-bottom:12px;}#review-results{margin-top:20px;}#review-result{padding-top:8px;}}
 @media(prefers-reduced-motion:reduce){.complete .review-complete-mark{animation:none;}}
+
+/* Inline study amount follows the Memory filter typography and neutral controls. */
+#review-setup{padding:0 12px;margin:0 0 12px;color:var(--settings-muted);font:400 12px/1.6 var(--ui);}
+#review-setup [hidden],#review-setup p:empty{display:none!important;}
+#review-setup p{margin:2px 0;white-space:pre-line;overflow-wrap:anywhere;}
+.review-amount{display:flex;align-items:center;gap:12px;min-height:44px;}
+.review-amount>label:first-child{flex:none;}
+#review-batch-range{flex:1;min-width:0;width:100%;height:44px;margin:0;appearance:none;background:transparent;cursor:pointer;}
+#review-batch-range::-webkit-slider-runnable-track{height:2px;border-radius:2px;background:var(--sentence-glass-line-soft);}
+#review-batch-range::-moz-range-track{height:2px;border-radius:2px;background:var(--sentence-glass-line-soft);}
+#review-batch-range::-webkit-slider-thumb{appearance:none;width:12px;height:12px;margin-top:-5px;border:0;border-radius:50%;background:var(--settings-muted);}
+#review-batch-range::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:var(--settings-muted);}
+.review-amount-value{display:flex;align-items:center;gap:0;}
+#review-setup input[type=number]{box-sizing:border-box;width:72px;min-height:44px;padding:6px 8px;border:0;border-radius:10px;background:var(--sentence-glass-action);color:var(--settings-ink);font:400 16px/1.5 var(--ui);}
+#review-setup #review-batch-size{width:44px;padding:6px 4px;text-align:center;background:transparent;appearance:textfield;-moz-appearance:textfield;}
+#review-batch-size::-webkit-inner-spin-button,#review-batch-size::-webkit-outer-spin-button{appearance:none;margin:0;}
+#review-setup button{min-height:44px;min-width:44px;padding:6px 8px;border:0;border-radius:10px;background:transparent;color:var(--settings-muted);font:400 12px/1.5 var(--ui);cursor:pointer;}
+#review-setup button:hover{background:var(--sentence-glass-action-hover);}
+#review-setup :focus-visible{outline:2px solid var(--selection-ink);outline-offset:2px;}
+#review-setup #review-setup-error{color:var(--danger);}
+#review-more{margin:12px 0;}
+#review-mode{margin:0 0 12px;}

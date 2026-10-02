@@ -181,12 +181,11 @@ test('deleted or invalid current and upcoming cards skip safely without grading 
   assert.equal(review.view(skipped.state,{},NOW).status,'complete');
 });
 
-test('edited definition, word, source sentence, book or recreated key invalidates old progress',()=>{
+test('edited definition, word or recreated key invalidates old progress',()=>{
   const words={wind:saved('wind')};
   const start=review.start(null,words,NOW);
   const done=remembered(start,words);
-  for(const extra of [{word:'winds'},{ko:'수정한 뜻'},{example:'A new source sentence'},
-    {book:'Another book'},{addedAt:101}]){
+  for(const extra of [{word:'winds'},{ko:'수정한 뜻'},{addedAt:101}]){
     const changed={wind:{...words.wind,...extra}};
     const refreshed=review.start(done.state,changed,NOW+1);
     assert.equal(refreshed.status,'active');
@@ -238,9 +237,9 @@ test('prototype-looking keys are ordinary Meaning keys and cannot pollute state'
 });
 
 test('invalid top-level schemas reset, malformed records drop, valid progress survives',()=>{
-  for(const raw of [null,undefined,[],42,'{}',{}, {version:2},Object.create({version:1})]){
+  for(const raw of [null,undefined,[],42,'{}',{}, {version:99},Object.create({version:1})]){
     const normalized=review.normalize(raw);
-    assert.equal(normalized.version,1);
+    assert.equal(normalized.version,2);
     assert.equal(normalized.session,null);
     assert.equal(Object.keys(normalized.progress).length,0);
   }
@@ -305,7 +304,9 @@ test('large dictionaries remain bounded to five persisted session references',()
     `word-${String(index).padStart(4,'0')}`,saved(`word ${index}`,{addedAt:index})]));
   const started=review.start(null,words,NOW);
   assert.equal(started.total,5);
-  assert.equal(started.eligibleCount,5000);
+  assert.equal(started.eligibleCount,20);
+  assert.equal(started.newCount,5000);
+  assert.equal(started.dueReviewCount,0);
   assert.equal(started.card.key,'word-0000');
   assert.equal(started.state.session.queue.length,5);
   assert.equal(Object.keys(started.state.progress).length,0);
@@ -326,7 +327,7 @@ test('no external APIs, Date clock, AI dependencies or stored answer visibility 
 
 test('explicit selection includes future-due meanings and preserves unrelated progress',()=>{
   const words={a:saved('a'),b:saved('b'),c:saved('c')};
-  let result=review.startSelection(null,words,['a'],NOW);
+  let result=review.start(null,{a:words.a},NOW);
   result=remembered(result,words);
   const aProgress=plain(result.state.progress.a);
   let scoped=review.startSelection(result.state,words,['b','c'],NOW);
@@ -345,19 +346,19 @@ test('manual selection resumes its own queue and supports more than the daily fi
   assert.equal(fresh.total,1);assert.equal(fresh.card.key,'w7');
 });
 
-test('three grades publish the same intervals they schedule; uncertain lowers one step and persists',()=>{
+test('three grades publish actual intervals; difficult correct recall retains its day step',()=>{
   const words={wind:saved('wind')};let start=review.start(null,words,NOW);
-  assert.deepEqual(plain(start.intervals),{confused:10*MINUTE,uncertain:60*MINUTE,remembered:DAY});
+  assert.deepEqual(plain(start.intervals),{confused:10*MINUTE,uncertain:DAY,remembered:DAY});
   let done=remembered(start,words,NOW);start=review.start(done.state,words,NOW+DAY);
   done=remembered(start,words,NOW+DAY);const at=NOW+4*DAY;start=review.start(done.state,words,at);
   assert.equal(start.intervals.remembered,7*DAY);
   const uncertain=review.grade(start.state,words,start.token,'uncertain',at);
-  assert.equal(uncertain.accepted,true);assert.equal(uncertain.state.progress.wind.streak,1);
+  assert.equal(uncertain.accepted,true);assert.equal(uncertain.state.progress.wind.streak,2);
   assert.equal(uncertain.state.progress.wind.dueAt,at+start.intervals.uncertain);
   assert.equal(uncertain.uncertain,1);assert.equal(review.normalize(plain(uncertain.state)).session.uncertain,1);
   assert.equal(review.grade(uncertain.state,words,start.token,'uncertain',at).accepted,false);
-  assert.equal(review.start(uncertain.state,words,at+60*MINUTE-1).status,'waiting');
-  assert.equal(review.start(uncertain.state,words,at+60*MINUTE).intervals.remembered,3*DAY);
+  assert.equal(review.start(uncertain.state,words,at+3*DAY-1).status,'waiting');
+  assert.equal(review.start(uncertain.state,words,at+3*DAY).intervals.remembered,7*DAY);
 });
 test('malformed uncertain counts cannot corrupt a saved session',()=>{
   const start=review.start(null,{wind:saved('wind')},NOW);
@@ -365,4 +366,171 @@ test('malformed uncertain counts cannot corrupt a saved session',()=>{
     const raw=plain(start.state);raw.session.uncertain=uncertain;
     assert.equal(review.normalize(raw).session,null);
   }
+});
+
+
+const many=n=>Object.fromEntries(Array.from({length:n},(_,i)=>[`w${String(i).padStart(4,'0')}`,saved(`w${i}`,{addedAt:i})]));
+function finish(view,words,at=NOW,outcome='remembered'){
+  let guard=0;
+  while(view.status==='active'){
+    assert.ok(guard++<10001,'session terminates');
+    view=review.grade(view.state,words,view.token,outcome,at);
+  }
+  return view;
+}
+test('2,000 new cards never become overdue; daily unused allocation does not roll over',()=>{
+  const words=many(2000);
+  let done=finish(review.start(null,words,NOW),words);
+  assert.equal(done.newUsed,5);assert.equal(done.newCount,1995);assert.equal(done.dueReviewCount,0);
+  const next=review.start(done.state,words,NOW+DAY);
+  assert.equal(next.newUsed,0);assert.equal(next.dueReviewCount,5);
+  assert.equal(next.eligibleCount,25); // Five due + today's 20 new, never yesterday's 15.
+  assert.equal(next.total,5);
+});
+test('1,000 overdue cards are backlog, limited separately from new cards and batch size',()=>{
+  const words=many(1000),raw=review.normalize(null);
+  for(const [key,word] of Object.entries(words))raw.progress[key]={identity:JSON.stringify([key,word.word,word.ko,word.addedAt]),streak:2,dueAt:NOW-1,lastReviewedAt:NOW-DAY};
+  const state=review.configure(raw,{reviewLimit:7,newLimit:0,batchSize:20});
+  const view=review.start(state,words,NOW);
+  assert.equal(view.dueReviewCount,1000);assert.equal(view.eligibleCount,7);assert.equal(view.total,7);
+  const done=finish(view,words);
+  assert.equal(done.reviewUsed,7);assert.equal(done.newUsed,0);assert.equal(done.dueReviewCount,993);
+  assert.equal(review.start(done.state,words,NOW).status,'waiting');
+  assert.equal(review.start(done.state,words,NOW,true).total,20);
+});
+test('zero new limit and independent review budget, with explicit extra batches',()=>{
+  const words=many(12);
+  const zero=review.configure(null,{newLimit:0,batchSize:10});
+  assert.equal(review.start(zero,words,NOW).total,0);
+  let result=finish(review.start(zero,words,NOW,true),words);
+  assert.equal(result.newUsed,10);assert.equal(result.responses,10);
+  assert.equal(review.start(result.state,words,NOW).status,'waiting');
+  result=review.start(result.state,words,NOW,true);
+  assert.equal(result.total,2);
+  const tomorrow=review.view(result.state,words,NOW+DAY);
+  assert.equal(tomorrow.status,'paused','extra authorization expires at local midnight');
+});
+test('daily relearning increases responses, not distinct new/review card counts',()=>{
+  const words={a:saved('a')};
+  const raw=review.configure(null,{newLimit:1,reviewLimit:0});
+  let result=finish(review.start(raw,words,NOW),words,NOW,'confused');
+  assert.equal(result.newUsed,1);assert.equal(result.reviewUsed,0);assert.equal(result.responses,1);
+  assert.equal(result.relearningCount,1);assert.equal(result.nextRelearningAt,NOW+10*MINUTE);
+  assert.equal(review.start(result.state,words,NOW+9*MINUTE).status,'waiting');
+  result=finish(review.start(result.state,words,NOW+10*MINUTE),words,NOW+10*MINUTE,'confused');
+  result=finish(review.start(result.state,words,NOW+20*MINUTE),words,NOW+20*MINUTE);
+  assert.equal(result.newUsed,1);assert.equal(result.reviewUsed,0);assert.equal(result.responses,3);
+  assert.equal(result.relearningCount,0);
+  assert.deepEqual(plain(result.state.history.map(event=>event.kind)),['new','relearning','relearning']);
+});
+test('due relearning precedes overdue reviews, which precede allowed new cards',()=>{
+  const words={a:saved('a'),b:saved('b'),c:saved('c')};
+  let state=finish(review.start(null,{a:words.a},NOW-DAY),{a:words.a},NOW-DAY).state;
+  state=finish(review.start(state,{a:words.a,b:words.b},NOW-10*MINUTE),{a:words.a,b:words.b},NOW-10*MINUTE,'confused').state;
+  const view=review.start(state,words,NOW);
+  assert.deepEqual(plain(view.state.session.queue.map(ref=>ref.key)),['b','a','c']);
+});
+test('short early practice does not graduate cards, consume new limits or alter progress',()=>{
+  const words={a:saved('a'),b:saved('b')};
+  let result=finish(review.start(null,{a:words.a},NOW),{a:words.a});
+  const before=plain(result.state.progress);
+  for(let i=0;i<8;i++)result=finish(review.startSelection(result.state,words,['a','b'],NOW+i),words,NOW+i);
+  assert.deepEqual(plain(result.state.progress),before);
+  assert.equal(result.newUsed,1);assert.equal(result.responses,1);assert.equal(result.practiceResponses,16);
+  assert.equal(result.state.history.filter(event=>event.kind==='practice').length,16);
+});
+test('shrinking limits or batch sizes preserves interrupted queues, including midnight resume',()=>{
+  const words=many(20);
+  let view=review.start(review.configure(null,{newLimit:20,batchSize:10}),words,NOW);
+  view=remembered(view,words);
+  const queue=plain(view.state.session.queue);
+  const lowered=review.configure(view.state,{newLimit:1,batchSize:5});
+  const paused=review.start(lowered,words,NOW);
+  assert.equal(paused.status,'paused');assert.equal(paused.completed,1);
+  assert.deepEqual(plain(paused.state.session.queue),queue);
+  const tomorrow=review.start(paused.state,words,NOW+DAY);
+  assert.equal(tomorrow.status,'active');assert.equal(tomorrow.card.key,'w0000','review due overnight precedes the parked new queue');
+  const reviewed=remembered(tomorrow,words,NOW+DAY);
+  const resumed=review.start(reviewed.state,words,NOW+DAY);
+  assert.equal(resumed.card.key,'w0001');assert.equal(resumed.total,10,'existing queue remains intact');
+  const next=remembered(resumed,words,NOW+DAY);
+  assert.equal(next.status,'paused');assert.equal(next.newUsed,1);
+});
+test('switching between practice scopes and regular study retains all unanswered queues',()=>{
+  const words=many(8);
+  let regular=remembered(review.start(null,words,NOW),words);
+  let practice=remembered(review.startSelection(regular.state,words,['w0006','w0007'],NOW),words);
+  const other=review.startSelection(practice.state,words,['w0005'],NOW);
+  const restored=review.start(other.state,words,NOW);
+  assert.equal(restored.token,regular.token);
+  const restoredPractice=review.startSelection(restored.state,words,['w0006','w0007'],NOW);
+  assert.equal(restoredPractice.token,practice.token);
+  const empty=review.startSelection(restoredPractice.state,words,[],NOW);
+  assert.equal(empty.token,practice.token);
+});
+test('practice batches keep their remaining selected scope through restart and smaller next batch',()=>{
+  const words=many(12),keys=Object.keys(words);
+  let view=finish(review.startSelection(null,words,keys,NOW,5),words);
+  assert.equal(view.total,5);assert.equal(view.practiceRemaining,7);
+  view=review.startSelection(plain(view.state),words,keys,NOW+1,2);
+  assert.equal(view.total,2);assert.equal(view.card.key,'w0005');
+  view=finish(view,words);
+  assert.equal(view.practiceRemaining,5);
+  assert.equal(view.remembered,2);
+});
+test('source title and context edits preserve identities and progress',()=>{
+  const words={a:saved('a')},start=review.start(null,words,NOW),done=remembered(start,words);
+  const changed={a:{...words.a,example:'Updated sentence',book:'Renamed book'}};
+  assert.deepEqual(plain(review.view(done.state,changed,NOW).state.progress),plain(done.state.progress));
+  const current=review.view(start.state,changed,NOW);
+  assert.equal(current.token,start.token);assert.equal(current.card.book,'Renamed book');
+});
+test('v1 migration preserves progress, due times and partial sessions with source edits',()=>{
+  const words={a:saved('a'),b:saved('b')};
+  const refs=Object.entries(words).map(([key,w])=>({key,identity:JSON.stringify([key,w.word,w.ko,w.example,w.book,w.addedAt])}));
+  const raw={version:1,sequence:7,progress:{a:{identity:refs[0].identity,streak:2,dueAt:NOW+DAY,lastReviewedAt:NOW}},
+    session:{id:'legacy',startedAt:NOW,queue:refs,index:1,remembered:1,confused:0}};
+  const view=review.start(raw,{a:{...words.a,book:'Edited'},b:{...words.b,example:'Edited'}},NOW);
+  assert.equal(view.state.version,2);assert.equal(view.card.key,'b');assert.equal(view.completed,1);
+  assert.equal(view.state.progress.a.streak,2);assert.equal(view.state.progress.a.dueAt,NOW+DAY);
+  assert.equal(view.legacyUsage,true);assert.equal(view.newUsed,1);assert.equal(view.reviewUsed,1);
+  const migrated=review.normalize(plain(view.state));
+  assert.deepEqual(plain(migrated),plain(view.state),'migration runs only once');
+  assert.equal(raw.version,1,'source untouched');
+});
+test('failed commits and duplicate callbacks never persist a second response or event',()=>{
+  const words=many(3),view=review.start(null,words,NOW),durable=plain(view.state);
+  const failed=remembered(view,words); // caller cannot save this value
+  const retry=review.grade(durable,words,view.token,'remembered',NOW);
+  assert.deepEqual(plain(retry.state),plain(failed.state));
+  const duplicate=review.grade(retry.state,words,view.token,'remembered',NOW);
+  assert.equal(duplicate.accepted,false);assert.equal(duplicate.responses,1);assert.equal(duplicate.state.history.length,1);
+});
+test('local calendar date changes reset budgets without altering old daily totals',()=>{
+  const before=new Date(2026,9,2,23,59,30).getTime(),after=new Date(2026,9,3,0,0,30).getTime(),words=many(10);
+  const done=finish(review.start(review.configure(null,{newLimit:1}),words,before),words,before);
+  assert.equal(done.newUsed,1);
+  const next=review.start(done.state,words,after);
+  assert.equal(next.newUsed,0);assert.equal(next.total,1);assert.equal(next.newCount,9);
+  assert.equal(Object.values(next.state.daily)[0].new.length,1);
+});
+
+test('due relearning preempts a resumed queue without losing unanswered cards',()=>{
+  const words=many(8);
+  let view=review.start(review.configure(null,{newLimit:2}),words,NOW);
+  view=review.grade(view.state,words,view.token,'confused',NOW);
+  const savedQueue=plain(view.state.session.queue),oldToken=view.token;
+  view=review.start(view.state,words,NOW+10*MINUTE);
+  assert.equal(view.card.key,'w0000');assert.equal(view.total,1);
+  view=finish(view,words,NOW+10*MINUTE);
+  view=review.start(view.state,words,NOW+10*MINUTE);
+  assert.equal(view.token,oldToken);assert.deepEqual(plain(view.state.session.queue),savedQueue);
+});
+
+test('deleted practice references do not restart already answered selected cards',()=>{
+  const words=many(8),keys=Object.keys(words);
+  let view=remembered(review.startSelection(null,words,keys,NOW,5),words);
+  const token=view.token;delete words.w0007;
+  view=review.startSelection(view.state,words,keys,NOW,5);
+  assert.equal(view.token,token);assert.equal(view.completed,1);
 });

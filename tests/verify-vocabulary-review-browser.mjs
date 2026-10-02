@@ -96,7 +96,7 @@ async function closeReview(page,keyboard=false){
 try{
   await scenario('five-item cap, hidden answers, durable progress and no mutation',uniqueWords(7),async page=>{
     const before=await persistedWords(page);
-    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'오늘 복습 · 5');
+    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'5개 학습 시작');
     await openReview(page);await assertHiddenAnswer(page);
     assert.equal((await progress(page)).at(-1),5,'A new session is capped at five cards');
     const first=await page.locator('#review-expression').innerText();
@@ -337,7 +337,7 @@ try{
     assert.equal(await page.locator('#review-front').isVisible(),false);
     assert.equal(await page.locator('#review-meaning').isVisible(),true);
     assert.equal(await page.locator('#review-confused-interval').textContent(),'10분');
-    assert.equal(await page.locator('#review-uncertain-interval').textContent(),'1시간');
+    assert.equal(await page.locator('#review-uncertain-interval').textContent(),'1일');
     assert.equal(await page.locator('#review-remember-interval').textContent(),'1일');
     await page.locator('#review-flip').focus();await page.keyboard.press('Space');
     assert.equal(await page.locator('#review-front').isVisible(),true);
@@ -347,9 +347,9 @@ try{
     assert.equal(await page.locator('#review-celebration').isVisible(),true);
     assert.equal(await page.locator('#review-result-uncertain').textContent(),'1');
     assert.equal(await page.locator('#review-result-known').textContent(),'0');
-    assert.equal(Object.values(stored.progress)[0].dueAt,NOW+3600000);
-    await closeReview(page);await page.clock.setFixedTime(NOW+3600000-1);await openReview(page);await assertDone(page);
-    await closeReview(page);await page.clock.setFixedTime(NOW+3600000);await openReview(page);await assertHiddenAnswer(page);
+    assert.equal(Object.values(stored.progress)[0].dueAt,NOW+86400000);
+    await closeReview(page);await page.clock.setFixedTime(NOW+86400000-1);await openReview(page);await assertDone(page);
+    await closeReview(page);await page.clock.setFixedTime(NOW+86400000);await openReview(page);await assertHiddenAnswer(page);
   });
 
   await scenario('responsive light and dark layouts',{
@@ -396,6 +396,141 @@ try{
       await page.screenshot({path:`${out}/${engine.name()}-complete-${width}x${height}-${dark?'dark':'light'}.png`});
     }
     await page.locator('#review-finish').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
+  });
+
+  await scenario('selection done preserves checks and empty scopes never expand',uniqueWords(8),async page=>{
+    await page.locator('#review-select-toggle').click();
+    await page.locator('.review-pick input').first().check();
+    await page.locator('.review-pick input').nth(1).check();
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('#review-selection-count').textContent(),'2개 선택');
+    assert.equal(await page.locator('.review-pick').count(),0);
+    await openReview(page);
+    assert.equal((await progress(page)).at(-1),2);
+    assert.equal(await page.locator('#review-mode').textContent(),'연습 · 복습 일정에 영향 없음');
+    await reveal(page);await page.locator('#review-remember').click();
+    let saved=JSON.parse(await reviewState(page));
+    assert.deepEqual(saved.progress,{});assert.equal(saved.history[0].kind,'practice');
+    await closeReview(page);
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('.review-pick input:checked').count(),2);
+    await page.locator('#review-select-all').check();
+    await page.locator('#review-select-all').uncheck();
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
+    await page.locator('#review-select-cancel').click();
+    assert.equal(await page.locator('#review-selection-count').textContent(),'');
+    await page.locator('#vsearch').fill('no such saved meaning');
+    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
+    await page.locator('#vsearch').fill('');
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('.review-pick input:checked').count(),0);
+  });
+
+  await scenario('setup limits, explicit extra and response counts survive failed saves',uniqueWords(12),async page=>{
+    await page.evaluate(()=>openSettings());
+    await page.locator('#review-new-limit').fill('0');
+    await page.locator('#set-close').click();
+    assert.equal(JSON.parse(await reviewState(page)).settings.newLimit,0);
+    assert.equal(await page.locator('#review-setup-extra').isVisible(),true);
+    await openReview(page);
+    assert.equal(await page.locator('#review-card').isVisible(),false);
+    await closeReview(page);
+    await page.locator('#review-batch-size').fill('10');
+    await page.locator('#review-batch-size').press('Tab');
+    await page.locator('#review-setup-extra').click();
+    assert.equal((await progress(page)).at(-1),10);
+    await reveal(page);await page.locator('#review-confused').click();
+    for(let i=1;i<10;i++){await reveal(page);await page.locator('#review-remember').click();}
+    assert.match(await page.locator('#review-status').innerText(),/이번 10개 완료/);
+    assert.match(await page.locator('#review-pending').innerText(),/10분 뒤부터 재학습 1개/);
+    await page.clock.setFixedTime(NOW+600001);
+    await page.locator('#review-more').click();
+    assert.equal((await progress(page)).at(-1),1);
+    await reveal(page);await page.locator('#review-remember').click();
+    const saved=JSON.parse(await reviewState(page)),today=Object.values(saved.daily)[0];
+    assert.equal(today.new.length,10);assert.equal(today.review.length,0);assert.equal(today.responses,11);
+    assert.equal(saved.history.length,11);
+  });
+
+  await scenario('practice uses batch size and preserves its remaining queue after reload',uniqueWords(8),async page=>{
+    await page.locator('#review-select-toggle').click();await page.locator('#review-select-all').check();
+    await page.locator('#review-select-toggle').click();await openReview(page);
+    for(let i=0;i<5;i++){await reveal(page);await page.locator('#review-remember').click();}
+    assert.match(await page.locator('#review-status').innerText(),/남은 선택 연습 3개/);
+    await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);await page.evaluate(()=>show('study'));
+    await page.locator('#review-more').click();
+    assert.equal((await progress(page)).at(-1),3);
+    for(let i=0;i<3;i++){await reveal(page);await page.locator('#review-remember').click();}
+    const saved=JSON.parse(await reviewState(page));
+    assert.deepEqual(saved.progress,{});assert.equal(saved.history.length,8);
+    assert.equal(Object.values(saved.daily)[0].practice,8);
+  });
+
+  await scenario('v1 migration backup preserves unfinished queue and source edits',uniqueWords(3),async page=>{
+    await page.evaluate(({key,at})=>{
+      const refs=Object.entries(words).map(([key,w])=>({key,identity:JSON.stringify([key,w.word,w.ko,w.example,w.book,w.addedAt])}));
+      const legacy={version:1,sequence:4,progress:{[refs[0].key]:{identity:refs[0].identity,streak:2,dueAt:at+86400000,lastReviewedAt:at}},session:{id:'old',startedAt:at,queue:refs,index:1,remembered:1,confused:0}};
+      localStorage.setItem(key,JSON.stringify(legacy));
+      words[refs[0].key].book='Renamed source';words[refs[1].key].example='Edited saved sentence';saveWords();
+    },{key:REVIEW_KEY,at:NOW});
+    await openReview(page);
+    assert.deepEqual(await progress(page),[2,3]);
+    const saved=JSON.parse(await reviewState(page));
+    assert.equal(saved.version,2);assert.equal(Object.values(saved.progress)[0].streak,2);
+    assert.equal(await page.evaluate(key=>JSON.parse(localStorage.getItem(key+'.backup')).version,REVIEW_KEY),1);
+    await reveal(page);await page.locator('#review-remember').click();
+    assert.equal(JSON.parse(await reviewState(page)).history.length,1);
+  });
+
+  await scenario('minimal inline drag, numeric input, app settings, persistence and responsive themes',uniqueWords(20),async page=>{
+    assert.equal(await page.locator('#review-setup').evaluate(node=>node.tagName),'SECTION');
+    assert.equal(await page.locator('dialog:modal').count(),0);
+    const slider=page.locator('#review-batch-range'),box=await slider.boundingBox();
+    await page.mouse.move(box.x+box.width*.1,box.y+box.height/2);await page.mouse.down();
+    await page.mouse.move(box.x+box.width*.65,box.y+box.height/2,{steps:8});await page.mouse.up();
+    const dragged=Number(await slider.inputValue());assert.ok(dragged>5);
+    assert.equal(Number(await page.locator('#review-batch-size').inputValue()),dragged);
+    assert.equal(JSON.parse(await reviewState(page)).settings.batchSize,dragged);
+    await slider.focus();await page.keyboard.press('ArrowRight');
+    assert.equal(Number(await slider.inputValue()),dragged+1);
+    await page.locator('#review-batch-size').fill('20');await page.locator('#review-batch-size').press('Tab');assert.equal(await slider.inputValue(),'20');
+    await page.locator('#review-batch-size').fill('8');await page.locator('#review-batch-size').press('Tab');
+    assert.equal(await slider.inputValue(),'8');
+    assert.equal(JSON.parse(await reviewState(page)).settings.batchSize,8);
+    await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);await page.evaluate(()=>show('vocab'));
+    assert.equal(await page.locator('#review-batch-size').inputValue(),'8');
+    for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390],[320,360]])for(const dark of [false,true]){
+      await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
+      await page.evaluate(()=>scrollTo(0,0));
+      await page.screenshot({path:`${out}/${engine.name()}-inline-${width}x${height}-${dark?'dark':'light'}.png`});
+      assert.match(await page.locator('#wordbook-review').innerText(),/8개 학습 시작/);
+      const layout=await page.locator('#review-setup').evaluate(node=>{const r=node.getBoundingClientRect();return {x:r.x,right:r.right,scroll:node.scrollWidth,width:node.clientWidth};});
+      assert.ok(layout.x>=-1&&layout.right<=width+1&&layout.scroll<=layout.width+1,JSON.stringify(layout));
+      for(const selector of ['#review-batch-range','#review-batch-size','#wordbook-review']){
+        await page.locator(selector).scrollIntoViewIfNeeded();const r=await page.locator(selector).boundingBox();
+        assert.ok(r.width>=44&&r.height>=44&&r.y>=0&&r.y+r.height<=height+1,selector);
+      }
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await page.evaluate(()=>openSettings());
+      for(const id of ['review-new-limit','review-daily-limit']){
+        const input=page.locator('#'+id);await input.scrollIntoViewIfNeeded();const r=await input.boundingBox();
+        assert.ok(r.width>=44&&r.height>=44&&r.x>=0&&r.x+r.width<=width+1&&r.y>=0&&r.y+r.height<=height+1,id);
+      }
+      await page.screenshot({path:`${out}/${engine.name()}-app-settings-${width}x${height}-${dark?'dark':'light'}.png`});
+      await page.locator('#set-close').click();
+    }
+    const original=await reviewState(page);
+    await page.evaluate(key=>{window.originalReviewSet=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===key)throw new Error('full');return window.originalReviewSet.call(this,k,v);};},REVIEW_KEY);
+    await page.locator('#review-batch-size').fill('10');
+    await page.locator('#review-batch-size').press('Tab');
+    assert.equal(await page.locator('#review-setup-error').isVisible(),true);
+    assert.equal(await reviewState(page),original);
+    await page.locator('#wordbook-review').click();
+    assert.equal(await page.evaluate(()=>activeAppView()),'vocab','failed start leaves the inline controls and old queue');
+    await page.evaluate(()=>{Storage.prototype.setItem=window.originalReviewSet;});
+    await openReview(page);await assertHiddenAnswer(page);
+    assert.equal((await progress(page)).at(-1),10);
   });
   if(failures.length)throw new AggregateError(failures,`${engine.name()}: ${failures.length} review scenarios failed`);
   console.log(`Vocabulary review browser regression passed (${engine.name()}); screenshots: ${out}`);

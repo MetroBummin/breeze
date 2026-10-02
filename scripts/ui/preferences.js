@@ -125,6 +125,7 @@ function openSettings(tab){
      지금 값으로 맞춥니다. */
   applyDark();
   settingsTab('sync');
+  if(typeof restoreReviewControls==='function'){try{restoreReviewControls();refreshVocabularyReviewEntry();}catch{/* Review controls surface errors on save. */}}
   document.getElementById('set-card').scrollTop=0;
   document.getElementById('set-close').focus({preventScroll:true});
 }
