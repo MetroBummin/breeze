@@ -46,3 +46,11 @@ Wordbook inline edits persist their one changed key; an unchanged blur is a no-o
 Row disclosure changes only that row's extra details and editable state, preserving
 other rows, focus and the existing multi-meaning deletion rules. Structural
 filter/sort/deletion and remote changes still use the full render path.
+
+## Saved meaning/example pair and transient help
+
+Opening a saved Meaning in a second sentence does not overwrite its example. A
+retry that resolves to the same Meaning keeps its original pair; a different
+meaning is saved with its own sentence. Reader-only context overlays are not a
+write contract. Easy explanations must never enter word items, journals, legacy
+snapshots, lookup receipts or sync payloads. They are bounded page/account memory.

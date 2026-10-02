@@ -98,7 +98,7 @@ tbody tr:last-child td{border-bottom:0}
 <main>
 <h1 id="breeze-사전은-어떻게-움직이나">Breeze 사전은 어떻게 움직이나</h1>
 <h2 id="한-줄-요약">한 줄 요약</h2>
-<p>처음 보는 lexical item은 DeepSeek가 문맥을 보고 분석합니다. 같은 문장의 같은 단어 위치에서 확인한 Meaning은 기기에서 즉시 재사용합니다. 처음 만나는 문맥은 같은 짧은 AI lookup으로 확인합니다.</p>
+<p>처음 보는 lexical item은 DeepSeek가 문맥을 보고 분석합니다. 같은 문장의 같은 단어 위치에서 확인한 Meaning은 기기에서 즉시 재사용합니다. 이미 저장된 단어는 새 문맥에서도 저장한 뜻을 먼저 보여 줍니다. 새 뜻 확인은 사용자가 다시 찾기를 누를 때 수행합니다.</p>
 <h2 id="조회-흐름">조회 흐름</h2>
 <pre data-lang="text"><code>처음 보는 낱말 선택
   → 같은 문장 cache가 있으면 즉시 사용
@@ -111,13 +111,14 @@ tbody tr:last-child td{border-bottom:0}
 
 이미 저장한 lexical item을 다시 선택
   → 확인한 문장/단어 위치면 저장 Meaning 즉시 표시
-  → 새 문맥이면 DeepSeek mini lookup 한 번
+  → 새 문맥이어도 저장된 뜻을 즉시 표시 (자동 AI 조회 없음)
   → 다시 찾기는 현재 문장과 앞뒤 문장으로 재확인
 
 작은 뜻 필에서 상세창 열기
   → 저장된 짧은 한국어 Meaning을 그대로 표시
   → IPA·음성·영어 정의는 dictionaryapi.dev metadata를 사용
-  → 추가 AI 호출 없음</code></pre>
+  → 여는 것만으로 추가 AI 호출 없음
+  → 쉽게 설명을 누르면 어려운 뜻·개념을 풀어 설명 (별도 요청, 저장 안 함)</code></pre>
 <h3 id="deepseek의-역할">DeepSeek의 역할</h3>
 <p>DeepSeek가 lexical analysis의 생성 엔진입니다.</p>
 <p>Mini lookup은 다음 네 필드만 만듭니다.</p>
@@ -126,7 +127,7 @@ tbody tr:last-child td{border-bottom:0}
 <pre data-lang="json"><code>{"kind":"expression","canonical":"give up","members":[4,8],"ko":"포기하다"}</code></pre>
 <ul><li>먼저 문맥 안의 고정 표현을 확인합니다. 숙어를 짧게 번역할 수 있어도 단어로 쪼개지 않습니다. 일반 수식어나 의미가 그대로 합쳐지는 전치사 결합은 word입니다.</li><li>phrasal verb, idiom, fixed expression처럼 여러 단어를 하나로 보지 않으면 의미가 달라지거나 중요한 lexical identity를 잃을 때만 expression으로 처리합니다.</li><li><code>canonical</code>은 저장할 표제형입니다.</li><li><code>members</code>는 <strong>현재 문장에서 색칠할 lexical member token</strong>입니다. 저장 표제어를 <code>members</code>를 이어 붙여 만들지 않습니다.</li><li>연속된 표현 안의 <code>of</code>, <code>to</code>, <code>at</code> 같은 function word가 lexical identity의 일부라면 빼지 않습니다.</li><li>분리 가능한 구동사의 목적어·변수는 member가 아닙니다. 예: <code>gave the plan up</code>은 <code>give/up</code>만 member이고 저장 표제어는 <code>give up</code>입니다.</li><li>Mini lookup에서는 긴 gloss·다른 뜻 후보·설명을 만들지 않습니다.</li></ul>
 <h2 id="저장된-meaning-재사용">저장된 Meaning 재사용</h2>
-<ul><li>같은 문장과 같은 클릭 위치에서 확정된 Meaning은 즉시 보여 줍니다.</li><li>새 문맥은 한 번 분석해 저장된 같은 뜻을 재사용하거나 새 Meaning을 만듭니다.</li><li>미니필과 상세창의 다시 찾기는 모두 현재 문장과 앞뒤 한 문장을 입력으로 사용합니다.</li><li>캐시는 문장뿐 아니라 클릭 위치와 계약 버전을 구분합니다.</li><li>단어 전체 빼기는 모든 뜻을 함께 지우며, 뜻 하나의 삭제와 구분합니다.</li><li>자동 분석은 지운 뜻을 되살리지 않고 표현 분석도 직접 수정한 뜻을 덮어쓰지 않습니다.</li></ul>
+<ul><li>같은 문장과 같은 클릭 위치에서 확정된 Meaning은 즉시 보여 줍니다.</li><li>새 문맥에서 여는 것만으로 저장된 뜻과 예문을 바꾸지 않습니다. 다시 찾기 결과가 같은 뜻이면 기존 Meaning/예문을 유지하고, 다른 뜻이면 현재 문장의 별도 Meaning을 만듭니다.</li><li>A에서 저장한 뜻을 B에서 다시 열어도 예문은 A입니다. Reader 상세창은 중복 예문을 숨기고, 미검증 문맥에서 보여 주는 뜻의 제목은 ‘저장된 뜻’으로 표시합니다.</li><li>미니필과 상세창의 다시 찾기는 모두 현재 문장과 앞뒤 한 문장을 입력으로 사용합니다.</li><li>캐시는 문장뿐 아니라 클릭 위치와 계약 버전을 구분합니다.</li><li>단어 전체 빼기는 모든 뜻을 함께 지우며, 뜻 하나의 삭제와 구분합니다.</li><li>자동 분석은 지운 뜻을 되살리지 않고 표현 분석도 직접 수정한 뜻을 덮어쓰지 않습니다.</li></ul>
 <h2 id="저장-모델">저장 모델</h2>
 <p>lexical identity와 문장 annotation을 분리합니다.</p>
 <pre data-lang="text"><code>Lexical Item
@@ -157,8 +158,12 @@ members: [gave, up]</code></pre>
 <ul><li>DeepSeek = lexical intelligence.</li><li>Saved Meaning reuse = local-only.</li><li>Mini pill = 최소 생성.</li><li>Detail popup = 이미 가진 Meaning과 dictionaryapi.dev metadata만 표시.</li><li><code>dictionaryapi.dev</code> = IPA·음성·영어 정의 metadata only.</li><li>OEWN/Breeze Lexicon/lazy Korean repair = lookup critical path에 없음.</li><li>같은 문장 cache는 네트워크보다 먼저 확인합니다.</li><li>늦게 도착한 답은 닫힌 lookup을 다시 열거나 화면을 조종할 수 없습니다.</li></ul>
 <h2 id="관련-코드">관련 코드</h2>
 <div class="tablewrap"><table><thead><tr><th>위치</th><th>역할</th></tr></thead><tbody><tr><td><code>scripts/dictionary/dictionary.js</code></td><td>mini lookup, local Meaning reuse, 단어 상세창, 단어장</td></tr><tr><td><code>scripts/dictionary/sentence.js</code></td><td>꾹 누르기 · 문장 해석 창</td></tr><tr><td><code>server/dict/index.ts</code></td><td>DeepSeek/fallback 요청, 한도</td></tr><tr><td><code>server/dict/telemetry.ts</code></td><td>제공자 latency/token telemetry</td></tr><tr><td><code>sql/supabase_dict.sql</code></td><td>AI 사용량 테이블</td></tr></tbody></table></div>
+<h2 id="쉽게-설명">쉽게 설명</h2>
+<p>버튼을 눌렀을 때만 <code>easy_explanation</code>을 호출합니다. 낱말·저장된 뜻·현재 문장(없으면 저장 예문)과 앞뒤 최대 두 문장씩을 전달합니다. 단어 자체가 어려우면 단어·개념을 풀고, 문맥이 필요한 표현이면 그 맥락에서의 의미도 설명합니다. 각 문장은 최대 2400자이며 없는 이웃 문장은 만들지 않습니다. 같은 문장이 반복되면 정확한 클릭 위치를 우선하고 위치를 확정할 수 없을 때는 이웃 문장을 생략합니다. 새 뜻으로 채택하거나 저장 예문을 바꾸는 동작이 아닙니다.</p>
+<p>답은 현재 페이지·계정의 최대 16개 메모리 캐시에만 둡니다. 같은 단어·같은 문장에서 다시 열면 펼친 설명을 복원합니다. 다른 문장에서 같은 단어를 누르는 즉시 이전 설명을 버리고 버튼부터 표시하며, A → B → A에서도 예전 답을 되살리지 않습니다. 앱의 단어 저장소, localStorage, IndexedDB, 동기화, 서버 lookup receipt에는 쓰지 않으며 응답은 <code>Cache-Control: no-store</code>입니다. 모델 제공자에게 보내는 요청이며 제공자의 보관 정책까지 변경하는 계약은 아닙니다.</p>
+<p>기존 사용량 RPC로 요청 전에 1회를 차감합니다. 영구 답변 receipt를 만들지 않는 첫 버전이므로 실패·중단된 요청도 1회가 사용될 수 있습니다. 클라이언트 자동 재시도는 하지 않습니다. 계정 변경, 단어 변경, 닫기 뒤 늦은 답은 표시하지 않습니다. 프론트엔드 사용 전 dict Edge Function의 별도 배포가 필요합니다.</p>
 </main>
-<aside><div class="lbl">이 문서 안</div><a class="" href="#한-줄-요약">한 줄 요약</a><a class="" href="#조회-흐름">조회 흐름</a><a class="sub" href="#deepseek의-역할">DeepSeek의 역할</a><a class="" href="#저장된-meaning-재사용">저장된 Meaning 재사용</a><a class="" href="#저장-모델">저장 모델</a><a class="" href="#화면에서-할-수-있는-것">화면에서 할 수 있는 것</a><a class="" href="#로그인과-한도">로그인과 한도</a><a class="" href="#무엇이-어디에-남나">무엇이 어디에 남나</a><a class="sub" href="#기기-안">기기 안</a><a class="sub" href="#breeze-서버와-ai-제공자">Breeze 서버와 AI 제공자</a><a class="" href="#구현의-경계">구현의 경계</a><a class="" href="#관련-코드">관련 코드</a></aside>
+<aside><div class="lbl">이 문서 안</div><a class="" href="#한-줄-요약">한 줄 요약</a><a class="" href="#조회-흐름">조회 흐름</a><a class="sub" href="#deepseek의-역할">DeepSeek의 역할</a><a class="" href="#저장된-meaning-재사용">저장된 Meaning 재사용</a><a class="" href="#저장-모델">저장 모델</a><a class="" href="#화면에서-할-수-있는-것">화면에서 할 수 있는 것</a><a class="" href="#로그인과-한도">로그인과 한도</a><a class="" href="#무엇이-어디에-남나">무엇이 어디에 남나</a><a class="sub" href="#기기-안">기기 안</a><a class="sub" href="#breeze-서버와-ai-제공자">Breeze 서버와 AI 제공자</a><a class="" href="#구현의-경계">구현의 경계</a><a class="" href="#관련-코드">관련 코드</a><a class="" href="#쉽게-설명">쉽게 설명</a></aside>
 </div>
 <div class="foot">
   이 문서는 저장소의 <code>DICT.md</code> 에서 자동으로 만들어집니다 ·

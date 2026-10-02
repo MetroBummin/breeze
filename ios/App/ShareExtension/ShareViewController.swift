@@ -5,9 +5,9 @@ final class ShareViewController: UIViewController {
     private let titleLabel = UILabel()
     private let detailLabel = UILabel()
     private let saveButton = UIButton(type: .system)
-    private var sharedURL: URL?
-    private var originalText: String?
-    private var pageTitle: String?
+    private var sharedFile: URL?
+    private var sharedName: String?
+    private var temporaryFolder: URL?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,13 +26,13 @@ final class ShareViewController: UIViewController {
         heading.alignment = .center
         heading.spacing = 10
 
-        detailLabel.text = "Loading link…"
+        detailLabel.text = "파일을 준비하고 있어요…"
         detailLabel.font = .preferredFont(forTextStyle: .subheadline)
         detailLabel.textColor = .secondaryLabel
         detailLabel.numberOfLines = 2
 
         saveButton.configuration = .filled()
-        saveButton.configuration?.title = "Save to Breeze"
+        saveButton.configuration?.title = "Breeze에 저장"
         saveButton.isEnabled = false
         saveButton.addTarget(self, action: #selector(save), for: .touchUpInside)
 
@@ -49,62 +49,90 @@ final class ShareViewController: UIViewController {
         loadShare()
     }
 
+    deinit {
+        if let temporaryFolder { try? FileManager.default.removeItem(at: temporaryFolder) }
+    }
+
     private func loadShare() {
         let items = extensionContext?.inputItems.compactMap { $0 as? NSExtensionItem } ?? []
-        pageTitle = items.first?.attributedTitle?.string
-        originalText = items.first?.attributedContentText?.string
         let providers = items.flatMap { $0.attachments ?? [] }
-        guard let provider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.url.identifier) })
-                ?? providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) }) else {
-            detailLabel.text = "No web link found"
+        let supported = providers.filter { provider in
+            provider.hasItemConformingToTypeIdentifier(UTType.pdf.identifier)
+                || provider.hasItemConformingToTypeIdentifier("org.idpf.epub-container")
+                || provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+        }
+        guard supported.count == 1, let provider = supported.first else {
+            detailLabel.text = "PDF 또는 EPUB 파일 하나를 공유해 주세요."
             return
         }
-        if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-            provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] item, _ in
-                let url = (item as? URL) ?? (item as? String).flatMap(URL.init(string:))
-                DispatchQueue.main.async { self?.setLink(url, text: nil) }
+        let type = [UTType.pdf.identifier, "org.idpf.epub-container"].first {
+            provider.hasItemConformingToTypeIdentifier($0)
+        }
+        if let type {
+            provider.loadFileRepresentation(forTypeIdentifier: type) { [weak self] url, error in
+                self?.receiveFile(url, suggestedName: provider.suggestedName, type: type, error: error)
             }
         } else {
-            provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { [weak self] item, _ in
-                let text = (item as? String) ?? (item as? NSAttributedString)?.string
-                    ?? (item as? Data).flatMap { String(data: $0, encoding: .utf8) }
-                let url = text.flatMap { string -> URL? in
-                    let range = NSRange(string.startIndex..<string.endIndex, in: string)
-                    return (try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue))?
-                        .firstMatch(in: string, range: range)?.url
-                }
-                DispatchQueue.main.async { self?.setLink(url, text: text) }
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { [weak self] item, error in
+                let url = (item as? URL) ?? (item as? Data).flatMap { URL(dataRepresentation: $0, relativeTo: nil) }
+                self?.receiveFile(url, suggestedName: nil, type: nil, error: error)
             }
         }
     }
 
-    private func setLink(_ url: URL?, text: String?) {
-        guard let url, let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
-              url.host != nil else {
-            detailLabel.text = "No web link found"
-            return
+    // Provider URLs can disappear when the completion returns. Copy synchronously
+    // inside that completion; only our owned temporary file waits for the Save tap.
+    private func receiveFile(_ url: URL?, suggestedName: String?, type: String?, error: Error?) {
+        do {
+            if let error { throw error }
+            guard let url else { throw NSError(domain: "BreezeShare", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "파일을 읽지 못했어요. 다시 공유해 주세요."]) }
+            let access = url.startAccessingSecurityScopedResource()
+            defer { if access { url.stopAccessingSecurityScopedResource() } }
+            var name = ((suggestedName?.isEmpty == false ? suggestedName! : url.lastPathComponent) as NSString).lastPathComponent
+            if !["pdf", "epub"].contains((name as NSString).pathExtension.lowercased()), let type {
+                name += type == UTType.pdf.identifier ? ".pdf" : ".epub"
+            }
+            _ = try ShareInboxStore.validateFile(at: url, name: name)
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let owned = folder.appendingPathComponent("payload")
+            do { try FileManager.default.copyItem(at: url, to: owned) }
+            catch { try? FileManager.default.removeItem(at: folder); throw error }
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { try? FileManager.default.removeItem(at: folder); return }
+                self.temporaryFolder = folder
+                self.sharedFile = owned
+                self.sharedName = name
+                self.detailLabel.text = name
+                self.saveButton.isEnabled = true
+            }
+        } catch {
+            DispatchQueue.main.async { [weak self] in self?.detailLabel.text = error.localizedDescription }
         }
-        sharedURL = url
-        originalText = text ?? originalText
-        if pageTitle == nil, let text = originalText, text != url.absoluteString {
-            pageTitle = text.components(separatedBy: .newlines).first?.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        detailLabel.text = pageTitle?.isEmpty == false ? pageTitle : url.absoluteString
-        saveButton.isEnabled = true
     }
 
     @objc private func save() {
-        guard let sharedURL else { return }
+        guard let sharedFile, let sharedName else { return }
         saveButton.isEnabled = false
-        do {
-            try ShareInboxStore.save(url: sharedURL, originalText: originalText, title: pageTitle)
-            saveButton.configuration?.title = "Saved to Breeze"
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-                self?.extensionContext?.completeRequest(returningItems: nil)
+        saveButton.configuration?.title = "저장 중…"
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try ShareInboxStore.saveFile(at: sharedFile, name: sharedName)
+                DispatchQueue.main.async {
+                    self?.saveButton.configuration?.title = "저장했어요"
+                    self?.detailLabel.text = "Breeze를 열면 책을 가져와요."
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self?.extensionContext?.completeRequest(returningItems: nil)
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self?.detailLabel.text = error.localizedDescription
+                    self?.saveButton.configuration?.title = "다시 저장"
+                    self?.saveButton.isEnabled = true
+                }
             }
-        } catch {
-            detailLabel.text = error.localizedDescription
-            saveButton.isEnabled = true
         }
     }
 }

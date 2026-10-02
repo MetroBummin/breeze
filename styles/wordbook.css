@@ -1,6 +1,6 @@
 /* Penpot Wordbook: 390 / 768 / 1024 / 1440. Material belongs to control-glass. */
-html:has(#v-vocab.on),body:has(#v-vocab.on){background:var(--home-background);}
-body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
+html:has(:is(#v-vocab,#v-study).on),body:has(:is(#v-vocab,#v-study).on){background:var(--home-background);}
+body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) #topbar{display:none;}
 #v-vocab{max-width:1160px;margin:0 auto;padding:calc(52px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));background:var(--home-background);color:var(--settings-ink);min-height:100svh;}
 #v-vocab .wordbook-brand{display:flex;align-items:center;gap:10px;margin:0 0 32px;min-height:38px;}
 .wordbook-brand img{border-radius:9px;flex:none;}
@@ -80,3 +80,86 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 #v-vocab .chip.s1{background:var(--s1);color:var(--s1-ink);}
 #v-vocab .chip.s2{background:var(--s2);color:var(--s2-ink);}
 #v-vocab .chip.s3{background:var(--s3);color:var(--s3-ink);}
+
+/* Context recall uses the shared task surface; the reader and dock are untouched. */
+.wordbook-review-entry{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 20px;}
+.wordbook-review-entry[hidden]{display:none;}
+#vocabulary-review-page button:not(#review-close){min-height:48px;padding:12px 16px;border:1px solid var(--sentence-glass-line-soft);border-radius:16px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:600 14px/1.5 var(--ui);cursor:pointer;}
+#vocabulary-review-page button:not(#review-close):hover{background:var(--sentence-glass-action-hover);}
+#wordbook-review:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:3px;}
+#vocabulary-review-page [hidden]{display:none!important;}
+#vocabulary-review-page h2{margin:0;font:700 26px/1.4 var(--ui);}
+#review-progress,#review-source{color:var(--sentence-glass-secondary);font:400 12px/1.65 var(--ui);overflow-wrap:anywhere;}
+#review-progress{align-self:flex-end;margin:0 0 16px;font-variant-numeric:tabular-nums;}
+#review-expression{font:600 22px/1.5 var(--ui);margin:0 0 16px;overflow-wrap:anywhere;}
+#review-sentence{font:400 19px/1.8 var(--serif,var(--ui));margin:0 0 12px;white-space:pre-wrap;overflow-wrap:anywhere;}
+#review-sentence mark{background:var(--selection-fill);color:inherit;border-radius:3px;text-decoration:underline;text-decoration-color:var(--selection-ink);text-underline-offset:4px;}
+#review-source{margin:0 0 24px;}
+#review-meaning{font:500 17px/1.75 var(--ui);white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 24px;}
+#review-reveal{width:100%;}
+#review-grade{display:flex;gap:8px;}
+#review-grade button{flex:1;min-width:0;}
+#review-status{font:400 15px/1.75 var(--ui);white-space:pre-line;overflow-wrap:anywhere;}
+#review-status:empty{display:none;}
+#review-error{color:var(--danger);font:400 13px/1.6 var(--ui);}
+@media(max-height:500px){#review-progress{margin-bottom:12px;}#review-source,#review-expression,#review-meaning{margin-bottom:12px;}}
+
+/* Actions use existing dock slots; selection is optional, per Meaning. */
+.wordbook-brand #wordbook-add{margin-left:auto;flex:none;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--settings-ink);cursor:pointer;}
+.wordbook-brand #wordbook-add svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
+.wordbook-selection{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 8px;font:400 12px/1.5 var(--ui);color:var(--settings-muted);}
+.wordbook-selection button,.wordbook-review-entry button{min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--settings-ink);font:500 12px/1.5 var(--ui);cursor:pointer;}
+.wordbook-selection label{display:flex;align-items:center;gap:7px;min-height:44px;cursor:pointer;}
+.wordbook-selection [hidden],.wordbook-review-entry [hidden]{display:none!important;}
+.review-selecting .vsense{position:relative;padding-left:28px;}
+.review-pick{position:absolute;left:-8px;top:-7px;display:grid;place-items:center;width:36px;height:44px;cursor:pointer;}
+.review-pick input,.wordbook-selection input{width:16px;height:16px;accent-color:var(--blue);}
+.review-recall-hint{font:400 12px/1.6 var(--ui);color:var(--sentence-glass-secondary);margin:0 0 16px;}
+
+/* Study is a real navigable page, with no modal backdrop or hidden Memory below. */
+#v-study{max-width:760px;min-height:100svh;box-sizing:border-box;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));color:var(--settings-ink);}
+#vocabulary-review-page{min-height:calc(100svh - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom));display:flex;flex-direction:column;}
+#review-close{display:grid;place-items:center;align-self:flex-start;flex:none;width:44px;height:44px;margin:0 0 12px -10px;padding:0;border:0;background:transparent;color:var(--settings-ink);cursor:pointer;}
+#review-close svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+#review-card{display:flex;flex-direction:column;flex:1;padding:24px;border:1px solid var(--sentence-glass-line-soft);border-radius:24px;background:var(--sentence-glass-solid);}
+#vocabulary-review-page #review-expression{font-size:27px;}
+#vocabulary-review-page #review-sentence{font-size:21px;}
+#vocabulary-review-page :focus-visible{outline:2px solid var(--selection-ink);outline-offset:4px;}
+@media(max-width:359px){#review-card{padding:18px;}}
+
+/* Flashcard interaction, using Breeze's existing reading type and surfaces. */
+#review-flip{display:grid;align-items:stretch;flex:1;cursor:pointer;perspective:900px;}
+.review-face{min-height:min(360px,44svh);display:flex;flex-direction:column;justify-content:center;text-align:center;}
+#review-front #review-source{margin:0 0 28px;}
+#review-front .review-recall-hint,#review-back .review-recall-hint{margin:28px 0 16px;}
+#review-back-expression{font:500 16px/1.5 var(--ui);color:var(--sentence-glass-secondary);overflow-wrap:anywhere;margin:0 0 24px;}
+#review-back #review-meaning{font:600 25px/1.7 var(--ui);margin:0;}
+#vocabulary-review-page #review-grade button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 5px;font-size:13px;}
+#review-grade small{font:400 11px/1.3 var(--ui);color:var(--sentence-glass-secondary);}
+#review-remember{background:color-mix(in srgb,var(--selection-ink) 9%,var(--sentence-glass-action))!important;}
+#review-grade{margin-top:16px;}
+#review-reveal{margin-top:16px;}
+#review-back:not([hidden]){animation:review-card-turn .2s ease-out;transform-origin:center;}
+@keyframes review-card-turn{from{opacity:.3;transform:rotateY(-18deg);}to{opacity:1;transform:rotateY(0);}}
+@media(prefers-reduced-motion:reduce){#review-back:not([hidden]){animation:none;}}
+
+#review-result{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:24px 0 36px;text-align:center;}
+#review-status:not(:empty){margin:14px 0 0;color:var(--sentence-glass-secondary);line-height:1.8;}
+#review-finish{width:100%;margin-top:8px;flex:none;}
+
+/* A brief completion moment in Breeze's colors, not a score or a mastery claim. */
+.review-complete-mark{display:block;width:160px;height:160px;margin:0 auto 24px;color:var(--selection-ink);overflow:visible;}
+.review-complete-halo{fill:color-mix(in srgb,currentColor 8%,transparent);}
+.review-complete-ring{fill:color-mix(in srgb,currentColor 12%,transparent);stroke:color-mix(in srgb,currentColor 26%,transparent);stroke-width:1.5;}
+.review-complete-check{stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;}
+.review-complete-sparks{stroke:currentColor;stroke-width:3;stroke-linecap:round;opacity:.45;}
+#vocabulary-review-page #review-celebration h2{font:700 30px/1.3 var(--ui);letter-spacing:-.6px;}
+#review-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:440px;margin:32px 0 0;}
+#review-results>div{padding:18px 6px;border:1px solid var(--sentence-glass-line-soft);border-radius:18px;background:var(--sentence-glass-action);}
+#review-results dt{font:400 12px/1.5 var(--ui);color:var(--sentence-glass-secondary);}
+#review-results dd{margin:8px 0 0;font:600 25px/1.3 var(--ui);font-variant-numeric:tabular-nums;}
+.complete #review-finish{background:color-mix(in srgb,var(--selection-ink) 10%,var(--sentence-glass-action));}
+.complete .review-complete-mark{animation:review-complete-arrive .4s cubic-bezier(.2,.8,.2,1);}
+@keyframes review-complete-arrive{from{opacity:0;transform:translateY(8px) scale(.9);}to{opacity:1;transform:none;}}
+@media(max-height:500px){.review-complete-mark{width:96px;height:96px;margin-bottom:12px;}#review-results{margin-top:20px;}#review-result{padding-top:8px;}}
+@media(prefers-reduced-motion:reduce){.complete .review-complete-mark{animation:none;}}

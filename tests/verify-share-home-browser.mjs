@@ -8,7 +8,7 @@ import {chromium, webkit} from 'playwright';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const project = readFileSync(resolve(root,'ios/App/App.xcodeproj/project.pbxproj'),'utf8');
 assert.match(project,/name = "Breeze Share Extension";/,'Share target must remain available for later');
-assert.match(project,/Embed App Extensions[^\n]*files = \( \);/,'Share extension must not be embedded in the app');
+assert.match(project,/Embed App Extensions[^\n]*files = \(A10000000000000000000005/,'File share extension must be embedded in the app');
 const mime = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.woff2':'font/woff2'};
 const server = createServer((request, response) => {
   const path = resolve(root, '.' + new URL(request.url, 'http://localhost').pathname.replace(/^\/$/, '/index.html'));
@@ -66,5 +66,5 @@ try {
       await page.close();
     } finally { await browser.close(); }
   }
-  console.log('Dormant share: target and records retained, no extension embedding or visible Saved cards passed');
+  console.log('File share target embedded; dormant URL records retained without visible Saved cards passed');
 } finally { server.close(); }

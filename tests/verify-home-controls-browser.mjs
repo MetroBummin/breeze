@@ -64,8 +64,8 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   await page.locator('#nav-vocab').click();assert.equal(await page.locator('#v-vocab').isVisible(),true);
 assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   await page.mouse.move(0,0);
-  assert.deepEqual(await capture(page,['btn-export','wordbook-home','wordbook-add']),home,`Wordbook/Home mismatch ${width} dark=${dark}`);
-  await page.locator('#wordbook-controls .control-pill').click();assert.equal(await page.locator('#home-controls #primary-nav').count(),1);
+  assert.deepEqual(await capture(page,['wordbook-home','wordbook-review','btn-export']),home,`Wordbook/Home mismatch ${width} dark=${dark}`);
+  await page.locator('#wordbook-home').click();assert.equal(await page.locator('#home-controls #primary-nav').count(),1);
   await page.mouse.move(0,0);
   assert.equal(await page.locator('#set-lang,#set-dark,[data-panel=general]').count(),0);
   await page.locator('#home-resume').click();

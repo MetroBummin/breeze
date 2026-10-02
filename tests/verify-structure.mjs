@@ -1806,7 +1806,7 @@ assert.match(dictionarySource, /const vocabOpen = new Set\(\);/,
 assert.doesNotMatch(dictionarySource, /vocabOpen[\s\S]{0,80}?(?:saveWords|queueSync|localStorage)/,
   '단어장 펼침은 화면에만 있어야 합니다 — 저장하거나 동기화하면 안 됩니다');
 /* 별·삭제·뜻 편집은 각자 할 일이 있어서 펼침 토글이 가로채면 안 됩니다. */
-assert.match(dictionarySource, /closest\('\.chip, \.rowdel, \.vmore, \[contenteditable\]'\)/,
+assert.match(dictionarySource, /closest\('\.chip, \.rowdel, \.vmore, \.review-pick, \[contenteditable\]'\)/,
   '별·삭제·뜻 편집이 펼침 토글과 다시 충돌합니다');
 /* 내보내기 단추의 id 는 btn-export 입니다. 예전 이름이 스타일시트에 남아 있던
    동안 이 단추는 모든 화면에서 브라우저 기본 단추로 떴습니다. */
