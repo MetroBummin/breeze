@@ -155,7 +155,7 @@ Active PDF/EPUB word selection uses one blue fill, without the status-dependent 
 
 Reader detail hides the repeated example block; stored examples remain available
 to Memory and review. The displayed saved meaning is labelled as saved when a
-new context has not been revalidated. “쉽게 설명” explicitly requests a short
+new context has not been revalidated. “쉬운 설명” explicitly requests a short
 explanation of a difficult word/concept and, when needed, its contextual meaning.
 Each explicit request includes the current sentence and up to two neighbors on
 either side. Text/EPUB use the source occurrence and adjacent paragraphs; PDF
@@ -167,8 +167,8 @@ detail surface and scroll budget; no nested explanation card is drawn. Closing/c
 Explanation text is transient page/account memory only; see DICT.md for request
 metering and the provider boundary. No automatic call on expand.
 
-The trigger is a minimal neutral text button at the right of the Korean meaning,
-with a 44px touch height. Long meanings wrap to its left. The meaning stays visible
+The trigger is a small neutral capsule labelled “쉬운 설명” at the right of the
+Korean meaning, with a subtle fill and border, 32px visual height and 44px touch height. Long meanings wrap to its left. The meaning stays visible
 while that same card grows downward to reveal the explanation. Card height
 transitions both on loading and on answer arrival, without scaling the text. Its label disappears as soon as
 the card opens; loading and success show no repeated title. Only errors expose a

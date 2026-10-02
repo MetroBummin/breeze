@@ -423,8 +423,10 @@ body.dark :is(#panel,.aa-legend,#vstars) .stbtn[data-s="3"].on{color:var(--s3);}
 #p-easy[hidden],#p-easy [hidden],#p-easy-button[hidden]{display:none!important;}
 #p-ai .m{display:flex;align-items:flex-start;gap:12px;min-height:44px;}
 #p-ai .p-meaning-copy{flex:1;min-width:0;overflow-wrap:anywhere;padding-top:7px;}
-#p-easy-button{flex:none;min-height:44px;padding:0 4px;border:0;border-radius:8px;background:transparent;color:var(--sentence-glass-secondary);font:400 12px/1.5 var(--ui);white-space:nowrap;cursor:pointer;}
-#p-easy-button:hover{color:var(--sentence-glass-ink);background:var(--sentence-glass-action);}
+#p-easy-button{position:relative;flex:none;min-height:32px;margin:6px 0;padding:0 11px;border:1px solid var(--sentence-glass-line);border-radius:999px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:500 12px/1.5 var(--ui);white-space:nowrap;cursor:pointer;}
+#p-easy-button::before{content:"";position:absolute;inset:-6px 0;border-radius:inherit;}
+#p-easy-button:hover{background:var(--sentence-glass-action-hover);}
+#p-easy-button:active{background:var(--sentence-glass-action-hover);opacity:.8;}
 #p-easy-button:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:2px;}
 #p-easy-button:disabled{opacity:.6;cursor:default;}
 #p-easy{box-sizing:border-box;width:100%;max-width:100%;margin:10px 0 0;}
