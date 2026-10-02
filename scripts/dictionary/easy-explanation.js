@@ -89,7 +89,9 @@ function renderEasyExplanation(){
   const state=easyExplanationState,button=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-button'));
   const expanded=!!(state.loading||state.text||state.error);
   const wasExpanded=section.classList.contains('expanded');
-  const trigger=button.getBoundingClientRect();
+  const surface=document.getElementById('p-ai');
+  const before=surface.getBoundingClientRect();
+  surface.getAnimations().forEach(animation=>animation.cancel());
   section.classList.toggle('expanded',expanded);
   button.disabled=state.loading;button.hidden=expanded;
   document.getElementById('p-easy-retry').hidden=!state.error;
@@ -97,11 +99,11 @@ function renderEasyExplanation(){
   const card=document.getElementById('p-easy-card');card.hidden=!expanded;card.setAttribute('aria-busy',String(state.loading));
   const text=document.getElementById('p-easy-text');
   text.textContent=state.loading?'뜻을 쉬운 말로 풀고 있어요.':state.text||state.error;
-  if(expanded&&!wasExpanded){
-    text.focus({preventScroll:true});
-    if(section.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-      const after=section.getBoundingClientRect();
-      section.animate([{width:trigger.width+'px',height:'0px'},{width:after.width+'px',height:after.height+'px'}],{duration:200,easing:'cubic-bezier(.2,.7,.2,1)'});
+  if(expanded&&!wasExpanded)text.focus({preventScroll:true});
+  if(expanded&&surface.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const after=surface.getBoundingClientRect();
+    if(before.height>0&&Math.abs(after.height-before.height)>1){
+      surface.animate([{height:before.height+'px'},{height:after.height+'px'}],{duration:260,easing:'cubic-bezier(.2,.7,.2,1)'});
     }
   }
 }
