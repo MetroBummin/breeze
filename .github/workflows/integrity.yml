@@ -56,6 +56,8 @@ jobs:
           retention-days: 7
       - name: Real IndexedDB and navigation regression
         run: if test -f tests/verify-integrity-browser.mjs; then node tests/verify-integrity-browser.mjs; fi
+      - name: Shared RSS quality and retained inventory
+        run: node tests/verify-rss-quality-browser.mjs
       - run: npm run test:ingestion && npm run test:home-ui
       - name: Preview regressions when present
         run: |

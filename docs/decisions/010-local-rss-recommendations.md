@@ -111,3 +111,11 @@ Home refresh starts at the first recommendation. When a rail already at its
 start replaces skeletons/cards, CSS snapping is suspended for two animation
 frames and the scroll offset is reset after layout. Ordinary updates while the
 user browses later cards continue preserving their position and order.
+
+## Shared eligibility gate (2026-10-02)
+
+[Decision 014](014-shared-rss-quality.md) supersedes the no-AI/no-new-request rule
+for built-in RSS eligibility. A bounded server service now supplies only approved
+public candidates. The local preference ranker and saved-item exclusion remain
+unchanged. Pending/failed work retains approved inventory rather than passing
+unreviewed candidates. Legacy custom feeds are saved but outside this allowlist.

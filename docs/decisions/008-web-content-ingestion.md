@@ -451,3 +451,11 @@ IndexedDB originals, duplicate bytes, write failures and corrupt input through
 the simulated native bridge. Native compilation and a KakaoTalk/Files share-sheet
 round trip still require Xcode and physical iOS devices; browser fixtures do not
 establish that those native paths work on device.
+
+## Shared recommendation eligibility (2026-10-02)
+
+[Decision 014](014-shared-rss-quality.md) introduces a public-feed-only server
+quality gate before recommendation cards are published. It fetches and evaluates
+public extracted bodies independently of private import/Preview/Reader state.
+Existing local cover, extraction and Reader checks remain necessary. Custom
+sources stay local and are not submitted for shared evaluation.

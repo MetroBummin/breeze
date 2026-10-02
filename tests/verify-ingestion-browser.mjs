@@ -92,12 +92,12 @@ try{
    }),[0,0,1]);
    await page.evaluate(async xml=>{
     if(rssLoading)await rssLoading;
-    const original=fetchArticleHtml;
-    try{fetchArticleHtml=async url=>url.includes('propublica') ? xml : Promise.reject(new Error('broken feed'));
+    const original=rssQualityFeed;
+    try{rssQualityFeed=async feed=>feed.url.includes('propublica') ? {entries:parseRss(xml,feed).map(entry=>({...entry,quality:{status:'approved',version:RSS_QUALITY_VERSION,checkedAt:Date.now()}})),pending:false} : Promise.reject(new Error('broken feed'));
       rssLoadedAt=0; await loadRss(true);
       const working=RSS_FEEDS.findIndex(feed=>feed.url.includes('propublica'));
       if(rssCands.length!==RSS_FEEDS.length || rssCands[0].length!==0 || rssCands[working].length!==1) throw new Error('Feed failure was not isolated');
-    }finally{fetchArticleHtml=original;}
+    }finally{rssQualityFeed=original;}
    },xml);
 
    await page.evaluate(async()=>{
@@ -126,11 +126,11 @@ try{
    // A slow source must not gate another source with a usable cover.
    await page.evaluate(async xml=>{
     if(rssLoading)await rssLoading;
-    const original=fetchArticleHtml;let release;
+    const original=rssQualityFeed;let release;
     try{
       save('breeze.feed-category','all');rssCands=[];rssLoadedAt=0;
-      fetchArticleHtml=url=>url.includes('propublica') ? new Promise(resolve=>{release=()=>resolve(xml);}) :
-        Promise.resolve(xml.replace('</item>','<enclosure url="https://content.example/photo.png" type="image/png"/></item>'));
+      const result=feed=>({entries:parseRss(xml.replace('</item>','<enclosure url="https://content.example/photo.png" type="image/png"/></item>'),feed).map(entry=>({...entry,quality:{status:'approved',version:RSS_QUALITY_VERSION,checkedAt:Date.now()}})),pending:false});
+      rssQualityFeed=feed=>feed.url.includes('propublica') ? new Promise(resolve=>{release=()=>resolve(result(feed));}) : Promise.resolve(result(feed));
       const rail=document.getElementById('casual-rail');
       const pending=renderRssCards(rail,true,document.getElementById('home-feed-empty'));
       // Wait for the ready card, while the other source is deliberately held.
@@ -141,7 +141,7 @@ try{
       const first=rail.querySelector('.rss-card:not([hidden])');
       release();await pending;
       if(!first.isConnected)throw Error('Partial update replaced existing card');
-    }finally{fetchArticleHtml=original;}
+    }finally{rssQualityFeed=original;}
    },xml);
    assert.equal(await page.evaluate(html=>{
      const entry={bodyProvided:true,contentHtml:html,title:'Public feed article',url:'https://medium.com/example/public',source:'Medium'};

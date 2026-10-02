@@ -3,3 +3,8 @@ project_id = "fqvhlyocdkwiyioiokte"
 [functions.ready]
 verify_jwt = false
 
+
+# Public fixed-feed inventory. The handler exposes no arbitrary evaluation API;
+# service-role-only database claims enforce shared budgets and write ownership.
+[functions.rss-quality]
+verify_jwt = false

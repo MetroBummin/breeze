@@ -227,42 +227,65 @@ async function rssPrepareCovers(entries,publish){
   }));
   return entries;
 }
-/* Publish each source as it arrives; one slow source never gates another. */
+/* The server owns public RSS eligibility. No article text or local history is
+   sent to it. Unavailable evaluations never fall back to unreviewed feed cards. */
+const RSS_QUALITY_VERSION = 'rss-quality-v1:jev-1.13.0:readability-0.6.0-v1';
+let rssQualityRetry = null;
+let rssQualityRetryCount = 0;
+let rssQualityPending = false;
+function rssQualityApproved(entry){
+  return entry?.quality?.status==='approved' && entry.quality.version===RSS_QUALITY_VERSION &&
+    Number.isFinite(entry.quality.checkedAt) && Date.now()-entry.quality.checkedAt<7*86400000;
+}
+async function rssQualityFeed(feed){
+  const id=RSS_FEEDS.findIndex(item=>item.url===feed.url);
+  // Legacy custom sources stay saved locally, but are not sent for paid evaluation.
+  if(id<0)return {entries:[],pending:false};
+  const response=await fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/rss-quality?feed='+id,{
+    headers:{apikey:SB_KEY},signal:AbortSignal.timeout(12000)
+  });
+  if(!response.ok)throw new Error('quality_unavailable');
+  const result=await response.json();
+  if(result.version!==RSS_QUALITY_VERSION || !Array.isArray(result.entries))throw new Error('quality_invalid');
+  return {entries:result.entries.filter(rssQualityApproved).map(entry=>({...entry,category:feed.category})),pending:!!result.pending};
+}
+/* Keep approved cards during refresh; the server advances its own candidate cursor. */
 async function loadRss(force){
-  if(rssLoading) return rssLoading;
-  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
-  rssPublicFeedJobs.clear();
-  rssPreparedArticles.clear();
-  const sources = rssSources();
-  const previous = rssCands;
-  rssCands = sources.map((_,i)=>previous[i] || []);
-  rssLoading = Promise.all(sources.map(async (feed,index) => {
-    try{
-    const location = {};
-    const html = await fetchArticleHtml(feed.url,location);
-    const pictured = parseRss(html, {...feed,sourceUrl:feed.url,url:location.url || feed.url});
-    /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
-       피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
-    const start = pictured.length ? (rssPage * RSS_PER_FEED) % pictured.length : 0;
-    const ordered=pictured.map((_, step) => pictured[(start + step) % pictured.length]);
+  if(rssLoading)return rssLoading;
+  if(!force && rssCands.length && Date.now()-rssLoadedAt<RSS_CACHE_MS)return rssCands;
+  if(force)rssQualityRetryCount=0;
+  if(rssQualityRetry){clearTimeout(rssQualityRetry);rssQualityRetry=null;}
+  rssPublicFeedJobs.clear();rssPreparedArticles.clear();
+  const sources=rssSources(),previous=rssCands;
+  rssCands=sources.map((_,i)=>(previous[i] || []).filter(rssQualityApproved));
+  let pending=false;
+  rssLoading=Promise.all(sources.map(async(feed,index)=>{
     const publish=entries=>{rssCands[index]=entries;rssListeners.forEach(notify=>notify(rssCands));};
-    if(rssMediumSource(feed))publish(await rssPreparePublicArticles(ordered,publish));
-    else if(ordered.slice(0,RSS_PER_FEED).some(entry=>!entry.photo && !entry.bodyProvided && !entry.kind))await rssPrepareCovers(ordered,publish);
-    else publish(ordered);
+    try{
+      const result=await rssQualityFeed(feed);pending=pending || result.pending;
+      const start=result.entries.length ? (rssPage*RSS_PER_FEED)%result.entries.length : 0;
+      const ordered=result.entries.map((_,step)=>result.entries[(start+step)%result.entries.length]);
+      // Resolve only approved Medium stories, skipping already saved entries first.
+      if(rssMediumSource(feed) && ordered.length){
+        const ready=await rssPreparePublicArticles(ordered.filter(entry=>!rssAlreadySaved(entry)),()=>{});
+        publish(ready.length ? ready : rssCands[index]);
+      }else publish(ordered);
+    }catch{pending=true;/* Retain last-good approved cards through service outages. */}
     return rssCands[index];
-    }catch(error){ rssCands[index]=[]; rssListeners.forEach(notify=>notify(rssCands)); console.warn('Feed unavailable:',feed.url); return []; }
-  })).then(groups => {
-    rssCands = groups;
-    rssLoadedAt = Date.now();
-    return rssCands;
-  }).finally(() => { rssLoading = null; });
+  })).then(groups=>{rssCands=groups;rssQualityPending=pending;rssLoadedAt=Date.now();return groups;}).finally(()=>{
+    rssLoading=null;
+    // Bounded cold-start polling lets completed background work populate Home.
+    if(pending && rssQualityRetryCount<4){rssQualityRetryCount++;
+      rssQualityRetry=setTimeout(()=>{rssQualityRetry=null;rssLoadedAt=0;void loadRss(false).then(()=>refreshFeedRails());},20000);
+    }
+  });
   return rssLoading;
 }
 function refreshRssPhotoEmpty(rail){
   const empty=document.getElementById(rail.id==='casual-rail'?'home-feed-empty':'casual-discover-empty');
   if(!empty)return;
   const hasPhoto=!!rail.querySelector('.rss-card:not([hidden])');
-  empty.textContent='사진이 있는 새 글을 찾지 못했어요.';
+  empty.textContent=rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':'사진이 있는 새 글을 찾지 못했어요.';
   empty.hidden=hasPhoto || !!rssLoading;
 }
 
@@ -599,7 +622,7 @@ function renderRssCards(rail, force, empty){
   const paint=async groups=>{
     const current=++revision;
     if(renderId!==rssRenderIds.get(rail))return;
-    const stamp=JSON.stringify([category,groups,books.map(book=>book.sourceUrl||'')]);
+    const stamp=JSON.stringify([category,groups,rssQualityPending,books.map(book=>book.sourceUrl||'')]);
     if(!force && rail.dataset.rssStamp===stamp && rail.dataset.rssRecommendationStamp===recommendationStamp){
       if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
       if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;
@@ -638,7 +661,7 @@ function renderRssCards(rail, force, empty){
     cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;
     rail.dataset.rssRecommendationStamp=recommendationStamp;
-    if(empty){ empty.textContent=cards.length?'':category==='all'?'표지 사진이 있는 새 글을 찾지 못했어요.':'이 카테고리에 표지 사진이 있는 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
+    if(empty){ empty.textContent=cards.length?'':rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':category==='all'?'표지 사진이 있는 새 글을 찾지 못했어요.':'이 카테고리에 표지 사진이 있는 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
   };
   const notify=groups=>{void paint(groups);};
   rssListeners.add(notify);
