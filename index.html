@@ -362,8 +362,16 @@
           <span class="glow"></span>
         </div>
         <div class="m">
-          <span class="mk" id="p-ai-ko"></span><span class="pos" id="p-ai-pos"></span>
+          <span class="p-meaning-copy"><span class="mk" id="p-ai-ko"></span><span class="pos" id="p-ai-pos"></span></span>
+          <button id="p-easy-button" type="button" aria-expanded="false" aria-controls="p-easy-card" hidden>쉽게 설명</button>
         </div>
+      <section id="p-easy" aria-label="쉬운 설명" hidden>
+        <div id="p-easy-card" hidden>
+          <p id="p-easy-text" role="status" aria-live="polite" tabindex="-1"></p>
+          <button id="p-easy-retry" type="button" hidden>다시 시도</button>
+          <p class="p-easy-note">AI 설명 · 이 설명은 저장하지 않아요</p>
+        </div>
+      </section>
         <!-- 뜻을 아직 받지 못했거나 다시 찾기가 오래 걸릴 때만 상태를 알리는 줄입니다. -->
         <div class="note" id="p-ai-note"></div>
         <div id="p-saved-senses" aria-label="저장된 다른 뜻"></div>
@@ -374,14 +382,7 @@
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec" id="p-alt-sec">추천 뜻</div>
       <div id="p-alts"></div>
-      <section id="p-easy" aria-label="쉬운 설명" hidden>
-        <button id="p-easy-button" type="button" aria-expanded="false" aria-controls="p-easy-card"><svg class="p-easy-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M9 15c0-2-3-3-3-7a6 6 0 0 1 12 0c0 4-3 5-3 7"/></svg><span>쉽게 설명</span></button>
-        <div id="p-easy-card" hidden>
-          <p id="p-easy-text" role="status" aria-live="polite" tabindex="-1"></p>
-          <button id="p-easy-retry" type="button" hidden>다시 시도</button>
-          <p class="p-easy-note">AI 설명 · 이 설명은 저장하지 않아요</p>
-        </div>
-      </section>
+
       <div class="p-sec" id="p-status-label">모르는 정도</div>
       <!-- 이 낱말을 화면에서 어떻게 다룰지 정하는 두 단추입니다 — 단어장에서 빼기,
            본문 색칠. 같은 일의 두 갈래라 한 줄에 같은 모양으로 섭니다. 빼기는

@@ -81,7 +81,7 @@ function cancelEasyExplanation(){
 function renderEasyExplanation(){
   const current=easyExplanationInput(),section=document.getElementById('p-easy');
   section.hidden=!current;
-  if(!current){cancelEasyExplanation();return;}
+  if(!current){document.getElementById('p-easy-button').hidden=true;cancelEasyExplanation();return;}
   if(easyExplanationState?.key!==current.key){
     cancelEasyExplanation();
     easyExplanationState={...current,text:easyExplanationCache.get(current.key)||'',error:'',loading:false,controller:null};
@@ -89,7 +89,7 @@ function renderEasyExplanation(){
   const state=easyExplanationState,button=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-button'));
   const expanded=!!(state.loading||state.text||state.error);
   const wasExpanded=section.classList.contains('expanded');
-  const before=section.getBoundingClientRect();
+  const trigger=button.getBoundingClientRect();
   section.classList.toggle('expanded',expanded);
   button.disabled=state.loading;button.hidden=expanded;
   document.getElementById('p-easy-retry').hidden=!state.error;
@@ -101,7 +101,7 @@ function renderEasyExplanation(){
     text.focus({preventScroll:true});
     if(section.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
       const after=section.getBoundingClientRect();
-      section.animate([{width:before.width+'px',height:before.height+'px'},{width:after.width+'px',height:after.height+'px'}],{duration:200,easing:'cubic-bezier(.2,.7,.2,1)'});
+      section.animate([{width:trigger.width+'px',height:'0px'},{width:after.width+'px',height:after.height+'px'}],{duration:200,easing:'cubic-bezier(.2,.7,.2,1)'});
     }
   }
 }

@@ -167,9 +167,9 @@ surface and scroll budget. Closing/changing lookup cancels its display ownership
 Explanation text is transient page/account memory only; see DICT.md for request
 metering and the provider boundary. No automatic call on expand.
 
-The trigger shares the full-width missing-response Retry button styling (border,
-background, typography, padding, hover and focus) in `styles/dictionary.css`.
-The trigger morphs into the explanation surface. Its label disappears as soon as
+The trigger is a minimal neutral text button at the right of the Korean meaning,
+with a 44px touch height. Long meanings wrap to its left. The meaning stays visible
+while the explanation expands beneath it from the right-hand trigger. Its label disappears as soon as
 the card opens; loading and success show no repeated title. Only errors expose a
 Retry control. Expansion honors reduced-motion preferences and moves keyboard
 focus to the live explanation text.
