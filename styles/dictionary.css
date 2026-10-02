@@ -443,3 +443,12 @@ body.dark :is(#panel,.aa-legend,#vstars) .stbtn[data-s="3"].on{color:var(--s3);}
 #p-easy-apply:active{opacity:.8;}
 #p-easy-apply:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:2px;}
 #p-easy-apply:disabled{opacity:.6;cursor:default;}
+
+/* A quiet text-shaped placeholder while the explicit explanation is pending. */
+#p-easy-skeleton{display:grid;gap:12px;padding:6px 0;}
+#p-easy-skeleton i{display:block;height:12px;border-radius:6px;background:var(--sentence-glass-line);animation:easy-skeleton-breathe 1.6s ease-in-out infinite alternate;}
+#p-easy-skeleton i:nth-child(2){width:92%;}
+#p-easy-skeleton i:last-child{width:64%;}
+#p-easy-text.easy-loading-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+@keyframes easy-skeleton-breathe{from{opacity:.45;}to{opacity:.9;}}
+@media(prefers-reduced-motion:reduce){#p-easy-skeleton i{animation:none;opacity:.7;}}

@@ -83,7 +83,7 @@ async function persistedWords(page){
   return page.evaluate(()=>({words:JSON.parse(JSON.stringify(words)),storage:Object.fromEntries(Object.keys(localStorage).filter(key=>key==='breeze.words'||key==='breeze.dead'||key.startsWith('breeze.word-item.')||key==='breeze.word-write.pending').sort().map(key=>[key,localStorage.getItem(key)]))}));
 }
 async function reviewState(page){return page.evaluate(key=>localStorage.getItem(key),REVIEW_KEY);}
-async function progress(page){return (await page.locator('#review-progress').innerText()).match(/\d+/g)?.map(Number)||[];}
+async function progress(page){return (await page.locator('#review-progress').textContent()).match(/\d+/g)?.map(Number)||[];}
 async function assertDone(page){
   assert.equal(await page.locator('#review-status').isVisible(),true,'End/empty state provides visible explanatory copy');
   assert.ok((await page.locator('#review-status').innerText()).trim());
@@ -99,11 +99,11 @@ async function closeReview(page,keyboard=false){
 }
 
 try{
-  await scenario('five-item cap, hidden answers, durable progress and no mutation',uniqueWords(7),async page=>{
+  await scenario('stage flow, hidden answers, durable progress and no mutation',uniqueWords(7),async page=>{
     const before=await persistedWords(page);
     assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'학습 시작');
     await openReview(page);await assertHiddenAnswer(page);
-    assert.equal((await progress(page)).at(-1),5,'A new session is capped at five cards');
+    assert.equal((await progress(page)).at(-1),7,'The daily journey retains the whole goal');
     const first=await page.locator('#review-expression').innerText();
     const firstProgress=await progress(page);
     // Programmatic clicks also must not bypass the reveal gate.
@@ -137,7 +137,7 @@ try{
     assert.equal(new Set(seen).size,5,'No card repeats during the five-card session');
     await assertDone(page);await closeReview(page);
     await openReview(page);await assertHiddenAnswer(page);
-    assert.equal((await progress(page)).at(-1),2,'Fewer than five remaining new cards are a complete smaller session');
+    assert.equal((await progress(page)).at(-1),7,'Continuing a stage retains the original queue');
     for(let i=0;i<2;i++){
       await continueMilestone(page);
       const word=await page.locator('#review-expression').innerText();assert.ok(!seen.includes(word),'Already graded cards do not instantly repeat');seen.push(word);
@@ -355,8 +355,6 @@ try{
     const stored=JSON.parse(await reviewState(page));
     assert.equal(stored.session.uncertain,1);
     assert.equal(await page.locator('#review-celebration').isVisible(),true);
-    assert.equal(await page.locator('#review-result-uncertain').textContent(),'1');
-    assert.equal(await page.locator('#review-result-known').textContent(),'0');
     assert.equal(Object.values(stored.progress)[0].dueAt,NOW+360000);
     await closeReview(page);await page.clock.setFixedTime(NOW+360000-1);await openReview(page);await assertDone(page);
     await closeReview(page);await page.clock.setFixedTime(NOW+360000);await openReview(page);await assertHiddenAnswer(page);
@@ -394,7 +392,6 @@ try{
     await openReview(page);
     assert.equal((await page.locator('#review-close').innerText()).trim(),'');
     await reveal(page);await page.locator('#review-remember').click();
-    assert.equal(await page.locator('#review-result-known').textContent(),'1');
     for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390],[320,360]])for(const dark of [false,true]){
       await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
       assert.equal(await page.locator('#review-celebration').isVisible(),true);
@@ -450,13 +447,14 @@ try{
     assert.equal(await page.locator('#review-card').isVisible(),false);
     await closeReview(page);
     await page.locator('#review-setup-extra').click();
-    assert.equal((await progress(page)).at(-1),5);
+    assert.equal((await progress(page)).at(-1),12);
     await reveal(page);await page.locator('#review-confused').click();
     for(let i=1;i<5;i++){await reveal(page);await page.locator('#review-remember').click();}
-    assert.match(await page.locator('#review-status').innerText(),/이번 5개 완료/);
-    assert.match(await page.locator('#review-pending').innerText(),/1분 뒤부터 학습·재학습 5개/);
+    assert.equal(await page.locator('#review-reveal').isVisible(),true);
+    assert.equal(await page.locator('#review-pending').isVisible(),false);
+    assert.match(await page.locator('#review-pending').textContent(),/1분 뒤부터 학습·재학습 5개/);
     await page.clock.setFixedTime(NOW+60001);
-    await page.locator('#review-more').click();
+    await closeReview(page);await page.locator('#review-setup-extra').click();
     assert.equal((await progress(page)).at(-1),1);
     await reveal(page);await page.locator('#review-remember').click();
     const saved=JSON.parse(await reviewState(page)),today=Object.values(saved.daily)[0];
@@ -464,14 +462,14 @@ try{
     assert.equal(saved.history.length,6);
   });
 
-  await scenario('practice uses batch size and preserves its remaining queue after reload',uniqueWords(8),async page=>{
+  await scenario('practice continues without five-card stops and resumes after reload',uniqueWords(8),async page=>{
     await page.locator('#review-select-toggle').click();await page.locator('#review-select-all').check();
     await page.locator('#review-select-toggle').click();await openReview(page);
     for(let i=0;i<5;i++){await reveal(page);await page.locator('#review-remember').click();}
-    assert.match(await page.locator('#review-status').innerText(),/남은 선택 연습 3개/);
+    assert.equal(await page.locator('#review-reveal').isVisible(),true);
+    assert.equal(await page.locator('#review-result').isVisible(),false);
     await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);await page.evaluate(()=>show('study'));
-    await page.locator('#review-more').click();
-    assert.equal((await progress(page)).at(-1),3);
+    assert.equal((await progress(page)).at(-1),8);
     for(let i=0;i<3;i++){await reveal(page);await page.locator('#review-remember').click();}
     const saved=JSON.parse(await reviewState(page));
     assert.deepEqual(saved.progress,{});assert.equal(saved.history.length,8);
@@ -524,7 +522,7 @@ try{
     await page.locator('#set-close').click();await page.locator('#wordbook-review').click();
     assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await reviewState(page),original);
     await page.evaluate(()=>{Storage.prototype.setItem=window.originalReviewSet;});
-    await openReview(page);await assertHiddenAnswer(page);assert.equal((await progress(page)).at(-1),5);
+    await openReview(page);await assertHiddenAnswer(page);assert.equal((await progress(page)).at(-1),8);
   });
   await scenario('progressive five stages, real assets and durable achievements',uniqueWords(100),async page=>{
     await page.evaluate(({key,at})=>{
@@ -538,6 +536,7 @@ try{
       if(!await page.locator('#review-reveal').isVisible())await page.locator('#review-more').click();
       await page.locator('#review-reveal').click();
       await page.locator(answered===1?'#review-confused':'#review-remember').click();
+      if(!boundaries.includes(answered))assert.equal(await page.locator('#review-reveal').isVisible(),true,'No intermediate five-card stop');
       if(boundaries.includes(answered)){
         const stage=boundaries.indexOf(answered)+1,mascot=page.locator('#review-stage-mascot');
         assert.equal(await mascot.isVisible(),true);
@@ -546,9 +545,6 @@ try{
         await mascot.evaluate(img=>img.decode());
         assert.ok(await mascot.evaluate(img=>img.naturalWidth>0));
         assert.equal(await page.locator('#review-day-count').innerText(),`${answered}/100개`);
-        assert.equal(await page.locator('#review-result-known').innerText(),String(answered-1));
-        assert.equal(await page.locator('#review-result-unknown').innerText(),'1');
-        assert.equal(await page.locator('#review-result-uncertain').innerText(),'0');
         assert.ok((await mascot.boundingBox()).width>=200);
         const aura=await page.locator('#review-mascot-scene').evaluate(node=>Number(getComputedStyle(node,'::before').opacity));
         assert.ok(Math.abs(aura-(.12+stage*.1))<.001);

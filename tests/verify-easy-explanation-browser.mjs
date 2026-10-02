@@ -42,8 +42,22 @@ try{
   await page.locator('#p-easy-button').click();
   assert.equal(await page.locator('#p-easy-button').isVisible(),false);
   assert.equal(await page.locator('#p-easy-card').isVisible(),true);
+  assert.equal(await page.locator('#p-easy-skeleton').isVisible(),true);
+  assert.equal(await page.locator('#p-easy-card').getAttribute('aria-busy'),'true');
+  mkdirSync('/tmp/breeze-easy-proof',{recursive:true});
+  for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390],[320,360]])for(const dark of [false,true]){
+    await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();placeWordDetail();},dark);
+    await page.locator('#p-easy-skeleton').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('#panel').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
+    await page.screenshot({path:`/tmp/breeze-easy-proof/${engine.name()}-loading-${width}x${height}-${dark?'dark':'light'}.png`});
+  }
+  await page.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await page.locator('#p-easy-skeleton i').first().evaluate(n=>getComputedStyle(n).animationName),'none');
+  await page.setViewportSize({width:390,height:844});
   await page.evaluate(()=>easyResolve({explanation:'물건과 서비스 가격이 전반적으로 오르는 현상이에요. 같은 돈으로 살 수 있는 양이 줄어든다는 뜻이에요.',suggestedMeaning:'물가 상승',left:40}));
   await page.waitForFunction(()=>document.getElementById('p-easy-text').textContent.includes('같은 돈'));
+  assert.equal(await page.locator('#p-easy-skeleton').isVisible(),false);
+  assert.equal(await page.locator('#p-easy-card').getAttribute('aria-busy'),'false');
   assert.equal(await page.evaluate(()=>easyCalls.length),1);
   assert.deepEqual(await page.evaluate(()=>({before:easyCalls[0].before,after:easyCalls[0].after})),{before:['Prices rose last year.','Wages stayed the same.'],after:['The bank changed interest rates.','Families spent less.']});
   assert.equal(await page.evaluate(()=>JSON.stringify(words.inflation)===easySaved),true);
@@ -95,10 +109,20 @@ try{
   assert.equal(await page.evaluate(()=>words[selKey].example),accepted.item.example);
   assert.equal(await page.evaluate(()=>Object.values(localStorage).some(x=>x.includes('전반적인 물가 상승'))),true);
   assert.equal(await page.evaluate(()=>Object.values(localStorage).some(x=>x.includes('이 문장에서는 전반적인 물가의'))),false);
+  // Failure exits the placeholder and offers retry; dismissal cancels pending UI.
+  await page.evaluate(()=>{cancelEasyExplanation();easyExplanationCache.clear();renderEasyExplanation();});
+  await page.locator('#p-easy-button').click();
+  await page.evaluate(()=>easyResolve({error:'unavailable'}));
+  await page.waitForFunction(()=>!document.getElementById('p-easy-retry').hidden);
+  assert.equal(await page.locator('#p-easy-skeleton').isVisible(),false);
+  await page.locator('#p-easy-retry').click();
+  assert.equal(await page.locator('#p-easy-skeleton').isVisible(),true);
+  await page.evaluate(()=>closePanel());
+  assert.equal(await page.locator('#p-easy-skeleton').isVisible(),false);
   await page.evaluate(()=>{closePanel();show('vocab');selectWord('inflation',null);});
   assert.equal(await page.locator('#p-ex-fold').evaluate(n=>n.hidden),false);
   assert.equal(await page.locator('#p-ex').textContent(),'Inflation was low last year.');
-  assert.equal(await page.evaluate(()=>easyCalls.length),3);
+  assert.equal(await page.evaluate(()=>easyCalls.length),5);
   assert.deepEqual(errors,[]);
   console.log(`${engine.name()}: explicit explanation, unchanged A example, no durable answer, responsive light/dark passed`);
 }finally{await browser.close();await new Promise(done=>server.close(done));}
