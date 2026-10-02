@@ -263,7 +263,7 @@ function releaseRetainedReader(){
   document.getElementById('rtext').replaceChildren();
 }
 function retainReaderForHome(){
-  if(!curBook||curBook.transient||originalOpenJob)return false;
+  if(!curBook||curBook.transient||originalOpenJob||readerPositionPending())return false;
   const b=curBook;
   retainedReader={book:b,paras:b.paras.slice(),formatting:b.formatting,
     mode:currentReaderMode,wordPresentation:readerWordPresentation(),
@@ -340,6 +340,8 @@ async function openBook(b,options={}){
      wherever the previous book was being read. */
   lastAnchor = null;
   curBook = b;
+  const positionOpening={book:b};
+  readerPositionOpening=positionOpening;
   if(!b.transient)save(HOME_RESUME_KEY,b.id);
   setReaderPillProgress(posOf(b.id).p||0,true);
   currentReaderMode = 'text';
@@ -386,6 +388,7 @@ async function openBook(b,options={}){
      시간표는 실제 스크롤이 남깁니다. */
   if(firstOpen && !b.transient){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
   updateReaderModeControls();
+  try{
   const original = prepared ? prepared.original : (bookSupportsOriginal(b) ? await originalGetForBook(b) : null);
   if(!alive())return;
   readerPreparedOriginal=original;
@@ -407,6 +410,9 @@ async function openBook(b,options={}){
       }
       resolve();
     }));
+  }
+  }finally{
+    if(readerPositionOpening===positionOpening)readerPositionOpening=null;
   }
 }
 /* Book titles and file names end up inside HTML attributes, so quotes have to
@@ -493,7 +499,7 @@ function scheduleProgressUpdate(){
   if(progressFrame) return;
   progressFrame=requestAnimationFrame(()=>{
     progressFrame=0;
-    if(!curBook) return;
+    if(!curBook || readerPositionPending()) return;
     /* 이 프레임의 자를 여기서 한 번 놓습니다. 아래 둘은 같은 답을 나눠 씁니다. */
     invalidateReaderMeasurements();
     updatePfill(readerScrollWasProgrammatic());

@@ -100,6 +100,7 @@ function originalZoom(){ return originalZoomLevel; }
    같은 픽셀이 몇 쪽 뒤를 가리킬 수 있으므로, reflow 전 마지막 PDF 좌표표에서
    "몇 쪽의 몇 %"였는지를 먼저 잡습니다. 새 DOM geometry를 읽으면 이미 늦습니다. */
 function capturePdfRotationAnchor(session=originalSession){
+  if(typeof readerPositionPending==='function'&&readerPositionPending())return null;
   if(currentReaderMode!=='original'||!session||session!==originalSession||session.kind!=='pdf'
       ||session.readDirection==='horizontal') return null;
   if(session.readingAnchor) return {...session.readingAnchor};
@@ -120,6 +121,7 @@ function keepPdfRotationAnchorAlive(pending){
   }));
 }
 function restorePdfRotationAnchor(pending){
+  if(typeof readerPositionPending==='function'&&readerPositionPending())return;
   const {session,anchor}=pending||{};
   if(!anchor||currentReaderMode!=='original'||session!==originalSession||session?.kind!=='pdf'
       ||session.readDirection==='horizontal') return;
@@ -221,6 +223,7 @@ function setOriginalZoom(next, focus, position){
 /* 버튼을 누를 때만 중심점을 한 번 보정합니다. 손가락을 따라 scrollTop을
    반복 수정하지 않으므로 iOS의 관성 스크롤과 충돌하지 않습니다. */
 function changeOriginalZoom(direction){
+  if(readerPositionPending())return;
   if(!originalZoomActive()) return;
   if(originalPinchBusy()) return;
   /* 단어 곁 필은 탭한 화면 좌표에 붙어 있습니다. 버튼 확대가 시작되면 그 좌표가

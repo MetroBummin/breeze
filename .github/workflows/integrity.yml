@@ -78,3 +78,5 @@ jobs:
         run: node tests/verify-reader-notice-controls-browser.mjs && node tests/verify-epub-navigation-input-browser.mjs
       - name: On-demand easy explanation in Chromium and WebKit
         run: node tests/verify-easy-explanation-browser.mjs && BROWSER=webkit node tests/verify-easy-explanation-browser.mjs
+      - name: Saved original position during interrupted reopening
+        run: node tests/verify-original-reopen-browser.mjs

@@ -133,7 +133,7 @@ function originalPinchStart(event){
   if(originalPinch && !originalFingerContacts(event).some(point=>originalPinch.ids.includes(point.identifier)))
     cancelOriginalPinch();
   // A reader's contact supersedes delayed automatic mode-landing restores.
-  if(originalFingerContacts(event).some(point=>point.target?.closest?.('#original-stage')))readerModeChangeToken++;
+  if(!readerPositionPending()&&originalFingerContacts(event).some(point=>point.target?.closest?.('#original-stage')))readerModeChangeToken++;
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/start',event);
   countOriginalPdfContacts(event);
   if(originalPinchTouches){
@@ -188,12 +188,22 @@ function originalPinchEnd(event){
   const start = ()=>{
     const box = readerScroller();
     if(!box) return;
+    // Only the final restored page can accept reading gestures. Chrome remains
+    // usable, including Back and mode switching; programmatic layout still runs.
+    const guardOpening=event=>{
+      if(!readerPositionPending())return;
+      if(event.type==='keydown'&&!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','PageDown','PageUp','Home','End',' '].includes(event.key))return;
+      if(event.cancelable)event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    for(const type of ['touchstart','touchmove','wheel','keydown'])
+      box.addEventListener(type,guardOpening,{capture:true,passive:false});
     box.addEventListener('scroll',()=>{
       if(originalPinch && !originalPinchFrame)
         originalPinchFrame=requestAnimationFrame(previewOriginalPinch);
       if(originalSession?.kind==='pdf'){
         originalSession.lastScrollAt=performance.now();
-        if(!readerScrollWasProgrammatic())readerModeChangeToken++;
+        if(!readerPositionPending()&&!readerScrollWasProgrammatic())readerModeChangeToken++;
         schedulePdfPaint(originalSession);
         schedulePdfSharpen(originalSession);
       }
