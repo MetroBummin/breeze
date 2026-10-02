@@ -1,0 +1,34 @@
+{
+  "name": "Thunderhead review milestones",
+  "format": "PNG",
+  "background": "transparent",
+  "animated": false,
+  "usage": "Daily review progress milestones, not mastery scores. Floating cloud character with no legs or feet.",
+  "stages": [
+    {
+      "stage": 1,
+      "progressPercent": 20,
+      "file": "thunderhead-stage-1.png"
+    },
+    {
+      "stage": 2,
+      "progressPercent": 40,
+      "file": "thunderhead-stage-2.png"
+    },
+    {
+      "stage": 3,
+      "progressPercent": 60,
+      "file": "thunderhead-stage-3.png"
+    },
+    {
+      "stage": 4,
+      "progressPercent": 80,
+      "file": "thunderhead-stage-4.png"
+    },
+    {
+      "stage": 5,
+      "progressPercent": 100,
+      "file": "thunderhead-stage-5.png"
+    }
+  ]
+}

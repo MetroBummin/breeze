@@ -37,3 +37,20 @@ sips -z <height> <width> -s format jpeg -s formatOptions 88 "$src" --out "$out.j
 
 현재 파일은 별도 세로·가로 구도를 가지므로 폰·Fold·태블릿·데스크톱에서 불필요한
 중앙 크롭 없이 장면의 중요한 부분을 유지합니다.
+
+## 썬더헤드 복습 완료 에셋
+
+`review/`에는 기존 `thunderhead.png`를 참고해 만든 다리 없는 구름 마스코트
+5종을 보관합니다. 모두 1254×1254 투명 배경 RGBA PNG이며 정지 이미지입니다.
+
+| 파일 | 오늘 복습 진행률 | 표현 |
+| --- | --- | --- |
+| `review/thunderhead-stage-1.png` | 20% | 손 흔들기 |
+| `review/thunderhead-stage-2.png` | 40% | 윙크 |
+| `review/thunderhead-stage-3.png` | 60% | 양손 들고 환호 |
+| `review/thunderhead-stage-4.png` | 80% | 번개 들고 응원 |
+| `review/thunderhead-stage-5.png` | 100% | 왕관·트로피로 축하 |
+
+단계와 파일의 대응은 `review/manifest.json`에 있습니다. 진행률은 오늘 분량의
+완료 비율이며 숙달률이 아닙니다. 현재는 에셋만 저장했으며 학습 화면 연결과
+둥실거리는 애니메이션은 적용하지 않았습니다.
