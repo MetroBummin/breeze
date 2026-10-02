@@ -10,6 +10,17 @@ let readerModeChangeToken = 0;
 let lastOriginalAnchor = null;
 let readerAnchorHoldUntil = 0;
 
+/* A surface being restored is not a new reading location. This is owned by
+   the current opening, not a timeout that can expire on a slow document. */
+let readerPositionOpening = null;
+function readerPositionPending(){
+  if(!curBook)return false;
+  if(readerPositionOpening?.book===curBook)return true;
+  return currentReaderMode==='original' && (originalSession?.bookId!==curBook.id
+    || originalSession?.presented!==true
+    || document.getElementById('originalwrap')?.hasAttribute('data-reader-preparing'));
+}
+
 /* While the reader is being put back where it was, its own scrolling must not
    be mistaken for the reader moving. Without this the width animation of the
    dictionary panel re-records a half-finished position on every frame and the
@@ -151,6 +162,7 @@ function readerProgressNow(){
 
 function visibleReaderProgress(){
   if(!curBook) return 0;
+  if(readerPositionPending())return posOf(curBook.id).p||0;
   const value=readerProgressNow();
   return readerProgressAtEnd(value==null ? (posOf(curBook.id).p||0) : value);
 }

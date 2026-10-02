@@ -251,3 +251,24 @@ the other shelf's assignments or any document.
 The Reader settings direction selection uses a separate 32px rounded neutral
 background within its existing 44px button. It no longer clips a rounded fill
 with transparent borders. Other setting controls keep their existing appearance.
+
+## Original reopening owns position restoration (2026-10-02)
+
+A cold PDF/EPUB opening is not a reading movement. Until the saved anchor has
+landed, the original stays on the existing loading surface and rejects body
+scroll/touch/scroll-key input. Reader chrome remains available for exit and mode
+changes. Loading has no fixed deadline after which its temporary cover may save.
+The central reading-position writer rejects an opening or an unpresented original
+session, including lifecycle saves when leaving or backgrounding the reader.
+
+Opening ownership is tied to that invocation and book, so a late completion cannot
+unlock a newer opening. Initial input or a viewport reflow cannot invalidate its restoration token.
+A failed anchor restore shows the existing error surface and retains the saved
+position; leaving during preparation cannot retain that unfinished reader. After
+successful landing, deliberate backward reading saves normally, including in a
+previously completed book. Completion is not made permanently sticky.
+
+Regression: `tests/verify-original-reopen-browser.mjs` uses real PDF/EPUB fixtures,
+delays anchor restoration beyond the old save timeout, and checks early touch,
+wheel, scroll and direct/lifecycle saves, completed/partial progress, normal backward
+reading and navigation to another book, in Chromium and WebKit.

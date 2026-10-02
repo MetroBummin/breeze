@@ -412,13 +412,13 @@ async function switchReaderMode(mode,options){
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;
   const previousMode = currentReaderMode;
-  const textAnchor = previousMode==='text' ? captureAnchor() : null;
+  const textAnchor = previousMode==='text' ? (readerPositionPending()?posOf(curBook.id):captureAnchor()) : null;
   let bridge = previousMode==='text'
     ? sourceAnchorForParagraph(curBook,(textAnchor||{}).pi)
-    : captureOriginalAnchor();
+    : (readerPositionPending()?posOf(curBook.id).original:captureOriginalAnchor());
   const returning=previousMode==='text'&&recentModeLanding?.bookId===curBook.id
     &&recentModeLanding.mode==='text'&&Date.now()-recentModeLanding.at<12000&&!textModeMovedByUser;
-  let sentenceBridge = !options.initial && previousMode!==mode&&!returning
+  let sentenceBridge = !options.initial && !readerPositionPending() && previousMode!==mode&&!returning
     ? (previousMode==='text' ? textSentenceBridge() : originalSentenceBridge(bridge))
     : null;
   /* 원본→글자 직후 다시 원본으로 돌아갈 때는, 사용자가 글자를 실제로 스크롤하지
@@ -472,7 +472,7 @@ async function switchReaderMode(mode,options){
   originalWrap.hidden = mode!=='original';
   const reusedOriginal=mode==='original'&&!options.reload&&originalSession?.bookId===curBook.id
     &&originalSession.hash===curBook.original?.hash&&originalSession.presented===true;
-  if(mode==='original'&&!reusedOriginal&&(curBook.kind||curBook.original?.kind)==='epub'){originalWrap.dataset.readerPreparing='true';originalWrap.setAttribute('aria-busy','true');}
+  if(mode==='original'&&!reusedOriginal){originalWrap.dataset.readerPreparing='true';originalWrap.setAttribute('aria-busy','true');}
   else{delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');}
   /* Restore the live paper's extent and last position before the first paint.
      An asynchronous anchor refinement must never expose the cover first. */
@@ -537,8 +537,9 @@ async function switchReaderMode(mode,options){
       target = ORIGINAL_FORMATS[record.kind].anchorFromProgress(originalSession,0);
     }
     target = target || sourceAnchorForParagraph(curBook,posOf(curBook.id).pi);
-    await restoreOriginalAnchor(target,changeToken);
+    const anchorRestored=await restoreOriginalAnchor(target,changeToken);
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
+    if(!anchorRestored)throw new Error('읽던 위치를 복원하지 못했어요. 책을 다시 열어 주세요.');
     if(sentenceBridge){
       /* 첫 PDF 진입은 문장 색인을 읽는 데 시간이 걸릴 수 있습니다. 레이아웃과
          sourceMap은 이미 준비됐으므로 같은 문단 블록을 먼저 보여 줍니다. */
@@ -563,9 +564,9 @@ async function switchReaderMode(mode,options){
     }
     stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
     suspendReaderScrollSave(500);
-    releaseReaderPillProgress();
     originalSession.presented=true;originalSession.lastScrollTop=readerScrollTop();
     delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
+    releaseReaderPillProgress();
   }catch(error){
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
     console.error(error);

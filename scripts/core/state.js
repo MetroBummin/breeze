@@ -206,6 +206,7 @@ function keepPlace(fn){
 
 function saveReadingState(){
   if(!curBook || curBook.transient) return;
+  if(typeof readerPositionPending==='function' && readerPositionPending())return;
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
