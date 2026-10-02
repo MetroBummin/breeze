@@ -19,7 +19,7 @@ const BreezeReview = (() => {
 
   /** @typedef {{identity:string,streak:number,dueAt:number,lastReviewedAt:number}} Progress */
   /** @typedef {{key:string,identity:string}} Reference */
-  /** @typedef {{id:string,startedAt:number,queue:Reference[],index:number,remembered:number,confused:number}} Session */
+  /** @typedef {{id:string,startedAt:number,queue:Reference[],index:number,remembered:number,confused:number,practice?:boolean}} Session */
   /** @typedef {{version:number,sequence:number,progress:Record<string,Progress>,session:Session|null}} State */
   /** @typedef {{key:string,identity:string,word:string,ko:string,example:string,book:string,addedAt:number}} Card */
 
@@ -44,7 +44,7 @@ const BreezeReview = (() => {
     const saved=own(raw,'session') ? raw.session : null;
     if(!record(saved) || !['id','startedAt','queue','index','remembered','confused'].every(field=>own(saved,field))) return state;
     if(typeof saved.id!=='string' || !saved.id || !time(saved.startedAt)
-        || !Array.isArray(saved.queue) || saved.queue.length<1 || saved.queue.length>LIMIT
+        || !Array.isArray(saved.queue) || saved.queue.length<1 || (saved.practice!==true&&saved.queue.length>LIMIT)
         || !count(saved.index) || saved.index>saved.queue.length
         || !count(saved.remembered) || !count(saved.confused)
         || saved.remembered+saved.confused>saved.index) return state;
@@ -60,6 +60,7 @@ const BreezeReview = (() => {
     }
     state.session={id:saved.id,startedAt:saved.startedAt,queue,index:saved.index,
       remembered:saved.remembered,confused:saved.confused};
+    if(saved.practice===true)state.session.practice=true;
     return state;
   }
 
@@ -157,6 +158,25 @@ const BreezeReview = (() => {
     return snapshot(state,available,at);
   }
 
+  // Explicit practice may include future-due cards. Reconcile against ALL words
+  // so a book/star filter can never prune another book's progress.
+  function startSelection(raw,words,keys,now){
+    const state=normalize(raw),available=cards(words),at=nowValue(now);
+    const byKey=reconcile(state,available);
+    const selected=[...new Set(Array.isArray(keys)?keys:[])]
+      .map(key=>byKey.get(key)).filter(Boolean);
+    const queue=selected.map(card=>({key:card.key,identity:card.identity}));
+    if(state.session?.practice&&state.session.index<state.session.queue.length
+      &&JSON.stringify(state.session.queue)===JSON.stringify(queue))return snapshot(state,available,at);
+    state.session=null;
+    if(queue.length){
+      state.sequence=state.sequence<Number.MAX_SAFE_INTEGER?state.sequence+1:1;
+      state.session={id:JSON.stringify([at,state.sequence]),startedAt:at,queue,
+        index:0,remembered:0,confused:0,practice:true};
+    }
+    return snapshot(state,available,at);
+  }
+
   function grade(raw,words,token,outcome,now){
     const state=normalize(raw),available=cards(words),at=nowValue(now);
     const current=snapshot(state,available,at);
@@ -172,5 +192,5 @@ const BreezeReview = (() => {
     return {...snapshot(state,available,at),accepted:true};
   }
 
-  return Object.freeze({normalize,view,start,grade});
+  return Object.freeze({normalize,view,start,startSelection,grade});
 })();

@@ -100,13 +100,8 @@ function sentenceBodyClass(name,on){
 function sentenceWaitingControls(waiting){
   const status=document.getElementById('sentence-pill-status');
   if(status) status.hidden=!waiting;
-  ['readback','aafab','modefab'].forEach(id=>{
-    const button=document.getElementById(id);
-    if(button) button.inert=!!waiting || !!(document.body&&document.body.classList
-      && document.body.classList.contains('chrome-hidden'));
-  });
-  const title=document.getElementById('readpill-title');
-  if(title) title.inert=!!waiting;
+  if(waiting&&typeof closePdfNavigation==='function')closePdfNavigation();
+  syncReaderControlInteractivity();
   if(!waiting) sentenceBodyClass('sentence-pill-waiting',false);
 }
 function beginSentenceWaiting(){

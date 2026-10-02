@@ -113,7 +113,7 @@ aspect ratio, fitting the strip width and 180px maximum height. Do not crop pape
 inside a fixed-height button. Variable-height virtual slots follow each source
 aspect ratio, with a 12px number line and 8px gap; there is no artificial trailing
 blank viewport. Page labels remain a 9px secondary line. Bookmark
-targets align to the paper top and left after rendering and container resizing.
+targets align to the paper top and right after rendering and container resizing.
 Sidebar closing uses the same fixed geometry as opening and releases inert
 content after its 220ms exit. Rapid reopening cancels pending cleanup.
 The writing pill remains on the bottom row, narrows between the side slots,
@@ -127,3 +127,127 @@ secondary-ink contrast; their 44px target remains aligned inside the paper.
 
 ### Compact category and Memory surfaces (2026-10-01)
 Shelf grids start at the heading/category left edge rather than centering leftover columns. Category and manual-word tasks use compact 380px forms with 44px input/action targets. Memory stars match lookup/Reader visual proportions while preserving 44px hit areas. These changes do not alter assignments, vocabulary, or persistence.
+
+## 2026-10-01: reuse Reader work
+
+EPUB star visibility uses one persistent highlight stylesheet and changed-only root CSS variables; toggles do not rebuild chapter marks. PDF sidebar close retains its bounded virtualized strip and rendered canvases within the live document session. Reopen reuses them, updates geometry/bookmarks, and cancels stale rendering by generation. Leaving the original session releases the cache. Mode returns reuse live documents instead of retrieving their Blob again. Sentence search starts near the mapped paragraph and falls back to the full search when needed.
+
+## EPUB original page previews (209)
+
+The shared original-navigation entry exposes the same visual page sidebar for EPUB and PDF. EPUB source layout is sliced at each chapter width times sqrt(2); page numbers describe the current layout rather than publisher-fixed pagination. Selecting a preview scrolls to that exact source slice. Publisher typography and images come from the already-sanitized source documents; no source Blob reread, extraction or render library is added. Only visible slices plus one neighbor on each side instantiate sandboxed, inert preview frames. Cached source markup and loaded previews are reused until source geometry changes, and session release clears ownership. Chapter headings are not used as the navigation UI.
+
+PDF-specific deletion and direction controls remain hidden on EPUB. EPUB bookmarks use source anchors rather than layout page numbers. Existing measured EPUB anchors supply the current spine without another source anchor capture. Frame geometry changes coalesce sidebar layout into one animation frame; source width/height changes invalidate slices and rotation updates page numbering.
+
+## Shared sidebar presentation (210)
+
+PDF bookmark ribbons and their 44px targets align inside the paper's upper-right
+edge. EPUB keeps the same right-aligned collapse control even without the PDF
+bookmark filter. Both formats retain the existing sidebar surface and motion.
+EPUB lays out preview placeholders first, waits for the sidebar entrance to
+finish, then creates one nearby source preview per frame. Close/reopen cancels
+stale work by generation; loaded previews remain reusable in the live session.
+
+EPUB navigation slices use a 1:sqrt(2) paper aspect ratio, independent of tall
+phone viewport proportions. Each thumbnail uses the strip width minus 8px,
+with a 12px number line, 8px inter-page gap and 6px paper corners. The source
+chapter remains continuous; preview clicks and current-page detection use the
+same per-chapter slice height. The last slice retains paper proportions. PDF
+keeps its existing uncropped source aspect ratios. This follows the supplied
+Apple Preview reference without scaling or reflowing the reading document.
+
+EPUB bookmarks persist per source hash as chapter/element/relative-element-offset
+anchors under `breeze.epub-bookmarks.v1`. Reflow remaps those anchors to the
+current preview pages; a full-frame height that happens not to change does not
+skip bookmark remapping. Right-hand ribbons and the bookmarks-only filter share
+PDF presentation. Removing a filtered bookmark updates the list; invalid storage
+or failed writes report an error and never replace the saved data.
+
+Both formats expose the same draggable scrollbar: a 4px visual thumb with a
+24px-wide touch grip and at least 44px height, pointer capture, and Home/End,
+PageUp/PageDown and arrow-key support. A reserved 14px rail plus the strip's inner paper gutter separates its entire
+hit target from thumbnail paper and bookmark targets. This scrollbar is
+intentionally narrower than an action button to preserve the thumbnail width. It owns only the sidebar
+scroll position; paper reading position and gestures remain independent.
+
+Both sidebar header controls share a 44px circular neutral surface and 22px
+icons with 2px strokes. The bookmark filter alone becomes red and filled when
+selected. The header bookmark uses a square viewBox; page ribbons retain their
+existing tall paper-edge geometry. This presentation is shared by PDF and EPUB.
+
+## Horizontal progress and bounded EPUB preview viewports (211)
+Horizontal PDF progress uses the retained-page ordinal plus the current paper's
+scroll fraction, divided by retained page count. A paper that fits in the Reader
+is fully visible and contributes its full share. A tall or zoomed paper advances
+from its top alignment to its visible bottom, bounded to that page's share.
+Deleted pages do not count. Source anchors still store the original page and
+normalized location, and vertical-mode progress is unchanged.
+
+EPUB previews previously transformed a full-chapter-height browsing viewport for
+each page slice. Keep each viewport at one slice height (remaining height on the
+last slice), scale it, and scroll its own document to the source offset on load
+and font readiness. Retain source root height and eagerly load cloned images so
+layout matches the source. This bounds painted surfaces independently of chapter
+length; source text, sandboxing, numbered slices and navigation are unchanged.
+Long-chapter regressions verify actual colored pixels on pages 43, 44 and 45 in
+Chromium and WebKit. This is constructed-book evidence, not reproduction with
+the user's original EPUB, which was not supplied.
+
+A second blank-page cause was the source frame's old height: scrollHeight is
+never less than its browsing viewport, so wider reflow could not shrink a chapter.
+For viewport-independent chapters, reset that floor once per changed width
+before measuring actual content. No reset runs on ordinary scroll or unchanged
+width. A regression widens a wrapping chapter and rejects the old empty tail.
+
+## EPUB navigation contact and motion (212)
+
+Late chapter reflow previously replaced the whole thumbnail track, including the
+button between a contact's down and click. Defer EPUB track rebuild and
+virtualization until the contact finishes; process deferred work on the next
+animation frame after the click. Preview creation also yields during a contact.
+Closing the sidebar clears contact ownership. No gesture is cancelled or captured.
+
+Preview selection resolves its current slice, clears obsolete pending source
+restoration, and moves the existing Reader scroller over 200ms (ease out). New
+selections supersede old motion through the existing reader mode token; direct
+scroll interrupts it. Reduced motion applies the destination immediately. Save
+the actual settled source position. CSS-pixel scroll truncation must not report
+the preceding page at an exact slice boundary.
+
+EPUB layout slices remain navigation positions rather than fixed source pages.
+PDF-only deletion remains hidden. A persistent EPUB deletion feature would need
+a source-content/chapter contract, not deletion by transient viewport page number.
+
+`tests/verify-epub-navigation-input-browser.mjs` reproduces a trusted down/up
+across late source reflow, repeats touchscreen selections in five sizes/themes,
+and checks exact source alignment, latest selection and reduced motion. The 211
+worktree fails because the pressed button is disconnected.
+
+## Reader input ownership (214)
+
+Collapsed chrome and sentence waiting now derive control interactivity from one
+shared policy, including the reader-navigation parent. Previously word selection
+called sentence cleanup while chrome was collapsed, marking that parent inert;
+expansion restored only its children, leaving visible navigation unresponsive.
+Reconciliation runs even when the visibility class has not changed. Opening the
+page sidebar ends the previous word/sentence presentation through normal lifetime
+cleanup, so pending answers cannot reappear over navigation.
+
+
+## Independent shelf categories (214)
+
+Casuals and Long-form own separate category lists, names, active filters and
+assignment choices. Imported content accepts only a category belonging to its
+actual shelf, even if the import began elsewhere. Categories remain device-local
+metadata; no category sync contract or book/content identity changes.
+
+After the local library loads, existing unscoped categories are assigned using
+their member documents. A category used on both shelves is split into independent
+IDs and its memberships retained. Unused categories are preserved on both shelves
+because their original creation shelf was never stored. Migration writes the
+whole metadata record atomically; failed writes preserve the previous data and
+block editing until a clean reload. Deleting one shelf's category never affects
+the other shelf's assignments or any document.
+
+The Reader settings direction selection uses a separate 32px rounded neutral
+background within its existing 44px button. It no longer clips a rounded fill
+with transparent borders. Other setting controls keep their existing appearance.

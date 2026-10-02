@@ -51,7 +51,7 @@ try{
   assert.ok(await page.locator('.wordbook-brand img').evaluate(e=>e.complete&&e.naturalWidth>0));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const exportBox=await page.locator('#btn-export').boundingBox();
-  assert.ok(exportBox.x<width/4,'Export moved out of the left control slot');
+  assert.ok(exportBox.x>width*3/4,'Export must remain in the right control slot');
   for(const button of await page.locator('#wordbook-controls button').all()){
    const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width);
   }
@@ -83,6 +83,6 @@ try{
   await page.mouse.move(0,0);
   await page.screenshot({path:`/tmp/breeze-home-proof/wordbook-${dark?'dark':'light'}.png`});
  }
- await page.locator('#wordbook-controls .control-pill').click();assert.equal(await page.evaluate(()=>activeAppView()),'home');
+ await page.locator('#wordbook-home').click();assert.equal(await page.evaluate(()=>activeAppView()),'home');
  assert.deepEqual(errors,[]);console.log('Wordbook responsive themes, search, sort, filters, edit, add, export and Home passed.');
 }finally{await browser.close();await new Promise(done=>server.close(done))}

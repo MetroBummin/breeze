@@ -2,12 +2,13 @@
 const wordbookStars=new Set();
 const wordbookBooks=new Set();
 function filterWordbookGroups(groups,q){
-  const filtered=groups.filter(([root,entries])=>{
+  const filtered=groups.map(([root,entries])=>{
     const head=words[root]||entries[0][1];
-    return (!wordbookStars.size||wordbookStars.has(Number(head.status))) && entries.some(([,w])=>
+    const matching=(!wordbookStars.size||wordbookStars.has(Number(head.status)))?entries.filter(([,w])=>
       (!wordbookBooks.size||wordbookBooks.has(w.book||'')) &&
-      (!q||w.word.toLowerCase().includes(q)||(w.ko||'').toLowerCase().includes(q)||(w.book||'').toLowerCase().includes(q)));
-  });
+      (!q||w.word.toLowerCase().includes(q)||(w.ko||'').toLowerCase().includes(q)||(w.book||'').toLowerCase().includes(q))):[];
+    return [root,matching];
+  }).filter(([,entries])=>entries.length);
   const sort=/** @type {HTMLInputElement} */(document.getElementById('vsort')).value;
   const added=entries=>Math.max(...entries.map(([,w])=>Number(w.addedAt)||0));
   return filtered.sort((a,b)=>sort==='alpha' ? a[1][0][1].word.localeCompare(b[1][0][1].word) :

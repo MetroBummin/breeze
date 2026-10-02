@@ -206,7 +206,12 @@ function epubFrameHeight(frame){
     doc.body&&doc.body.scrollHeight||0)));
 }
 function setEpubFrameHeight(frame,height){
-  frame.style.height=Math.max(60,Math.ceil(height))+'px';
+  const value=Math.max(60,Math.ceil(height))+'px';
+  if(frame.style.height!==value)frame.style.height=value;
+  // Reflow can move bookmark anchors even when the outer frame stays as tall.
+  if(typeof pdfNavigation!=='undefined'&&pdfNavigation?.session.kind==='epub'&&!pdfNavigation.layoutFrame){
+    const nav=pdfNavigation;nav.layoutFrame=requestAnimationFrame(()=>{nav.layoutFrame=0;if(pdfNavigation===nav)buildEpubNavigation(false);});
+  }
 }
 function applyEpubStableViewport(frame,viewport){
   const root=frame&&frame.contentDocument&&frame.contentDocument.documentElement;
@@ -431,14 +436,23 @@ async function openOriginalEpub(book,record,token){
       frame.onload=()=>{
         const frameDoc=frame.contentDocument;
         const resize=()=>{
-          if(!frameDoc||meta.viewportDependent) return;
+          if(!frameDoc||meta.viewportDependent||originalSession!==session||currentReaderMode!=='original') return;
+          // scrollHeight is at least the iframe viewport height. On a width
+          // change release that old floor before measuring, or a shorter
+          // reflow leaves whole blank navigation pages at the chapter end.
+          const width=frame.clientWidth;
+          if(width&&meta.width!==width){meta.width=width;frame.style.height='60px';}
           setEpubFrameHeight(frame,epubFrameHeight(frame));
         };
         applyEpubStableViewport(frame,session.viewport);
         if(meta.viewportDependent) freezeEpubHeightMediaQueries(frame,session);
         resize();
         if(window.ResizeObserver && frameDoc && !meta.viewportDependent){
-          const observer=new ResizeObserver(resize); observer.observe(frameDoc.documentElement);
+          let resizeFrame=0;
+          const observer=new ResizeObserver(()=>{
+            if(resizeFrame||currentReaderMode!=='original')return;
+            resizeFrame=requestAnimationFrame(()=>{resizeFrame=0;resize();});
+          });observer.observe(frameDoc.documentElement);
           session.resizeObservers.push(observer);
         }
         if(frameDoc) installEpubWordTap(frameDoc);
@@ -452,6 +466,7 @@ async function openOriginalEpub(book,record,token){
     session.frames[index]=frame; session.frameReady[index]=ready; session.frameGeometryReady[index]=geometryReady;
   }
   await Promise.all(session.frameReady.filter(Boolean).slice(0,2));
+  if(originalSession===session)updatePdfNavigationControls();
 }
 
 /* ================= saved vocabulary ================= */
@@ -468,7 +483,6 @@ function epubSavedWordSnapshot(){
 function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   const view=doc&&doc.defaultView;
   if(!doc || !view || !view.CSS || !view.CSS.highlights || !view.Highlight) return;
-  if(typeof applyEpubStarPreferences==='function')applyEpubStarPreferences(doc);
   const cached=epubSavedHighlightCache.get(doc);
   if(cached){
     const changed=[];let rebuild=false;
@@ -493,11 +507,6 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   ['breeze-saved-1','breeze-saved-2','breeze-saved-3'].forEach(name=>view.CSS.highlights.delete(name));
   /* 저장한 단어는 글자 화면과 같은 블록으로 칠합니다. 밑줄·끄기를 더 고를 수
      있었지만 아무도 고르지 않는 설정이었습니다. */
-  let markStyle=doc.getElementById('breeze-saved-mark-style');
-  if(!markStyle){ markStyle=doc.createElement('style'); markStyle.id='breeze-saved-mark-style'; doc.head.appendChild(markStyle); }
-  markStyle.textContent=`::highlight(breeze-saved-1){background:rgba(255,226,138,.34)}
-    ::highlight(breeze-saved-2){background:rgba(255,171,120,.31)}
-    ::highlight(breeze-saved-3){background:rgba(255,140,140,.33)}`;
   if(typeof applyEpubStarPreferences==='function')applyEpubStarPreferences(doc);
   const ranges=[[],[],[]],byKey=new Map(),byNode=new WeakMap(),candidates=new Set();
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
@@ -824,10 +833,9 @@ function openOriginalRange(doc,range,raw,owner,rect){
   marker.setAttribute('aria-hidden','true');
   if(words[key] && words[key].mark !== false) marker.classList.add('s'+words[key].status);
   const palette=getComputedStyle(document.body);
-  const status=words[key]&&words[key].mark!==false?words[key].status:0;
-  const fill=palette.getPropertyValue(status?'--pick'+status+'-fill':'--pick-fill');
+  const fill=palette.getPropertyValue('--pick-fill');
   marker.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:2147483646;color:transparent;box-sizing:border-box;border:0;border-radius:5px`;
-  marker.style.background=fill;marker.style.boxShadow=`0 0 0 2px ${fill}`;
+  marker.style.background=fill;
   doc.body.appendChild(marker);
   openWord(key,marker);
 }

@@ -128,6 +128,7 @@ function restorePdfRotationAnchor(pending){
   const token=++readerModeChangeToken;
   void restorePdfAnchor(anchor,topInset(),token).then(restored=>{
     if(!restored||token!==readerModeChangeToken||session!==originalSession) return;
+    session.presented=true;session.lastScrollTop=readerScrollTop();
     if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);
     if(typeof updatePdfNavigationControls==='function') updatePdfNavigationControls();
   });
@@ -143,16 +144,18 @@ function originalZoomActive(){
    (PDF 는 처음엔 첫 쪽 비율로 자리만 잡아 둡니다) 한 번으로는 모자랍니다 —
    아래 `ResizeObserver` 가 자랄 때마다 이 함수를 부릅니다. */
 function layoutOriginalZoom(){
+  if(!document.body.classList.contains('reading')||!document.body.classList.contains('reader-original'))return;
   const stage = originalZoomStage(), layer = originalZoomLayer(), box = readerScroller();
   if(!stage || !layer || !box) return;
   if(originalPinchBusy()) return;
   const baseWidth = box.clientWidth;
-  if(baseWidth > 0) layer.style.width = baseWidth + 'px';
+  if(baseWidth > 0&&layer.style.width!==baseWidth+'px')layer.style.width=baseWidth+'px';
   /* `offsetHeight` 는 레이아웃 값이라 `transform` 을 타지 않습니다 — 딱 필요한
      "확대 안 한 높이" 입니다. */
   originalZoomBaseHeight = layer.offsetHeight;
-  stage.style.width  = Math.round(baseWidth * originalZoomLevel) + 'px';
-  stage.style.height = Math.round(originalZoomBaseHeight * originalZoomLevel) + 'px';
+  const width=Math.round(baseWidth*originalZoomLevel)+'px',height=Math.round(originalZoomBaseHeight*originalZoomLevel)+'px';
+  if(stage.style.width!==width)stage.style.width=width;
+  if(stage.style.height!==height)stage.style.height=height;
 }
 
 function applyOriginalZoomTransform(){
@@ -288,37 +291,50 @@ let originalZoomWatchers = [];
   const start = ()=>{
     const layer = originalZoomLayer(), box = readerScroller();
     if(!layer || !box) return;
-    const growth = new ResizeObserver(()=>{
-      /* 배율이 그대로여도 높이는 자랍니다. 자란 만큼만 다시 적습니다. */
-      if(Math.abs(layer.offsetHeight - originalZoomBaseHeight) > 0.5) layoutOriginalZoom();
+    let layoutFrame=0,pendingRect=null;
+    const reading=()=>document.body.classList.contains('reading')&&document.body.classList.contains('reader-original');
+    const pdf=()=>typeof originalSession!=='undefined'&&originalSession?.kind==='pdf';
+    const scheduleLayout=()=>{
+      if(layoutFrame)return;
+      layoutFrame=requestAnimationFrame(()=>{
+        layoutFrame=0;layoutOriginalZoom();
+        if(pendingRect){settleOriginalZoomGeometry(pendingRect.width,pendingRect.height);pendingRect=null;}
+      });
+    };
+    const growth=new ResizeObserver(()=>{
+      if(!reading()||Math.abs(layer.offsetHeight-originalZoomBaseHeight)<=.5)return;
+      // PDF input owns synchronous geometry. EPUB frame growth is coalesced
+      // outside observer delivery to avoid a parent/frame feedback loop.
+      if(pdf())layoutOriginalZoom();else scheduleLayout();
     });
     growth.observe(layer);
-    const reflow = new ResizeObserver(entries=>{
+    const reflow=new ResizeObserver(entries=>{
       const rect=entries[0].contentRect;
       const nextWidth=Math.round(rect.width||0),nextHeight=Math.round(rect.height||0);
       const hadSize=originalZoomObservedWidth!=null&&originalZoomObservedHeight!=null;
       const orientationFlipped=hadSize
         &&(originalZoomObservedWidth>originalZoomObservedHeight)!==(nextWidth>nextHeight);
       const session=typeof originalSession!=='undefined'?originalSession:null;
-      if(orientationFlipped){
-        const anchor=capturePdfRotationAnchor(session);
-        originalRotationAnchor=anchor?{session,anchor}:null;
+      if(orientationFlipped||(pdf()&&hadSize&&nextWidth!==originalZoomObservedWidth&&!originalPinch)){
+        if(!originalRotationAnchor||originalRotationAnchor.session!==session){
+          const anchor=capturePdfRotationAnchor(session);
+          originalRotationAnchor=anchor?{session,anchor}:null;
+        }
       }else if(originalRotationAnchor&&originalRotationAnchor.session!==session){
         originalRotationAnchor=null;
       }
-      cancelOriginalPinch();
-      layoutOriginalZoom();
-      settleOriginalZoomGeometry(rect.width,rect.height);
-      /* Rotation can report more than one width. Keep restoring the first logical
-         anchor until two quiet animation frames confirm the new geometry. */
+      // A queued notification from the preceding zoom must not cancel a new
+      // gesture that already captured the current viewport.
+      if(!originalPinch||originalPinch.width!==box.clientWidth||originalPinch.viewportHeight!==box.clientHeight)cancelOriginalPinch();
+      if(!reading()){settleOriginalZoomGeometry(rect.width,rect.height);return;}
+      if(!pdf()){pendingRect=rect;scheduleLayout();return;}
+      layoutOriginalZoom();settleOriginalZoomGeometry(rect.width,rect.height);
       if(originalRotationAnchor){
         const pending=originalRotationAnchor;
-        restorePdfRotationAnchor(pending);
-        keepPdfRotationAnchorAlive(pending);
+        restorePdfRotationAnchor(pending);keepPdfRotationAnchorAlive(pending);
       }
     });
-    reflow.observe(box);
-    originalZoomWatchers = [growth, reflow];
+    reflow.observe(box);originalZoomWatchers=[growth,reflow];
   };
   // Deferred scripts can yield a ResizeObserver frame before pdf-pinch.js loads.
   if(document.readyState === 'loading' || typeof cancelOriginalPinch !== 'function')

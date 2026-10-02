@@ -8,7 +8,7 @@
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::after{display:none;}
 #readback svg{width:22px;height:22px;stroke-width:2;}
 #reader-navigation:has(#pdf-page-button[aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
-#readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){--reader-pill-max-width:calc(100% - 180px);}
+body:not(.sentence-pill-waiting) #readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){--reader-pill-max-width:calc(100% - 180px);}
 #readchrome:has(#pdf-page-button[aria-expanded=true]){z-index:75;}
 #readchrome:has(#pdf-page-button[aria-expanded=true])>:not(#reader-navigation){pointer-events:none;}
 
@@ -30,7 +30,6 @@
 #pdf-page-button[aria-expanded=true]{opacity:0;visibility:hidden;pointer-events:none;}
 body.chrome-hidden #reader-navigation{visibility:hidden;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s ease,transform .3s ease,visibility 0s .3s;}
 body.chrome-hidden #reader-navigation #readback{transform:none;}
-body.chrome-hidden #readchrome #readpill:not(.ink-pill-active){left:50%;}
 #pdf-navigation-dismiss{position:absolute;inset:0;z-index:74;width:100%;height:100%;border:0;padding:0;background:transparent;}
 #pdf-page-navigation{position:absolute;inset:0;width:calc(var(--pdf-navigation-width) - 1px);height:var(--pdf-navigation-height);box-sizing:border-box;padding:calc(env(safe-area-inset-top) + 8px) 8px calc(env(safe-area-inset-bottom) + 8px);color:inherit;display:flex;flex-direction:column;overflow:hidden;animation:pdf-navigation-reveal 220ms ease;}
 @keyframes pdf-sidebar-reveal{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
@@ -39,19 +38,20 @@ body.chrome-hidden #readchrome #readpill:not(.ink-pill-active){left:50%;}
 @media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-control.pdf-navigation-closing,#pdf-page-navigation{animation:none;}}
 .pdf-navigation-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:8px;padding-bottom:0;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
-.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;}
-.pdf-navigation-head>button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-#pdf-navigation-toggle{background:var(--sentence-glass-action);}
-#pdf-navigation-toggle svg{width:22px;height:22px;stroke-width:2;}
-#pdf-bookmarks-only svg{width:20px;height:26px;stroke-width:1.8;}
-#pdf-bookmarks-only[aria-pressed=true]{background:var(--sentence-glass-action);}
+.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;background:var(--sentence-glass-action);}
+.pdf-navigation-head>button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#pdf-navigation-toggle{margin-left:auto;}
+#pdf-bookmarks-only[aria-pressed=true]{color:var(--bookmark-ink);}
 #pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
-#pdf-thumbnail-strip{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;}
-#pdf-thumbnail-strip::-webkit-scrollbar{width:4px;height:4px;}
-#pdf-thumbnail-strip::-webkit-scrollbar-track,#pdf-thumbnail-strip::-webkit-scrollbar-track:hover,#pdf-thumbnail-strip::-webkit-scrollbar-corner{background:transparent;}
-#pdf-thumbnail-strip::-webkit-scrollbar-thumb,#pdf-thumbnail-strip::-webkit-scrollbar-thumb:hover,#pdf-thumbnail-strip::-webkit-scrollbar-thumb:active{background:var(--sb-thumb);border-radius:4px;}
-#pdf-thumbnail-strip::-webkit-scrollbar-button{display:none;}
-@supports not selector(::-webkit-scrollbar){#pdf-thumbnail-strip{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent;}}
+.pdf-thumbnail-viewport{position:relative;flex:1;min-height:0;padding-right:14px;box-sizing:border-box;}
+#pdf-thumbnail-strip{height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;scrollbar-width:none;}
+#pdf-thumbnail-strip::-webkit-scrollbar{display:none;}
+#pdf-navigation-scrollbar{position:absolute;right:-8px;top:0;width:24px;min-height:44px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;z-index:3;}
+#pdf-navigation-scrollbar[hidden]{display:none;}
+#pdf-navigation-scrollbar::before{content:"";position:absolute;right:8px;top:0;bottom:0;width:4px;border-radius:4px;background:var(--sb-thumb);}
+#pdf-navigation-scrollbar:is(:hover,:focus-visible,.dragging)::before{width:6px;background:var(--sentence-glass-secondary);}
+#pdf-navigation-scrollbar.dragging{cursor:grabbing;}
+#pdf-navigation-scrollbar:focus-visible{outline:2px solid var(--blue);outline-offset:-4px;border-radius:8px;}
 .pdf-thumbnail-track{position:relative;width:100%;}
 .pdf-thumbnail{position:absolute;left:0;right:0;}
 .pdf-thumbnail-frame{position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;width:max-content;max-width:calc(100% - 8px);}
@@ -73,7 +73,7 @@ body.chrome-hidden #readchrome #readpill:not(.ink-pill-active){left:50%;}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
 .pdf-thumbnail-jump canvas{display:block;max-width:100%;object-fit:contain;}
 .pdf-thumbnail-jump span{font:500 9px var(--ui);line-height:12px;color:var(--sentence-glass-muted);}
-.pdf-thumbnail-bookmark{position:absolute;left:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
+.pdf-thumbnail-bookmark{position:absolute;right:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
 .pdf-thumbnail-bookmark svg{width:20px;height:28px;fill:var(--sentence-glass-solid);stroke:currentColor;stroke-width:1.8;}
 .pdf-thumbnail-bookmark[aria-pressed=true]{color:var(--bookmark-ink);}
 .pdf-thumbnail-bookmark[aria-pressed=true] svg{fill:currentColor;}
@@ -114,15 +114,15 @@ body.chrome-hidden #readchrome #readpill:not(.ink-pill-active){left:50%;}
 .library-completion{position:absolute!important;top:8px!important;right:8px!important;left:auto!important;bottom:auto!important;z-index:5;display:flex!important;gap:3px;align-items:center;padding:4px 7px;border-radius:12px;background:var(--sentence-glass-solid);color:var(--brand);font:600 10px var(--ui);transform:none!important;}
 .library-completion svg{width:17px;height:17px;}
 /* The writing pill contains tools only; page navigation shares the bottom-left exit pill. */
-#readpill.ink-pill-active{bottom:0;top:auto;transform:translateX(-50%);width:calc(100% - 124px);max-width:340px;height:52px;min-height:0;flex-wrap:nowrap;justify-content:center;gap:0;padding:4px;}
-#readpill.ink-pill-active :is(#modefab,#readpill-title,.ink-pill-mini,.ink-pill-mode-separator,.completion-badge){display:none!important;}
+#readpill.ink-pill-active{bottom:0;top:auto;transform:none;width:calc(100% - 124px);max-width:340px;height:52px;min-height:0;flex-wrap:nowrap;justify-content:center;gap:0;padding:4px;}
+#readpill.ink-pill-active :is(#modefab,#reader-pill-copy,#readpill-title,.ink-pill-mini,.ink-pill-mode-separator,.completion-badge){display:none!important;}
 #readpill.ink-pill-active .ink-pill-toolbar{display:flex;flex:1 1 auto;min-width:0;max-width:none;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
 #readpill.ink-pill-active .ink-pill-toolbar .ink-pill-separator{display:none;}
 #readpill .ink-pill-toolbar .ink-pill-control,#readpill .ink-pill-entry{width:44px;height:44px;flex:none;}
-body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readpill{translate:var(--reader-pill-expanded-offset,0px) 0;}
+body:not(.chrome-hidden):not(.sentence-pill-waiting) #readchrome:has(#pdf-page-control:not([hidden])) #readpill{left:calc(2 * var(--reader-pill-expanded-offset,0px));}
 @container(max-width:650px){
   #readchrome{--reader-pill-expanded-offset:22px;}
-  #readpill.ink-pill-active{left:50%;bottom:0;width:min(340px,calc(100% - 180px));max-width:none;border-radius:26px;}
+  #readpill.ink-pill-active{bottom:0;width:min(340px,calc(100% - 180px));max-width:none;border-radius:26px;}
 }
 .pdf-navigation-head{margin-bottom:8px;}
 #aa-pop{touch-action:pan-y;}
@@ -138,3 +138,12 @@ body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readp
 .library-folder-controls .library-folder-menu>summary svg{fill:currentColor;stroke:none;}
 .library-folder-controls .library-folder-actions button{font-size:12px;border:0;background:transparent;}
 .library-folder-controls .library-folder-actions button:hover{background:var(--sentence-glass-action-hover);}
+
+/* A pending sentence owns one centered pill across every source format. */
+body.sentence-pill-waiting #reader-navigation{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(6px);}
+body.sentence-pill-waiting #readchrome #readpill{left:0;right:0;--reader-pill-max-width:calc(100% - 28px);max-width:520px;width:min(calc(100% - 28px),520px);height:48px;top:50%;bottom:auto;transform:translateY(-50%);padding:4px 12px;}
+body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-pill-mini){display:none!important;}
+#pdf-bookmarks-only[hidden]{display:none;}
+
+.epub-thumbnail-paper{border-radius:6px;}
+.epub-page-preview{position:absolute;left:0;top:0;border:0;pointer-events:none;transform-origin:top left;}

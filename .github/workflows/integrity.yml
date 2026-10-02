@@ -68,3 +68,11 @@ jobs:
         run: node tests/verify-breeze16-browser.mjs
       - name: Reader chrome motion and interruption regressions
         run: node tests/verify-reader-chrome-motion-browser.mjs
+      - name: Reader work, selection and original round-trip regressions
+        run: node tests/verify-reader-work-browser.mjs
+      - name: Horizontal progress and long EPUB preview regressions
+        run: node tests/verify-reader-211-browser.mjs
+      - name: Onboarding and independent shelf categories
+        run: node tests/verify-onboarding-browser.mjs && BROWSER=webkit node tests/verify-onboarding-browser.mjs && node tests/verify-category-import-browser.mjs
+      - name: Reader notice hit targets and EPUB navigation input
+        run: node tests/verify-reader-notice-controls-browser.mjs && node tests/verify-epub-navigation-input-browser.mjs

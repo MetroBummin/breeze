@@ -125,7 +125,7 @@ for(const hold of [false,true]){
 // Fresh users must not construct a hidden Home before entering the tutorial.
 for(const onboarding of [true,false]){
  let homes=0,revealed=0;
- const c={syncHomeNavigation(){},loadBooks:async()=>{},upgradeHomewardLongRead:async()=>{},
+ const c={syncHomeNavigation(){},loadBooks:async()=>{},migrateLibraryFolders(){},upgradeHomewardLongRead:async()=>{},
   maybeShowOnboarding:async()=>{},onboardingOwnsReader:()=>onboarding,renderHome(){homes++;},
   document:{documentElement:{classList:{remove(){revealed++;}}}},navigator:{},console};
  vm.createContext(c);vm.runInContext(read('scripts/main.js')+'\nglobalThis.boot=homeReady;',c);

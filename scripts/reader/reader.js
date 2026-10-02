@@ -248,6 +248,11 @@ function renderBookBody(b){
 }
 // Keep one recently closed Reader for quick Home round trips, for at most 60s.
 let retainedReader=null,retainedReaderTimer=0,readerPreparedOriginal=null;
+// Only lexical paint affects retained pages; definitions and metadata do not.
+function readerWordPresentation(){
+  return JSON.stringify(Object.entries(words).map(([key,word])=>
+    [key,word?.status,word?.mark,word?.phraseParts,word?.phraseGaps]));
+}
 function releaseRetainedReader(){
   clearTimeout(retainedReaderTimer);retainedReaderTimer=0;
   if(!retainedReader)return;
@@ -261,6 +266,7 @@ function retainReaderForHome(){
   if(!curBook||curBook.transient||originalOpenJob)return false;
   const b=curBook;
   retainedReader={book:b,paras:b.paras.slice(),formatting:b.formatting,
+    mode:currentReaderMode,wordPresentation:readerWordPresentation(),
     sourceMap:b.sourceMap,sourceSignature:JSON.stringify([b.original,b.formatting,b.title,b.kind]),original:readerPreparedOriginal};
   currentReaderMode='text'; // Hidden original frames must not perform viewport work.
   readerModeChangeToken++;
@@ -321,6 +327,8 @@ async function openBook(b,options={}){
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
   const reuse=canReuseReader(b);
+  const reusedMode=reuse?retainedReader.mode:null;
+  const reusedWords=reuse&&retainedReader.wordPresentation===readerWordPresentation();
   if(reuse){clearTimeout(retainedReaderTimer);retainedReaderTimer=0;retainedReader=null;}
   else{releaseRetainedReader();leaveOriginalReader();}
   /* 예전에 넣어 둔 책에 남아 있는 네모(□)를 여기서 한 번 고칩니다 —
@@ -332,6 +340,7 @@ async function openBook(b,options={}){
      wherever the previous book was being read. */
   lastAnchor = null;
   curBook = b;
+  if(!b.transient)save(HOME_RESUME_KEY,b.id);
   setReaderPillProgress(posOf(b.id).p||0,true);
   currentReaderMode = 'text';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
@@ -344,7 +353,6 @@ async function openBook(b,options={}){
   document.getElementById('rtitle').textContent = b.title;
   document.getElementById('readpill-title').textContent = b.title;
   document.getElementById('readpill-title').setAttribute('aria-label',b.title+' · 컨트롤 펼치기');
-  renderReaderAttribution(b);
   /* 기사에는 연결할 "원본 파일"이 없습니다. 사진과 소제목까지 담아 오지만
      사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을
      하나 남겨 둡니다. */
@@ -370,7 +378,7 @@ async function openBook(b,options={}){
   showReaderChrome();                 // 상단바가 다시 서는 날을 위한 배선입니다
   document.getElementById('readwrap').hidden=false;
   document.getElementById('originalwrap').hidden=true;
-  if(reuse)refreshReaderWords();else renderBookBody(b);
+  if(!reuse)renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
   /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
@@ -386,9 +394,10 @@ async function openBook(b,options={}){
     : (firstOpen && original ? 'original' : 'text');
   if(desired==='original'){
     await switchReaderMode('original',{initial:true,record:original,onPresented:presented});
-    if(alive()&&curBook===b&&reuse)refreshOriginalSavedWords();
+    if(alive()&&curBook===b&&reuse&&(!reusedWords||reusedMode!=='original'))refreshOriginalSavedWords();
   }
   else{
+    if(reuse&&(!reusedWords||reusedMode!=='text'))refreshReaderWords();
     presented();
     await new Promise(resolve=>requestAnimationFrame(()=>{
       if(alive()&&curBook===b){
@@ -542,17 +551,27 @@ function whileRestoringChrome(job){
 function setReaderChrome(hidden){
   // Writing needs immediate tool access. Reading keeps its scroll-collapse policy.
   if(document.getElementById('readpill')?.classList.contains('ink-pill-active'))hidden=false;
-  if(document.body.classList.contains('chrome-hidden')===hidden) return;
   document.body.classList.toggle('chrome-hidden', hidden);
-  const inkEntry=/** @type {HTMLElement|null} */(document.querySelector('#readpill .ink-pill-entry'));
-  const side=[document.getElementById('readback'),document.getElementById('aafab'),document.getElementById('pdf-page-control'),
-    document.getElementById('modefab'),inkEntry];
+  syncReaderControlInteractivity();
+  if(hidden && typeof closeAa==='function') closeAa();
+}
+/* Visibility and sentence waiting share one input policy, including parent slots.
+   Reconcile even when visibility is unchanged: lookup cleanup can run between
+   collapse and expansion, and an inert parent blocks every restored child. */
+function syncReaderControlInteractivity(){
+  const collapsed=document.body.classList.contains('chrome-hidden');
+  const waiting=typeof sentenceWaitingActive==='function' && sentenceWaitingActive();
+  const hidden=collapsed || waiting;
+  const side=['readback','aafab','reader-navigation','pdf-page-control','modefab']
+    .map(id=>document.getElementById(id));
+  side.push(document.querySelector('#readpill .ink-pill-entry'));
   side.forEach(button=>{
     if(!button) return;
     button.inert=hidden;
     if(hidden && document.activeElement===button) document.getElementById('readpill-title').focus();
   });
-  if(hidden && typeof closeAa==='function') closeAa();
+  const title=document.getElementById('readpill-title');
+  if(title) title.inert=waiting;
 }
 function expandReaderChrome(){
   if(!document.body.classList.contains('chrome-hidden')) return;
@@ -632,6 +651,9 @@ if(window.ResizeObserver){
     if(!readerWidth || width===readerWidth){ readerWidth = width; return; }
     readerWidth = width;
     if(!curBook || !document.getElementById('v-read').classList.contains('on')) return;
+    // PDF viewport restoration belongs to reader-scroll.js. Restoring its old
+    // generic anchor here also moves paper during a new pinch.
+    if(currentReaderMode==='original'&&originalSession?.kind==='pdf')return;
     invalidateReaderMeasurements();   // 폭이 바뀌면 글이 다시 흐릅니다
     suspendReaderScrollSave(600);
     /* The panel animates its width, so this fires many times. Freeze the

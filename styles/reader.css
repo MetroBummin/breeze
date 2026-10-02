@@ -83,8 +83,6 @@
   }
   .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
   .iconbtn:hover{background:var(--hover-quiet);}
-  #readwrap,#originalwrap{transition:opacity .22s ease,filter .22s ease;}
-  body.reader-mode-transition #readwrap,body.reader-mode-transition #originalwrap{opacity:.72; filter:saturate(.9);}
   /* 모드를 바꿨을 때 "여기 있었어요" 하고 짚어 주는 자리. Breeze 라서 로고 그라디언트의
      바람색(#4DAED6)을 씁니다 — 초록은 이 앱 어디에도 없는 색이었습니다. */
   ::highlight(breeze-mode-cue){background:var(--cue); color:inherit;}
@@ -182,13 +180,18 @@
     width:min(56vw,400px); height:44px; border-radius:24px;
     display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
   #readpill{--reader-chrome-duration:.26s;--reader-chrome-ease:cubic-bezier(.2,.75,.25,1);
+    /* Center resizing geometry in layout. Percentage X transforms can lag the
+       animated width in WKWebView's compositor during a scrolling frame. */
+    left:0;right:0;margin-inline:auto;transform:translateY(-50%);
     width:min(56vw,400px,var(--reader-pill-max-width,calc(100% - 124px)));
-    translate:0 0;transition:translate var(--reader-chrome-duration) var(--reader-chrome-ease),width var(--reader-chrome-duration) var(--reader-chrome-ease),height var(--reader-chrome-duration) var(--reader-chrome-ease),
+    transition:left var(--reader-chrome-duration) var(--reader-chrome-ease),width var(--reader-chrome-duration) var(--reader-chrome-ease),height var(--reader-chrome-duration) var(--reader-chrome-ease),
       padding var(--reader-chrome-duration) var(--reader-chrome-ease),border-radius var(--reader-chrome-duration) var(--reader-chrome-ease),
       box-shadow .34s ease;}
   #readpill-progress,#home-resume-progress{position:absolute; inset:0; pointer-events:none;
     background:var(--chrome-progress); transform:scaleX(0); transform-origin:left center;
     will-change:transform;}
+  #reader-pill-copy{position:relative;display:flex;align-items:center;align-self:stretch;flex:1 1 auto;min-width:0;}
+  #reader-pill-copy #readpill-title{width:100%;height:auto;align-self:stretch;}
   #readpill-title,#readpill #modefab{position:relative; z-index:1;}
   #readpill-title{border:0; background:none; color:inherit; cursor:default;
     min-width:0; max-width:100%; padding:0 5px; overflow:hidden; text-overflow:ellipsis;
@@ -216,6 +219,7 @@
       backdrop-filter:blur(16px) saturate(115%); -webkit-backdrop-filter:blur(16px) saturate(115%);}
   }
   body.sentence-pill-waiting #readpill-progress,
+  body.sentence-pill-waiting #reader-pill-copy,
   body.sentence-pill-waiting #readpill-title,
   body.sentence-pill-waiting #readpill #modefab{display:none;}
   body.sentence-pill-waiting #readback,
@@ -400,6 +404,13 @@
      줄을 붙들어 둘 기준점이 사라집니다. 안쪽에 두면 여백도 종이와 함께 커집니다
      — 진짜 PDF 뷰어가 그렇습니다. */
   #originalwrap{padding:calc(env(safe-area-inset-top) + 24px) 0 45vh;}
+  /* A first open stays on its loading surface until the reading anchor is ready.
+     Repeated switches reuse live paper and restore scroll in the same task. */
+  #originalwrap[data-reader-preparing] #original-stage{visibility:hidden;}
+  #originalwrap[data-reader-preparing]:has(.original-loading) #original-stage{visibility:visible;}
+  #originalwrap[data-reader-preparing]:has(.original-loading)::before{display:none;}
+  #originalwrap[data-reader-preparing]::before{content:'원본을 여는 중…';position:fixed;inset:0;z-index:1;
+    display:grid;place-items:center;background:var(--paper);color:var(--soft);font:13px var(--ui);pointer-events:none;}
   /* One-page horizontal reading has no next page below to scroll toward. */
   #originalwrap:has(.pdf-original.pdf-horizontal){padding-bottom:0;}
   #originalwrap[hidden]{display:none;}
@@ -457,11 +468,8 @@
      Page isolation keeps blending inside the paper, including in dark mode. */
   .pdf-source-page>.breeze-original-word{mix-blend-mode:multiply;}
   .pdf-source-page>.original-selection-marker{position:absolute; z-index:3; display:block; box-sizing:border-box;
-    color:transparent; --word-mark-fill:var(--pick-fill);background:var(--word-mark-fill); border:1px solid var(--pick-line);
-    box-shadow:0 0 0 1.5px var(--word-mark-fill);border-radius:5px; pointer-events:none; overflow:hidden; white-space:nowrap;}
-  .pdf-source-page>.original-selection-marker.s1{--word-mark-fill:var(--pick1-fill);background:var(--word-mark-fill); border-color:var(--pick1-line);}
-  .pdf-source-page>.original-selection-marker.s2{--word-mark-fill:var(--pick2-fill);background:var(--word-mark-fill); border-color:var(--pick2-line);}
-  .pdf-source-page>.original-selection-marker.s3{--word-mark-fill:var(--pick3-fill);background:var(--word-mark-fill); border-color:var(--pick3-line);}
+    color:transparent;background:var(--pick-fill);border:0;box-shadow:none;
+    border-radius:5px; pointer-events:none; overflow:hidden; white-space:nowrap;}
   /* 저장한 단어는 원본에서도 글자 화면과 똑같이 블록으로 칠합니다.
      밑줄·끄기 두 가지를 더 고를 수 있었지만, 설정을 위한 설정이었습니다. */
   .pdf-source-page>.original-saved-marker{position:absolute; z-index:3; display:block; box-sizing:border-box;
@@ -543,17 +551,19 @@ body:not(.dark) :is(#readback,#aafab,#readpill button,.control-glass):active{bac
 
 /* Notices share only the title slot; mode/back/settings keep their input targets.
    The title remains in the layout and restores without rewriting book state. */
-#reader-notice,#home-notice{position:absolute;inset:4px 12px;z-index:2;pointer-events:none;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;
-  font:600 12px/1.35 var(--ui);text-align:center;overflow-wrap:anywhere;}
+#reader-notice,#home-notice{position:absolute;inset:auto 12px;top:50%;transform:translateY(-50%);z-index:2;pointer-events:none;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-height:30px;overflow:hidden;
+  font:600 12px/15px var(--ui);text-align:center;overflow-wrap:anywhere;
+  animation:reader-notice-enter 120ms ease-out;}
+@keyframes reader-notice-enter{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){#reader-notice,#home-notice{animation:none;}}
 #reader-notice[hidden],#home-notice[hidden]{display:none;}
 body.home-notice-visible #home-resume .home-resume-copy{opacity:0;}
 body.home-notice-visible #home-resume .completion-badge{visibility:hidden;}
-body.reader-notice-visible #readpill-title{opacity:0;}
+/* Replace before first paint, rather than fading the title under the notice. */
+body.reader-notice-visible #readpill-title{opacity:0;transition:none;}
+#reader-pill-copy #reader-notice{inset:auto 5px;top:50%;}
 body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
-body.reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{left:48px;}
-body.reader-notice-visible.chrome-hidden #readpill{width:min(56vw,400px);height:44px;}
-body.reader-notice-visible.chrome-hidden #readpill #reader-notice{left:12px;}
 body.sentence-pill-waiting #reader-notice{display:none;}
 
 /* Imported semantic blocks use Breeze typography, never publisher CSS. */

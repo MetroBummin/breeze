@@ -45,6 +45,23 @@ try{
     };
     resumeQA.seed();
    });
+   // A reopened book is the local resume target even without new scroll progress.
+   const recent=await page.evaluate(async()=>{
+     const a={id:'recent-a',title:'Most recently scrolled',kind:'txt',paras:['A quiet page.']};
+     const b={id:'recent-b',title:'방금 다시 연 책',kind:'txt',paras:['Another quiet page.']};
+     books=[a,b];positions={[a.id]:{t:200,p:0,y:0,mode:'text'},[b.id]:{t:100,p:0,y:0,mode:'text'}};
+     await openBook(b);
+     const timestamp=posOf(b.id).t;
+     show('home');
+     const title=document.getElementById('home-resume-title').textContent;
+     const persisted=load(HOME_RESUME_KEY,null);
+     const target=homeResumeBook().id;
+     books=[a];const fallback=homeResumeBook().id;
+     books=[];const empty=homeResumeBook();
+     resumeQA.seed();
+     return {timestamp,title,persisted,target,fallback,empty};
+   });
+   assert.deepEqual(recent,{timestamp:100,title:'방금 다시 연 책',persisted:'recent-b',target:'recent-b',fallback:'recent-a',empty:null});
    // Normal text: exactly one transition, no live Reader scaling, saved scroll retained.
    await page.locator('#home-resume').click();
    await page.waitForFunction(()=>!homeResumeOpening);

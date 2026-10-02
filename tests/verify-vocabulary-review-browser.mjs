@@ -96,7 +96,7 @@ async function closeReview(page,keyboard=false){
 try{
   await scenario('five-item cap, hidden answers, durable progress and no mutation',uniqueWords(7),async page=>{
     const before=await persistedWords(page);
-    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'오늘 5개 복습');
+    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'오늘 복습 · 5');
     await openReview(page);await assertHiddenAnswer(page);
     assert.equal((await progress(page)).at(-1),5,'A new session is capped at five cards');
     const first=await page.locator('#review-expression').innerText();
@@ -305,8 +305,33 @@ try{
     await page.evaluate(()=>show('vocab'));await openReview(page);
     assert.equal(await page.locator('#review-expression').innerText(),current,'Navigation preserves unfinished session progress');
     await assertHiddenAnswer(page);await closeReview(page);
-    await page.locator('#wordbook-controls .control-pill').click();
+    await page.locator('#wordbook-home').click();
     assert.equal(await page.evaluate(()=>activeAppView()),'home');
+  });
+
+  await scenario('book filters and checkboxes target individual meanings',{
+    bank:fixture('bank',1,{book:'Book A',ko:'은행',status:2}),
+    river:fixture('bank',2,{root:'bank',sense:true,book:'Book B',ko:'강둑'}),
+    tree:fixture('tree',3,{book:'Book B',ko:'나무',status:1})
+  },async page=>{
+    const dock=await page.locator('#wordbook-controls button').evaluateAll(nodes=>nodes.map(n=>n.id));
+    assert.deepEqual(dock,['wordbook-home','wordbook-review','btn-export']);
+    await page.locator('#vbooks summary').click();
+    await page.locator('#vbook-options label').filter({hasText:'Book B'}).locator('input').check();
+    await page.locator('#vbooks summary').click();
+    assert.deepEqual(await page.locator('.vsense').evaluateAll(nodes=>nodes.map(n=>n.dataset.k).sort()),['river','tree']);
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
+    await page.locator('#review-select-all').check();
+    assert.equal(await page.locator('.review-pick input:checked').count(),2);
+    await page.locator('.vsense[data-k="tree"] .review-pick input').uncheck();
+    assert.equal(await page.locator('#review-select-all').evaluate(node=>node.indeterminate),true);
+    await openReview(page);
+    assert.equal(await page.locator('#review-source').innerText(),'Book B');
+    await page.locator('#review-reveal').click();assert.equal(await page.locator('#review-meaning').innerText(),'강둑');
+    await closeReview(page);
+    await page.locator('#review-use-daily').click();
+    assert.equal(await page.locator('#review-title').innerText(),'오늘의 복습');
   });
 
   await scenario('responsive light and dark layouts',{

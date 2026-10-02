@@ -1780,7 +1780,6 @@ function vocabMoreHtml(w){
   </div>`;
 }
 function renderVocab(){
-  if(typeof refreshVocabularyReviewEntry==='function')refreshVocabularyReviewEntry();
   const list = Object.entries(words).filter(([,item])=>validWordMeaning(item))
     .sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
@@ -1795,7 +1794,7 @@ function renderVocab(){
   document.getElementById('vcnt').textContent = groups.length===grouped.size ? `전체 ${grouped.size}단어` : `전체 ${grouped.size}단어 · ${groups.length}개 표시`;
   syncWordbookFilterLabels();
   const wrap = document.getElementById('vtablewrap');
-  if(!groups.length){ wrap.innerHTML = list.length ? '<div id="vempty">검색·필터에 맞는 단어가 없어요.</div>' : '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 누르거나 +로 추가해 보세요.</div>'; return; }
+  if(!groups.length){ wrap.innerHTML = list.length ? '<div id="vempty">검색·필터에 맞는 단어가 없어요.</div>' : '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 누르거나 +로 추가해 보세요.</div>'; renderVocabularySelection(); return; }
   const stName = {1:'★',2:'★★',3:'★★★'};
   wrap.innerHTML = groups.map(([groupKey,entries])=>{
     /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 단어 한 칸 아래로 묶습니다.
@@ -1854,7 +1853,7 @@ function renderVocab(){
        펼쳤을 때의 뜻은 `contenteditable` 이라 여기서 함께 걸러집니다: 고치려고
        누른 손이 창을 닫아 버리면 고칠 수가 없습니다. */
     group.addEventListener('click', event=>{
-      if((/** @type {HTMLElement} */(event.target)).closest('.chip, .rowdel, .vmore, [contenteditable]')) return;
+      if((/** @type {HTMLElement} */(event.target)).closest('.chip, .rowdel, .vmore, .review-pick, [contenteditable]')) return;
       toggle();
     });
     /** @type {HTMLElement} */(group.querySelector('.vword')).addEventListener('keydown', event=>{
@@ -1880,6 +1879,7 @@ function renderVocab(){
       });
     });
   });
+  renderVocabularySelection();
 }
 document.getElementById('vsearch').addEventListener('input', renderVocab);
 /* 내보내기는 CSV 입니다. 엑셀·넘버스·구글 시트가 전부 그냥 엽니다.

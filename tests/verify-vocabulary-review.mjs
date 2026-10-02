@@ -323,3 +323,24 @@ test('no external APIs, Date clock, AI dependencies or stored answer visibility 
   assert.equal(review.grade(result.state,{a:saved('a')},result.token,'remembered',
     Number.MAX_SAFE_INTEGER).state.progress.a.dueAt,Number.MAX_SAFE_INTEGER);
 });
+
+test('explicit selection includes future-due meanings and preserves unrelated progress',()=>{
+  const words={a:saved('a'),b:saved('b'),c:saved('c')};
+  let result=review.startSelection(null,words,['a'],NOW);
+  result=remembered(result,words);
+  const aProgress=plain(result.state.progress.a);
+  let scoped=review.startSelection(result.state,words,['b','c'],NOW);
+  assert.equal(scoped.total,2);assert.equal(scoped.card.key,'b');
+  scoped=remembered(scoped,words);assert.deepEqual(plain(scoped.state.progress.a),aProgress);
+  const future=review.startSelection(scoped.state,words,['a'],NOW+1);
+  assert.equal(future.card.key,'a');assert.equal(future.state.session.practice,true);
+});
+test('manual selection resumes its own queue and supports more than the daily five',()=>{
+  const words=Object.fromEntries(Array.from({length:8},(_,i)=>['w'+i,saved('w'+i)])),keys=Object.keys(words);
+  const start=review.startSelection(null,words,keys,NOW),graded=remembered(start,words);
+  assert.equal(start.total,8);
+  const resumed=review.startSelection(graded.state,words,keys,NOW+1);
+  assert.equal(resumed.completed,1);assert.equal(resumed.card.key,'w1');
+  const fresh=review.startSelection(resumed.state,words,['w7','w7','missing'],NOW+2);
+  assert.equal(fresh.total,1);assert.equal(fresh.card.key,'w7');
+});

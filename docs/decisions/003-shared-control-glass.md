@@ -215,12 +215,15 @@ use that same shared material. Lookup surfaces keep their existing tokens.
 Opaque fallback remains available without backdrop filtering.
 Sidebar entry and exit animate only translation and opacity at final size.
 
-All pills use a 50 percent viewport anchor. In narrow PDF containers (650px or
-less), expanded reading/writing adds a 22px translate to clear the left PDF slot.
-Collapsed reading removes that translate over 260ms and returns to viewport center.
-Reduced motion skips the translation.
+Reader pills use absolute left/right insets and auto inline margins to center
+their animated width in layout. No width-relative horizontal transform is used:
+on-device build 205 footage showed transient overshoot despite synchronized
+CSS timing and correct DOM trajectories. In narrow PDF containers (650px or
+less), expanded reading/writing uses a 44px left inset and a zero right inset,
+placing its center 22px right of the viewport center. Collapsed reading returns
+the left inset to zero over 260ms. Reduced motion applies geometry immediately.
 
-Reader collapse/expand uses one 260ms easing for translation, width, height,
+Reader collapse/expand uses one 260ms easing for the left inset, width, height,
 padding and corner radius, including the PDF reading variant. Resolve the
 viewport width cap inside both endpoint widths, rather than clipping an
 animated larger width with max-width: clipping stalls the visible shrink while
@@ -235,4 +238,65 @@ themes. It checks synchronized trajectories, interruption continuity, input
 gating, writing-mode expansion and reduced motion. Browser evidence does not
 establish physical iPhone frame rate.
 
-Task/import/edit dialogs, article preview and Home settings now share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.
+Task/import/edit dialogs and article preview share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.
+
+## 2026-10-01: reduce Reader transition work
+
+Keep the existing +22 px narrow PDF expanded-pill position and centered collapsed position. Decorative control transitions must not invalidate PDF paper measurements. Original paper-growth and viewport watchers share one EPUB frame layout, coalescing paper growth in a frame and writing sizes only when changed; PDF viewport changes settle immediately to preserve pinch and rotation coordinates; hidden originals are skipped. Cached mode returns restore scroll synchronously before presenting the source.
+
+Window resize no longer independently restores the Reader anchor. Text/EPUB width restoration stays with the Reader width observer; PDF viewport restoration stays with its paper observer. PDF width changes use the logical page anchor as well as rotation. Three competing original restorations caused scroll writes during newly started pinches.
+
+## Home capsule continuity (208)
+
+Both root reveal and named control geometry use one easing curve, cubic-bezier(.18,.86,.22,1), with a 480ms opening and 440ms closing duration. This extends the terminal deceleration compared with the former 340ms timing. Closing remains opaque through 90 percent and retains its terminal frame with fill-mode both. Text remains unscaled, Home snapshots remain opaque, and reduced motion follows the existing immediate path. The user supplied an Apple Music screen recording as the motion reference; this does not introduce interactive sheet dragging.
+
+## Local resume identity and unscaled capsule snapshots (210)
+
+The Home resume target is the most recently opened local book, persisted as one
+book ID in `breeze.home-resume.v1`. Opening does not advance the cloud progress
+timestamp; scrolling still owns progress updates. A deleted/missing local target
+falls back to the existing saved-progress ordering, and transient onboarding is
+never remembered. Titles and actions resolve the same target.
+
+Home/Reader snapshots use intrinsic-size, centered capsule contents clipped by
+the moving rounded surface, so the browser does not stretch title text between
+different pill widths. Both directions use cubic-bezier(.32,.72,0,1), keeping the
+480/440ms durations, opaque Home, terminal fill, and reduced-motion fallback.
+
+Unchanged Home round trips reuse lexical paint as well as document nodes. The
+bounded retained Reader stores its visible mode and a small signature of saved
+word keys, grades, visibility and phrase shape. Reopening the same mode skips
+retokenizing text and recreating PDF/EPUB highlights unless that presentation
+changed while Home was visible. A changed vocabulary or mode still refreshes
+the target; source edits still invalidate the Reader. Browser regression verifies
+zero refresh calls on unchanged Text/PDF/EPUB round trips and an actual repaint
+after a saved-word change. No new persistent cache or sync state is introduced.
+
+## Remove full-screen clipping (211)
+The user reports stutter in both directions on build 210. Remove the animated
+full-viewport clip-path and its measured inset. Reader snapshots use only a
+28px translation and opacity; the named capsule still connects both controls
+with intrinsic-size text, unchanged 480/440ms easing and reduced-motion behavior.
+This removes per-frame clipping work without another animation coordinator.
+The duplicate attribution render on book open is removed. Browser state and
+animation checks do not establish physical-device frame pacing.
+
+## Build 211: matte Home settings
+
+Home settings intentionally use the opaque `--settings-sheet-surface` token (light `#F2F2F7`, dark `#2C2C2E`). Covers showing through the full-height sheet distracted from settings. Remove this sheet from shared glass selectors instead of adding another blur/reflection override. `styles/home-shell.css` owns the fill; `styles/tokens.css` owns its theme values. Reader Aa, bottom controls and other dialogs retain their existing glass.
+
+## Prevent rectangular capsule backdrops (215)
+
+The browser-generated `reader-control` group animation transfers the live pill's
+backdrop filter to the rectangular transition group. Rounding its child image
+pair does not constrain that outer filter, leaving a brief rectangular patch in
+both navigation directions. Disable the group's additional backdrop filter with
+an important declaration, which takes precedence over generated keyframes.
+Keep the glass inside the captured capsule, intrinsic text, rounded image pair,
+soft outer shadow, timing, and live control material unchanged. Do not clip the
+whole group: doing so also cuts off the approved shadow.
+
+Browser coverage samples both directions, themes and viewport sizes, checks the
+animated filter and settled controls, and compares painted capsule corners with
+the underlying scene. Linux WebKit cannot establish physical iPhone rendering;
+real-device confirmation remains separate from these browser checks.

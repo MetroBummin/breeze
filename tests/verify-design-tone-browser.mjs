@@ -22,7 +22,7 @@ try{for(const engine of [chromium,webkit]){
  await page.evaluate(()=>show('home'));assert.equal(await page.locator('#shelf [data-local-book]').count(),1,'Home must show an uncategorized book while a shelf category is selected');
  await page.locator('#shelf [data-local-book]').focus();await page.keyboard.press('Shift+F10');assert.equal(await page.locator('#edit-modal').isVisible(),false,'Home cards must not open management');
  await page.evaluate(()=>show('longform'));
- await page.evaluate(()=>assignLibraryFolder(books.find(b=>b.kind==='txt').id,activeLibraryFolder));
+ await page.evaluate(()=>assignLibraryFolder(books.find(b=>b.kind==='txt').id,currentLibraryFolder()));
  await page.evaluate(()=>show('home'));assert.equal(await page.locator('#v-home .library-folder-controls,#v-home .home-card-actions,#v-home .cloud .del').count(),0);assert.equal(await page.locator('#shelf [data-local-book]').count(),1);
  await page.evaluate(()=>show('casuals'));assert.equal(await page.locator('#v-casuals .library-folder-controls').count(),1);
  await page.evaluate(()=>show('longform'));assert.equal(await page.locator('#v-longform .home-card-actions').count(),1);
@@ -51,7 +51,7 @@ try{for(const engine of [chromium,webkit]){
   const toolbar=await page.locator('.wordbook-filters').evaluate(e=>{const box=id=>document.getElementById(id).getBoundingClientRect(),sort=box('vsort-menu'),books=box('vbooks'),stars=box('vstars'),outer=e.getBoundingClientRect();return{sortY:sort.y,booksY:books.y,starsY:stars.y,sortRight:sort.right,booksRight:books.right,outerRight:outer.right,starsRight:stars.right};});
   assert.ok(Math.abs(toolbar.sortY-toolbar.booksY)<2&&toolbar.starsY>toolbar.sortY&&toolbar.booksRight<=toolbar.outerRight+1&&toolbar.starsRight<=toolbar.outerRight+1,`Memory toolbar must use two contained rows: ${key} ${JSON.stringify(toolbar)}`);
   if((width===390&&dark)||(width===320&&!dark))await page.screenshot({path:out+'/'+key+'-memory-toolbar.png'});
-  await page.evaluate(()=>openSettings());await check('#set-card');await page.screenshot({path:out+'/'+key+'-settings.png'});await page.evaluate(()=>closeSettings());
+  await page.evaluate(()=>openSettings());await check('#set-card');assert.deepEqual(await page.locator('#set-card').evaluate(e=>{const s=getComputedStyle(e);return [s.backgroundColor,s.backgroundImage,s.backdropFilter||s.webkitBackdropFilter];}),[dark?'rgb(44, 44, 46)':'rgb(242, 242, 247)','none','none'],'Home settings use opaque matte material in both themes');await page.screenshot({path:out+'/'+key+'-settings.png'});await page.evaluate(()=>closeSettings());
   await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));await page.evaluate(()=>toggleAa());await check('#aa-pop');assert.ok(await page.locator('#aa-pop').evaluate(e=>e.getBoundingClientRect().height<350),'Reader preferences should remain compact');assert.deepEqual(await page.evaluate(()=>['aa-pop','readpill'].map(id=>{const s=getComputedStyle(document.getElementById(id));return [s.backgroundColor,s.backdropFilter,s.webkitBackdropFilter];})),await page.evaluate(()=>{const s=getComputedStyle(document.getElementById('readpill')),material=[s.backgroundColor,s.backdropFilter,s.webkitBackdropFilter];return [material,material];}),'Reader settings share the floating control glass');await page.screenshot({path:out+'/'+key+'-aa.png'});await page.evaluate(()=>closeAa());
  }
  await page.evaluate(()=>changeLibraryFolder(''));

@@ -16,31 +16,33 @@ function persistStudyPrefs(next){
 }
 function starVisible(status){return studyPrefs.stars[(Number(status)||1)-1]?.visible!==false;}
 function starFill(status){const s=studyPrefs.stars[status-1];return s.visible?s.color+'66':'transparent';}
+function setStudyStyle(style,name,value){if(style.getPropertyValue(name)!==value)style.setProperty(name,value);}
 function applyStarPreferences(){
   const root=document.body.style;
   studyPrefs.stars.forEach((s,i)=>{
     const n=i+1,fill=starFill(n);
-    for(const name of ['mark','saved'])root.setProperty('--'+name+n,fill);
-    root.setProperty('--s'+n,s.color);root.setProperty('--pick'+n+'-fill',fill);
-    root.setProperty('--pick'+n+'-line',s.visible?s.color:'transparent');
+    for(const name of ['mark','saved'])setStudyStyle(root,'--'+name+n,fill);
+    setStudyStyle(root,'--s'+n,s.color);
     document.querySelectorAll(`[data-star-visibility="${n}"]`).forEach(button=>{
-      button.textContent='★'.repeat(n);button.classList.toggle('on',s.visible);button.setAttribute('aria-pressed',String(s.visible));
+      const label='★'.repeat(n),pressed=String(s.visible);
+      if(button.textContent!==label)button.textContent=label;
+      button.classList.toggle('on',s.visible);
+      if(button.getAttribute('aria-pressed')!==pressed)button.setAttribute('aria-pressed',pressed);
     });
   });
   document.querySelectorAll('.epub-chapter-frame').forEach(frame=>{
     if(frame instanceof HTMLIFrameElement&&frame.contentDocument)applyEpubStarPreferences(frame.contentDocument);
   });
-  if(typeof selKey!=='undefined'&&selKey&&words[selKey])renderPanel();
+  if(typeof selKey!=='undefined'&&selKey&&words[selKey]&&wordPanelOpen())renderPanel();
 }
 function applyEpubStarPreferences(doc){
-  let style=doc.getElementById('breeze-star-preferences');
-  if(!style){style=doc.createElement('style');style.id='breeze-star-preferences';doc.head.append(style);}
-  doc.head.append(style);
-  for(const marker of doc.querySelectorAll('.original-selection-marker')){
-    const n=[1,2,3].find(n=>marker.classList.contains('s'+n));
-    if(n){marker.style.background=starFill(n);marker.style.boxShadow=`0 0 0 2px ${starFill(n)}`;}
+  let style=doc.getElementById('breeze-saved-mark-style');
+  if(!style){
+    style=doc.createElement('style');style.id='breeze-saved-mark-style';
+    style.textContent=[1,2,3].map(n=>`::highlight(breeze-saved-${n}){background:var(--breeze-saved-${n})}`).join('\n');
+    doc.head.append(style);
   }
-  style.textContent=[1,2,3].map(n=>`::highlight(breeze-saved-${n}){background:${starFill(n)}} .breeze-original-word.s${n}{background:${starFill(n)}!important}`).join('\n');
+  for(const n of [1,2,3])setStudyStyle(doc.documentElement.style,'--breeze-saved-'+n,starFill(n));
 }
 function setStarPreference(index,patch){
   const next=structuredClone(studyPrefs);Object.assign(next.stars[index-1],patch);

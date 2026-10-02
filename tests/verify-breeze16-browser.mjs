@@ -59,7 +59,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>closeAa());
   assert.equal(await page.locator('#pdf-page-button').isVisible(),true);
   assert.equal(await page.locator('#readpill-title').isVisible(),true);
-  await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(420);
+  await page.evaluate(()=>setReaderChrome(true));
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),true);
+  await page.locator('#pdf-page-control').waitFor({state:'hidden',timeout:3000});
   assert.equal(await page.locator('#pdf-page-control').isVisible(),false,'Collapsed Reader hides page pill');
   await page.locator('#readpill-title').click();await page.waitForTimeout(320);
   await page.screenshot({path:`${qaDir}/${engine.name()}-combined-page-pill.png`});
@@ -70,7 +72,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForSelector('.pdf-thumbnail canvas');
   await page.waitForTimeout(320);
   const thumbRatios=await page.locator('.pdf-thumbnail canvas').evaluateAll(nodes=>nodes.map(c=>{
-    const r=c.getBoundingClientRect();return Math.abs(r.width/r.height-c.width/c.height);
+    const r=c.getBoundingClientRect(),[width,height]=c.style.aspectRatio.split('/').map(Number);
+    // Bitmap dimensions round up to whole device pixels; compare source paper
+    // geometry instead (a 145x113 bitmap can represent 792:612 paper).
+    return Math.abs(r.width/r.height-width/height);
   }));
   assert.ok(thumbRatios.every(error=>error<.01),'Thumbnails preserve the original paper aspect ratio');
   const expanded=await page.locator('#pdf-page-control').boundingBox();
@@ -109,7 +114,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.locator('.pdf-thumbnail-jump[aria-label="60페이지로 이동"] canvas').waitFor();
   const ribbonOffset=await page.locator('.pdf-thumbnail-bookmark[aria-label="60페이지 북마크"]').evaluate(button=>{
     const ribbon=button.getBoundingClientRect(),paper=button.closest('.pdf-thumbnail').querySelector('.pdf-thumbnail-paper').getBoundingClientRect();
-    return {x:ribbon.left-paper.left,y:ribbon.top-paper.top};
+    return {x:ribbon.right-paper.right,y:ribbon.top-paper.top};
   });
   assert.ok(Math.abs(ribbonOffset.x)<1&&Math.abs(ribbonOffset.y)<1,`Bookmark ribbon aligns with paper: ${JSON.stringify(ribbonOffset)}`);
   assert.ok(await page.evaluate(()=>readPdfBookmarks(originalSession).includes(60)));
@@ -201,7 +206,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
      const c=canvas.getBoundingClientRect(),paper=canvas.closest('.pdf-thumbnail-paper').getBoundingClientRect(),cell=canvas.closest('.pdf-thumbnail').getBoundingClientRect();
      return Math.abs(c.width/c.height-Number(canvas.style.aspectRatio.split('/')[0])/Number(canvas.style.aspectRatio.split('/')[1]))>.01||c.height>180.5||c.left<paper.left-.5||c.right>paper.right+.5||c.top<cell.top-.5||c.bottom>cell.bottom+.5;
    }));
-   assert.equal(clipped,false,'Portrait, landscape and tall source pages fit entirely without cropping');
+   assert.equal(clipped,false,`${engine.name()} ${width}x${height} dark=${dark}: source pages fit entirely without cropping`);
    const gaps=await page.locator('.pdf-thumbnail canvas').evaluateAll(canvases=>{
      const rects=canvases.map(c=>c.getBoundingClientRect()).sort((a,b)=>a.top-b.top);
      return rects.slice(1).map((r,i)=>r.top-rects[i].bottom);
@@ -238,7 +243,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    return {same:before===JSON.stringify(words),color:studyPrefs.stars[0].color,fill:starFill(1)};
   });assert.deepEqual(saved,{same:true,color:'#123456',fill:'transparent'});
   const folder=await page.evaluate(()=>{
-   createLibraryFolder('School');const id=activeLibraryFolder;assignLibraryFolder(books[0].id,id);
+   createLibraryFolder('School');const id=currentLibraryFolder();assignLibraryFolder(books[0].id,id);
    renameLibraryFolder(id,'학교');return {id,bookId:books[0].id};
   });
   await page.reload();await page.evaluate(()=>homeReady);
@@ -260,14 +265,14 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='epub'));await switchReaderMode('original');});
   await page.waitForFunction(()=>originalSession?.kind==='epub'&&originalSession.frames.some(frame=>frame.contentDocument?.getElementById('breeze-saved-mark-style')));
   assert.equal(await page.locator('#modefab').isVisible(),true,'EPUB bottom mode toggle');
-  assert.equal(await page.locator('#pdf-page-button').isVisible(),false);
+  assert.equal(await page.locator('#pdf-page-button').isVisible(),true,'EPUB original exposes the shared chapter navigation icon');
   assert.equal(await page.locator('#readpill-title').textContent(),await page.evaluate(()=>curBook.title));
   for(const width of [320,820,1180]){
    await page.setViewportSize({width,height:900});await page.waitForTimeout(200);
    const metrics=await page.evaluate(()=>{
     const frame=originalSession.frames.find(f=>f.contentDocument?.getElementById('breeze-saved-mark-style')),doc=frame.contentDocument,style=frame.contentWindow.getComputedStyle(doc.body);
     setStarPreference(1,{visible:true,color:'#123456'});
-    return {padding:parseFloat(style.paddingLeft),body:doc.body.getBoundingClientRect().width,frame:frame.clientWidth,star:doc.getElementById('breeze-star-preferences').textContent};
+    return {padding:parseFloat(style.paddingLeft),body:doc.body.getBoundingClientRect().width,frame:frame.clientWidth,star:doc.documentElement.style.getPropertyValue('--breeze-saved-1')};
    });assert.ok(metrics.padding>=16&&metrics.padding<=48,JSON.stringify(metrics));assert.ok(metrics.body<=metrics.frame+1,JSON.stringify(metrics));assert.match(metrics.star,/#12345666/);
   }
   await page.evaluate(()=>switchReaderMode('text'));

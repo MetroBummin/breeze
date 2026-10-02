@@ -19,12 +19,59 @@ function vocabularyReviewError(){
   error.textContent='복습 기록을 저장하지 못했어요. 저장 공간을 확인한 뒤 다시 시도해 주세요.';
   error.hidden=false;
 }
+let vocabularySelecting=false;
+const vocabularySelected=new Set();
+function visibleVocabularyReviewKeys(){
+  return Array.from(document.querySelectorAll('#vtablewrap .vsense')).map(node=>/** @type {HTMLElement} */(node).dataset.k).filter(key=>validWordMeaning(words[key]));
+}
+function vocabularyReviewScope(){
+  const visible=visibleVocabularyReviewKeys();
+  const filtered=wordbookBooks.size>0||wordbookStars.size>0||!!/** @type {HTMLInputElement} */(document.getElementById('vsearch')).value.trim();
+  return {custom:vocabularySelecting||filtered,keys:vocabularySelecting?visible.filter(key=>vocabularySelected.has(key)):visible};
+}
 function refreshVocabularyReviewEntry(){
   try{
-    const view=BreezeReview.view(readVocabularyReview(),words,Date.now());
-    document.getElementById('wordbook-review').textContent=view.status==='active'?'복습 이어 하기':'오늘 5개 복습';
-  }catch{/* The entry remains usable so a storage failure can be explained in the dialog. */}
+    const view=BreezeReview.view(readVocabularyReview(),words,Date.now()),scope=vocabularyReviewScope();
+    const button=/** @type {HTMLButtonElement} */(document.getElementById('wordbook-review'));
+    button.textContent=scope.custom?`선택 복습 · ${scope.keys.length}`:view.status==='active'?`복습 이어 하기 · ${view.total-view.completed}`:`오늘 복습 · ${Math.min(5,view.eligibleCount)}`;
+    button.disabled=scope.custom&&!scope.keys.length;
+    document.getElementById('review-use-daily').hidden=!scope.custom;
+    document.getElementById('review-plan').textContent=scope.custom?'선택한 범위의 뜻을 복습해요.':view.status==='active'?'지난 복습을 이어서 할 수 있어요.':'기한이 된 표현부터, 한 번에 최대 5개';
+  }catch{/* Keep entry usable; show storage errors in its dialog. */}
 }
+function renderVocabularySelection(){
+  const visible=visibleVocabularyReviewKeys(),allowed=new Set(visible);
+  for(const key of vocabularySelected)if(!allowed.has(key))vocabularySelected.delete(key);
+  const wrap=document.getElementById('vtablewrap');wrap.classList.toggle('review-selecting',vocabularySelecting);
+  wrap.querySelectorAll('.review-pick').forEach(node=>node.remove());
+  if(vocabularySelecting)for(const node of wrap.querySelectorAll('.vsense')){
+    const key=/** @type {HTMLElement} */(node).dataset.k,item=words[key];
+    const label=document.createElement('label');label.className='review-pick';
+    const input=document.createElement('input');input.type='checkbox';input.checked=vocabularySelected.has(key);
+    input.setAttribute('aria-label',`${item.word} · ${item.ko} 선택`);
+    input.addEventListener('change',()=>{if(input.checked)vocabularySelected.add(key);else vocabularySelected.delete(key);refreshVocabularySelectionState();});
+    label.append(input);node.prepend(label);
+  }
+  refreshVocabularySelectionState();
+}
+function refreshVocabularySelectionState(){
+  const visible=visibleVocabularyReviewKeys();
+  const all=/** @type {HTMLInputElement} */(document.getElementById('review-select-all'));
+  all.checked=visible.length>0&&visible.every(key=>vocabularySelected.has(key));
+  all.indeterminate=vocabularySelected.size>0&&!all.checked;
+  document.getElementById('review-select-all-label').hidden=!vocabularySelecting;
+  document.getElementById('review-select-toggle').textContent=vocabularySelecting?'선택 완료':'선택';
+  document.getElementById('review-select-toggle').setAttribute('aria-pressed',String(vocabularySelecting));
+  document.getElementById('review-selection-count').textContent=vocabularySelecting?`${vocabularySelected.size}개 선택`:'';
+  refreshVocabularyReviewEntry();
+}
+document.getElementById('review-select-toggle').addEventListener('click',()=>{
+  vocabularySelecting=!vocabularySelecting;vocabularySelected.clear();renderVocabularySelection();
+});
+document.getElementById('review-select-all').addEventListener('change',event=>{
+  for(const key of visibleVocabularyReviewKeys())if(/** @type {HTMLInputElement} */(event.target).checked)vocabularySelected.add(key);else vocabularySelected.delete(key);
+  renderVocabularySelection();
+});
 function highlightReviewSentence(card){
   const target=document.getElementById('review-sentence');target.replaceChildren();
   if(!card.example){target.textContent='저장된 원문 문장이 없어요. 표현을 보고 뜻을 떠올려 보세요.';return;}
@@ -96,11 +143,15 @@ function renderVocabularyReview(view,focus=true){
   }
   refreshVocabularyReviewEntry();
 }
-function openVocabularyReview(){
+function openVocabularyReview(daily=false){
   if(vocabularyReviewDialog.open)return;
   vocabularyReviewDialog.showModal();
   try{
-    const view=BreezeReview.start(readVocabularyReview(),words,Date.now());
+    const scope=vocabularyReviewScope();
+    const raw=readVocabularyReview();
+    if(daily&&raw.session?.practice)raw.session=null;
+    const view=!daily&&scope.custom?BreezeReview.startSelection(raw,words,scope.keys,Date.now()):BreezeReview.start(raw,words,Date.now());
+    document.getElementById('review-title').textContent=view.state.session?.practice?'선택한 뜻 복습':'오늘의 복습';
     commitVocabularyReview(view.state);renderVocabularyReview(view);
   }catch{
     renderVocabularyReview({card:null,status:'idle'});vocabularyReviewError();

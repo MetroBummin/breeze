@@ -84,8 +84,8 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 /* Context recall uses the shared task surface; the reader and dock are untouched. */
 .wordbook-review-entry{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 20px;}
 .wordbook-review-entry>span{font:400 12px/1.6 var(--ui);color:var(--settings-muted);}
-#wordbook-review,#vocabulary-review-dialog button:not(.task-close){min-height:48px;padding:12px 16px;border:1px solid var(--sentence-glass-line-soft);border-radius:16px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:600 14px/1.5 var(--ui);cursor:pointer;}
-#wordbook-review:hover,#vocabulary-review-dialog button:not(.task-close):hover{background:var(--sentence-glass-action-hover);}
+#vocabulary-review-dialog button:not(.task-close){min-height:48px;padding:12px 16px;border:1px solid var(--sentence-glass-line-soft);border-radius:16px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:600 14px/1.5 var(--ui);cursor:pointer;}
+#vocabulary-review-dialog button:not(.task-close):hover{background:var(--sentence-glass-action-hover);}
 #wordbook-review:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:3px;}
 #vocabulary-review-dialog [hidden]{display:none!important;}
 #vocabulary-review-dialog h2{margin:0;padding-right:44px;font:600 21px/1.4 var(--ui);}
@@ -106,3 +106,15 @@ body:has(#v-vocab.on)::before,body:has(#v-vocab.on) #topbar{display:none;}
 @media(max-height:500px){#review-progress{margin-bottom:12px;}#review-source,#review-expression,#review-meaning{margin-bottom:12px;}.review-local-note{margin-top:16px;}}
 /* The glass must not reveal answers from the Memory list behind the review. */
 body:has(#vocabulary-review-dialog[open]) #v-vocab #vtablewrap{visibility:hidden;}
+
+/* Actions use existing dock slots; selection is optional, per Meaning. */
+.wordbook-brand #wordbook-add{margin-left:auto;flex:none;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--settings-ink);cursor:pointer;}
+.wordbook-brand #wordbook-add svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
+.wordbook-selection{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 8px;font:400 12px/1.5 var(--ui);color:var(--settings-muted);}
+.wordbook-selection button,.wordbook-review-entry button{min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--settings-ink);font:500 12px/1.5 var(--ui);cursor:pointer;}
+.wordbook-selection label{display:flex;align-items:center;gap:7px;min-height:44px;cursor:pointer;}
+.wordbook-selection [hidden],.wordbook-review-entry [hidden]{display:none!important;}
+.review-selecting .vsense{position:relative;padding-left:28px;}
+.review-pick{position:absolute;left:-8px;top:-7px;display:grid;place-items:center;width:36px;height:44px;cursor:pointer;}
+.review-pick input,.wordbook-selection input{width:16px;height:16px;accent-color:var(--blue);}
+.review-recall-hint{font:400 12px/1.6 var(--ui);color:var(--sentence-glass-secondary);margin:0 0 16px;}

@@ -12,11 +12,11 @@ returned review state as one local-only value before advancing. Failed persisten
 must leave the previous card retryable. Existing vocabulary persistence remains
 as described in decision 007.
 
-An explicit start selects up to five cards. Previously reviewed cards due now
+The default Today start selects up to five cards. Previously reviewed cards due now
 come first, ordered by due time; new cards follow, oldest saved first. Raw Meaning
 key breaks ties independently of locale and object enumeration. Remembered
 advances through 1, 3, 7, 14 and 30 days, capped at 30. Confused resets that streak
-and schedules ten minutes later. No early review of a future-due card is selected.
+and schedules ten minutes later. No early review of a future-due card is selected by Today.
 
 The persisted queue, index and result counts resume an interrupted session. New
 vocabulary does not change its queue. Answer visibility is transient UI state;
@@ -46,3 +46,24 @@ valid. All public engine calls return fresh state and leave their inputs unchang
 Validation: `node --test tests/verify-vocabulary-review.mjs` covers scheduling,
 resumption, exactly-once sequential grading, malformed data, contextual changes,
 deletion, special keys, immutability and bounded sessions over 5,000 Meanings.
+
+## Explicit practice and entry
+
+Memory's shared dock is Home / Today review / CSV export. Add Word lives in
+its header; dock geometry remains owned by the shared control primitives.
+The center action shows a recommended count or resumes unfinished practice.
+
+Book, root-star and search filters select individual Meaning rows, not every
+meaning of a matching lexical item. Selection mode adds per-Meaning checkboxes
+and Select All for the visible rows. Filtered/checked practice includes exactly
+that scope, including future-due cards; its size is not limited to Today's five.
+A separate quiet “오늘 추천으로 복습” action bypasses the filters. Selection itself
+is transient; the started queue and its practice flag persist for resumption.
+Starting a different scope replaces the unfinished queue, not graded progress.
+All reconciliation uses the full vocabulary so filtering cannot delete progress
+outside the current scope. Manual grades use the same intervals as Today.
+
+The saved sentence is visible and its target expression highlighted before the
+meaning is revealed. This MVP practices contextual recall; it does not claim
+context-free mastery or Anki/FSRS scheduling. A short cue asks users to choose
+Confused if they inferred the answer but could not recall the word's meaning.

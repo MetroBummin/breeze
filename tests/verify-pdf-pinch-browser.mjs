@@ -181,7 +181,9 @@ try{
    await pinch(90,180,{dx:10,dy:-15});await pinch(180,90);
    await pinch(90,225);
    // Real scaled word hit testing remains exact, followed by a genuine tap.
-   const word=await page.evaluate(()=>{
+   // Pinch release resumes deferred visible-page extraction. Wait for its word
+   // map, rather than assuming the next protocol command runs after that job.
+   const wordHandle=await page.waitForFunction(()=>{
      for(const el of originalSession.pages){
        const r=el.getBoundingClientRect();
        for(const w of originalSession.wordBoxes.get(+el.dataset.page)||[]){
@@ -192,7 +194,8 @@ try{
          }
        }
      }
-   });
+   },null,{timeout:10000});
+   const word=await wordHandle.jsonValue();await wordHandle.dispose();
    assert.ok(word,'visible PDF has no working word map');
    const tapsBefore=(await snapshot()).wordActions;
    await page.touchscreen.tap(word.x,word.y);

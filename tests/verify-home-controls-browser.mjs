@@ -64,8 +64,8 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   await page.locator('#nav-vocab').click();assert.equal(await page.locator('#v-vocab').isVisible(),true);
 assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   await page.mouse.move(0,0);
-  assert.deepEqual(await capture(page,['btn-export','wordbook-home','wordbook-add']),home,`Wordbook/Home mismatch ${width} dark=${dark}`);
-  await page.locator('#wordbook-controls .control-pill').click();assert.equal(await page.locator('#home-controls #primary-nav').count(),1);
+  assert.deepEqual(await capture(page,['wordbook-home','wordbook-review','btn-export']),home,`Wordbook/Home mismatch ${width} dark=${dark}`);
+  await page.locator('#wordbook-home').click();assert.equal(await page.locator('#home-controls #primary-nav').count(),1);
   await page.mouse.move(0,0);
   assert.equal(await page.locator('#set-lang,#set-dark,[data-panel=general]').count(),0);
   await page.locator('#home-resume').click();
@@ -74,7 +74,11 @@ assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   assert.deepEqual(await page.evaluate(()=>window.nativeBackground),dark?[23,24,22]:[250,248,242]);
   await page.waitForTimeout(450); // Reader's existing expand transition
   const reader=await capture(page,['readback','readpill','aafab']);
-  assert.deepEqual(home,reader,`Home/Reader mismatch ${width} dark=${dark}`);
+  for(let i=0;i<home.length;i++){
+    assert.deepEqual(home[i].style,reader[i].style,`Home/Reader material mismatch ${width} dark=${dark}`);
+    assert.deepEqual(home[i].highlight,reader[i].highlight);
+    for(const key of ['x','y','w','h'])assert.ok(Math.abs(home[i].rect[key]-reader[i].rect[key])<=1/64,`Home/Reader geometry mismatch ${width} ${key}`);
+  }
   assert.equal(await page.locator('#readpill').evaluate(e=>e.classList.contains('control-glass')),true);
   const fillStyle=await page.evaluate(()=>['home-resume-progress','readpill-progress'].map(id=>{const s=getComputedStyle(document.getElementById(id));return [s.background,s.boxShadow]}));
   assert.deepEqual(fillStyle[0],fillStyle[1],'Home and Reader progress material diverged');

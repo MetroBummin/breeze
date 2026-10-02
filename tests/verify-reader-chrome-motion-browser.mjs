@@ -44,7 +44,10 @@ function checkTrajectory(result,offset){
   assert.ok(Math.abs(result.immediate.width-result.start.width)<.5,'Changing state must not jump the width');
   assert.notEqual(result.immediate.display,'none','Ink entry keeps its layout slot while fading');
   const {start,end,rows}=result;
+  let previous=start.center;
   for(const row of rows){
+    assert.ok((row.center-previous)*Math.sign(end.center-start.center)>=-.5,'Center must not reverse direction before reaching its target');
+    previous=row.center;
     for(const key of ['center','width','height','entry']){
       assert.ok(row[key]>=Math.min(start[key],end[key])-.5&&row[key]<=Math.max(start[key],end[key])+.5,`${key} must not overshoot`);
     }
@@ -87,6 +90,27 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       const reverse=await transition(page,true,true);
       assert.ok(reverse.jump<.5,'Reversing motion starts at the current presentation');
       assert.ok(Math.abs(reverse.end.center-width/2-offset)<.5,'Reversal finishes expanded');
+      if(width===390){
+        const repeated=await page.evaluate(async()=>{
+          const pill=document.getElementById('readpill'),box=readerScroller(),rows=[];
+          // Keep paper/progress updating while repeatedly interrupting geometry.
+          for(const hidden of [true,false,true,false,true,false]){
+            setReaderChrome(hidden);
+            const began=performance.now();
+            await new Promise(done=>{
+              const frame=now=>{
+                readerScrollTo(box.scrollTop+(hidden?3:-3));
+                const r=pill.getBoundingClientRect();
+                rows.push(r.x+r.width/2);
+                if(now-began<90)requestAnimationFrame(frame);else done();
+              };requestAnimationFrame(frame);
+            });
+          }
+          return rows;
+        });
+        assert.ok(repeated.every(center=>center>=width/2-.5&&center<=width/2+offset+.5),'Repeated interrupted motion while scrolling stays between the two anchors');
+        await page.waitForTimeout(350);
+      }
       await page.screenshot({path:resolve(proof,`${engine.name()}-${width}-${dark?'dark':'light'}.png`)});
     }
     await page.setViewportSize({width:390,height:844});await page.waitForTimeout(350);
@@ -95,7 +119,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),false,'Writing stays expanded');
     await page.locator('.ink-pill-entry').click();await page.waitForTimeout(350);
     await page.emulateMedia({reducedMotion:'reduce'});
-    await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(40);
+    await page.waitForFunction(()=>matchMedia('(prefers-reduced-motion:reduce)').matches&&getComputedStyle(document.getElementById('readpill')).getPropertyValue('--reader-chrome-duration').trim()==='0s');
+    await page.evaluate(async()=>{setReaderChrome(true);await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));});
     assert.ok(Math.abs((await page.locator('#readpill').boundingBox()).width-140.4)<.6);
     assert.equal(await page.locator('.ink-pill-entry').evaluate(e=>getComputedStyle(e).visibility),'hidden');
     await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(40);

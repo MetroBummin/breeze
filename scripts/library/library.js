@@ -481,12 +481,12 @@ function renderHome(){
 function renderCasualLibrary(){
   renderFolderControls();
   renderLibraryStorageNotice();
-  const casuals = folderBooks(casualBooks());
+  const casuals = folderBooks(casualBooks(),'casuals');
   const grid = document.getElementById('casual-grid');
   const empty = document.getElementById('casual-empty');
   grid.innerHTML = '';
   casuals.forEach(book => grid.appendChild(homeRegularTile(casualCard(book,null,false),book.title,book.site||'내 글',true)));
-  const cloud=serverOnlyCasuals().filter(row=>folderMatches(row.book_id));
+  const cloud=serverOnlyCasuals().filter(row=>folderMatches(row.book_id,'casuals'));
   cloud.forEach(row=>grid.appendChild(homeRegularTile(cloudCasualCard(row),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')));
   const count = casuals.length;
   document.getElementById('casual-cnt').textContent = count ? `${count}편` : '';
@@ -499,16 +499,16 @@ function renderCasualLibrary(){
 function renderLongformLibrary(){
   renderFolderControls();
   renderLibraryStorageNotice();
-  const longform = folderBooks(longformBooks());
+  const longform = folderBooks(longformBooks(),'longform');
   const grid = document.getElementById('longform-grid');
   if(!grid) return;
   const empty = document.getElementById('longform-empty');
   document.getElementById('longform-cnt').textContent = longform.length ? `${longform.length}권` : '';
   grid.innerHTML = '';
   longform.forEach(book => grid.appendChild(homeRegularTile(bookCard(book,null),book.title,book.author||'내 책',true)));
-  const cloud = serverOnlyBooks().filter(row=>folderMatches(row.book_id));
+  const cloud = serverOnlyBooks().filter(row=>folderMatches(row.book_id,'longform'));
   cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
-  const offered = activeLibraryFolder?[]:pendingLongReads();
+  const offered = currentLibraryFolder('longform')?[]:pendingLongReads();
   offered.forEach(read => grid.appendChild(homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')));
   grid.appendChild(homeAddTile(longformAddCard(),'파일 추가'));
   empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
@@ -917,10 +917,14 @@ async function importFile(file, extra, options={}){
   }
 }
 
-/* Reuse the existing saved progress timestamps; do not create a second reading history. */
+/* Opening a book is local navigation, not a newer cloud progress position. */
+const HOME_RESUME_KEY='breeze.home-resume.v1';
 function homeResumeBook(){
-  const id=nowReadingIn(books);
-  return books.find(book=>book.id===id) || null;
+  const localId=load(HOME_RESUME_KEY,null);
+  const local=books.find(book=>book.id===localId);
+  if(local)return local;
+  const fallbackId=nowReadingIn(books);
+  return books.find(book=>book.id===fallbackId) || null;
 }
 function renderHomeResume(){
   const book=homeResumeBook();
