@@ -183,13 +183,13 @@ body.dark #word-peek::before{
   /* 기다리는 동안에는 뜻도 아랫줄도 감춥니다. 특히 "다시 물어보기" 로 들어온 경우
      앞서 받은 설명이 그대로 남아 있으면, 새 답이 온 것처럼 보입니다. */
   #p-ai.load .m, #p-ai.load .note{display:none!important;}
-  #p-aibtn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
+  #p-aibtn,#p-easy-button{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
     border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-action); color:var(--sentence-glass-ink); border-radius:12px;
     padding:11px; font-size:13.5px; font-weight:600; font-family:var(--ui); cursor:pointer;
     margin-bottom:12px;}
-  #p-aibtn:hover{background:var(--sentence-glass-action-hover);}
-  #p-aibtn:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:2px;}
-  #p-aibtn:disabled{opacity:.6; cursor:default;}
+  #p-aibtn:hover,#p-easy-button:hover{background:var(--sentence-glass-action-hover);}
+  #p-aibtn:focus-visible,#p-easy-button:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:2px;}
+  #p-aibtn:disabled,#p-easy-button:disabled{opacity:.6; cursor:default;}
   #p-aibtn .p-ai-retry-icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
   /* 기본은 보통 흐름의 위 여백입니다 — 바로 위 형제가 아무것도 안 그려질 때
      (quota·offline: 단추가 숨습니다) 이 여백이 그 위의 낱말 칸과 부딪히지
@@ -421,11 +421,10 @@ body.dark :is(#panel,.aa-legend,#vstars) .stbtn[data-s="3"].on{color:var(--s3);}
 
 /* Preview summary proportions inside the existing lookup material. */
 #p-easy[hidden],#p-easy [hidden]{display:none!important;}
-#p-easy{box-sizing:border-box;width:fit-content;max-width:100%;margin:12px 0 16px;overflow:hidden;border:1px solid var(--sentence-glass-line-soft);border-radius:16px;background:var(--sentence-glass-action);}
-#p-easy.expanded{width:100%;}
-#p-easy-button{min-height:44px;padding:8px 14px;border:0;background:transparent;color:var(--sentence-glass-ink);font:500 13px/1.5 var(--ui);cursor:pointer;}
-#p-easy-button:disabled{cursor:default;text-decoration:none;color:var(--sentence-glass-muted);}
-#p-easy-button:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:3px;border-radius:6px;}
+#p-easy{box-sizing:border-box;width:100%;max-width:100%;margin:12px 0 16px;}
+#p-easy.expanded{overflow:hidden;border:1px solid var(--sentence-glass-line-soft);border-radius:16px;background:var(--sentence-glass-action);}
+#p-easy-button{position:relative;margin-bottom:0;}
+#p-easy-button::before{content:'';position:absolute;inset:-2px 0;min-height:44px;}
 #p-easy-card{padding:16px 17px 18px;}
 #p-easy-retry{min-height:44px;margin:8px 0 0;padding:6px 0;border:0;background:transparent;color:var(--sentence-glass-ink);font:500 13px var(--ui);text-decoration:underline;cursor:pointer;}
 #p-easy-text:focus{outline:none;}
