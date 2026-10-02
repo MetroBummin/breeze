@@ -89,7 +89,7 @@ function renderEasyExplanation(){
   const state=easyExplanationState,button=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-button'));
   const expanded=!!(state.loading||state.text||state.error);
   const wasExpanded=section.classList.contains('expanded');
-  const surface=document.getElementById('p-ai');
+  const surface=section;
   const before=surface.getBoundingClientRect();
   surface.getAnimations().forEach(animation=>animation.cancel());
   section.classList.toggle('expanded',expanded);

@@ -162,15 +162,15 @@ either side. Text/EPUB use the source occurrence and adjacent paragraphs; PDF
 falls back to the exact visible page window if book text cannot resolve it.
 Absent or ambiguous neighbors are omitted. Each sentence is bounded at 2,400
 characters. The action label appears once; the card has no repeated heading.
-The meaning and explanation share one quiet neutral card inside the existing
-detail surface and scroll budget; no nested explanation card is drawn. Closing/changing lookup cancels its display ownership.
+The meaning has no card background. The explanation uses a quiet neutral card
+inside the existing detail surface and scroll budget. Closing/changing lookup cancels its display ownership.
 Explanation text is transient page/account memory only; see DICT.md for request
 metering and the provider boundary. No automatic call on expand.
 
-The trigger is a small neutral capsule labelled “쉬운 설명” at the right of the
-Korean meaning, with a subtle fill and border, 32px visual height and 44px touch height. Long meanings wrap to its left. The meaning stays visible
-while that same card grows downward to reveal the explanation. Card height
-transitions both on loading and on answer arrival, without scaling the text. Its label disappears as soon as
+The full-width “쉬운 설명” trigger sits below the meaning and shares the star
+buttons' neutral fill, border, 12px corners and 36px visual height, with a 44px
+touch target. It expands into the explanation card at that same position.
+Height transitions on loading and answer arrival without scaling text. Its label disappears as soon as
 the card opens; loading and success show no repeated title. Only errors expose a
 Retry control. Expansion honors reduced-motion preferences and moves keyboard
 focus to the live explanation text.
