@@ -91,7 +91,7 @@ function renderEasyExplanation(){
   const wasExpanded=section.classList.contains('expanded');
   const surface=section;
   const before=surface.getBoundingClientRect();
-  surface.getAnimations().forEach(animation=>animation.cancel());
+  surface.getAnimations?.().forEach(animation=>animation.cancel());
   section.classList.toggle('expanded',expanded);
   button.disabled=state.loading;button.hidden=expanded;
   document.getElementById('p-easy-retry').hidden=!state.error;
