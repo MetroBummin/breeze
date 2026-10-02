@@ -828,6 +828,8 @@ async function reconnectOriginalFile(target,file){
 }
 /* `extra`는 파일에서 알 수 없는 것만 얹습니다 — 지금은 내장 고전의
    지은이와 고전 ID뿐입니다. */
+/* A receipt means the book write completed. Native inbox callers additionally
+   require originalStored before releasing their only durable source copy. */
 async function importFile(file, extra, options={}){
   const folderId=options.folderId??currentImportFolder();
   /* 도서관에서 빌리면 책이 아니라 이 표가 내려옵니다. 확장자만 보고 "지원하지
@@ -849,13 +851,13 @@ async function importFile(file, extra, options={}){
       if(prepared.kind === 'txt'){
         imgPurge(prepared.tmpId+'|');
         notice.finish(`이미 있는 책이에요 — "${already.title}"`);
-        return;
+        return {bookId:already.id, originalStored:false};
       }
       Object.assign(already, extra);      // 같은 고전을 다시 받았을 때 표시가 남도록
       await applyPreparedBook(already,prepared,file);
       renderAllBookViews();
       notice.finish(`기존 책에 원본을 연결했어요 — "${already.title}"`);
-      return;
+      return {bookId:already.id, originalStored:!!already.original};
     }
 
     /* 흐린 카드의 ×는 서버 기록을 지우는 것이 아니라 이 기기에서만 감춥니다.
@@ -876,7 +878,7 @@ async function importFile(file, extra, options={}){
       notice.finish(saved.position&&saved.position.t
         ? `${readingPercent(saved.position.p)}%부터 이어 읽을 수 있어요`
         : '이전에 보관한 책을 다시 연결했어요');
-      return;
+      return {bookId:book.id, originalStored:!!book.original};
     }
 
     const id = prepared.id;
@@ -904,6 +906,7 @@ async function importFile(file, extra, options={}){
       ? '추가 완료! 원본과 편한 글자 모드를 모두 준비했어요'
       : originalFailed ? '책은 추가했지만 원본 파일을 기기에 보관하지 못했어요'
       : '추가 완료! 카드를 눌러 읽기 시작하세요');
+    return {bookId:book.id, originalStored:!!original};
   }catch(error){
     if(prepared) imgPurge(prepared.tmpId+'|');
     console.error(error);

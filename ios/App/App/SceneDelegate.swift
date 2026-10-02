@@ -278,6 +278,8 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private static let libraryRefreshHandler = "breezeRefresh"
     private static let pencilAdmissionHandler = "breezePencilAdmission"
     private static let shareInboxHandler = "breezeShareInbox"
+    private static let sharedFileHandler = "breezeSharedFile"
+    private let sharedFileQueue = DispatchQueue(label: "kr.io.breeze.shared-files", qos: .userInitiated)
     private static let readerSelectionHandler = "breezeReaderSelection"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
@@ -418,6 +420,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView.configuration.userContentController.add(self, name: Self.vocabularyExportHandler)
         webView.configuration.userContentController.add(self, name: Self.libraryRefreshHandler)
         webView.configuration.userContentController.add(self, name: Self.shareInboxHandler)
+        webView.configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Self.sharedFileHandler)
         speechSynthesizer.delegate = self
         NotificationCenter.default.addObserver(
             self,
@@ -590,6 +593,40 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping (Any?, String?) -> Void) {
+        if message.name == Self.sharedFileHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let request = message.body as? [String: Any],
+                  let id = request["id"] as? String, UUID(uuidString: id) != nil,
+                  let action = request["action"] as? String else {
+                replyHandler(nil, "파일 요청을 확인할 수 없어요.")
+                return
+            }
+            sharedFileQueue.async {
+                do {
+                    let result: Any
+                    switch action {
+                    case "chunk":
+                        guard let offset = request["offset"] as? Int else {
+                            throw NSError(domain: "BreezeShareInbox", code: 4,
+                                userInfo: [NSLocalizedDescriptionKey: "파일 읽기 위치가 올바르지 않아요."])
+                        }
+                        result = try ShareInboxStore.readFileChunk(id: id, offset: offset)
+                    case "ack":
+                        try ShareInboxStore.acknowledgeFile(id: id)
+                        result = true
+                    default:
+                        throw NSError(domain: "BreezeShareInbox", code: 4,
+                            userInfo: [NSLocalizedDescriptionKey: "지원하지 않는 파일 요청이에요."])
+                    }
+                    DispatchQueue.main.async { replyHandler(result, nil) }
+                } catch {
+                    DispatchQueue.main.async { replyHandler(nil, error.localizedDescription) }
+                }
+            }
+            return
+        }
         guard message.name == Self.pencilAdmissionHandler,
               message.frameInfo.isMainFrame,
               message.frameInfo.securityOrigin.protocol == "breeze",
@@ -982,6 +1019,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
     func deliverSharedLinks() {
         do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(ShareInboxStore.pendingFiles())
+            if let json = String(data: data, encoding: .utf8) {
+                webView?.evaluateJavaScript("window.breezeSharedFilesPending = \(json); window.dispatchEvent(new CustomEvent('breeze-shared-files',{detail:window.breezeSharedFilesPending}))", completionHandler: nil)
+            }
+        } catch {
+            NSLog("[BreezeShareInbox] file listing failed: %@", error.localizedDescription)
+        }
+        do {
             let items = try ShareInboxStore.pending()
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
@@ -998,6 +1045,11 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
     private static let shareInboxScript = """
     window.breezeShareInboxPending = [];
+    window.breezeSharedFilesPending = [];
+    window.breezeSharedFiles = {
+      readChunk: (id, offset) => window.webkit.messageHandlers.breezeSharedFile.postMessage({action:'chunk', id, offset}),
+      acknowledge: id => window.webkit.messageHandlers.breezeSharedFile.postMessage({action:'ack', id})
+    };
     window.breezeShareInbox = {
       list: () => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'list'}),
       acknowledge: ids => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'ack', ids}),
