@@ -3,26 +3,26 @@
   "format": "PNG",
   "background": "transparent",
   "animated": false,
-  "usage": "Daily review progress milestones, not mastery scores. Floating cloud character with no legs or feet.",
+  "usage": "Daily review progress milestones, not mastery scores. Floating cloud character with no legs or feet. Percentages are nominal cumulative boundaries for a 100-card goal; small goals round to whole cards.",
   "stages": [
     {
       "stage": 1,
-      "progressPercent": 20,
+      "progressPercent": 5,
       "file": "thunderhead-stage-1.png"
     },
     {
       "stage": 2,
-      "progressPercent": 40,
+      "progressPercent": 15,
       "file": "thunderhead-stage-2.png"
     },
     {
       "stage": 3,
-      "progressPercent": 60,
+      "progressPercent": 35,
       "file": "thunderhead-stage-3.png"
     },
     {
       "stage": 4,
-      "progressPercent": 80,
+      "progressPercent": 65,
       "file": "thunderhead-stage-4.png"
     },
     {

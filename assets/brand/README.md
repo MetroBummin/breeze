@@ -45,12 +45,14 @@ sips -z <height> <width> -s format jpeg -s formatOptions 88 "$src" --out "$out.j
 
 | 파일 | 오늘 복습 진행률 | 표현 |
 | --- | --- | --- |
-| `review/thunderhead-stage-1.png` | 20% | 손 흔들기 |
-| `review/thunderhead-stage-2.png` | 40% | 윙크 |
-| `review/thunderhead-stage-3.png` | 60% | 양손 들고 환호 |
-| `review/thunderhead-stage-4.png` | 80% | 번개 들고 응원 |
+| `review/thunderhead-stage-1.png` | 5% | 손 흔들기 |
+| `review/thunderhead-stage-2.png` | 15% | 윙크 |
+| `review/thunderhead-stage-3.png` | 35% | 양손 들고 환호 |
+| `review/thunderhead-stage-4.png` | 65% | 번개 들고 응원 |
 | `review/thunderhead-stage-5.png` | 100% | 왕관·트로피로 축하 |
 
 단계와 파일의 대응은 `review/manifest.json`에 있습니다. 진행률은 오늘 분량의
 완료 비율이며 숙달률이 아닙니다. 현재는 에셋만 저장했으며 학습 화면 연결과
 둥실거리는 애니메이션은 적용하지 않았습니다.
+
+진행률은 100개 목표 기준 누적 경계(5 / 15 / 35 / 65 / 100%)다. 카드 수가 적으면 정수로 나누며, 실제 단계 경계는 학습 엔진이 저장한다.

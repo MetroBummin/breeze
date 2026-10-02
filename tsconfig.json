@@ -40,5 +40,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["types/**/*.d.ts", "scripts/**/*.js"]
+  "include": ["types/**/*.d.ts", "scripts/**/*.js"],
+  "exclude": ["scripts/vendor"]
 }

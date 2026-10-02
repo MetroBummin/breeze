@@ -544,3 +544,7 @@ body.dark{
   --rss-skeleton-line:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.035));
   --rss-skeleton-line-edge:inset 0 1px 0 rgba(255,255,255,.06);
 }
+
+/* A single warm yellow family; stage controls only area and intensity. */
+:root{--review-glow-core:#F7CF4A;--review-glow-soft:#FFE9A0;}
+body.dark{--review-glow-core:#E9B936;--review-glow-soft:#D8AE45;}

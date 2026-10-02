@@ -58,14 +58,19 @@ async function openReview(page){
   assert.equal(await page.locator('#vtablewrap').isVisible(),false,'Background Memory meanings cannot leak through the glass');
   assert.equal(await page.locator('#vocabulary-review-page').evaluate(element=>element.contains(document.activeElement)),true,'Focus enters the review dialog');
 }
+async function continueMilestone(page){
+  if(await page.locator('#review-stage-mascot').isVisible())await page.locator('#review-more').click();
+}
 async function assertHiddenAnswer(page){
+  await continueMilestone(page);
   assert.equal(await page.locator('#review-meaning').isVisible(),false,'Saved meaning stays hidden before recall');
   assert.equal(await page.locator('#review-reveal').isVisible(),true);
-  for(const id of ['review-remember','review-confused','review-uncertain']){
+  for(const id of ['review-remember','review-confused','review-uncertain','review-easy']){
     assert.ok(!await page.locator('#'+id).isVisible()||await page.locator('#'+id).isDisabled(),`${id} cannot be used before reveal`);
   }
 }
 async function reveal(page){
+  await continueMilestone(page);
   await page.locator('#review-reveal').click();
   assert.equal(await page.locator('#review-meaning').isVisible(),true);
   assert.ok((await page.locator('#review-meaning').innerText()).trim(),'Reveal shows a saved answer');
@@ -96,7 +101,7 @@ async function closeReview(page,keyboard=false){
 try{
   await scenario('five-item cap, hidden answers, durable progress and no mutation',uniqueWords(7),async page=>{
     const before=await persistedWords(page);
-    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'오늘 복습 · 5');
+    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'학습 시작');
     await openReview(page);await assertHiddenAnswer(page);
     assert.equal((await progress(page)).at(-1),5,'A new session is capped at five cards');
     const first=await page.locator('#review-expression').innerText();
@@ -112,6 +117,7 @@ try{
     assert.equal(await page.locator('#review-expression').innerText(),first,'Closing an ungraded card does not skip it');
     await reveal(page);
     await page.evaluate(()=>{const button=document.getElementById('review-remember');button.click();button.click();});
+    await continueMilestone(page);
     const second=await page.locator('#review-expression').innerText();
     assert.notEqual(second,first,'One grade advances one card');
     assert.equal((await progress(page))[0],firstProgress[0]+1,'Duplicate grade cannot skip the next hidden card');
@@ -133,6 +139,7 @@ try{
     await openReview(page);await assertHiddenAnswer(page);
     assert.equal((await progress(page)).at(-1),2,'Fewer than five remaining new cards are a complete smaller session');
     for(let i=0;i<2;i++){
+      await continueMilestone(page);
       const word=await page.locator('#review-expression').innerText();assert.ok(!seen.includes(word),'Already graded cards do not instantly repeat');seen.push(word);
       await reveal(page);await page.locator('#review-remember').click();
     }
@@ -179,22 +186,23 @@ try{
     assert.deepEqual(await persistedWords(page),before);
   });
 
-  await scenario('confused waits ten minutes and remembered waits days',{
+  await scenario('Again waits one minute while Good stays in learning',{
     confused:fixture('confused',1),remembered:fixture('remembered',2)
   },async page=>{
     const before=await persistedWords(page);
     await openReview(page);
     for(let i=0;i<2;i++){
+      await continueMilestone(page);
       const word=await page.locator('#review-expression').innerText();await reveal(page);
       await page.locator(word==='confused'?'#review-confused':'#review-remember').click();
     }
     await assertDone(page);await closeReview(page);await openReview(page);await assertDone(page);await closeReview(page);
-    await page.clock.setFixedTime(NOW+9*60*1000+59000);
+    await page.clock.setFixedTime(NOW+59000);
     await openReview(page);await assertDone(page);await closeReview(page);
-    await page.clock.setFixedTime(NOW+10*60*1000+1000);
+    await page.clock.setFixedTime(NOW+61000);
     await openReview(page);await assertHiddenAnswer(page);
     assert.equal(await page.locator('#review-expression').innerText(),'confused');
-    assert.equal((await progress(page)).at(-1),1,'A remembered card is not due again after ten minutes');
+    assert.equal((await progress(page)).at(-1),1,'Good is not due again after one minute');
     await reveal(page);await page.locator('#review-remember').click();await assertDone(page);await closeReview(page);
     await page.clock.setFixedTime(NOW+365*24*60*60*1000);
     await openReview(page);await assertHiddenAnswer(page);
@@ -210,7 +218,9 @@ try{
     assert.notEqual(await page.locator('#review-expression').innerText(),deleted,'Revealing rechecks that the current Meaning still exists');
     await closeReview(page);await openReview(page);await assertHiddenAnswer(page);
     const seen=[];
-    while(await page.locator('#review-reveal').isVisible()){
+    while(true){
+      await continueMilestone(page);
+      if(!await page.locator('#review-reveal').isVisible())break;
       seen.push(await page.locator('#review-expression').innerText());assert.ok(seen.length<=2,'Deleted cards do not extend the session');
       await reveal(page);await page.locator('#review-remember').click();
     }
@@ -331,14 +341,14 @@ try{
     assert.equal(await page.locator('#review-card #review-progress').count(),1);
   });
 
-  await scenario('flashcard front/back and three spaced grades',uniqueWords(1),async page=>{
+  await scenario('flashcard front/back and four FSRS grades',uniqueWords(1),async page=>{
     await openReview(page);
     await page.locator('#review-flip').click();
     assert.equal(await page.locator('#review-front').isVisible(),false);
     assert.equal(await page.locator('#review-meaning').isVisible(),true);
-    assert.equal(await page.locator('#review-confused-interval').textContent(),'10분');
-    assert.equal(await page.locator('#review-uncertain-interval').textContent(),'1시간');
-    assert.equal(await page.locator('#review-remember-interval').textContent(),'1일');
+    assert.equal(await page.locator('#review-confused-interval').textContent(),'1분');
+    assert.equal(await page.locator('#review-uncertain-interval').textContent(),'6분');
+    assert.equal(await page.locator('#review-remember-interval').textContent(),'10분');
     await page.locator('#review-flip').focus();await page.keyboard.press('Space');
     assert.equal(await page.locator('#review-front').isVisible(),true);
     await page.locator('#review-uncertain').click();await assertDone(page);
@@ -347,9 +357,9 @@ try{
     assert.equal(await page.locator('#review-celebration').isVisible(),true);
     assert.equal(await page.locator('#review-result-uncertain').textContent(),'1');
     assert.equal(await page.locator('#review-result-known').textContent(),'0');
-    assert.equal(Object.values(stored.progress)[0].dueAt,NOW+3600000);
-    await closeReview(page);await page.clock.setFixedTime(NOW+3600000-1);await openReview(page);await assertDone(page);
-    await closeReview(page);await page.clock.setFixedTime(NOW+3600000);await openReview(page);await assertHiddenAnswer(page);
+    assert.equal(Object.values(stored.progress)[0].dueAt,NOW+360000);
+    await closeReview(page);await page.clock.setFixedTime(NOW+360000-1);await openReview(page);await assertDone(page);
+    await closeReview(page);await page.clock.setFixedTime(NOW+360000);await openReview(page);await assertHiddenAnswer(page);
   });
 
   await scenario('responsive light and dark layouts',{
@@ -368,7 +378,7 @@ try{
       assert.ok(layout.scrollWidth<=layout.clientWidth+1,`${label}: no horizontal study overflow`);
       assert.ok(layout.documentWidth<=width+1,`${label}: no horizontal page overflow`);
       assert.notEqual(layout.color,layout.background,`${label}: text and surface colors differ`);
-      for(const id of ['review-close','review-remember','review-confused','review-uncertain']){
+      for(const id of ['review-close','review-remember','review-confused','review-uncertain','review-easy']){
         const control=page.locator('#'+id);await control.scrollIntoViewIfNeeded();
         const box=await control.boundingBox();
         assert.ok(box.width>=44&&box.height>=44,`${label}: ${id} maintains a 44px target`);
@@ -389,13 +399,251 @@ try{
       await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
       assert.equal(await page.locator('#review-celebration').isVisible(),true);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-      await page.locator('#review-finish').scrollIntoViewIfNeeded();
-      const box=await page.locator('#review-finish').boundingBox();
+      await page.locator('#review-close').scrollIntoViewIfNeeded();
+      const box=await page.locator('#review-close').boundingBox();
       assert.ok(box.height>=44&&box.x>=0&&box.x+box.width<=width&&box.y>=0&&box.y+box.height<=height+1);
+      await page.locator('#review-more').scrollIntoViewIfNeeded();
+      const cta=await page.locator('#review-more').boundingBox();
+      assert.ok(cta.height>=44&&cta.x>=0&&cta.x+cta.width<=width&&cta.y>=0&&cta.y+cta.height<=height+1);
       await page.locator('#review-close').scrollIntoViewIfNeeded();
       await page.screenshot({path:`${out}/${engine.name()}-complete-${width}x${height}-${dark?'dark':'light'}.png`});
     }
-    await page.locator('#review-finish').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
+    await page.locator('#review-close').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
+  });
+
+  await scenario('selection done preserves checks and empty scopes never expand',uniqueWords(8),async page=>{
+    await page.locator('#review-select-toggle').click();
+    await page.locator('.review-pick input').first().check();
+    await page.locator('.review-pick input').nth(1).check();
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('#review-selection-count').textContent(),'2개 선택');
+    assert.equal(await page.locator('.review-pick').count(),0);
+    await openReview(page);
+    assert.equal((await progress(page)).at(-1),2);
+    assert.equal(await page.locator('#review-mode').textContent(),'연습 · 복습 일정에 영향 없음');
+    await reveal(page);await page.locator('#review-remember').click();
+    let saved=JSON.parse(await reviewState(page));
+    assert.deepEqual(saved.progress,{});assert.equal(saved.history[0].kind,'practice');
+    await closeReview(page);
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('.review-pick input:checked').count(),2);
+    await page.locator('#review-select-all').check();
+    await page.locator('#review-select-all').uncheck();
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
+    await page.locator('#review-select-cancel').click();
+    assert.equal(await page.locator('#review-selection-count').textContent(),'');
+    await page.locator('#vsearch').fill('no such saved meaning');
+    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
+    await page.locator('#vsearch').fill('');
+    await page.locator('#review-select-toggle').click();
+    assert.equal(await page.locator('.review-pick input:checked').count(),0);
+  });
+
+  await scenario('setup limits, explicit extra and response counts survive failed saves',uniqueWords(12),async page=>{
+    await page.evaluate(()=>openSettings());
+    await page.locator('#review-daily-limit').fill('0');
+    await page.locator('#set-close').click();
+    assert.equal(JSON.parse(await reviewState(page)).settings.dailyLimit,0);
+    assert.equal(await page.locator('#review-setup-extra').isVisible(),true);
+    await openReview(page);
+    assert.equal(await page.locator('#review-card').isVisible(),false);
+    await closeReview(page);
+    await page.locator('#review-setup-extra').click();
+    assert.equal((await progress(page)).at(-1),5);
+    await reveal(page);await page.locator('#review-confused').click();
+    for(let i=1;i<5;i++){await reveal(page);await page.locator('#review-remember').click();}
+    assert.match(await page.locator('#review-status').innerText(),/이번 5개 완료/);
+    assert.match(await page.locator('#review-pending').innerText(),/1분 뒤부터 학습·재학습 5개/);
+    await page.clock.setFixedTime(NOW+60001);
+    await page.locator('#review-more').click();
+    assert.equal((await progress(page)).at(-1),1);
+    await reveal(page);await page.locator('#review-remember').click();
+    const saved=JSON.parse(await reviewState(page)),today=Object.values(saved.daily)[0];
+    assert.equal(today.new.length,5);assert.equal(today.review.length,0);assert.equal(today.responses,6);
+    assert.equal(saved.history.length,6);
+  });
+
+  await scenario('practice uses batch size and preserves its remaining queue after reload',uniqueWords(8),async page=>{
+    await page.locator('#review-select-toggle').click();await page.locator('#review-select-all').check();
+    await page.locator('#review-select-toggle').click();await openReview(page);
+    for(let i=0;i<5;i++){await reveal(page);await page.locator('#review-remember').click();}
+    assert.match(await page.locator('#review-status').innerText(),/남은 선택 연습 3개/);
+    await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);await page.evaluate(()=>show('study'));
+    await page.locator('#review-more').click();
+    assert.equal((await progress(page)).at(-1),3);
+    for(let i=0;i<3;i++){await reveal(page);await page.locator('#review-remember').click();}
+    const saved=JSON.parse(await reviewState(page));
+    assert.deepEqual(saved.progress,{});assert.equal(saved.history.length,8);
+    assert.equal(Object.values(saved.daily)[0].practice,8);
+  });
+
+  await scenario('v1 migration backup preserves unfinished queue and source edits',uniqueWords(3),async page=>{
+    await page.evaluate(({key,at})=>{
+      const refs=Object.entries(words).map(([key,w])=>({key,identity:JSON.stringify([key,w.word,w.ko,w.example,w.book,w.addedAt])}));
+      const legacy={version:1,sequence:4,progress:{[refs[0].key]:{identity:refs[0].identity,streak:2,dueAt:at+86400000,lastReviewedAt:at}},session:{id:'old',startedAt:at,queue:refs,index:1,remembered:1,confused:0}};
+      localStorage.setItem(key,JSON.stringify(legacy));
+      words[refs[0].key].book='Renamed source';words[refs[1].key].example='Edited saved sentence';saveWords();
+    },{key:REVIEW_KEY,at:NOW});
+    await openReview(page);
+    assert.deepEqual(await progress(page),[2,3]);
+    const saved=JSON.parse(await reviewState(page));
+    assert.equal(saved.version,3);assert.equal(Object.values(saved.progress)[0].streak,2);
+    assert.equal(await page.evaluate(key=>JSON.parse(localStorage.getItem(key+'.backup')).version,REVIEW_KEY),1);
+    await reveal(page);await page.locator('#review-remember').click();
+    assert.equal(JSON.parse(await reviewState(page)).history.length,1);
+  });
+
+  await scenario('single daily cap, no slider, persistence and responsive themes',uniqueWords(20),async page=>{
+    assert.equal(await page.locator('#review-batch-range').count(),0);
+    assert.equal(await page.locator('#review-new-limit').count(),0);
+    assert.equal(await page.locator('dialog:modal').count(),0);
+    await page.evaluate(()=>openSettings());
+    await page.locator('[data-review-limit="200"]').click();
+    assert.equal(JSON.parse(await reviewState(page)).settings.dailyLimit,200);
+    await page.locator('#review-daily-limit').fill('8');await page.locator('#review-daily-limit').press('Tab');
+    await page.locator('#set-close').click();
+    await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);await page.evaluate(()=>show('vocab'));
+    assert.equal(JSON.parse(await reviewState(page)).settings.dailyLimit,8);
+    for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390],[320,360]])for(const dark of [false,true]){
+      await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
+      await page.evaluate(()=>scrollTo(0,0));
+      await page.screenshot({path:`${out}/${engine.name()}-inline-${width}x${height}-${dark?'dark':'light'}.png`});
+      assert.match(await page.locator('#wordbook-review').innerText(),/학습 시작/);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await page.evaluate(()=>openSettings());
+      const input=page.locator('#review-daily-limit');await input.scrollIntoViewIfNeeded();const r=await input.boundingBox();
+      assert.ok(r.width>=44&&r.height>=44&&r.x>=0&&r.x+r.width<=width+1&&r.y>=0&&r.y+r.height<=height+1);
+      await page.screenshot({path:`${out}/${engine.name()}-app-settings-${width}x${height}-${dark?'dark':'light'}.png`});
+      await page.locator('#set-close').click();
+    }
+    const original=await reviewState(page);
+    await page.evaluate(key=>{window.originalReviewSet=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===key)throw new Error('full');return window.originalReviewSet.call(this,k,v);};},REVIEW_KEY);
+    await page.evaluate(()=>openSettings());await page.locator('#review-daily-limit').fill('10');await page.locator('#review-daily-limit').press('Tab');
+    assert.equal(await page.locator('#review-limit-error').isVisible(),true);assert.equal(await reviewState(page),original);
+    await page.locator('#set-close').click();await page.locator('#wordbook-review').click();
+    assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await reviewState(page),original);
+    await page.evaluate(()=>{Storage.prototype.setItem=window.originalReviewSet;});
+    await openReview(page);await assertHiddenAnswer(page);assert.equal((await progress(page)).at(-1),5);
+  });
+  await scenario('progressive five stages, real assets and durable achievements',uniqueWords(100),async page=>{
+    await page.evaluate(({key,at})=>{
+      const state=BreezeReview.configure(null,{newLimit:0,reviewLimit:100,batchSize:5});
+      for(const [id,w] of Object.entries(words))state.progress[id]={identity:JSON.stringify([id,w.word,w.ko,w.addedAt]),streak:1,dueAt:at-1,lastReviewedAt:at-86400000};
+      localStorage.setItem(key,JSON.stringify(state));restoreReviewControls();refreshVocabularyReviewEntry();
+    },{key:REVIEW_KEY,at:NOW});
+    await openReview(page);
+    const boundaries=[5,15,35,65,100];
+    for(let answered=1;answered<=100;answered++){
+      if(!await page.locator('#review-reveal').isVisible())await page.locator('#review-more').click();
+      await page.locator('#review-reveal').click();
+      await page.locator(answered===1?'#review-confused':'#review-remember').click();
+      if(boundaries.includes(answered)){
+        const stage=boundaries.indexOf(answered)+1,mascot=page.locator('#review-stage-mascot');
+        assert.equal(await mascot.isVisible(),true);
+        assert.equal(await mascot.getAttribute('data-stage'),String(stage));
+        assert.match(await mascot.getAttribute('src'),new RegExp(`thunderhead-stage-${stage}\\.png$`));
+        await mascot.evaluate(img=>img.decode());
+        assert.ok(await mascot.evaluate(img=>img.naturalWidth>0));
+        assert.equal(await page.locator('#review-day-count').innerText(),`${answered}/100개`);
+        assert.equal(await page.locator('#review-result-known').innerText(),String(answered-1));
+        assert.equal(await page.locator('#review-result-unknown').innerText(),'1');
+        assert.equal(await page.locator('#review-result-uncertain').innerText(),'0');
+        assert.ok((await mascot.boundingBox()).width>=200);
+        const aura=await page.locator('#review-mascot-scene').evaluate(node=>Number(getComputedStyle(node,'::before').opacity));
+        assert.ok(Math.abs(aura-(.12+stage*.1))<.001);
+        assert.equal(await mascot.evaluate(node=>getComputedStyle(node).animationName),'none');
+        assert.equal(await page.locator('#review-mascot-scene').evaluate(node=>getComputedStyle(node,'::before').animationName),'none');
+        assert.equal(await page.locator('#review-finish').count(),0);
+        if(stage<5)assert.equal(await page.locator('#review-more').innerText(),'다음 단계 도전');
+        {
+          for(const dark of [false,true]){
+            await page.evaluate(value=>{darkMode=value;applyDark();},dark);
+            await page.screenshot({path:`${out}/${engine.name()}-stage-${stage}-${dark?'dark':'light'}.png`});
+          }
+        }
+        if(stage===1){
+          await page.locator('#review-close').click();await page.reload({waitUntil:'domcontentloaded'});
+          await page.evaluate(()=>homeReady);await page.evaluate(()=>show('study'));
+          assert.equal(await mascot.getAttribute('data-stage'),'1');
+          assert.equal(await page.locator('#review-day-count').innerText(),'5/100개');
+        }
+      }
+    }
+    assert.equal(await page.locator('#review-result-title').innerText(),'오늘 목표 달성');
+    assert.match(await page.locator('#review-pending').innerText(),/재학습/);
+    const state=JSON.parse(await reviewState(page));
+    assert.equal(state.history.length,100);assert.equal(state.daily[Object.keys(state.daily)[0]].studied.length,100);
+    await page.evaluate(at=>{
+      words.extra= {word:'extra',ko:'추가',addedAt:at,example:'Extra context'};saveWords();
+    },NOW);
+    await page.locator('#review-more').click();
+    assert.equal(await page.locator('#review-reveal').isVisible(),true,'explicit final extra bypasses the zero new cap');
+    assert.equal(await page.locator('#review-expression').innerText(),'extra');
+    assert.equal(JSON.parse(await reviewState(page)).settings.dailyLimit,100);
+  });
+  for(const damaged of ['{broken','null','[]','42','"unexpected"','legacy','partial']){
+    await scenario(`recovery ${damaged}`,uniqueWords(8),async page=>{
+      const before=await persistedWords(page);
+      const original=await page.evaluate(({key,damaged,at})=>{
+        let raw=damaged;
+        if(damaged==='legacy'||damaged==='partial'){
+          const first=BreezeReview.start(null,words,at);
+          const state=BreezeReview.grade(first.state,words,first.token,'easy',at).state;
+          state.version=2;
+          for(const progress of Object.values(state.progress))delete progress.fsrs;
+          if(damaged==='partial'){state.progress.broken=null;state.history.push(null);state.session=null;}
+          raw=JSON.stringify(state);
+        }
+        localStorage.setItem(key,raw);restoreReviewControls();refreshVocabularyReviewEntry();return raw;
+      },{key:REVIEW_KEY,damaged,at:NOW});
+      await openReview(page);
+      await closeReview(page);
+      await page.evaluate(()=>{openSettings();});
+      await page.locator('#review-daily-limit').fill('12');
+      await page.locator('#review-daily-limit').dispatchEvent('change');
+      assert.equal(await page.locator('#review-limit-error').isVisible(),false);
+      await page.evaluate(()=>{closeSettings();show('vocab');});
+      await openReview(page);await reveal(page);await page.locator('#review-easy').click();
+      await continueMilestone(page);
+      const saved=JSON.parse(await reviewState(page));
+      assert.equal(saved.settings.dailyLimit,12);
+      assert.ok(saved.recovery?.backupKey);
+      assert.equal(await page.locator('#review-recovery').isVisible(),true);
+      assert.equal(saved.history.length,['legacy','partial'].includes(damaged)?2:1);
+      assert.ok(await page.evaluate(({key,raw})=>Object.keys(localStorage).some(k=>k.startsWith(key+'.backup')&&localStorage.getItem(k)===raw),{key:REVIEW_KEY,raw:original}));
+      const next=await page.locator('#review-expression').textContent();
+      await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);await page.evaluate(()=>show('vocab'));
+      await openReview(page);await assertHiddenAnswer(page);
+      assert.equal(await page.locator('#review-expression').textContent(),next);
+      assert.equal(JSON.parse(await reviewState(page)).history.length,saved.history.length);
+      assert.deepEqual(await persistedWords(page),before);
+    });
+  }
+  await scenario('recovery backup failure and future schema preserve original',uniqueWords(3),async page=>{
+    for(const original of ['null','{"version":99,"progress":{"keep":"untouched"}}']){
+      await page.evaluate(({key,raw})=>{localStorage.setItem(key,raw);window.reviewOriginalSet=Storage.prototype.setItem;
+        Storage.prototype.setItem=function(k,v){if(k.startsWith(key+'.backup'))throw new DOMException('quota','QuotaExceededError');return window.reviewOriginalSet.call(this,k,v);};
+      },{key:REVIEW_KEY,raw:original});
+      await page.evaluate(()=>openVocabularyReview());
+      assert.equal(await reviewState(page),original);
+      assert.equal(await page.locator('#review-setup-error').isVisible(),true);
+      await page.evaluate(()=>{Storage.prototype.setItem=window.reviewOriginalSet;});
+    }
+  });
+  await scenario('four grades visual proof and exact displayed intervals',uniqueWords(5),async page=>{
+    await openReview(page);await reveal(page);
+    for(const dark of [false,true]){
+      await page.evaluate(value=>{darkMode=value;applyDark();},dark);
+      assert.deepEqual(await page.locator('#review-grade button span').allTextContents(),['다시','어려움','알겠음','쉬움']);
+      assert.equal(await page.locator('#review-easy-interval').textContent(),'8일');
+      await page.screenshot({path:`${out}/${engine.name()}-four-grades-${dark?'dark':'light'}.png`,fullPage:true});
+    }
+    const before=await page.evaluate(()=>vocabularyReviewView.intervals.easy);
+    await page.locator('#review-easy').click();
+    const event=JSON.parse(await reviewState(page)).history.at(-1);
+    assert.equal(Date.parse(event.schedule.after.due)-event.at,before);
+    assert.equal(event.schedule.rating,4);
   });
   if(failures.length)throw new AggregateError(failures,`${engine.name()}: ${failures.length} review scenarios failed`);
   console.log(`Vocabulary review browser regression passed (${engine.name()}); screenshots: ${out}`);
