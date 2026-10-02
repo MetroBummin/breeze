@@ -118,7 +118,7 @@ async function opEasyExplanation(body:any,userId:string|null,signal?:AbortSignal
     },
     generate:async input=>{
       const out=await ask({action:"explain",prompt:easyPrompt(input),maxTokens:500,
-        schema:{type:"object",required:["explanation"],properties:{explanation:{type:"string"}}},signal});
+        schema:{type:"object",required:["explanation","suggestedMeaning"],properties:{explanation:{type:"string"},suggestedMeaning:{type:"string"}}},signal});
       return parseJson(out.text);
     }
   });

@@ -70,7 +70,8 @@ function easyExplanationInput(){
     const oldest=easyExplanationContexts.keys().next().value;
     easyExplanationCache.delete(easyExplanationContexts.get(oldest));easyExplanationContexts.delete(oldest);
   }
-  return {key,input,sourceSentence};
+  return {key,input,sourceSentence,id:selKey,snapshot:JSON.stringify([item.ko,item.example,item.book]),
+    book:context?.book||curBook?.title||item.book||'',clickedIndex:Number.isInteger(context?.clickedIndex)?context.clickedIndex:typeof lookupClickedTokenIndex==='function'?lookupClickedTokenIndex(node,sourceSentence,lookupSentenceTokens(sourceSentence),spot):-1};
 }
 function cancelEasyExplanation(){
   easyExplanationState?.controller?.abort();
@@ -82,9 +83,10 @@ function renderEasyExplanation(){
   const current=easyExplanationInput(),section=document.getElementById('p-easy');
   section.hidden=!current;
   if(!current){document.getElementById('p-easy-button').hidden=true;cancelEasyExplanation();return;}
-  if(easyExplanationState?.key!==current.key){
+  if(easyExplanationState?.key!==current.key||easyExplanationState?.snapshot!==current.snapshot){
     cancelEasyExplanation();
-    easyExplanationState={...current,text:easyExplanationCache.get(current.key)||'',error:'',loading:false,controller:null};
+    const cached=easyExplanationCache.get(current.key);
+    easyExplanationState={...current,text:'',suggestion:'',applied:false,...(cached?.snapshot===current.snapshot?cached:{}),error:'',loading:false,controller:null};
   }
   const state=easyExplanationState,button=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-button'));
   const expanded=!!(state.loading||state.text||state.error);
@@ -99,6 +101,12 @@ function renderEasyExplanation(){
   const card=document.getElementById('p-easy-card');card.hidden=!expanded;card.setAttribute('aria-busy',String(state.loading));
   const text=document.getElementById('p-easy-text');
   text.textContent=state.loading?'뜻을 쉬운 말로 풀고 있어요.':state.text||state.error;
+  const proposal=document.getElementById('p-easy-suggestion'),apply=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-apply'));
+  proposal.hidden=!state.suggestion&&!state.applied;
+  const same=easySameExample(state,words[state.id]);
+  document.getElementById('p-easy-proposal').textContent=state.applied?'뜻을 저장했어요.':same?`뜻을 ‘${state.suggestion}’로 바꿀까요?`:`이 문장에서는 ‘${state.suggestion}’라는 뜻으로 저장할까요?`;
+  apply.hidden=!!state.applied;apply.disabled=!state.suggestion;
+  apply.textContent=same?'이 뜻으로 바꾸기':'이 뜻 저장하기';
   if(expanded&&!wasExpanded)text.focus({preventScroll:true});
   if(expanded&&surface.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
     const after=surface.getBoundingClientRect();
@@ -129,7 +137,10 @@ async function requestEasyExplanation(){
     if(controller.signal.aborted||!wordLookupAlive(life)||easyExplanationState!==state||easyExplanationInput()?.key!==state.key)return;
     rememberAiLeft(answer?.left);
     if(!answer?.error&&typeof answer?.explanation==='string'&&answer.explanation.trim().length>=10&&answer.explanation.length<=600){
-      state.text=answer.explanation.trim();easyExplanationCache.set(state.key,state.text);
+      state.text=answer.explanation.trim();
+      const suggestion=typeof answer.suggestedMeaning==='string'&&answer.suggestedMeaning.length<=120?answer.suggestedMeaning.replace(/\s+/g,' ').trim():'';
+      state.suggestion=state.sourceSentence&&suggestion&&suggestion.toLowerCase()!==state.input.meaning.replace(/\s+/g,' ').toLowerCase()?suggestion:'';
+      easyExplanationCache.set(state.key,{text:state.text,suggestion:state.suggestion,snapshot:state.snapshot});
       if(easyExplanationCache.size>16)easyExplanationCache.delete(easyExplanationCache.keys().next().value);
     }else state.error=easyExplanationError(answer);
   }catch{
@@ -147,3 +158,44 @@ async function requestEasyExplanation(){
 document.getElementById('p-easy-button').addEventListener('click',()=>void requestEasyExplanation());
 
 document.getElementById('p-easy-retry').addEventListener('click',()=>void requestEasyExplanation());
+
+function easySameExample(state,item){
+  const clean=value=>String(value||'').replace(/\s+/g,' ').trim();
+  return !!item&&!!clean(item.example)&&clean(item.example)===clean(state.sourceSentence)&&(!item.book||item.book===state.book);
+}
+function applyEasyMeaning(){
+  const state=easyExplanationState,current=easyExplanationInput();
+  if(!state?.suggestion||state.applied||!current||current.key!==state.key||current.snapshot!==state.snapshot)return;
+  const item=words[state.id];if(!item)return;
+  const root=item.root||state.id,meaning=state.suggestion;
+  let id=state.id;
+  if(easySameExample(state,item)){
+    // An explicit correction follows manual editing: preserve this card's identity,
+    // stars and example; its changed meaning invalidates stale study grades.
+    item.ko=meaning;item.koEdited=true;item.ai={...item.ai,ko:meaning,done:true};
+    item.up=Math.max(Date.now(),(item.up||0)+1);
+  }else{
+    // Context B cannot rewrite the meaning/example pair from context A.
+    id=createMeaning(root,meaning,{example:state.sourceSentence,book:state.book,ai:{ko:meaning,done:true}});
+    if(!id)return;
+  }
+  // An explicitly accepted sense owns this occurrence even if a previous AI
+  // lookup associated the same occurrence with another meaning.
+  const hash='v2:'+sentenceHash(state.sourceSentence)+':'+state.clickedIndex;
+  let reassigned=false;
+  for(const [otherId,other] of Object.entries(words)){
+    if(otherId===id||(otherId!==root&&other.root!==root)||!other.contextHashes?.includes(hash))continue;
+    other.contextHashes=other.contextHashes.filter(value=>value!==hash);
+    other.up=Math.max(Date.now(),(other.up||0)+1);reassigned=true;
+  }
+  rememberSenseContext(id,state.sourceSentence,state.clickedIndex);
+  words[id].up=Math.max(Date.now(),(words[id].up||0)+1);
+  saveWords(reassigned?undefined:id);queueSync(true);selKey=id;contextView=null;
+  state.applied=true;state.suggestion='';
+  const next=easyExplanationInput();
+  easyExplanationCache.delete(state.key);
+  if(next){easyExplanationCache.set(next.key,{text:state.text,suggestion:'',applied:true,snapshot:next.snapshot});easyExplanationState={...state,...next};}
+  refreshReaderWords();renderWordLookup();
+  if(wordDetailAnchored)requestAnimationFrame(placeWordDetail);
+}
+document.getElementById('p-easy-apply').addEventListener('click',applyEasyMeaning);

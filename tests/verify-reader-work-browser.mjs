@@ -158,10 +158,15 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.ok(await page.evaluate(()=>pdfNavigation.track.querySelectorAll('iframe').length<=Math.ceil(pdfNavigation.strip.clientHeight/pdfNavigation.cellHeight)+3),'Only nearby page previews exist');
   for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);await page.waitForTimeout(240);
-   const previewSize=await page.locator('.epub-thumbnail-paper').first().evaluate(paper=>{
+   // ResizeObserver replaces the virtualized cells during reflow. Resolve and
+   // measure the current paper in one browser turn, rather than measuring a
+   // detached locator handle after an arbitrary 240ms delay on a busy runner.
+   const previewHandle=await page.waitForFunction(()=>{
+     const paper=document.querySelector('.epub-thumbnail-paper');if(!paper)return false;
      const r=paper.getBoundingClientRect(),strip=document.getElementById('pdf-thumbnail-strip').getBoundingClientRect();
-     return {width:r.width,height:r.height,strip:strip.width};
-   });
+     return r.width>0&&r.height>0&&strip.width>0?{width:r.width,height:r.height,strip:strip.width}:false;
+   },null,{timeout:10000});
+   const previewSize=await previewHandle.jsonValue();await previewHandle.dispose();
    assert.ok(Math.abs(previewSize.height/previewSize.width-Math.SQRT2)<.02&&previewSize.width/previewSize.strip>.9,`EPUB page proportions at ${width} dark=${dark}: ${JSON.stringify(previewSize)}`);
    assert.ok(await page.evaluate(()=>{
      const thumb=document.getElementById('pdf-navigation-scrollbar');if(thumb.hidden)return true;

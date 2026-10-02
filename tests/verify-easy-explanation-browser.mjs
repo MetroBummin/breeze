@@ -16,6 +16,7 @@ const url=`http://127.0.0.1:${server.address().port}/`,engine=process.env.BROWSE
 const browser=await engine.launch();
 try{
   const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'}),errors=[];
+  page.setDefaultTimeout(15000);
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
@@ -41,7 +42,7 @@ try{
   await page.locator('#p-easy-button').click();
   assert.equal(await page.locator('#p-easy-button').isVisible(),false);
   assert.equal(await page.locator('#p-easy-card').isVisible(),true);
-  await page.evaluate(()=>easyResolve({explanation:'물건과 서비스 가격이 전반적으로 오르는 현상이에요. 같은 돈으로 살 수 있는 양이 줄어든다는 뜻이에요.',left:40}));
+  await page.evaluate(()=>easyResolve({explanation:'물건과 서비스 가격이 전반적으로 오르는 현상이에요. 같은 돈으로 살 수 있는 양이 줄어든다는 뜻이에요.',suggestedMeaning:'물가 상승',left:40}));
   await page.waitForFunction(()=>document.getElementById('p-easy-text').textContent.includes('같은 돈'));
   assert.equal(await page.evaluate(()=>easyCalls.length),1);
   assert.deepEqual(await page.evaluate(()=>({before:easyCalls[0].before,after:easyCalls[0].after})),{before:['Prices rose last year.','Wages stayed the same.'],after:['The bank changed interest rates.','Families spent less.']});
@@ -71,10 +72,33 @@ try{
   await reopen(0);
   assert.equal(await page.locator('#p-easy-card').isVisible(),false,'Returning after a context change does not resurrect the old answer');
   assert.equal(await page.evaluate(()=>easyCalls.length),1,'Reopening never auto-requests an explanation');
+  // B's accepted suggestion preserves A, persists its own pair, and survives reopening.
+  await reopen(0);await page.locator('#p-easy-button').click();
+  await page.evaluate(()=>easyResolve({explanation:'문맥에서 가격이 전반적으로 오르는 현상을 가리켜요.',suggestedMeaning:'물가 상승'}));
+  await page.locator('#p-easy-apply').click();
+  const accepted=await page.evaluate(()=>({id:selKey,item:words[selKey],original:words.inflation,calls:easyCalls.length}));
+  assert.notEqual(accepted.id,'inflation');assert.equal(accepted.item.ko,'물가 상승');
+  assert.equal(accepted.item.example,'Inflation makes everyday goods more expensive.');
+  assert.equal(accepted.original.ko,'인플레이션');assert.equal(accepted.original.example,'Inflation was low last year.');
+  assert.equal(await page.locator('#p-easy-apply').isVisible(),false);
+  await reopen(0);assert.equal(await page.evaluate(()=>selKey),accepted.id);
+  assert.equal(await page.locator('#p-easy-card').isVisible(),true);
+  assert.equal(await page.evaluate(()=>easyCalls.length),accepted.calls);
+  // Same-example correction keeps the saved identity, stars and example.
+  await page.evaluate(()=>{cancelEasyExplanation();easyExplanationCache.clear();renderEasyExplanation();});
+  await page.locator('#p-easy-button').click();
+  await page.evaluate(()=>easyResolve({explanation:'이 문장에서는 전반적인 물가의 상승을 이야기해요.',suggestedMeaning:'전반적인 물가 상승'}));
+  await page.locator('#p-easy-apply').click();
+  assert.equal(await page.evaluate(()=>selKey),accepted.id);
+  assert.equal(await page.evaluate(()=>words[selKey].ko),'전반적인 물가 상승');
+  assert.equal(await page.evaluate(()=>words[selKey].status),accepted.item.status);
+  assert.equal(await page.evaluate(()=>words[selKey].example),accepted.item.example);
+  assert.equal(await page.evaluate(()=>Object.values(localStorage).some(x=>x.includes('전반적인 물가 상승'))),true);
+  assert.equal(await page.evaluate(()=>Object.values(localStorage).some(x=>x.includes('이 문장에서는 전반적인 물가의'))),false);
   await page.evaluate(()=>{closePanel();show('vocab');selectWord('inflation',null);});
   assert.equal(await page.locator('#p-ex-fold').evaluate(n=>n.hidden),false);
   assert.equal(await page.locator('#p-ex').textContent(),'Inflation was low last year.');
-  assert.equal(await page.evaluate(()=>easyCalls.length),1);
+  assert.equal(await page.evaluate(()=>easyCalls.length),3);
   assert.deepEqual(errors,[]);
   console.log(`${engine.name()}: explicit explanation, unchanged A example, no durable answer, responsive light/dark passed`);
 }finally{await browser.close();await new Promise(done=>server.close(done));}

@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=22832259">
   <link rel="stylesheet" href="styles/reader.css?v=7b53053d">
-  <link rel="stylesheet" href="styles/dictionary.css?v=7ec6ca98">
+  <link rel="stylesheet" href="styles/dictionary.css?v=2347c5ac">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=9d7d614e">
@@ -102,7 +102,7 @@
   <script defer src="scripts/dictionary/sentence.js?v=97a7f38a"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=27737332"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=6e8b28de"></script>
-  <script defer src="scripts/dictionary/easy-explanation.js?v=3fe1cf73"></script>
+  <script defer src="scripts/dictionary/easy-explanation.js?v=84bf9f35"></script>
   <script defer src="scripts/core/vocabulary-review.js?v=15eab363"></script>
   <script defer src="scripts/ui/vocabulary-review.js?v=9b02f1c4"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
@@ -385,6 +385,10 @@
         <div id="p-easy-card" hidden>
           <p id="p-easy-text" role="status" aria-live="polite" tabindex="-1"></p>
           <button id="p-easy-retry" type="button" hidden>다시 시도</button>
+          <div id="p-easy-suggestion" hidden>
+            <p id="p-easy-proposal" role="status"></p>
+            <button id="p-easy-apply" type="button">이 뜻으로 바꾸기</button>
+          </div>
           <p class="p-easy-note">AI 설명 · 이 설명은 저장하지 않아요</p>
         </div>
       </section>
