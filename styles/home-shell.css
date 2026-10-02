@@ -135,8 +135,7 @@ html:is(.home-resuming,.home-returning)::view-transition-image-pair(reader-contr
 /* One daily study maximum lives in existing app settings. */
 #review-limit-form input{box-sizing:border-box;flex:none;width:80px;min-height:44px;padding:8px;border:1px solid var(--settings-line);border-radius:10px;background:var(--settings-sheet-surface);color:var(--settings-ink);font:400 16px/1.5 var(--ui);}
 #settings-modal #review-limit-form .set-row{display:flex;justify-content:space-between;}
-#settings-modal #review-limit-form .set-row:first-child{border-radius:15px 15px 0 0;}
-#settings-modal #review-limit-form .set-row:nth-child(2){border-radius:0 0 15px 15px;}
+#settings-modal #review-limit-form .set-row{border-radius:15px;}
 #review-limit-form .set-label>span{display:block;}
 #review-limit-form .settings-sync-note{margin:8px 0 16px;white-space:pre-line;}
 #review-limit-error{font:400 12px/1.6 var(--ui);color:var(--danger);}
