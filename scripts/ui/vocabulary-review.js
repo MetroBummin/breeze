@@ -36,7 +36,7 @@ function refreshVocabularyReviewEntry(){
     button.textContent=scope.custom?`선택 복습 · ${scope.keys.length}`:view.status==='active'?`복습 이어 하기 · ${view.total-view.completed}`:`오늘 복습 · ${Math.min(5,view.eligibleCount)}`;
     button.disabled=scope.custom&&!scope.keys.length;
     document.getElementById('review-use-daily').hidden=!scope.custom;
-    document.getElementById('review-plan').textContent=scope.custom?'선택한 범위의 뜻을 복습해요.':view.status==='active'?'지난 복습을 이어서 할 수 있어요.':'기한이 된 표현부터, 한 번에 최대 5개';
+    document.getElementById('wordbook-review-entry').hidden=!scope.custom;
   }catch{/* Keep entry usable; show storage errors on the study page. */}
 }
 function renderVocabularySelection(){
@@ -132,6 +132,16 @@ function renderVocabularyReview(view,focus=true){
   document.getElementById('review-card').hidden=!view.card;
   document.getElementById('review-finish').hidden=!!view.card;
   document.getElementById('review-progress').textContent=view.card?`${view.completed+1} / ${view.total}`:'';
+  const graded=(view.remembered||0)+(view.uncertain||0)+(view.confused||0);
+  const complete=view.status==='complete'&&graded>0;
+  vocabularyReviewPage.classList.toggle('complete',complete);
+  document.getElementById('review-result').hidden=!!view.card;
+  document.getElementById('review-celebration').hidden=!complete;
+  document.getElementById('review-results').hidden=!complete;
+  document.getElementById('review-finish').textContent=complete?'완료':'단어장으로 돌아가기';
+  document.getElementById('review-result-known').textContent=String(view.remembered||0);
+  document.getElementById('review-result-uncertain').textContent=String(view.uncertain||0);
+  document.getElementById('review-result-unknown').textContent=String(view.confused||0);
   const status=document.getElementById('review-status');status.textContent='';
   if(view.card){
     document.getElementById('review-expression').textContent=view.card.word;
@@ -144,7 +154,8 @@ function renderVocabularyReview(view,focus=true){
     highlightReviewSentence(view.card);
     if(focus)document.getElementById('review-reveal').focus();
   }else{
-    if(view.status==='complete')status.textContent=`이번 복습을 마쳤어요.\n알아요 ${view.remembered}개 · 애매해요 ${view.uncertain}개 · 모르겠어요 ${view.confused}개\n각 표현의 다음 복습 시간을 정했어요.`;
+    if(complete)status.textContent=`${graded}개 표현을 복습했어요.`;
+    else if(view.status==='complete')status.textContent='복습할 표현이 더 없어요.';
     else if(view.status==='empty')status.textContent='아직 복습할 표현이 없어요. 읽다가 단어나 표현의 뜻을 저장해 보세요.';
     else if(view.status==='waiting')status.textContent='지금 복습할 표현은 모두 마쳤어요.'+(view.nextDueAt?`\n다음 복습: ${new Date(view.nextDueAt).toLocaleString('ko-KR',{month:'long',day:'numeric',hour:'numeric',minute:'2-digit'})}`:'');
     else status.textContent='저장한 표현으로 짧게 복습해 보세요.';
@@ -155,7 +166,6 @@ function renderVocabularyReview(view,focus=true){
 function resumeVocabularyReview(){
   try{
     const view=BreezeReview.view(readVocabularyReview(),words,Date.now());
-    document.getElementById('review-title').textContent=view.state.session?.practice?'선택한 뜻 복습':'오늘의 복습';
     renderVocabularyReview(view);
   }catch{renderVocabularyReview({card:null,status:'idle'});vocabularyReviewError();}
 }

@@ -89,3 +89,16 @@ step down. Known: 1, 3, 7, 14, 30 days, capped. No grading before reveal.
 The optional uncertain counter defaults to zero for older v1 sessions; old
 queues/progress remain readable. Flashcard behavior borrows familiar recall
 patterns while retaining Breeze type, surface and muted color tokens.
+
+## Card-first presentation and completion
+
+Memory omits scheduling/resume explanation copy; the filtered-scope escape to
+Today appears only when needed. Study has an icon-only 44px back target and a
+viewport-filling card, with progress at the card's top right. Page titles and
+resume footnotes are omitted. The accessible main/back labels remain.
+
+A completed session with actual grades gets a brief completion mark, heading,
+reviewed-expression count and the three recorded self-assessment counts. This
+is a completion moment, not an accuracy or mastery claim. Empty/waiting states
+and sessions exhausted only by deleted cards do not celebrate unperformed work.
+The Done button returns to Memory. Completion motion respects reduced motion.

@@ -326,7 +326,9 @@ try{
     await page.locator('#review-reveal').click();assert.equal(await page.locator('#review-meaning').innerText(),'강둑');
     await closeReview(page);
     await page.locator('#review-use-daily').click();
-    assert.equal(await page.locator('#review-title').innerText(),'오늘의 복습');
+    assert.equal(await page.evaluate(()=>activeAppView()),'study');
+    assert.equal(await page.locator('#review-title').count(),0);
+    assert.equal(await page.locator('#review-card #review-progress').count(),1);
   });
 
   await scenario('flashcard front/back and three spaced grades',uniqueWords(1),async page=>{
@@ -342,6 +344,9 @@ try{
     await page.locator('#review-uncertain').click();await assertDone(page);
     const stored=JSON.parse(await reviewState(page));
     assert.equal(stored.session.uncertain,1);
+    assert.equal(await page.locator('#review-celebration').isVisible(),true);
+    assert.equal(await page.locator('#review-result-uncertain').textContent(),'1');
+    assert.equal(await page.locator('#review-result-known').textContent(),'0');
     assert.equal(Object.values(stored.progress)[0].dueAt,NOW+3600000);
     await closeReview(page);await page.clock.setFixedTime(NOW+3600000-1);await openReview(page);await assertDone(page);
     await closeReview(page);await page.clock.setFixedTime(NOW+3600000);await openReview(page);await assertHiddenAnswer(page);
@@ -373,6 +378,24 @@ try{
       await page.screenshot({path:`${out}/${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`});
       await closeReview(page,true);
     }
+  });
+  await scenario('completion fits all screen sizes and returns to Memory',uniqueWords(1),async page=>{
+    assert.equal(await page.locator('#wordbook-review-entry').isVisible(),false);
+    await openReview(page);
+    assert.equal((await page.locator('#review-close').innerText()).trim(),'');
+    await reveal(page);await page.locator('#review-remember').click();
+    assert.equal(await page.locator('#review-result-known').textContent(),'1');
+    for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390],[320,360]])for(const dark of [false,true]){
+      await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
+      assert.equal(await page.locator('#review-celebration').isVisible(),true);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await page.locator('#review-finish').scrollIntoViewIfNeeded();
+      const box=await page.locator('#review-finish').boundingBox();
+      assert.ok(box.height>=44&&box.x>=0&&box.x+box.width<=width&&box.y>=0&&box.y+box.height<=height+1);
+      await page.locator('#review-close').scrollIntoViewIfNeeded();
+      await page.screenshot({path:`${out}/${engine.name()}-complete-${width}x${height}-${dark?'dark':'light'}.png`});
+    }
+    await page.locator('#review-finish').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
   });
   if(failures.length)throw new AggregateError(failures,`${engine.name()}: ${failures.length} review scenarios failed`);
   console.log(`Vocabulary review browser regression passed (${engine.name()}); screenshots: ${out}`);

@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=74247169">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=8f2e16bb">
+  <link rel="stylesheet" href="styles/wordbook.css?v=9d7d614e">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=57b3651b">
   <link rel="stylesheet" href="styles/onboarding.css?v=e80ba10b">
@@ -102,7 +102,7 @@
   <script defer src="scripts/dictionary/lookup-feedback.js?v=27737332"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=3c5aafe5"></script>
   <script defer src="scripts/core/vocabulary-review.js?v=15eab363"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=8a2f566e"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=9b02f1c4"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -396,7 +396,7 @@
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
   <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Breeze Memory</h1><button id="wordbook-add" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></header>
-  <div class="wordbook-review-entry"><span id="review-plan">기한이 된 표현부터, 한 번에 최대 5개</span><button id="review-use-daily" type="button" hidden onclick="openVocabularyReview(true)">오늘 추천으로 복습</button></div>
+  <div id="wordbook-review-entry" class="wordbook-review-entry" hidden><button id="review-use-daily" type="button" hidden onclick="openVocabularyReview(true)">오늘 추천으로 복습</button></div>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">
     <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><div id="vbook-options"></div></details></div>
@@ -412,11 +412,10 @@
     <button id="btn-export" class="control-glass control-circle" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button>
   </nav></div>
 </div>
-<section id="v-study" class="view"><main id="vocabulary-review-page" aria-labelledby="review-title">
-  <button id="review-close" type="button" aria-label="단어장으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span>Memory</span></button>
-  <h2 id="review-title">오늘의 복습</h2>
-  <p id="review-progress" aria-live="polite"></p>
+<section id="v-study" class="view"><main id="vocabulary-review-page" aria-label="단어 학습">
+  <button id="review-close" type="button" aria-label="단어장으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
   <div id="review-card">
+    <p id="review-progress" aria-live="polite"></p>
     <div id="review-flip" role="button" tabindex="0" aria-label="카드를 뒤집어 뜻 보기">
       <div id="review-front" class="review-face">
         <p id="review-source"></p>
@@ -437,10 +436,25 @@
       <button id="review-remember" type="button"><span>알아요</span><small id="review-remember-interval">1일</small></button>
     </div>
   </div>
-  <p id="review-status" role="status" tabindex="-1"></p>
+  <section id="review-result" hidden>
+    <div id="review-celebration" hidden>
+      <svg class="review-complete-mark" viewBox="0 0 160 160" fill="none" aria-hidden="true">
+        <circle class="review-complete-halo" cx="80" cy="80" r="54"/>
+        <circle class="review-complete-ring" cx="80" cy="80" r="40"/>
+        <path class="review-complete-check" d="m61 81 13 13 27-29"/>
+        <path class="review-complete-sparks" d="M80 7v9M80 144v9M7 80h9M144 80h9M28 28l6 6M126 126l6 6M28 132l6-6M126 34l6-6"/>
+      </svg>
+      <h2>학습 완료!</h2>
+    </div>
+    <p id="review-status" role="status" tabindex="-1"></p>
+    <dl id="review-results" hidden>
+      <div><dt>알아요</dt><dd id="review-result-known">0</dd></div>
+      <div><dt>애매해요</dt><dd id="review-result-uncertain">0</dd></div>
+      <div><dt>모르겠어요</dt><dd id="review-result-unknown">0</dd></div>
+    </dl>
+  </section>
   <button id="review-finish" type="button" hidden>단어장으로 돌아가기</button>
   <p id="review-error" role="alert" hidden></p>
-  <p class="review-local-note">학습 중 나가도 이어서 할 수 있어요.</p>
 </main></section>
 <dialog id="wordbook-add-dialog" class="task-surface" aria-labelledby="wordbook-add-title"><form id="wordbook-add-form">
   <button class="task-close" type="button" aria-label="단어 추가 닫기" onclick="document.getElementById('wordbook-add-dialog').close()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
