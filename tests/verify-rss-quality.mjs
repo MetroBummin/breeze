@@ -176,3 +176,43 @@ test('retention report distinguishes rejection, unresolved and missing measureme
   assert.equal(result.quality.falseRejections,0);assert.equal(result.quality.positiveUnresolved,1);
   assert.equal(result.availability.unmeasured,1);assert.equal(result.approvedDiversity.lengths.long,1);assert.equal(result.improvementMeasured,false);
 });
+test('successful Medium refresh cannot restore revoked or changed approvals when local resolution fails',async()=>{
+  const source=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8');
+  const make=(slug,key)=>({url:`https://medium.com/@writer/${slug}`,title:slug,feedUrl:FEEDS[9].url,photo:'https://example.com/photo.jpg',bodyProvided:true,contentHtml:'previous public body',
+    quality:{status:'approved',version:VERSION,key,checkedAt:Date.now()}});
+  const revoked=make('revoked','old-key'),retained=make('retained','same-key'),changed=make('changed','old-body');
+  for(const throws of [false,true]){
+    const fresh=[{...retained,bodyProvided:false,contentHtml:''},make('changed','new-body'),make('replacement','new-key')];
+    const ctx=vm.createContext({URL,AbortSignal,Date,setTimeout:()=>1,clearTimeout,Map,Set,WeakMap,
+      previous:[revoked,retained,changed],fresh,throws,feed:FEEDS[9],articleUrlKey:canonical});
+    vm.runInContext(source+`\nrssSources=()=>[feed];rssCands=[previous];rssQualityFeed=async()=>({entries:fresh,pending:false});
+      rssAlreadySaved=()=>false;rssPreparePublicArticles=async()=>{if(throws)throw Error('body unavailable');return [];};`,ctx);
+    const groups=await ctx.loadRss(true);
+    assert.deepEqual(Array.from(groups[0],entry=>entry.url),[retained.url]);
+    assert.equal(groups[0][0].contentHtml,'previous public body');
+  }
+});
+test('Medium transport outage preserves prior approvals, but successful refresh excludes saved fallback',async()=>{
+  const source=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8');
+  const prior={url:'https://medium.com/@writer/prior',quality:{status:'approved',version:VERSION,key:'same',checkedAt:Date.now()}};
+  const ctx=vm.createContext({URL,AbortSignal,Date,setTimeout:()=>1,clearTimeout,Map,Set,WeakMap,prior,feed:FEEDS[9],articleUrlKey:canonical});
+  vm.runInContext(source+`\nrssSources=()=>[feed];rssCands=[[prior]];rssQualityFeed=async()=>{throw Error('offline');};`,ctx);
+  assert.equal((await ctx.loadRss(true))[0][0].url,prior.url);
+  vm.runInContext(`rssQualityFeed=async()=>({entries:[prior],pending:false});rssAlreadySaved=()=>true;rssPreparePublicArticles=async()=>[];`,ctx);
+  assert.equal((await ctx.loadRss(true))[0].length,0);
+});
+test('unusable feed photo falls back to a public article cover; no usable cover still withholds',async()=>{
+  for(const [photo,cover,expected] of [
+    ['https://example.com/logo.jpg','https://example.com/article-photo.jpg','https://example.com/article-photo.jpg'],
+    ['https://example.com/icon.png','https://example.com/article-photo.jpg','https://example.com/article-photo.jpg'],
+    ['https://example.com/feed-photo.jpg','https://example.com/article-photo.jpg','https://example.com/feed-photo.jpg'],
+    ['https://example.com/logo.jpg','https://example.com/avatar.jpg',''],
+    ['https://example.com/logo.jpg','http://127.0.0.1/private.jpg','']]){
+    const store=memoryStore();
+    await service(store,{fetchDoc:async()=>({html:xml(['Story']).replace('https://example.com/photo.jpg',photo)}),
+      load:async entry=>({url:entry.url,article:{...article,cover}})}).refresh(0);
+    const entries=store.feeds.get(0).entries;
+    assert.equal(entries.length,expected?1:0,`${photo} -> ${cover}`);
+    if(expected)assert.equal(entries[0].photo,expected);
+  }
+});

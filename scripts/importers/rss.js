@@ -267,8 +267,17 @@ async function loadRss(force){
       const ordered=result.entries.map((_,step)=>result.entries[(start+step)%result.entries.length]);
       // Resolve only approved Medium stories, skipping already saved entries first.
       if(rssMediumSource(feed) && ordered.length){
+        // A successful inventory response is authoritative even if later body
+        // resolution fails. Retain prepared bodies only for the same approval.
+        const fresh=new Map(ordered.map(entry=>[articleUrlKey(entry.url),entry]));
+        const retained=rssCands[index].flatMap(old=>{
+          const current=fresh.get(articleUrlKey(old.url));
+          return current && current.quality.key===old.quality.key && !rssAlreadySaved(current)
+            ? [{...old,...current,bodyProvided:old.bodyProvided,contentHtml:old.contentHtml}] : [];
+        });
+        publish(retained);
         const ready=await rssPreparePublicArticles(ordered.filter(entry=>!rssAlreadySaved(entry)),()=>{});
-        publish(ready.length ? ready : rssCands[index]);
+        publish(ready.length ? ready : retained);
       }else publish(ordered);
     }catch{pending=true;/* Retain last-good approved cards through service outages. */}
     return rssCands[index];

@@ -51,7 +51,7 @@ articles; their real impact needs this run before rollout approval.
 
 ## Offline evidence
 
-- 33 quality tests: 16 original synthetic/paraphrased audit scenarios, strict
+- 36 quality tests: 16 original synthetic/paraphrased audit scenarios, strict
   provider output validation, injection boundaries, size/config/failure handling,
   cache identity, public extraction, Medium owner feeds, cross-reader cache reuse,
   coalescing, advancement past rejected candidates, outage retention, changed-body
@@ -75,3 +75,12 @@ articles; their real impact needs this run before rollout approval.
 Browser screenshots are local `/tmp/breeze-rss-quality-proof/`; they contain only
 synthetic card metadata. Live screenshot comparison/106-article API results are
 not present and must not be inferred from these fixtures.
+
+## Draft review follow-up
+
+Reproduced and fixed two inventory defects: a successful Medium inventory response
+now revokes absent/changed approvals before local body resolution, and fallback
+excludes saved articles. Transport outages still retain prior approvals. Cover
+selection now tries a usable public extracted cover when the feed photo is a
+logo/icon or otherwise unusable, while preserving feed-photo preference and the
+cover requirement. Three regression tests failed before the fixes and pass after.

@@ -8,8 +8,15 @@ export function approvedInventory(entries,now=Date.now()) {
 }
 // Public results carry only server-selected metadata; never article bodies, user IDs,
 // provider answers, private evidence, credentials, or client-supplied verdicts.
+function preferredCover(...candidates) {
+  for(const candidate of candidates){
+    if(typeof candidate!=='string' || !candidate || /(logo|icon|avatar|sprite|pixel|placeholder)/i.test(candidate))continue;
+    try{return canonical(candidate);}catch{/* Try the next public cover candidate. */}
+  }
+  return '';
+}
 function publicEntry(entry,article,url,key,now) {
-  return {url:entry.url,readUrl:entry.readUrl || '',title:entry.title,photo:entry.photo || article.cover,
+  return {url:entry.url,readUrl:entry.readUrl || '',title:entry.title,photo:preferredCover(entry.photo,article.cover),
     source:entry.source,category:entry.category,feedUrl:entry.feedUrl,feedSourceUrl:entry.feedUrl,
     author:entry.author,publishedAt:entry.publishedAt,summary:'',bodyProvided:false,contentHtml:'',kind:'',
     quality:{status:'approved',version:VERSION,key,checkedAt:now,resolvedUrl:url}};
@@ -52,7 +59,7 @@ export function createQualityService({store,key,fetchDoc=fetchDocument,load=load
             }
             if(verdict?.status==='approved' && verdict.version===VERSION) {
               const item=publicEntry(entry,loaded.article,loaded.url,hash,now());
-              if(item.photo && !/(logo|icon|avatar|sprite|pixel|placeholder)/i.test(item.photo)){remove();entries.unshift(item);}
+              if(item.photo){remove();entries.unshift(item);}
             } else if(verdict || evaluation.token)remove();
           } catch(error) {
             // Preserve last-good inventory on transport trouble. Deterministic
