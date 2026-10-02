@@ -239,11 +239,13 @@ const BreezeReview = (() => {
     state.session={id:JSON.stringify([at,state.sequence]),startedAt:at,
       queue:chosen.map(card=>({key:card.key,identity:card.identity})),index:0,remembered:0,confused:0,uncertain:0,easy:0,practice,journey:false,extraDay:extra?dayKey(at):'',batchStart:0,batchEnd:chosen.length};
   }
-  function start(raw,words,now,extra=false){
+  function start(raw,words,now,extra=false,capacity=null){
     const state=normalize(raw),available=cards(words),at=nowValue(now);reconcile(state,available);
+    const batchSize=capacity??state.settings.batchSize;
     if(activate(state,saved=>!saved.practice)){
+      if(capacity!==null)state.session.batchEnd=state.session.queue.length;
       if(state.session.index>=state.session.batchEnd){const saved=state.session;saved.batchStart=saved.index;
-        saved.batchEnd=Math.min(saved.queue.length,saved.index+state.settings.batchSize);saved.remembered=0;saved.confused=0;saved.uncertain=0;saved.easy=0;}
+        saved.batchEnd=Math.min(saved.queue.length,saved.index+batchSize);saved.remembered=0;saved.confused=0;saved.uncertain=0;saved.easy=0;}
       if(extra)state.session.extraDay=dayKey(at);
       // A resumed new-card queue must not hide relearning or reviews that became
       // due while away. Park it intact and serve higher-priority work first.
@@ -252,18 +254,18 @@ const BreezeReview = (() => {
       const ready=eligible(state,available,at,extra);
       const urgent=ready.filter(card=>!pending.has(card.key)&&(priority[kind(state,card)]<priority[kind(state,current)]
         ||!allowed(state,current,at,saved.extraDay===dayKey(at))));
-      if(urgent.length){state.suspended.unshift(saved);state.session=null;createSession(state,urgent.slice(0,state.settings.batchSize),at,false,extra);}
+      if(urgent.length){state.suspended.unshift(saved);state.session=null;createSession(state,urgent.slice(0,batchSize),at,false,extra);}
       return snapshot(state,available,at);
     }
-    createSession(state,eligible(state,available,at,extra).slice(0,state.settings.batchSize),at,false,extra);
+    createSession(state,eligible(state,available,at,extra).slice(0,batchSize),at,false,extra);
     return snapshot(state,available,at);
   }
   function startJourney(raw,words,now,extra=false){
     const state=normalize(raw),available=cards(words),at=nowValue(now);
     reconcile(state,available);ensurePlan(state,available,at).plan.pendingStage=0;
-    state.settings.batchSize=Math.min(10,state.settings.batchSize);
-    const result=start(state,words,at,extra),saved=result.state.session;
-    if(saved&&!saved.practice){saved.journey=true;saved.batchEnd=Math.min(saved.batchEnd,saved.index+10);}
+    // The daily goal owns the five stopping points, not a second batch limit.
+    const result=start(state,words,at,extra,available.length),saved=result.state.session;
+    if(saved&&!saved.practice){saved.journey=true;saved.batchEnd=saved.queue.length;}
     return snapshot(result.state,available,at);
   }
   function startSelection(raw,words,keys,now,batchSize){
@@ -280,6 +282,7 @@ const BreezeReview = (() => {
       saved.batchEnd=Math.min(saved.queue.length,saved.index+(count(batchSize)&&batchSize>0?batchSize:state.settings.batchSize));
       saved.remembered=0;saved.confused=0;saved.uncertain=0;saved.easy=0;
     }
+    if(batchSize===undefined)state.session.batchEnd=state.session.queue.length;
     return snapshot(state,available,at);
   }
   function configure(raw,values){const state=normalize(raw);state.settings=settings({...state.settings,...values});return state;}
@@ -308,6 +311,10 @@ const BreezeReview = (() => {
     state.daily[dayKey(at)]=used;
     state.history.push({id:token,at,identity:card.identity,kind:type,outcome,...(eventSchedule?{schedule:eventSchedule}:{})});
     state.session.index++;state.session[outcome]++;
+    // Bridge legacy short queues and urgent work without an extra completion screen.
+    if(state.session.journey&&!used.plan?.pendingStage&&state.session.index>=state.session.batchEnd
+      &&eligible(state,available,at,state.session.extraDay===dayKey(at)).length)
+      return {...startJourney(state,words,at,state.session.extraDay===dayKey(at)),accepted:true};
     return {...snapshot(state,available,at),accepted:true};
   }
   return Object.freeze({normalize,view,start,startJourney,startSelection,grade,configure});

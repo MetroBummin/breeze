@@ -556,13 +556,13 @@ test('100 cards use a tiny opening and progressively larger stages with durable 
   }
   assert.equal(view.reviewUsed,100);assert.equal(view.responses,100);
 });
-test('300-card goals retain five stages but never present more than ten responses per batch',()=>{
+test('300-card goals stop only at their five stage boundaries',()=>{
   const words=many(300);let view=review.startJourney(dueState(words,300,60),words,NOW);
-  assert.equal(view.journey.target,300);assert.equal(view.total,10);
+  assert.equal(view.journey.target,300);assert.equal(view.total,300);
   const milestones=[];
   for(let i=1;i<=300;i++){
+    if(![1,16,46,106,196].includes(i))assert.ok(view.card,`No batch stop before answer ${i}`);
     if(!view.card)view=review.startJourney(view.state,words,NOW);
-    assert.ok(view.total<=10);
     view=remembered(view,words);
     if(view.journey.milestone)milestones.push([i,view.journey.milestone]);
   }
@@ -624,7 +624,7 @@ test('goals remain stable on added cards or increased limits, and cap reductions
   view=review.startJourney(review.configure(view.state,{reviewLimit:300}),words,NOW);
   assert.equal(view.journey.target,60);
   assert.equal(Object.keys(view.state.progress).length,100);
-  assert.equal(refs.length,5);
+  assert.equal(refs.length,100);
   const tomorrow=review.startJourney(view.state,words,NOW+DAY);
   assert.equal(tomorrow.journey.done,0);assert.ok(tomorrow.journey.target>0);
 });
@@ -710,3 +710,16 @@ test('elapsed time uses the actual answer timestamp and memory survives serializ
   assert.deepEqual(plain(done.state.progress.a.fsrs),plain(oracle.next(original,new Date(answeredAt),3).card));
   assert.notDeepEqual(plain(done.state.progress.a.fsrs),plain(oracle.next(original,new Date(at),3).card));
 });
+
+ test('legacy five-card queues bridge directly into the rest of a stage',()=>{
+  const words=many(100);let view=review.startJourney(dueState(words),words,NOW);
+  view=answerJourney(view,words,5);
+  view=review.startJourney(view.state,words,NOW);
+  view.state.session.queue=view.state.session.queue.slice(0,10);
+  view.state.session.batchEnd=10;
+  for(let i=6;i<=15;i++){
+    assert.ok(view.card,`stage two has no artificial stop at ${i}`);
+    view=review.grade(view.state,words,view.token,'remembered',NOW);
+  }
+  assert.equal(view.journey.milestone,2);assert.equal(view.journey.done,15);
+ });

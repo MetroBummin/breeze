@@ -3,7 +3,10 @@
 2026-10-02. Based on main `d3d97ea` after #75 merged. This is a clean-base
 replacement proposal for #74, not a dependency on or modification of that PR.
 Do not merge #74's active gate on top of this implementation. #75's FSRS work,
-release version and existing evaluation artifacts remain unchanged.
+release version and existing evaluation artifacts remain unchanged. Later main
+`480ffe0` (#77) is integrated only to keep this branch conflict-free; no unrelated
+study UI changes are introduced relative to main. Draft #76 diagnostics were
+inspected without changing its branch or immutable evaluation results.
 
 ## Default and ownership
 

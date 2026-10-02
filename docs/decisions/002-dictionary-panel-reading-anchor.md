@@ -194,3 +194,7 @@ Apply validates account, occurrence, selected item and its meaning/example/book
 snapshot; stale/deleted records cannot be overwritten. Repeated clicks are no-ops.
 Explanation prose and unaccepted proposals remain bounded transient memory only;
 accepting does not call AI or consume another quota unit.
+
+## Explanation loading (1.7 / 222)
+
+An explicit pending explanation shows three neutral text-shaped skeleton lines in the existing card, with a quiet opacity pulse and static reduced-motion fallback. Off-screen live text and aria-busy announce the request. Success, failure, retry and lookup cancellation remove the placeholder. Request ownership, cache, pricing and saved meanings are unchanged.

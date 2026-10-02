@@ -3,6 +3,11 @@
 Base: main `d3d97ea` (includes merged #75). Original #74 head inspected:
 `d35a7926ae69be5caa3a4fd53eac5a55f45c5f7d`. No changes to #74/#75 branches or PRs.
 The new PR is independent of #74 and does not include unrelated FSRS changes.
+While CI ran, #77 merged to main `480ffe0`; this branch merged that main update
+and regenerated the conflicting service-worker stamp. Study UI/release files
+match main. Draft #76 `fcb0f8f` was inspected read-only: its NASA fix, safe schema
+diagnostics and honest report boundary align with this redesign; its archived
+results remain unchanged. #76 still depends on #74, not this PR.
 Selected #74 modules and regression tests are reused with v2 policy changes;
 the schema is an offline fixture, not a pending production migration.
 

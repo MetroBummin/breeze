@@ -26,9 +26,9 @@ test('quota gate precedes provider and output is bounded, without durable answer
 });
 function client(){
   const elements=new Map();
-  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',classList:{contains:()=>false,toggle(){}},getBoundingClientRect:()=>({width:100,height:44}),focus(){},setAttribute(){},addEventListener(){}});return elements.get(id);};
+  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',classList:{contains:()=>false,toggle(){}},getBoundingClientRect:()=>({width:100,height:44}),focus(){},toggleAttribute(){},setAttribute(){},addEventListener(){}});return elements.get(id);};
   const requests=[],owner=new AbortController();
-  const sandbox={normalizeLigatures:value=>String(value),document:{getElementById:element},Map,AbortController,setTimeout,clearTimeout,navigator:{onLine:true},
+  const sandbox={normalizeLigatures:value=>String(value),document:{getElementById:element,querySelector:element},Map,AbortController,setTimeout,clearTimeout,navigator:{onLine:true},
     activeSelectedWordNode:null,curBook:null,wordLookupTargets:new Map(),selKey:'fed',words:{fed:{word:input.word,ko:input.meaning,example:input.sentence}},previewWordCard:null,sbUser:{id:'one'},
     currentContext:()=>null,wordLookupLife:1,wordLookupSignal:()=>owner.signal,wordLookupAlive:life=>life===sandbox.wordLookupLife,
     deviceId:()=> 'test-device',rememberAiLeft:()=>{},wordDetailAnchored:false,

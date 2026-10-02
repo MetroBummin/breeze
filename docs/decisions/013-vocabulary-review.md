@@ -14,7 +14,7 @@ repeated callbacks. A grade commits progress, daily counters, event history and
 queue advancement together. This is not cross-tab compare-and-swap; concurrent
 writers across tabs remain a limitation of the existing local storage contract.
 
-## Limits, batches and due work
+## Limits and due work
 
 The final UI has one **daily maximum unique-card count**, default 100, with
 50/100/200/300 presets and custom input including zero. It combines new and
@@ -32,19 +32,17 @@ Local dates follow the device timezone; this is not Anki's configurable rollover
 Only learned cards whose due time has arrived are scheduled reviews. Unlearned
 cards are not overdue. Queue priority is due relearning, due review, then new
 cards within the daily maximum. Backlog counts describe inventory, not a
-recommended daily workload. Microbatches automatically select five cards.
+recommended daily workload. Regular study follows stage boundaries without an additional batch limit.
 Reducing the limits can pause an unfinished queue, never delete or complete it.
-An already started queue stays intact. Explicit extra study bypasses daily limits for that batch and local day;
-it does not alter configured limits or authorize future batches.
+An already started queue stays intact. Explicit extra study bypasses daily limits for that session and local day;
+it does not alter configured limits or authorize future sessions.
 
 Unfinished queues resume, with answer visibility reset. On regular resumption,
 higher-priority work that became due while away is served first and the original
 queue is parked intact. Switching to another practice scope or regular study
 also parks unfinished work. New vocabulary does not silently expand a started
 scope. Missing or substantively changed references skip without being graded.
-Completion describes only the current batch, reports remaining due reviews and
-pending relearning separately, and offers continuation; the back arrow ends study. Timed relearning
-is available in the next batch or on resume; a finished batch does not auto-start.
+Completion describes the earned stage or daily goal. Pending relearning remains visible on completion; the back arrow ends study at any card. Timed relearning is served on resume or when the current queue runs out. Legacy short queues bridge directly into remaining eligible work, without a batch-complete screen.
 
 ## Five-stage daily journey
 
@@ -59,14 +57,12 @@ boundaries are 5 / 15 / 35 / 65 / 100; for 300 they are 15 / 45 / 105 / 195 / 30
 Whole-card allocation is positive and nondecreasing; goals below five use fewer
 stages with no empty achievements. Boundaries are saved with the goal. This is a
 product hypothesis about an easy start, not an empirically validated motivational
-claim. Stage percentage reflects actual distinct responses within that stage;
-the separate day counter shows actual completed cards against the full goal.
+claim. The segmented track reflects distinct responses; one stage label and day counter show progress without duplicate per-batch counts.
 
 All accepted regular answers, including failures, earn unique-card progress.
 Same-card retries count as responses, not more goal cards or additional rewards.
 Practice earns no daily journey progress. Each stage pauses on its saved
-achievement until Next Stage; the back arrow and reload preserve it. Five stages remain
-visible, while five-card microbatches keep long stages interruptible. The final
+achievement until Next Stage; the back arrow and reload preserve it. Five stages remain visible; there are no extra five- or ten-card stops. The final
 message celebrates today's goal, not mastery or completion of pending relearning.
 
 The five transparent Thunderhead PNGs from main `8d302df` map to stage numbers;
@@ -135,8 +131,7 @@ An explicit action opens regular study over all books without filters.
 Filtered/checked practice includes precisely that scope, including future-due
 cards. It is labeled “연습 · 복습 일정에 영향 없음”. Assessments are recorded as
 practice events and do not change progress, due dates or regular daily budgets.
-Large selections are split into the automatic batch size; the unprocessed selected
-queue persists through completion and reload.
+Selections run continuously; their unprocessed queue persists through exit and reload.
 All reconciliation uses the full vocabulary so filtering cannot prune progress.
 
 ## Identity, v1/v2 migration and damaged storage recovery
@@ -178,13 +173,12 @@ Starting navigates to the existing `study` page. The saved sentence and its
 highlighted target precede the answer. Tap, Enter/Space or Show Answer flips the
 card; grades remain unavailable before reveal. Browser navigation and Escape
 retain durable queues while concealing the answer. Completion celebrates only
-actual responses and says “이번 묶음 완료”, not completion of all learning.
+actual responses: stage completion, today’s goal, or “연습 완료”, never mastery.
 
 Validation and remaining limits: [2026-10-02 QA](../qa/vocabulary-review-20261002.md).
 
 Stage completion uses a large 200–260px mascot (140px in short viewports), one
-heading, today's count and four unboxed outcome counts. These classify each
-unique card by its latest regular answer today; retries do not duplicate cards.
+heading and today's count. Outcome breakdowns and inventory diagnostics are removed from the study surface; history remains intact.
 Redundant mode/percentage labels are hidden on the celebration. A single Next
 Stage CTA uses user-requested vivid blue (#008DF0) and bold white 20px text,
 matching the supplied “Add 1 item” reference. This is a scoped exception to the
@@ -217,3 +211,7 @@ Timezone changes affect the local day budget; due timestamps stay absolute.
 Known storage limits: localStorage cannot provide multi-tab compare-and-swap;
 backup or history quota failure stops advancement and requires space/retry.
 History is intentionally not silently trimmed. There is no cloud FSRS sync.
+
+## Minimal study surface (1.7 / 222)
+
+Keep the stage track, saved content and four equal-weight rating buttons with actual intervals. Remove the enclosing card box, duplicate batch counter, inventory and outcome breakdowns. A single brief pre-answer recall hint remains with the answer; errors and storage recovery stay visible when relevant. Pending learning is shown after study rather than beneath every card. Daily limits, FSRS, saved history, mascot and warm aurora are unchanged.

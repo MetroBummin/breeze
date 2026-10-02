@@ -78,6 +78,7 @@ function cancelEasyExplanation(){
   easyExplanationState=null;
   document.getElementById('p-easy-text').textContent='';
   document.getElementById('p-easy-card').hidden=true;
+  document.getElementById('p-easy-skeleton').hidden=true;
 }
 function renderEasyExplanation(){
   const current=easyExplanationInput(),section=document.getElementById('p-easy');
@@ -100,6 +101,9 @@ function renderEasyExplanation(){
   button.setAttribute('aria-expanded',String(expanded));
   const card=document.getElementById('p-easy-card');card.hidden=!expanded;card.setAttribute('aria-busy',String(state.loading));
   const text=document.getElementById('p-easy-text');
+  document.getElementById('p-easy-skeleton').hidden=!state.loading;
+  text.classList.toggle('easy-loading-status',state.loading);
+  document.querySelector('.p-easy-note').toggleAttribute('hidden',state.loading);
   text.textContent=state.loading?'뜻을 쉬운 말로 풀고 있어요.':state.text||state.error;
   const proposal=document.getElementById('p-easy-suggestion'),apply=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-apply'));
   proposal.hidden=!state.suggestion&&!state.applied;

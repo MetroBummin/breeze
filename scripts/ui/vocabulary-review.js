@@ -141,7 +141,7 @@ function renderReviewJourney(journey){
   const wrap=document.getElementById('review-journey');wrap.hidden=!journey?.target;
   if(!journey?.target)return;
   const stage=journey.milestone||journey.stage,percent=journey.milestone?100:journey.percent;
-  document.getElementById('review-stage-label').textContent=`${stage}/${journey.stages}단계 · ${percent}%`;
+  document.getElementById('review-stage-label').textContent=`${stage}단계`;
   document.getElementById('review-day-count').textContent=`${journey.done}/${journey.target}개`;
   const track=document.getElementById('review-stage-track');track.replaceChildren();
   track.setAttribute('aria-valuemax',String(journey.target));track.setAttribute('aria-valuenow',String(journey.done));
@@ -175,6 +175,7 @@ function renderVocabularyReview(view,focus=true){
   document.getElementById('review-grade').hidden=true;
   document.getElementById('review-reveal').hidden=false;
   document.getElementById('review-card').hidden=!view.card;
+  document.getElementById('review-progress').hidden=!!view.journey;
   document.getElementById('review-progress').textContent=view.card?`${view.journey?'이번 ':''}${view.completed+1} / ${view.total}`:'';
   const graded=(view.remembered||0)+(view.uncertain||0)+(view.confused||0)+(view.easy||0);
   const complete=view.status==='complete'&&graded>0;
@@ -186,41 +187,31 @@ function renderVocabularyReview(view,focus=true){
   scene.style.setProperty('--review-stage',String(milestone||1));
   if(milestone){mascot.src=VOCABULARY_STAGE_ASSETS[milestone];mascot.dataset.stage=String(milestone);mascot.alt=`썬더헤드 · ${milestone}단계 완료`;}
   document.querySelector('.review-complete-mark').toggleAttribute('hidden',!!milestone);
-  document.getElementById('review-result-title').textContent=milestone?(journey.done>=journey.target?'오늘 목표 달성':`${milestone}단계 완료`):'이번 묶음 완료';
+  document.getElementById('review-result-title').textContent=milestone?(journey.done>=journey.target?'오늘 목표 달성':`${milestone}단계 완료`):'연습 완료';
   vocabularyReviewPage.classList.toggle('complete',complete);
   vocabularyReviewPage.classList.toggle('milestone',!!milestone);
   document.getElementById('review-result').hidden=!!view.card;
   document.getElementById('review-celebration').hidden=!complete||!!journey&&!milestone;
-  document.getElementById('review-results').hidden=!complete||!!journey&&!milestone;
   const practice=view.state?.session?.practice;
   document.getElementById('review-mode').hidden=!practice;
   document.getElementById('review-mode').textContent=practice?'연습 · 복습 일정에 영향 없음':'정규 학습';
   document.getElementById('review-more').hidden=!!view.card;
   document.getElementById('review-more').textContent=view.status==='paused'?'학습량 조절':milestone?(journey.done>=journey.target?'추가 학습':'다음 단계 도전'):'계속하기';
   document.getElementById('review-extra').hidden=!!view.card||practice||!view.limitReached||!!milestone&&journey.done>=journey.target;
+  document.getElementById('review-pending').hidden=!!view.card;
   document.getElementById('review-pending').textContent=reviewWaitingText(view);
-  const results={remembered:view.remembered||0,uncertain:view.uncertain||0,confused:view.confused||0,easy:view.easy||0};
-  if(milestone){
-    const latest=new Map(),today=new Date().toDateString();
-    for(const event of view.state.history)if(event.kind!=='practice'&&new Date(event.at).toDateString()===today)latest.set(event.identity,event.outcome);
-    results.remembered=0;results.uncertain=0;results.confused=0;results.easy=0;
-    for(const outcome of latest.values())results[outcome]++;
-  }
-  document.getElementById('review-result-easy').textContent=String(results.easy);
-  document.getElementById('review-result-known').textContent=String(results.remembered);
-  document.getElementById('review-result-uncertain').textContent=String(results.uncertain);
-  document.getElementById('review-result-unknown').textContent=String(results.confused);
   const status=document.getElementById('review-status');status.textContent='';
   if(view.card){
     document.getElementById('review-expression').textContent=view.card.word;
     document.getElementById('review-back-expression').textContent=view.card.word;
     renderReviewIntervals(view);
-    document.getElementById('review-source').textContent=view.card.book||'출처 제목 없음';
+    document.getElementById('review-source').textContent=view.card.book||'';
+    document.getElementById('review-source').hidden=!view.card.book;
     highlightReviewSentence(view.card);
     if(focus)document.getElementById('review-reveal').focus();
   }else{
     if(complete&&journey){status.textContent=milestone?`오늘 ${journey.done}/${journey.target}개${journey.repeats?` · 다시 연습 ${journey.repeats}회`:''}${journey.done>=journey.target&&view.dueReviewCount+view.dueRelearningCount?` · 남은 복습 ${view.dueReviewCount+view.dueRelearningCount}개`:''}`:`이번 ${graded}개 완료 · ${journey.stage}단계 ${journey.percent}%`; }
-    else if(complete)status.textContent=practice?`이번 ${graded}개 연습 완료 · 남은 선택 연습 ${view.practiceRemaining}개`:`이번 ${graded}개 완료 · 남은 복습 ${view.dueReviewCount+view.dueRelearningCount}개\n오늘 신규 ${view.newUsed}개 · 정규 복습 ${view.reviewUsed}개 · 총 응답 ${view.responses}회`;
+    else if(complete)status.textContent=practice?`이번 ${graded}개 연습 완료 · 남은 선택 연습 ${view.practiceRemaining}개`:`${graded}개 학습했어요. 남은 복습 ${view.dueReviewCount+view.dueRelearningCount}개`;
     else if(view.status==='paused')status.textContent='일일 한도에 도달했어요. 미응답 카드는 보관했어요.';
     else if(view.status==='complete')status.textContent='복습할 표현이 더 없어요.';
     else if(view.status==='empty')status.textContent='아직 복습할 표현이 없어요. 읽다가 단어나 표현의 뜻을 저장해 보세요.';
@@ -244,7 +235,7 @@ function reviewWaitingText(view){
   const minutes=view.nextRelearningAt?Math.max(1,Math.ceil((view.nextRelearningAt-Date.now())/60000)):0;
   return [view.dueRelearningCount?`지금 학습·재학습 ${view.dueRelearningCount}개`:'',future?`${minutes}분 뒤부터 학습·재학습 ${future}개`:''].filter(Boolean).join(' · ');
 }
-function reviewSetupValues(){const raw=readVocabularyReview();return {batchSize:5,dailyLimit:raw.settings.dailyLimit??raw.settings.reviewLimit};}
+function reviewSetupValues(){const raw=readVocabularyReview();return {dailyLimit:raw.settings.dailyLimit??raw.settings.reviewLimit};}
 function restoreReviewControls(){
   const raw=readVocabularyReview();
   reviewInput('review-daily-limit').value=String(raw.settings.dailyLimit??raw.settings.reviewLimit);
@@ -258,7 +249,7 @@ function reviewScope(raw,daily=false){
 }
 function reviewSetupPreview(daily=false,extra=false){
   const raw=BreezeReview.configure(readVocabularyReview(),reviewSetupValues()),scope=reviewScope(raw,daily);
-  return scope.custom?BreezeReview.startSelection(raw,words,scope.keys,Date.now(),raw.settings.batchSize):BreezeReview.startJourney(raw,words,Date.now(),extra);
+  return scope.custom?BreezeReview.startSelection(raw,words,scope.keys,Date.now()):BreezeReview.startJourney(raw,words,Date.now(),extra);
 }
 function refreshReviewSetup(){
   if(!reviewControlsReady)restoreReviewControls();
@@ -275,7 +266,6 @@ function refreshReviewSetup(){
   document.getElementById('review-setup-scope').textContent=scope.custom?'연습 · 복습 일정에 영향 없음':'';
   document.getElementById('review-limit-usage').textContent=`오늘 ${view.uniqueUsed}개 학습`+(view.legacyUsage?' · 이전 기록 포함':'');
   document.getElementById('review-setup-waiting').textContent=reviewWaitingText(view);
-  document.getElementById('review-inventory').textContent=`예정 복습 ${view.dueReviewCount}개 · 학습 중 ${view.learningCount}개 · 재학습 ${view.relearningCount-view.learningCount}개 · 신규 ${view.newCount}개`;
   document.getElementById('review-setup-plan').textContent=view.status==='paused'?'한도에 도달했어요. 미응답 카드는 보관돼요.':resume?'이어서 학습할 수 있어요.':'';
   document.getElementById('review-setup-extra').hidden=scope.custom||!view.limitReached;
 }
