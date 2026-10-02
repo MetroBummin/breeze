@@ -49,6 +49,25 @@ Validation: `npm test`, `node tests/verify-breeze16-browser.mjs`,
 `npm run test:pdf-ink`, `npm run test:pdf-pinch`. Physical iPad multitasking,
 Pencil admission/palm rejection and real-device latency remain a release gate.
 
+## Bounded text documents keep stable nodes during scrolling (2026-10-02)
+
+Text documents with at most 400 text blocks and 40,000 text characters prepare
+their word spans once, before the initial position is restored. Scrolling must
+not dehydrate or recreate those paragraphs. This includes short articles with
+images and inline emphasis. Both limits bound initial work; documents beyond
+either limit retain the existing viewport-based word preparation for long books.
+Opening a different document disconnects the previous observer before choosing
+the preparation policy. Saved-word changes still update token metadata in place.
+
+The reported iPad failure includes an abruptly clipped paper surface, a blank
+region and later recovery. The prior short-document path demonstrably replaced
+text nodes during scrolling; removing that work addresses an avoidable source of
+layout/paint invalidation. It does not establish that the reported native blank
+tiles have been resolved. `verify-text-scroll-stability-browser.mjs` checks zero
+scroll-induced child-list mutations, stable nodes/height, saved lookup and the
+long-book memory bound in Chromium and WebKit. Physical iPad reproduction remains
+necessary to distinguish native paint failure from scroller geometry changes.
+
 ## Task dialogs and semantic colors (2026-09-30)
 
 Category creation, rename and deletion use the shared native task dialog. Cancel
