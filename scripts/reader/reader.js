@@ -72,6 +72,10 @@ function wordSpans(text,starts,preview=false){
 /* 긴 책도 문단 뼈대는 한 번에 만들되, 단어 상자는 눈앞의 문단에만 붙입니다.
    원문 텍스트는 그대로 남으므로 검색·문단 앵커는 전 범위에서 즉시 작동합니다. */
 let wordSpanObserver=null;
+// Small documents do not need viewport virtualization. Keep their text nodes
+// stable while the native scroller moves; rebuilding them invalidates painting
+// and article formatting even when the visible words have not changed.
+const STABLE_WORD_SPAN_CHARS=40000, STABLE_WORD_SPAN_PARAGRAPHS=400;
 function hydrateWordSpanBatch(elements){
   const starts=savedPhraseStarts();
   elements.forEach(el=>{
@@ -87,7 +91,10 @@ function dehydrateWordSpan(el){
   delete el.dataset.wordSpans;
 }
 function beginLazyWordSpans(elements){
-  if(wordSpanObserver) wordSpanObserver.disconnect();
+  if(wordSpanObserver){wordSpanObserver.disconnect();wordSpanObserver=null;}
+  const bounded=elements.length<=STABLE_WORD_SPAN_PARAGRAPHS
+    && elements.reduce((size,el)=>size+el.textContent.length,0)<=STABLE_WORD_SPAN_CHARS;
+  if(bounded){hydrateWordSpanBatch(elements);return;}
   if(!window.IntersectionObserver){ hydrateWordSpanBatch(elements); return; }
   wordSpanObserver=new IntersectionObserver(entries=>{
     const entering=entries.filter(entry=>entry.isIntersecting).map(entry=>entry.target);

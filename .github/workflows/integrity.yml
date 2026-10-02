@@ -80,3 +80,5 @@ jobs:
         run: node tests/verify-easy-explanation-browser.mjs && BROWSER=webkit node tests/verify-easy-explanation-browser.mjs
       - name: Saved original position during interrupted reopening
         run: node tests/verify-original-reopen-browser.mjs
+      - name: Stable short-text scrolling
+        run: node tests/verify-text-scroll-stability-browser.mjs && BROWSER=webkit node tests/verify-text-scroll-stability-browser.mjs
