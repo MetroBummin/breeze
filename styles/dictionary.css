@@ -435,3 +435,11 @@ body.dark :is(#panel,.aa-legend,#vstars) .stbtn[data-s="3"].on{color:var(--s3);}
 #p-easy-text:focus{outline:none;}
 #p-easy-text{margin:0;font:400 15px/1.75 var(--ui);color:var(--sentence-glass-ink);white-space:pre-line;overflow-wrap:anywhere;}
 .p-easy-note{margin:12px 0 0;font:400 11px/1.5 var(--ui);color:var(--sentence-glass-secondary);}
+
+#p-easy-suggestion{margin-top:16px;padding-top:12px;border-top:1px solid var(--sentence-glass-line-soft);}
+#p-easy-proposal{margin:0 0 8px;color:var(--sentence-glass-ink);font:400 13px/1.6 var(--ui);overflow-wrap:anywhere;}
+#p-easy-apply{width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--sentence-glass-line);border-radius:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:500 13px/1.5 var(--ui);cursor:pointer;}
+#p-easy-apply:hover,#p-easy-apply:active{background:var(--sentence-glass-action-hover);}
+#p-easy-apply:active{opacity:.8;}
+#p-easy-apply:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:2px;}
+#p-easy-apply:disabled{opacity:.6;cursor:default;}

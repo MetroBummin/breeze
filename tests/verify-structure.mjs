@@ -906,7 +906,7 @@ for(const caller of ['adoptSuggestion']){
 /* 확인창은 읽는 흐름을 끊습니다. 사용자가 누른 것 자체가 대답입니다. */
 assert.doesNotMatch(dictionarySource, /\bconfirm\(/,
   'The dictionary panel asks the reader to confirm something again');
-assert.doesNotMatch(index, /이 뜻도 저장|기존 뜻도 유지|이 뜻으로 바꾸기/,
+assert.doesNotMatch(index.replace(/<div id="p-easy-suggestion"[\s\S]*?<\/div>/,''), /이 뜻도 저장|기존 뜻도 유지|이 뜻으로 바꾸기/,
   'A meaning now needs a second confirming step again');
 /* 지금 보고 있는 뜻은 늘 첫 자리입니다. 최근에 고른 것이 그 다음. */
 assert.match(dictionarySource, /cards\.sort\(\(\[a,aw\],\[b,bw\]\)=>\(a===activeId\?-1:0\)-\(b===activeId\?-1:0\)\s*\|\| meaningPickedAt\(bw\)-meaningPickedAt\(aw\)\)/,

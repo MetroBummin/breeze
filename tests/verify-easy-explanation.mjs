@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {easyInput,easyPrompt,easyText,runEasyExplanation} from '../server/dict/easy-explanation.ts';
+import {easyInput,easyPrompt,easyText,easySuggestion,runEasyExplanation} from '../server/dict/easy-explanation.ts';
 const input={before:[],after:[],word:'Federal Reserve',meaning:'연방준비제도',sentence:'The Federal Reserve held rates steady.'};
 const explanation='미국의 중앙은행 역할을 하는 기관이에요. 금리와 돈의 흐름을 조절해 물가와 고용을 안정시키려 해요.';
 test('invalid input and cancelled requests never consume quota or call a model',async()=>{
@@ -84,4 +84,25 @@ test('same context reopens expanded; changing context evicts its old explanation
   assert.equal(c.element('p-easy-button').hidden,false);assert.equal(c.element('p-easy-card').hidden,true);assert.equal(c.requests.length,1);
   c.sandbox.currentContext=()=>null;c.run('cancelEasyExplanation();renderEasyExplanation()');
   assert.equal(c.element('p-easy-card').hidden,true);assert.equal(c.run('easyExplanationCache.size'),0);
+});
+
+test('meaning suggestions are optional, bounded and never inferred from prose',async()=>{
+  for(const suggestedMeaning of [undefined,null,{},'',input.meaning,'x'.repeat(121)])assert.equal(easySuggestion({suggestedMeaning},input),'');
+  assert.equal(easySuggestion({suggestedMeaning:'다른 뜻'},{...input,sentence:''}),'');
+  const result=await runEasyExplanation(input,{charge:async()=>({ok:true,left:4}),generate:async()=>({explanation,suggestedMeaning:' 미국 중앙은행 '})});
+  assert.equal(result.body.suggestedMeaning,'미국 중앙은행');
+});
+test('accepting a same-example correction persists only on click and rejects repeated/stale applies',async()=>{
+  const c=client();let saves=0,syncs=0;
+  Object.assign(c.sandbox,{sentenceHash:s=>s,saveWords:()=>saves++,queueSync:()=>syncs++,rememberSenseContext:()=>{},refreshReaderWords:()=>{},renderWordLookup:()=>c.run('renderEasyExplanation()'),contextView:null});
+  const pending=c.run('requestEasyExplanation()');c.requests[0].resolve({explanation,suggestedMeaning:'미국 중앙은행'});await pending;
+  assert.equal(saves,0);assert.equal(c.sandbox.words.fed.ko,input.meaning);
+  c.run('applyEasyMeaning();applyEasyMeaning()');
+  assert.equal(c.sandbox.words.fed.ko,'미국 중앙은행');assert.equal(c.sandbox.words.fed.example,input.sentence);
+  assert.equal(saves,1);assert.equal(syncs,1);assert.equal(c.requests.length,1);
+  c.run('cancelEasyExplanation();renderEasyExplanation()');assert.equal(c.element('p-easy-apply').hidden,true);
+  for(const change of ['delete words.fed','words.fed.ko="새 뜻"','words.fed.example="Changed example"','sbUser={id:"other"}','currentContext=()=>({sentence:"Elsewhere."})']){
+    const stale=client();const req=stale.run('requestEasyExplanation()');stale.requests[0].resolve({explanation,suggestedMeaning:'미국 중앙은행'});await req;
+    stale.run(change);stale.run('applyEasyMeaning()'); // saveWords throws if reached
+  }
 });

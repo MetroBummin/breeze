@@ -22,13 +22,21 @@ ${JSON.stringify(input)}
 기관·제도·전문 용어라면 무엇이고 어떤 역할을 하는지, 어려운 뜻풀이라면 쉬운 말로, 숙어라면 실제 의미나 뉘앙스를 설명하세요.
 앞뒤 문장 배열은 원문 순서입니다. 원문에 없는 맥락을 만들지 말고, 원문과 저장된 뜻이 어긋나면 짧게 짚어 주세요.
 사실을 꾸며내거나 모든 용법을 나열하지 마세요. 불확실한 대상은 단정하지 마세요.
-짧은 한국어 2~3문장, 최대 600자. 마크다운·목록 없이 {"explanation":"..."}만 반환하세요.`;
+저장된 meaning이 현재 sentence에서 의미상 명백히 틀리고 더 정확한 짧은 한국어 뜻을 확신할 때만 suggestedMeaning에 대체 뜻(최대 120자)을 넣으세요. 단순 표현 개선, 동의어, 더 자세한 설명, 불확실한 추측에는 빈 문자열을 넣으세요. 문장이 없으면 제안하지 마세요. 다른 문장의 저장된 뜻 자체가 항상 틀렸다고 단정하지 마세요.
+짧은 한국어 2~3문장, 최대 600자. 마크다운·목록 없이 {"explanation":"...","suggestedMeaning":""}만 반환하세요.`;
 }
 export function easyText(value:unknown):string{
   if(!value||typeof value!=="object"||Array.isArray(value))throw Error("invalid_explanation");
   const text=(value as Record<string,unknown>).explanation;
   if(typeof text!=="string"||text.trim().length<10||text.length>600)throw Error("invalid_explanation");
   return text.trim();
+}
+export function easySuggestion(value:unknown,input:EasyInput):string{
+  if(!input.sentence||!value||typeof value!=="object"||Array.isArray(value))return "";
+  const raw=(value as Record<string,unknown>).suggestedMeaning;
+  if(typeof raw!=="string"||raw.length>120)return "";
+  const text=raw.replace(/\s+/g," ").trim();
+  return text&&text.toLowerCase()!==input.meaning.replace(/\s+/g," ").toLowerCase()?text:"";
 }
 type Quota={ok:boolean;left?:number;error?:string};
 export async function runEasyExplanation(body:unknown,deps:{charge:()=>Promise<Quota>;generate:(input:EasyInput)=>Promise<unknown>;signal?:AbortSignal}){
@@ -40,8 +48,8 @@ export async function runEasyExplanation(body:unknown,deps:{charge:()=>Promise<Q
   try{
     // Reserve one unit before provider work. No automatic client retry and no
     // persistent answer receipt; a failed or disconnected request can use a unit.
-    const explanation=easyText(await deps.generate(input));
-    return {status:200,body:{explanation,left:quota.left}};
+    const answer=await deps.generate(input),explanation=easyText(answer),suggestedMeaning=easySuggestion(answer,input);
+    return {status:200,body:{explanation,...(suggestedMeaning?{suggestedMeaning}:{}),left:quota.left}};
   }catch{
     return {status:502,body:{error:"explanation_failed",left:quota.left}};
   }

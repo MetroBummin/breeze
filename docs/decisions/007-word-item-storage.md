@@ -54,3 +54,17 @@ retry that resolves to the same Meaning keeps its original pair; a different
 meaning is saved with its own sentence. Reader-only context overlays are not a
 write contract. Easy explanations must never enter word items, journals, legacy
 snapshots, lookup receipts or sync payloads. They are bounded page/account memory.
+
+## Explicit meaning suggestions from easy explanations (1.7 follow-up)
+
+The same explanation request may return a bounded `suggestedMeaning` only for
+clear semantic mismatch, not stylistic rewrites or uncertain interpretations.
+A quiet proposal and one action appear inside the expanded explanation. Nothing
+is saved until acceptance. For the same source sentence/book, acceptance edits
+the saved card like a manual meaning edit. In another context it saves/selects a
+separate sense, retaining the original meaning/example pair. The accepted sense
+owns that occurrence. Existing study identity checks reject obsolete grades.
+Apply validates account, occurrence, selected item and its meaning/example/book
+snapshot; stale/deleted records cannot be overwritten. Repeated clicks are no-ops.
+Explanation prose and unaccepted proposals remain bounded transient memory only;
+accepting does not call AI or consume another quota unit.
