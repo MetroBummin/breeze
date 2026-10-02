@@ -11,6 +11,7 @@ const server=createServer((req,res)=>{try{const path=resolve(root,'.'+new URL(re
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
 let phase='pending',calls=0;
+let refreshedEntry=null;
 const entry={url:'https://example.com/approved',title:'Why coastal cities sink',source:'Dexerto · Entertainment',feedUrl:'https://www.dexerto.com/feed/category/entertainment/',category:'entertainment',photo:base+'assets/favicon/icon-512.png',
   quality:{status:'approved',version:VERSION,checkedAt:Date.now(),key:'test-key'}};
 const engines=process.env.BROWSER==='webkit'?[webkit]:process.env.BROWSER==='chromium'?[chromium]:[chromium,webkit];
@@ -27,7 +28,7 @@ try{for(const engine of engines){
       if(url.includes('/functions/v1/rss-quality?feed=')){
         calls++;if(phase==='outage')return route.fulfill({status:503,headers:{'Access-Control-Allow-Origin':'*'},body:'{}'});
         const first=new URL(url).searchParams.get('feed')==='0';
-        const entries=first && phase==='approved'?[entry,{...entry,url:'https://example.com/coupon',quality:{...entry.quality,status:'rejected'}}]:first && phase==='candidate'?[{...entry,quality:{...entry.quality,status:'uncertain',eligibility:'candidate'}}]:[];
+        const entries=first && phase==='changed'?[refreshedEntry]:first && phase==='approved'?[entry,{...entry,url:'https://example.com/coupon',quality:{...entry.quality,status:'rejected'}}]:first && phase==='candidate'?[{...entry,quality:{...entry.quality,status:'uncertain',eligibility:'candidate'}}]:[];
         return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify({version:VERSION,entries,pending:phase==='pending'})});
       }
       return route.abort();
@@ -55,6 +56,20 @@ try{for(const engine of engines){
         await page.screenshot({path:`${proof}/${engine.name()}-${name}-${dark?'dark':'light'}.png`});
       }
     }
+    // Same discovery URL, new content/import target: the real onclick must use
+    // the refreshed entry and its title/accessible name, not the retained closure.
+    phase='changed';refreshedEntry={...entry,readUrl:'https://example.com/new-target',title:'Refreshed title',quality:{...entry.quality,key:'new-key'}};
+    await page.evaluate(()=>{globalThis.clickedEntry=null;importRssEntry=async entry=>{globalThis.clickedEntry=entry;};});
+    await page.evaluate(async()=>{await loadRss(true);refreshFeedRails();});
+    await page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card .ct')?.textContent==='Refreshed title');
+    await page.locator('#casual-rail .rss-card').click();
+    assert.deepEqual(await page.evaluate(()=>({key:globalThis.clickedEntry.quality.key,readUrl:globalThis.clickedEntry.readUrl,title:globalThis.clickedEntry.title})),
+      {key:'new-key',readUrl:'https://example.com/new-target',title:'Refreshed title'});
+    assert.equal(await page.locator('#casual-rail .rss-card').count(),1);
+    assert.equal(await page.locator('#casual-rail .rss-card').getAttribute('data-test-identity'),null);
+    // Authoritative revocation removes the changed card; no old fallback returns.
+    phase='revoked';await page.evaluate(async()=>{await loadRss(true);refreshFeedRails();});
+    await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card').length===0);
     // Approved but saved articles disappear through the existing local exclusion.
     phase='approved';await page.evaluate(url=>{books.push({id:'quality-saved',format:'txt',sourceUrl:url,title:'Saved',paragraphs:[]});rssLoadedAt=0;},entry.url);
     await page.evaluate(async()=>{await loadRss(true);refreshFeedRails();});

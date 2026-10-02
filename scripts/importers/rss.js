@@ -482,6 +482,14 @@ async function ingestFeedPost(entry,options={}){
 }
 /* A discovery card is shown only when its cover can be displayed. The saved
    article remains readable without a cover after the user opens it. */
+const rssCardIdentities=new WeakMap();
+function rssCardIdentity(entry){
+  // Click handlers own the entry they were created with. Keep decoded DOM only
+  // when its import payload and visible metadata still match. Refresh timestamps
+  // and ranking alone do not change that payload; content/version/verdict do.
+  const {quality,...content}=entry;
+  return JSON.stringify([content,quality?.key,quality?.version,quality?.status,quality?.eligibility,quality?.resolvedUrl]);
+}
 async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
   const cards = [];
   for(const entry of entries){
@@ -489,6 +497,7 @@ async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
     if(rssAlreadySaved(entry)) continue;
     if(!entry.photo) continue;
     const card = rssCard(entry);
+    rssCardIdentities.set(card,rssCardIdentity(entry));
     // Covers load only after insertion; text never waits for an image.
     cards.push(card);
   }
@@ -695,7 +704,8 @@ function renderRssCards(rail, force, empty){
     }
     for(let i=0;i<cards.length;i++){
       const old=existing.get(cards[i].dataset.rssUrl)?.shift();
-      if(old)cards[i]=old;
+      if(old && rssCardIdentities.get(old)===rssCardIdentities.get(cards[i]))cards[i]=old;
+      else old?.remove();
     }
     existing.forEach(duplicates=>duplicates.forEach(card=>card.remove()));
     const keepStart=!!rail.dataset.rssResetStart || rail.scrollLeft<=1;

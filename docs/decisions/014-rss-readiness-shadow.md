@@ -63,7 +63,9 @@ Inventory is capped at 20/feed and seven days. Same-content transport/provider
 outages retain valid prior entries. Observed changed content invalidates the old
 key before evaluation. A cached rejected/unavailable verdict removes the entry.
 The client treats successful inventory as authoritative: missing/revoked/changed
-Medium approvals cannot return through prepared-body fallback. Invalid content
+Medium approvals cannot return through prepared-body fallback. Decoded cards are
+reused only when their import payload, visible metadata and verdict identity
+match; same-URL changed content cannot retain an old click closure. Invalid content
 never gets an approval merely because the provider is unavailable.
 
 Safe structured events carry stage, fixed reason/detail codes, content hash,

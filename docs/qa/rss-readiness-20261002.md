@@ -28,7 +28,7 @@ subjective review were **not** reconstructed or compared and never enter prompts
 
 ## Verification
 
-- 45 quality tests pass, including readiness, schema, fallback, cache and paired reporting; 26 audit/security and 30 recommendation tests also pass.
+- 45 quality tests pass, including readiness, schema, fallback, cache and paired reporting; 26 audit/security and 31 recommendation tests also pass.
 - Full `npm test` passes; browser typecheck remains at the existing 34 diagnostics.
 - System Chromium passes quality pending/approved/rejected/outage/saved states
   and eight viewport/theme checks. Legacy ingestion, RSS card and Article Preview
@@ -56,3 +56,13 @@ node tests/verify-rss-quality-browser.mjs
 Remaining risks: uncalibrated confidence/evidence, extraction false withholding,
 snapshot drift, cold inventory and bounded retry exhaustion. Bounded live
 evaluation requires separate approval; default behavior remains off/legacy.
+
+## Review follow-up: same-URL stale click binding
+
+Reproduced the P2 on `eb9362d`: active refresh changed the quality key/import
+URL/title, but URL-only DOM reuse retained the previous onclick entry (`old`
+instead of `new`). Cards now reuse decoded DOM only when their full import
+payload, visible metadata and content/version/verdict identity match. Checked-at
+and ranking-only changes do not discard unchanged cards. Changed cards replace
+the old node; authoritative revocation still removes them. Unit and real-browser
+refresh-and-click regressions verify the new key, read URL and title.
