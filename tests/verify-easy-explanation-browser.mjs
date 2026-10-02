@@ -20,7 +20,7 @@ try{
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
   await page.goto(url,{waitUntil:'domcontentloaded'});
-  await page.locator('#fileinput').setInputFiles({name:'concepts.txt',mimeType:'text/plain',buffer:Buffer.from('Prices rose last year. Wages stayed the same.\n\nInflation makes everyday goods more expensive.\n\nThe bank changed interest rates. Families spent less.\n\n'+('Another paragraph gives more reading space.\n\n').repeat(30))});
+  await page.locator('#fileinput').setInputFiles({name:'concepts.txt',mimeType:'text/plain',buffer:Buffer.from('Prices rose last year. Wages stayed the same.\n\nInflation makes everyday goods more expensive.\n\nThe bank changed interest rates. Families spent less.\n\nInflation changed the family budget.\n\n'+('Another paragraph gives more reading space.\n\n').repeat(30))});
   await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));
   await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
   await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
@@ -39,7 +39,8 @@ try{
   await page.evaluate(()=>new Promise(requestAnimationFrame));
   await page.evaluate(()=>{window.easySaved=JSON.stringify(words.inflation);});
   await page.locator('#p-easy-button').click();
-  assert.equal(await page.locator('#p-easy-button').isDisabled(),true);
+  assert.equal(await page.locator('#p-easy-button').isVisible(),false);
+  assert.equal(await page.locator('#p-easy-card').isVisible(),true);
   await page.evaluate(()=>easyResolve({explanation:'물건과 서비스 가격이 전반적으로 오르는 현상이에요. 같은 돈으로 살 수 있는 양이 줄어든다는 뜻이에요.',left:40}));
   await page.waitForFunction(()=>document.getElementById('p-easy-text').textContent.includes('같은 돈'));
   assert.equal(await page.evaluate(()=>easyCalls.length),1);
@@ -56,6 +57,20 @@ try{
     assert.equal(await page.locator('#p-easy-card').isVisible(),true);
     await page.screenshot({path:`/tmp/breeze-easy-proof/${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`});
   }
+  await page.setViewportSize({width:390,height:844});
+  const reopen=async index=>{
+    await page.evaluate(i=>{closePanel();const spans=Array.from(document.querySelectorAll('#rtext .w')).filter(n=>n.textContent.toLowerCase()==='inflation');openWord('inflation',spans[i]);},index);
+    await page.locator('#word-peek-more').click();
+  };
+  await reopen(0);
+  assert.equal(await page.locator('#p-easy-card').isVisible(),true,'Same sentence retains its open explanation');
+  assert.equal(await page.locator('#p-easy-button').isVisible(),false);
+  await reopen(1);
+  assert.equal(await page.locator('#p-easy-card').isVisible(),false,'Another sentence starts with the button');
+  assert.equal(await page.locator('#p-easy-button').isVisible(),true);
+  await reopen(0);
+  assert.equal(await page.locator('#p-easy-card').isVisible(),false,'Returning after a context change does not resurrect the old answer');
+  assert.equal(await page.evaluate(()=>easyCalls.length),1,'Reopening never auto-requests an explanation');
   await page.evaluate(()=>{closePanel();show('vocab');selectWord('inflation',null);});
   assert.equal(await page.locator('#p-ex-fold').evaluate(n=>n.hidden),false);
   assert.equal(await page.locator('#p-ex').textContent(),'Inflation was low last year.');

@@ -26,7 +26,7 @@ test('quota gate precedes provider and output is bounded, without durable answer
 });
 function client(){
   const elements=new Map();
-  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',setAttribute(){},addEventListener(){}});return elements.get(id);};
+  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',classList:{contains:()=>false,toggle(){}},getBoundingClientRect:()=>({width:100,height:44}),focus(){},setAttribute(){},addEventListener(){}});return elements.get(id);};
   const requests=[],owner=new AbortController();
   const sandbox={normalizeLigatures:value=>String(value),document:{getElementById:element},Map,AbortController,setTimeout,clearTimeout,navigator:{onLine:true},
     activeSelectedWordNode:null,curBook:null,wordLookupTargets:new Map(),selKey:'fed',words:{fed:{word:input.word,ko:input.meaning,example:input.sentence}},previewWordCard:null,sbUser:{id:'one'},
@@ -42,6 +42,7 @@ test('explanation is explicit, deduplicated, memory-only and shown as literal te
   const pending=c.run('requestEasyExplanation()');await c.run('requestEasyExplanation()');assert.equal(c.requests.length,1);
   assert.equal(c.requests[0].body.op,'easy_explanation');c.requests[0].resolve({explanation:'<b>미국 중앙은행이라는 뜻입니다.</b>',left:4});await pending;
   assert.equal(c.element('p-easy-text').textContent,'<b>미국 중앙은행이라는 뜻입니다.</b>');
+  assert.equal(c.element('p-easy-button').hidden,true);
   c.run('cancelEasyExplanation();renderEasyExplanation()');await c.run('requestEasyExplanation()');assert.equal(c.requests.length,1);
   assert.equal(JSON.stringify(c.sandbox.words),before);
 });
@@ -56,7 +57,7 @@ test('close, different meaning and account changes reject late answers',async()=
 test('offline performs no call, provider failure is manually retryable',async()=>{
   const c=client();c.sandbox.navigator.onLine=false;await c.run('requestEasyExplanation()');assert.equal(c.requests.length,0);
   c.sandbox.navigator.onLine=true;const first=c.run('requestEasyExplanation()');c.requests[0].resolve({error:'explanation_failed'});await first;
-  assert.equal(c.element('p-easy-button').disabled,false);assert.equal(c.requests.length,1);
+  assert.equal(c.element('p-easy-retry').hidden,false);assert.equal(c.requests.length,1);
   const retry=c.run('requestEasyExplanation()');c.requests[1].resolve({explanation});await retry;assert.equal(c.element('p-easy-text').textContent,explanation);
 });
 
@@ -74,4 +75,13 @@ test('current source sentence wins over saved example even when same meaning has
   const pending=c.run('requestEasyExplanation()');assert.equal(c.requests[0].body.sentence,'Current B sentence.');
   c.requests[0].resolve({explanation});await pending;
   assert.equal(c.sandbox.words.fed.example,input.sentence);
+});
+
+test('same context reopens expanded; changing context evicts its old explanation without retry',async()=>{
+  const c=client();const first=c.run('requestEasyExplanation()');c.requests[0].resolve({explanation});await first;
+  c.run('cancelEasyExplanation();renderEasyExplanation()');assert.equal(c.element('p-easy-button').hidden,true);
+  c.sandbox.currentContext=()=>({sentence:'Different B sentence.'});c.run('easyExplanationInput();cancelEasyExplanation();renderEasyExplanation()');
+  assert.equal(c.element('p-easy-button').hidden,false);assert.equal(c.element('p-easy-card').hidden,true);assert.equal(c.requests.length,1);
+  c.sandbox.currentContext=()=>null;c.run('cancelEasyExplanation();renderEasyExplanation()');
+  assert.equal(c.element('p-easy-card').hidden,true);assert.equal(c.run('easyExplanationCache.size'),0);
 });

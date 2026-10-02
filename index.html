@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=22832259">
   <link rel="stylesheet" href="styles/reader.css?v=7b53053d">
-  <link rel="stylesheet" href="styles/dictionary.css?v=e0f0bcfe">
+  <link rel="stylesheet" href="styles/dictionary.css?v=9e2ef660">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=26bcfce1">
@@ -100,8 +100,8 @@
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=97a7f38a"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=27737332"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=143a37a3"></script>
-  <script defer src="scripts/dictionary/easy-explanation.js?v=622b0054"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=2e2027f1"></script>
+  <script defer src="scripts/dictionary/easy-explanation.js?v=9f156477"></script>
   <script defer src="scripts/ui/wordbook.js?v=bd35bada"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -377,7 +377,8 @@
       <section id="p-easy" aria-label="쉬운 설명" hidden>
         <button id="p-easy-button" type="button" aria-expanded="false" aria-controls="p-easy-card">쉽게 설명</button>
         <div id="p-easy-card" hidden>
-          <p id="p-easy-text" role="status" aria-live="polite"></p>
+          <p id="p-easy-text" role="status" aria-live="polite" tabindex="-1"></p>
+          <button id="p-easy-retry" type="button" hidden>다시 시도</button>
           <p class="p-easy-note">AI 설명 · 이 설명은 저장하지 않아요</p>
         </div>
       </section>

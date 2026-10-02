@@ -166,3 +166,14 @@ It uses Preview summary's quiet inset-card styling inside the existing detail
 surface and scroll budget. Closing/changing lookup cancels its display ownership.
 Explanation text is transient page/account memory only; see DICT.md for request
 metering and the provider boundary. No automatic call on expand.
+
+The trigger morphs into the explanation surface. Its label disappears as soon as
+the card opens; loading and success show no repeated title. Only errors expose a
+Retry control. Expansion honors reduced-motion preferences and moves keyboard
+focus to the live explanation text.
+
+Within the current page/account, reopening the same word in the same source
+occurrence restores its expanded explanation. Encountering that word in another
+context invalidates the former answer immediately (including mini-pill opens).
+It starts collapsed without requiring Retry; A -> B -> A does not resurrect A's
+old explanation. Only an explicit button press generates another answer.

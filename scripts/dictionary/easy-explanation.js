@@ -1,6 +1,7 @@
 /* Request-only concept help. Memory cache belongs to this page/account, never to
    the vocabulary, IndexedDB, localStorage, sync or the persisted lookup cache. */
 const easyExplanationCache=new Map();
+const easyExplanationContexts=new Map();
 let easyExplanationState=null,easyExplanationActor='';
 // Resolve neighbors only on an explicit request. Exact occurrence hints win over
 // text search; repeated sentences without an anchor never borrow another scene.
@@ -53,13 +54,23 @@ function easyExplanationInput(){
   const context=currentContext(selKey);
   if(context&&(context.loading||context.error))return null;
   const actor=sbUser?.id||'anonymous';
-  if(actor!==easyExplanationActor){easyExplanationCache.clear();easyExplanationActor=actor;}
+  if(actor!==easyExplanationActor){easyExplanationCache.clear();easyExplanationContexts.clear();easyExplanationActor=actor;}
   const node=typeof activeSelectedWordNode==='undefined'?null:activeSelectedWordNode;
   const spot=typeof textSentencePartAt==='function'?textSentencePartAt(node):null;
   const occurrence=node?.dataset.readerAnchor||JSON.stringify([spot?.block.dataset.pi,spot?.part.start]);
   const sourceSentence=String(context?.sentence||(node&&typeof sentenceOf==='function'?sentenceOf(node):'')||item.example||'');
   const input={word:String(item.word||'').slice(0,120),meaning:String(item.ko).slice(0,500),sentence:sourceSentence.slice(0,2400)};
-  return {key:JSON.stringify([actor,selKey,input,typeof curBook!=='undefined'?curBook?.id:null,occurrence]),input,sourceSentence};
+  const key=JSON.stringify([actor,selKey,input,typeof curBook!=='undefined'?curBook?.id:null,occurrence]);
+  const word=item.root||selKey,previous=easyExplanationContexts.get(word);
+  // Only the last encountered context of a word may retain its transient answer.
+  // A -> B -> A starts collapsed again, even if A once had an explanation.
+  if(previous&&previous!==key)easyExplanationCache.delete(previous);
+  easyExplanationContexts.delete(word);easyExplanationContexts.set(word,key);
+  if(easyExplanationContexts.size>16){
+    const oldest=easyExplanationContexts.keys().next().value;
+    easyExplanationCache.delete(easyExplanationContexts.get(oldest));easyExplanationContexts.delete(oldest);
+  }
+  return {key,input,sourceSentence};
 }
 function cancelEasyExplanation(){
   easyExplanationState?.controller?.abort();
@@ -77,11 +88,23 @@ function renderEasyExplanation(){
   }
   const state=easyExplanationState,button=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-button'));
   const expanded=!!(state.loading||state.text||state.error);
-  button.disabled=state.loading||!!state.text;
-  button.textContent=state.loading?'설명하는 중…':state.text?'쉽게 설명':state.error?'다시 설명':'쉽게 설명';
+  const wasExpanded=section.classList.contains('expanded');
+  const before=section.getBoundingClientRect();
+  section.classList.toggle('expanded',expanded);
+  button.disabled=state.loading;button.hidden=expanded;
+  document.getElementById('p-easy-retry').hidden=!state.error;
+  button.textContent='쉽게 설명';
   button.setAttribute('aria-expanded',String(expanded));
   const card=document.getElementById('p-easy-card');card.hidden=!expanded;card.setAttribute('aria-busy',String(state.loading));
-  document.getElementById('p-easy-text').textContent=state.loading?'뜻을 쉬운 말로 풀고 있어요.':state.text||state.error;
+  const text=document.getElementById('p-easy-text');
+  text.textContent=state.loading?'뜻을 쉬운 말로 풀고 있어요.':state.text||state.error;
+  if(expanded&&!wasExpanded){
+    text.focus({preventScroll:true});
+    if(section.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      const after=section.getBoundingClientRect();
+      section.animate([{width:before.width+'px',height:before.height+'px'},{width:after.width+'px',height:after.height+'px'}],{duration:200,easing:'cubic-bezier(.2,.7,.2,1)'});
+    }
+  }
 }
 function easyExplanationError(answer){
   if(navigator.onLine===false)return '오프라인이에요. 연결한 뒤 다시 눌러 주세요.';
@@ -121,3 +144,5 @@ async function requestEasyExplanation(){
   }
 }
 document.getElementById('p-easy-button').addEventListener('click',()=>void requestEasyExplanation());
+
+document.getElementById('p-easy-retry').addEventListener('click',()=>void requestEasyExplanation());

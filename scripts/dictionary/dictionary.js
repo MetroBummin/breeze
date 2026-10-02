@@ -711,6 +711,7 @@ function renderWordPeek(){
   settlePendingWord();
   const pill=document.getElementById('word-peek'),w=displayedWord(selKey);
   if(!wordPeekActive||!w){pill.hidden=true;return;}
+  if(typeof easyExplanationInput==='function')easyExplanationInput();
   const state=wordPeekState(w,currentContext(selKey));
   if(wordPeekPresentationEnded){
     pill.hidden=true;
