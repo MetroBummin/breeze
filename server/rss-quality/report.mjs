@@ -28,5 +28,6 @@ export function qualityReport(reference,results){
       emptyMeasuredSources:Object.entries(sources).filter(([,s])=>s.unmeasured===0 && s.approved===0).map(([name])=>name)},
     approvedDiversity:{topics,lengths},usage:{inputTokens,outputTokens,usageMissing},
     // Do not report percentages over an incomplete/non-live cohort as an improvement.
-    improvementMeasured:totals.unmeasured===0 && results.every(row=>row.mode==='live')};
+    improvementMeasured:reference.length>0 && positives+negatives>0 && totals.unmeasured===0
+      && totals.approved+totals.rejected>0 && results.every(row=>row.mode==='live')};
 }

@@ -216,3 +216,27 @@ test('unusable feed photo falls back to a public article cover; no usable cover 
     if(expected)assert.equal(entries[0].photo,expected);
   }
 });
+
+
+test('empty, failed and unadjudicated cohorts cannot claim measured quality improvement',async()=>{
+  const {qualityReport}=await import('../server/rss-quality/report.mjs');
+  assert.equal(qualityReport([],[]).improvementMeasured,false);
+  assert.equal(qualityReport([{url:'a',source:'x',label:'positive'}],[{url:'a',status:'error',mode:'live'}]).improvementMeasured,false);
+  assert.equal(qualityReport([{url:'a',source:'x',label:'ambiguous'}],[{url:'a',status:'approved',mode:'live'}]).improvementMeasured,false);
+});
+
+
+test('NASA public WordPress addresses are not confused with reserved 192.0.0/24 or TEST-NET',async()=>{
+  const {publicAddress,publicAddresses}=await import('../server/article/public-fetch.mjs');
+  for(const address of ['192.0.66.108','192.0.66.161','192.2.1.1'])assert.equal(publicAddress(address),true,address);
+  for(const address of ['192.0.0.1','192.0.2.1','192.168.0.1','127.0.0.1','10.0.0.1','169.254.169.254','198.51.100.1','203.0.113.1'])assert.equal(publicAddress(address),false,address);
+  const resolver=async()=>[{address:'192.0.66.108',family:4}];
+  assert.equal((await publicAddresses(new URL('https://www.nasa.gov'),resolver))[0].address,'192.0.66.108');
+  await assert.rejects(publicAddresses(new URL('https://www.nasa.gov'),async()=>[...await resolver(),{address:'10.0.0.1',family:4}]),/bad_url/);
+});
+
+
+test('invalid provider envelope retains safe diagnostic and usage without raw response',()=>{
+  try{validateAnswers({model:'wrong',usage:{input_tokens:123,output_tokens:4},secret:'never-return'}, {paragraphs:['public prose']});assert.fail('must reject');}
+  catch(error){assert.equal(error.message,'invalid_evaluation');assert.deepEqual(error.diagnostic,{stage:'model_or_answer_envelope',usage:{inputTokens:123,outputTokens:4}});assert.ok(!JSON.stringify(error).includes('never-return'));}
+});

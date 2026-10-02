@@ -1,0 +1,105 @@
+{
+  "inputCount": 106,
+  "exactUniqueUrls": 106,
+  "humanGoldCount": 0,
+  "totals": {
+    "pass": 17,
+    "reject": 4,
+    "pending": 73,
+    "error": 12
+  },
+  "sources": {
+    "All That's Interesting": {
+      "pass": 0,
+      "reject": 0,
+      "pending": 11,
+      "error": 1
+    },
+    "Bloody Disgusting": {
+      "pass": 4,
+      "reject": 0,
+      "pending": 8,
+      "error": 0
+    },
+    "Dexerto": {
+      "pass": 5,
+      "reject": 0,
+      "pending": 13,
+      "error": 1
+    },
+    "Medium": {
+      "pass": 4,
+      "reject": 1,
+      "pending": 3,
+      "error": 3
+    },
+    "NASA": {
+      "pass": 0,
+      "reject": 0,
+      "pending": 0,
+      "error": 6
+    },
+    "ProPublica": {
+      "pass": 0,
+      "reject": 0,
+      "pending": 12,
+      "error": 0
+    },
+    "TMZ": {
+      "pass": 0,
+      "reject": 0,
+      "pending": 3,
+      "error": 0
+    },
+    "The Conversation": {
+      "pass": 4,
+      "reject": 0,
+      "pending": 14,
+      "error": 0
+    },
+    "WIRED": {
+      "pass": 0,
+      "reject": 3,
+      "pending": 9,
+      "error": 1
+    }
+  },
+  "decidedRetentionRate": 0.8095238095238095,
+  "allInputRetentionRate": 0.16037735849056603,
+  "falseRejectionRate": null,
+  "qualityImprovementRate": null,
+  "emptyApprovedSources": [
+    "All That's Interesting",
+    "NASA",
+    "ProPublica",
+    "TMZ",
+    "WIRED"
+  ],
+  "paidAttempts": 99,
+  "validModelResults": 94,
+  "usageMissingAttempts": 5,
+  "knownUsage": {
+    "inputTokens": 500993,
+    "outputTokens": 66996
+  },
+  "costUSD": {
+    "knownInputEstimate": 0.021041706,
+    "upperBoundIncludingMissingUsage": 0.03448170600000001,
+    "approvedCap": 0.3,
+    "isProviderInvoice": false
+  },
+  "splitCounts": {
+    "review": {
+      "pass": 13,
+      "reject": 3,
+      "pending": 58,
+      "error": 10
+    },
+    "holdout": {
+      "pass": 4,
+      "reject": 1,
+      "pending": 15,
+      "error": 2
+    }
+  }
+}

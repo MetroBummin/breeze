@@ -1,0 +1,140 @@
+-- Temporary evaluation only; no production RSS tables or client changes.
+create table public.breeze_rss_eval_106 (
+  id text primary key,
+  url text not null unique,
+  source text not null,
+  title text not null,
+  status text not null default 'queued' check(status in ('queued','running','approved','rejected','uncertain','error')),
+  claimed_at timestamptz,
+  result jsonb,
+  content_key text unique,
+  finished_at timestamptz
+);
+alter table public.breeze_rss_eval_106 enable row level security;
+revoke all on public.breeze_rss_eval_106 from public,anon,authenticated;
+grant select,update on public.breeze_rss_eval_106 to service_role;
+-- There are exactly 106 immutable work slots. No new slot or retry is allowed.
+insert into public.breeze_rss_eval_106(id,url,source,title) values
+('RSS-001','https://allthatsinteresting.com/cliff-house-san-francisco','All That''s Interesting','The Dramatic History Of San Francisco’s Cliff House, The Beloved Estate That Survived The 1906 Earthquake And A Sailboat Full Of Dynamite'),
+('RSS-002','https://allthatsinteresting.com/dorothea-lange-photos','All That''s Interesting','How Dorothea Lange Revealed The True Horrors Of The Great Depression Through Her Photography'),
+('RSS-003','https://allthatsinteresting.com/elvita-adams','All That''s Interesting','Elvita Adams Jumped From The Empire State Building In 1979 — And May Have Been Saved By A Gust Of Wind'),
+('RSS-004','https://allthatsinteresting.com/ethiopia-grat-beal-gibri','All That''s Interesting','This 2,800-Year-Old Palace Discovered In Ethiopia May Have Been One Of The World’s Very First ‘Skyscrapers’'),
+('RSS-005','https://allthatsinteresting.com/greece-ancient-royal-gymnasium','All That''s Interesting','Archaeologists In Greece Found An Ancient School Complete With Intact Benches Where Students Like Alexander The Great Listened To Lectures More Than 2,000 Years Ago'),
+('RSS-006','https://allthatsinteresting.com/james-dean-porsche','All That''s Interesting','The Eerie Story Of The Porsche 550 Spyder That James Dean Was Driving When He Died In A Tragic Crash In 1955'),
+('RSS-007','https://allthatsinteresting.com/kennedy-compound','All That''s Interesting','How A $25,000 Beach Cottage Became One Of The Most Iconic Homes In American History'),
+('RSS-008','https://allthatsinteresting.com/magic-bullet-theory','All That''s Interesting','Why The Magic Bullet Theory Surrounding John F. Kennedy’s Assassination Is So Controversial'),
+('RSS-009','https://allthatsinteresting.com/norellraptor-barsboldi-discovered','All That''s Interesting','A New Species Of Dinosaur With Four Wings Was Just Identified By Paleontologists In China'),
+('RSS-010','https://allthatsinteresting.com/rusty-spotted-cat','All That''s Interesting','The Little-Known Life Of The Rusty-Spotted Cat, The Elusive Predator That Weighs Just Three Pounds'),
+('RSS-011','https://allthatsinteresting.com/titanic-lifeboats','All That''s Interesting','The Tragic Story Of The Titanic Lifeboats — And The Role They Played In The Infamous Sinking'),
+('RSS-012','https://allthatsinteresting.com/turkey-ancient-shipwreck-rhosus-pottery','All That''s Interesting','Archaeologists In Turkey Just Found A 2,100-Year-Old Shipwreck Filled With Luxury Tableware Once Highly Prized In Ancient Rome'),
+('RSS-013','https://bloody-disgusting.com/editorials/3967896/the-strange-legacy-of-anacondas-the-hunt-for-the-blood-orchid-the-last-big-screen-snake-movie-before-the-reboot/','Bloody Disgusting','The Strange Legacy of ‘Anacondas: The Hunt for the Blood Orchid’, the Last Big-Screen Snake Movie Before the Reboot'),
+('RSS-014','https://bloody-disgusting.com/movie/3969472/erie-review-plays-fast-and-loose-with-found-footage/','Bloody Disgusting','‘Erie’ Review: Lo-Fi Found Footage Mystery Breaks Its Own Rules'),
+('RSS-015','https://bloody-disgusting.com/movie/3969876/10-must-watch-horror-movies-releasing-in-october/','Bloody Disgusting','10 New Horror Movies Releasing In October 2026'),
+('RSS-016','https://bloody-disgusting.com/movie/3970166/chase-infiniti-to-star-in-lionsgates-portrait-of-god-with-sam-raimi-and-jordan-peele-producing/','Bloody Disgusting','Chase Infiniti To Star In Lionsgate’s ‘Portrait of God’ With Sam Raimi And Jordan Peele Producing'),
+('RSS-017','https://bloody-disgusting.com/movie/3970169/river-acclaimed-slasher-starring-jane-levy-and-jessica-rothe-releasing-january-2027/','Bloody Disgusting','‘River’ – Acclaimed Slasher Starring Jane Levy and Jessica Rothe Releasing January 2027'),
+('RSS-018','https://bloody-disgusting.com/movie/3970184/slayground-posters-from-a24-welcome-you-to-a-haunted-house-with-no-exit/','Bloody Disgusting','‘Slayground’ Posters from A24 Welcome You to a Haunted House With No Exit'),
+('RSS-019','https://bloody-disgusting.com/movie/3970206/henry-portrait-of-a-serial-killer-4k-ultra-hd-blu-ray/','Bloody Disgusting','‘Henry: Portrait of a Serial Killer’ Getting 40th-Anniversary 4K Ultra HD Blu-ray'),
+('RSS-020','https://bloody-disgusting.com/movie/3970240/twilight-of-the-dead-filming-wraps-on-kate-beckinsale-zombie-movie-based-on-george-a-romero-story/','Bloody Disgusting','‘Twilight of the Dead’ – Filming Wraps on Kate Beckinsale Zombie Movie Based on George A. Romero Story'),
+('RSS-021','https://bloody-disgusting.com/news/3970198/scarescore/','Bloody Disgusting','ScareScore Measures Your Fear and Will Change the Horror Industry [Exclusive]'),
+('RSS-022','https://bloody-disgusting.com/news/3970212/blumhouse-popcorn-bucket-regal-cinemas/','Bloody Disgusting','Blumhouse Gets Their Own Limited-Edition Popcorn Bucket at Regal Cinemas'),
+('RSS-023','https://bloody-disgusting.com/video-games/3970138/everything-coming-to-dead-by-daylight-this-halloween-blighted-jason-voorhees-diablo-stranger-things-and-more/','Bloody Disgusting','Everything Coming to ‘Dead by Daylight’ This Halloween: Art the Clown, Blighted Jason Voorhees, ‘Stranger Things’ and More'),
+('RSS-024','https://bloody-disgusting.com/video-games/3970139/illfonic-teases-big-plans-for-the-season-for-halloween-the-game/','Bloody Disgusting','IllFonic Teases “Big Plans” for the Season for ‘Halloween: The Game’'),
+('RSS-025','https://www.dexerto.com/entertainment/100-thieves-admits-we-messed-up-after-ai-design-sparks-runescape-merch-backlash-3414244/','Dexerto','100 Thieves admits “we messed up” after AI design sparks RuneScape merch backlash'),
+('RSS-026','https://www.dexerto.com/entertainment/amazon-finally-answers-kindle-fans-calls-for-physical-page-turn-buttons-3414709/','Dexerto','Amazon finally answers Kindle fans’ calls for physical page-turn buttons'),
+('RSS-027','https://www.dexerto.com/entertainment/arnold-schwarzenegger-terminates-real-ai-robots-judgment-day-style-using-molten-steel-3414772/','Dexerto','Arnold Schwarzenegger terminates real AI robots Judgment Day style using molten steel'),
+('RSS-028','https://www.dexerto.com/entertainment/audible-will-soon-let-you-talk-to-audiobook-characters-with-new-ai-feature-3414556/','Dexerto','Audible will soon let you talk to audiobook characters with new AI feature'),
+('RSS-029','https://www.dexerto.com/entertainment/google-reveals-conveyor-belt-keyboard-that-brings-the-keys-to-you-3414464/','Dexerto','Google reveals conveyor belt keyboard that brings the keys to you'),
+('RSS-030','https://www.dexerto.com/entertainment/gypsy-rose-responds-after-partner-ken-urker-found-dead-on-his-birthday-3414822/','Dexerto','Gypsy Rose responds after partner Ken Urker found dead on his birthday'),
+('RSS-031','https://www.dexerto.com/entertainment/japan-raises-foreign-residency-fee-by-20x-as-immigration-rules-tighten-3414403/','Dexerto','Japan raises foreign residency fee by 20x as immigration rules tighten'),
+('RSS-032','https://www.dexerto.com/entertainment/japans-newest-attraction-lets-you-battle-in-robot-suits-with-health-points-and-special-moves-3414362/','Dexerto','Japan’s newest attraction lets you battle in robot suits with health points and special moves'),
+('RSS-033','https://www.dexerto.com/entertainment/man-arrested-after-faking-medical-emergency-to-try-and-escape-63-restaurant-bill-3414920/','Dexerto','Man arrested after faking medical emergency to try and escape $63 restaurant bill'),
+('RSS-034','https://www.dexerto.com/entertainment/substitute-teacher-fired-for-offering-students-extra-credit-if-they-fund-her-ecuador-trip-3414511/','Dexerto','Substitute teacher fired for offering students extra credit if they fund her Ecuador trip'),
+('RSS-035','https://www.dexerto.com/entertainment/who-is-benjamin-stachio-viral-triple-mustache-man-with-thick-neck-is-actually-an-ai-character-3414228/','Dexerto','Who is Benjamin Stachio? Viral triple-mustache man with thick neck is actually an AI character'),
+('RSS-036','https://www.dexerto.com/food/doordash-is-testing-an-ai-agent-that-orders-your-food-through-text-3414220/','Dexerto','DoorDash is testing an AI agent that orders your food through text'),
+('RSS-037','https://www.dexerto.com/food/doordashs-new-drone-delivery-could-get-chipotle-to-your-door-in-under-5-minutes-3414212/','Dexerto','DoorDash’s new drone delivery could get Chipotle to your door in under 5 minutes'),
+('RSS-038','https://www.dexerto.com/food/mcdonalds-addresses-claims-ai-is-being-used-to-determine-menu-prices-3414505/','Dexerto','McDonald’s addresses claims AI is being used to determine menu prices'),
+('RSS-039','https://www.dexerto.com/food/taco-bell-is-giving-duolingos-mascot-its-own-sauce-in-taco-day-collab-3414480/','Dexerto','Taco Bell is giving Duolingo’s mascot its own sauce in Taco Day collab'),
+('RSS-040','https://www.dexerto.com/twitch/kai-cenat-threatens-lawsuit-after-reggie-makes-abuse-allegations-involving-rakai-3414648/','Dexerto','Kai Cenat threatens lawsuit after Reggie makes abuse allegations involving RaKai'),
+('RSS-041','https://www.dexerto.com/twitch/man-arrested-after-twitch-streamer-accuses-him-of-sexual-assault-during-disneyland-stream-3414231/','Dexerto','Man arrested after Twitch streamer accuses him of sexual assault during Disneyland stream'),
+('RSS-042','https://www.dexerto.com/twitch/shroud-says-streaming-in-2026-is-depressing-as-fewer-viewers-interact-in-chat-3414260/','Dexerto','Shroud says streaming in 2026 is “depressing” as fewer viewers interact in chat'),
+('RSS-043','https://www.dexerto.com/twitch/twitch-chess-streamer-beats-magnus-carlsen-and-celebrates-by-taking-his-pants-off-3414564/','Dexerto','Twitch chess streamer beats Magnus Carlsen and celebrates by taking his pants off'),
+('RSS-044','https://medium.com/@VisibilityMemobyShraddhapatil/i-compared-how-three-different-website-platforms-get-read-by-ai-crawlers-one-wasnt-close-76d1362d69f4?source=rss------technology-5','Medium','I Compared How Three Different Website Platforms Get Read by AI Crawlers. One Wasn’t Close.'),
+('RSS-045','https://medium.com/@anishcp663/how-i-decide-whether-a-new-ai-tool-is-worth-trying-3-questions-i-actually-use-f8eac73a1e25?source=rss------technology-5','Medium','How I Decide Whether a New AI Tool Is Worth Trying: 3 Questions I Actually Use'),
+('RSS-046','https://medium.com/@arbabasfand1/introduction-to-software-coding-scripting-and-programming-44200d35089d?source=rss------technology-5','Medium','Introduction to Software, Coding, Scripting and Programming'),
+('RSS-047','https://medium.com/@hendersuoharveynqw43/low-latency-telemetry-streaming-and-resilient-edge-hydration-an-architectural-review-of-06f690474c4a?source=rss------technology-5','Medium','Low-Latency Telemetry Streaming and Resilient Edge Hydration: An Architectural Review of…'),
+('RSS-048','https://medium.com/@nagikawato/coca-cola-tested-new-coke-on-nearly-200-000-people-the-data-wasnt-wrong-a27c1d8e0bc6?source=rss------business-5','Medium','Coca-Cola Tested New Coke on Nearly 200,000 People. The Data Wasn’t Wrong.'),
+('RSS-049','https://medium.com/@sathyaru/blicq-transforms-the-colombo-international-book-fair-experience-6cbbcc29ea1e?source=rss------technology-5','Medium','Blicq Transforms the Colombo International Book Fair Experience'),
+('RSS-050','https://medium.com/@useakkant/why-every-nigerian-business-needs-its-own-independence-day-ff36bf86f8ba?source=rss------business-5','Medium','Why Every Nigerian Business Needs Its Own Independence Day'),
+('RSS-051','https://medium.com/@viralenglishmovies/why-some-hollywood-movies-go-viral-and-others-disappear-the-hidden-formula-behind-the-english-32012f950c0a?source=rss------technology-5','Medium','Why Some Hollywood Movies Go Viral (And Others Disappear) The hidden formula behind the English…'),
+('RSS-052','https://medium.com/exprea/churchills-famous-beaches-line-is-one-141-word-sentence-our-tool-couldn-t-see-it-5917dbdbeaf1?source=rss------culture-5','Medium','Churchill’s Famous Beaches Line Is One 141-Word Sentence. Our Tool Couldn’t See It.'),
+('RSS-053','https://medium.com/illumination/the-gray-space-of-interpretation-9fd4c0f8a1fe?source=rss------culture-5','Medium','The Gray Space of Interpretation'),
+('RSS-054','https://pub.aimind.so/the-ai-sovereignty-race-nobodys-explaining-well-8955f35ca548?source=rss------business-5','Medium','The AI Sovereignty Race Nobody’s Explaining Well'),
+('RSS-055','https://www.nasa.gov/centers-and-facilities/johnson/reliable-robots-meet-johnsons-dexterous-robotics-team/','NASA','Reliable Robots: Meet Johnson’s Dexterous Robotics Team'),
+('RSS-056','https://www.nasa.gov/technology/tech-transfer-spinoffs/nasas-machines-for-mars-make-beer-bubbly/','NASA','NASA’s Machines for Mars Make Beer Bubbly'),
+('RSS-057','https://science.nasa.gov/earth/earth-observatory/cloudy-cloak-over-the-northwest/','NASA','Cloudy Cloak Over the Northwest'),
+('RSS-058','https://science.nasa.gov/earth/earth-observatory/explosive-intensification-for-hurricane-polo/','NASA','Explosive Intensification for Hurricane Polo'),
+('RSS-059','https://science.nasa.gov/earth/earth-observatory/powerful-storms-continue-to-prowl-the-pacific/','NASA','Powerful Storms Continue to Prowl the Pacific'),
+('RSS-060','https://science.nasa.gov/earth/earth-observatory/rains-swamp-the-gandak-river/','NASA','Rains Swamp the Gandak River'),
+('RSS-061','https://projects.propublica.org/private-school-requirements-quiz/','ProPublica','It’s Easy to Start a Private School. Take Our Quiz to Find Out Where You Can Open Yours.'),
+('RSS-062','https://projects.propublica.org/sports-betting-uploader','ProPublica','What Does Your Data Reveal About Sports Betting Apps? Help ProPublica Find Out.'),
+('RSS-063','https://www.propublica.org/article/alpha-school-ai-texas-public-schools-mike-morath','ProPublica','Texas’ Education Board Raised Questions About an AI Learning Tool. The State Then Helped Pilot It in Public Schools.'),
+('RSS-064','https://www.propublica.org/article/arizona-english-fluency-legislation-adelita-grijalva','ProPublica','Arizona Lawmaker Proposes More Federal Support for English Fluency Services'),
+('RSS-065','https://www.propublica.org/article/california-raw-milk-regulation-emily-marris-moonlight-ridge-farm','ProPublica','A Girl Nearly Died After Drinking Raw Milk. The State Did Little to Punish the Unlicensed Farmer Who Sold It.'),
+('RSS-066','https://www.propublica.org/article/disabled-voters-nonprofit-funding-cuts-omb','ProPublica','“A Massive Power Grab”: White House Proposal Threatens Funding That Helps Disabled Americans Vote'),
+('RSS-067','https://www.propublica.org/article/draftkings-sports-gambling-problem-vip-fanduel','ProPublica','I Deliberately Bet Like a Problem Gambler. DraftKings Made Me a VIP.'),
+('RSS-068','https://www.propublica.org/article/hurricane-helene-flood-prone-areas','ProPublica','Two Years After Hurricane Helene, People Are Still Allowed to Live in Harm’s Way'),
+('RSS-069','https://www.propublica.org/article/idaho-faith-healing-multiple-deaths','ProPublica','Four Kids in One Faith-Healing Family Died. Authorities Could Do Nothing.'),
+('RSS-070','https://www.propublica.org/article/oregon-housing-director-husband-conflict','ProPublica','Her Agency Distributes Billions for Housing Projects. Her Husband’s Company Helped Develop Some of Them.'),
+('RSS-071','https://www.propublica.org/article/propublica-private-schools-arkansas-west-virginia-north-carolina','ProPublica','We’re Reporters, Not Teachers. We Were Able to Start Private Schools Anyway.'),
+('RSS-072','https://www.propublica.org/article/trumps-plan-to-restrict-mail-voting','ProPublica','The Untold Origins of Trump’s Plan to Sharply Restrict Mail-In Voting'),
+('RSS-073','https://www.tmz.com/2026/10/01/gypsy-rose-blanchard-ken-urker-death-apparent-overdose/','TMZ','Gypsy Rose Blanchard Says Ken Urker Died From Apparent Overdose'),
+('RSS-074','https://www.tmz.com/2026/10/02/cornell-gang-rape-scandal-kathy-hochul-letitia-james-press-conference/','TMZ','Cornell Gang Rape Scandal: Gov. Kathy Hochul and Special Prosecutor Letitia James Share Updates'),
+('RSS-075','https://www.tmz.com/2026/10/02/ken-urker-death-foul-play-not-ruled-out/','TMZ','Gypsy Rose Blanchard''s Former Fiancé: Foul Play Not Yet Ruled Out In Ken Urker''s Death'),
+('RSS-076','https://theconversation.com/almost-everyone-naturally-turns-left-when-walking-and-we-still-have-no-idea-why-292144','The Conversation','Almost everyone naturally turns left when walking – and we still have no idea why'),
+('RSS-077','https://theconversation.com/arctic-infrastructure-was-built-on-frozen-ground-drones-and-digital-twins-can-help-spot-the-permafrost-thaw-coming-292097','The Conversation','Arctic infrastructure was built on frozen ground – drones and digital twins can help spot the permafrost thaw coming'),
+('RSS-078','https://theconversation.com/chatbots-as-oracles-how-ai-is-giving-new-life-to-the-ancient-practice-of-seeking-answers-from-inscrutable-sources-289279','The Conversation','Chatbots as oracles: How AI is giving new life to the ancient practice of seeking answers from inscrutable sources'),
+('RSS-079','https://theconversation.com/christa-pikes-botched-execution-exposes-the-deep-contradictions-of-a-painless-state-imposed-death-293432','The Conversation','Christa Pike’s botched execution exposes the deep contradictions of a ‘painless’ state-imposed death'),
+('RSS-080','https://theconversation.com/cities-across-the-world-are-sinking-because-of-groundwater-depletion-but-the-process-can-be-reversed-292669','The Conversation','Cities across the world are sinking because of groundwater depletion. But the process can be reversed'),
+('RSS-081','https://theconversation.com/dozens-of-men-failed-to-stop-an-alleged-gang-rape-at-cornell-heres-the-misperception-that-keeps-bystanders-from-intervening-and-how-to-short-circuit-it-293321','The Conversation','Dozens of men failed to stop an alleged gang rape at Cornell – here’s the misperception that keeps bystanders from intervening and how to short-circuit it'),
+('RSS-082','https://theconversation.com/ethiopia-is-sliding-back-toward-war-a-look-at-what-is-driving-the-fighting-and-why-it-matters-293073','The Conversation','Ethiopia is sliding back toward war – a look at what is driving the fighting and why it matters'),
+('RSS-083','https://theconversation.com/from-suicide-bombers-to-positions-of-authority-the-changing-role-of-women-in-jihadi-groups-292409','The Conversation','From suicide bombers to positions of authority – the changing role of women in jihadi groups'),
+('RSS-084','https://theconversation.com/how-can-the-same-el-nino-cause-drought-in-one-part-of-the-world-and-floods-in-another-293013','The Conversation','How can the same El Niño cause drought in one part of the world and floods in another?'),
+('RSS-085','https://theconversation.com/how-sugar-from-outer-space-became-one-of-the-backbones-of-life-on-earth-293089','The Conversation','How sugar from outer space became one of the backbones of life on Earth'),
+('RSS-086','https://theconversation.com/manchester-city-supporters-have-been-gaslit-what-happens-now-293249','The Conversation','Manchester City supporters have been gaslit. What happens now?'),
+('RSS-087','https://theconversation.com/nina-simone-langston-hughes-and-their-forgotten-creative-collaboration-290878','The Conversation','Nina Simone, Langston Hughes and their forgotten creative collaboration'),
+('RSS-088','https://theconversation.com/one-in-eight-cancers-are-likely-caused-by-an-infection-worldwide-new-study-292996','The Conversation','One in eight cancers are likely caused by an infection worldwide – new study'),
+('RSS-089','https://theconversation.com/social-media-hasnt-killed-personal-style-its-killed-how-we-communicate-it-292483','The Conversation','Social media hasn’t killed personal style, it’s killed how we communicate it'),
+('RSS-090','https://theconversation.com/teenage-sex-and-death-at-camp-miasma-winks-and-blows-a-blood-soaked-kiss-at-horror-films-of-queer-past-291752','The Conversation','‘Teenage Sex and Death at Camp Miasma’ winks and blows a blood-soaked kiss at horror films of queer past'),
+('RSS-091','https://theconversation.com/the-war-games-problem-computer-science-has-long-understood-what-it-takes-to-keep-ai-under-control-292884','The Conversation','The ‘War Games’ problem: Computer science has long understood what it takes to keep AI under control'),
+('RSS-092','https://theconversation.com/us-tech-leaders-are-urgently-calling-for-rules-on-ai-china-already-has-them-292965','The Conversation','US tech leaders are urgently calling for rules on AI – China already has them'),
+('RSS-093','https://theconversation.com/why-do-some-chimpanzee-mothers-carry-their-dead-infants-for-months-292509','The Conversation','Why do some chimpanzee mothers carry their dead infants for months?'),
+('RSS-094','https://www.wired.com/gallery/best-stem-toys-for-kids/','WIRED','31 Best STEM Toys for Kids (2026): Learning Made Fun'),
+('RSS-095','https://www.wired.com/story/a-flaw-in-chatgpts-mac-app-could-have-let-hackers-grab-sensitive-data/','WIRED','A Flaw in ChatGPT’s Mac App Could Have Let Hackers Grab Sensitive Data'),
+('RSS-096','https://www.wired.com/story/amazon-says-it-is-going-to-stop-using-ndas-for-data-centers/','WIRED','Amazon Says It’s No Longer Using NDAs for Data Centers'),
+('RSS-097','https://www.wired.com/story/best-smart-cat-tracker/','WIRED','Best Smart Cat Trackers of 2026: Fi Mini vs. Tractive'),
+('RSS-098','https://www.wired.com/story/columbia-promo-code/','WIRED','Columbia Promo Codes: 15% Off | October 2026'),
+('RSS-099','https://www.wired.com/story/election-deniers-think-the-gops-terrible-midterm-polling-is-a-psyop/','WIRED','Election Deniers Think the GOP’s Terrible Midterm Polling Is a ‘Psyop’'),
+('RSS-100','https://www.wired.com/story/google-workspace-promo-code/','WIRED','Google Workspace Promo Codes: 14% Off for October 2026'),
+('RSS-101','https://www.wired.com/story/healthcare-workers-are-tired-of-cleaning-up-palantirs-mess/','WIRED','Health Care Workers Are Tired of Cleaning Up Palantir’s Mess'),
+('RSS-102','https://www.wired.com/story/nike-promo-code/','WIRED','Nike Promo Codes and Discounts: 30% for October 2026'),
+('RSS-103','https://www.wired.com/story/peacock-promo-code/','WIRED','Peacock Promo Codes: 40% Off October 2026'),
+('RSS-104','https://www.wired.com/story/uber-eats-promo-code/','WIRED','Uber Eats Promo Codes: $15 Off│October 2026'),
+('RSS-105','https://www.wired.com/story/wayfair-promo-code/','WIRED','Wayfair Coupons: Up to 80% Off October 2026'),
+('RSS-106','https://www.wired.com/story/when-the-robotaxis-are-watching-you/','WIRED','Your Driverless Cab Is Spying on You');
+create function public.claim_breeze_rss_eval_106(p_id text)
+returns jsonb language plpgsql security invoker set search_path='' as $$
+declare item public.breeze_rss_eval_106%rowtype;
+begin
+  perform pg_advisory_xact_lock(92304113);
+  select * into item from public.breeze_rss_eval_106 where id=p_id;
+  if not found then raise exception 'unknown article'; end if;
+  if item.status<>'queued' then return jsonb_build_object('claimed',false,'item',to_jsonb(item)); end if;
+  if (select count(*) from public.breeze_rss_eval_106 where status='running')>=2 then
+    return jsonb_build_object('claimed',false,'item',to_jsonb(item));
+  end if;
+  update public.breeze_rss_eval_106 set status='running',claimed_at=now() where id=p_id returning * into item;
+  return jsonb_build_object('claimed',true,'item',to_jsonb(item));
+end;
+$$;
+revoke all on function public.claim_breeze_rss_eval_106(text) from public,anon,authenticated;
+grant execute on function public.claim_breeze_rss_eval_106(text) to service_role;

@@ -22,19 +22,26 @@ export function questions(article) {
   };
 }
 const unit = value => typeof value==='number' && Number.isFinite(value) && value>=0 && value<=1;
+function evaluationError(stage,data){
+  const error=new Error('invalid_evaluation');
+  const usage=data?.usage && ['input_tokens','output_tokens'].every(k=>Number.isSafeInteger(data.usage[k])&&data.usage[k]>=0)
+    ? {inputTokens:data.usage.input_tokens,outputTokens:data.usage.output_tokens}:null;
+  // Safe diagnostic only: never return raw provider content or credentials.
+  error.diagnostic={stage,usage};return error;
+}
 export function validateAnswers(data, article) {
-  if(data?.model!==MODEL || !data.answers || typeof data.answers!=='object')throw new Error('invalid_evaluation');
+  if(data?.model!==MODEL || !data.answers || typeof data.answers!=='object')throw evaluationError('model_or_answer_envelope',data);
   const specs=questions(article), answers={};
-  if(Object.keys(data.answers).length!==Object.keys(specs).length)throw new Error('invalid_evaluation');
+  if(Object.keys(data.answers).length!==Object.keys(specs).length)throw evaluationError('answer_count',data);
   for(const [key,spec] of Object.entries(specs)) {
     const answer=data.answers[key], keys=Object.keys(spec.criteria);
     if(answer?.type!=='choice' || !keys.includes(answer.choice) || !unit(answer.confidence) ||
       !answer.probabilities || Object.keys(answer.probabilities).length!==keys.length ||
-      !keys.every(k=>unit(answer.probabilities[k])))throw new Error('invalid_evaluation');
+      !keys.every(k=>unit(answer.probabilities[k])))throw evaluationError('answer_shape:'+key,data);
     const values=keys.map(k=>answer.probabilities[k]), top=answer.probabilities[answer.choice];
     const confidence=(top-1/keys.length)/(1-1/keys.length);
     if(Math.abs(values.reduce((a,b)=>a+b,0)-1)>0.01 || top<Math.max(...values)-0.001 ||
-      Math.abs(confidence-answer.confidence)>0.02)throw new Error('invalid_evaluation');
+      Math.abs(confidence-answer.confidence)>0.02)throw evaluationError('probability_consistency:'+key,data);
     answers[key]={choice:answer.choice,confidence:answer.confidence,probabilities:answer.probabilities};
   }
   const gates=['promotion','extraction','mismatch'];
@@ -61,13 +68,14 @@ export async function evaluateArticle(article, key, {fetchImpl=fetch, signal}={}
       paragraphs:article.paragraphs.map((text,i)=>({id:`p${i+1}`,text})),links:article.links,extraction:article.checks}},questions:questions(article)})});
   if(!response.ok){await response.body?.cancel();throw new Error('provider_unavailable');}
   // Bound streaming output too; no raw provider body or credentials in logs/errors.
-  const reader=response.body?.getReader();if(!reader)throw new Error('invalid_evaluation');
+  const reader=response.body?.getReader();if(!reader)throw evaluationError('missing_response_body');
   const chunks=[];let size=0;
   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;
-    if(size>100000){await reader.cancel();throw new Error('invalid_evaluation');}chunks.push(value);}}
+    if(size>100000){await reader.cancel();throw evaluationError('response_size_limit');}chunks.push(value);}}
   finally{reader.releaseLock();}
   const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
-  return validateAnswers(JSON.parse(new TextDecoder().decode(bytes)),article);
+  let data;try{data=JSON.parse(new TextDecoder().decode(bytes));}catch{throw evaluationError('invalid_json');}
+  return validateAnswers(data,article);
 }
 export async function qualityKey(url, article) {
   const input=JSON.stringify([VERSION,url,article.title,article.paragraphs,article.links,article.checks]);
