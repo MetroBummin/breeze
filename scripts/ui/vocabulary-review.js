@@ -1,6 +1,6 @@
 /* Review progress is device-local and never touches vocabulary/sync records. */
 const VOCABULARY_REVIEW_STORAGE='breeze.vocabulary-review.v1';
-const vocabularyReviewDialog=/** @type {HTMLDialogElement} */(document.getElementById('vocabulary-review-dialog'));
+const vocabularyReviewPage=document.getElementById('vocabulary-review-page');
 let vocabularyReviewView=null;
 let vocabularyReviewRevealed=false;
 function readVocabularyReview(){
@@ -37,7 +37,7 @@ function refreshVocabularyReviewEntry(){
     button.disabled=scope.custom&&!scope.keys.length;
     document.getElementById('review-use-daily').hidden=!scope.custom;
     document.getElementById('review-plan').textContent=scope.custom?'선택한 범위의 뜻을 복습해요.':view.status==='active'?'지난 복습을 이어서 할 수 있어요.':'기한이 된 표현부터, 한 번에 최대 5개';
-  }catch{/* Keep entry usable; show storage errors in its dialog. */}
+  }catch{/* Keep entry usable; show storage errors on the study page. */}
 }
 function renderVocabularySelection(){
   const visible=visibleVocabularyReviewKeys(),allowed=new Set(visible);
@@ -121,21 +121,30 @@ function highlightReviewSentence(card){
 }
 function renderVocabularyReview(view,focus=true){
   vocabularyReviewView=view;vocabularyReviewRevealed=false;
+  document.getElementById('review-front').hidden=false;
+  document.getElementById('review-back').hidden=true;
+  document.getElementById('review-flip').setAttribute('aria-label','카드를 뒤집어 뜻 보기');
   document.getElementById('review-error').hidden=true;
   document.getElementById('review-meaning').hidden=true;
   document.getElementById('review-meaning').textContent='';
   document.getElementById('review-grade').hidden=true;
   document.getElementById('review-reveal').hidden=false;
   document.getElementById('review-card').hidden=!view.card;
+  document.getElementById('review-finish').hidden=!!view.card;
   document.getElementById('review-progress').textContent=view.card?`${view.completed+1} / ${view.total}`:'';
   const status=document.getElementById('review-status');status.textContent='';
   if(view.card){
     document.getElementById('review-expression').textContent=view.card.word;
+    document.getElementById('review-back-expression').textContent=view.card.word;
+    for(const [id,outcome] of [['confused','confused'],['uncertain','uncertain'],['remember','remembered']]){
+      const ms=view.intervals[outcome];
+      document.getElementById('review-'+id+'-interval').textContent=ms<3600000?`${ms/60000}분`:ms<86400000?`${ms/3600000}시간`:`${ms/86400000}일`;
+    }
     document.getElementById('review-source').textContent=view.card.book||'출처 제목 없음';
     highlightReviewSentence(view.card);
     if(focus)document.getElementById('review-reveal').focus();
   }else{
-    if(view.status==='complete')status.textContent=`이번 복습을 마쳤어요.\n기억났어요 ${view.remembered}개 · 헷갈렸어요 ${view.confused}개\n헷갈린 표현은 10분 뒤, 기억난 표현은 더 나중에 다시 만나요.`;
+    if(view.status==='complete')status.textContent=`이번 복습을 마쳤어요.\n알아요 ${view.remembered}개 · 애매해요 ${view.uncertain}개 · 모르겠어요 ${view.confused}개\n각 표현의 다음 복습 시간을 정했어요.`;
     else if(view.status==='empty')status.textContent='아직 복습할 표현이 없어요. 읽다가 단어나 표현의 뜻을 저장해 보세요.';
     else if(view.status==='waiting')status.textContent='지금 복습할 표현은 모두 마쳤어요.'+(view.nextDueAt?`\n다음 복습: ${new Date(view.nextDueAt).toLocaleString('ko-KR',{month:'long',day:'numeric',hour:'numeric',minute:'2-digit'})}`:'');
     else status.textContent='저장한 표현으로 짧게 복습해 보세요.';
@@ -143,67 +152,72 @@ function renderVocabularyReview(view,focus=true){
   }
   refreshVocabularyReviewEntry();
 }
-function openVocabularyReview(daily=false){
-  if(vocabularyReviewDialog.open)return;
-  vocabularyReviewDialog.showModal();
+function resumeVocabularyReview(){
   try{
-    const scope=vocabularyReviewScope();
-    const raw=readVocabularyReview();
+    const view=BreezeReview.view(readVocabularyReview(),words,Date.now());
+    document.getElementById('review-title').textContent=view.state.session?.practice?'선택한 뜻 복습':'오늘의 복습';
+    renderVocabularyReview(view);
+  }catch{renderVocabularyReview({card:null,status:'idle'});vocabularyReviewError();}
+}
+function openVocabularyReview(daily=false){
+  if(activeAppView()==='study')return;
+  try{
+    const scope=vocabularyReviewScope(),raw=readVocabularyReview();
     if(daily&&raw.session?.practice)raw.session=null;
     const view=!daily&&scope.custom?BreezeReview.startSelection(raw,words,scope.keys,Date.now()):BreezeReview.start(raw,words,Date.now());
-    document.getElementById('review-title').textContent=view.state.session?.practice?'선택한 뜻 복습':'오늘의 복습';
-    commitVocabularyReview(view.state);renderVocabularyReview(view);
+    commitVocabularyReview(view.state);show('study');
   }catch{
-    renderVocabularyReview({card:null,status:'idle'});vocabularyReviewError();
+    show('study');renderVocabularyReview({card:null,status:'idle'});vocabularyReviewError();
   }
 }
+function resetVocabularyReviewSurface(){
+  vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
+}
 function closeVocabularyReview(){
-  if(vocabularyReviewDialog.open)vocabularyReviewDialog.close();
+  if(activeAppView()!=='study')return;
+  show('vocab',{replace:true});document.getElementById('wordbook-review').focus();
 }
 document.getElementById('review-close').addEventListener('click',closeVocabularyReview);
-// Native modality makes the page inert, but browsers may still tab into chrome.
-// Keep keyboard recall inside visible controls, including after answer/status focus.
-vocabularyReviewDialog.addEventListener('keydown',event=>{
-  if(event.key!=='Tab')return;
-  const controls=Array.from(vocabularyReviewDialog.querySelectorAll('button:not([disabled])'))
-    .filter(node=>node.getClientRects().length>0);
-  if(!controls.length)return;
-  event.preventDefault();
-  const active=document.activeElement,index=controls.indexOf(active);
-  let next;
-  if(index>=0)next=controls[(index+(event.shiftKey?-1:1)+controls.length)%controls.length];
-  else if(event.shiftKey)next=[...controls].reverse().find(node=>active&&(active.compareDocumentPosition(node)&Node.DOCUMENT_POSITION_PRECEDING))||controls[controls.length-1];
-  else next=controls.find(node=>active&&(active.compareDocumentPosition(node)&Node.DOCUMENT_POSITION_FOLLOWING))||controls[0];
-  /** @type {HTMLElement} */(next).focus();
+document.getElementById('review-finish').addEventListener('click',closeVocabularyReview);
+window.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&activeAppView()==='study'){event.preventDefault();closeVocabularyReview();}
 });
-
-vocabularyReviewDialog.addEventListener('close',()=>{
-  vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
-  refreshVocabularyReviewEntry();
-  if(activeAppView()==='vocab')document.getElementById('wordbook-review').focus();
-});
-document.getElementById('review-reveal').addEventListener('click',()=>{
+function revealVocabularyReview(){
   if(!vocabularyReviewView?.card||vocabularyReviewRevealed)return;
   try{
     const latest=BreezeReview.view(readVocabularyReview(),words,Date.now());
     if(latest.token!==vocabularyReviewView.token){renderVocabularyReview(latest);return;}
     vocabularyReviewView=latest;vocabularyReviewRevealed=true;
+    document.getElementById('review-front').hidden=true;document.getElementById('review-back').hidden=false;
+    document.getElementById('review-flip').setAttribute('aria-label','원문 문장 다시 보기');
     const meaning=document.getElementById('review-meaning');meaning.textContent=latest.card.ko;meaning.hidden=false;
     document.getElementById('review-reveal').hidden=true;document.getElementById('review-grade').hidden=false;
     meaning.focus();
   }catch{vocabularyReviewError();}
+}
+document.getElementById('review-reveal').addEventListener('click',revealVocabularyReview);
+function flipVocabularyReview(){
+  if(!vocabularyReviewRevealed){revealVocabularyReview();return;}
+  const front=document.getElementById('review-front'),back=document.getElementById('review-back');
+  front.hidden=!front.hidden;back.hidden=!front.hidden;
+  document.getElementById('review-flip').setAttribute('aria-label',front.hidden?'원문 문장 다시 보기':'뜻 다시 보기');
+}
+document.getElementById('review-flip').addEventListener('click',flipVocabularyReview);
+document.getElementById('review-flip').addEventListener('keydown',event=>{
+  if(event.key==='Enter'||event.key===' '){event.preventDefault();flipVocabularyReview();}
 });
 function gradeVocabularyReview(outcome){
-  if(!vocabularyReviewDialog.open||!vocabularyReviewRevealed||!vocabularyReviewView?.token)return;
+  if(activeAppView()!=='study'||!vocabularyReviewRevealed||!vocabularyReviewView?.token)return;
   try{
     const view=BreezeReview.grade(readVocabularyReview(),words,vocabularyReviewView.token,outcome,Date.now());
     commitVocabularyReview(view.state);renderVocabularyReview(view);
   }catch{vocabularyReviewError();}
 }
 document.getElementById('review-remember').addEventListener('click',()=>gradeVocabularyReview('remembered'));
+document.getElementById('review-uncertain').addEventListener('click',()=>gradeVocabularyReview('uncertain'));
 document.getElementById('review-confused').addEventListener('click',()=>gradeVocabularyReview('confused'));
 window.addEventListener('storage',event=>{
   if(event.key!==VOCABULARY_REVIEW_STORAGE)return;
   refreshVocabularyReviewEntry();
-  if(vocabularyReviewDialog.open){try{renderVocabularyReview(BreezeReview.view(readVocabularyReview(),words,Date.now()));}catch{vocabularyReviewError();}}
+  if(activeAppView()==='study'){try{renderVocabularyReview(BreezeReview.view(readVocabularyReview(),words,Date.now()));}catch{vocabularyReviewError();}}
 });

@@ -7,7 +7,7 @@
    grade requires the opaque token from the displayed card and accepts it once.
    UI callers must read the latest state and save the result before advancing. */
 const BreezeReview = (() => {
-  const VERSION=1, LIMIT=5, DAY=86400000, RETRY=600000;
+  const VERSION=1, LIMIT=5, DAY=86400000, RETRY=600000, UNCERTAIN=3600000;
   const INTERVALS=[1,3,7,14,30];
   const own=(object,key)=>Object.prototype.hasOwnProperty.call(object,key);
   const record=value=>!!value && typeof value==='object' && !Array.isArray(value);
@@ -19,7 +19,7 @@ const BreezeReview = (() => {
 
   /** @typedef {{identity:string,streak:number,dueAt:number,lastReviewedAt:number}} Progress */
   /** @typedef {{key:string,identity:string}} Reference */
-  /** @typedef {{id:string,startedAt:number,queue:Reference[],index:number,remembered:number,confused:number,practice?:boolean}} Session */
+  /** @typedef {{id:string,startedAt:number,queue:Reference[],index:number,remembered:number,confused:number,uncertain?:number,practice?:boolean}} Session */
   /** @typedef {{version:number,sequence:number,progress:Record<string,Progress>,session:Session|null}} State */
   /** @typedef {{key:string,identity:string,word:string,ko:string,example:string,book:string,addedAt:number}} Card */
 
@@ -47,7 +47,8 @@ const BreezeReview = (() => {
         || !Array.isArray(saved.queue) || saved.queue.length<1 || (saved.practice!==true&&saved.queue.length>LIMIT)
         || !count(saved.index) || saved.index>saved.queue.length
         || !count(saved.remembered) || !count(saved.confused)
-        || saved.remembered+saved.confused>saved.index) return state;
+        || (saved.uncertain!==undefined&&!count(saved.uncertain))
+        || saved.remembered+saved.confused+(saved.uncertain||0)>saved.index) return state;
     const keys=new Set();
     /** @type {Reference[]} */
     const queue=[];
@@ -61,6 +62,7 @@ const BreezeReview = (() => {
     state.session={id:saved.id,startedAt:saved.startedAt,queue,index:saved.index,
       remembered:saved.remembered,confused:saved.confused};
     if(saved.practice===true)state.session.practice=true;
+    if(saved.uncertain!==undefined)state.session.uncertain=saved.uncertain;
     return state;
   }
 
@@ -113,6 +115,11 @@ const BreezeReview = (() => {
       });
   }
 
+  function schedule(previous,outcome){
+    const prior=previous?previous.streak:0;
+    const streak=outcome==='remembered'?Math.min(prior+1,INTERVALS.length):outcome==='uncertain'?Math.max(0,prior-1):0;
+    return {streak,delay:outcome==='remembered'?INTERVALS[streak-1]*DAY:outcome==='uncertain'?UNCERTAIN:RETRY};
+  }
   /** @param {State} state @param {Card[]} available */
   function snapshot(state,available,now){
     const byKey=reconcile(state,available),session=state.session;
@@ -135,7 +142,9 @@ const BreezeReview = (() => {
     }
     return {state,status,card,token,completed:session ? session.index : 0,
       total:session ? session.queue.length : 0,remembered:session ? session.remembered : 0,
-      confused:session ? session.confused : 0,eligibleCount:due.length,nextDueAt};
+      confused:session ? session.confused : 0,uncertain:session?.uncertain||0,
+      intervals:card?Object.fromEntries(['confused','uncertain','remembered'].map(outcome=>[outcome,schedule(state.progress[card.key],outcome).delay])):null,
+      eligibleCount:due.length,nextDueAt};
   }
 
   function view(raw,words,now){
@@ -181,14 +190,13 @@ const BreezeReview = (() => {
     const state=normalize(raw),available=cards(words),at=nowValue(now);
     const current=snapshot(state,available,at);
     if(current.status!=='active' || typeof token!=='string' || token!==current.token
-        || (outcome!=='remembered' && outcome!=='confused')) return {...current,accepted:false};
+        || (outcome!=='remembered' && outcome!=='confused' && outcome!=='uncertain')) return {...current,accepted:false};
     const card=current.card,previous=state.progress[card.key];
-    const streak=outcome==='remembered' ? Math.min((previous ? previous.streak : 0)+1,INTERVALS.length) : 0;
-    const delay=outcome==='remembered' ? INTERVALS[streak-1]*DAY : RETRY;
+    const {streak,delay}=schedule(previous,outcome);
     state.progress[card.key]={identity:card.identity,streak,
       dueAt:Math.min(at+delay,Number.MAX_SAFE_INTEGER),lastReviewedAt:at};
     state.session.index++;
-    state.session[outcome]++;
+    state.session[outcome]=(state.session[outcome]||0)+1;
     return {...snapshot(state,available,at),accepted:true};
   }
 

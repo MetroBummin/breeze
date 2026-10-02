@@ -344,3 +344,25 @@ test('manual selection resumes its own queue and supports more than the daily fi
   const fresh=review.startSelection(resumed.state,words,['w7','w7','missing'],NOW+2);
   assert.equal(fresh.total,1);assert.equal(fresh.card.key,'w7');
 });
+
+test('three grades publish the same intervals they schedule; uncertain lowers one step and persists',()=>{
+  const words={wind:saved('wind')};let start=review.start(null,words,NOW);
+  assert.deepEqual(plain(start.intervals),{confused:10*MINUTE,uncertain:60*MINUTE,remembered:DAY});
+  let done=remembered(start,words,NOW);start=review.start(done.state,words,NOW+DAY);
+  done=remembered(start,words,NOW+DAY);const at=NOW+4*DAY;start=review.start(done.state,words,at);
+  assert.equal(start.intervals.remembered,7*DAY);
+  const uncertain=review.grade(start.state,words,start.token,'uncertain',at);
+  assert.equal(uncertain.accepted,true);assert.equal(uncertain.state.progress.wind.streak,1);
+  assert.equal(uncertain.state.progress.wind.dueAt,at+start.intervals.uncertain);
+  assert.equal(uncertain.uncertain,1);assert.equal(review.normalize(plain(uncertain.state)).session.uncertain,1);
+  assert.equal(review.grade(uncertain.state,words,start.token,'uncertain',at).accepted,false);
+  assert.equal(review.start(uncertain.state,words,at+60*MINUTE-1).status,'waiting');
+  assert.equal(review.start(uncertain.state,words,at+60*MINUTE).intervals.remembered,3*DAY);
+});
+test('malformed uncertain counts cannot corrupt a saved session',()=>{
+  const start=review.start(null,{wind:saved('wind')},NOW);
+  for(const uncertain of [-1,0.5,'1',1]){
+    const raw=plain(start.state);raw.session.uncertain=uncertain;
+    assert.equal(review.normalize(raw).session,null);
+  }
+});

@@ -15,8 +15,9 @@ as described in decision 007.
 The default Today start selects up to five cards. Previously reviewed cards due now
 come first, ordered by due time; new cards follow, oldest saved first. Raw Meaning
 key breaks ties independently of locale and object enumeration. Remembered
-advances through 1, 3, 7, 14 and 30 days, capped at 30. Confused resets that streak
-and schedules ten minutes later. No early review of a future-due card is selected by Today.
+advances through 1, 3, 7, 14 and 30 days, capped at 30. Unknown resets that streak
+and schedules ten minutes later. Uncertain schedules one hour later and lowers
+the streak by one step, floored at zero. No early review of a future-due card is selected by Today.
 
 The persisted queue, index and result counts resume an interrupted session. New
 vocabulary does not change its queue. Answer visibility is transient UI state;
@@ -66,4 +67,25 @@ outside the current scope. Manual grades use the same intervals as Today.
 The saved sentence is visible and its target expression highlighted before the
 meaning is revealed. This MVP practices contextual recall; it does not claim
 context-free mastery or Anki/FSRS scheduling. A short cue asks users to choose
-Confused if they inferred the answer but could not recall the word's meaning.
+Uncertain if they inferred the answer but could not recall the word's meaning.
+
+## Study navigation
+
+The center action navigates to the dedicated `study` view rather than opening a
+modal. Memory filters/selection stay on the Memory page; the study page contains
+only the current recall task and a Memory back action. Browser Back/Forward
+restore the persisted queue with its answer hidden. There is no dialog top layer,
+scrim or focus trap. Leaving via Escape/Memory hides the answer and restores the
+entry focus. Long content scrolls as a normal page.
+
+## Flashcards and three grades
+
+The front presents the saved expression in its original sentence. Tapping the
+card, Enter/Space, or Show Answer flips to the exact saved meaning. Once revealed,
+the user can flip back to the original sentence and grade Unknown / Uncertain /
+Known. Every button shows its actual next interval from the same engine function
+that applies the grade. Unknown: 10 minutes and reset. Uncertain: 1 hour and one
+step down. Known: 1, 3, 7, 14, 30 days, capped. No grading before reveal.
+The optional uncertain counter defaults to zero for older v1 sessions; old
+queues/progress remain readable. Flashcard behavior borrows familiar recall
+patterns while retaining Breeze type, surface and muted color tokens.

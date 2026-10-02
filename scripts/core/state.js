@@ -247,7 +247,7 @@ function rememberAppView(view,replace){
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
-  if(v!=='vocab'&&typeof closeVocabularyReview==='function')closeVocabularyReview();
+  if(v!=='study'&&typeof resetVocabularyReviewSurface==='function')resetVocabularyReviewSurface();
   if(v!=='read')cancelPendingBookOpen();
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && v!=='read') endOnboarding(true,false);
   const settings=options||{};
@@ -256,7 +256,7 @@ function show(v,options){
   document.getElementById('v-'+v).classList.add('on');
   document.getElementById('nav-home').classList.toggle('on',
     v==='home' || v==='casuals' || v==='longform');
-  document.getElementById('nav-vocab').classList.toggle('on', v==='vocab');
+  document.getElementById('nav-vocab').classList.toggle('on', v==='vocab'||v==='study');
   if(v!=='read'){
     if(typeof closeSentence==='function') closeSentence();
     const retained=v==='home'&&typeof retainReaderForHome==='function'&&retainReaderForHome();
@@ -278,6 +278,7 @@ function show(v,options){
   if(v==='casuals') renderCasualLibrary();
   if(v==='longform') renderLongformLibrary();
   if(v==='vocab') renderVocab();
+  if(v==='study'&&typeof resumeVocabularyReview==='function')resumeVocabularyReview();
   window.scrollTo(0,0);
   const box = readerScroller();
   if(box && v!=='read'){ box.scrollTop = 0; box.scrollLeft = 0; }

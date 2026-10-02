@@ -53,15 +53,15 @@ async function scenario(name,records,run){
 }
 async function openReview(page){
   await page.locator('#wordbook-review').click();
-  assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.open),true);
-  assert.equal(await page.locator('#vocabulary-review-dialog:modal').count(),1,'Review must use native modal semantics');
+  assert.equal(await page.evaluate(()=>activeAppView()),'study');
+  assert.equal(await page.locator('dialog:modal').count(),0,'Study is a page, not a modal');
   assert.equal(await page.locator('#vtablewrap').isVisible(),false,'Background Memory meanings cannot leak through the glass');
-  assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.contains(document.activeElement)),true,'Focus enters the review dialog');
+  assert.equal(await page.locator('#vocabulary-review-page').evaluate(element=>element.contains(document.activeElement)),true,'Focus enters the review dialog');
 }
 async function assertHiddenAnswer(page){
   assert.equal(await page.locator('#review-meaning').isVisible(),false,'Saved meaning stays hidden before recall');
   assert.equal(await page.locator('#review-reveal').isVisible(),true);
-  for(const id of ['review-remember','review-confused']){
+  for(const id of ['review-remember','review-confused','review-uncertain']){
     assert.ok(!await page.locator('#'+id).isVisible()||await page.locator('#'+id).isDisabled(),`${id} cannot be used before reveal`);
   }
 }
@@ -87,7 +87,7 @@ async function assertDone(page){
 }
 async function closeReview(page,keyboard=false){
   if(keyboard)await page.keyboard.press('Escape');else await page.locator('#review-close').click();
-  await page.waitForFunction(()=>!document.getElementById('vocabulary-review-dialog').open);
+  await page.waitForFunction(()=>activeAppView()==='vocab');
   assert.equal(await page.locator('dialog:modal').count(),0,'Dismissal releases the native top layer');
   assert.equal(await page.locator('#vtablewrap').isVisible(),true,'Dismissal restores the unchanged Memory list');
   assert.equal(await page.locator('#wordbook-review').evaluate(element=>element===document.activeElement),true,'Dismissal restores initiating control focus');
@@ -278,17 +278,11 @@ try{
     assert.deepEqual(await persistedWords(page),vocabularyAfterEdit);
   });
 
-  await scenario('keyboard, Escape, navigation and Back release modal focus',uniqueWords(3),async page=>{
+  await scenario('keyboard, Escape, Back and Forward navigate study without losing progress',uniqueWords(3),async page=>{
     await page.locator('#wordbook-review').focus();await page.keyboard.press('Enter');
     await assertHiddenAnswer(page);
-    for(let i=0;i<8;i++){
-      await page.keyboard.press('Tab');
-      assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.contains(document.activeElement)),true,'Tab remains inside the native modal');
-    }
-    for(let i=0;i<4;i++){
-      await page.keyboard.press('Shift+Tab');
-      assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.contains(document.activeElement)),true,'Reverse Tab remains inside the native modal');
-    }
+    await page.keyboard.press('Tab');
+    assert.equal(await page.locator('#v-vocab').isVisible(),false);
     await page.locator('#review-reveal').focus();await page.keyboard.press('Space');
     assert.equal(await page.locator('#review-meaning').isVisible(),true);
     await page.locator('#review-remember').focus();await page.keyboard.press('Enter');await assertHiddenAnswer(page);
@@ -296,12 +290,13 @@ try{
     await closeReview(page,true);await openReview(page);
     assert.equal(await page.locator('#review-expression').innerText(),current);await assertHiddenAnswer(page);
     await page.evaluate(()=>show('home'));
-    assert.equal(await page.locator('#vocabulary-review-dialog').evaluate(element=>element.open),false,'Leaving Memory closes the modal');
+    assert.equal(await page.locator('#v-study').isVisible(),false,'Leaving Study changes the page');
     assert.equal(await page.locator('dialog:modal').count(),0);
     await page.locator('#nav-vocab').click();await openReview(page);await assertHiddenAnswer(page);
     await page.goBack();
-    await page.waitForFunction(()=>!document.getElementById('vocabulary-review-dialog').open);
-    assert.equal(await page.locator('dialog:modal').count(),0,'Browser Back releases the review modal');
+    await page.waitForFunction(()=>activeAppView()==='vocab');
+    assert.equal(await page.locator('dialog:modal').count(),0);
+    await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');await assertHiddenAnswer(page);
     await page.evaluate(()=>show('vocab'));await openReview(page);
     assert.equal(await page.locator('#review-expression').innerText(),current,'Navigation preserves unfinished session progress');
     await assertHiddenAnswer(page);await closeReview(page);
@@ -334,6 +329,24 @@ try{
     assert.equal(await page.locator('#review-title').innerText(),'오늘의 복습');
   });
 
+  await scenario('flashcard front/back and three spaced grades',uniqueWords(1),async page=>{
+    await openReview(page);
+    await page.locator('#review-flip').click();
+    assert.equal(await page.locator('#review-front').isVisible(),false);
+    assert.equal(await page.locator('#review-meaning').isVisible(),true);
+    assert.equal(await page.locator('#review-confused-interval').textContent(),'10분');
+    assert.equal(await page.locator('#review-uncertain-interval').textContent(),'1시간');
+    assert.equal(await page.locator('#review-remember-interval').textContent(),'1일');
+    await page.locator('#review-flip').focus();await page.keyboard.press('Space');
+    assert.equal(await page.locator('#review-front').isVisible(),true);
+    await page.locator('#review-uncertain').click();await assertDone(page);
+    const stored=JSON.parse(await reviewState(page));
+    assert.equal(stored.session.uncertain,1);
+    assert.equal(Object.values(stored.progress)[0].dueAt,NOW+3600000);
+    await closeReview(page);await page.clock.setFixedTime(NOW+3600000-1);await openReview(page);await assertDone(page);
+    await closeReview(page);await page.clock.setFixedTime(NOW+3600000);await openReview(page);await assertHiddenAnswer(page);
+  });
+
   await scenario('responsive light and dark layouts',{
     'take care of':fixture('take care of',1,{ko:'문맥에 맞는 아주 긴 저장된 한국어 뜻과 설명을 확인해요. '.repeat(8),example:'Please take care of '+('this long saved sentence with real reading context, ').repeat(14),book:'A very long saved book title / 아주 긴 원문 책 제목 '.repeat(5)})
   },async page=>{
@@ -341,16 +354,16 @@ try{
       await page.setViewportSize({width,height});
       await page.evaluate(value=>{darkMode=value;applyDark();},dark);
       await openReview(page);await assertHiddenAnswer(page);await reveal(page);
-      const layout=await page.locator('#vocabulary-review-dialog').evaluate(dialog=>{
+      const layout=await page.locator('#vocabulary-review-page').evaluate(dialog=>{
         const rect=dialog.getBoundingClientRect(),style=getComputedStyle(dialog);
         return {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom,width:rect.width,height:rect.height,scrollWidth:dialog.scrollWidth,clientWidth:dialog.clientWidth,color:style.color,background:style.backgroundColor,documentWidth:document.documentElement.scrollWidth};
       });
       const label=`${width}x${height} ${dark?'dark':'light'}`;
-      assert.ok(layout.x>=-1&&layout.right<=width+1&&layout.y>=-1&&layout.bottom<=height+1,`${label}: modal stays inside the viewport ${JSON.stringify(layout)}`);
-      assert.ok(layout.scrollWidth<=layout.clientWidth+1,`${label}: no horizontal modal overflow`);
+      assert.ok(layout.x>=-1&&layout.right<=width+1,`${label}: study page fits the viewport width ${JSON.stringify(layout)}`);
+      assert.ok(layout.scrollWidth<=layout.clientWidth+1,`${label}: no horizontal study overflow`);
       assert.ok(layout.documentWidth<=width+1,`${label}: no horizontal page overflow`);
       assert.notEqual(layout.color,layout.background,`${label}: text and surface colors differ`);
-      for(const id of ['review-close','review-remember','review-confused']){
+      for(const id of ['review-close','review-remember','review-confused','review-uncertain']){
         const control=page.locator('#'+id);await control.scrollIntoViewIfNeeded();
         const box=await control.boundingBox();
         assert.ok(box.width>=44&&box.height>=44,`${label}: ${id} maintains a 44px target`);
