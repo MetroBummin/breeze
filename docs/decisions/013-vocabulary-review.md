@@ -16,23 +16,25 @@ writers across tabs remain a limitation of the existing local storage contract.
 
 ## Limits, batches and due work
 
-Daily new and review limits are independent, defaulting to 20 and 100; either
-allows zero. A new card is counted at its first saved regular assessment, not
-when queued or merely revealed. The review budget counts distinct previously
-learned cards receiving a scheduled review that local calendar day. Relearning
-never consumes another card slot, including on a later day. Regular response
-counts include relearning; practice responses are separate. Daily identity sets
-and response totals persist, with no unused allocation carried to the next day.
-Local calendar dates use the device timezone and supplied time; this is not
-Anki's configurable rollover hour.
+The final UI has one **daily maximum unique-card count**, default 100, with
+50/100/200/300 presets and custom input including zero. It combines new and
+scheduled review cards; due work has priority and new cards use the remaining
+slots. Same-day repetitions consume no additional slots. First relearning on a
+later day consumes one slot. Regular/practice response history and new/review
+categories remain separate internally; no unused allocation carries over.
+
+Old v2 settings retain separate new/review fields for compatibility. The UI
+initializes the unified maximum from the saved review limit (100 if absent) and
+commits it on the next explicit start/settings save, without changing records or
+queues. The engine honors the legacy split only when `dailyLimit` is absent.
+Local dates follow the device timezone; this is not Anki's configurable rollover.
 
 Only learned cards whose due time has arrived are scheduled reviews. Unlearned
 cards are not overdue. Queue priority is due relearning, due review, then new
-cards within their separate budgets. Backlog counts describe inventory, not a
-recommended daily workload. A batch selects 5, 10, 20 or a positive custom count.
+cards within the daily maximum. Backlog counts describe inventory, not a
+recommended daily workload. Microbatches automatically select five cards.
 Reducing the limits can pause an unfinished queue, never delete or complete it.
-Changing batch size applies to the next batch; an already started queue stays
-intact. Explicit extra study bypasses daily limits for that batch and local day;
+An already started queue stays intact. Explicit extra study bypasses daily limits for that batch and local day;
 it does not alter configured limits or authorize future batches.
 
 Unfinished queues resume, with answer visibility reset. On regular resumption,
@@ -41,8 +43,37 @@ queue is parked intact. Switching to another practice scope or regular study
 also parks unfinished work. New vocabulary does not silently expand a started
 scope. Missing or substantively changed references skip without being graded.
 Completion describes only the current batch, reports remaining due reviews and
-pending relearning separately, and offers More / Stop for today. Timed relearning
+pending relearning separately, and offers continuation; the back arrow ends study. Timed relearning
 is available in the next batch or on resume; a finished batch does not auto-start.
+
+## Five-stage daily journey
+
+The first regular start freezes today's eligible unique-card goal, respecting
+the combined daily maximum. Added cards
+or a higher cap after progress do not move the earned finish line. A reduced cap
+or removed inventory can shrink it without deleting queued work. Extra study is
+explicit; overdue inventory above the cap remains pending.
+
+Stages use increasing weights **5 / 10 / 20 / 30 / 35**. For 100 cards, cumulative
+boundaries are 5 / 15 / 35 / 65 / 100; for 300 they are 15 / 45 / 105 / 195 / 300.
+Whole-card allocation is positive and nondecreasing; goals below five use fewer
+stages with no empty achievements. Boundaries are saved with the goal. This is a
+product hypothesis about an easy start, not an empirically validated motivational
+claim. Stage percentage reflects actual distinct responses within that stage;
+the separate day counter shows actual completed cards against the full goal.
+
+All accepted regular answers, including failures, earn unique-card progress.
+Same-card retries count as responses, not more goal cards or additional rewards.
+Practice earns no daily journey progress. Each stage pauses on its saved
+achievement until Next Stage; the back arrow and reload preserve it. Five stages remain
+visible, while five-card microbatches keep long stages interruptible. The final
+message celebrates today's goal, not mastery or completion of pending relearning.
+
+The five transparent Thunderhead PNGs from main `8d302df` map to stage numbers;
+no new artwork is generated. Their manifest's percentages document the nominal
+100-card boundaries, not runtime scheduling. Sources for the product pattern:
+[Duolingo flashcards](https://blog.duolingo.com/duolingo-flashcards/) and
+[Practice Hub](https://blog.duolingo.com/guide-to-duolingo-practice-hub/).
 
 ## Three assessments, without an algorithm claim
 
@@ -74,8 +105,8 @@ An explicit action opens regular study over all books without filters.
 Filtered/checked practice includes precisely that scope, including future-due
 cards. It is labeled “연습 · 복습 일정에 영향 없음”. Assessments are recorded as
 practice events and do not change progress, due dates or regular daily budgets.
-Large selections are split into the chosen batch size; the unprocessed selected
-queue persists through completion, reload and changing the next batch size.
+Large selections are split into the automatic batch size; the unprocessed selected
+queue persists through completion and reload.
 All reconciliation uses the full vocabulary so filtering cannot prune progress.
 
 ## Identity and safe v1 migration
@@ -96,28 +127,24 @@ or cloud migration is introduced.
 
 v1 stored only the latest assessment time, not complete response history or
 new/review classification. Migration does not fabricate those events. Its last
-known reviewed identities conservatively reserve both daily budgets for their
-recorded day; the settings disclose that ambiguity. From v2 onward, budgets and
+known reviewed identities conservatively reserve both legacy category sets for
+their recorded day, but their union consumes the unified maximum only once.
+Settings identify the included legacy records. From v2 onward, budgets and
 event categories are exact. v1 zero-stage progress retains its due time and is
 classified as relearning; the old format cannot distinguish every uncertain
 answer from a failed one. A previously lost/reset progress record is not recoverable.
 
 ## Study entry and presentation
 
-Memory keeps its approved shared Home / center / CSV dock geometry. Below the
-star filters, one inline amount row provides a draggable range and numeric input.
-The range normally spans 1–50; direct input allows larger batches and extends its
-maximum. Daily new/review limits and usage/due inventory live in app settings.
-Memory keeps the existing book/search/star scope controls and shows extra copy
-only for practice, unfinished batches, pending relearning or a reached limit.
-No duplicate preset buttons, entry dialog or dock morph is used.
+Memory keeps its approved shared Home / center / CSV dock geometry. The center
+pill starts immediately. There is no slider, quantity input, setup sheet or
+separate batch setting. The one daily maximum lives in existing app settings.
+Book/search/star scopes remain; only practice, interrupted work, pending
+relearning, storage failure or a reached limit adds contextual copy.
 
-The center pill shows the actual batch count and starts immediately. Amount and
-limit changes save on change/release in their respective surfaces, with a
-retryable storage error;
-invalid input cannot start study. Controls use Memory's existing type, neutral
-colors and 44px targets. Keyboard arrows and numeric entry complement dragging.
-Changing settings does not replace a persisted queue or mark its cards complete.
+Settings save on change, with a retryable storage error. Invalid input is not
+saved; starts use the last saved limit. Reducing the maximum never deletes an
+unanswered queue or marks cards complete. All controls retain 44px targets.
 
 Starting navigates to the existing `study` page. The saved sentence and its
 highlighted target precede the answer. Tap, Enter/Space or Show Answer flips the
@@ -126,3 +153,17 @@ retain durable queues while concealing the answer. Completion celebrates only
 actual responses and says “이번 묶음 완료”, not completion of all learning.
 
 Validation and remaining limits: [2026-10-02 QA](../qa/vocabulary-review-20261002.md).
+
+Stage completion uses a large 200–260px mascot (140px in short viewports), one
+heading, today's count and three unboxed outcome counts. These classify each
+unique card by its latest regular answer today; retries do not duplicate cards.
+Redundant mode/percentage labels are hidden on the celebration. A single Next
+Stage CTA uses user-requested vivid blue (#008DF0) and bold white 20px text,
+matching the supplied “Add 1 item” reference. This is a scoped exception to the
+normal neutral button tone; all other controls retain the shared design tokens.
+The duplicate Stop button is removed: the existing back arrow saves the same
+progress. Pending relearning remains visible even after goal completion.
+
+A static cyan/mint/lilac aurora behind the mascot increases in radius and opacity
+with stages 1–5. It has no looping motion, does not cover text or intercept input,
+and the mascot entrance respects reduced-motion preferences.

@@ -534,3 +534,133 @@ test('deleted practice references do not restart already answered selected cards
   view=review.startSelection(view.state,words,keys,NOW,5);
   assert.equal(view.token,token);assert.equal(view.completed,1);
 });
+
+function dueState(words,limit=100,batch=5){
+  const state=review.configure(null,{newLimit:0,reviewLimit:limit,batchSize:batch});
+  for(const [key,w] of Object.entries(words))state.progress[key]={identity:JSON.stringify([key,w.word,w.ko,w.addedAt]),streak:1,dueAt:NOW-1,lastReviewedAt:NOW-DAY};
+  return state;
+}
+function answerJourney(view,words,n,outcome='remembered',at=NOW){
+  for(let i=0;i<n;i++){
+    if(!view.card)view=review.startJourney(view.state,words,at);
+    assert.ok(view.card,'scheduled journey has a card');
+    view=review.grade(view.state,words,view.token,outcome,at);
+  }
+  return view;
+}
+test('100 cards use a tiny opening and progressively larger stages with durable partial progress',()=>{
+  const words=many(100);let view=review.startJourney(dueState(words),words,NOW);
+  assert.equal(view.journey.target,100);assert.equal(view.journey.stages,5);
+  for(let stage=1;stage<=5;stage++){
+    view=answerJourney(view,words,[5,10,20,30,35][stage-1]);
+    assert.equal(view.journey.done,[5,15,35,65,100][stage-1]);assert.equal(view.journey.milestone,stage);
+    assert.equal(view.card,null,'a milestone waits for an explicit continue');
+    const restored=review.view(plain(view.state),words,NOW);
+    assert.deepEqual(plain(restored.journey),plain(view.journey));
+  }
+  assert.equal(view.reviewUsed,100);assert.equal(view.responses,100);
+});
+test('300-card goals retain five stages but never present more than ten responses per batch',()=>{
+  const words=many(300);let view=review.startJourney(dueState(words,300,60),words,NOW);
+  assert.equal(view.journey.target,300);assert.equal(view.total,10);
+  const milestones=[];
+  for(let i=1;i<=300;i++){
+    if(!view.card)view=review.startJourney(view.state,words,NOW);
+    assert.ok(view.total<=10);
+    view=remembered(view,words);
+    if(view.journey.milestone)milestones.push([i,view.journey.milestone]);
+  }
+  assert.deepEqual(milestones,[[15,1],[45,2],[105,3],[195,4],[300,5]]);
+});
+test('a 60-card cap over 100 due cards completes the goal and leaves 40 pending',()=>{
+  const words=many(100);let view=review.startJourney(dueState(words,60),words,NOW);
+  assert.equal(view.journey.target,60);
+  view=answerJourney(view,words,60);
+  assert.equal(view.journey.done,60);assert.equal(view.journey.milestone,5);
+  assert.equal(view.dueReviewCount,40);assert.equal(Object.keys(view.state.progress).length,100);
+  const capped=review.startJourney(view.state,words,NOW);assert.equal(capped.card,null);
+  const extra=review.startJourney(capped.state,words,NOW,true);assert.ok(extra.card);
+});
+test('failed answers earn milestones while repeated same-card attempts never earn duplicate progress',()=>{
+  const words=many(20);let view=review.startJourney(dueState(words,20),words,NOW);
+  view=answerJourney(view,words,20,'confused');
+  assert.equal(view.journey.done,20);assert.equal(view.journey.milestone,5);
+  assert.equal(view.relearningCount,20);assert.equal(view.journey.repeats,0);
+  view=review.startJourney(view.state,words,NOW+10*MINUTE);
+  view=answerJourney(view,words,4,'remembered',NOW+10*MINUTE);
+  assert.equal(view.journey.done,20);assert.equal(view.journey.distinct,20);assert.equal(view.journey.repeats,4);
+  assert.equal(view.journey.milestone,0);assert.equal(view.reviewUsed,20);assert.equal(view.responses,24);
+});
+test('new cards remain independent, practice does not fill stages, and small goals do not invent empty stages',()=>{
+  const words=many(3);let view=review.startJourney(null,words,NOW);
+  assert.equal(view.journey.target,3);assert.equal(view.journey.stages,3);
+  view=remembered(view,words);assert.equal(view.journey.milestone,1);
+  const progress=view.journey.done;
+  const practice=finish(review.startSelection(view.state,words,Object.keys(words),NOW),words);
+  assert.equal(practice.journey,null);
+  const resumed=review.startJourney(practice.state,words,NOW);
+  assert.equal(resumed.journey.done,progress);assert.equal(resumed.journey.milestone,0);
+});
+test('first relearning on a later day uses one review slot; its same-day repetitions use none',()=>{
+  const words={a:saved('a')};
+  let view=finish(review.start(null,words,NOW),words,NOW,'confused');
+  view=review.startJourney(review.configure(view.state,{reviewLimit:1}),words,NOW+DAY);
+  view=review.grade(view.state,words,view.token,'confused',NOW+DAY);
+  assert.equal(view.newUsed,0);assert.equal(view.reviewUsed,1);
+  view=review.startJourney(view.state,words,NOW+DAY+10*MINUTE);
+  view=review.grade(view.state,words,view.token,'remembered',NOW+DAY+10*MINUTE);
+  assert.equal(view.reviewUsed,1);assert.equal(view.journey.distinct,1);assert.equal(view.journey.repeats,1);
+});
+test('milestone save failure and duplicate clicks neither lose nor double-award a stage',()=>{
+  const words=many(5),initial=review.startJourney(dueState(words,5),words,NOW);
+  const pending=remembered(initial,words),retried=remembered(initial,words);
+  assert.deepEqual(plain(pending.state),plain(retried.state));assert.equal(pending.journey.milestone,1);
+  const duplicate=review.grade(pending.state,words,initial.token,'remembered',NOW);
+  assert.equal(duplicate.accepted,false);assert.equal(duplicate.responses,1);
+  assert.equal(duplicate.journey.milestone,1);
+});
+test('goals remain stable on added cards or increased limits, and cap reductions preserve unanswered queues',()=>{
+  const words=many(100);let view=review.startJourney(dueState(words,100),words,NOW);
+  view=answerJourney(view,words,20);
+  const refs=plain(view.state.session.queue);
+  view=review.startJourney(review.configure(view.state,{reviewLimit:60}),words,NOW);
+  assert.equal(view.journey.target,60);assert.equal(view.journey.done,20);
+  view=review.startJourney(review.configure(view.state,{reviewLimit:300}),words,NOW);
+  assert.equal(view.journey.target,60);
+  assert.equal(Object.keys(view.state.progress).length,100);
+  assert.equal(refs.length,5);
+  const tomorrow=review.startJourney(view.state,words,NOW+DAY);
+  assert.equal(tomorrow.journey.done,0);assert.ok(tomorrow.journey.target>0);
+});
+
+test('integer stage sizes never decrease, even with small goals',()=>{
+  for(let target=1;target<=350;target++){
+    const words=many(target),view=review.startJourney(dueState(words,target),words,NOW);
+    const ends=plain(view.journey.ends),sizes=ends.map((n,i)=>n-(ends[i-1]||0));
+    assert.equal(ends.at(-1),target);assert.ok(sizes.every((n,i)=>n>0&&(!i||n>=sizes[i-1])),String(target));
+  }
+});
+
+test('one daily cap combines scheduled review and new cards without starving due priority',()=>{
+  const words=many(100),state=dueState(Object.fromEntries(Object.entries(words).slice(0,40)),100);
+  let view=review.startJourney(review.configure(state,{dailyLimit:60}),words,NOW);
+  assert.equal(view.journey.target,60);
+  view=answerJourney(view,words,60);
+  assert.equal(view.reviewUsed,40);assert.equal(view.newUsed,20);assert.equal(view.uniqueUsed,60);
+  assert.equal(view.newCount,40);assert.equal(view.journey.milestone,5);
+  view=review.startJourney(view.state,words,NOW);assert.equal(view.card,null);
+  view=review.startJourney(view.state,words,NOW,true);assert.ok(view.card);
+});
+test('combined zero cap, reduction, repeated failures and next-day reset preserve data',()=>{
+  const words=many(20);let view=review.startJourney(review.configure(null,{dailyLimit:0}),words,NOW);
+  assert.equal(view.card,null);assert.equal(view.newCount,20);
+  view=review.startJourney(review.configure(view.state,{dailyLimit:10}),words,NOW);
+  view=answerJourney(view,words,3,'confused');
+  const reduced=review.configure(view.state,{dailyLimit:2}),queue=plain(reduced.session.queue);
+  view=review.startJourney(reduced,words,NOW);assert.equal(view.card,null);
+  assert.deepEqual(plain(view.state.session.queue),queue);
+  view=review.startJourney(view.state,words,NOW+10*MINUTE);
+  view=answerJourney(view,words,3,'remembered',NOW+10*MINUTE);
+  assert.equal(view.uniqueUsed,3);assert.equal(view.responses,6);
+  view=review.startJourney(view.state,words,NOW+DAY);assert.equal(view.uniqueUsed,0);assert.ok(view.card);
+});

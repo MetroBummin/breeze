@@ -1,0 +1,34 @@
+{
+  "name": "Thunderhead review milestones",
+  "format": "PNG",
+  "background": "transparent",
+  "animated": false,
+  "usage": "Daily review progress milestones, not mastery scores. Floating cloud character with no legs or feet. Percentages are nominal cumulative boundaries for a 100-card goal; small goals round to whole cards.",
+  "stages": [
+    {
+      "stage": 1,
+      "progressPercent": 5,
+      "file": "thunderhead-stage-1.png"
+    },
+    {
+      "stage": 2,
+      "progressPercent": 15,
+      "file": "thunderhead-stage-2.png"
+    },
+    {
+      "stage": 3,
+      "progressPercent": 35,
+      "file": "thunderhead-stage-3.png"
+    },
+    {
+      "stage": 4,
+      "progressPercent": 65,
+      "file": "thunderhead-stage-4.png"
+    },
+    {
+      "stage": 5,
+      "progressPercent": 100,
+      "file": "thunderhead-stage-5.png"
+    }
+  ]
+}

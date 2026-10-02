@@ -1,4 +1,7 @@
 /* Review progress is device-local and never touches vocabulary/sync records. */
+const VOCABULARY_STAGE_ASSETS=Object.freeze(Object.fromEntries(
+  [1,2,3,4,5].map(stage=>[stage,`assets/brand/review/thunderhead-stage-${stage}.png`])
+));
 const VOCABULARY_REVIEW_STORAGE='breeze.vocabulary-review.v1';
 const vocabularyReviewPage=document.getElementById('vocabulary-review-page');
 let vocabularyReviewView=null;
@@ -122,6 +125,21 @@ function highlightReviewSentence(card){
   }
   target.append(document.createTextNode(card.example.slice(end)));
 }
+function renderReviewJourney(journey){
+  const wrap=document.getElementById('review-journey');wrap.hidden=!journey?.target;
+  if(!journey?.target)return;
+  const stage=journey.milestone||journey.stage,percent=journey.milestone?100:journey.percent;
+  document.getElementById('review-stage-label').textContent=`${stage}/${journey.stages}단계 · ${percent}%`;
+  document.getElementById('review-day-count').textContent=`${journey.done}/${journey.target}개`;
+  const track=document.getElementById('review-stage-track');track.replaceChildren();
+  track.setAttribute('aria-valuemax',String(journey.target));track.setAttribute('aria-valuenow',String(journey.done));
+  track.setAttribute('aria-valuetext',`${stage}단계 ${percent}%, 오늘 ${journey.done}/${journey.target}개`);
+  for(let n=1;n<=journey.stages;n++){
+    const part=document.createElement('span'),start=n>1?journey.ends[n-2]:0,end=journey.ends[n-1];
+    part.style.setProperty('--stage-fill',`${Math.max(0,Math.min(100,(journey.done-start)/(end-start)*100))}%`);
+    part.setAttribute('aria-hidden','true');track.append(part);
+  }
+}
 function renderVocabularyReview(view,focus=true){
   vocabularyReviewView=view;vocabularyReviewRevealed=false;
   document.getElementById('review-front').hidden=false;
@@ -133,24 +151,40 @@ function renderVocabularyReview(view,focus=true){
   document.getElementById('review-grade').hidden=true;
   document.getElementById('review-reveal').hidden=false;
   document.getElementById('review-card').hidden=!view.card;
-  document.getElementById('review-finish').hidden=!!view.card;
-  document.getElementById('review-progress').textContent=view.card?`${view.completed+1} / ${view.total}`:'';
+  document.getElementById('review-progress').textContent=view.card?`${view.journey?'이번 ':''}${view.completed+1} / ${view.total}`:'';
   const graded=(view.remembered||0)+(view.uncertain||0)+(view.confused||0);
   const complete=view.status==='complete'&&graded>0;
+  const journey=view.journey,milestone=journey?.milestone||0;
+  renderReviewJourney(journey);
+  const mascot=/** @type {HTMLImageElement} */(document.getElementById('review-stage-mascot'));
+  mascot.hidden=!milestone;
+  const scene=document.getElementById('review-mascot-scene');scene.hidden=!milestone;
+  scene.style.setProperty('--review-stage',String(milestone||1));
+  if(milestone){mascot.src=VOCABULARY_STAGE_ASSETS[milestone];mascot.dataset.stage=String(milestone);mascot.alt=`썬더헤드 · ${milestone}단계 완료`;}
+  document.querySelector('.review-complete-mark').toggleAttribute('hidden',!!milestone);
+  document.getElementById('review-result-title').textContent=milestone?(journey.done>=journey.target?'오늘 목표 달성':`${milestone}단계 완료`):'이번 묶음 완료';
   vocabularyReviewPage.classList.toggle('complete',complete);
+  vocabularyReviewPage.classList.toggle('milestone',!!milestone);
   document.getElementById('review-result').hidden=!!view.card;
-  document.getElementById('review-celebration').hidden=!complete;
-  document.getElementById('review-results').hidden=!complete;
-  document.getElementById('review-finish').textContent='오늘은 여기까지';
+  document.getElementById('review-celebration').hidden=!complete||!!journey&&!milestone;
+  document.getElementById('review-results').hidden=!complete||!!journey&&!milestone;
   const practice=view.state?.session?.practice;
+  document.getElementById('review-mode').hidden=!practice;
   document.getElementById('review-mode').textContent=practice?'연습 · 복습 일정에 영향 없음':'정규 학습';
   document.getElementById('review-more').hidden=!!view.card;
-  document.getElementById('review-more').textContent=view.status==='paused'?'학습량 조절':'더 하기';
-  document.getElementById('review-extra').hidden=!!view.card||practice||!view.limitReached;
+  document.getElementById('review-more').textContent=view.status==='paused'?'학습량 조절':milestone?(journey.done>=journey.target?'추가 학습':'다음 단계 도전'):'계속하기';
+  document.getElementById('review-extra').hidden=!!view.card||practice||!view.limitReached||!!milestone&&journey.done>=journey.target;
   document.getElementById('review-pending').textContent=reviewWaitingText(view);
-  document.getElementById('review-result-known').textContent=String(view.remembered||0);
-  document.getElementById('review-result-uncertain').textContent=String(view.uncertain||0);
-  document.getElementById('review-result-unknown').textContent=String(view.confused||0);
+  const results={remembered:view.remembered||0,uncertain:view.uncertain||0,confused:view.confused||0};
+  if(milestone){
+    const latest=new Map(),today=new Date().toDateString();
+    for(const event of view.state.history)if(event.kind!=='practice'&&new Date(event.at).toDateString()===today)latest.set(event.identity,event.outcome);
+    results.remembered=0;results.uncertain=0;results.confused=0;
+    for(const outcome of latest.values())results[outcome]++;
+  }
+  document.getElementById('review-result-known').textContent=String(results.remembered);
+  document.getElementById('review-result-uncertain').textContent=String(results.uncertain);
+  document.getElementById('review-result-unknown').textContent=String(results.confused);
   const status=document.getElementById('review-status');status.textContent='';
   if(view.card){
     document.getElementById('review-expression').textContent=view.card.word;
@@ -163,7 +197,8 @@ function renderVocabularyReview(view,focus=true){
     highlightReviewSentence(view.card);
     if(focus)document.getElementById('review-reveal').focus();
   }else{
-    if(complete)status.textContent=practice?`이번 ${graded}개 연습 완료 · 남은 선택 연습 ${view.practiceRemaining}개`:`이번 ${graded}개 완료 · 남은 복습 ${view.dueReviewCount+view.dueRelearningCount}개\n오늘 신규 ${view.newUsed}개 · 정규 복습 ${view.reviewUsed}개 · 총 응답 ${view.responses}회`;
+    if(complete&&journey){status.textContent=milestone?`오늘 ${journey.done}/${journey.target}개${journey.repeats?` · 다시 연습 ${journey.repeats}회`:''}${journey.done>=journey.target&&view.dueReviewCount+view.dueRelearningCount?` · 남은 복습 ${view.dueReviewCount+view.dueRelearningCount}개`:''}`:`이번 ${graded}개 완료 · ${journey.stage}단계 ${journey.percent}%`; }
+    else if(complete)status.textContent=practice?`이번 ${graded}개 연습 완료 · 남은 선택 연습 ${view.practiceRemaining}개`:`이번 ${graded}개 완료 · 남은 복습 ${view.dueReviewCount+view.dueRelearningCount}개\n오늘 신규 ${view.newUsed}개 · 정규 복습 ${view.reviewUsed}개 · 총 응답 ${view.responses}회`;
     else if(view.status==='paused')status.textContent='일일 한도에 도달했어요. 미응답 카드는 보관했어요.';
     else if(view.status==='complete')status.textContent='복습할 표현이 더 없어요.';
     else if(view.status==='empty')status.textContent='아직 복습할 표현이 없어요. 읽다가 단어나 표현의 뜻을 저장해 보세요.';
@@ -179,7 +214,6 @@ function resumeVocabularyReview(){
     renderVocabularyReview(view);
   }catch{renderVocabularyReview({card:null,status:'idle'});vocabularyReviewError();}
 }
-const reviewSetupForm=/** @type {HTMLFormElement} */(document.getElementById('review-setup-form'));
 let reviewControlsReady=false;
 function reviewInput(id){return /** @type {HTMLInputElement} */(document.getElementById(id));}
 function reviewWaitingText(view){
@@ -188,10 +222,10 @@ function reviewWaitingText(view){
   const minutes=view.nextRelearningAt?Math.max(1,Math.ceil((view.nextRelearningAt-Date.now())/60000)):0;
   return [view.dueRelearningCount?`지금 재학습 ${view.dueRelearningCount}개`:'',future?`${minutes}분 뒤부터 재학습 ${future}개`:''].filter(Boolean).join(' · ');
 }
-function reviewSetupValues(){return {batchSize:Number(reviewInput('review-batch-size').value)};}
+function reviewSetupValues(){const raw=readVocabularyReview();return {batchSize:5,dailyLimit:raw.settings.dailyLimit??raw.settings.reviewLimit};}
 function restoreReviewControls(){
   const raw=readVocabularyReview();
-  for(const [id,key] of [['review-new-limit','newLimit'],['review-daily-limit','reviewLimit'],['review-batch-size','batchSize']])reviewInput(id).value=String(raw.settings[key]);
+  reviewInput('review-daily-limit').value=String(raw.settings.dailyLimit??raw.settings.reviewLimit);
   reviewControlsReady=true;
 }
 function reviewScope(raw,daily=false){
@@ -202,42 +236,33 @@ function reviewScope(raw,daily=false){
 }
 function reviewSetupPreview(daily=false,extra=false){
   const raw=BreezeReview.configure(readVocabularyReview(),reviewSetupValues()),scope=reviewScope(raw,daily);
-  return scope.custom?BreezeReview.startSelection(raw,words,scope.keys,Date.now(),raw.settings.batchSize):BreezeReview.start(raw,words,Date.now(),extra);
+  return scope.custom?BreezeReview.startSelection(raw,words,scope.keys,Date.now(),raw.settings.batchSize):BreezeReview.startJourney(raw,words,Date.now(),extra);
 }
 function refreshReviewSetup(){
   if(!reviewControlsReady)restoreReviewControls();
-  const raw=readVocabularyReview(),scope=reviewScope(raw),view=reviewSetupPreview(),values=reviewSetupValues();
+  const raw=readVocabularyReview(),scope=reviewScope(raw),view=reviewSetupPreview();
   const button=/** @type {HTMLButtonElement} */(document.getElementById('wordbook-review'));
   const remaining=scope.custom&&!scope.keys.length?0:view.total-view.completed;
   const resume=view.state.session?.index>view.state.session?.batchStart;
-  const label=scope.custom?`${remaining}개 연습${resume?' 이어 하기':''}`:view.card?`${remaining}개 ${resume?'이어 하기':'학습 시작'}`:'학습 현황';
+  const label=scope.custom?`${remaining}개 연습${resume?' 이어 하기':''}`:view.card?(resume?'학습 이어 하기':'학습 시작'):'학습 현황';
   // Keep the button's text node stable through input blur (WebKit click target).
   if(button.textContent!==label)button.textContent=label;
   button.disabled=scope.custom&&!scope.keys.length;
   document.getElementById('review-use-daily').hidden=!scope.custom;
   document.getElementById('wordbook-review-entry').hidden=!scope.custom;
   document.getElementById('review-setup-scope').textContent=scope.custom?'연습 · 복습 일정에 영향 없음':'';
-  document.getElementById('review-limit-usage').textContent=`오늘 신규 ${view.newUsed}/${raw.settings.newLimit}개 · 복습 ${view.reviewUsed}/${raw.settings.reviewLimit}개\n예정 복습 ${view.dueReviewCount}개 · 정규 응답 ${view.responses}회`+(view.legacyUsage?'\n이전 기록은 신규·복습 구분이 없어 두 한도에 반영했어요.':'');
+  document.getElementById('review-limit-usage').textContent=`오늘 ${view.uniqueUsed}개 학습`+(view.legacyUsage?' · 이전 기록 포함':'');
   document.getElementById('review-setup-waiting').textContent=reviewWaitingText(view);
-  document.getElementById('review-setup-plan').textContent=view.status==='paused'?'한도에 도달했어요. 미응답 카드는 보관돼요.':resume?'진행 중인 묶음을 이어가요. 묶음 크기 변경은 다음부터 적용돼요.':'';
+  document.getElementById('review-setup-plan').textContent=view.status==='paused'?'한도에 도달했어요. 미응답 카드는 보관돼요.':resume?'이어서 학습할 수 있어요.':'';
   document.getElementById('review-setup-extra').hidden=scope.custom||!view.limitReached;
-  const range=reviewInput('review-batch-range');range.max=String(Math.max(50,values.batchSize));range.value=String(values.batchSize);
-  range.setAttribute('aria-valuetext',`${values.batchSize}개`);
-}
-function saveReviewSettings(){
-  if(!reviewSetupForm.checkValidity())return;
-  try{commitVocabularyReview(BreezeReview.configure(readVocabularyReview(),reviewSetupValues()));document.getElementById('review-setup-error').hidden=true;}
-  catch{reviewSettingsError();}
-  refreshVocabularyReviewEntry();
 }
 function reviewSettingsError(){
-  document.getElementById('review-setup-error').textContent='저장하지 못했어요. 값을 다시 조절하거나 학습 시작을 눌러 재시도해 주세요.';
+  document.getElementById('review-setup-error').textContent='저장하지 못했어요. 학습 시작을 눌러 재시도해 주세요.';
   document.getElementById('review-setup-error').hidden=false;
 }
 function openVocabularyReview(daily=false,extra=false){
   try{
     if(!reviewControlsReady)restoreReviewControls();
-    if(!reviewSetupForm.reportValidity())return;
     const scope=reviewScope(readVocabularyReview(),daily);
     if(scope.custom&&!scope.keys.length)return;
     const view=reviewSetupPreview(daily,extra);
@@ -245,28 +270,26 @@ function openVocabularyReview(daily=false,extra=false){
     show('study');renderVocabularyReview(view);
   }catch{if(activeAppView()==='study')vocabularyReviewError();else reviewSettingsError();}
 }
-reviewSetupForm.addEventListener('submit',event=>{event.preventDefault();openVocabularyReview();});
-reviewSetupForm.addEventListener('input',event=>{
-  if(event.target===reviewInput('review-batch-range'))reviewInput('review-batch-size').value=reviewInput('review-batch-range').value;
-  if(reviewSetupForm.checkValidity())refreshVocabularyReviewEntry();
-});
-reviewSetupForm.addEventListener('change',saveReviewSettings);
 const reviewLimitForm=/** @type {HTMLFormElement} */(document.getElementById('review-limit-form'));
 function saveReviewLimits(){
   if(!reviewLimitForm.checkValidity())return;
   try{
     commitVocabularyReview(BreezeReview.configure(readVocabularyReview(),{
-      newLimit:Number(reviewInput('review-new-limit').value),reviewLimit:Number(reviewInput('review-daily-limit').value)}));
+      dailyLimit:Number(reviewInput('review-daily-limit').value)}));
     document.getElementById('review-limit-error').hidden=true;refreshVocabularyReviewEntry();
   }catch{document.getElementById('review-limit-error').textContent='저장하지 못했어요. 값을 다시 입력해 재시도해 주세요.';document.getElementById('review-limit-error').hidden=false;}
 }
 reviewLimitForm.addEventListener('change',saveReviewLimits);
 reviewLimitForm.addEventListener('submit',event=>{event.preventDefault();saveReviewLimits();});
+document.querySelectorAll('[data-review-limit]').forEach(button=>button.addEventListener('click',()=>{
+  reviewInput('review-daily-limit').value=/** @type {HTMLElement} */(button).dataset.reviewLimit;saveReviewLimits();
+}));
 document.getElementById('review-setup-extra').addEventListener('click',()=>openVocabularyReview(true,true));
 document.getElementById('review-extra').addEventListener('click',()=>openVocabularyReview(true,true));
 document.getElementById('review-more').addEventListener('click',()=>{
-  if(vocabularyReviewView?.status==='paused'){closeVocabularyReview();reviewInput('review-batch-range').focus();return;}
-  openVocabularyReview(!vocabularyReviewView?.state?.session?.practice);
+  if(vocabularyReviewView?.status==='paused'){closeVocabularyReview();openSettings();reviewInput('review-daily-limit').focus();return;}
+  const journey=vocabularyReviewView?.journey;
+  openVocabularyReview(!vocabularyReviewView?.state?.session?.practice,!!journey?.milestone&&journey.done>=journey.target);
 });
 function resetVocabularyReviewSurface(){
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
@@ -276,7 +299,6 @@ function closeVocabularyReview(){
   show('vocab',{replace:true});document.getElementById('wordbook-review').focus();
 }
 document.getElementById('review-close').addEventListener('click',closeVocabularyReview);
-document.getElementById('review-finish').addEventListener('click',closeVocabularyReview);
 window.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&activeAppView()==='study'){event.preventDefault();closeVocabularyReview();}
 });
