@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="styles/article-preview.css?v=b5f991f8">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=22832259">
   <link rel="stylesheet" href="styles/reader.css?v=7b53053d">
-  <link rel="stylesheet" href="styles/dictionary.css?v=74247169">
+  <link rel="stylesheet" href="styles/dictionary.css?v=7ec6ca98">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=9d7d614e">
@@ -85,8 +85,9 @@
   <script defer src="scripts/reader/pdf-pinch.js?v=b465d648"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=d4af8093"></script>
+  <script defer src="scripts/library/library.js?v=481bb8bc"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
+  <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=dcf2f153"></script>
   <script defer src="scripts/library/longreads.js?v=2e095add"></script>
   <script defer src="assets/longreads/homeward-lookup-data.js?v=98cff2b8"></script>
@@ -100,7 +101,8 @@
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
   <script defer src="scripts/dictionary/sentence.js?v=97a7f38a"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=27737332"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=3c5aafe5"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=6e8b28de"></script>
+  <script defer src="scripts/dictionary/easy-explanation.js?v=3fe1cf73"></script>
   <script defer src="scripts/core/vocabulary-review.js?v=15eab363"></script>
   <script defer src="scripts/ui/vocabulary-review.js?v=9b02f1c4"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
@@ -109,7 +111,7 @@
   <script defer src="scripts/reader/original-session.js?v=7aab9a31"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=c6e17d1f"></script>
   <script defer src="scripts/reader/pdf-ink.js?v=c577d892"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=506755fb"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=71e1fe27"></script>
   <script defer src="scripts/reader/epub-original.js?v=b7c63d7a"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=15b2c61b"></script>
@@ -126,7 +128,7 @@
   <script defer src="scripts/reader/pdf-navigation.js?v=82f464be"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
-  <script defer src="scripts/main.js?v=f84bd5ae"></script>
+  <script defer src="scripts/main.js?v=bf9732ee"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
@@ -363,8 +365,10 @@
           <span class="glow"></span>
         </div>
         <div class="m">
-          <span class="mk" id="p-ai-ko"></span><span class="pos" id="p-ai-pos"></span>
+          <span class="p-meaning-copy"><span class="mk" id="p-ai-ko"></span><span class="pos" id="p-ai-pos"></span></span>
+
         </div>
+
         <!-- 뜻을 아직 받지 못했거나 다시 찾기가 오래 걸릴 때만 상태를 알리는 줄입니다. -->
         <div class="note" id="p-ai-note"></div>
         <div id="p-saved-senses" aria-label="저장된 다른 뜻"></div>
@@ -375,6 +379,15 @@
       <div id="p-aihint">뜻이 문맥과 안 맞을 때 눌러보세요</div>
       <div class="p-sec" id="p-alt-sec">추천 뜻</div>
       <div id="p-alts"></div>
+
+      <section id="p-easy" aria-label="쉬운 설명" hidden>
+        <button id="p-easy-button" type="button" aria-expanded="false" aria-controls="p-easy-card" hidden>쉬운 설명</button>
+        <div id="p-easy-card" hidden>
+          <p id="p-easy-text" role="status" aria-live="polite" tabindex="-1"></p>
+          <button id="p-easy-retry" type="button" hidden>다시 시도</button>
+          <p class="p-easy-note">AI 설명 · 이 설명은 저장하지 않아요</p>
+        </div>
+      </section>
       <div class="p-sec" id="p-status-label">모르는 정도</div>
       <!-- 이 낱말을 화면에서 어떻게 다룰지 정하는 두 단추입니다 — 단어장에서 빼기,
            본문 색칠. 같은 일의 두 갈래라 한 줄에 같은 모양으로 섭니다. 빼기는

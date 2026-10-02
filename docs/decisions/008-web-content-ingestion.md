@@ -9,11 +9,11 @@ recovery is introduced. Existing article/image relay remains the transport.
 
 ## Pipeline
 
-The Share Extension target and App Group inbox remain in the project, but the
-extension is not embedded in the app while external sharing is dormant. The
-Saved chip and pending-link cards are hidden. Existing App Group records are
-neither acknowledged nor deleted; articles already imported into Casuals remain
-ordinary saved books. An old persisted Saved category resets to All.
+The Share Extension is embedded for PDF/EPUB file intake only (see the file
+handoff below). External web-link sharing remains dormant: the Saved chip and
+pending-link cards are hidden. Existing App Group URL records are neither
+acknowledged nor deleted; articles already imported into Casuals remain ordinary
+saved books. An old persisted Saved category resets to All.
 
 The retained handoff path, when sharing is enabled again, is Share Extension
 -> atomic App Group URL record -> pending card -> explicit tap
@@ -416,3 +416,38 @@ number-free repair in the same 12-second budget and quota charge. Other upstream
 failures never retry automatically. Both attempts must pass validation; failed
 results are not cached. HTTP failures expose only bounded reason codes so the
 client distinguishes validation, timeout and server availability.
+
+
+## File-only share intake (1.7)
+
+The embedded extension accepts one PDF or EPUB, up to 100 MiB. The activation
+rule advertises files, not web URL/text intake; unsupported files get an explicit
+message. A provider's temporary/security-scoped URL is copied inside the load
+completion before it expires. The Save action copies that owned file into a
+private staging directory in the existing App Group and atomically publishes
+its complete payload and metadata. The extension does not parse books or attempt
+to force-launch the containing app. It tells the reader to open Breeze.
+
+On startup after library loading, or on foreground delivery, the main app reads
+pending file metadata. A main-frame, breeze://localhost-only reply bridge reads
+256 KiB chunks by validated UUID and offset, never by a web-supplied path. One
+file at a time enters the existing importFile pipeline and its full-byte hash
+identity checks. New files enter the unassigned Books shelf; importing again
+retains the existing book's identity, reading position and category.
+
+importFile now returns a receipt only after its durable writes complete. The
+file inbox acknowledges/removes a payload only when the book AND original are
+stored. Parse/DRM/storage/bridge failures and partial original-storage failures
+retain the source. Re-entering the app retries; repeated deliveries during the
+same foreground do not loop a failed import. Cleanup failure retries just cleanup
+in that session; a relaunch safely reruns the hash-deduplicated importer. Legacy
+URL records and the dormant article UI remain separate and untouched. Files and
+originals remain local; no new server upload or sync payload is added.
+
+Verification: tests/verify-shared-files.mjs covers startup ordering, chunk bounds,
+concurrent deliveries, failure retention, foreground retry and acknowledgement.
+tests/verify-shared-files-browser.mjs exercises real PDF/EPUB parsing and durable
+IndexedDB originals, duplicate bytes, write failures and corrupt input through
+the simulated native bridge. Native compilation and a KakaoTalk/Files share-sheet
+round trip still require Xcode and physical iOS devices; browser fixtures do not
+establish that those native paths work on device.

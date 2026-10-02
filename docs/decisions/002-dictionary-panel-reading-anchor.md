@@ -150,3 +150,33 @@ restores a deleted range or an obsolete highlight cache. Shimmer remains pending
 ## 2026-10-01: one selection surface
 
 Active PDF/EPUB word selection uses one blue fill, without the status-dependent inner fill or outer shadow. Saved-underlay suppression continues to target the exact selected occurrence and ends with selection. Star visibility affects saved marks only; it does not recolor selection or render a hidden dictionary panel.
+
+## On-demand easy explanation (1.7)
+
+Reader detail hides the repeated example block; stored examples remain available
+to Memory and review. The displayed saved meaning is labelled as saved when a
+new context has not been revalidated. “쉬운 설명” explicitly requests a short
+explanation of a difficult word/concept and, when needed, its contextual meaning.
+Each explicit request includes the current sentence and up to two neighbors on
+either side. Text/EPUB use the source occurrence and adjacent paragraphs; PDF
+falls back to the exact visible page window if book text cannot resolve it.
+Absent or ambiguous neighbors are omitted. Each sentence is bounded at 2,400
+characters. The action label appears once; the card has no repeated heading.
+The meaning has no card background. The explanation uses a quiet neutral card
+inside the existing detail surface and scroll budget. Closing/changing lookup cancels its display ownership.
+Explanation text is transient page/account memory only; see DICT.md for request
+metering and the provider boundary. No automatic call on expand.
+
+The full-width “쉬운 설명” trigger sits below the meaning and shares the star
+buttons' neutral fill, border, 12px corners and 36px visual height, with a 44px
+touch target. It expands into the explanation card at that same position.
+Height transitions on loading and answer arrival without scaling text. Its label disappears as soon as
+the card opens; loading and success show no repeated title. Only errors expose a
+Retry control. Expansion honors reduced-motion preferences and moves keyboard
+focus to the live explanation text.
+
+Within the current page/account, reopening the same word in the same source
+occurrence restores its expanded explanation. Encountering that word in another
+context invalidates the former answer immediately (including mini-pill opens).
+It starts collapsed without requiring Retry; A -> B -> A does not resurrect A's
+old explanation. Only an explicit button press generates another answer.

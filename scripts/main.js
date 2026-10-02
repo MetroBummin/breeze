@@ -13,6 +13,7 @@ const homeReady=loadBooks().then(async()=>{
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()) endOnboarding(false);
   renderHome();
 }).finally(()=>document.documentElement.classList.remove('boot-pending'));
+homeReady.then(()=>startSharedFileImports());
 /* ---- 다음부터는 네트워크를 기다리지 않고 켜집니다 ----
    무엇을 어떻게 담는지는 sw.js 맨 위에 적혀 있습니다. 여기서는 등록만 합니다.
 

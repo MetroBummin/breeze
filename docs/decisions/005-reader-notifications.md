@@ -70,3 +70,13 @@ copy slot. Queue priority, plain-text live regions and Home notices are unchange
 Run notification and shared-control regressions plus
 `tests/verify-reader-notice-controls-browser.mjs`: trusted Aa/mode taps and edge
 taps on compact notices at five sizes in both themes and browser engines.
+
+
+## Shared-file import (1.7)
+
+Native file intake uses the same importFile progress/result token after transfer.
+A retained share failure adds a short retry explanation through the existing toast
+routing. It does not navigate or replace a Reader session. Durable import receipts
+are returned to the inbox caller without changing ordinary picker behavior or the
+partial-original warning. File-only sharing is now enabled; URL sharing remains
+dormant as described in decision 008.
