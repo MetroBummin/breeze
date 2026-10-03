@@ -89,36 +89,43 @@ function renderEasyExplanation(){
     const cached=easyExplanationCache.get(current.key);
     easyExplanationState={...current,text:'',suggestion:'',applied:false,...(cached?.snapshot===current.snapshot?cached:{}),error:'',loading:false,controller:null};
   }
-  const state=easyExplanationState,button=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-button'));
-  const expanded=!!(state.loading||state.text||state.error);
-  const wasExpanded=section.classList.contains('expanded');
-  const surface=section;
-  const before=surface.getBoundingClientRect();
-  surface.getAnimations?.().forEach(animation=>animation.cancel());
-  section.classList.toggle('expanded',expanded);
-  button.disabled=state.loading;button.hidden=expanded;
-  document.getElementById('p-easy-retry').hidden=!state.error;
-  button.setAttribute('aria-expanded',String(expanded));
-  const card=document.getElementById('p-easy-card');card.hidden=!expanded;card.setAttribute('aria-busy',String(state.loading));
-  const text=document.getElementById('p-easy-text');
-  document.getElementById('p-easy-skeleton').hidden=!state.loading;
-  text.classList.toggle('easy-loading-status',state.loading);
-  document.querySelector('.p-easy-note').toggleAttribute('hidden',state.loading);
-  text.textContent=state.loading?'뜻을 쉬운 말로 풀고 있어요.':state.text||state.error;
+  const state=easyExplanationState;
+  const view=renderEasyExplanationSurface('p-easy',state,'뜻을 쉬운 말로 풀고 있어요.');
   const proposal=document.getElementById('p-easy-suggestion'),apply=/** @type {HTMLButtonElement} */(document.getElementById('p-easy-apply'));
   proposal.hidden=!state.suggestion&&!state.applied;
   const same=easySameExample(state,words[state.id]);
   document.getElementById('p-easy-proposal').textContent=state.applied?'뜻을 저장했어요.':same?`뜻을 ‘${state.suggestion}’로 바꿀까요?`:`이 문장에서는 ‘${state.suggestion}’라는 뜻으로 저장할까요?`;
   apply.hidden=!!state.applied;apply.disabled=!state.suggestion;
   apply.textContent=same?'이 뜻으로 바꾸기':'이 뜻 저장하기';
+  finishEasyExplanationSurface(view);
+}
+/* Both word and sentence help share expansion, skeleton, retry and motion. The
+   request/cache lifetime stays with the caller's lookup owner. */
+function renderEasyExplanationSurface(prefix,state,status){
+  const section=document.getElementById(prefix),button=/** @type {HTMLButtonElement} */(document.getElementById(prefix+'-button'));
+  const before=section.getBoundingClientRect(),wasExpanded=section.classList.contains('expanded');
+  section.getAnimations?.().forEach(animation=>animation.cancel());
+  const expanded=!!(state.text||state.error||state.loading);
+  section.hidden=false;section.classList.toggle('expanded',expanded);
+  button.hidden=expanded;button.disabled=state.loading;button.setAttribute('aria-expanded',String(expanded));
+  const card=document.getElementById(prefix+'-card');card.hidden=!expanded;card.setAttribute('aria-busy',String(state.loading));
+  document.getElementById(prefix+'-skeleton').hidden=!state.loading;
+  const text=document.getElementById(prefix+'-text');text.classList.toggle('easy-loading-status',state.loading);
+  text.textContent=state.loading?status:state.text||state.error;
+  document.querySelector('#'+prefix+' .p-easy-note').toggleAttribute('hidden',state.loading);
+  document.getElementById(prefix+'-retry').hidden=!state.error||!!state.blocked;
+  return {section,text,before,wasExpanded,expanded};
+}
+function finishEasyExplanationSurface({section,text,before,wasExpanded,expanded}){
   if(expanded&&!wasExpanded)text.focus({preventScroll:true});
-  if(expanded&&surface.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-    const after=surface.getBoundingClientRect();
+  if(expanded&&section.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const after=section.getBoundingClientRect();
     if(before.height>0&&Math.abs(after.height-before.height)>1){
-      surface.animate([{height:before.height+'px'},{height:after.height+'px'}],{duration:260,easing:'cubic-bezier(.2,.7,.2,1)'});
+      section.animate([{height:before.height+'px'},{height:after.height+'px'}],{duration:260,easing:'cubic-bezier(.2,.7,.2,1)'});
     }
   }
 }
+
 function easyExplanationError(answer){
   if(navigator.onLine===false)return '오프라인이에요. 연결한 뒤 다시 눌러 주세요.';
   if(answer?.error==='anon_exhausted'||answer?.error==='login_required')return '무료 체험을 다 썼어요. 설정에서 로그인한 뒤 다시 이용해 주세요.';

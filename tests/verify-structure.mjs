@@ -1491,8 +1491,10 @@ assert.doesNotMatch(index, /id="(?:ps-close|sentence-pill-cancel)"/,
   'The temporary sentence lookup exposes an explicit X button again');
 assert.doesNotMatch(index, /id="ps-cap"/,
   'The sentence result shows a redundant visible title again');
-assert.match(gestureSource, /function sentenceDismissTarget[\s\S]{0,160}target\.closest\('#sentence-scrim'\)/,
+assert.match(gestureSource, /function sentenceDismissTarget[\s\S]{0,360}target\.closest\('#sentence-scrim'\)/,
   'Outside tap no longer belongs to the sentence gesture owner');
+assert.match(gestureSource,/sentenceSurfaceAnchored\(\)\) return !target\.closest\('#p-sentence'\)/,
+  'Anchored sentence outside taps must use the same gesture owner');
 assert.match(gestureSource,
   /function endSentenceModalGesture[\s\S]{0,260}gesture\.pulls && gesture\.dy > SHEET_PULL_DISMISS/,
   'The compact sentence sheet no longer supports downward swipe dismissal');
@@ -1811,7 +1813,7 @@ assert.match(dictionarySource, /const vocabOpen = new Set\(\);/,
 assert.doesNotMatch(dictionarySource, /vocabOpen[\s\S]{0,80}?(?:saveWords|queueSync|localStorage)/,
   '단어장 펼침은 화면에만 있어야 합니다 — 저장하거나 동기화하면 안 됩니다');
 /* 별·삭제·뜻 편집은 각자 할 일이 있어서 펼침 토글이 가로채면 안 됩니다. */
-assert.match(dictionarySource, /closest\('\.chip, \.rowdel, \.vmore, \.review-pick, \[contenteditable\]'\)/,
+assert.match(dictionarySource, /closest\('\.chip, \.rowdel, \.vmore, \[contenteditable\]'\)/,
   '별·삭제·뜻 편집이 펼침 토글과 다시 충돌합니다');
 /* 내보내기 단추의 id 는 btn-export 입니다. 예전 이름이 스타일시트에 남아 있던
    동안 이 단추는 모든 화면에서 브라우저 기본 단추로 떴습니다. */

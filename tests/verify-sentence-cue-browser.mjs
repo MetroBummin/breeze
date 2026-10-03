@@ -35,7 +35,7 @@ try{
  for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
   for(const width of [390,768]){
    const profile=mkdtempSync(resolve(tmpdir(),'breeze-sentence-cue-'));
-   const context=await engine.launchPersistentContext(profile,{headless:true,viewport:{width,height:width===390?844:1024},hasTouch:true,isMobile:true,deviceScaleFactor:1,serviceWorkers:'block'});
+   const context=await engine.launchPersistentContext(profile,{executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined,headless:true,viewport:{width,height:width===390?844:1024},hasTouch:true,isMobile:true,deviceScaleFactor:1,serviceWorkers:'block'});
    try{
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.push(e.message);});
@@ -126,7 +126,8 @@ try{
      console.log('Result visible',engine.name(),width,kind);
      await page.locator('#p-sentence').evaluate(n=>Promise.all(n.getAnimations().map(a=>a.finished)));
      assert.equal(await page.locator('#ps-extra,#ps-points').count(),0);assert.equal(await page.locator('#ps-foot').isVisible(),false);
-     assert.equal(await page.locator('#ps-en').textContent(),cue.sentence);
+     assert.equal(await page.locator('#ps-en').textContent(),'');
+     assert.equal(await page.locator('#ps-source').isVisible(),false);
      assert.ok(await page.evaluate(()=>readerSentenceCue?.layer.isConnected));
      if(output)await page.screenshot({path:resolve(output,`${engine.name()}-${width}-${kind}.png`)});
      if(kind!=='pdf'){

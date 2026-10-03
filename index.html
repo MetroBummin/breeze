@@ -46,10 +46,10 @@
   <link rel="stylesheet" href="styles/article-preview.css?v=4136d11a">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=5ab30afa">
   <link rel="stylesheet" href="styles/reader.css?v=7b53053d">
-  <link rel="stylesheet" href="styles/dictionary.css?v=4d96eb0d">
+  <link rel="stylesheet" href="styles/dictionary.css?v=f4c2b7a4">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=79ec0677">
+  <link rel="stylesheet" href="styles/wordbook.css?v=82af523b">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=3ef1ca39">
   <link rel="stylesheet" href="styles/onboarding.css?v=e80ba10b">
@@ -81,8 +81,8 @@
   <script defer src="scripts/reader/reader-scroll.js?v=9627d9ac"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
-  <script defer src="scripts/reader/gesture.js?v=05e9d67a"></script>
-  <script defer src="scripts/reader/pdf-pinch.js?v=a37f36bf"></script>
+  <script defer src="scripts/reader/gesture.js?v=bc3acf8a"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=a37314b9"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
   <script defer src="scripts/library/library.js?v=c778d213"></script>
@@ -99,29 +99,30 @@
   <script defer src="scripts/importers/rss.js?v=2ccdbb2b"></script>
   <script defer src="scripts/library/article-preview.js?v=6b36e9af"></script>
   <script defer src="modules/lexical/core.js?v=967d0efa"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=97a7f38a"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=b285acc5"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=27737332"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=6e8b28de"></script>
-  <script defer src="scripts/dictionary/easy-explanation.js?v=a4e321f5"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=71cbbbac"></script>
+  <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
+  <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/vendor/ts-fsrs-5.4.2.js?v=59b74441"></script>
   <script defer src="scripts/core/vocabulary-review.js?v=e3c93ea7"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=b1da77d9"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=f02fd747"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=bd9ec090"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
   <script defer src="scripts/reader/pdf-ink.js?v=d1a42703"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=962af9f2"></script>
-  <script defer src="scripts/reader/epub-original.js?v=b7c63d7a"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=0c668f94"></script>
+  <script defer src="scripts/reader/epub-original.js?v=8d338b3b"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=afc95718"></script>
-  <script defer src="scripts/reader/reader.js?v=7d431663"></script>
+  <script defer src="scripts/reader/reader.js?v=28ca16b1"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=2a6fea27"></script>
   <script defer src="scripts/ui/preferences.js?v=996d590a"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
-  <script defer src="scripts/sync/sync.js?v=eb027cd7"></script>
+  <script defer src="scripts/sync/sync.js?v=ad7f5ff5"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=04236e7a"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
@@ -301,6 +302,15 @@
         <div id="ps-en"></div>
       </div>
       <div id="ps-ko" hidden></div>
+      <section id="ps-easy" aria-label="쉬운 설명" hidden>
+        <button id="ps-easy-button" type="button" aria-expanded="false" aria-controls="ps-easy-card">쉬운 설명</button>
+        <div id="ps-easy-card" hidden>
+          <div id="ps-easy-skeleton" aria-hidden="true" hidden><i></i><i></i><i></i></div>
+          <p id="ps-easy-text" role="status" aria-live="polite" tabindex="-1"></p>
+          <button id="ps-easy-retry" type="button" hidden>다시 시도</button>
+          <p class="p-easy-note">AI 설명 · 이 설명은 저장하지 않아요</p>
+        </div>
+      </section>
       <div id="ps-foot" hidden></div>
       <!-- 요청만 실패했는데 손짓부터 다시 할 이유는 없습니다. 같은 문장을 그대로
            다시 물어봅니다 — 창은 닫지 않습니다(scripts/dictionary/sentence.js).
@@ -430,7 +440,6 @@
     </div>
   </section>
   <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
-  <div class="wordbook-selection"><button id="review-select-toggle" type="button" aria-pressed="false">선택</button><label id="review-select-all-label" hidden><input id="review-select-all" type="checkbox">표시된 뜻 전체 선택</label><button id="review-select-cancel" type="button" hidden>선택 취소</button><span id="review-selection-count" role="status"></span></div>
   <div id="vtablewrap"></div>
   <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">

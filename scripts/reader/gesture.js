@@ -112,6 +112,7 @@ function sentenceModalOpen(){
    Reader에 내려가지 않습니다. */
 function sentenceDismissTarget(target){
   if(!target || typeof target.closest !== 'function') return false;
+  if(typeof sentenceSurfaceAnchored==='function' && sentenceSurfaceAnchored()) return !target.closest('#p-sentence');
   return !!target.closest('#sentence-scrim');
 }
 function sentencePullTarget(target){
@@ -572,9 +573,7 @@ function clickGesture(event){
    (`readerScrollTo` 가 적어 둡니다 — scripts/reader/reader-scroll.js). */
 function scrollGesture(){
   const userScroll=!(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic());
-  if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive() && userScroll){
-    if(typeof closeSentence==='function') closeSentence();
-  }
+  if(typeof sentenceReaderScrolled==='function') sentenceReaderScrolled(userScroll);
   /* Mini pills wait for scroll idle, preserving the same lookup/result. Expanded
      detail keeps its existing scroll dismissal. Only real position changes reset idle. */
   const retainedWordPeek=typeof wordPeekUserScrolled==='function'&&wordPeekUserScrolled(userScroll);
