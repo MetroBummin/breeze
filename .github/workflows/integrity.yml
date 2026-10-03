@@ -67,13 +67,17 @@ jobs:
           status=0
           node tests/verify-vocabulary-review-browser.mjs || status=1
           BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs || status=1
+          node tests/verify-simple-word-cards-browser.mjs || status=1
+          BROWSER=webkit node tests/verify-simple-word-cards-browser.mjs || status=1
           exit "$status"
       - name: Vocabulary review visual proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: vocabulary-review-proof
-          path: /tmp/breeze-review-proof/
+          path: |
+            /tmp/breeze-review-proof/
+            /tmp/breeze-simple-word-cards-proof/
           if-no-files-found: ignore
           retention-days: 7
       - name: Real IndexedDB and navigation regression

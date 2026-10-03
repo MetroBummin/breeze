@@ -227,3 +227,28 @@ Remove the Memory list's learning/relearning waiting row and redundant “이어
 Paused-limit and storage-error messages remain actionable; study completion still
 shows pending short-step learning. Queue persistence, FSRS ratings/due times,
 unique-card budgets and all vocabulary records are unchanged.
+
+## 1.7 simple cards; scheduled review deferred to 1.8 (2026-10-03)
+
+`ADVANCED_VOCABULARY_REVIEW_ENABLED=false` ships an all-saved-Meaning deck through
+Memory's center **단어 카드** control. One card per saved nonblank word/meaning,
+including distinct saved meanings of the same word. Memory search/book/star filters
+never narrow this deck. It uses the existing literal word, meaning, source/example
+and saved-expression highlighting. Front/back, previous/next and arrow keys are
+available; the ends stop navigation without completion/stage progression. Empty
+Memory has an actionable message. Current position is in memory for exit/reopen;
+app reload starts at the first card. Collection edits are reflected when rendering.
+
+Simple mode never calls `BreezeReview`, reads review storage, grades, schedules,
+counts daily usage, migrates records or writes vocabulary/review data. Scheduled
+review reads/writes reject while dormant; explicit daily/extra/settings/grade
+entrypoints do nothing. Old study history routes resume simple cards. The advanced
+settings section is hidden and its fieldset disabled; lookup, meaning additions,
+Memory browsing/filtering/edit/export and reader study preferences remain intact.
+The engine, its data and advanced UI remain for 1.8; no review-record cleanup occurs.
+
+The browser review suite explicitly serves an ON fixture to retain advanced
+regression coverage, while `verify-simple-word-cards-browser.mjs` tests the actual
+shipped OFF source and asserts zero review-storage access. Both modes run in CI
+Chromium/WebKit. Simple-card flips use a short fade to avoid perspective overflow
+on tablet and respect reduced motion. No AI/backend changes accompany this scope.

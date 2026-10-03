@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=f4c2b7a4">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=82af523b">
+  <link rel="stylesheet" href="styles/wordbook.css?v=1736245b">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=3ef1ca39">
   <link rel="stylesheet" href="styles/onboarding.css?v=e80ba10b">
@@ -106,7 +106,7 @@
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/vendor/ts-fsrs-5.4.2.js?v=59b74441"></script>
   <script defer src="scripts/core/vocabulary-review.js?v=e3c93ea7"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=f02fd747"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=0aca3ea6"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -431,7 +431,7 @@
     <div class="wordbook-sort"><span>정렬</span><input id="vsort" type="hidden" value="recent"><details id="vsort-menu" name="wordbook-menu"><summary aria-label="단어 정렬"><span id="vsort-label">최근 추가한 순</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><fieldset id="vsort-options"><legend>정렬 기준</legend><label><input type="radio" name="wordbook-sort" value="recent" checked><span>최근 추가한 순</span></label><label><input type="radio" name="wordbook-sort" value="oldest"><span>오래된 순</span></label><label><input type="radio" name="wordbook-sort" value="alpha"><span>알파벳순</span></label></fieldset></details><details id="vbooks" name="wordbook-menu"><summary><span id="vbook-label">모든 책</span><svg class="memory-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary><div id="vbook-options"></div></details></div>
     <div class="wordbook-filter-row"><span>별점</span><div id="vstars" role="group" aria-label="별점 필터"><button class="stbtn" type="button" data-s="1" data-status="1" aria-label="별 1개 필터" aria-pressed="false">★</button><button class="stbtn" type="button" data-s="2" data-status="2" aria-label="별 2개 필터" aria-pressed="false">★★</button><button class="stbtn" type="button" data-s="3" data-status="3" aria-label="별 3개 필터" aria-pressed="false">★★★</button></div></div>
   </div>
-  <section id="review-setup" aria-label="학습량">
+  <section id="review-setup" aria-label="학습량" hidden>
     <div id="review-setup-notices">
       <p id="review-setup-scope"></p>
       <p id="review-setup-plan"></p>
@@ -444,11 +444,11 @@
   <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
     <button id="wordbook-home" class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg></button>
-    <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="openVocabularyReview()">학습 시작</button>
+    <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="openVocabularyReview()">단어 카드</button>
     <button id="btn-export" class="control-glass control-circle" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button>
   </nav></div>
 </div>
-<section id="v-study" class="view"><main id="vocabulary-review-page" aria-label="단어 학습">
+<section id="v-study" class="view"><main id="vocabulary-review-page" aria-label="단어 카드">
   <button id="review-close" type="button" aria-label="단어장으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
   <section id="review-journey" aria-label="오늘 학습 단계" hidden><div class="review-journey-meta"><span id="review-stage-label"></span><span id="review-day-count"></span></div><div id="review-stage-track" role="progressbar" aria-label="오늘 학습 진행도" aria-valuemin="0"></div></section>
   <p id="review-mode" class="review-recall-hint"></p>
@@ -463,7 +463,7 @@
       <div id="review-back" class="review-face" hidden>
         <p id="review-back-expression"></p>
         <p id="review-meaning" tabindex="-1" hidden></p>
-        <p class="review-recall-hint">보기 전 떠올린 답으로 · 못 떠올렸다면 다시</p>
+        <p class="review-recall-hint" data-advanced-review>보기 전 떠올린 답으로 · 못 떠올렸다면 다시</p>
       </div>
     </div>
     <button id="review-reveal" type="button">정답 확인</button>
@@ -474,6 +474,7 @@
       <button id="review-easy" type="button" title="거의 즉시, 확실하게 떠올림"><span>쉬움</span><small id="review-easy-interval"></small></button>
     </div>
   </div>
+  <nav id="simple-word-navigation" aria-label="단어 카드 이동" hidden><button id="simple-word-previous" type="button">이전</button><button id="simple-word-next" type="button">다음</button></nav>
   <section id="review-result" hidden>
     <div id="review-celebration" hidden>
       <div id="review-mascot-scene" hidden><img id="review-stage-mascot" src="assets/brand/review/thunderhead-stage-1.png" alt="" width="260" height="260" hidden></div>
@@ -515,12 +516,12 @@
       <div class="set-label"><b>튜토리얼</b><span>단어와 문장 뜻 보는 방법을 따라 해봐요.</span></div>
       <button type="button" class="sm-mini" onclick="startOnboarding(true)">튜토리얼 다시보기</button>
     </div>
-    <h3 class="settings-section-title">단어 학습</h3>
-    <form id="review-limit-form">
+    <section id="review-settings" hidden><h3 class="settings-section-title">단어 학습</h3>
+    <form id="review-limit-form"><fieldset id="review-settings-controls" disabled>
       <label class="set-row"><span class="set-label"><b>하루 학습 최대 단어 수</b><span>신규·복습 합계 · 같은 단어 반복 제외</span></span><input id="review-daily-limit" type="number" min="0" max="100000" step="1" value="100" required inputmode="numeric" aria-label="하루 학습 최대 단어 수"></label>
       <div class="review-limit-presets" role="group" aria-label="하루 학습 최대 단어 수 바로 선택"><button type="button" data-review-limit="50">50개</button><button type="button" data-review-limit="100">100개</button><button type="button" data-review-limit="200">200개</button><button type="button" data-review-limit="300">300개</button></div>
       <p id="review-limit-usage" class="settings-sync-note"></p><p id="review-limit-error" role="alert" hidden></p>
-    </form>
+    </fieldset></form></section>
     <div class="set-panel" data-panel="sync">
       <div id="sm-body"></div>
       <div id="sm-status"></div>

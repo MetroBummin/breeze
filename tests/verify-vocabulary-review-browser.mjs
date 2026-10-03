@@ -19,7 +19,9 @@ const server=createServer((req,res)=>{
   const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
   const path=resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
   if(!path.startsWith(root.endsWith(sep)?root:root+sep)){res.writeHead(403).end();return;}
-  try{res.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}
+  try{res.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');const contents=readFileSync(path);
+    // Explicit 1.8 fixture; shipped 1.7 simple cards are tested separately.
+    res.end(path.endsWith('/scripts/ui/vocabulary-review.js')?contents.toString().replace('const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;','const ADVANCED_VOCABULARY_REVIEW_ENABLED=true;'):contents);}
   catch{res.writeHead(404).end();}
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
