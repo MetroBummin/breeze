@@ -1,0 +1,156 @@
+[
+  {
+    "paragraph": 1,
+    "before": "acquirement of wealth",
+    "after": "acquisition of wealth",
+    "reason": "Use the current form of this noun."
+  },
+  {
+    "paragraph": 3,
+    "before": "knock you up",
+    "after": "wake you",
+    "reason": "Avoid the changed modern meaning of this expression."
+  },
+  {
+    "paragraph": 3,
+    "before": "has been knocked up, she retorted upon me, and I on you",
+    "after": "was woken, she did the same to me, and I to you",
+    "reason": "Preserve the comic chain of interrupted sleep in current wording."
+  },
+  {
+    "paragraph": 5,
+    "before": "knock sleepy people up out of their beds",
+    "after": "wake sleepy people in their beds",
+    "reason": "Avoid the changed modern meaning of this expression."
+  },
+  {
+    "paragraph": 8,
+    "before": "Pray draw up",
+    "after": "Please draw up",
+    "reason": "Modernize the archaic polite imperative."
+  },
+  {
+    "paragraph": 19,
+    "before": "defray whatever expenses",
+    "after": "cover whatever expenses",
+    "reason": "Use the common current verb for paying expenses."
+  },
+  {
+    "paragraph": 24,
+    "before": "a capital sentence",
+    "after": "a death sentence",
+    "reason": "Clarify the historical legal expression without changing the penalty."
+  },
+  {
+    "paragraph": 32,
+    "before": "Pray be precise",
+    "after": "Please be precise",
+    "reason": "Modernize the archaic polite imperative."
+  },
+  {
+    "paragraph": 49,
+    "before": "Pray proceed",
+    "after": "Please proceed",
+    "reason": "Modernize the archaic polite imperative."
+  },
+  {
+    "paragraph": 50,
+    "before": "she would fain have said",
+    "after": "she would have liked to say",
+    "reason": "Modernize an obsolete expression of desire; retain uncertainty."
+  },
+  {
+    "paragraph": 66,
+    "before": "pray go on",
+    "after": "please go on",
+    "reason": "Modernize the archaic polite imperative."
+  },
+  {
+    "paragraph": 67,
+    "before": "from whence",
+    "after": "from where",
+    "reason": "Modernize the archaic relative adverb."
+  },
+  {
+    "paragraph": 70,
+    "before": "screening your stepfather",
+    "after": "shielding your stepfather",
+    "reason": "Clarify the dated sense of protecting someone from suspicion."
+  },
+  {
+    "paragraph": 73,
+    "before": "cruelly used",
+    "after": "cruelly treated",
+    "reason": "Clarify the dated sense of used."
+  },
+  {
+    "paragraph": 95,
+    "before": "The ejaculation",
+    "after": "The exclamation",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 99,
+    "before": "Pray take a seat",
+    "after": "Please take a seat",
+    "reason": "Modernize the archaic polite imperative."
+  },
+  {
+    "paragraph": 108,
+    "before": "Jack-in-office",
+    "after": "pompous official",
+    "reason": "Preserve Roylott’s insult in recognizable present-day language."
+  },
+  {
+    "paragraph": 113,
+    "before": "confound me with",
+    "after": "confuse me with",
+    "reason": "Clarify the dated sense of confound."
+  },
+  {
+    "paragraph": 195,
+    "before": "clinched fists",
+    "after": "clenched fists",
+    "reason": "Use the current spelling for tightly closed fists."
+  },
+  {
+    "paragraph": 226,
+    "before": "pets which the Doctor affected",
+    "after": "pets which the Doctor favoured",
+    "reason": "Clarify the dated sense of affected without changing the pets."
+  },
+  {
+    "paragraph": 231,
+    "before": "Do not go asleep",
+    "after": "Do not fall asleep",
+    "reason": "Use the current idiom."
+  },
+  {
+    "paragraph": 76,
+    "before": "to-day",
+    "after": "today",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 77,
+    "before": "to-day",
+    "after": "today",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 131,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 196,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  }
+]

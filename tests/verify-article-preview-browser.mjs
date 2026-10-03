@@ -17,7 +17,7 @@ const server=createServer((req,res)=>{
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
 try{
-  for(const engine of [chromium,webkit]){
+  for(const engine of [chromium,webkit].filter(engine=>!process.env.BROWSER||engine.name()===process.env.BROWSER)){
     const browser=await engine.launch();
     try{
       for(const [width,height] of [[320,568],[390,844],[820,1024],[1280,800]]){
@@ -30,7 +30,7 @@ try{
           if(url.includes('/functions/v1/article-preview')){
             calls++;
             const body=JSON.parse(route.request().postData());
-            return body.title==='Second article' ? route.abort() : route.fulfill({contentType:'application/json',body:JSON.stringify({summaryKo:'첫 문단에서 이 글의 주제와 핵심 질문을 소개합니다. 이어지는 설명을 통해 두 선택지가 어떻게 다른지 살펴봅니다.'})});
+            return body.title==='Second article' ? route.abort() : route.fulfill({contentType:'application/json',body:JSON.stringify({promptVersion:5,summaryKo:'첫 문단에서 이 글의 주제와 핵심 질문을 소개합니다. 이어지는 설명을 통해 두 선택지가 어떻게 다른지 살펴봅니다.'})});
           }
           return route.abort();
         });

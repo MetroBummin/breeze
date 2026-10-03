@@ -1,5 +1,6 @@
 /* Preview never owns reading progress. Optional metadata must not block Reader. */
-const ARTICLE_PREVIEW_CACHE = 'breeze.article-preview.v4';
+const ARTICLE_PREVIEW_CACHE = 'breeze.article-preview.v5';
+const ARTICLE_PREVIEW_PROMPT_VERSION = 5;
 const ARTICLE_PREVIEW_TIMEOUT = 15000;
 const ARTICLE_PREVIEW_CACHE_AGE = 30 * 86400000;
 const articlePreviewJobs = new Map();
@@ -51,13 +52,13 @@ function articlePreviewCacheEntries(){
 }
 function articlePreviewCached(key){
   const entry=articlePreviewCacheEntries()[key],now=Date.now();
-  return entry && Number.isFinite(entry.at) && entry.at<=now && now-entry.at<ARTICLE_PREVIEW_CACHE_AGE
+  return entry && entry.promptVersion===ARTICLE_PREVIEW_PROMPT_VERSION && Number.isFinite(entry.at) && entry.at<=now && now-entry.at<ARTICLE_PREVIEW_CACHE_AGE
     ? articlePreviewValid(entry.meta) : null;
 }
 function articlePreviewSave(key,meta){
   try{
     const now=Date.now(),all=articlePreviewCacheEntries();
-    all[key]={at:now,meta};
+    all[key]={at:now,meta,promptVersion:ARTICLE_PREVIEW_PROMPT_VERSION};
     const kept=Object.entries(all).filter(([,entry])=>entry && Number.isFinite(entry.at) &&
       entry.at<=now && now-entry.at<ARTICLE_PREVIEW_CACHE_AGE && articlePreviewValid(entry.meta))
       .sort((a,b)=>b[1].at-a[1].at).slice(0,100);
@@ -107,10 +108,12 @@ async function articlePreviewMetadata(book){
         }catch{/* Keep the HTTP category for non-JSON failures. */}
         return failed(reason);
       }
-      const meta=articlePreviewValid(await articlePreviewUntil(response.json(),controller.signal));
+      const payload=await articlePreviewUntil(response.json(),controller.signal);
+      const meta=articlePreviewValid(payload);
       if(controller.signal.aborted)return failed('timeout');
       if(!meta)return failed('invalid');
-      articlePreviewSave(key,meta);
+      // Older servers remain readable, but cannot populate the new editorial cache.
+      if(payload.promptVersion===ARTICLE_PREVIEW_PROMPT_VERSION)articlePreviewSave(key,meta);
       return {meta,reason:''};
     }catch{return failed(controller.signal.aborted?'timeout':'network');}
     finally{clearTimeout(timeout);}
@@ -129,6 +132,7 @@ function articlePreviewClose(cancelOpening=true){
   if(cancelOpening!==false&&articlePreviewOpenController){articlePreviewOpenController.abort();articlePreviewOpenController=null;articlePreviewOpening=null;}
 
   articlePreviewDialog.dataset.preparing='false';
+  articlePreviewDialog.dataset.kind='article';
   articlePreviewGeneration++;
   articlePreviewBook=null;
   const image=/** @type {HTMLImageElement} */(articlePreviewDialog.querySelector('.ap-hero img'));
@@ -143,15 +147,15 @@ function articlePreviewPaint(meta){
 function articlePreviewMetadataState(state,reason=''){
   articlePreviewDialog.dataset.metadata=state;
   articlePreviewDialog.dataset.metadataReason=reason;
-  const messages={source:'요약 없이 원문을 읽을 수 있어요.',offline:'오프라인이에요. 원문은 바로 읽을 수 있어요.',
-    unavailable:'한국어 요약을 아직 사용할 수 없어요.',auth:'한국어 요약 연결을 확인하지 못했어요.',
-    quota:'한국어 요약의 이용 한도에 도달했어요.',timeout:'한국어 요약이 늦어지고 있어요.',
-    network:'한국어 요약을 불러오지 못했어요.',service:'한국어 요약을 잠시 사용할 수 없어요.',
-    busy:'다른 요약을 준비 중이에요. 잠시 후 다시 시도해 주세요.',
-    invalid:'한국어 요약을 준비하지 못했어요.',request:'한국어 요약을 요청하지 못했어요.',
+  const messages={source:'소개 없이 원문을 읽을 수 있어요.',offline:'오프라인이에요. 원문은 바로 읽을 수 있어요.',
+    unavailable:'한국어 소개를 아직 사용할 수 없어요.',auth:'한국어 소개 연결을 확인하지 못했어요.',
+    quota:'한국어 소개의 이용 한도에 도달했어요.',timeout:'한국어 소개가 늦어지고 있어요.',
+    network:'한국어 소개를 불러오지 못했어요.',service:'한국어 소개를 잠시 사용할 수 없어요.',
+    busy:'다른 소개를 준비 중이에요. 잠시 후 다시 시도해 주세요.',
+    invalid:'한국어 소개를 준비하지 못했어요.',request:'한국어 소개를 요청하지 못했어요.',
     preparing_failed:'본문을 불러오지 못했어요.'};
-  articlePreviewMetaLabel.textContent=state==='loading'?(reason==='preparing'?'본문을 가져오는 중…':'한국어 요약을 준비하고 있어요…'):
-    state==='ready'?'':messages[reason]||'요약 없이도 원문을 읽을 수 있어요.';
+  articlePreviewMetaLabel.textContent=state==='loading'?(reason==='preparing'?'본문을 가져오는 중…':'한국어 소개를 준비하고 있어요…'):
+    state==='ready'?'':messages[reason]||'소개 없이도 원문을 읽을 수 있어요.';
   articlePreviewMetaStatus.hidden=state==='ready';
   articlePreviewSummaryCard.setAttribute('aria-busy',String(state==='loading'));
   articlePreviewDialog.setAttribute('aria-labelledby','ap-original-title');
@@ -168,6 +172,8 @@ function articlePreviewRequest(book,generation){
   });
 }
 function openCasualPreviewOrReader(book,options={}){
+  const bundled=book.longReadId&&LONG_READS.find(read=>read.id===book.longReadId);
+  if(bundled)return openLongReadPreview(bundled);
   if(articlePreviewOpening)articlePreviewClose();
   if(book.kind!=='article' || posOf(book.id).t){articlePreviewClose();return openBook(book);}
   if(articlePreviewDialog.open && articlePreviewBook===book)return book;
@@ -178,6 +184,8 @@ function openCasualPreviewOrReader(book,options={}){
     if(articlePreviewImageUrl){URL.revokeObjectURL(articlePreviewImageUrl);articlePreviewImageUrl='';}
   }else articlePreviewClose();
   articlePreviewDialog.dataset.preparing='false';articlePreviewBook=book;
+  articlePreviewDialog.dataset.kind='article';
+  articlePreviewDetails.hidden=true;
   const generation=articlePreviewGeneration,dialog=articlePreviewDialog;
   const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
   dialog.querySelector('.ap-art').innerHTML=coverArtwork(book.id);
@@ -258,7 +266,10 @@ async function articlePreviewStart(){
   const openingOptions={signal:controller.signal,onPresented:()=>{if(articlePreviewActive(generation))articlePreviewClose(false);}};
   const job=articlePreviewUntil(Promise.resolve().then(async()=>{
     // The CTA is the save boundary. A dismissed preparation never reaches here.
-    const saved=await commitArticleDraft(book);
+    const saved=book.bundledRead
+      ? await importLongRead(book.bundledRead,null,{signal:controller.signal})
+      : await commitArticleDraft(book,undefined,{signal:controller.signal});
+    if(!saved)throw new Error('Book preparation failed');
     if(controller.signal.aborted||!articlePreviewActive(generation))return;
     await openBook(saved,openingOptions);
     if(!controller.signal.aborted&&saved.social?.scope==='single-post')toast('게시글 1개를 가져왔어요. 답글·연속 글 전체는 포함하지 않아요.');
@@ -274,7 +285,7 @@ async function articlePreviewStart(){
     clearTimeout(deadline);if(articlePreviewOpenController===controller)articlePreviewOpenController=null;
     if(articlePreviewOpening===job)articlePreviewOpening=null;
     if(articlePreviewActive(generation)){
-      start.disabled=false;start.textContent='읽기 시작';start.removeAttribute('aria-busy');
+      start.disabled=false;start.textContent=book.bundledRead?longReadPreviewAction(book.bundledRead):'읽기 시작';start.removeAttribute('aria-busy');
     }
   }
 }
@@ -291,15 +302,50 @@ articlePreviewMetaSpinner.className='ap-metadata-spinner';articlePreviewMetaSpin
 const articlePreviewMetaLabel=document.createElement('span');
 articlePreviewMetaLabel.className='ap-metadata-label';
 const articlePreviewRetry=document.createElement('button');
-articlePreviewRetry.type='button';articlePreviewRetry.className='ap-retry';articlePreviewRetry.textContent='요약 다시 시도';
-articlePreviewRetry.hidden=true;articlePreviewRetry.setAttribute('aria-label','한국어 요약 다시 시도');
+articlePreviewRetry.type='button';articlePreviewRetry.className='ap-retry';articlePreviewRetry.textContent='소개 다시 시도';
+articlePreviewRetry.hidden=true;articlePreviewRetry.setAttribute('aria-label','한국어 소개 다시 시도');
 articlePreviewMetaStatus.append(articlePreviewMetaSpinner,articlePreviewMetaLabel,articlePreviewRetry);
 const articlePreviewSummaryCard=document.createElement('section');
-articlePreviewSummaryCard.className='ap-summary-card';articlePreviewSummaryCard.setAttribute('aria-label','한국어 요약');
+articlePreviewSummaryCard.className='ap-summary-card';articlePreviewSummaryCard.setAttribute('aria-label','한국어 소개');
 const articlePreviewSummaryHeading=document.createElement('div');articlePreviewSummaryHeading.className='ap-summary-heading';
 articlePreviewSummaryHeading.textContent='짧게 살펴보기';
 articlePreviewSummaryCard.append(articlePreviewSummaryHeading,articlePreviewMetaStatus,articlePreviewDialog.querySelector('.ap-summary'));
 articlePreviewDialog.querySelector('.ap-title').after(articlePreviewSummaryCard);
+const articlePreviewDetails=document.createElement('p');
+articlePreviewDetails.className='ap-details';articlePreviewDetails.hidden=true;
+articlePreviewSummaryCard.after(articlePreviewDetails);
+function longReadPreviewAction(read){
+  const book=books.find(item=>item.longReadId===read.id);
+  return book&&posOf(book.id).t?'이어서 읽기':'읽기';
+}
+function openLongReadPreview(read){
+  cancelPendingBookOpen();articlePreviewClose();
+  const dialog=articlePreviewDialog;
+  dialog.dataset.kind='longread';
+  articlePreviewBook={id:'preview:'+read.id,kind:'txt',bundledRead:read};
+  dialog.querySelector('.ap-art').innerHTML=coverArtwork(read.id);
+  dialog.querySelector('.ap-source').textContent=read.author;
+  dialog.querySelector('.ap-title').textContent=read.title;
+  articlePreviewPaint({summaryKo:read.hook});articlePreviewMetadataState('ready');
+  articlePreviewDetails.hidden=false;
+  articlePreviewDetails.textContent=`${read.edition} · ${read.wordCount.toLocaleString()} words · ${Math.max(1,Math.round(read.wordCount/180))} min (approx.)\n${read.license}`;
+  const source=document.createElement('a');
+  source.href=read.sourceUrl;source.target='_blank';source.rel='noopener noreferrer';
+  source.textContent=`Source acknowledgment: ${read.site}`;
+  articlePreviewDetails.append(document.createElement('br'),source);
+  const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
+  if(read.cover){image.src=read.cover;image.hidden=false;image.onerror=()=>{image.hidden=true;};}
+  const owned=books.find(book=>book.longReadId===read.id),generation=articlePreviewGeneration;
+  if(owned?.cover)void bookImageBlob(owned,owned.cover).then(blob=>{
+    if(!blob||!articlePreviewActive(generation))return;
+    articlePreviewImageUrl=URL.createObjectURL(blob);
+    image.src=articlePreviewImageUrl;image.hidden=false;
+  }).catch(()=>{/* The catalog cover or ordinary text fallback remains usable. */});
+  const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
+  start.onclick=articlePreviewStart;start.disabled=false;start.textContent=longReadPreviewAction(read);start.removeAttribute('aria-busy');
+  articlePreviewStatus('');dialog.querySelector('.ap-scroll').scrollTop=0;
+  dialog.showModal();dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});
+}
 const articlePreviewStatusNode=document.createElement('p');
 articlePreviewStatusNode.className='ap-status';articlePreviewStatusNode.setAttribute('role','status');
 articlePreviewStatusNode.setAttribute('aria-live','polite');

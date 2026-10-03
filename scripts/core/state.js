@@ -248,6 +248,9 @@ function rememberAppView(view,replace){
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
+  // Leaving the preview's owning view must invalidate its async preparation.
+  // Reader presentation closes its own preview through onPresented instead.
+  if(v!=='read'&&typeof articlePreviewClose==='function')articlePreviewClose();
   if(v!=='study'&&typeof resetVocabularyReviewSurface==='function')resetVocabularyReviewSurface();
   if(v!=='read')cancelPendingBookOpen();
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && v!=='read') endOnboarding(true,false);
@@ -292,6 +295,7 @@ function show(v,options){
    되돌립니다. 그래서 Google에서 들어온 사람도 책을 읽다 한 번 뒤로 갔다고 곧장
    바깥 사이트로 나가지 않습니다. */
 window.addEventListener('popstate',event=>{
+  if(typeof articlePreviewClose==='function')articlePreviewClose();
   if(typeof sentenceLookupOpen==='function' && sentenceLookupOpen()){
     closeSentence(); return;
   }

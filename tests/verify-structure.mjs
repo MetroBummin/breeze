@@ -1103,15 +1103,20 @@ new Script(readFileSync(resolve(root, 'scripts/library/longreads.js'), 'utf8'))
 const offered = longReadsContext.pendingLongReads();
 assert.deepEqual(Array.from(offered, read => read.title), [
   'Backroom - Homeward Bound',
-], 'Only Backroom - Homeward Bound should be offered as a default Long Read');
+  'The Adventure of the Speckled Band',
+  'A Scandal in Bohemia',
+  'The Red-Headed League',
+], 'All four bundled stories should be offered independently');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
 for(const read of offered){
   assert.match(read.file,/\.txt$/,`${read.id} is not a local Text book`);
   assert.ok(existsSync(resolve(root,read.file)),`Local text is missing: ${read.id}`);
-  assert.ok(existsSync(resolve(root,read.cover)),`Supplied cover is missing: ${read.id}`);
-  assert.equal(read.license,'CC BY-SA 3.0');
-  assert.ok(read.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
+  if(read.cover)assert.ok(existsSync(resolve(root,read.cover)),`Supplied cover is missing: ${read.id}`);
+  if(read.id==='backroom-homeward-bound'){
+    assert.equal(read.license,'CC BY-SA 3.0');
+    assert.ok(read.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
+  }else assert.equal(read.sourceUrl,'https://www.gutenberg.org/ebooks/1661');
 }
 assert.match(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),/importFile\(file,/,
   'Bundled stories no longer use the normal Text import path');

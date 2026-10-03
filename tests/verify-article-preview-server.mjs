@@ -32,8 +32,8 @@ function setup(options={}){
 }
 const sleep=()=>new Promise(r=>setTimeout(r,0));
 test('valid miss generates and persists, then hit avoids AI and quota',async()=>{
-  const {send,state}=setup();const first=await send();assert.equal(first.status,200);assert.equal((await first.json()).persisted,true);
-  const hit=await send();assert.equal((await hit.json()).cached,true);assert.equal(state.calls,1);assert.equal(state.quota,1);
+  const {send,state}=setup();const first=await send();assert.equal(first.status,200);const generated=await first.json();assert.equal(generated.persisted,true);assert.equal(generated.promptVersion,5);
+  const hit=await send();const cached=await hit.json();assert.equal(cached.cached,true);assert.equal(cached.promptVersion,5);assert.equal(state.calls,1);assert.equal(state.quota,1);
 });
 test('malformed inputs fail before cache/auth/model',async()=>{
   for(const input of [null,[],{}, {...body,title:4},{...body,excerpt:'short'}, {...body,url:'javascript:bad'}, {...body,url:'https://user:password@example.test'}, {...body,extra:'x'.repeat(17000)}]){
@@ -90,7 +90,7 @@ test('unusable model output cannot poison shared cache',async()=>{
 test('versioned evidence key normalizes tracking but not changed evidence',async()=>{
   const {send,state}=setup();await send();await send({...body,url:body.url+'?utm_source=home#fragment'});
   assert.equal(state.calls,1);await send({...body,title:'Updated title'});assert.equal(state.calls,2);
-  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v4\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v5\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
   assert.equal(state.keys[0],Buffer.from(digest).toString('hex'));
 });
 test('source month and written counts may be rendered as Korean numerals',async()=>{

@@ -17,7 +17,7 @@ const server=createServer((req,res)=>{
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 try{
-  for(const engine of [chromium,webkit]){
+  for(const engine of [chromium,webkit].filter(engine=>!process.env.BROWSER||engine.name()===process.env.BROWSER)){
     const browser=await engine.launch();
     try{
       const page=await browser.newPage({viewport:{width:320,height:568},hasTouch:true,isMobile:true,serviceWorkers:'block'});
@@ -31,8 +31,12 @@ try{
       await page.goto(url,{waitUntil:'domcontentloaded',timeout:120000});
       await page.evaluate(()=>homeReady);
       await page.locator('#shelf .longread[data-longread-id="backroom-homeward-bound"]').click();
+      await page.locator('#article-preview .ap-start').click();
       await page.waitForFunction(()=>books.some(book=>book.longReadId==='backroom-homeward-bound'));
+      await page.waitForFunction(()=>!articlePreviewDialog.open);
+      await page.evaluate(()=>show('home'));
       await page.locator('#shelf .bookcard.longread[data-longread-id="backroom-homeward-bound"]').click();
+      await page.locator('#article-preview .ap-start').click();
       await page.waitForFunction(()=>curBook?.longReadId==='backroom-homeward-bound');
 
       const audit=await page.evaluate(()=>{

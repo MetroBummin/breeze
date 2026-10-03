@@ -279,7 +279,8 @@ async function fetchArticleImage(url){
    나름의 크기를, 원문은 og:image 를 줍니다). 그래서 카드에서는 사진이 보이는데
    담고 나면 "사진은 못 가져왔어요" 가 뜨는 일이 있었습니다. 원문 쪽이 안 되면
    눈앞에 떠 있던 그 주소로 표지를 채웁니다. */
-async function attachArticleImages(parsed, fallbackPhoto){
+async function attachArticleImages(parsed, fallbackPhoto,options={}){
+  options.signal?.throwIfAborted();
   const wanted = [];
   if(parsed.cover) wanted.push(parsed.cover);
   parsed.blocks.forEach(block => {
@@ -292,8 +293,10 @@ async function attachArticleImages(parsed, fallbackPhoto){
 
   const fetched = await Promise.all(wanted.map(url =>
     fetchArticleImage(url).then(blob => [url, blob], () => [url, null])));
+  options.signal?.throwIfAborted();
   const stored = new Set();
   for(const [url, blob] of fetched){
+    options.signal?.throwIfAborted();
     if(!blob) continue;
     try{ await imgPut(articleImageKey(url), blob); stored.add(url); }catch(e){}
   }
@@ -423,7 +426,8 @@ async function repairIncompleteSocialBook(existing,parsed,extra){
   try{return await job;}
   finally{if(articleBookRepairJobs.get(existing.id)===job)articleBookRepairJobs.delete(existing.id);}
 }
-async function commitArticleDraft(draft,folderId){
+async function commitArticleDraft(draft,folderId,options={}){
+  options.signal?.throwIfAborted();
   const state=articleDrafts.get(draft);
   if(!state)return draft; // Already saved articles are never recreated.
   if(state.saved)return state.saved;
@@ -437,7 +441,8 @@ async function commitArticleDraft(draft,folderId){
       // Image attachment rewrites blocks. Keep the prepared source intact so a
       // failed save can be retried, with exactly the same original evidence.
       const parsed={...state.parsed,blocks:state.parsed.blocks.map(block=>({...block}))};
-      const photos=await attachArticleImages(parsed,state.fallbackPhoto);
+      const photos=await attachArticleImages(parsed,state.fallbackPhoto,options);
+      options.signal?.throwIfAborted();
       // If an image-only post loses every photo, it is still not a readable book.
       if(parsed.social&&!parsed.blocks.some(block=>block.r==='img')
         &&(!parsed.blocks.length||socialLinkOnlyText(parsed.blocks.map(block=>block.t).join('\n'))))throw socialImportError('incomplete');
@@ -446,7 +451,7 @@ async function commitArticleDraft(draft,folderId){
       if(state.repairId&&current?.id!==state.repairId)throw socialImportError('cancelled');
       const book=current&&articleNeedsSourceRefresh(current)
         ? await repairIncompleteSocialBook(current,parsed,extra)
-        : current||await saveCasualBook(parsed,extra,{present:false,folderId});
+        : current||await saveCasualBook(parsed,extra,{present:false,folderId,signal:options.signal});
       state.missed=photos.missed;
       return book;
     })();

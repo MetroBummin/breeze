@@ -314,8 +314,13 @@ function renderReaderAttribution(book){
   licenseLink.textContent=attribution.license;
   license.appendChild(licenseLink);
   const note=document.createElement('p');
-  note.textContent='본문은 원문 표현을 바꾸지 않고 Breeze Text 형식으로 재조판했습니다. 장면 삽화는 원문 내용을 바탕으로 새로 제작했으며 원문 페이지의 이미지는 사용하지 않았습니다. 표지는 별도로 제공된 이미지입니다.';
+  note.textContent=attribution.editionNote||'본문은 원문 표현을 바꾸지 않고 Breeze Text 형식으로 재조판했습니다. 장면 삽화는 원문 내용을 바탕으로 새로 제작했으며 원문 페이지의 이미지는 사용하지 않았습니다. 표지는 별도로 제공된 이미지입니다.';
   body.append(line,...sourceLines,license,note);
+  if(attribution.glossary){
+    const glossary=document.createElement('p');
+    glossary.textContent=attribution.glossary;
+    body.appendChild(glossary);
+  }
 }
 /** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void, signal?: AbortSignal}} [options] */
 async function openBook(b,options={}){
