@@ -454,13 +454,13 @@ establish that those native paths work on device.
 
 ## Bundled long-read previews and reading invitations (2026-10-03)
 
-Both offered local long reads now open the shared Preview dialog before import.
+All four provided local long reads (Backrooms and three Holmes stories) open the shared Preview dialog before import.
 They use authored spoiler-free Korean hooks, original English title, author,
 edition/source acknowledgment and estimated minutes at the existing 180 words
 per minute convention. English story text is unchanged by preview localization.
 The cover is contained rather than cropped in Preview. Opening/closing Preview
 performs no story fetch, book/image persistence or progress write. The explicit
-Download and read action owns import; a saved bundled item offers Read/Continue
+Read action owns import; a saved bundled item offers Read/Continue
 through the same dialog and resumes the normal Reader. User-imported books retain
 their existing behavior. Existing Home resume remains a direct reading shortcut.
 
@@ -483,3 +483,11 @@ The response field remains `summaryKo` for compatibility; local and shared cache
 keys advance to v5. The prompt is prepared in source only. A separate future Edge
 Function deployment is required for the new generated wording; no live paid call
 or production deployment is part of this change. RSS selection/ranking is untouched.
+
+The provided-story CTA now reads `읽기`, with `이어서 읽기` for existing progress.
+There is no separate download prerequisite or download-on-card-tap action.
+The normal local fetch/import remains an implementation detail behind Read.
+Closing Preview before Read saves nothing; repeated reads reuse the saved book.
+A Scandal in Bohemia and The Red-Headed League have separate catalog identities,
+complete source/edit audits and title-based fallback covers; the selected Speckled
+Band artwork belongs only to that story.

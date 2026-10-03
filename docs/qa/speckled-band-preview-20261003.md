@@ -5,7 +5,7 @@ Branch: `feat/speckled-band`. RSS PR #78 files/ranking logic are untouched.
 
 Implemented: separate Holmes catalog identity and complete local TXT; 25 audited
 modernization edits; accurate edition/source credits; previews and explicit
-download/read actions for both provided long reads; spoiler-free authored hooks;
+Read actions for all four provided long reads; spoiler-free authored hooks;
 grounded invitation prompt and v5 caches for short-article introductions.
 
 Local verification on Chromium using `/usr/bin/chromium`:
@@ -15,11 +15,11 @@ Local verification on Chromium using `/usr/bin/chromium`:
   Supabase/model doubles, no deployed-service or paid-model claim).
 - `npm run test:longreads` with Chromium selected: passed. Backrooms has its
   original 107 paragraphs, ten scene images, lookups and chapter-upgrade anchors.
-- New preview suite: both provided stories; open/cancel with no story download or
+- New preview suite: all four provided stories; open/cancel with no story download or
   persistence; light/dark at 320×568, 390×844, 820×1024, 1440×900, 844×390;
   reachable CTA; HTTP error, truncation, cancellation, failed IndexedDB save,
   retry and duplicate taps; browser Back during held downloads cancels without
-  book persistence or late Reader navigation; all 251 Holmes paragraphs imported exactly;
+  book persistence or late Reader navigation; all 251 Speckled Band paragraphs imported exactly;
   progress after reload; saved-book offline reopen; real service-worker cold
   offline reload and runtime text caching.
 - `verify-homeward-lookup-browser.mjs`: 314 sentences, 43 words, 34 phrases,
@@ -66,3 +66,19 @@ Local verification on Chromium using `/usr/bin/chromium`:
 
 Source, paragraph boundaries, complete edit log, rights/trademark handling and
 hashes: [editorial record](../content/speckled-band/README.md).
+
+## Expanded collection and Casual-style action
+
+A Scandal in Bohemia: 8,522 words, 261 reader blocks including the original three
+section headings, 10 logged edits. The Red-Headed League: 9,106 words, 218 reader
+blocks, 13 logged edits. Separate manifests and source audits live alongside the
+Speckled Band record. Blank-line source blocks and reader paragraphs are explicitly
+distinguished. All source text remains complete.
+
+All provided story cards open Preview without importing. `읽기` saves through the
+normal importer and opens Reader; `이어서 읽기` reuses existing reading progress.
+New browser coverage checks both added stories, including 30 total Holmes
+viewport/theme states with actual app captures: preview-only dismissal, no fetch
+before Read, failed save and retry, duplicate taps, every imported paragraph,
+reload/offline reopen and retained progress. The selected cover transfer and final
+cover screenshot gates above remain open.

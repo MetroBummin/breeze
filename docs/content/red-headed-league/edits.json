@@ -1,0 +1,89 @@
+[
+  {
+    "paragraph": 30,
+    "before": "I ejaculated",
+    "after": "I exclaimed",
+    "reason": "Avoid the changed predominant meaning of this verb."
+  },
+  {
+    "paragraph": 58,
+    "before": "Pray continue",
+    "after": "Please continue",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 83,
+    "before": "in that press",
+    "after": "in that cupboard",
+    "reason": "Clarify the historical furniture meaning; retain the same object."
+  },
+  {
+    "paragraph": 99,
+    "before": "Pray what steps did you take",
+    "after": "May I ask what steps you took",
+    "reason": "Modernize a polite question without changing its subject."
+  },
+  {
+    "paragraph": 83,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 139,
+    "before": "to-day",
+    "after": "today",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 160,
+    "before": "to-day",
+    "after": "today",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 160,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 167,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 172,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 174,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 213,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 214,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  }
+]

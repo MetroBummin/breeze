@@ -35,8 +35,10 @@ try{
       await page.goto(base);await page.evaluate(()=>homeReady);
       const card=()=>page.locator(`#shelf .longread[data-longread-id="${storyId}"]`);
       const start=()=>page.locator('#article-preview .ap-start');
-      for(const id of ['backroom-homeward-bound',storyId]){
+      for(const id of ['backroom-homeward-bound',storyId,'sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league']){
         await page.locator(`#shelf .longread[data-longread-id="${id}"]`).click();
+        assert.equal(await start().textContent(),'읽기');
+        assert.doesNotMatch(await page.locator('#article-preview').innerText(),/다운로드/);
         assert.equal(await page.evaluate(()=>books.length),0);
         assert.equal(requests,0,'Preview downloaded story text');
         assert.ok((await page.locator('.ap-summary').textContent()).length>30);
@@ -123,6 +125,54 @@ try{
       assert.equal(requests,downloads,'Saved book was downloaded again');
       assert.ok(await page.evaluate(()=>positions[curBook.id].p>.1));
       await context.setOffline(false);await context.close();
+      for(const slug of ['scandal-in-bohemia','red-headed-league']){
+        const id='sherlock-holmes-'+slug;
+        const full=readFileSync(resolve(root,'assets/longreads/'+slug+'.txt'),'utf8').trim().split('\n\n');
+        const other=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+        await other.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+        const p=await other.newPage();let fetches=0;
+        await p.route('**/*',route=>{
+          const href=route.request().url();if(href.includes('/'+slug+'.txt'))fetches++;
+          return href.startsWith(base)||href.startsWith('blob:')?route.continue():route.abort();
+        });
+        await p.goto(base);await p.evaluate(()=>homeReady);
+        const tile=()=>p.locator(`#shelf [data-longread-id="${id}"]`);
+        await tile().click();assert.equal(fetches,0);
+        assert.equal(await p.locator('.ap-start').textContent(),'읽기');
+        await p.keyboard.press('Escape');assert.equal(await p.evaluate(async()=>(await bookAll()).length),0);
+        for(const [width,height] of [[320,568],[390,844],[820,1024],[1440,900],[844,390]]){
+          await p.setViewportSize({width,height});
+          for(const dark of [false,true]){
+            await p.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
+            await tile().click();
+            const cta=await p.locator('.ap-start').boundingBox();assert.ok(cta&&cta.y>=0&&cta.y+cta.height<=height&&cta.height>=44);
+            assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+            await p.screenshot({animations:'disabled',path:`${proof}/${engine.name()}-${slug}-${width}x${height}-${dark?'dark':'light'}.png`});
+            await p.locator('.ap-close').click();
+          }
+        }
+        assert.equal(fetches,0);await p.setViewportSize({width:390,height:844});
+        await p.evaluate(()=>document.body.classList.remove('dark'));
+        await tile().click();
+        await p.evaluate(()=>{window.__save=bookPut;bookPut=async()=>{throw Error('fixture failed save');};});
+        await p.locator('.ap-start').click();await p.waitForFunction(()=>!articlePreviewOpening);
+        assert.equal(await p.evaluate(async()=>(await bookAll()).length),0);
+        assert.equal(await p.locator('.ap-start').textContent(),'읽기');
+        await p.evaluate(()=>{bookPut=window.__save;document.querySelector('.ap-start').click();document.querySelector('.ap-start').click();});
+        await p.waitForFunction(id=>!articlePreviewDialog.open&&curBook?.longReadId===id,id);
+        assert.deepEqual(await p.evaluate(()=>curBook.paras),full);
+        assert.equal(await p.evaluate(async()=>(await bookAll()).length),1);
+        await p.evaluate(()=>{readerScrollTo((readerContentHeight()-readerViewHeight())*.5);updatePfill(true);});
+        await p.waitForTimeout(950);assert.ok(await p.evaluate(()=>positions[curBook.id].p>.1));
+        await p.reload();await p.evaluate(()=>homeReady);await tile().click();
+        assert.equal(await p.locator('.ap-start').textContent(),'이어서 읽기');
+        const before=fetches;await other.setOffline(true);await p.locator('.ap-start').click();
+        await p.waitForFunction(()=>!articlePreviewDialog.open);
+        assert.deepEqual(await p.evaluate(()=>curBook.paras),full);assert.equal(fetches,before);
+        assert.equal(await p.evaluate(async()=>(await bookAll()).length),1);
+        assert.ok(await p.evaluate(()=>positions[curBook.id].p>.1));
+        await other.close();
+      }
       // A separate real service-worker context proves a cold offline relaunch,
       // not just opening already-rendered text after toggling offline.
       // Playwright supports service-worker control only in Chromium:
@@ -162,7 +212,7 @@ try{
         await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.paras.length===251);
         await cachedContext.close();
       }else console.log('webkit: cold service-worker offline reload requires device verification (unsupported Playwright control)');
-      console.log(engine.name()+': both previews, 10 viewport/theme states, failure/retry/truncation/cancel, duplicate taps, full import and offline progress passed');
+      console.log(engine.name()+': four previews, 30 Holmes viewport/theme states, failure/retry/truncation/cancel, duplicate taps, full import and offline progress passed');
     }finally{await browser.close();}
   }
 }finally{held?.end();await new Promise(done=>server.close(done));}

@@ -316,7 +316,7 @@ articlePreviewDetails.className='ap-details';articlePreviewDetails.hidden=true;
 articlePreviewSummaryCard.after(articlePreviewDetails);
 function longReadPreviewAction(read){
   const book=books.find(item=>item.longReadId===read.id);
-  return book?(posOf(book.id).t?'이어서 읽기':'읽기 시작'):'다운로드하고 읽기';
+  return book&&posOf(book.id).t?'이어서 읽기':'읽기';
 }
 function openLongReadPreview(read){
   cancelPendingBookOpen();articlePreviewClose();

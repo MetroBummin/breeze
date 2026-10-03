@@ -1104,7 +1104,9 @@ const offered = longReadsContext.pendingLongReads();
 assert.deepEqual(Array.from(offered, read => read.title), [
   'Backroom - Homeward Bound',
   'The Adventure of the Speckled Band',
-], 'Both bundled stories should be offered independently');
+  'A Scandal in Bohemia',
+  'The Red-Headed League',
+], 'All four bundled stories should be offered independently');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
 for(const read of offered){

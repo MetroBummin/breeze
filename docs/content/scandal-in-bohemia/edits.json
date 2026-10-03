@@ -1,0 +1,67 @@
+[
+  {
+    "paragraph": 45,
+    "before": "Pray take a seat",
+    "after": "Please take a seat",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 60,
+    "before": "pray consult",
+    "after": "please consult",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 108,
+    "before": "Pray do so",
+    "after": "Please do so",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 124,
+    "before": "whence he emerged",
+    "after": "from which he emerged",
+    "reason": "Replace an archaic relative adverb."
+  },
+  {
+    "paragraph": 254,
+    "before": "Pray tell me",
+    "after": "Please tell me",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 23,
+    "before": "to-night",
+    "after": "tonight",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 121,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 209,
+    "before": "to-day",
+    "after": "today",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 211,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 248,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "count": 1,
+    "reason": "Use current closed spelling."
+  }
+]

@@ -29,10 +29,10 @@ test('catalog has separate stable identity and checksum for complete local text'
   const context={console,Set,books:[]};
   new Script(read('scripts/library/longreads.js')).runInNewContext(context);
   const all=context.pendingLongReads(),story=all.find(item=>item.id==='sherlock-holmes-speckled-band');
-  assert.equal(all.length,2);
+  assert.equal(all.length,4);
   assert.equal(story.wordCount,9804);
   assert.equal(story.sha256,createHash('sha256').update(adapted).digest('hex'));
   assert.match(story.editionNote,/not Doyle’s verbatim text/);
   context.books.push({longReadId:story.id});
-  assert.deepEqual(Array.from(context.pendingLongReads(),item=>item.id),['backroom-homeward-bound']);
+  assert.deepEqual(Array.from(context.pendingLongReads(),item=>item.id),['backroom-homeward-bound','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league']);
 });
