@@ -38,7 +38,7 @@ function readerManipulationConsumes(event){
   if(event.type === 'pointerdown' && !originalPinchTouches && !originalPinch){
     originalPinchTail = false;
   }
-  return originalPinchTouches || !!originalPinch || (event.type === 'click' && event.detail !== 0 && originalPinchTail);
+  return (typeof originalNavigationConsumes==='function'&&originalNavigationConsumes(event)) || originalPinchTouches || !!originalPinch || (event.type === 'click' && event.detail !== 0 && originalPinchTail);
 }
 function originalPinchTarget(target){
   if(!originalZoomActive() || !target || typeof target.closest !== 'function') return false;
@@ -113,6 +113,7 @@ function finishOriginalPinch(){
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function cancelOriginalPinch(){
+  if(typeof cancelOriginalNavigation==='function')cancelOriginalNavigation();
   cancelAnimationFrame(originalPinchFrame);
   originalPinchFrame = 0;
   const pinch = originalPinch;
@@ -136,6 +137,7 @@ function originalPinchStart(event){
   if(!readerPositionPending()&&originalFingerContacts(event).some(point=>point.target?.closest?.('#original-stage')))readerModeChangeToken++;
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/start',event);
   countOriginalPdfContacts(event);
+  if(typeof originalNavigationStart==='function')originalNavigationStart(event);
   if(originalPinchTouches){
     if(event.cancelable) event.preventDefault();
     return;
@@ -155,6 +157,7 @@ function originalPinchStart(event){
 }
 function originalPinchMove(event){
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/move',event);
+  if(typeof originalNavigationMove==='function'&&originalNavigationMove(event))return;
   if(!originalPinchTouches){
     if(originalFingerContacts(event).length === 1) originalPinchPan = true;
     return;
@@ -169,6 +172,7 @@ function originalPinchMove(event){
   moveOriginalPinch(pinch.level*originalPinchDistance(points)/pinch.distance,originalPinchMiddle(points));
 }
 function originalPinchEnd(event){
+  if(typeof originalNavigationEnd==='function')originalNavigationEnd(event);
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/end',event);
   const owners=originalPinch?.ids;
   // A delayed terminal callback for an older contact cannot finish a new pinch.

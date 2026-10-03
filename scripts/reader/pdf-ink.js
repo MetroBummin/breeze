@@ -8,10 +8,12 @@ const BreezePdfInk = (()=>{
   const preferenceKey='__breeze_pdf_ink_tools_v1__';
   const undoStack=[],redoStack=[];
   let color=colors[0],width=widths[1],eraserRadius=eraserRadii[1];
+  let scribbleEnabled=false; // Opt in until physical Pencil false-positive testing.
   let highlightColor=highlightColors[0],highlightWidth=highlightWidths[0],lastTool='pen';
   try{
     const prefs=JSON.parse(localStorage.getItem(preferenceKey)||'null');
     if(prefs){
+      scribbleEnabled=prefs.scribbleEnabled===true;
       if(colors.includes(prefs.color))color=prefs.color;
       if(widths.includes(prefs.width))width=prefs.width;
       if(eraserRadii.includes(prefs.eraserRadius))eraserRadius=prefs.eraserRadius;
@@ -21,14 +23,14 @@ const BreezePdfInk = (()=>{
     }
   }catch{} // Tool preferences never block reading or loading existing ink.
   function savePreferences(){
-    try{localStorage.setItem(preferenceKey,JSON.stringify({tool:lastTool,color,width,eraserRadius,highlightColor,highlightWidth,highlightOpacity}));}catch{}
+    try{localStorage.setItem(preferenceKey,JSON.stringify({tool:lastTool,color,width,eraserRadius,highlightColor,highlightWidth,highlightOpacity,scribbleEnabled}));}catch{}
   }
   const ns='http://www.w3.org/2000/svg';
   const database=openDb('breeze-pdf-ink',1,db=>db.createObjectStore('pages'));
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
   let session=null, mode='read', active=null, pendingAdmission=null, toolbar=null, status=null;
   let inkTools=null,inkEntry=null,inkMini=null,inkReadSeparator=null;
-  let settings=null,settingsTool=null;
+  let settings=null,settingsTool=null,scribbleCue=null;
   const suppressed=new Set(), blockedPointers=new Set(), nativeOwnedStylus=new Set();
   let suppressClick=false, paperPenPointer=null;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
@@ -188,6 +190,9 @@ const BreezePdfInk = (()=>{
   function updateSettings(){
     if(!settings)return;
     settings.hidden=!settingsTool;
+    settings.querySelector('[data-ink-scribble]')?.setAttribute('aria-pressed',String(scribbleEnabled));
+    const scribbleSetting=settings.querySelector('.ink-scribble-setting');
+    if(scribbleSetting)scribbleSetting.hidden=settingsTool!=='pen';
     if(settingsTool&&typeof positionPdfInkSettings==='function')positionPdfInkSettings();
     settings.setAttribute('aria-label',settingsTool==='erase'?'지우개 설정':settingsTool==='highlighter'?'형광펜 설정':'펜 설정');
     settings.querySelectorAll('[data-ink-panel]').forEach(panel=>{panel.hidden=panel.dataset.inkPanel!==settingsTool;});
@@ -259,6 +264,11 @@ const BreezePdfInk = (()=>{
     settings.setAttribute('role','dialog');
     settings.innerHTML='<div data-ink-panel="pen"><div class="ink-setting-row ink-colors" role="group" aria-label="펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths" role="group" aria-label="펜 두께"></div></div><div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii"></div></div>';
     settings.insertAdjacentHTML('beforeend','<div data-ink-panel="highlighter" hidden><div class="ink-setting-row ink-highlight-colors" role="group" aria-label="형광펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-highlight-widths" role="group" aria-label="형광펜 두께"></div></div>');
+    settings.insertAdjacentHTML('beforeend','<div class="ink-scribble-setting"><button type="button" data-ink-scribble aria-pressed="false" aria-describedby="ink-scribble-help">휘갈겨 지우기</button><p id="ink-scribble-help">펜으로 같은 곳을 빠르게 여러 번 휘갈긴 뒤 잠시 멈추세요. 안내가 뜨면 떼어 겹친 펜·형광펜 획 전체를 지워요. 더 움직이면 취소돼요.</p></div>');
+    settings.querySelector('[data-ink-scribble]').addEventListener('click',()=>{cancel('scribble-setting');scribbleEnabled=!scribbleEnabled;savePreferences();updateSettings();});
+    scribbleCue=document.createElement('div');scribbleCue.id='pdf-ink-scribble-cue';scribbleCue.hidden=true;
+    scribbleCue.setAttribute('role','status');scribbleCue.setAttribute('aria-live','polite');
+    document.getElementById('readchrome').append(scribbleCue);
     const options=(kind,values,labels)=>{
       const row=settings.querySelector(kind==='color'?'.ink-colors':kind==='width'?'.ink-widths':kind==='highlightColor'?'.ink-highlight-colors':kind==='highlightWidth'?'.ink-highlight-widths':'.ink-radii');
       values.forEach((value,i)=>{
@@ -448,7 +458,7 @@ const BreezePdfInk = (()=>{
   function cancel(reason='other'){
     if(active){
       trace('stroke/cancel',undefined,reason);
-      const current=active;active=null;
+      const current=active;active=null;clearScribble(current);
       if(current.tool==='erase'){
         record(current.state,current.before);
         if(current.state.dirty)void persist(current.state);
@@ -526,7 +536,11 @@ const BreezePdfInk = (()=>{
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
     if(!p.every(Number.isFinite)||p[0]<0||p[1]<0||p[0]>state.width||p[1]>state.height)return;
     active={id:pen.identifier,pointerId,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
-      preview:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
+      preview:null,scribble:null,scribbleScale:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
+    if(mode==='pen'&&scribbleEnabled){
+      active.scribble=BreezeInkGeometry.createScribble([pen.clientX,pen.clientY],performance.now());
+      active.scribbleScale=[bounds.width/state.width,bounds.height/state.height];
+    }
     trace('stroke/start',event);
     updateHistoryControls();
     if(active.tool==='erase'){erase(state,p);showEraser(p);}
@@ -569,6 +583,7 @@ const BreezePdfInk = (()=>{
       }
       for(let axis=0;axis<2;axis++)p[axis]=Math.max(0,Math.min(size[axis],previous[axis]+(p[axis]-previous[axis])*fraction));
     }
+    if(exits)clearScribble(active,true);
     if(active.tool==='erase'){
       erase(active.state,p,previous);
       active.stroke.points=[p];
@@ -577,14 +592,54 @@ const BreezePdfInk = (()=>{
       active.stroke.points.push(p);
       active.smoother.add(p);
       active.preview.setAttribute('points',active.smoother.svgPoints());
+      trackScribble(active,p);
     }
     if(exits){trace('stroke/page-exit',event);finishStroke();}
     // The contact remains suppressed until lift, so crossing a gap or returning
     // onto paper cannot start another stroke or trigger Lookup.
   }
+  function clearScribble(current,disable=false){
+    if(current.scribbleTimer)clearTimeout(current.scribbleTimer);
+    current.scribbleTimer=0;current.scribbleTargets=null;
+    if(disable)current.scribble=null;
+    current.preview?.classList.toggle('pdf-ink-scribble-ready',false);
+    if(scribbleCue)scribbleCue.hidden=true;
+  }
+  function trackScribble(current,p){
+    if(!current.scribble)return;
+    const css=[current.bounds.left+p[0]*current.scribbleScale[0],current.bounds.top+p[1]*current.scribbleScale[1]];
+    // An armed contact can only release or cancel, never silently re-arm.
+    if(current.scribbleTargets){
+      if(Math.hypot(css[0]-current.scribbleHold[0],css[1]-current.scribbleHold[1])>4)clearScribble(current,true);
+      return;
+    }
+    if(!current.scribble.add(css,performance.now()))return;
+    clearScribble(current);
+    current.scribbleTimer=setTimeout(()=>{
+      current.scribbleTimer=0;
+      if(active!==current||!visible()||mode!=='pen'||!current.scribble.intentional())return;
+      // Use the eraser's actual swept capsule intersection, once after the hold.
+      // No saved ink changes until release. Both pen and highlighter are ink;
+      // text, PDF content and vocabulary highlights never enter this collection.
+      const points=current.smoother.snapshot(),targets=new Set();
+      for(const stroke of current.before){
+        for(let i=1;i<points.length;i++){
+          const parts=BreezeInkGeometry.eraseStroke(stroke,points[i-1],points[i],4);
+          if(parts.length!==1||parts[0]!==stroke){targets.add(stroke);break;}
+        }
+      }
+      if(!targets.size)return;
+      current.scribbleTargets=targets;current.scribbleHold=css;
+      current.preview.classList.toggle('pdf-ink-scribble-ready',true);
+      if(scribbleCue){scribbleCue.textContent='떼면 '+targets.size+'개 획 삭제 · 더 움직이면 취소';scribbleCue.hidden=false;}
+    },420);
+  }
   function finishStroke(){
     const current=active,state=current.state;active=null;
-    if(current.tool!=='erase'){
+    const targets=current.scribbleTargets;clearScribble(current);
+    if(targets?.size){
+      state.strokes=state.strokes.filter(stroke=>!targets.has(stroke));changed(state);
+    }else if(current.tool!=='erase'){
       current.stroke.points=current.smoother.finish();
       state.strokes.push(current.stroke);changed(state);
     }
@@ -626,7 +681,7 @@ const BreezePdfInk = (()=>{
   }
   // Pointer events only guard Lookup/click. Drawing remains WebKit stylus Touch.
   // Pointer and Touch identifiers are different namespaces and tracked separately.
-  for(const type of ['pointerdown','pointermove','pointerup','pointercancel','click']){
+  for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture','click']){
     window.addEventListener(type,rawEvent=>{
       const event=/** @type {PointerEvent} */(rawEvent);
       if(!visible()||mode==='read')return;
@@ -646,12 +701,12 @@ const BreezePdfInk = (()=>{
       }
       if(blocked){
         event.stopImmediatePropagation(); // Do not disable the following Touch path.
-        if(type==='pointercancel' && event.pointerType==='pen'){
+        if((type==='pointercancel'||(type==='lostpointercapture'&&paperPenPointer===event.pointerId)) && event.pointerType==='pen'){
           if(active?.pointerId===event.pointerId)cancel('pointercancel');
           if(pendingAdmission?.pointerId===event.pointerId)pendingAdmission=null;
         }
       }
-      if(type==='pointerup'||type==='pointercancel'){
+      if(type==='pointerup'||type==='pointercancel'||type==='lostpointercapture'){
         blockedPointers.delete(event.pointerId);
         if(paperPenPointer===event.pointerId)paperPenPointer=null;
       }

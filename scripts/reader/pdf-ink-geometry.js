@@ -97,11 +97,43 @@ const BreezeInkGeometry = (()=>{
         previous=last;last=p;
       },
       svgPoints(){return text+' '+last.join(',');},
+      snapshot(){return points.concat([last]);},
       finish(){
         append(last);
         return points.slice();
       }
     };
   }
-  return {eraseStroke,createSmoother};
+  // Bounded raw CSS-pixel trace, independent of zoom and smoothing. Recognition
+  // runs only after a pause; normal live ink still updates its one polyline.
+  function createScribble(first, startedAt){
+    const points=[first], cells=new Set();
+    let last=first,length=0,turn=0,reversals=0,previous=null,revisits=0;
+    let minX=first[0],maxX=minX,minY=first[1],maxY=minY,endedAt=startedAt,overflow=false;
+    return {
+      add(p,at){
+        const dx=p[0]-last[0],dy=p[1]-last[1],distance=Math.hypot(dx,dy);
+        if(distance<3)return false;
+        if(points.length>=256){overflow=true;return false;}
+        const vector=[dx/distance,dy/distance];
+        if(previous){
+          const dot=previous[0]*vector[0]+previous[1]*vector[1];
+          turn+=Math.atan2(previous[0]*vector[1]-previous[1]*vector[0],dot);
+          if(dot<-.65)reversals++;
+        }
+        const cell=Math.round(p[0]/8)+','+Math.round(p[1]/8);
+        if(cells.has(cell))revisits++;cells.add(cell);
+        previous=vector;last=p;points.push(p);length+=distance;endedAt=at;
+        minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);
+        return true;
+      },
+      intentional(){
+        const w=maxX-minX,h=maxY-minY,diagonal=Math.hypot(w,h),duration=endedAt-startedAt;
+        return !overflow&&points.length>=24&&duration>=120&&duration<=1800
+          &&w>=12&&h>=12&&w<=110&&h<=110&&length>=240&&length/diagonal>=9
+          &&revisits/points.length>=.45&&(Math.abs(turn)>=Math.PI*6||reversals>=10);
+      }
+    };
+  }
+  return {eraseStroke,createSmoother,createScribble};
 })();
