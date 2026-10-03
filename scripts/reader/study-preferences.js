@@ -1,10 +1,11 @@
 /* Presentation preferences only: never rewrite vocabulary or source records. */
 const STUDY_PREFS_KEY='breeze.study.v1';
-const studyDefaults={direction:'vertical',stars:[1,2,3].map((n)=>({visible:true,color:['#ffe28a','#ffab78','#ff8c8c'][n-1]}))};
+const studyDefaults={direction:'vertical',twoFingerUndo:false,stars:[1,2,3].map((n)=>({visible:true,color:['#ffe28a','#ffab78','#ff8c8c'][n-1]}))};
 let studyPrefs=structuredClone(studyDefaults);
 try{
   const stored=JSON.parse(localStorage.getItem(STUDY_PREFS_KEY)||'null');
   if(stored){
+    studyPrefs.twoFingerUndo=stored.twoFingerUndo===true;
     studyPrefs.direction=stored.direction==='horizontal'?'horizontal':'vertical';
     studyPrefs.stars=studyDefaults.stars.map((fallback,i)=>({visible:stored.stars?.[i]?.visible!==false,
       color:/^#[0-9a-f]{6}$/i.test(stored.stars?.[i]?.color)?stored.stars[i].color:fallback.color}));
@@ -57,3 +58,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   applyStarPreferences();
 });
+
+function updateTwoFingerUndoSetting(){
+  const button=document.getElementById('aa-ink-undo');
+  button.classList.toggle('on',studyPrefs.twoFingerUndo);
+  button.setAttribute('aria-pressed',String(studyPrefs.twoFingerUndo));
+}
+function toggleTwoFingerUndo(){
+  if(persistStudyPrefs({...studyPrefs,twoFingerUndo:!studyPrefs.twoFingerUndo})){
+    cancelOriginalUndoTap();updateTwoFingerUndoSetting();
+  }
+}
+document.addEventListener('DOMContentLoaded',updateTwoFingerUndoSetting);

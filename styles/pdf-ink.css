@@ -100,15 +100,3 @@ body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-
 @keyframes ink-settings-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(prefers-reduced-motion:reduce){#pdf-ink-settings{animation:none;}}
 .pdf-ink-eraser-cursor{fill:rgba(255,255,255,.35);stroke:#666;stroke-width:.8;pointer-events:none;}
-
-/* Confirmation belongs to the live Pencil contact, separate from save status. */
-#pdf-ink-scribble-cue{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 82px);
-  transform:translateX(-50%);max-width:calc(100vw - 28px);padding:10px 14px;border-radius:12px;
-  background:var(--sentence-glass-solid);color:var(--sentence-glass-ink);font:12px/1.5 var(--ui);pointer-events:none;}
-#pdf-ink-scribble-cue[hidden]{display:none;}
-.pdf-ink-scribble-ready{stroke-dasharray:3 3;opacity:.5;}
-#pdf-ink-settings .ink-scribble-setting{margin-top:12px;}
-#pdf-ink-settings [data-ink-scribble]{width:100%;min-height:44px;flex-direction:row;justify-content:space-between;font-size:12px;}
-#pdf-ink-settings [data-ink-scribble]::after{content:'끔';color:var(--sentence-glass-secondary);}
-#pdf-ink-settings [data-ink-scribble][aria-pressed="true"]::after{content:'켬';color:var(--brand-strong);}
-#ink-scribble-help{margin:6px 0 0;font:11px/1.5 var(--ui);color:var(--sentence-glass-secondary);}

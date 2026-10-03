@@ -110,7 +110,7 @@ const LONG_READS = [
   },
   {
     id:'sherlock-holmes-speckled-band', file:'assets/longreads/speckled-band.txt',
-    cover:'', coverPosition:'center top',
+    cover:'assets/longreads/covers/speckled-band.png', coverPosition:'center top',
     title:'The Adventure of the Speckled Band',
     originalTitle:'The Adventure of the Speckled Band (1892)',
     author:'Arthur Conan Doyle',
@@ -270,17 +270,25 @@ async function applyLongReadCover(read,options={}){
   options.signal?.addEventListener('abort',abort,{once:true});
   try{
     const book=books.find(item=>item.longReadId===read.id);
-    if(!book)return;
+    if(!book||(options.onlyMissing&&book.cover))return;
     const response=await fetch(read.cover,{signal:controller.signal});
     if(!response.ok)return;
     const blob=await response.blob();
     if(!blob.size||!/^image\/(jpeg|png|gif|webp)$/i.test(blob.type))return;
+    // A saved book may be deleted or receive a custom cover while fetching.
+    if(!books.includes(book)||(options.onlyMissing&&book.cover))return;
     const key=book.id+'|cover';
     await imgPut(key,blob);
     book.cover=key;book.coverPosition=read.coverPosition;
     await bookPut(book);renderAllBookViews();
   }catch(error){console.warn('긴 글 표지를 씌우지 못했습니다:',error&&error.message);}
   finally{clearTimeout(timeout);options.signal?.removeEventListener('abort',abort);}
+}
+async function restoreMissingLongReadCovers(){
+  for(const read of LONG_READS){
+    if(read.cover&&books.some(book=>book.longReadId===read.id&&!book.cover))
+      await applyLongReadCover(read,{onlyMissing:true});
+  }
 }
 function longReadCard(read){
   const card=el('div','bookcard classic longread');

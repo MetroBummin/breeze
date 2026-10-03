@@ -215,3 +215,12 @@ History is intentionally not silently trimmed. There is no cloud FSRS sync.
 ## Minimal study surface (1.7 / 222)
 
 Keep the stage track, saved content and four equal-weight rating buttons with actual intervals. Remove the enclosing card box, duplicate batch counter, inventory and outcome breakdowns. A single brief pre-answer recall hint remains with the answer; errors and storage recovery stay visible when relevant. Pending learning is shown after study rather than beneath every card. Daily limits, FSRS, saved history, mascot and warm aurora are unchanged.
+
+
+## Memory entry copy cleanup (2026-10-03)
+
+Remove the Memory list's learning/relearning waiting row and redundant “이어서
+학습할 수 있어요” sentence. The existing start/resume button remains the entry.
+Paused-limit and storage-error messages remain actionable; study completion still
+shows pending short-step learning. Queue persistence, FSRS ratings/due times,
+unique-card budgets and all vocabulary records are unchanged.
