@@ -40,6 +40,8 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: RSS shadow and approval regressions
+        run: node tests/verify-rss-quality-browser.mjs
       - name: Vocabulary review in Chromium and WebKit
         run: |
           status=0

@@ -111,3 +111,11 @@ Home refresh starts at the first recommendation. When a rail already at its
 start replaces skeletons/cards, CSS snapping is suspended for two animation
 frames and the scroll offset is reset after layout. Ordinary updates while the
 user browses later cards continue preserving their position and order.
+
+## Opt-in RSS shadow redesign (2026-10-02)
+
+[Decision 014](014-rss-readiness-shadow.md) adds a separate, default-off server
+readiness/quality pipeline and offline paired evaluation. The existing loader
+and this decision's visible ranking remain the default. A later reviewed client
+activation can select its explicitly approved/candidate inventory; no rollout
+is authorized by adding the code.
