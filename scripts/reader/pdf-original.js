@@ -781,7 +781,7 @@ registerReaderSurface({
        문단을 칠하면 질문과 답이 어긋납니다. */
     const boxes=(originalSession.wordBoxes.get(+page.dataset.page)||[])
       .filter(item=>item.sentenceStart===box.sentenceStart);
-    return { sentence, paint(){ showPdfSentenceCue(page,boxes); } };
+    return { sentence, page:+page.dataset.page, start:box.sentenceStart, context(){ return {before:box.easyBefore||[],after:box.easyAfter||[]}; }, paint(){ showPdfSentenceCue(page,boxes); } };
   },
 });
 

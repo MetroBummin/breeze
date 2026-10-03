@@ -13,7 +13,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`,engine=process.env.BROWSER==='webkit'?webkit:chromium;
-const browser=await engine.launch();
+const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
 try{
   const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'}),errors=[];
   page.setDefaultTimeout(15000);

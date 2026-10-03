@@ -87,6 +87,18 @@ function sentenceCompactViewport(){
 }
 
 let sentenceView = 'closed';
+let sentenceOrigin=null;
+let sentenceOwner=null;
+let sentenceScrollPosition=null;
+function sentenceSurfaceAnchored(){ return sentenceLookupOpen() && !!sentenceOrigin; }
+function sentenceReaderScrolled(userScroll){
+  if(!sentenceSurfaceAnchored()) return;
+  const box=readerScroller();
+  const position=[box?.scrollTop||0,box?.scrollLeft||0];
+  const changed=!sentenceScrollPosition || position.some((value,index)=>value!==sentenceScrollPosition[index]);
+  sentenceScrollPosition=position;
+  if(changed && userScroll) closeSentence();
+}
 let sentenceCompact = false;
 let sentenceWaitingFrame = 0;
 let sentencePendingPaint = null;
@@ -119,6 +131,8 @@ function revealSentenceResult(){
   sentenceView=sentenceCompact ? 'sheet' : 'modal';
   sentenceWaitingControls(false);
   sentenceBodyClass('sentence-compact',sentenceCompact);
+  sentenceBodyClass('sentence-anchored',!!sentenceOrigin);
+  document.getElementById('p-sentence').setAttribute('aria-modal',String(!sentenceOrigin));
   const viewport=sentenceViewport();
   sentenceBodyClass('sentence-low-viewport',sentenceCompact && viewport.height < SENTENCE_COMPACT_MAX_HEIGHT);
   const modal=document.getElementById('sentence-modal');
@@ -133,10 +147,13 @@ function closeSentence(){
   sentenceLife++;
   sentenceView='closed';
   sentencePendingPaint=null;
+  sentenceOrigin=null;sentenceOwner=null;sentenceScrollPosition=null;
+  if(typeof cancelSentenceEasyExplanation==='function') cancelSentenceEasyExplanation();
   if(sentenceWaitingFrame) cancelAnimationFrame(sentenceWaitingFrame);
   sentenceWaitingFrame=0;
   sentenceWaitingControls(false);
   sentenceBodyClass('sentence-compact',false);
+  sentenceBodyClass('sentence-anchored',false);
   sentenceBodyClass('sentence-low-viewport',false);
   const modal = document.getElementById('sentence-modal');
   if(modal) modal.hidden = true;
@@ -146,7 +163,9 @@ function closeSentence(){
 function paintSentence(state){
   const modal = document.getElementById('sentence-modal');
   const english=state.en || '';
-  document.getElementById('ps-en').textContent = english;
+  document.getElementById('ps-en').textContent = sentenceOrigin ? '' : english;
+  document.getElementById('ps-source').hidden=!!sentenceOrigin;
+  if(typeof resetSentenceEasyExplanation==='function') resetSentenceEasyExplanation(state.ko || '');
   const ko = document.getElementById('ps-ko');
   ko.textContent = state.ko || '';
   ko.hidden = !state.ko;
@@ -171,11 +190,11 @@ function paintSentence(state){
    한 줄로 남습니다 — 다시 짚을 필요가 없도록. 손짓·문장 찾기·칠하기는 이미
    끝난 일이라 아무것도 다시 하지 않습니다(scripts/reader/gesture.js). */
 let sentAsked = '';
-function retrySentence(){ if(sentAsked) openSentence(sentAsked); }
+function retrySentence(){ if(sentAsked) openSentence(sentAsked,sentenceOrigin); }
 
 let sentCtrl = null;
 let sentenceLife = 0;
-function sentenceAlive(life){ return life===sentenceLife; }
+function sentenceAlive(life){ return life===sentenceLife && (!sentenceOwner || (sentenceOwner.actor===(sbUser?.id||'anonymous') && sentenceOwner.book===curBook)); }
 function paintSentenceFor(life,state){
   if(!sentenceAlive(life)) return false;
   paintSentence(state); return true;
@@ -184,11 +203,17 @@ async function openSentence(text,origin){
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if(!clean) return;
   const life=++sentenceLife;
+  if(typeof cancelSentenceEasyExplanation==='function') cancelSentenceEasyExplanation();
+  sentenceOrigin=origin || null;
+  sentenceOwner={actor:sbUser?.id||'anonymous',book:curBook};
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  sentenceScrollPosition=[box?.scrollTop||0,box?.scrollLeft||0];
   if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl=null; }
   sentAsked = clean;
   sentenceCompact=sentenceCompactViewport();
   sentenceLastCompact=sentenceCompact;
   sentenceBodyClass('sentence-compact',false);
+  sentenceBodyClass('sentence-anchored',false);
   sentenceBodyClass('sentence-low-viewport',false);
   paintSentenceFor(life,{ en:clean, waiting:true });
 
@@ -232,8 +257,8 @@ async function openSentence(text,origin){
 
   if(!answer || answer.error || !answer.ko){
     const why = answer && answer.error;
-    if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
     if(!sentenceAlive(life)) return;
+    if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
     const stuck = why === 'login_required' || why === 'quota_exceeded' || why === 'anon_exhausted';
     paintSentenceFor(life,{ en:clean, retry:!stuck, foot:
         (why === 'login_required'||why === 'anon_exhausted') ? '문장 해석 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
@@ -242,7 +267,7 @@ async function openSentence(text,origin){
     return;
   }
   sentenceRecoveries.delete(recoveryKey);
-  if(sbUser)rememberSentLeft(answer.left,answer.day);
+  if(sentenceAlive(life)&&sbUser)rememberSentLeft(answer.left,answer.day);
   paintSentenceFor(life,{ en:clean, ko:answer.ko });
   await dictPut(key, { ko:answer.ko, done:true });
 }

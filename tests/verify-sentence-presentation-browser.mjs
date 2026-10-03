@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium,webkit} from 'playwright';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png',
@@ -17,7 +17,8 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await chromium.launch();
+const engine=process.env.BROWSER==='webkit'?webkit:chromium;
+const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
 
 try{
   const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,

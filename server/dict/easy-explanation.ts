@@ -39,8 +39,8 @@ export function easySuggestion(value:unknown,input:EasyInput):string{
   return text&&text.toLowerCase()!==input.meaning.replace(/\s+/g," ").toLowerCase()?text:"";
 }
 type Quota={ok:boolean;left?:number;error?:string};
-export async function runEasyExplanation(body:unknown,deps:{charge:()=>Promise<Quota>;generate:(input:EasyInput)=>Promise<unknown>;signal?:AbortSignal}){
-  const input=easyInput(body);
+export async function runTransientExplanation<Input>(body:unknown,deps:{charge:()=>Promise<Quota>;generate:(input:Input)=>Promise<unknown>;signal?:AbortSignal},parse:(body:unknown)=>Input|null,finish:(answer:unknown,input:Input)=>Record<string,string>){
+  const input=parse(body);
   if(!input)return {status:400,body:{error:"bad_explanation_input"}};
   if(deps.signal?.aborted)return {status:499,body:{error:"request_cancelled"}};
   const quota=await deps.charge();
@@ -48,9 +48,16 @@ export async function runEasyExplanation(body:unknown,deps:{charge:()=>Promise<Q
   try{
     // Reserve one unit before provider work. No automatic client retry and no
     // persistent answer receipt; a failed or disconnected request can use a unit.
-    const answer=await deps.generate(input),explanation=easyText(answer),suggestedMeaning=easySuggestion(answer,input);
-    return {status:200,body:{explanation,...(suggestedMeaning?{suggestedMeaning}:{}),left:quota.left}};
+    if(deps.signal?.aborted)return {status:499,body:{error:"request_cancelled",left:quota.left}};
+    const answer=await deps.generate(input);
+    return {status:200,body:{...finish(answer,input),left:quota.left}};
   }catch{
     return {status:502,body:{error:"explanation_failed",left:quota.left}};
   }
+}
+export function runEasyExplanation(body:unknown,deps:Parameters<typeof runTransientExplanation<EasyInput>>[1]){
+  return runTransientExplanation(body,deps,easyInput,(answer,input)=>{
+    const explanation=easyText(answer),suggestedMeaning=easySuggestion(answer,input);
+    return {explanation,...(suggestedMeaning?{suggestedMeaning}:{})};
+  });
 }

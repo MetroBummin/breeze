@@ -68,6 +68,8 @@ function assertSyncSession(session){
   }
 }
 function resetSyncSession(){
+  if(typeof closeSentence==='function') closeSentence();
+  if(typeof clearSentenceEasyCache==='function') clearSentenceEasyCache();
   syncSessionEpoch++;
   clearTimeout(syncTimer); clearTimeout(progressSyncTimer); clearInterval(pairingPoll);
   syncTimer=null; progressSyncTimer=null; pairingPoll=null; pendingPair=null;

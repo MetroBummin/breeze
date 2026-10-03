@@ -753,7 +753,7 @@ registerReaderSurface({
     /* 물어본 문장과 칠하는 자리가 같은 곳에서 나옵니다 — 문장을 글자로 다시
        찾지 않으므로 둘이 어긋날 자리가 없습니다. */
     const range=domRangeForOffsets(block, found.part.start, found.part.end);
-    return { sentence:found.sentence, pi:+block.dataset.pi, paint(){
+    return { sentence:found.sentence, pi:+block.dataset.pi, start:found.part.start, paint(){
       if(range && typeof showSentenceRangeCue==='function') showSentenceRangeCue(range);
       else if(block && typeof showElementModeCue==='function') showElementModeCue(block, 0);
     } };

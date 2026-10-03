@@ -314,7 +314,7 @@ try{
     assert.equal(await page.evaluate(()=>activeAppView()),'home');
   });
 
-  await scenario('book filters and checkboxes target individual meanings',{
+  await scenario('book and search filters target individual meanings',{
     bank:fixture('bank',1,{book:'Book A',ko:'은행',status:2}),
     river:fixture('bank',2,{root:'bank',sense:true,book:'Book B',ko:'강둑'}),
     tree:fixture('tree',3,{book:'Book B',ko:'나무',status:1})
@@ -325,12 +325,8 @@ try{
     await page.locator('#vbook-options label').filter({hasText:'Book B'}).locator('input').check();
     await page.locator('#vbooks summary').click();
     assert.deepEqual(await page.locator('.vsense').evaluateAll(nodes=>nodes.map(n=>n.dataset.k).sort()),['river','tree']);
-    await page.locator('#review-select-toggle').click();
-    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
-    await page.locator('#review-select-all').check();
-    assert.equal(await page.locator('.review-pick input:checked').count(),2);
-    await page.locator('.vsense[data-k="tree"] .review-pick input').uncheck();
-    assert.equal(await page.locator('#review-select-all').evaluate(node=>node.indeterminate),true);
+    assert.equal(await page.locator('#review-select-toggle, .wordbook-selection, .review-pick').count(),0);
+    await page.locator('#vsearch').fill('강둑');
     await openReview(page);
     assert.equal(await page.locator('#review-source').innerText(),'Book B');
     await page.locator('#review-reveal').click();assert.equal(await page.locator('#review-meaning').innerText(),'강둑');
@@ -408,33 +404,20 @@ try{
     await page.locator('#review-close').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
   });
 
-  await scenario('selection done preserves checks and empty scopes never expand',uniqueWords(8),async page=>{
-    await page.locator('#review-select-toggle').click();
-    await page.locator('.review-pick input').first().check();
-    await page.locator('.review-pick input').nth(1).check();
-    await page.locator('#review-select-toggle').click();
-    assert.equal(await page.locator('#review-selection-count').textContent(),'2개 선택');
-    assert.equal(await page.locator('.review-pick').count(),0);
+  await scenario('filters preserve practice and empty scopes never expand',uniqueWords(8),async page=>{
+    assert.equal(await page.locator('.wordbook-selection, .review-pick').count(),0);
+    await page.locator('#vsearch').fill('Word');
     await openReview(page);
-    assert.equal((await progress(page)).at(-1),2);
+    assert.equal((await progress(page)).at(-1),8);
     assert.equal(await page.locator('#review-mode').textContent(),'연습 · 복습 일정에 영향 없음');
     await reveal(page);await page.locator('#review-remember').click();
-    let saved=JSON.parse(await reviewState(page));
+    const saved=JSON.parse(await reviewState(page));
     assert.deepEqual(saved.progress,{});assert.equal(saved.history[0].kind,'practice');
     await closeReview(page);
-    await page.locator('#review-select-toggle').click();
-    assert.equal(await page.locator('.review-pick input:checked').count(),2);
-    await page.locator('#review-select-all').check();
-    await page.locator('#review-select-all').uncheck();
-    await page.locator('#review-select-toggle').click();
-    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
-    await page.locator('#review-select-cancel').click();
-    assert.equal(await page.locator('#review-selection-count').textContent(),'');
     await page.locator('#vsearch').fill('no such saved meaning');
     assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
     await page.locator('#vsearch').fill('');
-    await page.locator('#review-select-toggle').click();
-    assert.equal(await page.locator('.review-pick input:checked').count(),0);
+    assert.equal(await page.locator('#wordbook-review').isDisabled(),false);
   });
 
   await scenario('setup limits, explicit extra and response counts survive failed saves',uniqueWords(12),async page=>{
@@ -463,8 +446,7 @@ try{
   });
 
   await scenario('practice continues without five-card stops and resumes after reload',uniqueWords(8),async page=>{
-    await page.locator('#review-select-toggle').click();await page.locator('#review-select-all').check();
-    await page.locator('#review-select-toggle').click();await openReview(page);
+    await page.locator('#vsearch').fill('Word');await openReview(page);
     for(let i=0;i<5;i++){await reveal(page);await page.locator('#review-remember').click();}
     assert.equal(await page.locator('#review-reveal').isVisible(),true);
     assert.equal(await page.locator('#review-result').isVisible(),false);

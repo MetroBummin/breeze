@@ -121,17 +121,20 @@ Sources: https://github.com/open-spaced-repetition/ts-fsrs (MIT),
 https://docs.ankiweb.net/deck-options.html#fsrs,
 https://docs.ankiweb.net/studying.html#answer-buttons.
 
-## Explicit practice and selection
+## Explicit filtered practice
 
-Book, root-star and search filters select individual Meaning rows. Selection
-completion preserves checks; only explicit cancellation/unchecking clears them.
-Filtering narrows their visible intersection without expanding an empty scope.
+Book, root-star and search filters scope individual Meaning rows. The visible
+selection row and manual checkbox state were removed at user request on
+2026-10-03. Filtering narrows the visible intersection without expanding an empty
+scope.
 An explicit action opens regular study over all books without filters.
 
-Filtered/checked practice includes precisely that scope, including future-due
+Filtered practice includes precisely that scope, including future-due
 cards. It is labeled “연습 · 복습 일정에 영향 없음”. Assessments are recorded as
 practice events and do not change progress, due dates or regular daily budgets.
-Selections run continuously; their unprocessed queue persists through exit and reload.
+Practice runs continuously; its unprocessed queue persists through exit and reload.
+Previously saved manual-practice sessions and their history remain readable; no
+queue or study-engine storage is removed with the unreachable checkbox controls.
 All reconciliation uses the full vocabulary so filtering cannot prune progress.
 
 ## Identity, v1/v2 migration and damaged storage recovery

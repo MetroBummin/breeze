@@ -100,5 +100,20 @@ jobs:
         run: node tests/verify-reader-notice-controls-browser.mjs && node tests/verify-epub-navigation-input-browser.mjs
       - name: On-demand easy explanation in Chromium and WebKit
         run: node tests/verify-easy-explanation-browser.mjs && BROWSER=webkit node tests/verify-easy-explanation-browser.mjs
+      - name: Sentence help and lookup lifecycle in Chromium and WebKit
+        run: |
+          for engine in chromium webkit; do
+            BROWSER=$engine node tests/verify-sentence-help-browser.mjs
+            BROWSER=$engine node tests/verify-sentence-presentation-browser.mjs
+            BREEZE_QA_ENGINE=$engine node tests/verify-sentence-cue-browser.mjs
+          done
+      - name: Sentence help visual proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentence-help-proof
+          path: /tmp/breeze-sentence-help-proof/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Saved original position during interrupted reopening
         run: node tests/verify-original-reopen-browser.mjs

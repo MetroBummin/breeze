@@ -115,7 +115,7 @@ function readerManipulationConsumes(event){
 }
 function originalPinchTarget(target){
   if(!originalZoomActive() || !target || typeof target.closest !== 'function') return false;
-  if(sentenceModalOpen() || wordModalCovers() || aaPopOpen()) return false;
+  if((sentenceModalOpen() && !(typeof sentenceSurfaceAnchored==='function' && sentenceSurfaceAnchored())) || wordModalCovers() || aaPopOpen()) return false;
   return !!target.closest('#original-stage');
 }
 function originalPinchMiddle(points){
@@ -127,7 +127,7 @@ function originalPinchDistance(points){
                     points[0].clientY-points[1].clientY);
 }
 function beginOriginalPinch(center, distance, ids){
-  if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
+  if(typeof sentenceSurfaceAnchored==='function' && sentenceSurfaceAnchored()
       && typeof closeSentence==='function') closeSentence();
   // The same anchored lookup owner as scroll includes mini, detail and morphing UI.
   if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
