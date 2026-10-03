@@ -768,3 +768,41 @@ const savedWord = (key, ko) => ({ word:key, clicked:key, forms:[key], ko, ai:ko?
 
 console.log('낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)');
 console.log('확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다');
+
+// Pinch acquisition must use the real lookup cleanup, including delayed replies.
+for(const detail of [false,true]){
+  const {world,net,ctx}=boot();net.outran=true;
+  const pinch=readFileSync(new URL('../scripts/reader/pdf-pinch.js',import.meta.url),'utf8');
+  const box={scrollTop:0,scrollLeft:0,clientWidth:800,clientHeight:900,scrollHeight:1200,
+    getBoundingClientRect:()=>({left:0,top:0})};
+  Object.assign(ctx,{readerScroller:()=>box,originalZoomLayer:()=>world.el('layer'),
+    originalZoomStage:()=>world.el('stage'),layoutOriginalZoom(){},originalZoomOrigin:()=>({x:0,y:0}),
+    originalZoom:()=>1,originalZoomBaseHeight:1200,readerModeChangeToken:0,cancelGesture(){}});
+  new Script(pinch.slice(0,pinch.indexOf('(function(){'))).runInNewContext(ctx);
+  ctx.words.flutter=savedWord('flutter','기존 뜻');
+  const span=makeElement('word',world);
+  ctx.selectWord('flutter',span,true);await settle();
+  if(detail){
+    // Layout belongs to browser coverage; retain production state and cleanup.
+    new Script('wordPeekActive=false;wordDetailAnchored=true;').runInNewContext(ctx);
+    world.el('panel').classList.add('on');
+  }
+  const running=ctx.fetchLook('flutter',{sentence:'Wings flutter gently.',clickedIndex:1,clicked:'flutter'});await settle();
+  assert.equal(world.sent.length,1);
+  const oldLife=new Script('wordLookupLife').runInNewContext(ctx);
+  ctx.beginOriginalPinch({x:200,y:200},100,[1,2]);
+  assert.equal(ctx.wordSurfaceAnchored(),false,'pinch left an anchored lookup alive');
+  assert.equal(ctx.wordLookupAlive(oldLife),false);
+  assert.equal(world.aborted,1,'pinch did not abort the lookup request');
+  const renders=world.renders;
+  net.deliver();await running;await settle();
+  assert.equal(world.renders,renders,'late response rendered dismissed lookup');
+  assert.equal(world.el('panel').classList.contains('on'),false);
+  assert.equal(world.el('word-peek').hidden,true);
+  assert.ok(ctx.words.flutter.ko,'pinch deleted saved vocabulary');
+  assert.ok(world.puts.length,'usable late response lost its cache path');
+  ctx.selectWord('flutter',span,true);await settle();
+  assert.equal(ctx.wordPeekOpen(),true,'fresh lookup did not recover');
+  ctx.closePanel();
+}
+console.log('Pinch acquisition ends mini/detail lookup lifetime and rejects delayed presentation');

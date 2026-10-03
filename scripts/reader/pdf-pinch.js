@@ -129,7 +129,8 @@ function originalPinchDistance(points){
 function beginOriginalPinch(center, distance, ids){
   if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
       && typeof closeSentence==='function') closeSentence();
-  if(typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
+  // The same anchored lookup owner as scroll includes mini, detail and morphing UI.
+  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
   if(typeof pinReaderChrome==='function') pinReaderChrome(true,'zoom');
   const box = readerScroller(), layer = originalZoomLayer(), stage = originalZoomStage();
   // A deliberate pinch supersedes delayed mode-landing restores (360/900ms).

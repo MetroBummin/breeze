@@ -744,13 +744,14 @@ async function restorePdfSentence(candidates,source,changeToken,paragraphHint){
 async function openPdfWordAt(clientX,clientY){
   const page=pdfPageAtPoint(clientX,clientY);
   if(!page) return false;
-  const session=originalSession, pageNumber=+page.dataset.page;
+  const session=originalSession, pageNumber=+page.dataset.page, changeToken=readerModeChangeToken;
   /* 캔버스는 먼저 보이고 단어 좌표표는 PDF.js의 textContent가 끝난 뒤 생깁니다.
      그 짧은 사이의 첫 탭을 버리면 두 번 눌러야 합니다. 같은 렌더 작업을 기다린
      뒤 사용자가 눌렀던 좌표로 다시 찾습니다. */
   if(!(session.wordBoxes.get(pageNumber)||[]).length){
     await renderOriginalPdfPage(session,pageNumber);
-    if(!ownsPdfPage(page,session)) return false;
+    // Pinch, scroll and mode changes invalidate the tapped screen coordinates.
+    if(changeToken!==readerModeChangeToken || !ownsPdfPage(page,session)) return false;
   }
   const box=pdfWordAtPoint(page,clientX,clientY);
   if(!box) return false;

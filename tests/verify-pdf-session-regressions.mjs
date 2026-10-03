@@ -11,7 +11,7 @@ function fixture(realRender=false){
  let destroyed=0;
  const pdf={numPages:0,destroy(){destroyed++;},async getPage(){started.resolve();await gate.promise;return {getViewport:()=>({width:600,height:800})};}};
  const context={console,Map,Set,WeakMap,performance,setTimeout,clearTimeout,requestAnimationFrame:fn=>setTimeout(fn,0),cancelAnimationFrame:clearTimeout,
- originalLoadToken:1,originalSession:null,curBook:a,ensurePdfLib:async()=>{},pdfjsLib:{getDocument:()=>({promise:Promise.resolve(pdf)})},
+ readerModeChangeToken:0,originalLoadToken:1,originalSession:null,curBook:a,ensurePdfLib:async()=>{},pdfjsLib:{getDocument:()=>({promise:Promise.resolve(pdf)})},
  document:{getElementById:()=>content,addEventListener(){}},window:{addEventListener(){}},
  BreezePdfInk:{open(){}},IntersectionObserver:class{observe(){}},readerScroller:()=>({}),
  registerReaderSurface:s=>surfaces.push(s)};
@@ -142,4 +142,46 @@ test('rotation uses the last settled reading point even if page layout was alrea
  context.originalSession=session;
  assert.deepEqual(JSON.parse(JSON.stringify(context.capturePdfRotationAnchor(session))),
   {kind:'pdf',page:3,y:.5});
+});
+
+// A PDF word tap can be waiting for geometry when a later pinch takes over.
+// Exercise the production pinch owner, async adapter and shared dispatch cleanup.
+for(const ending of ['during','release','cancel','fresh-lookup'])test(`deferred word geometry cannot reopen lookup after pinch: ${ending}`,async()=>{
+ const f=fixture(),c=f.context,page={dataset:{page:'1'},isConnected:true};
+ const session={kind:'pdf',bookId:'A',hash:'hash-A',loadToken:1,pages:[page],wordBoxes:new Map()};
+ const box={scrollTop:0,scrollLeft:0,clientWidth:800,clientHeight:900,scrollHeight:1200,getBoundingClientRect:()=>({left:0,top:0})};
+ const stage={classList:{add(){},remove(){}}};let anchored=true,opened=0,closed=0;
+ Object.assign(c,{originalSession:session,readerModeChangeToken:0,originalZoomBaseHeight:1200,
+  readerScroller:()=>box,originalZoomLayer:()=>({style:{}}),originalZoomStage:()=>stage,
+  originalZoom:()=>1,originalZoomOrigin:()=>({x:0,y:0}),layoutOriginalZoom(){},cancelGesture(){},
+  setOriginalZoom(){},resharpenOriginalPages(){},saveReadingState(){},applyOriginalZoomTransform(){},
+  wordSurfaceAnchored:()=>anchored,closePanel(){anchored=false;closed++;},
+  countDispatch(){},gestureLog(){},pdfPageAtPoint:()=>page,pdfWordAtPoint:()=>({word:'minimum'}),
+  renderOriginalPdfPage:()=>f.gate.promise,openPdfWord(){opened++;anchored=true;}});
+ const pinch=readFileSync(new URL('../scripts/reader/pdf-pinch.js',import.meta.url),'utf8');
+ vm.runInContext(pinch.slice(0,pinch.indexOf('(function(){')),c);
+ const gesture=readFileSync(new URL('../scripts/reader/gesture.js',import.meta.url),'utf8');
+ vm.runInContext(gesture.match(/function dispatchWord\([^]*?\n\}/)[0],c);
+ const pending=c.openPdfWordAt(10,10);
+ c.dispatchWord({surface:{openWordAt:()=>pending}},10,10);
+ c.beginOriginalPinch({x:200,y:200},100,[1,2]);
+ if(ending==='release')c.finishOriginalPinch();
+ if(ending==='cancel'||ending==='fresh-lookup')c.cancelOriginalPinch();
+ if(ending==='fresh-lookup'){
+  session.wordBoxes.set(1,[{word:'fresh'}]);
+  assert.equal(await c.openPdfWordAt(10,10),true);
+ }
+ f.gate.resolve();assert.equal(await pending,false,'old tap must lose presentation ownership');
+ await Promise.resolve();
+ assert.equal(opened,ending==='fresh-lookup'?1:0,'stale geometry opened lookup');
+ assert.equal(closed,1,'stale dispatch dismissed a newer lookup');
+ assert.equal(anchored,ending==='fresh-lookup');
+});
+for(const hit of [true,false])test(`uninterrupted deferred word geometry keeps normal hit/miss behavior: ${hit}`,async()=>{
+ const f=fixture(),c=f.context,page={dataset:{page:'1'},isConnected:true};let opened=0;
+ c.originalSession={kind:'pdf',bookId:'A',hash:'hash-A',loadToken:1,pages:[page],wordBoxes:new Map()};
+ c.pdfPageAtPoint=()=>page;c.renderOriginalPdfPage=()=>f.gate.promise;
+ c.pdfWordAtPoint=()=>hit?{word:'minimum'}:null;c.openPdfWord=()=>opened++;
+ const pending=c.openPdfWordAt(10,10);f.gate.resolve();
+ assert.equal(await pending,hit);assert.equal(opened,hit?1:0);
 });
