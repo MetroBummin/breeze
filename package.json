@@ -21,7 +21,7 @@
     "test:longreads": "node tests/verify-longreads-browser.mjs && node tests/verify-longread-preview-browser.mjs",
     "test:homeward-lookup": "node tests/verify-homeward-lookup-browser.mjs",
     "test:sync": "node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs",
-    "test:pdf-pinch": "node tests/verify-pdf-pinch-interruption-browser.mjs && node tests/verify-pdf-pinch-browser.mjs",
+    "test:pdf-pinch": "node tests/verify-word-pinch-browser.mjs && node tests/verify-pdf-pinch-interruption-browser.mjs && node tests/verify-pdf-pinch-browser.mjs",
     "test:viewport": "node tests/verify-viewport-browser.mjs",
     "test:v11": "node tests/verify-onboarding-browser.mjs && node tests/verify-v11-browser.mjs",
     "test:onboarding": "node tests/verify-onboarding-browser.mjs",
