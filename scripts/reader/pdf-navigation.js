@@ -517,9 +517,10 @@ function originalNavigationAllowed(){
 function cancelOriginalNavigation(){originalNavigationContact=null;}
 function originalNavigationStart(event){
   // Any added contact cancels, including a Pencil or a finger left after pinch.
-  const existing=originalNavigationContact;originalNavigationContact=null;
-  if(event.touches.length!==1||!event.cancelable||!originalNavigationAllowed()
-      ||(existing&&event.touches[0].identifier===existing.id))return;
+  originalNavigationContact=null;
+  // touchstart with one live contact is a new sequence, even if the browser
+  // reuses an identifier after losing the old terminal delivery.
+  if(event.touches.length!==1||!event.cancelable||!originalNavigationAllowed())return;
   originalNavigationTail=false; // A fresh live list also recovers a lost terminal event.
   const touch=event.touches[0],target=touch.target;
   if(!BreezePdfInk.finger(touch)||!(target instanceof Element)

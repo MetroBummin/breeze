@@ -68,7 +68,9 @@ test('a long press already dispatched by the gesture owner cannot also open navi
 });
 
 test('a fresh single contact recovers immediately after a lost terminal event',()=>{
- const f=fixture();f.start();f.move();
- f.start(f.touch(12,150,2));f.move(f.touch(110,150,2));f.end(f.touch(110,150,2));
- assert.equal(f.result().opened,1);
+ for(const id of [1,2]){
+  const f=fixture();f.start();f.move();
+  f.start(f.touch(12,150,id));f.move(f.touch(110,150,id));f.end(f.touch(110,150,id));
+  assert.equal(f.result().opened,1,'fresh start, including reused identifier '+id);
+ }
 });
