@@ -110,7 +110,7 @@ const LONG_READS = [
   },
   {
     id:'sherlock-holmes-speckled-band', file:'assets/longreads/speckled-band.txt',
-    cover:'', coverPosition:'center top',
+    cover:'assets/longreads/covers/speckled-band.png', coverPosition:'center top',
     title:'The Adventure of the Speckled Band',
     originalTitle:'The Adventure of the Speckled Band (1892)',
     author:'Arthur Conan Doyle',
@@ -127,7 +127,7 @@ const LONG_READS = [
   {
     "id": "sherlock-holmes-scandal-in-bohemia",
     "file": "assets/longreads/scandal-in-bohemia.txt",
-    "cover": "",
+    "cover": "assets/longreads/covers/scandal-in-bohemia.png",
     "coverPosition": "center top",
     "title": "A Scandal in Bohemia",
     "originalTitle": "A Scandal in Bohemia (1891)",
@@ -147,7 +147,7 @@ const LONG_READS = [
   {
     "id": "sherlock-holmes-red-headed-league",
     "file": "assets/longreads/red-headed-league.txt",
-    "cover": "",
+    "cover": "assets/longreads/covers/red-headed-league.png",
     "coverPosition": "center top",
     "title": "The Red-Headed League",
     "originalTitle": "The Red-Headed League (1891)",
@@ -270,17 +270,26 @@ async function applyLongReadCover(read,options={}){
   options.signal?.addEventListener('abort',abort,{once:true});
   try{
     const book=books.find(item=>item.longReadId===read.id);
-    if(!book)return;
+    if(!book||(options.onlyMissing&&book.cover))return;
     const response=await fetch(read.cover,{signal:controller.signal});
     if(!response.ok)return;
     const blob=await response.blob();
     if(!blob.size||!/^image\/(jpeg|png|gif|webp)$/i.test(blob.type))return;
-    const key=book.id+'|cover';
+    // A saved book may be deleted or receive a custom cover while fetching.
+    if(!books.includes(book)||(options.onlyMissing&&book.cover))return;
+    const key=book.id+(options.onlyMissing?'|bundled-cover':'|cover');
     await imgPut(key,blob);
+    if(!books.includes(book)||(options.onlyMissing&&book.cover))return;
     book.cover=key;book.coverPosition=read.coverPosition;
     await bookPut(book);renderAllBookViews();
   }catch(error){console.warn('긴 글 표지를 씌우지 못했습니다:',error&&error.message);}
   finally{clearTimeout(timeout);options.signal?.removeEventListener('abort',abort);}
+}
+async function restoreMissingLongReadCovers(){
+  for(const read of LONG_READS){
+    if(read.cover&&books.some(book=>book.longReadId===read.id&&!book.cover))
+      await applyLongReadCover(read,{onlyMissing:true});
+  }
 }
 function longReadCard(read){
   const card=el('div','bookcard classic longread');

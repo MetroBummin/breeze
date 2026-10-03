@@ -620,34 +620,31 @@ cover 80 untouched strokes plus a highlight and prove zero detachments while
 erasing a separate stroke and undoing/redoing that edit.
 
 
-## Optional scribble erase and original-page edge navigation (2026-10-03)
+## Optional two-finger double-tap undo and original-page edge navigation (2026-10-03)
 
-Scribble erase is OFF by default in the existing local pen settings. A destructive
-heuristic needs explicit opt-in before physical Pencil false-positive testing.
-Only an admitted WebKit stylus in pen mode participates; highlighter drawing,
-fingers and suppressed palms do not. Existing native inertia/admission is intact.
+The user replaced scribble erase with an optional two-finger **double** tap undo.
+Scribble recognition, pen-popover toggle, help and contact cue are removed;
+ordinary scratch/loop strokes remain ink even if an older local preference was ON.
+Existing stored ink, undo/redo edits and save failure recovery are unchanged.
 
-The incremental recognizer retains at most 256 points spaced by 3 CSS pixels.
-Within 120–1800 ms it requires a 12–110 px box in both dimensions, at least 240 px
-travel, path/diagonal >=9, and either three net turns with >=45% revisited
-8 px cells or ten sharp reversals with >=75% revisits. Consecutive samples in one
-cell never count as retracing. It rejects single/double circles and advancing writing;
-these conservative fixture boundaries are not proof of zero false positives.
-After 420 ms stationary, eraser capsule geometry identifies intersected existing
-ink once. The dashed preview and contact-owned status say release to delete or
-move to cancel. A >4 px move disarms this contact permanently and preserves it as
-ordinary ink. Without recognition/targets/hold, release also saves ordinary ink.
-A cancelled stroke follows the existing discard policy. No ink is changed before
-release, including on page exit, resize, blur, lost capture or touch/pointer cancel.
+Reader settings (Aa) expose “두 손가락 더블탭 실행 취소” only for supported PDF
+original view. It is OFF by default, persisted in `breeze.study.v1`, and acts only
+in writing mode. One two-finger tap is not enough: two stationary pairs must
+complete. The existing toolbar Undo/Redo remains available; the gesture calls
+the same undo transaction. No instructional popup, toast or extra pen setting.
 
-Release removes whole intersected stored pen/highlighter strokes (or existing
-partial-erasure fragments), without adding the scratch. Text, PDF content and
-word highlights are excluded. All changes form one existing history transaction
-and use the revision-aware serialized page writer, including undo before save,
-redo and failed-save retry. History remains session-local. The small contact cue
-is deliberately distinct from deferred Reader notices: confirmation must be
-visible while the writing pill's title/notice slot is hidden. It uses existing
-theme tokens and cannot receive input. Normal moves never scan stored ink.
+The existing PDF pinch start/move/end owner observes these contacts. Each pair
+requires two admitted direct fingers on paper, start skew <=80 ms, total contact
+<=240 ms and lift skew <=80 ms. The second pair begins within 320 ms and each
+finger stays within 36 px of the preceding pair (either ordering). During a pair,
+movement over 6 px cancels undo and continues the already captured pinch/pan
+geometry. Stationary pairs do not commit identical zoom geometry on release.
+Single-finger/native pan, noncancelable input, third contacts, Pencil/suppressed
+palms, active ink, popups/navigation, dispatched selection, cancel/lost capture,
+scroll/zoom/viewport/session changes and backgrounding cancel candidates.
+The next distinct pair cannot inherit a cancelled tap. Stable enlarged zoom is
+allowed; a moving zoom gesture can never undo. These are conservative UI timing
+choices, not measurements of physical Pencil/palm/native recognizer ordering.
 
 The original pinch lifecycle now feeds a single navigation candidate in
 pdf-navigation.js, replacing its independent horizontal-swipe listeners. One

@@ -265,8 +265,7 @@ function refreshReviewSetup(){
   document.getElementById('wordbook-review-entry').hidden=!scope.custom;
   document.getElementById('review-setup-scope').textContent=scope.custom?'연습 · 복습 일정에 영향 없음':'';
   document.getElementById('review-limit-usage').textContent=`오늘 ${view.uniqueUsed}개 학습`+(view.legacyUsage?' · 이전 기록 포함':'');
-  document.getElementById('review-setup-waiting').textContent=reviewWaitingText(view);
-  document.getElementById('review-setup-plan').textContent=view.status==='paused'?'한도에 도달했어요. 미응답 카드는 보관돼요.':resume?'이어서 학습할 수 있어요.':'';
+  document.getElementById('review-setup-plan').textContent=view.status==='paused'?'한도에 도달했어요. 미응답 카드는 보관돼요.':'';
   document.getElementById('review-setup-extra').hidden=scope.custom||!view.limitReached;
 }
 function reviewSettingsError(){

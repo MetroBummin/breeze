@@ -19,8 +19,8 @@ then
 fi
 
 # Xcode Cloud has its own build counter and can override project settings.
-if [ -n "${CI_BUILD_NUMBER:-}" ] && [ "$CI_BUILD_NUMBER" != "229" ]; then
-  echo "Expected Xcode Cloud build 229; got $CI_BUILD_NUMBER. Review the release number before archiving." >&2
+if [ -n "${CI_BUILD_NUMBER:-}" ] && [ "$CI_BUILD_NUMBER" != "230" ]; then
+  echo "Expected Xcode Cloud build 230; got $CI_BUILD_NUMBER. Review the release number before archiving." >&2
   exit 1
 fi
 npm ci --ignore-scripts --no-audit --no-fund

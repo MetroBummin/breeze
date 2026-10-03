@@ -44,7 +44,7 @@
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
   <link rel="stylesheet" href="styles/home.css?v=608e679d">
   <link rel="stylesheet" href="styles/article-preview.css?v=4136d11a">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=e28a0957">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=5ab30afa">
   <link rel="stylesheet" href="styles/reader.css?v=7b53053d">
   <link rel="stylesheet" href="styles/dictionary.css?v=4d96eb0d">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
@@ -81,15 +81,15 @@
   <script defer src="scripts/reader/reader-scroll.js?v=9627d9ac"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
-  <script defer src="scripts/reader/gesture.js?v=6fd08329"></script>
-  <script defer src="scripts/reader/pdf-pinch.js?v=1161993f"></script>
+  <script defer src="scripts/reader/gesture.js?v=05e9d67a"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=a37f36bf"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
   <script defer src="scripts/library/library.js?v=c778d213"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=dcf2f153"></script>
-  <script defer src="scripts/library/longreads.js?v=cd31f457"></script>
+  <script defer src="scripts/library/longreads.js?v=c019fda8"></script>
   <script defer src="assets/longreads/homeward-lookup-data.js?v=98cff2b8"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=0b110c50"></script>
   <script defer src="scripts/importers/importers.js?v=8baa9909"></script>
@@ -105,14 +105,14 @@
   <script defer src="scripts/dictionary/easy-explanation.js?v=a4e321f5"></script>
   <script defer src="scripts/vendor/ts-fsrs-5.4.2.js?v=59b74441"></script>
   <script defer src="scripts/core/vocabulary-review.js?v=e3c93ea7"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=2558b540"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=b1da77d9"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=bd9ec090"></script>
-  <script defer src="scripts/reader/pdf-ink-geometry.js?v=5e8941c3"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=d2c2be60"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=71e1fe27"></script>
+  <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=d1a42703"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=962af9f2"></script>
   <script defer src="scripts/reader/epub-original.js?v=b7c63d7a"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=afc95718"></script>
@@ -125,11 +125,11 @@
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=04236e7a"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
-  <script defer src="scripts/reader/study-preferences.js?v=06447ebf"></script>
+  <script defer src="scripts/reader/study-preferences.js?v=eeef850c"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=91c3f69a"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
-  <script defer src="scripts/main.js?v=bf9732ee"></script>
+  <script defer src="scripts/main.js?v=6d3eec76"></script>
   <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
        것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
   <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
@@ -424,7 +424,6 @@
   <section id="review-setup" aria-label="학습량">
     <div id="review-setup-notices">
       <p id="review-setup-scope"></p>
-      <p id="review-setup-waiting"></p>
       <p id="review-setup-plan"></p>
       <p id="review-setup-error" role="alert" hidden></p>
       <button id="review-setup-extra" type="button" hidden>일일 한도 넘어 추가 학습</button>
@@ -645,6 +644,7 @@
       <button id="pdfzoom-in" type="button" title="PDF 확대" aria-label="PDF 확대" onclick="changeOriginalZoom(1)">+</button>
     </div>
   </div>
+  <div class="aa-row" id="aa-ink-undo-row" hidden><span class="aa-label">두 손가락 더블탭 실행 취소</span><button id="aa-ink-undo" type="button" class="aa-toggle" aria-label="두 손가락 더블탭 실행 취소" aria-pressed="false" onclick="toggleTwoFingerUndo()"><i></i></button></div>
   <div class="aa-star-settings"><div class="aa-star-heading"><span class="aa-label">단어 색칠</span><span id="aa-star-hint">탭해서 켜고 끄기</span></div><div class="aa-legend" role="group" aria-label="별점별 단어 색칠 켜기와 끄기" aria-describedby="aa-star-hint"></div></div>
 </div>
 <dialog id="task-dialog" class="task-surface" aria-labelledby="task-title" aria-describedby="task-description">

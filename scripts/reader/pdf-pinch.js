@@ -10,6 +10,79 @@ let originalPinchTail = false;
 let originalPinchPan = false;
 let originalPdfContacts = 0;
 let originalPdfRenderPending = false;
+// Observe the existing pinch owner: stationary pairs can become undo taps;
+// movement hands the same captured geometry straight to normal pinch/pan.
+let originalUndoContact=null,originalUndoFirst=null;
+function cancelOriginalUndoTap(){originalUndoContact=null;originalUndoFirst=null;}
+function originalUndoAllowed(){
+  return typeof studyPrefs!=='undefined'&&studyPrefs.twoFingerUndo
+    &&typeof BreezePdfInk!=='undefined'&&BreezePdfInk.writing()&&!BreezePdfInk.busy()
+    &&!readerPositionPending()&&!document.hidden&&!pdfNavigation
+    &&!sentenceModalOpen()&&!wordPanelOpen()&&!wordPeekOpen()&&!aaPopOpen()
+    &&!document.querySelector('dialog[open]')&&!activeGesture?.dispatched;
+}
+function originalUndoSnapshot(){
+  const box=readerScroller();
+  return {session:originalSession,zoom:originalZoom(),left:box.scrollLeft,top:box.scrollTop,width:box.clientWidth,height:box.clientHeight};
+}
+function originalUndoSame(snapshot){
+  const now=originalUndoSnapshot();return Object.keys(snapshot).every(key=>snapshot[key]===now[key]);
+}
+function originalUndoPoints(list){return Array.from(list,t=>({id:t.identifier,x:t.clientX,y:t.clientY}));}
+function originalUndoNear(a,b,limit){return Math.hypot(a.x-b.x,a.y-b.y)<=limit;}
+function originalUndoStart(event){
+  const now=performance.now(),points=originalFingerContacts(event);
+  if(!originalUndoAllowed()||!event.cancelable||points.length!==event.touches.length
+      ||!points.every(p=>p.target?.closest?.('.pdf-source-page'))||points.length>2){cancelOriginalUndoTap();return;}
+  if(points.length===1&&!originalPinchTouches&&!originalPinch&&!originalPinchPan){
+    if(originalUndoFirst&&(now-originalUndoFirst.at>320||!originalUndoSame(originalUndoFirst.snapshot)))originalUndoFirst=null;
+    originalUndoContact={at:now,points:originalUndoPoints(points),snapshot:originalUndoSnapshot(),paired:false,ended:[]};
+    return;
+  }
+  // Real events can deliver both fingers together, or within 80 ms of each other.
+  if(points.length!==2||originalPinchTouches||originalPinch||originalPinchPan){cancelOriginalUndoTap();return;}
+  let contact=originalUndoContact;
+  if(!contact){
+    if(event.changedTouches.length!==2){cancelOriginalUndoTap();return;}
+    contact={at:now,points:originalUndoPoints(points),snapshot:originalUndoSnapshot(),paired:false,ended:[]};
+  }
+  if(now-contact.at>80||!originalUndoSame(contact.snapshot)
+      ||!contact.points.every(p=>points.some(t=>t.identifier===p.id&&originalUndoNear(p,{x:t.clientX,y:t.clientY},6)))
+      ||originalPinchDistance(points)<8){cancelOriginalUndoTap();return;}
+  contact.points=originalUndoPoints(points);contact.paired=true;originalUndoContact=contact;
+}
+function originalUndoMove(event){
+  const contact=originalUndoContact;if(!contact)return false;
+  const points=originalUndoPoints(event.touches);
+  if(!originalUndoAllowed()||!event.cancelable||!originalUndoSame(contact.snapshot)
+      ||performance.now()-contact.at>240
+      ||points.some(p=>!contact.points.some(start=>start.id===p.id&&originalUndoNear(start,p,6)))){
+    cancelOriginalUndoTap();return false;
+  }
+  // No pinch transform or native pan has committed while this pair is stationary.
+  if(contact.paired){event.preventDefault();return true;}
+  return false;
+}
+function originalUndoEnd(event){
+  const contact=originalUndoContact;if(!contact)return false;
+  const now=performance.now(),changed=originalUndoPoints(event.changedTouches);
+  if(event.type!=='touchend'||!event.cancelable||!originalUndoAllowed()||!originalUndoSame(contact.snapshot)
+      ||now-contact.at>240||!contact.paired
+      ||changed.some(p=>!contact.points.some(start=>start.id===p.id&&originalUndoNear(start,p,6)))){
+    cancelOriginalUndoTap();return false;
+  }
+  for(const p of changed)if(!contact.ended.includes(p.id))contact.ended.push(p.id);
+  if(event.touches.length){
+    contact.firstEnd??=now;return false;
+  }
+  originalUndoContact=null;
+  if(contact.ended.length!==2||(contact.firstEnd!=null&&now-contact.firstEnd>80)){originalUndoFirst=null;return false;}
+  const first=originalUndoFirst;originalUndoFirst=null;
+  if(first&&contact.at-first.at<=320&&originalUndoSame(first.snapshot)
+      &&(contact.points.every((p,i)=>originalUndoNear(p,first.points[i],36))
+        ||contact.points.every((p,i)=>originalUndoNear(p,first.points[1-i],36))))return true;
+  originalUndoFirst={at:now,points:contact.points,snapshot:contact.snapshot};return false;
+}
 function originalPdfPaintPaused(optional=true){
   if(!originalPinch && !originalPinchTouches && (!optional || !originalPdfContacts) && !(typeof BreezePdfInk!=='undefined' && BreezePdfInk.busy())) return false;
   originalPdfRenderPending = true;
@@ -56,7 +129,8 @@ function originalPinchDistance(points){
 function beginOriginalPinch(center, distance, ids){
   if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
       && typeof closeSentence==='function') closeSentence();
-  if(typeof wordPeekOpen==='function'&&wordPeekOpen()&&typeof closePanel==='function') closePanel();
+  // The same anchored lookup owner as scroll includes mini, detail and morphing UI.
+  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
   if(typeof pinReaderChrome==='function') pinReaderChrome(true,'zoom');
   const box = readerScroller(), layer = originalZoomLayer(), stage = originalZoomStage();
   // A deliberate pinch supersedes delayed mode-landing restores (360/900ms).
@@ -96,6 +170,7 @@ function previewOriginalPinch(){
 }
 function moveOriginalPinch(level, center){
   if(!originalPinch) return;
+  originalPinch.manipulated=true;
   originalPinch.next = Math.max(ORIGINAL_ZOOM_MIN,Math.min(ORIGINAL_ZOOM_MAX,level));
   originalPinch.center = center;
   if(!originalPinchFrame) originalPinchFrame = requestAnimationFrame(previewOriginalPinch);
@@ -103,6 +178,14 @@ function moveOriginalPinch(level, center){
 function finishOriginalPinch(){
   if(!originalPinch) return;
   cancelAnimationFrame(originalPinchFrame);
+  if(originalPinch.undoTap&&!originalPinch.manipulated){
+    // Stationary taps never changed paper geometry; do not create a resize or
+    // deferred restoration between taps by committing an identical zoom.
+    originalPinch.stage.classList.remove('pinching');originalPinch=null;
+    originalPinchFrame=0;applyOriginalZoomTransform();
+    if(typeof pinReaderChrome==='function')pinReaderChrome(false,'zoom');
+    return;
+  }
   previewOriginalPinch();
   const pinch = originalPinch;
   originalPinch = null;
@@ -113,6 +196,7 @@ function finishOriginalPinch(){
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function cancelOriginalPinch(){
+  cancelOriginalUndoTap();
   if(typeof cancelOriginalNavigation==='function')cancelOriginalNavigation();
   cancelAnimationFrame(originalPinchFrame);
   originalPinchFrame = 0;
@@ -138,6 +222,7 @@ function originalPinchStart(event){
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/start',event);
   countOriginalPdfContacts(event);
   if(typeof originalNavigationStart==='function')originalNavigationStart(event);
+  originalUndoStart(event);
   if(originalPinchTouches){
     if(event.cancelable) event.preventDefault();
     return;
@@ -154,9 +239,11 @@ function originalPinchStart(event){
   if(originalPinch) finishOriginalPinch();
   originalPinchTouches = true;
   beginOriginalPinch(originalPinchMiddle(points),distance,points.map(point=>point.identifier));
+  originalPinch.undoTap=!!originalUndoContact?.paired;
 }
 function originalPinchMove(event){
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/move',event);
+  if(originalUndoMove(event))return;
   if(typeof originalNavigationMove==='function'&&originalNavigationMove(event))return;
   if(!originalPinchTouches){
     if(originalFingerContacts(event).length === 1) originalPinchPan = true;
@@ -172,6 +259,7 @@ function originalPinchMove(event){
   moveOriginalPinch(pinch.level*originalPinchDistance(points)/pinch.distance,originalPinchMiddle(points));
 }
 function originalPinchEnd(event){
+  const undo=originalUndoEnd(event);
   if(typeof originalNavigationEnd==='function')originalNavigationEnd(event);
   if(typeof BreezePdfInk!=='undefined')BreezePdfInk.trace('pinch/end',event);
   const owners=originalPinch?.ids;
@@ -186,6 +274,8 @@ function originalPinchEnd(event){
   if(!originalFingerContacts(event).some(point=>!owners || owners.includes(point.identifier))){
     finishOriginalPinch();
     originalPinchTouches = false;
+    if(undo)BreezePdfInk.undo();
+    resumeOriginalPdfPaint();
   }
 }
 (function(){
@@ -203,6 +293,8 @@ function originalPinchEnd(event){
     for(const type of ['touchstart','touchmove','wheel','keydown'])
       box.addEventListener(type,guardOpening,{capture:true,passive:false});
     box.addEventListener('scroll',()=>{
+      if((originalUndoContact&&!originalUndoSame(originalUndoContact.snapshot))
+          ||(originalUndoFirst&&!originalUndoSame(originalUndoFirst.snapshot)))cancelOriginalUndoTap();
       if(originalPinch && !originalPinchFrame)
         originalPinchFrame=requestAnimationFrame(previewOriginalPinch);
       if(originalSession?.kind==='pdf'){
@@ -217,6 +309,7 @@ function originalPinchEnd(event){
     // admit paper input after the same opening/surface boundary as before.
     document.addEventListener('touchstart',event=>{
       if(readerPositionPending()||!(event.target instanceof Node)||!box.contains(event.target)){
+        cancelOriginalUndoTap();
         if(typeof cancelOriginalNavigation==='function')cancelOriginalNavigation();
         return;
       }
@@ -229,6 +322,19 @@ function originalPinchEnd(event){
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded',start);
   else start();
   window.addEventListener('blur',cancelOriginalPinch);
+  window.addEventListener('resize',cancelOriginalUndoTap);
+  document.addEventListener('pointercancel',cancelOriginalUndoTap,{capture:true,passive:true});
+  // Pointer capture normally releases after pointerup; only an unexpected loss
+  // invalidates the touch sequence. This observes lifecycle, never owns input.
+  const releasedPointers=new Set();
+  document.addEventListener('pointerdown',e=>releasedPointers.delete(e.pointerId),{capture:true,passive:true});
+  document.addEventListener('pointerup',e=>{
+    releasedPointers.add(e.pointerId);
+    if(releasedPointers.size>8)releasedPointers.delete(releasedPointers.values().next().value);
+  },{capture:true,passive:true});
+  document.addEventListener('lostpointercapture',e=>{
+    if(!releasedPointers.delete(e.pointerId))cancelOriginalUndoTap();
+  },{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden) cancelOriginalPinch();
   });

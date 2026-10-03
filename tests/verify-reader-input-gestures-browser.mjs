@@ -41,28 +41,53 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const count=()=>page.locator('.pdf-source-page[data-page="1"] .pdf-ink-layer polyline').count();
  const saved=()=>page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
  const pen=page.locator('[data-ink-mode="pen"]');
- await page.locator('[data-ink-toggle]').click();await pen.click();
- const toggle=page.locator('[data-ink-scribble]');assert.equal(await toggle.getAttribute('aria-pressed'),'false');await toggle.click();assert.equal(await toggle.getAttribute('aria-pressed'),'true');
- await page.evaluate(()=>{qaInput.start(100,200);qaInput.move(250,200);qaInput.end();});await saved();assert.equal(await count(),1);
- const scribble=async(turns=5,type='stylus')=>page.evaluate(async({turns,type})=>{
-  qaInput.start(190,200,type);
-  for(let i=1;i<=turns*24;i++){qaInput.move(170+20*Math.cos(i*Math.PI/12),200+20*Math.sin(i*Math.PI/12));await new Promise(r=>setTimeout(r,5));}
- },{turns,type});
- await scribble();await page.waitForSelector('#pdf-ink-scribble-cue:not([hidden])');
- assert.equal(await count(),2,'original and live preview remain until release');
- await page.screenshot({path:resolve(proof,engine.name()+'-confirm.png')});
- await page.evaluate(()=>qaInput.end());await saved();assert.equal(await count(),0);
- await page.locator('[data-ink-undo]').click();await saved();assert.equal(await count(),1);
- await page.locator('[data-ink-redo]').click();await saved();assert.equal(await count(),0);
- await page.reload();await open();assert.equal(await count(),0,'deletion survives real database reopen');await install();
- await page.locator('[data-ink-toggle]').click();await pen.click();assert.equal(await toggle.getAttribute('aria-pressed'),'true','setting survives reload');await pen.click();
- await page.evaluate(()=>{qaInput.start(100,200);qaInput.move(250,200);qaInput.end();});await saved();
- await scribble(1);await page.waitForTimeout(480);assert.equal(await page.locator('#pdf-ink-scribble-cue').isVisible(),false);await page.evaluate(()=>qaInput.end());await saved();assert.equal(await count(),2,'circle remains ink');
- await page.locator('[data-ink-undo]').click();await saved();
- for(const kind of ['pointercancel','lostpointercapture']){await scribble();await page.waitForSelector('#pdf-ink-scribble-cue:not([hidden])');await page.evaluate(kind=>qaInput.cancelPointer(kind),kind);assert.equal(await count(),1,kind);}
- await scribble();await page.waitForSelector('#pdf-ink-scribble-cue:not([hidden])');await page.evaluate(()=>{qaInput.move(225,245);qaInput.end();});await saved();assert.equal(await count(),2,'moving after confirm cancels deletion');await page.locator('[data-ink-undo]').click();await saved();
- await scribble(5,'direct');await page.waitForTimeout(480);await page.evaluate(()=>qaInput.end());assert.equal(await count(),1,'finger does not scribble');
- await page.evaluate(()=>closePanel());assert.equal(await page.evaluate(()=>window.qaInkLookup),0,'scribble never looks up');
+ await page.locator('[data-ink-toggle]').click();
+ assert.equal(await page.locator('[data-ink-scribble]').count(),0);
+ await page.evaluate(()=>toggleAa());
+ const toggle=page.locator('#aa-ink-undo');assert.equal(await toggle.getAttribute('aria-pressed'),'false');
+ await page.evaluate(()=>closeAa());
+ const stroke=async()=>{await page.evaluate(()=>{qaInput.start(100,200);qaInput.move(250,200);qaInput.end();});await saved();};
+ const pair=async({move=0,cancel=false,third=false}={})=>page.evaluate(async({move,cancel,third})=>{
+  const target=originalSession.pages[0].querySelector('canvas'),r=target.getBoundingClientRect();
+  const id=window.qaPairId=(window.qaPairId||1000)+3;
+  const a={identifier:id,target,touchType:'direct',clientX:r.left+110,clientY:r.top+200};
+  const b={...a,identifier:id+1,clientX:r.left+180};
+  const send=(type,live,changed)=>{const e=new Event(type,{bubbles:true,cancelable:true});Object.defineProperties(e,{touches:{value:live},changedTouches:{value:changed}});target.dispatchEvent(e);};
+  send('touchstart',[a],[a]);await new Promise(r=>setTimeout(r,15));send('touchstart',[a,b],[b]);
+  if(move){b.clientX+=move;send('touchmove',[a,b],[b]);}
+  if(third){const c={...b,identifier:id+2};send('touchstart',[a,b,c],[c]);send('touchend',[a,b],[c]);}
+  await new Promise(r=>setTimeout(r,30));send(cancel?'touchcancel':'touchend',[],[a,b]);
+ },{move,cancel,third});
+ const double=async(options)=>{await pair(options);await page.waitForTimeout(60);await pair(options);};
+ await stroke();assert.equal(await count(),1);
+ await double();assert.equal(await count(),1,'OFF never undoes');
+ await page.evaluate(()=>toggleAa());await toggle.click();assert.equal(await toggle.getAttribute('aria-pressed'),'true');await page.evaluate(()=>closeAa());
+ await pair();assert.equal(await count(),1,'one two-finger tap is not double tap');
+ await page.waitForTimeout(60);await pair();await saved();assert.equal(await count(),0,'two pairs undo one edit');
+ assert.equal(await page.evaluate(()=>!!originalPinch||originalPinchTouches||originalPdfRenderPending||originalPinchFrame!==0),false,'tap completion releases pinch and queued paint');
+ await page.locator('[data-ink-redo]').click();await saved();assert.equal(await count(),1,'toolbar redo restores gesture undo');
+ if(engine===chromium){
+  const cdp=await context.newCDPSession(page),rect=await page.locator('.pdf-source-page[data-page="1"] canvas').boundingBox();
+  for(let i=0;i<2;i++){
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:rect.x+110,y:rect.y+200,id:1},{x:rect.x+180,y:rect.y+200,id:2}]});
+   await page.waitForTimeout(40);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(60);
+  }
+  await saved();assert.equal(await count(),0,'trusted Chromium pointer/touch delivery undoes once');
+  await page.locator('[data-ink-redo]').click();await saved();assert.equal(await count(),1);await cdp.detach();
+ }
+
+ for(const options of [{move:25},{cancel:true},{third:true}]){
+  await double(options);assert.equal(await count(),1,JSON.stringify(options));
+  await page.evaluate(()=>setOriginalZoom(1));await page.waitForTimeout(400);
+ }
+ await page.evaluate(()=>setOriginalZoom(1.5));await page.waitForTimeout(400);await double();await saved();assert.equal(await count(),0,'stationary double tap works at stable enlarged zoom');
+ await page.locator('[data-ink-redo]').click();await saved();await page.evaluate(()=>setOriginalZoom(1));await page.waitForTimeout(400);
+ await page.locator('[data-ink-toggle]').click();await double();assert.equal(await count(),1,'reading mode cannot undo');await page.locator('[data-ink-toggle]').click();
+ await page.reload();await open();assert.equal(await count(),1,'real database retains ink');await install();
+ await page.evaluate(()=>toggleAa());assert.equal(await toggle.getAttribute('aria-pressed'),'true','Reader setting persists');await page.evaluate(()=>closeAa());
+ await page.locator('[data-ink-toggle]').click();
+ await stroke();assert.equal(await count(),2);await double();await saved();assert.equal(await count(),1,'undo uses current-session toolbar history');
+ await page.evaluate(()=>closePanel());assert.equal(await page.evaluate(()=>window.qaInkLookup),0,'paired taps never look up');
  // Writing-mode navigation respects the same finger policy; pen mode alone is not busy.
  const edge=async({cancel=false,x=100,y=170}={})=>page.evaluate(({cancel,x,y})=>{qaInput.start(12,170,'direct',true);const prevented=qaInput.move(x,y,true);qaInput.end(cancel);return prevented;},{cancel,x,y});
  await page.evaluate(()=>setPdfReadDirection('horizontal'));await page.waitForTimeout(400);
@@ -80,13 +105,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const theme of ['light','dark']){
   await page.setViewportSize({width,height});await page.emulateMedia({colorScheme:theme});
   await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();expandReaderChrome();},theme);
-  if(await pen.getAttribute('aria-expanded')!=='true')await pen.click();
+  await page.evaluate(()=>toggleAa());
   await page.waitForTimeout(250);
   const rect=await toggle.boundingBox();assert.ok(rect&&rect.width>=44&&rect.height>=44&&rect.x>=0&&rect.x+rect.width<=width&&rect.y>=0&&rect.y+rect.height<=height,JSON.stringify({width,height,theme,rect}));
-  await page.screenshot({path:resolve(proof,`${engine.name()}-${width}-${height}-${theme}.png`)});await pen.click();
+  await page.screenshot({path:resolve(proof,`${engine.name()}-${width}-${height}-${theme}.png`)});await page.evaluate(()=>closeAa());
  }
  await page.setViewportSize({width:820,height:1180});await page.waitForTimeout(450);
- await scribble();await page.waitForSelector('#pdf-ink-scribble-cue:not([hidden])');
+ await pair();
  await page.evaluate(async()=>{
   await ensureZipLib();const zip=new JSZip();zip.file('mimetype','application/epub+zip');
   zip.file('META-INF/container.xml','<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="book.opf"/></rootfiles></container>');
@@ -97,7 +122,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   books.push(book);positions[book.id]={mode:'original',p:0,y:0};await openBook(book,{prepared:{book,original:record}});await Promise.all(originalSession.frameGeometryReady);
  });
  await page.waitForFunction(()=>!readerPositionPending());await page.waitForTimeout(500);
- assert.equal(await page.locator('#pdf-ink-scribble-cue').isVisible(),false,'new book cancels held confirmation');
+ assert.equal(await toggle.isVisible(),false,'EPUB cannot expose PDF writing setting');
  await page.evaluate(()=>{
   const target=document.getElementById('original-stage');
   const t=x=>({identifier:910,target,touchType:'direct',clientX:x,clientY:170});
@@ -106,7 +131,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   send('touchstart',[t(12)],[t(12)]);send('touchmove',[t(110)],[t(110)]);send('touchend',[],[t(110)]);
  });
  await page.waitForFunction(()=>pdfNavigation?.session.kind==='epub');await page.waitForTimeout(500);await page.screenshot({path:resolve(proof,engine.name()+'-epub-edge.png')});
- await page.evaluate(()=>closePdfNavigation());await open();assert.equal(await count(),1,'new book never commits tentative deletion');
- assert.deepEqual(errors,[]);console.log(engine.name()+': scribble lifecycle, real IDB reopen, edge ownership and 10 responsive settings states passed');
+ await page.evaluate(()=>closePdfNavigation());await open();assert.equal(await count(),1,'new book cannot apply an old tap undo');
+ assert.deepEqual(errors,[]);console.log(engine.name()+': two-finger double-tap undo, real IDB reopen, edge ownership and 10 responsive settings states passed');
  }finally{await browser.close();}
 }}finally{await new Promise(r=>server.close(r));}
