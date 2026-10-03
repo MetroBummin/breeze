@@ -108,3 +108,11 @@ Sources checked: [IANA IPv4 special registry](https://www.iana.org/assignments/i
 [TypeSafe API](https://docs.typesafe.ai/api), [confidence](https://docs.typesafe.ai/confidence),
 [Supabase changelog](https://supabase.com/changelog) and
 [server secrets](https://supabase.com/docs/guides/functions/secrets).
+
+2026-10-03 activation preparation adds an OFF service-only database mode control,
+fixed106 one-shot evaluation slots (two concurrent), existing-service-JWT-only
+operator requests and private aggregate telemetry. No environment-key changes
+are required. See `docs/qa/rss-activation-preparation.md` for the still-pending
+secure execution, live comparison, cache proof and all13-feed inventory gates.
+The client remains OFF, with its existing public anon JWT supplied for gateway
+verification. This preparation is based on build231 and does not release it.

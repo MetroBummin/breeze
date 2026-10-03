@@ -310,7 +310,9 @@ test('candidate fallback is eligible without relabeling approval; errors and all
 test('provider exceptions retain their processing stage without logging raw error text',async()=>{
   const events=[],store=memoryStore();
   await service(store,{evaluate:async()=>{throw Error('sensitive provider payload');},log:event=>events.push(event)}).refresh(0);
-  assert.equal(events.length,3);assert.ok(events.every(e=>e.stage==='provider' && e.code==='transient_failure'));
+  assert.equal(events.filter(e=>e.stage==='cache' && e.code==='miss').length,3);
+  const failures=events.filter(e=>e.stage==='provider');
+  assert.equal(failures.length,3);assert.ok(failures.every(e=>e.code==='transient_failure'));
   assert.ok(!JSON.stringify(events).includes('sensitive'));
 });
 

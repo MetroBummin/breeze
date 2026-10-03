@@ -3,3 +3,5 @@ project_id = "fqvhlyocdkwiyioiokte"
 [functions.ready]
 verify_jwt = false
 
+[functions.rss-quality]
+verify_jwt = true

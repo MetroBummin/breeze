@@ -50,6 +50,7 @@ export function createQualityService({store,key,fetchDoc=fetchDocument,load=load
             // Known new content must not inherit an earlier body's approval.
             for(let i=entries.length-1;i>=0;i--)if(canonical(entries[i].readUrl || entries[i].url)===identity && entries[i].quality.key!==hash)entries.splice(i,1);
             const evaluation=await store.claimEvaluation(hash,loaded.url);
+            log({stage:'cache',code:evaluation.verdict?'hit':evaluation.token?'miss':'busy',key:hash,feed:id});
             let verdict=evaluation.verdict;
             if(evaluation.token) {
               try {

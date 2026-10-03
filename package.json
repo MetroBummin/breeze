@@ -49,7 +49,7 @@
     "test:vocabulary-review": "node --test tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs && node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs",
     "ios:archive": "bash tools/ios-testflight.sh --archive",
     "ios:testflight": "bash tools/ios-testflight.sh --upload",
-    "test:rss-quality": "node --test tests/verify-rss-quality.mjs"
+    "test:rss-quality": "node --test tests/verify-rss-quality.mjs tests/verify-rss-activation.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
