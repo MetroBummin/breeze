@@ -34,7 +34,7 @@ Pencil or suppressed palm contacts. Failed/cancelled gestures do not open UI.
 - `node --test tests/verify-reader-input-gestures.mjs`: 7/7 passed.
 - `tests/verify-pdf-ink-regressions.mjs`: 37/37 passed; baseline suite together
   with PDF session regressions also passes. Includes held scratch vs normal
-  circles/letters/advancing hatching/notes, no tentative writes, undo before save,
+  circles/letters/crosshatching/advancing hatching/notes, no tentative writes, undo before save,
   redo, empty targets, movement/cancel/resize/blur/scroll/new-session cleanup.
 - Installed Chromium: existing PDF ink browser suite passed (actual IDB,
   highlighter/partial eraser, tool preferences, native admission simulation,
@@ -43,7 +43,8 @@ Pencil or suppressed palm contacts. Failed/cancelled gestures do not open UI.
 - Installed Chromium: new reader-input-gestures browser suite passed. Includes
   hold/release/cancel/lost capture, default/persistence, circle false-positive,
   real database reopen, finger rejection, edge/paging exclusivity, vertical,
-  zoom and Aa exclusions, existing page button, EPUB edge opening, new book
+  zoom and Aa exclusions, second finger on outside controls, existing page button,
+  EPUB edge opening, new book
   during confirmation, and ten responsive light/dark states.
 - Installed Chromium: Breeze 1.6 page/navigation/bookmark/deletion/direction
   regressions; pinch interruption; Reader chrome motion/reversal/reduced-motion

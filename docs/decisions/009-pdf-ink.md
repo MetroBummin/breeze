@@ -629,8 +629,9 @@ fingers and suppressed palms do not. Existing native inertia/admission is intact
 
 The incremental recognizer retains at most 256 points spaced by 3 CSS pixels.
 Within 120–1800 ms it requires a 12–110 px box in both dimensions, at least 240 px
-travel, path/diagonal >=9, >=45% repeated 8 px cells, and either three net turns
-or ten sharp reversals. It rejects single/double circles and advancing writing;
+travel, path/diagonal >=9, and either three net turns with >=45% revisited
+8 px cells or ten sharp reversals with >=75% revisits. Consecutive samples in one
+cell never count as retracing. It rejects single/double circles and advancing writing;
 these conservative fixture boundaries are not proof of zero false positives.
 After 420 ms stationary, eraser capsule geometry identifies intersected existing
 ink once. The dashed preview and contact-owned status say release to delete or
@@ -665,3 +666,9 @@ capture cancel candidates. System Safari edge-back may preempt and cancel web
 input; the existing button remains available. Native WKWebView navigation/security
 settings are unchanged. Neither synthetic WebKit nor Chromium proves UIKit/Pencil
 ordering, palm rejection or physical latency. See the QA acceptance checklist.
+
+The single original touch-start listener observes document capture and admits
+only scroller targets after the opening guard. An extra contact on toolbar/UI
+cancels a navigation candidate even if neither finger subsequently moves. The
+control itself never enters paper/pinch admission. A regression reproduced the
+previous scroller-only listener incorrectly opening the sidebar in this sequence.

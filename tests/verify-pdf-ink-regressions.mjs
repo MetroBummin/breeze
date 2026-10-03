@@ -332,7 +332,10 @@ test('scribble classifier: repeated loops and dense scratch; circles, shapes, ha
   assert.equal(classify(loops()),true);
   const scratch=Array.from({length:65},(_,i)=>{const row=Math.floor(i/4),x=(row%2?4-i%4:i%4)*10;return [200+x,210+(row%3)*8];});
   assert.equal(classify(scratch),true);
-  for(const points of [loops(1),loops(2),[[0,0],[0,40],[30,40],[30,0],[0,0]],
+  const crosshatch=[];
+  for(let y=0;y<=40;y+=8)for(let x=0;x<=40;x+=4)crosshatch.push([x,y]);
+  for(let x=0;x<=40;x+=8)for(let y=0;y<=40;y+=4)crosshatch.push([x,y]);
+  for(const points of [crosshatch,loops(1),loops(2),[[0,0],[0,40],[30,40],[30,0],[0,0]],
     [[0,40],[15,0],[30,40],[5,25],[25,25]], // A
     Array.from({length:40},(_,i)=>[i*5,(i%2)*25]), // rapid notes / advancing hatching
     Array.from({length:40},(_,i)=>[i*5,20]),loops(5,80)])assert.equal(classify(points),false);

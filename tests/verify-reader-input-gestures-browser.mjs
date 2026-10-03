@@ -14,14 +14,15 @@ const server=createServer((req,res)=>{
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}`;
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+ const browser=await engine.launchPersistentContext('',{executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
  try{
- const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'}),page=await context.newPage(),errors=[];
+ const context=browser,page=await context.newPage(),errors=[],warnings=[];
  page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')warnings.push(m.text());});
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{window.breezeInkIPad=true;localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
  await page.goto(url);await page.locator('#fileinput').setInputFiles({name:'Gesture.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture()});
- const open=async()=>{await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});await page.waitForSelector('.pdf-ink-layer');await page.waitForFunction(()=>!readerPositionPending());await page.waitForTimeout(500);};
+ const open=async()=>{await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});try{await page.waitForSelector('.pdf-ink-layer');}catch(error){console.log('PDF startup',engine.name(),errors,warnings.slice(-10),await page.evaluate(()=>({platform:window.breezeInkIPad,mode:currentReaderMode,book:curBook?.original,session:originalSession&&{kind:originalSession.kind,hash:originalSession.hash,settled:[...originalSession.settled||[]]},body:document.body.className})));throw error;}await page.waitForFunction(()=>!readerPositionPending());await page.waitForTimeout(500);};
  await open();
  const install=async()=>page.evaluate(()=>{
   window.qaInkLookup=0;const dispatch=dispatchWord;dispatchWord=(...args)=>{window.qaInkLookup++;return dispatch(...args);};
@@ -32,6 +33,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    start(x,y,type='stylus',edge=false){const element=originalSession.pages[0],r=element.getBoundingClientRect();contact={identifier:++seq,target:edge?document.getElementById('original-stage'):element.querySelector('canvas'),touchType:type,clientX:edge?x:r.left+x,clientY:edge?y:r.top+y};pointer('pointerdown',contact);send('touchstart',[contact],[contact]);},
    move(x,y,edge=false){const r=originalSession.pages[0].getBoundingClientRect();contact={...contact,clientX:edge?x:r.left+x,clientY:edge?y:r.top+y};pointer('pointermove',contact);return send('touchmove',[contact],[contact]);},
    end(cancel=false){pointer(cancel?'pointercancel':'pointerup',contact);send(cancel?'touchcancel':'touchend',[],[contact]);contact.target.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:1}));contact=null;},
+   outsideContact(){const other={...contact,identifier:++seq,target:document.getElementById('aafab'),clientX:790,clientY:1100,touchType:'direct'};send('touchstart',[contact,other],[other]);send('touchend',[contact],[other]);},
    cancelPointer(kind){pointer(kind,contact);send('touchcancel',[],[contact]);contact=null;}
   };
  });
@@ -67,6 +69,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const n=await page.evaluate(()=>pdfCurrentPage());assert.equal(await edge(),true);await page.waitForFunction(()=>!!pdfNavigation);
  assert.equal(await page.evaluate(()=>pdfCurrentPage()),n,'edge and paging cannot both win');assert.equal(await page.evaluate(()=>window.qaInkLookup),0);
  await page.evaluate(()=>closePdfNavigation());await edge({cancel:true});assert.equal(await page.evaluate(()=>!!pdfNavigation),false);
+ await page.evaluate(()=>{qaInput.start(12,170,'direct',true);qaInput.move(100,170,true);qaInput.outsideContact();qaInput.end();});
+ assert.equal(await page.evaluate(()=>!!pdfNavigation),false,'second finger on a control cancels edge ownership');
  assert.equal(await edge({y:280}),false,'vertical movement stays native');assert.equal(await page.evaluate(()=>!!pdfNavigation),false);
  await page.evaluate(()=>setOriginalZoom(1.5));await page.waitForTimeout(200);await edge();assert.equal(await page.evaluate(()=>!!pdfNavigation),false,'zoom pan excluded');await page.evaluate(()=>setOriginalZoom(1));await page.waitForTimeout(250);
  await page.evaluate(()=>toggleAa());await edge();assert.equal(await page.evaluate(()=>!!pdfNavigation),false,'Aa owns input');await page.evaluate(()=>closeAa());

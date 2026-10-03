@@ -212,7 +212,16 @@ function originalPinchEnd(event){
         schedulePdfSharpen(originalSession);
       }
     },{passive:true});
-    box.addEventListener('touchstart',originalPinchStart,{passive:false});
+    // Observe added contacts even on chrome: a second finger can land and lift
+    // there without the first finger moving. Keep one start route, and only
+    // admit paper input after the same opening/surface boundary as before.
+    document.addEventListener('touchstart',event=>{
+      if(readerPositionPending()||!(event.target instanceof Node)||!box.contains(event.target)){
+        if(typeof cancelOriginalNavigation==='function')cancelOriginalNavigation();
+        return;
+      }
+      originalPinchStart(event);
+    },{passive:false,capture:true});
     box.addEventListener('touchmove',originalPinchMove,{passive:false});
     document.addEventListener('touchend',originalPinchEnd,{passive:false,capture:true});
     document.addEventListener('touchcancel',originalPinchEnd,{passive:false,capture:true});
