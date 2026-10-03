@@ -14,6 +14,32 @@ service-role predicate. The predicate was removed by the parent. Do not assume
 Dashboard's default tester has operator permissions. The denied temporary admin
 execution route must not be retried or replaced without approval.
 
+## Mac continuation, 2026-10-03
+
+The authorized local continuation applied `rss_quality_activation_controls`
+once and deployed the complete PR bundle as `rss-quality` v4 with JWT verification
+enabled. It starts OFF; a brief shadow window with no evaluation deadline is used
+only for the user's manually submitted operator authentication check. All106
+slots remain queued and provider reservations/events remain zero. The new control,
+evaluation and event tables have RLS enabled, deny anon/authenticated reads, and
+the evaluation claim RPC denies those roles. Live evaluation/cache/inventory gates
+remain unmeasured until operator authentication succeeds.
+
+Deployment payload SHA-256:
+`b75da8a50cec4f17edb8091e4ee7815e847f4f9932919e21931b06dec94983b7`.
+Deployed bundle SHA-256:
+`a77dfe54abcb2e105fae5554695b889b9b84d8d8773c742adc9a15292be010af`.
+
+The browser CI hang was reproduced on Mac: the committed RSS script fingerprint
+was `2ccdbb2b`, while the actual script fingerprint is `62c5525e`. The service
+worker correctly rejected the inconsistent shell and the preview test waited on
+`navigator.serviceWorker.ready`. Regenerating `index.html` and `sw.js` with the
+existing stamp tool repairs the shell without changing build231 or assertions.
+After regeneration, `npm run test:longreads` and `npm run test:homeward-lookup`
+both passed in Chromium and WebKit on Mac. Chromium's cold service-worker offline
+relaunch passed; WebKit retains its documented Playwright limitation. The lookup
+test recorded314 sentences,43 words,34 phrases and zero AI requests in each engine.
+
 ## Files and schema
 
 The previously applied migration `rss_readiness_shared_cache` is represented by
