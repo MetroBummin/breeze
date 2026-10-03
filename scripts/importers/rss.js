@@ -247,7 +247,7 @@ async function rssQualityFeed(feed){
   // Legacy custom sources stay saved locally, but are not sent for paid evaluation.
   if(id<0)return {entries:[],pending:false};
   const response=await fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/rss-quality?feed='+id,{
-    headers:{apikey:SB_KEY},signal:AbortSignal.timeout(12000)
+    headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},signal:AbortSignal.timeout(12000)
   });
   if(!response.ok)throw new Error('quality_unavailable');
   const result=await response.json();

@@ -310,6 +310,18 @@ test('candidate fallback is eligible without relabeling approval; errors and all
 test('provider exceptions retain their processing stage without logging raw error text',async()=>{
   const events=[],store=memoryStore();
   await service(store,{evaluate:async()=>{throw Error('sensitive provider payload');},log:event=>events.push(event)}).refresh(0);
-  assert.equal(events.length,3);assert.ok(events.every(e=>e.stage==='provider' && e.code==='transient_failure'));
+  assert.equal(events.filter(e=>e.stage==='cache' && e.code==='miss').length,3);
+  const failures=events.filter(e=>e.stage==='provider');
+  assert.equal(failures.length,3);assert.ok(failures.every(e=>e.code==='transient_failure'));
   assert.ok(!JSON.stringify(events).includes('sensitive'));
+});
+
+test('quality request supplies the existing public anon JWT to the protected gateway',async()=>{
+  const source=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8');let headers;
+  const ctx=vm.createContext({URL,AbortSignal,Date,Map,Set,WeakMap,SB_URL:'https://example.supabase.co',SB_KEY:'public-anon-fixture',
+    fetch:async(_url,options)=>{headers=options.headers;return Response.json({version:VERSION,entries:[],pending:true});}});
+  vm.runInContext(source+'\nglobalThis.feed=RSS_FEEDS[0];',ctx);
+  await ctx.rssQualityFeed(ctx.feed);
+  assert.equal(headers.apikey,'public-anon-fixture');assert.equal(headers.Authorization,'Bearer public-anon-fixture');
+  assert.ok(source.includes("RSS_QUALITY_MODE = 'off'"));
 });
