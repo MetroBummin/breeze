@@ -30,7 +30,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  }await page.waitForFunction(()=>!readerPositionPending());
  await page.evaluate(()=>{
   // Use a source marker as in other original-format presentation fixtures.
-  window.qaOpen=async kind=>{
+  window.qaOpen=async()=>{
    closePanel();cancelOriginalPinch();setOriginalZoom(2);readerScrollTo(0);
    await new Promise(r=>setTimeout(r,300));
    const marker=document.createElement('span');marker.className='original-selection-marker';
@@ -39,8 +39,6 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    words.minimum={word:'minimum',clicked:'minimum',ko:'최소',status:1,addedAt:1,
     example:'A minimum value.',defs:[],kodict:[]};
    selectWord('minimum',marker,true);window.qaLife=wordLookupLife;
-   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-   if(kind!=='mini'){expandWordDetail();if(kind==='detail')await new Promise(r=>setTimeout(r,350));}
   };
   window.qaTouch=(type,ids,spread=100,cancelable=true,changed=ids)=>{
    const target=document.querySelector('.pdf-source-page canvas');
@@ -53,10 +51,19 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    document.getElementById('word-peek').hidden&&!document.getElementById('panel').classList.contains('on')&&
    !wordMorphAnimation&&!wordLookupAlive(qaLife);
  });
+ const openLookup=async kind=>{
+  await page.evaluate(()=>qaOpen());
+  await page.waitForFunction(()=>wordPeekActive&&!document.getElementById('word-peek').hidden);
+  if(kind!=='mini'){
+   await page.evaluate(()=>expandWordDetail());
+   assert.equal(await page.evaluate(()=>wordDetailAnchored),true,kind+' fixture must open anchored detail');
+   if(kind==='detail')await page.waitForFunction(()=>!wordMorphAnimation);
+  }
+ };
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);
   for(const kind of ['mini','detail','morph'])for(const spread of [60,160]){
-   await page.evaluate(kind=>qaOpen(kind),kind);
+   await openLookup(kind);
    assert.equal(await page.evaluate(()=>wordSurfaceAnchored()),true);
    await page.evaluate(()=>qaTouch('touchstart',[1,2]));
    assert.equal(await page.evaluate(()=>originalPinchBusy()&&qaClosed()),true,'acquisition must dismiss '+kind);
@@ -69,7 +76,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   }
  }
  for(const ending of ['cancel','noncancelable','blur','lost-end']){
-  await page.evaluate(()=>qaOpen('morph'));
+  await openLookup('morph');
   await page.evaluate(()=>qaTouch('touchstart',[1,2]));
   await page.evaluate(ending=>{
    if(ending==='cancel'){qaTouch('touchcancel',[2],100,true,[1]);qaTouch('touchcancel',[],100,true,[2]);}
@@ -84,7 +91,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(()=>qaClosed()),true);
  }
  // A legitimate new word lookup can present and expand again.
- await page.evaluate(()=>qaOpen('detail'));
+ await openLookup('detail');
  assert.equal(await page.evaluate(()=>wordDetailAnchored&&wordLookupOpen()),true);
  // Modal vocabulary detail blocks pinch rather than being dismissed by it.
  await page.evaluate(()=>{closePanel();selectWord('minimum',null);qaTouch('touchstart',[1,2]);});
@@ -107,14 +114,25 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    }
   },surface);
   await page.waitForFunction(()=>!readerPositionPending());await page.waitForTimeout(400);
-  await page.evaluate(async()=>{
+  await page.evaluate(()=>{
    const marker=document.createElement('span');marker.style.cssText='position:fixed;left:200px;top:160px;width:50px;height:22px';document.getElementById('v-read').append(marker);
-   selectWord('minimum',marker,true);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));expandWordDetail();
+   selectWord('minimum',marker,true);
+   // A late mode-landing scroll may leave the mini pill waiting for scroll idle.
+   // Exercise that boundary deliberately: two animation frames do not prove
+   // that expandWordDetail can act on a visible pill (its required precondition).
+   readerScroller().scrollTop+=1;scrollGesture();
+  });
+  await page.waitForFunction(()=>wordPeekActive&&!document.getElementById('word-peek').hidden);
+  await page.evaluate(()=>expandWordDetail());
+  assert.equal(await page.evaluate(()=>wordDetailAnchored),true,surface+' detail must be open before multitouch');
+  await page.evaluate(()=>{
    const target=document.getElementById(currentReaderMode==='text'?'rtext':'original-stage');
    const touch=id=>({identifier:id,touchType:'direct',target,clientX:200+100*id,clientY:500});
    const event=new Event('touchstart',{bubbles:true,cancelable:true});Object.defineProperties(event,{touches:{value:[touch(1),touch(2)]},changedTouches:{value:[touch(2)]}});target.dispatchEvent(event);
   });
-  assert.equal(await page.evaluate(()=>!originalPinchBusy()&&wordDetailAnchored),true,surface+' acquired PDF zoom');
+  const state=await page.evaluate(()=>({pinch:originalPinchBusy(),detail:wordDetailAnchored,lookup:wordLookupOpen(),pillHidden:document.getElementById('word-peek').hidden,mode:currentReaderMode}));
+  assert.equal(state.pinch,false,surface+' acquired PDF zoom: '+JSON.stringify(state));
+  assert.equal(state.detail,true,surface+' lost anchored word detail: '+JSON.stringify(state));
   await page.evaluate(()=>readerScroller().scrollTop+=30);await page.waitForFunction(()=>!wordLookupOpen());
  }
  assert.deepEqual(errors,[]);console.log(engine.name()+': word pinch dismissal, transitions, interruptions, PDF/text/EPUB passed');

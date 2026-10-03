@@ -25,7 +25,7 @@ for(const slug of ['scandal-in-bohemia','red-headed-league']){
     assert.doesNotMatch(adapted,/Gutenberg|START OF|END OF|A CASE OF IDENTITY/);
     const catalog=context.pendingLongReads(),story=catalog.find(x=>x.id==='sherlock-holmes-'+slug);
     assert.equal(story.sha256,m.adaptedSha256);assert.equal(story.wordCount,m.adaptedWords);
-    assert.equal(story.cover,'','Another story’s titled cover must not be reused');
+    assert.equal(story.cover,`assets/longreads/covers/${slug}.png`,'Each story uses its own approved titled cover');
     assert.match(story.editionNote,/not Doyle’s verbatim text/);
     assert.equal(new Set(catalog.map(x=>x.id)).size,4);
     if(slug==='scandal-in-bohemia'){

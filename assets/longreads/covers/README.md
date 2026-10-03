@@ -13,6 +13,16 @@ New imports and catalog cards use it. At startup, existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. An existing
 custom cover is preserved; source text and reading identity are never replaced.
 
-A Scandal in Bohemia and The Red-Headed League have no approved title-correct
-artwork in this task. Their text covers remain; the Speckled Band image and its
-unselected alternatives must not be reused for those titles.
+The user subsequently requested both remaining covers. The parent generated and
+approved title-specific images in the same series; the Mac consumer materialized
+and inspected the actual pixels before copying them unchanged:
+
+| Asset | Library identity | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| `scandal-in-bohemia.png` | `libfile_49171db645148191875d64c2e1194fa8` | 2,311,730 | `b9621e70c0d490ab7be26f922e9378299bfdfd102f5474b6979b324e3a2b7723` |
+| `red-headed-league.png` | `libfile_bb968c644d048191a1f472cd32d6e95f` | 2,329,351 | `9a6787e533ce4789d3d907ada917fe229f2b13f4a79806ca1964fa38aac84c81` |
+
+Both are 1024 × 1536, Library version 0. Source names are respectively
+`a-scandal-in-bohemia.png` and `the-red-headed-league.png`. Titles, author and
+Lightly Modernized labels are present and match their own catalog records.
+The original selected Speckled Band image remains byte-for-byte unchanged.

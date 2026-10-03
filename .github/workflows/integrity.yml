@@ -50,7 +50,7 @@ jobs:
           path: /tmp/breeze-holmes-proof/
           if-no-files-found: ignore
           retention-days: 7
-      - name: Scribble erase and edge navigation in Chromium and WebKit
+      - name: Reader gestures, pinch dismissal and covers in Chromium and WebKit
         run: node tests/verify-reader-input-gestures-browser.mjs && node tests/verify-word-pinch-browser.mjs && node tests/verify-client-polish-browser.mjs
       - name: Reader input gesture proof
         if: always()

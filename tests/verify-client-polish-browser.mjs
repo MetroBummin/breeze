@@ -32,6 +32,16 @@ try{for(const engine of [chromium,webkit]){
  await page.evaluate(async id=>{const b=books.find(b=>b.longReadId===id);b.cover='custom-cover';await bookPut(b);await restoreMissingLongReadCovers();},id);
  assert.equal(await page.evaluate(id=>books.find(b=>b.longReadId===id).cover,id),'custom-cover','custom cover preserved');
  await page.evaluate(async id=>{const b=books.find(b=>b.longReadId===id);delete b.cover;await bookPut(b);await restoreMissingLongReadCovers();},id);
+ const otherCovers=[['sherlock-holmes-scandal-in-bohemia',2311730],['sherlock-holmes-red-headed-league',2329351]];
+ for(const [coverId] of otherCovers){
+  await page.waitForFunction(id=>{const img=document.querySelector(`[data-longread-id="${id}"] img`);return img?.complete&&img.naturalWidth===1024;},coverId);
+  await page.evaluate(async id=>{const b=await importLongRead(LONG_READS.find(read=>read.id===id));delete b.cover;await bookPut(b);},coverId);
+ }
+ await page.reload();await page.evaluate(()=>homeReady);
+ for(const [coverId,size] of otherCovers){
+  await page.waitForFunction(id=>books.find(b=>b.longReadId===id)?.cover,coverId);
+  assert.equal(await page.evaluate(async id=>(await imgGet(books.find(b=>b.longReadId===id).cover)).size,coverId),size,coverId+' gets its own approved cover');
+ }
  await page.evaluate(()=>{
   const at=Date.now();words=Object.fromEntries(['alpha','beta','gamma','delta'].map((word,i)=>[word,{word,clicked:word,forms:[word],ko:'저장된 뜻 '+i,example:'We remember '+word+' in a saved sentence.',book:'Saved book',status:1,addedAt:at-i*1000,up:at-i*1000}]));saveWords();
   let view=BreezeReview.startJourney(readVocabularyReview(),words,at);

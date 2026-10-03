@@ -19,7 +19,9 @@ were regenerated from the combined source.
   `800b87d1e50a18fd622b9f8df1162bebf94c4f2e158bb470855bcd2c3fb13da2`.
   Existing coverless bundled books receive missing artwork after startup without
   blocking Home. Custom covers, deleted books and original text remain intact.
-  Scandal in Bohemia and Red-Headed League have no approved title-correct cover.
+  The later user-requested Scandal in Bohemia and Red-Headed League covers are
+  also applied to their exact catalog identities; source hashes and Library
+  provenance are recorded in `assets/longreads/covers/README.md`.
 - Scribble erase is removed, superseding the earlier request to simplify it.
   Scratch/loop strokes remain ordinary ink. Reader Aa settings expose the default
   OFF “두 손가락 더블탭 실행 취소” for supported PDF original view. Exactly two
@@ -79,3 +81,33 @@ rotation, cancellation, interruptions and undo/redo persistence.
 RSS remains OFF. No secrets, release number, archive, upload, production rollout
 or main merge is part of this draft. The integration owner waits for parent
 coordination before merging or selecting a release number.
+
+
+## CI fixture follow-up and remaining covers
+
+CI on `00fec12` passed contracts, native ownership and the new undo matrix in
+both engines, but WebKit failed the PR86 non-PDF control at line 117. Its combined
+assertion `!originalPinchBusy() && wordDetailAnchored` did not distinguish an
+unexpected pinch from an unprepared detail view.
+
+The original fixture called `expandWordDetail()` after two animation frames.
+That function intentionally does nothing while the mini pill is hidden. The
+production mini pill waits for 250 ms of scroll idle; late mode/viewport scrolls
+can therefore leave the fixture unprepared. A focused recent-scroll reproduction
+on both unchanged PR86 `a09f1a4` and PR87 records `pillHidden: true`,
+`expanded.detail: false`, `pinch: false`: the same composite assertion fails
+without any PDF zoom acquisition. Normal local full runs passed both revisions.
+This establishes an inherited timing flaw; the original CI did not record the
+individual booleans, so its exact timing cannot be reconstructed from that log.
+
+The fixture now deliberately exercises recent scroll, waits for a visible mini
+pill, expands it and asserts the anchored-detail precondition before multitouch.
+Post-touch no-pinch and retained-detail assertions are separate and carry state
+snapshots; actual scroll must still dismiss the lookup. The targeted reproduction
+passes against PR86 and PR87 with this correction. Application behavior and
+contracts are unchanged; no fixed sleep increase or weakened assertion.
+
+Both subsequently approved covers were materialized through Library on the Mac
+and visually checked. Catalog identity and exact checksum tests protect all
+three titles; browser tests cover new and existing-book artwork and responsive
+shelf previews. Final combined verification includes these assets.

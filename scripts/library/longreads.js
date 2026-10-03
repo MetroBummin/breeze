@@ -127,7 +127,7 @@ const LONG_READS = [
   {
     "id": "sherlock-holmes-scandal-in-bohemia",
     "file": "assets/longreads/scandal-in-bohemia.txt",
-    "cover": "",
+    "cover": "assets/longreads/covers/scandal-in-bohemia.png",
     "coverPosition": "center top",
     "title": "A Scandal in Bohemia",
     "originalTitle": "A Scandal in Bohemia (1891)",
@@ -147,7 +147,7 @@ const LONG_READS = [
   {
     "id": "sherlock-holmes-red-headed-league",
     "file": "assets/longreads/red-headed-league.txt",
-    "cover": "",
+    "cover": "assets/longreads/covers/red-headed-league.png",
     "coverPosition": "center top",
     "title": "The Red-Headed League",
     "originalTitle": "The Red-Headed League (1891)",
