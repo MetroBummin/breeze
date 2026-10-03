@@ -46,6 +46,7 @@ jobs:
           npm --version
           echo "Controlled CI_BUILD_NUMBER=$CI_BUILD_NUMBER; the actual Xcode Cloud counter is unverified."
       - name: Run original post-clone script
+        shell: bash
         env:
           CI_BUILD_NUMBER: ${{ matrix.build }}
         run: sh -x ios/App/ci_scripts/ci_post_clone.sh 2>&1 | tee "$RUNNER_TEMP/post-clone.log"
