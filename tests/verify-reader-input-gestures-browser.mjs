@@ -64,7 +64,18 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await page.evaluate(()=>toggleAa());await toggle.click();assert.equal(await toggle.getAttribute('aria-pressed'),'true');await page.evaluate(()=>closeAa());
  await pair();assert.equal(await count(),1,'one two-finger tap is not double tap');
  await page.waitForTimeout(60);await pair();await saved();assert.equal(await count(),0,'two pairs undo one edit');
+ assert.equal(await page.evaluate(()=>!!originalPinch||originalPinchTouches||originalPdfRenderPending||originalPinchFrame!==0),false,'tap completion releases pinch and queued paint');
  await page.locator('[data-ink-redo]').click();await saved();assert.equal(await count(),1,'toolbar redo restores gesture undo');
+ if(engine===chromium){
+  const cdp=await context.newCDPSession(page),rect=await page.locator('.pdf-source-page[data-page="1"] canvas').boundingBox();
+  for(let i=0;i<2;i++){
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:rect.x+110,y:rect.y+200,id:1},{x:rect.x+180,y:rect.y+200,id:2}]});
+   await page.waitForTimeout(40);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(60);
+  }
+  await saved();assert.equal(await count(),0,'trusted Chromium pointer/touch delivery undoes once');
+  await page.locator('[data-ink-redo]').click();await saved();assert.equal(await count(),1);await cdp.detach();
+ }
+
  for(const options of [{move:25},{cancel:true},{third:true}]){
   await double(options);assert.equal(await count(),1,JSON.stringify(options));
   await page.evaluate(()=>setOriginalZoom(1));await page.waitForTimeout(400);

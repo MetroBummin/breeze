@@ -182,6 +182,7 @@ function finishOriginalPinch(){
     // Stationary taps never changed paper geometry; do not create a resize or
     // deferred restoration between taps by committing an identical zoom.
     originalPinch.stage.classList.remove('pinching');originalPinch=null;
+    originalPinchFrame=0;applyOriginalZoomTransform();
     if(typeof pinReaderChrome==='function')pinReaderChrome(false,'zoom');
     return;
   }
@@ -274,6 +275,7 @@ function originalPinchEnd(event){
     finishOriginalPinch();
     originalPinchTouches = false;
     if(undo)BreezePdfInk.undo();
+    resumeOriginalPdfPaint();
   }
 }
 (function(){

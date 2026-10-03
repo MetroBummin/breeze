@@ -39,3 +39,20 @@ test('catalog has separate stable identity and checksum for complete local text'
   context.books.push({longReadId:story.id});
   assert.deepEqual(Array.from(context.pendingLongReads(),item=>item.id),['backroom-homeward-bound','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league']);
 });
+
+test('cover repair cannot overwrite a concurrent custom cover or restore a deleted book',async()=>{
+ for(const action of ['custom','delete']){
+  let resume;const gate=new Promise(resolve=>resume=resolve),book={id:'saved',longReadId:'sherlock-holmes-speckled-band'},writes=[];
+  const context={console,Set,books:[book],AbortController,setTimeout,clearTimeout,
+   fetch:async()=>({ok:true,blob:async()=>({size:2563098,type:'image/png'})}),
+   imgPut:async key=>{writes.push(key);await gate;},bookPut:async()=>writes.push('book'),renderAllBookViews(){}};
+  new Script(read('scripts/library/longreads.js')).runInNewContext(context);
+  const pending=context.restoreMissingLongReadCovers();
+  for(let i=0;i<10&&!writes.length;i++)await Promise.resolve();
+  assert.equal(writes[0],'saved|bundled-cover');
+  if(action==='custom')book.cover='saved|cover';else context.books=[];
+  resume();await pending;
+  assert.equal(writes.includes('book'),false,action);
+  if(action==='custom')assert.equal(book.cover,'saved|cover');else assert.equal(context.books.length,0);
+ }
+});

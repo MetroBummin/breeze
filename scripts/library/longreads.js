@@ -277,8 +277,9 @@ async function applyLongReadCover(read,options={}){
     if(!blob.size||!/^image\/(jpeg|png|gif|webp)$/i.test(blob.type))return;
     // A saved book may be deleted or receive a custom cover while fetching.
     if(!books.includes(book)||(options.onlyMissing&&book.cover))return;
-    const key=book.id+'|cover';
+    const key=book.id+(options.onlyMissing?'|bundled-cover':'|cover');
     await imgPut(key,blob);
+    if(!books.includes(book)||(options.onlyMissing&&book.cover))return;
     book.cover=key;book.coverPosition=read.coverPosition;
     await bookPut(book);renderAllBookViews();
   }catch(error){console.warn('긴 글 표지를 씌우지 못했습니다:',error&&error.message);}
