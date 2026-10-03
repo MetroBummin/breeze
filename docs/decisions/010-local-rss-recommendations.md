@@ -119,3 +119,19 @@ readiness/quality pipeline and offline paired evaluation. The existing loader
 and this decision's visible ranking remain the default. A later reviewed client
 activation can select its explicitly approved/candidate inventory; no rollout
 is authorized by adding the code.
+
+## Narrow promotional junk exclusion (2026-10-03)
+
+`rssObviousPromo` rejects only a promotional headline (coupon/promo/discount/voucher
+codes, or an urgent percentage-off deal) with all three supplied-text signals:
+redemption/checkout instructions, explicit savings, and sales boilerplate such as
+verified codes, expiry or shop-now language. Developed bodies and editorial
+signals for reviews, buying guides, reporting, research, discussion or explanation
+stay visible. A lone discount keyword or uncertain snippet never rejects an entry.
+This is a small local rule, not a completeness or general quality judgment.
+
+The parser excludes matching entries before cover/body preparation. Ranking and
+card selection recheck cached candidates, so the next render removes matching
+cards even outside the Home ranker. RSS candidates/decoded cards are transient;
+no cache migration or saved-article deletion occurs. Existing saved material is
+unchanged. The Jev pipeline remains OFF; no backend or paid calls are added.

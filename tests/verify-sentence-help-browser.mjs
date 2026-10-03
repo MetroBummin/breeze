@@ -44,6 +44,12 @@ try{
  assert.equal(await page.locator('#ps-easy-skeleton').isVisible(),true);
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);
+  // setViewportSize can resolve before the queued resize dismissal. Observe
+  // the new viewport and its handled compact state before deciding to reopen.
+  await page.waitForFunction(({width,height})=>{
+   const view=sentenceViewport();
+   return Math.abs(view.width-width)<1 && Math.abs(view.height-height)<1 && sentenceLastCompact===sentenceCompactViewport();
+  },{width,height});
   // Crossing the existing sheet/modal boundary ends the lifetime. Reopen and
   // explicitly request the same pending state to verify each real layout.
   if(await page.evaluate(()=>!sentenceLookupOpen())){await open();await page.locator('#ps-easy-button').click();}
