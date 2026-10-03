@@ -115,7 +115,7 @@ function makeWorld(){
 function makeContext(world){
   const { doc, nodes } = world;
   const context = {
-    document: doc,
+    document: doc, readerModeChangeToken:0,
     performance: { now: () => Date.now() },
     /* 꾹 누르기 타이머를 세어 둡니다. "창이 임자인 손짓에는 꾹 누르기가 아예
        없다"는 것은 결과(문장이 안 뜬다)가 아니라 **타이머를 걸지 않는다**로

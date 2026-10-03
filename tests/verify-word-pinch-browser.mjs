@@ -14,9 +14,10 @@ const server=createServer((req,res)=>{
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
+ // Match the existing PDF suites: WebKit needs persistent IndexedDB Blob storage.
+ const browser=await engine.launchPersistentContext('',{headless:true,viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block',executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  try{
- const page=await browser.newPage({viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'}),errors=[];
+ const page=await browser.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
@@ -24,7 +25,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await page.locator('#fileinput').setInputFiles({name:'lookup-pinch.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture()});
  await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
  await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
- await page.waitForSelector('.pdf-source-page canvas');await page.waitForFunction(()=>!readerPositionPending());
+ try{await page.waitForSelector('.pdf-source-page canvas');}catch(error){
+  console.log('PDF startup',engine.name(),errors,await page.evaluate(()=>({mode:currentReaderMode,session:originalSession&&{kind:originalSession.kind,hash:originalSession.hash},pages:document.querySelectorAll('.pdf-source-page').length})));throw error;
+ }await page.waitForFunction(()=>!readerPositionPending());
  await page.evaluate(()=>{
   // Use a source marker as in other original-format presentation fixtures.
   window.qaOpen=async kind=>{

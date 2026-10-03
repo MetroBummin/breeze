@@ -55,3 +55,19 @@ metadata and rapid expansion, then Pencil and scroll recovery.
 Only a draft feature PR is authorized. No main push, merge, deployment, build-number
 edit, archive or Cloud build request belongs to this change. Release229 settings
 are inherited unchanged from PR85.
+
+## Deferred geometry and CI follow-up
+
+The first CI attempt passed contracts and native ownership, but the new WebKit
+fixture timed out before creating a PDF canvas. The fixture now uses the same
+temporary persistent context as existing PDF tests, required for imported Blob
+storage. Assertions and engine coverage remain intact.
+
+A focused review follow-up reproduced an older tap awaiting PDF geometry opening
+lookup after pinch. Production `openPdfWordAt` now checks the existing
+`readerModeChangeToken` after its await; the dispatch completion checks that same
+generation before doing miss cleanup, so it cannot close a newer lookup. No new
+generation, listener or gesture owner was introduced. Four production-path tests
+fail without this guard and pass with it: during pinch, release, cancellation and
+a fresh lookup before the old geometry resolves. Two controls retain normal
+uninterrupted deferred hit/miss behavior.

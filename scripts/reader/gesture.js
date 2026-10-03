@@ -442,14 +442,18 @@ function endGesture(event){
 
 /* 낱말 찾기는 종이에 따라 기다림이 있을 수 있습니다 — PDF 는 캔버스가 먼저
    보이고 좌표표는 그 뒤에 생깁니다. 끝났는지는 손짓 기록에만 적고, 그 사이에
-   새 손짓이 시작되어도 이 일은 자기 자리로 돌아옵니다. */
+   새 손짓이 시작되어도 이 일은 자기 자리로 돌아옵니다. 화면 좌표의 소유권은
+   기존 readerModeChangeToken으로 확인하므로 핀치 뒤의 새 lookup은 건드리지 않습니다. */
 function dispatchWord(gesture, clientX, clientY){
   countDispatch(gesture, 'WORD');
+  const changeToken=readerModeChangeToken;
   let result;
   try{ result = gesture.surface.openWordAt(clientX, clientY); }
   catch(error){ result = false; }
   if(result && typeof result.then === 'function'){
     result.then(ok=>{ gesture.completed = !!ok;
+      // An invalidated geometry request cannot dismiss a newer lookup either.
+      if(changeToken!==readerModeChangeToken)return;
       if(!ok&&typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
       gestureLog(gesture,'(async)'); },
                 ()=>{ gesture.completed = false; });
