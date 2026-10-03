@@ -191,17 +191,17 @@ class Node {
 function renderer({id='casual-rail',category='all',options=personalized()}={}){
   const rail=new Node();rail.id=id;
   const empty=new Node(), document={activeElement:null,querySelectorAll:()=>[],createElement:()=>new Node()};
-  let groupData=items(),photos=0;
+  let groupData=items(),photos=0,opened=null;
   const ctx=environment({document,books:options.library||[],positions:options.positions||{},
     load:(key,fallback)=>key==='breeze.feed-category'?category:fallback});
   // Network and visual DOM are replaced; production ranking/paint stays intact.
   ctx.rssAlignRailStart=rail=>{rail.scrollLeft=0;delete rail.dataset.rssResetStart;};
   ctx.rssSources=()=>feeds;
   ctx.loadRss=async()=>groupData;
-  ctx.rssCard=entry=>{const card=new Node('casual rss-card');card.dataset.rssUrl=entry.url;card.hidden=true;return card;};
+  ctx.rssCard=entry=>{const card=new Node('casual rss-card');card.dataset.rssUrl=entry.url;card.hidden=true;card.onclick=()=>{opened=entry;};return card;};
   ctx.rssCardPhoto=async card=>{photos++;card.hidden=false;
     if(rail.dataset.rssResetStart){rail.scrollLeft=0;delete rail.dataset.rssResetStart;}return true;};
-  return {rail,empty,ctx,document,setGroups:value=>{groupData=value;},photos:()=>photos,
+  return {rail,empty,ctx,document,setGroups:value=>{groupData=value;},photos:()=>photos,opened:()=>opened,
     paint:force=>ctx.renderRssCards(rail,force,empty),urls:()=>rail.children.filter(n=>n.classList.contains('rss-card')).map(n=>n.dataset.rssUrl)};
 }
 test('Home render uses ranking, preserves decoded nodes, and refreshes after reading changes',async()=>{
@@ -242,4 +242,20 @@ test('ranking has no storage or network side effects',()=>{
   const ctx=environment({fetch:forbidden,save:forbidden,localStorage:{setItem:forbidden},
     crypto:{randomUUID:forbidden}});
   assert.equal(ctx.rssRankRecommendations(items(),{...personalized(),now,sources:feeds}).length,4);
+});
+
+test('same URL refresh replaces a changed verdict/import target/title and never restores revoked cards',async()=>{
+  for(const field of ['key','readUrl','title','all']){
+    const r=renderer({options:{}}),old={...items()[0][0],readUrl:'https://example.com/old-target',title:'Old title',quality:{key:'old',status:'approved',version:'v2'}};
+    r.setGroups([[old]]);await r.paint();const oldCard=r.rail.querySelector('.rss-card');oldCard.onclick();
+    assert.equal(r.opened().readUrl,old.readUrl);
+    const fresh={...old,quality:{...old.quality}};
+    if(field==='key' || field==='all')fresh.quality.key='new';
+    if(field==='readUrl' || field==='all')fresh.readUrl='https://example.com/new-target';
+    if(field==='title' || field==='all')fresh.title='New title';
+    r.setGroups([[fresh]]);await r.paint(true);const next=r.rail.querySelector('.rss-card');next.onclick();
+    assert.equal(r.opened().quality.key,fresh.quality.key);assert.equal(r.opened().readUrl,fresh.readUrl);assert.equal(r.opened().title,fresh.title);
+    assert.notEqual(next,oldCard,field);assert.equal(r.rail.querySelectorAll('.rss-card').length,1);
+    r.setGroups([]);await r.paint(true);assert.equal(r.rail.querySelectorAll('.rss-card').length,0);
+  }
 });

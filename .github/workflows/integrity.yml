@@ -50,6 +50,8 @@ jobs:
           path: /tmp/breeze-holmes-proof/
           if-no-files-found: ignore
           retention-days: 7
+      - name: RSS shadow and approval regressions
+        run: node tests/verify-rss-quality-browser.mjs
       - name: Vocabulary review in Chromium and WebKit
         run: |
           status=0

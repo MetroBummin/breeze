@@ -1,0 +1,1514 @@
+{
+  "referenceCount": 106,
+  "totals": {
+    "baseline": {
+      "pass": 17,
+      "reject": 4,
+      "pending": 73,
+      "error": 12,
+      "unmeasured": 0,
+      "usable": 17,
+      "approved": 17,
+      "candidates": 0,
+      "unresolvedCauses": {
+        "extraction_confidence": 70,
+        "invalid_evaluation": 5,
+        "promotion_confidence": 1,
+        "incomplete": 1,
+        "bad_url": 6,
+        "evidence_confidence": 2
+      }
+    },
+    "redesign": {
+      "pass": 0,
+      "reject": 0,
+      "pending": 0,
+      "error": 0,
+      "unmeasured": 106,
+      "usable": 0,
+      "approved": 0,
+      "candidates": 0,
+      "unresolvedCauses": {
+        "not_run": 106
+      }
+    }
+  },
+  "sources": {
+    "All That's Interesting": {
+      "baseline": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 11,
+        "error": 1,
+        "unmeasured": 0,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "extraction_confidence": 11,
+          "invalid_evaluation": 1
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 12,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 12
+        }
+      }
+    },
+    "Bloody Disgusting": {
+      "baseline": {
+        "pass": 4,
+        "reject": 0,
+        "pending": 8,
+        "error": 0,
+        "unmeasured": 0,
+        "usable": 4,
+        "approved": 4,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "extraction_confidence": 7,
+          "promotion_confidence": 1
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 12,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 12
+        }
+      }
+    },
+    "Dexerto": {
+      "baseline": {
+        "pass": 5,
+        "reject": 0,
+        "pending": 13,
+        "error": 1,
+        "unmeasured": 0,
+        "usable": 5,
+        "approved": 5,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "extraction_confidence": 13,
+          "invalid_evaluation": 1
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 19,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 19
+        }
+      }
+    },
+    "Medium": {
+      "baseline": {
+        "pass": 4,
+        "reject": 1,
+        "pending": 3,
+        "error": 3,
+        "unmeasured": 0,
+        "usable": 4,
+        "approved": 4,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "invalid_evaluation": 2,
+          "extraction_confidence": 3,
+          "incomplete": 1
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 11,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 11
+        }
+      }
+    },
+    "NASA": {
+      "baseline": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 6,
+        "unmeasured": 0,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "bad_url": 6
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 6,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 6
+        }
+      }
+    },
+    "ProPublica": {
+      "baseline": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 12,
+        "error": 0,
+        "unmeasured": 0,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "extraction_confidence": 12
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 12,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 12
+        }
+      }
+    },
+    "TMZ": {
+      "baseline": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 3,
+        "error": 0,
+        "unmeasured": 0,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "extraction_confidence": 3
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 3,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 3
+        }
+      }
+    },
+    "The Conversation": {
+      "baseline": {
+        "pass": 4,
+        "reject": 0,
+        "pending": 14,
+        "error": 0,
+        "unmeasured": 0,
+        "usable": 4,
+        "approved": 4,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "extraction_confidence": 14
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 18,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 18
+        }
+      }
+    },
+    "WIRED": {
+      "baseline": {
+        "pass": 0,
+        "reject": 3,
+        "pending": 9,
+        "error": 1,
+        "unmeasured": 0,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "extraction_confidence": 7,
+          "evidence_confidence": 2,
+          "invalid_evaluation": 1
+        }
+      },
+      "redesign": {
+        "pass": 0,
+        "reject": 0,
+        "pending": 0,
+        "error": 0,
+        "unmeasured": 13,
+        "usable": 0,
+        "approved": 0,
+        "candidates": 0,
+        "unresolvedCauses": {
+          "not_run": 13
+        }
+      }
+    }
+  },
+  "pairs": [
+    {
+      "id": "RSS-001",
+      "url": "https://allthatsinteresting.com/cliff-house-san-francisco",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-002",
+      "url": "https://allthatsinteresting.com/dorothea-lange-photos",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-003",
+      "url": "https://allthatsinteresting.com/elvita-adams",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-004",
+      "url": "https://allthatsinteresting.com/ethiopia-grat-beal-gibri",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-005",
+      "url": "https://allthatsinteresting.com/greece-ancient-royal-gymnasium",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-006",
+      "url": "https://allthatsinteresting.com/james-dean-porsche",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-007",
+      "url": "https://allthatsinteresting.com/kennedy-compound",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-008",
+      "url": "https://allthatsinteresting.com/magic-bullet-theory",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-009",
+      "url": "https://allthatsinteresting.com/norellraptor-barsboldi-discovered",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-010",
+      "url": "https://allthatsinteresting.com/rusty-spotted-cat",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-011",
+      "url": "https://allthatsinteresting.com/titanic-lifeboats",
+      "source": "All That's Interesting",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "invalid_evaluation",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-012",
+      "url": "https://allthatsinteresting.com/turkey-ancient-shipwreck-rhosus-pottery",
+      "source": "All That's Interesting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-013",
+      "url": "https://bloody-disgusting.com/editorials/3967896/the-strange-legacy-of-anacondas-the-hunt-for-the-blood-orchid-the-last-big-screen-snake-movie-before-the-reboot/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-014",
+      "url": "https://bloody-disgusting.com/movie/3969472/erie-review-plays-fast-and-loose-with-found-footage/",
+      "source": "Bloody Disgusting",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-015",
+      "url": "https://bloody-disgusting.com/movie/3969876/10-must-watch-horror-movies-releasing-in-october/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-016",
+      "url": "https://bloody-disgusting.com/movie/3970166/chase-infiniti-to-star-in-lionsgates-portrait-of-god-with-sam-raimi-and-jordan-peele-producing/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-017",
+      "url": "https://bloody-disgusting.com/movie/3970169/river-acclaimed-slasher-starring-jane-levy-and-jessica-rothe-releasing-january-2027/",
+      "source": "Bloody Disgusting",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-018",
+      "url": "https://bloody-disgusting.com/movie/3970184/slayground-posters-from-a24-welcome-you-to-a-haunted-house-with-no-exit/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-019",
+      "url": "https://bloody-disgusting.com/movie/3970206/henry-portrait-of-a-serial-killer-4k-ultra-hd-blu-ray/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-020",
+      "url": "https://bloody-disgusting.com/movie/3970240/twilight-of-the-dead-filming-wraps-on-kate-beckinsale-zombie-movie-based-on-george-a-romero-story/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-021",
+      "url": "https://bloody-disgusting.com/news/3970198/scarescore/",
+      "source": "Bloody Disgusting",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-022",
+      "url": "https://bloody-disgusting.com/news/3970212/blumhouse-popcorn-bucket-regal-cinemas/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "promotion_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-023",
+      "url": "https://bloody-disgusting.com/video-games/3970138/everything-coming-to-dead-by-daylight-this-halloween-blighted-jason-voorhees-diablo-stranger-things-and-more/",
+      "source": "Bloody Disgusting",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-024",
+      "url": "https://bloody-disgusting.com/video-games/3970139/illfonic-teases-big-plans-for-the-season-for-halloween-the-game/",
+      "source": "Bloody Disgusting",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-025",
+      "url": "https://www.dexerto.com/entertainment/100-thieves-admits-we-messed-up-after-ai-design-sparks-runescape-merch-backlash-3414244/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-026",
+      "url": "https://www.dexerto.com/entertainment/amazon-finally-answers-kindle-fans-calls-for-physical-page-turn-buttons-3414709/",
+      "source": "Dexerto",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-027",
+      "url": "https://www.dexerto.com/entertainment/arnold-schwarzenegger-terminates-real-ai-robots-judgment-day-style-using-molten-steel-3414772/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-028",
+      "url": "https://www.dexerto.com/entertainment/audible-will-soon-let-you-talk-to-audiobook-characters-with-new-ai-feature-3414556/",
+      "source": "Dexerto",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-029",
+      "url": "https://www.dexerto.com/entertainment/google-reveals-conveyor-belt-keyboard-that-brings-the-keys-to-you-3414464/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-030",
+      "url": "https://www.dexerto.com/entertainment/gypsy-rose-responds-after-partner-ken-urker-found-dead-on-his-birthday-3414822/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-031",
+      "url": "https://www.dexerto.com/entertainment/japan-raises-foreign-residency-fee-by-20x-as-immigration-rules-tighten-3414403/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-032",
+      "url": "https://www.dexerto.com/entertainment/japans-newest-attraction-lets-you-battle-in-robot-suits-with-health-points-and-special-moves-3414362/",
+      "source": "Dexerto",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-033",
+      "url": "https://www.dexerto.com/entertainment/man-arrested-after-faking-medical-emergency-to-try-and-escape-63-restaurant-bill-3414920/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-034",
+      "url": "https://www.dexerto.com/entertainment/substitute-teacher-fired-for-offering-students-extra-credit-if-they-fund-her-ecuador-trip-3414511/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-035",
+      "url": "https://www.dexerto.com/entertainment/who-is-benjamin-stachio-viral-triple-mustache-man-with-thick-neck-is-actually-an-ai-character-3414228/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-036",
+      "url": "https://www.dexerto.com/food/doordash-is-testing-an-ai-agent-that-orders-your-food-through-text-3414220/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-037",
+      "url": "https://www.dexerto.com/food/doordashs-new-drone-delivery-could-get-chipotle-to-your-door-in-under-5-minutes-3414212/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-038",
+      "url": "https://www.dexerto.com/food/mcdonalds-addresses-claims-ai-is-being-used-to-determine-menu-prices-3414505/",
+      "source": "Dexerto",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-039",
+      "url": "https://www.dexerto.com/food/taco-bell-is-giving-duolingos-mascot-its-own-sauce-in-taco-day-collab-3414480/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-040",
+      "url": "https://www.dexerto.com/twitch/kai-cenat-threatens-lawsuit-after-reggie-makes-abuse-allegations-involving-rakai-3414648/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-041",
+      "url": "https://www.dexerto.com/twitch/man-arrested-after-twitch-streamer-accuses-him-of-sexual-assault-during-disneyland-stream-3414231/",
+      "source": "Dexerto",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-042",
+      "url": "https://www.dexerto.com/twitch/shroud-says-streaming-in-2026-is-depressing-as-fewer-viewers-interact-in-chat-3414260/",
+      "source": "Dexerto",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-043",
+      "url": "https://www.dexerto.com/twitch/twitch-chess-streamer-beats-magnus-carlsen-and-celebrates-by-taking-his-pants-off-3414564/",
+      "source": "Dexerto",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "invalid_evaluation",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-044",
+      "url": "https://medium.com/@VisibilityMemobyShraddhapatil/i-compared-how-three-different-website-platforms-get-read-by-ai-crawlers-one-wasnt-close-76d1362d69f4?source=rss------technology-5",
+      "source": "Medium",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-045",
+      "url": "https://medium.com/@anishcp663/how-i-decide-whether-a-new-ai-tool-is-worth-trying-3-questions-i-actually-use-f8eac73a1e25?source=rss------technology-5",
+      "source": "Medium",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "invalid_evaluation",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-046",
+      "url": "https://medium.com/@arbabasfand1/introduction-to-software-coding-scripting-and-programming-44200d35089d?source=rss------technology-5",
+      "source": "Medium",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-047",
+      "url": "https://medium.com/@hendersuoharveynqw43/low-latency-telemetry-streaming-and-resilient-edge-hydration-an-architectural-review-of-06f690474c4a?source=rss------technology-5",
+      "source": "Medium",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "invalid_evaluation",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-048",
+      "url": "https://medium.com/@nagikawato/coca-cola-tested-new-coke-on-nearly-200-000-people-the-data-wasnt-wrong-a27c1d8e0bc6?source=rss------business-5",
+      "source": "Medium",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-049",
+      "url": "https://medium.com/@sathyaru/blicq-transforms-the-colombo-international-book-fair-experience-6cbbcc29ea1e?source=rss------technology-5",
+      "source": "Medium",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-050",
+      "url": "https://medium.com/@useakkant/why-every-nigerian-business-needs-its-own-independence-day-ff36bf86f8ba?source=rss------business-5",
+      "source": "Medium",
+      "baseline": "rejected",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": {
+        "reason": [
+          "promotion"
+        ],
+        "evidence": {
+          "paragraphId": "p34",
+          "excerpt": "👉 Book a Free Discovery Session with Akkant [https://bit.ly/akkantdiscoverysession]"
+        },
+        "contentKey": "a5f60f5b72002e317068ce5ac4b68a9098f345d72b43850bcfebfa095b33675c",
+        "version": "rss-quality-v1:jev-1.13.0:readability-0.6.0-v1"
+      },
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-051",
+      "url": "https://medium.com/@viralenglishmovies/why-some-hollywood-movies-go-viral-and-others-disappear-the-hidden-formula-behind-the-english-32012f950c0a?source=rss------technology-5",
+      "source": "Medium",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-052",
+      "url": "https://medium.com/exprea/churchills-famous-beaches-line-is-one-141-word-sentence-our-tool-couldn-t-see-it-5917dbdbeaf1?source=rss------culture-5",
+      "source": "Medium",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-053",
+      "url": "https://medium.com/illumination/the-gray-space-of-interpretation-9fd4c0f8a1fe?source=rss------culture-5",
+      "source": "Medium",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "incomplete",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-054",
+      "url": "https://pub.aimind.so/the-ai-sovereignty-race-nobodys-explaining-well-8955f35ca548?source=rss------business-5",
+      "source": "Medium",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-055",
+      "url": "https://www.nasa.gov/centers-and-facilities/johnson/reliable-robots-meet-johnsons-dexterous-robotics-team/",
+      "source": "NASA",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "bad_url",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-056",
+      "url": "https://www.nasa.gov/technology/tech-transfer-spinoffs/nasas-machines-for-mars-make-beer-bubbly/",
+      "source": "NASA",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "bad_url",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-057",
+      "url": "https://science.nasa.gov/earth/earth-observatory/cloudy-cloak-over-the-northwest/",
+      "source": "NASA",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "bad_url",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-058",
+      "url": "https://science.nasa.gov/earth/earth-observatory/explosive-intensification-for-hurricane-polo/",
+      "source": "NASA",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "bad_url",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-059",
+      "url": "https://science.nasa.gov/earth/earth-observatory/powerful-storms-continue-to-prowl-the-pacific/",
+      "source": "NASA",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "bad_url",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-060",
+      "url": "https://science.nasa.gov/earth/earth-observatory/rains-swamp-the-gandak-river/",
+      "source": "NASA",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "bad_url",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-061",
+      "url": "https://projects.propublica.org/private-school-requirements-quiz/",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-062",
+      "url": "https://projects.propublica.org/sports-betting-uploader",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-063",
+      "url": "https://www.propublica.org/article/alpha-school-ai-texas-public-schools-mike-morath",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-064",
+      "url": "https://www.propublica.org/article/arizona-english-fluency-legislation-adelita-grijalva",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-065",
+      "url": "https://www.propublica.org/article/california-raw-milk-regulation-emily-marris-moonlight-ridge-farm",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-066",
+      "url": "https://www.propublica.org/article/disabled-voters-nonprofit-funding-cuts-omb",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-067",
+      "url": "https://www.propublica.org/article/draftkings-sports-gambling-problem-vip-fanduel",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-068",
+      "url": "https://www.propublica.org/article/hurricane-helene-flood-prone-areas",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-069",
+      "url": "https://www.propublica.org/article/idaho-faith-healing-multiple-deaths",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-070",
+      "url": "https://www.propublica.org/article/oregon-housing-director-husband-conflict",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-071",
+      "url": "https://www.propublica.org/article/propublica-private-schools-arkansas-west-virginia-north-carolina",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-072",
+      "url": "https://www.propublica.org/article/trumps-plan-to-restrict-mail-voting",
+      "source": "ProPublica",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-073",
+      "url": "https://www.tmz.com/2026/10/01/gypsy-rose-blanchard-ken-urker-death-apparent-overdose/",
+      "source": "TMZ",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-074",
+      "url": "https://www.tmz.com/2026/10/02/cornell-gang-rape-scandal-kathy-hochul-letitia-james-press-conference/",
+      "source": "TMZ",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-075",
+      "url": "https://www.tmz.com/2026/10/02/ken-urker-death-foul-play-not-ruled-out/",
+      "source": "TMZ",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-076",
+      "url": "https://theconversation.com/almost-everyone-naturally-turns-left-when-walking-and-we-still-have-no-idea-why-292144",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-077",
+      "url": "https://theconversation.com/arctic-infrastructure-was-built-on-frozen-ground-drones-and-digital-twins-can-help-spot-the-permafrost-thaw-coming-292097",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-078",
+      "url": "https://theconversation.com/chatbots-as-oracles-how-ai-is-giving-new-life-to-the-ancient-practice-of-seeking-answers-from-inscrutable-sources-289279",
+      "source": "The Conversation",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-079",
+      "url": "https://theconversation.com/christa-pikes-botched-execution-exposes-the-deep-contradictions-of-a-painless-state-imposed-death-293432",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-080",
+      "url": "https://theconversation.com/cities-across-the-world-are-sinking-because-of-groundwater-depletion-but-the-process-can-be-reversed-292669",
+      "source": "The Conversation",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-081",
+      "url": "https://theconversation.com/dozens-of-men-failed-to-stop-an-alleged-gang-rape-at-cornell-heres-the-misperception-that-keeps-bystanders-from-intervening-and-how-to-short-circuit-it-293321",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-082",
+      "url": "https://theconversation.com/ethiopia-is-sliding-back-toward-war-a-look-at-what-is-driving-the-fighting-and-why-it-matters-293073",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-083",
+      "url": "https://theconversation.com/from-suicide-bombers-to-positions-of-authority-the-changing-role-of-women-in-jihadi-groups-292409",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-084",
+      "url": "https://theconversation.com/how-can-the-same-el-nino-cause-drought-in-one-part-of-the-world-and-floods-in-another-293013",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-085",
+      "url": "https://theconversation.com/how-sugar-from-outer-space-became-one-of-the-backbones-of-life-on-earth-293089",
+      "source": "The Conversation",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-086",
+      "url": "https://theconversation.com/manchester-city-supporters-have-been-gaslit-what-happens-now-293249",
+      "source": "The Conversation",
+      "baseline": "approved",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-087",
+      "url": "https://theconversation.com/nina-simone-langston-hughes-and-their-forgotten-creative-collaboration-290878",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-088",
+      "url": "https://theconversation.com/one-in-eight-cancers-are-likely-caused-by-an-infection-worldwide-new-study-292996",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-089",
+      "url": "https://theconversation.com/social-media-hasnt-killed-personal-style-its-killed-how-we-communicate-it-292483",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-090",
+      "url": "https://theconversation.com/teenage-sex-and-death-at-camp-miasma-winks-and-blows-a-blood-soaked-kiss-at-horror-films-of-queer-past-291752",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-091",
+      "url": "https://theconversation.com/the-war-games-problem-computer-science-has-long-understood-what-it-takes-to-keep-ai-under-control-292884",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-092",
+      "url": "https://theconversation.com/us-tech-leaders-are-urgently-calling-for-rules-on-ai-china-already-has-them-292965",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-093",
+      "url": "https://theconversation.com/why-do-some-chimpanzee-mothers-carry-their-dead-infants-for-months-292509",
+      "source": "The Conversation",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-094",
+      "url": "https://www.wired.com/gallery/best-stem-toys-for-kids/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-095",
+      "url": "https://www.wired.com/story/a-flaw-in-chatgpts-mac-app-could-have-let-hackers-grab-sensitive-data/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-096",
+      "url": "https://www.wired.com/story/amazon-says-it-is-going-to-stop-using-ndas-for-data-centers/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-097",
+      "url": "https://www.wired.com/story/best-smart-cat-tracker/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-098",
+      "url": "https://www.wired.com/story/columbia-promo-code/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "evidence_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-099",
+      "url": "https://www.wired.com/story/election-deniers-think-the-gops-terrible-midterm-polling-is-a-psyop/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-100",
+      "url": "https://www.wired.com/story/google-workspace-promo-code/",
+      "source": "WIRED",
+      "baseline": "rejected",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": {
+        "reason": [
+          "promotion"
+        ],
+        "evidence": {
+          "paragraphId": "p2",
+          "excerpt": "Google Workspace grants access to all kinds of productivity features that can help streamline processes and increase communication within a team or organization. It's not free, but"
+        },
+        "contentKey": "1701e1dd8a96d5c9f7c51977cf725a3a06b0589062f1d2fcb5390bcee2380e48",
+        "version": "rss-quality-v1:jev-1.13.0:readability-0.6.0-v1"
+      },
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-101",
+      "url": "https://www.wired.com/story/healthcare-workers-are-tired-of-cleaning-up-palantirs-mess/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-102",
+      "url": "https://www.wired.com/story/nike-promo-code/",
+      "source": "WIRED",
+      "baseline": "error",
+      "redesign": "not_run",
+      "baselineCause": "invalid_evaluation",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-103",
+      "url": "https://www.wired.com/story/peacock-promo-code/",
+      "source": "WIRED",
+      "baseline": "rejected",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": {
+        "reason": [
+          "promotion"
+        ],
+        "evidence": {
+          "paragraphId": "p4",
+          "excerpt": "With approximately 792 subscriptions, it can be hard to know exactly how much I’m paying for each (not to mention how much I’m spending each month) and which ones have the content "
+        },
+        "contentKey": "200725e97ad92e4daa67fd078faad73af5d5c2537f19502711af463efcabadc4",
+        "version": "rss-quality-v1:jev-1.13.0:readability-0.6.0-v1"
+      },
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-104",
+      "url": "https://www.wired.com/story/uber-eats-promo-code/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "evidence_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-105",
+      "url": "https://www.wired.com/story/wayfair-promo-code/",
+      "source": "WIRED",
+      "baseline": "rejected",
+      "redesign": "not_run",
+      "baselineCause": null,
+      "redesignCause": "not_run",
+      "baselineExclusion": {
+        "reason": [
+          "promotion"
+        ],
+        "evidence": {
+          "paragraphId": "p37",
+          "excerpt": "If you've been chasing an easy way to overheat, this click-together infrared sauna is easy to set up and works great."
+        },
+        "contentKey": "bb007bc9c0cf4cd730058e60df59b6a5efb14957d54c61d8aae4ae00755bcba1",
+        "version": "rss-quality-v1:jev-1.13.0:readability-0.6.0-v1"
+      },
+      "redesignExclusion": null
+    },
+    {
+      "id": "RSS-106",
+      "url": "https://www.wired.com/story/when-the-robotaxis-are-watching-you/",
+      "source": "WIRED",
+      "baseline": "uncertain",
+      "redesign": "not_run",
+      "baselineCause": "extraction_confidence",
+      "redesignCause": "not_run",
+      "baselineExclusion": null,
+      "redesignExclusion": null
+    }
+  ],
+  "accuracy": null,
+  "falseRejectionRate": null,
+  "qualityImprovement": null,
+  "limitations": [
+    "No independent gold labels; browser observations are not ground truth.",
+    "Usable is approved plus explicitly marked shadow candidates, not all pending or failed rows.",
+    "Different content keys or fetch times are not a controlled same-snapshot comparison.",
+    "No v1 answer is a v2 evaluation."
+  ]
+}
