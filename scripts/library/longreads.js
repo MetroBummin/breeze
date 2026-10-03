@@ -118,11 +118,11 @@ const LONG_READS = [
     license:'Original: public domain in the USA',
     licenseUrl:'https://www.gutenberg.org/ebooks/1661',
     series:'SHERLOCK HOLMES · LIGHTLY MODERNIZED',
-    hook:'언니의 결혼식을 앞두고 밤마다 들렸던 낮은 휘파람. 2년 뒤, 같은 방에서 그 소리를 들은 헬렌 스토너가 새벽의 베이커가를 찾아옵니다.',
+    hook:'결혼을 앞둔 줄리아에게 밤마다 들려오던 낮은 휘파람. 2년 뒤, 같은 방에서 그 소리를 들은 쌍둥이 자매 헬렌 스토너가 이른 아침 베이커가를 찾아옵니다.',
     edition:'Lightly modernized English edition', wordCount:9804,
     sha256:'9b9b230612dc39e67f18e86d1c71d4146adce8a677a15444938d619396ff50e2',
     editionNote:'Lightly modernized English edition. Adapted from Arthur Conan Doyle’s “The Adventure of the Speckled Band,” in The Adventures of Sherlock Holmes (1892). Source text: Project Gutenberg, eBook #1661. Language lightly modernized for Breeze; this is not Doyle’s verbatim text. The story, paragraph order, period setting and clues are preserved.',
-    glossary:'Period terms: dog-cart — a light horse-drawn carriage; trap — a light carriage; half-pay — reduced pay for an officer not on active service; mare — a female horse. Historical money, objects and the story’s account of animal behaviour are retained.',
+    glossary:'Period terms: dog-cart — a light horse-drawn carriage; trap — a light carriage; half-pay — reduced pay for an officer not on active service. Historical money, objects and the story’s account of animal behaviour are retained.',
   },
 ];
 /* These pictures sit above the exact story passage they depict. Match the
