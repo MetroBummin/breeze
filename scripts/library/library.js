@@ -562,6 +562,7 @@ async function saveCasualBook(parsed, extra, options={}){
   // Identical social text posted by different people is not the same source.
   const socialKey=extra?.social&&extra?.sourceUrl?articleUrlKey(extra.sourceUrl):'';
   const id = await casualContentId(socialKey?[socialKey,...parsed.paras]:parsed.paras);
+  options.signal?.throwIfAborted();
   const existing = books.find(book => CASUAL_KINDS.has(book.kind)&&sameCasualContent(book.paras,parsed.paras)
     && (!socialKey || book.sourceUrl&&articleUrlKey(book.sourceUrl)===socialKey));
   if(existing){
@@ -845,8 +846,10 @@ async function importFile(file, extra, options={}){
   let prepared = null;
   try{
     prepared = await prepareImportedFile(file,{...options,onProgress:notice.progress});
+    options.signal?.throwIfAborted();
     let already = books.find(book=>book.id===prepared.id || book.sourceHash===prepared.hash || (book.original&&book.original.hash===prepared.hash));
     if(!already) already=await originalBookForHash(books,prepared.hash);
+    options.signal?.throwIfAborted();
     if(already){
       if(prepared.kind === 'txt'){
         imgPurge(prepared.tmpId+'|');
@@ -866,6 +869,7 @@ async function importFile(file, extra, options={}){
        암호화 보관함의 기록을 먼저 찾아 다시 붙이면, 카드를 숨겼던 경우에도
        읽던 위치를 잃지 않습니다. */
     const identity=await vaultFileIdentity(prepared.hash);
+    options.signal?.throwIfAborted();
     const saved=identity&&(vaultRemoteItems||[]).find(item=>item.identity===identity);
     if(saved){
       const book={id:prepared.id,title:saved.title||prepared.title,author:saved.author||'',kind:prepared.kind,
@@ -896,6 +900,7 @@ async function importFile(file, extra, options={}){
       sourceMap:prepared.sourceMap,glyphs:prepared.glyphs||null,
       layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
       original,sourceHash:prepared.hash,localSourceAt:original ? original.storedAt : Date.now(), ...extra};
+    options.signal?.throwIfAborted();
     book.sourceSize=prepared.size||0;
     book.sourceModified=prepared.lastModified||0;
     await bookPut(book);
@@ -909,6 +914,7 @@ async function importFile(file, extra, options={}){
     return {bookId:book.id, originalStored:!!original};
   }catch(error){
     if(prepared) imgPurge(prepared.tmpId+'|');
+    if(options.signal?.aborted){notice.finish('');return;}
     console.error(error);
     /* 잠긴 책은 실패가 아니라 사실입니다. "읽지 못했어요"라고 하면 앱이 고장 난
        줄 알지만, 잠겼다고 하면 다른 파일을 찾아볼 생각을 합니다. */

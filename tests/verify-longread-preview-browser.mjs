@@ -61,6 +61,25 @@ try{
       }
       await page.setViewportSize({width:390,height:844});
       await page.evaluate(()=>document.body.classList.remove('dark'));
+      // Browser Back is navigation, not just the dialog's Close/Escape path.
+      mode='hold';
+      await page.evaluate(()=>{show('longform');openLongReadPreview(LONG_READS.find(read=>read.id==='sherlock-holmes-speckled-band'));});
+      await start().click();await page.waitForTimeout(100);assert.ok(held);
+      await page.goBack();await page.waitForFunction(()=>activeAppView()==='home');
+      assert.equal(await page.evaluate(()=>articlePreviewDialog.open),false,'Back left the preview active');
+      held.end(expected.join('\n\n')+'\n');held=null;
+      await page.waitForFunction(()=>!longReadBusy);
+      assert.deepEqual(await page.evaluate(async()=>({view:activeAppView(),books:books.length,stored:(await bookAll()).length})),
+        {view:'home',books:0,stored:0},'Cancelled navigation imported or reopened the story');
+      mode='ok';await card().click();
+      await page.evaluate(()=>{
+        const prepare=prepareImportedFile;window.__releasePrepared=null;
+        prepareImportedFile=async(...args)=>{const result=await prepare(...args);await new Promise(resolve=>window.__releasePrepared=()=>{prepareImportedFile=prepare;resolve();});return result;};
+      });
+      await start().click();await page.waitForFunction(()=>window.__releasePrepared);
+      await page.locator('.ap-close').click();await page.evaluate(()=>window.__releasePrepared());
+      await page.waitForFunction(()=>!longReadBusy);
+      assert.equal(await page.evaluate(async()=>(await bookAll()).length),0,'Cancelled TXT preparation persisted a book');
       for(const failure of ['error','truncated']){
         mode=failure;await card().click();await start().click();
         await page.waitForFunction(()=>!articlePreviewOpening);

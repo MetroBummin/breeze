@@ -209,7 +209,7 @@ async function importLongRead(read,card,options={}){
       title:read.title, author:read.author, longReadId:read.id,
       originalTitle:read.originalTitle, sourceUrl:read.sourceUrl, site:read.site,
       attribution:longReadAttribution(read), coverPosition:read.coverPosition,
-    },{preserveParagraphs:true});
+    },{preserveParagraphs:true,signal:options.signal});
     await applyLongReadCover(read,options);
     return imported&&books.find(book=>book.id===imported.bookId)||null;
   }catch(error){

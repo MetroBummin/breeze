@@ -52,7 +52,7 @@ Deno.serve(async request=>{
     const {data:hit,error:readError}=await db.from("article_preview_cache").select("hook_title,translated_title,teaser").eq("cache_key",cacheKey).maybeSingle();
     if(readError)return reply({error:"cache_unavailable"},503);
     const cached=hit && validMetadata({summaryKo:hit.teaser});
-    if(cached)return reply({...cached,cached:true});
+    if(cached)return reply({...cached,cached:true,promptVersion:5});
     if(hit)return reply({error:"cache_invalid"},503);
     const token=(request.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
     const {data:user}=await db.auth.getUser(token);
@@ -84,7 +84,7 @@ Deno.serve(async request=>{
         }catch{/* A storage transport failure must not discard usable metadata. */}
         // A useful, paid-for result remains usable even if shared persistence fails.
         // The client may keep it locally; no failure placeholder is cached.
-        return {...meta,cached:false,persisted};
+        return {...meta,cached:false,persisted,promptVersion:5};
       })();
       generating.set(cacheKey,job);
     }

@@ -470,8 +470,9 @@ normal source hashing also deduplicates an independently imported identical TXT.
 The Holmes asset checksum rejects truncated or unexpected successful responses;
 its versioned URL also uses the existing worker's pre-cache verification so a
 truncated response cannot poison subsequent retries.
-Dismissal cancels pending fetch/presentation; after an explicit save has begun,
-normal persistence may complete without reopening a dismissed dialog. Failure
+Dismissal, browser Back and navigation away cancel pending fetch/preparation and
+Reader presentation. Abort guards run before durable book writes; an already
+started write may finish, and saved books are never deleted on dismissal. Failure
 keeps Preview open with retry. Optional cover failure never discards readable text.
 
 Short-article descriptions now aim to invite reading through a grounded tension,

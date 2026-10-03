@@ -1,5 +1,6 @@
 /* Preview never owns reading progress. Optional metadata must not block Reader. */
 const ARTICLE_PREVIEW_CACHE = 'breeze.article-preview.v5';
+const ARTICLE_PREVIEW_PROMPT_VERSION = 5;
 const ARTICLE_PREVIEW_TIMEOUT = 15000;
 const ARTICLE_PREVIEW_CACHE_AGE = 30 * 86400000;
 const articlePreviewJobs = new Map();
@@ -51,13 +52,13 @@ function articlePreviewCacheEntries(){
 }
 function articlePreviewCached(key){
   const entry=articlePreviewCacheEntries()[key],now=Date.now();
-  return entry && Number.isFinite(entry.at) && entry.at<=now && now-entry.at<ARTICLE_PREVIEW_CACHE_AGE
+  return entry && entry.promptVersion===ARTICLE_PREVIEW_PROMPT_VERSION && Number.isFinite(entry.at) && entry.at<=now && now-entry.at<ARTICLE_PREVIEW_CACHE_AGE
     ? articlePreviewValid(entry.meta) : null;
 }
 function articlePreviewSave(key,meta){
   try{
     const now=Date.now(),all=articlePreviewCacheEntries();
-    all[key]={at:now,meta};
+    all[key]={at:now,meta,promptVersion:ARTICLE_PREVIEW_PROMPT_VERSION};
     const kept=Object.entries(all).filter(([,entry])=>entry && Number.isFinite(entry.at) &&
       entry.at<=now && now-entry.at<ARTICLE_PREVIEW_CACHE_AGE && articlePreviewValid(entry.meta))
       .sort((a,b)=>b[1].at-a[1].at).slice(0,100);
@@ -107,10 +108,12 @@ async function articlePreviewMetadata(book){
         }catch{/* Keep the HTTP category for non-JSON failures. */}
         return failed(reason);
       }
-      const meta=articlePreviewValid(await articlePreviewUntil(response.json(),controller.signal));
+      const payload=await articlePreviewUntil(response.json(),controller.signal);
+      const meta=articlePreviewValid(payload);
       if(controller.signal.aborted)return failed('timeout');
       if(!meta)return failed('invalid');
-      articlePreviewSave(key,meta);
+      // Older servers remain readable, but cannot populate the new editorial cache.
+      if(payload.promptVersion===ARTICLE_PREVIEW_PROMPT_VERSION)articlePreviewSave(key,meta);
       return {meta,reason:''};
     }catch{return failed(controller.signal.aborted?'timeout':'network');}
     finally{clearTimeout(timeout);}
@@ -265,7 +268,7 @@ async function articlePreviewStart(){
     // The CTA is the save boundary. A dismissed preparation never reaches here.
     const saved=book.bundledRead
       ? await importLongRead(book.bundledRead,null,{signal:controller.signal})
-      : await commitArticleDraft(book);
+      : await commitArticleDraft(book,undefined,{signal:controller.signal});
     if(!saved)throw new Error('Book preparation failed');
     if(controller.signal.aborted||!articlePreviewActive(generation))return;
     await openBook(saved,openingOptions);

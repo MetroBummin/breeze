@@ -17,7 +17,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
-const meta={summaryKo:'기사의 내용을 바탕으로 배경과 핵심 질문을 소개합니다. 원문을 읽으며 어떤 이야기가 이어지는지 확인해 보세요.'};
+const meta={promptVersion:5,summaryKo:'기사의 내용을 바탕으로 배경과 핵심 질문을 소개합니다. 원문을 읽으며 어떤 이야기가 이어지는지 확인해 보세요.'};
 let passed=0;
 try{
   for(const engine of process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[chromium,webkit]){
@@ -81,13 +81,34 @@ try{
       assert.deepEqual(await count(),{memory:0,stored:0,positions:0,images:0});
       await page.keyboard.press('Escape');assert.equal((await count()).stored,0);
     });
+    await check('browser Back cancels pending article save and preserves navigation',async()=>{
+      await page.evaluate(async()=>{
+        show('casuals');
+        const e=window.__fixture('Back during image preparation');await importRssEntry(e,window.__card(e));
+        const original=fetchArticleImage;window.__releaseImage=null;
+        fetchArticleImage=()=>new Promise(resolve=>window.__releaseImage=()=>{fetchArticleImage=original;resolve(new Blob(['fixture'],{type:'image/png'}));});
+        window.__imageWrites=0;window.__imgPut=imgPut;
+        imgPut=async(...args)=>{window.__imageWrites++;return window.__imgPut(...args);};
+      });
+      await waitPrepared();await page.click('.ap-start');await page.waitForFunction(()=>window.__releaseImage);
+      await page.goBack();await page.waitForFunction(()=>activeAppView()==='home');
+      assert(!await page.locator('#article-preview').evaluate(n=>n.open));
+      await page.evaluate(()=>window.__releaseImage());
+      await page.waitForFunction(()=>articleCommitJobs.size===0);
+      assert.deepEqual(await count(),{memory:0,stored:0,positions:0,images:0});
+      assert.equal(await page.evaluate(()=>window.__imageWrites),0);
+      assert.equal(await page.evaluate(()=>activeAppView()),'home');
+      await page.evaluate(()=>{imgPut=window.__imgPut;});
+    });
     await check('first CTA persists once, marks reading and bypasses future Preview',async()=>{
-      await page.evaluate(async()=>{const e=window.__fixture('Read only after CTA');await importRssEntry(e,window.__card(e));});
+      await page.evaluate(async()=>{show('casuals');const e=window.__fixture('Read only after CTA');await importRssEntry(e,window.__card(e));});
       await waitPrepared();
       await page.evaluate(()=>{document.querySelector('.ap-start').click();document.querySelector('.ap-start').click();});
       await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
       assert.equal((await count()).stored,1);assert.equal((await count()).memory,1);
       assert.equal((await count()).positions,1);
+      await page.goBack();await page.waitForFunction(()=>activeAppView()==='casuals');
+      assert(!await page.locator('#article-preview').evaluate(n=>n.open));
       await page.evaluate(()=>{renderHome();show('home');openCasualPreviewOrReader(books[0]);});
       assert(!await page.locator('#article-preview').evaluate(n=>n.open));
       await page.evaluate(()=>show('home'));

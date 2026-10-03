@@ -18,15 +18,16 @@ Local verification on Chromium using `/usr/bin/chromium`:
 - New preview suite: both provided stories; open/cancel with no story download or
   persistence; light/dark at 320×568, 390×844, 820×1024, 1440×900, 844×390;
   reachable CTA; HTTP error, truncation, cancellation, failed IndexedDB save,
-  retry and duplicate taps; all 251 Holmes paragraphs imported exactly;
+  retry and duplicate taps; browser Back during held downloads cancels without
+  book persistence or late Reader navigation; all 251 Holmes paragraphs imported exactly;
   progress after reload; saved-book offline reopen; real service-worker cold
   offline reload and runtime text caching.
 - `verify-homeward-lookup-browser.mjs`: 314 sentences, 43 words, 34 phrases,
   existing local lookup timing, no AI requests.
-- `verify-preview-intent-browser.mjs`: ten passed; opening/closing short-article
+- `verify-preview-intent-browser.mjs`: eleven passed; opening/closing short-article
   previews still creates no saved book/images/progress.
 - `verify-article-preview-browser.mjs`: Chromium, cache/fallback/Reader/four sizes.
-- `verify-article-preview-resilience.mjs`: twenty passed, controlled dependencies.
+- `verify-article-preview-resilience.mjs`: twenty-one passed, controlled dependencies.
 - Typecheck: baseline unchanged at 34 existing diagnostics; no new diagnostics.
 - `build-www.mjs`: complete adapted TXT copied byte-for-byte into the native bundle.
 - `git diff --check`: clean.
@@ -52,7 +53,14 @@ Local verification on Chromium using `/usr/bin/chromium`:
    iOS/WebView verification is claimed.
 4. Article-preview prompt v5 is prepared, not deployed. A later authorized Edge
    Function deployment is required to change live generated introductions.
-   Existing deployed v4 responses remain structurally compatible.
+   Existing deployed v4 responses remain readable, but missing/mismatched
+   `promptVersion` cannot populate the v5 client cache. Both generated and cached
+   server responses now declare `promptVersion: 5`; unversioned local v5 entries
+   are ignored. Prefer an authorized server-first rollout, verify the response
+   marker on hit and miss, then ship the client. Client-first rollout remains
+   compatible but legacy responses are transient until the server update.
+   v4 client/server cache keys are not reused; correct v5 client entries keep the
+   existing 30-day lifetime. No schema, quota or model changes are required.
 5. Exact-head CI is recorded in the task handoff after draft publication. This
    document does not imply pending CI has passed. No merge/release/deployment.
 

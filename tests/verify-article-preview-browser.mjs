@@ -30,7 +30,7 @@ try{
           if(url.includes('/functions/v1/article-preview')){
             calls++;
             const body=JSON.parse(route.request().postData());
-            return body.title==='Second article' ? route.abort() : route.fulfill({contentType:'application/json',body:JSON.stringify({summaryKo:'첫 문단에서 이 글의 주제와 핵심 질문을 소개합니다. 이어지는 설명을 통해 두 선택지가 어떻게 다른지 살펴봅니다.'})});
+            return body.title==='Second article' ? route.abort() : route.fulfill({contentType:'application/json',body:JSON.stringify({promptVersion:5,summaryKo:'첫 문단에서 이 글의 주제와 핵심 질문을 소개합니다. 이어지는 설명을 통해 두 선택지가 어떻게 다른지 살펴봅니다.'})});
           }
           return route.abort();
         });

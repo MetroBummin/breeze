@@ -26,7 +26,7 @@ function bookImageBlob(){return Promise.resolve(QA.image);}function toast(s){QA.
 async function openBook(book,options={}){QA.opens.push(book.id);if(QA.hold)await new Promise(r=>QA.resume=r);if(QA.fail)throw Error('read failure');positions[book.id]={t:1};document.querySelector('#reader').hidden=false;if(options.onPresented)options.onPresented();return book;}
 function book(id='a'){return {id,kind:'article',sourceUrl:'https://example.test/'+id,title:'Original article '+id,site:'Example',paras:['Original article '+id,'The first source paragraph describes the subject with enough detail to let readers decide whether to continue reading the article.']};}
 </script><script>${script}</script><script>document.querySelector('#launch').onclick=()=>openCasualPreviewOrReader(book());</script></body></html>`;
-const meta={summaryKo:'이 글은 구체적인 사례를 바탕으로 주제를 소개합니다. 서로 다른 설명과 그 배경을 함께 살펴봅니다.'};
+const meta={promptVersion:5,summaryKo:'이 글은 구체적인 사례를 바탕으로 주제를 소개합니다. 서로 다른 설명과 그 배경을 함께 살펴봅니다.'};
 let count=0;
 try{
   const engines=process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[chromium,webkit];
@@ -64,7 +64,7 @@ try{
       await run('A/B out-of-order responses cannot cross-paint',async(p,rs,respond)=>{
         await p.evaluate(()=>openCasualPreviewOrReader(book('a')));await p.waitForFunction(()=>articlePreviewJobs.size===1);
         await p.evaluate(()=>openCasualPreviewOrReader(book('b')));await p.waitForFunction(()=>articlePreviewJobs.size===2);
-        await respond(1,{summaryKo:'두 번째 글의 핵심은 예상과 다른 선택에 있습니다. 이어지는 과정과 그 배경을 원문에서 구체적으로 살펴봅니다.'});await respond(0);
+        await respond(1,{promptVersion:5,summaryKo:'두 번째 글의 핵심은 예상과 다른 선택에 있습니다. 이어지는 과정과 그 배경을 원문에서 구체적으로 살펴봅니다.'});await respond(0);
         await p.waitForTimeout(40);assert.equal(await p.textContent('.ap-summary'),'두 번째 글의 핵심은 예상과 다른 선택에 있습니다. 이어지는 과정과 그 배경을 원문에서 구체적으로 살펴봅니다.');
       });
       await run('close/reopen shares request; queued close is harmless',async(p,rs,respond)=>{
@@ -73,6 +73,20 @@ try{
         await p.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
         assert.equal(await p.evaluate(()=>QA.requests.length),1);assert(await p.locator('#article-preview').evaluate(n=>n.open));
         await p.keyboard.press('Escape');assert(!await p.locator('#article-preview').evaluate(n=>n.open));
+      });
+      await run('legacy response displays but cannot poison v5 cache',async(p,rs,respond)=>{
+        await p.click('#launch');await p.waitForFunction(()=>articlePreviewJobs.size===1);
+        await respond(0,{summaryKo:meta.summaryKo});await p.waitForFunction(()=>articlePreviewJobs.size===0);
+        assert.equal(await p.textContent('.ap-summary'),meta.summaryKo);
+        assert.equal(await p.evaluate(()=>articlePreviewCached(articlePreviewKey(book()))),null);
+        await p.evaluate(m=>{
+          articlePreviewClose();
+          localStorage.setItem(ARTICLE_PREVIEW_CACHE,JSON.stringify({[articlePreviewKey(book())]:{at:Date.now(),meta:m}}));
+          openCasualPreviewOrReader(book());
+        },meta);
+        await p.waitForFunction(()=>QA.requests.length===2);await respond(1);
+        await p.waitForFunction(()=>articlePreviewJobs.size===0);
+        assert.equal(await p.evaluate(()=>articlePreviewCached(articlePreviewKey(book())).summaryKo),meta.summaryKo);
       });
       await run('cached reopen is synchronous; title/body edits invalidate',async(p,rs,respond)=>{
         await p.click('#launch');await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond();await p.waitForFunction(()=>articlePreviewJobs.size===0);
@@ -98,7 +112,7 @@ try{
       await run('malformed/expired cache and storage failure are nonfatal',async(p,rs,respond)=>{
         await p.evaluate(()=>localStorage.setItem(ARTICLE_PREVIEW_CACHE,'null'));
         await p.click('#launch');await p.waitForFunction(()=>articlePreviewJobs.size===1);
-        await respond(0,{summaryKo:'x'});await p.waitForFunction(()=>articlePreviewJobs.size===0);
+        await respond(0,{promptVersion:5,summaryKo:'x'});await p.waitForFunction(()=>articlePreviewJobs.size===0);
         assert(await p.locator('.ap-summary').evaluate(n=>n.hidden));
         await p.evaluate(m=>{articlePreviewClose();localStorage.setItem(ARTICLE_PREVIEW_CACHE,JSON.stringify({[articlePreviewKey(book())]:{at:Date.now()-31*86400000,meta:m}}));Storage.prototype.setItem=()=>{throw Error('quota');};openCasualPreviewOrReader(book());},meta);
         await p.waitForFunction(()=>articlePreviewJobs.size===1);await respond(1);await p.waitForFunction(()=>!document.querySelector('.ap-summary').hidden);
