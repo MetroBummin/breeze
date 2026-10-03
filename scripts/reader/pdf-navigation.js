@@ -504,6 +504,82 @@ function installPdfNavigationScrollbar(){
     event.preventDefault();strip.scrollTop=event.key==='Home'?0:event.key==='End'?strip.scrollHeight:strip.scrollTop+step;
   });
 }
+// The original-input owner (pdf-pinch.js) feeds this one candidate. Edge-open
+// and horizontal paging are mutually exclusive; no independent swipe listeners.
+let originalNavigationContact=null,originalNavigationTail=false;
+function originalNavigationAllowed(){
+  return document.body.classList.contains('reading')&&currentReaderMode==='original'
+    &&(currentPdfSession()||currentEpubNavigationSession())&&originalZoom()<=1.01
+    &&!readerPositionPending()&&!BreezePdfInk.busy()&&!originalPinchBusy()&&!originalPinchTouches
+    &&!pdfNavigation&&!sentenceModalOpen()&&!wordPanelOpen()&&!aaPopOpen()
+    &&!sentenceWaitingActive()&&!document.querySelector('dialog[open],#pdf-ink-settings:not([hidden])');
+}
+function cancelOriginalNavigation(){originalNavigationContact=null;}
+function originalNavigationStart(event){
+  // Any added contact cancels, including a Pencil or a finger left after pinch.
+  originalNavigationContact=null;
+  // touchstart with one live contact is a new sequence, even if the browser
+  // reuses an identifier after losing the old terminal delivery.
+  if(event.touches.length!==1||!event.cancelable||!originalNavigationAllowed())return;
+  originalNavigationTail=false; // A fresh live list also recovers a lost terminal event.
+  const touch=event.touches[0],target=touch.target;
+  if(!BreezePdfInk.finger(touch)||!(target instanceof Element)
+      ||!target.closest('#originalwrap')||target.closest('button,input,textarea,select,[role=dialog]'))return;
+  const box=readerScroller(),rect=box.getBoundingClientRect(),x=touch.clientX-rect.left;
+  const edge=x>=0&&x<=24;
+  if(!edge&&(!pdfHorizontal()||!target.closest('.pdf-source-page')))return;
+  originalNavigationContact={id:touch.identifier,x:touch.clientX,y:touch.clientY,
+    session:originalSession,gesture:activeGesture,edge,claimed:false,top:box.scrollTop,left:box.scrollLeft};
+}
+function originalNavigationMove(event){
+  const contact=originalNavigationContact;if(!contact)return false;
+  if(event.touches.length!==1||!event.cancelable||!originalNavigationAllowed()||contact.gesture?.dispatched){
+    cancelOriginalNavigation();return false;
+  }
+  const touch=[...event.touches].find(t=>t.identifier===contact.id);if(!touch){cancelOriginalNavigation();return false;}
+  const dx=touch.clientX-contact.x,dy=touch.clientY-contact.y;
+  // Native scroll that was already admitted keeps the contact. No late stealing.
+  const box=readerScroller();
+  if(box.scrollTop!==contact.top||box.scrollLeft!==contact.left){
+    cancelOriginalNavigation();return false;
+  }
+  if(!contact.claimed&&Math.hypot(dx,dy)>10){
+    if(Math.abs(dx)<Math.abs(dy)*1.8||(contact.edge&&dx<=0)){
+      cancelOriginalNavigation();return false;
+    }
+    contact.claimed=true;originalNavigationTail=true;
+    cancelGesture('original navigation owns contact');reclaimReaderSelection();
+  }
+  if(contact.claimed){event.preventDefault();return true;}
+  return false;
+}
+function originalNavigationEnd(event){
+  const contact=originalNavigationContact;
+  if(!contact||![...event.changedTouches].some(t=>t.identifier===contact.id))return;
+  originalNavigationContact=null;
+  if(!contact.claimed||event.type!=='touchend'||event.touches.length
+      ||contact.session!==originalSession||!originalNavigationAllowed())return;
+  const touch=[...event.changedTouches].find(t=>t.identifier===contact.id);
+  const dx=touch.clientX-contact.x,dy=touch.clientY-contact.y;
+  if(event.cancelable)event.preventDefault();
+  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.8)return;
+  if(contact.edge){if(dx>0)togglePdfNavigation();}
+  else void stepPdfPage(dx<0?1:-1);
+}
+function originalNavigationPointerEnd(event){
+  if(originalNavigationContact&&event.pointerType==='touch')originalNavigationContact.pointerEnded=true;
+}
+function originalNavigationLostCapture(){
+  if(originalNavigationContact&&!originalNavigationContact.pointerEnded)cancelOriginalNavigation();
+}
+function originalNavigationConsumes(event){
+  if(event.type==='pointerdown'&&!originalNavigationContact)originalNavigationTail=false;
+  return !!originalNavigationContact?.claimed||(event.type==='click'&&event.detail!==0&&originalNavigationTail);
+}
+window.addEventListener('resize',cancelOriginalNavigation);
+window.addEventListener('blur',cancelOriginalNavigation);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelOriginalNavigation();});
+
 document.addEventListener('DOMContentLoaded',()=>{
   installPdfNavigationScrollbar();installEpubNavigationContact();
   document.addEventListener('click',event=>{
@@ -529,23 +605,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
   resize.observe(document.getElementById('readmain'));resize.observe(document.getElementById('readpill'));resize.observe(document.getElementById('pdf-thumbnail-strip'));
-  /* Observe single direct-finger swipes; never claim a Pencil, palm or pinch.
-     The existing gesture controller cancels lookup when movement exceeds slop. */
-  let swipe=null;
-  const box=readerScroller();
-  box.addEventListener('touchstart',event=>{
-    if(!pdfHorizontal()||currentReaderMode!=='original'||originalZoom()>1.01||BreezePdfInk.busy()||event.touches.length!==1){swipe=null;return;}
-    const touch=event.touches[0];
-    if(Reflect.get(touch,'touchType')==='stylus'||!BreezePdfInk.finger(touch)||!(event.target instanceof Element)||!event.target.closest('.pdf-source-page')){swipe=null;return;}
-    swipe={id:touch.identifier,x:touch.clientX,y:touch.clientY,session:originalSession};
-  },{passive:true});
-  box.addEventListener('touchend',event=>{
-    const start=swipe;swipe=null;if(!start||event.touches.length||start.session!==originalSession||originalPinchBusy()||BreezePdfInk.busy())return;
-    const touch=[...event.changedTouches].find(t=>t.identifier===start.id);if(!touch)return;
-    const dx=touch.clientX-start.x,dy=touch.clientY-start.y;
-    if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.6)void stepPdfPage(dx<0?1:-1);
-  },{passive:true});
-  box.addEventListener('touchcancel',()=>{swipe=null;},{passive:true});
+
 });
 
 let pdfDeletionBusy=false;

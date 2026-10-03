@@ -15,7 +15,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
 function fixture(){
   const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map(),writes=[];
-  let frameID=0,busy=false,failWrite=false;
+  let frameID=0,busy=false,failWrite=false,now=0,timerId=0;const timers=new Map();
   const register=(type,fn)=>{const list=listeners.get(type)||[];list.push(fn);listeners.set(type,list);};
   class Element {
     constructor(id='',className=''){
@@ -70,10 +70,12 @@ function fixture(){
     originalPinchPan:false,originalPinch:null,originalPinchTouches:false,originalPdfContacts:0,
     cancelGesture:()=>{},closePanel:()=>{},closeSentence:()=>{},resumeOriginalPdfPaint:()=>{},
     curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
-    crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,console:{warn(){}},performance};
+    setTimeout(fn,ms){timers.set(++timerId,{fn,at:now+ms});return timerId;},clearTimeout(id){timers.delete(id);},
+    crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,console:{warn(){}},performance:{now:()=>now,timeOrigin:performance.timeOrigin}};
   const needle='  return {\n    open(s)';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
     qa:{configure(s,state){session=s;mode='pen';pages.set(state.key,state);},
+      scribble(enabled){scribbleEnabled=enabled;},
       valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     open(s)`);
@@ -90,6 +92,7 @@ function fixture(){
     qa.touchEnd(event('touchend',[],[contact(...end)]));await tick();return preview;
   }
   return {engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,flush,mutate,stroke,
+    advance(ms){now+=ms;for(const [id,t] of timers)if(t.at<=now){timers.delete(id);t.fn();}},timers,
     controls:v=>{controls=v;},pinch:v=>{busy=v;},failWrite:v=>{failWrite=v;},
     emit:(type,target)=>{for(const fn of listeners.get(type)||[])fn({type,target});}};
 }
@@ -311,4 +314,64 @@ test('eraser: unchanged strokes and highlight groups never leave their parent',a
  assert.equal(f.state.strokes.length,83);
  f.qa.history(true);await tick();assert.equal(detachments,0);
  f.qa.history(false);await tick();assert.equal(detachments,0);
+});
+
+// Synthetic recognition fixtures establish boundaries, not a zero false-positive rate.
+const loops=(turns=5,r=20)=>Array.from({length:turns*24+1},(_,i)=>[220+r*Math.cos(i*Math.PI/12),220+r*Math.sin(i*Math.PI/12)]);
+function drawHeld(f,points=loops()){
+  f.qa.touchStart(f.event('touchstart',[f.contact(...points[0])]));
+  for(const p of points.slice(1)){f.advance(8);f.qa.touchMove(f.event('touchmove',[f.contact(...p)]));}
+}
+function liftHeld(f,p=loops().at(-1),type='touchend'){
+  f.qa.touchEnd(f.event(type,[],[f.contact(...p)]));
+}
+const targetInk=()=>({color:'#111111',width:1.5,points:[[190,220],[250,220]]});
+test('scribble classifier: repeated loops and dense scratch; circles, shapes, hatching and notes remain ink',()=>{
+  const g=geometry();
+  const classify=points=>{const r=g.createScribble(points[0],0);points.slice(1).forEach((p,i)=>r.add(p,(i+1)*8));return r.intentional();};
+  assert.equal(classify(loops()),true);
+  const scratch=Array.from({length:65},(_,i)=>{const row=Math.floor(i/4),x=(row%2?4-i%4:i%4)*10;return [200+x,210+(row%3)*8];});
+  assert.equal(classify(scratch),true);
+  const crosshatch=[];
+  for(let y=0;y<=40;y+=8)for(let x=0;x<=40;x+=4)crosshatch.push([x,y]);
+  for(let x=0;x<=40;x+=8)for(let y=0;y<=40;y+=4)crosshatch.push([x,y]);
+  for(const points of [crosshatch,loops(1),loops(2),[[0,0],[0,40],[30,40],[30,0],[0,0]],
+    [[0,40],[15,0],[30,40],[5,25],[25,25]], // A
+    Array.from({length:40},(_,i)=>[i*5,(i%2)*25]), // rapid notes / advancing hatching
+    Array.from({length:40},(_,i)=>[i*5,20]),loops(5,80)])assert.equal(classify(points),false);
+});
+test('scribble is off by default and lifting before hold preserves ordinary ink',async()=>{
+  for(const enabled of [false,true]){
+    const f=fixture();f.state.strokes=[targetInk()];f.qa.scribble(enabled);drawHeld(f);liftHeld(f);await tick();
+    assert.equal(f.state.strokes.length,2);assert.equal(f.qa.undo().length,1);
+  }
+});
+test('held scribble: no tentative mutation, one undo/redo edit, persisted final state',async()=>{
+  const f=fixture(),pen=targetInk(),highlight={...targetInk(),tool:'highlighter',strokeId:'highlight',opacity:.3,color:'#ffe34d',width:12};
+  f.state.strokes=[pen,highlight];f.qa.scribble(true);drawHeld(f);f.advance(421);
+  assert.equal(f.qa.active().scribbleTargets.size,2);assert.deepEqual(f.state.strokes,[pen,highlight]);assert.equal(f.writes.length,0);
+  liftHeld(f);f.qa.history(true);await tick(); // Undo before first save completes.
+  assert.deepEqual(f.state.strokes,[pen,highlight]);assert.equal(f.stored.get(f.state.key).strokes.length,2);
+  f.qa.history(false);await tick();assert.equal(f.state.strokes.length,0);assert.equal(f.stored.get(f.state.key).strokes.length,0);
+  assert.equal(f.qa.undo().length,1);assert.equal(f.timers.size,0);
+});
+test('scribble hold cancellation, movement, empty target and session interruption',async()=>{
+  for(const reason of ['touchcancel','resize','blur','scroll','move','empty','close']){
+    const f=fixture();f.state.strokes=reason==='empty'?[]:[targetInk()];f.qa.scribble(true);drawHeld(f);f.advance(421);
+    if(reason==='touchcancel')liftHeld(f,loops().at(-1),'touchcancel');
+    else if(reason==='move'){f.qa.touchMove(f.event('touchmove',[f.contact(260,250)]));f.advance(500);liftHeld(f,[260,250]);}
+    else if(reason==='empty')liftHeld(f);
+    else if(reason==='close')f.engine.close(f.session);
+    else f.emit(reason,reason==='scroll'?f.box:null);
+    await tick();assert.equal(f.state.strokes.length,reason==='move'?2:1,reason);
+    assert.equal(f.timers.size,0,reason);
+  }
+});
+
+test('rapid repeated scribbles each create one edit and leave no confirmation timer behind',async()=>{
+ const f=fixture();f.qa.scribble(true);
+ for(let i=0;i<12;i++){
+  f.state.strokes=[targetInk()];drawHeld(f);f.advance(421);liftHeld(f);await tick();
+  assert.equal(f.state.strokes.length,0);assert.equal(f.qa.undo().length,i+1);assert.equal(f.timers.size,0);
+ }
 });

@@ -426,6 +426,7 @@ function moveGesture(event){
 }
 
 function endGesture(event){
+  if(typeof originalNavigationPointerEnd==='function')originalNavigationPointerEnd(event);
   releaseSentenceHoldPointer(event);
   const gesture = activeGesture;
   if(!gesture) return;
@@ -608,7 +609,12 @@ function attachReaderGestures(doc){
   doc.addEventListener('pointercancel', event=>{
     releaseSentenceHoldPointer(event);
     cancelGesture('pointercancel');
+    if(typeof cancelOriginalNavigation==='function')cancelOriginalNavigation();
   }, true);
+  doc.addEventListener('lostpointercapture',()=>{
+    if(activeGesture)cancelGesture('lostpointercapture');
+    if(typeof originalNavigationLostCapture==='function')originalNavigationLostCapture();
+  },true);
   doc.addEventListener('click', clickGesture, true);
 }
 

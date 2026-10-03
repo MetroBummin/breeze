@@ -40,6 +40,16 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: Scribble erase and edge navigation in Chromium and WebKit
+        run: node tests/verify-reader-input-gestures-browser.mjs
+      - name: Reader input gesture proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reader-input-gestures-proof
+          path: /tmp/breeze-input-gestures/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: RSS shadow and approval regressions
         run: node tests/verify-rss-quality-browser.mjs
       - name: Vocabulary review in Chromium and WebKit
