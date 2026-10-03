@@ -46,7 +46,10 @@ Local verification on Chromium using `/usr/bin/chromium`:
    screenshots as final artwork proof.
 3. Local Playwright browser downloads are proxy-blocked. Chromium ran using the
    installed system binary; WebKit runs in the draft PR's Integrity browser job.
-   No physical iOS/WebView verification is claimed.
+   Playwright [supports service-worker control only in Chromium](https://playwright.dev/docs/service-workers).
+   WebKit covers saved-book offline reopen, but cold offline service-worker reload
+   is verified in Chromium only; a WebKit device check remains. No physical
+   iOS/WebView verification is claimed.
 4. Article-preview prompt v5 is prepared, not deployed. A later authorized Edge
    Function deployment is required to change live generated introductions.
    Existing deployed v4 responses remain structurally compatible.

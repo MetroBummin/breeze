@@ -106,39 +106,43 @@ try{
       await context.setOffline(false);await context.close();
       // A separate real service-worker context proves a cold offline relaunch,
       // not just opening already-rendered text after toggling offline.
-      const cachedContext=await browser.newContext({viewport:{width:390,height:844}});
-      await cachedContext.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
-      const cachedPage=await cachedContext.newPage();
-      await cachedPage.route('**/*',route=>route.request().url().startsWith(base)||route.request().url().startsWith('blob:')?route.continue():route.abort());
-      await cachedPage.goto(base);await cachedPage.evaluate(()=>homeReady);
-      await cachedPage.evaluate(()=>navigator.serviceWorker.ready);
-      await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
-      await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
-      mode='truncated';
-      await cachedPage.locator('.ap-start').click();
-      await cachedPage.waitForFunction(()=>!articlePreviewOpening);
-      assert.equal(await cachedPage.evaluate(()=>books.length),0);
-      assert.equal(await cachedPage.evaluate(async()=>{
-        const read=LONG_READS.find(item=>item.id==='sherlock-holmes-speckled-band');
-        return !!await caches.match(new URL(read.file+'?v='+read.sha256.slice(0,8),location.href).href);
-      }),false,'Worker cached an incomplete story');
-      mode='ok';
-      await cachedPage.locator('.ap-start').click();
-      await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.longReadId==='sherlock-holmes-speckled-band');
-      assert.ok(await cachedPage.evaluate(async()=>{
-        const read=LONG_READS.find(item=>item.id==='sherlock-holmes-speckled-band');
-        return !!await caches.match(new URL(read.file+'?v='+read.sha256.slice(0,8),location.href).href);
-      }));
-      const hasCover=await cachedPage.evaluate(()=>!!curBook.cover);
-      await cachedContext.setOffline(true);await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
-      await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
-      if(hasCover){
-        await cachedPage.waitForFunction(()=>document.querySelector('.ap-hero img').src.startsWith('blob:'));
-        await cachedPage.locator('.ap-hero img').evaluate(image=>image.decode());
-      }
-      await cachedPage.locator('.ap-start').click();
-      await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.paras.length===251);
-      await cachedContext.close();
+      // Playwright supports service-worker control only in Chromium:
+      // https://playwright.dev/docs/service-workers
+      if(engine===chromium){
+        const cachedContext=await browser.newContext({viewport:{width:390,height:844}});
+        await cachedContext.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+        const cachedPage=await cachedContext.newPage();
+        await cachedPage.route('**/*',route=>route.request().url().startsWith(base)||route.request().url().startsWith('blob:')?route.continue():route.abort());
+        await cachedPage.goto(base);await cachedPage.evaluate(()=>homeReady);
+        await cachedPage.evaluate(()=>navigator.serviceWorker.ready);
+        await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
+        await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
+        mode='truncated';
+        await cachedPage.locator('.ap-start').click();
+        await cachedPage.waitForFunction(()=>!articlePreviewOpening);
+        assert.equal(await cachedPage.evaluate(()=>books.length),0);
+        assert.equal(await cachedPage.evaluate(async()=>{
+          const read=LONG_READS.find(item=>item.id==='sherlock-holmes-speckled-band');
+          return !!await caches.match(new URL(read.file+'?v='+read.sha256.slice(0,8),location.href).href);
+        }),false,'Worker cached an incomplete story');
+        mode='ok';
+        await cachedPage.locator('.ap-start').click();
+        await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.longReadId==='sherlock-holmes-speckled-band');
+        assert.ok(await cachedPage.evaluate(async()=>{
+          const read=LONG_READS.find(item=>item.id==='sherlock-holmes-speckled-band');
+          return !!await caches.match(new URL(read.file+'?v='+read.sha256.slice(0,8),location.href).href);
+        }));
+        const hasCover=await cachedPage.evaluate(()=>!!curBook.cover);
+        await cachedContext.setOffline(true);await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
+        await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
+        if(hasCover){
+          await cachedPage.waitForFunction(()=>document.querySelector('.ap-hero img').src.startsWith('blob:'));
+          await cachedPage.locator('.ap-hero img').evaluate(image=>image.decode());
+        }
+        await cachedPage.locator('.ap-start').click();
+        await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.paras.length===251);
+        await cachedContext.close();
+      }else console.log('webkit: cold service-worker offline reload requires device verification (unsupported Playwright control)');
       console.log(engine.name()+': both previews, 10 viewport/theme states, failure/retry/truncation/cancel, duplicate taps, full import and offline progress passed');
     }finally{await browser.close();}
   }
