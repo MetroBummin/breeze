@@ -602,8 +602,8 @@ const BreezePdfInk = (()=>{
     if(current.scribbleTimer)clearTimeout(current.scribbleTimer);
     current.scribbleTimer=0;current.scribbleTargets=null;
     if(disable)current.scribble=null;
-    current.preview?.classList.toggle('pdf-ink-scribble-ready',false);
-    if(scribbleCue)scribbleCue.hidden=true;
+    if(current.preview?.classList.contains('pdf-ink-scribble-ready'))current.preview.classList.toggle('pdf-ink-scribble-ready',false);
+    if(scribbleCue&&!scribbleCue.hidden)scribbleCue.hidden=true;
   }
   function trackScribble(current,p){
     if(!current.scribble)return;

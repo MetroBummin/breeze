@@ -101,7 +101,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   target.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch',isPrimary:true,pointerId:910,clientX:12,clientY:170}));
   send('touchstart',[t(12)],[t(12)]);send('touchmove',[t(110)],[t(110)]);send('touchend',[],[t(110)]);
  });
- await page.waitForFunction(()=>pdfNavigation?.session.kind==='epub');await page.screenshot({path:resolve(proof,engine.name()+'-epub-edge.png')});
+ await page.waitForFunction(()=>pdfNavigation?.session.kind==='epub');await page.waitForTimeout(500);await page.screenshot({path:resolve(proof,engine.name()+'-epub-edge.png')});
  await page.evaluate(()=>closePdfNavigation());await open();assert.equal(await count(),1,'new book never commits tentative deletion');
  assert.deepEqual(errors,[]);console.log(engine.name()+': scribble lifecycle, real IDB reopen, edge ownership and 10 responsive settings states passed');
  }finally{await browser.close();}

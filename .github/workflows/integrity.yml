@@ -40,6 +40,16 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: Scribble erase and edge navigation in Chromium and WebKit
+        run: node tests/verify-reader-input-gestures-browser.mjs
+      - name: Reader input gesture proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reader-input-gestures-proof
+          path: /tmp/breeze-input-gestures/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: RSS shadow and approval regressions
         run: node tests/verify-rss-quality-browser.mjs
       - name: Vocabulary review in Chromium and WebKit
@@ -64,16 +74,6 @@ jobs:
           for test in tests/verify-article-preview-browser.mjs tests/verify-article-preview-resilience.mjs tests/verify-device-polish-browser.mjs; do
             if test -f "$test"; then node "$test"; fi
           done
-      - name: Scribble erase and edge navigation in Chromium and WebKit
-        run: node tests/verify-reader-input-gestures-browser.mjs
-      - name: Reader input gesture proof
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reader-input-gestures-proof
-          path: /tmp/breeze-input-gestures/
-          if-no-files-found: ignore
-          retention-days: 7
       - name: Ink regression when present
         run: if test -f tests/verify-pdf-ink-browser.mjs; then node tests/verify-pdf-ink-browser.mjs; fi
       - name: Reader page morph and rotation regressions

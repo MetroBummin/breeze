@@ -518,7 +518,9 @@ function cancelOriginalNavigation(){originalNavigationContact=null;}
 function originalNavigationStart(event){
   // Any added contact cancels, including a Pencil or a finger left after pinch.
   const existing=originalNavigationContact;originalNavigationContact=null;
-  if(existing||event.touches.length!==1||!event.cancelable||!originalNavigationAllowed())return;
+  if(event.touches.length!==1||!event.cancelable||!originalNavigationAllowed()
+      ||(existing&&event.touches[0].identifier===existing.id))return;
+  originalNavigationTail=false; // A fresh live list also recovers a lost terminal event.
   const touch=event.touches[0],target=touch.target;
   if(!BreezePdfInk.finger(touch)||!(target instanceof Element)
       ||!target.closest('#originalwrap')||target.closest('button,input,textarea,select,[role=dialog]'))return;
@@ -526,7 +528,7 @@ function originalNavigationStart(event){
   const edge=x>=0&&x<=24;
   if(!edge&&(!pdfHorizontal()||!target.closest('.pdf-source-page')))return;
   originalNavigationContact={id:touch.identifier,x:touch.clientX,y:touch.clientY,
-    session:originalSession,gesture:activeGesture,edge,claimed:false,dx:0,dy:0,top:box.scrollTop,left:box.scrollLeft};
+    session:originalSession,gesture:activeGesture,edge,claimed:false,top:box.scrollTop,left:box.scrollLeft};
 }
 function originalNavigationMove(event){
   const contact=originalNavigationContact;if(!contact)return false;
@@ -535,7 +537,6 @@ function originalNavigationMove(event){
   }
   const touch=[...event.touches].find(t=>t.identifier===contact.id);if(!touch){cancelOriginalNavigation();return false;}
   const dx=touch.clientX-contact.x,dy=touch.clientY-contact.y;
-  contact.dx=dx;contact.dy=dy;
   // Native scroll that was already admitted keeps the contact. No late stealing.
   const box=readerScroller();
   if(box.scrollTop!==contact.top||box.scrollLeft!==contact.left){

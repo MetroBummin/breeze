@@ -66,3 +66,9 @@ test('a long press already dispatched by the gesture owner cannot also open navi
  const f=fixture();f.c.activeGesture={dispatched:0};f.start();f.c.activeGesture.dispatched=1;
  assert.equal(f.move(),false);f.end();assert.equal(f.result().opened,0);
 });
+
+test('a fresh single contact recovers immediately after a lost terminal event',()=>{
+ const f=fixture();f.start();f.move();
+ f.start(f.touch(12,150,2));f.move(f.touch(110,150,2));f.end(f.touch(110,150,2));
+ assert.equal(f.result().opened,1);
+});

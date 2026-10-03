@@ -364,3 +364,11 @@ test('scribble hold cancellation, movement, empty target and session interruptio
     assert.equal(f.timers.size,0,reason);
   }
 });
+
+test('rapid repeated scribbles each create one edit and leave no confirmation timer behind',async()=>{
+ const f=fixture();f.qa.scribble(true);
+ for(let i=0;i<12;i++){
+  f.state.strokes=[targetInk()];drawHeld(f);f.advance(421);liftHeld(f);await tick();
+  assert.equal(f.state.strokes.length,0);assert.equal(f.qa.undo().length,i+1);assert.equal(f.timers.size,0);
+ }
+});

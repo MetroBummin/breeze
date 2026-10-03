@@ -31,8 +31,8 @@ Pencil or suppressed palm contacts. Failed/cancelled gestures do not open UI.
   typecheck (unchanged 34 diagnostics), structure, lookup, storage, sync egress,
   sync network and audit-hardening/security contracts.
 - `node tests/verify-ready-contracts.mjs`: passed (18 operations/137 questions).
-- `node --test tests/verify-reader-input-gestures.mjs`: 6/6 passed.
-- `tests/verify-pdf-ink-regressions.mjs`: 36/36 passed; baseline suite together
+- `node --test tests/verify-reader-input-gestures.mjs`: 7/7 passed.
+- `tests/verify-pdf-ink-regressions.mjs`: 37/37 passed; baseline suite together
   with PDF session regressions also passes. Includes held scratch vs normal
   circles/letters/advancing hatching/notes, no tentative writes, undo before save,
   redo, empty targets, movement/cancel/resize/blur/scroll/new-session cleanup.
@@ -49,8 +49,8 @@ Pencil or suppressed palm contacts. Failed/cancelled gestures do not open UI.
   regressions; pinch interruption; Reader chrome motion/reversal/reduced-motion
   regressions passed.
 - Screenshots: `/tmp/breeze-input-gestures/` (confirmation, EPUB panel and settings
-  at 390x844, 820x1180, 1440x900, 320x568, 844x390 in both themes). Phone/settings
-  and confirmation were visually inspected. CI uploads both-engine proof.
+  at 390x844, 820x1180, 1440x900, 320x568, 844x390 in both themes). Phone/settings, short dark settings,
+  confirmation and EPUB opening were visually inspected. CI uploads both-engine proof.
 
 Local browser binary is `/usr/bin/chromium`, not Playwright's pinned download.
 Pinned browser downloads return network-policy 403 here; WebKit is delegated to
