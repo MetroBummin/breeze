@@ -18,7 +18,7 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
 try{
   for(const engine of [chromium,webkit].filter(engine=>!process.env.BROWSER||engine.name()===process.env.BROWSER)){
-    const browser=await engine.launch();
+    const browser=await engine.launch(engine===chromium && process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
     try{
       for(const [width,height] of [[320,568],[390,844],[820,1024],[1280,800]]){
         const page=await browser.newPage({viewport:{width,height},serviceWorkers:'block'});

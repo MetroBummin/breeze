@@ -137,6 +137,22 @@ function rssLooksEnglish(entry){
   const other=words.filter(word=>RSS_OTHER_WORDS.has(word) && !RSS_ENGLISH_WORDS.has(word)).length;
   return english>=Math.max(words.length<15?1:2,Math.ceil(words.length*.055)) && english>other;
 }
+// Narrow local junk check, not an article-quality judgment. Ambiguous entries stay.
+function rssObviousPromo(entry){
+  const title=String(entry?.title || '');
+  const promotional=/\b(?:coupon|promo|discount|voucher)\s+codes?\b/i.test(title) ||
+    /\b\d{1,2}%\s+off\b/i.test(title) && /\b(?:deal|today|limited.time)\b/i.test(title);
+  if(!promotional)return false;
+  const body=String(entry.contentHtml || entry.summary || '').slice(0,200000)
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,' ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  // A short feed excerpt cannot establish that a longer article is promo-only.
+  // Strong editorial signals or a developed body make this uncertain, so retain it.
+  if(body.length>1200 || /\b(?:review|buying guide|report(?:ing)?|analysis|research|study|investigat\w*|discuss\w*|explain\w*|compare\w*|tested|strategy|announc\w*|how|why)\b/i.test(title+' '+body))return false;
+  const redeem=/\b(?:use|enter|apply)\s+(?:the\s+)?(?:coupon\s+|promo\s+)?code\b|\bat checkout\b/i.test(body);
+  const saving=/\b\d{1,2}%\s+off\b|\bsave\s+(?:up to\s+)?(?:\d{1,2}%|[$£€]\d+)|\bfree (?:shipping|delivery)\b/i.test(body);
+  const boilerplate=/\b(?:verified|working)\s+(?:coupon\s+|promo\s+)?codes?\b|\b(?:limited.time|expires? (?:today|soon)|valid until|shop now|claim (?:this|your|the) deal)\b/i.test(body);
+  return redeem && saving && boilerplate;
+}
 function parseRss(xml, feed){
   if(String(xml).length > 3000000 || /<!DOCTYPE|<!ENTITY/i.test(xml)) throw new Error('피드를 읽지 못했어요');
   let source=String(xml);
@@ -162,7 +178,7 @@ function parseRss(xml, feed){
       date:rssDate(rssText(node, ['published', 'updated', 'pubdate', 'date'])),
     };
   }).filter(entry => {
-    if(!entry.title || !entry.url || (!entry.readUrl && !rssLooksEnglish(entry))) return false;
+    if(!entry.title || !entry.url || rssObviousPromo(entry) || (!entry.readUrl && !rssLooksEnglish(entry))) return false;
     const key = articleUrlKey(entry.url); if(seen.has(key)) return false; seen.add(key); return true;
   });
 }
@@ -494,7 +510,7 @@ async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
   const cards = [];
   for(const entry of entries){
     if(cards.length >= limit || renderId !== rssRenderIds.get(rail)) break;
-    if(rssAlreadySaved(entry)) continue;
+    if(rssAlreadySaved(entry) || rssObviousPromo(entry)) continue;
     if(!entry.photo) continue;
     const card = rssCard(entry);
     rssCardIdentities.set(card,rssCardIdentity(entry));
@@ -574,7 +590,7 @@ function rssRankRecommendations(groups, options={}){
   const queues=[];
   for(const group of (Array.isArray(groups)?groups:[]).slice(0,RSS_SOURCE_LIMIT)){
     if(!Array.isArray(group))continue;
-    const entries=group.slice(0,100).filter(entry=>entry &&
+    const entries=group.slice(0,100).filter(entry=>entry && !rssObviousPromo(entry) &&
       typeof entry.title==='string' && entry.title.trim() &&
       typeof entry.photo==='string' && entry.photo.trim() &&
       rssRecommendationUrl(entry.url) && (!entry.readUrl || rssRecommendationUrl(entry.readUrl)))
