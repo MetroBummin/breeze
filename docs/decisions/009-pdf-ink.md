@@ -618,3 +618,57 @@ on completion/cancellation. Release clears both caches. Input ownership,
 geometry, undo/redo and serialized persistence are unchanged. Regression tests
 cover 80 untouched strokes plus a highlight and prove zero detachments while
 erasing a separate stroke and undoing/redoing that edit.
+
+
+## Optional scribble erase and original-page edge navigation (2026-10-03)
+
+Scribble erase is OFF by default in the existing local pen settings. A destructive
+heuristic needs explicit opt-in before physical Pencil false-positive testing.
+Only an admitted WebKit stylus in pen mode participates; highlighter drawing,
+fingers and suppressed palms do not. Existing native inertia/admission is intact.
+
+The incremental recognizer retains at most 256 points spaced by 3 CSS pixels.
+Within 120–1800 ms it requires a 12–110 px box in both dimensions, at least 240 px
+travel, path/diagonal >=9, and either three net turns with >=45% revisited
+8 px cells or ten sharp reversals with >=75% revisits. Consecutive samples in one
+cell never count as retracing. It rejects single/double circles and advancing writing;
+these conservative fixture boundaries are not proof of zero false positives.
+After 420 ms stationary, eraser capsule geometry identifies intersected existing
+ink once. The dashed preview and contact-owned status say release to delete or
+move to cancel. A >4 px move disarms this contact permanently and preserves it as
+ordinary ink. Without recognition/targets/hold, release also saves ordinary ink.
+A cancelled stroke follows the existing discard policy. No ink is changed before
+release, including on page exit, resize, blur, lost capture or touch/pointer cancel.
+
+Release removes whole intersected stored pen/highlighter strokes (or existing
+partial-erasure fragments), without adding the scratch. Text, PDF content and
+word highlights are excluded. All changes form one existing history transaction
+and use the revision-aware serialized page writer, including undo before save,
+redo and failed-save retry. History remains session-local. The small contact cue
+is deliberately distinct from deferred Reader notices: confirmation must be
+visible while the writing pill's title/notice slot is hidden. It uses existing
+theme tokens and cannot receive input. Normal moves never scan stored ink.
+
+The original pinch lifecycle now feeds a single navigation candidate in
+pdf-navigation.js, replacing its independent horizontal-swipe listeners. One
+finger starting in the Reader's first 24 CSS px can move decisively right and
+release beyond 60 px to open the existing PDF/EPUB navigator. At base zoom,
+non-edge horizontal PDF input uses that same candidate for paging. Edge and page
+turn can never both win. A dispatched lookup/hold cannot be superseded. Movement
+claims before native scroll, cancels lookup and consumes the contact's click;
+vertical/leftward/short/cancelled input opens nothing. No drag-following sheet.
+
+Ink-busy, Pencil/palm, multiple contacts, remaining pinch fingers, enlarged zoom,
+opening/restore, dialogs and popups are excluded. Read and idle writing modes
+permit fingers under the existing Pencil policy. Native pan already changing
+scroll position is retained. Resize, background, mode/session changes and lost
+capture cancel candidates. System Safari edge-back may preempt and cancel web
+input; the existing button remains available. Native WKWebView navigation/security
+settings are unchanged. Neither synthetic WebKit nor Chromium proves UIKit/Pencil
+ordering, palm rejection or physical latency. See the QA acceptance checklist.
+
+The single original touch-start listener observes document capture and admits
+only scroller targets after the opening guard. An extra contact on toolbar/UI
+cancels a navigation candidate even if neither finger subsequently moves. The
+control itself never enters paper/pinch admission. A regression reproduced the
+previous scroller-only listener incorrectly opening the sidebar in this sequence.
