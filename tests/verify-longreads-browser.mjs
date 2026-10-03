@@ -20,11 +20,11 @@ const url=`http://127.0.0.1:${server.address().port}/`;
 const definitions=[
   {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',file:'homewardbound.txt',paras:107,first:'I sat stunned',last:'It was another flickering wall.'},
 ];
-const expectedOrder=definitions.map(read=>read.title);
+const expectedOrder=[...definitions.map(read=>read.title),'The Adventure of the Speckled Band'];
 const reports=[];
 
 try{
-  for(const engine of [chromium,webkit]){
+  for(const engine of [chromium,webkit].filter(engine=>!process.env.BROWSER||engine.name()===process.env.BROWSER)){
     const browser=await engine.launch();
     try{
       const page=await browser.newPage({viewport:{width:320,height:568},hasTouch:true,isMobile:true,
@@ -40,10 +40,10 @@ try{
       assert.deepEqual(await page.locator('#shelf .longread').evaluateAll(nodes=>nodes.map(node=>node.querySelector('.bt').textContent)),
         expectedOrder,`${engine.name()} Home default Long Reads order is wrong`);
       assert.equal(await page.locator('#shelf .longread img.cover').count(),expectedOrder.length,'Home is missing a bundled cover');
-      assert.deepEqual(await page.locator('#shelf .longread img.cover').evaluateAll(nodes=>nodes.map(node=>({
+      assert.deepEqual(await page.locator('#shelf .longread[data-longread-id="backroom-homeward-bound"] img.cover').evaluateAll(nodes=>nodes.map(node=>({
         loaded:node.complete&&node.naturalWidth===512&&node.naturalHeight===1024,
         titleVisible:getComputedStyle(node).objectPosition,
-      }))),Array(expectedOrder.length).fill({loaded:true,titleVisible:'50% 0%'}),`${engine.name()} cover crop or title alignment changed`);
+      }))),Array(definitions.length).fill({loaded:true,titleVisible:'50% 0%'}),`${engine.name()} cover crop or title alignment changed`);
       const results=[];
 
       for(let index=0;index<definitions.length;index++){
@@ -53,7 +53,11 @@ try{
           .map(block=>block.split('\n').map(line=>line.trim()).join(' ').trim()).filter(Boolean);
         assert.equal(expected.length,definition.paras,`${definition.id} source paragraph count changed`);
         await page.locator(`#shelf .longread[data-longread-id="${definition.id}"]`).click();
+        assert.equal(await page.evaluate(()=>books.length),0,'Preview imported a book');
+        await page.locator('#article-preview .ap-start').click();
         await page.waitForFunction(id=>books.some(book=>book.longReadId===id),definition.id);
+        await page.waitForFunction(()=>!articlePreviewDialog.open);
+        await page.evaluate(()=>show('home'));
         const saved=await page.evaluate(id=>{
           const book=books.find(item=>item.longReadId===id);
           return {title:book.title,kind:book.kind,paras:book.paras,author:book.author,
@@ -79,6 +83,7 @@ try{
         assert.ok(saved.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
         assert.doesNotMatch(saved.paras.join('\n'),/rating:\s*[+-]|Licensing \/ Citation|For more information about on-wiki content/i);
         await page.locator('#shelf .bookcard').filter({hasText:definition.title}).first().click();
+        await page.locator('#article-preview .ap-start').click();
         await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on'));
         await page.waitForFunction(()=>document.querySelectorAll('#rtext [data-pi]').length>0);
         assert.equal(await page.locator('#rtitle').textContent(),definition.title);
@@ -189,7 +194,7 @@ try{
         results.push({title:definition.title,paras:saved.paras.length,kind:saved.kind,
           lookup:true,sentence:true,highlight:true,lightDark:true,progressRestored:true});
       }
-      assert.equal(await page.evaluate(()=>pendingLongReads().length),0,'Imported Long Reads reappeared as recommendations');
+      assert.equal(await page.evaluate(()=>pendingLongReads().length),1,'Imported Long Reads reappeared as recommendations');
       reports.push({engine:engine.name(),viewport:'320×568',stories:results});
       await page.close();
     }finally{await browser.close();}

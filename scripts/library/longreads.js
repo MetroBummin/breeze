@@ -104,6 +104,25 @@ const LONG_READS = [
     ],
     site:'Backrooms Wiki', license:'CC BY-SA 3.0',
     licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
+    series:'BACKROOMS TALE SERIES',
+    hook:'아내가 사라진 뒤, 제임스는 사진과 붉은 실로 뒤덮인 작업실에서 단서를 찾습니다. 노트북 속 낯선 노란 방은 그를 어디로 데려갈까요?',
+    edition:'English original · Chapters 1–2', wordCount:4035,
+  },
+  {
+    id:'sherlock-holmes-speckled-band', file:'assets/longreads/speckled-band.txt',
+    cover:'', coverPosition:'center top',
+    title:'The Adventure of the Speckled Band',
+    originalTitle:'The Adventure of the Speckled Band (1892)',
+    author:'Arthur Conan Doyle',
+    sourceUrl:'https://www.gutenberg.org/ebooks/1661', site:'Project Gutenberg',
+    license:'Original: public domain in the USA',
+    licenseUrl:'https://www.gutenberg.org/ebooks/1661',
+    series:'SHERLOCK HOLMES · LIGHTLY MODERNIZED',
+    hook:'언니의 결혼식을 앞두고 밤마다 들렸던 낮은 휘파람. 2년 뒤, 같은 방에서 그 소리를 들은 헬렌 스토너가 새벽의 베이커가를 찾아옵니다.',
+    edition:'Lightly modernized English edition', wordCount:9804,
+    sha256:'9b9b230612dc39e67f18e86d1c71d4146adce8a677a15444938d619396ff50e2',
+    editionNote:'Lightly modernized English edition. Adapted from Arthur Conan Doyle’s “The Adventure of the Speckled Band,” in The Adventures of Sherlock Holmes (1892). Source text: Project Gutenberg, eBook #1661. Language lightly modernized for Breeze; this is not Doyle’s verbatim text. The story, paragraph order, period setting and clues are preserved.',
+    glossary:'Period terms: dog-cart — a light horse-drawn carriage; trap — a light carriage; half-pay — reduced pay for an officer not on active service; mare — a female horse. Historical money, objects and the story’s account of animal behaviour are retained.',
   },
 ];
 /* These pictures sit above the exact story passage they depict. Match the
@@ -129,6 +148,7 @@ const longReadAttribution = read => ({
   title:read.originalTitle, author:read.author, sourceName:read.site,
   sourceUrl:read.sourceUrl, sources:read.sources,
   license:read.license, licenseUrl:read.licenseUrl,
+  editionNote:read.editionNote, glossary:read.glossary,
 });
 /* Upgrade the bundled Chapter 1 copy in place. The first 61 paragraph indices
    stay identical, so saved Text anchors and lookup context remain meaningful. */
@@ -162,35 +182,54 @@ function pendingLongReads(){
 }
 
 let longReadBusy=false;
-async function importLongRead(read,card){
+async function importLongRead(read,card,options={}){
   if(longReadBusy)return;
+  const owned=books.find(book=>book.longReadId===read.id);
+  if(owned){
+    if(!owned.cover)await applyLongReadCover(read,options);
+    return owned;
+  }
   longReadBusy=true;
   if(card)card.classList.add('busy');
   try{
-    const response=await fetch(read.file);
+    const response=await fetch(read.file,{signal:options.signal});
     if(!response.ok)throw new Error('HTTP '+response.status);
     const text=await response.text();
     if(text.trim().length<100)throw new Error('Text book is empty');
+    if(read.sha256){
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
+      const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+      if(hash!==read.sha256)throw new Error('Text book is incomplete or has changed');
+    }
+    if(options.signal?.aborted)return null;
     const file=new File([text],`${read.id}.txt`,{type:'text/plain'});
-    await importFile(file,{
+    const imported=await importFile(file,{
       title:read.title, author:read.author, longReadId:read.id,
       originalTitle:read.originalTitle, sourceUrl:read.sourceUrl, site:read.site,
       attribution:longReadAttribution(read), coverPosition:read.coverPosition,
     },{preserveParagraphs:true});
-    await applyLongReadCover(read);
+    await applyLongReadCover(read,options);
+    return imported&&books.find(book=>book.id===imported.bookId)||null;
   }catch(error){
+    if(options.signal?.aborted)return null;
     console.error(error);
     toast('긴 글을 준비하지 못했어요 — 잠시 뒤 다시 눌러 보세요');
+    return null;
   }finally{
     longReadBusy=false;
     if(card)card.classList.remove('busy');
   }
 }
-async function applyLongReadCover(read){
+async function applyLongReadCover(read,options={}){
+  if(!read.cover)return;
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
+  const abort=()=>controller.abort();
+  if(options.signal?.aborted)controller.abort();
+  options.signal?.addEventListener('abort',abort,{once:true});
   try{
     const book=books.find(item=>item.longReadId===read.id);
     if(!book)return;
-    const response=await fetch(read.cover);
+    const response=await fetch(read.cover,{signal:controller.signal});
     if(!response.ok)return;
     const blob=await response.blob();
     if(!blob.size||!/^image\/(jpeg|png|gif|webp)$/i.test(blob.type))return;
@@ -199,19 +238,21 @@ async function applyLongReadCover(read){
     book.cover=key;book.coverPosition=read.coverPosition;
     await bookPut(book);renderAllBookViews();
   }catch(error){console.warn('긴 글 표지를 씌우지 못했습니다:',error&&error.message);}
+  finally{clearTimeout(timeout);options.signal?.removeEventListener('abort',abort);}
 }
 function longReadCard(read){
   const card=el('div','bookcard classic longread');
   card.dataset.longreadId=read.id;
   card.innerHTML=`<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>
-    <div class="get">↓ Breeze Text로 읽기</div>`;
-  fillCard(card,{'.author':'BACKROOMS TALE SERIES','.bt':read.title});
+    <div class="get">미리보기</div>`;
+  fillCard(card,{'.author':read.series,'.bt':read.title});
   const image=card.querySelector('.cover');
   image.onload=()=>{image.hidden=false;card.classList.add('has-cover');};
   image.style.objectPosition=read.coverPosition;
-  image.src=read.cover;
-  card.title=`${read.originalTitle} · ${read.author} · Backrooms Wiki`;
-  card.onclick=()=>importLongRead(read,card);
+  if(read.cover)image.src=read.cover;
+  card.title=`${read.originalTitle} · ${read.author} · ${read.series}`;
+  accessibleLibraryCard(card,read.title);
+  card.onclick=()=>openLongReadPreview(read);
   return card;
 }

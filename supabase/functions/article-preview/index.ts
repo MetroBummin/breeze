@@ -48,7 +48,7 @@ Deno.serve(async request=>{
     parsed.hash="";
     for(const key of [...parsed.searchParams.keys()])if(/^utm_|^(fbclid|gclid)$/i.test(key))parsed.searchParams.delete(key);
     // New prompt/validation generations must not reuse older shared metadata.
-    const cacheKey=await digest("article-preview-v4\n"+parsed.href+"\n"+title+"\n"+excerpt);
+    const cacheKey=await digest("article-preview-v5\n"+parsed.href+"\n"+title+"\n"+excerpt);
     const {data:hit,error:readError}=await db.from("article_preview_cache").select("hook_title,translated_title,teaser").eq("cache_key",cacheKey).maybeSingle();
     if(readError)return reply({error:"cache_unavailable"},503);
     const cached=hit && validMetadata({summaryKo:hit.teaser});

@@ -90,7 +90,7 @@ test('unusable model output cannot poison shared cache',async()=>{
 test('versioned evidence key normalizes tracking but not changed evidence',async()=>{
   const {send,state}=setup();await send();await send({...body,url:body.url+'?utm_source=home#fragment'});
   assert.equal(state.calls,1);await send({...body,title:'Updated title'});assert.equal(state.calls,2);
-  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v4\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v5\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
   assert.equal(state.keys[0],Buffer.from(digest).toString('hex'));
 });
 test('source month and written counts may be rendered as Korean numerals',async()=>{

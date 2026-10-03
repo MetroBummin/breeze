@@ -40,6 +40,16 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: Bundled long-read previews, imports and offline persistence
+        run: npm run test:longreads && npm run test:homeward-lookup
+      - name: Long-read preview proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: longread-preview-proof
+          path: /tmp/breeze-holmes-proof/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Vocabulary review in Chromium and WebKit
         run: |
           status=0

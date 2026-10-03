@@ -142,7 +142,7 @@ try{
       mode='hold';
       await page.evaluate(async()=>{const e=window.__fixture('waiting-for-korean');await importRssEntry(e,window.__card(e));});
       await page.waitForFunction(()=>articlePreviewJobs.size>0);
-      assert.match(await page.textContent('.ap-metadata-label'),/한국어 요약을 준비하고 있어요/);
+      assert.match(await page.textContent('.ap-metadata-label'),/한국어 소개를 준비하고 있어요/);
       assert(await page.isVisible('.ap-metadata-spinner'));assert(await page.isEnabled('.ap-start'));
       assert(await page.locator('.ap-summary').count());
       if(process.env.BREEZE_PREVIEW_CAPTURE_DIR){mkdirSync(process.env.BREEZE_PREVIEW_CAPTURE_DIR,{recursive:true});await page.screenshot({path:process.env.BREEZE_PREVIEW_CAPTURE_DIR+'/'+engine.name()+'-loading.png'});}
