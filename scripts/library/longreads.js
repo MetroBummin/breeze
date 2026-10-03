@@ -192,7 +192,9 @@ async function importLongRead(read,card,options={}){
   longReadBusy=true;
   if(card)card.classList.add('busy');
   try{
-    const response=await fetch(read.file,{signal:options.signal});
+    // Reuse the worker's versioned-asset verification before it caches bytes.
+    const fileUrl=read.sha256?`${read.file}?v=${read.sha256.slice(0,8)}`:read.file;
+    const response=await fetch(fileUrl,{signal:options.signal});
     if(!response.ok)throw new Error('HTTP '+response.status);
     const text=await response.text();
     if(text.trim().length<100)throw new Error('Text book is empty');

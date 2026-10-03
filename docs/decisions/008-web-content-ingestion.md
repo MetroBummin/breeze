@@ -467,7 +467,9 @@ their existing behavior. Existing Home resume remains a direct reading shortcut.
 The normal `importFile`/IndexedDB path owns identity, persistence and source
 paragraphs. Stable `longReadId` avoids fetching already imported bundled stories;
 normal source hashing also deduplicates an independently imported identical TXT.
-The Holmes asset checksum rejects truncated or unexpected successful responses.
+The Holmes asset checksum rejects truncated or unexpected successful responses;
+its versioned URL also uses the existing worker's pre-cache verification so a
+truncated response cannot poison subsequent retries.
 Dismissal cancels pending fetch/presentation; after an explicit save has begun,
 normal persistence may complete without reopening a dismissed dialog. Failure
 keeps Preview open with retry. Optional cover failure never discards readable text.

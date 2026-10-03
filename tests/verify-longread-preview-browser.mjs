@@ -25,6 +25,7 @@ const expected=readFileSync(resolve(root,'assets/longreads/speckled-band.txt'),'
 const proof='/tmp/breeze-holmes-proof';mkdirSync(proof,{recursive:true});
 try{
   for(const engine of [chromium,webkit].filter(engine=>!process.env.BROWSER||engine.name()===process.env.BROWSER)){
+    requests=0;mode='ok';held=null;
     const browser=await engine.launch();
     try{
       const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
@@ -113,9 +114,21 @@ try{
       await cachedPage.evaluate(()=>navigator.serviceWorker.ready);
       await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
       await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
+      mode='truncated';
+      await cachedPage.locator('.ap-start').click();
+      await cachedPage.waitForFunction(()=>!articlePreviewOpening);
+      assert.equal(await cachedPage.evaluate(()=>books.length),0);
+      assert.equal(await cachedPage.evaluate(async()=>{
+        const read=LONG_READS.find(item=>item.id==='sherlock-holmes-speckled-band');
+        return !!await caches.match(new URL(read.file+'?v='+read.sha256.slice(0,8),location.href).href);
+      }),false,'Worker cached an incomplete story');
+      mode='ok';
       await cachedPage.locator('.ap-start').click();
       await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.longReadId==='sherlock-holmes-speckled-band');
-      assert.ok(await cachedPage.evaluate(async()=>!!await caches.match(new URL('assets/longreads/speckled-band.txt',location.href).href)));
+      assert.ok(await cachedPage.evaluate(async()=>{
+        const read=LONG_READS.find(item=>item.id==='sherlock-holmes-speckled-band');
+        return !!await caches.match(new URL(read.file+'?v='+read.sha256.slice(0,8),location.href).href);
+      }));
       const hasCover=await cachedPage.evaluate(()=>!!curBook.cover);
       await cachedContext.setOffline(true);await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
       await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
