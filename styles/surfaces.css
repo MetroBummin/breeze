@@ -87,7 +87,6 @@ body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15
 #vstars .stbtn{position:relative;min-width:44px;min-height:36px;height:36px;padding:4px;border-radius:12px;}
 #vstars .stbtn::before{content:"";position:absolute;inset:-4px 0;border-radius:inherit;}
 #vsort-menu summary,#vbooks summary{border-top:4px solid transparent;border-bottom:4px solid transparent;background-clip:padding-box;border-radius:14px;padding:0 10px;font-size:12px;gap:8px;}
-.wordbook-filters{padding:10px 12px;gap:2px;border:0;background:transparent;}
 .wordbook-sort,.wordbook-filter-row{gap:10px;}
 #v-vocab .wordbook-brand{gap:10px;margin-bottom:22px;}
 #v-vocab h1{font-size:22px;font-weight:600;}
