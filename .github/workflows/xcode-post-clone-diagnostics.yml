@@ -1,0 +1,59 @@
+name: Xcode post-clone diagnostics
+
+on:
+  pull_request:
+    paths: ['.github/workflows/xcode-post-clone-diagnostics.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  post-clone:
+    name: macOS post-clone / ${{ matrix.label }}
+    runs-on: macos-15
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: previous-success
+            sha: 480ffe005e2aebf06d49171d28753a5cfabda7e0
+            build: '222'
+          - label: pr78-failure
+            sha: d5cf29200b4563ee2e5618d322178ceb33e9d055
+            build: '222'
+          - label: current-main
+            sha: e3cdde012e5613fad9c5c7af40ae46bee9a2160b
+            build: '223'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record comparison environment
+        env:
+          EXPECTED_SHA: ${{ matrix.sha }}
+          CI_BUILD_NUMBER: ${{ matrix.build }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          sw_vers
+          xcodebuild -version
+          node --version
+          npm --version
+          echo "Controlled CI_BUILD_NUMBER=$CI_BUILD_NUMBER; the actual Xcode Cloud counter is unverified."
+      - name: Run original post-clone script
+        env:
+          CI_BUILD_NUMBER: ${{ matrix.build }}
+        run: sh -x ios/App/ci_scripts/ci_post_clone.sh 2>&1 | tee "$RUNNER_TEMP/post-clone.log"
+      - name: Preserve full post-clone log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-clone-${{ matrix.label }}
+          path: ${{ runner.temp }}/post-clone.log
+          if-no-files-found: warn
+          retention-days: 7
