@@ -1,0 +1,146 @@
+{
+  "slug": "speckled-band",
+  "images": [
+    {
+      "id": "speckled-band-01",
+      "filename": "speckled-band-01.png",
+      "sizeBytes": 1929786,
+      "sha256": "d314fd9dfb208d285c481f71eb4e482124782d1eb6f52c820d4ef1b27ecaae4b",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: early April 1883, Watson's modest upstairs Baker Street bedroom at 7:15 in the morning. Dawn-blue light falls through curtains onto an iron/brass Victorian bed and a mantel clock in soft background, no legible numerals required. Holmes is already fully dressed in charcoal frock coat, waistcoat and white collar; he stands at the side of the bed looking down patiently at sleepy Watson, who has just propped himself on one elbow under white linen in a simple nightshirt. Use Image 1 for the dark-haired, clean-shaven younger Holmes and Image 2 for the sandy-haired moustached Watson, keeping them unmistakably different. Framing: intimate but spatially wide side view from foot of bed, Watson's rumpled linen fills foreground, Holmes on right third; no camera-facing portrait pose. Quiet human interruption, no terror, no other characters.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "speckled-band-02",
+      "filename": "speckled-band-02.png",
+      "sizeBytes": 1841921,
+      "sha256": "09fa7be27b09bc1b611b35de5c5526e6637464be3d242e9b5d52f87b1ee55fff",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Approved consultation sample reused: Helen by the Baker Street fire, Holmes and Watson backs in foreground",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-speckled-bohemia-v1.png"
+      ]
+    },
+    {
+      "id": "speckled-band-03",
+      "filename": "speckled-band-03.png",
+      "sizeBytes": 2405635,
+      "sha256": "a2f8c3e45df72642435b1c516dc9113a8c28b7c450722020feff7288d9801a92",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: Roylott's threatening visit to 221B Baker Street. Use only Dr Grimesby Roylott, second column of Image 1: massive heavy-set older man with harsh deeply lined face, grey disordered hair and side-whiskers, brown country tweed. He stands at the hearth and bends a long iron fireplace poker into a visible single curve with both huge hands. The bending poker, his tense hands, and broad torso dominate the left foreground in a low tight cinematic shot; Roylott's face is partly seen in three-quarter profile above. Holmes (Image 2, younger dark-haired clean-shaven, slender in charcoal) is seated calm in right middle ground; Watson (Image 3, sandy hair and moustache, brown suit) is only partly seen from behind at the far right. Victorian fireplace glow, old books and shabby elegant wallpaper, winter-blue window light. Roylott menaces with strength, no one is injured, no weapons pointed at people, no Helen or other supporting faces.",
+      "referenceFilenames": [
+        "supporting-speckled-bohemia-v1.png",
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "speckled-band-04",
+      "filename": "speckled-band-04.png",
+      "sizeBytes": 2734292,
+      "sha256": "213bafaa058c67027ed1fcb33ab8d1740554acb142c2ece6d3114a1f6694964b",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Approved establishing sample reused: decaying Stoke Moran exterior, no visible faces",
+      "referenceFilenames": []
+    },
+    {
+      "id": "speckled-band-05",
+      "filename": "speckled-band-05.png",
+      "sizeBytes": 2459820,
+      "sha256": "76e1cb77b8dae11291641b4364da9c9dcac62d468ce538db812ab35d3d1edcf4",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: outside the low bedroom window of the old Stoke Moran stone manor in April daylight. Sherlock Holmes is examining the solid iron hinge of a closed wooden shutter with a small handheld magnifying lens, shutter bolted from inside. Image 1 is Holmes identity: lean youngish clean-shaven dark-haired man in charcoal country overcoat, seen primarily in profile, leaning close to the stone window embrasure. Image 2 is Watson, sandy hair and moustache, brown tweed overcoat, seen only from behind at frame right, standing back watching. Helen is inside behind the closed shutter and must not be visible. Composition: a tactile oblique medium-wide architectural close shot, hinge and weathered wood at left in sharp detail, lens and Holmes' hand a focus, uneven massive masonry dominates; slight garden bokeh right, not a group portrait. Old iron mounting embedded securely in stone, no damage to shutter, no extra people.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "speckled-band-06",
+      "filename": "speckled-band-06.png",
+      "sizeBytes": 2077093,
+      "sha256": "12ad2c6d92b007d36801bec0fb905f939646df70c1bc39ce7caf9268d020996f",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Edit this Victorian cinematic clue insert only in the area of the ventilator and the bell rope's top hook. Keep every other object, sleeve, hand, white bed, lighting and 2:1 framing unchanged. The story's ventilator is a very small, square opening between rooms, small enough that a rat could barely pass. Make its visible opening about 10 centimetres wide, an unobstructed little dark square with no broad modern grille. Move the bell-rope attachment hook so it is directly centered JUST ABOVE this little opening, not offset to the left. The decorative rope then hangs downward directly across the opening to the bed pillow; preserve the existing hand gently holding it. Rope does not obstruct whole opening. Do not add a snake, text, wires or any working bell mechanism. Photorealistic low-key Victorian film texture, no other changes.",
+      "referenceFilenames": [
+        "speckled-band-06.png"
+      ]
+    },
+    {
+      "id": "speckled-band-07",
+      "filename": "speckled-band-07.png",
+      "sizeBytes": 1987619,
+      "sha256": "cde02c59b2c589d90ec55111b295dccf5f3adbb0f79ed5ddc3c7fb3ea03b3eb1",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: a quiet clue still-life in Dr Grimesby Roylott's larger, plainly furnished bedroom at Stoke Moran, April daytime. Center subject: a small plain white ceramic saucer containing a shallow amount of milk resting on top of a large scuffed dark iron safe. The safe is closed at this moment. A narrow wash of cool window light and warm reflected wood brings out milk, ceramic, rough iron, old fasteners. Camera low and close, three-quarter angle, milk saucer in right third with most frame filled by textured safe top and negative space; a simple wooden chair and technical books on a shelf blurred in background. No people or faces necessary, no cat, no snake, no menacing silhouette, no bank vault wall, no labels or legible text.",
+      "referenceFilenames": []
+    },
+    {
+      "id": "speckled-band-08",
+      "filename": "speckled-band-08.png",
+      "sizeBytes": 1878702,
+      "sha256": "c95629312238b5c6fe7ce086a5180ba601803b89cae949a7f545c91ddaab77eb",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: night at Stoke Moran immediately BEFORE Holmes turns down the lamp for the vigil. Tight cinematic still-life across the narrow white-counterpaned bed: a long thin straight bamboo cane lying diagonally beside a small plain cardboard matchbox and the short stump of an unlit candle, both on the bed. An oil lamp on the nearby table at the extreme left casts a last shallow amber pool; most of the plain low-ceiling bedroom fades into darkness. One dark charcoal trouser leg of seated Holmes may enter far upper edge, no face or body portrait necessary. Bed pillow and old wood panelling, shut wooden shutters. Camera almost at sheet height with cane leading depthwise through frame, cotton weave tactile in light. Restrained anticipatory tension, no snake, no action yet, no text on matchbox, no invented tools or people.",
+      "referenceFilenames": []
+    },
+    {
+      "id": "speckled-band-09",
+      "filename": "speckled-band-09.png",
+      "sizeBytes": 1685983,
+      "sha256": "18e648fdf78a4701d2775218bde127e849f0f79fbe0a545bc33e04800462fe17",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Edit Image 1, keeping the same exact men, expressions, positions, hands, cane, burning match, shadows and 2:1 framing. Image 2 is only room detail continuity reference. Make ONLY these architectural corrections to Image 1: replace the brass/iron bed headboard with the simple dark old wooden headboard and turned bedpost visible in Image 2; replace Image 1's high square metal grille with the VERY SMALL, unobstructed dark square opening shown in Image 2, about ten centimetres wide, with no modern grille and no bright array of holes. There can be the faintest amber light inside that tiny opening, not a bright lamp beam. It connects to the next room. Preserve the same white bedding, tense dark night atmosphere and readable film lighting. No snake visible, no other people, no text or labels, no other changes.",
+      "referenceFilenames": [
+        "speckled-band-09.png",
+        "speckled-band-06.png"
+      ]
+    },
+    {
+      "id": "speckled-band-10",
+      "filename": "speckled-band-10.png",
+      "sizeBytes": 1722911,
+      "sha256": "1ee05dc02e6f62090afbe896a1f2314d66b4bb57cf1ede4ffc25e38fa19ef881",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Make two local corrections to this photorealistic Victorian ending scene. Keep the same seated older Roylott's face, exact pose, rigid upward gaze, chair, lamp beam, safe, red slippers, two observers seen from behind, dark room and 2:1 composition unchanged. Change Roylott's long brown patterned dressing gown to a plain soft medium-grey dressing gown with subtle woven cloth texture and no pattern, and remove the visible maroon cravat/white formal shirt beneath, leaving a simple modest grey nightshirt neckline. Replace the narrow headband-like thing across his brow with an actual small yellow snake with brown speckles, visibly round in cross-section, gently coiled along his brow and around his head; a small diamond-shaped reptile head emerges just beside his hair without attacking. Keep snake natural, small and understated, not giant or monstrous. No blood, wounds, text, gore or other changes.",
+      "referenceFilenames": [
+        "speckled-band-10.png"
+      ]
+    }
+  ]
+}

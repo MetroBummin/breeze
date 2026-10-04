@@ -1,0 +1,272 @@
+[
+  {
+    "id": "final-problem-01",
+    "scene": "Holmes closes the consulting-room shutters",
+    "spoiler": "none",
+    "teaserCandidate": true,
+    "placement": "after",
+    "paragraph1Based": 4,
+    "paragraphSha256": "4639fe4ca71be10a14c76b857c3ab305ed67fa5a9711484b24cae5f88eaabfc3",
+    "adaptedPrefix": "The only light in the room came from the lamp upon the table at which I had been reading. Holmes",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10385,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "The only light in the room came from the lamp upon the table",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 5,
+    "beforeNextPrefix": "“You are afraid of something?” I asked.",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 4,
+      "paragraphSha256": "4639fe4ca71be10a14c76b857c3ab305ed67fa5a9711484b24cae5f88eaabfc3",
+      "beforeParagraph1Based": 5,
+      "beforeNextPrefix": "“You are afraid of something?” I asked."
+    }
+  },
+  {
+    "id": "final-problem-02",
+    "scene": "Moriarty confronts Holmes in his rooms",
+    "spoiler": "early",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 27,
+    "paragraphSha256": "1c72baca8b44d2fcfdf5cb049092e75862a9f9098ac3d1cfc223799cf09e05c3",
+    "adaptedPrefix": "“My nerves are fairly proof, Watson, but I must confess to a start when I saw the very man who",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10534,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "“My nerves are fairly proof, Watson, but I must confess to a",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 28,
+    "beforeNextPrefix": "“The fact is that upon his entrance I had instantly recognised the extreme personal danger in which I lay. The",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 27,
+      "paragraphSha256": "1c72baca8b44d2fcfdf5cb049092e75862a9f9098ac3d1cfc223799cf09e05c3",
+      "beforeParagraph1Based": 28,
+      "beforeNextPrefix": "“The fact is that upon his entrance I had instantly recognised the extreme personal danger in which I lay. The only conceivable escape for"
+    }
+  },
+  {
+    "id": "final-problem-03",
+    "scene": "Holmes jumps clear of the fast two-horse van",
+    "spoiler": "early",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 48,
+    "paragraphSha256": "9ba4dd3c953424954a5d1dddb1e3d17ba63c64f3a3055f220661a606513b72b5",
+    "adaptedPrefix": "“My dear Watson, Professor Moriarty is not a man who lets the grass grow under his feet. I went out",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10640,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "“My dear Watson, Professor Moriarty is not a man who lets the",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 49,
+    "beforeNextPrefix": "I had often admired my friend’s courage, but never more than now, as he sat quietly checking off a series",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 48,
+      "paragraphSha256": "9ba4dd3c953424954a5d1dddb1e3d17ba63c64f3a3055f220661a606513b72b5",
+      "beforeParagraph1Based": 49,
+      "beforeNextPrefix": "I had often admired my friend’s courage, but never more than now, as he sat quietly checking off a series of incidents which must"
+    }
+  },
+  {
+    "id": "final-problem-04",
+    "scene": "Watson boards the brougham after crossing Lowther Arcade",
+    "spoiler": "clue",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 59,
+    "paragraphSha256": "e2e5ff79664615e34d0797515c02e44d3a0589f65fbffb776b163d23eb812cd4",
+    "adaptedPrefix": "In the morning I obeyed Holmes’s injunctions to the letter. A hansom was procured with such precaution as would prevent",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10722,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "In the morning I obeyed Holmes’s injunctions to the letter.",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 60,
+    "beforeNextPrefix": "So far all had gone admirably. My luggage was waiting for me, and I had no difficulty in finding the",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 59,
+      "paragraphSha256": "e2e5ff79664615e34d0797515c02e44d3a0589f65fbffb776b163d23eb812cd4",
+      "beforeParagraph1Based": 60,
+      "beforeNextPrefix": "So far all had gone admirably. My luggage was waiting for me, and I had no difficulty in finding the carriage which Holmes had"
+    }
+  },
+  {
+    "id": "final-problem-05",
+    "scene": "Watson and the disguised Italian priest in the reserved carriage",
+    "spoiler": "clue",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 60,
+    "paragraphSha256": "fe66712d2c5a896d8f1008fc5843eaafb34192f448727be600e2377cbe9b5920",
+    "adaptedPrefix": "So far all had gone admirably. My luggage was waiting for me, and I had no difficulty in finding the",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10732,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "So far all had gone admirably. My luggage was waiting for me,",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 61,
+    "beforeNextPrefix": "“My dear Watson,” said a voice, “you have not even condescended to say good-morning.”",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 60,
+      "paragraphSha256": "fe66712d2c5a896d8f1008fc5843eaafb34192f448727be600e2377cbe9b5920",
+      "beforeParagraph1Based": 61,
+      "beforeNextPrefix": "“My dear Watson,” said a voice, “you have not even condescended to say good-morning.”"
+    }
+  },
+  {
+    "id": "final-problem-06",
+    "scene": "The fugitives watch the special train pass Canterbury",
+    "spoiler": "mid",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 95,
+    "paragraphSha256": "9094edb38b7cb8b3e31c3eceb4af98a3218c20279086bc70be1c5537bef3f8f7",
+    "adaptedPrefix": "Far away, from among the Kentish woods there rose a thin spray of smoke. A minute later a carriage and",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10867,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "Far away, from among the Kentish woods there rose a thin spray of",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 96,
+    "beforeNextPrefix": "“There he goes,” said Holmes, as we watched the carriage swing and rock over the points. “There are limits, you",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 95,
+      "paragraphSha256": "9094edb38b7cb8b3e31c3eceb4af98a3218c20279086bc70be1c5537bef3f8f7",
+      "beforeParagraph1Based": 96,
+      "beforeNextPrefix": "“There he goes,” said Holmes, as we watched the carriage swing and rock over the points. “There are limits, you see, to our friend’s"
+    }
+  },
+  {
+    "id": "final-problem-07",
+    "scene": "A falling rock crashes into the Daubensee",
+    "spoiler": "late",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 106,
+    "paragraphSha256": "749924ea76982d35f36b13b9495ab704b5ad361f2dd5d4d282b4abbd220a5962",
+    "adaptedPrefix": "Once, I remember, as we passed over the Gemmi, and walked along the border of the melancholy Daubensee, a large",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10929,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "Once, I remember, as we passed over the Gemmi, and walked along",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 107,
+    "beforeNextPrefix": "And yet for all his watchfulness he was never depressed. On the contrary, I can never recollect having seen him",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 106,
+      "paragraphSha256": "749924ea76982d35f36b13b9495ab704b5ad361f2dd5d4d282b4abbd220a5962",
+      "beforeParagraph1Based": 107,
+      "beforeNextPrefix": "And yet for all his watchfulness he was never depressed. On the contrary, I can never recollect having seen him in such exuberant spirits."
+    }
+  },
+  {
+    "id": "final-problem-08",
+    "scene": "Holmes and Watson contemplate Reichenbach Falls",
+    "spoiler": "late",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 109,
+    "paragraphSha256": "1eaadad9ff7abeb375ea567e4839ae3da6e0b9977de02d3f11459810ce039eea",
+    "adaptedPrefix": "It was on the 3rd of May that we reached the little village of Meiringen, where we put up at",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10971,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "It is indeed, a fearful place. The torrent, swollen by the",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 110,
+    "beforeNextPrefix": "The path has been cut half-way round the fall to afford a complete view, but it ends abruptly, and the",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 109,
+      "paragraphSha256": "1eaadad9ff7abeb375ea567e4839ae3da6e0b9977de02d3f11459810ce039eea",
+      "beforeParagraph1Based": 110,
+      "beforeNextPrefix": "The path has been cut half-way round the fall to afford a complete view, but it ends abruptly, and the traveler has to return"
+    }
+  },
+  {
+    "id": "final-problem-09",
+    "scene": "A Swiss messenger brings Watson the hotel letter",
+    "spoiler": "late",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 110,
+    "paragraphSha256": "61ee782d33c29de911ffc12f3619ee865e7700ad2322b91909c99c2158b0b2ff",
+    "adaptedPrefix": "The path has been cut half-way round the fall to afford a complete view, but it ends abruptly, and the",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 10985,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "The path has been cut half-way round the fall to afford a",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 111,
+    "beforeNextPrefix": "The appeal was one which could not be ignored. It was impossible to refuse the request of a fellow-countrywoman dying",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 110,
+      "paragraphSha256": "61ee782d33c29de911ffc12f3619ee865e7700ad2322b91909c99c2158b0b2ff",
+      "beforeParagraph1Based": 111,
+      "beforeNextPrefix": "The appeal was one which could not be ignored. It was impossible to refuse the request of a fellow-countrywoman dying in a strange land."
+    }
+  },
+  {
+    "id": "final-problem-10",
+    "scene": "Watson discovers the cigarette case and farewell note",
+    "spoiler": "ending",
+    "teaserCandidate": false,
+    "placement": "after",
+    "paragraph1Based": 120,
+    "paragraphSha256": "be05642276de2e3cc7732dabea5501a8a0065243b15b4aaa383c73cb744bc454",
+    "adaptedPrefix": "I stood for a minute or two to collect myself, for I was dazed with the horror of the thing.",
+    "sourceLocator": {
+      "kind": "verified-official-source-line-locator",
+      "sourceLine0Based": 11075,
+      "paragraph1Based": null,
+      "adaptedPrefix": null,
+      "paragraphSha256": null,
+      "sourceLocatorPrefix": "But it was destined that I should after all have a last word of",
+      "paragraphBoundaryVerified": false
+    },
+    "beforeNextParagraph1Based": 121,
+    "beforeNextPrefix": "“My dear Watson,” he said, “I write these few lines through the courtesy of Mr. Moriarty, who awaits my convenience",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 120,
+      "paragraphSha256": "be05642276de2e3cc7732dabea5501a8a0065243b15b4aaa383c73cb744bc454",
+      "beforeParagraph1Based": 121,
+      "beforeNextPrefix": "“My dear Watson,” he said, “I write these few lines through the courtesy of Mr. Moriarty, who awaits my convenience for the final discussion"
+    }
+  }
+]

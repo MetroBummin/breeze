@@ -1,0 +1,153 @@
+{
+  "slug": "red-headed-league",
+  "images": [
+    {
+      "id": "red-headed-league-01",
+      "filename": "red-headed-league-01.png",
+      "sizeBytes": 2114390,
+      "sha256": "a3673c71327f2ff4336ca2638a29ca28d99ad6301cf5db0b55988b725b0011d7",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 01: Jabez Wilson consults Holmes in the Baker Street sitting room on an autumn afternoon. Composition: deliberately favor the new client's entrance and reaction, a medium-low shot framed over Holmes's dark, out-of-focus shoulder at left; Wilson is stout, middle-aged with flaming curly red hair, brown tweed three-piece, watch chain; sits forward on the opposite chair with puzzled earnestness. Watson (brown tweed, light brown hair and distinct curled moustache) stands further back near the doorway, smaller in frame. Approved Holmes identity only in partial left profile/shoulder in the foreground. A glowing fireplace and scattered books deepen the dark lived-in room; window light is cold and diffused. Clearly three distinct men, natural seating and scale. Reference 1 Holmes, reference 2 Watson, reference 3 Wilson (first column only; exclude all other reference-sheet characters). No newspaper advertisement readable yet, no tunnel or future clues.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-redheaded-norton-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-02",
+      "filename": "red-headed-league-02.png",
+      "sizeBytes": 2176981,
+      "sha256": "e908eb20c904c3072a7376d58ae6eb83628a5b9445667594f526584f04afe21f",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 02: THE NEWSPAPER advertisement for the Red-Headed League. An intimate insert shot with NO faces: a folded and creased late-Victorian English newspaper open across a walnut table, Jabez Wilson's broad hand with a white cuff and brown tweed sleeve indicating one small advertisement, Holmes's slender hand beside it and the edge of his dark sleeve. Newspaper print must be defocused, visibly antique ink but entirely illegible, no recognizable letters or headlines. A simple magnifying lens, unlit pipe, cup and saucer, lamp edge and firelight suggest the Baker Street room. Camera close over the desk at a shallow oblique angle, crisp tactile fingers, paper and worn wooden edge, blurred distant fireplace. Main image is the newspaper and human hands, not portraits. Cold autumn window reflection with a small warm pool of lamplight, mobile-readable composition. Historically ordinary newspaper, no future clues or tunnels.",
+      "referenceFilenames": []
+    },
+    {
+      "id": "red-headed-league-03",
+      "filename": "red-headed-league-03.png",
+      "sizeBytes": 2413102,
+      "sha256": "44940b0147c99a724081ad09297745c0b7c84071b5ba6ebaa2487bb0505d8adf",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 03: An absurd but believable crowd of red-haired applicants outside a shabby Fleet Street office, all adult men with different naturally auburn, orange or copper hair, period coats and top hats; crowded narrow lane and worn stone steps. An elevated wide shot looking diagonally down over the crowd. Wilson from reference first column is recognizable from BACK: a very stout man with flaming curly red hair and brown tweed, led by slim youthful Spaulding from reference second column, dark hair and grey suit, also from back; they are two midground figures pushing through. The emphasis is the unique red-haired crowd and Victorian street architecture, not faces. Diffuse overcast daylight, thin London haze, restrained dark clothing and russet hair. Office door half open at top of stairs, no readable signs, no modern signs, no tunnels or criminal visual hints. Reference third/fourth-column characters are excluded.",
+      "referenceFilenames": [
+        "supporting-redheaded-norton-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-04",
+      "filename": "red-headed-league-04.png",
+      "sizeBytes": 2310907,
+      "sha256": "1bb09a894d70e8ab6d4c1e7c11ccf8c973be07d2703f2ebbd5f34b319ca62631",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 04: Wilson copies the first volume of an encyclopedia at a lonely office desk. High-angle intimate view over his stout shoulder and flaming-red curly head; white cuff, brown tweed sleeve, a historically correct dip pen in hand writing an unreadable manuscript on foolscap. A thick opened antique encyclopedia and ink bottle dominate the desk; a tall plain cupboard and one empty chair stand beyond. Ross's dark trouser legs and lower coat at the far doorway only, no face needed, suggest supervision. The room is bare, quiet and monotonous. Cold north-window light falls across paper against warm copper hair, worn brown desk and slate shadows. Reference Wilson first column and Ross third column for build/clothes only. No readable words anywhere, no modern ballpoint, no tunnel/robbery clues.",
+      "referenceFilenames": [
+        "supporting-redheaded-norton-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-05",
+      "filename": "red-headed-league-05.png",
+      "sizeBytes": 2244914,
+      "sha256": "f231f0790ed114cc99d032284d25168318009bc44b5b1156e58cccffd70b5a6a",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 05: Wilson finds the League office closed. A lonely medium-wide rear view in a shabby narrow stair landing: stout Wilson's copper-red curls and brown tweed coat fill the lower left quarter; he stares at a shut, scuffed painted wooden door with a small white card nailed at eye height. The card carries indistinct unrecognizable ink strokes, no readable letters; story prose supplies the dissolution notice. His shoulders sag and one hand holds his hat. Worn treads, peeling plaster, a thin shaft of grey autumn daylight from the side, muted browns and cold blue shadows. Empty surroundings, no other person or villain, no tunnel. Reference first column Wilson only; identity from hair/build/wardrobe, no portrait.",
+      "referenceFilenames": [
+        "supporting-redheaded-norton-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-06",
+      "filename": "red-headed-league-06.png",
+      "sizeBytes": 2182854,
+      "sha256": "18baad4a002d95685a0d32e6184027857387417ddc246f8dd6c149b0d5c07f72",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 06: Holmes taps the pavement outside Jabez Wilson's pawnshop in the worn London Saxe-Coburg Square. A LOW street-level close shot emphasizing his slender hand holding a walking stick and stick tip touching worn flagstones; legs in dark charcoal Victorian trousers and black leather shoes, no recognisable Holmes face visible. Watson's brown tweed legs stand behind at right, and in the distant open shop doorway slim Spaulding (dark hair, grey suit) is small and out of focus. Three brass pawnbroker balls hang above. Old brick façades, little soot-dark shop frontage, grey daylight and damp stone. No readable lettering; do not show a cutaway tunnel or reveal solution. Reference1 Holmes silhouette/clothes, reference2 Watson clothes, reference3 Spaulding second column only. Natural cane and anatomical hands; this is a street-level clue insert, not another character group portrait.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-redheaded-norton-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-07",
+      "filename": "red-headed-league-07.png",
+      "sizeBytes": 1955275,
+      "sha256": "af31c7ececfe049a5d808568bbd0e71f2f3bbf860ab4e89c7190841a0a05a911",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 07: Holmes relaxes while listening to violin music at St James's Hall. An immersive WIDE establishing shot FROM BEHIND two seated men in a dark Victorian concert hall: slim Holmes in dark suit at left and sturdier Watson in brown tweed at right, seen as small backs in lower foreground, no faces. Ahead, a gaslit stage holds several seated classical string performers, a solo violinist standing naturally, a warm golden glow on wood instruments; dark audience tiers and restrained ornate nineteenth-century architecture fade into smoke-hazed shadow. Camera at audience eye level, long perspective toward the luminous stage, cool auditorium and warm music space. Identity references define back silhouettes and wardrobe only. No modern stage electronics, no readable programmes or signs, no extraneous case clues.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-08",
+      "filename": "red-headed-league-08.png",
+      "sizeBytes": 2086774,
+      "sha256": "6f73cb3a40f96211d5167cedd14e85b01732ab2cd4d1acd5e7a38593c3d599fb",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 08: Holmes, Watson, detective Peter Jones and bank director Merryweather descend a winding stone stair into a great bank cellar, London at night. Shot FROM BELOW and at some distance looking upward along the steep staircase: the investigators become four separated shadowed silhouettes, clear count four, no frontal faces. Merryweather, grey-haired with side whiskers in black long coat and patterned waistcoat (reference3 fourth column), leads with a nineteenth-century covered lantern; behind him Holmes (slim dark coat), Watson (brown tweed, sturdier), and Jones (stocky dark coat with muttonchop whiskers, reference3 third column). Iron gate in foreground, rough stone vault, great wooden crates and heavy iron-bound boxes in cellar. Lantern creates a narrow warm ribbon through near-black cool blue shadows. Atmospheric and readable, not horror. No gold scattered loose, no visible tunnel yet, no text/labels, no modern flashlight.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-moriarty-mycroft-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-09",
+      "filename": "red-headed-league-09.png",
+      "sizeBytes": 1869468,
+      "sha256": "337de6124d9f0cec7c2d8586a0752bf44246fc056fb10953d2b1df8d91a25c4e",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 09: John Clay emerges through the bank cellar floor. A tight, suspenseful ground-level shot from behind a dark wooden crate: one broad pale stone flag has tipped upward on its edge, exposing a dark tunnel opening; a youthful clean-shaven man's hand grips the floor and his pale, sharp dark-haired face and grey-clothed shoulders emerge. Match Spaulding/Clay's SAME original face, second column in reference, no older man. He looks cautiously along the floor, not toward camera. Deeper in the narrow hole only a dim copper-red-haired head of his accomplice is hinted, same Ross third-column hair identity, no extra bodies. Hidden lantern casts a thin amber stripe across fingers, stone edge and his cheek, all else cold black. Heavy crates at frame sides, dust and rough stone. No investigators visible, no weapons, no gore, no captions, no modern objects.",
+      "referenceFilenames": [
+        "supporting-redheaded-norton-v1.png"
+      ]
+    },
+    {
+      "id": "red-headed-league-10",
+      "filename": "red-headed-league-10.png",
+      "sizeBytes": 2328055,
+      "sha256": "dcbb6df88a8aaaa8f0d947ba4b120a9f14aa0aebde2430606ed42320547bec58",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset type: interior narrative illustration for a complete Sherlock Holmes story, not a cover. Style: original photorealistic Victorian period cinema, London 1890; muted charcoal and blue-grey shadows against restrained warm gaslight, true photographic skin and wool texture, restrained film grain and natural depth; emotionally tense but believable cold drama. Format: ONE single 2:1 landscape movie still, no collage, no panels, no labels, no readable typography, no watermarks. Never resemble or imitate any actor. Preserve the original characters in the reference sheets; reference sheets are identity and wardrobe only, do not copy their studio background, grid, text or pose. Match period clothing; no modern items. Composition must read on a mobile screen. Scene 10: Holmes arrests John Clay at the tunnel opening in the bank cellar. A dynamic medium-wide SIDE view, original Holmes (reference1, slim clean-shaven dark-haired, dark charcoal coat) calmly grips Clay's near wrist; Clay (reference3 second column, slim youthful dark hair, clean-shaven, grey suit) has just climbed out and stands half turned, caught. Hands and wrists anatomically credible, bodies separated. Stocky muttonchop-whiskered Jones (reference4 third column) reaches from right, dark coat; Watson (reference2 brown tweed and curled moustache) is partly obscured by a crate in far background, watching. Foreground tipped stone slab and dark opening are clearly grounded, lantern-lit wooden crates, no visible gold piles. Cold vault blacks against tightly controlled warm lantern light, decisive quiet tension, no violent brawl, no blood or gore, no readable text, no frontal lineup.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-redheaded-norton-v1.png",
+        "supporting-moriarty-mycroft-v1.png"
+      ]
+    }
+  ]
+}

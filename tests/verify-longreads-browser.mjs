@@ -20,7 +20,7 @@ const url=`http://127.0.0.1:${server.address().port}/`;
 const definitions=[
   {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',file:'homewardbound.txt',paras:107,first:'I sat stunned',last:'It was another flickering wall.'},
 ];
-const expectedOrder=[...definitions.map(read=>read.title),'The Adventure of the Speckled Band','A Scandal in Bohemia','The Red-Headed League'];
+const expectedOrder=[...definitions.map(read=>read.title),'The Adventure of the Speckled Band','A Scandal in Bohemia','The Red-Headed League','The Final Problem','The Hound of the Baskervilles'];
 const reports=[];
 
 try{
@@ -194,7 +194,7 @@ try{
         results.push({title:definition.title,paras:saved.paras.length,kind:saved.kind,
           lookup:true,sentence:true,highlight:true,lightDark:true,progressRestored:true});
       }
-      assert.equal(await page.evaluate(()=>pendingLongReads().length),3,'Imported Long Reads reappeared as recommendations');
+      assert.equal(await page.evaluate(()=>pendingLongReads().length),5,'Imported Long Reads reappeared as recommendations');
       reports.push({engine:engine.name(),viewport:'320×568',stories:results});
       await page.close();
     }finally{await browser.close();}

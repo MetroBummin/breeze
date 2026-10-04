@@ -109,7 +109,7 @@ try{
       assert.deepEqual(await page.evaluate(()=>curBook.paras),expected);
       assert.equal(await page.evaluate(()=>books.length),1);
       assert.equal(await page.locator('#rtext [data-pi]').count(),251);
-      assert.equal(await page.locator('#rtext .story-illustration').count(),0);
+      assert.equal(await page.locator('#rtext .story-illustration').count(),10);
       await page.locator('#r-attribution summary').click();
       assert.match(await page.locator('#r-attribution').innerText(),/not Doyle’s verbatim text/);
       await page.evaluate(()=>{readerScrollTo((readerContentHeight()-readerViewHeight())*.5);updatePfill(true);});

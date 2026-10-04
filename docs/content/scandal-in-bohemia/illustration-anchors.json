@@ -1,0 +1,247 @@
+[
+  {
+    "id": "scandal-in-bohemia-01",
+    "scene": "Watson sees Holmes pacing through Baker Street windows",
+    "characters": [
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "I.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 4,
+      "originalPrefix": "One night—it was on the twentieth of March, 1888—I was returning from a journey to a patient (for I had",
+      "adaptedPrefix": "One night—it was on the twentieth of March, 1888—I was returning from a journey to a patient (for I had",
+      "paragraphSha256": "48ab5ba26c63ca37bac3e19b839ceab1843e560cd508609b7698a37d75a9dc6a"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 4,
+      "paragraphSha256": "48ab5ba26c63ca37bac3e19b839ceab1843e560cd508609b7698a37d75a9dc6a",
+      "beforeParagraph1Based": 5,
+      "beforeNextPrefix": "His manner was not effusive. It seldom was; but he was glad, I think, to see me. With hardly a word spoken, but with"
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-02",
+    "scene": "The mysterious appointment letter",
+    "characters": [
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "I.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 23,
+      "originalPrefix": "“There will call upon you to-night, at a quarter to eight o’clock,” it said, “a gentleman who desires to consult",
+      "adaptedPrefix": "“There will call upon you tonight, at a quarter to eight o’clock,” it said, “a gentleman who desires to consult",
+      "paragraphSha256": "12168c11f9bf3c83f012406773459880039109e5e75dbaf5c7fc775057cc24f1"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 23,
+      "paragraphSha256": "12168c11f9bf3c83f012406773459880039109e5e75dbaf5c7fc775057cc24f1",
+      "beforeParagraph1Based": 24,
+      "beforeNextPrefix": "“This is indeed a mystery,” I remarked. “What do you imagine that it means?”"
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-03",
+    "scene": "The masked royal visitor enters",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "King"
+    ],
+    "chapter": "I.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 43,
+      "originalPrefix": "A man entered who could hardly have been less than six feet six inches in height, with the chest and",
+      "adaptedPrefix": "A man entered who could hardly have been less than six feet six inches in height, with the chest and",
+      "paragraphSha256": "a1a434147cac3a3d5b1a83113985dc274d6e1f88edf1720193c0f349e9054cd9"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 43,
+      "paragraphSha256": "a1a434147cac3a3d5b1a83113985dc274d6e1f88edf1720193c0f349e9054cd9",
+      "beforeParagraph1Based": 44,
+      "beforeNextPrefix": "“You had my note?” he asked with a deep harsh voice and a strongly marked German accent. “I told you that I would call.”"
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-04",
+    "scene": "Holmes disguised as a groom in the mews",
+    "characters": [
+      "Holmes"
+    ],
+    "chapter": "II.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 130,
+      "originalPrefix": "“I then lounged down the street and found, as I expected, that there was a mews in a lane which",
+      "adaptedPrefix": "“I then lounged down the street and found, as I expected, that there was a mews in a lane which",
+      "paragraphSha256": "f80d81598200d78896d0f9860d6ef0bf8c9913b5ab089642c630aef01329695b"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 130,
+      "paragraphSha256": "f80d81598200d78896d0f9860d6ef0bf8c9913b5ab089642c630aef01329695b",
+      "beforeParagraph1Based": 131,
+      "beforeNextPrefix": "“And what of Irene Adler?” I asked."
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-05",
+    "scene": "Holmes unexpectedly witnesses the wedding",
+    "characters": [
+      "Holmes",
+      "Irene",
+      "Godfrey Norton"
+    ],
+    "chapter": "II.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 144,
+      "originalPrefix": "“I was half-dragged up to the altar, and before I knew where I was I found myself mumbling responses which",
+      "adaptedPrefix": "“I was half-dragged up to the altar, and before I knew where I was I found myself mumbling responses which",
+      "paragraphSha256": "882fa071a52f5252d96a641f6b8e86d7c3307a4350fda7c535ff71da587655b9"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "mid",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 144,
+      "paragraphSha256": "882fa071a52f5252d96a641f6b8e86d7c3307a4350fda7c535ff71da587655b9",
+      "beforeParagraph1Based": 145,
+      "beforeNextPrefix": "“This is a very unexpected turn of affairs,” said I; “and what then?”"
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-06",
+    "scene": "Holmes returns dressed as a clergyman",
+    "characters": [
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "II.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 173,
+      "originalPrefix": "He disappeared into his bedroom and returned in a few minutes in the character of an amiable and simple-minded Nonconformist",
+      "adaptedPrefix": "He disappeared into his bedroom and returned in a few minutes in the character of an amiable and simple-minded Nonconformist",
+      "paragraphSha256": "7e9029a73058ef8628ed71c6f6eba93245bbffe6a0ceb9cc0a70455cfdf7bcdc"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 173,
+      "paragraphSha256": "7e9029a73058ef8628ed71c6f6eba93245bbffe6a0ceb9cc0a70455cfdf7bcdc",
+      "beforeParagraph1Based": 174,
+      "beforeNextPrefix": "It was a quarter past six when we left Baker Street, and it still wanted ten minutes to the hour when we found ourselves"
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-07",
+    "scene": "Irene steps out of her carriage at Briony Lodge",
+    "characters": [
+      "Irene",
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "II.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 188,
+      "originalPrefix": "As he spoke the gleam of the sidelights of a carriage came round the curve of the avenue. It was",
+      "adaptedPrefix": "As he spoke the gleam of the sidelights of a carriage came round the curve of the avenue. It was",
+      "paragraphSha256": "bcc76e8ca25ebae80d83aa19d1340697730854125f3200eda3253b737191a39e"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "mid",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 188,
+      "paragraphSha256": "bcc76e8ca25ebae80d83aa19d1340697730854125f3200eda3253b737191a39e",
+      "beforeParagraph1Based": 189,
+      "beforeNextPrefix": "“Is the poor gentleman much hurt?” she asked."
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-08",
+    "scene": "Smoke rises at the open drawing-room window",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Irene"
+    ],
+    "chapter": "II.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 196,
+      "originalPrefix": "Holmes had sat up upon the couch, and I saw him motion like a man who is in need of",
+      "adaptedPrefix": "Holmes had sat up upon the couch, and I saw him motion like a man who is in need of",
+      "paragraphSha256": "2463a31ae6e4f02cf73caf85cb7ed161d18a6e5c7dc25b82a1bde9d472356678"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 196,
+      "paragraphSha256": "2463a31ae6e4f02cf73caf85cb7ed161d18a6e5c7dc25b82a1bde9d472356678",
+      "beforeParagraph1Based": 197,
+      "beforeNextPrefix": "“You did it very nicely, Doctor,” he remarked. “Nothing could have been better. It is all right.”"
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-09",
+    "scene": "The abandoned room and letter by the bell pull",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "King"
+    ],
+    "chapter": "III.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 245,
+      "originalPrefix": "“We shall see.” He pushed past the servant and rushed into the drawing-room, followed by the King and myself. The",
+      "adaptedPrefix": "“We shall see.” He pushed past the servant and rushed into the drawing-room, followed by the King and myself. The",
+      "paragraphSha256": "a62006dfb98a7c8692b3adfcd32c98252464b464ff50dda878b0e06479980171"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "ending",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 245,
+      "paragraphSha256": "a62006dfb98a7c8692b3adfcd32c98252464b464ff50dda878b0e06479980171",
+      "beforeParagraph1Based": 246,
+      "beforeNextPrefix": "“MY DEAR MR. SHERLOCK HOLMES,—You really did it very well. You took me in completely. Until after the alarm of fire, I had not"
+    }
+  },
+  {
+    "id": "scandal-in-bohemia-10",
+    "scene": "Holmes leaves carrying the portrait",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "King"
+    ],
+    "chapter": "III.",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 260,
+      "originalPrefix": "“I thank your Majesty. Then there is no more to be done in the matter. I have the honour to",
+      "adaptedPrefix": "“I thank your Majesty. Then there is no more to be done in the matter. I have the honour to",
+      "paragraphSha256": "fab1abcfed67fa778f257d205f58194e96556ce285f01bef0b8e48ed93ae5591"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "ending",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 260,
+      "paragraphSha256": "fab1abcfed67fa778f257d205f58194e96556ce285f01bef0b8e48ed93ae5591",
+      "beforeParagraph1Based": 261,
+      "beforeNextPrefix": "And that was how a great scandal threatened to affect the kingdom of Bohemia, and how the best plans of Mr. Sherlock Holmes were"
+    }
+  }
+]

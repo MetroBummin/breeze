@@ -1,0 +1,249 @@
+[
+  {
+    "id": "speckled-band-01",
+    "scene": "Holmes wakes Watson at dawn",
+    "characters": [
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 2,
+      "originalPrefix": "It was early in April in the year '83 that I woke one morning to find Sherlock Holmes standing, fully",
+      "adaptedPrefix": "It was early in April in the year '83 that I woke one morning to find Sherlock Holmes standing, fully",
+      "paragraphSha256": "70fb8d9d0875bba0076bf9248a3024f3e08ff517199a2fb70bb20dd944412d38"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 2,
+      "paragraphSha256": "70fb8d9d0875bba0076bf9248a3024f3e08ff517199a2fb70bb20dd944412d38",
+      "beforeParagraph1Based": 3,
+      "beforeNextPrefix": "\"Very sorry to wake you, Watson,\" said he, \"but it's the common lot this morning. Mrs. Hudson was woken, she did the same to"
+    }
+  },
+  {
+    "id": "speckled-band-02",
+    "scene": "Helen Stoner beside the Baker Street fire",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Helen"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 11,
+      "originalPrefix": "\"It is fear, Mr. Holmes. It is terror.\" She raised her veil as she spoke, and we could see that",
+      "adaptedPrefix": "\"It is fear, Mr. Holmes. It is terror.\" She raised her veil as she spoke, and we could see that",
+      "paragraphSha256": "c8c16008655403eb830b555c044c9ae4f4bf886574194cc493e7893863f77ba5"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 11,
+      "paragraphSha256": "c8c16008655403eb830b555c044c9ae4f4bf886574194cc493e7893863f77ba5",
+      "beforeParagraph1Based": 12,
+      "beforeNextPrefix": "\"You must not fear,\" said he soothingly, bending forward and patting her forearm. \"We shall soon set matters right, I have no doubt. You"
+    }
+  },
+  {
+    "id": "speckled-band-03",
+    "scene": "Roylott bends the fireplace poker",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Roylott"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 110,
+      "originalPrefix": "\"I will go when I have had my say. Don't you dare to meddle with my affairs. I know that",
+      "adaptedPrefix": "\"I will go when I have had my say. Don't you dare to meddle with my affairs. I know that",
+      "paragraphSha256": "1dccbc91c513ecb2a930c1ea23241b65dfd1637208ba9d04c4a11d1093f69da9"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "early",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 110,
+      "paragraphSha256": "1dccbc91c513ecb2a930c1ea23241b65dfd1637208ba9d04c4a11d1093f69da9",
+      "beforeParagraph1Based": 111,
+      "beforeNextPrefix": "\"See that you keep yourself out of my grip,\" he snarled, and hurling the twisted poker into the fireplace he strode out of the"
+    }
+  },
+  {
+    "id": "speckled-band-04",
+    "scene": "Arrival at the decaying Stoke Moran estate",
+    "characters": [
+      "Watson",
+      "Holmes"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 118,
+      "originalPrefix": "A heavily timbered park stretched up in a gentle slope, thickening into a grove at the highest point. From amid",
+      "adaptedPrefix": "A heavily timbered park stretched up in a gentle slope, thickening into a grove at the highest point. From amid",
+      "paragraphSha256": "bd20e2fd8fb807094cc928bf256a5dff91bb925ff16c6e1cc93c26d8f4036666"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 118,
+      "paragraphSha256": "bd20e2fd8fb807094cc928bf256a5dff91bb925ff16c6e1cc93c26d8f4036666",
+      "beforeParagraph1Based": 119,
+      "beforeNextPrefix": "\"Stoke Moran?\" said he."
+    }
+  },
+  {
+    "id": "speckled-band-05",
+    "scene": "Holmes examines the bedroom shutters",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Helen"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 140,
+      "originalPrefix": "Miss Stoner did so, and Holmes, after a careful examination through the open window, endeavoured in every way to force",
+      "adaptedPrefix": "Miss Stoner did so, and Holmes, after a careful examination through the open window, endeavoured in every way to force",
+      "paragraphSha256": "773e14c5a23972da954943b9d1fbb82771b403a991b208b085535fc1bb57997d"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 140,
+      "paragraphSha256": "773e14c5a23972da954943b9d1fbb82771b403a991b208b085535fc1bb57997d",
+      "beforeParagraph1Based": 141,
+      "beforeNextPrefix": "A small side door led into the whitewashed corridor from which the three bedrooms opened. Holmes refused to examine the third chamber, so we"
+    }
+  },
+  {
+    "id": "speckled-band-06",
+    "scene": "Dummy bell rope and small ventilator",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Helen"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 151,
+      "originalPrefix": "\"No, it is not even attached to a wire. This is very interesting. You can see now that it is",
+      "adaptedPrefix": "\"No, it is not even attached to a wire. This is very interesting. You can see now that it is",
+      "paragraphSha256": "92345a751301d4c30c064ce6005b082584e13fbe2e8225554d392d12a4b4c070"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 151,
+      "paragraphSha256": "92345a751301d4c30c064ce6005b082584e13fbe2e8225554d392d12a4b4c070",
+      "beforeParagraph1Based": 152,
+      "beforeNextPrefix": "\"How very absurd! I never noticed that before.\""
+    }
+  },
+  {
+    "id": "speckled-band-07",
+    "scene": "Milk saucer on the iron safe",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Helen"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 165,
+      "originalPrefix": "\"Well, look at this!\" He took up a small saucer of milk which stood on the top of it.",
+      "adaptedPrefix": "\"Well, look at this!\" He took up a small saucer of milk which stood on the top of it.",
+      "paragraphSha256": "4b0a1356af805061d8f1ec6ad8299ca6874c02cdd54fd7d0121a7b85141bbd87"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 165,
+      "paragraphSha256": "4b0a1356af805061d8f1ec6ad8299ca6874c02cdd54fd7d0121a7b85141bbd87",
+      "beforeParagraph1Based": 166,
+      "beforeNextPrefix": "\"No; we don't keep a cat. But there is a cheetah and a baboon.\""
+    }
+  },
+  {
+    "id": "speckled-band-08",
+    "scene": "Cane, matches and candle before the night vigil",
+    "characters": [
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 233,
+      "originalPrefix": "Holmes had brought up a long thin cane, and this he placed upon the bed beside him. By it he",
+      "adaptedPrefix": "Holmes had brought up a long thin cane, and this he placed upon the bed beside him. By it he",
+      "paragraphSha256": "1f2c5defaa892cbd789007cb0db50aba4f3f16c7b9d814077352288c6fec821d"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "late",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 233,
+      "paragraphSha256": "1f2c5defaa892cbd789007cb0db50aba4f3f16c7b9d814077352288c6fec821d",
+      "beforeParagraph1Based": 234,
+      "beforeNextPrefix": "How shall I ever forget that dreadful vigil? I could not hear a sound, not even the drawing of a breath, and yet I"
+    }
+  },
+  {
+    "id": "speckled-band-09",
+    "scene": "A terrible cry breaks the darkness",
+    "characters": [
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 238,
+      "originalPrefix": "But I saw nothing. At the moment when Holmes struck the light I heard a low, clear whistle, but the",
+      "adaptedPrefix": "But I saw nothing. At the moment when Holmes struck the light I heard a low, clear whistle, but the",
+      "paragraphSha256": "a9009b512e7267ff4ca514036946f9025203dbb6d78931ecdefec72833a14e9a"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "late",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 238,
+      "paragraphSha256": "a9009b512e7267ff4ca514036946f9025203dbb6d78931ecdefec72833a14e9a",
+      "beforeParagraph1Based": 239,
+      "beforeNextPrefix": "\"What can it mean?\" I gasped."
+    }
+  },
+  {
+    "id": "speckled-band-10",
+    "scene": "Roylott in his chair and the revealed band",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Roylott",
+      "snake"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 242,
+      "originalPrefix": "It was a singular sight which met our eyes. On the table stood a dark-lantern with the shutter half open,",
+      "adaptedPrefix": "It was a singular sight which met our eyes. On the table stood a dark-lantern with the shutter half open,",
+      "paragraphSha256": "581db090353ca6353197f54367ecda3242af5df6d50683f40deab36fe2922156"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "ending",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 242,
+      "paragraphSha256": "581db090353ca6353197f54367ecda3242af5df6d50683f40deab36fe2922156",
+      "beforeParagraph1Based": 243,
+      "beforeNextPrefix": "\"The band! the speckled band!\" whispered Holmes."
+    }
+  }
+]

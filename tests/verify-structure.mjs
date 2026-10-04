@@ -1106,7 +1106,9 @@ assert.deepEqual(Array.from(offered, read => read.title), [
   'The Adventure of the Speckled Band',
   'A Scandal in Bohemia',
   'The Red-Headed League',
-], 'All four bundled stories should be offered independently');
+  'The Final Problem',
+  'The Hound of the Baskervilles',
+], 'All six bundled stories should be offered independently');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
 for(const read of offered){
@@ -1116,7 +1118,7 @@ for(const read of offered){
   if(read.id==='backroom-homeward-bound'){
     assert.equal(read.license,'CC BY-SA 3.0');
     assert.ok(read.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
-  }else assert.equal(read.sourceUrl,'https://www.gutenberg.org/ebooks/1661');
+  }else assert.equal(read.sourceUrl,'https://www.gutenberg.org/ebooks/'+(read.id.endsWith('final-problem')?'834':read.id.endsWith('hound-of-the-baskervilles')?'2852':'1661'));
 }
 assert.match(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),/importFile\(file,/,
   'Bundled stories no longer use the normal Text import path');

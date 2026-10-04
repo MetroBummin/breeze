@@ -272,3 +272,47 @@ Regression: `tests/verify-original-reopen-browser.mjs` uses real PDF/EPUB fixtur
 delays anchor restoration beyond the old save timeout, and checks early touch,
 wheel, scroll and direct/lifecycle saves, completed/partial progress, normal backward
 reading and navigation to another book, in Chromium and WebKit.
+
+
+## Five illustrated Holmes stories (2026-10-04)
+
+The five lightly modernized Doyle works retain their independent stable catalog
+IDs and normal TXT import path. Final Problem is the complete story; Hound is the
+complete fifteen-chapter novel with its original dedication and contents. Source
+captures, full license, ordered edit replay, counts and hashes remain editorial
+records in docs/content; they are not presented as raw-download hashes.
+
+Each catalog entry uses its approved cinematic cover. Ten full-frame WebP scenes
+per story decorate the reader only AFTER the verified depicted paragraph, using
+the next existing block. Source paragraph indices, text bytes, saved book IDs,
+vocabulary and reading positions never change. Both adjacent passage prefixes and
+the canonical block index must match; edited/mismatched copies omit that scene.
+Images reserve their native aspect ratio, load lazily and disappear on failure.
+Preview hooks are spoiler-free and show covers alone. Existing saved covers
+(including custom covers) are preserved; missing covers use the existing guarded
+repair. No text migration, new storage, remote image request or paid call is added.
+
+Assets are user-supplied verified local images. AI artwork source/derivative hashes,
+resize/encoding details and generation records live under docs/content. Original
+PNGs remain outside the app; derivatives preserve the complete frame. Artwork is
+not attributed to Gutenberg. Original text public-domain status is stated for the
+USA only, consistent with the existing source policy.
+
+Validation: focused source/anchor/asset tests, actual Chromium and WebKit TXT
+import and real IndexedDB reload, paragraph/lookup identity, offline saved-book
+reopen and late-position restoration, every scene's image decode and placement,
+and cover/reader light-dark screenshots at phone, tablet, desktop and short
+viewport sizes. Aggregate npm test, asset stamps and native www bundle verification
+remain required. Version 1.7(232), simple flashcards, dormant FSRS and Jev OFF are
+unchanged. Physical-device WebView performance and release actions remain a
+separate coordinated gate.
+
+Holmes typography is scoped to those five works. Hound’s exact source title,
+subtitle/author line, dedication/signature and contents retain the same source
+blocks. The contents block displays its original fifteen entries on separate
+lines without changing saved text or indices. All fifteen exact chapter headings
+(including the long Chapter 9 heading) and Bohemia’s I–III divisions start a new
+reading page with their following passage. Hound uses its source title once; the
+reader’s repeated page title is hidden only for the unchanged catalog title.
+Custom saved titles remain visible. The existing Reader font-size/margin/theme
+settings own body metrics; no global reader typography is changed.

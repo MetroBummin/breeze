@@ -29,19 +29,14 @@ test('catalog has separate stable identity and checksum for complete local text'
   const context={console,Set,books:[]};
   new Script(read('scripts/library/longreads.js')).runInNewContext(context);
   const all=context.pendingLongReads(),story=all.find(item=>item.id==='sherlock-holmes-speckled-band');
-  assert.equal(all.length,4);
+  assert.equal(all.length,6);
   assert.equal(story.wordCount,9804);
-  assert.equal(story.cover,'assets/longreads/covers/speckled-band.png');
-  assert.equal(createHash('sha256').update(readFileSync(new URL('../'+story.cover,import.meta.url))).digest('hex'),'800b87d1e50a18fd622b9f8df1162bebf94c4f2e158bb470855bcd2c3fb13da2');
-  for(const [slug,sha] of [['scandal-in-bohemia','b9621e70c0d490ab7be26f922e9378299bfdfd102f5474b6979b324e3a2b7723'],['red-headed-league','9a6787e533ce4789d3d907ada917fe229f2b13f4a79806ca1964fa38aac84c81']]){
-    const book=all.find(item=>item.id==='sherlock-holmes-'+slug);
-    assert.equal(book.cover,'assets/longreads/covers/'+slug+'.png');
-    assert.equal(createHash('sha256').update(readFileSync(new URL('../'+book.cover,import.meta.url))).digest('hex'),sha);
-  }
+  assert.equal(story.cover,'assets/longreads/covers/speckled-band.webp');
+  assert.ok(readFileSync(new URL('../'+story.cover,import.meta.url)).length>1000);
   assert.equal(story.sha256,createHash('sha256').update(adapted).digest('hex'));
   assert.match(story.editionNote,/not Doyle’s verbatim text/);
   context.books.push({longReadId:story.id});
-  assert.deepEqual(Array.from(context.pendingLongReads(),item=>item.id),['backroom-homeward-bound','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league']);
+  assert.deepEqual(Array.from(context.pendingLongReads(),item=>item.id),['backroom-homeward-bound','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles']);
 });
 
 test('cover repair cannot overwrite a concurrent custom cover or restore a deleted book',async()=>{

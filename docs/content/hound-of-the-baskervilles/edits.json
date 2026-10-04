@@ -1,0 +1,65 @@
+[
+  {
+    "paragraph": 242,
+    "before": "Pray take",
+    "after": "Please take",
+    "reason": "Modernize a polite imperative.",
+    "count": 1
+  },
+  {
+    "paragraph": 1236,
+    "before": "forthwith",
+    "after": "at once",
+    "reason": "Replace an archaic adverb without changing the action.",
+    "count": 1
+  },
+  {
+    "paragraph": 260,
+    "before": "whence these words have been taken",
+    "after": "where these words have been taken from",
+    "reason": "Replace an archaic source adverb; preserve the quoted clue words.",
+    "count": 1
+  },
+  {
+    "paragraph": 602,
+    "before": "say whence it came",
+    "after": "say where it came from",
+    "reason": "Replace an archaic source adverb.",
+    "count": 1
+  },
+  {
+    "paragraph": 784,
+    "before": "say whence it came",
+    "after": "say where it came from",
+    "reason": "Replace an archaic source adverb.",
+    "count": 1
+  },
+  {
+    "paragraph": 685,
+    "before": "tell whence the sound came",
+    "after": "tell where the sound came from",
+    "reason": "Replace an archaic source adverb.",
+    "count": 1
+  },
+  {
+    "paragraph": 794,
+    "before": "see whence it came",
+    "after": "see where it came from",
+    "reason": "Replace an archaic source adverb.",
+    "count": 1
+  },
+  {
+    "paragraph": 1051,
+    "before": "the direction whence those dreadful sounds had come",
+    "after": "the direction from which those dreadful sounds had come",
+    "reason": "Replace an archaic source adverb.",
+    "count": 1
+  },
+  {
+    "paragraph": 1251,
+    "before": "a point whence I could look",
+    "after": "a point from which I could look",
+    "reason": "Replace an archaic source adverb.",
+    "count": 1
+  }
+]

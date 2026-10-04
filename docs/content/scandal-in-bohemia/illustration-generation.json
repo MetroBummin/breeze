@@ -1,0 +1,151 @@
+{
+  "slug": "scandal-in-bohemia",
+  "images": [
+    {
+      "id": "scandal-in-bohemia-01",
+      "filename": "scandal-in-bohemia-01.png",
+      "sizeBytes": 2215052,
+      "sha256": "1711f82665828472d54b95ecc0421a363f83b152d37e5888ba09f1b2a0c317e1",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: London, Baker Street at night on March 20, 1888. Watson, based on Image 1, only seen from behind in brown Victorian wool overcoat and top hat at the lower left, has paused in the street looking upward. Most of the 2:1 frame is the dignified soot-dark Georgian townhouse façade and cold damp cobbled pavement. An upstairs pair of sitting-room windows is brilliantly lit amber; through a drawn blind is the tall spare dark silhouette of Holmes pacing with head sunk forward and hands clasped behind his back. The silhouette has no facial features, no public character reveal needed. A gas streetlamp adds weak warmth; restrained London haze and a few distant anonymous period pedestrians far down street. Low angle from behind Watson, film establishing shot, substantial architecture and atmosphere, no camera-facing men, no readable house numbers or signs, no cars, no storm or supernatural forms.",
+      "referenceFilenames": [
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-02",
+      "filename": "scandal-in-bohemia-02.png",
+      "sizeBytes": 1884132,
+      "sha256": "ad922e3b7a8963e383d3ea7f3c270c971ab06b88c26cc922780019dfd5412c35",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: the mysterious unsigned appointment letter at 221B Baker Street. Film-prop close-up of one thick, stiff, pink-tinted sheet of late-Victorian notepaper on a dark worn wooden sitting-room table; there are a few lines of indistinct soft out-of-focus handwritten ink, but absolutely no legible words, signature or address. An ordinary man's hand with a white cuff and brown tweed sleeve is lifting the edge of the paper as if reading it, only fingers visible. A little brass oil lamp and cigar case fall out of focus behind, fireplace warmth under cold night window light. Framing is an oblique macro insert at table height, paper and hand occupy left-center with rich dark wood breathing space on the right, shallow depth, tactile pink fiber and ink. No portrait, no invented wax seal, no photo, no mask laid on table, no modern stationery, no labels.",
+      "referenceFilenames": []
+    },
+    {
+      "id": "scandal-in-bohemia-03",
+      "filename": "scandal-in-bohemia-03.png",
+      "sizeBytes": 1995222,
+      "sha256": "e92d7e9723cbfba209fdbde17da402e8db36f9babd434d09cb9d54a8a3f7d66b",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Correct ONLY the background seen through the open doorway behind the masked royal visitor in this Victorian film still. The sitting room is UPSTAIRS at 221B Baker Street. Through that door we must see a dim enclosed upstairs interior landing: plaster walls, a shadowed wooden stair banister, and a modest wall oil lamp, with cool indirect light, NOT an exterior street, cobbles, townhouses or outdoor streetlamp. Keep the exact King, black mask, richly fur-trimmed blue cloak and red lining, hat in hand, brooch, two seated observers, furniture, faces and all remaining lighting/framing unchanged. 2:1 cinematic landscape, no text or other changes.",
+      "referenceFilenames": [
+        "scandal-in-bohemia-03.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-04",
+      "filename": "scandal-in-bohemia-04.png",
+      "sizeBytes": 2340848,
+      "sha256": "fa89e68c1639bba13c95d81f41ff3b843404ae39f3e979ef718d6af2556dcaa1",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: daytime at the Serpentine Avenue mews beside the garden wall of Briony Lodge, March 1888. Holmes undercover as an out-of-work groom is rubbing down the shoulder of a tethered carriage horse with a horse brush while chatting casually with one anonymous working ostler in flat cap. Image 1 is Holmes underlying identity: maintain his younger long angular face and dark hair, but disguise with untidy hair, modest false side-whiskers, weather-reddened complexion, shabby brown work jacket, rough waistcoat and scuffed boots, NOT his elegant detective outfit. Camera wide from inside shadowed stable doorway, Holmes mostly back and three-quarter profile in middle distance beside horse, cobbled mews lane and brick garden wall stretching deep right. Horse and leather harness large near foreground, stable dust in cold daylight, natural candid movement, no portrait pose. Period everyday labour and listening, no Watson or Irene, no deerstalker, no signage, no modern vehicles.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-05",
+      "filename": "scandal-in-bohemia-05.png",
+      "sizeBytes": 2145808,
+      "sha256": "57a850399f974194c6428a4bce32e92d302606288ce16200c1ac6952cb6396a9",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: the sudden small wedding of Irene Adler to Godfrey Norton at St Monica's Church, London, around noon March 1888. Exactly four adults stand at the altar in an otherwise empty Anglican church: Irene (third column of Image 2, auburn-haired elegant woman) in tasteful burgundy Victorian day dress and small bonnet, NOT an elaborate white wedding gown; Norton (fourth column of Image 3, dark wavy hair, aquiline face, black moustache) in black morning coat, white collar, holding Irene's hand; an anonymous middle-aged clergyman wearing white surplice at altar; Holmes, identity Image 1, still undercover as the shabby out-of-work groom with untidy dark hair, false side-whiskers, worn brown work coat and waistcoat, standing slightly awkwardly as unexpected witness. Keep Holmes distinct from moustached Norton, do not substitute Holmes for groom bridegroom or priest. Cinematic wide diagonal frame from side aisle behind carved wood pew, couple and priest mid-right, the shabby witness left of them, dusty cool light through tall leaded glass and candles restrained. Their small gathering feels hurried, private and faintly absurd, not a lavish crowded wedding. No Watson, spectators, extra bridal party, labels, text or cover layout.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "supporting-speckled-bohemia-v1.png",
+        "supporting-redheaded-norton-v1.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-06",
+      "filename": "scandal-in-bohemia-06.png",
+      "sizeBytes": 1986364,
+      "sha256": "b3b9e0368409c6b503d1e3b8d129bbc6d56cff11ae870fd7635ba141cfb3d593",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: Baker Street sitting room, late afternoon, Holmes has just emerged from his bedroom dressed as an amiable simple-minded Nonconformist clergyman. Image 1 is Holmes' same underlying younger dark-haired angular face, transformed through gentle expression and hunched, peering benevolent posture, NOT replaced with another older man. Costume: broad black soft-brimmed hat, shabby baggy black trousers, modest black clerical coat, a full white necktie, no modern Roman-collar white plastic tab, no priest vestments or cross. His newly sympathetic half-smile carries a hint of performance as he stands in the bedroom doorway left of frame. Watson, Image 2 sandy hair and moustache in brown Victorian suit, sits near right edge, mostly back/side, looking up with amused surprise. Camera wider than portrait, foreground chair back and tidy tea table, worn wallpaper and old bookcases, cold end-of-day window light, discreet fireplace glow. No Irene, King, additional people, labels or text.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-07",
+      "filename": "scandal-in-bohemia-07.png",
+      "sizeBytes": 2200900,
+      "sha256": "3dbaf8bc3f9f772c53c3ca0fc1de1daba13b795e999e6d01eb200763c8d3e509",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Scene: Irene Adler stepping out of her smart little horse-drawn landau at Briony Lodge in Serpentine Avenue just before seven in the evening, March 1888, dusk. Irene is exactly the auburn-haired woman from THIRD column of Image 1, same refined face and burgundy Victorian fitted day dress with small bonnet and gloves. She is in graceful motion on the carriage step, one gloved hand steadying against the open door, looking toward house, not posing at camera. Low cinematic framing from behind the large carriage wheel in left foreground, Irene in center-right, warm carriage side-light glints on dark wood and metal. Briony Lodge behind is a modest well-furnished two-story London villa built to roadside with long sitting-room windows almost to floor and light in hall, no palace. Holmes Image 2 and Watson Image 3 are small dark figures at far left background, Holmes disguised as a broad-black-hatted clergyman with baggy dark clothes and full white tie, Watson in brown overcoat, no forced recognizable faces. Two anonymous shabby men are only beginning to approach carriage from street, no fight yet, no gore, no giant crowd, no text, signs or contemporary vehicle.",
+      "referenceFilenames": [
+        "supporting-speckled-bohemia-v1.png",
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-08",
+      "filename": "scandal-in-bohemia-08.png",
+      "sizeBytes": 2066534,
+      "sha256": "1cecad1260036a8c693546bc7ced692e20ed9527c6a9727adbe125853c5ba7b6",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Edit Image 1 with exactly TWO small corrections, all other pixels/composition/lighting remain as close as possible. First, Holmes on the sofa inside the smoky room must wear the SAME full soft white necktie / cravat as the clergyman disguise in Image 2, not a modern rectangular Roman priest collar tab. Change only his neckwear, keep his face and hat. Second, remove the small cylindrical object from Watson's right hand in foreground: he has already thrown the smoke rocket, so his lowered hand is empty, keep natural relaxed fingers in same position. Keep the same smoke, no actual fire, Irene back, room, open window, all faces and cold evening, same 2:1 film frame. No text or other changes.",
+      "referenceFilenames": [
+        "scandal-in-bohemia-08.png",
+        "scandal-in-bohemia-06.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-09",
+      "filename": "scandal-in-bohemia-09.png",
+      "sizeBytes": 1963457,
+      "sha256": "5437c3e65b51da92a835c114a52ddcbd37df76a95cf47a56c49539205c2e460b",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Edit ONLY the costume inside the small sepia cabinet photograph in the foreground of this Victorian room image. The portrait should depict this exact same Irene Adler face, hair, gaze, identity, pose, sepia photographic texture and mounted card, but in a tasteful late-Victorian evening dress: dark velvet evening bodice with a modest open rounded evening neckline and a delicate short pearl necklace, no high white daywear collar. Keep neckline understated and historically elegant. Preserve everything outside the photo unchanged, including hand, envelope, sliding recess above bell-pull, abandoned room, open drawers, morning light, 2:1 framing. No readable text or other changes.",
+      "referenceFilenames": [
+        "scandal-in-bohemia-09.png"
+      ]
+    },
+    {
+      "id": "scandal-in-bohemia-10",
+      "filename": "scandal-in-bohemia-10.png",
+      "sizeBytes": 2512896,
+      "sha256": "5211eeb37bb26ce94301cbfa39156306b4a29ca74067da8bd05e51bfdfc977e5",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: a full-bleed interior illustration for a Sherlock Holmes reading app. Make a single photorealistic Victorian period-drama film still, a cinematic landscape with exact 2:1 aspect ratio. Beautiful textured film photography, restrained cold slate, brown and charcoal palette with small warm practical light accents, low-key but clearly readable on a phone. Realistic late-Victorian English architecture, materials and clothes. No text, labels, typography, watermark, frame, collage, contemporary props, recognizable actor imitation or stylized painting. Reference images are identity references only, never copy their grids or labels. Ending scene: Holmes turns away from the King and leaves Briony Lodge with Watson in the cool morning, carrying Irene's small cabinet photograph as his chosen reward. Cinematic tracking-like wide composition from rear three-quarter: Holmes Image 1, slender dark-haired clean-shaven man in charcoal frock coat, walking down the few front steps toward left, his back dominant, one hand at side holding a small stiff sepia portrait card, its image largely hidden by angle. Watson Image 2, sandy hair and moustache in brown overcoat, walks at his side toward street, mostly back, no look to camera. Behind them on right in open doorway the King from fourth column of Image 3, bearded tall broad man with light brown hair in dark blue fur-trimmed coat/cloak, UNMASKED, extends one hand after Holmes with slight perplexity. Briony is a modest two-story roadside villa, open door behind King, tall ground-floor windows, damp cobbled street, restrained overcast morning and gentle amber hall light. A quiet gracious defeat with dignity, not triumphant action. No Irene present in person, no mask, no crowd, text, floating portrait or cover montage.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-speckled-bohemia-v1.png"
+      ]
+    }
+  ]
+}
