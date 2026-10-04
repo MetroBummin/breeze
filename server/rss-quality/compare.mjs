@@ -2,7 +2,8 @@
 const normalize=row=>({...row,...(row.result || {}),url:row.url,source:row.source});
 export function unresolvedCause(row){
   if(!row)return 'not_run';
-  if(row.status==='error' || row.status==='unavailable')return row.diagnostic?.code || row.error || row.reason?.[0] || 'unknown_error';
+  if(row.status==='error' || row.status==='unavailable')return row.diagnostic?.code==='invalid_evaluation' && row.diagnostic.detail
+    ? `invalid_evaluation:${row.diagnostic.detail}` : row.diagnostic?.code || row.error || row.reason?.[0] || 'unknown_error';
   if(row.status==='pending')return 'not_evaluated';
   if(row.status!=='uncertain')return null;
   const a=row.answers;

@@ -261,7 +261,7 @@ test('safe schema diagnostics distinguish validation branches and preserve valid
     [r=>delete r.answers,'answers_shape',null],
     [r=>delete r.answers.promotion,'answer_count',null],
     [r=>r.answers.promotion.choice='secret-body','choice_shape','promotion'],
-    [r=>r.answers.promotion.confidence=.1,'probability_consistency','promotion']]){
+    [r=>r.answers.promotion.confidence=.1,'confidence_mismatch','promotion']]){
     const raw=responseFor();raw.usage={input_tokens:123,output_tokens:45};mutate(raw);
     assert.throws(()=>validateAnswers(raw,article),error=>{
       assert.deepEqual(error.diagnostic,{stage:'schema',code:'invalid_evaluation',detail,field,usage:{inputTokens:123,outputTokens:45}});

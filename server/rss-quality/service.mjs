@@ -56,7 +56,8 @@ export function createQualityService({store,key,fetchDoc=fetchDocument,load=load
                 verdict=await evaluate(loaded.article,key,{signal});
                 // Only a durable successful write can publish an approval.
                 await store.finishEvaluation(hash,evaluation.token,verdict);
-                log({stage:verdict.stage,code:verdict.status,reason:verdict.reason,usage:verdict.usage,key:hash,feed:id});
+                log({stage:verdict.stage,code:verdict.status,detail:verdict.reasonCodes?.[0] ?? null,reason:verdict.reason,usage:verdict.usage,key:hash,feed:id});
+                for(const diagnostic of verdict.diagnostics || [])log({...diagnostic,key:hash,feed:id});
               } catch(error) {
                 const diagnostic=safeDiagnostic(error,'provider');log({...diagnostic,key:hash,feed:id});
                 await store.retryEvaluation(hash,evaluation.token,diagnostic);

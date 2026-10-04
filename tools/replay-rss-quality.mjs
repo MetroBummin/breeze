@@ -1,4 +1,4 @@
-// Offline v2 replay from independently captured same-snapshot article/response fixtures.
+// Offline current-rubric replay from independently captured same-snapshot fixtures.
 // No browser observations/labels are accepted as model input. No network or keys.
 // Input [{url,source,article:{title,paragraphs,links,checks},response:{model,answers,usage}}]
 import {readFileSync} from 'node:fs';

@@ -32,11 +32,15 @@ inventory. Neither this PR nor its tests deploy, migrate or call paid Jev.
    original completeness is unknown. These checks do not prove completeness;
    list counts, missing images and length do not establish a missing original.
 3. Jev sees untrusted title, supplied paragraphs, links and extraction facts.
-   It judges coupon-only/promo-only/spam without independent editorial substance,
+   The v3 rubric judges primary-purpose promotion/spam without substantive
+   independent editorial value, including readable merchandise/campaign copy.
+   Brand mentions and commerce/history topics alone are insufficient.
+   It separately judges
    whether supplied prose is readable, and severe title/body mismatch. It must
    not infer completeness. Readability failure is `unavailable`, not poor quality.
    Sensitive, long, difficult, political and medical prose is not excluded for
    those traits. Optional images and incidental product links are not defects.
+   Developed biography/history in a gallery remains readable without pictures.
 4. Evidence-backed confident promotion/mismatch is `rejected`. A positive defect
    allegation without sufficient evidence stays `uncertain` and withheld.
    Low confidence or an unknown choice with **no positive defect allegation**
@@ -47,13 +51,18 @@ inventory. Neither this PR nor its tests deploy, migrate or call paid Jev.
 5. Substance, context and interest contribute a confidence-weighted 0–6 ranking
    score. Approved entries precede candidates, then score orders each group.
    Topic, sensitivity and length are descriptive metadata, not hard filters.
+   Promotion, readability, mismatch and evidence answers are mandatory and keep
+   the same strict probability/confidence checks. Invalid or missing optional
+   ranking/topic/sensitivity/timeliness answers are discarded with a fixed schema
+   diagnostic; missing ranking contribution is zero and missing description is
+   unknown. They cannot change eligibility or rescue a defective core answer.
    The existing local source/diversity preference ranker still owns cross-feed
    selection. If later activated, the client accepts only versioned approved or
    explicitly eligible uncertain entries, never arbitrary pending/error rows.
 
 ## Cache, retention, cost and diagnostics
 
-Canonical URL + title/body/links/extraction facts + pinned `jev-1.13.0` + v2 rubric
+Canonical URL + title/body/links/extraction facts + pinned `jev-1.13.0` + v3 rubric
 form a SHA-256 key. New body/title/version cannot inherit old approval. Shared
 service-role-only claims preserve RLS, fencing and four global slots/200 attempts
 per day; at most three attempts per identity, no immediate paid retry, one-hour
@@ -74,7 +83,11 @@ never gets an approval merely because the provider is unavailable.
 Safe structured events carry stage, fixed reason/detail codes, content hash,
 feed ID and validated token usage. Schema diagnostics distinguish model,
 answer shape/count, choice shape, probability consistency, empty/oversized
-response and invalid JSON. No raw provider payload, secret or full article is
+response and invalid JSON. New consistency diagnostics separate probability sum,
+selected-choice maximum and confidence mismatch; optional anomalies are counted
+separately from failed classifier decisions. Fixed quality reason codes identify
+primary-purpose promotion, unreadable body, mismatch and unsupported evidence.
+No raw provider payload, secret or full article is
 logged. Private verdicts retain a bounded 180-character evidence excerpt for
 human audit. A paragraph selection is evidence to inspect, not proof that the
 model's conclusion is correct. Response/transport failures may lack usage.
@@ -108,3 +121,10 @@ Sources checked: [IANA IPv4 special registry](https://www.iana.org/assignments/i
 [TypeSafe API](https://docs.typesafe.ai/api), [confidence](https://docs.typesafe.ai/confidence),
 [Supabase changelog](https://supabase.com/changelog) and
 [server secrets](https://supabase.com/docs/guides/functions/secrets).
+
+2026-10-04 v3 follow-up: see [purpose/validation review](../qa/rss-purpose-20261004.md).
+This classifier-only draft does not import PR89's stale Edge entrypoint or
+operator token comparison. Production v6's caller-JWT PostgREST authorization,
+service-role-only `rss_quality_operator_authorized()` SECURITY INVOKER RPC and
+`verify_jwt=true` must survive any later integration. No deployment, migration,
+paid run or client activation is authorized by this change.
