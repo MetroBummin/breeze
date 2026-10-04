@@ -7,6 +7,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const original=read('docs/content/speckled-band/original.txt');
 const adapted=read('assets/longreads/speckled-band.txt');
 const edits=JSON.parse(read('docs/content/speckled-band/edits.json'));
+const coverAsset=JSON.parse(read('docs/content/holmes-artwork/asset-manifest.json')).assets.find(asset=>asset.file==='assets/longreads/covers/speckled-band.webp');
 const paragraphs=text=>text.trim().split(/\n\s*\n/);
 test('complete story has one auditable, ordered baseline and no unlogged rewrites',()=>{
   assert.equal(createHash('sha256').update(original).digest('hex'),'255679f12fe1e457f7b5ee664389de1e507c8a557ccacd088508f330c433e2c7');
@@ -43,7 +44,7 @@ test('cover repair cannot overwrite a concurrent custom cover or restore a delet
  for(const action of ['custom','delete']){
   let resume;const gate=new Promise(resolve=>resume=resolve),book={id:'saved',longReadId:'sherlock-holmes-speckled-band'},writes=[];
   const context={console,Set,books:[book],AbortController,setTimeout,clearTimeout,
-   fetch:async()=>({ok:true,blob:async()=>({size:2563098,type:'image/png'})}),
+   fetch:async()=>({ok:true,blob:async()=>({size:coverAsset.bytes,type:'image/webp'})}),
    imgPut:async key=>{writes.push(key);await gate;},bookPut:async()=>writes.push('book'),renderAllBookViews(){}};
   new Script(read('scripts/library/longreads.js')).runInNewContext(context);
   const pending=context.restoreMissingLongReadCovers();
