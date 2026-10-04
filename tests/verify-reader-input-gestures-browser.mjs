@@ -41,10 +41,28 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const count=()=>page.locator('.pdf-source-page[data-page="1"] .pdf-ink-layer polyline').count();
  const saved=()=>page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
  const pen=page.locator('[data-ink-mode="pen"]');
+ await page.evaluate(()=>{expandReaderChrome();toggleAa();});
+ const toggle=page.locator('#aa-ink-undo');
+ assert.equal(await toggle.isVisible(),false,'PDF reading hides the writing-only setting');
+ const prefsBeforeModes=await page.evaluate(()=>localStorage.getItem('breeze.study.v1'));
+ // Invoke the real mode handler while retaining Aa: outside clicks normally close it.
+ await page.evaluate(()=>document.querySelector('[data-ink-toggle]').onclick());
+ assert.equal(await toggle.isVisible(),true,'entering writing updates the open Aa menu');
+ await page.evaluate(()=>document.querySelector('[data-ink-toggle]').onclick());
+ assert.equal(await toggle.isVisible(),false,'returning to reading updates the open Aa menu');
+ assert.equal(await page.locator('[data-star-visibility="1"]').isVisible(),true,'unrelated Reader preferences remain available');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.study.v1')),prefsBeforeModes,'mode changes preserve Reader preferences');
+ await page.evaluate(()=>document.querySelector('[data-ink-toggle]').onclick());
+ await page.evaluate(()=>switchReaderMode('text'));
+ await page.waitForFunction(()=>!readerPositionPending());
+ assert.equal(await page.locator('#aa-ink-undo-row').evaluate(row=>row.hidden),true,'extracted-text view hides the writing-only setting');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.study.v1')),prefsBeforeModes,'text view preserves Reader preferences');
+ await page.evaluate(()=>closeAa());
+ await open();
  await page.locator('[data-ink-toggle]').click();
  assert.equal(await page.locator('[data-ink-scribble]').count(),0);
  await page.evaluate(()=>toggleAa());
- const toggle=page.locator('#aa-ink-undo');assert.equal(await toggle.getAttribute('aria-pressed'),'false');
+ assert.equal(await toggle.getAttribute('aria-pressed'),'false');
  await page.evaluate(()=>closeAa());
  const stroke=async()=>{await page.evaluate(()=>{qaInput.start(100,200);qaInput.move(250,200);qaInput.end();});await saved();};
  const pair=async({move=0,cancel=false,third=false}={})=>page.evaluate(async({move,cancel,third})=>{
@@ -84,7 +102,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await page.locator('[data-ink-redo]').click();await saved();await page.evaluate(()=>setOriginalZoom(1));await page.waitForTimeout(400);
  await page.locator('[data-ink-toggle]').click();await double();assert.equal(await count(),1,'reading mode cannot undo');await page.locator('[data-ink-toggle]').click();
  await page.reload();await open();assert.equal(await count(),1,'real database retains ink');await install();
- await page.evaluate(()=>toggleAa());assert.equal(await toggle.getAttribute('aria-pressed'),'true','Reader setting persists');await page.evaluate(()=>closeAa());
+ await page.evaluate(()=>toggleAa());assert.equal(await toggle.isVisible(),false,'reopened PDF starts in reading mode');assert.equal(await toggle.getAttribute('aria-pressed'),'true','hidden Reader setting persists');await page.evaluate(()=>closeAa());
  await page.locator('[data-ink-toggle]').click();
  await stroke();assert.equal(await count(),2);await double();await saved();assert.equal(await count(),1,'undo uses current-session toolbar history');
  await page.evaluate(()=>closePanel());assert.equal(await page.evaluate(()=>window.qaInkLookup),0,'paired taps never look up');
@@ -122,7 +140,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   books.push(book);positions[book.id]={mode:'original',p:0,y:0};await openBook(book,{prepared:{book,original:record}});await Promise.all(originalSession.frameGeometryReady);
  });
  await page.waitForFunction(()=>!readerPositionPending());await page.waitForTimeout(500);
+ await page.evaluate(()=>toggleAa());
  assert.equal(await toggle.isVisible(),false,'EPUB cannot expose PDF writing setting');
+ assert.equal(await toggle.getAttribute('aria-pressed'),'true','EPUB does not reset the saved preference');
+ await page.evaluate(()=>closeAa());
  await page.evaluate(()=>{
   const target=document.getElementById('original-stage');
   const t=x=>({identifier:910,target,touchType:'direct',clientX:x,clientY:170});

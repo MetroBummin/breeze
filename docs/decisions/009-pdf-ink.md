@@ -628,8 +628,10 @@ ordinary scratch/loop strokes remain ink even if an older local preference was O
 Existing stored ink, undo/redo edits and save failure recovery are unchanged.
 
 Reader settings (Aa) expose “두 손가락 더블탭 실행 취소” only for supported PDF
-original view. It is OFF by default, persisted in `breeze.study.v1`, and acts only
-in writing mode. One two-finger tap is not enough: two stationary pairs must
+original view while writing mode is active. The row follows mode changes even
+when Aa is open, and is hidden in reading, extracted-text and EPUB views without
+changing the stored preference. It is OFF by default, persisted in
+`breeze.study.v1`, and acts only in writing mode. One two-finger tap is not enough: two stationary pairs must
 complete. The existing toolbar Undo/Redo remains available; the gesture calls
 the same undo transaction. No instructional popup, toast or extra pen setting.
 

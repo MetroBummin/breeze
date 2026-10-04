@@ -161,7 +161,7 @@ const BreezePdfInk = (()=>{
     if(writing&&typeof setReaderChrome==='function')setReaderChrome(false);
     inkEntry.hidden=!ready;
     const undoSetting=document.getElementById('aa-ink-undo-row');
-    if(undoSetting)undoSetting.hidden=!ready;
+    if(undoSetting)undoSetting.hidden=!writing;
     inkEntry.setAttribute('aria-pressed',String(writing));
     inkEntry.setAttribute('aria-label',writing?'읽기 모드로 전환':'필기 모드로 전환');
     inkEntry.title=writing?'읽기 모드로 전환':'필기 모드로 전환';
