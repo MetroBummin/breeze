@@ -20,10 +20,15 @@ async function readerReady(page){
  await page.waitForFunction(()=>curBook&&!readerPositionPending()&&!articlePreviewDialog.open);
  await page.evaluate(()=>document.fonts.ready);
 }
-async function wheelTo(page,pi){
+async function scrollToParagraph(page,pi,engine){
  const {top,target}=await page.evaluate(pi=>({top:readerScrollTop(),target:Math.round(readerScrollTop()+document.querySelector(`#rtext [data-pi="${pi}"]`).getBoundingClientRect().top-30)}),pi);
- await page.mouse.move(200,400);await page.mouse.wheel(0,target-top);
- await page.waitForFunction(pi=>captureAnchor().pi===pi&&readerPillRawProgress===visibleReaderProgress(),pi);
+ // Mobile WebKit has no Playwright wheel driver. Native DOM scrolling still
+ // emits the real scroll event; do not write progress or restore an anchor here.
+ if(engine===webkit)await page.evaluate(target=>readerScroller().scrollTo({top:target,behavior:'instant'}),target);
+ else{await page.mouse.move(200,400);await page.mouse.wheel(0,target-top);}
+ // Compare with the live anchor so an old frame cached before the scroll event
+ // cannot satisfy this wait. The handler owns invalidation and progress paint.
+ await page.waitForFunction(pi=>captureAnchor().pi===pi&&readerPillRawProgress===readerProgressAtEnd(textProgressForBook(curBook,captureAnchor())),pi);
 }
 async function homeState(page,id){
  return page.evaluate(id=>({saved:{...posOf(id)},durable:JSON.parse(localStorage.getItem(LS_POS))[id],
@@ -56,13 +61,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),0);assert.equal(downloads,before);
   await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.locator('.ap-start').click();await readerReady(page);
   const id=await page.evaluate(()=>curBook.id);assert.equal(await page.evaluate(async()=>(await bookAll()).length),1);
-  // Cold launch builds a real 66% tile, then actual wheel reading reaches 68%.
+  // Cold launch builds a real 66% tile, then real scrolling reaches 68%.
   await page.evaluate(()=>{restoreAnchor({pi:173,dy:30});show('home');});
   await page.reload();await page.evaluate(()=>homeReady);
   await page.evaluate(id=>{window.readingCard=document.querySelector(`#shelf [data-local-book="${id}"]`).parentElement;window.readingCover=readingCard.querySelector('img.cover');},id);
   assert.equal((await homeState(page,id)).label,'66% 읽음');
   await page.locator('#home-resume').click();await page.waitForFunction(()=>!homeResumeOpening);await readerReady(page);
-  await wheelTo(page,177);
+  await scrollToParagraph(page,177,engine);
   const reading=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureAnchor(),prior:{...posOf(curBook.id)}}));
   assert.equal(Math.floor(reading.p*100),68);assert.equal(reading.anchor.pi,177);
   await page.evaluate(()=>returnHomeFromReader());
@@ -82,7 +87,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   }
   await page.evaluate(()=>show('home'));
   // Same retained cover must also reflect deliberately backward reading.
-  await page.locator(`#shelf [data-local-book="${id}"]`).click();await readerReady(page);await wheelTo(page,173);
+  await page.locator(`#shelf [data-local-book="${id}"]`).click();await readerReady(page);await scrollToParagraph(page,173,engine);
   await page.evaluate(()=>returnHomeFromReader());const backward=await homeState(page,id);
   assert.equal(backward.capsule,'66%');assert.equal(backward.label,'66% 읽음');assert.equal(backward.saved.pi,173);
   releaseScene();
@@ -92,7 +97,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    await page.locator(`#shelf [data-local-book="${id}"]`).click();await readerReady(page);
    await page.locator('img[src$="scandal-in-bohemia-05.webp"]').evaluate(img=>img.decode());
    await page.evaluate(()=>{fontSize(1);return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});
-   await wheelTo(page,177);const actual=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureAnchor()}));
+   await scrollToParagraph(page,177,engine);const actual=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureAnchor()}));
    await page.evaluate(()=>returnHomeFromReader());const home=await homeState(page,id);
    assert.equal(home.saved.p,actual.p);assert.equal(home.saved.pi,actual.anchor.pi);assert.equal(home.saved.dy,actual.anchor.dy);
    assert.equal(home.capsule,Math.floor(actual.p*100)+'%');assert.equal(home.label,home.capsule+' 읽음');

@@ -41,8 +41,12 @@ and backward updates without replacing cover nodes, first-read labels, PDF
 completion/50/19, exact started-copy routing, current catalog identity and
 deleted/unread/reimport state.
 
-`tests/verify-home-reading-cards-browser.mjs` uses actual TXT import, real trusted
-wheel reading, native Home return, durable database reload and a real PDF fixture.
+`tests/verify-home-reading-cards-browser.mjs` uses actual TXT import, trusted wheel
+input in Chromium, native DOM scrolling in mobile WebKit, native Home return,
+durable database reload and a real PDF fixture. Both scroll drivers exercise the
+real scroll handler without setting progress or restoring an anchor. Mobile
+WebKit's Playwright driver does not implement wheel input; the first CI attempt
+exposed that harness limitation after Chromium and both-engine Bohemia passed.
 It checks the visible card, center capsule and saved record separately. It covers
 both Home and Explore; unread preview cancel and Read; Back/Forward; direct repeat
 opens; backward progress; renamed/replaced/reloaded saved copies; interrupted
