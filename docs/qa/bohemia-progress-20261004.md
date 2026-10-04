@@ -70,3 +70,43 @@ WebKit binaries are unavailable locally; final-head WebKit remains a CI check.
 Native process suspension is not assumed from Chromium checks; `ios:sync`
 prepares assets, not an archive or device test. The parent owns CI review,
 merge and TestFlight publication.
+
+## Final-head CI follow-up
+
+Integrity run `37192090059` at `4685dff` reported Chromium paragraph 244 instead
+of 245 on cold reopening, at the assertion before the font-size change. A local
+controlled reproduction blocked actual illustration 09: CSS `aspect-ratio:auto`
+overrode the native width/height ratio, leaving a zero-height unloaded image.
+Paragraph 245 restored at 200px, but the preceding paragraph entered the anchor
+probe. This does not establish a font-change implementation defect.
+
+Removing that CSS override restores native catalog-dimension reservation without
+changing decoded appearance. The strengthened test blocks illustration 09 on
+cold opening, requires an incomplete image with positive reserved height, and
+asserts exact paragraph/offset and unchanged height both before and after decode.
+It now also asserts the saved offset after the font-size change. Illustration 03
+decode separately preserves its reserved layout; a controlled 80px late-layout
+change then invalidates the cached offset and proves a fresh save/reopen.
+
+WebKit reported a Back-click timeout while controls became hidden. Local WebKit
+is unavailable, so this is not claimed as a reproduced engine defect. The fixture
+now observes settled scroll/progress/restoration and clicks the ordinary Reader
+title to open controls before the actual Back click. No forced click or relaxed
+progress/anchor assertion is used. The both-engine Integrity step is unchanged.
+
+Local follow-up checks passed:
+
+- Full `npm test`, including typecheck and release checks.
+- Bohemia Chromium: all existing progress/lifecycle checks; cold illustration 09
+  reserves 146px and retains paragraph 245 at 200px before/after decode; late
+  layout changes paragraph 43's offset from 200px to 280px and saves/reopens 280px.
+- Existing five-story illustrated Holmes Chromium browser verification, including
+  all scenes, import/database/offline restoration, light/dark at 390×844,
+  820×1180, 1440×900, 320×568 and 844×390. The installed system Chromium was
+  selected through a launcher-only preloader; assertions and product code ran
+  unchanged.
+- `npm run ios:sync`, exact source/www/iOS asset comparisons, release validation
+  for both 1.7(234) targets, RSS OFF confirmation and `git diff --check`.
+
+Final-head WebKit and CI review remain the parent's release gate. The follow-up
+does not change mode/navigation source, enable RSS, or archive/publish the app.

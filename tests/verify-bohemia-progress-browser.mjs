@@ -13,16 +13,28 @@ const server=createServer((req,res)=>{
  try{res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.webp':'image/webp'})[extname(path)]||'text/plain; charset=utf-8');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
+async function settleReader(page){
+ await page.evaluate(()=>{delete window.bohemiaSettled;});
+ await page.waitForFunction(()=>{
+  const anchor=captureAnchor(),actual=readerProgressAtEnd(textProgressForBook(curBook,anchor));
+  const sample=JSON.stringify([readerScrollTop(),readerContentHeight(),anchor]);
+  if(!window.bohemiaSettled||window.bohemiaSettled.sample!==sample)window.bohemiaSettled={sample,since:performance.now()};
+  return !readerPositionPending()&&document.fonts.status==='loaded'&&!chromeFrame&&!progressFrame&&!readerPillAnimationFrame&&
+    readerPillRawProgress===actual&&readerPillVisualProgress===actual&&performance.now()-window.bohemiaSettled.since>=200;
+ },undefined,{polling:'raf'});
+}
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
  const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_CHROMIUM_PATH:undefined});
  try{
   const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   let releaseFonts,releaseScene;const fonts=new Promise(r=>releaseFonts=r),scene=new Promise(r=>releaseScene=r);
+  let coldReload=false,releaseColdScene;const coldScene=new Promise(r=>releaseColdScene=r);
   await page.route('**/*',async r=>{
    if(!r.request().url().startsWith(url)){await r.abort();return;}
    if(r.request().url().includes('.woff2'))await fonts;
    if(r.request().url().includes('scandal-in-bohemia-03.webp'))await scene;
+   if(coldReload&&r.request().url().includes('scandal-in-bohemia-09.webp'))await coldScene;
    await r.continue();
   });
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
@@ -61,9 +73,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const oldTop=await page.evaluate(()=>readerScrollTop());
    await page.mouse.move(200,400);await page.mouse.wheel(0,delta);
    await page.waitForFunction(old=>readerScrollTop()!==old,oldTop);
-   await page.waitForFunction(()=>Math.abs(readerPillVisualProgress-readerPillRawProgress)<.001&&readerPillRawProgress===visibleReaderProgress());
+   await settleReader(page);
    const before=await page.evaluate(()=>({p:visibleReaderProgress(),pi:captureAnchor().pi,dy:captureAnchor().dy,raw:readerPillRawProgress}));
-   await page.evaluate(()=>showReaderChrome());await page.locator('#readback').click();await page.waitForFunction(()=>activeAppView()==='home');
+   await page.locator('#readpill-title').click();
+   await page.waitForFunction(()=>!document.body.classList.contains('chrome-hidden')&&!document.getElementById('readback').inert);
+   await page.locator('#readback').click();await page.waitForFunction(()=>activeAppView()==='home');
    const saved=await page.evaluate(id=>({...posOf(id),home:document.querySelector('#home-resume-percent').textContent}),id);
    assert.equal(saved.p,before.p);assert.equal(saved.pi,before.pi);assert.ok(Math.abs(saved.dy-before.dy)<=1);
    assert.equal(saved.home,Math.floor(saved.p*100)+'%');
@@ -93,12 +107,30 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   }
   const saved=await page.evaluate(()=>{show('home');return {...posOf(homeResumeBook().id)};});
   await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);
-  await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>captureAnchor().pi),saved.pi);
-  await page.evaluate(()=>fontSize(7));await page.waitForTimeout(150);
+  await settleReader(page);assert.equal(await page.evaluate(()=>captureAnchor().pi),saved.pi);
+  await page.evaluate(()=>{fontSize(7);return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
+  await settleReader(page);
   assert.equal(await page.evaluate(()=>captureAnchor().pi),saved.pi);
+  assert.equal(await page.evaluate(pi=>Math.round(document.querySelector(`#rtext [data-pi="${pi}"]`).getBoundingClientRect().top),saved.pi),saved.dy);
   await page.evaluate(()=>show('home'));assert.equal(await page.locator('#home-resume-percent').textContent(),Math.floor(saved.p*100)+'%');
-  // A real lazy illustration can grow beneath the visible fold without any
-  // scroll event. Its next paragraph is the anchor; save must measure its new dy.
+  // Save inside illustration 09's gap: a cold open must reserve its catalog
+  // dimensions before decode, so the preceding paragraph cannot enter the probe.
+  await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);
+  await page.locator('img[src$="scandal-in-bohemia-09.webp"]').evaluate(img=>img.decode());
+  await page.evaluate(()=>{const el=document.querySelector('#rtext [data-pi="245"]');readerScrollTo(readerScrollTop()+el.getBoundingClientRect().top-200);});
+  await settleReader(page);assert.deepEqual(await page.evaluate(()=>captureAnchor()),{pi:245,dy:200});
+  const coldSaved=await page.evaluate(()=>{show('home');return {...posOf(homeResumeBook().id)};});coldReload=true;
+  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);
+  await settleReader(page);
+  const coldBefore=await page.evaluate(()=>{const img=document.querySelector('img[src$="scandal-in-bohemia-09.webp"]');return {anchor:captureAnchor(),height:img.getBoundingClientRect().height,complete:img.complete};});
+  assert.equal(coldBefore.complete,false);assert.ok(coldBefore.height>0,'catalog dimensions reserve an unloaded illustration');
+  assert.deepEqual(coldBefore.anchor,{pi:coldSaved.pi,dy:coldSaved.dy});
+  releaseColdScene();await page.locator('img[src$="scandal-in-bohemia-09.webp"]').evaluate(img=>img.decode());await settleReader(page);
+  assert.deepEqual(await page.evaluate(()=>captureAnchor()),coldBefore.anchor,'cold image decode must not move the restored paragraph or offset');
+  assert.equal(await page.locator('img[src$="scandal-in-bohemia-09.webp"]').evaluate(img=>img.getBoundingClientRect().height),coldBefore.height);
+  console.log(`${engine.name()}: cold illustration 09 reserved ${coldBefore.height}px; paragraph 245 at 200px preserved before/after decode`);
+  // Delayed catalog decode preserves layout. A separate late-layout change
+  // without a scroll must still save the freshly measured paragraph offset.
   const layoutPage=await context.newPage();let releaseLayout;
   const layoutGate=new Promise(r=>releaseLayout=r);
   await layoutPage.route('**/*',async r=>{if(!r.request().url().startsWith(url)){await r.abort();return;}if(r.request().url().includes('scandal-in-bohemia-03.webp'))await layoutGate;await r.continue();});
@@ -106,14 +138,26 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await layoutPage.evaluate(async id=>{show('home');positions[id]={p:0,pi:0,dy:257,y:0,t:Date.now(),mode:'text'};await openBook(books.find(b=>b.id===id));},id);
   await layoutPage.evaluate(()=>readerScrollTo(0));
   await layoutPage.mouse.move(200,400);
-  await layoutPage.mouse.wheel(0,14000);await layoutPage.waitForFunction(()=>readerScrollTop()>=14000);
+  const layoutTarget=await layoutPage.evaluate(()=>{const el=document.querySelector('#rtext [data-pi="43"]');return readerScrollTop()+el.getBoundingClientRect().top-200;});
+  await layoutPage.mouse.wheel(0,layoutTarget);await layoutPage.waitForFunction(target=>Math.abs(readerScrollTop()-target)<1,layoutTarget);
   await layoutPage.waitForTimeout(100);
-  const beforeImage=await layoutPage.evaluate(()=>({anchor:captureAnchor(),cached:readerFrameAnchor(),top:readerScrollTop()}));
+  const beforeImage=await layoutPage.evaluate(()=>({anchor:captureAnchor(),cached:readerFrameAnchor(),top:readerScrollTop(),height:document.querySelector('img[src$="scandal-in-bohemia-03.webp"]').getBoundingClientRect().height}));
+  assert.ok(beforeImage.height>0,'delayed illustration 03 reserves height');
+  assert.deepEqual(beforeImage.anchor,{pi:43,dy:200});
   releaseLayout();await layoutPage.locator('img[src$="scandal-in-bohemia-03.webp"]').evaluate(img=>img.decode());
   await layoutPage.waitForTimeout(100);
-  const layout=await layoutPage.evaluate(()=>{const actual=captureAnchor(),cached=readerFrameAnchor();saveReadingState();return {actual,cached,stored:{...posOf(curBook.id)},top:readerScrollTop()};});
+  assert.deepEqual(await layoutPage.evaluate(()=>captureAnchor()),beforeImage.anchor,'decoding the actual image preserves its reserved layout');
+  // Keep a separate late-layout counterexample for the fresh save: layout can
+  // still change independently of scroll, even though catalog decode is stable.
+  const layout=await layoutPage.evaluate(()=>{
+   readerScroller().style.overflowAnchor='none';
+   const cached=readerFrameAnchor(),img=document.querySelector('img[src$="scandal-in-bohemia-03.webp"]');
+   img.style.height=(img.getBoundingClientRect().height+80)+'px';
+   const actual=captureAnchor();saveReadingState();return {actual,cached,stored:{...posOf(curBook.id)},top:readerScrollTop()};
+  });
+  assert.notEqual(layout.actual.dy,layout.cached.dy,'controlled late layout invalidates the cached offset without a scroll');
   assert.equal(layout.stored.pi,layout.actual.pi);
-  assert.equal(layout.stored.dy,layout.actual.dy,'saving after delayed image layout must use the current offset');
+  assert.equal(layout.stored.dy,layout.actual.dy,'saving after late layout must use the current offset');
   await layoutPage.evaluate(()=>show('home'));await layoutPage.evaluate(async()=>openBook(homeResumeBook()));await layoutPage.waitForTimeout(150);
   assert.deepEqual(await layoutPage.evaluate(()=>captureAnchor()),layout.actual,'Home/reopen must preserve the actual pre-exit paragraph and offset');
   console.log(`${engine.name()}: delayed actual illustration: ${JSON.stringify({beforeImage,...layout})}; actual anchor preserved on Home/reopen`);

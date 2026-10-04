@@ -362,7 +362,7 @@
   .pageno{text-align:center; color:var(--pageno); font-size:12px; margin:18px 0 26px; font-family:var(--serif); user-select:none;}
   #rtext figure{margin:1.5em 0; text-align:center;}
   #rtext figure.story-illustration{margin:1.8em 0 2em;}
-  #rtext figure.story-illustration img{display:block; width:100%; height:auto; aspect-ratio:auto;}
+  #rtext figure.story-illustration img{display:block; width:100%; height:auto;}
   /* The source-led Holmes hierarchy stays within the existing Reader settings. */
   #readwrap.holmes-reading #rtitle{font-size:clamp(1.35rem,3.4vw,1.85rem);line-height:1.35;
     font-weight:600;letter-spacing:-.02em;border:0;margin-bottom:0;padding-bottom:.45em;}

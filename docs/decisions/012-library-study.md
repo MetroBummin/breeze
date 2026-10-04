@@ -387,3 +387,26 @@ Reader/Home mismatch, which was not reproduced in ordinary Bohemia navigation.
 Regression: `tests/verify-bohemia-progress-browser.mjs` uses the actual bundled
 261-paragraph story, delayed assets, immediate Home, backward reading, completion,
 real database reopening, signed-out lifecycle saves and delayed-image offsets.
+
+## Cold illustration reservation and Bohemia CI follow-up (234)
+
+The illustration renderer already sets native width/height from catalog metadata.
+The story-image CSS override `aspect-ratio:auto` suppressed that reserved ratio
+before decode. Removing the override keeps the decoded appearance and reserves
+the same image height during cold opening. Blocking Bohemia illustration 09
+reproduced the CI paragraph 244 instead of 245 before any font-size change:
+paragraph 245 restored at 200px while the preceding paragraph entered the probe.
+With native reservation restored, the blocked image occupies 146px at the tested
+phone width; paragraph 245 stays at 200px before and after decode.
+
+The regression waits for scroll geometry, restoration and progress animation to
+settle, opens Reader controls through the normal title button, then clicks Back.
+This removes the fixture's dependence on an instantaneous chrome reveal while
+wheel input may still hide controls during the click's stability wait. Exact
+progress, paragraph and offset assertions remain. Cold
+decode is tested with the real illustration blocked; a separate controlled late
+layout change still proves that saving measures a fresh offset without a scroll.
+Chromium and five-story light/dark viewport checks pass locally. WebKit's reported
+hidden-button timeout is not reproduced locally because its binary is unavailable;
+the existing both-engine CI step remains the gate. No font implementation defect
+has been established by this cold-reopen failure.
