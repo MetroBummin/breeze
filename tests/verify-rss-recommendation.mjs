@@ -259,3 +259,27 @@ test('same URL refresh replaces a changed verdict/import target/title and never 
     r.setGroups([]);await r.paint(true);assert.equal(r.rail.querySelectorAll('.rss-card').length,0);
   }
 });
+
+for(const fixture of (await import('./fixtures/rss-promo.mjs')).rssPromoFixtures){
+ test(`narrow promo filter: ${fixture.name}`,()=>{
+  assert.equal(environment().rssObviousPromo(fixture),fixture.reject);
+ });
+}
+test('cached recommendation candidates skip obvious promo junk and keep the next readable entry',()=>{
+ const junk=entry('space','junk','science',0,{title:'Acme promo codes',summary:'Use code SAVE20 at checkout and save 20%. These verified promo codes expire today. Shop now.'});
+ const good=entry('space','good');
+ assert.deepEqual(urls(rank([[junk,good]])),[good.url]);
+});
+test('card selection rechecks cached candidates even outside the recommendation ranker',async()=>{
+ const ctx=environment();
+ const junk={title:'Acme coupon codes',summary:'Use code SAVE20 at checkout and save 20%. These verified codes expire today. Shop now.',url:'https://space.test/junk',photo:'https://images.test/junk.png'};
+ ctx.rail={};ctx.items=[junk];vm.runInContext('rssRenderIds.set(rail,1)',ctx);
+ assert.equal((await ctx.rssFeedCards(ctx.items,1,ctx.rail)).length,0);
+});
+test('RSS ingestion removes a clear coupon pitch before cover preparation',async()=>{
+ const {DOMParser}=await import('linkedom');
+ class FeedParser extends DOMParser{parseFromString(source,type){return super.parseFromString(type==='text/html'?'<html><body>'+source+'</body></html>':source,type);}}
+ const ctx=environment({DOMParser:FeedParser,articleAbsolute:(url,base)=>new URL(url,base).href,articleUrlKey:url=>url,ARTICLE_IMG_BAD:/logo/,articleBestSrc:node=>node.getAttribute('src')});
+ const xml='<rss><channel><item><title>Acme promo codes</title><link>https://space.test/junk</link><description>Use the code SAVE20 at checkout and save 20% on your order. These verified promo codes expire today. Shop now.</description></item><item><title>A coastal community studies the ocean</title><link>https://space.test/good</link><description>The community is learning about the ocean and how the changing water affects their homes.</description></item></channel></rss>';
+ assert.deepEqual(Array.from(ctx.parseRss(xml,{url:'https://space.test/feed',name:'Space',category:'science'}),row=>row.url),['https://space.test/good']);
+});

@@ -15,7 +15,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await chromium.launch();
+const browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
 
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block',reducedMotion:'reduce'});

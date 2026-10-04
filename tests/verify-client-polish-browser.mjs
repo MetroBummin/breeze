@@ -11,8 +11,8 @@ const server=createServer((req,res)=>{
  try{res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}`;
-try{for(const engine of [chromium,webkit]){
- const browser=await engine.launch();
+try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
+ const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  try{
  const page=await browser.newPage({viewport:{width:820,height:1180},serviceWorkers:'block'}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
@@ -44,12 +44,17 @@ try{for(const engine of [chromium,webkit]){
  }
  await page.evaluate(()=>{
   const at=Date.now();words=Object.fromEntries(['alpha','beta','gamma','delta'].map((word,i)=>[word,{word,clicked:word,forms:[word],ko:'저장된 뜻 '+i,example:'We remember '+word+' in a saved sentence.',book:'Saved book',status:1,addedAt:at-i*1000,up:at-i*1000}]));saveWords();
-  let view=BreezeReview.startJourney(readVocabularyReview(),words,at);
-  view=BreezeReview.grade(view.state,words,view.token,'confused',at);commitVocabularyReview(view.state);show('vocab');
+  // Seed a real pre-existing schedule as fixture data; shipped simple cards
+  // must never call the dormant UI storage adapters to read or mutate it.
+  let view=BreezeReview.startJourney(BreezeReview.normalize(null),words,at);
+  view=BreezeReview.grade(view.state,words,view.token,'confused',at);
+  localStorage.setItem('breeze.vocabulary-review.v1',JSON.stringify(view.state));show('vocab');
  });
  const before=await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1'));
  assert.equal(await page.locator('#review-setup-waiting').count(),0);
  assert.doesNotMatch(await page.locator('#review-setup').textContent(),/지금 학습|이어서 학습할 수/);
+ assert.equal(await page.locator('#review-setup').isVisible(),false,'scheduled setup stays dormant');
+ assert.equal(await page.locator('#review-settings').isVisible(),false,'scheduled settings stay dormant');
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const theme of ['light','dark']){
   await page.setViewportSize({width,height});await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();show('vocab');},theme);
   await page.screenshot({path:resolve(out,`${engine.name()}-memory-${width}-${theme}.png`)});
@@ -58,6 +63,9 @@ try{for(const engine of [chromium,webkit]){
  }
  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1')),before,'presentation does not change saved schedule');
  await page.evaluate(()=>show('vocab'));await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'study');
- assert.deepEqual(errors,[]);console.log(engine.name()+': exact cover, old-book repair/custom preservation, Memory resume/scheduling and 20 theme/viewport captures passed');
+ assert.equal(await page.locator('#review-progress').innerText(),'1 / 4','simple cards include all saved meanings regardless of schedule');
+ assert.equal(await page.locator('#review-grades').isVisible(),false,'simple cards do not grade scheduled review');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1')),before,'opening simple cards preserves the existing schedule');
+ assert.deepEqual(errors,[]);console.log(engine.name()+': exact cover, old-book repair/custom preservation, Memory/simple-card entry with schedule retention and 20 theme/viewport captures passed');
  }finally{await browser.close();}
 }}finally{await new Promise(r=>server.close(r));}

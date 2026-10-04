@@ -46,7 +46,7 @@
     "test:pdf-stability": "node --test tests/verify-pdf-session-regressions.mjs && node tests/verify-pdf-crop-memory-browser.mjs",
     "test:easy-explanation": "node --experimental-strip-types --test tests/verify-easy-explanation.mjs && node tests/verify-easy-explanation-browser.mjs && BROWSER=webkit node tests/verify-easy-explanation-browser.mjs",
     "test:shared-files": "node --test tests/verify-shared-files.mjs && node tests/verify-shared-files-browser.mjs && node tests/verify-share-home-browser.mjs",
-    "test:vocabulary-review": "node --test tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs && node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs",
+    "test:vocabulary-review": "node --test tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs && node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs && node tests/verify-simple-word-cards-browser.mjs && BROWSER=webkit node tests/verify-simple-word-cards-browser.mjs",
     "ios:archive": "bash tools/ios-testflight.sh --archive",
     "ios:testflight": "bash tools/ios-testflight.sh --upload",
     "test:rss-quality": "node --test tests/verify-rss-quality.mjs"

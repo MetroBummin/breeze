@@ -181,3 +181,13 @@ body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) 
 #vocabulary-review-page.milestone #review-more{background:#008DF0;border-color:#008DF0;color:#FFF;font-size:20px;font-weight:700;}
 
 #review-pending:empty{display:none;}
+
+/* 1.7 simple saved-word cards share the existing card surface. */
+#review-settings[hidden],#review-setup[hidden],#simple-word-navigation[hidden],.simple-word-cards [data-advanced-review]{display:none!important;}
+#review-settings-controls{border:0;padding:0;margin:0;min-width:0;}
+#simple-word-navigation{display:flex;gap:12px;margin:16px 0;}
+#simple-word-navigation button{flex:1;min-height:44px;border:1px solid var(--settings-line);border-radius:12px;background:var(--settings-sheet-surface);color:var(--settings-ink);font:500 14px var(--ui);cursor:pointer;}
+#simple-word-navigation button:disabled{opacity:.4;cursor:default;}
+.simple-word-cards #review-back:not([hidden]){animation:simple-word-turn .18s ease-out;}
+@keyframes simple-word-turn{from{opacity:.4;}to{opacity:1;}}
+@media(prefers-reduced-motion:reduce){.simple-word-cards #review-back:not([hidden]){animation:none;}}
