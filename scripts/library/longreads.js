@@ -95,6 +95,7 @@ async function refreshClassicCovers(){
 const LONG_READS = [
   {
     id:'backroom-homeward-bound', file:'assets/longreads/homewardbound.txt',
+    dormant:true, // Retain saved-copy rendering/attribution; omit new recommendations.
     cover:'assets/longreads/covers/backroom-homeward-bound.png', coverPosition:'center top',
     title:'Backroom - Homeward Bound', originalTitle:'Homeward Bound: Chapters 1–2',
     author:'DivineAtlas', sourceUrl:'https://backrooms-wiki.wikidot.com/homewardbound-ch-1',
@@ -847,7 +848,7 @@ async function upgradeHomewardLongRead(){
 }
 function pendingLongReads(){
   const owned=new Set(books.map(book=>book.longReadId).filter(Boolean));
-  return LONG_READS.filter(read=>!owned.has(read.id));
+  return LONG_READS.filter(read=>!read.dormant&&!owned.has(read.id));
 }
 
 let longReadBusy=false;

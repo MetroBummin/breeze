@@ -316,3 +316,14 @@ reading page with their following passage. Hound uses its source title once; the
 reader’s repeated page title is hidden only for the unchanged catalog title.
 Custom saved titles remain visible. The existing Reader font-size/margin/theme
 settings own body metrics; no global reader typography is changed.
+
+## Holmes-first 1.7 offering; Backrooms dormant (2026-10-04)
+
+The existing recommendation shelves now offer only the five illustrated Holmes
+works, in their established order. Backroom / Homeward Bound retains its stable
+catalog record, local text, cover, scenes, lookup data, attribution and saved-copy
+reader behavior, but is excluded from new recommendations. No migration, deletion,
+new shelf layout or saved-book filtering is added. Previously saved copies remain
+visible and readable with their custom cover and reading progress; removing a
+saved Backrooms copy does not make it a new recommendation again. FSRS stays
+dormant and Jev stays OFF. Public release numbering is coordinated separately.

@@ -1096,22 +1096,24 @@ for(const file of [...jsFiles, resolve(root, 'index.html')]){
     `${file.slice(root.length + 1)} still reaches for the removed sample book`);
 }
 
-/* ---- built-in Backrooms Long Reads ---- */
+/* ---- offered Holmes and dormant Backrooms Long Reads ---- */
 const longReadsContext = { console, Set, books:[] };
 new Script(readFileSync(resolve(root, 'scripts/library/longreads.js'), 'utf8'))
   .runInNewContext(longReadsContext);
 const offered = longReadsContext.pendingLongReads();
 assert.deepEqual(Array.from(offered, read => read.title), [
-  'Backroom - Homeward Bound',
   'The Adventure of the Speckled Band',
   'A Scandal in Bohemia',
   'The Red-Headed League',
   'The Final Problem',
   'The Hound of the Baskervilles',
-], 'All six bundled stories should be offered independently');
+], 'Only the five Holmes stories should be offered independently');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
-for(const read of offered){
+const retainedLongReads=new Script('LONG_READS').runInNewContext(longReadsContext);
+assert.equal(retainedLongReads.length,6,'Dormant Backrooms catalog entry was removed');
+assert.equal(retainedLongReads.find(read=>read.id==='backroom-homeward-bound').dormant,true);
+for(const read of retainedLongReads){
   assert.match(read.file,/\.txt$/,`${read.id} is not a local Text book`);
   assert.ok(existsSync(resolve(root,read.file)),`Local text is missing: ${read.id}`);
   if(read.cover)assert.ok(existsSync(resolve(root,read.cover)),`Supplied cover is missing: ${read.id}`);

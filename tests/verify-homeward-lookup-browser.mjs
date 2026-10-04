@@ -30,10 +30,8 @@ try{
       });
       await page.goto(url,{waitUntil:'domcontentloaded',timeout:120000});
       await page.evaluate(()=>homeReady);
-      await page.locator('#shelf .longread[data-longread-id="backroom-homeward-bound"]').click();
-      await page.locator('#article-preview .ap-start').click();
-      await page.waitForFunction(()=>books.some(book=>book.longReadId==='backroom-homeward-bound'));
-      await page.waitForFunction(()=>!articlePreviewDialog.open);
+      assert.equal(await page.locator('#shelf .longread[data-longread-id="backroom-homeward-bound"]').count(),0,'Dormant Backrooms should not be offered');
+      await page.evaluate(()=>importLongRead(LONG_READS.find(read=>read.id==='backroom-homeward-bound')));
       await page.evaluate(()=>show('home'));
       await page.locator('#shelf .bookcard.longread[data-longread-id="backroom-homeward-bound"]').click();
       await page.locator('#article-preview .ap-start').click();

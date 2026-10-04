@@ -30,14 +30,14 @@ test('catalog has separate stable identity and checksum for complete local text'
   const context={console,Set,books:[]};
   new Script(read('scripts/library/longreads.js')).runInNewContext(context);
   const all=context.pendingLongReads(),story=all.find(item=>item.id==='sherlock-holmes-speckled-band');
-  assert.equal(all.length,6);
+  assert.equal(all.length,5);
   assert.equal(story.wordCount,9804);
   assert.equal(story.cover,'assets/longreads/covers/speckled-band.webp');
   assert.ok(readFileSync(new URL('../'+story.cover,import.meta.url)).length>1000);
   assert.equal(story.sha256,createHash('sha256').update(adapted).digest('hex'));
   assert.match(story.editionNote,/not Doyle’s verbatim text/);
   context.books.push({longReadId:story.id});
-  assert.deepEqual(Array.from(context.pendingLongReads(),item=>item.id),['backroom-homeward-bound','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles']);
+  assert.deepEqual(Array.from(context.pendingLongReads(),item=>item.id),['sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles']);
 });
 
 test('cover repair cannot overwrite a concurrent custom cover or restore a deleted book',async()=>{
@@ -55,4 +55,20 @@ test('cover repair cannot overwrite a concurrent custom cover or restore a delet
   assert.equal(writes.includes('book'),false,action);
   if(action==='custom')assert.equal(book.cover,'saved|cover');else assert.equal(context.books.length,0);
  }
+});
+
+
+test('Backrooms stays retained but never becomes a new offer after saved-copy removal',()=>{
+ const saved={id:'saved-backrooms',longReadId:'backroom-homeward-bound',title:'My Backrooms',cover:'custom-cover',paras:['My saved text']};
+ const context={console,Set,books:[saved]};
+ new Script(read('scripts/library/longreads.js')).runInNewContext(context);
+ const before=JSON.stringify(saved);
+ assert.equal(context.pendingLongReads().length,5);
+ assert.equal(JSON.stringify(saved),before,'Offering logic mutated the saved copy');
+ context.books=[];
+ assert.equal(context.pendingLongReads().some(item=>item.id==='backroom-homeward-bound'),false);
+ const dormant=new Script("LONG_READS.find(read=>read.id==='backroom-homeward-bound')").runInNewContext(context);
+ assert.equal(dormant.file,'assets/longreads/homewardbound.txt');
+ assert.equal(dormant.license,'CC BY-SA 3.0');
+ assert.equal(dormant.sources.length,2);
 });
