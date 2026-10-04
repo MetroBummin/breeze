@@ -222,7 +222,9 @@ function saveReadingState(){
     if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
     return;
   }
-  const a = readerFrameAnchor();
+  // A delayed illustration can reflow text without another scroll frame.
+  // Persist one freshly measured location, rather than a cached paint sample.
+  const a = captureAnchor();
   const previous = posOf(curBook.id);
   const measured = textProgressForBook(curBook,a);
   const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);

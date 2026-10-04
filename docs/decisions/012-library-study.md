@@ -365,3 +365,25 @@ restoration errors, trusted wheel and lifecycle events during delayed restoratio
 stale callbacks after changing book, and normal reading/completion. Reused
 original sessions exercise navigation while no preparing attribute is present,
 then verify navigation and saved/visible progress equality after landing.
+
+## Text-only local position commits (234 follow-up)
+
+Saving Text progress measures the current paragraph anchor once at commit time.
+The per-frame anchor cache still avoids duplicate work during scrolling, but a
+lazy illustration can grow without a scroll event and invalidate its offset.
+Bohemia reproduced paragraph 43 moving from 233px to 379px while a save retained
+233px; the next opening advanced 146px. A fresh commit keeps the saved progress,
+paragraph and offset from the same visible surface.
+
+Local progress also saves on hidden visibility and pagehide, independently of
+cloud sign-in. Ordinary Home navigation already saves synchronously. The 800ms
+scroll writer is not a durability boundary when a mobile app may suspend before
+its timer runs. These saves use the existing pending-restoration guard and do
+not reset progress, change completion rules or reject backward reading.
+
+The animated Reader fill can trail its canonical target briefly; Home renders
+the saved target immediately. This is distinct from a persistent numerical
+Reader/Home mismatch, which was not reproduced in ordinary Bohemia navigation.
+Regression: `tests/verify-bohemia-progress-browser.mjs` uses the actual bundled
+261-paragraph story, delayed assets, immediate Home, backward reading, completion,
+real database reopening, signed-out lifecycle saves and delayed-image offsets.

@@ -72,6 +72,13 @@ jobs:
           retention-days: 7
       - name: RSS shadow and approval regressions
         run: node tests/verify-rss-quality-browser.mjs
+      - name: Text-only Bohemia progress in Chromium and WebKit
+        run: |
+          status=0
+          for engine in chromium webkit; do
+            BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
+          done
+          exit "$status"
       - name: Vocabulary review in Chromium and WebKit
         run: |
           status=0
