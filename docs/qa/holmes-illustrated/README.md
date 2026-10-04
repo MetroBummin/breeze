@@ -67,3 +67,23 @@ QA documents identify the existing Default / Archive - iOS workflow with its
 TestFlight post-action; Apple-side current workflow/counter/distribution settings
 need confirmation for the next coordinated release. No Cloud workflow trigger,
 number increment, archive or upload was performed here.
+
+## Coordinated 1.7 (233) release preparation
+
+After the preceding integration/fixture checks, parent release coordination
+confirmed App Store Connect's Xcode Cloud App product
+`63EB7A68-407F-4316-BB6E-53B5D9EA00EC` shows Next Build Number 233 and latest
+232 success. The parent owns that live Apple-side evidence and the upcoming
+exact-head CI review, main merge and Cloud run.
+
+App and Share Extension Debug/Release `CURRENT_PROJECT_VERSION`,
+`tools/verify-ios-release.mjs`, the post-clone `CI_BUILD_NUMBER` guard, and local
+archive/output paths, archive version validation and upload status wording in
+`tools/ios-testflight.sh` are aligned to **1.7 (233)**. Marketing version remains
+1.7. Earlier 232 references above describe the prior verified integration state.
+No product behavior, signing settings, Cloud settings or artwork/text changed.
+No native archive or release workflow was started in this preparation task.
+
+Release preparation validation passed: full `npm test`, `verify-ios-release.mjs`
+(1.7 / 233 for all four configurations), shell syntax checks, `npm run ios:sync`,
+all 55 native image hashes and five text bytes, and `git diff --check`.
