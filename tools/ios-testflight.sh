@@ -14,9 +14,9 @@ node tools/verify-ios-release.mjs
 npm ci --ignore-scripts --no-audit --no-fund
 npm test
 npm run ios:sync
-release_out="${BREEZE_RELEASE_DIR:-$repo_root/build/ios-1.7-232}"
+release_out="${BREEZE_RELEASE_DIR:-$repo_root/build/ios-1.7-233}"
 mkdir -p "$release_out"
-archive="$release_out/Breeze-1.7-232.xcarchive"
+archive="$release_out/Breeze-1.7-233.xcarchive"
 if [[ -e "$archive" ]]; then echo "Archive already exists: $archive. Use a fresh BREEZE_RELEASE_DIR." >&2; exit 1; fi
 # Optional App Store Connect API key (path only); otherwise use Xcode's signed-in account.
 auth=()
@@ -28,13 +28,13 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
   -destination 'generic/platform=iOS' -archivePath "$archive" \
   -allowProvisioningUpdates "${auth[@]}" archive
 /usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$archive/Info.plist"
-[[ "$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleVersion' "$archive/Info.plist")" == 232 ]]
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleVersion' "$archive/Info.plist")" == 233 ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$archive/Info.plist")" == 1.7 ]]
 if [[ "$mode" == --upload ]]; then
   xcodebuild -exportArchive -archivePath "$archive" \
     -exportOptionsPlist ios/ExportOptions-TestFlight.plist -exportPath "$release_out/export" \
     -allowProvisioningUpdates "${auth[@]}"
-  echo 'Upload command completed. Confirm Apple processing and build 1.7 (232) in TestFlight before claiming availability.'
+  echo 'Upload command completed. Confirm Apple processing and build 1.7 (233) in TestFlight before claiming availability.'
 else
   echo "Archive ready: $archive"
 fi

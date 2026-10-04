@@ -1,0 +1,249 @@
+[
+  {
+    "id": "red-headed-league-01",
+    "scene": "Red-haired Jabez Wilson consults Holmes",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Wilson"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 1,
+      "originalPrefix": "I had called upon my friend, Mr. Sherlock Holmes, one day in the autumn of last year and found him",
+      "adaptedPrefix": "I had called upon my friend, Mr. Sherlock Holmes, one day in the autumn of last year and found him",
+      "paragraphSha256": "36ff680cfcac6617e5bd80d08bcf6d27791202ab2b3d55eb1a7fcf806e6db799"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 1,
+      "paragraphSha256": "36ff680cfcac6617e5bd80d08bcf6d27791202ab2b3d55eb1a7fcf806e6db799",
+      "beforeParagraph1Based": 2,
+      "beforeNextPrefix": "“You could not possibly have come at a better time, my dear Watson,” he said cordially."
+    }
+  },
+  {
+    "id": "red-headed-league-02",
+    "scene": "The extraordinary newspaper advertisement",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Wilson"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 29,
+      "originalPrefix": "“TO THE RED-HEADED LEAGUE: On account of the bequest of the late Ezekiah Hopkins, of Lebanon, Pennsylvania, U.S.A., there is",
+      "adaptedPrefix": "“TO THE RED-HEADED LEAGUE: On account of the bequest of the late Ezekiah Hopkins, of Lebanon, Pennsylvania, U.S.A., there is",
+      "paragraphSha256": "1a749d97f33d168852f71246213b1c50acdbfbd35c4db8e380af2a745680718d"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 29,
+      "paragraphSha256": "1a749d97f33d168852f71246213b1c50acdbfbd35c4db8e380af2a745680718d",
+      "beforeParagraph1Based": 30,
+      "beforeNextPrefix": "“What on earth does this mean?” I exclaimed after I had twice read over the extraordinary announcement."
+    }
+  },
+  {
+    "id": "red-headed-league-03",
+    "scene": "A crowd of red-haired applicants outside the office",
+    "characters": [
+      "Wilson",
+      "Spaulding",
+      "Duncan Ross"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 57,
+      "originalPrefix": "“I never hope to see such a sight as that again, Mr. Holmes. From north, south, east, and west every",
+      "adaptedPrefix": "“I never hope to see such a sight as that again, Mr. Holmes. From north, south, east, and west every",
+      "paragraphSha256": "340f8870a128d3affc0925bfd63c866a34696d6add35f40dc77e5dc251b6f0bf"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 57,
+      "paragraphSha256": "340f8870a128d3affc0925bfd63c866a34696d6add35f40dc77e5dc251b6f0bf",
+      "beforeParagraph1Based": 58,
+      "beforeNextPrefix": "“Your experience has been a most entertaining one,” remarked Holmes as his client paused and refreshed his memory with a huge pinch of snuff."
+    }
+  },
+  {
+    "id": "red-headed-league-04",
+    "scene": "Wilson copies the encyclopedia at the office desk",
+    "characters": [
+      "Wilson",
+      "Duncan Ross"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 83,
+      "originalPrefix": "“‘Is to copy out the Encyclopædia Britannica. There is the first volume of it in that press. You must find",
+      "adaptedPrefix": "“‘Is to copy out the Encyclopædia Britannica. There is the first volume of it in that cupboard. You must find",
+      "paragraphSha256": "5362bba844d93ce11870b54c3da68c38f4d486e34cb19efcf33874e46564ea0e"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 83,
+      "paragraphSha256": "5362bba844d93ce11870b54c3da68c38f4d486e34cb19efcf33874e46564ea0e",
+      "beforeParagraph1Based": 84,
+      "beforeNextPrefix": "“‘Certainly,’ I answered."
+    }
+  },
+  {
+    "id": "red-headed-league-05",
+    "scene": "Wilson finds the closed office and dissolution notice",
+    "characters": [
+      "Wilson"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 91,
+      "originalPrefix": "“Yes, sir. And no later than this morning. I went to my work as usual at ten o’clock, but the",
+      "adaptedPrefix": "“Yes, sir. And no later than this morning. I went to my work as usual at ten o’clock, but the",
+      "paragraphSha256": "8a500deeb9e25278e166d6cff15783aafa15a59d4370b53f1a316868dea41197"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "mid",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 91,
+      "paragraphSha256": "8a500deeb9e25278e166d6cff15783aafa15a59d4370b53f1a316868dea41197",
+      "beforeParagraph1Based": 92,
+      "beforeNextPrefix": "He held up a piece of white cardboard about the size of a sheet of note-paper. It read in this fashion:"
+    }
+  },
+  {
+    "id": "red-headed-league-06",
+    "scene": "Holmes taps the pavement outside the pawnshop",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Spaulding"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 141,
+      "originalPrefix": "We travelled by the Underground as far as Aldersgate; and a short walk took us to Saxe-Coburg Square, the scene",
+      "adaptedPrefix": "We travelled by the Underground as far as Aldersgate; and a short walk took us to Saxe-Coburg Square, the scene",
+      "paragraphSha256": "8144f65c7a9dc6bd9203a6258b2d127a150ff3a8bbfc2492f2e159d50a05297c"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "clue",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 141,
+      "paragraphSha256": "8144f65c7a9dc6bd9203a6258b2d127a150ff3a8bbfc2492f2e159d50a05297c",
+      "beforeParagraph1Based": 142,
+      "beforeNextPrefix": "“Thank you,” said Holmes, “I only wished to ask you how you would go from here to the Strand.”"
+    }
+  },
+  {
+    "id": "red-headed-league-07",
+    "scene": "Holmes listens to music in the concert hall",
+    "characters": [
+      "Holmes",
+      "Watson"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 155,
+      "originalPrefix": "My friend was an enthusiastic musician, being himself not only a very capable performer but a composer of no ordinary",
+      "adaptedPrefix": "My friend was an enthusiastic musician, being himself not only a very capable performer but a composer of no ordinary",
+      "paragraphSha256": "1f7d51ab6c92504bba5ebee84ccef2945b2612fb489989679b319194b56bf159"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "none",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 155,
+      "paragraphSha256": "1f7d51ab6c92504bba5ebee84ccef2945b2612fb489989679b319194b56bf159",
+      "beforeParagraph1Based": 156,
+      "beforeNextPrefix": "“You want to go home, no doubt, Doctor,” he remarked as we emerged."
+    }
+  },
+  {
+    "id": "red-headed-league-08",
+    "scene": "The investigators descend into the bank cellar",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "Jones",
+      "Merryweather"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 177,
+      "originalPrefix": "We had reached the same crowded thoroughfare in which we had found ourselves in the morning. Our cabs were dismissed,",
+      "adaptedPrefix": "We had reached the same crowded thoroughfare in which we had found ourselves in the morning. Our cabs were dismissed,",
+      "paragraphSha256": "d52209e84bf7e1cf477475321bc87d025f4f3fc5f7a22ff4f09b0113cd5a5cf8"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "late",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 177,
+      "paragraphSha256": "d52209e84bf7e1cf477475321bc87d025f4f3fc5f7a22ff4f09b0113cd5a5cf8",
+      "beforeParagraph1Based": 178,
+      "beforeNextPrefix": "“You are not very vulnerable from above,” Holmes remarked as he held up the lantern and gazed about him."
+    }
+  },
+  {
+    "id": "red-headed-league-09",
+    "scene": "A hand and face emerge through the stone floor",
+    "characters": [
+      "John Clay",
+      "Archie"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 195,
+      "originalPrefix": "Its disappearance, however, was but momentary. With a rending, tearing sound, one of the broad, white stones turned over upon",
+      "adaptedPrefix": "Its disappearance, however, was but momentary. With a rending, tearing sound, one of the broad, white stones turned over upon",
+      "paragraphSha256": "189ee9477b265e5c98e0248a6a3d0a1491f4900d63c846b264e05da90828ca4e"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "ending",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 195,
+      "paragraphSha256": "189ee9477b265e5c98e0248a6a3d0a1491f4900d63c846b264e05da90828ca4e",
+      "beforeParagraph1Based": 196,
+      "beforeNextPrefix": "“It’s all clear,” he whispered. “Have you the chisel and the bags? Great Scott! Jump, Archie, jump, and I’ll swing for it!”"
+    }
+  },
+  {
+    "id": "red-headed-league-10",
+    "scene": "Holmes arrests John Clay at the tunnel opening",
+    "characters": [
+      "Holmes",
+      "Watson",
+      "John Clay",
+      "Jones"
+    ],
+    "chapter": "unsectioned",
+    "anchor": {
+      "kind": "verified-shipped-paragraph",
+      "paragraph1Based": 198,
+      "originalPrefix": "“It’s no use, John Clay,” said Holmes blandly. “You have no chance at all.”",
+      "adaptedPrefix": "“It’s no use, John Clay,” said Holmes blandly. “You have no chance at all.”",
+      "paragraphSha256": "ed88c9b1ec7ccbcd3c24d11b95032a4be28a13a949ac0913dffc420225a0df06"
+    },
+    "placement": "after-scene-paragraph (map to next verified paragraph for existing before renderer)",
+    "spoiler": "ending",
+    "verifiedPlacement": {
+      "afterParagraph1Based": 198,
+      "paragraphSha256": "ed88c9b1ec7ccbcd3c24d11b95032a4be28a13a949ac0913dffc420225a0df06",
+      "beforeParagraph1Based": 199,
+      "beforeNextPrefix": "“So I see,” the other answered with the utmost coolness. “I fancy that my pal is all right, though I see you have got"
+    }
+  }
+]

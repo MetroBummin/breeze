@@ -1,28 +1,24 @@
 # Approved long-read covers
 
-`speckled-band.png` is the user-selected option 1, gothic illustrated cover for
-**The Speckled Band**. Materialized through ChatGPT Library on 2026-10-03 and
-visually inspected before copying unchanged into this repository.
+The five Holmes catalog entries use the user-approved cinematic cover series,
+encoded as uncropped WebP derivatives. The former three Gothic PNG catalog covers
+were replaced in the illustrated collection; their provenance remains in Git
+history. User originals are preserved outside the checkout.
 
-- Library identity: `libfile_16281071d8948191a3f67c8fff03ef42`
-- Source name: `option-1-gothic-illustrated.png`
-- Bytes: 2,563,098; dimensions: 1024 × 1536
-- SHA-256: `800b87d1e50a18fd622b9f8df1162bebf94c4f2e158bb470855bcd2c3fb13da2`
+Exact current source/derivative hashes, dimensions, byte counts and generation
+records live in [the artwork manifest](../../../docs/content/holmes-artwork/asset-manifest.json).
+Browser cover tests compare repaired stored Blobs against that manifest, including
+SHA-256 and decoded dimensions.
 
-New imports and catalog cards use it. At startup, existing bundled books lacking
-covers receive their catalog cover asynchronously after Home appears. An existing
-custom cover is preserved; source text and reading identity are never replaced.
+| Current asset | Bytes | Dimensions |
+| --- | ---: | --- |
+| `final-problem.webp` | 176,008 | 768 × 1152 |
+| `hound-of-the-baskervilles.webp` | 99,430 | 768 × 1152 |
+| `red-headed-league.webp` | 120,184 | 768 × 1152 |
+| `scandal-in-bohemia.webp` | 122,122 | 768 × 1152 |
+| `speckled-band.webp` | 160,112 | 768 × 1152 |
 
-The user subsequently requested both remaining covers. The parent generated and
-approved title-specific images in the same series; the Mac consumer materialized
-and inspected the actual pixels before copying them unchanged:
-
-| Asset | Library identity | Bytes | SHA-256 |
-| --- | --- | ---: | --- |
-| `scandal-in-bohemia.png` | `libfile_49171db645148191875d64c2e1194fa8` | 2,311,730 | `b9621e70c0d490ab7be26f922e9378299bfdfd102f5474b6979b324e3a2b7723` |
-| `red-headed-league.png` | `libfile_bb968c644d048191a1f472cd32d6e95f` | 2,329,351 | `9a6787e533ce4789d3d907ada917fe229f2b13f4a79806ca1964fa38aac84c81` |
-
-Both are 1024 × 1536, Library version 0. Source names are respectively
-`a-scandal-in-bohemia.png` and `the-red-headed-league.png`. Titles, author and
-Lightly Modernized labels are present and match their own catalog records.
-The original selected Speckled Band image remains byte-for-byte unchanged.
+New catalog cards and imports use these covers. Existing bundled books lacking
+covers receive their catalog cover asynchronously after Home appears. Existing
+saved/custom covers are preserved; source text and reading identity are never
+replaced. The Backrooms cover and its licensing record are unchanged.

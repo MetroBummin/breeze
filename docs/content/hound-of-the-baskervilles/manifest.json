@@ -1,0 +1,115 @@
+{
+  "title": "The Hound of the Baskervilles",
+  "author": "Arthur Conan Doyle",
+  "year": 1902,
+  "gutenbergId": 2852,
+  "sourceUrl": "https://www.gutenberg.org/ebooks/2852",
+  "sourceTextUrl": "https://www.gutenberg.org/cache/epub/2852/pg2852.txt",
+  "retrieved": "2026-10-04",
+  "captureMethod": "complete official research-browser line coverage; not raw download bytes",
+  "sourceLineRange": [
+    31,
+    7203
+  ],
+  "sourceLinesSha256": "231459f4ce9c70547ab6669eda56dff41225605a041bac37c55bf382fd3edd5e",
+  "sourceLicenseSha256": "8dcffa62ba0ef31c6fa712bd81319f7967778b35bbdd2fa2a75a96f2d8ec92fa",
+  "originalSha256": "d1d40202d1a069967b0b82768bd9c34f6c50834a33714add37182d1cc9ca899a",
+  "adaptedSha256": "19906dcd8bd6e3127bfd6676361901199dd10ba6bf3077963e6de2768d08b2c4",
+  "paragraphs": 1328,
+  "originalWords": 59258,
+  "adaptedWords": 59266,
+  "bytes": 324921,
+  "first": "THE HOUND OF THE BASKERVILLES",
+  "last": "THE END",
+  "lastNarrativeParagraph": "“It is a formidable difficulty, and I fear that you ask too much when you expect me to solve it. The past and the present are within the field of my inquiry, but what a man may do in the future is a hard question to answer. Mrs. Stapleton has heard her husband discuss the problem on several occasions. There were three possible courses. He might claim the property from South America, establish his identity before the British authorities there and so obtain the fortune without ever coming to England at all, or he might adopt an elaborate disguise during the short time that he need be in London; or, again, he might furnish an accomplice with the proofs and papers, putting him in as heir, and retaining a claim upon some proportion of his income. We cannot doubt from what we know of him that he would have found some way out of the difficulty. And now, my dear Watson, we have had some weeks of severe work, and for one evening, I think, we may turn our thoughts into more pleasant channels. I have a box for Les Huguenots. Have you heard the De Reszkes? Might I trouble you then to be ready in half an hour, and we can stop at Marcini’s for a little dinner on the way?”",
+  "chapters": [
+    {
+      "number": 1,
+      "title": "Mr. Sherlock Holmes",
+      "paragraph1Based": 11
+    },
+    {
+      "number": 2,
+      "title": "The Curse of the Baskervilles",
+      "paragraph1Based": 70
+    },
+    {
+      "number": 3,
+      "title": "The Problem",
+      "paragraph1Based": 111
+    },
+    {
+      "number": 4,
+      "title": "Sir Henry Baskerville",
+      "paragraph1Based": 238
+    },
+    {
+      "number": 5,
+      "title": "Three Broken Threads",
+      "paragraph1Based": 347
+    },
+    {
+      "number": 6,
+      "title": "Baskerville Hall",
+      "paragraph1Based": 477
+    },
+    {
+      "number": 7,
+      "title": "The Stapletons of Merripit House",
+      "paragraph1Based": 542
+    },
+    {
+      "number": 8,
+      "title": "First Report of Dr. Watson",
+      "paragraph1Based": 660
+    },
+    {
+      "number": 9,
+      "title": "The Light upon the Moor [Second Report of Dr. Watson]",
+      "paragraph1Based": 686
+    },
+    {
+      "number": 10,
+      "title": "Extract from the Diary of Dr. Watson",
+      "paragraph1Based": 802
+    },
+    {
+      "number": 11,
+      "title": "The Man on the Tor",
+      "paragraph1Based": 881
+    },
+    {
+      "number": 12,
+      "title": "Death on the Moor",
+      "paragraph1Based": 983
+    },
+    {
+      "number": 13,
+      "title": "Fixing the Nets",
+      "paragraph1Based": 1123
+    },
+    {
+      "number": 14,
+      "title": "The Hound of the Baskervilles",
+      "paragraph1Based": 1235
+    },
+    {
+      "number": 15,
+      "title": "A Retrospection",
+      "paragraph1Based": 1304
+    }
+  ],
+  "edits": 9,
+  "complete": true,
+  "sourceHeaderSha256": "10d8dfd94657cd40fbda1ba309460ea9af119e4617bcd64f2eff8f9864a89573",
+  "sourceHeaderLineRange": [
+    0,
+    26
+  ],
+  "sourceLicenseLineRange": [
+    7231,
+    7546
+  ],
+  "edition": "Lightly modernized English edition",
+  "copyrightNotice": "Original: public domain in the USA; no worldwide clearance claim"
+}

@@ -1,0 +1,1439 @@
+{
+  "source": "User-supplied local Holmes illustration and cover ZIPs, verified CRC and source metadata SHA256",
+  "sourceTextLicense": "Per-story docs/content source and modernization audit; artwork is AI generated, not copied from Gutenberg",
+  "assets": [
+    {
+      "id": "final-problem-01",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-01.png",
+      "sourceBytes": 1764745,
+      "sourceSha256": "792ca785054937b41f84d76668210bfd43f5cca176988f58c5c521bcfd0b191d",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-01.webp",
+      "bytes": 58378,
+      "sha256": "b2a9c885c06a43f7d77bb2d3dcf0ee25131d62b5a89c02a48efda73a8c66ad63",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-02",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-02.png",
+      "sourceBytes": 1922932,
+      "sourceSha256": "4b77dc2d3306962ae5f71e8c96e2f32c6bb78b519d2e91864dcec017c430bbd8",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-02.webp",
+      "bytes": 84404,
+      "sha256": "14f82e7658ccfad296454a1cfa4815af8d96d9ae91b83e3ec3975cfa186ee291",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-03",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-03.png",
+      "sourceBytes": 2490300,
+      "sourceSha256": "49e146c395e6002e4f9b84aa5cdb0f8f1309cdd1c247227c246f19041f76129d",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-03.webp",
+      "bytes": 156972,
+      "sha256": "06032e50f23370bb3e71cd81179e55dc31677d10e08549a313e2eb81309d5a92",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-04",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-04.png",
+      "sourceBytes": 2145685,
+      "sourceSha256": "f149e32c556f2013ea2dc9a121a946c09f9388d2f6a960793c5df15d4a8b0c6e",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-04.webp",
+      "bytes": 127678,
+      "sha256": "3e72e58f7963c36a21a4be418306c1f4bd58910aa31cbfa626d7ee419571e39b",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-05",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-05.png",
+      "sourceBytes": 2132310,
+      "sourceSha256": "eb71ee43ce88c70b2fd827a3cc01113b8b643fb4dbc2565ba3cda797138dc489",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-05.webp",
+      "bytes": 94828,
+      "sha256": "c3f33c0e48d720bafb5ba91f6e695b656b5b551da2f6c503c79ab32b7e1ca4da",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-06",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-06.png",
+      "sourceBytes": 2496671,
+      "sourceSha256": "7ba64f6c48552fd59182adb11c7c72d9195496746b9ef223b903f5b098700db0",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-06.webp",
+      "bytes": 160016,
+      "sha256": "33104bbe455dfdd00b5773df64c50d13f6afafba438db7918d2d9fa1f6e0f44f",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-07",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-07.png",
+      "sourceBytes": 2968057,
+      "sourceSha256": "209eca3082d9695b9778978d50ee46be2963ce7ee184a4eebe3f6de82de5b62b",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-07.webp",
+      "bytes": 224196,
+      "sha256": "1e749940356778aacbdbcb29a749a5a2a7e27c6dc7926b171b9c4d03c655bc04",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-08",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-08.png",
+      "sourceBytes": 2920917,
+      "sourceSha256": "988ff2211dd48f98afb529d95f69f588925dd91b485814219fb04c756020f226",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-08.webp",
+      "bytes": 207510,
+      "sha256": "14d9cacafbe16c1820e3b2c9ef2c7db387f1e2032aa4ed63374c7305224000d3",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-09",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-09.png",
+      "sourceBytes": 2569087,
+      "sourceSha256": "1c7310adc9141b5ac231800d81d745d56160049c6d5c2374f30d659ec3098b69",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-09.webp",
+      "bytes": 159938,
+      "sha256": "bdfe46d38547a27d147c39d6c4fb45ed861a4436f56d0345e5b81f2e1067a1fc",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem-10",
+      "kind": "scene",
+      "sourceFilename": "final-problem/final-problem-10.png",
+      "sourceBytes": 2410335,
+      "sourceSha256": "29de75be266faeb22c0b34248b62fc6b076a207b4c28a34437f24031e11ade6f",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/final-problem-10.webp",
+      "bytes": 132644,
+      "sha256": "cdc4331453c10bd5b19ba69cf0f8594fe510ca7ab125b569c2a1f581ea60648a",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "final-problem",
+      "kind": "cover",
+      "sourceFilename": "holmes-cinematic-covers/final-problem.png",
+      "sourceBytes": 2846811,
+      "sourceSha256": "a9df594d85973dc300dadc6915eec835ade847a36b9c7ccaf74bf4f373093004",
+      "sourceDimensions": [
+        1024,
+        1536
+      ],
+      "file": "assets/longreads/covers/final-problem.webp",
+      "bytes": 176008,
+      "sha256": "34967c5597d931452a204650d3c5b9b43d5a75011888edbdab8eeeb4741ef9d1",
+      "dimensions": [
+        768,
+        1152
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles",
+      "kind": "cover",
+      "sourceFilename": "holmes-cinematic-covers/hound-of-the-baskervilles.png",
+      "sourceBytes": 2146213,
+      "sourceSha256": "a1b70b1d819dd21be0f0a75fb89d8e33c14fced0692e6f60e90cf0fd35e61621",
+      "sourceDimensions": [
+        1024,
+        1536
+      ],
+      "file": "assets/longreads/covers/hound-of-the-baskervilles.webp",
+      "bytes": 99430,
+      "sha256": "b601c8f31102ca960b8b56355a198a2b808d2f86a134ca12edcf42f57b6d39c7",
+      "dimensions": [
+        768,
+        1152
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league",
+      "kind": "cover",
+      "sourceFilename": "holmes-cinematic-covers/red-headed-league.png",
+      "sourceBytes": 2331997,
+      "sourceSha256": "4e7613d7863cf5a23de405f753ca83af1804ed5581ba59a000e9b3ba8b37de0c",
+      "sourceDimensions": [
+        1024,
+        1536
+      ],
+      "file": "assets/longreads/covers/red-headed-league.webp",
+      "bytes": 120184,
+      "sha256": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+      "dimensions": [
+        768,
+        1152
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia",
+      "kind": "cover",
+      "sourceFilename": "holmes-cinematic-covers/scandal-in-bohemia.png",
+      "sourceBytes": 2197231,
+      "sourceSha256": "d0fb92240cdf6d24dd564c92c350a828872d5eabe01cf787af6bf417f3e8df42",
+      "sourceDimensions": [
+        1024,
+        1536
+      ],
+      "file": "assets/longreads/covers/scandal-in-bohemia.webp",
+      "bytes": 122122,
+      "sha256": "4c831325c91b33fc5083709857377dac78f1bfab00098432d25b6d6359ce7269",
+      "dimensions": [
+        768,
+        1152
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band",
+      "kind": "cover",
+      "sourceFilename": "holmes-cinematic-covers/speckled-band.png",
+      "sourceBytes": 2750808,
+      "sourceSha256": "6cc43a632ab49ba76ef3c1f24c6ae3ca399e0ff67a7c3cd5d958335fe52cc198",
+      "sourceDimensions": [
+        1024,
+        1536
+      ],
+      "file": "assets/longreads/covers/speckled-band.webp",
+      "bytes": 160112,
+      "sha256": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+      "dimensions": [
+        768,
+        1152
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-01",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-01.png",
+      "sourceBytes": 2039805,
+      "sourceSha256": "5e36b19d6ec12add5f86e1d16b4e033d70ba46a9637aa7102f6f1a5e2ebbe4a7",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-01.webp",
+      "bytes": 101782,
+      "sha256": "ea14b26d184c2c2fd2f7e37b78ac4664ea9c10e6d71ad11ea561cb44bb9e57a5",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-02",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-02.png",
+      "sourceBytes": 2088455,
+      "sourceSha256": "89179923dee9b1491679eef667c4c7b1f1a13b44b9d2fa57c76397c72857d694",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-02.webp",
+      "bytes": 96942,
+      "sha256": "0ca43eacdee22a44b12be98bc647119865f9bd0625920bd149013204d612383f",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-03",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-03.png",
+      "sourceBytes": 1990371,
+      "sourceSha256": "7d01ebdbb95b28cf6d0af160212c41c72e877c7625911b530f1a4453ec952b6a",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-03.webp",
+      "bytes": 89524,
+      "sha256": "11c68007dad0ea161ffd3870d0172de3dde78149dca84a1cd9c75a3b22543951",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-04",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-04.png",
+      "sourceBytes": 2266830,
+      "sourceSha256": "1c55bac7df6d78f7299fae399facb5c5926f7ca98e8ac2a9cf886367a7242300",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-04.webp",
+      "bytes": 142946,
+      "sha256": "d0032dba1f99e70fe7fea632ccf5fe40200be532e0927b4316d3c7c4c0b4e469",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-05",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-05.png",
+      "sourceBytes": 2587976,
+      "sourceSha256": "b503f32c5cc8db8b0cfdeeadc30a0d30d7ad7fa7d0652c32c6453357e3590e94",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-05.webp",
+      "bytes": 167278,
+      "sha256": "bee7a3a87a52796b4f583b4655d2820d414d737714bda3e69cb1b8dc18fe4c34",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-06",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-06.png",
+      "sourceBytes": 2600214,
+      "sourceSha256": "5d0ae37c273b48c3b2852a75469c684973ebe1547bceb8cc5da12e1344ce20a8",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-06.webp",
+      "bytes": 163936,
+      "sha256": "1dd0ab85db9ac31ecb6cb5fea0608d7bd2bf70250ae4f840564f35478489def6",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-07",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-07.png",
+      "sourceBytes": 2063627,
+      "sourceSha256": "5718bff0fe10813af47e98471a4f5f9c02214c6458ab2104487913148353a540",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-07.webp",
+      "bytes": 88932,
+      "sha256": "aca78fd14b00b49c0c0d341682926ff35bea63e8025c37423b59f9c370aa36fa",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-08",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-08.png",
+      "sourceBytes": 2407911,
+      "sourceSha256": "845c26546ac64ee16f57ccce9f6e897c05f5dcba486dee1f4643dd606d70bfd9",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-08.webp",
+      "bytes": 114164,
+      "sha256": "8596833d5a9b14b38777135912238ada29b9060b3d4b00f9afccd92e8b52629c",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-09",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-09.png",
+      "sourceBytes": 2261571,
+      "sourceSha256": "25fd5c8b198cb19ed0b10783684f95bc4d3f8aaecde425a2fd334c944209175e",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-09.webp",
+      "bytes": 105518,
+      "sha256": "44318a7edd9f141e3663c64c696fc07a06738ba50da7eef55719b8e8f8e4a4b5",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "hound-of-the-baskervilles-10",
+      "kind": "scene",
+      "sourceFilename": "hound-of-the-baskervilles/hound-of-the-baskervilles-10.png",
+      "sourceBytes": 2177864,
+      "sourceSha256": "441c78c77967b726881e27bdea182e9b7515c61e5319c39d418e06a9c274680d",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/hound-of-the-baskervilles-10.webp",
+      "bytes": 123892,
+      "sha256": "71ee4f568a2d4e94fea1c81233cf2b731efd3928bdf077df2d391b77f0ac43a4",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-01",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-01.png",
+      "sourceBytes": 2114390,
+      "sourceSha256": "a3673c71327f2ff4336ca2638a29ca28d99ad6301cf5db0b55988b725b0011d7",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-01.webp",
+      "bytes": 106348,
+      "sha256": "4e1a1015715f017f96842ce8f8a5aa20ea13c081386248c1b29bab76db2070ef",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-02",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-02.png",
+      "sourceBytes": 2176981,
+      "sourceSha256": "e908eb20c904c3072a7376d58ae6eb83628a5b9445667594f526584f04afe21f",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-02.webp",
+      "bytes": 135228,
+      "sha256": "b00a934cf995576161cf97d518c933a45b0d02d2469bc5a64f48b23f23555e05",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-03",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-03.png",
+      "sourceBytes": 2413102,
+      "sourceSha256": "44940b0147c99a724081ad09297745c0b7c84071b5ba6ebaa2487bb0505d8adf",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-03.webp",
+      "bytes": 138624,
+      "sha256": "c7f3cd2c5637bd7f96dc0f4227bebb4bfcf3ece99216fada4043d8ac94ac1bda",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-04",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-04.png",
+      "sourceBytes": 2310907,
+      "sourceSha256": "1bb09a894d70e8ab6d4c1e7c11ccf8c973be07d2703f2ebbd5f34b319ca62631",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-04.webp",
+      "bytes": 131798,
+      "sha256": "c2877947dfe81a3ec3b0726e67e37cdcd47cfc86515b912f0941915fa3081503",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-05",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-05.png",
+      "sourceBytes": 2244914,
+      "sourceSha256": "f231f0790ed114cc99d032284d25168318009bc44b5b1156e58cccffd70b5a6a",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-05.webp",
+      "bytes": 107838,
+      "sha256": "49afe72be591ee51ced1381d80a1b092014671cbb9a6c1a1eab14d5de99a47c4",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-06",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-06.png",
+      "sourceBytes": 2182854,
+      "sourceSha256": "18baad4a002d95685a0d32e6184027857387417ddc246f8dd6c149b0d5c07f72",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-06.webp",
+      "bytes": 119460,
+      "sha256": "68c1da5abad1125eaddd670fee1ae941c2f5e01f14ffe2726b982bb8ce457592",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-07",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-07.png",
+      "sourceBytes": 1955275,
+      "sourceSha256": "af31c7ececfe049a5d808568bbd0e71f2f3bbf860ab4e89c7190841a0a05a911",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-07.webp",
+      "bytes": 87320,
+      "sha256": "ef332136d517dc5dbf692b85103209cd28fc07ece63f7de2899e4b8f13525443",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-08",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-08.png",
+      "sourceBytes": 2086774,
+      "sourceSha256": "6f73cb3a40f96211d5167cedd14e85b01732ab2cd4d1acd5e7a38593c3d599fb",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-08.webp",
+      "bytes": 99056,
+      "sha256": "452efc9846803ebc6dfaffc55b94a46e84181c09cbe75869216b8505d9b81855",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-09",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-09.png",
+      "sourceBytes": 1869468,
+      "sourceSha256": "337de6124d9f0cec7c2d8586a0752bf44246fc056fb10953d2b1df8d91a25c4e",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-09.webp",
+      "bytes": 80142,
+      "sha256": "9b53988fb24759ef1e03b7db803a775c1d1d5949329192aceacca622a3ffe4d8",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "red-headed-league-10",
+      "kind": "scene",
+      "sourceFilename": "red-headed-league/red-headed-league-10.png",
+      "sourceBytes": 2328055,
+      "sourceSha256": "dcbb6df88a8aaaa8f0d947ba4b120a9f14aa0aebde2430606ed42320547bec58",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/red-headed-league-10.webp",
+      "bytes": 125086,
+      "sha256": "f09c40bedd3f489a5f1abac1ef3030b259a809049686862b487ad24e76326c53",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-01",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-01.png",
+      "sourceBytes": 2215052,
+      "sourceSha256": "1711f82665828472d54b95ecc0421a363f83b152d37e5888ba09f1b2a0c317e1",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-01.webp",
+      "bytes": 124822,
+      "sha256": "9c1f5cf0ae06b666e1b3ccd2740265b554bcfbe147c2f71048a8aaaf372294c8",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-02",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-02.png",
+      "sourceBytes": 1884132,
+      "sourceSha256": "ad922e3b7a8963e383d3ea7f3c270c971ab06b88c26cc922780019dfd5412c35",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-02.webp",
+      "bytes": 82828,
+      "sha256": "5d975cd3598ae0047b6f240e6dc8eb0e205caaba2b30c254a6e5da28573101d3",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-03",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-03.png",
+      "sourceBytes": 1995222,
+      "sourceSha256": "e92d7e9723cbfba209fdbde17da402e8db36f9babd434d09cb9d54a8a3f7d66b",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-03.webp",
+      "bytes": 108522,
+      "sha256": "081d06678ec0c727c61c84dd5254ce0e3970ddeb0ea82b173a2d4d4151ce8661",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-04",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-04.png",
+      "sourceBytes": 2340848,
+      "sourceSha256": "fa89e68c1639bba13c95d81f41ff3b843404ae39f3e979ef718d6af2556dcaa1",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-04.webp",
+      "bytes": 138786,
+      "sha256": "99cd0ee179c1f587b9be7b7cef1dc2e9d61ec8700477e28728e623ff43892cd4",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-05",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-05.png",
+      "sourceBytes": 2145808,
+      "sourceSha256": "57a850399f974194c6428a4bce32e92d302606288ce16200c1ac6952cb6396a9",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-05.webp",
+      "bytes": 109260,
+      "sha256": "86499ec1018770bbb403ca830609aabb798451c2651a14524aae399e60574f36",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-06",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-06.png",
+      "sourceBytes": 1986364,
+      "sourceSha256": "b3b9e0368409c6b503d1e3b8d129bbc6d56cff11ae870fd7635ba141cfb3d593",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-06.webp",
+      "bytes": 87384,
+      "sha256": "93d1d5152bdc60a0e8a9cd055d0cd239d9a0c231b469cdca7dd109948e52b817",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-07",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-07.png",
+      "sourceBytes": 2200900,
+      "sourceSha256": "3dbaf8bc3f9f772c53c3ca0fc1de1daba13b795e999e6d01eb200763c8d3e509",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-07.webp",
+      "bytes": 138846,
+      "sha256": "c3e6ef34b8bc25adc496e24035bee269edb50a8c77ea32c9d54d13ac6a4a065c",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-08",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-08.png",
+      "sourceBytes": 2066534,
+      "sourceSha256": "1cecad1260036a8c693546bc7ced692e20ed9527c6a9727adbe125853c5ba7b6",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-08.webp",
+      "bytes": 111268,
+      "sha256": "69e58e79f825df357c1e4bf4b695149f01374f6f859afaf09a6965e5bc02bff1",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-09",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-09.png",
+      "sourceBytes": 1963457,
+      "sourceSha256": "5437c3e65b51da92a835c114a52ddcbd37df76a95cf47a56c49539205c2e460b",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-09.webp",
+      "bytes": 97798,
+      "sha256": "f59102be8e36d0b26f6d089917ed218b9ffac271e3255a36e17f5659e40d741b",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "scandal-in-bohemia-10",
+      "kind": "scene",
+      "sourceFilename": "scandal-in-bohemia/scandal-in-bohemia-10.png",
+      "sourceBytes": 2512896,
+      "sourceSha256": "5211eeb37bb26ce94301cbfa39156306b4a29ca74067da8bd05e51bfdfc977e5",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/scandal-in-bohemia-10.webp",
+      "bytes": 154118,
+      "sha256": "8e441979feacf5a6e5f28c73c71ee5a4ef185523b3046a97bcc1a75fe3ec309e",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-01",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-01.png",
+      "sourceBytes": 1929786,
+      "sourceSha256": "d314fd9dfb208d285c481f71eb4e482124782d1eb6f52c820d4ef1b27ecaae4b",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-01.webp",
+      "bytes": 76572,
+      "sha256": "d7b9050a149e07dfa1401e8570d246594cb6bd941ea87b3950551aa1f12eb134",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-02",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-02.png",
+      "sourceBytes": 1841921,
+      "sourceSha256": "09fa7be27b09bc1b611b35de5c5526e6637464be3d242e9b5d52f87b1ee55fff",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-02.webp",
+      "bytes": 76010,
+      "sha256": "112d3da81fe9214b011d3802e004a3f3a08e287aa9122e93a61aa8cf45207b9f",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-03",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-03.png",
+      "sourceBytes": 2405635,
+      "sourceSha256": "a2f8c3e45df72642435b1c516dc9113a8c28b7c450722020feff7288d9801a92",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-03.webp",
+      "bytes": 139768,
+      "sha256": "4d6c025edf63f8e1014833c39d8b47a6d7a28ab7cf2927fd47c9bcc8ae6238ce",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-04",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-04.png",
+      "sourceBytes": 2734292,
+      "sourceSha256": "213bafaa058c67027ed1fcb33ab8d1740554acb142c2ece6d3114a1f6694964b",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-04.webp",
+      "bytes": 201530,
+      "sha256": "3ba87a7ba0298979484ed6893297977388dfe4aa5baaf09c9f92e31f4b76e5c3",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-05",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-05.png",
+      "sourceBytes": 2459820,
+      "sourceSha256": "76e1cb77b8dae11291641b4364da9c9dcac62d468ce538db812ab35d3d1edcf4",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-05.webp",
+      "bytes": 136472,
+      "sha256": "e21d596af9d89cbed7a51af8bf6f4d9fb77f975399dd6ffc0cea535beffe008e",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-06",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-06.png",
+      "sourceBytes": 2077093,
+      "sourceSha256": "12ad2c6d92b007d36801bec0fb905f939646df70c1bc39ce7caf9268d020996f",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-06.webp",
+      "bytes": 89836,
+      "sha256": "f1de4323bd5ce799a493ee8eb021f8ae5e0599618daacc27d93c0ab5e6bd6262",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-07",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-07.png",
+      "sourceBytes": 1987619,
+      "sourceSha256": "cde02c59b2c589d90ec55111b295dccf5f3adbb0f79ed5ddc3c7fb3ea03b3eb1",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-07.webp",
+      "bytes": 92270,
+      "sha256": "874b62db84e19f05c0ed4df9c2cb6b44d70a51f7f2d39b732a5987c3dcbe8c4f",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-08",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-08.png",
+      "sourceBytes": 1878702,
+      "sourceSha256": "c95629312238b5c6fe7ce086a5180ba601803b89cae949a7f545c91ddaab77eb",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-08.webp",
+      "bytes": 83824,
+      "sha256": "4becdfb940e7b2e086240cb97ae6b0d24c009e9934ac05a95954a96c28e5569e",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-09",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-09.png",
+      "sourceBytes": 1685983,
+      "sourceSha256": "18e648fdf78a4701d2775218bde127e849f0f79fbe0a545bc33e04800462fe17",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-09.webp",
+      "bytes": 47652,
+      "sha256": "d2dd48a900a20bf1cfec1e249cddbbb36d6055b2944f0e52db544ecdf1bfcf27",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    },
+    {
+      "id": "speckled-band-10",
+      "kind": "scene",
+      "sourceFilename": "speckled-band/speckled-band-10.png",
+      "sourceBytes": 1722911,
+      "sourceSha256": "1ee05dc02e6f62090afbe896a1f2314d66b4bb57cf1ede4ffc25e38fa19ef881",
+      "sourceDimensions": [
+        1774,
+        887
+      ],
+      "file": "assets/longreads/illustrations/speckled-band-10.webp",
+      "bytes": 73798,
+      "sha256": "fba1cf2dff53d7b7e7311a07c9951662028e708402e8e6449787e7f728292a0d",
+      "dimensions": [
+        1400,
+        700
+      ],
+      "generationMethod": "AI image generation",
+      "derivative": {
+        "format": "WebP",
+        "quality": 83,
+        "method": 6,
+        "resize": "contain; full frame preserved",
+        "cropped": false
+      }
+    }
+  ],
+  "sourcePatchSha256": "da8c0b2223858d213aff261b7d0745f6af776a3b2c3fb46670c65bafa725ffdf",
+  "encodingLibrary": "Pillow WebP",
+  "sourceTextDraftCommit": "f8a2c9a125f8d867986c150fef2779d5d92bf2a4"
+}

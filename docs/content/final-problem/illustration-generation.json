@@ -1,0 +1,153 @@
+{
+  "slug": "final-problem",
+  "images": [
+    {
+      "id": "final-problem-01",
+      "filename": "final-problem-01.png",
+      "sizeBytes": 1764745,
+      "sha256": "792ca785054937b41f84d76668210bfd43f5cca176988f58c5c521bcfd0b191d",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: original cinematic interior illustration for Arthur Conan Doyle's The Final Problem. Generate one photorealistic 2:1 landscape film still, 1792x896 framing, not a collage or reference sheet. Character input images are identity references only: image 1 is original Sherlock Holmes, image 2 original Dr. Watson. Keep these exact fictional identities and period wardrobe shapes, do not imitate any actor. Scene: London, 24 April 1891, Watson's private medical consulting-room at night, not Baker Street. The only light in the room is a small oil lamp on the table where Watson has been reading. Tall slim clean-shaven dark-haired Holmes, pale and worn in charcoal Victorian frock coat, edges close along the wall and uses both hands to bolt the wooden interior shutters securely. View from behind Holmes at a slight angle so his face is hidden; large shutter boards and the brass bolt are a strong tactile focal point. In the middle ground the moustached auburn-haired Watson sits half turned at his desk, brown tweed suit, watching Holmes with quiet concern, his face a small profile in lamplight. Books and discreet late-Victorian medical paraphernalia only. Composition: intimate medium-wide doorway view, 40mm lens, rich negative shadow, hands naturally posed, restrained suspense. Cold near-black corners, tiny warm amber lamplight, muted desaturated charcoal and brown, natural wood/wool/skin textures, fine organic cinema grain, realistic chiaroscuro. No writing, lettering, captions, watermarks, frame, modern objects, theatrical pose, guns, gore or visible antagonist. Original story scene, no cover layout.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-02",
+      "filename": "final-problem-02.png",
+      "sizeBytes": 1922932,
+      "sha256": "4b77dc2d3306962ae5f71e8c96e2f32c6bb78b519d2e91864dcec017c430bbd8",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: original cinematic interior story illustration for The Final Problem. Produce ONE photorealistic 2:1 landscape film still, no collage, no contact sheet. Inputs are original-character identity references only: image 1 Sherlock Holmes; image 2 LEFTMOST COLUMN ONLY Professor Moriarty, ignore all other men and labels in that reference. Preserve both fictional faces faithfully, never imitate actors. London 1891, morning, Holmes's book-lined Baker Street room. Professor Moriarty has appeared in the open doorway and peers forward: the same extremely tall, thin, ascetic pale older man, domed bald forehead, gray hair at sides, clean-shaven, deep-set eyes, rounded scholarly shoulders, black long frock coat and dark waistcoat. His body is framed fully by a narrow doorway at the back right, softly lit against a cold landing. Camera is low over Holmes's shoulder; Holmes sits foreground left in a plain dark textured Victorian dressing-gown, his sharp original profile in a small slice of gray daylight, still and self-controlled. On the desk between them, a small authentic 1891 revolver lies horizontally beside scattered case papers, the gun a quiet secondary detail, not aimed or fired. No Watson, no other person. Visual emphasis on the gulf between the two men and Moriarty's disturbing arrival rather than a posed two-person portrait. 50mm cinematic lens, tactile room with books and worn wooden desk, winter-gray daylight and tiny warm fireplace spill, cold desaturated slate/ochre/black, realistic film grain, natural skin and textile texture, dramatic but restrained psychological tension. No writing or legible text anywhere, no captions, labels, modern equipment, deerstalker, caricature, overt violence, gore, watermark, frame, poster or cover design.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "supporting-moriarty-mycroft-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-03",
+      "filename": "final-problem-03.png",
+      "sizeBytes": 2490300,
+      "sha256": "49e146c395e6002e4f9b84aa5cdb0f8f1309cdd1c247227c246f19041f76129d",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Asset: original cinematic interior story illustration for The Final Problem. ONE photorealistic 2:1 landscape motion-film still, no split image or collage. Image input is an identity/body/wardrobe reference for original Sherlock Holmes only; use the same tall slim dark-haired clean-shaven man in dark charcoal Victorian frock coat, waistcoat, white high collar, black necktie and black trousers. No famous actor likeness. Scene: midday, London 1891 at the tight Bentinck Street/Welbeck Street crossing. A fast horse-drawn closed wooden delivery van has swung around the corner, Holmes just saves himself by springing onto the raised stone foot-path. Camera near ground at curb level: Holmes foreground right in back-three-quarter view with no readable face, one boot now firmly on pavement, trailing boot just clearing the curb; his long coat tails sweep with the sudden sideways movement. On the roadway behind him, exactly TWO bay horses abreast haul a single plain dark timber commercial van with real 1890s large wooden spoke wheels and leather harness; driver small and anonymous. Horses and wheels have slight believable lateral motion blur, Holmes sharply resolved, a near miss without collision or injury. Strong diagonal street movement, 28mm handheld cinema feel, wet pale cobbles, soot-dark brick and stone facades, iron gas lamp, dull window panes, spare background bystanders safely distant. Cold overcast daylight with subtle muted brown/amber window spill, desaturated slate-gray and black palette, natural textures and fine organic film grain, mobile-readable action composition. Avoid modern motor vehicles, road markings, electric wires, modern clothing, extra horses or limbs, a leap into the van, gore, spectacle fire, legible shop signs, writing, watermark, captions, frame, poster or cover layout. This illustrates only the street near-miss, no brick-fall or other attack.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-04",
+      "filename": "final-problem-04.png",
+      "sizeBytes": 2145685,
+      "sha256": "f149e32c556f2013ea2dc9a121a946c09f9388d2f6a960793c5df15d4a8b0c6e",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Original cinematic story illustration for The Final Problem, ONE photorealistic 2:1 landscape film still. Input image 1 is original Dr. Watson identity reference: stocky auburn-haired man with warm brown moustache, brown tweed Victorian suit and white collar. Input image 2 SECOND COLUMN ONLY is Mycroft's body/build reference: very massive broad heavyset coachman. Ignore other faces, labels and sheet composition. Scene: morning April 1891 just outside the far exit of London's Lowther Arcade. Viewed from the deep shadow inside the elegant narrow glazed-roof shopping arcade toward a pale damp curb, Watson has hurried through and is stepping into the open side door of a small black horse-drawn enclosed brougham waiting immediately outside. He wears the same brown tweed suit under a period brown travel overcoat, carries no large luggage because his luggage is already at Victoria; one gloved hand on the door handle, natural stepping gesture, small anxious profile. A SINGLE dark horse waits facing down the street. The coachman sits high on the box with his BACK FULLY TO THE CAMERA, entirely unrecognizable: broad bulky silhouette wrapped in a heavy black cloak with a discreet dark-red collar edging and a black brimmed coachman's hat. His head and face must be completely concealed by camera angle and collar; do not reveal Mycroft's recognizable face before the text does. Use Mycroft ref only for massive build. Compose a widescreen long shot with arcade architecture as dark foreground framing, gleaming curb and carriage in middle ground, period glass panes and hanging shop lamps, anonymous distant pedestrians. Victorian geometry, real wood spoke wheels, leather harness, damp paving, no modern signs. Cool blue-gray daylight, modest warm shop-window glow, muted cold-drama palette, authentic tactile fabrics and rain-polished wood, subtle cinema grain, 45mm lens, story-readable on mobile. No text, captions, readable signs, watermark, frame, actor imitation, modern vehicles, modern clothing, gore, heroic portrait or cover layout.",
+      "referenceFilenames": [
+        "watson-multiview-v1.png",
+        "supporting-moriarty-mycroft-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-05",
+      "filename": "final-problem-05.png",
+      "sizeBytes": 2132310,
+      "sha256": "eb71ee43ce88c70b2fd827a3cc01113b8b643fb4dbc2565ba3cda797138dc489",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Original cinematic interior illustration for The Final Problem. Generate ONE photorealistic 2:1 landscape Victorian suspense film still, no montage or sheet. Input image 1 is Dr. Watson's original identity and brown tweed wardrobe reference. Input image 2 is Sherlock Holmes's underlying body identity only; in THIS scene he is a completely anonymous aged Italian priest disguise, NEVER show the recognizable Holmes face. London Victoria, 1891, inside a reserved first-class Continental express compartment moments before departure. Watson in the same brown tweed suit and brown overcoat sits left, auburn hair and brown moustache in recognizable anxious profile, leaning toward the window to scan the station for his absent friend. Opposite him at right sits a stooped decrepit Italian ecclesiastic in an unadorned black cassock and black broad-brimmed clerical hat; gray-white hair visible at the nape, bowed head, frail bent posture, small gloved hands folded around an old leather handbag. Frame the priest from the BACK and SIDE with face fully lost below the hat brim and shadow; no nose/eyes/front face visible, no hint of the young Holmes identity. Keep the priest a real human anatomy with a thin underlying build, disguise clothes and elderly posture. No identity reveal or knowing smile. The main cinematic subjects are Watson's window vigil and the dark unfamiliar companion across the compartment. Authentic mahogany panels, brass luggage rail, deep worn burgundy velvet benches, old leather suitcase overhead, softly steamed window with blurred departing travellers and Victorian station canopy outside. 50mm medium-wide lateral composition, intimate quiet tension, cool gray windowlight touching Watson and a very restrained warm amber carriage lamp, muted desaturated browns/black/slate, fine photochemical grain, real skin/wool/wood/velvet. No text or visible carriage labels, no captions, poster, frame, modern equipment, famous actors, gore, pistols, electric train or extra characters inside the compartment.",
+      "referenceFilenames": [
+        "watson-multiview-v1.png",
+        "sherlock-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-06",
+      "filename": "final-problem-06.png",
+      "sizeBytes": 2496671,
+      "sha256": "7ba64f6c48552fd59182adb11c7c72d9195496746b9ef223b903f5b098700db0",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Original cinematic story illustration for The Final Problem. Generate ONE photorealistic 2:1 landscape Victorian pursuit film still. Input references: image 1 original Sherlock Holmes tall slim dark-haired man in black-charcoal Victorian frock coat; image 2 original Dr. Watson auburn-haired moustached stockier man in brown tweed suit and brown period overcoat. Preserve original characters, no actor likenesses. Scene: Canterbury railway station, April 1891. A private special steam train comprising one black 1890s British locomotive, its coal tender, and ONLY ONE dark passenger carriage roars past without stopping. Camera very low from behind a pile of aged leather trunks and canvas-wrapped parcels on the platform. Holmes and Watson are crouched behind the luggage in foreground shadow, watching the passing engine and coach; show their small back-three-quarter bodies and coat textures, faces completely turned away/hidden. Focus on the diagonal blur of the fast train, white steam rushing sideways and the luggage foreground, not portrait faces. Luggage is station freight, not their personal bags. Kentish woods and a Victorian iron-and-timber station canopy recede in gray spring haze. One readable broad story action: two fugitives concealed while the private train flies through. 35mm cinema lens, realistic train/track scale, correct spoke wheels, believable damp platform and old brass luggage fittings. Cold daylight with modest warm ochre highlights reflected in dark metal, subdued slate/black/brown, tactile soot/steam/leather/wool, organic fine film grain. No writing, signage, watermark, captions, logos, frame, montage, cover layout, modern train, electricity wires, diesel engine, extra carriages, visible Moriarty, violence or gore.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-07",
+      "filename": "final-problem-07.png",
+      "sizeBytes": 2968057,
+      "sha256": "209eca3082d9695b9778978d50ee46be2963ce7ee184a4eebe3f6de82de5b62b",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Original cinematic story illustration for The Final Problem. Generate ONE photorealistic 2:1 landscape period-drama film still dominated by Alpine scenery, not a portrait. Inputs are identity/body references only: image 1 original tall slim dark-haired Holmes; image 2 original stockier auburn-haired moustached Watson. Keep their original 1891 charcoal and brown Victorian wool traveling coats over period suits. Scene: the Gemmi Pass by the melancholy Daubensee in late April/early May 1891, lingering spring snow on high rocky slopes. A large dislodged rock has just plunged into the lake BEHIND the travelers; a sudden tall ragged splash and spreading rings break the steel-gray water near the right-hand ridge. Three tiny hikers occupy the lower-left shore path, no clear faces: slim black-coated Holmes instinctively turns to climb toward the ridge, brown-coated Watson half turns toward the impact, and their anonymous Alpine guide in rough 1890s wool jacket and brimmed felt hat gestures reassuringly with a simple wooden Alpine stock. Bodies occupy under 12 percent of image height so the mountain/lake atmosphere dominates. No one is struck, and no culprit appears on the ridge: do not assert an unseen attacker. Rugged broad establishing shot, 28mm lens, shore path pebbles and slate rubble, water impact a strong mobile-readable focal point, old wooden walking sticks not modern hiking gear, no modern backpacks. Cool windless leaden daylight, slate-blue lake, desaturated snow and black rock, tiny warmer brown cloth accents, realistic alpine geology, natural physical water splash, fine organic cinema grain, restrained sense of being followed. No writing, captions, text, watermark, frame, cover layout, actor likeness, modern safety rails, modern buildings, fantasy mountains, explosions, blood, violence or gore.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-08",
+      "filename": "final-problem-08.png",
+      "sizeBytes": 2920917,
+      "sha256": "988ff2211dd48f98afb529d95f69f588925dd91b485814219fb04c756020f226",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Original cinematic story illustration for The Final Problem. Generate ONE photorealistic 2:1 landscape cold period-drama film still, a grand establishing view, not a poster. Inputs are identity/body/wardrobe references only: image 1 Sherlock Holmes, tall slim original dark-haired man; image 2 Dr. Watson, stockier original auburn-haired moustached man. They wear the same 1891 Victorian wool travel coats, Holmes charcoal/black, Watson brown over brown tweed. Scene: afternoon 4 May 1891, Reichenbach Falls in Switzerland swollen by melting snow. An immense long sweep of green-gray water plunges from upper left into a deep narrow black-rock chasm; wet coal-black walls glisten, a thick boiling curtain of white spray rises out of the abyss, an overwhelming real waterfall landscape. On a narrow unrailed path cut into the right-hand wall, two small men seen FROM BEHIND stand still near the edge and peer down at the water far below. Holmes the taller/slimmer dark figure; Watson shorter/stockier brown figure; they have simple wooden Alpine-stocks. Their faces are invisible, bodies under 15 percent of image height. The path is precarious but they are stable and contemplative; no fall, confrontation, Moriarty, messenger, imagined fight, bodies or murder scene. Compose dramatic chasm depth with wet foreground ferns, broad near-black rock negative space and luminous cold spray, 28mm cinema lens, desaturated slate-green/charcoal with a restrained warmer brown coat accent, tactile geology/wool, realistic mist and natural light, subtle photochemical film grain, mobile-readable strong waterfall mass. No writing, text, watermark, captions, frame, modern railings or bridges, modern hiking gear, drone aesthetic, fantasy architecture, cover layout, famous actor resemblance, violence or gore.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-09",
+      "filename": "final-problem-09.png",
+      "sizeBytes": 2569087,
+      "sha256": "1c7310adc9141b5ac231800d81d745d56160049c6d5c2374f30d659ec3098b69",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Original cinematic interior story illustration for The Final Problem. Generate ONE photorealistic 2:1 landscape Victorian suspense film still, no montage or sheet. Image 1 is original Dr. Watson's identity reference: stockier auburn-haired warm-brown moustached man in 1891 brown tweed suit with brown Victorian wool traveling overcoat. Image 2 is original Sherlock Holmes identity/build reference: tall slim dark-haired clean-shaven man in charcoal/black long wool traveling coat. Preserve these fictional characters; no actor resemblance. Scene: afternoon 4 May 1891, narrow wet cut path at Reichenbach Falls. A youthful Swiss male messenger in an anonymous rough russet-brown wool jacket, simple felt cap, sturdy 1890s trousers and boots has run up the path to them and is handing Watson a small folded cream hotel letter. No legible writing or address. Cinematic mid-close shot at waist/chest height: the focal point is the letter passing between the messenger's outstretched hand and Watson's bare hand; Watson's concerned original face in side profile at right, messenger's modest anonymous youthful face at left. Hands natural and physically separate. In the background, the slim Holmes stands a few paces away with his back to camera, watching the spray and dark gorge, his recognizable face unseen. Place the people on stable path with sheer wet black rock on one side and waterfall spray beyond the other; realistic slim ferns on stone and cool mist, old wooden Alpine-stock held or leaning safely. Camera 60mm, shallow depth of field but context visible, daylight slate-gray/green with tiny warm russet/brown clothing accents, photochemical cinema grain, natural wet rock/wool/skin textures, restrained urgency, no sinister theatrical expression. No modern railings or hiking gear, no weapons, implied diagnosis, illustrated sick woman, Moriarty, confrontation, fall, violence, gore, writing, captions, watermarks, frame or cover layout.",
+      "referenceFilenames": [
+        "watson-multiview-v1.png",
+        "sherlock-multiview-v1.png"
+      ]
+    },
+    {
+      "id": "final-problem-10",
+      "filename": "final-problem-10.png",
+      "sizeBytes": 2410335,
+      "sha256": "29de75be266faeb22c0b34248b62fc6b076a207b4c28a34437f24031e11ade6f",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: historical-scene. Original cinematic story illustration for The Final Problem. Generate ONE photorealistic 2:1 landscape period-drama still, an intimate tactile prop close-up with NO VISIBLE FACES. Input image is original Dr. Watson's wardrobe/body reference only; use his brown Victorian tweed travel-coat sleeve and ordinary adult male hand. Scene: late afternoon 4 May 1891, a rain-dark boulder jutting into the narrow Reichenbach path. Watson has just discovered Holmes's small silver cigarette case, which weighted a folded square of cream paper consisting of THREE thin torn notebook pages. In the foreground the brown-coated Watson's hand lifts the CLOSED engraved silver cigarette case off the rock; beneath it the slightly unfolded small cream note catches spray, three paper edges subtly visible. Any handwriting is only faint completely illegible texture, NO readable letters or names, do not render the note contents. The case is small, palm-sized, flat hinged silver, elegantly worn rather than jewelry-like. Behind the boulder, Holmes's abandoned simple wooden Alpine-stock leans diagonally against wet black rock. The abyss and white waterfall spray are soft-focus gray-green background; water beads glisten on fern leaves and the boulder. Quiet devastating absence conveyed entirely through objects and Watson's still hand, NO Holmes, Moriarty, messenger, bodies, fight or falling men. 85mm macro-like cinematic lens, close focus on silver/cream/wet stone, cold desaturated blue-slate mist with small subdued warm brown sleeve and cream-paper highlights, natural realistic metals/textile/skin, subtle organic film grain, strong mobile-readable object composition. No modern objects, blood, gore, captions, labels, watermark, frame, actor likeness, poster or cover design.",
+      "referenceFilenames": [
+        "watson-multiview-v1.png"
+      ]
+    }
+  ]
+}

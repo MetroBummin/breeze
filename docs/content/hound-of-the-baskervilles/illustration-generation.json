@@ -1,0 +1,165 @@
+{
+  "slug": "hound-of-the-baskervilles",
+  "images": [
+    {
+      "id": "hound-of-the-baskervilles-01",
+      "filename": "hound-of-the-baskervilles-01.png",
+      "sizeBytes": 2039805,
+      "sha256": "5e36b19d6ec12add5f86e1d16b4e033d70ba46a9637aa7102f6f1a5e2ebbe4a7",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 01. Watson studies the visitor's walking stick in the Baker Street sitting room early one overcast morning. Make the old thick dark wooden walking stick with a tarnished silver band and rounded handle the central foreground object across Watson's hands; no readable inscription, just tiny indistinct engraved marks. Frame over Watson's brown-tweed shoulder toward the stick and his attentive moustached profile. Holmes sits farther back at a breakfast table, dark suit, one hand near a coffee cup, looking calmly toward Watson. Cold London window light, Victorian chair and cluttered mahogany table, fireplace embers. Intimate evidence-study shot, quiet deduction, sharp wood grain and silver patina, no extra visitor.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-02",
+      "filename": "hound-of-the-baskervilles-02.png",
+      "sizeBytes": 2088455,
+      "sha256": "89179923dee9b1491679eef667c4c7b1f1a13b44b9d2fa57c76397c72857d694",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 02. Dr James Mortimer reads the old Baskerville family manuscript to Holmes and Watson inside the same Victorian Baker Street sitting room. Mortimer, thin bespectacled man in black suit matching column 2, is the central three-quarter figure holding several folded yellowed handwritten pages (marks indistinct, no readable words). Holmes in the left midground leans back in armchair with fingertips together, Watson nearer camera in brown tweed seen from behind, listening. Character-focused but candid scene, never pose for camera. Cool rainy window light and a warm modest fire; manuscript and Mortimer's reflective spectacles draw the eye.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-03",
+      "filename": "hound-of-the-baskervilles-03.png",
+      "sizeBytes": 1990371,
+      "sha256": "7d01ebdbb95b28cf6d0af160212c41c72e877c7625911b530f1a4453ec952b6a",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 03. Sir Henry Baskerville first arrives with Dr Mortimer at the open interior doorway of the Baker Street sitting room in morning light. Henry matches supporting reference column 1, short sturdy energetic clean-shaven curly dark-haired man in a brown tweed Victorian suit; Mortimer thin and bespectacled in black stands one step behind. Henry's first uncertain glance into the room, removing his brown felt hat. View from inside room, Holmes seen from behind in charcoal suit rising beside his armchair, Watson's brown-tweed shoulder in near foreground. Breakfast table cleared, pale window reflection, dark panelled door frame, authentic cosy London interior. Do not form a group lineup or show any men holding modern baggage.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-04",
+      "filename": "hound-of-the-baskervilles-04.png",
+      "sizeBytes": 2266830,
+      "sha256": "1c55bac7df6d78f7299fae399facb5c5926f7ca98e8ac2a9cf886367a7242300",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 04. A black-bearded anonymous watcher escapes in a horse-drawn London hansom cab as Holmes and Watson begin to pursue on a wet gaslit Victorian street. Make cab's receding rear three-quarter view and horse in motion the main composition. A barely glimpsed bushy black beard under a hat visible in deep shadow through side opening; conceal the watcher's face, eyes and recognizable identity completely. Holmes and Watson at near right edge seen from back, black coat versus brown tweed coat, reacting and stepping after cab. Old London stone facades, mist, wet cobbles, believable hansom cab with elevated driver behind passenger compartment, period wheels and harness, dynamic but sharp readable main forms. No motorcars, no identity reveal.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-05",
+      "filename": "hound-of-the-baskervilles-05.png",
+      "sizeBytes": 2587976,
+      "sha256": "b503f32c5cc8db8b0cfdeeadc30a0d30d7ad7fa7d0652c32c6453357e3590e94",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 05. First view of Baskerville Hall at dusk: a brooding old English stone manor beyond a broad lawn, two high narrow towers, ivy and a central porch with dim welcoming warm lights, reached through a dark avenue of gnarled trees. Shot as a wide landscape establishing view from a horse-drawn carriage arriving along gravel avenue, carriage roof and the backs of Watson, Henry and thin Mortimer only subtly visible low in foreground, no faces required. Vast slate-blue evening sky, damp moor horizon, authentic weathered stone and clipped lawn, feeling of isolation and uneasy arrival. Keep the building legible, not crushed to black. No castle fantasy, no hound or monsters.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-06",
+      "filename": "hound-of-the-baskervilles-06.png",
+      "sizeBytes": 2600214,
+      "sha256": "5d0ae37c273b48c3b2852a75469c684973ebe1547bceb8cc5da12e1344ce20a8",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 06. On the open Dartmoor path in cloudy daylight, Jack Stapleton meets Watson carrying a long wooden-handled butterfly net. Stapleton matches supporting column 3: slight fair-haired clean-shaven man, grey tweed suit, muted green tie, soft straw hat held at his side; his fine gauze insect net rests diagonally against shoulder, unmistakably a butterfly collecting net. Watson matches reference 2 in brown tweed, seen mostly from back at left with slight moustached profile, has paused to listen. Reed beds, tawny grass, purple heather and distant granite tors, wind ripples the grass, low pale grey sky; casual quiet conversational encounter with underlying unease, restrained medium-wide frame. No insects of unnatural size, no pith helmets.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-07",
+      "filename": "hound-of-the-baskervilles-07.png",
+      "sizeBytes": 2063627,
+      "sha256": "5718bff0fe10813af47e98471a4f5f9c02214c6458ab2104487913148353a540",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 07. Barrymore secretly signals into the moor night from an upstairs window of Baskerville Hall. Camera in the dark stone window alcove, over Watson's partial brown-tweed shoulder hidden at left edge. Barrymore, black-bearded man in a formal black Victorian butler's suit matching supporting column 4, crouches at the open casement, holding a single small candle up close to glass toward the night. View predominantly his back and a sliver of bearded profile so posture, candle and window matter more than portrait. Outside lies vast dark slate moor; tiny far-away answering pinprick light only if subtle. Candle-lit hands physically natural, readable textured stone, curtains, dramatic secrecy, no modern flashlight, no letters or symbols.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-08",
+      "filename": "hound-of-the-baskervilles-08.png",
+      "sizeBytes": 2407911,
+      "sha256": "845c26546ac64ee16f57ccce9f6e897c05f5dcba486dee1f4643dd606d70bfd9",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 08. An anonymous distant man stands on a moonlit granite tor above the Dartmoor landscape. Extreme wide environmental cinematic composition: enormous pale moonlit grey sky and jagged tor rise above rolling heather and mist. The man is a very small distant completely black silhouette on the crest, erect, arms folded, no face, no recognizable outfit, no hat shape associated with Holmes, no identity clues. Watson and Henry observed from their backs as small dark figures on lower rocky foreground, only brown versus dark Victorian coats distinguishes them. Moonlight makes the landscape and scale readable while the identity remains unrevealed. Quiet ominous mystery, not a superhero pose, no ghost, no hound.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-09",
+      "filename": "hound-of-the-baskervilles-09.png",
+      "sizeBytes": 2261571,
+      "sha256": "25fd5c8b198cb19ed0b10783684f95bc4d3f8aaecde425a2fd334c944209175e",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 09. A huge dark hound bursts from dense white fog onto a narrow Dartmoor path at night, the fearsome dog the main subject in a low-angle tracking frame. A physically realistic very large black mastiff/bloodhound cross, powerful chest and shoulders, long natural canine muzzle and hanging canine ears, four correctly jointed legs, wet black fur, open mouth with ordinary canine teeth, cold glint in eyes; only a faint eerie sheen on wet muzzle if necessary, no supernatural anatomy. The dog gallops out of the fog toward Sir Henry whose back in brown tweed is glimpsed at the opposite far edge moving away; Holmes, Watson and Lestrade can remain cropped dark observers behind low rocks farther back, no face portraits required. Blue moonlight through fog and dark heather make dog's silhouette distinct and mobile-readable. No gore or contact injury. Crucially no dragon, wolf-man, humanoid monster, horns, wings, fire, glowing fire eyes or body.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    },
+    {
+      "id": "hound-of-the-baskervilles-10",
+      "filename": "hound-of-the-baskervilles-10.png",
+      "sizeBytes": 2177864,
+      "sha256": "441c78c77967b726881e27bdea182e9b7515c61e5319c39d418e06a9c274680d",
+      "width": 1774,
+      "height": 887,
+      "mimeType": "image/png",
+      "generationMethod": "AI image generation",
+      "prompt": "Use case: illustration-story / historical-scene. Asset: original interior story artwork for The Hound of the Baskervilles, a single photographic cinematic frame, exact 2:1 ultra-wide landscape, 2048 by 1024 if possible. Late Victorian England, 1889, cinematic photorealistic cold British crime-drama, fine film grain, tactile authentic period materials, cool slate shadows with small warm practical-light accents, low-key lighting but clear readable forms and faces on a mobile screen, grounded naturalistic photographic realism, subtle atmospheric depth. Not a cover, not a poster. No captions, typography, labels, lettering, decorative borders, watermark, modern objects, gore, fantasy creatures, or collage. Reference sheets are identity and wardrobe reference only, do not reproduce their sheet layout or text. Holmes is the tall lean clean-shaven dark-haired man in reference image 1; Watson is the distinct sturdier light-brown-haired moustached man in reference image 2. Image 3 has the supporting men in five columns left-to-right: Henry (curly dark hair, brown tweed), Mortimer (thin, round spectacles, black suit), Stapleton (fair-haired, grey tweed, green tie), Barrymore (black beard, formal black), Lestrade (shorter clean-shaven dark hair, brown suit). Honor these identities where visible; backs, silhouettes, cropped faces and props are welcome when composition calls for them. Build a real scene, not a lineup.\nScene 10. End of November, Holmes and Watson discuss the solved Baskerville case beside the Baker Street fireplace on a raw cold foggy evening. Reflective quiet cinematic two-shot in profile, Watson reference 2 at left in brown tweed armchair, his hands naturally relaxed, Holmes reference 1 at right in charcoal waistcoat and suit leaning back with long thin fingers resting together, familiar distinct identities. Central coal fire casts soft amber light onto their faces and a small table, cool blue window haze beyond deep bookshelves. Authentic Victorian mantel, subdued pipe on table, chairs and worn carpet. Concluding calm and thoughtful companionship, no papers with readable words, no villain portrait, no trophies, no hound. Faces readable but never posed toward the camera.",
+      "referenceFilenames": [
+        "sherlock-multiview-v1.png",
+        "watson-multiview-v1.png",
+        "supporting-hound-v1.png"
+      ]
+    }
+  ]
+}

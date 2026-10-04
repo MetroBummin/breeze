@@ -1,0 +1,44 @@
+[
+  {
+    "paragraph": 54,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling.",
+    "count": 1
+  },
+  {
+    "paragraph": 108,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling.",
+    "count": 1
+  },
+  {
+    "paragraph": 52,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling.",
+    "count": 1
+  },
+  {
+    "paragraph": 30,
+    "before": "Pray take",
+    "after": "Please take",
+    "reason": "Modernize a polite imperative.",
+    "count": 1
+  },
+  {
+    "paragraph": 121,
+    "before": "Pray give",
+    "after": "Please give",
+    "reason": "Modernize a polite imperative.",
+    "count": 1
+  },
+  {
+    "paragraph": 35,
+    "before": "incommoded",
+    "after": "inconvenienced",
+    "reason": "Replace a dated verb with its current equivalent.",
+    "count": 1
+  }
+]

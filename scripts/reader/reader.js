@@ -110,6 +110,12 @@ function renderBookBody(b){
   const formatting = b.formatting || null;
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
+  const holmes=LONG_READS.find(read=>read.id===b.longReadId&&read.id.startsWith('sherlock-holmes-'));
+  rt.classList.toggle('holmes-story',!!holmes);
+  const sourceTitle=!!holmes&&b.longReadId==='sherlock-holmes-hound-of-the-baskervilles'&&
+    b.paras[0]===HOLMES_HOUND_FRONTMATTER[0].text&&b.title.toLowerCase()===holmes.title.toLowerCase();
+  document.getElementById('readwrap').classList.toggle('holmes-source-title',sourceTitle);
+  document.getElementById('readwrap').classList.toggle('holmes-reading',!!holmes);
   const frag = document.createDocumentFragment();
   const PAGE_CHARS = 1700;
   const wordSpanTargets=[];
@@ -140,25 +146,35 @@ function renderBookBody(b){
      함께 고쳐집니다. */
   const titleText = String(b.title||'').trim();
   let headScan = 0;
-  if(titleText) list = list.filter(bl => {
+  if(titleText&&!holmes) list = list.filter(bl => {
     if(headScan >= 4) return true;
     headScan++;
     return !(bl.r && bl.r.charAt(0) === 'h' && String(bl.t||'').trim() === titleText);
   });
+  if(holmes)list=list.map(block=>{
+    const role=longReadBlockRole(b,block);
+    return role?{...block,bookRole:role,r:['title'].includes(role)?'h1':
+      ['chapter','section','contents-heading'].includes(role)?'h2':block.r,
+      before:['chapter','section'].includes(role)?'page':block.before}:block;
+  });
+  if(holmes&&b.longReadId!=='sherlock-holmes-hound-of-the-baskervilles'){
+    const author=document.createElement('p');author.className='holmes-byline';
+    author.textContent=b.author||holmes.author;frag.insertBefore(author,page);
+  }
   list.forEach(bl=>{
     if(b.longReadId==='backroom-homeward-bound'&&bl.t==='Chapter 2'&&pageChars>0)newPage();
-    const illustration=longReadIllustrationBefore(b,bl.t);
+    const illustration=longReadIllustrationBefore(b,bl.t,bl.f);
     if(illustration){
       /* Keep the picture with the next passage, without inserting a synthetic
          paragraph into the Text book or its lookup/progress coordinates. */
-      if(pageChars>PAGE_CHARS*.7) newPage();
+      if(pageChars>PAGE_CHARS*.7&&!(holmes&&bl.before==='page')) newPage();
       const fig=document.createElement('figure');
       fig.className='story-illustration';
       fig.dataset.scene=illustration.file.split('/').pop();
       const img=document.createElement('img');
       img.src=illustration.file;
       img.alt=illustration.alt;
-      img.width=1536; img.height=1024;
+      img.width=illustration.width||1536; img.height=illustration.height||1024;
       img.loading='lazy'; img.decoding='async';
       img.onerror=()=>fig.remove();
       fig.appendChild(img);
@@ -225,13 +241,21 @@ function renderBookBody(b){
     if(b.longReadId==='backroom-homeward-bound'&&bl.t==='* * *')el.classList.add('story-scene-break');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
+    if(bl.bookRole)el.classList.add('holmes-'+bl.bookRole);
     el.textContent = bl.v || bl.t;
+    if(bl.bookRole==='contents'){
+      const entries=bl.t.match(/Chapter \d+ [\s\S]*?(?=Chapter \d+ |$)/g);
+      if(entries&&entries.join('')===bl.t){
+        el.textContent='';
+        for(const text of entries){const line=document.createElement('span');line.className='holmes-contents-line';line.textContent=text;el.appendChild(line);}
+      }
+    }
     if(Array.isArray(bl.marks)) articleParagraphMarks.set(el,bl.marks);
     if(bl.list){el.classList.add('article-list-item'); el.dataset.marker=bl.list;}
     if(bl.caption) el.classList.add('article-caption');
     if(bl.table) el.classList.add('article-table-row');
     host.appendChild(el);
-    wordSpanTargets.push(el);
+    if(bl.bookRole!=='contents')wordSpanTargets.push(el);
     const links = (bl.marks || []).filter(mark=>mark.kind === 'link' && articleAbsolute(mark.href,mark.href));
     if(links.length){
       const refs = document.createElement('div'); refs.className='article-links';

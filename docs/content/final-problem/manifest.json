@@ -1,0 +1,39 @@
+{
+  "title": "The Final Problem",
+  "author": "Arthur Conan Doyle",
+  "year": 1893,
+  "gutenbergId": 834,
+  "sourceUrl": "https://www.gutenberg.org/ebooks/834",
+  "sourceTextUrl": "https://www.gutenberg.org/cache/epub/834/pg834.txt",
+  "retrieved": "2026-10-04",
+  "captureMethod": "complete official research-browser line coverage; not raw download bytes",
+  "sourceLineRange": [
+    10337,
+    11132
+  ],
+  "sourceLinesSha256": "3ca2a7e42ba50d074b9fc86dcba405d45dd2732cedd98ca2a4c82c5452c89103",
+  "sourceLicenseSha256": "8dcffa62ba0ef31c6fa712bd81319f7967778b35bbdd2fa2a75a96f2d8ec92fa",
+  "originalSha256": "0f4b845ae27eeae7a3bee9edbf31c4a8002ee338e2efed3bfef35f72ccabf838",
+  "adaptedSha256": "9d1f3c4140d80894937695add3b1ca60e6054ac03bbd081d4dedc55733556b90",
+  "paragraphs": 123,
+  "originalWords": 7150,
+  "adaptedWords": 7150,
+  "bytes": 39124,
+  "first": "It is with a heavy heart that I take up my pen to write these the last words in which I shall ever record the singular gifts by which my friend Mr. Sherlock Holmes was distinguished. In an incoherent and, as I deeply feel, an entirely inadequate fashion, I have endeavoured to give some account of my strange experiences in his company from the chance which first brought us together at the period of the “Study in Scarlet,” up to the time of his interference in the matter of the “Naval Treaty”—an interference which had the unquestionable effect of preventing a serious international complication. It was my intention to have stopped there, and to have said nothing of that event which has created a void in my life which the lapse of two years has done little to fill. My hand has been forced, however, by the recent letters in which Colonel James Moriarty defends the memory of his brother, and I have no choice but to lay the facts before the public exactly as they occurred. I alone know the absolute truth of the matter, and I am satisfied that the time has come when no good purpose is to be served by its suppression. As far as I know, there have been only three accounts in the public press: that in the Journal de Genève on May 6th, 1891, the Reuter’s despatch in the English papers on May 7th, and finally the recent letter to which I have alluded. Of these the first and second were extremely condensed, while the last is, as I shall now show, an absolute perversion of the facts. It lies with me to tell for the first time what really took place between Professor Moriarty and Mr. Sherlock Holmes.",
+  "last": "A few words may suffice to tell the little that remains. An examination by experts leaves little doubt that a personal contest between the two men ended, as it could hardly fail to end in such a situation, in their reeling over, locked in each other’s arms. Any attempt at recovering the bodies was absolutely hopeless, and there, deep down in that dreadful caldron of swirling water and seething foam, will lie for all time the most dangerous criminal and the foremost champion of the law of their generation. The Swiss youth was never found again, and there can be no doubt that he was one of the numerous agents whom Moriarty kept in his employ. As to the gang, it will be within the memory of the public how completely the evidence which Holmes had accumulated exposed their organization, and how heavily the hand of the dead man weighed upon them. Of their terrible chief few details came out during the proceedings, and if I have now been compelled to make a clear statement of his career it is due to those injudicious champions who have endeavoured to clear his memory by attacks upon him whom I shall ever regard as the best and the wisest man whom I have ever known.",
+  "lastNarrativeParagraph": "A few words may suffice to tell the little that remains. An examination by experts leaves little doubt that a personal contest between the two men ended, as it could hardly fail to end in such a situation, in their reeling over, locked in each other’s arms. Any attempt at recovering the bodies was absolutely hopeless, and there, deep down in that dreadful caldron of swirling water and seething foam, will lie for all time the most dangerous criminal and the foremost champion of the law of their generation. The Swiss youth was never found again, and there can be no doubt that he was one of the numerous agents whom Moriarty kept in his employ. As to the gang, it will be within the memory of the public how completely the evidence which Holmes had accumulated exposed their organization, and how heavily the hand of the dead man weighed upon them. Of their terrible chief few details came out during the proceedings, and if I have now been compelled to make a clear statement of his career it is due to those injudicious champions who have endeavoured to clear his memory by attacks upon him whom I shall ever regard as the best and the wisest man whom I have ever known.",
+  "chapters": [],
+  "edits": 6,
+  "complete": true,
+  "sourceHeaderSha256": "3c09c5464c2a3a3d9f2eedd9b2bb376f2c384765679b29d93caadf0002b0d06c",
+  "sourceHeaderLineRange": [
+    0,
+    26
+  ],
+  "sourceLicenseLineRange": [
+    11166,
+    11481
+  ],
+  "edition": "Lightly modernized English edition",
+  "copyrightNotice": "Original: public domain in the USA; no worldwide clearance claim"
+}
