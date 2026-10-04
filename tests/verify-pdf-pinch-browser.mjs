@@ -229,23 +229,16 @@ try{
    await touch('touchStart',points(90));await touch('touchMove',points(180));await touch('touchEnd',[]);
    assert.equal((await snapshot()).zoom,blockedZoom);
    await page.evaluate(()=>closeAa());
-   assert.equal(await page.locator('#pdfzoom-out,#pdfzoom-in,#aa-pdfzoom').count(),3);
+   assert.equal(await page.locator('#pdfzoom-out,#pdfzoom-in,#aa-pdfzoom').count(),0,'Pinch-only reader has no zoom buttons');
    await page.evaluate(async()=>{resetOriginalZoom();await restorePdfAnchor({page:1,y:.3},100);});
    await page.waitForTimeout(300);
-   await pinch(100,132);
-   if(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')))
-     await page.locator('#readpill-title').click();
-   await page.locator('#aafab').click();
-   assert.equal(await page.locator('#aa-pdfzoom-pct').textContent(),'132%');
-   await page.locator('#pdfzoom-in').click();
-   assert.ok(Math.abs((await snapshot()).zoom-1.82)<.002);
-   assert.equal(await page.locator('#aa-pdfzoom-pct').textContent(),'182%');
-   await page.locator('#pdfzoom-out').click();
-   assert.ok(Math.abs((await snapshot()).zoom-1.32)<.002);
+   await pinch(100,132);assert.ok(Math.abs((await snapshot()).zoom-1.32)<.002);
+   await pinch(100,150);assert.ok(Math.abs((await snapshot()).zoom-1.98)<.002);
+   await pinch(180,30);assert.equal((await snapshot()).zoom,1,'Existing pinch-out returns to normal scale without a button');
+   await page.evaluate(()=>toggleAa());
+   assert.equal(await page.locator('#aa-fs').isVisible(),false,'PDF original keeps text font-size controls scoped to text');
+   assert.equal(await page.locator('#aa-pdf-direction').isVisible(),true,'Unrelated page controls remain');
    await page.evaluate(()=>closeAa());
-   await pinch(100,150);
-   assert.ok(Math.abs((await snapshot()).zoom-1.98)<.002);
-   assert.equal(await page.locator('#aa-pdfzoom-pct').textContent(),'198%');
    // Mode change and viewport resize during a gesture clean up all state.
    await touch('touchStart',points(90));await touch('touchMove',points(180));
    await page.evaluate(()=>switchReaderMode('text'));await touch('touchEnd',[]);

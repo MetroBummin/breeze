@@ -413,10 +413,7 @@ assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily
    문서 전체가 종이 한 장처럼 같은 축에서 움직입니다. */
 assert.doesNotMatch(pdfSource,/pdf-page-lane|pdfZoom|panRatio/,
   'The per-page zoom lane is back, so pages no longer share one horizontal axis');
-assert.match(index,/id="pdfzoom-out"[^>]*changeOriginalZoom\(-1\)/,
-  'The PDF zoom-out button is missing');
-assert.match(index,/id="pdfzoom-in"[^>]*changeOriginalZoom\(1\)/,
-  'The PDF zoom-in button is missing');
+assert.doesNotMatch(index,/id="(?:pdfzoom-out|pdfzoom-in|aa-pdfzoom)"/,'Retired zoom buttons remain visible');
 /* 버튼으로 키운 캔버스는 다시 그려 또렷하게 남겨야 합니다. */
 assert.match(pdfSource,/PDF_OVERSAMPLE/,
   'PDF canvases are drawn at screen resolution again, so pinching makes them blurry');
@@ -955,13 +952,7 @@ assert.match(readerCss, /#readchrome, \.control-bar\{[^}]*bottom:calc\(env\(safe
   'Reader controls do not clear the bottom safe area');
 assert.match(dictionaryCss, /#p-speak\{[^}]*touch-action:manipulation/,
   'Rapid pronunciation taps can leak into browser double-tap zoom');
-/* PDF 확대 −/+ 는 예전처럼 따로 떠 있지 않습니다 — 뜨는 조각을 늘리지 않으려고
-   Aa popover 안, 다른 설정들 아래 한 줄로 들어갔습니다. 단추가 부르는 함수는
-   그대로입니다(위의 384/386번 검사). */
-assert.match(index,/id="aa-pdfzoom"[\s\S]{0,200}id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
-  'The original PDF has not got its +/- controls inside the Aa popover');
-assert.ok(index.indexOf('id="aa-pdfzoom"') > index.indexOf('id="aa-dark"'),
-  'The PDF zoom row is no longer the last row below the existing Aa settings');
+assert.doesNotMatch(index,/id="aa-ink-undo(?:-row)?"/,'Writing-only undo preference remains in Reader Aa');
 assert.doesNotMatch(index, /id="pdfzoomfabs"/,
   'The old floating PDF zoom control was not removed');
 /* 단추에는 글자가 없습니다. 두 그림이 서로 자리를 바꿔야 어느 쪽으로 가는지 보입니다. */

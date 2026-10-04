@@ -327,3 +327,16 @@ new shelf layout or saved-book filtering is added. Previously saved copies remai
 visible and readable with their custom cover and reading progress; removing a
 saved Backrooms copy does not make it a new recommendation again. FSRS stays
 dormant and Jev stays OFF. Public release numbering is coordinated separately.
+
+## EPUB queued-frame clock boundary (1.7 / 234)
+
+An rAF callback can carry a frame timestamp earlier than performance.now() at
+navigation start. The prior easing extrapolated negative progress, briefly moving
+backwards before the intended source move. The same product code on baseline
+main 72719a2 and PR93 c2c680f reproduced 13/24 backward starts under real Chromium
+12× CPU throttling, with actual timestamps and anchors recorded. Progress now
+clamps to [0,1]; duration, targets, interruption/latest-choice guards and reduced
+motion are unchanged. The existing monotonic assertion remains, with motion
+histories on failure, exact clock-boundary unit regressions and bounded native
+CPU-load browser sampling. This is an inherited product timing defect, not a
+reason to weaken the fixture or rerun CI without a fix.

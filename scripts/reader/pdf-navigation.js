@@ -239,7 +239,8 @@ async function goEpubNavigationPage(nav,index){
     const began=performance.now();let applied=start;
     const step=now=>{
       if(!current()||!!activeGesture||Math.abs(readerScrollTop()-applied)>2){resolve();return;}
-      const t=Math.min(1,(now-began)/200);
+      // A queued rAF timestamp can predate the event that began this move.
+      const t=Math.max(0,Math.min(1,(now-began)/200));
       readerScrollTo(start+(target-start)*(1-Math.pow(1-t,3)));applied=readerScrollTop();
       if(t<1)requestAnimationFrame(step);else resolve();
     };requestAnimationFrame(step);

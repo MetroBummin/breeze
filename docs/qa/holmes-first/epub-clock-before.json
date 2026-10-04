@@ -1,0 +1,126 @@
+{
+  "baselineCommit": "72719a2cfa9a7242b15d24cd0cc72f9753310dbe",
+  "prCommit": "c2c680fef2c62d6d0ce1354de3e3ed4aa80917b5",
+  "engine": "Chromium",
+  "cpuThrottlingRate": 12,
+  "clockValuesInjected": false,
+  "runs": {
+    "baseline": {
+      "trials": 24,
+      "backwardStarts": 13,
+      "firstTrial": {
+        "trial": 0,
+        "began": 16403.899999976158,
+        "sequence": [
+          32,
+          0,
+          244,
+          466,
+          651,
+          798,
+          915,
+          1003,
+          1067,
+          1110,
+          1137,
+          1151,
+          1157,
+          1158,
+          1158
+        ],
+        "bad": true
+      },
+      "firstActualFrameCallbacks": [
+        {
+          "stamp": 16400.766,
+          "wall": 16404,
+          "top": 32,
+          "token": 45
+        },
+        {
+          "stamp": 16417.4,
+          "wall": 16418.199999928474,
+          "top": 0,
+          "token": 45
+        },
+        {
+          "stamp": 16434,
+          "wall": 16438.299999952316,
+          "top": 244,
+          "token": 45
+        },
+        {
+          "stamp": 16450.7,
+          "wall": 16456.099999904633,
+          "top": 466,
+          "token": 45
+        },
+        {
+          "stamp": 16467.3,
+          "wall": 16471.199999928474,
+          "top": 651,
+          "token": 45
+        }
+      ]
+    },
+    "pr93": {
+      "trials": 24,
+      "backwardStarts": 13,
+      "firstTrial": {
+        "trial": 0,
+        "began": 16181.399999976158,
+        "sequence": [
+          32,
+          8,
+          271,
+          491,
+          670,
+          814,
+          926,
+          1012,
+          1072,
+          1114,
+          1139,
+          1152,
+          1157,
+          1158,
+          1158
+        ],
+        "bad": true
+      },
+      "firstActualFrameCallbacks": [
+        {
+          "stamp": 16180.1,
+          "wall": 16181.5,
+          "top": 32,
+          "token": 45
+        },
+        {
+          "stamp": 16196.8,
+          "wall": 16198.600000023842,
+          "top": 8,
+          "token": 45
+        },
+        {
+          "stamp": 16213.5,
+          "wall": 16216.299999952316,
+          "top": 271,
+          "token": 45
+        },
+        {
+          "stamp": 16230.1,
+          "wall": 16232.100000023842,
+          "top": 491,
+          "token": 45
+        },
+        {
+          "stamp": 16246.8,
+          "wall": 16248.299999952316,
+          "top": 670,
+          "token": 45
+        }
+      ]
+    }
+  },
+  "rootCause": "Queued rAF timestamp earlier than navigation performance.now start produces negative easing progress; clamp progress to [0,1]."
+}

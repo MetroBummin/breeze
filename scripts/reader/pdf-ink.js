@@ -160,7 +160,7 @@ const BreezePdfInk = (()=>{
     pill.classList.toggle('ink-pill-active',writing);
     if(writing&&typeof setReaderChrome==='function')setReaderChrome(false);
     inkEntry.hidden=!ready;
-    const undoSetting=document.getElementById('aa-ink-undo-row');
+    const undoSetting=document.getElementById('ink-two-finger-undo-row');
     if(undoSetting)undoSetting.hidden=!writing;
     inkEntry.setAttribute('aria-pressed',String(writing));
     inkEntry.setAttribute('aria-label',writing?'읽기 모드로 전환':'필기 모드로 전환');
@@ -259,7 +259,7 @@ const BreezePdfInk = (()=>{
     pill.append(inkTools,inkReadSeparator,inkEntry,inkMini);
     settings=document.createElement('div');settings.id='pdf-ink-settings';settings.className='control-glass';settings.hidden=true;
     settings.setAttribute('role','dialog');
-    settings.innerHTML='<div data-ink-panel="pen"><div class="ink-setting-row ink-colors" role="group" aria-label="펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths" role="group" aria-label="펜 두께"></div></div><div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii"></div></div>';
+    settings.innerHTML='<div data-ink-panel="pen"><div class="ink-setting-row ink-colors" role="group" aria-label="펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths" role="group" aria-label="펜 두께"></div></div><div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii" role="group" aria-label="지우개 크기"></div><div class="ink-undo-setting" id="ink-two-finger-undo-row"><span>두 손가락 더블탭 실행 취소</span><button id="ink-two-finger-undo" type="button" aria-label="두 손가락 더블탭 실행 취소" aria-pressed="false"><i aria-hidden="true"></i></button></div></div>';
     settings.insertAdjacentHTML('beforeend','<div data-ink-panel="highlighter" hidden><div class="ink-setting-row ink-highlight-colors" role="group" aria-label="형광펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-highlight-widths" role="group" aria-label="형광펜 두께"></div></div>');
     const options=(kind,values,labels)=>{
       const row=settings.querySelector(kind==='color'?'.ink-colors':kind==='width'?'.ink-widths':kind==='highlightColor'?'.ink-highlight-colors':kind==='highlightWidth'?'.ink-highlight-widths':'.ink-radii');
@@ -277,6 +277,8 @@ const BreezePdfInk = (()=>{
     options('highlightColor',highlightColors,['노랑','초록']);options('highlightWidth',highlightWidths,['보통','굵게']);
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',settings.id);});
     document.getElementById('readchrome').append(settings);
+    document.getElementById('ink-two-finger-undo').onclick=toggleTwoFingerUndo;
+    updateTwoFingerUndoSetting();
     document.addEventListener('pointerdown',event=>{if(event.target instanceof Element&&!event.target.closest('#pdf-ink-settings,#pdf-ink-tools'))closeSettings();},true);
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&settingsTool){const tool=settingsTool;closeSettings();inkTools.querySelector(`[data-ink-mode="${tool}"]`).focus();event.preventDefault();}});
     toolbar=document.createElement('div');toolbar.id='pdf-ink-status';toolbar.hidden=true;

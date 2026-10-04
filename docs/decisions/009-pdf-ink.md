@@ -627,10 +627,11 @@ Scribble recognition, pen-popover toggle, help and contact cue are removed;
 ordinary scratch/loop strokes remain ink even if an older local preference was ON.
 Existing stored ink, undo/redo edits and save failure recovery are unchanged.
 
-Reader settings (Aa) expose “두 손가락 더블탭 실행 취소” only for supported PDF
-original view while writing mode is active. The row follows mode changes even
-when Aa is open, and is hidden in reading, extracted-text and EPUB views without
-changing the stored preference. It is OFF by default, persisted in
+The eraser tool settings expose “두 손가락 더블탭 실행 취소” directly below
+eraser thickness, only for supported PDF original view while writing mode is
+active. Reader Aa, pen/highlighter settings, reading, extracted-text and EPUB
+views do not expose it. Hiding it never changes the stored preference. It is OFF
+by default, persisted in
 `breeze.study.v1`, and acts only in writing mode. One two-finger tap is not enough: two stationary pairs must
 complete. The existing toolbar Undo/Redo remains available; the gesture calls
 the same undo transaction. No instructional popup, toast or extra pen setting.
@@ -671,3 +672,19 @@ only scroller targets after the opening guard. An extra contact on toolbar/UI
 cancels a navigation candidate even if neither finger subsequently moves. The
 control itself never enters paper/pinch admission. A regression reproduced the
 previous scroller-only listener incorrectly opening the sidebar in this sequence.
+
+## Pinch-only zoom and eraser preference placement (1.7 / 234)
+
+Visible PDF zoom +/- controls are removed for all supported clients, including
+mobile Safari. Existing PDF touch pinch/pan ownership, scale limits (1–4),
+inertia, sharpening and mode/anchor restoration are unchanged. Existing pinch
+shrink reaches 1 (normal scale); the existing Text-mode transition also resets
+scale. No new reset gesture or instruction banner is introduced. Desktop users
+have no button-based enlargement; the existing mode transition still resets a
+previous enlarged view. Text font-size and page controls remain.
+
+The opt-in two-finger double-tap undo control moves from Aa into eraser settings,
+below the radius choices, with its existing preference key/default OFF and undo
+transaction. It has a labeled 46×44px hit target, theme-aware switch and reduced
+motion support. Reopening tools/documents retains its value; only writing/eraser
+settings expose it. Pen/eraser stroke, palm/Pencil and pinch owners are unchanged.

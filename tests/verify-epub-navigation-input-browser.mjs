@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -68,12 +68,29 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  }
  // Sample a real move: it must travel through intermediate positions rather than jump.
  const motion=await page.evaluate(async()=>{
-  const values=[],start=readerScrollTop();let done=false;
-  const sample=()=>{values.push(readerScrollTop());if(!done)requestAnimationFrame(sample);};requestAnimationFrame(sample);
-  await goEpubNavigationPage(pdfNavigation,1);done=true;return {start,end:readerScrollTop(),values};
+  const values=[],samples=[],start=readerScrollTop(),began=performance.now();let done=false;
+  const sample=timestamp=>{if(done)return;values.push(readerScrollTop());samples.push({timestamp,wall:performance.now(),top:readerScrollTop(),token:readerModeChangeToken,frame:originalSession.frames[0].getBoundingClientRect().top,inset:topInset(),pending:!!originalSession.pendingAnchor});requestAnimationFrame(sample);};requestAnimationFrame(sample);
+  await goEpubNavigationPage(pdfNavigation,1);done=true;return {start,end:readerScrollTop(),began,values,samples};
  });
+ writeFileSync(`${proof}/${engine.name()}-motion.json`,JSON.stringify(motion,null,2));
  assert.ok(motion.values.some(y=>y>motion.start+3&&y<motion.end-3),'EPUB movement has intermediate source positions');
- assert.ok(motion.values.every((y,i)=>!i||y>=motion.values[i-1]-1),'One selection advances monotonically');
+ assert.ok(motion.values.every((y,i)=>!i||y>=motion.values[i-1]-1),'One selection advances monotonically: '+JSON.stringify(motion));
+ if(engine===chromium){
+  const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:12});
+  try{for(let trial=0;trial<8;trial++){
+   await page.evaluate(()=>goEpubNavigationPage(pdfNavigation,0));
+   await page.waitForTimeout(trial);
+   const sample=await page.evaluate(async()=>{
+    const start=readerScrollTop(),values=[];let done=false;
+    const read=()=>{if(done)return;values.push(readerScrollTop());requestAnimationFrame(read);};requestAnimationFrame(read);
+    await goEpubNavigationPage(pdfNavigation,1);done=true;
+    const nav=pdfNavigation,p=nav.pages[1],f=nav.session.frames[p.spine];
+    return {start,end:readerScrollTop(),values,error:f.getBoundingClientRect().top+p.y*originalZoom()-topInset()};
+   });
+   assert.ok(sample.values.every((y,i)=>y>=sample.start-1&&(!i||y>=sample.values[i-1]-1)),'Loaded EPUB movement remains monotonic: '+JSON.stringify({trial,...sample}));
+   assert.ok(Math.abs(sample.error)<3,'Loaded move reaches its exact source slice');
+  }}finally{await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});}
+ }
  await page.evaluate(()=>goEpubNavigationPage(pdfNavigation,0));
  // A newer choice wins over the previous motion, without a queued late jump.
  await page.evaluate(()=>{pdfNavigation.strip.scrollTop=0;paintEpubThumbnails();void goEpubNavigationPage(pdfNavigation,1);});await page.waitForTimeout(40);

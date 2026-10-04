@@ -72,3 +72,57 @@ merge, native archive or Cloud build is changed or started by this preparation.
 Release preparation checks passed: full `npm test`, 1.7 (234) release verifier,
 shell syntax checks, `npm run ios:sync`, exact native-bundle comparison for all
 long-read text/image files including dormant Backrooms, and `git diff --check`.
+
+## Final TestFlight-only 234 scope
+
+The latest user scope requires final 1.7 (234) TestFlight validation, followed by
+user confirmation before any public App Store release. Parent owns final CI,
+merge, Cloud build and TestFlight delivery; this worker starts none of those.
+
+PDF +/- zoom controls are removed; existing pinch/pan, scale limits and gesture
+owners remain. Existing pinch shrink reaches 100%, and the existing Text-mode
+transition resets zoom. Text font size and page direction/navigation controls
+remain. Desktop button-based enlargement is intentionally unavailable.
+
+Two-finger double-tap undo moves from Reader Aa to the eraser settings directly
+below radius controls. Default OFF, the existing persisted preference, undo
+transaction, pen/eraser/highlighter and pinch/ink ownership remain. The control
+has a named 46×44px hit target, theme tokens and reduced-motion switch behavior.
+
+### EPUB failure diagnosis
+
+CI 37181791085 failed the unchanged monotonic-motion assertion in Chromium before
+WebKit ran. Baseline 72719a2 and PR c2c680f use identical navigation product code
+and fixture; both ordinary local two-engine runs passed. Under supported CDP
+12× CPU throttling with actual browser rAF timestamps (none injected), each
+reproduced 13 backward starts in 24 moves. [Before evidence](epub-clock-before.json)
+records exact time/token/scroll/frame/inset anchors: baseline began at
+16403.899999976158ms, first queued frame timestamp 16400.766ms, scroll 32→0;
+PR began at 16181.399999976158ms, timestamp 16180.1ms, scroll 32→8. This proves an
+inherited product clock-boundary bug rather than a catalog regression or a basis
+for a blind rerun.
+
+Easing now clamps progress to [0,1]. Existing monotonic, intermediate-position,
+exact source settling, latest-choice, reflow/pressed-target and reduced-motion
+assertions remain; forward/backward clock-boundary contracts fail on baseline
+and pass after the fix. Browser coverage includes eight actual throttled moves,
+plus per-frame timing/source histories for failures. No target, duration or
+interruption ownership changes.
+
+### UI proof
+
+- [Phone light eraser setting](eraser-chromium-390-844-light.png)
+- [Short landscape dark eraser setting](eraser-webkit-844-390-dark.png)
+
+Synthetic local PDF fixtures, not user documents. Browser touch/Pencil tests do
+not establish physical palm rejection, hardware latency or native inertia.
+
+Final local validation passed: full `npm test` (including new forward/backward
+clock-boundary contracts), EPUB input/motion both engines and eight real
+12× CPU-load movements, relocated eraser preference/real database reopen and
+ten theme/viewport states per engine, full PDF ink both engines, full PDF pinch
+(phone/tablet/desktop Chromium and phone WebKit), word-pinch dismissal and PDF
+interruption/owner recovery both engines. Device-polish controls, `ios:sync`,
+all 72 native long-read asset bytes, 1.7 (234) release verification and whitespace
+checks passed. Trusted CDP touch and synthetic WebKit/Pencil evidence are distinct
+from physical-device testing. CI on the final exact head remains the merge gate.
