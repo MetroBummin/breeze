@@ -149,11 +149,16 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     console.log(`${engine.name()}: PDF startup`,{percent,errors,warnings:warnings.slice(-10),state:await page.evaluate(async()=>({bookId:curBook?.id,mode:currentReaderMode,position:posOf(curBook?.id),original:curBook?.original,storedSize:(await originalGetForBook(curBook))?.blob?.size,session:originalSession&&{bookId:originalSession.bookId,kind:originalSession.kind,presented:originalSession.presented},pending:readerPositionPending()}))});
     await page.screenshot({animations:'disabled',path:`${proof}/${engine.name()}-pdf-startup-failure.png`});throw error;
    }
+   // Opening has two existing delayed PDF target refinements. Begin the fixture
+   // movement after that restoration owner is quiet, then return Home immediately
+   // after the new anchor paints; there is no delay to refresh a Home label.
+   await page.waitForFunction(()=>Date.now()>=readerScrollPauseUntil&&!readerAnchorHeld());
    await page.evaluate(async percent=>{
     if(percent===100)readerScrollTo(readerContentHeight());
     else await restoreOriginalAnchor({kind:'pdf',page:percent===50?6:2,y:percent===50?.05:.95});
     invalidateReaderMeasurements();updatePfill(true);
    },percent);
+   await page.waitForFunction(percent=>Math.floor(visibleReaderProgress()*100)===percent&&readerPillRawProgress===visibleReaderProgress(),percent);
    const actual=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureOriginalAnchor()}));
    assert.equal(Math.floor(actual.p*100),percent);
    await page.evaluate(()=>returnHomeFromReader());const home=await homeState(page,pdfId);
