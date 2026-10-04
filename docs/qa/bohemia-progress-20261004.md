@@ -136,3 +136,36 @@ The production-ramp oracle and complete Bohemia Chromium regression pass locally
 WebKit's remaining lifecycle, font and cold-decode cases still require final-head
 CI. This follow-up changes only the fixture and its decision/QA records; product
 assets, both 1.7(234) targets and RSS OFF are unchanged.
+
+## Idempotent restoration follow-up
+
+WebKit CI at `df92e81` reached the font check after passing ordinary navigation,
+the conditional end-ramp contract and lifecycle checks. It reported rounded
+paragraph top 4px versus saved 2px after reload and font change. This is an offset
+contract failure, not a paragraph-ID failure or a harmless float difference.
+
+The real `captureAnchor`/`restoreAnchor`/`keepPlace` functions, evaluated with
+controlled native scroll quantization, reproduce one-pixel drift when a
+fractional target is truncated or floored. The new focused test fails against the
+prior source for those two semantics and passes when only Text restoration's
+target is rounded to the nearest integer. It covers 20 reopen/font-layout cycles,
+five fractional coordinates, four positive/negative offsets and four scroll
+semantics. This proves the mechanism in a controlled surface; it is not a native
+WebKit reproduction. The supported WebKit CDN download returned HTTP 403 and
+that route was stopped without fallbacks or retries.
+
+The product change is limited to nearest-integer normalization at the Text
+restoration boundary. The browser regression retains exact paragraph and offset
+after reload/font changes, adds eight actual reopen and font-size round trips,
+and reports all font/cold-image/late-layout assertion failures before failing.
+No arbitrary offset or progress tolerance was added. The new source regression
+is registered in aggregate `npm test`. Final-head WebKit remains required before
+release, and the parent continues to own merge/publication.
+
+Local validation passed: focused source regression (four scroll semantics), full
+`npm test`, complete Bohemia Chromium including eight exact-offset font/reopen
+cycles, five illustrated Holmes stories across ten light/dark viewport layouts
+each, existing PDF/EPUB progress-handoff and restoration-navigation Chromium
+regressions, `ios:sync`, copied asset equality, 1.7(234) release validation, RSS OFF
+confirmation and `git diff --check`. Local logs retain the prior-source failure,
+corrected-source success and per-cycle raw browser geometry.

@@ -430,3 +430,28 @@ roundoff only in that conditional calculation. No general progress tolerance or
 product change is introduced. Diagnostics retain pre/post raw scroll, extent,
 reach and rounded anchors; production-ramp counterexamples reject wrong signed
 progress, two-pixel drift, layout changes and wrong paragraphs.
+
+## Idempotent Text anchor restoration (234 CI follow-up)
+
+WebKit CI at `df92e81` passed the end-ramp and lifecycle checks, then reported
+paragraph offset 4px versus saved 2px after cold reload and font resizing. This
+exposes repeated position drift, beyond the prior single-restoration float
+contract. `restoreAnchor` previously computed a fractional scroll target from
+an integer-rounded saved offset. A browser that truncates the target can round
+the next captured offset one pixel higher; saving and restoring again repeats
+the shift. The actual restoration function reproduces this defect under
+controlled truncating/flooring scroll semantics. Local WebKit download is blocked
+by HTTP 403, so native engine confirmation remains a final-head CI requirement.
+
+Text restoration now rounds the target to the nearest integer before the existing
+scroll writer. Saved integer offsets and scroll targets share the same grid;
+capture remains unchanged. No general scrolling, PDF/EPUB target calculation,
+mode ownership, progress formula, storage schema or completion rule is changed.
+The source regression exercises twenty reopen/font-layout cycles with positive
+and negative offsets and fractional paragraph coordinates under truncating,
+flooring, nearest and fractional scrolling. The browser regression checks eight
+actual reopen/smaller-font/larger-font cycles against the original exact paragraph
+and offset. Cold-image setup uses the ordinary restoration function; the wheel
+fixture likewise requests the nearest integer target for its exact 200px offset.
+Font, cold-image and late-layout assertions are collected so one run reports all
+remaining contract failures; any collected failure still fails the browser job.
