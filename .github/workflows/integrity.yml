@@ -40,6 +40,22 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: Bohemia progress and Home reading cards in Chromium and WebKit
+        run: |
+          status=0
+          for engine in chromium webkit; do
+            BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
+            BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
+          done
+          exit "$status"
+      - name: Home reading card proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-reading-cards-proof
+          path: /tmp/breeze-home-reading-cards-proof/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Bundled long-read previews, imports and offline persistence
         run: npm run test:longreads && npm run test:homeward-lookup
       - name: Five illustrated Holmes stories in Chromium and WebKit
@@ -72,22 +88,6 @@ jobs:
           retention-days: 7
       - name: RSS shadow and approval regressions
         run: node tests/verify-rss-quality-browser.mjs
-      - name: Bohemia progress and Home reading cards in Chromium and WebKit
-        run: |
-          status=0
-          for engine in chromium webkit; do
-            BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
-            BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
-          done
-          exit "$status"
-      - name: Home reading card proof
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: home-reading-cards-proof
-          path: /tmp/breeze-home-reading-cards-proof/
-          if-no-files-found: ignore
-          retention-days: 7
       - name: Vocabulary review in Chromium and WebKit
         run: |
           status=0

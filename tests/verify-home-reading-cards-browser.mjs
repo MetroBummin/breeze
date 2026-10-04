@@ -42,6 +42,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  try{
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'}),page=await context.newPage(),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
+  const warnings=[];page.on('console',message=>{if(['warning','error'].includes(message.type()))warnings.push(message.text());});
   let releaseScene;const scene=new Promise(resolve=>releaseScene=resolve);
   await page.route('**/*',async route=>{
    const href=route.request().url();if(!href.startsWith(url)&&!href.startsWith('blob:'))return route.abort();
@@ -134,7 +135,15 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   const pdfId=await page.evaluate(()=>books.find(book=>book.kind==='pdf').id);
   for(const percent of [100,50,19]){
    await page.locator(`#shelf [data-local-book="${pdfId}"]`).click();await readerReady(page);
-   await page.waitForFunction(()=>currentReaderMode==='original'&&originalSession?.presented===true);
+   assert.equal(await page.evaluate(()=>curBook.id),pdfId);
+   // Exercise original-PDF progress regardless of the existing mode preference.
+   // Selecting the surface is not an assertion about first-open default mode.
+   if(await page.evaluate(()=>currentReaderMode)!=='original')await page.locator('#modefab').click();
+   try{await page.waitForFunction(()=>currentReaderMode==='original'&&originalSession?.presented===true&&!readerPositionPending());}
+   catch(error){
+    console.log(`${engine.name()}: PDF startup`,{percent,errors,warnings:warnings.slice(-10),state:await page.evaluate(async()=>({bookId:curBook?.id,mode:currentReaderMode,position:posOf(curBook?.id),original:curBook?.original,storedSize:(await originalGetForBook(curBook))?.blob?.size,session:originalSession&&{bookId:originalSession.bookId,kind:originalSession.kind,presented:originalSession.presented},pending:readerPositionPending()}))});
+    await page.screenshot({animations:'disabled',path:`${proof}/${engine.name()}-pdf-startup-failure.png`});throw error;
+   }
    await page.evaluate(async percent=>{
     if(percent===100)readerScrollTo(readerContentHeight());
     else await restoreOriginalAnchor({kind:'pdf',page:percent===50?6:2,y:percent===50?.05:.95});

@@ -47,7 +47,9 @@ durable database reload and a real PDF fixture. Both scroll drivers exercise the
 real scroll handler without setting progress or restoring an anchor. Mobile
 WebKit's Playwright driver does not implement wheel input; the first CI attempt
 exposed that harness limitation after Chromium and both-engine Bohemia passed.
-It checks the visible card, center capsule and saved record separately. It covers
+The PDF scenario selects original mode through the existing control when needed;
+it does not assert a default mode. Startup failures include mode/storage/session
+diagnostics. It checks the visible card, center capsule and saved record separately. It covers
 both Home and Explore; unread preview cancel and Read; Back/Forward; direct repeat
 opens; backward progress; renamed/replaced/reloaded saved copies; interrupted
 preparation; deletion/reimport; delayed illustration and font changes; and
