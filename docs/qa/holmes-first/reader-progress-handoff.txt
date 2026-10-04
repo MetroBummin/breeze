@@ -1,0 +1,60 @@
+chromium pdf {
+  before: 0.635799247212607,
+  reader: 0.635799247212607,
+  pending: true,
+  during: 0.635799247212607,
+  after: 0.635799247212607,
+  mode: 'original',
+  original: { kind: 'pdf', page: 4, y: 0.5009314198978888 },
+  home: '63%',
+  stored: 0.635799247212607
+}
+chromium pdf landed anchors, rapid cancellation in both directions, failures, lifecycle, input and stale callbacks passed
+chromium epub {
+  before: 0.6,
+  reader: 0.6,
+  pending: true,
+  during: 0.6,
+  after: 0.6,
+  mode: 'original',
+  original: {
+    kind: 'epub',
+    href: 'chapter.xhtml',
+    spine: 0,
+    element: 60,
+    char: 0
+  },
+  home: '60%',
+  stored: 0.6
+}
+chromium epub landed anchors, rapid cancellation in both directions, failures, lifecycle, input and stale callbacks passed
+webkit pdf {
+  before: 0.6414525977041605,
+  reader: 0.6414525977041605,
+  pending: true,
+  during: 0.6414525977041605,
+  after: 0.6414525977041605,
+  mode: 'original',
+  original: { kind: 'pdf', page: 4, y: 0.49905778894472363 },
+  home: '64%',
+  stored: 0.6414525977041605
+}
+webkit pdf landed anchors, rapid cancellation in both directions, failures, lifecycle, input and stale callbacks passed
+webkit epub {
+  before: 0.6,
+  reader: 0.6,
+  pending: true,
+  during: 0.6,
+  after: 0.6,
+  mode: 'original',
+  original: {
+    kind: 'epub',
+    href: 'chapter.xhtml',
+    spine: 0,
+    element: 60,
+    char: 55
+  },
+  home: '60%',
+  stored: 0.6
+}
+webkit epub landed anchors, rapid cancellation in both directions, failures, lifecycle, input and stale callbacks passed

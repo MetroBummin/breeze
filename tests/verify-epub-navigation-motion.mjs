@@ -10,7 +10,7 @@ for(const [direction,start,index,end] of [['forward',32,1,532],['backward',532,0
   const session={frames:[{getBoundingClientRect:()=>({top:64-top})}],pendingAnchor:{old:true}};
   const nav={session,pages:[{spine:0,y:0},{spine:0,y:500}]};
   const c={pdfNavigation:nav,originalSession:session,currentEpubNavigationSession:()=>session,currentReaderMode:'original',readerModeChangeToken:1,
-   activeGesture:null,performance:{now:()=>100},requestAnimationFrame:callback=>callbacks.push(callback),matchMedia:()=>({matches:false}),
+   activeGesture:null,readerPositionPending:()=>false,performance:{now:()=>100},requestAnimationFrame:callback=>callbacks.push(callback),matchMedia:()=>({matches:false}),
    readerScrollTop:()=>top,readerScrollTo:y=>{top=y;values.push(y);},readerContentHeight:()=>3000,readerViewHeight:()=>844,
    originalZoom:()=>1,topInset:()=>32,closePanel(){},saveReadingState(){},updatePfill(){},updatePdfNavigationControls(){}};
   new Script(go).runInNewContext(c);

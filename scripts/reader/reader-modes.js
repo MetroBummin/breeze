@@ -411,14 +411,17 @@ async function switchReaderMode(mode,options){
 
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;
-  const previousMode = currentReaderMode;
-  const textAnchor = previousMode==='text' ? (readerPositionPending()?posOf(curBook.id):captureAnchor()) : null;
+  const restoring=readerPositionPending(),savedPosition=posOf(curBook.id);
+  // A pending shell is not the source reading location of a newer request.
+  const previousMode = restoring ? savedPosition.mode||'text' : currentReaderMode;
+  const textAnchor = previousMode==='text' ? (restoring?savedPosition:captureAnchor()) : null;
+  const resumeTextPosition=restoring&&previousMode==='text'&&mode==='text' ? savedPosition : null;
   let bridge = previousMode==='text'
     ? sourceAnchorForParagraph(curBook,(textAnchor||{}).pi)
-    : (readerPositionPending()?posOf(curBook.id).original:captureOriginalAnchor());
-  const returning=previousMode==='text'&&recentModeLanding?.bookId===curBook.id
+    : (restoring?savedPosition.original:captureOriginalAnchor());
+  const returning=!restoring&&previousMode==='text'&&recentModeLanding?.bookId===curBook.id
     &&recentModeLanding.mode==='text'&&Date.now()-recentModeLanding.at<12000&&!textModeMovedByUser;
-  let sentenceBridge = !options.initial && !readerPositionPending() && previousMode!==mode&&!returning
+  let sentenceBridge = !options.initial && !restoring && previousMode!==mode&&!returning
     ? (previousMode==='text' ? textSentenceBridge() : originalSentenceBridge(bridge))
     : null;
   /* 원본→글자 직후 다시 원본으로 돌아갈 때는, 사용자가 글자를 실제로 스크롤하지
@@ -444,13 +447,29 @@ async function switchReaderMode(mode,options){
      with a near-zero text measurement. Initial presentation owns no new reading
      movement, so preserve the stored position until restoration completes. */
   if(previousMode!==mode && !options.initial) saveReadingState();
-  if(previousMode==='original'&&originalSession?.bookId===curBook.id)
+  if(!restoring&&previousMode==='original'&&originalSession?.bookId===curBook.id)
     originalSession.lastScrollTop=readerScrollTop();
+  // The destination mode is a requested surface until its anchor has landed.
+  // One operation owns that restoration; neither pixels nor animation state
+  // can declare a reading position ready. A newer operation replaces this owner.
+  const positionRestoration={book:bookAtStart,mode,changeToken};
+  readerPositionRestoration=positionRestoration;
+  const ownsPosition=()=>readerPositionRestoration===positionRestoration
+    &&changeToken===readerModeChangeToken&&curBook===bookAtStart&&currentReaderMode===mode;
+  const commitPosition=()=>{
+    if(!ownsPosition())return false;
+    readerPositionRestoration=null;
+    // Cold opening is not reading movement. An actual mode landing commits
+    // mode, logical progress and its resume anchor through the ordinary writer.
+    if(options.initial)rememberReaderMode(mode);
+    else saveReadingState();
+    releaseReaderPillProgress();
+    return true;
+  };
   clearReaderModeCue();
   suspendReaderScrollSave(1400);
   holdReaderPillProgress();
   currentReaderMode = mode;
-  rememberReaderMode(mode);
   closePanel();
 
   document.body.classList.toggle('reader-original',mode==='original');
@@ -484,32 +503,42 @@ async function switchReaderMode(mode,options){
 
   if(mode==='text'){
     const targetPi = paragraphForSource(curBook,bridge);
-    requestAnimationFrame(()=>requestAnimationFrame(async()=>{
-      if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='text') return;
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    if(!ownsPosition())return false;
+    try{
       const canonicalPi=sentenceBridge&&sentenceBridge.paragraph!=null
         ? sentenceBridge.paragraph : targetPi;
       const sentenceFound=sentenceBridge
         ? await restoreTextSentence(sentenceBridge.candidates,canonicalPi) : false;
-      if(!sentenceFound && targetPi!=null){
+      if(!ownsPosition())return false;
+      if(resumeTextPosition){
+        if(!restoreAnchor(resumeTextPosition))readerScrollTo(resumeTextPosition.y||0);
+      }else if(!sentenceFound && targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
-        if(element){
-          readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-(topInset()+readerViewHeight()*.24));
-          /* PDF 문장 검색이 실패해도 sourceMap이 가리킨 문단은 확실한 목적지입니다. */
-          element.classList.add('reader-mode-cue-block');
-          readerModeCueTimer=setTimeout(clearReaderModeCue,6000);
-        }
+        if(!element)throw new Error('읽던 문단을 찾지 못했어요.');
+        readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-(topInset()+readerViewHeight()*.24));
+        /* PDF 문장 검색이 실패해도 sourceMap이 가리킨 문단은 확실한 목적지입니다. */
+        element.classList.add('reader-mode-cue-block');
+        readerModeCueTimer=setTimeout(clearReaderModeCue,6000);
       }else if(!sentenceFound){
         const position = posOf(curBook.id);
         if(!restoreAnchor(position)) readerScrollTo(position.y||0);
       }
       lastAnchor = captureAnchor();
-      recentModeLanding={bookId:curBook.id,mode:'text',at:Date.now(),textTop:readerScrollTop(),
+      if(!lastAnchor)throw new Error('읽던 위치를 복원하지 못했어요.');
+      recentModeLanding=resumeTextPosition ? null : {bookId:curBook.id,mode:'text',at:Date.now(),textTop:readerScrollTop(),
         originalAnchor:previousMode==='original' ? bridge : null};
       textModeMovedByUser=false;
       suspendReaderScrollSave(450);
-      releaseReaderPillProgress();
-    }));
-    return;
+      return commitPosition();
+    }catch(error){
+      if(ownsPosition()){
+        console.error(error);
+        releaseReaderPillProgress(true);
+        toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
+      }
+      return false;
+    }
   }
 
   const reusable=!options.reload&&originalSession?.bookId===curBook.id
@@ -518,19 +547,20 @@ async function switchReaderMode(mode,options){
   const record = options.record || (reusable
     ? {kind:originalSession.kind,hash:originalSession.hash}
     : await originalGetForBook(curBook));
+  if(!ownsPosition())return false;
   if(!record){
     showOriginalReconnect(curBook);
     delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
     if(options.onPresented) options.onPresented();
     releaseReaderPillProgress(true);
-    return;
+    return false;
   }
   if(options.reload) leaveOriginalReader();
   try{
     const rendering=renderOriginalBook(curBook,record);
     if(options.onPresented) options.onPresented();
     await rendering;
-    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
+    if(!ownsPosition())return false;
     let target = bridge || posOf(curBook.id).original;
     // 처음 여는 책은 맨 앞부터 — 형식별 "맨 앞"은 형식 표가 압니다.
     if(!target && options.initial){
@@ -538,7 +568,7 @@ async function switchReaderMode(mode,options){
     }
     target = target || sourceAnchorForParagraph(curBook,posOf(curBook.id).pi);
     const anchorRestored=await restoreOriginalAnchor(target,changeToken);
-    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
+    if(!ownsPosition())return false;
     if(!anchorRestored)throw new Error('읽던 위치를 복원하지 못했어요. 책을 다시 열어 주세요.');
     if(sentenceBridge){
       /* 첫 PDF 진입은 문장 색인을 읽는 데 시간이 걸릴 수 있습니다. 레이아웃과
@@ -549,7 +579,7 @@ async function switchReaderMode(mode,options){
          still a stable and useful fallback. */
       const sentenceFound=await ORIGINAL_FORMATS[record.kind].restoreSentence(
         sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
-      if(changeToken!==readerModeChangeToken||curBook!==bookAtStart||currentReaderMode!=='original')return;
+      if(!ownsPosition())return false;
       if(record.kind==='pdf'){
         clearReaderModeCue();
         showPdfParagraphModeCue(sentenceBridge.paragraph,10000,target&&target.page);
@@ -566,12 +596,13 @@ async function switchReaderMode(mode,options){
     suspendReaderScrollSave(500);
     originalSession.presented=true;originalSession.lastScrollTop=readerScrollTop();
     delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
-    releaseReaderPillProgress();
+    return commitPosition();
   }catch(error){
-    if(changeToken!==readerModeChangeToken || curBook!==bookAtStart) return;
+    if(!ownsPosition())return false;
     console.error(error);
     showOriginalError(error);
     releaseReaderPillProgress(true);
     delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
+    return false;
   }
 }

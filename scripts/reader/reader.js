@@ -370,7 +370,7 @@ async function openBook(b,options={}){
   lastAnchor = null;
   curBook = b;
   const positionOpening={book:b};
-  readerPositionOpening=positionOpening;
+  readerPositionRestoration=positionOpening;
   if(!b.transient)save(HOME_RESUME_KEY,b.id);
   setReaderPillProgress(posOf(b.id).p||0,true);
   currentReaderMode = 'text';
@@ -441,7 +441,7 @@ async function openBook(b,options={}){
     }));
   }
   }finally{
-    if(readerPositionOpening===positionOpening)readerPositionOpening=null;
+    if(readerPositionRestoration===positionOpening)readerPositionRestoration=null;
   }
 }
 /* Book titles and file names end up inside HTML attributes, so quotes have to

@@ -340,3 +340,28 @@ motion are unchanged. The existing monotonic assertion remains, with motion
 histories on failure, exact clock-boundary unit regressions and bounded native
 CPU-load browser sampling. This is an inherited product timing defect, not a
 reason to weaken the fixture or rerun CI without a fix.
+
+## Commit mode and position after restoration (1.7 / 234)
+
+A requested Reader mode does not become the saved mode until its destination
+anchor lands. The opening/mode operation owns one position-restoration record,
+qualified by book identity, mode and change token. Ordinary saves, Home exit and
+background lifecycle events retain the entire last committed mode/progress/anchor
+while that owner is pending. Success commits the landed surface through the
+ordinary writer; cold opening preserves saved progress. Failure keeps the prior
+record and permits retry. A newer mode/book operation replaces the owner; stale
+callbacks cannot scroll, capture or commit the new book.
+
+Rapid reversals start from the committed source record, including text-to-text
+cancellation back to its stored text anchor. Original-to-text restoration now
+awaits both frames and any sentence lookup before releasing ownership. PDF page,
+direction and deletion actions, opening the navigation panel, and EPUB page moves
+wait while position restoration owns the Reader, preventing a navigation token
+from orphaning the restoration. These actions work normally after landing.
+
+Regression coverage: actual PDF/EPUB fixtures in Chromium and WebKit, immediate
+Home exits, successful anchor/progress equality, reversals in both directions,
+restoration errors, trusted wheel and lifecycle events during delayed restoration,
+stale callbacks after changing book, and normal reading/completion. Reused
+original sessions exercise navigation while no preparing attribute is present,
+then verify navigation and saved/visible progress equality after landing.

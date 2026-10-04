@@ -126,3 +126,61 @@ interruption/owner recovery both engines. Device-polish controls, `ios:sync`,
 all 72 native long-read asset bytes, 1.7 (234) release verification and whitespace
 checks passed. Trusted CDP touch and synthetic WebKit/Pencil evidence are distinct
 from physical-device testing. CI on the final exact head remains the merge gate.
+
+## Reader progress handoff correction (1.7 / 234)
+
+The reviewed restoration patch is integrated on top of PR93 head `7ffc7003`.
+Previously, a requested mode could be saved before its anchor landed, letting an
+immediate Home/background event sample transient text. Mode, logical progress
+and the resume anchor now commit together only after the owning book/token/mode
+restoration succeeds. Pending, failed and superseded operations retain the last
+committed record. Navigation cannot replace its token during restoration; normal
+navigation resumes after landing. The existing EPUB [0,1] motion clamp remains.
+
+The two new browser fixtures pass in Chromium and WebKit. Immediate original to
+text to Home preserves PDF 63% (Chromium) / 64% (WebKit), and EPUB 60% in both,
+with exact before/during/after/durable progress and original mode/anchor retained.
+They also cover landed anchor/progress equality, rapid cancellation both ways,
+controlled restoration failures, delayed sentence restoration with trusted wheel
+and lifecycle saves, stale completion after changing book, normal completion,
+and reused-session PDF page/direction and EPUB page navigation before/after landing.
+
+The existing EPUB clock-boundary VM fixture supplies the newly required pending
+predicate as false; all original forward/backward motion assertions remain.
+Native policy/adapter checks pass all 37 cases; the production pieces pass the
+installed UIKit/WebKit SDK typecheck. This does not build an app or establish
+physical Pencil delivery/latency. No Simulator is used or reserved and no
+XcodeBuildMCP defaults are changed; the OXOX Diagnostic Isolated device is unused.
+
+Final exact-head CI, merge, Cloud build and TestFlight delivery remain the parent
+release gate. Public App Store release still requires the user's confirmation
+following TestFlight 1.7 (234).
+
+Committed fixture output: [progress handoff](reader-progress-handoff.txt) and
+[restoration/navigation](reader-restoration-navigation.txt), captured from this
+Mac checkout with the reviewed patch. Full `npm test` passes (the existing 34
+JavaScript type diagnostics do not increase). `ios:sync` passes; all 72 long-read
+text/image assets, stamped index and all Reader scripts match the native web
+bundle byte-for-byte.
+
+Existing affected suites also pass in both engines: original reopen with delayed
+restoration/early input/backward reading, Reader work/surface reuse, 211 horizontal
+progress/deleted-page/zoom/EPUB geometry, and EPUB navigation input/motion including
+real throttled Chromium sampling. Native verification used Xcode 26.6 (17F113)
+and iOS Simulator SDK 26.5 without booting a Simulator.
+
+The Home aggregate stopped once at the new navigation fixture's initial WebKit
+`page.goto` load timeout (30 seconds), before book setup or Reader assertions.
+The fixture had already passed independently in both engines; the aggregate's
+Chromium leg also passed. Only the failed WebKit leg was rerun, with the exact
+code/assertions/timeout unchanged, and passed. This records a startup failure;
+parallel browser/native work was present, but resource contention is an inference,
+not a measured cause. Passing suites were not restarted.
+
+All Home UI component checks are now complete, including the unchanged WebKit
+navigation leg and remaining Wordbook/lookup checks. Existing Breeze16 navigation,
+bookmarks, page deletion/direction, responsive tools, settings and folders also
+pass in Chromium and WebKit. The two running suites reached terminal results;
+no browser checks remain live. [Initial startup timeout](reader-home-startup-timeout.txt)
+and [completed tail checks](reader-home-tail.txt) preserve the aggregate exception
+and bounded completion, rather than claiming its first command exited cleanly.
