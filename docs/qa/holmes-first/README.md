@@ -6,7 +6,8 @@ Only the new-recommendation filter changes. Home and Long-form offer the five
 Holmes works in their established order. Backrooms retains its catalog identity,
 text, cover, ten scenes, local lookup data and attribution; saved copies still
 use the same preview and reader. No storage migration/deletion, shelf redesign,
-release-number change, native build, merge or release is included. FSRS remains
+native build, merge or release is included in the offering change; coordinated
+release-number preparation is recorded below. FSRS remains
 dormant; RSS/Jev configuration is untouched.
 
 ## Validation
@@ -58,3 +59,16 @@ These are editorial inputs, not a claim of new deployment in this PR:
   original-reading positions while reopening. See `docs/qa/breeze-1.7-release.md`,
   `docs/qa/breeze-1.7-reopen.md` and the Share Extension implementation. Link
   sharing and new Backrooms availability should not be advertised.
+
+## Coordinated 1.7 (234) release preparation
+
+Parent release coordination verified Next Build Number 234 in the authenticated
+Xcode Cloud UI. App and Share Extension Debug/Release, the existing release
+verifier, the post-clone `CI_BUILD_NUMBER` guard, and local archive/output naming,
+archive build validation and upload status wording are aligned to **1.7 (234)**.
+Marketing version remains 1.7. No product behavior, signing/Cloud settings, main
+merge, native archive or Cloud build is changed or started by this preparation.
+
+Release preparation checks passed: full `npm test`, 1.7 (234) release verifier,
+shell syntax checks, `npm run ios:sync`, exact native-bundle comparison for all
+long-read text/image files including dormant Backrooms, and `git diff --check`.
