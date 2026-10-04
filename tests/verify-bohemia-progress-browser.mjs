@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import vm from 'node:vm';
 import {chromium,webkit} from 'playwright';
 const root=process.env.BREEZE_PROGRESS_ROOT?resolve(process.env.BREEZE_PROGRESS_ROOT)+sep:fileURLToPath(new URL('../',import.meta.url));
 const server=createServer((req,res)=>{
@@ -23,6 +24,50 @@ async function settleReader(page){
     readerPillRawProgress===actual&&readerPillVisualProgress===actual&&performance.now()-window.bohemiaSettled.since>=200;
  },undefined,{polling:'raf'});
 }
+function textPositionSnapshot(){
+ const anchor=captureAnchor(),height=Math.max(1,readerViewHeight()),extent=Math.max(0,readerContentHeight()-height),top=Math.max(0,readerScrollTop());
+ return {...anchor,p:visibleReaderProgress(),raw:readerPillRawProgress,base:textProgressForBook(curBook,anchor),
+  top,height,extent,reach:Math.min(height,extent),left:Math.max(0,extent-top),
+  paragraphTop:document.querySelector(`#rtext [data-pi="${anchor.pi}"]`).getBoundingClientRect().top};
+}
+function assertReopenedPosition(before,saved,reopened,label){
+ const state=JSON.stringify({label,before,saved,reopened}),deltaTop=reopened.top-saved.y,deltaProgress=reopened.p-saved.p;
+ assert.equal(reopened.pi,saved.pi,state);
+ assert.ok(Math.abs(reopened.dy-saved.dy)<=1,state);
+ assert.equal(reopened.base,before.base,state);
+ assert.equal(reopened.extent,before.extent,state);
+ assert.equal(reopened.height,before.height,state);
+ assert.equal(reopened.reach,before.reach,state);
+ assert.ok(Math.abs(deltaTop)<=1,`restored raw scroll differs by at most one pixel: ${state}`);
+ assert.equal(Math.floor(reopened.p*100)+'%',saved.home,state);
+ if(deltaProgress!==0){
+  // Only the continuous final-viewport ramp depends on raw scroll position.
+  // Its exact slope is (1-base)/reach. Rounded saved dy and native scroll
+  // quantization may move the restored surface by <=1px; require that observed
+  // movement to explain the entire signed progress difference.
+  assert.ok(before.left>1&&before.left<before.reach&&reopened.left>1&&reopened.left<reopened.reach,state);
+  const slope=(1-before.base)/before.reach,roundoff=8*Number.EPSILON,bound=slope*Math.abs(deltaTop)+roundoff;
+  assert.ok(Math.abs(deltaProgress)<=bound,`progress exceeds observed pixel bound ${bound}: ${state}`);
+  assert.ok(Math.abs(deltaProgress-slope*deltaTop)<=roundoff,`progress difference must match final-viewport slope: ${state}`);
+ }
+ console.log(`${label}: reopen geometry ${JSON.stringify({beforeTop:before.top,savedTop:saved.y,reopenedTop:reopened.top,beforeParagraphTop:before.paragraphTop,extent:reopened.extent,reach:reopened.reach,base:reopened.base,savedAnchor:{pi:saved.pi,dy:saved.dy},reopenedAnchor:{pi:reopened.pi,dy:reopened.dy},paragraphTop:reopened.paragraphTop,deltaTop,deltaProgress})}`);
+}
+// Exercise the conditional bound against the actual production ramp, including
+// counterexamples that a blanket epsilon would incorrectly accept.
+const rampOracle=vm.createContext({readerViewHeight:()=>844,readerContentHeight:()=>60844,readerScrollTop:()=>59199});
+vm.runInContext(readFileSync(resolve(root,'scripts/reader/original-session.js'),'utf8'),rampOracle);
+const oracleBefore={pi:258,dy:53,base:258/260,top:59199,height:844,extent:60000,reach:844,left:801};
+oracleBefore.p=rampOracle.readerProgressAtEnd(oracleBefore.base);
+const oracleSaved={...oracleBefore,y:oracleBefore.top,home:'99%'};
+rampOracle.readerScrollTop=()=>59198;
+const oracleAfter={...oracleBefore,dy:54,top:59198,left:802,p:rampOracle.readerProgressAtEnd(oracleBefore.base)};
+assert.equal(oracleBefore.p,0.9926995989792199);
+assert.equal(oracleAfter.p,0.9926904848705796);
+assertReopenedPosition(oracleBefore,oracleSaved,oracleAfter,'production ramp 1px oracle');
+assert.throws(()=>assertReopenedPosition(oracleBefore,oracleSaved,{...oracleAfter,p:oracleBefore.p+1e-6},'wrong signed slope'),assert.AssertionError);
+assert.throws(()=>assertReopenedPosition(oracleBefore,oracleSaved,{...oracleAfter,top:59197},'2px drift'),assert.AssertionError);
+assert.throws(()=>assertReopenedPosition(oracleBefore,oracleSaved,{...oracleAfter,extent:60001},'changed layout'),assert.AssertionError);
+assert.throws(()=>assertReopenedPosition(oracleBefore,oracleSaved,{...oracleAfter,pi:257},'wrong paragraph'),assert.AssertionError);
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
  const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_CHROMIUM_PATH:undefined});
  try{
@@ -74,7 +119,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    await page.mouse.move(200,400);await page.mouse.wheel(0,delta);
    await page.waitForFunction(old=>readerScrollTop()!==old,oldTop);
    await settleReader(page);
-   const before=await page.evaluate(()=>({p:visibleReaderProgress(),pi:captureAnchor().pi,dy:captureAnchor().dy,raw:readerPillRawProgress}));
+   const before=await page.evaluate(textPositionSnapshot);
    await page.locator('#readpill-title').click();
    await page.waitForFunction(()=>!document.body.classList.contains('chrome-hidden')&&!document.getElementById('readback').inert);
    await page.locator('#readback').click();await page.waitForFunction(()=>activeAppView()==='home');
@@ -82,10 +127,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    assert.equal(saved.p,before.p);assert.equal(saved.pi,before.pi);assert.ok(Math.abs(saved.dy-before.dy)<=1);
    assert.equal(saved.home,Math.floor(saved.p*100)+'%');
    await page.waitForTimeout(900);assert.equal(await page.locator('#home-resume-percent').textContent(),saved.home,'Home is already fresh; waiting does not change it');
-   await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);await page.waitForTimeout(150);
-   assert.equal(await page.evaluate(()=>captureAnchor().pi),saved.pi);
-   assert.ok(Math.abs(await page.evaluate(()=>captureAnchor().dy)-saved.dy)<=1);
-   assert.equal(await page.evaluate(()=>visibleReaderProgress()),saved.p);
+   await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);await settleReader(page);
+   assertReopenedPosition(before,saved,await page.evaluate(textPositionSnapshot),`${engine.name()} delta ${delta}`);
    console.log(`${engine.name()}: delta ${delta}, canonical/Reader/Home ${saved.home}, paragraph ${saved.pi}, dy ${saved.dy}; ${delta<0?'backwards reading accepted':'position preserved'}`);
   }
   // Local durability must not wait for cloud sign-in or the 800ms scroll timer.

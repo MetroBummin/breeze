@@ -110,3 +110,29 @@ Local follow-up checks passed:
 
 Final-head WebKit and CI review remain the parent's release gate. The follow-up
 does not change mode/navigation source, enable RSS, or archive/publish the app.
+
+## WebKit reopened end-ramp assertion follow-up
+
+At CI head `7b7cda9`, Chromium completed the entire regression. WebKit passed
+normal Back and five wheel cases, then reported reopened progress
+0.9926904848705796 versus saved 0.9926995989792199 after backward scrolling from
+completion. Exact paragraph and offset-within-one-pixel checks had passed.
+The source rounds saved `dy` but uses raw scroll position in the final viewport.
+For paragraph 258/260 and reach 844px, the difference is exactly one pixel's ramp
+slope. The actual production function reproduces both reported values at 801px
+and 802px remaining scroll.
+
+The revised fixture records pre/post raw scroll, extent, reach, base progress,
+rounded anchors and raw paragraph top. Save/Home equality remains exact. Reopen
+requires the same paragraph, offset within one pixel, raw scroll drift no greater
+than one pixel, unchanged viewport/extent/base and the same displayed percentage.
+A nonzero float difference is accepted only within the continuous end ramp, with
+its full signed value explained by observed scroll drift and the exact slope;
+only machine arithmetic roundoff is added. Counterexamples reject wrong signed
+progress, two-pixel drift, changed layout and wrong paragraphs. Completion and
+ordinary paragraph progress retain exact equality.
+
+The production-ramp oracle and complete Bohemia Chromium regression pass locally.
+WebKit's remaining lifecycle, font and cold-decode cases still require final-head
+CI. This follow-up changes only the fixture and its decision/QA records; product
+assets, both 1.7(234) targets and RSS OFF are unchanged.

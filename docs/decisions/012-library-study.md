@@ -410,3 +410,23 @@ Chromium and five-story light/dark viewport checks pass locally. WebKit's report
 hidden-button timeout is not reproduced locally because its binary is unavailable;
 the existing both-engine CI step remains the gate. No font implementation defect
 has been established by this cold-reopen failure.
+
+## Bohemia reopened end-ramp pixel contract (234 CI)
+
+Saved Text offsets are integer-rounded, while the final-viewport progress ramp
+uses raw scroll position. At paragraph 258/260 with 844px reach, one pixel changes
+progress by `(1 - 258/260) / 844`. WebKit CI reported exactly that difference:
+0.9926995989792199 to 0.9926904848705796. Running the production ramp with remaining
+scroll 801px then 802px reproduces both values exactly; this establishes the
+formula match, not a local WebKit run.
+
+The fixture keeps exact save/Home progress, exact reopened paragraph, offset
+within one pixel and identical displayed integer percentage. It also requires
+unchanged base progress, content extent and viewport, and raw scroll displacement
+no greater than one pixel. A nonzero reopen-progress difference is permitted
+only inside the continuous end ramp and must match the signed observed scroll
+displacement times its exact slope. Eight machine epsilons cover arithmetic
+roundoff only in that conditional calculation. No general progress tolerance or
+product change is introduced. Diagnostics retain pre/post raw scroll, extent,
+reach and rounded anchors; production-ramp counterexamples reject wrong signed
+progress, two-pixel drift, layout changes and wrong paragraphs.
