@@ -192,7 +192,9 @@ function restoreAnchor(a){
   const el = document.querySelector(`#rtext [data-pi="${a.pi}"]`);
   if(!el) return false;
   /* 스크롤하는 것은 문서가 아니라 읽는 칸입니다 — scripts/reader/reader-scroll.js */
-  readerScrollTo(readerScrollTop() + el.getBoundingClientRect().top - (a.dy||0));
+  // Saved dy is an integer. Use the nearest integer scroll target as well:
+  // truncating a fractional target can recapture dy+1 on every restoration.
+  readerScrollTo(Math.round(readerScrollTop() + el.getBoundingClientRect().top - (a.dy||0)));
   updatePfill(true);
   return true;
 }
@@ -222,7 +224,9 @@ function saveReadingState(){
     if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
     return;
   }
-  const a = readerFrameAnchor();
+  // A delayed illustration can reflow text without another scroll frame.
+  // Persist one freshly measured location, rather than a cached paint sample.
+  const a = captureAnchor();
   const previous = posOf(curBook.id);
   const measured = textProgressForBook(curBook,a);
   const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);

@@ -97,6 +97,14 @@ body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-
 #pdf-ink-settings :is([data-ink-width],[data-ink-highlight-width]){min-height:44px;padding:7px 10px;gap:0;}
 #pdf-ink-settings :is(.ink-widths,.ink-highlight-widths) i{width:30px;height:var(--ink-option);border-radius:999px;background:currentColor;}
 #pdf-ink-settings .ink-radii i{width:var(--ink-option);height:var(--ink-option);border-radius:50%;border:1px solid currentColor;background:var(--sentence-glass-action);}
+#pdf-ink-settings .ink-undo-setting{display:flex;align-items:center;gap:12px;margin-top:12px;font:500 12px/1.5 var(--ui);}
+#pdf-ink-settings .ink-undo-setting span{flex:1;}
+#pdf-ink-settings #ink-two-finger-undo{position:relative;flex:0 0 46px;width:46px;height:44px;min-height:44px;padding:0;border:0;background:transparent;}
+#ink-two-finger-undo::before{content:"";position:absolute;left:0;top:9px;width:46px;height:26px;border-radius:13px;background:var(--toggle-off);transition:background .2s;}
+#pdf-ink-settings #ink-two-finger-undo i{position:absolute;left:3px;top:12px;width:20px;height:20px;border-radius:50%;background:var(--toggle-knob);box-shadow:var(--shadow-knob);transition:left .2s;}
+#ink-two-finger-undo.on::before{background:var(--blue);}
+#pdf-ink-settings #ink-two-finger-undo.on i{left:23px;}
+@media(prefers-reduced-motion:reduce){#ink-two-finger-undo::before,#pdf-ink-settings #ink-two-finger-undo i{transition:none;}}
 @keyframes ink-settings-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(prefers-reduced-motion:reduce){#pdf-ink-settings{animation:none;}}
 .pdf-ink-eraser-cursor{fill:rgba(255,255,255,.35);stroke:#666;stroke-width:.8;pointer-events:none;}

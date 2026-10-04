@@ -316,3 +316,142 @@ reading page with their following passage. Hound uses its source title once; the
 reader’s repeated page title is hidden only for the unchanged catalog title.
 Custom saved titles remain visible. The existing Reader font-size/margin/theme
 settings own body metrics; no global reader typography is changed.
+
+## Holmes-first 1.7 offering; Backrooms dormant (2026-10-04)
+
+The existing recommendation shelves now offer only the five illustrated Holmes
+works, in their established order. Backroom / Homeward Bound retains its stable
+catalog record, local text, cover, scenes, lookup data, attribution and saved-copy
+reader behavior, but is excluded from new recommendations. No migration, deletion,
+new shelf layout or saved-book filtering is added. Previously saved copies remain
+visible and readable with their custom cover and reading progress; removing a
+saved Backrooms copy does not make it a new recommendation again. FSRS stays
+dormant and Jev stays OFF. Public release numbering is coordinated separately.
+
+## EPUB queued-frame clock boundary (1.7 / 234)
+
+An rAF callback can carry a frame timestamp earlier than performance.now() at
+navigation start. The prior easing extrapolated negative progress, briefly moving
+backwards before the intended source move. The same product code on baseline
+main 72719a2 and PR93 c2c680f reproduced 13/24 backward starts under real Chromium
+12× CPU throttling, with actual timestamps and anchors recorded. Progress now
+clamps to [0,1]; duration, targets, interruption/latest-choice guards and reduced
+motion are unchanged. The existing monotonic assertion remains, with motion
+histories on failure, exact clock-boundary unit regressions and bounded native
+CPU-load browser sampling. This is an inherited product timing defect, not a
+reason to weaken the fixture or rerun CI without a fix.
+
+## Commit mode and position after restoration (1.7 / 234)
+
+A requested Reader mode does not become the saved mode until its destination
+anchor lands. The opening/mode operation owns one position-restoration record,
+qualified by book identity, mode and change token. Ordinary saves, Home exit and
+background lifecycle events retain the entire last committed mode/progress/anchor
+while that owner is pending. Success commits the landed surface through the
+ordinary writer; cold opening preserves saved progress. Failure keeps the prior
+record and permits retry. A newer mode/book operation replaces the owner; stale
+callbacks cannot scroll, capture or commit the new book.
+
+Rapid reversals start from the committed source record, including text-to-text
+cancellation back to its stored text anchor. Original-to-text restoration now
+awaits both frames and any sentence lookup before releasing ownership. PDF page,
+direction and deletion actions, opening the navigation panel, and EPUB page moves
+wait while position restoration owns the Reader, preventing a navigation token
+from orphaning the restoration. These actions work normally after landing.
+
+Regression coverage: actual PDF/EPUB fixtures in Chromium and WebKit, immediate
+Home exits, successful anchor/progress equality, reversals in both directions,
+restoration errors, trusted wheel and lifecycle events during delayed restoration,
+stale callbacks after changing book, and normal reading/completion. Reused
+original sessions exercise navigation while no preparing attribute is present,
+then verify navigation and saved/visible progress equality after landing.
+
+## Text-only local position commits (234 follow-up)
+
+Saving Text progress measures the current paragraph anchor once at commit time.
+The per-frame anchor cache still avoids duplicate work during scrolling, but a
+lazy illustration can grow without a scroll event and invalidate its offset.
+Bohemia reproduced paragraph 43 moving from 233px to 379px while a save retained
+233px; the next opening advanced 146px. A fresh commit keeps the saved progress,
+paragraph and offset from the same visible surface.
+
+Local progress also saves on hidden visibility and pagehide, independently of
+cloud sign-in. Ordinary Home navigation already saves synchronously. The 800ms
+scroll writer is not a durability boundary when a mobile app may suspend before
+its timer runs. These saves use the existing pending-restoration guard and do
+not reset progress, change completion rules or reject backward reading.
+
+The animated Reader fill can trail its canonical target briefly; Home renders
+the saved target immediately. This is distinct from a persistent numerical
+Reader/Home mismatch, which was not reproduced in ordinary Bohemia navigation.
+Regression: `tests/verify-bohemia-progress-browser.mjs` uses the actual bundled
+261-paragraph story, delayed assets, immediate Home, backward reading, completion,
+real database reopening, signed-out lifecycle saves and delayed-image offsets.
+
+## Cold illustration reservation and Bohemia CI follow-up (234)
+
+The illustration renderer already sets native width/height from catalog metadata.
+The story-image CSS override `aspect-ratio:auto` suppressed that reserved ratio
+before decode. Removing the override keeps the decoded appearance and reserves
+the same image height during cold opening. Blocking Bohemia illustration 09
+reproduced the CI paragraph 244 instead of 245 before any font-size change:
+paragraph 245 restored at 200px while the preceding paragraph entered the probe.
+With native reservation restored, the blocked image occupies 146px at the tested
+phone width; paragraph 245 stays at 200px before and after decode.
+
+The regression waits for scroll geometry, restoration and progress animation to
+settle, opens Reader controls through the normal title button, then clicks Back.
+This removes the fixture's dependence on an instantaneous chrome reveal while
+wheel input may still hide controls during the click's stability wait. Exact
+progress, paragraph and offset assertions remain. Cold
+decode is tested with the real illustration blocked; a separate controlled late
+layout change still proves that saving measures a fresh offset without a scroll.
+Chromium and five-story light/dark viewport checks pass locally. WebKit's reported
+hidden-button timeout is not reproduced locally because its binary is unavailable;
+the existing both-engine CI step remains the gate. No font implementation defect
+has been established by this cold-reopen failure.
+
+## Bohemia reopened end-ramp pixel contract (234 CI)
+
+Saved Text offsets are integer-rounded, while the final-viewport progress ramp
+uses raw scroll position. At paragraph 258/260 with 844px reach, one pixel changes
+progress by `(1 - 258/260) / 844`. WebKit CI reported exactly that difference:
+0.9926995989792199 to 0.9926904848705796. Running the production ramp with remaining
+scroll 801px then 802px reproduces both values exactly; this establishes the
+formula match, not a local WebKit run.
+
+The fixture keeps exact save/Home progress, exact reopened paragraph, offset
+within one pixel and identical displayed integer percentage. It also requires
+unchanged base progress, content extent and viewport, and raw scroll displacement
+no greater than one pixel. A nonzero reopen-progress difference is permitted
+only inside the continuous end ramp and must match the signed observed scroll
+displacement times its exact slope. Eight machine epsilons cover arithmetic
+roundoff only in that conditional calculation. No general progress tolerance or
+product change is introduced. Diagnostics retain pre/post raw scroll, extent,
+reach and rounded anchors; production-ramp counterexamples reject wrong signed
+progress, two-pixel drift, layout changes and wrong paragraphs.
+
+## Idempotent Text anchor restoration (234 CI follow-up)
+
+WebKit CI at `df92e81` passed the end-ramp and lifecycle checks, then reported
+paragraph offset 4px versus saved 2px after cold reload and font resizing. This
+exposes repeated position drift, beyond the prior single-restoration float
+contract. `restoreAnchor` previously computed a fractional scroll target from
+an integer-rounded saved offset. A browser that truncates the target can round
+the next captured offset one pixel higher; saving and restoring again repeats
+the shift. The actual restoration function reproduces this defect under
+controlled truncating/flooring scroll semantics. Local WebKit download is blocked
+by HTTP 403, so native engine confirmation remains a final-head CI requirement.
+
+Text restoration now rounds the target to the nearest integer before the existing
+scroll writer. Saved integer offsets and scroll targets share the same grid;
+capture remains unchanged. No general scrolling, PDF/EPUB target calculation,
+mode ownership, progress formula, storage schema or completion rule is changed.
+The source regression exercises twenty reopen/font-layout cycles with positive
+and negative offsets and fractional paragraph coordinates under truncating,
+flooring, nearest and fractional scrolling. The browser regression checks eight
+actual reopen/smaller-font/larger-font cycles against the original exact paragraph
+and offset. Cold-image setup uses the ordinary restoration function; the wheel
+fixture likewise requests the nearest integer target for its exact 200px offset.
+Font, cold-image and late-layout assertions are collected so one run reports all
+remaining contract failures; any collected failure still fails the browser job.

@@ -74,7 +74,7 @@ function applyPdfDirection(session,page=1){
   invalidatePdfPageLayout(session);layoutOriginalZoom();updatePdfNavigationControls();
 }
 async function setPdfReadDirection(direction){
-  if(!['vertical','horizontal'].includes(direction)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
+  if(readerPositionPending()||!['vertical','horizontal'].includes(direction)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
   if(direction===studyPrefs.direction)return;
   const session=originalSession,anchor=currentPdfSession(session)?capturePdfAnchor(topInset()):null;
   if(!persistStudyPrefs({...studyPrefs,direction}))return;
@@ -83,7 +83,7 @@ async function setPdfReadDirection(direction){
 }
 async function goPdfPage(n,{keepNavigation=false}={}){
   const session=originalSession;
-  if(currentReaderMode!=='original'||!currentPdfSession(session)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
+  if(readerPositionPending()||currentReaderMode!=='original'||!currentPdfSession(session)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
   n=pdfNearestPage(session,n);
   if(typeof closePanel==='function')closePanel();
   if(!keepNavigation)closePdfNavigation();expandReaderChrome();
@@ -159,7 +159,7 @@ function closePdfNavigation({release=false}={}){
 }
 function togglePdfNavigation(){
   if(pdfNavigation){closePdfNavigation();return;}
-  if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||document.getElementById('originalwrap').hasAttribute('data-reader-preparing')||sentenceWaitingActive()||BreezePdfInk.busy()||originalPinchBusy())return;
+  if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||readerPositionPending()||sentenceWaitingActive()||BreezePdfInk.busy()||originalPinchBusy())return;
   if(pdfNavigationCloseTimer){clearTimeout(pdfNavigationCloseTimer);pdfNavigationCloseTimer=null;}
   document.getElementById('pdf-page-control').classList.remove('pdf-navigation-closing');
   closePanel();closeSentence();closeAa();expandReaderChrome();
@@ -226,7 +226,7 @@ function buildEpubNavigation(focusCurrent=true){
 }
 // One source slice, one bounded motion. A newer selection or user scroll wins.
 async function goEpubNavigationPage(nav,index){
-  if(pdfNavigation!==nav||!currentEpubNavigationSession())return;
+  if(readerPositionPending()||pdfNavigation!==nav||!currentEpubNavigationSession())return;
   const page=nav.pages[index],source=page&&nav.session.frames[page.spine];if(!source)return;
   const session=nav.session,token=++readerModeChangeToken;
   if(typeof closePanel==='function')closePanel();
@@ -239,7 +239,8 @@ async function goEpubNavigationPage(nav,index){
     const began=performance.now();let applied=start;
     const step=now=>{
       if(!current()||!!activeGesture||Math.abs(readerScrollTop()-applied)>2){resolve();return;}
-      const t=Math.min(1,(now-began)/200);
+      // A queued rAF timestamp can predate the event that began this move.
+      const t=Math.max(0,Math.min(1,(now-began)/200));
       readerScrollTo(start+(target-start)*(1-Math.pow(1-t,3)));applied=readerScrollTop();
       if(t<1)requestAnimationFrame(step);else resolve();
     };requestAnimationFrame(step);
@@ -632,7 +633,7 @@ function offerPdfPageDeletion(session,n){
   actions.querySelector('[data-pdf-delete-cancel]').focus({preventScroll:true});
 }
 async function deletePdfPage(session,n){
-  if(pdfDeletionBusy||!currentPdfSession(session)||BreezePdfInk.busy()||originalPinchBusy()||pdfAvailablePages(session).length<=1)return false;
+  if(readerPositionPending()||pdfDeletionBusy||!currentPdfSession(session)||BreezePdfInk.busy()||originalPinchBusy()||pdfAvailablePages(session).length<=1)return false;
   const book=curBook;if(!book||book.transient)return false;
   pdfDeletionBusy=true;
   const deleted=new Set(session.deletedPages||[]);deleted.add(n);

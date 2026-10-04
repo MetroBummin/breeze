@@ -20,7 +20,7 @@ const url=`http://127.0.0.1:${server.address().port}/`;
 const definitions=[
   {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',file:'homewardbound.txt',paras:107,first:'I sat stunned',last:'It was another flickering wall.'},
 ];
-const expectedOrder=[...definitions.map(read=>read.title),'The Adventure of the Speckled Band','A Scandal in Bohemia','The Red-Headed League','The Final Problem','The Hound of the Baskervilles'];
+const expectedOrder=['The Adventure of the Speckled Band','A Scandal in Bohemia','The Red-Headed League','The Final Problem','The Hound of the Baskervilles'];
 const reports=[];
 
 try{
@@ -40,10 +40,7 @@ try{
       assert.deepEqual(await page.locator('#shelf .longread').evaluateAll(nodes=>nodes.map(node=>node.querySelector('.bt').textContent)),
         expectedOrder,`${engine.name()} Home default Long Reads order is wrong`);
       assert.equal(await page.locator('#shelf .longread img.cover').count(),expectedOrder.length,'Home is missing a bundled cover');
-      assert.deepEqual(await page.locator('#shelf .longread[data-longread-id="backroom-homeward-bound"] img.cover').evaluateAll(nodes=>nodes.map(node=>({
-        loaded:node.complete&&node.naturalWidth===512&&node.naturalHeight===1024,
-        titleVisible:getComputedStyle(node).objectPosition,
-      }))),Array(definitions.length).fill({loaded:true,titleVisible:'50% 0%'}),`${engine.name()} cover crop or title alignment changed`);
+      assert.equal(await page.locator('#shelf .longread[data-longread-id="backroom-homeward-bound"]').count(),0,'Dormant Backrooms was offered to a new reader');
       const results=[];
 
       for(let index=0;index<definitions.length;index++){
@@ -52,8 +49,15 @@ try{
         const expected=original.replace(/\r/g,'').split(/\n\s*\n+/)
           .map(block=>block.split('\n').map(line=>line.trim()).join(' ').trim()).filter(Boolean);
         assert.equal(expected.length,definition.paras,`${definition.id} source paragraph count changed`);
-        await page.locator(`#shelf .longread[data-longread-id="${definition.id}"]`).click();
-        assert.equal(await page.evaluate(()=>books.length),0,'Preview imported a book');
+        // Seed a previously imported copy using the existing importer, then exercise
+        // the normal saved-card preview/reader path. Dormant catalog assets remain available.
+        await page.evaluate(async id=>{
+          const book=await importLongRead(LONG_READS.find(read=>read.id===id));
+          const custom=book.id+'|custom-backrooms';await imgPut(custom,await imgGet(book.cover));
+          book.cover=custom;await bookPut(book);renderAllBookViews();
+        },definition.id);
+        await page.locator(`#shelf .bookcard.longread[data-longread-id="${definition.id}"]`).click();
+        assert.equal(await page.evaluate(()=>books.length),1,'Saved-copy preview duplicated the book');
         await page.locator('#article-preview .ap-start').click();
         await page.waitForFunction(id=>books.some(book=>book.longReadId===id),definition.id);
         await page.waitForFunction(()=>!articlePreviewDialog.open);
@@ -66,6 +70,7 @@ try{
             originalKind:book.original&&book.original.kind};
         },definition.id);
         assert.equal(saved.title,definition.title);
+        assert.match(saved.cover,/\|custom-backrooms$/,'Saved custom Backrooms cover changed');
         assert.equal(saved.kind,'txt');
         assert.equal(saved.originalKind,null,'TXT should follow the normal saved-text path without an EPUB/PDF original session');
         const savedCard=page.locator(`#shelf .bookcard.longread[data-longread-id="${definition.id}"]`);
@@ -165,10 +170,13 @@ try{
         const restored=await page.evaluate(id=>{
           const book=books.find(item=>item.longReadId===id);
           const pos=positions[book.id];
-          return {title:book.title,kind:book.kind,cover:book.cover,p:pos.p,attribution:book.attribution};
+          return {id:book.id,title:book.title,kind:book.kind,paras:book.paras,cover:book.cover,p:pos.p,attribution:book.attribution};
         },definition.id);
         assert.equal(restored.title,definition.title);
         assert.equal(restored.kind,'txt');
+        assert.equal(restored.id,beforeReload.id,'Saved Backrooms identity changed');
+        assert.deepEqual(restored.paras,saved.paras,'Saved Backrooms text changed on reload');
+        assert.equal(restored.cover,saved.cover,'Saved Backrooms custom cover changed on reload');
         assert.ok(restored.cover&&restored.p>0.1,'saved text, cover, or progress did not survive reload');
         assert.equal(restored.attribution.author,saved.author);
         await page.evaluate(async id=>{

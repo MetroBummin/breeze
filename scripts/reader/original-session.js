@@ -11,11 +11,11 @@ let lastOriginalAnchor = null;
 let readerAnchorHoldUntil = 0;
 
 /* A surface being restored is not a new reading location. This is owned by
-   the current opening, not a timeout that can expire on a slow document. */
-let readerPositionOpening = null;
+   the current opening or mode restoration, not a timeout or display animation. */
+let readerPositionRestoration = null;
 function readerPositionPending(){
   if(!curBook)return false;
-  if(readerPositionOpening?.book===curBook)return true;
+  if(readerPositionRestoration?.book===curBook)return true;
   return currentReaderMode==='original' && (originalSession?.bookId!==curBook.id
     || originalSession?.presented!==true
     || document.getElementById('originalwrap')?.hasAttribute('data-reader-preparing'));

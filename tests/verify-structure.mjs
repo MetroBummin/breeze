@@ -413,10 +413,7 @@ assert.match(pdfSource,/IntersectionObserver/,'PDF pages are not rendered lazily
    문서 전체가 종이 한 장처럼 같은 축에서 움직입니다. */
 assert.doesNotMatch(pdfSource,/pdf-page-lane|pdfZoom|panRatio/,
   'The per-page zoom lane is back, so pages no longer share one horizontal axis');
-assert.match(index,/id="pdfzoom-out"[^>]*changeOriginalZoom\(-1\)/,
-  'The PDF zoom-out button is missing');
-assert.match(index,/id="pdfzoom-in"[^>]*changeOriginalZoom\(1\)/,
-  'The PDF zoom-in button is missing');
+assert.doesNotMatch(index,/id="(?:pdfzoom-out|pdfzoom-in|aa-pdfzoom)"/,'Retired zoom buttons remain visible');
 /* 버튼으로 키운 캔버스는 다시 그려 또렷하게 남겨야 합니다. */
 assert.match(pdfSource,/PDF_OVERSAMPLE/,
   'PDF canvases are drawn at screen resolution again, so pinching makes them blurry');
@@ -955,13 +952,7 @@ assert.match(readerCss, /#readchrome, \.control-bar\{[^}]*bottom:calc\(env\(safe
   'Reader controls do not clear the bottom safe area');
 assert.match(dictionaryCss, /#p-speak\{[^}]*touch-action:manipulation/,
   'Rapid pronunciation taps can leak into browser double-tap zoom');
-/* PDF 확대 −/+ 는 예전처럼 따로 떠 있지 않습니다 — 뜨는 조각을 늘리지 않으려고
-   Aa popover 안, 다른 설정들 아래 한 줄로 들어갔습니다. 단추가 부르는 함수는
-   그대로입니다(위의 384/386번 검사). */
-assert.match(index,/id="aa-pdfzoom"[\s\S]{0,200}id="pdfzoom-out"[\s\S]*id="pdfzoom-in"/,
-  'The original PDF has not got its +/- controls inside the Aa popover');
-assert.ok(index.indexOf('id="aa-pdfzoom"') > index.indexOf('id="aa-dark"'),
-  'The PDF zoom row is no longer the last row below the existing Aa settings');
+assert.doesNotMatch(index,/id="aa-ink-undo(?:-row)?"/,'Writing-only undo preference remains in Reader Aa');
 assert.doesNotMatch(index, /id="pdfzoomfabs"/,
   'The old floating PDF zoom control was not removed');
 /* 단추에는 글자가 없습니다. 두 그림이 서로 자리를 바꿔야 어느 쪽으로 가는지 보입니다. */
@@ -1096,22 +1087,24 @@ for(const file of [...jsFiles, resolve(root, 'index.html')]){
     `${file.slice(root.length + 1)} still reaches for the removed sample book`);
 }
 
-/* ---- built-in Backrooms Long Reads ---- */
+/* ---- offered Holmes and dormant Backrooms Long Reads ---- */
 const longReadsContext = { console, Set, books:[] };
 new Script(readFileSync(resolve(root, 'scripts/library/longreads.js'), 'utf8'))
   .runInNewContext(longReadsContext);
 const offered = longReadsContext.pendingLongReads();
 assert.deepEqual(Array.from(offered, read => read.title), [
-  'Backroom - Homeward Bound',
   'The Adventure of the Speckled Band',
   'A Scandal in Bohemia',
   'The Red-Headed League',
   'The Final Problem',
   'The Hound of the Baskervilles',
-], 'All six bundled stories should be offered independently');
+], 'Only the five Holmes stories should be offered independently');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
-for(const read of offered){
+const retainedLongReads=new Script('LONG_READS').runInNewContext(longReadsContext);
+assert.equal(retainedLongReads.length,6,'Dormant Backrooms catalog entry was removed');
+assert.equal(retainedLongReads.find(read=>read.id==='backroom-homeward-bound').dormant,true);
+for(const read of retainedLongReads){
   assert.match(read.file,/\.txt$/,`${read.id} is not a local Text book`);
   assert.ok(existsSync(resolve(root,read.file)),`Local text is missing: ${read.id}`);
   if(read.cover)assert.ok(existsSync(resolve(root,read.cover)),`Supplied cover is missing: ${read.id}`);

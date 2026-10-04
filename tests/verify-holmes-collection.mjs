@@ -27,7 +27,7 @@ for(const slug of ['scandal-in-bohemia','red-headed-league']){
     assert.equal(story.sha256,m.adaptedSha256);assert.equal(story.wordCount,m.adaptedWords);
     assert.equal(story.cover,`assets/longreads/covers/${slug}.webp`,'Each story uses its own approved titled cover');
     assert.match(story.editionNote,/not Doyle’s verbatim text/);
-    assert.equal(new Set(catalog.map(x=>x.id)).size,6);
+    assert.equal(new Set(catalog.map(x=>x.id)).size,5);
     if(slug==='scandal-in-bohemia'){
       assert.deepEqual(paras.filter(p=>/^(I|II|III)\.$/.test(p)),['I.','II.','III.']);
       for(const clue of ['This account of you we have from all quarters received.','Mrs. Turner','IRENE NORTON, née ADLER'])assert.ok(adapted.includes(clue),clue);

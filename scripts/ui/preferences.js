@@ -398,3 +398,7 @@ function toast(msg){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),2600);
 }
 window.addEventListener('beforeunload', saveReadingState);
+window.addEventListener('pagehide', saveReadingState);
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) saveReadingState();
+});

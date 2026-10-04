@@ -35,7 +35,7 @@ try{
       await page.goto(base);await page.evaluate(()=>homeReady);
       const card=()=>page.locator(`#shelf .longread[data-longread-id="${storyId}"]`);
       const start=()=>page.locator('#article-preview .ap-start');
-      for(const id of ['backroom-homeward-bound',storyId,'sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league']){
+      for(const id of [storyId,'sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles']){
         await page.locator(`#shelf .longread[data-longread-id="${id}"]`).click();
         assert.equal(await start().textContent(),'읽기');
         assert.doesNotMatch(await page.locator('#article-preview').innerText(),/다운로드/);
@@ -212,7 +212,7 @@ try{
         await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.paras.length===251);
         await cachedContext.close();
       }else console.log('webkit: cold service-worker offline reload requires device verification (unsupported Playwright control)');
-      console.log(engine.name()+': four previews, 30 Holmes viewport/theme states, failure/retry/truncation/cancel, duplicate taps, full import and offline progress passed');
+      console.log(engine.name()+': five previews, 30 Holmes viewport/theme states, failure/retry/truncation/cancel, duplicate taps, full import and offline progress passed');
     }finally{await browser.close();}
   }
 }finally{held?.end();await new Promise(done=>server.close(done));}

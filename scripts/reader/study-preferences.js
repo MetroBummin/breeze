@@ -60,7 +60,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 function updateTwoFingerUndoSetting(){
-  const button=document.getElementById('aa-ink-undo');
+  const button=document.getElementById('ink-two-finger-undo');
+  if(!button)return;
   button.classList.toggle('on',studyPrefs.twoFingerUndo);
   button.setAttribute('aria-pressed',String(studyPrefs.twoFingerUndo));
 }

@@ -111,11 +111,6 @@
     cursor:pointer; font-size:13px; color:var(--ink); font-family:var(--ui);}
   .aa-size button:hover{background:var(--sky);}
   #aa-fs{font-size:13.5px; min-width:24px; text-align:center; color:var(--ink);}
-  /* PDF 원본을 열었을 때만 켭니다 — updateOriginalZoomControls() 가 켜고 끕니다.
-     `.aa-row{display:flex}` 가 저작 스타일이라 UA 의 `[hidden]{display:none}` 을
-     덮어써서, 여기서 다시 명시해야 실제로 접힙니다. */
-  #aa-pdfzoom[hidden]{display:none;}
-  #aa-pdfzoom-pct{font-size:13.5px; min-width:34px; text-align:center; color:var(--ink);}
   .aa-size button:disabled{opacity:.35; cursor:default;}
   .aa-size button:disabled:hover{background:none;}
   .aa-toggle{width:46px; height:26px; border-radius:13px; border:none; background:var(--toggle-off); cursor:pointer;
@@ -367,7 +362,7 @@
   .pageno{text-align:center; color:var(--pageno); font-size:12px; margin:18px 0 26px; font-family:var(--serif); user-select:none;}
   #rtext figure{margin:1.5em 0; text-align:center;}
   #rtext figure.story-illustration{margin:1.8em 0 2em;}
-  #rtext figure.story-illustration img{display:block; width:100%; height:auto; aspect-ratio:auto;}
+  #rtext figure.story-illustration img{display:block; width:100%; height:auto;}
   /* The source-led Holmes hierarchy stays within the existing Reader settings. */
   #readwrap.holmes-reading #rtitle{font-size:clamp(1.35rem,3.4vw,1.85rem);line-height:1.35;
     font-weight:600;letter-spacing:-.02em;border:0;margin-bottom:0;padding-bottom:.45em;}

@@ -42,12 +42,15 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const saved=()=>page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
  const pen=page.locator('[data-ink-mode="pen"]');
  await page.evaluate(()=>{expandReaderChrome();toggleAa();});
- const toggle=page.locator('#aa-ink-undo');
+ const toggle=page.locator('#ink-two-finger-undo');
+ const eraser=page.locator('[data-ink-mode="erase"]');
+ const eraserSettings=async()=>{if(await eraser.getAttribute('aria-pressed')!=='true')await eraser.click();if(await eraser.getAttribute('aria-expanded')!=='true')await eraser.click();await toggle.waitFor({state:'visible'});};
+ const closeEraserSettings=async()=>{if(await eraser.getAttribute('aria-expanded')==='true')await eraser.click();};
  assert.equal(await toggle.isVisible(),false,'PDF reading hides the writing-only setting');
  const prefsBeforeModes=await page.evaluate(()=>localStorage.getItem('breeze.study.v1'));
  // Invoke the real mode handler while retaining Aa: outside clicks normally close it.
  await page.evaluate(()=>document.querySelector('[data-ink-toggle]').onclick());
- assert.equal(await toggle.isVisible(),true,'entering writing updates the open Aa menu');
+ assert.equal(await toggle.isVisible(),false,'Aa never exposes the writing-only eraser setting');
  await page.evaluate(()=>document.querySelector('[data-ink-toggle]').onclick());
  assert.equal(await toggle.isVisible(),false,'returning to reading updates the open Aa menu');
  assert.equal(await page.locator('[data-star-visibility="1"]').isVisible(),true,'unrelated Reader preferences remain available');
@@ -55,15 +58,17 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await page.evaluate(()=>document.querySelector('[data-ink-toggle]').onclick());
  await page.evaluate(()=>switchReaderMode('text'));
  await page.waitForFunction(()=>!readerPositionPending());
- assert.equal(await page.locator('#aa-ink-undo-row').evaluate(row=>row.hidden),true,'extracted-text view hides the writing-only setting');
+ assert.equal(await page.locator('#ink-two-finger-undo-row').evaluate(row=>row.hidden),true,'extracted-text view hides the writing-only setting');
  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.study.v1')),prefsBeforeModes,'text view preserves Reader preferences');
  await page.evaluate(()=>closeAa());
  await open();
  await page.locator('[data-ink-toggle]').click();
  assert.equal(await page.locator('[data-ink-scribble]').count(),0);
- await page.evaluate(()=>toggleAa());
+ await eraserSettings();
  assert.equal(await toggle.getAttribute('aria-pressed'),'false');
- await page.evaluate(()=>closeAa());
+ assert.equal(await toggle.evaluate(button=>button.closest('[data-ink-panel]').dataset.inkPanel),'erase');
+ assert.equal(await toggle.evaluate(button=>button.parentElement.previousElementSibling.className),'ink-setting-row ink-radii');
+ await closeEraserSettings();await pen.click();
  const stroke=async()=>{await page.evaluate(()=>{qaInput.start(100,200);qaInput.move(250,200);qaInput.end();});await saved();};
  const pair=async({move=0,cancel=false,third=false}={})=>page.evaluate(async({move,cancel,third})=>{
   const target=originalSession.pages[0].querySelector('canvas'),r=target.getBoundingClientRect();
@@ -79,7 +84,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const double=async(options)=>{await pair(options);await page.waitForTimeout(60);await pair(options);};
  await stroke();assert.equal(await count(),1);
  await double();assert.equal(await count(),1,'OFF never undoes');
- await page.evaluate(()=>toggleAa());await toggle.click();assert.equal(await toggle.getAttribute('aria-pressed'),'true');await page.evaluate(()=>closeAa());
+ await eraserSettings();await toggle.click();assert.equal(await toggle.getAttribute('aria-pressed'),'true');await closeEraserSettings();await pen.click();
  await pair();assert.equal(await count(),1,'one two-finger tap is not double tap');
  await page.waitForTimeout(60);await pair();await saved();assert.equal(await count(),0,'two pairs undo one edit');
  assert.equal(await page.evaluate(()=>!!originalPinch||originalPinchTouches||originalPdfRenderPending||originalPinchFrame!==0),false,'tap completion releases pinch and queued paint');
@@ -123,10 +128,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const theme of ['light','dark']){
   await page.setViewportSize({width,height});await page.emulateMedia({colorScheme:theme});
   await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();expandReaderChrome();},theme);
-  await page.evaluate(()=>toggleAa());
+  await eraserSettings();
   await page.waitForTimeout(250);
   const rect=await toggle.boundingBox();assert.ok(rect&&rect.width>=44&&rect.height>=44&&rect.x>=0&&rect.x+rect.width<=width&&rect.y>=0&&rect.y+rect.height<=height,JSON.stringify({width,height,theme,rect}));
-  await page.screenshot({path:resolve(proof,`${engine.name()}-${width}-${height}-${theme}.png`)});await page.evaluate(()=>closeAa());
+  await page.screenshot({path:resolve(proof,`${engine.name()}-${width}-${height}-${theme}.png`)});await closeEraserSettings();
  }
  await page.setViewportSize({width:820,height:1180});await page.waitForTimeout(450);
  await pair();

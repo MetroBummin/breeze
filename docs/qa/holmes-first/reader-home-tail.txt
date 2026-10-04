@@ -1,0 +1,40 @@
+webkit pdf-page {
+  token: 4,
+  afterAction: 4,
+  pendingBefore: true,
+  preparing: false,
+  landed: true,
+  pendingAfter: false,
+  afterLanding: {
+    moved: true,
+    pending: false,
+    saved: 0.8132619803202426,
+    visible: 0.8132619803202426
+  }
+}
+webkit pdf-direction {
+  token: 4,
+  afterAction: 4,
+  pendingBefore: true,
+  preparing: false,
+  landed: true,
+  pendingAfter: false,
+  afterLanding: {
+    moved: true,
+    pending: false,
+    saved: 0.6666666666666666,
+    visible: 0.6666666666666666
+  }
+}
+webkit epub-page {
+  token: 4,
+  afterAction: 4,
+  pendingBefore: true,
+  preparing: false,
+  landed: true,
+  pendingAfter: false,
+  afterLanding: { moved: true, pending: false, saved: 0.1, visible: 0.1 }
+}
+Wordbook responsive themes, search, sort, filters, edit, add, export and Home passed.
+chromium: empty-session visible-only boot; 2100-word mouse/keyboard row identity, edit persistence and deletion passed
+webkit: empty-session visible-only boot; 2100-word mouse/keyboard row identity, edit persistence and deletion passed

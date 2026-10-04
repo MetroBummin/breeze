@@ -44,8 +44,8 @@
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
   <link rel="stylesheet" href="styles/home.css?v=608e679d">
   <link rel="stylesheet" href="styles/article-preview.css?v=4136d11a">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=5ab30afa">
-  <link rel="stylesheet" href="styles/reader.css?v=b441b167">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=727be0ed">
+  <link rel="stylesheet" href="styles/reader.css?v=5ea6b95a">
   <link rel="stylesheet" href="styles/dictionary.css?v=f4c2b7a4">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
@@ -72,13 +72,13 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=114c4fca"></script>
-  <script defer src="scripts/core/state.js?v=be7924d5"></script>
+  <script defer src="scripts/core/state.js?v=89865b26"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
-  <script defer src="scripts/reader/reader-scroll.js?v=9627d9ac"></script>
+  <script defer src="scripts/reader/reader-scroll.js?v=903649aa"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
   <script defer src="scripts/reader/gesture.js?v=bc3acf8a"></script>
@@ -89,7 +89,7 @@
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=dcf2f153"></script>
-  <script defer src="scripts/library/longreads.js?v=c8baaa51"></script>
+  <script defer src="scripts/library/longreads.js?v=a46a130a"></script>
   <script defer src="assets/longreads/homeward-lookup-data.js?v=98cff2b8"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=0b110c50"></script>
   <script defer src="scripts/importers/importers.js?v=8baa9909"></script>
@@ -110,24 +110,24 @@
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
-  <script defer src="scripts/reader/original-session.js?v=bd9ec090"></script>
+  <script defer src="scripts/reader/original-session.js?v=76c05c94"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=f2ee0d36"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=612b574d"></script>
   <script defer src="scripts/reader/pdf-original.js?v=0c668f94"></script>
   <script defer src="scripts/reader/epub-original.js?v=8d338b3b"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=afc95718"></script>
-  <script defer src="scripts/reader/reader.js?v=6eba3bb7"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=9c77d146"></script>
+  <script defer src="scripts/reader/reader.js?v=b0b63728"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=2a6fea27"></script>
-  <script defer src="scripts/ui/preferences.js?v=996d590a"></script>
+  <script defer src="scripts/ui/preferences.js?v=17d20ac3"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=ad7f5ff5"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=04236e7a"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
-  <script defer src="scripts/reader/study-preferences.js?v=eeef850c"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=91c3f69a"></script>
+  <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=c66e26e3"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
   <script defer src="scripts/main.js?v=6d3eec76"></script>
@@ -642,19 +642,7 @@
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" aria-label="다크 모드" class="aa-toggle" onclick="toggleDark()"><i></i></button>
   </div>
-  <!-- PDF 원본에서만 켭니다 — updateOriginalZoomControls() 가 예전에 떠 있던
-       #pdfzoomfabs 대신 이 자리를 켜고 끕니다. 버튼이 부르는 changeOriginalZoom
-       은 그대로입니다 — 옮긴 것은 자리뿐입니다. -->
   <div class="aa-row" id="aa-pdf-direction" hidden><span class="aa-label">페이지 넘김</span><div class="aa-seg"><button type="button" data-pdf-direction="vertical" onclick="setPdfReadDirection('vertical')">세로</button><button type="button" data-pdf-direction="horizontal" onclick="setPdfReadDirection('horizontal')">가로</button></div></div>
-  <div class="aa-row" id="aa-pdfzoom" hidden>
-    <span class="aa-label">PDF 확대</span>
-    <div class="aa-size">
-      <button id="pdfzoom-out" type="button" title="PDF 축소" aria-label="PDF 축소" onclick="changeOriginalZoom(-1)">−</button>
-      <span id="aa-pdfzoom-pct"></span>
-      <button id="pdfzoom-in" type="button" title="PDF 확대" aria-label="PDF 확대" onclick="changeOriginalZoom(1)">+</button>
-    </div>
-  </div>
-  <div class="aa-row" id="aa-ink-undo-row" hidden><span class="aa-label">두 손가락 더블탭 실행 취소</span><button id="aa-ink-undo" type="button" class="aa-toggle" aria-label="두 손가락 더블탭 실행 취소" aria-pressed="false" onclick="toggleTwoFingerUndo()"><i></i></button></div>
   <div class="aa-star-settings"><div class="aa-star-heading"><span class="aa-label">단어 색칠</span><span id="aa-star-hint">탭해서 켜고 끄기</span></div><div class="aa-legend" role="group" aria-label="별점별 단어 색칠 켜기와 끄기" aria-describedby="aa-star-hint"></div></div>
 </div>
 <dialog id="task-dialog" class="task-surface" aria-labelledby="task-title" aria-describedby="task-description">
