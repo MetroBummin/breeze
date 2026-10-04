@@ -38,9 +38,12 @@ async function homeState(page,id){
   sameCover:window.readingCover===document.querySelector(`#shelf [data-local-book="${id}"] img.cover`)}),id);
 }
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_CHROMIUM_PATH:undefined});
+ // Match the existing PDF integration harness: WebKit's ephemeral profile
+ // fails the IndexedDB original-blob write, which is required by this scenario.
+ const context=await engine.launchPersistentContext('',{executablePath:engine===chromium?process.env.BREEZE_CHROMIUM_PATH:undefined,
+  viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
  try{
-  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'}),page=await context.newPage(),errors=[];
+  const page=await context.newPage(),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   const warnings=[];page.on('console',message=>{if(['warning','error'].includes(message.type()))warnings.push(message.text());});
   let releaseScene;const scene=new Promise(resolve=>releaseScene=resolve);
@@ -130,9 +133,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   releaseScene();
   // Same real PDF: completion → 50% → 19%, then compare fresh shelf and Home.
   await page.evaluate(()=>show('home'));await page.setViewportSize({width:390,height:844});
-  await page.locator('#fileinput').setInputFiles({name:'Shared Home progress.pdf',mimeType:'application/pdf',buffer:fixturePdf(10)});
+  const pdfBytes=fixturePdf(10);
+  await page.locator('#fileinput').setInputFiles({name:'Shared Home progress.pdf',mimeType:'application/pdf',buffer:pdfBytes});
   await page.waitForFunction(()=>books.some(book=>book.kind==='pdf'));
   const pdfId=await page.evaluate(()=>books.find(book=>book.kind==='pdf').id);
+  assert.equal(await page.evaluate(async id=>(await originalGetForBook(books.find(book=>book.id===id)))?.blob?.size,pdfId),pdfBytes.length,'real imported PDF original is stored');
   for(const percent of [100,50,19]){
    await page.locator(`#shelf [data-local-book="${pdfId}"]`).click();await readerReady(page);
    assert.equal(await page.evaluate(()=>curBook.id),pdfId);
@@ -166,5 +171,5 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   }
   assert.deepEqual(errors,[]);
   console.log(`${engine.name()}: unread/cancel/Read, Home/Explore direct resume, backward/immediate progress, 10 layouts, font/image loading, current identity, interrupted open and deletion/reimport passed`);
- }finally{await browser.close();}
+ }finally{await context.close();}
 }}finally{await new Promise(resolve=>server.close(resolve));}

@@ -49,7 +49,11 @@ WebKit's Playwright driver does not implement wheel input; the first CI attempt
 exposed that harness limitation after Chromium and both-engine Bohemia passed.
 The PDF scenario selects original mode through the existing control when needed;
 it does not assert a default mode. Startup failures include mode/storage/session
-diagnostics. It checks the visible card, center capsule and saved record separately. It covers
+diagnostics. The first nonpersistent WebKit profile failed the original-blob
+IndexedDB write; this fixture now uses the existing PDF tests' persistent browser
+profile and asserts the imported original's byte count before opening it. No
+production storage code changes. It checks the visible card, center capsule and
+saved record separately. It covers
 both Home and Explore; unread preview cancel and Read; Back/Forward; direct repeat
 opens; backward progress; renamed/replaced/reloaded saved copies; interrupted
 preparation; deletion/reimport; delayed illustration and font changes; and
