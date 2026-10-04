@@ -88,7 +88,7 @@ try{
         assert.ok(saved.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
         assert.doesNotMatch(saved.paras.join('\n'),/rating:\s*[+-]|Licensing \/ Citation|For more information about on-wiki content/i);
         await page.locator('#shelf .bookcard').filter({hasText:definition.title}).first().click();
-        await page.locator('#article-preview .ap-start').click();
+        assert.equal(await page.evaluate(()=>articlePreviewDialog.open),false,'Started saved copy must resume directly');
         await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on'));
         await page.waitForFunction(()=>document.querySelectorAll('#rtext [data-pi]').length>0);
         assert.equal(await page.locator('#rtitle').textContent(),definition.title);

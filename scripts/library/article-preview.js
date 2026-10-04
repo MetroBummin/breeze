@@ -173,7 +173,7 @@ function articlePreviewRequest(book,generation){
 }
 function openCasualPreviewOrReader(book,options={}){
   const bundled=book.longReadId&&LONG_READS.find(read=>read.id===book.longReadId);
-  if(bundled)return openLongReadPreview(bundled);
+  if(bundled&&!posOf(book.id).t)return openLongReadPreview(bundled);
   if(articlePreviewOpening)articlePreviewClose();
   if(book.kind!=='article' || posOf(book.id).t){articlePreviewClose();return openBook(book);}
   if(articlePreviewDialog.open && articlePreviewBook===book)return book;
@@ -317,6 +317,12 @@ articlePreviewSummaryCard.after(articlePreviewDetails);
 function longReadPreviewAction(read){
   const book=books.find(item=>item.longReadId===read.id);
   return book&&posOf(book.id).t?'이어서 읽기':'읽기';
+}
+function openLongReadPreviewOrReader(read){
+  // Resolve the live library record at tap time; preview alone never starts it.
+  const book=books.find(item=>item.longReadId===read.id);
+  if(book&&posOf(book.id).t)return openCasualPreviewOrReader(book);
+  return openLongReadPreview(read);
 }
 function openLongReadPreview(read){
   cancelPendingBookOpen();articlePreviewClose();

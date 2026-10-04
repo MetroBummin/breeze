@@ -450,7 +450,16 @@ function homeBookSpec(book,casual){
   const stamp=JSON.stringify([book.title,book.cover,book.site,book.author,book.kind,posOf(book.id).p===1,casual?readMinutes(book):null]);
   return {key:'book:'+book.id,stamp,
     create:()=>homeRegularTile(casual?casualCard(book,null,false,false):bookCard(book,null,false),
-      book.title,casual?(book.site||'내 글'):(book.author||'내 책'))};
+      book.title,casual?(book.site||'내 글'):(book.author||'내 책')),
+    update:tile=>{
+      if(casual)return;
+      // Progress is mutable text on a retained cover, not a reason to replace it.
+      const card=tile.querySelector('.bookcard'),label=nowReadingLabel(book,null);
+      let slot=card.querySelector('.prog');
+      if(!label){slot?.remove();return;}
+      if(!slot){slot=el('div','prog');card.append(slot);}
+      slot.textContent=label;
+    }};
 }
 function renderHome(){
   renderLibraryStorageNotice();
