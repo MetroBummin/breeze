@@ -58,6 +58,9 @@ try{
         assert.equal(calls,1,'cached metadata avoids another AI request');
         await page.locator('.ap-start').click();
         await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
+        // The shell appears before asynchronous anchor restoration. A first-read
+        // marker is committed only once that restoration has succeeded.
+        await page.waitForFunction(()=>curBook?.id==='preview-one'&&!readerPositionPending());
         assert((await page.evaluate(()=>positions['preview-one']?.t))>0);
         await page.evaluate(()=>{renderHome();show('home');});
         await page.locator('#home-casual-rail .casual').filter({hasText:'First article'}).first().click();
