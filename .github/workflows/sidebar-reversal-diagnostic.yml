@@ -1,0 +1,27 @@
+name: Sidebar reversal diagnosis
+on:
+  push:
+    branches: [codex/sidebar-reversal-diagnostic]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps webkit
+      - run: BREEZE_QA_ENGINE=webkit node tests/diagnose-sidebar-reversal.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sidebar-reversal-diagnostic
+          path: /tmp/breeze-pdf-sidebar-motion/
+          retention-days: 7
