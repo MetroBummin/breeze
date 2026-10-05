@@ -33,7 +33,7 @@
 /* tools/stamp-version.mjs 가 찍습니다 — 손으로 고치지 마세요.
    값은 "판 번호를 찍은 index.html 의 해시" 입니다. index.html 은 모든 파일의
    해시를 담고 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다. */
-const VERSION = 'fad61b89';
+const VERSION = 'b52a8d67';
 const CACHE = `breeze-${VERSION}`;
 
 /* 담을 목록은 index.html 을 읽어서 그때그때 만듭니다. 손으로 적어 두면 파일을
@@ -156,6 +156,14 @@ async function cacheFirst(request){
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
   if(cached) return cached;
+  // The uncontrolled first page can cache immutable libraries before this worker
+  // ever sees a fetch from it. Shell HTML/versioned app scripts never use this.
+  const url=new URL(request.url);
+  if(!url.search && KEEP_ACROSS_VERSIONS.test(url.pathname)){
+    const runtime=await caches.open('breeze-runtime-libs-v1');
+    const response=await runtime.match(request);
+    if(response)return response;
+  }
   const response = await verifiedShellResponse(request.url);
   /* `basic` 은 우리 서버에서 온, 내용을 읽을 수 있는 응답입니다. 실패한 응답을
      담으면 그 실패가 다음 판까지 굳습니다. */

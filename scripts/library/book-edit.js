@@ -72,13 +72,11 @@ async function pickCoverFile(input){
   if(!/^image\//.test(file.type)){ toast('그림 파일을 골라주세요'); return; }
   const book = editTarget;
   const key = book.id + '|cover';
-  await imgPut(key, file);
+  const image={imageBytes:await file.arrayBuffer(),imageType:file.type};
   if(typeof waitForArticleBookRepair==='function') await waitForArticleBookRepair(book);
   if(editTarget !== book) return;
-  book.cover = key;
-  book.coverSourcePage = '';
-  book.coverUpdatedAt = Date.now();
-  await bookPut(book);
+  const committed=await commitBookEdit(book,{cover:key,coverSourcePage:''},image);
+  Object.assign(book,committed);
   queueSync();
   if(editTarget === book){
     renderCoverChoices(book);
@@ -96,24 +94,18 @@ async function saveEditSheet(){
   if(editTarget !== book) return;
   const typed = document.getElementById('ed-title').value.trim();
   const picked = document.getElementById('ed-covers').dataset.pick || '';
-  let changed = false;
-
-  if(typed && typed !== book.title){
-    book.title = typed;
-    book.renamedAt = Date.now();        // 어느 쪽 이름이 최신인지 판단하는 기준
-    changed = true;
-  }
+  const patch={};
+  if(typed && typed !== book.title) patch.title=typed;
   if(picked !== (book.cover || '')){
-    book.cover = picked || null;
-    book.coverUpdatedAt = Date.now();
-    book.coverSourcePage = '';
-    changed = true;
+    patch.cover=picked || null;
+    patch.coverSourcePage='';
   }
   const folder=document.getElementById('ed-folder');
   if(folder&&typeof assignLibraryFolder==='function'&&!assignLibraryFolder(book.id,Reflect.get(folder,'value')))return;
-  if(!changed){ closeEditSheet(); renderAllBookViews(); return; }
+  if(!Object.keys(patch).length){ closeEditSheet(); renderAllBookViews(); return; }
 
-  await bookPut(book);
+  const committed=await commitBookEdit(book,patch);
+  Object.assign(book,committed);
   if(editTarget === book) closeEditSheet();
   renderAllBookViews();
   toast('바꿨어요');

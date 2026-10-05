@@ -76,14 +76,14 @@ try{
       assert.ok(await page.evaluate(id=>shareQA.acks.includes(id),again));
       assert.deepEqual(await page.evaluate(()=>books.map(book=>book.id)),initial,'Re-sharing identical bytes duplicated the book');
       // Original storage failure cannot acknowledge. On a later foreground it reconnects.
-      await page.evaluate(()=>{shareQA.storeOriginal=storeLocalOriginal;storeLocalOriginal=async()=>{throw Error('Controlled original failure');};});
+      await page.evaluate(()=>{shareQA.put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){const request=shareQA.put.apply(this,args);if(this.name==='originals')this.transaction.abort();return request;};});
       const retained=await deliver(fixtures[0]);assert.equal(await page.evaluate(id=>shareQA.acks.includes(id),retained),false);
-      await page.evaluate(()=>{storeLocalOriginal=shareQA.storeOriginal;document.dispatchEvent(new Event('visibilitychange'));});
+      await page.evaluate(()=>{IDBObjectStore.prototype.put=shareQA.put;document.dispatchEvent(new Event('visibilitychange'));});
       await page.evaluate(()=>importPendingSharedFiles());assert.ok(await page.evaluate(id=>shareQA.acks.includes(id),retained));
       // A failed book write also retains the source; retry uses the production importer.
-      await page.evaluate(()=>{shareQA.bookPut=bookPut;bookPut=async()=>{throw Error('Controlled book failure');};});
+      await page.evaluate(()=>{shareQA.put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){const request=shareQA.put.apply(this,args);if(this.name==='books')this.transaction.abort();return request;};});
       const failedWrite=await deliver(fixtures[1]);assert.equal(await page.evaluate(id=>shareQA.acks.includes(id),failedWrite),false);
-      await page.evaluate(()=>{bookPut=shareQA.bookPut;document.dispatchEvent(new Event('visibilitychange'));});
+      await page.evaluate(()=>{IDBObjectStore.prototype.put=shareQA.put;document.dispatchEvent(new Event('visibilitychange'));});
       await page.evaluate(()=>importPendingSharedFiles());assert.ok(await page.evaluate(id=>shareQA.acks.includes(id),failedWrite));
       const corrupt=await deliver({name:'Broken.pdf',bytes:Buffer.from('not a PDF')});
       assert.equal(await page.evaluate(id=>shareQA.acks.includes(id),corrupt),false);

@@ -50,15 +50,16 @@ function world(values={}){
   new Script(storage+'\n'+importer).runInContext(context);return context;
 }
 function importWorld(localBooks,records){
-  const fixture=database(records),events={saved:[],applied:[],originalWrites:[],messages:[],rendered:0};
+  const fixture=database(records),events={saved:[],applied:[],messages:[],rendered:0};
   const positions=Object.fromEntries(localBooks.map(book=>[book.id,{p:.6,pi:4,t:123}]));
   const context=world({books:localBooks,positions,vaultRemoteItems:[],idb:async()=>fixture.db,
     prepareImportedFile:async()=>({...prepared}),
-    applyPreparedBook:async book=>events.applied.push(book),
-    vaultFileIdentity:async()=>null,imgRename:async()=>{},imgPurge:async()=>{},
-    remapImportedImages:paras=>paras,
-    storeLocalOriginal:async id=>{events.originalWrites.push(id);return {kind:'epub',hash,storedAt:1};},
-    bookPut:async book=>events.saved.push(book),
+    withFileImport:async(file,work)=>work(hash),
+    applyPreparedBook:async book=>{
+      if(localBooks.includes(book))events.applied.push(book);
+      else events.saved.push(book);
+    },
+    vaultFileIdentity:async()=>null,imgPurge:async()=>{},
     currentImportFolder:()=>'',assignImportedFolder:()=>{},
     renderAllBookViews:()=>events.rendered++,toast:message=>events.messages.push(message),
     readerNotices:{task:()=>({progress:message=>events.messages.push(message),finish:message=>events.messages.push(message)})},
@@ -149,7 +150,7 @@ test('transaction abort after a matching read rejects instead of accepting the m
 test('failed duplicate lookup stops import before either original or book is saved',async()=>{
   const fixture=importWorld([{id:'existing'}],new Map());
   const job=fixture.context.importFile(file);await tick();fixture.fail();await job;
-  assert.equal(fixture.events.saved.length,0);assert.equal(fixture.events.originalWrites.length,0);
+  assert.equal(fixture.events.saved.length,0);
   assert.equal(fixture.events.applied.length,0);assert.equal(fixture.events.rendered,0);
   assert.equal(fixture.context.books.length,1);assert.match(fixture.events.messages.at(-1),/Original storage failed/);
 });

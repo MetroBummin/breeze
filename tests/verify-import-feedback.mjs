@@ -130,10 +130,15 @@ function importEnvironment({kind='pdf',parseFailure=false,saveFailure=false,orig
       for(const page of [1,20,40,80])options.onProgress(`${page}/80쪽`);
       if(parseFailure)throw Error('Parse failure');return prepared;
     },
-    originalBookForHash:async()=>null,applyPreparedBook:async()=>{},
-    vaultFileIdentity:async()=>null,imgRename:async()=>{},imgPurge:async()=>{},remapImportedImages:p=>p,
-    storeLocalOriginal:async()=>{if(originalFailure)throw Error('Original failure');return kind==='txt'?null:{storedAt:1};},
-    bookPut:async book=>{if(delaySave)await delaySave;if(saveFailure)throw Error('Save failure');events.persisted.push(book);},
+    withFileImport:async(file,work)=>work(prepared.hash),
+    originalBookForHash:async()=>null,
+    applyPreparedBook:async book=>{
+      if(delaySave)await delaySave;
+      if(originalFailure)throw Error('Original failure');
+      if(saveFailure)throw Error('Save failure');
+      book.original=kind==='txt'?null:{storedAt:1};events.persisted.push(book);
+    },
+    vaultFileIdentity:async()=>null,imgPurge:async()=>{},
     currentImportFolder:()=>'',assignImportedFolder:()=>{},
     renderAllBookViews:()=>events.refreshes++,
     renderHome:()=>assert.fail('Import repainted hidden Home instead of current shelf'),
@@ -152,13 +157,14 @@ for(const failure of ['parseFailure','saveFailure'])test(`${failure} does not le
   assert.equal(e.context.books.length,0);assert.equal(e.events.refreshes,0);assert.match(e.text(),/파일을 읽지 못했어요/);
   const end=e.history.length;e.advance(15000);assert.ok(!e.history.slice(end).some(row=>/쪽|추가 완료/.test(row.text)));
 });
-test('partial original-storage warning is shown only after the book is actually saved',async()=>{
+test('original-storage failure publishes no book or success result',async()=>{
   let release;const pending=new Promise(done=>release=done);
   const e=importEnvironment({originalFailure:true,delaySave:pending});
   const job=e.context.importFile(e.file);await new Promise(done=>setImmediate(done));
-  assert.equal(e.context.books.length,0);assert.ok(!e.history.some(row=>row.text.includes('책은 추가했지만')));
-  release();await job;assert.equal(e.events.persisted.length,1);
-  assert.match(e.text(),/책은 추가했지만 원본 파일/);assert.ok(!e.history.some(row=>row.text.includes('추가 완료!')));
+  assert.equal(e.context.books.length,0);
+  release();await job;assert.equal(e.events.persisted.length,0);
+  assert.equal(e.context.books.length,0);assert.equal(e.events.refreshes,0);
+  assert.match(e.text(),/파일을 읽지 못했어요/);assert.ok(!e.history.some(row=>row.text.includes('추가 완료!')));
 });
 test('duplicate TXT replaces progress but does not add another record',async()=>{
   const e=importEnvironment({kind:'txt',existing:{id:'file-test',title:'Saved'}});
