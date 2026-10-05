@@ -57,7 +57,8 @@ One local metadata cache retains only public article/photo URLs and timestamps:
 at most 100 entries and 64,000 UTF-8 bytes, 24-hour photo expiry and 30-minute
 negative expiry. Supplied feed photos retain priority; custom sources, social
 owner resolution, credentials, local names and IP literals cannot trigger this
-automatic work. Warm refresh/relaunch reuses matching photo URLs without a new
+automatic work. The optional shared catalog retains its existing single-response
+metadata contract and does not initiate client cover lookups. Warm refresh/relaunch reuses matching photo URLs without a new
 cover lookup. Actual article body preparation and Read persistence still belong
 to selected intent. After selection, the parsed OG/body photo also updates that
 same current discovery entry/card without another request. See the follow-up

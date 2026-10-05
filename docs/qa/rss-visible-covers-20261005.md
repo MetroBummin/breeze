@@ -19,7 +19,9 @@ Positive photo metadata expires after 24 hours; empty metadata expires after
 bytes. IP literals, local hosts, credentials, sensitive query parameters and
 signed AWS/Google credential URLs are rejected. This is a separate cover-only
 cache; supplied feed data, saved books and personal reading state keep their
-existing owners. Default shared catalog/quality activation is unchanged.
+existing owners. Default shared catalog/quality activation is unchanged. The
+optional shared catalog retains its single metadata response without client
+cover lookups; its current-only Chromium browser contract also passes.
 
 Supplied photos retain priority. A supplied photo that fails decoding keeps
 existing artwork; this repair does not replace every supplied image failure
@@ -68,7 +70,7 @@ response prefix, then cancels the rest.
 
 The fixture generates approximately 2.1 MB of upstream HTML per lookup. The
 final Chromium run's maximum retained parsing prefix was 131,072 bytes, while
-an actual delivered reader chunk caused total `readBytes` to reach 167,936 bytes.
+an actual delivered reader chunk caused total `readBytes` to reach 466,944 bytes.
 Local server writer bytes are recorded separately and can be larger again.
 Thus retained parsing is bounded; delivered chunks, upstream reads and billed
 egress are not bounded by 128 KiB. The production relay can still incur its

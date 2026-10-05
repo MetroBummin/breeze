@@ -37,6 +37,9 @@ test('only a fixed public feed missing its own photo qualifies; warm metadata hy
   assert.equal(context.rssCoverEligible(entry),true);
   for(const extra of [{photo},{kind:'reddit'},{readUrl:url},{feedSourceUrl:'https://custom.test/feed'},{url:'http://10.0.0.1/x'}])
     assert.equal(context.rssCoverEligible({...entry,...extra}),false);
+  context.window.BREEZE_CONFIG={RSS_CATALOG:true};
+  assert.equal(context.rssCoverEligible(entry),false,'Optional shared catalog keeps its existing metadata-only response contract');
+  context.window.BREEZE_CONFIG={RSS_CATALOG:false};
   context.rssCoverStore(url,photo);assert.equal(context.rssCoverHydrate(entry),entry);
   assert.equal(entry.photo,photo);assert.equal(entry.coverFallback,false);
   const supplied={...entry,photo:'https://images.test/supplied.jpg'};

@@ -113,7 +113,7 @@ function rssCoverStore(url,photo){
 }
 function rssCoverEligible(entry){
   return !entry.photo&&!entry.kind&&!entry.readUrl&&RSS_FEEDS.some(feed=>feed.url===entry.feedSourceUrl)
-    &&!!rssCoverPublicUrl(entry.url);
+    &&!!rssCoverPublicUrl(entry.url)&&(typeof window==='undefined'||!rssCatalogEnabled());
 }
 function rssCoverHydrate(entry){
   if(rssCoverEligible(entry)){

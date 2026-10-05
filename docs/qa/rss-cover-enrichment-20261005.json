@@ -950,7 +950,7 @@
       "name": "visible-cover-fix",
       "fixture": "og-photo",
       "sha": "working-tree",
-      "sourceSha256": "e457d7a23be2eca2c2d41f74fea9e491d3c7a5e495944ad6bf3c13dc65c69c1c",
+      "sourceSha256": "06456fd9f60db5e7fcea1f62aac0b825ce568a7ad0baf1a1dd0bb8b6657f4b02",
       "articleSourceSha256": "dbf953fb24ccdcee07c8eaf89ac1a570c18be253263f33eb164b1eec66fc66ca",
       "beforeSelection": {
         "entryPhoto": "https://images.fixture/article-photo.jpg",
@@ -1089,7 +1089,7 @@
       "name": "visible-cover-fix",
       "fixture": "body-only-photo",
       "sha": "working-tree",
-      "sourceSha256": "e457d7a23be2eca2c2d41f74fea9e491d3c7a5e495944ad6bf3c13dc65c69c1c",
+      "sourceSha256": "06456fd9f60db5e7fcea1f62aac0b825ce568a7ad0baf1a1dd0bb8b6657f4b02",
       "articleSourceSha256": "dbf953fb24ccdcee07c8eaf89ac1a570c18be253263f33eb164b1eec66fc66ca",
       "beforeSelection": {
         "entryPhoto": "https://images.fixture/article-photo.jpg",
