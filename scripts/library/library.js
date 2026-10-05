@@ -71,6 +71,7 @@ async function deleteBook(b){
   if(curBook&&curBook.id===b.id)show('home');
   books=books.filter(item=>item.id!==b.id);
   delete positions[b.id];save(LS_POS,positions);
+  delete localReadTimes[b.id];save(LOCAL_READ_KEY,localReadTimes);
   hideBookLocally(remoteId);hideBookLocally(b.id);queueSync();
   renderAllBookViews();toast('이 기기에서 지웠어요');return true;
 }
@@ -126,7 +127,7 @@ function rowLooksCasual(meta){
    읽던 책을 늘 첫 칸에서 찾을 수 있으면 정렬 단추가 필요 없습니다. */
 function byRecentlyRead(list){
   return list.slice().sort((a,b) =>
-    (posOf(b.id).t||0)-(posOf(a.id).t||0) || (b.addedAt||0)-(a.addedAt||0));
+    localReadAt(b.id)-localReadAt(a.id) || (b.addedAt||0)-(a.addedAt||0));
 }
 function casualBooks(){ return byRecentlyRead(books.filter(isCasual)); }
 function longformBooks(){ return byRecentlyRead(books.filter(book => !isCasual(book))); }
@@ -153,9 +154,9 @@ const readMinutes = book => {
 /* 두 줄이 각자 자기 줄에서 마지막으로 읽던 것을 기억합니다. 지하철에서 기사를
    한 편 봤다고 해서 읽던 원서 표시가 사라지면 안 되니까요. */
 function nowReadingIn(list){
-  const opened = list.filter(book => posOf(book.id).t);
+  const opened = list.filter(book => localReadAt(book.id));
   if(!opened.length) return null;
-  return opened.sort((a,b) => posOf(b.id).t - posOf(a.id).t)[0].id;
+  return byRecentlyRead(opened)[0].id;
 }
 /* 테두리와 진행도 글귀 하나로 표시합니다. 카드 위에 배지를 얹으면 지은이나
    출처 줄을 가려 버립니다. */
@@ -475,7 +476,7 @@ function renderHome(){
   reconcileHomeCards(shelf,specs);
   const light=document.getElementById('home-casual-rail');
   const entries=[
-    ...casualBooks().map(book=>({kind:'book',value:book,readAt:posOf(book.id).t||0,addedAt:book.addedAt||0})),
+    ...casualBooks().map(book=>({kind:'book',value:book,readAt:localReadAt(book.id),addedAt:book.addedAt||0})),
     ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
   ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
   const lightSpecs=entries.map(entry=>entry.kind==='book'
@@ -923,6 +924,19 @@ async function importFile(file, extra, options={}){
 
 /* Opening a book is local navigation, not a newer cloud progress position. */
 const HOME_RESUME_KEY='breeze.home-resume.v1';
+const LOCAL_READ_KEY='breeze.local-read.v1';
+const localReadTimes=load(LOCAL_READ_KEY,{});
+function localReadAt(id){
+  return Number(localReadTimes[id])||Number(posOf(id).t)||0;
+}
+function rememberLocalReading(book){
+  if(book.transient)return;
+  // Successful restoration owns recency. Progress timestamps own locations.
+  const previous=Math.max(0,...books.map(item=>localReadAt(item.id)));
+  localReadTimes[book.id]=Math.max(Date.now(),previous+1);
+  save(LOCAL_READ_KEY,localReadTimes);
+  save(HOME_RESUME_KEY,book.id);
+}
 function homeResumeBook(){
   const localId=load(HOME_RESUME_KEY,null);
   const local=books.find(book=>book.id===localId);

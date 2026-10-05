@@ -215,6 +215,28 @@ use that same shared material. Lookup surfaces keep their existing tokens.
 Opaque fallback remains available without backdrop filtering.
 Sidebar entry and exit animate only translation and opacity at final size.
 
+### Page-sidebar timing alignment (2026-10-05, local follow-up)
+
+Both directions retain 220ms and 12px translation. Entry now uses the approved
+exit curve, cubic-bezier(.45,0,.8,.35), instead of cubic-bezier(.2,.75,.25,1).
+Chromium measured the former entry crossing half of its travel in 28–48ms after
+the button click, versus 180–198ms for the close button. Equal nominal duration
+did not produce equal progress. The surface owns opacity in both directions;
+the inner navigator no longer adds a separate 220ms ease fade to entry.
+Exit timing, cleanup, cached previews and reduced-motion behavior are unchanged.
+Reversals sample the currently drawn translation and opacity once when the
+existing sidebar owner changes direction, avoiding a jump to a fixed endpoint.
+There is no per-frame layout work, new timer or motion queue.
+The shared PDF/EPUB surface uses this same motion. Edge input still opens on
+release through the existing toggle; there is no drag-following sheet or swipe
+close route. Ink ownership and zoomed edge-open exclusions remain.
+
+`tests/verify-pdf-sidebar-motion-browser.mjs` records real frame samples and seeks
+rendered trajectories, checks interrupted/repeated toggles, resize, ownership,
+zoom exclusions, viewport/theme bounds and reduced motion. Browser and synthetic
+contact evidence does not establish native device timing. See
+`docs/qa/pdf-sidebar-motion-2026-10-05.md` for measurements and availability.
+
 Reader pills use absolute left/right insets and auto inline margins to center
 their animated width in layout. No width-relative horizontal transform is used:
 on-device build 205 footage showed transient overshoot despite synchronized
@@ -258,6 +280,25 @@ timestamp; scrolling still owns progress updates. A deleted/missing local target
 falls back to the existing saved-progress ordering, and transient onboarding is
 never remembered. Titles and actions resolve the same target.
 
+## Local recently read shelf order (2026-10-05)
+
+Successful Reader location restoration records device-local recency per book in
+`breeze.local-read.v1`, together with the existing Home resume identity. Reopening
+an unchanged location moves that book to the front of Home and its book shelf;
+progress `t` remains owned by location changes. Preview and cancelled preparation
+and failed source presentation do not record a read. A first-open progress marker
+is also deferred until the document is ready. Transient onboarding is excluded.
+Existing books without local recency fall back to their saved progress timestamp,
+then addition date.
+Home, shelf and current-book indicators share that comparator. Deletion removes
+the local recency record. Memory's independent sort selection is unchanged.
+
+An unfinished book opening carries its once-successful read commitment on the
+existing position restoration owner. A mode switch inherits that commitment;
+only its successful current owner can record the read. The superseded original
+open promise cannot omit a successful text landing or commit after cancellation.
+The plain text open frame also checks that it still owns restoration.
+
 Home/Reader snapshots use intrinsic-size, centered capsule contents clipped by
 the moving rounded surface, so the browser does not stretch title text between
 different pill widths. Both directions use cubic-bezier(.32,.72,0,1), keeping the
@@ -300,3 +341,28 @@ Browser coverage samples both directions, themes and viewport sizes, checks the
 animated filter and settled controls, and compares painted capsule corners with
 the underlying scene. Linux WebKit cannot establish physical iPhone rendering;
 real-device confirmation remains separate from these browser checks.
+
+## Sidebar dismissal on body manipulation
+
+The PDF/EPUB sidebar is a nonmodal navigator. Its former full-screen transparent
+button prevented body scroll and PDF pinch from reaching the existing Reader
+owners. Remove that button rather than forward its contacts through another
+gesture listener. Central Reader movement and the original pinch owner dismiss
+through the existing sidebar close path. The existing body wheel/key listeners
+handle those explicit scroll intents. A raw scroll event is insufficient: EPUB
+reflow and viewport clamping can move scrollTop without user input and must keep
+navigation open. Internal sidebar scroll
+and UI controls keep their own contacts; programmatic restoration does not
+dismiss. An outside stationary body tap preserves the previous dismiss-only
+policy, with its tail click consumed by the same central gesture owner. A fresh
+subsequent body tap works normally. A cancelled stationary body contact keeps
+the sidebar; a pan or pinch already committed cannot restore it.
+
+The pending Reader gesture holds the sidebar generation it began beside. A later
+sidebar opening cannot be dismissed by that earlier contact, even when it reuses
+the cached preview object. There is no new
+listener, gesture timer, persistent state or server request. Opening/closing
+reversal retains the current presentation, as described above. Browser checks
+cover PDF/EPUB body versus internal movement, programmatic restoration, trusted
+wheel/tap input, pinch cancellation, reopening and zoomed edge exclusions;
+these do not establish physical iOS/Pencil behavior.

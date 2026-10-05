@@ -51,6 +51,19 @@ Static contracts cover overlay-only DOM/CSS, one lookup lifetime, stale-response
 
 English definitions come only from FreeDictionaryAPI.com. Metadata has its own loading state and word-level request/cache, independent of contextual AI. Saved cards with missing definitions can refill. Successful responses cache for 30 days, explicit 404 for one day; transport failures are retryable and never cached as missing. Each network attempt times out after 3.5 seconds. At most two lexical forms are tried, and expressions never fall back to a component word. Stale responses may populate cache but cannot mutate a replaced/deleted card or reopen a lookup.
 
+Offline detail openings can still use unexpired local English metadata. A cache
+miss sends no request and records no provider error or retry cooldown, so the
+next online opening can refill normally. Meaning deletion owns the single
+visible Wordbook render; delete buttons and empty-edit handlers do not render it
+again. Fixture Chromium measurements found duplicate full-list rendering in
+both online and offline deletion, rather than an offline-only delay.
+Deletion passes its known changed/deleted record keys to local persistence and
+marks sync dirty directly. It does not rediscover a known mutation by serializing
+unrelated vocabulary on the interaction frame.
+Wordbook expansion prepares editable cells before toggling the group's layout
+class. Chromium tracing found the reverse order forced a full-list style flush
+at the contenteditable setter. This changes no editing or selection behavior.
+
 Frequent whole-word deletion and pronunciation share the title action pill. Meaning uses an unfilled neutral surface, with small subtly colored selected stars. The visible body-highlight toggle preserves saved vocabulary and controls the lexical root across its meanings. The card scrolls internally with its scrollbar hidden.
 
 The heading scrolls with the card. Word management disclosure and manual meaning input have been removed. The body-highlight switch has a 44px touch area. Failed English lookup uses an accessible retry icon. English entries include visible Wiktionary/provider/license attribution. Provider cache v2 bypasses stale negative cache and retry cooldown from the previous endpoint.

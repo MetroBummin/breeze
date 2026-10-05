@@ -150,12 +150,12 @@ for(const ending of ['during','release','cancel','fresh-lookup'])test(`deferred 
  const f=fixture(),c=f.context,page={dataset:{page:'1'},isConnected:true};
  const session={kind:'pdf',bookId:'A',hash:'hash-A',loadToken:1,pages:[page],wordBoxes:new Map()};
  const box={scrollTop:0,scrollLeft:0,clientWidth:800,clientHeight:900,scrollHeight:1200,getBoundingClientRect:()=>({left:0,top:0})};
- const stage={classList:{add(){},remove(){}}};let anchored=true,opened=0,closed=0;
+ const stage={classList:{add(){},remove(){}}};let anchored=true,opened=0,closed=0,navigationClosed=0;
  Object.assign(c,{originalSession:session,readerModeChangeToken:0,originalZoomBaseHeight:1200,
   readerScroller:()=>box,originalZoomLayer:()=>({style:{}}),originalZoomStage:()=>stage,
   originalZoom:()=>1,originalZoomOrigin:()=>({x:0,y:0}),layoutOriginalZoom(){},cancelGesture(){},
   setOriginalZoom(){},resharpenOriginalPages(){},saveReadingState(){},applyOriginalZoomTransform(){},
-  wordSurfaceAnchored:()=>anchored,closePanel(){anchored=false;closed++;},
+  wordSurfaceAnchored:()=>anchored,closePanel(){anchored=false;closed++;},closePdfNavigation(){navigationClosed++;},
   countDispatch(){},gestureLog(){},pdfPageAtPoint:()=>page,pdfWordAtPoint:()=>({word:'minimum'}),
   renderOriginalPdfPage:()=>f.gate.promise,openPdfWord(){opened++;anchored=true;}});
  const pinch=readFileSync(new URL('../scripts/reader/pdf-pinch.js',import.meta.url),'utf8');
@@ -165,6 +165,7 @@ for(const ending of ['during','release','cancel','fresh-lookup'])test(`deferred 
  const pending=c.openPdfWordAt(10,10);
  c.dispatchWord({surface:{openWordAt:()=>pending}},10,10);
  c.beginOriginalPinch({x:200,y:200},100,[1,2]);
+ assert.equal(navigationClosed,1,'the existing pinch owner dismisses navigation once');
  if(ending==='release')c.finishOriginalPinch();
  if(ending==='cancel'||ending==='fresh-lookup')c.cancelOriginalPinch();
  if(ending==='fresh-lookup'){

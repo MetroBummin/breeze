@@ -128,6 +128,15 @@ function updatePdfNavigationControls(measuredAnchor){
     const more=button.parentElement.querySelector('.pdf-thumbnail-more');if(more)more.hidden=current!=='true'||!actions.hidden;
   }
 }
+// A reversal starts at the currently drawn frame, not the other endpoint.
+// This belongs to the sidebar presentation; contact/gesture ownership stays elsewhere.
+function setPdfNavigationMotionStart(opening){
+  const control=document.getElementById('pdf-page-control');
+  const fromCurrent=!opening||control.classList.contains('pdf-navigation-closing');
+  const style=fromCurrent?getComputedStyle(control):null;
+  control.style.setProperty('--pdf-sidebar-start-opacity',style?style.opacity:'0');
+  control.style.setProperty('--pdf-sidebar-start-x',style?`${new DOMMatrixReadOnly(style.transform).m41}px`:'-12px');
+}
 function closePdfNavigation({release=false}={}){
   if(!pdfNavigation){
     if(release){
@@ -145,8 +154,8 @@ function closePdfNavigation({release=false}={}){
   nav.generation=pdfNavigationGeneration;nav.contact=null;
   for(const cell of strip.querySelectorAll('.pdf-thumbnail[data-rendered]'))if(!cell.querySelector('canvas'))delete cell.dataset.rendered;
   if(release)nav.session.navigationPreview=null;
+  setPdfNavigationMotionStart(false);
   control.classList.add('pdf-navigation-closing');panel.inert=true;
-  document.getElementById('pdf-navigation-dismiss').hidden=true;
   document.getElementById('pdf-page-button')?.setAttribute('aria-expanded','false');
   pdfNavigation=null;pinReaderChrome(false,'page-navigation');
   clearTimeout(pdfNavigationCloseTimer);
@@ -160,6 +169,7 @@ function closePdfNavigation({release=false}={}){
 function togglePdfNavigation(){
   if(pdfNavigation){closePdfNavigation();return;}
   if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||readerPositionPending()||sentenceWaitingActive()||BreezePdfInk.busy()||originalPinchBusy())return;
+  setPdfNavigationMotionStart(true);
   if(pdfNavigationCloseTimer){clearTimeout(pdfNavigationCloseTimer);pdfNavigationCloseTimer=null;}
   document.getElementById('pdf-page-control').classList.remove('pdf-navigation-closing');
   closePanel();closeSentence();closeAa();expandReaderChrome();
@@ -168,9 +178,9 @@ function togglePdfNavigation(){
   pdfNavigation=originalSession.navigationPreview||{session:originalSession,strip,bookmarksOnly:false,pages:[]};
   pdfNavigation.generation=++pdfNavigationGeneration;
   originalSession.navigationPreview=pdfNavigation;
-  panel.hidden=false;panel.inert=false;document.getElementById('pdf-navigation-dismiss').hidden=false;
+  panel.hidden=false;panel.inert=false;
   document.getElementById('pdf-page-button').setAttribute('aria-expanded','true');
-  // A transparent dismissal surface prevents a closing tap reaching the page.
+  // The existing Reader gesture owner handles outside taps without blocking pan.
   pinReaderChrome(true,'page-navigation');
   if(currentEpubNavigationSession())buildEpubNavigation();else buildPdfNavigation(true);
 }
@@ -584,7 +594,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelOrigi
 document.addEventListener('DOMContentLoaded',()=>{
   installPdfNavigationScrollbar();installEpubNavigationContact();
   document.addEventListener('click',event=>{
-    if(event.target instanceof Element&&event.target.closest('#aafab,#pdf-ink-tools,[data-ink-toggle]'))closePdfNavigation();
+    if(!event.defaultPrevented&&event.target instanceof Element
+        &&!event.target.closest('#pdf-page-control')&&!readerSurfaceFor(event))closePdfNavigation();
   },true);
   document.getElementById('pdf-bookmarks-only').onclick=()=>{if(pdfNavigation){pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;if(pdfNavigation.session.kind==='epub')buildEpubNavigation(true);else buildPdfNavigation(true);}};
   document.getElementById('pdf-thumbnail-strip').addEventListener('scroll',paintPdfThumbnails,{passive:true});

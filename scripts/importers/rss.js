@@ -1,7 +1,8 @@
 /* ================= Discover RSS =================
    RSS는 글을 보관하는 새 저장소가 아닙니다. 목록을 잠깐 보여 주고, 고른 한 편만
    기존 URL 반입기로 넘깁니다. 그래서 오프라인·사전·단어장 흐름은 기사 URL과
-   완전히 같고, 피드 자체나 카드 사진을 서버/IndexedDB에 쌓지 않습니다. */
+   완전히 같고, 카드 사진은 서버/IndexedDB에 쌓지 않습니다. 공개 기본 피드만
+   제한된 로컬 캐시를 사용하며, 사용자 지정 피드는 메모리에만 남습니다. */
 
 const RSS_FEEDS = [
   { name:'Dexerto · Entertainment', url:'https://www.dexerto.com/feed/category/entertainment/', category:'entertainment' },
@@ -32,14 +33,107 @@ const RSS_PER_FEED = 3;
 const RSS_SOURCE_LIMIT = 20;
 const RSS_CACHE_MS = 10 * 60 * 1000;
 const RSS_PHOTO_MS = 4000;
+const RSS_PUBLIC_CACHE_KEY='breeze.rss-public.v1';
+const RSS_PUBLIC_CACHE_BYTES=1000000;
+const RSS_PUBLIC_FEED_BYTES=64000;
+const RSS_PUBLIC_STALE_MS=86400000;
+const RSS_CATALOG_CACHE_KEY='breeze.rss-catalog.v1';
+const RSS_CATALOG_BYTES=200000;
+const RSS_CATALOG_CACHE_BYTES=250000;
+let rssCatalogCache=null;
+function rssCatalogEnabled(){return window.BREEZE_CONFIG?.RSS_CATALOG===true;}
 const rssListeners = new Set();
 let rssCands = [];
 let rssLoadedAt = 0;
 let rssLoading = null;
+let rssLoadedOffline=false;
+let rssPublicCache=null;
 const rssPublicFeedJobs = new Map();
 const rssPreparedArticles = new Map();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
+
+function rssOnline(){return typeof navigator==='undefined'||navigator.onLine!==false;}
+function rssCacheBytes(value){
+  const text=JSON.stringify(value);
+  // The fallback is a conservative UTF-8 upper bound, including surrogate pairs.
+  return typeof TextEncoder==='function'?new TextEncoder().encode(text).length:text.length*3;
+}
+function rssCacheEntry(entry){
+  if(!entry||typeof entry!=='object'||Array.isArray(entry))return null;
+  const fields=['source','category','title','url','author','publishedAt','kind','readUrl',
+    'feedUrl','feedSourceUrl','summary','photo','date'];
+  const value=Object.fromEntries(fields.map(key=>[key,typeof entry[key]==='string'?entry[key]:'']));
+  if(!value.title||value.title.length>1000||!normalizeArticleUrl(value.url)
+    ||[value.url,value.readUrl,value.photo,value.feedUrl,value.feedSourceUrl].some(url=>url.length>4096))return null;
+  for(const raw of [value.url,value.readUrl,value.photo,value.feedUrl,value.feedSourceUrl].filter(Boolean)){
+    try{const url=new URL(raw);if(!/^https?:$/.test(url.protocol)||url.username||url.password
+      ||[...url.searchParams.keys()].some(key=>/^(?:token|access_token|api_?key|auth|authorization|secret|password|session|jwt|signature|sig)$/i.test(key)))return null;}
+    catch{return null;}
+  }
+  value.author=value.author.slice(0,512);value.summary=value.summary.slice(0,280);
+  value.publishedAt=value.publishedAt.slice(0,100);value.date=value.date.slice(0,100);
+  value.source=value.source.slice(0,256);value.category=rssCategory(value.category);
+  value.kind=['x','reddit'].includes(value.kind)?value.kind:'';
+  return {...value,contentHtml:'',bodyProvided:false,discoveryFiltered:true};
+}
+function rssPublicCacheEntries(){
+  if(rssPublicCache)return rssPublicCache;
+  rssPublicCache={};
+  try{
+    const raw=localStorage.getItem(RSS_PUBLIC_CACHE_KEY);
+    if(!raw||raw.length>RSS_PUBLIC_CACHE_BYTES)return rssPublicCache;
+    const stored=JSON.parse(raw),now=Date.now();
+    if(rssCacheBytes(stored)>RSS_PUBLIC_CACHE_BYTES)return rssPublicCache;
+    for(const feed of RSS_FEEDS){
+      const record=stored?.[feed.url];
+      if(!record||!Number.isFinite(record.at)||record.at>now||now-record.at>RSS_PUBLIC_STALE_MS
+        ||!Array.isArray(record.entries)||record.entries.length>100)continue;
+      const entries=record.entries.map(rssCacheEntry);
+      if(entries.some(entry=>!entry)||rssCacheBytes({at:record.at,entries})>RSS_PUBLIC_FEED_BYTES)continue;
+      rssPublicCache[feed.url]={at:record.at,entries};
+    }
+  }catch{/* Cache corruption or denied storage cannot block public discovery. */}
+  return rssPublicCache;
+}
+function rssStorePublicFeed(feed,entries,at){
+  // Never persist custom sources, arbitrary article fetches or authenticated data.
+  if(!RSS_FEEDS.some(source=>source.url===feed.url))return;
+  const kept=[];
+  for(const entry of entries.slice(0,100)){
+    let value=rssCacheEntry(entry);if(!value)continue;
+    if(rssCacheBytes({at,entries:[...kept,value]})>RSS_PUBLIC_FEED_BYTES){
+      value={...value,contentHtml:'',bodyProvided:false};
+      if(rssCacheBytes({at,entries:[...kept,value]})>RSS_PUBLIC_FEED_BYTES)break;
+    }
+    kept.push(value);
+  }
+  const cache=rssPublicCacheEntries();cache[feed.url]={at,entries:kept};
+  const oldest=Object.keys(cache).sort((a,b)=>cache[a].at-cache[b].at);
+  while(rssCacheBytes(cache)>RSS_PUBLIC_CACHE_BYTES&&oldest.length)delete cache[oldest.shift()];
+  try{localStorage.setItem(RSS_PUBLIC_CACHE_KEY,JSON.stringify(cache));}
+  catch{/* Memory still reuses valid entries when persistent storage is unavailable. */}
+}
+async function rssFeedEntries(feed,force){
+  const cache=rssPublicCacheEntries(),record=cache[feed.url],now=Date.now();
+  const usable=record&&record.at<=now&&now-record.at<=RSS_PUBLIC_STALE_MS;
+  if(usable&&(!rssOnline()||!force&&now-record.at<RSS_CACHE_MS)){
+    // Clone: rotation and cover preparation must not mutate the stored cache.
+    return {at:record.at,entries:record.entries.map(entry=>({...entry,source:feed.name,
+      category:feed.category,feedSourceUrl:feed.url}))};
+  }
+  if(!rssOnline())throw new Error('feed_offline');
+  try{
+    const location={};const html=await fetchArticleHtml(feed.url,location);
+    const entries=parseRss(html,{...feed,sourceUrl:feed.url,url:location.url||feed.url}).map(rssCacheEntry).filter(Boolean);
+    rssStorePublicFeed(feed,entries,now);
+    return {at:now,entries};
+  }catch(error){
+    if(usable)return {at:record.at,entries:record.entries.map(entry=>({...entry,source:feed.name,
+      category:feed.category,feedSourceUrl:feed.url}))};
+    throw error;
+  }
+}
 
 function rssLocal(element){ return (element && (element.localName || element.nodeName) || '').toLowerCase(); }
 function rssChild(element, names){
@@ -183,7 +277,7 @@ function parseRss(xml, feed){
   });
 }
 // Medium topic feeds are discovery summaries. Resolve their public author or
-// publication feed before presenting a card, using the same content parser.
+// publication feed only after a card is selected, using the same content parser.
 function rssMediumSource(feed){
   try{return /(^|\.)medium\.com$/i.test(new URL(feed.url).hostname);}catch{return false;}
 }
@@ -201,6 +295,7 @@ function rssStoryKey(raw){
 }
 async function rssPublicArticle(entry){
   if(parseFeedArticle(entry))return entry;
+  if(!rssOnline())return null;
   const url=rssPublicFeedUrl(entry);if(!url)return null;
   let job=rssPublicFeedJobs.get(url);
   if(!job){
@@ -213,35 +308,93 @@ async function rssPublicArticle(entry){
   return {...entry,bodyProvided:true,contentHtml:match.contentHtml,
     author:match.author || entry.author,photo:entry.photo || match.photo};
 }
-async function rssPreparePublicArticles(entries,publish){
-  const ready=[];let cursor=0;
-  // A bounded pair of workers; publish usable bodies without waiting for others.
-  await Promise.all([0,1].map(async()=>{
-    while(cursor<entries.length && ready.length<RSS_PER_FEED){
-      const entry=entries[cursor++];
-      const resolved=await rssPublicArticle(entry);
-      if(resolved && ready.length<RSS_PER_FEED){ready.push(resolved);publish([...ready]);}
-    }
-  }));
-  return ready;
+async function rssResolveSelectedEntry(entry){
+  if(rssMediumSource({url:entry.feedSourceUrl||entry.feedUrl||entry.url}))return await rssPublicArticle(entry)||entry;
+  if(entry.kind&&!entry.readUrl&&!entry.contentHtml){
+    const feedUrl=entry.feedUrl||entry.feedSourceUrl;
+    if(!feedUrl)return entry;
+    const xml=await fetchArticleHtml(feedUrl);
+    const match=parseRss(xml,{url:feedUrl,name:entry.source,category:entry.category})
+      .find(item=>articleUrlKey(item.url)===articleUrlKey(entry.url));
+    return match?{...entry,contentHtml:match.contentHtml,bodyProvided:match.bodyProvided}:entry;
+  }
+  return entry;
 }
-async function rssPrepareCovers(entries,publish){
-  publish(entries);
-  const missing=entries.slice(0,RSS_PER_FEED).filter(entry=>!entry.photo && !entry.bodyProvided && !entry.kind);
-  await Promise.all(missing.map(async entry=>{
-    try{
-      const location={};
-      const html=await fetchArticleHtml(entry.url,location);
-      const parsed=parseArticleHtml(html,location.url||entry.url);
-      const cover=parsed?.cover || parsed?.blocks.find(block=>block.r==='img')?.t || '';
-      if(!cover || ARTICLE_IMG_BAD.test(cover))return;
-      entry.photo=cover;
-      if(rssPreparedArticles.size>=12)rssPreparedArticles.delete(rssPreparedArticles.keys().next().value);
-      rssPreparedArticles.set(articleUrlKey(entry.url),parsed);
-      publish(entries);
-    }catch(error){}
-  }));
-  return entries;
+function rssDiscoveryEntry(entry){return {...entry,coverFallback:!entry.photo};}
+function rssCatalogValidate(raw){
+  const now=Date.now();
+  if(raw?.version!==1||!Array.isArray(raw.feeds)||raw.feeds.length!==RSS_FEEDS.length||rssCacheBytes(raw)>RSS_CATALOG_CACHE_BYTES)throw Error('catalog_invalid');
+  const seen=new Set();
+  const feeds=raw.feeds.map(record=>{
+    if(!Number.isInteger(record.id)||!RSS_FEEDS[record.id]||seen.has(record.id)||!Number.isFinite(record.at)
+      ||record.at<0||record.at>now||!['ready','stale','disabled','unavailable'].includes(record.status)
+      ||!Array.isArray(record.entries)||record.entries.length>20)throw Error('catalog_invalid');
+    seen.add(record.id);
+    const feed=RSS_FEEDS[record.id],usable=['ready','stale'].includes(record.status)&&now-record.at<=RSS_PUBLIC_STALE_MS;
+    if(!['ready','stale'].includes(record.status)&&record.entries.length)throw Error('catalog_invalid');
+    const entries=record.entries.map(entry=>rssCacheEntry({...entry,source:feed.name,category:feed.category,
+      feedUrl:feed.url,feedSourceUrl:feed.url,date:rssDate(entry.publishedAt)}));
+    if(entries.some(entry=>!entry))throw Error('catalog_invalid');
+    return {id:record.id,at:record.at,status:usable?record.status:'unavailable',entries:usable?entries:[]};
+  });
+  return {version:1,feeds};
+}
+function rssCatalogStored(){
+  const now=Date.now();
+  if(rssCatalogCache&&rssCatalogCache.receivedAt<=now&&now-rssCatalogCache.receivedAt<=RSS_PUBLIC_STALE_MS)return rssCatalogCache;
+  rssCatalogCache=null;
+  try{
+    const raw=localStorage.getItem(RSS_CATALOG_CACHE_KEY);
+    if(!raw||raw.length>RSS_CATALOG_CACHE_BYTES+10000)return null;
+    const record=JSON.parse(raw);
+    if(!Number.isFinite(record.receivedAt)||record.receivedAt>now||now-record.receivedAt>RSS_PUBLIC_STALE_MS)return null;
+    rssCatalogCache={receivedAt:record.receivedAt,etag:typeof record.etag==='string'?record.etag.slice(0,2000):'',catalog:rssCatalogValidate(record.catalog)};
+    return rssCatalogCache;
+  }catch{return null;}
+}
+async function rssCatalogFetch(force){
+  const record=rssCatalogStored(),now=Date.now(),previous=record?rssCatalogValidate(record.catalog):null;
+  if(previous&&(!rssOnline()||!force&&now-record.receivedAt<RSS_CACHE_MS))return previous;
+  if(!rssOnline())throw Error('catalog_offline');
+  try{
+    const response=await fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/rss-catalog',{
+      credentials:'omit',headers:{apikey:SB_KEY,...(record?.etag?{'If-None-Match':record.etag}:{})},signal:AbortSignal.timeout(12000)});
+    let catalog;
+    if(response.status===304&&previous)catalog=previous;
+    else{
+      if(!response.ok)throw Error('catalog_unavailable');
+      // Bound the stream before JSON parsing, including missing Content-Length.
+      const reader=response.body.getReader(),chunks=[];let size=0;
+      try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;
+        if(size>RSS_CATALOG_BYTES)throw Error('catalog_too_big');chunks.push(value);}}
+      finally{await reader.cancel();}
+      const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+      catalog=rssCatalogValidate(JSON.parse(new TextDecoder().decode(bytes)));
+    }
+    rssCatalogCache={receivedAt:now,etag:(response.headers.get('etag')||record?.etag||'').slice(0,2000),catalog};
+    try{localStorage.setItem(RSS_CATALOG_CACHE_KEY,JSON.stringify(rssCatalogCache));}catch{/* Memory still works. */}
+    return catalog;
+  }catch(error){if(previous)return previous;throw error;}
+}
+async function loadRssCatalog(force){
+  if(rssLoading)return rssLoading;
+  const sources=rssSources();
+  const stored=rssCatalogStored();
+  const current=stored?rssCatalogValidate(stored.catalog):{feeds:[]};
+  rssCands=sources.map((_,index)=>index<RSS_FEEDS.length?(current.feeds.find(feed=>feed.id===index)?.entries||[]).map(rssDiscoveryEntry):[]);
+  // Catalog failure cannot initiate a per-client rebuild of the default feeds.
+  rssLoading=(async()=>{
+    let catalog;try{catalog=await rssCatalogFetch(force);}catch{catalog={feeds:[]};}
+    return Promise.all(sources.map(async(feed,index)=>{
+      let entries=[];
+      if(index<RSS_FEEDS.length)entries=catalog.feeds.find(record=>record.id===index)?.entries||[];
+      else try{entries=(await rssFeedEntries(feed,force)).entries;}catch{/* Custom feeds stay local. */}
+      const start=entries.length?(rssPage*RSS_PER_FEED)%entries.length:0;
+      rssCands[index]=entries.map((_,step)=>rssDiscoveryEntry(entries[(start+step)%entries.length]));
+      rssListeners.forEach(notify=>notify(rssCands));return rssCands[index];
+    }));
+  })().then(groups=>{rssCands=groups;rssLoadedAt=Date.now();return groups;}).finally(()=>{rssLoading=null;});
+  return rssLoading;
 }
 /* In active mode the server owns public RSS eligibility. No article text or local history is
    sent to it. Candidate uncertainty remains labeled and never becomes approval. */
@@ -274,28 +427,38 @@ async function rssQualityFeed(feed){
 /** @type {string} */
 const RSS_QUALITY_MODE = 'off'; // Activation requires a reviewed client release.
 async function loadRssLegacy(force){
+  if(rssCatalogEnabled())return loadRssCatalog(force);
   if(rssLoading) return rssLoading;
-  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS) return rssCands;
+  const now=Date.now(),cache=rssPublicCacheEntries();
+  const expiredPublic=RSS_FEEDS.some((feed,index)=>{
+    const record=cache[feed.url];
+    return rssCands[index]?.length&&record&&(record.at>now||now-record.at>RSS_PUBLIC_STALE_MS);
+  });
+  if(!force && rssCands.length && !expiredPublic && now>=rssLoadedAt && now-rssLoadedAt<RSS_CACHE_MS
+    &&(!rssLoadedOffline||!rssOnline())) return rssCands;
   rssPublicFeedJobs.clear();
   rssPreparedArticles.clear();
   const sources = rssSources();
   const previous = rssCands;
+  rssLoadedOffline=!rssOnline();
   rssCands = sources.map((_,i)=>previous[i] || []);
   rssLoading = Promise.all(sources.map(async (feed,index) => {
     try{
-    const location = {};
-    const html = await fetchArticleHtml(feed.url,location);
-    const pictured = parseRss(html, {...feed,sourceUrl:feed.url,url:location.url || feed.url});
+    const result=await rssFeedEntries(feed,force),entries=result.entries;
     /* 새 글이 아직 안 올라와도 ↻가 같은 세 장만 되풀이하면 단추가 무의미합니다.
        피드의 다음 묶음으로 넘어가고, 끝에서는 다시 처음으로 이어집니다. */
-    const start = pictured.length ? (rssPage * RSS_PER_FEED) % pictured.length : 0;
-    const ordered=pictured.map((_, step) => pictured[(start + step) % pictured.length]);
+    const start = entries.length ? (rssPage * RSS_PER_FEED) % entries.length : 0;
+    const ordered=entries.map((_, step) => entries[(start + step) % entries.length]);
     const publish=entries=>{rssCands[index]=entries;rssListeners.forEach(notify=>notify(rssCands));};
-    if(rssMediumSource(feed))publish(await rssPreparePublicArticles(ordered,publish));
-    else if(ordered.slice(0,RSS_PER_FEED).some(entry=>!entry.photo && !entry.bodyProvided && !entry.kind))await rssPrepareCovers(ordered,publish);
-    else publish(ordered);
+    publish(ordered.map(rssDiscoveryEntry));
     return rssCands[index];
-    }catch(error){ rssCands[index]=[]; rssListeners.forEach(notify=>notify(rssCands)); console.warn('Feed unavailable:',feed.url); return []; }
+    }catch(error){
+      // Public stale fallback belongs to rssFeedEntries, which checks its age.
+      // Reusing the previous group here would bypass that limit in an open page.
+      rssCands[index]=RSS_FEEDS.some(source=>source.url===feed.url)?[]:previous[index]||[];
+      rssListeners.forEach(notify=>notify(rssCands));console.warn('Feed unavailable:',feed.url);
+      return rssCands[index];
+    }
   })).then(groups => {
     rssCands = groups;
     rssLoadedAt = Date.now();
@@ -319,20 +482,8 @@ async function loadRss(force){
       const result=await rssQualityFeed(feed);pending=pending || result.pending;
       const start=result.entries.length ? (rssPage*RSS_PER_FEED)%result.entries.length : 0;
       const ordered=result.entries.map((_,step)=>result.entries[(start+step)%result.entries.length]);
-      // Resolve only approved Medium stories, skipping already saved entries first.
-      if(rssMediumSource(feed) && ordered.length){
-        // A successful inventory response is authoritative even if later body
-        // resolution fails. Retain prepared bodies only for the same approval.
-        const fresh=new Map(ordered.map(entry=>[articleUrlKey(entry.url),entry]));
-        const retained=rssCands[index].flatMap(old=>{
-          const current=fresh.get(articleUrlKey(old.url));
-          return current && current.quality.key===old.quality.key && !rssAlreadySaved(current)
-            ? [{...old,...current,bodyProvided:old.bodyProvided,contentHtml:old.contentHtml}] : [];
-        });
-        publish(retained);
-        const ready=await rssPreparePublicArticles(ordered.filter(entry=>!rssAlreadySaved(entry)),()=>{});
-        publish(ready.length ? ready : retained);
-      }else publish(ordered);
+      // Eligibility stays owned by Jev; article bodies wait for selection.
+      publish(ordered.filter(entry=>!rssAlreadySaved(entry)).map(entry=>rssDiscoveryEntry({...entry,contentHtml:'',bodyProvided:false})));
     }catch{pending=true;/* Retain last-good approved cards through service outages. */}
     return rssCands[index];
   })).then(groups=>{rssCands=groups;rssQualityPending=pending;rssLoadedAt=Date.now();return groups;}).finally(()=>{
@@ -348,7 +499,7 @@ function refreshRssPhotoEmpty(rail){
   const empty=document.getElementById(rail.id==='casual-rail'?'home-feed-empty':'casual-discover-empty');
   if(!empty)return;
   const hasPhoto=!!rail.querySelector('.rss-card:not([hidden])');
-  empty.textContent=rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':'사진이 있는 새 글을 찾지 못했어요.';
+  empty.textContent=rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':'새 글을 찾지 못했어요.';
   empty.hidden=hasPhoto || !!rssLoading;
 }
 
@@ -381,14 +532,14 @@ async function rssCardPhoto(card, entry){
     if(rail?.dataset.rssResetStart)rssAlignRailStart(rail);
     refreshRssPhotoEmpty(rail);
   }
-  else if(card.isConnected){
-    const rail=card.parentElement;
-    card.remove();
-    if(rail)refreshRssPhotoEmpty(rail);
-  }
+  else if(card.isConnected){rssCardReady(card);refreshRssPhotoEmpty(card.parentElement);}
   return ok;
 }
 
+function rssCardReady(card){
+  card.classList.remove('rss-pending');card.removeAttribute('aria-busy');
+  card.removeAttribute('aria-disabled');card.tabIndex=0;
+}
 function rssSkeletonMarkup(){
   return '<div class="rss-skeleton" aria-hidden="true"><span class="rss-skeleton-source"></span><span class="rss-skeleton-title"><i></i><i></i><i></i></span></div>';
 }
@@ -409,6 +560,7 @@ function rssCard(entry){
   card.querySelector('.lede').textContent = entry.title;
   card.querySelector('.ct').textContent = entry.title;
   card.querySelector('.cm').textContent = entry.date ? `${entry.date} · 탭해서 담기` : '탭해서 담기';
+  if(!entry.photo)rssCardReady(card);
   let pressedAt = 0;
   card.addEventListener('pointerdown', () => { pressedAt = performance.now(); });
   card.addEventListener('contextmenu', event => event.preventDefault());
@@ -423,7 +575,10 @@ async function importRssEntry(entry, card){
   card.classList.add('busy');
   const preparation=articlePreviewPrepare(entry,card);
   const options={preview:true,present:!preparation,deferSave:true};
+  const intent=++readerOpenIntent;
   try{
+    entry=await rssResolveSelectedEntry(entry);
+    if(intent!==readerOpenIntent)return;
     let book;
     if(entry.readUrl)book=await ingestArticle(entry.readUrl,{...entry,discoveredFromUrl:entry.url,...options});
     else if(entry.kind)book=await ingestFeedPost(entry,options);
@@ -496,8 +651,8 @@ async function ingestFeedPost(entry,options={}){
   }
   return book;
 }
-/* A discovery card is shown only when its cover can be displayed. The saved
-   article remains readable without a cover after the user opens it. */
+/* Use supplied photos or existing local artwork. A cover never requires an
+   article body fetch before selection. */
 const rssCardIdentities=new WeakMap();
 function rssCardIdentity(entry){
   // Click handlers own the entry they were created with. Keep decoded DOM only
@@ -510,8 +665,8 @@ async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
   const cards = [];
   for(const entry of entries){
     if(cards.length >= limit || renderId !== rssRenderIds.get(rail)) break;
-    if(rssAlreadySaved(entry) || rssObviousPromo(entry)) continue;
-    if(!entry.photo) continue;
+    if(rssAlreadySaved(entry) || !entry.discoveryFiltered&&rssObviousPromo(entry)) continue;
+    if(!entry.photo&&!entry.coverFallback) continue;
     const card = rssCard(entry);
     rssCardIdentities.set(card,rssCardIdentity(entry));
     // Covers load only after insertion; text never waits for an image.
@@ -536,7 +691,7 @@ function rssRecommendationHost(raw){
   try{return new URL(raw).hostname.replace(/^www\./,'');}catch{return '';}
 }
 /**
- * Rank one unread pictured entry per feed, preserving the feed's refresh order.
+ * Rank one unread discovery entry per feed, preserving the feed's refresh order.
  * Progress is an interest hint, not proof of comprehension or dwell time.
  * @param {Array<Array<any>>} groups
  * @param {{library?: Array<any>, positions?: Object, sources?: Array<any>, now?: number}} options
@@ -590,9 +745,9 @@ function rssRankRecommendations(groups, options={}){
   const queues=[];
   for(const group of (Array.isArray(groups)?groups:[]).slice(0,RSS_SOURCE_LIMIT)){
     if(!Array.isArray(group))continue;
-    const entries=group.slice(0,100).filter(entry=>entry && !rssObviousPromo(entry) &&
+    const entries=group.slice(0,100).filter(entry=>entry && (entry.discoveryFiltered || !rssObviousPromo(entry)) &&
       typeof entry.title==='string' && entry.title.trim() &&
-      typeof entry.photo==='string' && entry.photo.trim() &&
+      ((typeof entry.photo==='string' && entry.photo.trim()) || entry.coverFallback===true) &&
       rssRecommendationUrl(entry.url) && (!entry.readUrl || rssRecommendationUrl(entry.readUrl)))
       .map(entry=>{
         const keys=[entry.url,entry.readUrl].map(rssRecommendationUrl).filter(Boolean);
@@ -734,7 +889,7 @@ function renderRssCards(rail, force, empty){
     cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rail.dataset.rssStamp=stamp;
     rail.dataset.rssRecommendationStamp=recommendationStamp;
-    if(empty){ empty.textContent=cards.length?'':rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':category==='all'?'표지 사진이 있는 새 글을 찾지 못했어요.':'이 카테고리에 표지 사진이 있는 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
+    if(empty){ empty.textContent=cards.length?'':rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':category==='all'?'새 글을 찾지 못했어요.':'이 카테고리에 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
   };
   const notify=groups=>{void paint(groups);};
   rssListeners.add(notify);

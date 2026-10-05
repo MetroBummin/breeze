@@ -29,16 +29,20 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     const blob=await (await fetch('assets/classics/alice-in-wonderland.epub')).blob();
     window.commitQA={file:new File([blob],'Atomic Alice.epub',{type:'application/epub+zip'})};
     commitQA.import=async options=>{readerNotices.reset();return importFile(commitQA.file,null,options);};
+    commitQA.hash=async(value,label)=>{
+     try{return await rawFileHash(value);}
+     catch(error){throw new Error(label+': '+error.name+': '+error.message);}
+    };
     commitQA.snapshot=async()=>{
      const b=books.find(b=>b.kind==='epub');if(!b)return {book:null};
      const record=await originalGet(b.id),images={};
-     for(const [key,value] of await imgEntries())if(String(key).startsWith(b.id+'|'))images[key]=await rawFileHash(imageRecordBlob(value));
+     for(const [key,value] of await imgEntries())if(String(key).startsWith(b.id+'|'))images[key]=await commitQA.hash(imageRecordBlob(value),'snapshot image '+key);
      return {book:await rawFileHash(new Blob([JSON.stringify((await bookAll()).find(x=>x.id===b.id))])),live:await rawFileHash(new Blob([JSON.stringify(b)])),images,
-      original:record?{...record,blob:await rawFileHash(record.blob)}:null,position:JSON.stringify(posOf(b.id))};
+      original:record?{...record,blob:await commitQA.hash(record.blob,'snapshot original')}:null,position:JSON.stringify(posOf(b.id))};
     };
    });
    await fn(page);results.push({engine:engine.name(),name,pass:true});
-  }catch(error){results.push({engine:engine.name(),name,pass:false,error:String(error)});await page.screenshot({path:proof+'/'+engine.name()+'-'+name+'-failure.png'}).catch(()=>{});}
+  }catch(error){results.push({engine:engine.name(),name,pass:false,error:String(error),stack:error.stack});await page.screenshot({path:proof+'/'+engine.name()+'-'+name+'-failure.png'}).catch(()=>{});}
   finally{await context.close();if(profile)rmSync(profile,{recursive:true,force:true});console.log(JSON.stringify(results.at(-1)));}
  };
  try{

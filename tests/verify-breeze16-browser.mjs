@@ -89,7 +89,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.locator('#pdf-page-navigation').isVisible(),true,'Sidebar stays mounted for its closing motion');
   await page.locator('#pdf-page-navigation').waitFor({state:'hidden'});
   await page.locator('#pdf-page-button').click();
-  await page.locator('#pdf-navigation-dismiss').click({position:{x:300,y:200}});
+  await page.mouse.click(300,200);
   await page.locator('#pdf-page-navigation').waitFor({state:'hidden'});
   assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'Dismissal must not trigger lookup');
   await page.locator('[data-ink-toggle]').click();

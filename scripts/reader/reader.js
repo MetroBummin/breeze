@@ -351,7 +351,10 @@ async function openBook(b,options={}){
   const intent=++readerOpenIntent;
   const alive=()=>intent===readerOpenIntent&&!options.signal?.aborted;
   if(!alive())return;
-  const presented=()=>{if(alive()&&options.onPresented)options.onPresented();};
+  const presented=()=>{
+    if(!alive())return;
+    if(options.onPresented)options.onPresented();
+  };
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
@@ -371,7 +374,6 @@ async function openBook(b,options={}){
   curBook = b;
   const positionOpening={book:b};
   readerPositionRestoration=positionOpening;
-  if(!b.transient)save(HOME_RESUME_KEY,b.id);
   setReaderPillProgress(posOf(b.id).p||0,true);
   currentReaderMode = 'text';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
@@ -412,10 +414,14 @@ async function openBook(b,options={}){
   if(!reuse)renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
-  /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
-     다른 기기의 위치를 이길 수 있습니다. 처음 연 책만 자리를 만들고, 이후의
-     시간표는 실제 스크롤이 남깁니다. */
-  if(firstOpen && !b.transient){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
+  /* Progress freshness belongs to location changes. A first-open marker is
+     created only after the document and its saved location are ready. */
+  positionOpening.onRestored=()=>{
+    if(!alive()||curBook!==b||b.transient)return;
+    const position=posOf(b.id);
+    if(firstOpen&&!position.t){positions[b.id]={...position,t:Date.now()};save(LS_POS,positions);}
+    rememberLocalReading(b);
+  };
   updateReaderModeControls();
   try{
   const original = prepared ? prepared.original : (bookSupportsOriginal(b) ? await originalGetForBook(b) : null);
@@ -425,17 +431,19 @@ async function openBook(b,options={}){
     ? (original ? 'original' : 'text')
     : (firstOpen && original ? 'original' : 'text');
   if(desired==='original'){
-    await switchReaderMode('original',{initial:true,record:original,onPresented:presented});
+    const ready=await switchReaderMode('original',{initial:true,record:original,onPresented:presented});
+    if(!ready)return;
     if(alive()&&curBook===b&&reuse&&(!reusedWords||reusedMode!=='original'))refreshOriginalSavedWords();
   }
   else{
     if(reuse&&(!reusedWords||reusedMode!=='text'))refreshReaderWords();
     presented();
     await new Promise(resolve=>requestAnimationFrame(()=>{
-      if(alive()&&curBook===b){
+      if(alive()&&curBook===b&&readerPositionRestoration===positionOpening){
         const pos=posOf(b.id);
         if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
         lastAnchor=captureAnchor(); updatePfill(true);
+        positionOpening.onRestored();
       }
       resolve();
     }));

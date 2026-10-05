@@ -158,6 +158,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.ok(await page.evaluate(()=>pdfNavigation.track.querySelectorAll('iframe').length<=Math.ceil(pdfNavigation.strip.clientHeight/pdfNavigation.cellHeight)+3),'Only nearby page previews exist');
   for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);await page.waitForTimeout(240);
+   assert.equal(await page.evaluate(()=>!!pdfNavigation),true,`EPUB reflow keeps navigation open at ${width}x${height}, dark=${dark}`);
    // ResizeObserver replaces the virtualized cells during reflow. Resolve and
    // measure the current paper in one browser turn, rather than measuring a
    // detached locator handle after an arbitrary 240ms delay on a busy runner.
@@ -174,7 +175,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
      return [...document.querySelectorAll('.pdf-thumbnail-paper,.pdf-thumbnail-bookmark')].every(node=>node.getBoundingClientRect().right<=left);
    }),'Scrollbar grip never overlaps a page or bookmark hit target');
    const box=await page.locator('#pdf-page-navigation').boundingBox();
-   assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,'EPUB page sidebar stays inside the viewport');
+   assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,`EPUB page sidebar stays inside the viewport: ${JSON.stringify({width,height,dark,box})}`);
    await page.screenshot({path:`/tmp/breeze209-epub-${engine.name()}-${width}-${dark?'dark':'light'}.png`});
   }
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();closePdfNavigation();});

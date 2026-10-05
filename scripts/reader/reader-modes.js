@@ -11,11 +11,16 @@ let textModeMovedByUser = false;
    scroll 이벤트만 보면 둘을 구분할 수 없어서 실제 입력만 기록합니다. */
 document.addEventListener('DOMContentLoaded',()=>{
   const box=readerScroller(); if(!box) return;
-  const moved=()=>{ if(currentReaderMode==='text') textModeMovedByUser=true; };
+  const moved=event=>{
+    if(currentReaderMode==='text') textModeMovedByUser=true;
+    // Reflow can clamp scrollTop without input. Pointer pan/pinch have their
+    // existing owners; the existing wheel/key listeners own these body intents.
+    if((event.type==='wheel'||event.type==='keydown')&&typeof closePdfNavigation==='function')closePdfNavigation();
+  };
   box.addEventListener('wheel',moved,{passive:true});
   box.addEventListener('touchmove',moved,{passive:true});
   box.addEventListener('keydown',event=>{
-    if(['PageDown','PageUp','ArrowDown','ArrowUp','Home','End',' '].includes(event.key)) moved();
+    if(['PageDown','PageUp','ArrowDown','ArrowUp','Home','End',' '].includes(event.key)) moved(event);
   });
 });
 
@@ -411,6 +416,10 @@ async function switchReaderMode(mode,options){
 
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;
+  // A mode change can take over an unfinished book opening. Carry its read
+  // commitment with the restoration owner, not the superseded open promise.
+  const onRestored=readerPositionRestoration?.book===bookAtStart
+    ? readerPositionRestoration.onRestored : null;
   const restoring=readerPositionPending(),savedPosition=posOf(curBook.id);
   // A pending shell is not the source reading location of a newer request.
   const previousMode = restoring ? savedPosition.mode||'text' : currentReaderMode;
@@ -452,7 +461,7 @@ async function switchReaderMode(mode,options){
   // The destination mode is a requested surface until its anchor has landed.
   // One operation owns that restoration; neither pixels nor animation state
   // can declare a reading position ready. A newer operation replaces this owner.
-  const positionRestoration={book:bookAtStart,mode,changeToken};
+  const positionRestoration={book:bookAtStart,mode,changeToken,onRestored};
   readerPositionRestoration=positionRestoration;
   const ownsPosition=()=>readerPositionRestoration===positionRestoration
     &&changeToken===readerModeChangeToken&&curBook===bookAtStart&&currentReaderMode===mode;
@@ -463,6 +472,7 @@ async function switchReaderMode(mode,options){
     // mode, logical progress and its resume anchor through the ordinary writer.
     if(options.initial)rememberReaderMode(mode);
     else saveReadingState();
+    if(onRestored)onRestored();
     releaseReaderPillProgress();
     return true;
   };

@@ -25,6 +25,13 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
+      - name: RSS catalog function types and disabled boot
+        if: ${{ hashFiles('supabase/functions/rss-catalog/index.ts') != '' }}
+        env:
+          RSS_CATALOG_MODE: 'off'
+        run: |
+          npx --yes deno@2.9.6 check --config supabase/functions/rss-catalog/deno.json supabase/functions/rss-catalog/index.ts
+          npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-off-deno.mjs
       - name: Feature audit contracts
         run: |
           for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs tests/verify-pdf-ink-geometry.mjs; do
@@ -40,12 +47,27 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: RSS intent boundary and catalog browser contracts
+        run: |
+          for engine in chromium webkit; do
+            BREEZE_QA_ENGINE=$engine BREEZE_CATALOG_CURRENT_ONLY=1 BREEZE_CATALOG_QUICK=1 BREEZE_CATALOG_PROOF=/tmp/breeze-catalog-browser-proof/$engine node tests/benchmark-rss-catalog-browser.mjs || exit 1
+          done
+      - name: RSS catalog browser proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rss-catalog-browser-proof
+          path: /tmp/breeze-catalog-browser-proof/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Bohemia progress and Home reading cards in Chromium and WebKit
         run: |
           status=0
           for engine in chromium webkit; do
             BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
             BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
+            BREEZE_QA_ENGINE=$engine npm run test:recent-reading || status=1
+            BREEZE_QA_ENGINE=$engine npm run test:pdf-sidebar || status=1
           done
           exit "$status"
       - name: Home reading card proof
@@ -53,7 +75,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: home-reading-cards-proof
-          path: /tmp/breeze-home-reading-cards-proof/
+          path: |
+            /tmp/breeze-home-reading-cards-proof/
+            /tmp/breeze-recent-proof/
+            /tmp/breeze-pdf-sidebar-motion/
+            /tmp/breeze-sidebar-body-gestures/
           if-no-files-found: ignore
           retention-days: 7
       - name: Bundled long-read previews, imports and offline persistence

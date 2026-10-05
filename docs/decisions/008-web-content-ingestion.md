@@ -80,8 +80,11 @@ public page being accessible, and paywalled content is never bypassed.
 Loading uses a neutral card placeholder with a spinner and an accessible label,
 without a visible loading sentence. Feed cover discovery ignores known tiny
 tracking images and supports media thumbnails, image enclosures and lazy images.
-TMZ's feed gives no cover, so a bounded check of the first few public article
-pages may add a real cover and cache the parsed article for a fast first open.
+TMZ's feed gives no cover, so a bounded public article check may add a real cover
+and cache the parsed article for a fast first open. A source that already has an
+unsaved pictured candidate does not fetch extra cover pages. Each discovery load
+repairs at most three sources, with one article page per source. Remaining
+photo-free entries stay available through explicit URL entry.
 Feeds that append non-XML after a complete RSS/Atom root are parsed by discarding
 only that trailing material; malformed content within the root still fails.
 Image enclosures are preferred to small thumbnails. The official Complex feed
@@ -404,6 +407,15 @@ no universal Threads-import success is claimed. Platform availability is not
 proven by fixtures. See `docs/qa/social-import-20260925.md`.
 
 ## Device polish and numeric validation repair (2026-09-26)
+
+Decision 015's 2026-10-05 selected-body flow opens the existing Preview shell
+with known discovery title/source/photo before awaiting article HTML. Metadata
+photo is usable even when a decoded card image is absent. Missing introduction
+uses the existing shimmer as text lines, with reduced-motion fallback. Body
+failure/retry and switching use the same open sheet and generation guards.
+Introduction API input depends on the fetched body; Read unlocks after parsing
+and does not wait for that optional API. No preselection article fetch is added.
+
 The summary card owns loading shimmer and a short content reveal, disabled for
 reduced motion. Read uses the neutral action color. Dialog entry focuses the
 named dialog, with Tab continuing into its controls. Actual pointer input hides
@@ -540,3 +552,40 @@ No in-memory cover/import lock or last-writer full-record restoration is added.
 
 Browser regressions reproduce that split-write interval, no-cover reimport, both
 snapshot/commit orderings, and actual cover-edit transaction aborts on each store.
+
+
+## Bounded public discovery reuse (2026-10-05)
+
+Only the thirteen built-in public feeds may persist parsed entries in
+`breeze.rss-public.v1` local storage. The allowlist is exact; custom feeds and
+arbitrary/authenticated article fetches are never added. Entries include public
+feed metadata only; Decision 015 excludes supplied bodies. Up to 100
+entries fit within 64,000 UTF-8 bytes per feed and 1,000,000 bytes overall. An
+oversized body is omitted with `bodyProvided:false`, never truncated into a
+claimed full article. Unknown fields, credential-bearing URLs, corrupt, oversized
+and future-dated cache records are discarded. Storage failure leaves discovery
+usable through bounded memory reuse. Reading history/ranking is never persisted.
+
+Fresh entries last ten minutes across document launches. Card rotation invalidates
+the displayed grouping but reuses fresh public entries. Explicit `loadRss(true)`
+still refetches online; ordinary rotation refetches only expired feeds. Last-good
+public data up to one day old remains usable offline or after transport failure
+without renewing its timestamp. Returning online after an offline load rechecks
+freshness. The stale limit also applies in an already-open document; its displayed
+groups cannot bypass expiry after a transport failure. Backward clock jumps
+invalidate future-dated memory freshness. Each source still publishes independently;
+concurrent loads coalesce.
+
+Decision 015 removes background Medium body and cover-page preparation. Rotation
+advances metadata only; selected Medium owner feeds resolve after card intent.
+Existing local artwork keeps photo-less discoveries usable. Preview/Read
+commitment, selected-article images, Smart Crop, import persistence and the
+off/shadow Jev rollout remain unchanged. The shared catalog is a separate,
+default-off transport with an offline schema proposal.
+
+Verification: `npm run test:egress` covers clean/dirty/changed wordbook state,
+concurrency and failed saves, account changes, public feed restart/offline/expiry,
+cache limits, custom-source isolation and preparation budgets with mocked network.
+Set `BREEZE_EGRESS_COMPARE_BASE=34b5dc9` to write separate before/after request and
+uncompressed response-body byte totals. These fixtures do not predict billed
+production egress or establish historical attribution.
