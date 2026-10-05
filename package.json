@@ -43,6 +43,7 @@
     "test:reader-refinements": "node tests/verify-reader-refinements-browser.mjs",
     "test:word-morph": "node tests/verify-word-morph-browser.mjs",
     "test:lightweight": "node tests/verify-lightweight-resources-browser.mjs && node tests/verify-epub-incremental-browser.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-reader-reuse-browser.mjs",
+    "test:rss-purpose": "node --test tests/verify-rss-quality.mjs tests/verify-rss-purpose.mjs tests/verify-rss-v6-source.mjs tests/verify-rss-paired-eval.mjs tests/verify-rss-audit-server.mjs",
     "test:audit": "node --test tests/verify-audit-hardening.mjs",
     "test:recommendation": "node --test tests/verify-rss-recommendation.mjs",
     "test:pdf-ink": "node --test tests/verify-pdf-ink-regressions.mjs tests/verify-pdf-session-regressions.mjs && node tests/verify-pdf-ink-browser.mjs",
@@ -52,7 +53,7 @@
     "test:vocabulary-review": "node --test tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs && node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs && node tests/verify-simple-word-cards-browser.mjs && BROWSER=webkit node tests/verify-simple-word-cards-browser.mjs",
     "ios:archive": "bash tools/ios-testflight.sh --archive",
     "ios:testflight": "bash tools/ios-testflight.sh --upload",
-    "test:rss-quality": "node --test tests/verify-rss-quality.mjs tests/verify-rss-purpose.mjs tests/verify-rss-v6-source.mjs tests/verify-rss-paired-eval.mjs tests/verify-rss-audit-server.mjs",
+    "test:rss-quality": "node --test tests/verify-rss-quality.mjs",
     "test:holmes": "node --test tests/verify-speckled-band.mjs tests/verify-holmes-collection.mjs tests/verify-holmes-complete-texts.mjs tests/verify-holmes-illustrations.mjs && node tests/verify-holmes-illustrations-browser.mjs",
     "test:import-durability": "node tests/verify-import-commit-browser.mjs && node tests/verify-offline-import-browser.mjs"
   },
