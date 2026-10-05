@@ -87,6 +87,23 @@ async function originalAll(){return await localRead('originals',null,true) || []
 async function commitImportedBook(book,original,stagedPrefix,signal){
   void requestDurableLocalStorage();
   const db=await idb();signal?.throwIfAborted();
+  // WebKit can commit a copied native Blob, then lose its backing file when
+  // the staging key is deleted. Materialize only this import's staged bytes
+  // before the atomic write; existing/custom cover records remain untouched.
+  const stagedImages=new Map();
+  if(stagedPrefix){
+    const entries=await localTransaction(db,'imgs','readonly',(tx,done)=>{
+      const store=tx.objectStore('imgs'),range=IDBKeyRange.bound(stagedPrefix+'|',stagedPrefix+'|\uffff');
+      const keys=store.getAllKeys(range),values=store.getAll(range);let k,v;
+      const finish=()=>{if(k&&v)done(k.map((key,i)=>[key,v[i]]));};
+      keys.onsuccess=()=>{k=keys.result;finish();};values.onsuccess=()=>{v=values.result;finish();};
+    });
+    for(const [key,value] of entries){
+      signal?.throwIfAborted();
+      stagedImages.set(key,value instanceof Blob?{imageBytes:await value.arrayBuffer(),imageType:value.type}:value);
+    }
+    signal?.throwIfAborted();
+  }
   let transaction;
   const abort=()=>{try{transaction?.abort();}catch{}};
   signal?.addEventListener('abort',abort,{once:true});
@@ -114,13 +131,9 @@ async function commitImportedBook(book,original,stagedPrefix,signal){
               if(String(key).startsWith(book.id+'|')&&key!==preserved)imgs.delete(key);
               if(!String(key).startsWith(stagedPrefix+'|'))continue;
               const destination=book.id+String(key).slice(stagedPrefix.length);
-              const value=imgs.get(key);
-              value.onsuccess=()=>{
-                try{
-                  if(destination!==preserved)imgs.put(value.result,destination);
-                  imgs.delete(key);
-                }catch{abort();}
-              };
+              if(!stagedImages.has(key))throw new Error('Staged import image changed before commit');
+              if(destination!==preserved)imgs.put(stagedImages.get(key),destination);
+              imgs.delete(key);
             }
           }
           if(original)tx.objectStore('originals').put(original,book.id);

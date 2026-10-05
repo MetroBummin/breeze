@@ -1,0 +1,930 @@
+{
+  "head": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+  "base": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+  "run": 37356317490,
+  "artifact": 11364134716,
+  "matrix": [
+    {
+      "name": "base-existing-control-1",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": false,
+      "instrumented": false,
+      "attempt": 1,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "base-existing-control-2",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": false,
+      "instrumented": false,
+      "attempt": 2,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "base-existing-bytes-1",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": false,
+      "instrumented": true,
+      "attempt": 1,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "base-existing-bytes-2",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": false,
+      "instrumented": true,
+      "attempt": 2,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "base-single-control-1",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": true,
+      "instrumented": false,
+      "attempt": 1,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "base-single-control-2",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": true,
+      "instrumented": false,
+      "attempt": 2,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "base-single-bytes-1",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": true,
+      "instrumented": true,
+      "attempt": 1,
+      "status": 1,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": false,
+          "error": "Error: page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here.",
+          "stack": "page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here.\n    at /home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:170:28\n    at async run (/home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:45:4)\n    at async file:///home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:168:3"
+        }
+      ]
+    },
+    {
+      "name": "base-single-bytes-2",
+      "revision": "base",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "source": "/home/runner/work/breeze/breeze/base",
+      "single": true,
+      "instrumented": true,
+      "attempt": 2,
+      "status": 1,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": false,
+          "error": "Error: page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|cover: NotFoundError: The object can not be found here.",
+          "stack": "page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|cover: NotFoundError: The object can not be found here.\n    at /home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:144:71\n    at async run (/home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:45:4)\n    at async file:///home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:143:51"
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "current-existing-control-1",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": false,
+      "instrumented": false,
+      "attempt": 1,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "current-existing-control-2",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": false,
+      "instrumented": false,
+      "attempt": 2,
+      "status": 1,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": false,
+          "error": "Error: page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|cover: NotFoundError: The object can not be found here.",
+          "stack": "page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|cover: NotFoundError: The object can not be found here.\n    at /home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:144:71\n    at async run (/home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:45:4)\n    at async file:///home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:143:51"
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "current-existing-bytes-1",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": false,
+      "instrumented": true,
+      "attempt": 1,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "current-existing-bytes-2",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": false,
+      "instrumented": true,
+      "attempt": 2,
+      "status": 1,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": false,
+          "error": "Error: page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here.",
+          "stack": "page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here.\n    at /home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:170:28\n    at async run (/home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:45:4)\n    at async file:///home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:168:3"
+        }
+      ]
+    },
+    {
+      "name": "current-single-control-1",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": true,
+      "instrumented": false,
+      "attempt": 1,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "current-single-control-2",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": true,
+      "instrumented": false,
+      "attempt": 2,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "current-single-bytes-1",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": true,
+      "instrumented": true,
+      "attempt": 1,
+      "status": 0,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": true
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "current-single-bytes-2",
+      "revision": "current",
+      "sha": "e9ff4b1f2555a8df6e091f392862e5f0a0a08899",
+      "source": "/home/runner/work/breeze/breeze/current",
+      "single": true,
+      "instrumented": true,
+      "attempt": 2,
+      "status": 1,
+      "signal": null,
+      "cases": [
+        {
+          "engine": "webkit",
+          "name": "abort-originals",
+          "pass": false,
+          "error": "Error: page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here.",
+          "stack": "page.evaluate: Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here.\n    at /home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:144:71\n    at async run (/home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:45:4)\n    at async file:///home/runner/work/breeze/breeze/current/tests/verify-import-commit-browser.mjs:143:51"
+        },
+        {
+          "engine": "webkit",
+          "name": "abort-signal-during-promotion",
+          "pass": true
+        }
+      ]
+    }
+  ],
+  "failedByteTraces": {
+    "current-single-bytes-2/webkit-abort-originals-bytes.json": [
+      {
+        "at": 540,
+        "stage": "put-input",
+        "key": "tmp17912250835609o0w5|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 542,
+        "stage": "put-transaction",
+        "key": "tmp17912250835609o0w5|cover",
+        "outcome": "completed"
+      },
+      {
+        "at": 546,
+        "stage": "staged-after-write-get",
+        "key": "tmp17912250835609o0w5|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 549,
+        "stage": "put-input",
+        "key": "tmp17912250835609o0w5|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 551,
+        "stage": "put-transaction",
+        "key": "tmp17912250835609o0w5|0",
+        "outcome": "completed"
+      },
+      {
+        "at": 553,
+        "stage": "staged-after-write-get",
+        "key": "tmp17912250835609o0w5|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 598,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp17912250835609o0w5|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 600,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp17912250835609o0w5|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 606,
+        "stage": "promotion-transaction",
+        "outcome": "completed"
+      },
+      {
+        "at": 607,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 608,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 622,
+        "stage": "original-snapshot",
+        "outcome": "failed",
+        "error": "Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 624,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 625,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 688,
+        "stage": "case-ended"
+      }
+    ],
+    "current-existing-bytes-2/webkit-abort-signal-during-promotion-bytes.json": [
+      {
+        "at": 454,
+        "stage": "put-input",
+        "key": "tmp17912250731960km5s|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 510,
+        "stage": "put-transaction",
+        "key": "tmp17912250731960km5s|cover",
+        "outcome": "completed"
+      },
+      {
+        "at": 513,
+        "stage": "staged-after-write-get",
+        "key": "tmp17912250731960km5s|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 515,
+        "stage": "put-input",
+        "key": "tmp17912250731960km5s|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 517,
+        "stage": "put-transaction",
+        "key": "tmp17912250731960km5s|0",
+        "outcome": "completed"
+      },
+      {
+        "at": 519,
+        "stage": "staged-after-write-get",
+        "key": "tmp17912250731960km5s|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 579,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp17912250731960km5s|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 580,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp17912250731960km5s|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 585,
+        "stage": "promotion-transaction",
+        "outcome": "completed"
+      },
+      {
+        "at": 587,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 588,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 602,
+        "stage": "original-snapshot",
+        "outcome": "failed",
+        "error": "Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 604,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 605,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 665,
+        "stage": "case-ended"
+      }
+    ],
+    "base-single-bytes-2/webkit-abort-originals-bytes.json": [
+      {
+        "at": 468,
+        "stage": "put-input",
+        "key": "tmp1791225057956sgb9o|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 481,
+        "stage": "put-transaction",
+        "key": "tmp1791225057956sgb9o|cover",
+        "outcome": "completed"
+      },
+      {
+        "at": 497,
+        "stage": "staged-after-write-get",
+        "key": "tmp1791225057956sgb9o|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 501,
+        "stage": "put-input",
+        "key": "tmp1791225057956sgb9o|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 627,
+        "stage": "put-transaction",
+        "key": "tmp1791225057956sgb9o|0",
+        "outcome": "completed"
+      },
+      {
+        "at": 630,
+        "stage": "staged-after-write-get",
+        "key": "tmp1791225057956sgb9o|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 658,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp1791225057956sgb9o|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 659,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp1791225057956sgb9o|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 665,
+        "stage": "promotion-transaction",
+        "outcome": "completed"
+      },
+      {
+        "at": 667,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 668,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 683,
+        "stage": "original-snapshot",
+        "outcome": "failed",
+        "error": "Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|cover: NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 685,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 687,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 760,
+        "stage": "case-ended"
+      }
+    ],
+    "base-single-bytes-1/webkit-abort-signal-during-promotion-bytes.json": [
+      {
+        "at": 421,
+        "stage": "put-input",
+        "key": "tmp1791225056069wzsjj|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 475,
+        "stage": "put-transaction",
+        "key": "tmp1791225056069wzsjj|cover",
+        "outcome": "completed"
+      },
+      {
+        "at": 480,
+        "stage": "staged-after-write-get",
+        "key": "tmp1791225056069wzsjj|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 483,
+        "stage": "put-input",
+        "key": "tmp1791225056069wzsjj|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 485,
+        "stage": "put-transaction",
+        "key": "tmp1791225056069wzsjj|0",
+        "outcome": "completed"
+      },
+      {
+        "at": 487,
+        "stage": "staged-after-write-get",
+        "key": "tmp1791225056069wzsjj|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 529,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp1791225056069wzsjj|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 531,
+        "stage": "staged-before-commit-getAll",
+        "key": "tmp1791225056069wzsjj|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "passed",
+        "byteLength": 53578,
+        "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+      },
+      {
+        "at": 538,
+        "stage": "promotion-transaction",
+        "outcome": "completed"
+      },
+      {
+        "at": 541,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 542,
+        "stage": "final-after-commit-getAll",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 560,
+        "stage": "original-snapshot",
+        "outcome": "failed",
+        "error": "Error: snapshot image file-5c0706a6ad6ed931c1ad189246149025|0: NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 561,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|0",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 563,
+        "stage": "failed-snapshot-direct-get",
+        "key": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "representation": "native-blob",
+        "size": 53578,
+        "type": "image/jpeg",
+        "read": "failed",
+        "error": "NotFoundError: The object can not be found here."
+      },
+      {
+        "at": 623,
+        "stage": "case-ended"
+      }
+    ]
+  }
+}

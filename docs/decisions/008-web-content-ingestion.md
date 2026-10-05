@@ -589,3 +589,27 @@ cache limits, custom-source isolation and preparation budgets with mocked networ
 Set `BREEZE_EGRESS_COMPARE_BASE=34b5dc9` to write separate before/after request and
 uncompressed response-body byte totals. These fixtures do not predict billed
 production egress or establish historical attribution.
+
+### Staged native image promotion (2026-10-05)
+
+The WebKit base/current byte comparison reproduced readable native staged Blobs
+becoming unreadable immediately after the completed copy/delete promotion
+transaction. Direct-key reads also failed; single-browser ownership did not
+prevent it. The same boundary failed on build 238 before these cover changes.
+
+`commitImportedBook` now reads only its private staging-prefix records and
+materializes native Blob bytes before opening the atomic write transaction.
+It writes the already-supported `{imageBytes,imageType}` representation for
+promoted images. A byte-read failure rejects before any durable publication.
+The final transaction still owns staged deletion, original/book persistence,
+and preservation of the latest custom-cover revision. Existing image records
+are not migrated, and unrelated/custom covers are not materialized or replaced.
+No asynchronous Blob read runs inside an IndexedDB transaction callback. This
+adds transient memory proportional to the current EPUB's staged image bytes.
+
+The original abort/preservation assertions remain. An additional browser case
+promotes 40 native image records through the production owner and compares
+all bytes immediately and after reload; another rejects an unreadable staged
+Blob and verifies the existing book and image bytes are unchanged. The bounded
+base/current diagnostic retains every baseline failure as evidence and requires
+all current-head attempts to pass; the ordinary full Integrity gate is unchanged.
