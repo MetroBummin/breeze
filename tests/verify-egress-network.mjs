@@ -204,24 +204,20 @@ test('public cache stays within global/per-feed byte limits and never truncates 
     for(const entry of record.entries)assert.ok(!entry.bodyProvided||entry.contentHtml.length===200000);
   }
 });
-test('cover pages are unnecessary when a pictured candidate exists; all-missing load has three-page cap',async()=>{
-  const pictured=rssDevice();await pictured.load(false);assert.equal(pictured.calls.length,13);
-  const missing=rssDevice({missingCovers:true});await missing.load(false);assert.equal(missing.calls.length,16);
-  assert.equal(missing.calls.filter(call=>call.bytes>200000).length,3);
+test('Home never fetches cover pages or Medium owner bodies before selection',async()=>{
+  for(const options of [{missingCovers:true},{mediumUnusable:true,candidates:20},{mediumResolve:true}]){
+    const h=rssDevice(options);await h.load(false);assert.equal(h.calls.length,13);
+    assert.ok(h.entries().flat().every(entry=>!entry.contentHtml&&!entry.bodyProvided));
+    assert.ok(h.entries().flat().some(entry=>entry.coverFallback===true)||!options.missingCovers);
+    await h.rotate();assert.equal(h.calls.length,13);
+  }
 });
-test('Medium candidate resolution is bounded to three per topic and ready bodies survive restart',async()=>{
-  const unusable=rssDevice({mediumUnusable:true,candidates:20});await unusable.load(false);assert.equal(unusable.calls.length,22);
-  const storage=new Map(),first=rssDevice({storage,mediumResolve:true});await first.load(false);assert.equal(first.calls.length,16);
-  const restarted=rssDevice({storage,mediumResolve:true});await restarted.load(false);assert.equal(restarted.calls.length,0);
-});
-test('rotation reaches usable Medium candidates after a failed bounded batch',async()=>{
-  const h=rssDevice(),parse=h.context.parseFeedArticle;
-  h.context.parseFeedArticle=entry=>entry.url.includes('medium.com')&&!/writer-[345]\/story/.test(entry.url)?null:parse(entry);
-  const topics=h.context.rssSources().flatMap((feed,index)=>h.context.rssMediumSource(feed)?[index]:[]);
-  await h.load(false);assert.ok(topics.every(index=>h.entries()[index].length===0));
-  assert.equal(h.calls.length,16,'The topics coalesce their three shared author feeds');
-  await h.rotate();assert.ok(topics.every(index=>h.entries()[index].length===3));
-  assert.equal(h.calls.length,16,'Rotation reuses fresh feeds and complete public bodies');
+test('Medium selected body resolution coalesces only after explicit intent',async()=>{
+  const h=rssDevice({mediumResolve:true});await h.load(false);assert.equal(h.calls.length,13);
+  const entry=h.entries()[9][0];const ready=await h.context.rssResolveSelectedEntry(entry);
+  assert.equal(h.calls.length,14);assert.ok(ready.bodyProvided&&ready.contentHtml);
+  await h.context.rssResolveSelectedEntry(entry);assert.equal(h.calls.length,14);
+  assert.ok(!h.entries()[9][0].contentHtml,'Selected body never enters discovery metadata');
 });
 // Optional reproducible before/after artifact: uses the checked source at the
 // comparison base and the exact same synthetic transports, never production.

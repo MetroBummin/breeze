@@ -407,6 +407,15 @@ no universal Threads-import success is claimed. Platform availability is not
 proven by fixtures. See `docs/qa/social-import-20260925.md`.
 
 ## Device polish and numeric validation repair (2026-09-26)
+
+Decision 015's 2026-10-05 selected-body flow opens the existing Preview shell
+with known discovery title/source/photo before awaiting article HTML. Metadata
+photo is usable even when a decoded card image is absent. Missing introduction
+uses the existing shimmer as text lines, with reduced-motion fallback. Body
+failure/retry and switching use the same open sheet and generation guards.
+Introduction API input depends on the fetched body; Read unlocks after parsing
+and does not wait for that optional API. No preselection article fetch is added.
+
 The summary card owns loading shimmer and a short content reveal, disabled for
 reduced motion. Read uses the neutral action color. Dialog entry focuses the
 named dialog, with Tab continuing into its controls. Actual pointer input hides
@@ -550,7 +559,7 @@ snapshot/commit orderings, and actual cover-edit transaction aborts on each stor
 Only the thirteen built-in public feeds may persist parsed entries in
 `breeze.rss-public.v1` local storage. The allowlist is exact; custom feeds and
 arbitrary/authenticated article fetches are never added. Entries include public
-feed metadata and complete feed-provided bodies only when they fit. Up to 100
+feed metadata only; Decision 015 excludes supplied bodies. Up to 100
 entries fit within 64,000 UTF-8 bytes per feed and 1,000,000 bytes overall. An
 oversized body is omitted with `bodyProvided:false`, never truncated into a
 claimed full article. Unknown fields, credential-bearing URLs, corrupt, oversized
@@ -567,11 +576,12 @@ groups cannot bypass expiry after a transport failure. Backward clock jumps
 invalidate future-dated memory freshness. Each source still publishes independently;
 concurrent loads coalesce.
 
-Medium discovery considers at most three unsaved candidates per topic per load,
-using two existing workers. Rotation advances the batch. Successfully resolved
-public feed bodies enrich the bounded cache so a restart can reuse them. Existing
-photo-only cards, Preview/Read commitment, selected-article images, Smart Crop,
-import persistence and the off/shadow Jev rollout remain unchanged.
+Decision 015 removes background Medium body and cover-page preparation. Rotation
+advances metadata only; selected Medium owner feeds resolve after card intent.
+Existing local artwork keeps photo-less discoveries usable. Preview/Read
+commitment, selected-article images, Smart Crop, import persistence and the
+off/shadow Jev rollout remain unchanged. The shared catalog is a separate,
+default-off transport with an offline schema proposal.
 
 Verification: `npm run test:egress` covers clean/dirty/changed wordbook state,
 concurrency and failed saves, account changes, public feed restart/offline/expiry,

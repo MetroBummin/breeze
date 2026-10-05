@@ -6,20 +6,26 @@ const article=readFileSync(new URL('../scripts/importers/article.js',import.meta
 const current=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8');
 export const cacheKey='breeze.rss-public.v1';
 export function rssDevice({source=current,storage=new Map(),now=1000000,offline=false,
-  missingCovers=false,mediumUnusable=false,mediumResolve=false,candidates=20,custom=[],denyStorage=false}={}){
-  const calls=[],state={now,offline,fail:false};
+  missingCovers=false,mediumUnusable=false,mediumResolve=false,candidates=20,custom=[],denyStorage=false,catalog=false}={}){
+  const calls=[],state={now,offline,fail:false,catalogPayload:null,catalogStatus:200};
   let feedAt=[];
   class Clock extends Date{static now(){return state.now;}}
-  const context=createContext({URL,Date:Clock,TextEncoder,AbortSignal,console:{warn(){},error(){}},
+  const context=createContext({URL,Date:Clock,TextEncoder,TextDecoder,Uint8Array,Response,AbortSignal,window:{BREEZE_CONFIG:{RSS_CATALOG:catalog}},console:{warn(){},error(){}},
     setTimeout,clearTimeout,books:[],positions:{},SB_URL:'https://relay.example',SB_KEY:'synthetic-public-key',
     navigator:{get onLine(){return !state.offline;}},
     localStorage:{getItem:key=>{if(denyStorage)throw Error('storage denied');return storage.get(key)||null;},
       setItem:(key,value)=>{if(denyStorage)throw Error('storage denied');storage.set(key,value);}},
     load:(key,fallback)=>key==='breeze.feed-sources'?custom:fallback,
-    fetch:async raw=>{
+    fetch:async (raw,options)=>{
       const url=new URL(raw),proxy=url.origin==='https://relay.example';
       if(!proxy)throw new TypeError('Synthetic publisher CORS rejection');
       if(state.offline)throw Error('offline');
+      if(url.pathname.endsWith('/rss-catalog')){
+        if(state.fail){calls.push({target:'catalog',bytes:0,status:503});return new Response('',{status:503});}
+        const payload=state.catalogPayload||{version:1,feeds:context.rssSources().slice(0,13).map((feed,id)=>({id,at:state.now,status:'ready',entries:context.parseRss('',feed).slice(0,20).map(({contentHtml,bodyProvided,...entry})=>entry)}))};
+        const body=JSON.stringify(payload),status=state.catalogStatus;calls.push({target:'catalog',bytes:status===304?0:Buffer.byteLength(body),status,headers:options.headers});
+        return new Response(status===304?null:body,{status,headers:{etag:'synthetic-etag'}});
+      }
       const target=url.searchParams.get('url');
       if(state.fail){calls.push({target,bytes:0,status:503});return {ok:false,status:503,json:async()=>null};}
       const isFeed=/feed|\.xml|\.rss|\.atom/.test(target);

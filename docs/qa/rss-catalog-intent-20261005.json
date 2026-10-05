@@ -1,0 +1,1083 @@
+{
+  "units": "UTF-8 response body bytes, uncompressed; independent per-response fixture delays; real browser DOM/rendering. Single trials, not production latency or billing.",
+  "engine": "chromium",
+  "baseline": "34b5dc9ba04ffe0f23c61bd89c0163908bd097c6",
+  "pr97": "d103bb31f075404d5498dfa1a15a1e60def7c81a",
+  "pr97Tree": "b083c324b290dbddfdd8f43e82e95f90a89ba404",
+  "previewSourceHash": "f431f4b9d87a36431bb8dc1e2560e12e4ff12407b507a0f722ba1c0f37223c9f",
+  "sourceHashes": {
+    "main236": "c706bbb23f4381efd9b03a74cb8a43e048f848c82df0622af021c1007ba07d51",
+    "PR97": "ad89a41d43b5547d15620382dc2bb8f2ebad10fe1f77df50cce0ea48402f2965",
+    "catalogIntent": "c16ff27bce68d9de3a17aa671994faef78062f7fc2231aea8214b68e78b84365"
+  },
+  "rows": [
+    {
+      "version": "main236",
+      "profile": "normal",
+      "delays": {
+        "name": "normal",
+        "rtt": 20,
+        "bytesPerSecond": 1000000
+      },
+      "coldHome": {
+        "firstCardMs": 1014.7999999988824,
+        "settledMs": 1485.5,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 890.9000000003725,
+        "settledMs": 1134,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 163.90000000037253,
+        "previewWarmMs": 117.59999999962747,
+        "coldTiming": {
+          "clickedAt": 1619.8999999985099,
+          "shellFirstVisibleFrameMs": 93.30000000074506,
+          "bodyReadyMs": 43.20000000111759,
+          "metadataReadyMs": 107.10000000149012
+        },
+        "warmTiming": {
+          "clickedAt": 1974.7999999988824,
+          "shellFirstVisibleFrameMs": 49.59999999962747,
+          "bodyReadyMs": 18.700000001117587,
+          "metadataReadyMs": 56.5
+        },
+        "readMs": 205.2000000011176,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 110.5,
+        "previewWarmMs": 73.59999999962747,
+        "coldTiming": {
+          "clickedAt": 1215.5999999996275,
+          "shellFirstVisibleFrameMs": 57.20000000111759,
+          "bodyReadyMs": 21.600000001490116,
+          "metadataReadyMs": 67
+        },
+        "warmTiming": {
+          "clickedAt": 1612.0999999996275,
+          "shellFirstVisibleFrameMs": 42.600000001490116,
+          "bodyReadyMs": 13.700000001117587,
+          "metadataReadyMs": 45.40000000037253
+        },
+        "readMs": 137.19999999925494,
+        "coldRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 34,
+      "coldPlusFiveRelaunches": {
+        "requests": 102,
+        "responseBodyBytes": 12012144,
+        "kinds": {
+          "feed": 78,
+          "ownerFeed": 6,
+          "articleBody": 18,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 581.1999999992549,
+            "settledMs": 964.3000000007451,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 673.2999999988824,
+            "settledMs": 912.2999999988824,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 673.2999999988824,
+            "settledMs": 994.1999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 631.5,
+            "settledMs": 991.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 686.1999999992549,
+            "settledMs": 911.2999999988824,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 650.0999999996275,
+            "settledMs": 907.7000000011176,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "PR97",
+      "profile": "normal",
+      "delays": {
+        "name": "normal",
+        "rtt": 20,
+        "bytesPerSecond": 1000000
+      },
+      "coldHome": {
+        "firstCardMs": 666.0999999996275,
+        "settledMs": 912.0999999996275,
+        "cards": 13,
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 508.7000000011176,
+        "settledMs": 569.2000000011176,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 121.5,
+        "previewWarmMs": 59.90000000037253,
+        "coldTiming": {
+          "clickedAt": 993.7000000011176,
+          "shellFirstVisibleFrameMs": 70.89999999850988,
+          "bodyReadyMs": 22.699999999254942,
+          "metadataReadyMs": 75.29999999888241
+        },
+        "warmTiming": {
+          "clickedAt": 1388.0999999996275,
+          "shellFirstVisibleFrameMs": 43,
+          "bodyReadyMs": 11.800000000745058,
+          "metadataReadyMs": 45.40000000037253
+        },
+        "readMs": 124.69999999925494,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 323.30000000074506,
+        "previewWarmMs": 307,
+        "coldTiming": {
+          "clickedAt": 639.2000000011176,
+          "shellFirstVisibleFrameMs": 54,
+          "bodyReadyMs": 271.2999999988824,
+          "metadataReadyMs": 285
+        },
+        "warmTiming": {
+          "clickedAt": 1014.5,
+          "shellFirstVisibleFrameMs": 45.5,
+          "bodyReadyMs": 261.2000000011176,
+          "metadataReadyMs": 270.40000000037253
+        },
+        "readMs": 116.20000000111759,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 17,
+      "coldPlusFiveRelaunches": {
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 707.5,
+            "settledMs": 971.9000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 488.80000000074506,
+            "settledMs": 570.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 492.09999999962747,
+            "settledMs": 552.8000000007451,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 488.5,
+            "settledMs": 554.3000000007451,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 703.8000000007451,
+            "settledMs": 751.9000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 537.2999999988824,
+            "settledMs": 609.7999999988824,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "catalogIntent",
+      "profile": "normal",
+      "delays": {
+        "name": "normal",
+        "rtt": 20,
+        "bytesPerSecond": 1000000
+      },
+      "coldHome": {
+        "firstCardMs": 635.3999999985099,
+        "settledMs": 693.2999999988824,
+        "cards": 13,
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 533.0999999996275,
+        "settledMs": 640.9000000003725,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 381.90000000037253,
+        "previewWarmMs": 313.19999999925494,
+        "coldTiming": {
+          "clickedAt": 784.3999999985099,
+          "shellFirstVisibleFrameMs": 54.30000000074506,
+          "bodyReadyMs": 284.5,
+          "metadataReadyMs": 334.90000000037253
+        },
+        "warmTiming": {
+          "clickedAt": 1208.5,
+          "shellFirstVisibleFrameMs": 47,
+          "bodyReadyMs": 256.3999999985099,
+          "metadataReadyMs": 277.5
+        },
+        "readMs": 250.7999999988824,
+        "coldRequests": {
+          "requests": 2,
+          "responseBodyBytes": 200245,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 372,
+        "previewWarmMs": 332.80000000074506,
+        "coldTiming": {
+          "clickedAt": 725.6999999992549,
+          "shellFirstVisibleFrameMs": 60.20000000111759,
+          "bodyReadyMs": 287.40000000037253,
+          "metadataReadyMs": 340
+        },
+        "warmTiming": {
+          "clickedAt": 1153.5,
+          "shellFirstVisibleFrameMs": 44.79999999888241,
+          "bodyReadyMs": 282.90000000037253,
+          "metadataReadyMs": 295.2999999988824
+        },
+        "readMs": 253.80000000074506,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 4,
+      "coldPlusFiveRelaunches": {
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 647.9000000003725,
+            "settledMs": 715.5999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 521.7000000011176,
+            "settledMs": 623.3000000007451,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 526,
+            "settledMs": 636.2999999988824,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 494.09999999962747,
+            "settledMs": 593.3000000007451,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 515.3000000007451,
+            "settledMs": 612.4000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 466,
+            "settledMs": 580.5999999996275,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "main236",
+      "profile": "slow",
+      "delays": {
+        "name": "slow",
+        "rtt": 200,
+        "bytesPerSecond": 200000
+      },
+      "coldHome": {
+        "firstCardMs": 1260.5,
+        "settledMs": 2365.2999999988824,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 1245.0999999996275,
+        "settledMs": 2476.5,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 283.7000000011176,
+        "previewWarmMs": 68.19999999925494,
+        "coldTiming": {
+          "clickedAt": 2420.5,
+          "shellFirstVisibleFrameMs": 43.09999999962747,
+          "bodyReadyMs": 18.09999999962747,
+          "metadataReadyMs": 256.5
+        },
+        "warmTiming": {
+          "clickedAt": 2769.2999999988824,
+          "shellFirstVisibleFrameMs": 44.20000000111759,
+          "bodyReadyMs": 13.900000000372529,
+          "metadataReadyMs": 48.80000000074506
+        },
+        "readMs": 122.19999999925494,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 214,
+        "previewWarmMs": 81,
+        "coldTiming": {
+          "clickedAt": 2616.5,
+          "shellFirstVisibleFrameMs": 143.19999999925494,
+          "bodyReadyMs": 79.59999999962747,
+          "metadataReadyMs": 149.7999999988824
+        },
+        "warmTiming": {
+          "clickedAt": 3060.5,
+          "shellFirstVisibleFrameMs": 44.79999999888241,
+          "bodyReadyMs": 13.5,
+          "metadataReadyMs": 47.09999999962747
+        },
+        "readMs": 169.7999999988824,
+        "coldRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 34,
+      "coldPlusFiveRelaunches": {
+        "requests": 102,
+        "responseBodyBytes": 12012144,
+        "kinds": {
+          "feed": 78,
+          "ownerFeed": 6,
+          "articleBody": 18,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 1719,
+            "settledMs": 3042.10000000149,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1431.199999999255,
+            "settledMs": 2760.4000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1865.9000000003725,
+            "settledMs": 3049.300000000745,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1360.300000000745,
+            "settledMs": 2527.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1085.8999999985099,
+            "settledMs": 2357.2999999988824,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1263,
+            "settledMs": 2396.5999999996275,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "PR97",
+      "profile": "slow",
+      "delays": {
+        "name": "slow",
+        "rtt": 200,
+        "bytesPerSecond": 200000
+      },
+      "coldHome": {
+        "firstCardMs": 1334.3999999985099,
+        "settledMs": 2470.5999999996275,
+        "cards": 13,
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 578.2999999988824,
+        "settledMs": 646.3999999985099,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 288,
+        "previewWarmMs": 76.5,
+        "coldTiming": {
+          "clickedAt": 2552.699999999255,
+          "shellFirstVisibleFrameMs": 57.09999999962747,
+          "bodyReadyMs": 25.300000000745058,
+          "metadataReadyMs": 250.5
+        },
+        "warmTiming": {
+          "clickedAt": 2896.89999999851,
+          "shellFirstVisibleFrameMs": 44.20000000111759,
+          "bodyReadyMs": 17.300000000745058,
+          "metadataReadyMs": 45.30000000074506
+        },
+        "readMs": 133.59999999962747,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 1317.5,
+        "previewWarmMs": 1282.9000000003725,
+        "coldTiming": {
+          "clickedAt": 718.5,
+          "shellFirstVisibleFrameMs": 72.19999999925494,
+          "bodyReadyMs": 1261.7999999988824,
+          "metadataReadyMs": 1280.0999999996275
+        },
+        "warmTiming": {
+          "clickedAt": 2094.5999999996275,
+          "shellFirstVisibleFrameMs": 43.5,
+          "bodyReadyMs": 1241.9000000003725,
+          "metadataReadyMs": 1257.2999999988824
+        },
+        "readMs": 141.30000000074506,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 17,
+      "coldPlusFiveRelaunches": {
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 1291.9000000003725,
+            "settledMs": 2442.9000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 625.3000000007451,
+            "settledMs": 700.5999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 510.5,
+            "settledMs": 640.7999999988824,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 635.1999999992549,
+            "settledMs": 743.1999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 623.5999999996275,
+            "settledMs": 708.6999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 605.5999999996275,
+            "settledMs": 677.5999999996275,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "catalogIntent",
+      "profile": "slow",
+      "delays": {
+        "name": "slow",
+        "rtt": 200,
+        "bytesPerSecond": 200000
+      },
+      "coldHome": {
+        "firstCardMs": 1478.0999999996275,
+        "settledMs": 1538.199999999255,
+        "cards": 13,
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 502.09999999962747,
+        "settledMs": 600.3000000007451,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 1542.800000000745,
+        "previewWarmMs": 1282.2000000011176,
+        "coldTiming": {
+          "clickedAt": 1640,
+          "shellFirstVisibleFrameMs": 59.09999999962747,
+          "bodyReadyMs": 1254,
+          "metadataReadyMs": 1481.7999999988824
+        },
+        "warmTiming": {
+          "clickedAt": 3217.0999999996275,
+          "shellFirstVisibleFrameMs": 45.40000000037253,
+          "bodyReadyMs": 1233.9000000003725,
+          "metadataReadyMs": 1246
+        },
+        "readMs": 234.59999999962747,
+        "coldRequests": {
+          "requests": 2,
+          "responseBodyBytes": 200245,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 1309.5999999996275,
+        "previewWarmMs": 1289.4000000003725,
+        "coldTiming": {
+          "clickedAt": 670.5999999996275,
+          "shellFirstVisibleFrameMs": 56.30000000074506,
+          "bodyReadyMs": 1252.5999999996275,
+          "metadataReadyMs": 1273.800000000745
+        },
+        "warmTiming": {
+          "clickedAt": 2031.5999999996275,
+          "shellFirstVisibleFrameMs": 44.70000000111759,
+          "bodyReadyMs": 1248.5,
+          "metadataReadyMs": 1259.4000000003725
+        },
+        "readMs": 259,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 4,
+      "coldPlusFiveRelaunches": {
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 1423.800000000745,
+            "settledMs": 1471.6000000014901,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 464.09999999962747,
+            "settledMs": 572.4000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 511.40000000037253,
+            "settledMs": 618.5,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 466.5,
+            "settledMs": 567.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 548.3000000007451,
+            "settledMs": 672.7000000011176,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 546.7000000011176,
+            "settledMs": 668.3000000007451,
+            "cards": 13
+          }
+        ]
+      }
+    }
+  ],
+  "coldCatalog": {
+    "bytes": 702,
+    "upstreamBeforeWarm": 0,
+    "browser": {
+      "requests": 1,
+      "responseBodyBytes": 702,
+      "kinds": {
+        "feed": 0,
+        "ownerFeed": 0,
+        "articleBody": 0,
+        "catalog": 1,
+        "previewMetadata": 0
+      }
+    }
+  },
+  "upstreamFixedFeedLookups": 13,
+  "fallbackUI": [
+    {
+      "label": "phone",
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "screenshot": "fallback-phone-light.png"
+    },
+    {
+      "label": "phone",
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "screenshot": "fallback-phone-dark.png"
+    },
+    {
+      "label": "small-phone",
+      "width": 320,
+      "height": 568,
+      "theme": "light",
+      "screenshot": "fallback-small-phone-light.png"
+    },
+    {
+      "label": "small-phone",
+      "width": 320,
+      "height": 568,
+      "theme": "dark",
+      "screenshot": "fallback-small-phone-dark.png"
+    },
+    {
+      "label": "tablet",
+      "width": 834,
+      "height": 1112,
+      "theme": "light",
+      "screenshot": "fallback-tablet-light.png"
+    },
+    {
+      "label": "tablet",
+      "width": 834,
+      "height": 1112,
+      "theme": "dark",
+      "screenshot": "fallback-tablet-dark.png"
+    },
+    {
+      "label": "desktop",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "screenshot": "fallback-desktop-light.png"
+    },
+    {
+      "label": "desktop",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "screenshot": "fallback-desktop-dark.png"
+    },
+    {
+      "label": "short",
+      "width": 1024,
+      "height": 600,
+      "theme": "light",
+      "screenshot": "fallback-short-light.png"
+    },
+    {
+      "label": "short",
+      "width": 1024,
+      "height": 600,
+      "theme": "dark",
+      "screenshot": "fallback-short-dark.png"
+    }
+  ],
+  "mediumIntent": {
+    "url": "https://medium.com/@benchwriter/story-000000000001",
+    "cancelRequests": {
+      "requests": 1,
+      "responseBodyBytes": 100138,
+      "kinds": {
+        "feed": 0,
+        "ownerFeed": 1,
+        "articleBody": 0,
+        "catalog": 0,
+        "previewMetadata": 0
+      }
+    },
+    "retryAndReadRequests": {
+      "requests": 1,
+      "responseBodyBytes": 193,
+      "kinds": {
+        "feed": 0,
+        "ownerFeed": 0,
+        "articleBody": 0,
+        "catalog": 0,
+        "previewMetadata": 1
+      }
+    },
+    "savedOnlyAfterRead": true
+  }
+}

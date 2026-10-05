@@ -54,7 +54,9 @@ body:has(#article-preview[open]){overflow:hidden;}
 /* Loading occupies deliberate placeholders; final failure promotes source text.
    Outer dialog/CTA stay fixed across all three states. */
 #article-preview[data-metadata="loading"] .ap-summary[hidden]{visibility:visible;color:transparent;border-radius:7px;
-  background:linear-gradient(100deg,transparent 20%,var(--sentence-glass-line-soft) 48%,transparent 76%),var(--sentence-glass-action);background-size:220% 100%;}
+  background:linear-gradient(100deg,transparent 20%,var(--sentence-glass-line-soft) 48%,transparent 76%),var(--sentence-glass-action);background-size:220% 100%;
+  -webkit-mask-image:linear-gradient(#000 0 1em,transparent 1em 1.5em,#000 1.5em 2.5em,transparent 2.5em 3em,#000 3em 4em,transparent 4em);
+  mask-image:linear-gradient(#000 0 1em,transparent 1em 1.5em,#000 1.5em 2.5em,transparent 2.5em 3em,#000 3em 4em,transparent 4em);}
 #article-preview[data-metadata="fallback"] .ap-summary[hidden]{display:none;}
 
 /* Explicit optional-AI state; the original excerpt and Read button stay usable. */
