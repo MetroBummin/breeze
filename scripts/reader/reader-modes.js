@@ -11,11 +11,16 @@ let textModeMovedByUser = false;
    scroll 이벤트만 보면 둘을 구분할 수 없어서 실제 입력만 기록합니다. */
 document.addEventListener('DOMContentLoaded',()=>{
   const box=readerScroller(); if(!box) return;
-  const moved=()=>{ if(currentReaderMode==='text') textModeMovedByUser=true; };
+  const moved=event=>{
+    if(currentReaderMode==='text') textModeMovedByUser=true;
+    // Reflow can clamp scrollTop without input. Pointer pan/pinch have their
+    // existing owners; the existing wheel/key listeners own these body intents.
+    if((event.type==='wheel'||event.type==='keydown')&&typeof closePdfNavigation==='function')closePdfNavigation();
+  };
   box.addEventListener('wheel',moved,{passive:true});
   box.addEventListener('touchmove',moved,{passive:true});
   box.addEventListener('keydown',event=>{
-    if(['PageDown','PageUp','ArrowDown','ArrowUp','Home','End',' '].includes(event.key)) moved();
+    if(['PageDown','PageUp','ArrowDown','ArrowUp','Home','End',' '].includes(event.key)) moved(event);
   });
 });
 

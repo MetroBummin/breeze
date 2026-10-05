@@ -49,6 +49,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>readerScrollTo(readerScroller().scrollTop+25));await page.waitForTimeout(80);assert.equal(await page.evaluate(()=>!!pdfNavigation),true);
   // A wheel scroll reaches the body on the first attempt.
   const before=await page.evaluate(()=>readerScroller().scrollTop);await page.mouse.move(280,260);await page.mouse.wheel(0,160);await closed();assert.ok(await page.evaluate(()=>readerScroller().scrollTop)>before,'First body wheel moves paper');
+  // Keyboard scroll intent uses the existing body listener, not layout scrolls.
+  await open();await page.evaluate(()=>readerScroller().dispatchEvent(new KeyboardEvent('keydown',{key:'PageDown',bubbles:true})));await closed();
   // Central pointer movement is the existing body-scroll intent; no late WORD/page.
   await open();await page.evaluate(()=>{qaBodyPointer('#original-stage','pointerdown');qaBodyPointer('#original-stage','pointermove',280,100);qaBodyPointer('#original-stage','pointercancel',280,100);});await closed();
   // Outside taps retain the previous dismiss-only policy. A fresh tap works once.

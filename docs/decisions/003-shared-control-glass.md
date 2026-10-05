@@ -347,8 +347,11 @@ real-device confirmation remains separate from these browser checks.
 The PDF/EPUB sidebar is a nonmodal navigator. Its former full-screen transparent
 button prevented body scroll and PDF pinch from reaching the existing Reader
 owners. Remove that button rather than forward its contacts through another
-gesture listener. Central Reader movement/user-scroll and the original pinch
-owner dismiss through the existing sidebar close path. Internal sidebar scroll
+gesture listener. Central Reader movement and the original pinch owner dismiss
+through the existing sidebar close path. The existing body wheel/key listeners
+handle those explicit scroll intents. A raw scroll event is insufficient: EPUB
+reflow and viewport clamping can move scrollTop without user input and must keep
+navigation open. Internal sidebar scroll
 and UI controls keep their own contacts; programmatic restoration does not
 dismiss. An outside stationary body tap preserves the previous dismiss-only
 policy, with its tail click consumed by the same central gesture owner. A fresh

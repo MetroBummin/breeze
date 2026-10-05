@@ -591,7 +591,6 @@ function clickGesture(event){
    (`readerScrollTo` 가 적어 둡니다 — scripts/reader/reader-scroll.js). */
 function scrollGesture(){
   const userScroll=!(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic());
-  if(userScroll&&typeof closePdfNavigation==='function')closePdfNavigation();
   if(typeof sentenceReaderScrolled==='function') sentenceReaderScrolled(userScroll);
   /* Mini pills wait for scroll idle, preserving the same lookup/result. Expanded
      detail keeps its existing scroll dismissal. Only real position changes reset idle. */
