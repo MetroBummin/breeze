@@ -47,6 +47,7 @@ jobs:
             BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
             BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
             BREEZE_QA_ENGINE=$engine npm run test:recent-reading || status=1
+            BREEZE_QA_ENGINE=$engine npm run test:pdf-sidebar || status=1
           done
           exit "$status"
       - name: Home reading card proof
@@ -57,6 +58,8 @@ jobs:
           path: |
             /tmp/breeze-home-reading-cards-proof/
             /tmp/breeze-recent-proof/
+            /tmp/breeze-pdf-sidebar-motion/
+            /tmp/breeze-sidebar-body-gestures/
           if-no-files-found: ignore
           retention-days: 7
       - name: Bundled long-read previews, imports and offline persistence

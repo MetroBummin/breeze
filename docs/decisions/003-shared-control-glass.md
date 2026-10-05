@@ -229,7 +229,7 @@ existing sidebar owner changes direction, avoiding a jump to a fixed endpoint.
 There is no per-frame layout work, new timer or motion queue.
 The shared PDF/EPUB surface uses this same motion. Edge input still opens on
 release through the existing toggle; there is no drag-following sheet or swipe
-close route. No pinch, ink or global input handler changes.
+close route. Ink ownership and zoomed edge-open exclusions remain.
 
 `tests/verify-pdf-sidebar-motion-browser.mjs` records real frame samples and seeks
 rendered trajectories, checks interrupted/repeated toggles, resize, ownership,
@@ -341,3 +341,25 @@ Browser coverage samples both directions, themes and viewport sizes, checks the
 animated filter and settled controls, and compares painted capsule corners with
 the underlying scene. Linux WebKit cannot establish physical iPhone rendering;
 real-device confirmation remains separate from these browser checks.
+
+## Sidebar dismissal on body manipulation
+
+The PDF/EPUB sidebar is a nonmodal navigator. Its former full-screen transparent
+button prevented body scroll and PDF pinch from reaching the existing Reader
+owners. Remove that button rather than forward its contacts through another
+gesture listener. Central Reader movement/user-scroll and the original pinch
+owner dismiss through the existing sidebar close path. Internal sidebar scroll
+and UI controls keep their own contacts; programmatic restoration does not
+dismiss. An outside stationary body tap preserves the previous dismiss-only
+policy, with its tail click consumed by the same central gesture owner. A fresh
+subsequent body tap works normally. A cancelled stationary body contact keeps
+the sidebar; a pan or pinch already committed cannot restore it.
+
+The pending Reader gesture holds the sidebar generation it began beside. A later
+sidebar opening cannot be dismissed by that earlier contact, even when it reuses
+the cached preview object. There is no new
+listener, gesture timer, persistent state or server request. Opening/closing
+reversal retains the current presentation, as described above. Browser checks
+cover PDF/EPUB body versus internal movement, programmatic restoration, trusted
+wheel/tap input, pinch cancellation, reopening and zoomed edge exclusions;
+these do not establish physical iOS/Pencil behavior.

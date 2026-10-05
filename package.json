@@ -37,7 +37,7 @@
     "test:meaning-deletion": "node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs",
     "test:lookup-quality": "node tests/verify-lookup-contract.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-lookup-quality-browser.mjs && node tests/verify-word-presentation-browser.mjs",
     "test:pdf-geometry": "node tests/verify-pdf-glyph-geometry.mjs && node tests/verify-pdf-highlight-browser.mjs",
-    "test:pdf-sidebar": "node tests/verify-pdf-sidebar-motion-browser.mjs",
+    "test:pdf-sidebar": "node tests/verify-pdf-sidebar-motion-browser.mjs && node tests/verify-sidebar-body-gestures-browser.mjs",
     "test:sentence-cue": "node tests/verify-sentence-cue-browser.mjs",
     "test:design-tone": "node tests/verify-design-tone-browser.mjs",
     "test:home-ui": "node tests/verify-control-transition-backdrop-browser.mjs && node tests/verify-home-resume-browser.mjs && node tests/verify-home-controls-browser.mjs && node tests/verify-library-refresh-browser.mjs && node tests/verify-reader-progress-browser.mjs && node tests/verify-reader-progress-handoff-browser.mjs && node tests/verify-reader-restoration-navigation-browser.mjs && node tests/verify-wordbook-browser.mjs && node tests/verify-lookup-work-browser.mjs",

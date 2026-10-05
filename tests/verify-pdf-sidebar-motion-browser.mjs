@@ -62,8 +62,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
         requestAnimationFrame(sample);
       };
       document.addEventListener('click',event=>{
-        if(event.target.closest('#pdf-page-button,#pdf-navigation-toggle,#pdf-navigation-dismiss'))record();
+        if(event.target.closest('#pdf-page-button,#pdf-navigation-toggle'))record();
       },true);
+      document.addEventListener('pointerup',()=>{if(pending==='body-tap')record();},true);
       document.addEventListener('keydown',event=>{if(event.key==='Escape')record();},true);
       document.addEventListener('touchend',()=>{if(pending?.endsWith('edge-open'))record();},true);
       const send=(type,live,changed)=>{
@@ -84,7 +85,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       await page.evaluate(route=>qaSidebarArm(route),route);
       if(route==='button-open')await page.locator('#pdf-page-button').tap();
       if(route==='close-button')await page.locator('#pdf-navigation-toggle').tap();
-      if(route==='backdrop')await page.locator('#pdf-navigation-dismiss').tap({position:{x:300,y:180}});
+      if(route==='body-tap')await page.touchscreen.tap(300,180);
       if(route==='escape')await page.keyboard.press('Escape');
       if(route==='edge-open'){
         await page.evaluate(()=>{qaSidebarEdge.start();qaSidebarEdge.move();});
@@ -128,7 +129,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     };
     for(let trial=0;trial<3;trial++){
       await measure('button-open');await measure('close-button');
-      await measure('edge-open');await measure(trial===1?'escape':'backdrop');
+      await measure('edge-open');await measure(trial===1?'escape':'body-tap');
     }
     if(engine===chromium)for(let trial=0;trial<3;trial++){
       await measure('trusted-edge-open');await measure('close-button');
@@ -179,7 +180,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       }
       for(let i=0;i<12;i++){await page.evaluate(()=>togglePdfNavigation());await page.waitForTimeout(15);}
       await closed();
-      assert.equal(await page.evaluate(()=>document.getElementById('pdf-navigation-dismiss').hidden),true);
+      assert.equal(await page.locator('#pdf-navigation-dismiss').count(),0,'Paper has no input-blocking backdrop');
       assert.equal(await page.evaluate(()=>document.getElementById('pdf-page-button').getAttribute('aria-expanded')),'false');
 
       // Short/cancelled/vertical/extra-contact input, zoom pan and resize keep their owners.

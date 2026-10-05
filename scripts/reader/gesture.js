@@ -81,6 +81,7 @@ const GESTURE_UI = 'UI', GESTURE_SCROLL = 'SCROLL', GESTURE_WORD = 'WORD',
       GESTURE_SENTENCE = 'SENTENCE', GESTURE_CANCEL = 'CANCEL',
       GESTURE_DISMISS_SENTENCE = 'DISMISS_SENTENCE', GESTURE_DISMISS_WORD = 'DISMISS_WORD',
       GESTURE_DISMISS_AA = 'DISMISS_AA', GESTURE_MODAL_UI = 'MODAL_UI';
+const GESTURE_DISMISS_NAVIGATION = 'DISMISS_NAVIGATION';
 
 const READER_SURFACES = [];
 /* 종이마다 자기를 등록합니다. 등록 순서는 상관없습니다 — 한 손짓은
@@ -330,8 +331,18 @@ function beginGesture(event){
 
   gesture.owner = OWNER_READER;
   gesture.surface = surface;
+  // The sidebar leaves the paper available to native pan/pinch. A stationary
+  // outside tap still dismisses only the sidebar, like the former backdrop.
+  gesture.navigation = typeof pdfNavigation==='undefined' ? null : pdfNavigation?.generation;
   activeGesture = gesture;
-  gesture.holdTimer = setTimeout(()=>holdGesture(gesture), GESTURE_HOLD_MS);
+  if(!gesture.navigation)gesture.holdTimer = setTimeout(()=>holdGesture(gesture), GESTURE_HOLD_MS);
+}
+
+function endNavigationGesture(gesture){
+  finishGesture(gesture, GESTURE_DISMISS_NAVIGATION, true);
+  if(gesture.navigation!==pdfNavigation?.generation)return;
+  countDispatch(gesture, 'DISMISS_NAVIGATION');
+  closePdfNavigation();
 }
 
 /* ---- 창의 손짓이 끝나는 자리 ----
@@ -423,6 +434,7 @@ function moveGesture(event){
      읽는 것은 종이의 손짓일 때뿐입니다. */
   if(gesture.moved > GESTURE_SLOP && gesture.owner === OWNER_READER){
     finishGesture(gesture, GESTURE_SCROLL);
+    if(gesture.navigation&&gesture.navigation===pdfNavigation?.generation)closePdfNavigation();
   }
 }
 
@@ -436,6 +448,7 @@ function endGesture(event){
   if(gesture.owner === OWNER_SENTENCE_MODAL){ endSentenceModalGesture(gesture); return; }
   if(gesture.owner === OWNER_WORD_MODAL){ endWordModalGesture(gesture); return; }
   if(gesture.owner === OWNER_AA){ endAaGesture(gesture); return; }
+  if(gesture.navigation){endNavigationGesture(gesture);return;}
   finishGesture(gesture, GESTURE_WORD);
   gesture.adapterCall = `${gesture.surface.name}.openWordAt(${Math.round(event.clientX)},${Math.round(event.clientY)})`;
   dispatchWord(gesture, event.clientX, event.clientY);
@@ -504,6 +517,7 @@ function clickGesture(event){
     if(lastGesture.decision === GESTURE_WORD || lastGesture.decision === GESTURE_SENTENCE
        || lastGesture.decision === GESTURE_DISMISS_SENTENCE
        || lastGesture.decision === GESTURE_DISMISS_WORD
+       || lastGesture.decision === GESTURE_DISMISS_NAVIGATION
        || lastGesture.decision === GESTURE_DISMISS_AA){
       event.stopPropagation();
       event.preventDefault();
@@ -548,6 +562,10 @@ function clickGesture(event){
   }
   const surface = readerSurfaceFor(event);
   if(!surface) return;
+  if(typeof pdfNavigation!=='undefined'&&pdfNavigation){
+    endNavigationGesture({...syntheticGesture(event,OWNER_READER,false),navigation:pdfNavigation.generation});
+    event.stopPropagation();event.preventDefault();return;
+  }
   gestureDocument = event.target.ownerDocument || document;
   const gesture = {
     id: ++gestureSeq, pointerId: null, x: event.clientX, y: event.clientY, moved: 0,
@@ -573,6 +591,7 @@ function clickGesture(event){
    (`readerScrollTo` 가 적어 둡니다 — scripts/reader/reader-scroll.js). */
 function scrollGesture(){
   const userScroll=!(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic());
+  if(userScroll&&typeof closePdfNavigation==='function')closePdfNavigation();
   if(typeof sentenceReaderScrolled==='function') sentenceReaderScrolled(userScroll);
   /* Mini pills wait for scroll idle, preserving the same lookup/result. Expanded
      detail keeps its existing scroll dismissal. Only real position changes reset idle. */

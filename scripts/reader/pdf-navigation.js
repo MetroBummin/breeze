@@ -156,7 +156,6 @@ function closePdfNavigation({release=false}={}){
   if(release)nav.session.navigationPreview=null;
   setPdfNavigationMotionStart(false);
   control.classList.add('pdf-navigation-closing');panel.inert=true;
-  document.getElementById('pdf-navigation-dismiss').hidden=true;
   document.getElementById('pdf-page-button')?.setAttribute('aria-expanded','false');
   pdfNavigation=null;pinReaderChrome(false,'page-navigation');
   clearTimeout(pdfNavigationCloseTimer);
@@ -179,9 +178,9 @@ function togglePdfNavigation(){
   pdfNavigation=originalSession.navigationPreview||{session:originalSession,strip,bookmarksOnly:false,pages:[]};
   pdfNavigation.generation=++pdfNavigationGeneration;
   originalSession.navigationPreview=pdfNavigation;
-  panel.hidden=false;panel.inert=false;document.getElementById('pdf-navigation-dismiss').hidden=false;
+  panel.hidden=false;panel.inert=false;
   document.getElementById('pdf-page-button').setAttribute('aria-expanded','true');
-  // A transparent dismissal surface prevents a closing tap reaching the page.
+  // The existing Reader gesture owner handles outside taps without blocking pan.
   pinReaderChrome(true,'page-navigation');
   if(currentEpubNavigationSession())buildEpubNavigation();else buildPdfNavigation(true);
 }
@@ -595,7 +594,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelOrigi
 document.addEventListener('DOMContentLoaded',()=>{
   installPdfNavigationScrollbar();installEpubNavigationContact();
   document.addEventListener('click',event=>{
-    if(event.target instanceof Element&&event.target.closest('#aafab,#pdf-ink-tools,[data-ink-toggle]'))closePdfNavigation();
+    if(!event.defaultPrevented&&event.target instanceof Element
+        &&!event.target.closest('#pdf-page-control')&&!readerSurfaceFor(event))closePdfNavigation();
   },true);
   document.getElementById('pdf-bookmarks-only').onclick=()=>{if(pdfNavigation){pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;if(pdfNavigation.session.kind==='epub')buildEpubNavigation(true);else buildPdfNavigation(true);}};
   document.getElementById('pdf-thumbnail-strip').addEventListener('scroll',paintPdfThumbnails,{passive:true});

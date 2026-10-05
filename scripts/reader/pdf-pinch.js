@@ -127,6 +127,7 @@ function originalPinchDistance(points){
                     points[0].clientY-points[1].clientY);
 }
 function beginOriginalPinch(center, distance, ids){
+  closePdfNavigation();
   if(typeof sentenceSurfaceAnchored==='function' && sentenceSurfaceAnchored()
       && typeof closeSentence==='function') closeSentence();
   // The same anchored lookup owner as scroll includes mini, detail and morphing UI.
