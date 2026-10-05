@@ -351,7 +351,11 @@ async function openBook(b,options={}){
   const intent=++readerOpenIntent;
   const alive=()=>intent===readerOpenIntent&&!options.signal?.aborted;
   if(!alive())return;
-  const presented=()=>{if(alive()&&options.onPresented)options.onPresented();};
+  const presented=()=>{
+    if(!alive())return;
+    rememberLocalReading(b);
+    if(options.onPresented)options.onPresented();
+  };
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;
@@ -371,7 +375,6 @@ async function openBook(b,options={}){
   curBook = b;
   const positionOpening={book:b};
   readerPositionRestoration=positionOpening;
-  if(!b.transient)save(HOME_RESUME_KEY,b.id);
   setReaderPillProgress(posOf(b.id).p||0,true);
   currentReaderMode = 'text';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));

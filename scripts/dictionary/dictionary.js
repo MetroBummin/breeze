@@ -390,6 +390,7 @@ function deleteMeaning(id){
   const item=words[id]; if(!item) return;
   const panelWasOpen=document.getElementById('panel').classList.contains('on');
   const root=item.root||id;
+  const changedKeys=new Set([id,root]);
   dead[senseCardKey(root,item.ko)]=Math.max(Date.now(),(item.up||0)+1);
   save(LS_DEAD,dead);
   const wasActive=id===selKey;
@@ -400,6 +401,7 @@ function deleteMeaning(id){
   rest.sort(([a,aw],[b,bw])=>(a===selKey?-1:0)-(b===selKey?-1:0)
     || meaningPickedAt(bw)-meaningPickedAt(aw));
   const bury=key=>{
+    changedKeys.add(key);
     dead[key]=Math.max(Date.now(),(words[key]&&(words[key].up||words[key].addedAt)||0)+1);
     delete words[key]; save(LS_DEAD,dead);
   };
@@ -423,8 +425,9 @@ function deleteMeaning(id){
     if(wasActive){ const [nextId]=rest[0]; touchMeaning(nextId); next=nextId; }
   }
   if(!next || !words[next]) next=words[root]?root:'';
+  if(next)changedKeys.add(next);
   addingMeaning=false;
-  saveWords(); queueSync(); paintWord(root); refreshReaderWords();
+  saveWords([...changedKeys]); queueSync(true); paintWord(root); refreshReaderWords();
   if(typeof renderVocab==='function' && document.getElementById('v-vocab').classList.contains('on')) renderVocab();
   contextView=null;
   if(panelWasOpen){
@@ -1167,12 +1170,13 @@ document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k=words[selKey]&&(words[selKey].root||selKey);if(!k)return;
   const expression=Array.isArray(words[k]&&words[k].phraseParts);
-  Object.keys(words).filter(id=>id===k||words[id]&&words[id].root===k).forEach(id=>{
+  const removed=Object.keys(words).filter(id=>id===k||words[id]&&words[id].root===k);
+  removed.forEach(id=>{
     const item=words[id],stamp=Math.max(Date.now(),(item.up||0)+1,dead[id]||0);
     if(item.ko)dead[senseCardKey(k,item.ko)]=stamp;
     dead[id]=stamp;delete words[id];
   });
-  save(LS_DEAD,dead);closePanel();saveWords();paintWord(k);if(expression)refreshReaderWords();queueSync();
+  save(LS_DEAD,dead);closePanel();saveWords(removed);paintWord(k);if(expression)refreshReaderWords();queueSync(true);
 };
 function refreshReaderWords(){
   if(curBook && currentReaderMode==='text'){
@@ -1210,6 +1214,9 @@ async function fetchEnMetadata(form,force=false){
   const request=(async()=>{
     const cached=force?null:await dictGet(key);
     if(cached&&cached.expires>Date.now())return cached;
+    // Offline details can use local metadata, but a cache miss is not a
+    // provider failure or a reason to start a request/retry cooldown.
+    if(navigator.onLine===false)return null;
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),3500);
     try{
@@ -1722,12 +1729,14 @@ async function fillDictionaryMetadata(k,life,force=false){
   const forms=[...new Set([canonical,...(/\s/.test(canonical)?[]:(w.forms||[]))])]
     .filter(f=>/^[a-z][a-z'’ -]*$/i.test(f)).slice(0,2);
   if(!forms.length)return;
-  w.enLoading=true;delete w.enError;
+  w.enLoading=navigator.onLine!==false;
+  if(w.enLoading)delete w.enError;
   const work=(async()=>{
     try{
       for(const form of forms){
         const result=await fetchEnMetadata(form,force);
         if(!wordLookupAlive(life)||words[k]!==w)return;
+        if(!result)return;
         if(result.missing)continue;
         Object.assign(w,{defs:result.defs,phon:result.phon,definitionSource:result.source,definitionSourceWord:result.sourceWord});
         delete w.enRetryAt;return;
@@ -1837,8 +1846,6 @@ function renderVocab(){
     const toggle = ()=>{
       const open=!vocabOpen.has(groupKey);
       if(open)vocabOpen.add(groupKey);else vocabOpen.delete(groupKey);
-      group.classList.toggle('open',open);
-      group.querySelector('.vword').setAttribute('aria-expanded',String(open));
       group.querySelectorAll('.vsense').forEach(row=>{
         const sense=/** @type {HTMLElement} */(row),k=sense.dataset.k,w=words[k];
         const ko=sense.querySelector('.vko');
@@ -1846,12 +1853,16 @@ function renderVocab(){
         if(open){
           ko.setAttribute('contenteditable','true');ko.setAttribute('spellcheck','false');
           sense.insertAdjacentHTML('beforeend',vocabMoreHtml(w));
-          /** @type {HTMLElement} */(sense.querySelector('.rowdel')).onclick=()=>{deleteMeaning(k);renderVocab();};
+          /** @type {HTMLElement} */(sense.querySelector('.rowdel')).onclick=()=>deleteMeaning(k);
         }else{
           ko.removeAttribute('contenteditable');ko.removeAttribute('spellcheck');
           sense.querySelector('.vmore')?.remove();
         }
       });
+      // contenteditable can synchronously flush styles. Prepare editing before
+      // changing the group's geometry, so that flush does not reflow the list.
+      group.classList.toggle('open',open);
+      group.querySelector('.vword').setAttribute('aria-expanded',String(open));
     };
     /* 접었다 펴는 일은 줄 전체가 받습니다. 별·삭제·펼친 속은 각자 할 일이 있어서
        여기서 한 번에 비켜 줍니다 — 세 곳에 stopPropagation 을 흩뿌리는 것보다
@@ -1874,11 +1885,11 @@ function renderVocab(){
       const sense = /** @type {HTMLElement} */(row);
       const k = sense.dataset.k;
       const del = /** @type {HTMLElement} */(sense.querySelector('.rowdel'));
-      if(del) del.onclick = ()=>{ deleteMeaning(k); renderVocab(); };
+      if(del) del.onclick = ()=>deleteMeaning(k);
       sense.querySelector('.vko').addEventListener('blur', event=>{
         if(!words[k]) return;
         const value=(/** @type {HTMLElement} */(event.target)).textContent.trim();
-        if(!value){ deleteMeaning(k); renderVocab(); return; }
+        if(!value){ deleteMeaning(k); return; }
         if(words[k].ko===value)return;
         words[k].ko=value; words[k].koEdited=true; words[k].up=Date.now();
         saveWords(k); queueSync(true);

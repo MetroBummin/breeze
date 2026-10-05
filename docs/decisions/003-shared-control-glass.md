@@ -258,6 +258,17 @@ timestamp; scrolling still owns progress updates. A deleted/missing local target
 falls back to the existing saved-progress ordering, and transient onboarding is
 never remembered. Titles and actions resolve the same target.
 
+## Local recently read shelf order (2026-10-05)
+
+Reader presentation records device-local recency per book in
+`breeze.local-read.v1`, together with the existing Home resume identity. Reopening
+an unchanged location moves that book to the front of Home and its book shelf;
+progress `t` remains owned by location changes. Preview and cancelled preparation
+do not record a read. Transient onboarding is excluded. Existing books without
+local recency fall back to their saved progress timestamp, then addition date.
+Home, shelf and current-book indicators share that comparator. Deletion removes
+the local recency record. Memory's independent sort selection is unchanged.
+
 Home/Reader snapshots use intrinsic-size, centered capsule contents clipped by
 the moving rounded surface, so the browser does not stretch title text between
 different pill widths. Both directions use cubic-bezier(.32,.72,0,1), keeping the

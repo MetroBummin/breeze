@@ -46,6 +46,7 @@ jobs:
           for engine in chromium webkit; do
             BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
             BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
+            BREEZE_QA_ENGINE=$engine npm run test:recent-reading || status=1
           done
           exit "$status"
       - name: Home reading card proof
@@ -53,7 +54,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: home-reading-cards-proof
-          path: /tmp/breeze-home-reading-cards-proof/
+          path: |
+            /tmp/breeze-home-reading-cards-proof/
+            /tmp/breeze-recent-proof/
           if-no-files-found: ignore
           retention-days: 7
       - name: Bundled long-read previews, imports and offline persistence
