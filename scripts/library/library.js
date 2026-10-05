@@ -931,7 +931,7 @@ function localReadAt(id){
 }
 function rememberLocalReading(book){
   if(book.transient)return;
-  // Presentation owns local recency. Progress timestamps still own locations.
+  // Successful restoration owns recency. Progress timestamps own locations.
   const previous=Math.max(0,...books.map(item=>localReadAt(item.id)));
   localReadTimes[book.id]=Math.max(Date.now(),previous+1);
   save(LOCAL_READ_KEY,localReadTimes);

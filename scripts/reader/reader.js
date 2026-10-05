@@ -353,7 +353,6 @@ async function openBook(b,options={}){
   if(!alive())return;
   const presented=()=>{
     if(!alive())return;
-    rememberLocalReading(b);
     if(options.onPresented)options.onPresented();
   };
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
@@ -415,10 +414,8 @@ async function openBook(b,options={}){
   if(!reuse)renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
-  /* 책을 열었다는 것만으로 "더 최근에 읽었다"고 쓰면, 실제로 더 멀리 읽은
-     다른 기기의 위치를 이길 수 있습니다. 처음 연 책만 자리를 만들고, 이후의
-     시간표는 실제 스크롤이 남깁니다. */
-  if(firstOpen && !b.transient){ positions[b.id] = {...initialPosition, t:Date.now()}; save(LS_POS, positions); }
+  /* Progress freshness belongs to location changes. A first-open marker is
+     created only after the document and its saved location are ready. */
   updateReaderModeControls();
   try{
   const original = prepared ? prepared.original : (bookSupportsOriginal(b) ? await originalGetForBook(b) : null);
@@ -428,7 +425,8 @@ async function openBook(b,options={}){
     ? (original ? 'original' : 'text')
     : (firstOpen && original ? 'original' : 'text');
   if(desired==='original'){
-    await switchReaderMode('original',{initial:true,record:original,onPresented:presented});
+    const ready=await switchReaderMode('original',{initial:true,record:original,onPresented:presented});
+    if(!ready)return;
     if(alive()&&curBook===b&&reuse&&(!reusedWords||reusedMode!=='original'))refreshOriginalSavedWords();
   }
   else{
@@ -442,6 +440,11 @@ async function openBook(b,options={}){
       }
       resolve();
     }));
+  }
+  if(alive()&&curBook===b&&!b.transient){
+    const position=posOf(b.id);
+    if(firstOpen&&!position.t){positions[b.id]={...position,t:Date.now()};save(LS_POS,positions);}
+    rememberLocalReading(b);
   }
   }finally{
     if(readerPositionRestoration===positionOpening)readerPositionRestoration=null;
