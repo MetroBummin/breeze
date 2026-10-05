@@ -62,7 +62,7 @@ established by this web-upload analogue. The user should confirm this exact
 chooser flow on the next coordinated TestFlight build.
 
 Combined final validation: `npm test` passed (exit 0, Node 24.19.0), including the
-new chooser and RSS contracts. All fifteen existing Chromium atomic-import
-cases passed. `npm run ios:sync` passed, and both changed production scripts
+new chooser and RSS contracts. All fourteen existing Chromium atomic-import
+cases passed. `npm run ios:sync` passed, and all three changed production scripts
 match the actual `ios/App/App/public` bundle byte for byte. This verifies web
 asset delivery only; it does not establish an Xcode archive or new release.

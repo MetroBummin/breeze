@@ -40,15 +40,15 @@ photo; its article supplies either an OG photo or a body-only photo. These are
 synthetic transports, not a claim about TMZ's current response. Both cases use
 the same feed/article response across versions. No live request leaves the test.
 
-| Version | Article requests before selection | Home photo before selection | Article requests on selection | Preview photo after selection (OG / body-only) | Home photo after selection |
-| --- | ---: | --- | ---: | --- | --- |
-| Main236 | 1 | Yes | 0 | Yes / Yes | Yes |
-| PR97 | 1 | Yes | 0 | Yes / Yes | Yes |
-| Main238 | 0 | No: artwork | 1 | Yes / No | No: artwork |
-| Metadata-only fixes (`4e24903`) | 0 | No: artwork | 1 | Yes / No | No: artwork |
-| Selected-intent fix | 0 | No: artwork | 1 | Yes / Yes | Yes |
+| Version | Reading-body preparation before selection | Cover metadata requests before selection | Home photo before selection | Article requests on selection | Preview photo after selection (OG / body-only) | Home photo after selection |
+| --- | ---: | ---: | --- | ---: | --- | --- |
+| Main236 | 1 | 0 | Yes | 0 | Yes / Yes | Yes |
+| PR97 | 1 | 0 | Yes | 0 | Yes / Yes | Yes |
+| Main238 | 0 | 0 | No: artwork | 1 | Yes / No | No: artwork |
+| Metadata-only fixes (`4e24903`) | 0 | 0 | No: artwork | 1 | Yes / No | No: artwork |
+| Final visible-cover fix | 0 | 1 | Yes | 1 | Yes / Yes | Yes |
 
-All ten Chromium comparison cases pass. The selected fix also preserves its
+All ten Chromium comparison cases pass. The final fix also preserves its
 Home photo through a normal rerender, saves no book on Preview/dismissal, and
 does not write its selected photo into the durable public-feed cache. Exact
 source SHA256 values, request records and screenshots are in
@@ -60,13 +60,14 @@ The retained Home card after selecting the body-only image fixture:
 
 ![Home receives the already selected article photo](artifacts/rss-covers-20261005/selected-home-after.png)
 
-**Remaining product tradeoff:** a cold, unselected card whose feed supplies no
-photo still uses artwork. Its source-page photo cannot appear before fetching
-that page unless authorized metadata already supplies it. Reinstating all of
-the old initial photographs would therefore conflict with the requested
-no-eager-article-fetch invariant. The selected photo is memory-only and can
-return to artwork on document relaunch or a fresh feed replacement. This patch
-does not promise photographs on every initially unselected discovery card.
+**Historical selected-only tradeoff, now superseded:** the selected-only fix
+left cold, unselected cards on artwork when their feed supplied no photograph.
+The user subsequently authorized a bounded initial lookup in the same PR. The
+final implementation can restore currently visible missing photos before a
+click through at most two serial metadata lookups per discovery generation,
+with a bounded expiring public photo cache. It prepares no reading body, but
+the existing relay still reads a whole upstream page before the client retains
+its prefix. See [final visible-cover evidence and limits](rss-visible-covers-20261005.md).
 
 ## Separate supplied-feed metadata defects
 
@@ -82,8 +83,9 @@ and compares MIME types case insensitively. Existing URL validation, tracking
 pixel exclusion, responsive-image choice and photo decode/relay recovery remain
 the owners of their respective behavior. There is no new state or request.
 
-Decision 015's product contract is preserved: no discovery article-body fetch;
-absent or failed photographs keep existing local artwork, readable headline and
+Decision 015's product contract is preserved: no discovery reading-body preparation;
+only bounded visible cover-metadata lookups retrieve raw HTML through the relay.
+Absent or failed photographs keep existing local artwork, readable headline and
 source, and the same selectable card footprint. No source is hidden solely for
 having no photograph. The shared catalog remains OFF. Existing metadata-only
 public caches refresh naturally at expiry or an explicit refresh; no personal

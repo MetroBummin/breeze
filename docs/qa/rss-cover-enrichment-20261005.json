@@ -484,14 +484,14 @@
           "kind": "image",
           "target": "https://images.fixture/article-photo.jpg",
           "bytes": 235150
-        },
+        }
+      ],
+      "selectedRequests": [
         {
           "kind": "image",
           "target": "https://images.fixture/article-photo.jpg",
           "bytes": 235150
-        }
-      ],
-      "selectedRequests": [
+        },
         {
           "kind": "image",
           "target": "https://images.fixture/article-photo.jpg",
@@ -947,16 +947,16 @@
       ]
     },
     {
-      "name": "selected-intent-fix",
+      "name": "visible-cover-fix",
       "fixture": "og-photo",
       "sha": "working-tree",
-      "sourceSha256": "1690940f12b0e65c20ed962f5b76aa087aac749becbf9f22e7a161f0419090fa",
+      "sourceSha256": "e457d7a23be2eca2c2d41f74fea9e491d3c7a5e495944ad6bf3c13dc65c69c1c",
       "articleSourceSha256": "dbf953fb24ccdcee07c8eaf89ac1a570c18be253263f33eb164b1eec66fc66ca",
       "beforeSelection": {
-        "entryPhoto": "",
-        "fallback": true,
-        "cardPhoto": false,
-        "cardImage": "",
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
         "previewOpen": false,
         "previewPhoto": false,
         "previewImage": "",
@@ -1050,42 +1050,52 @@
           "kind": "feed",
           "target": "https://medium.com/feed/tag/business",
           "bytes": 30
+        },
+        {
+          "kind": "cover-metadata",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 1959
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
         }
       ],
       "selectedRequests": [
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
         {
           "kind": "article",
           "target": "https://stories.fixture/news/the-reading-story",
           "bytes": 1889
         },
         {
-          "kind": "image",
-          "target": "https://images.fixture/article-photo.jpg",
-          "bytes": 235150
-        },
-        {
           "kind": "mock-introduction",
           "target": "https://relay.fixture/functions/v1/article-preview",
           "bytes": 0
-        },
-        {
-          "kind": "image",
-          "target": "https://images.fixture/article-photo.jpg",
-          "bytes": 235150
         }
       ]
     },
     {
-      "name": "selected-intent-fix",
+      "name": "visible-cover-fix",
       "fixture": "body-only-photo",
       "sha": "working-tree",
-      "sourceSha256": "1690940f12b0e65c20ed962f5b76aa087aac749becbf9f22e7a161f0419090fa",
+      "sourceSha256": "e457d7a23be2eca2c2d41f74fea9e491d3c7a5e495944ad6bf3c13dc65c69c1c",
       "articleSourceSha256": "dbf953fb24ccdcee07c8eaf89ac1a570c18be253263f33eb164b1eec66fc66ca",
       "beforeSelection": {
-        "entryPhoto": "",
-        "fallback": true,
-        "cardPhoto": false,
-        "cardImage": "",
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
         "previewOpen": false,
         "previewPhoto": false,
         "previewImage": "",
@@ -1179,28 +1189,38 @@
           "kind": "feed",
           "target": "https://medium.com/feed/tag/business",
           "bytes": 30
+        },
+        {
+          "kind": "cover-metadata",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 2357
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
         }
       ],
       "selectedRequests": [
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
         {
           "kind": "article",
           "target": "https://stories.fixture/news/the-reading-story",
           "bytes": 2285
         },
         {
-          "kind": "image",
-          "target": "https://images.fixture/article-photo.jpg",
-          "bytes": 235150
-        },
-        {
           "kind": "mock-introduction",
           "target": "https://relay.fixture/functions/v1/article-preview",
           "bytes": 0
-        },
-        {
-          "kind": "image",
-          "target": "https://images.fixture/article-photo.jpg",
-          "bytes": 235150
         }
       ]
     }

@@ -53,6 +53,7 @@ jobs:
           for engine in chromium webkit; do
             BREEZE_QA_ENGINE=$engine BREEZE_COVER_PROOF=/tmp/breeze-cover-chooser/$engine node tests/verify-cover-chooser-browser.mjs || status=1
             BREEZE_QA_ENGINE=$engine BREEZE_RSS_COVER_PROOF=/tmp/breeze-rss-covers/$engine node tests/verify-rss-covers-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_VISIBLE_COVER_PROOF=/tmp/breeze-rss-visible-covers/$engine node tests/verify-rss-visible-covers-browser.mjs || status=1
             BREEZE_QA_ENGINE=$engine BREEZE_RSS_ENRICHMENT_CURRENT_ONLY=1 BREEZE_RSS_ENRICHMENT_PROOF=/tmp/breeze-rss-enrichment/$engine node tests/compare-rss-cover-enrichment-browser.mjs || status=1
           done
           exit "$status"
@@ -65,6 +66,7 @@ jobs:
             /tmp/breeze-cover-chooser/
             /tmp/breeze-rss-covers/
             /tmp/breeze-rss-enrichment/
+            /tmp/breeze-rss-visible-covers/
           if-no-files-found: ignore
           retention-days: 7
       - name: RSS intent boundary and catalog browser contracts

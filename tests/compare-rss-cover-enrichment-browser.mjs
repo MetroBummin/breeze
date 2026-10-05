@@ -19,7 +19,7 @@ const historicalVersions=[
   {name:'main238',sha:'7f64075aa1a4b82c74ec7bb829409b99d09e6d81',eager:false},
   {name:'metadata-fixes',sha:'4e24903',eager:false},
 ];
-const currentVersion={name:'selected-intent-fix',sha:'working-tree',eager:false,selectedProjection:true};
+const currentVersion={name:'visible-cover-fix',sha:'working-tree',eager:false,visibleMetadata:true,selectedProjection:true};
 const versions=(process.env.BREEZE_RSS_ENRICHMENT_CURRENT_ONLY?[currentVersion]:[...historicalVersions,currentVersion]).map(version=>({...version,
   source:version.sha==='working-tree'?readFileSync(resolve(root,'scripts/importers/rss.js'),'utf8'):git(version.sha,'scripts/importers/rss.js'),
   articleSource:version.sha==='working-tree'?readFileSync(resolve(root,'scripts/importers/article.js'),'utf8'):git(version.sha,'scripts/importers/article.js')}));
@@ -67,6 +67,10 @@ try{
           calls.push({kind:'mock-introduction',target:raw,bytes:0});
           return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify({promptVersion:5,summaryKo:'읽기의 사례를 통해 정보를 비교하는 방법을 살펴봅니다.'})});
         }
+        if(url.origin==='https://relay.fixture'&&url.pathname==='/functions/v1/article'&&url.searchParams.get('url')===article&&!url.searchParams.has('as')){
+          const body=JSON.stringify({url:article,html});calls.push({kind:'cover-metadata',target:article,bytes:Buffer.byteLength(body)});
+          return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body});
+        }
         const feedUrls=[...version.source.matchAll(/url:'([^']+)'/g)].map(([,value])=>value);
         if(feedUrls.includes(raw)){
           const body=raw===feed?xml:'<rss><channel></channel></rss>';
@@ -81,6 +85,7 @@ try{
         const card=document.querySelector(`[data-rss-url="${url}"]`);
         return card&&!card.classList.contains('rss-pending');
       },article);
+      if(version.visibleMetadata)await page.waitForFunction(url=>document.querySelector(`[data-rss-url="${url}"] .thumb`).classList.contains('has-cover'),article);
       const inspect=()=>page.evaluate(url=>{
         const card=document.querySelector(`[data-rss-url="${url}"]`),entry=rssCands.flat().find(item=>item.url===url);
         const hero=document.querySelector('#article-preview .ap-hero img');
@@ -92,8 +97,10 @@ try{
           preparedBodies:rssPreparedArticles.size};
       },article);
       const before=await inspect(),beforeCalls=calls.length;
-      assert.equal(before.cardPhoto,version.eager);assert.equal(before.entryPhoto,version.eager?imageUrl:'');
+      assert.equal(before.cardPhoto,version.eager||version.visibleMetadata===true);assert.equal(before.entryPhoto,version.eager||version.visibleMetadata?imageUrl:'');
       assert.equal(calls.filter(call=>call.kind==='article').length,version.eager?1:0);
+      assert.equal(calls.filter(call=>call.kind==='cover-metadata').length,version.visibleMetadata?1:0);
+      if(version.visibleMetadata)assert.equal(before.preparedBodies,0,'Cover lookup prepared an article body');
       assert.equal(before.books,0);
       await page.locator('#casual-rail').screenshot({path:resolve(proof,version.name+'-'+fixture.name+'-home.png')});
       await page.locator(`[data-rss-url="${article}"]`).click();
@@ -124,6 +131,7 @@ try{
         beforeSelection:before,afterSelection:after,retainedAfterRerender:retained,homeRequests:calls.slice(0,beforeCalls),selectedRequests:calls.slice(beforeCalls)};
       result.rows.push(row);
       console.log(version.name,fixture.name,JSON.stringify({homeArticleRequests:row.homeRequests.filter(call=>call.kind==='article').length,
+        homeCoverMetadataRequests:row.homeRequests.filter(call=>call.kind==='cover-metadata').length,
         homePhoto:before.cardPhoto,selectedArticleRequests:row.selectedRequests.filter(call=>call.kind==='article').length,
         selectedPreviewPhoto:after.previewPhoto,homePhotoAfterSelection:after.cardPhoto}));
     }finally{await context.close();}

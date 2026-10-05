@@ -1,0 +1,1834 @@
+{
+  "sourceSha256": "e457d7a23be2eca2c2d41f74fea9e491d3c7a5e495944ad6bf3c13dc65c69c1c",
+  "scope": "Immutable current RSS source on the real app; synthetic feeds, images and streamed existing-relay JSON. No live external request.",
+  "limits": {
+    "visibleLookupsPerDiscoveryGeneration": 2,
+    "retainedPrefixBytes": 131072,
+    "cacheBytes": 64000,
+    "cacheRecords": 100,
+    "positiveTtlHours": 24,
+    "negativeTtlMinutes": 30
+  },
+  "units": "UTF-8 bytes; upstreamHtmlBytes is the complete generated fixture, reader readBytes can exceed retained prefix, serverWrittenBytes is local writer evidence rather than billed bytes.",
+  "rows": [
+    {
+      "engine": "chromium",
+      "scenario": "cold/warm/offscreen/budget",
+      "first": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-0",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-1",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-0",
+            "photo": "https://images.fixture/chromium-cold/g0/photo-0.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-1",
+            "photo": "https://images.fixture/chromium-cold/g0/photo-1.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cold%2Fg0%2Farticle-0",
+            "readBytes": 159744,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cold%2Fg0%2Farticle-1",
+            "readBytes": 32768,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          131072,
+          32768
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-cold/g0/article-0\":{\"at\":1791218183785,\"photo\":\"https://images.fixture/chromium-cold/g0/photo-0.jpg\"},\"https://stories.fixture/chromium-cold/g0/article-1\":{\"at\":1791218183865,\"photo\":\"https://images.fixture/chromium-cold/g0/photo-1.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218182933,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218182938,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218182939,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218182940,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218182940,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218182941,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218182942,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218182943,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218182943,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218182943,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218182943,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218182943,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218182944,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "warm": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-0",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-1",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-0",
+            "photo": "https://images.fixture/chromium-cold/g0/photo-0.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-1",
+            "photo": "https://images.fixture/chromium-cold/g0/photo-1.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cold/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [],
+        "prefixEvidence": [],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-cold/g0/article-0\":{\"at\":1791218183785,\"photo\":\"https://images.fixture/chromium-cold/g0/photo-0.jpg\"},\"https://stories.fixture/chromium-cold/g0/article-1\":{\"at\":1791218183865,\"photo\":\"https://images.fixture/chromium-cold/g0/photo-1.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218182933,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218182938,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218182939,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218182940,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218182940,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218182941,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218182942,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218182943,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218182943,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218182943,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218182943,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218182943,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218182944,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-cold/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "secondRail": {
+        "remaining": 0,
+        "photo": false
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-cold/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100282,
+          "serializedResponseBytes": 2100358,
+          "serverWrittenBytes": 172032,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-cold/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100282,
+          "serializedResponseBytes": 2100358,
+          "serverWrittenBytes": 36864,
+          "closedEarly": true
+        }
+      ],
+      "maxActive": 1
+    },
+    {
+      "engine": "chromium",
+      "scenario": "supplied-photo-priority/public-URLs/cache-expiry-bounds",
+      "state": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-0",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-1",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-0",
+            "photo": "https://images.fixture/chromium-supplied/g0/photo-0.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-1",
+            "photo": "https://images.fixture/chromium-supplied/g0/photo-1.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-supplied/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-supplied%2Fg0%2Farticle-1",
+            "readBytes": 167936,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          131072
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-supplied/g0/article-1\":{\"at\":1791218188383,\"photo\":\"https://images.fixture/chromium-supplied/g0/photo-1.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218188091,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"https://images.fixture/chromium-supplied/g0/photo-0.jpg\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218188093,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218188093,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218188093,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218188093,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218188094,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218188094,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218188097,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218188097,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218188098,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218188098,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218188098,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218188098,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-supplied/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "validation": {
+        "rejected": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "valid": "https://public.example/a?id=2",
+        "fromInert": "https://images.fixture/public.jpg",
+        "badStored": null,
+        "positiveExpired": true,
+        "emptyExpired": true,
+        "scriptExecuted": false,
+        "cacheRecords": 58,
+        "cacheBytes": 63687
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-supplied/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100286,
+          "serializedResponseBytes": 2100366,
+          "serverWrittenBytes": 200704,
+          "closedEarly": true
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "scenario": "twitter",
+      "state": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-0",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-1",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-0",
+            "photo": "https://images.fixture/chromium-twitter/g0/photo-0.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-1",
+            "photo": "https://images.fixture/chromium-twitter/g0/photo-1.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-twitter/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-twitter%2Fg0%2Farticle-0",
+            "readBytes": 45056,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-twitter%2Fg0%2Farticle-1",
+            "readBytes": 28672,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          45056,
+          28672
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-twitter/g0/article-0\":{\"at\":1791218189439,\"photo\":\"https://images.fixture/chromium-twitter/g0/photo-0.jpg\"},\"https://stories.fixture/chromium-twitter/g0/article-1\":{\"at\":1791218189475,\"photo\":\"https://images.fixture/chromium-twitter/g0/photo-1.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218189195,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218189197,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218189197,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218189197,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218189198,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218189198,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218189198,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218189200,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218189201,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218189201,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218189201,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218189202,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218189202,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-twitter/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-twitter/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100286,
+          "serializedResponseBytes": 2100365,
+          "serverWrittenBytes": 57344,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-twitter/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100286,
+          "serializedResponseBytes": 2100365,
+          "serverWrittenBytes": 36864,
+          "closedEarly": true
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "scenario": "first-image",
+      "state": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-0",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-1",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-0",
+            "photo": "https://images.fixture/chromium-first-image/g0/photo-0.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-1",
+            "photo": "https://images.fixture/chromium-first-image/g0/photo-1.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-first-image/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-first-image%2Fg0%2Farticle-0",
+            "readBytes": 106496,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-first-image%2Fg0%2Farticle-1",
+            "readBytes": 36864,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          106496,
+          36864
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-first-image/g0/article-0\":{\"at\":1791218190792,\"photo\":\"https://images.fixture/chromium-first-image/g0/photo-0.jpg\"},\"https://stories.fixture/chromium-first-image/g0/article-1\":{\"at\":1791218190856,\"photo\":\"https://images.fixture/chromium-first-image/g0/photo-1.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218190547,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218190549,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218190549,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218190549,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218190550,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218190550,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218190550,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218190550,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218190551,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218190551,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218190551,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218190551,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218190551,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-first-image/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-first-image/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100289,
+          "serializedResponseBytes": 2100374,
+          "serverWrittenBytes": 139264,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-first-image/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100289,
+          "serializedResponseBytes": 2100374,
+          "serverWrittenBytes": 45056,
+          "closedEarly": true
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "scenario": "late",
+      "state": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-0",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-1",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-0",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-1",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-late/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-late%2Fg0%2Farticle-0",
+            "readBytes": 131072,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-late%2Fg0%2Farticle-1",
+            "readBytes": 131072,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          86016,
+          94208,
+          102400,
+          106496,
+          110592,
+          118784,
+          122880,
+          131072,
+          131072,
+          4096,
+          8192,
+          12288,
+          16384,
+          20480,
+          24576,
+          28672,
+          32768,
+          36864,
+          40960,
+          45056,
+          49152,
+          53248,
+          57344,
+          61440,
+          65536,
+          69632,
+          73728,
+          77824,
+          81920,
+          86016,
+          90112,
+          94208,
+          98304,
+          102400,
+          106496,
+          110592,
+          114688,
+          118784,
+          122880,
+          126976,
+          131072,
+          131072
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-late/g0/article-0\":{\"at\":1791218191781,\"photo\":\"\"},\"https://stories.fixture/chromium-late/g0/article-1\":{\"at\":1791218191878,\"photo\":\"\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218191538,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-late/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218191540,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-late/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218191541,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-late/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218191541,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-late/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218191541,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-late/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218191541,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-late/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218191541,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-late/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218191542,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-late/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218191542,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-late/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218191542,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-late/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218191542,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-late/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218191543,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-late/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218191543,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-late/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-late/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100282,
+          "serializedResponseBytes": 2100358,
+          "serverWrittenBytes": 147456,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-late/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100282,
+          "serializedResponseBytes": 2100358,
+          "serverWrittenBytes": 139264,
+          "closedEarly": true
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "scenario": "cancelled-late-completion/rotation",
+      "cancelled": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-0",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-1",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-0",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-0",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-1",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-1",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-12",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cancel-rotation%2Fg0%2Farticle-0",
+            "readBytes": 16384,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          16384
+        ],
+        "rssStorage": {
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218192801,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218192803,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218192803,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218192803,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218192804,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218192804,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218192804,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218192804,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218192804,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "rotated": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-0",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-1",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-0",
+            "photo": "https://images.fixture/chromium-cancel-rotation/g1/photo-0.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-0",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-1",
+            "photo": "https://images.fixture/chromium-cancel-rotation/g1/photo-1.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-1",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g1/article-12",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-cancel-rotation/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cancel-rotation%2Fg0%2Farticle-0",
+            "readBytes": 16384,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cancel-rotation%2Fg1%2Farticle-0",
+            "readBytes": 4096,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cancel-rotation%2Fg1%2Farticle-1",
+            "readBytes": 12288,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          16384,
+          4096,
+          12288
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-cancel-rotation/g1/article-0\":{\"at\":1791218193522,\"photo\":\"https://images.fixture/chromium-cancel-rotation/g1/photo-0.jpg\"},\"https://stories.fixture/chromium-cancel-rotation/g1/article-1\":{\"at\":1791218193558,\"photo\":\"https://images.fixture/chromium-cancel-rotation/g1/photo-1.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218192801,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218192803,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218192803,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218192803,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218192804,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218192804,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218192804,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218192804,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218192804,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218192805,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true},{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-cancel-rotation/g1/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-cancel-rotation/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100293,
+          "serializedResponseBytes": 2100380,
+          "serverWrittenBytes": 24576,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-cancel-rotation/g1/article-0",
+          "index": 0,
+          "generation": "g1",
+          "upstreamHtmlBytes": 2100293,
+          "serializedResponseBytes": 2100380,
+          "serverWrittenBytes": 8192,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-cancel-rotation/g1/article-1",
+          "index": 1,
+          "generation": "g1",
+          "upstreamHtmlBytes": 2100293,
+          "serializedResponseBytes": 2100380,
+          "serverWrittenBytes": 20480,
+          "closedEarly": true
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "scenario": "scroll-out-cancellation",
+      "initialTarget": "https://stories.fixture/chromium-scroll-cancel/g0/article-0",
+      "state": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-0",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-1",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-6",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-0",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-1",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-6",
+            "photo": "https://images.fixture/chromium-scroll-cancel/g0/photo-6.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-scroll-cancel/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-scroll-cancel%2Fg0%2Farticle-0",
+            "readBytes": 8192,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-scroll-cancel%2Fg0%2Farticle-6",
+            "readBytes": 8192,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          8192,
+          8192
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-scroll-cancel/g0/article-6\":{\"at\":1791218195549,\"photo\":\"https://images.fixture/chromium-scroll-cancel/g0/photo-6.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218194710,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218194713,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218194713,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218194713,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218194714,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218194715,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218194715,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218194716,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218194716,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218194716,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218194716,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218194716,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218194717,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-scroll-cancel/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-scroll-cancel/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100291,
+          "serializedResponseBytes": 2100376,
+          "serverWrittenBytes": 12288,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-scroll-cancel/g0/article-6",
+          "index": 6,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100291,
+          "serializedResponseBytes": 2100376,
+          "serverWrittenBytes": 16384,
+          "closedEarly": true
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "scenario": "coalesced-current-consumers",
+      "shares": {
+        "samePromise": true,
+        "url": "https://stories.fixture/chromium-coalesced/g0/article-0"
+      },
+      "state": {
+        "cards": [
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-0",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-1",
+            "photo": true,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-10",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-11",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-12",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-4",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-2",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-5",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-7",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-3",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-9",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-6",
+            "photo": false,
+            "ready": true
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-8",
+            "photo": false,
+            "ready": true
+          }
+        ],
+        "entryPhotos": [
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-0",
+            "photo": "https://images.fixture/chromium-coalesced/g0/photo-0.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-1",
+            "photo": "https://images.fixture/chromium-coalesced/g0/photo-1.jpg"
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-2",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-3",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-4",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-5",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-6",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-7",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-8",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-9",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-10",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-11",
+            "photo": ""
+          },
+          {
+            "url": "https://stories.fixture/chromium-coalesced/g0/article-12",
+            "photo": ""
+          }
+        ],
+        "books": 0,
+        "durableBooks": 0,
+        "images": 0,
+        "preparedBodies": 0,
+        "readerEvidence": [
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-coalesced%2Fg0%2Farticle-0",
+            "readBytes": 12288,
+            "cancelled": true
+          },
+          {
+            "url": "http://127.0.0.1:36797/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-coalesced%2Fg0%2Farticle-1",
+            "readBytes": 49152,
+            "cancelled": true
+          }
+        ],
+        "prefixEvidence": [
+          12288,
+          49152
+        ],
+        "rssStorage": {
+          "breeze.rss-cover-metadata.v1": "{\"https://stories.fixture/chromium-coalesced/g0/article-0\":{\"at\":1791218196602,\"photo\":\"https://images.fixture/chromium-coalesced/g0/photo-0.jpg\"},\"https://stories.fixture/chromium-coalesced/g0/article-1\":{\"at\":1791218196955,\"photo\":\"https://images.fixture/chromium-coalesced/g0/photo-1.jpg\"}}",
+          "breeze.rss-public.v1": "{\"https://www.dexerto.com/feed/category/entertainment/\":{\"at\":1791218196253,\"entries\":[{\"source\":\"Dexerto · Entertainment\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 0\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-0\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"feedSourceUrl\":\"https://www.dexerto.com/feed/category/entertainment/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://theconversation.com/global/articles.atom\":{\"at\":1791218196254,\"entries\":[{\"source\":\"The Conversation\",\"category\":\"general\",\"title\":\"The public story about reading evidence 1\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-1\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://theconversation.com/global/articles.atom\",\"feedSourceUrl\":\"https://theconversation.com/global/articles.atom\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.tmz.com/rss.xml\":{\"at\":1791218196254,\"entries\":[{\"source\":\"TMZ\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 2\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-2\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.tmz.com/rss.xml\",\"feedSourceUrl\":\"https://www.tmz.com/rss.xml\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://dailydot.com/feed\":{\"at\":1791218196255,\"entries\":[{\"source\":\"The Daily Dot\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 3\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-3\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://dailydot.com/feed\",\"feedSourceUrl\":\"https://dailydot.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.propublica.org/feeds/propublica/main\":{\"at\":1791218196255,\"entries\":[{\"source\":\"ProPublica\",\"category\":\"society\",\"title\":\"The public story about reading evidence 4\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-4\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"feedSourceUrl\":\"https://www.propublica.org/feeds/propublica/main\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.nasa.gov/technology/feed/\":{\"at\":1791218196255,\"entries\":[{\"source\":\"NASA\",\"category\":\"science\",\"title\":\"The public story about reading evidence 5\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-5\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.nasa.gov/technology/feed/\",\"feedSourceUrl\":\"https://www.nasa.gov/technology/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://bloody-disgusting.com/feed/\":{\"at\":1791218196255,\"entries\":[{\"source\":\"Bloody Disgusting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 6\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-6\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://bloody-disgusting.com/feed/\",\"feedSourceUrl\":\"https://bloody-disgusting.com/feed/\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.wired.com/feed/rss\":{\"at\":1791218196255,\"entries\":[{\"source\":\"WIRED\",\"category\":\"general\",\"title\":\"The public story about reading evidence 7\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-7\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.wired.com/feed/rss\",\"feedSourceUrl\":\"https://www.wired.com/feed/rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://allthatsinteresting.com/feed\":{\"at\":1791218196255,\"entries\":[{\"source\":\"All That’s Interesting\",\"category\":\"entertainment\",\"title\":\"The public story about reading evidence 8\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-8\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://allthatsinteresting.com/feed\",\"feedSourceUrl\":\"https://allthatsinteresting.com/feed\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/technology\":{\"at\":1791218196255,\"entries\":[{\"source\":\"Medium · Technology\",\"category\":\"science\",\"title\":\"The public story about reading evidence 9\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-9\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/technology\",\"feedSourceUrl\":\"https://medium.com/feed/tag/technology\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://www.reddit.com/r/science/.rss\":{\"at\":1791218196256,\"entries\":[{\"source\":\"Reddit · r/science\",\"category\":\"science\",\"title\":\"The public story about reading evidence 10\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-10\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://www.reddit.com/r/science/.rss\",\"feedSourceUrl\":\"https://www.reddit.com/r/science/.rss\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/culture\":{\"at\":1791218196256,\"entries\":[{\"source\":\"Medium · Culture\",\"category\":\"culture\",\"title\":\"The public story about reading evidence 11\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-11\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/culture\",\"feedSourceUrl\":\"https://medium.com/feed/tag/culture\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]},\"https://medium.com/feed/tag/business\":{\"at\":1791218196256,\"entries\":[{\"source\":\"Medium · Business\",\"category\":\"business\",\"title\":\"The public story about reading evidence 12\",\"url\":\"https://stories.fixture/chromium-coalesced/g0/article-12\",\"author\":\"\",\"publishedAt\":\"\",\"kind\":\"\",\"readUrl\":\"\",\"feedUrl\":\"https://medium.com/feed/tag/business\",\"feedSourceUrl\":\"https://medium.com/feed/tag/business\",\"summary\":\"The story explains how people learn about the world by reading evidence and comparing ideas.\",\"photo\":\"\",\"date\":\"\",\"contentHtml\":\"\",\"bodyProvided\":false,\"discoveryFiltered\":true}]}}"
+        }
+      },
+      "requests": [
+        {
+          "target": "https://stories.fixture/chromium-coalesced/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100287,
+          "serializedResponseBytes": 2100368,
+          "serverWrittenBytes": 20480,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/chromium-coalesced/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100287,
+          "serializedResponseBytes": 2100368,
+          "serverWrittenBytes": 57344,
+          "closedEarly": true
+        }
+      ]
+    }
+  ]
+}

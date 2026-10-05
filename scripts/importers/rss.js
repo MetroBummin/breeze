@@ -52,6 +52,240 @@ const rssPublicFeedJobs = new Map();
 const rssPreparedArticles = new Map();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
+const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v1';
+const RSS_COVER_CACHE_BYTES=64000;
+const RSS_COVER_CACHE_LIMIT=100;
+const RSS_COVER_TTL_MS=86400000;
+const RSS_COVER_EMPTY_MS=1800000;
+const RSS_COVER_LOOKUPS=2;
+const RSS_COVER_PREFIX_BYTES=128*1024;
+let rssCoverCache=null;
+let rssCoverPass=0;
+let rssCoverRemaining=RSS_COVER_LOOKUPS;
+let rssCoverTail=Promise.resolve();
+const rssCoverJobs=new Map();
+const rssCoverOwners=new WeakMap();
+const rssCoverActiveOwners=new Set();
+
+// Automatic lookups accept public DNS names, never credentials, local names or
+// IP literals. The existing relay additionally validates/pins public DNS.
+function rssCoverPublicUrl(raw){
+  if(typeof raw!=='string'||raw.length>4096)return '';
+  try{
+    const url=new URL(raw),host=url.hostname;
+    if(!/^https?:$/.test(url.protocol)||url.username||url.password
+      ||!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(host)
+      ||/(^|\.)(localhost|local|internal|home|lan|onion)$/i.test(host)
+      ||[...url.searchParams.keys()].some(key=>/^(?:token|access_token|api_?key|auth|authorization|secret|password|session|jwt|signature|sig|AWSAccessKeyId|GoogleAccessId|(?:x-amz|x-goog)-(?:credential|signature|security-token))$/i.test(key)))return '';
+    url.hash='';return url.href;
+  }catch{return '';}
+}
+function rssCoverCached(url){
+  if(!rssCoverCache){
+    rssCoverCache=Object.create(null);
+    try{
+      const raw=localStorage.getItem(RSS_COVER_CACHE_KEY);
+      if(raw&&raw.length<=RSS_COVER_CACHE_BYTES){
+        const parsed=JSON.parse(raw);
+        if(rssCacheBytes(parsed)<=RSS_COVER_CACHE_BYTES){
+          for(const [key,record] of Object.entries(parsed).slice(0,RSS_COVER_CACHE_LIMIT)){
+            if(rssCoverPublicUrl(key)!==key||!record||typeof record.photo!=='string'
+              ||record.photo&&rssCoverPublicUrl(record.photo)!==record.photo)continue;
+            const age=Date.now()-record.at;
+            if(Number.isFinite(record.at)&&age>=0&&age<(record.photo?RSS_COVER_TTL_MS:RSS_COVER_EMPTY_MS))
+              rssCoverCache[key]={at:record.at,photo:record.photo};
+          }
+        }
+      }
+    }catch{/* Denied or corrupt storage cannot block discovery. */}
+  }
+  const record=rssCoverCache[url],age=record?Date.now()-record.at:Infinity;
+  if(record&&(age<0||age>=(record.photo?RSS_COVER_TTL_MS:RSS_COVER_EMPTY_MS)))delete rssCoverCache[url];
+  return rssCoverCache[url]||null;
+}
+function rssCoverStore(url,photo){
+  if(!rssCoverPublicUrl(url)||photo&&!rssCoverPublicUrl(photo))return;
+  rssCoverCached(url);rssCoverCache[url]={at:Date.now(),photo};
+  const oldest=Object.keys(rssCoverCache).sort((a,b)=>rssCoverCache[a].at-rssCoverCache[b].at);
+  while(oldest.length>RSS_COVER_CACHE_LIMIT||rssCacheBytes(rssCoverCache)>RSS_COVER_CACHE_BYTES)
+    delete rssCoverCache[oldest.shift()];
+  try{localStorage.setItem(RSS_COVER_CACHE_KEY,JSON.stringify(rssCoverCache));}catch{/* Reuse in memory. */}
+}
+function rssCoverEligible(entry){
+  return !entry.photo&&!entry.kind&&!entry.readUrl&&RSS_FEEDS.some(feed=>feed.url===entry.feedSourceUrl)
+    &&!!rssCoverPublicUrl(entry.url);
+}
+function rssCoverHydrate(entry){
+  if(rssCoverEligible(entry)){
+    const record=rssCoverCached(rssCoverPublicUrl(entry.url));
+    if(record?.photo){entry.photo=record.photo;entry.coverFallback=false;}
+  }
+  return entry;
+}
+// Decode only a top-level relay {url,html} string prefix. Appending a closing
+// quote after trimming a dangling JSON escape preserves quotes/Unicode safely.
+function rssCoverPayloadPrefix(text){
+  let i=0,url='';
+  const space=()=>{while(/\s/.test(text[i]||'')&&i<text.length)i++;};
+  const string=partial=>{
+    if(text[i]!=='"')return null;
+    const start=i++;let escaped=false;
+    while(i<text.length){const char=text[i++];if(escaped){escaped=false;continue;}
+      if(char==='\\'){escaped=true;continue;}if(char==='"')return JSON.parse(text.slice(start,i));}
+    if(!partial)return null;
+    for(let trim=0;trim<=6&&i-trim>start;trim++){
+      try{return JSON.parse(text.slice(start,i-trim)+'"');}catch{/* Incomplete escape at the stream boundary. */}
+    }
+    return null;
+  };
+  try{
+    space();if(text[i++]!=='{')return null;
+    while(i<text.length){
+      space();const key=string(false);if(key===null)return null;
+      space();if(text[i++]!==':')return null;space();
+      const value=string(key==='html');if(value===null)return null;
+      if(key==='url')url=value;
+      if(key==='html')return {url,html:value};
+      space();if(text[i++]!==',')return null;
+    }
+  }catch{/* Unexpected response shape is not article metadata. */}
+  return null;
+}
+function rssCoverPhoto(html,base){
+  // Ignore a partial final tag; HTML stays in an inert document, never the UI.
+  const end=html.lastIndexOf('>');if(end<0)return '';
+  const doc=new DOMParser().parseFromString(html.slice(0,end+1),'text/html');
+  const metas=[...doc.querySelectorAll('meta')];
+  for(const name of ['og:image','og:image:url','twitter:image','twitter:image:src']){
+    const node=metas.find(node=>(node.getAttribute('property')||node.getAttribute('name')||'').toLowerCase()===name);
+    const photo=rssCoverPublicUrl(articleAbsolute(node?.getAttribute('content'),base));
+    if(photo&&!ARTICLE_IMG_BAD.test(photo))return photo;
+  }
+  for(const image of doc.querySelectorAll('img')){
+    const photo=rssCoverPublicUrl(articleAbsolute(articleBestSrc(image),base));
+    if(photo&&!articleTooSmall(image)&&!ARTICLE_IMG_BAD.test(photo))return photo;
+  }
+  return '';
+}
+async function rssCoverFetch(url,signal){
+  const endpoint=articleProxyUrl(url);if(!endpoint)return null;
+  const response=await fetch(endpoint,{credentials:'omit',signal,
+    headers:{Authorization:'Bearer '+SB_KEY,apikey:SB_KEY}});
+  if(!response.ok||!response.body||!/application\/json/i.test(response.headers.get('content-type')||'')){
+    await response.body?.cancel().catch(()=>{});
+    return response.ok?null:{photo:''};
+  }
+  const reader=response.body.getReader(),decoder=new TextDecoder();let text='',retainedBytes=0;
+  try{
+    while(retainedBytes<RSS_COVER_PREFIX_BYTES){
+      const {done,value}=await reader.read();if(done)break;
+      const prefix=value.subarray(0,RSS_COVER_PREFIX_BYTES-retainedBytes);
+      retainedBytes+=prefix.byteLength;text+=decoder.decode(prefix,{stream:true});
+      const payload=rssCoverPayloadPrefix(text);
+      const photo=payload&&rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url);
+      if(photo)return {photo};
+    }
+    text+=decoder.decode();const payload=rssCoverPayloadPrefix(text);
+    return payload?{photo:rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url)}:null;
+  }finally{await reader.cancel().catch(()=>{});}
+  // This bounds retained client parsing, not upstream or billed bytes. The
+  // existing relay reads the entire page (up to its 3 MB cap) before responding.
+}
+function rssCoverVisible(owner,card){
+  if(owner.cancelled||owner.pass!==rssCoverPass||!owner.rail.isConnected||!card.isConnected
+    ||typeof card.getBoundingClientRect!=='function'||document.visibilityState==='hidden')return false;
+  const rect=card.getBoundingClientRect(),rail=owner.rail.getBoundingClientRect();
+  const width=Math.min(rect.right,rail.right,window.innerWidth)-Math.max(rect.left,rail.left,0);
+  const height=Math.min(rect.bottom,rail.bottom,window.innerHeight)-Math.max(rect.top,rail.top,0);
+  return rect.width>0&&rect.height>0&&width>0&&height>0&&width*height>=rect.width*rect.height*.1;
+}
+function rssCoverCurrent(consumer){
+  const {owner,card,entry}=consumer;
+  return rssCoverVisible(owner,card)&&owner.entries.get(card)===entry&&card.dataset.rssUrl===entry.url
+    &&rssCands.some(group=>group.includes(entry))&&rssCoverEligible(entry);
+}
+function rssCoverRelease(consumer){
+  const job=consumer?.job;if(!job)return;
+  job.consumers.delete(consumer);
+  if(![...job.consumers].some(rssCoverCurrent))job.controller.abort();
+}
+function rssCoverLookup(url,consumer){
+  let job=rssCoverJobs.get(url);
+  if(job?.controller.signal.aborted)job=null;
+  if(!job){
+    job={controller:new AbortController(),consumers:new Set(),promise:null};
+    const currentJob=job;rssCoverJobs.set(url,job);
+    job.promise=rssCoverTail.catch(()=>{}).then(async()=>{
+      if(![...currentJob.consumers].some(rssCoverCurrent))return null;
+      const cached=rssCoverCached(url);if(cached)return cached;
+      const timeout=setTimeout(()=>currentJob.controller.abort(),15000);
+      try{
+        const result=await rssCoverFetch(url,currentJob.controller.signal);
+        if(result&&!currentJob.controller.signal.aborted&&[...currentJob.consumers].some(rssCoverCurrent))
+          rssCoverStore(url,result.photo);
+        return currentJob.controller.signal.aborted?null:result;
+      }catch{return null;}finally{clearTimeout(timeout);}
+    }).finally(()=>{if(rssCoverJobs.get(url)===currentJob)rssCoverJobs.delete(url);});
+    rssCoverTail=job.promise;
+  }
+  consumer.job=job;job.consumers.add(consumer);return job.promise;
+}
+function rssCoverCancel(owner){
+  if(!owner||owner.cancelled)return;
+  owner.cancelled=true;rssCoverRelease(owner.consumer);owner.observer?.disconnect();
+  cancelAnimationFrame(owner.frame);
+  owner.rail.removeEventListener?.('scroll',owner.changed);
+  window.removeEventListener?.('scroll',owner.changed,true);window.removeEventListener?.('resize',owner.changed);
+  document.removeEventListener?.('visibilitychange',owner.changed);window.removeEventListener?.('pagehide',owner.hidden);
+  rssCoverActiveOwners.delete(owner);
+}
+function rssCoverAdvance(){
+  rssCoverPass++;rssCoverRemaining=RSS_COVER_LOOKUPS;rssCoverActiveOwners.forEach(rssCoverCancel);
+}
+function rssCoverBegin(rail){
+  let owner=rssCoverOwners.get(rail);
+  if(owner&&!owner.cancelled&&owner.pass===rssCoverPass)return owner;
+  rssCoverCancel(owner);
+  owner={rail,pass:rssCoverPass,remaining:RSS_COVER_LOOKUPS,entries:new Map(),attempted:new Set(),cancelled:false,running:false,consumer:null,frame:0,observer:null,changed:null,hidden:null};
+  owner.changed=()=>{
+    if(owner.consumer&&!rssCoverCurrent(owner.consumer))rssCoverRelease(owner.consumer);
+    if(!owner.frame&&!owner.cancelled)owner.frame=requestAnimationFrame(()=>{owner.frame=0;void rssCoverPump(owner);});
+  };
+  owner.hidden=()=>rssCoverCancel(owner);
+  if(typeof IntersectionObserver==='function')owner.observer=new IntersectionObserver(owner.changed);
+  rail.addEventListener?.('scroll',owner.changed);
+  window.addEventListener?.('scroll',owner.changed,true);window.addEventListener?.('resize',owner.changed);
+  document.addEventListener?.('visibilitychange',owner.changed);window.addEventListener?.('pagehide',owner.hidden);
+  rssCoverOwners.set(rail,owner);rssCoverActiveOwners.add(owner);return owner;
+}
+function rssCoverWatch(owner,cards,entries){
+  if(!owner||owner.cancelled||owner.pass!==rssCoverPass)return;
+  owner.observer?.disconnect();
+  owner.entries=new Map(cards.map(card=>[card,entries.find(entry=>entry.url===card.dataset.rssUrl)]));
+  owner.entries.forEach((entry,card)=>rssCardEntries.set(card,entry));
+  cards.forEach(card=>owner.observer?.observe(card));owner.changed();
+}
+async function rssCoverPump(owner){
+  if(owner.running||owner.cancelled||!rssOnline())return;
+  owner.running=true;
+  try{
+    while(owner.remaining>0&&rssCoverRemaining>0&&!owner.cancelled){
+      const pair=[...owner.entries].find(([card,entry])=>entry&&rssCoverEligible(entry)
+        &&!owner.attempted.has(entry.url)&&!rssCoverCached(rssCoverPublicUrl(entry.url))&&rssCoverVisible(owner,card));
+      if(!pair)break;
+      const [card,entry]=pair,consumer={owner,card,entry,job:null};
+      owner.attempted.add(entry.url);owner.remaining--;owner.consumer=consumer;
+      const url=rssCoverPublicUrl(entry.url),existing=rssCoverJobs.get(url);
+      if(!existing||existing.controller.signal.aborted)rssCoverRemaining--;
+      const result=await rssCoverLookup(url,consumer);
+      if(result?.photo&&rssCoverCurrent(consumer)){
+        entry.photo=result.photo;entry.coverFallback=false;rssCardIdentities.set(card,rssCardIdentity(entry));
+        card.dataset.photoStarted='true';void rssCardPhoto(card,entry);
+      }
+      rssCoverRelease(consumer);if(owner.consumer===consumer)owner.consumer=null;
+    }
+  }finally{owner.running=false;}
+}
 
 function rssOnline(){return typeof navigator==='undefined'||navigator.onLine!==false;}
 function rssCacheBytes(value){
@@ -330,7 +564,7 @@ async function rssResolveSelectedEntry(entry){
   }
   return entry;
 }
-function rssDiscoveryEntry(entry){return {...entry,coverFallback:!entry.photo};}
+function rssDiscoveryEntry(entry){return rssCoverHydrate({...entry,coverFallback:!entry.photo});}
 function rssCatalogValidate(raw){
   const now=Date.now();
   if(raw?.version!==1||!Array.isArray(raw.feeds)||raw.feeds.length!==RSS_FEEDS.length||rssCacheBytes(raw)>RSS_CATALOG_CACHE_BYTES)throw Error('catalog_invalid');
@@ -388,6 +622,7 @@ async function rssCatalogFetch(force){
 }
 async function loadRssCatalog(force){
   if(rssLoading)return rssLoading;
+  rssCoverAdvance();
   const sources=rssSources();
   const stored=rssCatalogStored();
   const current=stored?rssCatalogValidate(stored.catalog):{feeds:[]};
@@ -446,6 +681,7 @@ async function loadRssLegacy(force){
   });
   if(!force && rssCands.length && !expiredPublic && now>=rssLoadedAt && now-rssLoadedAt<RSS_CACHE_MS
     &&(!rssLoadedOffline||!rssOnline())) return rssCands;
+  rssCoverAdvance();
   rssPublicFeedJobs.clear();
   rssPreparedArticles.clear();
   const sources = rssSources();
@@ -480,6 +716,7 @@ async function loadRss(force){
   if(RSS_QUALITY_MODE!=='active')return loadRssLegacy(force);
   if(rssLoading)return rssLoading;
   if(!force && rssCands.length && Date.now()-rssLoadedAt<RSS_CACHE_MS)return rssCands;
+  rssCoverAdvance();
   if(force)rssQualityRetryCount=0;
   if(rssQualityRetry){clearTimeout(rssQualityRetry);rssQualityRetry=null;}
   rssPublicFeedJobs.clear();rssPreparedArticles.clear();
@@ -576,12 +813,13 @@ function rssCard(entry){
   card.addEventListener('contextmenu', event => event.preventDefault());
   card.onclick = event => {
     if(pressedAt && performance.now() - pressedAt >= 500){event.preventDefault();return;}
-    importRssEntry(entry, card);
+    importRssEntry(rssCardEntries.get(card)||entry, card);
   };
   return card;
 }
 async function importRssEntry(entry, card){
   if(card.classList.contains('busy') || card.classList.contains('rss-pending'))return;
+  rssCoverCancel(rssCoverOwners.get(card.parentElement));
   card.classList.add('busy');
   const preparation=articlePreviewPrepare(entry,card);
   const selectedEntry=entry;
@@ -603,7 +841,7 @@ async function importRssEntry(entry, card){
   }finally{card.classList.remove('busy');}
 }
 // An article selected by the person has already supplied its cover. Project it
-// back to that same discovery entry/card; never fetch a page just for a cover.
+// back to that same discovery entry/card without another lookup.
 function rssSelectedCover(entry,card,book){
   const photo=articleDrafts.get(book)?.coverUrl;
   if(entry.photo || !photo || ARTICLE_IMG_BAD.test(photo) || !rssCands.some(group=>group.includes(entry)))return;
@@ -674,12 +912,13 @@ async function ingestFeedPost(entry,options={}){
   }
   return book;
 }
-/* Use supplied photos or existing local artwork. A cover never requires an
-   article body fetch before selection. */
+/* Supplied photos stay authoritative. Missing visible photos have a separate
+   bounded metadata lookup; article bodies remain selected-intent work. */
 const rssCardIdentities=new WeakMap();
+const rssCardEntries=new WeakMap();
 function rssCardIdentity(entry){
-  // Click handlers own the entry they were created with. Keep decoded DOM only
-  // when its import payload and visible metadata still match. Refresh timestamps
+  // Retained cards point to the current entry. Keep decoded DOM only when its
+  // import payload and visible metadata still match. Refresh timestamps
   // and ranking alone do not change that payload; content/version/verdict do.
   const {quality,...content}=entry;
   return JSON.stringify([content,quality?.key,quality?.version,quality?.status,quality?.eligibility,quality?.resolvedUrl]);
@@ -842,6 +1081,7 @@ function rssAlignRailStart(rail){
 }
 
 function renderRssCards(rail, force, empty){
+  let coverOwner;
   const category='all';
   if(force || rail.dataset.rssCategory!==category){
     rail.dataset.rssCategory=category;
@@ -872,11 +1112,13 @@ function renderRssCards(rail, force, empty){
   const paint=async groups=>{
     const current=++revision;
     if(renderId!==rssRenderIds.get(rail))return;
+    groups.flat().forEach(rssCoverHydrate);
     const stamp=JSON.stringify([category,groups,rssQualityPending,books.map(book=>book.sourceUrl||'')]);
     if(!force && rail.dataset.rssStamp===stamp && rail.dataset.rssRecommendationStamp===recommendationStamp){
       if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
       if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;
       if(rail.dataset.rssResetStart)rssAlignRailStart(rail);
+      rssCoverWatch(coverOwner,[...rail.querySelectorAll('.rss-card')],groups.flat());
       return;
     }
     const selected=recommendationContext?rssRankRecommendations(groups,recommendationContext):groups;
@@ -910,6 +1152,7 @@ function renderRssCards(rail, force, empty){
     if(keepStart)rssAlignRailStart(rail);
     const entries=groups.flat();
     cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
+    rssCoverWatch(coverOwner,cards,entries);
     rail.dataset.rssStamp=stamp;
     rail.dataset.rssRecommendationStamp=recommendationStamp;
     if(empty){ empty.textContent=cards.length?'':rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':category==='all'?'새 글을 찾지 못했어요.':'이 카테고리에 새 글이 없어요.'; empty.hidden=cards.length>0 || !!rssLoading; }
@@ -917,6 +1160,7 @@ function renderRssCards(rail, force, empty){
   const notify=groups=>{void paint(groups);};
   rssListeners.add(notify);
   const pending=loadRss(force);
+  coverOwner=rssCoverBegin(rail);
   if(rssCands.some(entries=>entries.length))notify(rssCands);
   return pending.then(paint).catch(error=>{
     if(renderId!==rssRenderIds.get(rail))return;
