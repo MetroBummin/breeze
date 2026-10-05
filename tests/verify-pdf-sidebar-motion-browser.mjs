@@ -183,7 +183,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       // WebKit can advance between synchronous style reads; keep the strict
       // no-jump assertion by seeking the outgoing effect and the new frame zero.
       for(const delay of [35,90,170]){
-        await page.evaluate(()=>togglePdfNavigation());await page.waitForTimeout(delay);
+        await page.evaluate(()=>togglePdfNavigation());
         const closeJump=await page.evaluate(delay=>{
           const control=document.getElementById('pdf-page-control');
           const read=()=>{const css=getComputedStyle(control);return {x:new DOMMatrixReadOnly(css.transform).m41,opacity:+css.opacity};};
@@ -193,9 +193,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
           const incoming=animation();incoming.pause();incoming.currentTime=0;
           const after=read();incoming.play();return {before,after};
         },delay);
-        reports.push({engine:engine.name(),kind:'closing-handoff',delayMs:delay,...closeJump});
+        reports.push({engine:engine.name(),kind:'closing-handoff',timelineMs:delay,...closeJump});
         assert.ok(Math.abs(closeJump.before.x-closeJump.after.x)<.001&&Math.abs(closeJump.before.opacity-closeJump.after.opacity)<.001,'Closing during entry must start at the rendered frame');
-        await page.waitForTimeout(delay);
         const openJump=await page.evaluate(delay=>{
           const control=document.getElementById('pdf-page-control');
           const read=()=>{const css=getComputedStyle(control);return {x:new DOMMatrixReadOnly(css.transform).m41,opacity:+css.opacity};};
@@ -205,9 +204,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
           const incoming=animation();incoming.pause();incoming.currentTime=0;
           const after=read();incoming.play();return {before,after};
         },delay);
-        reports.push({engine:engine.name(),kind:'reopening-handoff',delayMs:delay,...openJump});
+        reports.push({engine:engine.name(),kind:'reopening-handoff',timelineMs:delay,...openJump});
         assert.ok(Math.abs(openJump.before.x-openJump.after.x)<.001&&Math.abs(openJump.before.opacity-openJump.after.opacity)<.001,'Reopening during exit must start at the rendered frame');
-        reports.push({engine:engine.name(),kind:'interruption',delayMs:delay,closeJump,openJump});
+        reports.push({engine:engine.name(),kind:'interruption',timelineMs:delay,closeJump,openJump});
         await page.waitForTimeout(280);
         assert.equal(await page.evaluate(()=>!!pdfNavigation&&!document.getElementById('pdf-page-navigation').hidden&&!document.getElementById('pdf-page-navigation').inert),true,'Old close cleanup must not hide a reopened sidebar');
         await page.evaluate(()=>closePdfNavigation());await closed();
