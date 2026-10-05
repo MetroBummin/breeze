@@ -10,9 +10,10 @@ const proof=process.env.BREEZE_SIDEBAR_BODY_PROOF||'/tmp/breeze-sidebar-body-ges
 const server=createServer((req,res)=>{const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{if(!path.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}});
 await new Promise(done=>server.listen(0,'127.0.0.1',done));const url=`http://127.0.0.1:${server.address().port}/`,reports=[];
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE||undefined});
+ const browser=engine===webkit?null:await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE||undefined});
  try{for(const kind of ['pdf','epub']){
-  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block'}),page=await context.newPage(),errors=[];
+  const options={viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block'};
+  const context=engine===webkit?await engine.launchPersistentContext('',options):await browser.newContext(options),page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));await page.goto(url);await page.evaluate(()=>homeReady);
   if(kind==='pdf'){
@@ -66,6 +67,6 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    await page.evaluate(()=>setOriginalZoom(1.5));await page.waitForTimeout(350);await page.evaluate(()=>{qaBodyTouch('touchstart',[{id:811,x:12,y:220}]);qaBodyTouch('touchmove',[{id:811,x:115,y:220}]);qaBodyTouch('touchend',[],[{id:811,x:115,y:220}]);});assert.equal(await page.evaluate(()=>!!pdfNavigation),false,'Zoomed edge pan cannot reopen sidebar');await page.evaluate(()=>setOriginalZoom(1));await page.waitForTimeout(350);
   }
   await page.screenshot({path:resolve(proof,engine.name()+'-'+kind+'.png')});assert.deepEqual(errors,[]);reports.push({engine:engine.name(),kind,passed:true,checks:'body hit test, internal gesture retention, cancelled/programmatic motion, first wheel/pan, outside/fresh tap, reversal'+(kind==='pdf'?', pinch cancel and zoomed edge exclusion':'')});await context.close();
- }}finally{await browser.close();}
+ }}finally{await browser?.close();}
 }}finally{writeFileSync(resolve(proof,'results.json'),JSON.stringify(reports,null,2));await new Promise(done=>server.close(done));}
 console.log('Sidebar body gestures passed:',JSON.stringify(reports));

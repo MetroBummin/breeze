@@ -21,14 +21,15 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}`;
 const reports=[];
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
-  const browser=await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+  const options={viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block'};
+  const browser=engine===webkit?await engine.launchPersistentContext('',{...options,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE}):await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
   try{
-    const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block'});
+    const context=engine===webkit?browser:await browser.newContext(options);
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
     await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
-    await page.goto(url);
+    await page.goto(url);await page.evaluate(()=>homeReady);
     await page.locator('#fileinput').setInputFiles({name:'Sidebar.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture()});
     await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
     await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
@@ -220,7 +221,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       reports.push({engine:engine.name(),checks:'interruption, repeated toggle, ownership, zoom, resize, 16 viewport/theme states, reduced motion passed'});
     }
     assert.deepEqual(errors,[]);
-    reports.push({engine:engine.name(),browserVersion:browser.version(),pageErrors:errors});
+    reports.push({engine:engine.name(),browserVersion:context.browser()?.version()||'persistent context',pageErrors:errors});
     console.log(engine.name()+': PDF sidebar frame measurements'+(measureOnly?' recorded':' and focused motion regressions passed'));
   }finally{await browser.close();}
 }}finally{
