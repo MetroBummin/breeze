@@ -68,3 +68,17 @@ Apply validates account, occurrence, selected item and its meaning/example/book
 snapshot; stale/deleted records cannot be overwritten. Repeated clicks are no-ops.
 Explanation prose and unaccepted proposals remain bounded transient memory only;
 accepting does not call AI or consume another quota unit.
+
+## Clean wordbook revision checks (2026-10-05)
+
+A document first reads and durably merges a full account wordbook. Later automatic
+checks can project `data.revision` and `data.legacyImportedAt` from that same row.
+They skip the large payload only when the account, migration, dirty flag, exact
+acknowledged local words/tombstones and remote revision all still match. Recheck
+local state after the asynchronous probe. A mutation during CAS is not part of
+the earlier acknowledged state, even if it did not use a dirty hook.
+
+Acknowledgement is page memory, cleared on account/session reset. Restart, manual
+sync, unknown revisions, pending migration and dirty state retain full read/merge
+and conditional writes. Failed local persistence never advances acknowledgement.
+No server schema, per-word delta protocol or authentication policy changes.

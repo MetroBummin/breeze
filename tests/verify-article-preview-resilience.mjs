@@ -46,7 +46,9 @@ try{
     try{
       for(const [width,height] of [[320,568],[390,844],[820,1024],[1280,800],[844,390]]){
         await run(`stable layout ${width}x${height}`,async(p,rs,respond)=>{
-          await p.click('#launch');await p.waitForTimeout(180);
+          await p.click('#launch');
+          // Measure settled layout, independent of runner frame scheduling.
+          await p.locator('#article-preview').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
           assert.equal(await p.getAttribute('#article-preview','aria-labelledby'),'ap-original-title');
           assert.equal(await p.isEnabled('.ap-start'),true);
           const before=await p.locator('#article-preview').boundingBox(),cta=await p.locator('.ap-start').boundingBox();

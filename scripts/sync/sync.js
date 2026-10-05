@@ -13,6 +13,9 @@ let syncSessionEpoch=0;
 const SYNC_CAS_ATTEMPTS=4;
 let lastQueuedWordState='';
 let legacyWordbookPending=false;
+// A new document/account first reads and persists a full snapshot. Only that
+// acknowledged local state may use the small revision probe on later checks.
+let wordbookRemote=null;
 
 const VAULT_ROW='__breeze_vault_v2__';
 const VAULT_META_ROW='__breeze_vault_meta_v2__';
@@ -78,6 +81,7 @@ function resetSyncSession(){
   vaultMaster=null; vaultMeta=null; vaultRemoteItems=[]; serverBooks=[]; progressRemoteRecords={};
   pendingRecoveryKey=''; lastProgressSyncAt=0; noteSyncSuccess();
   legacyWordbookPending=false;
+  wordbookRemote=null;
 }
 function markSyncDirty(key){
   // Distinct writes in the same millisecond must not clear each other's dirty flag.
@@ -679,10 +683,33 @@ async function importLegacyWordbook(session,wordbook){
   return true;
 }
 
+async function completeWordbookSync(manual,session){
+  noteSyncSuccess();lastSync=Date.now();save('breeze.lastsync',lastSync);
+  await purgePrivateDictionaryLogs(); assertSyncSession(session);
+  if(manual||document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
+  if(manual) syncStatus('단어장 동기화를 마쳤어요');
+  if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
+  return true;
+}
 async function runSyncPass(manual){
   const session=syncSession();
   if(manual) syncStatus('단어장을 동기화하는 중…');
   try{
+    const acknowledged=wordbookRemote;
+    if(!manual&&acknowledged&&acknowledged.userId===session.userId
+      &&!Number(load(VAULT_LOCAL_CHANGED,0))
+      &&load(`breeze.wordbook.legacy-imported:${session.userId}`,false)
+      &&acknowledged.state===syncStableJson({words,dead})){
+      const header=await sb.from('words').select('revision:data->>revision,legacyImportedAt:data->legacyImportedAt')
+        .eq('user_id',session.userId).eq('key',WORDBOOK_ROW).maybeSingle();
+      assertSyncSession(session);if(header.error)throw header.error;
+      // A local mutation while the probe was in flight must still take the
+      // ordinary read/merge/CAS path, including writes without a dirty hook.
+      if(header.data&&header.data.revision===acknowledged.revision&&header.data.legacyImportedAt
+        &&!Number(load(VAULT_LOCAL_CHANGED,0))&&acknowledged.state===syncStableJson({words,dead})){
+        return await completeWordbookSync(manual,session);
+      }
+    }
     for(let attempt=0;attempt<SYNC_CAS_ATTEMPTS;attempt++){
       const dirtyAt=Number(load(VAULT_LOCAL_CHANGED,0))||0;
       const result=await sb.from('words').select('data').eq('user_id',session.userId).eq('key',WORDBOOK_ROW).maybeSingle();
@@ -696,21 +723,20 @@ async function runSyncPass(manual){
       const changed=!previous||(imported&&!previous.legacyImportedAt)
         ||syncStableJson(previous.words||{})!==syncStableJson(syncedWords)
         ||syncStableJson(previous.dead||{})!==syncStableJson(dead);
+      const syncedState=syncStableJson({words,dead});
+      let revision=previous&&previous.revision;
       if(changed){
         const data={v:1,updatedAt:Date.now(),revision:VaultCrypto.uuid(),words:syncedWords,dead:{...dead},
           ...(imported?{legacyImportedAt:previous&&previous.legacyImportedAt||Date.now()}: {})};
         if(!await compareAndSwapSyncRow(WORDBOOK_ROW,previous,data,session)) continue;
+        revision=data.revision;
       }
       assertSyncSession(session);
       if(imported) save(`breeze.wordbook.legacy-imported:${session.userId}`,true);
       if(Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt&&!save(VAULT_LOCAL_CHANGED,0))throw new Error('동기화 상태를 저장하지 못했어요');
       lastQueuedWordState=syncStableJson({words,dead});
-      noteSyncSuccess();lastSync=Date.now();save('breeze.lastsync',lastSync);
-      await purgePrivateDictionaryLogs(); assertSyncSession(session);
-      if(manual||document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
-      if(manual) syncStatus('단어장 동기화를 마쳤어요');
-      if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
-      return true;
+      wordbookRemote=imported&&revision?{userId:session.userId,revision,state:syncedState}:null;
+      return await completeWordbookSync(manual,session);
     }
     throw new Error('다른 기기의 변경과 충돌했어요. 이 기기의 단어는 보관하고 다음에 다시 합칩니다.');
   }catch(error){
