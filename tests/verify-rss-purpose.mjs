@@ -8,6 +8,7 @@ import {extractionReadiness} from '../server/rss-quality/extract.mjs';
 import {qualityReport} from '../server/rss-quality/report.mjs';
 import {unresolvedCause} from '../server/rss-quality/compare.mjs';
 import {purposeFixtures,articleFor,mockResponse,trialObservations} from './fixtures/rss-quality/purpose.mjs';
+import {sourceEvidence,syntheticEvidenceLinks} from './fixtures/rss-quality/source-evidence.mjs';
 const article=articleFor(purposeFixtures.find(f=>f.id==='coherent-sensitive-news'));
 const response=()=>mockResponse(article,classifier);
 
@@ -22,7 +23,27 @@ for(const fixture of purposeFixtures)test(`purpose policy contract, mocked model
 });
 test('label provenance distinguishes user observations from proposed synthetic policies',()=>{
   assert.equal(trialObservations.filter(f=>f.label==='promotion' && f.labelSource==='user-review').length,2);
-  assert.ok(trialObservations.filter(f=>['RSS002','RSS021'].includes(f.id)).every(f=>f.label==='uncertain'));
+  assert.ok(trialObservations.filter(f=>['RSS-002','RSS-021'].includes(f.id)).every(f=>f.label==='uncertain'));
+  assert.ok(purposeFixtures.every(f=>f.labelSource==='proposed-policy' && f.reviewStatus==='pending-human-review'));
+});
+test('bounded source evidence retains uncertainty and stays outside classifier state',()=>{
+  assert.equal(sourceEvidence.length,6);
+  assert.equal(new Set(sourceEvidence.map(row=>row.url)).size,sourceEvidence.length);
+  for(const row of sourceEvidence){
+    assert.ok(row.quote.trim().split(/\s+/).length<=25);
+    assert.equal(row.originalTrialSnapshot,false);assert.equal(row.modelInput,false);
+    assert.ok(row.locator && row.supports && row.counterevidence && row.limitation);
+    assert.ok(['user-review','proposed-policy'].includes(row.labelSource));
+    if(row.labelSource==='proposed-policy')assert.equal(row.reviewStatus,'pending-human-review');
+  }
+  assert.equal(sourceEvidence.find(row=>row.id==='RSS-021').label,'uncertain');
+  assert.equal(trialObservations.find(row=>row.id==='RSS-002').label,'uncertain');
+  for(const fixture of purposeFixtures){
+    const input=articleFor(fixture);
+    assert.deepEqual(Object.keys(input),['title','paragraphs','links','checks']);
+    assert.ok(!JSON.stringify(input).includes('pending-human-review'));
+    for(const id of syntheticEvidenceLinks[fixture.id] || [])assert.ok(sourceEvidence.some(row=>row.id===id));
+  }
 });
 test('rubric covers narrative campaigns, editorial commerce and substantial galleries',()=>{
   const specs=classifier.questions(article);
@@ -99,6 +120,7 @@ test('optional diagnostic logging contains fixed codes and hashes; no second pai
   await createQualityService({store,key:'test-only',mode:'shadow',fetchDoc:async()=>({html:'<rss><channel><item><title>Test</title><link>https://example.com/a</link><enclosure type="image/jpeg" url="https://example.com/cover.jpg"/></item></channel></rss>'}),
     load:async entry=>({url:entry.url,article}),evaluate:async()=>{evaluations++;return classifier.validateAnswers(raw,article);},log:e=>events.push(e)}).refresh(0);
   assert.deepEqual([claims,evaluations,writes],[1,1,1]);
+  assert.equal(events.find(e=>e.stage==='cache').code,'miss');
   assert.equal(events.find(e=>e.code==='optional_metadata_invalid').detail,'confidence_mismatch');
   assert.ok(!JSON.stringify(events).includes(article.paragraphs[0]));
   assert.ok(events.every(e=>/^[a-f0-9]{64}$/.test(e.key)));

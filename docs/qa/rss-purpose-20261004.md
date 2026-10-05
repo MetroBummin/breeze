@@ -1,5 +1,8 @@
 # RSS purpose and validator review
 
+2026-10-05 follow-up: [production v6 source verification and evidence](rss-purpose-20261005.md)
+resolves the earlier source-transfer gate. Human label confirmation remains pending.
+
 Draft from main `0e72a35be0fa663167acd7de2c7dd9a8dfbdfc4c` in a fresh worktree
 on `codex/rss-purpose-validation`. PR89 was inspected at
 `714625e6c71aec5e55a31aca38d53a340f81e41e`. Its operator compares the raw
@@ -65,7 +68,7 @@ missing supporting evidence. The service emits fixed reasons and optional schema
 diagnostics without article text, raw answers, excerpts or credentials. Private
 verdicts retain the existing evidence excerpt for audit. Production v6's separate
 cohort operator should emit optional diagnostics too during later integration;
-its source has not been transferred into this checkout.
+its exact v6 source was read directly in the 2026-10-05 follow-up.
 
 `rss-quality-v3:jev-1.13.0:readability-0.6.0-v1` changes the content cache key and
 client compatibility identity. This v3 is the rubric identity, distinct from the
@@ -111,8 +114,8 @@ uncertainty, errors and unavailability.
 
 ## Proposed bounded live evaluation — parent approval required
 
-1. Obtain only the nonsecret deployed v6 entrypoint/operator/authorization SQL.
-   Integrate this classifier on that verified source. Preserve caller JWT
+1. Use the nonsecret deployed v6 source and authorization catalog verified in
+   the 2026-10-05 follow-up. Integrate this classifier on that source. Preserve caller JWT
    forwarding to Supabase PostgREST and the service-role-only
    `public.rss_quality_operator_authorized()` RPC, `SECURITY INVOKER`,
    `current_user = 'service_role'`, and `verify_jwt=true`. Never restore raw key
@@ -148,11 +151,11 @@ uncertainty, errors and unavailability.
 
 Validation: RSS policy/security/cache/cost contracts and recommendation tests,
 typecheck, and mocked Chromium browser checks are recorded in the draft PR.
-No live model evaluation, remote SQL, migration, Edge deployment, App Store
+No live model evaluation, remote SQL mutation, migration, Edge deployment, App Store
 action, build-number change or release command ran. Full app release tests and
-Deno checks are outside this classifier-only verification. Missing exact v6
-source and human confirmation of the synthetic labels remain integration and
-evaluation gates, not reasons to redeploy the stale branch.
+Deno checks are outside this classifier-only verification. Human confirmation of
+synthetic labels and the reviewed v6 overlay remain evaluation/integration gates;
+the earlier missing-source gate is resolved. Do not redeploy the stale branch.
 
 Contracts rechecked: [TypeSafe API](https://docs.typesafe.ai/api),
 [Choice confidence](https://docs.typesafe.ai/confidence),

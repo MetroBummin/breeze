@@ -51,7 +51,7 @@
     "test:vocabulary-review": "node --test tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs && node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs && node tests/verify-simple-word-cards-browser.mjs && BROWSER=webkit node tests/verify-simple-word-cards-browser.mjs",
     "ios:archive": "bash tools/ios-testflight.sh --archive",
     "ios:testflight": "bash tools/ios-testflight.sh --upload",
-    "test:rss-quality": "node --test tests/verify-rss-quality.mjs tests/verify-rss-purpose.mjs",
+    "test:rss-quality": "node --test tests/verify-rss-quality.mjs tests/verify-rss-purpose.mjs tests/verify-rss-v6-source.mjs",
     "test:holmes": "node --test tests/verify-speckled-band.mjs tests/verify-holmes-collection.mjs tests/verify-holmes-complete-texts.mjs tests/verify-holmes-illustrations.mjs && node tests/verify-holmes-illustrations-browser.mjs"
   },
   "devDependencies": {

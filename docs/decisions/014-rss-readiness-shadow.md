@@ -128,3 +128,9 @@ operator token comparison. Production v6's caller-JWT PostgREST authorization,
 service-role-only `rss_quality_operator_authorized()` SECURITY INVOKER RPC and
 `verify_jwt=true` must survive any later integration. No deployment, migration,
 paid run or client activation is authorized by this change.
+
+2026-10-05: the [read-only v6 review](../qa/rss-purpose-20261005.md) verified those
+production auth invariants and the exact source. Synthetic fixture labels stay
+proposed, with bounded source quotations kept outside model state. The offline
+overlay rehearsal preserves auth/entrypoint hashes and retains v6 cache telemetry;
+it does not authorize production integration, deployment or paid evaluation.
