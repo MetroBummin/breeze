@@ -111,9 +111,9 @@ function costSummary(rows,successfulArticles){
   const known=rows.filter(x=>x.cost?.tokenEstimateUsd!==null && typeof x.cost?.tokenEstimateUsd==='number');
   const estimated=known.reduce((s,x)=>s+x.cost.tokenEstimateUsd,0),reserved=rows.length*RESERVATION_USD;
   const allKnown=known.length===rows.length;
-  return {attempts:rows.length,usageKnownAttempts:known.length,usageUnknownAttempts:rows.length-known.length,
+  return {reservations:rows.length,confirmedClientAttempts:rows.filter(x=>x.transportAttempted===true).length,knownNoCallReservations:rows.filter(x=>x.transportAttempted===false).length,transportUnknownReservations:rows.filter(x=>x.transportAttempted===undefined || x.transportAttempted===null).length,ambiguousReservations:rows.filter(x=>x.status==='pending'&&x.transportAttempted!==false).length,usageKnownAttempts:known.length,usageUnknownAttempts:rows.length-known.length,
     knownTokenEstimateUsd:estimated,completeTokenEstimateUsd:allKnown?estimated:null,invoiceChargeUsd:null,reservationUsd:reserved,
-    meanTokenEstimatePerAttemptUsd:rows.length&&allKnown?estimated/rows.length:null,
+    meanTokenEstimatePerReservationUsd:rows.length&&allKnown?estimated/rows.length:null,
     meanTokenEstimatePerSuccessfulArticleUsd:successfulArticles&&allKnown?estimated/successfulArticles:null,
     successfulArticles,cachedTokensReportedAttempts:rows.filter(x=>x.usage?.cachedTokens!==null).length,
     cacheHits:rows.filter(x=>x.cacheHit===true).length,cachingEffect:'not tested; isolated run cache disabled',
@@ -132,14 +132,16 @@ export function reportPaired(pack,rows,{stopReason=null}={}){
     const armRows=rows.filter(x=>x.arm===name),valid=armRows.filter(x=>validStatus.has(x.status));
     const positives=pairs.filter(x=>x.reference.label==='retain'&&x.reference.reviewStatus==='human-confirmed'&&validStatus.has(x[name]));
     const negatives=pairs.filter(x=>x.reference.label==='exclude'&&x.reference.reviewStatus==='user-reviewed'&&validStatus.has(x[name]));
+    const proposed=pairs.filter(x=>x.reference.reviewStatus==='pending-human-review'&&['retain','exclude','uncertain'].includes(x.reference.label)&&validStatus.has(x[name]));
     return [name,{counts:Object.fromEntries(['approved','rejected','uncertain','unavailable','schema_error','provider_error','pending'].map(s=>[s,armRows.filter(x=>x.status===s).length])),validDecisions:valid.length,
       userReviewedPromo:{classified:negatives.length,falseAccepts:negatives.filter(x=>x[name]==='approved').length},
       humanConfirmedRetention:{classified:positives.length,falseExclusions:positives.filter(x=>['rejected','unavailable'].includes(x[name])).length},
+      proposedReferenceAgreement:{classified:proposed.length,agrees:proposed.filter(x=>x[name]===({retain:'approved',exclude:'rejected',uncertain:'uncertain'}[x.reference.label])).length,meaning:'exact status agreement with proposed references; not human-gold accuracy'},
       costs:costSummary(armRows,valid.length)}];
   }));
   return {runId:pack.runId,pricing:PRICE,limits:LIMITS,counts:{articles:pack.inputs.length,ready:pack.inputs.filter(x=>x.stage==='ready').length,
     sourceFailures:pack.inputs.filter(x=>x.stage==='source').length,extractionFailures:pack.inputs.filter(x=>x.stage==='extraction').length,
-    attempted:rows.length,completeValidPairs:pairs.filter(x=>x.bothValid).length,uniqueArticlesWithValidDecision:new Set(rows.filter(x=>validStatus.has(x.status)).map(x=>x.id)).size},
+    reservations:rows.length,confirmedClientAttempts:rows.filter(x=>x.transportAttempted===true).length,knownNoCallReservations:rows.filter(x=>x.transportAttempted===false).length,ambiguousReservations:rows.filter(x=>x.status==='pending'&&x.transportAttempted!==false).length,completeValidPairs:pairs.filter(x=>x.bothValid).length,uniqueArticlesWithValidDecision:new Set(rows.filter(x=>validStatus.has(x.status)).map(x=>x.id)).size},
     stopReason,byArm,costs:costSummary(rows,new Set(rows.filter(x=>validStatus.has(x.status)).map(x=>x.id)).size),pairs,attempts:rows,
     limitations:['Proposed labels are not human-confirmed accuracy ground truth.','No population accuracy estimate from this purposive small sample.','Errors and unavailable source/extraction inputs are separate from quality rejection.','Reservations and token estimates are not invoices. Missing usage retains a full reservation and no zero-cost claim.','Pricing/context-bound reservation requires verification by the private executor before live transport.']};
 }

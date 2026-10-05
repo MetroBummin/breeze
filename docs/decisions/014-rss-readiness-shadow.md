@@ -167,3 +167,15 @@ adds a bounded sequential foreground batch using the same per-attempt durable
 claim, 3-second DB abort signals, 10-second provider timeout and pending withholding.
 The Mac is closed, so the temporary function remains undeployed pending a runnable
 manual window; no autonomous executor or live result is implied.
+
+
+Independent exact-bundle review found that pre-fetch configuration failures were
+miscounted as calls and incomplete fetch/body transports could unlock another
+slot while remote work continued. Ledger v2 separates known no-call, unknown,
+uncertain and complete transport states. Unknown/uncertain stays pending/running
+under the original fence, without reclaim or retry; pre-fetch no-call closes the
+run with a held reservation and zero confirmed calls. Both defects are reproduced
+against the previous committed code in offline before/after tests. Reports use
+reservation counts and proposed-reference agreement, never inferred billing or
+human-gold accuracy. The private bundle update preserves its original expiry
+until a manual Mac invocation window is actually planned.

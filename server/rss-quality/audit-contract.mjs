@@ -14,11 +14,11 @@ export function usageRecord(raw){
   const cachedTokens=tokens(raw?.cached_input_tokens ?? raw?.cached_tokens ?? raw?.input_tokens_details?.cached_tokens);
   return {inputTokens,outputTokens,cachedTokens:inputTokens!==null&&cachedTokens!==null&&cachedTokens<=inputTokens?cachedTokens:null};
 }
-export function costRecord(usage,{responseModel=null,attempted=true}={}){
+export function costRecord(usage,{responseModel=null,attempted=true,reserved=attempted}={}){
   const known=usage.inputTokens!==null && usage.outputTokens!==null && responseModel===PRICE.model;
   return {pricing:PRICE,tokenEstimateUsd:attempted&&known?usage.inputTokens*42/1e9:null,
     estimateBasis:attempted&&known?'provider-reported tokens at documented price':'unknown',invoiceChargeUsd:null,billableStatus:attempted?'not invoice-verified':'no attempt',
-    reservationUsd:attempted?RESERVATION_USD:0,cachedDiscountApplied:false};
+    reservationUsd:reserved?RESERVATION_USD:0,cachedDiscountApplied:false};
 }
 export async function digest(value){
   const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value)));

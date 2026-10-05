@@ -4,6 +4,7 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {pathToFileURL} from 'node:url';
+import {execFileSync} from 'node:child_process';
 import {extractionReadiness,canonical} from '../server/rss-quality/extract.mjs';
 import {looksEnglish} from '../server/rss-quality/language.mjs';
 import {loadArms,sealPack,sha} from './rss-paired-eval.mjs';
@@ -66,7 +67,7 @@ export async function prepareBundle(capture,review,{now=Date.now()}={}){
   if(!inputs.some(x=>x.stage==='ready'))throw Error('no_ready_input');
   const auth=await readFile(new URL('../tests/fixtures/rss-quality/production-v6-operator-auth.mjs',import.meta.url),'utf8');
   if(sha(auth)!==authSha)throw Error('auth_helper_changed');
-  const oldSource=(await import('node:child_process')).execFileSync('git',['show','0e72a35be0fa663167acd7de2c7dd9a8dfbdfc4c:server/rss-quality/jev.mjs'],{cwd:root,encoding:'utf8'});
+  const oldSource=execFileSync('git',['show','0e72a35be0fa663167acd7de2c7dd9a8dfbdfc4c:server/rss-quality/jev.mjs'],{cwd:root,encoding:'utf8'});
   const newSource=await readFile(new URL('../server/rss-quality/jev.mjs',import.meta.url),'utf8');
   if(sha(oldSource)!==arms.old.sourceSha || sha(newSource)!==arms.new.sourceSha)throw Error('arm_changed');
   const files=[
@@ -79,7 +80,10 @@ export async function prepareBundle(capture,review,{now=Date.now()}={}){
     {name:'index.ts',content:await readFile(new URL('./rss-audit-entrypoint.template.ts',import.meta.url),'utf8')},
   ];
   const row=initialAuditRow(pack,packSha);
-  const metadata={projectId:PROJECT,functionSlug:SLUG,verifyJwt:true,packSha,runId,createdAt,expiresAt:proof.expiresAt,readyInputs:inputs.filter(x=>x.stage==='ready').length,extractionFailures:inputs.filter(x=>x.stage==='extraction').length,maxProviderAttempts:inputs.filter(x=>x.stage==='ready').length*2,authHelperSha:authSha,referenceStatus:'proposed, not human-confirmed gold',invocationProof:{...review.invocationProof},files:files.map(x=>({name:x.name,sha:sha(x.content)})),deploymentPerformed:false,providerCalls:0};
+  const sourceHead=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
+  const sourcePaths={'audit.mjs':'server/rss-quality/audit.mjs','audit-store.mjs':'server/rss-quality/audit-store.mjs','audit-contract.mjs':'server/rss-quality/audit-contract.mjs','jev-v3.mjs':'server/rss-quality/jev.mjs','index.ts':'tools/rss-audit-entrypoint.template.ts'};
+  const runtimeMatchesSourceHead=Object.entries(sourcePaths).every(([name,path])=>sha(files.find(x=>x.name===name).content)===sha(execFileSync('git',['show',`${sourceHead}:${path}`],{cwd:root,encoding:'utf8'})));
+  const metadata={sourceHead,runtimeMatchesSourceHead,projectId:PROJECT,functionSlug:SLUG,verifyJwt:true,packSha,runId,createdAt,expiresAt:proof.expiresAt,readyInputs:inputs.filter(x=>x.stage==='ready').length,extractionFailures:inputs.filter(x=>x.stage==='extraction').length,maxProviderAttempts:inputs.filter(x=>x.stage==='ready').length*2,authHelperSha:authSha,referenceStatus:'proposed, not human-confirmed gold',invocationProof:{...review.invocationProof},files:files.map(x=>({name:x.name,sha:sha(x.content)})),deploymentPerformed:false,providerCalls:0};
   return {files,pack,row,metadata};
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href){

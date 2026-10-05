@@ -102,7 +102,8 @@ UUID, before one direct HTTP call. Completion is fenced by its new UUID. Running
 never times out into queued; post-call write failure or runtime termination keeps
 a pending reservation and blocks further calls across restarts. Concurrent
 requests can win only one current claim. A completed run cannot restart. Status
-separates reservations, confirmed client attempts and pending reservations, with
+separates reservations, confirmed fetch entries, known no-call reservations,
+completed transports and ambiguous/pending reservations, with
 expiry still allowing authorized numeric status access.
 
 `next` performs one attempt. `run` uses the same one-attempt transaction in a
@@ -132,7 +133,7 @@ must be regenerated for the actual manual window before deployment.
 
 ## Verification and cleanup
 
-**112 RSS tests pass**, including 20 isolated audit-server cases and a real local
+**115 RSS tests pass** via `npm run test:rss-purpose`, including 23 isolated audit-server cases and a real local
 Postgres CAS/fencing check that leaves neighboring `RSS-055` unchanged. Tests cover
 batch completion/continuation, concurrent calls, fixed 24-slot cap, auth before
 DB/paid work, body-only proof accuracy, JSON/body fingerprints, Unicode counts,
@@ -148,3 +149,58 @@ report reader versus publisher results and errors separately, and remove the
 temporary function/private deployed inputs. Keep the ledger closed for reviewed
 cleanup; never reset/delete it to recover budget or retry an unknown call. Verify
 function absence, production v6/RPC unchanged and client OFF afterward.
+
+
+## Independent transport review and correction
+
+Review of the earlier exact private bundle found two defects. Missing runtime
+`JEV_API_KEY` threw before fetch but the handler counted a confirmed client call;
+its batch could consume 24 reservations while making zero fetches. Fetch or body
+read timeout/abort was also recorded as complete, unlocking the next slot despite
+possible continuing remote processing. Neither case has occurred live.
+
+Ledger schema v2 now records explicit adapter states `unknown`, `not_started`,
+`uncertain` and `complete`. Missing configuration performs zero fetches, closes
+the run after one held reservation, reports zero confirmed client attempts and
+one known no-call reservation, and records `billableStatus:"no attempt"` with
+unknown invoice/estimate. The full reservation stays allocated and cannot be
+reused. Fetch initiation confirms only local entry into fetch, not acceptance,
+provider completion or billing. A worker/persistence failure can leave that fact
+unknown in the durable row; unknown is never counted as confirmed.
+
+Fetch errors and incomplete response body reads (abort, timeout, network failure,
+or response-limit cancellation) retain running/pending and the full reservation.
+A fenced `hold` saves fixed diagnostics without changing the row state. Failure
+to save that detail still leaves the original unknown pending reservation. Later
+`run` or `next`, including a fresh handler, returns 409 and sends nothing. There
+is no reclaim, retry or recovery that assumes remote cancellation. Completed
+body with invalid JSON remains a schema error; receiving headers alone does not
+establish transport completion.
+
+Executable before/after tests load the exact previous handler and contract from
+`b6a0a2d657a5fa888eac33705c85e5323d5fbebc`. Missing-key baseline reproduces
+0 fetches/24 falsely confirmed attempts; revised behavior is 0 fetches/0 confirmed
+attempts/1 known no-call held reservation. For fetch timeout/abort and body
+abort/network failure/limit, the simulated server remains active: baseline can
+start 24 overlapping operations; revised behavior starts one and refuses the
+next operation across restart. All transport is mocked. An actual Jev call,
+remote cancellation, billed charge and Deno timing remain unmeasured.
+
+Reports name record counts **reservations**, separate fetch confirmations,
+known no-calls and ambiguity, and calculate means per reservation rather than
+pretending every reservation is a physical attempt. Model output comparison
+against the 7/4/1 assistant-proposed references is labeled agreement; it is not
+human-gold accuracy. No human review is inferred from a preparation flag.
+
+The parent additionally verified account evidence: Supabase organization Free,
+41,096/500,000 Edge invocations, no billed overages, spend cap enabled and no
+extra usage charges. Reported egress was 4.791/5 GB (96%), an operational limit
+for the eventual manual window. No billing settings or plan changed here.
+Existing v6/RPC/auth helper were byte-equal and RSS-000 vacant in that parent's
+read-only review. Recheck before an eventual live action.
+
+The replacement private bundle is **review-only**. Its runtime files and source
+provenance are refreshed while the original input-pack creation time/expiry stay
+unchanged. No fresh execution expiry is invented while the Mac window is absent.
+Only a planned manual invocation window permits regenerating the expiring
+execution review. The deployment hold and zero-live-action state remain intact.

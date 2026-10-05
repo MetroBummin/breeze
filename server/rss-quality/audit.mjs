@@ -3,21 +3,21 @@ const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const stages=new Set(['ready','source','extraction']);
 const outcomes=new Set(['approved','rejected','uncertain','unavailable','schema_error','provider_error']);
 const fields=new Set(['promotion','readability','mismatch','evidence','substance','context','interest','topic','sensitivity','timeliness']);
-const details=new Set(['model','answers_shape','answer_count','choice_shape','probability_consistency','probability_sum','choice_not_top','confidence_mismatch','empty_response','response_limit','invalid_json']);
-const recordFields=new Set(['attemptId','packSha','id','arm','requestedModel','version','requestSha','cacheHit','status','stage','usage','cost','responseModel','transportAttempted','modelMatches','eligibility','reasonCodes','diagnostics','code','detail','field']);
+const details=new Set(['model','answers_shape','answer_count','choice_shape','probability_consistency','probability_sum','choice_not_top','confidence_mismatch','empty_response','response_limit','invalid_json','transport_failure','body_incomplete','contract_unknown','request_not_configured']);
+const recordFields=new Set(['attemptId','packSha','id','arm','requestedModel','version','requestSha','cacheHit','status','stage','usage','cost','responseModel','transportAttempted','transportState','modelMatches','eligibility','reasonCodes','diagnostics','code','detail','field']);
 const reasons=new Set(['promotion','readability','mismatch','uncertain','promotion_primary_purpose','body_unreadable','title_body_mismatch','hard_gate_uncertain','no_hard_exclusion','defect_evidence_missing']);
 function safeRecord(attempt){
-  return ['provider','quality','readability','schema'].includes(attempt.stage) && attempt.cacheHit===false && [true,false,null].includes(attempt.transportAttempted) && (attempt.responseModel===null || /^jev-\d+\.\d+\.\d+$/.test(attempt.responseModel)) &&
+  return ['provider','quality','readability','schema'].includes(attempt.stage) && attempt.cacheHit===false && [true,false,null].includes(attempt.transportAttempted) && ['unknown','not_started','uncertain','complete'].includes(attempt.transportState) && (attempt.transportState==='unknown'?attempt.transportAttempted===null:attempt.transportState==='not_started'?attempt.transportAttempted===false:attempt.transportAttempted===true) && (attempt.responseModel===null || /^jev-\d+\.\d+\.\d+$/.test(attempt.responseModel)) &&
     (attempt.modelMatches===undefined || typeof attempt.modelMatches==='boolean') && (attempt.eligibility===undefined || ['approved','candidate','withheld'].includes(attempt.eligibility)) &&
     (attempt.reasonCodes===undefined || Array.isArray(attempt.reasonCodes)&&attempt.reasonCodes.length<=4&&attempt.reasonCodes.every(x=>reasons.has(x))) &&
-    (attempt.code===undefined || ['invalid_evaluation','provider_unavailable'].includes(attempt.code)) && (attempt.detail===undefined || details.has(attempt.detail)||attempt.detail==='invalid_evaluation') && (attempt.field===undefined || attempt.field===null || fields.has(attempt.field)) &&
+    (attempt.code===undefined || ['invalid_evaluation','provider_unavailable','provider_transport_uncertain','provider_not_started'].includes(attempt.code)) && (attempt.detail===undefined || details.has(attempt.detail)||attempt.detail==='invalid_evaluation') && (attempt.field===undefined || attempt.field===null || fields.has(attempt.field)) &&
     (attempt.diagnostics===undefined || Array.isArray(attempt.diagnostics)&&attempt.diagnostics.length<=6&&attempt.diagnostics.every(x=>x&&Object.keys(x).every(k=>['stage','code','detail','field'].includes(k))&&x.stage==='schema'&&x.code==='optional_metadata_invalid'&&(details.has(x.detail)||x.detail==='missing_answer')&&['substance','context','interest','topic','sensitivity','timeliness'].includes(x.field)));
 }
 export function scheduleFor(pack){
   return pack.inputs.flatMap((input,index)=>input.stage==='ready'?(index%2?['new','old']:['old','new']).map(arm=>({input,arm})):[]);
 }
 export function initialAuditRow(pack,packSha){
-  return {id:LEDGER_ID,status:'queued',token:null,result:{schema:'rss-audit-ledger-v1',packSha,runId:pack.runId,expiresAt:pack.executionReview.expiresAt,nextIndex:0,reservedNanoUsd:0,attempts:[]}};
+  return {id:LEDGER_ID,status:'queued',token:null,result:{schema:'rss-audit-ledger-v2',packSha,runId:pack.runId,expiresAt:pack.executionReview.expiresAt,nextIndex:0,reservedNanoUsd:0,attempts:[]}};
 }
 export async function verifyAuditPack(pack,packSha,arms,now){
   if(await digest(pack)!==packSha || pack.schema!=='rss-paired-v1' || !same(pack.pricing,PRICE) || !same(pack.limits,LIMITS))throw Error('pack_invalid');
@@ -38,16 +38,16 @@ export async function verifyAuditPack(pack,packSha,arms,now){
 }
 function validLedger(row,pack,packSha,schedule){
   const data=row?.result;
-  if(row?.id!==LEDGER_ID || !['queued','running','done'].includes(row.status) || !data || data.schema!=='rss-audit-ledger-v1' || data.packSha!==packSha || data.runId!==pack.runId || data.expiresAt!==pack.executionReview.expiresAt || !Array.isArray(data.attempts) || !Number.isSafeInteger(data.nextIndex) || data.nextIndex!==data.attempts.length || data.nextIndex>schedule.length || data.nextIndex>24 || data.reservedNanoUsd!==data.nextIndex*RESERVATION_NANO_USD || data.reservedNanoUsd>100000000)throw Error('ledger_invalid');
+  if(row?.id!==LEDGER_ID || !['queued','running','done'].includes(row.status) || !data || data.schema!=='rss-audit-ledger-v2' || data.packSha!==packSha || data.runId!==pack.runId || data.expiresAt!==pack.executionReview.expiresAt || !Array.isArray(data.attempts) || !Number.isSafeInteger(data.nextIndex) || data.nextIndex!==data.attempts.length || data.nextIndex>schedule.length || data.nextIndex>24 || data.reservedNanoUsd!==data.nextIndex*RESERVATION_NANO_USD || data.reservedNanoUsd>100000000)throw Error('ledger_invalid');
   if(Object.keys(data).some(x=>!['schema','packSha','runId','expiresAt','nextIndex','reservedNanoUsd','attempts','stopReason'].includes(x)) || row.token!==null&&!/^[a-f0-9-]{36}$/i.test(row.token) || row.status==='running'&&(row.token===null||data.attempts.at(-1)?.status!=='pending') || row.status==='queued'&&data.attempts.some(x=>x.status==='pending'))throw Error('ledger_invalid');
   for(const [index,attempt] of data.attempts.entries()){
     const expected=schedule[index];
-    if(Object.keys(attempt).some(x=>!recordFields.has(x)) || !safeRecord(attempt) || attempt.id!==expected.input.id || attempt.arm!==expected.arm || attempt.attemptId!==`${pack.runId}:${expected.input.id}:${expected.arm}` || attempt.packSha!==packSha || attempt.requestSha!==expected.input.requestHashes[expected.arm] || attempt.version!==pack.arms[expected.arm].version || attempt.requestedModel!==PRICE.model || ![...outcomes,'pending'].includes(attempt.status) || !attempt.usage || !same(Object.keys(attempt.usage),['inputTokens','outputTokens','cachedTokens']) || Object.values(attempt.usage).some(x=>x!==null&&(!Number.isSafeInteger(x)||x<0)) || !same(attempt.cost,costRecord(attempt.usage,{responseModel:attempt.responseModel})))throw Error('ledger_invalid');
+    if(Object.keys(attempt).some(x=>!recordFields.has(x)) || !safeRecord(attempt) || attempt.id!==expected.input.id || attempt.arm!==expected.arm || attempt.attemptId!==`${pack.runId}:${expected.input.id}:${expected.arm}` || attempt.packSha!==packSha || attempt.requestSha!==expected.input.requestHashes[expected.arm] || attempt.version!==pack.arms[expected.arm].version || attempt.requestedModel!==PRICE.model || ![...outcomes,'pending'].includes(attempt.status) || !attempt.usage || !same(Object.keys(attempt.usage),['inputTokens','outputTokens','cachedTokens']) || Object.values(attempt.usage).some(x=>x!==null&&(!Number.isSafeInteger(x)||x<0)) || !same(attempt.cost,costRecord(attempt.usage,{responseModel:attempt.responseModel,attempted:attempt.transportAttempted!==false,reserved:true})))throw Error('ledger_invalid');
   }
   return data;
 }
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
-function summary(row,data){return {runId:data.runId,state:row.status,reservations:data.nextIndex,confirmedClientAttempts:data.attempts.filter(x=>x.transportAttempted===true).length,pendingReservations:data.attempts.filter(x=>x.status==='pending').length,reservedUsd:data.reservedNanoUsd/1e9,attempts:data.attempts};}
+function summary(row,data){return {runId:data.runId,state:row.status,reservations:data.nextIndex,confirmedClientAttempts:data.attempts.filter(x=>x.transportAttempted===true).length,knownNoCallReservations:data.attempts.filter(x=>x.transportAttempted===false).length,ambiguousReservations:data.attempts.filter(x=>x.status==='pending'&&x.transportAttempted!==false).length,completedTransports:data.attempts.filter(x=>x.transportState==='complete').length,pendingReservations:data.attempts.filter(x=>x.status==='pending').length,reservedUsd:data.reservedNanoUsd/1e9,attempts:data.attempts};}
 function verdictRecord(raw,input,implementation){
   try{
     const verdict=implementation.validateAnswers(raw,input.article);
@@ -81,23 +81,43 @@ export function createAuditHandler({pack,packSha,arms,store,authorized,execute,n
       if(row.status==='running')return reply({error:'audit_pending',reservations:data.nextIndex},409);
       if(row.status==='done' || data.nextIndex>=schedule.length || data.nextIndex>=24 || data.reservedNanoUsd+RESERVATION_NANO_USD>100000000)return reply({error:'audit_closed',reservations:data.nextIndex},409);
       const {input,arm}=schedule[data.nextIndex];
-      const attempt={attemptId:`${pack.runId}:${input.id}:${arm}`,packSha,id:input.id,arm,requestedModel:PRICE.model,version:pack.arms[arm].version,requestSha:input.requestHashes[arm],cacheHit:false,status:'pending',stage:'provider',usage:usageRecord(null),cost:costRecord(usageRecord(null)),responseModel:null,transportAttempted:null};
+      const attempt={attemptId:`${pack.runId}:${input.id}:${arm}`,packSha,id:input.id,arm,requestedModel:PRICE.model,version:pack.arms[arm].version,requestSha:input.requestHashes[arm],cacheHit:false,status:'pending',stage:'provider',usage:usageRecord(null),cost:costRecord(usageRecord(null)),responseModel:null,transportAttempted:null,transportState:'unknown'};
       const reserved={...data,nextIndex:data.nextIndex+1,reservedNanoUsd:data.reservedNanoUsd+RESERVATION_NANO_USD,attempts:[...data.attempts,attempt]};
       let token;
       try{token=await store.claim(row,reserved);}catch{return reply({error:'ledger_unavailable'},503);}
       if(!token)return reply({error:'audit_busy'},409);
       if(Date.parse(data.expiresAt)<=now()){
+        Object.assign(attempt,{status:'provider_error',transportAttempted:false,transportState:'not_started',code:'provider_not_started'});
+        attempt.cost=costRecord(attempt.usage,{attempted:false,reserved:true});reserved.stopReason='audit_expired';
         try{await store.finish(token,reserved,true);}catch{}
         return reply({error:'audit_expired',reservations:reserved.nextIndex},410);
       }
       let response;
-      try{response=await execute(requestFor(input.article,arms[arm].implementation));}catch{response={ok:false};}
-      attempt.transportAttempted=true;
+      try{response=await execute(requestFor(input.article,arms[arm].implementation));}catch{response=null;}
+      // Only the transport adapter can establish whether fetch was entered.
+      // An unrecognized adapter result/exception is unknown, never a proven call.
+      if(response?.transportState==='not_started' && response.transportAttempted===false){
+        Object.assign(attempt,{transportAttempted:false,transportState:'not_started',status:'provider_error',code:'provider_not_started'});
+        attempt.cost=costRecord(attempt.usage,{attempted:false,reserved:true});reserved.stopReason='provider_not_started';
+        try{await store.finish(token,reserved,true);}catch{return reply({error:'ledger_pending',reservations:reserved.nextIndex},503);}
+        return reply({error:'provider_not_started',reservations:reserved.nextIndex,closed:true,attempt},503);
+      }
+      if(response?.transportAttempted===true && ['complete','uncertain'].includes(response.transportState)){
+        attempt.transportAttempted=true;attempt.transportState=response.transportState;
+      }
+      if(attempt.transportState!=='complete'){
+        Object.assign(attempt,{code:'provider_transport_uncertain',detail:attempt.transportAttempted===true?(response.invalidDetail==='response_limit'?'response_limit':response.detail==='body_incomplete'?'body_incomplete':'transport_failure'):'contract_unknown'});
+        reserved.stopReason='transport_uncertain';
+        // A timeout/abort (including during body read) does not cancel remote
+        // processing. Preserve pending/running even if the fixed detail saves.
+        try{await store.hold(token,reserved);}catch{}
+        return reply({error:'audit_transport_pending',reservations:reserved.nextIndex,attempt},503);
+      }
       const raw=response?.data;
       attempt.responseModel=/^jev-\d+\.\d+\.\d+$/.test(raw?.model || '')?raw.model:null;
       attempt.modelMatches=raw?.model===PRICE.model;
       attempt.usage=usageRecord(raw?.usage ?? response?.usage);
-      attempt.cost=costRecord(attempt.usage,{responseModel:attempt.responseModel});
+      attempt.cost=costRecord(attempt.usage,{responseModel:attempt.responseModel,attempted:attempt.transportAttempted!==false,reserved:true});
       const result=response?.ok===true?(response.invalidJson?{status:'schema_error',stage:'schema',code:'invalid_evaluation',detail:details.has(response.invalidDetail)?response.invalidDetail:'invalid_json',field:null}:verdictRecord(raw,input,arms[arm].implementation)):{status:'provider_error',stage:'provider',code:'provider_unavailable'};
       Object.assign(attempt,result);
       const violation=attempt.usage.inputTokens>65536 || (raw?.model && raw.model!==PRICE.model);
@@ -130,9 +150,19 @@ export async function boundedText(stream,limit){
 }
 export function providerExecutor(key,{fetchImpl=fetch}={}){
   return async payload=>{
-    if(!key || payload.model!==PRICE.model)throw Error('not_configured');
-    const response=await fetchImpl('https://api.typesafe.ai/v1/systemone',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},body:JSON.stringify(payload)});
-    let data;try{const text=await boundedText(response.body,100000);if(!text)throw Error('empty_response');data=JSON.parse(text);}catch(error){return {ok:response.ok,invalidJson:true,invalidDetail:['empty_response','response_limit'].includes(error.message)?error.message:'invalid_json'};}
-    return {ok:response.ok,data};
+    if(!key || payload?.model!==PRICE.model || typeof fetchImpl!=='function')return {transportAttempted:false,transportState:'not_started'};
+    let init;
+    try{init={method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},body:JSON.stringify(payload)};}
+    catch{return {transportAttempted:false,transportState:'not_started'};}
+    let response;
+    try{response=await fetchImpl('https://api.typesafe.ai/v1/systemone',init);}
+    catch{return {transportAttempted:true,transportState:'uncertain',detail:'transport_failure'};}
+    let text;
+    try{text=response.body?await boundedText(response.body,100000):'';}
+    catch(error){return {transportAttempted:true,transportState:'uncertain',detail:'body_incomplete',invalidDetail:error.message==='response_limit'?'response_limit':null};}
+    const transport={transportAttempted:true,transportState:'complete',ok:response.ok};
+    if(!text)return {...transport,invalidJson:true,invalidDetail:'empty_response'};
+    let data;try{data=JSON.parse(text);}catch{return {...transport,invalidJson:true,invalidDetail:'invalid_json'};}
+    return {...transport,data};
   };
 }

@@ -50,7 +50,7 @@ test('24 mocked attempts execute sequentially once, journal before transport, an
     return {ok:true,data};
   });
   const report=await runPaired(pack,{expectedSha:manifest.packSha,arms,executor,checkpoint:async rows=>{last=rows;}});
-  assert.equal(calls,24);assert.equal(maxActive,1);assert.equal(report.counts.attempted,24);
+  assert.equal(calls,24);assert.equal(maxActive,1);assert.equal(report.counts.reservations,24);
   assert.equal(report.counts.completeValidPairs,11);assert.equal(report.attempts[0].status,'provider_error');assert.equal(report.attempts[1].status,'schema_error');
   assert.equal(report.costs.usageUnknownAttempts,0);assert.ok(Math.abs(report.costs.knownTokenEstimateUsd-24*.000042)<1e-12);
   assert.ok(Math.abs(report.costs.failedAttemptKnownTokenEstimateUsd-2*.000042)<1e-12);
@@ -67,7 +67,7 @@ test('durable pending attempts are reserved and skipped on resume; failed checkp
   await assert.rejects(runPaired(pack,options),/disk/);assert.equal(calls,0);assert.equal(journal[0].status,'pending');
   const report=await runPaired(pack,{...options,journal,checkpoint:async()=>{}});
   assert.equal(calls,1);assert.equal(report.attempts[0].status,'pending');assert.equal(report.costs.usageUnknownAttempts,1);
-  assert.equal(report.costs.completeTokenEstimateUsd,null);assert.equal(report.costs.meanTokenEstimatePerAttemptUsd,null);
+  assert.equal(report.costs.completeTokenEstimateUsd,null);assert.equal(report.costs.meanTokenEstimatePerReservationUsd,null);
   assert.equal(report.costs.reservationUsd,2*RESERVATION_USD);
 });
 test('no unverified transport, SDK retry contract, malformed journals or duplicate IDs',async()=>{
