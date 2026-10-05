@@ -24,8 +24,13 @@ payloads match across 195 files; cache stamp is b52a8d67. Application JS/CSS/ass
 are identical to the reviewed integration 741eae5.
 
 Local browser verification uses installed Chromium 151 with Playwright 1.63.0.
-WebKit downloads were blocked by HTTP 403 locally. Native archive/device/Pencil
-behavior is not established by browser tests. PR CI results must be assessed on
+WebKit downloads were blocked by HTTP 403 locally. CI ran the import/cover suite
+and passed all 14 cases in each of Chromium and WebKit. Cold-offline shell and
+worker lifecycle use Chromium only: Playwright documents worker automation as
+Chromium-only, and the attempted WebKit cold navigation returned an internal
+error. This is an explicit WebKit offline coverage limit, not a passed check.
+See [Playwright BrowserContext](https://playwright.dev/docs/api/class-browsercontext#browser-context-service-workers).
+Native archive/device/Pencil behavior is not established by browser tests. PR CI results must be assessed on
 the published exact head; local results do not substitute for those checks.
 
 Device checks once 236 is available:

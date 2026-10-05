@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import {readFileSync,mkdirSync,writeFileSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
-import {tmpdir} from 'node:os';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium} from 'playwright';
 const root=process.env.BREEZE_IMPORT_ROOT||fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_IMPORT_PROOF||'/tmp/breeze-offline-import-proof';mkdirSync(proof,{recursive:true});
 let nextGeneration=false;
@@ -15,12 +14,15 @@ const server=createServer((req,res)=>{try{
 }catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 const epubFile={name:'QA Alice.epub',mimeType:'application/epub+zip',buffer:readFileSync(resolve(root,'assets/classics/alice-in-wonderland.epub'))};
-try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
+// Playwright's worker enumeration/lifecycle automation is Chromium-only:
+// https://playwright.dev/docs/api/class-browsercontext#browser-context-service-workers
+// Keep WebKit's real IndexedDB/import/cover matrix in verify-import-commit-browser.
+console.log('NOT RUN WebKit cold-offline shell/worker lifecycle: unsupported Playwright service-worker automation; WebKit import/cover tests remain enabled.');
+try{for(const engine of [chromium].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
  const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  try{for(const controlled of [false,true]){
  nextGeneration=false;
- const profile=engine===webkit?mkdtempSync(resolve(tmpdir(),'breeze-import-')):null;
-  const context=profile?await engine.launchPersistentContext(profile,{headless:true,viewport:{width:390,height:844},serviceWorkers:'allow'}):await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});
  await context.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await context.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
  const page=await context.newPage();page.setDefaultTimeout(20000);
@@ -86,6 +88,6 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   }
  }
  console.log(engine.name()+': offline imported TXT/EPUB/PDF passed; initially controlled='+controlled);
- }finally{await context.close();if(profile)rmSync(profile,{recursive:true,force:true});}
+ }finally{await context.close();}
  }}finally{await browser.close();}
 }}finally{await new Promise(r=>server.close(r));}
