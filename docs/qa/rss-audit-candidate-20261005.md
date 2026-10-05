@@ -1,179 +1,150 @@
-# Approved temporary audit: prepared candidate, gates still closed
+# Temporary paired audit: inputs frozen, batch tested, undeployed
 
-The parent supplied transcript evidence that the user approved the temporary
-service-role-only paired audit function, durable attempt ledger, previously
-approved **24-attempt / USD 0.10 total** pilot and subsequent function removal.
-Production RSS, client OFF and 235/QA remain outside this change. This supersedes
-the earlier plan-only state; it does not remove the requirement to verify actual
-credential-resident invocation **before deployment** or review/freeze inputs
-before paid transport.
+The parent supplied explicit user approval for one temporary service-role-only
+function and one durable ledger row, **24 physical provider attempts / USD 0.10
+total**, concurrency one, zero retries and subsequent function removal. Production
+RSS, client OFF, release 235 and QA remain outside this change. No deployment,
+live ledger initialization, SQL mutation, provider attempt, grant, credential
+creation/export or client activation has occurred.
 
-The [handler](../../server/rss-quality/audit.mjs),
-[store adapter](../../server/rss-quality/audit-store.mjs),
-[shared contract](../../server/rss-quality/audit-contract.mjs),
-[private bundle builder](../../tools/prepare-rss-audit-bundle.mjs) and
-[entrypoint template](../../tools/rss-audit-entrypoint.template.ts) are prepared.
-They are isolated from production RSS imports. No function deployment, live
-ledger initialization, provider attempt, SQL mutation, grant, credential creation,
-key export, client activation or 235 action has occurred.
+The isolated [handler](../../server/rss-quality/audit.mjs),
+[store](../../server/rss-quality/audit-store.mjs),
+[contract](../../server/rss-quality/audit-contract.mjs),
+[private builder](../../tools/prepare-rss-audit-bundle.mjs) and
+[entrypoint](../../tools/rss-audit-entrypoint.template.ts) are prepared. The
+production v6 auth helper is copied byte-for-byte, SHA-256
+`2d612962b01784a76e1b72f5cf79de3c4972a337b6dd73b856ec67e31549ae79`.
+Gateway `verify_jwt=true` remains mandatory. Caller JWT forwarding to the
+service-role-only SECURITY INVOKER/current_user RPC remains the runtime gate.
 
-## Invocation checkpoint
+## Actual caller evidence and remaining manual step
 
-Read-only metadata confirms production `rss-quality` remains version 6 with
-`verify_jwt=true` and the recorded bundle hash. The project has neither `pg_net`
-nor `pg_cron` installed. Existing `rss-eval-106` version 2 is a retired HTTP 410
-stub, with no environment credential lookup or outbound calls; it is not an
-executor. Current exposed tools still have no invocation action. No secret names,
-values, request headers, vault contents or cron command bodies were queried.
+At 2026-10-05 04:57 UTC, the parent reported that the user personally entered
+an existing service-role JWT in the official Mac Supabase Dashboard Test UI and
+sent `{"operation":"auth_probe"}` to production `rss-quality`. The user reported
+exact response body `{"error":"operation"}`. HTTP status was **not reported**.
+Verified v6 source authenticates before returning this unknown-operation body;
+this supports that particular manual caller. It is not evidence of a native
+service-role selector, key access by an agent, or autonomous cloud invocation.
+Preparation records `status:null` and `user-reported-response-body`, rather than
+inventing HTTP 400. Runtime authorization is unchanged and runs on every request.
 
-The parent must verify the existing native caller, not merely assert a decoded
-role. In the already authenticated Supabase Dashboard for project
-`hrtfhojbhqvaoiulspto`, inspect **Edge Functions → rss-quality → Test**. Only if
-there is a built-in `service_role` authorization choice that needs no key reveal
-or copying, select it and send exactly `{"operation":"auth_probe"}`. The verified
-v6 source authenticates before rejecting this unknown operation, so:
+The Mac is now closed. There is no exposed Supabase invocation tool, `pg_net`,
+`pg_cron`, or usable existing executor (`rss-eval-106` is a retired 410 stub).
+Deployment remains on hold until the parent has a runnable manual window. No
+agent may inspect/copy/export JWTs, request headers, environment keys or vault
+values. The user can personally operate their existing authenticated Dashboard;
+no new credential or grant is needed. Approval of the already approved audit
+scope must not be requested again.
 
-| Response | Meaning |
-| --- | --- |
-| HTTP 400, `{"error":"operation"}` | The request passed existing gateway/helper/PostgREST authorization; no provider or feed operation ran. |
-| HTTP 403, `{"error":"operator_required"}` | The caller did not pass the operator gate. |
-| Other response | Investigate the fixed status/error only; do not infer authorization. |
+Once that window is available, refresh the private execution review and expiry,
+recheck production v6/RPC and the unused sentinel, deploy only
+`rss-quality-paired-audit`, and verify returned JWT/source metadata. The user's
+paid-work-free `{"operation":"auth_probe"}` on that temporary function should
+return `{"authorized":true,"providerAttempts":0}`. After its one ledger row is
+initialized, the manual paid request is `{"operation":"run"}`. A response with
+`pausedReason:"request_window"` allows another manual Send to continue untouched
+slots. Do not promise that all 24 attempts fit one Send. Error/pending responses
+require status review, never an automatic retry or reset. A foreground request
+can also be killed by a reused worker; pending then stays withheld.
 
-This is an exact preflight request whose interpretation is grounded in v6 source,
-**not evidence that the UI currently offers such a selector**. Official Dashboard
-documentation describes anon/user-token testing, not a verified service-role
-broker. If the selector is absent, stop. An ordinary anon/user token is not a
-substitute; do not paste a service key into a header field, inspect network
-credentials, export a key or create a new one. Identify an already approved
-trusted server job instead. The candidate remains undeployed until the parent
-returns a verified credential-resident caller identity and status/error result.
-Deployment alone cannot solve this missing caller.
+## Exact private handoff and input freeze
 
-## Private input handoff checkpoint
+The earlier ZIP materialization failure is superseded by the parent's explicitly
+authorized complete Library **text reads** of the two JSON originals. Each read
+returned all lines, no remaining chunk. Restoring the missing final LF reproduced
+both expected original byte counts and hashes exactly:
 
-The parent supplied a private Library ZIP named
-`breeze-rss-private-audit-inputs-20261005.zip`, 49,658 bytes, expected SHA-256
-`9cbc8e6a0b4f0bf6783977378783688f90f8982d8825e3e568df93d2a5fde947`,
-containing `private-visible-inputs.json` and `audit-manifest-no-full-text.json`.
-The parent's description is 11 Breeze-reader captures and one Dexerto-publisher
-capture, with proposed **7 retain / 4 promo / 1 uncertain** references. These are
-not human-confirmed gold labels, a random sample or verified production payloads.
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| private-visible-inputs.json | 125621 | `12f319e0aa31993aa475bbbe331ba6dc61500ca58fd45119aa17123170bc9850` |
+| audit-manifest-no-full-text.json | 10539 | `26c213caedd0b679fd7059a9a813cf66c621b0ec2d7e321d72844ff2a4ade710` |
 
-The resolved-reference Library materialization action returned a transfer, but
-the current official download helper failed in this execution environment,
-including supported additional-network and escalation paths. Automatic approval
-review did not reject the action. The helper reports `download failed`; its
-underlying network cause is not established. The ZIP is **not readable locally**,
-its actual checksum is **not verified**, and its JSON field schema/body hashes
-are **not inspected or frozen**. Do not claim that a successful preparation
-response means bytes were transferred. No signed transfer URLs or publisher
-bodies are committed. A consumer-readable private handoff is still required.
+All 12 raw body hashes and Unicode character counts match the manifest. The
+[adapter](../../tools/prepare-rss-audit-bundle.mjs) checks every manifest field
+against the matching sample, keeps raw-body fingerprints, and converts the
+actual parent schema without retyping prose. Adapted capture SHA-256 is
+`015c4a2ea69d7d2fc223f7301cab1611572d3815619a2dd28731650f9d2ee2fc`.
+Bodies and deployment inputs remain mode-600 files in a mode-700 directory outside
+the checkout; none is committed or printed.
 
-The builder's minimal private interchange format is one JSON object:
+There are **12 ready captures**, no local extraction failures: 11 Breeze-reader
+visible captures plus one publisher-only Taco Bell/Duolingo capture. Proposed
+references are **7 retain / 4 promotion / 1 uncertain**, not human-confirmed gold
+or a random/publisher-independent sample. The unavailable historical popcorn URL
+is recorded outside this 12-input pack, not a model quality rejection. Its
+replacement does not erase that source failure or create an archived cohort pair.
+The supplied historical trial remains 46 completed: 36 approved, 1 candidate,
+9 errors (37 valid classifications); 44 reservations are not proven paid calls.
 
-```json
-{
-  "schema": "rss-browser-capture-v1",
-  "items": [
-    {
-      "id": "ARTICLE_ID",
-      "url": "https://publisher.example/article",
-      "title": "Captured title",
-      "capturedAt": "UTC ISO timestamp",
-      "captureMethod": "breeze-reader-visible-text",
-      "bodyText": "PRIVATE full captured text",
-      "bodySha256": "SHA-256 of the exact UTF-8 bodyText",
-      "reference": {
-        "label": "retain",
-        "reviewStatus": "proposed-reviewed-before-model"
-      }
-    }
-  ]
-}
-```
+Conversion trims nonblank line whitespace, normalizes line endings and groups
+contiguous lines within 200 paragraphs. It preserves all prose, pagination and
+repetition, with no truncation or invented HTML. All raw originals remain
+available for inspection. Eleven samples report only a capture window; its upper
+bound is explicitly marked as an approximate capture instant. Captured links
+are absent/unverified, original completeness unknown, and
+`productionExtractionVerified=false`. Both arms receive identical state; labels
+and reviewer notes never enter requests. The publisher-only result must be
+reported separately from reader captures. The longest prepared body is 55,397
+characters / 60,066 serialized state UTF-8 bytes; no tokenizer/context acceptance
+is asserted. An over-context response consumes one reservation and is not retried.
 
-There must be 12 unique items. `captureMethod` may instead be
-`publisher-visible-text`; reference labels may be `promotion` or `uncertain`.
-Optional captured `links` are bounded `{text,url}` objects; when absent, they
-remain unverified rather than inferred. Once the unchanged parent ZIP is
-readable, adapt its actual schema locally to this format and retain its original
-fingerprint; do not require manually retyping article prose.
+## Durable bounds and batch behavior
 
-Conversion normalizes line endings, trims whitespace around nonblank captured
-lines, and groups contiguous lines if needed to stay within 200 paragraphs.
-It preserves headings, pagination and repeated links, never truncates prose,
-never fabricates HTML, and keeps the original raw-body hash alongside prepared
-article/request hashes. Both arms receive exactly the same resulting state.
-Body/language failures are separate extraction outcomes and skip both calls.
-Checks explicitly say `productionExtractionVerified=false` and original
-completeness unknown. Labels are outside requests and remain pending human
-confirmation. Results assess these reader-visible captures, not extraction
-parity or production population accuracy.
+Only the preexisting service-role-only `rss_quality_eval` table's sentinel
+`RSS-000` is writable. Recheck vacancy and insert once without overwriting.
+No schema/grants/control/feed/cache/budget/cohort job change is needed. Original
+cohort reports must use original manifest membership and exclude this sentinel.
+The initial row contains only fingerprints, expiry, numeric records and IDs.
 
-## One-row, one-attempt implementation
+Each attempt claims a conditional queued-to-running update fenced by its prior
+UUID, before one direct HTTP call. Completion is fenced by its new UUID. Running
+never times out into queued; post-call write failure or runtime termination keeps
+a pending reservation and blocks further calls across restarts. Concurrent
+requests can win only one current claim. A completed run cannot restart. Status
+separates reservations, confirmed client attempts and pending reservations, with
+expiry still allowing authorized numeric status access.
 
-The builder emits only **private** files outside the checkout: provider inputs,
-deployment file content, numeric ledger initialization, and bounded safe metadata.
-It neither deploys nor initializes the live database. It requires a fresh
-execution-review file documenting actual caller preflight, input/reference review,
-verified context-bound billing terms and an expiry no more than one hour away.
-There is no default that silently authorizes live execution. It pins old/new
-source and request hashes, copies the production v6 auth helper byte-for-byte,
-and requests gateway JWT verification in metadata. A later deployment must
-explicitly set `verify_jwt=true` and check returned deployment metadata/source.
+`next` performs one attempt. `run` uses the same one-attempt transaction in a
+sequential foreground loop. Its target window is 85 seconds, including auth;
+it starts no further attempt after 65 seconds, leaving 20 seconds for read/claim,
+provider and completion. Every PostgREST read/write has a 3-second abort signal;
+the provider HTTP timeout is 10 seconds. No SDK retries, background task, schedule,
+self-invocation, auth-header replication or lease recovery is used. Fixed bounded
+reason/diagnostic fields reject unexpected stored text before status disclosure.
+Logs omit article/evidence/raw answers/exceptions and follow durable completion.
 
-The existing RLS-protected `rss_quality_eval` table already grants the service
-role SELECT/INSERT/UPDATE/DELETE; neither ordinary role can read it. Its ID
-constraint accepts only `RSS-###`; `RSS-000` was observed unused and is outside
-the fixed original cohort. After all gates are verified, insert only that row
-if still vacant—never overwrite a conflicting row. No schema or grants change.
-The row contains run/input/code fingerprints, expiry and numeric records, no
-publisher prose. Historical cohort reports use the original manifest membership
-and exclude this sentinel; supplied 46/36/1/9 accounting remains unchanged.
+At the documented 2026-10-05 Jev price, reserve 65,536 input tokens × 42
+nanodollars = **USD 0.002752512 per attempt**, or **USD 0.066060288 for 24**.
+Output is free; no cache discount is assumed. Integer reservations prevent cap
+drift. Unknown usage retains full reservation and unknown estimate; token estimates
+are not invoices. Unexpected model/token bounds close the run. The remaining
+USD 0.033939712 must cover applicable platform charges. Actual invoices and model
+latency remain unmeasured. Sources: [Jev terms](https://docs.typesafe.ai/models),
+[Supabase pricing](https://supabase.com/pricing), and
+[Edge limits](https://supabase.com/docs/guides/functions/limits), checked October 5.
 
-Every authorized `next` request reserves one slot and full cost before transport
-using a conditional update on ID, queued state and the previous fencing token.
-Only one caller wins. The row remains running through the single awaited direct
-HTTP attempt; completion is fenced by the newly assigned token. No SDK, hidden
-retry, lease timeout/reclaim or automatic reset exists. A post-call persistence
-failure keeps the pending reservation and blocks subsequent work, including
-across runtime restarts. Pending slots are not proven billed/successful calls.
-Status reports separate reservations, confirmed client attempts and pending
-reservations. Expired runs retain authorized numeric status access but refuse
-new attempts. A completed run cannot restart.
+Supabase documents 150-second Free/400-second Paid worker wall-clock limits,
+150-second request idle timeout and 2-second CPU limit per request excluding I/O.
+The bounded loop is a preparation, not proof of Deno/worker timing; reused workers
+can terminate earlier. The private execution window expires within one hour and
+must be regenerated for the actual manual window before deployment.
 
-The runtime writes only the sentinel, not feeds, controls, production quality
-cache, production budgets or cohort jobs. Its auth probe does no provider work.
-All paid operations require the unchanged caller-JWT PostgREST authorization and
-gateway check; no decoded-role trust or raw key-equality check is introduced.
-Per-attempt cost/usage uses the shared existing report contract. Core schema
-failures retain cost when usage is reported; missing usage keeps an unknown
-estimate/full reservation. Fixed diagnostics omit body, evidence, raw responses
-and transport exception text. Numeric logs occur only after durable completion.
+## Verification and cleanup
 
-## Bounds, verification and next action
+**112 RSS tests pass**, including 20 isolated audit-server cases and a real local
+Postgres CAS/fencing check that leaves neighboring `RSS-055` unchanged. Tests cover
+batch completion/continuation, concurrent calls, fixed 24-slot cap, auth before
+DB/paid work, body-only proof accuracy, JSON/body fingerprints, Unicode counts,
+expiry, pending withholding, bounded transport and diagnostic privacy. All provider
+calls are mocked. Typecheck passes with the same 34 existing findings. The original
+17-case deterministic comparison still separates 11 synthetic articles from six
+optional-field mutations; six validator recoveries are not an accuracy gain.
 
-Reserve 65,536 input tokens × 42 nanodollars = **USD 0.002752512 per slot**;
-24 slots reserve **USD 0.066060288** for Jev. Output is free at the documented
-2026-10-05 price. Integer nanodollar accounting avoids floating-point cap drift.
-The remaining approved allowance must cover applicable platform charges; verify
-actual billing terms before arming the run. Unexpected response model/token
-bounds close the run; unknown usage is never called zero cost. Real invoices,
-means and cache savings remain unmeasured. No study cache reuse occurs.
-
-The server tests cover unauthorized/probe paths, reviews/hashes, claim-before-call,
-concurrent callers, 24 slots/replay, failed persistence/restart, stored-field
-disclosure, expiry/status, provider/core/optional failures and costs, single fixed
-bounded HTTP transport, capture conversion and exact helper hash. An ephemeral
-Postgres test exercises real conditional updates, fencing and an untouched
-neighbor cohort row. All provider HTTP is mocked. Deno/gateway/native caller,
-private real inputs and production integration remain untested.
-
-Once the caller, readable handoff, frozen hashes/references and billing terms are
-verified, prepare the private bundle, recheck v6/RPC/unused sentinel, deploy only
-the temporary slug, verify its JWT/auth/source, initialize its one row and invoke
-one attempt at a time through the verified native caller. The existing paid/server
-approval persists; do not ask for it again. Keep client OFF and do not warm feeds.
-After reporting, close the sentinel, export numeric results and remove the
-temporary function/private inputs. Keep the numeric ledger for reviewed cleanup;
-never automatically delete/reset it to recover budget or retry failures.
+Deno execution, live gateway/native UI, provider behavior, exact production
+extraction and real billing are untested. No real before/after classifier result
+exists yet. When the manual run finishes or stops, export numeric ledger results,
+report reader versus publisher results and errors separately, and remove the
+temporary function/private deployed inputs. Keep the ledger closed for reviewed
+cleanup; never reset/delete it to recover budget or retry an unknown call. Verify
+function absence, production v6/RPC unchanged and client OFF afterward.

@@ -12,6 +12,20 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const authSha='2d612962b01784a76e1b72f5cf79de3c4972a337b6dd73b856ec67e31549ae79';
 export const PROJECT='hrtfhojbhqvaoiulspto';
 export const SLUG='rss-quality-paired-audit';
+export function convertParentHandoff(rawText,manifestText){
+  const raw=JSON.parse(rawText),manifest=JSON.parse(manifestText);
+  if(raw.schema_version!==1 || manifest.schema_version!==1 || !Array.isArray(raw.samples) || raw.samples.length!==12 || !Array.isArray(manifest.samples) || manifest.samples.length!==12 || manifest.raw_input_sha256!==sha(rawText))throw Error('parent_handoff_invalid');
+  const items=raw.samples.map((sample,index)=>{
+    const ref=manifest.samples[index];
+    if(typeof sample.body!=='string' || ref.body_characters!==[...sample.body].length || ref.body_sha256!==sha(sample.body) || Object.keys(ref).some(key=>!['body_characters','body_sha256'].includes(key)&&JSON.stringify(ref[key])!==JSON.stringify(sample[key])))throw Error('parent_manifest_mismatch');
+    const label=sample.manual_label?.startsWith('retain_')?'retain':sample.manual_label?.startsWith('reject_')?'promotion':sample.manual_label==='uncertain_retain_news'?'uncertain':null;
+    const captureMethod=sample.capture==='Visible Breeze reader DOM'?'breeze-reader-visible-text':sample.capture==='Visible publisher article-content DOM (not Breeze extraction)'?'publisher-visible-text':null;
+    const window=sample.observed_window_utc?.split('/');
+    if(!label || !captureMethod || window?.length!==2 || window.some(x=>!Number.isFinite(Date.parse(x))) || Date.parse(window[0])>Date.parse(window[1]))throw Error('parent_capture_invalid');
+    return {id:sample.id,url:sample.source,title:sample.title,bodyText:sample.body,bodySha256:ref.body_sha256,captureMethod,capturedAt:sample.observed_at || window[1],capturedWindow:sample.observed_window_utc,capturedAtPrecision:sample.observed_at?'observed':'window-upper-bound',reference:{label,reviewStatus:'proposed-reviewed-before-model'}};
+  });
+  return {schema:'rss-browser-capture-v1',sourceFiles:{rawSha:sha(rawText),manifestSha:sha(manifestText)},items};
+}
 export function convertCapture(capture){
   if(capture?.schema!=='rss-browser-capture-v1' || !Array.isArray(capture.items) || capture.items.length!==12)throw Error('capture_requires_12_items');
   const inputs=[],seeds=[];
@@ -28,7 +42,7 @@ export function convertCapture(capture){
     // Keep all captured prose (including pagination/repetition), never synthesize
     // HTML or claim that visible text is the production Readability payload.
     const readiness=extractionReadiness({paragraphs});
-    const base={id:item.id,url,title:item.title,capturedAt:item.capturedAt,captureMethod:item.captureMethod,rawBodySha:item.bodySha256};
+    const base={id:item.id,url,title:item.title,capturedAt:item.capturedAt,capturedWindow:item.capturedWindow || null,capturedAtPrecision:item.capturedAtPrecision || 'observed',captureMethod:item.captureMethod,rawBodySha:item.bodySha256};
     if(readiness.status!=='ready'){inputs.push({...base,stage:'extraction',code:readiness.reasons[0]});continue;}
     if(!looksEnglish(paragraphs.join(' '))){inputs.push({...base,stage:'extraction',code:'language_unavailable'});continue;}
     const article={title:item.title,paragraphs,links,checks:{captureMethod:item.captureMethod,originalCompleteness:'unknown',productionExtractionVerified:false,linksCaptured:item.links!==undefined,readiness}};
@@ -39,9 +53,9 @@ export function convertCapture(capture){
 }
 export function executionReview(review,now=Date.now()){
   const probe=review?.invocationProof;
-  if(review?.schema!=='rss-audit-execution-review-v1' || review.inputReview!=='reviewed-before-model' || review.referenceReview!=='proposed-reviewed-before-model' || review.billingTerms!=='verified-context-bound-no-retries' || !probe || probe.projectId!==PROJECT || probe.functionSlug!=='rss-quality' || probe.status!==400 || probe.error!=='operation' || !['dashboard-native-service-role-selector','existing-server-job'].includes(probe.callerKind) || !/^[A-Za-z0-9:_-]{1,128}$/.test(probe.callerId || '') || !Number.isFinite(Date.parse(probe.verifiedAt)) || Date.parse(probe.verifiedAt)>now || now-Date.parse(probe.verifiedAt)>3600000 || !Number.isFinite(Date.parse(review.expiresAt)) || Date.parse(review.expiresAt)<=now || Date.parse(review.expiresAt)-now>3600000)throw Error('verified_execution_review_required');
-  if(Object.keys(probe).some(x=>!['projectId','functionSlug','status','error','callerKind','callerId','verifiedAt'].includes(x)))throw Error('proof_must_not_contain_credentials');
-  return {inputReview:review.inputReview,referenceReview:review.referenceReview,callerProof:'existing-service-role-auth-probe-400-operation',billingTerms:review.billingTerms,expiresAt:review.expiresAt};
+  if(review?.schema!=='rss-audit-execution-review-v1' || review.inputReview!=='reviewed-before-model' || review.referenceReview!=='proposed-reviewed-before-model' || review.billingTerms!=='verified-context-bound-no-retries' || !probe || probe.projectId!==PROJECT || probe.functionSlug!=='rss-quality' || probe.error!=='operation' || !(probe.status===400 && ['dashboard-native-service-role-selector','existing-server-job'].includes(probe.callerKind) || probe.status===null && probe.callerKind==='manual-dashboard-existing-jwt' && probe.evidence==='user-reported-response-body') || !/^[A-Za-z0-9:_-]{1,128}$/.test(probe.callerId || '') || !Number.isFinite(Date.parse(probe.verifiedAt)) || Date.parse(probe.verifiedAt)>now || now-Date.parse(probe.verifiedAt)>3600000 || !Number.isFinite(Date.parse(review.expiresAt)) || Date.parse(review.expiresAt)<=now || Date.parse(review.expiresAt)-now>3600000)throw Error('verified_execution_review_required');
+  if(Object.keys(probe).some(x=>!['projectId','functionSlug','status','error','callerKind','callerId','verifiedAt','evidence'].includes(x)))throw Error('proof_must_not_contain_credentials');
+  return {inputReview:review.inputReview,referenceReview:review.referenceReview,callerProof:probe.status===400?'existing-service-role-auth-probe-400-operation':'manual-existing-jwt-probe-operation-body-status-unreported',billingTerms:review.billingTerms,expiresAt:review.expiresAt};
 }
 export async function prepareBundle(capture,review,{now=Date.now()}={}){
   const proof=executionReview(review,now),{inputs,seeds}=convertCapture(capture),arms=await loadArms();

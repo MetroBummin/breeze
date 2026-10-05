@@ -155,3 +155,15 @@ conversion and the unchanged v6 authorization helper. No production RSS module
 imports the audit code. Approval requires verifying the existing native caller
 before deployment; private input availability/review and billing terms also
 remain gates. Local preparation does not imply a function, row or paid run exists.
+
+The parent subsequently supplied body-only manual Dashboard authorization evidence:
+`{"error":"operation"}` after the user personally used an existing service JWT;
+HTTP status is unreported. The preparation records that distinction, with the
+unchanged runtime gate. Complete private JSON text reads now reproduce both
+original handoff hashes, 12 body hashes, and proposed 7/4/1 references; 11 reader
+captures and one publisher capture stay distinct. The input adapter preserves
+capture-window uncertainty and excludes labels/notes from model state. `run`
+adds a bounded sequential foreground batch using the same per-attempt durable
+claim, 3-second DB abort signals, 10-second provider timeout and pending withholding.
+The Mac is closed, so the temporary function remains undeployed pending a runnable
+manual window; no autonomous executor or live result is implied.

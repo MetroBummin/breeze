@@ -6,7 +6,7 @@ import {createAuditHandler,initialAuditRow,providerExecutor} from '../server/rss
 import {auditStore} from '../server/rss-quality/audit-store.mjs';
 import {RESERVATION_NANO_USD,digest,LEDGER_ID} from '../server/rss-quality/audit-contract.mjs';
 import {loadArms,sealPack,sha} from '../tools/rss-paired-eval.mjs';
-import {convertCapture,prepareBundle} from '../tools/prepare-rss-audit-bundle.mjs';
+import {convertCapture,convertParentHandoff,prepareBundle} from '../tools/prepare-rss-audit-bundle.mjs';
 import {articleFor,purposeFixtures,mockResponse} from './fixtures/rss-quality/purpose.mjs';
 const arms=await loadArms(),T=Date.parse('2026-10-05T10:00:00Z');
 const article=articleFor(purposeFixtures.find(x=>x.id==='coherent-sensitive-news'));
@@ -72,6 +72,25 @@ test('24 one-attempt calls close the pilot; replay and new handler cannot restar
   const status=await (await restarted(request('status'))).json();assert.equal(status.reservations,24);assert.equal(status.confirmedClientAttempts,24);assert.equal(status.pendingReservations,0);
   assert.ok(!JSON.stringify(status).includes(article.paragraphs[0]));
 });
+test('foreground batch completes only sequential reserved attempts and shares the 24-slot cap',async()=>{
+  const h=harness();let active=0,maxActive=0,authCalls=0;
+  const handler=createAuditHandler({...h,arms,authorized:async()=>{authCalls++;return true;},now:()=>T,execute:async()=>{active++;maxActive=Math.max(maxActive,active);assert.equal(h.store.row.status,'running');await Promise.resolve();active--;return {ok:true,data:dataFor()};}});
+  const response=await handler(request('run'));assert.equal(response.status,200);
+  const body=await response.json();assert.equal(body.completedThisRequest,24);assert.equal(body.closed,true);assert.equal(maxActive,1);assert.equal(authCalls,1);
+  assert.equal(h.store.row.result.nextIndex,24);assert.equal((await handler(request('run'))).status,409);
+});
+test('batch request window pauses before another reservation; continuation sends untouched slots only',async()=>{
+  const h=harness();let clock=0,calls=0;
+  const handler=createAuditHandler({...h,arms,authorized:async()=>true,now:()=>T,elapsed:()=>clock,execute:async()=>{calls++;clock+=10000;return {ok:true,data:dataFor()};}});
+  const first=await (await handler(request('run'))).json();assert.equal(first.completedThisRequest,7);assert.equal(first.pausedReason,'request_window');assert.equal(h.store.row.result.nextIndex,7);assert.equal(h.store.row.status,'queued');
+  clock=0;const next=await (await handler(request('run'))).json();assert.equal(next.completedThisRequest,7);assert.equal(calls,14);
+  assert.equal(new Set(h.store.row.result.attempts.map(x=>x.attemptId)).size,14);
+});
+test('batch stops at persistence failure and never continues a pending attempt after restart',async()=>{
+  const h=harness();h.store.finish=async()=>{throw Error('failed');};
+  assert.equal((await h.handler(request('run'))).status,503);assert.equal(h.calls.length,1);
+  assert.equal((await h.handler(request('run'))).status,409);assert.equal(h.calls.length,1);
+});
 test('post-call persistence failure remains pending across restarts, with full unknown reservation',async()=>{
   const h=harness(1);h.store.finish=async()=>{throw Error('failed write');};
   assert.equal((await h.handler(request())).status,503);assert.equal(h.calls.length,1);assert.equal(h.store.row.status,'running');assert.equal(h.logs.length,0);
@@ -87,6 +106,12 @@ test('unrecognized stored fields and manually queued pending reservations fail c
   delete h.store.row.result.attempts[0].articleText;
   h.store.row.result.attempts[0].status='pending';
   assert.equal((await h.handler(request())).status,503);assert.equal(h.calls.length,1);
+});
+test('stored diagnostic/reason/stage text cannot disclose prose through authorized status',async()=>{
+  for(const patch of [{reasonCodes:['DO NOT DISCLOSE']},{diagnostics:[{stage:'schema',code:'optional_metadata_invalid',field:'topic',detail:'DO NOT DISCLOSE'}]},{stage:'DO NOT DISCLOSE'}]){
+    const h=harness(1);await h.handler(request());Object.assign(h.store.row.result.attempts[0],patch);
+    const response=await h.handler(request('status'));assert.equal(response.status,503);assert.ok(!(await response.text()).includes('DO NOT DISCLOSE'));assert.equal(h.calls.length,1);
+  }
 });
 test('expiry blocks next calls while retaining private numeric status after restart',async()=>{
   const h=harness(1);let clock=T;
@@ -130,6 +155,17 @@ function capture(){
   return {schema:'rss-browser-capture-v1',items:Array.from({length:12},(_,i)=>({id:'B'+i,url:'https://example.org/'+i,title:article.title,capturedAt:new Date(T).toISOString(),captureMethod:i===11?'publisher-visible-text':'breeze-reader-visible-text',bodyText,bodySha256:sha(bodyText),reference:{label:i<7?'retain':i<11?'promotion':'uncertain',reviewStatus:'proposed-reviewed-before-model'}}))};
 }
 const review=()=>({schema:'rss-audit-execution-review-v1',inputReview:'reviewed-before-model',referenceReview:'proposed-reviewed-before-model',billingTerms:'verified-context-bound-no-retries',expiresAt:new Date(T+1800000).toISOString(),invocationProof:{projectId:'hrtfhojbhqvaoiulspto',functionSlug:'rss-quality',status:400,error:'operation',callerKind:'existing-server-job',callerId:'offline-test-only',verifiedAt:new Date(T).toISOString()}});
+test('manual body-only probe evidence remains explicit and cannot claim an observed HTTP status',async()=>{
+  const proof=review();Object.assign(proof.invocationProof,{status:null,callerKind:'manual-dashboard-existing-jwt',evidence:'user-reported-response-body'});
+  const bundle=await prepareBundle(capture(),proof,{now:T});assert.equal(bundle.metadata.invocationProof.status,null);assert.equal(bundle.pack.executionReview.callerProof,'manual-existing-jwt-probe-operation-body-status-unreported');
+  proof.invocationProof.status=400;await assert.rejects(prepareBundle(capture(),proof,{now:T}),/verified_execution_review_required/);
+});
+test('parent handoff adapter cross-checks full-file and body hashes, preserves capture-window uncertainty',()=>{
+  const raw={schema_version:1,samples:capture().items.map(x=>({id:x.id,source:x.url,title:x.title,body:x.bodyText+'😀',capture:x.captureMethod==='publisher-visible-text'?'Visible publisher article-content DOM (not Breeze extraction)':'Visible Breeze reader DOM',manual_label:'retain_substantive_reporting',observed_window_utc:'2026-10-05T09:50:00Z/2026-10-05T10:00:00Z'}))};
+  const rawText=JSON.stringify(raw),manifest={schema_version:1,raw_input_sha256:sha(rawText),samples:raw.samples.map(({body,...s})=>({...s,body_characters:[...body].length,body_sha256:sha(body)}))};
+  const result=convertParentHandoff(rawText,JSON.stringify(manifest));assert.equal(result.items[0].capturedAtPrecision,'window-upper-bound');assert.equal(result.items[0].bodyText,raw.samples[0].body);
+  manifest.samples[0].body_sha256='changed';assert.throws(()=>convertParentHandoff(rawText,JSON.stringify(manifest)),/parent_manifest_mismatch/);
+});
 test('capture conversion preserves repeated UI text and raw hashes; labels stay proposed and outside state',()=>{
   const converted=convertCapture(capture());assert.equal(converted.inputs.length,12);assert.equal(converted.inputs[0].rawBodySha,capture().items[0].bodySha256);
   assert.ok(converted.inputs[0].article.paragraphs.join('\n').includes('Repeated navigation link\nRepeated navigation link'));
@@ -153,7 +189,7 @@ test('real local Postgres CAS fences stale callers and writes only sentinel; no 
     await db.exec("create table rss_quality_eval(id text primary key check(id ~ '^RSS-[0-9]{3}$'),status text not null check(status in ('queued','running','done')),token uuid,result jsonb); insert into rss_quality_eval values('RSS-000','queued',null,'{}'),('RSS-055','done',null,'{\"original\":true}');");
     const seen=[];
     const bridge={from(table){assert.equal(table,'rss_quality_eval');const filters=[],patch={};let mode='read';return {
-      select(){return this;},update(value){mode='update';Object.assign(patch,value);return this;},eq(key,value){filters.push([key,value]);return this;},is(key,value){filters.push([key,value]);return this;},
+      abortSignal(signal){assert.ok(signal instanceof AbortSignal);return this;},select(){return this;},update(value){mode='update';Object.assign(patch,value);return this;},eq(key,value){filters.push([key,value]);return this;},is(key,value){filters.push([key,value]);return this;},
       async maybeSingle(){
         assert.ok(filters.some(([key,value])=>key==='id'&&value===LEDGER_ID));seen.push({mode,filters,patch});
         const values=[],where=filters.map(([key,value])=>{assert.ok(['id','status','token'].includes(key));if(value===null)return key+' is null';values.push(value);return key+'=$'+values.length;}).join(' and ');

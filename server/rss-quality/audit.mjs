@@ -5,6 +5,14 @@ const outcomes=new Set(['approved','rejected','uncertain','unavailable','schema_
 const fields=new Set(['promotion','readability','mismatch','evidence','substance','context','interest','topic','sensitivity','timeliness']);
 const details=new Set(['model','answers_shape','answer_count','choice_shape','probability_consistency','probability_sum','choice_not_top','confidence_mismatch','empty_response','response_limit','invalid_json']);
 const recordFields=new Set(['attemptId','packSha','id','arm','requestedModel','version','requestSha','cacheHit','status','stage','usage','cost','responseModel','transportAttempted','modelMatches','eligibility','reasonCodes','diagnostics','code','detail','field']);
+const reasons=new Set(['promotion','readability','mismatch','uncertain','promotion_primary_purpose','body_unreadable','title_body_mismatch','hard_gate_uncertain','no_hard_exclusion','defect_evidence_missing']);
+function safeRecord(attempt){
+  return ['provider','quality','readability','schema'].includes(attempt.stage) && attempt.cacheHit===false && [true,false,null].includes(attempt.transportAttempted) && (attempt.responseModel===null || /^jev-\d+\.\d+\.\d+$/.test(attempt.responseModel)) &&
+    (attempt.modelMatches===undefined || typeof attempt.modelMatches==='boolean') && (attempt.eligibility===undefined || ['approved','candidate','withheld'].includes(attempt.eligibility)) &&
+    (attempt.reasonCodes===undefined || Array.isArray(attempt.reasonCodes)&&attempt.reasonCodes.length<=4&&attempt.reasonCodes.every(x=>reasons.has(x))) &&
+    (attempt.code===undefined || ['invalid_evaluation','provider_unavailable'].includes(attempt.code)) && (attempt.detail===undefined || details.has(attempt.detail)||attempt.detail==='invalid_evaluation') && (attempt.field===undefined || attempt.field===null || fields.has(attempt.field)) &&
+    (attempt.diagnostics===undefined || Array.isArray(attempt.diagnostics)&&attempt.diagnostics.length<=6&&attempt.diagnostics.every(x=>x&&Object.keys(x).every(k=>['stage','code','detail','field'].includes(k))&&x.stage==='schema'&&x.code==='optional_metadata_invalid'&&(details.has(x.detail)||x.detail==='missing_answer')&&['substance','context','interest','topic','sensitivity','timeliness'].includes(x.field)));
+}
 export function scheduleFor(pack){
   return pack.inputs.flatMap((input,index)=>input.stage==='ready'?(index%2?['new','old']:['old','new']).map(arm=>({input,arm})):[]);
 }
@@ -15,7 +23,7 @@ export async function verifyAuditPack(pack,packSha,arms,now){
   if(await digest(pack)!==packSha || pack.schema!=='rss-paired-v1' || !same(pack.pricing,PRICE) || !same(pack.limits,LIMITS))throw Error('pack_invalid');
   const review=pack.executionReview;
   const created=Date.parse(pack.createdAt),expires=Date.parse(review?.expiresAt);
-  if(!review || review.inputReview!=='reviewed-before-model' || review.referenceReview!=='proposed-reviewed-before-model' || review.callerProof!=='existing-service-role-auth-probe-400-operation' || review.billingTerms!=='verified-context-bound-no-retries' || !Number.isFinite(created) || created>now || !Number.isFinite(expires) || expires<=created || expires-created>3600000)throw Error('review_required');
+  if(!review || review.inputReview!=='reviewed-before-model' || review.referenceReview!=='proposed-reviewed-before-model' || !['existing-service-role-auth-probe-400-operation','manual-existing-jwt-probe-operation-body-status-unreported'].includes(review.callerProof) || review.billingTerms!=='verified-context-bound-no-retries' || !Number.isFinite(created) || created>now || !Number.isFinite(expires) || expires<=created || expires-created>3600000)throw Error('review_required');
   if(!pack.inputs.length || pack.inputs.length>12 || new Set(pack.inputs.map(x=>x.id)).size!==pack.inputs.length)throw Error('pack_invalid');
   for(const [name,arm] of Object.entries(arms))if(arm.implementation.MODEL!==PRICE.model || arm.implementation.VERSION!==pack.arms[name]?.version || arm.sourceSha!==pack.arms[name]?.sourceSha)throw Error('arm_invalid');
   if(!arms.old || !arms.new || Object.keys(arms).length!==2)throw Error('arm_invalid');
@@ -34,7 +42,7 @@ function validLedger(row,pack,packSha,schedule){
   if(Object.keys(data).some(x=>!['schema','packSha','runId','expiresAt','nextIndex','reservedNanoUsd','attempts','stopReason'].includes(x)) || row.token!==null&&!/^[a-f0-9-]{36}$/i.test(row.token) || row.status==='running'&&(row.token===null||data.attempts.at(-1)?.status!=='pending') || row.status==='queued'&&data.attempts.some(x=>x.status==='pending'))throw Error('ledger_invalid');
   for(const [index,attempt] of data.attempts.entries()){
     const expected=schedule[index];
-    if(Object.keys(attempt).some(x=>!recordFields.has(x)) || attempt.id!==expected.input.id || attempt.arm!==expected.arm || attempt.attemptId!==`${pack.runId}:${expected.input.id}:${expected.arm}` || attempt.packSha!==packSha || attempt.requestSha!==expected.input.requestHashes[expected.arm] || attempt.version!==pack.arms[expected.arm].version || attempt.requestedModel!==PRICE.model || ![...outcomes,'pending'].includes(attempt.status) || !attempt.usage || !same(Object.keys(attempt.usage),['inputTokens','outputTokens','cachedTokens']) || Object.values(attempt.usage).some(x=>x!==null&&(!Number.isSafeInteger(x)||x<0)) || !same(attempt.cost,costRecord(attempt.usage,{responseModel:attempt.responseModel})))throw Error('ledger_invalid');
+    if(Object.keys(attempt).some(x=>!recordFields.has(x)) || !safeRecord(attempt) || attempt.id!==expected.input.id || attempt.arm!==expected.arm || attempt.attemptId!==`${pack.runId}:${expected.input.id}:${expected.arm}` || attempt.packSha!==packSha || attempt.requestSha!==expected.input.requestHashes[expected.arm] || attempt.version!==pack.arms[expected.arm].version || attempt.requestedModel!==PRICE.model || ![...outcomes,'pending'].includes(attempt.status) || !attempt.usage || !same(Object.keys(attempt.usage),['inputTokens','outputTokens','cachedTokens']) || Object.values(attempt.usage).some(x=>x!==null&&(!Number.isSafeInteger(x)||x<0)) || !same(attempt.cost,costRecord(attempt.usage,{responseModel:attempt.responseModel})))throw Error('ledger_invalid');
   }
   return data;
 }
@@ -48,54 +56,69 @@ function verdictRecord(raw,input,implementation){
     return {status:'schema_error',stage:'schema',code:'invalid_evaluation',detail:details.has(error.diagnostic?.detail)?error.diagnostic.detail:'invalid_evaluation',field:fields.has(error.diagnostic?.field)?error.diagnostic.field:null};
   }
 }
-export function createAuditHandler({pack,packSha,arms,store,authorized,execute,now=Date.now,log=()=>{}}){
+export function createAuditHandler({pack,packSha,arms,store,authorized,execute,now=Date.now,elapsed=()=>performance.now(),log=()=>{}}){
   let verified;
   return async request=>{
+    const started=elapsed();
     // Actual gateway verification is configured independently at deployment.
     if(!await authorized(request))return reply({error:'operator_required'},403);
     let operation;
     if(request.method==='GET')operation='status';
     else if(request.method==='POST'){
       let body;try{const text=await boundedText(request.body,1024);body=JSON.parse(text);}catch{return reply({error:'request'},400);}
-      if(!body || typeof body!=='object' || Array.isArray(body) || Object.keys(body).length!==1 || !['next','status','auth_probe'].includes(body.operation))return reply({error:'operation'},400);
+      if(!body || typeof body!=='object' || Array.isArray(body) || Object.keys(body).length!==1 || !['next','run','status','auth_probe'].includes(body.operation))return reply({error:'operation'},400);
       operation=body.operation;
     }else return reply({error:'method'},405);
     if(operation==='auth_probe')return reply({authorized:true,providerAttempts:0});
-    let schedule,row,data;
-    try{
-      verified ||= verifyAuditPack(pack,packSha,arms,now());schedule=await verified;
-      row=await store.read();data=validLedger(row,pack,packSha,schedule);
-    }catch{return reply({error:'audit_not_ready'},503);}
-    if(operation==='status')return reply(summary(row,data));
-    if(Date.parse(data.expiresAt)<=now())return reply({error:'audit_expired'},410);
-    if(row.status==='running')return reply({error:'audit_pending',reservations:data.nextIndex},409);
-    if(row.status==='done' || data.nextIndex>=schedule.length || data.nextIndex>=24 || data.reservedNanoUsd+RESERVATION_NANO_USD>100000000)return reply({error:'audit_closed',reservations:data.nextIndex},409);
-    const {input,arm}=schedule[data.nextIndex];
-    const attempt={attemptId:`${pack.runId}:${input.id}:${arm}`,packSha,id:input.id,arm,requestedModel:PRICE.model,version:pack.arms[arm].version,requestSha:input.requestHashes[arm],cacheHit:false,status:'pending',stage:'provider',usage:usageRecord(null),cost:costRecord(usageRecord(null)),responseModel:null,transportAttempted:null};
-    const reserved={...data,nextIndex:data.nextIndex+1,reservedNanoUsd:data.reservedNanoUsd+RESERVATION_NANO_USD,attempts:[...data.attempts,attempt]};
-    let token;
-    try{token=await store.claim(row,reserved);}catch{return reply({error:'ledger_unavailable'},503);}
-    if(!token)return reply({error:'audit_busy'},409);
-    if(Date.parse(data.expiresAt)<=now()){
-      try{await store.finish(token,reserved,true);}catch{}
-      return reply({error:'audit_expired',reservations:reserved.nextIndex},410);
+    async function one(){
+      let schedule,row,data;
+      try{
+        verified ||= verifyAuditPack(pack,packSha,arms,now());schedule=await verified;
+        row=await store.read();data=validLedger(row,pack,packSha,schedule);
+      }catch{return reply({error:'audit_not_ready'},503);}
+      if(operation==='status')return reply(summary(row,data));
+      if(Date.parse(data.expiresAt)<=now())return reply({error:'audit_expired'},410);
+      if(row.status==='running')return reply({error:'audit_pending',reservations:data.nextIndex},409);
+      if(row.status==='done' || data.nextIndex>=schedule.length || data.nextIndex>=24 || data.reservedNanoUsd+RESERVATION_NANO_USD>100000000)return reply({error:'audit_closed',reservations:data.nextIndex},409);
+      const {input,arm}=schedule[data.nextIndex];
+      const attempt={attemptId:`${pack.runId}:${input.id}:${arm}`,packSha,id:input.id,arm,requestedModel:PRICE.model,version:pack.arms[arm].version,requestSha:input.requestHashes[arm],cacheHit:false,status:'pending',stage:'provider',usage:usageRecord(null),cost:costRecord(usageRecord(null)),responseModel:null,transportAttempted:null};
+      const reserved={...data,nextIndex:data.nextIndex+1,reservedNanoUsd:data.reservedNanoUsd+RESERVATION_NANO_USD,attempts:[...data.attempts,attempt]};
+      let token;
+      try{token=await store.claim(row,reserved);}catch{return reply({error:'ledger_unavailable'},503);}
+      if(!token)return reply({error:'audit_busy'},409);
+      if(Date.parse(data.expiresAt)<=now()){
+        try{await store.finish(token,reserved,true);}catch{}
+        return reply({error:'audit_expired',reservations:reserved.nextIndex},410);
+      }
+      let response;
+      try{response=await execute(requestFor(input.article,arms[arm].implementation));}catch{response={ok:false};}
+      attempt.transportAttempted=true;
+      const raw=response?.data;
+      attempt.responseModel=/^jev-\d+\.\d+\.\d+$/.test(raw?.model || '')?raw.model:null;
+      attempt.modelMatches=raw?.model===PRICE.model;
+      attempt.usage=usageRecord(raw?.usage ?? response?.usage);
+      attempt.cost=costRecord(attempt.usage,{responseModel:attempt.responseModel});
+      const result=response?.ok===true?(response.invalidJson?{status:'schema_error',stage:'schema',code:'invalid_evaluation',detail:details.has(response.invalidDetail)?response.invalidDetail:'invalid_json',field:null}:verdictRecord(raw,input,arms[arm].implementation)):{status:'provider_error',stage:'provider',code:'provider_unavailable'};
+      Object.assign(attempt,result);
+      const violation=attempt.usage.inputTokens>65536 || (raw?.model && raw.model!==PRICE.model);
+      const closed=violation || reserved.nextIndex===schedule.length || Date.parse(data.expiresAt)<=now();
+      if(violation)reserved.stopReason='billing_contract_violation';
+      try{await store.finish(token,reserved,closed);}catch{return reply({error:'ledger_pending',reservations:reserved.nextIndex},503);}
+      log({stage:attempt.stage,code:attempt.status,detail:attempt.detail || null,field:attempt.field || null,key:attempt.requestSha,usage:{inputTokens:attempt.usage.inputTokens,outputTokens:attempt.usage.outputTokens}});
+      return reply({runId:pack.runId,reservations:reserved.nextIndex,closed,attempt});
     }
-    let response;
-    try{response=await execute(requestFor(input.article,arms[arm].implementation));}catch{response={ok:false};}
-    attempt.transportAttempted=true;
-    const raw=response?.data;
-    attempt.responseModel=/^jev-\d+\.\d+\.\d+$/.test(raw?.model || '')?raw.model:null;
-    attempt.modelMatches=raw?.model===PRICE.model;
-    attempt.usage=usageRecord(raw?.usage ?? response?.usage);
-    attempt.cost=costRecord(attempt.usage,{responseModel:attempt.responseModel});
-    const result=response?.ok===true?(response.invalidJson?{status:'schema_error',stage:'schema',code:'invalid_evaluation',detail:details.has(response.invalidDetail)?response.invalidDetail:'invalid_json',field:null}:verdictRecord(raw,input,arms[arm].implementation)):{status:'provider_error',stage:'provider',code:'provider_unavailable'};
-    Object.assign(attempt,result);
-    const violation=attempt.usage.inputTokens>65536 || (raw?.model && raw.model!==PRICE.model);
-    const closed=violation || reserved.nextIndex===schedule.length || Date.parse(data.expiresAt)<=now();
-    if(violation)reserved.stopReason='billing_contract_violation';
-    try{await store.finish(token,reserved,closed);}catch{return reply({error:'ledger_pending',reservations:reserved.nextIndex},503);}
-    log({stage:attempt.stage,code:attempt.status,detail:attempt.detail || null,field:attempt.field || null,key:attempt.requestSha,usage:{inputTokens:attempt.usage.inputTokens,outputTokens:attempt.usage.outputTokens}});
-    return reply({runId:pack.runId,reservations:reserved.nextIndex,closed,attempt});
+    if(operation!=='run')return one();
+    // Foreground only: each iteration independently reserves/completes one slot.
+    // Leave 20s for bounded DB (3s each), provider (10s), and response overhead.
+    // A later manual run continues only untouched slots; pending never retries.
+    let completedThisRequest=0,last=null;
+    while(elapsed()-started<65000){
+      const response=await one(),body=await response.json();
+      if(response.status!==200)return reply({...body,operation:'run',completedThisRequest},response.status);
+      completedThisRequest++;last=body;
+      if(body.closed)return reply({...body,operation:'run',completedThisRequest});
+    }
+    return reply({...(last || {runId:pack.runId}),operation:'run',completedThisRequest,pausedReason:'request_window',requestWindowMs:85000});
   };
 }
 export async function boundedText(stream,limit){
