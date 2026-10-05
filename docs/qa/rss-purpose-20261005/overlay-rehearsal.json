@@ -1,0 +1,39 @@
+{
+  "kind": "offline_v6_overlay_rehearsal",
+  "deploymentVersion": 6,
+  "verifyJwt": true,
+  "overlays": [
+    "jev.mjs",
+    "service.mjs",
+    "operator.mjs diagnostics only"
+  ],
+  "unchangedFiles": 9,
+  "entrypointAndAuthPreserved": true,
+  "networkCalls": 0,
+  "paidCalls": 0,
+  "outcomes": [
+    {
+      "scenario": "optional-invalid",
+      "status": "approved",
+      "mockedEvaluations": 1,
+      "retryRecords": 0
+    },
+    {
+      "scenario": "core-invalid",
+      "status": "error",
+      "mockedEvaluations": 1,
+      "retryRecords": 1
+    },
+    {
+      "scenario": "budget-busy",
+      "status": "pending",
+      "mockedEvaluations": 0,
+      "retryRecords": 0
+    }
+  ],
+  "limitations": [
+    "The Deno entrypoint/gateway is not executed.",
+    "Provider and stores are mocks; no live JWT or durable-budget integration is measured.",
+    "Operator logging exists only in this temporary rehearsal; production auth/SQL remain unchanged."
+  ]
+}

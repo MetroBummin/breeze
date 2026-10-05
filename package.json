@@ -43,6 +43,7 @@
     "test:reader-refinements": "node tests/verify-reader-refinements-browser.mjs",
     "test:word-morph": "node tests/verify-word-morph-browser.mjs",
     "test:lightweight": "node tests/verify-lightweight-resources-browser.mjs && node tests/verify-epub-incremental-browser.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-reader-reuse-browser.mjs",
+    "test:rss-purpose": "node --test tests/verify-rss-quality.mjs tests/verify-rss-purpose.mjs tests/verify-rss-v6-source.mjs tests/verify-rss-paired-eval.mjs tests/verify-rss-audit-server.mjs",
     "test:audit": "node --test tests/verify-audit-hardening.mjs",
     "test:recommendation": "node --test tests/verify-rss-recommendation.mjs",
     "test:pdf-ink": "node --test tests/verify-pdf-ink-regressions.mjs tests/verify-pdf-session-regressions.mjs && node tests/verify-pdf-ink-browser.mjs",

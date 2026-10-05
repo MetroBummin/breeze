@@ -1,0 +1,92 @@
+{
+  "kind": "read_only_production_source_review",
+  "reviewDate": "2026-10-05",
+  "projectId": "hrtfhojbhqvaoiulspto",
+  "functionSlug": "rss-quality",
+  "deploymentVersion": 6,
+  "verifyJwt": true,
+  "bundleSha256": "1a64f483236c770f0d2b96187798312a4b231527e764fb278fba75c67c7fc325",
+  "files": [
+    {
+      "name": "supabase/functions/rss-quality/index.ts",
+      "sha256": "aa5660048b99575957652d6b03a3a8fa984752ae17f952f379c3648bc6159bd5",
+      "sameAsMain": false
+    },
+    {
+      "name": "server/rss-quality/service.mjs",
+      "sha256": "650a1aaa74750aed8eeebd830235af7a79639d5589bb6c7bc0b4eb4fc30bb9c7",
+      "sameAsMain": false
+    },
+    {
+      "name": "server/rss-quality/feeds.mjs",
+      "sha256": "4b3d21b0af618378fcea86ae925a94fbdf34e6dbef58508616c35b8ca3b147c9",
+      "sameAsMain": true
+    },
+    {
+      "name": "server/rss-quality/jev.mjs",
+      "sha256": "f415379d87d0b9fd2f0fa8c7c8cedc6deda4b6383f61919e44991e1ed7d1805d",
+      "sameAsMain": true
+    },
+    {
+      "name": "server/rss-quality/extract.mjs",
+      "sha256": "db352553e6660637859397809f66c7753ce8c5dcc066b0d3bb5bb0f966d8bba9",
+      "sameAsMain": true
+    },
+    {
+      "name": "server/article/public-fetch.mjs",
+      "sha256": "04fe4241a8f578b1a4c5d41753cc92d615221ec0c4487b32af572c0eb4f0c2b7",
+      "sameAsMain": true
+    },
+    {
+      "name": "server/rss-quality/language.mjs",
+      "sha256": "b50b267474526804ca44418b5dc137c63610ddd791638dd363c61fd8316fe79b",
+      "sameAsMain": true
+    },
+    {
+      "name": "server/rss-quality/handler.mjs",
+      "sha256": "243fcfbdc2655f879baa23e6502326ffb0a48ce8b5959444c0414a77b9573e08",
+      "sameAsMain": true
+    },
+    {
+      "name": "server/rss-quality/operator.mjs",
+      "sha256": "bbe1ee54b12d7cf6457d847f1589c0b0566386dbb511d3661dc33c181934bbb4",
+      "sameAsMain": false
+    },
+    {
+      "name": "server/rss-quality/operator-auth.mjs",
+      "sha256": "2d612962b01784a76e1b72f5cf79de3c4972a337b6dd73b856ec67e31549ae79",
+      "sameAsMain": false
+    },
+    {
+      "name": "server/rss-quality/cohort.json",
+      "sha256": "d4b1c87c874eda755bb2230bc025ad5cdb81eba30eb44527576bc044e413ffa4",
+      "sameAsMain": false
+    },
+    {
+      "name": "supabase/functions/rss-quality/deno.json",
+      "sha256": "b74323ea3f0506b55a0fbfd7b6d5a8cb6e97c68e399afb8b3c9b77d569244e41",
+      "sameAsMain": true
+    }
+  ],
+  "operatorRpc": {
+    "name": "public.rss_quality_operator_authorized()",
+    "securityDefiner": false,
+    "searchPath": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.rss_quality_operator_authorized()\n RETURNS boolean\n LANGUAGE sql\n STABLE\n SET search_path TO ''\nAS $function$ select current_user = 'service_role' $function$\n",
+    "privileges": "{postgres=X/postgres,service_role=X/postgres}",
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "serviceRoleExecute": true
+  },
+  "controlObservation": {
+    "mode": "shadow",
+    "evaluationUntil": "2026-10-04 13:41:05.173592+00",
+    "windowExpiredOnReviewDate": true
+  },
+  "limitations": [
+    "Function status ACTIVE is a deployment status, not RSS serving mode.",
+    "This captures nonsecret code and catalog metadata; no credentials or live function invocation.",
+    "Catalog permissions and mock tests do not prove gateway JWT verification end to end.",
+    "No Edge/auth/RPC change, deployment, migration, warming or provider call was performed."
+  ]
+}

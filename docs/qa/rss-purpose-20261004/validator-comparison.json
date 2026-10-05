@@ -1,0 +1,483 @@
+{
+  "kind": "offline_validator_contract",
+  "baseline": "0e72a35be0fa663167acd7de2c7dd9a8dfbdfc4c",
+  "version": "rss-quality-v3:jev-1.13.0:readability-0.6.0-v1",
+  "modelCalls": 0,
+  "distinctSyntheticArticles": 11,
+  "validatorCases": 17,
+  "distinctArticleProcessing": {
+    "before": {
+      "classified": 9,
+      "approved": 5,
+      "rejected": 2,
+      "candidates": 1,
+      "withheldUncertainty": 1,
+      "errors": 1,
+      "unavailable": 1,
+      "pending": 0,
+      "unmeasured": 0
+    },
+    "after": {
+      "classified": 9,
+      "approved": 5,
+      "rejected": 2,
+      "candidates": 1,
+      "withheldUncertainty": 1,
+      "errors": 1,
+      "unavailable": 1,
+      "pending": 0,
+      "unmeasured": 0
+    }
+  },
+  "before": {
+    "referenceCount": 17,
+    "measuredCount": 17,
+    "totals": {
+      "approved": 5,
+      "rejected": 2,
+      "uncertain": 2,
+      "pending": 0,
+      "error": 7,
+      "unavailable": 1,
+      "unmeasured": 0
+    },
+    "sources": {
+      "synthetic": {
+        "before": 17,
+        "approved": 5,
+        "rejected": 2,
+        "uncertain": 2,
+        "pending": 0,
+        "error": 7,
+        "unavailable": 1,
+        "unmeasured": 0
+      }
+    },
+    "processing": {
+      "classified": 9,
+      "approved": 5,
+      "rejected": 2,
+      "candidates": 1,
+      "withheldUncertainty": 1,
+      "errors": 7,
+      "unavailable": 1,
+      "pending": 0,
+      "unmeasured": 0
+    },
+    "quality": {
+      "positives": 11,
+      "positiveApprovals": 5,
+      "falseRejections": 0,
+      "positiveUnresolved": 6,
+      "negatives": 2,
+      "negativeRejections": 2,
+      "negativeApprovals": 0
+    },
+    "availability": {
+      "approved": 5,
+      "unresolved": 10,
+      "unmeasured": 0,
+      "emptyMeasuredSources": []
+    },
+    "approvedDiversity": {
+      "topics": {
+        "science": 5
+      },
+      "lengths": {
+        "short": 4,
+        "medium": 1,
+        "long": 0,
+        "unknown": 0
+      }
+    },
+    "usage": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usageMissing": 9
+    },
+    "improvementMeasured": false,
+    "falseRejectionRate": 0
+  },
+  "after": {
+    "referenceCount": 17,
+    "measuredCount": 17,
+    "totals": {
+      "approved": 11,
+      "rejected": 2,
+      "uncertain": 2,
+      "pending": 0,
+      "error": 1,
+      "unavailable": 1,
+      "unmeasured": 0
+    },
+    "sources": {
+      "synthetic": {
+        "before": 17,
+        "approved": 11,
+        "rejected": 2,
+        "uncertain": 2,
+        "pending": 0,
+        "error": 1,
+        "unavailable": 1,
+        "unmeasured": 0
+      }
+    },
+    "processing": {
+      "classified": 15,
+      "approved": 11,
+      "rejected": 2,
+      "candidates": 1,
+      "withheldUncertainty": 1,
+      "errors": 1,
+      "unavailable": 1,
+      "pending": 0,
+      "unmeasured": 0
+    },
+    "quality": {
+      "positives": 11,
+      "positiveApprovals": 11,
+      "falseRejections": 0,
+      "positiveUnresolved": 0,
+      "negatives": 2,
+      "negativeRejections": 2,
+      "negativeApprovals": 0
+    },
+    "availability": {
+      "approved": 11,
+      "unresolved": 4,
+      "unmeasured": 0,
+      "emptyMeasuredSources": []
+    },
+    "approvedDiversity": {
+      "topics": {
+        "science": 10,
+        "unknown": 1
+      },
+      "lengths": {
+        "short": 10,
+        "medium": 1,
+        "long": 0,
+        "unknown": 0
+      }
+    },
+    "usage": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usageMissing": 15
+    },
+    "improvementMeasured": false,
+    "falseRejectionRate": 0
+  },
+  "pairs": [
+    {
+      "id": "narrative-merchandise",
+      "label": "promotion",
+      "synthetic": true,
+      "before": {
+        "status": "rejected",
+        "eligibility": "withheld",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "rejected",
+        "eligibility": "withheld",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "narrative-collaboration",
+      "label": "promotion",
+      "synthetic": true,
+      "before": {
+        "status": "rejected",
+        "eligibility": "withheld",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "rejected",
+        "eligibility": "withheld",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "independent-brand-reporting",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "tested-product-review",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "commerce-history",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "substantial-biography-gallery",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "coherent-sensitive-news",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "ambiguous-launch-analysis",
+      "label": "uncertain",
+      "synthetic": true,
+      "before": {
+        "status": "uncertain",
+        "eligibility": "candidate",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "uncertain",
+        "eligibility": "candidate",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "positive-defect-without-evidence",
+      "label": "uncertain",
+      "synthetic": true,
+      "before": {
+        "status": "uncertain",
+        "eligibility": "withheld",
+        "diagnostic": null
+      },
+      "after": {
+        "status": "uncertain",
+        "eligibility": "withheld",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "source-failure",
+      "label": "source_failure",
+      "synthetic": true,
+      "before": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "transport",
+          "code": "source_unavailable"
+        }
+      },
+      "after": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "transport",
+          "code": "source_unavailable"
+        }
+      }
+    },
+    {
+      "id": "extraction-failure",
+      "label": "extraction_failure",
+      "synthetic": true,
+      "before": {
+        "status": "unavailable",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "extraction",
+          "code": "body_too_short"
+        }
+      },
+      "after": {
+        "status": "unavailable",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "extraction",
+          "code": "body_too_short"
+        }
+      }
+    },
+    {
+      "id": "optional-substance",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "schema",
+          "code": "invalid_evaluation",
+          "detail": "probability_consistency",
+          "field": "substance",
+          "usage": null
+        }
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "optional-context",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "schema",
+          "code": "invalid_evaluation",
+          "detail": "probability_consistency",
+          "field": "context",
+          "usage": null
+        }
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "optional-interest",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "schema",
+          "code": "invalid_evaluation",
+          "detail": "probability_consistency",
+          "field": "interest",
+          "usage": null
+        }
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "optional-topic",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "schema",
+          "code": "invalid_evaluation",
+          "detail": "probability_consistency",
+          "field": "topic",
+          "usage": null
+        }
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "optional-sensitivity",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "schema",
+          "code": "invalid_evaluation",
+          "detail": "probability_consistency",
+          "field": "sensitivity",
+          "usage": null
+        }
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    },
+    {
+      "id": "optional-timeliness",
+      "label": "editorial",
+      "synthetic": true,
+      "before": {
+        "status": "error",
+        "eligibility": null,
+        "diagnostic": {
+          "stage": "schema",
+          "code": "invalid_evaluation",
+          "detail": "probability_consistency",
+          "field": "timeliness",
+          "usage": null
+        }
+      },
+      "after": {
+        "status": "approved",
+        "eligibility": "approved",
+        "diagnostic": null
+      }
+    }
+  ],
+  "limitations": [
+    "Responses are scripted, not actual Jev judgments.",
+    "Synthetic labels are proposed policy labels pending human review.",
+    "Six optional-field corruptions reuse one article and are test cases, not six additional articles.",
+    "Promotion classification improvement is unmeasured; unchanged scripted core answers cannot establish a rubric effect.",
+    "Original numeric values for the seven trial schema errors were not retained."
+  ]
+}

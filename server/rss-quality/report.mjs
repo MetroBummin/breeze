@@ -7,11 +7,12 @@ export function qualityReport(reference,results){
   const sources={},topics={},lengths={short:0,medium:0,long:0,unknown:0};
   const totals=Object.fromEntries([...statuses,'unmeasured'].map(x=>[x,0]));
   let positives=0,falseRejections=0,positiveApprovals=0,positiveUnresolved=0,negatives=0,negativeRejections=0,negativeApprovals=0;
-  let inputTokens=0,outputTokens=0,usageMissing=0;
+  let inputTokens=0,outputTokens=0,usageMissing=0,candidates=0;
   for(const row of reference){
     const result=byUrl.get(row.url),status=result?.status || 'unmeasured';
     if(![...statuses,'unmeasured'].includes(status))throw new Error('invalid result status');
     totals[status]++;const source=sources[row.source] ||= {before:0,...Object.fromEntries([...statuses,'unmeasured'].map(x=>[x,0]))};source.before++;source[status]++;
+    if(status==='uncertain' && result.eligibility==='candidate')candidates++;
     if(row.label==='positive'){positives++;if(status==='rejected')falseRejections++;else if(status==='approved')positiveApprovals++;else positiveUnresolved++;}
     if(row.label==='negative'){negatives++;if(status==='rejected')negativeRejections++;if(status==='approved')negativeApprovals++;}
     if(status==='approved'){
@@ -23,6 +24,8 @@ export function qualityReport(reference,results){
     }else if(result && !['pending','error','unavailable'].includes(status))usageMissing++;
   }
   return {referenceCount:reference.length,measuredCount:reference.length-totals.unmeasured,totals,sources,
+    processing:{classified:totals.approved+totals.rejected+totals.uncertain,approved:totals.approved,rejected:totals.rejected,
+      candidates,withheldUncertainty:totals.uncertain-candidates,errors:totals.error,unavailable:totals.unavailable,pending:totals.pending,unmeasured:totals.unmeasured},
     quality:{positives,positiveApprovals,falseRejections,positiveUnresolved,negatives,negativeRejections,negativeApprovals},
     availability:{approved:totals.approved,unresolved:totals.uncertain+totals.pending+totals.error+totals.unavailable,unmeasured:totals.unmeasured,
       emptyMeasuredSources:Object.entries(sources).filter(([,s])=>s.unmeasured===0 && s.approved===0).map(([name])=>name)},

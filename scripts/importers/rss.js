@@ -245,7 +245,7 @@ async function rssPrepareCovers(entries,publish){
 }
 /* In active mode the server owns public RSS eligibility. No article text or local history is
    sent to it. Candidate uncertainty remains labeled and never becomes approval. */
-const RSS_QUALITY_VERSION = 'rss-quality-v2:jev-1.13.0:readability-0.6.0-v1';
+const RSS_QUALITY_VERSION = 'rss-quality-v3:jev-1.13.0:readability-0.6.0-v1';
 let rssQualityRetry = null;
 let rssQualityRetryCount = 0;
 let rssQualityPending = false;
