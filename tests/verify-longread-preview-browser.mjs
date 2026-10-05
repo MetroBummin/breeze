@@ -97,11 +97,11 @@ try{
       assert.equal(await page.evaluate(()=>books.length),0,'Cancelled fetch created a book');
       // A real persistence failure must leave the same preview retryable.
       mode='ok';await card().click();
-      await page.evaluate(()=>{window.__bookPut=bookPut;bookPut=async()=>{throw new Error('fixture storage failure');};});
+      await page.evaluate(()=>{window.__commitImportedBook=commitImportedBook;commitImportedBook=async()=>{throw new Error('fixture storage failure');};});
       await start().click();await page.waitForFunction(()=>!articlePreviewOpening);
       assert.equal(await page.evaluate(()=>books.length),0);
       assert.equal(await start().isEnabled(),true);
-      await page.evaluate(()=>{bookPut=window.__bookPut;delete window.__bookPut;});
+      await page.evaluate(()=>{commitImportedBook=window.__commitImportedBook;delete window.__commitImportedBook;});
       await page.locator('.ap-close').click();
       mode='ok';await card().click();
       await page.evaluate(()=>{document.querySelector('.ap-start').click();document.querySelector('.ap-start').click();});
@@ -154,11 +154,11 @@ try{
         assert.equal(fetches,0);await p.setViewportSize({width:390,height:844});
         await p.evaluate(()=>document.body.classList.remove('dark'));
         await tile().click();
-        await p.evaluate(()=>{window.__save=bookPut;bookPut=async()=>{throw Error('fixture failed save');};});
+        await p.evaluate(()=>{window.__save=commitImportedBook;commitImportedBook=async()=>{throw Error('fixture failed save');};});
         await p.locator('.ap-start').click();await p.waitForFunction(()=>!articlePreviewOpening);
         assert.equal(await p.evaluate(async()=>(await bookAll()).length),0);
         assert.equal(await p.locator('.ap-start').textContent(),'읽기');
-        await p.evaluate(()=>{bookPut=window.__save;document.querySelector('.ap-start').click();document.querySelector('.ap-start').click();});
+        await p.evaluate(()=>{commitImportedBook=window.__save;document.querySelector('.ap-start').click();document.querySelector('.ap-start').click();});
         await p.waitForFunction(id=>!articlePreviewDialog.open&&curBook?.longReadId===id,id);
         assert.deepEqual(await p.evaluate(()=>curBook.paras),full);
         assert.equal(await p.evaluate(async()=>(await bookAll()).length),1);

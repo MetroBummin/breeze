@@ -19,7 +19,7 @@
     "test:reader-selection": "node --test tests/verify-reader-native-selection.mjs",
     "test:bohemia-progress": "node tests/verify-bohemia-progress-browser.mjs",
     "test:home-reading-cards": "node tests/verify-home-reading-cards-browser.mjs",
-    "test:ingestion": "node tests/verify-import-feedback-browser.mjs && node tests/verify-import-identity-browser.mjs && node tests/verify-social-import-browser.mjs && node tests/verify-ingestion-browser.mjs && node tests/verify-share-home-browser.mjs && node tests/verify-rss-card-browser.mjs && node tests/verify-article-preview-browser.mjs && node tests/verify-shared-files-browser.mjs",
+    "test:ingestion": "npm run test:import-durability && node tests/verify-import-feedback-browser.mjs && node tests/verify-import-identity-browser.mjs && node tests/verify-social-import-browser.mjs && node tests/verify-ingestion-browser.mjs && node tests/verify-share-home-browser.mjs && node tests/verify-rss-card-browser.mjs && node tests/verify-article-preview-browser.mjs && node tests/verify-shared-files-browser.mjs",
     "test:holmes-texts": "node --test tests/verify-holmes-complete-texts.mjs && node tests/verify-holmes-texts-browser.mjs",
     "test:longreads": "node tests/verify-longreads-browser.mjs && node tests/verify-longread-preview-browser.mjs",
     "test:homeward-lookup": "node tests/verify-homeward-lookup-browser.mjs",
@@ -53,7 +53,8 @@
     "ios:archive": "bash tools/ios-testflight.sh --archive",
     "ios:testflight": "bash tools/ios-testflight.sh --upload",
     "test:rss-quality": "node --test tests/verify-rss-quality.mjs",
-    "test:holmes": "node --test tests/verify-speckled-band.mjs tests/verify-holmes-collection.mjs tests/verify-holmes-complete-texts.mjs tests/verify-holmes-illustrations.mjs && node tests/verify-holmes-illustrations-browser.mjs"
+    "test:holmes": "node --test tests/verify-speckled-band.mjs tests/verify-holmes-collection.mjs tests/verify-holmes-complete-texts.mjs tests/verify-holmes-illustrations.mjs && node tests/verify-holmes-illustrations-browser.mjs",
+    "test:import-durability": "node tests/verify-import-commit-browser.mjs && node tests/verify-offline-import-browser.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

@@ -80,6 +80,78 @@ async function bookAll(){return await localRead('books',null,true) || [];}
 async function originalPut(id,record){return localPut('originals',id,record);}
 async function originalGet(id){return await localRead('originals',id) || null;}
 async function originalAll(){return await localRead('originals',null,true) || [];}
+/* The temporary EPUB prefix belongs to preparation. Promotion, the original
+   and book metadata share one commit; abort preserves the previous document.
+   A selected cover is an existing asset, even when its key is also used by the
+   source EPUB. Read its latest durable revision inside this transaction. */
+async function commitImportedBook(book,original,stagedPrefix,signal){
+  void requestDurableLocalStorage();
+  const db=await idb();signal?.throwIfAborted();
+  let transaction;
+  const abort=()=>{try{transaction?.abort();}catch{}};
+  signal?.addEventListener('abort',abort,{once:true});
+  try{
+    return await localTransaction(db,['books','originals','imgs'],'readwrite',(tx,done)=>{
+      transaction=tx;
+      const store=tx.objectStore('books'),imgs=tx.objectStore('imgs');
+      const current=store.get(book.id),keys=stagedPrefix?imgs.getAllKeys():null;
+      let stored,imageKeys=keys?null:[];
+      const commit=()=>{
+        if(stored===undefined||!imageKeys)return;
+        try{
+          signal?.throwIfAborted();
+          const next={...book};
+          if(stored && (stored.coverUpdatedAt||0)>(next.coverUpdatedAt||0)){
+            next.cover=stored.cover;next.coverUpdatedAt=stored.coverUpdatedAt;
+            next.coverSourcePage=stored.coverSourcePage;next.coverPosition=stored.coverPosition;
+          }
+          if(stored && (stored.renamedAt||0)>(next.renamedAt||0)){
+            next.title=stored.title;next.renamedAt=stored.renamedAt;
+          }
+          if(stagedPrefix){
+            const preserved=next.cover&&imageKeys.includes(next.cover)?next.cover:null;
+            for(const key of imageKeys){
+              if(String(key).startsWith(book.id+'|')&&key!==preserved)imgs.delete(key);
+              if(!String(key).startsWith(stagedPrefix+'|'))continue;
+              const destination=book.id+String(key).slice(stagedPrefix.length);
+              const value=imgs.get(key);
+              value.onsuccess=()=>{
+                try{
+                  if(destination!==preserved)imgs.put(value.result,destination);
+                  imgs.delete(key);
+                }catch{abort();}
+              };
+            }
+          }
+          if(original)tx.objectStore('originals').put(original,book.id);
+          store.put(next,book.id);done(next);
+        }catch{abort();}
+      };
+      current.onsuccess=()=>{stored=current.result||null;commit();};
+      if(keys)keys.onsuccess=()=>{imageKeys=keys.result;commit();};
+    });
+  }finally{signal?.removeEventListener('abort',abort);}
+}
+/* User presentation edits share the importer's books/imgs transaction boundary.
+   Merge only edited fields into the latest durable record: neither operation
+   can publish a cover pointer before its bytes or restore stale source content. */
+async function commitBookEdit(book,patch,image=null){
+  void requestDurableLocalStorage();
+  return localTransaction(await idb(),['books','imgs'],'readwrite',(tx,done)=>{
+    const store=tx.objectStore('books'),request=store.get(book.id);
+    request.onsuccess=()=>{
+      try{
+        const current=request.result;
+        if(!current){tx.abort();return;}
+        const next={...current,...patch};
+        if(Object.hasOwn(patch,'cover'))next.coverUpdatedAt=Math.max(Date.now(),(current.coverUpdatedAt||0)+1);
+        if(Object.hasOwn(patch,'title'))next.renamedAt=Math.max(Date.now(),(current.renamedAt||0)+1);
+        if(image)tx.objectStore('imgs').put(image,next.cover);
+        store.put(next,book.id);done(next);
+      }catch{try{tx.abort();}catch{}}
+    };
+  });
+}
 async function storeEntries(name){
   return localTransaction(await idb(),name,'readonly',(tx,done)=>{
     const store=tx.objectStore(name),kr=store.getAllKeys(),vr=store.getAll();
@@ -194,35 +266,6 @@ async function imgGet(id){ try{
 }catch(e){return null;} }
 async function imgDel(id){ try{ const db=await idb(); return await new Promise(res=>{
   const tx=db.transaction('imgs','readwrite'); tx.objectStore('imgs').delete(id); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
-async function imgRename(oldPrefix, newPrefix){
-  try{
-    const db = await idb();
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction('imgs', 'readwrite');
-      const store = tx.objectStore('imgs');
-      const keysRequest = store.getAllKeys();
-
-      keysRequest.onsuccess = () => {
-        keysRequest.result
-          .filter(key => String(key).startsWith(oldPrefix + '|'))
-          .forEach(key => {
-            const valueRequest = store.get(key);
-            valueRequest.onsuccess = () => {
-              if(valueRequest.result === undefined) return;
-              store.put(valueRequest.result, String(key).replace(oldPrefix, newPrefix));
-              store.delete(key);
-            };
-          });
-      };
-      keysRequest.onerror = () => reject(keysRequest.error);
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
-    });
-  }catch(error){
-    console.warn('Could not rename imported images:', error);
-  }
-}
 async function imgPurge(prefix){ try{ const db=await idb(); return await new Promise((resolve,reject)=>{
   const tx=db.transaction('imgs','readwrite');
   const st=tx.objectStore('imgs');

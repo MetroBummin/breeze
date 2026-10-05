@@ -491,3 +491,52 @@ Closing Preview before Read saves nothing; repeated reads reuse the saved book.
 A Scandal in Bohemia and The Red-Headed League have separate catalog identities,
 complete source/edit audits and title-based fallback covers; the selected Speckled
 Band artwork belongs only to that story.
+
+
+## File import durability and first-session offline use (1.8 QA)
+
+The file SHA-256 owns preparation through durable commit across file pickers,
+native inbox intake and reconnect. Same-file operations run in order; unrelated
+files remain independent. A failed/cancelled owner does not cancel later imports.
+EPUB preparation uses a temporary image prefix. Promotion, book metadata and
+original bytes commit in one IndexedDB transaction; only completion publishes
+live book state or an import receipt. Aborting any store preserves previous
+bytes, images, metadata and reading position. Temporary preparation failures are
+observable; no image write failure is swallowed as a successful import.
+
+Reimporting identical bytes preserves the existing cover asset, including a user
+image stored under the source EPUB's cover key. The transaction reads the latest
+durable cover revision. Home's card signature includes that revision, so replacing
+bytes under an unchanged image key refreshes its picture. File IDs, progress,
+source hashes, folders and sync representation remain unchanged.
+
+A new import that cannot persist its original now fails without publishing a
+partial book. Previously a text-only book could be published with a warning.
+Native inbox release continues to require a committed original receipt.
+
+The first web document is not controlled just because its service worker is
+ready. When a lazy library is needed there, its immutable versioned script (and
+PDF worker) is cached before use. The worker can read this runtime cache across
+shell generations. Controlled pages keep their existing fetch caching; native
+bundles skip this web path. This does not precache libraries on launch or claim a
+running Reader. Cache preparation failure is retryable and reports import failure.
+
+Regression checks: `verify-import-commit-browser.mjs` uses real IndexedDB aborts,
+byte hashes, parallel file imports and cover screenshots; `verify-offline-import-browser.mjs`
+imports TXT/EPUB/PDF in first and controlled sessions, then closes the document and
+opens stored content offline. Browser results do not establish native/iOS behavior.
+
+
+### Cover edit/import transaction boundary (1.8 QA follow-up)
+
+Cover selection persists the image bytes and metadata in one books/imgs
+transaction, merging only edited fields into the latest stored book. Live state
+changes after completion. The old split image write -> metadata write allowed a
+reimport in between to overwrite the new image before the pointer was saved.
+A user-selected null cover with coverUpdatedAt is explicit intent, not a request
+for the EPUB fallback. Cover/title edit revisions increase monotonically from
+the durable record; an import prepared earlier preserves later presentation edits.
+No in-memory cover/import lock or last-writer full-record restoration is added.
+
+Browser regressions reproduce that split-write interval, no-cover reimport, both
+snapshot/commit orderings, and actual cover-edit transaction aborts on each store.

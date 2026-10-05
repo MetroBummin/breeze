@@ -30,16 +30,37 @@ const LAZY_LIB_READY = {
 };
 const lazyLibJobs = {};
 
+/* A first web page is not controlled merely because its worker is installed.
+   Keep only immutable, version-named libraries in a shared runtime cache before
+   using them there. Neither this cache nor a new shell takes over a live Reader.
+   Controlled pages use the worker's ordinary fetch path; native bundles need no
+   CacheStorage. force-cache permits HTTP cache reuse by the following script tag. */
+async function cacheUncontrolledLibraries(name){
+  if(!['pdf','zip'].includes(name) || !location.protocol.startsWith('http') || !('caches' in window)
+      || !('serviceWorker' in navigator) || navigator.serviceWorker.controller)return;
+  const cache=await caches.open('breeze-runtime-libs-v1');
+  const urls=name==='pdf'?[LAZY_LIBS.pdf,PDF_WORKER]:[LAZY_LIBS[name]];
+  await Promise.all(urls.map(async url=>{
+    if(await cache.match(url))return;
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+    try{
+      const response=await fetch(url,{cache:'force-cache',signal:controller.signal});
+      if(!response.ok)throw new Error('오프라인 읽기를 준비하지 못했어요. 연결을 확인하고 다시 시도해 주세요.');
+      await cache.put(url,response);
+    }finally{clearTimeout(timer);}
+  }));
+}
+
 function loadLazyLib(name){
   if(LAZY_LIB_READY[name] && LAZY_LIB_READY[name]()) return Promise.resolve();
   if(lazyLibJobs[name]) return lazyLibJobs[name];
-  lazyLibJobs[name] = new Promise((resolve, reject) => {
+  lazyLibJobs[name] = cacheUncontrolledLibraries(name).then(()=>new Promise((resolve, reject) => {
     const tag = document.createElement('script');
     tag.src = LAZY_LIBS[name];
     tag.onload = resolve;
     tag.onerror = () => reject(new Error('필요한 라이브러리를 받지 못했어요. 인터넷 연결을 확인해 주세요.'));
     document.head.appendChild(tag);
-  }).catch(error => { delete lazyLibJobs[name]; throw error; });
+  })).catch(error => { delete lazyLibJobs[name]; throw error; });
   return lazyLibJobs[name];
 }
 

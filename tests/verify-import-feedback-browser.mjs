@@ -92,20 +92,20 @@ try{
       }
       // A failed durable write must never create a card or report completion.
       await page.evaluate(()=>{
-        feedbackQA.start('longform');feedbackQA.savedBookPut=bookPut;
-        bookPut=async()=>{throw Error('Controlled failed write');};
+        feedbackQA.start('longform');feedbackQA.savedBookPut=commitImportedBook;
+        commitImportedBook=async()=>{throw Error('Controlled failed write');};
       });
       try{
         await page.locator('#fileinput').setInputFiles({name:'Failed.txt',mimeType:'text/plain',buffer:Buffer.from('This failure fixture is not a saved book.')});
         await page.waitForFunction(()=>document.getElementById('home-notice').textContent.includes('파일을 읽지 못했어요'));
         assert.equal(await page.evaluate(()=>books.some(book=>book.title==='Failed')),false);
         assert.deepEqual(await page.evaluate(()=>feedbackQA.refreshes),[]);
-      }finally{await page.evaluate(()=>bookPut=feedbackQA.savedBookPut);}
+      }finally{await page.evaluate(()=>commitImportedBook=feedbackQA.savedBookPut);}
       // Navigation drops the old status, but the pending write updates the new visible shelf.
       await page.evaluate(()=>{
-        feedbackQA.start('longform');feedbackQA.savedBookPut=bookPut;
+        feedbackQA.start('longform');feedbackQA.savedBookPut=commitImportedBook;
         feedbackQA.writeStarted=false;
-        bookPut=async(...args)=>{feedbackQA.writeStarted=true;await new Promise(done=>feedbackQA.release=done);return feedbackQA.savedBookPut(...args);};
+        commitImportedBook=async(...args)=>{feedbackQA.writeStarted=true;await new Promise(done=>feedbackQA.release=done);return feedbackQA.savedBookPut(...args);};
       });
       try{
         await page.locator('#fileinput').setInputFiles({name:'Navigated.txt',mimeType:'text/plain',buffer:Buffer.from('This import completes after its reader changes shelves.')});
@@ -117,7 +117,7 @@ try{
         assert.deepEqual(await page.evaluate(()=>feedbackQA.refreshes),['home']);
         await page.waitForTimeout(800);
         assert.ok(!(await page.evaluate(()=>feedbackQA.messages)).some(text=>/준비|쪽|추가 완료/.test(text)));
-      }finally{await page.evaluate(()=>bookPut=feedbackQA.savedBookPut);}
+      }finally{await page.evaluate(()=>commitImportedBook=feedbackQA.savedBookPut);}
       assert.deepEqual(errors,[]);
       console.log(engine.name()+': EPUB/TXT current shelf, failure and navigation PASS');
     }finally{try{await context?.close();}finally{rmSync(profile,{recursive:true,force:true});}}

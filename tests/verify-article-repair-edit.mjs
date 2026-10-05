@@ -27,7 +27,7 @@ function world(extra={}){
     'ed-cover-source':{hidden:false},
   };
   const state={stored:copy(book),writes:[],images:[],deleted:[],closed:0,views:0,coverViews:[]};
-  const write=deferred(),image=deferred();let writes=0;
+  const write=deferred();let writes=0;
   const context=createContext({Date,Map,Promise,books:[book],editTarget:book,
     socialLinkOnlyText:text=>/^https?:\/\/\S+$/.test(text),
     articleAssemble:(title,blocks)=>({paras:[title,...blocks.map(block=>block.t)],formatting:{blocks}}),
@@ -37,7 +37,11 @@ function world(extra={}){
       if(++writes===1)await write.promise;
       state.stored=snapshot;
     },
-    imgPut:async(key,file)=>{state.images.push({key,file});await image.promise;},
+    commitBookEdit:async(value,patch,asset)=>{
+      const next={...state.stored,...patch};
+      if(asset)state.images.push({key:next.cover,file:asset});
+      await context.bookPut(next);return next;
+    },
     deleteBook:async value=>{state.deleted.push(value.id);state.stored=null;context.books=context.books.filter(item=>item.id!==value.id);},
     document:{getElementById:id=>elements[id]},
     closeEditSheet:()=>{state.closed++;context.editTarget=null;},
@@ -48,7 +52,7 @@ function world(extra={}){
   const parsed={title:'Recovered article',blocks:[{r:'p',t:'Full recovered article text.'}],
     paras:['Recovered article','Full recovered article text.'],formatting:{blocks:[]}};
   const repair=()=>context.repairIncompleteSocialBook(book,parsed,{cover:'art|recovered',imgSrc:{'art|recovered':'https://images.example/photo.jpg'}});
-  return {context,book,elements,state,write,image,repair};
+  return {context,book,elements,state,write,repair};
 }
 
 test('editing during repair waits for durable content and retains the same book object',async()=>{
@@ -77,20 +81,20 @@ for(const action of ['close','switch'])test(`${action} while waiting cancels the
 
 test('cover selection waits for repair and saves the recovered paragraphs',async()=>{
   const f=world(),repair=f.repair();
-  const pick=f.context.pickCoverFile({files:[{type:'image/png'}],value:'photo.png'});
-  f.image.resolve();await tick();assert.equal(f.state.writes.length,1);assert.equal(f.book.cover,null);
+  const pick=f.context.pickCoverFile({files:[{type:'image/png',arrayBuffer:async()=>new ArrayBuffer(1)}],value:'photo.png'});
+  await tick();assert.equal(f.state.writes.length,1);assert.equal(f.book.cover,null);
   f.write.resolve();await repair;await pick;
   assert.equal(f.state.stored.cover,'stale|cover');assert.equal(f.state.stored.paras[1],'Full recovered article text.');
   assert.deepEqual(f.state.coverViews,['stale']);
 });
 
-test('switching sheets during image persistence cannot apply the cover to the new book',async()=>{
+test('switching sheets before cover commit cannot apply the cover to the new book',async()=>{
   const f=world(),repair=f.repair();
-  const pick=f.context.pickCoverFile({files:[{type:'image/png'}],value:'photo.png'});
+  const pick=f.context.pickCoverFile({files:[{type:'image/png',arrayBuffer:async()=>new ArrayBuffer(1)}],value:'photo.png'});
   const other={id:'other',title:'Other book',cover:null};f.context.editTarget=other;
-  f.image.resolve();f.write.resolve();await repair;await pick;
+  f.write.resolve();await repair;await pick;
   assert.equal(f.state.writes.length,1);assert.equal(other.cover,null);assert.deepEqual(f.state.coverViews,[]);
-  assert.equal(f.state.images[0].key,'stale|cover');
+  assert.equal(f.state.images.length,0,'cancelled edit must not persist an orphan image');
 });
 
 for(const failure of [false,true])test(`deletion waits for ${failure?'failed':'successful'} repair and wins afterward`,async()=>{

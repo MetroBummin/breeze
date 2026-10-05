@@ -939,11 +939,9 @@ async function epubCoverImage(archive, key){
   const path = decodeURIComponent(joinPath(archive.opfDir, cover.href));
   const file = archive.zip.file(path);
   if(!file) return '';
-  try{
-    const blob = new Blob([await file.async('arraybuffer')], {type:cover.mediaType});
-    await imgPut(key, blob);
-    return key;
-  }catch(error){ return ''; }
+  const blob = new Blob([await file.async('arraybuffer')], {type:cover.mediaType});
+  await imgPut(key, blob);
+  return key;
 }
 
 async function parseEPUB(f, bookId){
@@ -951,7 +949,7 @@ async function parseEPUB(f, bookId){
   const zip = archive.zip;
   /* 표지는 본문 그림과 같은 접두어를 씁니다. 책을 지울 때 `imgPurge(id+'|')`
      한 번에 함께 쓸려 나가야 하고, 반입이 끝나고 임시 ID 를 진짜 ID 로 바꿀 때
-     (`imgRename`) 같이 따라와야 하기 때문입니다. */
+     (책·원본과 같은 트랜잭션으로) 같이 따라와야 하기 때문입니다. */
   const cover = await epubCoverImage(archive, bookId+'|cover');
   const paras=[]; let imgIdx=0; const seenImg={};
   const sig=[];
@@ -986,10 +984,8 @@ async function parseEPUB(f, bookId){
         const ext = (imgFile.name.split('.').pop()||'').toLowerCase();
         const blob = new Blob([await imgFile.async('arraybuffer')], {type: MIME[ext]||'image/jpeg'});
         const id = bookId+'|'+(imgIdx++);
-        try{
-          await imgPut(id, blob); seenImg[imgFile.name]=id; paras.push(IMG_MARK+id);
-          sig.push({src:chPath,si:spineIndex,ei:sourceElement});
-        }catch(e){}
+        await imgPut(id, blob); seenImg[imgFile.name]=id; paras.push(IMG_MARK+id);
+        sig.push({src:chPath,si:spineIndex,ei:sourceElement});
       }else{
         if(tag==='li' && el.querySelector('p,h1,h2,h3,h4')) continue;
         let t = el.textContent.replace(/\s+/g,' ').trim();
