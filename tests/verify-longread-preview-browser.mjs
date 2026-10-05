@@ -116,10 +116,10 @@ try{
       await page.waitForTimeout(950);
       const progress=await page.evaluate(()=>({id:curBook.id,p:positions[curBook.id].p}));assert.ok(progress.p>.1);
       await page.reload();await page.evaluate(()=>homeReady);
-      await card().click();assert.equal(await start().textContent(),'이어서 읽기');
       const downloads=requests;
-      await context.setOffline(true);await start().click();
-      await page.waitForFunction(()=>!articlePreviewDialog.open);
+      await context.setOffline(true);await card().click();
+      await page.waitForFunction(()=>activeAppView()==='read'&&!readerPositionPending());
+      assert.equal(await page.evaluate(()=>articlePreviewDialog.open),false,'Started story reopened its preview');
       assert.equal(await page.evaluate(()=>books.length),1);
       assert.equal(await page.evaluate(()=>curBook.paras.length),251);
       assert.equal(requests,downloads,'Saved book was downloaded again');
@@ -164,10 +164,10 @@ try{
         assert.equal(await p.evaluate(async()=>(await bookAll()).length),1);
         await p.evaluate(()=>{readerScrollTo((readerContentHeight()-readerViewHeight())*.5);updatePfill(true);});
         await p.waitForTimeout(950);assert.ok(await p.evaluate(()=>positions[curBook.id].p>.1));
-        await p.reload();await p.evaluate(()=>homeReady);await tile().click();
-        assert.equal(await p.locator('.ap-start').textContent(),'이어서 읽기');
-        const before=fetches;await other.setOffline(true);await p.locator('.ap-start').click();
-        await p.waitForFunction(()=>!articlePreviewDialog.open);
+        await p.reload();await p.evaluate(()=>homeReady);
+        const before=fetches;await other.setOffline(true);await tile().click();
+        await p.waitForFunction(()=>activeAppView()==='read'&&!readerPositionPending());
+        assert.equal(await p.evaluate(()=>articlePreviewDialog.open),false,'Started story reopened its preview');
         assert.deepEqual(await p.evaluate(()=>curBook.paras),full);assert.equal(fetches,before);
         assert.equal(await p.evaluate(async()=>(await bookAll()).length),1);
         assert.ok(await p.evaluate(()=>positions[curBook.id].p>.1));
@@ -204,12 +204,15 @@ try{
         const hasCover=await cachedPage.evaluate(()=>!!curBook.cover);
         await cachedContext.setOffline(true);await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
         await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
+        await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.paras.length===251&&!readerPositionPending());
         if(hasCover){
-          await cachedPage.waitForFunction(()=>document.querySelector('.ap-hero img').src.startsWith('blob:'));
-          await cachedPage.locator('.ap-hero img').evaluate(image=>image.decode());
+          assert.equal(await cachedPage.evaluate(async()=>{
+            const blob=await bookImageBlob(curBook,curBook.cover);if(!blob)return false;
+            const src=URL.createObjectURL(blob),image=new Image();
+            try{image.src=src;await image.decode();return image.naturalWidth>0;}
+            finally{URL.revokeObjectURL(src);}
+          }),true,'Saved cover still decodes offline after direct resume');
         }
-        await cachedPage.locator('.ap-start').click();
-        await cachedPage.waitForFunction(()=>!articlePreviewDialog.open&&curBook?.paras.length===251);
         await cachedContext.close();
       }else console.log('webkit: cold service-worker offline reload requires device verification (unsupported Playwright control)');
       console.log(engine.name()+': five previews, 30 Holmes viewport/theme states, failure/retry/truncation/cancel, duplicate taps, full import and offline progress passed');

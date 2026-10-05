@@ -934,6 +934,6 @@ function longReadCard(read){
   if(read.cover)image.src=read.cover;
   card.title=`${read.originalTitle} · ${read.author} · ${read.series}`;
   accessibleLibraryCard(card,read.title);
-  card.onclick=()=>openLongReadPreview(read);
+  card.onclick=()=>openLongReadPreviewOrReader(read);
   return card;
 }

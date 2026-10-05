@@ -455,3 +455,40 @@ and offset. Cold-image setup uses the ordinary restoration function; the wheel
 fixture likewise requests the nearest integer target for its exact 200px offset.
 Font, cold-image and late-layout assertions are collected so one run reports all
 remaining contract failures; any collected failure still fails the browser job.
+
+## Shared progress on retained Home cards and started-story routing (post-234 draft)
+
+The committed per-book position in `positions[book.id]` remains the sole reading
+truth. Reader exit saves it and the center Home capsule reads it immediately.
+The library shelf rebuilds its cards from it. Home retains cards and their decoded
+covers, but its structural stamp included only completion, not partial progress,
+and had no update callback for the reading label. This reproduced text-only
+Bohemia at 68% with a retained 66% Home card and the same PDF moving from completion
+to 50% then 19% with a retained 50% Home card. Saved positions, center capsule and
+fresh library shelf were correct. A cold render or structural metadata change
+could refresh the old label; waiting or backgrounding alone was not established
+as the user's eventual correction mechanism.
+
+Home's existing reconciliation now updates the long-form card's label directly
+from `nowReadingLabel`/`posOf` on every render, creating/removing that label when
+read-start state changes. Partial progress preserves the tile and cover. The
+existing completion stamp still owns completion-badge rebuilding. Backward reading
+uses the same committed position; no timer, monotonic clamp, progress calculation,
+storage record or restoration ownership change is added.
+
+Bundled saved cards previously took the catalog-preview branch before checking
+their read-start timestamp. An unread copy still takes that preview. A started
+copy now follows the existing direct Reader path using its exact library record.
+Catalog cards resolve the current library record by stable `longReadId` at tap
+time, resuming started copies and previewing unread/missing copies. Preview cancel
+does not save; Read remains the import boundary. Deleted copies return to preview,
+and legitimate reimports require Read before subsequent direct resume. No title
+matching, separate started-state registry, migration or gesture change is added.
+
+Regressions cover actual-source failed-before/passed-after Home projections and
+identity routes; bundled Bohemia 66→68 and backward reading; a real PDF completion
+→50→19; Home/Explore, unread cancellation, Back/Forward, renamed/reloaded copies,
+interrupted preparation, deletion/reimport, delayed image/font layout, offline
+resumption and phone/tablet/desktop/short light/dark views. The authorized TestFlight candidate is
+1.7(235), RSS OFF; the parent owns final CI review, merge and cloud execution.
+App Store replacement/resubmission still requires the user’s later approval.
