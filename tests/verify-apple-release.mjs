@@ -25,12 +25,12 @@ const res = (type, id, attributes = {}, relationships = {}) => ({type, id, attri
 const rel = (type, id) => ({data: {type, id}});
 
 // Stateful fake ASC: actual JSON:API routes and request bodies, zero networking.
-function fake({versionExists = true, selected = null, submission = null, unrelated = false, drift = null} = {}) {
+function fake({versionExists = true, selected = null, submission = null, unrelated = false, drift = null, afterItem = null, afterSubmit = null} = {}) {
   const calls = [];
   const app = res('apps', base.appId, {bundleId: base.bundleId});
   const run = res('ciBuildRuns', 'run-1', {sourceCommit: {commitSha: sha}, isPullRequestBuild: false,
     executionProgress: 'COMPLETE', completionStatus: 'SUCCEEDED'});
-  const build = res('builds', 'build-1', {version: '237', processingState: 'VALID', expired: false},
+  const build = res('builds', 'build-1', {version: '237', processingState: 'VALID', expired: false, buildAudienceType: 'APP_STORE_ELIGIBLE'},
     {app: rel('apps', base.appId), preReleaseVersion: rel('preReleaseVersions', 'pre-1')});
   const pre = res('preReleaseVersions', 'pre-1', {version: '1.8', platform: 'IOS'});
   let version = versionExists ? res('appStoreVersions', 'version-1', {versionString: '1.8', platform: 'IOS',
@@ -38,24 +38,34 @@ function fake({versionExists = true, selected = null, submission = null, unrelat
   let notes = [res('appStoreVersionLocalizations', 'ko-1', {locale: 'ko', whatsNew: ''})];
   let reviews = submission ? [res('reviewSubmissions', 'review-1', {platform: 'IOS', state: submission === 'draft' ?
     'READY_FOR_REVIEW' : 'WAITING_FOR_REVIEW', submittedDate: submission === 'draft' ? null : '2026-10-05T21:00:00Z'})] : [];
-  let items = submission ? [res('reviewSubmissionItems', 'item-1', {}, {appStoreVersion: rel('appStoreVersions', 'version-1')})] : [];
+  let items = submission ? [res('reviewSubmissionItems', 'item-1', {state: submission === 'draft' ? 'READY_FOR_REVIEW' : 'IN_REVIEW'},
+    {appStoreVersion: rel('appStoreVersions', 'version-1')})] : [];
   if (unrelated) reviews.push(res('reviewSubmissions', 'other-review', {platform: 'IOS', state: 'READY_FOR_REVIEW'}));
   drift?.({app, run, build, pre, version, notes, reviews, items});
   const client = {
     async list(path) {
       calls.push({method: 'GET', path});
-      if (path.startsWith('/v1/ciBuildRuns/run-1/builds?')) return [build];
+      if (path.startsWith('/v1/ciBuildRuns/run-1/builds?')) return [{type: 'builds', id: build.id}];
       if (path.startsWith(`/v1/apps/${base.appId}/appStoreVersions?`)) return version ? [version] : [];
       if (path.startsWith('/v1/appStoreVersions/version-1/appStoreVersionLocalizations?')) return notes;
       if (path.startsWith(`/v1/apps/${base.appId}/reviewSubmissions?`)) return reviews;
-      if (path.startsWith('/v1/reviewSubmissions/')) return items;
+      if (path.startsWith('/v1/reviewSubmissions/')) {
+        // Default relationship responses may be sparse; explicit include hydrates linkage.
+        if (new URL(path, 'https://mock.invalid').searchParams.get('include') === 'appStoreVersion') return structuredClone(items);
+        return items.map(item => ({...structuredClone(item), relationships: {appStoreVersion: {links: {related: 'mock-related-version'}}}}));
+      }
       assert.fail(`Unexpected list route: ${path}`);
     },
     async request(method, path, body) {
       calls.push({method, path, body});
       if (method === 'GET') {
         const data = new Map([
-          [`/v1/apps/${base.appId}`, app], ['/v1/ciBuildRuns/run-1', run], ['/v1/builds/build-1', build],
+          [`/v1/apps/${base.appId}`, app], ['/v1/ciBuildRuns/run-1', run],
+          ['/v1/builds/build-1', {...build, relationships: {
+            app: {links: {related: '/v1/builds/build-1/app'}},
+            preReleaseVersion: {links: {related: '/v1/builds/build-1/preReleaseVersion'}},
+          }}],
+          ['/v1/builds/build-1?include=app,preReleaseVersion', build],
           ['/v1/preReleaseVersions/pre-1', pre], ['/v1/appStoreVersions/version-1', version],
           ['/v1/appStoreVersions/version-1/relationships/build', selected ? {type: 'builds', id: selected} : null],
           ['/v1/reviewSubmissions/review-1', reviews[0]],
@@ -80,10 +90,13 @@ function fake({versionExists = true, selected = null, submission = null, unrelat
         return {data: structuredClone(reviews[0])};
       } else if (path === '/v1/reviewSubmissionItems') {
         assert.deepEqual(body.data.relationships, {reviewSubmission: rel('reviewSubmissions', 'review-1'), appStoreVersion: rel('appStoreVersions', 'version-1')});
-        items = [res('reviewSubmissionItems', 'item-1', {}, body.data.relationships)];
+        items = [res('reviewSubmissionItems', 'item-1', {state: 'READY_FOR_REVIEW'}, body.data.relationships)];
+        afterItem?.({reviews, items, version});
       } else if (path === '/v1/reviewSubmissions/review-1') {
         assert.deepEqual(body, {data: {type: 'reviewSubmissions', id: 'review-1', attributes: {submitted: true}}});
         Object.assign(reviews[0].attributes, {state: 'WAITING_FOR_REVIEW', submittedDate: '2026-10-05T22:01:00Z'});
+        items[0].attributes.state = 'READY_FOR_REVIEW';
+        afterSubmit?.({reviews, items, version});
       } else assert.fail(`Unexpected write: ${method} ${path}`);
       return {};
     },
@@ -143,6 +156,20 @@ for (const mode of ['status', 'dry-run']) test(`${mode} performs GETs only by de
 test('default release mode stays read-only', async () => {
   const f = fake(); await release(f.client, manifest()); assert.equal(writes(f).length, 0);
 });
+test('default build/review-item responses are sparse; orchestration explicitly requests linkage', async () => {
+  const f = fake({submission: 'draft'}); f.match();
+  const sparse = (await f.client.request('GET', '/v1/builds/build-1')).data;
+  assert.equal(sparse.relationships.app.data, undefined);
+  assert.equal(sparse.relationships.preReleaseVersion.data, undefined);
+  const sparseItems = await f.client.list('/v1/reviewSubmissions/review-1/items?limit=200');
+  assert.equal(sparseItems[0].relationships.appStoreVersion.data, undefined);
+  f.calls.length = 0;
+  await release(f.client, manifest('submit'), 'submit', () => now);
+  assert.ok(f.calls.some(c => c.path === '/v1/builds/build-1?include=app,preReleaseVersion'));
+  assert.ok(f.calls.filter(c => c.path.startsWith('/v1/reviewSubmissions/') && c.path.includes('/items?'))
+    .every(c => new URL(c.path, 'https://mock.invalid').searchParams.get('include') === 'appStoreVersion'));
+  assert.ok(!f.calls.some(c => c.path === '/v1/builds/build-1'));
+});
 for (const [name, drift] of [
   ['bundle', ({app}) => app.attributes.bundleId = 'other.app'],
   ['commit', ({run}) => run.attributes.sourceCommit.commitSha = 'b'.repeat(40)],
@@ -153,6 +180,11 @@ for (const [name, drift] of [
   ['build number', ({build}) => build.attributes.version = '238'],
   ['processing', ({build}) => build.attributes.processingState = 'PROCESSING'],
   ['expired build', ({build}) => build.attributes.expired = true],
+  ['internal-only audience', ({build}) => build.attributes.buildAudienceType = 'INTERNAL_ONLY'],
+  ['missing audience', ({build}) => delete build.attributes.buildAudienceType],
+  ['unknown audience', ({build}) => build.attributes.buildAudienceType = 'OTHER_AUDIENCE'],
+  ['sparse included app', ({build}) => delete build.relationships.app.data],
+  ['sparse included pre-release version', ({build}) => delete build.relationships.preReleaseVersion.data],
   ['marketing version', ({pre}) => pre.attributes.version = '1.9'],
   ['platform', ({pre}) => pre.attributes.platform = 'MAC_OS'],
   ['App Store version', ({version}) => version.attributes.versionString = '1.9'],
@@ -180,6 +212,67 @@ test('matching single-item draft resumes without duplicate submission creation',
   const f = fake({submission: 'draft'}); f.match();
   await release(f.client, manifest('submit'), 'submit', () => now);
   assert.deepEqual(writes(f).map(c => c.path), ['/v1/reviewSubmissions/review-1']);
+});
+for (const [reviewState, itemState, expected] of [
+  ['WAITING_FOR_REVIEW', 'READY_FOR_REVIEW', 'already-submitted'],
+  ['IN_REVIEW', 'IN_REVIEW', 'already-submitted'],
+  ['COMPLETING', 'ACCEPTED', 'already-submitted'],
+  ['COMPLETE', 'ACCEPTED', 'review-complete'],
+]) test(`confirmed ${reviewState}/${itemState} returns explicit state without writes`, async () => {
+  const f = fake({submission: 'submitted', drift: ({reviews, items}) => {
+    reviews[0].attributes.state = reviewState; items[0].attributes.state = itemState;
+  }}); f.match();
+  const result = await release(f.client, manifest('submit'), 'submit', () => now);
+  assert.equal(result.result, expected); assert.equal(result.reviewState, reviewState); assert.equal(result.itemState, itemState);
+  assert.equal(writes(f).length, 0);
+});
+for (const [reviewState, itemState] of [
+  ['UNRESOLVED_ISSUES', 'REJECTED'], ['UNRESOLVED_ISSUES', 'ACCEPTED'],
+  ['WAITING_FOR_REVIEW', 'REJECTED'], ['COMPLETE', 'REJECTED'], ['COMPLETE', 'REMOVED'],
+  ['CANCELING', 'IN_REVIEW'], ['READY_FOR_REVIEW', 'READY_FOR_REVIEW'],
+]) test(`timestamp with ${reviewState}/${itemState} requires action and never resubmits`, async () => {
+  const f = fake({submission: 'submitted', drift: ({reviews, items}) => {
+    reviews[0].attributes.state = reviewState; items[0].attributes.state = itemState;
+  }}); f.match();
+  const status = await release(f.client, manifest(), 'status', () => now);
+  assert.equal(status.result, 'action-required'); assert.equal(status.reviewState, reviewState); assert.equal(status.itemState, itemState);
+  for (const mode of ['prepare', 'submit']) await assert.rejects(release(f.client, manifest(mode), mode, () => now), /manual action/);
+  assert.equal(writes(f).length, 0);
+});
+for (const [name, drift] of [
+  ['unknown submission state', ({reviews}) => reviews[0].attributes.state = 'UNKNOWN'],
+  ['unknown item state', ({items}) => items[0].attributes.state = 'UNKNOWN'],
+  ['missing item state', ({items}) => delete items[0].attributes.state],
+]) test(`${name} fails closed before writes`, async () => {
+  const f = fake({submission: 'submitted', drift}); f.match();
+  await assert.rejects(release(f.client, manifest('submit'), 'submit', () => now), /Unknown review/);
+  assert.equal(writes(f).length, 0);
+});
+test('rejected App Store version exposes action-required and cannot be automatically resubmitted', async () => {
+  const f = fake({drift: ({version}) => version.attributes.appStoreState = 'REJECTED'});
+  assert.equal((await release(f.client, manifest(), 'status', () => now)).result, 'action-required');
+  await assert.rejects(release(f.client, manifest('submit'), 'submit', () => now), /manual action/);
+  assert.equal(writes(f).length, 0);
+});
+test('in-progress review without a submission timestamp remains unconfirmed and cannot write', async () => {
+  const f = fake({submission: 'submitted', drift: ({reviews}) => delete reviews[0].attributes.submittedDate}); f.match();
+  assert.equal((await release(f.client, manifest(), 'status', () => now)).reason, 'unconfirmed-review-state');
+  await assert.rejects(release(f.client, manifest('submit'), 'submit', () => now), /manual action/);
+  assert.equal(writes(f).length, 0);
+});
+test('post-submit read-back rejection reports manual action and never retries the submit', async () => {
+  const f = fake({afterSubmit: ({reviews, items}) => {
+    reviews[0].attributes.state = 'UNRESOLVED_ISSUES'; items[0].attributes.state = 'REJECTED';
+  }});
+  await assert.rejects(release(f.client, manifest('submit'), 'submit', () => now), /manual action.*UNRESOLVED_ISSUES.*REJECTED/);
+  assert.equal(writes(f).filter(c => c.method === 'PATCH' && c.path === '/v1/reviewSubmissions/review-1').length, 1);
+  const status = await release(f.client, manifest(), 'status', () => now);
+  assert.equal(status.result, 'action-required');
+});
+test('version rejection after item creation blocks the final submission PATCH', async () => {
+  const f = fake({afterItem: ({version}) => version.attributes.appStoreState = 'REJECTED'});
+  await assert.rejects(release(f.client, manifest('submit'), 'submit', () => now), /manual action.*version-rejected/);
+  assert.equal(writes(f).filter(c => c.method === 'PATCH' && c.path === '/v1/reviewSubmissions/review-1').length, 0);
 });
 test('unrelated, empty, or extra-item review submissions fail before writing', async () => {
   for (const config of [{unrelated: true}, {submission: 'draft', drift: ({items}) => items.length = 0},

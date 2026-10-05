@@ -10,7 +10,10 @@ const SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA = /^[a-f0-9]{40}$/;
 const DIGEST = /^[a-f0-9]{64}$/;
 const MODES = ['smoke', 'status', 'dry-run', 'prepare', 'submit'];
-const EDITABLE = ['PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED'];
+const EDITABLE = ['PREPARE_FOR_SUBMISSION'];
+const REVIEW_STATES = ['READY_FOR_REVIEW', 'WAITING_FOR_REVIEW', 'IN_REVIEW', 'UNRESOLVED_ISSUES', 'CANCELING', 'COMPLETING', 'COMPLETE'];
+const ITEM_STATES = ['READY_FOR_REVIEW', 'IN_REVIEW', 'ACCEPTED', 'REJECTED', 'REMOVED'];
+const REJECTED_VERSIONS = ['DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'];
 export class ReleaseError extends Error {}
 function requireThat(ok, message) { if (!ok) throw new ReleaseError(message); }
 function exactKeys(value, keys, name) {
@@ -144,7 +147,7 @@ const query = values => new URLSearchParams(values).toString();
 const link = (type, id) => ({data: {type, id}});
 const payload = (type, attributes, relationships, id) => ({data: {type,
   ...(id ? {id} : {}), ...(attributes ? {attributes} : {}), ...(relationships ? {relationships} : {})}});
-const state = version => version.attributes?.appVersionState ?? version.attributes?.appStoreState;
+const state = version => version?.attributes?.appVersionState ?? version?.attributes?.appStoreState;
 
 async function inspect(client, m) {
   const get = async (path, type, id) => resource((await client.request('GET', path)).data, type, id);
@@ -155,9 +158,11 @@ async function inspect(client, m) {
     run.attributes?.executionProgress === 'COMPLETE' && run.attributes?.completionStatus === 'SUCCEEDED', 'Cloud run commit or completion mismatch');
   const runBuilds = await client.list(`/v1/ciBuildRuns/${m.ciBuildRunId}/builds?limit=200`);
   requireThat(runBuilds.filter(b => b.type === 'builds' && b.id === m.buildId).length === 1, 'Build is not uniquely linked to expected Cloud run');
-  const build = await get(`/v1/builds/${m.buildId}`, 'builds', m.buildId);
+  // Default build responses can contain relationship links without linkage data.
+  const build = await get(`/v1/builds/${m.buildId}?include=app,preReleaseVersion`, 'builds', m.buildId);
   requireThat(relationship(build, 'app', 'apps') === m.appId && build.attributes?.version === m.buildNumber &&
     build.attributes?.processingState === 'VALID' && build.attributes?.expired === false, 'Build app, number, or readiness mismatch');
+  requireThat(build.attributes?.buildAudienceType === 'APP_STORE_ELIGIBLE', 'Build must be APP_STORE_ELIGIBLE; internal-only or unknown audience cannot be released');
   const preId = relationship(build, 'preReleaseVersion', 'preReleaseVersions');
   const pre = await get(`/v1/preReleaseVersions/${preId}`, 'preReleaseVersions', preId);
   requireThat(pre.attributes?.version === m.version && pre.attributes?.platform === 'IOS', 'Build marketing version or platform mismatch');
@@ -193,17 +198,53 @@ async function reviewState(client, appId, versionId) {
   let matching;
   for (const submission of submissions) {
     resource(submission, 'reviewSubmissions');
-    requireThat(submission.attributes?.platform === 'IOS' && typeof submission.attributes.state === 'string', 'Invalid review platform/state');
-    const items = await client.list(`/v1/reviewSubmissions/${submission.id}/items?limit=200`);
+    requireThat(submission.attributes?.platform === 'IOS' && REVIEW_STATES.includes(submission.attributes.state), 'Unknown review platform/state; inspect ASC');
+    const items = await client.list(`/v1/reviewSubmissions/${submission.id}/items?include=appStoreVersion&limit=200`);
     const matches = items.filter(item => item.relationships?.appStoreVersion?.data?.id === versionId && versionId);
     if (matches.length) {
       requireThat(items.length === 1 && matches.length === 1 && !matching, 'Submission must contain exactly this version, once');
       resource(matches[0], 'reviewSubmissionItems');
       requireThat(relationship(matches[0], 'appStoreVersion', 'appStoreVersions') === versionId, 'Review item version mismatch');
-      matching = submission;
+      requireThat(ITEM_STATES.includes(matches[0].attributes?.state), 'Unknown review item state; inspect ASC');
+      matching = {...submission, itemState: matches[0].attributes.state};
     } else requireThat(submission.attributes.state === 'COMPLETE', 'Unrelated or empty active submission; reconcile in ASC first');
   }
   return matching;
+}
+
+// A submission timestamp survives rejection and resubmission. Success requires
+// an allowed submission/item state pair as well as exact manifest contents.
+function reviewOutcome(review, version, contents, m) {
+  const versionState = state(version);
+  const summary = {versionId: version?.id ?? null, submissionId: review?.id ?? null,
+    reviewState: review?.attributes.state ?? null, itemState: review?.itemState ?? null,
+    versionState: versionState ?? null};
+  const action = reason => ({result: 'action-required', reason, ...summary});
+  if (REJECTED_VERSIONS.includes(versionState)) return action('version-rejected');
+  if (!review) return null;
+  const reviewState = review.attributes.state;
+  if (['UNRESOLVED_ISSUES', 'CANCELING'].includes(reviewState) || ['REJECTED', 'REMOVED'].includes(review.itemState)) {
+    return action('review-requires-resolution');
+  }
+  if (!contentsMatch(version, contents, m)) return action('submitted-content-mismatch');
+  if (reviewState === 'READY_FOR_REVIEW' && review.itemState === 'READY_FOR_REVIEW' && !review.attributes.submittedDate) return null;
+  const date = review.attributes.submittedDate;
+  if (typeof date !== 'string' || !Number.isFinite(Date.parse(date))) return action('unconfirmed-review-state');
+  const inProgress = {
+    WAITING_FOR_REVIEW: ['READY_FOR_REVIEW', 'IN_REVIEW'],
+    IN_REVIEW: ['IN_REVIEW', 'ACCEPTED'],
+    COMPLETING: ['ACCEPTED'],
+  };
+  if (inProgress[reviewState]?.includes(review.itemState)) return {result: 'already-submitted', ...summary};
+  if (reviewState === 'COMPLETE' && review.itemState === 'ACCEPTED') return {result: 'review-complete', ...summary};
+  return action('previous-submission-needs-reconciliation');
+}
+
+function enforceOutcome(outcome, write) {
+  if (write && outcome?.result === 'action-required') {
+    throw new ReleaseError(`Release requires manual action: ${outcome.reason}; review=${outcome.reviewState ?? 'none'}, item=${outcome.itemState ?? 'none'}`);
+  }
+  return outcome;
 }
 
 export async function release(client, m, mode = 'status', clock = Date.now) {
@@ -217,10 +258,8 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
   let {version} = await inspect(client, m);
   let contents = version ? await versionContents(client, version) : null;
   let review = await reviewState(client, m.appId, version?.id);
-  if (review?.attributes?.submittedDate) {
-    requireThat(contentsMatch(version, contents, m), 'Submitted version does not match authorized manifest');
-    return {result: 'already-submitted', versionId: version.id, submissionId: review.id};
-  }
+  const existingOutcome = enforceOutcome(reviewOutcome(review, version, contents, m), write);
+  if (existingOutcome) return existingOutcome;
   if (version) requireThat(EDITABLE.includes(state(version)) ||
     (state(version) === 'READY_FOR_REVIEW' && review && contentsMatch(version, contents, m)), 'Version is not safely editable');
   if (review) requireThat(review.attributes.state === 'READY_FOR_REVIEW' && contentsMatch(version, contents, m), 'Review draft needs reconciliation');
@@ -252,9 +291,12 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
   if (mode === 'prepare') return {...plan, versionId: version.id};
   validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
   // Recheck all provenance and active submissions immediately before submitting.
-  await inspect(client, m);
+  const rechecked = await inspect(client, m);
+  requireThat(rechecked.version?.id === version.id, 'App Store version changed before review submission');
+  version = rechecked.version;
   review = await reviewState(client, m.appId, version.id);
-  if (review?.attributes?.submittedDate) return {result: 'already-submitted', versionId: version.id, submissionId: review.id};
+  const concurrentOutcome = enforceOutcome(reviewOutcome(review, version, await versionContents(client, version), m), true);
+  if (concurrentOutcome) return concurrentOutcome;
   if (!review) {
     review = resource((await change('POST', '/v1/reviewSubmissions', payload('reviewSubmissions',
       {platform: 'IOS'}, {app: link('apps', m.appId)}))).data, 'reviewSubmissions');
@@ -262,16 +304,21 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
       {reviewSubmission: link('reviewSubmissions', review.id), appStoreVersion: link('appStoreVersions', version.id)}));
   }
   const ready = await reviewState(client, m.appId, version.id);
-  requireThat(ready?.id === review.id && ready.attributes.state === 'READY_FOR_REVIEW' && !ready.attributes.submittedDate,
+  requireThat(ready?.id === review.id && ready.attributes.state === 'READY_FOR_REVIEW' &&
+    ready.itemState === 'READY_FOR_REVIEW' && !ready.attributes.submittedDate,
     'Review submission changed before submit');
   const finalVersion = resource((await client.request('GET', `/v1/appStoreVersions/${version.id}`)).data, 'appStoreVersions', version.id);
+  const finalContents = await versionContents(client, finalVersion);
   requireThat(finalVersion.attributes?.versionString === m.version && finalVersion.attributes?.platform === 'IOS' &&
-    contentsMatch(finalVersion, await versionContents(client, finalVersion), m), 'Release contents changed before submit');
+    contentsMatch(finalVersion, finalContents, m), 'Release contents changed before submit');
+  enforceOutcome(reviewOutcome(ready, finalVersion, finalContents, m), true);
   validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
   await change('PATCH', `/v1/reviewSubmissions/${review.id}`, payload('reviewSubmissions', {submitted: true}, null, review.id));
-  const submitted = resource((await client.request('GET', `/v1/reviewSubmissions/${review.id}`)).data, 'reviewSubmissions', review.id);
-  requireThat(submitted.attributes?.submittedDate && submitted.attributes.state !== 'READY_FOR_REVIEW', 'Submission not yet confirmed; inspect status before retrying');
-  return {result: 'submitted', versionId: version.id, submissionId: review.id};
+  const submitted = await reviewState(client, m.appId, version.id);
+  requireThat(submitted?.id === review.id, 'Submission not yet confirmed; inspect status before retrying');
+  const outcome = enforceOutcome(reviewOutcome(submitted, finalVersion, await versionContents(client, finalVersion), m), true);
+  requireThat(['already-submitted', 'review-complete'].includes(outcome?.result), 'Submission not yet confirmed; inspect status before retrying');
+  return {...outcome, result: outcome.result === 'already-submitted' ? 'submitted' : 'review-complete'};
 }
 
 function git(...args) { return execFileSync('git', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']}).trim(); }
