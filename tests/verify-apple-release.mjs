@@ -1,8 +1,11 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {generateKeyPairSync, verify} from 'node:crypto';
-import {readFileSync} from 'node:fs';
+import {readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {createClient, manifestDigest, release, tokenFactory, validateInvocation, validateManifest} from '../tools/apple-release.mjs';
 
 const now = Date.parse('2026-10-05T22:00:00Z');
@@ -17,9 +20,61 @@ function manifest(operation = 'none') { return {...structuredClone(base), author
 function invocation(m = base, mode = 'status', extra = {}) {
   const raw = JSON.stringify(m), digest = manifestDigest(raw);
   return {event: 'workflow_dispatch', ref: 'refs/heads/main', eventSha: sha, mainSha: sha,
-    push: {created: true, deleted: false, forced: false, after: sha},
+    repository: 'MetroBummin/breeze', actor: 'MetroBummin', triggeringActor: 'MetroBummin', runAttempt: '1',
+    push: {created: false, deleted: false, forced: false, before: 'b'.repeat(40), after: sha, sender: {login: 'MetroBummin'}},
     raw, appId: m.appId, now, inputs: {mode, release_id: m.releaseId, manifest_sha256: digest,
       confirmation: `${mode}:${m.releaseId}:${digest}`}, ...extra};
+}
+function requestInvocation(m = base, mode = 'status', extra = {}) {
+  const input = invocation(m, mode), requestId = `${mode}-candidate`;
+  const request = {schemaVersion: 1, requestId, mode, releaseId: m.releaseId, manifestSha256: manifestDigest(input.raw),
+    requestedBy: 'MetroBummin', confirmation: ['prepare', 'submit'].includes(mode) ? input.inputs.confirmation : ''};
+  return {...input, event: 'push', changes: [{status: 'A', path: `releases/apple/requests/${requestId}.json`}],
+    requestRaw: JSON.stringify(request), ...extra};
+}
+function gateFixture(t, {symlinkManifest = false} = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'breeze-apple-gate-'));
+  t.after(() => rmSync(dir, {recursive: true, force: true}));
+  const cleanEnv = {PATH: process.env.PATH, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null'};
+  const git = (...args) => {
+    const result = spawnSync('git', args, {cwd: dir, env: cleanEnv, encoding: 'utf8'});
+    assert.equal(result.status, 0, result.stderr); return result.stdout.trim();
+  };
+  git('init', '-q', '-b', 'main');
+  git('config', 'user.name', 'Mock release operator'); git('config', 'user.email', 'mock@example.invalid');
+  writeFileSync(join(dir, 'README'), 'Synthetic repository; no real credentials.\n');
+  git('add', 'README'); git('commit', '-qm', 'Mock source commit');
+  const source = git('rev-parse', 'HEAD');
+  const raw = JSON.stringify({...manifest(), expectedCommit: source}, null, 2) + '\n';
+  mkdirSync(join(dir, 'releases/apple/requests'), {recursive: true});
+  if (symlinkManifest) {
+    writeFileSync(join(dir, 'synthetic-private-marker'), 'do-not-read-synthetic-marker');
+    symlinkSync(join(dir, 'synthetic-private-marker'), join(dir, 'releases/apple/candidate.json'));
+  } else writeFileSync(join(dir, 'releases/apple/candidate.json'), raw);
+  git('add', 'releases/apple/candidate.json'); git('commit', '-qm', 'Reviewed existing manifest');
+  const before = git('rev-parse', 'HEAD');
+  const requestPath = 'releases/apple/requests/status-candidate.json';
+  // Omitted mode exercises the read-only default. Digest includes the final newline.
+  const request = {schemaVersion: 1, requestId: 'status-candidate', releaseId: 'candidate',
+    manifestSha256: manifestDigest(raw), requestedBy: 'MetroBummin', confirmation: ''};
+  writeFileSync(join(dir, requestPath), JSON.stringify(request, null, 2) + '\n');
+  git('add', requestPath); git('commit', '-qm', 'Explicit status request only');
+  const eventPath = join(dir, 'event.json'), outputPath = join(dir, 'output');
+  const env = {...cleanEnv, GITHUB_REPOSITORY: 'MetroBummin/breeze', GITHUB_REF: 'refs/heads/main',
+    GITHUB_EVENT_NAME: 'push', GITHUB_ACTOR: 'MetroBummin', GITHUB_TRIGGERING_ACTOR: 'MetroBummin',
+    GITHUB_RUN_ATTEMPT: '1', GITHUB_EVENT_PATH: eventPath, GITHUB_OUTPUT: outputPath, ASC_APP_ID: base.appId};
+  const refresh = previous => {
+    const head = git('rev-parse', 'HEAD'); git('update-ref', 'refs/remotes/origin/main', head);
+    env.GITHUB_SHA = head;
+    writeFileSync(eventPath, JSON.stringify({created: false, deleted: false, forced: false,
+      before: previous, after: head, sender: {login: 'MetroBummin'}}));
+    return head;
+  };
+  const head = refresh(before);
+  const run = (args = ['--gate'], overrides = {}) => spawnSync(process.execPath,
+    [fileURLToPath(new URL('../tools/apple-release.mjs', import.meta.url)), ...args],
+    {cwd: dir, encoding: 'utf8', env: {...env, ...overrides}});
+  return {dir, git, env, run, refresh, head, before, outputPath, eventPath, requestPath};
 }
 const res = (type, id, attributes = {}, relationships = {}) => ({type, id, attributes, relationships});
 const rel = (type, id) => ({data: {type, id}});
@@ -106,35 +161,80 @@ function fake({versionExists = true, selected = null, submission = null, unrelat
 }
 const writes = f => f.calls.filter(c => c.method !== 'GET');
 
-test('manual smoke and exact smoke tag need no manifest or app configuration', () => {
+test('explicit manual smoke needs no manifest or app configuration', () => {
   assert.equal(validateInvocation(invocation(base, 'smoke', {raw: '', appId: ''})).mode, 'smoke');
-  assert.equal(validateInvocation(invocation(base, 'smoke', {event: 'push', ref: 'refs/tags/apple-release/smoke'})).mode, 'smoke');
 });
 for (const mode of ['status', 'dry-run', 'prepare', 'submit']) {
-  test(`exact manifest and tag bind ${mode}`, () => {
-    const input = invocation(manifest(['prepare', 'submit'].includes(mode) ? mode : 'none'), mode);
-    assert.equal(validateInvocation(input).mode, mode);
-    assert.equal(validateInvocation({...input, event: 'push', ref: `refs/tags/apple-release/${mode}/candidate/${manifestDigest(input.raw)}`}).mode, mode);
+  test(`exact manifest, dispatch and new main request bind ${mode}`, () => {
+    const m = manifest(['prepare', 'submit'].includes(mode) ? mode : 'none');
+    assert.equal(validateInvocation(invocation(m, mode)).mode, mode);
+    assert.equal(validateInvocation(requestInvocation(m, mode)).mode, mode);
   });
 }
+test('missing operation defaults to GET-only status for manual and request invocations', () => {
+  const manual = invocation(); delete manual.inputs.mode;
+  assert.equal(validateInvocation(manual).mode, 'status');
+  const input = requestInvocation(), request = JSON.parse(input.requestRaw); delete request.mode;
+  assert.equal(validateInvocation({...input, requestRaw: JSON.stringify(request)}).mode, 'status');
+});
 for (const [name, update] of [
-  ['PR', {event: 'pull_request'}], ['development push', {event: 'push', ref: 'refs/heads/main'}],
+  ['PR', {event: 'pull_request'}], ['ordinary main push', {event: 'push', ref: 'refs/heads/main'}],
+  ['development push', {event: 'push', ref: 'refs/heads/develop'}],
   ['manual branch', {ref: 'refs/heads/develop'}], ['other commit', {eventSha: 'b'.repeat(40)}],
+  ['other repository', {repository: 'someone/breeze'}], ['other actor', {actor: 'someone'}],
+  ['other rerun actor', {triggeringActor: 'someone'}], ['missing actor', {actor: undefined}],
   ['unknown operation', {inputs: {mode: 'upload'}}], ['missing hash', {inputs: {mode: 'submit', release_id: 'candidate'}}],
   ['malformed JSON', {raw: '{'}], ['manifest path traversal', {inputs: {mode: 'status', release_id: '../candidate'}}],
 ]) test(`gate rejects ${name}`, () => assert.throws(() => validateInvocation(invocation(manifest('submit'), 'submit', update))));
-test('manual writes require exact confirmation and tags reject extra segments', () => {
+test('manual writes require exact confirmation', () => {
   const input = invocation(manifest('submit'), 'submit');
   assert.throws(() => validateInvocation({...input, inputs: {...input.inputs, confirmation: ''}}));
-  assert.throws(() => validateInvocation({...input, event: 'push', ref: `refs/tags/apple-release/submit/candidate/${manifestDigest(input.raw)}/extra`}));
 });
-for (const [name, push] of [
-  ['update', {created: false, deleted: false, forced: false, after: sha}],
-  ['deletion', {created: false, deleted: true, forced: false, after: '0'.repeat(40)}],
-  ['forced update', {created: true, deleted: false, forced: true, after: sha}],
-  ['annotated tag object', {created: true, deleted: false, forced: false, after: 'b'.repeat(40)}],
-]) test(`gate rejects tag ${name}`, () => {
-  assert.throws(() => validateInvocation(invocation(base, 'status', {event: 'push', ref: 'refs/tags/apple-release/smoke', push})));
+for (const ref of ['refs/tags/apple-release/smoke', 'refs/tags/apple-release/submit/candidate/' + 'a'.repeat(64)]) {
+  test(`gate rejects removed tag trigger ${ref}`, () => assert.throws(() => validateInvocation(requestInvocation(base, 'status', {ref}))));
+}
+for (const [name, changes] of [
+  ['no request', []], ['request edit', [{status: 'M', path: 'releases/apple/requests/status-candidate.json'}]],
+  ['request deletion', [{status: 'D', path: 'releases/apple/requests/status-candidate.json'}]],
+  ['rename', [{status: 'R100', path: 'releases/apple/requests/status-candidate.json'}]],
+  ['nested path', [{status: 'A', path: 'releases/apple/requests/nested/status-candidate.json'}]],
+  ['path traversal', [{status: 'A', path: 'releases/apple/requests/../status-candidate.json'}]],
+  ['non-request JSON', [{status: 'A', path: 'releases/apple/status-candidate.json'}]],
+  ['multiple requests', [{status: 'A', path: 'releases/apple/requests/status-candidate.json'}, {status: 'A', path: 'releases/apple/requests/other.json'}]],
+  ['mixed code change', [{status: 'A', path: 'releases/apple/requests/status-candidate.json'}, {status: 'M', path: 'tools/apple-release.mjs'}]],
+  ['mixed manifest change', [{status: 'A', path: 'releases/apple/requests/status-candidate.json'}, {status: 'M', path: 'releases/apple/candidate.json'}]],
+]) test(`request gate rejects ${name} before credentials`, () => assert.throws(() => validateInvocation(requestInvocation(base, 'status', {changes}))));
+for (const [name, update] of [
+  ['new branch', {created: true}], ['deletion', {deleted: true}], ['forced update', {forced: true}],
+  ['wrong after', {after: 'c'.repeat(40)}], ['missing before', {before: undefined}],
+  ['zero before', {before: '0'.repeat(40)}], ['same before/after', {before: sha}],
+  ['other sender', {sender: {login: 'someone'}}],
+]) test(`request gate rejects ${name}`, () => {
+  const input = requestInvocation();
+  assert.throws(() => validateInvocation({...input, push: {...input.push, ...update}}));
+});
+for (const [name, mutate] of [
+  ['unknown fields/code', r => r.command = 'node arbitrary-code.mjs'], ['missing hash', r => delete r.manifestSha256],
+  ['wrong hash', r => r.manifestSha256 = 'c'.repeat(64)], ['wrong ID', r => r.requestId = 'other'],
+  ['wrong operator', r => r.requestedBy = 'someone'], ['wrong version manifest', r => r.releaseId = 'other'],
+  ['unknown operation', r => r.mode = 'upload'], ['null operation', r => r.mode = null],
+  ['missing confirmation', r => delete r.confirmation], ['write confirmation on status', r => r.confirmation = 'submit:anything'],
+]) test(`request JSON rejects ${name}`, () => {
+  const input = requestInvocation(), request = JSON.parse(input.requestRaw); mutate(request);
+  assert.throws(() => validateInvocation({...input, requestRaw: JSON.stringify(request)}));
+});
+test('write requests require exact confirmation, matching manifest operation and bounded expiry', () => {
+  const input = requestInvocation(manifest('submit'), 'submit'), request = JSON.parse(input.requestRaw);
+  assert.throws(() => validateInvocation({...input, requestRaw: JSON.stringify({...request, confirmation: ''})}));
+  assert.throws(() => validateInvocation(requestInvocation(manifest(), 'submit')));
+  const expired = manifest('submit'); expired.authorization.expiresAt = '2026-10-05T21:00:00Z';
+  assert.throws(() => validateInvocation(requestInvocation(expired, 'submit')));
+});
+test('write reruns are blocked, while status reruns only inspect', () => {
+  for (const build of [invocation, requestInvocation]) {
+    assert.throws(() => validateInvocation(build(manifest('submit'), 'submit', {runAttempt: '2'})), /cannot be rerun/);
+    assert.equal(validateInvocation(build(base, 'status', {runAttempt: '2'})).mode, 'status');
+  }
 });
 for (const [name, mutate] of [
   ['missing input', m => delete m.expectedCommit], ['unknown input', m => m.extra = true],
@@ -376,9 +476,50 @@ test('CLI missing inputs fails without printing secret values', () => {
     encoding: 'utf8', env: {PATH: process.env.PATH, ASC_PRIVATE_KEY: 'do-not-print-secret'}});
   assert.equal(result.status, 1); assert.doesNotMatch(result.stdout + result.stderr, /do-not-print|Error:|at main/);
 });
+test('CLI gate reads a request-only Git diff and exact committed bytes without credentials', t => {
+  const f = gateFixture(t), result = f.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(readFileSync(f.outputPath, 'utf8'), /mode=status\nrelease_id=candidate\nmain_sha=[a-f0-9]{40}\n/);
+  assert.match(result.stdout, /no credentials used/);
+  const disabled = f.run([]);
+  assert.equal(disabled.status, 1); assert.match(disabled.stderr, /setup is not enabled/);
+});
+test('CLI rejects a modified request record before credentials', t => {
+  const f = gateFixture(t);
+  writeFileSync(join(f.dir, f.requestPath), readFileSync(join(f.dir, f.requestPath), 'utf8') + '\n');
+  f.git('add', f.requestPath); f.git('commit', '-qm', 'Edit existing request'); f.refresh(f.head);
+  const result = f.run(); assert.equal(result.status, 1); assert.match(result.stderr, /exactly one request JSON/);
+});
+test('CLI rejects mixed request/code changes before credentials', t => {
+  const f = gateFixture(t);
+  writeFileSync(join(f.dir, 'releases/apple/requests/other.json'), '{}');
+  writeFileSync(join(f.dir, 'arbitrary-code.mjs'), 'throw Error("must not execute");');
+  f.git('add', 'releases/apple/requests/other.json', 'arbitrary-code.mjs');
+  f.git('commit', '-qm', 'Mixed request and code'); f.refresh(f.head);
+  const result = f.run(); assert.equal(result.status, 1); assert.match(result.stderr, /exactly one request JSON/);
+  assert.doesNotMatch(result.stderr, /must not execute/);
+});
+test('CLI rejects symlink manifests without reading their targets', t => {
+  const f = gateFixture(t, {symlinkManifest: true}), result = f.run();
+  assert.equal(result.status, 1); assert.match(result.stderr, /regular committed JSON/);
+  assert.doesNotMatch(result.stdout + result.stderr, /do-not-read-synthetic-marker/);
+});
+test('CLI rejects a stale checkout when current origin/main differs', t => {
+  const f = gateFixture(t); f.git('update-ref', 'refs/remotes/origin/main', f.before);
+  const result = f.run(); assert.equal(result.status, 1); assert.match(result.stderr, /exact current main/);
+});
+test('explicit main smoke stays secret-free in the CLI', t => {
+  const f = gateFixture(t); writeFileSync(f.eventPath, JSON.stringify({inputs: {mode: 'smoke'}}));
+  const result = f.run([], {GITHUB_EVENT_NAME: 'workflow_dispatch', ASC_APP_ID: ''});
+  assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /Secret-free setup smoke passed/);
+});
 test('workflow exposes no PR/dev trigger, has read-only token, pinned actions and serialized gated secrets', () => {
   const workflow = readFileSync(new URL('../.github/workflows/apple-release.yml', import.meta.url), 'utf8');
-  assert.doesNotMatch(workflow, /pull_request|branches:|contents: write|id-token: write|npm (?:ci|install)|xcodebuild/);
+  assert.doesNotMatch(workflow, /pull_request|tags:|schedule:|contents: write|id-token: write|npm (?:ci|install)|xcodebuild/);
+  assert.match(workflow, /push:\n    branches: \[main\]\n    paths: \['releases\/apple\/requests\/\*\.json'\]/);
+  assert.match(workflow, /default: status/);
+  assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /github\.actor == 'MetroBummin' && github\.triggering_actor == 'MetroBummin'/);
   assert.match(workflow, /contents: read/); assert.match(workflow, /cancel-in-progress: false/);
   assert.match(workflow, /needs: gate/); assert.match(workflow, /environment: apple-release/);
   assert.match(workflow, /ref: refs\/heads\/main/); assert.match(workflow, /persist-credentials: false/);

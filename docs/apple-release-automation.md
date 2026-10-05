@@ -14,10 +14,13 @@ approved version. No active release manifest or credentials are included.
    inherits that user's app access/role. An Account Holder's individual key remains
    broad. The fallback **team App Manager key** covers all apps and cannot be
    app-scoped. Do not assume an existing key.
-2. Before storing keys, configure GitHub's `apple-release` environment with required
-   reviewers, no self-review/bypass where available, and deployments limited to
-   `main`. If the GitHub plan cannot enforce these protections, leave automation
-   disabled and retain the existing release process.
+2. **Solo profile, requiring explicit security approval:** configure GitHub's
+   `apple-release` environment with Selected branches and tags → **Branch `main`
+   only**, environment secrets, and **no required deployment reviewers**. Requiring
+   the sole operator `MetroBummin` to review with self-review prevented deadlocks;
+   allowing self-review still adds a prompt each run. A team can choose reviewers,
+   accepting those recurring approvals. This PR changes no live setting. If the
+   plan cannot enforce environment secrets/main-only access, keep it disabled.
 3. Store **environment secrets only**: `ASC_PRIVATE_KEY` (downloaded `.p8` text),
    `ASC_KEY_ID`, and `ASC_ISSUER_ID` for team keys only. Individual keys must omit
    issuer ID. Never put credentials in chat, committed files, repository-wide
@@ -32,13 +35,20 @@ team `iss`, individual `sub=user`, audience `appstoreconnect-v1`. Nothing prints
 persists keys/JWTs. Revocation, changed permissions/contracts/membership or Xcode
 Cloud repository/signing access can still require user action.
 
+The solo tradeoff is explicit: the account, connected GitHub credential and everyone
+able to change main/workflows are trusted with release authority and environment
+secrets. Actor/diff checks limit this workflow; they cannot constrain someone who
+can replace it on main. Preserve the existing main policy and limit its writers;
+do not silently weaken branch protection to make a request work. One-time key setup
+removes recurring Apple sign-ins, not the need for the user's exact release instruction.
+
 ## Smoke, exact manifest and operations
 
 After review/merge: **Apple release → Run workflow → main → smoke** runs mock tests
-and a pre-secret gate without Apple calls. The connector exposes neither dispatch
-nor tag creation; an authorized Git client can request this same secret-free check
-with the lightweight tag `apple-release/smoke` on exact current main. Do not create
-release tags during today's independently handled release.
+and a pre-secret gate without Apple calls. Manual mode defaults to GET-only `status`;
+missing release inputs fail before credentials. The connector exposes file creation,
+but neither dispatch nor tag creation: the request path below supports it. No release
+requests are included here or created during today's independently handled release.
 
 Merge a reviewed `releases/apple/<release_id>.json`. Example with fictitious IDs
 and expired read-only authorization:
@@ -74,22 +84,54 @@ UTC expiry within 24 hours (rechecked before each write), plus confirmation
 metadata must already be complete. `MANUAL` holds approval for manual publication;
 `AFTER_APPROVAL` explicitly authorizes availability after Apple's approval.
 
-## Optional bounded release refs
+## Connector-compatible request-only main push
 
-After separately approved security setup, release operators using authorized Git
-(or a future tag-capable connector) can create a lightweight tag
-`apple-release/<status|dry-run|prepare|submit>/<release_id>/<64-character-hash>`
-on **exact current main**, with the manifest already reviewed there. Updates,
-deletions, annotated tags, stale main, wrong hashes and expired/mismatched authority
-fail before secrets. Ordinary PR/development pushes cannot run this workflow.
+After setup, use the user's specific instruction naming the operation, app, source
+commit, version/build, What's New and publication choice to review the manifest.
+It must already be on main. Then append **one new file only** at
+`releases/apple/requests/<request_id>.json`, as `MetroBummin`. Example GET-only setup
+check (`manifestSha256` must be replaced with the exact lowercase file hash):
 
-Before permitting these tags in the environment, enforce an `apple-release/**`
-tag ruleset restricting creation to release operators and prohibiting updates/
-deletion. Keep required environment review; reviewers must verify the tag targets
-reviewed main and inspect the exact manifest/build/publication choice. A push
-workflow comes from its triggering ref: script checks cannot protect against an
-untrusted replacement workflow. Without these external protections, retain
-manual-main-only setup. This PR configures none of these controls.
+```json
+{
+  "schemaVersion": 1,
+  "requestId": "status-candidate",
+  "mode": "status",
+  "releaseId": "candidate",
+  "manifestSha256": "REPLACE-WITH-EXACT-64-CHARACTER-SHA256",
+  "requestedBy": "MetroBummin",
+  "confirmation": ""
+}
+```
+
+Omitted mode defaults to `status`. `prepare`/`submit` require that explicit mode,
+`confirmation=<mode>:<release_id>:<hash>`, and the matching manifest authority/expiry.
+`requestedBy` records the operator; it is not proof of a chat instruction. The caller
+must create the record only after that specific instruction, never from routine
+code pushes or a standing blanket deployment grant. JSON is parsed as data: no
+commands, URLs, code paths or arbitrary arguments are accepted.
+
+Only `main` pushes matching `releases/apple/requests/*.json` trigger. Before secrets,
+the gate checks the complete Git before/after diff: exactly one added request,
+no code/manifest edits, request ID/path match, exact manifest hash, authenticated
+actor/sender/rerun actor `MetroBummin`, and exact current main. It checks real Git
+history, not potentially truncated webhook file lists. Requests and manifests must
+be regular committed files; symlinks fail. Forced/deleted/new-branch pushes, modified
+records, multiple requests, stale refs and unknown fields fail closed. Tags and PRs
+cannot trigger. Writes cannot rerun: inspect status and authorize a fresh request.
+
+The connector's file-create action can append the record if the existing main policy
+allows it; a request-only PR merge by the same operator also works. Its actual push
+principal and ability to start Actions still need a GET-only setup test. GitHub
+suppresses push runs produced by a workflow's `GITHUB_TOKEN`; this design adds no
+token or service to bypass that. If the connector cannot commit under the allowed
+principal/policy, manual main dispatch remains the exact fallback.
+
+Request-only main commits may also match existing Xcode Cloud start conditions or
+other main CI. This workflow never starts a Cloud run, but avoidance of redundant
+Cloud builds is **unverified until those start conditions are inspected**. Do not
+enable this route when it would duplicate builds without separate workflow setup;
+manual dispatch avoids a source push. No Cloud settings are changed here.
 
 ## State handling, evidence and remaining blockers
 
@@ -126,6 +168,10 @@ Official sources checked on 2026-10-05:
 [submit](https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-reviewsubmissions-_id_),
 [beta-group access](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-builds-_id_-relationships-betagroups)
 (available in ASC, outside this workflow).
+
+GitHub sources: [environment configuration](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments),
+[branch/path filters](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushpull_requestpull_request_targetpathspaths-ignore),
+[token-trigger limits](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
 
 Apple's detailed schema pages rendered JavaScript shells; Markdown/OpenAPI downloads
 were blocked. Full current schema verification remains a **pre-write blocker**,

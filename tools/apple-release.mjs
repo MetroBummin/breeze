@@ -9,6 +9,9 @@ const ID = /^[A-Za-z0-9-]{1,100}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA = /^[a-f0-9]{40}$/;
 const DIGEST = /^[a-f0-9]{64}$/;
+const REPOSITORY = 'MetroBummin/breeze';
+const RELEASE_ACTOR = 'MetroBummin';
+const REQUEST_PATH = /^releases\/apple\/requests\/([a-z0-9][a-z0-9-]{0,63})\.json$/;
 const MODES = ['smoke', 'status', 'dry-run', 'prepare', 'submit'];
 const EDITABLE = ['PREPARE_FOR_SUBMISSION'];
 const REVIEW_STATES = ['READY_FOR_REVIEW', 'WAITING_FOR_REVIEW', 'IN_REVIEW', 'UNRESOLVED_ISSUES', 'CANCELING', 'COMPLETING', 'COMPLETE'];
@@ -65,33 +68,63 @@ export function validateManifest(m, {appId, releaseId, mode = 'status', now = Da
   return m;
 }
 
-// This gate runs before Apple secrets are attached. Only exact current-main events
-// can proceed. A release tag binds the operation, release ID, and raw manifest hash.
-export function validateInvocation({event, ref, eventSha, mainSha, inputs = {}, push, raw, appId, now}) {
+function validateMainPush(push, eventSha) {
+  requireThat(push?.created === false && push.deleted === false && push.forced === false &&
+    push.after === eventSha && SHA.test(push.before) && push.before !== '0'.repeat(40) && push.before !== eventSha,
+  'Only ordinary updates of existing main are accepted');
+}
+function requestPath(changes) {
+  requireThat(Array.isArray(changes) && changes.length === 1 && changes[0]?.status === 'A' &&
+    REQUEST_PATH.test(changes[0].path), 'Push must add exactly one request JSON and change nothing else');
+  return changes[0].path;
+}
+function json(raw, name) {
+  requireThat(typeof raw === 'string' && Buffer.byteLength(raw) <= 262144, `Invalid or oversized ${name}`);
+  try { return JSON.parse(raw); } catch { throw new ReleaseError(`Invalid ${name} JSON`); }
+}
+export function validateRequest({push, eventSha, changes, requestRaw}) {
+  validateMainPush(push, eventSha);
+  requireThat(push.sender?.login === RELEASE_ACTOR, 'Request sender is not the release operator');
+  const path = requestPath(changes), request = json(requestRaw, 'request');
+  exactKeys(request, ['schemaVersion', 'requestId', 'releaseId', 'manifestSha256', 'requestedBy', 'confirmation',
+    ...(request && Object.hasOwn(request, 'mode') ? ['mode'] : [])], 'request');
+  const mode = Object.hasOwn(request, 'mode') ? request.mode : 'status';
+  requireThat(request.schemaVersion === 1 && request.requestId === REQUEST_PATH.exec(path)[1] &&
+    request.requestedBy === RELEASE_ACTOR, 'Request identity or operator mismatch');
+  requireThat(['status', 'dry-run', 'prepare', 'submit'].includes(mode) &&
+    typeof request.releaseId === 'string' && SLUG.test(request.releaseId) &&
+    typeof request.manifestSha256 === 'string' && DIGEST.test(request.manifestSha256), 'Invalid bounded request');
+  const write = ['prepare', 'submit'].includes(mode);
+  requireThat(request.confirmation === (write ? `${mode}:${request.releaseId}:${request.manifestSha256}` : ''),
+    'Request requires exact write confirmation or empty read-only confirmation');
+  return {mode, releaseId: request.releaseId, digest: request.manifestSha256, requestId: request.requestId};
+}
+
+// Pre-secret gate: trusted main and operator, with explicit dispatch or one new
+// request binding an already-committed manifest. JSON is data, never executable.
+export function validateInvocation({event, ref, repository, actor, triggeringActor, runAttempt,
+  eventSha, mainSha, inputs = {}, push, changes, requestRaw, raw, appId, now}) {
+  requireThat(repository === REPOSITORY && ref === 'refs/heads/main' &&
+    actor === RELEASE_ACTOR && triggeringActor === RELEASE_ACTOR, 'Trusted repository, main and release operator required');
   requireThat(SHA.test(mainSha) && eventSha === mainSha, 'Request must point to exact current main');
-  if (event === 'push') requireThat(push?.created === true && push.deleted === false && push.forced === false &&
-    push.after === eventSha, 'Only new lightweight release tags are accepted');
-  let mode, releaseId, digest;
+  requireThat(typeof runAttempt === 'string' && /^[1-9]\d{0,3}$/.test(runAttempt), 'Invalid workflow attempt');
+  let mode, releaseId, digest, requestId;
   if (event === 'workflow_dispatch') {
-    requireThat(ref === 'refs/heads/main', 'Manual runs must use main');
-    mode = inputs.mode ?? 'smoke'; releaseId = inputs.release_id; digest = inputs.manifest_sha256;
-  } else if (event === 'push' && ref === 'refs/tags/apple-release/smoke') {
-    return {mode: 'smoke'};
+    mode = inputs.mode === undefined ? 'status' : inputs.mode; releaseId = inputs.release_id; digest = inputs.manifest_sha256;
   } else if (event === 'push') {
-    const match = /^refs\/tags\/apple-release\/(status|dry-run|prepare|submit)\/([a-z0-9][a-z0-9-]{0,63})\/([a-f0-9]{64})$/.exec(ref);
-    requireThat(match, 'Invalid bounded release tag');
-    [, mode, releaseId, digest] = match;
+    ({mode, releaseId, digest, requestId} = validateRequest({push, eventSha, changes, requestRaw}));
   } else throw new ReleaseError('Unsupported event');
   requireThat(MODES.includes(mode), 'Invalid operation');
   if (mode === 'smoke') return {mode};
-  requireThat(SLUG.test(releaseId) && DIGEST.test(digest) && digest === manifestDigest(raw), 'Manifest identity or digest mismatch');
-  let m;
-  try { m = JSON.parse(raw); } catch { throw new ReleaseError('Invalid manifest JSON'); }
+  requireThat(typeof releaseId === 'string' && SLUG.test(releaseId) && typeof digest === 'string' &&
+    DIGEST.test(digest) && typeof raw === 'string' && digest === manifestDigest(raw), 'Manifest identity or digest mismatch');
+  const m = json(raw, 'manifest');
   validateManifest(m, {mode, releaseId, appId, now});
-  if (event === 'workflow_dispatch' && ['prepare', 'submit'].includes(mode)) {
-    requireThat(inputs.confirmation === `${mode}:${releaseId}:${digest}`, 'Explicit write confirmation required');
+  if (['prepare', 'submit'].includes(mode)) {
+    requireThat(runAttempt === '1', 'Write runs cannot be rerun; inspect status and authorize a fresh request');
+    if (event === 'workflow_dispatch') requireThat(inputs.confirmation === `${mode}:${releaseId}:${digest}`, 'Explicit write confirmation required');
   }
-  return {mode, releaseId, digest, manifest: m};
+  return {mode, releaseId, digest, ...(requestId ? {requestId} : {}), manifest: m};
 }
 
 export function tokenFactory(env, clock = Date.now) {
@@ -325,18 +358,38 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
 }
 
 function git(...args) { return execFileSync('git', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']}).trim(); }
+function trackedJson(path) {
+  const entry = git('ls-tree', 'HEAD', '--', path);
+  requireThat(/^100644 blob [a-f0-9]{40}\t/.test(entry) && entry.split('\t')[1] === path,
+    'Request and manifest must be regular committed JSON files');
+  // Preserve exact bytes for the digest; never follow a worktree symlink.
+  return execFileSync('git', ['show', `HEAD:${path}`], {encoding: 'utf8', maxBuffer: 262144, stdio: ['ignore', 'pipe', 'pipe']});
+}
 async function main(env) {
   requireThat(!env.ACTIONS_STEP_DEBUG || env.ACTIONS_STEP_DEBUG !== 'true', 'Disable Actions step debug for Apple operations');
   const event = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, 'utf8'));
   const inputs = event.inputs ?? {};
-  const tagMatch = /^refs\/tags\/apple-release\/[^/]+\/([^/]+)\//.exec(env.GITHUB_REF ?? '');
-  const releaseId = tagMatch?.[1] ?? inputs.release_id;
-  const mode = env.GITHUB_REF === 'refs/tags/apple-release/smoke' ? 'smoke' :
-    tagMatch ? env.GITHUB_REF.split('/')[3] : inputs.mode ?? 'smoke';
+  requireThat(env.GITHUB_REPOSITORY === REPOSITORY && env.GITHUB_REF === 'refs/heads/main' &&
+    env.GITHUB_ACTOR === RELEASE_ACTOR && env.GITHUB_TRIGGERING_ACTOR === RELEASE_ACTOR, 'Trusted repository, main and release operator required');
+  const mainSha = git('rev-parse', 'refs/remotes/origin/main');
+  requireThat(git('rev-parse', 'HEAD') === mainSha && env.GITHUB_SHA === mainSha, 'Request must point to exact current main');
+  let mode = inputs.mode ?? 'status', releaseId = inputs.release_id, changes, requestRaw;
+  if (env.GITHUB_EVENT_NAME === 'push') {
+    validateMainPush(event, env.GITHUB_SHA);
+    git('merge-base', '--is-ancestor', event.before, 'HEAD');
+    const fields = git('diff', '--name-status', '--no-renames', '-z', event.before, 'HEAD', '--').split('\0');
+    requireThat(fields.pop() === '' && fields.length % 2 === 0, 'Invalid request diff');
+    changes = [];
+    for (let i = 0; i < fields.length; i += 2) changes.push({status: fields[i], path: fields[i + 1]});
+    requestRaw = trackedJson(requestPath(changes));
+    ({mode, releaseId} = validateRequest({push: event, eventSha: env.GITHUB_SHA, changes, requestRaw}));
+  } else requireThat(env.GITHUB_EVENT_NAME === 'workflow_dispatch', 'Unsupported event');
   requireThat(mode === 'smoke' || SLUG.test(releaseId), 'Invalid release ID');
-  const raw = mode === 'smoke' ? '' : readFileSync(`releases/apple/${releaseId}.json`, 'utf8');
+  const raw = mode === 'smoke' ? '' : trackedJson(`releases/apple/${releaseId}.json`);
   const invocation = validateInvocation({event: env.GITHUB_EVENT_NAME, ref: env.GITHUB_REF,
-    eventSha: env.GITHUB_SHA, mainSha: git('rev-parse', 'HEAD'), inputs, push: event, raw, appId: env.ASC_APP_ID});
+    repository: env.GITHUB_REPOSITORY, actor: env.GITHUB_ACTOR, triggeringActor: env.GITHUB_TRIGGERING_ACTOR,
+    runAttempt: env.GITHUB_RUN_ATTEMPT, eventSha: env.GITHUB_SHA, mainSha, inputs, push: event,
+    changes, requestRaw, raw, appId: env.ASC_APP_ID});
   if (invocation.manifest) git('merge-base', '--is-ancestor', invocation.manifest.expectedCommit, 'HEAD');
   if (process.argv.includes('--gate')) {
     requireThat(env.GITHUB_OUTPUT, 'GitHub output file required');

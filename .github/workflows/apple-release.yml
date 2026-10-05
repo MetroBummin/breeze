@@ -7,7 +7,7 @@ on:
         description: Operation (smoke uses no Apple credentials)
         type: choice
         options: [smoke, status, dry-run, prepare, submit]
-        default: smoke
+        default: status
         required: true
       release_id:
         description: Reviewed releases/apple/<id>.json on main
@@ -19,9 +19,8 @@ on:
         description: Writes require <mode>:<release_id>:<manifest_sha256>
         type: string
   push:
-    tags:
-      - apple-release/smoke
-      - apple-release/*/*/*
+    branches: [main]
+    paths: ['releases/apple/requests/*.json']
 
 permissions:
   contents: read
@@ -32,7 +31,7 @@ concurrency:
 
 jobs:
   gate:
-    if: github.repository == 'MetroBummin/breeze'
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/main' && github.actor == 'MetroBummin' && github.triggering_actor == 'MetroBummin'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
@@ -49,7 +48,7 @@ jobs:
           node-version: '24.19.0'
       - name: Mock contracts (no secrets or Apple calls)
         run: node --test tests/verify-apple-release.mjs
-      - name: Validate exact main, manifest and authorization
+      - name: Validate actor, request-only diff, exact manifest and authorization
         id: gate
         env:
           ASC_APP_ID: ${{ vars.ASC_APP_ID }}
