@@ -134,7 +134,13 @@ try{
       assert.equal(await page.textContent('.ap-title'),'latest-shell');assert.match(await page.locator('.ap-hero img').getAttribute('src'),/latest-shell/);
       await page.evaluate(()=>window.__heldBodies.get('https://example.test/late-old').reject(Error('late old failure')));await page.evaluate(()=>window.__pendingA);
       assert.equal(await page.textContent('.ap-title'),'latest-shell');assert.equal(await page.locator('#article-preview').getAttribute('data-metadata'),'loading');
-      await page.evaluate(()=>{articlePreviewClose();window.__heldBodies.get('https://example.test/latest-shell').resolve('<article/>');});await page.evaluate(()=>window.__pendingB);
+      await page.evaluate(async()=>{
+        // dialog.close() queues its event. Finish this fixture's close before
+        // the next fixture starts counting modal reopen/close events.
+        const closed=new Promise(resolve=>articlePreviewDialog.addEventListener('close',resolve,{once:true}));
+        articlePreviewClose();window.__heldBodies.get('https://example.test/latest-shell').resolve('<article/>');
+        await closed;
+      });await page.evaluate(()=>window.__pendingB);
       assert(!await page.locator('#article-preview').evaluate(n=>n.open));assert.deepEqual(await count(),{memory:0,stored:0,positions:0,images:0});
     });
     await page.evaluate(()=>{fetchArticleHtml=window.__bodyFetch;parseArticleHtml=window.__bodyParse;});
