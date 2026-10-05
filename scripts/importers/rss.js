@@ -172,16 +172,26 @@ function rssImage(entry, html, base){
     const kind=rssLocal(node);
     if(!['content','thumbnail','enclosure','link'].includes(kind))continue;
     if(kind==='link' && node.getAttribute('rel')!=='enclosure')continue;
-    const type=node.getAttribute('type') || '';
+    const type=(node.getAttribute('type') || '').trim().toLowerCase();
+    const medium=(node.getAttribute('medium') || '').trim().toLowerCase();
+    if(medium && medium!=='image')continue;
     if((kind==='enclosure'||kind==='link') && !type.startsWith('image/'))continue;
     if(type && !type.startsWith('image/'))continue;
     const src=rssAbsolute(node.getAttribute('url')||node.getAttribute('href'),base);
     if(src && !tooSmall(node) && !ARTICLE_IMG_BAD.test(src))return src;
   }
-  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
-  for(const img of doc.querySelectorAll('img')){
-    const src=rssAbsolute(articleBestSrc(img),base);
-    if(src && !tooSmall(img) && !ARTICLE_IMG_BAD.test(src))return src;
+  // The body and the photo need not live in the same feed field. A publisher
+  // may supply image-less full content and a photo in its description/summary.
+  // Inspect only those supplied fields; never fetch an article to fill a cover.
+  const supplied=new Set([String(html || ''),...['encoded','content','description','summary']
+    .map(name=>rssText(entry,[name]))]);
+  for(const value of supplied){
+    if(!value)continue;
+    const doc = new DOMParser().parseFromString(value.slice(0,200000), 'text/html');
+    for(const img of doc.querySelectorAll('img')){
+      const src=rssAbsolute(articleBestSrc(img),base);
+      if(src && !tooSmall(img) && !ARTICLE_IMG_BAD.test(src))return src;
+    }
   }
   return '';
 }
@@ -574,6 +584,7 @@ async function importRssEntry(entry, card){
   if(card.classList.contains('busy') || card.classList.contains('rss-pending'))return;
   card.classList.add('busy');
   const preparation=articlePreviewPrepare(entry,card);
+  const selectedEntry=entry;
   const options={preview:true,present:!preparation,deferSave:true};
   const intent=++readerOpenIntent;
   try{
@@ -583,12 +594,24 @@ async function importRssEntry(entry, card){
     if(entry.readUrl)book=await ingestArticle(entry.readUrl,{...entry,discoveredFromUrl:entry.url,...options});
     else if(entry.kind)book=await ingestFeedPost(entry,options);
     else book=await ingestArticle(entry.url,{...entry,preparedArticle:rssPreparedArticles.get(articleUrlKey(entry.url)),...options});
+    rssSelectedCover(selectedEntry,card,book);
     if(preparation)preparation.finish(book);
   }catch(error){
     // A transient read/storage failure must not delete cards or decoded covers.
     if(preparation)preparation.fail(()=>importRssEntry(entry,card));
     else toast(error?.code?.startsWith('social_') ? error.message : '지금은 글을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
   }finally{card.classList.remove('busy');}
+}
+// An article selected by the person has already supplied its cover. Project it
+// back to that same discovery entry/card; never fetch a page just for a cover.
+function rssSelectedCover(entry,card,book){
+  const photo=articleDrafts.get(book)?.coverUrl;
+  if(entry.photo || !photo || ARTICLE_IMG_BAD.test(photo) || !rssCands.some(group=>group.includes(entry)))return;
+  entry.photo=photo;entry.coverFallback=false;
+  if(card.isConnected && card.dataset.rssUrl===entry.url){
+    rssCardIdentities.set(card,rssCardIdentity(entry));
+    card.dataset.photoStarted='true';void rssCardPhoto(card,entry);
+  }
 }
 /* A feed's own post body is enough for short posts. It never becomes live HTML:
    only text, explicit marks and validated image URLs enter the existing Reader. */

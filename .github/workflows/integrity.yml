@@ -47,6 +47,26 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: RSS and current-cover chooser regressions in Chromium and WebKit
+        run: |
+          status=0
+          for engine in chromium webkit; do
+            BREEZE_QA_ENGINE=$engine BREEZE_COVER_PROOF=/tmp/breeze-cover-chooser/$engine node tests/verify-cover-chooser-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_COVER_PROOF=/tmp/breeze-rss-covers/$engine node tests/verify-rss-covers-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_ENRICHMENT_CURRENT_ONLY=1 BREEZE_RSS_ENRICHMENT_PROOF=/tmp/breeze-rss-enrichment/$engine node tests/compare-rss-cover-enrichment-browser.mjs || status=1
+          done
+          exit "$status"
+      - name: Cover regression screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cover-regression-proof
+          path: |
+            /tmp/breeze-cover-chooser/
+            /tmp/breeze-rss-covers/
+            /tmp/breeze-rss-enrichment/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: RSS intent boundary and catalog browser contracts
         run: |
           for engine in chromium webkit; do

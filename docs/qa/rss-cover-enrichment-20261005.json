@@ -1,0 +1,1208 @@
+{
+  "engine": "chromium",
+  "fixture": {
+    "feed": "https://www.tmz.com/rss.xml",
+    "article": "https://stories.fixture/news/the-reading-story",
+    "imageUrl": "https://images.fixture/article-photo.jpg",
+    "feedSuppliesPhoto": false,
+    "articleImageFixtures": [
+      "og-photo",
+      "body-only-photo"
+    ]
+  },
+  "scope": "Exact historical RSS and article importer scripts on a common current app shell, not separate native builds. All network mocked.",
+  "rows": [
+    {
+      "name": "main236",
+      "fixture": "og-photo",
+      "sha": "34b5dc9ba04ffe0f23c61bd89c0163908bd097c6",
+      "sourceSha256": "c706bbb23f4381efd9b03a74cb8a43e048f848c82df0622af021c1007ba07d51",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "afterSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        },
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 1889
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "main236",
+      "fixture": "body-only-photo",
+      "sha": "34b5dc9ba04ffe0f23c61bd89c0163908bd097c6",
+      "sourceSha256": "c706bbb23f4381efd9b03a74cb8a43e048f848c82df0622af021c1007ba07d51",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "afterSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        },
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 2285
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "PR97",
+      "fixture": "og-photo",
+      "sha": "d103bb31f075404d5498dfa1a15a1e60def7c81a",
+      "sourceSha256": "ad89a41d43b5547d15620382dc2bb8f2ebad10fe1f77df50cce0ea48402f2965",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "afterSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        },
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 1889
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "PR97",
+      "fixture": "body-only-photo",
+      "sha": "d103bb31f075404d5498dfa1a15a1e60def7c81a",
+      "sourceSha256": "ad89a41d43b5547d15620382dc2bb8f2ebad10fe1f77df50cce0ea48402f2965",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "afterSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 1
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        },
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 2285
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "main238",
+      "fixture": "og-photo",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "sourceSha256": "c16ff27bce68d9de3a17aa671994faef78062f7fc2231aea8214b68e78b84365",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "afterSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 1889
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "main238",
+      "fixture": "body-only-photo",
+      "sha": "7f64075aa1a4b82c74ec7bb829409b99d09e6d81",
+      "sourceSha256": "c16ff27bce68d9de3a17aa671994faef78062f7fc2231aea8214b68e78b84365",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "afterSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": true,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 2285
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "metadata-fixes",
+      "fixture": "og-photo",
+      "sha": "4e24903",
+      "sourceSha256": "dc5d632488c91395907d12721f089ca651ca741fc28cf934e4fbe6a018d27740",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "afterSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 1889
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "metadata-fixes",
+      "fixture": "body-only-photo",
+      "sha": "4e24903",
+      "sourceSha256": "dc5d632488c91395907d12721f089ca651ca741fc28cf934e4fbe6a018d27740",
+      "articleSourceSha256": "77db636b61981bf14276c715a0aac5f962abfa3c407f32c59d1dfd3ca0398b43",
+      "beforeSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "afterSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": true,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 2285
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "selected-intent-fix",
+      "fixture": "og-photo",
+      "sha": "working-tree",
+      "sourceSha256": "1690940f12b0e65c20ed962f5b76aa087aac749becbf9f22e7a161f0419090fa",
+      "articleSourceSha256": "dbf953fb24ccdcee07c8eaf89ac1a570c18be253263f33eb164b1eec66fc66ca",
+      "beforeSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "afterSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "retainedAfterRerender": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 1889
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        }
+      ]
+    },
+    {
+      "name": "selected-intent-fix",
+      "fixture": "body-only-photo",
+      "sha": "working-tree",
+      "sourceSha256": "1690940f12b0e65c20ed962f5b76aa087aac749becbf9f22e7a161f0419090fa",
+      "articleSourceSha256": "dbf953fb24ccdcee07c8eaf89ac1a570c18be253263f33eb164b1eec66fc66ca",
+      "beforeSelection": {
+        "entryPhoto": "",
+        "fallback": true,
+        "cardPhoto": false,
+        "cardImage": "",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "afterSelection": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": true,
+        "previewPhoto": true,
+        "previewImage": "https://images.fixture/article-photo.jpg",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "retainedAfterRerender": {
+        "entryPhoto": "https://images.fixture/article-photo.jpg",
+        "fallback": false,
+        "cardPhoto": true,
+        "cardImage": "https://images.fixture/article-photo.jpg",
+        "previewOpen": false,
+        "previewPhoto": false,
+        "previewImage": "",
+        "books": 0,
+        "preparedBodies": 0
+      },
+      "homeRequests": [
+        {
+          "kind": "feed",
+          "target": "https://www.dexerto.com/feed/category/entertainment/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://theconversation.com/global/articles.atom",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.tmz.com/rss.xml",
+          "bytes": 292
+        },
+        {
+          "kind": "feed",
+          "target": "https://dailydot.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.propublica.org/feeds/propublica/main",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.nasa.gov/technology/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://bloody-disgusting.com/feed/",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.wired.com/feed/rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://allthatsinteresting.com/feed",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/technology",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://www.reddit.com/r/science/.rss",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/culture",
+          "bytes": 30
+        },
+        {
+          "kind": "feed",
+          "target": "https://medium.com/feed/tag/business",
+          "bytes": 30
+        }
+      ],
+      "selectedRequests": [
+        {
+          "kind": "article",
+          "target": "https://stories.fixture/news/the-reading-story",
+          "bytes": 2285
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        },
+        {
+          "kind": "mock-introduction",
+          "target": "https://relay.fixture/functions/v1/article-preview",
+          "bytes": 0
+        },
+        {
+          "kind": "image",
+          "target": "https://images.fixture/article-photo.jpg",
+          "bytes": 235150
+        }
+      ]
+    }
+  ]
+}

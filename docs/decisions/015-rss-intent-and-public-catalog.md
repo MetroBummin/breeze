@@ -29,6 +29,19 @@ actual paragraphs supply the introduction request. Read becomes available when
 the body is ready, independently of the optional introduction. First-visible
 shell, body/Read-ready and introduction-ready latency are distinct measurements.
 
+The 238 device follow-up confirms a visible tradeoff in this decision: 236/PR97
+previously fetched article pages to supply photographs absent from a feed. Cold
+238 discovery intentionally omits that work. A missing feed photo therefore
+does not establish that its article lacks a photograph. After explicit selection,
+the parsed OG photo or existing body image also updates that same current
+discovery entry and retained card. Replaced entries cannot receive stale results.
+This projection adds no article request or persistent body/image; its photo stays
+in the current discovery document. Supplied publisher photos retain priority.
+Cold unselected cards still require feed photo metadata to show a photograph;
+restoring page-only photos before selection would require revisiting the
+no-background-article-fetch constraint. See the follow-up
+[comparison evidence](../qa/rss-covers-20261005.md).
+
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport
 can still contain embedded article bodies; only the optional catalog removes
