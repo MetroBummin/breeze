@@ -18,6 +18,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const profile=mkdtempSync(resolve(tmpdir(),'breeze-recent-'));
  const launch={executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined,viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'};
  let context=await engine.launchPersistentContext(profile,launch);
+ let phase='initial';
  try{
  const page=await context.newPage();page.setDefaultTimeout(20000);
  await context.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
@@ -65,6 +66,53 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   show('home');await deleteBook(book);return result;
  },ids[3]);
  assert.deepEqual(failed,{shellShown:true,recency:0,progress:0,resume:ids[2]},'Failed rendering must not mark reading');await check(ids[2]);
+ const interruptions=[];
+ for(const id of [ids[3],ids[2]]){
+  phase='interrupt setup '+id;
+  await open(id);await page.evaluate(async()=>{
+   if(currentReaderMode!=='original')await switchReaderMode('original');
+   // Use a readable body location: an EPUB's image-only cover need not have a
+   // corresponding text paragraph and is outside this successful-landing case.
+   const pi=curBook.paras.findIndex(p=>p.length>100&&!p.startsWith(IMG_MARK));
+   if(pi>=0)await restoreOriginalAnchor(sourceAnchorForParagraph(curBook,pi),readerModeChangeToken);
+   show('home');
+  });
+  await open(ids[0]);await check(ids[0]);
+  await page.evaluate(id=>{
+   const restore=restoreOriginalAnchor,book=books.find(b=>b.id===id);
+   window.interruptQA={restore,before:{readAt:localReadAt(id),resume:load(HOME_RESUME_KEY,null),position:{...posOf(id)}}};
+   restoreOriginalAnchor=async(...args)=>{interruptQA.waiting=true;await new Promise(r=>interruptQA.release=r);return restore(...args);};
+   interruptQA.opening=openBook(book);
+  },id);
+  phase='original waiting '+id;await page.waitForFunction(()=>interruptQA.waiting===true);
+  assert.equal(await page.locator('#modefab').isEnabled(),true);
+  phase='text landing '+id;await page.locator('#modefab').click();await page.waitForFunction(()=>currentReaderMode==='text'&&!readerPositionPending());
+  const interrupted=await page.evaluate(async id=>{
+   const landed={book:curBook.id,mode:currentReaderMode,readAt:localReadAt(id),resume:load(HOME_RESUME_KEY,null),position:{...posOf(id)}};
+   interruptQA.release();await interruptQA.opening;restoreOriginalAnchor=interruptQA.restore;
+   return {id,before:interruptQA.before,landed,afterLate:{...posOf(id)},lateReadAt:localReadAt(id)};
+  },id);interruptions.push(interrupted);
+  assert.equal(interrupted.landed.resume,id,`New text owner did not record reading: ${JSON.stringify(interrupted)}`);
+  assert.ok(interrupted.landed.readAt>interrupted.before.readAt);
+  assert.deepEqual(interrupted.afterLate,interrupted.landed.position,'Late original owner changed canonical progress');
+  assert.equal(interrupted.lateReadAt,interrupted.landed.readAt,'Late original owner recorded a second read');
+  await check(id);
+ }
+ // Cancelling the replacement text landing in the same input turn must not
+ // inherit permission to mark an opening that has already left Reader.
+ await open(ids[3]);await page.evaluate(async()=>{await switchReaderMode('original');show('home');});
+ await open(ids[0]);await check(ids[0]);
+ await page.evaluate(id=>{
+  const restore=restoreOriginalAnchor;window.cancelModeQA={restore,before:localReadAt(id)};
+  restoreOriginalAnchor=async(...args)=>{cancelModeQA.waiting=true;await new Promise(r=>cancelModeQA.release=r);return restore(...args);};
+  cancelModeQA.opening=openBook(books.find(b=>b.id===id));
+ },ids[3]);
+ await page.waitForFunction(()=>cancelModeQA.waiting===true);
+ const cancelledMode=await page.evaluate(async id=>{
+  document.getElementById('modefab').click();show('home');cancelModeQA.release();await cancelModeQA.opening;
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));restoreOriginalAnchor=cancelModeQA.restore;
+  return {before:cancelModeQA.before,after:localReadAt(id),resume:load(HOME_RESUME_KEY,null)};
+ },ids[3]);assert.deepEqual(cancelledMode,{before:cancelledMode.before,after:cancelledMode.before,resume:ids[0]});await check(ids[0]);
  // A navigation flush must capture the current position even before debounce.
  await open(ids[1]);const flushed=await page.evaluate(()=>{
   const id=curBook.id,node=document.querySelector('#rtext [data-pi="10"]');
@@ -81,8 +129,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const restarted=await context.newPage();await restarted.goto(url);await restarted.evaluate(()=>homeReady);
  const durableOrder=await restarted.evaluate(()=>{renderLongformLibrary();return {home:[...document.querySelectorAll('#shelf [data-local-book]')].map(n=>n.dataset.localBook),library:[...document.querySelectorAll('#longform-grid [data-local-book]')].map(n=>n.dataset.localBook),resume:homeResumeBook().id};});
  assert.equal(durableOrder.home[0],ids[0]);assert.deepEqual(durableOrder.home,durableOrder.library);assert.equal(durableOrder.resume,ids[0]);
- results.push({engine:engine.name(),pass:true,snapshots,failed,flushed,durableOrder});
- }catch(error){results.push({engine:engine.name(),pass:false,error:String(error)});await context.pages().at(-1)?.screenshot({path:`${proof}/${engine.name()}-failure.png`});}
+ results.push({engine:engine.name(),pass:true,snapshots,failed,interruptions,cancelledMode,flushed,durableOrder});
+ }catch(error){results.push({engine:engine.name(),pass:false,phase,error:String(error),state:await context.pages().at(-1)?.evaluate(()=>({book:curBook?.id,mode:currentReaderMode,pending:readerPositionPending(),waiting:window.interruptQA?.waiting,owner:readerPositionRestoration&&{book:readerPositionRestoration.book?.id,mode:readerPositionRestoration.mode,onRestored:typeof readerPositionRestoration.onRestored}})).catch(()=>null)});await context.pages().at(-1)?.screenshot({path:`${proof}/${engine.name()}-failure.png`});}
  finally{await context.close();rmSync(profile,{recursive:true,force:true});}
 }}finally{server.close();}
 writeFileSync(proof+'/results.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results,null,2));assert.ok(results.every(r=>r.pass));

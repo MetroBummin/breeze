@@ -411,6 +411,10 @@ async function switchReaderMode(mode,options){
 
   const changeToken=++readerModeChangeToken;
   const bookAtStart=curBook;
+  // A mode change can take over an unfinished book opening. Carry its read
+  // commitment with the restoration owner, not the superseded open promise.
+  const onRestored=readerPositionRestoration?.book===bookAtStart
+    ? readerPositionRestoration.onRestored : null;
   const restoring=readerPositionPending(),savedPosition=posOf(curBook.id);
   // A pending shell is not the source reading location of a newer request.
   const previousMode = restoring ? savedPosition.mode||'text' : currentReaderMode;
@@ -452,7 +456,7 @@ async function switchReaderMode(mode,options){
   // The destination mode is a requested surface until its anchor has landed.
   // One operation owns that restoration; neither pixels nor animation state
   // can declare a reading position ready. A newer operation replaces this owner.
-  const positionRestoration={book:bookAtStart,mode,changeToken};
+  const positionRestoration={book:bookAtStart,mode,changeToken,onRestored};
   readerPositionRestoration=positionRestoration;
   const ownsPosition=()=>readerPositionRestoration===positionRestoration
     &&changeToken===readerModeChangeToken&&curBook===bookAtStart&&currentReaderMode===mode;
@@ -463,6 +467,7 @@ async function switchReaderMode(mode,options){
     // mode, logical progress and its resume anchor through the ordinary writer.
     if(options.initial)rememberReaderMode(mode);
     else saveReadingState();
+    if(onRestored)onRestored();
     releaseReaderPillProgress();
     return true;
   };

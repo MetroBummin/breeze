@@ -416,6 +416,12 @@ async function openBook(b,options={}){
   const firstOpen = !initialPosition.t;
   /* Progress freshness belongs to location changes. A first-open marker is
      created only after the document and its saved location are ready. */
+  positionOpening.onRestored=()=>{
+    if(!alive()||curBook!==b||b.transient)return;
+    const position=posOf(b.id);
+    if(firstOpen&&!position.t){positions[b.id]={...position,t:Date.now()};save(LS_POS,positions);}
+    rememberLocalReading(b);
+  };
   updateReaderModeControls();
   try{
   const original = prepared ? prepared.original : (bookSupportsOriginal(b) ? await originalGetForBook(b) : null);
@@ -433,18 +439,14 @@ async function openBook(b,options={}){
     if(reuse&&(!reusedWords||reusedMode!=='text'))refreshReaderWords();
     presented();
     await new Promise(resolve=>requestAnimationFrame(()=>{
-      if(alive()&&curBook===b){
+      if(alive()&&curBook===b&&readerPositionRestoration===positionOpening){
         const pos=posOf(b.id);
         if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
         lastAnchor=captureAnchor(); updatePfill(true);
+        positionOpening.onRestored();
       }
       resolve();
     }));
-  }
-  if(alive()&&curBook===b&&!b.transient){
-    const position=posOf(b.id);
-    if(firstOpen&&!position.t){positions[b.id]={...position,t:Date.now()};save(LS_POS,positions);}
-    rememberLocalReading(b);
   }
   }finally{
     if(readerPositionRestoration===positionOpening)readerPositionRestoration=null;
