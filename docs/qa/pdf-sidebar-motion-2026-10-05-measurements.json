@@ -1,0 +1,1055 @@
+{
+  "baseCommit": "93d38f2a73069910e2bc7e293a436f2702677519",
+  "release": "1.8 (235)",
+  "browser": "Chromium 151.0.7922.173",
+  "webKit": "Unavailable: download mirrors returned 403 Domain forbidden",
+  "before": [
+    {
+      "engine": "chromium",
+      "route": "button-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 13.20000000006985,
+      "halfTravelMs": [
+        27.100000000093132,
+        43.60000000009313
+      ],
+      "ninetyTravelMs": [
+        93.90000000002328,
+        110.30000000004657
+      ],
+      "halfTravelTimelineMs": [
+        16.645000000051535,
+        33.34500000005147
+      ],
+      "finishedFrameMs": 248.70000000006985
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 13.79999999993015,
+      "halfTravelMs": [
+        188.90000000002328,
+        197.79999999993015
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.72700000002027,
+        183.32700000002023
+      ],
+      "finishedFrameMs": 230.79999999993015
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 188,
+      "note": "Synthetic contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 0.19999999995343387,
+      "halfTravelMs": [
+        19.400000000023283,
+        35.79999999993015
+      ],
+      "ninetyTravelMs": [
+        85.90000000002328,
+        102.40000000002328
+      ],
+      "halfTravelTimelineMs": [
+        16.680999999983293,
+        33.28099999998324
+      ],
+      "finishedFrameMs": 235.59999999997672
+    },
+    {
+      "engine": "chromium",
+      "route": "backdrop",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 12.70000000006985,
+      "halfTravelMs": [
+        179.70000000006985,
+        196.30000000004657
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.6969999999659,
+        183.29699999996586
+      ],
+      "finishedFrameMs": 232.20000000006985
+    },
+    {
+      "engine": "chromium",
+      "route": "button-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 14.29999999993015,
+      "halfTravelMs": [
+        31.599999999976717,
+        48.5
+      ],
+      "ninetyTravelMs": [
+        98.09999999997672,
+        114.69999999995343
+      ],
+      "halfTravelTimelineMs": [
+        16.679000000048294,
+        33.27900000004824
+      ],
+      "finishedFrameMs": 247.89999999990687
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 13.599999999976717,
+      "halfTravelMs": [
+        180.59999999997672,
+        197.5
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.66100000001728,
+        183.361000000017
+      ],
+      "finishedFrameMs": 230.29999999993015
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 188,
+      "note": "Synthetic contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 0.19999999995343387,
+      "halfTravelMs": [
+        20.099999999976717,
+        36.300000000046566
+      ],
+      "ninetyTravelMs": [
+        86.40000000002328,
+        103.09999999997672
+      ],
+      "halfTravelTimelineMs": [
+        16.71499999998005,
+        33.41499999998021
+      ],
+      "finishedFrameMs": 236.5
+    },
+    {
+      "engine": "chromium",
+      "route": "escape",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 6.5,
+      "halfTravelMs": [
+        173.59999999997672,
+        190.30000000004657
+      ],
+      "ninetyTravelMs": [
+        207,
+        223.59999999997672
+      ],
+      "halfTravelTimelineMs": [
+        166.6290000000359,
+        183.32900000003605
+      ],
+      "finishedFrameMs": 242.40000000002328
+    },
+    {
+      "engine": "chromium",
+      "route": "button-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 14.5,
+      "halfTravelMs": [
+        31.699999999953434,
+        48.29999999993015
+      ],
+      "ninetyTravelMs": [
+        98.5,
+        115.09999999997672
+      ],
+      "halfTravelTimelineMs": [
+        16.611000000004594,
+        33.31100000000475
+      ],
+      "finishedFrameMs": 248.69999999995343
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 13.899999999906868,
+      "halfTravelMs": [
+        181,
+        197.89999999990687
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.69299999997378,
+        183.2929999999733
+      ],
+      "finishedFrameMs": 230.5
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 188,
+      "note": "Synthetic contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 0.40000000002328306,
+      "halfTravelMs": [
+        20.199999999953434,
+        36.699999999953434
+      ],
+      "ninetyTravelMs": [
+        86.69999999995343,
+        103.30000000004657
+      ],
+      "halfTravelTimelineMs": [
+        16.647000000050483,
+        33.34700000004975
+      ],
+      "finishedFrameMs": 236.80000000004657
+    },
+    {
+      "engine": "chromium",
+      "route": "backdrop",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.400000000023283,
+      "halfTravelMs": [
+        181.69999999995343,
+        198.5
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.66300000003264,
+        183.3630000000328
+      ],
+      "finishedFrameMs": 234.59999999997672
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 205,
+      "note": "Trusted Chromium CDP contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "trusted-edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 11.699999999953434,
+      "halfTravelMs": [
+        28.5,
+        45.199999999953434
+      ],
+      "ninetyTravelMs": [
+        95.39999999990687,
+        112
+      ],
+      "halfTravelTimelineMs": [
+        16.653000000049545,
+        33.353000000049704
+      ],
+      "finishedFrameMs": 245.09999999997672
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 13.800000000046566,
+      "halfTravelMs": [
+        181.70000000006985,
+        197.5
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.63500000001807,
+        183.33500000001823
+      ],
+      "finishedFrameMs": 230.30000000004657
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 207,
+      "note": "Trusted Chromium CDP contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "trusted-edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 9.70000000006985,
+      "halfTravelMs": [
+        27,
+        43.60000000009313
+      ],
+      "ninetyTravelMs": [
+        93.40000000002328,
+        110.30000000004657
+      ],
+      "halfTravelTimelineMs": [
+        16.625000000034973,
+        33.32500000003513
+      ],
+      "finishedFrameMs": 243.5
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.199999999953434,
+      "halfTravelMs": [
+        181.29999999993015,
+        198
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.70700000000414,
+        183.30700000000456
+      ],
+      "finishedFrameMs": 230.90000000002328
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 206,
+      "note": "Trusted Chromium CDP contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "trusted-edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.2, 0.75, 0.25, 1)",
+      "firstFrameMs": 10.599999999976717,
+      "halfTravelMs": [
+        27.79999999993015,
+        44.29999999993015
+      ],
+      "ninetyTravelMs": [
+        94.5,
+        111.19999999995343
+      ],
+      "halfTravelTimelineMs": [
+        16.5970000000204,
+        33.29700000002056
+      ],
+      "finishedFrameMs": 244.69999999995343
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.5,
+      "halfTravelMs": [
+        181.90000000002328,
+        198.40000000002328
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.67899999998957,
+        183.37899999998973
+      ],
+      "finishedFrameMs": 231.20000000006985
+    },
+    {
+      "engine": "chromium",
+      "browserVersion": "151.0.7922.173",
+      "pageErrors": []
+    }
+  ],
+  "after": [
+    {
+      "engine": "chromium",
+      "route": "button-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 12.70000000006985,
+      "halfTravelMs": [
+        178.90000000002328,
+        195.70000000006985
+      ],
+      "ninetyTravelMs": [
+        212.20000000006985,
+        228.80000000004657
+      ],
+      "halfTravelTimelineMs": [
+        166.6800000000077,
+        183.28000000000765
+      ],
+      "finishedFrameMs": 246.20000000006985
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.29999999993015,
+      "halfTravelMs": [
+        181,
+        197.69999999995343
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.66199999997656,
+        183.2619999999765
+      ],
+      "finishedFrameMs": 230.5
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 189,
+      "note": "Synthetic contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 0.2000000000698492,
+      "halfTravelMs": [
+        169,
+        185.5
+      ],
+      "ninetyTravelMs": [
+        202.20000000006985,
+        219
+      ],
+      "halfTravelTimelineMs": [
+        166.61600000005316,
+        183.31600000005332
+      ],
+      "finishedFrameMs": 235.60000000009313
+    },
+    {
+      "engine": "chromium",
+      "route": "backdrop",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.800000000046566,
+      "halfTravelMs": [
+        182.09999999997672,
+        198.59999999997672
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.63200000003542,
+        183.33200000003558
+      ],
+      "finishedFrameMs": 235.5
+    },
+    {
+      "engine": "chromium",
+      "route": "button-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14,
+      "halfTravelMs": [
+        181.09999999997672,
+        197.89999999990687
+      ],
+      "ninetyTravelMs": [
+        214.5,
+        231.19999999995343
+      ],
+      "halfTravelTimelineMs": [
+        166.61400000000447,
+        183.41400000000442
+      ],
+      "finishedFrameMs": 247.69999999995343
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.099999999976717,
+      "halfTravelMs": [
+        181.59999999997672,
+        197.90000000002328
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.59599999997354,
+        183.39599999997347
+      ],
+      "finishedFrameMs": 230.69999999995343
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 188,
+      "note": "Synthetic contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 0.39999999990686774,
+      "halfTravelMs": [
+        168.5,
+        185.19999999995343
+      ],
+      "ninetyTravelMs": [
+        201.89999999990687,
+        218.69999999995343
+      ],
+      "halfTravelTimelineMs": [
+        166.65000000005037,
+        183.35000000004965
+      ],
+      "finishedFrameMs": 235.29999999993015
+    },
+    {
+      "engine": "chromium",
+      "route": "escape",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 6.899999999906868,
+      "halfTravelMs": [
+        174.19999999995343,
+        190.69999999995343
+      ],
+      "ninetyTravelMs": [
+        207.39999999990687,
+        224.09999999997672
+      ],
+      "halfTravelTimelineMs": [
+        166.66399999999192,
+        183.36399999999207
+      ],
+      "finishedFrameMs": 242.39999999990687
+    },
+    {
+      "engine": "chromium",
+      "route": "button-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 10.400000000023283,
+      "halfTravelMs": [
+        177.59999999997672,
+        194.30000000004657
+      ],
+      "ninetyTravelMs": [
+        210.80000000004657,
+        227.5
+      ],
+      "halfTravelTimelineMs": [
+        166.64600000007468,
+        183.2460000000742
+      ],
+      "finishedFrameMs": 244.20000000006985
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 11.900000000023283,
+      "halfTravelMs": [
+        179.29999999993015,
+        195.79999999993015
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.7280000000435,
+        183.328000000043
+      ],
+      "finishedFrameMs": 228.69999999995343
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 188,
+      "note": "Synthetic contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 0.19999999995343387,
+      "halfTravelMs": [
+        171.19999999995343,
+        188
+      ],
+      "ninetyTravelMs": [
+        204.40000000002328,
+        221.19999999995343
+      ],
+      "halfTravelTimelineMs": [
+        166.58200000000622,
+        183.28200000000638
+      ],
+      "finishedFrameMs": 237.90000000002328
+    },
+    {
+      "engine": "chromium",
+      "route": "backdrop",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.100000000093132,
+      "halfTravelMs": [
+        181.30000000004657,
+        197.90000000002328
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.66399999997506,
+        183.36399999997522
+      ],
+      "finishedFrameMs": 233
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 208,
+      "note": "Trusted Chromium CDP contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "trusted-edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 9.29999999993015,
+      "halfTravelMs": [
+        175.59999999997672,
+        192.5
+      ],
+      "ninetyTravelMs": [
+        208.89999999990687,
+        225.59999999997672
+      ],
+      "halfTravelTimelineMs": [
+        166.65399999999232,
+        183.35399999999248
+      ],
+      "finishedFrameMs": 242.09999999997672
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 14.099999999976717,
+      "halfTravelMs": [
+        181.40000000002328,
+        198
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.63600000007506,
+        183.33600000007434
+      ],
+      "finishedFrameMs": 230.59999999997672
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 205,
+      "note": "Trusted Chromium CDP contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "trusted-edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 11.800000000046566,
+      "halfTravelMs": [
+        179.09999999997672,
+        195.59999999997672
+      ],
+      "ninetyTravelMs": [
+        212.20000000006985,
+        229.09999999997672
+      ],
+      "halfTravelTimelineMs": [
+        166.7259999999775,
+        183.3259999999779
+      ],
+      "finishedFrameMs": 245.5
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 13.900000000023283,
+      "halfTravelMs": [
+        181.30000000004657,
+        198
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.60800000006049,
+        183.30800000006064
+      ],
+      "finishedFrameMs": 230.70000000006985
+    },
+    {
+      "engine": "chromium",
+      "kind": "contact",
+      "heldMs": 203,
+      "note": "Trusted Chromium CDP contact duration, excluded from settlement timing"
+    },
+    {
+      "engine": "chromium",
+      "route": "trusted-edge-open",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 11.199999999953434,
+      "halfTravelMs": [
+        178.40000000002328,
+        195.09999999997672
+      ],
+      "ninetyTravelMs": [
+        211.69999999995343,
+        229.29999999993015
+      ],
+      "halfTravelTimelineMs": [
+        166.59799999996318,
+        183.39799999996308
+      ],
+      "finishedFrameMs": 244.79999999993015
+    },
+    {
+      "engine": "chromium",
+      "route": "close-button",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "duration": 220,
+      "easing": "cubic-bezier(0.45, 0, 0.8, 0.35)",
+      "firstFrameMs": 13.79999999993015,
+      "halfTravelMs": [
+        181.40000000002328,
+        198
+      ],
+      "ninetyTravelMs": null,
+      "halfTravelTimelineMs": [
+        166.68000000004568,
+        183.28000000004607
+      ],
+      "finishedFrameMs": 230.40000000002328
+    },
+    {
+      "engine": "chromium",
+      "kind": "seeked-browser-trajectory",
+      "opening": [
+        {
+          "ms": 0,
+          "x": -12,
+          "opacity": 0,
+          "width": 144
+        },
+        {
+          "ms": 55,
+          "x": -11.5311,
+          "opacity": 0.0390729,
+          "width": 144
+        },
+        {
+          "ms": 110,
+          "x": -9.9198,
+          "opacity": 0.17335,
+          "width": 144
+        },
+        {
+          "ms": 165,
+          "x": -6.61124,
+          "opacity": 0.449063,
+          "width": 144
+        },
+        {
+          "ms": 220,
+          "x": 0,
+          "opacity": 1,
+          "width": 144
+        }
+      ],
+      "closing": [
+        {
+          "ms": 0,
+          "x": 0,
+          "opacity": 1,
+          "width": 144
+        },
+        {
+          "ms": 55,
+          "x": -0.468875,
+          "opacity": 0.960927,
+          "width": 144
+        },
+        {
+          "ms": 110,
+          "x": -2.0802,
+          "opacity": 0.82665,
+          "width": 144
+        },
+        {
+          "ms": 165,
+          "x": -5.38876,
+          "opacity": 0.550937,
+          "width": 144
+        },
+        {
+          "ms": 220,
+          "x": -12,
+          "opacity": 0,
+          "width": 144
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "kind": "interruption",
+      "delayMs": 35,
+      "closeJump": {
+        "before": {
+          "x": -11.9591,
+          "opacity": 0.00341187
+        },
+        "after": {
+          "x": -11.9591,
+          "opacity": 0.00341187
+        }
+      },
+      "openJump": {
+        "before": {
+          "x": -11.9597,
+          "opacity": 0.00336454
+        },
+        "after": {
+          "x": -11.9597,
+          "opacity": 0.00336454
+        }
+      }
+    },
+    {
+      "engine": "chromium",
+      "kind": "interruption",
+      "delayMs": 90,
+      "closeJump": {
+        "before": {
+          "x": -10.8686,
+          "opacity": 0.0942807
+        },
+        "after": {
+          "x": -10.8686,
+          "opacity": 0.0942807
+        }
+      },
+      "openJump": {
+        "before": {
+          "x": -10.9753,
+          "opacity": 0.0853909
+        },
+        "after": {
+          "x": -10.9753,
+          "opacity": 0.0853909
+        }
+      }
+    },
+    {
+      "engine": "chromium",
+      "kind": "interruption",
+      "delayMs": 170,
+      "closeJump": {
+        "before": {
+          "x": -7.7376,
+          "opacity": 0.3552
+        },
+        "after": {
+          "x": -7.7376,
+          "opacity": 0.3552
+        }
+      },
+      "openJump": {
+        "before": {
+          "x": -9.69858,
+          "opacity": 0.191785
+        },
+        "after": {
+          "x": -9.69858,
+          "opacity": 0.191785
+        }
+      }
+    },
+    {
+      "engine": "chromium",
+      "checks": "interruption, repeated toggle, ownership, zoom, resize, 16 viewport/theme states, reduced motion passed"
+    },
+    {
+      "engine": "chromium",
+      "browserVersion": "151.0.7922.173",
+      "pageErrors": []
+    }
+  ]
+}

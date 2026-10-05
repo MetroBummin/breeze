@@ -128,6 +128,15 @@ function updatePdfNavigationControls(measuredAnchor){
     const more=button.parentElement.querySelector('.pdf-thumbnail-more');if(more)more.hidden=current!=='true'||!actions.hidden;
   }
 }
+// A reversal starts at the currently drawn frame, not the other endpoint.
+// This belongs to the sidebar presentation; contact/gesture ownership stays elsewhere.
+function setPdfNavigationMotionStart(opening){
+  const control=document.getElementById('pdf-page-control');
+  const fromCurrent=!opening||control.classList.contains('pdf-navigation-closing');
+  const style=fromCurrent?getComputedStyle(control):null;
+  control.style.setProperty('--pdf-sidebar-start-opacity',style?style.opacity:'0');
+  control.style.setProperty('--pdf-sidebar-start-x',style?`${new DOMMatrixReadOnly(style.transform).m41}px`:'-12px');
+}
 function closePdfNavigation({release=false}={}){
   if(!pdfNavigation){
     if(release){
@@ -145,6 +154,7 @@ function closePdfNavigation({release=false}={}){
   nav.generation=pdfNavigationGeneration;nav.contact=null;
   for(const cell of strip.querySelectorAll('.pdf-thumbnail[data-rendered]'))if(!cell.querySelector('canvas'))delete cell.dataset.rendered;
   if(release)nav.session.navigationPreview=null;
+  setPdfNavigationMotionStart(false);
   control.classList.add('pdf-navigation-closing');panel.inert=true;
   document.getElementById('pdf-navigation-dismiss').hidden=true;
   document.getElementById('pdf-page-button')?.setAttribute('aria-expanded','false');
@@ -160,6 +170,7 @@ function closePdfNavigation({release=false}={}){
 function togglePdfNavigation(){
   if(pdfNavigation){closePdfNavigation();return;}
   if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||readerPositionPending()||sentenceWaitingActive()||BreezePdfInk.busy()||originalPinchBusy())return;
+  setPdfNavigationMotionStart(true);
   if(pdfNavigationCloseTimer){clearTimeout(pdfNavigationCloseTimer);pdfNavigationCloseTimer=null;}
   document.getElementById('pdf-page-control').classList.remove('pdf-navigation-closing');
   closePanel();closeSentence();closeAa();expandReaderChrome();

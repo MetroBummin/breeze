@@ -215,6 +215,28 @@ use that same shared material. Lookup surfaces keep their existing tokens.
 Opaque fallback remains available without backdrop filtering.
 Sidebar entry and exit animate only translation and opacity at final size.
 
+### Page-sidebar timing alignment (2026-10-05, local follow-up)
+
+Both directions retain 220ms and 12px translation. Entry now uses the approved
+exit curve, cubic-bezier(.45,0,.8,.35), instead of cubic-bezier(.2,.75,.25,1).
+Chromium measured the former entry crossing half of its travel in 28–48ms after
+the button click, versus 180–198ms for the close button. Equal nominal duration
+did not produce equal progress. The surface owns opacity in both directions;
+the inner navigator no longer adds a separate 220ms ease fade to entry.
+Exit timing, cleanup, cached previews and reduced-motion behavior are unchanged.
+Reversals sample the currently drawn translation and opacity once when the
+existing sidebar owner changes direction, avoiding a jump to a fixed endpoint.
+There is no per-frame layout work, new timer or motion queue.
+The shared PDF/EPUB surface uses this same motion. Edge input still opens on
+release through the existing toggle; there is no drag-following sheet or swipe
+close route. No pinch, ink or global input handler changes.
+
+`tests/verify-pdf-sidebar-motion-browser.mjs` records real frame samples and seeks
+rendered trajectories, checks interrupted/repeated toggles, resize, ownership,
+zoom exclusions, viewport/theme bounds and reduced motion. Browser and synthetic
+contact evidence does not establish native device timing. See
+`docs/qa/pdf-sidebar-motion-2026-10-05.md` for measurements and availability.
+
 Reader pills use absolute left/right insets and auto inline margins to center
 their animated width in layout. No width-relative horizontal transform is used:
 on-device build 205 footage showed transient overshoot despite synchronized
