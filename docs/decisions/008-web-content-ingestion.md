@@ -80,8 +80,11 @@ public page being accessible, and paywalled content is never bypassed.
 Loading uses a neutral card placeholder with a spinner and an accessible label,
 without a visible loading sentence. Feed cover discovery ignores known tiny
 tracking images and supports media thumbnails, image enclosures and lazy images.
-TMZ's feed gives no cover, so a bounded check of the first few public article
-pages may add a real cover and cache the parsed article for a fast first open.
+TMZ's feed gives no cover, so a bounded public article check may add a real cover
+and cache the parsed article for a fast first open. A source that already has an
+unsaved pictured candidate does not fetch extra cover pages. Each discovery load
+repairs at most three sources, with one article page per source. Remaining
+photo-free entries stay available through explicit URL entry.
 Feeds that append non-XML after a complete RSS/Atom root are parsed by discarding
 only that trailing material; malformed content within the root still fails.
 Image enclosures are preferred to small thumbnails. The official Complex feed
@@ -540,3 +543,36 @@ No in-memory cover/import lock or last-writer full-record restoration is added.
 
 Browser regressions reproduce that split-write interval, no-cover reimport, both
 snapshot/commit orderings, and actual cover-edit transaction aborts on each store.
+
+
+## Bounded public discovery reuse (2026-10-05)
+
+Only the thirteen built-in public feeds may persist parsed entries in
+`breeze.rss-public.v1` local storage. The allowlist is exact; custom feeds and
+arbitrary/authenticated article fetches are never added. Entries include public
+feed metadata and complete feed-provided bodies only when they fit. Up to 100
+entries fit within 64,000 UTF-8 bytes per feed and 1,000,000 bytes overall. An
+oversized body is omitted with `bodyProvided:false`, never truncated into a
+claimed full article. Unknown fields, credential-bearing URLs, corrupt, oversized
+and future-dated cache records are discarded. Storage failure leaves discovery
+usable through bounded memory reuse. Reading history/ranking is never persisted.
+
+Fresh entries last ten minutes across document launches. Card rotation invalidates
+the displayed grouping but reuses fresh public entries. Explicit `loadRss(true)`
+still refetches online; ordinary rotation refetches only expired feeds. Last-good
+public data up to one day old remains usable offline or after transport failure
+without renewing its timestamp. Returning online after an offline load rechecks
+freshness. Each source still publishes independently; concurrent loads coalesce.
+
+Medium discovery considers at most three unsaved candidates per topic per load,
+using two existing workers. Rotation advances the batch. Successfully resolved
+public feed bodies enrich the bounded cache so a restart can reuse them. Existing
+photo-only cards, Preview/Read commitment, selected-article images, Smart Crop,
+import persistence and the off/shadow Jev rollout remain unchanged.
+
+Verification: `npm run test:egress` covers clean/dirty/changed wordbook state,
+concurrency and failed saves, account changes, public feed restart/offline/expiry,
+cache limits, custom-source isolation and preparation budgets with mocked network.
+Set `BREEZE_EGRESS_COMPARE_BASE=34b5dc9` to write separate before/after request and
+uncompressed response-body byte totals. These fixtures do not predict billed
+production egress or establish historical attribution.

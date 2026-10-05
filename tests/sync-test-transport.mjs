@@ -56,7 +56,11 @@ export function server({words={apple:word(100)},dead={},items=[],separated=true,
             else{
               const row=peek(key,user);
               answer=row===undefined?null:columns==='data'?{data:row}
-                :{revision:row.revision??null,updatedAt:row.updatedAt??null,sync:row.sync??null};
+                :Object.fromEntries(columns.split(',').map(column=>{
+                  const [alias,path]=column.split(':');
+                  const property=path?.replace(/^data->>?/,'');
+                  return [alias,property?row[property]??null:null];
+                }));
             }
             const snapshot=clone(answer);
             await hooks.afterRead?.(call,snapshot);
@@ -97,7 +101,7 @@ export function device(db,label,{user='user',words={},dead={},books=[],positions
     setInterval(fn,delay){timers.set(++timerId,{fn,delay});return timerId;},clearInterval(id){timers.delete(id);},
     window:{BREEZE_CONFIG:{}},location:{href:'https://breeze.test/',pathname:'/',hash:''},history:{replaceState(){}},
     localStorage:{getItem(){return null;}},
-    document:{hidden:false,addEventListener(){},querySelector(selector){
+    document:{hidden:false,addEventListener(name,fn){(context.events||={})[name]=fn;},querySelector(selector){
       if(selector==='#nav-settings [data-i18n="nav.settings"]') return this.getElementById('nav-settings-label');
       return null;
     },getElementById(id){
