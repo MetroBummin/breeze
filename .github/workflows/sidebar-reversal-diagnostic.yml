@@ -18,10 +18,12 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps webkit
-      - run: BREEZE_QA_ENGINE=webkit node tests/diagnose-sidebar-reversal.mjs
+      - run: BREEZE_QA_ENGINE=webkit npm run test:pdf-sidebar
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: sidebar-reversal-diagnostic
-          path: /tmp/breeze-pdf-sidebar-motion/
+          name: sidebar-reversal-regression
+          path: |
+            /tmp/breeze-pdf-sidebar-motion/
+            /tmp/breeze-sidebar-body-gestures/
           retention-days: 7
