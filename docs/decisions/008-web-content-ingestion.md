@@ -407,6 +407,15 @@ no universal Threads-import success is claimed. Platform availability is not
 proven by fixtures. See `docs/qa/social-import-20260925.md`.
 
 ## Device polish and numeric validation repair (2026-09-26)
+
+Decision 015's 2026-10-05 selected-body flow opens the existing Preview shell
+with known discovery title/source/photo before awaiting article HTML. Metadata
+photo is usable even when a decoded card image is absent. Missing introduction
+uses the existing shimmer as text lines, with reduced-motion fallback. Body
+failure/retry and switching use the same open sheet and generation guards.
+Introduction API input depends on the fetched body; Read unlocks after parsing
+and does not wait for that optional API. No preselection article fetch is added.
+
 The summary card owns loading shimmer and a short content reveal, disabled for
 reduced motion. Read uses the neutral action color. Dialog entry focuses the
 named dialog, with Tab continuing into its controls. Actual pointer input hides

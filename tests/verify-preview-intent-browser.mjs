@@ -28,6 +28,7 @@ try{
     await page.route('**/*',route=>{
       const url=route.request().url();
       if(url.startsWith(base))return route.continue();
+      if(url.startsWith('https://preview.fixture/'))return route.fulfill({contentType:'image/png',body:readFileSync(resolve(root,'assets/favicon/icon-512.png'))});
       if(url.includes('/functions/v1/article-preview')){
         requests++;
         if(mode==='hold'){held.push(route);return;}
@@ -70,6 +71,73 @@ try{
       assert.deepEqual(await count(),{memory:0,stored:0,positions:0,images:0});
       assert(!await page.locator('#article-preview').evaluate(n=>n.open));
     });
+    await page.evaluate(()=>{
+      window.__bodyFetch=fetchArticleHtml;window.__bodyParse=parseArticleHtml;
+      window.__heldBodies=new Map();window.__parsedBodies=new Map();
+      fetchArticleHtml=url=>new Promise((resolve,reject)=>window.__heldBodies.set(url,{resolve,reject}));
+      parseArticleHtml=(_html,url)=>window.__parsedBodies.get(url);
+      window.__selectHeld=name=>{
+        const entry=window.__fixture(name);entry.photo='https://preview.fixture/'+name+'.png';
+        window.__parsedBodies.set(entry.url,rssPreparedArticles.get(articleUrlKey(entry.url)));rssPreparedArticles.delete(articleUrlKey(entry.url));
+        return importRssEntry(entry,window.__card(entry));
+      };
+    });
+    await check('known title/source/photo render during a held body; only missing intro shimmers',async()=>{
+      const before=requests;
+      const synchronous=await page.evaluate(()=>{
+        window.__pending=window.__selectHeld('known-before-body');
+        return {open:articlePreviewDialog.open,title:articlePreviewDialog.querySelector('.ap-title').textContent,
+          source:articlePreviewDialog.querySelector('.ap-source').textContent,preparing:articlePreviewDialog.dataset.preparing,
+          disabled:articlePreviewDialog.querySelector('.ap-start').disabled};
+      });
+      assert.deepEqual(synchronous,{open:true,title:'known-before-body',source:'Example',preparing:'true',disabled:true});
+      await page.waitForFunction(()=>document.querySelector('.ap-hero img').naturalWidth>0);
+      assert(await page.isVisible('.ap-title'));assert(await page.isVisible('.ap-source'));assert(await page.isVisible('.ap-hero img'));
+      assert.equal(await page.locator('.ap-summary').evaluate(n=>getComputedStyle(n).animationName),'ap-shimmer');
+      assert.equal(await page.locator('.ap-title').evaluate(n=>getComputedStyle(n).animationName),'none');assert.equal(requests,before);
+      await page.emulateMedia({reducedMotion:'reduce'});
+      assert.equal(await page.locator('.ap-summary').evaluate(n=>getComputedStyle(n).animationName),'none');
+      await page.emulateMedia({reducedMotion:'no-preference'});
+      if(process.env.BREEZE_PREVIEW_CAPTURE_DIR){
+        mkdirSync(process.env.BREEZE_PREVIEW_CAPTURE_DIR,{recursive:true});
+        for(const [label,width,height] of [['phone',390,844],['small-phone',320,568],['tablet',834,1112],['desktop',1440,900],['short',1024,600]])for(const dark of [false,true]){
+          await page.setViewportSize({width,height});await page.evaluate(dark=>{document.body.classList.toggle('dark',dark);document.documentElement.classList.toggle('dark',dark);},dark);
+          assert(await page.isVisible('.ap-title'));assert(await page.isVisible('.ap-hero img'));
+          await page.screenshot({path:process.env.BREEZE_PREVIEW_CAPTURE_DIR+'/'+engine.name()+'-body-pending-'+label+'-'+(dark?'dark':'light')+'.png'});
+        }
+        await page.setViewportSize({width:820,height:1024});await page.evaluate(()=>{document.body.classList.remove('dark');document.documentElement.classList.remove('dark');});
+      }
+      await page.evaluate(()=>{articlePreviewClose();window.__heldBodies.get('https://example.test/known-before-body').resolve('<article/>');});
+      await page.evaluate(()=>window.__pending);assert.deepEqual(await count(),{memory:0,stored:0,positions:0,images:0});
+    });
+    await check('body failure retains metadata; manual retry uses the same open sheet',async()=>{
+      await page.evaluate(()=>{window.__pending=window.__selectHeld('body-error');});
+      await page.waitForFunction(()=>window.__heldBodies.has('https://example.test/body-error'));
+      await page.evaluate(()=>window.__heldBodies.get('https://example.test/body-error').reject(Error('controlled body failure')));
+      await page.evaluate(()=>window.__pending);
+      assert.equal(await page.textContent('.ap-title'),'body-error');assert.match(await page.textContent('.ap-start'),/다시 시도/);
+      assert.equal(await page.locator('.ap-summary').evaluate(n=>getComputedStyle(n).animationName),'none');
+      assert.equal(await page.locator('#article-preview').getAttribute('data-metadata-reason'),'preparing_failed');
+      await page.evaluate(()=>{window.__retryCloses=0;articlePreviewDialog.addEventListener('close',()=>window.__retryCloses++);});
+      await page.click('.ap-start');await page.waitForFunction(()=>articlePreviewDialog.dataset.preparing==='true');
+      assert.equal(await page.evaluate(()=>window.__retryCloses),0);assert.equal(await page.textContent('.ap-title'),'body-error');
+      assert(await page.isDisabled('.ap-start'));assert(await page.isVisible('.ap-hero img'));
+      await page.evaluate(()=>{articlePreviewClose();window.__heldBodies.get('https://example.test/body-error').resolve('<article/>');});
+      await page.waitForFunction(()=>!document.querySelector('.rss-card.busy'));assert.deepEqual(await count(),{memory:0,stored:0,positions:0,images:0});
+    });
+    await check('late old body/error cannot replace another article shell or reopen after dismissal',async()=>{
+      await page.evaluate(()=>{window.__pendingA=window.__selectHeld('late-old');});
+      await page.waitForFunction(()=>window.__heldBodies.has('https://example.test/late-old'));
+      await page.evaluate(()=>{window.__pendingB=window.__selectHeld('latest-shell');});
+      await page.waitForFunction(()=>window.__heldBodies.has('https://example.test/latest-shell'));
+      await page.waitForFunction(()=>document.querySelector('.ap-hero img').naturalWidth>0);
+      assert.equal(await page.textContent('.ap-title'),'latest-shell');assert.match(await page.locator('.ap-hero img').getAttribute('src'),/latest-shell/);
+      await page.evaluate(()=>window.__heldBodies.get('https://example.test/late-old').reject(Error('late old failure')));await page.evaluate(()=>window.__pendingA);
+      assert.equal(await page.textContent('.ap-title'),'latest-shell');assert.equal(await page.locator('#article-preview').getAttribute('data-metadata'),'loading');
+      await page.evaluate(()=>{articlePreviewClose();window.__heldBodies.get('https://example.test/latest-shell').resolve('<article/>');});await page.evaluate(()=>window.__pendingB);
+      assert(!await page.locator('#article-preview').evaluate(n=>n.open));assert.deepEqual(await count(),{memory:0,stored:0,positions:0,images:0});
+    });
+    await page.evaluate(()=>{fetchArticleHtml=window.__bodyFetch;parseArticleHtml=window.__bodyParse;});
     await check('prepared Preview stays open without modal reopen or persistence',async()=>{
       await page.evaluate(()=>{
         window.__modalCloses=0;articlePreviewDialog.addEventListener('close',()=>window.__modalCloses++);

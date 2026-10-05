@@ -19,6 +19,16 @@ its body again. Closing during owner-feed resolution prevents a late Preview or
 book save; it does not cancel the already-started public feed request. Preview
 is transient. Read remains the only persistence boundary.
 
+The preview shell opens synchronously with the known title/source and available
+card or metadata photo. Only the missing Korean introduction uses the existing
+reduced-motion-aware shimmer, shaped as text lines. Failed photo decode keeps
+artwork; body failure keeps metadata and offers manual retry in the same sheet.
+Generation checks prevent an old completion/error from changing another article
+or reopening a dismissed preview. The body is fetched/parsed first, then its
+actual paragraphs supply the introduction request. Read becomes available when
+the body is ready, independently of the optional introduction. First-visible
+shell, body/Read-ready and introduction-ready latency are distinct measurements.
+
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport
 can still contain embedded article bodies; only the optional catalog removes

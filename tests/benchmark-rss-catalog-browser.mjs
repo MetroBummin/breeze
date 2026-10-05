@@ -52,6 +52,7 @@ const profiles=process.env.BREEZE_CATALOG_QUICK?[{name:'normal',rtt:20,bytesPerS
 const delay=ms=>new Promise(done=>setTimeout(done,ms));
 const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;
 const result={units:'UTF-8 response body bytes, uncompressed; independent per-response fixture delays; real browser DOM/rendering. Single trials, not production latency or billing.',engine:engine.name(),baseline,pr97:'d103bb31f075404d5498dfa1a15a1e60def7c81a',pr97Tree:pr97,
+ previewSourceHash:createHash('sha256').update(readFileSync(resolve(root,'scripts/library/article-preview.js'))).digest('hex'),
  sourceHashes:Object.fromEntries(versions.map(version=>[version.name,createHash('sha256').update(version.source).digest('hex')])),rows:[],coldCatalog:null,upstreamFixedFeedLookups:0};
 const browser=await engine.launch(engine===chromium&&process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
 async function contextFor(version,profile,storage={}){
@@ -100,19 +101,33 @@ async function home(h){
 async function clicks(h,page){
  const card=page.locator('#casual-rail .rss-card[data-rss-url="https://stories.example/f0/0"]');
  await card.waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('[data-rss-url="https://stories.example/f0/0"]').classList.contains('rss-pending'));
- const before=h.calls.length,start=await page.evaluate(()=>performance.now());await card.click();
+ const arm=()=>card.evaluate(node=>{
+  node.addEventListener('click',()=>{
+   const timing={clickedAt:performance.now(),shellFirstVisibleFrameMs:null,bodyReadyMs:null};window.previewTiming=timing;
+   const ready=()=>{const dialog=document.querySelector('#article-preview');
+    if(dialog.open&&dialog.dataset.preparing!=='true'&&!dialog.querySelector('.ap-start').disabled&&timing.bodyReadyMs===null)timing.bodyReadyMs=performance.now()-timing.clickedAt;};
+   const observer=new MutationObserver(ready);observer.observe(document.querySelector('#article-preview'),{attributes:true,childList:true,subtree:true});
+   requestAnimationFrame(function sample(){const dialog=document.querySelector('#article-preview');
+    if(dialog.open&&dialog.querySelector('.ap-title').textContent&&Number(getComputedStyle(dialog).opacity)>0){timing.shellFirstVisibleFrameMs=performance.now()-timing.clickedAt;ready();}
+    else requestAnimationFrame(sample);
+   });window.previewTimingObserver=observer;
+  },{once:true,capture:true});
+ });
+ const measured=async()=>{await page.waitForFunction(()=>previewTiming.shellFirstVisibleFrameMs!==null&&previewTiming.bodyReadyMs!==null);
+  return page.evaluate(()=>{previewTimingObserver.disconnect();return {...previewTiming,metadataReadyMs:performance.now()-previewTiming.clickedAt};});};
+ const before=h.calls.length,start=await page.evaluate(()=>performance.now());await arm();await card.click();
  await page.waitForFunction(()=>document.querySelector('#article-preview').open&&document.querySelector('#article-preview').dataset.preparing!=='true'&&!document.querySelector('.ap-start').disabled&&!document.querySelector('.ap-summary').hidden,null,{timeout:15000});
- const coldMs=await page.evaluate(()=>performance.now()),storage=await page.evaluate(()=>Object.fromEntries(Object.entries(localStorage)));
+ const coldMs=await page.evaluate(()=>performance.now()),coldTiming=await measured(),storage=await page.evaluate(()=>Object.fromEntries(Object.entries(localStorage)));
  assert.equal(await page.evaluate(()=>books.filter(book=>book.sourceUrl==='https://stories.example/f0/0').length),0,'Preview does not persist a book');
  await page.locator('.ap-close').click();
- const warmBefore=h.calls.length,warmStart=await page.evaluate(()=>performance.now());await card.click();
+ const warmBefore=h.calls.length,warmStart=await page.evaluate(()=>performance.now());await arm();await card.click();
  await page.waitForFunction(()=>document.querySelector('#article-preview').open&&document.querySelector('#article-preview').dataset.preparing!=='true'&&!document.querySelector('.ap-start').disabled&&!document.querySelector('.ap-summary').hidden);
- const warmEnd=await page.evaluate(()=>performance.now());await page.locator('#article-preview').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
+ const warmEnd=await page.evaluate(()=>performance.now()),warmTiming=await measured();await page.locator('#article-preview').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
  const readStart=await page.evaluate(()=>performance.now());await page.locator('.ap-start').click();
  await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on')&&books.some(book=>book.sourceUrl==='https://stories.example/f0/0'),null,{timeout:15000});
  const readEnd=await page.evaluate(()=>performance.now());
  assert.equal(await page.evaluate(()=>books.filter(book=>book.sourceUrl==='https://stories.example/f0/0').length),1,'Read persists exactly one book');
- return {previewColdMs:coldMs-start,previewWarmMs:warmEnd-warmStart,readMs:readEnd-readStart,coldRequests:metrics(h.calls.slice(before,warmBefore)),warmAndReadRequests:metrics(h.calls.slice(warmBefore)),storage};
+ return {previewColdMs:coldMs-start,previewWarmMs:warmEnd-warmStart,coldTiming,warmTiming,readMs:readEnd-readStart,coldRequests:metrics(h.calls.slice(before,warmBefore)),warmAndReadRequests:metrics(h.calls.slice(warmBefore)),storage};
 }
 try{
  // A cold server snapshot has no cards and public GET performs no upstream work.

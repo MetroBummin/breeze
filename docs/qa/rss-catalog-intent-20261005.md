@@ -44,14 +44,49 @@ CPU/browser noise and no statistical speed guarantee.
 
 <!-- benchmark-table -->
 | Version / delay | Cold Home requests / bytes | Warm Home requests / bytes | Six Homes requests / bytes | Cold Home first card (ms) | First Preview / reopen (ms) | Preview after warm Home (ms) | Read (ms) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| main236 / normal | 17 / 2,002,024 | 17 / 2,002,024 | 102 / 12,012,144 | 1050 | 130 / 84 | 110 | 184 |
-| PR97 / normal | 15 / 1,601,920 | 0 / 0 | 15 / 1,601,920 | 572 | 102 / 72 | 334 | 108 |
-| catalogIntent / normal | 1 / 155,417 | 0 / 0 | 1 / 155,417 | 658 | 358 / 308 | 355 | 287 |
-| main236 / slow | 17 / 2,002,024 | 17 / 2,002,024 | 102 / 12,012,144 | 1248 | 284 / 62 | 69 | 117 |
-| PR97 / slow | 15 / 1,601,920 | 0 / 0 | 15 / 1,601,920 | 1171 | 296 / 65 | 1340 | 122 |
-| catalogIntent / slow | 1 / 155,417 | 0 / 0 | 1 / 155,417 | 1460 | 1519 / 1265 | 1293 | 238 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| main236 / normal | 17 / 2,002,024 | 17 / 2,002,024 | 102 / 12,012,144 | 1015 | 164 / 118 | 110 | 205 |
+| PR97 / normal | 15 / 1,601,920 | 0 / 0 | 15 / 1,601,920 | 666 | 122 / 60 | 323 | 125 |
+| catalogIntent / normal | 1 / 155,417 | 0 / 0 | 1 / 155,417 | 635 | 382 / 313 | 372 | 251 |
+| main236 / slow | 17 / 2,002,024 | 17 / 2,002,024 | 102 / 12,012,144 | 1260 | 284 / 68 | 214 | 122 |
+| PR97 / slow | 15 / 1,601,920 | 0 / 0 | 15 / 1,601,920 | 1334 | 288 / 76 | 1318 | 134 |
+| catalogIntent / slow | 1 / 155,417 | 0 / 0 | 1 / 155,417 | 1478 | 1543 / 1282 | 1310 | 235 |
 <!-- /benchmark-table -->
+
+## Immediate shell versus body and introduction (09:40 follow-up)
+
+The prior 1.3–1.5 second figure meant prepared body/intro, not the first dialog.
+Before this follow-up, `articlePreviewPrepare` already synchronously opened title,
+source and a card photo, with the existing introduction shimmer. This change
+also accepts the known metadata photo when no decoded card image is available,
+uses line-shaped placeholders only for the missing introduction, and keeps
+body retry/article replacement in the same sheet. Existing generation guards
+ignore late responses/errors and dismissal. No Home article prefetch is added.
+
+Body parsing precedes the introduction API because it sends actual extracted
+paragraphs. Read unlocks after body parsing, independently of the optional API.
+Photo availability can still depend on image decode/network; failed images show
+local artwork. Fast Read or slow/failed body transport still exposes the wait.
+
+| Catalog scenario | First visible shell frame (ms) | Body / Read ready (ms) | Introduction ready (ms) |
+| --- | ---: | ---: | ---: |
+| normal / cold Home | 54 | 284 | 335 |
+| normal / warm Home | 60 | 287 | 340 |
+| slow / cold Home | 59 | 1254 | 1482 |
+| slow / warm Home | 56 | 1253 | 1274 |
+
+Timing starts at the actual click event. First shell is the first browser frame
+observing an open dialog with known title and nonzero opacity; it is not a native
+compositor timestamp. Body readiness observes enabled Read before the mocked
+optional introduction completes. Single local trials are not uniform latency.
+The JSON hashes the common Preview script as well as each RSS version.
+
+Fourteen local Chromium Preview intent cases pass, including held-body known
+title/source/photo, reduced motion, body error/retry without modal close, late
+old failure and cancellation without persistence. Pending shell screenshots
+cover five sizes in both themes at `/tmp/breeze-preview-shell-proof/`.
+Existing four-size Preview layout and 21 resilience cases also pass.
+Exact updated-head WebKit/CI results must be reported separately.
 
 Six documents means a cold Home plus five document relaunches sharing browser
 storage within ten minutes, with no reading in that sequence. Separate click

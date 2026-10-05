@@ -237,21 +237,19 @@ function articlePreviewPrepare(entry,card){
   const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===articleUrlKey(url));
   if(existing)return null;
   const provisional={id:'preparing:'+url,kind:'article',title:entry.title,site:entry.source,sourceUrl:url,paras:[]};
-  openCasualPreviewOrReader(provisional);
+  const cover=card?.querySelector('img.cover');
+  const src=cover?.currentSrc||cover?.getAttribute('src')||entry.photo||'';
+  // Paint known discovery metadata synchronously; only the missing body/intro
+  // waits. Reuse the open sheet for selection/retry and its generation guards.
+  openCasualPreviewOrReader(provisional,{replace:true,photo:src});
   const generation=articlePreviewGeneration,start=/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-start'));
   articlePreviewDialog.dataset.preparing='true';articlePreviewMetadataState('loading','preparing');
   articlePreviewStatus('');start.disabled=true;start.textContent='본문 준비 중…';
-  const cover=card?.querySelector('img.cover');
-  const src=cover?.currentSrc||cover?.getAttribute('src')||'';
-  if(/^(https?:|blob:)/.test(src)){
-    const image=/** @type {HTMLImageElement} */(articlePreviewDialog.querySelector('.ap-hero img'));
-    image.src=src;image.hidden=false;
-  }
   return {
     finish(book){if(articlePreviewActive(generation))openCasualPreviewOrReader(book,{replace:true,photo:src});},
     fail(retry){if(!articlePreviewActive(generation))return;
       articlePreviewMetadataState('fallback','preparing_failed');articlePreviewStatus('본문을 준비하지 못했어요. 다시 시도할 수 있어요.');
-      start.disabled=false;start.textContent='다시 시도';start.onclick=()=>{if(articlePreviewActive(generation)){articlePreviewClose();retry();}};
+      start.disabled=false;start.textContent='다시 시도';start.onclick=()=>{if(articlePreviewActive(generation))retry();};
     }
   };
 }
