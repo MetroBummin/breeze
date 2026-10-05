@@ -43,7 +43,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       const record=()=>{
         if(!pending)return;
         const route=pending;pending=null;
-        const start=performance.now(),samples=[];
+        const start=performance.now(),samples=[],trajectory=[];
         const read=()=>{
           const css=getComputedStyle(control),inner=getComputedStyle(panel);
           const animation=control.getAnimations().find(a=>a.animationName?.startsWith('pdf-sidebar-'));
@@ -57,10 +57,24 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
         const sample=()=>{
           samples.push(read());
           if(performance.now()-start<320)requestAnimationFrame(sample);
-          else window.qaSidebarResult={route,samples};
+          else window.qaSidebarResult={route,samples,trajectory};
         };
-        // Capture runs before the real handler; sampling runs after its style change.
-        requestAnimationFrame(sample);
+        // Run after the complete input dispatch, including its actual handler.
+        // A headless renderer can omit all intermediate rAF frames. Check the real
+        // effect at fixed timeline positions too, without treating seeks as latency.
+        setTimeout(()=>{
+          const animation=control.getAnimations().find(a=>a.animationName?.startsWith('pdf-sidebar-'));
+          if(animation){
+            const time=animation.currentTime,state=animation.playState;
+            animation.pause();
+            for(const ms of [0,55,110,165,220]){
+              animation.currentTime=ms;trajectory.push({...read(),seekMs:ms});
+            }
+            animation.currentTime=time??0;
+            if(state!=='paused')animation.play();
+          }
+          requestAnimationFrame(sample);
+        },0);
       };
       document.addEventListener('click',event=>{
         if(event.target.closest('#pdf-page-button,#pdf-navigation-toggle'))record();
@@ -108,13 +122,18 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       }
       await page.waitForFunction(()=>window.qaSidebarResult);
       const result=await page.evaluate(()=>qaSidebarResult);
-      const opening=route.endsWith('open'),animated=result.samples.find(s=>s.name);
+      // Persist a failing route too; a following engine must not erase its proof.
+      reports.push({engine:engine.name(),kind:'raw-route-capture',...result});
+      const opening=route.endsWith('open'),animated=result.trajectory.find(s=>s.name)||result.samples.find(s=>s.name);
       assert.ok(animated,'A real sidebar CSS animation must be sampled');
       assert.equal(animated.duration,220);
-      assert.ok(result.samples.some(s=>s.x>-11.8&&s.x<-.2),'Intermediate translation must be observed');
+      assert.ok(result.trajectory.some(s=>s.x>-11.8&&s.x<-.2),'Intermediate translation must be observed');
+      assert.equal(result.trajectory.length,5,'Every real input route exposes a seekable CSS effect');
+      assert.ok(result.trajectory.every(s=>s.x>=-12.001&&s.x<=.001),'Real effect remains within its 12px travel');
+      assert.ok(result.trajectory.every((s,i,a)=>!i||(opening?s.x>=a[i-1].x:s.x<=a[i-1].x)),'Real effect travels in the requested direction');
       if(!measureOnly){
         assert.equal(animated.easing,'cubic-bezier(0.45, 0, 0.8, 0.35)');
-        assert.ok(result.samples.filter(s=>!s.panelHidden).every(s=>s.contentOpacity===1),'One opacity owner, including navigation contents');
+        assert.ok([...result.samples,...result.trajectory].filter(s=>!s.panelHidden).every(s=>s.contentOpacity===1),'One opacity owner, including navigation contents');
       }
       const crossed=p=>{
         const index=result.samples.findIndex(s=>(opening?1+s.x/12:-s.x/12)>=p);
@@ -124,7 +143,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       const summary={engine:engine.name(),route,viewport:page.viewportSize(),duration:animated.duration,easing:animated.easing,
         firstFrameMs:result.samples[0].ms,halfTravelMs:crossed(.5),ninetyTravelMs:crossed(.9),
         halfTravelTimelineMs:halfIndex<0?null:[result.samples[halfIndex-1]?.timelineMs??0,result.samples[halfIndex].timelineMs],
-        finishedFrameMs:result.samples.find(s=>opening?s.x===0:s.panelHidden)?.ms??null};
+        finishedFrameMs:result.samples.find(s=>opening?s.x===0:s.panelHidden)?.ms??null,
+        observedIntermediateFrames:result.samples.filter(s=>s.x>-11.8&&s.x<-.2).length,
+        capture:'Real effect seek, restored playback; diagnostic frame brackets, not untouched latency'};
       console.log(JSON.stringify(summary));reports.push({...summary,samples:result.samples});
       if(opening)await settled();else await closed();
     };
