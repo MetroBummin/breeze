@@ -62,7 +62,7 @@ function rssCacheEntry(entry){
   const value=Object.fromEntries(fields.map(key=>[key,typeof entry[key]==='string'?entry[key]:'']));
   if(!value.title||value.title.length>1000||!normalizeArticleUrl(value.url)
     ||[value.url,value.readUrl,value.photo,value.feedUrl,value.feedSourceUrl].some(url=>url.length>4096))return null;
-  for(const raw of [value.url,value.readUrl,value.photo].filter(Boolean)){
+  for(const raw of [value.url,value.readUrl,value.photo,value.feedUrl,value.feedSourceUrl].filter(Boolean)){
     try{const url=new URL(raw);if(!/^https?:$/.test(url.protocol)||url.username||url.password)return null;}
     catch{return null;}
   }
@@ -125,7 +125,8 @@ async function rssFeedEntries(feed,force){
     rssStorePublicFeed(feed,entries,now);
     return {at:now,entries};
   }catch(error){
-    if(usable)return {at:record.at,entries:record.entries.map(entry=>({...entry}))};
+    if(usable)return {at:record.at,entries:record.entries.map(entry=>({...entry,source:feed.name,
+      category:feed.category,feedSourceUrl:feed.url}))};
     throw error;
   }
 }
@@ -372,7 +373,12 @@ async function rssQualityFeed(feed){
 const RSS_QUALITY_MODE = 'off'; // Activation requires a reviewed client release.
 async function loadRssLegacy(force){
   if(rssLoading) return rssLoading;
-  if(!force && rssCands.length && Date.now() - rssLoadedAt < RSS_CACHE_MS
+  const now=Date.now(),cache=rssPublicCacheEntries();
+  const expiredPublic=RSS_FEEDS.some((feed,index)=>{
+    const record=cache[feed.url];
+    return rssCands[index]?.length&&record&&(record.at>now||now-record.at>RSS_PUBLIC_STALE_MS);
+  });
+  if(!force && rssCands.length && !expiredPublic && now>=rssLoadedAt && now-rssLoadedAt<RSS_CACHE_MS
     &&(!rssLoadedOffline||!rssOnline())) return rssCands;
   rssPublicFeedJobs.clear();
   rssPreparedArticles.clear();
@@ -400,7 +406,13 @@ async function loadRssLegacy(force){
     }
     else publish(ordered);
     return rssCands[index];
-    }catch(error){ rssCands[index]=previous[index]||[]; rssListeners.forEach(notify=>notify(rssCands)); console.warn('Feed unavailable:',feed.url); return rssCands[index]; }
+    }catch(error){
+      // Public stale fallback belongs to rssFeedEntries, which checks its age.
+      // Reusing the previous group here would bypass that limit in an open page.
+      rssCands[index]=RSS_FEEDS.some(source=>source.url===feed.url)?[]:previous[index]||[];
+      rssListeners.forEach(notify=>notify(rssCands));console.warn('Feed unavailable:',feed.url);
+      return rssCands[index];
+    }
   })).then(groups => {
     rssCands = groups;
     rssLoadedAt = Date.now();

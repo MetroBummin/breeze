@@ -67,6 +67,23 @@ test('a local edit during CAS does not become acknowledged until a later merge',
   await h.client.api.all(false);assert.equal(h.db.peek(WORD).words.second,undefined);
   await h.client.api.all(false);assert.equal(h.db.peek(WORD).words.second.up,400);assert.equal(fullReads(h.db),3);
 });
+test('a mutation during clean completion remains unacknowledged and is merged on the next pass',async()=>{
+  for(const dirty of [false,true]){
+    const h=measuredSync();await h.client.api.all(false);
+    h.client.memory.set('breeze.private-logs-purged:user',false);
+    const entered=deferred(),release=deferred();
+    h.client.context.dictCall=async()=>{entered.resolve();await release.promise;return {ok:true};};
+    const pending=h.client.api.all(false);await entered.promise;
+    if(dirty)h.client.add('completion-edit',word(400));
+    else h.client.context.words['completion-edit']=word(400);
+    release.resolve();assert.equal(await pending,true);
+    assert.equal(h.db.peek(WORD).words['completion-edit'],undefined);
+    assert.equal(await h.client.api.all(false),true);
+    assert.equal(h.db.peek(WORD).words['completion-edit'].up,400);
+    assert.equal(h.client.memory.get('words')['completion-edit'].up,400);
+    assert.equal(fullReads(h.db),2);assert.equal(headers(h.db),1);
+  }
+});
 test('failed local persistence never acknowledges the failed pull',async()=>{
   const h=measuredSync();h.client.context.saveWords=()=>false;
   assert.equal(await h.client.api.all(false),false);
@@ -140,6 +157,19 @@ test('failed fresh fetch retains cached cards without renewing their timestamp',
   h.advance(600000);h.state.fail=true;await h.load(false);assert.ok(h.entries()[0].length);
   assert.equal(JSON.parse(h.storage.get(cacheKey))[h.feedAt[0].url].at,at);
 });
+test('an open page drops default cards past the stale limit or after a backward clock jump',async()=>{
+  for(const mode of ['offline','failed-online','clock-backward']){
+    const h=rssDevice();await h.load(false);assert.ok(h.entries()[0].length);
+    if(mode==='clock-backward'){h.advance(-1);h.state.offline=true;}
+    else{h.advance(86400001);if(mode==='offline')h.state.offline=true;else h.state.fail=true;}
+    await h.load(false);assert.ok(h.entries().every(group=>!group.length),mode);
+  }
+  const nearExpiry=rssDevice();await nearExpiry.load(false);
+  nearExpiry.advance(86400000-60000);nearExpiry.state.offline=true;
+  await nearExpiry.load(false);assert.ok(nearExpiry.entries()[0].length);
+  nearExpiry.advance(60001);await nearExpiry.load(false);
+  assert.ok(nearExpiry.entries().every(group=>!group.length),'Display freshness cannot extend source expiry');
+});
 test('storage denial and corrupt/oversized/future cache fall back to safe fetching',async()=>{
   const denied=rssDevice({denyStorage:true});await denied.load(false);await denied.rotate();assert.equal(denied.calls.length,13);
   for(const value of ['{bad','x'.repeat(1000001),JSON.stringify({'https://www.propublica.org/feeds/propublica/main':{at:2000000,entries:[]}})]){
@@ -152,6 +182,17 @@ test('custom feeds are not persisted and private cache entries are discarded',as
   assert.ok(!storage.get(cacheKey).includes('private.example'));
   const restarted=rssDevice({custom,storage});await restarted.load(false);
   assert.deepEqual(restarted.calls.map(call=>call.target),[custom[0].url]);
+});
+test('credential-bearing feed metadata is rejected when hydrating public cache records',async()=>{
+  const storage=new Map(),first=rssDevice({storage});await first.load(false);
+  const url=first.feedAt[0].url;
+  for(const field of ['feedUrl','feedSourceUrl']){
+    const stored=JSON.parse(storage.get(cacheKey));
+    stored[url].entries[0][field]='https://synthetic-user:synthetic-password@feed.example/feed';
+    const h=rssDevice({storage:new Map([[cacheKey,JSON.stringify(stored)]])});await h.load(false);
+    assert.equal(h.calls.length,1,field);assert.equal(h.calls[0].target,url);
+    assert.ok(!JSON.stringify(h.entries()).includes('synthetic-password'));
+  }
 });
 test('public cache stays within global/per-feed byte limits and never truncates HTML into a body',async()=>{
   const h=rssDevice({candidates:100});
@@ -172,6 +213,15 @@ test('Medium candidate resolution is bounded to three per topic and ready bodies
   const unusable=rssDevice({mediumUnusable:true,candidates:20});await unusable.load(false);assert.equal(unusable.calls.length,22);
   const storage=new Map(),first=rssDevice({storage,mediumResolve:true});await first.load(false);assert.equal(first.calls.length,16);
   const restarted=rssDevice({storage,mediumResolve:true});await restarted.load(false);assert.equal(restarted.calls.length,0);
+});
+test('rotation reaches usable Medium candidates after a failed bounded batch',async()=>{
+  const h=rssDevice(),parse=h.context.parseFeedArticle;
+  h.context.parseFeedArticle=entry=>entry.url.includes('medium.com')&&!/writer-[345]\/story/.test(entry.url)?null:parse(entry);
+  const topics=h.context.rssSources().flatMap((feed,index)=>h.context.rssMediumSource(feed)?[index]:[]);
+  await h.load(false);assert.ok(topics.every(index=>h.entries()[index].length===0));
+  assert.equal(h.calls.length,16,'The topics coalesce their three shared author feeds');
+  await h.rotate();assert.ok(topics.every(index=>h.entries()[index].length===3));
+  assert.equal(h.calls.length,16,'Rotation reuses fresh feeds and complete public bodies');
 });
 // Optional reproducible before/after artifact: uses the checked source at the
 // comparison base and the exact same synthetic transports, never production.

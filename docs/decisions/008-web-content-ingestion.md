@@ -562,7 +562,10 @@ the displayed grouping but reuses fresh public entries. Explicit `loadRss(true)`
 still refetches online; ordinary rotation refetches only expired feeds. Last-good
 public data up to one day old remains usable offline or after transport failure
 without renewing its timestamp. Returning online after an offline load rechecks
-freshness. Each source still publishes independently; concurrent loads coalesce.
+freshness. The stale limit also applies in an already-open document; its displayed
+groups cannot bypass expiry after a transport failure. Backward clock jumps
+invalidate future-dated memory freshness. Each source still publishes independently;
+concurrent loads coalesce.
 
 Medium discovery considers at most three unsaved candidates per topic per load,
 using two existing workers. Rotation advances the batch. Successfully resolved
