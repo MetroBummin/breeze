@@ -6,17 +6,13 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {extractionReadiness} from '../server/rss-quality/extract.mjs';
 export const BASELINE='0e72a35be0fa663167acd7de2c7dd9a8dfbdfc4c';
-export const PRICE=Object.freeze({model:'jev-1.13.0',asOf:'2026-10-05',source:'https://docs.typesafe.ai/models',inputUsdPerMillion:0.042,outputUsdPerMillion:0,cachedDiscount:'not documented; no discount assumed'});
-export const LIMITS=Object.freeze({articles:12,attempts:24,usd:0.10,concurrency:1,retries:0,reservedInputTokens:65536});
-export const RESERVATION_USD=LIMITS.reservedInputTokens*PRICE.inputUsdPerMillion/1e6;
+import {PRICE,LIMITS,RESERVATION_USD,requestFor,usageRecord,costRecord} from '../server/rss-quality/audit-contract.mjs';
+export {PRICE,LIMITS,RESERVATION_USD,requestFor,usageRecord,costRecord};
 export const sha=value=>createHash('sha256').update(typeof value==='string'?value:JSON.stringify(value)).digest('hex');
 const root=fileURLToPath(new URL('../',import.meta.url));
 export async function loadArms(){
   const sources={old:execFileSync('git',['show',`${BASELINE}:server/rss-quality/jev.mjs`],{cwd:root,encoding:'utf8'}),new:await readFile(new URL('../server/rss-quality/jev.mjs',import.meta.url),'utf8')};
   return Object.fromEntries(await Promise.all(Object.entries(sources).map(async([name,source])=>[name,{sourceSha:sha(source),implementation:await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'))}])));
-}
-export function requestFor(article,implementation){
-  return {model:implementation.MODEL,state:{untrusted_article:{title:article.title,paragraphs:article.paragraphs.map((text,i)=>({id:`p${i+1}`,text})),links:article.links,extraction:article.checks}},questions:implementation.questions(article)};
 }
 export function sealPack({runId,createdAt,inputs,seeds,arms,capture=null}){
   if(inputs.length!==seeds.length || inputs.length>LIMITS.articles)throw Error('article_limit');
@@ -54,18 +50,6 @@ export function verifyPack(pack,expectedSha,arms){
   }
 }
 const tokens=n=>Number.isSafeInteger(n)&&n>=0?n:null;
-export function usageRecord(raw){
-  // Cached tokens are metadata only: no undocumented billing discount.
-  const inputTokens=tokens(raw?.input_tokens),outputTokens=tokens(raw?.output_tokens);
-  const cachedTokens=tokens(raw?.cached_input_tokens ?? raw?.cached_tokens ?? raw?.input_tokens_details?.cached_tokens);
-  return {inputTokens,outputTokens,cachedTokens:inputTokens!==null&&cachedTokens!==null&&cachedTokens<=inputTokens?cachedTokens:null};
-}
-export function costRecord(usage,{responseModel=null,attempted=true}={}){
-  const known=usage.inputTokens!==null && usage.outputTokens!==null && responseModel===PRICE.model;
-  return {pricing:PRICE,tokenEstimateUsd:attempted&&known?usage.inputTokens*PRICE.inputUsdPerMillion/1e6:null,
-    estimateBasis:attempted&&known?'provider-reported tokens at documented price':'unknown',invoiceChargeUsd:null,billableStatus:attempted?'not invoice-verified':'no attempt',
-    reservationUsd:attempted?RESERVATION_USD:0,cachedDiscountApplied:false};
-}
 const validStatus=new Set(['approved','rejected','uncertain','unavailable']);
 function classify(raw,row,arm){
   try{

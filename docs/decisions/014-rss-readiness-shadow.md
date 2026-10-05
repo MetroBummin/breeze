@@ -146,3 +146,12 @@ full reservation and estimates never masquerade as invoice charges. Existing
 private executor and publisher capture paths are unresolved, so no paid attempt
 or full real-input freeze has occurred. Selected source labels remain proposed
 except the supplied historical promotion observations; accuracy is unmeasured.
+
+Subsequent explicit user approval permits the isolated temporary paired-audit
+function and one service-only sentinel ledger row, with the same 24-attempt /
+USD 0.10 cap and cleanup. [Prepared candidate and live gates](../qa/rss-audit-candidate-20261005.md)
+document one-shot conditional claims, expiry, crash withholding, private input
+conversion and the unchanged v6 authorization helper. No production RSS module
+imports the audit code. Approval requires verifying the existing native caller
+before deployment; private input availability/review and billing terms also
+remain gates. Local preparation does not imply a function, row or paid run exists.
