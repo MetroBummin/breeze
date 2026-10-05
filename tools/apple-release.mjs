@@ -12,7 +12,9 @@ const DIGEST = /^[a-f0-9]{64}$/;
 const MODES = ['smoke', 'status', 'dry-run', 'prepare', 'submit'];
 const EDITABLE = ['PREPARE_FOR_SUBMISSION'];
 const REVIEW_STATES = ['READY_FOR_REVIEW', 'WAITING_FOR_REVIEW', 'IN_REVIEW', 'UNRESOLVED_ISSUES', 'CANCELING', 'COMPLETING', 'COMPLETE'];
-const ITEM_STATES = ['READY_FOR_REVIEW', 'IN_REVIEW', 'ACCEPTED', 'REJECTED', 'REMOVED'];
+// ReviewSubmissionItem.Attributes.state is a separate enum from submission state:
+// https://developer.apple.com/documentation/appstoreconnectapi/reviewsubmissionitem/attributes-data.dictionary
+const ITEM_STATES = ['READY_FOR_REVIEW', 'ACCEPTED', 'APPROVED', 'REJECTED', 'REMOVED'];
 const REJECTED_VERSIONS = ['DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'];
 export class ReleaseError extends Error {}
 function requireThat(ok, message) { if (!ok) throw new ReleaseError(message); }
@@ -231,12 +233,13 @@ function reviewOutcome(review, version, contents, m) {
   const date = review.attributes.submittedDate;
   if (typeof date !== 'string' || !Number.isFinite(Date.parse(date))) return action('unconfirmed-review-state');
   const inProgress = {
-    WAITING_FOR_REVIEW: ['READY_FOR_REVIEW', 'IN_REVIEW'],
-    IN_REVIEW: ['IN_REVIEW', 'ACCEPTED'],
-    COMPLETING: ['ACCEPTED'],
+    WAITING_FOR_REVIEW: ['READY_FOR_REVIEW'],
+    IN_REVIEW: ['READY_FOR_REVIEW', 'ACCEPTED', 'APPROVED'],
+    COMPLETING: ['ACCEPTED', 'APPROVED'],
   };
   if (inProgress[reviewState]?.includes(review.itemState)) return {result: 'already-submitted', ...summary};
-  if (reviewState === 'COMPLETE' && review.itemState === 'ACCEPTED') return {result: 'review-complete', ...summary};
+  // ACCEPTED can still be held by unresolved items; only APPROVED confirms the item.
+  if (reviewState === 'COMPLETE' && review.itemState === 'APPROVED') return {result: 'review-complete', ...summary};
   return action('previous-submission-needs-reconciliation');
 }
 

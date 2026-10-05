@@ -95,8 +95,11 @@ manual-main-only setup. This PR configures none of these controls.
 
 Global concurrency serializes requests without cancelling in-flight runs. Matching
 metadata is left alone; only an unsubmitted matching single-item draft resumes.
-Allowlisted submission/item pairs report `already-submitted`; `COMPLETE` plus
-`ACCEPTED` reports `review-complete`, which does not imply publication. A timestamp
+Item API states are `READY_FOR_REVIEW`, `ACCEPTED`, `APPROVED`, `REJECTED`, `REMOVED`;
+`IN_REVIEW` belongs to the submission enum. Allowlisted active submission/item pairs
+report `already-submitted`; `COMPLETE` plus `APPROVED` reports `review-complete`,
+which does not imply publication. `COMPLETE` plus `ACCEPTED` requires reconciliation:
+an accepted item can still be held by unresolved items. A timestamp
 alone never proves success. GET modes expose `action-required` for unresolved
 issues, rejection/removal, cancellation or inconsistent state; writes stop. Unknown
 states fail closed. Rejected versions/items are never automatically edited or
@@ -118,14 +121,18 @@ Official sources checked on 2026-10-05:
 [selection](https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-appstoreversions-_id_-relationships-build),
 [submission](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-reviewsubmissions),
 [item](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-reviewsubmissionitems),
+[item states](https://developer.apple.com/documentation/appstoreconnectapi/reviewsubmissionitem/attributes-data.dictionary?changes=_4_8),
+[status meanings](https://developer.apple.com/help/app-store-connect/reference/app-information/app-and-submission-statuses),
 [submit](https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-reviewsubmissions-_id_),
 [beta-group access](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-builds-_id_-relationships-betagroups)
 (available in ASC, outside this workflow).
 
 Apple's detailed schema pages rendered JavaScript shells; Markdown/OpenAPI downloads
 were blocked. Full current schema verification remains a **pre-write blocker**,
-including include/linkage response shape, audience and review/item enums. Mock tests
-distinguish sparse defaults from explicit includes and exercise rejection pairs;
+including include/linkage response shape, audience and review/item state transitions.
+The item enum above follows the official Attributes source supplied in review;
+the full source could not be independently retrieved here. Mock tests distinguish
+sparse defaults from explicit includes and exercise conservative state classification;
 they do not prove Apple's acceptance. Verify current OpenAPI, run GET-only status,
 then separately approve `ASC_WRITES_ENABLED=true`. No live Apple endpoint, secret,
 secure setup or end-to-end release was exercised here.

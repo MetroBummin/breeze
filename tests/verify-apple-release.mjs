@@ -38,7 +38,7 @@ function fake({versionExists = true, selected = null, submission = null, unrelat
   let notes = [res('appStoreVersionLocalizations', 'ko-1', {locale: 'ko', whatsNew: ''})];
   let reviews = submission ? [res('reviewSubmissions', 'review-1', {platform: 'IOS', state: submission === 'draft' ?
     'READY_FOR_REVIEW' : 'WAITING_FOR_REVIEW', submittedDate: submission === 'draft' ? null : '2026-10-05T21:00:00Z'})] : [];
-  let items = submission ? [res('reviewSubmissionItems', 'item-1', {state: submission === 'draft' ? 'READY_FOR_REVIEW' : 'IN_REVIEW'},
+  let items = submission ? [res('reviewSubmissionItems', 'item-1', {state: 'READY_FOR_REVIEW'},
     {appStoreVersion: rel('appStoreVersions', 'version-1')})] : [];
   if (unrelated) reviews.push(res('reviewSubmissions', 'other-review', {platform: 'IOS', state: 'READY_FOR_REVIEW'}));
   drift?.({app, run, build, pre, version, notes, reviews, items});
@@ -213,23 +213,32 @@ test('matching single-item draft resumes without duplicate submission creation',
   await release(f.client, manifest('submit'), 'submit', () => now);
   assert.deepEqual(writes(f).map(c => c.path), ['/v1/reviewSubmissions/review-1']);
 });
+// Item enum from Apple's ReviewSubmissionItem.Attributes, not the UI/submission enum:
+// https://developer.apple.com/documentation/appstoreconnectapi/reviewsubmissionitem/attributes-data.dictionary?changes=_4_8
+// These pairs test conservative result classification; they do not simulate Apple's transitions.
 for (const [reviewState, itemState, expected] of [
   ['WAITING_FOR_REVIEW', 'READY_FOR_REVIEW', 'already-submitted'],
-  ['IN_REVIEW', 'IN_REVIEW', 'already-submitted'],
+  ['IN_REVIEW', 'READY_FOR_REVIEW', 'already-submitted'],
+  ['IN_REVIEW', 'ACCEPTED', 'already-submitted'],
+  ['IN_REVIEW', 'APPROVED', 'already-submitted'],
   ['COMPLETING', 'ACCEPTED', 'already-submitted'],
-  ['COMPLETE', 'ACCEPTED', 'review-complete'],
+  ['COMPLETING', 'APPROVED', 'already-submitted'],
+  ['COMPLETE', 'APPROVED', 'review-complete'],
 ]) test(`confirmed ${reviewState}/${itemState} returns explicit state without writes`, async () => {
   const f = fake({submission: 'submitted', drift: ({reviews, items}) => {
     reviews[0].attributes.state = reviewState; items[0].attributes.state = itemState;
   }}); f.match();
-  const result = await release(f.client, manifest('submit'), 'submit', () => now);
-  assert.equal(result.result, expected); assert.equal(result.reviewState, reviewState); assert.equal(result.itemState, itemState);
+  for (const mode of ['status', 'dry-run', 'prepare', 'submit']) {
+    const result = await release(f.client, manifest(['prepare', 'submit'].includes(mode) ? mode : 'none'), mode, () => now);
+    assert.equal(result.result, expected); assert.equal(result.reviewState, reviewState); assert.equal(result.itemState, itemState);
+  }
   assert.equal(writes(f).length, 0);
 });
 for (const [reviewState, itemState] of [
   ['UNRESOLVED_ISSUES', 'REJECTED'], ['UNRESOLVED_ISSUES', 'ACCEPTED'],
   ['WAITING_FOR_REVIEW', 'REJECTED'], ['COMPLETE', 'REJECTED'], ['COMPLETE', 'REMOVED'],
-  ['CANCELING', 'IN_REVIEW'], ['READY_FOR_REVIEW', 'READY_FOR_REVIEW'],
+  ['CANCELING', 'READY_FOR_REVIEW'], ['READY_FOR_REVIEW', 'READY_FOR_REVIEW'],
+  ['COMPLETE', 'ACCEPTED'], ['COMPLETE', 'READY_FOR_REVIEW'], ['COMPLETING', 'READY_FOR_REVIEW'],
 ]) test(`timestamp with ${reviewState}/${itemState} requires action and never resubmits`, async () => {
   const f = fake({submission: 'submitted', drift: ({reviews, items}) => {
     reviews[0].attributes.state = reviewState; items[0].attributes.state = itemState;
@@ -242,10 +251,13 @@ for (const [reviewState, itemState] of [
 for (const [name, drift] of [
   ['unknown submission state', ({reviews}) => reviews[0].attributes.state = 'UNKNOWN'],
   ['unknown item state', ({items}) => items[0].attributes.state = 'UNKNOWN'],
+  ['submission-only IN_REVIEW item state', ({items}) => items[0].attributes.state = 'IN_REVIEW'],
   ['missing item state', ({items}) => delete items[0].attributes.state],
 ]) test(`${name} fails closed before writes`, async () => {
   const f = fake({submission: 'submitted', drift}); f.match();
-  await assert.rejects(release(f.client, manifest('submit'), 'submit', () => now), /Unknown review/);
+  for (const mode of ['status', 'dry-run', 'prepare', 'submit']) {
+    await assert.rejects(release(f.client, manifest(['prepare', 'submit'].includes(mode) ? mode : 'none'), mode, () => now), /Unknown review/);
+  }
   assert.equal(writes(f).length, 0);
 });
 test('rejected App Store version exposes action-required and cannot be automatically resubmitted', async () => {
@@ -268,6 +280,23 @@ test('post-submit read-back rejection reports manual action and never retries th
   assert.equal(writes(f).filter(c => c.method === 'PATCH' && c.path === '/v1/reviewSubmissions/review-1').length, 1);
   const status = await release(f.client, manifest(), 'status', () => now);
   assert.equal(status.result, 'action-required');
+});
+test('post-submit COMPLETE/APPROVED read-back reports completion without repeating submit', async () => {
+  const f = fake({afterSubmit: ({reviews, items}) => {
+    reviews[0].attributes.state = 'COMPLETE'; items[0].attributes.state = 'APPROVED';
+  }});
+  const result = await release(f.client, manifest('submit'), 'submit', () => now);
+  assert.equal(result.result, 'review-complete'); assert.equal(result.itemState, 'APPROVED');
+  f.calls.length = 0;
+  assert.equal((await release(f.client, manifest('submit'), 'submit', () => now)).result, 'review-complete');
+  assert.equal(writes(f).length, 0);
+});
+test('post-submit COMPLETE/ACCEPTED requires reconciliation and never retries submit', async () => {
+  const f = fake({afterSubmit: ({reviews, items}) => {
+    reviews[0].attributes.state = 'COMPLETE'; items[0].attributes.state = 'ACCEPTED';
+  }});
+  await assert.rejects(release(f.client, manifest('submit'), 'submit', () => now), /manual action.*COMPLETE.*ACCEPTED/);
+  assert.equal(writes(f).filter(c => c.method === 'PATCH' && c.path === '/v1/reviewSubmissions/review-1').length, 1);
 });
 test('version rejection after item creation blocks the final submission PATCH', async () => {
   const f = fake({afterItem: ({version}) => version.attributes.appStoreState = 'REJECTED'});
