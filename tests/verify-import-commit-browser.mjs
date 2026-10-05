@@ -15,7 +15,7 @@ const server=createServer((req,res)=>{try{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 const results=[];
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
+ const browser=engine===webkit&&process.env.BREEZE_IMPORT_SINGLE_BROWSER==='1'?null:await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  const run=async(name,fn)=>{
   if(process.env.BREEZE_IMPORT_CASE&&!process.env.BREEZE_IMPORT_CASE.split(',').includes(name))return;
   const profile=engine===webkit?mkdtempSync(resolve(tmpdir(),'breeze-import-')):null;
@@ -41,9 +41,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       original:record?{...record,blob:await commitQA.hash(record.blob,'snapshot original')}:null,position:JSON.stringify(posOf(b.id))};
     };
    });
+   if(process.env.BREEZE_IMPORT_BYTE_DIAGNOSTICS==='1')await page.evaluate(readFileSync(new URL('./helpers/import-byte-diagnostics.js',import.meta.url),'utf8'));
    await fn(page);results.push({engine:engine.name(),name,pass:true});
   }catch(error){results.push({engine:engine.name(),name,pass:false,error:String(error),stack:error.stack});await page.screenshot({path:proof+'/'+engine.name()+'-'+name+'-failure.png'}).catch(()=>{});}
-  finally{await context.close();if(profile)rmSync(profile,{recursive:true,force:true});console.log(JSON.stringify(results.at(-1)));}
+  finally{if(process.env.BREEZE_IMPORT_BYTE_DIAGNOSTICS==='1'){
+   const bytes=await page.evaluate(async()=>{await window.importByteDiagnostics?.afterCase();return window.importByteDiagnostics?.events||JSON.parse(sessionStorage.getItem('import-byte-diagnostics')||'null');}).catch(error=>({error:String(error)}));
+   writeFileSync(proof+'/'+engine.name()+'-'+name+'-bytes.json',JSON.stringify(bytes,null,2));
+  }await context.close();if(profile)rmSync(profile,{recursive:true,force:true});console.log(JSON.stringify(results.at(-1)));}
  };
  try{
   await run('cover-edit-overlaps-reimport',async page=>{
@@ -200,6 +204,6 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    });
    assert.deepEqual(result,{first:false,later:true,count:1});
   });
- }finally{await browser.close();}
+ }finally{await browser?.close();}
 }}finally{await new Promise(r=>server.close(r));writeFileSync(proof+'/results.json',JSON.stringify(results,null,2));}
 assert.ok(results.every(r=>r.pass),'Import commit regressions failed; see '+proof+'/results.json');

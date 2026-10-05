@@ -197,3 +197,37 @@ jobs:
           retention-days: 7
       - name: Saved original position during interrupted reopening
         run: node tests/verify-original-reopen-browser.mjs
+  import-byte-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: current
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: current
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: 7f64075aa1a4b82c74ec7bb829409b99d09e6d81
+          path: base
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: current/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps webkit
+      - name: Compare unchanged assertions and byte boundaries on base and current
+        run: BREEZE_BYTE_BASE_ROOT="$GITHUB_WORKSPACE/base" node tests/diagnose-import-bytes.mjs
+      - name: Import byte diagnostic receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-byte-diagnostic
+          path: /tmp/breeze-import-byte-matrix/
+          if-no-files-found: error
+          retention-days: 7
