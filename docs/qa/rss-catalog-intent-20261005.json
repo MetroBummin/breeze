@@ -1,0 +1,938 @@
+{
+  "units": "UTF-8 response body bytes, uncompressed; independent per-response fixture delays; real browser DOM/rendering. Single trials, not production latency or billing.",
+  "engine": "chromium",
+  "baseline": "34b5dc9ba04ffe0f23c61bd89c0163908bd097c6",
+  "pr97": "d103bb31f075404d5498dfa1a15a1e60def7c81a",
+  "pr97Tree": "b083c324b290dbddfdd8f43e82e95f90a89ba404",
+  "sourceHashes": {
+    "main236": "c706bbb23f4381efd9b03a74cb8a43e048f848c82df0622af021c1007ba07d51",
+    "PR97": "ad89a41d43b5547d15620382dc2bb8f2ebad10fe1f77df50cce0ea48402f2965",
+    "catalogIntent": "c16ff27bce68d9de3a17aa671994faef78062f7fc2231aea8214b68e78b84365"
+  },
+  "rows": [
+    {
+      "version": "main236",
+      "profile": "normal",
+      "delays": {
+        "name": "normal",
+        "rtt": 20,
+        "bytesPerSecond": 1000000
+      },
+      "coldHome": {
+        "firstCardMs": 1050,
+        "settledMs": 1316.2000000011176,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 928.9000000003725,
+        "settledMs": 1219.0999999996275,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 129.7999999988824,
+        "previewWarmMs": 84.5,
+        "readMs": 183.80000000074506,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 110.5,
+        "previewWarmMs": 91.39999999850988,
+        "readMs": 275.69999999925494,
+        "coldRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 34,
+      "coldPlusFiveRelaunches": {
+        "requests": 102,
+        "responseBodyBytes": 12012144,
+        "kinds": {
+          "feed": 78,
+          "ownerFeed": 6,
+          "articleBody": 18,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 780.3000000007451,
+            "settledMs": 1153.9000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 701.1000000014901,
+            "settledMs": 1077.1000000014901,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 674.9000000003725,
+            "settledMs": 962.6999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 649.2000000011176,
+            "settledMs": 878.6000000014901,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 565.2999999988824,
+            "settledMs": 919.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 663.3999999985099,
+            "settledMs": 896.0999999996275,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "PR97",
+      "profile": "normal",
+      "delays": {
+        "name": "normal",
+        "rtt": 20,
+        "bytesPerSecond": 1000000
+      },
+      "coldHome": {
+        "firstCardMs": 572.2000000011176,
+        "settledMs": 959.2000000011176,
+        "cards": 13,
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 487.30000000074506,
+        "settledMs": 553.9000000003725,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 101.59999999962747,
+        "previewWarmMs": 72.40000000037253,
+        "readMs": 108.5,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 334.5,
+        "previewWarmMs": 322.09999999962747,
+        "readMs": 152.5,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 17,
+      "coldPlusFiveRelaunches": {
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 724.1999999992549,
+            "settledMs": 1055.699999999255,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 519.3000000007451,
+            "settledMs": 586,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 542,
+            "settledMs": 601.3000000007451,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 582.1999999992549,
+            "settledMs": 691.6999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 522.5999999996275,
+            "settledMs": 588.1999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 524.2999999988824,
+            "settledMs": 608.0999999996275,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "catalogIntent",
+      "profile": "normal",
+      "delays": {
+        "name": "normal",
+        "rtt": 20,
+        "bytesPerSecond": 1000000
+      },
+      "coldHome": {
+        "firstCardMs": 657.5999999996275,
+        "settledMs": 700.8000000007451,
+        "cards": 9,
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 611.2000000011176,
+        "settledMs": 749.5,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 358.2000000011176,
+        "previewWarmMs": 308.19999999925494,
+        "readMs": 286.80000000074506,
+        "coldRequests": {
+          "requests": 2,
+          "responseBodyBytes": 200245,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 354.80000000074506,
+        "previewWarmMs": 312.59999999962747,
+        "readMs": 245,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 4,
+      "coldPlusFiveRelaunches": {
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 677.4000000003725,
+            "settledMs": 762.9000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 526.4000000003725,
+            "settledMs": 725.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 527.7999999988824,
+            "settledMs": 630.5999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 567.0999999996275,
+            "settledMs": 703.4000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 726.1999999992549,
+            "settledMs": 863.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 621.9000000003725,
+            "settledMs": 731.2000000011176,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "main236",
+      "profile": "slow",
+      "delays": {
+        "name": "slow",
+        "rtt": 200,
+        "bytesPerSecond": 200000
+      },
+      "coldHome": {
+        "firstCardMs": 1247.800000000745,
+        "settledMs": 2374.0999999996275,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 1231.9000000003725,
+        "settledMs": 2338,
+        "cards": 13,
+        "requests": 17,
+        "responseBodyBytes": 2002024,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 3,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 283.59999999962747,
+        "previewWarmMs": 62.30000000074506,
+        "readMs": 116.70000000111759,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 69,
+        "previewWarmMs": 66.40000000037253,
+        "readMs": 117.09999999962747,
+        "coldRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 34,
+      "coldPlusFiveRelaunches": {
+        "requests": 102,
+        "responseBodyBytes": 12012144,
+        "kinds": {
+          "feed": 78,
+          "ownerFeed": 6,
+          "articleBody": 18,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 1324.699999999255,
+            "settledMs": 2400.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1093.5999999996275,
+            "settledMs": 2367.5,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1327.0999999996275,
+            "settledMs": 2479,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1269.5999999996275,
+            "settledMs": 2365.39999999851,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1248.2999999988824,
+            "settledMs": 2337.5,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 1170.4000000003725,
+            "settledMs": 2256.800000000745,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "PR97",
+      "profile": "slow",
+      "delays": {
+        "name": "slow",
+        "rtt": 200,
+        "bytesPerSecond": 200000
+      },
+      "coldHome": {
+        "firstCardMs": 1171.4000000003725,
+        "settledMs": 2287.800000000745,
+        "cards": 13,
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 529.6999999992549,
+        "settledMs": 598.2999999988824,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 296.19999999925494,
+        "previewWarmMs": 65.09999999962747,
+        "readMs": 121.69999999925494,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 193,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 0,
+          "responseBodyBytes": 0,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 0,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 1340.5,
+        "previewWarmMs": 1288.5999999996275,
+        "readMs": 143.90000000037253,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 17,
+      "coldPlusFiveRelaunches": {
+        "requests": 15,
+        "responseBodyBytes": 1601920,
+        "kinds": {
+          "feed": 13,
+          "ownerFeed": 1,
+          "articleBody": 1,
+          "catalog": 0,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 1372.9000000003725,
+            "settledMs": 2405.9000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 455.59999999962747,
+            "settledMs": 516.4000000003725,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 442.59999999962747,
+            "settledMs": 515.0999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 412.90000000037253,
+            "settledMs": 469.30000000074506,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 454.7999999988824,
+            "settledMs": 534.6999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 467.40000000037253,
+            "settledMs": 534.5999999996275,
+            "cards": 13
+          }
+        ]
+      }
+    },
+    {
+      "version": "catalogIntent",
+      "profile": "slow",
+      "delays": {
+        "name": "slow",
+        "rtt": 200,
+        "bytesPerSecond": 200000
+      },
+      "coldHome": {
+        "firstCardMs": 1459.5,
+        "settledMs": 1532.7000000011176,
+        "cards": 13,
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        }
+      },
+      "warmRelaunchHome": {
+        "firstCardMs": 482.2000000011176,
+        "settledMs": 589.0999999996275,
+        "cards": 13,
+        "requests": 0,
+        "responseBodyBytes": 0,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 0,
+          "previewMetadata": 0
+        }
+      },
+      "clickAfterColdHome": {
+        "previewColdMs": 1519.300000000745,
+        "previewWarmMs": 1265,
+        "readMs": 237.59999999962747,
+        "coldRequests": {
+          "requests": 2,
+          "responseBodyBytes": 200245,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 1
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "clickAfterWarmHome": {
+        "previewColdMs": 1293.4000000003725,
+        "previewWarmMs": 1265.699999999255,
+        "readMs": 254.09999999962747,
+        "coldRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        },
+        "warmAndReadRequests": {
+          "requests": 1,
+          "responseBodyBytes": 200052,
+          "kinds": {
+            "feed": 0,
+            "ownerFeed": 0,
+            "articleBody": 1,
+            "catalog": 0,
+            "previewMetadata": 0
+          }
+        }
+      },
+      "directRejectedAttempts": 4,
+      "coldPlusFiveRelaunches": {
+        "requests": 1,
+        "responseBodyBytes": 155417,
+        "kinds": {
+          "feed": 0,
+          "ownerFeed": 0,
+          "articleBody": 0,
+          "catalog": 1,
+          "previewMetadata": 0
+        },
+        "timings": [
+          {
+            "firstCardMs": 1372,
+            "settledMs": 1415,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 510.80000000074506,
+            "settledMs": 606.5999999996275,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 520.6999999992549,
+            "settledMs": 627.1999999992549,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 491.7000000011176,
+            "settledMs": 598.6000000014901,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 505.40000000037253,
+            "settledMs": 611.2999999988824,
+            "cards": 13
+          },
+          {
+            "firstCardMs": 464.19999999925494,
+            "settledMs": 573.0999999996275,
+            "cards": 13
+          }
+        ]
+      }
+    }
+  ],
+  "coldCatalog": {
+    "bytes": 702,
+    "upstreamBeforeWarm": 0,
+    "browser": {
+      "requests": 1,
+      "responseBodyBytes": 702,
+      "kinds": {
+        "feed": 0,
+        "ownerFeed": 0,
+        "articleBody": 0,
+        "catalog": 1,
+        "previewMetadata": 0
+      }
+    }
+  },
+  "upstreamFixedFeedLookups": 13,
+  "fallbackUI": [
+    {
+      "label": "phone",
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "screenshot": "fallback-phone-light.png"
+    },
+    {
+      "label": "phone",
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "screenshot": "fallback-phone-dark.png"
+    },
+    {
+      "label": "small-phone",
+      "width": 320,
+      "height": 568,
+      "theme": "light",
+      "screenshot": "fallback-small-phone-light.png"
+    },
+    {
+      "label": "small-phone",
+      "width": 320,
+      "height": 568,
+      "theme": "dark",
+      "screenshot": "fallback-small-phone-dark.png"
+    },
+    {
+      "label": "tablet",
+      "width": 834,
+      "height": 1112,
+      "theme": "light",
+      "screenshot": "fallback-tablet-light.png"
+    },
+    {
+      "label": "tablet",
+      "width": 834,
+      "height": 1112,
+      "theme": "dark",
+      "screenshot": "fallback-tablet-dark.png"
+    },
+    {
+      "label": "desktop",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "screenshot": "fallback-desktop-light.png"
+    },
+    {
+      "label": "desktop",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "screenshot": "fallback-desktop-dark.png"
+    },
+    {
+      "label": "short",
+      "width": 1024,
+      "height": 600,
+      "theme": "light",
+      "screenshot": "fallback-short-light.png"
+    },
+    {
+      "label": "short",
+      "width": 1024,
+      "height": 600,
+      "theme": "dark",
+      "screenshot": "fallback-short-dark.png"
+    }
+  ],
+  "mediumIntent": {
+    "url": "https://medium.com/@benchwriter/story-000000000001",
+    "cancelRequests": {
+      "requests": 1,
+      "responseBodyBytes": 100138,
+      "kinds": {
+        "feed": 0,
+        "ownerFeed": 1,
+        "articleBody": 0,
+        "catalog": 0,
+        "previewMetadata": 0
+      }
+    },
+    "retryAndReadRequests": {
+      "requests": 1,
+      "responseBodyBytes": 193,
+      "kinds": {
+        "feed": 0,
+        "ownerFeed": 0,
+        "articleBody": 0,
+        "catalog": 0,
+        "previewMetadata": 1
+      }
+    },
+    "savedOnlyAfterRead": true
+  }
+}

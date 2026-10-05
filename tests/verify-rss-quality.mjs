@@ -175,21 +175,21 @@ test('retention report distinguishes rejection, unresolved and missing measureme
   assert.equal(result.quality.falseRejections,0);assert.equal(result.quality.positiveUnresolved,1);
   assert.equal(result.availability.unmeasured,1);assert.equal(result.approvedDiversity.lengths.long,1);assert.equal(result.improvementMeasured,false);
 });
-test('successful Medium refresh cannot restore revoked or changed approvals when local resolution fails',async()=>{
+test('successful Medium metadata refresh revokes old approvals and never prepares a body before intent',async()=>{
   const source=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8').replace("RSS_QUALITY_MODE = 'off'","RSS_QUALITY_MODE = 'active'");
   const make=(slug,key)=>({url:`https://medium.com/@writer/${slug}`,title:slug,feedUrl:FEEDS[9].url,photo:'https://example.com/photo.jpg',bodyProvided:true,contentHtml:'previous public body',
     quality:{status:'approved',version:VERSION,key,checkedAt:Date.now()}});
   const revoked=make('revoked','old-key'),retained=make('retained','same-key'),changed=make('changed','old-body');
-  for(const throws of [false,true]){
-    const fresh=[{...retained,bodyProvided:false,contentHtml:''},make('changed','new-body'),make('replacement','new-key')];
-    const ctx=vm.createContext({URL,AbortSignal,Date,setTimeout:()=>1,clearTimeout,Map,Set,WeakMap,
-      previous:[revoked,retained,changed],fresh,throws,feed:FEEDS[9],articleUrlKey:canonical});
-    vm.runInContext(source+`\nrssSources=()=>[feed];rssCands=[previous];rssQualityFeed=async()=>({entries:fresh,pending:false});
-      rssAlreadySaved=()=>false;rssPreparePublicArticles=async()=>{if(throws)throw Error('body unavailable');return [];};`,ctx);
-    const groups=await ctx.loadRss(true);
-    assert.deepEqual(Array.from(groups[0],entry=>entry.url),[retained.url]);
-    assert.equal(groups[0][0].contentHtml,'previous public body');
-  }
+  const fresh=[{...retained,bodyProvided:false,contentHtml:''},make('changed','new-body'),make('replacement','new-key')];
+  const ctx=vm.createContext({URL,AbortSignal,Date,setTimeout:()=>1,clearTimeout,Map,Set,WeakMap,
+    previous:[revoked,retained,changed],fresh,feed:FEEDS[9],articleUrlKey:canonical});
+  vm.runInContext(source+`\nrssSources=()=>[feed];rssCands=[previous];rssQualityFeed=async()=>({entries:fresh,pending:false});
+    rssAlreadySaved=()=>false;rssPublicArticle=()=>{throw Error('No body request before intent');};`,ctx);
+  const groups=await ctx.loadRss(true);
+  assert.deepEqual(Array.from(groups[0],entry=>entry.url),fresh.map(entry=>entry.url));
+  assert.deepEqual(Array.from(groups[0],entry=>entry.quality.key),['same-key','new-body','new-key']);
+  assert.ok(groups[0].every(entry=>!entry.contentHtml&&!entry.bodyProvided));
+  assert.ok(!groups[0].some(entry=>entry.url===revoked.url));
 });
 test('Medium transport outage preserves prior approvals, but successful refresh excludes saved fallback',async()=>{
   const source=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8').replace("RSS_QUALITY_MODE = 'off'","RSS_QUALITY_MODE = 'active'");
@@ -197,7 +197,7 @@ test('Medium transport outage preserves prior approvals, but successful refresh 
   const ctx=vm.createContext({URL,AbortSignal,Date,setTimeout:()=>1,clearTimeout,Map,Set,WeakMap,prior,feed:FEEDS[9],articleUrlKey:canonical});
   vm.runInContext(source+`\nrssSources=()=>[feed];rssCands=[[prior]];rssQualityFeed=async()=>{throw Error('offline');};`,ctx);
   assert.equal((await ctx.loadRss(true))[0][0].url,prior.url);
-  vm.runInContext(`rssQualityFeed=async()=>({entries:[prior],pending:false});rssAlreadySaved=()=>true;rssPreparePublicArticles=async()=>[];`,ctx);
+  vm.runInContext(`rssQualityFeed=async()=>({entries:[prior],pending:false});rssAlreadySaved=()=>true;`,ctx);
   assert.equal((await ctx.loadRss(true))[0].length,0);
 });
 test('unusable feed photo falls back to a public article cover; no usable cover still withholds',async()=>{
