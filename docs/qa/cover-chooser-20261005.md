@@ -66,3 +66,42 @@ new chooser and RSS contracts. All fourteen existing Chromium atomic-import
 cases passed. `npm run ios:sync` passed, and all three changed production scripts
 match the actual `ios/App/App/public` bundle byte for byte. This verifies web
 asset delivery only; it does not establish an Xcode archive or new release.
+
+## CI fixture timeout investigation
+
+The final-head [Integrity run 37344693979](https://github.com/MetroBummin/breeze/actions/runs/37344693979/job/111880373375)
+completed all four new Chromium scripts by 16:58:21 UTC, then produced no output
+until cancellation at 17:27:27. Its terminal logs show live WebKit MiniBrowser,
+network and web processes during orphan cleanup. The uploaded cover proof has
+32 Chromium files and no WebKit file, including no first-photo screenshot.
+This locates the wait in the first WebKit chooser before that screenshot;
+the old fixture did not log enough phases to identify the exact pending call.
+
+The chooser used an ephemeral browser context, unlike the existing import,
+identity and Home-reading fixtures. Those use persistent WebKit profiles because
+native original-Blob IndexedDB writes failed in an ephemeral profile; the prior
+failure is recorded in [Home-reading QA](home-reading-cards-20261004.md).
+The chooser now uses a fresh temporary persistent profile per engine and removes
+it after owned context/browser cleanup. All actual imports, native IndexedDB byte
+comparisons, photo selection, reimport, None, races and deletion assertions remain.
+An ordinary storage rejection alone does not explain the indefinite wait: a
+Chromium probe that aborted the original write resolved in 289ms and left no
+books or staged images. A pending WebKit transaction or another pre-screenshot
+phase remains the probable cause until the next CI phase evidence is available.
+
+Playwright's default timeout does not bound a never-settling `page.evaluate`
+promise. The Node phase owner now bounds and logs launch/setup, navigation,
+readiness, import and every asynchronous evaluated selection/storage operation.
+Failure propagates after bounded context/browser/server cleanup; results and
+phase receipts are written even on failure. Integrity also bounds each of the
+eight cover scripts' process groups to 120 seconds, with TERM then KILL after
+five seconds. A timeout fails the check and all eight cases still run. No
+assertion, browser or later CI check was removed, and job timeout was not raised.
+
+[Fault-injection evidence](cover-chooser-ci-timeouts-20261005.json) uses the
+committed phase helper with real Chromium: a successful evaluate returned 42 and
+exited 0 in 1.85s; a never-resolving evaluate failed its named 200ms deadline and
+exited 1 in 2.02s. Both disconnected the browser and closed the server without
+the probe's watchdog firing. The amended real chooser and `npm test` pass
+locally. Local WebKit remains unavailable because its official download returns
+403 `Domain forbidden`; exact-head WebKit CI is required before parent merge.

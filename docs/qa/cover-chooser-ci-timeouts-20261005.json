@@ -1,0 +1,183 @@
+{
+  "helper": "tests/helpers/browser-phase.mjs",
+  "engine": "system Chromium",
+  "rows": [
+    {
+      "mode": "evaluate42",
+      "exitCode": 0,
+      "elapsedMs": 1846,
+      "watchdogFired": false,
+      "value": 42,
+      "failure": null,
+      "browserDisconnected": true,
+      "serverClosed": true,
+      "phases": [
+        {
+          "name": "launch persistent",
+          "status": "started",
+          "started": 1791221993834
+        },
+        {
+          "name": "launch persistent",
+          "status": "passed",
+          "durationMs": 988
+        },
+        {
+          "name": "new page",
+          "status": "started",
+          "started": 1791221994823
+        },
+        {
+          "name": "new page",
+          "status": "passed",
+          "durationMs": 69
+        },
+        {
+          "name": "navigate",
+          "status": "started",
+          "started": 1791221994892
+        },
+        {
+          "name": "navigate",
+          "status": "passed",
+          "durationMs": 68
+        },
+        {
+          "name": "evaluate",
+          "status": "started",
+          "started": 1791221994960
+        },
+        {
+          "name": "evaluate",
+          "status": "passed",
+          "durationMs": 21
+        },
+        {
+          "name": "close context",
+          "status": "started",
+          "started": 1791221994981
+        },
+        {
+          "name": "close context",
+          "status": "passed",
+          "durationMs": 94
+        },
+        {
+          "name": "close server",
+          "status": "started",
+          "started": 1791221995075
+        },
+        {
+          "name": "close server",
+          "status": "passed",
+          "durationMs": 1
+        }
+      ]
+    },
+    {
+      "mode": "never-resolving evaluate",
+      "exitCode": 1,
+      "elapsedMs": 2018,
+      "watchdogFired": false,
+      "value": null,
+      "failure": "Error: evaluate exceeded 200ms",
+      "browserDisconnected": true,
+      "serverClosed": true,
+      "phases": [
+        {
+          "name": "launch persistent",
+          "status": "started",
+          "started": 1791221995624
+        },
+        {
+          "name": "launch persistent",
+          "status": "passed",
+          "durationMs": 970
+        },
+        {
+          "name": "new page",
+          "status": "started",
+          "started": 1791221996594
+        },
+        {
+          "name": "new page",
+          "status": "passed",
+          "durationMs": 94
+        },
+        {
+          "name": "navigate",
+          "status": "started",
+          "started": 1791221996688
+        },
+        {
+          "name": "navigate",
+          "status": "passed",
+          "durationMs": 60
+        },
+        {
+          "name": "evaluate",
+          "status": "started",
+          "started": 1791221996748
+        },
+        {
+          "name": "evaluate",
+          "status": "failed",
+          "durationMs": 201,
+          "error": "Error: evaluate exceeded 200ms"
+        },
+        {
+          "name": "close context",
+          "status": "started",
+          "started": 1791221996949
+        },
+        {
+          "name": "close context",
+          "status": "passed",
+          "durationMs": 145
+        },
+        {
+          "name": "close server",
+          "status": "started",
+          "started": 1791221997094
+        },
+        {
+          "name": "close server",
+          "status": "passed",
+          "durationMs": 0
+        }
+      ]
+    }
+  ],
+  "previousCI": {
+    "head": "c9b39f9191ea417e7ec4cb62ba961f82f42beae3",
+    "run": 37344693979,
+    "job": 111880373375,
+    "conclusion": "cancelled",
+    "stepStartedUTC": "2026-10-05T16:58:06.7264375Z",
+    "lastChromiumOutputUTC": "2026-10-05T16:58:21.3481642Z",
+    "cancellationUTC": "2026-10-05T17:27:27.1037905Z",
+    "artifact": 11362135626,
+    "artifactFiles": 32,
+    "webkitFiles": 0,
+    "observedBoundary": "First WebKit chooser, before its first photo screenshot; exact phase unobserved"
+  },
+  "chooserChromium": [
+    {
+      "engine": "chromium",
+      "id": "file-5c0706a6ad6ed931c1ad189246149025",
+      "photo": {
+        "cover": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "pick": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "storedHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+        "shownHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70"
+      },
+      "replacement": {
+        "cover": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "pick": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "storedHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+        "shownHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51"
+      },
+      "checks": "upload/reopen/reload/replace/reimport/None/stale-picker/latest-picker/delete/10 viewports"
+    }
+  ]
+}

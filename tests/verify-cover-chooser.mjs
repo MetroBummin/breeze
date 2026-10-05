@@ -3,6 +3,20 @@ import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
 import {createContext,Script} from 'node:vm';
 import {parseHTML} from 'linkedom';
+import {browserPhase} from './helpers/browser-phase.mjs';
+
+test('browser phase bounds a never-settling page promise and names the failing owner',async()=>{
+  const reports=[];
+  await assert.rejects(browserPhase('webkit:import EPUB',()=>new Promise(()=>{}),{
+    timeoutMs:10,report:result=>reports.push(result),
+  }),/webkit:import EPUB exceeded 10ms/);
+  assert.deepEqual(reports.map(result=>result.status),['started','failed']);
+});
+test('browser phase retains successful values and original failures',async()=>{
+  assert.equal(await browserPhase('value',async()=>42,{timeoutMs:100}),42);
+  const error=new Error('real assertion');
+  await assert.rejects(browserPhase('failure',()=>{throw error;},{timeoutMs:100}),value=>value===error);
+});
 
 const declaration=(path,name)=>{
   const source=readFileSync(new URL('../'+path,import.meta.url),'utf8');
