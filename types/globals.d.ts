@@ -16,7 +16,7 @@ declare var qrcode: any;
    - `breezeExportDict` : 콘솔에서 사전 캐시를 들여다보는 문 */
 interface Window {
   supabase?: any;
-  BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string };
+  BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string; RSS_CATALOG?: boolean };
   Capacitor?: any;
   breezeExportDict?: () => Promise<any>;
   showSaveFilePicker?: (options?: any) => Promise<any>;

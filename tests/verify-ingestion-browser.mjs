@@ -12,7 +12,7 @@ const para='Reading brings people into contact with different ideas. A thoughtfu
 const html=`<!doctype html><html><head><title>Reading together</title><meta name="author" content="A Writer"><meta property="article:published_time" content="2026-09-22"><style>body{color:red}</style></head><body><nav>Subscribe navigation</nav><article><h1>Reading together</h1><p>${para}<strong>Important words</strong> and <em>gentle emphasis</em>. Read <a href="/reference">the reference</a>.</p><h2>A smaller section</h2><p>${para}</p><ul><li>Short first item</li><li>Short second item</li></ul><blockquote><p>${para}</p></blockquote><figure><img src="https://content.example/photo.png" alt="A book" width="640" height="480"><figcaption>A quiet reading room.</figcaption></figure><pre>const answer = 42;</pre><table><tr><th>Day</th><th>Pages</th></tr><tr><td>Monday</td><td>12</td></tr></table><p>${para}</p><script>window.injected=true</script><a href="javascript:alert(1)">Unsafe</a></article></body></html>`;
 const xml=`<rss version="2.0"><channel><title>Public essays</title><item><title>Reading together</title><link>https://content.example/article</link><description><![CDATA[<p>A useful essay.</p>]]></description></item><item><title>Bad URL</title><link>javascript:alert(1)</link></item></channel></rss>`;
 try{
- for(const engine of [chromium,webkit]){
+ for(const engine of [chromium,webkit].filter(engine=>!process.env.BREEZE_QA_ENGINE||engine.name()===process.env.BREEZE_QA_ENGINE)){
   const browser=await engine.launch();try{
    const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
    await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
@@ -74,14 +74,14 @@ try{
    assert.equal(await page.evaluate(()=>{try{parseRss('<rss><broken>',{url:'https://a.example',name:'bad'});return false;}catch{return true;}}),true);
    assert.equal(await page.evaluate(()=>parseRss('<rss><channel><item><title>A useful English story</title><link>https://example.com/story</link><description>The story follows a writer who finds something strange in the city.</description></item></channel></rss><script>publisher tail</script>',{url:'https://example.com/feed',name:'test'}).length),1);
    assert.equal(await page.evaluate(async()=>{
-     const fetchOriginal=fetchArticleHtml,parseOriginal=parseArticleHtml;
-     const entry={url:'https://example.com/photo-story',title:'A story',bodyProvided:false,photo:''};
+     const original=fetchArticleHtml;let requests=0;
      try{
-       fetchArticleHtml=async()=>'<html><article>Story</article></html>';
-       parseArticleHtml=()=>({cover:'https://example.com/real-cover.jpg',blocks:[{r:'p',t:'A real story'}]});
-       await rssPrepareCovers([entry],()=>{});
-       return entry.photo==='https://example.com/real-cover.jpg' && rssPreparedArticles.has(articleUrlKey(entry.url));
-     }finally{fetchArticleHtml=fetchOriginal;parseArticleHtml=parseOriginal;rssPreparedArticles.clear();}
+       fetchArticleHtml=async()=>{requests++;throw Error('Body must wait for selection');};
+       const entry=rssDiscoveryEntry({title:'A story without a photo',url:'https://example.com/no-cover',source:'Example'});
+       const rail=document.getElementById('casual-rail');rssRenderIds.set(rail,1);
+       const cards=await rssFeedCards([entry],1,rail);
+       return cards.length===1&&!cards[0].classList.contains('rss-pending')&&requests===0;
+     }finally{fetchArticleHtml=original;}
    }),true);
    assert.deepEqual(await page.evaluate(()=>{
      const feed={url:'https://medium.com/feed/tag/culture',name:'Medium'};

@@ -20,8 +20,9 @@ with explicit library, positions, sources and clock inputs. It stays in the
 existing script to avoid a new script-load/iOS bundle dependency while Home,
 Preview and Annotation PRs are being integrated.
 
-1. Use only valid HTTP(S) candidates with a title and photo. Existing image decode
-   and ingestion checks remain responsible for display and readability.
+1. Use valid HTTP(S) candidates with a title and supplied photo or the explicit
+   local-artwork fallback marker from Decision 015's loader. Existing image
+   decode and ingestion checks own photo display and body readability.
 2. Exclude saved source/resolved/discovery URLs, including UTM, fbclid, gclid and
    fragment variants. Preserve meaningful query parameters. Deduplicate articles
    across feeds and Reddit outbound links. Do not claim semantic near-duplicate
@@ -104,7 +105,8 @@ graphite glass skeleton covering the image, publisher and headline regions.
 Cards cannot be opened or keyboard-focused until the photo succeeds. Successful
 loads fade the overlay over 650 ms without changing card geometry; reduced motion
 disables the shimmer and fade. Existing decoded cards remain visible on refresh.
-Missing or failed covers still follow the existing exclusion and empty-state path.
+Decision 015 supersedes missing/failed-cover exclusion: local artwork keeps
+cards selectable without downloading article HTML to repair their covers.
 The shared control glass and Lookup materials are unchanged.
 
 Home refresh starts at the first recommendation. When a rail already at its
@@ -130,8 +132,16 @@ signals for reviews, buying guides, reporting, research, discussion or explanati
 stay visible. A lone discount keyword or uncertain snippet never rejects an entry.
 This is a small local rule, not a completeness or general quality judgment.
 
-The parser excludes matching entries before cover/body preparation. Ranking and
-card selection recheck cached candidates, so the next render removes matching
-cards even outside the Home ranker. RSS candidates/decoded cards are transient;
-no cache migration or saved-article deletion occurs. Existing saved material is
-unchanged. The Jev pipeline remains OFF; no backend or paid calls are added.
+The parser excludes matching entries before publishing metadata. A cache record
+written after that check carries a discovery-filtered marker; a shortened
+snippet cannot overturn a decision made with supplied prose. Unfiltered
+candidates are still checked by ranking/card selection. Decision 015 applies
+the same lexical English/promo rules at the optional catalog boundary, without
+claiming Jev approval. Saved material is unchanged; Jev stays OFF.
+
+## Selected-article intent and optional catalog (2026-10-05)
+
+[Decision 015](015-rss-intent-and-public-catalog.md) removes background article
+cover and Medium owner-body fetches, preserves ranking and Read commitment,
+and proposes a separate default-off shared metadata transport. Preference
+history stays private; custom feeds never enter its server inventory.

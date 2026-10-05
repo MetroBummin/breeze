@@ -21,6 +21,14 @@ inventory. Neither this PR nor its tests deploy, migrate or call paid Jev.
 
 ## Separate decisions
 
+Decision 015 (2026-10-05) moves client article/Medium resolution to card intent
+and adds a separate default-off public metadata catalog. It does not change this
+pipeline's mode, eligibility, rubric, readiness, provider, budgets or SQL.
+Future active client inventory still accepts only versioned approved/explicitly
+eligible candidates; successful missing/revoked inventory remains authoritative.
+Cards publish metadata without background bodies, exclude saved entries, and
+resolve selected content through existing import/Preview/Read ownership.
+
 1. Transport and extraction own readiness. Public DNS is checked for every hop,
    all answers must be public, and validated addresses stay pinned to sockets.
    `192.0.0/24` and `192.0.2/24` remain blocked; public `192.0.66.*` is allowed.

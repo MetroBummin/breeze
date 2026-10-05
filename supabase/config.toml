@@ -3,3 +3,7 @@ project_id = "fqvhlyocdkwiyioiokte"
 [functions.ready]
 verify_jwt = false
 
+# Proposal only: public metadata GET; POST authorizes the existing service key
+# inside the handler. No public request triggers upstream refresh work.
+[functions.rss-catalog]
+verify_jwt = false
