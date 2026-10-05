@@ -197,5 +197,32 @@
     "RSSSourceSha256": "06456fd9f60db5e7fcea1f62aac0b825ce568a7ad0baf1a1dd0bb8b6657f4b02",
     "remainingFailure": "WebKit supplied-image fixture card-photo assertion line109; relay CORS fixture investigation",
     "coverArtifact": 11362801023
+  },
+  "diagnosticCI": {
+    "head": "7371a9ee21079af75127ec9ada950dd121b53036",
+    "run": 37351916478,
+    "browserJob": 111904593388,
+    "coverArtifact": 11363196448,
+    "RSSFailure": {
+      "case": "hotlink-recovery",
+      "src": "blob:http://127.0.0.1:40313/96c11d63-f97d-4e99-8ce1-0f2005e3269d",
+      "complete": true,
+      "naturalWidth": 0,
+      "blockedRequest": {
+        "kind": "blocked",
+        "method": "GET",
+        "resourceType": "image",
+        "error": "Blocked by Web Inspector"
+      },
+      "rootCause": "Fixture denied browser-owned local blob image after successful relay fetch",
+      "fix": "Permit blob URLs belonging to the local test page; keep photo/fallback assertions"
+    },
+    "chooserFailure": {
+      "phase": "replacement bytes saved already passed",
+      "storedHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+      "shownHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+      "rootCause": "IDB replacement commit precedes picker DOM projection; old decoded image satisfied generic readiness",
+      "fix": "Wait for a new selected DOM image to decode, then retain strict stored/shown hash equality"
+    }
   }
 }

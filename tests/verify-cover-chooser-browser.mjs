@@ -64,8 +64,16 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     }
     await evaluate('close edit sheet',()=>closeEditSheet());await page.reload();await evaluate('reloaded homeReady',()=>homeReady);
     await evaluate('reopen after reload',id=>openEditSheet(books.find(b=>b.id===id)),id);assert.deepEqual(await chosen(),photo,'real IndexedDB cold reload retains cover projection');
+    const previousImage=await page.locator('#ed-covers .on img').elementHandle();
     await page.locator('#ed-pick-file input').setInputFiles(resolve(root,'assets/longreads/covers/red-headed-league.webp'));
     await phase('replacement bytes saved',()=>page.waitForFunction(async old=>await rawFileHash(await imgGet(editTarget.cover))!==old,photo.storedHash));
+    // The IDB write precedes the picker's DOM projection. A decoded old image
+    // must not satisfy readiness for a replacement that reuses the same key.
+    await phase('replacement chooser decoded',()=>page.waitForFunction(previous=>{
+      const image=document.querySelector('#ed-covers .on img');
+      return image&&image!==previous&&image.complete&&image.naturalWidth>0;
+    },previousImage));
+    await previousImage.dispose();
     const replacement=await chosen();assert.notEqual(replacement.storedHash,photo.storedHash);assert.equal(replacement.shownHash,replacement.storedHash,'same cover key shows replacement bytes');
     await evaluate('save replacement',()=>saveEditSheet());
     await evaluate('reimport EPUB',async()=>{

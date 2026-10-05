@@ -118,3 +118,19 @@ interception automatically fulfills preflights, hiding that fixture difference.
 The supplied-image fixture is corrected to the existing relay contract, with
 method/resource receipts and diagnostic image state before its unchanged
 photo/fallback assertions. The next exact-head CI must pass all checks.
+
+Those diagnostics on [job 111904593388](https://github.com/MetroBummin/breeze/actions/runs/37351916478/job/111904593388)
+proved the hotlink failure's actual cause: the relay GET succeeded, but the
+fixture recorded the resulting local Blob image as `blocked`; WebKit's request
+failure for that same URL was `Blocked by Web Inspector`. The fixture now permits
+Blob URLs belonging to its local page. The CORS correction remains protocol
+fidelity; it was not the cause of the image abort.
+
+That run also exposed an independent chooser fixture race: IDB already contained
+the replacement bytes while the test hashed the still-decoded old DOM image.
+The picker commits before rebuilding its choices, so durable replacement alone
+does not establish presentation readiness. The fixture now waits for a new
+selected image element to decode, then performs the same strict byte equality
+comparison. It does not wait for an expected hash or change production behavior.
+Both corrected browser fixtures pass Chromium; full exact-head CI remains the
+WebKit and merge gate.

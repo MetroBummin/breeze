@@ -64,6 +64,11 @@ try{
       await page.route('**/*',async route=>{
         const request=route.request(),url=request.url(),parsed=new URL(url);
         const receipt=(kind,target=url)=>({kind,url:target,method:request.method(),resourceType:request.resourceType()});
+        // WebKit routes the image Blob created by the real relay recovery.
+        // It belongs to this page; aborting it would test the fixture's blocker.
+        if(parsed.protocol==='blob:'&&parsed.origin===new URL(base).origin){
+          requests.push(receipt('local-blob'));return route.continue();
+        }
         if(url.startsWith(base)){
           if(process.env.BREEZE_RSS_COVER_SOURCE&&parsed.pathname==='/scripts/importers/rss.js')
             return route.fulfill({contentType:'text/javascript',body:readFileSync(process.env.BREEZE_RSS_COVER_SOURCE,'utf8')});
