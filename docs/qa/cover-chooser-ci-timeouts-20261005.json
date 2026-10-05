@@ -179,5 +179,23 @@
       },
       "checks": "upload/reopen/reload/replace/reimport/None/stale-picker/latest-picker/delete/10 viewports"
     }
-  ]
+  ],
+  "followupCI": {
+    "head": "28ff047581702d833304de091255be048a1f72f4",
+    "run": 37350611249,
+    "browserJob": 111900228435,
+    "chooserChromium": "passed",
+    "chooserWebKit": "passed",
+    "webkitChooserDurationMs": 11761,
+    "webkitPhotoStoredAndShownHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+    "webkitReplacementStoredAndShownHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+    "webkitChooserPhaseFailures": 0,
+    "webkitContextCloseMs": 345,
+    "serverCloseMs": 1,
+    "rssVisibleScenariosEachEnginePassed": 8,
+    "rssCurrentComparatorCasesEachEnginePassed": 2,
+    "RSSSourceSha256": "06456fd9f60db5e7fcea1f62aac0b825ce568a7ad0baf1a1dd0bb8b6657f4b02",
+    "remainingFailure": "WebKit supplied-image fixture card-photo assertion line109; relay CORS fixture investigation",
+    "coverArtifact": 11362801023
+  }
 }

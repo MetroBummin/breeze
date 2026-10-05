@@ -105,3 +105,16 @@ exited 1 in 2.02s. Both disconnected the browser and closed the server without
 the probe's watchdog firing. The amended real chooser and `npm test` pass
 locally. Local WebKit remains unavailable because its official download returns
 403 `Domain forbidden`; exact-head WebKit CI is required before parent merge.
+
+The next [Integrity job 111900228435](https://github.com/MetroBummin/breeze/actions/runs/37350611249/job/111900228435)
+at `28ff047581702d833304de091255be048a1f72f4` passed the complete chooser in both
+engines. WebKit finished in 11.76s, including import, photo byte equality,
+save/reopen/reload, replacement/reimport, None, both picker races, deletion,
+ten size/theme checks and cleanup (context 345ms, server 1ms). It also passed all
+eight visible-cover scenarios and both current RSS comparison cases. That job
+failed a separate supplied-image WebKit assertion. Its mock image relay
+omitted the real relay's allowed headers/methods and OPTIONS response; Chromium
+interception automatically fulfills preflights, hiding that fixture difference.
+The supplied-image fixture is corrected to the existing relay contract, with
+method/resource receipts and diagnostic image state before its unchanged
+photo/fallback assertions. The next exact-head CI must pass all checks.

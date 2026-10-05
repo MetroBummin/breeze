@@ -13,6 +13,13 @@ const rssSource=readFileSync(resolve(root,'scripts/importers/rss.js'),'utf8');
 const feeds=[...rssSource.matchAll(/name:'([^']+)', url:'([^']+)', category:'([^']+)'/g)]
   .map(([,name,url,category])=>({name,url,category}));
 const prose='The story explains how people learn about the world by reading evidence and comparing ideas. ';
+// Match server/article/index.ts. Chromium auto-fulfills intercepted preflights;
+// WebKit also needs the fixture to model the relay's actual CORS response.
+const relayCors={
+  'Access-Control-Allow-Origin':'*',
+  'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods':'GET, OPTIONS',
+};
 const cases=[
   {name:'description-photo',fields:`<content:encoded><![CDATA[<p>${prose.repeat(8)}</p>]]></content:encoded><description><![CDATA[<p>${prose}</p><img src="https://images.test/description.jpg" width="640" height="480">]]></description>`,expected:'https://images.test/description.jpg'},
   {name:'summary-photo',atom:true,fields:`<content type="html">${prose.repeat(8)}</content><summary type="html"><![CDATA[<p>${prose}</p><img data-src="https://images.test/summary.jpg" width="640" height="480">]]></summary>`,expected:'https://images.test/summary.jpg'},
@@ -50,35 +57,42 @@ try{
     const browser=await engine.launch(engine===chromium&&executable?{executablePath:executable}:{});
     try{
       const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
-      const requests=[];
+      const requests=[],failures=[],consoleErrors=[];
+      page.on('requestfailed',request=>failures.push({url:request.url(),method:request.method(),resourceType:request.resourceType(),error:request.failure()?.errorText}));
+      page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
       await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
       await page.route('**/*',async route=>{
-        const url=route.request().url(),parsed=new URL(url);
+        const request=route.request(),url=request.url(),parsed=new URL(url);
+        const receipt=(kind,target=url)=>({kind,url:target,method:request.method(),resourceType:request.resourceType()});
         if(url.startsWith(base)){
           if(process.env.BREEZE_RSS_COVER_SOURCE&&parsed.pathname==='/scripts/importers/rss.js')
             return route.fulfill({contentType:'text/javascript',body:readFileSync(process.env.BREEZE_RSS_COVER_SOURCE,'utf8')});
           return route.continue();
         }
         if(parsed.hostname==='stories.test'){
-          requests.push({kind:'article',url});
+          requests.push(receipt('article'));
           return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'text/html',
             body:`<!doctype html><title>The selected story</title><article><h1>The selected story</h1><p>${prose.repeat(18)}</p></article>`});
         }
         const index=feeds.findIndex(feed=>feed.url===url);
-        if(index>=0){requests.push({kind:'feed',url});return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:fixture(index)});}
+        if(index>=0){requests.push(receipt('feed'));return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:fixture(index)});}
         if(parsed.hostname==='images.test'){
-          requests.push({kind:'image',url});
+          requests.push(receipt('image'));
           if(parsed.pathname==='/broken.jpg')return route.fulfill({contentType:'text/html',body:'Challenge page'});
           if(parsed.pathname==='/hotlink.jpg')return route.abort();
           return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/jpeg',body:photo});
         }
         if(parsed.pathname==='/functions/v1/article'&&parsed.searchParams.get('as')==='image'){
-          requests.push({kind:'image-relay',url:parsed.searchParams.get('url')});
+          if(request.method()==='OPTIONS'){
+            requests.push({...receipt('image-preflight',parsed.searchParams.get('url')),requestedHeaders:request.headers()['access-control-request-headers']||''});
+            return route.fulfill({status:204,headers:relayCors});
+          }
+          requests.push(receipt('image-relay',parsed.searchParams.get('url')));
           return parsed.searchParams.get('url')==='https://images.test/hotlink.jpg'
-            ? route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/jpeg',body:photo})
-            : route.fulfill({status:404,headers:{'Access-Control-Allow-Origin':'*'}});
+            ? route.fulfill({headers:relayCors,contentType:'image/jpeg',body:photo})
+            : route.fulfill({status:404,headers:relayCors});
         }
-        requests.push({kind:'blocked',url});return route.abort();
+        requests.push(receipt('blocked'));return route.abort();
       });
       await page.goto(base);await page.evaluate(()=>homeReady);
       await page.evaluate(async()=>{if(rssLoading)await rssLoading;refreshFeedRails();});
@@ -89,10 +103,16 @@ try{
         cards:[...document.querySelectorAll('#casual-rail .rss-card')].map(card=>({url:card.dataset.rssUrl,
           photo:card.querySelector('.thumb').classList.contains('has-cover'),hidden:card.hidden,
           title:card.querySelector('.ct').textContent,source:card.querySelector('.src').textContent,
-          artwork:!!card.querySelector('.cover-art'),ready:!card.classList.contains('rss-pending'),tabIndex:card.tabIndex})),
+          artwork:!!card.querySelector('.cover-art'),ready:!card.classList.contains('rss-pending'),tabIndex:card.tabIndex,
+          photoStarted:card.dataset.photoStarted||'',image:{src:card.querySelector('img.cover').getAttribute('src'),
+            complete:card.querySelector('img.cover').complete,naturalWidth:card.querySelector('img.cover').naturalWidth,
+            naturalHeight:card.querySelector('img.cover').naturalHeight,hidden:card.querySelector('img.cover').hidden}})),
         cache:JSON.parse(localStorage.getItem(RSS_PUBLIC_CACHE_KEY)),books:books.length,
       }));
+      // Preserve diagnostics even if a later assertion fails in one engine.
+      writeFileSync(resolve(artifacts,`${engine.name()}-results.json`),JSON.stringify({state,requests,failures,consoleErrors},null,2));
       console.log(engine.name(),'RSS cover metadata:',JSON.stringify(state.entries.map(entry=>entry.photo)));
+      console.log(engine.name(),'RSS decoded cards:',JSON.stringify(state.cards.map(card=>({case:cases[Number(card.url.split('-').at(-1))%cases.length].name,...card}))));
       await page.locator('#casual-rail').screenshot({path:resolve(artifacts,`${engine.name()}-phone-light.png`)});
       for(let index=0;index<feeds.length;index++){
         assert.equal(state.entries[index].photo,cases[index%cases.length].expected,`Supplied feed photo lost: ${cases[index%cases.length].name}`);
@@ -106,7 +126,7 @@ try{
       assert.equal(state.books,0,'Discovery persisted a personal book');
       for(const card of state.cards){
         const index=Number(card.url.split('-').at(-1));
-        assert.equal(card.photo,!['no-publisher-photo','broken-image'].includes(cases[index%cases.length].name));
+        assert.equal(card.photo,!['no-publisher-photo','broken-image'].includes(cases[index%cases.length].name),`Decoded card photo: ${cases[index%cases.length].name} (${card.url})`);
         assert.equal(card.hidden,false);assert.equal(card.ready,true);assert.equal(card.tabIndex,0);
         assert(card.artwork&&card.title&&card.source,'Missing/failed photo must preserve readable artwork and metadata');
       }
@@ -144,7 +164,7 @@ try{
       assert.equal(await page.evaluate(()=>books.length),0,'Preview committed before Read');
       await page.evaluate(()=>articlePreviewClose());
       assert.equal(await page.evaluate(()=>books.length),0,'Dismissal persisted the draft');
-      writeFileSync(resolve(artifacts,`${engine.name()}-results.json`),JSON.stringify({state,filtering,geometry,requests},null,2));
+      writeFileSync(resolve(artifacts,`${engine.name()}-results.json`),JSON.stringify({state,filtering,geometry,requests,failures,consoleErrors},null,2));
       console.log(engine.name(),'RSS supplied-photo mapping, cache, failure/artwork, hotlink, filtering and selected-only body regressions passed');
     }finally{await browser.close();}
   }
