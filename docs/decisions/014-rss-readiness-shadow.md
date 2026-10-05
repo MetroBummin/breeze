@@ -179,3 +179,13 @@ against the previous committed code in offline before/after tests. Reports use
 reservation counts and proposed-reference agreement, never inferred billing or
 human-gold accuracy. The private bundle update preserves its original expiry
 until a manual Mac invocation window is actually planned.
+
+The [manual-window outcome](../qa/rss-audit-window-20261005.md) records actual
+JWT-protected temporary deployment and successful user-operated auth probe, but
+zero provider reservations/fetches/decisions. The unused row's mistaken deadline
+closure was conditionally re-armed under explicit parent recovery instruction,
+with original payload/expiry/caps intact and private provenance preserved. After
+actual expiry the idle ledger was closed without result deletion. The active
+temporary function is a verified v2 410 stub; permanent Dashboard deletion remains
+because the toolset has no function-delete action. Production v6 and client OFF
+remain unchanged. No quality or per-article cost conclusion follows from this run.
