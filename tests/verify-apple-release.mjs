@@ -45,7 +45,6 @@ function fake({versionExists = true, selected = null, submission = null, unrelat
     async list(path) {
       calls.push({method: 'GET', path});
       if (path.startsWith('/v1/ciBuildRuns/run-1/builds?')) return [build];
-      if (path.startsWith('/v1/builds/build-1/betaGroups?')) return [res('betaGroups', 'group-1')];
       if (path.startsWith(`/v1/apps/${base.appId}/appStoreVersions?`)) return version ? [version] : [];
       if (path.startsWith('/v1/appStoreVersions/version-1/appStoreVersionLocalizations?')) return notes;
       if (path.startsWith(`/v1/apps/${base.appId}/reviewSubmissions?`)) return reviews;

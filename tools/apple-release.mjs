@@ -161,7 +161,6 @@ async function inspect(client, m) {
   const preId = relationship(build, 'preReleaseVersion', 'preReleaseVersions');
   const pre = await get(`/v1/preReleaseVersions/${preId}`, 'preReleaseVersions', preId);
   requireThat(pre.attributes?.version === m.version && pre.attributes?.platform === 'IOS', 'Build marketing version or platform mismatch');
-  const groups = await client.list(`/v1/builds/${m.buildId}/betaGroups?limit=200`);
   const versions = await client.list(`/v1/apps/${m.appId}/appStoreVersions?${query({'filter[versionString]': m.version, 'filter[platform]': 'IOS', limit: '200'})}`);
   requireThat(versions.length <= 1, 'Ambiguous App Store version');
   const version = versions[0];
@@ -169,7 +168,7 @@ async function inspect(client, m) {
     resource(version, 'appStoreVersions');
     requireThat(version.attributes?.versionString === m.version && version.attributes?.platform === 'IOS', 'App Store version mismatch');
   }
-  return {version, groups: groups.map(g => resource(g, 'betaGroups').id)};
+  return {version};
 }
 
 async function versionContents(client, version) {
@@ -215,17 +214,17 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
     validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
     return client.request(...args);
   };
-  let {version, groups} = await inspect(client, m);
+  let {version} = await inspect(client, m);
   let contents = version ? await versionContents(client, version) : null;
   let review = await reviewState(client, m.appId, version?.id);
   if (review?.attributes?.submittedDate) {
     requireThat(contentsMatch(version, contents, m), 'Submitted version does not match authorized manifest');
-    return {result: 'already-submitted', versionId: version.id, submissionId: review.id, betaGroupIds: groups};
+    return {result: 'already-submitted', versionId: version.id, submissionId: review.id};
   }
   if (version) requireThat(EDITABLE.includes(state(version)) ||
     (state(version) === 'READY_FOR_REVIEW' && review && contentsMatch(version, contents, m)), 'Version is not safely editable');
   if (review) requireThat(review.attributes.state === 'READY_FOR_REVIEW' && contentsMatch(version, contents, m), 'Review draft needs reconciliation');
-  const plan = {result: write ? 'prepared' : mode, versionId: version?.id ?? null, betaGroupIds: groups,
+  const plan = {result: write ? 'prepared' : mode, versionId: version?.id ?? null,
     createVersion: !version, selectBuild: contents?.selectedBuild !== m.buildId,
     updateLocales: Object.entries(m.whatsNew).filter(([locale, text]) => contents?.locales.get(locale)?.attributes?.whatsNew !== text).map(([locale]) => locale),
     releaseType: m.releaseType, submit: mode === 'submit'};
@@ -272,7 +271,7 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
   await change('PATCH', `/v1/reviewSubmissions/${review.id}`, payload('reviewSubmissions', {submitted: true}, null, review.id));
   const submitted = resource((await client.request('GET', `/v1/reviewSubmissions/${review.id}`)).data, 'reviewSubmissions', review.id);
   requireThat(submitted.attributes?.submittedDate && submitted.attributes.state !== 'READY_FOR_REVIEW', 'Submission not yet confirmed; inspect status before retrying');
-  return {result: 'submitted', versionId: version.id, submissionId: review.id, betaGroupIds: groups};
+  return {result: 'submitted', versionId: version.id, submissionId: review.id};
 }
 
 function git(...args) { return execFileSync('git', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']}).trim(); }

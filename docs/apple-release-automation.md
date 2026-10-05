@@ -40,15 +40,15 @@ repository/signing access can still require user action; this is not perpetual a
 
 After review and merge, run **Apple release → Run workflow → main → smoke**.
 This runs mock tests and validates main with no secrets and no Apple calls.
-The connector currently cannot dispatch workflows; its safe alternative is the
-single lightweight tag `apple-release/smoke` pointing at exact current `main`.
+The connector currently exposes neither workflow dispatch nor tag creation.
+An explicitly authorized Git client can use the single lightweight tag
+`apple-release/smoke` pointing at exact current `main` as a secret-free alternative.
 Creating the automation PR or ordinary development pushes cannot run this workflow.
 Do not create any release tag while today's separate release is in progress.
 
 For a real **GET-only** setup check, merge a manifest with authorization `none`,
 then run `status` or `dry-run` with its ID and exact SHA-256. This verifies key
 access, app/bundle identity, Cloud commit/build linkage and ASC processing state.
-It also lists the build's existing TestFlight beta-group IDs without changing them.
 Missing keys, wrong role, incomplete build data or mismatches fail closed.
 
 ## Exact manifest and explicit authorization
@@ -90,9 +90,10 @@ provide mode/ID/hash, and for writes provide the exact confirmation
 `<mode>:<release_id>:<hash>`. Reviewers should inspect those exact file bytes, the
 expected build/commit and publication choice before approving the environment job.
 
-## Optional connector release-ref path
+## Optional release-ref path
 
-After **separate approval of security setup**, restricted release operators may
+After **separate approval of security setup**, restricted release operators using
+an authorized Git client (or a connector that supports tag creation) may
 create a lightweight tag:
 `apple-release/<status|dry-run|prepare|submit>/<release_id>/<64-character-hash>`.
 It must point to **exact current main** and the manifest must already be reviewed
@@ -128,7 +129,7 @@ Official documentation checked on 2026-10-05:
 - [Cloud run](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-cibuildruns-_id_),
   [run → builds](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-cibuildruns-_id_-builds),
   [build](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-builds-_id_),
-  [build → beta groups](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-builds-_id_-betagroups).
+  [beta-group build access relationship](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-builds-_id_-relationships-betagroups) (available in ASC, outside this workflow).
 - [Create version](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-appstoreversions),
   [localization](https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-appstoreversionlocalizations-_id_),
   [build selection](https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-appstoreversions-_id_-relationships-build),
