@@ -18,11 +18,9 @@ then
   export PATH
 fi
 
-# Xcode Cloud has its own build counter and can override project settings.
-if [ -n "${CI_BUILD_NUMBER:-}" ] && [ "$CI_BUILD_NUMBER" != "236" ]; then
-  echo "Expected Xcode Cloud build 236; got $CI_BUILD_NUMBER. Review the release number before archiving." >&2
-  exit 1
-fi
+# Apply Apple's counter to both targets before tests and Capacitor sync.
+# Missing/invalid counters and checked-in release drift fail before any install.
+node tools/verify-ios-release.mjs --apply-cloud-build
 npm ci --ignore-scripts --no-audit --no-fund
 npm test
 npm run ios:sync
