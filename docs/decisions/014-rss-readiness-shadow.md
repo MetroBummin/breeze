@@ -134,3 +134,15 @@ production auth invariants and the exact source. Synthetic fixture labels stay
 proposed, with bounded source quotations kept outside model state. The offline
 overlay rehearsal preserves auth/entrypoint hashes and retains v6 cache telemetry;
 it does not authorize production integration, deployment or paid evaluation.
+
+2026-10-05 headless follow-up: [preparation and cost reporting](../qa/rss-headless-20261005.md)
+records the user's subsequently approved **24-attempt / USD 0.10** two-arm pilot,
+concurrency one and zero retries. That specific cap supersedes the broader
+historical evaluation proposal above for this task; it does not authorize
+deployment/activation or credential export. The headless module has no live
+adapter or credential access. Every physical attempt is reserved before transport;
+failed attempts count, pending attempts are not resent, unknown usage retains a
+full reservation and estimates never masquerade as invoice charges. Existing
+private executor and publisher capture paths are unresolved, so no paid attempt
+or full real-input freeze has occurred. Selected source labels remain proposed
+except the supplied historical promotion observations; accuracy is unmeasured.

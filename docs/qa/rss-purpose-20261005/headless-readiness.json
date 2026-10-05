@@ -1,0 +1,88 @@
+{
+  "schema": "rss-headless-readiness-v1",
+  "checkedAt": "2026-10-05T01:48:10.220Z",
+  "state": "blocked-before-real-input-freeze",
+  "paidAuthorization": {
+    "approved": true,
+    "scope": "12 sources x old/new, <=24 attempts, <=USD 0.10, concurrency 1, zero retries",
+    "deploymentAuthorized": false,
+    "clientActivationAuthorized": false
+  },
+  "referenceSelection": {
+    "articles": 12,
+    "seedSha": "6d17c34d44615bdaf92e6c4422b03325c7a8e7d4a451295ce632f42573def095",
+    "userReviewedHistoricalPromoLabels": 2,
+    "proposedUnconfirmedLabels": 10,
+    "frozenFullSourceInputs": 0,
+    "freshHumanConfirmedGoldLabels": 0
+  },
+  "arms": {
+    "old": {
+      "version": "rss-quality-v2:jev-1.13.0:readability-0.6.0-v1",
+      "model": "jev-1.13.0",
+      "sourceSha": "f415379d87d0b9fd2f0fa8c7c8cedc6deda4b6383f61919e44991e1ed7d1805d"
+    },
+    "new": {
+      "version": "rss-quality-v3:jev-1.13.0:readability-0.6.0-v1",
+      "model": "jev-1.13.0",
+      "sourceSha": "d977b6ccd4a4c2198d694ec82332d3edd07d1858f8f4b94dbd937a7f3729e03b"
+    }
+  },
+  "pricing": {
+    "model": "jev-1.13.0",
+    "asOf": "2026-10-05",
+    "source": "https://docs.typesafe.ai/models",
+    "inputUsdPerMillion": 0.042,
+    "outputUsdPerMillion": 0,
+    "cachedDiscount": "not documented; no discount assumed"
+  },
+  "limits": {
+    "articles": 12,
+    "attempts": 24,
+    "usd": 0.1,
+    "concurrency": 1,
+    "retries": 0,
+    "reservedInputTokens": 65536
+  },
+  "reservation": {
+    "perAttemptUsd": 0.0027525120000000004,
+    "maximum24AttemptsUsd": 0.06606028800000001,
+    "basis": "Conservative 65536 input tokens per physical attempt at documented price. Private executor must verify/enforce billing terms before transport."
+  },
+  "execution": {
+    "providerAttempts": 0,
+    "providerUsage": null,
+    "tokenBasedEstimateUsd": null,
+    "invoiceChargeUsd": null,
+    "reservationConsumedUsd": 0,
+    "cacheHits": 0,
+    "cachingEffect": "not tested"
+  },
+  "sourceCapture": {
+    "sourcesSelected": 12,
+    "completeSnapshots": 0,
+    "localDnsFailure": "EAI_AGAIN",
+    "managedProxyFailure": "CONNECT tunnel 403",
+    "supportedNetworkPermissionAttempted": true,
+    "automaticApprovalReviewRejected": false,
+    "infrastructureFailures": 12,
+    "sourceFailureVerdicts": 0,
+    "extractionVerdicts": 0,
+    "classifierVerdicts": 0,
+    "captureSha": "3a683eeaed08f862b5eac43d1d609094525590517894ae0738e55f759e913480"
+  },
+  "blockers": [
+    "No callable existing credential-resident Jev executor is exposed; no keys were read or exported.",
+    "Production v6 only evaluates its one-shot live-refetched cohort using old rubric; it cannot compare frozen v2/v3 inputs, and its observed window is expired. No deployment or control/reset action is authorized.",
+    "Supported workspace network paths cannot capture publisher HTML; web page summaries are not substitutes for frozen Readability inputs."
+  ],
+  "nextRequirement": "Identify a supported existing private executor/job and public-source capture path. Transfer only nonsecret source snapshots/IDs, never credentials. Freeze input hashes and review proposed labels before invoking either arm.",
+  "validation": {
+    "rssTests": 92,
+    "pairedHarnessTests": 9,
+    "typecheckExistingDiagnostics": 34,
+    "paidCalls": 0,
+    "productionMutations": 0,
+    "no235Changes": true
+  }
+}

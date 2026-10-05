@@ -1,0 +1,146 @@
+[
+  {
+    "id": "RSS-022",
+    "url": "https://bloody-disgusting.com/news/3970212/blumhouse-popcorn-bucket-regal-cinemas/",
+    "source": "Bloody Disgusting",
+    "title": "Blumhouse Gets Their Own Limited-Edition Popcorn Bucket at Regal Cinemas",
+    "reference": {
+      "label": "exclude",
+      "reviewStatus": "user-reviewed",
+      "labelSource": "user historical trial observation",
+      "rationale": "Narrative merchandise announcement; supplied false-accept concern."
+    }
+  },
+  {
+    "id": "RSS-039",
+    "url": "https://www.dexerto.com/food/taco-bell-is-giving-duolingos-mascot-its-own-sauce-in-taco-day-collab-3414480/",
+    "source": "Dexerto",
+    "title": "Taco Bell is giving Duolingo’s mascot its own sauce in Taco Day collab",
+    "reference": {
+      "label": "exclude",
+      "reviewStatus": "user-reviewed",
+      "labelSource": "user historical trial observation",
+      "rationale": "Rewards collaboration and offer availability; supplied false-accept concern."
+    }
+  },
+  {
+    "id": "RSS-002",
+    "url": "https://allthatsinteresting.com/dorothea-lange-photos",
+    "source": "All That's Interesting",
+    "title": "How Dorothea Lange Revealed The True Horrors Of The Great Depression Through Her Photography",
+    "reference": {
+      "label": "retain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Gallery has developed biography; retain if that prose survives extraction."
+    }
+  },
+  {
+    "id": "RSS-021",
+    "url": "https://bloody-disgusting.com/news/3970198/scarescore/",
+    "source": "Bloody Disgusting",
+    "title": "ScareScore Measures Your Fear and Will Change the Horror Industry [Exclusive]",
+    "reference": {
+      "label": "uncertain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Launch claims versus useful explanation of the measurement need judgment."
+    }
+  },
+  {
+    "id": "RSS-001",
+    "url": "https://allthatsinteresting.com/cliff-house-san-francisco",
+    "source": "All That's Interesting",
+    "title": "The Dramatic History Of San Francisco’s Cliff House, The Beloved Estate That Survived The 1906 Earthquake And A Sailboat Full Of Dynamite",
+    "reference": {
+      "label": "retain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Developed resort history is useful despite a commercial subject."
+    }
+  },
+  {
+    "id": "RSS-014",
+    "url": "https://bloody-disgusting.com/movie/3969472/erie-review-plays-fast-and-loose-with-found-footage/",
+    "source": "Bloody Disgusting",
+    "title": "‘Erie’ Review: Lo-Fi Found Footage Mystery Breaks Its Own Rules",
+    "reference": {
+      "label": "retain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Critical film review has independent analysis despite screening information."
+    }
+  },
+  {
+    "id": "RSS-025",
+    "url": "https://www.dexerto.com/entertainment/100-thieves-admits-we-messed-up-after-ai-design-sparks-runescape-merch-backlash-3414244/",
+    "source": "Dexerto",
+    "title": "100 Thieves admits “we messed up” after AI design sparks RuneScape merch backlash",
+    "reference": {
+      "label": "retain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Brand merchandise coverage reports criticism and a response to backlash."
+    }
+  },
+  {
+    "id": "RSS-038",
+    "url": "https://www.dexerto.com/food/mcdonalds-addresses-claims-ai-is-being-used-to-determine-menu-prices-3414505/",
+    "source": "Dexerto",
+    "title": "McDonald’s addresses claims AI is being used to determine menu prices",
+    "reference": {
+      "label": "retain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Brand reporting examines a disputed pricing claim rather than an offer."
+    }
+  },
+  {
+    "id": "RSS-055",
+    "url": "https://www.nasa.gov/centers-and-facilities/johnson/reliable-robots-meet-johnsons-dexterous-robotics-team/",
+    "source": "NASA",
+    "title": "Reliable Robots: Meet Johnson’s Dexterous Robotics Team",
+    "reference": {
+      "label": "retain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Coherent robotics team explanation; institutional source is not a defect alone."
+    }
+  },
+  {
+    "id": "RSS-061",
+    "url": "https://projects.propublica.org/private-school-requirements-quiz/",
+    "source": "ProPublica",
+    "title": "It’s Easy to Start a Private School. Take Our Quiz to Find Out Where You Can Open Yours.",
+    "reference": {
+      "label": "uncertain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Interactive quiz introduction may lack standalone substance without the quiz."
+    }
+  },
+  {
+    "id": "RSS-065",
+    "url": "https://www.propublica.org/article/california-raw-milk-regulation-emily-marris-moonlight-ridge-farm",
+    "source": "ProPublica",
+    "title": "A Girl Nearly Died After Drinking Raw Milk. The State Did Little to Punish the Unlicensed Farmer Who Sold It.",
+    "reference": {
+      "label": "retain",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Substantive regulation reporting; medical sensitivity is optional metadata."
+    }
+  },
+  {
+    "id": "RSS-044",
+    "url": "https://medium.com/@VisibilityMemobyShraddhapatil/i-compared-how-three-different-website-platforms-get-read-by-ai-crawlers-one-wasnt-close-76d1362d69f4?source=rss------technology-5",
+    "source": "Medium",
+    "title": "I Compared How Three Different Website Platforms Get Read by AI Crawlers. One Wasn’t Close.",
+    "reference": {
+      "label": "source-check",
+      "reviewStatus": "pending-human-review",
+      "labelSource": "proposed pre-model source review",
+      "rationale": "Previously unavailable source; current fetch failure is not a content verdict."
+    }
+  }
+]
