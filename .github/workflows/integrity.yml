@@ -47,6 +47,30 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: RSS and current-cover chooser regressions in Chromium and WebKit
+        run: |
+          status=0
+          for engine in chromium webkit; do
+            # Bound the owned process group too, including browser-launch/cleanup
+            # failures. A timeout remains a failed check; every case still runs.
+            BREEZE_QA_ENGINE=$engine BREEZE_COVER_PROOF=/tmp/breeze-cover-chooser/$engine timeout --verbose --kill-after=5s 120s node tests/verify-cover-chooser-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_COVER_PROOF=/tmp/breeze-rss-covers/$engine timeout --verbose --kill-after=5s 120s node tests/verify-rss-covers-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_VISIBLE_COVER_PROOF=/tmp/breeze-rss-visible-covers/$engine timeout --verbose --kill-after=5s 120s node tests/verify-rss-visible-covers-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_ENRICHMENT_CURRENT_ONLY=1 BREEZE_RSS_ENRICHMENT_PROOF=/tmp/breeze-rss-enrichment/$engine timeout --verbose --kill-after=5s 120s node tests/compare-rss-cover-enrichment-browser.mjs || status=1
+          done
+          exit "$status"
+      - name: Cover regression screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cover-regression-proof
+          path: |
+            /tmp/breeze-cover-chooser/
+            /tmp/breeze-rss-covers/
+            /tmp/breeze-rss-enrichment/
+            /tmp/breeze-rss-visible-covers/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: RSS intent boundary and catalog browser contracts
         run: |
           for engine in chromium webkit; do
@@ -173,3 +197,37 @@ jobs:
           retention-days: 7
       - name: Saved original position during interrupted reopening
         run: node tests/verify-original-reopen-browser.mjs
+  import-byte-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: current
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: current
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: 7f64075aa1a4b82c74ec7bb829409b99d09e6d81
+          path: base
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: current/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps webkit
+      - name: Compare unchanged assertions and byte boundaries on base and current
+        run: BREEZE_BYTE_BASE_ROOT="$GITHUB_WORKSPACE/base" node tests/diagnose-import-bytes.mjs
+      - name: Import byte diagnostic receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-byte-diagnostic
+          path: /tmp/breeze-import-byte-matrix/
+          if-no-files-found: error
+          retention-days: 7

@@ -19,7 +19,8 @@ const read=(host='space',id='read',extra={})=>({id,kind:'article',sourceUrl:`htt
 const position=(p=1,age=0)=>({p,t:now-age*day});
 class Clock extends Date { static now(){return now;} }
 function environment(overrides={}){
-  const context=vm.createContext({URL,Date:Clock,console,setTimeout,clearTimeout,performance,books:[],positions:{},
+  const context=vm.createContext({URL,Date:Clock,console,setTimeout,clearTimeout,performance,books:[],positions:{},window:{},
+    requestAnimationFrame:callback=>setTimeout(callback,0),cancelAnimationFrame:clearTimeout,
     load:(_key,fallback)=>fallback,normalizeArticleUrl:value=>value,...overrides});
   vm.runInContext(source,context);
   return context;

@@ -28,7 +28,7 @@ function world(extra={}){
   };
   const state={stored:copy(book),writes:[],images:[],deleted:[],closed:0,views:0,coverViews:[]};
   const write=deferred();let writes=0;
-  const context=createContext({Date,Map,Promise,books:[book],editTarget:book,
+  const context=createContext({Date,Map,Promise,books:[book],editTarget:book,editCoverToken:0,
     socialLinkOnlyText:text=>/^https?:\/\/\S+$/.test(text),
     articleAssemble:(title,blocks)=>({paras:[title,...blocks.map(block=>block.t)],formatting:{blocks}}),
     bookContentFingerprint:paras=>paras.join('|'),
@@ -44,7 +44,7 @@ function world(extra={}){
     },
     deleteBook:async value=>{state.deleted.push(value.id);state.stored=null;context.books=context.books.filter(item=>item.id!==value.id);},
     document:{getElementById:id=>elements[id]},
-    closeEditSheet:()=>{state.closed++;context.editTarget=null;},
+    closeEditSheet:()=>{state.closed++;context.editTarget=null;context.editCoverToken++;},
     renderCoverChoices:value=>state.coverViews.push(value.id),
     renderHome(){},queueSync(){},toast(){},renderAllBookViews:()=>state.views++,
   });
@@ -95,6 +95,23 @@ test('switching sheets before cover commit cannot apply the cover to the new boo
   f.write.resolve();await repair;await pick;
   assert.equal(f.state.writes.length,1);assert.equal(other.cover,null);assert.deepEqual(f.state.coverViews,[]);
   assert.equal(f.state.images.length,0,'cancelled edit must not persist an orphan image');
+});
+
+test('a newer photo selection owns the sheet while an older file read is pending',async()=>{
+  const f=world(),older=deferred();f.context.waitForArticleBookRepair=undefined;
+  const first=f.context.pickCoverFile({files:[{type:'image/png',arrayBuffer:()=>older.promise}],value:'old.png'});
+  const second=f.context.pickCoverFile({files:[{type:'image/webp',arrayBuffer:async()=>new ArrayBuffer(2)}],value:'new.webp'});
+  f.write.resolve();await second;older.resolve(new ArrayBuffer(1));await first;
+  assert.equal(f.state.images.length,1);assert.equal(f.state.images[0].file.imageType,'image/webp');
+  assert.equal(f.state.images[0].file.imageBytes.byteLength,2);
+});
+
+test('closing and reopening the same book invalidates the earlier picker read',async()=>{
+  const f=world(),read=deferred();f.context.waitForArticleBookRepair=undefined;
+  const job=f.context.pickCoverFile({files:[{type:'image/png',arrayBuffer:()=>read.promise}],value:'old.png'});
+  f.context.closeEditSheet();f.context.editTarget=f.book;f.context.editCoverToken++;
+  read.resolve(new ArrayBuffer(1));await job;
+  assert.equal(f.state.writes.length,0);assert.equal(f.state.images.length,0);assert.equal(f.book.cover,null);
 });
 
 for(const failure of [false,true])test(`deletion waits for ${failure?'failed':'successful'} repair and wins afterward`,async()=>{

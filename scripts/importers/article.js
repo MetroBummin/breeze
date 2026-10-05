@@ -394,7 +394,8 @@ const articleCommitJobs = new Map();
 function makeArticleDraft(parsed, extra, fallbackPhoto='',repairId=''){
   const draft={id:'preview:'+articleUrlKey(extra.sourceUrl),kind:'article',transient:true,
     title:parsed.title,paras:parsed.paras,formatting:parsed.formatting,...extra,cover:null};
-  articleDrafts.set(draft,{parsed,extra,fallbackPhoto,repairId,coverUrl:parsed.cover||fallbackPhoto,saved:null,missed:0});
+  articleDrafts.set(draft,{parsed,extra,fallbackPhoto,repairId,
+    coverUrl:parsed.cover||fallbackPhoto||parsed.blocks.find(block=>block.r==='img')?.t||'',saved:null,missed:0});
   return draft;
 }
 function articleNeedsSourceRefresh(book){

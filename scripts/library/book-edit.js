@@ -7,6 +7,8 @@
    되돌릴 수 없는 쪽을 기본으로 두면 안 됩니다. */
 
 let editTarget = null;
+// Opening/closing a sheet or starting a newer picker read ends the old owner.
+let editCoverToken = 0;
 
 const editModal = () => document.getElementById('edit-modal');
 
@@ -18,6 +20,7 @@ function editStep(step){
 
 function openEditSheet(book, step){
   if(!book) return;
+  editCoverToken++;
   editTarget = book;
   renderBookFolderChoice(book);
   document.getElementById('ed-title').value = book.title;
@@ -31,6 +34,7 @@ function openEditSheet(book, step){
   editStep(step || 'edit');
 }
 function closeEditSheet(){
+  editCoverToken++;
   /** @type {HTMLDialogElement} */(editModal()).close(); editTarget = null;
 }
 
@@ -58,11 +62,9 @@ function renderCoverChoices(book){
   };
   wrap.dataset.pick = book.cover || '';
   add('', '없음');
-  const own = new Set(Object.keys(book.imgSrc || {}));
-  (book.paras || []).forEach(paragraph => {
-    if(paragraph.startsWith(IMG_MARK)) own.add(paragraph.slice(IMG_MARK.length));
-  });
-  own.forEach(key => add(key, ''));
+  // The selected photo may be a local asset outside the source's body images.
+  // Use the same asset projection as storage, including the canonical cover.
+  bookAssetKeys(book).forEach(key => add(key, ''));
 }
 
 async function pickCoverFile(input){
@@ -71,14 +73,15 @@ async function pickCoverFile(input){
   if(!file || !editTarget) return;
   if(!/^image\//.test(file.type)){ toast('그림 파일을 골라주세요'); return; }
   const book = editTarget;
+  const token = ++editCoverToken;
   const key = book.id + '|cover';
   const image={imageBytes:await file.arrayBuffer(),imageType:file.type};
   if(typeof waitForArticleBookRepair==='function') await waitForArticleBookRepair(book);
-  if(editTarget !== book) return;
+  if(editTarget !== book || token !== editCoverToken) return;
   const committed=await commitBookEdit(book,{cover:key,coverSourcePage:''},image);
   Object.assign(book,committed);
   queueSync();
-  if(editTarget === book){
+  if(editTarget === book && token === editCoverToken){
     renderCoverChoices(book);
     document.getElementById('ed-cover-source').hidden = true;
   }

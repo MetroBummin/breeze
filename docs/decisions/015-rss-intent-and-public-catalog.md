@@ -6,8 +6,8 @@
 ## Ownership and visible behavior
 
 Home needs discovery metadata, not a prepared article for every candidate.
-Remove the background cover-page and Medium owner-body preparation passes.
-Use the supplied publisher image or existing local editorial artwork; image
+Remove unbounded background article/Medium owner-body preparation passes.
+Use the supplied publisher image, bounded visible cover metadata or local editorial artwork; image
 failure retains the artwork. A fallback uses one headline and readable source
 text, preserving card geometry and the shared dock/lookup surfaces.
 
@@ -28,6 +28,42 @@ or reopening a dismissed preview. The body is fetched/parsed first, then its
 actual paragraphs supply the introduction request. Read becomes available when
 the body is ready, independently of the optional introduction. First-visible
 shell, body/Read-ready and introduction-ready latency are distinct measurements.
+
+The 238 device follow-up identified a first-screen regression: 236/PR97 fetched
+article pages to supply photographs absent from feeds, whereas PR99 removed
+that work entirely. The user authorized restoring those visible photos while
+keeping discovery bounded. A discovery pass can now look up at most two
+currently visible, photograph-free ordinary cards from the fixed public feeds.
+Viewport/rail clipping and one generation budget cover asynchronous feed paints
+and all visible rail owners; routine rerenders do not reset that budget.
+Requests use the existing public-DNS relay, run serially, and coalesce by URL.
+Rotation, replacement, scrolling out of view, hiding or opening Preview cancels
+obsolete consumers; late results cannot change a replacement entry or cache.
+
+The client retains at most 128 KiB of the relay's escaped JSON HTML prefix,
+extracts OG/Twitter/first-image URLs in an inert document, and cancels the stream
+after finding a photo or reaching the prefix limit. It does not run Readability,
+prepare paragraphs, write IndexedDB or persist image bytes. This is a client
+parsing limit, **not** an upstream, network or billing ceiling: the unchanged
+relay reads the whole upstream page before emitting JSON and has its existing
+3,000,000-byte HTML limit. A delivered reader chunk can exceed the retained
+prefix. Two accepted final HTML bodies can total 6,000,000 bytes under that
+repository limit; redirect bodies, protocol overhead, serialized response,
+image traffic and buffering add separate costs. This is not an overall wire or
+billing bound, and the deployed relay was not inspected. A photo
+after the inspected prefix may remain artwork. No relay deployment is included.
+
+One local metadata cache retains only public article/photo URLs and timestamps:
+at most 100 entries and 64,000 UTF-8 bytes, 24-hour photo expiry and 30-minute
+negative expiry. Supplied feed photos retain priority; custom sources, social
+owner resolution, credentials, local names and IP literals cannot trigger this
+automatic work. The optional shared catalog retains its existing single-response
+metadata contract and does not initiate client cover lookups. Warm refresh/relaunch reuses matching photo URLs without a new
+cover lookup. Actual article body preparation and Read persistence still belong
+to selected intent. After selection, the parsed OG/body photo also updates that
+same current discovery entry/card without another request. See the follow-up
+[comparison evidence](../qa/rss-covers-20261005.md) and
+[visible-cover limits](../qa/rss-visible-covers-20261005.md).
 
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport

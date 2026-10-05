@@ -1,0 +1,19 @@
+[
+  {
+    "engine": "chromium",
+    "id": "file-5c0706a6ad6ed931c1ad189246149025",
+    "photo": {
+      "cover": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+      "pick": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+      "storedHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+      "shownHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70"
+    },
+    "replacement": {
+      "cover": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+      "pick": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+      "storedHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+      "shownHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51"
+    },
+    "checks": "upload/reopen/reload/replace/reimport/None/stale-picker/latest-picker/delete/10 viewports"
+  }
+]

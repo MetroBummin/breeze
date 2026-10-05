@@ -15,7 +15,7 @@ const server=createServer((req,res)=>{try{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 const results=[];
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
+ const browser=engine===webkit&&process.env.BREEZE_IMPORT_SINGLE_BROWSER==='1'?null:await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  const run=async(name,fn)=>{
   if(process.env.BREEZE_IMPORT_CASE&&!process.env.BREEZE_IMPORT_CASE.split(',').includes(name))return;
   const profile=engine===webkit?mkdtempSync(resolve(tmpdir(),'breeze-import-')):null;
@@ -41,11 +41,54 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       original:record?{...record,blob:await commitQA.hash(record.blob,'snapshot original')}:null,position:JSON.stringify(posOf(b.id))};
     };
    });
+   if(process.env.BREEZE_IMPORT_BYTE_DIAGNOSTICS==='1')await page.evaluate(readFileSync(new URL('./helpers/import-byte-diagnostics.js',import.meta.url),'utf8'));
    await fn(page);results.push({engine:engine.name(),name,pass:true});
   }catch(error){results.push({engine:engine.name(),name,pass:false,error:String(error),stack:error.stack});await page.screenshot({path:proof+'/'+engine.name()+'-'+name+'-failure.png'}).catch(()=>{});}
-  finally{await context.close();if(profile)rmSync(profile,{recursive:true,force:true});console.log(JSON.stringify(results.at(-1)));}
+  finally{if(process.env.BREEZE_IMPORT_BYTE_DIAGNOSTICS==='1'){
+   const bytes=await page.evaluate(async()=>{await window.importByteDiagnostics?.afterCase();return window.importByteDiagnostics?.events||JSON.parse(sessionStorage.getItem('import-byte-diagnostics')||'null');}).catch(error=>({error:String(error)}));
+   writeFileSync(proof+'/'+engine.name()+'-'+name+'-bytes.json',JSON.stringify(bytes,null,2));
+  }await context.close();if(profile)rmSync(profile,{recursive:true,force:true});console.log(JSON.stringify(results.at(-1)));}
  };
  try{
+  await run('native-staged-promotion-bytes',async page=>{
+   const result=await page.evaluate(async()=>{
+    const expected=[],failures=[];
+    for(let n=0;n<20;n++){
+     const prefix='promotion-stage-'+n,id='promotion-book-'+n;
+     const bytes=new Uint8Array(53578);for(let i=0;i<bytes.length;i++)bytes[i]=(i+n)%251;
+     const blob=new Blob([bytes],{type:'image/jpeg'}),hash=await rawFileHash(blob);
+     await imgPut(prefix+'|0',blob);await imgPut(prefix+'|cover',blob);
+     const staged=await rawFileHash(await imgGet(prefix+'|0'));
+     if(staged!==hash)failures.push({n,phase:'staging',staged,hash});
+     await commitImportedBook({id,kind:'epub',cover:id+'|cover',paras:[IMG_MARK+id+'|0']},null,prefix);
+     for(const suffix of ['0','cover']){
+      const key=id+'|'+suffix;expected.push({key,hash});
+      try{const actual=await rawFileHash(await imgGet(key));if(actual!==hash)failures.push({key,actual,hash});}
+      catch(error){failures.push({key,error:String(error)});}
+     }
+     if((await imgEntries()).some(([key])=>String(key).startsWith(prefix+'|')))failures.push({n,phase:'staging-not-deleted'});
+    }
+    return {expected,failures};
+   });
+   assert.deepEqual(result.failures,[],'completed promotion must retain every native staged image byte');
+   await page.reload();await page.evaluate(()=>homeReady);
+   const failures=await page.evaluate(async expected=>{
+    const failures=[];for(const {key,hash} of expected){try{if(await rawFileHash(await imgGet(key))!==hash)failures.push(key);}catch(error){failures.push({key,error:String(error)});}}return failures;
+   },result.expected);
+   assert.deepEqual(failures,[],'promoted image bytes must survive reload');
+  });
+  await run('staged-byte-read-failure-preserves-book',async page=>{
+   await page.evaluate(()=>commitQA.import());
+   const result=await page.evaluate(async()=>{
+    const b=books.find(b=>b.kind==='epub'),before=await commitQA.snapshot(),prefix='unreadable-stage';
+    await imgPut(prefix+'|0',new Blob(['unreadable staged image'],{type:'image/png'}));
+    const read=Blob.prototype.arrayBuffer;let failed=false;
+    Blob.prototype.arrayBuffer=async()=>{throw new DOMException('Controlled unreadable staged bytes','NotFoundError');};
+    try{await commitImportedBook({...b,title:'Must not publish'},null,prefix);}catch{failed=true;}finally{Blob.prototype.arrayBuffer=read;}
+    return {failed,before,after:await commitQA.snapshot()};
+   });
+   assert.equal(result.failed,true);assert.deepEqual(result.after,result.before,'unreadable staged bytes must not change any existing book or image');
+  });
   await run('cover-edit-overlaps-reimport',async page=>{
    await page.evaluate(()=>commitQA.import());
    const result=await page.evaluate(async()=>{
@@ -200,6 +243,6 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    });
    assert.deepEqual(result,{first:false,later:true,count:1});
   });
- }finally{await browser.close();}
+ }finally{await browser?.close();}
 }}finally{await new Promise(r=>server.close(r));writeFileSync(proof+'/results.json',JSON.stringify(results,null,2));}
 assert.ok(results.every(r=>r.pass),'Import commit regressions failed; see '+proof+'/results.json');

@@ -1,0 +1,228 @@
+{
+  "helper": "tests/helpers/browser-phase.mjs",
+  "engine": "system Chromium",
+  "rows": [
+    {
+      "mode": "evaluate42",
+      "exitCode": 0,
+      "elapsedMs": 1846,
+      "watchdogFired": false,
+      "value": 42,
+      "failure": null,
+      "browserDisconnected": true,
+      "serverClosed": true,
+      "phases": [
+        {
+          "name": "launch persistent",
+          "status": "started",
+          "started": 1791221993834
+        },
+        {
+          "name": "launch persistent",
+          "status": "passed",
+          "durationMs": 988
+        },
+        {
+          "name": "new page",
+          "status": "started",
+          "started": 1791221994823
+        },
+        {
+          "name": "new page",
+          "status": "passed",
+          "durationMs": 69
+        },
+        {
+          "name": "navigate",
+          "status": "started",
+          "started": 1791221994892
+        },
+        {
+          "name": "navigate",
+          "status": "passed",
+          "durationMs": 68
+        },
+        {
+          "name": "evaluate",
+          "status": "started",
+          "started": 1791221994960
+        },
+        {
+          "name": "evaluate",
+          "status": "passed",
+          "durationMs": 21
+        },
+        {
+          "name": "close context",
+          "status": "started",
+          "started": 1791221994981
+        },
+        {
+          "name": "close context",
+          "status": "passed",
+          "durationMs": 94
+        },
+        {
+          "name": "close server",
+          "status": "started",
+          "started": 1791221995075
+        },
+        {
+          "name": "close server",
+          "status": "passed",
+          "durationMs": 1
+        }
+      ]
+    },
+    {
+      "mode": "never-resolving evaluate",
+      "exitCode": 1,
+      "elapsedMs": 2018,
+      "watchdogFired": false,
+      "value": null,
+      "failure": "Error: evaluate exceeded 200ms",
+      "browserDisconnected": true,
+      "serverClosed": true,
+      "phases": [
+        {
+          "name": "launch persistent",
+          "status": "started",
+          "started": 1791221995624
+        },
+        {
+          "name": "launch persistent",
+          "status": "passed",
+          "durationMs": 970
+        },
+        {
+          "name": "new page",
+          "status": "started",
+          "started": 1791221996594
+        },
+        {
+          "name": "new page",
+          "status": "passed",
+          "durationMs": 94
+        },
+        {
+          "name": "navigate",
+          "status": "started",
+          "started": 1791221996688
+        },
+        {
+          "name": "navigate",
+          "status": "passed",
+          "durationMs": 60
+        },
+        {
+          "name": "evaluate",
+          "status": "started",
+          "started": 1791221996748
+        },
+        {
+          "name": "evaluate",
+          "status": "failed",
+          "durationMs": 201,
+          "error": "Error: evaluate exceeded 200ms"
+        },
+        {
+          "name": "close context",
+          "status": "started",
+          "started": 1791221996949
+        },
+        {
+          "name": "close context",
+          "status": "passed",
+          "durationMs": 145
+        },
+        {
+          "name": "close server",
+          "status": "started",
+          "started": 1791221997094
+        },
+        {
+          "name": "close server",
+          "status": "passed",
+          "durationMs": 0
+        }
+      ]
+    }
+  ],
+  "previousCI": {
+    "head": "c9b39f9191ea417e7ec4cb62ba961f82f42beae3",
+    "run": 37344693979,
+    "job": 111880373375,
+    "conclusion": "cancelled",
+    "stepStartedUTC": "2026-10-05T16:58:06.7264375Z",
+    "lastChromiumOutputUTC": "2026-10-05T16:58:21.3481642Z",
+    "cancellationUTC": "2026-10-05T17:27:27.1037905Z",
+    "artifact": 11362135626,
+    "artifactFiles": 32,
+    "webkitFiles": 0,
+    "observedBoundary": "First WebKit chooser, before its first photo screenshot; exact phase unobserved"
+  },
+  "chooserChromium": [
+    {
+      "engine": "chromium",
+      "id": "file-5c0706a6ad6ed931c1ad189246149025",
+      "photo": {
+        "cover": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "pick": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "storedHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+        "shownHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70"
+      },
+      "replacement": {
+        "cover": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "pick": "file-5c0706a6ad6ed931c1ad189246149025|cover",
+        "storedHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+        "shownHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51"
+      },
+      "checks": "upload/reopen/reload/replace/reimport/None/stale-picker/latest-picker/delete/10 viewports"
+    }
+  ],
+  "followupCI": {
+    "head": "28ff047581702d833304de091255be048a1f72f4",
+    "run": 37350611249,
+    "browserJob": 111900228435,
+    "chooserChromium": "passed",
+    "chooserWebKit": "passed",
+    "webkitChooserDurationMs": 11761,
+    "webkitPhotoStoredAndShownHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+    "webkitReplacementStoredAndShownHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+    "webkitChooserPhaseFailures": 0,
+    "webkitContextCloseMs": 345,
+    "serverCloseMs": 1,
+    "rssVisibleScenariosEachEnginePassed": 8,
+    "rssCurrentComparatorCasesEachEnginePassed": 2,
+    "RSSSourceSha256": "06456fd9f60db5e7fcea1f62aac0b825ce568a7ad0baf1a1dd0bb8b6657f4b02",
+    "remainingFailure": "WebKit supplied-image fixture card-photo assertion line109; relay CORS fixture investigation",
+    "coverArtifact": 11362801023
+  },
+  "diagnosticCI": {
+    "head": "7371a9ee21079af75127ec9ada950dd121b53036",
+    "run": 37351916478,
+    "browserJob": 111904593388,
+    "coverArtifact": 11363196448,
+    "RSSFailure": {
+      "case": "hotlink-recovery",
+      "src": "blob:http://127.0.0.1:40313/96c11d63-f97d-4e99-8ce1-0f2005e3269d",
+      "complete": true,
+      "naturalWidth": 0,
+      "blockedRequest": {
+        "kind": "blocked",
+        "method": "GET",
+        "resourceType": "image",
+        "error": "Blocked by Web Inspector"
+      },
+      "rootCause": "Fixture denied browser-owned local blob image after successful relay fetch",
+      "fix": "Permit blob URLs belonging to the local test page; keep photo/fallback assertions"
+    },
+    "chooserFailure": {
+      "phase": "replacement bytes saved already passed",
+      "storedHash": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51",
+      "shownHash": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70",
+      "rootCause": "IDB replacement commit precedes picker DOM projection; old decoded image satisfied generic readiness",
+      "fix": "Wait for a new selected DOM image to decode, then retain strict stored/shown hash equality"
+    }
+  }
+}
