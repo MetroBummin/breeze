@@ -221,6 +221,19 @@ async function settled(page){
   });
   return snapshot(page);
 }
+async function metadataSettled(page){
+  // Image work may intentionally remain held while successive metadata generations
+  // finish. Feed-refresh completion alone does not establish a negative cache.
+  await page.waitForFunction(()=>{
+    const owner=rssCoverOwners.get(document.getElementById('casual-rail'));
+    return !rssLoading&&rssCoverJobs.size===0&&(owner?.cancelled||!owner?.frame)
+      &&!owner?.running&&!owner?.consumer;
+  });
+  return page.evaluate(()=>({pass:rssCoverPass,remaining:rssCoverRemaining,
+    admissions:coverLookupAdmission.map(record=>({url:record.url,pass:record.pass,visible:record.visible})),
+    cache:Object.fromEntries(rssCands.flat().map(entry=>[entry.url,rssCoverCached(rssCoverPublicUrl(entry.url))])),
+  }));
+}
 async function coverOwnership(page){
   return page.evaluate(()=>{
     const rail=document.getElementById('casual-rail'),owner=rssCoverOwners.get(rail);
@@ -631,7 +644,7 @@ try{
       results.push({engine:engine.name(),scenario:'coalesced-current-consumers',shares,state:coalescedState,requests:coalesced.requests});await c.context.close();
 
       // Observe the real card throughout metadata lookup, image load, and decode.
-      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',holdFirstMetadata:true,delayMs:250,imageDelayMs:2000}),sh=await start(browser,shimmer);
+      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',holdFirstMetadata:true,holdImages:true,recordCoverAdmission:true}),sh=await start(browser,shimmer);
       await waitForRequest(shimmer);
       const lookup=await snapshot(sh.page);
       assert.equal(lookup.cards.filter(card=>card.pending).length,1,'Never-attempted cards shimmered');
@@ -643,13 +656,35 @@ try{
       shimmer.releaseFirstMetadata();
       await sh.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
       const decoding=await snapshot(sh.page);assert(decoding.cards[0].pending&&!decoding.cards[0].photo);
-      await sh.page.waitForFunction(()=>rssCoverJobs.size===0);
-      await sh.page.evaluate(async()=>{await refreshLibrary();await refreshLibrary();});
-      const retained=await sh.page.evaluate(()=>document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
-      assert(retained,'Same-URL refresh canceled a retained image load');
+      await sh.page.evaluate(()=>{
+        window.shimmerCard=document.querySelector('#casual-rail .rss-card');
+        window.shimmerWork=rssCardCoverWork.get(shimmerCard);
+      });
+      const metadataStages=[];
+      for(let stage=0;stage<3;stage++){
+        if(stage)await sh.page.evaluate(()=>refreshLibrary());
+        metadataStages.push(await metadataSettled(sh.page));
+        writeFileSync(resolve(proof,engine.name()+'-shimmer-metadata-stages.json'),JSON.stringify({metadataStages,requests:shimmer.requests},null,2));
+      }
+      const retained=await sh.page.evaluate(()=>({
+        pending:shimmerCard.classList.contains('rss-cover-pending'),
+        sameCard:document.querySelector('#casual-rail .rss-card')===shimmerCard,
+        sameWork:rssCardCoverWork.get(shimmerCard)===shimmerWork,
+      }));
+      writeFileSync(resolve(proof,engine.name()+'-shimmer-held-image.json'),JSON.stringify({retained,state:await snapshot(sh.page),metadataStages,requests:shimmer.requests},null,2));
+      assert.deepEqual(retained,{pending:true,sameCard:true,sameWork:true},'Same-URL refresh canceled or restarted the retained image');
       assert(shimmer.requests.length<=6,'Two explicit refresh generations exceeded their two-request budgets');
       assert.equal(shimmer.requests.filter(request=>request.index===0).length,1,'Warm refresh repeated the recovered photo metadata');
-      assert.equal(new Set(shimmer.requests.map(request=>request.target)).size,shimmer.requests.length,'Negative metadata cache repeated an attempted URL');
+      assert.equal(new Set(shimmer.requests.map(request=>request.target)).size,shimmer.requests.length,'Settled confirmed metadata was requested again');
+      for(const [stage,evidence] of metadataStages.entries()){
+        assert.equal(evidence.pass,metadataStages[0].pass+stage);
+        const admissions=evidence.admissions.filter(record=>record.pass===evidence.pass);
+        assert.equal(admissions.length,2,'Fixture did not exhaust its bounded metadata generation');
+        assert.equal(new Set(admissions.map(record=>record.url)).size,2,'Same-generation metadata retry');
+        assert(admissions.every(record=>record.visible),'Metadata was admitted offscreen');
+        for(const record of admissions)assert(evidence.cache[record.url],'Generation ended before its metadata outcome was cached');
+      }
+      shimmer.releaseImages();
       // Exercise the exact changed surface at the repository's required sizes.
       for(const viewport of [{width:390,height:844},{width:820,height:1024},{width:1440,height:900},{width:320,height:568},{width:844,height:390}]){
         await sh.page.setViewportSize(viewport);
@@ -683,7 +718,7 @@ try{
       assert.deepEqual(await sh.page.locator('#casual-rail .rss-card').first().boundingBox(),geometry);
       assert.equal(shimmer.images.filter(image=>image.url===imageUrl(shimmer.name,0)&&image.type==='image').length,1,'Refresh restarted the same image load');
       assert(shimmer.requests.length<=6,'Viewport changes exceeded the two refreshed generation budgets');
-      results.push({engine:engine.name(),scenario:'lookup/image-shimmer/refresh/geometry/reduced-motion',lookup,decoding,decoded,reduced,requests:shimmer.requests,images:shimmer.images});await sh.context.close();
+      results.push({engine:engine.name(),scenario:'lookup/image-shimmer/refresh/geometry/reduced-motion',lookup,decoding,decoded,reduced,metadataStages,requests:shimmer.requests,images:shimmer.images});await sh.context.close();
 
       for(const mode of ['empty','error','unsafe-base','timeout','image-failure','image-timeout']){
         const terminal=run(engine.name()+'-'+mode,{mode:['empty','error','unsafe-base'].includes(mode)?mode:'og',

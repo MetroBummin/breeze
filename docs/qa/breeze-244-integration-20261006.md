@@ -112,3 +112,12 @@ read the actual config and verify one catalog plus twelve legacy sources on
 success and failure, including Medium. The dedicated browser test uses that same
 partition. The production runtime allowlist and scheduler must still be verified
 before merge; repository settings alone do not establish server readiness.
+
+The image-retention fixture separates completed negatives from canceled unknowns:
+feed-refresh completion does not mean cover metadata has settled. A controlled
+three-generation test reproduces six requests/five unique URLs when an unfinished
+unknown is canceled and explicitly retried in the next generation, versus six
+unique URLs for settled generations. Each generation still has two distinct
+requests; confirmed negatives are requested once without timestamp renewal.
+The browser's strict uniqueness check now waits for metadata settlement between
+intentional refreshes and retains the exact same held image task throughout.

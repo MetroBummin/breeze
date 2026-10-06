@@ -358,3 +358,49 @@ test('late changed-title or version publication still cancels the old original o
     assert.equal(f.metadata.length,4,change);assert.equal(f.writes.length,0);assertReadyOnly(f);
   }
 });
+
+test('interrupted refresh retries only canceled unknown metadata; settled generations never repeat confirmed results',async()=>{
+  for(const interrupted of [true,false]){
+    const f=fixture(),actualLoad=f.context.loadRss,entries=Array.from({length:13},(_,i)=>f.entry('shimmer-'+i,i)),admissions=[];
+    f.groups(entries.map(entry=>[entry]));f.context.loadRss=actualLoad;
+    f.context.rssFeedEntries=async feed=>({entries:entries.filter(entry=>entry.feedSourceUrl===feed.url)});
+    let finishCanceled;
+    f.setTransport((url,signal)=>{
+      admissions.push({url,pass:runInContext('rssCoverPass',f.context),cached:f.context.rssCoverCached(url),signal});
+      if(url===entries[0].url)return Promise.resolve({photo:'https://images.test/shimmer-0.jpg'});
+      if(interrupted&&admissions.length===4)return new Promise(resolve=>{finishCanceled=resolve;});
+      return Promise.resolve({photo:''});
+    });
+    await f.paint();await f.flush();assert.equal(admissions.length,2);
+    const firstNegative=admissions[1].url,negative={...f.context.rssCoverCached(firstNegative)};
+    assert.equal(negative.photo,'');assert.equal(f.imageStarts.length,1);
+    runInContext('rssPage++;rssLoadedAt=0',f.context);await f.paint();await f.flush();
+    assert.equal(admissions.length,4);
+    const fourth=admissions[3];
+    if(interrupted)assert.equal(f.context.rssCoverCached(fourth.url),null,'Unfinished attempt must remain unknown');
+    else assert.equal(f.context.rssCoverCached(fourth.url)?.photo,'','Settled attempt must confirm its absence');
+    // Same-generation warm paint never spends another request.
+    await f.paint();await f.flush();assert.equal(admissions.length,4);
+    runInContext('rssPage++;rssLoadedAt=0',f.context);const next=f.paint();await f.flush();
+    if(interrupted){
+      assert.equal(fourth.signal.aborted,true);assert.equal(f.context.rssCoverCached(fourth.url),null);
+      finishCanceled({photo:''});
+    }
+    await next;await f.flush();
+    assert.equal(admissions.length,6);assert.equal(new Set(admissions.map(a=>a.url)).size,interrupted?5:6);
+    const byPass=new Map();for(const a of admissions){const urls=byPass.get(a.pass)||[];urls.push(a.url);byPass.set(a.pass,urls);}
+    assert.equal(byPass.size,3);for(const urls of byPass.values()){assert.equal(urls.length,2);assert.equal(new Set(urls).size,2);}
+    assert.equal(admissions.filter(a=>a.url===firstNegative).length,1,'Confirmed-negative URL was refetched');
+    assert.deepEqual({...f.context.rssCoverCached(firstNegative)},negative,'Negative provenance/timestamp was renewed');
+    if(interrupted){const retry=admissions.filter(a=>a.url===fourth.url);assert.equal(retry.length,2);assert.equal(retry[1].cached,null,'Retry saw a false-negative cache from the canceled response');assert.notEqual(retry[0].pass,retry[1].pass);}
+    console.log('RSS refresh boundary evidence:',JSON.stringify({interrupted,
+      total:admissions.length,unique:new Set(admissions.map(a=>a.url)).size,
+      perGeneration:[...byPass].map(([pass,urls])=>({pass,urls})),
+      confirmedNegativeRequests:admissions.filter(a=>a.url===firstNegative).length,
+      canceledRetryCache:interrupted?admissions.filter(a=>a.url===fourth.url)[1].cached:'no retry',
+    }));
+    assert.equal(f.imageStarts.length,1,'Explicit refresh restarted the held same-URL image');
+    await f.completeImages();assertReadyOnly(f);assert.equal(f.cards().length,1);
+    assert.equal(runInContext('rssCands.flat().length',f.context),13);assert.equal(f.writes.length,0);
+  }
+});
