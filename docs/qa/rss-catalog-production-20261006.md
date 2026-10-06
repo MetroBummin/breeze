@@ -216,6 +216,13 @@ Validation at the prepared source:
 - WebKit download attempts failed with CDN HTTP 403 (Domain forbidden). Local
   catalog launch is blocked by the missing binary. CI remains responsible for
   exact-head WebKit proof; no WebKit pass is claimed here.
+- Integrity run 37413914024 at `b29660a` passed contracts and its WebKit
+  supplied/visible-photo suites. Chromium's legacy visible-cover fixture failed
+  `maxActive=1` with 2; that unchanged counter waits for the server socket close,
+  which can lag the client's awaited reader cancellation. This is referred to
+  PR #104's owner. Catalog browser CI now runs even after earlier step failures;
+  a prior failure remains a failed job and is not suppressed. Exact-head catalog
+  WebKit and combined client proof must still pass before activation.
 - Public `breeze.io.kr` HTML/config read attempts were inaccessible to this
   environment's web tool. Parent owns the requested actual website baseline and
   post-deployment validation. Neither fixture results nor failed page access

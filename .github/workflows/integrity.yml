@@ -75,6 +75,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: RSS intent boundary and catalog browser contracts
+        if: ${{ !cancelled() }}
         run: |
           for engine in chromium webkit; do
             BREEZE_QA_ENGINE=$engine BREEZE_CATALOG_CURRENT_ONLY=1 BREEZE_CATALOG_QUICK=1 BREEZE_CATALOG_PROOF=/tmp/breeze-catalog-browser-proof/$engine node tests/benchmark-rss-catalog-browser.mjs || exit 1
