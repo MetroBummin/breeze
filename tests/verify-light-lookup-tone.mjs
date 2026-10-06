@@ -7,8 +7,8 @@ const sentence=read('scripts/reader/reader-modes.js');
 const light=tokens.slice(tokens.indexOf(':root{'),tokens.indexOf('body.lang-ko{'));
 const dark=tokens.slice(tokens.indexOf('body.dark{'));
 const before='linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%)';
-assert.match(light,/--word-lookup-wash:rgba\(41,87,221,\.30\)/);
-assert.match(light,/--word-lookup-sheen:linear-gradient\(108deg,transparent 28%,rgba\(41,87,221,\.18\) 40%,rgba\(41,87,221,\.30\) 49%,rgba\(41,87,221,\.18\) 58%,transparent 70%\)/);
+assert.match(light,/--word-lookup-wash:rgba\(74,151,235,\.22\)/);
+assert.match(light,/--word-lookup-sheen:linear-gradient\(108deg,transparent 38%,rgba\(74,151,235,\.18\) 44%,rgba\(74,151,235,\.50\) 49%,rgba\(171,216,255,\.10\) 54%,transparent 60%\)/);
 assert.match(dark,/--word-lookup-wash:rgba\(102,170,239,\.24\)/);
 assert.ok(dark.includes('--word-lookup-sheen:'+before+';'),'dark gradient is the exact existing palette');
 assert.ok(feedback.includes('background-image:var(--breeze-lookup-sheen,'+before+')!important'));
@@ -25,8 +25,8 @@ const token=name=>light.match(new RegExp(name+':(#[\\da-f]+)','i'))[1];
 const luminance=color=>color.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4)
   .reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
 const paper=rgb(token('--paper')),ink=rgb(token('--ink-body'));
-for(const alpha of [.30,1-(1-.30)*(1-.18),1-(1-.30)*(1-.30)]){
-  const paint=paper.map((v,i)=>v*(1-alpha)+[41,87,221][i]*alpha);
+for(const alpha of [.22,1-(1-.22)*(1-.18),1-(1-.22)*(1-.50)]){
+  const paint=paper.map((v,i)=>v*(1-alpha)+[74,151,235][i]*alpha);
   const ratio=(luminance(paint)+.05)/(luminance(ink)+.05);
   assert.ok(ratio>=4.5,`light text contrast ${ratio.toFixed(2)} is below 4.5`);
   console.log(`Light blue composite alpha=${alpha.toFixed(3)}, estimated contrast=${ratio.toFixed(2)}:1`);

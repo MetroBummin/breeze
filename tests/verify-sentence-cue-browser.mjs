@@ -30,7 +30,7 @@ zip.file('META-INF/container.xml','<container xmlns="urn:oasis:names:tc:opendocu
 zip.file('book.opf','<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">cue-test</dc:identifier><dc:title>Sentence cues</dc:title><dc:language>en</dc:language></metadata><manifest><item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="chapter"/></spine></package>');
 zip.file('chapter.xhtml','<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Cues</title><style>body{margin:24px;font:20px/1.8 Georgia}p{margin:0 0 30px}</style></head><body>'+('<p>'+sentence+' A different sentence stays outside the blue highlight.</p>').repeat(20)+'</body></html>');
 const epub=await zip.generateAsync({type:'nodebuffer',compression:'DEFLATE'});
-const reports=[];
+const reports=[],diagnostics=[];
 try{
  for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
   for(const width of [390,768]){
@@ -47,6 +47,26 @@ try{
      ['pdf',{name:'cue.pdf',mimeType:'application/pdf',buffer:pdf}],['epub',{name:'cue.epub',mimeType:'application/epub+zip',buffer:epub}]];
     for(const [kind,input] of inputs){
      console.log('Checking',engine.name(),width,kind);
+     const trace=async phase=>{
+      const state=await page.evaluate(()=>{
+       const rect=node=>{if(!node?.getBoundingClientRect)return null;const r=node.getBoundingClientRect();
+        return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+       const target=sentenceOrigin?.peekTarget,view=window.visualViewport;
+       return {scroll:readerScrollTop(),view:sentenceView,held:sentenceGestureStillPressed(),
+        holdPointerId:sentenceHoldPointerId,hasPendingPaint:!!sentencePendingPaint,
+        ended:sentencePresentationEnded,visible:target?sentencePeekVisible():null,
+        anchor:target?wordPeekNodeRect(target):null,scroller:rect(readerScroller()),
+        viewport:view?{left:view.offsetLeft,top:view.offsetTop,width:view.width,height:view.height}:null,
+        releaseTarget:window.qaTouchTarget?{tag:qaTouchTarget.tagName,connected:qaTouchTarget.isConnected,
+          rect:rect(qaTouchTarget)}:null,
+        lastScroll:sentencePeekLastScroll,idleRemaining:lookupPeekScrollRemaining(sentencePeekLastScroll),
+        cueConnected:!!readerSentenceCue?.layer.isConnected};
+      });
+      const entry={engine:engine.name(),width,kind,phase,...state};diagnostics.push(entry);
+      console.log('Sentence cue state',JSON.stringify(entry));
+      if(output)writeFileSync(resolve(output,'sentence-cue-diagnostics.json'),JSON.stringify(diagnostics,null,2));
+      return entry;
+     };
      const oldCount=await page.evaluate(()=>books.length);await page.locator('#fileinput').setInputFiles(input);
      await page.waitForFunction(n=>books.length>n,oldCount,{timeout:120000});
      await page.evaluate(async kind=>{await openBook(books.find(b=>b.kind===kind));if(kind!=='txt')await switchReaderMode('original');},kind);
@@ -90,6 +110,8 @@ try{
      await page.waitForFunction(()=>sentenceWaitingActive()&&readerSentenceCue?.layer.childElementCount>0,null,{timeout:5000});
      if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
      else await page.evaluate(p=>qaTouchTarget.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:71,pointerType:'touch',isPrimary:true,clientX:p.x,clientY:p.y})),point);
+     const released=await trace('after-pointerup');
+     assert.equal(released.held,false,'synthetic/trusted pointer release did not reach the gesture owner: '+JSON.stringify(released));
      await page.evaluate(()=>Promise.all(readerSentenceCue.layer.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished)));
      const cue=await page.evaluate(()=>{
       const layer=readerSentenceCue.layer;return {sentence:sentAsked,count:layer.childElementCount,
@@ -103,6 +125,7 @@ try{
       assert.equal(cue.sentence,sentence);assert.equal(cue.count,2,'identical second occurrence was highlighted too');
       await page.waitForTimeout(6250);
       assert.equal(await page.evaluate(()=>getComputedStyle(readerSentenceCue.layer.firstElementChild).opacity),'1','pending PDF cue expired');
+      await trace('after-slow-pdf-wait');
      }
      if(kind==='pdf'){
       const exact=await page.evaluate(p=>{
@@ -117,12 +140,18 @@ try{
       assert.ok(exact<.1,'blue cue diverged from the pressed PDF occurrence');
      }
      // Programmatic scroll retains the source marker without range reads.
+     const beforeScroll=await trace('before-programmatic-scroll');
      const reads=await page.evaluate(()=>qaRangeReads);
      await page.evaluate(()=>readerScrollTo(readerScrollTop()+25));
      await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
      assert.equal(await page.evaluate(()=>qaRangeReads),reads,'scroll remeasured sentence ranges');
+     const afterScroll=await trace('after-programmatic-scroll');
+     assert.equal(afterScroll.visible,true,'success fixture scrolled the selected sentence offscreen: '+JSON.stringify({beforeScroll,afterScroll}));
+     assert.equal(afterScroll.ended,false,'selection presentation ended before the fixture answer: '+JSON.stringify({beforeScroll,afterScroll}));
      await page.evaluate(()=>qaWait.resolve({ko:'참을성 있는 독자는 다음 줄까지 이어지는 문장의 모든 단어와 의미를 함께 읽습니다.',points:['표현 설명은 표시되면 안 됩니다.']}));
-     await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden);
+     await trace('after-cache-answer');
+     try{await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden);}
+     catch(error){await trace('result-timeout');throw error;}
      console.log('Result visible',engine.name(),width,kind);
      await page.locator('#p-sentence').evaluate(n=>Promise.all(n.getAnimations().map(a=>a.finished)));
      assert.equal(await page.locator('#ps-extra,#ps-points').count(),0);assert.equal(await page.locator('#ps-foot').isVisible(),false);

@@ -131,14 +131,14 @@ try{
         }
         const pixels=await page.screenshot({path:resolve(output,`${key}-${kind}-${state}.png`),animations:'allow'});
         if(baseline)beforePixels=pixels;
-        else if(dark)assert.deepEqual(pixels,beforePixels,`${key}/${kind}: dark screenshot pixels changed`);
+        else if(dark||reduced)assert.deepEqual(pixels,beforePixels,`${key}/${kind}: dark or static pale screenshot pixels changed`);
       }
       const {before,after}=pair[kind];
       for(const field of ['source','scroll','paper','ink'])assert.deepEqual(after[field],before[field],`${key}/${kind}: ${field} changed`);
       assert.deepEqual(after.cues.map(c=>c.box),before.cues.map(c=>c.box),`${key}/${kind}: source geometry changed`);
       if(dark)assert.deepEqual(after,before,`${key}/${kind}: dark rendering properties changed`);
       else{
-        assert.notEqual(after.cues[0].background,before.cues[0].background);
+        assert.equal(after.cues[0].background,before.cues[0].background,'original pale base must be unchanged');
         if(!reduced)assert.notEqual(after.cues[0].image,before.cues[0].image);
       }
     }
