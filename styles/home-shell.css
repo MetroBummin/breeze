@@ -80,7 +80,7 @@ body.dark #add-modal #am-card::before{background:linear-gradient(145deg,rgba(255
 #home-resume:disabled{cursor:default;}
 #v-home .sec-head h2{font:600 22px/30px var(--ui);letter-spacing:0;}
 #v-home .section-link{display:flex;align-items:center;gap:8px;border:0;padding:0;background:none;color:var(--settings-ink);font:inherit;letter-spacing:inherit;cursor:pointer;text-align:left;}
-#v-home .section-link svg{width:20px;height:20px;flex:none;transform:translateY(1px);fill:none;stroke:var(--settings-muted);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+#v-home .section-link svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--settings-muted);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
 
 #home-controls{display:none;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #home-controls{display:block;}
