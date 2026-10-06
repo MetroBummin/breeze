@@ -38,7 +38,8 @@ function inventory contains only Ready. Always name the app project explicitly.
   schema so queued authorization headers cannot be read through the Data API.
   This affects the newly installed extension schemas; reinspect existing uses
   if another worker installs them before this plan executes.
-- Runtime settings: environment mode stays OFF; reviewed feed IDs default empty;
+- Runtime settings: environment mode stays OFF; reviewed feed IDs and separate
+  original-probe feed IDs default empty;
   database switch and scheduler default OFF; client configuration stays OFF.
   Reuse the owner's existing service credential through Vault; create no key,
   credential, project, branch, external scheduler or paid service.
@@ -64,6 +65,11 @@ function inventory contains only Ready. Always name the app project explicitly.
    return 503 without initializing DB/credential clients or fetching publishers.
 4. Through the parent's secure supported settings path, set
    `RSS_CATALOG_MODE=active` and `RSS_CATALOG_FEED_IDS=<reviewed CSV IDs>`.
+   `RSS_CATALOG_ORIGINAL_FEED_IDS=<separately reviewed CSV IDs>` is an independent
+   empty-by-default subset of the feed IDs. Leave it empty for approved RSS
+   caching that has no reviewed original-page probing permission. Removing a
+   probe ID withholds its prior original-photo hints from public GET and clears
+   them on the next refresh, without removing supplied feed photos.
    No setting tool is supplied by this repository. Database `active=false`
    still produces empty disabled inventory and POST `reason=off`.
 5. Store the existing service credential securely as Vault
@@ -122,6 +128,23 @@ never renew source or cache receipt age. Source `max-age` can defer revalidation
 
 ## Photo integration boundary
 
+Source admission is operation-specific. Ordinary public RSS reader use and
+server-shared feed caching are distinct from automated original-page HTML probes;
+public image display/attribution also needs its own review. Several sources
+expressly support RSS readers, so this plan does not label all built-ins
+prohibited. Synthetic inclusion of all thirteen feeds and Conversation/TMZ
+originals is never permission to enable them in production.
+
+The parent's source-policy reviewer reports that TMZ's conditional commercial
+reposting grant requires original links, unchanged excerpts and a copyright
+notice. This catalog's current 280-character normalized summary and stripped
+copyright metadata have not been reviewed against that grant. Keep TMZ (ID 2)
+outside the initial production feed/probe lists until the exact operations are
+approved with required rights/attribution preservation or separate permission.
+No copyright/rights schema or blanket source ban is invented here. The parent
+and `review_shared_rss_catalog` reviewer own the initial per-operation source
+matrix; activation of all thirteen IDs is not an authorized default.
+
 Server supplied-photo parity now covers description versus image-less content,
 Atom summary, lazy attributes, responsive widths, media type/case, video versus
 thumbnail and unsafe/tracking image exclusion. The catalog consumes PR #104's
@@ -135,7 +158,7 @@ URL after a real head close, without consuming the large article tail. Comments,
 quoted attributes, raw text, templates and incomplete bases cannot fake closure.
 
 Original lookup occurs only inside an authorized claimed refresh, for missing
-photos on ordinary entries from enabled fixed feeds. Article and every redirect
+photos on ordinary entries from separately approved original-probe IDs. Article and every redirect
 must be HTTPS on the feed hostname (www aliases permitted); public DNS answers
 are validated together and pinned. Custom feeds, social/read targets, credentials
 and cross-publisher redirects never qualify. Supplied feed photos win.
@@ -202,8 +225,8 @@ excluded. No percentage billing-savings claim is made.
 
 Validation at the prepared source:
 
-- Full `npm test`: 518 Node-runner tests, zero failures, plus existing script
-  checks. Catalog subset: 40 tests, including actual SQL role denial/control
+- Full `npm test`: 519 Node-runner tests, zero failures, plus existing script
+  checks. Catalog subset: 41 tests, including actual SQL role denial/control
   fencing, modeled disabled scheduler/grants, publisher validators, long-URL
   snapshot trimming, supplied/original-photo policy and provenance, transport
   cancellation, base/case parity, cache/concurrency, client failure bounds and expiry.
@@ -218,6 +241,9 @@ Validation at the prepared source:
   themes; four audited original photo URLs render directly through catalog Home
   using fixture image bytes, with no client cover/body lookup. This is local
   rendering evidence, not a live website/photo decode claim.
+  Specifically, `assets/favicon/icon-512.png` stands in for each original photo
+  URL: that part proves URL propagation and renderer readiness, not publisher
+  image decoding. PR #104's live original/image audit is separate evidence.
 - WebKit download attempts failed with CDN HTTP 403 (Domain forbidden). Local
   catalog launch is blocked by the missing binary. CI remains responsible for
   exact-head WebKit proof; no WebKit pass is claimed here.
@@ -237,6 +263,14 @@ Validation at the prepared source:
   accounting can overlap while client ownership is serial. This does not prove
   the absent client timestamps in the earlier failing CI run; instrumented CI
   retains both assertions so a real overlap still fails and exposes evidence.
+  [Instrumented failing CI proof](rss-catalog-serial-ci-20261006.json), run
+  37414684684 at `9942d0c`: Chromium client ownership maximum 1, cancel/fetch
+  settle t=0, next client start t=2 ms, next server arrival t=52 ms, prior server
+  close t=55 ms. The 3 ms server acknowledgement overlap reproduces server
+  `maxActive=2`; client fetch/reader work remains serial. No assertion was removed
+  or relaxed. WebKit supplied/visible checks pass; independent catalog
+  Chromium/WebKit CI passes at that head. PR #104's owner must reconcile the
+  fixture metric while preserving strict serial ownership and request budgets.
 - Public `breeze.io.kr` HTML/config read attempts were inaccessible to this
   environment's web tool. Parent owns the requested actual website baseline and
   post-deployment validation. Neither fixture results nor failed page access

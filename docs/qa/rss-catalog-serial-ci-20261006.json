@@ -1,0 +1,128 @@
+{
+  "head": "9942d0c1eb4ca490f0b8a0ef97608d120503aaf3",
+  "runId": 37414684684,
+  "jobId": 112110588984,
+  "scope": "Synthetic browser transport. Both original server serial/budget assertions and additional strict client ownership assertion remain unchanged/enabled. Chromium failure is reproduced with client ownership 1 and delayed previous-server close after next-server arrival.",
+  "chromium": {
+    "engine": "chromium",
+    "serverMaxActive": 2,
+    "client": {
+      "maxActive": 1,
+      "events": [
+        {
+          "kind": "start",
+          "url": "https://stories.fixture/chromium-cold/g0/article-0",
+          "at": 1791261594625,
+          "active": 1
+        },
+        {
+          "kind": "settle",
+          "url": "https://stories.fixture/chromium-cold/g0/article-0",
+          "at": 1791261594768,
+          "active": 0
+        },
+        {
+          "kind": "start",
+          "url": "https://stories.fixture/chromium-cold/g0/article-1",
+          "at": 1791261594770,
+          "active": 1
+        },
+        {
+          "kind": "settle",
+          "url": "https://stories.fixture/chromium-cold/g0/article-1",
+          "at": 1791261594826,
+          "active": 0
+        }
+      ]
+    },
+    "readers": [
+      {
+        "url": "http://127.0.0.1:39409/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cold%2Fg0%2Farticle-0",
+        "readBytes": 147456,
+        "cancelled": true,
+        "cancelAt": 1791261594768,
+        "cancelSettledAt": 1791261594768
+      },
+      {
+        "url": "http://127.0.0.1:39409/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cold%2Fg0%2Farticle-1",
+        "readBytes": 4096,
+        "cancelled": true,
+        "cancelAt": 1791261594826,
+        "cancelSettledAt": 1791261594826
+      }
+    ],
+    "requests": [
+      {
+        "target": "https://stories.fixture/chromium-cold/g0/article-0",
+        "arrivedAt": 1791261594666,
+        "closedAt": 1791261594823
+      },
+      {
+        "target": "https://stories.fixture/chromium-cold/g0/article-1",
+        "arrivedAt": 1791261594820,
+        "closedAt": 1791261594835
+      }
+    ]
+  },
+  "webkit": {
+    "engine": "webkit",
+    "serverMaxActive": 1,
+    "client": {
+      "maxActive": 1,
+      "events": [
+        {
+          "kind": "start",
+          "url": "https://stories.fixture/webkit-cold/g0/article-0",
+          "at": 1791261627104,
+          "active": 1
+        },
+        {
+          "kind": "settle",
+          "url": "https://stories.fixture/webkit-cold/g0/article-0",
+          "at": 1791261627140,
+          "active": 0
+        },
+        {
+          "kind": "start",
+          "url": "https://stories.fixture/webkit-cold/g0/article-1",
+          "at": 1791261627142,
+          "active": 1
+        },
+        {
+          "kind": "settle",
+          "url": "https://stories.fixture/webkit-cold/g0/article-1",
+          "at": 1791261627185,
+          "active": 0
+        }
+      ]
+    },
+    "readers": [
+      {
+        "url": "http://127.0.0.1:36115/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fwebkit-cold%2Fg0%2Farticle-0",
+        "readBytes": 8192,
+        "cancelled": true,
+        "cancelAt": 1791261627140,
+        "cancelSettledAt": 1791261627140
+      },
+      {
+        "url": "http://127.0.0.1:36115/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fwebkit-cold%2Fg0%2Farticle-1",
+        "readBytes": 12288,
+        "cancelled": true,
+        "cancelAt": 1791261627185,
+        "cancelSettledAt": 1791261627185
+      }
+    ],
+    "requests": [
+      {
+        "target": "https://stories.fixture/webkit-cold/g0/article-0",
+        "arrivedAt": 1791261627133,
+        "closedAt": 1791261627143
+      },
+      {
+        "target": "https://stories.fixture/webkit-cold/g0/article-1",
+        "arrivedAt": 1791261627177,
+        "closedAt": 1791261627188
+      }
+    ]
+  }
+}

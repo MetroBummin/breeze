@@ -195,7 +195,7 @@ test('bounded workers coalesce duplicates, retain only provenance and reuse phot
 test('positive original expiry clears the photo, changes ETag and bounds HTTP cache independently of refreshed feeds',async()=>{
   let clock=now;const snapshot={version:1,feeds:[{id,at:now,nextFetchAt:now+FRESH_MS,entries:[{...entry(),photo:'https://imagez.tmz.com/original.jpg',
     originalCover:{status:'present',at:now-STALE_MS+5000,photo:'https://imagez.tmz.com/original.jpg',finalUrl:entry().url}}]}]};
-  const service=createCatalogService({enabled:[id],store:{read:async()=>({active:true,payload:snapshot,revision:'same'})},now:()=>clock});
+  const service=createCatalogService({enabled:[id],originalEnabled:[id],store:{read:async()=>({active:true,payload:snapshot,revision:'same'})},now:()=>clock});
   const handler=catalogHandler(service,{now:()=>clock});
   const first=await handler(new Request('https://catalog.fixture'));assert.match(first.headers.get('cache-control'),/max-age=5\b/);
   const payload=await first.json();assert.equal(payload.feeds[id].entries[0].photo,'https://imagez.tmz.com/original.jpg');assert.equal(payload.feeds[id].entries[0].originalCover,undefined);
@@ -210,4 +210,19 @@ test('a cold missing-photo budget reaches first entries across feeds before one 
   await enrichCatalogPhotos(feeds,[],ids,{now,fetcher:async(e,feed)=>{visited.push([FEEDS.indexOf(feed),e.url]);return {status:'noimage',photo:'',bodyBytesReceived:0};}});
   assert.equal(visited.length,6);assert.equal(visited.filter(([id])=>id===1).length,3);assert.equal(visited.filter(([id])=>id===2).length,3);
   assert.ok(visited.every(([,url])=>Number(url.split('-').at(-1))<3));
+});
+
+test('feed approval alone cannot probe originals; removing original approval withholds old hints but keeps supplied photos',async()=>{
+  const original={...entry(),photo:'https://imagez.tmz.com/original.jpg',originalCover:{status:'present',at:now,photo:'https://imagez.tmz.com/original.jpg'}};
+  const supplied={...entry(1),photo:'https://imagez.tmz.com/supplied.jpg'};
+  const payload={version:1,feeds:[record([original,supplied])]};let probes=0;
+  const store={read:async()=>({active:true,payload,revision:'same'})};
+  const approved=createCatalogService({store,enabled:[id],originalEnabled:[id],now:()=>now});
+  const unapproved=createCatalogService({store,enabled:[id],now:()=>now});
+  assert.ok((await approved.read()).catalog.feeds[id].entries[0].photo);
+  const catalog=(await unapproved.read()).catalog;assert.equal(catalog.feeds[id].entries[0].photo,'');assert.equal(catalog.feeds[id].entries[1].photo,supplied.photo);
+  const copied=structuredClone(payload.feeds);
+  const metrics=await enrichCatalogPhotos(copied,payload.feeds,[],{now,fetcher:async()=>{probes++;}});
+  assert.equal(probes,0);assert.equal(metrics.originalJobs,0);assert.equal(copied[0].entries[0].originalCover,undefined);assert.equal(copied[0].entries[1].photo,supplied.photo);
+  assert.throws(()=>createCatalogService({enabled:[1],originalEnabled:[2]}),/original_feed_config/);
 });

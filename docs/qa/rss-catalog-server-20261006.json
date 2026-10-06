@@ -1,9 +1,11 @@
 {
   "units": "UTF-8 uncompressed HTTP response bodies. Synthetic feeds; four audited public OG snippets plus two synthetic originals. Local pinned Node HTTP, modeled DNS; live publisher/TLS, headers, redirects, DB responses, images, selected article bodies and other traffic excluded. Retained original-prefix bytes and delivered chunks are separate; neither is total billed egress.",
   "sourceHashes": {
-    "server/rss-catalog/service.mjs": "37f309883366f8799f169beac50f88cbb9e9dd1558c5425aa702873199c4c515",
+    "supabase/functions/rss-catalog/index.ts": "29af24f56fcbe25ea76d49b4a3746a4bf4265d676980ba4a85b554a7d0a7e4f8",
+    "server/rss-catalog/service.mjs": "6d5ef2617de7e0262cacae5b548baa319c71d197ff8fbe733d699567a34d3624",
+    "server/rss-catalog/metadata.mjs": "1e98adb63e703859cde3b0013d37c42cf26a81deb7137afca6d89c46e762432e",
     "server/rss-catalog/handler.mjs": "5dd2bf523b57ec0643f97781e6398b6cbd0d64db0393c08eeb58fda7ef4ba1d0",
-    "server/rss-catalog/photos.mjs": "21ffcfc4ea924621a5a3dd45bef2ba62229362670e467434d2012bf1e21f00da",
+    "server/rss-catalog/photos.mjs": "a09c33ac6392ee0008a1e8b63eb623f68e9fc9548416e031ed5ae2b7bc03bc84",
     "server/rss-catalog/photo-head.mjs": "0ad69a3c3a7febb0cbfd35655a31687c886a01596bf0ce2d47411bacd78c79bd",
     "server/rss-catalog/public-prefix.mjs": "55ec4ced14670d4a15c82cd11578145206a9a8d582adf9cdb0a4e4ba573897ab",
     "server/article/cover-metadata.mjs": "52ab91f202efede40bfdaa250e5c746aed6db779ba45f83ae77e44148b5be411",

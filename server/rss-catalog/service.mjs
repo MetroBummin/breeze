@@ -25,15 +25,16 @@ function cacheDelay(headers){
   const age=Number(control.match(/(?:^|,)\s*max-age\s*=\s*"?(\d+)/i)?.[1]||0)*1000;
   return Math.max(FRESH_MS,Math.min(age,STALE_MS));
 }
-/** @param {{store?:any,enabled?:number[],fetcher?:typeof fetchFeed,photoFetcher?:typeof fetchCatalogPhoto,now?:()=>number,uuid?:()=>string}} options */
-export function createCatalogService({store,enabled=[],fetcher=fetchFeed,photoFetcher=fetchCatalogPhoto,now=Date.now,uuid=()=>crypto.randomUUID()}={}){
+/** @param {{store?:any,enabled?:number[],originalEnabled?:number[],fetcher?:typeof fetchFeed,photoFetcher?:typeof fetchCatalogPhoto,now?:()=>number,uuid?:()=>string}} options */
+export function createCatalogService({store,enabled=[],originalEnabled=[],fetcher=fetchFeed,photoFetcher=fetchCatalogPhoto,now=Date.now,uuid=()=>crypto.randomUUID()}={}){
   if(enabled.some(id=>!Number.isInteger(id)||!FEEDS[id]))throw Error('feed_config');
+  if(originalEnabled.some(id=>!Number.isInteger(id)||!enabled.includes(id)))throw Error('original_feed_config');
   return {
     async read(){
       const record=await store.read(),at=now(),ids=record?.active===true?enabled:[];
-      const expiries=(record?.payload?.feeds||[]).filter(feed=>ids.includes(feed.id)).flatMap(feed=>(feed.entries||[])
+      const expiries=(record?.payload?.feeds||[]).filter(feed=>ids.includes(feed.id)&&originalEnabled.includes(feed.id)).flatMap(feed=>(feed.entries||[])
         .filter(entry=>entry.originalCover?.status==='present'&&entry.originalCover.at+STALE_MS>at).map(entry=>entry.originalCover.at+STALE_MS));
-      return {catalog:publicCatalog(record?.payload,ids,at),revision:record?.revision||'',cacheUntil:expiries.length?Math.min(...expiries):null};
+      return {catalog:publicCatalog(record?.payload,ids,at,originalEnabled),revision:record?.revision||'',cacheUntil:expiries.length?Math.min(...expiries):null};
     },
     async refresh(){
       if(!enabled.length)return {refreshed:false,reason:'no_sources'};
@@ -65,7 +66,7 @@ export function createCatalogService({store,enabled=[],fetcher=fetchFeed,photoFe
             }
           }
         }));
-        const originalMetrics=await enrichCatalogPhotos(next,records,enabled,{now:at,fetcher:photoFetcher});
+        const originalMetrics=await enrichCatalogPhotos(next,records,originalEnabled,{now:at,fetcher:photoFetcher});
         const payload={version:1,feeds:next};
         const bytes=value=>new TextEncoder().encode(JSON.stringify(value)).length;
         // Long publisher URLs must not make the entire catalog unavailable.
@@ -75,7 +76,7 @@ export function createCatalogService({store,enabled=[],fetcher=fetchFeed,photoFe
           const largest=next.filter(feed=>feed.entries.length).sort((a,b)=>bytes(b)-bytes(a))[0];
           if(!largest)throw Error('catalog_too_big');largest.entries.pop();
         }
-        publicCatalog(payload,enabled,at);
+        publicCatalog(payload,enabled,at,originalEnabled);
         if(!await store.publish(token,payload))return {refreshed:false,reason:'lease_expired'};
         // Service-only counters: final successful feed bodies, excluding failed
         // partial transfers, redirect bodies, headers/TLS, images and DB traffic.

@@ -39,7 +39,7 @@ const client={from(){return {select(){return {eq(){return {async maybeSingle(){
   const result=name==='rss_catalog_publish'?await db.query('select public.rss_catalog_publish($1::uuid,$2::jsonb) as value',[args.claim_token,JSON.stringify(args.new_payload)]):
     await db.query(`select public.${name}($1::uuid) as value`,[args.claim_token]);return {data:result.rows[0].value};
 }};
-const service=createCatalogService({store:databaseStore(client),enabled:FEEDS.map((_,id)=>id),now:()=>clock,fetcher:async feed=>{
+const service=createCatalogService({store:databaseStore(client),enabled:FEEDS.map((_,id)=>id),originalEnabled:[1,2],now:()=>clock,fetcher:async feed=>{
   const xml=fixtures[FEEDS.indexOf(feed)];stats.requests++;if(!secondPass)stats.bytes+=Buffer.byteLength(xml);stats.pending++;stats.maxPending=Math.max(stats.pending,stats.maxPending);
   await new Promise(done=>setTimeout(done,2));stats.pending--;return secondPass?{unchanged:true,headers:{},responseBodyBytes:0}:{xml,headers:{etag:'"fixture-1"'},responseBodyBytes:Buffer.byteLength(xml)};
 },photoFetcher:async(entry,feed)=>{
@@ -60,7 +60,7 @@ const server=createServer(async(req,res)=>{
   }catch{res.writeHead(500).end();}
 });
 const result={units:'UTF-8 uncompressed HTTP response bodies. Synthetic feeds; four audited public OG snippets plus two synthetic originals. Local pinned Node HTTP, modeled DNS; live publisher/TLS, headers, redirects, DB responses, images, selected article bodies and other traffic excluded. Retained original-prefix bytes and delivered chunks are separate; neither is total billed egress.',sourceHashes:{},cases:{}};
-for(const file of ['server/rss-catalog/service.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/photos.mjs','server/rss-catalog/photo-head.mjs','server/rss-catalog/public-prefix.mjs','server/article/cover-metadata.mjs','server/rss-catalog/schema/rss_public_catalog.sql','scripts/importers/rss.js'])result.sourceHashes[file]=createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex');
+for(const file of ['supabase/functions/rss-catalog/index.ts','server/rss-catalog/service.mjs','server/rss-catalog/metadata.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/photos.mjs','server/rss-catalog/photo-head.mjs','server/rss-catalog/public-prefix.mjs','server/article/cover-metadata.mjs','server/rss-catalog/schema/rss_public_catalog.sql','scripts/importers/rss.js'])result.sourceHashes[file]=createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex');
 let base;
 async function get(headers={}){const response=await fetch(base,{headers});const bytes=Buffer.from(await response.arrayBuffer());return {status:response.status,bytes:bytes.length,etag:response.headers.get('etag'),payload:bytes.length?JSON.parse(bytes):null};}
 try{

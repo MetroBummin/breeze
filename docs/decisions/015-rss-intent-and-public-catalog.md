@@ -173,7 +173,16 @@ types. Catalog mode skips the client's visible-cover fetches, so the server now
 owns bounded original-photo metadata lookup under the same global SQL claim.
 It consumes PR #104's unchanged pure extractor from `7121c0f`, with its case,
 safe-base and malformed-input fixtures. Only missing-photo ordinary entries
-from reviewed fixed feeds qualify. Every original/redirect must be HTTPS on
+from a separately reviewed `RSS_CATALOG_ORIGINAL_FEED_IDS` subset qualify; it
+defaults empty independently of RSS caching's `RSS_CATALOG_FEED_IDS`. Feed
+approval never authorizes original-page probing. Removing a probe ID withholds
+previous original-photo hints while supplied feed photos remain available.
+The parent's source-policy review separates supported RSS-reader use, shared
+metadata transformations, original automation and image/attribution rights.
+TMZ stays outside initial admission until its unchanged-excerpt/copyright
+requirements are resolved against the current normalized summary. No blanket
+all-source permission or prohibition follows from the fixed feed inventory.
+Every original/redirect must be HTTPS on
 the feed publisher's hostname (allowing www aliases), with public DNS answers
 pinned before connection and no credential-bearing URL.
 

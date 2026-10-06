@@ -32,7 +32,7 @@ jobs:
         run: |
           npx --yes deno@2.9.6 check --config supabase/functions/rss-catalog/deno.json supabase/functions/rss-catalog/index.ts
           npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-off-deno.mjs
-          RSS_CATALOG_MODE=active RSS_CATALOG_FEED_IDS=0,1 SUPABASE_URL=https://catalog-db.fixture SUPABASE_SERVICE_ROLE_KEY=synthetic-service-key npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE,RSS_CATALOG_FEED_IDS,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-active-deno.mjs
+          RSS_CATALOG_MODE=active RSS_CATALOG_FEED_IDS=0,1 RSS_CATALOG_ORIGINAL_FEED_IDS= SUPABASE_URL=https://catalog-db.fixture SUPABASE_SERVICE_ROLE_KEY=synthetic-service-key npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE,RSS_CATALOG_FEED_IDS,RSS_CATALOG_ORIGINAL_FEED_IDS,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-active-deno.mjs
           npx --yes deno@2.9.6 test --allow-net=127.0.0.1 --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-prefix-deno.mjs
           node tests/measure-rss-catalog-server.mjs
       - name: Feature audit contracts

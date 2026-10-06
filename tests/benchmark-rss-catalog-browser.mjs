@@ -38,7 +38,7 @@ function articleHtml(target){
 let snapshot=null,revision='',claimed=false,upstream=0,originalLookups=0;
 const store={read:async()=>({payload:snapshot,revision,active:true}),claim:async()=>{if(claimed)return false;claimed=true;return true;},
  publish:async(token,payload)=>{snapshot=payload;revision=token;return true;},release:async()=>{claimed=false;}};
-const service=createCatalogService({store,enabled:FEEDS.map((_,i)=>i),fetcher:async feed=>{upstream++;return {xml:feedXml(FEEDS.indexOf(feed)),headers:{}};},uuid:()=>String(upstream+1),
+const service=createCatalogService({store,enabled:FEEDS.map((_,i)=>i),originalEnabled:[1,2],fetcher:async feed=>{upstream++;return {xml:feedXml(FEEDS.indexOf(feed)),headers:{}};},uuid:()=>String(upstream+1),
  photoFetcher:(entry,feed)=>fetchCatalogPhoto(entry,feed,{fetcher:async(url,options)=>{
   const row=audit.cases.find(row=>row.url===url);assert.ok(row);originalLookups++;
   const bytes=new TextEncoder().encode('<html><head>'+row.meta);const headers={'content-type':'text/html'};

@@ -61,12 +61,13 @@ export async function enrichCatalogPhotos(feeds,previous,enabled,{now=Date.now()
   for(const record of previous||[])if(enabled.includes(record.id))for(const entry of record.entries||[]){
     const hint=validHint(entry.originalCover,now,FEEDS[record.id]);if(hint)oldByUrl.set(entry.url,hint);
   }
-  for(const record of feeds)if(enabled.includes(record.id)&&record.at>0){
+  for(const record of feeds)if(record.at>0){
     record.entries=record.entries.map((raw,position)=>{
       const entry={...raw},feed=FEEDS[record.id],wasOriginal=entry.originalCover&&entry.photo===entry.originalCover.photo;
       const hint=validHint(entry.originalCover,now,feed)||oldByUrl.get(entry.url);delete entry.originalCover;
       if(entry.photo&&!wasOriginal)return entry; // Fresh supplied feed photo wins.
       entry.photo='';if(!originalEligible(entry,feed))return entry;
+      if(!enabled.includes(record.id))return entry; // Feed caching never approves original-page probing.
       if(hint){
         entry.originalCover={...hint};const ttl=hint.status==='present'?STALE_MS:hint.status==='noimage'?NO_IMAGE_MS:FRESH_MS;
         if(now-hint.at<ttl){if(hint.status==='present')entry.photo=hint.photo;metrics.originalCacheHits++;return entry;}

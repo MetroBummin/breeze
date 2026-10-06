@@ -97,12 +97,12 @@ export function parseMetadata(xml,feed){
   }
   return entries;
 }
-export function publicCatalog(snapshot,enabled,now){
+export function publicCatalog(snapshot,enabled,now,originalEnabled=[]){
   const catalog={version:CATALOG_VERSION,feeds:FEEDS.map((feed,id)=>{
     const record=snapshot?.feeds?.find(item=>item.id===id);
     const valid=enabled.includes(id)&&record&&Number.isFinite(record.at)&&record.at>=0&&record.at<=now&&now-record.at<=STALE_MS;
     const entries=valid&&Array.isArray(record.entries)?record.entries.slice(0,MAX_ENTRIES).map(entry=>metadataEntry(
-      entry.originalCover?.status==='present'&&(!Number.isFinite(entry.originalCover.at)||entry.originalCover.at>now||now-entry.originalCover.at>=STALE_MS)
+      entry.originalCover?.status==='present'&&(!originalEnabled.includes(id)||!Number.isFinite(entry.originalCover.at)||entry.originalCover.at>now||now-entry.originalCover.at>=STALE_MS)
         ?{...entry,photo:''}:entry,feed)).filter(Boolean):[];
     return {id,at:valid?record.at:0,status:!enabled.includes(id)?'disabled':!valid?'unavailable':
       record.error||now-record.at>=FRESH_MS?'stale':'ready',entries};
