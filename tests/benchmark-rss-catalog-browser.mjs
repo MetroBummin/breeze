@@ -11,6 +11,8 @@ import {chromium,webkit} from 'playwright';
 import {FEEDS} from '../server/rss-quality/feeds.mjs';
 import {createCatalogService} from '../server/rss-catalog/service.mjs';
 import {catalogHandler} from '../server/rss-catalog/handler.mjs';
+import {fetchCatalogPhoto} from '../server/rss-catalog/photos.mjs';
+const audit=JSON.parse(readFileSync(new URL('./fixtures/rss-original-cover-metadata.json',import.meta.url)));
 const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
 const proof=process.env.BREEZE_CATALOG_PROOF||'/tmp/breeze-catalog-browser-proof';mkdirSync(proof,{recursive:true});
 const image=readFileSync(resolve(root,'assets/favicon/icon-512.png'));
@@ -23,7 +25,8 @@ const title=i=>'The synthetic English story '+i;
 const prose='The story follows people who learn to read the world around them. They compare the evidence and explain how different choices affect their lives. This public example provides meaningful English prose for a reading test. ';
 const storyUrl=(id,i)=>id===9||id===11||id===12?`https://medium.com/@benchwriter/story-${(i+1).toString(16).padStart(12,'0')}`:`https://stories.example/f${id}/${i}`;
 function feedXml(id,owner=false){
- const items=Array.from({length:20},(_,i)=>`<item><title>${title(i)}</title><link>${storyUrl(id,i)}</link><description><![CDATA[<p>${prose}</p>]]></description>${owner?`<content:encoded><![CDATA[${Array.from({length:8},()=>'<p>'+prose+'</p>').join('')}]]></content:encoded>`:''}${id!==0?`<enclosure type="image/png" url="https://images.fixture/f${id}/${i}.png"/>`:''}<pubDate>Mon, 05 Oct 2026 01:00:00 GMT</pubDate></item>`).join('');
+ const originals=audit.cases.filter(row=>row.feedSourceUrl===FEEDS[id].url);
+ const items=Array.from({length:20},(_,i)=>`<item><title>${title(i)}</title><link>${originals[i]?.url||storyUrl(id,i)}</link><description><![CDATA[<p>${prose}</p>]]></description>${owner?`<content:encoded><![CDATA[${Array.from({length:8},()=>'<p>'+prose+'</p>').join('')}]]></content:encoded>`:''}${id!==0&&!originals[i]?`<enclosure type="image/png" url="https://images.fixture/f${id}/${i}.png"/>`:''}<pubDate>Mon, 05 Oct 2026 01:00:00 GMT</pubDate></item>`).join('');
  const xml='<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>'+items+'</channel></rss>';
  return xml.replace('</channel>',`<!--${'x'.repeat(Math.max(0,100000-Buffer.byteLength(xml)-7))}--></channel>`);
 }
@@ -32,10 +35,15 @@ function articleHtml(target){
  const html=`<!doctype html><html><head><title>${title(i)}</title><meta property="og:image" content="https://images.fixture/f${id}/${i}.png"></head><body><article><h1>${title(i)}</h1>${Array.from({length:15},()=>'<p>'+prose.repeat(2)+'</p>').join('')}</article></body></html>`;
  return html.replace('</body>',`<!--${'x'.repeat(Math.max(0,200000-Buffer.byteLength(html)-7))}--></body>`);
 }
-let snapshot=null,revision='',claimed=false,upstream=0;
-const store={read:async()=>({payload:snapshot,revision}),claim:async()=>{if(claimed)return false;claimed=true;return true;},
+let snapshot=null,revision='',claimed=false,upstream=0,originalLookups=0;
+const store={read:async()=>({payload:snapshot,revision,active:true}),claim:async()=>{if(claimed)return false;claimed=true;return true;},
  publish:async(token,payload)=>{snapshot=payload;revision=token;return true;},release:async()=>{claimed=false;}};
-const service=createCatalogService({store,enabled:FEEDS.map((_,i)=>i),fetcher:async feed=>{upstream++;return {xml:feedXml(FEEDS.indexOf(feed)),headers:{}};},uuid:()=>String(upstream+1)});
+const service=createCatalogService({store,enabled:FEEDS.map((_,i)=>i),originalEnabled:[1,2],fetcher:async feed=>{upstream++;return {xml:feedXml(FEEDS.indexOf(feed)),headers:{}};},uuid:()=>String(upstream+1),
+ photoFetcher:(entry,feed)=>fetchCatalogPhoto(entry,feed,{fetcher:async(url,options)=>{
+  const row=audit.cases.find(row=>row.url===url);assert.ok(row);originalLookups++;
+  const bytes=new TextEncoder().encode('<html><head>'+row.meta);const headers={'content-type':'text/html'};
+  assert.equal(options.stop(bytes,headers,url),true);return {url,status:200,headers,bytes,complete:false,bodyBytesReceived:bytes.length};
+ }})});
 const handler=catalogHandler(service);
 let current=versions[0];
 const server=createServer((req,res)=>{
@@ -71,7 +79,7 @@ async function contextFor(version,profile,storage={}){
  },storage);
  await context.route('**/*',async route=>{
   const raw=route.request().url(),url=new URL(raw);if(raw.startsWith(base)||raw.startsWith('blob:'))return route.continue();
-  if(url.origin==='https://images.fixture')return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/png',body:image});
+  if(url.origin==='https://images.fixture'||audit.cases.some(row=>row.photo===raw))return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/png',body:image});
   if(url.origin!=='https://relay.fixture'){attempts.push(raw);return route.abort();}
   let body,status=200,headers={'Access-Control-Allow-Origin':'*'},kind='other',target='';
   if(url.pathname.endsWith('/rss-catalog')){
@@ -140,6 +148,7 @@ try{
  assert.equal(upstream,0,'Cold public client cannot initialize upstream inventory');
  result.coldCatalog.browser=metrics(empty.calls);await empty.context.close();
  await service.refresh();result.upstreamFixedFeedLookups=upstream;assert.equal(upstream,13);
+ assert.equal(originalLookups,4);result.serverOriginalPhotoLookups=originalLookups;
  for(const profile of profiles)for(const version of versions){
   current=version;const h=await contextFor(version,profile);const first=await home(h),homeCold=metrics(h.calls),clickCold=await clicks(h,first.page);
   await h.context.close();
@@ -169,6 +178,28 @@ try{
   const screenshot=`fallback-${label}-${theme}.png`;await card.screenshot({path:proof+'/'+screenshot});result.fallbackUI.push({label,width,height,theme,screenshot});
  }
  assert.equal(ui.errors.length,0);await ui.context.close();
+ // Catalog-origin photos render directly on Home; no client cover/body lookup.
+ const originalsUI=await contextFor(current,profiles[0]),originalsHome=await home(originalsUI);result.originalPhotos=[];
+ for(const row of audit.cases){
+  // Home chooses one unread entry per feed. Model previously saved audit
+  // entries to exercise every already returned photo through normal ranking.
+  await originalsHome.page.evaluate(async url=>{
+   const group=rssCands.find(entries=>entries.some(entry=>entry.url===url));
+   for(const entry of group.slice(0,group.findIndex(entry=>entry.url===url)))
+    if(!books.some(book=>book.sourceUrl===entry.url))books.push({id:'audit-'+entry.url,sourceUrl:entry.url});
+   await appendRssCards(document.querySelector('#casual-rail'),false);
+  },row.url);
+  const card=originalsHome.page.locator(`#casual-rail .rss-card[data-rss-url="${row.url}"]`);
+  await card.evaluate(node=>node.scrollIntoView({block:'nearest',inline:'center',behavior:'instant'}));
+  await card.locator('.thumb img').waitFor();await card.locator('.thumb img').evaluate(img=>img.decode());
+  assert.equal(await card.locator('.thumb img').getAttribute('src'),row.photo);
+  assert.equal(await card.getAttribute('aria-busy'),null);
+  const screenshot='original-'+result.originalPhotos.length+'.png';await card.screenshot({path:proof+'/'+screenshot});
+  result.originalPhotos.push({url:row.url,photo:row.photo,source:row.source,screenshot});
+ }
+ assert.deepEqual(metrics(originalsUI.calls).kinds,{feed:0,ownerFeed:0,articleBody:0,catalog:1,previewMetadata:0});
+ assert.equal(originalsUI.attempts.length,0);assert.equal(originalsUI.errors.length,0);assert.equal(originalLookups,4);
+ await originalsUI.context.close();
  // A selected Medium owner feed is deferred; closing while it resolves cannot save/reopen.
  const medium=await contextFor(current,{name:'intent',rtt:300,bytesPerSecond:200000,ownerDelay:2000}),mediumHome=await home(medium);
  const mediumCard=mediumHome.page.locator('#casual-rail .rss-card[data-rss-url^="https://medium.com/"]').first();

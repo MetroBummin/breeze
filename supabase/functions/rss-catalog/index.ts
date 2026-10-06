@@ -10,6 +10,7 @@ if(Deno.env.get('RSS_CATALOG_MODE')!=='active')Deno.serve(request=>request.metho
 else{
   const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
   const db=createClient(Deno.env.get('SUPABASE_URL')!,key,{auth:{persistSession:false}});
-  const service=createCatalogService({store:databaseStore(db),enabled:feedIds(Deno.env.get('RSS_CATALOG_FEED_IDS')||'')});
+  const service=createCatalogService({store:databaseStore(db),enabled:feedIds(Deno.env.get('RSS_CATALOG_FEED_IDS')||''),
+    originalEnabled:feedIds(Deno.env.get('RSS_CATALOG_ORIGINAL_FEED_IDS')||'')});
   Deno.serve(catalogHandler(service,{authorize:serviceAuthorization(key)}));
 }

@@ -7,12 +7,14 @@ import {createHash} from 'node:crypto';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
+import {coverDocumentCases} from './fixtures/rss-cover-document-cases.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_RSS_VISIBLE_COVER_PROOF||'/tmp/breeze-rss-visible-covers';
 mkdirSync(proof,{recursive:true});
 const photo=readFileSync(resolve(root,'assets/samples/starship-1.jpg'));
 const source=readFileSync(resolve(root,'scripts/importers/rss.js'),'utf8');
+const originalCases=JSON.parse(readFileSync(resolve(root,'tests/fixtures/rss-original-cover-metadata.json'),'utf8')).cases;
 const feeds=[...source.matchAll(/name:'([^']+)', url:'([^']+)', category:'([^']+)'/g)]
   .map(([,name,url,category])=>({name,url,category}));
 const prose='The story explains how people learn about the world by reading evidence and comparing ideas. ';
@@ -22,7 +24,8 @@ function run(name,options={}){
   const value={name,options,generation:0,requests:[],images:[],blocked:[],writes:[]};state.runs.set(name,value);return value;
 }
 const imageUrl=(name,index,generation=0)=>`https://images.fixture/${name}/g${generation}/photo-${index}.jpg`;
-const articleUrl=(name,index,generation=0)=>`https://stories.fixture/${name}/g${generation}/article-${index}`;
+const articleUrl=(name,index,generation=0)=>index===0&&state.runs.get(name)?.options.original
+  ?state.runs.get(name).options.original.url:`https://stories.fixture/${name}/g${generation}/article-${index}`;
 function feedXml(test,index){
   const supplied=test.options.supplied&&index===0;
   const generations=test.options.rotation?[0,1]:[test.generation];
@@ -33,9 +36,17 @@ function feedXml(test,index){
   return `<rss><channel>${items}</channel></rss>`;
 }
 function articleHtml(test,index,generation){
+  if(test.options.original&&index===0){
+    const record=test.options.original,head='<html><head>';
+    return head+'<!--'+'x'.repeat(Math.max(0,record.metaByteOffset-head.length-7))+'-->'+record.meta+'</head><body>'+prose+'</body></html>';
+  }
   const url=imageUrl(test.name,index,generation),mode=test.options.mode||'og';
-  if(mode==='empty')return `<html><body><p>${prose}</p></body></html>`;
-  const early=mode==='shimmer'&&index!==0?'':mode==='twitter'?`<meta name="twitter:image" content="${url}">`:
+  if(mode==='unsafe-base')return '<html><head><BASE HREF="http://127.0.0.1/"><META PROPERTY="og:image" CONTENT="cover.jpg"></head><body></body></html>';
+  // Warm no-image reuse needs a complete received page. The independent late
+  // fixture covers an unknown truncated response, which cannot be negative.
+  if(mode==='empty'||mode==='shimmer'&&index!==0)return `<html><body><p>${prose}</p></body></html>`;
+  const early=mode==='head-relative'?`<meta property="og:image" content="relative-${index}.jpg">`:
+    mode==='shimmer'&&index!==0?'':mode==='twitter'?`<meta name="twitter:image" content="${url}">`:
     mode==='first-image'?'':mode==='late'?'':`<meta property="og:image" content="${url}">`;
   const image=mode==='first-image'?`<img src="${url}" width="640" height="480">`:'';
   const late=mode==='late'?`<meta property="og:image" content="${url}">`:'';
@@ -46,11 +57,12 @@ const server=createServer((req,res)=>{
   if(path==='/functions/v1/article'){
     const target=parsed.searchParams.get('url'),as=parsed.searchParams.get('as')||'';
     let url;try{url=new URL(target);}catch{return res.writeHead(400).end();}
-    const name=url.pathname.split('/')[1],test=state.runs.get(name);
-    if(!test||url.hostname!=='stories.fixture'||as)return res.writeHead(404).end();
-    const index=Number(url.pathname.split('-').at(-1)),generation=Number(url.pathname.split('/')[2].slice(1)),html=articleHtml(test,index,generation);
+    const original=[...state.runs.values()].findLast(test=>test.options.original?.url===target);
+    const name=url.pathname.split('/')[1],test=original||state.runs.get(name);
+    if(!test||(!original&&url.hostname!=='stories.fixture')||as)return res.writeHead(404).end();
+    const index=original?0:Number(url.pathname.split('-').at(-1)),generation=original?0:Number(url.pathname.split('/')[2].slice(1)),html=articleHtml(test,index,generation);
     const bytes=Buffer.from(JSON.stringify({url:target,html}));
-    const record={target,index,generation:url.pathname.split('/')[2],upstreamHtmlBytes:Buffer.byteLength(html),
+    const record={target,index,generation:original?'g0':url.pathname.split('/')[2],upstreamHtmlBytes:Buffer.byteLength(html),
       serializedResponseBytes:bytes.length,serverWrittenBytes:0,closedEarly:false};test.requests.push(record);
     state.active++;state.maxActive=Math.max(state.maxActive,state.active);
     res.writeHead(test.options.mode==='error'?503:200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
@@ -62,7 +74,9 @@ const server=createServer((req,res)=>{
       if(offset>=bytes.length)res.end();else timer=setTimeout(write,2);
     };
     res.on('close',()=>{clearTimeout(timer);record.closedEarly=offset<bytes.length;state.active--;});
-    timer=setTimeout(write,test.options.delayMs||0);
+    if(test.options.holdFirstMetadata&&test.requests.length===1)
+      test.releaseFirstMetadata=()=>{timer=setTimeout(write,test.options.delayMs||0);};
+    else timer=setTimeout(write,test.options.delayMs||0);
     return;
   }
   try{
@@ -79,6 +93,7 @@ async function start(browser,test){
   const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
   await context.addInitScript(options=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+    if(options.legacyCache)localStorage.setItem('breeze.rss-cover-metadata.v1',JSON.stringify(options.legacyCache));
     window.coverReaderEvidence=[];
     window.coverPrefixEvidence=[];
     window.coverPhotoStarts=[];
@@ -121,7 +136,9 @@ async function start(browser,test){
     if(raw.startsWith(base)||raw.startsWith('blob:'))return route.continue();
     const index=feeds.findIndex(feed=>feed.url===raw);
     if(index>=0)return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:feedXml(test,index)});
-    if(url.hostname==='images.fixture'){
+    if(url.hostname==='images.fixture'||test.options.original?.photo===raw
+      ||test.options.mode==='head-relative'&&url.hostname==='stories.fixture'
+        &&url.pathname.startsWith('/'+test.name+'/')&&/\/relative-\d+\.jpg$/.test(url.pathname)){
       test.images.push({url:raw,type:route.request().resourceType()});
       if(test.options.imageDelayMs)await new Promise(done=>setTimeout(done,test.options.imageDelayMs));
       return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/jpeg',body:test.options.brokenImage?'invalid image bytes':photo}).catch(()=>{});
@@ -202,6 +219,41 @@ try{
       results.push({engine:engine.name(),scenario:'cold/warm/offscreen/budget',first,warm,secondRail,requests:cold.requests,maxActive:state.maxActive});
       await h.context.close();
 
+      for(const [index,record] of originalCases.entries()){
+        const original=run(engine.name()+'-original-'+index,{original:record}),o=await start(browser,original);
+        await o.page.waitForFunction(url=>document.querySelector(`.rss-card[data-rss-url="${url}"] .thumb.has-cover`),record.url);
+        const value=await settled(o.page);noPersonalData(value);
+        assert.equal(value.entryPhotos.find(entry=>entry.url===record.url).photo,record.photo);
+        assert.equal(original.requests.filter(request=>request.target===record.url).length,1);
+        await o.page.evaluate(()=>refreshLibrary());await settled(o.page);
+        assert.equal(original.requests.length,2,'Warm actual-metadata replay repeated the lookup');
+        results.push({engine:engine.name(),scenario:'captured-original-'+index,provenance:record,state:value,requests:original.requests});await o.context.close();
+      }
+
+      for(const hasPhoto of [false,true]){
+        const name=engine.name()+'-v1-'+(hasPhoto?'positive':'negative');
+        const legacyCache=Object.fromEntries([0,1].map(index=>[articleUrl(name,index),{at:Date.now(),photo:hasPhoto?imageUrl(name,index):''}]));
+        const migrated=run(name,{legacyCache}),m=await start(browser,migrated);
+        await m.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+        const value=await settled(m.page);noPersonalData(value);
+        assert.equal(migrated.requests.length,hasPhoto?0:2);
+        assert(value.cards.every(card=>!card.pending&&card.ready));
+        results.push({engine:engine.name(),scenario:'v1-cache-migration-'+(hasPhoto?'positive':'negative'),state:value,requests:migrated.requests});await m.context.close();
+      }
+
+      const documents=run(engine.name()+'-document-cases'),dc=await start(browser,documents);
+      await settled(dc.page);
+      const documentResults=await dc.page.evaluate(cases=>cases.map(record=>{
+        try{return {name:record.name,photo:rssCoverPhoto(record.html,record.url)};}
+        catch(error){return {name:record.name,error:error.message};}
+      }),coverDocumentCases);
+      for(const [index,result] of documentResults.entries()){
+        const expected=coverDocumentCases[index];
+        if(expected.error)assert.equal(result.error,expected.error,expected.name);
+        else assert.equal(result.photo,expected.photo,expected.name);
+      }
+      results.push({engine:engine.name(),scenario:'case/head/base/entities/malformed',cases:documentResults});await dc.context.close();
+
       const supplied=run(engine.name()+'-supplied',{supplied:true}),s=await start(browser,supplied);
       await s.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
       assert.equal(supplied.requests.length,1);assert.equal(supplied.requests[0].index,1,'Supplied photo was enriched unnecessarily');
@@ -234,11 +286,12 @@ try{
       assert(validation.cacheRecords<=100&&validation.cacheBytes<=64000);
       results.push({engine:engine.name(),scenario:'supplied-photo-priority/public-URLs/cache-expiry-bounds',state:suppliedState,validation,requests:supplied.requests});await s.context.close();
 
-      for(const mode of ['twitter','first-image','late']){
+      for(const mode of ['twitter','first-image','head-relative','late']){
         const fixture=run(engine.name()+'-'+mode,{mode}),f=await start(browser,fixture);
         if(mode==='late'){
           await f.page.waitForFunction(()=>window.coverReaderEvidence.length===2&&window.coverReaderEvidence.every(record=>record.cancelled));
           assert.equal((await snapshot(f.page)).cards.filter(card=>card.photo).length,0,'Photo beyond the bounded prefix was consumed');
+          assert.equal(await f.page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem(RSS_COVER_CACHE_KEY)||'{}')).length),0,'A truncated original became a negative cache entry');
         }else await f.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
         const value=await snapshot(f.page);noPersonalData(value);
         assert.equal(fixture.requests.length,2);assert(Math.max(...value.prefixEvidence)<=128*1024+3,'Retained parsing prefix exceeded128KiB');
@@ -290,13 +343,16 @@ try{
       results.push({engine:engine.name(),scenario:'coalesced-current-consumers',shares,state:coalescedState,requests:coalesced.requests});await c.context.close();
 
       // Observe the real card throughout metadata lookup, image load, and decode.
-      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',delayMs:250,imageDelayMs:2000}),sh=await start(browser,shimmer);
+      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',holdFirstMetadata:true,delayMs:250,imageDelayMs:2000}),sh=await start(browser,shimmer);
       await waitForRequest(shimmer);
       const lookup=await snapshot(sh.page);
       assert.equal(lookup.cards.filter(card=>card.pending).length,1,'Never-attempted cards shimmered');
       assert(lookup.cards.every(card=>card.ready),'Cover lookup blocked immediate metadata Preview');
       await sh.page.locator('#casual-rail').screenshot({animations:'disabled',path:resolve(proof,engine.name()+'-lookup-pending.png')});
       const geometry=await sh.page.locator('#casual-rail .rss-card').first().boundingBox();
+      // Release after observing lookup: CPU scheduling must not move the test
+      // into simultaneous image decoding + a legitimately admitted next lookup.
+      shimmer.releaseFirstMetadata();
       await sh.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
       const decoding=await snapshot(sh.page);assert(decoding.cards[0].pending&&!decoding.cards[0].photo);
       await sh.page.waitForFunction(()=>rssCoverJobs.size===0);
@@ -339,16 +395,27 @@ try{
       assert(shimmer.requests.length<=4,'Viewport changes exceeded the refreshed generation budget');
       results.push({engine:engine.name(),scenario:'lookup/image-shimmer/refresh/geometry/reduced-motion',lookup,decoding,decoded,reduced,requests:shimmer.requests,images:shimmer.images});await sh.context.close();
 
-      for(const mode of ['empty','error','timeout','image-failure','image-timeout']){
-        const terminal=run(engine.name()+'-'+mode,{mode:mode==='empty'||mode==='error'?mode:'og',
+      for(const mode of ['empty','error','unsafe-base','timeout','image-failure','image-timeout']){
+        const terminal=run(engine.name()+'-'+mode,{mode:['empty','error','unsafe-base'].includes(mode)?mode:'og',
           fastTimeout:mode.includes('timeout'),delayMs:mode==='timeout'?350:0,
           brokenImage:mode==='image-failure',stallDecode:mode==='image-timeout',imageDelayMs:mode==='image-timeout'?350:0}),t=await start(browser,terminal);
         await waitForRequest(terminal,2);const value=await settled(t.page);noPersonalData(value);
         assert(value.cards.every(card=>!card.pending&&card.ready&&!card.photo),mode+' did not terminate to usable artwork');
         assert.equal(terminal.requests.length,2);
-        if(mode==='empty'||mode==='error'){
+        if(mode==='unsafe-base'){
+          assert.equal(await t.page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem(RSS_COVER_CACHE_KEY)||'{}')).length),0,'Ambiguous base poisoned the negative cache');
+          assert(!terminal.blocked.some(url=>url.startsWith('http://127.0.0.1/')),'Public base policy was bypassed');
+        }
+        if(mode==='empty'){
           await t.page.evaluate(()=>refreshLibrary());await settled(t.page);
           assert.equal(terminal.requests.length,2,'Negative cache repeated the same lookup');
+        }else if(mode==='error'){
+          assert.equal(await t.page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem(RSS_COVER_CACHE_KEY)||'{}')).length),0,'HTTP error poisoned the negative cache');
+          await t.page.evaluate(()=>renderHome());await settled(t.page);
+          assert.equal(terminal.requests.length,2,'Same-generation error started an automatic retry loop');
+          terminal.options.mode='og';await t.page.evaluate(()=>refreshLibrary());
+          await t.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+          assert.equal(terminal.requests.length,4,'Explicit new generation failed to recover after a temporary relay error');
         }
         if(mode==='image-failure'||mode==='image-timeout'){
           const failedImages=terminal.images.filter(image=>image.type==='image').map(image=>image.url);

@@ -76,6 +76,29 @@ image, while replacement/view exit prevents a late image from painting.
 The two-lookup budget, cache lifetimes, image fallback transport and release
 numbering remain unchanged. See [shimmer QA](../qa/rss-cover-shimmer-20261006.md).
 
+The 240 follow-up separates retrieval failure/unknown metadata from actual photo
+absence. Only a complete successful relay HTML response with no usable image
+can create a 30-minute negative record; HTTP errors, malformed JSON, timeouts,
+aborts and the 128 KiB cutoff cannot. Cache v2 preserves valid v1 positive URLs
+but ignores v1 negatives whose provenance cannot be recovered. Admission and
+same-generation attempt guards remain bounded; errors do not start retry loops.
+`server/article/cover-metadata.mjs` provides pure, public-image extraction for a
+catalog-owned bounded refresh without fetching, storing a body or changing the
+public `photo: string` shape. The October 6 production preparation below integrates
+the catalog-owned bounded caller. Deployed population and source permissions
+still need verification before catalog activation. See
+[actual photo provenance](../qa/rss-photo-provenance-20261006.md).
+
+Cover metadata uses case-insensitive HTML attributes and the first public
+`<base href>` for relative URLs. Absolute public photos can survive an unsafe
+base, but ambiguous relative resolution throws `cover_base_unsafe`; callers must
+not cache that error as photo absence. Streamed relative declarations wait for
+the first base, a real head boundary or a complete bounded response instead of
+guessing a publisher path. A completed head permits the final public URL to
+resolve relative photos before a long body reaches the prefix cutoff; inert
+text and quoted attributes cannot fake completion. This does not increase fetch,
+prefix or refresh budgets.
+
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport
 can still contain embedded article bodies; only the optional catalog removes
@@ -107,7 +130,8 @@ two-minute lease and ten-minute cooldown, with two bounded feed workers.
 The existing pinned-public-DNS transport enforces a six-second timeout and
 512,000-byte feed cap. Publisher validators and `max-age` are honored;
 `private`/`no-store` revokes cached metadata. Failures keep last-good metadata
-without renewing age. No scheduler, new credentials or paid provider is added.
+without renewing age. No new credential or paid provider is used. The October 6
+preparation adds a separate disabled Supabase cron setup described below.
 
 SQL remains an offline proposal outside `supabase/migrations`. RLS and explicit
 table/RPC grants deny PUBLIC, anon and authenticated access; only service_role
@@ -140,6 +164,85 @@ project, source permission/attribution, an explicit refresh owner and warmed
 inventory before client opt-in. Repository and production project IDs differ;
 do not infer the deployment target from local CLI config. Roll back via client
 opt-out and server OFF; preserve all user data.
+
+## October 6 production preparation
+
+Main `f7a2889` already contains the prototype. Read-only inspection of the app's
+actual project `hrtfhojbhqvaoiulspto` found no catalog function, table or claim
+RPC. The local CLI's `fqvhlyocdkwiyioiokte` is the unrelated Ready project.
+Deployment and activation remain parent-owned, for the next TestFlight build.
+
+The snapshot now has an owner-controlled `active=false` switch in addition to
+the existing environment OFF gate and empty fixed-ID allowlist. service_role
+can read and update cache/lease columns but cannot toggle `active`; anon and
+authenticated have neither table nor RPC access. A control transition clears
+the snapshot, claim and cooldown, fencing in-flight workers even through rapid
+OFF/ON. Reactivation always needs warm-up. No user/account tables are involved.
+
+The separately applied scheduling SQL enables `pg_cron` and `pg_net`, revokes
+public/service access to credential-bearing network queues/functions and cron
+jobs, and installs one postgres-owned ten-minute job **disabled**. Its private
+SECURITY INVOKER enqueue function accepts no URL or body input. It references
+the existing service credential in Vault at runtime without returning it. That
+Vault reference did not exist at inspection; the owner must configure it through
+a secure supported path before enabling the job. SQL NULL produces a bodyless
+POST; the endpoint rejects any nonempty stream, caller URLs and source lists.
+The actual extension/HTTP/job behavior must be proved after parent deployment;
+PGlite tests the grants and SQL with modeled extension interfaces.
+
+The server parser preserves the current client's supplied photo choices across
+content, description, summary, lazy attributes, responsive widths and media
+types. Catalog mode skips the client's visible-cover fetches, so the server now
+owns bounded original-photo metadata lookup under the same global SQL claim.
+It consumes PR #104's unchanged pure extractor from `7121c0f`, with its case,
+safe-base and malformed-input fixtures. Only missing-photo ordinary entries
+from a separately reviewed `RSS_CATALOG_ORIGINAL_FEED_IDS` subset qualify; it
+defaults empty independently of RSS caching's `RSS_CATALOG_FEED_IDS`. Feed
+approval never authorizes original-page probing. Removing a probe ID withholds
+previous original-photo hints while supplied feed photos remain available.
+The parent's source-policy review separates supported RSS-reader use, shared
+metadata transformations, original automation and image/attribution rights.
+TMZ stays outside initial admission until its unchanged-excerpt/copyright
+requirements are resolved against the current normalized summary. No blanket
+all-source permission or prohibition follows from the fixed feed inventory.
+Every original/redirect must be HTTPS on
+the feed publisher's hostname (allowing www aliases), with public DNS answers
+pinned before connection and no credential-bearing URL.
+
+Each ten-minute refresh permits at most six distinct original jobs, two workers,
+four seconds per job including DNS/redirects, two redirects (three HTTP attempts),
+and a retained 128 KiB identity-encoded HTML prefix. It cancels after an
+unambiguous complete photo tag or the prefix limit; unresolved relative metadata
+waits for a safe base, real head close or complete response. The pure head scanner
+is copied from `7121c0f` and ignores fake closure inside comments/attributes/raw
+text/templates. It never runs article-body parsing,
+downloads images or publishes HTML. Delivered chunks may exceed the retained
+prefix; headers/TLS and failed transfers are not covered by that parsing cap.
+
+Service-only snapshot hints retain status/time/photo/final public URL: positives
+reuse for 24 hours; only complete successful cacheable public HTML establishes a
+30-minute `noimage`; transient, truncated and blocked states retry no sooner
+than the ten-minute global cooldown. Supplied feed photos win. Oldest attempts
+are prioritized, shared URLs coalesce, and public metadata strips internal hints.
+ETags and HTTP expiry also track original-photo expiry. Existing client public
+metadata reuse/offline-age rules still apply. Selected article bodies remain
+selected-intent work; unknown/failed photos keep local artwork. Parent must
+verify actual deployed source/photo provenance before activation. Client edits
+here remain limited to catalog retry state and `rssCatalogFetch`.
+
+Source age is fresh for less than ten minutes, stale after that, and unavailable
+after twenty-four hours. A publisher max-age can defer revalidation without
+renewing that source timestamp. Successful 304 revalidation renews the timestamp
+and retains absent validators. ETags/HTTP TTL track freshness and expiry.
+Oversized inventories drop tail entries from the largest source until the
+snapshot has 10 KiB of JSONB separator headroom under its 200,000-byte cap.
+Failed clients retry after ten to eleven minutes with jitter, including forced
+Home refreshes, while keeping unexpired last-good metadata without renewing age.
+Public readers never trigger refresh or per-client built-in feed fallback.
+
+Exact migration/function arguments, security changes, warm-up proof, switches
+and remaining parent gates are in the
+[deployment runbook](../qa/rss-catalog-production-20261006.md).
 
 ## Evidence and limits
 

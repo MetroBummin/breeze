@@ -41,6 +41,7 @@ const RSS_CATALOG_CACHE_KEY='breeze.rss-catalog.v1';
 const RSS_CATALOG_BYTES=200000;
 const RSS_CATALOG_CACHE_BYTES=250000;
 let rssCatalogCache=null;
+let rssCatalogRetryAt=0;
 function rssCatalogEnabled(){return window.BREEZE_CONFIG?.RSS_CATALOG===true;}
 const rssListeners = new Set();
 let rssCands = [];
@@ -52,7 +53,7 @@ const rssPublicFeedJobs = new Map();
 const rssPreparedArticles = new Map();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
-const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v1';
+const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v2';
 const RSS_COVER_CACHE_BYTES=64000;
 const RSS_COVER_CACHE_LIMIT=100;
 const RSS_COVER_TTL_MS=86400000;
@@ -74,7 +75,7 @@ function rssCoverPublicUrl(raw){
   if(typeof raw!=='string'||raw.length>4096)return '';
   try{
     const url=new URL(raw),host=url.hostname;
-    if(!/^https?:$/.test(url.protocol)||url.username||url.password
+    if(!/^https?:$/.test(url.protocol)||url.username||url.password||url.port&&url.port!==(url.protocol==='https:'?'443':'80')
       ||!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(host)
       ||/(^|\.)(localhost|local|internal|home|lan|onion)$/i.test(host)
       ||[...url.searchParams.keys()].some(key=>/^(?:token|access_token|api_?key|auth|authorization|secret|password|session|jwt|signature|sig|AWSAccessKeyId|GoogleAccessId|(?:x-amz|x-goog)-(?:credential|signature|security-token))$/i.test(key)))return '';
@@ -85,13 +86,17 @@ function rssCoverCached(url){
   if(!rssCoverCache){
     rssCoverCache=Object.create(null);
     try{
-      const raw=localStorage.getItem(RSS_COVER_CACHE_KEY);
+      const current=localStorage.getItem(RSS_COVER_CACHE_KEY);
+      const raw=current||localStorage.getItem('breeze.rss-cover-metadata.v1');
       if(raw&&raw.length<=RSS_COVER_CACHE_BYTES){
         const parsed=JSON.parse(raw);
         if(rssCacheBytes(parsed)<=RSS_COVER_CACHE_BYTES){
           for(const [key,record] of Object.entries(parsed).slice(0,RSS_COVER_CACHE_LIMIT)){
             if(rssCoverPublicUrl(key)!==key||!record||typeof record.photo!=='string'
               ||record.photo&&rssCoverPublicUrl(record.photo)!==record.photo)continue;
+            // v1 stored retrieval failures/truncated prefixes as photo absence.
+            // Keep its successful photos; only v2 negatives have that provenance.
+            if(!current&&!record.photo)continue;
             const age=Date.now()-record.at;
             if(Number.isFinite(record.at)&&age>=0&&age<(record.photo?RSS_COVER_TTL_MS:RSS_COVER_EMPTY_MS))
               rssCoverCache[key]={at:record.at,photo:record.photo};
@@ -152,20 +157,71 @@ function rssCoverPayloadPrefix(text){
   }catch{/* Unexpected response shape is not article metadata. */}
   return null;
 }
-function rssCoverPhoto(html,base){
+// Recognize real head completion without mistaking quoted attributes, comments
+// or inert/raw-text content for markup. A closed head permits the final URL to
+// resolve relative metadata even when a long article body exceeds our prefix.
+function rssCoverHeadComplete(html){
+  let at=0,templates=0;
+  while(at<html.length){
+    const start=html.indexOf('<',at);if(start<0)return false;
+    if(html.startsWith('<!--',start)){
+      const end=html.indexOf('-->',start+4);if(end<0)return false;
+      at=end+3;continue;
+    }
+    let end=start+1,quote='';
+    for(;end<html.length;end++){
+      const char=html[end];
+      if(quote){if(char===quote)quote='';}
+      else if(char==='"'||char==="'")quote=char;
+      else if(char==='>')break;
+    }
+    if(end===html.length)return false;
+    const tag=/^<\/?([a-z][\w:-]*)\b/i.exec(html.slice(start,end+1));at=end+1;
+    if(!tag)continue;
+    const name=tag[1].toLowerCase(),closing=html[start+1]==='/';
+    if(!templates&&(closing&&name==='head'||!closing&&name==='body'))return true;
+    if(name==='template')templates=Math.max(0,templates+(closing?-1:1));
+    if(!closing&&name==='plaintext')return false;
+    if(!closing&&/^(script|style|noscript|title|textarea|xmp|iframe|noembed|noframes|plaintext)$/.test(name)){
+      const close=new RegExp('</'+name+'\\s*>','ig');close.lastIndex=at;
+      const match=close.exec(html);if(!match)return false;
+      at=close.lastIndex;
+    }
+  }
+  return false;
+}
+function rssCoverPhoto(html,base,complete=true){
+  const origin=rssCoverPublicUrl(base);if(!origin)return '';
   // Ignore a partial final tag; HTML stays in an inert document, never the UI.
   const end=html.lastIndexOf('>');if(end<0)return '';
   const doc=new DOMParser().parseFromString(html.slice(0,end+1),'text/html');
+  doc.querySelectorAll('script,style,noscript,template').forEach(node=>node.remove());
+  const attribute=(node,name)=>[...node.attributes].find(item=>item.name.toLowerCase()===name)?.value??null;
+  const declared=[...doc.querySelectorAll('base')].find(node=>attribute(node,'href')!==null);
+  const resolvedBase=declared?rssCoverPublicUrl(articleAbsolute(attribute(declared,'href').trim()||origin,origin))
+    :complete||rssCoverHeadComplete(html)?origin:'';
+  let ambiguousBase=false;
+  const photoFor=raw=>{
+    if(!String(raw||'').trim())return '';
+    if(!resolvedBase){try{new URL(raw);}catch{ambiguousBase=true;return '';}}
+    const photo=rssCoverPublicUrl(articleAbsolute(raw,resolvedBase||undefined));
+    return ARTICLE_IMG_BAD.test(photo)?'':photo;
+  };
   const metas=[...doc.querySelectorAll('meta')];
   for(const name of ['og:image','og:image:url','twitter:image','twitter:image:src']){
-    const node=metas.find(node=>(node.getAttribute('property')||node.getAttribute('name')||'').toLowerCase()===name);
-    const photo=rssCoverPublicUrl(articleAbsolute(node?.getAttribute('content'),base));
-    if(photo&&!ARTICLE_IMG_BAD.test(photo))return photo;
+    for(const node of metas.filter(node=>(attribute(node,'property')||attribute(node,'name')||'').trim().toLowerCase()===name)){
+      const photo=photoFor(attribute(node,'content'));if(photo)return photo;
+      // A later first <base> can change relative metadata in a streamed head.
+      if(ambiguousBase&&!complete&&!declared)return '';
+    }
   }
-  for(const image of doc.querySelectorAll('img')){
-    const photo=rssCoverPublicUrl(articleAbsolute(articleBestSrc(image),base));
-    if(photo&&!articleTooSmall(image)&&!ARTICLE_IMG_BAD.test(photo))return photo;
+  if(!/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html))for(const image of doc.querySelectorAll('img')){
+    const attributes={getAttribute:name=>attribute(image,name)};
+    if(articleTooSmall(attributes))continue;
+    const photo=photoFor(articleBestSrc(attributes));if(photo)return photo;
+    if(ambiguousBase&&!complete&&!declared)return '';
   }
+  if(ambiguousBase&&(complete||declared))throw Error('cover_base_unsafe');
   return '';
 }
 async function rssCoverFetch(url,signal){
@@ -174,20 +230,26 @@ async function rssCoverFetch(url,signal){
     headers:{Authorization:'Bearer '+SB_KEY,apikey:SB_KEY}});
   if(!response.ok||!response.body||!/application\/json/i.test(response.headers.get('content-type')||'')){
     await response.body?.cancel().catch(()=>{});
-    return response.ok?null:{photo:''};
+    return null;
   }
-  const reader=response.body.getReader(),decoder=new TextDecoder();let text='',retainedBytes=0;
+  const reader=response.body.getReader(),decoder=new TextDecoder();let text='',retainedBytes=0,complete=false;
   try{
     while(retainedBytes<RSS_COVER_PREFIX_BYTES){
-      const {done,value}=await reader.read();if(done)break;
+      const {done,value}=await reader.read();if(done){complete=true;break;}
       const prefix=value.subarray(0,RSS_COVER_PREFIX_BYTES-retainedBytes);
       retainedBytes+=prefix.byteLength;text+=decoder.decode(prefix,{stream:true});
       const payload=rssCoverPayloadPrefix(text);
-      const photo=payload&&rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url);
+      const photo=payload&&rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url,false);
       if(photo)return {photo};
     }
-    text+=decoder.decode();const payload=rssCoverPayloadPrefix(text);
-    return payload?{photo:rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url)}:null;
+    text+=decoder.decode();
+    // A bounded prefix with no photo is unknown, not a successful no-image page.
+    if(!complete)return null;
+    try{
+      const payload=JSON.parse(text);
+      return typeof payload?.html==='string'
+        ?{photo:rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url)}:null;
+    }catch{return null;}
   }finally{await reader.cancel().catch(()=>{});}
   // This bounds retained client parsing, not upstream or billed bytes. The
   // existing relay reads the entire page (up to its 3 MB cap) before responding.
@@ -616,6 +678,9 @@ async function rssCatalogFetch(force){
   const record=rssCatalogStored(),now=Date.now(),previous=record?rssCatalogValidate(record.catalog):null;
   if(previous&&(!rssOnline()||!force&&now-record.receivedAt<RSS_CACHE_MS))return previous;
   if(!rssOnline())throw Error('catalog_offline');
+  if(rssCatalogRetryAt>now&&rssCatalogRetryAt-now<=RSS_CACHE_MS+60000){
+    if(previous)return previous;throw Error('catalog_cooldown');
+  }
   try{
     const response=await fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/rss-catalog',{
       credentials:'omit',headers:{apikey:SB_KEY,...(record?.etag?{'If-None-Match':record.etag}:{})},signal:AbortSignal.timeout(12000)});
@@ -631,10 +696,16 @@ async function rssCatalogFetch(force){
       const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
       catalog=rssCatalogValidate(JSON.parse(new TextDecoder().decode(bytes)));
     }
+    rssCatalogRetryAt=0;
     rssCatalogCache={receivedAt:now,etag:(response.headers.get('etag')||record?.etag||'').slice(0,2000),catalog};
     try{localStorage.setItem(RSS_CATALOG_CACHE_KEY,JSON.stringify(rssCatalogCache));}catch{/* Memory still works. */}
     return catalog;
-  }catch(error){if(previous)return previous;throw error;}
+  }catch(error){
+    // Bound retries even for forced Home refreshes. Jitter spreads clients after
+    // an outage; source timestamps and last-good cache receipt never renew here.
+    rssCatalogRetryAt=now+RSS_CACHE_MS+Math.floor(Math.random()*60000);
+    if(previous)return previous;throw error;
+  }
 }
 async function loadRssCatalog(force){
   if(rssLoading)return rssLoading;

@@ -61,6 +61,12 @@ try{
         await page.locator('#article-preview .ap-start').click();
         await page.waitForFunction(id=>books.some(book=>book.longReadId===id),definition.id);
         await page.waitForFunction(()=>!articlePreviewDialog.open);
+        // Presentation closes Preview before the next frame commits restored
+        // location/first-read state. Returning Home earlier cancels that open.
+        await page.waitForFunction(id=>{
+          const book=books.find(item=>item.longReadId===id);
+          return curBook===book&&!readerPositionRestoration&&!articlePreviewOpening&&posOf(book.id).t>0;
+        },definition.id);
         await page.evaluate(()=>show('home'));
         const saved=await page.evaluate(id=>{
           const book=books.find(item=>item.longReadId===id);

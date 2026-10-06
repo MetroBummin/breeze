@@ -1,5 +1,6 @@
-import {timingSafeEqual} from 'node:crypto';
+import {timingSafeEqual,createHash} from 'node:crypto';
 import {Buffer} from 'node:buffer';
+import {FRESH_MS,STALE_MS} from './metadata.mjs';
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey,authorization,content-type,if-none-match',
   'Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Expose-Headers':'ETag,Retry-After'};
 export const catalogReply=(body,status=200,headers={})=>new Response(JSON.stringify(body),{status,
@@ -20,12 +21,13 @@ export function catalogHandler(service,{authorize=()=>false,now=Date.now}={}){
     if(new URL(request.url).search)return catalogReply({error:'parameters'},400);
     if(request.method==='GET'){
       try{
-        const {catalog,revision}=await service.read();
+        const {catalog,revision,cacheUntil}=await service.read();
         // The representation changes when source data expires or is disabled,
         // even without a new stored revision. Include that state in the ETag.
-        const signature=catalog.feeds.map(feed=>`${feed.id}:${feed.at}:${feed.status}:${feed.entries.length}`).join('|');
+        const signature=createHash('sha256').update(JSON.stringify(catalog)).digest('hex');
         const etag='"'+(revision||'empty')+':'+signature+'"';
-        const expires=catalog.feeds.filter(feed=>feed.entries.length).map(feed=>feed.at+86400000);
+        const expires=catalog.feeds.filter(feed=>feed.entries.length).map(feed=>feed.at+(feed.status==='ready'?FRESH_MS:STALE_MS));
+        if(Number.isFinite(cacheUntil)&&cacheUntil!==null)expires.push(cacheUntil);
         const ttl=expires.length?Math.max(0,Math.min(60,Math.floor((Math.min(...expires)-now())/1000))):60;
         const headers={'ETag':etag,'Cache-Control':`public,max-age=${ttl}`};
         if(request.headers.get('if-none-match')===etag)return new Response(null,{status:304,headers:{...cors,...headers}});
@@ -36,7 +38,14 @@ export function catalogHandler(service,{authorize=()=>false,now=Date.now}={}){
     if(!authorize(request))return catalogReply({error:'unauthorized'},401);
     // Refresh always uses the server's reviewed fixed inventory, never URLs or
     // a caller-supplied source list. Public reads cannot trigger upstream work.
-    if(request.body!==null){await request.body.cancel();return catalogReply({error:'body'},400);}
+    // HTTP stacks can expose a stream even for Content-Length: 0. Permit only
+    // an actually empty stream; pg_net uses SQL NULL rather than its default {}.
+    if(request.body!==null){
+      const reader=request.body.getReader();let empty=false;
+      try{const first=await reader.read();empty=first.done;}
+      finally{await reader.cancel();}
+      if(!empty)return catalogReply({error:'body'},400);
+    }
     try{return catalogReply(await service.refresh());}
     catch{return catalogReply({error:'refresh_unavailable'},503,{'Retry-After':'600'});}
   };
