@@ -230,3 +230,52 @@ test('warm decoded-photo count precedes layout-probe settlement; settled rail ke
   assert.equal(runInContext('rssCands.flat().length',f.context),3);
   assert.equal(f.context.rssCoverCached(entries[2].url),null,'Unadmitted metadata remains unknown');
 });
+
+
+test('explicit refresh reranks before admission and preserves the new visible owner through late refill',async()=>{
+  const f=fixture(),first=f.entry('z-first',11),second=f.entry('z-second',12);
+  f.groups([[first],[second]]);
+  f.setTransport(async url=>({photo:'https://images.test/'+url.split('/').at(-1)+'.jpg'}));
+  await f.paint();await f.flush();await f.completeImages();
+  assert.deepEqual(f.cards().map(card=>card.dataset.rssUrl),[first.url,second.url]);
+  assert.equal(f.metadata.length,2);
+  const ready=f.entry('a-ready',0,'https://images.test/ready.jpg'),probe=f.entry('b-probe',1);
+  f.groups([[ready],[probe],[first],[second]]);
+  let finish;f.setTransport(()=>new Promise(resolve=>{finish=resolve;}));
+  f.context.rssCoverAdvance();
+  const pass=runInContext('rssCoverPass',f.context);
+  await f.paint(true);
+  // No frame has run: this is the new generation's rerank before admission.
+  const initial=[ready.url,probe.url,first.url,second.url];
+  assert.deepEqual(f.cards().map(card=>card.dataset.rssUrl),initial);
+  assert.equal(runInContext('rssCoverRemaining',f.context),2);
+  assert.equal(f.metadata.length,2);
+  await f.flush();assert.equal(f.metadata.length,3);assert.equal(f.metadata.at(-1),probe.url);
+  const late=f.entry('c-late',5,'https://images.test/late.jpg');
+  f.groups([[ready],[probe],[first],[second],[late]]);
+  f.owner().repaint();await f.flush();
+  assert.deepEqual(f.cards().map(card=>card.dataset.rssUrl),[...initial,late.url]);
+  finish({photo:'https://images.test/probe.jpg'});await f.flush();await f.completeImages();
+  assert.deepEqual(f.cards().map(card=>card.dataset.rssUrl),[...initial,late.url]);
+  const ownerCard=f.cards().find(card=>card.dataset.rssUrl===probe.url);
+  assert(f.context.rssCoverVisible(f.owner(),ownerCard));assert(ownerCard.thumb.classList.contains('has-cover'));
+  assert.equal(runInContext('rssCoverPass',f.context),pass);assert.equal(f.metadata.length,3);
+  assert.equal(runInContext('rssCoverRemaining',f.context),1);assertReadyOnly(f);assert.equal(f.writes.length,0);
+});
+
+test('display-eligible ranking cannot be replaced by filtering a full-candidate ranking',async()=>{
+  const f=fixture(),eligible=new Set([1,2,4]);
+  const entries=Array.from({length:13},(_,i)=>f.entry('article-'+i,i,eligible.has(i)?'https://images.test/'+i+'.jpg':''));
+  f.groups(entries.map(entry=>[entry]));
+  f.context.excluded=entries.filter((_entry,index)=>!eligible.has(index));
+  runInContext('excluded.forEach(entry=>rssCoverWithheld.set(entry,{pass:rssCoverPass,photo:entry.photo}))',f.context);
+  const eligibleUrls=[1,2,4].map(index=>entries[index].url);
+  const globalFiltered=Array.from(f.context.rssRankRecommendations(entries.map(entry=>[entry]),{
+    library:[],positions:{},sources:runInContext('rssSources()',f.context),now:Date.now(),
+  }),group=>group[0].url).filter(url=>eligibleUrls.includes(url));
+  assert.deepEqual(globalFiltered,[1,4,2].map(index=>entries[index].url),'Fixture must expose category-diversity dependence on eligibility');
+  await f.paint(true);
+  assert.deepEqual(f.cards().map(card=>card.dataset.rssUrl),eligibleUrls);
+  assert.equal(f.metadata.length,0);assert.equal(runInContext('rssCoverRemaining',f.context),2);
+  await f.flush();await f.completeImages();assertReadyOnly(f);assert.equal(f.metadata.length,0);
+});

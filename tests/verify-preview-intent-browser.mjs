@@ -50,7 +50,7 @@ try{
         return {title:name,source:'Example',url,photo:''};
       };
       // Model an already decoded card; real cover admission/decode is tested by the RSS browser suites.
-      window.__card=entry=>{const card=rssCard(entry);card.classList.remove('rss-pending');card.removeAttribute('aria-busy');card.removeAttribute('aria-disabled');card.tabIndex=0;card.hidden=false;card.style.removeProperty('visibility');card.removeAttribute('aria-hidden');card.querySelector('.thumb').classList.add('has-cover');const image=card.querySelector('.cover');image.src='/assets/favicon/icon-512.png';image.hidden=false;document.getElementById('casual-rail').prepend(card);return card;};
+      window.__card=entry=>{const card=rssCard(entry);card.classList.remove('rss-pending');card.removeAttribute('aria-busy');card.removeAttribute('aria-disabled');card.tabIndex=0;card.hidden=false;card.style.removeProperty('visibility');card.removeAttribute('aria-hidden');card.querySelector('.thumb').classList.add('has-cover');const image=card.querySelector('.cover');image.src=entry.photo||'/assets/favicon/icon-512.png';image.hidden=false;document.getElementById('casual-rail').prepend(card);return card;};
       renderHome();show('home');
     });
     const count=()=>page.evaluate(async()=>({memory:books.length,stored:(await bookAll()).length,positions:Object.keys(positions).length,images:window.__images}));
@@ -93,6 +93,7 @@ try{
       assert.deepEqual(synchronous,{open:true,title:'known-before-body',source:'Example',preparing:'true',disabled:true});
       await page.waitForFunction(()=>document.querySelector('.ap-hero img').naturalWidth>0);
       assert(await page.isVisible('.ap-title'));assert(await page.isVisible('.ap-source'));assert(await page.isVisible('.ap-hero img'));
+      assert.equal(await page.locator('.ap-hero img').getAttribute('src'),'https://preview.fixture/known-before-body.png','Fixture card must preserve the known photo provenance');
       assert.equal(await page.locator('.ap-summary').evaluate(n=>getComputedStyle(n).animationName),'ap-shimmer');
       assert.equal(await page.locator('.ap-title').evaluate(n=>getComputedStyle(n).animationName),'none');assert.equal(requests,before);
       await page.emulateMedia({reducedMotion:'reduce'});
@@ -134,6 +135,7 @@ try{
       assert.equal(await page.textContent('.ap-title'),'latest-shell');assert.match(await page.locator('.ap-hero img').getAttribute('src'),/latest-shell/);
       await page.evaluate(()=>window.__heldBodies.get('https://example.test/late-old').reject(Error('late old failure')));await page.evaluate(()=>window.__pendingA);
       assert.equal(await page.textContent('.ap-title'),'latest-shell');assert.equal(await page.locator('#article-preview').getAttribute('data-metadata'),'loading');
+      assert.equal(await page.locator('.ap-hero img').getAttribute('src'),'https://preview.fixture/latest-shell.png','Late body error must preserve the latest photo');
       await page.evaluate(async()=>{
         // dialog.close() queues its event. Finish this fixture's close before
         // the next fixture starts counting modal reopen/close events.

@@ -63,3 +63,21 @@ full-body sentinel. It positively checks the existing bounded introduction cache
 rejects either sentinel in RSS caches, keeps the full-body localStorage rejection,
 and retains the pre-Read empty IndexedDB and post-Read single-body assertions.
 No product code, display eligibility, source ownership or request budget changes.
+
+## Reader warm request admission
+
+Run `37441414506` on head `cf99e8807722806cf163788ba2a930bb6bd5c7d2` passed
+both engines' persistence assertions and then rejected the Reader's existing
+`POST /functions/v1/dict` as unexpected. `scripts/reader/reader.js` calls
+`warmDict()` only after entering Reader for a non-transient book;
+`scripts/dictionary/dictionary.js` sends exactly `{op:'warm'}`. This warms the
+function and reports capability without performing a word lookup or spending
+AI quota.
+
+The fixture now fulfills only that exact request after a trusted Read-button
+click, with matching selected/saved Reader source. Discovery and Preview must
+have zero dictionary requests and zero Read admissions. The receipt records
+before/after intent and the admitted warm payload. Any earlier dictionary call,
+other operation, extra payload field, wrong source or method remains unexpected
+and fails the unchanged final unexpected-request assertion. Product behavior,
+photo display, catalog ownership and all persistence assertions stay unchanged.

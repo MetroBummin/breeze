@@ -76,3 +76,14 @@ fixture waits for the existing owner/work settlement predicate, then requires
 exactly two decoded ready cards, all thirteen retained candidates and unchanged
 request count. A controlled renderer test reproduces the intermediate two-photo
 count with a third inert queued probe, then proves zero-request cleanup.
+
+On `cf99e880`, complete npm/type/native sync and Edge Deno OFF/active/prefix
+checks passed, as did Social/import and all four PDF engine/orientation jobs.
+The remaining RSS fixture corrections preserve supplied photo identity, admit
+only the existing saved-Reader `{op:'warm'}` request after trusted Read intent,
+and compare fresh eligible ranking before admission separately from settled
+post-admission owner stability. Scroll cancellation now proves real overflow and
+actual offscreen geometry with supplied photos, then waits for the exact
+consumer's abort/release instead of assuming thirteen artwork slots still exist.
+The metadata request cap, stale-cache prohibition and retained-data assertions
+remain. Held transports replace short timing races in cancellation/reentry cases.

@@ -52,10 +52,17 @@ const deadline=setTimeout(()=>{console.error('Hybrid browser contract exceeded 1
 async function session({storage={},fail=false}={}){
   const context=await browser.newContext({viewport:{width:820,height:1024},serviceWorkers:'block',reducedMotion:'reduce'});
   context.setDefaultTimeout(10000);
-  const h={context,fail,catalogGate:deferred(),bodyGate:deferred(),bodyStarted:deferred(),failedImage:deferred(),calls:[],direct:[],images:[],unexpected:[],errors:[]};sessions.push(h);
+  const h={context,fail,catalogGate:deferred(),bodyGate:deferred(),bodyStarted:deferred(),failedImage:deferred(),dictReady:deferred(),dictRequests:[],selectedReadUrl:'',calls:[],direct:[],images:[],unexpected:[],errors:[]};sessions.push(h);
   await context.addInitScript(values=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
     for(const [key,value] of Object.entries(values))localStorage.setItem(key,value);
+    window.hybridReadIntents=[];
+    document.addEventListener('click',event=>{
+      const start=event.target instanceof Element?event.target.closest('#article-preview .ap-start'):null;
+      if(!event.isTrusted||!start||start.disabled||!articlePreviewDialog.open
+        ||articlePreviewDialog.dataset.preparing!=='false'||!articlePreviewBook?.sourceUrl)return;
+      window.hybridReadIntents.push({sourceUrl:articlePreviewBook.sourceUrl,at:performance.now()});
+    },true);
   },storage);
   await context.route('**/*',async route=>{
     const raw=route.request().url(),url=new URL(raw);
@@ -70,6 +77,20 @@ async function session({storage={},fail=false}={}){
       if(FEEDS.some(feed=>feed.url===raw)||FEEDS.some((_,id)=>story(id)===raw))h.direct.push(raw);
       else h.unexpected.push(raw);
       return route.abort();
+    }
+    if(url.href==='https://relay.fixture/functions/v1/dict'){
+      let payload;try{payload=route.request().postDataJSON();}catch{/* Anything but the exact warm request remains unexpected. */}
+      const intent=await h.page.evaluate(()=>({events:window.hybridReadIntents,
+        readerOpen:document.getElementById('v-read').classList.contains('on'),sourceUrl:curBook?.sourceUrl||'',
+        saved:!!curBook&&!curBook.transient&&books.some(book=>book.id===curBook.id)}));
+      const accepted=route.request().method()==='POST'&&payload?.op==='warm'&&Object.keys(payload).length===1
+        &&intent.events.length===1&&intent.events[0].sourceUrl===h.selectedReadUrl
+        &&intent.readerOpen&&intent.saved&&intent.sourceUrl===h.selectedReadUrl;
+      h.dictRequests.push({payload,intent,accepted});
+      if(!accepted){h.unexpected.push(raw);return route.abort();}
+      h.calls.push({kind:'dictWarm',afterRead:true,target:intent.sourceUrl});
+      await route.fulfill({headers,contentType:'application/json',body:JSON.stringify({ok:true,sentenceEasyExplanation:false})});
+      h.dictReady.release();return;
     }
     if(url.pathname.endsWith('/rss-catalog')){
       h.calls.push({kind:'catalog'});await h.catalogGate.promise;
@@ -170,6 +191,7 @@ try{
   assert.equal(warm.calls.length,0,'Warm relaunch should reuse both discovery caches');assert.equal(warm.direct.length,0);
   const card=warm.page.locator('#casual-rail .rss-card:not([hidden])[data-rss-url^="https://stories.fixture/"]').first();
   await card.locator('.thumb.has-cover').waitFor({state:'visible'});const selected=await card.getAttribute('data-rss-url');
+  warm.selectedReadUrl=selected;
   await card.click();
   await warm.page.waitForFunction(()=>document.querySelector('#article-preview').open&&document.querySelector('.ap-start').disabled);
   await warm.page.waitForFunction(()=>articlePreviewDialog.dataset.preparing==='true');
@@ -196,20 +218,27 @@ try{
   assert.equal(persistence.discoveryEvidenceStored,false,'Selected body evidence leaked into a discovery cache');
   assert(persistence.excerpt.includes(excerptMarker),'The fixture must exercise the existing selected-preview evidence cache');
   assert(persistence.excerpt.length<=544,'Preview evidence exceeds 540 characters plus paragraph separators');
+  const beforeRead={requests:warm.dictRequests.length,events:await warm.page.evaluate(()=>window.hybridReadIntents)};
+  assert.deepEqual(beforeRead,{requests:0,events:[]},'Discovery and Preview must not warm or query the dictionary');
+  assert(sessions.every(h=>h.dictRequests.length===0),'An earlier discovery session called the dictionary');
   await warm.page.locator('.ap-start').click();
   await warm.page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on')&&books.length===1);
   const saved=await warm.page.evaluate(async value=>{const stored=await bookAll();return {memory:books.length,count:stored.length,url:stored[0]?.sourceUrl,body:JSON.stringify(stored[0]?.paras).includes(value)};},marker);
   assert.deepEqual(saved,{memory:1,count:1,url:selected,body:true});
+  await bounded(warm.dictReady.promise,'Saved Reader did not issue its existing dictionary warm request');
+  assert.equal(warm.dictRequests.length,1);assert.equal(warm.dictRequests[0].accepted,true);
+  assert.deepEqual(warm.dictRequests[0].payload,{op:'warm'});
   assert.equal(warm.calls.filter(c=>c.kind==='articleBody').length,1);
   assert.equal(warm.calls.filter(c=>c.kind==='feed'||c.kind==='catalog').length,0);
   await warm.page.screenshot({path:proof+'/selected-only-read.png'});
-  result.phases.push({name:'warm-preview-read',zeroWarmDiscoveryRequests:true,selected,saved,calls:[...warm.calls]});
+  result.phases.push({name:'warm-preview-read',zeroWarmDiscoveryRequests:true,selected,saved,
+    dictionaryIntent:{beforeRead,afterRead:warm.dictRequests},calls:[...warm.calls]});
   for(const h of sessions){assert.deepEqual(h.errors,[]);assert.deepEqual(h.unexpected,[]);}
   result.status='passed';console.log('PASS',engine.name(),'hybrid RSS: all13 metadata, independent legacy, photo provenance, warm reuse and selected-only persistence');
 }catch(error){result.status='failed';result.error=error.stack;throw error;}
 finally{
   for(const h of sessions){h.catalogGate.release();h.bodyGate.release();}
-  result.requests=sessions.map(h=>({calls:h.calls,direct:h.direct,images:h.images,unexpected:h.unexpected,errors:h.errors}));
+  result.requests=sessions.map(h=>({calls:h.calls,direct:h.direct,images:h.images,dictRequests:h.dictRequests,unexpected:h.unexpected,errors:h.errors}));
   writeFileSync(proof+'/results.json',JSON.stringify(result,null,2)+'\n');
   await browser?.close();await new Promise(done=>server.close(done));clearTimeout(deadline);
 }
