@@ -1,5 +1,5 @@
 /* Actual imported Reader text and production word/sentence paint owners.
- * The before control changes only the exact pre-change palette. Motion is paused
+ * The before control pins the exact original production palette. Motion is paused
  * at the same animation time for pixel comparisons; no mockup/CSS cue replica.
  * Run: BREEZE_QA_ENGINE=chromium|webkit BREEZE_LOOKUP_TONE_PROOF=/tmp/tone node tests/verify-light-lookup-tone-browser.mjs
  * This browser proof is not physical iOS/WebView sign-off.
@@ -110,7 +110,11 @@ try{
         },{baseline,dark,oldSheen,kind});
         // The word's existing 120ms background transition must finish before
         // comparing stable material values at a fixed shimmer phase.
-        await page.waitForTimeout(180);
+        await page.waitForFunction(()=>{
+          const probe=document.createElement('span');probe.style.backgroundColor=getComputedStyle(document.body).getPropertyValue('--word-lookup-wash');document.body.appendChild(probe);
+          const expected=getComputedStyle(probe).backgroundColor;probe.remove();
+          return qaTone.nodes.every(node=>getComputedStyle(node).backgroundColor===expected);
+        });
         await page.evaluate(async()=>{
           await new Promise(requestAnimationFrame);
           for(const node of qaTone.nodes)for(const animation of node.getAnimations()){
@@ -131,22 +135,18 @@ try{
         }
         const pixels=await page.screenshot({path:resolve(output,`${key}-${kind}-${state}.png`),animations:'allow'});
         if(baseline)beforePixels=pixels;
-        else if(dark||reduced)assert.deepEqual(pixels,beforePixels,`${key}/${kind}: dark or static pale screenshot pixels changed`);
+        else assert.deepEqual(pixels,beforePixels,`${key}/${kind}: original production screenshot pixels changed`);
       }
       const {before,after}=pair[kind];
       for(const field of ['source','scroll','paper','ink'])assert.deepEqual(after[field],before[field],`${key}/${kind}: ${field} changed`);
       assert.deepEqual(after.cues.map(c=>c.box),before.cues.map(c=>c.box),`${key}/${kind}: source geometry changed`);
-      if(dark)assert.deepEqual(after,before,`${key}/${kind}: dark rendering properties changed`);
-      else{
-        assert.equal(after.cues[0].background,before.cues[0].background,'original pale base must be unchanged');
-        if(!reduced)assert.notEqual(after.cues[0].image,before.cues[0].image);
-      }
+      assert.deepEqual(after,before,`${key}/${kind}: original production rendering properties changed`);
     }
     for(const state of ['before','after'])for(const field of ['background','image','animation','duration','timing','size','repeat','wash','sheen']){
       for(const cue of pair.sentence[state].cues)assert.equal(cue[field],pair.word[state].cues[0][field],`${key}/${state}: word/sentence ${field} diverged`);
     }
     reports.push({key,...pair});
-    console.log(`${key}: actual word/sentence palette, geometry, dark control and reduced motion passed`);
+    console.log(`${key}: actual word/sentence original palette, shared geometry and reduced motion passed`);
   }
   await page.evaluate(()=>qaTone.close());
   assert.equal(await page.locator('.breeze-lookup-pending,.reader-sentence-cue-layer').count(),0,'paint remains after close');

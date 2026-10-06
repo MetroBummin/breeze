@@ -268,8 +268,7 @@ Reader 단어 확장의 중복 예문은 숨긴다. 문맥 뜻은 카드 배경 
 로그인·한도 오류에는 재시도를 활성화하지 않는다.
 
 
-Light lookup preserves the original pale blue base and uses a narrower sky-blue
-moving reflection so progress is easier to see; dark preserves its existing
-blue/white sheen. Text remains visible underneath, and
-the shared motion timing, reduced-motion fallback, sentence line geometry and
-source-specific blending remain unchanged.
+Word and sentence pending feedback use the exact original production lookup
+wash and blue/white reflection in both themes. The proposed light palette and
+motion changes were discarded after review. Timing, keyframes, reduced-motion
+fallback, sentence line geometry and source-specific blending remain unchanged.

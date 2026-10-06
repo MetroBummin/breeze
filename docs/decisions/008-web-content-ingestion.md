@@ -20,8 +20,8 @@ The retained handoff path, when sharing is enabled again, is Share Extension
 -> `ingestArticle` -> fetch -> Readability 0.6.0 -> semantic blocks -> existing
 `saveCasualBook`/IndexedDB -> existing Reader. The native record is marked opened
 only after persistence and Reader opening succeed, and is never acknowledged/deleted.
-Failed RSS opens keep the same card and decoded cover for retry. Medium
-discovery only publishes cards after a usable public feed body is prepared. Failed shared cards are hidden from Home for
+Failed RSS opens keep the same card and decoded cover for retry. Current discovery admission verifies a usable photo, not an article body.
+Selected-body resolution and its limits are specified in Decision 015. Failed shared cards are hidden from Home for
 the session without deleting or marking the App Group record read; re-sharing
 with a new saved time or relaunching permits another attempt. No inline failure
 card or original-link button is added to these rails. Explicit URL entry retains

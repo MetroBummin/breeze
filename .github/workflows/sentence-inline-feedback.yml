@@ -43,21 +43,7 @@ jobs:
           path: /tmp/breeze-sentence-phone-preview/
           if-no-files-found: warn
           retention-days: 7
-      - name: Actual pale lookup sheen motion
-        if: ${{ !cancelled() }}
-        env:
-          BREEZE_QA_ENGINE: ${{ matrix.engine }}
-          BREEZE_LOOKUP_MOTION_PROOF: /tmp/breeze-lookup-sheen-motion
-        run: node tests/verify-lookup-sheen-motion-browser.mjs
-      - name: Lookup sheen motion proof
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lookup-sheen-motion-${{ matrix.engine }}
-          path: /tmp/breeze-lookup-sheen-motion/
-          if-no-files-found: warn
-          retention-days: 7
-      - name: Matched light lookup tone before and after
+      - name: Original production lookup appearance parity
         if: ${{ !cancelled() }}
         env:
           BREEZE_QA_ENGINE: ${{ matrix.engine }}
@@ -65,7 +51,7 @@ jobs:
         run: |
           node tests/verify-light-lookup-tone.mjs
           node tests/verify-light-lookup-tone-browser.mjs
-      - name: Light lookup tone screenshots
+      - name: Original lookup parity screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:

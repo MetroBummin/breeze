@@ -380,3 +380,42 @@ size/theme combinations. Timings are local trials, not a speed guarantee.
 Bytes are mocked relay response bodies, not billed egress. Server refresh/DB
 legs, images and other traffic need separate measurement after authorized
 deployment. These fixtures cannot fully attribute the historical 4.791 GB.
+
+
+## October 7 selected-body recovery
+
+The metadata-only discovery change removed the prior Medium pre-publication
+body gate. It also discarded `content:encoded` that a legacy feed had already
+transferred, leaving ordinary article selection dependent on the original page.
+Photo readiness does not establish article readability. The current client fixes
+these avoidable failures without resuming per-candidate background fetching.
+
+Legacy feed responses retain supplied explicit article bodies and feed-only
+social text in a separate memory-only cache: at most 200,000 serialized UTF-8 bytes per
+source and 1,000,000 in total (including identity and provenance), expiring after ten minutes. Successful source
+refresh replaces that source's evidence; a transient failure does not invent an
+empty successful feed. Cache budget eviction can remove old bodies. No body is
+added to discovery metadata, localStorage, the shared catalog, or a saved book.
+Readability and access/truncation checks still run only after selection. Reuse
+requires matching source provenance and canonical article identity. A cold
+restart with only persisted metadata cannot reconstruct these bodies.
+
+Medium owner-feed jobs continue to coalesce while in flight and after success.
+Transport or parsing failures remove only their own job, so a manual retry can
+make one fresh request. A stale rejected job cannot erase a replacement job.
+Successful empty or missing-story results remain distinct from transient error.
+There are no automatic retry loops, new requests during Home loading, paid
+provider calls, server changes or access-restriction workarounds.
+
+This is a partial reliability correction, not a new readability-admission gate.
+An article can still have a photo while its public body is unavailable. A shared
+readiness service would need a separately reviewed publisher allowlist and a
+bounded refresh owner. Evidence should distinguish usable, confirmed restricted
+or absent, and unknown/transient failure, with URL/body identity, parser version,
+check time and expiry. Reuse one source check across readers, never treat unknown
+as a confirmed negative, and do not infer shared-storage permission from public
+RSS availability. Keeping exact approved body bytes would make evidence stronger
+but additionally requires publisher permission, storage/retention policy and a
+cost budget. None of that service or policy is activated by this client fix.
+
+See [the controlled regression report](../qa/rss-selected-body-20261007.md).

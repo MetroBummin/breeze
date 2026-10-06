@@ -161,3 +161,13 @@ The existing sentence lifetime owns close, outside input, pinch, page/mode/
 document navigation, backgrounding and stale completion. This presentation
 change does not fix hanging auth/network promises or establish the cause of
 physical-device spinner freezes. No backend or quota behavior changes.
+
+## Original lookup appearance retained (2026-10-07)
+
+After comparing light-mode variants, the user chose the existing production
+word shimmer unchanged. Word and sentence share its original light/dark wash,
+blue/white gradient, 1.65-second timing and keyframes. The more saturated wash
+and narrower moving-reflection proposals are discarded. The shared token is
+only a material transfer to the owned Text/PDF/EPUB marker, not a new palette.
+The browser parity fixture pins the original values and requires identical
+computed styles and screenshot bytes in both themes and motion preferences.
