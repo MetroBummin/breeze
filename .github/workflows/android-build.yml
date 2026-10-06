@@ -1,0 +1,82 @@
+name: Android build
+
+on:
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'capacitor.config.json'
+      - 'package*.json'
+      - 'index.html'
+      - 'config.js'
+      - 'scripts/**'
+      - 'styles/**'
+      - 'assets/**'
+      - 'modules/**'
+      - 'public/**'
+      - 'tools/**'
+      - 'tests/verify-android-build.mjs'
+      - '.github/workflows/android-build.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Check preinstalled Android SDK
+        run: |
+          test -f "$ANDROID_HOME/platforms/android-36/android.jar"
+          test -d "$ANDROID_HOME/build-tools/35.0.0"
+          # Use the runner's installed SDK; do not accept new SDK licenses here.
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run test:android
+      - name: Build and verify bundled web assets
+        run: |
+          npm run android:sync
+          cmp index.html android/app/src/main/assets/public/index.html
+          cmp scripts/reader/pdf-ink.js android/app/src/main/assets/public/scripts/reader/pdf-ink.js
+          git diff --exit-code -- index.html sw.js
+      - name: Compile debug APK and unsigned release bundle
+        working-directory: android
+        run: ./gradlew --no-daemon lintDebug assembleDebug assembleDebugAndroidTest bundleRelease
+      - name: Verify artifact content and record provenance
+        run: python3 tools/verify-android-artifacts.py
+      - name: Upload installable debug APK and unsigned AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: breeze-android-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/android-provenance.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: breeze-android-lint-${{ github.event.pull_request.head.sha || github.sha }}
+          path: android/app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore
+          retention-days: 7

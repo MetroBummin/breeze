@@ -58,7 +58,12 @@
     "test:holmes": "node --test tests/verify-speckled-band.mjs tests/verify-holmes-collection.mjs tests/verify-holmes-complete-texts.mjs tests/verify-holmes-illustrations.mjs && node tests/verify-holmes-illustrations-browser.mjs",
     "test:import-durability": "node tests/verify-import-commit-browser.mjs && node tests/verify-offline-import-browser.mjs",
     "test:recent-reading": "node tests/verify-recent-reading-browser.mjs",
-    "test:rss-catalog": "node --test tests/verify-rss-catalog.mjs tests/verify-rss-catalog-client.mjs tests/verify-rss-catalog-photos.mjs"
+    "test:rss-catalog": "node --test tests/verify-rss-catalog.mjs tests/verify-rss-catalog-client.mjs tests/verify-rss-catalog-photos.mjs",
+    "android": "npm run android:sync && cap open android",
+    "android:sync": "npm run www && cap sync android",
+    "android:debug": "npm run android:sync && cd android && ./gradlew --no-daemon assembleDebug",
+    "android:bundle": "npm run android:sync && cd android && ./gradlew --no-daemon bundleRelease",
+    "test:android": "node --test tests/verify-android-build.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",
@@ -69,6 +74,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
     "@capacitor/core": "^8.5.0",
     "@capacitor/ios": "^8.5.0",
     "ts-fsrs": "5.4.2"
