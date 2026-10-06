@@ -211,3 +211,12 @@ accepting does not call AI or consume another quota unit.
 ## Explanation loading (1.7 / 222)
 
 An explicit pending explanation shows three neutral text-shaped skeleton lines in the existing card, with a quiet opacity pulse and static reduced-motion fallback. Off-screen live text and aria-busy announce the request. Success, failure, retry and lookup cancellation remove the placeholder. Request ownership, cache, pricing and saved meanings are unchanged.
+
+
+## Native PDF tap feedback (2026-10-06)
+
+The whole PDF paper remains a pointer target for mouse affordance, but explicitly
+uses transparent browser-native tap feedback, like text words and EPUB touch
+skins. The canvas inherits that rule. Breeze's selected-word marker and pending
+word cue remain the only word feedback; touch/scroll and lookup ownership do not
+change. See [scope and device-proof limits](../qa/pdf-native-tap-feedback-20261006.md).
