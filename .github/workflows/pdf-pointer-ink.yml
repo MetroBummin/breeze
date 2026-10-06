@@ -1,0 +1,35 @@
+name: PDF pointer ink
+on:
+  pull_request:
+    paths:
+      - 'scripts/reader/**'
+      - 'styles/reader.css'
+      - 'tests/verify-pdf*'
+      - 'tests/helpers/pdf-geometry-fixture.mjs'
+      - '.github/workflows/pdf-pointer-ink.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pdf-pointer-ink-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tests/verify-pdf-ink-regressions.mjs
+      - run: node tests/verify-pdf-pointer-ink-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pdf-pointer-ink-proof
+          path: /tmp/breeze-pdf-pointer-ink/
+          if-no-files-found: ignore
+          retention-days: 7
