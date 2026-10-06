@@ -58,6 +58,16 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
+      - name: Email login interruption and resend regression
+        run: node tests/verify-email-login-browser.mjs
+      - name: Email login visual proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: email-login-proof
+          path: /tmp/breeze-email-login-proof/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: RSS and current-cover chooser regressions in Chromium and WebKit
         run: |
           status=0
