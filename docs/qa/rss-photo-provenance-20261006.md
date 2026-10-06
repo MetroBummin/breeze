@@ -1,7 +1,7 @@
 # RSS photo provenance after 1.8 (240)
 
 Base: main `f7a2889296226f1ebca03cdcc45d09b739b05e88`.
-RSS source SHA-256: `595e91b8abc0f254cc964b8827eca5f13f5e9f6aaf48cffc0b6de0d0daa2e8c5`.
+RSS source SHA-256: `cd34169c7cb7393526c15fb666170b78bee40573445ed4f2d0b8f7bb0112abeb`.
 
 The required outcome is a publisher photograph when usable metadata/image bytes
 exist, a finite pending state during genuine work, and the existing artwork
@@ -32,7 +32,11 @@ HTTP/DNS, so the bounded opt-in CI audit used the repository's pinned public
 transport. Its source responses, hashes and decoder evidence are distinct from
 deployed relay and device provenance. A follow-up audit records supplied-field
 image inputs, both-engine decoding and two unauthenticated current-client relay
-GETs; unauthenticated gateway errors cannot establish signed-app failures.
+GETs. [That audit](https://github.com/MetroBummin/breeze/actions/runs/37411517237/artifacts/11389137684)
+at 04:00 UTC confirms TMZ's three entries have no image/media fields; Gaza's
+Atom body contains only a 1px tracking image. All four original OG JPEGs and
+both supplied-photo controls decode in Chromium and WebKit without a referrer.
+The two anonymous relay GETs return 401; this cannot establish signed-app failures.
 
 ## Confirmed mechanisms and fix
 
@@ -47,10 +51,22 @@ can recover a temporary failure under the same two-request budget.
 Metadata extraction skips unsafe/hidden candidates and continues past an invalid
 duplicate OG declaration. Public share images remain distinct from restricted
 body-image fallback. The pure server export
-`extractPublicArticleCover(html, finalPublicUrl): string` in
+`extractPublicArticleCover(html, finalPublicUrl)` in
 `server/article/cover-metadata.mjs` performs no network, state, DB or body storage.
 Its caller must establish successful public HTTP provenance, fixed-source
 allowlisting, body/time/request bounds, staleness and cache ownership.
+
+Pinned LinkeDOM preserves uppercase attribute names, so attribute access is now
+case-insensitive and retains HTML's first-duplicate precedence. The first
+`<base href>` resolves relative candidates against a validated public base;
+target-only and later bases do not override it. Empty bases use the final public
+URL. Client and server reject credentials, private/IP/local destinations, signed
+URLs and nonstandard ports. A safe absolute photo remains usable independently
+of an unsafe base. Unresolved relative candidates under an unsafe base throw
+`cover_base_unsafe`, which the caller must treat as unknown/error, never a
+successful no-image negative. The legacy stream defers relative metadata until
+the first base appears or the bounded JSON response is complete, preserving the
+early absolute-photo path and the existing 128 KiB cutoff.
 
 The two-lookups-per-discovery-generation limit still means never-attempted cards
 can retain artwork. Catalog mode currently disables those legacy client lookups;
@@ -63,16 +79,18 @@ legacy request/prefix budgets.
 
 ## Validation
 
-- Related Node regression tests: 30 passed, including captured metadata,
+- Related Node regression tests: 32 passed, including captured metadata,
   old-cache migration, failure/partial-response recovery, in-flight coalescing,
-  stale ownership, private/signed URLs and restricted body candidates.
-- Chromium: 26 real-app scenarios pass. Four replay captured OG tags at their
+  stale ownership, private/signed URLs and restricted body candidates. Shared
+  case/head/base/entity/malformed fixtures cover server/client parser parity;
+  streamed relative metadata and unsafe bases cannot poison the negative cache.
+- Chromium: 28 real-app scenarios pass. Four replay captured OG tags at their
   original byte offsets and URLs with synthetic image transport. The live audit
   separately validates the original image bytes. Two replay old positive and
   poisoned negative caches. Existing budget, refresh, no-image/error/timeout,
   image-failure, canceled-return, light/dark geometry and reduced-motion checks
   remain. An error does not automatically retry; explicit refresh recovers.
-- Full `npm test`: 502 Node-runner tests, 501 passed, zero failures, one existing
+- Full `npm test`: 504 Node-runner tests, 503 passed, zero failures, one existing
   skip, plus the existing script checks. Typecheck passes its current baseline.
 - `ios:sync` passes. Source, `www` and Capacitor public RSS/CSS/index bytes align.
 - Exact-head Chromium/WebKit CI and catalog-path integration are pending.

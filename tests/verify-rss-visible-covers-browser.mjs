@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
+import {coverDocumentCases} from './fixtures/rss-cover-document-cases.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_RSS_VISIBLE_COVER_PROOF||'/tmp/breeze-rss-visible-covers';
@@ -40,6 +41,7 @@ function articleHtml(test,index,generation){
     return head+'<!--'+'x'.repeat(Math.max(0,record.metaByteOffset-head.length-7))+'-->'+record.meta+'</head><body>'+prose+'</body></html>';
   }
   const url=imageUrl(test.name,index,generation),mode=test.options.mode||'og';
+  if(mode==='unsafe-base')return '<html><head><BASE HREF="http://127.0.0.1/"><META PROPERTY="og:image" CONTENT="cover.jpg"></head><body></body></html>';
   // Warm no-image reuse needs a complete received page. The independent late
   // fixture covers an unknown truncated response, which cannot be negative.
   if(mode==='empty'||mode==='shimmer'&&index!==0)return `<html><body><p>${prose}</p></body></html>`;
@@ -234,6 +236,19 @@ try{
         results.push({engine:engine.name(),scenario:'v1-cache-migration-'+(hasPhoto?'positive':'negative'),state:value,requests:migrated.requests});await m.context.close();
       }
 
+      const documents=run(engine.name()+'-document-cases'),dc=await start(browser,documents);
+      await settled(dc.page);
+      const documentResults=await dc.page.evaluate(cases=>cases.map(record=>{
+        try{return {name:record.name,photo:rssCoverPhoto(record.html,record.url)};}
+        catch(error){return {name:record.name,error:error.message};}
+      }),coverDocumentCases);
+      for(const [index,result] of documentResults.entries()){
+        const expected=coverDocumentCases[index];
+        if(expected.error)assert.equal(result.error,expected.error,expected.name);
+        else assert.equal(result.photo,expected.photo,expected.name);
+      }
+      results.push({engine:engine.name(),scenario:'case/head/base/entities/malformed',cases:documentResults});await dc.context.close();
+
       const supplied=run(engine.name()+'-supplied',{supplied:true}),s=await start(browser,supplied);
       await s.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
       assert.equal(supplied.requests.length,1);assert.equal(supplied.requests[0].index,1,'Supplied photo was enriched unnecessarily');
@@ -372,13 +387,17 @@ try{
       assert(shimmer.requests.length<=4,'Viewport changes exceeded the refreshed generation budget');
       results.push({engine:engine.name(),scenario:'lookup/image-shimmer/refresh/geometry/reduced-motion',lookup,decoding,decoded,reduced,requests:shimmer.requests,images:shimmer.images});await sh.context.close();
 
-      for(const mode of ['empty','error','timeout','image-failure','image-timeout']){
-        const terminal=run(engine.name()+'-'+mode,{mode:mode==='empty'||mode==='error'?mode:'og',
+      for(const mode of ['empty','error','unsafe-base','timeout','image-failure','image-timeout']){
+        const terminal=run(engine.name()+'-'+mode,{mode:['empty','error','unsafe-base'].includes(mode)?mode:'og',
           fastTimeout:mode.includes('timeout'),delayMs:mode==='timeout'?350:0,
           brokenImage:mode==='image-failure',stallDecode:mode==='image-timeout',imageDelayMs:mode==='image-timeout'?350:0}),t=await start(browser,terminal);
         await waitForRequest(terminal,2);const value=await settled(t.page);noPersonalData(value);
         assert(value.cards.every(card=>!card.pending&&card.ready&&!card.photo),mode+' did not terminate to usable artwork');
         assert.equal(terminal.requests.length,2);
+        if(mode==='unsafe-base'){
+          assert.equal(await t.page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem(RSS_COVER_CACHE_KEY)||'{}')).length),0,'Ambiguous base poisoned the negative cache');
+          assert(!terminal.blocked.some(url=>url.startsWith('http://127.0.0.1/')),'Public base policy was bypassed');
+        }
         if(mode==='empty'){
           await t.page.evaluate(()=>refreshLibrary());await settled(t.page);
           assert.equal(terminal.requests.length,2,'Negative cache repeated the same lookup');

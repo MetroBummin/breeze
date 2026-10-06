@@ -88,6 +88,13 @@ public `photo: string` shape. The existing catalog does not yet call it; origina
 photos absent from feeds still need that separately integrated ownership before
 catalog activation. See [actual photo provenance](../qa/rss-photo-provenance-20261006.md).
 
+Cover metadata uses case-insensitive HTML attributes and the first public
+`<base href>` for relative URLs. Absolute public photos can survive an unsafe
+base, but ambiguous relative resolution throws `cover_base_unsafe`; callers must
+not cache that error as photo absence. Streamed relative declarations wait for
+the first base or a complete bounded response instead of guessing a publisher
+path. This does not increase fetch, prefix or refresh budgets.
+
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport
 can still contain embedded article bodies; only the optional catalog removes

@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createContext,runInContext} from 'node:vm';
 import {DOMParser} from 'linkedom';
 import {extractPublicArticleCover} from '../server/article/cover-metadata.mjs';
+import {coverDocumentCases} from './fixtures/rss-cover-document-cases.mjs';
 
 const article=readFileSync(new URL('../scripts/importers/article.js',import.meta.url),'utf8');
 const rss=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8');
@@ -30,6 +31,7 @@ test('automatic metadata excludes credentials, private/local hosts and all IP li
     'https://publisher.test/x?API_KEY=secret','file:///tmp/x','javascript:alert(1)','notaurl',
     'https://publisher.test/x?X-Amz-Signature=secret','https://publisher.test/x?X-Goog-Credential=secret',
     'https://publisher.test/'+ 'x'.repeat(4096)])assert.equal(context.rssCoverPublicUrl(raw),'',raw);
+  assert.equal(context.rssCoverPublicUrl('https://publisher.example:8443/cover.jpg'),'');
   assert.equal(context.rssCoverPublicUrl(url+'#section'),url);
   assert.equal(context.rssCoverPublicUrl('https://publisher.test/x?q=reading'),'https://publisher.test/x?q=reading');
 });
@@ -104,6 +106,15 @@ test('shared cover extraction rejects private/signed images and hidden/restricte
   assert.equal(extractPublicArticleCover('<script type="application/ld+json">{"isAccessibleForFree":false}</script><meta property="og:image" content="'+good+'">',base),good,'Public share metadata remains distinct from restricted body extraction');
   assert.equal(extractPublicArticleCover('<img src="https://images.example/tiny.jpg" width="1" height="1"><img data-src="'+good+'" width="800" height="600">',base),good);
 });
+test('pinned server and client HTML extraction agree on case, head, base, entities and malformed input',()=>{
+  const {context}=runtime();
+  for(const record of coverDocumentCases){
+    for(const extract of [context.rssCoverPhoto,extractPublicArticleCover]){
+      if(record.error)assert.throws(()=>extract(record.html,record.url),{message:record.error},record.name);
+      else assert.equal(extract(record.html,record.url),record.photo,record.name);
+    }
+  }
+});
 test('relay prefixes decode JSON escapes without treating nested or fake html fields as metadata',()=>{
   const {context}=runtime();
   const html='<html><head><title>"quote" \\ 雪</title><meta property="og:image" content="'+photo+'"></head><body>';
@@ -170,6 +181,22 @@ test('failed or incomplete cover retrieval cannot poison the negative cache; com
       assert.equal((await context.rssCoverLookup(url,{})).photo,photo,'A failed result blocked later recovery');
     }
   }
+});
+test('a streamed relative declaration waits for the first public base; ambiguous bases never cache absence',async()=>{
+  const {context,storage}=runtime();context.rssCoverCurrent=()=>true;
+  const target='https://images.example/assets/cover.jpg';
+  const html='<html><head><META PROPERTY="og:image" CONTENT="cover.jpg">'+' '.repeat(4096)+'<BASE HREF="https://images.example/assets/"></head><body>'+'x'.repeat(200000);
+  streamed(context,html,1024);
+  assert.equal((await context.rssCoverLookup(url,{})).photo,target);
+  for(const record of coverDocumentCases.filter(record=>record.error)){
+    const {context,storage}=runtime();context.rssCoverCurrent=()=>true;
+    streamed(context,record.html,1024);
+    assert.equal(await context.rssCoverLookup(url,{}),null,record.name);
+    assert.equal(context.rssCoverCached(url),null,record.name);
+    assert.equal(storage.has('breeze.rss-cover-metadata.v2'),false,record.name);
+  }
+  const complete=runtime();streamed(complete.context,'<meta property="og:image" content="cover.jpg">',1024);
+  assert.equal((await complete.context.rssCoverFetch(url,new AbortController().signal)).photo,'https://publisher.test/cover.jpg');
 });
 test('coalesced in-flight metadata and stale completions preserve cache ownership',async()=>{
   const {context}=runtime();let complete,active=true,requests=0;

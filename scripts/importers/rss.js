@@ -74,7 +74,7 @@ function rssCoverPublicUrl(raw){
   if(typeof raw!=='string'||raw.length>4096)return '';
   try{
     const url=new URL(raw),host=url.hostname;
-    if(!/^https?:$/.test(url.protocol)||url.username||url.password
+    if(!/^https?:$/.test(url.protocol)||url.username||url.password||url.port&&url.port!==(url.protocol==='https:'?'443':'80')
       ||!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(host)
       ||/(^|\.)(localhost|local|internal|home|lan|onion)$/i.test(host)
       ||[...url.searchParams.keys()].some(key=>/^(?:token|access_token|api_?key|auth|authorization|secret|password|session|jwt|signature|sig|AWSAccessKeyId|GoogleAccessId|(?:x-amz|x-goog)-(?:credential|signature|security-token))$/i.test(key)))return '';
@@ -156,23 +156,37 @@ function rssCoverPayloadPrefix(text){
   }catch{/* Unexpected response shape is not article metadata. */}
   return null;
 }
-function rssCoverPhoto(html,base){
+function rssCoverPhoto(html,base,complete=true){
+  const origin=rssCoverPublicUrl(base);if(!origin)return '';
   // Ignore a partial final tag; HTML stays in an inert document, never the UI.
   const end=html.lastIndexOf('>');if(end<0)return '';
   const doc=new DOMParser().parseFromString(html.slice(0,end+1),'text/html');
   doc.querySelectorAll('script,style,noscript,template').forEach(node=>node.remove());
+  const attribute=(node,name)=>[...node.attributes].find(item=>item.name.toLowerCase()===name)?.value??null;
+  const declared=[...doc.querySelectorAll('base')].find(node=>attribute(node,'href')!==null);
+  const resolvedBase=declared?rssCoverPublicUrl(articleAbsolute(attribute(declared,'href').trim()||origin,origin)):complete?origin:'';
+  let ambiguousBase=false;
+  const photoFor=raw=>{
+    if(!String(raw||'').trim())return '';
+    if(!resolvedBase){try{new URL(raw);}catch{ambiguousBase=true;return '';}}
+    const photo=rssCoverPublicUrl(articleAbsolute(raw,resolvedBase||undefined));
+    return ARTICLE_IMG_BAD.test(photo)?'':photo;
+  };
   const metas=[...doc.querySelectorAll('meta')];
   for(const name of ['og:image','og:image:url','twitter:image','twitter:image:src']){
-    for(const node of metas.filter(node=>(node.getAttribute('property')||node.getAttribute('name')||'').toLowerCase()===name)){
-      const photo=rssCoverPublicUrl(articleAbsolute(node.getAttribute('content'),base));
-      if(photo&&!ARTICLE_IMG_BAD.test(photo))return photo;
+    for(const node of metas.filter(node=>(attribute(node,'property')||attribute(node,'name')||'').trim().toLowerCase()===name)){
+      const photo=photoFor(attribute(node,'content'));if(photo)return photo;
+      // A later first <base> can change relative metadata in a streamed head.
+      if(ambiguousBase&&!complete&&!declared)return '';
     }
   }
-  if(/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html))return '';
-  for(const image of doc.querySelectorAll('img')){
-    const photo=rssCoverPublicUrl(articleAbsolute(articleBestSrc(image),base));
-    if(photo&&!articleTooSmall(image)&&!ARTICLE_IMG_BAD.test(photo))return photo;
+  if(!/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html))for(const image of doc.querySelectorAll('img')){
+    const attributes={getAttribute:name=>attribute(image,name)};
+    if(articleTooSmall(attributes))continue;
+    const photo=photoFor(articleBestSrc(attributes));if(photo)return photo;
+    if(ambiguousBase&&!complete&&!declared)return '';
   }
+  if(ambiguousBase&&(complete||declared))throw Error('cover_base_unsafe');
   return '';
 }
 async function rssCoverFetch(url,signal){
@@ -190,7 +204,7 @@ async function rssCoverFetch(url,signal){
       const prefix=value.subarray(0,RSS_COVER_PREFIX_BYTES-retainedBytes);
       retainedBytes+=prefix.byteLength;text+=decoder.decode(prefix,{stream:true});
       const payload=rssCoverPayloadPrefix(text);
-      const photo=payload&&rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url);
+      const photo=payload&&rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url,false);
       if(photo)return {photo};
     }
     text+=decoder.decode();
