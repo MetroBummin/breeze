@@ -788,11 +788,13 @@ registerReaderSurface({
        문단을 칠하면 질문과 답이 어긋납니다. */
     const boxes=(originalSession.wordBoxes.get(+page.dataset.page)||[])
       .filter(item=>item.sentenceStart===box.sentenceStart);
+    const sentenceBox={left:Math.min(...boxes.map(b=>b.x)),top:Math.min(...boxes.map(b=>b.y)),
+      right:Math.max(...boxes.map(b=>b.x+b.w)),bottom:Math.max(...boxes.map(b=>b.y+b.h))};
     const peekTarget={ownerDocument:document,getBoundingClientRect(){
-      const rect=page.getBoundingClientRect();
-      return {left:rect.left+box.x*rect.width,top:rect.top+box.y*rect.height,
-        right:rect.left+(box.x+box.w)*rect.width,bottom:rect.top+(box.y+box.h)*rect.height,
-        width:box.w*rect.width,height:box.h*rect.height};
+      const rect=page.getBoundingClientRect(),b=sentenceBox;
+      return {left:rect.left+b.left*rect.width,top:rect.top+b.top*rect.height,
+        right:rect.left+b.right*rect.width,bottom:rect.top+b.bottom*rect.height,
+        width:(b.right-b.left)*rect.width,height:(b.bottom-b.top)*rect.height};
     }};
     return { sentence, peekTarget, page:+page.dataset.page, start:box.sentenceStart, context(){ return {before:box.easyBefore||[],after:box.easyAfter||[]}; }, paint(){ showPdfSentenceCue(page,boxes); } };
   },

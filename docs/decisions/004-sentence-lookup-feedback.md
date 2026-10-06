@@ -138,10 +138,13 @@ for the initiating finger. Completed/outgoing cues stay static rather than
 replaying their entrance. Success retains the existing sentence translation
 surface. Source-anchored failure uses the same mini-pill material, meaning
 spacing, retry icon and 44px action as word lookup, with no chevron or visible
-retry label. Its source anchor is the word actually long-pressed: Text's span,
-PDF's existing glyph box, or EPUB's exact word Range mapped from its frame.
-The shared placeLookupPeek function is the word placement algorithm, including
-its side selection, detail-space reservation, viewport and Reader-control clamp.
+retry label. After visual review, its source anchor is the whole selected sentence union:
+Text/EPUB's exact sentence Range, or PDF's selected occurrence glyph-box union.
+The shared placeLookupPeek function retains the word viewport and Reader-control
+clamp, with detail-space reservation disabled for this non-expanding error pill.
+It prefers fully below the selected sentence when the pill fits, otherwise fully
+above. It overlaps/clamps only when neither outside position can fit (such as
+a sentence filling the viewport). The word pill's default policy is unchanged.
 No source scroll is introduced for errors, retries or placement.
 
 Word and sentence mini feedback use one 250ms idle calculation and 750ms

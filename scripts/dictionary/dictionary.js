@@ -647,7 +647,7 @@ function wordPeekState(w,context){
 function placeWordPeek(){
   placeLookupPeek(document.getElementById('word-peek'),wordPeekAnchor);
 }
-function placeLookupPeek(pill,anchor){
+function placeLookupPeek(pill,anchor,reserveDetail=true){
   if(!pill||pill.hidden||!anchor) return;
   const view=window.visualViewport;
   const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
@@ -661,7 +661,7 @@ function placeLookupPeek(pill,anchor){
   // Reserve room for the future detail surface, not only today's 44px pill.
   // Freeze the chosen side for the lookup lifetime so async text cannot flip it.
   if(!anchor.direction){
-    const detailHeight=Math.min(420,(safeBottom-safeTop)*.7);
+    const detailHeight=reserveDetail?Math.min(420,(safeBottom-safeTop)*.7):box.height;
     anchor.direction=below>=detailHeight?'below':above>=detailHeight?'above':below>=above?'below':'above';
   }
   let left=(anchor.left+anchor.right-box.width)/2;

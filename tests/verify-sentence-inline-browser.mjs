@@ -1,11 +1,13 @@
 /* Rendered, provider-free regression for inline waiting and anchored error/retry.
  * Run with BROWSER=chromium|webkit (or BREEZE_QA_ENGINE), and optionally
  * BREEZE_BROWSER_EXECUTABLE / BREEZE_QA_OUTPUT. Screenshots are browser pixels.
+ * BREEZE_QA_PREVIEW=1 runs the phone/Text theme+motion subset for early review;
+ * the default always retains all 60 cases plus per-format interruptions.
  * Synthetic fixture state starts at the existing surface/lifetime boundary;
  * verify-sentence-cue-browser.mjs separately owns trusted long-press admission.
  */
 import assert from 'node:assert/strict';
-import {readFileSync, mkdirSync, writeFileSync} from 'node:fs';
+import {readFileSync, mkdirSync, writeFileSync, mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve, extname} from 'node:path';
@@ -32,6 +34,7 @@ zip.file('mimetype','application/epub+zip');
 zip.file('META-INF/container.xml','<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="book.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
 zip.file('book.opf','<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">sentence-inline-test</dc:identifier><dc:title>Inline sentence fixture</dc:title><dc:language>en</dc:language></metadata><manifest><item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="chapter"/></spine></package>');
 zip.file('chapter.xhtml','<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Inline sentence fixture</title><style>body{margin:24px;font:20px/1.8 Georgia}p{max-width:600px;margin:0 0 30px}</style></head><body>'+('<p>'+sentence+' '+other+'</p>').repeat(30)+'</body></html>');
+const preview=process.env.BREEZE_QA_PREVIEW==='1';
 const inputs=[
   ['txt',{name:'sentence-inline.txt',mimeType:'text/plain',buffer:Buffer.from((sentence+' '+other+'\n\n').repeat(50))}],
   ['pdf',{name:'sentence-inline.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture([
@@ -40,28 +43,35 @@ const inputs=[
     'A patient reader keeps every word and every meaning',
     'together while the sentence continues onto the next line.',other])}],
   ['epub',{name:'sentence-inline.epub',mimeType:'application/epub+zip',buffer:await zip.generateAsync({type:'nodebuffer',compression:'DEFLATE'})}],
-];
+].filter(([kind])=>!preview||kind==='txt');
 const profiles=[
   {name:'phone',width:390,height:844},
   {name:'tablet',width:820,height:1180},
   {name:'desktop',width:1440,height:900},
   {name:'narrow',width:320,height:568},
   {name:'short',width:844,height:390},
-];
+].filter(profile=>!preview||profile.name==='phone');
 const engineName=process.env.BREEZE_QA_ENGINE||process.env.BROWSER||'chromium';
 assert.ok(['chromium','webkit'].includes(engineName),'BROWSER/BREEZE_QA_ENGINE must be chromium or webkit');
 const engine=engineName==='webkit'?webkit:chromium;
 const output=resolve(process.env.BREEZE_QA_OUTPUT||resolve(tmpdir(),'breeze-sentence-inline-proof'));
 mkdirSync(output,{recursive:true});
-const reports=[],screenshots=[];
-let browser,pageForFailure;
+const reports=[],screenshots=[],imports=[];
+let browser,context,profile,pageForFailure,importing=null;
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 try{
-  browser=await engine.launch({headless:true,
-    executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
-  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,
-    deviceScaleFactor:1,serviceWorkers:'block'});
+  const contextOptions={viewport:{width:390,height:844},hasTouch:true,
+    deviceScaleFactor:1,serviceWorkers:'block'};
+  if(engine===webkit){
+    // Match the repository's sentence-cue/import-commit fixtures: persistent
+    // WebKit storage preserves imported original-file bytes through IDB reads.
+    profile=mkdtempSync(resolve(tmpdir(),'breeze-sentence-inline-'));
+    context=await engine.launchPersistentContext(profile,{...contextOptions,headless:true});
+  }else{
+    browser=await engine.launch({headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+    context=await browser.newContext(contextOptions);
+  }
   const page=await context.newPage(),errors=[],providerAttempts=[];
   pageForFailure=page;
   page.on('pageerror',error=>{if(!error.message.startsWith('ResizeObserver loop'))errors.push(error.message);});
@@ -78,11 +88,70 @@ try{
   await page.goto(url,{waitUntil:'domcontentloaded'});
   await page.evaluate(()=>homeReady);
   for(const [kind,input] of inputs){
-    await page.locator('#fileinput').setInputFiles(input);
-    await page.waitForFunction(kind=>books.some(book=>book.kind===kind),kind,{timeout:120000});
+    importing={kind,name:input.name,startedAt:Date.now()};
+    console.log('Importing',engineName,kind,input.name);
+    try{
+      await page.locator('#fileinput').setInputFiles(input);
+      await page.waitForFunction(kind=>books.some(book=>book.kind===kind),kind,{timeout:120000});
+    }catch(error){
+      const state=await page.evaluate(()=>({kinds:books.map(book=>book.kind),
+        notice:document.getElementById('reader-notice')?.textContent,
+        toast:document.getElementById('toast')?.textContent})).catch(()=>null);
+      importing={...importing,state};
+      throw new Error(`${engineName}: ${kind} import (${input.name}) failed; state=${JSON.stringify(state)}`,{cause:error});
+    }
+    imports.push({kind,name:input.name,elapsedMs:Date.now()-importing.startedAt});
+    console.log('Imported',engineName,kind,imports.at(-1).elapsedMs+'ms');
+    importing=null;
   }
   await page.evaluate(()=>{
     window.qaInline={pending:[],calls:[],writes:[],range:null,currentLayer:null,kind:null};
+    qaInline.restorationJobs=new Set();qaInline.restorationEvents=[];qaInline.scrollWrites=[];
+    const recordRestoration=event=>{
+      qaInline.restorationEvents.push({...event,at:performance.now(),scroll:readerScrollTop()});
+      if(qaInline.restorationEvents.length>100)qaInline.restorationEvents.shift();
+    };
+    // Mode readiness excludes the existing 360/900ms PDF landing callbacks.
+    // Observe those real callbacks through completion, without changing delays,
+    // canceling them, or replacing their restoration implementation.
+    const stabilize=stabilizePdfModeTarget;
+    stabilizePdfModeTarget=(...args)=>{
+      const schedule=window.setTimeout;
+      window.setTimeout=(callback,delay,...timerArgs)=>{
+        const job={owner:'pdf-mode-landing',delay};qaInline.restorationJobs.add(job);
+        recordRestoration({...job,state:'scheduled'});
+        return schedule(async()=>{
+          try{return await callback(...timerArgs);}
+          finally{qaInline.restorationJobs.delete(job);recordRestoration({...job,state:'finished'});}
+        },delay);
+      };
+      try{return stabilize(...args);}
+      finally{window.setTimeout=schedule;}
+    };
+    const restorePdf=restorePdfAnchor;
+    const trackedPdfRestore=async(...args)=>{
+      const job={owner:'pdf-anchor',source:args[0],inset:args[1]};
+      qaInline.restorationJobs.add(job);recordRestoration({...job,state:'started'});
+      try{return await restorePdf(...args);}
+      finally{qaInline.restorationJobs.delete(job);recordRestoration({...job,state:'finished'});}
+    };
+    restorePdfAnchor=trackedPdfRestore;
+    if(ORIGINAL_FORMATS.pdf.restoreAnchor===restorePdf)ORIGINAL_FORMATS.pdf.restoreAnchor=trackedPdfRestore;
+    const scrollTo=readerScrollTo;
+    readerScrollTo=y=>{
+      qaInline.scrollWrites.push({at:performance.now(),from:readerScrollTop(),to:y,
+        lookupOpen:sentenceLookupOpen(),stack:new Error().stack});
+      if(qaInline.scrollWrites.length>100)qaInline.scrollWrites.shift();
+      return scrollTo(y);
+    };
+    qaInline.readerReady=()=>{
+      if(readerPositionPending()||readerAnchorHeld()||qaInline.restorationJobs.size)return false;
+      if(currentReaderMode!=='original')return true;
+      const box=readerScroller();
+      return !originalRotationAnchor&&Math.abs(originalZoomObservedWidth-box.clientWidth)<1
+        &&Math.abs(originalZoomObservedHeight-box.clientHeight)<1;
+    };
+
     dictGet=async()=>null;
     dictPut=async(key,value)=>{qaInline.writes.push({key,value});};
     // openSentence's real request owner is exercised; no transport/provider runs.
@@ -132,6 +201,8 @@ try{
       const {found,point}=qaInline.find(kind);
       if(!found?.paint)throw new Error('Missing actual source occurrence');
       qaInline.found=found;qaInline.point=point;qaInline.range=null;
+      if(!qaInline.readerReady())throw new Error('Lookup started before Reader restoration completed');
+      qaInline.baselineAt=performance.now();
       qaInline.before=qaInline.geometry();qaInline.beforeChrome=qaInline.chrome();
       const views=[window,...(originalSession?.kind==='epub'
         ?originalSession.frames.filter(Boolean).map(frame=>frame.contentWindow):[])];
@@ -192,6 +263,12 @@ try{
       animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime))
       .map(animation=>animation.finished.catch(()=>{}))));
     await frames();
+  };
+  const readerReady=async()=>{
+    await frames();
+    await page.waitForFunction(()=>qaInline.readerReady());
+    await settle();
+    await page.waitForFunction(()=>qaInline.readerReady());
   };
   const screenshot=async(name)=>{
     const filename=`${engineName}-${name}.png`;
@@ -298,10 +375,36 @@ try{
       reference.style.setProperty('--word-safe-top',getComputedStyle(peek).getPropertyValue('--word-safe-top'));
       document.body.appendChild(reference);
       const expectedAnchor={...source,direction:null};
-      placeLookupPeek(reference,expectedAnchor);
+      placeLookupPeek(reference,expectedAnchor,false);
       const expected={left:reference.style.left,top:reference.style.top,direction:reference.dataset.expandDirection};
+      const view=window.visualViewport,vx=view?.offsetLeft||0,vy=view?.offsetTop||0;
+      const width=view?.width||innerWidth,height=view?.height||innerHeight;
+      const safeTop=vy+16+(parseFloat(getComputedStyle(peek).getPropertyValue('--word-safe-top'))||0);
+      const chrome=document.getElementById('readchrome').getBoundingClientRect();
+      const safeBottom=Math.min(vy+height-16,chrome.height&&chrome.top>safeTop?chrome.top-8:vy+height-16);
+      const layer=readerSentenceCue.layer,doc=layer.ownerDocument;
+      const frame=doc===document?null:originalSession.frames.find(frame=>frame?.contentDocument===doc);
+      const outer=frame?.getBoundingClientRect(),sx=frame?outer.width/frame.clientWidth:1,sy=frame?outer.height/frame.clientHeight:1;
+      const lines=[...layer.children].map(node=>{
+        const r=node.getBoundingClientRect();return {left:(outer?.left||0)+r.left*sx,
+          top:(outer?.top||0)+r.top*sy,right:(outer?.left||0)+r.right*sx,bottom:(outer?.top||0)+r.bottom*sy};
+      });
+      const union={left:Math.min(...lines.map(r=>r.left)),top:Math.min(...lines.map(r=>r.top)),
+        right:Math.max(...lines.map(r=>r.right)),bottom:Math.max(...lines.map(r=>r.bottom))};
+      const scenarios=[];
+      for(const [name,top,bottom] of [
+        ['both-fit',(safeTop+safeBottom)/2-10,(safeTop+safeBottom)/2+10],
+        ['above-only',safeBottom-20,safeBottom],
+        ['oversized',safeTop-100,safeBottom+100],
+      ]){
+        const anchor={...source,top,bottom,height:bottom-top,direction:null};
+        placeLookupPeek(reference,anchor,false);
+        const r=reference.getBoundingClientRect();
+        scenarios.push({name,source:anchor,direction:reference.dataset.expandDirection,top:r.top,bottom:r.bottom});
+      }
       reference.remove();
-      return {source,actual:{left:peek.style.left,top:peek.style.top,direction:peek.dataset.expandDirection},expected,
+      return {source,union,scenarios,safe:{top:safeTop,bottom:safeBottom,left:vx+16,right:vx+width-16},
+        box:{left:box.left,top:box.top,right:box.right,bottom:box.bottom,height:box.height},actual:{left:peek.style.left,top:peek.style.top,direction:peek.dataset.expandDirection},expected,
         sentence:{shell:values(peek,shell),glass:values(peek,glass,'::before'),
           meaning:values(document.getElementById('sentence-peek-meaning'),meaning),
           action:values(document.getElementById('sentence-peek-retry'),action)},
@@ -309,8 +412,32 @@ try{
           meaning:values(document.getElementById('word-peek-meaning'),meaning),
           action:values(document.getElementById('word-peek-retry'),action)}};
     });
-    assert.ok(result.source?.width>0&&result.source.height>0,label+': missing live pressed-word anchor');
-    assert.deepEqual(result.actual,result.expected,label+': anchored error differs from word placement/reserve/clamp');
+    assert.ok(result.source?.width>0&&result.source.height>0,label+': missing live whole-sentence anchor');
+    assert.deepEqual(result.actual,result.expected,label+': anchored error differs from shared placement with actual-pill reservation');
+    for(const edge of ['left','top','right','bottom'])assert.ok(Math.abs(result.source[edge]-result.union[edge])<.2,
+      label+': error anchor does not span the whole selected sentence '+edge);
+    const below=result.safe.bottom-result.source.bottom-8>=result.box.height;
+    const above=result.source.top-8-result.safe.top>=result.box.height;
+    if(below){
+      assert.equal(result.actual.direction,'below',label+': did not prefer available space below the sentence');
+      assert.ok(result.box.top>=result.source.bottom,label+': error overlaps the final selected line');
+    }else if(above){
+      assert.equal(result.actual.direction,'above',label+': did not use available space above the sentence');
+      assert.ok(result.box.bottom<=result.source.top,label+': error overlaps the first selected line');
+    }
+    assert.ok(result.box.top>=result.safe.top-.6&&result.box.bottom<=result.safe.bottom+.6
+      &&result.box.left>=result.safe.left-.6&&result.box.right<=result.safe.right+.6,
+      label+': error fallback escaped the usable viewport');
+    for(const scenario of result.scenarios){
+      if(scenario.name==='both-fit'){
+        assert.equal(scenario.direction,'below',label+': both-fit policy did not prefer below');
+        assert.ok(scenario.top>=scenario.source.bottom,label+': both-fit placement overlaps sentence');
+      }else if(scenario.name==='above-only'){
+        assert.equal(scenario.direction,'above',label+': above-only policy did not choose above');
+        assert.ok(scenario.bottom<=scenario.source.top,label+': above-only placement overlaps sentence');
+      }else assert.ok(scenario.top>=result.safe.top-.6&&scenario.bottom<=result.safe.bottom+.6,
+        label+': oversized-sentence fallback escaped the usable viewport');
+    }
     assert.deepEqual(result.sentence,result.word,label+': anchored error differs from word mini-pill styles');
     assert.deepEqual(await page.evaluate(()=>qaInline.chrome()),await page.evaluate(()=>qaInline.beforeChrome),
       label+': error changed bottom chrome visibility or interactivity');
@@ -325,13 +452,14 @@ try{
       :kind==='pdf'?originalSession?.wordBoxes.get(1)?.length>0
       :originalSession?.frames.some(frame=>frame?.contentDocument?.querySelector('p')),kind);
     if(kind==='epub')await page.evaluate(()=>Promise.all(originalSession.frameGeometryReady));
-    await page.waitForFunction(()=>!readerPositionPending());
+    await readerReady();
     for(const profile of profiles)for(const dark of [false,true])for(const reduced of [false,true]){
       const label=`${kind}-${profile.name}-${profile.width}x${profile.height}-${dark?'dark':'light'}-${reduced?'reduced':'motion'}`;
       console.log('Checking',engineName,label);
       await page.setViewportSize({width:profile.width,height:profile.height});
       await page.emulateMedia({reducedMotion:reduced?'reduce':'no-preference',colorScheme:dark?'dark':'light'});
       await page.waitForFunction(()=>sentenceLastCompact===sentenceCompactViewport());
+      await readerReady();
       await page.evaluate(({dark,kind})=>{
         darkMode=dark;applyDark();readerScrollTo(0);setReaderChrome(false);
         if(kind==='epub'){
@@ -341,7 +469,7 @@ try{
           readerScrollTo(readerScrollTop()+y-80);
         }
       },{dark,kind});
-      await settle();await page.waitForFunction(()=>!readerPositionPending());
+      await settle();await page.waitForFunction(()=>qaInline.readerReady());
       await start(kind);
       const cue=await pending(label,reduced);
       if(kind==='pdf')assert.equal(cue.styles.length,2,label+': identical second PDF occurrence was also highlighted');
@@ -395,6 +523,7 @@ try{
     await page.setViewportSize({width:390,height:844});
     await page.emulateMedia({reducedMotion:'no-preference'});
     await page.waitForFunction(()=>sentenceLastCompact===sentenceCompactViewport());
+    await readerReady();
     await page.evaluate(()=>{readerScrollTo(0);setReaderChrome(false);});await settle();
     await start(kind);
     const cancellationMotion=await page.evaluate(()=>{
@@ -471,27 +600,38 @@ try{
       await closed(kind+' '+action);
       if(action==='navigation'){
         await page.evaluate(async kind=>{await openBook(books.find(book=>book.kind===kind));if(kind!=='txt')await switchReaderMode('original');},kind);
-        await page.waitForFunction(()=>!readerPositionPending());
+        await readerReady();
       }
       await page.evaluate(()=>{readerScrollTo(0);setReaderChrome(false);});await settle();
     }
   }
   assert.deepEqual(providerAttempts,[],'test attempted a live translation/explanation transport');
   assert.deepEqual(errors,[],'uncaught browser errors');
-  const report={engine:engineName,providerCalls:0,synthetic:true,
+  const report={engine:engineName,preview,providerCalls:0,synthetic:true,
     note:'Rendered imported fixtures; this is browser evidence, not physical iPhone/iPad validation.',
-    cases:reports,screenshots};
+    imports,cases:reports,screenshots};
   writeFileSync(resolve(output,`${engineName}-sentence-inline-report.json`),JSON.stringify(report,null,2));
-  console.log(`${engineName}: ${reports.length} sentence inline state cases, lifetime interruptions, and ${screenshots.length} screenshots passed; ${output}`);
+  console.log(`${engineName}${preview?' preview':''}: ${reports.length} sentence inline state cases, lifetime interruptions, and ${screenshots.length} screenshots passed; ${output}`);
 }catch(error){
+  let restorationDiagnostics=null;
+  if(pageForFailure&&!pageForFailure.isClosed()){
+    try{restorationDiagnostics=await pageForFailure.evaluate(()=>({baselineAt:qaInline.baselineAt,
+      pending:[...qaInline.restorationJobs],events:qaInline.restorationEvents,scrollWrites:qaInline.scrollWrites}));}catch{}
+  }
   if(pageForFailure&&!pageForFailure.isClosed()){
     try{await pageForFailure.screenshot({path:resolve(output,`${engineName}-sentence-inline-failure.png`),fullPage:false});}
     catch{}
   }
   writeFileSync(resolve(output,`${engineName}-sentence-inline-failure.json`),JSON.stringify({
-    engine:engineName,error:String(error),completedCases:reports,screenshots},null,2));
+    engine:engineName,preview,error:String(error),importing,imports,completedCases:reports,screenshots,restorationDiagnostics},null,2));
   throw error;
 }finally{
-  if(browser)await browser.close();
-  await new Promise(done=>server.close(done));
+  try{
+    if(context)await context.close();
+    if(browser)await browser.close();
+  }finally{
+    if(profile)rmSync(profile,{recursive:true,force:true});
+    await new Promise(done=>server.close(done));
+  }
 }
+

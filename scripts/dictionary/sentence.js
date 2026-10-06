@@ -138,9 +138,9 @@ function revealSentencePeek(){
     if(lookupPeekScrollRemaining(sentencePeekLastScroll)>0){pill.hidden=true;deferSentencePeekReveal();return;}
     if(!sentencePeekVisible()){closeSentence();return;}
     const rect=wordPeekNodeRect(sentenceOrigin.peekTarget);
-    sentencePeekAnchor={...rect,direction:sentencePeekAnchor?.direction||null};
+    sentencePeekAnchor={...rect,direction:null};
     pill.style.visibility='hidden';pill.hidden=false;
-    placeLookupPeek(pill,sentencePeekAnchor);pill.style.visibility='';
+    placeLookupPeek(pill,sentencePeekAnchor,false);pill.style.visibility='';
     if(sentencePeekShownAt===null)sentencePeekShownAt=performance.now();
   });
 }
