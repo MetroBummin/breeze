@@ -862,13 +862,17 @@ async function retryWordPeek(){
   const input=lookupRequestFor(w,activeSelectedWordNode,true);
   const {sentence,clicked,clickedIndex,book}=input;
   const root=w.retryOwner||w.root||k,life=wordLookupLife;
+  // This explicit retry replaces the failed occurrence's presentation. An old
+  // context error must not mask its pending state or the next failure reason.
+  if(blocked){blocked.loading='';delete blocked.error;}
   wordPeekRetryState={key:k,loading:true,error:''};
   renderWordPeek();
   const answer=await fetchLook(k,{...input,node:activeSelectedWordNode,
     retry:true,hold:true,life});
-  if(!wordLookupAlive(life)||!wordPeekActive||!words[k]) return;
+  if(!wordLookupAlive(life)||!wordPeekActive||selKey!==k||words[k]!==w||currentContext(k)!==blocked) return;
   if(!answer||!String(answer.ko||'').trim()){
     wordPeekRetryState={key:k,loading:false,error:words[k].aiOff||'error'};
+    if(blocked)blocked.error=wordPeekRetryState.error;
     renderWordPeek();
     return;
   }
@@ -1694,17 +1698,32 @@ function applyLook(w, j, k, opt){
 }
 
 /* A failed first lookup can still be retried from its detail state. */
-function askAI(){
-  const k = selKey; if(!k || !words[k]) return;
+async function askAI(){
+  const k = selKey,w=words[k]; if(!k || !w) return;
   /* 이미 묻고 있는 중이면 한 번 더 묻는 것은 한도만 쓰는 일입니다. 예전에는
      `fetchLook` 이 앞의 요청을 끊는 것으로 이 일을 했는데, 이제 끊는 표는 열림
      전체의 것이라 여기서 막습니다. */
-  if(words[k].aiLoading) return;
-  const off = words[k].aiOff;
+  if(w.aiLoading) return;
+  const off = w.aiOff;
   /* 맛보기를 다 썼거나 서버가 로그인을 요구하면, 다시 부르는 것은 같은 답을
      한 번 더 받는 일입니다. 할 수 있는 일이 있는 곳으로 보냅니다. */
   if(off === 'trial' || off === 'login'){ openSyncModal(); return; }
-  fetchLook(k, {});
+  const context=currentContext(k),life=wordLookupLife;
+  if(context){context.loading='checking';delete context.error;}
+  let found=false;
+  try{
+    found=await fetchLook(k,{life});
+    return found;
+  }finally{
+    // The answer may still be cached/saved after dismissal. Only this same
+    // live occurrence may retire its transient error and reveal the answer.
+    if(context&&wordLookupAlive(life)&&selKey===k&&words[k]===w&&currentContext(k)===context){
+      context.loading='';
+      if(found)delete context.error;
+      else context.error=w.aiOff||'error';
+      renderIfAlive(life);
+    }
+  }
 }
 document.getElementById('p-aibtn').onclick   = ()=>askAI();
 /* 단어창을 열어 둔 채로 연결이 끊기거나 돌아올 수 있습니다. 안내 한 줄은 지금

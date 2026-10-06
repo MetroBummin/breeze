@@ -1,3 +1,6 @@
+import "../../modules/lexical/core.js";
+const lexicalCore=(globalThis as typeof globalThis & {BreezeLexical:{lookupLemmaCands:(raw:string)=>string[]}}).BreezeLexical;
+
 // One short lexical result; context is input only, never an extra output field.
 export const LOOK_SCHEMA={type:"object",additionalProperties:false,required:["kind","canonical","members","ko"],properties:{kind:{type:"string",enum:["word","expression"]},canonical:{type:"string"},members:{type:"array",items:{type:"integer"}},ko:{type:"string"}}};
 export const tokenize=(text:string)=>[...text.matchAll(/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g)].map(m=>m[0]);
@@ -52,7 +55,13 @@ export function validateLook(value:any,input:Lookup){
   if(!/^[A-Za-z][A-Za-z'’\- ]{0,119}$/.test(canonical)||!ko||ko.length>60||/[\n\r,;／/]/.test(ko))throw Error('invalid_text');
   const members=value.members;
   if(!Array.isArray(members)||!members.length||members.some((n:any,i:number)=>!Number.isInteger(n)||n<0||n>=input.tokens.length||(i>0&&n<=members[i-1]))||!members.includes(input.clickedIndex))throw Error('invalid_members');
-  if(kind==='word'&&![input.word,input.tokens[input.clickedIndex],...input.cands].some(t=>t.toLowerCase().replace(/’/g,"'")===canonical.toLowerCase().replace(/’/g,"'")))throw Error('invalid_lemma');
+  // Client candidates are versioned hints, not a complete dictionary or an
+  // authority to rename the selected token. Old clients must benefit from new
+  // morphology without changing their payload fingerprint or receipt identity.
+  const selectedToken=input.tokens[input.clickedIndex];
+  const normalizedCanonical=canonical.toLowerCase();
+  if(kind==='word'&&selectedToken.toLowerCase().replace(/’/g,"'")!==normalizedCanonical
+    &&!lexicalCore.lookupLemmaCands(selectedToken).some(t=>t.toLowerCase().replace(/’/g,"'")===normalizedCanonical))throw Error('invalid_lemma');
   if(kind==='word'&&(members.length!==1||canonical.includes(' ')))throw Error('invalid_word');
   if(kind==='expression'){
     if(members.length<2||!canonical.includes(' '))throw Error('invalid_expression');
