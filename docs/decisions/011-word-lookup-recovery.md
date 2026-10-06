@@ -68,3 +68,41 @@ Chromium/WebKit AI arrival/explicit retry/cache browser tests.
 non-resurrection and ownership. Existing reader-feedback, lookup lifecycle,
 word-presentation, PDF highlight and lookup contract regressions are also checked.
 Local SQL/fixtures do not establish production migration or physical-device proof.
+
+## Retry failure investigation (2026-10-06)
+
+The server treated the client-supplied lemma candidates as a complete allow-list.
+An old client sends only `slept`, or `studi/studie/studied`; a correct model answer
+`sleep` or `study` therefore failed `invalid_lemma`. All provider fallbacks and
+manual retries ran the same validation. A second word could succeed because its
+lemma was in the list. This is a deterministic validation failure, not a cached
+negative result. The deployed `dict` v59 validator was inspected read-only and
+matched the repository's pre-fix validator. The same source exists in the
+repository's 1.7(216) commit; that is not independent proof of an App Store
+user's precise installed build or the cause of every reported failure.
+
+Word validation now derives candidates from the selected server-token using the
+shared lexical core, including attested irregulars, `-ied`, and possessive forms.
+Exact selected spelling remains valid, including acronyms. Arbitrary client
+`word/cands` can no longer authorize an unrelated headword. Member alignment,
+word/expression shape, Korean answer, and expression validation stay strict.
+Validation uses a separate `lookupLemmaCands()` helper in the same core. It leaves
+both `lemma()` and the entire existing `lemmaCands()` result unchanged: even
+appending a candidate there can redirect `keyOf()` to an existing saved card.
+The repair does not rename vocabulary/phrase identities. This is bounded morphology,
+not a claim of a complete English dictionary.
+
+Derivation happens only during answer validation. Normalized lookup input,
+fingerprints, logical IDs, receipt replay, and success-only quota remain intact,
+including for old clients with stale candidates.
+
+`tests/verify-word-lemma-validation.mjs` uses the real server/client recovery
+functions with synthetic provider responses. It covers old-client requests,
+valid/invalid headwords, casing, possessives, existing word goldens, technical
+failure followed by same-ID manual recovery, another-word success, and no
+duplicate receipt charge. It makes no paid AI request.
+
+For an explicitly approved future deployment, preserve repository-relative paths
+in the bundle: entrypoint `server/dict/index.ts`, all its sibling imports, and
+`modules/lexical/core.js`. The new shared-core import must not be omitted or
+flattened. This change itself does not deploy the function or publish an app.

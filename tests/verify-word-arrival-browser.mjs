@@ -37,11 +37,12 @@ try{
 
 
   const pill=page.locator('#word-peek'),requests=[];
-  let fail=true;
+  let failures=1,responseDelay=0;
   await page.route(url+'functions/v1/dict',async route=>{
     const payload=route.request().postDataJSON();requests.push(payload);
-    if(fail){fail=false;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
-    return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical:'patient',members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
+    if(failures>0){failures--;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
+    if(responseDelay)await new Promise(done=>setTimeout(done,responseDelay));
+    return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical:payload.word,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
   });
   await page.evaluate(url=>{
     sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-user'};SB_URL=url;SB_KEY='qa';
@@ -78,5 +79,38 @@ try{
   await page.evaluate(()=>{const node=qaNode;closePanel();openWord('patient',node);});
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   assert.equal(requests.length,3);assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false);
+  // Existing unresolved cards own a context view. Exhaust initial recovery, then
+  // exercise both actual retry controls: stale context errors must not hide
+  // pending feedback or the successful meaning already saved in the card.
+  for(const [surface,mode] of [['resilient','mini'],['reader','detail']]){
+    const before=requests.length;failures=2;
+    await page.evaluate(surface=>{
+      closePanel();
+      const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()===surface&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
+      if(!node)throw Error('Missing visible retry fixture '+surface);
+      const key=keyOf(surface);
+      words[key]={word:surface,clicked:surface,forms:[key],ko:'',defs:[],example:sentenceOf(node),book:curBook.title,status:1,addedAt:1,up:1};
+      openWord(key,node);
+    },surface);
+    await page.waitForFunction(()=>currentContext(selKey)?.error==='error'&&!words[selKey].aiLoading&&!document.getElementById('word-peek').hidden);
+    assert.equal(requests.length,before+2);
+    responseDelay=600;
+    if(mode==='detail'){
+      await page.locator('#word-peek-more').click();
+      await page.locator('#p-aibtn').click();
+      await page.waitForFunction(()=>document.getElementById('p-ai').classList.contains('load'));
+      await page.waitForFunction(()=>document.getElementById('p-ai-ko').textContent==='참을성 있는');
+      assert.equal(await page.locator('#p-ai-note').textContent(),'');
+    }else{
+      await page.locator('#word-peek-retry').click();
+      await page.waitForFunction(()=>wordPeekPending()&&document.getElementById('word-peek').hidden);
+      await page.waitForFunction(()=>!wordPeekPending()&&!document.getElementById('word-peek').hidden&&document.getElementById('word-peek-meaning').textContent==='참을성 있는');
+    }
+    responseDelay=0;
+    assert.equal(await page.evaluate(()=>words[selKey].ko),'참을성 있는');
+    assert.equal(requests.length,before+3,'manual retry repeated automatic budget');
+    assert.equal(requests.at(-1).lookupId,requests[before].lookupId,'manual retry lost its recovery ID');
+    assert.equal(await page.evaluate(()=>currentContext(selKey)?.error||''),'');
+  }
   console.log('word recovery + neutral arrival browser: passed');
 }finally{await browser.close();await new Promise(done=>server.close(done));}
