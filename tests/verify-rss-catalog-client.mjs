@@ -12,9 +12,19 @@ test('catalog replaces thirteen feed requests; concurrent consumers coalesce, re
 });
 test('catalog failure never rebuilds default feeds and empty/disabled results replace old cards',async()=>{
   const h=rssDevice({catalog:true});h.state.fail=true;await h.load(false);assert.equal(h.calls.length,1);assert.equal(h.entries().flat().length,0);
-  h.state.fail=false;await h.load(true);h.state.catalogPayload=payload(h);
+  h.state.fail=false;h.advance(660001);await h.load(true);h.state.catalogPayload=payload(h);
   h.state.catalogPayload.feeds=h.state.catalogPayload.feeds.map(feed=>({...feed,at:0,status:'disabled',entries:[]}));
   await h.load(true);assert.equal(h.entries().flat().length,0);assert.ok(h.calls.every(call=>call.target==='catalog'));
+});
+test('failed catalog refreshes are bounded across rotations and forced refreshes without a default feed herd',async()=>{
+  const h=rssDevice({catalog:true});await h.load(false);h.advance(600001);h.state.fail=true;
+  await h.load(true);const receipt=JSON.parse(h.storage.get(key)).receivedAt;
+  for(let i=0;i<10;i++){await h.load(true);await h.rotate();}
+  assert.equal(h.calls.length,2);assert.equal(JSON.parse(h.storage.get(key)).receivedAt,receipt);
+  assert.ok(h.entries().flat().length);h.advance(660001);await h.load(true);assert.equal(h.calls.length,3);
+  const cold=rssDevice({catalog:true});cold.state.fail=true;await cold.load(false);
+  for(let i=0;i<10;i++)await cold.load(true);
+  assert.equal(cold.calls.length,1);assert.equal(cold.entries().flat().length,0);
 });
 test('catalog offline fallback expires by source timestamp and failure cannot renew it',async()=>{
   const storage=new Map(),h=rssDevice({catalog:true,storage});await h.load(false);h.advance(600001);h.state.fail=true;

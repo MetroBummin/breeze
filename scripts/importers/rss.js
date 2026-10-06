@@ -41,6 +41,7 @@ const RSS_CATALOG_CACHE_KEY='breeze.rss-catalog.v1';
 const RSS_CATALOG_BYTES=200000;
 const RSS_CATALOG_CACHE_BYTES=250000;
 let rssCatalogCache=null;
+let rssCatalogRetryAt=0;
 function rssCatalogEnabled(){return window.BREEZE_CONFIG?.RSS_CATALOG===true;}
 const rssListeners = new Set();
 let rssCands = [];
@@ -616,6 +617,9 @@ async function rssCatalogFetch(force){
   const record=rssCatalogStored(),now=Date.now(),previous=record?rssCatalogValidate(record.catalog):null;
   if(previous&&(!rssOnline()||!force&&now-record.receivedAt<RSS_CACHE_MS))return previous;
   if(!rssOnline())throw Error('catalog_offline');
+  if(rssCatalogRetryAt>now&&rssCatalogRetryAt-now<=RSS_CACHE_MS+60000){
+    if(previous)return previous;throw Error('catalog_cooldown');
+  }
   try{
     const response=await fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/rss-catalog',{
       credentials:'omit',headers:{apikey:SB_KEY,...(record?.etag?{'If-None-Match':record.etag}:{})},signal:AbortSignal.timeout(12000)});
@@ -631,10 +635,16 @@ async function rssCatalogFetch(force){
       const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
       catalog=rssCatalogValidate(JSON.parse(new TextDecoder().decode(bytes)));
     }
+    rssCatalogRetryAt=0;
     rssCatalogCache={receivedAt:now,etag:(response.headers.get('etag')||record?.etag||'').slice(0,2000),catalog};
     try{localStorage.setItem(RSS_CATALOG_CACHE_KEY,JSON.stringify(rssCatalogCache));}catch{/* Memory still works. */}
     return catalog;
-  }catch(error){if(previous)return previous;throw error;}
+  }catch(error){
+    // Bound retries even for forced Home refreshes. Jitter spreads clients after
+    // an outage; source timestamps and last-good cache receipt never renew here.
+    rssCatalogRetryAt=now+RSS_CACHE_MS+Math.floor(Math.random()*60000);
+    if(previous)return previous;throw error;
+  }
 }
 async function loadRssCatalog(force){
   if(rssLoading)return rssLoading;

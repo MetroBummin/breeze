@@ -33,7 +33,7 @@ function articleHtml(target){
  return html.replace('</body>',`<!--${'x'.repeat(Math.max(0,200000-Buffer.byteLength(html)-7))}--></body>`);
 }
 let snapshot=null,revision='',claimed=false,upstream=0;
-const store={read:async()=>({payload:snapshot,revision}),claim:async()=>{if(claimed)return false;claimed=true;return true;},
+const store={read:async()=>({payload:snapshot,revision,active:true}),claim:async()=>{if(claimed)return false;claimed=true;return true;},
  publish:async(token,payload)=>{snapshot=payload;revision=token;return true;},release:async()=>{claimed=false;}};
 const service=createCatalogService({store,enabled:FEEDS.map((_,i)=>i),fetcher:async feed=>{upstream++;return {xml:feedXml(FEEDS.indexOf(feed)),headers:{}};},uuid:()=>String(upstream+1)});
 const handler=catalogHandler(service);

@@ -107,7 +107,8 @@ two-minute lease and ten-minute cooldown, with two bounded feed workers.
 The existing pinned-public-DNS transport enforces a six-second timeout and
 512,000-byte feed cap. Publisher validators and `max-age` are honored;
 `private`/`no-store` revokes cached metadata. Failures keep last-good metadata
-without renewing age. No scheduler, new credentials or paid provider is added.
+without renewing age. No new credential or paid provider is used. The October 6
+preparation adds a separate disabled Supabase cron setup described below.
 
 SQL remains an offline proposal outside `supabase/migrations`. RLS and explicit
 table/RPC grants deny PUBLIC, anon and authenticated access; only service_role
@@ -140,6 +141,53 @@ project, source permission/attribution, an explicit refresh owner and warmed
 inventory before client opt-in. Repository and production project IDs differ;
 do not infer the deployment target from local CLI config. Roll back via client
 opt-out and server OFF; preserve all user data.
+
+## October 6 production preparation
+
+Main `f7a2889` already contains the prototype. Read-only inspection of the app's
+actual project `hrtfhojbhqvaoiulspto` found no catalog function, table or claim
+RPC. The local CLI's `fqvhlyocdkwiyioiokte` is the unrelated Ready project.
+Deployment and activation remain parent-owned, for the next TestFlight build.
+
+The snapshot now has an owner-controlled `active=false` switch in addition to
+the existing environment OFF gate and empty fixed-ID allowlist. service_role
+can read and update cache/lease columns but cannot toggle `active`; anon and
+authenticated have neither table nor RPC access. A control transition clears
+the snapshot, claim and cooldown, fencing in-flight workers even through rapid
+OFF/ON. Reactivation always needs warm-up. No user/account tables are involved.
+
+The separately applied scheduling SQL enables `pg_cron` and `pg_net`, revokes
+public/service access to credential-bearing network queues/functions and cron
+jobs, and installs one postgres-owned ten-minute job **disabled**. Its private
+SECURITY INVOKER enqueue function accepts no URL or body input. It references
+the existing service credential in Vault at runtime without returning it. That
+Vault reference did not exist at inspection; the owner must configure it through
+a secure supported path before enabling the job. SQL NULL produces a bodyless
+POST; the endpoint rejects any nonempty stream, caller URLs and source lists.
+The actual extension/HTTP/job behavior must be proved after parent deployment;
+PGlite tests the grants and SQL with modeled extension interfaces.
+
+The server parser preserves the current client's supplied photo choices across
+content, description, summary, lazy attributes, responsive widths and media
+types. It fetches no article page for photos. Missing/failed photos retain local
+artwork; selected article body intent is unchanged. PR #104 owns the additional
+photo lookup/UI investigation. Any changes it makes to supplied-photo policy
+need corresponding catalog parity checks before activation. Client edits here
+are limited to catalog retry state and `rssCatalogFetch`, outside its cover work.
+
+Source age is fresh for less than ten minutes, stale after that, and unavailable
+after twenty-four hours. A publisher max-age can defer revalidation without
+renewing that source timestamp. Successful 304 revalidation renews the timestamp
+and retains absent validators. ETags/HTTP TTL track freshness and expiry.
+Oversized inventories drop tail entries from the largest source until the
+snapshot has 10 KiB of JSONB separator headroom under its 200,000-byte cap.
+Failed clients retry after ten to eleven minutes with jitter, including forced
+Home refreshes, while keeping unexpired last-good metadata without renewing age.
+Public readers never trigger refresh or per-client built-in feed fallback.
+
+Exact migration/function arguments, security changes, warm-up proof, switches
+and remaining parent gates are in the
+[deployment runbook](../qa/rss-catalog-production-20261006.md).
 
 ## Evidence and limits
 
