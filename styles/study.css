@@ -8,7 +8,7 @@
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::after{display:none;}
 #readback svg{width:22px;height:22px;stroke-width:2;}
 #reader-navigation:has(#pdf-page-button[aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
-body:not(.sentence-pill-waiting) #readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){--reader-pill-max-width:calc(100% - 180px);}
+body #readchrome:has(#pdf-page-control:not([hidden])) #readpill:not(.ink-pill-active){--reader-pill-max-width:calc(100% - 180px);}
 #readchrome:has(#pdf-page-button[aria-expanded=true]){z-index:75;}
 #readchrome:has(#pdf-page-button[aria-expanded=true])>:not(#reader-navigation){pointer-events:none;}
 
@@ -118,7 +118,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 #readpill.ink-pill-active .ink-pill-toolbar{display:flex;flex:1 1 auto;min-width:0;max-width:none;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
 #readpill.ink-pill-active .ink-pill-toolbar .ink-pill-separator{display:none;}
 #readpill .ink-pill-toolbar .ink-pill-control,#readpill .ink-pill-entry{width:44px;height:44px;flex:none;}
-body:not(.chrome-hidden):not(.sentence-pill-waiting) #readchrome:has(#pdf-page-control:not([hidden])) #readpill{left:calc(2 * var(--reader-pill-expanded-offset,0px));}
+body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readpill{left:calc(2 * var(--reader-pill-expanded-offset,0px));}
 @container(max-width:650px){
   #readchrome{--reader-pill-expanded-offset:22px;}
   #readpill.ink-pill-active{bottom:0;width:min(340px,calc(100% - 180px));max-width:none;border-radius:26px;}
@@ -139,9 +139,6 @@ body:not(.chrome-hidden):not(.sentence-pill-waiting) #readchrome:has(#pdf-page-c
 .library-folder-controls .library-folder-actions button:hover{background:var(--sentence-glass-action-hover);}
 
 /* A pending sentence owns one centered pill across every source format. */
-body.sentence-pill-waiting #reader-navigation{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(6px);}
-body.sentence-pill-waiting #readchrome #readpill{left:0;right:0;--reader-pill-max-width:calc(100% - 28px);max-width:520px;width:min(calc(100% - 28px),520px);height:48px;top:50%;bottom:auto;transform:translateY(-50%);padding:4px 12px;}
-body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-pill-mini){display:none!important;}
 #pdf-bookmarks-only[hidden]{display:none;}
 
 .epub-thumbnail-paper{border-radius:6px;}

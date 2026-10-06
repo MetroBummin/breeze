@@ -86,6 +86,7 @@ async function goPdfPage(n,{keepNavigation=false}={}){
   if(readerPositionPending()||currentReaderMode!=='original'||!currentPdfSession(session)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
   n=pdfNearestPage(session,n);
   if(typeof closePanel==='function')closePanel();
+  if(typeof closeSentence==='function')closeSentence();
   if(!keepNavigation)closePdfNavigation();expandReaderChrome();
   const token=++readerModeChangeToken;
   await restorePdfAnchor({kind:'pdf',page:n,y:0},topInset(),token);
@@ -168,7 +169,7 @@ function closePdfNavigation({release=false}={}){
 }
 function togglePdfNavigation(){
   if(pdfNavigation){closePdfNavigation();return;}
-  if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||readerPositionPending()||sentenceWaitingActive()||BreezePdfInk.busy()||originalPinchBusy())return;
+  if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||readerPositionPending()||BreezePdfInk.busy()||originalPinchBusy())return;
   setPdfNavigationMotionStart(true);
   if(pdfNavigationCloseTimer){clearTimeout(pdfNavigationCloseTimer);pdfNavigationCloseTimer=null;}
   document.getElementById('pdf-page-control').classList.remove('pdf-navigation-closing');
@@ -240,6 +241,7 @@ async function goEpubNavigationPage(nav,index){
   const page=nav.pages[index],source=page&&nav.session.frames[page.spine];if(!source)return;
   const session=nav.session,token=++readerModeChangeToken;
   if(typeof closePanel==='function')closePanel();
+  if(typeof closeSentence==='function')closeSentence();
   session.pendingAnchor=null;
   const start=readerScrollTop(),target=Math.max(0,Math.min(readerContentHeight()-readerViewHeight(),
     start+source.getBoundingClientRect().top+page.y*originalZoom()-topInset()));
@@ -523,7 +525,7 @@ function originalNavigationAllowed(){
     &&(currentPdfSession()||currentEpubNavigationSession())&&originalZoom()<=1.01
     &&!readerPositionPending()&&!BreezePdfInk.busy()&&!originalPinchBusy()&&!originalPinchTouches
     &&!pdfNavigation&&!sentenceModalOpen()&&!wordPanelOpen()&&!aaPopOpen()
-    &&!sentenceWaitingActive()&&!document.querySelector('dialog[open],#pdf-ink-settings:not([hidden])');
+    &&!document.querySelector('dialog[open],#pdf-ink-settings:not([hidden])');
 }
 function cancelOriginalNavigation(){originalNavigationContact=null;}
 function originalNavigationStart(event){

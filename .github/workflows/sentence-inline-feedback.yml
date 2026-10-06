@@ -1,0 +1,51 @@
+name: Sentence inline feedback
+on:
+  pull_request:
+    paths:
+      - 'scripts/dictionary/**'
+      - 'scripts/reader/**'
+      - 'styles/**'
+      - 'index.html'
+      - 'tests/verify-sentence*.mjs'
+      - '.github/workflows/sentence-inline-feedback.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sentence-inline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Synthetic loading, errors and source ownership
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_QA_OUTPUT: /tmp/breeze-sentence-inline-proof
+        run: node tests/verify-sentence-inline-browser.mjs
+      - name: Existing sentence long-press and presentation regression
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BROWSER: ${{ matrix.engine }}
+        run: |
+          node tests/verify-sentence-cue-browser.mjs
+          node tests/verify-sentence-presentation-browser.mjs
+      - name: Rendered screenshot proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentence-inline-proof-${{ matrix.engine }}
+          path: /tmp/breeze-sentence-inline-proof/
+          if-no-files-found: warn
+          retention-days: 7

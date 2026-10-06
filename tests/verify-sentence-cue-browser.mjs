@@ -90,14 +90,14 @@ try{
      await page.waitForFunction(()=>sentenceWaitingActive()&&readerSentenceCue?.layer.childElementCount>0,null,{timeout:5000});
      if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
      else await page.evaluate(p=>qaTouchTarget.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:71,pointerType:'touch',isPrimary:true,clientX:p.x,clientY:p.y})),point);
-     await page.evaluate(()=>Promise.all(readerSentenceCue.layer.getAnimations({subtree:true}).map(a=>a.finished)));
+     await page.evaluate(()=>Promise.all(readerSentenceCue.layer.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished)));
      const cue=await page.evaluate(()=>{
       const layer=readerSentenceCue.layer;return {sentence:sentAsked,count:layer.childElementCount,
        opacity:getComputedStyle(layer.firstElementChild).opacity,radius:getComputedStyle(layer.firstElementChild).borderRadius,
        animation:getComputedStyle(layer.firstElementChild).animationName,blend:getComputedStyle(layer).mixBlendMode};
      });
      assert.ok(cue.count>=2,`${kind} ${width}: sentence did not wrap into line cues`);
-     assert.equal(cue.opacity,'1');assert.equal(cue.radius,'8px');assert.equal(cue.animation,'breeze-sentence-cue-in');
+     assert.equal(cue.opacity,'1');assert.equal(cue.radius,'8px');assert.equal(cue.animation,'breeze-word-sheen');
      assert.equal(await page.locator('#sentence-modal').isVisible(),false);
      if(kind==='pdf'){
       assert.equal(cue.sentence,sentence);assert.equal(cue.count,2,'identical second occurrence was highlighted too');
@@ -137,7 +137,7 @@ try{
        const count=qaRangeReads;block.style.width=(block.clientWidth*.82)+'px';
        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
        const reread=qaRangeReads>count,layer=readerSentenceCue.layer;
-       await Promise.all(layer.getAnimations({subtree:true}).map(a=>a.finished));
+       await Promise.all(layer.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished));
        const marks=[...layer.children].map(n=>n.getBoundingClientRect());
        const covered=[...range.getClientRects()].filter(r=>r.width>0&&r.height>0).every(r=>marks.some(m=>
         m.left<=r.left+.1&&m.right>=r.right-.1&&m.top<=r.top+.1&&m.bottom>=r.bottom-.1));

@@ -598,13 +598,12 @@ function setReaderChrome(hidden){
   syncReaderControlInteractivity();
   if(hidden && typeof closeAa==='function') closeAa();
 }
-/* Visibility and sentence waiting share one input policy, including parent slots.
+/* Visibility owns Reader controls, including parent slots. Inline lookups leave them available.
    Reconcile even when visibility is unchanged: lookup cleanup can run between
    collapse and expansion, and an inert parent blocks every restored child. */
 function syncReaderControlInteractivity(){
   const collapsed=document.body.classList.contains('chrome-hidden');
-  const waiting=typeof sentenceWaitingActive==='function' && sentenceWaitingActive();
-  const hidden=collapsed || waiting;
+  const hidden=collapsed;
   const side=['readback','aafab','reader-navigation','pdf-page-control','modefab']
     .map(id=>document.getElementById(id));
   side.push(document.querySelector('#readpill .ink-pill-entry'));
@@ -614,7 +613,7 @@ function syncReaderControlInteractivity(){
     if(hidden && document.activeElement===button) document.getElementById('readpill-title').focus();
   });
   const title=document.getElementById('readpill-title');
-  if(title) title.inert=waiting;
+  if(title) title.inert=false;
 }
 function expandReaderChrome(){
   if(!document.body.classList.contains('chrome-hidden')) return;
@@ -785,7 +784,8 @@ registerReaderSurface({
     /* 물어본 문장과 칠하는 자리가 같은 곳에서 나옵니다 — 문장을 글자로 다시
        찾지 않으므로 둘이 어긋날 자리가 없습니다. */
     const range=domRangeForOffsets(block, found.part.start, found.part.end);
-    return { sentence:found.sentence, pi:+block.dataset.pi, start:found.part.start, paint(){
+    wordTapPoints.set(span,{x:clientX,y:clientY});
+    return { sentence:found.sentence, peekTarget:span, pi:+block.dataset.pi, start:found.part.start, paint(){
       if(range && typeof showSentenceRangeCue==='function') showSentenceRangeCue(range);
       else if(block && typeof showElementModeCue==='function') showElementModeCue(block, 0);
     } };

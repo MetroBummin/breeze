@@ -291,16 +291,23 @@ const READER_SENTENCE_CUE_CSS = `
 .reader-sentence-cue{position:absolute;display:block;pointer-events:none;
   border-radius:8px;background:var(--sentence-cue-color,rgba(77,174,214,.34));
   transform-origin:center;animation:breeze-sentence-cue-in 260ms cubic-bezier(.16,1,.3,1) both;}
+.reader-sentence-cue-layer.has-pending-feedback .reader-sentence-cue{animation:none;}
 .reader-sentence-cue-layer.is-leaving{opacity:0;transition:opacity 160ms ease-out;}
 @keyframes breeze-sentence-cue-in{from{opacity:0;transform:scaleY(.88)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){
   .reader-sentence-cue{animation:none}.reader-sentence-cue-layer.is-leaving{transition:none}}
 `;
+function setReaderSentencePending(pending){
+  const layer=readerSentenceCue?.layer;
+  if(pending) layer?.classList.add('has-pending-feedback');
+  layer?.classList.toggle('is-pending',!!pending);
+}
 function clearReaderSentenceCue(immediate=false){
   const active=readerSentenceCue;
   readerSentenceCue=null;
   if(!active) return;
   if(active.observer) active.observer.disconnect();
+  active.layer.classList.remove('is-pending');
   const layer=active.layer,view=layer.ownerDocument.defaultView;
   if(immediate || (view.matchMedia&&view.matchMedia('(prefers-reduced-motion: reduce)').matches)){
     layer.remove();return;
@@ -314,6 +321,7 @@ function clearReaderSentenceCue(immediate=false){
 function createReaderSentenceCue(host,pdf=false){
   clearReaderSentenceCue(true);
   const doc=host.ownerDocument;
+  wordLookupFeedback.ensureStyle(doc);
   if(!doc.getElementById('breeze-sentence-cue-style')){
     const style=doc.createElement('style');style.id='breeze-sentence-cue-style';
     style.textContent=READER_SENTENCE_CUE_CSS;doc.head.appendChild(style);
@@ -323,6 +331,8 @@ function createReaderSentenceCue(host,pdf=false){
   const dark=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
   layer.style.setProperty('--sentence-cue-color',getComputedStyle(document.documentElement).getPropertyValue('--cue'));
   layer.style.setProperty('--sentence-cue-blend',!pdf&&dark?'screen':'multiply');
+  layer.style.setProperty('--breeze-lookup-radius','8px');
+  layer.style.setProperty('--breeze-lookup-wash',getComputedStyle(document.body).getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
   host.appendChild(layer);
   readerSentenceCue={layer,observer:null};
   return layer;

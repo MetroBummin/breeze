@@ -28,7 +28,7 @@ function boot({get,call,put,width=390,height=844,pressed=false}={}){
   const visualViewport={width,height,addEventListener(type,fn){ listeners['visual:'+type]=fn; }};
   const window={visualViewport,addEventListener(type,fn){ listeners[type]=fn; }};
   const context=createContext({
-    console,Promise,Date,String,AbortController,
+    console,Promise,Date,String,AbortController,setTimeout,clearTimeout,performance,
     window,innerWidth:width,innerHeight:height,
     requestAnimationFrame:fn=>setTimeout(()=>fn(Date.now()),0),cancelAnimationFrame:clearTimeout,
     document:{body,querySelector:()=>null,getElementById:element,createElement:()=>element('node-'+Math.random()),addEventListener(){}},
@@ -45,18 +45,18 @@ function boot({get,call,put,width=390,height=844,pressed=false}={}){
   return {context,elements,element,classes,contact,visualViewport,listeners};
 }
 
-/* Pending is always the existing bottom pill; only the result presentation adapts. */
+/* Pending feedback stays on the selected source; only successful results adapt. */
 for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:800,compact:false}]){
   const cache=deferred(),app=boot({...viewport,get:()=>cache.promise});
   const opening=app.context.openSentence('Pending everywhere');
   assert.equal(app.element('sentence-modal').hidden,true,'pending opened a result window');
-  assert.equal(app.element('sentence-pill-status').hidden,false,'pending did not occupy the Reader pill');
-  assert.equal(app.element('readback').inert,true,'a side control stayed interactive behind the pending pill');
+  assert.equal(app.element('sentence-peek').hidden,true,'pending exposed an error pill');
+  assert.equal(app.element('readback').inert,false,'inline pending disabled Reader controls');
   cache.resolve({ko:'결과',points:['구조']}); await opening; await tick();
   assert.equal(app.element('sentence-modal').hidden,false,'result presentation did not open');
   assert.equal(app.classes.has('sentence-compact'),viewport.compact,
     'only compact result presentation should become a bottom sheet');
-  assert.equal(app.element('sentence-pill-status').hidden,true,'pending pill remained beside the result');
+  assert.equal(app.element('sentence-peek').hidden,true,'error pill remained beside the result');
 }
 
 /* A cache hit may finish under the long-press finger, but the result waits for pointerup. */
@@ -64,6 +64,8 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   const app=boot({pressed:true,get:()=>Promise.resolve({ko:'즉시 결과',points:[]})});
   await app.context.openSentence('Fast');
   assert.equal(app.element('sentence-modal').hidden,true,'fast result appeared under the held finger');
+  app.context.revealSentenceResult();
+  assert.equal(app.element('sentence-modal').hidden,true,'idle callback bypassed the held-pointer gate');
   app.contact.pressed=false; app.context.sentenceGestureReleased(); await tick();
   assert.equal(app.element('sentence-modal').hidden,false,'fast result did not appear after pointer release');
 }
@@ -79,13 +81,13 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   assert.notEqual(app.element('ps-ko').textContent,'old A','stale cache hit painted after close');
 }
 
-/* Offline/failure leaves pending and uses the same result surface with retry. */
+/* Offline/failure leaves pending and uses the compact bottom retry surface. */
 {
   const app=boot({get:()=>Promise.resolve(null)});
   app.context.navigator.onLine=false;
   await app.context.openSentence('Offline');
-  assert.equal(app.element('sentence-modal').hidden,false,'offline lookup stayed in infinite pending');
-  assert.equal(app.element('sentence-pill-status').hidden,true,'failure left the pending pill active');
+  assert.equal(app.element('sentence-modal').hidden,false,'unanchored failure did not use its existing modal');
+  assert.equal(app.element('sentence-peek').hidden,true,'unanchored failure invented a source anchor');
   assert.equal(app.element('ps-retry').hidden,false,'retryable failure lost its retry action');
 }
 

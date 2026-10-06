@@ -223,7 +223,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    originalSession.pages.forEach((p,i)=>p.getBoundingClientRect=originals[i]);return reads;
   });
   assert.equal(controls,0,'Chrome-only motion must not invalidate and remeasure PDF paper');
-  // A pending PDF sentence owns the center pill, in reading and writing,
+  // A pending PDF sentence uses the source only, in reading and writing,
   // even with the sidebar open or collapsed chrome at admission.
   for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true])for(const writing of [false,true])for(const hidden of [false,true]){
    await page.setViewportSize({width,height});
@@ -231,15 +231,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    // Viewport restoration closes stale lookup state; admit the new request after it settles.
    await page.waitForTimeout(240);
    await page.evaluate(({writing,hidden})=>{closeSentence();expandReaderChrome();if(document.getElementById('readpill').classList.contains('ink-pill-active')!==writing)document.querySelector('[data-ink-toggle]').click();if(!writing)setReaderChrome(hidden);togglePdfNavigation();beginSentenceWaiting();},{writing,hidden});
-   await page.waitForFunction(()=>document.body.classList.contains('sentence-pill-waiting'));
+   await page.waitForFunction(()=>sentenceWaitingActive());
    await page.waitForTimeout(320);
-   assert.equal(await page.locator('#sentence-pill-status').isVisible(),true);
-   assert.equal(await page.locator('#reader-navigation').isVisible(),false,'Sentence loading must hide the complete back/page surface');
-   assert.equal(await page.locator('.ink-pill-toolbar').isVisible(),false);
-   const pill=await page.locator('#readpill').boundingBox();
-   assert.ok(Math.abs(pill.x+pill.width/2-width/2)<1,'Pending sentence pill is centered');
-   assert.ok(pill.width>Math.min(width-60,500),'Pending label has the full center surface');
-   assert.equal(await page.locator('#reader-navigation').evaluate(n=>n.inert),true);
+   assert.equal(await page.locator('#sentence-pill-status').count(),0);
+   assert.equal(await page.locator('#reader-navigation').isVisible(),true,'Inline lookup must retain Reader navigation');
+   assert.equal(await page.locator('.ink-pill-toolbar').isVisible(),writing);
+   assert.equal(await page.locator('#readpill').isVisible(),true,'Inline lookup must retain the title controls');
+   assert.equal(await page.locator('#reader-navigation').evaluate(n=>n.inert),false);
    if(!hidden&&!writing)await page.screenshot({path:`/tmp/breeze208-${engine.name()}-${width}-${dark?'dark':'light'}-waiting.png`});
    await page.evaluate(()=>closeSentence());
   }

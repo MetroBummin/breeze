@@ -1486,7 +1486,7 @@ assert.doesNotMatch(index, /id="(?:ps-close|sentence-pill-cancel)"/,
   'The temporary sentence lookup exposes an explicit X button again');
 assert.doesNotMatch(index, /id="ps-cap"/,
   'The sentence result shows a redundant visible title again');
-assert.match(gestureSource, /function sentenceDismissTarget[\s\S]{0,360}target\.closest\('#sentence-scrim'\)/,
+assert.match(gestureSource, /function sentenceDismissTarget[\s\S]{0,520}target\.closest\('#sentence-scrim'\)/,
   'Outside tap no longer belongs to the sentence gesture owner');
 assert.match(gestureSource,/sentenceSurfaceAnchored\(\)\) return !target\.closest\('#p-sentence'\)/,
   'Anchored sentence outside taps must use the same gesture owner');
@@ -1499,7 +1499,7 @@ assert.match(gestureSource, /const OWNER_READER = 'READER', OWNER_SENTENCE_MODAL
   'A gesture no longer has an owner, so a modal and the reader can share one physical gesture');
 /* 임자는 pointerdown 에서 정해집니다 — 판정보다 먼저, 그리고 딱 한 번. */
 assert.match(gestureSource,
-  /function beginGesture[\s\S]{0,2600}if\(sentenceModalOpen\(\) \|\| \(typeof sentenceWaitingActive==='function'[\s\S]{0,180}sentenceDismissTarget\(target\)\)\)\{\s*\n\s*gesture\.owner = OWNER_SENTENCE_MODAL;[\s\S]{0,200}activeGesture = gesture;\s*\n\s*return;/,
+  /function beginGesture[\s\S]{0,2600}if\(sentenceModalOpen\(\)\)\{\s*\n\s*gesture\.owner = OWNER_SENTENCE_MODAL;[\s\S]{0,200}activeGesture = gesture;\s*\n\s*return;/,
   'The owner is not decided at pointerdown, so a gesture can change hands halfway through');
 /* ---- 임자는 손짓이 끝날 때까지 바뀌지 않습니다 ----
    창이 닫혀 눌렀던 자리가 사라지고 그 밑에서 종이가 드러나도 마찬가지입니다.
@@ -1542,7 +1542,7 @@ assert.match(index,
   /id="readback"[\s\S]{0,240}stroke-width="2\.1"[\s\S]*?id="word-peek-retry"[\s\S]{0,240}stroke-width="2\.1"[\s\S]*?id="word-peek-more"[\s\S]{0,240}stroke-width="2\.1"/,
   'Back, retry, and chevron icons no longer share the same visual weight');
 assert.match(dictionaryCss,
-  /#word-peek \.word-peek-actions\{[\s\S]{0,360}#word-peek \.word-peek-actions::before[\s\S]{0,700}#word-peek-more::after/,
+  /:is\(#word-peek,#sentence-peek\) \.word-peek-actions\{[\s\S]{0,360}:is\(#word-peek,#sentence-peek\) \.word-peek-actions::before[\s\S]{0,700}#word-peek-more::after/,
   'Retry and chevron no longer share one capsule with a subtle divider');
 assert.match(dictionarySource,
   /async function retryWordPeek\(\)[\s\S]{0,1200}fetchLook\(k,\{\.\.\.input,node:activeSelectedWordNode,[\s\S]{0,80}retry:true,hold:true,life\}\)/,

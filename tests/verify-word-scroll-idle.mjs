@@ -24,7 +24,7 @@ function fixture(pending=true){
     target:{left:400,right:450,top:300,bottom:320},
     wordPeekRetryState:null,loading:true,visible:true};
   const helpers=source.slice(source.indexOf('const WORD_PEEK_SCROLL_IDLE_MS'),source.indexOf('function wordPeekOpen'));
-  runInNewContext(helpers+'\n'+fn('wordPeekPending')+'\n'+fn('placeWordPeek')+'\n'+fn('renderWordPeek'),context);
+  runInNewContext(helpers+'\n'+fn('wordPeekPending')+'\n'+fn('placeWordPeek')+'\n'+fn('placeLookupPeek')+'\n'+fn('renderWordPeek'),context);
   if(pending)context.renderWordPeek();
   const realPlace=context.placeWordPeek;
   context.placeWordPeek=()=>{placed++;realPlace();};

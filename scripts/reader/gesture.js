@@ -266,8 +266,7 @@ function beginGesture(event){
   if(!target || typeof target.closest !== 'function') return;
 
   const pendingReaderSurface=readerSurfaceFor(event);
-  if(typeof sentenceWaitingActive==='function' && sentenceWaitingActive() && pendingReaderSurface
-      && typeof closeSentence==='function') closeSentence();
+
 
   gestureDocument = target.ownerDocument || document;
   const gesture = {
@@ -289,8 +288,7 @@ function beginGesture(event){
 
      둘 다 떠 있을 수 있습니다 — 낱말 popup 위에 해석 창이 겹칩니다. 위에 있는
      것이 손가락을 받으므로 해석 창을 먼저 봅니다. */
-  if(sentenceModalOpen() || (typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
-      && sentenceDismissTarget(target))){
+  if(sentenceModalOpen()){
     gesture.owner = OWNER_SENTENCE_MODAL;
     gesture.dismisses = sentenceDismissTarget(target);
     gesture.pulls = typeof sentenceSheetOpen==='function' && sentenceSheetOpen()
@@ -460,6 +458,8 @@ function endGesture(event){
    기존 readerModeChangeToken으로 확인하므로 핀치 뒤의 새 lookup은 건드리지 않습니다. */
 function dispatchWord(gesture, clientX, clientY){
   countDispatch(gesture, 'WORD');
+  // A confirmed new tap ends the old inline sentence now, never from a late hit-test.
+  if(typeof sentenceInlineActive==='function'&&sentenceInlineActive())closeSentence();
   const changeToken=readerModeChangeToken;
   let result;
   try{ result = gesture.surface.openWordAt(clientX, clientY); }
@@ -530,8 +530,7 @@ function clickGesture(event){
   /* 창이 떠 있는데 pointer 조각 없이 click 만 왔다면, 그 한 번이 통째로 창의
      손짓입니다. scrim 의 `onclick` 을 지웠으므로 이 길이 없으면 그런 기기에서는
      바깥을 눌러 닫을 수 없게 됩니다. 자판의 Enter 로 X 를 누르는 길도 여기입니다. */
-  if(sentenceModalOpen() || (typeof sentenceWaitingActive==='function' && sentenceWaitingActive()
-      && sentenceDismissTarget(event.target))){
+  if(sentenceModalOpen()){
     const modalGesture = syntheticGesture(event, OWNER_SENTENCE_MODAL,
                                           sentenceDismissTarget(event.target));
     endSentenceModalGesture(modalGesture);

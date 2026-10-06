@@ -526,9 +526,14 @@ function wordPeekMotionPosition(){
 function cancelWordPeekReveal(){
   clearTimeout(wordPeekRevealTimer);wordPeekRevealTimer=null;
 }
-function wordPeekScrollRemaining(){
-  return Math.max(0,WORD_PEEK_SCROLL_IDLE_MS-(performance.now()-wordPeekLastScroll));
+function lookupPeekScrollRemaining(lastScroll){
+  return Math.max(0,WORD_PEEK_SCROLL_IDLE_MS-(performance.now()-lastScroll));
 }
+function lookupPeekScrollDismiss(offscreen,userScroll,shownAt,hadPending){
+  return offscreen || (userScroll&&shownAt!==null
+    &&(!hadPending||performance.now()-shownAt>=WORD_PEEK_SEEN_MS));
+}
+function wordPeekScrollRemaining(){ return lookupPeekScrollRemaining(wordPeekLastScroll); }
 function deferWordPeekReveal(){
   cancelWordPeekReveal();
   const life=wordLookupLife;
@@ -546,11 +551,11 @@ function wordPeekUserScrolled(userScroll=true){
   wordPeekLastScroll=performance.now();
   if(!wordPeekActive)return false;
   const offscreen=activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode);
-  const seen=userScroll&&wordPeekPresentation==='SHOWN'&&wordPeekShownAt!==null
-    &&(!wordPeekHadPending||performance.now()-wordPeekShownAt>=WORD_PEEK_SEEN_MS);
+  const dismiss=lookupPeekScrollDismiss(offscreen,userScroll,
+    wordPeekPresentation==='SHOWN'?wordPeekShownAt:null,wordPeekHadPending);
   document.getElementById('word-peek').hidden=true;
   cancelWordPeekReveal();
-  if(offscreen||seen){
+  if(dismiss){
     wordPeekPresentationEnded=true;
     if(!wordPeekPending())closePanel();
     return true;
@@ -640,8 +645,10 @@ function wordPeekState(w,context){
   return {text:'뜻 찾는 중',loading:true};
 }
 function placeWordPeek(){
-  const pill=document.getElementById('word-peek');
-  if(!pill||pill.hidden||!wordPeekAnchor) return;
+  placeLookupPeek(document.getElementById('word-peek'),wordPeekAnchor);
+}
+function placeLookupPeek(pill,anchor){
+  if(!pill||pill.hidden||!anchor) return;
   const view=window.visualViewport;
   const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
   const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
@@ -649,20 +656,20 @@ function placeWordPeek(){
   const chrome=document.getElementById('readchrome').getBoundingClientRect();
   const safeTop=vy+edge+(parseFloat(getComputedStyle(pill).getPropertyValue('--word-safe-top'))||0);
   const safeBottom=Math.min(vy+vh-edge,chrome.height&&chrome.top>safeTop?chrome.top-gap:vy+vh-edge);
-  const above=Math.max(0,wordPeekAnchor.top-gap-safeTop);
-  const below=Math.max(0,safeBottom-wordPeekAnchor.bottom-gap);
+  const above=Math.max(0,anchor.top-gap-safeTop);
+  const below=Math.max(0,safeBottom-anchor.bottom-gap);
   // Reserve room for the future detail surface, not only today's 44px pill.
   // Freeze the chosen side for the lookup lifetime so async text cannot flip it.
-  if(!wordPeekAnchor.direction){
+  if(!anchor.direction){
     const detailHeight=Math.min(420,(safeBottom-safeTop)*.7);
-    wordPeekAnchor.direction=below>=detailHeight?'below':above>=detailHeight?'above':below>=above?'below':'above';
+    anchor.direction=below>=detailHeight?'below':above>=detailHeight?'above':below>=above?'below':'above';
   }
-  let left=(wordPeekAnchor.left+wordPeekAnchor.right-box.width)/2;
+  let left=(anchor.left+anchor.right-box.width)/2;
   left=Math.max(vx+edge,Math.min(left,vx+vw-edge-box.width));
-  let top=wordPeekAnchor.direction==='above' ? wordPeekAnchor.top-gap-box.height : wordPeekAnchor.bottom+gap;
+  let top=anchor.direction==='above' ? anchor.top-gap-box.height : anchor.bottom+gap;
   top=Math.max(safeTop,Math.min(top,safeBottom-box.height));
-  pill.dataset.expandDirection=wordPeekAnchor.direction;
-  pill.style.transformOrigin=wordPeekAnchor.direction==='below'?'50% 0%':'50% 100%';
+  pill.dataset.expandDirection=anchor.direction;
+  pill.style.transformOrigin=anchor.direction==='below'?'50% 0%':'50% 100%';
   pill.style.left=`${Math.round(left)}px`;pill.style.top=`${Math.round(top)}px`;
 
 }
