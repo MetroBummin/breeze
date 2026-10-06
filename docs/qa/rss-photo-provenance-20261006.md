@@ -103,3 +103,25 @@ legacy request/prefix budgets.
 Marketing 1.8 and Cloud build-number logic are unchanged. Parent owns integration,
 merge, production preparation and the next TestFlight-only build. No activation,
 App Review, Apple build, paid provider, API key or PR #102 action is performed.
+
+## Integrity long-read fixture lifecycle
+
+The exact `7121c0f` [Integrity run](https://github.com/MetroBummin/breeze/actions/runs/37413931351)
+passed photo/catalog/contracts but failed the saved-copy resume assertion in
+`verify-longreads-browser.mjs`. Preview closes on Reader presentation before
+the next frame restores the location and commits the first-read marker. The
+fixture returned Home immediately after dialog closure, canceling that frame.
+
+A controlled Chromium probe held that same restoration frame on both base
+`f7a2889` and photo head `7121c0f`. Both had `t=0`, active restoration/opening,
+and reopened Preview after Home. Releasing the frame before Home committed
+`t>0` and both resumed Reader directly. Reader/Preview code is byte-identical
+between these revisions; this is a demonstrated fixture lifecycle race.
+
+The fixture now waits for the current saved book's actual first-read marker,
+completed position restoration and completed Preview opening before Home.
+It does not seed progress, add a delay or relax “Started saved copy must resume
+directly.” The full local Chromium long-read test, including text, illustrations,
+word/sentence lookup, theme, progress persistence and migration, passes.
+The next exact-head full Integrity run must also complete the previously skipped
+downstream browser regressions before merge.
