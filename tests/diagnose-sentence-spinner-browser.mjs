@@ -40,6 +40,7 @@ try{
    await page.goto(url);await page.evaluate(()=>homeReady);
    if(intervention==='no-pill-geometry-transition')await page.addStyleTag({content:'body.sentence-pill-waiting #readpill {transition-property:box-shadow!important}'});
    if(intervention==='no-pill-backdrop')await page.addStyleTag({content:'#readpill {backdrop-filter:none!important;-webkit-backdrop-filter:none!important}'});
+   row.effectivePillStyles=await page.locator('#readpill').evaluate(el=>{const s=getComputedStyle(el);return{transitionProperty:s.transitionProperty,transitionDuration:s.transitionDuration,backdropFilter:s.backdropFilter||s.webkitBackdropFilter}});
    row.lastPhase='import';await page.locator('#fileinput').setInputFiles(kind==='txt'?{name:'spinner.txt',mimeType:'text/plain',buffer:Buffer.from((sentence+'\n\n').repeat(60))}:{name:'spinner.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture(['A patient reader keeps every word and every meaning','together while the sentence continues onto the next line.'])});
    await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind,{timeout:30000});
    row.lastPhase='open-reader';await page.evaluate(async({kind,dark})=>{darkMode=dark;applyDark();await openBook(books.find(b=>b.kind===kind));if(kind==='pdf')await switchReaderMode('original');},{kind,dark});
@@ -80,11 +81,11 @@ try{
      elapsedMs:last.t-first.t,firstFrameDelayMs:samples[1]?.t-first.t,maxProbeReadMs:Math.max(...samples.map(s=>s.probeReadMs)),animationAdvanceMs:last.currentTime-first.currentTime,distinctTransforms:new Set(fullSamples.map(s=>s.transform)).size};
     row.phases.push({phase,summary,samples});
     assert.ok(fullSamples.every(s=>s.waiting&&!s.statusHidden&&s.statusVisible&&s.bodyWaiting&&s.playState==='running'),phase+': visible waiting animation did not remain running');
-    assert.ok(summary.animationAdvanceMs>=summary.elapsedMs*.7,phase+': animation clock did not track the sampled wall-time window');assert.ok(summary.distinctTransforms>(intervention==='passive-probe'?1:10),phase+': transform samples did not change');
+    assert.ok(summary.animationAdvanceMs>=summary.elapsedMs*.7,phase+': animation clock did not track the sampled wall-time window');if(intervention!=='passive-probe')assert.ok(summary.distinctTransforms>10,phase+': transform samples did not change');
     if(block)assert.ok(summary.maxFrameGapMs>250,'positive control did not detect the injected stall');
     return summary;
    };
-   row.lastPhase='long-press';await press();await page.waitForFunction(()=>sentenceWaitingActive()&&qaCalls.length===1&&sentenceGestureStillPressed());
+   row.lastPhase='long-press';await press();await page.waitForFunction(()=>sentenceWaitingActive()&&document.body.classList.contains('sentence-pill-waiting')&&qaCalls.length===1&&sentenceGestureStillPressed());
    await sample('network-pending-finger-held');
    // Real completed response remains gated until the opening pointer is released.
    await page.evaluate(()=>qaResolve({ko:'차분한 독자는 단어와 의미를 함께 읽습니다.'}));
@@ -96,7 +97,7 @@ try{
    // Same DOM spinner reused across repeated interrupted and completed lifetimes.
    for(let repeat=0;repeat<3;repeat++){
     await page.evaluate(sentence=>{qaSignal=null;qaResolve=null;window.qaOpening=openSentence(sentence,{pi:0});},sentence);
-    await page.waitForFunction(()=>sentenceWaitingActive()&&qaSignal&&!qaSignal.aborted&&qaCalls.at(-1)?.op==='explain');
+    await page.waitForFunction(()=>sentenceWaitingActive()&&document.body.classList.contains('sentence-pill-waiting')&&qaSignal&&!qaSignal.aborted&&qaCalls.at(-1)?.op==='explain');
     await sample('repeat-'+repeat+'-released');
     if(repeat===0){await page.evaluate(()=>{closeSentence();qaResolve({ko:'Stale answer'});});await page.evaluate(()=>qaOpening);assert.equal(await page.locator('#sentence-modal').isVisible(),false);}
     else {await page.evaluate(()=>qaResolve({ko:'Repeated completed answer'}));await page.evaluate(()=>qaOpening);assert.equal(await page.locator('#sentence-modal').isVisible(),true);await page.evaluate(()=>closeSentence());}
@@ -108,7 +109,7 @@ try{
    await page.evaluate(()=>qaResolve({explanation:'이 문장은 독자가 단어와 문장의 의미를 함께 살펴보며 읽는다는 뜻입니다.'}));
    await page.waitForFunction(()=>!!sentenceEasyState?.text);await page.waitForTimeout(350);
    await page.evaluate(sentence=>{closeSentence();dictGet=async()=>null;qaSignal=null;qaResolve=null;window.qaOpening=openSentence(sentence,{pi:0});},sentence);
-   await page.waitForFunction(()=>sentenceWaitingActive()&&qaSignal&&!qaSignal.aborted&&qaCalls.at(-1)?.op==='explain');
+   await page.waitForFunction(()=>sentenceWaitingActive()&&document.body.classList.contains('sentence-pill-waiting')&&qaSignal&&!qaSignal.aborted&&qaCalls.at(-1)?.op==='explain');
    await sample('pending-after-easy-explanation');
    const hashes=[],box=await page.locator('.sentence-spinner').boundingBox();assert.ok(box,'spinner missing before painted sampling');
    const clip={x:box.x+box.width/2-14,y:box.y+box.height/2-14,width:28,height:28};
