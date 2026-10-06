@@ -40,8 +40,8 @@ for(let i=0;i<3;i++)zip.file(`c${i}.xhtml`,'<html xmlns="http://www.w3.org/1999/
 const inputs={pdf:{name:'scroll-diagnostic.pdf',mimeType:'application/pdf',buffer:pdfFixture()},epub:{name:'scroll-diagnostic.epub',mimeType:'application/epub+zip',buffer:await zip.generateAsync({type:'nodebuffer'})}};
 const reports=[],failures=[];
 try{
- for(const kind of ['pdf','epub'])for(const dark of [false,true])for(const condition of ['baseline','translation','help-ready','help-pending']){
-  const name=`${engine.name()}-${kind}-${dark?'dark':'light'}-${condition}`;
+ for(const kind of ['pdf','epub'])for(const dark of [false,true])for(const condition of ['baseline','translation','help-ready','help-pending',...(kind==='pdf'?['visible-admission',...(!dark?['visible-only-sharpen','visible-admission-and-sharpen']:[])]:[])]){
+  const name=`${engine.name()}-${kind}-${dark?'dark':'light'}-${condition}`,wantsLookup=['translation','help-ready','help-pending'].includes(condition);
   const context=await engine.launchPersistentContext('',{headless:true,executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined,viewport:{width:820,height:1180},deviceScaleFactor:2,hasTouch:true,isMobile:true,serviceWorkers:'block'});
   const page=await context.newPage(),errors=[];
   page.setDefaultTimeout(20000);
@@ -51,7 +51,14 @@ try{
 page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.push(e.message);});
   try{
    await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
-   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+   await page.addInitScript(()=>{
+    localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+    window.qaIntersectionEvents=[];const Original=window.IntersectionObserver;
+    window.IntersectionObserver=class extends Original{constructor(callback,options){super((entries,observer)=>{
+     for(const entry of entries)if(entry.target.matches?.('.pdf-source-page'))qaIntersectionEvents.push({t:performance.now(),page:+entry.target.dataset.page,isIntersecting:entry.isIntersecting,rootMargin:options?.rootMargin});
+     callback(entries,observer);
+    },options);}};
+   });
    await page.goto(url);await page.evaluate(()=>homeReady);
    await page.locator('#fileinput').setInputFiles(inputs[kind]);
    await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind,{timeout:30000});
@@ -112,7 +119,7 @@ page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.p
      const box=readerScroller(),r=document.getElementById('readmain').getBoundingClientRect();
      return {sentenceOpen:sentenceLookupOpen(),modalHidden:document.getElementById('sentence-modal').hidden,
       easyAlive:!!sentenceEasyState,easyLoading:!!sentenceEasyState?.loading,easyText:!!sentenceEasyState?.text,hasPending:!!qaPending,signalAborted:qaSignal?.aborted??null,cues:docs.reduce((n,d)=>n+d.querySelectorAll('.reader-sentence-cue-layer').length,0),
-      pdfState:originalSession.kind==='pdf'?{settled:[...originalSession.settled].sort((a,b)=>a-b),drawnAt:[...originalSession.drawnAt].sort((a,b)=>a[0]-b[0]),wordBoxes:[...originalSession.wordBoxes.keys()].sort((a,b)=>a-b),active:originalSession.paintActive?.pageNumber||null,queue:[...(originalSession.paintQueue?.keys()||[])]}:null,bodyClasses:[...document.body.classList].sort(),activeElement:document.activeElement?.id||document.activeElement?.tagName,
+      pdfState:originalSession.kind==='pdf'?{settled:[...originalSession.settled].sort((a,b)=>a-b),drawnAt:[...originalSession.drawnAt].sort((a,b)=>a[0]-b[0]),wordBoxes:[...originalSession.wordBoxes.keys()].sort((a,b)=>a-b),active:originalSession.paintActive?.pageNumber||null,queue:[...(originalSession.paintQueue?.keys()||[])],nearby:pdfPagesInView(originalSession,1300)}:null,bodyClasses:[...document.body.classList].sort(),activeElement:document.activeElement?.id||document.activeElement?.tagName,
       scroll:[box.scrollTop,box.scrollLeft,box.scrollWidth,box.scrollHeight],readerSize:[r.width,r.height],
       pages:originalSession.kind==='pdf'?originalSession.pages.map(p=>{const c=p.querySelector('canvas'),r=p.getBoundingClientRect();return {page:+p.dataset.page,rect:[r.top+box.scrollTop,r.height],bitmap:c?[c.width,c.height]:null,settled:originalSession.settled.has(+p.dataset.page),pixels:qaVisible().includes(+p.dataset.page)?bitmap(c):null};}):null,
       frames:originalSession.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>[f.clientWidth,f.clientHeight]):null};
@@ -121,7 +128,23 @@ page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.p
    });
    const before=await page.evaluate(()=>qaSnapshot());
    assert.ok(before.scroll[0]>1600,'fixture must begin away from the top so both directions move');
-   if(condition!=='baseline'){
+   if(condition.includes('admission'))await page.evaluate(()=>{
+    // Counterfactual only, not a product implementation: admit missing visible
+    // paper on the existing scroll signal; keep all normal paint pause/queue rules.
+    readerScroller().addEventListener('scroll',()=>{
+     for(const n of pdfPagesInView(originalSession))if(!originalSession.settled.has(n))void renderOriginalPdfPage(originalSession,n,{prefetch:true});
+    },{passive:true});
+   });
+   if(condition.includes('sharpen'))await page.evaluate(()=>{
+    // Independent counterfactual: stop idle sharpening from repeatedly filling
+    // both offscreen sides when their combined bitmaps exceed the cache budget.
+    resharpenOriginalPages=()=>{
+     originalPdfRenderPending=false;const session=originalSession;
+     if(!session||session.kind!=='pdf')return;
+     for(const n of pdfPagesInView(session))void renderOriginalPdfPage(session,n,session.settled.has(n)?{resharpen:true,prefetch:true}:{prefetch:true});
+    };
+   });
+   if(wantsLookup){
     await page.evaluate(async({kind,condition})=>{
      const surface=READER_SURFACES.find(s=>s.name===kind);let found=null;
      if(kind==='pdf'){
@@ -139,9 +162,9 @@ page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.p
    await page.waitForTimeout(300);
    if(kind==='pdf')await page.waitForFunction(()=>!originalSession.paintActive&&!originalSession.paintQueue?.size);
    const open=await page.evaluate(()=>qaSnapshot());
-   assert.equal(open.cues,condition==='baseline'?0:1,'expected source cue was not painted');
-   assert.equal(open.sentenceOpen,condition!=='baseline');
-   if(condition!=='baseline')assert.equal(await page.locator('#ps-ko').innerText(),'차분한 독자는 모든 단어와 의미를 함께 읽습니다.');
+   assert.equal(open.cues,wantsLookup?1:0,'expected source cue was not painted');
+   assert.equal(open.sentenceOpen,wantsLookup);
+   if(wantsLookup)assert.equal(await page.locator('#ps-ko').innerText(),'차분한 독자는 모든 단어와 의미를 함께 읽습니다.');
    if(condition==='help-ready')assert.equal(open.easyText,true,'ready explanation precondition missing');
    if(condition==='help-pending'){
     assert.equal(open.easyLoading,true);assert.equal(open.hasPending,true);assert.equal(open.signalAborted,false);
@@ -162,8 +185,9 @@ page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.p
    await page.waitForTimeout(1000);
    if(kind==='pdf')await page.waitForFunction(()=>pdfPagesInView(originalSession).every(n=>originalSession.settled.has(n)),{timeout:30000});
    const after=await page.evaluate(()=>qaSnapshot()),events=await page.evaluate(()=>qaEvents),samples=await page.evaluate(()=>qaSamples);
-   const row={name,engine:engine.name(),kind,dark,condition,before,open,after,events,samples,errors,
-    summary:{emptyVisibleSamples:samples.filter(s=>s.empty.length).length,releaseVisible:events.filter(e=>e.name==='releaseOriginalPdfPage'&&e.visible).length,
+   const gaps=samples.slice(1).map((sample,index)=>sample.t-samples[index].t).sort((a,b)=>a-b);
+   const row={name,engine:engine.name(),kind,dark,condition,before,open,after,events,samples,errors,intersections:await page.evaluate(()=>qaIntersectionEvents),
+    summary:{scrollSampleGapP95:gaps[Math.floor(gaps.length*.95)],scrollSampleGapMax:gaps.at(-1),emptyVisibleSamples:samples.filter(s=>s.empty.length).length,releaseVisible:events.filter(e=>e.name==='releaseOriginalPdfPage'&&e.visible).length,
      paintEntries:events.filter(e=>e.name==='paintOriginalPdfPage').length,bitmapRenders:events.filter(e=>e.name==='pdf-render-start').length,renderCancels:events.filter(e=>e.name==='pdf-render-cancel').length,unsettledVisibleSamples:samples.filter(s=>s.unsettled.length).length,visibilityDisagreements:samples.filter(s=>JSON.stringify(s.visible)!==JSON.stringify(s.productionVisible)).length,releases:events.filter(e=>e.name==='releaseOriginalPdfPage').length,
      maxCueLayers:Math.max(before.cues,open.cues,after.cues,...samples.map(s=>s.cues)),closeCalls:events.filter(e=>e.name==='closeSentence').length}};
    reports.push(row);writeFileSync(resolve(output,name+'.json'),JSON.stringify(row,null,2));
@@ -181,7 +205,7 @@ page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.p
    if(kind==='epub')assert.deepEqual(after.frames,before.frames,'lookup changed EPUB frame geometry');
    assert.deepEqual(errors,[]);
    console.log(JSON.stringify({name,...row.summary}));
-  }catch(error){await page.screenshot({path:resolve(output,name+'-failure.png')}).catch(()=>{});writeFileSync(resolve(output,name+'-failure.txt'),error.stack);failures.push({name,error:error.stack});console.error(name+': '+error.message);}
+  }catch(error){await page.screenshot({path:resolve(output,name+'-failure.png')}).catch(()=>{});writeFileSync(resolve(output,name+'-failure.txt'),error.stack+'\nPage errors: '+JSON.stringify(errors));failures.push({name,error:error.stack});console.error(name+': '+error.message);}
   finally{await context.close();writeFileSync(resolve(output,'report.json'),JSON.stringify({physicalIpadValidated:false,nativeMomentumEmulated:false,failures,reports},null,2));}
  }
  assert.deepEqual(failures,[],'diagnostic scenarios failed; inspect all preserved reports');
