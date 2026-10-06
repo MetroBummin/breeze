@@ -14,7 +14,7 @@ const proof=process.env.BREEZE_RSS_SHIMMER_COST_PROOF||'/tmp/breeze-rss-shimmer-
 mkdirSync(proof,{recursive:true});
 const photo=readFileSync(resolve(root,'assets/samples/starship-1.jpg'));
 let source=readFileSync(resolve(root,'scripts/importers/rss.js'),'utf8');
-const candidates=[{name:'PR101',sha:'7a5e0c25f2b87791dad6687719e4fb3eb4585c1a',source:execFileSync('git',['show','7a5e0c25:scripts/importers/rss.js'],{encoding:'utf8'})},{name:'PR103',sha:'candidate',source}];
+const candidates=[{name:'PR101',sha:'7a5e0c25f2b87791dad6687719e4fb3eb4585c1a',source:execFileSync('git',['show','7a5e0c25:scripts/importers/rss.js'],{encoding:'utf8'})},{name:'photoReady244',sha:'candidate',source}];
 const feeds=[...source.matchAll(/name:'([^']+)', url:'([^']+)', category:'([^']+)'/g)]
   .map(([,name,url,category])=>({name,url,category}));
 const prose='The story explains how people learn about the world by reading evidence and comparing ideas. ';
@@ -125,7 +125,7 @@ async function start(browser,test){
     test.blocked.push(raw);return route.abort();
   });
   const page=await context.newPage();await page.goto(base);await page.evaluate(()=>homeReady);
-  await page.waitForFunction(()=>!rssLoading&&document.querySelectorAll('#casual-rail .rss-card').length===13);
+  await page.waitForFunction(()=>!rssLoading&&rssCands.length===13&&rssCands.every(group=>group.length));
   return {context,page};
 }
 async function snapshot(page){
@@ -167,6 +167,8 @@ try{
    await h.page.waitForTimeout(2000);await h.page.waitForFunction(()=>homeCropJobs.size===0);
    const cumulative=counts(),delta=Object.fromEntries(Object.keys(cumulative).map(k=>[k,cumulative[k]-previous[k]]));previous=cumulative;
    const state=await snapshot(h.page);noPersonalData(state);
+   assert.equal(state.entryPhotos.length,13,'Photo withholding deleted source metadata');
+   if(candidate.name==='photoReady244')assert(state.cards.every(card=>card.photo&&!card.pending&&card.ready),'Current ready display contains a photo-free card');
    stages.push({name,delta,cumulative,actualReaderReadBytes:state.readerEvidence.reduce((s,x)=>s+x.readBytes,0),photos:state.cards.filter(x=>x.photo).length});
   }
   await stage('cold Home');
@@ -183,7 +185,7 @@ try{
  }
  for(const profile of ['all feed photos supplied','both visible feed photos missing']){
   const pair=rows.filter(x=>x.profile===profile);assert.equal(pair.length,2);
-  assert.deepEqual(pair[0].stages.map(x=>x.delta),pair[1].stages.map(x=>x.delta),'Shimmer added requests/fixture response bytes');
+  assert.deepEqual(pair[0].stages.map(x=>x.delta),pair[1].stages.map(x=>x.delta),'Photo-only display changed bounded fixture transport counts/bytes');
  }
- writeFileSync(resolve(proof,'results.json'),JSON.stringify({catalogEnabled:false,engine:engine.name(),scope:'PR101 and final PR103 RSS scripts on a common app shell; fixed synthetic feeds/images/streamed relay. No publisher, Jev or live service calls.',units:'Request counts and UTF-8 mock response body sizes. Serialized metadata is the full fixture response, not delivered/billed bytes. Generated upstream HTML is fixture input, not a live upstream read. Actual reader bytes recorded separately; headers, redirects, TLS, CDN and pricing excluded.',rows},null,2));
+ writeFileSync(resolve(proof,'results.json'),JSON.stringify({catalogEnabled:false,engine:engine.name(),scope:'PR101 and photo-ready244 RSS scripts on a common app shell; fixed synthetic feeds/images/streamed relay. No publisher, Jev or live service calls.',units:'Request counts and UTF-8 mock response body sizes. Serialized metadata is the full fixture response, not delivered/billed bytes. Generated upstream HTML is fixture input, not a live upstream read. Actual reader bytes recorded separately; headers, redirects, TLS, CDN and pricing excluded.',rows},null,2));
 }finally{await browser.close();await new Promise(done=>server.close(done));}

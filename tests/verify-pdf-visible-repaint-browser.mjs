@@ -1,0 +1,202 @@
+/* Regression: missing visible PDF pages and bounded idle sharpening.
+ * Native iPad asynchronous scrolling/compositing is NOT emulated by this test.
+ * Canvas payload loss, DOM cleanup and source geometry are separately reported.
+ */
+import assert from 'node:assert/strict';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {createServer} from 'node:http';
+import {resolve,extname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createRequire} from 'node:module';
+import {chromium,webkit} from 'playwright';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const output=process.env.BREEZE_PDF_REPAINT_PROOF||'/tmp/breeze-pdf-visible-repaint';
+const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;
+const orientation=process.env.BREEZE_QA_ORIENTATION||'portrait';
+assert.ok(['portrait','landscape'].includes(orientation),'unknown diagnostic orientation');
+const viewport=orientation==='landscape'?{width:1180,height:820}:{width:820,height:1180};
+mkdirSync(output,{recursive:true});
+const server=createServer((req,res)=>{
+ const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));
+ try{if(!path.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
+});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
+const sentence='A patient reader keeps every word and every meaning together.';
+function pdfFixture(){
+ const objects=['','','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'],kids=[];
+ for(let n=1;n<=12;n++){
+  const page=objects.length+1,stream=page+1;kids.push(`${page} 0 R`);
+  const rows=Array.from({length:30},(_,i)=>`1 0 0 1 42 ${750-i*23} Tm (${i===0?'Page '+n:sentence}) Tj`).join('\n');
+  const content=`BT /F1 12 Tf\n${rows}\nET`;
+  objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${stream} 0 R >>`);
+  objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+ }
+ objects[0]='<< /Type /Catalog /Pages 2 0 R >>';objects[1]=`<< /Type /Pages /Count 12 /Kids [${kids.join(' ')}] >>`;
+ let pdf='%PDF-1.4\n',offsets=[0];for(let i=0;i<objects.length;i++){offsets.push(pdf.length);pdf+=`${i+1} 0 obj\n${objects[i]}\nendobj\n`;}
+ const xref=pdf.length;pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`+offsets.slice(1).map(n=>`${String(n).padStart(10,'0')} 00000 n \n`).join('')+`trailer << /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+ return Buffer.from(pdf);
+}
+const zip=new (createRequire(import.meta.url)('../assets/lib/jszip-3.10.1.min.js'))();
+zip.file('mimetype','application/epub+zip');zip.file('META-INF/container.xml','<container><rootfiles><rootfile full-path="book.opf"/></rootfiles></container>');
+zip.file('book.opf','<package><metadata/><manifest>'+[0,1,2].map(i=>`<item id="c${i}" href="c${i}.xhtml" media-type="application/xhtml+xml"/>`).join('')+'</manifest><spine>'+[0,1,2].map(i=>`<itemref idref="c${i}"/>`).join('')+'</spine></package>');
+for(let i=0;i<3;i++)zip.file(`c${i}.xhtml`,'<html xmlns="http://www.w3.org/1999/xhtml"><head><style>body{margin:24px;font:20px/1.8 Georgia}p{margin:0 0 24px}</style></head><body>'+Array.from({length:70},()=>'<p>'+sentence+'</p>').join('')+'</body></html>');
+const inputs={pdf:{name:'scroll-diagnostic.pdf',mimeType:'application/pdf',buffer:pdfFixture()},epub:{name:'scroll-diagnostic.epub',mimeType:'application/epub+zip',buffer:await zip.generateAsync({type:'nodebuffer'})}};
+const reports=[],failures=[];
+try{
+ for(const kind of ['pdf','epub'])for(const dark of [false,true])for(const condition of ['baseline','translation','help-ready','help-pending']){
+  const name=`${engine.name()}-${orientation}-${kind}-${dark?'dark':'light'}-${condition}`,wantsLookup=['translation','help-ready','help-pending'].includes(condition);
+  const context=await engine.launchPersistentContext('',{headless:true,executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined,viewport,deviceScaleFactor:2,hasTouch:true,isMobile:true,serviceWorkers:'block'});
+  const page=await context.newPage(),errors=[];
+  page.setDefaultTimeout(20000);
+  const evaluate=page.evaluate.bind(page);
+  page.evaluate=async(...args)=>{let timer;try{return await Promise.race([evaluate(...args),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Evaluation exceeded 40 seconds: '+String(args[0]).slice(0,180))),40000);})]);}finally{clearTimeout(timer);}};
+  console.log('Starting '+name);
+page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.push(e.message);});
+  try{
+   await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
+   await page.addInitScript(()=>{
+    localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+    window.qaIntersectionEvents=[];const Original=window.IntersectionObserver;
+    window.IntersectionObserver=class extends Original{constructor(callback,options){super((entries,observer)=>{
+     for(const entry of entries)if(entry.target.matches?.('.pdf-source-page'))qaIntersectionEvents.push({t:performance.now(),page:+entry.target.dataset.page,isIntersecting:entry.isIntersecting,rootMargin:options?.rootMargin});
+     callback(entries,observer);
+    },options);}};
+   });
+   await page.goto(url);await page.evaluate(()=>homeReady);
+   await page.locator('#fileinput').setInputFiles(inputs[kind]);
+   await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind,{timeout:30000});
+   await page.evaluate(async({kind,dark})=>{darkMode=dark;applyDark();await openBook(books.find(b=>b.kind===kind));await switchReaderMode('original',{initial:true});}, {kind,dark});
+   await page.waitForFunction(()=>!readerPositionPending(),null,{timeout:30000});
+   // Mode-bridge stabilizers from opening must finish before the experiment.
+   await page.waitForTimeout(1100);
+   if(kind==='pdf'){
+    await page.evaluate(async()=>{await renderOriginalPdfPage(originalSession,4);const p=originalSession.pages[3];readerScrollTo(readerScrollTop()+p.getBoundingClientRect().top-120);});
+    await page.waitForFunction(()=>pdfPagesInView(originalSession).every(n=>originalSession.settled.has(n)),{timeout:30000});
+    await page.evaluate(async()=>{for(const n of pdfPagesInView(originalSession))await renderOriginalPdfPage(originalSession,n);});
+   }else{
+    await page.evaluate(()=>Promise.all(originalSession.frameGeometryReady));
+    await page.evaluate(()=>readerScrollTo(2400));
+   }
+   await page.waitForTimeout(700);
+   if(kind==='pdf')await page.waitForFunction(()=>!originalSession.paintActive&&!originalSession.paintQueue?.size);
+   await page.evaluate(()=>{
+    window.qaEvents=[];window.qaSamples=[];window.qaPhase='before';window.qaPending=null;window.qaSignal=null;
+    window.qaVisible=()=>{
+     if(originalSession.kind!=='pdf')return [];
+     const r=readerScroller().getBoundingClientRect();
+     return originalSession.pages.filter(p=>{const q=p.getBoundingClientRect();return q.width>0&&q.height>0&&q.bottom>r.top&&q.top<r.bottom&&q.right>r.left&&q.left<r.right;}).map(p=>+p.dataset.page);
+    };
+    const canvasIds=new WeakMap();let canvasId=0;
+    const identify=c=>{if(!canvasIds.has(c))canvasIds.set(c,++canvasId);return canvasIds.get(c);};
+    const bitmap=c=>{
+     if(!c?.width||!c.height)return null;
+     const sample=document.createElement('canvas');sample.width=96;sample.height=128;
+     const ctx=sample.getContext('2d');ctx.drawImage(c,0,0,96,128);const bytes=ctx.getImageData(0,0,96,128).data;
+     let ink=0,hash=2166136261;for(let i=0;i<bytes.length;i+=4){if(bytes[i+3]&&Math.min(bytes[i],bytes[i+1],bytes[i+2])<235)ink++;hash=Math.imul(hash^bytes[i]^bytes[i+1]^bytes[i+2]^bytes[i+3],16777619)>>>0;}
+     return {id:identify(c),ink,hash};
+    };
+    if(originalSession.kind==='pdf'){
+     const getPage=originalSession.pdf.getPage,wrapped=new WeakSet();
+     originalSession.pdf.getPage=async function(...args){
+      const p=await getPage.apply(this,args);if(wrapped.has(p))return p;wrapped.add(p);const render=p.render;
+      p.render=function(...args){
+       const c=args[0].canvasContext.canvas,id=identify(c),n=p.pageNumber;
+       qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-start',page:n,id,attached:c.isConnected,visible:qaVisible().includes(n)});
+       const task=render.apply(this,args),cancel=task.cancel;
+       task.cancel=function(...args){qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-cancel',page:n,id});return cancel.apply(this,args);};
+       task.promise.then(()=>qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-complete',page:n,id}),error=>qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-reject',page:n,id,error:error.name}));
+       return task;
+      };return p;
+     };
+    }
+    for(const name of ['releaseOriginalPdfPage','paintOriginalPdfPage','closeSentence','clearReaderSentenceCue']){
+     const original=window[name];window[name]=function(...args){
+      const n=typeof args[1]==='number'?args[1]:null;
+      qaEvents.push({t:performance.now(),phase:qaPhase,name,page:n,visible:n==null?null:qaVisible().includes(n),options:args[2]});
+      return original.apply(this,args);
+     };
+    }
+    window.qaCueCount=()=>[document,...(originalSession?.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>f.contentDocument):[])].reduce((n,d)=>n+d.querySelectorAll('.reader-sentence-cue-layer').length,0);
+    window.qaSnapshot=()=>{
+     const docs=[document,...(originalSession?.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>f.contentDocument):[])];
+     const box=readerScroller(),r=document.getElementById('readmain').getBoundingClientRect();
+     return {sentenceOpen:sentenceLookupOpen(),modalHidden:document.getElementById('sentence-modal').hidden,
+      easyAlive:!!sentenceEasyState,easyLoading:!!sentenceEasyState?.loading,easyText:!!sentenceEasyState?.text,hasPending:!!qaPending,signalAborted:qaSignal?.aborted??null,cues:docs.reduce((n,d)=>n+d.querySelectorAll('.reader-sentence-cue-layer').length,0),
+      pdfState:originalSession.kind==='pdf'?{settled:[...originalSession.settled].sort((a,b)=>a-b),drawnAt:[...originalSession.drawnAt].sort((a,b)=>a[0]-b[0]),wordBoxes:[...originalSession.wordBoxes.keys()].sort((a,b)=>a-b),active:originalSession.paintActive?.pageNumber||null,queue:[...(originalSession.paintQueue?.keys()||[])],nearby:pdfPagesInView(originalSession,1300)}:null,bodyClasses:[...document.body.classList].sort(),activeElement:document.activeElement?.id||document.activeElement?.tagName,
+      scroll:[box.scrollTop,box.scrollLeft,box.scrollWidth,box.scrollHeight],readerSize:[r.width,r.height],
+      pages:originalSession.kind==='pdf'?originalSession.pages.map(p=>{const c=p.querySelector('canvas'),r=p.getBoundingClientRect();return {page:+p.dataset.page,rect:[r.top+box.scrollTop,r.height],bitmap:c?[c.width,c.height]:null,settled:originalSession.settled.has(+p.dataset.page),pixels:qaVisible().includes(+p.dataset.page)?bitmap(c):null};}):null,
+      frames:originalSession.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>[f.clientWidth,f.clientHeight]):null};
+    };
+    dictGet=async()=>({ko:'차분한 독자는 모든 단어와 의미를 함께 읽습니다.'});dictPut=async()=>{};setSentenceEasyCapability(true);
+   });
+   const before=await page.evaluate(()=>qaSnapshot());
+   assert.ok(before.scroll[0]>1600,'fixture must begin away from the top so both directions move');
+   if(wantsLookup){
+    await page.evaluate(async({kind,condition})=>{
+     const surface=READER_SURFACES.find(s=>s.name===kind);let found=null;
+     if(kind==='pdf'){
+      const p=originalSession.pages[3],b=originalSession.wordBoxes.get(4).find(b=>b.word==='patient'),r=p.getBoundingClientRect();
+      const x=r.left+(b.x+b.w/2)*r.width,y=r.top+(b.y+b.h/2)*r.height;
+      if(y<0||y>innerHeight||x<0||x>innerWidth)throw Error('PDF source sentence is outside the viewport');
+      found=surface.sentenceAt(x,y);
+     }else for(let y=160;y<700&&!found;y+=20)for(let x=60;x<680&&!found;x+=30)found=surface.sentenceAt(x,y);
+     if(!found)throw Error('No source sentence');found.paint();await openSentence(found.sentence,found);
+     dictCall=(_body,signal)=>{qaSignal=signal;return condition==='help-pending'?new Promise(resolve=>qaPending=resolve):Promise.resolve({explanation:'이 문장은 독자가 단어를 따로 떼어 보기보다 문장 안에서 의미를 연결하며 읽는다는 뜻이에요. 주어는 독자이고 중심 행동은 의미를 함께 이해하는 것입니다.'});};
+    },{kind,condition});
+    await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden);
+    if(condition.startsWith('help')){await page.locator('#ps-easy-button').click();if(condition==='help-ready')await page.waitForFunction(()=>!!sentenceEasyState?.text);}
+   }
+   await page.waitForTimeout(300);
+   if(kind==='pdf')await page.waitForFunction(()=>!originalSession.paintActive&&!originalSession.paintQueue?.size);
+   const open=await page.evaluate(()=>qaSnapshot());
+   assert.equal(open.cues,wantsLookup?1:0,'expected source cue was not painted');
+   assert.equal(open.sentenceOpen,wantsLookup);
+   if(wantsLookup)assert.equal(await page.locator('#ps-ko').innerText(),'차분한 독자는 모든 단어와 의미를 함께 읽습니다.');
+   if(condition==='help-ready')assert.equal(open.easyText,true,'ready explanation precondition missing');
+   if(condition==='help-pending'){
+    assert.equal(open.easyLoading,true);assert.equal(open.hasPending,true);assert.equal(open.signalAborted,false);
+    assert.equal(await page.locator('#ps-easy-skeleton').isVisible(),true);
+   }
+   if(kind==='pdf')assert.ok(open.pages.filter(p=>open.pdfState.settled.includes(p.page)&&p.pixels).every(p=>p.pixels.ink>0),'pre-scroll source bitmap is blank');
+   await page.screenshot({path:resolve(output,name+'-before-scroll.png')});
+   // Identical physical-coordinate displacements. These cause genuine scroll
+   // events, but do not claim to reproduce iOS's native finger/momentum path.
+   await page.evaluate(async()=>{
+    qaPhase='scroll';const box=readerScroller(),start=box.scrollTop;
+    const offsets=[...Array.from({length:18},(_,i)=>(i+1)*80),...Array.from({length:36},(_,i)=>1440-(i+1)*80),...Array.from({length:18},(_,i)=>-1440+(i+1)*80)];
+    for(const offset of offsets){box.scrollTop=start+offset;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+     const visible=qaVisible(),productionVisible=originalSession.kind==='pdf'?pdfPagesInView(originalSession):[];
+     qaSamples.push({t:performance.now(),y:box.scrollTop,visible,productionVisible,unsettled:visible.filter(n=>!originalSession.settled.has(n)),empty:visible.filter(n=>{const c=originalSession.pages[n-1].querySelector('canvas');return !c||!c.width||!c.height;}),sentenceOpen:sentenceLookupOpen(),cues:qaCueCount()});
+    }qaPhase='settle';if(qaPending)qaPending({explanation:'늦은 응답은 닫힌 창을 다시 열면 안 됩니다.'});
+   });
+   await page.waitForTimeout(1000);
+   if(kind==='pdf')await page.waitForFunction(()=>pdfPagesInView(originalSession).every(n=>originalSession.settled.has(n)),{timeout:30000});
+   const after=await page.evaluate(()=>qaSnapshot()),events=await page.evaluate(()=>qaEvents),samples=await page.evaluate(()=>qaSamples);
+   const runs=new Map();let maxEmptyRun=0;for(const sample of samples){for(const page of runs.keys())if(!sample.empty.includes(page))runs.set(page,0);for(const page of sample.empty){const run=(runs.get(page)||0)+1;runs.set(page,run);maxEmptyRun=Math.max(maxEmptyRun,run);}}
+   const gaps=samples.slice(1).map((sample,index)=>sample.t-samples[index].t).sort((a,b)=>a-b);
+   const row={name,engine:engine.name(),orientation,viewport,deviceScaleFactor:2,kind,dark,condition,before,open,after,events,samples,errors,intersections:await page.evaluate(()=>qaIntersectionEvents),
+    summary:{maxEmptyRun,scrollSampleGapP95:gaps[Math.floor(gaps.length*.95)],scrollSampleGapMax:gaps.at(-1),emptyVisibleSamples:samples.filter(s=>s.empty.length).length,releaseVisible:events.filter(e=>e.name==='releaseOriginalPdfPage'&&e.visible).length,
+     paintEntries:events.filter(e=>e.name==='paintOriginalPdfPage').length,bitmapRenders:events.filter(e=>e.name==='pdf-render-start').length,renderCancels:events.filter(e=>e.name==='pdf-render-cancel').length,unsettledVisibleSamples:samples.filter(s=>s.unsettled.length).length,visibilityDisagreements:samples.filter(s=>JSON.stringify(s.visible)!==JSON.stringify(s.productionVisible)).length,releases:events.filter(e=>e.name==='releaseOriginalPdfPage').length,
+     maxCueLayers:Math.max(before.cues,open.cues,after.cues,...samples.map(s=>s.cues)),closeCalls:events.filter(e=>e.name==='closeSentence').length}};
+   reports.push(row);writeFileSync(resolve(output,name+'.json'),JSON.stringify(row,null,2));
+   await page.screenshot({path:resolve(output,name+'-after-scroll.png')});
+   assert.ok(samples.every(s=>!s.sentenceOpen),'lookup remained open or reopened after displacement');
+   assert.equal(after.sentenceOpen,false,'lookup reopened');assert.equal(after.modalHidden,true);assert.equal(after.easyAlive,false);assert.equal(after.cues,0,'outgoing sentence layer leaked');
+   assert.deepEqual(after.readerSize,before.readerSize,'lookup changed reader dimensions');assert.deepEqual(after.scroll,before.scroll,'closed lookup changed final scroll geometry');
+   assert.equal(row.summary.releaseVisible,0,'cache eviction cleared visible paper');
+   assert.equal(row.summary.visibilityDisagreements,0,'cached visibility disagrees with live source rectangles');
+   if(condition==='help-pending')assert.equal(after.signalAborted,true,'dismissal did not abort pending explanation');
+   if(kind==='pdf'){
+    assert.ok(maxEmptyRun<=2,'visible page waits for scroll idle before repaint');
+    assert.ok(row.summary.bitmapRenders<=12,'offscreen sharpening repeatedly evicts and repaints paper');
+    assert.ok(after.pages.filter(p=>p.pixels).every(p=>p.pixels.ink>0),'settled visible source bitmap is blank');
+    assert.deepEqual(after.pages.map(p=>p.rect),before.pages.map(p=>p.rect),'individual paper rectangles shifted');
+   }
+   if(kind==='epub')assert.deepEqual(after.frames,before.frames,'lookup changed EPUB frame geometry');
+   assert.deepEqual(errors,[]);
+   console.log(JSON.stringify({name,...row.summary}));
+  }catch(error){await page.screenshot({path:resolve(output,name+'-failure.png')}).catch(()=>{});writeFileSync(resolve(output,name+'-failure.txt'),error.stack+'\nPage errors: '+JSON.stringify(errors));failures.push({name,error:error.stack});console.error(name+': '+error.message);}
+  finally{await context.close();writeFileSync(resolve(output,'report.json'),JSON.stringify({physicalIpadValidated:false,nativeMomentumEmulated:false,orientation,viewport,deviceScaleFactor:2,failures,reports},null,2));}
+ }
+ assert.deepEqual(failures,[],'diagnostic scenarios failed; inspect all preserved reports');
+}finally{server.close();}

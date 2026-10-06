@@ -41,7 +41,14 @@ function fixture(index){
 }
 const server=createServer((req,res)=>{
   try{
-    const path=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/^\/$/,'/index.html'));
+    const requested=new URL(req.url,'http://localhost').pathname;
+    if(requested==='/config.js'){
+      // This suite owns the legacy feed contract. Product rollout flags must not
+      // silently switch its four managed sources to an unstubbed catalog.
+      res.setHeader('Content-Type','text/javascript');
+      return res.end("window.BREEZE_CONFIG={RSS_CATALOG:false,SB_URL:'https://relay.fixture',SB_KEY:'synthetic-public-key'};");
+    }
+    const path=resolve(root,'.'+requested.replace(/^\/$/,'/index.html'));
     if(!path.startsWith(root))throw Error();
     res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');
     res.end(readFileSync(path));
@@ -101,8 +108,10 @@ try{
       });
       await page.goto(base);await page.evaluate(()=>homeReady);
       await page.evaluate(async()=>{if(rssLoading)await rssLoading;refreshFeedRails();});
-      await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card').length===13&&
-        !document.querySelector('#casual-rail .rss-cover-pending'),{},{timeout:20000});
+      let settlingError;
+      try{await page.waitForFunction(()=>rssCands.length===13&&document.querySelectorAll('#casual-rail .rss-card').length===11&&
+        !document.querySelector('#casual-rail .rss-cover-pending')&&
+        [...document.querySelectorAll('#casual-rail .rss-card')].every(card=>!card.hidden&&card.querySelector('.thumb.has-cover')),{},{timeout:20000});}catch(error){settlingError=error;}
       const state=await page.evaluate(()=>({
         entries:rssCands.map(group=>group[0]),catalog:rssCatalogEnabled(),
         cards:[...document.querySelectorAll('#casual-rail .rss-card')].map(card=>({url:card.dataset.rssUrl,
@@ -113,12 +122,16 @@ try{
             complete:card.querySelector('img.cover').complete,naturalWidth:card.querySelector('img.cover').naturalWidth,
             naturalHeight:card.querySelector('img.cover').naturalHeight,hidden:card.querySelector('img.cover').hidden}})),
         cache:JSON.parse(localStorage.getItem(RSS_PUBLIC_CACHE_KEY)),books:books.length,
+        settling:{loading:!!rssLoading,pass:rssCoverPass,remaining:rssCoverRemaining,jobs:rssCoverJobs.size,
+          frame:rssCoverOwners.get(document.getElementById('casual-rail'))?.frame,
+          running:rssCoverOwners.get(document.getElementById('casual-rail'))?.running},
       }));
       // Preserve diagnostics even if a later assertion fails in one engine.
       writeFileSync(resolve(artifacts,`${engine.name()}-results.json`),JSON.stringify({state,requests,failures,consoleErrors},null,2));
-      console.log(engine.name(),'RSS cover metadata:',JSON.stringify(state.entries.map(entry=>entry.photo)));
+      console.log(engine.name(),'RSS cover metadata:',JSON.stringify(state.entries.map(entry=>entry?.photo)));
       console.log(engine.name(),'RSS decoded cards:',JSON.stringify(state.cards.map(card=>({case:cases[Number(card.url.split('-').at(-1))%cases.length].name,...card}))));
       await page.locator('#casual-rail').screenshot({path:resolve(artifacts,`${engine.name()}-phone-light.png`)});
+      if(settlingError)throw settlingError;
       for(let index=0;index<feeds.length;index++){
         assert.equal(state.entries[index].photo,cases[index%cases.length].expected,`Supplied feed photo lost: ${cases[index%cases.length].name}`);
         assert.equal(state.entries[index].contentHtml,'','Discovery must not retain a body');
@@ -129,11 +142,16 @@ try{
       }
       assert.equal(state.catalog,false,'Optional catalog unexpectedly activated');
       assert.equal(state.books,0,'Discovery persisted a personal book');
+      assert.equal(state.cards.length,11);assert.equal(state.entries.length,13,'Withholding deleted source candidates');
+      assert.equal(await page.evaluate(()=>rssCoverCached('https://stories.test/article-6')),null,'Unadmitted/failed metadata became a false negative');
+      assert.equal(await page.evaluate(()=>rssCoverCached('https://stories.test/article-7')),null,'Decode failure became a false negative');
       for(const card of state.cards){
         const index=Number(card.url.split('-').at(-1));
-        assert.equal(card.photo,!['no-publisher-photo','broken-image'].includes(cases[index%cases.length].name),`Decoded card photo: ${cases[index%cases.length].name} (${card.url})`);
+        assert(!['no-publisher-photo','broken-image'].includes(cases[index%cases.length].name),'Unusable photo candidate became a ready card');
+        assert.equal(card.photo,true,`Decoded card photo: ${cases[index%cases.length].name} (${card.url})`);
         assert.equal(card.hidden,false);assert.equal(card.ready,true);assert.equal(card.tabIndex,0);
-        assert(card.artwork&&card.title&&card.source,'Missing/failed photo must preserve readable artwork and metadata');
+        assert(card.title&&card.source,'Decoded photo card lost source metadata');
+        assert.equal(card.artwork,false,'Artwork-only readiness must not return');
       }
       assert(requests.some(request=>request.kind==='image-relay'&&request.url.endsWith('/hotlink.jpg')),'Hotlink was not recovered through the existing image transport');
       assert.equal(requests.filter(request=>request.kind==='article').length,0,'Article body fetched before selection');
@@ -153,7 +171,7 @@ try{
           await page.evaluate(dark=>{document.body.classList.toggle('dark',dark);document.getElementById('casual-rail').scrollLeft=0;},dark);
           const values=await page.locator('#casual-rail .rss-card').evaluateAll(cards=>cards.map(card=>{
             const rect=card.querySelector('.thumb').getBoundingClientRect();return [rect.width,rect.height];}));
-          values.forEach(([w,h])=>assert(Math.abs(w/h-.75)<.01,'Photo/fallback changed the shared card footprint'));
+          values.forEach(([w,h])=>assert(Math.abs(w/h-.75)<.01,'Photo-ready display changed the shared card footprint'));
           geometry.push({name,dark,values});
           await page.locator('#casual-rail').screenshot({path:resolve(artifacts,`${engine.name()}-${name}-${dark?'dark':'light'}.png`)});
         }
@@ -170,7 +188,7 @@ try{
       await page.evaluate(()=>articlePreviewClose());
       assert.equal(await page.evaluate(()=>books.length),0,'Dismissal persisted the draft');
       writeFileSync(resolve(artifacts,`${engine.name()}-results.json`),JSON.stringify({state,filtering,geometry,requests,failures,consoleErrors},null,2));
-      console.log(engine.name(),'RSS supplied-photo mapping, cache, failure/artwork, hotlink, filtering and selected-only body regressions passed');
+      console.log(engine.name(),'RSS supplied-photo mapping, cache, failed-photo withholding, hotlink, filtering and selected-only body regressions passed');
     }finally{await browser.close();}
   }
 }finally{server.close();}

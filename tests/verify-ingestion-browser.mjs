@@ -5,7 +5,14 @@ import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const server=createServer((req,res)=>{try{const p=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/^\/$/,'/index.html'));if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
+const server=createServer((req,res)=>{try{
+  const requested=new URL(req.url,'http://localhost').pathname;
+  if(requested==='/config.js'){
+    // These feed-parser and manually seeded rail fixtures own legacy transport.
+    res.setHeader('Content-Type','text/javascript');
+    return res.end("window.BREEZE_CONFIG={RSS_CATALOG:false,SB_URL:'https://relay.fixture',SB_KEY:'synthetic-public-key'};");
+  }
+  const p=resolve(root,'.'+requested.replace(/^\/$/,'/index.html'));if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
 const para='Reading brings people into contact with different ideas. A thoughtful reader can follow an argument, compare the evidence, and discover a different way to understand the world. This ordinary paragraph provides enough meaningful prose to identify the main content of a public article. ';
@@ -79,8 +86,10 @@ try{
        fetchArticleHtml=async()=>{requests++;throw Error('Body must wait for selection');};
        const entry=rssDiscoveryEntry({title:'A story without a photo',url:'https://example.com/no-cover',source:'Example'});
        const rail=document.getElementById('casual-rail');rssRenderIds.set(rail,1);
-       const cards=await rssFeedCards([entry],1,rail);
-       return cards.length===1&&!cards[0].classList.contains('rss-pending')&&requests===0;
+       const candidates=[[entry]],owner=rssCoverBegin(rail);
+       const cards=await rssFeedCards(rssDisplayGroups(candidates,owner,null)[0],1,rail);
+       return cards.length===0&&candidates[0][0]===entry&&entry.coverFallback===true
+         &&rssCoverCached(entry.url)===null&&requests===0;
      }finally{fetchArticleHtml=original;}
    }),true);
    assert.deepEqual(await page.evaluate(()=>{
@@ -136,10 +145,10 @@ try{
       const pending=renderRssCards(rail,true,document.getElementById('home-feed-empty'));
       // Wait for the ready card, while the other source is deliberately held.
       // A fixed 50 ms pause can expire on a busy CI browser before any card paints.
-      for(let i=0;i<80&&!rail.querySelector('.rss-card:not([hidden])');i++)
+      for(let i=0;i<80&&!rail.querySelector('.rss-card:not([hidden]) .thumb.has-cover');i++)
         await new Promise(resolve=>setTimeout(resolve,25));
-      if(!rail.querySelector('.rss-card:not([hidden])') || !rssLoading)throw Error('Ready cards waited for slow feed or photo');
-      const first=rail.querySelector('.rss-card:not([hidden])');
+      if(!rail.querySelector('.rss-card:not([hidden]) .thumb.has-cover') || !rssLoading)throw Error('Ready cards waited for slow feed or photo');
+      const first=rail.querySelector('.rss-card:not([hidden]) .thumb.has-cover').closest('.rss-card');
       release();await pending;
       if(!first.isConnected)throw Error('Partial update replaced existing card');
     }finally{fetchArticleHtml=original;}

@@ -175,3 +175,59 @@ supported properties do not include border-radius. They remain native rather
 than wrapping/reflowing publisher text or rebuilding per-range overlay geometry.
 Consequently this PR rounds EPUB's active/pending selection, not every saved
 EPUB highlight. See https://www.w3.org/TR/css-pseudo-4/#highlight-styling .
+
+
+
+## Visible-page re-entry and bounded sharpening (2026-10-06)
+
+Eviction leaves the page shell in place, so it does not change the prefetch
+IntersectionObserver's membership. A page can have no pixels while remaining
+inside the 1300 px margin. Scrolling must admit missing visible paper even when
+there is no new observer callback. The existing Reader scroll callback now performs
+that admission, so requests coalesce through the same paint queue and
+pinch/ink pause rules. The same scroll signal wakes a pending idle retry
+through the scheduler, so newly visible paper does not inherit an offscreen
+160 ms delay. No separate listener is added. No new input owner or text/glyph geometry work is added.
+
+Idle sharpening requests only visible pages. Asking for both offscreen sides at
+full resolution can request more page bitmaps than the 24 Mi-pixel cache holds;
+those sides then repeatedly evict each other. Initial observer prefetch remains
+available. Scrolling uses the existing lower-resolution first-paint path and
+visible paper sharpens after idle. The cache limit and source glyph map are
+unchanged.
+
+The synthetic tablet comparison in diagnostic PR #107 separated these causes:
+Chromium's visible empty-bitmap samples fell from 11 to 1 with visible admission;
+WebKit's actual renders/evictions fell from 46 to 6 with visible-only sharpening.
+The remaining Chromium sample was one newly exposed page beginning its render,
+not the prior wait-until-idle interval. These are controlled browser findings,
+not proof that the user's physical iPad report has the same complete cause.
+The initial nonpersistent WebKit run did not pass fixture import and is excluded.
+The calibrated persistent runs asserted actual middle-page position, visible
+source selection, pending/ready help, independent rectangle visibility, and
+source pixel content. Translation-only and no-popup controls showed the same
+PDF scheduling mechanisms; EPUB retained stable frame geometry and cue cleanup.
+
+`verify-pdf-visible-repaint.mjs` covers admission without an observer transition,
+coalescing, no unnecessary work for settled pages, pinch pause, stale sessions,
+and visible-only sharpening. `verify-pdf-visible-repaint-browser.mjs` runs the
+actual product scheduler on a 12-page PDF and EPUB controls in both engines,
+light/dark, before/after translation and pending/ready help. It asserts bounded
+empty-frame runs, bounded actual bitmap renders, stable page/frame geometry,
+cleanup and request abort. It does not claim native touch/momentum, original
+user-file coverage or physical-device GPU validation.
+
+### Same-value geometry notifications (2026-10-06)
+
+The delayed fail-open boot cleanup can remove an already-absent HTML class.
+MutationObserver still reports that no-op. Treating every root attribute record
+as geometry invalidation caused an unnecessary twelve-page cache rebuild when
+the cleanup coincided with the chrome-only measurement boundary. The ink scope
+observer now skips only identical old/current attribute values. Actual root,
+paper aspect-ratio and page-list mutations, and changed-then-restored batches,
+still invalidate geometry and update native scope. The zero-paper-read chrome
+contract is retained; no timing sleep or measurement allowance is added.
+
+Production-callback tests and a browser counterfactual cover the no-op before/
+after behavior plus a real-change positive control. The diagnostic keeps every
+bounded attempt and fails if any attempt violates its existing assertion.

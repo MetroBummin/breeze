@@ -40,7 +40,7 @@ jobs:
         run: |
           npx --yes deno@2.9.6 check --config supabase/functions/rss-catalog/deno.json supabase/functions/rss-catalog/index.ts
           npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-off-deno.mjs
-          RSS_CATALOG_MODE=active RSS_CATALOG_FEED_IDS=0,1 RSS_CATALOG_ORIGINAL_FEED_IDS= SUPABASE_URL=https://catalog-db.fixture SUPABASE_SERVICE_ROLE_KEY=synthetic-service-key npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE,RSS_CATALOG_FEED_IDS,RSS_CATALOG_ORIGINAL_FEED_IDS,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-active-deno.mjs
+          RSS_CATALOG_MODE=active RSS_CATALOG_FEED_IDS=0,1 RSS_CATALOG_ORIGINAL_FEED_IDS= SUPABASE_URL=https://catalog-db.fixture SUPABASE_SERVICE_ROLE_KEY=synthetic-service-key SUPABASE_ANON_KEY=synthetic-anon-key npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE,RSS_CATALOG_FEED_IDS,RSS_CATALOG_ORIGINAL_FEED_IDS,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,SUPABASE_ANON_KEY --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-active-deno.mjs
           npx --yes deno@2.9.6 test --allow-net=127.0.0.1 --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-prefix-deno.mjs
           node tests/measure-rss-catalog-server.mjs
       - name: Feature audit contracts
@@ -241,5 +241,65 @@ jobs:
         with:
           name: import-byte-diagnostic
           path: /tmp/breeze-import-byte-matrix/
+          if-no-files-found: error
+          retention-days: 7
+  catalog-hybrid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Explicit hybrid RSS transport and selected-intent browser contracts
+        run: |
+          status=0
+          for engine in chromium webkit; do
+            BREEZE_QA_ENGINE=$engine BREEZE_HYBRID_PROOF=/tmp/breeze-catalog-browser-proof/$engine/hybrid timeout --verbose --kill-after=5s 120s node tests/verify-rss-catalog-hybrid-browser.mjs || status=1
+          done
+          exit "$status"
+      - name: Hybrid RSS browser proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rss-catalog-hybrid-proof
+          path: /tmp/breeze-catalog-browser-proof/
+          if-no-files-found: error
+          retention-days: 7
+  reader-chrome-layout-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Prove no-op invalidation before and after the production guard
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_SCOPE_PROOF: /tmp/breeze-chrome-layout/causal
+        run: timeout --kill-after=5s 120s node tests/diagnose-pdf-scope-noop-browser.mjs
+      - name: Trace paper cache invalidation without changing the zero-read assertion
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_CHROME_TRACE_ITERATIONS: '3'
+          BREEZE_CHROME_TRACE_PROOF: /tmp/breeze-chrome-layout
+        run: timeout --kill-after=5s 600s node tests/diagnose-reader-chrome-layout.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reader-chrome-layout-${{ matrix.engine }}
+          path: /tmp/breeze-chrome-layout/
           if-no-files-found: error
           retention-days: 7

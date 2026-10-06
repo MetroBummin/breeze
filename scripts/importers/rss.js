@@ -42,7 +42,18 @@ const RSS_CATALOG_BYTES=200000;
 const RSS_CATALOG_CACHE_BYTES=250000;
 let rssCatalogCache=null;
 let rssCatalogRetryAt=0;
+let rssCatalogLoadedPartition='';
 function rssCatalogEnabled(){return window.BREEZE_CONFIG?.RSS_CATALOG===true;}
+// Missing configuration keeps the original all-catalog contract. An explicit
+// partition owns transport even when its catalog record is absent or disabled.
+function rssCatalogPartition(){
+  const ids=window.BREEZE_CONFIG?.RSS_CATALOG_FEED_IDS;
+  if(ids===undefined)return null;
+  if(!Array.isArray(ids)||!ids.length||ids.length>RSS_FEEDS.length
+    ||[...ids].some(id=>!Number.isInteger(id)||!RSS_FEEDS[id])||new Set(ids).size!==ids.length)
+    throw Error('catalog_partition_invalid');
+  return new Set(ids);
+}
 const rssListeners = new Set();
 let rssCands = [];
 let rssLoadedAt = 0;
@@ -68,6 +79,9 @@ const rssCoverJobs=new Map();
 const rssCoverOwners=new WeakMap();
 const rssCoverActiveOwners=new Set();
 const rssCardCoverWork=new WeakMap();
+// Display failure is generation-local, not evidence that the publisher has no
+// photo. Keep the canonical metadata and the positive/negative cache untouched.
+const rssCoverWithheld=new WeakMap();
 
 // Automatic lookups accept public DNS names, never credentials, local names or
 // IP literals. The existing relay additionally validates/pins public DNS.
@@ -118,8 +132,12 @@ function rssCoverStore(url,photo){
   try{localStorage.setItem(RSS_COVER_CACHE_KEY,JSON.stringify(rssCoverCache));}catch{/* Reuse in memory. */}
 }
 function rssCoverEligible(entry){
-  return !entry.photo&&!entry.kind&&!entry.readUrl&&RSS_FEEDS.some(feed=>feed.url===entry.feedSourceUrl)
-    &&!!rssCoverPublicUrl(entry.url)&&(typeof window==='undefined'||!rssCatalogEnabled());
+  if(entry.photo||entry.kind||entry.readUrl||!RSS_FEEDS.some(feed=>feed.url===entry.feedSourceUrl)
+    ||!rssCoverPublicUrl(entry.url))return false;
+  if(typeof window==='undefined'||!rssCatalogEnabled())return true;
+  // Explicit hybrid mode retains fixed-feed client photos under the existing
+  // shared two-request generation budget; server original probing is separate.
+  try{return rssCatalogPartition()!==null;}catch{return false;}
 }
 function rssCoverHydrate(entry){
   if(rssCoverEligible(entry)){
@@ -269,7 +287,7 @@ function rssCoverCurrent(consumer){
 }
 function rssCoverRelease(consumer){
   if(consumer&&rssCardCoverWork.get(consumer.card)===consumer){
-    rssCardCoverWork.delete(consumer.card);consumer.card.classList.remove('rss-cover-pending');
+    rssCardCoverWork.delete(consumer.card);rssCardReady(consumer.card);
   }
   const job=consumer?.job;if(!job)return;
   job.consumers.delete(consumer);
@@ -315,7 +333,8 @@ function rssCoverBegin(rail){
   let owner=rssCoverOwners.get(rail);
   if(owner&&!owner.cancelled&&owner.pass===rssCoverPass)return owner;
   rssCoverCancel(owner);
-  owner={rail,pass:rssCoverPass,remaining:RSS_COVER_LOOKUPS,entries:new Map(),attempted:new Set(),cancelled:false,running:false,consumer:null,frame:0,observer:null,changed:null,hidden:null};
+  const repaint=owner?.repaint;
+  owner={rail,repaint,pass:rssCoverPass,remaining:RSS_COVER_LOOKUPS,entries:new Map(),attempted:new Set(),cancelled:false,running:false,consumer:null,frame:0,observer:null,changed:null,hidden:null};
   owner.changed=()=>{
     if(owner.cancelled||owner.pass!==rssCoverPass)return;
     if(owner.consumer&&!rssCoverCurrent(owner.consumer))rssCoverRelease(owner.consumer);
@@ -324,6 +343,9 @@ function rssCoverBegin(rail){
     else owner.entries.forEach((entry,card)=>{
       if(card.isConnected&&entry?.photo&&!card.dataset.photoStarted){
         card.dataset.photoStarted='true';void rssCardPhoto(card,entry);
+      }else if(card.isConnected&&entry&&!entry.photo&&rssDisplayEligible(entry,owner)
+        &&!rssCardCoverWork.has(card)){
+        card.hidden=false;card.style.visibility='hidden';card.tabIndex=-1;card.setAttribute('aria-hidden','true');
       }
     });
     if(!owner.frame&&!owner.cancelled)owner.frame=requestAnimationFrame(()=>{owner.frame=0;void rssCoverPump(owner);});
@@ -339,14 +361,22 @@ function rssCoverWatch(owner,cards,entries){
   if(!owner||owner.cancelled||owner.pass!==rssCoverPass)return;
   owner.observer?.disconnect();
   owner.entries=new Map(cards.map(card=>[card,entries.find(entry=>entry.url===card.dataset.rssUrl)]));
-  owner.entries.forEach((entry,card)=>rssCardEntries.set(card,entry));
+  owner.entries.forEach((entry,card)=>{
+    const consumer=owner.consumer;
+    // Async refresh can replace a canonical entry without changing its retained
+    // card. Transfer only identical metadata ownership; changed payloads still
+    // cancel below and cannot receive the old result or poison the cache.
+    if(entry&&consumer?.card===card&&rssCardCoverWork.get(card)===consumer
+      &&rssCardIdentity(consumer.entry)===rssCardIdentity(entry))consumer.entry=entry;
+    rssCardEntries.set(card,entry);
+  });
   cards.forEach(card=>owner.observer?.observe(card));owner.changed();
 }
 async function rssCoverPump(owner){
-  if(owner.running||owner.cancelled||!rssOnline())return;
-  owner.running=true;
+  if(owner.running||owner.cancelled)return;
+  owner.running=true;let repaint=false;
   try{
-    while(owner.remaining>0&&rssCoverRemaining>0&&!owner.cancelled){
+    while(rssOnline()&&owner.remaining>0&&rssCoverRemaining>0&&!owner.cancelled){
       const pair=[...owner.entries].find(([card,entry])=>entry&&rssCoverEligible(entry)
         &&!owner.attempted.has(entry.url)&&!rssCoverCached(rssCoverPublicUrl(entry.url))&&rssCoverVisible(owner,card));
       if(!pair)break;
@@ -354,15 +384,33 @@ async function rssCoverPump(owner){
       owner.attempted.add(entry.url);owner.remaining--;owner.consumer=consumer;
       const url=rssCoverPublicUrl(entry.url),existing=rssCoverJobs.get(url);
       if(!existing||existing.controller.signal.aborted)rssCoverRemaining--;
-      rssCardCoverWork.set(card,consumer);card.classList.add('rss-cover-pending');
-      const result=await rssCoverLookup(url,consumer);
+      rssCardCoverWork.set(card,consumer);rssCardPending(card);
+      const result=await rssCoverLookup(url,consumer),currentEntry=consumer.entry;
       if(result?.photo&&rssCoverCurrent(consumer)){
-        entry.photo=result.photo;entry.coverFallback=false;rssCardIdentities.set(card,rssCardIdentity(entry));
-        card.dataset.photoStarted='true';void rssCardPhoto(card,entry);
+        currentEntry.photo=result.photo;currentEntry.coverFallback=false;rssCardIdentities.set(card,rssCardIdentity(currentEntry));
+        card.dataset.photoStarted='true';void rssCardPhoto(card,currentEntry);
       }
       rssCoverRelease(consumer);if(owner.consumer===consumer)owner.consumer=null;
+      repaint=true;
     }
-  }finally{owner.running=false;}
+  }finally{
+    owner.running=false;
+    // Unadmitted layout probes never become artwork cards or keep shimmering.
+    // Another retained photo candidate in that source can now fill this slot.
+    if(!owner.cancelled){
+      owner.entries.forEach((entry,card)=>{
+        if(entry&&!entry.photo&&!rssCardCoverWork.has(card)){
+          // An unadmitted source slot has the same offscreen geometry for its
+          // other unresolved entries. Do not cycle through every one to prove it.
+          const candidates=owner.attempted.has(entry.url)?[entry]:rssCands.find(group=>group.includes(entry))||[entry];
+          candidates.filter(candidate=>!candidate.photo).forEach(candidate=>
+            rssCoverWithheld.set(candidate,{pass:rssCoverPass,photo:candidate.photo}));
+          rssCardReady(card);repaint=true;
+        }
+      });
+      if(repaint)owner.repaint?.();
+    }
+  }
 }
 
 function rssOnline(){return typeof navigator==='undefined'||navigator.onLine!==false;}
@@ -663,7 +711,11 @@ function rssCatalogValidate(raw){
 }
 function rssCatalogStored(){
   const now=Date.now();
-  if(rssCatalogCache&&rssCatalogCache.receivedAt<=now&&now-rssCatalogCache.receivedAt<=RSS_PUBLIC_STALE_MS)return rssCatalogCache;
+  if(rssCatalogCache&&rssCatalogCache.receivedAt<=now&&now-rssCatalogCache.receivedAt<=RSS_PUBLIC_STALE_MS){
+    // A source can be newer than request receipt. Revalidate memory as well as
+    // disk after clock changes so bad catalog age cannot block legacy loading.
+    try{rssCatalogValidate(rssCatalogCache.catalog);return rssCatalogCache;}catch{/* Try validated storage below. */}
+  }
   rssCatalogCache=null;
   try{
     const raw=localStorage.getItem(RSS_CATALOG_CACHE_KEY);
@@ -709,23 +761,51 @@ async function rssCatalogFetch(force){
 }
 async function loadRssCatalog(force){
   if(rssLoading)return rssLoading;
-  rssCoverAdvance();
-  const sources=rssSources();
+  // Validate before any transport. Invalid configuration must not turn managed
+  // feeds into client fallback requests or silently widen cover admission.
+  const partition=rssCatalogPartition(),managed=partition||new Set(RSS_FEEDS.map((_,id)=>id));
+  const partitionKey=[...managed].sort((a,b)=>a-b).join(',')+(partition?':hybrid':':catalog');
+  const sources=rssSources(),now=Date.now(),cache=rssPublicCacheEntries();
+  const sourceIds=sources.map(feed=>RSS_FEEDS.findIndex(source=>source.url===feed.url));
   const stored=rssCatalogStored();
   const current=stored?rssCatalogValidate(stored.catalog):{feeds:[]};
-  rssCands=sources.map((_,index)=>index<RSS_FEEDS.length?(current.feeds.find(feed=>feed.id===index)?.entries||[]).map(rssDiscoveryEntry):[]);
-  // Catalog failure cannot initiate a per-client rebuild of the default feeds.
-  rssLoading=(async()=>{
-    let catalog;try{catalog=await rssCatalogFetch(force);}catch{catalog={feeds:[]};}
-    return Promise.all(sources.map(async(feed,index)=>{
-      let entries=[];
-      if(index<RSS_FEEDS.length)entries=catalog.feeds.find(record=>record.id===index)?.entries||[];
-      else try{entries=(await rssFeedEntries(feed,force)).entries;}catch{/* Custom feeds stay local. */}
-      const start=entries.length?(rssPage*RSS_PER_FEED)%entries.length:0;
-      rssCands[index]=entries.map((_,step)=>rssDiscoveryEntry(entries[(start+step)%entries.length]));
-      rssListeners.forEach(notify=>notify(rssCands));return rssCands[index];
-    }));
-  })().then(groups=>{rssCands=groups;rssLoadedAt=Date.now();return groups;}).finally(()=>{rssLoading=null;});
+  const expired=sources.some((feed,index)=>{
+    if(!rssCands[index]?.length||sourceIds[index]<0)return false;
+    if(managed.has(sourceIds[index]))return !current.feeds.find(record=>record.id===sourceIds[index])?.entries.length;
+    const record=cache[feed.url];
+    return !record||record.at>now||now-record.at>RSS_PUBLIC_STALE_MS;
+  });
+  if(!force&&rssCands.length===sources.length&&!expired&&partitionKey===rssCatalogLoadedPartition
+    &&now>=rssLoadedAt&&now-rssLoadedAt<RSS_CACHE_MS&&(!rssLoadedOffline||!rssOnline()))return rssCands;
+  rssCoverAdvance();
+  rssPublicFeedJobs.clear();rssPreparedArticles.clear();
+  const previous=rssCands;
+  rssLoadedOffline=!rssOnline();
+  rssCands=sources.map((feed,index)=>{
+    if(managed.has(sourceIds[index]))return (current.feeds.find(record=>record.id===sourceIds[index])?.entries||[]).map(rssDiscoveryEntry);
+    if(sourceIds[index]<0)return previous[index]||[];
+    const record=cache[feed.url];
+    return record&&record.at<=now&&now-record.at<=RSS_PUBLIC_STALE_MS?record.entries.map(rssDiscoveryEntry):[];
+  });
+  // Start both transports together: catalog delay/failure cannot hold unrelated
+  // legacy or custom feeds hostage. Managed misses never enter rssFeedEntries.
+  const catalogJob=rssCatalogFetch(force).catch(()=>({feeds:[]}));
+  rssLoading=Promise.all(sources.map(async(feed,index)=>{
+    let entries=[];
+    if(managed.has(sourceIds[index])){
+      const catalog=await catalogJob;
+      entries=catalog.feeds.find(record=>record.id===sourceIds[index])?.entries||[];
+    }else try{entries=(await rssFeedEntries(feed,force)).entries;}
+    catch{
+      // Public last-good fallback and its age belong exclusively to rssFeedEntries.
+      entries=sourceIds[index]>=0?[]:previous[index]||[];
+    }
+    const start=entries.length?(rssPage*RSS_PER_FEED)%entries.length:0;
+    rssCands[index]=entries.map((_,step)=>rssDiscoveryEntry(entries[(start+step)%entries.length]));
+    rssListeners.forEach(notify=>notify(rssCands));return rssCands[index];
+  })).then(groups=>{
+    rssCands=groups;rssLoadedAt=Date.now();rssCatalogLoadedPartition=partitionKey;return groups;
+  }).finally(()=>{rssLoading=null;});
   return rssLoading;
 }
 /* In active mode the server owns public RSS eligibility. No article text or local history is
@@ -832,7 +912,7 @@ async function loadRss(force){
 function refreshRssPhotoEmpty(rail){
   const empty=document.getElementById(rail.id==='casual-rail'?'home-feed-empty':'casual-discover-empty');
   if(!empty)return;
-  const hasPhoto=!!rail.querySelector('.rss-card:not([hidden])');
+  const hasPhoto=!!rail.querySelector('.rss-card.rss-cover-pending:not([hidden]),.rss-card:not([hidden]) .thumb.has-cover');
   empty.textContent=rssQualityPending?'새 글을 확인하고 있어요. 잠시 후 다시 새로고침해 주세요.':'새 글을 찾지 못했어요.';
   empty.hidden=hasPhoto || !!rssLoading;
 }
@@ -852,7 +932,7 @@ function rssCardPhoto(card, entry){
   }};
   const current=()=>!cancelled&&rssCardCoverWork.get(card)===task&&card.isConnected
     &&card.dataset.rssUrl===entry.url&&entry.photo===photo;
-  rssCardCoverWork.set(card,task);card.classList.add('rss-cover-pending');
+  rssCardCoverWork.set(card,task);rssCardPending(card);
   image.referrerPolicy = 'no-referrer';
   const decode = src => new Promise(resolve=>{
     let settled=false;
@@ -883,25 +963,65 @@ function rssCardPhoto(card, entry){
       }
       if(!current())return false;
       if(ok){
+        rssCoverWithheld.delete(entry);
         image.hidden=false;thumb.classList.add('has-cover');card.hidden=false;
         if(card.closest('#v-home'))homeSmartCrop(image,photo,3/4,()=>fetchArticleImage(photo));
         const rail=card.parentElement;
         if(rail?.dataset.rssResetStart)rssAlignRailStart(rail);
       }
-      refreshRssPhotoEmpty(card.parentElement);
+      if(!ok)rssCardWithhold(card,entry);
       return ok;
-    }catch{return false;}
+    }catch{if(current())rssCardWithhold(card,entry);return false;}
     finally{
       if(rssCardCoverWork.get(card)===task){rssCardCoverWork.delete(card);rssCardReady(card);}
+      if(card.parentElement)refreshRssPhotoEmpty(card.parentElement);
     }
   })();
   return task.promise;
 }
 
+function rssCardPending(card){
+  card.hidden=false;card.style.removeProperty('visibility');card.removeAttribute('aria-hidden');
+  card.classList.add('rss-cover-pending');card.tabIndex=0;
+}
 function rssCardReady(card){
   card.classList.remove('rss-cover-pending');card.removeAttribute('aria-busy');
-  card.removeAttribute('aria-disabled');card.tabIndex=0;
+  card.removeAttribute('aria-disabled');card.style.removeProperty('visibility');
+  const ready=!!card.querySelector('.thumb.has-cover');
+  card.hidden=!ready;card.tabIndex=ready?0:-1;
+  if(ready)card.removeAttribute('aria-hidden');else card.setAttribute('aria-hidden','true');
 }
+function rssCardWithhold(card,entry){
+  rssCoverWithheld.set(entry,{pass:rssCoverPass,photo:entry.photo});
+  card.hidden=true;
+  const owner=rssCoverOwners.get(card.parentElement);
+  if(owner&&!owner.cancelled)owner.repaint?.();
+}
+function rssDisplayEligible(entry,owner){
+  const withheld=rssCoverWithheld.get(entry);
+  if(withheld?.pass===rssCoverPass&&withheld.photo===entry.photo)return false;
+  if(entry.photo)return true;
+  if(owner?.consumer?.entry===entry&&rssCardCoverWork.get(owner.consumer.card)===owner.consumer)return true;
+  return !!owner&&!owner.cancelled&&rssOnline()&&owner.remaining>0&&rssCoverRemaining>0
+    &&!owner.attempted.has(entry.url)&&rssCoverEligible(entry)&&!rssCoverCached(rssCoverPublicUrl(entry.url));
+}
+function rssDisplayGroups(groups,owner,context){
+  const pending=owner?.consumer?.entry;
+  const eligible=groups.map(entries=>{
+    const candidates=entries.filter(entry=>rssDisplayEligible(entry,owner));
+    // Prefer source photos, retaining their relative rotation order. Keep an
+    // already admitted owner first; saved/promo/duplicate filtering still belongs
+    // to the existing ranker, with unknown entries available if no photo survives.
+    const order=entry=>entry===pending?0:entry.photo?1:2;
+    return candidates.sort((a,b)=>order(a)-order(b));
+  });
+  const ranked=context?rssRankRecommendations(eligible,context):eligible.map(entries=>entries.slice(0,1));
+  // The existing serial pump owns one unresolved card at a time. Other source
+  // slots may use their supplied photos while this bounded lookup is pending.
+  const probe=pending||ranked.flat().find(entry=>!entry.photo);
+  return eligible.map(entries=>entries.filter(entry=>entry.photo||entry===probe));
+}
+
 function rssSkeletonMarkup(){
   return '<div class="rss-skeleton" aria-hidden="true"><span class="rss-skeleton-source"></span><span class="rss-skeleton-title"><i></i><i></i><i></i></span></div>';
 }
@@ -909,11 +1029,15 @@ function rssSkeletonMarkup(){
 function rssCard(entry){
   const card = document.createElement('article');
   card.hidden = false;
+  // Measure candidate placement before admitting visible metadata work; no
+  // artwork, interaction or shimmer is exposed by this synchronous probe.
+  card.style.visibility='hidden';card.setAttribute('aria-hidden','true');
   const color = entry.source === 'ProPublica' ? 1 : 0;
   card.className = 'casual rss-card cpal' + color;
   card.dataset.rssUrl=entry.url;
   accessibleLibraryCard(card,[entry.title,entry.source,'미리보기 열기'].filter(Boolean).join(' · '));
-  card.innerHTML = `<div class="thumb rss-thumb editorial-cover">${coverArtwork(entry.url)}<img class="cover" alt="" hidden>
+  card.tabIndex=-1;
+  card.innerHTML = `<div class="thumb rss-thumb editorial-cover"><img class="cover" alt="" hidden>
       <div class="src"></div><div class="lede"></div>${WAVE('#FFFFFF','.35')}</div>
     <div class="ct"></div><div class="cm"></div>`;
   card.insertAdjacentHTML('beforeend',rssSkeletonMarkup());
@@ -1044,7 +1168,7 @@ async function rssFeedCards(entries, renderId, rail, limit=RSS_PER_FEED){
     if(!entry.photo&&!entry.coverFallback) continue;
     const card = rssCard(entry);
     rssCardIdentities.set(card,rssCardIdentity(entry));
-    // Covers load only after insertion; text never waits for an image.
+    // Supplied photos decode after insertion; only admitted work is shown.
     cards.push(card);
   }
   return cards;
@@ -1225,8 +1349,11 @@ function renderRssCards(rail, force, empty){
   const paint=async groups=>{
     const current=++revision;
     if(renderId!==rssRenderIds.get(rail))return;
+    coverOwner=rssCoverOwners.get(rail)||coverOwner;
     groups.flat().forEach(rssCoverHydrate);
-    const stamp=JSON.stringify([category,groups,rssQualityPending,books.map(book=>book.sourceUrl||'')]);
+    // Identical metadata must be reconsidered when a new bounded generation
+    // resets display withholding/admission (for example after a relay failure).
+    const stamp=JSON.stringify([category,rssCoverPass,groups,rssQualityPending,books.map(book=>book.sourceUrl||'')]);
     if(!force && rail.dataset.rssStamp===stamp && rail.dataset.rssRecommendationStamp===recommendationStamp){
       if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
       if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;
@@ -1234,13 +1361,16 @@ function renderRssCards(rail, force, empty){
       rssCoverWatch(coverOwner,[...rail.querySelectorAll('.rss-card')],groups.flat());
       return;
     }
-    const selected=recommendationContext?rssRankRecommendations(groups,recommendationContext):groups;
+    const displayGroups=rssDisplayGroups(groups,coverOwner,recommendationContext);
+    const selected=recommendationContext?rssRankRecommendations(displayGroups,recommendationContext):displayGroups;
     const cards=(await Promise.all(selected.map(entries=>rssFeedCards(entries,renderId,rail,category==='all'?1:RSS_PER_FEED)))).flat();
     if(current!==revision||renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
-    // Do not reshuffle cards under a scrolled/focused/pressed recommendation rail
-    // when another feed arrives. New cards append; explicit refresh may rerank.
-    if(rail.id==='casual-rail' && category==='all' && !force &&
-       (rail.scrollLeft>0 || rail.contains(document.activeElement) || rail.querySelector('.rss-card.busy'))){
+    // Keep the visible owners of this generation's shared cover budget in place,
+    // including after a canceled rail owner is recreated. A new refresh resets
+    // the budget and can rerank before admission; later feeds append afterward.
+    if(rail.id==='casual-rail' && category==='all' &&
+       (rssCoverRemaining<RSS_COVER_LOOKUPS || !force &&
+        (rail.scrollLeft>0 || rail.contains(document.activeElement) || rail.querySelector('.rss-card.busy')))){
       const order=new Map([...rail.querySelectorAll('.rss-card')].map((card,index)=>[card.dataset.rssUrl,index]));
       cards.sort((a,b)=>(order.get(a.dataset.rssUrl)??Infinity)-(order.get(b.dataset.rssUrl)??Infinity));
     }
@@ -1273,6 +1403,7 @@ function renderRssCards(rail, force, empty){
   rssListeners.add(notify);
   const pending=loadRss(force);
   coverOwner=rssCoverBegin(rail);
+  coverOwner.repaint=()=>{delete rail.dataset.rssStamp;void paint(rssCands);};
   if(rssCands.some(entries=>entries.length))notify(rssCands);
   return pending.then(paint).catch(error=>{
     if(renderId!==rssRenderIds.get(rail))return;

@@ -71,7 +71,7 @@ async function contextFor(version,profile,storage={}){
   addEventListener('DOMContentLoaded',()=>{
    const observer=new MutationObserver(()=>{
     if(window.benchTimes.firstCard!==null)return;
-    const card=document.querySelector('#casual-rail .rss-card:not(.rss-pending)');
+    const card=document.querySelector('#casual-rail .rss-card:not([hidden]):has(.thumb.has-cover)');
     if(card?.querySelector('.lede')?.textContent&&card?.querySelector('.src')?.textContent)
       requestAnimationFrame(()=>{if(window.benchTimes.firstCard===null)window.benchTimes.firstCard=performance.now();});
    });observer.observe(document.body,{subtree:true,childList:true,attributes:true});
@@ -103,12 +103,12 @@ async function home(h){
  await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});await page.evaluate(()=>homeReady);
  await page.waitForFunction(()=>!rssLoading&&!document.querySelector('#casual-rail .rss-loading'),null,{timeout:30000});
  await page.waitForFunction(()=>window.benchTimes.firstCard!==null,null,{timeout:10000});
- const time=await page.evaluate(()=>({firstCardMs:benchTimes.firstCard,settledMs:performance.now(),cards:document.querySelectorAll('#casual-rail .rss-card:not(.rss-pending)').length}));
+ const time=await page.evaluate(()=>({firstCardMs:benchTimes.firstCard,settledMs:performance.now(),cards:document.querySelectorAll('#casual-rail .rss-card:not([hidden]):has(.thumb.has-cover)').length}));
  assert.ok(time.cards>0);return {page,time};
 }
 async function clicks(h,page){
- const card=page.locator('#casual-rail .rss-card[data-rss-url="https://stories.example/f0/0"]');
- await card.waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('[data-rss-url="https://stories.example/f0/0"]').classList.contains('rss-pending'));
+ const card=page.locator('#casual-rail .rss-card[data-rss-url="https://stories.example/f3/0"]');
+ await card.waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('[data-rss-url="https://stories.example/f3/0"]').classList.contains('rss-pending'));
  const arm=()=>card.evaluate(node=>{
   node.addEventListener('click',()=>{
    const timing={clickedAt:performance.now(),shellFirstVisibleFrameMs:null,bodyReadyMs:null};window.previewTiming=timing;
@@ -126,15 +126,15 @@ async function clicks(h,page){
  const before=h.calls.length,start=await page.evaluate(()=>performance.now());await arm();await card.click();
  await page.waitForFunction(()=>document.querySelector('#article-preview').open&&document.querySelector('#article-preview').dataset.preparing!=='true'&&!document.querySelector('.ap-start').disabled&&!document.querySelector('.ap-summary').hidden,null,{timeout:15000});
  const coldMs=await page.evaluate(()=>performance.now()),coldTiming=await measured(),storage=await page.evaluate(()=>Object.fromEntries(Object.entries(localStorage)));
- assert.equal(await page.evaluate(()=>books.filter(book=>book.sourceUrl==='https://stories.example/f0/0').length),0,'Preview does not persist a book');
+ assert.equal(await page.evaluate(()=>books.filter(book=>book.sourceUrl==='https://stories.example/f3/0').length),0,'Preview does not persist a book');
  await page.locator('.ap-close').click();
  const warmBefore=h.calls.length,warmStart=await page.evaluate(()=>performance.now());await arm();await card.click();
  await page.waitForFunction(()=>document.querySelector('#article-preview').open&&document.querySelector('#article-preview').dataset.preparing!=='true'&&!document.querySelector('.ap-start').disabled&&!document.querySelector('.ap-summary').hidden);
  const warmEnd=await page.evaluate(()=>performance.now()),warmTiming=await measured();await page.locator('#article-preview').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
  const readStart=await page.evaluate(()=>performance.now());await page.locator('.ap-start').click();
- await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on')&&books.some(book=>book.sourceUrl==='https://stories.example/f0/0'),null,{timeout:15000});
+ await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on')&&books.some(book=>book.sourceUrl==='https://stories.example/f3/0'),null,{timeout:15000});
  const readEnd=await page.evaluate(()=>performance.now());
- assert.equal(await page.evaluate(()=>books.filter(book=>book.sourceUrl==='https://stories.example/f0/0').length),1,'Read persists exactly one book');
+ assert.equal(await page.evaluate(()=>books.filter(book=>book.sourceUrl==='https://stories.example/f3/0').length),1,'Read persists exactly one book');
  return {previewColdMs:coldMs-start,previewWarmMs:warmEnd-warmStart,coldTiming,warmTiming,readMs:readEnd-readStart,coldRequests:metrics(h.calls.slice(before,warmBefore)),warmAndReadRequests:metrics(h.calls.slice(warmBefore)),storage};
 }
 try{
@@ -164,18 +164,23 @@ try{
   console.log(JSON.stringify(result.rows.at(-1)));
  }
  current=intentVersion;
- // Existing local artwork stays readable and clickable in every required size/theme.
- const ui=await contextFor(current,profiles[0]),loaded=await home(ui);result.fallbackUI=[];
+ // Only decoded photos become ready cards; metadata-only candidates stay retained.
+ const ui=await contextFor(current,profiles[0]),loaded=await home(ui);result.photoReadyUI=[];
+ const withheld=await loaded.page.evaluate(()=>({retained:rssCands[0].length,emptyPhotos:rssCands[0].every(entry=>!entry.photo),
+   displayed:[...document.querySelectorAll('#casual-rail .rss-card')].some(card=>card.dataset.rssUrl.startsWith('https://stories.example/f0/'))}));
+ assert.equal(withheld.retained,20);assert.equal(withheld.emptyPhotos,true);assert.equal(withheld.displayed,false);
+ result.metadataOnlyWithheld=withheld;
  for(const [label,width,height] of [['phone',390,844],['small-phone',320,568],['tablet',834,1112],['desktop',1440,900],['short',1024,600]])for(const theme of ['light','dark']){
   await loaded.page.setViewportSize({width,height});await loaded.page.evaluate(theme=>{document.documentElement.classList.toggle('dark',theme==='dark');document.body.classList.toggle('dark',theme==='dark');},theme);
-  const card=loaded.page.locator('#casual-rail .rss-card[data-rss-url="https://stories.example/f0/0"]');
+  const card=loaded.page.locator('#casual-rail .rss-card[data-rss-url="https://stories.example/f3/0"]');
   await card.evaluate(node=>node.scrollIntoView({block:'nearest',inline:'center',behavior:'instant'}));
   await loaded.page.evaluate(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done))));
   const box=await card.boundingBox();assert.ok(box.width>100&&box.height>100);
   assert.equal(await card.getAttribute('aria-busy'),null);assert.equal(await card.getAttribute('aria-disabled'),null);
-  assert.ok(await card.locator('.thumb svg').count(),'Existing local fallback artwork is present');
-  assert.equal(await card.locator('.lede').isVisible(),false,'Fallback has one visible title');assert.ok(await card.locator('.ct').isVisible());
-  const screenshot=`fallback-${label}-${theme}.png`;await card.screenshot({path:proof+'/'+screenshot});result.fallbackUI.push({label,width,height,theme,screenshot});
+  assert.equal(await card.locator('.thumb.has-cover').count(),1,'Ready card requires a decoded usable photo');
+  assert.equal(await card.locator('.cover-art').count(),0,'Artwork cannot substitute for a ready photo');
+  assert.equal(await card.locator('.lede').isVisible(),false,'Photo-ready card has one visible title');assert.ok(await card.locator('.ct').isVisible());
+  const screenshot=`photo-ready-${label}-${theme}.png`;await card.screenshot({path:proof+'/'+screenshot});result.photoReadyUI.push({label,width,height,theme,screenshot});
  }
  assert.equal(ui.errors.length,0);await ui.context.close();
  // Catalog-origin photos render directly on Home; no client cover/body lookup.

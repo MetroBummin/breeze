@@ -64,8 +64,14 @@ function schedulePdfSharpen(session=originalSession){
 function pdfScrollBusy(session=originalSession,includeContacts=true){
   return (includeContacts&&originalPdfContacts>0) || performance.now()-(session?.lastScrollAt??-Infinity)<160;
 }
-function schedulePdfPaint(session=originalSession){
-  if(!currentPdfSession(session)||session.paintTimer)return;
+function schedulePdfPaint(session=originalSession,urgent=false){
+  if(!currentPdfSession(session))return;
+  // A scroll can expose missing paper while offscreen work is waiting for idle.
+  // Wake that retry without bypassing the queue's pinch/ink admission rules.
+  if(session.paintTimer){
+    if(!urgent)return;
+    clearTimeout(session.paintTimer);session.paintTimer=0;
+  }
   session.paintTimer=setTimeout(()=>{session.paintTimer=0;void drainPdfPaint(session);},0);
 }
 async function drainPdfPaint(session){
@@ -396,13 +402,14 @@ async function paintOriginalPdfPage(session,pageNumber,options){
 
 /* ---- 손을 뗀 뒤 다시 또렷하게 ----
    벌리는 도중에는 안 합니다. 긴 PDF 에서 쪽마다 캔버스를 다시 그리면 손짓이
-   끊깁니다. 보이는 쪽과 그 위아래 한 화면씩만 손봅니다.
+   끊깁니다. 현재 보이는 쪽만 손봅니다. 화면 밖 양쪽을 고해상도로 다시
+   채우면 캐시 한도를 넘어 서로를 반복해서 밀어낼 수 있습니다.
    부르는 곳은 `scripts/reader/pdf-pinch.js` 의 손짓이 끝나는 자리입니다. */
 function resharpenOriginalPages(){
   originalPdfRenderPending = false;
   const session=originalSession;
   if(!session || session.kind!=='pdf') return;
-  for(const pageNumber of pdfPagesInView(session,readerViewHeight())){
+  for(const pageNumber of pdfPagesInView(session)){
     const options=session.settled.has(pageNumber)?{resharpen:true,prefetch:true}:{prefetch:true};
     void renderOriginalPdfPage(session,pageNumber,options);
   }

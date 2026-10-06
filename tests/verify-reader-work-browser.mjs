@@ -165,7 +165,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const previewHandle=await page.waitForFunction(()=>{
      const paper=document.querySelector('.epub-thumbnail-paper');if(!paper)return false;
      const r=paper.getBoundingClientRect(),strip=document.getElementById('pdf-thumbnail-strip').getBoundingClientRect();
-     return r.width>0&&r.height>0&&strip.width>0?{width:r.width,height:r.height,strip:strip.width}:false;
+     // Connected cells can retain the previous viewport's dimensions until
+     // the queued EPUB reflow publishes its new geometry.
+     const ready=r.width>0&&r.height>0&&strip.width>0
+       &&Math.abs(r.height/r.width-Math.SQRT2)<.02&&r.width/strip.width>.9;
+     return ready?{width:r.width,height:r.height,strip:strip.width}:false;
    },null,{timeout:10000});
    const previewSize=await previewHandle.jsonValue();await previewHandle.dispose();
    assert.ok(Math.abs(previewSize.height/previewSize.width-Math.SQRT2)<.02&&previewSize.width/previewSize.strip>.9,`EPUB page proportions at ${width} dark=${dark}: ${JSON.stringify(previewSize)}`);
@@ -245,3 +249,4 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   console.log(engine.name(),JSON.stringify({text,modes,stars,sidebar,paperReadsDuringChrome:controls}));
  }finally{await browser.close();}
 }}finally{await new Promise(done=>server.close(done));}
+

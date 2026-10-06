@@ -7,7 +7,8 @@ import {createHash} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
 import {FEEDS} from '../server/rss-quality/feeds.mjs';
 import {createCatalogService,databaseStore} from '../server/rss-catalog/service.mjs';
-import {catalogHandler,serviceAuthorization} from '../server/rss-catalog/handler.mjs';
+import {catalogHandler} from '../server/rss-catalog/handler.mjs';
+import {operatorAuthorized} from '../server/rss-catalog/operator-auth.mjs';
 import {rssDevice} from './egress-rss-transport.mjs';
 import {fetchCatalogPhoto} from '../server/rss-catalog/photos.mjs';
 import {fetchPublicPrefix,requestPrefixNode} from '../server/rss-catalog/public-prefix.mjs';
@@ -52,7 +53,18 @@ const service=createCatalogService({store:databaseStore(client),enabled:FEEDS.ma
       return requestPrefixNode(local,[{address:'127.0.0.1',family:4}],{...opts,stop:(bytes,headers)=>opts.stop(bytes,headers,target.href)});
     }})});}finally{originalStats.pending--;}
 }});
-const handler=catalogHandler(service,{authorize:serviceAuthorization('synthetic-service-key'),now:()=>clock});
+// Model only the existing verified-operator RPC; no real credential, JWT
+// signing, PostgREST request or operator endpoint leaves this process.
+let operatorChecks=0;
+const handler=catalogHandler(service,{authorize:request=>operatorAuthorized(request,{
+  url:'https://catalog-db.fixture',apiKey:'synthetic-anon-key',fetcher:async(url,options)=>{
+    operatorChecks++;
+    assert.equal(url,'https://catalog-db.fixture/rest/v1/rpc/rss_quality_operator_authorized');
+    assert.equal(options.method,'POST');assert.equal(options.body,'{}');assert.equal(options.redirect,'error');
+    assert.equal(options.headers.apikey,'synthetic-anon-key');
+    return Response.json(options.headers.Authorization==='Bearer synthetic.service.signature');
+  }
+}),now:()=>clock});
 const server=createServer(async(req,res)=>{
   try{
     const reply=await handler(new Request('http://catalog.fixture'+req.url,{method:req.method,headers:req.headers}));
@@ -60,7 +72,7 @@ const server=createServer(async(req,res)=>{
   }catch{res.writeHead(500).end();}
 });
 const result={units:'UTF-8 uncompressed HTTP response bodies. Synthetic feeds; four audited public OG snippets plus two synthetic originals. Local pinned Node HTTP, modeled DNS; live publisher/TLS, headers, redirects, DB responses, images, selected article bodies and other traffic excluded. Retained original-prefix bytes and delivered chunks are separate; neither is total billed egress.',sourceHashes:{},cases:{}};
-for(const file of ['supabase/functions/rss-catalog/index.ts','server/rss-catalog/service.mjs','server/rss-catalog/metadata.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/photos.mjs','server/rss-catalog/photo-head.mjs','server/rss-catalog/public-prefix.mjs','server/article/cover-metadata.mjs','server/rss-catalog/schema/rss_public_catalog.sql','scripts/importers/rss.js'])result.sourceHashes[file]=createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex');
+for(const file of ['supabase/functions/rss-catalog/index.ts','server/rss-catalog/service.mjs','server/rss-catalog/metadata.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/operator-auth.mjs','server/rss-catalog/photos.mjs','server/rss-catalog/photo-head.mjs','server/rss-catalog/public-prefix.mjs','server/article/cover-metadata.mjs','server/rss-catalog/schema/rss_public_catalog.sql','scripts/importers/rss.js'])result.sourceHashes[file]=createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex');
 let base;
 async function get(headers={}){const response=await fetch(base,{headers});const bytes=Buffer.from(await response.arrayBuffer());return {status:response.status,bytes:bytes.length,etag:response.headers.get('etag'),payload:bytes.length?JSON.parse(bytes):null};}
 try{
@@ -72,7 +84,7 @@ try{
   await db.exec('update public.rss_public_catalog set active=true where id=1; set role service_role;');
   const cold=await get();assert.ok(cold.payload.feeds.every(feed=>!feed.entries.length));assert.equal(stats.requests,0);
   result.cases.coldServer={clientRequests:1,clientResponseBodyBytes:cold.bytes,publisherRequests:0};
-  const refreshes=await Promise.all(Array.from({length:30},()=>fetch(base,{method:'POST',headers:{apikey:'synthetic-service-key'}}).then(response=>response.json())));
+  const refreshes=await Promise.all(Array.from({length:30},()=>fetch(base,{method:'POST',headers:{authorization:'Bearer synthetic.service.signature'}}).then(response=>response.json())));
   assert.equal(refreshes.filter(reply=>reply.refreshed).length,1);assert.equal(stats.requests,13);assert.equal(stats.maxPending,2);
   const refreshed=refreshes.find(reply=>reply.refreshed);assert.equal(refreshed.successfulFeedBodyBytes,1300000);assert.equal(refreshed.failedSources,0);
   result.cases.concurrentRefresh={callers:30,successfulRefreshes:1,publisherRequests:stats.requests,publisherResponseBodyBytes:stats.bytes,maxPublisherConcurrency:stats.maxPending};
@@ -97,13 +109,13 @@ try{
   // Advance the real SQL cooldown as the database owner; do not model a bypass
   // available to public readers. Publisher validator responses are now 304.
   await db.exec("reset role; update public.rss_public_catalog set refresh_after='-infinity'; set role service_role;");
-  const nextRefreshes=await Promise.all(Array.from({length:30},()=>fetch(base,{method:'POST',headers:{apikey:'synthetic-service-key'}}).then(response=>response.json())));
+  const nextRefreshes=await Promise.all(Array.from({length:30},()=>fetch(base,{method:'POST',headers:{authorization:'Bearer synthetic.service.signature'}}).then(response=>response.json())));
   const second=nextRefreshes.find(reply=>reply.refreshed);assert.equal(nextRefreshes.filter(reply=>reply.refreshed).length,1);
   assert.equal(second.originalJobs,0);assert.equal(second.originalCacheHits,6);assert.equal(originalStats.requests,6);assert.equal(second.successfulFeedBodyBytes,0);
   result.cases.nextScheduledRefresh={callers:30,successfulRefreshes:1,feedValidatorRequests:13,successfulFeedBodyBytes:0,originalJobs:0,originalCacheHits:6};
   await db.exec('reset role; update public.rss_public_catalog set active=false; set role service_role;');
   const disabled=await get({'if-none-match':warm.etag});assert.equal(disabled.status,200);assert.ok(disabled.payload.feeds.every(feed=>!feed.entries.length));
-  assert.equal(stats.requests,26);result.cases.rollback={empty:true,publisherRequests:0};
+  assert.equal(stats.requests,26);assert.equal(operatorChecks,60);result.cases.rollback={empty:true,publisherRequests:0};
   result.comparison={legacyNewUsers:{users:30,publisherFeedRequestsViaClient:390,fixtureFeedBodyBytes:39000000},catalogNewUsersAndOneServerWarm:{users:30,publisherFeedRequests:13,publisherFeedBodyBytes:1300000,originalJobs:6,originalRetainedPrefixBytes:refreshed.originalPrefixBytes,originalDeliveredBodyChunkBytes:refreshed.originalBodyBytesReceived,clientCatalogBodyBytes:many.reduce((sum,row)=>sum+row.bytes,0)},caveat:'Legacy feed bodies alone versus the separately counted catalog legs, including bounded server original-photo work. This is a controlled transport comparison, not total egress or a billing percentage.'};
   if(process.env.BREEZE_CATALOG_SERVER_REPORT)writeFileSync(process.env.BREEZE_CATALOG_SERVER_REPORT,JSON.stringify(result,null,2)+'\n');
   console.log(JSON.stringify(result,null,2));

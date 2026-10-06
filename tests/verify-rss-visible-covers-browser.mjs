@@ -21,13 +21,17 @@ const prose='The story explains how people learn about the world by reading evid
 const state={runs:new Map(),active:0,maxActive:0};
 let base;
 function run(name,options={}){
-  const value={name,options,generation:0,requests:[],images:[],blocked:[],writes:[]};state.runs.set(name,value);return value;
+  const value={name,options,generation:0,requests:[],images:[],blocked:[],writes:[]};
+  if(options.holdFeeds)value.feedGate=new Promise(done=>{value.releaseFeeds=done;});
+  if(options.holdImages)value.imageGate=new Promise(done=>{value.releaseImages=done;});
+  state.runs.set(name,value);return value;
 }
 const imageUrl=(name,index,generation=0)=>`https://images.fixture/${name}/g${generation}/photo-${index}.jpg`;
 const articleUrl=(name,index,generation=0)=>index===0&&state.runs.get(name)?.options.original
   ?state.runs.get(name).options.original.url:`https://stories.fixture/${name}/g${generation}/article-${index}`;
 function feedXml(test,index){
-  const supplied=test.options.supplied&&index===0;
+  const supplied=test.options.allSupplied||test.options.supplied&&index===0
+    ||Array.isArray(test.options.missingPhotos)&&!test.options.missingPhotos.includes(index);
   const generations=test.options.rotation?[0,1]:[test.generation];
   const items=generations.map(generation=>{
     const url=articleUrl(test.name,index,generation);
@@ -89,7 +93,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));base=`http://127.0.0.1:${server.address().port}/`;
 const results=[];
-async function start(browser,test){
+async function start(browser,test,{waitForFeeds=true}={}){
   const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
   await context.addInitScript(options=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
@@ -97,12 +101,45 @@ async function start(browser,test){
     window.coverReaderEvidence=[];
     window.coverPrefixEvidence=[];
     window.coverPhotoStarts=[];
+    window.coverLookupAdmission=[];
+    window.coverRankPaints=[];
+    window.coverFeedsReady=false;
     if(options.fastTimeout){
       const schedule=window.setTimeout;
       window.setTimeout=(callback,ms,...args)=>schedule(callback,ms===15000||ms===4000?80:ms,...args);
     }
     if(options.stallDecode)HTMLImageElement.prototype.decode=()=>new Promise(()=>{});
     addEventListener('DOMContentLoaded',()=>{
+      // Isolate supplied-photo priority from arrival-order ownership, which has
+      // its own held-feed regression below. Keep that case's exact assertions.
+      if(options.waitForFeedSettlement){
+        const pump=window.rssCoverPump;
+        window.rssCoverPump=owner=>window.coverFeedsReady?pump(owner):Promise.resolve();
+      }
+      if(options.recordCoverAdmission){
+        const rankDisplayed=owner=>{
+          const context={library:books,positions,sources:rssSources(),now:Date.now()};
+          return rssRankRecommendations(rssDisplayGroups(rssCands,owner,context),context)
+            .map(group=>group[0]?.url).filter(Boolean);
+        };
+        const watch=window.rssCoverWatch;
+        window.rssCoverWatch=(owner,cards,entries)=>{
+          // This runs after DOM insertion and before owner.changed can admit
+          // metadata work. Rank the eligible subset, not a filtered global rank.
+          if(owner&&!owner.cancelled&&owner.pass===rssCoverPass&&rssCoverRemaining===RSS_COVER_LOOKUPS){
+            window.coverRankPaints.push({pass:rssCoverPass,remaining:rssCoverRemaining,
+              order:cards.map(card=>card.dataset.rssUrl),ranked:rankDisplayed(owner)});
+          }
+          return watch(owner,cards,entries);
+        };
+        const lookup=window.rssCoverLookup;
+        window.rssCoverLookup=(url,consumer)=>{
+          const order=[...consumer.owner.rail.querySelectorAll('.rss-card')].map(card=>card.dataset.rssUrl);
+          const ranked=rankDisplayed(consumer.owner);
+          window.coverLookupAdmission.push({url,pass:rssCoverPass,visible:rssCoverVisible(consumer.owner,consumer.card),order,ranked});
+          return lookup(url,consumer);
+        };
+      }
       const originalPhoto=window.rssCardPhoto;
       window.rssCardPhoto=(card,entry)=>{
         window.coverPhotoStarts.push({url:entry.url,photo:entry.photo});
@@ -135,23 +172,31 @@ async function start(browser,test){
     const raw=route.request().url(),url=new URL(raw);
     if(raw.startsWith(base)||raw.startsWith('blob:'))return route.continue();
     const index=feeds.findIndex(feed=>feed.url===raw);
-    if(index>=0)return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:feedXml(test,index)});
+    if(index>=0){
+      if(test.options.holdFeeds?.includes(index))await test.feedGate;
+      return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:feedXml(test,index)});
+    }
     if(url.hostname==='images.fixture'||test.options.original?.photo===raw
       ||test.options.mode==='head-relative'&&url.hostname==='stories.fixture'
         &&url.pathname.startsWith('/'+test.name+'/')&&/\/relative-\d+\.jpg$/.test(url.pathname)){
       test.images.push({url:raw,type:route.request().resourceType()});
+      if(test.options.holdImages)await test.imageGate;
       if(test.options.imageDelayMs)await new Promise(done=>setTimeout(done,test.options.imageDelayMs));
       return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/jpeg',body:test.options.brokenImage?'invalid image bytes':photo}).catch(()=>{});
     }
     test.blocked.push(raw);return route.abort();
   });
-  const page=await context.newPage();await page.goto(base);await page.evaluate(()=>homeReady);
-  await page.waitForFunction(()=>!rssLoading&&document.querySelectorAll('#casual-rail .rss-card').length===13);
+  // Gated images can postpone window load; application readiness does not need it.
+  const page=await context.newPage();await page.goto(base,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
+  if(waitForFeeds)await page.waitForFunction(()=>!rssLoading&&rssCands.length===13&&rssCands.every(group=>group.length));
+  if(test.options.waitForFeedSettlement)await page.evaluate(()=>{
+    window.coverFeedsReady=true;rssCoverActiveOwners.forEach(owner=>owner.changed());
+  });
   return {context,page};
 }
 async function snapshot(page){
   return page.evaluate(async()=>({
-    cards:[...document.querySelectorAll('#casual-rail .rss-card')].map(card=>({url:card.dataset.rssUrl,
+    cards:[...document.querySelectorAll('#casual-rail .rss-card')].map(card=>({url:card.dataset.rssUrl,hidden:card.hidden,
       photo:card.querySelector('.thumb').classList.contains('has-cover'),pending:card.classList.contains('rss-cover-pending'),
       ready:card.tabIndex===0&&!card.hasAttribute('aria-disabled')})),
     entryPhotos:rssCands.flat().map(entry=>({url:entry.url,photo:entry.photo||''})),
@@ -167,9 +212,42 @@ async function waitForRequest(test,count=1){
   while(test.requests.length<count){if(Date.now()>deadline)throw Error('Cover metadata request did not start');await new Promise(done=>setTimeout(done,20));}
 }
 async function settled(page){
-  await page.waitForFunction(()=>rssCoverJobs.size===0&&!document.querySelector('#casual-rail .rss-cover-pending')
-    &&[...document.querySelectorAll('#casual-rail .rss-card')].every(card=>!rssCardCoverWork.has(card)));
+  await page.waitForFunction(()=>{
+    const owner=rssCoverOwners.get(document.getElementById('casual-rail'));
+    // Canceling an owner cancels its RAF; its old numeric handle is not live work.
+    return rssCoverJobs.size===0&&(owner?.cancelled||!owner?.frame)&&!owner?.running
+      &&!document.querySelector('#casual-rail .rss-cover-pending')
+      &&[...document.querySelectorAll('#casual-rail .rss-card')].every(card=>!rssCardCoverWork.has(card));
+  });
   return snapshot(page);
+}
+async function metadataSettled(page){
+  // Image work may intentionally remain held while successive metadata generations
+  // finish. Feed-refresh completion alone does not establish a negative cache.
+  await page.waitForFunction(()=>{
+    const owner=rssCoverOwners.get(document.getElementById('casual-rail'));
+    return !rssLoading&&rssCoverJobs.size===0&&(owner?.cancelled||!owner?.frame)
+      &&!owner?.running&&!owner?.consumer;
+  });
+  return page.evaluate(()=>({pass:rssCoverPass,remaining:rssCoverRemaining,
+    admissions:coverLookupAdmission.map(record=>({url:record.url,pass:record.pass,visible:record.visible})),
+    cache:Object.fromEntries(rssCands.flat().map(entry=>[entry.url,rssCoverCached(rssCoverPublicUrl(entry.url))])),
+  }));
+}
+async function coverOwnership(page){
+  return page.evaluate(()=>{
+    const rail=document.getElementById('casual-rail'),owner=rssCoverOwners.get(rail);
+    return {admissions:coverLookupAdmission,pass:rssCoverPass,remaining:rssCoverRemaining,
+      loading:!!rssLoading,attempted:[...(owner?.attempted||[])],cancelled:owner?.cancelled,
+      scrollLeft:rail.scrollLeft,focused:rail.contains(document.activeElement),busy:!!rail.querySelector('.rss-card.busy'),
+      order:[...rail.querySelectorAll('.rss-card')].map(card=>card.dataset.rssUrl),
+      visible:[...rail.querySelectorAll('.rss-card')].filter(card=>rssCoverVisible(owner,card))
+        .map(card=>({url:card.dataset.rssUrl,photo:card.querySelector('.thumb').classList.contains('has-cover')}))};
+  });
+}
+async function ownershipProof(page,name,evidence){
+  writeFileSync(resolve(proof,name+'-ownership.json'),JSON.stringify(evidence,null,2));
+  await page.locator('#casual-rail').screenshot({path:resolve(proof,name+'.png')});
 }
 try{
   for(const engine of [chromium,webkit].filter(engine=>!process.env.BREEZE_QA_ENGINE||engine.name()===process.env.BREEZE_QA_ENGINE)){
@@ -180,7 +258,9 @@ try{
       const cold=run(engine.name()+'-cold'),h=await start(browser,cold);
       await h.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2,null,{timeout:20000});
       const first=await snapshot(h.page);noPersonalData(first);
-      assert(first.cards.every(card=>!card.pending&&card.ready),'Completed/budget-ineligible cards still shimmered or blocked Preview');
+      assert.equal(first.cards.length,2,'Never-admitted artwork escaped photo-only display');
+      assert(first.cards.every(card=>!card.hidden&&!card.pending&&card.ready&&card.photo),'Ready recommendation did not contain a decoded photo');
+      assert.equal(first.entryPhotos.length,13,'Display withholding deleted source metadata');
       assert.equal(cold.requests.length,2,'One discovery pass exceeded the two visible-cover lookups');
       assert.equal(state.maxActive,1,'Cover requests were not serial');
       for(const request of cold.requests){
@@ -213,9 +293,15 @@ try{
       }
       await h.page.reload();await h.page.evaluate(()=>homeReady);
       await h.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+      // Cached photos can decode before the queued visible-probe cleanup frame.
+      // Require the actual settled rail, rather than treating two decoded images
+      // as evidence that every other pending/layout owner has finished.
+      const warm=await settled(h.page);noPersonalData(warm);
+      writeFileSync(resolve(proof,engine.name()+'-warm-relaunch-state.json'),JSON.stringify({state:warm,requests:cold.requests},null,2));
       assert.equal(cold.requests.length,2,'Warm relaunch repeated known cover enrichment');
-      const warm=await snapshot(h.page);noPersonalData(warm);
-      assert(warm.cards.every(card=>!card.pending&&card.ready));
+      assert.equal(warm.cards.length,2,'Warm relaunch exposed an unadmitted candidate');
+      assert.equal(warm.entryPhotos.length,13,'Warm relaunch lost source metadata');
+      assert(warm.cards.every(card=>!card.hidden&&!card.pending&&card.ready&&card.photo));
       results.push({engine:engine.name(),scenario:'cold/warm/offscreen/budget',first,warm,secondRail,requests:cold.requests,maxActive:state.maxActive});
       await h.context.close();
 
@@ -254,7 +340,7 @@ try{
       }
       results.push({engine:engine.name(),scenario:'case/head/base/entities/malformed',cases:documentResults});await dc.context.close();
 
-      const supplied=run(engine.name()+'-supplied',{supplied:true}),s=await start(browser,supplied);
+      const supplied=run(engine.name()+'-supplied',{supplied:true,waitForFeedSettlement:true}),s=await start(browser,supplied);
       await s.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
       assert.equal(supplied.requests.length,1);assert.equal(supplied.requests[0].index,1,'Supplied photo was enriched unnecessarily');
       const suppliedState=await snapshot(s.page);noPersonalData(suppliedState);
@@ -286,6 +372,180 @@ try{
       assert(validation.cacheRecords<=100&&validation.cacheBytes<=64000);
       results.push({engine:engine.name(),scenario:'supplied-photo-priority/public-URLs/cache-expiry-bounds',state:suppliedState,validation,requests:supplied.requests});await s.context.close();
 
+      for(const [name,holdFeeds,admitted] of [
+        ['first-feed-late',[0],2],['second-feed-late',[1],1],
+        ['leading-feeds-late',Array.from({length:11},(_,i)=>i),2],
+      ]){
+        const delayed=run(engine.name()+'-'+name,{supplied:true,holdFeeds,recordCoverAdmission:true});
+        const startup=start(browser,delayed);
+        try{await waitForRequest(delayed,admitted);}finally{delayed.releaseFeeds();}
+        const d=await startup;await settled(d.page);
+        const ownership=await coverOwnership(d.page);
+        await ownershipProof(d.page,engine.name()+'-'+name,{ownership,requests:delayed.requests});
+        assert.equal(ownership.admissions.length,admitted,'Fixture did not hold late feeds through actual cover admission');
+        assert(ownership.admissions.every(record=>record.visible),'A lookup started for an offscreen card');
+        for(const record of ownership.admissions)assert(ownership.visible.some(card=>card.url===record.url&&card.photo),
+          'Late feeds displaced a visible budget-owning cover: '+record.url);
+        assert(delayed.requests.length<=2,'Late feeds exceeded the original discovery-generation request budget');
+        assert(!delayed.requests.some(request=>request.index===0),'A supplied photo consumed an original-page lookup');
+        const value=await snapshot(d.page);noPersonalData(value);
+        assert(value.cards.some(card=>card.url===articleUrl(delayed.name,0)&&card.photo),'The supplied photo did not decode');
+        const firstOrder=ownership.order,requestsBefore=delayed.requests.length;
+        await d.page.evaluate(()=>renderRssCards(document.getElementById('casual-rail'),false,document.getElementById('home-feed-empty')));
+        await settled(d.page);
+        const warm=await coverOwnership(d.page);
+        await ownershipProof(d.page,engine.name()+'-'+name+'-warm',{ownership,warm,requests:delayed.requests});
+        assert.equal(warm.pass,ownership.pass,'A warm render started a new discovery generation');
+        assert.equal(delayed.requests.length,requestsBefore,'A warm render repeated metadata work');
+        assert.deepEqual(warm.order,firstOrder,'A warm render displaced the same generation\'s visible owners');
+        await d.page.evaluate(()=>renderRssCards(document.getElementById('casual-rail'),true,document.getElementById('home-feed-empty')));
+        const refreshedState=await settled(d.page);
+        // Read final order after probe/refill settlement, rather than retaining
+        // an earlier DOM snapshot that can still contain an unadmitted probe.
+        const refreshed=await d.page.evaluate(()=>{
+          const rail=document.getElementById('casual-rail'),owner=rssCoverOwners.get(rail);
+          const context={library:books,positions,sources:rssSources(),now:Date.now()};
+          return {pass:rssCoverPass,remaining:rssCoverRemaining,
+            beforeAdmission:coverRankPaints.filter(record=>record.pass===rssCoverPass),
+            admissions:coverLookupAdmission.filter(record=>record.pass===rssCoverPass),
+            actual:[...rail.querySelectorAll('.rss-card')].map(card=>card.dataset.rssUrl),
+            visible:[...rail.querySelectorAll('.rss-card')].filter(card=>rssCoverVisible(owner,card)).map(card=>card.dataset.rssUrl),
+            finalRank:rssRankRecommendations(rssDisplayGroups(rssCands,owner,context),context).map(group=>group[0]?.url).filter(Boolean)};
+        });
+        await ownershipProof(d.page,engine.name()+'-'+name+'-refresh',{ownership,warm,refreshed,state:refreshedState,requests:delayed.requests});
+        assert.equal(refreshed.pass,ownership.pass+1,'Explicit refresh did not start a new discovery generation');
+        assert(refreshed.beforeAdmission.length,'Explicit refresh did not record a fresh pre-admission paint');
+        for(const paint of refreshed.beforeAdmission){
+          assert.equal(paint.remaining,2);
+          assert.deepEqual(paint.order,paint.ranked,'Explicit refresh did not rerank display-eligible candidates before admission');
+        }
+        if(refreshed.admissions.length){
+          const first=refreshed.admissions[0],survivingOwners=first.order.filter(url=>refreshed.actual.includes(url));
+          assert.deepEqual(refreshed.actual.slice(0,survivingOwners.length),survivingOwners,
+            'Refresh refill displaced surviving owners after admission');
+          for(const record of refreshed.admissions){
+            assert(record.visible,'Refresh admitted an offscreen original');
+            if(refreshedState.entryPhotos.some(entry=>entry.url===record.url&&entry.photo))
+              assert(refreshed.visible.includes(record.url),'A successfully enriched refresh owner moved offscreen');
+          }
+        }else assert.deepEqual(refreshed.actual,refreshed.finalRank,'A refresh without admission did not retain eligible ranking');
+        assert(refreshedState.cards.every(card=>card.hidden||card.pending||card.photo),'Refresh exposed an artwork-only card');
+        assert(delayed.requests.length-requestsBefore<=2,'Explicit refresh exceeded its separate generation budget');
+        assert(!delayed.requests.some(request=>request.index===0),'Refresh spent original-page budget on the supplied photo');
+        results.push({engine:engine.name(),scenario:'late-feed-visible-ownership-'+name,ownership,state:value,warm,refreshed,requests:delayed.requests});
+        await d.context.close();
+      }
+
+      // A forced render gets its initial rerank, then the new generation owns
+      // any admitted covers even while higher-ranked feeds are still pending.
+      const forced=run(engine.name()+'-forced-late-feeds',{
+        supplied:true,holdFeeds:[],recordCoverAdmission:true,waitForFeedSettlement:true,
+      }),fr=await start(browser,forced);
+      await waitForRequest(forced);await settled(fr.page);
+      const previous=await coverOwnership(fr.page),forcedRequestsBefore=forced.requests.length;
+      forced.generation=1;forced.options.holdFeeds=Array.from({length:11},(_,i)=>i);
+      const forcedStart=await fr.page.evaluate(()=>{
+        const rail=document.getElementById('casual-rail');
+        // Model replacement of the old inventory without clearing its DOM or
+        // cover cache: the next forced paint must replace the previous order.
+        rssCands=[];coverLookupAdmission=[];
+        window.forcedCoverRender=renderRssCards(rail,true,document.getElementById('home-feed-empty'));
+        return {pass:rssCoverPass,remaining:rssCoverRemaining};
+      });
+      let forcedAdmission;
+      try{
+        await waitForRequest(forced,forcedRequestsBefore+2);
+        forcedAdmission=await coverOwnership(fr.page);
+      }finally{forced.releaseFeeds();}
+      await fr.page.evaluate(()=>forcedCoverRender);await settled(fr.page);
+      const forcedFinal=await coverOwnership(fr.page),forcedValue=await snapshot(fr.page);
+      await ownershipProof(fr.page,engine.name()+'-forced-late-feeds',{
+        previous,forcedStart,forcedAdmission,forcedFinal,state:forcedValue,requests:forced.requests,
+      });
+      assert.equal(forcedStart.pass,previous.pass+1,'Forced refresh did not advance the discovery generation');
+      assert.equal(forcedStart.remaining,2,'Forced refresh did not reset its own two-request budget');
+      assert(forcedAdmission.loading,'Fixture released the leading feeds before forced admission');
+      assert.deepEqual(forcedAdmission.admissions[0].order,forcedAdmission.admissions[0].ranked,
+        'Forced refresh did not apply the available ranking before its first admission');
+      assert(forcedAdmission.order.every(url=>url.includes('/g1/')),'Forced refresh retained an old-generation card');
+      assert.equal(forcedFinal.pass,forcedStart.pass);
+      assert.equal(forcedFinal.admissions.length,2);
+      assert(forcedFinal.admissions.every(record=>record.pass===forcedStart.pass&&record.visible));
+      for(const record of forcedFinal.admissions)assert(forcedFinal.visible.some(card=>card.url===record.url&&card.photo),
+        'Forced late feeds displaced an admitted visible cover: '+record.url);
+      assert.deepEqual(forcedFinal.order.slice(0,forcedAdmission.order.length),forcedAdmission.order,
+        'Forced late feeds did not append after the admitted owners');
+      assert(forced.requests.length-forcedRequestsBefore<=2,'Forced late feeds exceeded their new-generation lookup budget');
+      assert(!forced.requests.some(request=>request.index===0),'Forced refresh looked up the supplied-photo original');
+      assert(forcedValue.cards.some(card=>card.url===articleUrl(forced.name,0,1)&&card.photo),'Forced supplied photo did not decode');
+      noPersonalData(forcedValue);
+      results.push({engine:engine.name(),scenario:'forced-generation-late-feed-ownership',previous,forcedStart,
+        forcedAdmission,forcedFinal,state:forcedValue,requests:forced.requests});
+      await fr.context.close();
+
+      // Closing Preview replaces the canceled cover owner without replenishing
+      // the discovery generation. A new render must not rely on the old owner.
+      const recreated=run(engine.name()+'-recreated-owner-late-feeds',{
+        supplied:true,holdFeeds:Array.from({length:11},(_,i)=>i),recordCoverAdmission:true,
+      }),rc=await start(browser,recreated,{waitForFeeds:false});
+      let beforeRecreate,previewCycle,recreatedRender,recreatedAdmission;
+      try{
+        await waitForRequest(recreated,2);await settled(rc.page);
+        beforeRecreate=await coverOwnership(rc.page);
+        previewCycle=await rc.page.evaluate(async()=>{
+          const rail=document.getElementById('casual-rail'),card=rail.querySelector('.rss-card');
+          window.coverOwnerBeforePreview=rssCoverOwners.get(rail);
+          const originalFetch=fetchArticleHtml;
+          // Settle selected intent locally so a lingering .busy card cannot
+          // accidentally satisfy the unrelated interaction-preservation guard.
+          fetchArticleHtml=async()=>{throw new Error('Synthetic selected-body failure');};
+          try{await importRssEntry(rssCardEntries.get(card),card);}finally{fetchArticleHtml=originalFetch;}
+          const cycle={open:document.getElementById('article-preview').open,cancelled:coverOwnerBeforePreview.cancelled};
+          articlePreviewClose();return cycle;
+        });
+        await rc.page.waitForFunction(()=>{
+          const owner=rssCoverOwners.get(document.getElementById('casual-rail'));
+          return owner!==coverOwnerBeforePreview&&!owner.cancelled;
+        });
+        recreatedRender=await rc.page.evaluate(()=>{
+          const rail=document.getElementById('casual-rail');
+          document.activeElement?.blur();rail.scrollLeft=0;
+          const renderBefore=rssRenderIds.get(rail);
+          window.recreatedCoverRender=renderRssCards(rail,false,document.getElementById('home-feed-empty'));
+          return {ownerChanged:rssCoverOwners.get(rail)!==coverOwnerBeforePreview,
+            renderBefore,renderAfter:rssRenderIds.get(rail)};
+        });
+        recreatedAdmission=await coverOwnership(rc.page);
+      }finally{recreated.releaseFeeds();}
+      await rc.page.evaluate(()=>recreatedCoverRender);await settled(rc.page);
+      const recreatedFinal=await coverOwnership(rc.page),recreatedValue=await snapshot(rc.page);
+      await ownershipProof(rc.page,engine.name()+'-recreated-owner-late-feeds',{
+        beforeRecreate,previewCycle,recreatedRender,recreatedAdmission,recreatedFinal,state:recreatedValue,requests:recreated.requests,
+      });
+      assert(previewCycle.open&&previewCycle.cancelled,'Preview did not cancel the existing cover owner');
+      assert(recreatedRender.ownerChanged,'Closing Preview did not recreate the cover owner');
+      assert.equal(recreatedRender.renderAfter,recreatedRender.renderBefore+1,'Fixture did not replace the old render closure');
+      assert(recreatedAdmission.loading,'Late feeds settled before owner recreation was observed');
+      assert.deepEqual(recreatedAdmission.attempted,[],'New owner inherited the old per-owner attempt set');
+      assert.equal(recreatedAdmission.pass,beforeRecreate.pass);
+      assert.equal(recreatedAdmission.remaining,beforeRecreate.remaining);
+      assert.equal(recreatedAdmission.remaining,0,'Fixture did not exhaust its original generation budget');
+      assert.equal(recreatedAdmission.scrollLeft,0);assert.equal(recreatedAdmission.focused,false);assert.equal(recreatedAdmission.busy,false);
+      assert.equal(recreatedFinal.pass,beforeRecreate.pass,'Owner recreation advanced the discovery generation');
+      assert.equal(recreated.requests.length,2,'Owner recreation repeated or expanded cover lookup work');
+      assert.equal(recreatedFinal.admissions.length,2);
+      assert(recreatedFinal.admissions.every(record=>record.pass===beforeRecreate.pass&&record.visible));
+      for(const record of recreatedFinal.admissions)assert(recreatedFinal.visible.some(card=>card.url===record.url&&card.photo),
+        'A recreated owner lost its same-generation visible cover: '+record.url);
+      assert.deepEqual(recreatedFinal.order.slice(0,beforeRecreate.order.length),beforeRecreate.order,
+        'Late feeds displaced the same-generation order after owner recreation');
+      assert(!recreated.requests.some(request=>request.index===0),'Owner recreation looked up the supplied-photo original');
+      assert(recreatedValue.cards.some(card=>card.url===articleUrl(recreated.name,0)&&card.photo),'Recreated-owner supplied photo did not decode');
+      noPersonalData(recreatedValue);
+      results.push({engine:engine.name(),scenario:'same-generation-recreated-owner-late-feeds',beforeRecreate,
+        previewCycle,recreatedRender,recreatedAdmission,recreatedFinal,state:recreatedValue,requests:recreated.requests});
+      await rc.context.close();
+
       for(const mode of ['twitter','first-image','head-relative','late']){
         const fixture=run(engine.name()+'-'+mode,{mode}),f=await start(browser,fixture);
         if(mode==='late'){
@@ -316,18 +576,59 @@ try{
       assert.equal(delayed.requests.filter(request=>request.generation==='g1').length,2);
       results.push({engine:engine.name(),scenario:'cancelled-late-completion/rotation',cancelled,rotated,requests:delayed.requests});await d.context.close();
 
-      const scroll=run(engine.name()+'-scroll-cancel',{delayMs:350,ignoreAbort:true}),sc=await start(browser,scroll);
+      // Photo-only display no longer leaves thirteen artwork cards to provide
+      // overflow. Real supplied photos keep this cancellation fixture scrollable;
+      // only its first and eventual tail entries need original metadata.
+      const scroll=run(engine.name()+'-scroll-cancel',{
+        missingPhotos:[0,9],holdFirstMetadata:true,ignoreAbort:true,waitForFeedSettlement:true,
+      }),sc=await start(browser,scroll);
       await waitForRequest(scroll);
+      await sc.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===11
+        &&!rssStartFrames.has(document.getElementById('casual-rail')));
       const initialTarget=scroll.requests[0].target;
-      await sc.page.evaluate(()=>{const rail=document.getElementById('casual-rail');rail.scrollLeft=rail.scrollWidth;});
-      await sc.page.waitForFunction(()=>rssCoverJobs.size===0&&document.querySelector('#casual-rail .rss-card .thumb.has-cover'));
-      const scrolled=await snapshot(sc.page);noPersonalData(scrolled);
+      assert.equal(initialTarget,articleUrl(scroll.name,0));
+      let scrollGeometry;
+      try{
+        scrollGeometry=await sc.page.evaluate(target=>{
+          const rail=document.getElementById('casual-rail'),owner=rssCoverOwners.get(rail);
+          const card=[...rail.querySelectorAll('.rss-card')].find(card=>card.dataset.rssUrl===target);
+          window.scrollFixtureConsumer=owner.consumer;
+          const bounds=node=>{const rect=node.getBoundingClientRect();return {left:rect.left,right:rect.right,width:rect.width};};
+          const before={scrollLeft:rail.scrollLeft,scrollWidth:rail.scrollWidth,clientWidth:rail.clientWidth,
+            visible:rssCoverVisible(owner,card),consumerUrl:owner.consumer?.entry.url,card:bounds(card),rail:bounds(rail)};
+          // Keep the requested tail position through photo-only refill. Hiding
+          // the first card can clamp max scroll before the replacement is added.
+          window.scrollFixtureTail=new MutationObserver(()=>{rail.scrollLeft=rail.scrollWidth;});
+          scrollFixtureTail.observe(rail,{childList:true});
+          rail.scrollLeft=rail.scrollWidth;
+          return {before,after:{scrollLeft:rail.scrollLeft,visible:rssCoverVisible(owner,card),card:bounds(card),rail:bounds(rail)}};
+        },initialTarget);
+        writeFileSync(resolve(proof,engine.name()+'-scroll-cancel-geometry.json'),JSON.stringify({initialTarget,scrollGeometry,requests:scroll.requests},null,2));
+        assert(scrollGeometry.before.scrollWidth>scrollGeometry.before.clientWidth,'Fixture lacks real overflow');
+        assert(scrollGeometry.before.visible,'Fixture target was not initially visible');
+        assert.equal(scrollGeometry.before.consumerUrl,initialTarget,'Fixture did not capture the admitted metadata owner');
+        assert(scrollGeometry.after.scrollLeft>scrollGeometry.before.scrollLeft,'Fixture did not actually scroll');
+        assert(scrollGeometry.after.card.right<=scrollGeometry.after.rail.left,'Fixture target did not leave the viewport');
+        assert.equal(scrollGeometry.after.visible,false,'Offscreen geometry still qualified for metadata');
+        await sc.page.waitForFunction(()=>{
+          const consumer=window.scrollFixtureConsumer;
+          return consumer?.job.controller.signal.aborted&&!rssCardCoverWork.has(consumer.card)
+            &&!consumer.card.classList.contains('rss-cover-pending');
+        });
+      }finally{scroll.releaseFirstMetadata();}
+      await waitForRequest(scroll,2);
+      const scrolled=await settled(sc.page);noPersonalData(scrolled);
+      await sc.page.evaluate(()=>scrollFixtureTail.disconnect());
+      writeFileSync(resolve(proof,engine.name()+'-scroll-cancel-state.json'),JSON.stringify({initialTarget,scrollGeometry,state:scrolled,requests:scroll.requests},null,2));
       assert.equal(scroll.requests.length,2);assert.notEqual(scroll.requests[1].target,initialTarget);
+      assert.equal(scroll.requests[1].target,articleUrl(scroll.name,9),'Remaining budget did not follow the newly visible tail candidate');
       assert.equal(scrolled.entryPhotos.find(entry=>entry.url===initialTarget).photo,'','Offscreen late completion hydrated its old source');
       assert.equal(await sc.page.evaluate(url=>rssCoverCached(rssCoverPublicUrl(url)),initialTarget),null,'Offscreen cancelled result entered cache');
-      results.push({engine:engine.name(),scenario:'scroll-out-cancellation',initialTarget,state:scrolled,requests:scroll.requests});await sc.context.close();
+      assert(scrolled.cards.some(card=>card.url===articleUrl(scroll.name,9)&&card.photo),'The remaining admitted cover did not decode');
+      assert.equal(scrolled.entryPhotos.length,13,'Scrolling deleted retained metadata');
+      results.push({engine:engine.name(),scenario:'scroll-out-cancellation',initialTarget,scrollGeometry,state:scrolled,requests:scroll.requests});await sc.context.close();
 
-      const coalesced=run(engine.name()+'-coalesced',{delayMs:250}),c=await start(browser,coalesced);
+      const coalesced=run(engine.name()+'-coalesced',{holdFirstMetadata:true}),c=await start(browser,coalesced);
       await waitForRequest(coalesced);
       const shares=await c.page.evaluate(()=>{
         const owner=rssCoverOwners.get(document.getElementById('casual-rail')),original=owner.consumer;
@@ -336,14 +637,14 @@ try{
         window.secondCover=promise.then(result=>{rssCoverRelease(second);return result;});
         return {samePromise:promise===original.job.promise,url:second.entry.url};
       });
-      assert.equal(shares.samePromise,true);
+      assert.equal(shares.samePromise,true);coalesced.releaseFirstMetadata();
       await c.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
       assert.equal(coalesced.requests.filter(request=>request.target===shares.url).length,1);
       const coalescedState=await snapshot(c.page);noPersonalData(coalescedState);
       results.push({engine:engine.name(),scenario:'coalesced-current-consumers',shares,state:coalescedState,requests:coalesced.requests});await c.context.close();
 
       // Observe the real card throughout metadata lookup, image load, and decode.
-      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',holdFirstMetadata:true,delayMs:250,imageDelayMs:2000}),sh=await start(browser,shimmer);
+      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',holdFirstMetadata:true,holdImages:true,recordCoverAdmission:true}),sh=await start(browser,shimmer);
       await waitForRequest(shimmer);
       const lookup=await snapshot(sh.page);
       assert.equal(lookup.cards.filter(card=>card.pending).length,1,'Never-attempted cards shimmered');
@@ -355,11 +656,35 @@ try{
       shimmer.releaseFirstMetadata();
       await sh.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
       const decoding=await snapshot(sh.page);assert(decoding.cards[0].pending&&!decoding.cards[0].photo);
-      await sh.page.waitForFunction(()=>rssCoverJobs.size===0);
-      await sh.page.evaluate(async()=>{await refreshLibrary();await refreshLibrary();});
-      const retained=await sh.page.evaluate(()=>document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
-      assert(retained,'Same-URL refresh canceled a retained image load');
-      assert.equal(shimmer.requests.length,2,'Warm same-URL refresh repeated metadata lookup');
+      await sh.page.evaluate(()=>{
+        window.shimmerCard=document.querySelector('#casual-rail .rss-card');
+        window.shimmerWork=rssCardCoverWork.get(shimmerCard);
+      });
+      const metadataStages=[];
+      for(let stage=0;stage<3;stage++){
+        if(stage)await sh.page.evaluate(()=>refreshLibrary());
+        metadataStages.push(await metadataSettled(sh.page));
+        writeFileSync(resolve(proof,engine.name()+'-shimmer-metadata-stages.json'),JSON.stringify({metadataStages,requests:shimmer.requests},null,2));
+      }
+      const retained=await sh.page.evaluate(()=>({
+        pending:shimmerCard.classList.contains('rss-cover-pending'),
+        sameCard:document.querySelector('#casual-rail .rss-card')===shimmerCard,
+        sameWork:rssCardCoverWork.get(shimmerCard)===shimmerWork,
+      }));
+      writeFileSync(resolve(proof,engine.name()+'-shimmer-held-image.json'),JSON.stringify({retained,state:await snapshot(sh.page),metadataStages,requests:shimmer.requests},null,2));
+      assert.deepEqual(retained,{pending:true,sameCard:true,sameWork:true},'Same-URL refresh canceled or restarted the retained image');
+      assert(shimmer.requests.length<=6,'Two explicit refresh generations exceeded their two-request budgets');
+      assert.equal(shimmer.requests.filter(request=>request.index===0).length,1,'Warm refresh repeated the recovered photo metadata');
+      assert.equal(new Set(shimmer.requests.map(request=>request.target)).size,shimmer.requests.length,'Settled confirmed metadata was requested again');
+      for(const [stage,evidence] of metadataStages.entries()){
+        assert.equal(evidence.pass,metadataStages[0].pass+stage);
+        const admissions=evidence.admissions.filter(record=>record.pass===evidence.pass);
+        assert.equal(admissions.length,2,'Fixture did not exhaust its bounded metadata generation');
+        assert.equal(new Set(admissions.map(record=>record.url)).size,2,'Same-generation metadata retry');
+        assert(admissions.every(record=>record.visible),'Metadata was admitted offscreen');
+        for(const record of admissions)assert(evidence.cache[record.url],'Generation ended before its metadata outcome was cached');
+      }
+      shimmer.releaseImages();
       // Exercise the exact changed surface at the repository's required sizes.
       for(const viewport of [{width:390,height:844},{width:820,height:1024},{width:1440,height:900},{width:320,height:568},{width:844,height:390}]){
         await sh.page.setViewportSize(viewport);
@@ -392,35 +717,50 @@ try{
       await sh.page.evaluate(()=>window.scrollTo(0,0));
       assert.deepEqual(await sh.page.locator('#casual-rail .rss-card').first().boundingBox(),geometry);
       assert.equal(shimmer.images.filter(image=>image.url===imageUrl(shimmer.name,0)&&image.type==='image').length,1,'Refresh restarted the same image load');
-      assert(shimmer.requests.length<=4,'Viewport changes exceeded the refreshed generation budget');
-      results.push({engine:engine.name(),scenario:'lookup/image-shimmer/refresh/geometry/reduced-motion',lookup,decoding,decoded,reduced,requests:shimmer.requests,images:shimmer.images});await sh.context.close();
+      assert(shimmer.requests.length<=6,'Viewport changes exceeded the two refreshed generation budgets');
+      results.push({engine:engine.name(),scenario:'lookup/image-shimmer/refresh/geometry/reduced-motion',lookup,decoding,decoded,reduced,metadataStages,requests:shimmer.requests,images:shimmer.images});await sh.context.close();
 
       for(const mode of ['empty','error','unsafe-base','timeout','image-failure','image-timeout']){
         const terminal=run(engine.name()+'-'+mode,{mode:['empty','error','unsafe-base'].includes(mode)?mode:'og',
           fastTimeout:mode.includes('timeout'),delayMs:mode==='timeout'?350:0,
           brokenImage:mode==='image-failure',stallDecode:mode==='image-timeout',imageDelayMs:mode==='image-timeout'?350:0}),t=await start(browser,terminal);
         await waitForRequest(terminal,2);const value=await settled(t.page);noPersonalData(value);
-        assert(value.cards.every(card=>!card.pending&&card.ready&&!card.photo),mode+' did not terminate to usable artwork');
+        writeFileSync(resolve(proof,engine.name()+'-'+mode+'-terminal-state.json'),JSON.stringify({state:value,requests:terminal.requests,images:terminal.images},null,2));
+        assert.equal(value.cards.length,0,mode+' left a ready/pending artwork card: '+JSON.stringify(value.cards));
+        assert.equal(value.entryPhotos.length,13,mode+' deleted discovery metadata');
         assert.equal(terminal.requests.length,2);
         if(mode==='unsafe-base'){
           assert.equal(await t.page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem(RSS_COVER_CACHE_KEY)||'{}')).length),0,'Ambiguous base poisoned the negative cache');
           assert(!terminal.blocked.some(url=>url.startsWith('http://127.0.0.1/')),'Public base policy was bypassed');
         }
         if(mode==='empty'){
+          const previous=terminal.requests.map(request=>request.target);
           await t.page.evaluate(()=>refreshLibrary());await settled(t.page);
-          assert.equal(terminal.requests.length,2,'Negative cache repeated the same lookup');
+          assert(terminal.requests.length<=4,'New-generation refill exceeded its two-request budget');
+          for(const target of previous)assert.equal(terminal.requests.filter(request=>request.target===target).length,1,'Negative cache repeated the same lookup');
         }else if(mode==='error'){
           assert.equal(await t.page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem(RSS_COVER_CACHE_KEY)||'{}')).length),0,'HTTP error poisoned the negative cache');
           await t.page.evaluate(()=>renderHome());await settled(t.page);
           assert.equal(terminal.requests.length,2,'Same-generation error started an automatic retry loop');
+          const failedPass=await t.page.evaluate(()=>rssCoverPass);
           terminal.options.mode='og';await t.page.evaluate(()=>refreshLibrary());
-          await t.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+          let recoveryError;
+          try{
+            await t.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+            await settled(t.page);
+          }catch(error){recoveryError=error;}
+          const recovered=await snapshot(t.page),recoveredPass=await t.page.evaluate(()=>rssCoverPass);
+          writeFileSync(resolve(proof,engine.name()+'-error-recovery-state.json'),JSON.stringify({failedPass,recoveredPass,state:recovered,requests:terminal.requests},null,2));
+          if(recoveryError)throw recoveryError;
+          noPersonalData(recovered);assert.equal(recoveredPass,failedPass+1);
+          assert.equal(recovered.cards.length,2);assert(recovered.cards.every(card=>card.photo&&!card.pending));
+          assert.equal(recovered.entryPhotos.length,13,'Recovery deleted retained metadata');
           assert.equal(terminal.requests.length,4,'Explicit new generation failed to recover after a temporary relay error');
         }
         if(mode==='image-failure'||mode==='image-timeout'){
           const failedImages=terminal.images.filter(image=>image.type==='image').map(image=>image.url);
           await t.page.evaluate(()=>show('casuals'));await t.page.evaluate(()=>show('home'));
-          await t.page.evaluate(()=>refreshLibrary());await settled(t.page);
+          await t.page.evaluate(()=>renderHome());await settled(t.page);
           for(const url of new Set(failedImages))assert.equal(terminal.images.filter(image=>image.type==='image'&&image.url===url).length,
             failedImages.filter(image=>image===url).length,'Terminal '+mode+' started an automatic retry loop for '+url);
         }
@@ -429,14 +769,22 @@ try{
       }
 
       for(const phase of ['metadata','image']){
-        const navigation=run(engine.name()+'-navigation-'+phase,{ignoreAbort:true,delayMs:phase==='metadata'?400:0,imageDelayMs:phase==='image'?400:0}),n=await start(browser,navigation);
+        const navigation=run(engine.name()+'-navigation-'+phase,{ignoreAbort:true,holdFirstMetadata:phase==='metadata',holdImages:phase==='image'}),n=await start(browser,navigation);
         await waitForRequest(navigation);
-        if(phase==='image')await n.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-cover-pending'));
+        if(phase==='image'){
+          await n.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-cover-pending'));
+          // This case tests image resume with both generation slots already
+          // admitted. Otherwise return may legitimately use its remaining slot.
+          await waitForRequest(navigation,2);
+          assert.equal(navigation.requests.length,2);
+          assert.equal(await n.page.evaluate(()=>rssCoverRemaining),0);
+        }
         const beforeCancel={imageRequests:navigation.images.filter(image=>image.type==='image'&&image.url===imageUrl(navigation.name,0)).length,
           photoStarts:await n.page.evaluate(url=>coverPhotoStarts.filter(start=>start.url===url).length,articleUrl(navigation.name,0))};
         await n.page.evaluate(()=>show('casuals'));
+        if(phase==='metadata')navigation.releaseFirstMetadata();else navigation.releaseImages();
         const cancelled=await settled(n.page);noPersonalData(cancelled);
-        assert(cancelled.cards.every(card=>!card.pending&&card.ready&&!card.photo),'Navigation left a shimmer or painted stale '+phase);
+        assert(cancelled.cards.every(card=>!card.pending&&card.hidden&&!card.ready&&!card.photo),'Navigation left a shimmer/artwork or painted stale '+phase);
         if(phase==='image'){
           const paused=await n.page.evaluate(()=>{
             window.pausedCoverCard=document.querySelector('#casual-rail .rss-card');
@@ -445,7 +793,6 @@ try{
           assert.equal(paused.started,'','Canceled image retained the started marker and cannot resume');
           assert.equal(paused.src,null);
           const metadataRequests=navigation.requests.length;
-          navigation.options.imageDelayMs=0;
           await n.page.evaluate(()=>show('home'));
           await n.page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card .thumb.has-cover'));
           assert.equal(await n.page.evaluate(()=>document.querySelector('#casual-rail .rss-card')===pausedCoverCard),true,'Return replaced a retained same-URL card');
@@ -459,7 +806,7 @@ try{
       }
 
       for(const trigger of ['document-hidden','preview-close','home-return']){
-        const resumed=run(engine.name()+'-resume-'+trigger,{supplied:true,mode:'empty',imageDelayMs:1200}),r=await start(browser,resumed);
+        const resumed=run(engine.name()+'-resume-'+trigger,{allSupplied:true,mode:'empty',holdImages:true}),r=await start(browser,resumed);
         await r.page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
         await r.page.evaluate(()=>{
           window.pausedCoverCard=document.querySelector('#casual-rail .rss-card');
@@ -488,13 +835,16 @@ try{
           assert.deepEqual(obsolete,{started:'',pending:false},'Canceled owner restarted its paused image before Preview returned');
         }
         const metadataBefore=resumed.requests.length;
-        resumed.options.imageDelayMs=0;
+        resumed.releaseImages();
         if(trigger==='document-hidden')await r.page.evaluate(()=>{qaDocumentHidden=false;document.dispatchEvent(new Event('visibilitychange'));});
         else if(trigger==='preview-close')await r.page.evaluate(()=>articlePreviewClose());
         else await r.page.evaluate(()=>show('home'));
         await r.page.waitForFunction(()=>pausedCoverCard.querySelector('.thumb').classList.contains('has-cover'));
         await r.page.evaluate(()=>pausedCoverWork.promise);
+        if(trigger==='home-return')assert.equal(await r.page.evaluate(()=>document.getElementById('casual-rail').dataset.rssStamp===resumeStamp),true,'Return did not cover the unchanged-stamp path');
+        const resumedPass=await r.page.evaluate(()=>rssCoverPass);
         await r.page.evaluate(()=>refreshLibrary());await settled(r.page);
+        assert.equal(await r.page.evaluate(()=>rssCoverPass),resumedPass+1,'Explicit refresh did not advance its own generation');
         assert.equal(await r.page.evaluate(()=>document.querySelector('#casual-rail .rss-card')===pausedCoverCard),true,'Canceled photo replaced the retained card');
         assert.equal(await r.page.evaluate(()=>!pausedCoverCard.classList.contains('rss-cover-pending')),true);
         assert.equal(resumed.requests.length,metadataBefore,'Resume fetched new cover metadata');
@@ -502,12 +852,11 @@ try{
         // Assert two logical starts; a canceled first transport may never arrive.
         assert.equal(await r.page.evaluate(url=>coverPhotoStarts.filter(start=>start.url===url).length,articleUrl(resumed.name,0)),2,'Resume did not restart the canceled image exactly once');
         assert(resumed.images.filter(image=>image.type==='image'&&image.url===imageUrl(resumed.name,0)).length<=2,'Resume duplicated image requests');
-        if(trigger==='home-return')assert.equal(await r.page.evaluate(()=>document.getElementById('casual-rail').dataset.rssStamp===resumeStamp),true,'Return did not cover the unchanged-stamp path');
         results.push({engine:engine.name(),scenario:'cancel-resume-'+trigger,paused,state:await snapshot(r.page),requests:resumed.requests,images:resumed.images});
         await r.context.close();
       }
 
-      const preview=run(engine.name()+'-pending-preview',{supplied:true,imageDelayMs:500}),p=await start(browser,preview);
+      const preview=run(engine.name()+'-pending-preview',{supplied:true,holdImages:true,waitForFeedSettlement:true}),p=await start(browser,preview);
       await p.page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
       const immediate=await p.page.evaluate(()=>{
         const card=document.querySelector('#casual-rail .rss-card'),entry=rssCands[0][0];
@@ -518,6 +867,7 @@ try{
           pending:card.classList.contains('rss-cover-pending')};
       });
       assert(immediate.open&&immediate.title&&immediate.source);assert.equal(immediate.pending,false);
+      preview.releaseImages();
       results.push({engine:engine.name(),scenario:'immediate-known-metadata-preview-during-image',immediate});await p.context.close();
     }finally{await browser.close();}
   }

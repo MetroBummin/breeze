@@ -21,8 +21,9 @@ existing script to avoid a new script-load/iOS bundle dependency while Home,
 Preview and Annotation PRs are being integrated.
 
 1. Use valid HTTP(S) candidates with a title and supplied photo or the explicit
-   local-artwork fallback marker from Decision 015's loader. Existing image
-   decode and ingestion checks own photo display and body readability.
+   missing-photo candidate marker from Decision 015's loader. That marker retains
+   metadata eligibility only: the renderer requires a decoded usable photo for
+   a ready card, or actual bounded work for a temporary selectable shimmer.
 2. Exclude saved source/resolved/discovery URLs, including UTM, fbclid, gclid and
    fragment variants. Preserve meaningful query parameters. Deduplicate articles
    across feeds and Reddit outbound links. Do not claim semantic near-duplicate
@@ -105,8 +106,9 @@ graphite glass skeleton covering the image, publisher and headline regions.
 Cards cannot be opened or keyboard-focused until the photo succeeds. Successful
 loads fade the overlay over 650 ms without changing card geometry; reduced motion
 disables the shimmer and fade. Existing decoded cards remain visible on refresh.
-Decision 015 supersedes missing/failed-cover exclusion: local artwork keeps
-cards selectable without downloading article HTML to repair their covers.
+Decision 015's October 6 restoration again withholds missing/failed ready covers.
+Only actually admitted metadata/image work may show a selectable pending card;
+unknown candidates remain retained and later source photos can refill the slot.
 The shared control glass and Lookup materials are unchanged.
 
 Home refresh starts at the first recommendation. When a rail already at its

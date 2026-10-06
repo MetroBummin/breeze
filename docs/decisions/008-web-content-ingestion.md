@@ -578,7 +578,9 @@ concurrent loads coalesce.
 
 Decision 015 removes background Medium body and cover-page preparation. Rotation
 advances metadata only; selected Medium owner feeds resolve after card intent.
-Existing local artwork keeps photo-less discoveries usable. Preview/Read
+Its October 6 ready-display restoration withholds photo-less cards while keeping
+their candidate metadata. Only actual bounded cover work shows temporary shimmer;
+a decoded usable photo is required for a ready recommendation. Preview/Read
 commitment, selected-article images, Smart Crop, import persistence and the
 off/shadow Jev rollout remain unchanged. The shared catalog is a separate,
 default-off transport with an offline schema proposal.

@@ -41,6 +41,7 @@ try{for(const engine of engines){
     // The delayed poll must also repaint Home after its first render unsubscribed.
     phase='approved';
     await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card:not([hidden])').length===1);
+    await page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card:not([hidden]) .thumb.has-cover'));
     assert.equal(await page.locator('#casual-rail .rss-card').getAttribute('data-rss-url'),entry.url);
     const before=await page.locator('#casual-rail .rss-card').evaluate(node=>{node.dataset.testIdentity='retained';return node.querySelector('img').naturalWidth;});assert.ok(before>0);
     phase='outage';await page.evaluate(async()=>{await loadRss(true);refreshFeedRails();});
@@ -84,3 +85,4 @@ try{for(const engine of engines){
     await browser.close();console.log(`${engine.name()}: RSS pending/approved/rejected/outage/saved states and eight viewport/theme checks passed`);
   }finally{await browser.close();}
 }}finally{server.close();}
+

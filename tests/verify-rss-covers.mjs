@@ -61,11 +61,13 @@ test('unsafe and tracking images do not replace an available publisher photo',()
   const entry=parse(`<description><![CDATA[<p>${prose}</p><img src="javascript:alert(1)"><img src="https://images.test/count.gif" width="1" height="1"><img src="https://images.test/cover.jpg" width="640" height="480">]]></description><enclosure type="audio/mpeg" url="https://images.test/podcast.mp3"/>`);
   assert.equal(entry.photo,'https://images.test/cover.jpg');
 });
-test('source photo absence retains artwork eligibility without inventing a photo',()=>{
+test('source photo absence retains candidate metadata without inventing ready display or a photo',()=>{
   const {context,calls}=runtime(),entry=context.parseRss(xml(`<description>${prose}</description>`),feed)[0];
   const discovery=context.rssDiscoveryEntry(entry);
   assert.equal(discovery.photo,'');assert.equal(discovery.coverFallback,true);
   assert.equal(context.rssRankRecommendations([[discovery]],{library:[],positions:{},sources:[feed],now:Date.now()}).length,1);
+  assert.equal(context.rssDisplayGroups([[discovery]],{remaining:2,cancelled:false,attempted:new Set()},null)[0].length,0);
+  assert.equal(context.rssCoverCached(discovery.url),null,'Unadmitted custom-source metadata is unknown');
   assert.equal(entry.source,feed.name);assert.equal(entry.category,feed.category);assert.equal(calls.length,0);
 });
 test('cold default loading caches the supplementary photo and never prepares an article',async()=>{
@@ -121,7 +123,7 @@ test('a supplied discovery photo remains authoritative after article selection',
   const fixture=selectedFixture({photo:'https://images.test/supplied.jpg'});fixture.project();
   assert.equal(fixture.context.entry.photo,'https://images.test/supplied.jpg');assert.equal(fixture.decoded.length,0);
 });
-test('missing or excluded draft photos preserve the existing artwork',()=>{
+test('missing or excluded draft photos preserve candidate metadata without inventing a photo',()=>{
   for(const draftPhoto of ['','https://images.test/avatar.jpg']){
     const fixture=selectedFixture({draftPhoto});fixture.project();
     assert.equal(fixture.context.entry.photo,'');assert.equal(fixture.context.entry.coverFallback,true);assert.equal(fixture.decoded.length,0);
