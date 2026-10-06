@@ -40,11 +40,13 @@ try{
         const qaRail=document.createElement('div');qaRail.id='qa-rail';document.body.append(qaRail);
         const card=rssCard(entry);qaRail.append(card);
         window.rssCoverReady=rssCardPhoto(card,entry);
-        return {noPhotoCount:noPhoto.length,pendingUntilPhoto:card.classList.contains('rss-pending'),hidden:card.hidden};
+        return {noPhotoCount:noPhoto.length,pendingUntilPhoto:card.classList.contains('rss-cover-pending'),hidden:card.hidden,
+          interactive:card.tabIndex===0&&!card.hasAttribute('aria-disabled')};
       });
       assert.equal(state.noPhotoCount,0);
       assert.equal(state.pendingUntilPhoto,true);
       assert.equal(state.hidden,false);
+      assert.equal(state.interactive,true);
       assert.equal(await page.evaluate(()=>window.rssCoverReady),true);
       const coverState=await page.locator('#qa-rail .rss-card').evaluate(card=>({hidden:card.hidden,loaded:card.querySelector('.cover').naturalWidth}));
       assert.equal(coverState.hidden,false);
@@ -61,7 +63,7 @@ try{
           const before=bounds();
           const material=getComputedStyle(card.querySelector('.rss-skeleton')).backgroundImage;
           await rssCardPhoto(card,entry);
-          results.push({before,after:bounds(),material,pending:card.classList.contains('rss-pending')});
+          results.push({before,after:bounds(),material,pending:card.classList.contains('rss-cover-pending')});
           card.remove();
         }
         document.body.classList.remove('dark');

@@ -65,6 +65,17 @@ same current discovery entry/card without another request. See the follow-up
 [comparison evidence](../qa/rss-covers-20261005.md) and
 [visible-cover limits](../qa/rss-visible-covers-20261005.md).
 
+The 239 device follow-up requested the existing discovery shimmer while a cover
+is being found or decoded. The thumbnail now uses that same light/dark material
+only for an admitted lookup or an actual image load, independently of card
+interaction. Known title/source/photo metadata opens Preview immediately.
+Never-attempted, offscreen, budget-ineligible and negative-cache cards retain
+artwork. Decode success replaces the shimmer; no-image, error, cancellation and
+the existing timeouts end it. Same-URL refresh retains an in-flight or decoded
+image, while replacement/view exit prevents a late image from painting.
+The two-lookup budget, cache lifetimes, image fallback transport and release
+numbering remain unchanged. See [shimmer QA](../qa/rss-cover-shimmer-20261006.md).
+
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport
 can still contain embedded article bodies; only the optional catalog removes

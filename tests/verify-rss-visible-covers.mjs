@@ -120,3 +120,57 @@ test('128 KiB retained prefix cannot promise a network or relay billing ceiling'
   assert.equal(result.photo,'');assert(largest<=128*1024);assert.equal(metrics().cancelled,true);
   assert.equal(metrics().readBytes,1024*1024,'A single delivered chunk can exceed the retained parsing limit');
 });
+
+function pendingFixture(){
+  const fixture=runtime(),{context}=fixture,classes=new Set();
+  const entry={url,photo:'',coverFallback:true,feedSourceUrl:runInContext('RSS_FEEDS[0].url',context)};
+  const card={isConnected:true,dataset:{rssUrl:url},classList:{
+    add:value=>classes.add(value),remove:value=>classes.delete(value),contains:value=>classes.has(value),
+  }};
+  const owner={pass:0,remaining:1,entries:new Map([[card,entry]]),attempted:new Set(),cancelled:false,
+    running:false,consumer:null,rail:{isConnected:true},frame:0};
+  Object.assign(context,{entry,card,owner,cancelAnimationFrame:()=>{},document:{visibilityState:'visible'}});
+  runInContext('rssCands=[[entry]]',context);
+  context.rssCoverVisible=()=>!owner.cancelled;
+  let complete;
+  context.rssCoverLookup=(_url,consumer)=>{
+    consumer.job={controller:new AbortController(),consumers:new Set([consumer])};
+    return new Promise(resolve=>{complete=resolve;});
+  };
+  return {...fixture,entry,card,owner,complete:result=>complete(result)};
+}
+test('only an admitted lookup shimmers, and empty/error completion releases the thumbnail',async()=>{
+  for(const result of [{photo:''},null]){
+    const fixture=pendingFixture(),{context,card,owner}=fixture;
+    assert.equal(card.classList.contains('rss-cover-pending'),false);
+    const work=context.rssCoverPump(owner);
+    assert.equal(card.classList.contains('rss-cover-pending'),true);
+    fixture.complete(result);await work;
+    assert.equal(card.classList.contains('rss-cover-pending'),false);
+    assert.equal(owner.consumer,null);assert.equal(fixture.calls.length,0);
+  }
+});
+test('negative cache, ineligible metadata and exhausted budgets never shimmer or enqueue work',async()=>{
+  for(const reason of ['negative','custom','budget','generation-budget','offline']){
+    const {context,entry,card,owner,calls}=pendingFixture();
+    if(reason==='negative')context.rssCoverStore(url,'');
+    if(reason==='custom')entry.feedSourceUrl='https://custom.test/feed';
+    if(reason==='budget')owner.remaining=0;
+    if(reason==='generation-budget')runInContext('rssCoverRemaining=0',context);
+    if(reason==='offline')context.navigator.onLine=false;
+    await context.rssCoverPump(owner);
+    assert.equal(card.classList.contains('rss-cover-pending'),false,reason);
+    assert.equal(owner.consumer,null);assert.equal(calls.length,0);
+  }
+});
+test('cancellation ends pending immediately, and stale release cannot clear a newer image owner',async()=>{
+  const fixture=pendingFixture(),{context,card,owner}=fixture;
+  const work=context.rssCoverPump(owner),consumer=owner.consumer;
+  context.rssCoverCancel(owner);
+  assert.equal(card.classList.contains('rss-cover-pending'),false);
+  assert.equal(consumer.job.controller.signal.aborted,true);
+  runInContext('rssCardCoverWork.set(card,{promise:Promise.resolve(false)})',context);
+  card.classList.add('rss-cover-pending');
+  fixture.complete(null);await work;
+  assert.equal(card.classList.contains('rss-cover-pending'),true,'Old metadata completion cleared a newer image load');
+});
