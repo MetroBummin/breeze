@@ -40,7 +40,7 @@ replace("  assert.equal(controls,0,'Chrome-only motion must not invalidate and r
   writeFileSync(resolve(proof,engine.name()+'-'+process.env.BREEZE_CHROME_TRACE_ATTEMPT+'.json'),JSON.stringify(evidence,null,2));
   console.log('Reader chrome layout evidence '+JSON.stringify(evidence));
   assert.equal(controls,0,'Chrome-only motion must not invalidate and remeasure PDF paper');`);
-const end=source.indexOf('  // A pending PDF sentence owns');
+const end=source.indexOf('  // A pending PDF sentence ');
 if(end<0)throw Error('Owned test boundary missing');
 source=source.slice(0,end)+"  assert.deepEqual(errors,[]);\n }finally{await browser.close();}\n}}finally{await new Promise(done=>server.close(done));}\n";
 writeFileSync(temporary,source);

@@ -121,3 +121,53 @@ providers, authenticated owner and anonymous quota; `verify-sentence-help-browse
 checks capability, source distinction, duplicate calls, failure/retry/offline,
 stale results, cache bounds, scroll/pinch endings and text/EPUB controls. Existing
 cue/presentation and word-help regressions remain required in both engines.
+
+
+## Shared lookup pending and anchored failure (2026-10-07)
+
+Supersedes the waiting-pill presentation above. While translation is pending,
+only the selected sentence carries word lookup's shared blue sheen. Reader
+controls remain normal; there is no bottom spinner, loading label or empty pill.
+A separate off-screen live status announces waiting. Text and EPUB still use
+their exact sentence Range; PDF uses existing glyph-box occurrence geometry.
+The shared stylesheet is installed in each owning document, and reduced motion
+keeps a static visible tint. No range reads are added to cue scrolling.
+
+A response ends the sheen immediately, including while release gating waits
+for the initiating finger. Completed/outgoing cues stay static rather than
+replaying their entrance. Success retains the existing sentence translation
+surface. Source-anchored failure uses the same mini-pill material, meaning
+spacing, retry icon and 44px action as word lookup, with no chevron or visible
+retry label. After visual review, its source anchor is the whole selected sentence union:
+Text/EPUB's exact sentence Range, or PDF's selected occurrence glyph-box union.
+The shared placeLookupPeek function retains the word viewport and Reader-control
+clamp, with detail-space reservation disabled for this non-expanding error pill.
+It prefers fully below the selected sentence when the pill fits, otherwise fully
+above. It overlaps/clamps only when neither outside position can fit (such as
+a sentence filling the viewport). The word pill's default policy is unchanged.
+No source scroll is introduced for errors, retries or placement.
+
+Word and sentence mini feedback use one 250ms idle calculation and 750ms
+seen/dismiss policy. Pending requests survive source scroll; errors wait for
+idle and a live visible target. A short reveal returns to hidden-ready on
+scroll; a seen error closes on the next user movement. Once its target leaves
+the viewport, presentation cannot return, even if the request later succeeds.
+Existing sentence success sheets still close on real user scrolling. Retry
+retains exact source occurrence and existing request identity; it is explicit
+and single-flight. Authentication/quota errors do not enable retry. Unanchored
+openings retain the existing modal fallback.
+
+The existing sentence lifetime owns close, outside input, pinch, page/mode/
+document navigation, backgrounding and stale completion. This presentation
+change does not fix hanging auth/network promises or establish the cause of
+physical-device spinner freezes. No backend or quota behavior changes.
+
+## Original lookup appearance retained (2026-10-07)
+
+After comparing light-mode variants, the user chose the existing production
+word shimmer unchanged. Word and sentence share its original light/dark wash,
+blue/white gradient, 1.65-second timing and keyframes. The more saturated wash
+and narrower moving-reflection proposals are discarded. The shared token is
+only a material transfer to the owned Text/PDF/EPUB marker, not a new palette.
+The browser parity fixture pins the original values and requires identical
+computed styles and screenshot bytes in both themes and motion preferences.

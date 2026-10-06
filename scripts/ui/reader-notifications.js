@@ -109,7 +109,7 @@ const readerNotices = (()=>{
   window.addEventListener('blur',yieldToInput);
   // Observe only overlay roots, not words, progress styles, or scrolling content.
   const observer=new MutationObserver(()=>{ if(active || queue.length) pump(); });
-  ['sentence-modal','sentence-pill-status','panel','word-peek','aa-pop','settings-modal','sync-modal','add-modal'].forEach(id=>{
+  ['sentence-modal','sentence-peek','panel','word-peek','aa-pop','settings-modal','sync-modal','add-modal'].forEach(id=>{
     const node=document.getElementById(id);
     if(node) observer.observe(node,{attributes:true,attributeFilter:['hidden','class','open']});
   });

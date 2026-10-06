@@ -253,3 +253,22 @@ Reader 단어 확장의 중복 예문은 숨긴다. 문맥 뜻은 카드 배경 
 정렬·필터 영역은 기존 `styles/wordbook.css`의 카드 배경·테두리·간격을 사용한다.
 `surfaces.css`의 투명·무테두리 덮어쓰기는 제거한다. 현재 두 줄 배치, 정렬·책·별표
 컨트롤과 44px 터치 영역은 유지하며, 학습·필터 동작이나 저장 형식은 바꾸지 않는다.
+
+
+## 문장 조회 대기와 오류 (2026-10-07)
+
+기존 문장 대기 필을 대체한다. 조회 중 선택한 문장에는 단어와 같은 파란 반사
+효과만 보인다. 하단에는 스피너·대기 문구를 만들지 않고 평소 Reader 컨트롤을
+유지한다. 접근성 상태는 화면 밖에서 알리며 동작 줄이기는 정적 강조를 쓴다.
+성공은 기존 번역 화면이다. 실패는 단어 미니필과 같은 재질·배치·스크롤 정책을
+공유하며 ‘해석하지 못했어요’와 재시도 아이콘 하나만 표시한다. 셰브론이나 보이는
+재시도 라벨은 넣지 않는다. 선택 문장 전체를 앵커로 공유 함수에서 화면·하단 컨트롤 경계를 계산한다.
+필이 들어갈 공간이 있으면 문장 맨 아래, 없으면 맨 위에 놓는다. 양쪽 모두
+들어가지 않는 긴 문장일 때만 화면 안으로 겹쳐 배치한다. 오류·재시도는 본문을 이동하지 않는다.
+로그인·한도 오류에는 재시도를 활성화하지 않는다.
+
+
+Word and sentence pending feedback use the exact original production lookup
+wash and blue/white reflection in both themes. The proposed light palette and
+motion changes were discarded after review. Timing, keyframes, reduced-motion
+fallback, sentence line geometry and source-specific blending remain unchanged.

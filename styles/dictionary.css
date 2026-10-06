@@ -4,53 +4,53 @@
    상세 단어창과 Reader 레이아웃은 그대로 두고, 탭 직후의 기다림과 대표 뜻만
    fixed overlay로 보여 줍니다. PDF/EPUB의 확대 레이어 밖이라 필 자체는 커지지
    않습니다. 위치는 scripts/dictionary/dictionary.js가 실제 선택 rect로 정합니다. */
-#word-peek{--word-safe-top:env(safe-area-inset-top,0px);position:fixed; z-index:78; isolation:isolate; display:flex; align-items:stretch; min-height:44px;
+:is(#word-peek,#sentence-peek){--word-safe-top:env(safe-area-inset-top,0px);position:fixed; z-index:78; isolation:isolate; display:flex; align-items:stretch; min-height:44px;
   max-width:calc(100vw - 32px); overflow:hidden; border:1px solid var(--sentence-glass-line);
   border-radius:999px; background:var(--sentence-glass-solid); color:var(--sentence-glass-ink);
   box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
   animation:word-peek-in 120ms cubic-bezier(.2,.7,.25,1);}
-#word-peek[hidden]{display:none;}
-#word-peek::before{content:""; position:absolute; z-index:-1; inset:0; pointer-events:none;
+:is(#word-peek,#sentence-peek)[hidden]{display:none;}
+:is(#word-peek,#sentence-peek)::before{content:""; position:absolute; z-index:-1; inset:0; pointer-events:none;
   border-radius:inherit;
   background:linear-gradient(145deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.07) 44%,rgba(255,255,255,.16) 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.42);}
-body.dark #word-peek::before{
+body.dark :is(#word-peek,#sentence-peek)::before{
   background:linear-gradient(145deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.025) 46%,rgba(255,255,255,.07) 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.14);}
-#word-peek .word-peek-spinner{flex:0 0 auto; align-self:center; width:13px; height:13px;
+:is(#word-peek,#sentence-peek) .word-peek-spinner{flex:0 0 auto; align-self:center; width:13px; height:13px;
   margin:0 0 0 15px; border:1.5px solid var(--sentence-glass-spinner);
   border-top-color:var(--sentence-glass-spinner-on); border-radius:50%;
   animation:sentence-spin .82s linear infinite;}
-#word-peek:not(.loading) .word-peek-spinner{display:none;}
-#word-peek-meaning{display:block; min-width:0; max-width:min(280px,calc(100vw - 92px));
+:is(#word-peek,#sentence-peek):not(.loading) .word-peek-spinner{display:none;}
+:is(#word-peek-meaning,#sentence-peek-meaning){display:block; min-width:0; max-width:min(280px,calc(100vw - 92px));
   padding:11px 14px 10px 16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   font:600 14px/22px var(--ui); pointer-events:none;}
-#word-peek.loading #word-peek-meaning{padding-left:9px;}
-#word-peek .word-peek-actions{position:relative; isolation:isolate; flex:0 0 88px;
+:is(#word-peek,#sentence-peek).loading :is(#word-peek-meaning,#sentence-peek-meaning){padding-left:9px;}
+:is(#word-peek,#sentence-peek) .word-peek-actions{position:relative; isolation:isolate; flex:0 0 88px;
   display:flex; align-items:stretch; min-height:44px;}
-#word-peek .word-peek-actions::before{content:""; position:absolute; z-index:-1; inset:5px;
+:is(#word-peek,#sentence-peek) .word-peek-actions::before{content:""; position:absolute; z-index:-1; inset:5px;
   border:1px solid var(--sentence-glass-line); border-radius:999px;
   background:var(--sentence-glass-action);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 1px 3px rgba(24,28,30,.10);}
-#word-peek .word-peek-action{position:relative; flex:0 0 44px; width:44px; min-height:44px; padding:0; border:0;
+:is(#word-peek,#sentence-peek) .word-peek-action{position:relative; flex:0 0 44px; width:44px; min-height:44px; padding:0; border:0;
   display:flex; align-items:center; justify-content:center;
   background:transparent; color:var(--sentence-glass-secondary); cursor:pointer;
   touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
 #word-peek-more::after{content:""; position:absolute; left:0; top:11px; bottom:11px; width:1px;
   background:var(--sentence-glass-line-soft);}
-#word-peek .word-peek-action:hover{color:var(--sentence-glass-ink);}
-#word-peek .word-peek-action:active{opacity:.68;}
-#word-peek .word-peek-action:focus-visible{outline:2px solid var(--blue); outline-offset:-3px; border-radius:50%;}
-#word-peek .word-peek-action:disabled{cursor:default; opacity:.52;}
-#word-peek .word-peek-action:disabled{background:transparent; transform:none;}
-#word-peek .word-peek-action svg{display:block; width:17px; height:17px;}
+:is(#word-peek,#sentence-peek) .word-peek-action:hover{color:var(--sentence-glass-ink);}
+:is(#word-peek,#sentence-peek) .word-peek-action:active{opacity:.68;}
+:is(#word-peek,#sentence-peek) .word-peek-action:focus-visible{outline:2px solid var(--blue); outline-offset:-3px; border-radius:50%;}
+:is(#word-peek,#sentence-peek) .word-peek-action:disabled{cursor:default; opacity:.52;}
+:is(#word-peek,#sentence-peek) .word-peek-action:disabled{background:transparent; transform:none;}
+:is(#word-peek,#sentence-peek) .word-peek-action svg{display:block; width:17px; height:17px;}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  #word-peek{background:var(--sentence-glass-pill); backdrop-filter:blur(19px) saturate(122%);
+  :is(#word-peek,#sentence-peek){background:var(--sentence-glass-pill); backdrop-filter:blur(19px) saturate(122%);
     -webkit-backdrop-filter:blur(19px) saturate(122%);}
 }
 @keyframes word-peek-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){
-  #word-peek{animation:word-peek-fade var(--sentence-transition) linear;}
+  :is(#word-peek,#sentence-peek){animation:word-peek-fade var(--sentence-transition) linear;}
   @keyframes word-peek-fade{from{opacity:0}to{opacity:1}}
 }
 
@@ -458,3 +458,7 @@ body.dark :is(#panel,.aa-legend,#vstars) .stbtn[data-s="3"].on{color:var(--s3);}
 :is(#p-easy-text,#ps-easy-text).easy-loading-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 @keyframes easy-skeleton-breathe{from{opacity:.45;}to{opacity:.9;}}
 @media(prefers-reduced-motion:reduce){:is(#p-easy-skeleton,#ps-easy-skeleton) i{animation:none;opacity:.7;}}
+
+/* Sentence failures use the same mini surface with only its retry action. */
+#sentence-peek .word-peek-actions{flex-basis:44px;}
+#sentence-peek .word-peek-action[hidden]{display:none;}

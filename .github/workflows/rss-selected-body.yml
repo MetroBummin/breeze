@@ -1,0 +1,29 @@
+name: RSS selected body recovery
+on:
+  pull_request:
+    paths:
+      - 'scripts/importers/rss.js'
+      - 'scripts/importers/article.js'
+      - 'tests/verify-rss-selected-body*'
+      - '.github/workflows/rss-selected-body.yml'
+permissions:
+  contents: read
+concurrency:
+  group: rss-selected-body-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --test tests/verify-rss-selected-body.mjs
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/verify-rss-selected-body-browser.mjs

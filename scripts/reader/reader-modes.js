@@ -291,16 +291,23 @@ const READER_SENTENCE_CUE_CSS = `
 .reader-sentence-cue{position:absolute;display:block;pointer-events:none;
   border-radius:8px;background:var(--sentence-cue-color,rgba(77,174,214,.34));
   transform-origin:center;animation:breeze-sentence-cue-in 260ms cubic-bezier(.16,1,.3,1) both;}
+.reader-sentence-cue-layer.has-pending-feedback .reader-sentence-cue{animation:none;}
 .reader-sentence-cue-layer.is-leaving{opacity:0;transition:opacity 160ms ease-out;}
 @keyframes breeze-sentence-cue-in{from{opacity:0;transform:scaleY(.88)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){
   .reader-sentence-cue{animation:none}.reader-sentence-cue-layer.is-leaving{transition:none}}
 `;
+function setReaderSentencePending(pending){
+  const layer=readerSentenceCue?.layer;
+  if(pending) layer?.classList.add('has-pending-feedback');
+  layer?.classList.toggle('is-pending',!!pending);
+}
 function clearReaderSentenceCue(immediate=false){
   const active=readerSentenceCue;
   readerSentenceCue=null;
   if(!active) return;
   if(active.observer) active.observer.disconnect();
+  active.layer.classList.remove('is-pending');
   const layer=active.layer,view=layer.ownerDocument.defaultView;
   if(immediate || (view.matchMedia&&view.matchMedia('(prefers-reduced-motion: reduce)').matches)){
     layer.remove();return;
@@ -314,6 +321,7 @@ function clearReaderSentenceCue(immediate=false){
 function createReaderSentenceCue(host,pdf=false){
   clearReaderSentenceCue(true);
   const doc=host.ownerDocument;
+  wordLookupFeedback.ensureStyle(doc);
   if(!doc.getElementById('breeze-sentence-cue-style')){
     const style=doc.createElement('style');style.id='breeze-sentence-cue-style';
     style.textContent=READER_SENTENCE_CUE_CSS;doc.head.appendChild(style);
@@ -323,8 +331,11 @@ function createReaderSentenceCue(host,pdf=false){
   const dark=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
   layer.style.setProperty('--sentence-cue-color',getComputedStyle(document.documentElement).getPropertyValue('--cue'));
   layer.style.setProperty('--sentence-cue-blend',!pdf&&dark?'screen':'multiply');
+  layer.style.setProperty('--breeze-lookup-radius','8px');
+  layer.style.setProperty('--breeze-lookup-wash',getComputedStyle(document.body).getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
+  layer.style.setProperty('--breeze-lookup-sheen',getComputedStyle(document.body).getPropertyValue('--word-lookup-sheen'));
   host.appendChild(layer);
-  readerSentenceCue={layer,observer:null};
+  readerSentenceCue={layer,observer:null,bounds:null};
   return layer;
 }
 function sentenceLineRects(rects){
@@ -340,6 +351,20 @@ function sentenceLineRects(rects){
       }else lines.push({left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom});
     });
   return lines;
+}
+/* The same selected cue owns source geometry. Scroll only maps its cached union
+   through the moving layer; it never traverses the source Range again. */
+function readerSentenceCueTarget(active){
+  const layer=active.layer;
+  return {ownerDocument:layer.ownerDocument,getBoundingClientRect(){
+    const b=active.bounds;
+    if(!layer.isConnected||!b)return {left:0,top:0,right:0,bottom:0,width:0,height:0};
+    const r=layer.getBoundingClientRect();
+    const sx=r.width/layer.offsetWidth||1,sy=r.height/layer.offsetHeight||1;
+    return {left:r.left+b.left*sx,top:r.top+b.top*sy,
+      right:r.left+b.right*sx,bottom:r.top+b.bottom*sy,
+      width:(b.right-b.left)*sx,height:(b.bottom-b.top)*sy};
+  }};
 }
 function showSentenceRangeCue(range){
   if(!range) return;
@@ -357,7 +382,10 @@ function showSentenceRangeCue(range){
       (r.right-r.left)/sx,(r.bottom-r.top)/sy]);
     const next=JSON.stringify(rects);
     if(next===signature) return;
-    signature=next;layer.replaceChildren();
+    signature=next;
+    active.bounds=rects.length?{left:Math.min(...rects.map(r=>r[0])),top:Math.min(...rects.map(r=>r[1])),
+      right:Math.max(...rects.map(r=>r[0]+r[2])),bottom:Math.max(...rects.map(r=>r[1]+r[3]))}:null;
+    layer.replaceChildren();
     for(const [x,y,w,h] of rects){
       const cue=doc.createElement('span');cue.className='reader-sentence-cue';
       cue.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
@@ -372,6 +400,7 @@ function showSentenceRangeCue(range){
     const block=owner.nodeType===1?owner:owner.parentElement;
     if(block){active.observer=new view.ResizeObserver(paint);active.observer.observe(block);}
   }
+  return readerSentenceCueTarget(active);
 }
 
 function showOriginalLandingCue(record,target,paragraphHint){

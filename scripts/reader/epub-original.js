@@ -789,11 +789,14 @@ registerReaderSurface({
     const sentence=part ? part.text.replace(/\s+/g,' ').trim() : '';
     if(!sentence) return null;
     const range=domRangeForOffsets(block, part.start, part.end);
-    return { sentence, owner:block, start:part.start, context(){
+    let cueTarget=null;
+    const peekTarget={ownerDocument:doc,getBoundingClientRect:()=>
+      cueTarget?cueTarget.getBoundingClientRect():block.getBoundingClientRect()};
+    return { sentence, peekTarget, owner:block, start:part.start, context(){
       const selector='p,li,blockquote,h1,h2,h3,h4';
       const blocks=Array.from(doc.querySelectorAll(selector)).filter(el=>el===block||!el.querySelector(selector));
       return easySentenceWindow(blocks.map(el=>el.textContent),sentence,{pi:blocks.indexOf(block),start:part.start});
-    }, paint(){ showSentenceRangeCue(range); } };
+    }, paint(){ cueTarget=showSentenceRangeCue(range); } };
   },
   trace(){ return `caret path: ${epubLastHitPath||'—'}`; },
 });

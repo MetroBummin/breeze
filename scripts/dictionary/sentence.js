@@ -22,7 +22,7 @@
    예전 구현이 통째로 걷힌 이유가 그것이었습니다.
 
    확정되면 문장이 앵커 문장처럼 파랗게 차오르고(모드마다 같은 문장 전용 표시),
-   모든 화면의 하단 필이 먼저 대기를 알립니다. 답은 좁은 화면에서는 바텀시트,
+   선택한 문장 위의 은은한 반사만 대기를 알립니다. 답은 좁은 화면에서는 바텀시트,
    넓은 화면에서는 종전 중앙 창에 뜹니다. 세 화면(글자 · 원본 PDF · 원본 EPUB)이
    모두 같은 요청 수명과 같은 표시 문법을 씁니다.
 
@@ -91,43 +91,100 @@ let sentenceOrigin=null;
 let sentenceOwner=null;
 let sentenceScrollPosition=null;
 function sentenceSurfaceAnchored(){ return sentenceLookupOpen() && !!sentenceOrigin; }
+let sentencePeekAnchor=null,sentencePeekLastScroll=-Infinity,sentencePeekShownAt=null;
+let sentencePeekTimer=null,sentencePresentationEnded=false;
+function cancelSentencePeekReveal(){ clearTimeout(sentencePeekTimer);sentencePeekTimer=null; }
+function sentencePeekVisible(){
+  return !!sentenceOrigin?.peekTarget && wordPeekTargetVisible(sentenceOrigin.peekTarget);
+}
+function deferSentencePeekReveal(){
+  cancelSentencePeekReveal();
+  const life=sentenceLife;
+  sentencePeekTimer=setTimeout(()=>{
+    sentencePeekTimer=null;
+    if(!sentenceAlive(life)||!sentenceLookupOpen())return;
+    if(sentencePendingPaint)revealSentenceResult();
+    else if(sentencePillErrorActive())revealSentencePeek();
+  },lookupPeekScrollRemaining(sentencePeekLastScroll));
+}
 function sentenceReaderScrolled(userScroll){
   if(!sentenceSurfaceAnchored()) return;
   const box=readerScroller();
   const position=[box?.scrollTop||0,box?.scrollLeft||0];
   const changed=!sentenceScrollPosition || position.some((value,index)=>value!==sentenceScrollPosition[index]);
   sentenceScrollPosition=position;
-  if(changed && userScroll) closeSentence();
+  if(!changed)return;
+  if(!sentenceInlineActive()){ if(userScroll)closeSentence();return; }
+  sentencePeekLastScroll=performance.now();
+  const offscreen=!sentencePeekVisible();
+  const dismiss=lookupPeekScrollDismiss(offscreen,userScroll,sentencePeekShownAt,true);
+  document.getElementById('sentence-peek').hidden=true;
+  cancelSentencePeekReveal();
+  if(dismiss){
+    sentencePresentationEnded=true;
+    if(!sentenceWaitingActive())closeSentence();
+    return;
+  }
+  sentencePeekShownAt=null;
+  if(sentencePendingPaint||sentencePillErrorActive())deferSentencePeekReveal();
+}
+function revealSentencePeek(){
+  const pill=document.getElementById('sentence-peek');
+  if(!sentencePillErrorActive()||sentencePresentationEnded)return;
+  if(lookupPeekScrollRemaining(sentencePeekLastScroll)>0){pill.hidden=true;deferSentencePeekReveal();return;}
+  const life=sentenceLife;
+  requestAnimationFrame(()=>{
+    if(!sentenceAlive(life)||!sentencePillErrorActive())return;
+    if(lookupPeekScrollRemaining(sentencePeekLastScroll)>0){pill.hidden=true;deferSentencePeekReveal();return;}
+    if(!sentencePeekVisible()){closeSentence();return;}
+    const rect=wordPeekNodeRect(sentenceOrigin.peekTarget);
+    sentencePeekAnchor={...rect,direction:null};
+    pill.style.visibility='hidden';pill.hidden=false;
+    placeLookupPeek(pill,sentencePeekAnchor,false);pill.style.visibility='';
+    if(sentencePeekShownAt===null)sentencePeekShownAt=performance.now();
+  });
 }
 let sentenceCompact = false;
-let sentenceWaitingFrame = 0;
 let sentencePendingPaint = null;
 function sentenceLookupOpen(){ return sentenceView !== 'closed'; }
 function sentenceWaitingActive(){ return sentenceView === 'waiting'; }
+function sentencePillErrorActive(){ return sentenceView === 'error'; }
+function sentenceInlineActive(){ return sentenceWaitingActive() || sentencePillErrorActive(); }
 function sentenceSheetOpen(){ return sentenceView === 'sheet'; }
 function sentenceBodyClass(name,on){
   const body=document.body;
   if(body && body.classList) body.classList.toggle(name,!!on);
 }
 function sentenceWaitingControls(waiting){
-  const status=document.getElementById('sentence-pill-status');
-  if(status) status.hidden=!waiting;
+  document.getElementById('sentence-peek').hidden=true;
+  const announcement=document.getElementById('sentence-loading-status');
+  if(announcement) announcement.textContent=waiting ? '문장 해석 중' : '';
+  if(typeof setReaderSentencePending==='function') setReaderSentencePending(waiting);
   if(waiting&&typeof closePdfNavigation==='function')closePdfNavigation();
-  syncReaderControlInteractivity();
-  if(!waiting) sentenceBodyClass('sentence-pill-waiting',false);
 }
 function beginSentenceWaiting(){
   sentenceView='waiting';
   sentenceWaitingControls(true);
-  if(sentenceWaitingFrame) cancelAnimationFrame(sentenceWaitingFrame);
-  sentenceWaitingFrame=requestAnimationFrame(()=>{
-    sentenceWaitingFrame=0;
-    if(sentenceView==='waiting') sentenceBodyClass('sentence-pill-waiting',true);
-  });
 }
 function revealSentenceResult(){
   if(!sentencePendingPaint || !sentenceAlive(sentencePendingPaint.life)) return;
+  if(typeof sentenceGestureStillPressed==='function' && sentenceGestureStillPressed())return;
+  if(sentencePresentationEnded){closeSentence();return;}
+  if(sentenceOrigin?.peekTarget && lookupPeekScrollRemaining(sentencePeekLastScroll)>0){deferSentencePeekReveal();return;}
+  if(sentenceOrigin?.peekTarget && !sentencePeekVisible()){closeSentence();return;}
+  const state=sentencePendingPaint;
   sentencePendingPaint=null;
+  if(state.error && sentenceOrigin?.peekTarget){
+    sentenceView='error';
+    document.getElementById('sentence-peek-meaning').textContent=state.foot || '해석하지 못했어요';
+    const retry=document.getElementById('sentence-peek-retry');
+    if(state.retry)retry.removeAttribute('disabled');else retry.setAttribute('disabled','');
+    sentenceWaitingControls(false);
+    const announcement=document.getElementById('sentence-loading-status');
+    if(announcement)announcement.textContent=state.foot || '해석하지 못했어요';
+    revealSentencePeek();
+    return;
+  }
   sentenceView=sentenceCompact ? 'sheet' : 'modal';
   sentenceWaitingControls(false);
   sentenceBodyClass('sentence-compact',sentenceCompact);
@@ -146,11 +203,11 @@ function sentenceGestureReleased(){
 function closeSentence(){
   sentenceLife++;
   sentenceView='closed';
+  cancelSentencePeekReveal();
+  sentencePeekAnchor=null;sentencePeekShownAt=null;sentencePresentationEnded=false;
   sentencePendingPaint=null;
   sentenceOrigin=null;sentenceOwner=null;sentenceScrollPosition=null;
   if(typeof cancelSentenceEasyExplanation==='function') cancelSentenceEasyExplanation();
-  if(sentenceWaitingFrame) cancelAnimationFrame(sentenceWaitingFrame);
-  sentenceWaitingFrame=0;
   sentenceWaitingControls(false);
   sentenceBodyClass('sentence-compact',false);
   sentenceBodyClass('sentence-anchored',false);
@@ -181,7 +238,10 @@ function paintSentence(state){
     beginSentenceWaiting();
     return;
   }
-  sentencePendingPaint={life:sentenceLife};
+  if(typeof setReaderSentencePending==='function') setReaderSentencePending(false);
+  const announcement=document.getElementById('sentence-loading-status');
+  if(announcement) announcement.textContent='';
+  sentencePendingPaint={life:sentenceLife,error:!state.ko,retry:!!state.retry,foot:state.foot};
   if(typeof sentenceGestureStillPressed === 'function' && sentenceGestureStillPressed()) return;
   revealSentenceResult();
 }
@@ -190,7 +250,7 @@ function paintSentence(state){
    한 줄로 남습니다 — 다시 짚을 필요가 없도록. 손짓·문장 찾기·칠하기는 이미
    끝난 일이라 아무것도 다시 하지 않습니다(scripts/reader/gesture.js). */
 let sentAsked = '';
-function retrySentence(){ if(sentAsked) openSentence(sentAsked,sentenceOrigin); }
+function retrySentence(){ if(sentAsked&&!sentenceWaitingActive()) openSentence(sentAsked,sentenceOrigin); }
 
 let sentCtrl = null;
 let sentenceLife = 0;
@@ -203,8 +263,12 @@ async function openSentence(text,origin){
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if(!clean) return;
   const life=++sentenceLife;
+  cancelSentencePeekReveal();sentencePendingPaint=null;
+  sentencePeekAnchor=null;sentencePeekShownAt=null;sentencePresentationEnded=false;
+  sentencePeekLastScroll=-Infinity;
   if(typeof cancelSentenceEasyExplanation==='function') cancelSentenceEasyExplanation();
   sentenceOrigin=origin || null;
+  if(origin?.peekTarget)sentencePeekAnchor=wordPeekNodeRect(origin.peekTarget);
   sentenceOwner={actor:sbUser?.id||'anonymous',book:curBook};
   const box=typeof readerScroller==='function'?readerScroller():null;
   sentenceScrollPosition=[box?.scrollTop||0,box?.scrollLeft||0];
@@ -241,7 +305,7 @@ async function openSentence(text,origin){
   }
 
   if(!sb || navigator.onLine === false){
-    paintSentenceFor(life,{ en:clean, retry:true, foot:'오프라인이라 문장 해석은 나중에 볼 수 있어요' });
+    paintSentenceFor(life,{ en:clean, retry:true, foot:'오프라인이에요' });
     return;
   }
 
@@ -261,9 +325,9 @@ async function openSentence(text,origin){
     if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
     const stuck = why === 'login_required' || why === 'quota_exceeded' || why === 'anon_exhausted';
     paintSentenceFor(life,{ en:clean, retry:!stuck, foot:
-        (why === 'login_required'||why === 'anon_exhausted') ? '문장 해석 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
-      : why === 'quota_exceeded' ? '오늘의 사용량을 모두 썼어요. 내일 다시 이용할 수 있어요'
-      :                            '잠깐 문제가 있었어요' });
+        (why === 'login_required'||why === 'anon_exhausted') ? '로그인하면 해석을 이어서 볼 수 있어요'
+      : why === 'quota_exceeded' ? '오늘 해석 사용량을 다 썼어요'
+      :                            '해석하지 못했어요' });
     return;
   }
   sentenceRecoveries.delete(recoveryKey);
@@ -283,6 +347,7 @@ function sentenceViewportChanged(){
   const next=sentenceCompactViewport();
   if(next!==sentenceLastCompact && sentenceLookupOpen()) closeSentence();
   sentenceLastCompact=next;
+  if(sentencePillErrorActive())revealSentencePeek();
 }
 if(typeof window!=='undefined'){
   window.addEventListener('resize',sentenceViewportChanged,{passive:true});

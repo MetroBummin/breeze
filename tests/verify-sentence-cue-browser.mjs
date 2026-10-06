@@ -30,7 +30,7 @@ zip.file('META-INF/container.xml','<container xmlns="urn:oasis:names:tc:opendocu
 zip.file('book.opf','<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">cue-test</dc:identifier><dc:title>Sentence cues</dc:title><dc:language>en</dc:language></metadata><manifest><item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="chapter"/></spine></package>');
 zip.file('chapter.xhtml','<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Cues</title><style>body{margin:24px;font:20px/1.8 Georgia}p{margin:0 0 30px}</style></head><body>'+('<p>'+sentence+' A different sentence stays outside the blue highlight.</p>').repeat(20)+'</body></html>');
 const epub=await zip.generateAsync({type:'nodebuffer',compression:'DEFLATE'});
-const reports=[];
+const reports=[],diagnostics=[];
 try{
  for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
   for(const width of [390,768]){
@@ -47,6 +47,26 @@ try{
      ['pdf',{name:'cue.pdf',mimeType:'application/pdf',buffer:pdf}],['epub',{name:'cue.epub',mimeType:'application/epub+zip',buffer:epub}]];
     for(const [kind,input] of inputs){
      console.log('Checking',engine.name(),width,kind);
+     const trace=async phase=>{
+      const state=await page.evaluate(()=>{
+       const rect=node=>{if(!node?.getBoundingClientRect)return null;const r=node.getBoundingClientRect();
+        return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+       const target=sentenceOrigin?.peekTarget,view=window.visualViewport;
+       return {scroll:readerScrollTop(),view:sentenceView,held:sentenceGestureStillPressed(),
+        holdPointerId:sentenceHoldPointerId,hasPendingPaint:!!sentencePendingPaint,
+        ended:sentencePresentationEnded,visible:target?sentencePeekVisible():null,
+        anchor:target?wordPeekNodeRect(target):null,scroller:rect(readerScroller()),
+        viewport:view?{left:view.offsetLeft,top:view.offsetTop,width:view.width,height:view.height}:null,
+        releaseTarget:window.qaTouchTarget?{tag:qaTouchTarget.tagName,connected:qaTouchTarget.isConnected,
+          rect:rect(qaTouchTarget)}:null,
+        lastScroll:sentencePeekLastScroll,idleRemaining:lookupPeekScrollRemaining(sentencePeekLastScroll),
+        cueConnected:!!readerSentenceCue?.layer.isConnected};
+      });
+      const entry={engine:engine.name(),width,kind,phase,...state};diagnostics.push(entry);
+      console.log('Sentence cue state',JSON.stringify(entry));
+      if(output)writeFileSync(resolve(output,'sentence-cue-diagnostics.json'),JSON.stringify(diagnostics,null,2));
+      return entry;
+     };
      const oldCount=await page.evaluate(()=>books.length);await page.locator('#fileinput').setInputFiles(input);
      await page.waitForFunction(n=>books.length>n,oldCount,{timeout:120000});
      await page.evaluate(async kind=>{await openBook(books.find(b=>b.kind===kind));if(kind!=='txt')await switchReaderMode('original');},kind);
@@ -72,14 +92,19 @@ try{
       }
       throw new Error('No visible sentence for '+kind);
      },kind);
+     const selectionScroll=await page.evaluate(()=>readerScrollTop());
      await page.evaluate(()=>{
       window.qaWait={};dictGet=()=>new Promise(r=>qaWait.resolve=r);dictPut=()=>Promise.resolve();
-      window.qaRangeReads=0;window.qaRangeOriginals ||= new Map();
+      window.qaRangeReads=0;window.qaRangeMethods={getClientRects:0,getBoundingClientRect:0};window.qaRangeOriginals ||= new Map();
       const views=[window,...(originalSession?.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>f.contentWindow):[])];
       for(const view of views){
        const proto=view.Range.prototype;
-       if(!qaRangeOriginals.has(proto))qaRangeOriginals.set(proto,proto.getClientRects);
-       proto.getClientRects=function(){qaRangeReads++;window.qaRangeForCue=this.cloneRange();return qaRangeOriginals.get(proto).call(this);};
+       if(!qaRangeOriginals.has(proto))qaRangeOriginals.set(proto,{getClientRects:proto.getClientRects,getBoundingClientRect:proto.getBoundingClientRect});
+       for(const method of ['getClientRects','getBoundingClientRect'])proto[method]=function(...args){
+        qaRangeReads++;qaRangeMethods[method]++;
+        if(method==='getClientRects')window.qaRangeForCue=this.cloneRange();
+        return qaRangeOriginals.get(proto)[method].apply(this,args);
+       };
       }
      });
      if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:point.x,y:point.y,id:1}]});
@@ -90,19 +115,22 @@ try{
      await page.waitForFunction(()=>sentenceWaitingActive()&&readerSentenceCue?.layer.childElementCount>0,null,{timeout:5000});
      if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
      else await page.evaluate(p=>qaTouchTarget.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:71,pointerType:'touch',isPrimary:true,clientX:p.x,clientY:p.y})),point);
-     await page.evaluate(()=>Promise.all(readerSentenceCue.layer.getAnimations({subtree:true}).map(a=>a.finished)));
+     const released=await trace('after-pointerup');
+     assert.equal(released.held,false,'synthetic/trusted pointer release did not reach the gesture owner: '+JSON.stringify(released));
+     await page.evaluate(()=>Promise.all(readerSentenceCue.layer.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished)));
      const cue=await page.evaluate(()=>{
       const layer=readerSentenceCue.layer;return {sentence:sentAsked,count:layer.childElementCount,
        opacity:getComputedStyle(layer.firstElementChild).opacity,radius:getComputedStyle(layer.firstElementChild).borderRadius,
        animation:getComputedStyle(layer.firstElementChild).animationName,blend:getComputedStyle(layer).mixBlendMode};
      });
      assert.ok(cue.count>=2,`${kind} ${width}: sentence did not wrap into line cues`);
-     assert.equal(cue.opacity,'1');assert.equal(cue.radius,'8px');assert.equal(cue.animation,'breeze-sentence-cue-in');
+     assert.equal(cue.opacity,'1');assert.equal(cue.radius,'8px');assert.equal(cue.animation,'breeze-word-sheen');
      assert.equal(await page.locator('#sentence-modal').isVisible(),false);
      if(kind==='pdf'){
       assert.equal(cue.sentence,sentence);assert.equal(cue.count,2,'identical second occurrence was highlighted too');
       await page.waitForTimeout(6250);
       assert.equal(await page.evaluate(()=>getComputedStyle(readerSentenceCue.layer.firstElementChild).opacity),'1','pending PDF cue expired');
+      await trace('after-slow-pdf-wait');
      }
      if(kind==='pdf'){
       const exact=await page.evaluate(p=>{
@@ -117,12 +145,19 @@ try{
       assert.ok(exact<.1,'blue cue diverged from the pressed PDF occurrence');
      }
      // Programmatic scroll retains the source marker without range reads.
-     const reads=await page.evaluate(()=>qaRangeReads);
+     const beforeScroll=await trace('before-programmatic-scroll');
+     const reads=await page.evaluate(()=>({...qaRangeMethods}));
      await page.evaluate(()=>readerScrollTo(readerScrollTop()+25));
      await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
-     assert.equal(await page.evaluate(()=>qaRangeReads),reads,'scroll remeasured sentence ranges');
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),reads,'pending scroll remeasured Range client/bounding geometry');
+     const afterScroll=await trace('after-programmatic-scroll');
+     assert.equal(afterScroll.visible,true,'success fixture scrolled the selected sentence offscreen: '+JSON.stringify({beforeScroll,afterScroll}));
+     assert.equal(afterScroll.ended,false,'selection presentation ended before the fixture answer: '+JSON.stringify({beforeScroll,afterScroll}));
      await page.evaluate(()=>qaWait.resolve({ko:'참을성 있는 독자는 다음 줄까지 이어지는 문장의 모든 단어와 의미를 함께 읽습니다.',points:['표현 설명은 표시되면 안 됩니다.']}));
-     await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden);
+     await trace('after-cache-answer');
+     try{await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden);}
+     catch(error){await trace('result-timeout');throw error;}
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),reads,'success idle reveal remeasured Range client/bounding geometry');
      console.log('Result visible',engine.name(),width,kind);
      await page.locator('#p-sentence').evaluate(n=>Promise.all(n.getAnimations().map(a=>a.finished)));
      assert.equal(await page.locator('#ps-extra,#ps-points').count(),0);assert.equal(await page.locator('#ps-foot').isVisible(),false);
@@ -137,7 +172,7 @@ try{
        const count=qaRangeReads;block.style.width=(block.clientWidth*.82)+'px';
        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
        const reread=qaRangeReads>count,layer=readerSentenceCue.layer;
-       await Promise.all(layer.getAnimations({subtree:true}).map(a=>a.finished));
+       await Promise.all(layer.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished));
        const marks=[...layer.children].map(n=>n.getBoundingClientRect());
        const covered=[...range.getClientRects()].filter(r=>r.width>0&&r.height>0).every(r=>marks.some(m=>
         m.left<=r.left+.1&&m.right>=r.right-.1&&m.top<=r.top+.1&&m.bottom>=r.bottom-.1));
@@ -148,21 +183,39 @@ try{
       assert.ok(reflow.covered,'reflowed source range escaped its blue cue');
      }
      console.log('Reflow verified',engine.name(),width,kind);
+     // Reopen through the real lifetime/cache path; the controlled transport
+     // returns a terminal error without contacting a provider. Geometry reads
+     // used by the reflow assertion above are outside this measurement window.
+     await page.evaluate(()=>{
+      sb ||= {};dictCall=async()=>({error:'lookup_failed'});
+      window.qaErrorOpening=openSentence(sentAsked,sentenceOrigin);
+     });
+     await page.waitForFunction(()=>sentenceWaitingActive());
+     await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+     const errorReads=await page.evaluate(()=>({...qaRangeMethods}));
+     await page.evaluate(()=>{readerScrollTo(readerScrollTop()+2);scrollGesture();qaWait.resolve(null);});
+     await page.waitForFunction(()=>!document.getElementById('sentence-peek').hidden);
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),errorReads,'pending-to-error scroll-idle reveal remeasured Range geometry');
+     await page.evaluate(()=>{readerScroller().scrollTop+=2;scrollGesture();});
+     assert.equal(await page.locator('#sentence-peek').isVisible(),false,'briefly shown error did not hide on actual scroll');
+     await page.waitForFunction(()=>!document.getElementById('sentence-peek').hidden);
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),errorReads,'error scroll and idle re-reveal remeasured Range geometry');
+
      // Close fades just this selection, including its EPUB document layer.
      await page.evaluate(()=>{window.qaLeaving=readerSentenceCue.layer;closeSentence();});
      assert.equal(await page.evaluate(()=>readerSentenceCue),null);
      await page.waitForFunction(()=>!qaLeaving.isConnected);
      // Reduced motion: same selection, no scaling or timed movement; immediate cleanup.
      await page.emulateMedia({reducedMotion:'reduce'});
-     const reduced=await page.evaluate(({point,kind})=>{
+     const reduced=await page.evaluate(({point,kind,selectionScroll})=>{
       const surface=READER_SURFACES.find(s=>s.name===(kind==='txt'?'text':kind));
       document.documentElement.classList.add('dark');document.body.classList.add('dark');
-      const found=surface.sentenceAt(point.x,point.y-25);found.paint();
+      const found=surface.sentenceAt(point.x,point.y-(readerScrollTop()-selectionScroll));found.paint();
       const layer=readerSentenceCue.layer,animation=getComputedStyle(layer.firstElementChild).animationName;
       const blend=getComputedStyle(layer).mixBlendMode;clearReaderSentenceCue();
       document.documentElement.classList.remove('dark');document.body.classList.remove('dark');
       return {animation,removed:!layer.isConnected,blend};
-     },{point,kind});
+     },{point,kind,selectionScroll});
      assert.equal(reduced.animation,'none');assert.ok(reduced.removed);assert.equal(reduced.blend,kind==='pdf'?'multiply':'screen');
      await page.emulateMedia({reducedMotion:'no-preference'});
      reports.push({engine:engine.name(),width,kind,...cue});

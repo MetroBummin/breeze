@@ -69,7 +69,6 @@ body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entr
 #pdf-ink-status.ink-save-failed .pdf-ink-retry{display:inline-block;margin-left:8px;border:0;background:var(--sentence-glass-action);color:inherit;border-radius:8px;padding:8px;font:inherit;}
 
 #readpill .ink-pill-toolbar::-webkit-scrollbar{display:none;}
-body.sentence-pill-waiting #readpill :is(.ink-pill-toolbar,.ink-pill-entry,.ink-pill-mini,.ink-pill-mode-separator){display:none;}
 
 /* Tool options live above the pill; the paper and its geometry never move. */
 #pdf-ink-settings{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%);

@@ -96,7 +96,7 @@ try{
   const rect=await sentence.boundingBox();
   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);
   await page.mouse.down();await page.waitForTimeout(820);
-  assert.equal(await page.locator('#sentence-pill-status').isVisible(),true);
+  assert.equal(await page.locator('#sentence-pill-status').count(),0);
   await page.mouse.up();
   await page.locator('#sentence-modal').waitFor({state:'visible'});
   assert.equal(await page.locator('#readback').isDisabled(),true,'sentence controls re-enabled Back');

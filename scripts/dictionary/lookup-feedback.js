@@ -8,12 +8,12 @@ const wordLookupFeedback = (()=>{
   const elapsed=start=>Math.max(0,Math.round(now()-start));
   const append=row=>{rows.push(row);if(rows.length>limit)rows.shift();};
   const styles=`
-    .breeze-lookup-pending {
-      --breeze-lookup-wash:rgba(74,151,235,.22);
-      background-color:var(--breeze-lookup-wash)!important;
-      background-image:linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%)!important;
+    .breeze-lookup-pending,
+    .reader-sentence-cue-layer.is-pending .reader-sentence-cue {
+      background-color:var(--breeze-lookup-wash,rgba(74,151,235,.22))!important;
+      background-image:var(--breeze-lookup-sheen,linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%))!important;
       background-size:240% 100%!important;background-repeat:no-repeat!important;
-      border-color:transparent!important;border-radius:5px!important;
+      border-color:transparent!important;border-radius:var(--breeze-lookup-radius,5px)!important;
       box-shadow:none!important;
       -webkit-box-decoration-break:clone;box-decoration-break:clone;
       animation:breeze-word-sheen 1.65s ease-in-out infinite!important;
@@ -24,7 +24,8 @@ const wordLookupFeedback = (()=>{
     #word-lookup-status {position:fixed;width:1px;height:1px;padding:0;margin:-1px;
       overflow:hidden;clip-path:inset(50%);white-space:nowrap;pointer-events:none;}
     @media(prefers-reduced-motion:reduce){
-      .breeze-lookup-pending {animation:none!important;background-image:none!important;}
+      .breeze-lookup-pending,
+      .reader-sentence-cue-layer.is-pending .reader-sentence-cue {animation:none!important;background-image:none!important;}
     }`;
   function ensureStyle(doc){
     if(!doc||!doc.head||doc.getElementById('breeze-word-feedback-style'))return;
@@ -49,6 +50,7 @@ const wordLookupFeedback = (()=>{
       pendingNode.style.removeProperty('--breeze-lookup-ink');
       pendingNode.style.removeProperty('--breeze-lookup-paper');
       pendingNode.style.removeProperty('--breeze-lookup-wash');
+      pendingNode.style.removeProperty('--breeze-lookup-sheen');
     }
     pendingNode=null;pendingBusy=null;
   }
@@ -115,6 +117,7 @@ const wordLookupFeedback = (()=>{
     node.style.setProperty('--breeze-lookup-ink',palette.getPropertyValue('--sentence-glass-ink'));
     node.style.setProperty('--breeze-lookup-paper',palette.getPropertyValue('--sentence-glass-solid'));
     node.style.setProperty('--breeze-lookup-wash',palette.getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
+    node.style.setProperty('--breeze-lookup-sheen',palette.getPropertyValue('--word-lookup-sheen'));
     pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
     node.setAttribute('aria-busy','true');node.classList.add('breeze-lookup-pending');
     announce('뜻 찾는 중');
@@ -132,6 +135,7 @@ const wordLookupFeedback = (()=>{
     clearCue();selectCueNode(null);if(status)status.textContent='';
   }
   const api={
+    ensureStyle,
     refreshSavedUnderlays,
     start(life,surface){
       active={life,format:format(surface),start:now(),hadPending:false,pending:true,
