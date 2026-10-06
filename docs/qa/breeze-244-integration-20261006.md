@@ -56,3 +56,23 @@ The specific pictured Medium Business “Healthy Habits…” article rolled out
 the live feed before its URL could be identified. The user's report that its
 original has no photo motivated restoration of the verified historical rule;
 this report does not invent that article's request/cache history.
+
+## First combined CI corrections
+
+The first head `de1355c3` caught a missing declaration for the new explicit
+`BREEZE_CONFIG.RSS_CATALOG_FEED_IDS` field. A local full-source TypeScript
+comparison reproduces TS2339 at `rss.js:50` before the declaration and passes
+the unchanged 34-diagnostic baseline afterward. No baseline increase is used.
+
+The hybrid Preview fixture also placed its body sentinel inside the existing
+bounded introduction-cache excerpt. It now distinguishes that permitted excerpt
+from later body content, positively checks the bound, and retains the no-body
+discovery-cache and pre-Read IndexedDB assertions. This changes no product cache.
+
+Legacy supplied-cover/ingestion/RSS-card fixtures now explicitly select their
+legacy transport with synthetic configuration; the independent hybrid suite
+continues to exercise the intended production ON partition. The warm-cover
+fixture waits for the existing owner/work settlement predicate, then requires
+exactly two decoded ready cards, all thirteen retained candidates and unchanged
+request count. A controlled renderer test reproduces the intermediate two-photo
+count with a third inert queued probe, then proves zero-request cleanup.

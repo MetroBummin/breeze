@@ -15,7 +15,7 @@ const managed=[7,9,11,12],legacy=[0,1,2,3,4,5,6,8,10];
 assert.equal(FEEDS.length,13,'The reviewed hybrid partition needs an explicit inventory update if fixed sources change');
 const image=readFileSync(resolve(root,'assets/favicon/icon-512.png'));
 const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;
-const marker='HYBRID_SELECTED_BODY_ONLY';
+const marker='HYBRID_SELECTED_BODY_ONLY',excerptMarker='HYBRID_SELECTED_PREVIEW_EVIDENCE';
 const prose='The story explains how people learn by reading evidence and comparing ideas. They discuss the world around them and consider how different choices affect their lives. ';
 const title=id=>'The public English story about learning '+id;
 const story=id=>[9,11,12].includes(id)?`https://medium.com/@hybrid/story-${(id+1).toString(16).padStart(12,'0')}`:`https://stories.fixture/f${id}/story`;
@@ -25,7 +25,9 @@ function entry(id){return {title:title(id),url:story(id),source:FEEDS[id].name,c
 function catalog(){return {version:1,feeds:FEEDS.map((_,id)=>({id,at:Date.now()-1000,
   status:managed.includes(id)?'ready':'disabled',entries:managed.includes(id)?[entry(id)]:[]}))};}
 function feedXml(id){return `<rss><channel><item><title>${title(id)}</title><link>${story(id)}</link><description><![CDATA[<p>${prose}</p>]]></description><enclosure type="image/png" url="${photo(id)}"/></item></channel></rss>`;}
-function articleHtml(id){return `<!doctype html><html><head><title>${title(id)}</title><meta property="og:image" content="${photo(id)}"></head><body><article><h1>${title(id)}</h1>${Array.from({length:15},(_,i)=>`<p>${marker} ${i}. ${prose.repeat(2)}</p>`).join('')}</article></body></html>`;}
+// The existing introduction cache legitimately keys a bounded source excerpt.
+// Put the full-body sentinel beyond that excerpt, and test both boundaries.
+function articleHtml(id){return `<!doctype html><html><head><title>${title(id)}</title><meta property="og:image" content="${photo(id)}"></head><body><article><h1>${title(id)}</h1>${Array.from({length:15},(_,i)=>`<p>${i===0?excerptMarker:i>=8?marker:''} ${i}. ${prose.repeat(2)}</p>`).join('')}</article></body></html>`;}
 const deferred=()=>{let release;const promise=new Promise(done=>{release=done;});return {promise,release};};
 function bounded(promise,label){let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label)),10000);})]).finally(()=>clearTimeout(timer));}
 const server=createServer((req,res)=>{
@@ -180,7 +182,20 @@ try{
   await warm.page.waitForFunction(()=>articlePreviewDialog.open&&articlePreviewDialog.dataset.preparing==='false'&&!document.querySelector('.ap-start').disabled);
   await emptyPersistence(warm.page);
   assert.equal(await warm.page.evaluate(value=>JSON.stringify(articlePreviewBook?.paras).includes(value),marker),true,'Selected body did not reach the transient Preview');
-  assert.equal(await warm.page.evaluate(value=>JSON.stringify(Object.fromEntries(Object.entries(localStorage))).includes(value),marker),false);
+  await warm.page.waitForFunction(()=>articlePreviewDialog.dataset.metadata==='ready');
+  await emptyPersistence(warm.page);
+  const persistence=await warm.page.evaluate(({marker,excerptMarker,selected})=>{
+    const storage=Object.fromEntries(Object.entries(localStorage));
+    const key=Object.keys(JSON.parse(storage[ARTICLE_PREVIEW_CACHE]||'{}')).map(key=>JSON.parse(key)).find(parts=>parts[0]===selected);
+    return {fullBodyStored:JSON.stringify(storage).includes(marker),
+      discoveryEvidenceStored:[RSS_PUBLIC_CACHE_KEY,RSS_CATALOG_CACHE_KEY,RSS_COVER_CACHE_KEY].some(key=>
+        (storage[key]||'').includes(marker)||(storage[key]||'').includes(excerptMarker)),
+      excerpt:key?.[2]||''};
+  },{marker,excerptMarker,selected});
+  assert.equal(persistence.fullBodyStored,false,'Preview persisted the full-body sentinel');
+  assert.equal(persistence.discoveryEvidenceStored,false,'Selected body evidence leaked into a discovery cache');
+  assert(persistence.excerpt.includes(excerptMarker),'The fixture must exercise the existing selected-preview evidence cache');
+  assert(persistence.excerpt.length<=544,'Preview evidence exceeds 540 characters plus paragraph separators');
   await warm.page.locator('.ap-start').click();
   await warm.page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on')&&books.length===1);
   const saved=await warm.page.evaluate(async value=>{const stored=await bookAll();return {memory:books.length,count:stored.length,url:stored[0]?.sourceUrl,body:JSON.stringify(stored[0]?.paras).includes(value)};},marker);

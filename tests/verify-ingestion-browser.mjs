@@ -5,7 +5,14 @@ import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const server=createServer((req,res)=>{try{const p=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/^\/$/,'/index.html'));if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
+const server=createServer((req,res)=>{try{
+  const requested=new URL(req.url,'http://localhost').pathname;
+  if(requested==='/config.js'){
+    // These feed-parser and manually seeded rail fixtures own legacy transport.
+    res.setHeader('Content-Type','text/javascript');
+    return res.end("window.BREEZE_CONFIG={RSS_CATALOG:false,SB_URL:'https://relay.fixture',SB_KEY:'synthetic-public-key'};");
+  }
+  const p=resolve(root,'.'+requested.replace(/^\/$/,'/index.html'));if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}/`;
 const para='Reading brings people into contact with different ideas. A thoughtful reader can follow an argument, compare the evidence, and discover a different way to understand the world. This ordinary paragraph provides enough meaningful prose to identify the main content of a public article. ';

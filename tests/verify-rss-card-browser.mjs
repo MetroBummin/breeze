@@ -9,7 +9,13 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const image=readFileSync(resolve(root,'assets/favicon/icon-512.png'));
 const server=createServer((req,res)=>{
   try{
-    const path=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/^\/$/,'/index.html'));
+    const requested=new URL(req.url,'http://localhost').pathname;
+    if(requested==='/config.js'){
+      // Keep this manually seeded legacy rail independent of live catalog flags.
+      res.setHeader('Content-Type','text/javascript');
+      return res.end("window.BREEZE_CONFIG={RSS_CATALOG:false,SB_URL:'https://relay.fixture',SB_KEY:'synthetic-public-key'};");
+    }
+    const path=resolve(root,'.'+requested.replace(/^\/$/,'/index.html'));
     if(!path.startsWith(root))throw Error();
     res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');
     res.end(readFileSync(path));

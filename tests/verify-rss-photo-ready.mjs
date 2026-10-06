@@ -213,3 +213,20 @@ test('saved or promotional photo siblings do not suppress original-only recovery
   assert.deepEqual(f.metadata,[unknown.url]);assert.deepEqual(f.cards().map(c=>c.dataset.rssUrl),[unknown.url]);assertReadyOnly(f);
   assert.equal(runInContext('rssCands[0].length',f.context),3);assert.equal(f.writes.length,0);
 });
+
+test('warm decoded-photo count precedes layout-probe settlement; settled rail keeps only cached photos',async()=>{
+  const f=fixture(),entries=[0,1,2].map(i=>f.entry('warm-'+i,i));
+  f.rail.getBoundingClientRect=()=>({left:0,right:300,top:0,bottom:200,width:300,height:200});
+  f.context.window.innerWidth=300;
+  for(const entry of entries.slice(0,2))f.context.rssCoverStore(entry.url,'https://images.test/'+entry.url.split('/').at(-1)+'.jpg');
+  f.groups(entries.map(entry=>[entry]));await f.paint();
+  for(const item of f.imagePending.splice(0))item.image.onload?.();
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(f.cards().filter(card=>card.thumb.classList.contains('has-cover')).length,2);
+  assert.equal(f.cards().length,3,'The fixture must observe the still-queued offscreen layout probe');
+  assert.equal(f.cards().filter(card=>card.tabIndex!==0).length,1);
+  await f.flush();
+  assert.equal(f.cards().length,2);assertReadyOnly(f);assert.equal(f.metadata.length,0);
+  assert.equal(runInContext('rssCands.flat().length',f.context),3);
+  assert.equal(f.context.rssCoverCached(entries[2].url),null,'Unadmitted metadata remains unknown');
+});

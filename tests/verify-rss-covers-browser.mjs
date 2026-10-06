@@ -41,7 +41,14 @@ function fixture(index){
 }
 const server=createServer((req,res)=>{
   try{
-    const path=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/^\/$/,'/index.html'));
+    const requested=new URL(req.url,'http://localhost').pathname;
+    if(requested==='/config.js'){
+      // This suite owns the legacy feed contract. Product rollout flags must not
+      // silently switch its four managed sources to an unstubbed catalog.
+      res.setHeader('Content-Type','text/javascript');
+      return res.end("window.BREEZE_CONFIG={RSS_CATALOG:false,SB_URL:'https://relay.fixture',SB_KEY:'synthetic-public-key'};");
+    }
+    const path=resolve(root,'.'+requested.replace(/^\/$/,'/index.html'));
     if(!path.startsWith(root))throw Error();
     res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');
     res.end(readFileSync(path));
@@ -101,9 +108,10 @@ try{
       });
       await page.goto(base);await page.evaluate(()=>homeReady);
       await page.evaluate(async()=>{if(rssLoading)await rssLoading;refreshFeedRails();});
-      await page.waitForFunction(()=>rssCands.length===13&&document.querySelectorAll('#casual-rail .rss-card').length===11&&
+      let settlingError;
+      try{await page.waitForFunction(()=>rssCands.length===13&&document.querySelectorAll('#casual-rail .rss-card').length===11&&
         !document.querySelector('#casual-rail .rss-cover-pending')&&
-        [...document.querySelectorAll('#casual-rail .rss-card')].every(card=>!card.hidden&&card.querySelector('.thumb.has-cover')),{},{timeout:20000});
+        [...document.querySelectorAll('#casual-rail .rss-card')].every(card=>!card.hidden&&card.querySelector('.thumb.has-cover')),{},{timeout:20000});}catch(error){settlingError=error;}
       const state=await page.evaluate(()=>({
         entries:rssCands.map(group=>group[0]),catalog:rssCatalogEnabled(),
         cards:[...document.querySelectorAll('#casual-rail .rss-card')].map(card=>({url:card.dataset.rssUrl,
@@ -114,12 +122,16 @@ try{
             complete:card.querySelector('img.cover').complete,naturalWidth:card.querySelector('img.cover').naturalWidth,
             naturalHeight:card.querySelector('img.cover').naturalHeight,hidden:card.querySelector('img.cover').hidden}})),
         cache:JSON.parse(localStorage.getItem(RSS_PUBLIC_CACHE_KEY)),books:books.length,
+        settling:{loading:!!rssLoading,pass:rssCoverPass,remaining:rssCoverRemaining,jobs:rssCoverJobs.size,
+          frame:rssCoverOwners.get(document.getElementById('casual-rail'))?.frame,
+          running:rssCoverOwners.get(document.getElementById('casual-rail'))?.running},
       }));
       // Preserve diagnostics even if a later assertion fails in one engine.
       writeFileSync(resolve(artifacts,`${engine.name()}-results.json`),JSON.stringify({state,requests,failures,consoleErrors},null,2));
-      console.log(engine.name(),'RSS cover metadata:',JSON.stringify(state.entries.map(entry=>entry.photo)));
+      console.log(engine.name(),'RSS cover metadata:',JSON.stringify(state.entries.map(entry=>entry?.photo)));
       console.log(engine.name(),'RSS decoded cards:',JSON.stringify(state.cards.map(card=>({case:cases[Number(card.url.split('-').at(-1))%cases.length].name,...card}))));
       await page.locator('#casual-rail').screenshot({path:resolve(artifacts,`${engine.name()}-phone-light.png`)});
+      if(settlingError)throw settlingError;
       for(let index=0;index<feeds.length;index++){
         assert.equal(state.entries[index].photo,cases[index%cases.length].expected,`Supplied feed photo lost: ${cases[index%cases.length].name}`);
         assert.equal(state.entries[index].contentHtml,'','Discovery must not retain a body');

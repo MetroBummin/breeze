@@ -260,9 +260,15 @@ try{
       }
       await h.page.reload();await h.page.evaluate(()=>homeReady);
       await h.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+      // Cached photos can decode before the queued visible-probe cleanup frame.
+      // Require the actual settled rail, rather than treating two decoded images
+      // as evidence that every other pending/layout owner has finished.
+      const warm=await settled(h.page);noPersonalData(warm);
+      writeFileSync(resolve(proof,engine.name()+'-warm-relaunch-state.json'),JSON.stringify({state:warm,requests:cold.requests},null,2));
       assert.equal(cold.requests.length,2,'Warm relaunch repeated known cover enrichment');
-      const warm=await snapshot(h.page);noPersonalData(warm);
-      assert(warm.cards.every(card=>!card.pending&&card.ready));
+      assert.equal(warm.cards.length,2,'Warm relaunch exposed an unadmitted candidate');
+      assert.equal(warm.entryPhotos.length,13,'Warm relaunch lost source metadata');
+      assert(warm.cards.every(card=>!card.hidden&&!card.pending&&card.ready&&card.photo));
       results.push({engine:engine.name(),scenario:'cold/warm/offscreen/budget',first,warm,secondRail,requests:cold.requests,maxActive:state.maxActive});
       await h.context.close();
 
