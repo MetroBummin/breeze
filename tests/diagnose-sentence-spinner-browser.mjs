@@ -20,20 +20,29 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1
 const sentence='A patient reader keeps every word and every meaning together while the sentence continues onto the next line.';
 const reports=[],failures=[];
 async function bounded(promise,ms,label){let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label+' exceeded '+ms+' ms')),ms);})]);}finally{clearTimeout(timer);}}
-const browser=await engine.launch({headless:true});
+const cases=['txt','pdf'].flatMap(kind=>[false,true].flatMap(reduced=>[false,true].map(dark=>({kind,reduced,dark,intervention:'none'}))));
+// Diagnostic-only counterfactuals. They do not change the production stylesheet.
+for(let round=0;round<3;round++){
+ const controls=['none','no-pill-geometry-transition','no-pill-backdrop','passive-probe'];
+ for(const intervention of [...controls.slice(round),...controls.slice(0,round)])cases.push({kind:'txt',reduced:false,dark:false,intervention,round});
+}
 try{
- for(const kind of ['txt','pdf'])for(const reduced of [false,true])for(const dark of [false,true]){
-  const name=`${engine.name()}-${kind}-${dark?'dark':'light'}-${reduced?'reduced':'normal'}`;
-  const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,isMobile:true,deviceScaleFactor:2,serviceWorkers:'block',reducedMotion:reduced?'reduce':'no-preference'});
+ for(const {kind,reduced,dark,intervention,round} of cases){
+  const name=`${engine.name()}-${kind}-${dark?'dark':'light'}-${reduced?'reduced':'normal'}${intervention==='none'?'':'-'+intervention}${round==null?'':'-round'+round}`;
+  const context=await engine.launchPersistentContext('',{headless:true,viewport:{width:820,height:1180},hasTouch:true,isMobile:true,deviceScaleFactor:2,serviceWorkers:'block',reducedMotion:reduced?'reduce':'no-preference'});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.push(e.message);});
-  const row={name,kind,reduced,dark,physicalIpadValidated:false,nativeMomentumEmulated:false,phases:[]};
+  console.log('Starting '+name);
+  const row={name,kind,reduced,dark,intervention,round,lastPhase:'setup',physicalIpadValidated:false,nativeMomentumEmulated:false,phases:[]};
   try{
+   await bounded((async()=>{
    await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
    await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
    await page.goto(url);await page.evaluate(()=>homeReady);
-   await page.locator('#fileinput').setInputFiles(kind==='txt'?{name:'spinner.txt',mimeType:'text/plain',buffer:Buffer.from((sentence+'\n\n').repeat(60))}:{name:'spinner.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture(['A patient reader keeps every word and every meaning','together while the sentence continues onto the next line.'])});
-   await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind,{timeout:120000});
-   await page.evaluate(async({kind,dark})=>{darkMode=dark;applyDark();await openBook(books.find(b=>b.kind===kind));if(kind==='pdf')await switchReaderMode('original');},{kind,dark});
+   if(intervention==='no-pill-geometry-transition')await page.addStyleTag({content:'body.sentence-pill-waiting #readpill {transition-property:box-shadow!important}'});
+   if(intervention==='no-pill-backdrop')await page.addStyleTag({content:'#readpill {backdrop-filter:none!important;-webkit-backdrop-filter:none!important}'});
+   row.lastPhase='import';await page.locator('#fileinput').setInputFiles(kind==='txt'?{name:'spinner.txt',mimeType:'text/plain',buffer:Buffer.from((sentence+'\n\n').repeat(60))}:{name:'spinner.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture(['A patient reader keeps every word and every meaning','together while the sentence continues onto the next line.'])});
+   await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind,{timeout:30000});
+   row.lastPhase='open-reader';await page.evaluate(async({kind,dark})=>{darkMode=dark;applyDark();await openBook(books.find(b=>b.kind===kind));if(kind==='pdf')await switchReaderMode('original');},{kind,dark});
    await page.waitForFunction(kind=>!readerPositionPending()&&(kind==='txt'?document.querySelectorAll('#rtext .w').length>20:originalSession?.wordBoxes.get(1)?.length>0),kind);
    await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(1200);
    await page.evaluate(()=>{
@@ -41,17 +50,17 @@ try{
     dictGet=async()=>null;dictPut=async()=>{};
     dictCall=(body,signal)=>{qaCalls.push(body);qaSignal=signal;return new Promise(resolve=>qaResolve=resolve);};
     window.qaSnapshot=()=>{
-     const el=document.querySelector('.sentence-spinner'),a=el.getAnimations()[0],style=getComputedStyle(el);
-     return {t:performance.now(),view:sentenceView,waiting:sentenceWaitingActive(),statusHidden:document.getElementById('sentence-pill-status').hidden,
-      statusVisible:el.getBoundingClientRect().width>0,bodyWaiting:document.body.classList.contains('sentence-pill-waiting'),held:sentenceGestureStillPressed(),pendingPaint:!!sentencePendingPaint,
+     const readStart=performance.now(),el=document.querySelector('.sentence-spinner'),a=el.getAnimations()[0],style=getComputedStyle(el),transform=style.transform,rect=el.getBoundingClientRect();
+     return {t:performance.now(),probeReadMs:performance.now()-readStart,view:sentenceView,waiting:sentenceWaitingActive(),statusHidden:document.getElementById('sentence-pill-status').hidden,
+      statusVisible:rect.width>0,bodyWaiting:document.body.classList.contains('sentence-pill-waiting'),held:sentenceGestureStillPressed(),pendingPaint:!!sentencePendingPaint,
       animationName:style.animationName,playState:a?.playState||null,currentTime:typeof a?.currentTime==='number'?a.currentTime:null,
-      duration:style.animationDuration,transform:style.transform,signalAborted:qaSignal?.aborted??null,calls:qaCalls.length};
+      duration:style.animationDuration,transform,signalAborted:qaSignal?.aborted??null,calls:qaCalls.length};
     };
-    window.qaSample=async(block=false)=>{
-     const samples=window.qaSamples=[],start=performance.now();let blocked=false;
-     while(performance.now()-start<1400){await new Promise(r=>requestAnimationFrame(r));samples.push(qaSnapshot());
+    window.qaSample=async({block=false,passive=false})=>{
+     const samples=window.qaSamples=[qaSnapshot()],start=performance.now();let blocked=false;
+     while(performance.now()-start<1400){await new Promise(r=>requestAnimationFrame(r));samples.push(passive?{t:performance.now(),probeReadMs:0}:qaSnapshot());
       if(block&&!blocked&&performance.now()-start>150){blocked=true;const until=performance.now()+350;while(performance.now()<until){/* Instrumentation positive control only. */}}
-     }return samples;
+     }if(passive)samples.push(qaSnapshot());return samples;
     };
    });
    const point=await page.evaluate(kind=>{
@@ -65,16 +74,17 @@ try{
    const press=async()=>{if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...point,id:1}]});else await page.evaluate(p=>{window.qaTouchTarget=document.elementFromPoint(p.x,p.y);qaTouchTarget.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:71,pointerType:'touch',isPrimary:true,clientX:p.x,clientY:p.y}));},point);};
    const release=async()=>{if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});else await page.evaluate(p=>qaTouchTarget.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:71,pointerType:'touch',isPrimary:true,clientX:p.x,clientY:p.y})),point);};
    const sample=async(phase,block=false)=>{
-    const samples=await bounded(page.evaluate(block=>qaSample(block),block),6000,name+': '+phase+' frame sampling'),first=samples[0],last=samples.at(-1);
+    row.lastPhase=phase;
+    const samples=await bounded(page.evaluate(options=>qaSample(options),{block,passive:intervention==='passive-probe'}),6000,name+': '+phase+' frame sampling'),first=samples[0],last=samples.at(-1),fullSamples=samples.filter(s=>s.view);
     const gaps=samples.slice(1).map((s,i)=>s.t-samples[i].t),summary={frames:samples.length,maxFrameGapMs:Math.max(...gaps),over100Ms:gaps.filter(g=>g>100).length,
-     animationAdvanceMs:last.currentTime-first.currentTime,distinctTransforms:new Set(samples.map(s=>s.transform)).size};
+     elapsedMs:last.t-first.t,firstFrameDelayMs:samples[1]?.t-first.t,maxProbeReadMs:Math.max(...samples.map(s=>s.probeReadMs)),animationAdvanceMs:last.currentTime-first.currentTime,distinctTransforms:new Set(fullSamples.map(s=>s.transform)).size};
     row.phases.push({phase,summary,samples});
-    assert.ok(samples.every(s=>s.waiting&&!s.statusHidden&&s.statusVisible&&s.bodyWaiting&&s.playState==='running'),phase+': visible waiting animation did not remain running');
-    assert.ok(summary.animationAdvanceMs>900,phase+': animation clock stalled');assert.ok(summary.distinctTransforms>10,phase+': transform samples did not change');
+    assert.ok(fullSamples.every(s=>s.waiting&&!s.statusHidden&&s.statusVisible&&s.bodyWaiting&&s.playState==='running'),phase+': visible waiting animation did not remain running');
+    assert.ok(summary.animationAdvanceMs>=summary.elapsedMs*.7,phase+': animation clock did not track the sampled wall-time window');assert.ok(summary.distinctTransforms>(intervention==='passive-probe'?1:10),phase+': transform samples did not change');
     if(block)assert.ok(summary.maxFrameGapMs>250,'positive control did not detect the injected stall');
     return summary;
    };
-   await press();await page.waitForFunction(()=>sentenceWaitingActive()&&qaCalls.length===1&&sentenceGestureStillPressed());
+   row.lastPhase='long-press';await press();await page.waitForFunction(()=>sentenceWaitingActive()&&qaCalls.length===1&&sentenceGestureStillPressed());
    await sample('network-pending-finger-held');
    // Real completed response remains gated until the opening pointer is released.
    await page.evaluate(()=>qaResolve({ko:'차분한 독자는 단어와 의미를 함께 읽습니다.'}));
@@ -104,12 +114,13 @@ try{
    const clip={x:box.x+box.width/2-14,y:box.y+box.height/2-14,width:28,height:28};
    for(let i=0;i<4;i++){const bytes=await page.screenshot({path:resolve(out,name+`-paint-${i}.png`),clip,animations:'allow',timeout:3000});hashes.push(createHash('sha256').update(bytes).digest('hex'));await page.waitForTimeout(137);}
    row.distinctPaintedSnapshots=new Set(hashes).size;assert.ok(row.distinctPaintedSnapshots>1,'painted loading indicator snapshots are identical');
-   if(kind==='txt'&&!dark&&!reduced)await sample('injected-350ms-main-thread-block-positive-control',true);
+   if(kind==='txt'&&!dark&&!reduced&&intervention==='none'&&round==null)await sample('injected-350ms-main-thread-block-positive-control',true);
    await page.evaluate(()=>{closeSentence();qaResolve({ko:'Late answer'});});await page.evaluate(()=>qaOpening);
    assert.equal(await page.locator('#sentence-pill-status').isVisible(),false);assert.equal(await page.locator('#sentence-modal').isVisible(),false);
-   assert.deepEqual(errors,[]);console.log(JSON.stringify({name,input:row.input,distinctPaintedSnapshots:row.distinctPaintedSnapshots,phases:row.phases.map(p=>({phase:p.phase,...p.summary}))}));
+   assert.deepEqual(errors,[]);row.lastPhase='complete';console.log(JSON.stringify({name,input:row.input,distinctPaintedSnapshots:row.distinctPaintedSnapshots,phases:row.phases.map(p=>({phase:p.phase,...p.summary}))}));
+   })(),45000,name+' case');
   }catch(error){row.failure=error.stack;failures.push({name,error:error.stack});row.partialSamples=await bounded(page.evaluate(()=>window.qaSamples||[]),2000,name+' partial samples').catch(()=>[]);await page.screenshot({path:resolve(out,name+'-failure.png'),timeout:3000}).catch(()=>{});console.error(name,error.stack);}
   finally{row.errors=errors;reports.push(row);writeFileSync(resolve(out,name+'.json'),JSON.stringify(row,null,2));writeFileSync(resolve(out,'report.json'),JSON.stringify({physicalIpadValidated:false,failures,reports},null,2));await context.close();}
  }
  assert.deepEqual(failures,[],'spinner diagnostics failed; inspect preserved phase and screen evidence');
-}finally{await browser.close();server.close();}
+}finally{server.close();}

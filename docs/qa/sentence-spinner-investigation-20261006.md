@@ -67,3 +67,30 @@ snapshots show selected moments, not continuous native-screen capture.
 
 Browser CI results are attached to the diagnostic pull request. The initial
 local validation passed all seven VM cases and both JavaScript syntax checks.
+
+## Initial CI observations and harness correction
+
+Run [37428557763](https://github.com/MetroBummin/breeze/actions/runs/37428557763):
+Chromium passed all eight base cases/48 ordinary timing windows. Each case had
+four distinct painted spinner crops. Largest ordinary sampled frame gap was
+78.3 ms; the labelled injected block produced 350.9 ms.
+
+Linux WebKit text normal-motion cases showed frame-delivery delays, including a
+476 ms inter-frame gap and a roughly 1 s delay before one first sample. However,
+its animation clock advanced 883 ms over an 881 ms sampled span and 394 ms over
+392 ms. The initial diagnostic's fixed 900 ms minimum mislabeled these shorter
+windows as clock stalls. The correction includes the initial snapshot and checks
+clock advance against the actual sampled span, with a Node-side case deadline.
+This is not a reproduced frozen compositor or evidence from physical iPad.
+Reduced-motion text cases completed; four PDF cases failed before reader entry,
+at nonpersistent-profile import. The revised harness uses the persistent profile
+already used by the repository's sentence tests and independently verified by
+PR #107's diagnostic. Import failure is not spinner evidence.
+
+The revised run logs probe read cost and adds three rotated-order repetitions of
+normal text controls: unmodified, geometry-transition removed, pill backdrop
+removed, and passive rAF-only cadence (no per-frame style/animation/layout reads).
+The two stylesheet interventions exist only in the test page. Timed phases have
+no screenshots or PNG encoding; painted crops are captured afterward. Cases run
+sequentially, with each browser engine on a separate CI runner. Host scheduling,
+Linux renderer differences and instrumentation remain possible confounders.
