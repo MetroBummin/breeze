@@ -144,3 +144,14 @@ DB and the existing ten-minute job are active; deployed source is unchanged from
 the tested bundle. Artificial two-caller refresh proof remains unrun after a
 denial, and the existing pg_net namespace-registration advisor remains documented.
 Final app CI and main merge remain independent gates.
+
+## Reader layout diagnostic gate
+
+On `41c2bb35`, the complete RSS browser stage passed, but the later reader-work
+test measured one twelve-page cache rebuild during its chrome-only motion
+boundary (expected zero). Its PDF source and test match the previously green
+component head. A separate read-only diagnostic preserves that exact assertion,
+captures invalidation/read stacks, cache keys, relevant observer/transition
+deliveries and pending paint state, and records three fixed attempts per engine.
+Any failed attempt fails the job. No product change or timing tolerance is added
+on the basis of the unexplained failure; merge remains blocked by complete CI.

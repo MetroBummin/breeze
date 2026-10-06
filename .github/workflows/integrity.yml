@@ -268,3 +268,33 @@ jobs:
           path: /tmp/breeze-catalog-browser-proof/
           if-no-files-found: error
           retention-days: 7
+  reader-chrome-layout-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Trace paper cache invalidation without changing the zero-read assertion
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_CHROME_TRACE_ITERATIONS: '3'
+          BREEZE_CHROME_TRACE_PROOF: /tmp/breeze-chrome-layout
+        run: timeout --kill-after=5s 600s node tests/diagnose-reader-chrome-layout.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reader-chrome-layout-${{ matrix.engine }}
+          path: /tmp/breeze-chrome-layout/
+          if-no-files-found: error
+          retention-days: 7
