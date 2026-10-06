@@ -63,10 +63,17 @@ function inventory contains only Ready. Always name the app project explicitly.
    No setting tool is supplied by this repository. Database `active=false`
    still produces empty disabled inventory and POST `reason=off`.
 5. Store the existing service credential securely as Vault
-   `rss_catalog_service_role` if the reference is absent. Do not query, print,
-   export or commit its value. Apply `optionalScheduleMigration` from the bundle;
-   it installs the job disabled. Verify actual pg_net version/bodyless SQL NULL
-   behavior, job ownership and queue/schema denial before activation.
+   `rss_catalog_service_role` if the reference is absent. This requires separate
+   action-time approval and owner entry in the project's secure Dashboard Vault
+   UI; general catalog deployment consent does not authorize copying a service
+   credential or changing extension permissions. Never ask the owner to paste
+   the key into chat, a PR, a shell command or a tool argument. Do not query,
+   print, export, read or inject its value. Separately obtain action-time approval
+   for the exact pg_cron/pg_net installation, net/cron permission changes and
+   disabled job setup, then apply `optionalScheduleMigration` from the bundle.
+   Verify actual pg_net version/bodyless SQL NULL behavior, job ownership and
+   queue/schema denial before activation. All calls must explicitly target
+   `hrtfhojbhqvaoiulspto`; never infer a project from the Ready CLI config.
 6. As database owner, set `public.rss_public_catalog.active=true` for id 1.
    Invoke `select rss_catalog_private.enqueue_refresh();` once; only its request
    ID is returned. Inspect `net._http_response` for that ID's status, timeout and
