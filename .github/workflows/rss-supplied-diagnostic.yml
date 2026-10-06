@@ -1,0 +1,33 @@
+name: RSS supplied-photo diagnostic
+on:
+  push:
+    branches: [breeze/diagnose-rss-supplied-20261006]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rss-supplied-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Preserve supplied-photo expectations and record controlled feed timing
+        env:
+          BREEZE_RSS_VISIBLE_COVER_PROOF: /tmp/breeze-rss-supplied-diagnostic
+        run: node tests/diagnose-rss-supplied-photo-browser.mjs
+      - name: Capture diagnostic state even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rss-supplied-diagnostic
+          path: /tmp/breeze-rss-supplied-diagnostic/
+          if-no-files-found: error
+          retention-days: 7
