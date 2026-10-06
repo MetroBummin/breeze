@@ -806,3 +806,84 @@ for(const detail of [false,true]){
   ctx.closePanel();
 }
 console.log('Pinch acquisition ends mini/detail lookup lifetime and rejects delayed presentation');
+
+/* Explicit retries own only the failed occurrence's transient presentation. */
+{
+  const spanFor=(word,sentence)=>({textContent:word,dataset:{example:sentence,clickedTokenIndex:'1'},
+    classList:{add(){},remove(){}},closest:()=>null});
+  const answer={kind:'word',canonical:'bank',members:[1],ko:'강둑',lemma:'bank'};
+  async function failedContext(){
+    const f=boot(),{ctx,net}=f;
+    // Legacy/unresolved records take the occurrence-context path on reopen.
+    ctx.words.bank={...savedWord('bank',''),example:'The bank flooded.'};
+    ctx.openWord('bank',spanFor('bank','The bank flooded.'));await settle(20);
+    net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
+    net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
+    assert.equal(ctx.currentContext('bank').error,'error');
+    assert.equal(ctx.words.bank.ko,'');
+    return f;
+  }
+  {
+    const {ctx,net,world}=await failedContext();
+    const retry=ctx.retryWordPeek();await settle(20);
+    assert.equal(ctx.wordPeekState(ctx.words.bank,ctx.currentContext('bank')).loading,true,
+      'stale occurrence error hid the mini retry pending state');
+    net.deliver({error:'offline'});await retry;await settle();
+    assert.equal(ctx.currentContext('bank').error,'offline','mini retry retained the previous failure');
+    assert.match(ctx.wordPeekState(ctx.words.bank,ctx.currentContext('bank')).text,/오프라인/);
+    const recovered=ctx.retryWordPeek();await settle(20);
+    net.deliver(answer);await recovered;await settle();
+    assert.equal(ctx.words.bank.ko,'강둑');
+    assert.equal(ctx.currentContext('bank'),null);
+    assert.equal(ctx.wordPeekState(ctx.words.bank,null).text,'강둑');
+    assert.equal(world.sent.length,4,'manual retries restarted the exhausted automatic budget');
+    ctx.closePanel();
+  }
+  {
+    const {ctx,net,world}=await failedContext();
+    // Layout has separate browser coverage; use the production detail state.
+    new Script('wordPeekActive=false;').runInNewContext(ctx);
+    world.el('panel').classList.add('on');ctx.renderPanel();
+    const context=ctx.currentContext('bank'),retry=ctx.askAI();await settle(20);
+    assert.ok(context.loading,'detail retry did not publish its pending state');
+    assert.equal(context.error,undefined,'detail retry retained the previous failure');
+    assert.equal(world.el('p-ai').className,'on load');
+    ctx.navigator.onLine=false;
+    net.deliver({error:'offline'});await retry;await settle();
+    assert.equal(context.loading,'');assert.equal(context.error,'offline');
+    assert.match(world.el('p-ai-note').textContent,/오프라인/);
+    ctx.navigator.onLine=true;
+    const recovered=ctx.askAI();await settle(20);
+    net.deliver(answer);await recovered;await settle();
+    assert.equal(ctx.words.bank.ko,'강둑');
+    assert.equal(context.loading,'');assert.equal(context.error,undefined);
+    assert.equal(world.el('p-ai-ko').textContent,'강둑','saved retry answer stayed hidden behind context.error');
+    assert.equal(world.el('p-ai-note').textContent,'');
+    assert.equal(world.sent.length,4);
+    ctx.closePanel();
+  }
+  for(const surface of ['mini','detail'])for(const next of ['cancel','same-word','other-word']){
+    const {ctx,net,world}=await failedContext();net.outran=true;
+    const retry=surface==='mini'?ctx.retryWordPeek():ctx.askAI();await settle(20);
+    const old=net.pending.pop();assert.ok(old,surface+' retry did not send');
+    let newer=null;
+    if(next==='cancel')ctx.closePanel();
+    else{
+      const key=next==='same-word'?'bank':'river',sentence='The '+key+' closed.';
+      if(key!=='bank')ctx.words[key]={...savedWord(key,''),example:sentence};
+      ctx.openWord(key,spanFor(key,sentence));await settle(20);
+      net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
+      net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
+      newer=ctx.currentContext(key);assert.equal(newer.error,'error');
+    }
+    const selected=ctx.selKey,renders=world.renders,snapshot=JSON.stringify(newer);
+    old.done=true;old.res(answer);await retry;await settle(20);
+    assert.equal(ctx.selKey,selected,'late '+surface+' retry changed selection');
+    assert.equal(world.renders,renders,'late '+surface+' retry rendered a retired occurrence');
+    assert.equal(JSON.stringify(newer),snapshot,'late '+surface+' retry cleared a newer occurrence error');
+    if(next==='cancel')assert.equal(world.el('panel').classList.contains('on'),false);
+    else assert.equal(ctx.currentContext(selected),newer);
+    ctx.closePanel();
+  }
+}
+console.log('Explicit mini/detail retries replace stale occurrence errors without touching newer openings');

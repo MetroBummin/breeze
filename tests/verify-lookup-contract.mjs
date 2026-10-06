@@ -8,6 +8,7 @@ const server=readFileSync(new URL('server/dict/index.ts',root),'utf8');
 const box={Response,AbortSignal,console,crypto,TextEncoder,Deno:{env:{get:()=>''},serve(){}},createClient:()=>({rpc:async(name,p)=>({data:!p.p_user&&!p.p_device?{status:'login_required'}:box.quotaDenied?{status:'quota_exceeded'}:p.p_answer?{status:'replay',answer:p.p_answer,left:8}:{status:'ok'},error:null})}),newAiTrace:()=>({})};
 vm.createContext(box);
 const run=code=>vm.runInContext(ts.transpileModule(code.replace(/^import .*;$/gm,'').replace(/^export /gm,''),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText,box);
+run(readFileSync(new URL('modules/lexical/core.js',root),'utf8'));
 run(readFileSync(new URL('server/dict/logical-lookup.ts',root),'utf8'));run(lookup);run(server);
 const input=box.lookupInput({word:'apple',clicked:'apple',sentence:'He upset the apple cart.',clickedIndex:3});
 const valid={kind:'expression',canonical:'upset the apple cart',members:[1,2,3,4],ko:'계획을 망치다'};

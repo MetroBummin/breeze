@@ -17,13 +17,27 @@
     movies:'movie',cookies:'cookie',calories:'calorie',better:'good',best:'good',worse:'bad',worst:'bad'
   };
   const NO_LEMMA = new Set(['news','always','perhaps','these','those','series','species','during','evening','morning','nothing','something','anything','everything','indeed','hundred','sacred','hatred','united','ing','analysis','basis','crisis','thesis','themselves','ourselves','yourselves','myself','yourself','himself','herself','itself','oneself']);
+  // Lookup validation owns a wider morphology vocabulary than storage identity.
+  // Do not feed these additions into lemma()/lemmaCands(): even appended values
+  // can redirect keyOf() to an existing card and change saved-word highlights.
+  const EXTRA_LEMMAS = {
+    arose:'arise',arisen:'arise',awoke:'awake',awoken:'awake',bent:'bend',bit:'bite',bitten:'bite',bled:'bleed',blew:'blow',blown:'blow',
+    bore:'bear',born:'bear',borne:'bear',bound:'bind',bred:'breed',burnt:'burn',clung:'cling',crept:'creep',dealt:'deal',dug:'dig',
+    drank:'drink',drunk:'drink',dreamt:'dream',fed:'feed',flung:'fling',forbade:'forbid',forbidden:'forbid',forgot:'forget',forgotten:'forget',
+    froze:'freeze',frozen:'freeze',hung:'hang',knelt:'kneel',leant:'lean',leapt:'leap',lent:'lend',lit:'light',rode:'ride',ridden:'ride',
+    rang:'ring',rung:'ring',shook:'shake',shaken:'shake',shone:'shine',shot:'shoot',shrank:'shrink',shrunk:'shrink',sang:'sing',sung:'sing',
+    sank:'sink',sunk:'sink',slept:'sleep',slid:'slide',smelt:'smell',sped:'speed',spelt:'spell',spilt:'spill',spun:'spin',spat:'spit',
+    sprang:'spring',sprung:'spring',stole:'steal',stolen:'steal',stuck:'stick',stung:'sting',stank:'stink',stunk:'stink',struck:'strike',
+    striven:'strive',strove:'strive',swore:'swear',sworn:'swear',swam:'swim',swum:'swim',swung:'swing',tore:'tear',torn:'tear',
+    wept:'weep',won:'win',wound:'wind',died:'die',lied:'lie',tied:'tie',vied:'vie'
+  };
   const DULL_TAIL=/(?:er|en|el|on|or)$/;
   const vowelRuns=s=>(s.match(/[aeiouy]+/g)||[]).length;
   const needsSilentE=b=>/[^aeiou][aeiou][^aeiouwxy]$/.test(b)&&!(DULL_TAIL.test(b)&&vowelRuns(b)>1);
 
   function lemma(raw){
     const w=String(raw||'').toLowerCase().replace(/’/g,"'").replace(/^[^a-z]+|[^a-z']+$/g,'');
-    if(IRREG[w])return IRREG[w]; if(w.length<4||NO_LEMMA.has(w))return w;
+    if(Object.prototype.hasOwnProperty.call(IRREG,w))return IRREG[w]; if(w.length<4||NO_LEMMA.has(w))return w;
     const hasVowel=s=>/[aeiouy]/.test(s);
     if(/ies$/.test(w)&&w.length>4)return w.slice(0,-3)+'y';
     if(/(sses|shes|ches|xes|zes)$/.test(w))return w.slice(0,-2);
@@ -43,5 +57,15 @@
     set.add(w0);[...set].forEach(candidate=>{if(candidate!==w0&&candidate.endsWith('e'))set.add(candidate.slice(0,-1));});
     return [...set];
   }
-  globalThis.BreezeLexical=Object.freeze({lemma,lemmaCands,isAcro});
+  function lookupLemmaCands(raw){
+    const surface=String(raw||'').replace(/’/g,"'"),word=surface.toLowerCase();
+    // Preserve case-sensitive acronym plurals (IDs -> ID) while also allowing
+    // ordinary all-caps inflections (SLEPT -> sleep).
+    const set=new Set([...lemmaCands(surface),...lemmaCands(word)]);
+    if(Object.prototype.hasOwnProperty.call(EXTRA_LEMMAS,word))set.add(EXTRA_LEMMAS[word]);
+    if(/ied$/.test(word)&&word.length>4)set.add(word.slice(0,-3)+'y');
+    if(/'s$/.test(word))lookupLemmaCands(word.slice(0,-2)).forEach(candidate=>set.add(candidate));
+    return [...set];
+  }
+  globalThis.BreezeLexical=Object.freeze({lemma,lemmaCands,lookupLemmaCands,isAcro});
 })();

@@ -18,8 +18,9 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 const browser=await (process.env.BROWSER==='webkit'?webkit:chromium).launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
 
+let page;
 try{
-  const page=await browser.newPage({viewport:{width:1100,height:800},serviceWorkers:'block'});
+  page=await browser.newPage({viewport:{width:1100,height:800},serviceWorkers:'block'});
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.route('**/*',route=>{
     const href=route.request().url();
@@ -37,16 +38,19 @@ try{
 
 
   const pill=page.locator('#word-peek'),requests=[];
-  let fail=true;
+  let failures=1,responseGate=null,releaseResponse=null;
   await page.route(url+'functions/v1/dict',async route=>{
     const payload=route.request().postDataJSON();requests.push(payload);
-    if(fail){fail=false;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
-    return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical:'patient',members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
+    if(failures>0){failures--;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
+    if(responseGate)await responseGate;
+    return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical:payload.word,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
   });
   await page.evaluate(url=>{
     sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-user'};SB_URL=url;SB_KEY='qa';
     dictGet=async()=>null;fillDictionaryMetadata=async()=>{};
-    const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()==='patient'&&n.getBoundingClientRect().top>100);
+    const bounds=readerScroller().getBoundingClientRect();
+    const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()==='patient'&&n.getBoundingClientRect().top>bounds.top+80&&n.getBoundingClientRect().bottom<bounds.bottom-80);
+    if(!node)throw Error('Missing interior word-arrival fixture');
     const key=keyOf('patient');
     words[key]={word:'patient',clicked:'patient',forms:[key],ko:'',defs:[],kodict:[],example:sentenceOf(node),book:curBook.title,status:1,addedAt:1,up:1};
     const input=lookupRequestFor(words[key],node,true);contextView={key,...input,loading:'checking'};
@@ -63,7 +67,9 @@ try{
   assert.equal(await pill.evaluate(n=>getComputedStyle(n,'::after').content),'none','arrival added a decorative overlay');
   assert.deepEqual(await pill.boundingBox(),rect,'accent moved the pill');
   // Under 750ms of continuous visibility remains unseen and can reveal again.
-  await page.evaluate(()=>readerScroller().scrollTop+=8);
+  // Protocol round trips above can exceed that interval on a slow WebKit runner.
+  // Set the fixture's visibility age at the same turn that initiates the scroll.
+  await page.evaluate(()=>{wordPeekShownAt=performance.now();readerScroller().scrollTop+=8;});
   await page.waitForFunction(()=>document.getElementById('word-peek').hidden);
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false,'reveal repeated arrival bloom');
@@ -78,5 +84,49 @@ try{
   await page.evaluate(()=>{const node=qaNode;closePanel();openWord('patient',node);});
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   assert.equal(requests.length,3);assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false);
-  console.log('word recovery + neutral arrival browser: passed');
+  // Existing unresolved cards own a context view. Exhaust initial recovery, then
+  // exercise both actual retry controls: stale context errors must not hide
+  // pending feedback or the successful meaning already saved in the card.
+  for(const [surface,mode] of [['resilient','mini'],['reader','detail']]){
+    const before=requests.length;failures=2;
+    await page.evaluate(surface=>{
+      closePanel();
+      const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()===surface&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
+      if(!node)throw Error('Missing visible retry fixture '+surface);
+      const key=keyOf(surface);
+      words[key]={word:surface,clicked:surface,forms:[key],ko:'',defs:[],example:sentenceOf(node),book:curBook.title,status:1,addedAt:1,up:1};
+      openWord(key,node);
+    },surface);
+    await page.waitForFunction(()=>currentContext(selKey)?.error==='error'&&!words[selKey].aiLoading&&!document.getElementById('word-peek').hidden);
+    assert.equal(requests.length,before+2);
+    responseGate=new Promise(done=>{releaseResponse=done;});
+    if(mode==='detail'){
+      await page.locator('#word-peek-more').click();
+      await page.locator('#p-aibtn').click();
+      await page.waitForFunction(()=>document.getElementById('p-ai').classList.contains('load'));
+      releaseResponse();
+      await page.waitForFunction(()=>document.getElementById('p-ai-ko').textContent==='참을성 있는');
+      assert.equal(await page.locator('#p-ai-note').textContent(),'');
+    }else{
+      await page.locator('#word-peek-retry').click();
+      await page.waitForFunction(()=>wordPeekPending()&&document.getElementById('word-peek').hidden);
+      releaseResponse();
+      await page.waitForFunction(()=>!wordPeekPending()&&!document.getElementById('word-peek').hidden&&document.getElementById('word-peek-meaning').textContent==='참을성 있는');
+    }
+    responseGate=null;releaseResponse=null;
+    assert.equal(await page.evaluate(()=>words[selKey].ko),'참을성 있는');
+    assert.equal(requests.length,before+3,'manual retry repeated automatic budget');
+    assert.equal(requests.at(-1).lookupId,requests[before].lookupId,'manual retry lost its recovery ID');
+    assert.equal(await page.evaluate(()=>currentContext(selKey)?.error||''),'');
+  }
+  console.log(`${process.env.BROWSER||'chromium'} word recovery + neutral arrival browser: passed`);
+}catch(error){
+  if(page)console.error('word recovery fixture state',await page.evaluate(()=>({
+    selected:selKey,active:wordPeekActive,hidden:document.getElementById('word-peek').hidden,
+    presentation:wordPeekPresentation,ended:wordPeekPresentationEnded,hadPending:wordPeekHadPending,
+    shownAge:wordPeekShownAt===null?null:performance.now()-wordPeekShownAt,
+    contextError:currentContext(selKey)?.error||'',loading:!!words[selKey]?.aiLoading,
+    meaningVisible:document.getElementById('p-ai-ko').textContent,
+  })).catch(()=>null));
+  throw error;
 }finally{await browser.close();await new Promise(done=>server.close(done));}
