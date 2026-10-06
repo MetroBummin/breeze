@@ -60,7 +60,7 @@ const server=createServer(async(req,res)=>{
   }catch{res.writeHead(500).end();}
 });
 const result={units:'UTF-8 uncompressed HTTP response bodies. Synthetic feeds; four audited public OG snippets plus two synthetic originals. Local pinned Node HTTP, modeled DNS; live publisher/TLS, headers, redirects, DB responses, images, selected article bodies and other traffic excluded. Retained original-prefix bytes and delivered chunks are separate; neither is total billed egress.',sourceHashes:{},cases:{}};
-for(const file of ['server/rss-catalog/service.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/photos.mjs','server/rss-catalog/public-prefix.mjs','server/article/cover-metadata.mjs','server/rss-catalog/schema/rss_public_catalog.sql','scripts/importers/rss.js'])result.sourceHashes[file]=createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex');
+for(const file of ['server/rss-catalog/service.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/photos.mjs','server/rss-catalog/photo-head.mjs','server/rss-catalog/public-prefix.mjs','server/article/cover-metadata.mjs','server/rss-catalog/schema/rss_public_catalog.sql','scripts/importers/rss.js'])result.sourceHashes[file]=createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex');
 let base;
 async function get(headers={}){const response=await fetch(base,{headers});const bytes=Buffer.from(await response.arrayBuffer());return {status:response.status,bytes:bytes.length,etag:response.headers.get('etag'),payload:bytes.length?JSON.parse(bytes):null};}
 try{

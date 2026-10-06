@@ -3,7 +3,8 @@
   "sourceHashes": {
     "server/rss-catalog/service.mjs": "37f309883366f8799f169beac50f88cbb9e9dd1558c5425aa702873199c4c515",
     "server/rss-catalog/handler.mjs": "5dd2bf523b57ec0643f97781e6398b6cbd0d64db0393c08eeb58fda7ef4ba1d0",
-    "server/rss-catalog/photos.mjs": "0a8d8e4fe677bb48b976d544a62624d7d3e925eae47e8e06afa8c25abca61f3d",
+    "server/rss-catalog/photos.mjs": "21ffcfc4ea924621a5a3dd45bef2ba62229362670e467434d2012bf1e21f00da",
+    "server/rss-catalog/photo-head.mjs": "0ad69a3c3a7febb0cbfd35655a31687c886a01596bf0ce2d47411bacd78c79bd",
     "server/rss-catalog/public-prefix.mjs": "55ec4ced14670d4a15c82cd11578145206a9a8d582adf9cdb0a4e4ba573897ab",
     "server/article/cover-metadata.mjs": "52ab91f202efede40bfdaa250e5c746aed6db779ba45f83ae77e44148b5be411",
     "server/rss-catalog/schema/rss_public_catalog.sql": "61e905cd8ea374f9ea255f083da56810339053ef76a119f10922b5211f128246",

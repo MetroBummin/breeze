@@ -171,7 +171,7 @@ The server parser preserves the current client's supplied photo choices across
 content, description, summary, lazy attributes, responsive widths and media
 types. Catalog mode skips the client's visible-cover fetches, so the server now
 owns bounded original-photo metadata lookup under the same global SQL claim.
-It consumes PR #104's unchanged pure extractor from `2d1f942`, with its case,
+It consumes PR #104's unchanged pure extractor from `7121c0f`, with its case,
 safe-base and malformed-input fixtures. Only missing-photo ordinary entries
 from reviewed fixed feeds qualify. Every original/redirect must be HTTPS on
 the feed publisher's hostname (allowing www aliases), with public DNS answers
@@ -181,7 +181,9 @@ Each ten-minute refresh permits at most six distinct original jobs, two workers,
 four seconds per job including DNS/redirects, two redirects (three HTTP attempts),
 and a retained 128 KiB identity-encoded HTML prefix. It cancels after an
 unambiguous complete photo tag or the prefix limit; unresolved relative metadata
-waits for a safe base or complete response. It never runs article-body parsing,
+waits for a safe base, real head close or complete response. The pure head scanner
+is copied from `7121c0f` and ignores fake closure inside comments/attributes/raw
+text/templates. It never runs article-body parsing,
 downloads images or publishes HTML. Delivered chunks may exceed the retained
 prefix; headers/TLS and failed transfers are not covered by that parsing cap.
 

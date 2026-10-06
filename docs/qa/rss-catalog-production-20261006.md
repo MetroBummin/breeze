@@ -125,9 +125,14 @@ never renew source or cache receipt age. Source `max-age` can defer revalidation
 Server supplied-photo parity now covers description versus image-less content,
 Atom summary, lazy attributes, responsive widths, media type/case, video versus
 thumbnail and unsafe/tracking image exclusion. The catalog consumes PR #104's
-unchanged pure `extractPublicArticleCover` at `2d1f942`, plus its case/base/entity
+unchanged pure `extractPublicArticleCover` at `7121c0f`, plus its case/base/entity
 fixtures and four audited feed-empty public OG snippets. PR #104 still owns the
 client cover policy/UI; this PR owns the server fetch/cache and deploy bundle.
+The helper bytes remain identical to `2d1f942`; latest `7121c0f` also supplies
+the pure head-completion scanner copied unchanged into catalog-owned
+`photo-head.mjs`. Root/path-relative share metadata resolves at the final redirect
+URL after a real head close, without consuming the large article tail. Comments,
+quoted attributes, raw text, templates and incomplete bases cannot fake closure.
 
 Original lookup occurs only inside an authorized claimed refresh, for missing
 photos on ordinary entries from enabled fixed feeds. Article and every redirect
@@ -197,8 +202,8 @@ excluded. No percentage billing-savings claim is made.
 
 Validation at the prepared source:
 
-- Full `npm test`: 516 Node-runner tests, zero failures, plus existing script
-  checks. Catalog subset: 38 tests, including actual SQL role denial/control
+- Full `npm test`: 518 Node-runner tests, zero failures, plus existing script
+  checks. Catalog subset: 40 tests, including actual SQL role denial/control
   fencing, modeled disabled scheduler/grants, publisher validators, long-URL
   snapshot trimming, supplied/original-photo policy and provenance, transport
   cancellation, base/case parity, cache/concurrency, client failure bounds and expiry.
@@ -223,6 +228,15 @@ Validation at the prepared source:
   PR #104's owner. Catalog browser CI now runs even after earlier step failures;
   a prior failure remains a failed job and is not suppressed. Exact-head catalog
   WebKit and combined client proof must still pass before activation.
+  The added diagnostic wrapper preserves the original serial/budget assertions
+  and adds strict client fetch/reader ownership plus lifecycle timestamps.
+  [Local timing proof](rss-catalog-serial-20261006.json): first cancellation and
+  fetch settlement at t=0, next client start at t=2 ms, previous server close at
+  t=9 ms, next server arrival at t=30 ms. Client and server maxima are both 1 in
+  that run, but the observed close acknowledgement lag explains why server-close
+  accounting can overlap while client ownership is serial. This does not prove
+  the absent client timestamps in the earlier failing CI run; instrumented CI
+  retains both assertions so a real overlap still fails and exposes evidence.
 - Public `breeze.io.kr` HTML/config read attempts were inaccessible to this
   environment's web tool. Parent owns the requested actual website baseline and
   post-deployment validation. Neither fixture results nor failed page access

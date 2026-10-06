@@ -3,6 +3,7 @@ import {publicUrl} from '../article/public-fetch.mjs';
 import {FEEDS} from '../rss-quality/feeds.mjs';
 import {metadataUrl,STALE_MS,FRESH_MS} from './metadata.mjs';
 import {fetchPublicPrefix,prefixHeadersAllowed} from './public-prefix.mjs';
+import {rssCoverHeadComplete} from './photo-head.mjs';
 export const ORIGINAL_LIMIT=6,ORIGINAL_BYTES=131072,ORIGINAL_TIMEOUT_MS=4000,ORIGINAL_REDIRECTS=2,NO_IMAGE_MS=1800000;
 const statuses=['present','noimage','transient','truncated','blocked'];
 const host=url=>url.hostname.toLowerCase().replace(/^www\./,'').replace(/\.$/,'');
@@ -25,7 +26,7 @@ function inspect(bytes,headers,url,complete=false){
   // Until EOF, a later first <base> can change a relative declaration. Reuse
   // the pure extractor with a different inert public origin to prove that an
   // early photo is independent of the missing base. No URL is fetched here.
-  return photo&&(complete||photo===extractPublicArticleCover(prefix,'https://breeze-cover-base.example/'))?photo:'';
+  return photo&&(complete||rssCoverHeadComplete(prefix)||photo===extractPublicArticleCover(prefix,'https://breeze-cover-base.example/'))?photo:'';
 }
 export async function fetchCatalogPhoto(entry,feed,{fetcher=fetchPublicPrefix}={}){
   if(!originalEligible(entry,feed))return {status:'blocked',photo:'',prefixBytes:0,bodyBytesReceived:0};

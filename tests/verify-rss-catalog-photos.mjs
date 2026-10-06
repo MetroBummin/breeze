@@ -11,6 +11,7 @@ import {catalogHandler} from '../server/rss-catalog/handler.mjs';
 import {FRESH_MS,STALE_MS} from '../server/rss-catalog/metadata.mjs';
 import {extractPublicArticleCover} from '../server/article/cover-metadata.mjs';
 import {coverDocumentCases} from './fixtures/rss-cover-document-cases.mjs';
+import {rssCoverHeadComplete} from '../server/rss-catalog/photo-head.mjs';
 const audit=JSON.parse(readFileSync(new URL('./fixtures/rss-original-cover-metadata.json',import.meta.url)));
 const tmz=FEEDS.find(feed=>feed.url==='https://www.tmz.com/rss.xml'),id=FEEDS.indexOf(tmz),now=1800000000000;
 const entry=(i=0)=>({title:'The English public story '+i,url:`https://www.tmz.com/public-story-${i}`,feedSourceUrl:tmz.url,source:tmz.name,photo:'',date:''});
@@ -39,6 +40,35 @@ test('streamed relative photos wait for a first base or full response; ambiguous
   assert.equal((await fetchCatalogPhoto(entry(),tmz,{fetcher:async()=>response(partial)})).photo,'https://www.tmz.com/cover.jpg');
   const unsafe=partial+'<base href="http://127.0.0.1/">';
   assert.equal((await fetchCatalogPhoto(entry(),tmz,{fetcher:async()=>response(unsafe)})).status,'blocked');
+});
+
+test('real head completion resolves root/path relative photos at the final redirect URL before a long body',async()=>{
+  const finalUrl='https://www.tmz.com/final/path/article';
+  for(const declaration of ['/assets/root.jpg','relative.jpg']){
+    const prefix='<html><head><META PROPERTY="og:image" CONTENT="'+declaration+'"></head><body>';
+    const result=await fetchCatalogPhoto(entry(),tmz,{fetcher:async(url,options)=>{
+      assert.equal(options.stop(bytes(prefix),headers,finalUrl),true);assert.ok(bytes(prefix).length<4096);
+      return response(prefix,{url:finalUrl,complete:false});
+    }});
+    assert.equal(result.status,'present');assert.equal(result.photo,new URL(declaration,finalUrl).href);
+  }
+});
+
+test('comments, quoted markup, raw text and templates cannot fake a completed head or negative provenance',async()=>{
+  const before='<html><head><meta property="og:image" content="relative.jpg">';
+  for(const fake of ['<!-- </head><body> -->','<script>const s="</head><body>";</script>',
+    '<style>p:after{content:"</head>"}</style>','<meta content="</head><body>">','<template></head><body></template>',
+    '<noscript></head></noscript>','<title></head></title>','<base href="https://imagez.tmz.com/unfinished']){
+    const prefix=before+fake;assert.equal(rssCoverHeadComplete(prefix),false,fake);
+    const result=await fetchCatalogPhoto(entry(),tmz,{fetcher:async(url,options)=>{
+      assert.equal(options.stop(bytes(prefix),headers,url),false,fake);return response(prefix,{complete:false});
+    }});
+    assert.equal(result.status,'truncated',fake);
+  }
+  const final=before+'<!-- </head> --><script>"</head>"</script><BASE HREF="https://imagez.tmz.com/assets/"></head><body>';
+  assert.equal(rssCoverHeadComplete(final),true);
+  const result=await fetchCatalogPhoto(entry(),tmz,{fetcher:async()=>response(final,{complete:false})});
+  assert.equal(result.photo,'https://imagez.tmz.com/assets/relative.jpg');
 });
 
 test('audited feed-empty original metadata becomes a photo without retaining page prose',async()=>{

@@ -58,7 +58,7 @@ jobs:
             # failures. A timeout remains a failed check; every case still runs.
             BREEZE_QA_ENGINE=$engine BREEZE_COVER_PROOF=/tmp/breeze-cover-chooser/$engine timeout --verbose --kill-after=5s 120s node tests/verify-cover-chooser-browser.mjs || status=1
             BREEZE_QA_ENGINE=$engine BREEZE_RSS_COVER_PROOF=/tmp/breeze-rss-covers/$engine timeout --verbose --kill-after=5s 120s node tests/verify-rss-covers-browser.mjs || status=1
-            BREEZE_QA_ENGINE=$engine BREEZE_RSS_VISIBLE_COVER_PROOF=/tmp/breeze-rss-visible-covers/$engine timeout --verbose --kill-after=5s 120s node tests/verify-rss-visible-covers-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_VISIBLE_COVER_PROOF=/tmp/breeze-rss-visible-covers/$engine timeout --verbose --kill-after=5s 120s node tests/diagnose-rss-cover-serial.mjs || status=1
             BREEZE_QA_ENGINE=$engine BREEZE_RSS_ENRICHMENT_CURRENT_ONLY=1 BREEZE_RSS_ENRICHMENT_PROOF=/tmp/breeze-rss-enrichment/$engine timeout --verbose --kill-after=5s 120s node tests/compare-rss-cover-enrichment-browser.mjs || status=1
           done
           exit "$status"
