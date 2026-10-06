@@ -688,3 +688,57 @@ below the radius choices, with its existing preference key/default OFF and undo
 transaction. It has a labeled 46×44px hit target, theme-aware switch and reduced
 motion support. Reopening tools/documents retains its value; only writing/eraser
 settings expose it. Pen/eraser stroke, palm/Pencil and pinch owners are unchanged.
+
+
+## Touch-capable Pointer pen route (2026-10-06)
+
+The Android internal-test request adds a second input adapter to the existing
+PDF ink engine. Native iPad still uses its explicit UIKit idiom flag, WebKit
+stylus Touch input and native Pencil admission ledger. Other runtimes can expose
+the same PDF-only tools when they support PointerEvent, TouchEvent,
+navigator.maxTouchPoints > 0 and scrollend. This is a capability gate, not a
+user-agent or tablet-width test; touch-capable browsers without a pen may show
+the tools but finger and mouse input never creates ink. No URL switch enables
+production handwriting. Old runtimes lacking these capabilities stay read-only.
+
+Only pointerType=pen creates geometry on the new route. Coalesced movement and
+the final pointerup position use the existing smoothing, clipping, eraser,
+highlighter, undo/redo and serialized IndexedDB writer. Pointer and Touch IDs
+remain separate namespaces. Pointer input owns geometry and commits; companion
+Touch events only suppress browser defaults and feed the existing finger filter.
+The existing pending-admission lifecycle waits for a cancelable companion
+Touch to be prevented before creating a preview or erasing. Missing or
+noncancelable Touch admission fails closed, including for erasure. Any intervening
+different pointerdown invalidates that pending admission, so a later palm cannot
+stand in for a missing pen Touch. Ambiguous contact ordering is rejected. Touch events
+never append geometry or commit a second stroke on this route. Native iPad continues
+to use the original Touch geometry owner even when PointerEvent is available.
+
+Preventing pointerdown does not prevent native panning. The existing non-passive
+Touch listeners prevent the companion pen touchstart/move, preserving the
+paper's pan-x/pan-y policy for real fingers. A pen arriving while an earlier
+finger/pinch owns navigation is rejected for its entire contact. New paper
+contacts during a pen contact are suppressed through their own end; a fresh
+finger after pen lift is immediately eligible even if an older palm remains.
+There is no global touch-action:none, finger drawing, synthetic event forwarding,
+fixed tap blackout or coordinate/ID-based pointer-to-Touch matching.
+
+The Pointer route also rejects a pen that starts in an observed scroll cycle,
+until the browser emits scrollend. The rejected contact cannot begin editing
+midway. Scrollend support is part of this route's capability gate, so a missing
+end event is not approximated with a timer. Actual scrolling cancels unfinished
+pen geometry, while completed erasures keep the existing undoable semantics.
+This does not claim that JavaScript can stop every Android vendor's native
+momentum. Actual stop-only behavior and event delivery are physical-device gates.
+
+Checks distinguish deterministic input contracts, real browser PDF/IndexedDB
+regressions, and hardware evidence. Synthetic Pointer/Touch or CDP touch events
+cannot prove Android palm rejection, stylus latency, inertia routing or process
+kill durability. Test-device acceptance must include pen-first and palm-first
+sequences, finger pan/pinch then pen, page edges and zoom, interruptions,
+undo/redo/partial erase, reopen, offline operation and a real app restart.
+
+References:
+- https://www.w3.org/TR/pointerevents/ (pointer cancellation and default actions)
+- https://www.w3.org/TR/touch-events/ (cancelable touch default actions)
+- https://developer.chrome.com/blog/scrollend-a-new-javascript-event

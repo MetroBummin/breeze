@@ -471,7 +471,7 @@ try{
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
    console.log(engine.name()+': highlighter pixels '+JSON.stringify(pixels)+', durable settings, partial eraser/undo/redo/reload passed');
-   await page.evaluate(()=>{window.breezeInkIPad=false;document.body.classList.toggle('qa-platform');});
+   await page.evaluate(()=>{window.breezeInkIPad=false;Object.defineProperty(window,'TouchEvent',{value:undefined});document.body.classList.toggle('qa-platform');});
    await page.waitForFunction(()=>document.getElementById('pdf-ink-status').hidden && window.qaInkScope?.enabled===false);
    assert.deepEqual(errors.filter(x=>!x.includes('ResizeObserver loop')),[]);
    console.log(`${engine.name()}: PASS 3 colors/3 widths, undo/redo including evicted pages and durable redo, black ink, stylus/finger separation (synthetic), no-mode-switch word/sentence Lookup, collision IDs, late Pencil during pinch, cancellations, zoom/resize/rotated page, release/reload, durable erase, failed save/retry, document isolation, platform gate`);
