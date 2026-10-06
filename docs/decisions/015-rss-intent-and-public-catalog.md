@@ -92,8 +92,11 @@ Cover metadata uses case-insensitive HTML attributes and the first public
 `<base href>` for relative URLs. Absolute public photos can survive an unsafe
 base, but ambiguous relative resolution throws `cover_base_unsafe`; callers must
 not cache that error as photo absence. Streamed relative declarations wait for
-the first base or a complete bounded response instead of guessing a publisher
-path. This does not increase fetch, prefix or refresh budgets.
+the first base, a real head boundary or a complete bounded response instead of
+guessing a publisher path. A completed head permits the final public URL to
+resolve relative photos before a long body reaches the prefix cutoff; inert
+text and quoted attributes cannot fake completion. This does not increase fetch,
+prefix or refresh budgets.
 
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport

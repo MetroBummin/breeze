@@ -45,7 +45,8 @@ function articleHtml(test,index,generation){
   // Warm no-image reuse needs a complete received page. The independent late
   // fixture covers an unknown truncated response, which cannot be negative.
   if(mode==='empty'||mode==='shimmer'&&index!==0)return `<html><body><p>${prose}</p></body></html>`;
-  const early=mode==='shimmer'&&index!==0?'':mode==='twitter'?`<meta name="twitter:image" content="${url}">`:
+  const early=mode==='head-relative'?`<meta property="og:image" content="relative-${index}.jpg">`:
+    mode==='shimmer'&&index!==0?'':mode==='twitter'?`<meta name="twitter:image" content="${url}">`:
     mode==='first-image'?'':mode==='late'?'':`<meta property="og:image" content="${url}">`;
   const image=mode==='first-image'?`<img src="${url}" width="640" height="480">`:'';
   const late=mode==='late'?`<meta property="og:image" content="${url}">`:'';
@@ -73,7 +74,9 @@ const server=createServer((req,res)=>{
       if(offset>=bytes.length)res.end();else timer=setTimeout(write,2);
     };
     res.on('close',()=>{clearTimeout(timer);record.closedEarly=offset<bytes.length;state.active--;});
-    timer=setTimeout(write,test.options.delayMs||0);
+    if(test.options.holdFirstMetadata&&test.requests.length===1)
+      test.releaseFirstMetadata=()=>{timer=setTimeout(write,test.options.delayMs||0);};
+    else timer=setTimeout(write,test.options.delayMs||0);
     return;
   }
   try{
@@ -133,7 +136,9 @@ async function start(browser,test){
     if(raw.startsWith(base)||raw.startsWith('blob:'))return route.continue();
     const index=feeds.findIndex(feed=>feed.url===raw);
     if(index>=0)return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:feedXml(test,index)});
-    if(url.hostname==='images.fixture'||test.options.original?.photo===raw){
+    if(url.hostname==='images.fixture'||test.options.original?.photo===raw
+      ||test.options.mode==='head-relative'&&url.hostname==='stories.fixture'
+        &&url.pathname.startsWith('/'+test.name+'/')&&/\/relative-\d+\.jpg$/.test(url.pathname)){
       test.images.push({url:raw,type:route.request().resourceType()});
       if(test.options.imageDelayMs)await new Promise(done=>setTimeout(done,test.options.imageDelayMs));
       return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/jpeg',body:test.options.brokenImage?'invalid image bytes':photo}).catch(()=>{});
@@ -281,7 +286,7 @@ try{
       assert(validation.cacheRecords<=100&&validation.cacheBytes<=64000);
       results.push({engine:engine.name(),scenario:'supplied-photo-priority/public-URLs/cache-expiry-bounds',state:suppliedState,validation,requests:supplied.requests});await s.context.close();
 
-      for(const mode of ['twitter','first-image','late']){
+      for(const mode of ['twitter','first-image','head-relative','late']){
         const fixture=run(engine.name()+'-'+mode,{mode}),f=await start(browser,fixture);
         if(mode==='late'){
           await f.page.waitForFunction(()=>window.coverReaderEvidence.length===2&&window.coverReaderEvidence.every(record=>record.cancelled));
@@ -338,13 +343,16 @@ try{
       results.push({engine:engine.name(),scenario:'coalesced-current-consumers',shares,state:coalescedState,requests:coalesced.requests});await c.context.close();
 
       // Observe the real card throughout metadata lookup, image load, and decode.
-      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',delayMs:250,imageDelayMs:2000}),sh=await start(browser,shimmer);
+      const shimmer=run(engine.name()+'-shimmer',{mode:'shimmer',holdFirstMetadata:true,delayMs:250,imageDelayMs:2000}),sh=await start(browser,shimmer);
       await waitForRequest(shimmer);
       const lookup=await snapshot(sh.page);
       assert.equal(lookup.cards.filter(card=>card.pending).length,1,'Never-attempted cards shimmered');
       assert(lookup.cards.every(card=>card.ready),'Cover lookup blocked immediate metadata Preview');
       await sh.page.locator('#casual-rail').screenshot({animations:'disabled',path:resolve(proof,engine.name()+'-lookup-pending.png')});
       const geometry=await sh.page.locator('#casual-rail .rss-card').first().boundingBox();
+      // Release after observing lookup: CPU scheduling must not move the test
+      // into simultaneous image decoding + a legitimately admitted next lookup.
+      shimmer.releaseFirstMetadata();
       await sh.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
       const decoding=await snapshot(sh.page);assert(decoding.cards[0].pending&&!decoding.cards[0].photo);
       await sh.page.waitForFunction(()=>rssCoverJobs.size===0);

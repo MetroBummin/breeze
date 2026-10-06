@@ -138,8 +138,8 @@ test('metadata extraction prefers OG/twitter then usable first images and leaves
   assert.equal(context.rssCoverPhoto('<img src="http://127.0.0.1/private" width="640" height="480">',url),'');
   assert.equal(context.rssCoverPhoto('<meta property="og:image" content="'+photo,url),'');
 });
-function streamed(context,body,chunkSize){
-  const bytes=new TextEncoder().encode(JSON.stringify({url,html:body}));let offset=0,readBytes=0,cancelled=false;
+function streamed(context,body,chunkSize,finalUrl=url){
+  const bytes=new TextEncoder().encode(JSON.stringify({url:finalUrl,html:body}));let offset=0,readBytes=0,cancelled=false;
   context.fetch=async(endpoint,options)=>{
     assert.equal(new URL(endpoint).searchParams.get('url'),url);assert.equal(options.credentials,'omit');
     assert(options.signal instanceof AbortSignal);
@@ -197,6 +197,28 @@ test('a streamed relative declaration waits for the first public base; ambiguous
   }
   const complete=runtime();streamed(complete.context,'<meta property="og:image" content="cover.jpg">',1024);
   assert.equal((await complete.context.rssCoverFetch(url,new AbortController().signal)).photo,'https://publisher.test/cover.jpg');
+});
+test('closed heads recover relative photos before a long body while inert head text cannot choose the base',async()=>{
+  const finalUrl='https://redirected.example/news/story';
+  for(const relative of ['/cover.jpg','cover.jpg']){
+    const {context}=runtime(),html='<html><head><meta property="og:image" content="'+relative+'"></head><body>'+'x'.repeat(200000);
+    const metrics=streamed(context,html,4096,finalUrl);
+    assert.equal((await context.rssCoverFetch(url,new AbortController().signal)).photo,new URL(relative,finalUrl).href);
+    assert.equal(metrics().readBytes,4096);assert.equal(metrics().cancelled,true);
+  }
+  for(const fake of ['<!-- </head><body> -->','<script>const text="</head><body>";</script>',
+    '<style>/* </head><body> */</style>','<title>literal </head><body></title>',
+    '<template><template></template></head><body></template>',
+    '<meta name="fake" content="<script></head><body>">']){
+    const {context}=runtime(),head='<html><head><meta property="og:image" content="cover.jpg">'+fake;
+    assert.equal(context.rssCoverHeadComplete(head),false,fake);
+    assert.equal(context.rssCoverPhoto(head,finalUrl,false),'',fake);
+    const html=head+' '.repeat(4096)+'<base href="https://images.example/assets/"></head><body>'+'x'.repeat(200000);
+    streamed(context,html,1024,finalUrl);
+    assert.equal((await context.rssCoverFetch(url,new AbortController().signal)).photo,'https://images.example/assets/cover.jpg',fake);
+  }
+  const {context}=runtime();
+  assert.equal(context.rssCoverHeadComplete('<head><meta content="</head>'),false);
 });
 test('coalesced in-flight metadata and stale completions preserve cache ownership',async()=>{
   const {context}=runtime();let complete,active=true,requests=0;
