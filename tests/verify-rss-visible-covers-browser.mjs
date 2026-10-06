@@ -21,7 +21,10 @@ const prose='The story explains how people learn about the world by reading evid
 const state={runs:new Map(),active:0,maxActive:0};
 let base;
 function run(name,options={}){
-  const value={name,options,generation:0,requests:[],images:[],blocked:[],writes:[]};state.runs.set(name,value);return value;
+  const value={name,options,generation:0,requests:[],images:[],blocked:[],writes:[]};
+  if(options.holdFeeds)value.feedGate=new Promise(done=>{value.releaseFeeds=done;});
+  if(options.holdImages)value.imageGate=new Promise(done=>{value.releaseImages=done;});
+  state.runs.set(name,value);return value;
 }
 const imageUrl=(name,index,generation=0)=>`https://images.fixture/${name}/g${generation}/photo-${index}.jpg`;
 const articleUrl=(name,index,generation=0)=>index===0&&state.runs.get(name)?.options.original
@@ -97,12 +100,27 @@ async function start(browser,test){
     window.coverReaderEvidence=[];
     window.coverPrefixEvidence=[];
     window.coverPhotoStarts=[];
+    window.coverLookupAdmission=[];
+    window.coverFeedsReady=false;
     if(options.fastTimeout){
       const schedule=window.setTimeout;
       window.setTimeout=(callback,ms,...args)=>schedule(callback,ms===15000||ms===4000?80:ms,...args);
     }
     if(options.stallDecode)HTMLImageElement.prototype.decode=()=>new Promise(()=>{});
     addEventListener('DOMContentLoaded',()=>{
+      // Isolate supplied-photo priority from arrival-order ownership, which has
+      // its own held-feed regression below. Keep that case's exact assertions.
+      if(options.waitForFeedSettlement){
+        const pump=window.rssCoverPump;
+        window.rssCoverPump=owner=>window.coverFeedsReady?pump(owner):Promise.resolve();
+      }
+      if(options.recordCoverAdmission){
+        const lookup=window.rssCoverLookup;
+        window.rssCoverLookup=(url,consumer)=>{
+          window.coverLookupAdmission.push({url,visible:rssCoverVisible(consumer.owner,consumer.card)});
+          return lookup(url,consumer);
+        };
+      }
       const originalPhoto=window.rssCardPhoto;
       window.rssCardPhoto=(card,entry)=>{
         window.coverPhotoStarts.push({url:entry.url,photo:entry.photo});
@@ -135,11 +153,15 @@ async function start(browser,test){
     const raw=route.request().url(),url=new URL(raw);
     if(raw.startsWith(base)||raw.startsWith('blob:'))return route.continue();
     const index=feeds.findIndex(feed=>feed.url===raw);
-    if(index>=0)return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:feedXml(test,index)});
+    if(index>=0){
+      if(test.options.holdFeeds?.includes(index))await test.feedGate;
+      return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/xml',body:feedXml(test,index)});
+    }
     if(url.hostname==='images.fixture'||test.options.original?.photo===raw
       ||test.options.mode==='head-relative'&&url.hostname==='stories.fixture'
         &&url.pathname.startsWith('/'+test.name+'/')&&/\/relative-\d+\.jpg$/.test(url.pathname)){
       test.images.push({url:raw,type:route.request().resourceType()});
+      if(test.options.holdImages)await test.imageGate;
       if(test.options.imageDelayMs)await new Promise(done=>setTimeout(done,test.options.imageDelayMs));
       return route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'image/jpeg',body:test.options.brokenImage?'invalid image bytes':photo}).catch(()=>{});
     }
@@ -147,6 +169,9 @@ async function start(browser,test){
   });
   const page=await context.newPage();await page.goto(base);await page.evaluate(()=>homeReady);
   await page.waitForFunction(()=>!rssLoading&&document.querySelectorAll('#casual-rail .rss-card').length===13);
+  if(test.options.waitForFeedSettlement)await page.evaluate(()=>{
+    window.coverFeedsReady=true;rssCoverActiveOwners.forEach(owner=>owner.changed());
+  });
   return {context,page};
 }
 async function snapshot(page){
@@ -254,7 +279,7 @@ try{
       }
       results.push({engine:engine.name(),scenario:'case/head/base/entities/malformed',cases:documentResults});await dc.context.close();
 
-      const supplied=run(engine.name()+'-supplied',{supplied:true}),s=await start(browser,supplied);
+      const supplied=run(engine.name()+'-supplied',{supplied:true,waitForFeedSettlement:true}),s=await start(browser,supplied);
       await s.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
       assert.equal(supplied.requests.length,1);assert.equal(supplied.requests[0].index,1,'Supplied photo was enriched unnecessarily');
       const suppliedState=await snapshot(s.page);noPersonalData(suppliedState);
@@ -285,6 +310,51 @@ try{
       assert.equal(validation.scriptExecuted,false);assert(validation.positiveExpired&&validation.emptyExpired);
       assert(validation.cacheRecords<=100&&validation.cacheBytes<=64000);
       results.push({engine:engine.name(),scenario:'supplied-photo-priority/public-URLs/cache-expiry-bounds',state:suppliedState,validation,requests:supplied.requests});await s.context.close();
+
+      for(const [name,holdFeeds,admitted] of [
+        ['first-feed-late',[0],2],['second-feed-late',[1],1],
+        ['leading-feeds-late',Array.from({length:11},(_,i)=>i),2],
+      ]){
+        const delayed=run(engine.name()+'-'+name,{supplied:true,holdFeeds,recordCoverAdmission:true});
+        const startup=start(browser,delayed);
+        try{await waitForRequest(delayed,admitted);}finally{delayed.releaseFeeds();}
+        const d=await startup;await settled(d.page);
+        const ownership=await d.page.evaluate(()=>{
+          const rail=document.getElementById('casual-rail'),owner=rssCoverOwners.get(rail);
+          return {admissions:coverLookupAdmission,remaining:rssCoverRemaining,
+            order:[...rail.querySelectorAll('.rss-card')].map(card=>card.dataset.rssUrl),
+            visible:[...rail.querySelectorAll('.rss-card')].filter(card=>rssCoverVisible(owner,card))
+              .map(card=>({url:card.dataset.rssUrl,photo:card.querySelector('.thumb').classList.contains('has-cover')}))};
+        });
+        writeFileSync(resolve(proof,engine.name()+'-'+name+'-ownership.json'),JSON.stringify({ownership,requests:delayed.requests},null,2));
+        await d.page.locator('#casual-rail').screenshot({path:resolve(proof,engine.name()+'-'+name+'.png')});
+        assert.equal(ownership.admissions.length,admitted,'Fixture did not hold late feeds through actual cover admission');
+        assert(ownership.admissions.every(record=>record.visible),'A lookup started for an offscreen card');
+        for(const record of ownership.admissions)assert(ownership.visible.some(card=>card.url===record.url&&card.photo),
+          'Late feeds displaced a visible budget-owning cover: '+record.url);
+        assert(delayed.requests.length<=2,'Late feeds exceeded the original discovery-generation request budget');
+        assert(!delayed.requests.some(request=>request.index===0),'A supplied photo consumed an original-page lookup');
+        const value=await snapshot(d.page);noPersonalData(value);
+        assert(value.cards.some(card=>card.url===articleUrl(delayed.name,0)&&card.photo),'The supplied photo did not decode');
+        const firstOrder=ownership.order,requestsBefore=delayed.requests.length;
+        await d.page.evaluate(()=>refreshLibrary());await settled(d.page);
+        assert.equal(delayed.requests.length,requestsBefore,'A warm render repeated metadata work');
+        const warmOrder=await d.page.locator('#casual-rail .rss-card').evaluateAll(cards=>cards.map(card=>card.dataset.rssUrl));
+        assert.deepEqual(warmOrder,firstOrder,'A warm render displaced the same generation\'s visible owners');
+        const refreshed=await d.page.evaluate(async()=>{
+          const rail=document.getElementById('casual-rail');
+          const groups=rssRankRecommendations(rssCands,{library:books,positions,sources:rssSources(),now:Date.now()});
+          const expected=groups.map(group=>group[0]?.url).filter(Boolean);
+          await renderRssCards(rail,true,document.getElementById('home-feed-empty'));
+          return {expected,actual:[...rail.querySelectorAll('.rss-card')].map(card=>card.dataset.rssUrl)};
+        });
+        assert.deepEqual(refreshed.actual,refreshed.expected,'Explicit refresh did not apply the current recommendation ranking');
+        await settled(d.page);
+        assert(delayed.requests.length-requestsBefore<=2,'Explicit refresh exceeded its separate generation budget');
+        assert(!delayed.requests.some(request=>request.index===0),'Refresh spent original-page budget on the supplied photo');
+        results.push({engine:engine.name(),scenario:'late-feed-visible-ownership-'+name,ownership,state:value,refreshed,requests:delayed.requests});
+        await d.context.close();
+      }
 
       for(const mode of ['twitter','first-image','head-relative','late']){
         const fixture=run(engine.name()+'-'+mode,{mode}),f=await start(browser,fixture);
@@ -507,7 +577,7 @@ try{
         await r.context.close();
       }
 
-      const preview=run(engine.name()+'-pending-preview',{supplied:true,imageDelayMs:500}),p=await start(browser,preview);
+      const preview=run(engine.name()+'-pending-preview',{supplied:true,holdImages:true,waitForFeedSettlement:true}),p=await start(browser,preview);
       await p.page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
       const immediate=await p.page.evaluate(()=>{
         const card=document.querySelector('#casual-rail .rss-card'),entry=rssCands[0][0];
@@ -518,6 +588,7 @@ try{
           pending:card.classList.contains('rss-cover-pending')};
       });
       assert(immediate.open&&immediate.title&&immediate.source);assert.equal(immediate.pending,false);
+      preview.releaseImages();
       results.push({engine:engine.name(),scenario:'immediate-known-metadata-preview-during-image',immediate});await p.context.close();
     }finally{await browser.close();}
   }

@@ -40,6 +40,15 @@ Requests use the existing public-DNS relay, run serially, and coalesce by URL.
 Rotation, replacement, scrolling out of view, hiding or opening Preview cancels
 obsolete consumers; late results cannot change a replacement entry or cache.
 
+Once a Home rail admits original-photo work, later feeds preserve the current
+card order for that discovery generation, using the existing scroll/focus/press
+order-preservation path. Late cards append instead of displacing the visible
+cards that own the two-request budget. Explicit refresh still reranks and starts
+its separately bounded generation. This favors stable visible ownership over
+continuous reranking during one feed load; it does not promise a photo for every
+late or offscreen card. Supplied photos remain independent of the original-page
+request budget, so more than two decoded photos can legitimately exist.
+
 The client retains at most 128 KiB of the relay's escaped JSON HTML prefix,
 extracts OG/Twitter/first-image URLs in an inert document, and cancels the stream
 after finding a photo or reaching the prefix limit. It does not run Readability,

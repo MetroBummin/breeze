@@ -1237,10 +1237,11 @@ function renderRssCards(rail, force, empty){
     const selected=recommendationContext?rssRankRecommendations(groups,recommendationContext):groups;
     const cards=(await Promise.all(selected.map(entries=>rssFeedCards(entries,renderId,rail,category==='all'?1:RSS_PER_FEED)))).flat();
     if(current!==revision||renderId!==rssRenderIds.get(rail)||!rail.isConnected)return;
-    // Do not reshuffle cards under a scrolled/focused/pressed recommendation rail
-    // when another feed arrives. New cards append; explicit refresh may rerank.
+    // Keep the visible owners of this generation's bounded cover work in place,
+    // just as for a scrolled/focused/pressed rail. Late feeds append instead of
+    // spending lookups on cards that immediately move offscreen. Refresh reranks.
     if(rail.id==='casual-rail' && category==='all' && !force &&
-       (rail.scrollLeft>0 || rail.contains(document.activeElement) || rail.querySelector('.rss-card.busy'))){
+       (coverOwner?.attempted.size>0 || rail.scrollLeft>0 || rail.contains(document.activeElement) || rail.querySelector('.rss-card.busy'))){
       const order=new Map([...rail.querySelectorAll('.rss-card')].map((card,index)=>[card.dataset.rssUrl,index]));
       cards.sort((a,b)=>(order.get(a.dataset.rssUrl)??Infinity)-(order.get(b.dataset.rssUrl)??Infinity));
     }
