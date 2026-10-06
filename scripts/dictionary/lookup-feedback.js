@@ -11,7 +11,7 @@ const wordLookupFeedback = (()=>{
     .breeze-lookup-pending,
     .reader-sentence-cue-layer.is-pending .reader-sentence-cue {
       background-color:var(--breeze-lookup-wash,rgba(74,151,235,.22))!important;
-      background-image:linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%)!important;
+      background-image:var(--breeze-lookup-sheen,linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%))!important;
       background-size:240% 100%!important;background-repeat:no-repeat!important;
       border-color:transparent!important;border-radius:var(--breeze-lookup-radius,5px)!important;
       box-shadow:none!important;
@@ -50,6 +50,7 @@ const wordLookupFeedback = (()=>{
       pendingNode.style.removeProperty('--breeze-lookup-ink');
       pendingNode.style.removeProperty('--breeze-lookup-paper');
       pendingNode.style.removeProperty('--breeze-lookup-wash');
+      pendingNode.style.removeProperty('--breeze-lookup-sheen');
     }
     pendingNode=null;pendingBusy=null;
   }
@@ -116,6 +117,7 @@ const wordLookupFeedback = (()=>{
     node.style.setProperty('--breeze-lookup-ink',palette.getPropertyValue('--sentence-glass-ink'));
     node.style.setProperty('--breeze-lookup-paper',palette.getPropertyValue('--sentence-glass-solid'));
     node.style.setProperty('--breeze-lookup-wash',palette.getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
+    node.style.setProperty('--breeze-lookup-sheen',palette.getPropertyValue('--word-lookup-sheen'));
     pendingNode=node;pendingBusy=node.getAttribute('aria-busy');
     node.setAttribute('aria-busy','true');node.classList.add('breeze-lookup-pending');
     announce('뜻 찾는 중');

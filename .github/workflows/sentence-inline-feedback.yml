@@ -43,6 +43,22 @@ jobs:
           path: /tmp/breeze-sentence-phone-preview/
           if-no-files-found: warn
           retention-days: 7
+      - name: Matched light lookup tone before and after
+        if: ${{ !cancelled() }}
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_LOOKUP_TONE_PROOF: /tmp/breeze-light-lookup-tone
+        run: |
+          node tests/verify-light-lookup-tone.mjs
+          node tests/verify-light-lookup-tone-browser.mjs
+      - name: Light lookup tone screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: light-lookup-tone-${{ matrix.engine }}
+          path: /tmp/breeze-light-lookup-tone/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Synthetic loading, errors and source ownership
         if: ${{ !cancelled() }}
         env:

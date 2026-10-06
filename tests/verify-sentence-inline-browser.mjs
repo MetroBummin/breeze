@@ -232,7 +232,9 @@ try{
           inline:[node.style.left,node.style.top,node.style.width,node.style.height]};
       });
       const probe=doc.createElement('span');probe.className='breeze-lookup-pending';
-      probe.style.cssText='position:absolute;left:-9999px;top:0;width:1px;height:1px';doc.body.appendChild(probe);
+      probe.style.cssText='position:absolute;left:-9999px;top:0;width:1px;height:1px';
+      for(const name of ['--breeze-lookup-wash','--breeze-lookup-sheen'])probe.style.setProperty(name,layer.style.getPropertyValue(name));
+      doc.body.appendChild(probe);
       const wordStyle=view.getComputedStyle(probe);
       const shared={animation:wordStyle.animationName,duration:wordStyle.animationDuration,
         timing:wordStyle.animationTimingFunction,image:wordStyle.backgroundImage};probe.remove();

@@ -333,6 +333,7 @@ function createReaderSentenceCue(host,pdf=false){
   layer.style.setProperty('--sentence-cue-blend',!pdf&&dark?'screen':'multiply');
   layer.style.setProperty('--breeze-lookup-radius','8px');
   layer.style.setProperty('--breeze-lookup-wash',getComputedStyle(document.body).getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
+  layer.style.setProperty('--breeze-lookup-sheen',getComputedStyle(document.body).getPropertyValue('--word-lookup-sheen'));
   host.appendChild(layer);
   readerSentenceCue={layer,observer:null};
   return layer;

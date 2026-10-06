@@ -266,3 +266,9 @@ Reader 단어 확장의 중복 예문은 숨긴다. 문맥 뜻은 카드 배경 
 필이 들어갈 공간이 있으면 문장 맨 아래, 없으면 맨 위에 놓는다. 양쪽 모두
 들어가지 않는 긴 문장일 때만 화면 안으로 겹쳐 배치한다. 오류·재시도는 본문을 이동하지 않는다.
 로그인·한도 오류에는 재시도를 활성화하지 않는다.
+
+
+Light lookup uses the shared saturated blue wash and colored sheen token; dark
+preserves its existing blue/white sheen. Text remains visible underneath, and
+the shared motion timing, reduced-motion fallback, sentence line geometry and
+source-specific blending remain unchanged.
