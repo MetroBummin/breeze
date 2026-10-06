@@ -404,3 +404,39 @@ test('interrupted refresh retries only canceled unknown metadata; settled genera
     assert.equal(runInContext('rssCands.flat().length',f.context),13);assert.equal(f.writes.length,0);
   }
 });
+
+test('navigation after the first pending image may legitimately admit the remaining candidate on return',async()=>{
+  const f=fixture(),entries=Array.from({length:3},(_,i)=>f.entry('navigation-'+i,i));f.groups(entries.map(entry=>[entry]));
+  f.setTransport(async url=>({photo:'https://images.test/'+url.split('/').at(-1)+'.jpg'}));
+  const photo=f.context.rssCardPhoto;let cancelOnce=true,before;
+  f.context.rssCardPhoto=(card,entry)=>{
+    const work=photo(card,entry);
+    if(cancelOnce){cancelOnce=false;Promise.resolve().then(()=>{
+      before={requests:f.metadata.length,remaining:runInContext('rssCoverRemaining',f.context),pass:runInContext('rssCoverPass',f.context)};
+      f.context.rssCoverCancel(f.owner());
+    });}
+    return work;
+  };
+  await f.paint();await f.flush();assert.equal(before.requests,1);assert.equal(before.remaining,1);
+  assert.equal(f.metadata.length,1);assert.equal(f.owner().cancelled,true);
+  await f.paint();await f.flush();await f.completeImages();
+  const after={requests:f.metadata.length,remaining:runInContext('rssCoverRemaining',f.context),pass:runInContext('rssCoverPass',f.context)};
+  assert.equal(after.requests,2);assert.equal(after.remaining,0);assert.equal(after.pass,before.pass);
+  assert.equal(f.metadata.filter(url=>url===entries[0].url).length,1,'The resumed image refetched its original');
+  assert.equal(new Set(f.metadata).size,2);assert.equal(f.writes.length,0);assertReadyOnly(f);
+  console.log('Navigation boundary:',JSON.stringify({before,after,requests:f.metadata,firstSourceOriginalReused:true}));
+});
+
+test('Home return preserves its stamp before explicit refresh; generation refresh changes stamp but retains photo',async()=>{
+ const f=fixture(),load=f.context.loadRss,entry=f.entry('stamp-photo',0,'https://images.test/stamp.jpg');
+ f.groups([[entry]]);f.context.loadRss=load;
+ f.context.rssFeedEntries=async feed=>({entries:feed.url===entry.feedSourceUrl?[entry]:[]});
+ await f.paint();await f.flush();await f.completeImages();
+ const card=f.cards()[0],stamp=f.rail.dataset.rssStamp,pass=runInContext('rssCoverPass',f.context);
+ f.context.rssCoverCancel(f.owner());await f.paint();await f.flush();
+ assert.equal(f.rail.dataset.rssStamp,stamp);assert.equal(f.cards()[0],card);
+ runInContext('rssPage++;rssLoadedAt=0',f.context);await f.paint();await f.flush();
+ assert.notEqual(f.rail.dataset.rssStamp,stamp);assert.equal(runInContext('rssCoverPass',f.context),pass+1);
+ assert.equal(f.cards()[0],card);assert.equal(f.imageStarts.length,1);assert.equal(f.metadata.length,0);
+ console.log('Stamp boundary:',JSON.stringify({sameOnReturn:true,changesOnExplicitRefresh:true,decodedCardRetained:true}));
+});

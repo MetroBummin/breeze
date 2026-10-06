@@ -121,3 +121,26 @@ unique URLs for settled generations. Each generation still has two distinct
 requests; confirmed negatives are requested once without timestamp renewal.
 The browser's strict uniqueness check now waits for metadata settlement between
 intentional refreshes and retains the exact same held image task throughout.
+
+Navigation coverage distinguishes return from a later explicit refresh: Home
+return preserves the stamp and decoded card, while deliberate refresh advances
+the generation and its stamp. The image-resume case first proves both metadata
+slots are admitted, then keeps its unchanged request-total assertion. A separate
+controlled regression proves that returning with one unspent slot may admit a
+different URL while never refetching the retained image's original.
+
+The separate active-quality browser fixture also waits for decoded cover state
+before asserting natural image width and retained-node identity. A merely visible
+pending card is not decode evidence; the existing assertions are unchanged.
+
+## Backend readiness observed
+
+The actual 2026-10-06 10:10 UTC scheduler cycle succeeded with one fetched source,
+zero failed sources and zero original jobs/HTTP attempts. Final public readback
+at 10:12:40 UTC showed exactly WIRED `[7]` ready and twelve disabled shared groups,
+with twenty entries, supplied photo URLs, bylines and original-source links.
+GET returned 200/14,019 bytes and conditional GET returned 304/zero body bytes.
+DB and the existing ten-minute job are active; deployed source is unchanged from
+the tested bundle. Artificial two-caller refresh proof remains unrun after a
+denial, and the existing pg_net namespace-registration advisor remains documented.
+Final app CI and main merge remain independent gates.

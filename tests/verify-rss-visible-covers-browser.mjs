@@ -771,7 +771,14 @@ try{
       for(const phase of ['metadata','image']){
         const navigation=run(engine.name()+'-navigation-'+phase,{ignoreAbort:true,holdFirstMetadata:phase==='metadata',holdImages:phase==='image'}),n=await start(browser,navigation);
         await waitForRequest(navigation);
-        if(phase==='image')await n.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-cover-pending'));
+        if(phase==='image'){
+          await n.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-cover-pending'));
+          // This case tests image resume with both generation slots already
+          // admitted. Otherwise return may legitimately use its remaining slot.
+          await waitForRequest(navigation,2);
+          assert.equal(navigation.requests.length,2);
+          assert.equal(await n.page.evaluate(()=>rssCoverRemaining),0);
+        }
         const beforeCancel={imageRequests:navigation.images.filter(image=>image.type==='image'&&image.url===imageUrl(navigation.name,0)).length,
           photoStarts:await n.page.evaluate(url=>coverPhotoStarts.filter(start=>start.url===url).length,articleUrl(navigation.name,0))};
         await n.page.evaluate(()=>show('casuals'));
@@ -834,7 +841,10 @@ try{
         else await r.page.evaluate(()=>show('home'));
         await r.page.waitForFunction(()=>pausedCoverCard.querySelector('.thumb').classList.contains('has-cover'));
         await r.page.evaluate(()=>pausedCoverWork.promise);
+        if(trigger==='home-return')assert.equal(await r.page.evaluate(()=>document.getElementById('casual-rail').dataset.rssStamp===resumeStamp),true,'Return did not cover the unchanged-stamp path');
+        const resumedPass=await r.page.evaluate(()=>rssCoverPass);
         await r.page.evaluate(()=>refreshLibrary());await settled(r.page);
+        assert.equal(await r.page.evaluate(()=>rssCoverPass),resumedPass+1,'Explicit refresh did not advance its own generation');
         assert.equal(await r.page.evaluate(()=>document.querySelector('#casual-rail .rss-card')===pausedCoverCard),true,'Canceled photo replaced the retained card');
         assert.equal(await r.page.evaluate(()=>!pausedCoverCard.classList.contains('rss-cover-pending')),true);
         assert.equal(resumed.requests.length,metadataBefore,'Resume fetched new cover metadata');
@@ -842,7 +852,6 @@ try{
         // Assert two logical starts; a canceled first transport may never arrive.
         assert.equal(await r.page.evaluate(url=>coverPhotoStarts.filter(start=>start.url===url).length,articleUrl(resumed.name,0)),2,'Resume did not restart the canceled image exactly once');
         assert(resumed.images.filter(image=>image.type==='image'&&image.url===imageUrl(resumed.name,0)).length<=2,'Resume duplicated image requests');
-        if(trigger==='home-return')assert.equal(await r.page.evaluate(()=>document.getElementById('casual-rail').dataset.rssStamp===resumeStamp),true,'Return did not cover the unchanged-stamp path');
         results.push({engine:engine.name(),scenario:'cancel-resume-'+trigger,paused,state:await snapshot(r.page),requests:resumed.requests,images:resumed.images});
         await r.context.close();
       }
