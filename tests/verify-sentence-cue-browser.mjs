@@ -92,14 +92,19 @@ try{
       }
       throw new Error('No visible sentence for '+kind);
      },kind);
+     const selectionScroll=await page.evaluate(()=>readerScrollTop());
      await page.evaluate(()=>{
       window.qaWait={};dictGet=()=>new Promise(r=>qaWait.resolve=r);dictPut=()=>Promise.resolve();
-      window.qaRangeReads=0;window.qaRangeOriginals ||= new Map();
+      window.qaRangeReads=0;window.qaRangeMethods={getClientRects:0,getBoundingClientRect:0};window.qaRangeOriginals ||= new Map();
       const views=[window,...(originalSession?.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>f.contentWindow):[])];
       for(const view of views){
        const proto=view.Range.prototype;
-       if(!qaRangeOriginals.has(proto))qaRangeOriginals.set(proto,proto.getClientRects);
-       proto.getClientRects=function(){qaRangeReads++;window.qaRangeForCue=this.cloneRange();return qaRangeOriginals.get(proto).call(this);};
+       if(!qaRangeOriginals.has(proto))qaRangeOriginals.set(proto,{getClientRects:proto.getClientRects,getBoundingClientRect:proto.getBoundingClientRect});
+       for(const method of ['getClientRects','getBoundingClientRect'])proto[method]=function(...args){
+        qaRangeReads++;qaRangeMethods[method]++;
+        if(method==='getClientRects')window.qaRangeForCue=this.cloneRange();
+        return qaRangeOriginals.get(proto)[method].apply(this,args);
+       };
       }
      });
      if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:point.x,y:point.y,id:1}]});
@@ -141,10 +146,10 @@ try{
      }
      // Programmatic scroll retains the source marker without range reads.
      const beforeScroll=await trace('before-programmatic-scroll');
-     const reads=await page.evaluate(()=>qaRangeReads);
+     const reads=await page.evaluate(()=>({...qaRangeMethods}));
      await page.evaluate(()=>readerScrollTo(readerScrollTop()+25));
      await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
-     assert.equal(await page.evaluate(()=>qaRangeReads),reads,'scroll remeasured sentence ranges');
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),reads,'pending scroll remeasured Range client/bounding geometry');
      const afterScroll=await trace('after-programmatic-scroll');
      assert.equal(afterScroll.visible,true,'success fixture scrolled the selected sentence offscreen: '+JSON.stringify({beforeScroll,afterScroll}));
      assert.equal(afterScroll.ended,false,'selection presentation ended before the fixture answer: '+JSON.stringify({beforeScroll,afterScroll}));
@@ -152,6 +157,7 @@ try{
      await trace('after-cache-answer');
      try{await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden);}
      catch(error){await trace('result-timeout');throw error;}
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),reads,'success idle reveal remeasured Range client/bounding geometry');
      console.log('Result visible',engine.name(),width,kind);
      await page.locator('#p-sentence').evaluate(n=>Promise.all(n.getAnimations().map(a=>a.finished)));
      assert.equal(await page.locator('#ps-extra,#ps-points').count(),0);assert.equal(await page.locator('#ps-foot').isVisible(),false);
@@ -177,21 +183,39 @@ try{
       assert.ok(reflow.covered,'reflowed source range escaped its blue cue');
      }
      console.log('Reflow verified',engine.name(),width,kind);
+     // Reopen through the real lifetime/cache path; the controlled transport
+     // returns a terminal error without contacting a provider. Geometry reads
+     // used by the reflow assertion above are outside this measurement window.
+     await page.evaluate(()=>{
+      sb ||= {};dictCall=async()=>({error:'lookup_failed'});
+      window.qaErrorOpening=openSentence(sentAsked,sentenceOrigin);
+     });
+     await page.waitForFunction(()=>sentenceWaitingActive());
+     await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+     const errorReads=await page.evaluate(()=>({...qaRangeMethods}));
+     await page.evaluate(()=>{readerScrollTo(readerScrollTop()+2);scrollGesture();qaWait.resolve(null);});
+     await page.waitForFunction(()=>!document.getElementById('sentence-peek').hidden);
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),errorReads,'pending-to-error scroll-idle reveal remeasured Range geometry');
+     await page.evaluate(()=>{readerScroller().scrollTop+=2;scrollGesture();});
+     assert.equal(await page.locator('#sentence-peek').isVisible(),false,'briefly shown error did not hide on actual scroll');
+     await page.waitForFunction(()=>!document.getElementById('sentence-peek').hidden);
+     assert.deepEqual(await page.evaluate(()=>({...qaRangeMethods})),errorReads,'error scroll and idle re-reveal remeasured Range geometry');
+
      // Close fades just this selection, including its EPUB document layer.
      await page.evaluate(()=>{window.qaLeaving=readerSentenceCue.layer;closeSentence();});
      assert.equal(await page.evaluate(()=>readerSentenceCue),null);
      await page.waitForFunction(()=>!qaLeaving.isConnected);
      // Reduced motion: same selection, no scaling or timed movement; immediate cleanup.
      await page.emulateMedia({reducedMotion:'reduce'});
-     const reduced=await page.evaluate(({point,kind})=>{
+     const reduced=await page.evaluate(({point,kind,selectionScroll})=>{
       const surface=READER_SURFACES.find(s=>s.name===(kind==='txt'?'text':kind));
       document.documentElement.classList.add('dark');document.body.classList.add('dark');
-      const found=surface.sentenceAt(point.x,point.y-25);found.paint();
+      const found=surface.sentenceAt(point.x,point.y-(readerScrollTop()-selectionScroll));found.paint();
       const layer=readerSentenceCue.layer,animation=getComputedStyle(layer.firstElementChild).animationName;
       const blend=getComputedStyle(layer).mixBlendMode;clearReaderSentenceCue();
       document.documentElement.classList.remove('dark');document.body.classList.remove('dark');
       return {animation,removed:!layer.isConnected,blend};
-     },{point,kind});
+     },{point,kind,selectionScroll});
      assert.equal(reduced.animation,'none');assert.ok(reduced.removed);assert.equal(reduced.blend,kind==='pdf'?'multiply':'screen');
      await page.emulateMedia({reducedMotion:'no-preference'});
      reports.push({engine:engine.name(),width,kind,...cue});

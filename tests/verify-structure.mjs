@@ -1348,7 +1348,7 @@ assert.match(textReaderSource, /showSentenceRangeCue\(range\)/,
   'The pressed sentence in 글자 mode paints something other than the shared reader cue');
 assert.match(pdfSource, /paint\(\)\{ showPdfSentenceCue\(page,boxes\); \}/,
   'A pressed sentence paints the whole paragraph on a scan');
-assert.match(epubOriginalSource, /paint\(\)\{ showSentenceRangeCue\(range\); \}/,
+assert.match(epubOriginalSource, /paint\(\)\{ cueTarget=showSentenceRangeCue\(range\); \}/,
   'The pressed sentence in EPUB original paints something other than the shared reader cue');
 /* 원본 EPUB 도 "이 문장" 하나여야 합니다. 낱말이 들어 있는 문장을 글자로 찾으면
    짧은 문단은 통째로, 같은 낱말이 두 번 나오면 늘 앞의 것이 잡힙니다. */

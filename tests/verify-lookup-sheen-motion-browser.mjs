@@ -67,7 +67,15 @@ try{
         found.paint();setReaderSentencePending(true);window.qaMotionNodes=[...readerSentenceCue.layer.children];
       }
     },{before,dark,oldSheen,kind});
-    await page.waitForTimeout(180);
+    // Wall time can advance while a busy WebKit recorder defers paint ticks.
+    // Observe the existing background transition's real terminal value instead.
+    const settledWash=await page.evaluate(()=>{
+      const probe=document.createElement('i');
+      probe.style.cssText='position:fixed;visibility:hidden;pointer-events:none';
+      probe.style.backgroundColor=getComputedStyle(document.body).getPropertyValue('--word-lookup-wash');
+      document.body.append(probe);const color=getComputedStyle(probe).backgroundColor;probe.remove();return color;
+    });
+    await page.waitForFunction(expected=>qaMotionNodes.every(node=>getComputedStyle(node).backgroundColor===expected),settledWash);
     const frames=[];
     for(const phase of [0,330,660,825,990,1320,1650]){
       const state=await page.evaluate(async phase=>{

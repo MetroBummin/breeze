@@ -106,6 +106,23 @@ try{
   }
   await page.evaluate(()=>{
     window.qaInline={pending:[],calls:[],writes:[],range:null,currentLayer:null,kind:null};
+    qaInline.rangeReads={getClientRects:0,getBoundingClientRect:0};qaInline.rangeOriginals=new Map();
+    qaInline.observeRangeReads=()=>{
+      const views=[window,...(originalSession?.kind==='epub'
+        ?originalSession.frames.filter(Boolean).map(frame=>frame.contentWindow):[])];
+      for(const view of views){
+        const proto=view.Range.prototype;if(qaInline.rangeOriginals.has(proto))continue;
+        const methods={getClientRects:proto.getClientRects,getBoundingClientRect:proto.getBoundingClientRect};
+        qaInline.rangeOriginals.set(proto,methods);
+        for(const method of Object.keys(methods))proto[method]=function(...args){
+          qaInline.rangeReads[method]++;return methods[method].apply(this,args);
+        };
+      }
+    };
+    // Assertion-only source geometry uses the native method, so it never
+    // contributes to the app's scroll/reveal Range-read counters.
+    qaInline.sourceRects=range=>qaInline.rangeOriginals.get(Object.getPrototypeOf(range)).getClientRects.call(range);
+
     qaInline.restorationJobs=new Set();qaInline.restorationEvents=[];qaInline.scrollWrites=[];
     const recordRestoration=event=>{
       qaInline.restorationEvents.push({...event,at:performance.now(),scroll:readerScrollTop()});
@@ -198,6 +215,7 @@ try{
       throw new Error('No visible selected sentence in '+kind);
     };
     qaInline.start=kind=>{
+      qaInline.observeRangeReads();
       const {found,point}=qaInline.find(kind);
       if(!found?.paint)throw new Error('Missing actual source occurrence');
       qaInline.found=found;qaInline.point=point;qaInline.range=null;
@@ -244,7 +262,7 @@ try{
         const words=originalSession.wordBoxes.get(1).filter(word=>word.sentenceStart===qaInline.found.start);
         expected=words.map(word=>[box.left+word.x*box.width,box.top+word.y*box.height,
           box.left+(word.x+word.w)*box.width,box.top+(word.y+word.h)*box.height]);
-      }else expected=[...qaInline.range.getClientRects()].filter(box=>box.width>0&&box.height>0)
+      }else expected=[...qaInline.sourceRects(qaInline.range)].filter(box=>box.width>0&&box.height>0)
         .map(box=>[box.left,box.top,box.right,box.bottom]);
       const frame=doc===document?null:originalSession.frames.find(frame=>frame?.contentDocument===doc);
       const frameBox=frame?.getBoundingClientRect();
@@ -546,10 +564,14 @@ try{
     });
     await start(kind);
     const scrollCallCount=await page.evaluate(()=>qaInline.calls.length);
+    const scrollRangeReads=await page.evaluate(()=>({...qaInline.rangeReads}));
     await page.evaluate(()=>{readerScrollTo(readerScrollTop()+2);scrollGesture();});
     assert.equal(await page.evaluate(()=>sentenceWaitingActive()),true,kind+': programmatic scroll canceled pending');
     await userMove();
     assert.equal(await page.evaluate(()=>sentenceWaitingActive()),true,kind+': user scroll canceled pending');
+    await frames();
+    assert.deepEqual(await page.evaluate(()=>({...qaInline.rangeReads})),scrollRangeReads,
+      kind+': pending programmatic/user scroll remeasured Range client/bounding geometry');
     await terminal({error:'lookup_failed'},kind+' moving error terminal frame');
     assert.equal(await page.locator('#sentence-peek').isVisible(),false,kind+': error revealed during motion');
     await page.waitForTimeout(timing.idle/2);await userMove();
@@ -558,17 +580,24 @@ try{
     await page.waitForFunction(()=>!document.getElementById('sentence-peek').hidden);
     assert.ok(await page.evaluate(()=>performance.now()-qaInline.lastMotion)>=timing.idle-1,
       kind+': error appeared before word scroll-idle interval');
+    assert.deepEqual(await page.evaluate(()=>({...qaInline.rangeReads})),scrollRangeReads,
+      kind+': error arrival/momentum/idle reveal remeasured Range geometry');
     await userMove();
     assert.equal(await page.locator('#sentence-peek').isVisible(),false,kind+': brief reveal stayed visible during scroll');
     assert.equal(await page.evaluate(()=>sentenceLookupOpen()),true,kind+': brief reveal ended its lifetime');
     await page.waitForFunction(()=>!document.getElementById('sentence-peek').hidden);
     assert.equal(await page.evaluate(()=>qaInline.calls.length),scrollCallCount,kind+': scroll/reveal retried automatically');
+    assert.deepEqual(await page.evaluate(()=>({...qaInline.rangeReads})),scrollRangeReads,
+      kind+': brief error scroll/idle re-reveal remeasured Range geometry');
     await page.waitForTimeout(timing.seen+30);await userMove();
     await closed(kind+' seen error scroll dismissal');
+    assert.deepEqual(await page.evaluate(()=>({...qaInline.rangeReads})),scrollRangeReads,
+      kind+': seen-error scroll dismissal remeasured Range geometry');
     await page.waitForTimeout(timing.idle+30);
     assert.equal(await page.locator('#sentence-peek').isVisible(),false,kind+': seen error resurrected at idle');
     await page.evaluate(()=>{readerScrollTo(0);setReaderChrome(false);});await settle();
     await start(kind);
+    const offscreenRangeReads=await page.evaluate(()=>({...qaInline.rangeReads}));
     await page.evaluate(()=>{
       qaInline.offscreen=qaInline.pending.at(-1);
       readerScroller().scrollTop+=innerHeight+200;scrollGesture();
@@ -578,12 +607,14 @@ try{
       qaInline.offscreen.resolve({error:'lookup_failed'});sentenceGestureReleased();
     });
     await closed(kind+' offscreen completion');
+    assert.deepEqual(await page.evaluate(()=>({...qaInline.rangeReads})),offscreenRangeReads,
+      kind+': offscreen completion remeasured Range geometry');
     await page.waitForTimeout(timing.idle+30);
     assert.equal(await page.locator('#sentence-peek').isVisible(),false,kind+': offscreen completion reopened error');
     await page.evaluate(()=>{readerScrollTo(0);setReaderChrome(false);});await settle();
     for(const action of ['cancel','navigation','replacement']){
       await start(kind);
-      await page.evaluate(()=>{qaInline.stale=qaInline.pending.at(-1);qaInline.oldLayer=readerSentenceCue.layer;});
+      await page.evaluate(()=>{qaInline.stale=qaInline.pending.at(-1);qaInline.oldLayer=readerSentenceCue.layer;qaInline.oldTarget=qaInline.found.peekTarget;});
       if(action==='cancel')await page.keyboard.press('Escape');
       if(action==='navigation')await page.evaluate(()=>show('home'));
       if(action==='replacement'){
@@ -597,6 +628,13 @@ try{
         assert.equal(await page.evaluate(()=>readerSentenceCue.layer===qaInline.oldLayer),false);
         await page.waitForFunction(()=>!qaInline.oldLayer.isConnected);
         assert.ok(await page.evaluate(()=>readerSentenceCue.layer.isConnected),'outgoing callback erased replacement');
+        if(kind!=='pdf'){
+          const targets=await page.evaluate(()=>({old:qaInline.oldTarget.getBoundingClientRect(),
+            current:qaInline.found.peekTarget.getBoundingClientRect()}));
+          assert.equal(targets.old.width,0,kind+': stale facade adopted replacement width');
+          assert.equal(targets.old.height,0,kind+': disconnected facade retained source height');
+          assert.ok(targets.current.width>0&&targets.current.height>0,kind+': replacement facade lost its own source');
+        }
         await page.evaluate(()=>{closeSentence();qaInline.pending.at(-1).resolve({error:'lookup_failed'});});
       }
       await closed(kind+' '+action);
@@ -618,7 +656,7 @@ try{
   let restorationDiagnostics=null;
   if(pageForFailure&&!pageForFailure.isClosed()){
     try{restorationDiagnostics=await pageForFailure.evaluate(()=>({baselineAt:qaInline.baselineAt,
-      pending:[...qaInline.restorationJobs],events:qaInline.restorationEvents,scrollWrites:qaInline.scrollWrites}));}catch{}
+      pending:[...qaInline.restorationJobs],events:qaInline.restorationEvents,scrollWrites:qaInline.scrollWrites,rangeReads:qaInline.rangeReads}));}catch{}
   }
   if(pageForFailure&&!pageForFailure.isClosed()){
     try{await pageForFailure.screenshot({path:resolve(output,`${engineName}-sentence-inline-failure.png`),fullPage:false});}

@@ -335,7 +335,7 @@ function createReaderSentenceCue(host,pdf=false){
   layer.style.setProperty('--breeze-lookup-wash',getComputedStyle(document.body).getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
   layer.style.setProperty('--breeze-lookup-sheen',getComputedStyle(document.body).getPropertyValue('--word-lookup-sheen'));
   host.appendChild(layer);
-  readerSentenceCue={layer,observer:null};
+  readerSentenceCue={layer,observer:null,bounds:null};
   return layer;
 }
 function sentenceLineRects(rects){
@@ -351,6 +351,20 @@ function sentenceLineRects(rects){
       }else lines.push({left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom});
     });
   return lines;
+}
+/* The same selected cue owns source geometry. Scroll only maps its cached union
+   through the moving layer; it never traverses the source Range again. */
+function readerSentenceCueTarget(active){
+  const layer=active.layer;
+  return {ownerDocument:layer.ownerDocument,getBoundingClientRect(){
+    const b=active.bounds;
+    if(!layer.isConnected||!b)return {left:0,top:0,right:0,bottom:0,width:0,height:0};
+    const r=layer.getBoundingClientRect();
+    const sx=r.width/layer.offsetWidth||1,sy=r.height/layer.offsetHeight||1;
+    return {left:r.left+b.left*sx,top:r.top+b.top*sy,
+      right:r.left+b.right*sx,bottom:r.top+b.bottom*sy,
+      width:(b.right-b.left)*sx,height:(b.bottom-b.top)*sy};
+  }};
 }
 function showSentenceRangeCue(range){
   if(!range) return;
@@ -368,7 +382,10 @@ function showSentenceRangeCue(range){
       (r.right-r.left)/sx,(r.bottom-r.top)/sy]);
     const next=JSON.stringify(rects);
     if(next===signature) return;
-    signature=next;layer.replaceChildren();
+    signature=next;
+    active.bounds=rects.length?{left:Math.min(...rects.map(r=>r[0])),top:Math.min(...rects.map(r=>r[1])),
+      right:Math.max(...rects.map(r=>r[0]+r[2])),bottom:Math.max(...rects.map(r=>r[1]+r[3]))}:null;
+    layer.replaceChildren();
     for(const [x,y,w,h] of rects){
       const cue=doc.createElement('span');cue.className='reader-sentence-cue';
       cue.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
@@ -383,6 +400,7 @@ function showSentenceRangeCue(range){
     const block=owner.nodeType===1?owner:owner.parentElement;
     if(block){active.observer=new view.ResizeObserver(paint);active.observer.observe(block);}
   }
+  return readerSentenceCueTarget(active);
 }
 
 function showOriginalLandingCue(record,target,paragraphHint){
