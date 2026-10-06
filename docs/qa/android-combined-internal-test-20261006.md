@@ -9,7 +9,7 @@ Play account settings, release credentials, signing permissions, or store releas
 
 - PR #112 (`4eaed0c3`): transparent native PDF tap feedback; product change limited to PDF paper CSS
 - PR #113 (`524dab50`): email OTP form state survives settings dismissal, rerender and password-mode round trips, with bounded resend handling
-- PR #114 (`2d7d61e7`): stylus Pointer Events use the existing PDF geometry/history/storage path; iPad native Touch ownership remains preferred, and missing safe event delivery fails closed
+- PR #114 (`9ff17fb9`; product source `2d7d61e7`): stylus Pointer Events use the existing PDF geometry/history/storage path; iPad native Touch ownership remains preferred, and missing safe event delivery fails closed
 - PR #115 (`74d23b7e`): official Capacitor 8.5 Android shell, SDK 36, debug APK and unsigned release AAB builds
 
 The merged main's RSS fixtures and same-value PDF observer guard are preserved.
@@ -45,6 +45,11 @@ ordering, palm rejection, pen during inertia, local ink persistence and recovery
 A phone/tablet must validate launch, system bars, keyboard, rotation, native file
 picking, offline reopen and email login. Physical Chrome/WebView tap feedback must
 be compared on the user's reproduction device before claiming its cause resolved.
+The user confirmed the blue-panel observation on PDF on October 6. On that exact
+PDF, tap a word, begin scrolling, and continue scrolling; check that the unwanted
+paper-wide blue panel does not remain while word lookup and deliberate selection
+retain their intended behavior. Other formats were not reported as tested by the
+user; the EPUB automated case is a preservation check, not an affected-format claim.
 
 Play Console/account readiness, package identity and an unused version code still
 need verification. The AAB is unsigned; release upload signing must use an approved
@@ -65,3 +70,14 @@ artifact interpretation, device cases and official Play/Capacitor requirements.
   password sign-in, logout and a new send cannot unlock or overwrite that newer send.
   The exact overlapping-request regression failed before the correction and passes
   after it.
+
+## Device-polish fixture reconciliation
+
+The first long standalone ink run reached an older unsupported-device assertion:
+it cleared only the native iPad flag in a touch-capable browser. That browser now
+correctly qualifies for the Pointer route, so hiding the toolbar was no longer the
+correct expectation. The fixture now disables both input routes for that negative
+case; supported pen/finger/toolbar assertions remain intact. The focused workflow
+runs device polish and the existing native-iPad ink checks in both browser engines
+as well as Pointer ink. No product input source or assertion threshold is changed
+by this correction. The original failing run is retained as historical evidence.

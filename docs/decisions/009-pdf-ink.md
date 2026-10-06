@@ -1,5 +1,13 @@
 # iPad PDF Pencil annotation
 
+## Current platform policy (2026-10-06)
+
+The original native-iPad-only gate and Touch-only statements below document the
+historical iPad implementation. The October 6 Pointer route described at the end
+adds ink on other touch runtimes with the required event capabilities. Native iPad
+continues to prefer its original Touch owner. Browser synthetic checks remain
+separate from physical Android stylus, palm-rejection and inertia acceptance.
+
 ## Status
 
 2026-09-25: the user confirmed on an iPad 10th generation (iPadOS 26.5)

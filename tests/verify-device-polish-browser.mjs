@@ -39,7 +39,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    if(output)await page.screenshot({path:resolve(output,`preview-${engine.name()}-${width}-${dark?'dark':'light'}.png`)});
    await page.locator('.ap-close').tap();
   }
-  // The native iPad gate, rather than screen width, controls the actual toolbar.
+  // Exercise the native iPad route at both full and split-view widths.
   await page.evaluate(()=>{window.breezeInkIPad=true;});
   await page.locator('#fileinput').setInputFiles({name:'polish.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture()});await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
@@ -81,7 +81,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>toast('검증 알림'));await page.waitForTimeout(700);
   assert.equal(await page.locator('#reader-notice').isVisible(),false,'notice never overlays drawing controls');
   await page.locator('.ink-pill-entry').tap();assert.notEqual(await page.locator('#readpill-progress').evaluate(n=>getComputedStyle(n).display),'none');
-  await page.evaluate(()=>{window.breezeInkIPad=false;document.body.classList.toggle('qa-gate');});
+  // Neither the native iPad route nor browser Pointer/Touch capabilities remain.
+  await page.evaluate(()=>{window.breezeInkIPad=false;Object.defineProperty(window,'TouchEvent',{value:undefined});document.body.classList.toggle('qa-gate');});
   assert.equal(await page.locator('.ink-pill-entry').isVisible(),false);
   assert.deepEqual(errors.filter(e=>!e.includes('ResizeObserver loop')),[]);await page.close();
  }
