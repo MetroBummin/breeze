@@ -5,6 +5,7 @@ on:
       - 'scripts/reader/**'
       - 'styles/reader.css'
       - 'tests/verify-pdf*'
+      - 'tests/verify-device-polish-browser.mjs'
       - 'tests/helpers/pdf-geometry-fixture.mjs'
       - '.github/workflows/pdf-pointer-ink.yml'
   workflow_dispatch:
@@ -23,9 +24,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: node --test tests/verify-pdf-ink-regressions.mjs
       - run: node tests/verify-pdf-pointer-ink-browser.mjs
+      - run: node tests/verify-device-polish-browser.mjs
+      - run: node tests/verify-pdf-ink-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
