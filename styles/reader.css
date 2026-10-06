@@ -475,7 +475,10 @@
      줍니다. 스캔본은 그림이라 그냥 두면 화살표라서, 마우스가 있는 화면에서는
      여기서 무엇을 할 수 있는지 알려 주는 것이 커서밖에 없습니다. */
   .pdf-source-page{position:relative; width:100%; background:var(--source-page);
-    box-shadow:var(--pdf-paper-shadow); overflow:hidden; isolation:isolate; cursor:pointer;}
+    box-shadow:var(--pdf-paper-shadow); overflow:hidden; isolation:isolate; cursor:pointer;
+    /* Chrome highlights the enclosing pointer target, which here is the whole
+       paper. Word selection already owns feedback, including during scroll. */
+    -webkit-tap-highlight-color:transparent;}
   .pdf-source-page canvas{position:absolute; inset:0; display:block; width:100%!important; height:100%!important;}
   .pdf-page-loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--source-wait); font:13px var(--ui); background:var(--source-page);}

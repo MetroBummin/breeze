@@ -1,0 +1,55 @@
+name: PDF native tap feedback
+on:
+  pull_request:
+    paths:
+      - styles/reader.css
+      - tests/verify-pdf-tap-feedback.mjs
+      - tests/verify-pdf-tap-feedback-browser.mjs
+      - .github/workflows/pdf-tap-feedback.yml
+permissions:
+  contents: read
+concurrency:
+  group: pdf-tap-feedback-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node --test tests/verify-pdf-tap-feedback.mjs
+      - name: Preserve the unprotected main CSS as the control
+        run: git show 693488cfe25419654e91d5bf18a03cbb8d8d591c:styles/reader.css > /tmp/breeze-reader-before.css
+      - name: Baseline native feedback and unchanged word/scroll behavior
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_TAP_BASELINE: '1'
+          BREEZE_TAP_READER_CSS: /tmp/breeze-reader-before.css
+          BREEZE_TAP_PROOF: /tmp/breeze-pdf-tap-feedback
+        run: timeout --kill-after=5s 300s node tests/verify-pdf-tap-feedback-browser.mjs
+      - name: Fixed native feedback and unchanged word/scroll behavior
+        if: ${{ !cancelled() }}
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_TAP_PROOF: /tmp/breeze-pdf-tap-feedback
+        run: timeout --kill-after=5s 300s node tests/verify-pdf-tap-feedback-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pdf-tap-feedback-${{ matrix.engine }}
+          path: /tmp/breeze-pdf-tap-feedback/
+          if-no-files-found: error
+          retention-days: 7

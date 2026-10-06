@@ -1,7 +1,8 @@
-/* iPad PDF Pencil annotation. No finger drawing, export or sync.
-   SVG is display-only; WebKit stylus Touch events own drawing. Keeping the
-   existing pan-x/pan-y policy lets fingers reach the existing PDF scroller.
-   Basic Pencil/pan/pinch was confirmed on iPad; expanded physical QA is documented. */
+/* PDF pen annotation. No finger drawing, export or sync.
+   Native iPad retains WebKit Touch + UIKit admission. Other touch-capable
+   PointerEvent runtimes use pen pointers and cancel their companion Touch
+   defaults. SVG stays display-only; fingers retain the existing PDF scroller.
+   Synthetic browser tests do not establish Android hardware acceptance. */
 const BreezePdfInk = (()=>{
   const colors=['#111111','#c43d3d','#2864c5'], widths=[0.75,1.5,3];
   const eraserRadii=[4,8,16],highlightColors=['#ffe34d','#91df80'],highlightWidths=[12,20],highlightOpacity=0.3;
@@ -33,7 +34,15 @@ const BreezePdfInk = (()=>{
   let suppressClick=false, paperPenPointer=null;
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
   const onPaper=target=>target?.closest?.('.pdf-source-page') && !target.closest('button,input,select,textarea');
-  const supported=()=>Reflect.get(window,'breezeInkIPad')===true;
+  const nativeIPad=()=>Reflect.get(window,'breezeInkIPad')===true;
+  // Capability detection, never a screen-width or user-agent guess. TouchEvent
+  // cancellation is required to keep pen drawing from becoming native panning;
+  // canceling pointerdown alone cannot prevent that browser default action.
+  const pointerInk=()=>!nativeIPad() && typeof window.PointerEvent==='function'
+    && typeof window.TouchEvent==='function' && window.navigator?.maxTouchPoints>0 && 'onscrollend' in document;
+  const supported=()=>nativeIPad()||pointerInk();
+  const penPointers=new Set(),fingerPointers=new Set();
+  let pointerScrolling=false;
   const visible=()=>supported() && session===originalSession && session?.kind==='pdf'
     && document.body.classList.contains('reader-original') && document.body.classList.contains('reading');
   // Explicit native DEBUG flag only. No text, document bytes, or stored ink in logs.
@@ -296,7 +305,7 @@ const BreezePdfInk = (()=>{
   }
   function setMode(next){
     if(typeof cancelOriginalUndoTap==='function')cancelOriginalUndoTap();
-    cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false; mode=next;
+    cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false;penPointers.clear();fingerPointers.clear(); mode=next;
     if(next!=='read'){lastTool=next;savePreferences();}
     if(next==='read')publishNativeScope();
     if(typeof cancelGesture==='function')cancelGesture('PDF ink mode');
@@ -475,6 +484,22 @@ const BreezePdfInk = (()=>{
   function touchStart(event){
     if(!visible()||mode==='read')return;
     const changed=Array.from(event.changedTouches);
+    if(pointerInk()){
+      // Pointer and Touch identifiers are unrelated. A pen pointer is delivered
+      // before its companion touchstart; suppress new paper Touch contacts for
+      // that contact's lifetime, without relabeling old finger contacts.
+      if(penPointers.size)for(const t of changed)if(onPaper(t.target))suppressed.add(t.identifier);
+      consumeTouches(event);
+      if(pendingAdmission){
+        const pending=pendingAdmission;pendingAdmission=null;
+        // No preview, erasure or persistence until the companion Touch default
+        // is actually canceled. A runtime that emits no Touch fails closed.
+        if(event.cancelable&&event.defaultPrevented&&pending.session===session&&!Array.from(event.touches).some(finger))
+          beginStroke(pending.points[0],event,pending.pointerId);
+      }
+      if(!event.cancelable&&active)cancel('noncancelable-touchstart');
+      return; // Pointer events are the sole geometry/commit owner on this route.
+    }
     for(const t of changed){
       if(onPaper(t.target) && (active || (pendingAdmission && !pendingAdmission.ended)
           || nativeOwnedStylus.size || t.touchType==='stylus'))suppressed.add(t.identifier);
@@ -547,6 +572,10 @@ const BreezePdfInk = (()=>{
   }
   function touchMove(event){
     consumeTouches(event);
+    if(pointerInk()){
+      if(active&&!event.cancelable)cancel('noncancelable-touchmove');
+      return;
+    }
     if(pendingAdmission){
       const pen=Array.from(event.changedTouches).find(t=>t.identifier===pendingAdmission.id);
       if(pen){
@@ -603,7 +632,7 @@ const BreezePdfInk = (()=>{
   function touchEnd(event){
     if(active)trace('stroke/end',event);
     consumeTouches(event);
-    if(pendingAdmission){
+    if(pendingAdmission&&!pointerInk()){
       const pendingPen=Array.from(event.changedTouches).find(t=>t.identifier===pendingAdmission.id);
       if(pendingPen){
         if(event.type==='touchcancel')pendingAdmission=null;
@@ -614,7 +643,7 @@ const BreezePdfInk = (()=>{
         }
       }
     }
-    const pen=active&&Array.from(event.changedTouches).find(t=>t.identifier===active.id);
+    const pen=!pointerInk()&&active&&Array.from(event.changedTouches).find(t=>t.identifier===active.id);
     if(pen){
       if(event.type==='touchend'){
         // WebKit can deliver a final position only on lift. Keep that endpoint,
@@ -633,19 +662,61 @@ const BreezePdfInk = (()=>{
       scheduleNativeScope();
     }
   }
-  // Pointer events only guard Lookup/click. Drawing remains WebKit stylus Touch.
-  // Pointer and Touch identifiers are different namespaces and tracked separately.
+  function pointerStroke(event){
+    if(event.type==='pointerdown'){
+      if(typeof cancelOriginalUndoTap==='function')cancelOriginalUndoTap();
+      if(active||pendingAdmission||pointerScrolling||penPointers.size!==1||fingerPointers.size||originalPdfContacts||originalPinchBusy()
+          ||event.button!==0||!event.cancelable)return;
+      pendingAdmission={id:event.pointerId,pointerId:event.pointerId,session,points:[{
+        identifier:event.pointerId,target:event.target,clientX:event.clientX,clientY:event.clientY
+      }],ended:false};
+      // Retain movement/lift beyond the starting paper. The companion Touch
+      // must admit this contact before it can create geometry or erase ink.
+      try{event.target.setPointerCapture?.(event.pointerId);}catch{}
+      return;
+    }
+    if(pendingAdmission?.pointerId===event.pointerId){
+      if(event.type==='pointerup'||event.type==='pointercancel'||event.type==='lostpointercapture')pendingAdmission=null;
+      return;
+    }
+    if(active?.pointerId!==event.pointerId)return;
+    if(event.type==='pointercancel'||event.type==='lostpointercapture'){
+      cancel(event.type);return;
+    }
+    if(event.type!=='pointermove'&&event.type!=='pointerup')return;
+    const samples=event.getCoalescedEvents?.()||[];
+    for(const sample of [...samples,event]){
+      if(!active)break;
+      extendStroke(point(sample,active.state,active.bounds),event);
+    }
+    if(event.type==='pointerup'&&active)finishStroke();
+  }
+  // Native iPad Pointer events only guard Lookup/click; its Touch path remains
+  // unchanged. The capability route owns geometry exclusively via pen Pointer.
+  // Pointer and Touch identifiers are different namespaces and never equated.
   for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture','click']){
     window.addEventListener(type,rawEvent=>{
       const event=/** @type {PointerEvent} */(rawEvent);
-      if(!visible()||mode==='read')return;
+      const terminal=type==='pointerup'||type==='pointercancel'||type==='lostpointercapture';
+      if(terminal)fingerPointers.delete(event.pointerId);
+      if(!visible()||mode==='read'){
+        if(terminal)penPointers.delete(event.pointerId);
+        return;
+      }
       trace('pointer/capture',event);
       const paper=onPaper(event.target);
       if(type==='pointerdown'){
-        if(paper && event.pointerType==='pen')paperPenPointer=event.pointerId;
+        // Admission belongs to the immediately following companion Touch, not
+        // to a later palm/finger. Ambiguous intervening contacts fail closed.
+        if(pointerInk()&&pendingAdmission&&pendingAdmission.pointerId!==event.pointerId)pendingAdmission=null;
+        if(paper && event.pointerType==='pen'){
+          paperPenPointer=event.pointerId;
+          if(pointerInk())penPointers.add(event.pointerId);
+        }
         blockedPointers.delete(event.pointerId);
-        const blocked=paper && (event.pointerType==='pen' || !!active);
+        const blocked=paper && (event.pointerType==='pen' || !!active || (pointerInk()&&penPointers.size>0));
         if(blocked)blockedPointers.add(event.pointerId);
+        else if(pointerInk()&&event.pointerType==='touch')fingerPointers.add(event.pointerId);
         suppressClick=!!blocked; // A fresh finger is immediately eligible; no timer.
       }
       const blocked=blockedPointers.has(event.pointerId) || (paper && event.pointerType==='pen');
@@ -654,13 +725,20 @@ const BreezePdfInk = (()=>{
         return;
       }
       if(blocked){
-        event.stopImmediatePropagation(); // Do not disable the following Touch path.
+        event.stopImmediatePropagation();
+        if(pointerInk()&&event.pointerType==='pen'){
+          // preventDefault here only suppresses compatibility mouse input. The
+          // non-passive touchstart/move listener owns scroll suppression.
+          if(event.cancelable)event.preventDefault();
+          pointerStroke(event);
+        }
         if((type==='pointercancel'||(type==='lostpointercapture'&&paperPenPointer===event.pointerId)) && event.pointerType==='pen'){
           if(active?.pointerId===event.pointerId)cancel('pointercancel');
           if(pendingAdmission?.pointerId===event.pointerId)pendingAdmission=null;
         }
       }
-      if(type==='pointerup'||type==='pointercancel'||type==='lostpointercapture'){
+      if(terminal){
+        penPointers.delete(event.pointerId);
         blockedPointers.delete(event.pointerId);
         if(paperPenPointer===event.pointerId)paperPenPointer=null;
       }
@@ -683,11 +761,11 @@ const BreezePdfInk = (()=>{
       }
     },{capture:true,passive:false});
   }
-  const interrupt=()=>{cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false;paperPenPointer=null;resumeOriginalPdfPaint();};
+  const interrupt=()=>{cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false;paperPenPointer=null;penPointers.clear();fingerPointers.clear();pointerScrolling=false;resumeOriginalPdfPaint();};
   window.addEventListener('blur',interrupt);
-  window.addEventListener('resize',()=>{cancel('resize');resumeOriginalPdfPaint();});
-  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){trace('reader/scroll',event);pendingAdmission=null;cancel('reader-scroll');}},{capture:true,passive:true});
-  document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
+  window.addEventListener('resize',()=>{cancel('resize');pendingAdmission=null;resumeOriginalPdfPaint();});
+  document.addEventListener('scroll',event=>{if(event.target===readerScroller()){if(pointerInk())pointerScrolling=true;trace('reader/scroll',event);pendingAdmission=null;cancel('reader-scroll');}},{capture:true,passive:true});
+  document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){pointerScrolling=false;trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{
     if(supported() && originalSession?.kind==='pdf'){
@@ -718,7 +796,7 @@ const BreezePdfInk = (()=>{
     state.svg.setAttribute('aria-hidden','true');if(state.svg.parentElement!==element)element.append(state.svg);paint(state);
   }
   return {
-    open(s){if(!supported()||!s.hash)return;session=s;mode='read';undoStack.length=redoStack.length=0;
+    open(s){if(!supported()||!s.hash)return;session=s;mode='read';pointerScrolling=false;undoStack.length=redoStack.length=0;
       controls();update();},
     mount,
     release(s,n,{keepShell=false}={}){

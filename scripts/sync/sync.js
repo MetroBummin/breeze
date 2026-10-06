@@ -28,6 +28,36 @@ let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[],progre
 let pendingRecoveryKey='', vaultInfoOpen=false, vaultRecoveryError='', recoveryRotateOpen=false;
 let pendingPair=null, pairingPoll=null, pairingError='';
 let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
+// Keep the current email step across settings dismissal/auth rerenders. Never
+// persist a password or OTP; Supabase continues to own session verification.
+const emailLogin={email:'',sentTo:'',message:'',sending:false,request:0,retryAt:0,retryEmail:'',timer:null};
+function rememberLoginEmail(){
+  const input=syncInput('sm-email')||syncInput('sm-password-email');
+  if(!input) return;
+  const email=(input.value||'').trim();
+  if(email.toLowerCase()!==emailLogin.email.toLowerCase()) emailLogin.message='';
+  emailLogin.email=email;
+}
+function emailLoginChanged(){ rememberLoginEmail(); updateEmailLoginControls(); }
+function updateEmailLoginControls(showMessage=true){
+  clearTimeout(emailLogin.timer); emailLogin.timer=null;
+  const input=syncInput('sm-email'),button=/** @type {HTMLButtonElement} */(document.getElementById('sm-send-link'));
+  if(!input||!button||sbUser) return;
+  const email=emailLogin.email.toLowerCase();
+  const seconds=email===emailLogin.retryEmail?Math.max(0,Math.ceil((emailLogin.retryAt-Date.now())/1000)):0;
+  input.disabled=emailLogin.sending;
+  button.disabled=emailLogin.sending||seconds>0;
+  button.textContent=emailLogin.sending?'메일 보내는 중…':seconds?`다시 보내기 (${seconds}초)`:'로그인 링크 보내기';
+  const wrap=document.getElementById('sm-codewrap');
+  if(wrap) wrap.style.display=email&&email===emailLogin.sentTo?'block':'none';
+  if(showMessage&&!passwordLoginOpen) syncStatus(emailLogin.message);
+  if(seconds) emailLogin.timer=setTimeout(()=>updateEmailLoginControls(false),1000);
+}
+function clearEmailLogin(){
+  emailLogin.request++;
+  clearTimeout(emailLogin.timer);
+  Object.assign(emailLogin,{email:'',sentTo:'',message:'',sending:false,retryAt:0,retryEmail:'',timer:null});
+}
 /** @param {string} id */
 const syncInput=id=>/** @type {HTMLInputElement} */(document.getElementById(id));
 
@@ -213,6 +243,7 @@ function recoveryPanel(){
 }
 
 function renderSyncModal(){
+  rememberLoginEmail();
   const body=document.getElementById('sm-body');
   if(!sb){
     const guide=sbInitProblem==='sdk'?'동기화 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'
@@ -221,6 +252,7 @@ function renderSyncModal(){
     body.innerHTML=`<div class="desc">${guide}</div>`; syncStatus(''); return;
   }
   if(sbUser){
+    clearEmailLogin();
     const deleteArea=accountDeleteOpen
       ? `<div class="sm-delete-confirm"><b>계정과 서버의 단어장을 지울까요?</b><span>이 기기의 책과 단어장은 그대로 남습니다. 계속하려면 DELETE를 입력하세요.</span><input id="sm-delete-input" autocomplete="off" spellcheck="false" placeholder="DELETE"><div><button class="sm-reset" onclick="cancelAccountDelete()">취소</button><button class="sm-mini danger" onclick="confirmAccountDelete()">계정 지우기</button></div>${accountDeleteError?`<small class="sm-vault-error">${esc(accountDeleteError)}</small>`:''}</div>`
       : `<button class="sm-linkish" onclick="openAccountDelete()">계정 지우기</button>`;
@@ -237,32 +269,64 @@ function renderSyncModal(){
   }else if(passwordLoginOpen){
     body.innerHTML=`<div class="desc">이미 비밀번호가 설정된 계정으로 로그인합니다.
       새 비밀번호를 만들거나 바꾸는 곳은 아니에요.</div>
-      <input id="sm-password-email" type="email" placeholder="you@example.com" autocomplete="email">
+      <input id="sm-password-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email">
       <input id="sm-password" type="password" placeholder="비밀번호" autocomplete="current-password">
       <button class="sm-btn primary" onclick="sbPasswordLogin()">비밀번호로 로그인</button>
       <button class="sm-linkish neutral" onclick="closePasswordLogin()">이메일 코드 로그인으로 돌아가기</button>`;
   }else{
     body.innerHTML=`<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
       로그인하면 단어장이 기기 간에 자동으로 동기화됩니다.</div>
-      <input id="sm-email" type="email" placeholder="you@example.com" autocomplete="email">
-      <button class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
+      <input id="sm-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email" oninput="emailLoginChanged()">
+      <button id="sm-send-link" class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
       <div id="sm-codewrap"><div class="hint">메일에 온 <b>6자리 코드</b>를 입력해도 로그인돼요</div>
       <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
       <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
       <button class="sm-linkish neutral" onclick="openPasswordLogin()">비밀번호로 로그인</button>`;
   }
   syncStatus('');
+  updateEmailLoginControls();
 }
 
 async function sbSendLink(){
-  const email=(syncInput('sm-email').value||'').trim();
-  if(!/.+@.+\..+/.test(email)){ syncStatus('이메일 형식을 확인해 주세요'); return; }
-  const native=isNativeShell(); syncStatus(native?'코드 보내는 중…':'링크 보내는 중…');
-  const options=native?{}:{emailRedirectTo:location.origin+location.pathname};
-  const result=await sb.auth.signInWithOtp({email,options});
-  if(result.error){ syncStatus('전송 실패: '+result.error.message); return; }
-  syncStatus(native?'메일로 6자리 코드를 보냈어요.':'메일을 보냈어요. 링크를 누르거나 코드를 입력하세요.');
-  const wrap=document.getElementById('sm-codewrap'); if(wrap){ wrap.style.display='block'; document.getElementById('sm-code').focus(); }
+  const input=syncInput('sm-email');
+  if(!input||!sb||sbUser||emailLogin.sending) return;
+  rememberLoginEmail();
+  const email=emailLogin.email;
+  if(!/.+@.+\..+/.test(email)){ emailLogin.message='이메일 형식을 확인해 주세요'; updateEmailLoginControls(); return; }
+  if(email.toLowerCase()===emailLogin.retryEmail&&Date.now()<emailLogin.retryAt){ updateEmailLoginControls(); return; }
+  const native=isNativeShell(),epoch=syncSessionEpoch,request=++emailLogin.request;
+  emailLogin.sending=true; emailLogin.message='메일 보내는 중…'; updateEmailLoginControls();
+  try{
+    const options=native?{}:{emailRedirectTo:location.origin+location.pathname};
+    const result=await sb.auth.signInWithOtp({email,options});
+    if(sbUser||epoch!==syncSessionEpoch||request!==emailLogin.request) return;
+    if(result.error){
+      const error=result.error;
+      if(error.status===429||error.code==='over_email_send_rate_limit'){
+        const seconds=Number(String(error.message||'').match(/after (\d+) seconds?/i)?.[1])||60;
+        emailLogin.sentTo=email.toLowerCase();
+        emailLogin.retryEmail=email.toLowerCase(); emailLogin.retryAt=Date.now()+seconds*1000;
+        emailLogin.message='메일을 너무 자주 요청했어요. 표시된 시간이 지나면 다시 보낼 수 있어요. 이미 받은 코드는 그대로 입력할 수 있어요.';
+      }else emailLogin.message='메일을 보내지 못했어요. 이메일 주소와 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
+      return;
+    }
+    emailLogin.sentTo=email.toLowerCase(); emailLogin.retryEmail=email.toLowerCase();
+    emailLogin.retryAt=Date.now()+60000;
+    emailLogin.message=native?'메일로 6자리 코드를 보냈어요.':'메일을 보냈어요. 링크를 누르거나 코드를 입력하세요.';
+    updateEmailLoginControls();
+    // A response must not steal focus after the user leaves this form.
+    if(syncInput('sm-email')===input&&document.getElementById('settings-modal')?.classList.contains('on')) syncInput('sm-code')?.focus();
+  }catch(error){
+    if(!sbUser&&epoch===syncSessionEpoch&&request===emailLogin.request) emailLogin.message='메일을 보내지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
+  }finally{
+    // Account transitions can clear this form while a transport is pending.
+    // Only the active request may release the form's busy state.
+    if(request===emailLogin.request){
+      emailLogin.sending=false;
+      if(!sbUser&&epoch!==syncSessionEpoch) emailLogin.message='로그인 상태가 바뀌었어요. 다시 시도해 주세요.';
+      updateEmailLoginControls();
+    }
+  }
 }
 async function sbVerifyCode(){
   const email=(syncInput('sm-email').value||'').trim();
