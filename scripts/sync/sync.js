@@ -30,7 +30,7 @@ let pendingPair=null, pairingPoll=null, pairingError='';
 let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
 // Keep the current email step across settings dismissal/auth rerenders. Never
 // persist a password or OTP; Supabase continues to own session verification.
-const emailLogin={email:'',sentTo:'',message:'',sending:false,retryAt:0,retryEmail:'',timer:null};
+const emailLogin={email:'',sentTo:'',message:'',sending:false,request:0,retryAt:0,retryEmail:'',timer:null};
 function rememberLoginEmail(){
   const input=syncInput('sm-email')||syncInput('sm-password-email');
   if(!input) return;
@@ -54,6 +54,7 @@ function updateEmailLoginControls(showMessage=true){
   if(seconds) emailLogin.timer=setTimeout(()=>updateEmailLoginControls(false),1000);
 }
 function clearEmailLogin(){
+  emailLogin.request++;
   clearTimeout(emailLogin.timer);
   Object.assign(emailLogin,{email:'',sentTo:'',message:'',sending:false,retryAt:0,retryEmail:'',timer:null});
 }
@@ -293,12 +294,12 @@ async function sbSendLink(){
   const email=emailLogin.email;
   if(!/.+@.+\..+/.test(email)){ emailLogin.message='이메일 형식을 확인해 주세요'; updateEmailLoginControls(); return; }
   if(email.toLowerCase()===emailLogin.retryEmail&&Date.now()<emailLogin.retryAt){ updateEmailLoginControls(); return; }
-  const native=isNativeShell(),epoch=syncSessionEpoch;
+  const native=isNativeShell(),epoch=syncSessionEpoch,request=++emailLogin.request;
   emailLogin.sending=true; emailLogin.message='메일 보내는 중…'; updateEmailLoginControls();
   try{
     const options=native?{}:{emailRedirectTo:location.origin+location.pathname};
     const result=await sb.auth.signInWithOtp({email,options});
-    if(sbUser||epoch!==syncSessionEpoch) return;
+    if(sbUser||epoch!==syncSessionEpoch||request!==emailLogin.request) return;
     if(result.error){
       const error=result.error;
       if(error.status===429||error.code==='over_email_send_rate_limit'){
@@ -316,9 +317,15 @@ async function sbSendLink(){
     // A response must not steal focus after the user leaves this form.
     if(syncInput('sm-email')===input&&document.getElementById('settings-modal')?.classList.contains('on')) syncInput('sm-code')?.focus();
   }catch(error){
-    if(!sbUser&&epoch===syncSessionEpoch) emailLogin.message='메일을 보내지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
+    if(!sbUser&&epoch===syncSessionEpoch&&request===emailLogin.request) emailLogin.message='메일을 보내지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
   }finally{
-    emailLogin.sending=false; updateEmailLoginControls();
+    // Account transitions can clear this form while a transport is pending.
+    // Only the active request may release the form's busy state.
+    if(request===emailLogin.request){
+      emailLogin.sending=false;
+      if(!sbUser&&epoch!==syncSessionEpoch) emailLogin.message='로그인 상태가 바뀌었어요. 다시 시도해 주세요.';
+      updateEmailLoginControls();
+    }
   }
 }
 async function sbVerifyCode(){

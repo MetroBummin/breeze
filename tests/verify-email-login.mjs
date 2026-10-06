@@ -92,3 +92,18 @@ test('a throttled first request still lets an existing email code be entered',as
   assert.equal(h.get('sm-codewrap').style.display,'block');assert.match(h.get('sm-send-link').textContent,/17초/);
   h.api.render();assert.equal(h.get('sm-codewrap').style.display,'block');assert.equal(h.get('sm-email').value,'reader@example.com');
 });
+
+test('an old send cannot unlock a newer request after sign-in and sign-out',async()=>{
+  const h=device();h.email('first@example.com');const first=h.api.send();
+  h.api.advanceEpoch();h.api.setUser({id:'password-user',email:'password@example.com'});h.api.render();
+  h.api.advanceEpoch();h.api.setUser(null);h.api.render();
+  h.email('second@example.com');const second=h.api.send();
+  h.requests[0].resolve({error:null});await first;
+  assert.equal(h.get('sm-send-link').disabled,true,'An old finally released the new request');
+  assert.equal(h.get('sm-email').disabled,true);
+  assert.equal(h.get('sm-status').textContent,'메일 보내는 중…');
+  await h.api.send();assert.equal(h.requests.length,2,'A duplicate send escaped while the new request was pending');
+  h.requests[1].resolve({error:null});await second;
+  assert.equal(h.get('sm-email').disabled,false);assert.equal(h.get('sm-email').value,'second@example.com');
+  assert.equal(h.get('sm-codewrap').style.display,'block');
+});
