@@ -25,6 +25,14 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
+      - name: Verify integrated native asset sync
+        run: |
+          npm run ios:sync
+          cmp scripts/importers/rss.js www/scripts/importers/rss.js
+          cmp scripts/importers/rss.js ios/App/App/public/scripts/importers/rss.js
+          cmp index.html www/index.html
+          cmp index.html ios/App/App/public/index.html
+          git diff --exit-code -- index.html sw.js ios/App/App.xcodeproj/project.pbxproj
       - name: RSS catalog function types and disabled boot
         if: ${{ hashFiles('supabase/functions/rss-catalog/index.ts') != '' }}
         env:
@@ -32,6 +40,9 @@ jobs:
         run: |
           npx --yes deno@2.9.6 check --config supabase/functions/rss-catalog/deno.json supabase/functions/rss-catalog/index.ts
           npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-off-deno.mjs
+          RSS_CATALOG_MODE=active RSS_CATALOG_FEED_IDS=0,1 RSS_CATALOG_ORIGINAL_FEED_IDS= SUPABASE_URL=https://catalog-db.fixture SUPABASE_SERVICE_ROLE_KEY=synthetic-service-key npx --yes deno@2.9.6 test --allow-env=RSS_CATALOG_MODE,RSS_CATALOG_FEED_IDS,RSS_CATALOG_ORIGINAL_FEED_IDS,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-active-deno.mjs
+          npx --yes deno@2.9.6 test --allow-net=127.0.0.1 --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-prefix-deno.mjs
+          node tests/measure-rss-catalog-server.mjs
       - name: Feature audit contracts
         run: |
           for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs tests/verify-pdf-ink-geometry.mjs; do
@@ -55,7 +66,7 @@ jobs:
             # failures. A timeout remains a failed check; every case still runs.
             BREEZE_QA_ENGINE=$engine BREEZE_COVER_PROOF=/tmp/breeze-cover-chooser/$engine timeout --verbose --kill-after=5s 120s node tests/verify-cover-chooser-browser.mjs || status=1
             BREEZE_QA_ENGINE=$engine BREEZE_RSS_COVER_PROOF=/tmp/breeze-rss-covers/$engine timeout --verbose --kill-after=5s 120s node tests/verify-rss-covers-browser.mjs || status=1
-            BREEZE_QA_ENGINE=$engine BREEZE_RSS_VISIBLE_COVER_PROOF=/tmp/breeze-rss-visible-covers/$engine timeout --verbose --kill-after=5s 120s node tests/verify-rss-visible-covers-browser.mjs || status=1
+            BREEZE_QA_ENGINE=$engine BREEZE_RSS_VISIBLE_COVER_PROOF=/tmp/breeze-rss-visible-covers/$engine timeout --verbose --kill-after=5s 120s node tests/diagnose-rss-cover-serial.mjs || status=1
             BREEZE_QA_ENGINE=$engine BREEZE_RSS_ENRICHMENT_CURRENT_ONLY=1 BREEZE_RSS_ENRICHMENT_PROOF=/tmp/breeze-rss-enrichment/$engine timeout --verbose --kill-after=5s 120s node tests/compare-rss-cover-enrichment-browser.mjs || status=1
           done
           exit "$status"
@@ -72,6 +83,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: RSS intent boundary and catalog browser contracts
+        if: ${{ !cancelled() }}
         run: |
           for engine in chromium webkit; do
             BREEZE_QA_ENGINE=$engine BREEZE_CATALOG_CURRENT_ONLY=1 BREEZE_CATALOG_QUICK=1 BREEZE_CATALOG_PROOF=/tmp/breeze-catalog-browser-proof/$engine node tests/benchmark-rss-catalog-browser.mjs || exit 1

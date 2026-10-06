@@ -3,7 +3,8 @@ project_id = "fqvhlyocdkwiyioiokte"
 [functions.ready]
 verify_jwt = false
 
-# Proposal only: public metadata GET; POST authorizes the existing service key
-# inside the handler. No public request triggers upstream refresh work.
+# Public metadata GET; POST authorizes the existing service key inside the
+# handler. Server mode, reviewed feed IDs and database active default OFF.
+# Breeze production is hrtfhojbhqvaoiulspto, NOT this CLI config's project.
 [functions.rss-catalog]
 verify_jwt = false

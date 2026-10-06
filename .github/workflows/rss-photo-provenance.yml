@@ -1,0 +1,30 @@
+name: Public RSS photo provenance
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths: ['tools/audit-rss-photo-provenance.mjs', '.github/workflows/rss-photo-provenance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-get:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.body, '[verify-live-rss-photos]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tools/audit-rss-photo-provenance.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-rss-photo-provenance
+          path: /tmp/breeze-rss-photo-provenance/
+          retention-days: 7

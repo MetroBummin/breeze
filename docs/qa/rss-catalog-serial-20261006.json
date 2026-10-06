@@ -1,0 +1,61 @@
+{
+  "engine": "chromium",
+  "serverMaxActive": 1,
+  "client": {
+    "maxActive": 1,
+    "events": [
+      {
+        "kind": "start",
+        "url": "https://stories.fixture/chromium-cold/g0/article-0",
+        "at": 1791261465065,
+        "active": 1
+      },
+      {
+        "kind": "settle",
+        "url": "https://stories.fixture/chromium-cold/g0/article-0",
+        "at": 1791261465183,
+        "active": 0
+      },
+      {
+        "kind": "start",
+        "url": "https://stories.fixture/chromium-cold/g0/article-1",
+        "at": 1791261465185,
+        "active": 1
+      },
+      {
+        "kind": "settle",
+        "url": "https://stories.fixture/chromium-cold/g0/article-1",
+        "at": 1791261465220,
+        "active": 0
+      }
+    ]
+  },
+  "readers": [
+    {
+      "url": "http://127.0.0.1:46423/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cold%2Fg0%2Farticle-0",
+      "readBytes": 159744,
+      "cancelled": true,
+      "cancelAt": 1791261465183,
+      "cancelSettledAt": 1791261465183
+    },
+    {
+      "url": "http://127.0.0.1:46423/functions/v1/article?url=https%3A%2F%2Fstories.fixture%2Fchromium-cold%2Fg0%2Farticle-1",
+      "readBytes": 12288,
+      "cancelled": true,
+      "cancelAt": 1791261465220,
+      "cancelSettledAt": 1791261465220
+    }
+  ],
+  "requests": [
+    {
+      "target": "https://stories.fixture/chromium-cold/g0/article-0",
+      "arrivedAt": 1791261465091,
+      "closedAt": 1791261465192
+    },
+    {
+      "target": "https://stories.fixture/chromium-cold/g0/article-1",
+      "arrivedAt": 1791261465213,
+      "closedAt": 1791261465222
+    }
+  ]
+}

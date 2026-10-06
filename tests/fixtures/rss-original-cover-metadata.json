@@ -1,0 +1,68 @@
+{
+  "capturedAt": "2026-10-06T03:37:38.793Z",
+  "auditRun": 37409797315,
+  "sourceSha256": "6a2daa4ca8078636beb8061fa4601305fb684744219b71520a54aa397d345343",
+  "scope": "Only public URL/share metadata and provenance; no original article prose or image bytes. Feed photo absence is the observed production parser output, not proof that every original has a photo.",
+  "cases": [
+    {
+      "source": "The Conversation",
+      "url": "https://theconversation.com/three-years-after-october-7-global-attention-on-gaza-has-receded-the-real-test-will-come-after-israels-election-292360",
+      "feedSourceUrl": "https://theconversation.com/global/articles.atom",
+      "feedPhoto": "",
+      "meta": "<meta property=\"og:image\" content=\"https://images.theconversation.com/files/763796/original/file-20261005-50-wx9j2k.jpg?ixlib=rb-4.1.1&amp;rect=0%2C721%2C8640%2C4320&amp;q=45&amp;auto=format&amp;w=1356&amp;h=668&amp;fit=crop\" />",
+      "photo": "https://images.theconversation.com/files/763796/original/file-20261005-50-wx9j2k.jpg?ixlib=rb-4.1.1&rect=0%2C721%2C8640%2C4320&q=45&auto=format&w=1356&h=668&fit=crop",
+      "originalStatus": 200,
+      "metaByteOffset": 1631,
+      "imageStatus": 200,
+      "decoded": {
+        "width": 1356,
+        "height": 668
+      }
+    },
+    {
+      "source": "TMZ",
+      "url": "https://www.tmz.com/2026/10/05/halle-berry-claims-shes-been-a-dv-victim-and-would-never-hurt-child/",
+      "feedSourceUrl": "https://www.tmz.com/rss.xml",
+      "feedPhoto": "",
+      "meta": "<meta property=\"og:image\" content=\"https://imagez.tmz.com/image/fb/16by9/2026/10/05/fb6d7b3cdce0454ab02f3b5ee32a2571_xl.jpg\">",
+      "photo": "https://imagez.tmz.com/image/fb/16by9/2026/10/05/fb6d7b3cdce0454ab02f3b5ee32a2571_xl.jpg",
+      "originalStatus": 200,
+      "metaByteOffset": 10041,
+      "imageStatus": 200,
+      "decoded": {
+        "width": 2048,
+        "height": 1152
+      }
+    },
+    {
+      "source": "TMZ",
+      "url": "https://www.tmz.com/2026/10/05/televangelist-jim-bakker-dies-at-86/",
+      "feedSourceUrl": "https://www.tmz.com/rss.xml",
+      "feedPhoto": "",
+      "meta": "<meta property=\"og:image\" content=\"https://imagez.tmz.com/image/fe/16by9/2026/10/06/fe770428227348569ce351e0c0ed423c_xl.jpg\">",
+      "photo": "https://imagez.tmz.com/image/fe/16by9/2026/10/06/fe770428227348569ce351e0c0ed423c_xl.jpg",
+      "originalStatus": 200,
+      "metaByteOffset": 6764,
+      "imageStatus": 200,
+      "decoded": {
+        "width": 2048,
+        "height": 1152
+      }
+    },
+    {
+      "source": "TMZ",
+      "url": "https://www.tmz.com/2026/10/05/cornell-fraternity-brother-lawyer-criticizes-the-school/",
+      "feedSourceUrl": "https://www.tmz.com/rss.xml",
+      "feedPhoto": "",
+      "meta": "<meta property=\"og:image\" content=\"https://imagez.tmz.com/image/43/16by9/2026/10/05/432d067bfd3f4d7ebf090533be3b348f_xl.jpg\">",
+      "photo": "https://imagez.tmz.com/image/43/16by9/2026/10/05/432d067bfd3f4d7ebf090533be3b348f_xl.jpg",
+      "originalStatus": 200,
+      "metaByteOffset": 7553,
+      "imageStatus": 200,
+      "decoded": {
+        "width": 2048,
+        "height": 1152
+      }
+    }
+  ]
+}

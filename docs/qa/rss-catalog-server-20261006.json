@@ -1,0 +1,98 @@
+{
+  "units": "UTF-8 uncompressed HTTP response bodies. Synthetic feeds; four audited public OG snippets plus two synthetic originals. Local pinned Node HTTP, modeled DNS; live publisher/TLS, headers, redirects, DB responses, images, selected article bodies and other traffic excluded. Retained original-prefix bytes and delivered chunks are separate; neither is total billed egress.",
+  "sourceHashes": {
+    "supabase/functions/rss-catalog/index.ts": "29af24f56fcbe25ea76d49b4a3746a4bf4265d676980ba4a85b554a7d0a7e4f8",
+    "server/rss-catalog/service.mjs": "6d5ef2617de7e0262cacae5b548baa319c71d197ff8fbe733d699567a34d3624",
+    "server/rss-catalog/metadata.mjs": "1e98adb63e703859cde3b0013d37c42cf26a81deb7137afca6d89c46e762432e",
+    "server/rss-catalog/handler.mjs": "5dd2bf523b57ec0643f97781e6398b6cbd0d64db0393c08eeb58fda7ef4ba1d0",
+    "server/rss-catalog/photos.mjs": "a09c33ac6392ee0008a1e8b63eb623f68e9fc9548416e031ed5ae2b7bc03bc84",
+    "server/rss-catalog/photo-head.mjs": "0ad69a3c3a7febb0cbfd35655a31687c886a01596bf0ce2d47411bacd78c79bd",
+    "server/rss-catalog/public-prefix.mjs": "55ec4ced14670d4a15c82cd11578145206a9a8d582adf9cdb0a4e4ba573897ab",
+    "server/article/cover-metadata.mjs": "52ab91f202efede40bfdaa250e5c746aed6db779ba45f83ae77e44148b5be411",
+    "server/rss-catalog/schema/rss_public_catalog.sql": "61e905cd8ea374f9ea255f083da56810339053ef76a119f10922b5211f128246",
+    "scripts/importers/rss.js": "d21ab704447e102289953cbc53703f82f6a59404884a4bd31855e12010eba46d"
+  },
+  "cases": {
+    "coldServer": {
+      "clientRequests": 1,
+      "clientResponseBodyBytes": 702,
+      "publisherRequests": 0
+    },
+    "concurrentRefresh": {
+      "callers": 30,
+      "successfulRefreshes": 1,
+      "publisherRequests": 13,
+      "publisherResponseBodyBytes": 1300000,
+      "maxPublisherConcurrency": 2
+    },
+    "concurrentOriginals": {
+      "callers": 30,
+      "originalJobs": 6,
+      "httpAttempts": 6,
+      "retainedPrefixBytes": 29004,
+      "deliveredBodyChunkBytes": 29004,
+      "unknownByteJobs": 0,
+      "fixtureBodyBytesWritten": 29004,
+      "maxJobConcurrency": 2,
+      "statuses": {
+        "present": 6,
+        "noimage": 0,
+        "transient": 0,
+        "truncated": 0,
+        "blocked": 0
+      }
+    },
+    "firstClient": {
+      "clientRequests": 1,
+      "clientResponseBodyBytes": 142079,
+      "publisherRequests": 0,
+      "metadataEntries": 260
+    },
+    "concurrentNewUsers": {
+      "users": 30,
+      "clientRequests": 30,
+      "clientResponseBodyBytes": 4262370,
+      "publisherRequests": 0
+    },
+    "conditionalClient": {
+      "clientRequests": 1,
+      "clientResponseBodyBytes": 0,
+      "publisherRequests": 0
+    },
+    "warmRotationAndRelaunch": {
+      "users": 30,
+      "clientRequests": 0,
+      "clientResponseBodyBytes": 0,
+      "publisherRequests": 0
+    },
+    "nextScheduledRefresh": {
+      "callers": 30,
+      "successfulRefreshes": 1,
+      "feedValidatorRequests": 13,
+      "successfulFeedBodyBytes": 0,
+      "originalJobs": 0,
+      "originalCacheHits": 6
+    },
+    "rollback": {
+      "empty": true,
+      "publisherRequests": 0
+    }
+  },
+  "comparison": {
+    "legacyNewUsers": {
+      "users": 30,
+      "publisherFeedRequestsViaClient": 390,
+      "fixtureFeedBodyBytes": 39000000
+    },
+    "catalogNewUsersAndOneServerWarm": {
+      "users": 30,
+      "publisherFeedRequests": 13,
+      "publisherFeedBodyBytes": 1300000,
+      "originalJobs": 6,
+      "originalRetainedPrefixBytes": 29004,
+      "originalDeliveredBodyChunkBytes": 29004,
+      "clientCatalogBodyBytes": 4262370
+    },
+    "caveat": "Legacy feed bodies alone versus the separately counted catalog legs, including bounded server original-photo work. This is a controlled transport comparison, not total egress or a billing percentage."
+  }
+}
