@@ -1,0 +1,81 @@
+name: Apple release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Operation (smoke uses no Apple credentials)
+        type: choice
+        options: [smoke, status, dry-run, prepare, submit]
+        default: status
+        required: true
+      release_id:
+        description: Reviewed releases/apple/<id>.json on main
+        type: string
+      manifest_sha256:
+        description: SHA-256 of the exact manifest file bytes
+        type: string
+      confirmation:
+        description: Writes require <mode>:<release_id>:<manifest_sha256>
+        type: string
+  push:
+    branches: [main]
+    paths: ['releases/apple/requests/*.json']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apple-release-breeze
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/main' && github.actor == 'MetroBummin' && github.triggering_actor == 'MetroBummin'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.gate.outputs.mode }}
+      main_sha: ${{ steps.gate.outputs.main_sha }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: refs/heads/main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: '24.19.0'
+      - name: Mock contracts (no secrets or Apple calls)
+        run: node --test tests/verify-apple-release.mjs
+      - name: Validate actor, request-only diff, exact manifest and authorization
+        id: gate
+        env:
+          ASC_APP_ID: ${{ vars.ASC_APP_ID }}
+        run: node tools/apple-release.mjs --gate
+
+  apple:
+    needs: gate
+    if: needs.gate.outputs.mode != 'smoke'
+    environment: apple-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.gate.outputs.main_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: '24.19.0'
+      - name: Inspect or execute the bounded release
+        env:
+          ASC_APP_ID: ${{ vars.ASC_APP_ID }}
+          ASC_RELEASE_ENABLED: ${{ vars.ASC_RELEASE_ENABLED }}
+          ASC_WRITES_ENABLED: ${{ vars.ASC_WRITES_ENABLED }}
+          ASC_KEY_TYPE: ${{ vars.ASC_KEY_TYPE }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: node tools/apple-release.mjs
