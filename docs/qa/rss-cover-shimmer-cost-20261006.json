@@ -1,0 +1,966 @@
+{
+  "catalogEnabled": false,
+  "engine": "chromium",
+  "scope": "PR101 and final PR103 RSS scripts on a common app shell; fixed synthetic feeds/images/streamed relay. No publisher, Jev or live service calls.",
+  "units": "Request counts and UTF-8 mock response body sizes. Serialized metadata is the full fixture response, not delivered/billed bytes. Generated upstream HTML is fixture input, not a live upstream read. Actual reader bytes recorded separately; headers, redirects, TLS, CDN and pricing excluded.",
+  "rows": [
+    {
+      "version": "PR101",
+      "sha": "7a5e0c25f2b87791dad6687719e4fb3eb4585c1a",
+      "sourceSha256": "06456fd9f60db5e7fcea1f62aac0b825ce568a7ad0baf1a1dd0bb8b6657f4b02",
+      "profile": "both visible feed photos missing",
+      "stages": [
+        {
+          "name": "cold Home",
+          "delta": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 262144,
+          "photos": 2,
+          "actualClientReadBodyBytes": 1206507
+        },
+        {
+          "name": "same-document Home 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 262144,
+          "photos": 2
+        },
+        {
+          "name": "same-document Home 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 262144,
+          "photos": 2
+        },
+        {
+          "name": "same-document Home 3",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 262144,
+          "photos": 2
+        },
+        {
+          "name": "warm refresh 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 262144,
+          "photos": 2
+        },
+        {
+          "name": "warm refresh 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 262144,
+          "photos": 2
+        },
+        {
+          "name": "warm reload",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 2,
+            "responseBodyBytes": 470300,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 6,
+            "responseBodyBytes": 5615407,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 2
+        }
+      ],
+      "requests": [
+        {
+          "target": "https://stories.fixture/PR101-missing-photos/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100289,
+          "serializedResponseBytes": 2100372,
+          "serverWrittenBytes": 278528,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/PR101-missing-photos/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100289,
+          "serializedResponseBytes": 2100372,
+          "serverWrittenBytes": 24576,
+          "closedEarly": true
+        }
+      ],
+      "images": [
+        {
+          "url": "https://images.fixture/PR101-missing-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-missing-photos/g0/photo-0.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-missing-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-missing-photos/g0/photo-1.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-missing-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-missing-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        }
+      ]
+    },
+    {
+      "version": "PR101",
+      "sha": "7a5e0c25f2b87791dad6687719e4fb3eb4585c1a",
+      "sourceSha256": "06456fd9f60db5e7fcea1f62aac0b825ce568a7ad0baf1a1dd0bb8b6657f4b02",
+      "profile": "all feed photos supplied",
+      "stages": [
+        {
+          "name": "cold Home",
+          "delta": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13,
+          "actualClientReadBodyBytes": 3532173
+        },
+        {
+          "name": "same-document Home 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "same-document Home 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "same-document Home 3",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "warm refresh 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "warm refresh 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "warm reload",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 13,
+            "responseBodyBytes": 3056950,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 28,
+            "responseBodyBytes": 6589123,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        }
+      ],
+      "requests": [],
+      "images": [
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-2.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-3.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-4.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-5.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-6.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-7.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-8.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-9.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-10.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-11.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-12.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-0.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-1.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-10.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-11.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-12.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-4.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-2.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-5.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-7.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-3.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-9.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-6.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR101-feed-photos/g0/photo-8.jpg",
+          "type": "image",
+          "bytes": 235150
+        }
+      ]
+    },
+    {
+      "version": "PR103",
+      "sha": "candidate",
+      "sourceSha256": "995029bd4bf9f5f361736d3b60eebac68ea4672abde9c01a1a480004f546a506",
+      "profile": "both visible feed photos missing",
+      "stages": [
+        {
+          "name": "cold Home",
+          "delta": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 212992,
+          "photos": 2,
+          "actualClientReadBodyBytes": 1157355
+        },
+        {
+          "name": "same-document Home 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 212992,
+          "photos": 2
+        },
+        {
+          "name": "same-document Home 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 212992,
+          "photos": 2
+        },
+        {
+          "name": "same-document Home 3",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 212992,
+          "photos": 2
+        },
+        {
+          "name": "warm refresh 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 212992,
+          "photos": 2
+        },
+        {
+          "name": "warm refresh 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 4,
+            "responseBodyBytes": 5145107,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 212992,
+          "photos": 2
+        },
+        {
+          "name": "warm reload",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 2,
+            "responseBodyBytes": 470300,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 2,
+            "images": 6,
+            "responseBodyBytes": 5615407,
+            "generatedUpstreamHtmlBytes": 4200578
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 2
+        }
+      ],
+      "requests": [
+        {
+          "target": "https://stories.fixture/PR103-missing-photos/g0/article-0",
+          "index": 0,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100289,
+          "serializedResponseBytes": 2100372,
+          "serverWrittenBytes": 229376,
+          "closedEarly": true
+        },
+        {
+          "target": "https://stories.fixture/PR103-missing-photos/g0/article-1",
+          "index": 1,
+          "generation": "g0",
+          "upstreamHtmlBytes": 2100289,
+          "serializedResponseBytes": 2100372,
+          "serverWrittenBytes": 20480,
+          "closedEarly": true
+        }
+      ],
+      "images": [
+        {
+          "url": "https://images.fixture/PR103-missing-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-missing-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-missing-photos/g0/photo-0.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-missing-photos/g0/photo-1.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-missing-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-missing-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        }
+      ]
+    },
+    {
+      "version": "PR103",
+      "sha": "candidate",
+      "sourceSha256": "995029bd4bf9f5f361736d3b60eebac68ea4672abde9c01a1a480004f546a506",
+      "profile": "all feed photos supplied",
+      "stages": [
+        {
+          "name": "cold Home",
+          "delta": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13,
+          "actualClientReadBodyBytes": 3532173
+        },
+        {
+          "name": "same-document Home 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "same-document Home 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "same-document Home 3",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "warm refresh 1",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "warm refresh 2",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 0,
+            "responseBodyBytes": 0,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 15,
+            "responseBodyBytes": 3532173,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        },
+        {
+          "name": "warm reload",
+          "delta": {
+            "feeds": 0,
+            "metadata": 0,
+            "images": 13,
+            "responseBodyBytes": 3056950,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "cumulative": {
+            "feeds": 13,
+            "metadata": 0,
+            "images": 28,
+            "responseBodyBytes": 6589123,
+            "generatedUpstreamHtmlBytes": 0
+          },
+          "actualReaderReadBytes": 0,
+          "photos": 13
+        }
+      ],
+      "requests": [],
+      "images": [
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-2.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-3.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-4.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-5.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-6.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-7.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-8.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-9.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-10.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-11.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-12.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-0.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-1.jpg",
+          "type": "fetch",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-0.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-1.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-10.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-11.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-12.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-4.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-2.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-5.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-7.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-3.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-9.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-6.jpg",
+          "type": "image",
+          "bytes": 235150
+        },
+        {
+          "url": "https://images.fixture/PR103-feed-photos/g0/photo-8.jpg",
+          "type": "image",
+          "bytes": 235150
+        }
+      ]
+    }
+  ]
+}

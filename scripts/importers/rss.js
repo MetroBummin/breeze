@@ -258,6 +258,11 @@ function rssCoverBegin(rail){
     if(owner.consumer&&!rssCoverCurrent(owner.consumer))rssCoverRelease(owner.consumer);
     if(rail.getClientRects?.().length===0||document.visibilityState==='hidden')
       owner.entries.forEach((_entry,card)=>rssCardCoverWork.get(card)?.cancel?.());
+    else owner.entries.forEach((entry,card)=>{
+      if(card.isConnected&&entry?.photo&&!card.dataset.photoStarted){
+        card.dataset.photoStarted='true';void rssCardPhoto(card,entry);
+      }
+    });
     if(!owner.frame&&!owner.cancelled)owner.frame=requestAnimationFrame(()=>{owner.frame=0;void rssCoverPump(owner);});
   };
   owner.hidden=()=>rssCoverCancel(owner);
@@ -769,7 +774,9 @@ function rssCardPhoto(card, entry){
   let stopDecode=null,cancelled=false;
   const task={promise:null,cancel:()=>{
     cancelled=true;stopDecode?.();
-    if(rssCardCoverWork.get(card)===task){rssCardCoverWork.delete(card);rssCardReady(card);}
+    if(rssCardCoverWork.get(card)===task){
+      rssCardCoverWork.delete(card);delete card.dataset.photoStarted;rssCardReady(card);
+    }
   }};
   const current=()=>!cancelled&&rssCardCoverWork.get(card)===task&&card.isConnected
     &&card.dataset.rssUrl===entry.url&&entry.photo===photo;
@@ -1185,7 +1192,6 @@ function renderRssCards(rail, force, empty){
     slots.forEach((slot,index)=>{if(index<cards.length || !rssLoading)slot.remove();});
     if(keepStart)rssAlignRailStart(rail);
     const entries=groups.flat();
-    cards.forEach(card=>{const entry=entries.find(item=>item.url===card.dataset.rssUrl);if(entry?.photo && !card.dataset.photoStarted){card.dataset.photoStarted='true';void rssCardPhoto(card,entry);}});
     rssCoverWatch(coverOwner,cards,entries);
     rail.dataset.rssStamp=stamp;
     rail.dataset.rssRecommendationStamp=recommendationStamp;
@@ -1206,6 +1212,14 @@ function renderRssCards(rail, force, empty){
 function appendRssCards(rail, force){
   return renderRssCards(rail,force,document.getElementById('home-feed-empty'));
 }
+
+// Dismissing Preview returns to the same Home without repainting its rail.
+// Resume canceled photo work from current metadata, without loading feeds.
+if(typeof document!=='undefined')document.getElementById?.('article-preview')?.addEventListener('close',()=>{
+  const rail=document.getElementById('casual-rail');
+  if(!rail?.isConnected||!rail.closest('#v-home.on')||document.getElementById('article-preview').hasAttribute('open'))return;
+  rssCoverWatch(rssCoverBegin(rail),[...rail.querySelectorAll('.rss-card')],rssCands.flat());
+});
 
 // Small, local source list. Article feeds provide discovery metadata; a short
 // social post may be read from its feed body when enough text is present.

@@ -343,6 +343,13 @@ try{
           await t.page.evaluate(()=>refreshLibrary());await settled(t.page);
           assert.equal(terminal.requests.length,2,'Negative cache repeated the same lookup');
         }
+        if(mode==='image-failure'||mode==='image-timeout'){
+          const failedImages=terminal.images.filter(image=>image.type==='image').map(image=>image.url);
+          await t.page.evaluate(()=>show('casuals'));await t.page.evaluate(()=>show('home'));
+          await t.page.evaluate(()=>refreshLibrary());await settled(t.page);
+          for(const url of new Set(failedImages))assert.equal(terminal.images.filter(image=>image.type==='image'&&image.url===url).length,
+            failedImages.filter(image=>image===url).length,'Terminal '+mode+' started an automatic retry loop for '+url);
+        }
         results.push({engine:engine.name(),scenario:mode,state:value,requests:terminal.requests,images:terminal.images});await t.context.close();
         console.log(engine.name(),'RSS cover shimmer terminal:',mode);
       }
@@ -354,7 +361,62 @@ try{
         await n.page.evaluate(()=>show('casuals'));
         const cancelled=await settled(n.page);noPersonalData(cancelled);
         assert(cancelled.cards.every(card=>!card.pending&&card.ready&&!card.photo),'Navigation left a shimmer or painted stale '+phase);
+        if(phase==='image'){
+          const paused=await n.page.evaluate(()=>{
+            window.pausedCoverCard=document.querySelector('#casual-rail .rss-card');
+            return {started:pausedCoverCard.dataset.photoStarted||'',src:pausedCoverCard.querySelector('.cover').getAttribute('src')};
+          });
+          assert.equal(paused.started,'','Canceled image retained the started marker and cannot resume');
+          assert.equal(paused.src,null);
+          const metadataRequests=navigation.requests.length;
+          navigation.options.imageDelayMs=0;
+          await n.page.evaluate(()=>show('home'));
+          await n.page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card .thumb.has-cover'));
+          assert.equal(await n.page.evaluate(()=>document.querySelector('#casual-rail .rss-card')===pausedCoverCard),true,'Return replaced a retained same-URL card');
+          assert.equal(navigation.requests.length,metadataRequests,'Resuming an image repeated cover metadata lookup');
+          for(let refresh=0;refresh<2;refresh++)await n.page.evaluate(()=>refreshLibrary());
+          assert.equal(await n.page.evaluate(()=>pausedCoverCard.querySelector('.thumb').classList.contains('has-cover')),true,'Refresh discarded a resumed decoded photo');
+          assert.equal(navigation.images.filter(image=>image.type==='image'&&image.url===imageUrl(navigation.name,0)).length,2,'Canceled image did not resume exactly once');
+        }
         results.push({engine:engine.name(),scenario:'navigation-cancel-'+phase,state:cancelled,requests:navigation.requests});await n.context.close();
+      }
+
+      for(const trigger of ['document-hidden','preview-close','home-return']){
+        const resumed=run(engine.name()+'-resume-'+trigger,{supplied:true,mode:'empty',imageDelayMs:1200}),r=await start(browser,resumed);
+        await r.page.waitForFunction(()=>document.querySelector('#casual-rail .rss-card').classList.contains('rss-cover-pending'));
+        await r.page.evaluate(()=>{
+          window.pausedCoverCard=document.querySelector('#casual-rail .rss-card');
+          window.pausedCoverWork=rssCardCoverWork.get(pausedCoverCard);
+          window.resumeStamp=document.getElementById('casual-rail').dataset.rssStamp;
+        });
+        if(trigger==='document-hidden')await r.page.evaluate(()=>{
+          window.qaDocumentHidden=true;
+          Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>qaDocumentHidden?'hidden':'visible'});
+          document.dispatchEvent(new Event('visibilitychange'));
+        });
+        else if(trigger==='preview-close')await r.page.evaluate(()=>{
+          fetchArticleHtml=()=>new Promise(()=>{});
+          void importRssEntry(rssCands[0][0],pausedCoverCard);
+        });
+        else await r.page.evaluate(()=>show('casuals'));
+        await r.page.waitForFunction(()=>!pausedCoverCard.classList.contains('rss-cover-pending'));
+        const paused=await r.page.evaluate(()=>({started:pausedCoverCard.dataset.photoStarted||'',src:pausedCoverCard.querySelector('.cover').getAttribute('src')}));
+        assert.deepEqual(paused,{started:'',src:null});
+        const metadataBefore=resumed.requests.length;
+        resumed.options.imageDelayMs=0;
+        if(trigger==='document-hidden')await r.page.evaluate(()=>{qaDocumentHidden=false;document.dispatchEvent(new Event('visibilitychange'));});
+        else if(trigger==='preview-close')await r.page.evaluate(()=>articlePreviewClose());
+        else await r.page.evaluate(()=>show('home'));
+        await r.page.waitForFunction(()=>pausedCoverCard.querySelector('.thumb').classList.contains('has-cover'));
+        await r.page.evaluate(()=>pausedCoverWork.promise);
+        await r.page.evaluate(()=>refreshLibrary());await settled(r.page);
+        assert.equal(await r.page.evaluate(()=>document.querySelector('#casual-rail .rss-card')===pausedCoverCard),true,'Canceled photo replaced the retained card');
+        assert.equal(await r.page.evaluate(()=>!pausedCoverCard.classList.contains('rss-cover-pending')),true);
+        assert.equal(resumed.requests.length,metadataBefore,'Resume fetched new cover metadata');
+        assert.equal(resumed.images.filter(image=>image.type==='image'&&image.url===imageUrl(resumed.name,0)).length,2,'Resume did not restart the canceled image exactly once');
+        if(trigger==='home-return')assert.equal(await r.page.evaluate(()=>document.getElementById('casual-rail').dataset.rssStamp===resumeStamp),true,'Return did not cover the unchanged-stamp path');
+        results.push({engine:engine.name(),scenario:'cancel-resume-'+trigger,paused,state:await snapshot(r.page),requests:resumed.requests,images:resumed.images});
+        await r.context.close();
       }
 
       const preview=run(engine.name()+'-pending-preview',{supplied:true,imageDelayMs:500}),p=await start(browser,preview);
