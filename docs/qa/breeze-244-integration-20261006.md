@@ -171,3 +171,12 @@ previous viewport width. The reader-work readiness wait now includes the exact
 existing aspect/width assertions and retains their thresholds and ten-second
 deadline. Three readiness tests pass; browser causal and full regression proof
 remain the exact-head CI gate.
+
+The first causal run exposed independent delayed mode-anchor reads (two reads
+with the same cache object), so its setup now records and awaits the actual
+360/900ms owner callbacks and nearby paint before warming the measured cache.
+No timer is shortened or suppressed; forced no-op and real-change assertions
+remain zero/twelve. Existing native-scope unit fixtures now represent genuine
+old/current style and class changes rather than unchanged null/null records.
+Their geometry/Pencil expectations remain; the related PDF suites pass 74/74
+locally. Exact browser proof is still required.

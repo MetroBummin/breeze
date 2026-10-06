@@ -30,8 +30,8 @@ function fixture(){
     closest(selector){for(let p=this;p;p=p.parentElement)if(p.matches(selector))return p;return null;}
     getBoundingClientRect(){this.reads++;const r=this.rectFn?this.rectFn():this.rect;return {...r,left:r.x,top:r.y,right:r.x+r.width,bottom:r.y+r.height};}
     getClientRects(){return this.hidden?[]:[this.getBoundingClientRect()];}
-    setAttribute(k,v){this.attributes[k]=String(v);}
-    getAttribute(k){return this.attributes[k]??null;}
+    setAttribute(k,v){this.attributes[k]=String(v);if(k==='class')this.className=String(v);}
+    getAttribute(k){return k==='class'?this.className:this.attributes[k]??null;}
     append(...nodes){for(const n of nodes){n.remove();n.parentElement=this;this.children.push(n);}}
     insertBefore(node,prior){if(node===prior)return;node.remove();node.parentElement=this;if(prior)this.children.splice(this.children.indexOf(prior),0,node);else this.children.push(node);}
     get firstChild(){return this.children[0]||null;}
@@ -84,13 +84,16 @@ function fixture(){
   const event=(type,touches,changedTouches=touches)=>({type,touches,changedTouches,cancelable:true,preventDefault(){this.defaultPrevented=true;},stopImmediatePropagation(){}});
   const flush=()=>{const pending=[...frames.values()];frames.clear();for(const fn of pending)fn();};
   const mutate=(target,attributeName='class',oldValue=null)=>observers[0]([{target,type:'attributes',attributeName,oldValue}]);
+  // A geometry change needs a real attribute delta, not an unchanged null/null
+  // synthetic record. Match MutationObserver's attributeOldValue contract.
+  const changeAttribute=(target,name,value)=>{const old=target.getAttribute(name);target.setAttribute(name,value);mutate(target,name,old);};
   async function stroke(points,end=points.at(-1)){
     qa.touchStart(event('touchstart',[contact(...points[0])]));
     for(const p of points.slice(1))qa.touchMove(event('touchmove',[contact(...p)]));
     const preview=qa.active()?.preview?.getAttribute('points');
     qa.touchEnd(event('touchend',[],[contact(...end)]));await tick();return preview;
   }
-  return {engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,flush,mutate,stroke,
+  return {engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,flush,mutate,changeAttribute,stroke,
     advance(ms){now+=ms;for(const [id,t] of timers)if(t.at<=now){timers.delete(id);t.fn();}},timers,
     controls:v=>{controls=v;},pinch:v=>{busy=v;},failWrite:v=>{failWrite=v;},
     emit:(type,target)=>{for(const fn of listeners.get(type)||[])fn({type,target});}};
@@ -102,10 +105,10 @@ test('scope: selecting pen arms native scope before a later animation frame',()=
 });
 test('scope: ancestor layout changes invalidate paper even with unchanged extent/zoom',()=>{
   const f=fixture();f.qa.publishNativeScope();const old=f.posted.at(-1).pages[0][0];
-  f.paper.rect.x=35;f.mutate(f.stage);f.flush();assert.equal(f.posted.at(-1).pages[0][0],old+35);
+  f.paper.rect.x=35;f.changeAttribute(f.stage,'style','transform:translateX(35px)');f.flush();assert.equal(f.posted.at(-1).pages[0][0],old+35);
 });
 test('scope: body layout changes also invalidate cached paper',()=>{
-  const f=fixture();f.qa.publishNativeScope();f.paper.rect.y=27;f.mutate(f.body);f.flush();
+  const f=fixture();f.qa.publishNativeScope();f.paper.rect.y=27;f.changeAttribute(f.body,'style','transform:translateY(27px)');f.flush();
   assert.equal(f.posted.at(-1).pages[0][1],27);
 });
 test('scope: chrome-only body changes retain cached paper geometry',()=>{
@@ -113,8 +116,19 @@ test('scope: chrome-only body changes retain cached paper geometry',()=>{
   const prior=f.body.className;f.body.classList.add('chrome-hidden');f.mutate(f.body,'class',prior);f.flush();
   assert.equal(f.paper.reads,reads,'decorative control state must not rescan paper');
 });
+test('scope: same-value root class and ancestor style retain cached paper',()=>{
+  const f=fixture();f.qa.publishNativeScope();const reads=f.paper.reads;
+  f.mutate(f.html,'class',f.html.getAttribute('class'));
+  f.mutate(f.stage,'style',f.stage.getAttribute('style'));f.flush();
+  assert.equal(f.paper.reads,reads);
+});
+test('scope: genuine ancestor class changes still refresh paper',()=>{
+  const f=fixture();f.qa.publishNativeScope();f.paper.rect.x=19;
+  f.changeAttribute(f.stage,'class','shifted');f.flush();
+  assert.equal(f.posted.at(-1).pages[0][0],19);
+});
 test('scope: pinch dirty geometry survives deferral and refreshes after contact end',()=>{
-  const f=fixture();f.qa.publishNativeScope();f.pinch(true);f.paper.rect.x=45;f.mutate(f.zoom);f.flush();
+  const f=fixture();f.qa.publishNativeScope();f.pinch(true);f.paper.rect.x=45;f.changeAttribute(f.zoom,'style','transform:translateX(45px)');f.flush();
   assert.equal(f.posted.at(-1).pages[0][0],0,'keep committed scope during preview');
   f.qa.touchEnd(f.event('touchend',[],[f.contact(100,100,2,'direct')]));
   f.pinch(false);f.flush();assert.equal(f.posted.at(-1).pages[0][0],45);
@@ -138,7 +152,7 @@ test('scope: scrolling retains content-coordinate cache without per-frame page s
   assert.equal(f.paper.reads,reads);assert.equal(f.posted.length,1);
 });
 test('scope: layout invalidation refreshes paper before the next Pencil',()=>{
-  const f=fixture();f.qa.publishNativeScope();f.paper.rect.x=31;f.mutate(f.stage);f.flush();
+  const f=fixture();f.qa.publishNativeScope();f.paper.rect.x=31;f.changeAttribute(f.stage,'style','transform:translateX(31px)');f.flush();
   f.qa.touchStart(f.event('touchstart',[f.contact(100,100,2,'direct')]));
   assert.equal(f.posted.at(-1).pages[0][0],31);assert.equal(f.qa.active(),null);
 });

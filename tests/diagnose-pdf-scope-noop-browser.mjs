@@ -42,19 +42,49 @@ try{
    });
    await page.addInitScript(()=>{window.breezeInkIPad=true;localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
    await page.goto(url);await page.evaluate(()=>homeReady);
+   await page.evaluate(()=>{
+    // Track the actual delayed mode-restoration owner without changing its
+    // scheduling. initial:true still arms both callbacks; paint-idle alone
+    // does not mean those page reads have finished.
+    window.qaModeTargets=[];
+    const stabilize=stabilizePdfModeTarget;
+    window.stabilizePdfModeTarget=function(...args){
+     const schedule=window.setTimeout;
+     window.setTimeout=function(callback,delay,...rest){
+      const task={delay,done:false};qaModeTargets.push(task);
+      return schedule(async()=>{try{await callback(...rest);}finally{task.done=true;}},delay);
+     };
+     try{return stabilize.apply(this,args);}finally{window.setTimeout=schedule;}
+    };
+   });
    await page.locator('#fileinput').setInputFiles({name:'scope-noop.pdf',mimeType:'application/pdf',buffer:fixturePdf(12)});
    await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
-   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original',{initial:true});await document.fonts.ready;});
-   await page.waitForFunction(()=>!readerPositionPending()&&!!originalSession&&!originalSession.paintActive&&!originalSession.paintQueue?.size);
+   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');await document.fonts.ready;});
+   await page.evaluate(()=>{
+    window.qaSettleReads=[];window.qaSettleRects=originalSession.pages.map(p=>p.getBoundingClientRect.bind(p));
+    originalSession.pages.forEach((p,i)=>p.getBoundingClientRect=()=>{qaSettleReads.push({page:i+1,stack:new Error().stack});return qaSettleRects[i]();});
+   });
+   await page.waitForFunction(()=>qaModeTargets.some(t=>t.delay===900)&&qaModeTargets.every(t=>t.done)
+    &&!readerPositionPending()&&!!originalSession&&!originalSession.paintActive&&!originalSession.paintQueue?.size);
+   // Admit the same nearby range as the real queue so an undelivered initial
+   // IntersectionObserver notification cannot introduce a first paint later.
+   await page.evaluate(()=>Promise.all(pdfPagesInView(originalSession,1300)
+    .map(n=>renderOriginalPdfPage(originalSession,n,{prefetch:true}))));
+   await page.waitForFunction(()=>!originalSession.paintActive&&!originalSession.paintQueue?.size);
+   const settlement=await page.evaluate(()=>{
+    originalSession.pages.forEach((p,i)=>p.getBoundingClientRect=qaSettleRects[i]);
+    return {tasks:qaModeTargets,reads:qaSettleReads};
+   });
+   console.log('PDF scope setup settlement '+JSON.stringify({engine:engine.name(),variant,...settlement}));
    // Deliver existing setup mutations before warming. No test assertion waits
    // for the no-op under investigation: that mutation is forced after warm.
    await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
    for(const mutation of ['none','absent-boot-class','real-root-class']){
     const result=await page.evaluate(async mutation=>{
-     let reads=0;const pages=originalSession.pages,rects=pages.map(p=>p.getBoundingClientRect.bind(p));
+     let reads=0;const readStacks=[],pages=originalSession.pages,rects=pages.map(p=>p.getBoundingClientRect.bind(p));
      pdfPageLayout(originalSession);await Promise.resolve();
      const key=originalSession.pageLayout.key,identity=originalSession.pageLayout;
-     pages.forEach((p,i)=>p.getBoundingClientRect=()=>{reads++;return rects[i]();});
+     pages.forEach((p,i)=>p.getBoundingClientRect=()=>{reads++;readStacks.push({page:i+1,stack:new Error().stack});return rects[i]();});
      try{
       if(mutation==='absent-boot-class'){
        if(document.documentElement.classList.contains('boot-pending'))throw Error('boot must already be complete');
@@ -64,7 +94,7 @@ try{
       for(let i=0;i<6;i++){setReaderChrome(i%2===0);await new Promise(r=>requestAnimationFrame(r));pdfPageLayout(originalSession);}
       await Promise.all(document.getElementById('readchrome').getAnimations({subtree:true}).map(a=>a.finished.catch(()=>{})));
       await new Promise(r=>requestAnimationFrame(r));pdfPageLayout(originalSession);
-      return {reads,pages:pages.length,key,finalKey:originalSession.pageLayout.key,sameCache:identity===originalSession.pageLayout};
+      return {reads,readStacks,pages:pages.length,key,finalKey:originalSession.pageLayout.key,sameCache:identity===originalSession.pageLayout};
      }finally{pages.forEach((p,i)=>p.getBoundingClientRect=rects[i]);}
     },mutation);
     const row={engine:engine.name(),variant,mutation,...result};reports.push(row);console.log('PDF scope causal proof '+JSON.stringify(row));
