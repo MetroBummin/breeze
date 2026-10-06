@@ -255,6 +255,7 @@ function rssCoverBegin(rail){
   rssCoverCancel(owner);
   owner={rail,pass:rssCoverPass,remaining:RSS_COVER_LOOKUPS,entries:new Map(),attempted:new Set(),cancelled:false,running:false,consumer:null,frame:0,observer:null,changed:null,hidden:null};
   owner.changed=()=>{
+    if(owner.cancelled||owner.pass!==rssCoverPass)return;
     if(owner.consumer&&!rssCoverCurrent(owner.consumer))rssCoverRelease(owner.consumer);
     if(rail.getClientRects?.().length===0||document.visibilityState==='hidden')
       owner.entries.forEach((_entry,card)=>rssCardCoverWork.get(card)?.cancel?.());

@@ -81,12 +81,18 @@ async function start(browser,test){
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
     window.coverReaderEvidence=[];
     window.coverPrefixEvidence=[];
+    window.coverPhotoStarts=[];
     if(options.fastTimeout){
       const schedule=window.setTimeout;
       window.setTimeout=(callback,ms,...args)=>schedule(callback,ms===15000||ms===4000?80:ms,...args);
     }
     if(options.stallDecode)HTMLImageElement.prototype.decode=()=>new Promise(()=>{});
     addEventListener('DOMContentLoaded',()=>{
+      const originalPhoto=window.rssCardPhoto;
+      window.rssCardPhoto=(card,entry)=>{
+        window.coverPhotoStarts.push({url:entry.url,photo:entry.photo});
+        return originalPhoto(card,entry);
+      };
       const originalPrefix=window.rssCoverPayloadPrefix;
       window.rssCoverPayloadPrefix=text=>{
         window.coverPrefixEvidence.push(new TextEncoder().encode(text).length);
@@ -134,6 +140,7 @@ async function snapshot(page){
     entryPhotos:rssCands.flat().map(entry=>({url:entry.url,photo:entry.photo||''})),
     books:books.length,durableBooks:(await bookAll()).length,images:(await imgEntries()).length,
     preparedBodies:rssPreparedArticles.size,readerEvidence:window.coverReaderEvidence,prefixEvidence:window.coverPrefixEvidence,
+    photoStarts:window.coverPhotoStarts,
     rssStorage:Object.fromEntries(Object.entries(localStorage).filter(([key])=>/rss/.test(key))),
   }));
 }
@@ -358,6 +365,8 @@ try{
         const navigation=run(engine.name()+'-navigation-'+phase,{ignoreAbort:true,delayMs:phase==='metadata'?400:0,imageDelayMs:phase==='image'?400:0}),n=await start(browser,navigation);
         await waitForRequest(navigation);
         if(phase==='image')await n.page.waitForFunction(()=>rssCands[0][0]?.photo&&document.querySelector('#casual-rail .rss-cover-pending'));
+        const beforeCancel={imageRequests:navigation.images.filter(image=>image.type==='image'&&image.url===imageUrl(navigation.name,0)).length,
+          photoStarts:await n.page.evaluate(url=>coverPhotoStarts.filter(start=>start.url===url).length,articleUrl(navigation.name,0))};
         await n.page.evaluate(()=>show('casuals'));
         const cancelled=await settled(n.page);noPersonalData(cancelled);
         assert(cancelled.cards.every(card=>!card.pending&&card.ready&&!card.photo),'Navigation left a shimmer or painted stale '+phase);
@@ -376,9 +385,10 @@ try{
           assert.equal(navigation.requests.length,metadataRequests,'Resuming an image repeated cover metadata lookup');
           for(let refresh=0;refresh<2;refresh++)await n.page.evaluate(()=>refreshLibrary());
           assert.equal(await n.page.evaluate(()=>pausedCoverCard.querySelector('.thumb').classList.contains('has-cover')),true,'Refresh discarded a resumed decoded photo');
-          assert.equal(navigation.images.filter(image=>image.type==='image'&&image.url===imageUrl(navigation.name,0)).length,2,'Canceled image did not resume exactly once');
+          assert.equal(await n.page.evaluate(url=>coverPhotoStarts.filter(start=>start.url===url).length,articleUrl(navigation.name,0)),2,'Canceled image did not resume exactly once');
+          assert(navigation.images.filter(image=>image.type==='image'&&image.url===imageUrl(navigation.name,0)).length<=2,'Resume duplicated image requests');
         }
-        results.push({engine:engine.name(),scenario:'navigation-cancel-'+phase,state:cancelled,requests:navigation.requests});await n.context.close();
+        results.push({engine:engine.name(),scenario:'navigation-cancel-'+phase,beforeCancel,state:cancelled,afterReturn:await snapshot(n.page),requests:navigation.requests,images:navigation.images});await n.context.close();
       }
 
       for(const trigger of ['document-hidden','preview-close','home-return']){
@@ -387,6 +397,7 @@ try{
         await r.page.evaluate(()=>{
           window.pausedCoverCard=document.querySelector('#casual-rail .rss-card');
           window.pausedCoverWork=rssCardCoverWork.get(pausedCoverCard);
+          window.pausedCoverOwner=rssCoverOwners.get(document.getElementById('casual-rail'));
           window.resumeStamp=document.getElementById('casual-rail').dataset.rssStamp;
         });
         if(trigger==='document-hidden')await r.page.evaluate(()=>{
@@ -402,6 +413,13 @@ try{
         await r.page.waitForFunction(()=>!pausedCoverCard.classList.contains('rss-cover-pending'));
         const paused=await r.page.evaluate(()=>({started:pausedCoverCard.dataset.photoStarted||'',src:pausedCoverCard.querySelector('.cover').getAttribute('src')}));
         assert.deepEqual(paused,{started:'',src:null});
+        if(trigger==='preview-close'){
+          const obsolete=await r.page.evaluate(()=>{
+            pausedCoverOwner.changed();
+            return {started:pausedCoverCard.dataset.photoStarted||'',pending:pausedCoverCard.classList.contains('rss-cover-pending')};
+          });
+          assert.deepEqual(obsolete,{started:'',pending:false},'Canceled owner restarted its paused image before Preview returned');
+        }
         const metadataBefore=resumed.requests.length;
         resumed.options.imageDelayMs=0;
         if(trigger==='document-hidden')await r.page.evaluate(()=>{qaDocumentHidden=false;document.dispatchEvent(new Event('visibilitychange'));});
@@ -413,7 +431,10 @@ try{
         assert.equal(await r.page.evaluate(()=>document.querySelector('#casual-rail .rss-card')===pausedCoverCard),true,'Canceled photo replaced the retained card');
         assert.equal(await r.page.evaluate(()=>!pausedCoverCard.classList.contains('rss-cover-pending')),true);
         assert.equal(resumed.requests.length,metadataBefore,'Resume fetched new cover metadata');
-        assert.equal(resumed.images.filter(image=>image.type==='image'&&image.url===imageUrl(resumed.name,0)).length,2,'Resume did not restart the canceled image exactly once');
+        // Assigning src starts work before a route necessarily receives it.
+        // Assert two logical starts; a canceled first transport may never arrive.
+        assert.equal(await r.page.evaluate(url=>coverPhotoStarts.filter(start=>start.url===url).length,articleUrl(resumed.name,0)),2,'Resume did not restart the canceled image exactly once');
+        assert(resumed.images.filter(image=>image.type==='image'&&image.url===imageUrl(resumed.name,0)).length<=2,'Resume duplicated image requests');
         if(trigger==='home-return')assert.equal(await r.page.evaluate(()=>document.getElementById('casual-rail').dataset.rssStamp===resumeStamp),true,'Return did not cover the unchanged-stamp path');
         results.push({engine:engine.name(),scenario:'cancel-resume-'+trigger,paused,state:await snapshot(r.page),requests:resumed.requests,images:resumed.images});
         await r.context.close();

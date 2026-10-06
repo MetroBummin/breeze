@@ -1,7 +1,7 @@
 # RSS cover loading shimmer after 1.8 (239)
 
 Base: main `7a5e0c25f2b87791dad6687719e4fb3eb4585c1a` (PR #101).
-Tested RSS source SHA-256: `995029bd4bf9f5f361736d3b60eebac68ea4672abde9c01a1a480004f546a506`.
+Tested RSS source SHA-256: `6a2daa4ca8078636beb8061fa4601305fb684744219b71520a54aa397d345343`.
 
 The user requested the existing shimmer while finding a cover. An admitted
 visible metadata lookup and actual image loading/decoding now own
@@ -90,9 +90,10 @@ request counts and full fixture response-body sums in all stages:
 Image counts include the unchanged Smart Crop recovery; route interception
 disables the browser HTTP image cache, so document reload fetches image fixtures
 again. The shimmer adds zero normal-path requests. Legitimate cancellation and
-resumption adds exactly one replacement image load for the paused image, with
-no extra metadata lookup in the regression fixtures; terminal failures do not
-restart. These are separate from cold/warm normal-path counts above.
+resumption starts one replacement image task, with at most one additional image
+request and no extra metadata lookup in the regression fixtures. A canceled
+first request may never reach the transport, so logical starts and wire requests
+are recorded separately. Terminal failures do not restart. These are separate from cold/warm normal-path counts above.
 
 The byte sum includes the full generated serialized metadata response, although
 the client cancels its stream after finding the photo. Actual reader bytes and
@@ -109,3 +110,9 @@ Reproduce the comparison with:
 BREEZE_QA_ENGINE=chromium BREEZE_BROWSER_EXECUTABLE=/usr/bin/chromium \
   node tests/compare-rss-shimmer-cost-browser.mjs
 ```
+
+The resume fixture records two logical image starts and bounded transport calls
+while retaining successful decode, same-card identity, no metadata refetch and
+stale-owner assertions. Canceled or obsolete owners return before their queued
+observer callbacks can restart paused images. The existing ingestion recovery
+assertion remains unchanged.

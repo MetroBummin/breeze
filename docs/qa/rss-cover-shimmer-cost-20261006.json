@@ -26,9 +26,9 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 262144,
+          "actualReaderReadBytes": 102400,
           "photos": 2,
-          "actualClientReadBodyBytes": 1206507
+          "actualClientReadBodyBytes": 1046763
         },
         {
           "name": "same-document Home 1",
@@ -46,7 +46,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 262144,
+          "actualReaderReadBytes": 102400,
           "photos": 2
         },
         {
@@ -65,7 +65,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 262144,
+          "actualReaderReadBytes": 102400,
           "photos": 2
         },
         {
@@ -84,7 +84,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 262144,
+          "actualReaderReadBytes": 102400,
           "photos": 2
         },
         {
@@ -103,7 +103,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 262144,
+          "actualReaderReadBytes": 102400,
           "photos": 2
         },
         {
@@ -122,7 +122,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 262144,
+          "actualReaderReadBytes": 102400,
           "photos": 2
         },
         {
@@ -152,7 +152,7 @@
           "generation": "g0",
           "upstreamHtmlBytes": 2100289,
           "serializedResponseBytes": 2100372,
-          "serverWrittenBytes": 278528,
+          "serverWrittenBytes": 114688,
           "closedEarly": true
         },
         {
@@ -486,7 +486,7 @@
     {
       "version": "PR103",
       "sha": "candidate",
-      "sourceSha256": "995029bd4bf9f5f361736d3b60eebac68ea4672abde9c01a1a480004f546a506",
+      "sourceSha256": "6a2daa4ca8078636beb8061fa4601305fb684744219b71520a54aa397d345343",
       "profile": "both visible feed photos missing",
       "stages": [
         {
@@ -505,9 +505,9 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 212992,
+          "actualReaderReadBytes": 450560,
           "photos": 2,
-          "actualClientReadBodyBytes": 1157355
+          "actualClientReadBodyBytes": 1394923
         },
         {
           "name": "same-document Home 1",
@@ -525,7 +525,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 212992,
+          "actualReaderReadBytes": 450560,
           "photos": 2
         },
         {
@@ -544,7 +544,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 212992,
+          "actualReaderReadBytes": 450560,
           "photos": 2
         },
         {
@@ -563,7 +563,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 212992,
+          "actualReaderReadBytes": 450560,
           "photos": 2
         },
         {
@@ -582,7 +582,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 212992,
+          "actualReaderReadBytes": 450560,
           "photos": 2
         },
         {
@@ -601,7 +601,7 @@
             "responseBodyBytes": 5145107,
             "generatedUpstreamHtmlBytes": 4200578
           },
-          "actualReaderReadBytes": 212992,
+          "actualReaderReadBytes": 450560,
           "photos": 2
         },
         {
@@ -631,7 +631,7 @@
           "generation": "g0",
           "upstreamHtmlBytes": 2100289,
           "serializedResponseBytes": 2100372,
-          "serverWrittenBytes": 229376,
+          "serverWrittenBytes": 454656,
           "closedEarly": true
         },
         {
@@ -640,7 +640,7 @@
           "generation": "g0",
           "upstreamHtmlBytes": 2100289,
           "serializedResponseBytes": 2100372,
-          "serverWrittenBytes": 20480,
+          "serverWrittenBytes": 32768,
           "closedEarly": true
         }
       ],
@@ -680,7 +680,7 @@
     {
       "version": "PR103",
       "sha": "candidate",
-      "sourceSha256": "995029bd4bf9f5f361736d3b60eebac68ea4672abde9c01a1a480004f546a506",
+      "sourceSha256": "6a2daa4ca8078636beb8061fa4601305fb684744219b71520a54aa397d345343",
       "profile": "all feed photos supplied",
       "stages": [
         {
