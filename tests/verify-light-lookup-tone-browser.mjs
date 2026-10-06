@@ -5,6 +5,7 @@
  * This browser proof is not physical iOS/WebView sign-off.
  */
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
@@ -90,7 +91,8 @@ try{
     await page.evaluate(()=>document.fonts.ready);
     await page.waitForFunction(()=>!readerPositionPending()&&!readerAnchorHeld());
     const key=`${engineName}-${width}x${height}-${dark?'dark':'light'}-${reduced?'reduced':'motion'}`;
-    const pair={};
+    console.log(`Checking original appearance ${key}`);
+    const pair={key};reports.push(pair);
     for(const kind of ['word','sentence']){
       pair[kind]={};
       let beforePixels;
@@ -116,6 +118,12 @@ try{
           return qaTone.nodes.every(node=>getComputedStyle(node).backgroundColor===expected);
         });
         await page.evaluate(async()=>{
+          // Whole-viewport screenshots also contain finite Reader chrome/theme
+          // transitions. Wait for their terminal state, never the infinite sheen.
+          await new Promise(requestAnimationFrame);
+          await Promise.all(document.getAnimations().filter(animation=>
+            animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime))
+            .map(animation=>animation.finished.catch(()=>{})));
           await new Promise(requestAnimationFrame);
           for(const node of qaTone.nodes)for(const animation of node.getAnimations()){
             if(animation.animationName==='breeze-word-sheen'){animation.pause();animation.currentTime=825;}
@@ -133,9 +141,15 @@ try{
           assert.equal(cue.blend,kind==='sentence'?(dark?'screen':'multiply'):'normal');
           assert.equal(cue.image==='none',reduced);
         }
+        console.log(`Capturing ${key}/${kind}/${state}`);
         const pixels=await page.screenshot({path:resolve(output,`${key}-${kind}-${state}.png`),animations:'allow'});
         if(baseline)beforePixels=pixels;
-        else assert.deepEqual(pixels,beforePixels,`${key}/${kind}: original production screenshot pixels changed`);
+        else {
+          // Never feed PNG Buffers to strict.deepEqual: formatting a large pixel
+          // mismatch can exhaust the runner before it reports the real failure.
+          const digest=buffer=>createHash('sha256').update(buffer).digest('hex');
+          assert.ok(pixels.equals(beforePixels),`${key}/${kind}: original production screenshot bytes changed; before=${digest(beforePixels)} (${beforePixels.length}), after=${digest(pixels)} (${pixels.length})`);
+        }
       }
       const {before,after}=pair[kind];
       for(const field of ['source','scroll','paper','ink'])assert.deepEqual(after[field],before[field],`${key}/${kind}: ${field} changed`);
@@ -145,7 +159,6 @@ try{
     for(const state of ['before','after'])for(const field of ['background','image','animation','duration','timing','size','repeat','wash','sheen']){
       for(const cue of pair.sentence[state].cues)assert.equal(cue[field],pair.word[state].cues[0][field],`${key}/${state}: word/sentence ${field} diverged`);
     }
-    reports.push({key,...pair});
     console.log(`${key}: actual word/sentence original palette, shared geometry and reduced motion passed`);
   }
   await page.evaluate(()=>qaTone.close());
