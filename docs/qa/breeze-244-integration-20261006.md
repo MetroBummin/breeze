@@ -22,10 +22,12 @@ verify the actual binary rather than reusing or forcing an occupied number.
   to actually admitted work. Failed/unadmitted/absent photos cannot become
   permanently selectable artwork cards; existing supplied-photo fallback and
   bounded original-only recovery remain.
-- Explicit hybrid catalog partition `[7,9,11,12]` (WIRED and Medium), with the
-  other nine built-ins retaining their existing local transport/cache. A managed
+- Explicit hybrid catalog partition `[7]` (WIRED), with the
+  other twelve built-ins retaining their existing local transport/cache. A managed
   error or missing record never causes a legacy feed rebuild. All thirteen source
   inventories remain represented even when no candidate is photo-ready.
+  The initial four-source warm returned Medium unavailable; Medium therefore
+  remains explicitly legacy-owned rather than disappearing or falling back on error.
 - Existing client original-photo recovery remains available in hybrid mode under
   the same shared two-request cap. Shared-server original admission remains empty;
   there is no new publisher original-page probe permission.
@@ -87,3 +89,26 @@ actual offscreen geometry with supplied photos, then waits for the exact
 consumer's abort/release instead of assuming thirteen artwork slots still exist.
 The metadata request cap, stale-cache prohibition and retained-data assertions
 remain. Held transports replace short timing races in cancellation/reentry cases.
+
+## Normal refresh recovery
+
+Head `e014c998` exposed a real recovery failure after temporary relay errors:
+normal Home refresh advanced the budget generation but identical feed metadata
+reused an empty-rail render stamp. The stamp now includes the generation. A
+production-loader/renderer regression fails before the fix with two cumulative
+original requests and passes afterward with exactly four across two generations,
+two decoded cards, thirteen retained candidates and no warm retry/body writes.
+
+A separate held-feed regression confirms that replacing an entry object with
+identical metadata could cancel its already admitted request. Ownership now
+follows the current canonical entry only when the existing full card identity
+matches. Changed title/version still aborts and cannot populate stale cache.
+Confirmed-negative records keep their timestamps and are not fetched again;
+the budget recovers other unknown entries. Both fixes retain two requests per
+generation; the browser assertion remains exactly two decoded cards after retry.
+
+The final candidate narrows the shared partition to WIRED `[7]`. Node contracts
+read the actual config and verify one catalog plus twelve legacy sources on
+success and failure, including Medium. The dedicated browser test uses that same
+partition. The production runtime allowlist and scheduler must still be verified
+before merge; repository settings alone do not establish server readiness.

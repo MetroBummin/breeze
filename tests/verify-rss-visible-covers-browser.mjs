@@ -707,8 +707,19 @@ try{
           assert.equal(await t.page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem(RSS_COVER_CACHE_KEY)||'{}')).length),0,'HTTP error poisoned the negative cache');
           await t.page.evaluate(()=>renderHome());await settled(t.page);
           assert.equal(terminal.requests.length,2,'Same-generation error started an automatic retry loop');
+          const failedPass=await t.page.evaluate(()=>rssCoverPass);
           terminal.options.mode='og';await t.page.evaluate(()=>refreshLibrary());
-          await t.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+          let recoveryError;
+          try{
+            await t.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
+            await settled(t.page);
+          }catch(error){recoveryError=error;}
+          const recovered=await snapshot(t.page),recoveredPass=await t.page.evaluate(()=>rssCoverPass);
+          writeFileSync(resolve(proof,engine.name()+'-error-recovery-state.json'),JSON.stringify({failedPass,recoveredPass,state:recovered,requests:terminal.requests},null,2));
+          if(recoveryError)throw recoveryError;
+          noPersonalData(recovered);assert.equal(recoveredPass,failedPass+1);
+          assert.equal(recovered.cards.length,2);assert(recovered.cards.every(card=>card.photo&&!card.pending));
+          assert.equal(recovered.entryPhotos.length,13,'Recovery deleted retained metadata');
           assert.equal(terminal.requests.length,4,'Explicit new generation failed to recover after a temporary relay error');
         }
         if(mode==='image-failure'||mode==='image-timeout'){

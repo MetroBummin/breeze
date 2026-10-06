@@ -361,7 +361,15 @@ function rssCoverWatch(owner,cards,entries){
   if(!owner||owner.cancelled||owner.pass!==rssCoverPass)return;
   owner.observer?.disconnect();
   owner.entries=new Map(cards.map(card=>[card,entries.find(entry=>entry.url===card.dataset.rssUrl)]));
-  owner.entries.forEach((entry,card)=>rssCardEntries.set(card,entry));
+  owner.entries.forEach((entry,card)=>{
+    const consumer=owner.consumer;
+    // Async refresh can replace a canonical entry without changing its retained
+    // card. Transfer only identical metadata ownership; changed payloads still
+    // cancel below and cannot receive the old result or poison the cache.
+    if(entry&&consumer?.card===card&&rssCardCoverWork.get(card)===consumer
+      &&rssCardIdentity(consumer.entry)===rssCardIdentity(entry))consumer.entry=entry;
+    rssCardEntries.set(card,entry);
+  });
   cards.forEach(card=>owner.observer?.observe(card));owner.changed();
 }
 async function rssCoverPump(owner){
@@ -377,10 +385,10 @@ async function rssCoverPump(owner){
       const url=rssCoverPublicUrl(entry.url),existing=rssCoverJobs.get(url);
       if(!existing||existing.controller.signal.aborted)rssCoverRemaining--;
       rssCardCoverWork.set(card,consumer);rssCardPending(card);
-      const result=await rssCoverLookup(url,consumer);
+      const result=await rssCoverLookup(url,consumer),currentEntry=consumer.entry;
       if(result?.photo&&rssCoverCurrent(consumer)){
-        entry.photo=result.photo;entry.coverFallback=false;rssCardIdentities.set(card,rssCardIdentity(entry));
-        card.dataset.photoStarted='true';void rssCardPhoto(card,entry);
+        currentEntry.photo=result.photo;currentEntry.coverFallback=false;rssCardIdentities.set(card,rssCardIdentity(currentEntry));
+        card.dataset.photoStarted='true';void rssCardPhoto(card,currentEntry);
       }
       rssCoverRelease(consumer);if(owner.consumer===consumer)owner.consumer=null;
       repaint=true;
@@ -1343,7 +1351,9 @@ function renderRssCards(rail, force, empty){
     if(renderId!==rssRenderIds.get(rail))return;
     coverOwner=rssCoverOwners.get(rail)||coverOwner;
     groups.flat().forEach(rssCoverHydrate);
-    const stamp=JSON.stringify([category,groups,rssQualityPending,books.map(book=>book.sourceUrl||'')]);
+    // Identical metadata must be reconsidered when a new bounded generation
+    // resets display withholding/admission (for example after a relay failure).
+    const stamp=JSON.stringify([category,rssCoverPass,groups,rssQualityPending,books.map(book=>book.sourceUrl||'')]);
     if(!force && rail.dataset.rssStamp===stamp && rail.dataset.rssRecommendationStamp===recommendationStamp){
       if(rail.querySelector('.rss-card') || !rssLoading)rail.querySelectorAll('.rss-loading').forEach(node=>node.remove());
       if(empty)empty.hidden=!!rail.querySelector('.rss-card') || !!rssLoading;

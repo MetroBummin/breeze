@@ -36,6 +36,14 @@ The existing shared two-request generation budget, stable admitted-card order,
 public-URL restrictions, positive/negative cache lifetimes, one image fallback,
 cancellation and reentry ownership are preserved. No extra original request,
 body preparation, article/image persistence, AI request or retry loop is added.
+The render stamp includes the cover generation, so a normal Home refresh with
+identical cached feed metadata can reconsider previously withheld unknowns.
+Same-generation warm paints still reuse their result. When asynchronous refresh
+replaces an entry object while preserving its exact card identity, its admitted
+metadata consumer follows the current canonical entry without another request.
+Changed titles, quality versions or other identity payloads still cancel stale
+work and cannot receive its cover or cache write.
+
 Known metadata can still open Preview immediately while its admitted photo work
 is pending. Preview/body preparation and Read persistence keep selected intent.
 
@@ -321,11 +329,14 @@ and remaining parent gates are in the
 ## October 6 explicit hybrid partition
 
 The reviewed release preserves all thirteen built-in sources while assigning
-only WIRED and Medium IDs `[7,9,11,12]` to the shared catalog. Client opt-in needs
+only the successfully warmed WIRED ID `[7]` to the shared catalog. Client opt-in needs
 both `BREEZE_CONFIG.RSS_CATALOG === true` and the explicit
-`BREEZE_CONFIG.RSS_CATALOG_FEED_IDS = [7,9,11,12]` array. This patch does not
-change `config.js` or enable either switch. Apply the reviewed opt-in only after
-the parent's backend, security and warm-inventory gates pass. Server
+`BREEZE_CONFIG.RSS_CATALOG_FEED_IDS = [7]` array. The candidate branch contains
+this intended setting; main merge still requires the backend, security and
+warm-inventory gates. The initial four-source pilot warmed WIRED but Medium IDs
+9, 11 and 12 returned unavailable. The explicit release partition therefore
+keeps Medium on its existing legacy path instead of suppressing those sources.
+This is fixed transport ownership, not fallback inferred from an error. Server
 `RSS_CATALOG_ORIGINAL_FEED_IDS` stays empty; the client switch grants no server
 original-probing admission.
 
@@ -339,7 +350,7 @@ managed inventory never triggers a legacy feed fetch. The existing thirteen-
 record catalog response validation, stream/cache byte limits, source-age cap,
 conditional refresh and ten-to-eleven-minute failure cooldown remain intact.
 
-The other nine IDs `[0,1,2,3,4,5,6,8,10]` keep their existing local metadata cache
+The other twelve IDs `[0,1,2,3,4,5,6,8,9,10,11,12]` keep their existing local metadata cache
 and per-feed transport. Their jobs and genuine custom feeds start alongside the
 single catalog request, and publish independently even while it is stalled.
 Legacy and catalog caches retain separate freshness/age owners. Warm load and

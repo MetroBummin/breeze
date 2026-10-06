@@ -1,8 +1,9 @@
 # Explicit hybrid RSS client verification
 
 2026-10-06. Prepared from the combined 244 snapshot, preserving PR #110's
-stable-owner and generation-budget code. No production configuration, database,
-server source admission, scheduler, credential, deployment or release is changed.
+stable-owner and generation-budget code. The release candidate includes the
+explicit WIRED-only setting below; main merge remains gated on final CI and
+backend readiness. This note grants no new source or credential permission.
 
 ## Reviewed opt-in, pending backend gates
 
@@ -11,16 +12,18 @@ add these two properties to the existing `window.BREEZE_CONFIG` object:
 
 ```js
 RSS_CATALOG: true,
-RSS_CATALOG_FEED_IDS: [7, 9, 11, 12],
+RSS_CATALOG_FEED_IDS: [7],
 ```
 
 Do not ship only `RSS_CATALOG: true`: omitting the explicit ID array intentionally
-retains the older all-catalog behavior. This client patch leaves `config.js`
-untouched, so the catalog remains OFF by default. Keep the existing public
+retains the older all-catalog behavior. The draft candidate contains these
+settings; production main stays OFF until its release gates pass. Keep the existing public
 Supabase URL/key unchanged. No new credentials are needed.
 
-The matching managed server inventory is IDs 7, 9, 11 and 12 (WIRED and Medium).
-Server `RSS_CATALOG_ORIGINAL_FEED_IDS` remains empty. The other nine sources keep
+The matching managed server inventory is WIRED ID 7. The initial four-source
+warm succeeded for WIRED but returned Medium unavailable, so Medium remains
+explicitly legacy-owned; no status-driven fallback is introduced.
+Server `RSS_CATALOG_ORIGINAL_FEED_IDS` remains empty. The other twelve sources keep
 the current client transport and local cache; shared server approval is neither
 required nor inferred for those unchanged client requests. Rollback is client
 `RSS_CATALOG: false`, with no deletion of user data.
@@ -40,7 +43,9 @@ partial. It is not part of the implementation diff.
 
 Covered behavior:
 
-- Exactly one catalog request plus nine legacy feed requests supplies all13
+- The generic partition tests cover one catalog request plus nine legacy feed
+  requests for a four-managed fixture. The final release browser fixture covers
+  the intended one-managed/twelve-legacy partition and all13 retained inventories
 - Concurrent consumers coalesce; legacy/custom publication does not await catalog
 - Errors, missing records, disabled sources and a duplicate managed custom alias
   never fetch managed feeds through the legacy path

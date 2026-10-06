@@ -2,8 +2,10 @@
 
 The dedicated `tests/verify-rss-catalog-hybrid-browser.mjs` runs the real app,
 photo decoder, Preview, Reader and IndexedDB with synthetic intercepted network
-responses. It serves explicit client configuration `[7,9,11,12]` only inside the
-fixture HTTP server. Repository/production `config.js` remains unchanged.
+responses. It serves explicit client configuration `[7]` (WIRED only) inside the fixture HTTP server. The Node
+release-contract test reads repository `config.js` and requires its explicit
+managed IDs to be `[7]` with the catalog enabled. This test patch does not edit
+production configuration; the release owner applies that reviewed switch.
 
 Integrity CI runs the script independently for Chromium and WebKit, including
 when another browser step fails. Each engine has a 120-second process-group
@@ -22,9 +24,9 @@ done
 
 Covered contracts:
 
-- Before the held catalog resolves, all nine unmanaged feeds have published and
+- Before the held catalog resolves, all twelve unmanaged feeds, including the three Medium feeds, have published and
   decoded legacy cards remain usable; no managed feed uses direct/relay fallback
-- A successful four-source catalog completes all thirteen retained source groups
+- A successful single-source WIRED catalog completes all thirteen retained source groups
 - Article URL, source name, feed URL and supplied photo URL match each source
 - One supplied photo intentionally fails both direct and image-relay retrieval;
   its candidate remains retained while its terminal card is withheld
@@ -81,3 +83,19 @@ before/after intent and the admitted warm payload. Any earlier dictionary call,
 other operation, extra payload field, wrong source or method remains unexpected
 and fails the unchanged final unexpected-request assertion. Product behavior,
 photo display, catalog ownership and all persistence assertions stay unchanged.
+
+## Final 244 WIRED-only rollout
+
+The release owner narrowed the shared partition to `[7]` after the live Medium
+shared-feed transport was unavailable. The twelve legacy IDs are
+`[0,1,2,3,4,5,6,8,9,10,11,12]`, preserving all thirteen sources. Medium uses its
+existing local transport even when the WIRED catalog succeeds; a catalog error
+never changes transport ownership or fetches WIRED through the legacy path.
+The cold request budget is one catalog plus twelve legacy feed requests.
+
+The dedicated Chromium/WebKit fixture now exercises this exact rollout. Generic
+Node coverage retains the explicit four-source partition to test the reusable
+loader; two additional Node contracts verify the actual `config.js` switch and
+the final one-plus-twelve transport behavior on both catalog success and error.
+All photo-only display, photo provenance, cache, selected-body persistence and
+Read-gated dictionary-warm assertions remain intact.

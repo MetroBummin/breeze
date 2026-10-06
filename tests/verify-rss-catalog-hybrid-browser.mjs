@@ -11,7 +11,7 @@ import {FEEDS} from '../server/rss-quality/feeds.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_HYBRID_PROOF||'/tmp/breeze-catalog-browser-proof/hybrid';
 mkdirSync(proof,{recursive:true});
-const managed=[7,9,11,12],legacy=[0,1,2,3,4,5,6,8,10];
+const managed=[7],legacy=[0,1,2,3,4,5,6,8,9,10,11,12];
 assert.equal(FEEDS.length,13,'The reviewed hybrid partition needs an explicit inventory update if fixed sources change');
 const image=readFileSync(resolve(root,'assets/favicon/icon-512.png'));
 const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;
@@ -35,7 +35,7 @@ const server=createServer((req,res)=>{
     const path=new URL(req.url,'http://local').pathname;
     if(path==='/config.js'){
       res.setHeader('Content-Type','text/javascript');
-      return res.end("window.BREEZE_CONFIG={SB_URL:'https://relay.fixture',SB_KEY:'synthetic-public-key',RSS_CATALOG:true,RSS_CATALOG_FEED_IDS:[7,9,11,12]};");
+      return res.end('window.BREEZE_CONFIG='+JSON.stringify({SB_URL:'https://relay.fixture',SB_KEY:'synthetic-public-key',RSS_CATALOG:true,RSS_CATALOG_FEED_IDS:managed})+';');
     }
     const file=resolve(root,'.'+(path==='/'?'/index.html':path));if(!file.startsWith(root))throw Error('path');
     res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2'})[extname(file)]||'application/octet-stream');
@@ -147,16 +147,16 @@ try{
   browser=await engine.launch(engine===chromium&&process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
   const cold=await session();
   await cold.page.waitForFunction(ids=>ids.every(id=>rssCands[id]?.length===1),legacy);
-  assert.deepEqual(await cold.page.evaluate(ids=>({loading:!!rssLoading,managed:ids.map(id=>rssCands[id]?.length||0)}),managed),{loading:true,managed:[0,0,0,0]});
+  assert.deepEqual(await cold.page.evaluate(ids=>({loading:!!rssLoading,managed:ids.map(id=>rssCands[id]?.length||0)}),managed),{loading:true,managed:managed.map(()=>0)});
   ownership(cold);assert.equal(cold.calls.filter(c=>c.kind==='catalog').length,1);
   assert.equal(cold.calls.filter(c=>c.kind==='articleBody').length,0);
   const pendingCards=await readyCards(cold.page);await emptyPersistence(cold.page);
   await cold.page.screenshot({path:proof+'/pending-catalog-legacy-ready.png'});
-  result.phases.push({name:'catalog-pending',candidateSources:9,visibleCards:pendingCards,calls:[...cold.calls]});
+  result.phases.push({name:'catalog-pending',candidateSources:legacy.length,visibleCards:pendingCards,calls:[...cold.calls]});
   cold.catalogGate.release();await cold.page.waitForFunction(()=>!rssLoading&&rssCands.length===13&&rssCands.every(group=>group.length===1));
   const inventory=await cold.page.evaluate(()=>rssCands.map(group=>({source:group[0].source,feed:group[0].feedSourceUrl,url:group[0].url,photo:group[0].photo,body:group[0].contentHtml,provided:group[0].bodyProvided})));
   for(const [id,value] of inventory.entries())assert.deepEqual(value,{source:FEEDS[id].name,feed:FEEDS[id].url,url:story(id),photo:photo(id),body:'',provided:false});
-  ownership(cold);assert.equal(cold.calls.length,10,'All supplied photos require no original-page probe');
+  ownership(cold);assert.equal(cold.calls.length,1+legacy.length,'One catalog plus twelve legacy feeds require no original-page probe');
   // One failed supplied image proves candidate retention is independent of
   // photo-only display. Its title/source cannot fall back to a visible artwork.
   await bounded(cold.failedImage.promise,'Failed image did not exercise its bounded relay fallback');
@@ -175,14 +175,14 @@ try{
   const error=await session({fail:true});
   await error.page.waitForFunction(ids=>ids.every(id=>rssCands[id]?.length===1),legacy);
   error.catalogGate.release();await error.page.waitForFunction(()=>!rssLoading);
-  assert.deepEqual(await error.page.evaluate(ids=>ids.map(id=>rssCands[id].length),managed),[0,0,0,0]);
+  assert.deepEqual(await error.page.evaluate(ids=>ids.map(id=>rssCands[id].length),managed),managed.map(()=>0));
   ownership(error);await readyCards(error.page);await emptyPersistence(error.page);
   await error.page.evaluate(()=>loadRss(true));
   assert.equal(error.calls.filter(c=>c.kind==='catalog').length,1,'Forced refresh bypassed catalog failure cooldown');
   assert(!error.calls.some(c=>c.kind==='feed'&&managed.includes(c.id)));
   assert.equal(error.calls.filter(c=>c.kind==='articleBody').length,0);
   await error.page.screenshot({path:proof+'/catalog-error-legacy-ready.png'});
-  result.phases.push({name:'catalog-error',candidateSources:9,calls:[...error.calls]});
+  result.phases.push({name:'catalog-error',candidateSources:legacy.length,calls:[...error.calls]});
   await error.context.close();
 
   const warm=await session({storage});warm.catalogGate.release();

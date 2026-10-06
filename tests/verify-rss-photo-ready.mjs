@@ -279,3 +279,82 @@ test('display-eligible ranking cannot be replaced by filtering a full-candidate 
   assert.equal(f.metadata.length,0);assert.equal(runInContext('rssCoverRemaining',f.context),2);
   await f.flush();await f.completeImages();assertReadyOnly(f);assert.equal(f.metadata.length,0);
 });
+
+test('normal Home refresh re-admits unknown metadata after a new generation with identical feed contents',async()=>{
+  const f=fixture(),actualLoad=f.context.loadRss,entries=Array.from({length:13},(_,i)=>f.entry('refresh-'+i,i));
+  f.groups(entries.map(entry=>[entry]));f.context.loadRss=actualLoad;
+  let feeds=0;f.context.rssFeedEntries=async feed=>{feeds++;return {entries:entries.filter(entry=>entry.feedSourceUrl===feed.url)};};
+  f.setTransport(async()=>null);
+  await f.paint();await f.flush();assert.equal(f.metadata.length,2);assert.equal(f.cards().length,0);
+  const failedPass=runInContext('rssCoverPass',f.context),failedStamp=f.rail.dataset.rssStamp;
+  assert.equal(feeds,13);assert.equal(f.storage.size,0,'Transient errors must not cache absence');
+  await f.paint();await f.flush();assert.equal(f.metadata.length,2,'Same-generation render must not retry');
+  f.setTransport(async url=>({photo:'https://images.test/'+url.split('/').at(-1)+'.jpg'}));
+  // refreshLibrary invalidates feed freshness, then renderHome uses force=false.
+  // Keep the actual production loader and per-source cloning/publication here.
+  runInContext('rssPage++;rssLoadedAt=0',f.context);
+  await f.paint();await f.flush();await f.completeImages();
+  assert.equal(runInContext('rssCoverPass',f.context),failedPass+1);assert.equal(feeds,26);
+  assert.equal(f.metadata.length,4,'New generation with identical metadata must recover within its two-request budget');
+  assert.equal(f.cards().length,2);assertReadyOnly(f);
+  assert.notEqual(f.rail.dataset.rssStamp,failedStamp);assert.equal(runInContext('rssCands.flat().length',f.context),13);
+  assert.equal(f.writes.length,0);assert.equal(runInContext('rssPreparedArticles.size',f.context),0);
+  await f.paint();await f.flush();assert.equal(f.metadata.length,4,'Recovered warm render repeated originals');
+});
+
+test('normal refresh preserves confirmed-negative metadata and recovers other unknown candidates',async()=>{
+  const f=fixture(),actualLoad=f.context.loadRss,entries=Array.from({length:13},(_,i)=>f.entry('negative-'+i,i));
+  f.groups(entries.map(entry=>[entry]));f.context.loadRss=actualLoad;
+  f.context.rssFeedEntries=async feed=>({entries:entries.filter(entry=>entry.feedSourceUrl===feed.url)});
+  f.setTransport(async()=>({photo:''}));await f.paint();await f.flush();
+  assert.equal(f.metadata.length,2);assert.equal(f.cards().length,0);
+  const absent=new Map(f.metadata.map(url=>[url,{...f.context.rssCoverCached(url)}]));
+  f.setTransport(async url=>({photo:'https://images.test/'+url.split('/').at(-1)+'.jpg'}));
+  runInContext('rssPage++;rssLoadedAt=0',f.context);await f.paint();await f.flush();await f.completeImages();
+  assert.equal(f.metadata.length,4);assert.equal(new Set(f.metadata).size,4,'Confirmed absence was fetched again');
+  assert.equal(f.cards().length,2);assertReadyOnly(f);
+  for(const [url,record] of absent)assert.deepEqual({...f.context.rssCoverCached(url)},record,'Confirmed-negative provenance/lifetime changed');
+  assert.equal(runInContext('rssCands.flat().length',f.context),13);assert.equal(f.writes.length,0);
+  await f.paint();await f.flush();assert.equal(f.metadata.length,4);
+});
+
+test('late identical feed publication preserves an admitted original owner through normal refresh',async()=>{
+  const f=fixture(),actualLoad=f.context.loadRss,entries=[f.entry('late-a',0),f.entry('late-b',1)];
+  f.groups(entries.map(entry=>[entry]));f.context.loadRss=actualLoad;
+  let releaseFeeds,feedGate=Promise.resolve();
+  f.context.rssFeedEntries=async feed=>{await feedGate;return {entries:entries.filter(entry=>entry.feedSourceUrl===feed.url)};};
+  f.setTransport(async()=>null);await f.paint();await f.flush();assert.equal(f.metadata.length,2);
+  feedGate=new Promise(resolve=>{releaseFeeds=resolve;});let finishFirst;
+  f.setTransport(url=>f.metadata.length===3?new Promise(resolve=>{finishFirst=resolve;}):Promise.resolve({photo:'https://images.test/'+url.split('/').at(-1)+'.jpg'}));
+  runInContext('rssPage++;rssLoadedAt=0',f.context);const refreshing=f.paint();await f.flush();
+  assert.equal(f.metadata.length,3);const consumer=f.owner().consumer;
+  assert(consumer&&!consumer.job.controller.signal.aborted);
+  releaseFeeds();await refreshing;await f.flush();
+  const aborted=consumer.job.controller.signal.aborted,canonical=f.owner().consumer?.entry===runInContext('rssCands[0][0]',f.context);
+  finishFirst({photo:'https://images.test/late-a.jpg'});await f.flush();await f.completeImages();
+  assert.equal(aborted,false,'Identical canonical metadata replacement canceled admitted work');
+  assert.equal(canonical,true,'Admitted owner did not follow identical current metadata');
+  assert.equal(f.metadata.length,4);assert.equal(f.cards().length,2);assertReadyOnly(f);
+  assert.equal(runInContext('rssCoverRemaining',f.context),0);assert.equal(f.writes.length,0);
+});
+
+test('late changed-title or version publication still cancels the old original owner and cache write',async()=>{
+  for(const change of ['title','version']){
+    const f=fixture(),actualLoad=f.context.loadRss,entries=[f.entry('changed-a',0),f.entry('changed-b',1)];
+    entries[0].quality={key:'same-key',version:'v1',status:'approved'};
+    f.groups(entries.map(entry=>[entry]));f.context.loadRss=actualLoad;
+    let releaseFeeds,feedGate=Promise.resolve();
+    f.context.rssFeedEntries=async feed=>{await feedGate;return {entries:entries.filter(entry=>entry.feedSourceUrl===feed.url)};};
+    f.setTransport(async()=>null);await f.paint();await f.flush();assert.equal(f.metadata.length,2);
+    feedGate=new Promise(resolve=>{releaseFeeds=resolve;});let finishFirst;
+    f.setTransport(url=>f.metadata.length===3?new Promise(resolve=>{finishFirst=resolve;}):Promise.resolve({photo:'https://images.test/current.jpg'}));
+    runInContext('rssPage++;rssLoadedAt=0',f.context);const refreshing=f.paint();await f.flush();
+    const consumer=f.owner().consumer;assert(consumer&&!consumer.job.controller.signal.aborted);
+    if(change==='title')entries[0].title='Revised source title';else entries[0].quality={...entries[0].quality,version:'v2'};
+    releaseFeeds();await refreshing;await f.flush();const aborted=consumer.job.controller.signal.aborted;
+    finishFirst({photo:'https://images.test/stale.jpg'});await f.flush();await f.completeImages();
+    assert.equal(aborted,true,change);assert.equal(f.context.rssCoverCached(entries[0].url),null,change);
+    assert.equal(runInContext('rssCands[0][0].photo',f.context),'',change);
+    assert.equal(f.metadata.length,4,change);assert.equal(f.writes.length,0);assertReadyOnly(f);
+  }
+});

@@ -2,8 +2,10 @@
    These tests never call a publisher, production API, image or article service. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {runInContext} from 'node:vm';
+import {createContext,runInContext} from 'node:vm';
+import {readFileSync} from 'node:fs';
 import {rssDevice,cacheKey} from './egress-rss-transport.mjs';
+// Keep the generic multi-source contract independent of the narrower release244 rollout.
 const managed=[7,9,11,12],legacy=[0,1,2,3,4,5,6,8,10],catalogKey='breeze.rss-catalog.v1';
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function hybrid(options={}){
@@ -22,7 +24,36 @@ function failCatalog(h){
     h.calls.push({target:'catalog',bytes:0,status:503});return new Response('',{status:503});
   };
 }
-test('reviewed hybrid partition keeps all thirteen sources with one catalog and nine independent legacy requests',async()=>{
+function releaseConfig(){
+  const context=createContext({window:{}});
+  runInContext(readFileSync(new URL('../config.js',import.meta.url),'utf8'),context);
+  return context.window.BREEZE_CONFIG;
+}
+test('release244 config explicitly enables only WIRED in the shared partition',()=>{
+  const config=releaseConfig();
+  assert.equal(config.RSS_CATALOG,true);
+  assert.deepEqual(Array.from(config.RSS_CATALOG_FEED_IDS||[]),[7]);
+});
+test('release244 uses one catalog plus twelve legacy feeds, including Medium, without error-driven reassignment',async()=>{
+  const config=releaseConfig(),ids=Array.from(config.RSS_CATALOG_FEED_IDS||[]);
+  assert.deepEqual(ids,[7]);
+  const legacyIds=[0,1,2,3,4,5,6,8,9,10,11,12];
+  for(const fail of [false,true]){
+    const h=rssDevice({catalog:config.RSS_CATALOG});
+    h.context.window.BREEZE_CONFIG.RSS_CATALOG_FEED_IDS=ids;
+    if(fail)failCatalog(h);
+    await h.load(false);
+    assert.equal(h.calls.filter(call=>call.target==='catalog').length,1);
+    assert.equal(callsFor(h,[7]).length,0);
+    assert.equal(callsFor(h,legacyIds).length,12);
+    assert.equal(callsFor(h,[9,11,12]).length,3,'Medium stays on the existing legacy transport even when the catalog succeeds');
+    assert(legacyIds.every(id=>h.entries()[id].length>0));
+    assert.equal(h.entries()[7].length>0,!fail);
+    assert.equal(h.entries().filter(group=>group.length).length,fail?12:13);
+    await h.load(false);assert.equal(h.calls.length,13,'Warm load reuses both transport caches');
+  }
+});
+test('explicit multi-source hybrid keeps all thirteen sources with one catalog and nine independent legacy requests',async()=>{
   const h=hybrid();await Promise.all([h.load(false),h.load(false)]);
   assert.equal(h.calls.length,10);assert.equal(h.calls.filter(c=>c.target==='catalog').length,1);
   assert.equal(callsFor(h,managed).length,0);assert.equal(callsFor(h,legacy).length,9);
