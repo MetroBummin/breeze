@@ -62,6 +62,11 @@ let rssLoadedOffline=false;
 let rssPublicCache=null;
 const rssPublicFeedJobs = new Map();
 const rssPreparedArticles = new Map();
+// Keep only public bodies already paid for by a legacy feed response. Discovery
+// and its persistent cache remain metadata-only; parsing still waits for a tap.
+const rssSuppliedBodies = new Map();
+const RSS_SUPPLIED_BODY_BYTES=1000000;
+const RSS_SUPPLIED_FEED_BYTES=200000;
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v2';
@@ -474,6 +479,40 @@ function rssStorePublicFeed(feed,entries,at){
   try{localStorage.setItem(RSS_PUBLIC_CACHE_KEY,JSON.stringify(cache));}
   catch{/* Memory still reuses valid entries when persistent storage is unavailable. */}
 }
+function rssForgetSuppliedBodies(feedUrl){
+  for(const [key,record] of rssSuppliedBodies)if(record.feedUrl===feedUrl)rssSuppliedBodies.delete(key);
+}
+function rssRememberSuppliedBodies(feed,entries,at){
+  rssForgetSuppliedBodies(feed.url);
+  const now=Date.now();
+  if(at>now || now-at>=RSS_CACHE_MS || typeof feed.url!=='string' || feed.url.length>4096)return;
+  let feedBytes=0;
+  for(const entry of entries){
+    if(!entry.contentHtml || !(entry.bodyProvided || entry.kind&&!entry.readUrl) || !rssCacheEntry(entry))continue;
+    const body={contentHtml:entry.contentHtml,bodyProvided:!!entry.bodyProvided};
+    const key=feed.url+'\n'+articleUrlKey(entry.url),record={feedUrl:feed.url,at,body};
+    const bytes=rssCacheBytes([key,record]);
+    if(bytes>RSS_SUPPLIED_FEED_BYTES-feedBytes)continue;
+    feedBytes+=bytes;
+    rssSuppliedBodies.delete(key);
+    rssSuppliedBodies.set(key,{...record,bytes});
+  }
+  let total=0;
+  for(const [key,record] of rssSuppliedBodies){
+    if(record.at>now || now-record.at>=RSS_CACHE_MS)rssSuppliedBodies.delete(key);
+    else total+=record.bytes;
+  }
+  for(const [key,record] of rssSuppliedBodies){
+    if(total<=RSS_SUPPLIED_BODY_BYTES)break;
+    rssSuppliedBodies.delete(key);total-=record.bytes;
+  }
+}
+function rssSuppliedEntry(entry){
+  const key=(entry.feedSourceUrl||entry.feedUrl)+'\n'+articleUrlKey(entry.url),record=rssSuppliedBodies.get(key),now=Date.now();
+  if(!record)return entry;
+  if(record.at>now || now-record.at>=RSS_CACHE_MS){rssSuppliedBodies.delete(key);return entry;}
+  return record.feedUrl===(entry.feedSourceUrl||entry.feedUrl)?{...entry,...record.body}:entry;
+}
 async function rssFeedEntries(feed,force){
   const cache=rssPublicCacheEntries(),record=cache[feed.url],now=Date.now();
   const usable=record&&record.at<=now&&now-record.at<=RSS_PUBLIC_STALE_MS;
@@ -485,7 +524,9 @@ async function rssFeedEntries(feed,force){
   if(!rssOnline())throw new Error('feed_offline');
   try{
     const location={};const html=await fetchArticleHtml(feed.url,location);
-    const entries=parseRss(html,{...feed,sourceUrl:feed.url,url:location.url||feed.url}).map(rssCacheEntry).filter(Boolean);
+    const supplied=parseRss(html,{...feed,sourceUrl:feed.url,url:location.url||feed.url});
+    rssRememberSuppliedBodies(feed,supplied,now);
+    const entries=supplied.map(rssCacheEntry).filter(Boolean);
     rssStorePublicFeed(feed,entries,now);
     return {at:now,entries};
   }catch(error){
@@ -670,7 +711,12 @@ async function rssPublicArticle(entry){
   let job=rssPublicFeedJobs.get(url);
   if(!job){
     if(rssPublicFeedJobs.size>=40)rssPublicFeedJobs.delete(rssPublicFeedJobs.keys().next().value);
-    job=fetchArticleHtml(url).then(xml=>parseRss(xml,{name:entry.source,url})).catch(()=>[]);
+    job=fetchArticleHtml(url).then(xml=>parseRss(xml,{name:entry.source,url})).catch(()=>{
+      // Coalesce in-flight/successful work, never turn a transport/parser failure
+      // into a successful empty feed that makes the visible retry inert.
+      if(rssPublicFeedJobs.get(url)===job)rssPublicFeedJobs.delete(url);
+      return [];
+    });
     rssPublicFeedJobs.set(url,job);
   }
   const match=(await job).find(item=>rssStoryKey(item.url)===rssStoryKey(entry.url));
@@ -679,6 +725,7 @@ async function rssPublicArticle(entry){
     author:match.author || entry.author,photo:entry.photo || match.photo};
 }
 async function rssResolveSelectedEntry(entry){
+  entry=rssSuppliedEntry(entry);
   if(rssMediumSource({url:entry.feedSourceUrl||entry.feedUrl||entry.url}))return await rssPublicArticle(entry)||entry;
   if(entry.kind&&!entry.readUrl&&!entry.contentHtml){
     const feedUrl=entry.feedUrl||entry.feedSourceUrl;
