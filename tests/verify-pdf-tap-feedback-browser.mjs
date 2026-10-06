@@ -26,13 +26,14 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`,reports=[];
-const browser=await engine.launch({headless:true});
 const transparent=value=>/rgba\(0,\s*0,\s*0,\s*0\)/.test(value);
 try{
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:900},{width:844,height:390}]){
     for(const dark of [false,true]){
       const name=`${engine.name()}-${viewport.width}x${viewport.height}-${dark?'dark':'light'}-${baseline?'baseline':'fixed'}`;
-      const context=await browser.newContext({viewport,hasTouch:true,isMobile:true,deviceScaleFactor:1,serviceWorkers:'block'});
+      // Match the repository's PDF fixture context: WebKit's transient context
+      // can reject imported bytes before Reader entry. No product import path changes.
+      const context=await engine.launchPersistentContext('',{headless:true,viewport,hasTouch:true,isMobile:true,deviceScaleFactor:1,serviceWorkers:'block'});
       const page=await context.newPage(),errors=[];page.setDefaultTimeout(25000);
       page.on('pageerror',error=>errors.push(error.message));
       try{
@@ -109,10 +110,15 @@ try{
         reports.push({name,state,lookup,errors});
         assert.deepEqual(errors,[],`${name}: page errors`);
         console.log('PASS',name,JSON.stringify(state));
+      }catch(error){
+        const failure={name,error:error.message,errors,state:await page.evaluate(()=>({
+          books:books.map(book=>({kind:book.kind})),body:document.body.innerText.slice(-2000)
+        })).catch(()=>null)};
+        reports.push(failure);console.error(JSON.stringify(failure));throw error;
       }finally{await context.close();}
     }
   }
 }finally{
   writeFileSync(resolve(output,`${engine.name()}-${baseline?'baseline':'fixed'}.json`),JSON.stringify(reports,null,2)+'\n');
-  await browser.close();server.close();
+  server.close();
 }
