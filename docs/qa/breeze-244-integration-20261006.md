@@ -155,3 +155,19 @@ captures invalidation/read stacks, cache keys, relevant observer/transition
 deliveries and pending paint state, and records three fixed attempts per engine.
 Any failed attempt fails the job. No product change or timing tolerance is added
 on the basis of the unexplained failure; merge remains blocked by complete CI.
+
+The trace identified the delayed boot fallback removing an already-absent
+`boot-pending` class. Browsers still deliver that same-value HTML class record;
+the global ink observer previously invalidated paper geometry unconditionally.
+The observer now ignores only identical attribute old/current values. Real root,
+aspect-ratio and page-list changes still invalidate, including changed-then-
+restored mutation batches. Seven production-callback tests fail before and pass
+after this guard. The causal browser fixture serves a guardless counterfactual
+and the exact shipped source, expecting twelve versus zero reads for the forced
+no-op, while both retain twelve reads for a real-change positive control.
+
+One diagnostic WebKit attempt separately observed an EPUB cell still carrying its
+previous viewport width. The reader-work readiness wait now includes the exact
+existing aspect/width assertions and retains their thresholds and ten-second
+deadline. Three readiness tests pass; browser causal and full regression proof
+remain the exact-head CI gate.

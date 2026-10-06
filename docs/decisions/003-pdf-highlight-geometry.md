@@ -216,3 +216,18 @@ light/dark, before/after translation and pending/ready help. It asserts bounded
 empty-frame runs, bounded actual bitmap renders, stable page/frame geometry,
 cleanup and request abort. It does not claim native touch/momentum, original
 user-file coverage or physical-device GPU validation.
+
+### Same-value geometry notifications (2026-10-06)
+
+The delayed fail-open boot cleanup can remove an already-absent HTML class.
+MutationObserver still reports that no-op. Treating every root attribute record
+as geometry invalidation caused an unnecessary twelve-page cache rebuild when
+the cleanup coincided with the chrome-only measurement boundary. The ink scope
+observer now skips only identical old/current attribute values. Actual root,
+paper aspect-ratio and page-list mutations, and changed-then-restored batches,
+still invalidate geometry and update native scope. The zero-paper-read chrome
+contract is retained; no timing sleep or measurement allowance is added.
+
+Production-callback tests and a browser counterfactual cover the no-op before/
+after behavior plus a real-change positive control. The diagnostic keeps every
+bounded attempt and fails if any attempt violates its existing assertion.

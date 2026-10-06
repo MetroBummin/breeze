@@ -285,6 +285,11 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Prove no-op invalidation before and after the production guard
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_SCOPE_PROOF: /tmp/breeze-chrome-layout/causal
+        run: timeout --kill-after=5s 120s node tests/diagnose-pdf-scope-noop-browser.mjs
       - name: Trace paper cache invalidation without changing the zero-read assertion
         env:
           BREEZE_QA_ENGINE: ${{ matrix.engine }}

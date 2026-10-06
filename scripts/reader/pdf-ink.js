@@ -123,6 +123,9 @@ const BreezePdfInk = (()=>{
     for(const record of records){
       const node=record.target;
       if(!(node instanceof Element)||node.closest('.pdf-ink-layer'))continue;
+      // DOMTokenList can report a mutation even when removing an absent class.
+      // Same-value attributes cannot change paper geometry or native exclusions.
+      if(record.type==='attributes'&&record.attributeName&&record.oldValue===node.getAttribute(record.attributeName))continue;
       const bodyLayout=node===document.body&&(record.attributeName!=='class'||record.oldValue==null
         ||['reading','reader-original'].some(name=>(' '+record.oldValue+' ').includes(' '+name+' ')!==node.classList.contains(name)));
       const layout=bodyLayout||node===document.documentElement
