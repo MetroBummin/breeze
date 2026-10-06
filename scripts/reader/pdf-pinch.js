@@ -301,8 +301,13 @@ function originalPinchEnd(event){
       if(originalSession?.kind==='pdf'){
         originalSession.lastScrollAt=performance.now();
         if(!readerPositionPending()&&!readerScrollWasProgrammatic())readerModeChangeToken++;
-        schedulePdfPaint(originalSession);
+        schedulePdfPaint(originalSession,true);
         schedulePdfSharpen(originalSession);
+        // Evicted paper can remain inside the observer's prefetch margin.
+        // Visibility changes must admit missing pixels even without a new
+        // intersection callback; the existing queue keeps pause/coalescing rules.
+        for(const n of pdfPagesInView(originalSession))if(!originalSession.settled.has(n))
+          void renderOriginalPdfPage(originalSession,n,{prefetch:true});
       }
     },{passive:true});
     // Observe added contacts even on chrome: a second finger can land and lift

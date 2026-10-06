@@ -64,18 +64,15 @@ function schedulePdfSharpen(session=originalSession){
 function pdfScrollBusy(session=originalSession,includeContacts=true){
   return (includeContacts&&originalPdfContacts>0) || performance.now()-(session?.lastScrollAt??-Infinity)<160;
 }
-function schedulePdfPaint(session=originalSession){
-  if(!currentPdfSession(session)||session.paintTimer)return;
-  session.paintTimer=setTimeout(()=>{
-    // Eviction does not change IntersectionObserver membership. A page can
-    // re-enter the visible viewport while still inside the prefetch margin.
-    // Admit its missing pixels here, keeping the existing queue/pinch owner.
-    // Retain this timer token during admission so nested requests coalesce.
-    if(currentPdfSession(session))for(const n of pdfPagesInView(session)){
-      if(!session.settled.has(n))void renderOriginalPdfPage(session,n,{prefetch:true});
-    }
-    session.paintTimer=0;void drainPdfPaint(session);
-  },0);
+function schedulePdfPaint(session=originalSession,urgent=false){
+  if(!currentPdfSession(session))return;
+  // A scroll can expose missing paper while offscreen work is waiting for idle.
+  // Wake that retry without bypassing the queue's pinch/ink admission rules.
+  if(session.paintTimer){
+    if(!urgent)return;
+    clearTimeout(session.paintTimer);session.paintTimer=0;
+  }
+  session.paintTimer=setTimeout(()=>{session.paintTimer=0;void drainPdfPaint(session);},0);
 }
 async function drainPdfPaint(session){
   if(!currentPdfSession(session)||session.paintActive||!session.paintQueue?.size)return;

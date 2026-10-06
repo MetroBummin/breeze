@@ -183,9 +183,11 @@ EPUB highlight. See https://www.w3.org/TR/css-pseudo-4/#highlight-styling .
 Eviction leaves the page shell in place, so it does not change the prefetch
 IntersectionObserver's membership. A page can have no pixels while remaining
 inside the 1300 px margin. Scrolling must admit missing visible paper even when
-there is no new observer callback. The existing paint scheduler now performs
-that admission while holding its timer token, so requests coalesce through the
-same queue and pinch/ink pause rules. No new input owner or text/glyph geometry work is added.
+there is no new observer callback. The existing Reader scroll callback now performs
+that admission, so requests coalesce through the same paint queue and
+pinch/ink pause rules. The same scroll signal wakes a pending idle retry
+through the scheduler, so newly visible paper does not inherit an offscreen
+160 ms delay. No separate listener is added. No new input owner or text/glyph geometry work is added.
 
 Idle sharpening requests only visible pages. Asking for both offscreen sides at
 full resolution can request more page bitmaps than the 24 Mi-pixel cache holds;
