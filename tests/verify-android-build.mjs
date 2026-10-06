@@ -66,7 +66,7 @@ test('reproducible wrapper and CI produce explicitly unsigned release artifacts'
   const ci = read('.github/workflows/android-build.yml');
   assert.match(ci, /persist-credentials: false/);
   assert.match(ci, /java-version: '21'/);
-  assert.match(ci, /lintDebug assembleDebug assembleDebugAndroidTest bundleRelease/);
+  assert.match(ci, /:app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest :app:bundleRelease/);
   assert.match(ci, /python3 tools\/verify-android-artifacts\.py/);
   assert.doesNotMatch(ci, /secrets\.|pull_request_target|sdkmanager --licenses|supply|upload_to_play_store/);
   const ignore = read('android/.gitignore').split('\n');

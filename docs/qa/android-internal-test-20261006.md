@@ -22,7 +22,7 @@ npm ci --ignore-scripts --no-audit --no-fund
 npm run test:android
 npm run android:sync
 cd android
-./gradlew --no-daemon lintDebug assembleDebug assembleDebugAndroidTest bundleRelease
+./gradlew --no-daemon :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest :app:bundleRelease
 ```
 
 `android:debug` includes web asset sync and makes an installable development APK.
@@ -48,8 +48,8 @@ and packaging evidence, not a completed tablet/stylus or Play acceptance test.
 
 Generated template arithmetic/package-name tests were removed. The correctly
 namespaced `PackagedAssetsTest` is a device/emulator smoke test for app identity and
-bundled runtime assets. `assembleDebugAndroidTest` only compiles it. To actually run
-it on a connected authorized test device/emulator, use `connectedDebugAndroidTest`.
+bundled runtime assets. `:app:assembleDebugAndroidTest` only compiles it. To actually run
+it on a connected authorized test device/emulator, use `:app:connectedDebugAndroidTest`.
 
 ## Before the first Play internal test
 
@@ -103,3 +103,12 @@ GitHub tree. The official Capacitor generator and Android sync succeeded, packag
 diagnostics. This cloud executor has Java 21 but no Android SDK, so native compilation
 and lint results must come from the exact-commit GitHub workflow. Device QA, release
 signing and Console submission remain outstanding until separately verified.
+
+### First native CI correction
+
+The first run compiled the Breeze debug app and its instrumented-test APK. An
+unqualified Gradle `assembleDebugAndroidTest` also selected a separate generated
+Cordova placeholder module's test APK, whose old template Kotlin dependencies
+conflicted. CI now explicitly selects `:app:` tasks. This still compiles all
+application runtime dependencies and the real Breeze device test; it does not
+modify, suppress, or force library dependency versions.
