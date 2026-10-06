@@ -1,4 +1,4 @@
-import {timingSafeEqual} from 'node:crypto';
+import {timingSafeEqual,createHash} from 'node:crypto';
 import {Buffer} from 'node:buffer';
 import {FRESH_MS,STALE_MS} from './metadata.mjs';
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey,authorization,content-type,if-none-match',
@@ -21,12 +21,13 @@ export function catalogHandler(service,{authorize=()=>false,now=Date.now}={}){
     if(new URL(request.url).search)return catalogReply({error:'parameters'},400);
     if(request.method==='GET'){
       try{
-        const {catalog,revision}=await service.read();
+        const {catalog,revision,cacheUntil}=await service.read();
         // The representation changes when source data expires or is disabled,
         // even without a new stored revision. Include that state in the ETag.
-        const signature=catalog.feeds.map(feed=>`${feed.id}:${feed.at}:${feed.status}:${feed.entries.length}`).join('|');
+        const signature=createHash('sha256').update(JSON.stringify(catalog)).digest('hex');
         const etag='"'+(revision||'empty')+':'+signature+'"';
         const expires=catalog.feeds.filter(feed=>feed.entries.length).map(feed=>feed.at+(feed.status==='ready'?FRESH_MS:STALE_MS));
+        if(Number.isFinite(cacheUntil)&&cacheUntil!==null)expires.push(cacheUntil);
         const ttl=expires.length?Math.max(0,Math.min(60,Math.floor((Math.min(...expires)-now())/1000))):60;
         const headers={'ETag':etag,'Cache-Control':`public,max-age=${ttl}`};
         if(request.headers.get('if-none-match')===etag)return new Response(null,{status:304,headers:{...cors,...headers}});

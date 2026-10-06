@@ -58,7 +58,7 @@
     "test:holmes": "node --test tests/verify-speckled-band.mjs tests/verify-holmes-collection.mjs tests/verify-holmes-complete-texts.mjs tests/verify-holmes-illustrations.mjs && node tests/verify-holmes-illustrations-browser.mjs",
     "test:import-durability": "node tests/verify-import-commit-browser.mjs && node tests/verify-offline-import-browser.mjs",
     "test:recent-reading": "node tests/verify-recent-reading-browser.mjs",
-    "test:rss-catalog": "node --test tests/verify-rss-catalog.mjs tests/verify-rss-catalog-client.mjs"
+    "test:rss-catalog": "node --test tests/verify-rss-catalog.mjs tests/verify-rss-catalog-client.mjs tests/verify-rss-catalog-photos.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

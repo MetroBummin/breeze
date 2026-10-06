@@ -169,11 +169,32 @@ PGlite tests the grants and SQL with modeled extension interfaces.
 
 The server parser preserves the current client's supplied photo choices across
 content, description, summary, lazy attributes, responsive widths and media
-types. It fetches no article page for photos. Missing/failed photos retain local
-artwork; selected article body intent is unchanged. PR #104 owns the additional
-photo lookup/UI investigation. Any changes it makes to supplied-photo policy
-need corresponding catalog parity checks before activation. Client edits here
-are limited to catalog retry state and `rssCatalogFetch`, outside its cover work.
+types. Catalog mode skips the client's visible-cover fetches, so the server now
+owns bounded original-photo metadata lookup under the same global SQL claim.
+It consumes PR #104's unchanged pure extractor from `2d1f942`, with its case,
+safe-base and malformed-input fixtures. Only missing-photo ordinary entries
+from reviewed fixed feeds qualify. Every original/redirect must be HTTPS on
+the feed publisher's hostname (allowing www aliases), with public DNS answers
+pinned before connection and no credential-bearing URL.
+
+Each ten-minute refresh permits at most six distinct original jobs, two workers,
+four seconds per job including DNS/redirects, two redirects (three HTTP attempts),
+and a retained 128 KiB identity-encoded HTML prefix. It cancels after an
+unambiguous complete photo tag or the prefix limit; unresolved relative metadata
+waits for a safe base or complete response. It never runs article-body parsing,
+downloads images or publishes HTML. Delivered chunks may exceed the retained
+prefix; headers/TLS and failed transfers are not covered by that parsing cap.
+
+Service-only snapshot hints retain status/time/photo/final public URL: positives
+reuse for 24 hours; only complete successful cacheable public HTML establishes a
+30-minute `noimage`; transient, truncated and blocked states retry no sooner
+than the ten-minute global cooldown. Supplied feed photos win. Oldest attempts
+are prioritized, shared URLs coalesce, and public metadata strips internal hints.
+ETags and HTTP expiry also track original-photo expiry. Existing client public
+metadata reuse/offline-age rules still apply. Selected article bodies remain
+selected-intent work; unknown/failed photos keep local artwork. Parent must
+verify actual deployed source/photo provenance before activation. Client edits
+here remain limited to catalog retry state and `rssCatalogFetch`.
 
 Source age is fresh for less than ten minutes, stale after that, and unavailable
 after twenty-four hours. A publisher max-age can defer revalidation without

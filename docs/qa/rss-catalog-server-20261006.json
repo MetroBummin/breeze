@@ -1,8 +1,11 @@
 {
-  "units": "UTF-8 uncompressed HTTP response bodies. Fixtures, not production billing. Headers, TLS, redirects, DB responses, images, selected article bodies and other traffic excluded.",
+  "units": "UTF-8 uncompressed HTTP response bodies. Synthetic feeds; four audited public OG snippets plus two synthetic originals. Local pinned Node HTTP, modeled DNS; live publisher/TLS, headers, redirects, DB responses, images, selected article bodies and other traffic excluded. Retained original-prefix bytes and delivered chunks are separate; neither is total billed egress.",
   "sourceHashes": {
-    "server/rss-catalog/service.mjs": "9842ab3a132acf4499ed734279450be830158e231437a3ddc67134e9455f1caa",
-    "server/rss-catalog/handler.mjs": "adc323a9d63457064a02d0a92fefd01fc622e3ebef1da40a332dcd90bb6eb228",
+    "server/rss-catalog/service.mjs": "37f309883366f8799f169beac50f88cbb9e9dd1558c5425aa702873199c4c515",
+    "server/rss-catalog/handler.mjs": "5dd2bf523b57ec0643f97781e6398b6cbd0d64db0393c08eeb58fda7ef4ba1d0",
+    "server/rss-catalog/photos.mjs": "0a8d8e4fe677bb48b976d544a62624d7d3e925eae47e8e06afa8c25abca61f3d",
+    "server/rss-catalog/public-prefix.mjs": "55ec4ced14670d4a15c82cd11578145206a9a8d582adf9cdb0a4e4ba573897ab",
+    "server/article/cover-metadata.mjs": "52ab91f202efede40bfdaa250e5c746aed6db779ba45f83ae77e44148b5be411",
     "server/rss-catalog/schema/rss_public_catalog.sql": "61e905cd8ea374f9ea255f083da56810339053ef76a119f10922b5211f128246",
     "scripts/importers/rss.js": "d21ab704447e102289953cbc53703f82f6a59404884a4bd31855e12010eba46d"
   },
@@ -19,16 +22,33 @@
       "publisherResponseBodyBytes": 1300000,
       "maxPublisherConcurrency": 2
     },
+    "concurrentOriginals": {
+      "callers": 30,
+      "originalJobs": 6,
+      "httpAttempts": 6,
+      "retainedPrefixBytes": 29004,
+      "deliveredBodyChunkBytes": 29004,
+      "unknownByteJobs": 0,
+      "fixtureBodyBytesWritten": 29004,
+      "maxJobConcurrency": 2,
+      "statuses": {
+        "present": 6,
+        "noimage": 0,
+        "transient": 0,
+        "truncated": 0,
+        "blocked": 0
+      }
+    },
     "firstClient": {
       "clientRequests": 1,
-      "clientResponseBodyBytes": 141337,
+      "clientResponseBodyBytes": 142079,
       "publisherRequests": 0,
       "metadataEntries": 260
     },
     "concurrentNewUsers": {
       "users": 30,
       "clientRequests": 30,
-      "clientResponseBodyBytes": 4240110,
+      "clientResponseBodyBytes": 4262370,
       "publisherRequests": 0
     },
     "conditionalClient": {
@@ -41,6 +61,14 @@
       "clientRequests": 0,
       "clientResponseBodyBytes": 0,
       "publisherRequests": 0
+    },
+    "nextScheduledRefresh": {
+      "callers": 30,
+      "successfulRefreshes": 1,
+      "feedValidatorRequests": 13,
+      "successfulFeedBodyBytes": 0,
+      "originalJobs": 0,
+      "originalCacheHits": 6
     },
     "rollback": {
       "empty": true,
@@ -57,8 +85,11 @@
       "users": 30,
       "publisherFeedRequests": 13,
       "publisherFeedBodyBytes": 1300000,
-      "clientCatalogBodyBytes": 4240110
+      "originalJobs": 6,
+      "originalRetainedPrefixBytes": 29004,
+      "originalDeliveredBodyChunkBytes": 29004,
+      "clientCatalogBodyBytes": 4262370
     },
-    "caveat": "Legacy feed bodies alone versus the separately counted catalog legs. This is a controlled transport comparison, not total egress or a billing percentage."
+    "caveat": "Legacy feed bodies alone versus the separately counted catalog legs, including bounded server original-photo work. This is a controlled transport comparison, not total egress or a billing percentage."
   }
 }
