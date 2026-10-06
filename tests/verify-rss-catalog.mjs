@@ -10,7 +10,8 @@ import {PGlite} from '@electric-sql/pglite';
 import {FEEDS} from '../server/rss-quality/feeds.mjs';
 import {metadataUrl,parseMetadata,publicCatalog,STALE_MS,FRESH_MS,MAX_CATALOG_BYTES} from '../server/rss-catalog/metadata.mjs';
 import {createCatalogService,feedIds} from '../server/rss-catalog/service.mjs';
-import {catalogHandler,serviceAuthorization} from '../server/rss-catalog/handler.mjs';
+import {catalogHandler} from '../server/rss-catalog/handler.mjs';
+import {operatorAuthorized} from '../server/rss-catalog/operator-auth.mjs';
 const xml=(id=0)=>`<rss><channel><item><title>A useful public English story ${id}</title><link>https://stories.example/${id}</link><description><![CDATA[<p>The story explains how people learn by reading evidence and comparing ideas.</p>]]></description><content:encoded><![CDATA[<p>${'The FULL BODY NEVER SHARED describes how people learn by reading the story and comparing ideas. '.repeat(40)}</p>]]></content:encoded><enclosure type="image/png" url="https://images.example/${id}.png"/></item></channel></rss>`;
 function fixture({enabled=[0,1],payload={version:1,feeds:[]},now=1000000}={}){
   const state={now,payload,active:true,revision:'',token:null,until:0,next:0,calls:[],fail:false,headers:{'content-type':'application/rss+xml'}};
@@ -98,10 +99,99 @@ test('ETag and HTTP lifetime follow freshness boundaries',async()=>{
   assert.equal(stale.status,200);assert.equal((await stale.json()).feeds[0].status,'stale');
 });
 
-test('scheduler installs disabled and denies public access to refresh, jobs and credential-bearing queues',async()=>{
+test('GET weakly validates gateway ETags, wildcard and complete entity-tag lists while OFF',async()=>{
+  const h=fixture();h.state.active=false;
+  const handler=catalogHandler({...h.service,refresh:async()=>{throw Error('GET must not refresh');}},
+    {now:()=>h.state.now,authorize:()=>{throw Error('GET must stay public');}});
+  const url='https://catalog.example/rss-catalog',first=await handler(new Request(url));
+  assert.equal(first.status,200);
+  const etag=first.headers.get('etag');
+  assert.ok(etag.startsWith('"empty:'));
+  assert.ok((await first.json()).feeds.every(feed=>feed.status==='disabled'&&!feed.entries.length));
+  const valid=[etag,'W/'+etag,'*',' \t*\t ',
+    '"unrelated", W/'+etag,etag+', "unrelated"',
+    '"comma,inside", W/'+etag+', "back\\slash"',
+    ', , W/'+etag+' ,\t,', '"", "\x80", '+etag,
+    ' \t"unrelated"\t,\tW/'+etag+'\t '];
+  for(const value of valid){
+    const response=await handler(new Request(url,{headers:{'if-none-match':value}}));
+    assert.equal(response.status,304,value);assert.equal(await response.text(),'');
+    assert.equal(response.headers.get('etag'),etag);
+    for(const name of ['cache-control','access-control-allow-origin','access-control-expose-headers'])
+      assert.equal(response.headers.get(name),first.headers.get(name),name);
+  }
+  assert.deepEqual(h.state.calls,[]);
+});
+test('GET does not accept malformed, partial, or mismatching entity-tag conditions',async()=>{
+  const h=fixture(),handler=catalogHandler(h.service),url='https://catalog.example/rss-catalog';
+  const etag=(await handler(new Request(url))).headers.get('etag');
+  const invalid=['',', ,','"other"','W/"other"','"*"',etag.toUpperCase(),etag.slice(1,-1),
+    'prefix'+etag,etag+'suffix','w/'+etag,'W/ '+etag,'W/W/'+etag,
+    etag+' "other"','"unterminated, '+etag,etag+', "unterminated',
+    'garbage, '+etag,etag+', garbage','*, '+etag,etag+', *','*,',
+    '"space inside", '+etag,'"tab\tinside", '+etag,'"delete\x7f", '+etag,
+    '"escaped\\"quote", '+etag,'\xa0'+etag,etag+'\xa0'];
+  for(const value of invalid){
+    const response=await handler(new Request(url,{headers:{'if-none-match':value}}));
+    assert.equal(response.status,200,JSON.stringify(value));
+    assert.equal(response.headers.get('etag'),etag);
+    assert.ok((await response.text()).length>0);
+  }
+  assert.deepEqual(h.state.calls,[]);
+});
+test('gateway-weakened old ETags cannot hide changes, freshness, expiry or DB OFF',async()=>{
+  const h=fixture();await h.service.refresh();
+  const handler=catalogHandler(h.service,{now:()=>h.state.now}),url='https://catalog.example/rss-catalog';
+  let prior=await handler(new Request(url));
+  const revision=h.state.revision,calls=h.state.calls.length;
+  const transitions=[
+    ()=>{h.state.payload.feeds[0].entries[0].title='An updated public English story';},
+    ()=>{h.state.now+=FRESH_MS;},
+    ()=>{h.state.now+=STALE_MS;},
+    ()=>{h.state.active=false;}
+  ];
+  for(const change of transitions){
+    const old=prior.headers.get('etag');change();
+    prior=await handler(new Request(url,{headers:{'if-none-match':'"unrelated", W/'+old}}));
+    assert.equal(prior.status,200);assert.notEqual(prior.headers.get('etag'),old);
+    const cached=await handler(new Request(url,{headers:{'if-none-match':'W/'+prior.headers.get('etag')}}));
+    assert.equal(cached.status,304);assert.equal(await cached.text(),'');
+    assert.equal(h.state.revision,revision);
+  }
+  assert.equal(h.state.calls.length,calls);
+});
+test('conditional GET does not mask read failures or change refresh authorization',async()=>{
+  const url='https://catalog.example/rss-catalog';
+  const unavailable=catalogHandler({read:async()=>{throw Error('offline');}});
+  assert.equal((await unavailable(new Request(url,{headers:{'if-none-match':'*'}}))).status,503);
+  const h=fixture(),handler=catalogHandler(h.service,{authorize:request=>operatorAuthorized(request,{url:'https://catalog-db.fixture',apiKey:'synthetic-anon-key',
+    fetcher:async(_url,options)=>Response.json(options.headers.Authorization==='Bearer synthetic.service.signature')})});
+  for(const headers of [{},{apikey:'synthetic-anon-key'},{authorization:'Bearer forged-user-role-service_role'},
+    {apikey:'synthetic-service-key-extra'},{apikey:'synthetic-anon-key',authorization:'Bearer synthetic-service-key'}]){
+    const response=await handler(new Request(url,{method:'POST',headers:{...headers,'if-none-match':'*'}}));
+    assert.equal(response.status,401);
+  }
+  assert.deepEqual(h.state.calls,[]);
+  for(const headers of [{authorization:'Bearer synthetic.service.signature'},
+    {apikey:'synthetic-anon-key',authorization:'Bearer synthetic.service.signature'}])
+    assert.equal((await handler(new Request(url,{method:'POST',headers:{...headers,'if-none-match':'*'}}))).status,200);
+});
+
+test('scheduler registers new pg_net installs in extensions without replacing existing installs',()=>{
+  const sql=readFileSync(new URL('../server/rss-catalog/schema/rss_public_catalog_schedule.sql',import.meta.url),'utf8');
+  assert.match(sql,/^create schema if not exists extensions;/m);
+  assert.match(sql,/^create extension if not exists pg_net with schema extensions;/m);
+  assert.doesNotMatch(sql,/^\s*(?:drop extension[^;]*\bpg_net|alter extension\s+pg_net\s+set schema)\b/im);
+});
+
+test('scheduler uses owner APIs without direct table writes and installs disabled with owned-fixture ACLs',async()=>{
   const db=new PGlite();
   try{
     await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
+      create role catalog_owner; create role cron_extension_owner;
+      do $$ begin execute format('grant create on database %I to catalog_owner',current_database()); end $$;
+      grant usage,create on schema public to catalog_owner;
+      set role catalog_owner;
       create schema net; create schema cron; create schema vault;
       create table vault.secrets(name text); create table vault.decrypted_secrets(name text,decrypted_secret text);
       insert into vault.secrets values('rss_catalog_service_role');
@@ -111,29 +201,81 @@ test('scheduler installs disabled and denies public access to refresh, jobs and 
         'insert into net.http_request_queue(url,body,headers,timeout_milliseconds) values($1,$2,$3,$4) returning id';
       grant usage on schema net,cron to public;
       grant all on all tables in schema net to public; grant all on all sequences in schema net to public;
-      create table cron.job(jobid bigserial primary key,jobname text unique,schedule text,command text,active boolean default true);
-      create function cron.schedule(jobname text,schedule text,command text) returns bigint language sql as
-        'insert into cron.job(jobname,schedule,command) values($1,$2,$3) returning jobid';`);
+      grant usage on schema cron to cron_extension_owner;
+      create table cron.job(jobid bigserial primary key,jobname text unique,schedule text,command text,
+        database text default current_database(),username text default current_setting('role'),active boolean default true);
+      create function cron.schedule(job_name text,schedule text,command text) returns bigint
+        language sql security definer set search_path='' as $$
+          insert into cron.job(jobname,schedule,command) values($1,$2,$3)
+          on conflict(jobname) do update set schedule=excluded.schedule,command=excluded.command,active=true
+          returning jobid;
+        $$;
+      create function cron.alter_job(job_id bigint,schedule text default null,command text default null,
+        database text default null,username text default null,active boolean default null)
+        returns void language sql security definer set search_path='' as $$
+          update cron.job set schedule=coalesce($2,schedule),command=coalesce($3,command),
+            database=coalesce($4,database),username=coalesce($5,username),active=coalesce($6,active)
+          where jobid=$1 and username=current_setting('role');
+        $$;
+      reset role;
+      alter table cron.job owner to cron_extension_owner;
+      alter function cron.schedule(text,text,text) owner to cron_extension_owner;
+      alter function cron.alter_job(bigint,text,text,text,text,boolean) owner to cron_extension_owner;
+      grant select on cron.job to catalog_owner;
+      set role catalog_owner;`);
     await db.exec(readFileSync(new URL('../server/rss-catalog/schema/rss_public_catalog.sql',import.meta.url),'utf8'));
-    // PGlite cannot run native background workers. Test the actual setup SQL
-    // against modeled extension interfaces; live extension/job proof is a gate.
-    await db.exec(readFileSync(new URL('../server/rss-catalog/schema/rss_public_catalog_schedule.sql',import.meta.url),'utf8')
-      .replace(/^create extension .*;$/gm,''));
-    assert.equal((await db.query('select active from cron.job')).rows[0].active,false);
+    // PGlite cannot run native workers/C extension APIs. These test-only definer
+    // functions model extension-owned writes; non-superuser catalog_owner stands
+    // in for managed postgres: it owns jobs but cannot UPDATE the extension
+    // table. The installer-owned net fixture proves strict local ACL denial,
+    // not managed Supabase ACL behavior. Hosted safety uses the separately
+    // verified Data API/NOLOGIN/no-RPC-bridge boundary documented in the runbook.
+    assert.equal((await db.query("select has_table_privilege('catalog_owner','cron.job','UPDATE') as allowed")).rows[0].allowed,false);
+    await assert.rejects(db.query('update cron.job set active=false'),{code:'42501'});
+    const setup=readFileSync(new URL('../server/rss-catalog/schema/rss_public_catalog_schedule.sql',import.meta.url),'utf8')
+      .replace(/^create extension .*;$/gm,'');
+    await db.exec(setup);
+    const expectedJob={jobname:'breeze-rss-catalog-refresh',schedule:'*/10 * * * *',
+      command:'select rss_catalog_private.enqueue_refresh();',username:'catalog_owner',active:false};
+    const readJobs=async()=>(await db.query('select jobname,schedule,command,username,active from cron.job')).rows;
+    assert.deepEqual(await readJobs(),[expectedJob]);
+    // Activation and rollback use the same supported API, never a table grant.
+    await db.exec("select cron.alter_job(jobid,active := true) from cron.job where jobname='breeze-rss-catalog-refresh';");
+    assert.deepEqual(await readJobs(),[{...expectedJob,active:true}]);
+    await db.exec("select cron.alter_job(jobid,active := false) from cron.job where jobname='breeze-rss-catalog-refresh';");
+    assert.deepEqual(await readJobs(),[expectedJob]);
+    // Reapplying setup must reuse the named job and leave it disabled again.
+    await db.exec("select cron.alter_job(jobid,active := true) from cron.job where jobname='breeze-rss-catalog-refresh';");
+    await db.exec(setup);
+    assert.deepEqual(await readJobs(),[expectedJob]);
+    await assert.rejects(db.query('update cron.job set active=true'),{code:'42501'});
     assert.equal((await db.query('select rss_catalog_private.enqueue_refresh() as id')).rows[0].id,null);
+    assert.equal((await db.query('select count(*)::int as queued from net.http_request_queue')).rows[0].queued,0);
     for(const role of ['anon','authenticated','service_role']){
+      assert.deepEqual((await db.query(`select
+        has_schema_privilege($1,'net','USAGE') as net_usage,
+        has_table_privilege($1,'net.http_request_queue','SELECT') as queue_read,
+        has_sequence_privilege($1,'net.http_request_queue_id_seq','USAGE') as queue_sequence,
+        has_function_privilege($1,'net.http_post(text,jsonb,jsonb,integer)','EXECUTE') as net_enqueue,
+        has_schema_privilege($1,'cron','USAGE') as cron_usage,
+        has_schema_privilege($1,'rss_catalog_private','USAGE') as private_usage`,[role])).rows[0],
+        {net_usage:false,queue_read:false,queue_sequence:false,net_enqueue:false,cron_usage:false,private_usage:false});
       await db.exec('set role '+role);
       await assert.rejects(db.query('select * from net.http_request_queue'));
       await assert.rejects(db.query('select * from cron.job'));
+      await assert.rejects(db.query("select cron.schedule('unauthorized','* * * * *','select 1')"),{code:'42501'});
+      await assert.rejects(db.query('select cron.alter_job(1,active := true)'),{code:'42501'});
       await assert.rejects(db.query('select rss_catalog_private.enqueue_refresh()'));
       await assert.rejects(db.query("select net.http_post('https://private.example',null,'{}',1)"));
-      await db.exec('reset role');
+      await db.exec('set role catalog_owner');
     }
     await db.exec('update public.rss_public_catalog set active=true;');
     const id=(await db.query('select rss_catalog_private.enqueue_refresh() as id')).rows[0].id;
-    const row=(await db.query('select url,body,timeout_milliseconds from net.http_request_queue where id=$1',[id])).rows[0];
+    const row=(await db.query('select url,body,headers,timeout_milliseconds from net.http_request_queue where id=$1',[id])).rows[0];
     assert.equal(row.url,'https://hrtfhojbhqvaoiulspto.supabase.co/functions/v1/rss-catalog');
     assert.equal(row.body,null);assert.equal(row.timeout_milliseconds,60000);
+    assert.deepEqual(row.headers,{'Content-Type':'application/json',Authorization:'Bearer synthetic-service-key'});
+    assert.equal(row.headers.apikey,undefined);
   }finally{await db.close();}
 });
 test('no-store/private responses revoke prior metadata and failed workers cannot overwrite later claims',async()=>{
@@ -145,18 +287,19 @@ test('no-store/private responses revoke prior metadata and failed workers cannot
 });
 test('public reads never fetch or refresh; parameters, bodies, forged user credentials and methods are rejected',async()=>{
   const h=fixture();await h.service.refresh();const before=h.state.calls.length;
-  const handler=catalogHandler(h.service,{authorize:serviceAuthorization('synthetic-service-key')});
+  const handler=catalogHandler(h.service,{authorize:request=>operatorAuthorized(request,{url:'https://catalog-db.fixture',apiKey:'synthetic-anon-key',
+    fetcher:async(_url,options)=>Response.json(options.headers.Authorization==='Bearer synthetic.service.signature')})});
   const url='https://catalog.example/rss-catalog';
   const response=await handler(new Request(url));assert.equal(response.status,200);
   const cached=await handler(new Request(url,{headers:{'if-none-match':response.headers.get('etag')}}));assert.equal(cached.status,304);assert.equal((await cached.text()).length,0);
   for(const target of [url+'?url=http://127.0.0.1/',url+'?feed=0',url+'?refresh=1'])assert.equal((await handler(new Request(target))).status,400);
   for(const headers of [{},{apikey:'synthetic-anon-key'},{authorization:'Bearer forged-user-role-service_role'}])assert.equal((await handler(new Request(url,{method:'POST',headers}))).status,401);
   assert.equal((await handler(new Request(url,{method:'PUT'}))).status,405);
-  assert.equal((await handler(new Request(url,{method:'POST',headers:{apikey:'synthetic-service-key'},body:'{}'}))).status,400);
+  assert.equal((await handler(new Request(url,{method:'POST',headers:{authorization:'Bearer synthetic.service.signature'},body:'{}'}))).status,400);
   assert.equal(h.state.calls.length,before);
-  assert.equal((await handler(new Request(url,{method:'POST',headers:{apikey:'synthetic-service-key'}}))).status,200);
+  assert.equal((await handler(new Request(url,{method:'POST',headers:{authorization:'Bearer synthetic.service.signature'}}))).status,200);
   const empty=new ReadableStream({start(controller){controller.close();}});
-  assert.equal((await handler(new Request(url,{method:'POST',headers:{apikey:'synthetic-service-key'},body:empty,duplex:'half'}))).status,200);
+  assert.equal((await handler(new Request(url,{method:'POST',headers:{authorization:'Bearer synthetic.service.signature'},body:empty,duplex:'half'}))).status,200);
 });
 test('ETag changes on expiry/disabled sources without retaining an old private/body representation',async()=>{
   const h=fixture();await h.service.refresh();const handler=catalogHandler(h.service);

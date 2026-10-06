@@ -79,8 +79,10 @@ try{
        fetchArticleHtml=async()=>{requests++;throw Error('Body must wait for selection');};
        const entry=rssDiscoveryEntry({title:'A story without a photo',url:'https://example.com/no-cover',source:'Example'});
        const rail=document.getElementById('casual-rail');rssRenderIds.set(rail,1);
-       const cards=await rssFeedCards([entry],1,rail);
-       return cards.length===1&&!cards[0].classList.contains('rss-pending')&&requests===0;
+       const candidates=[[entry]],owner=rssCoverBegin(rail);
+       const cards=await rssFeedCards(rssDisplayGroups(candidates,owner,null)[0],1,rail);
+       return cards.length===0&&candidates[0][0]===entry&&entry.coverFallback===true
+         &&rssCoverCached(entry.url)===null&&requests===0;
      }finally{fetchArticleHtml=original;}
    }),true);
    assert.deepEqual(await page.evaluate(()=>{
@@ -136,10 +138,10 @@ try{
       const pending=renderRssCards(rail,true,document.getElementById('home-feed-empty'));
       // Wait for the ready card, while the other source is deliberately held.
       // A fixed 50 ms pause can expire on a busy CI browser before any card paints.
-      for(let i=0;i<80&&!rail.querySelector('.rss-card:not([hidden])');i++)
+      for(let i=0;i<80&&!rail.querySelector('.rss-card:not([hidden]) .thumb.has-cover');i++)
         await new Promise(resolve=>setTimeout(resolve,25));
-      if(!rail.querySelector('.rss-card:not([hidden])') || !rssLoading)throw Error('Ready cards waited for slow feed or photo');
-      const first=rail.querySelector('.rss-card:not([hidden])');
+      if(!rail.querySelector('.rss-card:not([hidden]) .thumb.has-cover') || !rssLoading)throw Error('Ready cards waited for slow feed or photo');
+      const first=rail.querySelector('.rss-card:not([hidden]) .thumb.has-cover').closest('.rss-card');
       release();await pending;
       if(!first.isConnected)throw Error('Partial update replaced existing card');
     }finally{fetchArticleHtml=original;}

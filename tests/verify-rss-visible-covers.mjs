@@ -236,7 +236,8 @@ test('coalesced in-flight metadata and stale completions preserve cache ownershi
 function pendingFixture(){
   const fixture=runtime(),{context}=fixture,classes=new Set();
   const entry={url,photo:'',coverFallback:true,feedSourceUrl:runInContext('RSS_FEEDS[0].url',context)};
-  const card={isConnected:true,dataset:{rssUrl:url},classList:{
+  const card={isConnected:true,dataset:{rssUrl:url},style:{removeProperty(){}},
+    setAttribute(){},removeAttribute(){},querySelector:()=>null,classList:{
     add:value=>classes.add(value),remove:value=>classes.delete(value),contains:value=>classes.has(value),
   }};
   const owner={pass:0,remaining:1,entries:new Map([[card,entry]]),attempted:new Set(),cancelled:false,
@@ -260,6 +261,8 @@ test('only an admitted lookup shimmers, and empty/error completion releases the 
     fixture.complete(result);await work;
     assert.equal(card.classList.contains('rss-cover-pending'),false);
     assert.equal(owner.consumer,null);assert.equal(fixture.calls.length,0);
+    assert.equal(card.hidden,true,'A completed photo-free card must be withheld, not made artwork-ready');
+    assert.equal(card.tabIndex,-1);assert.equal(runInContext('rssCands[0].length',context),1);
   }
 });
 test('negative cache, ineligible metadata and exhausted budgets never shimmer or enqueue work',async()=>{

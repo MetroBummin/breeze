@@ -49,8 +49,8 @@ try{
         rssPreparedArticles.set(articleUrlKey(url),parsed);
         return {title:name,source:'Example',url,photo:''};
       };
-      // Model an already prepared card; cover transport is covered by RSS browser tests.
-      window.__card=entry=>{const card=rssCard(entry);card.classList.remove('rss-pending');card.removeAttribute('aria-busy');card.removeAttribute('aria-disabled');card.tabIndex=0;card.hidden=false;document.getElementById('casual-rail').prepend(card);return card;};
+      // Model an already decoded card; real cover admission/decode is tested by the RSS browser suites.
+      window.__card=entry=>{const card=rssCard(entry);card.classList.remove('rss-pending');card.removeAttribute('aria-busy');card.removeAttribute('aria-disabled');card.tabIndex=0;card.hidden=false;card.style.removeProperty('visibility');card.removeAttribute('aria-hidden');card.querySelector('.thumb').classList.add('has-cover');const image=card.querySelector('.cover');image.src='/assets/favicon/icon-512.png';image.hidden=false;document.getElementById('casual-rail').prepend(card);return card;};
       renderHome();show('home');
     });
     const count=()=>page.evaluate(async()=>({memory:books.length,stored:(await bookAll()).length,positions:Object.keys(positions).length,images:window.__images}));
@@ -179,6 +179,9 @@ try{
       await waitPrepared();
       await page.evaluate(()=>{document.querySelector('.ap-start').click();document.querySelector('.ap-start').click();});
       await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
+      // Reader presentation precedes the restoration frame that commits its
+      // first-read marker. Keep the persistence assertions at that real boundary.
+      await page.waitForFunction(()=>curBook&&!readerPositionRestoration&&!articlePreviewOpening&&posOf(curBook.id).t>0);
       assert.equal((await count()).stored,1);assert.equal((await count()).memory,1);
       assert.equal((await count()).positions,1);
       await page.goBack();await page.waitForFunction(()=>activeAppView()==='casuals');

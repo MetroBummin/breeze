@@ -5,9 +5,9 @@ The parent owns production execution, activation, combined integration and merge
 No production write, publisher fetch, paid call, credential export, Apple action
 or release-counter change was performed by this preparation.
 
-## Verified inventory
+## Initial inventory before parent installation
 
-Read-only connector inspection on October 6 found the app project
+Read-only connector inspection on October 6 initially found the app project
 `hrtfhojbhqvaoiulspto` has no `rss-catalog` Edge Function, no
 `public.rss_public_catalog` table, and no `rss_catalog_claim(uuid)` RPC.
 `pg_cron` and `pg_net` are absent; Vault is installed. Existence-only checks found
@@ -29,26 +29,165 @@ function inventory contains only Ready. Always name the app project explicitly.
   fences previous workers. All functions use SECURITY INVOKER and empty search
   paths. No user, account, history or custom-feed table is touched.
 - Edge Function: `verify_jwt=false` intentionally exposes a public metadata GET.
-  POST compares the existing server service key directly and accepts no URL,
-  feed list, query or nonempty body. Forged roles and public/user credentials do
-  not authorize it. Public reads never claim, fetch or write.
+  POST forwards the incoming legacy Bearer JWT to the existing same-project
+  `rss_quality_operator_authorized()` RPC, using the public `SUPABASE_ANON_KEY`
+  as `apikey`. Only awaited boolean `true` authorizes refresh. No local claim
+  decoding, secret equality or server-admin substitution authorizes it.
+  It accepts no URL, feed list, query or nonempty body. Public reads never
+  invoke operator validation, claim, fetch or write.
 - Optional refresh ownership: enable `pg_cron`/`pg_net` on the existing project,
   install a private postgres-owned enqueue function and one disabled job.
-  Explicitly revoke public/service access to network queues, functions and cron
-  schema so queued authorization headers cannot be read through the Data API.
-  This affects the newly installed extension schemas; reinspect existing uses
-  if another worker installs them before this plan executes.
+  Retain the reviewed owner-scope network/cron REVOKEs. On hosted pg_net,
+  supabase_admin-owned PUBLIC grants can remain; successful SQL does not prove
+  role-level queue denial. Verify the hosted boundary below and reinspect
+  existing extension uses before applying this setup.
 - Runtime settings: environment mode stays OFF; reviewed feed IDs and separate
   original-probe feed IDs default empty;
   database switch and scheduler default OFF; client configuration stays OFF.
   Reuse the owner's existing service credential through Vault; create no key,
   credential, project, branch, external scheduler or paid service.
 
+## Hosted pg_net boundary accepted after parent verification
+
+[Supabase's pg_net permissions documentation](https://supabase.com/docs/guides/database/extensions/pg_net#permissions)
+describes default PUBLIC access to net objects and the hosted protection:
+`net` is outside the Data API, and client roles cannot log into Postgres directly.
+The parent accepted this supported boundary after reviewing the following live
+checks on October 6. These are parent-reported production results, separate from
+this patch's owned/mock PGlite checks; no role-level net ACL denial is claimed.
+
+- The net schema/queue objects are owned by `supabase_admin`. PUBLIC grants
+  remained effective after the reviewed REVOKEs, which could warn or be no-ops.
+  No additional grant, ownership change or elevated privilege is part of this fix.
+- The exposed Data API schemas were only `public` and `graphql_public`.
+  Public-anon-key REST GETs for `net.http_request_queue` and `net._http_response`
+  with `Accept-Profile: net` returned HTTP 406 / `PGRST106`.
+  The private schema was also rejected with 406; the public-schema queue route
+  returned 404. The checks did not read request headers or credential values.
+- `anon`, `authenticated` and `service_role` were `NOLOGIN`. The scan found zero
+  ordinary exposed RPC bridges to arbitrary SQL or the queue; `rls_auto_enable`
+  was an event-trigger-only function, not an ordinary callable RPC bridge.
+  Client roles had no EXECUTE access to the private enqueue function.
+- The private enqueue path remained postgres-owned, fixed-endpoint and bodyless.
+  Readback showed zero queued requests, job 1 disabled and database catalog OFF.
+  This establishes the installation checkpoint, not a successful scheduled run
+  or catalog activation.
+
+Residual risk remains if net becomes exposed through the Data API, an exposed
+arbitrary-SQL/queue bridge is added, or an untrusted principal gains a database
+login/role-switching path. Recheck schema exposure, actual REST denial, role
+login attributes, exposed RPC bridges and private EXECUTE rights after relevant
+schema, API, function or role changes and before activation. Keep the job and
+catalog OFF if this boundary no longer holds. The strict PGlite ACL tests and
+no-op-REVOKE negative control remain useful for an owned/mock environment; they
+do not prove hosted object-level denial. This acceptance adds no privileges and
+does not replace source, credential, warm-up or release gates.
+
+## Operator RPC dependency and protected scheduler transport
+
+The parent’s October 6 controlled checks returned 401 from catalog refresh with
+both the previous apikey transport and the stored JWT in Authorization alone.
+The same stored JWT returned HTTP 200 / boolean true from the existing
+same-project `rss_quality_operator_authorized()` RPC. Thus changing transport
+alone cannot fix refresh; raw equality rejects a verified service-role identity.
+These are parent-reported production findings; this patch makes no live calls.
+
+Before deployment/activation, read back this existing zero-argument function and
+verify its only result is `current_user = 'service_role'`. It must return boolean,
+be STABLE, SECURITY INVOKER, set `search_path=''`, grant EXECUTE to service_role,
+and deny EXECUTE to PUBLIC, anon and authenticated. Do not broaden privileges,
+rename it, recreate it or add a second catalog RPC. A safe metadata-only check:
+
+```sql
+select p.provolatile = 's' as stable,
+       not p.prosecdef as invoker,
+       p.proconfig @> array['search_path=""'] as empty_path,
+       p.prorettype = 'boolean'::regtype as boolean_result,
+       has_function_privilege('service_role',p.oid,'EXECUTE') as service_execute,
+       has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+       has_function_privilege('authenticated',p.oid,'EXECUTE') as user_execute,
+       exists(select 1 from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
+         where a.grantee=0 and a.privilege_type='EXECUTE') as public_execute,
+       pg_get_functiondef(p.oid) as operator_definition
+from pg_proc p
+where p.oid=to_regprocedure('public.rss_quality_operator_authorized()');
+```
+
+Expect exactly one row: the first five booleans true, the last three false,
+with the reviewed role-check-only definition. Zero rows or a mismatched result
+blocks activation. A new project must already have the separately reviewed
+quality-operator prerequisite; neither catalog migration supplies it. Missing
+public API-key configuration, absent/unexecutable RPC, false/non-boolean JSON,
+invalid/expired/forged JWTs, network error, redirect or a five-second timeout all
+fail closed with 401 and no refresh. Modern secret keys and apikey-only requests
+are intentionally unsupported. Never use the catalog database service key as a
+validation fallback. [Supabase role verification](https://supabase.com/docs/guides/database/postgres/roles)
+explains the PostgREST authenticator’s verified-role boundary.
+
+The scheduler sends `Authorization: Bearer <Vault reference>` to its fixed HTTPS
+catalog endpoint with SQL NULL body, omitting apikey. The secret is never copied
+into migration text or cron commands. Validate the rewritten enqueue function
+and keep the job disabled before the parent’s authorized warm-up.
+[pg_net 0.20.4 transport source](https://github.com/supabase/pg_net/blob/v0.20.4/src/core.c)
+sets FOLLOWLOCATION and does not enable UNRESTRICTED_AUTH; its
+[worker source](https://github.com/supabase/pg_net/blob/v0.20.4/src/worker.c)
+requires libcurl >=7.83.0. It has no per-request redirect-disable option here.
+[libcurl redirect behavior](https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html)
+protects Authorization, whereas arbitrary custom headers such as apikey can
+follow redirects. [curl’s 7.83.0 fix](https://curl.se/docs/CVE-2022-27776.html)
+extends that protection to changed scheme and port as well as hostname.
+
+This is source/version-based protection, not an independently captured hosted
+redirect trace. A same-origin redirect can still receive Authorization, and
+redirects may change POST to GET. Keep the fixed trusted endpoint, reviewed
+pg_net/runtime version, accepted queue/Data API boundary, and normal non-debug
+pg_net logging: DEBUG2 or more verbose mode enables curl verbose header output.
+Treat unexpected redirects or runtime/endpoint changes as a stop-and-review
+condition. The Edge’s own RPC validation fetch is stricter: redirect:error and
+a five-second AbortSignal, with the original incoming Authorization unchanged.
+The parent’s 08:51 UTC read-only checkpoint found `log_min_messages=warning`
+(default/reset value warning), no database/role overrides, database and job OFF,
+and queue count zero. It did not read queued headers or log contents. Recheck
+if logging settings change; this checkpoint is not a warm-up or activation.
+No new privileges, credential material, persistent access or RPCs are added.
+
+## Existing pg_net namespace advisor remains unresolved
+
+The parent's 08:29 UTC October 6 readback found pg_net 0.20.4 registered in
+`public`, managed by `supabase_admin`, with its operational objects in `net`.
+The queue and response tables each had zero rows; the job and catalog were OFF.
+The metadata-only external-dependency check was cancelled at 08:30 UTC, so a
+complete dependency review was not established. No live correction or retry is
+authorized by this patch, and the namespace advisor has not been repaired.
+
+[Supabase's troubleshooting guidance](https://supabase.com/docs/guides/database/extensions/pg_net#troubleshooting)
+recommends registration in `extensions`. New installs now create that schema if
+needed and use `create extension if not exists pg_net with schema extensions;`.
+For an existing installation, `IF NOT EXISTS` leaves its registration and objects
+unchanged. pg_net is non-relocatable; this setup never automatically drops or
+moves it, and it does not convert an existing public registration.
+
+An explicit owner-approved manual correction needs a fresh OFF-state check,
+a complete external-dependency review, a fresh empty-queue check and an informed
+decision about stored responses before any destructive step. Dropping pg_net
+removes its queue and response objects: queued requests are lost and stored
+responses are deleted. Preserve any required response data through an approved
+safe path without exposing credentials. If dependencies or permissions are
+uncertain, stop and resolve them with the managed owner/support; do not use
+CASCADE, add privileges, or infer approval from an earlier empty checkpoint.
+Only after separate authorization and those checks should the owner consider
+the documented drop/recreate flow in `extensions`. Reverify registration,
+version, dependencies, hosted API/role/RPC protections, private enqueue behavior
+and the still-disabled scheduler afterward; namespace registration alone does
+not establish credential safety or authorize activation.
+
 ## Exact deployment and warm-up order
 
 1. Reinspect project and existing objects, source permissions/attribution and
    PR #104's final photo policy. Use the parent's reviewed fixed-ID list; the
    thirteen sources in synthetic tests are not a live permission decision.
+   Recheck the existing operator RPC dependency and trusted redirect/runtime
+   assumptions above; absence or mismatch blocks activation.
    These are the existing Decision 015 gates, with the user's standing approval
    and the parent's production ownership preserved.
 2. Generate connector arguments from the exact integrated commit:
@@ -60,7 +199,9 @@ function inventory contains only Ready. Always name the app project explicitly.
    The existing schema file is the reviewed migration input; it is not added to
    automatic CLI migrations against the unrelated Ready project.
 3. Apply `migration` and deploy `deployment` while environment mode is OFF.
-   Read back function files/hashes, `verify_jwt`, schema, RLS and grants. Check
+   Read back function files/hashes (including `operator-auth.mjs`), `verify_jwt`,
+   schema, RLS and grants. Ensure the built-in `SUPABASE_ANON_KEY` is present;
+   do not provision a key or substitute the service key for RPC validation. Check
    advisors for this change and perform actual role/RPC denial checks. OFF must
    return 503 without initializing DB/credential clients or fetching publishers.
 4. Through the parent's secure supported settings path, set
@@ -81,8 +222,20 @@ function inventory contains only Ready. Always name the app project explicitly.
    print, export, read or inject its value. Separately obtain action-time approval
    for the exact pg_cron/pg_net installation, net/cron permission changes and
    disabled job setup, then apply `optionalScheduleMigration` from the bundle.
-   Verify actual pg_net version/bodyless SQL NULL behavior, job ownership and
-   queue/schema denial before activation. All calls must explicitly target
+   New pg_net installs register in `extensions`; existing installations are left
+   untouched and need the separate namespace-advisor procedure above if flagged.
+   The setup calls `cron.alter_job(cron.schedule(...), active := false)` in one
+   transaction. Managed postgres can own a job without direct `cron.job` UPDATE
+   rights; use pg_cron's owner APIs and do not add table grants to work around it.
+   Verify exactly one `breeze-rss-catalog-refresh` job, owned by `postgres`, with
+   schedule `*/10 * * * *`, command `select rss_catalog_private.enqueue_refresh();`
+   and `active=false`. Verify actual pg_net version/bodyless SQL NULL behavior and
+   the accepted hosted boundary above before activation. Record effective ACLs
+   accurately: PUBLIC net grants may remain, and SQL success or modeled denial
+   is not proof of managed role-level denial. Recheck Data API exclusion, NOLOGIN
+   roles, absence of an exposed SQL/queue bridge and private EXECUTE denial;
+   stop if those protections no longer hold. Do not expand privileges to force
+   hosted net ACLs to match the owned/mock fixture. All calls must explicitly target
    `hrtfhojbhqvaoiulspto`; never infer a project from the Ready CLI config.
    Owner UI input: open this project's Vault screen, choose Add/New secret,
    enter Name `rss_catalog_service_role`, enter the existing service-role key in
@@ -108,10 +261,12 @@ function inventory contains only Ready. Always name the app project explicitly.
    Concurrent authorized refreshes must share the SQL claim; repeat refreshes
    during cooldown must make no source fetch. Record actual request/body bytes
    on each leg separately. The adjacent local result does not replace this gate.
-8. Enable `cron.job.active` for `breeze-rss-catalog-refresh`. Observe a successful
-   scheduled run and reuse across multiple readers; failed source timestamps
-   must remain unchanged. The ten-minute job can skip a tick if the fenced
-   cooldown is still active; cached sources become stale and never renew by GET.
+8. As the postgres job owner, enable the job through its supported API:
+   `select cron.alter_job(jobid, active := true) from cron.job where
+   jobname='breeze-rss-catalog-refresh';`. Read back the named job's `active=true`.
+   Observe a successful scheduled run and reuse across multiple readers; failed
+   source timestamps must remain unchanged. The ten-minute job can skip a tick if
+   the fenced cooldown is still active; cached sources become stale and never renew by GET.
 9. Only after these gates and combined Chromium/WebKit photo/fallback tests,
    parent adds `RSS_CATALOG:true` to the app config and runs full checks,
    `ios:sync`, and the already chosen cloud TestFlight workflow at the exact
@@ -284,10 +439,13 @@ the OFF/active synthetic Edge boot tests.
 
 ## Rollback
 
-Disable the cron job and set database `active=false`; this clears public
-snapshots/leases and prevents any old worker publication. Keep the endpoint in
-active environment mode long enough to return authoritative disabled metadata
-to connected opted-in clients, then restore environment OFF if desired. Parent
+As the postgres job owner, disable the job with
+`select cron.alter_job(jobid, active := false) from cron.job where
+jobname='breeze-rss-catalog-refresh';` and verify `active=false`. Do not directly
+update the extension table. Set database `public.rss_public_catalog.active=false`
+for id 1; this clears public snapshots/leases and prevents any old worker
+publication. Keep the endpoint in active environment mode long enough to return
+authoritative disabled metadata to connected opted-in clients, then restore environment OFF if desired. Parent
 sets client opt-in false in the next app configuration/build. Cached public
 cards cannot be revoked instantly on offline devices: source-age expiry is
 twenty-four hours, and connected client reuse/retry windows are ten to eleven
@@ -303,6 +461,7 @@ Primary documentation checked: [Supabase Edge authentication](https://supabase.c
 [RLS/service credentials](https://supabase.com/docs/guides/database/postgres/row-level-security),
 [scheduling Edge Functions](https://supabase.com/docs/guides/functions/schedule-functions),
 [pg_net interfaces](https://supabase.com/docs/guides/database/extensions/pg_net),
+[pg_cron owner APIs](https://github.com/citusdata/pg_cron#altering-a-cron-job),
 and [pg_net source for SQL NULL bodies](https://github.com/supabase/pg_net/blob/master/sql/pg_net.sql).
 The markdown changelog fetch was blocked; the [HTML changelog](https://supabase.com/changelog)
 was reviewed instead. No applicable breaking change to this pinned client's

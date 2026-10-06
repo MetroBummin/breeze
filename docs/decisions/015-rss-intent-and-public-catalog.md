@@ -3,6 +3,50 @@
 2026-10-05. Dependent on PR #97 (`d103bb31`), based on main 1.8(236)
 `34b5dc9`. This proposal does not merge, deploy, apply SQL or activate Jev.
 
+## Current Home photo-only display (244, October 6)
+
+Restore the historical ready-card invariant from `ff48c255d9cac8634f955f25a189dfe431d785ee`
+(August 17), still present in `d103bb31f075404d5498dfa1a15a1e60def7c81a`:
+a ready Home recommendation requires a successfully decoded usable photograph.
+PR #99 (`24fc76739cbb87ca410d2bae6da76f6a0052c4f6`, integrated by
+`79784329500fc1ad0e3cc2e32ef4feea25d86408`) admitted artwork through
+`coverFallback`; that ready-display admission is superseded here. This is a Home
+rule even with the separate Jev quality mode OFF.
+
+Candidate retention is separate from ready display. All source metadata remains
+in the existing discovery groups. Complete successful no-image metadata uses the
+existing short-lived negative cache; retrieval error, cutoff, cancellation,
+never-admitted metadata and failed image decode never become negative records.
+A generation-local WeakMap only withholds unsuccessful display attempts. A new
+explicit discovery generation may reconsider unknown candidates; a changed
+photo can be decoded without rewriting or deleting its source metadata.
+
+One unresolved original-photo candidate per rail may briefly occupy an inert,
+invisible layout probe so the existing visibility check still works. Only actual
+admission to the existing serial metadata job, or an actual image decode, makes
+that card visible with the existing shimmer. Completed absence or exhausted
+bounded decode/fallback removes it from display and refills from retained
+candidates, preferring later eligible photos in the same feed before probing an
+unknown. A source slot outside the viewport withholds its unresolved siblings
+for that generation rather than repainting each entry. Other unresolved candidates
+remain retained; they neither shimmer nor count as ready cards. A source with no
+photo-ready candidate can therefore have no ready card.
+
+The existing shared two-request generation budget, stable admitted-card order,
+public-URL restrictions, positive/negative cache lifetimes, one image fallback,
+cancellation and reentry ownership are preserved. No extra original request,
+body preparation, article/image persistence, AI request or retry loop is added.
+Known metadata can still open Preview immediately while its admitted photo work
+is pending. Preview/body preparation and Read persistence keep selected intent.
+
+`tests/verify-rss-photo-ready.mjs` runs the real renderer, serial admission and
+image lifecycle with controlled layout/image events; the prior source fails its
+restored display assertions. The existing recommendation and visible-cover
+suites remain in place. Local browser execution was unavailable; browser pixels,
+WebKit/device behavior and full dependency-backed suites require CI/device QA.
+The artwork descriptions below document the earlier intermediate behavior and
+must not be used to relax this current ready-card invariant.
+
 ## Ownership and visible behavior
 
 Home needs discovery metadata, not a prepared article for every candidate.
@@ -40,6 +84,15 @@ Requests use the existing public-DNS relay, run serially, and coalesce by URL.
 Rotation, replacement, scrolling out of view, hiding or opening Preview cancels
 obsolete consumers; late results cannot change a replacement entry or cache.
 
+Once a Home rail admits original-photo work, later feeds preserve the current
+card order for that discovery generation, using the existing scroll/focus/press
+order-preservation path. Late cards append instead of displacing the visible
+cards that own the two-request budget. Explicit refresh still reranks and starts
+its separately bounded generation. This favors stable visible ownership over
+continuous reranking during one feed load; it does not promise a photo for every
+late or offscreen card. Supplied photos remain independent of the original-page
+request budget, so more than two decoded photos can legitimately exist.
+
 The client retains at most 128 KiB of the relay's escaped JSON HTML prefix,
 extracts OG/Twitter/first-image URLs in an inert document, and cancels the stream
 after finding a photo or reaching the prefix limit. It does not run Readability,
@@ -57,8 +110,9 @@ One local metadata cache retains only public article/photo URLs and timestamps:
 at most 100 entries and 64,000 UTF-8 bytes, 24-hour photo expiry and 30-minute
 negative expiry. Supplied feed photos retain priority; custom sources, social
 owner resolution, credentials, local names and IP literals cannot trigger this
-automatic work. The optional shared catalog retains its existing single-response
-metadata contract and does not initiate client cover lookups. Warm refresh/relaunch reuses matching photo URLs without a new
+automatic work. The unpartitioned shared catalog retains its existing single-response
+metadata contract and does not initiate client cover lookups. The explicit
+hybrid partition described below preserves bounded client cover recovery. Warm refresh/relaunch reuses matching photo URLs without a new
 cover lookup. Actual article body preparation and Read persistence still belong
 to selected intent. After selection, the parsed OG/body photo also updates that
 same current discovery entry/card without another request. See the follow-up
@@ -124,8 +178,19 @@ renew source age. Empty/disabled inventory clears cards. Catalog failure cannot
 trigger thirteen fallback feed rebuilds per client.
 
 An authenticated, bodyless POST refresh uses only server-configured fixed IDs.
-The existing service credential is compared directly; forged role claims and
-anonymous keys cannot authorize refresh. One fenced global claim has a
+The catalog passes the incoming Bearer JWT unchanged to the existing
+same-project `rss_quality_operator_authorized()` PostgREST RPC, using the public
+`SUPABASE_ANON_KEY` only as its API routing key. The RPC verifies the effective
+service role; local JWT decoding or equality against an Edge environment key
+cannot grant access. Authorization is awaited and requires the exact boolean
+`true`; missing/rejected RPCs, redirects, five-second timeout and malformed
+responses fail closed. The existing RPC must remain STABLE SECURITY INVOKER,
+empty-search-path and service-role-only EXECUTE, returning only whether
+`current_user = 'service_role'`. No new RPC, grants or keys are introduced.
+New projects must provision that independently reviewed existing quality
+prerequisite before activation; the catalog does not create or repair it.
+Malformed Bearer values, modern secret keys and apikey-only calls are unsupported;
+forged/expired/user/anon JWTs cannot authorize refresh. One fenced global claim has a
 two-minute lease and ten-minute cooldown, with two bounded feed workers.
 The existing pinned-public-DNS transport enforces a six-second timeout and
 512,000-byte feed cap. Publisher validators and `max-age` are honored;
@@ -185,15 +250,24 @@ jobs, and installs one postgres-owned ten-minute job **disabled**. Its private
 SECURITY INVOKER enqueue function accepts no URL or body input. It references
 the existing service credential in Vault at runtime without returning it. That
 Vault reference did not exist at inspection; the owner must configure it through
-a secure supported path before enabling the job. SQL NULL produces a bodyless
+a secure supported path before enabling the job. The private request now carries the Vault JWT in `Authorization: Bearer`,
+never a secret-valued `apikey`; SQL NULL produces a bodyless
 POST; the endpoint rejects any nonempty stream, caller URLs and source lists.
 The actual extension/HTTP/job behavior must be proved after parent deployment;
 PGlite tests the grants and SQL with modeled extension interfaces.
+pg_net 0.20.4 follows redirects; this is not a redirect-disabled transport.
+Its libcurl >=7.83 dependency protects Authorization when host, scheme or port
+changes, unlike arbitrary custom headers. Same-origin redirects can still carry
+the credential, and the hosted net queue boundary and fixed endpoint remain
+required. The Edge-to-RPC verification fetch separately uses `redirect: error`.
+See the production runbook for the dependency checks and residual risks.
 
 The server parser preserves the current client's supplied photo choices across
 content, description, summary, lazy attributes, responsive widths and media
-types. Catalog mode skips the client's visible-cover fetches, so the server now
-owns bounded original-photo metadata lookup under the same global SQL claim.
+types. Unpartitioned catalog mode skips the client's visible-cover fetches, so the
+optional server path can own bounded original-photo metadata lookup under the
+same global SQL claim. The explicit hybrid release keeps server originals
+disabled and retains the existing bounded client lookup instead.
 It consumes PR #104's unchanged pure extractor from `7121c0f`, with its case,
 safe-base and malformed-input fixtures. Only missing-photo ordinary entries
 from a separately reviewed `RSS_CATALOG_ORIGINAL_FEED_IDS` subset qualify; it
@@ -227,8 +301,8 @@ are prioritized, shared URLs coalesce, and public metadata strips internal hints
 ETags and HTTP expiry also track original-photo expiry. Existing client public
 metadata reuse/offline-age rules still apply. Selected article bodies remain
 selected-intent work; unknown/failed photos keep local artwork. Parent must
-verify actual deployed source/photo provenance before activation. Client edits
-here remain limited to catalog retry state and `rssCatalogFetch`.
+verify actual deployed source/photo provenance before activation. The initial client preparation changed catalog retry state and
+`rssCatalogFetch`; the hybrid client changes below add explicit transport ownership.
 
 Source age is fresh for less than ten minutes, stale after that, and unavailable
 after twenty-four hours. A publisher max-age can defer revalidation without
@@ -243,6 +317,48 @@ Public readers never trigger refresh or per-client built-in feed fallback.
 Exact migration/function arguments, security changes, warm-up proof, switches
 and remaining parent gates are in the
 [deployment runbook](../qa/rss-catalog-production-20261006.md).
+
+## October 6 explicit hybrid partition
+
+The reviewed release preserves all thirteen built-in sources while assigning
+only WIRED and Medium IDs `[7,9,11,12]` to the shared catalog. Client opt-in needs
+both `BREEZE_CONFIG.RSS_CATALOG === true` and the explicit
+`BREEZE_CONFIG.RSS_CATALOG_FEED_IDS = [7,9,11,12]` array. This patch does not
+change `config.js` or enable either switch. Apply the reviewed opt-in only after
+the parent's backend, security and warm-inventory gates pass. Server
+`RSS_CATALOG_ORIGINAL_FEED_IDS` stays empty; the client switch grants no server
+original-probing admission.
+
+The explicit nonempty array accepts only unique fixed integer IDs. A malformed
+partition fails before either transport starts. Omitting the key preserves the
+older all-catalog contract, so omission is not the shipping hybrid configuration.
+Transport ownership follows the configured fixed source ID, never the presence,
+absence or status of a response record. A custom alias of the same managed URL
+also cannot bypass that ownership. Missing, disabled, malformed and failed
+managed inventory never triggers a legacy feed fetch. The existing thirteen-
+record catalog response validation, stream/cache byte limits, source-age cap,
+conditional refresh and ten-to-eleven-minute failure cooldown remain intact.
+
+The other nine IDs `[0,1,2,3,4,5,6,8,10]` keep their existing local metadata cache
+and per-feed transport. Their jobs and genuine custom feeds start alongside the
+single catalog request, and publish independently even while it is stalled.
+Legacy and catalog caches retain separate freshness/age owners. Warm load and
+restart reuse both caches; a warm repeated consumer does not advance the cover
+generation. Rotation or an explicit refresh still owns a new bounded generation.
+
+Hybrid mode retains client original-photo eligibility for ordinary entries from
+all thirteen fixed sources, preserving the existing supplied-photo, linked,
+social, unsafe-URL and custom-source exclusions. Every visible rail uses the
+same unchanged serial lookup pipeline and shared two-request generation budget.
+Supplied photos take priority and consume none of that original-page budget.
+Warm original metadata hydrates the canonical entry without another request.
+These transport changes do not decide photo-only card display eligibility;
+that separate restoration still owns which retained candidates are shown.
+Selected article/Medium owner-body resolution remains deferred to selection.
+
+Focused synthetic tests are in `tests/verify-rss-catalog-hybrid.mjs`; opt-in
+values and the local verification scope are in the
+[hybrid client QA note](../qa/rss-catalog-hybrid-20261006.md).
 
 ## Evidence and limits
 

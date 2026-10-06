@@ -1,0 +1,46 @@
+name: PDF visible-page repaint regression
+on:
+  pull_request:
+    paths:
+      - scripts/reader/pdf-original.js
+      - scripts/reader/pdf-pinch.js
+      - tests/verify-pdf-visible-repaint-browser.mjs
+      - .github/workflows/pdf-visible-repaint.yml
+permissions:
+  contents: read
+concurrency:
+  group: pdf-visible-repaint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        orientation: [portrait, landscape]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Compare baseline, translation, ready and pending explanation
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_QA_ORIENTATION: ${{ matrix.orientation }}
+          BREEZE_PDF_REPAINT_PROOF: /tmp/breeze-pdf-visible-repaint
+        run: timeout --kill-after=5s 600s node tests/verify-pdf-visible-repaint-browser.mjs
+      - name: Canvas lifecycle, cleanup and screen evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-visible-repaint-${{ matrix.engine }}-${{ matrix.orientation }}
+          path: /tmp/breeze-pdf-visible-repaint/
+          if-no-files-found: error
+          retention-days: 7

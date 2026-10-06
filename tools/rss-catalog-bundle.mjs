@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 const project_id='hrtfhojbhqvaoiulspto';
 const paths=[
   'supabase/functions/rss-catalog/index.ts','supabase/functions/rss-catalog/deno.json','supabase/functions/rss-catalog/deno.lock',
-  'server/rss-catalog/service.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/metadata.mjs','server/rss-catalog/discovery.mjs',
+  'server/rss-catalog/service.mjs','server/rss-catalog/handler.mjs','server/rss-catalog/operator-auth.mjs','server/rss-catalog/metadata.mjs','server/rss-catalog/discovery.mjs',
   'server/rss-catalog/photos.mjs','server/rss-catalog/photo-head.mjs','server/rss-catalog/public-prefix.mjs','server/article/cover-metadata.mjs',
   'server/rss-quality/feeds.mjs','server/rss-quality/language.mjs','server/article/public-fetch.mjs'
 ];

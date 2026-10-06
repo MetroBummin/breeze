@@ -3,11 +3,18 @@
 -- must already be stored by the owner in Vault as rss_catalog_service_role.
 begin;
 create extension if not exists pg_cron with schema pg_catalog;
-create extension if not exists pg_net;
+-- New installs use the recommended extension registration namespace. IF NOT
+-- EXISTS leaves an existing pg_net unchanged; never drop or relocate it here.
+create schema if not exists extensions;
+create extension if not exists pg_net with schema extensions;
 revoke usage on schema cron from public, anon, authenticated, service_role;
 
--- pg_net's queue can contain authorization headers. A new extension must not
--- expose that queue or a privileged HTTP enqueue API to public Data API roles.
+-- pg_net's queue can contain authorization headers. These owner-scope REVOKEs
+-- are effective on owned installs, but hosted supabase_admin PUBLIC grants may
+-- remain after warnings/no-ops. They do not prove managed role-level ACL denial.
+-- Hosted safety requires net/private schemas excluded from the Data API,
+-- NOLOGIN client roles, and no exposed SQL/queue bridge. Verify the runbook's
+-- hosted boundary before activation; do not add privileges to force ACL denial.
 revoke usage on schema net from public, anon, authenticated, service_role;
 revoke all on all tables in schema net from public, anon, authenticated, service_role;
 revoke all on all sequences in schema net from public, anon, authenticated, service_role;
@@ -30,8 +37,10 @@ begin
     then raise exception 'catalog refresh credential is not configured'; end if;
   return net.http_post(
     url := 'https://hrtfhojbhqvaoiulspto.supabase.co/functions/v1/rss-catalog',
-    headers := jsonb_build_object('Content-Type','application/json','apikey',
-      (select decrypted_secret from vault.decrypted_secrets where name='rss_catalog_service_role')),
+    -- pg_net follows redirects. libcurl protects Authorization across origin,
+    -- scheme and port changes; a custom secret-bearing apikey is not protected.
+    headers := jsonb_build_object('Content-Type','application/json','Authorization',
+      'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name='rss_catalog_service_role')),
     body := null::jsonb,
     timeout_milliseconds := 60000
   );
@@ -40,7 +49,8 @@ $$;
 revoke all on function rss_catalog_private.enqueue_refresh() from public, anon, authenticated, service_role;
 -- Installation remains inert. Parent warms and checks the catalog before
 -- explicitly enabling this postgres-owned job. The endpoint has its own fence.
-select cron.schedule('breeze-rss-catalog-refresh','*/10 * * * *',
-  'select rss_catalog_private.enqueue_refresh();');
-update cron.job set active=false where jobname='breeze-rss-catalog-refresh';
+-- Use pg_cron's owner API: managed postgres need not have cron.job UPDATE.
+-- Schedule and disable in the same transaction so no active job is committed.
+select cron.alter_job(cron.schedule('breeze-rss-catalog-refresh','*/10 * * * *',
+  'select rss_catalog_private.enqueue_refresh();'), active := false);
 commit;
