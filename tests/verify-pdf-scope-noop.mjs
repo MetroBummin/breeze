@@ -21,7 +21,7 @@ function fixture(){
  vm.createContext(c);vm.runInContext(source,c);
  assert.equal(observers.length,1,'fixture must exercise the production document observer');
  const deliver=(target,type='attributes',attributeName='class',oldValue='reading')=>observers[0]([{target,type,attributeName,oldValue}]);
- return {root,body,Element,deliver,observations:()=>invalidations};
+ return {root,body,Element,deliver,deliverRecords:records=>observers[0](records),observations:()=>invalidations};
 }
 test('removing an already absent boot class does not invalidate PDF paper',()=>{
  const f=fixture();f.deliver(f.root);assert.equal(f.observations(),0);
@@ -45,5 +45,8 @@ test('chrome-only body class changes remain excluded',()=>{
  const f=fixture();f.body.attributes.class+=' chrome-hidden';f.deliver(f.body,'attributes','class','reading reader-original');assert.equal(f.observations(),0);
 });
 test('a changed-then-restored class batch still carries the real transition',()=>{
- const f=fixture();f.deliver(f.root,'attributes','class','reading');f.deliver(f.root,'attributes','class','reading dark');assert.equal(f.observations(),1);
+ const f=fixture();f.deliverRecords([
+  {target:f.root,type:'attributes',attributeName:'class',oldValue:'reading'},
+  {target:f.root,type:'attributes',attributeName:'class',oldValue:'reading dark'}
+ ]);assert.equal(f.observations(),1);
 });

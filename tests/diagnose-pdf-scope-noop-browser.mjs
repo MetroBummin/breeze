@@ -12,6 +12,11 @@ import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_SCOPE_PROOF||'/tmp/breeze-pdf-scope-noop';mkdirSync(proof,{recursive:true});
 const source=readFileSync(new URL('../scripts/reader/pdf-ink.js',import.meta.url),'utf8');
+const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const bootFallback="setTimeout(()=>document.documentElement.classList.remove('boot-pending'),8000);";
+assert.ok(html.includes(bootFallback),'owned boot fallback changed');
+// Isolate its delivery time; ordinary regressions still run the natural timer.
+const causalHtml=html.replace(bootFallback,"window.qaBootFallback=()=>document.documentElement.classList.remove('boot-pending');");
 const needle="      if(!(node instanceof Element)||node.closest('.pdf-ink-layer'))continue;";
 const guard="      if(record.type==='attributes'&&record.attributeName&&record.oldValue===node.getAttribute(record.attributeName))continue;";
 assert.ok(source.includes(needle),'observer boundary changed');
@@ -31,6 +36,7 @@ try{
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/*',r=>{
     const target=r.request().url();
+    if(target===url||target===url+'index.html')return r.fulfill({contentType:'text/html',body:causalHtml});
     if(target.startsWith(url)&&new URL(target).pathname==='/scripts/reader/pdf-ink.js')return r.fulfill({contentType:'text/javascript',body:inkSource});
     return target.startsWith(url)||target.startsWith('blob:')?r.continue():r.abort();
    });
@@ -38,7 +44,7 @@ try{
    await page.goto(url);await page.evaluate(()=>homeReady);
    await page.locator('#fileinput').setInputFiles({name:'scope-noop.pdf',mimeType:'application/pdf',buffer:fixturePdf(12)});
    await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
-   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');await document.fonts.ready;});
+   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original',{initial:true});await document.fonts.ready;});
    await page.waitForFunction(()=>!readerPositionPending()&&!!originalSession&&!originalSession.paintActive&&!originalSession.paintQueue?.size);
    // Deliver existing setup mutations before warming. No test assertion waits
    // for the no-op under investigation: that mutation is forced after warm.
@@ -52,7 +58,7 @@ try{
      try{
       if(mutation==='absent-boot-class'){
        if(document.documentElement.classList.contains('boot-pending'))throw Error('boot must already be complete');
-       document.documentElement.classList.remove('boot-pending');
+       qaBootFallback();
       }
       if(mutation==='real-root-class')document.documentElement.classList.toggle('qa-scope-real-change');
       for(let i=0;i<6;i++){setReaderChrome(i%2===0);await new Promise(r=>requestAnimationFrame(r));pdfPageLayout(originalSession);}
