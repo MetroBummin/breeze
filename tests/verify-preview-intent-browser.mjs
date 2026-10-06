@@ -179,6 +179,9 @@ try{
       await waitPrepared();
       await page.evaluate(()=>{document.querySelector('.ap-start').click();document.querySelector('.ap-start').click();});
       await page.waitForFunction(()=>document.querySelector('#v-read').classList.contains('on'));
+      // Reader presentation precedes the restoration frame that commits its
+      // first-read marker. Keep the persistence assertions at that real boundary.
+      await page.waitForFunction(()=>curBook&&!readerPositionRestoration&&!articlePreviewOpening&&posOf(curBook.id).t>0);
       assert.equal((await count()).stored,1);assert.equal((await count()).memory,1);
       assert.equal((await count()).positions,1);
       await page.goBack();await page.waitForFunction(()=>activeAppView()==='casuals');

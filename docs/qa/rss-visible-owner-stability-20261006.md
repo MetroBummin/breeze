@@ -37,7 +37,8 @@ feed/image/relay results, not proof of the user's particular Medium card cause.
 After a Home rail admits original-photo work, reuse the existing scroll/focus/
 press order-preservation path for that discovery generation. Current cards stay
 in order and late feeds append. Explicit refresh still reranks. The existing
-owner attempted set provides the condition; there is no new cache, request,
+generation-wide remaining budget provides the condition, including after a
+canceled rail owner is recreated; there is no new cache, request,
 timer or budget. This trades continuous arrival-time reranking for stable visible
 owners. It does not guarantee photos on every late or offscreen card.
 
@@ -63,6 +64,17 @@ The immediate-Preview fixture replaces its fixed 500 ms image delay with an
 explicit image gate, retaining known-title/source/open and cancellation checks.
 PR109 independently observed that fixture timing out after startup; a completed
 load can otherwise make a later wait for a transient pending class impossible.
+
+The first proposed-head Preview-intent run also checked its first-read position
+as soon as Reader became visible, before restoration committed that marker.
+Its fixture now waits for the same actual first-read/restoration boundary used
+by PR104's long-read fix, then retains the original single-record persistence
+and Preview-bypass assertions. No Reader behavior changes.
+
+The same-generation render explicitly verifies the discovery pass does not
+change. Forced late-feed and canceled/recreated-owner checks exercise ownership
+across those boundaries. A force request during an already-running load reuses
+that generation; it does not reset the budget merely to reorder cards.
 
 Local source parsing and repository asset stamping pass. Exact proposed-head
 CI, native sync and full browser results are pending. No pass is inferred from
