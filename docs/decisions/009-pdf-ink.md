@@ -708,7 +708,9 @@ remain separate namespaces. Pointer input owns geometry and commits; companion
 Touch events only suppress browser defaults and feed the existing finger filter.
 The existing pending-admission lifecycle waits for a cancelable companion
 Touch to be prevented before creating a preview or erasing. Missing or
-noncancelable Touch admission fails closed, including for erasure. Touch events
+noncancelable Touch admission fails closed, including for erasure. Any intervening
+different pointerdown invalidates that pending admission, so a later palm cannot
+stand in for a missing pen Touch. Ambiguous contact ordering is rejected. Touch events
 never append geometry or commit a second stroke on this route. Native iPad continues
 to use the original Touch geometry owner even when PointerEvent is available.
 

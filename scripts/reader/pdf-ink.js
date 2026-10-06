@@ -706,6 +706,9 @@ const BreezePdfInk = (()=>{
       trace('pointer/capture',event);
       const paper=onPaper(event.target);
       if(type==='pointerdown'){
+        // Admission belongs to the immediately following companion Touch, not
+        // to a later palm/finger. Ambiguous intervening contacts fail closed.
+        if(pointerInk()&&pendingAdmission&&pendingAdmission.pointerId!==event.pointerId)pendingAdmission=null;
         if(paper && event.pointerType==='pen'){
           paperPenPointer=event.pointerId;
           if(pointerInk())penPointers.add(event.pointerId);
@@ -760,7 +763,7 @@ const BreezePdfInk = (()=>{
   }
   const interrupt=()=>{cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false;paperPenPointer=null;penPointers.clear();fingerPointers.clear();pointerScrolling=false;resumeOriginalPdfPaint();};
   window.addEventListener('blur',interrupt);
-  window.addEventListener('resize',()=>{cancel('resize');resumeOriginalPdfPaint();});
+  window.addEventListener('resize',()=>{cancel('resize');pendingAdmission=null;resumeOriginalPdfPaint();});
   document.addEventListener('scroll',event=>{if(event.target===readerScroller()){if(pointerInk())pointerScrolling=true;trace('reader/scroll',event);pendingAdmission=null;cancel('reader-scroll');}},{capture:true,passive:true});
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){pointerScrolling=false;trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});

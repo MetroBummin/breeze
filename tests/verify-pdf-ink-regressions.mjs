@@ -104,6 +104,7 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5}={}){
   return {engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,pointerEvent,flush,mutate,changeAttribute,stroke,
     advance(ms){now+=ms;for(const [id,t] of timers)if(t.at<=now){timers.delete(id);t.fn();}},timers,
     controls:v=>{controls=v;},pinch:v=>{busy=v;},failWrite:v=>{failWrite=v;},
+    admission:v=>{context.window.webkit.messageHandlers.breezePencilAdmission=v;},
     emit:(type,target)=>{for(const fn of listeners.get(type)||[])fn({type,target});}};
 }
 
@@ -467,4 +468,39 @@ test('pointer ink: rejected or interrupted pending admission never acts on a lat
  const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20,7,'pen',{companion:false});f.emit('blur',f.document);
  f.qa.touchStart(f.event('touchstart',[f.contact(20,20,107,'direct')]));f.pointerEvent('pointerup',100,100);
  assert.equal(f.state.strokes.length,0);f.pointerEvent('pointerdown',40,40,8);f.pointerEvent('pointerup',80,80,8);assert.equal(f.state.strokes.length,1);
+});
+
+test('pointer ink: unrelated palm cannot admit a pen whose companion Touch is missing',async()=>{
+ const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,100);f.pointerEvent('pointerup',280,100);
+ const before=plain(f.state.strokes);f.qa.setMode('erase');
+ f.pointerEvent('pointerdown',150,100,7,'pen',{companion:false});
+ f.pointerEvent('pointerdown',400,400,8,'touch');
+ f.qa.touchStart(f.event('touchstart',[f.contact(400,400,107,'direct')]));
+ assert.equal(f.qa.active(),null);assert.deepEqual(plain(f.state.strokes),before);
+ f.pointerEvent('pointercancel',150,100,7);f.pointerEvent('pointerup',400,400,8,'touch');
+ f.qa.touchEnd(f.event('touchend',[],[f.contact(400,400,107,'direct')]));await tick();
+ assert.deepEqual(plain(f.state.strokes),before);assert.equal(f.qa.undo().length,1);
+ assert.deepEqual(f.stored.get(f.state.key).strokes,before);
+ // The next complete pen sequence still edits without a time-based blackout.
+ f.pointerEvent('pointerdown',150,80,9);f.pointerEvent('pointerup',150,130,9);assert.equal(f.state.strokes.length,2);
+});
+
+test('pointer ink: a second pen cannot provide the first pen missing Touch admission',()=>{
+ const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20,7,'pen',{companion:false});
+ f.pointerEvent('pointerdown',400,400,8);f.pointerEvent('pointerup',420,420,8);f.pointerEvent('pointerup',40,40,7);
+ assert.equal(f.state.strokes.length,0);assert.equal(f.qa.active(),null);
+ f.pointerEvent('pointerdown',40,40,9);f.pointerEvent('pointerup',80,80,9);assert.equal(f.state.strokes.length,1);
+});
+test('pointer ink: resize invalidates unadmitted geometry and the next clean pen recovers',()=>{
+ const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20,7,'pen',{companion:false});f.emit('resize',f.document);
+ f.qa.touchStart(f.event('touchstart',[f.contact(20,20,107,'direct')]));f.pointerEvent('pointerup',100,100);
+ assert.equal(f.state.strokes.length,0);f.qa.touchEnd(f.event('touchend',[],[f.contact(20,20,107,'direct')]));
+ f.pointerEvent('pointerdown',40,40,8);f.pointerEvent('pointerup',80,80,8);assert.equal(f.state.strokes.length,1);
+});
+test('native ink: resize also retires a delayed UIKit admission before it can write stale geometry',async()=>{
+ const f=fixture();let reply;f.admission({postMessage:()=>new Promise(resolve=>{reply=resolve;})});
+ f.qa.touchStart(f.event('touchstart',[f.contact(20,20)]));await tick();
+ assert.equal(typeof reply,'function');f.emit('resize',f.document);reply('ink');await tick();
+ f.qa.touchEnd(f.event('touchend',[],[f.contact(100,100)]));await tick();
+ assert.equal(f.qa.active(),null);assert.equal(f.state.strokes.length,0);assert.equal(f.writes.length,0);
 });
