@@ -76,6 +76,18 @@ image, while replacement/view exit prevents a late image from painting.
 The two-lookup budget, cache lifetimes, image fallback transport and release
 numbering remain unchanged. See [shimmer QA](../qa/rss-cover-shimmer-20261006.md).
 
+The 240 follow-up separates retrieval failure/unknown metadata from actual photo
+absence. Only a complete successful relay HTML response with no usable image
+can create a 30-minute negative record; HTTP errors, malformed JSON, timeouts,
+aborts and the 128 KiB cutoff cannot. Cache v2 preserves valid v1 positive URLs
+but ignores v1 negatives whose provenance cannot be recovered. Admission and
+same-generation attempt guards remain bounded; errors do not start retry loops.
+`server/article/cover-metadata.mjs` provides pure, public-image extraction for a
+catalog-owned bounded refresh without fetching, storing a body or changing the
+public `photo: string` shape. The existing catalog does not yet call it; original
+photos absent from feeds still need that separately integrated ownership before
+catalog activation. See [actual photo provenance](../qa/rss-photo-provenance-20261006.md).
+
 Legacy and catalog discovery caches retain whitelisted metadata only, never
 article HTML, supplied bodies, user history or verdicts. Legacy feed transport
 can still contain embedded article bodies; only the optional catalog removes

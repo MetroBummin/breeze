@@ -1,7 +1,7 @@
 name: Public RSS photo provenance
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
     paths: ['tools/audit-rss-photo-provenance.mjs', '.github/workflows/rss-photo-provenance.yml']
   workflow_dispatch:
 permissions:
@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: node tools/audit-rss-photo-provenance.mjs
       - uses: actions/upload-artifact@v4
         if: always()

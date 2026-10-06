@@ -1,9 +1,9 @@
-/* Read-only, opt-in provenance audit. No relay/API keys, private feeds, body
+/* Read-only, opt-in provenance audit. No API keys, private feeds, body
    persistence or paid provider. The same pinned public transport reads fixed
    feeds, at most eight public originals and one image per original. */
 import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {chromium} from 'playwright';
+import {chromium,webkit} from 'playwright';
 import {fetchPublic} from '../server/article/public-fetch.mjs';
 
 const root=new URL('../',import.meta.url);
@@ -13,18 +13,22 @@ const proof=process.env.BREEZE_RSS_PHOTO_PROOF||'/tmp/breeze-rss-photo-provenanc
 mkdirSync(proof,{recursive:true});
 const headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36','Accept-Language':'en-US,en;q=0.9'};
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-async function read(url,image=false){
+let imageReads=0;
+async function read(url,image=false,useReferer=false){
   const at=new Date().toISOString();
+  if(image&&imageReads++>=8)return {record:{requestedUrl:url,at,skipped:'image_budget'}};
   try{
     const response=await fetchPublic(url,{limit:image?2000000:3000000,signal:AbortSignal.timeout(12000),
       headers:{...headers,Accept:image?'image/*':'text/html,application/rss+xml,application/atom+xml,application/xml',
-        ...(image?{Referer:new URL(url).origin+'/'}:{})}});
+        ...(image&&useReferer?{Referer:new URL(url).origin+'/'}:{})}});
     const {status,bytes}=response,type=response.headers['content-type']||'';
     return {bytes,record:{requestedUrl:url,url:response.url||url,at,status,type,
-      bytes:bytes?.byteLength||0,sha256:bytes?sha(bytes):null}};
+      bytes:bytes?.byteLength||0,sha256:bytes?sha(bytes):null,...(image?{referrer:useReferer?'origin':'none'}:{})}};
   }catch(error){return {record:{requestedUrl:url,at,error:error.name+': '+error.message}};}
 }
 const browser=await chromium.launch({headless:true});
+const webkitBrowser=await webkit.launch({headless:true});
+const webkitPage=await webkitBrowser.newPage();
 const page=await browser.newPage();
 // Production parser functions operate on inert documents. No app boot/network.
 await page.setContent('<html><head></head><body></body></html>');
@@ -34,7 +38,7 @@ await page.addScriptTag({content:article+'\n'+rss});
 const allFeeds=await page.evaluate(()=>RSS_FEEDS.map(feed=>({...feed})));
 const chosen=[0,1,2,3,4,5,7].map(index=>allFeeds[index]);
 const report={at:new Date().toISOString(),sourceSha256:sha(rss),
-  scope:'Live, read-only public GETs through repository pinned transport; seven fixed feeds, at most eight originals and eight images. No production relay, API key, paid provider or server mutation.',
+  scope:'Live, read-only public GETs through repository pinned transport; seven fixed feeds, at most eight originals, eight image requests and two anonymous current-client relay/gateway GETs. No API key, paid provider or server mutation.',
   limitations:'Received HTTP representation, not proof of every rendered/photo variant. Original bodies are not retained in this artifact. Client CORS, deployed relay geography/runtime and billed egress are separate.',
   feeds:[],articles:[]};
 try{
@@ -43,9 +47,22 @@ try{
     const response=await read(feed.url),record={feed,...response.record};report.feeds.push(record);
     if(!response.bytes)continue;
     try{
-      const entries=await page.evaluate(({xml,feed})=>parseRss(xml,feed).slice(0,3).map(entry=>({
-        url:entry.url,title:entry.title,photo:entry.photo,kind:entry.kind,readUrl:entry.readUrl,
-        feedSourceUrl:entry.feedSourceUrl})),{xml:new TextDecoder().decode(response.bytes),feed});
+      const entries=await page.evaluate(({xml,feed})=>{
+        const doc=new DOMParser().parseFromString(xml,'application/xml'),nodes=[...doc.querySelectorAll('entry,item')];
+        return parseRss(xml,feed).slice(0,3).map(entry=>{
+          const node=nodes.find(node=>rssEntryUrl(node,feed.url)===entry.url);
+          const fields=['encoded','content','description','summary'].map(name=>{
+            const raw=rssText(node,[name]),body=new DOMParser().parseFromString(raw,'text/html');
+            return {name,chars:raw.length,images:[...body.querySelectorAll('img')].slice(0,6).map(image=>({
+              url:rssCoverPublicUrl(articleAbsolute(articleBestSrc(image),entry.url)),width:image.getAttribute('width'),height:image.getAttribute('height')}))};
+          });
+          const media=[...node.querySelectorAll('*')].filter(node=>['content','thumbnail','enclosure','link'].includes(rssLocal(node))&&
+            (node.getAttribute('url')||node.getAttribute('href'))).slice(0,8).map(node=>({name:rssLocal(node),
+              url:rssCoverPublicUrl(articleAbsolute(node.getAttribute('url')||node.getAttribute('href'),entry.url)),type:node.getAttribute('type'),medium:node.getAttribute('medium')}));
+          return {url:entry.url,title:entry.title,photo:entry.photo,kind:entry.kind,readUrl:entry.readUrl,
+            feedSourceUrl:entry.feedSourceUrl,photoInputs:{fields,media}};
+        });
+      },{xml:new TextDecoder().decode(response.bytes),feed});
       record.entries=entries;candidates.push(...entries.map(entry=>({...entry,feed:feed.name})));
     }catch(error){record.parseError=error.message;}
   }
@@ -75,23 +92,46 @@ try{
       return {suppliedPhoto:entry.photo,eligible:rssCoverEligible(entry),
         prefixPhoto:payload?rssCoverPhoto(payload.html,payload.url||url):null,
         fullPhoto:rssCoverPhoto(html,url),declarations,
-        bodyImages:[...doc.querySelectorAll('img')].slice(0,12).map(image=>({url:articleBestSrc(image),width:image.getAttribute('width'),height:image.getAttribute('height')})),
+        bodyImages:[...doc.querySelectorAll('img')].slice(0,12).map(image=>({url:rssCoverPublicUrl(articleAbsolute(articleBestSrc(image),url)),width:image.getAttribute('width'),height:image.getAttribute('height')})),
         declaresRestricted:/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html)};
     },{html,prefix,url:response.record.url,entry,rawDeclarations});
     row.metadata=metadata;row.serializedBytes=Buffer.byteLength(serialized);
     const imageUrl=entry.photo||metadata.fullPhoto;if(!imageUrl)continue;
-    const image=await read(imageUrl,true);row.image=image.record;
+    let image=await read(imageUrl,true);row.image=image.record;
+    if(!image.bytes||!/^image\//i.test(image.record.type)||/svg/i.test(image.record.type)){
+      image=await read(imageUrl,true,true);row.imageFallback=image.record;
+    }
     if(image.bytes&&/^image\//i.test(image.record.type)&&!/svg/i.test(image.record.type)){
       const data='data:'+image.record.type.split(';')[0]+';base64,'+Buffer.from(image.bytes).toString('base64');
-      row.decode=await page.evaluate(data=>new Promise(resolve=>{
-        const image=new Image(),timer=setTimeout(()=>resolve({error:'decode_timeout'}),4000);
-        image.onload=()=>image.decode().then(()=>{clearTimeout(timer);resolve({width:image.naturalWidth,height:image.naturalHeight});},()=>{clearTimeout(timer);resolve({error:'decode_failed'});});
-        image.onerror=()=>{clearTimeout(timer);resolve({error:'image_error'});};image.src=data;
-      }),data);
+      row.decode={};
+      for(const [engine,decoder] of [['chromium',page],['webkit',webkitPage]]){
+        row.decode[engine]=await decoder.evaluate(data=>new Promise(resolve=>{
+          const image=new Image(),timer=setTimeout(()=>resolve({error:'decode_timeout'}),4000);
+          image.onload=()=>image.decode().then(()=>{clearTimeout(timer);resolve({width:image.naturalWidth,height:image.naturalHeight});},()=>{clearTimeout(timer);resolve({error:'decode_failed'});});
+          image.onerror=()=>{clearTimeout(timer);resolve({error:'image_error'});};image.src=data;
+        }),data);
+      }
+    }
+  }
+  const relayBase=readFileSync(new URL('config.js',root),'utf8').match(/SB_URL\s*:\s*['"]([^'"]+)['"]/)?.[1];
+  // Public gateway provenance only; never read/use SB_KEY or authenticate. A 401
+  // here is not proof that the application's authenticated request fails.
+  if(relayBase)for(const row of report.articles.filter(row=>!row.entry.photo).slice(0,2)){
+    const endpoint=relayBase.replace(/\/+$/,'')+'/functions/v1/article?url='+encodeURIComponent(row.entry.url);
+    const response=await read(endpoint);row.relay={...response.record,authentication:'none (gateway/public response, not the signed app request)'};
+    if(response.bytes){
+      try{
+        const payload=JSON.parse(new TextDecoder().decode(response.bytes));row.relay.code=payload.code||payload.error||null;
+        if(typeof payload.html==='string'){
+          row.relay.htmlBytes=Buffer.byteLength(payload.html);row.relay.htmlSha256=sha(payload.html);
+          row.relay.photo=await page.evaluate(({html,url})=>rssCoverPhoto(html,url),{html:payload.html,url:payload.url||row.entry.url});
+        }
+      }catch{row.relay.invalidJson=true;}
     }
   }
 }finally{
   writeFileSync(proof+'/results.json',JSON.stringify(report,null,2)+'\n');
   await browser.close();
+  await webkitBrowser.close();
 }
 console.log(JSON.stringify(report,null,2));

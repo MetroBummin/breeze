@@ -52,7 +52,7 @@ const rssPublicFeedJobs = new Map();
 const rssPreparedArticles = new Map();
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
-const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v1';
+const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v2';
 const RSS_COVER_CACHE_BYTES=64000;
 const RSS_COVER_CACHE_LIMIT=100;
 const RSS_COVER_TTL_MS=86400000;
@@ -85,13 +85,17 @@ function rssCoverCached(url){
   if(!rssCoverCache){
     rssCoverCache=Object.create(null);
     try{
-      const raw=localStorage.getItem(RSS_COVER_CACHE_KEY);
+      const current=localStorage.getItem(RSS_COVER_CACHE_KEY);
+      const raw=current||localStorage.getItem('breeze.rss-cover-metadata.v1');
       if(raw&&raw.length<=RSS_COVER_CACHE_BYTES){
         const parsed=JSON.parse(raw);
         if(rssCacheBytes(parsed)<=RSS_COVER_CACHE_BYTES){
           for(const [key,record] of Object.entries(parsed).slice(0,RSS_COVER_CACHE_LIMIT)){
             if(rssCoverPublicUrl(key)!==key||!record||typeof record.photo!=='string'
               ||record.photo&&rssCoverPublicUrl(record.photo)!==record.photo)continue;
+            // v1 stored retrieval failures/truncated prefixes as photo absence.
+            // Keep its successful photos; only v2 negatives have that provenance.
+            if(!current&&!record.photo)continue;
             const age=Date.now()-record.at;
             if(Number.isFinite(record.at)&&age>=0&&age<(record.photo?RSS_COVER_TTL_MS:RSS_COVER_EMPTY_MS))
               rssCoverCache[key]={at:record.at,photo:record.photo};
@@ -156,12 +160,15 @@ function rssCoverPhoto(html,base){
   // Ignore a partial final tag; HTML stays in an inert document, never the UI.
   const end=html.lastIndexOf('>');if(end<0)return '';
   const doc=new DOMParser().parseFromString(html.slice(0,end+1),'text/html');
+  doc.querySelectorAll('script,style,noscript,template').forEach(node=>node.remove());
   const metas=[...doc.querySelectorAll('meta')];
   for(const name of ['og:image','og:image:url','twitter:image','twitter:image:src']){
-    const node=metas.find(node=>(node.getAttribute('property')||node.getAttribute('name')||'').toLowerCase()===name);
-    const photo=rssCoverPublicUrl(articleAbsolute(node?.getAttribute('content'),base));
-    if(photo&&!ARTICLE_IMG_BAD.test(photo))return photo;
+    for(const node of metas.filter(node=>(node.getAttribute('property')||node.getAttribute('name')||'').toLowerCase()===name)){
+      const photo=rssCoverPublicUrl(articleAbsolute(node.getAttribute('content'),base));
+      if(photo&&!ARTICLE_IMG_BAD.test(photo))return photo;
+    }
   }
+  if(/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(html))return '';
   for(const image of doc.querySelectorAll('img')){
     const photo=rssCoverPublicUrl(articleAbsolute(articleBestSrc(image),base));
     if(photo&&!articleTooSmall(image)&&!ARTICLE_IMG_BAD.test(photo))return photo;
@@ -174,20 +181,26 @@ async function rssCoverFetch(url,signal){
     headers:{Authorization:'Bearer '+SB_KEY,apikey:SB_KEY}});
   if(!response.ok||!response.body||!/application\/json/i.test(response.headers.get('content-type')||'')){
     await response.body?.cancel().catch(()=>{});
-    return response.ok?null:{photo:''};
+    return null;
   }
-  const reader=response.body.getReader(),decoder=new TextDecoder();let text='',retainedBytes=0;
+  const reader=response.body.getReader(),decoder=new TextDecoder();let text='',retainedBytes=0,complete=false;
   try{
     while(retainedBytes<RSS_COVER_PREFIX_BYTES){
-      const {done,value}=await reader.read();if(done)break;
+      const {done,value}=await reader.read();if(done){complete=true;break;}
       const prefix=value.subarray(0,RSS_COVER_PREFIX_BYTES-retainedBytes);
       retainedBytes+=prefix.byteLength;text+=decoder.decode(prefix,{stream:true});
       const payload=rssCoverPayloadPrefix(text);
       const photo=payload&&rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url);
       if(photo)return {photo};
     }
-    text+=decoder.decode();const payload=rssCoverPayloadPrefix(text);
-    return payload?{photo:rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url)}:null;
+    text+=decoder.decode();
+    // A bounded prefix with no photo is unknown, not a successful no-image page.
+    if(!complete)return null;
+    try{
+      const payload=JSON.parse(text);
+      return typeof payload?.html==='string'
+        ?{photo:rssCoverPhoto(payload.html,rssCoverPublicUrl(payload.url)||url)}:null;
+    }catch{return null;}
   }finally{await reader.cancel().catch(()=>{});}
   // This bounds retained client parsing, not upstream or billed bytes. The
   // existing relay reads the entire page (up to its 3 MB cap) before responding.
