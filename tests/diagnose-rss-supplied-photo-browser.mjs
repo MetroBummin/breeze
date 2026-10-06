@@ -13,7 +13,8 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_RSS_VISIBLE_COVER_PROOF||'/tmp/breeze-rss-visible-covers';
 mkdirSync(proof,{recursive:true});
 const photo=readFileSync(resolve(root,'assets/samples/starship-1.jpg'));
-const source=readFileSync(resolve(root,'scripts/importers/rss.js'),'utf8');
+const source=readFileSync(resolve(root,process.env.BREEZE_RSS_DIAGNOSTIC_SOURCE||'scripts/importers/rss.js'),'utf8');
+console.log('RSS diagnostic source SHA256:',createHash('sha256').update(source).digest('hex'));
 const originalCases=JSON.parse(readFileSync(resolve(root,'tests/fixtures/rss-original-cover-metadata.json'),'utf8')).cases;
 const feeds=[...source.matchAll(/name:'([^']+)', url:'([^']+)', category:'([^']+)'/g)]
   .map(([,name,url,category])=>({name,url,category}));
@@ -184,6 +185,7 @@ const outcomes=[];
 const browser=await chromium.launch(process.env.BREEZE_BROWSER_EXECUTABLE?{executablePath:process.env.BREEZE_BROWSER_EXECUTABLE}:{});
 const scenarios=[...Array.from({length:8},(_,i)=>({name:'baseline-'+i})),
  {name:'first-feed-late',feedDelays:[150,...Array(12).fill(0)]},
+ {name:'first-feed-late-settled',feedDelays:[150,...Array(12).fill(0)],settleFirst:true},
  {name:'second-feed-late',feedDelays:[0,150,...Array(11).fill(0)]},
  {name:'rest-feeds-late',feedDelays:[0,0,...Array(11).fill(150)]},
  {name:'staggered',feedDelays:Array.from({length:13},(_,i)=>i*15)},
@@ -193,6 +195,7 @@ try{
    const fixture=run('chromium-'+scenario.name,{supplied:true,...scenario});
    const h=await start(browser,fixture);
    let status='pass',error='';
+   if(scenario.settleFirst)await settled(h.page);
    try{
      await h.page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card .thumb.has-cover').length===2);
      assert.equal(fixture.requests.length,1);
@@ -209,7 +212,7 @@ try{
          image:{src:card.querySelector('.cover').src,width:card.querySelector('.cover').naturalWidth,height:card.querySelector('.cover').naturalHeight,complete:card.querySelector('.cover').complete},
          work:!!rssCardCoverWork.get(card)}))};
    });
-   const row={name:scenario.name,status,error,feedEvents:fixture.feedEvents,requests:fixture.requests,images:fixture.images,state,value};
+   const row={sourceSha256:createHash('sha256').update(source).digest('hex'),name:scenario.name,status,error,feedEvents:fixture.feedEvents,requests:fixture.requests,images:fixture.images,state,value};
    outcomes.push(row);writeFileSync(resolve(proof,'diagnostic-results.json'),JSON.stringify(outcomes,null,2));
    console.log(JSON.stringify({name:row.name,status,error,requests:fixture.requests.map(r=>r.index),coverUrls:value.cards.filter(c=>c.photo).map(c=>c.url),remaining:state.remaining}));
    if(status==='fail')await h.page.screenshot({path:resolve(proof,scenario.name+'-failed.png'),fullPage:true});

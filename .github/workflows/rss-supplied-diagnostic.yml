@@ -12,22 +12,36 @@ jobs:
   diagnose:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [released, before104]
+    defaults:
+      run:
+        working-directory: current
     steps:
       - uses: actions/checkout@v4
-        with: {persist-credentials: false}
+        with: {persist-credentials: false, path: current}
+      - uses: actions/checkout@v4
+        if: matrix.source == 'before104'
+        with:
+          persist-credentials: false
+          ref: f7a2889296226f1ebca03cdcc45d09b739b05e88
+          path: before
       - uses: actions/setup-node@v4
-        with: {node-version: '22', cache: npm}
+        with: {node-version: '22', cache: npm, cache-dependency-path: current/package-lock.json}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - name: Preserve supplied-photo expectations and record controlled feed timing
         env:
           BREEZE_RSS_VISIBLE_COVER_PROOF: /tmp/breeze-rss-supplied-diagnostic
+          BREEZE_RSS_DIAGNOSTIC_SOURCE: ${{ matrix.source == 'before104' && '../before/scripts/importers/rss.js' || 'scripts/importers/rss.js' }}
         run: node tests/diagnose-rss-supplied-photo-browser.mjs
       - name: Capture diagnostic state even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rss-supplied-diagnostic
+          name: rss-supplied-diagnostic-${{ matrix.source }}
           path: /tmp/breeze-rss-supplied-diagnostic/
           if-no-files-found: error
           retention-days: 7
