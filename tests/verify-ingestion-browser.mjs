@@ -102,11 +102,12 @@ try{
 
    await page.evaluate(async()=>{
      const original=fetchArticleImage;
-     const card=rssCard({title:'Recovered cover',source:'Test',url:'https://content.example/cover-test'});
+     const entry={title:'Recovered cover',source:'Test',url:'https://content.example/cover-test',photo:'https://blocked.example/photo.jpg'};
+     const card=rssCard(entry);
      document.getElementById('casual-rail').appendChild(card);
      try{
        fetchArticleImage=async()=>await (await fetch('/assets/favicon/icon-512.png')).blob();
-       const ok=await rssCardPhoto(card,{photo:'https://blocked.example/photo.jpg'});
+       const ok=await rssCardPhoto(card,entry);
        if(!ok || !card.querySelector('.thumb').classList.contains('has-cover'))throw Error('Cover relay recovery failed');
      }finally{fetchArticleImage=original;card.remove();}
    });

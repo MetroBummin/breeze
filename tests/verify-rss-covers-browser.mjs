@@ -102,13 +102,13 @@ try{
       await page.goto(base);await page.evaluate(()=>homeReady);
       await page.evaluate(async()=>{if(rssLoading)await rssLoading;refreshFeedRails();});
       await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card').length===13&&
-        !document.querySelector('#casual-rail .rss-pending'),{},{timeout:20000});
+        !document.querySelector('#casual-rail .rss-cover-pending'),{},{timeout:20000});
       const state=await page.evaluate(()=>({
         entries:rssCands.map(group=>group[0]),catalog:rssCatalogEnabled(),
         cards:[...document.querySelectorAll('#casual-rail .rss-card')].map(card=>({url:card.dataset.rssUrl,
           photo:card.querySelector('.thumb').classList.contains('has-cover'),hidden:card.hidden,
           title:card.querySelector('.ct').textContent,source:card.querySelector('.src').textContent,
-          artwork:!!card.querySelector('.cover-art'),ready:!card.classList.contains('rss-pending'),tabIndex:card.tabIndex,
+          artwork:!!card.querySelector('.cover-art'),ready:!card.classList.contains('rss-cover-pending'),tabIndex:card.tabIndex,
           photoStarted:card.dataset.photoStarted||'',image:{src:card.querySelector('img.cover').getAttribute('src'),
             complete:card.querySelector('img.cover').complete,naturalWidth:card.querySelector('img.cover').naturalWidth,
             naturalHeight:card.querySelector('img.cover').naturalHeight,hidden:card.querySelector('img.cover').hidden}})),
