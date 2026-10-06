@@ -38,20 +38,27 @@ zip.file('mimetype','application/epub+zip');zip.file('META-INF/container.xml','<
 zip.file('book.opf','<package><metadata/><manifest>'+[0,1,2].map(i=>`<item id="c${i}" href="c${i}.xhtml" media-type="application/xhtml+xml"/>`).join('')+'</manifest><spine>'+[0,1,2].map(i=>`<itemref idref="c${i}"/>`).join('')+'</spine></package>');
 for(let i=0;i<3;i++)zip.file(`c${i}.xhtml`,'<html xmlns="http://www.w3.org/1999/xhtml"><head><style>body{margin:24px;font:20px/1.8 Georgia}p{margin:0 0 24px}</style></head><body>'+Array.from({length:70},()=>'<p>'+sentence+'</p>').join('')+'</body></html>');
 const inputs={pdf:{name:'scroll-diagnostic.pdf',mimeType:'application/pdf',buffer:pdfFixture()},epub:{name:'scroll-diagnostic.epub',mimeType:'application/epub+zip',buffer:await zip.generateAsync({type:'nodebuffer'})}};
-const reports=[],failures=[];const browser=await engine.launch({headless:true,executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
+const reports=[],failures=[];
 try{
  for(const kind of ['pdf','epub'])for(const dark of [false,true])for(const condition of ['baseline','translation','help-ready','help-pending']){
   const name=`${engine.name()}-${kind}-${dark?'dark':'light'}-${condition}`;
-  const context=await browser.newContext({viewport:{width:820,height:1180},deviceScaleFactor:2,hasTouch:true,isMobile:true,serviceWorkers:'block'});
-  const page=await context.newPage(),errors=[];page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.push(e.message);});
+  const context=await engine.launchPersistentContext('',{headless:true,executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined,viewport:{width:820,height:1180},deviceScaleFactor:2,hasTouch:true,isMobile:true,serviceWorkers:'block'});
+  const page=await context.newPage(),errors=[];
+  page.setDefaultTimeout(20000);
+  const evaluate=page.evaluate.bind(page);
+  page.evaluate=async(...args)=>{let timer;try{return await Promise.race([evaluate(...args),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Evaluation exceeded 40 seconds: '+String(args[0]).slice(0,180))),40000);})]);}finally{clearTimeout(timer);}};
+  console.log('Starting '+name);
+page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.push(e.message);});
   try{
    await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
    await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
    await page.goto(url);await page.evaluate(()=>homeReady);
    await page.locator('#fileinput').setInputFiles(inputs[kind]);
-   await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind,{timeout:120000});
-   await page.evaluate(async({kind,dark})=>{darkMode=dark;applyDark();await openBook(books.find(b=>b.kind===kind));await switchReaderMode('original');}, {kind,dark});
-   await page.waitForFunction(()=>!readerPositionPending(),{timeout:30000});
+   await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind,{timeout:30000});
+   await page.evaluate(async({kind,dark})=>{darkMode=dark;applyDark();await openBook(books.find(b=>b.kind===kind));await switchReaderMode('original',{initial:true});}, {kind,dark});
+   await page.waitForFunction(()=>!readerPositionPending(),null,{timeout:30000});
+   // Mode-bridge stabilizers from opening must finish before the experiment.
+   await page.waitForTimeout(1100);
    if(kind==='pdf'){
     await page.evaluate(async()=>{await renderOriginalPdfPage(originalSession,4);const p=originalSession.pages[3];readerScrollTo(readerScrollTop()+p.getBoundingClientRect().top-120);});
     await page.waitForFunction(()=>pdfPagesInView(originalSession).every(n=>originalSession.settled.has(n)),{timeout:30000});
@@ -61,43 +68,86 @@ try{
     await page.evaluate(()=>readerScrollTo(2400));
    }
    await page.waitForTimeout(700);
+   if(kind==='pdf')await page.waitForFunction(()=>!originalSession.paintActive&&!originalSession.paintQueue?.size);
    await page.evaluate(()=>{
-    window.qaEvents=[];window.qaSamples=[];window.qaPhase='before';window.qaPending=null;
+    window.qaEvents=[];window.qaSamples=[];window.qaPhase='before';window.qaPending=null;window.qaSignal=null;
+    window.qaVisible=()=>{
+     if(originalSession.kind!=='pdf')return [];
+     const r=readerScroller().getBoundingClientRect();
+     return originalSession.pages.filter(p=>{const q=p.getBoundingClientRect();return q.width>0&&q.height>0&&q.bottom>r.top&&q.top<r.bottom&&q.right>r.left&&q.left<r.right;}).map(p=>+p.dataset.page);
+    };
+    const canvasIds=new WeakMap();let canvasId=0;
+    const identify=c=>{if(!canvasIds.has(c))canvasIds.set(c,++canvasId);return canvasIds.get(c);};
+    const bitmap=c=>{
+     if(!c?.width||!c.height)return null;
+     const sample=document.createElement('canvas');sample.width=96;sample.height=128;
+     const ctx=sample.getContext('2d');ctx.drawImage(c,0,0,96,128);const bytes=ctx.getImageData(0,0,96,128).data;
+     let ink=0,hash=2166136261;for(let i=0;i<bytes.length;i+=4){if(bytes[i+3]&&Math.min(bytes[i],bytes[i+1],bytes[i+2])<235)ink++;hash=Math.imul(hash^bytes[i]^bytes[i+1]^bytes[i+2]^bytes[i+3],16777619)>>>0;}
+     return {id:identify(c),ink,hash};
+    };
+    if(originalSession.kind==='pdf'){
+     const getPage=originalSession.pdf.getPage,wrapped=new WeakSet();
+     originalSession.pdf.getPage=async function(...args){
+      const p=await getPage.apply(this,args);if(wrapped.has(p))return p;wrapped.add(p);const render=p.render;
+      p.render=function(...args){
+       const c=args[0].canvasContext.canvas,id=identify(c),n=p.pageNumber;
+       qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-start',page:n,id,attached:c.isConnected,visible:qaVisible().includes(n)});
+       const task=render.apply(this,args),cancel=task.cancel;
+       task.cancel=function(...args){qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-cancel',page:n,id});return cancel.apply(this,args);};
+       task.promise.then(()=>qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-complete',page:n,id}),error=>qaEvents.push({t:performance.now(),phase:qaPhase,name:'pdf-render-reject',page:n,id,error:error.name}));
+       return task;
+      };return p;
+     };
+    }
     for(const name of ['releaseOriginalPdfPage','paintOriginalPdfPage','closeSentence','clearReaderSentenceCue']){
      const original=window[name];window[name]=function(...args){
       const n=typeof args[1]==='number'?args[1]:null;
-      qaEvents.push({t:performance.now(),phase:qaPhase,name,page:n,visible:n==null?null:pdfPagesInView(originalSession).includes(n),options:args[2]});
+      qaEvents.push({t:performance.now(),phase:qaPhase,name,page:n,visible:n==null?null:qaVisible().includes(n),options:args[2]});
       return original.apply(this,args);
      };
     }
+    window.qaCueCount=()=>[document,...(originalSession?.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>f.contentDocument):[])].reduce((n,d)=>n+d.querySelectorAll('.reader-sentence-cue-layer').length,0);
     window.qaSnapshot=()=>{
      const docs=[document,...(originalSession?.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>f.contentDocument):[])];
      const box=readerScroller(),r=document.getElementById('readmain').getBoundingClientRect();
      return {sentenceOpen:sentenceLookupOpen(),modalHidden:document.getElementById('sentence-modal').hidden,
-      easyAlive:!!sentenceEasyState,cues:docs.reduce((n,d)=>n+d.querySelectorAll('.reader-sentence-cue-layer').length,0),
-      bodyClasses:[...document.body.classList].sort(),activeElement:document.activeElement?.id||document.activeElement?.tagName,
+      easyAlive:!!sentenceEasyState,easyLoading:!!sentenceEasyState?.loading,easyText:!!sentenceEasyState?.text,hasPending:!!qaPending,signalAborted:qaSignal?.aborted??null,cues:docs.reduce((n,d)=>n+d.querySelectorAll('.reader-sentence-cue-layer').length,0),
+      pdfState:originalSession.kind==='pdf'?{settled:[...originalSession.settled].sort((a,b)=>a-b),drawnAt:[...originalSession.drawnAt].sort((a,b)=>a[0]-b[0]),wordBoxes:[...originalSession.wordBoxes.keys()].sort((a,b)=>a-b),active:originalSession.paintActive?.pageNumber||null,queue:[...(originalSession.paintQueue?.keys()||[])]}:null,bodyClasses:[...document.body.classList].sort(),activeElement:document.activeElement?.id||document.activeElement?.tagName,
       scroll:[box.scrollTop,box.scrollLeft,box.scrollWidth,box.scrollHeight],readerSize:[r.width,r.height],
-      pages:originalSession.kind==='pdf'?originalSession.pages.map(p=>{const c=p.querySelector('canvas'),r=p.getBoundingClientRect();return {page:+p.dataset.page,rect:[r.top+box.scrollTop,r.height],bitmap:c?[c.width,c.height]:null,settled:originalSession.settled.has(+p.dataset.page)};}):null,
+      pages:originalSession.kind==='pdf'?originalSession.pages.map(p=>{const c=p.querySelector('canvas'),r=p.getBoundingClientRect();return {page:+p.dataset.page,rect:[r.top+box.scrollTop,r.height],bitmap:c?[c.width,c.height]:null,settled:originalSession.settled.has(+p.dataset.page),pixels:qaVisible().includes(+p.dataset.page)?bitmap(c):null};}):null,
       frames:originalSession.kind==='epub'?originalSession.frames.filter(Boolean).map(f=>[f.clientWidth,f.clientHeight]):null};
     };
     dictGet=async()=>({ko:'차분한 독자는 모든 단어와 의미를 함께 읽습니다.'});dictPut=async()=>{};setSentenceEasyCapability(true);
    });
    const before=await page.evaluate(()=>qaSnapshot());
+   assert.ok(before.scroll[0]>1600,'fixture must begin away from the top so both directions move');
    if(condition!=='baseline'){
     await page.evaluate(async({kind,condition})=>{
      const surface=READER_SURFACES.find(s=>s.name===kind);let found=null;
      if(kind==='pdf'){
       const p=originalSession.pages[3],b=originalSession.wordBoxes.get(4).find(b=>b.word==='patient'),r=p.getBoundingClientRect();
-      found=surface.sentenceAt(r.left+(b.x+b.w/2)*r.width,r.top+(b.y+b.h/2)*r.height);
+      const x=r.left+(b.x+b.w/2)*r.width,y=r.top+(b.y+b.h/2)*r.height;
+      if(y<0||y>innerHeight||x<0||x>innerWidth)throw Error('PDF source sentence is outside the viewport');
+      found=surface.sentenceAt(x,y);
      }else for(let y=160;y<700&&!found;y+=20)for(let x=60;x<680&&!found;x+=30)found=surface.sentenceAt(x,y);
      if(!found)throw Error('No source sentence');found.paint();await openSentence(found.sentence,found);
-     dictCall=()=>condition==='help-pending'?new Promise(resolve=>qaPending=resolve):Promise.resolve({explanation:'이 문장은 독자가 단어를 따로 떼어 보기보다 문장 안에서 의미를 연결하며 읽는다는 뜻이에요. 주어는 독자이고 중심 행동은 의미를 함께 이해하는 것입니다.'});
+     dictCall=(_body,signal)=>{qaSignal=signal;return condition==='help-pending'?new Promise(resolve=>qaPending=resolve):Promise.resolve({explanation:'이 문장은 독자가 단어를 따로 떼어 보기보다 문장 안에서 의미를 연결하며 읽는다는 뜻이에요. 주어는 독자이고 중심 행동은 의미를 함께 이해하는 것입니다.'});};
     },{kind,condition});
     await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden);
     if(condition.startsWith('help')){await page.locator('#ps-easy-button').click();if(condition==='help-ready')await page.waitForFunction(()=>!!sentenceEasyState?.text);}
    }
    await page.waitForTimeout(300);
+   if(kind==='pdf')await page.waitForFunction(()=>!originalSession.paintActive&&!originalSession.paintQueue?.size);
    const open=await page.evaluate(()=>qaSnapshot());
+   assert.equal(open.cues,condition==='baseline'?0:1,'expected source cue was not painted');
+   assert.equal(open.sentenceOpen,condition!=='baseline');
+   if(condition!=='baseline')assert.equal(await page.locator('#ps-ko').innerText(),'차분한 독자는 모든 단어와 의미를 함께 읽습니다.');
+   if(condition==='help-ready')assert.equal(open.easyText,true,'ready explanation precondition missing');
+   if(condition==='help-pending'){
+    assert.equal(open.easyLoading,true);assert.equal(open.hasPending,true);assert.equal(open.signalAborted,false);
+    assert.equal(await page.locator('#ps-easy-skeleton').isVisible(),true);
+   }
+   if(kind==='pdf')assert.ok(open.pages.filter(p=>open.pdfState.settled.includes(p.page)&&p.pixels).every(p=>p.pixels.ink>0),'pre-scroll source bitmap is blank');
    await page.screenshot({path:resolve(output,name+'-before-scroll.png')});
    // Identical physical-coordinate displacements. These cause genuine scroll
    // events, but do not claim to reproduce iOS's native finger/momentum path.
@@ -105,8 +155,8 @@ try{
     qaPhase='scroll';const box=readerScroller(),start=box.scrollTop;
     const offsets=[...Array.from({length:18},(_,i)=>(i+1)*80),...Array.from({length:36},(_,i)=>1440-(i+1)*80),...Array.from({length:18},(_,i)=>-1440+(i+1)*80)];
     for(const offset of offsets){box.scrollTop=start+offset;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-     const visible=originalSession.kind==='pdf'?pdfPagesInView(originalSession):[];
-     qaSamples.push({t:performance.now(),y:box.scrollTop,visible,empty:visible.filter(n=>{const c=originalSession.pages[n-1].querySelector('canvas');return !c||!c.width||!c.height;}),sentenceOpen:sentenceLookupOpen()});
+     const visible=qaVisible(),productionVisible=originalSession.kind==='pdf'?pdfPagesInView(originalSession):[];
+     qaSamples.push({t:performance.now(),y:box.scrollTop,visible,productionVisible,unsettled:visible.filter(n=>!originalSession.settled.has(n)),empty:visible.filter(n=>{const c=originalSession.pages[n-1].querySelector('canvas');return !c||!c.width||!c.height;}),sentenceOpen:sentenceLookupOpen(),cues:qaCueCount()});
     }qaPhase='settle';if(qaPending)qaPending({explanation:'늦은 응답은 닫힌 창을 다시 열면 안 됩니다.'});
    });
    await page.waitForTimeout(1000);
@@ -114,13 +164,20 @@ try{
    const after=await page.evaluate(()=>qaSnapshot()),events=await page.evaluate(()=>qaEvents),samples=await page.evaluate(()=>qaSamples);
    const row={name,engine:engine.name(),kind,dark,condition,before,open,after,events,samples,errors,
     summary:{emptyVisibleSamples:samples.filter(s=>s.empty.length).length,releaseVisible:events.filter(e=>e.name==='releaseOriginalPdfPage'&&e.visible).length,
-     paints:events.filter(e=>e.name==='paintOriginalPdfPage').length,releases:events.filter(e=>e.name==='releaseOriginalPdfPage').length,
-     maxCueLayers:Math.max(before.cues,open.cues,after.cues),closeCalls:events.filter(e=>e.name==='closeSentence').length}};
+     paintEntries:events.filter(e=>e.name==='paintOriginalPdfPage').length,bitmapRenders:events.filter(e=>e.name==='pdf-render-start').length,renderCancels:events.filter(e=>e.name==='pdf-render-cancel').length,unsettledVisibleSamples:samples.filter(s=>s.unsettled.length).length,visibilityDisagreements:samples.filter(s=>JSON.stringify(s.visible)!==JSON.stringify(s.productionVisible)).length,releases:events.filter(e=>e.name==='releaseOriginalPdfPage').length,
+     maxCueLayers:Math.max(before.cues,open.cues,after.cues,...samples.map(s=>s.cues)),closeCalls:events.filter(e=>e.name==='closeSentence').length}};
    reports.push(row);writeFileSync(resolve(output,name+'.json'),JSON.stringify(row,null,2));
    await page.screenshot({path:resolve(output,name+'-after-scroll.png')});
+   assert.ok(samples.every(s=>!s.sentenceOpen),'lookup remained open or reopened after displacement');
    assert.equal(after.sentenceOpen,false,'lookup reopened');assert.equal(after.modalHidden,true);assert.equal(after.easyAlive,false);assert.equal(after.cues,0,'outgoing sentence layer leaked');
    assert.deepEqual(after.readerSize,before.readerSize,'lookup changed reader dimensions');assert.deepEqual(after.scroll,before.scroll,'closed lookup changed final scroll geometry');
    assert.equal(row.summary.releaseVisible,0,'cache eviction cleared visible paper');
+   assert.equal(row.summary.visibilityDisagreements,0,'cached visibility disagrees with live source rectangles');
+   if(condition==='help-pending')assert.equal(after.signalAborted,true,'dismissal did not abort pending explanation');
+   if(kind==='pdf'){
+    assert.ok(after.pages.filter(p=>p.pixels).every(p=>p.pixels.ink>0),'settled visible source bitmap is blank');
+    assert.deepEqual(after.pages.map(p=>p.rect),before.pages.map(p=>p.rect),'individual paper rectangles shifted');
+   }
    if(kind==='epub')assert.deepEqual(after.frames,before.frames,'lookup changed EPUB frame geometry');
    assert.deepEqual(errors,[]);
    console.log(JSON.stringify({name,...row.summary}));
@@ -128,4 +185,4 @@ try{
   finally{await context.close();writeFileSync(resolve(output,'report.json'),JSON.stringify({physicalIpadValidated:false,nativeMomentumEmulated:false,failures,reports},null,2));}
  }
  assert.deepEqual(failures,[],'diagnostic scenarios failed; inspect all preserved reports');
-}finally{await browser.close();server.close();}
+}finally{server.close();}
