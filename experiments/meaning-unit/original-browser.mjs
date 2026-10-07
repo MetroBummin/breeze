@@ -75,7 +75,12 @@ try {
       for(const viewport of [{width:820,height:1180},{width:1180,height:820}]) {
         await page.setViewportSize(viewport);
         for(const theme of ['light','dark']) {
-          await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+          const actualTheme=await page.evaluate(theme=>{
+            document.documentElement.classList.toggle('dark',theme==='dark');
+            document.body.classList.toggle('dark',theme==='dark');
+            return {html:document.documentElement.classList.contains('dark'),body:document.body.classList.contains('dark')};
+          },theme);
+          assert.deepEqual(actualTheme,{html:theme==='dark',body:theme==='dark'});
           for(const zoom of [1,1.5]) {
             await page.evaluate(z=>{setOriginalZoom(z);readerScrollTo(0);},zoom);
             for(let column=0;column<2;column++)for(const probe of ['beginning','middle','repeated','end']) {
