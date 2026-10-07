@@ -398,7 +398,15 @@ function showSentenceRangeCue(range){
   if(view.ResizeObserver){
     const owner=range.commonAncestorContainer;
     const block=owner.nodeType===1?owner:owner.parentElement;
-    if(block){active.observer=new view.ResizeObserver(paint);active.observer.observe(block);}
+    if(block){
+      active.observer=new view.ResizeObserver(paint);active.observer.observe(block);
+      // A capped paragraph can move inside a wider viewport without changing
+      // its own size. Invalidate its cached local cue offsets on real container
+      // layout changes too; ordinary scrolling never triggers these observers.
+      for(const container of new Set([layer.parentElement,doc.documentElement])){
+        if(container&&container!==block)active.observer.observe(container);
+      }
+    }
   }
   return readerSentenceCueTarget(active);
 }
