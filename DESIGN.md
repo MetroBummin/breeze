@@ -298,3 +298,7 @@ iPad 등 넓은 화면은 17px를 유지하고 굵기·줄간격 비율·재질�
 wordmark on splash and onboarding; neutral light/dark full wordmark on Home.
 Keep the original letter contours and selected teal lowercase b app icon.
 Memory icon alternatives remain preview-only until selection (decision 014).
+
+2026-10-07 Home Memory icon selection: one neutral bookmark outline, no visible
+Home label or Aa decoration. Keep the existing shared glass button geometry,
+Breeze Memory accessible name and navigation; see decision 014.

@@ -109,9 +109,8 @@ html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
 @keyframes library-refresh-spin{to{rotate:360deg;}}
 @media(prefers-reduced-motion:reduce){#library-refresh{transition:none;}#library-refresh.refreshing .refresh-spinner{animation:none;}}
 
-/* Penpot Thunderhead cloud + lightning, independent of shared glass material. */
-#home-controls #nav-vocab svg{width:24px;height:24px;stroke:#1688b6;stroke-width:1.8;}
-body.dark #home-controls #nav-vocab svg{stroke:#65c6ea;}
+/* Selected single bookmark silhouette; shared dock material and geometry stay owned by Reader. */
+#home-controls #nav-vocab svg{width:21px;height:21px;fill:none;stroke:var(--settings-ink);stroke-width:1.5;}
 
 .home-resume-copy{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;}
 #home-resume-percent{font-size:10px;line-height:13px;opacity:.8;}

@@ -123,3 +123,13 @@ A new continuous actual onboarding capture is 28.88 seconds / 722 frames,
 390×844 at 25fps. Its MP4 is H264 Main, avc1, yuv420p with moov before mdat;
 input/output frame count and duration match and full decoding passes.
 This verifies packaging, not physical iPhone saving or native launch rendering.
+
+## Selected Home bookmark (2026-10-07)
+
+The user selects candidate 1 from the simplified icon-only review: a single
+bookmark outline without Aa, a visible label or overlapping decorations.
+Home now uses that exact path at 21px with a 1.5px neutral stroke. The existing
+42px shared glass circle, navigation handler and Breeze Memory accessible name
+remain intact; the button has a matching tooltip. The existing span stays
+visually hidden on Home and still supplies navigation text outside Home.
+No vocabulary, authentication or onboarding behavior changes.
