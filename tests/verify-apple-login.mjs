@@ -60,6 +60,26 @@ test('SDK failure or off-project redirect never navigates away and remains retry
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
 for(const provider of ['apple','google']){
  const login=h=>provider==='apple'?h.api.login():h.api.google();
+ test(provider+': failed settings and stalled JSON release retry without requesting consent',async()=>{
+  for(const stalled of [false,true]){
+   const h=device(),work=login(h);let finish;
+   if(stalled){h.requests[0].resolve({ok:true,json:()=>new Promise(resolve=>{finish=resolve;})});await turn();[...h.timers.values()][0]();}
+   else h.requests[0].resolve({ok:false});
+   await work;assert.equal(h.oauth.length,0);assert.equal(h.button().disabled,false);
+   if(finish){finish({external:{[provider]:true}});await turn();assert.equal(h.oauth.length,0);}
+   assert.equal(h.redirects.length,0);assert.equal(h.timers.size,0);
+  }
+ });
+ test(provider+': credential-bearing, fragmented and ambiguous authorize URLs never navigate',async()=>{
+  for(const url of [
+   'https://user:password@project.supabase.co/auth/v1/authorize?provider='+provider,
+   'https://project.supabase.co/auth/v1/authorize?provider='+provider+'#unexpected',
+   'https://project.supabase.co/auth/v1/authorize?provider='+provider+'&provider=other',
+  ]){
+   const h=device();h.client.auth.signInWithOAuth=async()=>({data:{url},error:null});
+   const work=login(h);h.resolve(true);await work;assert.equal(h.redirects.length,0);assert.equal(h.button().disabled,false);
+  }
+ });
  test(provider+': the whole-operation deadline settles a never-returning SDK promise and ignores its late URL',async()=>{
   const h=device();let finish;
   h.client.auth.signInWithOAuth=()=>new Promise(resolve=>{finish=resolve;});
@@ -101,6 +121,30 @@ test('Google button follows Apple and invokes the configured provider through th
 
 for(const provider of ['apple','google']){
  const login=h=>provider==='apple'?h.api.login():h.api.google();
+ test(provider+': consent deadline and cancellation reject a late valid callback',async()=>{
+  for(const timedOut of [false,true]){
+   const messages=[];let reply;
+   const bridge={postMessage:message=>{messages.push(message);return message.action==='start'?new Promise(resolve=>{reply=resolve;}):Promise.resolve(true);}};
+   const h=device({native:true,bridge});h.client.auth.signInWithOAuth=async()=>({data:{url:'https://project.supabase.co/auth/v1/authorize?provider='+provider},error:null});
+   const work=login(h);h.resolve(true);await turn();const request=messages.find(m=>m.action==='start').request;
+   if(timedOut)[...h.timers.values()][0]();else h.api.cancel();
+   await work;reply('kr.io.breeze.app://auth/callback?request='+request+'#access_token=local-test-access&refresh_token=local-test-refresh&token_type=bearer');await turn();
+   assert.equal(h.redirects.length,0);assert.equal(h.button().disabled,false);assert.equal(h.timers.size,0);
+   assert.ok(messages.some(m=>m.action==='cancel'&&m.request===request));
+  }
+ });
+ test(provider+': ambiguous or credential-bearing native callbacks cannot reload the app',async()=>{
+  for(const address of [request=>'kr.io.breeze.app://user:password@auth/callback?request='+request,
+   request=>'kr.io.breeze.app://auth:123/callback?request='+request,
+   request=>'kr.io.breeze.app://auth/callback?request='+request+'&request=other']){
+   const messages=[];let reply;
+   const bridge={postMessage:message=>{messages.push(message);return message.action==='start'?new Promise(resolve=>{reply=resolve;}):Promise.resolve(true);}};
+   const h=device({native:true,bridge});h.client.auth.signInWithOAuth=async()=>({data:{url:'https://project.supabase.co/auth/v1/authorize?provider='+provider},error:null});
+   const work=login(h);h.resolve(true);await turn();const request=messages.find(m=>m.action==='start').request;
+   reply(address(request)+'#access_token=local-test-access&refresh_token=local-test-refresh&token_type=bearer');await work;
+   assert.equal(h.redirects.length,0);assert.equal(h.button().disabled,false);assert.match(h.status(),/연결하지 못했/);
+  }
+ });
  test(provider+': iOS bridge returns a bound callback to a new app document, preserving custom-scheme origin',async()=>{
   const messages=[];let reply;
   const bridge={postMessage:message=>{messages.push(message);return message.action==='start'?new Promise(resolve=>{reply=resolve;}):Promise.resolve(true);}};
@@ -110,7 +154,7 @@ for(const provider of ['apple','google']){
   const request=messages.find(message=>message.action==='start').request;
   assert.equal(h.oauth[0].options.redirectTo,'kr.io.breeze.app://auth/callback?request='+request);
   reply('kr.io.breeze.app://auth/callback?request='+request+'#access_token=local-test-access&refresh_token=local-test-refresh&token_type=bearer');await work;
-  assert.deepEqual(h.redirects,['breeze://localhost/index.html#access_token=local-test-access&refresh_token=local-test-refresh&token_type=bearer']);assert.equal(h.timers.size,0);
+  assert.deepEqual(h.redirects,['breeze://localhost/index.html?breeze_auth_return='+request+'#access_token=local-test-access&refresh_token=local-test-refresh&token_type=bearer']);assert.equal(h.timers.size,0);
  });
  test(provider+': cancellation ignores late native credentials and mismatched callbacks never reload',async()=>{
   for(const cancelled of [false,true]){

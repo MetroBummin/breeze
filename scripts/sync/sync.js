@@ -356,7 +356,7 @@ async function sbSocialLogin(provider){
       if(!current())return null;
       if(error||!data?.url)throw Error('social_signin');
       const target=new URL(data.url),project=new URL(SB_URL);
-      if(target.protocol!=='https:'||target.origin!==project.origin||target.pathname!=='/auth/v1/authorize'||target.searchParams.get('provider')!==provider)throw Error('social_url');
+      if(target.protocol!=='https:'||target.origin!==project.origin||target.username||target.password||target.hash||target.pathname!=='/auth/v1/authorize'||target.searchParams.getAll('provider').length!==1||target.searchParams.get('provider')!==provider)throw Error('social_url');
       return {url:target.href};
     };
     const result=await Promise.race([prepare(),deadline]);
@@ -371,13 +371,16 @@ async function sbSocialLogin(provider){
     const callback=await Promise.race([operation.native.postMessage({action:'start',request:operation.nonce,url:result.url}),deadline]);
     if(!current())return;
     const returned=new URL(String(callback));
-    if(returned.protocol!=='kr.io.breeze.app:'||returned.hostname!=='auth'||returned.pathname!=='/callback'||returned.searchParams.get('request')!==operation.nonce)throw Error('social_callback');
+    if(returned.protocol!=='kr.io.breeze.app:'||returned.hostname!=='auth'||returned.username||returned.password||returned.port||returned.pathname!=='/callback'||returned.searchParams.getAll('request').length!==1||returned.searchParams.get('request')!==operation.nonce)throw Error('social_callback');
     const tokens=new URLSearchParams(returned.hash.slice(1));
     if(tokens.get('error')||!tokens.get('access_token')||!tokens.get('refresh_token')||tokens.get('token_type')!=='bearer')throw Error('social_callback');
     // A new app document hands the callback to the same bundled SDK's URL
     // initialization and persistent session store, rather than a second client
     // or a cancellable setSession promise that could write after its owner died.
-    const appURL=new URL(location.href);appURL.search='';appURL.hash=returned.hash;
+    // A fragment-only replace is same-document navigation: the SDK would never
+    // reinitialize. A request-bound query forces a fresh document without a
+    // second auth client; the accepted-session listener removes it below.
+    const appURL=new URL(location.href);appURL.search='';appURL.searchParams.set('breeze_auth_return',operation.nonce);appURL.hash=returned.hash;
     location.replace(appURL.href);
   }catch(error){
     if(socialLoginOperation===operation&&operation.epoch===syncSessionEpoch&&operation.client===sb&&!sbUser)syncStatus(label+' 로그인에 연결하지 못했어요. 다시 시도하거나 이메일로 로그인해 주세요.');
@@ -1210,6 +1213,13 @@ function attachSupabaseAuth(){
     const next=session?session.user:storedAuthUser();
     if(!next||!sbUser||sbUser.id!==next.id) resetSyncSession();
     sbUser=next; syncBadge();
+    if(sbUser&&isNativeShell()){
+      const url=new URL(location.href);
+      if(url.searchParams.has('breeze_auth_return')){
+        url.searchParams.delete('breeze_auth_return');
+        history.replaceState(null,'',url.pathname+url.search+url.hash);
+      }
+    }
     if(typeof selKey!=='undefined'&&selKey&&typeof renderPanel==='function') renderPanel();
     if(sbUser) syncRemoteChanges(false);
     if(document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
