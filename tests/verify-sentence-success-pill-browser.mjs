@@ -538,6 +538,66 @@ try{
         await closed(label+' reader scroll');
       }
     }
+    if(kind==='txt')for(const helpProfile of [
+      {name:'phone',width:390,height:844},{name:'ipad-portrait',width:820,height:1180},
+    ]){
+      const label=`txt-${helpProfile.name}-direct-help-scroll-${helpProfile.width}x${helpProfile.height}`;
+      await prepare(kind,helpProfile);
+      await page.evaluate(()=>sentenceEasyCache.clear());
+      await start(kind);await result({ko:korean},label,{capture:false});
+      const sourceBefore=await page.evaluate(()=>qaPill.measure().source);
+      await page.evaluate(()=>{
+        qaPill.helpPanel=document.getElementById('p-sentence');qaPill.helpLife=sentenceLife;
+        qaPill.helpOrigin=sentenceOrigin;qaPill.helpLayer=readerSentenceCue.layer;
+      });
+      const calls=await page.evaluate(()=>qaPill.calls.length);
+      await page.locator('#ps-easy-button').click();
+      await page.waitForFunction(calls=>qaPill.calls.length===calls+1,calls);
+      assert.equal(await page.evaluate(()=>qaPill.calls.at(-1).op),'sentence_easy_explanation',label+': wrong explicit request');
+      // Real newlines retain the production pre-line rendering and make a
+      // valid, bounded answer overflow on both devices without CSS overrides.
+      const explanation=Array(18).fill('문장 앞부분은 배경이고 뒷부분은 중심 행동입니다.').join('\n');
+      assert.ok(explanation.length>=10&&explanation.length<=600,label+': invalid help fixture length');
+      await page.evaluate(explanation=>qaPill.pending.at(-1).resolve({explanation}),explanation);
+      await page.waitForFunction(()=>!sentenceEasyState.loading);await settle();
+      assert.equal(await page.locator('#ps-easy-text').textContent(),explanation,label+': help text was changed');
+      const geometry=await validateResult(label+' ready',{long:true});
+      assert.deepEqual(geometry.source,sourceBefore,label+': help growth moved the selected source anchor');
+      assert.equal(await page.evaluate(()=>document.getElementById('ps-easy-card').closest('#p-sentence')===qaPill.helpPanel),true,
+        label+': help expanded outside the original pill');
+      const scrollOwner=geometry.scrolling.find(owner=>owner.id==='p-sentence');
+      assert.ok(scrollOwner,label+': long help lacks the original pill scroll owner');
+      const panelBefore=await page.locator('#p-sentence').evaluate(node=>node.scrollTop);
+      assert.ok(panelBefore<scrollOwner.scrollHeight-scrollOwner.clientHeight,label+': no downward help scroll room');
+      const x=geometry.shell.left+geometry.shell.width/2,y=geometry.shell.top+geometry.shell.height/2;
+      await page.mouse.move(x,y);
+      await page.mouse.wheel(0,150);
+      await page.waitForFunction(before=>document.getElementById('p-sentence').scrollTop>before,panelBefore);
+      await frames();
+      assert.equal(await page.evaluate(()=>sentenceResultAnchored()&&sentenceLife===qaPill.helpLife
+        &&sentenceOrigin===qaPill.helpOrigin&&readerSentenceCue?.layer===qaPill.helpLayer
+        &&document.getElementById('p-sentence')===qaPill.helpPanel),true,label+': internal help wheel changed lookup ownership');
+      assert.equal(await page.locator('#ps-easy-text').textContent(),explanation,label+': internal help scroll lost text');
+      assert.equal(await page.locator('#ps-ko').textContent(),korean,label+': internal help scroll lost translation');
+      const afterInternal=await validateResult(label+' after internal wheel',{long:true});
+      assert.deepEqual(afterInternal.source,sourceBefore,label+': internal help wheel moved selected source');
+      const panelAfter=await page.locator('#p-sentence').evaluate(node=>node.scrollTop);
+      await screenshot(label+'-internally-scrolled');
+      const readerBefore=await page.evaluate(()=>readerScrollTop());
+      const line=afterInternal.lines[0],sourcePoint={x:(line.left+line.right)/2,y:(line.top+line.bottom)/2};
+      assert.equal(await page.evaluate(point=>!!document.elementFromPoint(point.x,point.y)?.closest('#p-sentence'),sourcePoint),false,
+        label+': outside wheel target is still inside the pill');
+      await page.mouse.move(sourcePoint.x,sourcePoint.y);
+      await page.mouse.wheel(0,150);
+      await page.waitForFunction(before=>readerScrollTop()>before,readerBefore);
+      await closed(label+' outside Reader wheel');
+      const readerAfter=await page.evaluate(()=>readerScrollTop());
+      assert.equal(await page.evaluate(()=>qaPill.calls.length),calls+1,label+': scrolling requested help again');
+      await screenshot(label+'-reader-dismissed');
+      reports.push({kind,...helpProfile,dark:false,reduced:false,scenario:'direct-help-scroll',geometry,
+        explanationLength:explanation.length,input:'browser mouse wheel',panelBefore,panelAfter,
+        readerBefore,readerAfter,samePillRetained:true,sourceAnchorUnchanged:true,readerScrollDismissed:true});
+    }
     if(kind==='txt'){
       const label='txt-phone-above-390x844-light-motion';
       await prepare(kind,{width:390,height:844});
