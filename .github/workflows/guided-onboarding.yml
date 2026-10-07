@@ -1,0 +1,79 @@
+name: Guided onboarding draft
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'scripts/**'
+      - 'styles/**'
+      - 'assets/**'
+      - 'ios/**'
+      - 'package*.json'
+      - 'tests/verify-onboarding-browser.mjs'
+      - 'tests/verify-social-login-browser.mjs'
+      - 'tests/verify-apple-login.mjs'
+      - 'tests/verify-auth-native-policy.mjs'
+      - 'tests/auth-native-policy-checks.swift'
+      - 'docs/qa/social-login-verification.md'
+      - '.github/workflows/guided-onboarding.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guided-onboarding-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    env:
+      BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node --test tests/verify-apple-login.mjs
+      - run: node tests/verify-onboarding-browser.mjs
+      - run: node tests/verify-social-login-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guided-onboarding-${{ matrix.browser }}
+          path: /tmp/breeze-onboarding-review*/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ios-compile:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Execute production native callback policy with Foundation
+        run: node tests/verify-auth-native-policy.mjs
+      - run: npm run ios:sync
+      - name: Compile draft for Simulator without signing or archiving
+        run: >-
+          xcodebuild -project ios/App/App.xcodeproj -scheme App
+          -configuration Debug -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath /tmp/breeze-onboarding-ios
+          CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build

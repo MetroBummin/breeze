@@ -1,5 +1,6 @@
 /* Explicit, transient sentence help. Shared word-help material; no vocabulary or
    durable cache writes. The distinct op fails closed on an undeployed backend. */
+function sentenceEasyDemoActive(){return typeof onboardingOwnsReader==='function' && onboardingOwnsReader();}
 let sentenceEasyAvailable=false;
 const sentenceEasyCache=new Map();
 const sentenceEasyOccurrences=new WeakMap();
@@ -30,13 +31,19 @@ function resetSentenceEasyExplanation(translation){
 }
 function renderSentenceEasyExplanation(){
   const state=sentenceEasyState;if(!state||!sentenceAlive(state.life))return;
-  if(!sentenceEasyAvailable){document.getElementById('ps-easy').hidden=true;return;}
+  if(!sentenceEasyAvailable && !sentenceEasyDemoActive()){document.getElementById('ps-easy').hidden=true;return;}
   finishEasyExplanationSurface(renderEasyExplanationSurface('ps-easy',state,'문장을 쉬운 말로 풀고 있어요.'));
 }
 
 async function requestSentenceEasyExplanation(){
   const state=sentenceEasyState;
-  if(!sentenceEasyAvailable||!state||state.loading||state.text||state.blocked||!sentenceAlive(state.life))return;
+  if((!sentenceEasyAvailable&&!sentenceEasyDemoActive())||!state||state.loading||state.text||state.blocked||!sentenceAlive(state.life))return;
+  if(sentenceEasyDemoActive()){
+    const session=onboardingSession;state.loading=true;renderSentenceEasyExplanation();
+    if(!(await onboardingDelay(session,ONBOARD_DELAY_MS)) || sentenceEasyState!==state || !sentenceAlive(state.life))return;
+    state.loading=false;state.text='독서가 자연스럽게 이어지도록 해 보라는 뜻이에요. 모르는 부분에서 도움을 받고 다시 읽어 나가세요.';
+    session.easySeen=true;persistOnboarding();renderSentenceEasyExplanation();drawOnboarding();return;
+  }
   if(navigator.onLine===false){state.error=easyExplanationError(null);renderSentenceEasyExplanation();return;}
   const controller=new AbortController();state.controller=controller;state.loading=true;state.error='';renderSentenceEasyExplanation();
   const timeout=setTimeout(()=>controller.abort(),30000);

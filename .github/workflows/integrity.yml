@@ -50,7 +50,9 @@ jobs:
           done
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The serial suite now includes guided onboarding in both engines. Keep
+    # every case: the former 30-minute bound cut off final WebKit reopening.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}

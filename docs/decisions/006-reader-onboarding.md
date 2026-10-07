@@ -1,72 +1,106 @@
-# Onboarding in the real Reader
+# Guided onboarding
 
 ## Decision
 
-First-time web and native readers open the same temporary TXT book in `#v-read`.
-The normal Reader body renderer, gesture owner, floating controls, Aa, word pill,
-detail popup and translation-only sentence result are authoritative. Onboarding
-adds only a guidance card and Skip. No copied Reader controls or lookup surfaces
-remain. The existing completion marker is retained; returning readers with local
-books, vocabulary, tombstones or reading positions are not interrupted. Settings
-provides replay on both platforms. Startup waits for the local library and chooses
-the initial Reader or Home before revealing the app, without a post-Home delay.
-A boot error or an eight-second script-load watchdog reveals the app so a failed
-startup cannot leave the interface permanently hidden.
+First-time readers see the existing mascot, “브리즈에 오신 걸 환영해요”, and
+one bottom “시작하기” button. The lesson uses a quiet interactive illustration:
+Reader chrome is hidden and only the large word Breeze is visible. Tapping it
+opens the production mini pill. Its chevron opens the production word detail;
+“다음” then reveals “Let your reading flow.” with a gentle fade/scale handoff.
+Breeze means “산들바람”. The two phrases are separate illustrations; the reveal
+does not pretend Breeze is a word in the sentence. Neutral colors, generous space
+and a left-aligned welcome follow the supplied visual references. The unchanged
+repository app icon contains the requested green-leaf character; standalone
+Library artwork could not be downloaded and remains a visual refinement gap.
 
-The short authored story has a prepared Korean meaning and English definition
-for every tappable word, plus translations for every sentence. The first lookup
-of an occurrence waits 1000 ms using the real loading UI; a repeat is immediate.
-The normal 750 ms long-press threshold and release-before-result rule remain.
-The word detail can open during that same pending lookup. No AI request, metadata
-request, quota charge or dictionary-cache write is made for these answers.
+The existing Reader long press, sentence selection cue, responsive translation
+pill and easy-explanation surface remain authoritative. “문장 해석” (accessible label: “길게 누르기 대신 문장 해석”) provides a keyboard and tap alternative through the registered text Reader
+adapter. Sentence extraction and truncation are unchanged. After easy explanation,
+“다음” introduces only two font-size controls and a live sentence preview, using
+the existing font-size setter. Other choices can wait until normal reading.
+Appearance changes are session-only and restored on exit.
 
-The book is transient, never inserted into the library. Word cards are owned by
-the presentation, never inserted into `words`. Existing vocabulary cannot merge
-words into saved phrases or color the tutorial. Progress/history persistence and
-dictionary warmup are skipped for transient books. Aa uses real controls with
-session-only changes, restored on exit. Timers and stale replies are invalidated
-on skip, navigation, another lookup, replay, and completion. A settings replay
-can return to the user's existing book without deleting or replacing its data.
+The final screen offers only “책 추가하기” and “나중에”. The former opens the
+existing book-import dialog. Authentication belongs in normal Settings: email
+opens the existing link/code form; password is a subdued secondary link with a
+44px target. Google follows Apple. Redundant provider helper copy below the buttons is removed;
+unavailable native-platform descriptions remain attached through hidden ARIA
+descriptions. Actual auth feedback uses a polite status region. Official branded
+logo buttons remain pending approved assets: current provisional text-only
+appearances must not be treated as official artwork. Web Apple/Google login uses the existing Supabase client and the same return URL as
+email login. A read-only provider check runs only on an explicit login tap; an
+unconfigured provider or network failure leaves Settings usable. Consent then
+uses `signInWithOAuth`, with the existing session listener owning completion.
+The five-second preparation deadline covers the settings response, JSON and SDK
+URL preparation. Closing Settings cancels the operation; stale or cancelled
+results cannot navigate or release a newer operation's controls.
 
-Guidance advances on completed actions and yields while lookup/Aa is open.
-Each step names and outlines its target: tap “curiosity”, press and hold “Reading”,
-then tap Aa. Korean guidance uses short action-first instructions. The Reader
-Back button is disabled throughout the tutorial, including lookups and Aa, and
-the Home-return action also rejects tutorial requests. Exit restores the button's
-previous state; Skip, completion and Escape remain available. Settings labels
-the replay action “튜토리얼 다시보기”.
-Completion offers the existing Add dialog or a later exit. The final note reminds
-readers of tap/long-press gestures; it makes no login claim. The tutorial grants no
-extra production access.
+The iOS draft adds an AuthenticationServices system consent browser bridge to
+the existing WebView owner. It accepts only the local main frame, this project's
+HTTPS authorize endpoint and Apple/Google, with a UUID-bound callback. Consent
+has a separate two-minute deadline. The validated callback reloads the existing
+app document with its token fragment so the same bundled SDK, auth listener and
+persistent store own session acceptance. A request-bound `breeze_auth_return`
+query forces a new document: changing only the fragment would leave the old SDK
+running and never accept the callback. The accepted-session listener removes
+that temporary query. Native and JS reject credential-bearing URLs and duplicate
+provider/request values. Foundation CI executes the production native URL policy.
+There is no second auth client or late
+`setSession` write. Android and native shells without the bridge remain unavailable.
+No provider, credentials, entitlements, provisioning, security settings or existing
+email/password requests change. Unsigned native compilation passed at 04056222;
+real OS consent and physical-device login remain unverified. Current code/setup
+dependencies are recorded
+in `docs/qa/social-login-verification.md`.
 
-Signed-out and signed-in lookups share the same renderer. Successful anonymous
-lookups show no legacy explanations or repeated trial counters. Login/exhaustion
-is an actionable state only when a lookup is blocked; the pill retry opens login
-instead of issuing another doomed request. A new pending result clears the old
-meaning/part-of-speech/notice before painting. Production authentication and quota
-rules are unchanged.
+Guidance uses one gently breathing halo on the current actionable element,
+stopping on activation and moving with progress. Persistent visual tap instructions
+are removed; a short hint appears only after 3.5 seconds idle. A contact ring
+and the delayed “길게 누르기” hint distinguish sentence holding from a tap.
+Full instructions remain accessible; reduced motion uses a static outline.
+
+Guidance yields to lookup surfaces. Its explicit controls own their taps, so the
+Reader's outside-tap dismissal cannot consume the tutorial's Next action. Next
+requires word expansion, easy explanation, and one font-size adjustment.
+Tutorial Back revisits steps; Skip remains available during lessons. Welcome
+and final screens make the covered Reader inert. Focus follows explicit stage
+changes. Controls have visible focus and keyboard access (Enter/Space word lookup,
+chevron, sentence alternative and font controls). Reduced motion removes attention
+and reveal animation. Existing account and guest behavior remain available.
+
+## Local data and lifecycle
+
+The temporary TXT book is transient and never inserted into the library.
+Prepared meanings for all five words, the sentence translation and easy
+explanation use shared production surfaces with a deterministic one-second
+first result. They never call dictionary APIs, debit quota, populate caches,
+add vocabulary, persist reading history or enter sync payloads. Repeat word and
+sentence lookups are immediate. Network failures cannot block the lesson.
+
+The existing `breeze.onboarding.v1` completion marker is retained. Returning
+readers with local books, vocabulary, tombstones or positions are not interrupted.
+`breeze.onboarding.guided-progress` records the current step and completed
+interactions for interrupted first-time sessions. It is cleared on Skip or
+completion and never written by Settings replay. Timers, observers and stale
+replies are invalidated on exit/replay. Replay restores the previous view/book
+and appearance without replacing account data. Startup and boot fallback remain
+unchanged.
 
 ## Verification
 
-`npm run test:onboarding` covers fresh web/native sessions, prepared word coverage,
-1000 ms first lookup, immediate repeats, shared detail and real long-press behavior,
-Aa, completion, replay, cancellation, history/storage isolation and zero lookup
-requests. Screenshots include phone, desktop and dark completion. Normal Reader,
-word/sentence lifecycle, signed-out states, shared controls and full-suite checks
-remain required. Browser/native-shell emulation does not prove physical iOS behavior.
+`npm run test:onboarding` covers word/chevron, long-press release gating,
+local sentence help, font preview, interruption/reopening, Back, Skip, both final
+actions, replay restoration, cancellation, keyboard alternatives, Settings auth
+routes, returning local data, storage isolation and zero dictionary requests.
+Web and native-shell emulation exercise five stages in light/dark at 390×844,
+820×1180, 1440×900, 320×568 and 844×390. Email login browser tests exercise the
+existing request/reopen/password-return flow with mocked auth at five sizes in
+both themes. Captures and remaining validation limits are in
+[QA notes](../qa/guided-onboarding-draft.md).
 
-## Visible-only startup (2026-09-29)
-
-After local data loads, choose onboarding before rendering Home. A first-time
-Reader does not build recommendation cards or begin their image/feed work for a
-hidden Home. Returning readers still render Home, and leaving onboarding renders
-it through normal navigation. The one-second authored tutorial feedback policy,
-boot failure fallback and local storage ordering are unchanged.
-
-## Compact targets and optional completion (214)
-
-Word guidance uses the existing pale-blue selection fill on the actual span,
-without an outline or expansion into neighboring text. Aa retains a separate
-control outline. The temporary book is titled “Breeze Tutorial”.
-The final coach offers both Add Book and “나중에 할게요”; either completes the
-same transient session, but the latter exits without opening the Add dialog.
+Apple/Google tests cover configured/unconfigured providers, native bridge absence,
+whole-operation timeout/retry, cancel/new request, late SDK replies, stale sessions,
+unsafe redirects and native callback binding. A real bundled SDK browser test
+substitutes the provider server, then verifies callback acceptance and persistence
+after app reload. This does not prove real consent, provider setup or native execution.
+Live provider configuration cannot be inferred from this repository.
