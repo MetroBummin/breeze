@@ -208,6 +208,10 @@ try{
     };
     qaPill.find=kind=>{
       const surface=READER_SURFACES.find(surface=>surface.name===(kind==='txt'?'text':kind));
+      if(kind==='txt'&&qaPill.targetWord?.isConnected){
+        const rect=qaPill.targetWord.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+        return {found:surface.sentenceAt(x,y),point:{x,y}};
+      }
       if(kind==='pdf'){
         const page=originalSession.pages[0],rect=page.getBoundingClientRect();
         const words=originalSession.wordBoxes.get(1).filter(word=>word.word==='patient');
@@ -533,6 +537,40 @@ try{
         await page.evaluate(()=>{readerScroller().scrollTop+=2;scrollGesture();});
         await closed(label+' reader scroll');
       }
+    }
+    if(kind==='txt'){
+      const label='txt-phone-above-390x844-light-motion';
+      await prepare(kind,{width:390,height:844});
+      // Put a real later occurrence near the bottom using Reader's ordinary
+      // scroll owner before lookup. The production placement chooses the side.
+      await page.evaluate(()=>{
+        const block=[...document.querySelectorAll('#rtext [data-pi]')]
+          .filter(node=>node.querySelector('.w'))[4];
+        const word=[...block.querySelectorAll('.w')].find(node=>node.textContent==='patient');
+        if(!word)throw new Error('Missing lower-page phone source word');
+        const found=textSentencePartAt(word),range=domRangeForOffsets(found.block,found.part.start,found.part.end);
+        const rects=[...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0);
+        const sourceBottom=Math.max(...rects.map(rect=>rect.bottom));
+        const viewport=window.visualViewport,top=(viewport?.offsetTop||0)+16;
+        const chrome=document.getElementById('readchrome').getBoundingClientRect();
+        const safeBottom=Math.min((viewport?.offsetTop||0)+(viewport?.height||innerHeight)-16,
+          chrome.height&&chrome.top>top?chrome.top-8:Infinity);
+        readerScrollTo(readerScrollTop()+sourceBottom-(safeBottom-24));
+        qaPill.targetWord=word;
+      });
+      await readerReady();await start(kind);await result({ko:korean},label);
+      const above=await validateResult(label),{source,safe,shell}=above;
+      assert.ok(source.left>=safe.left-1&&source.right<=safe.right+1&&source.top>=safe.top&&source.bottom<=safe.bottom,
+        label+': entire selected sentence must remain visible');
+      assert.ok(source.top-safe.top-8>=above.desiredHeight,label+': insufficient room above');
+      assert.ok(safe.bottom-source.bottom-8<above.desiredHeight,label+': below still fits the result');
+      assert.equal(above.direction,'above',label+': actual lower source did not choose above');
+      assert.ok(shell.bottom<=source.top-7,label+': result covers selected sentence');
+      assert.equal(await page.locator('#ps-ko').evaluate(node=>getComputedStyle(node).fontSize),'16px',
+        label+': phone translation font differs from approved size');
+      await screenshot(label+'-settled');
+      reports.push({kind,scenario:'phone-above',width:390,height:844,dark:false,reduced:false,geometry:above});
+      await page.evaluate(()=>{closeSentence();qaPill.targetWord=null;});
     }
     await prepare(kind,{width:390,height:844});
     // A fast answer must wait for the initiating long-press finger to release.

@@ -49,6 +49,14 @@ jobs:
           BREEZE_QA_ENGINE: ${{ matrix.engine }}
           BREEZE_QA_OUTPUT: /tmp/breeze-sentence-success-proof
         run: node tests/verify-sentence-success-pill-browser.mjs
+      - name: Downloadable geometry and failure reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentence-success-reports-${{ matrix.engine }}
+          path: /tmp/breeze-sentence-success-proof/*.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Full responsive proof
         if: always()
         uses: actions/upload-artifact@v4
