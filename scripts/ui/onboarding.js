@@ -2,49 +2,15 @@
    It never inserts a book, Meaning, cache entry, progress row or sync payload. */
 const ONBOARD_KEY='breeze.onboarding.v1';
 const ONBOARD_DELAY_MS=1000;
-const ONBOARD_PASSAGES=[
-  ['Every story begins with a little curiosity.','모든 이야기는 작은 호기심에서 시작돼요.'],
-  ['Reading should feel easy.','독서는 편안해야 하니까요.'],
-  ['There is always another story waiting for you.','당신을 기다리는 이야기는 언제나 있어요.'],
-  ['Let your reading flow with Breeze.','Breeze와 함께 막힘없이 읽어 나가세요.'],
-];
+const ONBOARD_PROGRESS_KEY='breeze.onboarding.guided-progress';
+const ONBOARD_PASSAGES=[['Breeze lets your reading flow.','브리즈와 함께 막힘없이 읽어 나가세요.']];
 // Each tappable word has an authored meaning and short English definition.
 const ONBOARD_WORDS={
-  should:['~해야 한다','modal verb','Used to say what is right or expected.'],
-  feel:['느껴지다','verb','Give a particular impression or feeling.'],
-  easy:['편안한','adjective','Requiring little effort or difficulty.'],
-  there:['그곳에','adverb','Used with be to say that something exists.'],
-  is:['있다','verb','Exists or is present.'],
-  always:['언제나','adverb','At all times.'],
-  another:['또 다른','determiner','One more or a different one.'],
-  waiting:['기다리는','verb','Staying ready for someone or something.'],
-  for:['~을 위해','preposition','Intended for someone or something.'],
-  you:['당신','pronoun','The person being spoken to.'],
-  every:['모든','determiner','Used to refer to all members of a group.'],
-  story:['이야기','noun','An account of events, real or imagined.'],
-  begins:['시작된다','verb','Starts to happen.'],
-  with:['~와 함께','preposition','Together with someone or something.'],
-  a:['하나의','article','Used before one person or thing.'],
-  little:['작은','adjective','Small in amount or size.'],
-  curiosity:['호기심','noun','A desire to learn or know more.'],
-  tap:['가볍게 누르다','verb','Touch something lightly with a finger.'],
-  word:['단어','noun','A unit of language that has meaning.'],
-  to:['~하기 위해','particle','Used before a verb to show a purpose.'],
-  discover:['알아내다','verb','Find or learn something.'],
-  its:['그것의','determiner','Belonging to the thing just mentioned.'],
-  meaning:['뜻','noun','The idea that a word expresses.'],
-  press:['누르다','verb','Push against something with a finger.'],
-  and:['그리고','conjunction','Used to connect words or actions.'],
-  hold:['누른 채로 유지하다','verb','Keep something in the same position.'],
-  understand:['이해하다','verb','Know what something means.'],
-  the:['그','article','Used before a particular person or thing.'],
-  whole:['전체의','adjective','Complete, with no part missing.'],
-  sentence:['문장','noun','A group of words that expresses a complete thought.'],
-  let:['~하게 하다','verb','Allow something to happen.'],
+  breeze:['브리즈','proper noun','The name of this reading app; a breeze is also a gentle wind.'],
+  lets:['~하게 해 주다','verb','Allows something to happen.'],
   your:['당신의','determiner','Belonging to the person being addressed.'],
   reading:['독서','noun','The activity of reading written words.'],
   flow:['자연스럽게 이어지다','verb','Continue smoothly and easily.'],
-  breeze:['브리즈','proper noun','The name of this reading app; a breeze is also a gentle wind.'],
 };
 let onboardingSession=null;
 function onboardingOwnsReader(){ return !!(onboardingSession && curBook===onboardingSession.book); }
@@ -62,9 +28,16 @@ async function startOnboarding(replay){
       paras:ONBOARD_PASSAGES.map(part=>part[0]),textAvailable:true},
     previousBook:curBook,previousView:activeAppView(),
     appearance:{fs,darkMode,readMargin},controller:new AbortController(),
-    timers:new Map(),seen:new Set(),wordSeen:false,sentenceSeen:false,aaSeen:false,
+    timers:new Map(),seen:new Set(),wordSeen:false,wordExpanded:false,sentenceSeen:false,easySeen:false,aaSeen:false,stage:0,replay:!!replay,
     frame:0,observer:null,
   };
+  if(!replay){
+    const progress=load(ONBOARD_PROGRESS_KEY,null);
+    if(progress && Number.isInteger(progress.stage) && progress.stage>=0 && progress.stage<=4){
+      session.stage=progress.stage;
+      for(const key of ['wordSeen','wordExpanded','sentenceSeen','easySeen','aaSeen']) session[key]=progress[key]===true;
+    }
+  }
   onboardingSession=session;
   const back=/** @type {HTMLButtonElement} */(document.getElementById('readback'));
   session.backDisabled=back.disabled;
@@ -84,7 +57,21 @@ async function startOnboarding(replay){
   session.observer.observe(document.getElementById('rtext'),{childList:true,subtree:true});
   document.getElementById('onboard-skip').addEventListener('click',()=>endOnboarding(true),{signal});
   document.getElementById('onboard-finish').addEventListener('click',()=>endOnboarding(true),{signal});
-  document.getElementById('onboard-next').addEventListener('click',()=>{endOnboarding(true);openAddModal();},{signal});
+  document.getElementById('onboard-next').addEventListener('click',()=>advanceOnboarding(),{signal});
+  document.getElementById('onboard-back').addEventListener('click',()=>{
+    closePanel();closeSentence();closeAa();session.stage=Math.max(0,session.stage-1);persistOnboarding();drawOnboarding();
+    document.getElementById('onboard-next').focus({preventScroll:true});
+  },{signal});
+  document.getElementById('onboard-sentence').addEventListener('click',()=>{
+    const node=document.querySelector('#rtext .w');if(!node)return;
+    const rect=node.getBoundingClientRect();
+    const surface=READER_SURFACES.find(surface=>surface.name==='text');
+    const found=surface?.sentenceAt(rect.x+rect.width/2,rect.y+rect.height/2);
+    if(found){closePanel();found.paint();void openSentence(found.sentence,found);}
+  },{signal});
+  document.getElementById('onboard-return').addEventListener('click',()=>{closePanel();closeSentence();closeAa();drawOnboarding();document.getElementById('onboard-next').focus({preventScroll:true});},{signal});
+  document.getElementById('onboard-password').addEventListener('click',()=>{endOnboarding(true);openSyncModal();openPasswordLogin();},{signal});
+  document.getElementById('onboard-login').addEventListener('click',()=>{endOnboarding(true);openSyncModal();},{signal});
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape' && !wordLookupOpen() && !sentenceLookupOpen()
         && !document.getElementById('aa-pop').classList.contains('on') && !event.defaultPrevented){
@@ -101,37 +88,61 @@ async function startOnboarding(replay){
   if(onboardingSession!==session) return;
   document.getElementById('rhint').hidden=true;
   const title=document.getElementById('rtitle');
-  title.setAttribute('tabindex','-1');title.focus({preventScroll:true});
+  title.setAttribute('tabindex','-1');
   drawOnboarding();
+  document.getElementById('onboard-prompt').focus({preventScroll:true});
+}
+function persistOnboarding(){
+  const session=onboardingSession;if(!session||session.replay)return;
+  save(ONBOARD_PROGRESS_KEY,Object.fromEntries(['stage','wordSeen','wordExpanded','sentenceSeen','easySeen','aaSeen'].map(key=>[key,session[key]])));
+}
+function advanceOnboarding(){
+  const session=onboardingSession;if(!session)return;
+  if((session.stage===1&&!session.wordExpanded)||(session.stage===2&&!session.easySeen)||(session.stage===3&&!session.aaSeen))return;
+  closePanel();closeSentence();closeAa();
+  session.stage=Math.min(4,session.stage+1);persistOnboarding();drawOnboarding();
+  document.getElementById('onboard-prompt').focus({preventScroll:true});
 }
 function onboardingAppearanceOpened(){
-  if(onboardingOwnsReader() && onboardingSession.sentenceSeen) onboardingSession.aaSeen=true;
+  if(onboardingOwnsReader() && onboardingSession.stage===3){onboardingSession.aaSeen=true;persistOnboarding();}
 }
 function drawOnboarding(){
-  const session=onboardingSession;if(!session) return;
+  const session=onboardingSession;if(!session)return;
+  const stage=session.stage,root=document.getElementById('onboarding');root.dataset.stage=String(stage);
+  document.body.dataset.onboardStage=String(stage);
+  document.getElementById('v-read').inert=stage===0||stage===4;
   const aaOpen=document.getElementById('aa-pop').classList.contains('on');
-  if(aaOpen && session.sentenceSeen) session.aaSeen=true;
-  const stage=!session.wordSeen?0:!session.sentenceSeen?1:!session.aaSeen?2:3;
-  const root=document.getElementById('onboarding');root.dataset.stage=String(stage);
+  const overlay=wordLookupOpen()||sentenceLookupOpen()||aaOpen;
   const coach=document.getElementById('onboard-coach');
-  coach.hidden=wordLookupOpen() || sentenceLookupOpen() || aaOpen;
-  // Guidance yields the whole surface while a lookup or Aa owns the interaction.
-  document.getElementById('onboard-skip').hidden=coach.hidden;
+  coach.hidden=overlay;
+  const guidance=document.getElementById('onboard-overlay-guide');guidance.hidden=!overlay;
+  document.getElementById('onboard-overlay-prompt').textContent=stage===1
+    ?(session.wordExpanded?'단어를 더 자세히 볼 수 있어요.':'뜻 옆의 꺾쇠를 눌러보세요.')
+    :stage===2?'번역 아래 ‘쉬운 설명’을 눌러보세요.':'글자 크기부터 맞춰보세요.';
+  document.getElementById('onboard-skip').hidden=stage===0||overlay;
+  document.getElementById('onboard-back').hidden=stage===0||overlay;
+  document.getElementById('onboard-welcome').hidden=stage!==0;
   const prompts=[
-    '“curiosity”를 눌러보세요.\n단어 뜻을 확인할 수 있어요.',
-    '“Reading”을 길게 눌러보세요.\n문장 전체의 뜻을 확인할 수 있어요.',
-    '“Aa”를 눌러보세요.\n글자 크기와 화면 색을 바꿀 수 있어요.',
-    '이제 내 책으로 읽어볼까요?\n책을 추가하거나 나중에 시작할 수 있어요.',
+    '브리즈에 오신 걸 환영해요',
+    session.wordSeen?'뜻 옆의 꺾쇠를 눌러 더 알아보세요.':'Breeze를 눌러보세요.',
+    session.sentenceSeen?'번역 아래 ‘쉬운 설명’을 눌러보세요.':'문장을 길게 눌러보세요.',
+    'Aa에서 글자 크기를 맞춰보세요.',
+    sbUser?'읽을 준비가 됐어요.':'로그인하면 단어장을 이어서 볼 수 있어요.',
   ];
-  document.getElementById('onboard-step').textContent=stage===3?'준비됐어요':`${stage+1} / 3 · ${['단어 눌러보기','문장 꾹 눌러보기','읽기 화면 바꾸기'][stage]}`;
+  document.getElementById('onboard-step').textContent=stage===0?'':`${stage} / 4`;
   document.getElementById('onboard-prompt').textContent=prompts[stage];
-  document.getElementById('onboard-next').hidden=stage!==3;
-  document.getElementById('onboard-finish').hidden=stage!==3;
+  const next=/** @type {HTMLButtonElement} */(document.getElementById('onboard-next'));
+  next.hidden=stage===4;next.textContent=stage===0?'시작하기':'다음';
+  next.disabled=(stage===1&&!session.wordExpanded)||(stage===2&&!session.easySeen)||(stage===3&&!session.aaSeen);
+  document.getElementById('onboard-finish').hidden=stage!==4;
+  document.getElementById('onboard-finish').textContent=sbUser?'읽기 시작':'로그인 없이 시작';
+  for(const id of ['onboard-login','onboard-apple','onboard-apple-note','onboard-password'])document.getElementById(id).hidden=stage!==4||!!sbUser;
+  document.getElementById('onboard-sentence').hidden=stage!==2;
   document.getElementById('onboard-note').hidden=stage!==3;
-  document.getElementById('aafab').classList.toggle('onboard-target',stage===2 && !aaOpen);
+  document.getElementById('aafab').classList.toggle('onboard-target',stage===3&&!aaOpen);
   document.querySelectorAll('#rtext .w').forEach(node=>{
-    node.classList.toggle('onboard-target',!coach.hidden &&
-      ((stage===0 && node.textContent==='curiosity') || (stage===1 && node.textContent==='Reading')));
+    node.classList.toggle('onboard-focus-word',node.textContent==='Breeze');
+    node.classList.toggle('onboard-target',!overlay&&stage===1&&node.textContent==='Breeze');
   });
 }
 async function openOnboardingWord(node,retry=false){
@@ -152,10 +163,11 @@ async function openOnboardingWord(node,retry=false){
   if(!ready && !(await onboardingDelay(session,ONBOARD_DELAY_MS))) return;
   if(onboardingSession!==session || !wordLookupAlive(life) || previewWordCard!==card) return;
   card.ko=entry[0];card.ai.ko=entry[0];card.loading=false;card.aiLoading=false;
-  session.seen.add(key);session.wordSeen=true;
+  session.seen.add(key);session.wordSeen=true;persistOnboarding();
   renderWordLookup();drawOnboarding();
 }
 function renderOnboardingWordDetail(card){
+  if(onboardingSession && !card.loading){onboardingSession.wordExpanded=true;persistOnboarding();}
   // Reuse the normal meaning/metadata/utterance surface, without vocabulary actions.
   document.getElementById('p-ai-saved').hidden=true;
   document.getElementById('p-aibtn').style.display='none';
@@ -172,7 +184,7 @@ async function explainOnboardingSentence(clean,life){
   const key='sentence:'+clean;
   if(!session.seen.has(key) && !(await onboardingDelay(session,ONBOARD_DELAY_MS))) return;
   if(onboardingSession!==session || !sentenceAlive(life)) return;
-  session.seen.add(key);session.sentenceSeen=true;
+  session.seen.add(key);session.sentenceSeen=true;persistOnboarding();
   showReaderChrome();
   paintSentenceFor(life,{en:clean,ko:prepared[1]});
   drawOnboarding();
@@ -186,6 +198,8 @@ function endOnboarding(remember,returnToPrevious=true){
   onboardingSession=null;
   document.getElementById('onboarding').hidden=true;
   document.body.classList.remove('onboarding-active');
+  delete document.body.dataset.onboardStage;
+  document.getElementById('v-read').inert=false;
   const back=/** @type {HTMLButtonElement} */(document.getElementById('readback'));
   back.disabled=session.backDisabled;
   document.getElementById('aafab').classList.remove('onboard-target');
@@ -196,7 +210,7 @@ function endOnboarding(remember,returnToPrevious=true){
   document.documentElement.style.setProperty('--fs',fs+'px');
   showFontSize();applyDark();applyReadMargin();
   curBook=null;
-  if(remember) save(ONBOARD_KEY,'done');
+  if(remember){save(ONBOARD_KEY,'done');localStorage.removeItem(ONBOARD_PROGRESS_KEY);}
   if(returnToPrevious){
     if(session.previousView==='read' && session.previousBook) openBook(session.previousBook);
     else show(session.previousView,{fromHistory:true});

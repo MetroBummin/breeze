@@ -52,7 +52,7 @@
   <link rel="stylesheet" href="styles/wordbook.css?v=1736245b">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=d48868b0">
-  <link rel="stylesheet" href="styles/onboarding.css?v=e80ba10b">
+  <link rel="stylesheet" href="styles/onboarding.css?v=62f19868">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -103,7 +103,7 @@
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
   <script defer src="scripts/dictionary/dictionary.js?v=191a8143"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
-  <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
+  <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=2e62ab29"></script>
   <script defer src="scripts/vendor/ts-fsrs-5.4.2.js?v=59b74441"></script>
   <script defer src="scripts/core/vocabulary-review.js?v=e3c93ea7"></script>
   <script defer src="scripts/ui/vocabulary-review.js?v=0aca3ea6"></script>
@@ -124,7 +124,7 @@
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=46c6c6f2"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=04236e7a"></script>
+  <script defer src="scripts/ui/onboarding.js?v=4bdfe252"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=1ea70870"></script>
@@ -538,14 +538,22 @@
   </div>
 </div>
 <!-- Guidance only: the book, controls and lookup surfaces are the real Reader. -->
-<div id="onboarding" aria-label="Breeze Tutorial" hidden>
+<div id="onboarding" aria-label="브리즈 시작 안내" hidden>
+  <button id="onboard-back" type="button" hidden>뒤로</button>
   <button id="onboard-skip" type="button">건너뛰기</button>
+  <div id="onboard-overlay-guide" hidden><p id="onboard-overlay-prompt" role="status"></p><button id="onboard-return" type="button">안내로 돌아가기</button></div>
   <section id="onboard-coach" aria-labelledby="onboard-prompt">
+    <div id="onboard-welcome"><img src="assets/brand/review/thunderhead-stage-1.png" alt="브리즈 마스코트" width="160" height="160"></div>
     <span id="onboard-step"></span>
-    <p id="onboard-prompt" role="status" aria-live="polite"></p>
-    <p id="onboard-note" hidden>단어는 가볍게, 문장은 길게 눌러 뜻을 확인해요.</p>
-    <button id="onboard-next" type="button" hidden>책 추가하기</button>
-    <button id="onboard-finish" type="button" hidden>나중에 할게요</button>
+    <p id="onboard-prompt" role="status" aria-live="polite" tabindex="-1"></p>
+    <p id="onboard-note" hidden>나머지 설정은 읽으면서 바꿔도 돼요.</p>
+    <button id="onboard-sentence" type="button" hidden>길게 누르기 대신 문장 해석</button>
+    <button id="onboard-next" type="button">시작하기</button>
+    <button id="onboard-login" type="button" hidden>이메일 로그인</button>
+    <button id="onboard-apple" type="button" aria-describedby="onboard-apple-note" disabled hidden>Apple 로그인</button>
+    <p id="onboard-apple-note" hidden>Apple 로그인은 아직 지원하지 않아요.</p>
+    <button id="onboard-password" type="button" hidden>비밀번호 로그인</button>
+    <button id="onboard-finish" type="button" hidden>로그인 없이 시작</button>
   </section>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
