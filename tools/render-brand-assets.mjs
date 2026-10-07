@@ -6,14 +6,14 @@ try{
  mkdirSync('docs/qa/breeze-wordmark',{recursive:true});
  for(const theme of ['light','dark']){
   const page=await browser.newPage({viewport:{width:1024,height:400}});
-  await page.setContent(`<style>html,body{margin:0;height:100%;display:grid;place-items:center;background:${theme==='dark'?'#20211e':'#fbfcfc'};}svg{width:842px;height:auto;}</style>${readFileSync(`assets/brand/wordmark-${theme}.svg`,'utf8')}`);
+  await page.setContent(`<style>html,body{margin:0;height:100%;display:grid;place-items:center;background:${theme==='dark'?'#20211e':'#fbfcfc'};}svg{width:842px;height:auto;}</style>${readFileSync(`assets/brand/wordmarks/breeze-flow-${theme}.svg`,'utf8')}`);
   await page.screenshot({path:`docs/qa/breeze-wordmark/wordmark-${theme}.png`});await page.close();
  }
  for(const theme of ['light','dark']){
   const dir=`ios/App/App/Assets.xcassets/BreezeWordmark.imageset`;mkdirSync(dir,{recursive:true});
   for(const scale of [1,2,3]){
    const page=await browser.newPage({viewport:{width:220*scale,height:68*scale}});
-   await page.setContent(`<style>html,body{margin:0;width:100%;height:100%;display:grid;place-items:center;}svg{width:100%;height:auto;}</style>${readFileSync(`assets/brand/wordmark-${theme}.svg`,'utf8')}`);
+   await page.setContent(`<style>html,body{margin:0;width:100%;height:100%;display:grid;place-items:center;}svg{width:100%;height:auto;}</style>${readFileSync(`assets/brand/wordmarks/breeze-flow-${theme}.svg`,'utf8')}`);
    await page.screenshot({path:`${dir}/wordmark-${theme}-${scale}x.png`,omitBackground:true});await page.close();
   }
  }

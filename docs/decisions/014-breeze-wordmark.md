@@ -103,3 +103,23 @@ Home, welcome/splash wordmarks and auth source stay unchanged.
 Unused reusable variants stay in the repository/asset ZIP and are excluded from
 www. Browser favicon URLs are content-stamped through the existing version owner
 so future deployment would not keep stale icons. No release/signing change.
+
+## Approved asset placement and memory previews (2026-10-07)
+
+The user now explicitly selects the four delivered SVGs: flow light/dark on
+web boot, native launch artwork and onboarding; neutral light/dark on Home.
+These exact assets replace the earlier CSS letter treatment without changing
+the original z, cursive r, e connections or proportions. Reduced motion,
+transparency and increased contrast use the original mask with flat ink.
+The selected teal lowercase b app icon stays unchanged.
+
+Three Home wordbook candidates (Aa card/bookmark, saved cards, word bubble)
+are review-only SVGs under docs/brand/memory-icon-drafts. Actual light/dark
+Home captures preserve the existing 42px glass dock circle and navigation.
+A small 단어장 label is shown for comparison. No production navigation icon
+or Home layout is replaced before the user selects a candidate.
+
+A new continuous actual onboarding capture is 28.88 seconds / 722 frames,
+390×844 at 25fps. Its MP4 is H264 Main, avc1, yuv420p with moov before mdat;
+input/output frame count and duration match and full decoding passes.
+This verifies packaging, not physical iPhone saving or native launch rendering.

@@ -23,6 +23,7 @@ try{
   assert.equal(await page.locator('#brand-boot').isHidden(),true,'cold startup must remove brand without an extra delay');
   const mark=page.locator('#onboard-welcome .breeze-wordmark');
   assert.equal(await mark.getAttribute('aria-label'),'Breeze');
+  assert.ok(await mark.evaluate(n=>getComputedStyle(n).backgroundImage.includes('breeze-flow-')),'Welcome must use selected teal artwork');
   await page.waitForFunction(()=>Promise.all([...document.querySelectorAll('.breeze-wordmark')].map(n=>new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(true);i.onerror=reject;i.src=getComputedStyle(n).backgroundImage.slice(5,-2);}))),null,{timeout:5000});
   await page.screenshot({path:`${out}/${name}-${theme}-welcome.png`});
   const rect=await mark.boundingBox();assert.ok(Math.abs(rect.width/rect.height-841/258)<.03,'wordmark must retain approved proportions');
@@ -35,16 +36,16 @@ try{
   await page.evaluate(()=>endOnboarding(true));await page.evaluate(()=>show('home'));
   await page.locator('#logo .breeze-wordmark').evaluate(async node=>{
    const style=getComputedStyle(node);
-   if(style.backgroundImage!=='none')throw Error('Home wordmark retained a gradient/image fill');
-   const ink=getComputedStyle(node,'::before');
-   if(ink.backgroundImage.includes('wordmark-')||ink.opacity!=='1')throw Error('Home must use neutral opaque ink with material reflection, no colored artwork');
-   if(style.backdropFilter!=='none'||style.boxShadow!=='none')throw Error('Wordmark must not acquire a glass plate or backdrop blur');
-   const source=ink.maskImage||ink.webkitMaskImage;
-   await new Promise((resolve,reject)=>{const i=new Image();i.onload=resolve;i.onerror=reject;i.src=source.slice(5,-2);});
+   const theme=document.body.classList.contains('dark')?'dark':'light';
+   if(!style.backgroundImage.includes('breeze-neutral-'+theme+'.svg'))throw Error('Home must use the selected neutral theme asset');
+   if(getComputedStyle(node,'::before').display!=='none')throw Error('Do not overlay a second material on the selected asset');
+   if(style.backdropFilter!=='none'||style.boxShadow!=='none'||style.filter!=='none')throw Error('Wordmark must not acquire a plate, blur or shadow');
+   await new Promise((resolve,reject)=>{const i=new Image();i.onload=resolve;i.onerror=reject;i.src=style.backgroundImage.slice(5,-2);});
   });
   await page.screenshot({path:`${out}/${name}-${theme}-home.png`});
   await page.emulateMedia({reducedMotion:'reduce'});
   assert.equal(await page.locator('#logo .breeze-wordmark').evaluate(n=>getComputedStyle(n).filter),'none');
+  assert.equal(await page.locator('#logo .breeze-wordmark').evaluate(n=>getComputedStyle(n).backgroundImage),'none');
   assert.equal(await page.locator('#logo .breeze-wordmark').evaluate(n=>getComputedStyle(n,'::after').display),'none');
   if(name==='phone')await page.screenshot({path:`${out}/${name}-${theme}-home-reduced-motion.png`});
   await page.emulateMedia({reducedMotion:'no-preference',contrast:'more'});

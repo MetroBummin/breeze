@@ -1,0 +1,142 @@
+[
+  {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/memory-three-candidates.png",
+    "file_id": "file_0000000072b0820ea0e901558094d377",
+    "library_file_id": "libfile_1529b48f40508191bd76264e8da5b326",
+    "file_name": "memory-three-candidates.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 236201
+  },
+  {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/card-bookmark-light-home.png",
+    "file_id": "file_00000000b89c81f89c95f46d23d1a3d2",
+    "library_file_id": "libfile_a71bd7e23ea081918da7e586a75f426f",
+    "file_name": "card-bookmark-light-home.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 151121
+  },
+  {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/card-bookmark-dark-home.png",
+    "file_id": "file_000000001a708230ac953c67265bfdfa",
+    "library_file_id": "libfile_5350962aa4548191bf7fd78bddd4fea1",
+    "file_name": "card-bookmark-dark-home.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 151555
+  },
+  {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/saved-cards-light-home.png",
+    "file_id": "file_0000000015a081f88738d18748a1c990",
+    "library_file_id": "libfile_84229509e0a08191becb3d31df2fec3e",
+    "file_name": "saved-cards-light-home.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 151058
+  },
+  {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/saved-cards-dark-home.png",
+    "file_id": "file_0000000020a4820e9093b8009e3ad7fc",
+    "library_file_id": "libfile_25678346ae148191adb65135658dc26e",
+    "file_name": "saved-cards-dark-home.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 151528
+  },
+  {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/word-bubble-light-home.png",
+    "file_id": "file_000000004aec81f599976a7a8ed449ba",
+    "library_file_id": "libfile_d6266bebf9f0819182f14b5cecb1e1e3",
+    "file_name": "word-bubble-light-home.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 151080
+  },
+  {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/word-bubble-dark-home.png",
+    "file_id": "file_000000000fe482108d02ac1286ac30d5",
+    "library_file_id": "libfile_75be65a03bc0819197f2bae1b46163a0",
+    "file_name": "word-bubble-dark-home.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 151554
+  }
+]

@@ -293,3 +293,8 @@ Reader 문장 번역은 단어 확장 필과 같은 중립 유리 재질의 별�
 
 휴대폰 폭(640px 미만)의 성공 번역 본문은 검토 후 17px에서 16px로 줄였다.
 iPad 등 넓은 화면은 17px를 유지하고 굵기·줄간격 비율·재질·등장 동작은 그대로다.
+
+2026-10-07 approved brand placement: use the delivered flow light/dark full
+wordmark on splash and onboarding; neutral light/dark full wordmark on Home.
+Keep the original letter contours and selected teal lowercase b app icon.
+Memory icon alternatives remain preview-only until selection (decision 014).

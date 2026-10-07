@@ -1,0 +1,266 @@
+[
+  {
+    "name": "phone-light-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-light-home.png",
+    "file_id": "file_000000001b6c81f4b4a8079b52d475d1",
+    "library_file_id": "libfile_ea3e24c2361c8191ae64d03b956708a8",
+    "file_name": "phone-light-home.png",
+    "current_version_number": 5,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "5"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 152458,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "phone-dark-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-dark-home.png",
+    "file_id": "file_000000005d9481f5800c807e1a92a1d3",
+    "library_file_id": "libfile_424e8c14c17081919500af0309ef3a59",
+    "file_name": "phone-dark-home.png",
+    "current_version_number": 4,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "4"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 153110,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-light-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-light-home.png",
+    "file_id": "file_00000000dbd081f495337a6a896ca7fa",
+    "library_file_id": "libfile_fb6906536f5c819184cb51338b781fe9",
+    "file_name": "ipad-light-home.png",
+    "current_version_number": 5,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "5"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 311940,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-dark-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-dark-home.png",
+    "file_id": "file_00000000323881f89dc5eb989dfe1078",
+    "library_file_id": "libfile_5b53ca7a29408191b6289a4dfbece26b",
+    "file_name": "ipad-dark-home.png",
+    "current_version_number": 4,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "4"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 313391,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "phone-light-welcome",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-light-welcome.png",
+    "file_id": "file_00000000d7f4820e8ae068fc9d804e35",
+    "library_file_id": "libfile_8cc4f1a4733881918e3497b1054a0800",
+    "file_name": "phone-light-welcome.png",
+    "current_version_number": 3,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "3"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 28816,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "phone-dark-welcome",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-dark-welcome.png",
+    "file_id": "file_0000000085c081f5a1d607bafaf89bd1",
+    "library_file_id": "libfile_01470b6207ac8191b6f9b9357ecc4b1e",
+    "file_name": "phone-dark-welcome.png",
+    "current_version_number": 2,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "2"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 32568,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-light-welcome",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-light-welcome.png",
+    "file_id": "file_000000000a2881fba32bb70f671bd425",
+    "library_file_id": "libfile_cf7253edc9348191aff7f8cec0ef317e",
+    "file_name": "ipad-light-welcome.png",
+    "current_version_number": 3,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "3"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 34345,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-dark-welcome",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-dark-welcome.png",
+    "file_id": "file_00000000042881f88cbd125ef261a17f",
+    "library_file_id": "libfile_ee401d6ff1d881918e55a4fc705cbf47",
+    "file_name": "ipad-dark-welcome.png",
+    "current_version_number": 2,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "2"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 37696,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "phone-light-splash-preview",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-light-splash-preview.png",
+    "file_id": "file_0000000064fc820e9daeb7ad54149215",
+    "library_file_id": "libfile_ee2867bfb89c81918696285577f7c09e",
+    "file_name": "phone-light-splash-preview.png",
+    "current_version_number": 3,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "3"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 13006,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "phone-dark-splash-preview",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-dark-splash-preview.png",
+    "file_id": "file_00000000337c820eab7b488e558cf8ac",
+    "library_file_id": "libfile_e80f80ea9a808191a92833d0cac3b089",
+    "file_name": "phone-dark-splash-preview.png",
+    "current_version_number": 1,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "1"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 13762,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-light-splash-preview",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-light-splash-preview.png",
+    "file_id": "file_00000000e6f081f583c603611490da48",
+    "library_file_id": "libfile_e7c11b0ea6e4819180fbb34135fee660",
+    "file_name": "ipad-light-splash-preview.png",
+    "current_version_number": 3,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "3"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 16111,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-dark-splash-preview",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-dark-splash-preview.png",
+    "file_id": "file_0000000009bc81fdad5c0bf3f8944fc0",
+    "library_file_id": "libfile_a440fc99cea48191aca214d7a1c03044",
+    "file_name": "ipad-dark-splash-preview.png",
+    "current_version_number": 1,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "1"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 16920,
+    "external_connectors_accessed": false
+  }
+]
