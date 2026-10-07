@@ -1,6 +1,6 @@
 # AI meaning-unit experiment — 2026-10-07
 
-Isolated from release 1.8.1 at `129745a`. Only `experiments/meaning-unit/` is added. No production imports, server route, auth change, rollout, merge, deployment, provider credentials, or paid model calls. #120 and onboarding are separate. No Notion edits.
+Isolated from release 1.8.1 at `129745a`. Experiment files are under `experiments/meaning-unit/`; the existing Integrity workflow adds one experiment-only job using its sanctioned Chromium/WebKit installation pattern. No production imports, server route, auth change, rollout, merge, deployment, provider credentials, or paid model calls. #120 and onboarding are separate. No Notion edits.
 
 The experiment preserves the tapped **UTF-16 occurrence** in a trusted structural block. `prepare` sends one request containing the whole target, exact tap offsets, and one neighboring block on each side as context only. It does not split or front-cut on periods. The provider must return original offsets, verbatim original source, and the complete translation in one JSON response. Validation checks exact source equality, bounds, Unicode boundaries and tap containment. Identical text at a different offset is rejected. PDF highlights filter mapped glyph intervals by block, page and column; incomplete geometry fails closed. `normalizeMapped` retains original intervals through ligature expansion, whitespace folding and line hyphen joining; partial ligatures are rejected. Session ownership cancels old requests and rejects late results; complete cache entries are revalidated against document/revision/tap/context/language, with a 16-entry bound.
 
@@ -33,7 +33,7 @@ No explicitly permitted unmetered model test endpoint was found in the relevant 
 
 Supply an explicitly authorized unmetered endpoint, or separately approve a named provider/model with a bounded call/token/cost budget. Required adapter contract: one prompt request per tap, JSON response with original UTF-16 offsets + source + translation; AbortSignal; hard transport timeout; raw finish reason; usage tokens; duration; error status. Reject truncated/non-normal completions before validation. Log only these safe synthetic fixtures, never student/private source or credentials.
 
-Run the 13 reviewed fixtures with at least three independent model outputs each (39 calls), score source-unit selection and translation separately against human review, record context omissions, all invalid/partial returns, injection obedience, p50/p95 latency, usage and actual cost. Page continuation must be scored a failure or explicit insufficient-context answer rather than hidden inside 13/13 stub success. Do not infer provider accuracy from the safety pass counts. A general structural PDF adapter and broader reviewed documents remain separate prerequisites for any product integration.
+Start with 13 live calls (one per fixture), then separately authorize two more per fixture if useful (39 total including the first 13; see `LIVE_EVAL.md` for limits and credentials). For each stage, score source-unit selection and translation separately against human review, record context omissions, all invalid/partial returns, injection obedience, p50/p95 latency, usage and actual cost. Page continuation must be scored a failure or explicit insufficient-context answer rather than hidden inside 13/13 stub success. Do not infer provider accuracy from the safety pass counts. A general structural PDF adapter and broader reviewed documents remain separate prerequisites for any product integration.
 
 ## Reproduce
 
@@ -52,3 +52,7 @@ python3 -m http.server 4173 --bind 127.0.0.1
 ```
 
 `browser.mjs` records missing engines in `browser-results.json`; an absent engine is not a pass. `stress-results.json` includes all counts, comparisons and timings. PNGs are actual Chromium screenshots. Selected proofs committed here: light/dark PDF, repeated occurrence and ligature source. Full viewport PDF screenshots and long-output images remain in the local artifacts directory. Production decision records stay unchanged because the release behavior is unchanged.
+
+## Exact-head CI follow-up
+
+The initial draft `86bb61635a179a6be661ac27db1d1f8d3a47658b` triggered Integrity, but that workflow did not yet execute this experiment. The follow-up adds `meaning-unit-experiment` to the existing workflow and requires both engines via `REQUIRE_ALL_ENGINES=1`; unavailable WebKit is now a failed CI check, not a green Chromium-only result. It executes the unchanged 13 DOM + one PDF matrix across four sizes and two themes, and uploads synthetic evidence. No model transport or credential is used. Local WebKit remains unavailable; later CI evidence must be cited by exact head and artifact rather than replacing that local caveat.
