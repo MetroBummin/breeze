@@ -1,8 +1,10 @@
-# WHITE palette comparison — selection pending
+# WHITE palette comparison — B selected
 
 08:15 user decision confirms the original cursive r; all three variants have
 the exact same source contour. Dark onboarding/splash ink is unchanged.
 Home now uses neutral text-token monochrome and is outside this color choice.
+The user confirmed B at 08:48. This sheet remains historical review evidence;
+selected B is applied to WHITE onboarding/splash and native static artwork.
 
 | Variant | Gradient stops | Endpoint contrast on #FBFCFC |
 |---|---|---|
@@ -25,6 +27,5 @@ The individual colored Home candidate files are historical palette comparisons
 from before the monochrome Home direction, not the current Home. Latest actual
 monochrome screenshots and native IDs are in `../breeze-wordmark/`.
 
-Preview vectors live under `docs/brand/white-palette-variants/`, outside the app
-bundle. No A/B palette is applied to production onboarding or native artwork
-until selection. Native Library references are in `library-images.json`.
+Comparison vectors live under `docs/brand/white-palette-variants/`, outside the
+app bundle. Native Library references are in `library-images.json`.

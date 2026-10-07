@@ -61,15 +61,17 @@ def outline(bounds):
 
 
 def svg(width,height,path,dark=False,icon=False):
-    # 07:56 feedback: WHITE uses exactly Dark01 ink, without darkening it.
-    # 08:15 feedback confirms the original approved cursive r contour.
-    colors=('#acece1','#a9d4ee')
+    # 08:15 confirms original cursive r; 08:48 selects WHITE palette B.
+    # Dark01 and br icon ink remain unchanged.
+    colors=('#acece1','#a9d4ee') if dark or icon else ('#63acb5','#699bbc')
+    gradient=f'<stop stop-color="{colors[0]}"/><stop offset="{1 if dark or icon else .8}" stop-color="{colors[1]}"/>'
+    if not dark and not icon: gradient+=f'<stop offset="1" stop-color="{colors[1]}"/>'
     if icon:
         scale=820/max(width,height); x=(1024-width*scale)/2; y=(1024-height*scale)/2
         geometry=f'<rect width="1024" height="1024" rx="220" fill="#20211e"/><g transform="translate({x:g} {y:g}) scale({scale:g})"><path d="{path}" fill="url(#ink)" fill-rule="evenodd"/></g>'
         width=height=1024
     else: geometry=f'<path d="{path}" fill="url(#ink)" fill-rule="evenodd"/>'
-    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"><defs><linearGradient id="ink"><stop stop-color="{colors[0]}"/><stop offset="1" stop-color="{colors[1]}"/></linearGradient></defs>{geometry}</svg>\n'
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"><defs><linearGradient id="ink">{gradient}</linearGradient></defs>{geometry}</svg>\n'
 
 
 if __name__=='__main__':

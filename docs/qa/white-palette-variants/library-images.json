@@ -1,5 +1,5 @@
 {
-  "status": "White palettes await user selection; original cursive r approved at 08:15; Dark01 unchanged",
+  "status": "B selected by user at 08:48; original cursive r approved at 08:15; comparison is historical",
   "palettes": {
     "current": {
       "stops": [
@@ -102,5 +102,33 @@
     "library_file_id": "libfile_389b214687948191a26d128ae8e390fb",
     "file_id": "file_00000000afd481f6bf5c2424fc86b13d",
     "version": 1
+  },
+  "selected": "B",
+  "currentProduction": {
+    "whiteStops": [
+      [
+        0,
+        "#63acb5"
+      ],
+      [
+        0.8,
+        "#699bbc"
+      ],
+      [
+        1,
+        "#699bbc"
+      ]
+    ],
+    "darkStops": [
+      [
+        0,
+        "#acece1"
+      ],
+      [
+        1,
+        "#a9d4ee"
+      ]
+    ],
+    "home": "monochrome settings ink, letter-only material highlights/depth; no colored gradient or plate"
   }
 }

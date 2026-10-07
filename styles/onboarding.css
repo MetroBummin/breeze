@@ -13,9 +13,9 @@ body.onboarding-active #v-read{background:var(--onboard-paper);}
 #onboard-step{color:var(--onboard-muted);font:600 11px/1.4 var(--ui);letter-spacing:1px;}
 #onboard-prompt{margin:16px 0 24px;font:650 24px/1.4 var(--ui);letter-spacing:-.6px;word-break:keep-all;}
 #onboard-note{margin:0 0 24px;font:400 14px/1.6 var(--ui);color:var(--onboard-muted);}
-#onboard-next,#onboard-finish,#onboard-sentence{width:100%;margin-top:12px;border:1px solid #e4e8ef;border-radius:16px;background:transparent;}
-body.dark #onboard-next,body.dark #onboard-finish,body.dark #onboard-sentence{border-color:#313b4b;}
-#onboarding #onboard-next{min-height:52px;font-weight:650;background:var(--onboard-ink);color:var(--onboard-paper);border:0;}
+#onboard-finish,#onboard-sentence{width:100%;margin-top:12px;border:1px solid #e4e8ef;border-radius:16px;background:transparent;}
+body.dark #onboard-finish,body.dark #onboard-sentence{border-color:#313b4b;}
+#onboarding #onboard-next{width:100%;margin-top:12px;border-radius:16px;min-height:52px;font-weight:650;color:var(--sentence-glass-ink);}
 #onboarding #onboard-next:disabled{background:#edf0f5;color:#9aa5b4;}
 body.dark #onboarding #onboard-next:disabled{background:#242c39;color:#8390a4;}
 #onboard-finish,#onboard-sentence{font-size:13px!important;}
@@ -57,3 +57,4 @@ body.onboarding-active[data-onboard-stage="3"] #rtext p:last-child{font-size:var
 #onboard-font-value{color:var(--onboard-muted);font:500 14px var(--ui);min-width:24px;}
 @media(max-height:500px){body.onboarding-active #readwrap{padding-top:80px;padding-bottom:200px;}#onboard-prompt{font-size:18px;margin:8px 0 16px;}#onboard-note{font-size:12px;margin-bottom:8px;}#onboard-reader-settings{margin:8px 0;}#onboard-welcome .breeze-wordmark{width:190px;}#onboarding:is([data-stage="0"],[data-stage="4"]) #onboard-prompt{font-size:26px;align-self:center;text-align:center;margin:8px 0;}#onboarding:is([data-stage="0"],[data-stage="4"]) #onboard-coach{width:100%;padding-bottom:128px;}#onboarding[data-stage="0"] #onboard-note{align-self:center;margin:0;}#onboard-overlay-guide{justify-content:space-between;}}
 @media(prefers-reduced-motion:reduce){body.onboarding-active #rtext p{transition:none;}body.onboarding-active .onboard-target{animation:none;outline:1.5px solid #91a8da;outline-offset:4px;}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){#onboarding #onboard-next{background:var(--sentence-glass-solid);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;}}

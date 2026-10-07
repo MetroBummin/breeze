@@ -4,8 +4,8 @@ The user selected Dark01 and authorized a white-mode version, onboarding,
 splash and restrained Home branding, with screenshots before approval. This
 draft is stacked on PR #122 and changes no auth, Reader lookup or release policy.
 The user confirmed the original cursive `r` at 08:15. Its contour is retained;
-the plain-r alternative is not implemented. WHITE palette A/B still awaits
-selection after the 08:06 feedback about the pale appearance.
+the plain-r alternative is not implemented. The user selected WHITE palette B
+at 08:48: #63acb5 at 0%, #699bbc at 80% and 100%. Dark01 ink is unchanged.
 
 The approved Library board is `libfile_709561bacc108191b6ec01dddc4318f9`
 (version 0, backing `file_000000006c9881f9bf2b7604c4c0cb57`). Actual pixels
@@ -14,16 +14,26 @@ source and is excluded from the shipped application bundle.
 `tools/trace-breeze-brand.py` extracts its connected
 wordmark and `br` contours with midpoint quadratic smoothing (maximum polygon
 simplification tolerance 1.15 source pixels), removing raster texture. Both
-themes share exactly the same outline and aspect ratio. Both use the exact
-Dark01 gradient #acece1 → #a9d4ee; WHITE is not darkened. These are decorative
+themes share exactly the same outline and aspect ratio. Dark01 keeps
+#acece1 → #a9d4ee; WHITE uses selected B. These are decorative
 brand ink, not general control/selection tokens.
 
 The full wordmark replaces the mascot on welcome and completion. Following
 08:08 user feedback, the Home header uses the identical contour as a mask filled
 with the existing neutral `--settings-ink` token (#1C1C1E / #F2F2F7), with no
-gradient. Colored artwork remains on onboarding and splash. The 08:06 feedback
-rejects the pale WHITE effect; two preview-only white palette candidates are
-recorded separately and await user selection. Dark ink is unchanged.
+colored gradient. Colored artwork remains on onboarding and splash. The palette
+comparison is historical review evidence; B is now selected and shipped.
+
+The subsequent Liquid Glass direction adds a thin directional reflection and
+1px shallow depth only on the original letter contours. It reuses shared
+`--control-light-reflection`, `--sentence-glass-line` and scrim tokens; no new
+plate, backdrop blur, shimmer or interaction is added to the wordmark. Home
+stays neutral monochrome; onboarding keeps its colored outline with the same
+restrained letter treatment. Start/Next uses the real `.control-glass` material,
+whose owner remains `reader.css`, at the existing tutorial button geometry.
+Reduced transparency/motion or increased contrast removes letter reflections
+and depth. Reduced transparency/increased contrast makes the CTA opaque with
+no backdrop blur. Static native/web splash artwork keeps its simple flat mark.
 The ordinary content word `Breeze` stays selectable Reader text. Its
 lesson, actual mini pill, expansion, translation and explanation remain shared.
 Home content and navigation, including the existing Memory illustration, remain

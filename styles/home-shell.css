@@ -3,10 +3,15 @@
 html:has(:is(#v-home,#v-casuals,#v-longform).on),body:has(:is(#v-home,#v-casuals,#v-longform).on){background:var(--home-background);}
 body:has(:is(#v-home,#v-casuals,#v-longform).on)::before{display:none;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #topbar{position:relative;transform:none;opacity:1;visibility:visible;pointer-events:auto;transition:none;background:transparent;backdrop-filter:none;border:0;gap:10px;padding:calc(env(safe-area-inset-top) + 24px) 20px 12px;}
-.breeze-wordmark{display:block;width:120px;aspect-ratio:841/258;background:url('../assets/brand/wordmark-light.svg') center/contain no-repeat;}
+.breeze-wordmark{position:relative;display:block;width:120px;aspect-ratio:841/258;background:url('../assets/brand/wordmark-light.svg') center/contain no-repeat;filter:drop-shadow(0 1px .6px var(--sentence-glass-scrim));}
+.breeze-wordmark::before,.breeze-wordmark::after{content:'';position:absolute;inset:0;pointer-events:none;-webkit-mask:url('../assets/brand/wordmark-mask.svg') center/contain no-repeat;mask:url('../assets/brand/wordmark-mask.svg') center/contain no-repeat;}
+.breeze-wordmark::before{background:var(--control-light-reflection);opacity:.16;}
+.breeze-wordmark::after{background:var(--sentence-glass-line);opacity:.45;-webkit-mask-image:url('../assets/brand/wordmark-mask.svg'),url('../assets/brand/wordmark-mask.svg');mask-image:url('../assets/brand/wordmark-mask.svg'),url('../assets/brand/wordmark-mask.svg');-webkit-mask-position:0 0,0 1px;mask-position:0 0,0 1px;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-composite:source-out;mask-composite:subtract;}
 body.dark .breeze-wordmark{background-image:url('../assets/brand/wordmark-dark.svg');}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo{gap:10px;}
-body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark{width:132px;background:var(--settings-ink);-webkit-mask:url('../assets/brand/wordmark-mask.svg') center/contain no-repeat;mask:url('../assets/brand/wordmark-mask.svg') center/contain no-repeat;}
+body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark{width:132px;background:none;}
+body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark::before{background:var(--control-light-reflection),linear-gradient(180deg,transparent 45%,var(--sentence-glass-scrim) 80%,transparent),var(--settings-ink);background-blend-mode:soft-light,normal;opacity:1;}
+@media(prefers-reduced-transparency:reduce),(prefers-reduced-motion:reduce),(prefers-contrast:more){.breeze-wordmark{filter:none;}.breeze-wordmark::before{opacity:0;}.breeze-wordmark::after{display:none;}body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark::before{background:var(--settings-ink);background-blend-mode:normal;opacity:1;}}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings{margin-left:auto;flex:none;width:44px;height:44px;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
