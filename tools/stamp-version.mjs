@@ -24,10 +24,10 @@ const shortHash = path =>
 
 let stamped = 0, missing = [];
 /* 우리 파일만 — CDN 주소는 이미 판 번호를 달고 있고 남의 서버입니다. */
-const local = /(<(?:script|link)\b[^>]*?\b(?:src|href)=")(?!https?:|\/\/|data:|#)([^"?]+)(?:\?[^"]*)?(")/g;
+const local = /(<(?:script|link|img)\b[^>]*?\b(?:src|href)=")(?!https?:|\/\/|data:|#)([^"?]+)(?:\?[^"]*)?(")/g;
 
 const next = html.replace(local, (all, head, path, tail) => {
-  if(!/\.(?:js|css)$/.test(path)) return all;
+  if(!/\.(?:js|css)$/.test(path)&&!/(?:^|\/)assets\/favicon\/[^/]+\.(?:png|svg|ico)$/.test(path)) return all;
   try{
     stamped++;
     return `${head}${path}?v=${shortHash(path)}${tail}`;
@@ -69,7 +69,7 @@ if(existsSync(worker)){
 for(const entry of ['landing/index.html','support/index.html']){
   const target=resolve(root,entry),source=readFileSync(target,'utf8');
   const updated=source.replace(local,(all,head,path,tail)=>{
-    if(!/\.(?:js|css)$/.test(path))return all;
+    if(!/\.(?:js|css)$/.test(path)&&!/(?:^|\/)assets\/favicon\/[^/]+\.(?:png|svg|ico)$/.test(path))return all;
     const file=resolve(dirname(target),path);
     const hash=createHash('sha256').update(readFileSync(file)).digest('hex').slice(0,8);
     return `${head}${path}?v=${hash}${tail}`;

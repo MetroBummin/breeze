@@ -63,8 +63,9 @@
     "android:sync": "npm run www && cap sync android",
     "android:debug": "npm run android:sync && cd android && ./gradlew --no-daemon assembleDebug",
     "android:bundle": "npm run android:sync && cd android && ./gradlew --no-daemon bundleRelease",
-    "test:android": "node --test tests/verify-android-build.mjs",
-    "test:social-login": "node --test tests/verify-apple-login.mjs && node tests/verify-social-login-browser.mjs"
+    "test:android": "node --test tests/verify-android-build.mjs && npm run test:brand-icons",
+    "test:social-login": "node --test tests/verify-apple-login.mjs && node tests/verify-social-login-browser.mjs",
+    "test:brand-icons": "python3 tools/verify-brand-icon-assets.py"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

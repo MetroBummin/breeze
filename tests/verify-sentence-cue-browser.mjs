@@ -42,7 +42,7 @@ try{
     await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
     await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
     await page.goto(url+'index.html');
-    const cdp=engine===chromium?await context.newCDPSession(page):null;
+    const cdp=engine===chromium&&!process.env.BREEZE_QA_SYNTHETIC_POINTER?await context.newCDPSession(page):null;
     const inputs=[['txt',{name:'cue.txt',mimeType:'text/plain',buffer:Buffer.from((sentence+' A different sentence stays outside the blue highlight.\n\n').repeat(30))}],
      ['pdf',{name:'cue.pdf',mimeType:'application/pdf',buffer:pdf}],['epub',{name:'cue.epub',mimeType:'application/epub+zip',buffer:epub}]];
     for(const [kind,input] of inputs){
@@ -114,7 +114,14 @@ try{
      },point);
      await page.waitForFunction(()=>sentenceWaitingActive()&&readerSentenceCue?.layer.childElementCount>0,null,{timeout:5000});
      if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-     else await page.evaluate(p=>qaTouchTarget.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:71,pointerType:'touch',isPrimary:true,clientX:p.x,clientY:p.y})),point);
+     else await page.evaluate(p=>{
+      // PDF may repaint its canvas while the pointer is held. A detached old
+      // target cannot bubble to the document gesture owner. Synthetic release
+      // must hit the current document surface, as a real browser release does.
+      const doc=qaTouchTarget.ownerDocument;
+      const target=qaTouchTarget.isConnected?qaTouchTarget:doc.elementFromPoint(p.x,p.y)||doc;
+      target.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:71,pointerType:'touch',isPrimary:true,clientX:p.x,clientY:p.y}));
+     },point);
      const released=await trace('after-pointerup');
      assert.equal(released.held,false,'synthetic/trusted pointer release did not reach the gesture owner: '+JSON.stringify(released));
      await page.evaluate(()=>Promise.all(readerSentenceCue.layer.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished)));

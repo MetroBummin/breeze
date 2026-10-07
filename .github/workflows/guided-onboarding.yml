@@ -46,16 +46,22 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
       - run: node --test tests/verify-apple-login.mjs
       - run: node tests/verify-onboarding-browser.mjs
+      - run: python3 tools/verify-brand-icon-assets.py
+      - run: node tests/verify-brand-browser.mjs
       - run: node tests/verify-social-login-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: guided-onboarding-${{ matrix.browser }}
-          path: /tmp/breeze-onboarding-review*/
+          path: |
+            /tmp/breeze-onboarding-review*/
+            /tmp/breeze-brand-review*/
           if-no-files-found: ignore
           retention-days: 7
 
   ios-compile:
+    # Stacked screenshot drafts run browser checks without a native build.
+    if: github.base_ref == 'main'
     runs-on: macos-26
     timeout-minutes: 20
     steps:

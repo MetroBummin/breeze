@@ -1,0 +1,90 @@
+[
+  {
+    "name": "phone-light-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-light-home.png",
+    "file_id": "file_000000005e9881f58e74c86172f97e81",
+    "library_file_id": "libfile_ea3e24c2361c8191ae64d03b956708a8",
+    "file_name": "phone-light-home.png",
+    "current_version_number": 6,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "6"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 150135,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "phone-dark-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/phone-dark-home.png",
+    "file_id": "file_000000008b448230b3c43e4cc16d260d",
+    "library_file_id": "libfile_424e8c14c17081919500af0309ef3a59",
+    "file_name": "phone-dark-home.png",
+    "current_version_number": 5,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "5"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 150833,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-light-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-light-home.png",
+    "file_id": "file_00000000c3f4820dbd12c2d3766f38de",
+    "library_file_id": "libfile_fb6906536f5c819184cb51338b781fe9",
+    "file_name": "ipad-light-home.png",
+    "current_version_number": 6,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "6"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 309248,
+    "external_connectors_accessed": false
+  },
+  {
+    "name": "ipad-dark-home",
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/ipad-dark-home.png",
+    "file_id": "file_00000000043c820ab1d5bd22f2564391",
+    "library_file_id": "libfile_5b53ca7a29408191b6289a4dfbece26b",
+    "file_name": "ipad-dark-home.png",
+    "current_version_number": 5,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "5"
+      }
+    ],
+    "directory_id": "libdir_776f708d5c2c8191bd0a801e433f3dee",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 310654,
+    "external_connectors_accessed": false
+  }
+]
