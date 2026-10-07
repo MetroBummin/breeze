@@ -15,7 +15,20 @@
                     <view key="view" contentMode="scaleToFill" id="snD-IY-ifK">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="backgroundColor" red="0.9803921569" green="0.9725490196" blue="0.9490196078" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="BreezeWordmark" translatesAutoresizingMaskIntoConstraints="NO" id="brand-launch-image">
+                                <rect key="frame" x="77.5" y="299.5" width="220" height="68"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="220" id="brand-launch-width"/>
+                                    <constraint firstAttribute="height" constant="68" id="brand-launch-height"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" name="BreezeLaunchBackground"/>
+                        <constraints>
+                            <constraint firstItem="brand-launch-image" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="brand-launch-center-x"/>
+                            <constraint firstItem="brand-launch-image" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" id="brand-launch-center-y"/>
+                        </constraints>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -23,4 +36,10 @@
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="BreezeWordmark" width="220" height="68"/>
+        <namedColor name="BreezeLaunchBackground">
+            <color red="0.9843137255" green="0.9882352941" blue="0.9882352941" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
 </document>

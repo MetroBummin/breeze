@@ -2,16 +2,18 @@
 
 ## Decision
 
-First-time readers see the existing mascot, “브리즈에 오신 걸 환영해요”, and
+First-time readers see the approved connected `breeze` wordmark, “브리즈에 오신 걸 환영해요”, and
 one bottom “시작하기” button. The lesson uses a quiet interactive illustration:
 Reader chrome is hidden and only the large word Breeze is visible. Tapping it
 opens the production mini pill. Its chevron opens the production word detail;
 “다음” then reveals “Let your reading flow.” with a gentle fade/scale handoff.
 Breeze means “산들바람”. The two phrases are separate illustrations; the reveal
 does not pretend Breeze is a word in the sentence. Neutral colors, generous space
-and a left-aligned welcome follow the supplied visual references. The unchanged
-repository app icon contains the requested green-leaf character; standalone
-Library artwork could not be downloaded and remains a visual refinement gap.
+and a left-aligned welcome follow the supplied visual references. The subsequent
+Dark01 brand draft replaces the mascot with the approved sea-glass wordmark.
+Its contour is traced from the actual approved Library board, never a substitute
+font. Light/dark assets share the same geometry. The separate `br` monogram is
+used for app icons; Memory navigation artwork remains unchanged.
 
 The existing Reader long press, sentence selection cue, responsive translation
 pill and easy-explanation surface remain authoritative. “문장 해석” (accessible label: “길게 누르기 대신 문장 해석”) provides a keyboard and tap alternative through the registered text Reader

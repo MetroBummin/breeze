@@ -29,6 +29,8 @@ concurrency:
 
 jobs:
   android:
+    # Stacked screenshot drafts do not request a native build.
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:

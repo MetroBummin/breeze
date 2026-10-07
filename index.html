@@ -5,9 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <!-- viewport-fit=cover 가 있어야 env(safe-area-inset-*) 이 값을 냅니다.
        네이티브 셸(Capacitor)과 아이폰 사파리 둘 다 여기에 기댑니다. -->
-  <style>html.boot-pending #app{visibility:hidden;opacity:0;pointer-events:none;}</style>
+  <style>
+    html.boot-pending #app{visibility:hidden;opacity:0;pointer-events:none;}
+    #brand-boot{display:none;}
+    html.boot-pending #brand-boot{display:grid;position:fixed;inset:0;place-items:center;background:#fbfcfc;}
+    #brand-boot span{width:min(220px,60vw);aspect-ratio:841/258;background:url('assets/brand/wordmark-light.svg') center/contain no-repeat;}
+    html.dark.boot-pending #brand-boot{background:#20211e;}
+    html.dark #brand-boot span{background-image:url('assets/brand/wordmark-dark.svg');}
+  </style>
   <script>
     document.documentElement.classList.add('boot-pending');
+    // Match the existing saved appearance while the normal preference owner loads.
+    try{document.documentElement.classList.toggle('dark',JSON.parse(localStorage.getItem('breeze.dark')||'false')===true);}catch(error){}
     // Fail open even if a later script cannot load. Normal startup clears this early.
     setTimeout(()=>document.documentElement.classList.remove('boot-pending'),8000);
     /* Capacitor 는 document 시작 전에 이 bridge 를 넣습니다. CSS 가 그려지기 전에
@@ -51,8 +60,8 @@
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=1736245b">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=5a9f0595">
-  <link rel="stylesheet" href="styles/onboarding.css?v=72764cb5">
+  <link rel="stylesheet" href="styles/home-shell.css?v=b36cbbdb">
+  <link rel="stylesheet" href="styles/onboarding.css?v=7cd86bec">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -138,12 +147,13 @@
   <link rel="stylesheet" href="styles/surfaces.css?v=838a8c6e">
 </head>
 <body>
+<div id="brand-boot" aria-hidden="true"><span></span></div>
 <div id="app">
 
 <!-- ================= TOP BAR ================= -->
 <div id="topbar">
   <div id="logo" onclick="show('home')">
-    <img class="home-brand-icon" src="assets/favicon/icon-192.png" alt="" width="38" height="38"><span class="mark">Breeze</span>
+    <span class="breeze-wordmark" role="img" aria-label="Breeze"></span>
   </div>
   <nav id="primary-nav" aria-label="Main navigation">
     <button class="navbtn on" id="nav-home" type="button" onclick="show('home')">
@@ -544,7 +554,7 @@
   <div id="onboard-overlay-guide" hidden><p id="onboard-overlay-prompt" role="status"></p><button id="onboard-return" type="button">안내로 돌아가기</button></div>
   <p id="onboard-idle-hint" aria-hidden="true" hidden></p>
   <section id="onboard-coach" aria-labelledby="onboard-prompt">
-    <div id="onboard-welcome"><img src="assets/favicon/icon-512.png" alt="브리즈 마스코트" width="160" height="160"></div>
+    <div id="onboard-welcome"><span class="breeze-wordmark" role="img" aria-label="Breeze"></span></div>
     <span id="onboard-step"></span>
     <p id="onboard-prompt" role="status" aria-live="polite" tabindex="-1"></p>
     <p id="onboard-note" hidden>나머지 설정은 읽으면서 바꿔도 돼요.</p>

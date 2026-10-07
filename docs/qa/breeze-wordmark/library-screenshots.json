@@ -1,0 +1,107 @@
+[
+  {
+    "file_name": "phone-light-welcome.png",
+    "library_file_id": "libfile_8cc4f1a4733881918e3497b1054a0800",
+    "file_id": "file_00000000409081fd9c3f419110444946",
+    "version": 1,
+    "size_bytes": 24431
+  },
+  {
+    "file_name": "phone-dark-welcome.png",
+    "library_file_id": "libfile_01470b6207ac8191b6f9b9357ecc4b1e",
+    "file_id": "file_00000000c42081f6a0df6aa5b0933185",
+    "version": 0,
+    "size_bytes": 25457
+  },
+  {
+    "file_name": "ipad-light-welcome.png",
+    "library_file_id": "libfile_cf7253edc9348191aff7f8cec0ef317e",
+    "file_id": "file_000000003a9881f88e97a26afcee1420",
+    "version": 1,
+    "size_bytes": 29411
+  },
+  {
+    "file_name": "ipad-dark-welcome.png",
+    "library_file_id": "libfile_ee401d6ff1d881918e55a4fc705cbf47",
+    "file_id": "file_00000000589082308a580edd78d49161",
+    "version": 0,
+    "size_bytes": 30648
+  },
+  {
+    "file_name": "phone-light-home.png",
+    "library_file_id": "libfile_ea3e24c2361c8191ae64d03b956708a8",
+    "file_id": "file_0000000024c881f5ae094af7fbd85028",
+    "version": 1,
+    "size_bytes": 152292
+  },
+  {
+    "file_name": "phone-dark-home.png",
+    "library_file_id": "libfile_424e8c14c17081919500af0309ef3a59",
+    "file_id": "file_00000000cd0481f784d5ad4471526517",
+    "version": 0,
+    "size_bytes": 153298
+  },
+  {
+    "file_name": "ipad-light-home.png",
+    "library_file_id": "libfile_fb6906536f5c819184cb51338b781fe9",
+    "file_id": "file_00000000aba081f6a4c8cadffeb7dfb5",
+    "version": 1,
+    "size_bytes": 311730
+  },
+  {
+    "file_name": "ipad-dark-home.png",
+    "library_file_id": "libfile_5b53ca7a29408191b6289a4dfbece26b",
+    "file_id": "file_000000008d0c8230aac78bc111e624be",
+    "version": 0,
+    "size_bytes": 313504
+  },
+  {
+    "file_name": "phone-light-splash-preview.png",
+    "library_file_id": "libfile_ee2867bfb89c81918696285577f7c09e",
+    "file_id": "file_00000000f174823088e64ef558defb1e",
+    "version": 1,
+    "size_bytes": 11173
+  },
+  {
+    "file_name": "phone-dark-splash-preview.png",
+    "library_file_id": "libfile_e80f80ea9a808191a92833d0cac3b089",
+    "file_id": "file_00000000b10881f595918cd2ddc563ed",
+    "version": 0,
+    "size_bytes": 12452
+  },
+  {
+    "file_name": "ipad-light-splash-preview.png",
+    "library_file_id": "libfile_e7c11b0ea6e4819180fbb34135fee660",
+    "file_id": "file_00000000df0081fdb2ae49ba2252b312",
+    "version": 1,
+    "size_bytes": 14217
+  },
+  {
+    "file_name": "ipad-dark-splash-preview.png",
+    "library_file_id": "libfile_a440fc99cea48191aca214d7a1c03044",
+    "file_id": "file_00000000f0288230a5d2cf707b34b4c7",
+    "version": 0,
+    "size_bytes": 15477
+  },
+  {
+    "file_name": "wordmark-light.png",
+    "library_file_id": "libfile_0b6c7fdad59081919f9209d571f64238",
+    "file_id": "file_000000008e6081f591d611680a73e3c8",
+    "version": 1,
+    "size_bytes": 49450
+  },
+  {
+    "file_name": "wordmark-dark.png",
+    "library_file_id": "libfile_77fc950b69ac819180d3698f0b259b92",
+    "file_id": "file_0000000032a081f7aaf5463e00b8ea05",
+    "version": 0,
+    "size_bytes": 54738
+  },
+  {
+    "file_name": "icon-512.png",
+    "library_file_id": "libfile_12f3bb5c6e84819195f99f3dcc56092e",
+    "file_id": "file_000000007dec81fd982a6042d95f1ee0",
+    "version": 0,
+    "size_bytes": 34649
+  }
+]

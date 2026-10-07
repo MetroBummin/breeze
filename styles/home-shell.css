@@ -3,10 +3,10 @@
 html:has(:is(#v-home,#v-casuals,#v-longform).on),body:has(:is(#v-home,#v-casuals,#v-longform).on){background:var(--home-background);}
 body:has(:is(#v-home,#v-casuals,#v-longform).on)::before{display:none;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #topbar{position:relative;transform:none;opacity:1;visibility:visible;pointer-events:auto;transition:none;background:transparent;backdrop-filter:none;border:0;gap:10px;padding:calc(env(safe-area-inset-top) + 24px) 20px 12px;}
-.home-brand-icon{display:none;}
+.breeze-wordmark{display:block;width:120px;aspect-ratio:841/258;background:url('../assets/brand/wordmark-light.svg') center/contain no-repeat;}
+body.dark .breeze-wordmark{background-image:url('../assets/brand/wordmark-dark.svg');}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo{gap:10px;}
-body:has(:is(#v-home,#v-casuals,#v-longform).on) .home-brand-icon{display:block;border-radius:9px;}
-body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark{font:700 32px/44px var(--ui);letter-spacing:-.8px;color:var(--settings-ink);}
+body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark{width:132px;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings{margin-left:auto;flex:none;width:44px;height:44px;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
