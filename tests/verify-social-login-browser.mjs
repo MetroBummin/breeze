@@ -65,7 +65,12 @@ try{
   assert.equal(session?.user.email,'reader@example.com');assert.equal(session?.user.id,user.id);
   assert.equal(new URL(page.url()).searchParams.has('breeze_auth_return'),false);
   assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('sb-')&&key.endsWith('-auth-token'))),true);
+  // Auth acceptance starts background word sync. Drain the real existing owner
+  // before intentionally navigating, so WebKit does not turn a navigation-aborted
+  // mocked cross-origin POST into a spurious CORS page error. Keep errors asserted.
+  await page.evaluate(async()=>{if(remoteSyncPromise)await remoteSyncPromise;});
   await page.reload();await page.evaluate(()=>homeReady);await page.waitForFunction(()=>typeof sbUser!=='undefined'&&sbUser?.email==='reader@example.com');
+  await page.evaluate(async()=>{if(remoteSyncPromise)await remoteSyncPromise;});
   await page.evaluate(()=>openSettings());assert.equal(await page.locator('.sm-account b').textContent(),'reader@example.com');
   assert.equal(await page.evaluate(()=>sbUser.id),user.id);assert.deepEqual(pageErrors,[]);
   assert.equal(await page.locator('#sm-'+provider+'-login').count(),0);

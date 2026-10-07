@@ -18,3 +18,17 @@ These SVGs are static highlight mockups. They do not demonstrate Apple's
 automatic Liquid Glass icon rendering. Production br app icon assets, welcome
 colors, launch artwork and auth are untouched. Review files are under docs and
 are excluded from the native www application bundle.
+
+## b optical correction and br addition
+
+The four-way comparison is icon-four-directions.png. b shifts 14px left within
+its 512px tile (2.7%); its path, height, material and lighting are unchanged.
+The heavier loop/stem on the right makes geometric bounds alone look off-center.
+icon-b-optical-before-after.png shows the old and corrected b; its center guide
+is review-only. The older icon-two-directions.png is historical, before correction.
+
+br reuses the entire existing assets/brand/monogram.svg outline. Both marks have
+361.2px letter height in a 512px tile; br naturally needs more horizontal space.
+Each mark's neutral/flow variants have exactly matching paths and transforms.
+All eight SVGs were decoded in a real Chromium browser, then checked visually at
+210px enlarged and 60/40/29/20px. Home production CSS/assets are unchanged.

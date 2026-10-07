@@ -102,3 +102,18 @@ Screenshots were uploaded as individual native Library image files (dark version
 See `library-screenshots.json` for persistent IDs and backing IDs. CI status should
 be read for this draft's exact head; PR #122's previous green run is not proof
 of this branch.
+
+## Subsequent icon draft and WebKit fixture review
+
+Added original br in neutral/flow colors and shifted b 14px left at 512px.
+Four-way and optical before/after boards are in docs/brand/drafts. No installed
+icon, Home CSS, welcome artwork, auth source or provider settings change.
+
+At ae556a6, both Chromium and WebKit passed guided onboarding and Home branding;
+sentence inline/responsive passed. Guided WebKit then failed in the social-login
+fixture when a mocked background words POST reported a CORS error during its reload
+scenario. Navigation interrupting that request is the current diagnosis. Auth source matches the already reviewed 0e6ed20 base.
+The fixture now awaits the existing remoteSyncPromise before navigation and after
+restored startup, retaining all callback, persisted-user and page-error assertions.
+This avoids interrupting the real startup sync owner; no response/security policy
+or production auth behavior is changed. New exact-head CI will verify the diagnosis.

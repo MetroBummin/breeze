@@ -75,3 +75,8 @@ the outgoing connection, with identical size and lighting: neutral glass and
 subtle teal-to-blue glass. These are static SVG highlight mockups, not evidence
 of Apple's automatic iOS Liquid Glass icon rendering. The existing br icon
 remains installed. No new direction is selected.
+
+The follow-up icon review adds the original lowercase br contour in both colors.
+The b-only draft moves 14px left in the 512px tile for optical balance, without
+changing its path/scale/light. Four-way light/dark samples and 60/40/29/20px sizes
+remain review-only; Home and installed icon assets are preserved.
