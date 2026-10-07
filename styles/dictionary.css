@@ -287,6 +287,7 @@ body.sentence-result-anchored #p-sentence{--word-safe-top:env(safe-area-inset-to
   -webkit-overflow-scrolling:touch;scrollbar-width:thin;overflow-wrap:anywhere;}
 #ps-content{display:flow-root;min-width:0;}
 body.sentence-result-anchored #ps-ko{font-size:17px;line-height:1.65;}
+@media(max-width:639px){body.sentence-result-anchored #ps-ko{font-size:16px;}}
 body.sentence-result-anchored #ps-easy{margin:12px 0 0;}
 
   .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}

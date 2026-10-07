@@ -419,6 +419,7 @@ try{
     assert.equal(state.ariaModal,'false',label+': anchored result owns modal input');
     assert.equal(state.sourceHidden,true,label+': English source was duplicated');
     assert.equal(await page.locator('#ps-en').textContent(),'');
+    assert.equal(await page.locator('#ps-ko').evaluate(node=>getComputedStyle(node).fontSize),state.viewport.width<640?'16px':'17px',label+': responsive translation typography');
     assert.equal(await page.locator('#ps-ko').textContent(),await page.evaluate(()=>qaPill.answerText),
       label+': supplied translation text was trimmed or truncated');
     assert.equal(await page.locator('#ps-ko').evaluate(node=>getComputedStyle(node).webkitLineClamp),'none',
