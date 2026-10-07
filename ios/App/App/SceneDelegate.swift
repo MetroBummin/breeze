@@ -5,6 +5,33 @@ import WebKit
 import AVFoundation
 import AuthenticationServices
 
+// BEGIN AUTH_CALLBACK_POLICY
+// Foundation-only boundary exercised by the unsigned native CI job.
+private enum BreezeAuthCallbackPolicy {
+    static func authorize(_ url: URL, request: String) -> Bool {
+        guard UUID(uuidString: request) != nil,
+              url.scheme == "https", url.host == "hrtfhojbhqvaoiulspto.supabase.co",
+              url.user == nil, url.password == nil, url.port == nil, url.fragment == nil,
+              url.path == "/auth/v1/authorize",
+              let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
+        let providers = parts.queryItems?.filter { $0.name == "provider" } ?? []
+        let redirects = parts.queryItems?.filter { $0.name == "redirect_to" } ?? []
+        return providers.count == 1 && ["apple", "google"].contains(providers[0].value ?? "")
+            && redirects.count == 1
+            && redirects[0].value == "kr.io.breeze.app://auth/callback?request=\(request)"
+    }
+
+    static func callback(_ url: URL, request: String) -> Bool {
+        guard UUID(uuidString: request) != nil,
+              url.scheme == "kr.io.breeze.app", url.host == "auth", url.path == "/callback",
+              url.user == nil, url.password == nil, url.port == nil,
+              let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
+        let requests = parts.queryItems?.filter { $0.name == "request" } ?? []
+        return requests.count == 1 && requests[0].value == request
+    }
+}
+// END AUTH_CALLBACK_POLICY
+
 // BEGIN PDF_CONTACT_POLICY
 // Native identities only: never compare these with DOM Touch/Pointer IDs.
 // Roles are assigned on admission and cannot change until that contact ends.
@@ -483,14 +510,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
         guard action == "start", view.window != nil,
               let rawURL = body["url"] as? String, let url = URL(string: rawURL),
-              url.scheme == "https", url.host == "hrtfhojbhqvaoiulspto.supabase.co",
-              url.user == nil, url.password == nil, url.port == nil,
-              url.path == "/auth/v1/authorize",
-              let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let provider = parts.queryItems?.first(where: { $0.name == "provider" })?.value,
-              ["apple", "google"].contains(provider),
-              let redirect = parts.queryItems?.first(where: { $0.name == "redirect_to" })?.value,
-              redirect == "kr.io.breeze.app://auth/callback?request=\(request)" else {
+              BreezeAuthCallbackPolicy.authorize(url, request: request) else {
             replyHandler(nil, "로그인 연결을 확인할 수 없어요.")
             return
         }
@@ -503,8 +523,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             DispatchQueue.main.async {
                 guard let self, self.authRequest == request else { return }
                 guard let callback,
-                      callback.scheme == "kr.io.breeze.app", callback.host == "auth", callback.path == "/callback",
-                      URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "request" })?.value == request else {
+                      BreezeAuthCallbackPolicy.callback(callback, request: request) else {
                     self.finishAuth(request: request, error: "로그인을 마치지 못했어요.")
                     return
                 }

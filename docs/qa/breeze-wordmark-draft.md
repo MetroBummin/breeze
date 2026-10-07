@@ -19,8 +19,11 @@ and short landscape), cold launch, proportions, overflow, motion, contrast and
 actual CDP reduced-transparency emulation. Real native icon installation,
 physical-device accessibility appearance and local WebKit are unverified.
 First-entry colors, auth PR #122 head 0e6ed20, extraction and release remain
-untouched. PR #124 stays draft. New exact-head CI evidence will be recorded
-after push; historical evidence below belongs to earlier heads.
+untouched. PR #124 stays draft. PR #122 advanced during review; its exact 0e6ed20 head was integrated into
+the brand branch to resolve the generated service-worker version conflict.
+Auth source and native policy match that base exactly. The auth branch itself
+is unchanged. New exact-head CI evidence will be recorded after push; historical
+evidence below belongs to earlier heads.
 
 ---
 

@@ -12,6 +12,9 @@ on:
       - 'tests/verify-onboarding-browser.mjs'
       - 'tests/verify-social-login-browser.mjs'
       - 'tests/verify-apple-login.mjs'
+      - 'tests/verify-auth-native-policy.mjs'
+      - 'tests/auth-native-policy-checks.swift'
+      - 'docs/qa/social-login-verification.md'
       - '.github/workflows/guided-onboarding.yml'
 
 permissions:
@@ -69,6 +72,8 @@ jobs:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Execute production native callback policy with Foundation
+        run: node tests/verify-auth-native-policy.mjs
       - run: npm run ios:sync
       - name: Compile draft for Simulator without signing or archiving
         run: >-

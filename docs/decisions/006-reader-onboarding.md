@@ -42,11 +42,18 @@ the existing WebView owner. It accepts only the local main frame, this project's
 HTTPS authorize endpoint and Apple/Google, with a UUID-bound callback. Consent
 has a separate two-minute deadline. The validated callback reloads the existing
 app document with its token fragment so the same bundled SDK, auth listener and
-persistent store own session acceptance. There is no second auth client or late
+persistent store own session acceptance. A request-bound `breeze_auth_return`
+query forces a new document: changing only the fragment would leave the old SDK
+running and never accept the callback. The accepted-session listener removes
+that temporary query. Native and JS reject credential-bearing URLs and duplicate
+provider/request values. Foundation CI executes the production native URL policy.
+There is no second auth client or late
 `setSession` write. Android and native shells without the bridge remain unavailable.
 No provider, credentials, entitlements, provisioning, security settings or existing
-email/password requests change. Native compilation and real provider login are
-unverified; provider and callback setup need owner handoff (see QA notes).
+email/password requests change. Unsigned native compilation passed at 04056222;
+real OS consent and physical-device login remain unverified. Current code/setup
+dependencies are recorded
+in `docs/qa/social-login-verification.md`.
 
 Guidance uses one gently breathing halo on the current actionable element,
 stopping on activation and moving with progress. Persistent visual tap instructions
