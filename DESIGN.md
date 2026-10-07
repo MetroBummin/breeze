@@ -272,3 +272,20 @@ Word and sentence pending feedback use the exact original production lookup
 wash and blue/white reflection in both themes. The proposed light palette and
 motion changes were discarded after review. Timing, keyframes, reduced-motion
 fallback, sentence line geometry and source-specific blending remain unchanged.
+
+## 문장 성공 결과의 반응형 필 (2026-10-07)
+
+Reader 문장 번역은 단어 확장 필과 같은 중립 유리 재질의 별도 필로 표시한다.
+선택 문장 전체 아래에 놓고 공간이 부족하면 위를 사용한다. 긴 번역·쉬운 설명은
+필 내부에서 스크롤하며, 양쪽 모두 읽을 만한 공간이 없을 때만 화면 안으로 겹친다.
+휴대폰은 기존 단어 필 폭에 가깝고 iPad에서는 여유 있게 넓어지되 최대 600px다.
+본문 폭·줄바꿈·읽던 위치를 변경하거나 결과를 위해 강제 스크롤하지 않는다.
+
+이미 존재하는 미니필에서 커지는 연출은 사용하지 않는다. 최종 크기로 배치한
+표면이 문장 쪽에서 6px 이동하며 220ms 동안 나타나고 글자는 확대하지 않는다.
+동작 줄이기에서는 바로 표시한다. 기존 대기 반사·오류 필·번역/쉬운 설명 소유권을
+유지하며, 원문 앵커가 없는 호출은 기존 modal/sheet를 사용한다. 화면 회전과 설명
+높이 변경은 같은 결과를 다시 배치하고 바깥 스크롤·핀치·탐색·취소는 기존 임자가 닫는다.
+
+휴대폰 폭(640px 미만)의 성공 번역 본문은 검토 후 17px에서 16px로 줄였다.
+iPad 등 넓은 화면은 17px를 유지하고 굵기·줄간격 비율·재질·등장 동작은 그대로다.

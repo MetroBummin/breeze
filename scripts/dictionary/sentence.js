@@ -86,6 +86,82 @@ function sentenceCompactViewport(){
   return view.width < SENTENCE_COMPACT_MAX_WIDTH || view.height < SENTENCE_COMPACT_MAX_HEIGHT;
 }
 
+let sentenceResultFrame=0,sentenceResultObserver=null,sentenceResultAnimation=null;
+function sentenceResultAnchored(){ return sentenceView==='anchored'; }
+function stopSentenceResultPresentation(){
+  if(sentenceResultFrame)cancelAnimationFrame(sentenceResultFrame);
+  sentenceResultFrame=0;
+  sentenceResultObserver?.disconnect();sentenceResultObserver=null;
+  sentenceResultAnimation?.cancel();sentenceResultAnimation=null;
+  const panel=document.getElementById('p-sentence');
+  if(panel){
+    for(const name of ['left','top','width','max-height','transform-origin'])panel.style.removeProperty?.(name);
+    if(panel.dataset)delete panel.dataset.expandDirection;
+  }
+}
+function scheduleSentenceResultPlacement(afterLayout=false){
+  if(!sentenceResultAnchored()||sentenceResultFrame)return;
+  const life=sentenceLife;
+  sentenceResultFrame=requestAnimationFrame(()=>{
+    sentenceResultFrame=0;
+    if(!sentenceAlive(life)||!sentenceResultAnchored())return;
+    if(afterLayout){scheduleSentenceResultPlacement();return;}
+    placeSentenceResult();
+  });
+}
+function placeSentenceResult(){
+  if(!sentenceResultAnchored()||!sentenceOrigin?.peekTarget)return;
+  const panel=document.getElementById('p-sentence'),content=document.getElementById('ps-content');
+  const anchor=wordPeekNodeRect(sentenceOrigin.peekTarget);
+  if(!anchor||!anchor.width||!anchor.height){closeSentence();return;}
+  const viewport=window.visualViewport,edge=16,gap=8;
+  const x=viewport?viewport.offsetLeft:0,y=viewport?viewport.offsetTop:0;
+  const width=viewport?viewport.width:innerWidth,height=viewport?viewport.height:innerHeight;
+  const css=getComputedStyle(panel),chrome=document.getElementById('readchrome').getBoundingClientRect();
+  const top=y+edge+(parseFloat(css.getPropertyValue('--word-safe-top'))||0);
+  const bottom=Math.max(top+1,Math.min(y+height-edge,chrome.height&&chrome.top>top?chrome.top-gap:y+height-edge));
+  const left=x+edge+(parseFloat(css.getPropertyValue('--word-safe-left'))||0);
+  const right=x+width-edge-(parseFloat(css.getPropertyValue('--word-safe-right'))||0);
+  const available=Math.max(1,bottom-top),cap=Math.min(520,available);
+  panel.style.width=Math.max(1,Math.min(600,Math.max(360,width*.64),right-left))+'px';
+  panel.style.maxHeight=cap+'px';
+  // Only this overlay is measured. Source adapters own/cache the sentence union;
+  // placement never reads a DOM Range, resizes the Reader or writes its scroll.
+  const inset=['paddingTop','paddingBottom','borderTopWidth','borderBottomWidth'].reduce((n,key)=>n+(parseFloat(css[key])||0),0);
+  const desired=Math.min(cap,Math.ceil(content.getBoundingClientRect().height+inset));
+  const above=Math.max(0,anchor.top-gap-top),below=Math.max(0,bottom-anchor.bottom-gap);
+  const useful=Math.min(desired,160);
+  let budget=desired;
+  if(below<desired&&above<desired){
+    if(below>=useful)budget=Math.min(desired,below);
+    else if(above>=useful)budget=Math.min(desired,above);
+  }
+  panel.style.maxHeight=Math.max(1,Math.floor(budget))+'px';
+  placeLookupPeek(panel,{...anchor,direction:null},false);
+  // Horizontal safe areas matter on landscape phones; the shared placement
+  // still owns the below/above choice and Reader-control boundary.
+  panel.style.left=Math.max(left,Math.min(parseFloat(panel.style.left),right-panel.offsetWidth))+'px';
+}
+function revealAnchoredSentenceResult(){
+  const panel=document.getElementById('p-sentence'),life=sentenceLife;
+  placeSentenceResult();
+  if(!sentenceAlive(life)||!sentenceResultAnchored())return;
+  if(typeof ResizeObserver!=='undefined'){
+    sentenceResultObserver=new ResizeObserver(()=>{
+      if(sentenceAlive(life)&&sentenceResultAnchored())scheduleSentenceResultPlacement();
+    });
+    sentenceResultObserver.observe(document.getElementById('ps-content'));
+  }
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!panel.animate)return;
+  // The final-sized surface arrives from its sentence-facing edge. There is no
+  // imaginary mini pill, no scaling of Korean text, and no per-frame reflow.
+  const delta=panel.dataset.expandDirection==='above'?6:-6;
+  const animation=panel.animate([{opacity:0,transform:`translateY(${delta}px)`},{opacity:1,transform:'none'}],
+    {duration:220,easing:'cubic-bezier(.2,.75,.25,1)',fill:'none'});
+  sentenceResultAnimation=animation;
+  animation.finished.then(()=>{if(sentenceResultAnimation===animation)sentenceResultAnimation=null;}).catch(()=>{});
+}
+
 let sentenceView = 'closed';
 let sentenceOrigin=null;
 let sentenceOwner=null;
@@ -114,7 +190,10 @@ function sentenceReaderScrolled(userScroll){
   const changed=!sentenceScrollPosition || position.some((value,index)=>value!==sentenceScrollPosition[index]);
   sentenceScrollPosition=position;
   if(!changed)return;
-  if(!sentenceInlineActive()){ if(userScroll)closeSentence();return; }
+  if(!sentenceInlineActive()){
+    if(userScroll)closeSentence();else if(sentenceResultAnchored())scheduleSentenceResultPlacement();
+    return;
+  }
   sentencePeekLastScroll=performance.now();
   const offscreen=!sentencePeekVisible();
   const dismiss=lookupPeekScrollDismiss(offscreen,userScroll,sentencePeekShownAt,true);
@@ -185,15 +264,18 @@ function revealSentenceResult(){
     revealSentencePeek();
     return;
   }
-  sentenceView=sentenceCompact ? 'sheet' : 'modal';
+  const anchored=!!sentenceOrigin?.peekTarget&&!state.error;
+  sentenceView=anchored?'anchored':sentenceCompact?'sheet':'modal';
   sentenceWaitingControls(false);
-  sentenceBodyClass('sentence-compact',sentenceCompact);
+  sentenceBodyClass('sentence-result-anchored',anchored);
+  sentenceBodyClass('sentence-compact',!anchored&&sentenceCompact);
   sentenceBodyClass('sentence-anchored',!!sentenceOrigin);
   document.getElementById('p-sentence').setAttribute('aria-modal',String(!sentenceOrigin));
   const viewport=sentenceViewport();
-  sentenceBodyClass('sentence-low-viewport',sentenceCompact && viewport.height < SENTENCE_COMPACT_MAX_HEIGHT);
+  sentenceBodyClass('sentence-low-viewport',!anchored&&sentenceCompact && viewport.height < SENTENCE_COMPACT_MAX_HEIGHT);
   const modal=document.getElementById('sentence-modal');
   modal.hidden=false;
+  if(anchored)revealAnchoredSentenceResult();
 }
 /* gesture.js가 롱프레스를 확정한 손가락의 pointerup을 받으면 부릅니다. 빠른 답이
    손가락 아래에 시트를 만들고, 그 손짓의 click이 곧바로 닫는 일을 막습니다. */
@@ -201,6 +283,7 @@ function sentenceGestureReleased(){
   if(sentencePendingPaint) revealSentenceResult();
 }
 function closeSentence(){
+  stopSentenceResultPresentation();
   sentenceLife++;
   sentenceView='closed';
   cancelSentencePeekReveal();
@@ -210,6 +293,7 @@ function closeSentence(){
   if(typeof cancelSentenceEasyExplanation==='function') cancelSentenceEasyExplanation();
   sentenceWaitingControls(false);
   sentenceBodyClass('sentence-compact',false);
+  sentenceBodyClass('sentence-result-anchored',false);
   sentenceBodyClass('sentence-anchored',false);
   sentenceBodyClass('sentence-low-viewport',false);
   const modal = document.getElementById('sentence-modal');
@@ -262,6 +346,7 @@ function paintSentenceFor(life,state){
 async function openSentence(text,origin){
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if(!clean) return;
+  stopSentenceResultPresentation();
   const life=++sentenceLife;
   cancelSentencePeekReveal();sentencePendingPaint=null;
   sentencePeekAnchor=null;sentencePeekShownAt=null;sentencePresentationEnded=false;
@@ -277,6 +362,7 @@ async function openSentence(text,origin){
   sentenceCompact=sentenceCompactViewport();
   sentenceLastCompact=sentenceCompact;
   sentenceBodyClass('sentence-compact',false);
+  sentenceBodyClass('sentence-result-anchored',false);
   sentenceBodyClass('sentence-anchored',false);
   sentenceBodyClass('sentence-low-viewport',false);
   paintSentenceFor(life,{ en:clean, waiting:true });
@@ -345,9 +431,16 @@ document.addEventListener('keydown', event=>{
 let sentenceLastCompact=sentenceCompactViewport();
 function sentenceViewportChanged(){
   const next=sentenceCompactViewport();
-  if(next!==sentenceLastCompact && sentenceLookupOpen()) closeSentence();
+  if(next!==sentenceLastCompact && sentenceLookupOpen()&&!sentenceResultAnchored()) closeSentence();
   sentenceLastCompact=next;
   if(sentencePillErrorActive())revealSentencePeek();
+  if(sentenceResultAnchored()){
+    sentenceResultAnimation?.cancel();sentenceResultAnimation=null;
+    if(sentenceResultFrame)cancelAnimationFrame(sentenceResultFrame);sentenceResultFrame=0;
+    // The source cue's ResizeObserver refreshes its cached union after layout.
+    // Reposition in the following frame even when this card stays at its cap.
+    scheduleSentenceResultPlacement(true);
+  }
 }
 if(typeof window!=='undefined'){
   window.addEventListener('resize',sentenceViewportChanged,{passive:true});
