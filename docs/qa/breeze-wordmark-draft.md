@@ -1,3 +1,26 @@
+# Selected b icon assets and original-z wordmark variants
+
+User selection 2026-10-07 14:03: corrected lowercase b with subdued teal glass
+is now the draft default app icon. Existing dark neutral background is retained.
+The other b/br neutral/teal light/dark variants are independently reusable SVG
+and 1024 PNG assets. Four full wordmarks preserve the original z/r/e contour;
+the rejected z refinement is not applied. Their colors do not change Home.
+
+Asset validation is separate from previous-head CI. The standard-library checker
+verifies iOS 1024 RGB opaque corners, Web 512/192/180/64 and cache-stamped URLs,
+Android legacy fallback equality, 108/162/216/324/432 adaptive/themed layer RGBA
+encodings and content inside the 66dp safe circle, catalog/resource references,
+four original wordmark contours and eight reusable variant dimensions. Native
+compilation/installation remains unverified on this revision; existing stacked
+PR CI skips native builds. No release/signing configuration changes.
+
+Unused variants are excluded from www; its default favicon and original Home
+mask match source bytes. Local test:android (5 contracts + asset checker), full
+npm test, structure and www checks passed. The PNGs are static glass highlights,
+not layered Icon Composer assets or proof of OS automatic Liquid Glass rendering.
+
+---
+
 # Home neutral gray refinement — review draft
 
 Compared with PR #124 head 37c4b992. Light Home is brighter neutral gray with

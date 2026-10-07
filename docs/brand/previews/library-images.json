@@ -1,0 +1,30 @@
+[
+  {
+    "file_name": "breeze-flow-light-preview.png",
+    "library_file_id": "libfile_a9b772a3a0088191a2c080deb233aee8",
+    "file_id": "file_0000000028948210a3b18240596dae58",
+    "version": 0,
+    "size_bytes": 94642
+  },
+  {
+    "file_name": "breeze-flow-dark-preview.png",
+    "library_file_id": "libfile_28be42f1f24c819195a3a3ff4cde3cf2",
+    "file_id": "file_000000002ba081f58e367d7a5d0969b7",
+    "version": 0,
+    "size_bytes": 101296
+  },
+  {
+    "file_name": "breeze-neutral-light-preview.png",
+    "library_file_id": "libfile_f53239c7bfa881919ae686232e84f207",
+    "file_id": "file_000000002bf081f68b61db2dd413a6bc",
+    "version": 0,
+    "size_bytes": 69802
+  },
+  {
+    "file_name": "breeze-neutral-dark-preview.png",
+    "library_file_id": "libfile_3d00b9136f648191807cbe2e29dcc0fb",
+    "file_id": "file_0000000015848230bac51b5e3cf524a3",
+    "version": 0,
+    "size_bytes": 81901
+  }
+]

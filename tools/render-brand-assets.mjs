@@ -19,7 +19,6 @@ try{
  }
  const images=['light','dark'].flatMap(theme=>[1,2,3].map(scale=>({idiom:'universal',filename:`wordmark-${theme}-${scale}x.png`,scale:`${scale}x`,...(theme==='dark'?{appearances:[{appearance:'luminosity',value:'dark'}]}:{})})));
  writeFileSync('ios/App/App/Assets.xcassets/BreezeWordmark.imageset/Contents.json',JSON.stringify({images,info:{version:1,author:'xcode'}},null,2)+'\n');
- for(const [size,path] of [[1024,'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'],[512,'assets/favicon/icon-512.png'],[192,'assets/favicon/icon-192.png'],[180,'assets/favicon/apple-touch-icon.png'],[64,'assets/favicon/favicon.png']]){
-  const page=await browser.newPage({viewport:{width:size,height:size}});await page.setContent(`<style>html,body{margin:0;background:#20211e;}svg{width:100%;height:auto;}</style>${readFileSync('assets/brand/monogram.svg','utf8')}`);await page.screenshot({path});await page.close();
- }
+ // Icon generation has one owner; never restore the historical br default.
+ await import('./render-app-icons.mjs');
 }finally{await browser.close();}

@@ -80,3 +80,26 @@ The follow-up icon review adds the original lowercase br contour in both colors.
 The b-only draft moves 14px left in the 512px tile for optical balance, without
 changing its path/scale/light. Four-way light/dark samples and 60/40/29/20px sizes
 remain review-only; Home and installed icon assets are preserved.
+
+## Selected app icon and reusable originals (2026-10-07 14:03–14:05)
+
+The user selects the optically corrected lowercase b with subdued teal glass
+as the default app icon. The existing dark neutral icon background is retained.
+assets/brand/app-icon.svg is the single square opaque canonical source; iOS
+1024, Web favicon/touch and Android legacy PNGs are derived from it.
+Android API26 adds separate foreground/background and API33 a monochrome layer;
+the original b/material is padded for the 66dp safe zone in 108dp density layers.
+Web maskable exports are separate; the app does not currently declare a PWA manifest.
+Static SVG highlights remain distinct from native automatic Liquid Glass processing.
+
+Neutral b, neutral br and teal br are retained independently, with light/dark
+vector and 1024 PNG variants under assets/brand/icons. Four complete wordmarks
+under assets/brand/wordmarks preserve exactly the original z, cursive r and e
+connections: flow/light, flow/dark, neutral/light, neutral/dark, SVG and 2x
+transparent PNG. User rejects the z refinement; its review-only candidate is not
+applied. Colored reusable wordmarks do not authorize colored Home.
+Home, welcome/splash wordmarks and auth source stay unchanged.
+
+Unused reusable variants stay in the repository/asset ZIP and are excluded from
+www. Browser favicon URLs are content-stamped through the existing version owner
+so future deployment would not keep stale icons. No release/signing change.
