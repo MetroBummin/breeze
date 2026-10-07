@@ -32,7 +32,10 @@ try{
     assert.equal(address.searchParams.get('redirect_to'),origin+'/');
     // Only the provider server is substituted. The bundled SDK, callback,
     // auth listener, persistent store and app reload below are real.
-    return route.fulfill({status:302,headers:{location:origin+'/#access_token='+token+'&refresh_token=local-test-refresh&expires_in=3600&token_type=bearer'}});
+    const callback=origin+'/#access_token='+token+'&refresh_token=local-test-refresh&expires_in=3600&token_type=bearer';
+    // WebKit cannot synthesize an HTTP redirect with route.fulfill. A provider
+    // page navigation exercises the same real app callback on both engines.
+    return route.fulfill({contentType:'text/html',body:'<!doctype html><script>location.replace('+JSON.stringify(callback)+')</script>'});
    }
    if(address.pathname==='/auth/v1/user')return route.fulfill({json:user});
    if(address.pathname.startsWith('/rest/v1/'))return route.fulfill({json:[]});

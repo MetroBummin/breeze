@@ -23,8 +23,8 @@ These are actual system Chromium renders with external requests blocked,
 including a real long press in the continuous 24.6-second video. No cuts conceal
 transitions. The recording ends at book import / Later; it contains no auth simulation.
 Verified native Library video: `libfile_4c2ea8fa6fc481919b48ba2e749ae0a5`, version 3,
-`walkthrough.webm`. This is a system-browser recording They are not image mockups or native
-iOS recordings. Screenshots and video are also saved in ChatGPT Library.
+`walkthrough.webm`. These are system-browser recordings, not image mockups or
+native iOS recordings. Screenshots and video are also saved in ChatGPT Library.
 
 | Surface | Capture |
 | --- | --- |
@@ -85,8 +85,10 @@ requires the exact callback host/path and current UUID. No allowlist or Site URL
 was changed. No Info.plist URL scheme, entitlement or provisioning change is used
 by this system consent-session draft.
 
-No Xcode, Simulator or Swift compiler is present here. The Swift bridge is
-uncompiled/unexecuted draft code and requires a macOS device/simulator handoff.
+No Xcode, Simulator or Swift compiler is present here. The Swift bridge compiled successfully in the unsigned Simulator CI job at
+`4900a20`; local compilation and native execution remain unavailable. The draft
+workflow checks this again on each relevant PR change. A device/simulator
+consent handoff is still required.
 Live Apple/Google consent, callback and persistence require the owner to sign in
 on approved accounts after setup verification; credentials must stay with the
 provider. Browser tests substitute provider responses and do not prove live login.
@@ -132,8 +134,10 @@ Passed on 2026-10-07:
 - Production word, sentence, sentence-help and shared Home/Reader controls
   browser regressions.
 
-Playwright Chromium/WebKit downloads returned 403 “Domain forbidden”; installed
-system Chromium was used. WebKit and physical iPhone/iPad safe-area, keyboard,
+Local Playwright Chromium/WebKit downloads returned 403 “Domain forbidden”; installed
+system Chromium was used. The draft CI workflow runs the onboarding and SDK callback
+tests in Chromium/WebKit and performs an unsigned iOS Simulator compile. Physical
+iPhone/iPad safe-area, keyboard,
 gesture and WebView verification remain unperformed. Live email/password or Apple/Google login
 was not exercised. Native consent execution is unverified. Apple artwork,
 standalone leaf artwork and Pinterest access remain blocked as above.
