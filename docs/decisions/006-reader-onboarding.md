@@ -50,7 +50,7 @@ There is no second auth client or late
 No provider, credentials, entitlements, provisioning, security settings or existing
 email/password requests change. Unsigned native compilation passed at 04056222;
 real OS consent and physical-device login remain unverified. Current code/setup
-dependencies and the parent browser's read-only provider evidence are recorded
+dependencies are recorded
 in `docs/qa/social-login-verification.md`.
 
 Guidance uses one gently breathing halo on the current actionable element,

@@ -14,6 +14,7 @@ on:
       - 'tests/verify-apple-login.mjs'
       - 'tests/verify-auth-native-policy.mjs'
       - 'tests/auth-native-policy-checks.swift'
+      - 'docs/qa/social-login-verification.md'
       - '.github/workflows/guided-onboarding.yml'
 
 permissions:

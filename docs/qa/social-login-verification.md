@@ -4,31 +4,15 @@ This is an auth-only follow-up to draft PR #122. PR #124 and the undecided
 mascot/letter design remain preserved for review. No merge, deployment, archive,
 App Review, credential, provider, redirect, entitlement or security setting change.
 
-## Verified access and current setup
+## Configuration evidence
 
-On 2026-10-07 the connected Supabase `get_project` read, explicitly scoped to
-`hrtfhojbhqvaoiulspto`, succeeded: breeze, ACTIVE_HEALTHY, organization
-`ilnaonnnwkbmgfhymvtd` (Breeze Production). Empty discovery lists do not establish
-project access failure. The parent also successfully read tables/migrations.
-There is no reason to request reconnection based on those empty lists alone.
-
-The parent's authorized read in the actual Supabase dashboard found:
-
-| Setting | Observed value |
-| --- | --- |
-| Apple | Disabled; Client IDs empty; secret empty |
-| Google | Disabled; Client IDs empty; secret empty |
-| Email | Enabled |
-| Site URL | `https://breeze.io.kr` |
-| Redirect allowlist | `https://metrobummin.github.io/**`, `http://localhost:*/**`, `https://breeze.io.kr/**` |
-
-This worker's HTTP proxy returned `Tunnel connection failed: 403 Forbidden` for
-the read-only public `/auth/v1/settings` request. This is a transport limitation,
-not evidence of missing project permission or provider state. Current state above
-comes from the parent's dashboard read, not a successful public HTTP response.
-The changelog markdown fetch was also blocked; current Auth docs were read via
-the available browser documentation tool. Settings must be read again at action
-time before any authorized configuration change.
+Live provider/configuration evidence belongs in the private owner handoff, not
+this public source document. The repository cannot establish whether providers
+are currently enabled or whether credentials are configured. Verify the existing
+setup through an authorized dashboard read before any approved change. Empty
+connector discovery lists alone do not prove that the project is inaccessible.
+This environment's public settings/changelog HTTP reads were blocked by its
+proxy; current primary Auth documentation was available through the browser.
 
 ## Code correction and executable proof
 
@@ -69,12 +53,11 @@ do not label native checks as passed until that CI job completes.
    web client and approved consent audience/test-account access.
 2. Both providers' registered HTTPS return must be
    `https://hrtfhojbhqvaoiulspto.supabase.co/auth/v1/callback`. Google's authorized
-   web origin is `https://breeze.io.kr`. Existing web allowlisting already covers
-   this app's `https://breeze.io.kr/` return; preserve Site URL and existing valid
-   entries. Any missing setting/credential activation requires its own approval.
+   web origin is `https://breeze.io.kr`. Verify existing web allowlisting covers
+   this app's `https://breeze.io.kr/` return; preserve Site URL and valid entries. Any missing setting/credential activation requires its own approval.
 3. The current iOS draft requests
-   `kr.io.breeze.app://auth/callback?request=<UUID>`. None of the three observed
-   entries allows it. A narrowly scoped candidate is
+   `kr.io.breeze.app://auth/callback?request=<UUID>`. Verify whether an existing
+   entry allows it. If missing, a narrowly scoped candidate is
    `kr.io.breeze.app://auth/callback\?request=*`; the `\?` is a literal query
    question mark, not Supabase's single-character wildcard. Verify matching in an
    approved test setup before adding it. Do not add a broad `**` app-scheme rule.
