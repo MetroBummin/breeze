@@ -26,8 +26,8 @@
   <meta property="og:description" content="원서를 편하게 읽고, 모르는 단어는 눌러서 바로 단어장에.">
   <meta property="og:image" content="assets/favicon/icon-512.png">
 
-  <link rel="icon" href="assets/favicon/favicon.png" type="image/png">
-  <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+  <link rel="icon" href="assets/favicon/favicon.png?v=dd2a6d46" type="image/png">
+  <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png?v=e9c9a0d6">
   <!-- 제목에 쓰는 두 글꼴(Fraunces · 고운바탕)은 우리 서버에 함께 들어 있습니다.
        남의 서버를 부르지 않으므로 비행기 모드에서도 제목이 제 글꼴로 찍히고,
        이 앱을 여는 사람의 IP 가 글꼴 회사로 가지 않습니다. 이 파일은
@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=1736245b">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=d48868b0">
+  <link rel="stylesheet" href="styles/home-shell.css?v=73411654">
   <link rel="stylesheet" href="styles/onboarding.css?v=e80ba10b">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
@@ -143,14 +143,14 @@
 <!-- ================= TOP BAR ================= -->
 <div id="topbar">
   <div id="logo" onclick="show('home')">
-    <img class="home-brand-icon" src="assets/favicon/icon-192.png" alt="" width="38" height="38"><span class="mark">Breeze</span>
+    <img class="home-brand-icon" src="assets/favicon/icon-192.png?v=a1e0cfc7" alt="" width="38" height="38"><span class="mark">Breeze</span>
   </div>
   <nav id="primary-nav" aria-label="Main navigation">
     <button class="navbtn on" id="nav-home" type="button" onclick="show('home')">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg>
       <span data-i18n="nav.home">Home</span>
     </button>
-    <button class="navbtn" id="nav-vocab" type="button" onclick="show('vocab')"><img src="assets/brand/thunderhead-round.png" alt="" width="28" height="28"><span data-i18n="nav.words">Breeze Memory</span></button>
+    <button class="navbtn" id="nav-vocab" type="button" aria-label="Breeze Memory" title="Breeze Memory" onclick="show('vocab')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 4.5h10v15l-5-3.5-5 3.5z"/></svg><span data-i18n="nav.words">Breeze Memory</span></button>
     <button class="navbtn" id="nav-settings" type="button" onclick="openSettings()">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-2 .9-2.1-.6-2.5 4.2 1.6 1.7v2.3L2.3 15.5l2.5 4.2 2.1-.6 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.6 2.5-4.2-1.6-1.7v-2.3l1.6-1.7-2.5-4.2-2.1.6-2-.9-.6-2.3z" transform="translate(0 -1) scale(1 .96)"/><circle cx="12" cy="12" r="3"/></svg>
       <span data-i18n="nav.settings">Settings</span>

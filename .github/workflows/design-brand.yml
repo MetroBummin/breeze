@@ -1,0 +1,60 @@
+name: Design-only brand
+on:
+  pull_request:
+    paths: ['index.html', 'styles/**', 'assets/**', 'ios/**', 'android/**', 'tools/**', 'tests/verify-design-*.mjs', 'package*.json', '.github/workflows/design-brand.yml']
+permissions:
+  contents: read
+concurrency:
+  group: design-brand-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    env:
+      BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/verify-design-only-boundary.mjs
+      - run: npm run test:brand-icons
+      - run: node tests/verify-design-home-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: design-brand-${{ matrix.browser }}
+          path: /tmp/breeze-design-only-final*/
+          if-no-files-found: ignore
+          retention-days: 7
+  ios-compile:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tests/verify-design-only-boundary.mjs
+      - run: npm run ios:sync
+      - name: Compile without signing or upload
+        run: >-
+          xcodebuild -project ios/App/App.xcodeproj -scheme App
+          -configuration Debug -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath /tmp/breeze-design-ios
+          CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build

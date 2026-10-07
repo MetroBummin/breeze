@@ -24,7 +24,7 @@ const DIRS  = ['scripts', 'styles', 'assets', 'modules', 'public'];
 /* Local Long Reads text and their supplied covers ship with the app for offline use. */
 /* 라이선스 원문(OFL-*.txt)은 앱에 함께 들어갑니다 — 글꼴을 실어 나르는 조건입니다.
    빠지는 것은 사람이 읽으려고 둔 메모뿐입니다. */
-const SKIP = /(^|\/)\.DS_Store$|^scripts\/library\/samples\.js$|^assets\/samples\/|^assets\/brand\/(?:README\.md|breeze-day(?:-wide)?\.(?:jpg|avif))$|^assets\/fonts\/gowun-batang-ui\.txt$/;
+const SKIP = /(^|\/)\.DS_Store$|^scripts\/library\/samples\.js$|^assets\/samples\/|^assets\/brand\/icons\/|^assets\/brand\/wordmarks\/.*\.png$|^assets\/brand\/(?:app-icon\.svg|README\.md|breeze-day(?:-wide)?\.(?:jpg|avif))$|^assets\/fonts\/gowun-batang-ui\.txt$/;
 
 let copied = 0, bytes = 0;
 function copyInto(sourcePath){

@@ -67,7 +67,17 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
    const saved=await page.evaluate(boundary=>{const id=curBook.id,book=curBook;show('home');positions[id]={p:boundary/(book.paras.length-1),pi:boundary,y:0,mode:'text',t:Date.now()};save(LS_POS,positions);return {id,cover:book.cover,title:book.title};},boundary);
    await page.reload();await page.evaluate(()=>homeReady);
    await context.setOffline(true);await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),saved.id);await page.waitForFunction(()=>!readerPositionPending());
-   assert.ok(Math.abs(await page.evaluate(()=>captureAnchor().pi)-boundary)<=1,'offline saved late paragraph restores');
+   const restored=await page.evaluate(()=>({
+    anchor:captureAnchor(),saved:posOf(curBook.id),scrollTop:readerScroller().scrollTop,
+    pending:readerPositionPending(),fontStatus:document.fonts.status,
+    viewport:{width:innerWidth,height:innerHeight},
+    images:[...document.querySelectorAll('#rtext .story-illustration img')].map(img=>({complete:img.complete,width:img.naturalWidth})),
+   }));
+   if(Math.abs(restored.anchor.pi-boundary)>1){
+    await page.screenshot({path:`${proof}/${engine.name()}-${slug}-offline-anchor-failure.png`});
+    console.error('Offline anchor diagnostic',JSON.stringify({engine:engine.name(),slug,boundary,restored}));
+   }
+   assert.ok(Math.abs(restored.anchor.pi-boundary)<=1,'offline saved late paragraph restores: '+JSON.stringify({engine:engine.name(),slug,boundary,anchor:restored.anchor,saved:restored.saved}));
    assert.deepEqual(await page.evaluate(()=>curBook.paras),paras);assert.equal(await page.evaluate(()=>curBook.cover),saved.cover);
    await context.setOffline(false);
    // Inspect each story's first safe interior illustration through the normal renderer.

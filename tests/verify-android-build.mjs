@@ -52,7 +52,7 @@ test('wrapper preserves local-data privacy and keeps permissions minimal', () =>
   }
 });
 
-test('Android launcher reuses the unchanged approved Breeze artwork', () => {
+test('Android legacy launcher reuses the selected Breeze b artwork', () => {
   const hash = path => createHash('sha256').update(readFileSync(new URL(path, root))).digest('hex');
   assert.equal(hash('android/app/src/main/res/mipmap-nodpi/ic_launcher.png'), hash('assets/favicon/icon-512.png'));
   assert.match(read('android/app/src/main/res/values/strings.xml'), /<string name="app_name">Breeze<\/string>/);
