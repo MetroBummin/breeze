@@ -29,7 +29,7 @@ async function startOnboarding(replay){
     previousBook:curBook,previousView:activeAppView(),
     appearance:{fs,darkMode,readMargin},controller:new AbortController(),
     timers:new Map(),seen:new Set(),wordSeen:false,wordExpanded:false,sentenceSeen:false,easySeen:false,aaSeen:false,stage:0,replay:!!replay,
-    frame:0,observer:null,
+    frame:0,observer:null,cueTarget:null,cueKey:'',hintTimer:null,
   };
   if(!replay){
     const progress=load(ONBOARD_PROGRESS_KEY,null);
@@ -86,7 +86,7 @@ async function startOnboarding(replay){
   },{signal});
   document.getElementById('onboard-return').addEventListener('click',()=>{
     if((session.stage===1&&session.wordExpanded)||(session.stage===2&&session.easySeen))advanceOnboarding();
-    else{closePanel();closeSentence();drawOnboarding();document.getElementById('onboard-prompt').focus({preventScroll:true});}
+    else{closePanel();closeSentence();drawOnboarding();focusOnboardingStage(session);}
   },{signal});
   for(const [id,delta] of [['onboard-font-smaller',-1],['onboard-font-larger',1]]){
     document.getElementById(String(id)).addEventListener('click',()=>{fontSize(Number(delta));session.aaSeen=true;persistOnboarding();drawOnboarding();},{signal});
@@ -103,13 +103,23 @@ async function startOnboarding(replay){
     if(event.key==='Escape') session.escapeWasOverlay=wordLookupOpen() || sentenceLookupOpen()
       || document.getElementById('aa-pop').classList.contains('on');
   },{signal,capture:true});
+  const pauseCue=event=>{
+    if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return;
+    if(!(event.target instanceof Element)||event.target.closest('.onboard-target')!==session.cueTarget)return;
+    clearTimeout(session.hintTimer);session.hintTimer=null;session.cueKey='';
+    session.cueTarget?.classList.remove('onboard-target','onboard-hold-target');
+    document.getElementById('onboard-idle-hint').hidden=true;
+  };
+  document.addEventListener('pointerdown',pauseCue,{signal,capture:true});
+  document.addEventListener('keydown',pauseCue,{signal,capture:true});
+  document.addEventListener('pointerup',schedule,{signal});
   await openBook(session.book);
   if(onboardingSession!==session) return;
   document.getElementById('rhint').hidden=true;
   const title=document.getElementById('rtitle');
   title.setAttribute('tabindex','-1');
   drawOnboarding();
-  document.getElementById('onboard-prompt').focus({preventScroll:true});
+  focusOnboardingStage(session);
 }
 function persistOnboarding(){
   const session=onboardingSession;if(!session||session.replay)return;
@@ -121,7 +131,14 @@ function advanceOnboarding(){
   if((session.stage===1&&!session.wordExpanded)||(session.stage===2&&!session.easySeen)||(session.stage===3&&!session.aaSeen))return;
   closePanel();closeSentence();closeAa();
   session.stage=Math.min(4,session.stage+1);persistOnboarding();drawOnboarding();
-  document.getElementById('onboard-prompt').focus({preventScroll:true});
+  focusOnboardingStage(session);
+}
+function focusOnboardingStage(session){
+  const focus=session.stage===1&&!session.wordExpanded?document.querySelector('#rtext .onboard-focus-word')
+    :session.stage===2&&!session.easySeen?document.getElementById('onboard-sentence')
+    :session.stage===3&&!session.aaSeen?document.getElementById('onboard-font-larger')
+    :document.getElementById('onboard-next');
+  if(focus instanceof HTMLElement)focus.focus({preventScroll:true});
 }
 function onboardingAppearanceOpened(){
   if(onboardingOwnsReader() && onboardingSession.stage===3){onboardingSession.aaSeen=true;persistOnboarding();}
@@ -146,7 +163,7 @@ function drawOnboarding(){
     '브리즈에 오신 걸 환영해요',
     session.wordSeen?'뜻 옆의 꺾쇠를 눌러 더 알아보세요.':'Breeze를 눌러보세요.',
     session.sentenceSeen?'번역 아래 ‘쉬운 설명’을 눌러보세요.':'문장을 길게 눌러보세요.',
-    '내 눈에 편하게 맞춰보세요.',
+    '글자 크기',
     '이제 내 책으로 읽어볼까요?',
   ];
   document.getElementById('onboard-step').textContent=stage===0?'':`${stage} / 4`;
@@ -160,18 +177,53 @@ function drawOnboarding(){
   document.getElementById('onboard-font-value').textContent=String(fs);
   document.getElementById('onboard-return').textContent=((stage===1&&session.wordExpanded)||(stage===2&&session.easySeen))?'다음':'닫기';
   document.getElementById('onboard-sentence').hidden=stage!==2;
-  document.getElementById('onboard-note').hidden=stage!==0&&stage!==3;
+  document.getElementById('onboard-note').hidden=stage!==0;
   document.getElementById('onboard-note').textContent=stage===0?'막힘없이 읽는 새로운 방법.':'나머지 설정은 읽으면서 바꿔도 돼요.';
-  document.getElementById('aafab').classList.toggle('onboard-target',stage===3&&!aaOpen);
+  document.getElementById('aafab').classList.remove('onboard-target');
   document.querySelectorAll('#rtext .w').forEach(node=>{
     node.classList.toggle('onboard-focus-word',node.textContent==='Breeze');
     if(stage===1 && node.textContent==='Breeze'){
       node.setAttribute('tabindex','0');node.setAttribute('role','button');node.setAttribute('aria-label','Breeze 뜻 보기');
     }else{node.removeAttribute('tabindex');node.removeAttribute('role');node.removeAttribute('aria-label');}
 
-    node.classList.toggle('onboard-target',!overlay&&stage===1&&node.textContent==='Breeze');
   });
+  updateOnboardingCue(session,overlay);
 }
+function updateOnboardingCue(session,overlay){
+  let target=null,hint='',hold=false;
+  const stage=session.stage;
+  if(stage===1){
+    if(!overlay)target=session.wordExpanded?document.getElementById('onboard-next'):document.querySelector('#rtext .onboard-focus-word');
+    else if(session.wordExpanded)target=document.getElementById('onboard-return');
+    else if(session.wordSeen&&!document.getElementById('word-peek').hidden)target=document.getElementById('word-peek-more');
+    hint=target?.id==='word-peek-more'?'더 보기':target?.classList.contains('onboard-focus-word')?'뜻 보기':'';
+  }else if(stage===2){
+    if(!overlay){
+      target=session.easySeen?document.getElementById('onboard-next'):document.querySelector('#rtext p:last-child .w');
+      hold=!session.easySeen;hint=hold?'길게 누르기':'';
+    }else if(wordLookupOpen()||session.easySeen)target=document.getElementById('onboard-return');
+    else if(session.sentenceSeen)target=document.getElementById('ps-easy-button');
+  }else if(stage===3)target=overlay?document.getElementById('onboard-return'):document.getElementById(session.aaSeen?'onboard-next':'onboard-font-larger');
+  if((target instanceof HTMLButtonElement&&target.disabled)||target?.getClientRects().length===0)target=null;
+  const key=target?stage+':'+(target.id||target.textContent)+':'+hold:'';
+  if(session.cueKey===key&&session.cueTarget===target)return;
+  clearTimeout(session.hintTimer);session.hintTimer=null;
+  session.cueTarget?.classList.remove('onboard-target','onboard-hold-target');
+  const idle=document.getElementById('onboard-idle-hint');idle.hidden=true;
+  session.cueTarget=target;session.cueKey=key;
+  if(!target)return;
+  target.classList.add('onboard-target');target.classList.toggle('onboard-hold-target',hold);
+  if(!hint)return;
+  session.hintTimer=setTimeout(()=>{
+    if(onboardingSession!==session||session.cueTarget!==target||session.cueKey!==key)return;
+    const rect=target.getBoundingClientRect();
+    idle.textContent=hint;
+    idle.style.left=Math.max(72,Math.min(innerWidth-72,rect.x+rect.width/2))+'px';
+    idle.style.top=Math.max(52,Math.min(innerHeight-100,rect.bottom+(hold?42:16)))+'px';
+    idle.hidden=false;session.hintTimer=null;
+  },3500);
+}
+
 async function openOnboardingWord(node,retry=false){
   const session=onboardingSession;
   if(!onboardingOwnsReader() || !node) return;
@@ -219,6 +271,8 @@ async function explainOnboardingSentence(clean,life){
 function endOnboarding(remember,returnToPrevious=true){
   const session=onboardingSession;if(!session) return;
   session.controller.abort();session.observer.disconnect();
+  clearTimeout(session.hintTimer);session.cueTarget?.classList.remove('onboard-target','onboard-hold-target');
+  document.getElementById('onboard-idle-hint').hidden=true;
   if(session.frame) cancelAnimationFrame(session.frame);
   session.timers.forEach((resolve,timer)=>{clearTimeout(timer);resolve(false);});session.timers.clear();
   closePanel();closeSentence();closeAa();

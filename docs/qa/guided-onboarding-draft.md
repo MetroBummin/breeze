@@ -13,17 +13,17 @@ Standalone leaf images were found in Library metadata, but pixel reads and
 authorized downloads failed; the repository icon is reused unchanged. A minimal lesson
 hides Reader chrome while sharing its actual word mini pill, expansion, sentence
 translation and easy explanation. The word means “산들바람”; a gentle fade/scale handoff reveals the separate
-sentence “Let your reading flow.” without implying Breeze belongs to it. One instruction per step and only font size initially keep
+sentence “Let your reading flow.” without implying Breeze belongs to it. One gently breathing actionable target and only font size initially keep
 choices limited. The final screen offers book import or Later; login lives in
 normal Settings. Local answers avoid paid calls and durable demo records.
 
 ## Rendered captures
 
 These are actual system Chromium renders with external requests blocked,
-including a real long press in the continuous 24.6-second video. No cuts conceal
+including a real long press in the continuous 30-second video. No cuts conceal
 transitions. The recording ends at book import / Later; it contains no auth simulation.
-Verified native Library video: `libfile_4c2ea8fa6fc481919b48ba2e749ae0a5`, version 3,
-`walkthrough.webm`. These are system-browser recordings, not image mockups or
+Verified native Library video: `libfile_4c2ea8fa6fc481919b48ba2e749ae0a5`, version 5,
+`walkthrough.mp4` (H.264 Main, yuv420p, fast-start). These are system-browser recordings, not image mockups or
 native iOS recordings. Screenshots and video are also saved in ChatGPT Library.
 
 | Surface | Capture |
@@ -39,7 +39,7 @@ native iOS recordings. Screenshots and video are also saved in ChatGPT Library.
 | Book import / Later | [finish](guided-onboarding/finish.png) |
 | Normal Settings login choices | [Settings](guided-onboarding/settings-login.png) |
 | Existing email form | [email](guided-onboarding/settings-email.png) |
-| Actual interaction recording | [video](guided-onboarding/walkthrough.webm) |
+| Actual interaction recording | [video](guided-onboarding/walkthrough.mp4) |
 | Tablet dark finish | [820px dark](guided-onboarding/tablet-dark-finish.png) |
 | Desktop sentence | [1440px light](guided-onboarding/desktop-light-sentence.png) |
 | Short finish | [844×390](guided-onboarding/short-finish.png) |
@@ -147,3 +147,18 @@ no merge, deployment, native archive, App Review submission or active release ch
 Terminal `gh pr checks` and check-runs reads return “Forbidden”. Connected GitHub
 workflow reads remain usable. Exact final-head CI status is recorded in the draft
 PR; no older-head run is counted as validation for this version.
+
+The cue revision removes persistent visible tap instructions. A single halo follows
+the current word, chevron, help or font control and stops on activation. After
+3.5 seconds of inactivity a short local hint appears; the sentence also has a
+contact ring. Screen-reader instructions and keyboard/tap alternatives remain.
+Reduced motion uses a static outline. Browser assertions cover cue ownership,
+immediate stopping and delayed long-press guidance. The continuous MP4 preserves
+all 749 source-frame timestamps; full decoding passes. iPhone Photos import is
+still unverified. The older WebM is retained as historical evidence.
+
+At head `1492719`, guided Chromium/WebKit, unsigned iOS compilation, responsive
+sentence #121 and all other workflows passed. Integrity reached its configured
+30-minute job limit during final WebKit reopening, after Chromium reopening passed.
+The serial suite keeps every case and receives a 35-minute job budget; exact
+revision-head CI must finish before claiming complete verification.

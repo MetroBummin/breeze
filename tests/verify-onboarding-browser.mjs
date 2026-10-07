@@ -23,13 +23,20 @@ async function ready(page){
  await page.evaluate(()=>{window.demoCalls=0;dictCall=async()=>{window.demoCalls++;throw Error('Demo used network');};});
 }
 async function wordInteraction(page,capture=false){
+ assert.equal(await page.locator('.onboard-target').count(),1);
  await page.locator('#rtext .onboard-focus-word').click();
+ assert.equal(await page.locator('#rtext .onboard-focus-word').evaluate(node=>node.classList.contains('onboard-target')),false,'word cue continued after action');
+ assert.equal(await page.locator('#onboard-idle-hint').isHidden(),true);
  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='산들바람');
  if(capture)await page.waitForTimeout(400);
  if(capture)await page.screenshot({path:`${artifact}/web-word-mini.png`});
  assert.equal(await page.evaluate(()=>onboardingSession.wordExpanded),false);
+ await page.waitForFunction(()=>document.getElementById('word-peek-more').classList.contains('onboard-target'));
+ assert.equal(await page.locator('.onboard-target').count(),1);
  await page.locator('#word-peek-more').click();
  await page.waitForFunction(()=>onboardingSession.wordExpanded);
+ assert.equal(await page.locator('#word-peek-more').evaluate(node=>node.classList.contains('onboard-target')),false);
+ assert.equal(await page.locator('#onboard-return').evaluate(node=>node.classList.contains('onboard-target')),true);
  if(capture)await page.waitForTimeout(400);
  if(capture)await page.screenshot({path:`${artifact}/web-word-expanded.png`});
  await page.locator('#onboard-return').click();
@@ -67,9 +74,18 @@ try{
   assert.equal(await page.locator('#onboard-next').isEnabled(),true);
   await page.locator('#onboard-next').click();
   await context.setOffline(true);
+  if(!native){
+   assert.equal(await page.locator('#onboard-idle-hint').isHidden(),true);
+   await page.locator('#onboard-idle-hint').waitFor({state:'visible'});
+   assert.equal(await page.locator('#onboard-idle-hint').textContent(),'길게 누르기');
+   assert.equal(await page.locator('.onboard-target').count(),1);
+  }
   const word=page.locator('#rtext p:last-child .w').first(),rect=await word.boundingBox();
   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);
-  await page.mouse.down();await page.waitForTimeout(820);
+  await page.mouse.down();
+  assert.equal(await page.locator('#onboard-idle-hint').isHidden(),true);
+  assert.equal(await word.evaluate(node=>node.classList.contains('onboard-target')),false);
+  await page.waitForTimeout(820);
   assert.equal(await page.locator('#sentence-modal').isVisible(),false,'long press must wait for release');
   await page.mouse.up();
   await page.locator('#ps-ko').waitFor({state:'visible'});

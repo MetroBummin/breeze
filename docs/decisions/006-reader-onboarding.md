@@ -14,8 +14,7 @@ repository app icon contains the requested green-leaf character; standalone
 Library artwork could not be downloaded and remains a visual refinement gap.
 
 The existing Reader long press, sentence selection cue, responsive translation
-pill and easy-explanation surface remain authoritative. “길게 누르기 대신 문장
-해석” provides a keyboard and tap alternative through the registered text Reader
+pill and easy-explanation surface remain authoritative. “문장 해석” (accessible label: “길게 누르기 대신 문장 해석”) provides a keyboard and tap alternative through the registered text Reader
 adapter. Sentence extraction and truncation are unchanged. After easy explanation,
 “다음” introduces only two font-size controls and a live sentence preview, using
 the existing font-size setter. Other choices can wait until normal reading.
@@ -42,6 +41,12 @@ persistent store own session acceptance. There is no second auth client or late
 No provider, credentials, entitlements, provisioning, security settings or existing
 email/password requests change. Native compilation and real provider login are
 unverified; provider and callback setup need owner handoff (see QA notes).
+
+Guidance uses one gently breathing halo on the current actionable element,
+stopping on activation and moving with progress. Persistent visual tap instructions
+are removed; a short hint appears only after 3.5 seconds idle. A contact ring
+and the delayed “길게 누르기” hint distinguish sentence holding from a tap.
+Full instructions remain accessible; reduced motion uses a static outline.
 
 Guidance yields to lookup surfaces. Its explicit controls own their taps, so the
 Reader's outside-tap dismissal cannot consume the tutorial's Next action. Next
