@@ -170,3 +170,28 @@ engines. The regression now waits up to one second for the rendered cue, while
 preserving immediate old-cue removal and asserting exactly one active target.
 This changes test synchronization only; runtime behavior and Library video v5
 remain unchanged. The revision still requires terminal exact-head CI.
+
+### Official button correction — partial, asset access blocked
+
+The explanatory “계정으로 로그인해요” lines below Apple/Google are removed.
+Unsupported native-platform descriptions remain accessible via hidden referenced
+nodes, and the real auth feedback region has role=status/aria-live=polite.
+The provider flows, grants and settings are unchanged. Full local npm test,
+Apple/email operation tests, email browser regressions and bundled-SDK
+Apple/Google callback/persistence tests pass.
+
+The official-logo portion is **not completed**. No approved sign-in logo asset
+exists in this repository. The official Apple JavaScript SDK request
+`https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/ko_KR/appleid.auth.js`
+and Google pre-approved bundle
+`https://developers.google.com/static/identity/images/signin-assets.zip`
+each failed with “Tunnel connection failed: 403 Forbidden”. The previously
+blocked Apple design-resource download was not retried or bypassed. No homemade
+mark, third-party icon or invented OAuth client ID is substituted. Approved
+official asset input is required to finish the requested branded appearance.
+
+Current primary guidance: [Apple buttons](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple/)
+and [Google branding, updated July 2026](https://developers.google.com/identity/branding-guidelines).
+Google recommends its SDK, generated HTML or pre-approved artwork, with its
+standard-color G and prescribed font/padding. Apple provides its system/web
+buttons and official artwork. Current text-only draft buttons remain provisional.

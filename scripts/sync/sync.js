@@ -313,9 +313,9 @@ function renderSyncModal(){
           </div>
         </details>
         <button id="sm-apple-login" class="settings-apple-signin" type="button" onclick="sbAppleLogin()" ${!appleLoginWebSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-apple-note">Apple로 로그인</button>
-        <p id="sm-apple-note" class="settings-signin-note">${isNativeShell()&&!socialNativeBridge()?'이 앱의 Apple 로그인 연결은 아직 준비되지 않았어요.':'Apple 계정으로 로그인해요.'}</p>
+        <span id="sm-apple-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Apple 로그인 연결은 아직 준비되지 않았어요.':''}</span>
         <button id="sm-google-login" class="settings-google-signin" type="button" onclick="sbGoogleLogin()" ${!socialLoginSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-google-note">Google로 로그인</button>
-        <p id="sm-google-note" class="settings-signin-note">${isNativeShell()&&!socialNativeBridge()?'이 앱의 Google 로그인 연결은 아직 준비되지 않았어요.':'Google 계정으로 로그인해요.'}</p>
+        <span id="sm-google-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Google 로그인 연결은 아직 준비되지 않았어요.':''}</span>
         <button id="sm-password-login" class="sm-linkish neutral settings-password-link" onclick="openPasswordLogin()">비밀번호 로그인</button>
       </div>`;
   }

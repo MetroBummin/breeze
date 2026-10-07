@@ -23,7 +23,11 @@ Appearance changes are session-only and restored on exit.
 The final screen offers only “책 추가하기” and “나중에”. The former opens the
 existing book-import dialog. Authentication belongs in normal Settings: email
 opens the existing link/code form; password is a subdued secondary link with a
-44px target. Google follows Apple. Web Apple/Google login uses the existing Supabase client and the same return URL as
+44px target. Google follows Apple. Redundant provider helper copy below the buttons is removed;
+unavailable native-platform descriptions remain attached through hidden ARIA
+descriptions. Actual auth feedback uses a polite status region. Official branded
+logo buttons remain pending approved assets: current provisional text-only
+appearances must not be treated as official artwork. Web Apple/Google login uses the existing Supabase client and the same return URL as
 email login. A read-only provider check runs only on an explicit login tap; an
 unconfigured provider or network failure leaves Settings usable. Consent then
 uses `signInWithOAuth`, with the existing session listener owning completion.
