@@ -1,0 +1,474 @@
+{
+  "semanticCounterexamples": [
+    "Valid source with deliberately wrong translation is accepted",
+    "Continued page unit can be incomplete despite complete:true"
+  ],
+  "generatedAt": "2026-10-07T04:11:30.867Z",
+  "provider": "oracle stub (expected fixture span supplied, zero live AI calls)",
+  "fixtures": 13,
+  "checks": 1128,
+  "adversarialRejections": 1000,
+  "checksNamed": [
+    "abbreviations accepted",
+    "abbreviations fabricated",
+    "abbreviations bounds",
+    "abbreviations partial",
+    "abbreviations context",
+    "abbreviations malformed",
+    "abbreviations highlight agreement",
+    "abbreviations missing geometry",
+    "decimal-ellipsis accepted",
+    "decimal-ellipsis fabricated",
+    "decimal-ellipsis bounds",
+    "decimal-ellipsis partial",
+    "decimal-ellipsis context",
+    "decimal-ellipsis malformed",
+    "decimal-ellipsis highlight agreement",
+    "decimal-ellipsis missing geometry",
+    "choices accepted",
+    "choices fabricated",
+    "choices bounds",
+    "choices partial",
+    "choices context",
+    "choices malformed",
+    "choices highlight agreement",
+    "choices missing geometry",
+    "dialogue accepted",
+    "dialogue fabricated",
+    "dialogue bounds",
+    "dialogue partial",
+    "dialogue context",
+    "dialogue malformed",
+    "dialogue highlight agreement",
+    "dialogue missing geometry",
+    "long-sentence accepted",
+    "long-sentence fabricated",
+    "long-sentence bounds",
+    "long-sentence partial",
+    "long-sentence context",
+    "long-sentence malformed",
+    "long-sentence highlight agreement",
+    "long-sentence missing geometry",
+    "repeated-word accepted",
+    "repeated-word fabricated",
+    "repeated-word bounds",
+    "repeated-word partial",
+    "repeated-word context",
+    "repeated-word malformed",
+    "repeated-word highlight agreement",
+    "repeated-word missing geometry",
+    "repeated-sentence accepted",
+    "repeated-sentence fabricated",
+    "repeated-sentence bounds",
+    "repeated-sentence partial",
+    "repeated-sentence context",
+    "repeated-sentence malformed",
+    "repeated-sentence highlight agreement",
+    "repeated-sentence missing geometry",
+    "page-boundary accepted",
+    "page-boundary fabricated",
+    "page-boundary bounds",
+    "page-boundary partial",
+    "page-boundary context",
+    "page-boundary malformed",
+    "page-boundary highlight agreement",
+    "page-boundary missing geometry",
+    "two-columns accepted",
+    "two-columns fabricated",
+    "two-columns bounds",
+    "two-columns partial",
+    "two-columns context",
+    "two-columns malformed",
+    "two-columns highlight agreement",
+    "two-columns missing geometry",
+    "hyphen-ligature accepted",
+    "hyphen-ligature fabricated",
+    "hyphen-ligature bounds",
+    "hyphen-ligature partial",
+    "hyphen-ligature context",
+    "hyphen-ligature malformed",
+    "hyphen-ligature highlight agreement",
+    "hyphen-ligature missing geometry",
+    "malicious accepted",
+    "malicious fabricated",
+    "malicious bounds",
+    "malicious partial",
+    "malicious context",
+    "malicious malformed",
+    "malicious highlight agreement",
+    "malicious missing geometry",
+    "unicode accepted",
+    "unicode fabricated",
+    "unicode bounds",
+    "unicode partial",
+    "unicode context",
+    "unicode malformed",
+    "unicode highlight agreement",
+    "unicode missing geometry",
+    "long-output accepted",
+    "long-output fabricated",
+    "long-output bounds",
+    "long-output partial",
+    "long-output context",
+    "long-output malformed",
+    "long-output highlight agreement",
+    "long-output missing geometry",
+    "repeated sentence wrong occurrence",
+    "negative",
+    "noninteger",
+    "empty",
+    "null",
+    "insufficient",
+    "truncated",
+    "surrogate split",
+    "input budget fails explicitly",
+    "normalization offsets",
+    "stale response discarded",
+    "stale result rejected",
+    "cancel discards result",
+    "partial cache evicted full hit revalidated",
+    "revision cache isolation",
+    "occurrence cache isolation",
+    "output budget rejects without cutting",
+    "geometry rejects cross column",
+    "tap cannot split emoji",
+    "context budget omission is visible",
+    "normalization maps ligature to original",
+    "semantic error counterexample accepted by structural validator",
+    "invalid output never cached",
+    "cache bounded"
+  ],
+  "rows": [
+    {
+      "name": "abbreviations",
+      "baselineExact": false,
+      "baselineRetainsTap": true,
+      "baselineChars": 13,
+      "serverChars": 13,
+      "prototypeChars": 44,
+      "translationChars": 36,
+      "promptChars": 892,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "decimal-ellipsis",
+      "baselineExact": false,
+      "baselineRetainsTap": true,
+      "baselineChars": 11,
+      "serverChars": 11,
+      "prototypeChars": 50,
+      "translationChars": 39,
+      "promptChars": 902,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "choices",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 56,
+      "serverChars": 56,
+      "prototypeChars": 56,
+      "translationChars": 30,
+      "promptChars": 1062,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "dialogue",
+      "baselineExact": false,
+      "baselineRetainsTap": true,
+      "baselineChars": 18,
+      "serverChars": 18,
+      "prototypeChars": 34,
+      "translationChars": 31,
+      "promptChars": 906,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "long-sentence",
+      "baselineExact": false,
+      "baselineRetainsTap": false,
+      "baselineChars": 900,
+      "serverChars": 600,
+      "prototypeChars": 3814,
+      "translationChars": 36,
+      "promptChars": 4658,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "repeated-word",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 23,
+      "serverChars": 23,
+      "prototypeChars": 23,
+      "translationChars": 36,
+      "promptChars": 895,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "repeated-sentence",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 10,
+      "serverChars": 10,
+      "prototypeChars": 10,
+      "translationChars": 40,
+      "promptChars": 872,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "page-boundary",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 37,
+      "serverChars": 37,
+      "prototypeChars": 37,
+      "translationChars": 36,
+      "promptChars": 956,
+      "stubExact": true,
+      "limitation": "Continued unit across page blocks cannot be selected; stub acceptance is not semantic completeness."
+    },
+    {
+      "name": "two-columns",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 52,
+      "serverChars": 52,
+      "prototypeChars": 52,
+      "translationChars": 34,
+      "promptChars": 1010,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "hyphen-ligature",
+      "baselineExact": false,
+      "baselineRetainsTap": true,
+      "baselineChars": 42,
+      "serverChars": 42,
+      "prototypeChars": 42,
+      "translationChars": 38,
+      "promptChars": 891,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "malicious",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 28,
+      "serverChars": 28,
+      "prototypeChars": 28,
+      "translationChars": 32,
+      "promptChars": 912,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "unicode",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 39,
+      "serverChars": 39,
+      "prototypeChars": 39,
+      "translationChars": 30,
+      "promptChars": 882,
+      "stubExact": true,
+      "limitation": null
+    },
+    {
+      "name": "long-output",
+      "baselineExact": true,
+      "baselineRetainsTap": true,
+      "baselineChars": 47,
+      "serverChars": 47,
+      "prototypeChars": 47,
+      "translationChars": 2520,
+      "promptChars": 886,
+      "stubExact": true,
+      "limitation": null
+    }
+  ],
+  "performanceTrialsPerFixture": 1000,
+  "performanceRows": [
+    {
+      "name": "abbreviations",
+      "baseline": {
+        "p50Ms": 0.000610999999999251,
+        "p95Ms": 0.000922000000002754,
+        "maxMs": 0.01834800000000314
+      },
+      "prototype": {
+        "p50Ms": 0.0068599999999960914,
+        "p95Ms": 0.010064999999997326,
+        "maxMs": 0.3173880000000011
+      }
+    },
+    {
+      "name": "decimal-ellipsis",
+      "baseline": {
+        "p50Ms": 0.0005310000000022796,
+        "p95Ms": 0.0006610000000009109,
+        "maxMs": 0.01552300000000173
+      },
+      "prototype": {
+        "p50Ms": 0.005518000000002132,
+        "p95Ms": 0.006399999999999295,
+        "maxMs": 0.15937999999999874
+      }
+    },
+    {
+      "name": "choices",
+      "baseline": {
+        "p50Ms": 0.0005099999999984561,
+        "p95Ms": 0.0006110000000063565,
+        "maxMs": 0.024386000000006902
+      },
+      "prototype": {
+        "p50Ms": 0.007532000000004757,
+        "p95Ms": 0.008192999999998563,
+        "maxMs": 0.1245970000000014
+      }
+    },
+    {
+      "name": "dialogue",
+      "baseline": {
+        "p50Ms": 0.0005000000000023874,
+        "p95Ms": 0.000580999999996834,
+        "maxMs": 0.02703099999999381
+      },
+      "prototype": {
+        "p50Ms": 0.005999000000002752,
+        "p95Ms": 0.00664000000000442,
+        "maxMs": 0.19131799999999544
+      }
+    },
+    {
+      "name": "long-sentence",
+      "baseline": {
+        "p50Ms": 0.0005009999999998627,
+        "p95Ms": 0.0006609999999938054,
+        "maxMs": 0.024947999999994863
+      },
+      "prototype": {
+        "p50Ms": 0.02031099999999242,
+        "p95Ms": 0.03768599999999367,
+        "maxMs": 0.33681699999999637
+      }
+    },
+    {
+      "name": "repeated-word",
+      "baseline": {
+        "p50Ms": 0.0004809999999935144,
+        "p95Ms": 0.0005510000000015225,
+        "maxMs": 0.0028639999999882093
+      },
+      "prototype": {
+        "p50Ms": 0.005458000000004404,
+        "p95Ms": 0.005848000000000297,
+        "maxMs": 0.10028100000000961
+      }
+    },
+    {
+      "name": "repeated-sentence",
+      "baseline": {
+        "p50Ms": 0.0004809999999935144,
+        "p95Ms": 0.0005509999999873116,
+        "maxMs": 0.0038660000000021455
+      },
+      "prototype": {
+        "p50Ms": 0.005307999999999424,
+        "p95Ms": 0.005577999999999861,
+        "maxMs": 0.11779700000001014
+      }
+    },
+    {
+      "name": "page-boundary",
+      "baseline": {
+        "p50Ms": 0.0004809999999935144,
+        "p95Ms": 0.0005510000000015225,
+        "maxMs": 0.01676499999999237
+      },
+      "prototype": {
+        "p50Ms": 0.0063600000000008095,
+        "p95Ms": 0.006989999999987617,
+        "maxMs": 0.1116180000000071
+      }
+    },
+    {
+      "name": "two-columns",
+      "baseline": {
+        "p50Ms": 0.00048099999997930354,
+        "p95Ms": 0.0005500000000040473,
+        "maxMs": 0.002262999999999238
+      },
+      "prototype": {
+        "p50Ms": 0.00644900000000348,
+        "p95Ms": 0.00696999999999548,
+        "maxMs": 0.1039260000000013
+      }
+    },
+    {
+      "name": "hyphen-ligature",
+      "baseline": {
+        "p50Ms": 0.0004710000000045511,
+        "p95Ms": 0.0005610000000046966,
+        "maxMs": 0.020269999999982247
+      },
+      "prototype": {
+        "p50Ms": 0.00596899999999323,
+        "p95Ms": 0.006599999999991724,
+        "maxMs": 0.1474019999999996
+      }
+    },
+    {
+      "name": "malicious",
+      "baseline": {
+        "p50Ms": 0.00048000000001025,
+        "p95Ms": 0.0005510000000015225,
+        "maxMs": 0.01681500000000824
+      },
+      "prototype": {
+        "p50Ms": 0.005448999999998705,
+        "p95Ms": 0.005958999999990056,
+        "maxMs": 0.11414199999998687
+      }
+    },
+    {
+      "name": "unicode",
+      "baseline": {
+        "p50Ms": 0.00043099999999185457,
+        "p95Ms": 0.0005009999999856518,
+        "maxMs": 0.049424999999985175
+      },
+      "prototype": {
+        "p50Ms": 0.005798999999996113,
+        "p95Ms": 0.006338999999996986,
+        "maxMs": 0.23779799999999796
+      }
+    },
+    {
+      "name": "long-output",
+      "baseline": {
+        "p50Ms": 0.00043999999999755346,
+        "p95Ms": 0.0004909999999824777,
+        "maxMs": 0.0022229999999865413
+      },
+      "prototype": {
+        "p50Ms": 0.008543000000003076,
+        "p95Ms": 0.009323999999992338,
+        "maxMs": 0.13427200000000994
+      }
+    }
+  ],
+  "liveAccuracy": null,
+  "liveLatencyMs": null,
+  "liveCost": null
+}
