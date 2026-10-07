@@ -289,3 +289,10 @@ Reader 문장 번역은 단어 확장 필과 같은 중립 유리 재질의 별�
 
 휴대폰 폭(640px 미만)의 성공 번역 본문은 검토 후 17px에서 16px로 줄였다.
 iPad 등 넓은 화면은 17px를 유지하고 굵기·줄간격 비율·재질·등장 동작은 그대로다.
+
+2026-10-07 design-only release: approved neutral light/dark Breeze wordmark on
+Home/shelves, selected teal lowercase b app icon and single thin neutral
+bookmark for Memory without a visible Home label. Existing dock geometry,
+accessible name and navigation stay intact. Onboarding, Reader/auth and native
+launch remain exactly at main; the guided proposal is preserved in PR124.
+See docs/decisions/014-design-only-brand-release.md.
