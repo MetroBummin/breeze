@@ -562,12 +562,14 @@ try{
     // Actual lower-page source occurrences exercise the above-first fallback,
     // independently of the exhaustive pure geometry contract.
     if(!preview){
-      await prepare(kind,{width:844,height:390});
+      await prepare(kind,{width:844,height:500});
       await page.evaluate(()=>{qaPill.pickBottom=true;});
       await start(kind);await result({ko:korean},kind+'-above');
       const above=await validateResult(kind+'-above');
       assert.equal(above.direction,'above',kind+': lower source did not exercise above placement');
       assert.ok(above.shell.bottom<=above.source.top-7,kind+': above pill overlaps whole sentence');
+      assert.ok(above.source.top-above.safe.top-8>=160,
+        kind+': long-help-above fixture must provide the documented useful minimum');
       await screenshot(kind+'-above-settled');
       reports.push({kind,scenario:'actual-lower-source',geometry:above});
       await page.locator('#ps-easy-button').click();
@@ -720,9 +722,11 @@ try{
   assert.deepEqual(providerAttempts,[],'attempted real provider transport');
   assert.deepEqual(errors,[],'uncaught browser errors');
   const video=page.video();await page.close();
-  await context.close();context=null;
   const videoPath=resolve(output,`${engineName}-sentence-success-pill.webm`);
+  // Persistent WebKit closes the browser with its context. Save the completed
+  // page artifact while that connection is still alive.
   if(video)await video.saveAs(videoPath);
+  await context.close();context=null;
   writeFileSync(resolve(output,`${engineName}-sentence-success-pill-report.json`),JSON.stringify({
     engine:engineName,preview,synthetic:true,providerCalls:0,imports,cases:reports,screenshots,video:videoPath,videoTimeline,
     videoTimeOrigin:'Milliseconds from page creation request; allow 1 second leading/trailing padding when extracting clips.',
