@@ -31,6 +31,12 @@ try{
   assert.equal(await page.locator('.onboard-target').evaluate(n=>getComputedStyle(n).animationName),'none');
   await page.screenshot({path:`${out}/${name}-${theme}-word.png`});
   await page.evaluate(()=>endOnboarding(true));await page.evaluate(()=>show('home'));
+  await page.locator('#logo .breeze-wordmark').evaluate(async node=>{
+   const style=getComputedStyle(node);
+   if(style.backgroundImage!=='none')throw Error('Home wordmark retained a gradient/image fill');
+   const source=style.maskImage||style.webkitMaskImage;
+   await new Promise((resolve,reject)=>{const i=new Image();i.onload=resolve;i.onerror=reject;i.src=source.slice(5,-2);});
+  });
   await page.screenshot({path:`${out}/${name}-${theme}-home.png`});
   const bounds=await page.locator('#logo .breeze-wordmark').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'brand must not create page overflow');

@@ -3,9 +3,9 @@
 The user selected Dark01 and authorized a white-mode version, onboarding,
 splash and restrained Home branding, with screenshots before approval. This
 draft is stacked on PR #122 and changes no auth, Reader lookup or release policy.
-The 07:56 feedback requests identical Dark01 ink on WHITE and a more readable,
-less hooked `r`. The current contour is explicitly **provisional** pending the
-design worker's comparison and user review; this draft does not finalize it.
+The user confirmed the original cursive `r` at 08:15. Its contour is retained;
+the plain-r alternative is not implemented. WHITE palette A/B still awaits
+selection after the 08:06 feedback about the pale appearance.
 
 The approved Library board is `libfile_709561bacc108191b6ec01dddc4318f9`
 (version 0, backing `file_000000006c9881f9bf2b7604c4c0cb57`). Actual pixels
@@ -18,8 +18,13 @@ themes share exactly the same outline and aspect ratio. Both use the exact
 Dark01 gradient #acece1 → #a9d4ee; WHITE is not darkened. These are decorative
 brand ink, not general control/selection tokens.
 
-The full wordmark replaces the mascot on welcome and completion, and the Home
-header. The ordinary content word `Breeze` stays selectable Reader text. Its
+The full wordmark replaces the mascot on welcome and completion. Following
+08:08 user feedback, the Home header uses the identical contour as a mask filled
+with the existing neutral `--settings-ink` token (#1C1C1E / #F2F2F7), with no
+gradient. Colored artwork remains on onboarding and splash. The 08:06 feedback
+rejects the pale WHITE effect; two preview-only white palette candidates are
+recorded separately and await user selection. Dark ink is unchanged.
+The ordinary content word `Breeze` stays selectable Reader text. Its
 lesson, actual mini pill, expansion, translation and explanation remain shared.
 Home content and navigation, including the existing Memory illustration, remain
 intact. The `br` mark replaces web/PWA/iOS app icon assets.

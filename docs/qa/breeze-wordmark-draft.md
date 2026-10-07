@@ -1,8 +1,23 @@
 # Breeze Dark01 brand — screenshot draft
 
-**Provisional letterform:** 07:56 user feedback requests a less hooked, readable
-`r`. That geometry awaits the design comparison and user review. Both themes now
-use identical Dark01 ink; the earlier darkened WHITE preview is superseded.
+08:08: Home header is now monochrome using the existing neutral text token,
+with the identical source contour. Ten brand layouts and the new monochrome
+mask assertion pass locally. Onboarding WHITE palette A/B previews await review;
+dark and letterform remain unchanged. Preview metadata is in
+`white-palette-variants/library-images.json`.
+
+The original `26266e8` CI attempt passed onboarding/branding on Chromium and
+WebKit, sentence responsive on both engines and Integrity contract/diagnostic
+jobs. Sentence inline WebKit failed because its synthetic pointerup was sent
+to a detached PDF canvas after repaint. The test now releases on the current
+hit-tested surface when its old target has detached, preserving the assertion
+that the document gesture owner receives release. Reader production code is
+unchanged. Forced synthetic-pointer TXT/PDF/EPUB checks pass locally in Chromium;
+actual WebKit verification awaits the next exact-head CI.
+
+**Letterform approved at 08:15:** keep the original cursive `r`. No plain-r
+alternative is implemented. Current onboarding/splash assets use identical
+Dark01 ink; the WHITE palette A/B comparison still awaits user selection.
 
 Stacked on guided onboarding/auth PR #122 (`04056222`). Base main remains
 `c649047d`. No merge, deployment, release build or App Review submission.

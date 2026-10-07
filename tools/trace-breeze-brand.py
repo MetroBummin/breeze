@@ -62,7 +62,7 @@ def outline(bounds):
 
 def svg(width,height,path,dark=False,icon=False):
     # 07:56 feedback: WHITE uses exactly Dark01 ink, without darkening it.
-    # Letterform remains provisional while the new readable-r is reviewed.
+    # 08:15 feedback confirms the original approved cursive r contour.
     colors=('#acece1','#a9d4ee')
     if icon:
         scale=820/max(width,height); x=(1024-width*scale)/2; y=(1024-height*scale)/2
@@ -77,3 +77,5 @@ if __name__=='__main__':
     monogram=outline((52,1110,315,1340))
     for name,data in [('wordmark-light.svg',svg(*word)),('wordmark-dark.svg',svg(*word,dark=True)),('monogram.svg',svg(*monogram,icon=True))]:
         (ROOT/'assets/brand'/name).write_text(data)
+    width,height,path=word
+    (ROOT/'assets/brand/wordmark-mask.svg').write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"><path d="{path}" fill="black" fill-rule="evenodd"/></svg>\n')

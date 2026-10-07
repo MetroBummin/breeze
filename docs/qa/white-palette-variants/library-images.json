@@ -1,0 +1,106 @@
+{
+  "status": "White palettes await user selection; original cursive r approved at 08:15; Dark01 unchanged",
+  "palettes": {
+    "current": {
+      "stops": [
+        [
+          0,
+          "#acece1"
+        ],
+        [
+          1,
+          "#a9d4ee"
+        ]
+      ],
+      "welcomeContrast": [
+        1.29,
+        1.53
+      ]
+    },
+    "A": {
+      "stops": [
+        [
+          0,
+          "#75b9bd"
+        ],
+        [
+          0.8,
+          "#79aac8"
+        ],
+        [
+          1,
+          "#79aac8"
+        ]
+      ],
+      "welcomeContrast": [
+        2.17,
+        2.43
+      ]
+    },
+    "B": {
+      "stops": [
+        [
+          0,
+          "#63acb5"
+        ],
+        [
+          0.8,
+          "#699bbc"
+        ],
+        [
+          1,
+          "#699bbc"
+        ]
+      ],
+      "welcomeContrast": [
+        2.52,
+        2.91
+      ]
+    }
+  },
+  "capture": "Production welcome UI with preview-only SVG substitution. Comparison board lays out independent browser PNGs at their original 390x844 dimensions. Earlier colored Home comparisons are historical; latest Home is monochrome.",
+  "images": [
+    {
+      "file_name": "white-current-welcome.png",
+      "library_file_id": "libfile_be6c09184de08191b66be7ed27de030e",
+      "file_id": "file_000000007408823086ada7c8a9962aca",
+      "version": 0
+    },
+    {
+      "file_name": "white-current-home.png",
+      "library_file_id": "libfile_dc52180ab68c81919aaf12d20c68d921",
+      "file_id": "file_000000001e3881f6b2df5a8181d3793e",
+      "version": 0
+    },
+    {
+      "file_name": "white-A-welcome.png",
+      "library_file_id": "libfile_614e22bf58d481918f30e03dc73ad178",
+      "file_id": "file_0000000051388230b09993992aa41c84",
+      "version": 0
+    },
+    {
+      "file_name": "white-A-home.png",
+      "library_file_id": "libfile_58d69c57e4d48191b149d34239ed8f32",
+      "file_id": "file_00000000c90c81f8b67686a2a15edc2b",
+      "version": 0
+    },
+    {
+      "file_name": "white-B-welcome.png",
+      "library_file_id": "libfile_c33b1b6b21008191bde6cbebb3e2bd52",
+      "file_id": "file_00000000415881f6b43f092c5907b3b7",
+      "version": 0
+    },
+    {
+      "file_name": "white-B-home.png",
+      "library_file_id": "libfile_ea1b48fdc03c8191a0fda076edfb2361",
+      "file_id": "file_00000000480881f895056be9a1eeb828",
+      "version": 0
+    }
+  ],
+  "comparison": {
+    "file_name": "white-onboarding-comparison.png",
+    "library_file_id": "libfile_389b214687948191a26d128ae8e390fb",
+    "file_id": "file_00000000afd481f6bf5c2424fc86b13d",
+    "version": 1
+  }
+}

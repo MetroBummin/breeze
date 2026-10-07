@@ -30,30 +30,30 @@
   {
     "file_name": "phone-light-home.png",
     "library_file_id": "libfile_ea3e24c2361c8191ae64d03b956708a8",
-    "file_id": "file_0000000024c881f5ae094af7fbd85028",
-    "version": 1,
-    "size_bytes": 152292
+    "file_id": "file_00000000cf6081f6bfad4a1a67f87f61",
+    "version": 2,
+    "size_bytes": 152247
   },
   {
     "file_name": "phone-dark-home.png",
     "library_file_id": "libfile_424e8c14c17081919500af0309ef3a59",
-    "file_id": "file_00000000cd0481f784d5ad4471526517",
-    "version": 0,
-    "size_bytes": 153298
+    "file_id": "file_00000000006c82308b6f8d3dd3713ecd",
+    "version": 1,
+    "size_bytes": 152297
   },
   {
     "file_name": "ipad-light-home.png",
     "library_file_id": "libfile_fb6906536f5c819184cb51338b781fe9",
-    "file_id": "file_00000000aba081f6a4c8cadffeb7dfb5",
-    "version": 1,
-    "size_bytes": 311730
+    "file_id": "file_00000000a04081f5ac3728496d171e1b",
+    "version": 2,
+    "size_bytes": 311647
   },
   {
     "file_name": "ipad-dark-home.png",
     "library_file_id": "libfile_5b53ca7a29408191b6289a4dfbece26b",
-    "file_id": "file_000000008d0c8230aac78bc111e624be",
-    "version": 0,
-    "size_bytes": 313504
+    "file_id": "file_0000000031a881f8b9f75c1e69e4d324",
+    "version": 1,
+    "size_bytes": 312593
   },
   {
     "file_name": "phone-light-splash-preview.png",
