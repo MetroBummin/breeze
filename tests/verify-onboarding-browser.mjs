@@ -138,6 +138,11 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.evaluate(()=>{onboardingSession.stage=1;drawOnboarding();});
  assert.equal(await page.locator('#rtext .onboard-focus-word').evaluate(n=>getComputedStyle(n).animationName),'none');
+ await page.locator('#rtext .onboard-focus-word').focus();await page.keyboard.press('Enter');
+ await page.waitForFunction(()=>document.activeElement===document.getElementById('word-peek-more'));
+ await page.keyboard.press('Enter');await page.waitForFunction(()=>onboardingSession.wordExpanded);
+ await page.locator('#onboard-return').focus();await page.keyboard.press('Enter');
+
  await page.evaluate(()=>{onboardingSession.stage=4;drawOnboarding();});
  await page.locator('#onboard-password').click();
  assert.equal(await page.locator('#sm-password').isVisible(),true,'existing reviewer/password route missing');

@@ -29,7 +29,7 @@ easy explanation, and an Aa visit respectively. Tutorial Back revisits steps;
 the Reader Home action remains disabled while the transient book is open.
 Welcome and account steps make the covered Reader inert. Focus follows explicit
 stage changes; guidance announces changes, controls have keyboard access and
-visible focus, and reduced motion removes attention and reveal motion.
+visible focus (including Enter/Space word lookup and its chevron), and reduced motion removes attention and reveal motion.
 
 ## Local data and lifecycle
 

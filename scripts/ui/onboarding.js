@@ -62,6 +62,21 @@ async function startOnboarding(replay){
     closePanel();closeSentence();closeAa();session.stage=Math.max(0,session.stage-1);persistOnboarding();drawOnboarding();
     document.getElementById('onboard-next').focus({preventScroll:true});
   },{signal});
+  document.getElementById('rtext').addEventListener('keydown',async event=>{
+    const node=event.target;
+    if(session.stage!==1 || !(node instanceof HTMLElement) || !node.classList.contains('onboard-focus-word')
+        || !['Enter',' '].includes(event.key))return;
+    event.preventDefault();await openOnboardingWord(node);
+    const pill=document.getElementById('word-peek');
+    const focusChevron=()=>{
+      if(onboardingSession!==session || activeSelectedWordNode!==node || document.activeElement!==node){observer.disconnect();return;}
+      if(!pill.hidden){observer.disconnect();document.getElementById('word-peek-more').focus({preventScroll:true});}
+    };
+    const observer=new MutationObserver(focusChevron);
+    observer.observe(pill,{attributes:true,attributeFilter:['hidden']});
+    session.controller.signal.addEventListener('abort',()=>observer.disconnect(),{once:true});
+    focusChevron();
+  },{signal});
   document.getElementById('onboard-sentence').addEventListener('click',()=>{
     const node=document.querySelector('#rtext .w');if(!node)return;
     const rect=node.getBoundingClientRect();
@@ -142,6 +157,10 @@ function drawOnboarding(){
   document.getElementById('aafab').classList.toggle('onboard-target',stage===3&&!aaOpen);
   document.querySelectorAll('#rtext .w').forEach(node=>{
     node.classList.toggle('onboard-focus-word',node.textContent==='Breeze');
+    if(stage===1 && node.textContent==='Breeze'){
+      node.setAttribute('tabindex','0');node.setAttribute('role','button');node.setAttribute('aria-label','Breeze 뜻 보기');
+    }else{node.removeAttribute('tabindex');node.removeAttribute('role');node.removeAttribute('aria-label');}
+
     node.classList.toggle('onboard-target',!overlay&&stage===1&&node.textContent==='Breeze');
   });
 }

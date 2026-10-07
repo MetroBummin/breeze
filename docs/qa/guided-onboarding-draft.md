@@ -47,7 +47,7 @@ Passed on 2026-10-07:
 - `PLAYWRIGHT_BROWSERS_PATH=/tmp/breeze-browsers BREEZE_CHROMIUM=/usr/bin/chromium npm run test:onboarding`:
   actual word tap/chevron, actual long-press release gate, local sentence help,
   Aa, interrupted/reopened, Back, Skip, guest success, replay restoration,
-  stale-result cancellation, keyboard long-press alternative, zero dictionary
+  stale-result cancellation, Enter/Space word lookup and chevron, keyboard long-press alternative, zero dictionary
   calls, durable data/appearance isolation, preserved local vocabulary,
   email/password handoff, reduced motion. Browser offline mode covers word and
   sentence/easy-help interactions. Web and native-shell emulation pass.

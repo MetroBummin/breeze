@@ -42,3 +42,6 @@ body.onboarding-active #rtitle:focus{outline:none;}
 #onboard-apple-note{font:400 11px/1.5 var(--ui);color:var(--soft);margin:8px 0;}
 
 body.onboarding-active #rtext .pageno{display:none;}
+
+body.onboarding-active #rtext .onboard-focus-word:focus-visible{outline:2px solid var(--blue);outline-offset:4px;}
+@media(max-height:500px){#onboard-overlay-guide{justify-content:space-between;}}
